@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.15  2005/03/29 07:38:00  ishtvan
+ * Added global typedefs for sound propagation flags and team alert flags
+ *
  * Revision 1.14  2005/03/26 20:59:52  sparhawk
  * Logging initialization added for automatic mod name detection.
  *
@@ -109,6 +112,40 @@ typedef enum {
 	LC_COUNT
 } LC_LogClass;
 
+/**
+* Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
+* Therefore they are global.
+* See sound prop doc file for definitions of these flags.
+**/
+
+typedef struct SSprFlagBits_s
+{
+	unsigned int omni_directional : 1;
+	unsigned int unique_location : 1;
+	unsigned int urgent : 1;
+	unsigned int global_vol : 1;
+	unsigned int check_last_touched : 1;
+} SSprFlagBits;
+
+typedef union USprFlags_s
+{
+	unsigned int m_field;
+	SSprFlagBits m_bits;
+} USprFlags;
+
+typedef struct STeamBits_s
+{
+	unsigned int friendly : 1;
+	unsigned int neutral : 1;
+	unsigned int enemy : 1;
+	unsigned int same : 1;
+} STeamBits;
+
+typedef union UTeamFlags_s
+{
+	unsigned int m_field;
+	STeamBits m_bits;
+} UTeamFlags;
 class CDarkModPlayer;
 
 class CImage {
