@@ -7,9 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/14 08:06:51  nexenizer
+ * *** empty log message ***
  *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
+ * Revision 1.1.1.2  2004/11/14 10:11:02  nexenizer
+ * Updated #pragma at bool idMatX::Cholesky_UpdateRowColumn to create compatible code
+ * 
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -60,7 +65,7 @@ bool idMat2::InverseSelf( void ) {
 idMat2::InverseFastSelf
 ============
 */
-bool idMat2::InverseFastSelf( void ) {
+boOl idMat2::InverseFastSelf( void ) {
 #if 1
 	// 2+4 = 6 multiplications
 	//		 1 division
@@ -5378,6 +5383,14 @@ idMatX::Cholesky_UpdateRowColumn
   where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1]
 ============
 */
+
+/**
+ * #pragma update for compatible code
+ * Nexenizer
+ * */
+
+#pragma optimize( "", off )
+
 bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	int i, j;
 	double sum;
@@ -5545,6 +5558,13 @@ bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 
 	return true;
 }
+
+/**
+ * Bring optimizations back on line
+ * Nexenizer
+ * */
+
+#pragma optimize( "", on )
 
 /*
 ============
