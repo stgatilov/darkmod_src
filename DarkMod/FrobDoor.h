@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/24 21:59:06  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ *
  * Revision 1.3  2004/11/21 01:02:03  sparhawk
  * Doors can now be properly opened and have sound.
  *
@@ -46,13 +51,15 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
-	void					Open(void);
-	void					Close(void);
-	void					Lock(void);
-	void					Unlock(void);
+	void					Open(bool Master);
+	void					Close(bool Master);
+	void					Lock(bool Master);
+	void					Unlock(bool Master);
 
 	void					ToggleOpen(void);
 	void					ToggleLock(void);
+
+	bool					UsedBy(idEntity *);
 
 protected:
 	/**

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/24 21:59:06  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ *
  * Revision 1.3  2004/11/21 01:02:03  sparhawk
  * Doors can now be properly opened and have sound.
  *
@@ -28,6 +33,9 @@
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"
 #include "FrobDoor.h"
+
+// TODO: A parameter must be added to translate doors. Currently they
+// can be only rotated when they are opened.
 
 //===============================================================================
 //CFrobDoor
@@ -78,96 +86,306 @@ void CFrobDoor::Spawn( void )
 {
 	idStr str;
 	idMover::Spawn();
+	idEntity *e;
+	CFrobDoor *master;
 
 	LoadTDMSettings();
 
 	if(spawnArgs.GetString("master_open", "", str))
 	{
-		if(AddToMasterList(m_OpenList, str) == true)
-			m_MasterOpen = str;
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_OpenList, str) == true)
+					m_MasterOpen = str;
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
 	if(spawnArgs.GetString("master_lock", "", str))
 	{
-		if(AddToMasterList(m_LockList, str) == true)
-			m_MasterLock = str;
-	}
-
-	if(spawnArgs.GetString("master_lock", "", str))
-	{
-		if(AddToMasterList(m_LockList, str) == true)
-			m_MasterLock = str;
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_LockList, str) == true)
+					m_MasterLock = str;
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
 
 	m_Open = spawnArgs.GetBool("open");
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] open (%u)\r", name.c_str(), m_Open);
+	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] open (%u)\r", name.c_str(), m_Open);
 
 	m_Locked = spawnArgs.GetBool("locked");
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] locked (%u)\r", name.c_str(), m_Locked);
+	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] locked (%u)\r", name.c_str(), m_Locked);
 
 	m_Pickable = spawnArgs.GetBool("pickable");
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
+	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
 }
 
-void CFrobDoor::Lock(void)
+void CFrobDoor::Lock(bool bMaster)
 {
-	// Numerical locks can always be locked by changing the number.
-	// All other locks need to have an entity which represents the key. And 
-	// this key must be equipped in the inventory to be used. Lockpicking
-	// will not lock a door once it is open.
+	CFrobDoor *ent;
+	idEntity *e;
+
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	if(bMaster == true && m_MasterLock.Length() != 0)
+	{
+		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		{
+			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				ent->Lock(false);
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+		}
+	}
+	else
+	{
+		int i, n;
+
+		n = m_LockList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
+			{
+				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+					ent->Lock(false);
+				}
+				else
+					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+		}
+
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] Door is locked\r", name.c_str());
+		m_Locked = true;
+	}
 }
 
-void CFrobDoor::Unlock(void)
+void CFrobDoor::Unlock(bool bMaster)
 {
-	// Unlock needs to be an entity passed in which is the key. We can do this 
-	// either by specifing the entity directly, or we can look which inventory
-	// item currently is equipped. The question of course is, how are numerical 
-	// locks treated? Of course the lockpicking can also be used.
+	CFrobDoor *ent;
+	idEntity *e;
+
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	if(bMaster == true && m_MasterLock.Length() != 0)
+	{
+		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		{
+			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				ent->Unlock(false);
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+		}
+	}
+	else
+	{
+		int i, n;
+
+		n = m_LockList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
+			{
+				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+					ent->Unlock(false);
+				}
+				else
+					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+		}
+
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] Door is unlocked\r", name.c_str());
+		m_Locked = false;
+
+		ToggleOpen();
+	}
 }
 
 void CFrobDoor::ToggleLock(void)
 {
+	// A door can only be un/locked when it is closed.
+	if(m_Open == true)
+	{
+		ToggleOpen();
+		return;
+	}
+
 	if(m_Locked == true)
-		Unlock();
+		Unlock(true);
 	else
-		Lock();
+		Lock(true);
 }
 
-void CFrobDoor::Open(void)
+void CFrobDoor::Open(bool bMaster)
 {
+	CFrobDoor *ent;
+	idEntity *e;
+
 	// If the door is already open, we don't have anything to do. :)
 	if(m_Open == true)
 		return;
 
-	if(m_Locked == true)
-		StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
+	if(bMaster == true && m_MasterLock.Length() != 0)
+	{
+		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		{
+			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				ent->Open(false);
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+		}
+	}
 	else
 	{
-		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-		Event_RotateOnce(m_Rotate);
-		m_Open = true;
+		int i, n;
+
+		n = m_LockList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
+			{
+				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
+					ent->Open(false);
+				}
+				else
+					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+		}
+
+		if(m_Locked == true)
+			StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
+		else
+		{
+			StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+			Event_RotateOnce(m_Rotate);
+			m_Open = true;
+		}
 	}
 }
 
-void CFrobDoor::Close(void)
+void CFrobDoor::Close(bool bMaster)
 {
+	CFrobDoor *ent;
+	idEntity *e;
+
 	// If the door is already closed, we don't have anything to do. :)
 	if(m_Open == false)
 		return;
 
-	idAngles angle = m_Rotate * (-1);
-	StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-	Event_RotateOnce(angle);
-	m_Open = false;
+	if(bMaster == true && m_MasterLock.Length() != 0)
+	{
+		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		{
+			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				ent->Close(false);
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+		}
+	}
+	else
+	{
+		int i, n;
+
+		n = m_LockList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
+			{
+				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
+					ent->Close(false);
+				}
+				else
+					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+		}
+
+		idAngles angle = m_Rotate * (-1);
+		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+		Event_RotateOnce(angle);
+		m_Open = false;
+	}
 }
 
 void CFrobDoor::ToggleOpen(void)
 {
 	if(m_Open == true)
-		Close();
+		Close(true);
 	else
-		Open();
+		Open(true);
+}
+
+bool CFrobDoor::UsedBy(idEntity *ent)
+{
+	bool bRc = false;
+	int i, n;
+	CFrobDoor *master;
+	idEntity *e;
+
+	if(ent == NULL)
+		return false;
+
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
+		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
+
+	// When we are here we know that the item is usable
+	// so we have to check if it is associated with this entity.
+	n = m_UsedBy.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(ent->name == m_UsedBy[i])
+		{
+			ToggleLock();
+			bRc = true;
+		}
+	}
+
+	// If we haven't found the entity here. we can still try to unlock it
+	// via a master
+	if(bRc == false && m_MasterLock.Length() != 0)
+	{
+		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+				bRc = master->UsedBy(ent);
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+		}
+	}
+
+	return bRc;
 }
 
