@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2004/11/06 17:16:53  sparhawk
+ * Optimized the debug log function for ease of use and speed.
+ *
  * Revision 1.3  2004/11/05 21:23:01  sparhawk
  * Added ENTITY class
  * Added compile time info to logfile header to check DLL version on client installation.
@@ -70,7 +73,7 @@ public:
 	CGlobal(void);
 	~CGlobal(void);
 
-	void LogString(char *Filename, int LineNumber, LC_LogClass, LT_LogType, char *Format, ...);
+	void LogString(char *Format, ...);
 
 private:
 	void LoadINISettings(void *);
@@ -85,15 +88,19 @@ public:
 	bool m_LogArray[LT_COUNT];
 	bool m_ClassArray[LC_COUNT];
 
-	float m_MinFrobAngle;
-	float m_MaxFrobAngle;
-	float m_FrobAngle;
+	LC_LogClass		m_LogClass;
+	LT_LogType		m_LogType;
+	char			*m_Filename;
+	int				m_Linenumber;
+
+public:
+	// Global game settings, default values
 	float m_DefaultFrobDistance;
 };
 
 extern CGlobal g_Global;
 extern char *g_LCString[];
 
-#define DM_LOG(lc)		if(g_Global.m_ClassArray[lc] == true) g_Global
+#define DM_LOG(lc, lt)		if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
 
 #endif
