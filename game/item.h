@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
  * Revision 1.3  2004/11/03 00:06:08  sparhawk
  * Frob highlight finished and working.
  *
@@ -69,7 +72,6 @@ private:
 	bool					spin;
 	bool					pulse;
 	bool					canPickUp;
-	int						m_FrobDistance;
 
 	// for item pulse effect
 	int						itemShellHandle;
@@ -83,14 +85,6 @@ private:
 
 	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView );
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
-
-	/**
-	 * Frob will test if the item is in frobrange. If this is the case it also checks
-	 * if the player is looking at it. If it is the nearest looked at item, the item 
-	 * will be highlighted. If another item is highlighted, the frobeffect for that
-	 * item will be disabled.
-	 */
-	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView);
 
 	void					Event_DropToFloor( void );
 	void					Event_Touch( idEntity *other, trace_t *trace );

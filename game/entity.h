@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -340,10 +343,38 @@ public:
 	void					ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const;
 	void					ClientSendEvent( int eventId, const idBitMsg *msg ) const;
 
+	// Darkmod function
+
+	/**
+	 * LoadTDMSettings will initialize the settings required for 
+	 * darkmod to operate. It should be called form the respective
+	 * Spawn function on each object as there is no common function
+	 * that is called on Spawn for all entities. If a class needs
+	 * to load additional settings, which are only of interest to this
+	 * particular class it should override this virtual function but
+	 * don't forget to call it for the base class.
+	 */
+	virtual void			LoadTDMSettings(void);
+
+	/**
+	 * Frob will test if the item is in frobrange. If this is the case it also checks
+	 * if the player is looking at it. If it is the nearest looked at item, the item 
+	 * will be highlighted. If another item is highlighted, the frobeffect for that
+	 * item will be disabled.
+	 */
+	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView);
+
+
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
 	int						modelDefHandle;						// handle to static renderer model
 	refSound_t				refSound;							// used to present sound to the audio engine
+
+	/**
+	 * Frobdistance determines the distance in renderunits. If set to 0
+	 * the entity is not frobable.
+	 */
+	int						m_FrobDistance;
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object

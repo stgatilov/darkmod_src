@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
  * Revision 1.5  2004/11/03 21:47:38  sparhawk
  * Changed debug LogString for better performance and group settings
  *
@@ -34,7 +37,6 @@
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/PlayerData.h"
 
 /*
 ===============================================================================
@@ -281,12 +283,14 @@ void idItem::Present( void )
 		shell.callback = idItem::ModelCallback;
 		shell.entityNum = entityNumber;
 		shell.customShader = shellMaterial;
-		if ( itemShellHandle == -1 ) {
+		if ( itemShellHandle == -1 )
+		{
 			itemShellHandle = gameRenderWorld->AddEntityDef( &shell );
-		} else {
+		}
+		else
+		{
 			gameRenderWorld->UpdateEntityDef( itemShellHandle, &shell );
 		}
-
 	}
 }
 
@@ -301,15 +305,6 @@ void idItem::Spawn( void )
 	idEntity *	ent;
 	float		tsize;
 
-	// If an item has the frobable flag set to true we will use the 
-	// the default value. If the frobdistance is set in the item
-	// it will override the defaultsetting. If none of that is set
-	// the frobdistance will be set to 0 meaning no frobbing on that item.
-	spawnArgs.GetInt( "frob_distance", "0", m_FrobDistance);
-	if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
-		m_FrobDistance = g_Global.m_DefaultFrobDistance;
-
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "FrobDistance: %u\r", m_FrobDistance);
 	if ( spawnArgs.GetBool( "dropToFloor" ) )
 	{
 		PostEventMS( &EV_DropToFloor, 0 );
@@ -357,6 +352,8 @@ void idItem::Spawn( void )
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	LoadTDMSettings();
 }
 
 /*
@@ -364,7 +361,8 @@ void idItem::Spawn( void )
 idItem::GetAttributes
 ================
 */
-void idItem::GetAttributes( idDict &attributes ) {
+void idItem::GetAttributes( idDict &attributes )
+{
 	int					i;
 	const idKeyValue	*arg;
 
@@ -426,7 +424,8 @@ bool idItem::Pickup( idPlayer *player )
 	Hide();
 
 	// add the highlight shell
-	if ( itemShellHandle != -1 ) {
+	if ( itemShellHandle != -1 )
+	{
 		gameRenderWorld->FreeEntityDef( itemShellHandle );
 		itemShellHandle = -1;
 	}
@@ -1408,76 +1407,3 @@ void idObjectiveComplete::Event_HideObjective( idEntity *e ) {
 	}
 }
 
-bool idItem::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
-{
-	bool bRc;
-	idPlayer *player;
-	CDarkModPlayer *pDM;
-	float param;
-	float fDistance;
-	bool bHighlight;
-
-	player = gameLocal.GetLocalPlayer();
-	pDM = player->m_DarkModPlayer;
-
-	// If we have no player there is no point in doing this. :)
-	if(player == NULL || pDM == NULL)
-		return false;
-
-	bRc = false;
-	bHighlight = false;
-	param = 0.0f;
-
-	trace_t trace;
-	idVec3 start;
-	idVec3 end;
-
-	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-	fDistance = v3Difference.Length();
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
-		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, fDistance);
-
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
-		"Pitch: %f   Yaw: %f   Roll: %f\r", player->viewAngles.pitch, player->viewAngles.yaw, player->viewAngles.roll);
-
-	start = player->GetEyePosition( );
-	end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
-
-	// sparhawk
-	// TODO: We may have to determine the actual masks that we really will need, but that should work for now.
-	gameLocal.clip.TracePoint(trace, start, end, 
-		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-		|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
-		player);
-
-	if((trace.fraction < 1.0f))
-	{
-		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
-
-		idEntity *ent = gameLocal.GetTraceEntity(trace);
-		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
-
-		if(ent == this)
-			bHighlight = true;
-	}
-
-	if(bHighlight == true)
-	{
-		pDM->m_FrobEntity = this;
-		param = 1.0f;
-	}
-	else
-	{
-		// Only switch it off if we are the current highlight
-		if(pDM->m_FrobEntity == this)
-			pDM->m_FrobEntity = NULL;
-	}
-
-	renderEntity->shaderParms[4] = param;
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity);
-
-	bRc = true;
-
-	return bRc;
-}

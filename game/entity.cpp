@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
  * Revision 1.3  2004/11/03 21:47:38  sparhawk
  * Changed debug LogString for better performance and group settings
  *
@@ -26,6 +29,7 @@
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
 
 /*
 ===============================================================================
@@ -365,7 +369,8 @@ properly. An optional source may be provided if the values reside in an outside 
 first need copied over to spawnArgs
 ===============
 */
-void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
+void idEntity::UpdateChangeableSpawnArgs( const idDict *source )
+{
 	int i;
 	const char *target;
 
@@ -436,7 +441,8 @@ idEntity::idEntity()
 idEntity::FixupLocalizedStrings
 ================
 */
-void idEntity::FixupLocalizedStrings() {
+void idEntity::FixupLocalizedStrings()
+{
 	for ( int i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
 		const idKeyValue *kv = spawnArgs.GetKeyVal( i );
 		if ( idStr::Cmpn( kv->GetValue(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ){
@@ -450,7 +456,8 @@ void idEntity::FixupLocalizedStrings() {
 idEntity::Spawn
 ================
 */
-void idEntity::Spawn( void ) {
+void idEntity::Spawn( void )
+{
 	int					i;
 	const char			*temp;
 	idVec3				origin;
@@ -512,18 +519,10 @@ void idEntity::Spawn( void ) {
 		fl.networkSync = ( atoi( networkSync->GetValue() ) != 0 );
 	}
 
-#if 0
-	if ( !gameLocal.isClient ) {
-		// common->DPrintf( "NET: DBG %s - %s is synced: %s\n", spawnArgs.GetString( "classname", "" ), GetType()->classname, fl.networkSync ? "true" : "false" );
-		if ( spawnArgs.GetString( "classname", "" )[ 0 ] == '\0' && !fl.networkSync ) {
-			common->DPrintf( "NET: WRN %s entity, no classname, and no networkSync?\n", GetType()->classname );
-		}
-	}
-#endif
-
 	// every object will have a unique name
-	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber ) );
-	SetName( temp );
+	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
+	SetName(temp);
+	DM_LOG(LC_ENTITY).LogString(__FILE__, __LINE__, LC_ENTITY, LT_INFO, "this: %08lX   Name: [%s]\r", this, temp);
 
 	// if we have targets, wait until all entities are spawned to get them
 	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
@@ -564,6 +563,8 @@ void idEntity::Spawn( void ) {
 
 		ConstructScriptObject();
 	}
+
+	LoadTDMSettings();
 }
 
 /*
@@ -571,7 +572,9 @@ void idEntity::Spawn( void ) {
 idEntity::~idEntity
 ================
 */
-idEntity::~idEntity( void ) {
+idEntity::~idEntity( void )
+{
+	DM_LOG(LC_FUNCTION).LogString(__FILE__, __LINE__, LC_FUNCTION, LT_DEBUG, "this: %08lX [%s]\r", this, __FUNCTION__);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
@@ -623,7 +626,8 @@ idEntity::~idEntity( void ) {
 idEntity::Save
 ================
 */
-void idEntity::Save( idSaveGame *savefile ) const {
+void idEntity::Save( idSaveGame *savefile ) const
+{
 	int i, j;
 
 	savefile->WriteInt( entityNumber );
@@ -691,7 +695,8 @@ void idEntity::Save( idSaveGame *savefile ) const {
 idEntity::Restore
 ================
 */
-void idEntity::Restore( idRestoreGame *savefile ) {
+void idEntity::Restore( idRestoreGame *savefile )
+{
 	int			i, j;
 	int			num;
 	idStr		funcname;
@@ -776,7 +781,8 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 idEntity::GetEntityDefName
 ================
 */
-const char * idEntity::GetEntityDefName( void ) const {
+const char * idEntity::GetEntityDefName( void ) const
+{
 	if ( entityDefNumber < 0 ) {
 		return "*unknown*";
 	}
@@ -788,7 +794,8 @@ const char * idEntity::GetEntityDefName( void ) const {
 idEntity::SetName
 ================
 */
-void idEntity::SetName( const char *newname ) {
+void idEntity::SetName( const char *newname )
+{
 	if ( name.Length() ) {
 		gameLocal.RemoveEntityFromHash( name.c_str(), this );
 		gameLocal.program.SetEntity( name, NULL );
@@ -825,7 +832,8 @@ const char * idEntity::GetName( void ) const {
 idEntity::Think
 ================
 */
-void idEntity::Think( void ) {
+void idEntity::Think( void )
+{
 	RunPhysics();
 	Present();
 }
@@ -838,8 +846,8 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::DoDormantTests( void ) {
-
+bool idEntity::DoDormantTests( void )
+{
 	if ( fl.neverDormant ) {
 		return false;
 	}
@@ -880,7 +888,8 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::CheckDormant( void ) {
+bool idEntity::CheckDormant( void )
+{
 	bool dormant;
 	
 	dormant = DoDormantTests();
@@ -929,7 +938,8 @@ bool idEntity::IsActive( void ) const {
 idEntity::BecomeActive
 ================
 */
-void idEntity::BecomeActive( int flags ) {
+void idEntity::BecomeActive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// enable the team master if this entity is part of a physics team
 		if ( teamMaster && teamMaster != this ) {
@@ -959,7 +969,8 @@ void idEntity::BecomeActive( int flags ) {
 idEntity::BecomeInactive
 ================
 */
-void idEntity::BecomeInactive( int flags ) {
+void idEntity::BecomeInactive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// may only disable physics on a team master if no team members are running physics or bound to a joints
 		if ( teamMaster == this ) {
@@ -1001,7 +1012,8 @@ void idEntity::BecomeInactive( int flags ) {
 idEntity::SetShaderParm
 ================
 */
-void idEntity::SetShaderParm( int parmnum, float value ) {
+void idEntity::SetShaderParm( int parmnum, float value )
+{
 	if ( ( parmnum < 0 ) || ( parmnum >= MAX_ENTITY_SHADER_PARMS ) ) {
 		gameLocal.Warning( "shader parm index (%d) out of range", parmnum );
 		return;
@@ -1393,25 +1405,29 @@ idEntity::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
-void idEntity::Present( void ) {
-
-	if ( !gameLocal.isNewFrame ) {
+void idEntity::Present(void)
+{
+	if(!gameLocal.isNewFrame )
+	{
 		return;
 	}
 
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if( !( thinkFlags & TH_UPDATEVISUALS))
+	{
 		return;
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
 
 	// camera target for remote render views
-	if ( cameraTarget && gameLocal.InPlayerPVS( this ) ) {
+	if(cameraTarget && gameLocal.InPlayerPVS(this))
+	{
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
 	}
 
 	// if set to invisible, skip
-	if ( !renderEntity.hModel || IsHidden() ) {
+	if(!renderEntity.hModel || IsHidden())
+	{
 		return;
 	}
 
@@ -1446,7 +1462,8 @@ int idEntity::GetModelDefHandle( void ) {
 idEntity::UpdateRenderEntity
 ================
 */
-bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -1466,7 +1483,8 @@ idEntity::ModelCallback
 	NOTE: may not change the game state whatsoever!
 ================
 */
-bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
 	idEntity *ent;
 
 	ent = gameLocal.entities[ renderEntity->entityNum ];
@@ -1723,7 +1741,8 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 idEntity::PreBind
 ================
 */
-void idEntity::PreBind( void ) {
+void idEntity::PreBind( void )
+{
 }
 
 /*
@@ -1731,7 +1750,8 @@ void idEntity::PreBind( void ) {
 idEntity::PostBind
 ================
 */
-void idEntity::PostBind( void ) {
+void idEntity::PostBind( void )
+{
 }
 
 /*
@@ -1739,7 +1759,8 @@ void idEntity::PostBind( void ) {
 idEntity::PreUnbind
 ================
 */
-void idEntity::PreUnbind( void ) {
+void idEntity::PreUnbind( void )
+{
 }
 
 /*
@@ -1747,7 +1768,8 @@ void idEntity::PreUnbind( void ) {
 idEntity::PostUnbind
 ================
 */
-void idEntity::PostUnbind( void ) {
+void idEntity::PostUnbind( void )
+{
 }
 
 /*
@@ -1755,8 +1777,8 @@ void idEntity::PostUnbind( void ) {
 idEntity::InitBind
 ================
 */
-bool idEntity::InitBind( idEntity *master ) {
-
+bool idEntity::InitBind( idEntity *master )
+{
 	if ( master == this ) {
 		gameLocal.Error( "Tried to bind an object to itself." );
 		return false;
@@ -1788,8 +1810,8 @@ bool idEntity::InitBind( idEntity *master ) {
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( void ) {
-
+void idEntity::FinishBind( void )
+{
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
 
@@ -1814,8 +1836,8 @@ idEntity::Bind
   bind relative to the visual position of the master
 ================
 */
-void idEntity::Bind( idEntity *master, bool orientated ) {
-
+void idEntity::Bind( idEntity *master, bool orientated )
+{
 	if ( !InitBind( master ) ) {
 		return;
 	}
@@ -5401,4 +5423,91 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idAngles ang = axis.ToAngles();
 	idVec3 vec( ang[ 0 ], ang[ 1 ], ang[ 2 ] );
 	idThread::ReturnVector( vec );
+}
+
+void idEntity::LoadTDMSettings(void)
+{
+	// If an item has the frobable flag set to true we will use the 
+	// the default value. If the frobdistance is set in the item
+	// it will override the defaultsetting. If none of that is set
+	// the frobdistance will be set to 0 meaning no frobbing on that item.
+	spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+	if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+		m_FrobDistance = g_Global.m_DefaultFrobDistance;
+
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_INFO, "FrobDistance: %u\r", m_FrobDistance);
+}
+
+bool idEntity::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	bool bRc;
+	idPlayer *player;
+	CDarkModPlayer *pDM;
+	float param;
+	float fDistance;
+	bool bHighlight;
+
+	player = gameLocal.GetLocalPlayer();
+	pDM = player->m_DarkModPlayer;
+
+	// If we have no player there is no point in doing this. :)
+	if(player == NULL || pDM == NULL)
+		return false;
+
+	bRc = false;
+	bHighlight = false;
+	param = 0.0f;
+
+	trace_t trace;
+	idVec3 start;
+	idVec3 end;
+
+	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+	fDistance = v3Difference.Length();
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
+		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, fDistance);
+
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
+		"Pitch: %f   Yaw: %f   Roll: %f\r", player->viewAngles.pitch, player->viewAngles.yaw, player->viewAngles.roll);
+
+	start = player->GetEyePosition( );
+	end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
+
+	// sparhawk
+	// TODO: We may have to determine the actual masks that we really will need, but that should work for now.
+	gameLocal.clip.TracePoint(trace, start, end, 
+		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+		|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
+		player);
+
+	if((trace.fraction < 1.0f))
+	{
+		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
+
+		idEntity *ent = gameLocal.GetTraceEntity(trace);
+		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+
+		if(ent == this)
+			bHighlight = true;
+	}
+
+	if(bHighlight == true)
+	{
+		pDM->m_FrobEntity = this;
+		param = 1.0f;
+	}
+	else
+	{
+		// Only switch it off if we are the current highlight
+		if(pDM->m_FrobEntity == this)
+			pDM->m_FrobEntity = NULL;
+	}
+
+	renderEntity->shaderParms[4] = param;
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity);
+
+	bRc = true;
+
+	return bRc;
 }
