@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/01/19 23:01:48  sparhawk
+ * Lightgem updated to do proper projected lights with occlusion.
+ *
  * Revision 1.9  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -8574,7 +8577,10 @@ void idPlayer::AdjustLightgem(void)
 	double fDistance;
 	double fLightgemVal;
 	idVec3 vLightColor;
+	idVec3 vPlayer;
 	idLight *light, *helper;
+	idPlayer *player;
+	trace_t trace;
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 	int i, n, h = -1;
 
@@ -8584,12 +8590,16 @@ void idPlayer::AdjustLightgem(void)
 	n = pDM->m_LightList.Num();
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
+	player = gameLocal.GetLocalPlayer();
+	idVec3 vStart(player->GetEyePosition());
+	idVec3 vPlayerPos(GetPhysics()->GetOrigin());
 
 	for(i = 0; i < n; i++)
 	{
 		if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
 			continue;
-		idVec3 vPlayer(GetPhysics()->GetOrigin());
+
+		vPlayer = vPlayerPos;
 		idVec3 vLight(light->GetPhysics()->GetOrigin());
 		vPlayer.z = vLight.z;
 		vDifference = vPlayer - vLight;
@@ -8602,6 +8612,19 @@ void idPlayer::AdjustLightgem(void)
 			if(h == -1)
 				h = i;
 			continue;
+		}
+
+		if(light->Parallel() != true)
+		{
+			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, player);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+			if(trace.fraction < 1.0f)
+			{
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s] can not be seen\r", light->name.c_str());
+				continue;
+			}
 		}
 
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in distance: %f/%f\r", light->name.c_str(), fDistance, light->m_MaxLightRadius);
@@ -8620,7 +8643,7 @@ void idPlayer::AdjustLightgem(void)
 		}
 
 		// No need to do further calculations when we are fully lit. 0 < n < 1
-		if(fLightgemVal > 1.0f)
+		if(fLightgemVal >= 1.0f)
 		{
 			fLightgemVal = 1.0;
 			break;

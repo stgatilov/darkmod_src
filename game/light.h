@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/01/19 23:01:48  sparhawk
+ * Lightgem updated to do proper projected lights with occlusion.
+ *
  * Revision 1.2  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -86,11 +89,18 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
-	// This will return a grayscale value dependent on the distance from the light.
-	// The nearer the distance, the brighter the value, dependent on the actual color
-	// of the light itself and potential textures.
-	// The value is 0 < n < 1.
+	/**
+	 * This will return a grayscale value dependent on the distance from the light.
+	 * The nearer the distance, the brighter the value, dependent on the actual color
+	 * of the light itself and potential textures.
+	 * The value is 0 < n < 1.
+	 */
 	double			GetDistanceColor(double fDistance);
+
+	/**
+	 * Returns true if the light is a parallel light.
+	 */
+	inline bool		Parallel(void) { return renderLight.parallel; };
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
