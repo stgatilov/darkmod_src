@@ -8,6 +8,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "d3game.vcproj", "{4
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idLib", "idlib.vcproj", "{49BEC5C6-B964-417A-851E-808886B57400}"
 EndProject
+Project("{8BC9CEB9-8B4A-11D0-8D11-00A0C91BC942}") = "doom3.exe", "F:\Programme\Doom3\doom3.exe", "{96122C98-4CD9-461A-A8F8-EAFDE4A0BBF5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with inlines and memory log|Win32 = Debug with inlines and memory log|Win32
@@ -32,6 +34,10 @@ Global
 		{49BEC5C6-B964-417A-851E-808886B57400}.Debug|Win32.Build.0 = Debug|Win32
 		{49BEC5C6-B964-417A-851E-808886B57400}.Release|Win32.ActiveCfg = Release|Win32
 		{49BEC5C6-B964-417A-851E-808886B57400}.Release|Win32.Build.0 = Release|Win32
+		{96122C98-4CD9-461A-A8F8-EAFDE4A0BBF5}.Debug with inlines and memory log|Win32.ActiveCfg = Debug
+		{96122C98-4CD9-461A-A8F8-EAFDE4A0BBF5}.Debug with inlines|Win32.ActiveCfg = Debug
+		{96122C98-4CD9-461A-A8F8-EAFDE4A0BBF5}.Debug|Win32.ActiveCfg = Debug
+		{96122C98-4CD9-461A-A8F8-EAFDE4A0BBF5}.Release|Win32.ActiveCfg = Debug
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
