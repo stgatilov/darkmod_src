@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/01/20 19:37:49  sparhawk
+ * Lightgem now calculates projected lights as well as parallel lights.
+ *
  * Revision 1.11  2005/01/19 23:22:04  sparhawk
  * Bug fixed for ambient lights
  *
@@ -8607,7 +8610,7 @@ void idPlayer::AdjustLightgem(void)
 		vPlayer.z = vLight.z;
 		vDifference = vPlayer - vLight;
 		fDistance = vDifference.Length();
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
 
 		if(fDistance > light->m_MaxLightRadius)
 		{
@@ -8630,8 +8633,9 @@ void idPlayer::AdjustLightgem(void)
 			}
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in distance: %f/%f\r", light->name.c_str(), fDistance, light->m_MaxLightRadius);
 		fLightgemVal += light->GetDistanceColor(fDistance);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in distance: %f/%f   Brightness: %f\r",
+			light->name.c_str(), fDistance, light->m_MaxLightRadius, fLightgemVal);
 
 		// Exchange the position of these lights, so that nearer lights are more
 		// at the beginning of the list. You may not use the arrayentry from this point on now.

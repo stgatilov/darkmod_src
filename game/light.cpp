@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/01/20 19:37:48  sparhawk
+ * Lightgem now calculates projected lights as well as parallel lights.
+ *
  * Revision 1.2  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -481,10 +484,10 @@ void idLight::Spawn( void )
 			m_MaxLightRadius = fabs(renderLight.end[2]);
 	}
 
-	m_FalloffImage = NULL;
-	spawnArgs.GetString( "texture", "lights/squarelight1", &m_FalloffImage);
-	if(m_FalloffImage != NULL)
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_FalloffImage);
+	m_MaterialName = NULL;
+	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
+	if(m_MaterialName != NULL)
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_MaterialName);
 
 	idImage *pImage;
 	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
@@ -1276,23 +1279,28 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 
 double idLight::GetDistanceColor(double fDistance)
 {
-	double fColVal;
-	int w, h, i;
-	double w2;
+	double fColVal, fImgVal;
+	int fw, fh, iw, ih, x, y, i, fbpp, ibpp;
+	double w2, h2;
 	unsigned char *img = NULL;
+	unsigned char *fot = NULL;
 
 	if(m_LightMaterial == NULL)
 	{
-		if((m_LightMaterial = g_Global.GetFallOffTexture(m_FalloffImage)) != NULL)
+		if((m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL)
 		{
 			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Material found for [%s]\r", name.c_str());
-			img = m_LightMaterial->GetFallOffTexture(w, h);
+			fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
+			img = m_LightMaterial->GetImage(iw, ih, ibpp);
 		}
 	}
 	else
-		img = m_LightMaterial->GetFallOffTexture(w, h);
+	{
+		fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
+		img = m_LightMaterial->GetImage(iw, ih, ibpp);
+	}
 
-	i = -1;
+	x = -1;
 	fColVal = (baseColor.x * LIGHTGEM_RED + baseColor.y * LIGHTGEM_GREEN + baseColor.z * LIGHTGEM_BLUE);
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
 		baseColor.x, baseColor.x * LIGHTGEM_RED,
@@ -1300,22 +1308,50 @@ double idLight::GetDistanceColor(double fDistance)
 		baseColor.z, baseColor.z * LIGHTGEM_BLUE,
 		fColVal);
 
-	// If we have a texture, we have to calculate the final value based on the value given by the texture.
-	if(img != NULL)
+	// If we have neither falloff texture nor a projection image, we do a 
+	// simple linear falloff
+	if(fot == NULL && img == NULL)
 	{
-		// The lighttextures must be projected from the middle of the texture because left and right
-		// is the falloff and the brightest spot is in the center.
-		w2 = (double)w/2.0;
-
-		i = w2 - (w2/m_MaxLightRadius) * fDistance;
-		fColVal = fColVal * (img[i*3] * LIGHTGEM_SCALE);
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Index: %u   Value: %u [%f]\r", i, (int)img[i*3], (double)(img[i*3] * LIGHTGEM_SCALE));
+		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
+		fImgVal = 0;
 	}
 	else
-		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
+	{
+		// If we have a falloff texture ...
+		if(fot != NULL)
+		{
+			// The lighttextures must be projected from the middle of the texture because left and right
+			// is the falloff and the brightest spot is in the center.
+			w2 = (double)fw/2.0;
+			h2 = (double)fh/2.0;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Final ColVal: %f\r", fColVal);
+			x = w2 - (w2/m_MaxLightRadius) * fDistance;
+			y = h2 - (h2/m_MaxLightRadius) * fDistance;
+			i = (y * (fw*fbpp)) + (x*fbpp);
+			fColVal = fColVal * (fot[i] * LIGHTGEM_SCALE);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (double)(fot[i] * LIGHTGEM_SCALE));
+		}
+		else
+			fColVal = 1;
 
-	return fColVal;
+		// ... or a projection image.
+		if(img != NULL)
+		{
+			w2 = (double)iw/2.0;
+			h2 = (double)ih/2.0;
+
+			x = w2 - (w2/m_MaxLightRadius) * fDistance;
+			y = h2 - (h2/m_MaxLightRadius) * fDistance;
+			i = (y * (iw*ibpp)) + (x*ibpp);
+			fImgVal = img[i] * LIGHTGEM_SCALE;
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (double)(img[i] * LIGHTGEM_SCALE));
+		}
+		else
+			fImgVal = 1;
+	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
+
+	return fColVal*fImgVal;
 }
 
