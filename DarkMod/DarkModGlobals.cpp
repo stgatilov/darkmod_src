@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.13  2005/02/07 21:28:11  sparhawk
+ * Added MATH class and LogVector3 function.
+ *
  * Revision 1.12  2005/01/28 22:56:52  sparhawk
  * WEAPON class added.
  *
@@ -97,6 +100,7 @@ static char *LCString[LC_COUNT+1] = {
 	"INVENTORY",
 	"LIGHT",
 	"WEAPON",
+	"MATH",
 	"(empty)"
 };
 
@@ -177,6 +181,11 @@ CGlobal::~CGlobal(void)
 {
 	if(m_LogFile != NULL)
 		fclose(m_LogFile);
+}
+
+void CGlobal::LogVector(idStr const &Name, idVec3 const &Vector)
+{
+	LogString("Vector %s:    x: %f   y: %f   z: %f\r", Name.c_str(), Vector.x, Vector.y, Vector.z);
 }
 
 void CGlobal::LogString(char *fmt, ...)
@@ -335,6 +344,13 @@ void CGlobal::LoadINISettings(void *p)
 				m_ClassArray[LC_WEAPON] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_WEAPON: %c\r", pm->Value[0]);
+		}
+		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+				m_ClassArray[LC_MATH] = true;
+
+			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MATH: %c\r", pm->Value[0]);
 		}
 	}
 

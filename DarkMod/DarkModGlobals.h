@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.12  2005/02/07 21:28:11  sparhawk
+ * Added MATH class and LogVector3 function.
+ *
  * Revision 1.11  2005/01/28 22:56:53  sparhawk
  * WEAPON class added.
  *
@@ -94,6 +97,7 @@ typedef enum {
 	LC_INVENTORY,		// Everything that has to do with inventory
 	LC_LIGHT,
 	LC_WEAPON,
+	LC_MATH,
 	LC_COUNT
 } LC_LogClass;
 
@@ -143,6 +147,7 @@ public:
 	CGlobal(void);
 	~CGlobal(void);
 
+	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogString(char *Format, ...);
 	CLightMaterial *GetMaterial(idStr const &MaterialName);
 
@@ -195,5 +200,6 @@ extern CGlobal g_Global;
 extern char *g_LCString[];
 
 #define DM_LOG(lc, lt)		if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
+#define DM_LOGVECTOR3(lc, lt, s, v)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogVector(s, v)
 
 #endif
