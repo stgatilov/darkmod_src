@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2004/11/05 21:23:01  sparhawk
+ * Added ENTITY class
+ * Added compile time info to logfile header to check DLL version on client installation.
+ *
  * Revision 1.2  2004/11/03 21:47:17  sparhawk
  * Changed debug LogString for better performance and group settings
  *
@@ -57,6 +61,7 @@ typedef enum {
 	LC_AI,				// same for AI
 	LC_SOUND,			// same for sound
 	LC_FUNCTION,		// general logging for functions (being, end, etc).
+	LC_ENTITY,
 	LC_COUNT
 } LC_LogClass;
 

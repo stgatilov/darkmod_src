@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2004/11/05 21:23:01  sparhawk
+ * Added ENTITY class
+ * Added compile time info to logfile header to check DLL version on client installation.
+ *
  * Revision 1.2  2004/11/03 21:47:17  sparhawk
  * Changed debug LogString for better performance and group settings
  *
@@ -37,23 +41,26 @@
 #include "Profile.h"
 #include "direct.h"
 
-static char *LTString[LT_COUNT] = {
+static char *LTString[LT_COUNT+1] = {
 	"FRC",
 	"ERR",
 	"BEG",
 	"END",
 	"WAR",
 	"INF",
-	"DEB"
+	"DEB",
+	"---"
 };
 
-static char *LCString[LT_COUNT] = {
+static char *LCString[LT_COUNT+1] = {
 	"FORCE",
 	"SYSTEM",
 	"FROBBING",
 	"AI",
 	"SOUND",
-	"FUNCTION"
+	"FUNCTION",
+	"ENTITY",
+	"(empty)"
 };
 
 CGlobal::CGlobal(void)
@@ -145,7 +152,7 @@ void CGlobal::LogString(char *fn, int ln, LC_LogClass lc, LT_LogType lt, char *f
 	va_list arg;
 	va_start(arg, fmt);
 
-	fprintf(m_LogFile, "[%s:%s (%s) - %u] ", fn, LTString[lt], LCString[lc], ln);
+	fprintf(m_LogFile, "[%s:%s (%s) - %4u] ", fn, LTString[lt], LCString[lc], ln);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);
@@ -174,6 +181,7 @@ void CGlobal::LoadINISettings(void *p)
 				fprintf(m_LogFile, "LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 							t->tm_year+1900, t->tm_mon, t->tm_mday, 
 							t->tm_hour, t->tm_min, t->tm_sec);
+				fprintf(m_LogFile, "DLL compiled on " __DATE__ " " __TIME__ "\r\r");
 			}
 		}
 
