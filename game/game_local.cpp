@@ -7,8 +7,23 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.6  2004/11/28 19:51:56  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.5  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.4  2004/11/03 00:06:07  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.3  2004/10/31 20:01:55  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
+ * Revision 1.2  2004/10/30 17:19:39  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,7 +33,13 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4996)
+
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+
+CGlobal g_Global;
 
 #ifdef GAME_DLL
 
@@ -63,7 +84,13 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 GetGameAPI
 ============
 */
+#if __MWERKS__
+#pragma export on
+#endif
 extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
+#if __MWERKS__
+#pragma export off
+#endif
 
 	if ( import->version == GAME_API_VERSION ) {
 
@@ -306,7 +333,6 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
-
 	if ( !common ) {
 		return;
 	}
@@ -322,10 +348,8 @@ void idGameLocal::Shutdown( void ) {
 
 	idAI::FreeObstacleAvoidanceNodes();
 
-#ifndef _D3SDK
 	// shutdown the model exporter
 	idModelExport::Shutdown();
-#endif
 
 	idEvent::Shutdown();
 
@@ -1779,7 +1803,8 @@ void idGameLocal::InitScriptForMap( void ) {
 idGameLocal::SpawnPlayer
 ============
 */
-void idGameLocal::SpawnPlayer( int clientNum ) {
+void idGameLocal::SpawnPlayer( int clientNum )
+{
 	idEntity	*ent;
 	idDict		args;
 
@@ -1801,6 +1826,13 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
+
+	idPlayer *player;	
+	player = GetLocalPlayer();
+	if(player->m_DarkModPlayer != NULL)
+		delete player->m_DarkModPlayer;
+
+	player->m_DarkModPlayer = new CDarkModPlayer;
 
 	mpGame.SpawnPlayer( clientNum );
 }

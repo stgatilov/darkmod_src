@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:17:19  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -161,7 +164,7 @@ typedef struct {
 	bool					anim_turn					: 1;
 } animFlags_t;
 
-#ifndef _D3SDK
+
 /*
 ==============================================================================================
 
@@ -197,7 +200,7 @@ public:
 	bool					ExportAnim( const char *anim );
 	int						ExportModels( const char *pathname, const char *extension );
 };
-#endif
+
 /*
 ==============================================================================================
 

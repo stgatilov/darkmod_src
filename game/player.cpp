@@ -7,8 +7,32 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.8  2004/11/28 09:16:32  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.7  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.6  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.5  2004/11/14 20:25:24  sparhawk
+ * Unneccessary logstatement removed.
+ *
+ * Revision 1.4  2004/11/14 00:42:37  sparhawk
+ * Added USE/Frob Key.
+ *
+ * Revision 1.3  2004/11/06 17:17:43  sparhawk
+ * Removed Frobangles as we don't need them anymore.
+ *
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +43,8 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
 
 /*
 ===============================================================================
@@ -67,6 +93,8 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
+const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -85,6 +113,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
+
+	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -927,6 +957,7 @@ idPlayer::idPlayer
 idPlayer::idPlayer() {
 	memset( &usercmd, 0, sizeof( usercmd ) );
 
+	m_DarkModPlayer			= NULL;
 	noclip					= false;
 	godmode					= false;
 
@@ -3716,7 +3747,8 @@ idPlayer::StealWeapon
 steal the target player's current weapon
 =================
 */
-void idPlayer::StealWeapon( idPlayer *player ) {
+void idPlayer::StealWeapon( idPlayer *player )
+{
 	assert( !gameLocal.isClient );
 
 	// make sure there's something to steal
@@ -5592,6 +5624,70 @@ void idPlayer::PerformImpulse( int impulse ) {
 			UseVehicle();
 			break;
 		}
+
+		case IMPULSE_41:		// TDM Use/Frob
+		{
+			bool bFrob = true;
+			idEntity *ent, *frob;
+			int i;
+
+			frob = m_DarkModPlayer->m_FrobEntity;
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, m_DarkModPlayer->m_Selection);
+			// If the player has an item that is selected we need to check if this
+			// is a usable item (like a key). In this case the use action takes
+			// precedence over the frobaction.
+			if((i = m_DarkModPlayer->m_Selection) != 0)
+			{
+				ent = m_DarkModPlayer->GetEntity(i);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
+				if(ent != NULL)
+				{
+					if(ent->spawnArgs.GetBool("usable"))
+					{
+						DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Item is usable\r");
+						if(frob)
+							bFrob = !frob->UsedBy(ent);
+						else
+							bFrob = !ent->UsedBy(NULL);
+					}
+				}
+			}
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+			if(bFrob == true && frob != NULL)
+				frob->FrobAction(true);
+		}
+		break;
+
+		case IMPULSE_42:		// Inventory prev
+		{
+			if(m_DarkModPlayer)
+				m_DarkModPlayer->SelectPrev();
+		}
+		break;
+
+		case IMPULSE_43:		// Inventory next
+		{
+			if(m_DarkModPlayer)
+				m_DarkModPlayer->SelectNext();
+		}
+		break;
+
+		case IMPULSE_44:		// Lean forward
+		{
+		}
+		break;
+
+		case IMPULSE_45:		// Lean left
+		{
+		}
+		break;
+
+		case IMPULSE_46:		// Lean right
+		{
+		}
+		break;
 	} 
 }
 
@@ -6308,6 +6404,10 @@ void idPlayer::Think( void ) {
 	UpdatePowerUps();
 
 	UpdateDeathSkin( false );
+
+	if ( gameLocal.isMultiplayer ) {
+		DrawPlayerIcons();
+	}
 
 	if ( head.GetEntity() ) {
 		headRenderEnt = head.GetEntity()->GetRenderEntity();
@@ -8460,3 +8560,9 @@ idPlayer::NeedsIcon
 bool idPlayer::NeedsIcon( void ) {
 	return ( isLagged || isChatting );
 }
+
+void idPlayer::AddToInventory(idEntity *ent)
+{
+	m_DarkModPlayer->AddEntity(ent);
+}
+

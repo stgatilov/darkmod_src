@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:20:33  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -3858,6 +3861,256 @@ void idAFConstraint_PyramidLimit::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadFloat( cosHalfAngle[0] );
 	saveFile->ReadFloat( cosHalfAngle[1] );
 	saveFile->ReadFloat( epsilon );
+}
+
+
+//===============================================================
+//
+//	idAFConstraint_Suspension
+//
+//===============================================================
+
+/*
+================
+idAFConstraint_Suspension::idAFConstraint_Suspension
+================
+*/
+idAFConstraint_Suspension::idAFConstraint_Suspension( void ) {
+	type = CONSTRAINT_SUSPENSION;
+	name = "suspension";
+	InitSize( 3 );
+	fl.allowPrimary = false;
+	fl.frameConstraint = true;
+
+	localOrigin.Zero();
+	localAxis.Identity();
+	suspensionUp = 0.0f;
+	suspensionDown = 0.0f;
+	suspensionKCompress = 0.0f;
+	suspensionDamping = 0.0f;
+	steerAngle = 0.0f;
+	friction = 2.0f;
+	motorEnabled = false;
+	motorForce = 0.0f;
+	motorVelocity = 0.0f;
+	wheelModel = NULL;
+	memset( &trace, 0, sizeof( trace ) );
+	epsilon = LCP_EPSILON;
+}
+
+/*
+================
+idAFConstraint_Suspension::Setup
+================
+*/
+void idAFConstraint_Suspension::Setup( const char *name, idAFBody *body, const idVec3 &origin, const idMat3 &axis, idClipModel *clipModel ) {
+	this->name = name;
+	body1 = body;
+	body2 = NULL;
+	localOrigin = ( origin - body->GetWorldOrigin() ) * body->GetWorldAxis().Transpose();
+	localAxis = axis * body->GetWorldAxis().Transpose();
+	wheelModel = clipModel;
+}
+
+/*
+================
+idAFConstraint_Suspension::SetSuspension
+================
+*/
+void idAFConstraint_Suspension::SetSuspension( const float up, const float down, const float k, const float d, const float f ) {
+	suspensionUp = up;
+	suspensionDown = down;
+	suspensionKCompress = k;
+	suspensionDamping = d;
+	friction = f;
+}
+
+/*
+================
+idAFConstraint_Suspension::GetWheelOrigin
+================
+*/
+const idVec3 idAFConstraint_Suspension::GetWheelOrigin( void ) const {
+	return body1->GetWorldOrigin() + wheelOffset * body1->GetWorldAxis();
+}
+
+/*
+================
+idAFConstraint_Suspension::Evaluate
+================
+*/
+void idAFConstraint_Suspension::Evaluate( float invTimeStep ) {
+	float velocity, suspensionLength, springLength, compression, dampingForce, springForce;
+	idVec3 origin, start, end, vel1, vel2, springDir, r, frictionDir, motorDir;
+	idMat3 axis;
+	idRotation rotation;
+
+	axis = localAxis * body1->GetWorldAxis();
+	origin = body1->GetWorldOrigin() + localOrigin * body1->GetWorldAxis();
+	start = origin + suspensionUp * axis[2];
+	end = origin - suspensionDown * axis[2];
+
+	rotation.SetVec( axis[2] );
+	rotation.SetAngle( steerAngle );
+
+	axis *= rotation.ToMat3();
+
+	gameLocal.clip.Translation( trace, start, end, wheelModel, axis, MASK_SOLID, NULL );
+
+	wheelOffset = ( trace.endpos - body1->GetWorldOrigin() ) * body1->GetWorldAxis().Transpose();
+
+	if ( trace.fraction >= 1.0f ) {
+		J1.SetSize( 0, 6 );
+		if ( body2 ) {
+			J2.SetSize( 0, 6 );
+		}
+		return;
+	}
+
+	// calculate and add spring force
+	vel1 = body1->GetPointVelocity( start );
+	if ( body2 ) {
+		vel2 = body2->GetPointVelocity( trace.c.point );
+	} else {
+		vel2.Zero();
+	}
+
+	suspensionLength = suspensionUp + suspensionDown;
+	springDir = trace.endpos - start;
+	springLength = trace.fraction * suspensionLength;
+	dampingForce = suspensionDamping * idMath::Fabs( ( vel2 - vel1 ) * springDir ) / ( 1.0f + springLength * springLength );
+	compression = suspensionLength - springLength;
+	springForce = compression * compression * suspensionKCompress - dampingForce;
+
+	r = trace.c.point - body1->GetWorldOrigin();
+	J1.SetSize( 2, 6 );
+	J1.SubVec6(0).SubVec3(0) = trace.c.normal;
+	J1.SubVec6(0).SubVec3(1) = r.Cross( trace.c.normal );
+	c1.SetSize( 2 );
+	c1[0] = 0.0f;
+	velocity = J1.SubVec6(0).SubVec3(0) * body1->GetLinearVelocity() + J1.SubVec6(0).SubVec3(1) * body1->GetAngularVelocity();
+
+	if ( body2 ) {
+		r = trace.c.point - body2->GetWorldOrigin();
+		J2.SetSize( 2, 6 );
+		J2.SubVec6(0).SubVec3(0) = -trace.c.normal;
+		J2.SubVec6(0).SubVec3(1) = r.Cross( -trace.c.normal );
+		c2.SetSize( 2 );
+		c2[0] = 0.0f;
+		velocity += J2.SubVec6(0).SubVec3(0) * body2->GetLinearVelocity() + J2.SubVec6(0).SubVec3(1) * body2->GetAngularVelocity();
+	}
+
+	c1[0] = -compression;		// + 0.5f * -velocity;
+
+	e[0] = 1e-4f;
+	lo[0] = 0.0f;
+	hi[0] = springForce;
+	boxConstraint = NULL;
+	boxIndex[0] = -1;
+
+	// project the friction direction into the contact plane
+	frictionDir = axis[1] - axis[1] * trace.c.normal * axis[1];
+	frictionDir.Normalize();
+
+	r = trace.c.point - body1->GetWorldOrigin();
+
+	J1.SubVec6(1).SubVec3(0) = frictionDir;
+	J1.SubVec6(1).SubVec3(1) = r.Cross( frictionDir );
+	c1[1] = 0.0f;
+
+	if ( body2 ) {
+		r = trace.c.point - body2->GetWorldOrigin();
+
+		J2.SubVec6(1).SubVec3(0) = -frictionDir;
+		J2.SubVec6(1).SubVec3(1) = r.Cross( -frictionDir );
+		c2[1] = 0.0f;
+	}
+
+	lo[1] = -friction * physics->GetContactFrictionScale();
+	hi[1] = friction * physics->GetContactFrictionScale();
+
+	boxConstraint = this;
+	boxIndex[1] = 0;
+
+
+	if ( motorEnabled ) {
+		// project the motor force direction into the contact plane
+		motorDir = axis[0] - axis[0] * trace.c.normal * axis[0];
+		motorDir.Normalize();
+
+		r = trace.c.point - body1->GetWorldOrigin();
+
+		J1.ChangeSize( 3, J1.GetNumColumns() );
+		J1.SubVec6(2).SubVec3(0) = -motorDir;
+		J1.SubVec6(2).SubVec3(1) = r.Cross( -motorDir );
+		c1.ChangeSize( 3 );
+		c1[2] = motorVelocity;
+
+		if ( body2 ) {
+			r = trace.c.point - body2->GetWorldOrigin();
+
+			J2.ChangeSize( 3, J2.GetNumColumns() );
+			J2.SubVec6(2).SubVec3(0) = -motorDir;
+			J2.SubVec6(2).SubVec3(1) = r.Cross( -motorDir );
+			c2.ChangeSize( 3 );
+			c2[2] = 0.0f;
+		}
+
+		lo[2] = -motorForce;
+		hi[2] = motorForce;
+		boxIndex[2] = -1;
+	}
+}
+
+/*
+================
+idAFConstraint_Suspension::ApplyFriction
+================
+*/
+void idAFConstraint_Suspension::ApplyFriction( float invTimeStep ) {
+	// do nothing
+}
+
+/*
+================
+idAFConstraint_Suspension::Translate
+================
+*/
+void idAFConstraint_Suspension::Translate( const idVec3 &translation ) {
+}
+
+/*
+================
+idAFConstraint_Suspension::Rotate
+================
+*/
+void idAFConstraint_Suspension::Rotate( const idRotation &rotation ) {
+}
+
+/*
+================
+idAFConstraint_Suspension::DebugDraw
+================
+*/
+void idAFConstraint_Suspension::DebugDraw( void ) {
+	idVec3 origin;
+	idMat3 axis;
+	idRotation rotation;
+
+	axis = localAxis * body1->GetWorldAxis();
+
+	rotation.SetVec( axis[2] );
+	rotation.SetAngle( steerAngle );
+
+	axis *= rotation.ToMat3();
+
+	if ( trace.fraction < 1.0f ) {
+		origin = trace.c.point;
+
+		gameRenderWorld->DebugLine( colorWhite, origin, origin + 6.0f * axis[2] );
+		gameRenderWorld->DebugLine( colorWhite, origin - 4.0f * axis[0], origin + 4.0f * axis[0] );
+		gameRenderWorld->DebugLine( colorWhite, origin - 2.0f * axis[1], origin + 2.0f * axis[1] );
+	}
 }
 
 

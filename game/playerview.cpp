@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/10/30 16:55:57  sparhawk
+ * Compile errors fixed. float cast added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -537,7 +540,7 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	if ( scale > 0.5f ) {
 		scale = 0.5f;
 	}
-	float shift = scale * sin( sqrt( offset ) * g_dvFrequency.GetFloat() );
+	float shift = scale * sin( sqrt( (float)offset ) * g_dvFrequency.GetFloat() );
 	shift = fabs( shift );
 
 	// if double vision, render to a texture
@@ -673,7 +676,7 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 		SingleView( hud, view );
 		return;
 	} else {
-		int offset =  25 + sin( gameLocal.time );
+		int offset =  25 + sin( (float)gameLocal.time );
 		DoubleVision( hud, view, pct * offset );
 	}
 }
