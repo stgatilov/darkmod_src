@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.10  2005/01/24 00:15:22  sparhawk
+ * AmbientLight parameter added to material
+ *
  * Revision 1.9  2005/01/20 19:36:01  sparhawk
  * CImage class implemented to load and store texture images.
  *
@@ -122,6 +125,7 @@ public:
 
 public:
 	idStr		m_MaterialName;
+	bool		m_AmbientLight;		// Set to true if the ambientLight parameter is set.
 
 protected:
 	idStr		m_FallOffTexture;
