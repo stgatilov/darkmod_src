@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/04/01 21:03:22  sparhawk
+ * Fixed the maximum distance calculation for the lightgem.
+ *
  * Revision 1.6  2005/03/26 16:00:33  sparhawk
  * double changed to float
  *
@@ -433,70 +436,19 @@ void idLight::Spawn( void )
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
 	if(renderLight.pointLight == true)
-	{
-		if(m_MaxLightRadius < fabs(renderLight.lightRadius[0]))
-			m_MaxLightRadius = fabs(renderLight.lightRadius[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.lightRadius[1]))
-			m_MaxLightRadius = fabs(renderLight.lightRadius[1]);
-		
-		if(m_MaxLightRadius < fabs(renderLight.lightRadius[2]))
-			m_MaxLightRadius = fabs(renderLight.lightRadius[2]);
-
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
-	}
+		m_MaxLightRadius = renderLight.lightRadius.Length();
 	else
 	{
-		if(m_MaxLightRadius < fabs(renderLight.target[0]))
-			m_MaxLightRadius = fabs(renderLight.target[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.target[1]))
-			m_MaxLightRadius = fabs(renderLight.target[1]);
-		
-		if(m_MaxLightRadius < fabs(renderLight.target[2]))
-			m_MaxLightRadius = fabs(renderLight.target[2]);
-
-		if(m_MaxLightRadius < fabs(renderLight.right[0]))
-			m_MaxLightRadius = fabs(renderLight.right[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.right[1]))
-			m_MaxLightRadius = fabs(renderLight.right[1]);
-		
-		if(m_MaxLightRadius < fabs(renderLight.right[2]))
-			m_MaxLightRadius = fabs(renderLight.right[2]);
-
-		if(m_MaxLightRadius < fabs(renderLight.up[0]))
-			m_MaxLightRadius = fabs(renderLight.up[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.up[1]))
-			m_MaxLightRadius = fabs(renderLight.up[1]);
-		
-		if(m_MaxLightRadius < fabs(renderLight.up[2]))
-			m_MaxLightRadius = fabs(renderLight.up[2]);
-
-		if(m_MaxLightRadius < fabs(renderLight.start[0]))
-			m_MaxLightRadius = fabs(renderLight.start[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.start[1]))
-			m_MaxLightRadius = fabs(renderLight.start[1]);
-		
-		if(m_MaxLightRadius < fabs(renderLight.start[2]))
-			m_MaxLightRadius = fabs(renderLight.start[2]);
-
-		if(m_MaxLightRadius < fabs(renderLight.end[0]))
-			m_MaxLightRadius = fabs(renderLight.end[0]);
-
-		if(m_MaxLightRadius < fabs(renderLight.end[1]))
-			m_MaxLightRadius = fabs(renderLight.end[1]);
-			
-		if(m_MaxLightRadius < fabs(renderLight.end[2]))
-			m_MaxLightRadius = fabs(renderLight.end[2]);
+		idVec3 pos = GetPhysics()->GetOrigin();
+		idVec3 max = renderLight.target + renderLight.right + renderLight.up;
+		m_MaxLightRadius = max.Length();
 	}
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
 
 	m_MaterialName = NULL;
 	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
 	if(m_MaterialName != NULL)
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_MaterialName);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_MaterialName);
 
 	idImage *pImage;
 	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
@@ -515,40 +467,14 @@ void idLight::Spawn( void )
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Radius ( %0.3f / %0.3f / %03f )\r",
-		renderLight.lightRadius[0],		// x
-		renderLight.lightRadius[1],		// y
-		renderLight.lightRadius[2]);	// z
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Center ( %0.3f / %0.3f / %03f )\r",
-		renderLight.lightCenter[0],
-		renderLight.lightCenter[1],
-		renderLight.lightCenter[2]);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Target ( %0.3f / %0.3f / %03f )\r",
-		renderLight.target[0],
-		renderLight.target[1],
-		renderLight.target[2]);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Right ( %0.3f / %0.3f / %03f )\r",
-		renderLight.right[0],
-		renderLight.right[1],
-		renderLight.right[2]);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Up ( %0.3f / %0.3f / %03f )\r",
-		renderLight.up[0],
-		renderLight.up[1],
-		renderLight.up[2]);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Start( %0.3f / %0.3f / %03f )\r",
-		renderLight.start[0],
-		renderLight.start[1],
-		renderLight.start[2]);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("End ( %0.3f / %0.3f / %03f )\r",
-		renderLight.end[0],
-		renderLight.end[1],
-		renderLight.end[2]);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Origin", GetPhysics()->GetOrigin());
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Radius", renderLight.lightRadius);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Center", renderLight.lightCenter);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Target", renderLight.target);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Right", renderLight.right);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Up", renderLight.up);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Start", renderLight.start);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "End", renderLight.end);
 }
 
 /*
