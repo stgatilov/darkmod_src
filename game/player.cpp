@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
  * Revision 1.5  2004/11/14 20:25:24  sparhawk
  * Unneccessary logstatement removed.
  *
@@ -5612,7 +5615,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_41:
 		{
 			if(m_DarkModPlayer && m_DarkModPlayer->m_FrobEntity != NULL)
-				m_DarkModPlayer->m_FrobEntity->FrobAction();
+				m_DarkModPlayer->m_FrobEntity->FrobAction(true);
 		}
 		break;
 	} 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/21 01:02:03  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
  * Revision 1.2  2004/11/16 23:56:03  sparhawk
  * Frobcode has been generalized now and resides for all entities in the base classe.
  *
@@ -43,6 +46,14 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	void					Open(void);
+	void					Close(void);
+	void					Lock(void);
+	void					Unlock(void);
+
+	void					ToggleOpen(void);
+	void					ToggleLock(void);
+
 protected:
 	/**
 	 * LinkedOpen will point to a door that is to be switched when this
@@ -55,12 +66,13 @@ protected:
 	 * Of ocurse the last door in the chain should NOT point to the first
 	 * door, otherwise it will result in an endless loop.
 	 */
-	CFrobDoor					*m_LinkedOpen;
+	idStr						m_MasterOpen;
+	idList<idStr>				m_OpenList;
 
 	/**
 	 * This member is the same as m_LinkedOpen, only for locks. This means
 	 * that, if this door is locked, or unlocked, all other associated doors
-	 * will also be locked or unlocked. Again he state depends on the respective
+	 * will also be locked or unlocked. Again the state depends on the respective
 	 * entity state and not on the action itself. This means that if one door
 	 * is locked and the other is unlocked, the lockstate will reverse. If both
 	 * are locked or unlocked, both will become unlocked or locked.
@@ -68,7 +80,13 @@ protected:
 	 * and the other one is closed. Or you can create a set of doors that all are
 	 * locked when this one is unlocked.
 	 */
-	CFrobDoor					*m_LinkedLock;
+	idStr						m_MasterLock;
+	idList<idStr>				m_LockList;
+
+	bool						m_Open;
+	bool						m_Locked;
+	bool						m_Pickable;
+	idAngles					m_Rotate;
 
 private:
 };

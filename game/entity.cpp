@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
  * Revision 1.8  2004/11/19 20:14:24  sparhawk
  * Multifrob added.
  *
@@ -5480,12 +5483,50 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idThread::ReturnVector( vec );
 }
 
-void idEntity::LoadTDMSettings(void)
+bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 {
-	idStr str;
+	bool bRc = false;
 	idEntity *ent;
 	int i, n;
 	bool bFound;
+
+	// The master may not be the same as this entity.
+	if(str == name)
+		goto Quit;
+
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
+	if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
+		i = 0;
+		n = ent->m_FrobList.Num();
+		bFound = false;
+		for(i = 0; i < n; i++)
+		{
+			if(ent->m_FrobList[i] == name)
+			{
+				bFound = true;
+				break;
+			}
+		}
+		if(bFound == false)
+			ent->m_FrobList.Append(name);
+	}
+	else
+	{
+		DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", str.c_str());
+		goto Quit;
+	}
+
+	bRc = true;
+
+Quit:
+	return bRc;
+}
+
+void idEntity::LoadTDMSettings(void)
+{
+	idStr str;
 
 	// If an item has the frobable flag set to true we will use the 
 	// the default value. If the frobdistance is set in the item
@@ -5507,31 +5548,8 @@ void idEntity::LoadTDMSettings(void)
 	// Check if this entity is associated to a master frob entity.
 	if(spawnArgs.GetString("frob_master", "", str))
 	{
-		// Just a sanity check.
-		if(str != name)
-		{
+		if(AddToMasterList(m_FrobList, str) == true)
 			m_MasterFrob = str;
-			DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] Master frob set to [%s]\r", name.c_str(), str.c_str());
-			if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
-			{
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
-				i = 0;
-				n = ent->m_FrobList.Num();
-				bFound = false;
-				for(i = 0; i < n; i++)
-				{
-					if(ent->m_FrobList[i] == name)
-					{
-						bFound = true;
-						break;
-					}
-				}
-				if(bFound == false)
-					ent->m_FrobList.Append(name);
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", str.c_str());
-		}
 	}
 
 	// If this is a frobable entity we need to activate the frobcode.

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
  * Revision 1.6  2004/11/19 20:14:24  sparhawk
  * Multifrob added.
  *
@@ -404,6 +407,8 @@ public:
 	 * bMaster indicates wheter the entity should call it's master or not.
 	 */
 	virtual void			FrobAction(bool bMaster);
+
+	bool AddToMasterList(idList<idStr> &, idStr &);
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
