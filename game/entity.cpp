@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.12  2004/11/28 19:51:52  sparhawk
  * SDK V2 merge
  *
@@ -2510,9 +2513,12 @@ void idEntity::QuitTeam( void ) {
 idEntity::InitDefaultPhysics
 ================
 */
-void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
+void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
+{
 	const char *temp;
 	idClipModel *clipModel = NULL;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] test for clipmodel\r", name.c_str());
 
 	// check if a clipmodel key/value pair is set
 	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
@@ -2521,22 +2527,29 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 		}
 	}
 
-	if ( !spawnArgs.GetBool( "noclipmodel", "0" ) ) {
-
+	if(!spawnArgs.GetBool( "noclipmodel", "0" ))
+	{
 		// check if mins/maxs or size key/value pairs are set
-		if ( !clipModel ) {
+		if ( !clipModel )
+		{
 			idVec3 size;
 			idBounds bounds;
 			bool setClipModel = false;
 
 			if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
-				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) ) {
+				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
+			{
 				setClipModel = true;
-				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] ) {
+				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
+				{
 					gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
 				}
-			} else if ( spawnArgs.GetVector( "size", NULL, size ) ) {
-				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) ) {
+			} 
+			else
+			if ( spawnArgs.GetVector( "size", NULL, size ) )
+			{
+				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
+				{
 					gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
 				}
 				bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
@@ -2569,6 +2582,8 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 			}
 		}
 	}
+	else
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] does not contain a clipmodel\r", name.c_str());
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );
@@ -5620,7 +5635,7 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 	CDarkModPlayer *pDM;
 
 	player = gameLocal.GetLocalPlayer();
-	pDM = player->m_DarkModPlayer;
+	pDM = g_Global.m_DarkModPlayer;
 
 	// If we have no player there is no point in doing this. :)
 	if(player == NULL || pDM == NULL)

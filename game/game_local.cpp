@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.6  2004/11/28 19:51:56  sparhawk
  * SDK V2 merge
  *
@@ -36,10 +39,17 @@
 #pragma warning(disable : 4996)
 
 #include "Game_local.h"
+
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
+#include "../darkmod/misc.h"
+
+#include "il/config.h"
+#include "il/il.h"
 
 CGlobal g_Global;
+
+#define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
 
@@ -262,6 +272,9 @@ void idGameLocal::Init( void ) {
 
 #else
 
+	// Initialize the image library, so we can use it later on.
+	ilInit();
+
 	// initialize idLib
 	idLib::Init();
 
@@ -323,6 +336,9 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+	Printf( "Parsing material files\n" );
+
+	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 }
 
 /*
@@ -1829,10 +1845,6 @@ void idGameLocal::SpawnPlayer( int clientNum )
 
 	idPlayer *player;	
 	player = GetLocalPlayer();
-	if(player->m_DarkModPlayer != NULL)
-		delete player->m_DarkModPlayer;
-
-	player->m_DarkModPlayer = new CDarkModPlayer;
 
 	mpGame.SpawnPlayer( clientNum );
 }
@@ -4254,3 +4266,98 @@ idGameLocal::ThrottleUserInfo
 void idGameLocal::ThrottleUserInfo( void ) {
 	mpGame.ThrottleUserInfo();
 }
+
+void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
+{
+	idToken token;
+	idLexer src;
+	bool bFallOffImage;
+	bool bImageMode;
+	idStr Material, Image, *add;
+	int level;		// Nestinglevel for brackets
+	CLightMaterial *mat;
+
+	if(pFN == NULL || ml == NULL)
+		goto Quit;
+
+	src.LoadFile(pFN);
+
+	bFallOffImage = false;
+	bImageMode = false;
+	level = 0;
+	add = NULL;
+
+	while(1)
+	{
+		if(!src.ReadToken(&token))
+			goto Quit;
+
+//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
+
+		if(token == "{")
+		{
+			if(level == 0)
+				add = NULL;
+			else
+			{
+				bImageMode = false;
+				bFallOffImage = false;
+			}
+
+			level++;
+		}
+		else if(token == "}")
+			level --;
+
+		if(bImageMode == true)
+		{
+			if(token == "(")
+			{
+				Image = "";
+				add = &Image;
+				bImageMode = true;
+				continue;
+			}
+			else if(token == ")")
+			{
+				add = NULL;
+				bImageMode = false;
+				bFallOffImage = false;
+				mat = new CLightMaterial(Material, Image);
+				ml->Append(mat);
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]\r", Material.c_str(), Image.c_str());
+				continue;
+			}
+		}
+		else if(level == 0 && token == "lights")
+		{
+			Material = token;
+			add = &Material;
+			continue;
+		}
+		else if(level == 1)
+		{
+			if(token == "lightFalloffImage")
+			{
+				bFallOffImage = true;
+				continue;
+			}
+			else if(bFallOffImage == true && token == "makeintensity")
+			{
+				bImageMode = true;
+				continue;
+			}
+		}
+
+		if(add != NULL)
+			*add += token;
+
+//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", Material.c_str());
+//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Image: [%s]\r", Image.c_str());
+	}
+
+
+Quit:
+	return;
+}
+

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/01/07 02:10:36  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.3  2004/11/24 22:00:05  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -192,8 +195,6 @@ typedef struct {
 	idVec3	pos;
 } aasLocation_t;
 
-class CDarkModPlayer;
-
 class idPlayer : public idActor {
 public:
 	enum {
@@ -205,12 +206,6 @@ public:
 		EVENT_MAXEVENTS
 	};
 
-	/**
-	 * We are declaring this as void pointer here, because we don't really want to 
-	 * recompile the entire thing when we are changing user data only relevant for
-	 * The Dark Mod. 
-	 */
-	CDarkModPlayer			*m_DarkModPlayer;
 	usercmd_t				usercmd;
 
 	class idPlayerView		playerView;			// handles damage kicks and effects
@@ -520,6 +515,11 @@ public:
 	 * the inventory.
 	 */
 	void AddToInventory(idEntity *ent);
+
+	/**
+	 * AdjustLightgem will calculate how much the lightgem should light up
+	 */
+	void AdjustLightgem(void);
 
 private:
 	jointHandle_t			hipJoint;

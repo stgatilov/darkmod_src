@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -25,6 +28,7 @@
 
 ===============================================================================
 */
+class CLightMaterial;
 
 extern const idEventDef EV_Light_GetLightParm;
 extern const idEventDef EV_Light_SetLightParm;
@@ -82,6 +86,12 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
+	// This will return a grayscale value dependent on the distance from the light.
+	// The nearer the distance, the brighter the value, dependent on the actual color
+	// of the light itself and potential textures.
+	// The value is 0 < n < 1.
+	double			GetDistanceColor(double fDistance);
+
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
@@ -119,6 +129,28 @@ private:
 	void			Event_SetSoundHandles( void );
 	void			Event_FadeOut( float time );
 	void			Event_FadeIn( float time );
+
+	/**
+	 * Texturename for the falloff image
+	 */
+	const char		*m_FalloffImage;
+
+	/**
+	 * Pointer to the material that is used for this light. This pointer
+	 * is only loaded once. If the material needs to change dynamically
+	 * for a light, the m_FalloffImage must be set to the new material name
+	 * and m_LightMaterial must be set to NULL, to force the reload, next
+	 * time the light should use a new material.
+	 */
+	CLightMaterial	*m_LightMaterial;
+
+public:
+	/**
+	 * Each light also gets the maxlightradius, which determines which value
+	 * is the maximum radius for that particular light,
+	 */
+	double			m_MaxLightRadius;
+
 };
 
 #endif /* !__GAME_LIGHT_H__ */

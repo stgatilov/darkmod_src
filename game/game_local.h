@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -89,6 +92,8 @@ class idLocationEntity;
 #include "MultiplayerGame.h"
 
 //============================================================================
+
+class CLightMaterial;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -494,6 +499,12 @@ public:
 
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
+
+	/**
+	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
+	 * textures are only loaded when the light is spawned and requests the texture.
+	 */
+	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;

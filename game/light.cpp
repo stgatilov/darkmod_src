@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,8 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
 
 /*
 ===============================================================================
@@ -178,7 +183,10 @@ void idLight::UpdateChangeableSpawnArgs( const idDict *source ) {
 idLight::idLight
 ================
 */
-idLight::idLight() {
+idLight::idLight()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX %s\r", this, __FUNCTION__);
+
 	memset( &renderLight, 0, sizeof( renderLight ) );
 	localLightOrigin	= vec3_zero;
 	localLightAxis		= mat3_identity;
@@ -195,6 +203,8 @@ idLight::idLight() {
 	fadeStart			= 0;
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
+	m_MaxLightRadius	= 0.0f;
+	m_LightMaterial		= NULL;
 }
 
 /*
@@ -202,10 +212,12 @@ idLight::idLight() {
 idLight::~idLight
 ================
 */
-idLight::~idLight() {
+idLight::~idLight()
+{
 	if ( lightDefHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( lightDefHandle );
 	}
+	g_Global.m_DarkModPlayer->RemoveLight(this);
 }
 
 /*
@@ -294,7 +306,8 @@ void idLight::Restore( idRestoreGame *savefile ) {
 idLight::Spawn
 ================
 */
-void idLight::Spawn( void ) {
+void idLight::Spawn( void )
+{
 	bool start_off;
 	bool needBroken;
 	const char *demonic_shader;
@@ -404,6 +417,126 @@ void idLight::Spawn( void ) {
 	PostEventMS( &EV_PostSpawn, 0 );
 
 	UpdateVisuals();
+
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+	if(renderLight.pointLight == true)
+	{
+		if(m_MaxLightRadius < fabs(renderLight.lightRadius[0]))
+			m_MaxLightRadius = fabs(renderLight.lightRadius[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.lightRadius[1]))
+			m_MaxLightRadius = fabs(renderLight.lightRadius[1]);
+		
+		if(m_MaxLightRadius < fabs(renderLight.lightRadius[2]))
+			m_MaxLightRadius = fabs(renderLight.lightRadius[2]);
+
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
+	}
+	else
+	{
+		if(m_MaxLightRadius < fabs(renderLight.target[0]))
+			m_MaxLightRadius = fabs(renderLight.target[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.target[1]))
+			m_MaxLightRadius = fabs(renderLight.target[1]);
+		
+		if(m_MaxLightRadius < fabs(renderLight.target[2]))
+			m_MaxLightRadius = fabs(renderLight.target[2]);
+
+		if(m_MaxLightRadius < fabs(renderLight.right[0]))
+			m_MaxLightRadius = fabs(renderLight.right[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.right[1]))
+			m_MaxLightRadius = fabs(renderLight.right[1]);
+		
+		if(m_MaxLightRadius < fabs(renderLight.right[2]))
+			m_MaxLightRadius = fabs(renderLight.right[2]);
+
+		if(m_MaxLightRadius < fabs(renderLight.up[0]))
+			m_MaxLightRadius = fabs(renderLight.up[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.up[1]))
+			m_MaxLightRadius = fabs(renderLight.up[1]);
+		
+		if(m_MaxLightRadius < fabs(renderLight.up[2]))
+			m_MaxLightRadius = fabs(renderLight.up[2]);
+
+		if(m_MaxLightRadius < fabs(renderLight.start[0]))
+			m_MaxLightRadius = fabs(renderLight.start[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.start[1]))
+			m_MaxLightRadius = fabs(renderLight.start[1]);
+		
+		if(m_MaxLightRadius < fabs(renderLight.start[2]))
+			m_MaxLightRadius = fabs(renderLight.start[2]);
+
+		if(m_MaxLightRadius < fabs(renderLight.end[0]))
+			m_MaxLightRadius = fabs(renderLight.end[0]);
+
+		if(m_MaxLightRadius < fabs(renderLight.end[1]))
+			m_MaxLightRadius = fabs(renderLight.end[1]);
+			
+		if(m_MaxLightRadius < fabs(renderLight.end[2]))
+			m_MaxLightRadius = fabs(renderLight.end[2]);
+	}
+
+	m_FalloffImage = NULL;
+	spawnArgs.GetString( "texture", "lights/squarelight1", &m_FalloffImage);
+	if(m_FalloffImage != NULL)
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_FalloffImage);
+
+	idImage *pImage;
+	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %08lX\r", pImage);
+	}
+
+	g_Global.m_DarkModPlayer->AddLight(this);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
+		this, name.c_str(),
+		renderLight.noShadows,
+		renderLight.noSpecular,
+		renderLight.pointLight,
+		renderLight.parallel);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Radius ( %0.3f / %0.3f / %03f )\r",
+		renderLight.lightRadius[0],		// x
+		renderLight.lightRadius[1],		// y
+		renderLight.lightRadius[2]);	// z
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Center ( %0.3f / %0.3f / %03f )\r",
+		renderLight.lightCenter[0],
+		renderLight.lightCenter[1],
+		renderLight.lightCenter[2]);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Target ( %0.3f / %0.3f / %03f )\r",
+		renderLight.target[0],
+		renderLight.target[1],
+		renderLight.target[2]);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Right ( %0.3f / %0.3f / %03f )\r",
+		renderLight.right[0],
+		renderLight.right[1],
+		renderLight.right[2]);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Up ( %0.3f / %0.3f / %03f )\r",
+		renderLight.up[0],
+		renderLight.up[1],
+		renderLight.up[2]);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Start( %0.3f / %0.3f / %03f )\r",
+		renderLight.start[0],
+		renderLight.start[1],
+		renderLight.start[2]);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("End ( %0.3f / %0.3f / %03f )\r",
+		renderLight.end[0],
+		renderLight.end[1],
+		renderLight.end[2]);
 }
 
 /*
@@ -683,7 +816,15 @@ void idLight::BecomeBroken( idEntity *activator ) {
 idLight::PresentLightDefChange
 ================
 */
-void idLight::PresentLightDefChange( void ) {
+void idLight::PresentLightDefChange( void )
+{
+/*
+DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s] Radius ( %0.3f / %0.3f / %03f )\r", this, name.c_str(),
+		renderLight.lightRadius[0],		// x
+		renderLight.lightRadius[1],		// y
+		renderLight.lightRadius[2]);	// z
+*/
+
 	// let the renderer apply it to the world
 	if ( ( lightDefHandle != -1 ) ) {
 		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
@@ -1132,3 +1273,49 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 	}
 	return false;
 }
+
+double idLight::GetDistanceColor(double fDistance)
+{
+	double fColVal;
+	int w, h, i;
+	double w2;
+	unsigned char *img = NULL;
+
+	if(m_LightMaterial == NULL)
+	{
+		if((m_LightMaterial = g_Global.GetFallOffTexture(m_FalloffImage)) != NULL)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Material found for [%s]\r", name.c_str());
+			img = m_LightMaterial->GetFallOffTexture(w, h);
+		}
+	}
+	else
+		img = m_LightMaterial->GetFallOffTexture(w, h);
+
+	i = -1;
+	fColVal = (baseColor.x * LIGHTGEM_RED + baseColor.y * LIGHTGEM_GREEN + baseColor.z * LIGHTGEM_BLUE);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
+		baseColor.x, baseColor.x * LIGHTGEM_RED,
+		baseColor.y, baseColor.y * LIGHTGEM_GREEN,
+		baseColor.z, baseColor.z * LIGHTGEM_BLUE,
+		fColVal);
+
+	// If we have a texture, we have to calculate the final value based on the value given by the texture.
+	if(img != NULL)
+	{
+		// The lighttextures must be projected from the middle of the texture because left and right
+		// is the falloff and the brightest spot is in the center.
+		w2 = (double)w/2.0;
+
+		i = w2 - (w2/m_MaxLightRadius) * fDistance;
+		fColVal = fColVal * (img[i*3] * LIGHTGEM_SCALE);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Index: %u   Value: %u [%f]\r", i, (int)img[i*3], (double)(img[i*3] * LIGHTGEM_SCALE));
+	}
+	else
+		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Final ColVal: %f\r", fColVal);
+
+	return fColVal;
+}
+

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.8  2004/11/28 09:16:32  sparhawk
  * SDK V2 merge
  *
@@ -957,7 +960,6 @@ idPlayer::idPlayer
 idPlayer::idPlayer() {
 	memset( &usercmd, 0, sizeof( usercmd ) );
 
-	m_DarkModPlayer			= NULL;
 	noclip					= false;
 	godmode					= false;
 
@@ -2507,7 +2509,8 @@ void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
 idPlayer::UpdateHudStats
 ===============
 */
-void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
+void idPlayer::UpdateHudStats( idUserInterface *_hud )
+{
 	int staminapercentage;
 	float max_stamina;
 
@@ -2523,7 +2526,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 	_hud->SetStateInt( "player_health", health );
 	_hud->SetStateInt( "player_stamina", staminapercentage );
-	_hud->SetStateInt( "player_armor", inventory.armor );
+	_hud->SetStateInt( "player_shadow", 1 );
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -2607,7 +2610,12 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 idPlayer::DrawHUD
 ===============
 */
-void idPlayer::DrawHUD( idUserInterface *_hud ) {
+void idPlayer::DrawHUD(idUserInterface *_hud)
+{
+	if(_hud)
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
+	else
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: NULL\r");
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
 		return;
@@ -2626,12 +2634,7 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 
 	_hud->Redraw( gameLocal.realClientTime );
 
-	// weapon targeting crosshair
-	if ( !GuiActive() ) {
-		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
-			cursor->Redraw( gameLocal.realClientTime );
-		}
-	}
+	AdjustLightgem();
 }
 
 /*
@@ -5630,16 +5633,17 @@ void idPlayer::PerformImpulse( int impulse ) {
 			bool bFrob = true;
 			idEntity *ent, *frob;
 			int i;
+			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
-			frob = m_DarkModPlayer->m_FrobEntity;
+			frob = pDM->m_FrobEntity;
 
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, m_DarkModPlayer->m_Selection);
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
 			// If the player has an item that is selected we need to check if this
 			// is a usable item (like a key). In this case the use action takes
 			// precedence over the frobaction.
-			if((i = m_DarkModPlayer->m_Selection) != 0)
+			if((i = pDM->m_Selection) != 0)
 			{
-				ent = m_DarkModPlayer->GetEntity(i);
+				ent = pDM->GetEntity(i);
 				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
 				if(ent != NULL)
 				{
@@ -5662,15 +5666,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_42:		// Inventory prev
 		{
-			if(m_DarkModPlayer)
-				m_DarkModPlayer->SelectPrev();
+			g_Global.m_DarkModPlayer->SelectPrev();
 		}
 		break;
 
 		case IMPULSE_43:		// Inventory next
 		{
-			if(m_DarkModPlayer)
-				m_DarkModPlayer->SelectNext();
+			g_Global.m_DarkModPlayer->SelectNext();
 		}
 		break;
 
@@ -8563,6 +8565,75 @@ bool idPlayer::NeedsIcon( void ) {
 
 void idPlayer::AddToInventory(idEntity *ent)
 {
-	m_DarkModPlayer->AddEntity(ent);
+	g_Global.m_DarkModPlayer->AddEntity(ent);
 }
 
+void idPlayer::AdjustLightgem(void)
+{
+	idVec3 vDifference;
+	double fDistance;
+	double fLightgemVal;
+	idVec3 vLightColor;
+	idLight *light, *helper;
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	int i, n, h = -1;
+
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
+
+	fLightgemVal = 0;
+	n = pDM->m_LightList.Num();
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
+
+	for(i = 0; i < n; i++)
+	{
+		if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
+			continue;
+		idVec3 vPlayer(GetPhysics()->GetOrigin());
+		idVec3 vLight(light->GetPhysics()->GetOrigin());
+		vPlayer.z = vLight.z;
+		vDifference = vPlayer - vLight;
+		fDistance = vDifference.Length();
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+
+		if(fDistance > light->m_MaxLightRadius)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
+			if(h == -1)
+				h = i;
+			continue;
+		}
+
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in distance: %f/%f\r", light->name.c_str(), fDistance, light->m_MaxLightRadius);
+		fLightgemVal += light->GetDistanceColor(fDistance);
+
+		// Exchange the position of these lights, so that nearer lights are more
+		// at the beginning of the list. You may not use the arrayentry from this point on now.
+		// This sorting is not exactly good, but it is very cheap and we don't want to waste
+		// time to sort an everchanging array.
+		if(h != -1)
+		{
+			helper = pDM->m_LightList[h];
+			pDM->m_LightList[h] = light;
+			pDM->m_LightList[i] = helper;
+			h = -1;
+		}
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal > 1.0f)
+		{
+			fLightgemVal = 1.0;
+			break;
+		}
+	}
+
+	pDM->m_LightgemValue = LIGHTGEM_MAX * fLightgemVal;
+	if(pDM->m_LightgemValue < LIGHTGEM_MIN)
+		pDM->m_LightgemValue = LIGHTGEM_MIN;
+	else
+	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
+		pDM->m_LightgemValue = LIGHTGEM_MAX;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r", pDM->m_LightgemValue, hud);
+	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
+}
