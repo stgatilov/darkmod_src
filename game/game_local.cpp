@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/01/20 19:36:56  sparhawk
+ * Materialparser improved to also load projection textures for lights.
+ *
  * Revision 1.7  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -36,7 +39,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#pragma warning(disable : 4996)
+#pragma warning(disable : 4996 4805)
 
 #include "Game_local.h"
 
@@ -4271,9 +4274,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 {
 	idToken token;
 	idLexer src;
-	bool bFallOffImage;
-	bool bImageMode;
-	idStr Material, Image, *add;
+	idStr Material, FallOff, Map, *add;
 	int level;		// Nestinglevel for brackets
 	CLightMaterial *mat;
 
@@ -4282,8 +4283,6 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 
 	src.LoadFile(pFN);
 
-	bFallOffImage = false;
-	bImageMode = false;
 	level = 0;
 	add = NULL;
 
@@ -4294,66 +4293,95 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 
 //		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
 
-		if(token == "{")
+		if(token == "table")
 		{
-			if(level == 0)
-				add = NULL;
-			else
-			{
-				bImageMode = false;
-				bFallOffImage = false;
-			}
-
-			level++;
-		}
-		else if(token == "}")
-			level --;
-
-		if(bImageMode == true)
-		{
-			if(token == "(")
-			{
-				Image = "";
-				add = &Image;
-				bImageMode = true;
-				continue;
-			}
-			else if(token == ")")
-			{
-				add = NULL;
-				bImageMode = false;
-				bFallOffImage = false;
-				mat = new CLightMaterial(Material, Image);
-				ml->Append(mat);
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]\r", Material.c_str(), Image.c_str());
-				continue;
-			}
-		}
-		else if(level == 0 && token == "lights")
-		{
-			Material = token;
-			add = &Material;
+			src.SkipBracedSection(true);
 			continue;
 		}
-		else if(level == 1)
+
+		if(token == "lights")
 		{
-			if(token == "lightFalloffImage")
+			Material = token;
+			while(src.ReadTokenOnLine(&token) == true)
 			{
-				bFallOffImage = true;
-				continue;
+				Material += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", token.c_str());
 			}
-			else if(bFallOffImage == true && token == "makeintensity")
-			{
-				bImageMode = true;
-				continue;
-			}
+
+			continue;
 		}
 
-		if(add != NULL)
-			*add += token;
+		if(token == "{")
+		{
+			level++;
+			continue;
+		}
+		else if(token == "}")
+		{
+			level--;
+			if(level == 0)
+			{
+				if(FallOff.Length()  == 0 && Map.Length() == 0)
+					continue;
 
-//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", Material.c_str());
-//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Image: [%s]\r", Image.c_str());
+				mat = new CLightMaterial(Material, FallOff, Map);
+				ml->Append(mat);
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s]\r", Material.c_str(), FallOff.c_str(), Map.c_str());
+			}
+			continue;
+		}
+		else if(token == "map")
+		{
+			Map = "";
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+					Map += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Map: [%s]\r", token.c_str());
+			}
+			continue;
+		}
+		else if(token == "lightFalloffImage")
+		{
+			FallOff = "";
+
+			while(1)
+			{
+				if(!src.ReadToken(&token))
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Invalid material file structure on line %u\r", src.GetLineNum());
+					goto Quit;
+				}
+
+				// Ignore makeintensity tag
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+				{
+					do
+					{
+						if(token == ")")
+							break;
+
+						FallOff += token;
+//						DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FallOff: [%s]\r", token.c_str());
+					}
+					while(src.ReadTokenOnLine(&token) == true);
+					break;
+				}
+			}
+			continue;
+		}
 	}
 
 
