@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 // a mover will update any gui entities in it's target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent
@@ -125,7 +129,10 @@ END_CLASS
 idMover::idMover
 ================
 */
-idMover::idMover( void ) {
+idMover::idMover(void)
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	memset( &move, 0, sizeof( move ) );
 	memset( &rot, 0, sizeof( rot ) );
 	move_thread = 0;
@@ -296,7 +303,8 @@ void idMover::Event_PostRestore( int start, int total, int accel, int decel, boo
 idMover::Spawn
 ================
 */
-void idMover::Spawn( void ) {
+void idMover::Spawn( void )
+{
 	move_thread		= 0;
 	rotate_thread	= 0;
 	stopRotation	= false;
@@ -344,6 +352,7 @@ void idMover::Spawn( void ) {
 		fl.takedamage = true;
 	}
 
+	LoadTDMSettings();
 }
 
 /*
@@ -1625,7 +1634,8 @@ void idElevator::Restore( idRestoreGame *savefile ) {
 idElevator::Spawn
 ================
 */
-void idElevator::Spawn( void ) {
+void idElevator::Spawn( void )
+{
 	idStr str;
 	int len1;
 
@@ -2242,7 +2252,8 @@ Base class for all movers.
 "speed"		movement speed
 ================
 */
-void idMover_Binary::Spawn( void ) {
+void idMover_Binary::Spawn( void )
+{
 	idEntity	*ent;
 	const char	*temp;
 
@@ -2321,6 +2332,8 @@ void idMover_Binary::Spawn( void ) {
 			FindGuiTargets();
 		}
 	}
+
+	LoadTDMSettings();
 }
 
 /*
@@ -3079,7 +3092,10 @@ END_CLASS
 idDoor::idDoor
 ================
 */
-idDoor::idDoor( void ) {
+idDoor::idDoor( void )
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	triggersize = 1.0f;
 	crusher = false;
 	noTouch = false;
@@ -3173,7 +3189,8 @@ void idDoor::Restore( idRestoreGame *savefile ) {
 idDoor::Spawn
 ================
 */
-void idDoor::Spawn( void ) {
+void idDoor::Spawn(void)
+{
 	idVec3		abs_movedir;
 	float		distance;
 	idVec3		size;
@@ -3185,7 +3202,8 @@ void idDoor::Spawn( void ) {
 	float		speed;
 
 	// get the direction to move
-	if ( !spawnArgs.GetFloat( "movedir", "0", dir ) ) {
+	if(!spawnArgs.GetFloat( "movedir", "0", dir))
+	{
 		// no movedir, so angle defines movement direction and not orientation,
 		// a la oldschool Quake
 		SetAngles( ang_zero );
@@ -3194,16 +3212,16 @@ void idDoor::Spawn( void ) {
 	GetMovedir( dir, movedir );
 
 	// default speed of 400
-	spawnArgs.GetFloat( "speed", "400", speed );
+	spawnArgs.GetFloat("speed", "400", speed);
 
 	// default wait of 2 seconds
-	spawnArgs.GetFloat( "wait", "3", wait );
+	spawnArgs.GetFloat("wait", "3", wait);
 
 	// default lip of 8 units
-	spawnArgs.GetFloat( "lip", "8", lip );
+	spawnArgs.GetFloat("lip", "8", lip);
 
 	// by default no damage
-	spawnArgs.GetFloat( "damage", "0", damage );
+	spawnArgs.GetFloat("damage", "0", damage);
 
 	// trigger size
 	spawnArgs.GetFloat( "triggersize", "120", triggersize );
@@ -3288,6 +3306,16 @@ void idDoor::Spawn( void ) {
 
 	enabled = true;
 	blocked = false;
+
+	// Load frobsettings
+	LoadTDMSettings();
+
+	// If this is a frobable door we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
+		renderEntity.callback = idDoor::ModelCallback;
+	}
 }
 
 /*
@@ -3387,13 +3415,16 @@ void idDoor::Hide( void ) {
 idDoor::Show
 ================
 */
-void idDoor::Show( void ) {
+void idDoor::Show( void )
+{
 	idMover_Binary *slave;
 	idMover_Binary *master;
 	idDoor *slaveDoor;
 	idDoor *companion;
 
 	master = GetMoveMaster();
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Show: %08lX\r", this);
+
 	if ( this != master ) {
 		master->Show();
 	} else {
@@ -4014,7 +4045,8 @@ void idPlat::Restore( idRestoreGame *savefile ) {
 idPlat::Spawn
 ===============
 */
-void idPlat::Spawn( void ) {
+void idPlat::Spawn( void )
+{
 	float	lip;
 	float	height;
 	float	time;
@@ -4056,6 +4088,29 @@ void idPlat::Spawn( void ) {
 		// spawn trigger
 		SpawnPlatTrigger( pos1 );
 	}
+}
+
+bool idDoor::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
+
+	// this may be triggered by a model trace or other non-view related source
+	if(!renderView)
+		return false;
+
+	bool bRc = false;
+	idItem *ent;
+
+	ent = static_cast<idItem *>(gameLocal.entities[ renderEntity->entityNum ]);
+	if(!ent)
+	{
+		gameLocal.Error( "idItem::ModelCallback: callback with NULL game entity" );
+		bRc = false;
+	}
+	else
+		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL);
+
+	return bRc;
 }
 
 /*
@@ -4331,7 +4386,8 @@ idRotater::idRotater( void ) {
 idRotater::Spawn
 ===============
 */
-void idRotater::Spawn( void ) {
+void idRotater::Spawn( void )
+{
 	physicsObj.SetSelf( this );
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
@@ -4347,6 +4403,8 @@ void idRotater::Spawn( void ) {
 	if ( spawnArgs.GetBool( "start_on" ) ) {
 		ProcessEvent( &EV_Activate, this );
 	}
+
+	LoadTDMSettings();
 }
 
 /*
@@ -4428,7 +4486,8 @@ idBobber::idBobber( void ) {
 idBobber::Spawn
 ===============
 */
-void idBobber::Spawn( void ) {
+void idBobber::Spawn( void )
+{
 	float	speed;
 	float	height;
 	float	phase;
@@ -4462,6 +4521,8 @@ void idBobber::Spawn( void ) {
 	}
 	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, speed * 500, GetPhysics()->GetOrigin(), delta * 2.0f, vec3_origin );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 
@@ -4489,7 +4550,8 @@ idPendulum::idPendulum( void ) {
 idPendulum::Spawn
 ===============
 */
-void idPendulum::Spawn( void ) {
+void idPendulum::Spawn( void )
+{
 	float	speed;
 	float	freq;
 	float	length;
@@ -4523,6 +4585,8 @@ void idPendulum::Spawn( void ) {
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, 500/freq, GetPhysics()->GetAxis().ToAngles(), idAngles( 0, 0, speed * 2.0f ), ang_zero );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 
@@ -4551,7 +4615,8 @@ idRiser::idRiser( void ) {
 idRiser::Spawn
 ===============
 */
-void idRiser::Spawn( void ) {
+void idRiser::Spawn( void )
+{
 	physicsObj.SetSelf( this );
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
@@ -4566,6 +4631,8 @@ void idRiser::Spawn( void ) {
 	}
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 /*

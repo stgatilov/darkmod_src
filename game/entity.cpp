@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
  * Revision 1.4  2004/11/05 18:58:09  sparhawk
  * Moved frobcode to idEntity to make it available for all entities.
  *
@@ -396,7 +399,7 @@ idEntity::idEntity
 */
 idEntity::idEntity()
 {
-	DM_LOG(LC_FUNCTION).LogString(__FILE__, __LINE__, LC_FUNCTION, LT_DEBUG, "this: %08lX\r", this);
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX %s\r", this, __FUNCTION__);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
@@ -434,6 +437,8 @@ idEntity::idEntity()
 	memset( &refSound, 0, sizeof( refSound ) );
 
 	mpGUIState = -1;
+
+	m_FrobDistance = 0;
 }
 
 /*
@@ -522,7 +527,7 @@ void idEntity::Spawn( void )
 	// every object will have a unique name
 	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
 	SetName(temp);
-	DM_LOG(LC_ENTITY).LogString(__FILE__, __LINE__, LC_ENTITY, LT_INFO, "this: %08lX   Name: [%s]\r", this, temp);
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("this: %08lX   Name: [%s]\r", this, temp);
 
 	// if we have targets, wait until all entities are spawned to get them
 	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
@@ -564,6 +569,8 @@ void idEntity::Spawn( void )
 		ConstructScriptObject();
 	}
 
+	idEntity *player = (idEntity *)gameLocal.GetLocalPlayer();
+	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Player: %08lX\r", player);
 	LoadTDMSettings();
 }
 
@@ -574,7 +581,7 @@ idEntity::~idEntity
 */
 idEntity::~idEntity( void )
 {
-	DM_LOG(LC_FUNCTION).LogString(__FILE__, __LINE__, LC_FUNCTION, LT_DEBUG, "this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
@@ -1227,7 +1234,8 @@ void idEntity::UpdateModel( void ) {
 
 	// check if the entity has an MD5 model
 	idAnimator *animator = GetAnimator();
-	if ( animator && animator->ModelHandle() ) {
+	if(animator && animator->ModelHandle())
+	{
 		// set the callback to update the joints
 		renderEntity.callback = idEntity::ModelCallback;
 	}
@@ -1407,29 +1415,43 @@ Present is called to allow entities to generate refEntities, lights, etc for the
 */
 void idEntity::Present(void)
 {
-	if(!gameLocal.isNewFrame )
+/*
+	if(m_FrobDistance != 0)
 	{
-		return;
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderEntity: %08lX\r", renderEntity);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderModel: %08lX\r", renderEntity.hModel);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("CustomShader: %08lX\r", renderEntity.customShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+
+		for(int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++)
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Shaderparam[%u]: %f\r", i, renderEntity.shaderParms[i]);
+
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ForceUpdate: %u\r", renderEntity.forceUpdate);
+
+		renderEntity.customShader = gameLocal.GetGlobalMaterial();
 	}
+*/
+
+	if(!gameLocal.isNewFrame )
+		return;
 
 	// don't present to the renderer if the entity hasn't changed
 	if( !( thinkFlags & TH_UPDATEVISUALS))
-	{
 		return;
-	}
-	BecomeInactive( TH_UPDATEVISUALS );
+
+	if(m_FrobDistance == 0)
+		BecomeInactive( TH_UPDATEVISUALS );
 
 	// camera target for remote render views
 	if(cameraTarget && gameLocal.InPlayerPVS(this))
-	{
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
-	}
 
 	// if set to invisible, skip
 	if(!renderEntity.hModel || IsHidden())
-	{
 		return;
-	}
 
 	// add to refresh list
 	if ( modelDefHandle == -1 ) {
@@ -1464,6 +1486,9 @@ idEntity::UpdateRenderEntity
 */
 bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
 {
+	if(m_FrobDistance != 0)
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("%s this: %08lX    FrobDistance: %lu\r", __FUNCTION__, this, m_FrobDistance);
+
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -1488,6 +1513,7 @@ bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *
 	idEntity *ent;
 
 	ent = gameLocal.entities[ renderEntity->entityNum ];
+
 	if ( !ent ) {
 		gameLocal.Error( "idEntity::ModelCallback: callback with NULL game entity" );
 	}
@@ -5431,14 +5457,18 @@ void idEntity::LoadTDMSettings(void)
 	// the default value. If the frobdistance is set in the item
 	// it will override the defaultsetting. If none of that is set
 	// the frobdistance will be set to 0 meaning no frobbing on that item.
-	spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
-	if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
-		m_FrobDistance = g_Global.m_DefaultFrobDistance;
+	// If the frobsetting is alread initialized we can skip this.
+	if(m_FrobDistance == 0)
+	{
+		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+		if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+			m_FrobDistance = g_Global.m_DefaultFrobDistance;
+	}
 
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_INFO, "FrobDistance: %u\r", m_FrobDistance);
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("this: %08lX FrobDistance: %u\r", this, m_FrobDistance);
 }
 
-bool idEntity::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
+bool idEntity::Frob(unsigned long cm)
 {
 	bool bRc;
 	idPlayer *player;
@@ -5464,32 +5494,38 @@ bool idEntity::Frob(renderEntity_s *renderEntity, const renderView_t *renderView
 
 	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 	fDistance = v3Difference.Length();
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
-		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, fDistance);
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
+		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance, fDistance);
 
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
-		"Pitch: %f   Yaw: %f   Roll: %f\r", player->viewAngles.pitch, player->viewAngles.yaw, player->viewAngles.roll);
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("This: %08lX   RenderEntity: %08lX\r", this, renderEntity);
 
-	start = player->GetEyePosition( );
-	end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
+//		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+//			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+//			|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
 
-	// sparhawk
-	// TODO: We may have to determine the actual masks that we really will need, but that should work for now.
-	gameLocal.clip.TracePoint(trace, start, end, 
-		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-		|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
-		player);
-
-	if((trace.fraction < 1.0f))
+	// Uncomment this code if you want to test which mask is needed for a given entity.
+	// When this code is uncommented you look at the entity, you wish to test, and then
+	// check the logfile.
+//	for(int i = 0; i < 16; i++)			// Uncomment for bitmasktest
 	{
-		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
+//		cm = i << 1;			// Uncomment for bitmasktest
 
-		idEntity *ent = gameLocal.GetTraceEntity(trace);
-		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+		start = player->GetEyePosition( );
+		end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
 
-		if(ent == this)
-			bHighlight = true;
+		gameLocal.clip.TracePoint(trace, start, end, cm, player);
+		if((trace.fraction < 1.0f))
+		{
+//			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
+			if(fDistance <= m_FrobDistance)
+			{
+				idEntity *ent = gameLocal.GetTraceEntity(trace);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+
+				if(ent == this)
+					bHighlight = true;
+			}
+		}
 	}
 
 	if(bHighlight == true)
@@ -5504,10 +5540,16 @@ bool idEntity::Frob(renderEntity_s *renderEntity, const renderView_t *renderView
 			pDM->m_FrobEntity = NULL;
 	}
 
-	renderEntity->shaderParms[4] = param;
-	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity);
+	renderEntity.shaderParms[4] = param;
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, renderEntity.shaderParms[4]);
 
 	bRc = true;
 
 	return bRc;
+}
+
+// Default for entities that are frobable and movable is to pick it up and
+// carry it around (probably throwing or dropping it).
+void idEntity::FrobAction(void)
+{
 }

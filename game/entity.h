@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
  * Revision 1.2  2004/11/05 18:58:09  sparhawk
  * Moved frobcode to idEntity to make it available for all entities.
  *
@@ -343,7 +346,7 @@ public:
 	void					ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const;
 	void					ClientSendEvent( int eventId, const idBitMsg *msg ) const;
 
-	// Darkmod function
+	// ---===<* Darkmod functions *>===---
 
 	/**
 	 * LoadTDMSettings will initialize the settings required for 
@@ -360,10 +363,30 @@ public:
 	 * Frob will test if the item is in frobrange. If this is the case it also checks
 	 * if the player is looking at it. If it is the nearest looked at item, the item 
 	 * will be highlighted. If another item is highlighted, the frobeffect for that
-	 * item will be disabled.
+	 * item will be disabled. This code should be put in the UpdateRenderer function
+	 * if available. Usually you should install a modelcallback which is called whenever
+	 * the model can be seen.
+	 * CollisionMask specifies the bits needed for TracePoint to determine if the player
+	 * is looking at the item or not.
 	 */
-	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView);
+	bool					Frob(unsigned long CollisionMask);
 
+	/**
+	 * Frobaction will determine what a particular item should do when an entity is highlighted.
+	 * The actual action depends on the type of the entity.
+	 * Loot is being picked up and counted to the loot.
+	 * Special items are transfered to the inventory. If the item is also loot it will count 
+	 *    to that as well.
+	 * Doors are tested for their state (locked/unlocked) and opened if unlocked. if the 
+	 *    lockpicks or an appropriate key is equipped the door will either unlock or the
+	 *    lockpick HUD should appear.
+	 * Windows are just smaller doors so they don't need special treatment.
+	 * AI is tested for it's state. If it is an ally some defined script should start. If
+	 *    it is unconscious or dead it is picked up and the player can carry it around.
+	 * If it is a movable item the item is picked up and the player can carry it around.
+	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
+	 */
+	virtual void			FrobAction(void);
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
