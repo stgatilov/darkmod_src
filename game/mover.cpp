@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/12 18:38:37  sparhawk
+ * Moved frobcode from idDoor to baseclass.
+ *
  * Revision 1.3  2004/11/11 23:52:28  sparhawk
  * Fixed frob highlight for items and doors.
  *
@@ -2336,7 +2339,15 @@ void idMover_Binary::Spawn( void )
 		}
 	}
 
+	// Load frobsettings
 	LoadTDMSettings();
+
+	// If this is a frobable door we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
+		renderEntity.callback = idMover_Binary::ModelCallback;
+	}
 }
 
 /*
@@ -3309,16 +3320,6 @@ void idDoor::Spawn(void)
 
 	enabled = true;
 	blocked = false;
-
-	// Load frobsettings
-	LoadTDMSettings();
-
-	// If this is a frobable door we need to activate the frobcode.
-	if(m_FrobDistance != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
-		renderEntity.callback = idDoor::ModelCallback;
-	}
 }
 
 /*
@@ -4093,29 +4094,6 @@ void idPlat::Spawn( void )
 	}
 }
 
-bool idDoor::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
-{
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
-
-	// this may be triggered by a model trace or other non-view related source
-	if(!renderView)
-		return false;
-
-	bool bRc = false;
-	idDoor *ent;
-
-	ent = static_cast<idDoor *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if(!ent)
-	{
-		gameLocal.Error( "idDoor::ModelCallback: callback with NULL game entity" );
-		bRc = false;
-	}
-	else
-		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
-
-	return bRc;
-}
-
 /*
 ================
 idPlat::Think
@@ -4661,4 +4639,27 @@ void idRiser::Event_Activate( idEntity *activator ) {
 
 		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_LINEAR, gameLocal.time, time * 1000, physicsObj.GetOrigin(), delta, vec3_origin );
 	}
+}
+
+bool idMover_Binary::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
+
+	// this may be triggered by a model trace or other non-view related source
+	if(!renderView)
+		return false;
+
+	bool bRc = false;
+	idDoor *ent;
+
+	ent = static_cast<idDoor *>(gameLocal.entities[ renderEntity->entityNum ]);
+	if(!ent)
+	{
+		gameLocal.Error( "idDoor::ModelCallback: callback with NULL game entity" );
+		bRc = false;
+	}
+	else
+		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
+
+	return bRc;
 }
