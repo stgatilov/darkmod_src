@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2004/11/16 23:51:55  sparhawk
+ * Fixed a bug that prevented the proper logclass being shown in the log.
+ *
  * Revision 1.4  2004/11/06 17:16:53  sparhawk
  * Optimized the debug log function for ease of use and speed.
  *
@@ -101,6 +104,6 @@ public:
 extern CGlobal g_Global;
 extern char *g_LCString[];
 
-#define DM_LOG(lc, lt)		if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
+#define DM_LOG(lc, lt)		if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
 
 #endif
