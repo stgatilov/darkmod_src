@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/14 19:24:56  sparhawk
+ * Added frobcode to idMover
+ *
  * Revision 1.4  2004/11/12 18:38:37  sparhawk
  * Moved frobcode from idDoor to baseclass.
  *
@@ -359,6 +362,13 @@ void idMover::Spawn( void )
 	}
 
 	LoadTDMSettings();
+
+	// If this is a frobable mover we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
+		renderEntity.callback = idMover::ModelCallback;
+	}
 }
 
 /*
@@ -4663,3 +4673,55 @@ bool idMover_Binary::ModelCallback(renderEntity_s *renderEntity, const renderVie
 
 	return bRc;
 }
+
+void idMover_Binary::FrobAction(void)
+{
+	function_t *pScriptFkt = gameLocal.program.FindFunction("try_door");
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered (%08lX)\r", pScriptFkt);
+	if(pScriptFkt)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("ScriptDef: (%08lX)  Elements: %u   Typedef: %u\r", pScriptFkt->def, pScriptFkt->parmSize.Num(), pScriptFkt->def->TypeDef()->Type());
+
+		idThread *pThread = new idThread(pScriptFkt);
+		pThread->CallFunction(this, pScriptFkt, true);
+		pThread->DelayedStart(0);
+	}
+}
+
+bool idMover::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
+
+	// this may be triggered by a model trace or other non-view related source
+	if(!renderView)
+		return false;
+
+	bool bRc = false;
+	idMover *ent;
+
+	ent = static_cast<idMover *>(gameLocal.entities[ renderEntity->entityNum ]);
+	if(!ent)
+	{
+		gameLocal.Error( "idMover::ModelCallback: callback with NULL game entity" );
+		bRc = false;
+	}
+	else
+		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
+
+	return bRc;
+}
+
+void idMover::FrobAction(void)
+{
+	function_t *pScriptFkt = gameLocal.program.FindFunction("try_door");
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered (%08lX)\r", pScriptFkt);
+	if(pScriptFkt)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("ScriptDef: (%08lX)  Elements: %u   Typedef: %u\r", pScriptFkt->def, pScriptFkt->parmSize.Num(), pScriptFkt->def->TypeDef()->Type());
+
+		idThread *pThread = new idThread(pScriptFkt);
+		pThread->CallFunction(this, pScriptFkt, true);
+		pThread->DelayedStart(0);
+	}
+}
+

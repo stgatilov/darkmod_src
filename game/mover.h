@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/14 19:24:56  sparhawk
+ * Added frobcode to idMover
+ *
  * Revision 1.3  2004/11/12 18:38:38  sparhawk
  * Moved frobcode from idDoor to baseclass.
  *
@@ -57,6 +60,9 @@ public:
 	virtual void			Show( void );
 
 	void					SetPortalState( bool open );
+
+	static bool				ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
+	void FrobAction(void);
 
 protected:
 	typedef enum {
@@ -311,6 +317,7 @@ public:
 	void					SetPortalState( bool open );
 
 	static bool				ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
+	void FrobAction(void);
 
 protected:
 	idVec3					pos1;
