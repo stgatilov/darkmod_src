@@ -1,3 +1,10 @@
+2005-03-29:
+*) Logging detects now the mod directory and loads automatically a default INI file.
+*) Soundpropagation code added.
+
+2005-03-26:
+Lightgem code finalized.
+
 2005-Jan-05 (0.008a):
 *) Lightgem updated. It includes now code to pickup projection images
 as well.

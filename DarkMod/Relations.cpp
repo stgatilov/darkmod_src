@@ -12,6 +12,21 @@
 *
 *****************************************************************************/
 
+/******************************************************************************
+ *
+ * PROJECT: DarkMod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ * $Name$
+ *
+ * $Log$
+ * Revision 1.2  2005/03/30 18:16:20  sparhawk
+ * CVS Header added
+ *
+ ******************************************************************************/
+
 // TODO: Go thru game_local and call Save and Restore relations when game
 // is saved or restored.
 
