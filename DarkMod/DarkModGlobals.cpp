@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2004/11/22 23:51:34  sparhawk
+ * Added MISC log class.
+ *
  * Revision 1.6  2004/11/19 20:44:00  sparhawk
  * Added a trick to update compiletime automatically
  *
@@ -65,14 +68,16 @@ static char *LTString[LT_COUNT+1] = {
 	"---"
 };
 
-static char *LCString[LT_COUNT+1] = {
+static char *LCString[LC_COUNT+1] = {
 	"FORCE",
+	"MISC",
 	"SYSTEM",
 	"FROBBING",
 	"AI",
 	"SOUND",
 	"FUNCTION",
 	"ENTITY",
+	"INVENTORY",
 	"(empty)"
 };
 
@@ -254,6 +259,13 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_SYSTEM: %c\r", pm->Value[0]);
 		}
+		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+				m_ClassArray[LC_MISC] = true;
+
+			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MISC: %c\r", pm->Value[0]);
+		}
 		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
@@ -281,6 +293,13 @@ void CGlobal::LoadINISettings(void *p)
 				m_ClassArray[LC_FUNCTION] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_FUNCTION: %c\r", pm->Value[0]);
+		}
+		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+				m_ClassArray[LC_INVENTORY] = true;
+
+			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_INVENTORY: %c\r", pm->Value[0]);
 		}
 	}
 

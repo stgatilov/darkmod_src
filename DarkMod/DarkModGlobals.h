@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.6  2004/11/22 23:51:34  sparhawk
+ * Added MISC log class.
+ *
  * Revision 1.5  2004/11/16 23:51:55  sparhawk
  * Fixed a bug that prevented the proper logclass being shown in the log.
  *
@@ -62,12 +65,14 @@ typedef enum {
 // independent of it's class (like AI, item, doors, switche, etc.).
 typedef enum {
 	LC_FORCE,			// Never use this
+	LC_MISC,
 	LC_SYSTEM,			// Initialization, INI file and such stuff
 	LC_FROBBING,		// Everything that has to do with frobbing
 	LC_AI,				// same for AI
 	LC_SOUND,			// same for sound
 	LC_FUNCTION,		// general logging for functions (being, end, etc).
 	LC_ENTITY,
+	LC_INVENTORY,		// Everything that has to do with inventory
 	LC_COUNT
 } LC_LogClass;
 
