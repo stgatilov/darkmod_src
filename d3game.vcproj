@@ -141,8 +141,8 @@
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="mssdk/include"
-				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS"
+				AdditionalIncludeDirectories="mssdk/include,include"
+				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS,IL_STATIC_LIB"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -174,7 +174,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib devil.lib "
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -556,10 +556,6 @@
 			</File>
 			<File
 				RelativePath="game\Misc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
@@ -1067,6 +1063,10 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\FrobDoor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Misc.h"
 					>
 				</File>
 				<File

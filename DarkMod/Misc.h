@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.2  2005/01/07 02:01:10  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.1  2004/10/30 17:06:36  sparhawk
  * DarkMod added to project.
  *
@@ -108,5 +111,9 @@
 #define chsize      ftruncate
 #endif
 
+
+LONG FindChar(UBYTE *s, UBYTE *p, BOOL Case, BOOL Find, UBYTE SkipChar);
+UBYTE *Strip(UBYTE *s, int Start);
+UBYTE *StrStrip(UBYTE *s, int Start, char *p);
 
 #endif // _MISC_H

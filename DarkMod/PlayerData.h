@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2005/01/07 02:01:11  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.3  2004/11/24 21:59:06  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -40,6 +43,11 @@
  * There are several properties for various items which are not directly
  * stored in the item itself, because they are independent from the
  * entity and only related to the inventory.
+ *
+ * Playercoordinates are:
+ * x = forward/backward
+ * y = left/right
+ * z = up/down
  */
 class CInventoryItem {
 public:
@@ -48,6 +56,8 @@ public:
 public:
 	/**
 	 * The entity that is associated with this inventory entry.
+	 * TODO: This should become an idList to store more than one entity
+	 * for weapons and such.
 	 */
 	idEntity	*m_Entity;
 
@@ -124,6 +134,9 @@ public:
 	void					SelectNext(void);
 	void					SelectPrev(void);
 
+	unsigned long			AddLight(idLight *);
+	unsigned long			RemoveLight(idLight *);
+
 public:
 	/**
 	 * Selection points to the entity in the list that is currently selected
@@ -132,7 +145,31 @@ public:
 	 * the list will be a dummy that can be selected but does nothing.
 	 */
 	long						m_Selection;
-	idList<CInventoryItem>	m_Inventory;
+	idList<CInventoryItem>		m_Inventory;
+
+	/**
+	 * LightgemValue determines the level of visibillity of the player.
+	 * This value is used to light up the lightgem and is defined as
+	 * 1 <= N <= 16
+	 */
+	int							m_LightgemValue;
+
+	/**
+	 * Each light entity must register here itself. This is used
+	 * to calculate the value for the lightgem.
+	 */
+	idList<idLight *>				m_LightList;
 };
 
+// The colour is converted to a grayscale value which determines the state
+// of the lightgem.
+// LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
+
+#define LIGHTGEM_MIN			1
+#define LIGHTGEM_MAX			16
+#define LIGHTGEM_FRACTION		(1.0f/16.0f)
+#define LIGHTGEM_RED			0.29900f
+#define LIGHTGEM_GREEN			0.58700f
+#define LIGHTGEM_BLUE			0.11400f
+#define LIGHTGEM_SCALE			(1.0/255.0)			// scaling factor for grayscale value
 #endif

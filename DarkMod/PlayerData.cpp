@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2005/01/07 02:01:10  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.3  2004/11/24 21:59:06  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -57,6 +60,7 @@ CDarkModPlayer::CDarkModPlayer(void)
 	// The first entry in the inventory is always empty and selected by default.
 	m_Selection = 0;
 	m_Inventory.Append(inv_item);
+	m_LightgemValue = 0;
 }
 
 CDarkModPlayer::~CDarkModPlayer(void)
@@ -90,35 +94,34 @@ void CDarkModPlayer::AddEntity(idEntity *ent)
 		DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("[%s] added to inventory (%u)\r", ent->name.c_str(), m_Inventory.Num());
 		ent->Hide();
 	}
-
-	idPlayer *p = gameLocal.GetLocalPlayer();
-	p->inventory.armor = m_Selection;
 }
 
 void CDarkModPlayer::SelectNext(void)
 {
+	// TODO: Inventory keys are abused for lightgem
+	idPlayer *p = gameLocal.GetLocalPlayer();
+	if(m_LightgemValue < LIGHTGEM_MAX)
+		m_LightgemValue++;
+	p->hud->SetStateInt("lightgem_val", m_LightgemValue);
+
 	if(m_Selection < m_Inventory.Num()-1)
 		m_Selection++;
 	else
 		m_Selection = 0;
-
-	// TODO: Since we have no HUD for now I use the armor
-	// display as the inventory counter.
-	idPlayer *p = gameLocal.GetLocalPlayer();
-	p->inventory.armor = m_Selection;
 }
 
 void CDarkModPlayer::SelectPrev(void)
 {
+	// TODO: Inventory keys are abused for lightgem
+	idPlayer *p = gameLocal.GetLocalPlayer();
+	if(m_LightgemValue > LIGHTGEM_MIN)
+		m_LightgemValue--;
+	p->hud->SetStateInt("lightgem_val", m_LightgemValue);
+
 	if(m_Selection > 0)
 		m_Selection--;
 	else
 		m_Selection = m_Inventory.Num()-1;
-
-	// TODO: Since we have no HUD for now I use the armor
-	// display as the inventory counter.
-	idPlayer *p = gameLocal.GetLocalPlayer();
-	p->inventory.armor = m_Selection;
 }
 
 long CDarkModPlayer::GetEntity(idEntity *ent)
@@ -142,5 +145,32 @@ idEntity *CDarkModPlayer::GetEntity(long i)
 		return m_Inventory[i].m_Entity;
 	else
 		return NULL;
+}
+
+unsigned long CDarkModPlayer::AddLight(idLight *light)
+{
+	if(light)
+	{
+		m_LightList.Append(light);
+		DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("%08lX [%s] %lu added to LightList\r", light, light->name.c_str(), m_LightList.Num());
+	}
+
+	return m_LightList.Num();
+}
+
+unsigned long CDarkModPlayer::RemoveLight(idLight *light)
+{
+	int n;
+
+	if(light)
+	{
+		if((n = m_LightList.FindIndex(light)) != -1)
+		{
+			m_LightList.RemoveIndex(n);
+			DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
+		}
+	}
+
+	return m_LightList.Num();
 }
 

@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.9  2005/01/07 02:01:10  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.8  2004/12/04 22:50:45  sparhawk
  * Added LogClass LIGHT
  *
@@ -56,9 +59,11 @@
 #endif
 
 #include "DarkModGlobals.h"
+#include "PlayerData.h"
 #include "Misc.h"
 #include "Profile.h"
 #include "direct.h"
+#include "il/il.h"
 
 static char *LTString[LT_COUNT+1] = {
 	"FRC",
@@ -91,6 +96,8 @@ CGlobal::CGlobal(void)
 	char cwd[1024];
 	PROFILE_HANDLE *pfh = NULL;
 	FILE *logfile = NULL;
+
+	m_DarkModPlayer = new CDarkModPlayer;
 
 	getcwd(cwd, sizeof(cwd)-1);
 	memset(m_LogArray, 0, sizeof(m_LogArray));
@@ -321,4 +328,98 @@ void CGlobal::LoadINISettings(void *p)
 	}
 
 	DM_LOG(LC_SYSTEM, LT_INFO).LogString("FrobDistance: %f\r", m_DefaultFrobDistance);
+}
+
+
+CLightMaterial *CGlobal::GetFallOffTexture(idStr const &mn)
+{
+	CLightMaterial *rc = NULL;
+	int i, n;
+
+	n = m_LightMaterial.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(m_LightMaterial[i]->m_MaterialName.Icmp(mn) == 0)
+		{
+			rc = m_LightMaterial[i];
+			break;
+		}
+	}
+
+	DM_LOG(LC_SYSTEM, LT_INFO).LogString("GetFallOffTexture returns: [%s] for [%s]\r", (rc == NULL) ? "(null)" : rc->m_MaterialName.c_str(), mn.c_str());
+	return rc;
+}
+
+
+CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureName)
+{
+	m_MaterialName = MaterialName;
+	m_FallOffTexture = TextureName;
+	m_Image = NULL;
+	m_BufferLength = 0L;
+	m_ImageId = -1;
+	m_Width = 0;
+	m_Height = 0;
+}
+
+CLightMaterial::~CLightMaterial()
+{
+	if(m_ImageId != -1)
+		ilDeleteImages(1, &m_ImageId);
+
+	if(m_Image != NULL)
+		delete [] m_Image;
+}
+
+unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height)
+{
+	unsigned char *rc = NULL;
+	idFile *fl = NULL;
+
+	if(m_Image == NULL)
+	{
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_FallOffTexture.c_str());
+
+		if((fl = fileSystem->OpenFileRead(m_FallOffTexture)) == NULL)
+		{
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_FallOffTexture.c_str());
+			goto Quit;
+		}
+
+		m_BufferLength = fl->Length();
+		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
+		{
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_FallOffTexture.c_str());
+			goto Quit;
+		}
+
+		fl->Read(m_Image, m_BufferLength);
+		ilGenImages(1, &m_ImageId);
+		ilBindImage(m_ImageId);
+
+		if(ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength) == IL_FALSE)
+		{
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Error while loading LightFallOffImage [%s]\r", m_FallOffTexture.c_str());
+			goto Quit;
+		}
+
+		m_Width = ilGetInteger(IL_IMAGE_WIDTH);
+		m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   ImageType: %04X\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), ilGetInteger(IL_IMAGE_TYPE));
+	}
+
+	if(m_Image != NULL)
+	{
+		ilBindImage(m_ImageId);
+		ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength);
+		rc = (unsigned char *)ilGetData();
+		Width = m_Width;
+		Height = m_Height;
+	}
+
+Quit:
+	if(fl)
+		fileSystem->CloseFile(fl);
+
+	return(rc);
 }

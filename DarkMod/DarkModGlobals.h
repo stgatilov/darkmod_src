@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2005/01/07 02:01:10  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.7  2004/12/04 22:50:45  sparhawk
  * Added LogClass LIGHT
  *
@@ -50,6 +53,10 @@
 
 #include <stdio.h>
 
+#ifndef ILuint
+typedef unsigned int ILuint;
+#endif
+
 typedef enum {
 	LT_FORCE,			// Never use this
 	LT_ERROR,			// Errormessage
@@ -80,12 +87,33 @@ typedef enum {
 	LC_COUNT
 } LC_LogClass;
 
+class CDarkModPlayer;
+
+class CLightMaterial {
+public:
+	CLightMaterial(idStr const &MaterialName, idStr const &TextureName);
+	~CLightMaterial(void);
+
+	unsigned char *GetFallOffTexture(int &Width, int &Height);
+
+public:
+	idStr m_MaterialName;
+
+protected:
+	idStr m_FallOffTexture;
+	unsigned long m_BufferLength;		// m_Image
+	unsigned char *m_Image;
+	ILuint m_ImageId;
+	int m_Width, m_Height;
+};
+
 class CGlobal {
 public:
 	CGlobal(void);
 	~CGlobal(void);
 
 	void LogString(char *Format, ...);
+	CLightMaterial *GetFallOffTexture(idStr const &MaterialName);
 
 private:
 	void LoadINISettings(void *);
@@ -104,6 +132,9 @@ public:
 	LT_LogType		m_LogType;
 	char			*m_Filename;
 	int				m_Linenumber;
+	CDarkModPlayer	*m_DarkModPlayer;
+
+	idList<CLightMaterial *> m_LightMaterial;
 
 public:
 	// Global game settings, default values
