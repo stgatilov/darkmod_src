@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.14  2005/03/21 22:57:36  sparhawk
+ * Special plane and vectorlogs added.
+ *
  * Revision 1.13  2005/02/07 21:28:11  sparhawk
  * Added MATH class and LogVector3 function.
  *
@@ -181,6 +184,14 @@ CGlobal::~CGlobal(void)
 {
 	if(m_LogFile != NULL)
 		fclose(m_LogFile);
+}
+
+void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)
+{
+	float a, b, c, d;
+
+	Plane.GetPlaneParams(a, b, c, d);
+	LogString("Plane %s:    a: %f   b: %f   c: %f   d: %f\r", Name.c_str(), a, b, c, d);
 }
 
 void CGlobal::LogVector(idStr const &Name, idVec3 const &Vector)

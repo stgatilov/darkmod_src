@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.13  2005/03/21 22:57:36  sparhawk
+ * Special plane and vectorlogs added.
+ *
  * Revision 1.12  2005/02/07 21:28:11  sparhawk
  * Added MATH class and LogVector3 function.
  *
@@ -147,6 +150,7 @@ public:
 	CGlobal(void);
 	~CGlobal(void);
 
+	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogString(char *Format, ...);
 	CLightMaterial *GetMaterial(idStr const &MaterialName);
@@ -199,7 +203,22 @@ public:
 extern CGlobal g_Global;
 extern char *g_LCString[];
 
-#define DM_LOG(lc, lt)		if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
+#define DM_LOG(lc, lt)				if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
 #define DM_LOGVECTOR3(lc, lt, s, v)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogVector(s, v)
+#define DM_LOGPLANE(lc, lt, s, p)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogPlane(s, p)
 
+/**
+* The DARKMOD_NOTE macro makes it easy to add reminders which are shown when code is compiled. 
+* You can double click on a reminder in the Output Window and jump to the line when using VC. 
+* Adapted from highprogrammer.com (Originally from Windows Developer Journal).
+*
+* Usage: #pragma message(DARKMOD_NOTE "your reminder goes here")
+*
+* Submitted by Zaccheus
+*/
+
+#define DARKMOD_NOTE_AUX_STR( _S_ )             #_S_ 
+#define DARKMOD_NOTE_AUX_MAKESTR( _M_, _L_ )    _M_(_L_) 
+#define DARKMOD_NOTE_AUX_LINE                   DARKMOD_NOTE_AUX_MAKESTR(DARKMOD_NOTE_AUX_STR,__LINE__) 
+#define DARKMOD_NOTE                            __FILE__ "(" DARKMOD_NOTE_AUX_LINE ") : DARKMOD_NOTE: " 
 #endif
