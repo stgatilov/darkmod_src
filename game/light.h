@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/03/21 23:09:13  sparhawk
+ * Implemented projected and ellipsoid lights
+ *
  * Revision 1.6  2005/01/24 00:17:16  sparhawk
  * Lightgem shadow problem fixed.
  *
@@ -99,12 +102,18 @@ public:
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 	/**
-	 * This will return a grayscale value dependent on the distance from the light.
-	 * The nearer the distance, the brighter the value, dependent on the actual color
-	 * of the light itself and potential textures.
-	 * The value is 0 < n < 1.
+	 * This will return a grayscale value dependent on the value from the light.
+	 * X and Y are the coordinates returned by calculating the position from the 
+	 * player related to the light. The Z coordinate can be ignored. The distance
+	 * is required when the light has no textures to calculate a falloff.
 	 */
-	double			GetDistanceColor(double fDistance);
+	double			GetDistanceColor(double distance, double x, double y);
+
+	/**
+	 * GetTextureIndex calculates the index into the texture based on the x/y coordinates
+	 * given and returns the index.
+	 */
+	int				GetTextureIndex(double x, double y, int TextureWidth, int TextureHeight, int BytesPerPixel);
 
 	/**
 	 * Returns true if the light is a parallel light.
@@ -112,6 +121,16 @@ public:
 	inline bool		IsParallel(void) { return renderLight.parallel; };
 	inline bool		IsPointlight(void) { return renderLight.pointLight; };
 	bool			CastsShadow(void);
+
+	/**
+	 * GetLightCone returns the lightdata.
+	 * If the light is a pointlight it will return an ellipsoid defining the light.
+	 * In case of a projected light, the returned data is a cone.
+	 * If the light is a projected light and uses the additional vectors for
+	 * cut off cones, it will return true.
+	 */
+	bool GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center);
+	bool GetLightCone(idVec3 &Origin, idVec3 &Target, idVec3 &Right, idVec3 &Up, idVec3 &Start, idVec3 &End);
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer

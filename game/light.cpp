@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/03/21 23:09:13  sparhawk
+ * Implemented projected and ellipsoid lights
+ *
  * Revision 1.4  2005/01/24 00:17:16  sparhawk
  * Lightgem shadow problem fixed.
  *
@@ -1280,11 +1283,60 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 	return false;
 }
 
-double idLight::GetDistanceColor(double fDistance)
+
+int idLight::GetTextureIndex(double x, double y, int w, int h, int bpp)
+{
+	int rc = 0;
+	double w2, h2;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Calculating texture index: x/y: %f/%f w/h: %u/%u\r", x, y, w, h);
+
+	w2 = ((double)w)/2.0;
+	h2 = ((double)h)/2.0;
+
+	if(renderLight.pointLight)
+	{
+		// The lighttextures are spread out over the range of the axis. The z axis
+		// can be ignored for this and we assume that the x/y is already properly
+		// calculated.
+		x = w2 - (w2/renderLight.lightRadius.x) * x;
+		y = h2 - (h2/renderLight.lightRadius.y) * y;
+	}
+	else
+	{
+		// TODO: Just for now until the projected lights are implemented to not cause any crash.
+		// x = right
+		// y = up
+#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+#pragma message(DARKMOD_NOTE "For projected lights this is likely not enough. As long as the light will")
+#pragma message(DARKMOD_NOTE "be straight up or down it should work, but if the cone is angled it might")
+#pragma message(DARKMOD_NOTE "give wrong results.")
+#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+		x = w2 - (w2/renderLight.right.x) * x;
+		y = h2 - (h2/renderLight.up.y) * y;
+	}
+
+	if(y > h)
+		y = h;
+	if(x > w)
+		x = w;
+
+	if(x < 0)
+		x = 0;
+	if(y < 0)
+		y = 0;
+
+	rc = ((int)y * (w*bpp)) + ((int)x*bpp);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Index result: %u   x/y: %f/%f\r", rc, x, y);
+
+	return rc;
+}
+
+
+double idLight::GetDistanceColor(double fDistance, double fx, double fy)
 {
 	double fColVal, fImgVal;
-	int fw, fh, iw, ih, x, y, i, fbpp, ibpp;
-	double w2, h2;
+	int fw, fh, iw, ih, i, fbpp, ibpp;
 	unsigned char *img = NULL;
 	unsigned char *fot = NULL;
 
@@ -1303,7 +1355,6 @@ double idLight::GetDistanceColor(double fDistance)
 		img = m_LightMaterial->GetImage(iw, ih, ibpp);
 	}
 
-	x = -1;
 	fColVal = (baseColor.x * LIGHTGEM_RED + baseColor.y * LIGHTGEM_GREEN + baseColor.z * LIGHTGEM_BLUE);
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
 		baseColor.x, baseColor.x * LIGHTGEM_RED,
@@ -1315,22 +1366,22 @@ double idLight::GetDistanceColor(double fDistance)
 	// simple linear falloff
 	if(fot == NULL && img == NULL)
 	{
+		// TODO: Light falloff calculation
+#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
+#pragma message(DARKMOD_NOTE "The lightfalloff should be calculated for ellipsoids instead of spheres")
+#pragma message(DARKMOD_NOTE "when no textures are defined. The current code will give wrong results")
+#pragma message(DARKMOD_NOTE "when a light is defined as an ellipsoid.")
+#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
 		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
-		fImgVal = 0;
+		fImgVal = 1;
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("No textures defined using distance: [%f]\r", fDistance);
 	}
 	else
 	{
 		// If we have a falloff texture ...
 		if(fot != NULL)
 		{
-			// The lighttextures must be projected from the middle of the texture because left and right
-			// is the falloff and the brightest spot is in the center.
-			w2 = (double)fw/2.0;
-			h2 = (double)fh/2.0;
-
-			x = w2 - (w2/m_MaxLightRadius) * fDistance;
-			y = h2 - (h2/m_MaxLightRadius) * fDistance;
-			i = (y * (fw*fbpp)) + (x*fbpp);
+			i = GetTextureIndex((double)fabs(fx), (double)fabs(fy), fw, fh, fbpp);
 			fColVal = fColVal * (fot[i] * LIGHTGEM_SCALE);
 			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (double)(fot[i] * LIGHTGEM_SCALE));
 		}
@@ -1340,12 +1391,7 @@ double idLight::GetDistanceColor(double fDistance)
 		// ... or a projection image.
 		if(img != NULL)
 		{
-			w2 = (double)iw/2.0;
-			h2 = (double)ih/2.0;
-
-			x = w2 - (w2/m_MaxLightRadius) * fDistance;
-			y = h2 - (h2/m_MaxLightRadius) * fDistance;
-			i = (y * (iw*ibpp)) + (x*ibpp);
+			i = GetTextureIndex((double)fabs(fx), (double)fabs(fy), iw, ih, ibpp);
 			fImgVal = img[i] * LIGHTGEM_SCALE;
 			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (double)(img[i] * LIGHTGEM_SCALE));
 		}
@@ -1355,7 +1401,7 @@ double idLight::GetDistanceColor(double fDistance)
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
 
-	return fColVal*fImgVal;
+	return (fColVal*fImgVal);
 }
 
 bool idLight::CastsShadow(void)
@@ -1371,4 +1417,31 @@ bool idLight::CastsShadow(void)
 
 	return !renderLight.noShadows; 
 }
+
+bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Target, idVec3 &Right, idVec3 &Up, idVec3 &Start, idVec3 &End)
+{
+	bool rc = false;
+
+	Origin = GetPhysics()->GetOrigin();
+	Target = renderLight.target;
+	Right = renderLight.right;
+	Up = renderLight.up;
+
+	Start = renderLight.start;
+	End = renderLight.end;
+
+	return rc;
+}
+
+bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center)
+{
+	bool rc = false;
+
+	Origin = GetPhysics()->GetOrigin();
+	Axis = renderLight.lightRadius;
+	Center = renderLight.lightCenter;
+
+	return rc;
+}
+
 
