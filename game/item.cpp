@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2004/11/11 23:52:27  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
  * Revision 1.7  2004/11/11 22:15:40  sparhawk
  * Frobcode is now more generalized. Doors are now frobable.
  *
@@ -148,7 +151,9 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 	bool bRc = true;
 
 	if(pulse == false)
-		bRc = Frob(CONTENTS_PLAYERCLIP);
+		bRc = Frob(CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, &renderEntity->shaderParms[11]);
 	else
 	{
 		if(lastRenderViewTime == renderView->time)
@@ -274,7 +279,7 @@ void idItem::Present( void )
 {
 	idEntity::Present();
 
-	if(!fl.hidden && (pulse || m_FrobDistance != 0))
+	if(!fl.hidden && pulse)
 	{
 		// also add a highlight shell model
 		renderEntity_t	shell;
@@ -357,6 +362,12 @@ void idItem::Spawn( void )
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
 
 	LoadTDMSettings();
+	// If this is a frobable door we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
+		renderEntity.callback = idItem::ModelCallback;
+	}
 }
 
 /*

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2004/11/11 23:52:27  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
  * Revision 1.5  2004/11/11 22:15:40  sparhawk
  * Frobcode is now more generalized. Doors are now frobable.
  *
@@ -5468,7 +5471,7 @@ void idEntity::LoadTDMSettings(void)
 	DM_LOG(LC_FROBBING, LT_INFO).LogString("this: %08lX FrobDistance: %u\r", this, m_FrobDistance);
 }
 
-bool idEntity::Frob(unsigned long cm)
+bool idEntity::Frob(unsigned long cm, float *ShaderParam)
 {
 	bool bRc;
 	idPlayer *player;
@@ -5506,21 +5509,22 @@ bool idEntity::Frob(unsigned long cm)
 	// Uncomment this code if you want to test which mask is needed for a given entity.
 	// When this code is uncommented you look at the entity, you wish to test, and then
 	// check the logfile.
-//	for(int i = 0; i < 16; i++)			// Uncomment for bitmasktest
+//	for(int i = 0; i < 32; i++)			// Uncomment for bitmasktest
 	{
-//		cm = i << 1;			// Uncomment for bitmasktest
+//		cm = CONTENTS_SOLID | (i << 1);			// Uncomment for bitmasktest
 
 		start = player->GetEyePosition( );
 		end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
 
 		gameLocal.clip.TracePoint(trace, start, end, cm, player);
-		if((trace.fraction < 1.0f))
+//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+		if(trace.fraction < 1.0f)
 		{
-//			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
 			if(fDistance <= m_FrobDistance)
 			{
 				idEntity *ent = gameLocal.GetTraceEntity(trace);
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
 
 				if(ent == this)
 					bHighlight = true;
@@ -5540,8 +5544,8 @@ bool idEntity::Frob(unsigned long cm)
 			pDM->m_FrobEntity = NULL;
 	}
 
-	renderEntity.shaderParms[4] = param;
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, renderEntity.shaderParms[4]);
+	*ShaderParam = param;
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
 
 	bRc = true;
 
