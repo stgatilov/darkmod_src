@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2004/12/04 22:50:45  sparhawk
+ * Added LogClass LIGHT
+ *
  * Revision 1.7  2004/11/22 23:51:34  sparhawk
  * Added MISC log class.
  *
@@ -78,6 +81,7 @@ static char *LCString[LC_COUNT+1] = {
 	"FUNCTION",
 	"ENTITY",
 	"INVENTORY",
+	"LIGHT",
 	"(empty)"
 };
 
@@ -300,6 +304,13 @@ void CGlobal::LoadINISettings(void *p)
 				m_ClassArray[LC_INVENTORY] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_INVENTORY: %c\r", pm->Value[0]);
+		}
+		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+				m_ClassArray[LC_LIGHT] = true;
+
+			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_LIGHT: %c\r", pm->Value[0]);
 		}
 	}
 

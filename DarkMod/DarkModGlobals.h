@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2004/12/04 22:50:45  sparhawk
+ * Added LogClass LIGHT
+ *
  * Revision 1.6  2004/11/22 23:51:34  sparhawk
  * Added MISC log class.
  *
@@ -73,6 +76,7 @@ typedef enum {
 	LC_FUNCTION,		// general logging for functions (being, end, etc).
 	LC_ENTITY,
 	LC_INVENTORY,		// Everything that has to do with inventory
+	LC_LIGHT,
 	LC_COUNT
 } LC_LogClass;
 
