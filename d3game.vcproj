@@ -1046,6 +1046,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\PlayerData.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\PlayerData.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Profile.cpp"
 					>
 				</File>
