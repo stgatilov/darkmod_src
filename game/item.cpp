@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/03 00:06:08  sparhawk
+ * Frob highlight finished and working.
+ *
  * Revision 1.3  2004/10/31 20:01:56  sparhawk
  * Frob highlights now only for one item at a time.
  *
@@ -138,67 +141,47 @@ idItem::UpdateRenderEntity
 */
 bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t *renderView)
 {
-	bool bHighlight = false;
+	bool bRc = true;
 
-	idPlayer *player;	
-	player = gameLocal.GetLocalPlayer();
-	CDarkModPlayer *pDM = NULL;
-	float param;
-	float fDistance;
-
-	if(player)
-	{
-		idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-		fDistance = v3Difference.Length();
-		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "This: %08lX   Distance: %f\r", this, fDistance);
-
-		if(fDistance < m_FrobDistance)
-			bHighlight = true;
-
-		pDM = player->m_DarkModPlayer;
-	}
-
-	if(pulse == true && lastRenderViewTime == renderView->time)
-	{
-		return false;
-	}
-
-	lastRenderViewTime = renderView->time;
-
-	// check for glow highlighting if near the center of the view
-	idVec3 dir = renderEntity->origin - renderView->vieworg;
-	dir.Normalize();
-	float d = dir * renderView->viewaxis[0];
-
-	// two second pulse cycle
-	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
-
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Viewaxis: %f\r", d);
-	if(d > 0.94f)
-	{
-		if(!inView)
-		{
-			inView = true;
-			if(cycle > lastCycle)
-			{
-				// restart at the beginning
-				inViewTime = renderView->time;
-				cycle = 0.0f;
-			}
-		}
-	}
+	if(pulse == false)
+		bRc = Frob(renderEntity, renderView);
 	else
 	{
-		if(inView)
-		{
-			inView = false;
-			lastCycle = ceil(cycle);
-		}
-	}
+		if(lastRenderViewTime == renderView->time)
+			return false;
 
-	// fade down after the last pulse finishes 
-	if(pulse == true)
-	{
+		lastRenderViewTime = renderView->time;
+
+		// check for glow highlighting if near the center of the view
+		idVec3 dir = renderEntity->origin - renderView->vieworg;
+		dir.Normalize();
+		float d = dir * renderView->viewaxis[0];
+
+		// two second pulse cycle
+		float cycle = ( renderView->time - inViewTime ) / 2000.0f;
+
+		if(d > 0.94f)
+		{
+			if(!inView)
+			{
+				inView = true;
+				if(cycle > lastCycle)
+				{
+					// restart at the beginning
+					inViewTime = renderView->time;
+					cycle = 0.0f;
+				}
+			}
+		}
+		else
+		{
+			if(inView)
+			{
+				inView = false;
+				lastCycle = ceil(cycle);
+			}
+		}
+
 		if(!inView && cycle > lastCycle)
 		{
 			renderEntity->shaderParms[4] = 0.0f;
@@ -219,42 +202,11 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 			}
 		}
 	}
-	else
-	{
-		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
-		param = 0.0f;
-		if(bHighlight == true)
-		{
-			if(pDM != NULL)
-			{
-				// When an item is already highlighted and it is not *this* item, we
-				// may not highlight this one as well to make sure there is always
-				// only one item highlighted. We still have to check if this is the
-				// current item and set the highlight always, otherwise the renderer 
-				// would highlight it only once and switch it off afterwards.
-				if(pDM->m_FrobEntity == NULL || pDM->m_FrobEntity == this)
-				{
-					pDM->m_FrobEntity = this;
-					pDM->m_FrobDistance = fDistance;
-					param = 1.0f;
-				}
-			}
-		}
-		else
-		{
-			if(pDM != NULL && pDM->m_FrobEntity == this)
-				pDM->m_FrobEntity = NULL;
-		}
-
-		renderEntity->shaderParms[4] = param;
-		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
-	}
-
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "ShaderParms: %f\r", renderEntity->shaderParms[4]);
 
 	// update every single time this is in view
-	return true;
+	return bRc;
 }
+
 
 /*
 ================
@@ -356,9 +308,13 @@ void idItem::Spawn( void )
 
 	DARKMOD_FKT_BEG;
 
+	// If an item has a frobdistance it is frobable by default.
+	// If the distance is 0 (not set) then we will use the global 
+	// defaultvalue.
 	spawnArgs.GetInt( "frob_distance", "0", m_FrobDistance);
+	if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+		m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "FrobDistance: %u\r", m_FrobDistance);
-
 	if ( spawnArgs.GetBool( "dropToFloor" ) )
 	{
 		PostEventMS( &EV_DropToFloor, 0 );
@@ -1459,3 +1415,76 @@ void idObjectiveComplete::Event_HideObjective( idEntity *e ) {
 	}
 }
 
+bool idItem::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	bool bRc;
+	idPlayer *player;
+	CDarkModPlayer *pDM;
+	float param;
+	float fDistance;
+	bool bHighlight;
+
+	player = gameLocal.GetLocalPlayer();
+	pDM = player->m_DarkModPlayer;
+
+	// If we have no player there is no point in doing this. :)
+	if(player == NULL || pDM == NULL)
+		return false;
+
+	bRc = false;
+	bHighlight = false;
+	param = 0.0f;
+
+	trace_t trace;
+	idVec3 start;
+	idVec3 end;
+
+	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+	fDistance = v3Difference.Length();
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, 
+		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, pDM->m_FrobDistance, fDistance);
+
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, 
+		"Pitch: %f   Yaw: %f   Roll: %f\r", player->viewAngles.pitch, player->viewAngles.yaw, player->viewAngles.roll);
+
+	start = player->GetEyePosition( );
+	end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
+
+	// sparhawk
+	// TODO: We may have to determine the actual masks that we really will need, but that should work for now.
+	gameLocal.clip.TracePoint(trace, start, end, 
+		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+		|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
+		player);
+
+	if((trace.fraction < 1.0f))
+	{
+		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
+
+		idEntity *ent = gameLocal.GetTraceEntity(trace);
+		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+
+		if(ent == this)
+			bHighlight = true;
+	}
+
+	if(bHighlight == true)
+	{
+		pDM->m_FrobEntity = this;
+		param = 1.0f;
+	}
+	else
+	{
+		// Only switch it off if we are the current highlight
+		if(pDM->m_FrobEntity == this)
+			pDM->m_FrobEntity = NULL;
+	}
+
+	renderEntity->shaderParms[4] = param;
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
+
+	bRc = true;
+
+	return bRc;
+}

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/03 00:06:06  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 /*
 ===============================================================================
@@ -382,7 +386,9 @@ void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
 idEntity::idEntity
 ================
 */
-idEntity::idEntity() {
+idEntity::idEntity()
+{
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "this: %08lX\r", this);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;

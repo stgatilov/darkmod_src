@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2004/11/03 00:06:07  sparhawk
+ * Frob highlight finished and working.
+ *
  * Revision 1.3  2004/10/31 20:01:55  sparhawk
  * Frob highlights now only for one item at a time.
  *
@@ -23,6 +26,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+#pragma warning(disable : 4996)
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"

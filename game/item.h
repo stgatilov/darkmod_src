@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/03 00:06:08  sparhawk
+ * Frob highlight finished and working.
+ *
  * Revision 1.2  2004/10/30 17:19:40  sparhawk
  * Frob highlight added.
  *
@@ -80,6 +83,14 @@ private:
 
 	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView );
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
+
+	/**
+	 * Frob will test if the item is in frobrange. If this is the case it also checks
+	 * if the player is looking at it. If it is the nearest looked at item, the item 
+	 * will be highlighted. If another item is highlighted, the frobeffect for that
+	 * item will be disabled.
+	 */
+	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView);
 
 	void					Event_DropToFloor( void );
 	void					Event_Touch( idEntity *other, trace_t *trace );
