@@ -7,8 +7,32 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.8  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.7  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.6  2004/11/19 20:14:24  sparhawk
+ * Multifrob added.
+ *
+ * Revision 1.5  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
+ * Revision 1.4  2004/11/11 23:52:27  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
+ * Revision 1.3  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.2  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -136,6 +160,23 @@ public:
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
 	} fl;
+
+	/**
+	 * UsedBy ist the list of entity names that this entity can be used by.
+	 * i.e. A door can have a list of keys that can unlock it. A fountain can
+	 * be used by a water arrow to make it holy, etc.
+	 * The list is initialized by the key "used"_by" in the entity and contains
+	 * the names of the entities seperated by ';'. If the first character of
+	 * the name is a '*' the name donates a classname instead of an entity. In
+	 * this case all entities of that class can be used by this entity.
+	 * Example: If you have several holy fountains you would have to list all
+	 * fountain names. Alternatively you can create a "holy_fountain" class and
+	 * list it like this:
+	 * "used_by" "*holy_fountain;*holy_bottle;holy_cross"
+	 * In this example the entity can be used by any holy_fountain, any holy_bottle
+	 * and addtionaly by the entity named holy_cross.
+	 */
+	idList<idStr>			m_UsedBy;
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
@@ -340,10 +381,121 @@ public:
 	void					ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const;
 	void					ClientSendEvent( int eventId, const idBitMsg *msg ) const;
 
+	// ---===<* Darkmod functions *>===---
+
+	/**
+	 * LoadTDMSettings will initialize the settings required for 
+	 * darkmod to operate. It should be called form the respective
+	 * Spawn function on each object as there is no common function
+	 * that is called on Spawn for all entities. If a class needs
+	 * to load additional settings, which are only of interest to this
+	 * particular class it should override this virtual function but
+	 * don't forget to call it for the base class.
+	 */
+	virtual void			LoadTDMSettings(void);
+
+	/**
+	 * Frob will test if the item is in frobrange. If this is the case it also checks
+	 * if the player is looking at it. If it is the nearest looked at item, the item 
+	 * will be highlighted. If another item is highlighted, the frobeffect for that
+	 * item will be disabled. This code should be put in the UpdateRenderer function
+	 * if available. Usually you should install a modelcallback which is called whenever
+	 * the model can be seen.
+	 * CollisionMask specifies the bits needed for TracePoint to determine if the player
+	 * is looking at the item or not.
+	 */
+	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView, unsigned long CollisionMask, float *ShaderArray);
+
+	/**
+	 * FrobModelCallback is the callback function that is installed to enable the frobcode.
+	 * This callback will be called by the renderengine when the object in question is
+	 * visible by the camera view.
+	 */
+	static bool				FrobModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
+
+	/**
+	 * Frobaction will determine what a particular item should do when an entity is highlighted.
+	 * The actual action depends on the type of the entity.
+	 * Loot is being picked up and counted to the loot.
+	 * Special items are transfered to the inventory. If the item is also loot it will count 
+	 *    to that as well.
+	 * Doors are tested for their state (locked/unlocked) and opened if unlocked. if the 
+	 *    lockpicks or an appropriate key is equipped the door will either unlock or the
+	 *    lockpick HUD should appear.
+	 * Windows are just smaller doors so they don't need special treatment.
+	 * AI is tested for it's state. If it is an ally some defined script should start. If
+	 *    it is unconscious or dead it is picked up and the player can carry it around.
+	 * If it is a movable item the item is picked up and the player can carry it around.
+	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
+	 * bMaster indicates wheter the entity should call it's master or not.
+	 */
+	virtual void FrobAction(bool bMaster);
+
+	/**
+	 * AddToMasterList adds a string entry to a list and checks is a) the new entry
+	 * is not the current entities name and b) if the name already exists in the list.
+	 * If both conditions are met, the name is added to the list and true is returned,
+	 * otherwise false is returned and the name is not added to the list.
+	 */
+	bool AddToMasterList(idList<idStr> &, idStr &name);
+
+	/**
+	 * UsedBy determines the behaviour when an entity is used against another one.
+	 * The entity passed in as an argument is the one that uses this entity. If the 
+	 * argument is NULL, then the called entity is the one being used.
+	 * The return value indicates if the item could be used. If false the item is not
+	 * appropriate for usage on that entity and the default frobaction will be executed
+	 * instead.
+	 */
+	virtual bool UsedBy(idEntity *);
+
+	/**
+	 * Parses a used_by string. For a detailed information on how to use this feature
+	 * refer to the m_UsedBy description.
+	 */
+	void ParseUsedByList(idList<idStr> &, idStr &);
+
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
 	int						modelDefHandle;						// handle to static renderer model
 	refSound_t				refSound;							// used to present sound to the audio engine
+
+	/**
+	 * Frobdistance determines the distance in renderunits. If set to 0
+	 * the entity is not frobable.
+	 */
+	int							m_FrobDistance;
+
+	/**
+	 * FrobActionScript will contain the name of the script that is to be
+	 * exected whenever a frobaction occurs. The default should be set by
+	 * the constructor of the respective derived class but can be overriden
+	 * by the property "frob_action_script" in the entity defintion file.
+	 */
+	idStr						m_FrobActionScript;
+
+	/**
+	 * If AssociatedFrob is set then MasterFrob contains
+	 * the parent of the entity  chain in order to be able to walk the chain in
+	 * both directions. The user can frob any object in the chain but all of them
+	 * have to be notified.
+	 */
+	idStr					m_MasterFrob;
+
+	/**
+	 * Froblist is the list of entities that should be notified when this entity
+	 * is frobbed. Each entity in this list is called as if it were the one being
+	 * frobbed.
+	 */
+	idList<idStr>			m_FrobList;
+
+	/**
+	 * FrobCallbackChain is used to store the callbackfunction in case
+	 * the entity whishes to install a callback itself. The Frob function
+	 * will call this callback after it is determined the frob state 
+	 * in order to ensure that it is also called.
+	 */
+	deferredEntityCallback_t	m_FrobCallbackChain;
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object

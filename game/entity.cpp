@@ -7,8 +7,47 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.13  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.12  2004/11/28 19:51:52  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.11  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.10  2004/11/24 22:00:04  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.9  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.8  2004/11/19 20:14:24  sparhawk
+ * Multifrob added.
+ *
+ * Revision 1.7  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
+ * Revision 1.6  2004/11/11 23:52:27  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
+ * Revision 1.5  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.4  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
+ * Revision 1.3  2004/11/03 21:47:38  sparhawk
+ * Changed debug LogString for better performance and group settings
+ *
+ * Revision 1.2  2004/11/03 00:06:06  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,7 +57,11 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4533 )
+
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
 
 /*
 ===============================================================================
@@ -382,7 +425,9 @@ void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
 idEntity::idEntity
 ================
 */
-idEntity::idEntity() {
+idEntity::idEntity()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX %s\r", this, __FUNCTION__);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
@@ -420,6 +465,10 @@ idEntity::idEntity() {
 	memset( &refSound, 0, sizeof( refSound ) );
 
 	mpGUIState = -1;
+
+	m_FrobDistance = 0;
+	m_FrobActionScript = "";
+	m_FrobCallbackChain = NULL;
 }
 
 /*
@@ -427,7 +476,8 @@ idEntity::idEntity() {
 idEntity::FixupLocalizedStrings
 ================
 */
-void idEntity::FixupLocalizedStrings() {
+void idEntity::FixupLocalizedStrings()
+{
 	for ( int i = 0; i < spawnArgs.GetNumKeyVals(); i++ ) {
 		const idKeyValue *kv = spawnArgs.GetKeyVal( i );
 		if ( idStr::Cmpn( kv->GetValue(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ){
@@ -441,7 +491,8 @@ void idEntity::FixupLocalizedStrings() {
 idEntity::Spawn
 ================
 */
-void idEntity::Spawn( void ) {
+void idEntity::Spawn( void )
+{
 	int					i;
 	const char			*temp;
 	idVec3				origin;
@@ -513,8 +564,9 @@ void idEntity::Spawn( void ) {
 #endif
 
 	// every object will have a unique name
-	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber ) );
-	SetName( temp );
+	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
+	SetName(temp);
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("this: %08lX   Name: [%s]\r", this, temp);
 
 	// if we have targets, wait until all entities are spawned to get them
 	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
@@ -555,6 +607,8 @@ void idEntity::Spawn( void ) {
 
 		ConstructScriptObject();
 	}
+
+	LoadTDMSettings();
 }
 
 /*
@@ -562,7 +616,9 @@ void idEntity::Spawn( void ) {
 idEntity::~idEntity
 ================
 */
-idEntity::~idEntity( void ) {
+idEntity::~idEntity( void )
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
@@ -614,7 +670,8 @@ idEntity::~idEntity( void ) {
 idEntity::Save
 ================
 */
-void idEntity::Save( idSaveGame *savefile ) const {
+void idEntity::Save( idSaveGame *savefile ) const
+{
 	int i, j;
 
 	savefile->WriteInt( entityNumber );
@@ -682,7 +739,8 @@ void idEntity::Save( idSaveGame *savefile ) const {
 idEntity::Restore
 ================
 */
-void idEntity::Restore( idRestoreGame *savefile ) {
+void idEntity::Restore( idRestoreGame *savefile )
+{
 	int			i, j;
 	int			num;
 	idStr		funcname;
@@ -767,7 +825,8 @@ void idEntity::Restore( idRestoreGame *savefile ) {
 idEntity::GetEntityDefName
 ================
 */
-const char * idEntity::GetEntityDefName( void ) const {
+const char * idEntity::GetEntityDefName( void ) const
+{
 	if ( entityDefNumber < 0 ) {
 		return "*unknown*";
 	}
@@ -779,7 +838,8 @@ const char * idEntity::GetEntityDefName( void ) const {
 idEntity::SetName
 ================
 */
-void idEntity::SetName( const char *newname ) {
+void idEntity::SetName( const char *newname )
+{
 	if ( name.Length() ) {
 		gameLocal.RemoveEntityFromHash( name.c_str(), this );
 		gameLocal.program.SetEntity( name, NULL );
@@ -816,7 +876,8 @@ const char * idEntity::GetName( void ) const {
 idEntity::Think
 ================
 */
-void idEntity::Think( void ) {
+void idEntity::Think( void )
+{
 	RunPhysics();
 	Present();
 }
@@ -829,8 +890,8 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::DoDormantTests( void ) {
-
+bool idEntity::DoDormantTests( void )
+{
 	if ( fl.neverDormant ) {
 		return false;
 	}
@@ -871,7 +932,8 @@ Monsters and other expensive entities that are completely closed
 off from the player can skip all of their work
 ================
 */
-bool idEntity::CheckDormant( void ) {
+bool idEntity::CheckDormant( void )
+{
 	bool dormant;
 	
 	dormant = DoDormantTests();
@@ -920,7 +982,8 @@ bool idEntity::IsActive( void ) const {
 idEntity::BecomeActive
 ================
 */
-void idEntity::BecomeActive( int flags ) {
+void idEntity::BecomeActive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// enable the team master if this entity is part of a physics team
 		if ( teamMaster && teamMaster != this ) {
@@ -950,7 +1013,8 @@ void idEntity::BecomeActive( int flags ) {
 idEntity::BecomeInactive
 ================
 */
-void idEntity::BecomeInactive( int flags ) {
+void idEntity::BecomeInactive( int flags )
+{
 	if ( ( flags & TH_PHYSICS ) ) {
 		// may only disable physics on a team master if no team members are running physics or bound to a joints
 		if ( teamMaster == this ) {
@@ -992,7 +1056,8 @@ void idEntity::BecomeInactive( int flags ) {
 idEntity::SetShaderParm
 ================
 */
-void idEntity::SetShaderParm( int parmnum, float value ) {
+void idEntity::SetShaderParm( int parmnum, float value )
+{
 	if ( ( parmnum < 0 ) || ( parmnum >= MAX_ENTITY_SHADER_PARMS ) ) {
 		gameLocal.Warning( "shader parm index (%d) out of range", parmnum );
 		return;
@@ -1093,7 +1158,13 @@ void idEntity::SetModel( const char *modelname ) {
 		renderEntity.hModel->Reset();
 	}
 
-	renderEntity.callback = NULL;
+	// If we have a callback for our frob installed
+	// we should not deactivate it.
+	if(m_FrobDistance == 0)
+		renderEntity.callback = NULL;
+	else
+		m_FrobCallbackChain = NULL;
+
 	renderEntity.numJoints = 0;
 	renderEntity.joints = NULL;
 	if ( renderEntity.hModel ) {
@@ -1206,9 +1277,13 @@ void idEntity::UpdateModel( void ) {
 
 	// check if the entity has an MD5 model
 	idAnimator *animator = GetAnimator();
-	if ( animator && animator->ModelHandle() ) {
+	if(animator && animator->ModelHandle())
+	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
+		if(m_FrobDistance == 0)
+			renderEntity.callback = idEntity::ModelCallback;
+		else
+			m_FrobCallbackChain = idEntity::ModelCallback;
 	}
 
 	// set to invalid number to force an update the next time the PVS areas are retrieved
@@ -1244,7 +1319,7 @@ void idEntity::UpdatePVSAreas( void ) {
 	// FIXME: some particle systems may have huge bounds and end up in many PVS areas
 	// the first MAX_PVS_AREAS may not be visible to a network client and as a result the particle system may not show up when it should
 	if ( localNumPVSAreas > MAX_PVS_AREAS ) {
-		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( renderEntity.origin ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( modelAbsBounds.GetCenter() ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
 	}
 
 	for ( numPVSAreas = 0; numPVSAreas < MAX_PVS_AREAS && numPVSAreas < localNumPVSAreas; numPVSAreas++ ) {
@@ -1384,27 +1459,45 @@ idEntity::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
-void idEntity::Present( void ) {
+void idEntity::Present(void)
+{
+/*
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderEntity: %08lX\r", renderEntity);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderModel: %08lX\r", renderEntity.hModel);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("CustomShader: %08lX\r", renderEntity.customShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
 
-	if ( !gameLocal.isNewFrame ) {
-		return;
+		for(int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++)
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Shaderparam[%u]: %f\r", i, renderEntity.shaderParms[i]);
+
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ForceUpdate: %u\r", renderEntity.forceUpdate);
+
+		renderEntity.customShader = gameLocal.GetGlobalMaterial();
 	}
+*/
+
+	if(!gameLocal.isNewFrame )
+		return;
 
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if( !( thinkFlags & TH_UPDATEVISUALS))
 		return;
-	}
-	BecomeInactive( TH_UPDATEVISUALS );
+
+	if(m_FrobDistance == 0)
+		BecomeInactive( TH_UPDATEVISUALS );
 
 	// camera target for remote render views
-	if ( cameraTarget && gameLocal.InPlayerPVS( this ) ) {
+	if(cameraTarget && gameLocal.InPlayerPVS(this))
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
-	}
 
 	// if set to invisible, skip
-	if ( !renderEntity.hModel || IsHidden() ) {
+	if(!renderEntity.hModel || IsHidden())
 		return;
-	}
 
 	// add to refresh list
 	if ( modelDefHandle == -1 ) {
@@ -1437,7 +1530,11 @@ int idEntity::GetModelDefHandle( void ) {
 idEntity::UpdateRenderEntity
 ================
 */
-bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
+	if(m_FrobDistance != 0)
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("%s this: %08lX    FrobDistance: %lu\r", __FUNCTION__, this, m_FrobDistance);
+
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -1457,10 +1554,12 @@ idEntity::ModelCallback
 	NOTE: may not change the game state whatsoever!
 ================
 */
-bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView ) {
+bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView )
+{
 	idEntity *ent;
 
 	ent = gameLocal.entities[ renderEntity->entityNum ];
+
 	if ( !ent ) {
 		gameLocal.Error( "idEntity::ModelCallback: callback with NULL game entity" );
 	}
@@ -1714,7 +1813,8 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 idEntity::PreBind
 ================
 */
-void idEntity::PreBind( void ) {
+void idEntity::PreBind( void )
+{
 }
 
 /*
@@ -1722,7 +1822,8 @@ void idEntity::PreBind( void ) {
 idEntity::PostBind
 ================
 */
-void idEntity::PostBind( void ) {
+void idEntity::PostBind( void )
+{
 }
 
 /*
@@ -1730,7 +1831,8 @@ void idEntity::PostBind( void ) {
 idEntity::PreUnbind
 ================
 */
-void idEntity::PreUnbind( void ) {
+void idEntity::PreUnbind( void )
+{
 }
 
 /*
@@ -1738,7 +1840,8 @@ void idEntity::PreUnbind( void ) {
 idEntity::PostUnbind
 ================
 */
-void idEntity::PostUnbind( void ) {
+void idEntity::PostUnbind( void )
+{
 }
 
 /*
@@ -1746,8 +1849,8 @@ void idEntity::PostUnbind( void ) {
 idEntity::InitBind
 ================
 */
-bool idEntity::InitBind( idEntity *master ) {
-
+bool idEntity::InitBind( idEntity *master )
+{
 	if ( master == this ) {
 		gameLocal.Error( "Tried to bind an object to itself." );
 		return false;
@@ -1779,8 +1882,8 @@ bool idEntity::InitBind( idEntity *master ) {
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( void ) {
-
+void idEntity::FinishBind( void )
+{
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
 
@@ -1805,8 +1908,8 @@ idEntity::Bind
   bind relative to the visual position of the master
 ================
 */
-void idEntity::Bind( idEntity *master, bool orientated ) {
-
+void idEntity::Bind( idEntity *master, bool orientated )
+{
 	if ( !InitBind( master ) ) {
 		return;
 	}
@@ -2410,9 +2513,12 @@ void idEntity::QuitTeam( void ) {
 idEntity::InitDefaultPhysics
 ================
 */
-void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
+void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
+{
 	const char *temp;
 	idClipModel *clipModel = NULL;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] test for clipmodel\r", name.c_str());
 
 	// check if a clipmodel key/value pair is set
 	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
@@ -2421,22 +2527,29 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 		}
 	}
 
-	if ( !spawnArgs.GetBool( "noclipmodel", "0" ) ) {
-
+	if(!spawnArgs.GetBool( "noclipmodel", "0" ))
+	{
 		// check if mins/maxs or size key/value pairs are set
-		if ( !clipModel ) {
+		if ( !clipModel )
+		{
 			idVec3 size;
 			idBounds bounds;
 			bool setClipModel = false;
 
 			if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
-				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) ) {
+				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
+			{
 				setClipModel = true;
-				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] ) {
+				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
+				{
 					gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
 				}
-			} else if ( spawnArgs.GetVector( "size", NULL, size ) ) {
-				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) ) {
+			} 
+			else
+			if ( spawnArgs.GetVector( "size", NULL, size ) )
+			{
+				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
+				{
 					gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
 				}
 				bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
@@ -2469,6 +2582,8 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 			}
 		}
 	}
+	else
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] does not contain a clipmodel\r", name.c_str());
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );
@@ -4927,9 +5042,14 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 	animator.Restore( savefile );
 
 	// check if the entity has an MD5 model
-	if ( animator.ModelHandle() ) {
+	if ( animator.ModelHandle() )
+	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
+		if(m_FrobDistance == 0)
+			renderEntity.callback = idEntity::ModelCallback;
+		else
+			m_FrobCallbackChain = idEntity::ModelCallback;
+
 		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 		animator.GetBounds( gameLocal.time, renderEntity.bounds );
 		if ( modelDefHandle != -1 ) {
@@ -5030,7 +5150,11 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 	}
 
 	// set the callback to update the joints
-	renderEntity.callback = idEntity::ModelCallback;
+	if(m_FrobDistance == 0)
+		renderEntity.callback = idEntity::ModelCallback;
+	else
+		m_FrobCallbackChain = idEntity::ModelCallback;
+
 	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
 
@@ -5392,4 +5516,316 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 	idAngles ang = axis.ToAngles();
 	idVec3 vec( ang[ 0 ], ang[ 1 ], ang[ 2 ] );
 	idThread::ReturnVector( vec );
+}
+
+bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
+{
+	bool bRc = false;
+	idEntity *ent;
+	int i, n;
+	bool bFound;
+
+	// The master may not be the same as this entity.
+	if(str == name)
+		goto Quit;
+
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
+	if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
+		i = 0;
+		n = MasterList.Num();
+		bFound = false;
+		for(i = 0; i < n; i++)
+		{
+			if(MasterList[i] == name)
+			{
+				bFound = true;
+				break;
+			}
+		}
+		if(bFound == false)
+			MasterList.Append(name);
+	}
+	else
+	{
+		DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", str.c_str());
+		goto Quit;
+	}
+
+	bRc = true;
+
+Quit:
+	return bRc;
+}
+
+void idEntity::LoadTDMSettings(void)
+{
+	idStr str;
+
+	// If an item has the frobable flag set to true we will use the 
+	// the default value. If the frobdistance is set in the item
+	// it will override the defaultsetting. If none of that is set
+	// the frobdistance will be set to 0 meaning no frobbing on that item.
+	// If the frobsetting is alread initialized we can skip this.
+	if(m_FrobDistance == 0)
+	{
+		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+		if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+			m_FrobDistance = g_Global.m_DefaultFrobDistance;
+	}
+
+	// Override the frob action script to apply custom events to 
+	// specific entities.
+	if(spawnArgs.GetString("frob_action_script", "", str))
+		m_FrobActionScript = str;
+
+	// Check if this entity is associated to a master frob entity.
+	if(spawnArgs.GetString("frob_master", "", str))
+	{
+		if(AddToMasterList(m_FrobList, str) == true)
+			m_MasterFrob = str;
+	}
+
+	// Check if this entity can be used by others.
+	if(spawnArgs.GetString("used_by", "", str))
+		ParseUsedByList(m_UsedBy, str);
+
+	// If this is a frobable entity we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("Frob activated: %08lX\r", this);
+		if(renderEntity.callback != NULL && renderEntity.callback != idEntity::FrobModelCallback)
+			m_FrobCallbackChain = renderEntity.callback;
+
+		renderEntity.callback = idEntity::FrobModelCallback;
+	}
+
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
+}
+
+bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView_t *pRenderView)
+{
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, pRenderEntity, pRenderView);
+
+	// this may be triggered by a model trace or other non-view related source
+	if(!pRenderView)
+		return false;
+
+	bool bRc = false;
+	bool bCallback = false;
+	idEntity *ent;
+
+	ent = static_cast<idEntity *>(gameLocal.entities[pRenderEntity->entityNum]);
+	if(!ent)
+	{
+		gameLocal.Error("%s: callback with NULL game entity", __FUNCTION__);
+		bRc = false;
+	}
+	else
+		bRc = ent->Frob(pRenderEntity, pRenderView, CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
+
+	return bRc;
+}
+
+bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderView, unsigned long cm, float *ShaderParam)
+{
+	bool bRc = false;
+	idPlayer *player;
+	CDarkModPlayer *pDM;
+
+	player = gameLocal.GetLocalPlayer();
+	pDM = g_Global.m_DarkModPlayer;
+
+	// If we have no player there is no point in doing this. :)
+	if(player == NULL || pDM == NULL)
+		goto Quit;
+
+	float param;
+	float fDistance;
+	bool bHighlight;
+	trace_t trace;
+	idVec3 start;
+	idVec3 end;
+	idVec3 v3Difference;
+
+	bHighlight = false;
+	param = 0.0f;
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Player: [%s]\r", player->name.c_str());
+
+	v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+	fDistance = v3Difference.Length();
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
+		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance, fDistance);
+
+	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+			|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER;
+
+	// Uncomment this code if you want to test which mask is needed for a given entity.
+	// When this code is uncommented you look at the entity, you wish to test, and then
+	// check the logfile.
+//	for(int i = 0; i < 32; i++)			// Uncomment for bitmasktest
+	{
+//		cm = CONTENTS_SOLID | (i << 1);			// Uncomment for bitmasktest
+
+		start = player->GetEyePosition( );
+		end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
+
+		gameLocal.clip.TracePoint(trace, start, end, cm, player);
+//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+		if(trace.fraction < 1.0f)
+		{
+			if(fDistance <= m_FrobDistance)
+			{
+				idEntity *ent = gameLocal.GetTraceEntity(trace);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
+
+				if(ent == this)
+					bHighlight = true;
+			}
+		}
+	}
+
+	if(bHighlight == true)
+	{
+		pDM->m_FrobEntity = this;
+		param = 1.0f;
+		bRc = true;
+	}
+	else
+	{
+		// Only switch it off if we are the current highlight
+		if(pDM->m_FrobEntity == this)
+			pDM->m_FrobEntity = NULL;
+	}
+
+	*ShaderParam = param;
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
+
+Quit:
+	if(m_FrobCallbackChain != NULL)
+	{
+		if(m_FrobCallbackChain == idEntity::FrobModelCallback)
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Internal Error: Chainfunction set to FrobModelCallback. Please file a bugreport!\r\r");
+		else
+		{
+			// The return value is always true if this function returns true as well
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling chainfunction: %08lX - %08lX\r\r", renderEntity.callback, m_FrobCallbackChain);
+			if(m_FrobCallbackChain(pRenderEntity, pRenderView) == true)
+				bRc = true;
+		}
+	}
+
+	return bRc;
+}
+
+// Default for entities that are frobable and movable is to pick it up and
+// carry it around (probably throwing or dropping it).
+void idEntity::FrobAction(bool bMaster)
+{
+	idEntity *ent;
+
+	if(m_FrobActionScript.Length() == 0)
+	{
+		DM_LOG(LC_FROBBING, LT_ERROR).LogString("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
+		return;
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
+
+	// The player can frob any entity in a chain so we must make sure that all 
+	// others, in the chain, are also called. The master has no special meaning
+	// except that it has to be the first in a chain. The master also doesn't have
+	// to be the same entity type.
+	if(bMaster == true && m_MasterFrob.Length() != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity [%s] is called.\r", m_MasterFrob.c_str());
+		if((ent = gameLocal.FindEntity(m_MasterFrob.c_str())) != NULL)
+			ent->FrobAction(false);
+		else
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", m_MasterFrob.c_str());
+	}
+	else
+	{
+		int i, n;
+
+		n = m_FrobList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_FrobList[i].c_str());
+			if((ent = gameLocal.FindEntity(m_FrobList[i].c_str())) != NULL)
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s]\r", m_FrobList[i].c_str());
+				ent->FrobAction(false);
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_FrobList[i].c_str());
+		}
+
+		function_t *pScriptFkt = gameLocal.program.FindFunction(m_FrobActionScript.c_str());
+		if(pScriptFkt)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] FrobAction has been triggered using %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+			idThread *pThread = new idThread(pScriptFkt);
+			pThread->CallFunction(this, pScriptFkt, true);
+			pThread->DelayedStart(0);
+			StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
+		}
+		else
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+	}
+}
+
+void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
+{
+	idStr str;
+	int i, n;
+	int x, y;
+	bool bFound;
+
+	DM_LOG(LC_MISC, LT_INFO).LogString("Parsing [%s]\r", s.c_str());
+	i = 0;
+	while(1)
+	{
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 1: %u:%u [%s]\r", i, n, &s[i]);
+		// If no seperator is found, the remainder of the string
+		// is copied.
+		if((n = s.Find(';', i)) == -1)
+			n = s.Length();
+
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 2: %u:%u [%s]\r", i, n, &s[i]);
+		n -= i;
+		s.Mid(i, n, str);
+		i += n;
+		if(s[i] == ';')
+			i++;
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 3: %u:%u [%s]\r", i, n, &s[i]);
+		if(str.Length() == 0)
+			break;
+
+		y = list.Num();
+		bFound = false;
+		for(x = 0; x < y; x++)
+		{
+			if(list[x] == str)
+			{
+				bFound = true;
+				break;
+			}
+		}
+
+		if(bFound == false)
+		{
+			DM_LOG(LC_MISC, LT_DEBUG).LogString("Append [%s] to uselist\r", str.c_str());
+			list.Append(str);
+		}
+	}
+}
+
+bool idEntity::UsedBy(idEntity *ent)
+{
+	return false;
 }

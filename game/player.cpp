@@ -7,8 +7,53 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.15  2005/03/26 16:01:59  sparhawk
+ * Linefeeds
+ *
+ * Revision 1.14  2005/03/26 16:01:00  sparhawk
+ * Lightgem implemented
+ *
+ * Revision 1.13  2005/01/24 00:17:16  sparhawk
+ * Lightgem shadow problem fixed.
+ *
+ * Revision 1.12  2005/01/20 19:37:49  sparhawk
+ * Lightgem now calculates projected lights as well as parallel lights.
+ *
+ * Revision 1.11  2005/01/19 23:22:04  sparhawk
+ * Bug fixed for ambient lights
+ *
+ * Revision 1.10  2005/01/19 23:01:48  sparhawk
+ * Lightgem updated to do proper projected lights with occlusion.
+ *
+ * Revision 1.9  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.8  2004/11/28 09:16:32  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.7  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.6  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.5  2004/11/14 20:25:24  sparhawk
+ * Unneccessary logstatement removed.
+ *
+ * Revision 1.4  2004/11/14 00:42:37  sparhawk
+ * Added USE/Frob Key.
+ *
+ * Revision 1.3  2004/11/06 17:17:43  sparhawk
+ * Removed Frobangles as we don't need them anymore.
+ *
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +64,9 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/intersection.h"
 
 /*
 ===============================================================================
@@ -67,6 +115,8 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
+const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -85,6 +135,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
+
+	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -2476,7 +2528,8 @@ void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
 idPlayer::UpdateHudStats
 ===============
 */
-void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
+void idPlayer::UpdateHudStats( idUserInterface *_hud )
+{
 	int staminapercentage;
 	float max_stamina;
 
@@ -2492,7 +2545,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 	_hud->SetStateInt( "player_health", health );
 	_hud->SetStateInt( "player_stamina", staminapercentage );
-	_hud->SetStateInt( "player_armor", inventory.armor );
+	_hud->SetStateInt( "player_shadow", 1 );
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -2576,7 +2629,12 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 idPlayer::DrawHUD
 ===============
 */
-void idPlayer::DrawHUD( idUserInterface *_hud ) {
+void idPlayer::DrawHUD(idUserInterface *_hud)
+{
+	if(_hud)
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
+	else
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: NULL\r");
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
 		return;
@@ -2595,12 +2653,7 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 
 	_hud->Redraw( gameLocal.realClientTime );
 
-	// weapon targeting crosshair
-	if ( !GuiActive() ) {
-		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
-			cursor->Redraw( gameLocal.realClientTime );
-		}
-	}
+	AdjustLightgem();
 }
 
 /*
@@ -3716,7 +3769,8 @@ idPlayer::StealWeapon
 steal the target player's current weapon
 =================
 */
-void idPlayer::StealWeapon( idPlayer *player ) {
+void idPlayer::StealWeapon( idPlayer *player )
+{
 	assert( !gameLocal.isClient );
 
 	// make sure there's something to steal
@@ -5592,6 +5646,69 @@ void idPlayer::PerformImpulse( int impulse ) {
 			UseVehicle();
 			break;
 		}
+
+		case IMPULSE_41:		// TDM Use/Frob
+		{
+			bool bFrob = true;
+			idEntity *ent, *frob;
+			int i;
+			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+			frob = pDM->m_FrobEntity;
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
+			// If the player has an item that is selected we need to check if this
+			// is a usable item (like a key). In this case the use action takes
+			// precedence over the frobaction.
+			if((i = pDM->m_Selection) != 0)
+			{
+				ent = pDM->GetEntity(i);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
+				if(ent != NULL)
+				{
+					if(ent->spawnArgs.GetBool("usable"))
+					{
+						DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Item is usable\r");
+						if(frob)
+							bFrob = !frob->UsedBy(ent);
+						else
+							bFrob = !ent->UsedBy(NULL);
+					}
+				}
+			}
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+			if(bFrob == true && frob != NULL)
+				frob->FrobAction(true);
+		}
+		break;
+
+		case IMPULSE_42:		// Inventory prev
+		{
+			g_Global.m_DarkModPlayer->SelectPrev();
+		}
+		break;
+
+		case IMPULSE_43:		// Inventory next
+		{
+			g_Global.m_DarkModPlayer->SelectNext();
+		}
+		break;
+
+		case IMPULSE_44:		// Lean forward
+		{
+		}
+		break;
+
+		case IMPULSE_45:		// Lean left
+		{
+		}
+		break;
+
+		case IMPULSE_46:		// Lean right
+		{
+		}
+		break;
 	} 
 }
 
@@ -6308,6 +6425,10 @@ void idPlayer::Think( void ) {
 	UpdatePowerUps();
 
 	UpdateDeathSkin( false );
+
+	if ( gameLocal.isMultiplayer ) {
+		DrawPlayerIcons();
+	}
 
 	if ( head.GetEntity() ) {
 		headRenderEnt = head.GetEntity()->GetRenderEntity();
@@ -8459,4 +8580,171 @@ idPlayer::NeedsIcon
 */
 bool idPlayer::NeedsIcon( void ) {
 	return ( isLagged || isChatting );
+}
+
+void idPlayer::AddToInventory(idEntity *ent)
+{
+	g_Global.m_DarkModPlayer->AddEntity(ent);
+}
+
+void idPlayer::AdjustLightgem(void)
+{
+	idVec3 vDifference;
+	double fx, fy;
+	double fDistance;
+	double fLightgemVal;
+	idVec3 vLightColor;
+	idVec3 vPlayer;
+	idLight *light, *helper;
+	trace_t trace;
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	int i, n, h = -1, l;
+	bool bMinOneLight = false, bStump;
+
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
+
+	fLightgemVal = 0;
+	n = pDM->m_LightList.Num();
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
+	idVec3 vStart(GetEyePosition());
+	idVec3 vPlayerPos(GetPhysics()->GetOrigin());
+	idVec3 vPlayerSeg[LSG_COUNT];
+	idVec3 vLightCone[ELC_COUNT];
+	idVec3 vResult[2];
+	EIntersection inter;
+
+	vPlayerSeg[LSG_ORIGIN] = vPlayerPos;
+	vPlayerSeg[LSG_DIRECTION] = vStart - vPlayerPos;
+
+	for(i = 0; i < n; i++)
+	{
+		if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
+			continue;
+
+		vPlayer = vPlayerPos;
+		idVec3 vLight(light->GetPhysics()->GetOrigin());
+		vPlayer.z = vLight.z;
+		vDifference = vPlayer - vLight;
+		fDistance = vDifference.Length();
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
+			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+
+		// Fast and cheap test to see if the player could be in the area of the light.
+		// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
+		if(fDistance > light->m_MaxLightRadius)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
+			if(h == -1)
+				h = i;
+			continue;
+		}
+
+		if(light->IsPointlight())
+		{
+			light->GetLightCone(vLightCone[ELL_ORIGIN], vLightCone[ELA_AXIS], vLightCone[ELA_CENTER]);
+			inter = IntersectLineEllipsoid(vPlayerSeg, vLightCone, vResult);
+
+			// If this is a centerlight we have to move the origin from the original origin to where the
+			// center of the light is supposed to be.
+			// Centerlight means that the center of the ellipsoid is not the same as the origin. It has to
+			// be adjusted because if it casts shadows we have to trace to it, and in this case the light
+			// might be inside geometry and would be reported as not being visible even though it casts
+			// a visible light outside the geometry it is embedded. If it is not a centerlight and has
+			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
+			// be blocked by the geometry.
+			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineEllipsoid returned %u\r", inter);
+		}
+		else
+		{
+			bStump = false;
+			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
+			inter = IntersectLineCone(vPlayerSeg, vLightCone, vResult, bStump);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineCone returned %u\r", inter);
+		}
+
+		// The line intersection can only return three states. Either the line is passing
+		// through the lightcone in which case we will get two intersection points, the line
+		// is not passing through which means that the player is fully outside, or the line
+		// is touching the cone in exactly one point. The last case is not really helpfull in
+		// our case and doesn't make a difference for the gameplay so we simply ignore it and
+		// consider only cases where the player is at least partially inside the cone.
+		if(inter != INTERSECT_FULL)
+			continue;
+
+		if(light->CastsShadow() == true)
+		{
+			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, this);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+			if(trace.fraction < 1.0f)
+			{
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s] can not be seen\r", light->name.c_str());
+				continue;
+			}
+		}
+
+		if(vResult[0].z < vResult[1].z)
+			l = 0;
+		else
+			l = 1;
+
+		if(vResult[l].z < vPlayerPos.z)
+		{
+			fx = vPlayerPos.x;
+			fy = vPlayerPos.y;
+		}
+		else
+		{
+			fx = vResult[l].x;
+			fy = vResult[l].y;
+		}
+
+		if(bMinOneLight == false)
+			bMinOneLight = true;
+
+		fLightgemVal += light->GetDistanceColor(fDistance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
+			light->name.c_str(), fx, fy, fLightgemVal, fDistance, light->m_MaxLightRadius);
+
+		// Exchange the position of these lights, so that nearer lights are more
+		// at the beginning of the list. You may not use the arrayentry from this point on now.
+		// This sorting is not exactly good, but it is very cheap and we don't want to waste
+		// time to sort an everchanging array.
+		if(h != -1)
+		{
+			helper = pDM->m_LightList[h];
+			pDM->m_LightList[h] = light;
+			pDM->m_LightList[i] = helper;
+			h = -1;
+		}
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal >= 1.0f)
+				continue;
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal >= 1.0f)
+		{
+			fLightgemVal = 1.0;
+			break;
+		}
+	}
+
+	pDM->m_LightgemValue = LIGHTGEM_MAX * fLightgemVal;
+	if(pDM->m_LightgemValue < LIGHTGEM_MIN)
+		pDM->m_LightgemValue = LIGHTGEM_MIN;
+	else
+	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
+		pDM->m_LightgemValue = LIGHTGEM_MAX;
+
+	// if the player is in a lit area and the lightgem would be totaly dark we set it to at least
+	// one step higher.
+	if(bMinOneLight == true && pDM->m_LightgemValue <= LIGHTGEM_MIN)
+		pDM->m_LightgemValue++;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
+	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
 }

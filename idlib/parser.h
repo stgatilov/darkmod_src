@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:34:48  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -74,12 +77,13 @@ public:
 					~idParser();
 					// load a source file
 	int				LoadFile( const char *filename, bool OSPath = false );
-					// load a source from memory
+					// load a source from the given memory with the given length
+					// NOTE: the ptr is expected to point at a valid C string: ptr[length] == '\0'
 	int				LoadMemory( const char *ptr, int length, const char *name );
 					// free the current source
 	void			FreeSource( bool keepDefines = false );
 					// returns true if a source is loaded
-	int				IsLoaded( void ) const { return idParser::loaded; };
+	int				IsLoaded( void ) const { return idParser::loaded; }
 					// read a token from the source
 	int				ReadToken( idToken *token );
 					// expect a certain token, reads the token when available
@@ -88,10 +92,14 @@ public:
 	int				ExpectTokenType( int type, int subtype, idToken *token );
 					// expect a token
 	int				ExpectAnyToken( idToken *token );
-					// returns true and reads the token when it is available
+					// returns true if the next token equals the given string and removes the token from the source
 	int				CheckTokenString( const char *string );
-					// returns true and reads the token when a token with the given type is available
+					// returns true if the next token equals the given type and removes the token from the source
 	int				CheckTokenType( int type, int subtype, idToken *token );
+					// returns true if the next token equals the given string but does not remove the token from the source
+	int				PeekTokenString( const char *string );
+					// returns true if the next token equals the given type but does not remove the token from the source
+	int				PeekTokenType( int type, int subtype, idToken *token );
 					// skip tokens until the given token string is read
 	int				SkipUntilString( const char *string );
 					// skip the rest of the current line
@@ -175,7 +183,6 @@ private:
 	define_t **		definehash;					// hash chain with defines
 	indent_t *		indentstack;				// stack with indents
 	int				skip;						// > 0 if skipping conditional code
-	idToken			token;						// last read token
 	const char*		marker_p;
 
 	static define_t *globaldefines;				// list with global defines added to every source loaded
@@ -266,4 +273,3 @@ ID_INLINE const int idParser::GetLineNum( void ) const {
 }
 
 #endif /* !__PARSER_H__ */
-

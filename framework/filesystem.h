@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:15:24  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -232,6 +235,14 @@ public:
 	virtual void			AddToReadCount( int c ) = 0;
 							// look for a dynamic module
 	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum ) = 0;
+
+	// TMP: only the Linux 1.1 build has those, the SDK game source doesn't use them
+#ifdef __linux__
+							// case sensitive filesystems use an internal directory cache
+							// the cache is cleared when calling OpenFileWrite and RemoveFile
+							// in some cases you may need to use this directly
+	virtual void			ClearDirCache( void ) = 0;
+#endif
 };
 
 extern idFileSystem *		fileSystem;

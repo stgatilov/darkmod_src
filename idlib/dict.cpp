@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:34:47  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -560,7 +563,7 @@ idDict::WriteToFileHandle
 void idDict::WriteToFileHandle( idFile *f ) const {
 	int c = LittleLong( args.Num() );
 	f->Write( &c, sizeof( c ) );
-	for ( int i = 0; i < c; i++ ) {
+	for ( int i = 0; i < args.Num(); i++ ) {        // don't loop on the swapped count use the original
 		WriteString( args[i].GetKey().c_str(), f );
 		WriteString( args[i].GetValue().c_str(), f );
 	}

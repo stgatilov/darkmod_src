@@ -7,8 +7,17 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.4  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
+ * Revision 1.3  2004/11/03 00:06:08  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.2  2004/10/30 17:19:40  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -74,7 +83,7 @@ private:
 	mutable int				lastCycle;
 	mutable int				lastRenderViewTime;
 
-	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
+	bool					UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView );
 	static bool				ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
 
 	void					Event_DropToFloor( void );

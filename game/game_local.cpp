@@ -7,8 +7,38 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.11  2005/03/29 07:45:20  ishtvan
+ * AI Relations: global AI relations object initializes from map, is saved & restored, and cleared on map shutdown
+ *
+ * Revision 1.10  2005/03/26 20:59:30  sparhawk
+ * Logging initialization added for automatic mod name detection.
+ *
+ * Revision 1.9  2005/01/24 00:16:25  sparhawk
+ * AmbientLight parameter added to material parser
+ *
+ * Revision 1.8  2005/01/20 19:36:56  sparhawk
+ * Materialparser improved to also load projection textures for lights.
+ *
+ * Revision 1.7  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.6  2004/11/28 19:51:56  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.5  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.4  2004/11/03 00:06:07  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.3  2004/10/31 20:01:55  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
+ * Revision 1.2  2004/10/30 17:19:39  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,7 +48,23 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4996 4805)
+
 #include "Game_local.h"
+
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/misc.h"
+#include "../darkmod/relations.h"
+
+
+#include "il/config.h"
+#include "il/il.h"
+
+CGlobal g_Global;
+
+extern CRelations		g_globalRelations;
+#define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
 
@@ -63,7 +109,13 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 GetGameAPI
 ============
 */
+#if __MWERKS__
+#pragma export on
+#endif
 extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
+#if __MWERKS__
+#pragma export off
+#endif
 
 	if ( import->version == GAME_API_VERSION ) {
 
@@ -93,6 +145,9 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 	gameExport.version = GAME_API_VERSION;
 	gameExport.game = game;
 	gameExport.gameEdit = gameEdit;
+
+	// Initialize logging and all the global stuff for darkmod
+	g_Global.Init();
 
 	return &gameExport;
 }
@@ -128,7 +183,10 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal() {
+idGameLocal::idGameLocal() 
+{
+	m_RelationsManager = &g_globalRelations;
+	
 	Clear();
 }
 
@@ -235,6 +293,9 @@ void idGameLocal::Init( void ) {
 
 #else
 
+	// Initialize the image library, so we can use it later on.
+	ilInit();
+
 	// initialize idLib
 	idLib::Init();
 
@@ -296,6 +357,9 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+	Printf( "Parsing material files\n" );
+
+	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 }
 
 /*
@@ -306,7 +370,6 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
-
 	if ( !common ) {
 		return;
 	}
@@ -322,10 +385,8 @@ void idGameLocal::Shutdown( void ) {
 
 	idAI::FreeObstacleAvoidanceNodes();
 
-#ifndef _D3SDK
 	// shutdown the model exporter
 	idModelExport::Shutdown();
-#endif
 
 	idEvent::Shutdown();
 
@@ -418,6 +479,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.AddObject( threads[i] );
 	}
 
+	// DarkMod: Add darkmod specific objects here:
+
+	// Add relationship matrix object
+	savegame.AddObject( m_RelationsManager );
 	// write out complete object list
 	savegame.WriteObjectList();
 
@@ -1137,6 +1202,8 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	MapPopulate();
 
+	// initialize the AI relationships based on worldspawn
+	m_RelationsManager->SetFromArgs( &world->spawnArgs );
 	mpGame.Reset();
 
 	mpGame.Precache();
@@ -1442,6 +1509,7 @@ void idGameLocal::MapShutdown( void ) {
 	}
 
 	pvs.Shutdown();
+	m_RelationsManager->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
@@ -1779,7 +1847,8 @@ void idGameLocal::InitScriptForMap( void ) {
 idGameLocal::SpawnPlayer
 ============
 */
-void idGameLocal::SpawnPlayer( int clientNum ) {
+void idGameLocal::SpawnPlayer( int clientNum )
+{
 	idEntity	*ent;
 	idDict		args;
 
@@ -1801,6 +1870,9 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
+
+	idPlayer *player;	
+	player = GetLocalPlayer();
 
 	mpGame.SpawnPlayer( clientNum );
 }
@@ -4222,3 +4294,133 @@ idGameLocal::ThrottleUserInfo
 void idGameLocal::ThrottleUserInfo( void ) {
 	mpGame.ThrottleUserInfo();
 }
+
+void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
+{
+	idToken token;
+	idLexer src;
+	idStr Material, FallOff, Map, *add;
+	int level;		// Nestinglevel for brackets
+	bool bAmbient;
+	CLightMaterial *mat;
+
+	if(pFN == NULL || ml == NULL)
+		goto Quit;
+
+	src.LoadFile(pFN);
+
+	level = 0;
+	add = NULL;
+	bAmbient = false;
+
+	while(1)
+	{
+		if(!src.ReadToken(&token))
+			goto Quit;
+
+//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
+
+		if(token == "table")
+		{
+			src.SkipBracedSection(true);
+			continue;
+		}
+
+		if(token == "lights")
+		{
+			Material = token;
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				Material += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", token.c_str());
+			}
+
+			continue;
+		}
+		else if(level == 1 && token == "ambientLight")
+		{
+			bAmbient = true;
+			continue;
+		}
+		else if(token == "{")
+		{
+			level++;
+			if(level == 1)
+				bAmbient = false;
+
+			continue;
+		}
+		else if(token == "}")
+		{
+			level--;
+			if(level == 0)
+			{
+				if(FallOff.Length()  == 0 && Map.Length() == 0)
+					continue;
+
+				mat = new CLightMaterial(Material, FallOff, Map);
+				mat->m_AmbientLight = bAmbient;
+				ml->Append(mat);
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
+			}
+			continue;
+		}
+		else if(token == "map")
+		{
+			Map = "";
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+					Map += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Map: [%s]\r", token.c_str());
+			}
+			continue;
+		}
+		else if(token == "lightFalloffImage")
+		{
+			FallOff = "";
+
+			while(1)
+			{
+				if(!src.ReadToken(&token))
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Invalid material file structure on line %u\r", src.GetLineNum());
+					goto Quit;
+				}
+
+				// Ignore makeintensity tag
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+				{
+					do
+					{
+						if(token == ")")
+							break;
+
+						FallOff += token;
+//						DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FallOff: [%s]\r", token.c_str());
+					}
+					while(src.ReadTokenOnLine(&token) == true);
+					break;
+				}
+			}
+			continue;
+		}
+	}
+
+
+Quit:
+	return;
+}
+

@@ -7,8 +7,26 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.7  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
+ * Revision 1.6  2004/11/14 20:21:20  sparhawk
+ * Moved code for doors into a seperate class.
+ *
+ * Revision 1.5  2004/11/14 19:24:56  sparhawk
+ * Added frobcode to idMover
+ *
+ * Revision 1.4  2004/11/12 18:38:37  sparhawk
+ * Moved frobcode from idDoor to baseclass.
+ *
+ * Revision 1.3  2004/11/11 23:52:28  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
+ * Revision 1.2  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +37,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 // a mover will update any gui entities in it's target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent
@@ -125,7 +144,10 @@ END_CLASS
 idMover::idMover
 ================
 */
-idMover::idMover( void ) {
+idMover::idMover(void)
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	memset( &move, 0, sizeof( move ) );
 	memset( &rot, 0, sizeof( rot ) );
 	move_thread = 0;
@@ -144,6 +166,7 @@ idMover::idMover( void ) {
 	damage = 0.0f;
 	areaPortal = 0;
 	fl.networkSync = true;
+	m_FrobActionScript = "frob_mover";
 }
 
 /*
@@ -151,7 +174,8 @@ idMover::idMover( void ) {
 idMover::Save
 ================
 */
-void idMover::Save( idSaveGame *savefile ) const {
+void idMover::Save( idSaveGame *savefile ) const
+{
 	int i;
 
 	savefile->WriteStaticObject( physicsObj );
@@ -296,7 +320,8 @@ void idMover::Event_PostRestore( int start, int total, int accel, int decel, boo
 idMover::Spawn
 ================
 */
-void idMover::Spawn( void ) {
+void idMover::Spawn( void )
+{
 	move_thread		= 0;
 	rotate_thread	= 0;
 	stopRotation	= false;
@@ -344,6 +369,7 @@ void idMover::Spawn( void ) {
 		fl.takedamage = true;
 	}
 
+	LoadTDMSettings();
 }
 
 /*
@@ -1625,7 +1651,8 @@ void idElevator::Restore( idRestoreGame *savefile ) {
 idElevator::Spawn
 ================
 */
-void idElevator::Spawn( void ) {
+void idElevator::Spawn( void )
+{
 	idStr str;
 	int len1;
 
@@ -2060,7 +2087,10 @@ END_CLASS
 idMover_Binary::idMover_Binary()
 ================
 */
-idMover_Binary::idMover_Binary() {
+idMover_Binary::idMover_Binary()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	pos1.Zero();
 	pos2.Zero();
 	moverState = MOVER_POS1;
@@ -2085,6 +2115,7 @@ idMover_Binary::idMover_Binary() {
 	areaPortal = 0;
 	blocked = false;
 	fl.networkSync = true;
+	m_FrobActionScript = "frob_binary_mover";
 }
 
 /*
@@ -2092,7 +2123,8 @@ idMover_Binary::idMover_Binary() {
 idMover_Binary::~idMover_Binary
 ================
 */
-idMover_Binary::~idMover_Binary() {
+idMover_Binary::~idMover_Binary()
+{
 	idMover_Binary *mover;
 
 	// if this is the mover master
@@ -2242,7 +2274,8 @@ Base class for all movers.
 "speed"		movement speed
 ================
 */
-void idMover_Binary::Spawn( void ) {
+void idMover_Binary::Spawn( void )
+{
 	idEntity	*ent;
 	const char	*temp;
 
@@ -2321,6 +2354,9 @@ void idMover_Binary::Spawn( void ) {
 			FindGuiTargets();
 		}
 	}
+
+	// Load frobsettings
+	LoadTDMSettings();
 }
 
 /*
@@ -3079,7 +3115,10 @@ END_CLASS
 idDoor::idDoor
 ================
 */
-idDoor::idDoor( void ) {
+idDoor::idDoor( void )
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	triggersize = 1.0f;
 	crusher = false;
 	noTouch = false;
@@ -3173,7 +3212,8 @@ void idDoor::Restore( idRestoreGame *savefile ) {
 idDoor::Spawn
 ================
 */
-void idDoor::Spawn( void ) {
+void idDoor::Spawn(void)
+{
 	idVec3		abs_movedir;
 	float		distance;
 	idVec3		size;
@@ -3185,7 +3225,8 @@ void idDoor::Spawn( void ) {
 	float		speed;
 
 	// get the direction to move
-	if ( !spawnArgs.GetFloat( "movedir", "0", dir ) ) {
+	if(!spawnArgs.GetFloat( "movedir", "0", dir))
+	{
 		// no movedir, so angle defines movement direction and not orientation,
 		// a la oldschool Quake
 		SetAngles( ang_zero );
@@ -3194,16 +3235,16 @@ void idDoor::Spawn( void ) {
 	GetMovedir( dir, movedir );
 
 	// default speed of 400
-	spawnArgs.GetFloat( "speed", "400", speed );
+	spawnArgs.GetFloat("speed", "400", speed);
 
 	// default wait of 2 seconds
-	spawnArgs.GetFloat( "wait", "3", wait );
+	spawnArgs.GetFloat("wait", "3", wait);
 
 	// default lip of 8 units
-	spawnArgs.GetFloat( "lip", "8", lip );
+	spawnArgs.GetFloat("lip", "8", lip);
 
 	// by default no damage
-	spawnArgs.GetFloat( "damage", "0", damage );
+	spawnArgs.GetFloat("damage", "0", damage);
 
 	// trigger size
 	spawnArgs.GetFloat( "triggersize", "120", triggersize );
@@ -3387,7 +3428,8 @@ void idDoor::Hide( void ) {
 idDoor::Show
 ================
 */
-void idDoor::Show( void ) {
+void idDoor::Show( void )
+{
 	idMover_Binary *slave;
 	idMover_Binary *master;
 	idDoor *slaveDoor;
@@ -4014,7 +4056,8 @@ void idPlat::Restore( idRestoreGame *savefile ) {
 idPlat::Spawn
 ===============
 */
-void idPlat::Spawn( void ) {
+void idPlat::Spawn( void )
+{
 	float	lip;
 	float	height;
 	float	time;
@@ -4331,7 +4374,8 @@ idRotater::idRotater( void ) {
 idRotater::Spawn
 ===============
 */
-void idRotater::Spawn( void ) {
+void idRotater::Spawn( void )
+{
 	physicsObj.SetSelf( this );
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
@@ -4347,6 +4391,8 @@ void idRotater::Spawn( void ) {
 	if ( spawnArgs.GetBool( "start_on" ) ) {
 		ProcessEvent( &EV_Activate, this );
 	}
+
+	LoadTDMSettings();
 }
 
 /*
@@ -4428,7 +4474,8 @@ idBobber::idBobber( void ) {
 idBobber::Spawn
 ===============
 */
-void idBobber::Spawn( void ) {
+void idBobber::Spawn( void )
+{
 	float	speed;
 	float	height;
 	float	phase;
@@ -4462,6 +4509,8 @@ void idBobber::Spawn( void ) {
 	}
 	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, speed * 500, GetPhysics()->GetOrigin(), delta * 2.0f, vec3_origin );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 
@@ -4489,7 +4538,8 @@ idPendulum::idPendulum( void ) {
 idPendulum::Spawn
 ===============
 */
-void idPendulum::Spawn( void ) {
+void idPendulum::Spawn( void )
+{
 	float	speed;
 	float	freq;
 	float	length;
@@ -4523,6 +4573,8 @@ void idPendulum::Spawn( void ) {
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, 500/freq, GetPhysics()->GetAxis().ToAngles(), idAngles( 0, 0, speed * 2.0f ), ang_zero );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 
@@ -4551,7 +4603,8 @@ idRiser::idRiser( void ) {
 idRiser::Spawn
 ===============
 */
-void idRiser::Spawn( void ) {
+void idRiser::Spawn( void )
+{
 	physicsObj.SetSelf( this );
 	physicsObj.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ), 1.0f );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
@@ -4566,6 +4619,8 @@ void idRiser::Spawn( void ) {
 	}
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	SetPhysics( &physicsObj );
+
+	LoadTDMSettings();
 }
 
 /*
@@ -4592,3 +4647,5 @@ void idRiser::Event_Activate( idEntity *activator ) {
 		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_LINEAR, gameLocal.time, time * 1000, physicsObj.GetOrigin(), delta, vec3_origin );
 	}
 }
+
+

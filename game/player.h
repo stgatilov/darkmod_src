@@ -7,8 +7,20 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.4  2005/01/07 02:10:36  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.3  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -497,6 +509,17 @@ public:
 	virtual	void			DrawPlayerIcons( void );
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
+
+	/**
+	 * AddToInventory maps to a scriptfunction which will store an entity into
+	 * the inventory.
+	 */
+	void AddToInventory(idEntity *ent);
+
+	/**
+	 * AdjustLightgem will calculate how much the lightgem should light up
+	 */
+	void AdjustLightgem(void);
 
 private:
 	jointHandle_t			hipJoint;
