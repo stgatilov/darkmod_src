@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:17:20  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -17,9 +20,8 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
-#ifndef _D3SDK
 #include "../../MayaImport/maya_main.h"
-#endif
+
 /***********************************************************************
 
 	Maya conversion functions
@@ -267,7 +269,6 @@ idModelExport::ExportModel
 */
 bool idModelExport::ExportModel( const char *model ) {
 	const char *game = cvarSystem->GetCVarString( "fs_game" );
-
 	if ( strlen(game) == 0 ) {
 		game = BASE_GAMEDIR;
 	}
@@ -292,12 +293,17 @@ idModelExport::ExportAnim
 ====================
 */
 bool idModelExport::ExportAnim( const char *anim ) {
+	const char *game = cvarSystem->GetCVarString( "fs_game" );
+	if ( strlen(game) == 0 ) {
+		game = BASE_GAMEDIR;
+	}
+
 	Reset();
 	src  = anim;
 	dest = anim;
 	dest.SetFileExtension( MD5_ANIM_EXT );
 
-	sprintf( commandLine, "anim %s -dest %s -game %s", src.c_str(), dest.c_str(), CD_BASEDIR );
+	sprintf( commandLine, "anim %s -dest %s -game %s", src.c_str(), dest.c_str(), game );
 	if ( !ConvertMayaToMD5() ) {
 		gameLocal.Printf( "Failed to export '%s' : %s", src.c_str(), Maya_Error.c_str() );
 		return false;
@@ -445,6 +451,11 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 
 			Reset();
 			if ( ParseOptions( lex ) ) {
+				const char *game = cvarSystem->GetCVarString( "fs_game" );
+				if ( strlen(game) == 0 ) {
+					game = BASE_GAMEDIR;
+				}
+
 				if ( command == "mesh" ) {
 					dest.SetFileExtension( MD5_MESH_EXT );
 				} else if ( command == "anim" ) {
@@ -455,7 +466,7 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 					dest.SetFileExtension( command );
 				}
 				idStr back = commandLine;
-				sprintf( commandLine, "%s %s -dest %s -game %s%s", command.c_str(), src.c_str(), dest.c_str(), CD_BASEDIR, commandLine.c_str() );
+				sprintf( commandLine, "%s %s -dest %s -game %s%s", command.c_str(), src.c_str(), dest.c_str(), game, commandLine.c_str() );
 				if ( ConvertMayaToMD5() ) {
 					count++;
 				} else {

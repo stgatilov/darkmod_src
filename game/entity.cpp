@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
  * Revision 1.10  2004/11/24 22:00:04  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -383,6 +386,35 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 }
 
 /*
+===============
+idEntity::UpdateChangeableSpawnArgs
+
+Any key val pair that might change during the course of the game ( via a gui or whatever )
+should be initialize here so a gui or other trigger can change something and have it updated
+properly. An optional source may be provided if the values reside in an outside dictionary and
+first need copied over to spawnArgs
+===============
+*/
+void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
+	int i;
+	const char *target;
+
+	if ( !source ) {
+		source = &spawnArgs;
+	}
+	cameraTarget = NULL;
+	target = source->GetString( "cameraTarget" );
+	if ( target && target[0] ) {
+		// update the camera taget
+		PostEventMS( &EV_UpdateCameraTarget, 0 );
+	}
+
+	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
+		UpdateGuiParms( renderEntity.gui[ i ], source );
+	}
+}
+
+/*
 ================
 idEntity::idEntity
 ================
@@ -545,6 +577,15 @@ void idEntity::Spawn( void )
 	if ( networkSync ) {
 		fl.networkSync = ( atoi( networkSync->GetValue() ) != 0 );
 	}
+
+#if 0
+	if ( !gameLocal.isClient ) {
+		// common->DPrintf( "NET: DBG %s - %s is synced: %s\n", spawnArgs.GetString( "classname", "" ), GetType()->classname, fl.networkSync ? "true" : "false" );
+		if ( spawnArgs.GetString( "classname", "" )[ 0 ] == '\0' && !fl.networkSync ) {
+			common->DPrintf( "NET: WRN %s entity, no classname, and no networkSync?\n", GetType()->classname );
+		}
+	}
+#endif
 
 	// every object will have a unique name
 	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
@@ -1302,7 +1343,7 @@ void idEntity::UpdatePVSAreas( void ) {
 	// FIXME: some particle systems may have huge bounds and end up in many PVS areas
 	// the first MAX_PVS_AREAS may not be visible to a network client and as a result the particle system may not show up when it should
 	if ( localNumPVSAreas > MAX_PVS_AREAS ) {
-		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( renderEntity.origin ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+		localNumPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( modelAbsBounds.GetCenter() ).Expand( 64.0f ), localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
 	}
 
 	for ( numPVSAreas = 0; numPVSAreas < MAX_PVS_AREAS && numPVSAreas < localNumPVSAreas; numPVSAreas++ ) {

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:20:34  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -47,6 +50,7 @@ class idAFConstraint_Contact;
 class idAFConstraint_ContactFriction;
 class idAFConstraint_ConeLimit;
 class idAFConstraint_PyramidLimit;
+class idAFConstraint_Suspension;
 class idAFBody;
 class idAFTree;
 class idPhysics_AF;
@@ -66,7 +70,8 @@ typedef enum {
 	CONSTRAINT_CONTACT,
 	CONSTRAINT_FRICTION,
 	CONSTRAINT_CONELIMIT,
-	CONSTRAINT_PYRAMIDLIMIT
+	CONSTRAINT_PYRAMIDLIMIT,
+	CONSTRAINT_SUSPENSION
 } constraintType_t;
 
 
@@ -577,6 +582,48 @@ protected:
 	float					cosAngle[2];				// cos( pyramidAngle / 2 )
 	float					sinHalfAngle[2];			// sin( pyramidAngle / 4 )
 	float					cosHalfAngle[2];			// cos( pyramidAngle / 4 )
+	float					epsilon;					// lcp epsilon
+
+protected:
+	virtual void			Evaluate( float invTimeStep );
+	virtual void			ApplyFriction( float invTimeStep );
+};
+
+// vehicle suspension
+class idAFConstraint_Suspension : public idAFConstraint {
+
+public:
+							idAFConstraint_Suspension( void );
+
+	void					Setup( const char *name, idAFBody *body, const idVec3 &origin, const idMat3 &axis, idClipModel *clipModel );
+	void					SetSuspension( const float up, const float down, const float k, const float d, const float f );
+
+	void					SetSteerAngle( const float degrees ) { steerAngle = degrees; }
+	void					EnableMotor( const bool enable ) { motorEnabled = enable; }
+	void					SetMotorForce( const float force ) { motorForce = force; }
+	void					SetMotorVelocity( const float vel ) { motorVelocity = vel; }
+	void					SetEpsilon( const float e ) { epsilon = e; }
+	const idVec3			GetWheelOrigin( void ) const;
+
+	virtual void			DebugDraw( void );
+	virtual void			Translate( const idVec3 &translation );
+	virtual void			Rotate( const idRotation &rotation );
+
+protected:
+	idVec3					localOrigin;				// position of suspension relative to body1
+	idMat3					localAxis;					// orientation of suspension relative to body1
+	float					suspensionUp;				// suspension up movement
+	float					suspensionDown;				// suspension down movement
+	float					suspensionKCompress;		// spring compress constant
+	float					suspensionDamping;			// spring damping
+	float					steerAngle;					// desired steer angle in degrees
+	float					friction;					// friction
+	bool					motorEnabled;				// whether the motor is enabled or not
+	float					motorForce;					// motor force
+	float					motorVelocity;				// desired velocity
+	idClipModel *			wheelModel;					// wheel model
+	idVec3					wheelOffset;				// wheel position relative to body1
+	trace_t					trace;						// contact point with the ground
 	float					epsilon;					// lcp epsilon
 
 protected:
