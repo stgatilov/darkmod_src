@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/01/24 00:17:16  sparhawk
+ * Lightgem shadow problem fixed.
+ *
  * Revision 1.12  2005/01/20 19:37:49  sparhawk
  * Lightgem now calculates projected lights as well as parallel lights.
  *
@@ -8610,7 +8613,8 @@ void idPlayer::AdjustLightgem(void)
 		vPlayer.z = vLight.z;
 		vDifference = vPlayer - vLight;
 		fDistance = vDifference.Length();
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
+			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
 
 		if(fDistance > light->m_MaxLightRadius)
 		{
@@ -8620,7 +8624,7 @@ void idPlayer::AdjustLightgem(void)
 			continue;
 		}
 
-		if(light->IsPointlight() != true)
+		if(light->CastsShadow() == true)
 		{
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
@@ -8664,6 +8668,6 @@ void idPlayer::AdjustLightgem(void)
 	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
 		pDM->m_LightgemValue = LIGHTGEM_MAX;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r", pDM->m_LightgemValue, hud);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
 }
