@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:34:48  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -180,12 +183,23 @@ idMapPatch *idMapPatch::Parse( idLexer &src, const idVec3 &origin, bool patchDef
 			return NULL;
 		}
 	}
-	if ( !src.ExpectTokenString( ")" ) ||
-			!src.ExpectTokenString( "}" ) ||
-				!src.ExpectTokenString( "}" ) ) {
+	if ( !src.ExpectTokenString( ")" ) ) {
 		src.Error( "idMapPatch::Parse: unable to parse patch control points, no closure" );
 		delete patch;
 		return NULL;
+	}
+
+	// read any key/value pairs
+	while( src.ReadToken( &token ) ) {
+		if ( token == "}" ) {
+			src.ExpectTokenString( "}" );
+			break;
+		}
+		if ( token.type == TT_STRING ) {
+			idStr key = token;
+			src.ExpectTokenType( TT_STRING, 0, &token );
+			patch->epairs.Set( key, token );
+		}
 	}
 
 	return patch;

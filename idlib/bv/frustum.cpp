@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:39:41  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -2033,6 +2036,7 @@ bool idFrustum::ProjectionBounds( const idBounds &bounds, idBounds &projectionBo
 	return ProjectionBounds( idBox( bounds, vec3_origin, mat3_identity ), projectionBounds );
 }
 
+#if !defined( __linux__ )
 /*
 ============
 idFrustum::ProjectionBounds
@@ -2144,6 +2148,7 @@ bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds )
 
 	return true;
 }
+#endif
 
 /*
 ============
