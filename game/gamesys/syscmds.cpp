@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/03/29 07:50:45  ishtvan
+ * AI Relations: Added command "PrintAIRelations," which prints the AI relationship matrix to the console for debugging purposes
+ *
  * Revision 1.2  2004/11/28 09:17:51  sparhawk
  * SDK V2 merge
  *
@@ -22,8 +25,20 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../../darkmod/relations.h"
 
 #include "TypeInfo.h"
+
+/*
+==================
+Cmd_PrintAIRelations_f
+==================
+*/
+void Cmd_PrintAIRelations_f( const idCmdArgs &args ) 
+{
+	gameLocal.m_RelationsManager->DebugPrintMat();
+	return;
+}
 
 /*
 ==================
@@ -2359,6 +2374,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "saveParticles",			Cmd_SaveParticles_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"saves all lights to the .map file" );
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
+
+
+	cmdSystem->AddCommand( "printAIRelations",		Cmd_PrintAIRelations_f,		CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
