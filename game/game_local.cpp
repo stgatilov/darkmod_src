@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/01/24 00:16:25  sparhawk
+ * AmbientLight parameter added to material parser
+ *
  * Revision 1.8  2005/01/20 19:36:56  sparhawk
  * Materialparser improved to also load projection textures for lights.
  *
@@ -4276,6 +4279,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 	idLexer src;
 	idStr Material, FallOff, Map, *add;
 	int level;		// Nestinglevel for brackets
+	bool bAmbient;
 	CLightMaterial *mat;
 
 	if(pFN == NULL || ml == NULL)
@@ -4285,6 +4289,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 
 	level = 0;
 	add = NULL;
+	bAmbient = false;
 
 	while(1)
 	{
@@ -4310,10 +4315,17 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 
 			continue;
 		}
-
-		if(token == "{")
+		else if(level == 1 && token == "ambientLight")
+		{
+			bAmbient = true;
+			continue;
+		}
+		else if(token == "{")
 		{
 			level++;
+			if(level == 1)
+				bAmbient = false;
+
 			continue;
 		}
 		else if(token == "}")
@@ -4325,8 +4337,9 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 					continue;
 
 				mat = new CLightMaterial(Material, FallOff, Map);
+				mat->m_AmbientLight = bAmbient;
 				ml->Append(mat);
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s]\r", Material.c_str(), FallOff.c_str(), Map.c_str());
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
 			}
 			continue;
 		}
