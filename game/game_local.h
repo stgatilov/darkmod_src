@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/03/29 07:43:42  ishtvan
+ * Added forward declared pointer to global AI relations object: m_RelationsManager
+ *
  * Revision 1.2  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -94,6 +97,7 @@ class idLocationEntity;
 //============================================================================
 
 class CLightMaterial;
+class CRelations;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -321,6 +325,10 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+/**
+* Pointer to global AI Relations object
+**/
+	CRelations *			m_RelationsManager;
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
