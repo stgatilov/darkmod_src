@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/10/30 17:19:40  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,7 +22,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
-
+#include "../DarkMod/DarkModGlobals.h"
 
 /*
 ===============================================================================
@@ -50,7 +53,10 @@ END_CLASS
 idItem::idItem
 ================
 */
-idItem::idItem() {
+idItem::idItem()
+{
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_BEGIN, "This: %08lX \r", this);
+
 	spin = false;
 	inView = false;
 	inViewTime = 0;
@@ -61,6 +67,8 @@ idItem::idItem() {
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
+
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_END, "This: %08lX \r", this);
 }
 
 /*
@@ -122,9 +130,24 @@ void idItem::Restore( idRestoreGame *savefile ) {
 idItem::UpdateRenderEntity
 ================
 */
-bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
+bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	bool bHighlight = false;
 
-	if ( lastRenderViewTime == renderView->time ) {
+	idPlayer *player;	
+	player = gameLocal.GetLocalPlayer();
+	if(player)
+	{
+		idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+		float fDistance = v3Difference.Length();
+		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "This: %08lX   Distance: %f\r", this, fDistance);
+
+		if(fDistance < m_FrobDistance)
+			bHighlight = true;
+	}
+
+	if(lastRenderViewTime == renderView->time)
+	{
 		return false;
 	}
 
@@ -138,39 +161,60 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 	// two second pulse cycle
 	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
 
-	if ( d > 0.94f ) {
-		if ( !inView ) {
+	if(d > 0.94f)
+	{
+		if(!inView)
+		{
 			inView = true;
-			if ( cycle > lastCycle ) {
+			if(cycle > lastCycle)
+			{
 				// restart at the beginning
 				inViewTime = renderView->time;
 				cycle = 0.0f;
 			}
 		}
-	} else {
-		if ( inView ) {
+	}
+	else
+	{
+		if(inView)
+		{
 			inView = false;
-			lastCycle = ceil( cycle );
+			lastCycle = ceil(cycle);
 		}
 	}
 
 	// fade down after the last pulse finishes 
-	if ( !inView && cycle > lastCycle ) {
+	if(!inView && cycle > lastCycle)
+	{
 		renderEntity->shaderParms[4] = 0.0f;
-	} else {
-		// pulse up in 1/4 second
-		cycle -= (int)cycle;
-		if ( cycle < 0.1f ) {
-			renderEntity->shaderParms[4] = cycle * 10.0f;
-		} else if ( cycle < 0.2f ) {
-			renderEntity->shaderParms[4] = 1.0f;
-		} else if ( cycle < 0.3f ) {
-			renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
-		} else {
-			// stay off between pulses
-			renderEntity->shaderParms[4] = 0.0f;
+	}
+	else
+	{
+		if(pulse == true)
+		{
+			// pulse up in 1/4 second
+			cycle -= (int)cycle;
+			if ( cycle < 0.1f ) {
+				renderEntity->shaderParms[4] = cycle * 10.0f;
+			} else if ( cycle < 0.2f ) {
+				renderEntity->shaderParms[4] = 1.0f;
+			} else if ( cycle < 0.3f ) {
+				renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
+			} else {
+				// stay off between pulses
+				renderEntity->shaderParms[4] = 0.0f;
+			}
+		}
+		else
+		{
+			if(bHighlight == true)
+				renderEntity->shaderParms[4] = 1.0f;
+			else
+				renderEntity->shaderParms[4] = 0.0f;
 		}
 	}
+
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "ShaderParms: %f\r", renderEntity->shaderParms[4]);
 
 	// update every single time this is in view
 	return true;
@@ -181,16 +225,19 @@ bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_
 idItem::ModelCallback
 ================
 */
-bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView ) {
-	const idItem *ent;
+bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView )
+{
+	idItem *ent;
 
 	// this may be triggered by a model trace or other non-view related source
-	if ( !renderView ) {
+	if ( !renderView )
+	{
 		return false;
 	}
 
 	ent = static_cast<idItem *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if ( !ent ) {
+	if(!ent)
+	{
 		gameLocal.Error( "idItem::ModelCallback: callback with NULL game entity" );
 	}
 
@@ -202,9 +249,12 @@ bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *re
 idItem::Think
 ================
 */
-void idItem::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		if ( spin ) {
+void idItem::Think( void )
+{
+	if ( thinkFlags & TH_THINK )
+	{
+		if(spin)
+		{
 			idAngles	ang;
 			idVec3		org;
 
@@ -228,10 +278,14 @@ void idItem::Think( void ) {
 idItem::Present
 ================
 */
-void idItem::Present( void ) {
+void idItem::Present( void )
+{
 	idEntity::Present();
 
-	if ( !fl.hidden && pulse ) {
+	DARKMOD_FKT_BEG;
+
+	if(!fl.hidden && (pulse || m_FrobDistance != 0))
+	{
 		// also add a highlight shell model
 		renderEntity_t	shell;
 
@@ -249,6 +303,8 @@ void idItem::Present( void ) {
 		}
 
 	}
+
+	DARKMOD_FKT_END;
 }
 
 /*
@@ -256,12 +312,19 @@ void idItem::Present( void ) {
 idItem::Spawn
 ================
 */
-void idItem::Spawn( void ) {
+void idItem::Spawn( void )
+{
 	idStr		giveTo;
 	idEntity *	ent;
 	float		tsize;
 
-	if ( spawnArgs.GetBool( "dropToFloor" ) ) {
+	DARKMOD_FKT_BEG;
+
+	spawnArgs.GetInt( "frob_distance", "0", m_FrobDistance);
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "FrobDistance: %u\r", m_FrobDistance);
+
+	if ( spawnArgs.GetBool( "dropToFloor" ) )
+	{
 		PostEventMS( &EV_DropToFloor, 0 );
 	}
 
@@ -270,23 +333,28 @@ void idItem::Spawn( void ) {
 		GetPhysics()->GetClipModel()->Link( gameLocal.clip );
 	}
 
-	if ( spawnArgs.GetBool( "start_off" ) ) {
+	if ( spawnArgs.GetBool( "start_off" ) )
+	{
 		GetPhysics()->SetContents( 0 );
 		Hide();
-	} else {
+	} else
+	{
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
 
 	giveTo = spawnArgs.GetString( "owner" );
-	if ( giveTo.Length() ) {
+	if ( giveTo.Length() )
+	{
 		ent = gameLocal.FindEntity( giveTo );
-		if ( !ent ) {
+		if ( !ent )
+		{
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
 		PostEventMS( &EV_Touch, 0, ent, NULL );
 	}
 
-	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
+	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer )
+	{
 		spin = true;
 		BecomeActive( TH_THINK );
 	}
@@ -302,6 +370,8 @@ void idItem::Spawn( void ) {
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	DARKMOD_FKT_END;
 }
 
 /*
@@ -326,12 +396,15 @@ void idItem::GetAttributes( idDict &attributes ) {
 idItem::GiveToPlayer
 ================
 */
-bool idItem::GiveToPlayer( idPlayer *player ) {
-	if ( player == NULL ) {
+bool idItem::GiveToPlayer( idPlayer *player )
+{
+	if ( player == NULL )
+	{
 		return false;
 	}
 
-	if ( spawnArgs.GetBool( "inv_carry" ) ) {
+	if ( spawnArgs.GetBool( "inv_carry" ) )
+	{
 		return player->GiveInventoryItem( &spawnArgs );
 	} 
 	
@@ -343,13 +416,15 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 idItem::Pickup
 ================
 */
-bool idItem::Pickup( idPlayer *player ) {
-	
-	if ( !GiveToPlayer( player ) ) {
+bool idItem::Pickup( idPlayer *player )
+{
+	if ( !GiveToPlayer( player ) )
+	{
 		return false;
 	}
 
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer )
+	{
 		ServerSendEvent( EVENT_PICKUP, NULL, false, -1 );
 	}
 
@@ -711,14 +786,17 @@ void idObjective::Event_CamShot( ) {
 idObjective::Event_Trigger
 ================
 */
-void idObjective::Event_Trigger( idEntity *activator ) {
+void idObjective::Event_Trigger( idEntity *activator )
+{
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
 
 		//Pickup( player );
 
-		if ( spawnArgs.GetString( "inv_objective", NULL ) ) {
-	 		if ( player && player->hud ) {
+		if ( spawnArgs.GetString( "inv_objective", NULL ) )
+		{
+	 		if ( player && player->hud )
+			{
 				idStr shotName = gameLocal.GetMapName();
 				shotName.StripFileExtension();
 				shotName += "/";
@@ -731,9 +809,12 @@ void idObjective::Event_Trigger( idEntity *activator ) {
 				player->GiveObjective( spawnArgs.GetString( "objectivetitle" ), spawnArgs.GetString( "objectivetext" ), shotName );
 
 				// a tad slow but keeps from having to update all objectives in all maps with a name ptr
-				for( int i = 0; i < gameLocal.num_entities; i++ ) {
-					if ( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType( idObjectiveComplete::Type ) ) {
-						if ( idStr::Icmp( spawnArgs.GetString( "objectivetitle" ), gameLocal.entities[ i ]->spawnArgs.GetString( "objectivetitle" ) ) == 0 ){
+				for( int i = 0; i < gameLocal.num_entities; i++ )
+				{
+					if ( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType( idObjectiveComplete::Type ) )
+					{
+						if ( idStr::Icmp( spawnArgs.GetString( "objectivetitle" ), gameLocal.entities[ i ]->spawnArgs.GetString( "objectivetitle" ) ) == 0 )
+						{
 							gameLocal.entities[ i ]->spawnArgs.SetBool( "objEnabled", true );
 							break;
 						}

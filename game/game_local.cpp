@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2004/10/30 17:19:39  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,9 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+
+CGlobal g_Global;
 
 #ifdef GAME_DLL
 
@@ -58,13 +64,15 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
 
+FILE *logfile = NULL;
+
 /*
 ===========
 GetGameAPI
 ============
 */
-extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
-
+extern "C" gameExport_t *GetGameAPI( gameImport_t *import )
+{
 	if ( import->version == GAME_API_VERSION ) {
 
 		// set interface pointers used by the game
@@ -296,6 +304,9 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+
+	if(logfile)
+		fprintf(logfile, "Init\r");
 }
 
 /*
@@ -306,6 +317,11 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
+	if(logfile)
+	{
+		fprintf(logfile, "Shutdown\r");
+		fclose(logfile);
+	}
 
 	if ( !common ) {
 		return;
