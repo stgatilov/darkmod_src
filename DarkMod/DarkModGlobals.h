@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.9  2005/01/20 19:36:01  sparhawk
+ * CImage class implemented to load and store texture images.
+ *
  * Revision 1.8  2005/01/07 02:01:10  sparhawk
  * Lightgem updates
  *
@@ -89,22 +92,42 @@ typedef enum {
 
 class CDarkModPlayer;
 
-class CLightMaterial {
+class CImage {
 public:
-	CLightMaterial(idStr const &MaterialName, idStr const &TextureName);
-	~CLightMaterial(void);
+	CImage(idStr const &Name);
+	~CImage(void);
 
-	unsigned char *GetFallOffTexture(int &Width, int &Height);
-
-public:
-	idStr m_MaterialName;
+	unsigned char *GetImage(void);
 
 protected:
-	idStr m_FallOffTexture;
-	unsigned long m_BufferLength;		// m_Image
-	unsigned char *m_Image;
-	ILuint m_ImageId;
-	int m_Width, m_Height;
+	unsigned long	m_BufferLength;
+	unsigned char	*m_Image;
+	ILuint			m_ImageId;
+	bool			m_Loaded;
+
+public:
+	idStr			m_Name;
+	int				m_Width;
+	int				m_Height;
+	int				m_Bpp;
+};
+
+class CLightMaterial {
+public:
+	CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName);
+	~CLightMaterial(void);
+
+	unsigned char *GetFallOffTexture(int &Width, int &Height, int &Bpp);
+	unsigned char *GetImage(int &Width, int &Height, int &Bpp);
+
+public:
+	idStr		m_MaterialName;
+
+protected:
+	idStr		m_FallOffTexture;
+	int			m_FallOffIndex;
+	idStr		m_Map;
+	int			m_MapIndex;
 };
 
 class CGlobal {
@@ -113,7 +136,25 @@ public:
 	~CGlobal(void);
 
 	void LogString(char *Format, ...);
-	CLightMaterial *GetFallOffTexture(idStr const &MaterialName);
+	CLightMaterial *GetMaterial(idStr const &MaterialName);
+
+	/**
+	 * AddImageTexture will add the given image structure to the 
+	 * texture list and returns the index with <Added> = true. If the
+	 * image already exists in the list, based on it's name, the
+	 * stucture will not be returned and the <Added> is set to false. 
+	 * The index is still returned. If the image couldn't be added, -1
+	 * is returned.
+	 */
+	int AddImage(idStr const &Name, bool &Added);
+
+	/**
+	 * Find an image by it's name or the index, if it is known.
+	 * The second version will also return the index.
+	 * NULL is returned if the image couldn't be found.
+	 */
+	CImage *GetImage(int Index);
+	CImage *GetImage(idStr const &Name, int &Index);
 
 private:
 	void LoadINISettings(void *);
@@ -134,7 +175,8 @@ public:
 	int				m_Linenumber;
 	CDarkModPlayer	*m_DarkModPlayer;
 
-	idList<CLightMaterial *> m_LightMaterial;
+	idList<CLightMaterial *>		m_LightMaterial;
+	idList<CImage *>				m_Image;
 
 public:
 	// Global game settings, default values

@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.10  2005/01/20 19:36:00  sparhawk
+ * CImage class implemented to load and store texture images.
+ *
  * Revision 1.9  2005/01/07 02:01:10  sparhawk
  * Lightgem updates
  *
@@ -331,7 +334,7 @@ void CGlobal::LoadINISettings(void *p)
 }
 
 
-CLightMaterial *CGlobal::GetFallOffTexture(idStr const &mn)
+CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 {
 	CLightMaterial *rc = NULL;
 	int i, n;
@@ -351,18 +354,126 @@ CLightMaterial *CGlobal::GetFallOffTexture(idStr const &mn)
 }
 
 
-CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureName)
+int CGlobal::AddImage(idStr const &Name, bool &Added)
 {
+	int rc = -1;
+	CImage *im;
+	Added = false;
+
+	if(Name.Length() == 0)
+		goto Quit;
+
+	// If the image is already in the list, we have now the
+	// index and can immediately return.
+	if(GetImage(Name, rc) != NULL)
+		goto Quit;
+
+	im = new CImage(Name);
+
+	m_Image.Append(im);
+	rc = m_Image.Num()-1;
+	Added = true;
+
+Quit:
+	return rc;
+}
+
+CImage *CGlobal::GetImage(int i)
+{
+	if(i > m_Image.Num())
+		return NULL;
+	else
+		return m_Image[i];
+}
+
+CImage *CGlobal::GetImage(idStr const &Name, int &Index)
+{
+	int i, n;
+
+	Index = -1;
+
+	n = m_Image.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(m_Image[i]->m_Name.Icmp(Name) == 0)
+		{
+			Index = i;
+			return m_Image[i];
+		}
+	}
+
+	return NULL;
+}
+
+CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName)
+{
+	bool added;
+
 	m_MaterialName = MaterialName;
 	m_FallOffTexture = TextureName;
+	m_Map = MapName;
+
+	m_FallOffIndex = g_Global.AddImage(TextureName, added);
+	m_MapIndex = g_Global.AddImage(MapName, added);
+}
+
+CLightMaterial::~CLightMaterial()
+{
+}
+
+unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &Bpp)
+{
+	unsigned char *rc = NULL;
+	CImage *im;
+
+	if(m_FallOffIndex != -1)
+	{
+		if((im = g_Global.GetImage(m_FallOffIndex)) != NULL)
+		{
+			DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Falloff [%s]\r", im->m_Name.c_str());
+			rc = im->GetImage();
+			Width = im->m_Width;
+			Height = im->m_Height;
+			Bpp = im->m_Bpp;
+		}
+	}
+
+	return(rc);
+}
+
+unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
+{
+	unsigned char *rc = NULL;
+	CImage *im;
+
+	if(m_MapIndex != -1)
+	{
+		if((im = g_Global.GetImage(m_MapIndex)) != NULL)
+		{
+			DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Image [%s]\r", im->m_Name.c_str());
+			rc = im->GetImage();
+			Width = im->m_Width;
+			Height = im->m_Height;
+			Bpp = im->m_Bpp;
+		}
+	}
+
+	return(rc);
+}
+
+CImage::CImage(idStr const &Name)
+{
+	m_Name = Name;
 	m_Image = NULL;
 	m_BufferLength = 0L;
 	m_ImageId = -1;
 	m_Width = 0;
 	m_Height = 0;
+	m_Loaded = false;
+	m_Bpp = 0;
 }
 
-CLightMaterial::~CLightMaterial()
+CImage::~CImage(void)
 {
 	if(m_ImageId != -1)
 		ilDeleteImages(1, &m_ImageId);
@@ -371,25 +482,25 @@ CLightMaterial::~CLightMaterial()
 		delete [] m_Image;
 }
 
-unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height)
+unsigned char *CImage::GetImage(void)
 {
 	unsigned char *rc = NULL;
 	idFile *fl = NULL;
 
-	if(m_Image == NULL)
+	if(m_Loaded == false)
 	{
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_FallOffTexture.c_str());
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_Name.c_str());
 
-		if((fl = fileSystem->OpenFileRead(m_FallOffTexture)) == NULL)
+		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_FallOffTexture.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_Name.c_str());
 			goto Quit;
 		}
 
 		m_BufferLength = fl->Length();
 		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_FallOffTexture.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
 			goto Quit;
 		}
 
@@ -399,13 +510,14 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height)
 
 		if(ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength) == IL_FALSE)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Error while loading LightFallOffImage [%s]\r", m_FallOffTexture.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Error while loading image [%s]\r", m_Name.c_str());
 			goto Quit;
 		}
 
 		m_Width = ilGetInteger(IL_IMAGE_WIDTH);
 		m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   ImageType: %04X\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), ilGetInteger(IL_IMAGE_TYPE));
+		m_Bpp = ilGetInteger(IL_IMAGE_BPP);
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
 	}
 
 	if(m_Image != NULL)
@@ -413,13 +525,19 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height)
 		ilBindImage(m_ImageId);
 		ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength);
 		rc = (unsigned char *)ilGetData();
-		Width = m_Width;
-		Height = m_Height;
+		m_Loaded = true;
 	}
 
 Quit:
+	if(m_Loaded == false && m_Image != NULL)
+	{
+		delete [] m_Image;
+		m_Image = NULL;
+	}
+
 	if(fl)
 		fileSystem->CloseFile(fl);
 
-	return(rc);
+	return rc;
 }
+
