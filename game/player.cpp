@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/06 17:17:43  sparhawk
+ * Removed Frobangles as we don't need them anymore.
+ *
  * Revision 1.2  2004/10/31 19:09:53  sparhawk
  * Added CDarkModPlayer to player
  *
@@ -3720,7 +3723,8 @@ idPlayer::StealWeapon
 steal the target player's current weapon
 =================
 */
-void idPlayer::StealWeapon( idPlayer *player ) {
+void idPlayer::StealWeapon( idPlayer *player )
+{
 	assert( !gameLocal.isClient );
 
 	// make sure there's something to steal
