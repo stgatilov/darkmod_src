@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.4  2004/11/14 19:24:56  sparhawk
  * Added frobcode to idMover
  *
@@ -60,9 +63,6 @@ public:
 	virtual void			Show( void );
 
 	void					SetPortalState( bool open );
-
-	static bool				ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
-	void FrobAction(void);
 
 protected:
 	typedef enum {
@@ -315,9 +315,6 @@ public:
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
 	void					SetPortalState( bool open );
-
-	static bool				ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
-	void FrobAction(void);
 
 protected:
 	idVec3					pos1;

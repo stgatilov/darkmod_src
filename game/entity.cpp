@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.6  2004/11/11 23:52:27  sparhawk
  * Fixed frob highlight for items and doors.
  *
@@ -32,6 +35,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+#pragma warning(disable : 4533 )
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
@@ -366,36 +371,6 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 }
 
 /*
-===============
-idEntity::UpdateChangeableSpawnArgs
-
-Any key val pair that might change during the course of the game ( via a gui or whatever )
-should be initialize here so a gui or other trigger can change something and have it updated
-properly. An optional source may be provided if the values reside in an outside dictionary and
-first need copied over to spawnArgs
-===============
-*/
-void idEntity::UpdateChangeableSpawnArgs( const idDict *source )
-{
-	int i;
-	const char *target;
-
-	if ( !source ) {
-		source = &spawnArgs;
-	}
-	cameraTarget = NULL;
-	target = source->GetString( "cameraTarget" );
-	if ( target && target[0] ) {
-		// update the camera taget
-		PostEventMS( &EV_UpdateCameraTarget, 0 );
-	}
-
-	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		UpdateGuiParms( renderEntity.gui[ i ], source );
-	}
-}
-
-/*
 ================
 idEntity::idEntity
 ================
@@ -442,6 +417,39 @@ idEntity::idEntity()
 	mpGUIState = -1;
 
 	m_FrobDistance = 0;
+	m_FrobActionScript = "";
+	m_FrobCallbackChain = NULL;
+	m_AssociatedFrob = NULL;
+}
+
+/*
+===============
+idEntity::UpdateChangeableSpawnArgs
+
+Any key val pair that might change during the course of the game ( via a gui or whatever )
+should be initialize here so a gui or other trigger can change something and have it updated
+properly. An optional source may be provided if the values reside in an outside dictionary and
+first need copied over to spawnArgs
+===============
+*/
+void idEntity::UpdateChangeableSpawnArgs( const idDict *source )
+{
+	int i;
+	const char *target;
+
+	if ( !source ) {
+		source = &spawnArgs;
+	}
+	cameraTarget = NULL;
+	target = source->GetString( "cameraTarget" );
+	if ( target && target[0] ) {
+		// update the camera taget
+		PostEventMS( &EV_UpdateCameraTarget, 0 );
+	}
+
+	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
+		UpdateGuiParms( renderEntity.gui[ i ], source );
+	}
 }
 
 /*
@@ -572,8 +580,6 @@ void idEntity::Spawn( void )
 		ConstructScriptObject();
 	}
 
-	idEntity *player = (idEntity *)gameLocal.GetLocalPlayer();
-	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Player: %08lX\r", player);
 	LoadTDMSettings();
 }
 
@@ -1124,7 +1130,13 @@ void idEntity::SetModel( const char *modelname ) {
 		renderEntity.hModel->Reset();
 	}
 
-	renderEntity.callback = NULL;
+	// If we have a callback for our frob installed
+	// we should not deactivate it.
+	if(m_FrobDistance == 0)
+		renderEntity.callback = NULL;
+	else
+		m_FrobCallbackChain = NULL;
+
 	renderEntity.numJoints = 0;
 	renderEntity.joints = NULL;
 	if ( renderEntity.hModel ) {
@@ -1240,7 +1252,10 @@ void idEntity::UpdateModel( void ) {
 	if(animator && animator->ModelHandle())
 	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
+		if(m_FrobDistance == 0)
+			renderEntity.callback = idEntity::ModelCallback;
+		else
+			m_FrobCallbackChain = idEntity::ModelCallback;
 	}
 
 	// set to invalid number to force an update the next time the PVS areas are retrieved
@@ -4987,9 +5002,14 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 	animator.Restore( savefile );
 
 	// check if the entity has an MD5 model
-	if ( animator.ModelHandle() ) {
+	if ( animator.ModelHandle() )
+	{
 		// set the callback to update the joints
-		renderEntity.callback = idEntity::ModelCallback;
+		if(m_FrobDistance == 0)
+			renderEntity.callback = idEntity::ModelCallback;
+		else
+			m_FrobCallbackChain = idEntity::ModelCallback;
+
 		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 		animator.GetBounds( gameLocal.time, renderEntity.bounds );
 		if ( modelDefHandle != -1 ) {
@@ -5090,7 +5110,11 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 	}
 
 	// set the callback to update the joints
-	renderEntity.callback = idEntity::ModelCallback;
+	if(m_FrobDistance == 0)
+		renderEntity.callback = idEntity::ModelCallback;
+	else
+		m_FrobCallbackChain = idEntity::ModelCallback;
+
 	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
 
@@ -5468,43 +5492,75 @@ void idEntity::LoadTDMSettings(void)
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
 
+	// If this is a frobable entity we need to activate the frobcode.
+	if(m_FrobDistance != 0)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("Frob activated: %08lX\r", this);
+		if(renderEntity.callback != NULL && renderEntity.callback != idEntity::FrobModelCallback)
+			m_FrobCallbackChain = renderEntity.callback;
+
+		renderEntity.callback = idEntity::FrobModelCallback;
+	}
+
 	DM_LOG(LC_FROBBING, LT_INFO).LogString("this: %08lX FrobDistance: %u\r", this, m_FrobDistance);
 }
 
-bool idEntity::Frob(unsigned long cm, float *ShaderParam)
+bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView_t *pRenderView)
 {
-	bool bRc;
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, pRenderEntity, pRenderView);
+
+	// this may be triggered by a model trace or other non-view related source
+	if(!pRenderView)
+		return false;
+
+	bool bRc = false;
+	bool bCallback = false;
+	idEntity *ent;
+
+	ent = static_cast<idEntity *>(gameLocal.entities[pRenderEntity->entityNum]);
+	if(!ent)
+	{
+		gameLocal.Error("%s: callback with NULL game entity", __FUNCTION__);
+		bRc = false;
+	}
+	else
+		bRc = ent->Frob(pRenderEntity, pRenderView, CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
+
+	return bRc;
+}
+
+bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderView, unsigned long cm, float *ShaderParam)
+{
+	bool bRc = false;
 	idPlayer *player;
 	CDarkModPlayer *pDM;
-	float param;
-	float fDistance;
-	bool bHighlight;
 
 	player = gameLocal.GetLocalPlayer();
 	pDM = player->m_DarkModPlayer;
 
 	// If we have no player there is no point in doing this. :)
 	if(player == NULL || pDM == NULL)
-		return false;
+		goto Quit;
 
-	bRc = false;
-	bHighlight = false;
-	param = 0.0f;
-
+	float param;
+	float fDistance;
+	bool bHighlight;
 	trace_t trace;
 	idVec3 start;
 	idVec3 end;
+	idVec3 v3Difference;
 
-	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+	bHighlight = false;
+	param = 0.0f;
+
+	v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 	fDistance = v3Difference.Length();
 	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
 		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance, fDistance);
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("This: %08lX   RenderEntity: %08lX\r", this, renderEntity);
-
-//		CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-//			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-//			|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER,
+	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+			|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER;
 
 	// Uncomment this code if you want to test which mask is needed for a given entity.
 	// When this code is uncommented you look at the entity, you wish to test, and then
@@ -5536,6 +5592,7 @@ bool idEntity::Frob(unsigned long cm, float *ShaderParam)
 	{
 		pDM->m_FrobEntity = this;
 		param = 1.0f;
+		bRc = true;
 	}
 	else
 	{
@@ -5547,7 +5604,19 @@ bool idEntity::Frob(unsigned long cm, float *ShaderParam)
 	*ShaderParam = param;
 	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
 
-	bRc = true;
+Quit:
+	if(m_FrobCallbackChain != NULL)
+	{
+		if(m_FrobCallbackChain == idEntity::FrobModelCallback)
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Internal Error: Chainfunction set to FrobModelCallback. Please file a bugreport!\r\r");
+		else
+		{
+			// The return value is always true if this function returns true as well
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling chainfunction: %08lX - %08lX\r\r", renderEntity.callback, m_FrobCallbackChain);
+			if(m_FrobCallbackChain(pRenderEntity, pRenderView) == true)
+				bRc = true;
+		}
+	}
 
 	return bRc;
 }
@@ -5556,4 +5625,21 @@ bool idEntity::Frob(unsigned long cm, float *ShaderParam)
 // carry it around (probably throwing or dropping it).
 void idEntity::FrobAction(void)
 {
+	if(m_FrobActionScript.Length() == 0)
+	{
+		DM_LOG(LC_FROBBING, LT_ERROR).LogString("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
+		return;
+	}
+
+	function_t *pScriptFkt = gameLocal.program.FindFunction(m_FrobActionScript.c_str());
+	if(pScriptFkt)
+	{
+		DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered using %08lX->[%s]\r", pScriptFkt, m_FrobActionScript.c_str());
+		idThread *pThread = new idThread(pScriptFkt);
+		pThread->CallFunction(this, pScriptFkt, true);
+		pThread->DelayedStart(0);
+	}
+	else
+		DM_LOG(LC_FROBBING, LT_ERROR).LogString("FrobAction has been triggered using %08lX->[%s]\r", pScriptFkt, m_FrobActionScript.c_str());
 }
+

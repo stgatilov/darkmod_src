@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.6  2004/11/14 20:21:20  sparhawk
  * Moved code for doors into a seperate class.
  *
@@ -163,6 +166,7 @@ idMover::idMover(void)
 	damage = 0.0f;
 	areaPortal = 0;
 	fl.networkSync = true;
+	m_FrobActionScript = "frob_mover";
 }
 
 /*
@@ -170,7 +174,8 @@ idMover::idMover(void)
 idMover::Save
 ================
 */
-void idMover::Save( idSaveGame *savefile ) const {
+void idMover::Save( idSaveGame *savefile ) const
+{
 	int i;
 
 	savefile->WriteStaticObject( physicsObj );
@@ -365,13 +370,6 @@ void idMover::Spawn( void )
 	}
 
 	LoadTDMSettings();
-
-	// If this is a frobable mover we need to activate the frobcode.
-	if(m_FrobDistance != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
-		renderEntity.callback = idMover::ModelCallback;
-	}
 }
 
 /*
@@ -2089,7 +2087,10 @@ END_CLASS
 idMover_Binary::idMover_Binary()
 ================
 */
-idMover_Binary::idMover_Binary() {
+idMover_Binary::idMover_Binary()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	pos1.Zero();
 	pos2.Zero();
 	moverState = MOVER_POS1;
@@ -2114,6 +2115,7 @@ idMover_Binary::idMover_Binary() {
 	areaPortal = 0;
 	blocked = false;
 	fl.networkSync = true;
+	m_FrobActionScript = "frob_binary_mover";
 }
 
 /*
@@ -2121,7 +2123,8 @@ idMover_Binary::idMover_Binary() {
 idMover_Binary::~idMover_Binary
 ================
 */
-idMover_Binary::~idMover_Binary() {
+idMover_Binary::~idMover_Binary()
+{
 	idMover_Binary *mover;
 
 	// if this is the mover master
@@ -2354,13 +2357,6 @@ void idMover_Binary::Spawn( void )
 
 	// Load frobsettings
 	LoadTDMSettings();
-
-	// If this is a frobable door we need to activate the frobcode.
-	if(m_FrobDistance != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
-		renderEntity.callback = idMover_Binary::ModelCallback;
-	}
 }
 
 /*
@@ -3440,8 +3436,6 @@ void idDoor::Show( void )
 	idDoor *companion;
 
 	master = GetMoveMaster();
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Show: %08lX\r", this);
-
 	if ( this != master ) {
 		master->Show();
 	} else {
@@ -4654,77 +4648,4 @@ void idRiser::Event_Activate( idEntity *activator ) {
 	}
 }
 
-bool idMover_Binary::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
-{
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
-
-	// this may be triggered by a model trace or other non-view related source
-	if(!renderView)
-		return false;
-
-	bool bRc = false;
-	idDoor *ent;
-
-	ent = static_cast<idDoor *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if(!ent)
-	{
-		gameLocal.Error( "idDoor::ModelCallback: callback with NULL game entity" );
-		bRc = false;
-	}
-	else
-		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
-
-	return bRc;
-}
-
-void idMover_Binary::FrobAction(void)
-{
-	function_t *pScriptFkt = gameLocal.program.FindFunction("frob_binary_mover");
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered (%08lX)\r", pScriptFkt);
-	if(pScriptFkt)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("ScriptDef: (%08lX)  Elements: %u   Typedef: %u\r", pScriptFkt->def, pScriptFkt->parmSize.Num(), pScriptFkt->def->TypeDef()->Type());
-
-		idThread *pThread = new idThread(pScriptFkt);
-		pThread->CallFunction(this, pScriptFkt, true);
-		pThread->DelayedStart(0);
-	}
-}
-
-bool idMover::ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView)
-{
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, renderEntity, renderView);
-
-	// this may be triggered by a model trace or other non-view related source
-	if(!renderView)
-		return false;
-
-	bool bRc = false;
-	idMover *ent;
-
-	ent = static_cast<idMover *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if(!ent)
-	{
-		gameLocal.Error( "idMover::ModelCallback: callback with NULL game entity" );
-		bRc = false;
-	}
-	else
-		bRc = ent->Frob(CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
-
-	return bRc;
-}
-
-void idMover::FrobAction(void)
-{
-	function_t *pScriptFkt = gameLocal.program.FindFunction("frob_mover");
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered (%08lX)\r", pScriptFkt);
-	if(pScriptFkt)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("ScriptDef: (%08lX)  Elements: %u   Typedef: %u\r", pScriptFkt->def, pScriptFkt->parmSize.Num(), pScriptFkt->def->TypeDef()->Type());
-
-		idThread *pThread = new idThread(pScriptFkt);
-		pThread->CallFunction(this, pScriptFkt, true);
-		pThread->DelayedStart(0);
-	}
-}
 

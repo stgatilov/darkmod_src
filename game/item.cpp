@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.8  2004/11/11 23:52:27  sparhawk
  * Fixed frob highlight for items and doors.
  *
@@ -75,6 +78,8 @@ idItem::idItem
 */
 idItem::idItem()
 {
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	spin = false;
 	inView = false;
 	inViewTime = 0;
@@ -85,6 +90,8 @@ idItem::idItem()
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
+
+	m_FrobActionScript = "frob_item";
 }
 
 /*
@@ -151,9 +158,11 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 	bool bRc = true;
 
 	if(pulse == false)
-		bRc = Frob(CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, &renderEntity->shaderParms[11]);
+	{
+//		bRc = Frob(CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+// |CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+// |CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, &renderEntity->shaderParms[11]);
+	}
 	else
 	{
 		if(lastRenderViewTime == renderView->time)
@@ -288,7 +297,11 @@ void idItem::Present( void )
 
 		// we will mess with shader parms when the item is in view
 		// to give the "item pulse" effect
-		shell.callback = idItem::ModelCallback;
+		if(m_FrobDistance == 0)
+			shell.callback = idItem::ModelCallback;
+		else
+			m_FrobCallbackChain = idItem::ModelCallback;
+
 		shell.entityNum = entityNumber;
 		shell.customShader = shellMaterial;
 		if ( itemShellHandle == -1 )
@@ -362,12 +375,6 @@ void idItem::Spawn( void )
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
 
 	LoadTDMSettings();
-	// If this is a frobable door we need to activate the frobcode.
-	if(m_FrobDistance != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  Frob activated\r", __FUNCTION__, renderEntity, renderView);
-		renderEntity.callback = idItem::ModelCallback;
-	}
 }
 
 /*

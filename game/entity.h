@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.4  2004/11/11 23:52:27  sparhawk
  * Fixed frob highlight for items and doors.
  *
@@ -372,7 +375,14 @@ public:
 	 * CollisionMask specifies the bits needed for TracePoint to determine if the player
 	 * is looking at the item or not.
 	 */
-	bool					Frob(unsigned long CollisionMask, float *ShaderArray);
+	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView, unsigned long CollisionMask, float *ShaderArray);
+
+	/**
+	 * FrobModelCallback is the callback function that is installed to enable the frobcode.
+	 * This callback will be called by the renderengine when the object in question is
+	 * visible by the camera view.
+	 */
+	static bool				FrobModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
@@ -400,7 +410,35 @@ protected:
 	 * Frobdistance determines the distance in renderunits. If set to 0
 	 * the entity is not frobable.
 	 */
-	int						m_FrobDistance;
+	int							m_FrobDistance;
+
+	/**
+	 * FrobActionScript will contain the name of the script that is to be
+	 * exected whenever a frobaction occurs. The default should be set by
+	 * the constructor of the respective derived class but can be overriden
+	 * by the property "frob_action_script" in the entity defintion file.
+	 */
+	idStr						m_FrobActionScript;
+
+	/**
+	 * m_AssociatedFrob will trigger a frob on the associated object whenever
+	 * a frob occurs on this one. This means that you can create two entities
+	 * which are connected to each other and whenever one is frobbed the other
+	 * will be too. One example to use this could be to associate an alarm gong
+	 * with a door. When the door is frobed to be opened, the alarm gong will
+	 * also be activated and can be sound. of course this is just an example.
+	 * The user must make sure that the last entity in a chain will NOT point back
+	 * to the first entity, otherwise an endless loop will happen.
+	 */
+	idEntity					*m_AssociatedFrob;
+
+	/**
+	 * FrobCallbackChain is used to store the callbackfunction in case
+	 * the entity whishes to install a callback itself. The Frob function
+	 * will call this callback afterwards in order to ensure that it is
+	 * also called.
+	 */
+	deferredEntityCallback_t	m_FrobCallbackChain;
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object

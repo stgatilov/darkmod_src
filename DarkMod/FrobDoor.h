@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2004/11/16 23:56:03  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
  * Revision 1.1  2004/11/14 20:19:12  sparhawk
  * Initial Release
  *
@@ -40,10 +43,33 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
-	static bool				ModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
-	void FrobAction(void);
-
 protected:
+	/**
+	 * LinkedOpen will point to a door that is to be switched when this
+	 * one is triggered. Note that the next door is flipped! This means
+	 * it will change it's state according to it's current state. So if
+	 * this door is open and the other one is closed this door will be
+	 * closed and the other one will be opened. If both are open and they
+	 * are used, both are closed and vice versa. With this pointer you can
+	 * also create a chain of doors by each door pointing to the next one.
+	 * Of ocurse the last door in the chain should NOT point to the first
+	 * door, otherwise it will result in an endless loop.
+	 */
+	CFrobDoor					*m_LinkedOpen;
+
+	/**
+	 * This member is the same as m_LinkedOpen, only for locks. This means
+	 * that, if this door is locked, or unlocked, all other associated doors
+	 * will also be locked or unlocked. Again he state depends on the respective
+	 * entity state and not on the action itself. This means that if one door
+	 * is locked and the other is unlocked, the lockstate will reverse. If both
+	 * are locked or unlocked, both will become unlocked or locked.
+	 * This way you can create i.e. a safety catch were always one door is open
+	 * and the other one is closed. Or you can create a set of doors that all are
+	 * locked when this one is unlocked.
+	 */
+	CFrobDoor					*m_LinkedLock;
+
 private:
 };
 
