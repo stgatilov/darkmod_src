@@ -555,6 +555,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\DarkMod\Misc.h"
+				>
+			</File>
+			<File
 				RelativePath="game\Misc.h"
 				>
 			</File>
@@ -1023,6 +1027,42 @@
 				</File>
 				<File
 					RelativePath="game\script\Script_Thread.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="DarkMod"
+				>
+				<File
+					RelativePath=".\DarkMod\DarkModGlobals.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\DarkModGlobals.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\fdchar.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Profile.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Profile.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\rdline.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Strip.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\ToUpper.cpp"
 					>
 				</File>
 			</Filter>
