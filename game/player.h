@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -183,6 +186,8 @@ typedef struct {
 	idVec3	pos;
 } aasLocation_t;
 
+class CDarkModPlayer;
+
 class idPlayer : public idActor {
 public:
 	enum {
@@ -194,6 +199,12 @@ public:
 		EVENT_MAXEVENTS
 	};
 
+	/**
+	 * We are declaring this as void pointer here, because we don't really want to 
+	 * recompile the entire thing when we are changing user data only relevant for
+	 * The Dark Mod. 
+	 */
+	CDarkModPlayer			*m_DarkModPlayer;
 	usercmd_t				usercmd;
 
 	class idPlayerView		playerView;			// handles damage kicks and effects
