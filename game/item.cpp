@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/10/31 20:01:56  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
  * Revision 1.2  2004/10/30 17:19:40  sparhawk
  * Frob highlight added.
  *
@@ -21,8 +24,11 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4996)
+
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
 
 /*
 ===============================================================================
@@ -136,17 +142,23 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 
 	idPlayer *player;	
 	player = gameLocal.GetLocalPlayer();
+	CDarkModPlayer *pDM = NULL;
+	float param;
+	float fDistance;
+
 	if(player)
 	{
 		idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-		float fDistance = v3Difference.Length();
+		fDistance = v3Difference.Length();
 		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "This: %08lX   Distance: %f\r", this, fDistance);
 
 		if(fDistance < m_FrobDistance)
 			bHighlight = true;
+
+		pDM = player->m_DarkModPlayer;
 	}
 
-	if(lastRenderViewTime == renderView->time)
+	if(pulse == true && lastRenderViewTime == renderView->time)
 	{
 		return false;
 	}
@@ -161,6 +173,7 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 	// two second pulse cycle
 	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
 
+	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Viewaxis: %f\r", d);
 	if(d > 0.94f)
 	{
 		if(!inView)
@@ -184,13 +197,13 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 	}
 
 	// fade down after the last pulse finishes 
-	if(!inView && cycle > lastCycle)
+	if(pulse == true)
 	{
-		renderEntity->shaderParms[4] = 0.0f;
-	}
-	else
-	{
-		if(pulse == true)
+		if(!inView && cycle > lastCycle)
+		{
+			renderEntity->shaderParms[4] = 0.0f;
+		}
+		else
 		{
 			// pulse up in 1/4 second
 			cycle -= (int)cycle;
@@ -205,13 +218,36 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 				renderEntity->shaderParms[4] = 0.0f;
 			}
 		}
+	}
+	else
+	{
+		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
+		param = 0.0f;
+		if(bHighlight == true)
+		{
+			if(pDM != NULL)
+			{
+				// When an item is already highlighted and it is not *this* item, we
+				// may not highlight this one as well to make sure there is always
+				// only one item highlighted. We still have to check if this is the
+				// current item and set the highlight always, otherwise the renderer 
+				// would highlight it only once and switch it off afterwards.
+				if(pDM->m_FrobEntity == NULL || pDM->m_FrobEntity == this)
+				{
+					pDM->m_FrobEntity = this;
+					pDM->m_FrobDistance = fDistance;
+					param = 1.0f;
+				}
+			}
+		}
 		else
 		{
-			if(bHighlight == true)
-				renderEntity->shaderParms[4] = 1.0f;
-			else
-				renderEntity->shaderParms[4] = 0.0f;
+			if(pDM != NULL && pDM->m_FrobEntity == this)
+				pDM->m_FrobEntity = NULL;
 		}
+
+		renderEntity->shaderParms[4] = param;
+		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
 	}
 
 	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "ShaderParms: %f\r", renderEntity->shaderParms[4]);
@@ -1422,3 +1458,4 @@ void idObjectiveComplete::Event_HideObjective( idEntity *e ) {
 		}
 	}
 }
+
