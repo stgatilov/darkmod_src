@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2005/03/26 16:01:00  sparhawk
+ * Lightgem implemented
+ *
  * Revision 1.13  2005/01/24 00:17:16  sparhawk
  * Lightgem shadow problem fixed.
  *
@@ -60,6 +63,7 @@
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
+#include "../darkmod/intersection.h"
 
 /*
 ===============================================================================
@@ -8583,15 +8587,16 @@ void idPlayer::AddToInventory(idEntity *ent)
 void idPlayer::AdjustLightgem(void)
 {
 	idVec3 vDifference;
+	double fx, fy;
 	double fDistance;
 	double fLightgemVal;
 	idVec3 vLightColor;
 	idVec3 vPlayer;
 	idLight *light, *helper;
-	idPlayer *player;
 	trace_t trace;
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-	int i, n, h = -1;
+	int i, n, h = -1, l;
+	bool bMinOneLight = false, bStump;
 
 	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
 
@@ -8599,9 +8604,15 @@ void idPlayer::AdjustLightgem(void)
 	n = pDM->m_LightList.Num();
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
-	player = gameLocal.GetLocalPlayer();
-	idVec3 vStart(player->GetEyePosition());
+	idVec3 vStart(GetEyePosition());
 	idVec3 vPlayerPos(GetPhysics()->GetOrigin());
+	idVec3 vPlayerSeg[LSG_COUNT];
+	idVec3 vLightCone[ELC_COUNT];
+	idVec3 vResult[2];
+	EIntersection inter;
+
+	vPlayerSeg[LSG_ORIGIN] = vPlayerPos;
+	vPlayerSeg[LSG_DIRECTION] = vStart - vPlayerPos;
 
 	for(i = 0; i < n; i++)
 	{
@@ -8616,6 +8627,8 @@ void idPlayer::AdjustLightgem(void)
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
 			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
 
+		// Fast and cheap test to see if the player could be in the area of the light.
+		// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
 		if(fDistance > light->m_MaxLightRadius)
 		{
 			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
@@ -8624,11 +8637,44 @@ void idPlayer::AdjustLightgem(void)
 			continue;
 		}
 
+		if(light->IsPointlight())
+		{
+			light->GetLightCone(vLightCone[ELL_ORIGIN], vLightCone[ELA_AXIS], vLightCone[ELA_CENTER]);
+			inter = IntersectLineEllipsoid(vPlayerSeg, vLightCone, vResult);
+
+			// If this is a centerlight we have to move the origin from the original origin to where the
+			// center of the light is supposed to be.
+			// Centerlight means that the center of the ellipsoid is not the same as the origin. It has to
+			// be adjusted because if it casts shadows we have to trace to it, and in this case the light
+			// might be inside geometry and would be reported as not being visible even though it casts
+			// a visible light outside the geometry it is embedded. If it is not a centerlight and has
+			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
+			// be blocked by the geometry.
+			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineEllipsoid returned %u\r", inter);
+		}
+		else
+		{
+			bStump = false;
+			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
+			inter = IntersectLineCone(vPlayerSeg, vLightCone, vResult, bStump);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineCone returned %u\r", inter);
+		}
+
+		// The line intersection can only return three states. Either the line is passing
+		// through the lightcone in which case we will get two intersection points, the line
+		// is not passing through which means that the player is fully outside, or the line
+		// is touching the cone in exactly one point. The last case is not really helpfull in
+		// our case and doesn't make a difference for the gameplay so we simply ignore it and
+		// consider only cases where the player is at least partially inside the cone.
+		if(inter != INTERSECT_FULL)
+			continue;
+
 		if(light->CastsShadow() == true)
 		{
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, player);
+				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, this);
 			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
 			if(trace.fraction < 1.0f)
 			{
@@ -8637,9 +8683,28 @@ void idPlayer::AdjustLightgem(void)
 			}
 		}
 
-		fLightgemVal += light->GetDistanceColor(fDistance);
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in distance: %f/%f   Brightness: %f\r",
-			light->name.c_str(), fDistance, light->m_MaxLightRadius, fLightgemVal);
+		if(vResult[0].z < vResult[1].z)
+			l = 0;
+		else
+			l = 1;
+
+		if(vResult[l].z < vPlayerPos.z)
+		{
+			fx = vPlayerPos.x;
+			fy = vPlayerPos.y;
+		}
+		else
+		{
+			fx = vResult[l].x;
+			fy = vResult[l].y;
+		}
+
+		if(bMinOneLight == false)
+			bMinOneLight = true;
+
+		fLightgemVal += light->GetDistanceColor(fDistance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
+			light->name.c_str(), fx, fy, fLightgemVal, fDistance, light->m_MaxLightRadius);
 
 		// Exchange the position of these lights, so that nearer lights are more
 		// at the beginning of the list. You may not use the arrayentry from this point on now.
@@ -8655,6 +8720,10 @@ void idPlayer::AdjustLightgem(void)
 
 		// No need to do further calculations when we are fully lit. 0 < n < 1
 		if(fLightgemVal >= 1.0f)
+				continue;
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal >= 1.0f)
 		{
 			fLightgemVal = 1.0;
 			break;
@@ -8667,6 +8736,11 @@ void idPlayer::AdjustLightgem(void)
 	else
 	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
 		pDM->m_LightgemValue = LIGHTGEM_MAX;
+
+	// if the player is in a lit area and the lightgem would be totaly dark we set it to at least
+	// one step higher.
+	if(bMinOneLight == true && pDM->m_LightgemValue <= LIGHTGEM_MIN)
+		pDM->m_LightgemValue++;
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
