@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/01/19 23:22:04  sparhawk
+ * Bug fixed for ambient lights
+ *
  * Revision 1.10  2005/01/19 23:01:48  sparhawk
  * Lightgem updated to do proper projected lights with occlusion.
  *
@@ -8614,7 +8617,7 @@ void idPlayer::AdjustLightgem(void)
 			continue;
 		}
 
-		if(light->Parallel() != true)
+		if(light->IsPointlight() != true)
 		{
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL

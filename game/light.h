@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/01/19 23:22:04  sparhawk
+ * Bug fixed for ambient lights
+ *
  * Revision 1.3  2005/01/19 23:01:48  sparhawk
  * Lightgem updated to do proper projected lights with occlusion.
  *
@@ -100,7 +103,8 @@ public:
 	/**
 	 * Returns true if the light is a parallel light.
 	 */
-	inline bool		Parallel(void) { return renderLight.parallel; };
+	inline bool		IsParallel(void) { return renderLight.parallel; };
+	inline bool		IsPointlight(void) { return renderLight.pointLight; };
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
