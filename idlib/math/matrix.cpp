@@ -7,9 +7,18 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.4  2004/11/14 10:18:21  nexenizer
+ * Fixed some more typos.
  *
+ * Revision 1.3  2004/11/14 09:58:17  sparhawk
+ * Fixed a typo
+ *
+ * Revision 1.2  2004/11/14 08:06:51  nexenizer
+ * Updated #pragma at bool idMatX::Cholesky_UpdateRowColumn to create compatible code
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
+ *  
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -5378,6 +5387,14 @@ idMatX::Cholesky_UpdateRowColumn
   where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1]
 ============
 */
+
+/**
+ * #pragma update for compatible code
+ * Nexenizer
+ * */
+
+#pragma optimize( "", off )
+
 bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	int i, j;
 	double sum;
@@ -5545,6 +5562,13 @@ bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 
 	return true;
 }
+
+/**
+ * Bring optimizations back on line
+ * Nexenizer
+ * */
+
+#pragma optimize( "", on )
 
 /*
 ============

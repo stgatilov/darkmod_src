@@ -7,8 +7,17 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.4  2004/11/03 00:06:07  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.3  2004/10/31 20:01:55  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
+ * Revision 1.2  2004/10/30 17:19:39  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,7 +27,13 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4996)
+
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+
+CGlobal g_Global;
 
 #ifdef GAME_DLL
 
@@ -58,13 +73,15 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
 
+FILE *logfile = NULL;
+
 /*
 ===========
 GetGameAPI
 ============
 */
-extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
-
+extern "C" gameExport_t *GetGameAPI( gameImport_t *import )
+{
 	if ( import->version == GAME_API_VERSION ) {
 
 		// set interface pointers used by the game
@@ -296,6 +313,9 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+
+	if(logfile)
+		fprintf(logfile, "Init\r");
 }
 
 /*
@@ -306,6 +326,11 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
+	if(logfile)
+	{
+		fprintf(logfile, "Shutdown\r");
+		fclose(logfile);
+	}
 
 	if ( !common ) {
 		return;
@@ -1779,7 +1804,8 @@ void idGameLocal::InitScriptForMap( void ) {
 idGameLocal::SpawnPlayer
 ============
 */
-void idGameLocal::SpawnPlayer( int clientNum ) {
+void idGameLocal::SpawnPlayer( int clientNum )
+{
 	idEntity	*ent;
 	idDict		args;
 
@@ -1801,6 +1827,13 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
+
+	idPlayer *player;	
+	player = GetLocalPlayer();
+	if(player->m_DarkModPlayer != NULL)
+		delete player->m_DarkModPlayer;
+
+	player->m_DarkModPlayer = new CDarkModPlayer;
 
 	mpGame.SpawnPlayer( clientNum );
 }
