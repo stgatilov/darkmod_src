@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.14  2005/03/26 20:59:52  sparhawk
+ * Logging initialization added for automatic mod name detection.
+ *
  * Revision 1.13  2005/03/21 22:57:36  sparhawk
  * Special plane and vectorlogs added.
  *
@@ -73,6 +76,7 @@ typedef unsigned int ILuint;
 #endif
 
 typedef enum {
+	LT_INIT,
 	LT_FORCE,			// Never use this
 	LT_ERROR,			// Errormessage
 	LT_BEGIN,			// Begin function
@@ -89,6 +93,7 @@ typedef enum {
 // Frobbing which contains all loginfo concerning frobbing an item
 // independent of it's class (like AI, item, doors, switche, etc.).
 typedef enum {
+	LC_INIT,
 	LC_FORCE,			// Never use this
 	LC_MISC,
 	LC_SYSTEM,			// Initialization, INI file and such stuff
@@ -150,6 +155,8 @@ public:
 	CGlobal(void);
 	~CGlobal(void);
 
+	void Init(void);
+	void GetModName(void);
 	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogString(char *Format, ...);
@@ -188,6 +195,8 @@ public:
 
 	LC_LogClass		m_LogClass;
 	LT_LogType		m_LogType;
+	char			m_ModPath[1024];
+	char			m_ModName[256];
 	char			*m_Filename;
 	int				m_Linenumber;
 	CDarkModPlayer	*m_DarkModPlayer;

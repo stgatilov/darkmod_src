@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.15  2005/03/26 20:59:52  sparhawk
+ * Logging initialization added for automatic mod name detection.
+ *
  * Revision 1.14  2005/03/21 22:57:36  sparhawk
  * Special plane and vectorlogs added.
  *
@@ -81,6 +84,7 @@
 #include "il/il.h"
 
 static char *LTString[LT_COUNT+1] = {
+	"INI",
 	"FRC",
 	"ERR",
 	"BEG",
@@ -92,6 +96,7 @@ static char *LTString[LT_COUNT+1] = {
 };
 
 static char *LCString[LC_COUNT+1] = {
+	"INIT",
 	"FORCE",
 	"MISC",
 	"SYSTEM",
@@ -109,23 +114,22 @@ static char *LCString[LC_COUNT+1] = {
 
 CGlobal::CGlobal(void)
 {
-	char ProfilePath[1024];
-	char cwd[1024];
-	PROFILE_HANDLE *pfh = NULL;
-	FILE *logfile = NULL;
-
 	m_DarkModPlayer = new CDarkModPlayer;
 
-	getcwd(cwd, sizeof(cwd)-1);
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
 
+	memset(m_ModPath, 0, sizeof(m_ModPath));
+	memset(m_ModName, 0, sizeof(m_ModName));
+
+	m_LogArray[LT_INIT] = true;			// This is always on
 	m_LogArray[LT_FORCE] = true;			// This is always on
 	m_LogArray[LT_ERROR] = false;
 	m_LogArray[LT_BEGIN] = false;
 	m_LogArray[LT_END] = false;
 	m_LogArray[LT_DEBUG] = false;
 
+	m_ClassArray[LC_INIT] = true;
 	m_ClassArray[LC_FORCE] = true;			// This is always on
 	m_ClassArray[LC_SYSTEM] = false;
 	m_ClassArray[LC_FROBBING] = false;
@@ -139,14 +143,95 @@ CGlobal::CGlobal(void)
 	m_Filename = "undefined";
 	m_Linenumber = 0;
 
-	if((logfile = fopen("c:\\darkmod.log", "w+b")) != NULL)
-		fprintf(logfile, "Initialzing: %s\r", cwd);
-
 	m_LogFile = NULL;
 
+	if((m_LogFile = fopen("c:\\d3modlogger.log", "w+b")) != NULL)
+		DM_LOG(LC_INIT, LT_INIT).LogString("Initialzing mod logging\r");
+}
+
+CGlobal::~CGlobal(void)
+{
+	if(m_LogFile != NULL)
+		fclose(m_LogFile);
+}
+
+void CGlobal::GetModName()
+{
+	int i, n;
+	char PathSep, *p;
+	const char *modpath = fileSystem->RelativePathToOSPath(".");
+	char name[256];
+
+	DM_LOG(LC_INIT, LT_INIT).LogString("Modpath: %08lx - [%s]\r", modpath, modpath);
+
 #ifdef _WINDOWS_
-	strcpy(ProfilePath, cwd);
-	strcat(ProfilePath, "\\Darkmod\\darkmod.ini");
+		PathSep = '\\';
+#else
+		PathSep = '/';
+#endif
+
+	strcpy(m_ModPath, modpath);
+	n = strlen(m_ModPath)-1;
+	if(n <= 0)
+		goto Quit;
+
+	// First we cut of the path
+	for(i = n; i >= 0; i--)
+	{
+		if(m_ModPath[i] == '.')
+		{
+			m_ModPath[i] = 0;
+			continue;
+		}
+
+		if(m_ModPath[i] == PathSep)
+		{
+			m_ModPath[i] = 0;
+			break;
+		}
+	}
+
+	n = strlen(m_ModPath)-1;
+	if(n <= 0)
+		goto Quit;
+
+	memset(name, 0, sizeof(name));
+	p = name;
+	for(i = n; i >= 0; i--)
+	{
+		if(m_ModPath[i] == PathSep)
+			break;
+
+		*p = m_ModPath[i];
+		p++;
+	}
+
+	n = strlen(name)-1;
+	memset(m_ModName, 0, sizeof(m_ModName));
+	p = m_ModName;
+	for(i = n; i >= 0; i--)
+	{
+		*p = name[i];
+		p++;
+	}
+
+Quit:
+	DM_LOG(LC_INIT, LT_INIT).LogString("Modpath: [%s]\r", m_ModPath);
+	DM_LOG(LC_INIT, LT_INIT).LogString("Modname: [%s]\r", m_ModName);
+	return;
+}
+
+void CGlobal::Init()
+{
+	char ProfilePath[1024];
+	PROFILE_HANDLE *pfh = NULL;
+
+	GetModName();
+
+#ifdef _WINDOWS_
+	strcpy(ProfilePath, m_ModPath);
+	sprintf(ProfilePath, "%s\\%s.ini", m_ModPath, m_ModName);
+//	strcat(ProfilePath, "\\Darkmod\\darkmod.ini");
 #else   // LINUX
 	char *home = getenv("HOME");
 
@@ -157,33 +242,18 @@ CGlobal::CGlobal(void)
 	strcat(ProfilePath, "/.darkmod.ini");
 #endif
 
-	fprintf(logfile, "Trying to open %s\r", ProfilePath);
+	DM_LOG(LC_INIT, LT_INIT).LogString("Trying to open %s\r", ProfilePath);
 	if((pfh = OpenProfile(ProfilePath, TRUE, FALSE)) == NULL)
 	{
-		fprintf(logfile, "darkmod.ini not found at %s\r", ProfilePath);
-#ifdef _WINDOWS_
-	strcpy(ProfilePath, cwd);
-	strcat(ProfilePath, "\\darkmod.ini");
-#endif
-		fprintf(logfile, "retrying at %s\r", ProfilePath);
-		pfh = OpenProfile(ProfilePath, TRUE, FALSE);
+		DM_LOG(LC_INIT, LT_INIT).LogString("%s.ini not found at %s\r", m_ModName, ProfilePath);
 	}
 
-	if(pfh == NULL)
-		fprintf(logfile, "Unable to open darkmod.ini\r");
-	else
+	if(pfh != NULL)
 		LoadINISettings(pfh);
+	else
+		DM_LOG(LC_INIT, LT_INIT).LogString("Unable to open %s.ini\r", m_ModName);
 
 	CloseProfile(pfh);
-
-	if(logfile)
-		fclose(logfile);
-}
-
-CGlobal::~CGlobal(void)
-{
-	if(m_LogFile != NULL)
-		fclose(m_LogFile);
 }
 
 void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)
@@ -229,6 +299,9 @@ void CGlobal::LoadINISettings(void *p)
 	PROFILE_HANDLE *pfh = (PROFILE_HANDLE *)p;
 	PROFILE_SECTION *ps;
 	PROFILE_MAP *pm;
+	FILE *logfile;
+
+	DM_LOG(LC_INIT, LT_INIT).LogString("Loading INI settings\r");
 
 	if(FindSection(pfh, "Debug", &ps) != -1)
 	{
@@ -240,12 +313,19 @@ void CGlobal::LoadINISettings(void *p)
 			timer = time(NULL);
 			t = localtime(&timer);
 
-			if((m_LogFile = fopen(pm->Value, "w+b")) != NULL)
+			if((logfile = fopen(pm->Value, "w+b")) != NULL)
 			{
-				fprintf(m_LogFile, "LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
+				DM_LOG(LC_INIT, LT_INIT).LogString("Switching logfile to [%s].\r", pm->Value);
+				if(m_LogFile != NULL)
+				{
+					fclose(m_LogFile);
+					m_LogFile = logfile;
+				}
+
+				DM_LOG(LC_INIT, LT_INIT).LogString("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 							t->tm_year+1900, t->tm_mon, t->tm_mday, 
 							t->tm_hour, t->tm_min, t->tm_sec);
-				fprintf(m_LogFile, "DLL compiled on " __DATE__ " " __TIME__ "\r\r");
+				DM_LOG(LC_INIT, LT_INIT).LogString("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
 			}
 		}
 
