@@ -559,11 +559,11 @@
 				>
 			</File>
 			<File
-				RelativePath="game\Misc.h"
+				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DarkMod\Misc.h"
+				RelativePath="game\Misc.h"
 				>
 			</File>
 			<File
@@ -1087,6 +1087,10 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\rdline.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\README.txt"
 					>
 				</File>
 				<File
