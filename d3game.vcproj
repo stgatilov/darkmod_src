@@ -178,7 +178,7 @@
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="releasedll"
+				AdditionalLibraryDirectories="releasedll;lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
