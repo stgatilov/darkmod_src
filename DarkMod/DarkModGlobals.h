@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2005/01/28 22:56:53  sparhawk
+ * WEAPON class added.
+ *
  * Revision 1.10  2005/01/24 00:15:22  sparhawk
  * AmbientLight parameter added to material
  *
@@ -90,6 +93,7 @@ typedef enum {
 	LC_ENTITY,
 	LC_INVENTORY,		// Everything that has to do with inventory
 	LC_LIGHT,
+	LC_WEAPON,
 	LC_COUNT
 } LC_LogClass;
 
