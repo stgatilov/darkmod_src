@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/03/29 07:45:20  ishtvan
+ * AI Relations: global AI relations object initializes from map, is saved & restored, and cleared on map shutdown
+ *
  * Revision 1.10  2005/03/26 20:59:30  sparhawk
  * Logging initialization added for automatic mod name detection.
  *
@@ -52,12 +55,15 @@
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
 #include "../darkmod/misc.h"
+#include "../darkmod/relations.h"
+
 
 #include "il/config.h"
 #include "il/il.h"
 
 CGlobal g_Global;
 
+extern CRelations		g_globalRelations;
 #define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
@@ -177,7 +183,10 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal() {
+idGameLocal::idGameLocal() 
+{
+	m_RelationsManager = &g_globalRelations;
+	
 	Clear();
 }
 
@@ -470,6 +479,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.AddObject( threads[i] );
 	}
 
+	// DarkMod: Add darkmod specific objects here:
+
+	// Add relationship matrix object
+	savegame.AddObject( m_RelationsManager );
 	// write out complete object list
 	savegame.WriteObjectList();
 
@@ -1189,6 +1202,8 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	MapPopulate();
 
+	// initialize the AI relationships based on worldspawn
+	m_RelationsManager->SetFromArgs( &world->spawnArgs );
 	mpGame.Reset();
 
 	mpGame.Precache();
@@ -1494,6 +1509,7 @@ void idGameLocal::MapShutdown( void ) {
 	}
 
 	pvs.Shutdown();
+	m_RelationsManager->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
