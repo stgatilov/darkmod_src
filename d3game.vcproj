@@ -4,6 +4,7 @@
 	Version="8,00"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
+	RootNamespace="Game"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -153,7 +154,6 @@
 				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
-				ProgramDataBaseFileName="$(IntDir)/"
 				BrowseInformation="1"
 				BrowseInformationFile="$(IntDir)/"
 				WarningLevel="3"
@@ -183,6 +183,7 @@
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
 				GenerateMapFile="TRUE"
 				MapFileName="$(OutDir)/game.map"
+				MapExports="TRUE"
 				SubSystem="0"
 				StackReserveSize="4194304"
 				OptimizeReferences="2"
@@ -556,11 +557,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DarkMod\Misc.h"
+				RelativePath="game\Misc.h"
 				>
 			</File>
 			<File
-				RelativePath="game\Misc.h"
+				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
@@ -1035,8 +1036,30 @@
 				Name="DarkMod"
 				>
 				<File
+					RelativePath="c:\CompileDate"
+					FileType="2"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+							CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h&#x0D;&#x0A;"
+							Outputs="C:\dont-touch-this.h"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath=".\DarkMod\DarkModGlobals.cpp"
 					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ForcedIncludeFiles="c:\compiled.h"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.h"
