@@ -556,11 +556,11 @@
 				>
 			</File>
 			<File
-				RelativePath="game\Misc.h"
+				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DarkMod\Misc.h"
+				RelativePath="game\Misc.h"
 				>
 			</File>
 			<File
@@ -1044,6 +1044,14 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\fdchar.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobDoor.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobDoor.h"
 					>
 				</File>
 				<File
