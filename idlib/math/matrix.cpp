@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/14 09:58:17  sparhawk
+ * Fixed a typo
+ *
  * Revision 1.2  2004/11/14 08:06:51  nexenizer
  * *** empty log message ***
  *
@@ -65,7 +68,7 @@ bool idMat2::InverseSelf( void ) {
 idMat2::InverseFastSelf
 ============
 */
-boOl idMat2::InverseFastSelf( void ) {
+bool idMat2::InverseFastSelf( void ) {
 #if 1
 	// 2+4 = 6 multiplications
 	//		 1 division
