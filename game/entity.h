@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
  * Revision 1.7  2004/11/21 01:03:27  sparhawk
  * Doors can now be properly opened and have sound.
  *
@@ -154,6 +160,23 @@ public:
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
 	} fl;
+
+	/**
+	 * UsedBy ist the list of entity names that this entity can be used by.
+	 * i.e. A door can have a list of keys that can unlock it. A fountain can
+	 * be used by a water arrow to make it holy, etc.
+	 * The list is initialized by the key "used"_by" in the entity and contains
+	 * the names of the entities seperated by ';'. If the first character of
+	 * the name is a '*' the name donates a classname instead of an entity. In
+	 * this case all entities of that class can be used by this entity.
+	 * Example: If you have several holy fountains you would have to list all
+	 * fountain names. Alternatively you can create a "holy_fountain" class and
+	 * list it like this:
+	 * "used_by" "*holy_fountain;*holy_bottle;holy_cross"
+	 * In this example the entity can be used by any holy_fountain, any holy_bottle
+	 * and addtionaly by the entity named holy_cross.
+	 */
+	idList<idStr>			m_UsedBy;
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
@@ -406,9 +429,31 @@ public:
 	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
 	 * bMaster indicates wheter the entity should call it's master or not.
 	 */
-	virtual void			FrobAction(bool bMaster);
+	virtual void FrobAction(bool bMaster);
 
-	bool AddToMasterList(idList<idStr> &, idStr &);
+	/**
+	 * AddToMasterList adds a string entry to a list and checks is a) the new entry
+	 * is not the current entities name and b) if the name already exists in the list.
+	 * If both conditions are met, the name is added to the list and true is returned,
+	 * otherwise false is returned and the name is not added to the list.
+	 */
+	bool AddToMasterList(idList<idStr> &, idStr &name);
+
+	/**
+	 * UsedBy determines the behaviour when an entity is used against another one.
+	 * The entity passed in as an argument is the one that uses this entity. If the 
+	 * argument is NULL, then the called entity is the one being used.
+	 * The return value indicates if the item could be used. If false the item is not
+	 * appropriate for usage on that entity and the default frobaction will be executed
+	 * instead.
+	 */
+	virtual bool UsedBy(idEntity *);
+
+	/**
+	 * Parses a used_by string. For a detailed information on how to use this feature
+	 * refer to the m_UsedBy description.
+	 */
+	void ParseUsedByList(idList<idStr> &, idStr &);
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
@@ -436,6 +481,12 @@ protected:
 	 * have to be notified.
 	 */
 	idStr					m_MasterFrob;
+
+	/**
+	 * Froblist is the list of entities that should be notified when this entity
+	 * is frobbed. Each entity in this list is called as if it were the one being
+	 * frobbed.
+	 */
 	idList<idStr>			m_FrobList;
 
 	/**

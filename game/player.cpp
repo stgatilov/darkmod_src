@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
  * Revision 1.6  2004/11/21 01:03:27  sparhawk
  * Doors can now be properly opened and have sound.
  *
@@ -34,8 +40,8 @@
 #pragma hdrstop
 
 #include "Game_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/PlayerData.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
 
 /*
 ===============================================================================
@@ -84,6 +90,8 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
+const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -102,6 +110,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
+
+	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -5612,10 +5622,67 @@ void idPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 
-		case IMPULSE_41:
+		case IMPULSE_41:		// TDM Use/Frob
 		{
-			if(m_DarkModPlayer && m_DarkModPlayer->m_FrobEntity != NULL)
-				m_DarkModPlayer->m_FrobEntity->FrobAction(true);
+			bool bFrob = true;
+			idEntity *ent, *frob;
+			int i;
+
+			frob = m_DarkModPlayer->m_FrobEntity;
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, m_DarkModPlayer->m_Selection);
+			// If the player has an item that is selected we need to check if this
+			// is a usable item (like a key). In this case the use action takes
+			// precedence over the frobaction.
+			if((i = m_DarkModPlayer->m_Selection) != 0)
+			{
+				ent = m_DarkModPlayer->GetEntity(i);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
+				if(ent != NULL)
+				{
+					if(ent->spawnArgs.GetBool("usable"))
+					{
+						DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Item is usable\r");
+						if(frob)
+							bFrob = !frob->UsedBy(ent);
+						else
+							bFrob = !ent->UsedBy(NULL);
+					}
+				}
+			}
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+			if(bFrob == true && frob != NULL)
+				frob->FrobAction(true);
+		}
+		break;
+
+		case IMPULSE_42:		// Inventory prev
+		{
+			if(m_DarkModPlayer)
+				m_DarkModPlayer->SelectPrev();
+		}
+		break;
+
+		case IMPULSE_43:		// Inventory next
+		{
+			if(m_DarkModPlayer)
+				m_DarkModPlayer->SelectNext();
+		}
+		break;
+
+		case IMPULSE_44:		// Lean forward
+		{
+		}
+		break;
+
+		case IMPULSE_45:		// Lean left
+		{
+		}
+		break;
+
+		case IMPULSE_46:		// Lean right
+		{
 		}
 		break;
 	} 
@@ -8486,3 +8553,9 @@ idPlayer::NeedsIcon
 bool idPlayer::NeedsIcon( void ) {
 	return ( isLagged || isChatting );
 }
+
+void idPlayer::AddToInventory(idEntity *ent)
+{
+	m_DarkModPlayer->AddEntity(ent);
+}
+

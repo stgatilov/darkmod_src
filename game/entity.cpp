@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2004/11/24 22:00:04  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
  * Revision 1.9  2004/11/21 01:03:27  sparhawk
  * Doors can now be properly opened and have sound.
  *
@@ -45,8 +51,8 @@
 #pragma warning(disable : 4533 )
 
 #include "Game_local.h"
-#include "../DarkMod/DarkModGlobals.h"
-#include "../DarkMod/PlayerData.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
 
 /*
 ===============================================================================
@@ -5499,18 +5505,18 @@ bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
 		i = 0;
-		n = ent->m_FrobList.Num();
+		n = MasterList.Num();
 		bFound = false;
 		for(i = 0; i < n; i++)
 		{
-			if(ent->m_FrobList[i] == name)
+			if(MasterList[i] == name)
 			{
 				bFound = true;
 				break;
 			}
 		}
 		if(bFound == false)
-			ent->m_FrobList.Append(name);
+			MasterList.Append(name);
 	}
 	else
 	{
@@ -5551,6 +5557,10 @@ void idEntity::LoadTDMSettings(void)
 		if(AddToMasterList(m_FrobList, str) == true)
 			m_MasterFrob = str;
 	}
+
+	// Check if this entity can be used by others.
+	if(spawnArgs.GetString("used_by", "", str))
+		ParseUsedByList(m_UsedBy, str);
 
 	// If this is a frobable entity we need to activate the frobcode.
 	if(m_FrobDistance != 0)
@@ -5612,6 +5622,8 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 
 	bHighlight = false;
 	param = 0.0f;
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Player: [%s]\r", player->name.c_str());
 
 	v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 	fDistance = v3Difference.Length();
@@ -5731,10 +5743,60 @@ void idEntity::FrobAction(bool bMaster)
 			idThread *pThread = new idThread(pScriptFkt);
 			pThread->CallFunction(this, pScriptFkt, true);
 			pThread->DelayedStart(0);
+			StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 		else
 			DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
 	}
 }
 
+void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
+{
+	idStr str;
+	int i, n;
+	int x, y;
+	bool bFound;
 
+	DM_LOG(LC_MISC, LT_INFO).LogString("Parsing [%s]\r", s.c_str());
+	i = 0;
+	while(1)
+	{
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 1: %u:%u [%s]\r", i, n, &s[i]);
+		// If no seperator is found, the remainder of the string
+		// is copied.
+		if((n = s.Find(';', i)) == -1)
+			n = s.Length();
+
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 2: %u:%u [%s]\r", i, n, &s[i]);
+		n -= i;
+		s.Mid(i, n, str);
+		i += n;
+		if(s[i] == ';')
+			i++;
+//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 3: %u:%u [%s]\r", i, n, &s[i]);
+		if(str.Length() == 0)
+			break;
+
+		y = list.Num();
+		bFound = false;
+		for(x = 0; x < y; x++)
+		{
+			if(list[x] == str)
+			{
+				bFound = true;
+				break;
+			}
+		}
+
+		if(bFound == false)
+		{
+			DM_LOG(LC_MISC, LT_DEBUG).LogString("Append [%s] to uselist\r", str.c_str());
+			list.Append(str);
+		}
+	}
+}
+
+bool idEntity::UsedBy(idEntity *ent)
+{
+	return false;
+}
