@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/03/26 16:00:33  sparhawk
+ * double changed to float
+ *
  * Revision 1.5  2005/03/21 23:09:13  sparhawk
  * Implemented projected and ellipsoid lights
  *
@@ -1284,15 +1287,15 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 }
 
 
-int idLight::GetTextureIndex(double x, double y, int w, int h, int bpp)
+int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 {
 	int rc = 0;
-	double w2, h2;
+	float w2, h2;
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Calculating texture index: x/y: %f/%f w/h: %u/%u\r", x, y, w, h);
 
-	w2 = ((double)w)/2.0;
-	h2 = ((double)h)/2.0;
+	w2 = ((float)w)/2.0;
+	h2 = ((float)h)/2.0;
 
 	if(renderLight.pointLight)
 	{
@@ -1333,9 +1336,9 @@ int idLight::GetTextureIndex(double x, double y, int w, int h, int bpp)
 }
 
 
-double idLight::GetDistanceColor(double fDistance, double fx, double fy)
+float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 {
-	double fColVal, fImgVal;
+	float fColVal, fImgVal;
 	int fw, fh, iw, ih, i, fbpp, ibpp;
 	unsigned char *img = NULL;
 	unsigned char *fot = NULL;
@@ -1381,9 +1384,9 @@ double idLight::GetDistanceColor(double fDistance, double fx, double fy)
 		// If we have a falloff texture ...
 		if(fot != NULL)
 		{
-			i = GetTextureIndex((double)fabs(fx), (double)fabs(fy), fw, fh, fbpp);
+			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), fw, fh, fbpp);
 			fColVal = fColVal * (fot[i] * LIGHTGEM_SCALE);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (double)(fot[i] * LIGHTGEM_SCALE));
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * LIGHTGEM_SCALE));
 		}
 		else
 			fColVal = 1;
@@ -1391,9 +1394,9 @@ double idLight::GetDistanceColor(double fDistance, double fx, double fy)
 		// ... or a projection image.
 		if(img != NULL)
 		{
-			i = GetTextureIndex((double)fabs(fx), (double)fabs(fy), iw, ih, ibpp);
+			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), iw, ih, ibpp);
 			fImgVal = img[i] * LIGHTGEM_SCALE;
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (double)(img[i] * LIGHTGEM_SCALE));
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * LIGHTGEM_SCALE));
 		}
 		else
 			fImgVal = 1;

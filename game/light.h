@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/03/26 16:00:33  sparhawk
+ * double changed to float
+ *
  * Revision 1.7  2005/03/21 23:09:13  sparhawk
  * Implemented projected and ellipsoid lights
  *
@@ -107,13 +110,13 @@ public:
 	 * player related to the light. The Z coordinate can be ignored. The distance
 	 * is required when the light has no textures to calculate a falloff.
 	 */
-	double			GetDistanceColor(double distance, double x, double y);
+	float			GetDistanceColor(float distance, float x, float y);
 
 	/**
 	 * GetTextureIndex calculates the index into the texture based on the x/y coordinates
 	 * given and returns the index.
 	 */
-	int				GetTextureIndex(double x, double y, int TextureWidth, int TextureHeight, int BytesPerPixel);
+	int				GetTextureIndex(float x, float y, int TextureWidth, int TextureHeight, int BytesPerPixel);
 
 	/**
 	 * Returns true if the light is a parallel light.
@@ -189,7 +192,7 @@ public:
 	 * Each light also gets the maxlightradius, which determines which value
 	 * is the maximum radius for that particular light,
 	 */
-	double			m_MaxLightRadius;
+	float			m_MaxLightRadius;
 
 };
 
