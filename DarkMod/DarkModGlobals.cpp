@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2004/11/18 22:48:34  sparhawk
+ * Changed the default frob highlight to 100
+ *
  * Revision 1.4  2004/11/06 17:16:53  sparhawk
  * Optimized the debug log function for ease of use and speed.
  *
@@ -90,7 +93,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_SOUND] = false;
 	m_ClassArray[LC_FUNCTION] = false;
 
-	m_DefaultFrobDistance = 70.0f;
+	m_DefaultFrobDistance = 100.0f;
 	m_LogClass = LC_SYSTEM;
 	m_LogType = LT_DEBUG;
 	m_Filename = "undefined";
