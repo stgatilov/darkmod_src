@@ -119,6 +119,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -212,6 +213,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"
 			/>
 		</Configuration>
 		<Configuration
@@ -557,11 +559,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DarkMod\Misc.h"
+				RelativePath="game\Misc.h"
 				>
 			</File>
 			<File
-				RelativePath="game\Misc.h"
+				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
@@ -1039,20 +1041,6 @@
 			<Filter
 				Name="DarkMod"
 				>
-				<File
-					RelativePath="c:\CompileDate"
-					FileType="2"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-							CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h&#x0D;&#x0A;"
-							Outputs="C:\dont-touch-this.h"
-						/>
-					</FileConfiguration>
-				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.cpp"
 					>
