@@ -73,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -173,7 +173,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib"
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -557,11 +557,11 @@
 				>
 			</File>
 			<File
-				RelativePath="game\Misc.h"
+				RelativePath=".\DarkMod\Misc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\DarkMod\Misc.h"
+				RelativePath="game\Misc.h"
 				>
 			</File>
 			<File
@@ -745,6 +745,10 @@
 				</File>
 				<File
 					RelativePath="game\anim\Anim_Blend.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\game\anim\anim_import.cpp"
 					>
 				</File>
 				<File

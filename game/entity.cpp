@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2004/11/28 19:51:52  sparhawk
+ * SDK V2 merge
+ *
  * Revision 1.11  2004/11/28 09:16:31  sparhawk
  * SDK V2 merge
  *
@@ -463,36 +466,6 @@ idEntity::idEntity()
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
-}
-
-/*
-===============
-idEntity::UpdateChangeableSpawnArgs
-
-Any key val pair that might change during the course of the game ( via a gui or whatever )
-should be initialize here so a gui or other trigger can change something and have it updated
-properly. An optional source may be provided if the values reside in an outside dictionary and
-first need copied over to spawnArgs
-===============
-*/
-void idEntity::UpdateChangeableSpawnArgs( const idDict *source )
-{
-	int i;
-	const char *target;
-
-	if ( !source ) {
-		source = &spawnArgs;
-	}
-	cameraTarget = NULL;
-	target = source->GetString( "cameraTarget" );
-	if ( target && target[0] ) {
-		// update the camera taget
-		PostEventMS( &EV_UpdateCameraTarget, 0 );
-	}
-
-	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		UpdateGuiParms( renderEntity.gui[ i ], source );
-	}
 }
 
 /*
