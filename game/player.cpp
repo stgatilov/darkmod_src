@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/14 20:25:24  sparhawk
+ * Unneccessary logstatement removed.
+ *
  * Revision 1.4  2004/11/14 00:42:37  sparhawk
  * Added USE/Frob Key.
  *
@@ -5608,7 +5611,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_41:
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frob key has been hit\r");
 			if(m_DarkModPlayer && m_DarkModPlayer->m_FrobEntity != NULL)
 				m_DarkModPlayer->m_FrobEntity->FrobAction();
 		}
