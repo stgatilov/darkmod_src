@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2004/11/03 21:47:38  sparhawk
+ * Changed debug LogString for better performance and group settings
+ *
  * Revision 1.2  2004/11/03 00:06:06  sparhawk
  * Frob highlight finished and working.
  *
@@ -388,7 +391,7 @@ idEntity::idEntity
 */
 idEntity::idEntity()
 {
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "this: %08lX\r", this);
+	DM_LOG(LC_FUNCTION).LogString(__FILE__, __LINE__, LC_FUNCTION, LT_DEBUG, "this: %08lX\r", this);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;

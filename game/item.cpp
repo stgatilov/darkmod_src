@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2004/11/03 21:47:38  sparhawk
+ * Changed debug LogString for better performance and group settings
+ *
  * Revision 1.4  2004/11/03 00:06:08  sparhawk
  * Frob highlight finished and working.
  *
@@ -64,8 +67,6 @@ idItem::idItem
 */
 idItem::idItem()
 {
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_BEGIN, "This: %08lX \r", this);
-
 	spin = false;
 	inView = false;
 	inViewTime = 0;
@@ -76,8 +77,6 @@ idItem::idItem()
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
-
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_END, "This: %08lX \r", this);
 }
 
 /*
@@ -270,8 +269,6 @@ void idItem::Present( void )
 {
 	idEntity::Present();
 
-	DARKMOD_FKT_BEG;
-
 	if(!fl.hidden && (pulse || m_FrobDistance != 0))
 	{
 		// also add a highlight shell model
@@ -291,8 +288,6 @@ void idItem::Present( void )
 		}
 
 	}
-
-	DARKMOD_FKT_END;
 }
 
 /*
@@ -306,15 +301,15 @@ void idItem::Spawn( void )
 	idEntity *	ent;
 	float		tsize;
 
-	DARKMOD_FKT_BEG;
-
-	// If an item has a frobdistance it is frobable by default.
-	// If the distance is 0 (not set) then we will use the global 
-	// defaultvalue.
+	// If an item has the frobable flag set to true we will use the 
+	// the default value. If the frobdistance is set in the item
+	// it will override the defaultsetting. If none of that is set
+	// the frobdistance will be set to 0 meaning no frobbing on that item.
 	spawnArgs.GetInt( "frob_distance", "0", m_FrobDistance);
 	if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
 		m_FrobDistance = g_Global.m_DefaultFrobDistance;
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "FrobDistance: %u\r", m_FrobDistance);
+
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "FrobDistance: %u\r", m_FrobDistance);
 	if ( spawnArgs.GetBool( "dropToFloor" ) )
 	{
 		PostEventMS( &EV_DropToFloor, 0 );
@@ -362,8 +357,6 @@ void idItem::Spawn( void )
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
-
-	DARKMOD_FKT_END;
 }
 
 /*
@@ -1441,10 +1434,10 @@ bool idItem::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
 
 	idVec3 v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 	fDistance = v3Difference.Length();
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, 
-		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, pDM->m_FrobDistance, fDistance);
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
+		"[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %f   Distance: %f\r", name.c_str(), this, pDM->m_FrobEntity, fDistance);
 
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, 
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, 
 		"Pitch: %f   Yaw: %f   Roll: %f\r", player->viewAngles.pitch, player->viewAngles.yaw, player->viewAngles.roll);
 
 	start = player->GetEyePosition( );
@@ -1460,10 +1453,10 @@ bool idItem::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
 
 	if((trace.fraction < 1.0f))
 	{
-		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
+		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "EntityNum: %u\r", trace.c.entityNum);
 
 		idEntity *ent = gameLocal.GetTraceEntity(trace);
-		g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
+		DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Entity: %08lX  [%s]\r", ent, ent->name.c_str());
 
 		if(ent == this)
 			bHighlight = true;
@@ -1482,7 +1475,7 @@ bool idItem::Frob(renderEntity_s *renderEntity, const renderView_t *renderView)
 	}
 
 	renderEntity->shaderParms[4] = param;
-	g_Global.LogString(__FILE__, __FUNCTION__, __LINE__, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity, pDM->m_FrobDistance);
+	DM_LOG(LC_FROBBING).LogString(__FILE__, __LINE__, LC_FROBBING, LT_DEBUG, "Frobentity: %08lX   FrobDistance: %f\r\r", pDM->m_FrobEntity);
 
 	bRc = true;
 

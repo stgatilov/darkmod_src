@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.2  2004/11/03 21:47:17  sparhawk
+ * Changed debug LogString for better performance and group settings
+ *
  * Revision 1.1  2004/10/31 20:03:36  sparhawk
  * CDarkMod created to contain relevant player data seperate from id code.
  *
@@ -29,6 +32,8 @@
 
 #include "playerdata.h"
 
+#include "../DarkMod/DarkModGlobals.h"
+
 CDarkModPlayer::CDarkModPlayer(void)
 {
 	m_FrobEntity = NULL;
@@ -37,4 +42,3 @@ CDarkModPlayer::CDarkModPlayer(void)
 CDarkModPlayer::~CDarkModPlayer(void)
 {
 }
-
