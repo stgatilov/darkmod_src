@@ -3,6 +3,21 @@
 # TTimo <ttimo@idsoftware.com>
 # http://scons.sourceforge.net
 
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision$
+#* $Date$
+#* $Author$
+#*
+#* $Log$
+#* Revision 1.2  2004/11/28 19:23:11  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
 import sys, os
 import scons_utils
 

@@ -1,4 +1,23 @@
 # -*- mode: python -*-
+
+#***************************************************************************
+#*
+#* PROJECT: The Dark Mod
+#* $Source$
+#* $Revision$
+#* $Date$
+#* $Author$
+#*
+#* $Log$
+#* Revision 1.2  2004/11/28 19:23:10  sparhawk
+#* Added header and Id Copyright.
+#*
+#*
+#***************************************************************************
+
+# Copyright (C) 2004 Id Software, Inc.
+#
+
 import sys, os, string, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile
 import SCons
 
