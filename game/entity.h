@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2004/11/19 20:14:24  sparhawk
+ * Multifrob added.
+ *
  * Revision 1.5  2004/11/17 00:00:38  sparhawk
  * Frobcode has been generalized now and resides for all entities in the base classe.
  *
@@ -398,8 +401,9 @@ public:
 	 *    it is unconscious or dead it is picked up and the player can carry it around.
 	 * If it is a movable item the item is picked up and the player can carry it around.
 	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
+	 * bMaster indicates wheter the entity should call it's master or not.
 	 */
-	virtual void			FrobAction(void);
+	virtual void			FrobAction(bool bMaster);
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
@@ -421,22 +425,19 @@ protected:
 	idStr						m_FrobActionScript;
 
 	/**
-	 * m_AssociatedFrob will trigger a frob on the associated object whenever
-	 * a frob occurs on this one. This means that you can create two entities
-	 * which are connected to each other and whenever one is frobbed the other
-	 * will be too. One example to use this could be to associate an alarm gong
-	 * with a door. When the door is frobed to be opened, the alarm gong will
-	 * also be activated and can be sound. of course this is just an example.
-	 * The user must make sure that the last entity in a chain will NOT point back
-	 * to the first entity, otherwise an endless loop will happen.
+	 * If AssociatedFrob is set then MasterFrob contains
+	 * the parent of the entity  chain in order to be able to walk the chain in
+	 * both directions. The user can frob any object in the chain but all of them
+	 * have to be notified.
 	 */
-	idEntity					*m_AssociatedFrob;
+	idStr					m_MasterFrob;
+	idList<idStr>			m_FrobList;
 
 	/**
 	 * FrobCallbackChain is used to store the callbackfunction in case
 	 * the entity whishes to install a callback itself. The Frob function
-	 * will call this callback afterwards in order to ensure that it is
-	 * also called.
+	 * will call this callback after it is determined the frob state 
+	 * in order to ensure that it is also called.
 	 */
 	deferredEntityCallback_t	m_FrobCallbackChain;
 

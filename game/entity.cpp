@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2004/11/19 20:14:24  sparhawk
+ * Multifrob added.
+ *
  * Revision 1.7  2004/11/17 00:00:38  sparhawk
  * Frobcode has been generalized now and resides for all entities in the base classe.
  *
@@ -419,7 +422,6 @@ idEntity::idEntity()
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
-	m_AssociatedFrob = NULL;
 }
 
 /*
@@ -5480,6 +5482,11 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 
 void idEntity::LoadTDMSettings(void)
 {
+	idStr str;
+	idEntity *ent;
+	int i, n;
+	bool bFound;
+
 	// If an item has the frobable flag set to true we will use the 
 	// the default value. If the frobdistance is set in the item
 	// it will override the defaultsetting. If none of that is set
@@ -5492,6 +5499,41 @@ void idEntity::LoadTDMSettings(void)
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
 
+	// Override the frob action script to apply custom events to 
+	// specific entities.
+	if(spawnArgs.GetString("frob_action_script", "", str))
+		m_FrobActionScript = str;
+
+	// Check if this entity is associated to a master frob entity.
+	if(spawnArgs.GetString("frob_master", "", str))
+	{
+		// Just a sanity check.
+		if(str != name)
+		{
+			m_MasterFrob = str;
+			DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] Master frob set to [%s]\r", name.c_str(), str.c_str());
+			if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
+				i = 0;
+				n = ent->m_FrobList.Num();
+				bFound = false;
+				for(i = 0; i < n; i++)
+				{
+					if(ent->m_FrobList[i] == name)
+					{
+						bFound = true;
+						break;
+					}
+				}
+				if(bFound == false)
+					ent->m_FrobList.Append(name);
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", str.c_str());
+		}
+	}
+
 	// If this is a frobable entity we need to activate the frobcode.
 	if(m_FrobDistance != 0)
 	{
@@ -5502,7 +5544,7 @@ void idEntity::LoadTDMSettings(void)
 		renderEntity.callback = idEntity::FrobModelCallback;
 	}
 
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("this: %08lX FrobDistance: %u\r", this, m_FrobDistance);
+	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
 
 bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView_t *pRenderView)
@@ -5623,23 +5665,58 @@ Quit:
 
 // Default for entities that are frobable and movable is to pick it up and
 // carry it around (probably throwing or dropping it).
-void idEntity::FrobAction(void)
+void idEntity::FrobAction(bool bMaster)
 {
+	idEntity *ent;
+
 	if(m_FrobActionScript.Length() == 0)
 	{
 		DM_LOG(LC_FROBBING, LT_ERROR).LogString("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
 		return;
 	}
 
-	function_t *pScriptFkt = gameLocal.program.FindFunction(m_FrobActionScript.c_str());
-	if(pScriptFkt)
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
+
+	// The player can frob any entity in a chain so we must make sure that all 
+	// others, in the chain, are also called. The master has no special meaning
+	// except that it has to be the first in a chain. The master also doesn't have
+	// to be the same entity type.
+	if(bMaster == true && m_MasterFrob.Length() != 0)
 	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("FrobAction has been triggered using %08lX->[%s]\r", pScriptFkt, m_FrobActionScript.c_str());
-		idThread *pThread = new idThread(pScriptFkt);
-		pThread->CallFunction(this, pScriptFkt, true);
-		pThread->DelayedStart(0);
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity [%s] is called.\r", m_MasterFrob.c_str());
+		if((ent = gameLocal.FindEntity(m_MasterFrob.c_str())) != NULL)
+			ent->FrobAction(false);
+		else
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", m_MasterFrob.c_str());
 	}
 	else
-		DM_LOG(LC_FROBBING, LT_ERROR).LogString("FrobAction has been triggered using %08lX->[%s]\r", pScriptFkt, m_FrobActionScript.c_str());
+	{
+		int i, n;
+
+		n = m_FrobList.Num();
+		for(i = 0; i < n; i++)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_FrobList[i].c_str());
+			if((ent = gameLocal.FindEntity(m_FrobList[i].c_str())) != NULL)
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s]\r", m_FrobList[i].c_str());
+				ent->FrobAction(false);
+			}
+			else
+				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_FrobList[i].c_str());
+		}
+
+		function_t *pScriptFkt = gameLocal.program.FindFunction(m_FrobActionScript.c_str());
+		if(pScriptFkt)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] FrobAction has been triggered using %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+			idThread *pThread = new idThread(pScriptFkt);
+			pThread->CallFunction(this, pScriptFkt, true);
+			pThread->DelayedStart(0);
+		}
+		else
+			DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+	}
 }
+
 
