@@ -1,3 +1,21 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ * $Log$
+ * Revision 1.2  2004/11/28 19:09:02  sparhawk
+ * Added header and Id Copyright.
+ *
+ *
+ ***************************************************************************/
+
+// Copyright (C) 2004 Id Software, Inc.
+//
+
 #include "../precompiled.h"
 
 void BoxToPoints( const idVec3 &center, const idVec3 &extents, const idMat3 &axis, idVec3 points[8] );
