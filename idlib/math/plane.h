@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2005/03/21 23:15:16  sparhawk
+ * Added function for logging purposes.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -100,7 +103,7 @@ public:
 	float			Distance( const idVec3 &v ) const;
 	int				Side( const idVec3 &v, const float epsilon = 0.0f ) const;
 
-	bool			LineIntersection( const idVec3 &start, const idVec3 &end ) const;
+	bool			LineIntersection( const idVec3 &start, const idVec3 &end, float *Fraction = NULL ) const;
 					// intersection point is start + dir * scale
 	bool			RayIntersection( const idVec3 &start, const idVec3 &dir, float &scale ) const;
 	bool			PlaneIntersection( const idPlane &plane, idVec3 &start, idVec3 &dir ) const;
@@ -113,6 +116,7 @@ public:
 	float *			ToFloatPtr( void );
 	const char *	ToString( int precision = 2 ) const;
 
+	void			GetPlaneParams(float &a, float &b, float &c, float &d) const;
 private:
 	float			a;
 	float			b;
@@ -139,6 +143,15 @@ ID_INLINE idPlane::idPlane( const idVec3 &normal, const float dist ) {
 	this->c = normal.z;
 	this->d = -dist;
 }
+
+ID_INLINE void idPlane::GetPlaneParams(float &fa, float &fb, float &fc, float &fd) const
+{
+	fa = a;
+	fb = b;
+	fc = c;
+	fd = d;
+}
+
 
 ID_INLINE float idPlane::operator[]( int index ) const {
 	return ( &a )[ index ];
@@ -327,7 +340,7 @@ ID_INLINE int idPlane::Side( const idVec3 &v, const float epsilon ) const {
 	}
 }
 
-ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end ) const {
+ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end, float *fract ) const {
 	float d1, d2, fraction;
 
 	d1 = Normal() * start + d;
@@ -342,6 +355,9 @@ ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end
 		return false;
 	}
 	fraction = ( d1 / ( d1 - d2 ) );
+	if(fract != NULL)
+		*fract = fraction;
+
 	return ( fraction >= 0.0f && fraction <= 1.0f );
 }
 
