@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
 	RootNamespace="Game"
@@ -1074,6 +1074,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\MatrixSq.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Misc.h"
 					>
 				</File>
@@ -1099,6 +1103,14 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\README.txt"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Relations.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\Relations.h"
 					>
 				</File>
 				<File
