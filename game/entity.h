@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/04/07 09:33:50  ishtvan
+ * Added soundprop methods.
+ *
+ * *) PlaySound will now check for "sprP_" and "sprE_" key/values of the same name as the "snd_" key it is trying to play.  If it finds them, the sound will be propagated.
+ *
+ * *) Also added the option to directly propagate a sound, because Id code sometimes plays a sound without calling PlaySound
+ *
  * Revision 1.8  2004/11/24 22:00:05  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -454,6 +461,48 @@ public:
 	 * refer to the m_UsedBy description.
 	 */
 	void ParseUsedByList(idList<idStr> &, idStr &);
+
+	/**
+	* DarkMod sound prop functions (called by StartSound and StopSound)
+	**/
+
+	/**
+	* The following two functions propagate either a suspicious or
+	* an environmental sound.  They are called by idEntity::StartSound.
+	*
+	* The parameters are the local sound name (ie, the name in the entity
+	* def file, INCLUDING the "snd_" at the beginning), and the global sound
+	* name (name in the soundprop def file, NOT including the prefix)
+	*
+	* (For now sounds can be suspicious or environmental, but not both.
+	*  defining a sound as suspicious overrides any environmental def
+	*  with the same sound name. )
+	**/
+
+	/**
+	* Propagate a suspicious sound
+	**/
+	void PropSoundS( const char *localName, const char *globalName );
+
+	/**
+	* Propagate an environmental sound (called by PropSound)
+	**/
+	void PropSoundE( const char *localName, const char *globalName );
+
+	/**
+	* Propagate a sound directly, outside of StartSound
+	* Direct calling should be done in cases where the gamecode calls
+	* StartSoundShader directly, without going thru PlaySound.
+	* 
+	* PropSoundDirect first looks for a local definition of the sound
+	* on the entity, to find volume/duration modifier, extra flags
+	* and the "global" sound definition (in the sound def file)
+	*
+	* If the local definition is not found, it calls sound prop
+	* with the unmodified global definition.
+	**/
+	void PropSoundDirect( const char *sndName, bool bForceLocal = false, 
+						  bool bAssumeEnv = false );	
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer

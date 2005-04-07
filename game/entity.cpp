@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2005/04/07 09:33:50  ishtvan
+ * Added soundprop methods.
+ *
+ * *) PlaySound will now check for "sprP_" and "sprE_" key/values of the same name as the "snd_" key it is trying to play.  If it finds them, the sound will be propagated.
+ *
+ * *) Also added the option to directly propagate a sound, because Id code sometimes plays a sound without calling PlaySound
+ *
  * Revision 1.13  2005/01/07 02:10:35  sparhawk
  * Lightgem updates
  *
@@ -62,6 +69,7 @@
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
+#include "../darkmod/sndprop.h"
 
 /*
 ===============================================================================
@@ -1630,31 +1638,34 @@ bool idEntity::CanPlayChatterSounds( void ) const {
 idEntity::StartSound
 ================
 */
-bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) {
+bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length ) 
+{
 	const idSoundShader *shader;
 	const char *sound;
 
-	if ( length ) {
+	if ( length ) 
 		*length = 0;
-	}
 
 	// we should ALWAYS be playing sounds from the def.
 	// hardcoded sounds MUST be avoided at all times because they won't get precached.
 	assert( idStr::Icmpn( soundName, "snd_", 4 ) == 0 );
 
-	if ( !spawnArgs.GetString( soundName, "", &sound ) ) {
+	if ( !spawnArgs.GetString( soundName, "", &sound ) ) 
 		return false;
-	}
 
-	if ( *sound == NULL ) {
+	if ( *sound == NULL ) 
 		return false;
-	}
 
-	if ( !gameLocal.isNewFrame ) {
+	if ( !gameLocal.isNewFrame ) 
+	{
 		// don't play the sound, but don't report an error
 		return true;
 	}
+	
+	// DarkMod sound propagation:
+	PropSoundDirect( soundName, true, false );
 
+	// play the audible sound
 	shader = declManager->FindSound( sound );
 	return StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
 }
@@ -1801,6 +1812,218 @@ void idEntity::FreeSoundEmitter( bool immediate ) {
 		refSound.referenceSound = NULL;
 	}
 }
+
+/*
+================
+idEntity::PropSoundS
+================
+*/
+
+// note: the format for kv pair is: <global sound name>:volMod,durMod
+// the last two values should be optional, so <global sound name>:volMod,
+// and <global sound name>,durMod also work.
+
+void idEntity::PropSoundS( const char *localName, const char *globalName )
+{
+	int start, end, len;
+	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
+	float volMod(1.0), durMod(1.0);
+	idStr gName(globalName), locName, tempstr;
+
+	// if there is no local name, skip all the loading of local flags
+	// and parms.
+	if( localName == NULL )
+	{
+		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, false );
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundS: Propagating global sound %s without checking local sound\r", globalName);
+		// note: if we are doing the global only, gName remains set to globalName
+		goto Quit;
+	}
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundS: Found local sound %s, parsing local sound modifiers\r", localName);
+
+	locName = localName;
+
+	// parse the volMod and durMod if they are tacked on to the globalName
+	len = gName.Length();
+
+	// parse volMod, when durMod may or may not be present
+	if( (start = gName.Find(':')) != -1 )
+	{
+		bHasColon = true;
+		start++;
+		end = gName.Find(',');
+
+		if( end == -1 )
+			end = gName.Length();
+
+		tempstr = gName.Mid(start, (end - start));
+		
+		if( !tempstr.IsNumeric() || start >= end )
+		{
+			gameLocal.Warning( "[Soundprop] Bad volume multiplier for sound %s on entity %s.", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING).LogString("Bad volume multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+		}
+		else
+		{
+			volMod = atof( tempstr.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local volume modifier %f \r", volMod);
+		}
+	}
+
+	// parse durMod
+	if( (start = gName.Find(',')) != -1 )
+	{
+		bHasComma = true;
+		start++;
+		end = gName.Length();
+
+		tempstr = gName.Mid(start, (end - start));
+		if( !tempstr.IsNumeric() || start >= end )
+		{
+			gameLocal.Warning( "[Soundprop] Bad duration multiplier for sound %s on entity %s.", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING).LogString("Bad duration multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+		}
+		else
+		{
+			durMod = atof( tempstr.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local duration modifier %f \r", durMod);
+		}
+	}
+
+	// TODO: Get the extra flags, freqmod and bandwidthmod from another key/value pair
+	// we will need locName for this.
+	
+	// strip the durmod and volmod off of the global name
+	if( bHasColon )
+		end = gName.Find(':');
+	else if( bHasComma && !bHasColon )
+		end = gName.Find(',');
+	else if( !bHasComma && !bHasColon )
+		end = gName.Length();
+
+	gName = gName.Mid(0, end);
+
+	bFoundSnd = gameLocal.m_sndProp->CheckSound( gName.c_str(), false );
+
+Quit:
+	if( bFoundSnd )
+	{
+		gameLocal.m_sndProp->Propagate( volMod, durMod, gName, 
+										GetPhysics()->GetOrigin(), 
+										this ); 
+	}
+
+	return;
+}
+
+/*
+================
+idEntity::PropSoundE
+================
+*/
+
+void idEntity::PropSoundE( const char *localName, const char *globalName )
+{
+	bool bFoundSnd(false);
+	float volMod(1.0);
+	idStr gName(globalName), locName(localName), tempstr;
+
+	if( localName == NULL )
+	{
+		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, true );
+		// if we are doing the global only, gName remains set to globalName
+		goto Quit;
+	}
+
+	// do the parsing of the local vars that modify the Env. sound
+
+	// strip gName of all modifiers at the end
+
+Quit:
+	
+	if( bFoundSnd )
+	{
+		//TODO : Call soundprop to add env. sound to list
+		// have not written this sndprop functionality yet!
+	}
+	else
+	{
+		// log error, did not find sound in sound def file
+	}
+	return;
+}
+
+/*
+================
+idEntity::PropSoundDirect
+================
+*/
+
+void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv )
+{
+	idStr sprName, sprNameSG, sprNameEG;
+	bool bIsSusp(false), bIsEnv(false);
+
+	// uncomment for debugging (spams the logfile since it plays for every sound that happens)
+	// DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
+	
+	sprName = sndName;
+
+	sprName.StripLeading("snd_");
+
+	bIsSusp = spawnArgs.GetString( ("sprS_" + sprName) , "", sprNameSG );
+	bIsEnv =  spawnArgs.GetString( ("sprE_" + sprName) , "", sprNameEG );
+
+	if ( bForceLocal && ( !(idStr::Icmpn( sndName, "snd_", 4 ) == 0)
+		 || ( !bIsSusp && !bIsEnv ) ) )  
+	{
+		// uncomment for debugging
+		// DM_LOG(LC_SOUND, LT_WARNING).LogString("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
+		// gameLocal.Warning("[PropSound] Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)", sndName );
+		goto Quit;
+	}
+
+	if ( !bIsSusp && !bIsEnv ) 
+	{
+		// play the unmodified, global sound directly
+		sprNameSG = sndName;
+		sprNameEG = sndName;
+	}
+
+	if (bIsSusp)
+	{
+		PropSoundS( sprName.c_str(), sprNameSG.c_str() );
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
+		// exit here, because we don't want to allow playing both
+		// env. sound AND susp. sound for the same sound and entity
+		goto Quit;
+	}
+	if (bIsEnv)
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
+		PropSoundE( sprName.c_str(), sprNameEG.c_str() );
+		goto Quit;
+	}
+
+	// play the global sound directly.
+	if ( bAssumeEnv )
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
+		PropSoundE( NULL, sprNameEG.c_str() );
+		goto Quit;
+	}
+	else
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
+		PropSoundS( NULL, sprNameSG.c_str() );
+	}
+
+Quit:
+	return;
+}
+
+
 
 /***********************************************************************
 
