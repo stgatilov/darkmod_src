@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2005/04/07 08:40:16  ishtvan
+ * Fixes in the worldspawn parsing, removed warnings that displayed to the console
+ *
  * Revision 1.2  2005/03/30 18:16:20  sparhawk
  * CVS Header added
  *
@@ -185,12 +188,12 @@ bool CRelations::SetFromArgs( idDict *args )
 		
 		// parse it
 		start = 4;
-		end = tempKey.FindChar(tempKey.c_str(), ',');
+		end = tempKey.Find(',');
 		end--;
 
 		DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: arg %d, start = %d, end(comma-1) = %d\r", num, start, end);
 
-		if(end == -1)
+		if(end < 0 )
 		{
 			hadSynError = true;
 			goto Quit;
@@ -274,7 +277,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			EntryDat.val = tempint2;
 		}
 
-		// Check for asymmetric element and append one with same val if
+		// Check for asymmetric element and append one with same value if
 		// it does not exist.
 		if ( args->FindKeyIndex( va("rel %d,%d", EntryDat.col, EntryDat.row) ) == -1 )
 		{
@@ -318,8 +321,6 @@ Quit:
 	if(hadSynError)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
-		// make this a warning for now, so we can play maps without relationship matrices
-		//idLib::common->Error("Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)", num);
 		idLib::common->Warning("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
 	}
 
@@ -327,8 +328,6 @@ Quit:
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
-		// make this a warning for now, so we can play maps without relationship matrices
-		//idLib::common->Error("Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect)");
 		idLib::common->Warning("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 	}
 
