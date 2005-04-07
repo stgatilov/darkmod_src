@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/04/07 09:43:31  ishtvan
+ * *) Added an Event_Touch so that players will alert any enemy AI that they bump while moving
+ *
  * Revision 1.15  2005/03/26 16:01:59  sparhawk
  * Linefeeds
  *
@@ -67,6 +70,7 @@
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
 #include "../darkmod/intersection.h"
+#include "../darkmod/relations.h"
 
 /*
 ===============================================================================
@@ -137,6 +141,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
 	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
+	EVENT( EV_Touch,						idPlayer::Event_Touch )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -8747,4 +8752,24 @@ void idPlayer::AdjustLightgem(void)
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
+}
+
+void idPlayer::Event_Touch( idEntity *other, trace_t *trace ) 
+{
+	idAI *AItest;
+	
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Entity %s is touching the player.\r", other->name.c_str() );
+	if( !other->IsType( idAI::Type ) )
+		goto Quit;
+	
+	AItest = static_cast<idAI *>(other);
+
+	// note the reversed order of the team check.  We need to check
+	// if the other team hates the player, not the other way around.
+	if( gameLocal.m_RelationsManager->IsEnemy( AItest->team, team ) )
+		AItest->TactileAlert( this );
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Did team comparison between AI team %d and player team %d.\r", AItest->team, team );
+
+Quit:
+	return;
 }
