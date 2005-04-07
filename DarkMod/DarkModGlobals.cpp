@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.17  2005/04/07 08:35:42  ishtvan
+ * Added AI acuities hash, moved soundprop flags to game_local.h
+ *
  * Revision 1.16  2005/03/29 07:38:42  ishtvan
  * Added declaration of global AI Relations object
  *
@@ -85,7 +88,12 @@
 #include "Profile.h"
 #include "direct.h"
 #include "il/il.h"
+#include "sndproploader.h"
+#include "sndprop.h"
 #include "relations.h"
+#include "../game/ai/ai.h"
+
+class idAI;
 
 static char *LTString[LT_COUNT+1] = {
 	"INI",
@@ -116,7 +124,11 @@ static char *LCString[LC_COUNT+1] = {
 	"(empty)"
 };
 
-CRelations g_globalRelations;
+// declare various global objects
+
+CsndPropLoader	g_SoundPropLoader;
+CsndProp		g_SoundProp;
+CRelations		g_globalRelations;
 
 CGlobal::CGlobal(void)
 {
@@ -153,6 +165,27 @@ CGlobal::CGlobal(void)
 
 	if((m_LogFile = fopen("c:\\d3modlogger.log", "w+b")) != NULL)
 		DM_LOG(LC_INIT, LT_INIT).LogString("Initialzing mod logging\r");
+
+	// initialize the AI Acuities hash
+
+/**
+* Define AI Acuities Here:
+* NOTE: If you add an acuity, your total number of acuities
+* must be below s_MAXACUITIES defined in AI.h, unless you
+* want to chagne that and recompile everything.
+**/
+	m_AcuityNames.Append("vis");
+	m_AcuityNames.Append("aud");
+	m_AcuityNames.Append("tact");
+	m_AcuityNames.Append("env");
+	m_AcuityNames.Append("other");
+
+	m_AcuityNames.Condense();
+
+	for( int i=0; i < m_AcuityNames.Num(); i++ )
+	{
+		m_AcuityHash.Add( m_AcuityHash.GenerateKey( m_AcuityNames[i].c_str(), false ), i );
+	}
 }
 
 CGlobal::~CGlobal(void)
