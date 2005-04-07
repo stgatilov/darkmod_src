@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/04/07 09:24:35  ishtvan
+ * Added alerts: Visible, audible and tactile, as well as generalized alerts and acuities
+ *
  * Revision 1.2  2005/03/29 07:47:10  ishtvan
  * Modified idAI::ReactionTo to check AI Relations to check if an actor is an enemy before attacking that actor
  *
@@ -23,8 +26,35 @@
 
 #include "../Game_local.h"
 #include "../../darkmod/relations.h"
+#include "../../darkmod/darkmodglobals.h"
+#include "../../darkmod/playerdata.h"
+#include "../../darkmod/sndprop.h"
+
+//TODO: Move these to AI def:
+
+// Visual detection parameters
+
+/**
+* amount of time to normalize by for the % check, in seconds
+*  this gets modified by 1 / the cvar dm_ai_sight.
+**/
+static const float s_VisNormtime = 0.2f;
+
+/**
+* In pitch darkness, player is invisible
+**/
+// full bright minimum distance is 0
+static const float s_VisFDMin = 0.0f;
+
+// full bright maximum distance is zero (because probability is always zero anyway)
+static const float s_VisFDMax = 0.0f;
+
+const float s_DOOM_TO_METERS = 0.0254f;
+
 
 class CRelations;
+class CsndProp;
+class CDarkModPlayer;
 
 static const char *moveCommandString[ NUM_MOVE_COMMANDS ] = {
 	"MOVE_NONE",
@@ -375,6 +405,12 @@ idAI::idAI() {
 	eyeFocusRate		= 0.0f;
 	headFocusRate		= 0.0f;
 	focusAlignTime		= 0;
+
+	m_SoundDir.Zero();
+	m_LastSight.Zero();
+
+	m_TactAlertEnt = NULL;
+
 }
 
 /*
@@ -747,8 +783,25 @@ void idAI::Spawn( void ) {
 	spawnArgs.GetInt( "blockedMoveTime",		"750",		blockedMoveTime );
 	spawnArgs.GetInt( "blockedAttackTime",		"750",		blockedAttackTime );
 
+	// DarkMod: Set the AI acuities from the spawnargs.
+
+	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
+	{
+		spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100", m_Acuities[ind] );
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
+	}
+
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
 	current_cinematic = 0;
+
+	/**
+	* Initialize Darkmod AI vars
+	**/
+	AI_ALERTED = false;
+
+	AI_HEARDSOUND = false;
+	AI_VISALERT = false;
+	AI_TACTALERT = false;
 
 	LinkScriptVariables();
 
@@ -798,6 +851,9 @@ void idAI::Spawn( void ) {
 	eyeFocusRate		= spawnArgs.GetFloat( "eye_focus_rate", "0.5" );
 	headFocusRate		= spawnArgs.GetFloat( "head_focus_rate", "0.1" );
 	focusAlignTime		= SEC2MS( spawnArgs.GetFloat( "focus_align_time", "1" ) );
+
+	// DarkMod: Allow the FM author to set an initial alert number for AI
+	AI_AlertNum			= spawnArgs.GetFloat( "alert_initial", "0" );
 
 	flashJointWorld = animator.GetJointHandle( "flash" );
 
@@ -923,6 +979,9 @@ void idAI::Spawn( void ) {
 
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
+
+	// init DarkMod variables
+	m_BlockingActor = NULL;
 }
 
 /*
@@ -1120,12 +1179,21 @@ void idAI::Think( void ) {
 		AI_PAIN = false;
 		AI_SPECIAL_DAMAGE = 0;
 		AI_PUSHED = false;
+
 	} else if ( thinkFlags & TH_PHYSICS ) {
 		RunPhysics();
 	}
 
-	if ( af_push_moveables ) {
+	if ( af_push_moveables ) 
+	{
 		PushWithAF();
+	}
+
+	// Don't check tactile alerts if AI is already enganged in combat
+	if( !GetEnemy() && m_BlockingActor )
+	{
+		HadTactile( m_BlockingActor );
+		m_BlockingActor = NULL;
 	}
 
 	if ( fl.hidden && allowHiddenMovement ) {
@@ -1144,6 +1212,9 @@ void idAI::Think( void ) {
 	Present();
 	UpdateDamageEffects();
 	LinkCombat();
+
+	// Clear DarkMod per frame vars now that the script was updated.
+	AI_ALERTED = false;
 }
 
 /***********************************************************************
@@ -1157,7 +1228,8 @@ void idAI::Think( void ) {
 idAI::LinkScriptVariables
 =====================
 */
-void idAI::LinkScriptVariables( void ) {
+void idAI::LinkScriptVariables( void ) 
+{
 	AI_TALK.LinkTo(				scriptObject, "AI_TALK" );
 	AI_DAMAGE.LinkTo(			scriptObject, "AI_DAMAGE" );
 	AI_PAIN.LinkTo(				scriptObject, "AI_PAIN" );
@@ -1176,6 +1248,16 @@ void idAI::LinkScriptVariables( void ) {
 	AI_HIT_ENEMY.LinkTo(		scriptObject, "AI_HIT_ENEMY" );
 	AI_OBSTACLE_IN_PATH.LinkTo(	scriptObject, "AI_OBSTACLE_IN_PATH" );
 	AI_PUSHED.LinkTo(			scriptObject, "AI_PUSHED" );
+
+	//this is only set in a given frame
+	AI_ALERTED.LinkTo(			scriptObject, "AI_ALERTED" );
+
+	AI_AlertNum.LinkTo(			scriptObject, "AI_AlertNum" );
+
+	//these are set until unset by the script
+	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
+	AI_VISALERT.LinkTo(			scriptObject, "AI_VISALERT");
+	AI_TACTALERT.LinkTo(		scriptObject, "AI_TACTALERT");
 }
 
 /*
@@ -2593,15 +2675,25 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	}
 
 	// if we had an obstacle, set our move status based on the type, and kick it out of the way if it's a moveable
-	if ( obstacle ) {
-		if ( obstacle->IsType( idActor::Type ) ) {
+	if ( obstacle ) 
+	{
+		if ( obstacle->IsType( idActor::Type ) ) 
+		{
+			// DarkMod: Set the blocking actor for tactile alert tests
+			// uncomment for tactile alert debugging
+			//DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s is bumping into entity %s\r", name.c_str(), obstacle->name.c_str() );
+			m_BlockingActor = static_cast<idActor *>( obstacle );
+
 			// monsters aren't kickable
-			if ( obstacle == enemy.GetEntity() ) {
+			if ( obstacle == enemy.GetEntity() ) 
+			{
 				move.moveStatus = MOVE_STATUS_BLOCKED_BY_ENEMY;
-			} else {
+			} else 
+			{
 				move.moveStatus = MOVE_STATUS_BLOCKED_BY_MONSTER;
 			}
-		} else {
+		} else 
+		{
 			// try kicking the object out of the way
 			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 		}
@@ -3489,6 +3581,9 @@ void idAI::PlayCinematic( void ) {
 idAI::Activate
 
 Notifies the script that a monster has been activated by a trigger or flashlight
+
+DarkMod: Commented out calls to SetEnemy.  We don't want the AI calling setEnemy,
+only the alert state scripts.
 =====================
 */
 void idAI::Activate( idEntity *activator ) {
@@ -3512,8 +3607,9 @@ void idAI::Activate( idEntity *activator ) {
 			player = static_cast<idPlayer *>( activator );
 		}
 
-		if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) {
-			SetEnemy( player );
+		if ( ReactionTo( player ) & ATTACK_ON_ACTIVATE ) 
+		{
+			//SetEnemy( player );
 		}
 
 		// update the script in cinematics so that entities don't start anims or show themselves a frame late.
@@ -4328,6 +4424,8 @@ the facing direction + melee_range.
 
 kickDir is specified in the monster's coordinate system, and gives the direction
 that the view kick and knockback should go
+
+DarkMod : Took out saving throws.
 =====================
 */
 bool idAI::AttackMelee( const char *meleeDefName ) {
@@ -4352,6 +4450,12 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 
 	// check for the "saving throw" automatic melee miss on lethal blow
 	// stupid place for this.
+
+/**
+* Saving throws removed.  Uncomment the following for saving throws.
+**/
+
+/*** BEGIN SAVING THROWS SECTION *****
 	bool forceMiss = false;
 	if ( enemyEnt->IsType( idPlayer::Type ) && g_skill.GetInteger() < 2 ) {
 		int	damage, armor;
@@ -4371,8 +4475,13 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 		}
 	}
 
+
 	// make sure the trace can actually hit the enemy
 	if ( forceMiss || !TestMelee() ) {
+****** END SAVING THROWS SECTION *******/
+
+	if ( !TestMelee() )
+	{
 		// missed
 		p = meleeDef->GetString( "snd_miss" );
 		if ( p && *p ) {
@@ -4420,6 +4529,7 @@ void idAI::PushWithAF( void ) {
 	num_pushed = 0;
 	af.ChangePose( this, gameLocal.time );
 	int num = af.EntitiesTouchingAF( touchList );
+
 	for( i = 0; i < num; i++ ) {
 		if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) ) {
 			// skip projectiles
@@ -4432,16 +4542,21 @@ void idAI::PushWithAF( void ) {
 				break;
 			}
 		}
-		if ( j >= num_pushed ) {
+		if ( j >= num_pushed ) 
+		{
 			ent = touchList[ i ].touchedEnt;
 			pushed_ents[num_pushed++] = ent;
 			vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
 			vel.Normalize();
-			if ( attack.Length() && ent->IsType( idActor::Type ) ) {
+			if ( attack.Length() && ent->IsType( idActor::Type ) ) 
+			{
 				ent->Damage( this, this, vel, attack, 1.0f, INVALID_JOINT );
-			} else {
+			} else 
+			{
 				ent->GetPhysics()->SetLinearVelocity( 100.0f * vel, touchList[ i ].touchedClipModel->GetId() );
 			}
+
+
 		}
 	}
 }
@@ -5103,3 +5218,418 @@ void idCombatNode::Event_MarkUsed( void ) {
 		disabled = true;
 	}
 }
+
+// DarkMod sound propagation functions
+
+void idAI::SPLtoLoudness( SSprParms *propParms )
+{
+	// put in frequency, duration and bandwidth effects here
+	propParms->loudness = propParms->propVol;
+}
+
+bool idAI::CheckHearing( SSprParms *propParms )
+{
+	bool returnval(false);
+	float threshold;
+	
+	// TODO: threshold should be calculated from "aural acuity" number
+	// to make life easier for the FM author who has to define this
+
+	// TODO: Store this on a member instead of getting it every time...
+	if ( !spawnArgs.GetFloat("alert_aud_thresh", "", threshold) )
+	{
+		// set the threshold to the global default if it's not found
+		// in the specific AI's spawnargs.
+		threshold = gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold;
+	}
+
+	if( propParms->loudness > threshold)
+		returnval = true;
+
+	return returnval;
+}
+
+void idAI::HearSound
+	( SSprParms *propParms, float noise, 
+	  idVec3 origin, bool bSameArea )
+{
+	// TODO: calculate threshold from def and acuity
+	float threshold;
+
+	threshold = gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold;
+
+	// TODO:
+	// Modify loudness by propVol/noise ratio,
+	// looking up a selectivity spawnarg on the AI to
+	// see how well the AI distinguishes signal from noise
+
+	float psychLoud;
+
+	//psychLoud = pow(2, (propParms->loudness - threshold)/10 );
+	// this scale didn't make much sense for the alerts ingame
+	// because the numbers would have been very close together for
+	// very different amounts of alert.
+	// It is better to keep it in dB.
+
+	// and so alert units are born!
+
+	
+
+	/**
+	* NOTE: an AlertNum of 1 constitutes just barely seeing something
+	* out of the corner of your eye, or just barely hearing a whisper
+	* of a sound for a short instant.  An AlertNum of 10 is seeing/hearing twice
+	* as much, 20 is four times as much, etc.
+	**/
+
+	psychLoud = 1 + (propParms->loudness - threshold);
+
+	// quick fix for deaf AI:
+	if (GetAcuity("aud") > 0)
+	{
+		AI_HEARDSOUND = true;
+		m_SoundDir = propParms->direction;
+
+		AlertAI( "aud", psychLoud );
+		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s HEARD a sound\r", name.c_str() );
+		if( g_ai_debug.GetBool() )
+			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
+	}
+}
+
+
+void idAI::AlertAI( const char *type, float amount )
+{
+	float mod;
+
+	mod = GetAcuity( type );	
+	AI_AlertNum = AI_AlertNum + amount*mod/100.0;
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+	
+	if( g_ai_debug.GetBool() )
+		gameLocal.Printf("[DM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+
+	if( gameLocal.isNewFrame )
+		AI_ALERTED = true;
+}
+
+float idAI::GetAcuity( const char *type )
+{
+	float returnval;
+	int ind;
+	
+	ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey( type, false ) );
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Retrived Acuity index %d for type %s\r", ind, type);
+
+	if (ind == -1)
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString("Script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
+		gameLocal.Warning("[AI] AI script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
+		returnval = -1;
+		goto Quit;
+	}
+
+	returnval = m_Acuities[ind];
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Acuity %s = %f\r", type, returnval);
+
+Quit:
+	return returnval;
+}
+
+void idAI::SetAcuity( const char *type, float acuity )
+{
+	int ind;
+	
+	ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey( type, false ) );
+
+	if (ind == -1)
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString("Script on %s attempted to set nonexistant acuity type: %s\r",name.c_str(), type);
+		gameLocal.Warning("[AI] Script on %s attempted to set nonexistant acuity type: %s",name.c_str(), type);
+		goto Quit;
+	}
+
+	m_Acuities[ind] = acuity;
+
+Quit:
+	return;
+}
+
+idVec3 idAI::GetSndDir( void )
+{
+	return m_SoundDir;
+}
+
+idVec3 idAI::GetVisDir( void )
+{
+	return m_LastSight;
+}
+
+idEntity *idAI::GetTactEnt( void )
+{
+	return m_TactAlertEnt;
+}
+
+idActor *idAI::VisualScan( float timecheck )
+{
+	float visFrac, randFrac, lgem, incAlert(0);
+	idActor *actor;
+	
+	actor = FindEnemy( true );
+
+	if( !actor )
+	{
+		goto Quit;
+	}
+
+	if( !actor->IsType( idPlayer::Type ) )
+	{
+		actor = NULL;
+		goto Quit;
+	}
+
+	visFrac = GetVisibility( actor );
+	// uncomment for visibility fraction debugging (spams the log)
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Visibility fraction for %s = %f\r", actor->name.c_str(), visFrac );
+
+	// Do the percentage check
+	randFrac = gameLocal.random.RandomFloat( );
+	if( randFrac > ( (timecheck / s_VisNormtime * g_ai_sightmod.GetFloat()) * visFrac ) )
+	{
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
+		actor = NULL;
+		goto Quit;
+	}
+
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Random number check succeeded.\r");
+	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+
+	// set AI_VISALERT and the vector for last sighted position
+	
+	//quick fix for blind AI:
+	if( GetAcuity("vis") > 0 )
+	{
+		AI_VISALERT = true;
+		m_LastSight = actor->GetPhysics()->GetOrigin();
+
+		// convert to alert units ( 0.6931472 = log(2) )
+		incAlert = 4*log( visFrac * lgem ) / 0.6931472;
+		AlertAI( "vis", incAlert );
+	}
+
+	if ( actor )
+	{
+		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
+		if( g_ai_debug.GetBool() )
+			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
+	}
+
+Quit:
+	return actor;
+}
+
+float idAI::GetVisibility( idEntity *ent )
+{
+/**
+* PSUEDOCODE:
+* Factors:
+* Lightgem / brightness: Current lightgem number / max number
+* Distance: Do a linear increase and then cutoff?
+*			or more complicated clamped function?
+*
+* Movement: Do this later, but get the object's current velocity
+* from physics object or just read from the lightgem if this 
+* will be factored in to the lightgem.
+**/
+	// NOTE: Returns the probability that the entity will be seen in a half second
+
+	float lgem, safedist, clampdist, clampVal;
+	float dist, returnval(0);
+	idVec3 delta;
+
+	// for now, only players may have their visibility checked
+	if(!ent->IsType( idPlayer::Type ))
+		goto Quit;
+
+	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+	// debug for formula checking
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Current lightgem value = %f\r", lgem );
+
+	clampdist = (lgem -1) * ( g_ai_sightmindist.GetFloat() / 31 );
+	safedist = clampdist + (g_ai_sightmaxdist.GetFloat() - g_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
+
+	// clampVal is normalized to 100% at TimeNorm
+	// In other words: Visibility percentage scales linearly with the lightgem
+	//clampVal = (lgem-1)/31;
+
+	//NOTE: Linear model didn't work so well ingame, not enough response to increasing
+	// brightness.. try an exponential model (between 0 and 1) :
+	// the formula for now is: 1/e^1.2 * exp(1.2* lgem / lgem_max )
+	// TODO: Make the 1.2 a factor that you can tweak.
+	clampVal = 1/3.3201f * idMath::Exp16( 1.2 * (float) (lgem/32));
+
+	delta = GetEyePosition() - ent->GetPhysics()->GetOrigin();
+	dist = delta.Length()*s_DOOM_TO_METERS;
+
+	//TODO : Add acuity in to this calculation
+
+	if (dist < clampdist)
+		returnval = clampVal;
+	else if (dist > safedist)
+		returnval = 0;
+	else
+		returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
+
+Quit:
+	return returnval;
+}
+
+void idAI::TactileAlert( idEntity *entest, float amount )
+{
+	if ( amount == -1 )
+		amount = g_ai_tactalert.GetFloat();
+	
+	if( entest != NULL )
+	{
+		AlertAI( "tact", amount );
+		m_TactAlertEnt = entest;
+		
+		AI_TACTALERT = true;
+
+		if( g_ai_debug.GetBool() )
+		{
+			// Note: This can spam the log a lot, so only put it in if g_ai_debug.GetBool() is true
+			DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s FELT entity %s\r", name.c_str(), entest->name.c_str() );
+			gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), entest->name.c_str() );
+		}
+	}
+}
+	
+idActor *idAI::FindEnemy( bool useFOV ) 
+{
+	int			i;
+	idEntity	*ent;
+	idActor		*actor;
+
+	if ( gameLocal.InPlayerPVS( this ) ) 
+	{
+		for ( i = 0; i < gameLocal.numClients ; i++ ) {
+			ent = gameLocal.entities[ i ];
+
+			if ( !ent || !ent->IsType( idActor::Type ) ) {
+				continue;
+			}
+
+			actor = static_cast<idActor *>( ent );
+			if ( ( actor->health <= 0 ) || !( gameLocal.m_RelationsManager->IsEnemy(team, actor->team) ) ) 
+			{
+				continue;
+			}
+
+			if ( CanSee( actor, useFOV ) ) 
+			{
+				goto Quit;
+			}
+		}
+	}
+
+	actor = NULL;
+
+Quit:
+	return actor;
+}
+
+idActor *idAI::FindNearestEnemy( bool useFOV ) 
+{
+	idEntity	*ent;
+	idActor		*actor, *playerEnemy;
+	idActor		*bestEnemy;
+	float		bestDist;
+	float		dist;
+	idVec3		delta;
+	pvsHandle_t pvs;
+
+	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	bestDist = idMath::INFINITY;
+	bestEnemy = NULL;
+
+	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) 
+		{
+			continue;
+		}
+
+		actor = static_cast<idActor *>( ent );
+		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) 
+		{
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) 
+		{
+			continue;
+		}
+
+		delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
+		dist = delta.LengthSqr();
+		if ( ( dist < bestDist ) && CanSee( actor, useFOV ) ) {
+			bestDist = dist;
+			bestEnemy = actor;
+		}
+	}
+
+	playerEnemy = FindEnemy(false);
+	if( !playerEnemy )
+		goto Quit;
+
+	delta = physicsObj.GetOrigin() - playerEnemy->GetPhysics()->GetOrigin();
+	dist = delta.LengthSqr();
+
+	if( dist < bestDist )
+		bestEnemy = playerEnemy;
+		bestDist = dist;
+
+Quit:
+	gameLocal.pvs.FreeCurrentPVS( pvs );	
+	return bestEnemy;
+}
+
+bool idAI::IsEnemy( idEntity *other )
+{
+	bool returnval;
+	idActor *actor;
+
+	if ( !other->IsType( idActor::Type ) ) 
+	{
+		returnval = false;
+		goto Quit;
+	}
+
+	actor = static_cast<idActor *>( other );
+	returnval = gameLocal.m_RelationsManager->IsEnemy( team, actor->team );
+
+Quit:
+	return returnval;
+}
+
+void idAI::HadTactile( idActor *actor )
+{
+	if( !actor )
+		goto Quit;
+
+	if( gameLocal.m_RelationsManager->IsEnemy( team, actor->team ) )
+		TactileAlert( actor );
+
+	// alert both AI if they bump into eachother
+	if( gameLocal.m_RelationsManager->IsEnemy( actor->team, team ) 
+		&& actor->IsType(idAI::Type) )
+	{	
+		static_cast<idAI *>(actor)->TactileAlert( this );
+	}
+
+Quit:
+	return;
+}
+	

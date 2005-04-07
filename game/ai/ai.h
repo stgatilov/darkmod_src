@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2005/04/07 09:24:35  ishtvan
+ * Added alerts: Visible, audible and tactile, as well as generalized alerts and acuities
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -33,6 +36,11 @@ const float	AI_SEEK_PREDICTION			= 0.3f;
 const float	AI_FLY_DAMPENING			= 0.15f;
 const float	AI_HEARING_RANGE			= 2048.0f;
 const int	DEFAULT_FLY_OFFSET			= 68.0f;
+
+
+// used to declare the Dark Mod Acuity values array.
+// THIS MUST BE CHANGED if you want more than 15 acuities
+static const int s_MAXACUITIES = 15;
 
 #define ATTACK_IGNORE			0
 #define ATTACK_ON_DAMAGE		1
@@ -142,6 +150,20 @@ extern const idEventDef AI_EnableGravity;
 extern const idEventDef AI_DisableGravity;
 extern const idEventDef AI_TriggerParticles;
 extern const idEventDef AI_RandomPath;
+
+// DarkMod Events
+extern const idEventDef AI_GetRelationEnt;
+extern const idEventDef AI_IsEnemy;
+extern const idEventDef AI_IsFriend;
+extern const idEventDef AI_IsNeutral;
+extern const idEventDef AI_GetSndDir;
+extern const idEventDef AI_GetVisDir;
+extern const idEventDef AI_GetTactEnt;
+extern const idEventDef AI_VisScan;
+extern const idEventDef AI_Alert;
+extern const idEventDef AI_GetAcuity;
+extern const idEventDef AI_SetAcuity;
+extern const idEventDef AI_ClosestReachableEnemy;
 
 class idPathCorner;
 
@@ -258,6 +280,132 @@ public:
 	static bool				TestTrajectory( const idVec3 &start, const idVec3 &end, float zVel, float gravity, float time, float max_height, const idClipModel *clip, int clipmask, const idEntity *ignore, const idEntity *targetEntity, int drawtime );
 							// Finds the best collision free trajectory for a clip model.
 	static bool				PredictTrajectory( const idVec3 &firePos, const idVec3 &target, float projectileSpeed, const idVec3 &projGravity, const idClipModel *clip, int clipmask, float max_height, const idEntity *ignore, const idEntity *targetEntity, int drawtime, idVec3 &aimDir );
+
+	// Begin Dark Mod Functions:
+	
+	/**
+	* Checks with the global Relationship Manager to see if the
+	* other entity is an enemy of this AI.
+	**/
+	bool IsEnemy( idEntity *other );
+	
+	/**
+	* Interface with Dark Mod Sound Propagation
+	**/
+
+	/**
+	* Convert Sound Pressure Level from sound propagation
+	* to psychoacoustic Loudness for the given AI
+	* propVol is read from propParms, and 
+	* loudness is set in propParms for later use.
+	**/
+	void SPLtoLoudness( SSprParms *propParms );
+							
+	/**
+	* CheckHearing returns "true" if the sound is above
+	* AI hearing threshold, without taking env. noise into 
+	* account.
+	**/
+	bool CheckHearing( SSprParms *propParms );
+
+	/**
+	* Called by soundprop when AI hears a sound Assumes that CheckHearing
+	* has been called and that the sound is above threshold without
+	* considering environmental noise masking.
+	**/
+	void HearSound( SSprParms *propParms, float noise, idVec3 origin, bool bSameArea );
+
+	/**
+	* Return the last point at which the AI heard a sound
+	* Returns (0,0,0) if the AI didn't hear a sound.
+	* Check AI_HEARDSOUND to see if the vector is valid.
+	**/
+	idVec3 GetSndDir( void );
+
+	/**
+	* Return the last point at which an AI glimpsed something suspicious.
+	* Returns (0,0,0) if the AI was not visually alerted.
+	* Check AI_VISALERT to see if the vector is valid.
+	**/
+	idVec3 GetVisDir( void );
+
+	/**
+	* Returns the entity that the AI is in tactile contact with
+	**/
+	idEntity *GetTactEnt( void );
+
+	/**
+	* Visual Alerts
+	**/
+
+	/**
+	* Do a visibility calculation based on 3 things:
+	* The lightgem value, the distance to entity, and the movement velocity
+	* of the entity.
+	*
+	* The visibility can also be integrated over a number
+	* of frames if we need to do that for optimization later.
+	**/
+	float GetVisibility( idEntity *ent );
+
+	/**
+	* Checks enemies in the AI's FOV and calls Alert( "vis", amount )
+	* The amount is calculated based on distance and the lightgem
+	*
+	* It also returns the most visible entity in case the AI script
+	* goes into a combat state and needs to get the enemy to attack.
+	*
+	* For now the check is only done on the player, and only the player
+	* may be returned.
+	**/
+	idActor *VisualScan( float time = 1/60 );
+
+	/**
+	* Tactile Alerts:
+	*
+	* If no amount is entered, of the alert is defined in the global AI 
+	* settings def file, and it also gets multiplied by the AI's specific
+	* "acuity_tact" key in the spawnargs (defaults to 1.0)
+	*
+	* The amount is in alert units, so as usual 1 = barely noticible, 
+	*	10 = twice as noticable, etc.
+	**/
+	void TactileAlert( idEntity *ent, float amount = -1 );
+
+	/**
+	* This is called in the frame if the AI bumped into another actor.
+	* Checks the relationship to the AI, and calls TactileAlert appropriately.
+	*
+	* If the bumped actor is an enemy of the AI, the AI calls TactileAlert on itself
+	*
+	* If the bumped actor is an AI, and if this AI is an enemy of the bumped AI,
+	* it calls TactileAlert on the bumped AI as well.
+	**/
+	void HadTactile( idActor *actor );
+
+	/**
+	* Generalized alerts and acuities
+	**/
+
+	/**
+	* Alert the AI.  The first parameter is the alert type (same as acuity type)
+	* The second parameter is the alert amount.
+	* NOTE: For "alert units," an alert of 1 corresponds to just barely
+	* seeing something or just barely hearing a whisper of a sound.
+	**/
+	void AlertAI( const char *type, float amount );
+
+	/**
+	* Returns the float val of the specific AI's acuity
+	* Acuity type is a char, from the same list as alert types
+	* That list is defined in DarkModGlobals.cpp
+	**/
+	float GetAcuity( const char *type );
+
+	/**
+	* Sets the AI acuity for a certain type of alert.
+	**/
+	void SetAcuity( const char *type, float acuity );
 
 protected:
 	// navigation
@@ -402,6 +550,91 @@ protected:
 	idScriptBool			AI_HIT_ENEMY;
 	idScriptBool			AI_PUSHED;
 
+	/**
+	* DarkMod AI Member Vars
+	**/
+	
+	/**
+	* Set to true if the AI has been alerted in this frame
+	**/
+	idScriptBool			AI_ALERTED;
+
+	/**
+	* The following variables are set as soon as the AI
+	* gets a certain type of alert, and never unset by the
+	* game code.  They are only unset in scripting.  This is
+	* to facilitate different script reactions to different kinds
+	* of alerts.
+	*
+	* It's also done this way so that the AI will know if it has been
+	* alerted even if it happened in a frame that the script did not check.
+	*
+	* This is to facilitate optimization by having the AI check for alerts
+	* every N frames rather than every frame.
+	**/
+
+
+	/**
+	* Set to true if the AI heard a suspicious sound.
+	**/
+	idScriptBool			AI_HEARDSOUND;
+
+	/**
+	* Set to true if the AI saw something suspicious.
+	**/
+	idScriptBool			AI_VISALERT;
+
+	/**
+	* Set to true if the AI was pushed by or bumped into an enemy.
+	**/
+	idScriptBool			AI_TACTALERT;
+
+	/**
+	* The current alert number of the AI.
+	* This is checked by scripting to see if the AI should
+	* change alertstates.  This var is very important!
+	**/
+	idScriptFloat			AI_AlertNum;
+
+	/**
+	* Array containing the various AI acuities (visual, aural, tactile, etc)
+	**/
+	float					m_Acuities[s_MAXACUITIES];
+
+	/**
+	* Static visual distance cutoff that is calculated dynamically
+	* from the other visual acuity settings.
+	**/
+	float					m_VisDistMax;
+
+	/**
+	* The loudest direction for the last suspicious sound the AI heard
+	* is set to NULL if the AI has not yet heard a suspicious sound
+	* Note suspicious sounds that are omnidirectional do not set this.
+	* If no sound has been propagated it will be (0,0,0).
+	**/
+	idVec3					m_SoundDir;
+
+	/**
+	* Position of the last visual alert
+	**/
+	idVec3					m_LastSight;
+
+	/**
+	* The entity that last issued a tactile alert
+	**/
+	idEntity *				m_TactAlertEnt;
+
+	/**
+	* The entity that is currently blocking the AI's attempt to move
+	* This is used for tactile alert checks.
+	*
+	* NOTE: idAI already has a member variable that is supposed to store
+	*		this info, but in testing I found that it was bugged in certain
+	*		situations.  This one works in all situations.
+	**/
+	idActor *				m_BlockingActor;
+
 	//
 	// ai/ai.cpp
 	//
@@ -488,6 +721,31 @@ protected:
 	void					SetEnemyPosition( void );
 	void					UpdateEnemyPosition( void );
 	void					SetEnemy( idActor *newEnemy );
+/**
+* DarkMod: Ishtvan note:
+* Before I added this, this code was only called in
+* Event_FindEnemy, so it could be used by scripting, but
+* not by the SDK.  I just moved the code to a new function,
+* and made Event_FindEnemy call this.
+*
+* This was because I needed to use FindEnemy in the visibility
+* calculation.
+**/
+	idActor * FindEnemy( bool useFOV ) ;
+
+/**
+* Similarly to FindEnemy, this was previously only an Event_ scripting
+* function.  I moved it over to a new SDK function and had the Event_ 
+* call it, in case we want to use this later.  It returns the closest
+* AI or Player enemy.
+*
+* It was originally used to get tactile alerts, but is no longer used for that
+* IMO we should leave it in though, as we might use it for something later,
+* like determining what targets to engage with ranged weapons.
+**/	
+	idActor * FindNearestEnemy( bool useFOV = true );				
+		
+			
 
 	// attacks
 	void					CreateProjectileClipModel( void ) const;
@@ -519,7 +777,18 @@ protected:
 	// ai/ai_events.cpp
 	//
 	void					Event_Activate( idEntity *activator );
+
+/*****
+* DarkMod: Event_Touch was modified to issue a tactile alert.
+*
+* Note: Event_Touch checks ReactionTo, which checks our DarkMod Relations.
+* So it will only go off if the AI is bumped by an enemy that moves into it.
+* This is NOT called when an AI moves into an enemy.
+*
+* AI bumping by inanimate objects is handled separately in idMoveable::Collide.
+****/
 	void					Event_Touch( idEntity *other, trace_t *trace );
+
 	void					Event_FindEnemy( int useFOV );
 	void					Event_FindEnemyAI( int useFOV );
 	void					Event_FindEnemyInCombatNodes( void );
@@ -646,6 +915,57 @@ protected:
 	void 					Event_CanReachEntity( idEntity *ent );
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
+
+	/**
+	* Frontend scripting functions for Dark Mod Relations Manager
+	* See CRelations class definition for descriptions
+	**/
+	void					Event_GetRelationEnt( idEntity *ent );
+	void					Event_IsEnemy( idEntity *ent );
+	void					Event_IsFriend( idEntity *ent );
+	void					Event_IsNeutral( idEntity *ent );
+	
+	/**
+	* Script frontend for, idAI::GetAcuity and idAI::SetAcuity
+	* and idAI::AlertAI
+	**/
+	void Event_Alert( const char *type, float amount );
+	void Event_GetAcuity( const char *type );
+	void Event_SetAcuity( const char *type, float val );
+
+	/**
+	* Scan for the player in FOV, and cause a visual alert if found
+	* Currently only checks the player.
+	* Will return the entity that caused the visual alert for 
+	* scripting purposes.
+	**/
+	void Event_VisScan( void );
+	
+	/**
+	* Return the last suspicious sound direction
+	**/
+	void Event_GetSndDir( void );
+
+	/**
+	* Return the last visual alert position
+	**/
+	void Event_GetVisDir( void );
+
+	/**
+	* Return the entity that the AI is in tactile contact with
+	**/
+	void Event_GetTactEnt( void );
+
+	/**
+	* This is needed for accurate AI-AI combat
+	* It just calls the vanilla D3 event:
+	* Event_ClosestReachableEnemyToEntity( idEntity *ent )
+	* with the "this" pointer.
+	*
+	* For some reason this was left out of D3.
+	**/
+	void idAI::Event_ClosestReachableEnemy( void );
+
 };
 
 class idCombatNode : public idEntity {
