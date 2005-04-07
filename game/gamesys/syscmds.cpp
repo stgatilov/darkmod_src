@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/04/07 09:49:16  ishtvan
+ * Added soundprop file I/O debugging command "testsndIO"
+ *
  * Revision 1.3  2005/03/29 07:50:45  ishtvan
  * AI Relations: Added command "PrintAIRelations," which prints the AI relationship matrix to the console for debugging purposes
  *
@@ -25,9 +28,35 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../../darkmod/sndproploader.h"
 #include "../../darkmod/relations.h"
 
 #include "TypeInfo.h"
+
+/*
+==================
+Cmd_TestSndIO_f
+==================
+*/
+void Cmd_TestSndIO_f( const idCmdArgs &args ) 
+{
+	idStr inFN;
+
+	if ( args.Argc() < 2 ) {
+		gameLocal.Printf( "usage: dm_spr_testIO <file name without extension>\n" );
+		goto Quit;
+	}
+	inFN = args.Args();
+
+	if ( inFN.Length() == 0 ) 
+	{
+		goto Quit;
+	}
+	gameLocal.Printf( "Testing sound prop. IO for file %s\n", inFN.c_str() );
+	gameLocal.m_sndPropLoader->testReadWrite( inFN );
+Quit:
+	return;
+}
 
 /*
 ==================
@@ -2375,8 +2404,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
 
-
-	cmdSystem->AddCommand( "printAIRelations",		Cmd_PrintAIRelations_f,		CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
+	cmdSystem->AddCommand( "dm_spr_testIO",				Cmd_TestSndIO_f,		CMD_FL_GAME,				"test soundprop file IO (needs a .spr file)" );
+	cmdSystem->AddCommand( "dm_ai_Relations",			Cmd_PrintAIRelations_f,	CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
