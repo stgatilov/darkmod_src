@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/04/07 09:28:53  ishtvan
+ * *) Moved Relations methods to idAI.  They did not belong on idActor.
+ *
+ * *) Added calling of Soundprop in method PlayFootstepSound
+ *
  * Revision 1.2  2005/03/29 07:40:30  ishtvan
  * Added AI Relations functions to be used by scripting
  *
@@ -22,9 +27,6 @@
 #pragma hdrstop
 
 #include "Game_local.h"
-#include "../darkmod/relations.h"
-
-class CRelations;
 
 
 /***********************************************************************
@@ -356,12 +358,6 @@ const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 
-// frontend for relationship manager
-const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
-const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
-const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
-const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
-
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -405,11 +401,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
-	
-	EVENT( AI_GetRelationEnt,			idActor::Event_GetRelationEnt )
-	EVENT( AI_IsEnemy,					idActor::Event_IsEnemy )
-	EVENT( AI_IsFriend,					idActor::Event_IsFriend )
-	EVENT( AI_IsNeutral,				idActor::Event_IsNeutral )
 END_CLASS
 
 /*
@@ -2404,6 +2395,7 @@ idActor::Event_EnableEyeFocus
 */
 void idActor::PlayFootStepSound( void ) {
 	const char *sound = NULL;
+	char *localSound;
 	const idMaterial *material;
 
 	if ( !GetPhysics()->HasGroundContacts() ) {
@@ -2412,14 +2404,19 @@ void idActor::PlayFootStepSound( void ) {
 
 	// start footstep sound based on material type
 	material = GetPhysics()->GetContact( 0 ).material;
-	if ( material != NULL ) {
-		sound = spawnArgs.GetString( va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] ) );
+	if ( material != NULL ) 
+	{
+		localSound = va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] );
+		sound = spawnArgs.GetString( localSound );
 	}
 	if ( *sound == '\0' ) {
+		localSound = "snd_footstep";
 		sound = spawnArgs.GetString( "snd_footstep" );
 	}
-	if ( *sound != '\0' ) {
+	if ( *sound != '\0' ) 
+	{
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
+		PropSoundDirect( static_cast<const char *>( localSound ), true, false );
 	}
 }
 
@@ -3278,62 +3275,3 @@ idActor::Event_GetHead
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
 }
-
-/**
-* DarkMod: Begin Team Relationship Events.  See the definitions on CRelations
-* for descriptions of the Relations functions that are called.
-**/
-
-void idActor::Event_GetRelationEnt( idEntity *ent )
-{
-	idActor *actor;
-
-	if ( !ent->IsType( idActor::Type ) ) 
-	{
-		gameLocal.Error( "'%s' is not an idActor, cannot have relationships", ent->name.c_str() );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team, actor->team ) );
-}
-
-void idActor::Event_IsEnemy( idEntity *ent )
-{
-	idActor *actor;
-
-	if ( !ent->IsType( idActor::Type ) ) 
-	{
-		gameLocal.Error( "'%s' is not an idActor, cannot have relationships", ent->name.c_str() );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsEnemy( team, actor->team ) );
-}
-
-void idActor::Event_IsFriend( idEntity *ent )
-{
-	idActor *actor;
-
-	if ( !ent->IsType( idActor::Type ) ) 
-	{
-		gameLocal.Error( "'%s' is not an idActor, cannot have relationships", ent->name.c_str() );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
-}
-
-void idActor::Event_IsNeutral( idEntity *ent )
-{
-	idActor *actor;
-
-	if ( !ent->IsType( idActor::Type ) ) 
-	{
-		gameLocal.Error( "'%s' is not an idActor, cannot have relationships", ent->name.c_str() );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, actor->team ) );
-}
-
-

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/04/07 09:28:54  ishtvan
+ * *) Moved Relations methods to idAI.  They did not belong on idActor.
+ *
+ * *) Added calling of Soundprop in method PlayFootstepSound
+ *
  * Revision 1.2  2005/03/29 07:40:30  ishtvan
  * Added AI Relations functions to be used by scripting
  *
@@ -44,11 +49,6 @@ extern const idEventDef AI_PlayCycle;
 extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
-
-extern const idEventDef AI_GetRelationEnt;
-extern const idEventDef AI_IsEnemy;
-extern const idEventDef AI_IsFriend;
-extern const idEventDef AI_IsNeutral;
 
 class idDeclParticle;
 
@@ -163,23 +163,6 @@ public:
 	const char *			GetDamageGroup( int location );
 	void					ClearPain( void );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
-
-							/**
-							* Sound propagation related (NOT YET IMPLEMENTED)
-							**/
-
-							/**
-							* CheckHearing returns "true" if the sound is above
-							* AI hearing threshold, without taking env. noise into 
-							* account.
-							**/
-	//bool					CheckHearing( float sVol, USprFlags flags );
-
-							/**
-							* Called when AI hears a sound
-							**/
-	//void					HearSound( float sVol, float noiseVol, idStr sndName, 
-	//									USprFlags flags, idVec3 loudestPortal, idVec3 origin );
 
 							// model/combat model/ragdoll
 	void					SetCombatModel( void );
@@ -328,11 +311,6 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
-
-	void					Event_GetRelationEnt( idEntity *ent );
-	void					Event_IsEnemy( idEntity *ent );
-	void					Event_IsFriend( idEntity *ent );
-	void					Event_IsNeutral( idEntity *ent );
 };
 
 #endif /* !__GAME_ACTOR_H__ */
