@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/04/07 08:42:38  ishtvan
+ * Added placeholder method GetSoundLoss, which is called by CsndProp
+ *
  * Revision 1.4  2004/11/24 21:59:06  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -60,6 +63,8 @@ public:
 	void					ToggleLock(void);
 
 	bool					UsedBy(idEntity *);
+
+	float					GetSoundLoss(void);
 
 protected:
 	/**

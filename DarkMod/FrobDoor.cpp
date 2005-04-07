@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/04/07 08:42:38  ishtvan
+ * Added placeholder method GetSoundLoss, which is called by CsndProp
+ *
  * Revision 1.4  2004/11/24 21:59:06  sparhawk
  * *) Multifrob implemented
  * *) Usage of items against other items implemented.
@@ -389,3 +392,25 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 	return bRc;
 }
 
+float CFrobDoor::GetSoundLoss(void)
+{
+	float returnval;
+
+	// TODO: Get open/closed state
+
+	// TODO: check the spawnarg: sound_char, and return the 
+	// appropriate loss for that door, open or closed
+
+	// TODO: Account for double doors, get state of other door
+
+	if (m_Open == true)
+	{
+		returnval = 1;
+	}
+	else
+	{
+		returnval = 15;
+	}
+
+	return returnval;
+}
