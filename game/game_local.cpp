@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/04/07 09:35:57  ishtvan
+ * Added pointer to the global sound prop class, initialization and loading of soundprop data at the proper times
+ *
  * Revision 1.11  2005/03/29 07:45:20  ishtvan
  * AI Relations: global AI relations object initializes from map, is saved & restored, and cleared on map shutdown
  *
@@ -56,7 +59,8 @@
 #include "../darkmod/playerdata.h"
 #include "../darkmod/misc.h"
 #include "../darkmod/relations.h"
-
+#include "../darkmod/sndproploader.h"
+#include "../darkmod/sndprop.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -64,6 +68,11 @@
 CGlobal g_Global;
 
 extern CRelations		g_globalRelations;
+
+extern CsndPropLoader	g_SoundPropLoader;
+
+extern CsndProp			g_SoundProp;
+
 #define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
@@ -185,6 +194,8 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
+	m_sndPropLoader = &g_SoundPropLoader;
+	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
 	
 	Clear();
@@ -360,6 +371,9 @@ void idGameLocal::Init( void ) {
 	Printf( "Parsing material files\n" );
 
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
+
+	// load the soundprop globals from the def file
+	m_sndPropLoader->GlobalsFromDef();
 }
 
 /*
@@ -942,6 +956,10 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	clip.Init();
 	pvs.Init();
+
+	// this will always fail for now, have not yet written the map compile
+	m_sndPropLoader->LoadSprFile( mapFileName );
+
 	playerPVS.i = -1;
 	playerConnectedAreas.i = -1;
 
@@ -1149,6 +1167,7 @@ void idGameLocal::NextMap_f( const idCmdArgs &args ) {
 /*
 ===================
 idGameLocal::MapPopulate
+Sound prop: Added filling sndProp doorID hash
 ===================
 */
 void idGameLocal::MapPopulate( void ) {
@@ -1166,6 +1185,11 @@ void idGameLocal::MapPopulate( void ) {
 	RandomizeInitialSpawns( );
 
 	mapSpawnCount = spawnCount;
+
+	// Transfer sound prop data from loader to gameplay object
+	m_sndProp->SetupFromLoader( m_sndPropLoader );
+
+	m_sndPropLoader->Shutdown();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
@@ -1509,6 +1533,8 @@ void idGameLocal::MapShutdown( void ) {
 	}
 
 	pvs.Shutdown();
+
+	m_sndProp->Clear();
 	m_RelationsManager->Clear();
 
 	clip.Shutdown();
@@ -4423,4 +4449,3 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 Quit:
 	return;
 }
-
