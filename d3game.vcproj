@@ -1114,6 +1114,22 @@
 					>
 				</File>
 				<File
+					RelativePath=".\DarkMod\sndProp.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndProp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndPropLoader.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndPropLoader.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DarkMod\Strip.cpp"
 					>
 				</File>
