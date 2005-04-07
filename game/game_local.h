@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/04/07 09:38:10  ishtvan
+ * *) Added members for global sound prop and sound prop loader objects
+ *
+ * *) Added global typedef for sound propagation flags which are needed by several different classes
+ *
  * Revision 1.3  2005/03/29 07:43:42  ishtvan
  * Added forward declared pointer to global AI relations object: m_RelationsManager
  *
@@ -20,6 +25,20 @@
 
 // Copyright (C) 2004 Id Software, Inc.
 //
+
+/** DarkMod AI Note:
+* The following members in class idGameLocal:
+* lastAIAlertEntity, lastAIAlertTime and idGameLocal::AlertAI
+* ALL have nothing to do with DarkMod AI.
+*
+* DarkMod AI alerts are handled in class idAI
+*
+* AIAlertEntity alerts ALL AI to the entity in vanilla D3
+*
+* Unfortunately idGameLocal::AlertAI has the same name as
+* our DarkMod alert function, idAI::AlertAI.  DarkMod
+* alerts do not directly make use of idGameLocal::AlertAI.
+**/
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
@@ -97,6 +116,8 @@ class idLocationEntity;
 //============================================================================
 
 class CLightMaterial;
+class CsndPropLoader;
+class CsndProp;
 class CRelations;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
@@ -170,6 +191,57 @@ typedef struct {
 	idEntity	*ent;
 	int			dist;
 } spawnSpot_t;
+
+//===========Dark Mod Global Typedefs===========
+
+/**
+* Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
+* Therefore they are global.
+* See sound prop doc file for definitions of these flags.
+**/
+
+typedef struct SSprFlagBits_s
+{
+	// team alert flags
+	unsigned int friendly : 1;
+	unsigned int neutral : 1;
+	unsigned int enemy : 1;
+	unsigned int same : 1;
+
+	// propagation flags
+	unsigned int omni_dir : 1; // omnidirectional
+	unsigned int unique_loc : 1; // sound comes from a unique location
+	unsigned int urgent : 1; // urgent (AI tries to respond ASAP)
+	unsigned int global_vol : 1; // sound has same volume over whole map
+	unsigned int check_touched : 1; // for non-AI, check who last touched the entity
+} SSprFlagBits;
+
+typedef union USprFlags_s
+{
+	unsigned int m_field;
+	SSprFlagBits m_bits;
+} USprFlags;
+
+/**
+* Sound propagation parameters: needed for function arguments
+**/
+
+typedef struct SSprParms_s
+{
+	USprFlags flags;
+
+	const char *name; // sound name
+	float propVol; // propagated volume
+	idVec3 direction; // direction of the loudest sound
+	float duration; // duration
+	int frequency; // int representing the octave of the sound
+	float bandwidth; // sound bandwidth
+
+	float loudness; // this is set by AI hearing response
+
+	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
+
+} SSprParms;
 
 //============================================================================
 
@@ -329,6 +401,19 @@ public:
 * Pointer to global AI Relations object
 **/
 	CRelations *			m_RelationsManager;
+
+/**
+* Pointer to global sound prop loader object
+**/
+	CsndPropLoader *		m_sndPropLoader;
+
+/**
+* Pointer to global sound prop gameplay object
+**/
+	CsndProp *				m_sndProp;
+
+
+
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
