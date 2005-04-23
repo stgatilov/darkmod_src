@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/04/23 10:09:11  ishtvan
+ * Added fix for slow player movement speeds being unable to overcome the floor friction
+ *
  * Revision 1.2  2004/11/28 09:20:37  sparhawk
  * SDK V2 merge
  *
@@ -42,6 +45,15 @@ const float PM_AIRFRICTION		= 0.0f;
 const float PM_WATERFRICTION	= 1.0f;
 const float PM_FLYFRICTION		= 3.0f;
 const float PM_NOCLIPFRICTION	= 12.0f;
+
+/**
+* Desired player speed below which ground friction is neglected
+*
+* This was determined for PM_FRICTION = 6.0 and should change if
+*	PM_FRICTION changes from 6.0.
+**/
+
+const float PM_NOFRICTION_SPEED = 69.0f;
 
 const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
 const float OVERCLIP			= 1.001f;
@@ -463,7 +475,8 @@ void idPhysics_Player::Friction( void ) {
 		// no friction on slick surfaces
 		if ( !(groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK) ) {
 			// if getting knocked back, no friction
-			if ( !(current.movementFlags & PMF_TIME_KNOCKBACK) ) {
+			if ( !(current.movementFlags & PMF_TIME_KNOCKBACK) ) 
+			{
 				control = speed < PM_STOPSPEED ? PM_STOPSPEED : speed;
 				drop += control * PM_FRICTION * frametime;
 			}
@@ -696,8 +709,14 @@ void idPhysics_Player::WalkMove( void ) {
 	if ( ( groundMaterial && groundMaterial->GetSurfaceFlags() & SURF_SLICK ) || current.movementFlags & PMF_TIME_KNOCKBACK ) {
 		accelerate = PM_AIRACCELERATE;
 	}
-	else {
+	else 
+	{
 		accelerate = PM_ACCELERATE;
+		
+	//FIX: If the player is moving very slowly, bump up their acceleration
+	// so they don't get stuck to the floor by friction.
+		if( playerSpeed < PM_NOFRICTION_SPEED )
+			accelerate *= 3.0f;
 	}
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, accelerate );
