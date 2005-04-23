@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2005/04/23 01:43:53  ishtvan
+ * Added SetFrameRate frame command, for re-using animations but slowing them down or speeding them up on the fly
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,7 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../darkmod/darkmodglobals.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
@@ -600,7 +604,19 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		if( src.ReadTokenOnLine( &token ) ) {
 			fc.string = new idStr( token );
 		}
-	} else {
+	} else if (token == "setRate" )
+	{
+		if( !src.ReadTokenOnLine( &token ) ) 
+		{
+			DM_LOG(LC_MISC, LT_ERROR).LogString("ANIMRATE: Did not find rate, exiting\r");
+			return "Unexpected end of line";
+		}
+
+		fc.type = FC_SETRATE;
+		fc.string = new idStr( token );
+	} 
+	
+	else {
 		return va( "Unknown command '%s'", token.c_str() );
 	}
 
@@ -913,7 +929,8 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					}
 					break;
 				}
-				case FC_AVIGAME: {
+				case FC_AVIGAME: 
+				{
 					if ( command.string ) {
 						cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "aviGame %s", command.string->c_str() ) );
 					} else {
@@ -921,6 +938,21 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					}
 					break;
 				}
+
+				case FC_SETRATE:
+				{
+					int newRate = atoi( command.string->c_str() );
+					
+					for( int ind = 0; ind < numAnims; ind++ )
+					{
+						// debug for SetRate debugging
+						//DM_LOG(LC_SOUND, LT_DEBUG).LogString("SETFRAMERATE: Setting frame rate: %d, on entity %s, channel %d\r", newRate, ent->name.c_str(), ind );
+						const_cast<idMD5Anim *>(anims[ ind ])->SetFrameRate( newRate );
+					}
+					break;
+				}
+
+
 			}
 		}
 	}
@@ -1450,6 +1482,7 @@ void idAnimBlend::SetCycleCount( int count ) {
 				endtime = -1;
 			}
 		} else {
+
 			// most of the time we're running at the original frame rate, so avoid the int-to-float-to-int conversion
 			if ( rate == 1.0f ) {
 				endtime	= starttime - timeOffset + anim->Length() * cycle;
