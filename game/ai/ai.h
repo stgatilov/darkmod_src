@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/04/23 01:42:47  ishtvan
+ * Added AI awareness of their crouch/run/creep state
+ *
  * Revision 1.2  2005/04/07 09:24:35  ishtvan
  * Added alerts: Visible, audible and tactile, as well as generalized alerts and acuities
  *
@@ -407,6 +410,32 @@ public:
 	**/
 	void SetAcuity( const char *type, float acuity );
 
+	/**
+	* Get the volume modifier for a given movement type
+	* Use the same function as idPlayer::GetMovementVolMod.
+	* Unfortunately this is exactly the same as idPlayer::GetMovementVolMod
+	* It's bad coding, but that's how D3 wrote the movement vars.
+	**/
+	float GetMovementVolMod( void );
+
+public:
+	/**
+	* DarkMod AI Member Vars
+	**/
+	
+	/**
+	* Set to true if the AI has been alerted in this frame
+	**/
+	idScriptBool			AI_ALERTED;
+
+	/**
+	* Set these flags so we can tell if the AI is running or creeping
+	* for the purposes of playing audible sounds and propagated sounds.
+	**/
+	idScriptBool			AI_CROUCH;
+	idScriptBool			AI_RUN;
+	idScriptBool			AI_CREEP;
+
 protected:
 	// navigation
 	idAAS *					aas;
@@ -549,15 +578,6 @@ protected:
 	idScriptBool			AI_DEST_UNREACHABLE;
 	idScriptBool			AI_HIT_ENEMY;
 	idScriptBool			AI_PUSHED;
-
-	/**
-	* DarkMod AI Member Vars
-	**/
-	
-	/**
-	* Set to true if the AI has been alerted in this frame
-	**/
-	idScriptBool			AI_ALERTED;
 
 	/**
 	* The following variables are set as soon as the AI

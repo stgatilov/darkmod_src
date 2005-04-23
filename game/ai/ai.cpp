@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/04/23 01:42:47  ishtvan
+ * Added AI awareness of their crouch/run/creep state
+ *
  * Revision 1.3  2005/04/07 09:24:35  ishtvan
  * Added alerts: Visible, audible and tactile, as well as generalized alerts and acuities
  *
@@ -765,6 +768,16 @@ void idAI::Spawn( void ) {
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
 
 	spawnArgs.GetBool( "talks",					"0",		talks );
+
+	// DarkMod: Get the movement type audible volumes from the spawnargs
+	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
+	spawnArgs.GetFloat( "stepvol_run",			"0",		m_stepvol_run );
+	spawnArgs.GetFloat( "stepvol_creep",		"0",		m_stepvol_creep );
+
+	spawnArgs.GetFloat( "stepvol_crouch_walk",			"0",		m_stepvol_crouch_walk );
+	spawnArgs.GetFloat( "stepvol_run",			"0",		m_stepvol_crouch_run );
+	spawnArgs.GetFloat( "stepvol_creep",		"0",		m_stepvol_crouch_creep );
+
 	if ( spawnArgs.GetString( "npc_name", NULL ) != NULL ) {
 		if ( talks ) {
 			talk_state = TALK_OK;
@@ -798,6 +811,9 @@ void idAI::Spawn( void ) {
 	* Initialize Darkmod AI vars
 	**/
 	AI_ALERTED = false;
+	AI_CROUCH = false;
+	AI_RUN = false;
+	AI_CREEP = false;
 
 	AI_HEARDSOUND = false;
 	AI_VISALERT = false;
@@ -1258,6 +1274,10 @@ void idAI::LinkScriptVariables( void )
 	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
 	AI_VISALERT.LinkTo(			scriptObject, "AI_VISALERT");
 	AI_TACTALERT.LinkTo(		scriptObject, "AI_TACTALERT");
+
+	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH");
+	AI_RUN.LinkTo(				scriptObject, "AI_RUN");
+	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP");
 }
 
 /*
@@ -5292,7 +5312,7 @@ void idAI::HearSound
 
 		AlertAI( "aud", psychLoud );
 		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s HEARD a sound\r", name.c_str() );
-		if( g_ai_debug.GetBool() )
+		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
 }
@@ -5307,7 +5327,7 @@ void idAI::AlertAI( const char *type, float amount )
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
 	
-	if( g_ai_debug.GetBool() )
+	if( cv_ai_debug.GetBool() )
 		gameLocal.Printf("[DM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
 
 	if( gameLocal.isNewFrame )
@@ -5395,7 +5415,7 @@ idActor *idAI::VisualScan( float timecheck )
 
 	// Do the percentage check
 	randFrac = gameLocal.random.RandomFloat( );
-	if( randFrac > ( (timecheck / s_VisNormtime * g_ai_sightmod.GetFloat()) * visFrac ) )
+	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sightmod.GetFloat()) * visFrac ) )
 	{
 		//DM_LOG(LC_AI, LT_DEBUG).LogString("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
 		actor = NULL;
@@ -5421,7 +5441,7 @@ idActor *idAI::VisualScan( float timecheck )
 	if ( actor )
 	{
 		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
-		if( g_ai_debug.GetBool() )
+		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
 	}
 
@@ -5456,8 +5476,8 @@ float idAI::GetVisibility( idEntity *ent )
 	// debug for formula checking
 	//DM_LOG(LC_AI, LT_DEBUG).LogString("Current lightgem value = %f\r", lgem );
 
-	clampdist = (lgem -1) * ( g_ai_sightmindist.GetFloat() / 31 );
-	safedist = clampdist + (g_ai_sightmaxdist.GetFloat() - g_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
+	clampdist = (lgem -1) * ( cv_ai_sightmindist.GetFloat() / 31 );
+	safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
 
 	// clampVal is normalized to 100% at TimeNorm
 	// In other words: Visibility percentage scales linearly with the lightgem
@@ -5488,7 +5508,7 @@ Quit:
 void idAI::TactileAlert( idEntity *entest, float amount )
 {
 	if ( amount == -1 )
-		amount = g_ai_tactalert.GetFloat();
+		amount = cv_ai_tactalert.GetFloat();
 	
 	if( entest != NULL )
 	{
@@ -5497,9 +5517,9 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 		
 		AI_TACTALERT = true;
 
-		if( g_ai_debug.GetBool() )
+		if( cv_ai_debug.GetBool() )
 		{
-			// Note: This can spam the log a lot, so only put it in if g_ai_debug.GetBool() is true
+			// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
 			DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s FELT entity %s\r", name.c_str(), entest->name.c_str() );
 			gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), entest->name.c_str() );
 		}
@@ -5631,5 +5651,54 @@ void idAI::HadTactile( idActor *actor )
 
 Quit:
 	return;
+}
+
+/*
+=====================
+idAI::GetMovementVolMod
+=====================
+*/
+
+float idAI::GetMovementVolMod( void )
+{
+	float returnval;
+	bool bCrouched(false);
+	
+	if( AI_CROUCH )
+		bCrouched = true;
+
+	// figure out which of the 6 cases we have:
+	if( !AI_RUN && !AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_walk;
+		else
+			returnval = m_stepvol_crouch_walk;
+	}
+
+	// NOTE: running always has priority over creeping
+	else if( AI_RUN )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_run;
+		else
+			returnval = m_stepvol_crouch_run;
+	}
+
+	else if( AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_creep;
+		else
+			returnval = m_stepvol_crouch_creep;
+	}
+
+	else
+	{
+		// something unexpected happened
+		returnval = 0;
+	}
+
+	return returnval;
 }
 	
