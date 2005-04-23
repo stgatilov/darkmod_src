@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/04/23 01:48:58  ishtvan
+ * *) Removed the effect of stamina on everything but the heartbeat sound
+ *
+ * *) Added additional movement speeds (creep, crouch-creep and crouch-run) for 6 total movement speeds
+ *
  * Revision 1.5  2005/04/07 10:02:42  ishtvan
  * added event_touch method for triggering AI's tactile alert when player bumps them
  *
@@ -248,6 +253,11 @@ public:
 	idScriptBool			AI_TELEPORT;
 	idScriptBool			AI_TURN_LEFT;
 	idScriptBool			AI_TURN_RIGHT;
+
+	/**
+	* Set to true if the player is creeping
+	**/
+	idScriptBool			AI_CREEP;
 
 	// inventory
 	idInventory				inventory;
@@ -523,6 +533,17 @@ public:
 	 * AdjustLightgem will calculate how much the lightgem should light up
 	 */
 	void AdjustLightgem(void);
+
+	/**
+	* Update movement volumes: Reads the movement volume
+	* modifiers from cvars (for now)
+	**/
+	void UpdateMoveVolumes( void );
+
+	/**
+	* Get the volume modifier for a given movement type
+	**/
+	float GetMovementVolMod( void );
 
 private:
 	jointHandle_t			hipJoint;

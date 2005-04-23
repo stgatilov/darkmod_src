@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/04/23 01:48:58  ishtvan
+ * *) Removed the effect of stamina on everything but the heartbeat sound
+ *
+ * *) Added additional movement speeds (creep, crouch-creep and crouch-run) for 6 total movement speeds
+ *
  * Revision 1.16  2005/04/07 09:43:31  ishtvan
  * *) Added an Event_Touch so that players will alert any enemy AI that they bump while moving
  *
@@ -1189,6 +1194,8 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_TELEPORT.LinkTo(			scriptObject, "AI_TELEPORT" );
 	AI_TURN_LEFT.LinkTo(		scriptObject, "AI_TURN_LEFT" );
 	AI_TURN_RIGHT.LinkTo(		scriptObject, "AI_TURN_RIGHT" );
+
+	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP" );
 }
 
 /*
@@ -1400,6 +1407,8 @@ void idPlayer::Init( void ) {
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
 
+	AI_CREEP		= false;
+
 	// reset the script object
 	ConstructScriptObject();
 
@@ -1600,6 +1609,9 @@ void idPlayer::Spawn( void ) {
 
 	inventory.pdaOpened = false;
 	inventory.selPDA = 0;
+
+	// copy step volumes over from cvars
+	UpdateMoveVolumes();
 
 	if ( !gameLocal.isMultiplayer ) {
 		if ( g_skill.GetInteger() < 2 ) {
@@ -2703,6 +2715,8 @@ void idPlayer::EnterCinematic( void ) {
 	AI_TELEPORT		= false;
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
+
+	AI_CREEP		= false;
 }
 
 /*
@@ -2760,8 +2774,13 @@ void idPlayer::UpdateConditions( void ) {
 		AI_STRAFE_RIGHT	= false;
 	}
 
-	AI_RUN			= ( usercmd.buttons & BUTTON_RUN ) && ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) );
+	// stamina disabled, always run regardless of stamina
+	//AI_RUN			= ( usercmd.buttons & BUTTON_RUN ) && ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) );
+	AI_RUN = ( usercmd.buttons & BUTTON_RUN ) && true ;
 	AI_DEAD			= ( health <= 0 );
+	
+	// DarkMod: Catch the creep modifier
+	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
 }
 
 /*
@@ -5773,10 +5792,14 @@ void idPlayer::EvaluateControls( void ) {
 /*
 ==============
 idPlayer::AdjustSpeed
+
+DarkMod Note: Wow... this was pretty badly written
 ==============
 */
-void idPlayer::AdjustSpeed( void ) {
+void idPlayer::AdjustSpeed( void ) 
+{
 	float speed;
+	float crouchspeed;
 	float rate;
 
 	if ( spectating ) {
@@ -5785,8 +5808,12 @@ void idPlayer::AdjustSpeed( void ) {
 	} else if ( noclip ) {
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
-	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
-		if ( !gameLocal.isMultiplayer && !physicsObj.IsCrouching() && !PowerUpActive( ADRENALINE ) ) {
+
+	// running case
+	// DarkMod: removed check for not crouching..
+	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
+	{
+		if ( !gameLocal.isMultiplayer && !PowerUpActive( ADRENALINE ) ) {
 			stamina -= MS2SEC( gameLocal.msec );
 		}
 		if ( stamina < 0 ) {
@@ -5799,30 +5826,53 @@ void idPlayer::AdjustSpeed( void ) {
 		} else {
 			bobFrac = stamina / pm_staminathreshold.GetFloat();
 		}
-		speed = pm_walkspeed.GetFloat() * ( 1.0f - bobFrac ) + pm_runspeed.GetFloat() * bobFrac;
-	} else {
+
+		/**
+		*  DarkMod : Removed the effect of stamina on speed
+		* uncomment for stamina effecting speed
+		**/
+		//speed = pm_walkspeed.GetFloat() * ( 1.0f - bobFrac ) + pm_walkspeed*cv_pm_runmod.GetFloat() * bobFrac;
+		speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
+		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
+
+	} else 
+
+	// standing still, walking, or creeping case
+	{
 		rate = pm_staminarate.GetFloat();
 		
 		// increase 25% faster when not moving
-		if ( ( usercmd.forwardmove == 0 ) && ( usercmd.rightmove == 0 ) && ( !physicsObj.OnLadder() || ( usercmd.upmove == 0 ) ) ) {
+		if ( ( usercmd.forwardmove == 0 ) && ( usercmd.rightmove == 0 ) && ( !physicsObj.OnLadder() || ( usercmd.upmove == 0 ) ) ) 
+		{
 			 rate *= 1.25f;
 		}
 
 		stamina += rate * MS2SEC( gameLocal.msec );
-		if ( stamina > pm_stamina.GetFloat() ) {
+		if ( stamina > pm_stamina.GetFloat() ) 
+		{
 			stamina = pm_stamina.GetFloat();
 		}
+
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
+
+		// apply creep modifier; creep is on button_5
+		if( usercmd.buttons & BUTTON_5 )
+			speed *= cv_pm_creepmod.GetFloat();
+
+		// apply movement multipliers to crouch as well
+		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
 	}
 
+	// leave this in for speed potions or something
 	speed *= PowerUpModifier(SPEED);
 
-	if ( influenceActive == INFLUENCE_LEVEL3 ) {
+	if ( influenceActive == INFLUENCE_LEVEL3 ) 
+	{
 		speed *= 0.33f;
 	}
 
-	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() );
+	physicsObj.SetSpeed( speed, crouchspeed );
 }
 
 /*
@@ -8772,4 +8822,65 @@ void idPlayer::Event_Touch( idEntity *other, trace_t *trace )
 
 Quit:
 	return;
+}
+
+void idPlayer::UpdateMoveVolumes( void )
+{
+	// copy step volumes from current cvar value
+	m_stepvol_walk = cv_pm_stepvol_walk.GetFloat();
+	m_stepvol_run = cv_pm_stepvol_run.GetFloat();
+	m_stepvol_creep = cv_pm_stepvol_creep.GetFloat();
+
+	m_stepvol_crouch_walk = cv_pm_stepvol_crouch_walk.GetFloat();
+	m_stepvol_crouch_creep = cv_pm_stepvol_crouch_creep.GetFloat();
+	m_stepvol_crouch_run = cv_pm_stepvol_crouch_run.GetFloat();
+}
+
+/*
+=====================
+idPlayer::GetMovementVolMod
+=====================
+*/
+
+float idPlayer::GetMovementVolMod( void )
+{
+	float returnval;
+	bool bCrouched(false);
+	
+	if( AI_CROUCH )
+		bCrouched = true;
+
+	// figure out which of the 6 cases we have:
+	if( !AI_RUN && !AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_walk;
+		else
+			returnval = m_stepvol_crouch_walk;
+	}
+
+	// NOTE: running always has priority over creeping
+	else if( AI_RUN )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_run;
+		else
+			returnval = m_stepvol_crouch_run;
+	}
+
+	else if( AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_creep;
+		else
+			returnval = m_stepvol_crouch_creep;
+	}
+
+	else
+	{
+		// something unexpected happened
+		returnval = 0;
+	}
+
+	return returnval;
 }
