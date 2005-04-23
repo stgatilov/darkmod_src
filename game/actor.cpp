@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/04/23 01:46:51  ishtvan
+ * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
+ *
  * Revision 1.3  2005/04/07 09:28:53  ishtvan
  * *) Moved Relations methods to idAI.  They did not belong on idActor.
  *
@@ -2381,44 +2384,113 @@ const char *idActor::GetDamageGroup( int location ) {
 	return damageGroups[ location ];
 }
 
-
-/***********************************************************************
-
-	Events
-
-***********************************************************************/
-
 /*
 =====================
-idActor::Event_EnableEyeFocus
+idActor::PlayFootStepSound
 =====================
 */
 void idActor::PlayFootStepSound( void ) {
-	const char *sound = NULL;
-	char *localSound;
-	const idMaterial *material;
+	const char			*sound = NULL;
+	idStr				moveType, localSound;
+	const idMaterial	*material;
+	idPlayer			*thisPlayer(NULL);
+	idAI				*thisAI(NULL);
 
 	if ( !GetPhysics()->HasGroundContacts() ) {
 		return;
 	}
+
+	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
+	// Currently only players have movement flags set up this way, not AI.  We could change that later.
+	if ( IsType( idPlayer::Type ) )
+	{
+		thisPlayer =  static_cast<idPlayer *>(this);
+		moveType.Clear();
+
+		UpdateMoveVolumes();
+
+		if( thisPlayer->AI_CROUCH )
+			moveType = "_crouch";
+
+		if( thisPlayer->AI_RUN )
+			moveType += "_run";
+		else if ( thisPlayer->AI_CREEP )
+			moveType += "_creep";
+		else
+			moveType += "_walk";
+	}
+
+	else if ( IsType( idAI::Type ) )
+	{
+		thisAI =  static_cast<idAI *>(this);
+		moveType.Clear();
+
+		if( thisAI->AI_CROUCH )
+			moveType = "_crouch";
+
+		if( thisAI->AI_RUN )
+			moveType += "_run";
+		else if ( thisAI->AI_CREEP )
+			moveType += "_creep";
+		else
+			moveType += "_walk";
+	}
+
 
 	// start footstep sound based on material type
 	material = GetPhysics()->GetContact( 0 ).material;
 	if ( material != NULL ) 
 	{
 		localSound = va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] );
-		sound = spawnArgs.GetString( localSound );
+		sound = spawnArgs.GetString( localSound.c_str() );
 	}
-	if ( *sound == '\0' ) {
+	if ( *sound == '\0' ) 
+	{
 		localSound = "snd_footstep";
-		sound = spawnArgs.GetString( "snd_footstep" );
 	}
+	
+	sound = spawnArgs.GetString( localSound.c_str() );
+
+	// if a sound was not found for that specific material, use default
+	if( *sound == '\0' )
+	{
+		sound = spawnArgs.GetString( "snd_footstep" );
+		localSound = "snd_footstep";
+	}
+
+	// The player always considers the movement type when propagating
+	if( thisPlayer )
+	{
+		localSound += moveType;
+	}
+/***
+* AI footsteps always propagate as snd_footstep for now
+* If we want to add in AI soundprop based on movement speed later,
+*	here is the place to do it.
+**/
+/*
+	localSound += moveType;
+	if( !gameLocal.m_sndProp->CheckSound( localSound.c_str(), false ) )
+		localSound -= moveType;
+*/
+
 	if ( *sound != '\0' ) 
 	{
 		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-		PropSoundDirect( static_cast<const char *>( localSound ), true, false );
+		
+		// apply the movement type modifier to the volume
+		SetSoundVolume( GetMovementVolMod() );
+
+		// propagate the suspicious sound to other AI
+		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
 	}
 }
+
+/***********************************************************************
+
+	Events
+
+***********************************************************************/
 
 /*
 =====================
