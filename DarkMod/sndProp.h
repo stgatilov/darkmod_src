@@ -28,6 +28,13 @@
 
 #include "sndproploader.h"
 
+/******************************************************************************
+*
+* DESCRIPTION: Sound propagation class for propagating suspicious sounds to AI
+* during gameplay.  Friend class to CsndPropLoader.
+*
+*****************************************************************************/
+
 template <class type> 
 class CMatRUT;
 

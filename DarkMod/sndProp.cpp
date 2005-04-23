@@ -180,7 +180,7 @@ void CsndProp::Propagate
 	idList<idEntity *>	validTypeEnts, validEnts;
 	const idDict *		parms;
 
-	if( g_spr_debug.GetBool() )
+	if( cv_spr_debug.GetBool() )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \r", maker->name.c_str(), sndName.c_str(), volMod, durMod );
 		gameLocal.Printf("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \n", maker->name.c_str(), sndName.c_str(), volMod, durMod );
@@ -196,12 +196,12 @@ void CsndProp::Propagate
 	if(!parms)
 		goto Quit;
 
-	vol0 = parms->GetFloat("vol","0") * volMod;
+	vol0 = parms->GetFloat("vol","0") + volMod;
 	// DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found modified sound volume %f\r", vol0 );
 
 	// scale the volume by some amount that is be a cvar for now for tweaking
 	// later we will put a permananet value in the def for globals->Vol
-	vol0 += g_ai_sndvol.GetFloat();
+	vol0 += cv_ai_sndvol.GetFloat();
 
 	propParms.duration *= durMod;
 	// DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found modified duration %f\r", propParms.duration);
@@ -247,7 +247,7 @@ void CsndProp::Propagate
 
 	validTypeEnts.Condense();
 	
-	if( g_spr_debug.GetBool() )
+	if( cv_spr_debug.GetBool() )
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
 
 	// cull the list by testing distance and valid team flag
@@ -261,7 +261,7 @@ void CsndProp::Propagate
 
 		if( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
 		{
-			if( g_spr_debug.GetBool() )
+			if( cv_spr_debug.GetBool() )
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI %s is not within propagation cutoff range %f\r", testAI->name.c_str(), range );
 			continue;
 		}
@@ -272,7 +272,7 @@ void CsndProp::Propagate
 		{
 			// for now, inanimate objects alert everyone
 			bValidTeam = true;
-			if( g_spr_debug.GetBool() )
+			if( cv_spr_debug.GetBool() )
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Sound was propagated from inanimate object: Alerts all teams\r" );
 		}
 		else
@@ -289,7 +289,7 @@ void CsndProp::Propagate
 			if ( tmask.m_field & compMask.m_field )
 			{
 				bValidTeam = true;
-				if( g_spr_debug.GetBool() )
+				if( cv_spr_debug.GetBool() )
 					DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI %s has a valid team for soundprop\r", testAI->name.c_str() );
 			}
 		}
@@ -299,12 +299,12 @@ void CsndProp::Propagate
 		// don't alert the AI that caused the sound
 		if( bValidTeam && testAI != maker )
 		{
-			if( g_spr_debug.GetBool() )
+			if( cv_spr_debug.GetBool() )
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found a valid propagation target: %s\r", testAI->name.c_str() );
 			validEnts.Append( validTypeEnts[i] );
 			continue;
 		}
-		if( g_spr_debug.GetBool() )
+		if( cv_spr_debug.GetBool() )
 			DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI %s does not have a valid team for propagation\r", testAI->name.c_str() );
 
 	}
@@ -360,7 +360,7 @@ void CsndProp::Propagate
 		// PropToPoint sets propagated sound parameters based on Loss Matrix lookup
 		propVol = PropToPoint( vol0, origin, AI->GetEyePosition(), &propParms, &bSameArea );	
 	
-		if( g_spr_debug.GetBool() )
+		if( cv_spr_debug.GetBool() )
 		{
 			gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
 							  sndName.c_str(), AI->name.c_str(), origin.ToString(), propVol, propParms.direction.ToString() );
@@ -533,7 +533,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	if( addFlags )
 	{
 		tempflags.m_field = tempflags.m_field | addFlags->m_field;
-		if( g_spr_debug.GetBool() )
+		if( cv_spr_debug.GetBool() )
 			DM_LOG(LC_SOUND,LT_DEBUG).LogString("Added additional sound propagation flags from local sound \r");
 	}
 	
@@ -551,7 +551,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	propParms->frequency = parms->GetFloat("freq","-1");
 	propParms->bandwidth = parms->GetFloat("width", "-1");
 	
-	if( g_spr_debug.GetBool() )
+	if( cv_spr_debug.GetBool() )
 		DM_LOG(LC_SOUND,LT_DEBUG).LogString("Finished transfering sound prop parms\r");
 
 	return;
@@ -603,7 +603,7 @@ bool CsndProp::CheckSound( const char *sndNameGlobal, bool isEnv )
 	if ( !parms )
 	{
 		// Don't log this, because it happens all the time.  Most sounds played with idEntity::StartSound are not propagated.
-		//if( g_spr_debug.GetBool() )
+		//if( cv_spr_debug.GetBool() )
 			//gameLocal.Warning("[Soundprop] Could not find sound def for sound \"%s\" Sound not propagated.", sndNameGlobal );
 		//DM_LOG(LC_SOUND, LT_WARNING).LogString("Could not find sound def for sound \"%s\" Sound not propagated.\r", sndNameGlobal );
 		returnval = false;
