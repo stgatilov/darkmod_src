@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2005/04/23 01:47:25  ishtvan
+ * Minor fix to volume modifier for propagated sounds
+ *
  * Revision 1.14  2005/04/07 09:33:50  ishtvan
  * Added soundprop methods.
  *
@@ -1827,7 +1830,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName )
 {
 	int start, end, len;
 	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
-	float volMod(1.0), durMod(1.0);
+	float volMod(0.0), durMod(1.0);
 	idStr gName(globalName), locName, tempstr;
 
 	// if there is no local name, skip all the loading of local flags
