@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/04/23 10:07:26  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
  * Revision 1.4  2005/04/07 09:38:10  ishtvan
  * *) Added members for global sound prop and sound prop loader objects
  *
@@ -412,6 +415,11 @@ public:
 **/
 	CsndProp *				m_sndProp;
 
+/**
+* Temporary storage of the walkspeed.  This is a workaround
+*	because the walkspeed keeps getting reset.
+**/
+	float					m_walkSpeed;
 
 
 

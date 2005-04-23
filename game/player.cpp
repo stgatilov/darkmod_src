@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2005/04/23 10:08:02  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
  * Revision 1.17  2005/04/23 01:48:58  ishtvan
  * *) Removed the effect of stamina on everything but the heartbeat sound
  *
@@ -1632,6 +1635,9 @@ void idPlayer::Spawn( void ) {
 #endif
 		}
 	}
+
+	//FIX: Set the walkspeed back to the stored value.
+	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 }
 
 /*

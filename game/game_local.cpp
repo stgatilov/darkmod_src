@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/04/23 10:07:25  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
  * Revision 1.12  2005/04/07 09:35:57  ishtvan
  * Added pointer to the global sound prop class, initialization and loading of soundprop data at the proper times
  *
@@ -374,6 +377,10 @@ void idGameLocal::Init( void ) {
 
 	// load the soundprop globals from the def file
 	m_sndPropLoader->GlobalsFromDef();
+
+	//FIX: pm_walkspeed keeps getting reset whenever a map loads.
+	// Copy the old value here and set it when the map starts up.
+	m_walkSpeed = pm_walkspeed.GetFloat();
 }
 
 /*
