@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/04/23 10:10:56  ishtvan
+ * *) pm_walkspeed is now archived and not synced with the network
+ *
+ * *) Changed default movement speeds to be similar to T2
+ *
  * Revision 1.4  2005/04/23 01:45:16  ishtvan
  * *) changed DarkMod cvar names to cv_*
  *
@@ -73,9 +78,9 @@ idCVar cv_spr_debug(				"dm_spr_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVA
 * DarkMod player movement
 * Use multipliers instead of setting a speed for each
 **/
-idCVar cv_pm_runmod(				"pm_runmod",			"1.57",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain run speed from pm_walkspeed." );
-idCVar cv_pm_creepmod(				"pm_creepmod",			"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
-idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.58",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
+idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain run speed from pm_walkspeed." );
+idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
+idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
 
 /**
 * DarkMod movement volumes.  Walking volume is zero dB, other volumes are added to that
@@ -86,7 +91,7 @@ idCVar cv_pm_stepvol_creep(		"pm_stepvol_creep",	"-10",					CVAR_GAME | CVAR_ARC
 
 idCVar cv_pm_stepvol_crouch_walk(	"pm_stepvol_crouch_walk",	"-4",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch walking footsteps" );
 idCVar cv_pm_stepvol_crouch_run(	"pm_stepvol_crouch_run",	"2",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch running footsteps" );
-idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-10",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch creeping footsteps" );
+idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-11.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch creeping footsteps" );
 /**
 * End DarkMod cvars
 **/
@@ -264,7 +269,7 @@ idCVar pm_jumpheight(				"pm_jumpheight",			"48",			CVAR_GAME | CVAR_NETWORKSYNC
 idCVar pm_stepsize(					"pm_stepsize",				"16",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "maximum height the player can step up without jumping" );
 // replaced by crouch multiplier
 //idCVar pm_crouchspeed(				"pm_crouchspeed",			"80",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while crouched" );
-idCVar pm_walkspeed(				"pm_walkspeed",				"140",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while walking" );
+idCVar pm_walkspeed(				"pm_walkspeed",				"60",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "speed the player can move while walking" );
 // also replaced by multiplier
 //idCVar pm_runspeed(					"pm_runspeed",				"220",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while running" );
 idCVar pm_noclipspeed(				"pm_noclipspeed",			"200",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while in noclip" );
