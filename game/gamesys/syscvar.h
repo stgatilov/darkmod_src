@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/04/23 01:45:16  ishtvan
+ * *) changed DarkMod cvar names to cv_*
+ *
+ * *) Added movement speed and footstep volume cvars for ingame tweaking
+ *
  * Revision 1.3  2005/04/07 09:47:07  ishtvan
  * Added darkmod Cvars for ingame developer tweaking of soundprop and AI
  *
@@ -24,15 +29,31 @@
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
 
-// darkmod cvars
+/**
+* DarkMod cvars - See text description in syscvar.cpp for descriptions
+**/
+extern idCVar cv_ai_sndvol;
+extern idCVar cv_ai_sightmod;
+extern idCVar cv_ai_sightmaxdist;
+extern idCVar cv_ai_sightmindist;
+extern idCVar cv_ai_tactalert;
+extern idCVar cv_ai_debug;
+extern idCVar cv_spr_debug;
 
-extern idCVar g_ai_sndvol;
-extern idCVar g_ai_sightmod;
-extern idCVar g_ai_sightmaxdist;
-extern idCVar g_ai_sightmindist;
-extern idCVar g_ai_tactalert;
-extern idCVar g_ai_debug;
-extern idCVar g_spr_debug;
+extern idCVar cv_pm_runmod;
+extern idCVar cv_pm_crouchmod;
+extern idCVar cv_pm_creepmod;
+
+extern idCVar cv_pm_stepvol_walk;
+extern idCVar cv_pm_stepvol_run;
+extern idCVar cv_pm_stepvol_creep;
+extern idCVar cv_pm_stepvol_crouch_walk;
+extern idCVar cv_pm_stepvol_crouch_creep;
+extern idCVar cv_pm_stepvol_crouch_run;
+
+/**
+* End DarkMod cvars
+**/
 
 extern idCVar	developer;
 
@@ -165,9 +186,9 @@ extern idCVar	rb_showActive;
 
 extern idCVar	pm_jumpheight;
 extern idCVar	pm_stepsize;
-extern idCVar	pm_crouchspeed;
+//extern idCVar	pm_crouchspeed;
 extern idCVar	pm_walkspeed;
-extern idCVar	pm_runspeed;
+//extern idCVar	pm_runspeed;
 extern idCVar	pm_noclipspeed;
 extern idCVar	pm_spectatespeed;
 extern idCVar	pm_spectatebbox;
