@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/07/01 21:21:23  sophisticatedzombie
+ * This is my check in of the mantling code on July 1, 2005.  I've tested it agains the .3 sdk, but not the .2 one.  Any takers?
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -57,6 +60,18 @@ typedef struct playerPState_s {
 	int						movementFlags;
 	int						movementTime;
 } playerPState_t;
+
+
+// This enumreation defines the phases of the mantling movement
+typedef enum
+{
+	notMantling_DarkModMantlePhase	= 0x00,
+	hang_DarkModMantlePhase			= 0x01,
+	pull_DarkModMantlePhase			= 0x02,
+	shiftHands_DarkModMantlePhase	= 0x03,
+	push_DarkModMantlePhase			= 0x04
+
+} EDarkMod_MantlePhase;
 
 class idPhysics_Player : public idPhysics_Actor {
 
@@ -179,6 +194,76 @@ private:
 	void					SetWaterLevel( void );
 	void					DropTimers( void );
 	void					MovePlayer( int msec );
+
+	//#####################################################
+	// Mantling handler
+	// by SophisticatedZombie (Damon Hill)
+	//
+	//#####################################################
+
+public:
+
+
+	// This method returns
+	// true if the player is mantling, false otherwise
+	__inline bool IsMantling (void) const;
+	
+	// This returns the current mantling phase
+	__inline EDarkMod_MantlePhase GetMantlePhase(void) const;
+
+	// Cancels any current mantle
+	inline void CancelMantle();
+
+	// Checks to see if there is a mantleable target within reach
+	// of the player's view. If so, starts the mantle... 
+	// If the player is already mantling, this does nothing.
+	void PerformMantle();
+
+
+protected:
+
+
+	// The current mantling phase
+	EDarkMod_MantlePhase m_mantlePhase;
+
+	// Point being mantled to...
+	idVec3 m_mantlePullStartPos;
+	idVec3 m_mantlePullEndPos;
+	idVec3 m_mantlePushEndPos;
+
+	// Pointer to the entity being mantled.
+	// This is undefined if m_mantlePhase == notMantling_DarkModMantlePhase
+	idEntity* p_mantledEntity;
+
+	// How long will the current phase of the mantle operation take?
+	// Uses the same time unit as other movement times.
+	float m_mantleTime;
+
+	// This method determines the mantle time required for each phase of the mantle.
+	// I made this a function so you could implement things such as carry-weight,
+	// tiredness, length of lift....
+	float getMantleTimeForPhase (EDarkMod_MantlePhase mantlePhase);
+
+	// Internal method to start the mantle operation
+	void StartMantle
+	(
+		EDarkMod_MantlePhase initialMantlePhase,
+		idVec3 eyePos,
+		idVec3 startPos,
+		idVec3 endPos
+	);
+
+	// Timer change methods
+	void DropMantleTimers();
+    
+	// Movement methods
+	void MantleMove();
+
+	//#################################################
+	// End mantling handler
+	//#################################################
+
+
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */
