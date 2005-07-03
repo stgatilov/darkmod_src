@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/07/03 18:37:02  sophisticatedzombie
+ * Added a time variable which accumulates the milliseconds that the jump button is held down.  If it gets greater than a constant (JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) then a mantle attempt is initiated.  The timer is not reset until jump is released, so you can hold it in while falling and try to catch something.
+ *
  * Revision 1.2  2005/07/01 21:21:23  sophisticatedzombie
  * This is my check in of the mantling code on July 1, 2005.  I've tested it agains the .3 sdk, but not the .2 one.  Any takers?
  *
@@ -239,6 +242,10 @@ protected:
 	// Uses the same time unit as other movement times.
 	float m_mantleTime;
 
+	// Jump held down timer
+	// Times how long jump has been held down
+	float m_jumpHeldDownTime;
+
 	// This method determines the mantle time required for each phase of the mantle.
 	// I made this a function so you could implement things such as carry-weight,
 	// tiredness, length of lift....
@@ -254,10 +261,14 @@ protected:
 	);
 
 	// Timer change methods
-	void DropMantleTimers();
+	void UpdateMantleTimers();
     
 	// Movement methods
 	void MantleMove();
+
+	// Tests if player is holding down jump while already jumping
+	// (can be used to trigger mantle)
+	bool CheckJumpHeldDown( void );
 
 	//#################################################
 	// End mantling handler

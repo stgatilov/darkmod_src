@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/07/03 18:37:02  sophisticatedzombie
+ * Added a time variable which accumulates the milliseconds that the jump button is held down.  If it gets greater than a constant (JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) then a mantle attempt is initiated.  The timer is not reset until jump is released, so you can hold it in while falling and try to catch something.
+ *
  * Revision 1.5  2005/07/03 14:03:22  sophisticatedzombie
  * Derp. I, um, forgot when I integrated the change to copy in the part where I had to initialize my new variables in the constructor.  Back to kindergarten for me.
  *
@@ -76,6 +79,9 @@ const int PMF_TIME_WATERJUMP	= 128;		// movementTime is waterjump
 const int PMF_ALL_TIMES			= (PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK);
 
 int c_pmove = 0;
+
+// Mantle jump timer
+const int JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS = 500.0;
 
 /*
 ============
@@ -1412,7 +1418,14 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	idPhysics_Player::DropTimers();
 
 	// Mantle Mod: SophisticatdZombie (DH)
-	idPhysics_Player::DropMantleTimers();
+	idPhysics_Player::UpdateMantleTimers();
+
+	// Check if holding down jump
+	if (CheckJumpHeldDown())
+	{
+		idPhysics_Player::PerformMantle();
+	}
+
 
 	// move
 	if ( current.movementType == PM_DEAD ) {
@@ -1552,6 +1565,7 @@ idPhysics_Player::idPhysics_Player( void ) {
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0;
 	p_mantledEntity = NULL;
+	m_jumpHeldDownTime = 0.0;
 
 }
 
@@ -2211,10 +2225,20 @@ void idPhysics_Player::MantleMove()
 
 //----------------------------------------------------------------------
 
-void idPhysics_Player::DropMantleTimers()
+void idPhysics_Player::UpdateMantleTimers()
 {
 	// Frame seconds left
 	float framemSecLeft = framemsec;
+
+	// Update jump held down timer: This actually grows, not drops
+	if (!( current.movementFlags & PMF_JUMP_HELD ) ) 
+	{
+		m_jumpHeldDownTime = 0.0;
+	}
+	else
+	{
+		m_jumpHeldDownTime += framemsec;
+	}
 
 	// Skip all this if not mantling
 	if (m_mantlePhase == notMantling_DarkModMantlePhase)
@@ -2412,6 +2436,21 @@ void idPhysics_Player::StartMantle
 
 //----------------------------------------------------------------------
 
+bool idPhysics_Player::CheckJumpHeldDown( void )
+{
+	if (m_jumpHeldDownTime > JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) // Half a second
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
+
+//----------------------------------------------------------------------
+
 void idPhysics_Player::PerformMantle()
 {
 	trace_t		trace;
@@ -2422,7 +2461,7 @@ void idPhysics_Player::PerformMantle()
 		return;
 	}
     
-	// TODO: During integration, replace this with the CheckAhead trace.
+	// Perform mantle trace
 	common->Printf ("PerformMantle performing trace\n");
 	
 	// Forward vector is direction player is looking
