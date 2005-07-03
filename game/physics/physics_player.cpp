@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/07/03 14:03:22  sophisticatedzombie
+ * Derp. I, um, forgot when I integrated the change to copy in the part where I had to initialize my new variables in the constructor.  Back to kindergarten for me.
+ *
  * Revision 1.4  2005/07/01 21:21:23  sophisticatedzombie
  * This is my check in of the mantling code on July 1, 2005.  I've tested it agains the .3 sdk, but not the .2 one.  Any takers?
  *
@@ -1544,6 +1547,12 @@ idPhysics_Player::idPhysics_Player( void ) {
 	ladderNormal.Zero();
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
+
+	// Mantle Mod
+	m_mantlePhase = notMantling_DarkModMantlePhase;
+	m_mantleTime = 0.0;
+	p_mantledEntity = NULL;
+
 }
 
 /*
