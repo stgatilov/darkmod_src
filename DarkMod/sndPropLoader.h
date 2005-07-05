@@ -30,7 +30,8 @@
 #ifndef SNDPROPLOADER_H
 #define SNDPROPLOADER_H
 
-#include "darkmodglobals.h"
+#include "../idlib/precompiled.h"
+#include "DarkModGlobals.h"
 
 template <class type> 
 class CMatRUT;
