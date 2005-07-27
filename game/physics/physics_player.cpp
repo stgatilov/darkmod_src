@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/07/27 20:48:09  sophisticatedzombie
+ * Added leaning.  The clip model stuff still needs alot of work.
+ *
  * Revision 1.6  2005/07/03 18:37:02  sophisticatedzombie
  * Added a time variable which accumulates the milliseconds that the jump button is held down.  If it gets greater than a constant (JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) then a mantle attempt is initiated.  The timer is not reset until jump is released, so you can hold it in while falling and try to catch something.
  *
@@ -34,6 +37,7 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS
@@ -81,7 +85,7 @@ const int PMF_ALL_TIMES			= (PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK
 int c_pmove = 0;
 
 // Mantle jump timer
-const int JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS = 500.0;
+const int JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS = 100.0;
 
 /*
 ============
@@ -1381,6 +1385,11 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	viewRight = gravityNormal.Cross( viewForward );
 	viewRight.Normalize();
 
+	// Leaning Mod: Orient clip model to have same yaw as view angles
+	// and account for leaning
+	UpdateClipModelOrientation();
+
+
 	// fly in spectator mode
 	if ( current.movementType == PM_SPECTATOR ) {
 		SpectatorMove();
@@ -1420,12 +1429,14 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// Mantle Mod: SophisticatdZombie (DH)
 	idPhysics_Player::UpdateMantleTimers();
 
+	// Lean Mod: Zaccheus and SophisticatedZombie (DH)
+	idPhysics_Player::LeanMove();
+
 	// Check if holding down jump
 	if (CheckJumpHeldDown())
 	{
 		idPhysics_Player::PerformMantle();
 	}
-
 
 	// move
 	if ( current.movementType == PM_DEAD ) {
@@ -1438,7 +1449,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 	// Mantle MOD
 	// SophisticatedZombie (DH)
-	else if (m_mantlePhase != notMantling_DarkModMantlePhase) {
+	else if (m_mantlePhase != notMantling_DarkModMantlePhase) 
+	{
 		idPhysics_Player::MantleMove();
 	}
 	else if ( current.movementFlags & PMF_TIME_WATERJUMP ) {
@@ -1565,7 +1577,15 @@ idPhysics_Player::idPhysics_Player( void ) {
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0;
 	p_mantledEntity = NULL;
+	mantledEntityID = 0;
 	m_jumpHeldDownTime = 0.0;
+
+	// Leaning Mod
+	m_b_tryingToLean = false;
+	m_leanYawAngleDegrees = 0.0;
+	m_currentLeanTiltDegrees = 0.0;
+	m_viewLeanAngles = ang_zero;
+	m_viewLeanTranslation = vec3_zero;
 
 }
 
@@ -2171,6 +2191,7 @@ void idPhysics_Player::MantleMove()
 		{
 			((idPlayer*)self)->SetViewAngles (viewAngles);
 		}
+
 	}
 	else if (m_mantlePhase == pull_DarkModMantlePhase)
 	{
@@ -2180,7 +2201,7 @@ void idPhysics_Player::MantleMove()
 	}
 	else if (m_mantlePhase == shiftHands_DarkModMantlePhase)
 	{
-		// TODO: Rock back and forth a bit?
+		// Rock back and forth a bit?
 		float rockDistance = 1.0;
 
 		newPosition = m_mantlePullEndPos;
@@ -2196,12 +2217,24 @@ void idPhysics_Player::MantleMove()
 	}
 	else if (m_mantlePhase == push_DarkModMantlePhase)
 	{
+		// Rocking back and forth to get legs up over edge
+		float rockDistance = 10.0;
+
 		// Player pushes themselves upward to get their legs onto the surface
 		totalMove = m_mantlePushEndPos - m_mantlePullEndPos;
 		newPosition = m_mantlePullEndPos + (totalMove * idMath::Sin(timeRatio * (idMath::PI/2)) );
 
 		// We go into duck during this phase and stay there until end
 		current.movementFlags |= PMF_DUCKED;
+
+		float timeRadians = (idMath::PI) * timeRatio;
+		newPosition += ((idMath::Sin (timeRadians) * rockDistance) * viewRight );
+		viewAngles.roll = (idMath::Sin (timeRadians) * rockDistance);
+
+		if (self)
+		{
+			((idPlayer*)self)->SetViewAngles (viewAngles);
+		}
 
 	}
 
@@ -2219,8 +2252,9 @@ void idPhysics_Player::MantleMove()
 		}
 	}
 
-	//common->Printf ("New position is %f,%f,%f\n", newPosition.x, newPosition.y, newPosition.z);
-	current.origin = newPosition;
+	//	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("New position is %f,%f,%f\n", newPosition.x, newPosition.y, newPosition.z);
+	SetOrigin (newPosition);
+	
 }
 
 //----------------------------------------------------------------------
@@ -2260,17 +2294,17 @@ void idPhysics_Player::UpdateMantleTimers()
 		switch (m_mantlePhase)
 		{
 		case hang_DarkModMantlePhase:
-			common->Printf ("MantleMod: Pulling up...\n");
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Pulling up...\r\n");
 			m_mantlePhase = pull_DarkModMantlePhase;
 			break;
 
 		case pull_DarkModMantlePhase:
-			common->Printf ("MantleMod: Shifting hand position...\n");
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Shifting hand position...\r\r\n");
 			m_mantlePhase = shiftHands_DarkModMantlePhase;
 			break;
 
 		case shiftHands_DarkModMantlePhase:
-			common->Printf ("MantleMod: Pushing self up...\n");
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Pushing self up...\r\r\n");
 			m_mantlePhase = push_DarkModMantlePhase;
 
 			// Go into crouch
@@ -2278,7 +2312,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			break;
 
 		case push_DarkModMantlePhase:
-			common->Printf ("MantleMod: mantle completed\n");
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: mantle completed\r\n");
 			m_mantlePhase = notMantling_DarkModMantlePhase;
 
 
@@ -2337,7 +2371,7 @@ EDarkMod_MantlePhase idPhysics_Player::GetMantlePhase (void) const
 
 void idPhysics_Player::CancelMantle()
 {
-	common->Printf ("Mantle cancelled\n");
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Mantle cancelled\r\n");
 
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0f;
@@ -2353,6 +2387,10 @@ void idPhysics_Player::StartMantle
 	idVec3 endPos
 )
 {
+	// If mantling from a jump, cancel any velocity so that it does
+	// not continue after the mantle is completed.
+	current.velocity.Zero();
+
 	// Calculate mantle distance
 	idVec3 mantleDistanceVec = endPos - startPos;
 	float mantleDistance = mantleDistanceVec.Length();
@@ -2360,21 +2398,34 @@ void idPhysics_Player::StartMantle
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
 	{
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
 			"Mantle starting with hang\n"
 		);
+
+		// Impart a force on mantled object?
+		if ((p_mantledEntity != NULL) && (self != NULL))
+		{
+			impactInfo_t info;
+			p_mantledEntity->GetImpactInfo( self, mantledEntityID, endPos, &info );
+			if ( info.invMass != 0.0f ) 
+			{
+				p_mantledEntity->ActivatePhysics(self);
+				p_mantledEntity->ApplyImpulse( self, mantledEntityID, endPos, current.velocity / ( info.invMass * 2.0f ) );
+			}
+		}
+
 	}
 	else if (initialMantlePhase == pull_DarkModMantlePhase)
 	{
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
 			"Mantle starting with pull upward\n"
 		);
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
 			"Mantle starting with shift hands\n"
 		);
@@ -2385,7 +2436,7 @@ void idPhysics_Player::StartMantle
 		current.movementFlags |= PMF_DUCKED;
 
 		// Start with push upward
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
 			"Mantle starting with push upward\n"
 		);
@@ -2438,7 +2489,7 @@ void idPhysics_Player::StartMantle
 
 bool idPhysics_Player::CheckJumpHeldDown( void )
 {
-	if (m_jumpHeldDownTime > JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) // Half a second
+	if (m_jumpHeldDownTime > JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS)
 	{
 		return true;
 	}
@@ -2462,7 +2513,7 @@ void idPhysics_Player::PerformMantle()
 	}
     
 	// Perform mantle trace
-	common->Printf ("PerformMantle performing trace\n");
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("PerformMantle performing trace\r\n");
 	
 	// Forward vector is direction player is looking
 	idVec3 forward = viewAngles.ToForward();
@@ -2476,14 +2527,19 @@ void idPhysics_Player::PerformMantle()
 	// Determine player height
 	// Max distance the player can reach vertically
 	// Theres a bit of padding here.... 
+	float armLength = pm_normalheight.GetFloat() / 1.8;
 	float maxVerticalReachDist; 
+	float maxHorizontalReachDist;
 	if (current.movementFlags & PMF_DUCKED )
 	{
-		maxVerticalReachDist = pm_crouchheight.GetFloat() * 1.8;
+		maxVerticalReachDist = pm_crouchheight.GetFloat() + armLength;
+		maxHorizontalReachDist = armLength;
 	}
 	else
 	{
-		maxVerticalReachDist = pm_normalheight.GetFloat() * 1.8;
+		// This vertical distance is up from the players feet
+		maxVerticalReachDist = pm_normalheight.GetFloat() + armLength;
+		maxHorizontalReachDist = armLength;
 	}
 
 
@@ -2496,54 +2552,108 @@ void idPhysics_Player::PerformMantle()
 	// It is along the line of the player's view.
 	// It does not represent the distance up to the ledge, which can be
 	// further.
-	float maxMantleTraceDistance = maxVerticalReachDist;
+	float maxMantleTraceDistance = armLength;
 	
 	idVec3 eyePos;
 
 	idPlayer* p_player = (idPlayer*) self;
 	if (p_player == NULL)
 	{
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_ERROR).LogString
 		(
-			"^3p_player is NULL^0\n"
+			"p_player is NULL\n"
 		);
 		return;
 	}
 	else
 	{
-		common->Printf ("Getting eye position\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Getting eye position\r\n");
 		eyePos = p_player->GetEyePosition();
 	}
+
 
 	idVec3 end = eyePos + (maxMantleTraceDistance * forward);
 	gameLocal.clip.TracePoint( trace, eyePos, end, MASK_SOLID, self );
 
 	// This will hold the mantled entity
 	p_mantledEntity = NULL;
+	mantledEntityID = 0;
+
+	/*
+	// SophisticatedZombie:
+	// I commented this out after adding it because it tends to find
+	// a collision point off to the side of the center of where the player
+	// is aiming.  The effect is kind of wierd, and I think the gaze trace
+	// is good enough.
+	// If that trace didn't hit anything, try a broader trace
+	if ( trace.fraction >= 1.0f ) 
+	{
+		idVec3 forwardPerpGrav = forward;
+		forwardPerpGrav.ProjectOntoPlane (upVector);
+
+		idBounds bounds;
+		idBounds savedBounds;
+		bounds = clipModel->GetBounds();
+		savedBounds = bounds;
+
+		bounds[0][0] = -0.2f;
+		bounds[1][0] = 0.2f;
+
+		if ( pm_usecylinder.GetBool() ) 
+		{
+			clipModel->LoadModel( idTraceModel( bounds, 0.2 ) );
+		}
+		else 
+		{
+			clipModel->LoadModel( idTraceModel( bounds ) );
+		}
+
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		(
+			"Mantle gaze trace didn't hit anything, so doing forward movement trace for mantle target\n"
+		);
+		gameLocal.clip.Translation 
+		(
+			trace, 
+			current.origin, 
+			current.origin + (maxMantleTraceDistance * forwardPerpGrav), 
+			clipModel, 
+			clipModel->GetAxis(), 
+			MASK_SOLID, 
+			self
+		);
+
+		if ( pm_usecylinder.GetBool() ) 
+		{
+			clipModel->LoadModel( idTraceModel( savedBounds, 8 ) );
+		}
+		else 
+		{
+			clipModel->LoadModel( idTraceModel( savedBounds ) );
+		}
+
+	}
+	*/
 
 	// if near a surface
 	if ( trace.fraction < 1.0f ) 
 	{
+
 		// Log trace hit point
-		common->Printf
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
-			"Mantle target trace collision point (^4%f %f %f^0)\n", 
+			"Mantle target trace collision point (%f %f %f)\n", 
 			trace.c.point.x,
 			trace.c.point.y,
 			trace.c.point.z
 		);
 
-		// TODO: Does the trace have a near horizontal surface with a minimum depth?
-
-		// If so, call StartMantle with that surface.
-		// The initial mode depends on the height of the surface relative to a point
-		// just below the player point of view (shoulders)
-		//common->Printf ("Surface found within trace, distance %.3f\n", trace.fraction);
-		// Get the entities
+		// Get the entity to be mantled
 		if (trace.c.entityNum != ENTITYNUM_NONE)
 		{
 			// Get the entity
 			p_mantledEntity = gameLocal.entities[trace.c.entityNum];
+			mantledEntityID = trace.c.id;
 
 			// Is it the world?
 			// The world must be handled differently, because the entity bounds
@@ -2552,9 +2662,9 @@ void idPhysics_Player::PerformMantle()
 			bool b_World = (trace.c.entityNum == ENTITYNUM_WORLD);
 
 			idStr targetMessage;
-			common->Printf
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 			(
-				"^0Mantle target entity is called '^2%s^0'\n", 
+				"Mantle target entity is called '%s'\n", 
 				p_mantledEntity->name.c_str()
 			);
 
@@ -2597,7 +2707,13 @@ void idPhysics_Player::PerformMantle()
 			originParallelToGravity.z = -gravityNormal.z * current.origin.z;
 
 			float verticalReachDistanceUsed = (componentParallelToGravity - originParallelToGravity).Length();
-			common->Printf ("Initial vertical rech distance used = %f out of maximum of %f\n", verticalReachDistanceUsed, maxVerticalReachDist);
+			
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+			(
+				"Initial vertical rech distance used = %f out of maximum of %f\n", 
+				verticalReachDistanceUsed, 
+				maxVerticalReachDist
+			);
 
 			// The first test point 
 			idVec3 testPosition = componentOrthogonalToGravity + componentParallelToGravity;
@@ -2653,6 +2769,13 @@ void idPhysics_Player::PerformMantle()
 						}
 						componentParallelToGravity += (-gravityNormal * testIncrementAmount);
 						verticalReachDistanceUsed = (componentParallelToGravity - originParallelToGravity).Length();
+
+						DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+						(
+							"Ledge Search: Vertical rech distance used = %f out of maximum of %f\n", 
+							verticalReachDistanceUsed, 
+							maxVerticalReachDist
+						);
 
 						// Modify test position
 						testPosition = componentOrthogonalToGravity + componentParallelToGravity;
@@ -2754,7 +2877,7 @@ void idPhysics_Player::PerformMantle()
 				// Log
 				if (roomForMoveUpTrace.fraction < 1.0)
 				{
-					common->Printf 
+					DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 					(
 						"Collision test from (%f %f %f) to (%f %f %f) yieled trace fraction %f\n",
 						MoveUpStart.x,
@@ -2767,20 +2890,20 @@ void idPhysics_Player::PerformMantle()
 					);
 					b_mantlePossible = false;
 
-					common->Printf ("Not enough vertical clearance along mantle path\n");
+					DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Not enough vertical clearance along mantle path\r\n");
 					return;
 				}
 			}
 			else 
 			{
-				common->Printf ("No mantleable surface within reach distance\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("No mantleable surface within reach distance\r\n");
 				return;
 			}
 
 			//#####################################################
 			// Log the end point
 			//#####################################################
-			common->Printf 
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString 
 			(
 				"EyePos = (%f %f %f)\nStartPos = (%f %f %f) EndPos = (%f %f %f)\n", 
 				eyePos.x,
@@ -2813,17 +2936,27 @@ void idPhysics_Player::PerformMantle()
 
 
 			// Check the calculated distances
-			if
+			if (upDist < 0.0)
+			{
+				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+				(
+					"Mantleable surface was below player's feet. No belly slide allowed.\n"
+				);
+				return;
+			}
+			else if
 			(
 				(upDist  > maxVerticalReachDist) || 
-				(nonUpDist > 80.0)
+				(nonUpDist > maxHorizontalReachDist)
 			)
 			{
-				common->Printf
+				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 				(
-					"Distance to end point was %f, horizontal = %f, which is too far, so mantle cannot be done\n",
-					endDistance,
-					nonUpDist
+					"Distance to end point was (%f, %f) (horizontal, vertical) which is greater than limits of (%f %f), so mantle cannot be done\n",
+					upDist,
+					nonUpDist,
+					maxVerticalReachDist,
+					maxHorizontalReachDist
 				);
 
 			}
@@ -2858,7 +2991,7 @@ void idPhysics_Player::PerformMantle()
 		else
 		{
 			// This should not happen
-			common->Printf ("^0Mantle target entity is not an entity\n");
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("^0Mantle target entity is not an entity\r\n");
 		}
 	
 	} // End mantle target found
@@ -2868,3 +3001,495 @@ void idPhysics_Player::PerformMantle()
 // End Mantle Mod
 // SophisticatedZombie (DH)
 //####################################################################
+
+//####################################################################
+// Start Leaning Mod
+//	Zaccheus
+//	SophsiticatedZombie (DH)
+//
+//####################################################################
+
+// About 3.0 degrees every 100 milliseconds, or 30.0 degrees in 1 second 
+#define LEAN_TILT_DEGREES_PER_MILLISECOND 0.060
+#define MAX_LEAN_TILT_DEGREES 20.0
+
+//----------------------------------------------------------------------
+
+void idPhysics_Player::ToggleLean
+(
+	float leanYawAngleDegrees
+)
+{
+	if (m_currentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
+	{
+		// Start the lean
+		m_b_tryingToLean = true;
+		m_leanYawAngleDegrees = leanYawAngleDegrees;
+
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean staring lean\r\n");
+	}
+	else
+	{
+		// End the lean
+		m_b_tryingToLean = false;
+
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean ending lean\r\n");
+	}
+
+}
+
+//----------------------------------------------------------------------
+
+__inline bool idPhysics_Player::IsLeaning()
+{
+	if ((m_b_tryingToLean == false) && (m_currentLeanTiltDegrees < 0.0001)) // prevent floating point compare errors
+	{
+		return false;
+	}
+	else
+	{
+		// Still entering, holding,  or exiting lean
+		return true;
+	}
+}	
+
+//----------------------------------------------------------------------
+
+idAngles idPhysics_Player::GetViewLeanAngles()
+{
+	return m_viewLeanAngles;
+}
+
+//----------------------------------------------------------------------
+
+idVec3 idPhysics_Player::GetViewLeanTranslation()
+{
+	return m_viewLeanTranslation;
+}
+
+//----------------------------------------------------------------------
+
+void idPhysics_Player::UpdateViewLeanAnglesAndTranslation()
+{
+
+	// Set lean view angles
+	float pitchAngle = m_currentLeanTiltDegrees;
+	float rollAngle = pitchAngle;
+
+	pitchAngle *= idMath::Sin(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	rollAngle *= idMath::Cos(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	
+	m_viewLeanAngles.Set ( pitchAngle, 0.0, rollAngle);
+
+	// Set lean translate vector
+	float playerHeight;
+	if ( current.movementFlags & PMF_DUCKED ) 
+	{
+		playerHeight = pm_crouchheight.GetFloat();
+	}
+	else
+	{
+		playerHeight = pm_normalheight.GetFloat();
+	}
+	
+	m_viewLeanTranslation.x = playerHeight * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.y = playerHeight * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.z = 0.0;
+	
+	m_viewLeanTranslation.ProjectSelfOntoSphere
+	(
+		playerHeight
+	);
+	m_viewLeanTranslation.z = m_viewLeanTranslation.z - playerHeight;
+
+
+	// Rotate to player's facing
+	idMat4 rotMat = viewAngles.ToMat4();
+
+	m_viewLeanTranslation *= rotMat;
+
+	// Sign h4x0rx
+	m_viewLeanTranslation.x = -m_viewLeanTranslation.x;
+	m_viewLeanTranslation.y = -m_viewLeanTranslation.y;
+
+	// Some debugging
+	/*
+	gameRenderWorld->DebugBounds
+	(
+		idVec4 (1.0, 1.0, 1.0, 1.0),
+		clipModel->GetBounds(),
+		current.origin
+	);
+	
+	gameRenderWorld->DebugAxis
+	(
+		current.origin, 
+		GetAxis()
+	);
+	*/
+
+}
+//----------------------------------------------------------------------
+
+void idPhysics_Player::UpdateClipModelOrientation()
+{
+	// ASSUMES viewForward and viewRight have already been set
+	
+
+	//######################################################
+	// Make rotation due to view direction perpendicular to gravity
+	//######################################################
+	idVec3 upVector = -GetGravityNormal();
+
+	idVec3 forwardPerpGravityVector = viewForward;
+	forwardPerpGravityVector.ProjectAlongPlane (upVector, 0.0);
+
+	idVec3 rightPerpGravityVector = viewRight;
+	rightPerpGravityVector.ProjectAlongPlane (upVector, 0.0);
+
+    idMat3 NewAxis;
+	
+	NewAxis[0][0] = forwardPerpGravityVector.x;
+	NewAxis[0][1] = forwardPerpGravityVector.y;
+	NewAxis[0][2] = forwardPerpGravityVector.z;
+	NewAxis[1][0] = -rightPerpGravityVector.x; // Actually, wants left
+	NewAxis[1][1] = -rightPerpGravityVector.y; // Actually, wants left
+	NewAxis[1][2] = -rightPerpGravityVector.z; // Actually, wants left
+	NewAxis[2][0] = upVector.x;
+	NewAxis[2][1] = upVector.y;
+	NewAxis[2][2] = upVector.z;
+
+		
+	//######################################################
+	// Make rotation due to lean, after reorientation
+	// (independent of player facing)
+	//######################################################
+
+	idAngles leanYawOnly;
+	leanYawOnly.yaw = m_leanYawAngleDegrees;
+	leanYawOnly.pitch = 0.0;
+	leanYawOnly.roll = 0.0;
+
+	idMat3 leanTiltYawMat;
+	leanTiltYawMat = leanYawOnly.ToMat3();
+
+	// Rotate axis by lean yaw rotation
+	idVec3 leanTiltAxis (-1.0, 0.0, 0.0);
+	leanTiltAxis *= leanTiltYawMat;
+	leanTiltAxis.Normalize();
+
+	idRotation leanTiltRotation;
+	leanTiltRotation.Set
+	(
+		idVec3(0.0, 0.0, 0.0),
+		leanTiltAxis,
+		m_currentLeanTiltDegrees
+	);
+
+	//###########################
+	// Build new axis
+	// Lean, then rotate to facing
+	// (order is important)
+	//###########################
+	idMat3 finalAxis;
+	finalAxis = leanTiltRotation.ToMat3();
+	finalAxis *= NewAxis;
+	finalAxis.OrthoNormalizeSelf();
+
+	/*
+	//###########################
+	// Get rotation from current
+	// axis to new axis and see
+	// if there is a clip model
+	// collision
+	//###########################
+
+	// We must convert existing axis and new axis to idAngles objects.
+	// We can take the difference of those, and from that result, go to
+	// a rotation definition that we can use with the clip tests.
+	idMat3 existingAxis;
+	existingAxis = GetAxis();
+
+	idAngles existingAngles, finalAngles;
+	finalAngles = finalAxis.ToAngles();
+	existingAngles = existingAxis.ToAngles();
+
+	idAngles deltaAngles;
+	deltaAngles = finalAngles - existingAngles;
+	deltaAngles.Normalize180();
+
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"\nFinal angles = %.2f %.2f %.2f\nExisting angles %.2f %.2f %.2f\nDelta Angles are %.2f %.2f %.2f\n",
+		finalAngles.pitch, finalAngles.yaw, finalAngles.roll,
+		existingAngles.pitch, existingAngles.yaw, existingAngles.roll,
+		deltaAngles.pitch,	deltaAngles.yaw, deltaAngles.roll
+	);
+
+	// The rotation that this change involves
+	idRotation rotationOfChange = deltaAngles.ToRotation();
+	rotationOfChange.SetOrigin (current.origin);
+
+	// Perform the trace
+	trace_t rotationTraceResults;
+	ClipRotation
+	(
+		rotationTraceResults,
+		rotationOfChange,
+		NULL // We are not comparing against one specific clip model
+	);
+
+	if (rotationTraceResults.fraction < 1.0)
+	{
+
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		(
+			"Clip model axis change has collision at rotation percentage %.2f%%\n",
+			rotationTraceResults.fraction * 100.0
+		);
+
+		// We can't rotate that far, limit rotation
+		// What is the change in angles needed to prevent the collision?
+		// We need to backward fit the view angles to match.
+
+		// Compute the angles that wouldn't involve the collision
+		rotationOfChange *= rotationTraceResults.fraction;
+
+		finalAxis = existingAxis * rotationOfChange.ToMat3();
+		finalAxis.OrthoNormalizeSelf();
+
+		// Set view angles
+		float pitchSave = viewAngles.pitch;
+		viewAngles = finalAxis.ToAngles();
+		viewAngles.pitch = pitchSave;
+		viewAngles = viewAngles.Normalize180();
+
+		// Set view angles in player object
+		if (self)
+		{
+			((idPlayer*)self)->SetViewAngles (viewAngles);
+		}
+
+		// Recompute vectors
+		viewAngles.ToVectors( &viewForward, NULL, NULL );
+		viewForward *= clipModelAxis;
+		viewRight = gravityNormal.Cross( viewForward );
+		viewRight.Normalize();
+
+
+	}
+	*/
+
+	//###########################
+	// Set new axis
+	//###########################
+	SetAxis (finalAxis);
+
+
+}
+
+//----------------------------------------------------------------------
+
+void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
+{
+	
+	float newLeanTiltDegrees = 0.0;
+
+	//####################################################
+	// What would the new lean angle be?
+	//####################################################
+
+	newLeanTiltDegrees = m_currentLeanTiltDegrees + deltaLeanTiltDegrees;
+	if (newLeanTiltDegrees < 0.0)
+	{
+		// Adjust delta
+		deltaLeanTiltDegrees = 0.0 - m_currentLeanTiltDegrees;
+	}
+	else if (newLeanTiltDegrees > MAX_LEAN_TILT_DEGREES)
+	{
+		// Adjust delta
+		deltaLeanTiltDegrees = MAX_LEAN_TILT_DEGREES - m_currentLeanTiltDegrees;
+	}
+
+	//####################################################
+	// Log max possible lean
+	//####################################################
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"Currently leaning %.2f degrees, can lean up to %.2f more degrees this frame\n",
+		m_currentLeanTiltDegrees,
+		deltaLeanTiltDegrees
+	);
+
+	//####################################################
+	// Axis-Vector around which tilt takes place is the part of the
+	// viewForward vector that is perpendicular to the gravity normal
+	// rotated around the gravity normal by m_leanYawDegrees;
+	//####################################################
+	idVec3 leanTiltAxis = viewForward;
+	leanTiltAxis.ProjectAlongPlane (-GetGravity(), 0.0);
+	leanTiltAxis.Normalize();
+
+	idAngles leanYawOnly;
+	leanYawOnly.yaw = m_leanYawAngleDegrees;
+	leanYawOnly.pitch = 0.0;
+	leanYawOnly.roll = 0.0;
+
+	idMat4 leanTiltYawMat;
+	leanTiltYawMat = leanYawOnly.ToMat4();
+
+	leanTiltAxis *= leanTiltYawMat;
+	leanTiltAxis.Normalize();
+
+    DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"view forward axis (%.2f %.2f %.2f), leanTiltAxis is (%.2f %.2f %.2f)\n",
+		viewForward.x,
+		viewForward.y,
+		viewForward.z,
+		leanTiltAxis.x,
+		leanTiltAxis.y,
+		leanTiltAxis.z
+	);
+
+
+	//####################################################
+    // Test for collision, and adjust to less lean change 
+	// if collision occurs during leaning move
+	//####################################################
+	idRotation clipRotation;
+	clipRotation.Set
+	(
+		current.origin,
+		leanTiltAxis,
+		deltaLeanTiltDegrees
+	);
+
+	// Lift origin off of ground a little
+	idVec3 originSave = current.origin;
+	current.origin += -GetGravityNormal() * 1.0;
+	clipModel->SetPosition (current.origin, clipModel->GetAxis());
+	
+	trace_t rotationTraceResults;
+	ClipRotation
+	(
+		rotationTraceResults,
+		clipRotation,
+		NULL // We are not comparing against one specific clip model
+	);
+	
+	/*
+	trace_t rotationTraceResults;
+	idVec3 pointTraceStartPoint, pointTraceEndPoint;
+	pointTraceStartPoint = current.origin;
+	pointTraceStartPoint += 
+
+	gameLocal.clip.TracePoint
+	(
+		rotationTraceResults,
+		pointTraceStartPoint,
+		pointTraceEndPoint,
+		MASK_SOLID,
+		self // Ignore self
+	);
+	*/
+
+	//####################################################
+	// Log max possible lean with clipping
+	//####################################################
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"Rotation test around axis (%.2f %.2f %.2f) by %.2f degrees yielded trace fraction of %.2f\n",
+		leanTiltAxis.x,
+		leanTiltAxis.y,
+		leanTiltAxis.z,
+		deltaLeanTiltDegrees,
+		rotationTraceResults.fraction
+	);
+
+	// Handle case of not able to rotate that far by adjusting tilt delta angle
+	// to rotation at which collision stopped rotation
+	if (rotationTraceResults.fraction < 1.0)
+	{
+		// Subtract a little from trace fraction to keep from getting stuck in stuff
+		if (rotationTraceResults.fraction > 0.25)
+		{
+			deltaLeanTiltDegrees  = (rotationTraceResults.fraction - 0.25) * deltaLeanTiltDegrees;
+		}
+		else
+		{
+			deltaLeanTiltDegrees = 0.0;
+
+			// Restore player to the ground so they don't
+			// "lean climb" a wall or something
+			current.origin = originSave;
+			clipModel->SetPosition (current.origin, clipModel->GetAxis());
+		}
+		
+		// Log max possible lean
+		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		(
+			"Lean change this frame clipped by collision to %.2f degrees\n",
+			deltaLeanTiltDegrees
+		);
+	}
+		
+
+	//####################################################
+	// Adjust lean angle by delta which was allowed
+	//####################################################
+
+	m_currentLeanTiltDegrees += deltaLeanTiltDegrees;
+	
+	// Log activity
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"Lean tilt is now %.2f degrees\n",
+		m_currentLeanTiltDegrees
+	);
+
+	//####################################################
+	// Lean angle is now updated
+	//####################################################
+
+}
+
+//----------------------------------------------------------------------
+
+void idPhysics_Player::LeanMove()
+{
+
+	// Change in lean tilt this frame
+	float deltaLeanTiltDegrees = 0.0;
+
+	if ( (m_b_tryingToLean) && (m_currentLeanTiltDegrees < MAX_LEAN_TILT_DEGREES) )
+	{
+		// Try to lean some more
+		deltaLeanTiltDegrees = LEAN_TILT_DEGREES_PER_MILLISECOND * framemsec;
+	}
+	else if ((!m_b_tryingToLean) && (m_currentLeanTiltDegrees > 0.0))
+	{
+		// Check if already at minimum lean
+		deltaLeanTiltDegrees = -LEAN_TILT_DEGREES_PER_MILLISECOND * framemsec;
+	}
+
+	// Perform any change to leaning
+	if (deltaLeanTiltDegrees != 0.0)
+	{
+		// Re-orient clip model before change so that collision tests
+		// are accurate (player may have rotated mid-lean)
+		UpdateClipModelOrientation();
+		UpdateLeanAngle (deltaLeanTiltDegrees);
+	}
+
+	// Update view lean angles and translation, which can change with
+	// a lean angle update or if the player has turned around while leaning.
+	UpdateViewLeanAnglesAndTranslation();
+
+	// Update clip model again to account for any changes in orientation
+	// This is either the first call if deltaLeanTiltDegrees was 0.0, or
+	// the second call if the lean has changed. In either case, it is necessary.
+	UpdateClipModelOrientation();
+
+
+}

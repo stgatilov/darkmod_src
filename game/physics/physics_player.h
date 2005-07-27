@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/07/27 20:48:09  sophisticatedzombie
+ * Added leaning.  The clip model stuff still needs alot of work.
+ *
  * Revision 1.3  2005/07/03 18:37:02  sophisticatedzombie
  * Added a time variable which accumulates the milliseconds that the jump button is held down.  If it gets greater than a constant (JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS) then a mantle attempt is initiated.  The timer is not reset until jump is released, so you can hold it in while falling and try to catch something.
  *
@@ -76,6 +79,8 @@ typedef enum
 
 } EDarkMod_MantlePhase;
 
+
+// The class itself
 class idPhysics_Player : public idPhysics_Actor {
 
 public:
@@ -237,6 +242,7 @@ protected:
 	// Pointer to the entity being mantled.
 	// This is undefined if m_mantlePhase == notMantling_DarkModMantlePhase
 	idEntity* p_mantledEntity;
+	int mantledEntityID;
 
 	// How long will the current phase of the mantle operation take?
 	// Uses the same time unit as other movement times.
@@ -273,6 +279,78 @@ protected:
 	//#################################################
 	// End mantling handler
 	//#################################################
+
+	//#####################################################
+	// Leaning handler
+	// by SophisticatedZombie (Damon Hill)
+	//
+	//#####################################################
+
+protected:
+
+	// Starts or ends a lean around and axis which is perpendicular to the gravity normal and
+	// rotated by the given yaw angle clockwise (when looking down in direction of
+	// gravity) around it. 
+	float m_leanYawAngleDegrees;
+
+	// The current lean angle
+	float m_currentLeanTiltDegrees;
+
+	// Is the player trying to lean
+	bool m_b_tryingToLean;
+
+	// The current resulting view lean angles
+	idAngles m_viewLeanAngles;
+
+	// The current resulting view lean translation
+	idVec3 m_viewLeanTranslation;
+
+	// This method handles the change to the player view angles
+	// and bounding box during a lean
+	void LeanMove();
+
+	// This method is required for leaning to work right.
+	// By default, Doom 3 does not orient the player's clipmodel at all.
+	// (Physics_Player::Rotate is never caled).  So the player's clipmodel
+	// always faces north.
+	// Leaning is orientation sensitive, so this method is used to set
+	// the clip model orientation to match the portions of the 
+	// view direction perpendicular to the gravity normal. (appropriate for mouse look)
+	// This is called within LeanMove whether or not a lean is taking place.
+	void UpdateClipModelOrientation();
+
+	// This method is used to update the lean angles and translation
+	// It needs to be called every MovePlayer cycle, because if the player
+	// is leaning and then looks around, these values change.
+	// This is called within LeanMove whether or not a lean is taking place.
+	void UpdateViewLeanAnglesAndTranslation();
+
+	// This method updates the lean by as much of the delta amount given
+	// that does not result in a clip model trace collision.
+	// This is an internal method called by LeanMove
+	void UpdateLeanAngle (float deltaLeanAngle);
+
+public:
+
+	// Starts or ends a lean around and axis which is perpendicular to the gravity normal and
+	// rotated by the given yaw angle clockwise (when looking down in direction of
+	// gravity) around it. 
+	// 0.0 leans right, 180.0 leans left, 90.0 leans forward, 270.0 leans backward
+	void ToggleLean
+	(
+		float leanYawAngleDegrees
+	);
+
+	// This method returns true if a lean movement is being executed
+	// or is still cancelling.
+	// It only returns false if the lean is fully off.
+	__inline bool IsLeaning();
+
+	// These are called from idPlayer to adjust the camera viewpoint before
+	// rendering
+	idAngles GetViewLeanAngles();
+	idVec3 GetViewLeanTranslation();
+
 
 
 };
