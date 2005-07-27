@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/07/27 20:44:34  sophisticatedzombie
+ * Added variables to handle view roll and translate during lean.
+ *
  * Revision 1.19  2005/07/01 21:22:31  sophisticatedzombie
  * I added a case statement for Impule 24 to the impulse handler which triggers a mantling attempt.
  *
@@ -4901,6 +4904,7 @@ void idPlayer::UpdateDeltaViewAngles( const idAngles &angles ) {
 	for( int i = 0; i < 3; i++ ) {
 		delta[ i ] = angles[ i ] - SHORT2ANGLE( usercmd.angles[ i ] );
 	}
+
 	SetDeltaViewAngles( delta );
 }
 
@@ -4977,7 +4981,8 @@ void idPlayer::UpdateViewAngles( void ) {
 	UpdateDeltaViewAngles( viewAngles );
 
 	// orient the model towards the direction we're looking
-	SetAngles( idAngles( 0, viewAngles.yaw, 0 ) );
+	// LeanMod: SophisticatedZombie: Added pitch and roll to this
+	SetAngles( idAngles( viewAngles.pitch, viewAngles.yaw, viewAngles.roll ) );
 
 	// save in the log for analyzing weapon angle offsets
 	loggedViewAngles[ gameLocal.framenum & (NUM_LOGGED_VIEW_ANGLES-1) ] = viewAngles;
@@ -5738,16 +5743,32 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_44:		// Lean forward
 		{
+			common->Printf ("Impulse 44, lean forward\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(90.0);
+			}
+
 		}
 		break;
 
 		case IMPULSE_45:		// Lean left
 		{
+			common->Printf ("Impulse 45, lean left\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(180.0);
+			}
 		}
 		break;
 
 		case IMPULSE_46:		// Lean right
 		{
+			common->Printf ("Impulse 46, lean right\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(0.0);
+			}
 		}
 		break;
 	} 
@@ -7387,6 +7408,12 @@ idVec3 idPlayer::GetEyePosition( void ) const {
 	} else {
 		org = GetPhysics()->GetOrigin();
 	}
+
+	// Lean Mod: Sophisticated Zombie
+	// Move eye position due to leaning
+	org += ((idPhysics_Player*)GetPhysics())->GetViewLeanTranslation();
+
+	// This was in SDK untouched
 	return org + ( GetPhysics()->GetGravityNormal() * -eyeOffset.z );
 }
 
@@ -7407,7 +7434,7 @@ void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 		origin = GetEyePosition();
 	} else {
 		origin = GetEyePosition() + viewBob;
-		angles = viewAngles + viewBobAngles + playerView.AngleOffset();
+		angles = viewAngles + viewBobAngles + ((idPhysics_Player*)GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
 
 		axis = angles.ToMat3() * physicsObj.GetGravityAxis();
 
@@ -7430,12 +7457,17 @@ void idPlayer::CalculateFirstPersonView( void ) {
 		idVec3 origin;
 		idAngles ang;
 
-		ang = viewBobAngles + playerView.AngleOffset();
+		// Lean mod: Sophisticated Zombie
+		// Original line commented out
+		//ang = viewBobAngles + playerView.AngleOffset();
+		ang = viewBobAngles + ((idPhysics_Player*) GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
+
+		
 		ang.yaw += viewAxis[ 0 ].ToYaw();
 		
 		jointHandle_t joint = animator.GetJointHandle( "camera" );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		firstPersonViewOrigin = ( origin + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() ) + physicsObj.GetOrigin() + viewBob;
+		firstPersonViewOrigin = ( origin + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() ) + physicsObj.GetOrigin() + viewBob + physicsObj.GetViewLeanTranslation();
 		firstPersonViewAxis = axis * ang.ToMat3() * physicsObj.GetGravityAxis();
 	} else {
 		// offset for local bobbing and kicks
