@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/07/30 01:31:28  sophisticatedzombie
+ * Somewhat improved collision detection. Work needs to be done on handling collisions due to viewpoint rotation while in a leaned position.
+ *
  * Revision 1.4  2005/07/27 20:48:09  sophisticatedzombie
  * Added leaning.  The clip model stuff still needs alot of work.
  *
@@ -299,6 +302,9 @@ protected:
 	// Is the player trying to lean
 	bool m_b_tryingToLean;
 
+	// Is the lean finished
+	bool m_b_leanFinished;
+	
 	// The current resulting view lean angles
 	idAngles m_viewLeanAngles;
 
