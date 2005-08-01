@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/08/01 22:37:09  sophisticatedzombie
+ * Added rotation test to the UpdateClipModelOrientation method which detects collisions due to changes in player yaw in between frames.  This can happen when leaning, leading to the clip model penetrating a nearby surface, thereby breaking collision "sidedness" calculations.  In order to get around the issue, if the rotation test detects that the change in player yaw between the last frame and this frame resulted in collision with another collision model, then the player snaps to the upright position.  It prevents the ability to rotate the view through objects.
+ *
  * Revision 1.5  2005/07/30 01:31:28  sophisticatedzombie
  * Somewhat improved collision detection. Work needs to be done on handling collisions due to viewpoint rotation while in a leaned position.
  *
@@ -304,12 +307,19 @@ protected:
 
 	// Is the lean finished
 	bool m_b_leanFinished;
+
+	// The last recorded view angles
+	idAngles m_lastPlayerViewAngles;
+
 	
 	// The current resulting view lean angles
 	idAngles m_viewLeanAngles;
 
 	// The current resulting view lean translation
 	idVec3 m_viewLeanTranslation;
+
+	// The bounds without leaning
+	idBounds boundsWithoutLeaning;
 
 	// This method handles the change to the player view angles
 	// and bounding box during a lean

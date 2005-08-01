@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/08/01 22:37:09  sophisticatedzombie
+ * Added rotation test to the UpdateClipModelOrientation method which detects collisions due to changes in player yaw in between frames.  This can happen when leaning, leading to the clip model penetrating a nearby surface, thereby breaking collision "sidedness" calculations.  In order to get around the issue, if the rotation test detects that the change in player yaw between the last frame and this frame resulted in collision with another collision model, then the player snaps to the upright position.  It prevents the ability to rotate the view through objects.
+ *
  * Revision 1.9  2005/07/30 01:31:27  sophisticatedzombie
  * Somewhat improved collision detection. Work needs to be done on handling collisions due to viewpoint rotation while in a leaned position.
  *
@@ -1483,6 +1486,15 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// move the player velocity back into the world frame
 	current.velocity += current.pushVelocity;
 	current.pushVelocity.Zero();
+
+	// DEBUG
+	gameRenderWorld->DebugBounds
+	(
+		idVec4 (1.0, 0.0, 1.0, 1.0), 
+		clipModel->GetAbsBounds(),
+		idVec3 (0.0, 0.0, 0.0)
+	);
+
 }
 
 /*
@@ -3127,15 +3139,25 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation()
 
 void idPhysics_Player::UpdateClipModelOrientation()
 {
-	// DEBUGATRON:
-	// Rotating this box seems to make the player able to move
-	// diagonally through walls.
 	
-
-
-
 	// ASSUMES viewForward and viewRight have already been set
-	
+
+	//######################################################
+	// Adjust for crouch or not
+	//######################################################
+	idBounds bounds;
+	bounds = clipModel->GetBounds();
+	if (IsCrouching())
+	{
+		bounds[1][2] = pm_crouchheight.GetFloat();
+	}
+	else
+	{
+		bounds[1][2] = pm_normalheight.GetFloat();
+	}
+
+	// Try pulling it up a bit
+	bounds[0][2] = bounds[1][2] - 1.0f;
 
 	//######################################################
 	// Make rotation due to view direction perpendicular to gravity
@@ -3194,7 +3216,6 @@ void idPhysics_Player::UpdateClipModelOrientation()
 		m_currentLeanTiltDegrees
 	);
 
-	
 	//###########################
 	// Build new physics axii by
 	// leaning around the lean tilt
@@ -3204,92 +3225,94 @@ void idPhysics_Player::UpdateClipModelOrientation()
 	finalAxii = leanTiltRotation.ToMat3();
 	finalAxii.OrthoNormalizeSelf();
 
-	/*
 	//###########################
 	// Does the rotation from the old
 	// model to the new one cause a collision.
 	// If so, then undo lean.
 	//###########################
-	idMat3 oldAxii = GetAxis();
+	idMat3 oldAxii = clipModel->GetAxis();
 
-	idAngles oldAngles, newAngles;
-	oldAngles = oldAxii.ToAngles();
-	newAngles = finalAxii.ToAngles();
-	
+
+
 	idAngles deltaAngles;
-	deltaAngles = newAngles - oldAngles;
-	deltaAngles.Normalize180();
-	deltaAngles.pitch = 0.0;
+	deltaAngles.Zero();
 
+	if (self != NULL)
+	{
+		idPlayer* p_player = (idPlayer*) self;
+		deltaAngles = p_player->viewAngles - m_lastPlayerViewAngles;
+		m_lastPlayerViewAngles = p_player->viewAngles;
 
+		// Only interested in yaw
+		deltaAngles.pitch = 0.0;
+		deltaAngles.roll = 0.0;
+	}
 
 	idRotation testRotation= deltaAngles.ToRotation();
-	testRotation.SetOrigin (current.origin - 5 * GetGravityNormal());
-
-	trace_t rotationTraceResults;
-	ClipRotation
-	(
-		rotationTraceResults,
-		testRotation,
-		NULL // We are not comparing against one specific clip model
-	);
-
-	if (rotationTraceResults.fraction < 1.0)
+	if (testRotation.GetAngle() != 0.0)
 	{
+		testRotation.SetOrigin (current.origin);
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		trace_t rotationTraceResults;
+		ClipRotation
 		(
-			"old angles pitch %f yaw %f roll %f,   new angles p %f y %f r %f\n",
-			oldAngles.pitch,
-			oldAngles.yaw,
-			oldAngles.roll,
-			newAngles.pitch,
-			newAngles.yaw,
-			newAngles.roll
+			rotationTraceResults,
+			testRotation,
+			NULL // We are not comparing against one specific clip model
 		);
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
-		(
-			"Orientation change by delta angles pitch %f yaw %f roll %f\n",
-			deltaAngles.pitch,
-			deltaAngles.yaw,
-			deltaAngles.roll
-		);
+		if (rotationTraceResults.fraction < 1.0)
+		{
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+			(
+				"Orientation change by delta angles pitch %e yaw %e roll %e\n",
+				deltaAngles.pitch,
+				deltaAngles.yaw,
+				deltaAngles.roll
+			);
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
-		(
-			"Orientation change by %f degrees around axis %f %f %f yielded trace fraction %f",
-			testRotation.GetVec()[0],
-			testRotation.GetVec()[1],
-			testRotation.GetVec()[2],
-			testRotation.GetAngle(),
-			rotationTraceResults.fraction
-		);
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+			(
+				"Orientation change by %e degrees around axis %e %e %e yielded trace fraction %e",
+				testRotation.GetVec()[0],
+				testRotation.GetVec()[1],
+				testRotation.GetVec()[2],
+				testRotation.GetAngle(),
+				rotationTraceResults.fraction
+			);
 
-		// Can't do it.
-		// Must undo lean
-		m_b_leanFinished = true;
-		m_b_tryingToLean = false;
-		m_currentLeanTiltDegrees = 0.0;
+			// Can't do it.
+			// Must undo lean
+			m_b_leanFinished = true;
+			m_b_tryingToLean = false;
+			m_currentLeanTiltDegrees = 0.0;
 
-		// Set orientation for no lean
-		leanTiltRotation.Set
-		(
-			idVec3(0.0, 0.0, 0.0),
-			leanTiltAxis,
-			m_currentLeanTiltDegrees
-		);
-		finalAxii = leanTiltRotation.ToMat3();
-		finalAxii.OrthoNormalizeSelf();
+			// Set orientation for no lean
+			leanTiltRotation.Set
+			(
+				idVec3(0.0, 0.0, 0.0),
+				leanTiltAxis,
+				m_currentLeanTiltDegrees
+			);
+			finalAxii = leanTiltRotation.ToMat3();
+			finalAxii.OrthoNormalizeSelf();
 
+		}
 	}
-	*/
 
+	//######################################################
+	// Perform the modficiation of the clip model
+	// 
+	//######################################################
+
+#define ROTATE_CLIP_MODEL_FOR_LEAN
+#ifdef ROTATE_CLIP_MODEL_FOR_LEAN
 
 	//###########################
 	// Set new axii for clip model
 	//###########################
 	SetAxis (finalAxii);
+	clipModelAxis = finalAxii;
 
 	/*
 	// Some debugging
@@ -3299,6 +3322,65 @@ void idPhysics_Player::UpdateClipModelOrientation()
 		GetAxis()
 	);
 	*/
+
+#else
+
+	/* NOTE: This does not work */
+
+	//######################################################
+	// Transform the bounds
+	//######################################################
+
+	if (boundsWithoutLeaning.IsCleared())
+	{
+		boundsWithoutLeaning = clipModel->GetAbsBounds();
+	}
+
+	// Adjust for crouch or not
+	if (IsCrouching())
+	{
+		boundsWithoutLeaning[1][2] = pm_crouchheight.GetFloat();
+	}
+	else
+	{
+		boundsWithoutLeaning[1][2] = pm_normalheight.GetFloat();
+	}
+
+	// Update bounds origin
+	idBounds newBounds;
+	
+	// Make bounds with lean
+	newBounds = boundsWithoutLeaning;
+	idMat3 IdentityAxii;
+	IdentityAxii.Identity();
+
+	newBounds.FromBoundsRotation
+	(
+		boundsWithoutLeaning,
+		idVec3 (0.0, 0.0, 0.0),
+		IdentityAxii,
+		leanTiltRotation
+	);
+
+	newBounds.TranslateSelf
+	(
+		-current.origin
+	);
+
+
+	/*
+    if ( pm_usecylinder.GetBool() ) 
+	{
+		clipModel->LoadModel( idTraceModel( newBounds, 8 ) );
+	}
+	else 
+	{
+		clipModel->LoadModel( idTraceModel( newBounds ) );
+	}
+	*/
+
+#endif
+
 
 }
 
