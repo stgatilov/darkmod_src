@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/08/02 00:29:28  sophisticatedzombie
+ * I've added a line to CorrectAllSolid that bumps the player against gravity slightly if they are inside a solid object. This fixes the problem with getting stuck in the floor.
+ *
  * Revision 1.10  2005/08/01 22:37:09  sophisticatedzombie
  * Added rotation test to the UpdateClipModelOrientation method which detects collisions due to changes in player yaw in between frames.  This can happen when leaning, leading to the clip model penetrating a nearby surface, thereby breaking collision "sidedness" calculations.  In order to get around the issue, if the rotation test detects that the change in player yaw between the last frame and this frame resulted in collision with another collision model, then the player snaps to the upright position.  It prevents the ability to rotate the view through objects.
  *
@@ -968,8 +971,14 @@ idPhysics_Player::CorrectAllSolid
 */
 void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 	if ( debugLevel ) {
+		
 		gameLocal.Printf( "%i:allsolid\n", c_pmove );
 	}
+
+	// SophisticatedZombie
+	//DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("performing CorrectAllSolid due to player inside solid object\n");
+	current.origin -= (GetGravityNormal() * 0.2f);
+
 
 	// FIXME: jitter around to find a free spot ?
 
@@ -3142,22 +3151,6 @@ void idPhysics_Player::UpdateClipModelOrientation()
 	
 	// ASSUMES viewForward and viewRight have already been set
 
-	//######################################################
-	// Adjust for crouch or not
-	//######################################################
-	idBounds bounds;
-	bounds = clipModel->GetBounds();
-	if (IsCrouching())
-	{
-		bounds[1][2] = pm_crouchheight.GetFloat();
-	}
-	else
-	{
-		bounds[1][2] = pm_normalheight.GetFloat();
-	}
-
-	// Try pulling it up a bit
-	bounds[0][2] = bounds[1][2] - 1.0f;
 
 	//######################################################
 	// Make rotation due to view direction perpendicular to gravity
@@ -3287,6 +3280,9 @@ void idPhysics_Player::UpdateClipModelOrientation()
 			m_b_tryingToLean = false;
 			m_currentLeanTiltDegrees = 0.0;
 
+			// Update view angles
+			UpdateViewLeanAnglesAndTranslation();
+
 			// Set orientation for no lean
 			leanTiltRotation.Set
 			(
@@ -3297,6 +3293,7 @@ void idPhysics_Player::UpdateClipModelOrientation()
 			finalAxii = leanTiltRotation.ToMat3();
 			finalAxii.OrthoNormalizeSelf();
 
+
 		}
 	}
 
@@ -3305,81 +3302,11 @@ void idPhysics_Player::UpdateClipModelOrientation()
 	// 
 	//######################################################
 
-#define ROTATE_CLIP_MODEL_FOR_LEAN
-#ifdef ROTATE_CLIP_MODEL_FOR_LEAN
-
 	//###########################
 	// Set new axii for clip model
 	//###########################
 	SetAxis (finalAxii);
 	clipModelAxis = finalAxii;
-
-	/*
-	// Some debugging
-	gameRenderWorld->DebugAxis
-	(
-		current.origin, 
-		GetAxis()
-	);
-	*/
-
-#else
-
-	/* NOTE: This does not work */
-
-	//######################################################
-	// Transform the bounds
-	//######################################################
-
-	if (boundsWithoutLeaning.IsCleared())
-	{
-		boundsWithoutLeaning = clipModel->GetAbsBounds();
-	}
-
-	// Adjust for crouch or not
-	if (IsCrouching())
-	{
-		boundsWithoutLeaning[1][2] = pm_crouchheight.GetFloat();
-	}
-	else
-	{
-		boundsWithoutLeaning[1][2] = pm_normalheight.GetFloat();
-	}
-
-	// Update bounds origin
-	idBounds newBounds;
-	
-	// Make bounds with lean
-	newBounds = boundsWithoutLeaning;
-	idMat3 IdentityAxii;
-	IdentityAxii.Identity();
-
-	newBounds.FromBoundsRotation
-	(
-		boundsWithoutLeaning,
-		idVec3 (0.0, 0.0, 0.0),
-		IdentityAxii,
-		leanTiltRotation
-	);
-
-	newBounds.TranslateSelf
-	(
-		-current.origin
-	);
-
-
-	/*
-    if ( pm_usecylinder.GetBool() ) 
-	{
-		clipModel->LoadModel( idTraceModel( newBounds, 8 ) );
-	}
-	else 
-	{
-		clipModel->LoadModel( idTraceModel( newBounds ) );
-	}
-	*/
-
-#endif
 
 
 }
@@ -3546,8 +3473,9 @@ void idPhysics_Player::LeanMove()
 	{
 		// Re-orient clip model before change so that collision tests
 		// are accurate (player may have rotated mid-lean)
-		UpdateClipModelOrientation();
 		UpdateLeanAngle (deltaLeanTiltDegrees);
+
+
 	}
 
 	// Update clip model again to account for any changes in orientation
@@ -3555,8 +3483,7 @@ void idPhysics_Player::LeanMove()
 	// the second call if the lean has changed. In either case, it is necessary.
 	UpdateClipModelOrientation();
 
-	// Update view lean angles and translation, which can change with
-	// a lean angle update or if the player has turned around while leaning.
 	UpdateViewLeanAnglesAndTranslation();
+
 
 }
