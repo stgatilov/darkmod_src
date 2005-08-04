@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/08/04 05:16:43  sophisticatedzombie
+ * Lean angle is now 12 degrees rather than 20.
+ * Leaning now uses sinusoidal velocity rather than linear velocity.
+ * Its still to bumpy, but pushing the player up is the only way to keep them out of the floor that I have come up with yet.
+ *
  * Revision 1.6  2005/08/01 22:37:09  sophisticatedzombie
  * Added rotation test to the UpdateClipModelOrientation method which detects collisions due to changes in player yaw in between frames.  This can happen when leaning, leading to the clip model penetrating a nearby surface, thereby breaking collision "sidedness" calculations.  In order to get around the issue, if the rotation test detects that the change in player yaw between the last frame and this frame resulted in collision with another collision model, then the player snaps to the upright position.  It prevents the ability to rotate the view through objects.
  *
@@ -303,10 +308,15 @@ protected:
 	float m_currentLeanTiltDegrees;
 
 	// Is the player trying to lean
-	bool m_b_tryingToLean;
+	float m_leanMoveStartTilt;
+	float m_leanMoveEndTilt;
 
 	// Is the lean finished
 	bool m_b_leanFinished;
+
+	// How long will the current phase of the leaning operation take?
+	// Uses the same time unit as other movement times.
+	float m_leanTime;
 
 	// The last recorded view angles
 	idAngles m_lastPlayerViewAngles;

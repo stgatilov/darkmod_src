@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/08/04 05:16:43  sophisticatedzombie
+ * Lean angle is now 12 degrees rather than 20.
+ * Leaning now uses sinusoidal velocity rather than linear velocity.
+ * Its still to bumpy, but pushing the player up is the only way to keep them out of the floor that I have come up with yet.
+ *
  * Revision 1.11  2005/08/02 00:29:28  sophisticatedzombie
  * I've added a line to CorrectAllSolid that bumps the player against gravity slightly if they are inside a solid object. This fixes the problem with getting stuck in the floor.
  *
@@ -1497,12 +1502,15 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	current.pushVelocity.Zero();
 
 	// DEBUG
+	/*
 	gameRenderWorld->DebugBounds
 	(
 		idVec4 (1.0, 0.0, 1.0, 1.0), 
 		clipModel->GetAbsBounds(),
 		idVec3 (0.0, 0.0, 0.0)
 	);
+	*/
+
 
 }
 
@@ -1608,9 +1616,12 @@ idPhysics_Player::idPhysics_Player( void ) {
 	m_jumpHeldDownTime = 0.0;
 
 	// Leaning Mod
-	m_b_tryingToLean = false;
 	m_leanYawAngleDegrees = 0.0;
 	m_currentLeanTiltDegrees = 0.0;
+	m_b_leanFinished = true;
+	m_leanMoveStartTilt = 0.0;
+	m_leanMoveEndTilt = 0.0;
+
 	m_viewLeanAngles = ang_zero;
 	m_viewLeanTranslation = vec3_zero;
 
@@ -2606,13 +2617,7 @@ void idPhysics_Player::PerformMantle()
 	p_mantledEntity = NULL;
 	mantledEntityID = 0;
 
-	/*
-	// SophisticatedZombie:
-	// I commented this out after adding it because it tends to find
-	// a collision point off to the side of the center of where the player
-	// is aiming.  The effect is kind of wierd, and I think the gaze trace
-	// is good enough.
-	// If that trace didn't hit anything, try a broader trace
+	// If that trace didn't hit anything, try a taller trace
 	if ( trace.fraction >= 1.0f ) 
 	{
 		idVec3 forwardPerpGrav = forward;
@@ -2623,12 +2628,16 @@ void idPhysics_Player::PerformMantle()
 		bounds = clipModel->GetBounds();
 		savedBounds = bounds;
 
-		bounds[0][0] = -0.2f;
-		bounds[1][0] = 0.2f;
-
+		bounds[0][1] = (savedBounds[0][1] + savedBounds[1][1]) / 2;
+		bounds[0][1] -= 0.01f;
+		bounds[1][1] = bounds[0][1] + 0.02f;
+		bounds[0][0] = bounds[0][1];
+		bounds[1][0] = bounds[1][1];
+		
+		
 		if ( pm_usecylinder.GetBool() ) 
 		{
-			clipModel->LoadModel( idTraceModel( bounds, 0.2 ) );
+			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
 		}
 		else 
 		{
@@ -2660,7 +2669,7 @@ void idPhysics_Player::PerformMantle()
 		}
 
 	}
-	*/
+	
 
 	// if near a surface
 	if ( trace.fraction < 1.0f ) 
@@ -3031,14 +3040,13 @@ void idPhysics_Player::PerformMantle()
 
 //####################################################################
 // Start Leaning Mod
-//	Zaccheus
-//	SophsiticatedZombie (DH)
+//	Zaccheus (some original geometric drawings)
+//	SophsiticatedZombie (DH) 
 //
 //####################################################################
 
-// About 3.0 degrees every 100 milliseconds, or 30.0 degrees in 1 second 
-#define LEAN_TILT_DEGREES_PER_MILLISECOND 0.060
-#define MAX_LEAN_TILT_DEGREES 20.0
+#define NUM_MILLISECONDS_FOR_LEAN_MOVE 600
+#define MAX_LEAN_TILT_DEGREES 12.0
 
 //----------------------------------------------------------------------
 
@@ -3050,16 +3058,24 @@ void idPhysics_Player::ToggleLean
 	if (m_currentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
 	{
 		// Start the lean
-		m_b_tryingToLean = true;
-		m_b_leanFinished = false;
+		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
+		m_leanMoveEndTilt = MAX_LEAN_TILT_DEGREES;
+
 		m_leanYawAngleDegrees = leanYawAngleDegrees;
+		m_leanTime = NUM_MILLISECONDS_FOR_LEAN_MOVE;
+
+		m_b_leanFinished = false;
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean staring lean\r\n");
 	}
 	else
 	{
 		// End the lean
-		m_b_tryingToLean = false;
+		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
+		m_leanMoveEndTilt = 0.0;
+
+		m_leanTime = NUM_MILLISECONDS_FOR_LEAN_MOVE;
+
 		m_b_leanFinished = false;
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean ending lean\r\n");
@@ -3071,13 +3087,13 @@ void idPhysics_Player::ToggleLean
 
 __inline bool idPhysics_Player::IsLeaning()
 {
-	if ((m_b_tryingToLean == false) && (m_currentLeanTiltDegrees < 0.0001)) // prevent floating point compare errors
+	if (m_currentLeanTiltDegrees < 0.001)
 	{
 		return false;
 	}
 	else
 	{
-		// Still entering, holding,  or exiting lean
+		// entering, exiting, or holding lean
 		return true;
 	}
 }	
@@ -3225,8 +3241,6 @@ void idPhysics_Player::UpdateClipModelOrientation()
 	//###########################
 	idMat3 oldAxii = clipModel->GetAxis();
 
-
-
 	idAngles deltaAngles;
 	deltaAngles.Zero();
 
@@ -3256,6 +3270,7 @@ void idPhysics_Player::UpdateClipModelOrientation()
 
 		if (rotationTraceResults.fraction < 1.0)
 		{
+			/*
 			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 			(
 				"Orientation change by delta angles pitch %e yaw %e roll %e\n",
@@ -3273,12 +3288,15 @@ void idPhysics_Player::UpdateClipModelOrientation()
 				testRotation.GetAngle(),
 				rotationTraceResults.fraction
 			);
+			*/
 
 			// Can't do it.
 			// Must undo lean
 			m_b_leanFinished = true;
-			m_b_tryingToLean = false;
 			m_currentLeanTiltDegrees = 0.0;
+			m_leanMoveStartTilt = 0.0;
+			m_leanMoveEndTilt = 0.0;
+			m_leanTime = 0.0;
 
 			// Update view angles
 			UpdateViewLeanAnglesAndTranslation();
@@ -3327,12 +3345,14 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	{
 		// Adjust delta
 		deltaLeanTiltDegrees = 0.0 - m_currentLeanTiltDegrees;
+		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
 	else if (newLeanTiltDegrees > MAX_LEAN_TILT_DEGREES)
 	{
 		// Adjust delta
 		deltaLeanTiltDegrees = MAX_LEAN_TILT_DEGREES - m_currentLeanTiltDegrees;
+		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
 
@@ -3385,7 +3405,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 
 	// Lift origin off of ground a little
 	idVec3 originSave = current.origin;
-	current.origin += -GetGravityNormal() * 0.5;
+	current.origin += -GetGravityNormal() * 0.25;
 	clipModel->SetPosition (current.origin, clipModel->GetAxis());
 
 	// build rotation
@@ -3428,9 +3448,10 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 		clipModel->SetPosition (current.origin, clipModel->GetAxis());
 
 		// Lean is finished
+		m_leanTime = 0.0;
+		deltaLeanTiltDegrees *= rotationTraceResults.fraction;
 		m_b_leanFinished = true;
 
-		return;
 	}
 		
 
@@ -3457,15 +3478,37 @@ void idPhysics_Player::LeanMove()
 	// Change in lean tilt this frame
 	float deltaLeanTiltDegrees = 0.0;
 
-	if ( (m_b_tryingToLean) && (!m_b_leanFinished) )
+	if ( !m_b_leanFinished) 
 	{
-		// Try to lean some more
-		deltaLeanTiltDegrees = LEAN_TILT_DEGREES_PER_MILLISECOND * framemsec;
-	}
-	else if ((!m_b_tryingToLean) && (!m_b_leanFinished))
-	{
-		// Check if already at minimum lean
-		deltaLeanTiltDegrees = -LEAN_TILT_DEGREES_PER_MILLISECOND * framemsec;
+
+		// Update lean time
+		m_leanTime -= framemsec;
+		if (m_leanTime <= 0.0)
+		{
+			m_leanTime = 0.0;
+			m_b_leanFinished = true;
+		}
+
+		// Try sinusoidal movement
+		float timeRatio = 0.0;
+		timeRatio = ( NUM_MILLISECONDS_FOR_LEAN_MOVE - m_leanTime) /  NUM_MILLISECONDS_FOR_LEAN_MOVE;
+
+		float timeRadians = (idMath::PI/2.0f) * timeRatio;
+		
+		float newLeanTiltDegrees = 0.0;
+		
+		if (m_leanMoveEndTilt > m_leanMoveStartTilt)
+		{
+			newLeanTiltDegrees = (idMath::Sin(timeRadians) * (m_leanMoveEndTilt - m_leanMoveStartTilt))
+			 + m_leanMoveStartTilt;
+		}
+		else if (m_leanMoveStartTilt > m_leanMoveEndTilt)
+		{
+			newLeanTiltDegrees = m_leanMoveStartTilt - (idMath::Sin(timeRadians) * (m_leanMoveStartTilt - m_leanMoveEndTilt));
+		}
+
+		deltaLeanTiltDegrees = newLeanTiltDegrees - m_currentLeanTiltDegrees;
+
 	}
 
 	// Perform any change to leaning
@@ -3474,8 +3517,6 @@ void idPhysics_Player::LeanMove()
 		// Re-orient clip model before change so that collision tests
 		// are accurate (player may have rotated mid-lean)
 		UpdateLeanAngle (deltaLeanTiltDegrees);
-
-
 	}
 
 	// Update clip model again to account for any changes in orientation
