@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.17  2005/08/14 23:26:41  sophisticatedzombie
+ * Added mantling and leaning constants to g_Global
+ *
  * Revision 1.16  2005/04/07 08:35:42  ishtvan
  * Added AI acuities hash, moved soundprop flags to game_local.h
  *
@@ -76,6 +79,7 @@
 #define DARKMODGLOBALS_H
 
 #include <stdio.h>
+#include "..\game\game_local.h"
 
 #ifndef ILuint
 typedef unsigned int ILuint;
@@ -112,6 +116,7 @@ typedef enum {
 	LC_LIGHT,
 	LC_WEAPON,
 	LC_MATH,
+	LC_MOVEMENT,		// mantling, leaning, ledge hanging, etc...
 	LC_COUNT
 } LC_LogClass;
 
@@ -211,8 +216,68 @@ public:
 	idList<CImage *>				m_Image;
 
 public:
-	// Global game settings, default values
+
+	/*!
+	* Global game settings, default values
+	*/
+
+	/*!
+	* Maximum distance of reach for frobbing
+	*/
 	float m_DefaultFrobDistance;
+
+	/*!
+	* Arm length for mantling
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_armLengthAsFractionOfPlayerHeight;
+
+	// Mantle trigger timer for holding jump key
+	float m_jumpHoldMantleTrigger_Milliseconds;
+	
+	/*!
+	* Milliseconds of time that player hangs if mantle begins
+	* with the player's feet of the ground
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_mantleHang_Milliseconds;
+
+	/*!
+	* Milliseconds of time it takes for the player to pull themselves
+	* up to shoulder level with the mantle surface
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_mantlePull_Milliseconds;
+
+	/*!
+	* Milliseconds of time it takes for the player to shift their
+	* hands from pulling to pushing
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_mantleShiftHands_Milliseconds;
+
+	/*!
+	* Milliseconds of time it takes for the player to push
+	* themselves up onto the mantle surface
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_mantlePush_Milliseconds;
+
+	/*!
+	* Milliseconds of time it takes for the player to enter
+	* or exit a lean
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_leanMove_Milliseconds;
+
+	/*!
+	* The angle to which a player rolls to the side during
+	* a lean. The center of the circle is the player's feet,
+	* so lean angles are smaller than they would be if the
+	* player had a waist joint.
+	* @author: sophisticatedZombie (DH)
+	*/
+	float m_leanMove_DegreesTilt;
 
 	/**
 	* List of AI Acuities

@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.18  2005/08/14 23:26:41  sophisticatedzombie
+ * Added mantling and leaning constants to g_Global
+ *
  * Revision 1.17  2005/04/07 08:35:42  ishtvan
  * Added AI acuities hash, moved soundprop flags to game_local.h
  *
@@ -79,7 +82,7 @@
 #pragma warning(disable : 4996)
 
 #ifdef _WINDOWS_
-#include "c:\compiled.h"
+//#include "c:\compiled.h"
 #endif
 
 #include "DarkModGlobals.h"
@@ -92,6 +95,26 @@
 #include "sndprop.h"
 #include "relations.h"
 #include "../game/ai/ai.h"
+
+
+// Default length of time for holding down jump key to start
+// mantling.
+#define DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS 100.0f
+
+// Player arm length, as fraction of player height: About 3/5 plus some padding
+#define DARKMOD_MANTLE_ARM_LENGTH_AS_FRACTION_OF_PLAYER_HEIGHT 0.8f
+
+// Default time values for phases of mantling
+#define DARKMOD_MANTLE_MILLISECONDS_HANG		750.0f
+#define DARKMOD_MANTLE_MILLISECONDS_PULL		750.0f
+#define DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS	500.0f
+#define DARKMOD_MANTLE_MILLISECONDS_PUSH		800.0f
+
+// Default time value for phases of leaning
+#define DARKMOD_NUM_MILLISECONDS_FOR_LEAN_MOVE 600.0f
+
+// Default lean angle
+#define DARKMOD_MAX_LEAN_TILT_DEGREES 12.0f
 
 class idAI;
 
@@ -121,6 +144,7 @@ static char *LCString[LC_COUNT+1] = {
 	"LIGHT",
 	"WEAPON",
 	"MATH",
+	"MOVEMENT",
 	"(empty)"
 };
 
@@ -154,6 +178,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_AI] = false;
 	m_ClassArray[LC_SOUND] = false;
 	m_ClassArray[LC_FUNCTION] = false;
+	m_ClassArray[LC_MOVEMENT] = false;
 
 	m_DefaultFrobDistance = 100.0f;
 	m_LogClass = LC_SYSTEM;
@@ -186,6 +211,27 @@ CGlobal::CGlobal(void)
 	{
 		m_AcuityHash.Add( m_AcuityHash.GenerateKey( m_AcuityNames[i].c_str(), false ), i );
 	}
+
+	//*******
+	// Initialize the Mantling and Leaning variables
+	//*******
+	m_jumpHoldMantleTrigger_Milliseconds = DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS;
+
+	// Default arm length for determining reach distances when mantling
+	m_armLengthAsFractionOfPlayerHeight = DARKMOD_MANTLE_ARM_LENGTH_AS_FRACTION_OF_PLAYER_HEIGHT;
+
+	// Default time values for phases of mantling
+	m_mantleHang_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_HANG;
+	m_mantlePull_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_PULL;
+	m_mantleShiftHands_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS;
+	m_mantlePush_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_PUSH;
+
+	// Default time value for leaning
+	m_leanMove_Milliseconds = DARKMOD_NUM_MILLISECONDS_FOR_LEAN_MOVE;
+
+	// Default angle for leaning
+	m_leanMove_DegreesTilt = DARKMOD_MAX_LEAN_TILT_DEGREES;
+
 }
 
 CGlobal::~CGlobal(void)
@@ -482,15 +528,74 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MATH: %c\r", pm->Value[0]);
 		}
+		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+				m_ClassArray[LC_MOVEMENT] = true;
+
+			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MOVEMENT: %c\r", pm->Value[0]);
+		}
 	}
 
 	if(FindSection(pfh, "GlobalParams", &ps) != -1)
 	{
 		if(FindMap(ps, "DefaultFrobDistance", TRUE, &pm) != -1)
 			m_DefaultFrobDistance = abs(atof(pm->Value));
+
+		if(FindMap(ps, "Mantle_JumpHoldMilliseconds", TRUE, &pm) != -1)
+		{
+			m_jumpHoldMantleTrigger_Milliseconds = atof(pm->Value);
+		}
+
+		if(FindMap(ps, "Mantle_HangMilliseconds", TRUE, &pm) != -1)
+		{
+			m_mantleHang_Milliseconds = atof(pm->Value);
+		}
+
+		if(FindMap(ps, "Mantle_PullMilliseconds", TRUE, &pm) != -1)
+		{
+			m_mantlePull_Milliseconds = atof(pm->Value);
+		}
+
+		if(FindMap(ps, "Mantle_ShiftHandsMilliseconds", TRUE, &pm) != -1)
+		{
+			m_mantleShiftHands_Milliseconds = atof(pm->Value);
+		}
+
+		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != -1)
+		{
+			m_mantlePush_Milliseconds = atof(pm->Value);
+		}
+				
+		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != -1)
+		{
+			m_mantlePush_Milliseconds = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "Lean_Milliseconds", TRUE, &pm) != -1)
+		{
+			m_leanMove_Milliseconds = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "Lean_Degrees", TRUE, &pm) != -1)
+		{
+			m_leanMove_DegreesTilt = atof(pm->Value);
+		}
+
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("FrobDistance: %f\r", m_DefaultFrobDistance);
+		
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle pull milliseconds: %f\r", m_mantlePull_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle shift hands milliseconds: %f\r", m_mantleShiftHands_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle push milliseconds: %f\r", m_mantlePush_Milliseconds);
+
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Lean milliseconds: %f\r", m_leanMove_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE).LogString("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
+
 	}
 
-	DM_LOG(LC_SYSTEM, LT_INFO).LogString("FrobDistance: %f\r", m_DefaultFrobDistance);
+
 }
 
 
