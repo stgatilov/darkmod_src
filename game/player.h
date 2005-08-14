@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/08/14 23:27:31  sophisticatedzombie
+ * Updated handling of leaning to use doxygen style comments
+ *
  * Revision 1.6  2005/04/23 01:48:58  ishtvan
  * *) Removed the effect of stamina on everything but the heartbeat sound
  *
@@ -259,7 +262,9 @@ public:
 	**/
 	idScriptBool			AI_CREEP;
 
-	// inventory
+	/*!
+	* container for the player's inventory
+	*/
 	idInventory				inventory;
 
 	idEntityPtr<idWeapon>	weapon;
