@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/08/14 23:29:04  sophisticatedzombie
+ * Broke methods into smaller more logical units.
+ * Changed header documentation to use doxygen format and doxygen tags.
+ * Leaning and Mantling constants moved to DarkModGlobals
+ * Fixed infinite loop that could occur in mantling test due to floating point number precision.
+ *
  * Revision 1.7  2005/08/04 05:16:43  sophisticatedzombie
  * Lean angle is now 12 degrees rather than 20.
  * Leaning now uses sinusoidal velocity rather than linear velocity.
@@ -242,33 +248,62 @@ public:
 protected:
 
 
-	// The current mantling phase
+	/*!
+	* The current mantling phase
+	*/
 	EDarkMod_MantlePhase m_mantlePhase;
 
-	// Point being mantled to...
+	/*!
+	* Points along the mantle path
+	*/
 	idVec3 m_mantlePullStartPos;
 	idVec3 m_mantlePullEndPos;
 	idVec3 m_mantlePushEndPos;
 
-	// Pointer to the entity being mantled.
-	// This is undefined if m_mantlePhase == notMantling_DarkModMantlePhase
+	/*!
+	* Pointer to the entity being mantled.
+	* This is undefined if m_mantlePhase == notMantling_DarkModMantlePhase
+	*/
 	idEntity* p_mantledEntity;
+
+	/*!
+	* ID number of the entity being mantled
+	* This is 0 if m_mantlePhase == notMantling_DarkModMantlePhase
+	*/
 	int mantledEntityID;
 
-	// How long will the current phase of the mantle operation take?
-	// Uses the same time unit as other movement times.
+	/*!
+	* How long will the current phase of the mantle operation take?
+	* Uses milliseconds and counts down to 0.
+	*/
 	float m_mantleTime;
 
-	// Jump held down timer
-	// Times how long jump has been held down
+	/*!
+	* Tracks, in milliseconds, how long jump button has been held down
+	* Counts upwards from 0.
+	*/ 
 	float m_jumpHeldDownTime;
 
-	// This method determines the mantle time required for each phase of the mantle.
-	// I made this a function so you could implement things such as carry-weight,
-	// tiredness, length of lift....
-	float getMantleTimeForPhase (EDarkMod_MantlePhase mantlePhase);
+	/*!
+	* This method determines the mantle time required for each phase of the mantle.
+	* I made this a function so you could implement things such as carry-weight,
+	* tiredness, length of lift....
+	/* @param[in] mantlePhase The mantle phase for which the duration is to be retrieved
+	*/
+	float getMantleTimeForPhase 
+	(
+		EDarkMod_MantlePhase mantlePhase
+	);
 
-	// Internal method to start the mantle operation
+	/*!
+	*
+	* Internal method to start the mantle operation
+	*
+	* @param[in] initialMantlePhase The mantle phase in which the mantle starts.
+	* @param[in] eyePos The position of the player's eyes in the world
+	* @param[in] startPos The position of the player's feet at the start of the mantle
+	* @param[in] endPos The position of the player's feet at the end of the mantle
+	*/
 	void StartMantle
 	(
 		EDarkMod_MantlePhase initialMantlePhase,
@@ -277,10 +312,139 @@ protected:
 		idVec3 endPos
 	);
 
-	// Timer change methods
+	/*!
+	* Internal method which determines the maximum vertical
+	* and horizontal distances for mantling
+	*
+	* @param[out] out_maxVerticalReachDistance The distance that the player can reach vertically, from their current origin
+	* @param[out] out_maxHorizontalReachDistance The distance that the player can reach horizontally, from their current origin
+	* @param[out] out_maxMantleTraceDistance The maximum distance that the traces should look in front of the player for a mantle target
+	*/
+	void GetCurrentMantlingReachDistances
+	(
+		float& out_maxVerticalReachDistance,
+		float& out_maxHorizontalReachDistance,
+		float& out_maxMantleTraceDistance
+	);
+
+	/*!
+	* This method runs the trace to find a mantle target
+	* It first attempts to raycast along the player's gaze
+	* direction to determine a target. If it doesn't find one,
+	* then it tries a collision test along a vertical plane
+	* from the players feet to their height, out in the direction
+	* the player is facing.
+	*
+	* @param[in] maxMantleTraceDistance The maximum distance from the player that should be used in the traces
+	* @param[in] eyePos The position of the player's eyes, used for the beginning of the gaze trace
+	* @param[in] forwardVec The vector gives the direction that the player is facing
+	* @param[out] out_trace This trace structure will hold the result of whichever trace succeeds. If both fail, the trace fraction will be 1.0
+	*/
+	void MantleTargetTrace
+	(
+		float maxMantleTraceDistance,
+		idVec3 eyePos,
+		idVec3 forwardVec,
+		trace_t& out_trace
+	);
+
+	/*!
+	* 
+	* This function checks the collision target of the mantle 
+	* trace to see if there is a surface within reach distance
+	* upon which the player will fit.
+	*
+	* @param[in] maxVerticalReachDistance The maximum distance that the player can reach vertically from their current origin
+	* @param[in] maxHorizontalReachDistance The maximum distance that the player can reach horizontally from their current origin
+	* @param[in] in_targetTraceResult The trace which found the mantle target
+	* @param[out] out_mantleEndPoint If the return code is true, this out paramter specifies the position of the player's origin at the end of the mantle move.
+	*
+	* @return the result of the test
+	* @retval true if the mantle target has a mantleable surface
+	* @retval false if the mantel target does not have a mantleable surface
+	*
+	*/
+	bool DetermineIfMantleTargetHasMantleableSurface
+	(
+		float maxVerticalReachDistance,
+		float maxHorizontalReachDistance,
+		trace_t& in_targetTraceResult,
+		idVec3& out_mantleEndPoint
+	);		
+
+	/*!
+	* Call this method to test whether or not the path
+	* along the mantle movement is free of obstructions.
+	*
+	* @param[in] maxVerticalReachDistance The maximum distance that the player can reach vertically from their current origin
+	* @param[in] maxHorizontalReachDistance The maximum distance that the player can reach horizontally from their current origin
+	* @param[in] eyePos The position of the player's eyes in the world
+	* @param[in] mantleStartPoint The player's origin at the start of the mantle movement
+	* @param[in] mantleEndPoint The player's origin at the end of the mantle movement
+	*
+	* @return the result of the test
+	* @retval true if the path is clear
+	* @retval false if the path is blocked
+	*/
+	bool DetermineIfPathToMantleSurfaceIsPossible
+	(
+		float maxVerticalReachDistance,
+		float maxHorizontalReachDistance,
+		idVec3 eyePos,
+		idVec3 mantleStartPoint,
+		idVec3 mantleEndPoint
+	);
+
+	/*!
+	* Given a trace which resulted in a detected mantle
+	* target, this method checks to see if the target
+	* is mantleable.  It looks for a surface up from gravity
+	* on which the player can fit while crouching. It also
+	* checks that the distance does not violate horizontal
+	* and vertical displacement rules for mantling. Finally
+	* it checks that the path to the mantleable surface is
+	* not blocked by obstructions.
+	*
+	* This method calls DetermineIfMantleTargetHasMantleableSurface and
+	* also DetermineIfPathToMantleSurfaceIsPossible
+	*
+	* @param[in] maxVerticalReachDistance The maximum distance from the player's origin that the player can reach vertically
+	* @param[in] maxHorizontalReachDistance The maximum distance from the player's origin that the player can reach horizontally
+	* @param[in] eyePos The position of the player's eyes (camera point) in the world coordinate system
+	* @param[in] in_targetTraceResult Pass in the trace result from MantleTargetTrace
+	* @param[out] out_mantleEndPoint If the return value is true, this passes back out what the player's origin will be at the end of the mantle
+	*
+	* @returns the result of the test
+	* @retval true if the mantle target can be mantled
+	* @retval false if the mantle target cannot be mantled
+	*
+	*/	
+	bool ComputeMantlePathForTarget
+	(	
+		float maxVerticalReachDistance,
+		float maxHorizontalReachDistance,
+		idVec3 eyePos,
+		trace_t& in_targetTraceResult,
+		idVec3& out_mantleEndPoint
+
+	);
+		
+
+	/*!
+	* This handles the reduction of the mantle timer by the
+	* number of milliseconds between animation frames. It
+	* uses the timer results to update the mantle timers.
+	*/
 	void UpdateMantleTimers();
     
-	// Movement methods
+	/*!
+	* This handles the movement of the the player during
+	* the phases of the mantle.  It performs the translation
+	* of the player along the mantle path, the camera movement
+	* that creates the visual effect, and the placing of the
+	* player into a crouch during the end phase of the mantle.
+	* 
+	*/
 	void MantleMove();
 
 	// Tests if player is holding down jump while already jumping
@@ -299,82 +463,136 @@ protected:
 
 protected:
 
-	// Starts or ends a lean around and axis which is perpendicular to the gravity normal and
-	// rotated by the given yaw angle clockwise (when looking down in direction of
-	// gravity) around it. 
+	/*!
+	* An axis which is perpendicular to the gravity normal and
+	* rotated by the given yaw angle clockwise (when looking down in direction of
+	* gravity) around it. The player always leans to positive angles
+	* around this axis.
+	*/
 	float m_leanYawAngleDegrees;
 
-	// The current lean angle
+	/*! 
+	* The current lean angle
+	*/
 	float m_currentLeanTiltDegrees;
 
-	// Is the player trying to lean
+	/*!
+	* The start (roll) angle of this lean movement
+	*/
 	float m_leanMoveStartTilt;
+
+	/*!
+	* The end (roll) angle of this lean movement
+	*/
 	float m_leanMoveEndTilt;
 
-	// Is the lean finished
+	/*!
+	* Is the lean finished
+	*/
 	bool m_b_leanFinished;
 
-	// How long will the current phase of the leaning operation take?
-	// Uses the same time unit as other movement times.
+	/*!
+	* How long will the current phase of the leaning operation take?
+	* Uses milliseconds and counts down to 0
+	*/
 	float m_leanTime;
 
-	// The last recorded view angles
+	/*!
+	* The last recorded view angles
+	* These are updated each animation frame and are used
+	* to track player rotations to due rotation collision detection.
+	* The original Doom3 code did not need to due collision tests
+	* during player view rotation, but if the player is leaning, it is
+	* necessary to prevent passing through solid objects
+	*/
 	idAngles m_lastPlayerViewAngles;
-
 	
-	// The current resulting view lean angles
+	/*!
+	* The current resulting view lean angles
+	*/
 	idAngles m_viewLeanAngles;
 
-	// The current resulting view lean translation
+	/*!
+	* The current resulting view lean translation
+	*/
 	idVec3 m_viewLeanTranslation;
 
-	// The bounds without leaning
+	/*!
+	* The bounds without leaning
+	*/
 	idBounds boundsWithoutLeaning;
 
-	// This method handles the change to the player view angles
-	// and bounding box during a lean
-	void LeanMove();
-
-	// This method is required for leaning to work right.
-	// By default, Doom 3 does not orient the player's clipmodel at all.
-	// (Physics_Player::Rotate is never caled).  So the player's clipmodel
-	// always faces north.
-	// Leaning is orientation sensitive, so this method is used to set
-	// the clip model orientation to match the portions of the 
-	// view direction perpendicular to the gravity normal. (appropriate for mouse look)
-	// This is called within LeanMove whether or not a lean is taking place.
+	/*!
+	* This method is required for leaning to work right.
+	* By default, Doom 3 does not orient the player's clipmodel at all.
+	* (Physics_Player::Rotate is never caled).  So the player's clipmodel
+	* always faces north.
+	* Leaning is orientation sensitive, so this method is used to set
+	* the clip model orientation to match the portions of the 
+	* view direction perpendicular to the gravity normal. (appropriate for mouse look)
+	* This is called within LeanMove whether or not a lean is taking place.
+	*/
 	void UpdateClipModelOrientation();
 
-	// This method is used to update the lean angles and translation
-	// It needs to be called every MovePlayer cycle, because if the player
-	// is leaning and then looks around, these values change.
-	// This is called within LeanMove whether or not a lean is taking place.
+	/*!
+	* This method is used to update the view lean angles and view translation
+	* that result from the lean.
+	*
+	* This is an internal method called by LeanMove.
+	*/
 	void UpdateViewLeanAnglesAndTranslation();
 
-	// This method updates the lean by as much of the delta amount given
-	// that does not result in a clip model trace collision.
-	// This is an internal method called by LeanMove
+	/*!
+	* This method updates the lean by as much of the delta amount given
+	* that does not result in a clip model trace collision.
+	*
+	* This is an internal method called by LeanMove.
+	*/
 	void UpdateLeanAngle (float deltaLeanAngle);
+
+	/*!
+	* This uses the other internal mtehods to coordiante the lean
+	* lean movement.
+	*/
+	void LeanMove();
 
 public:
 
-	// Starts or ends a lean around and axis which is perpendicular to the gravity normal and
-	// rotated by the given yaw angle clockwise (when looking down in direction of
-	// gravity) around it. 
-	// 0.0 leans right, 180.0 leans left, 90.0 leans forward, 270.0 leans backward
+	/*!
+	* Starts or ends a lean around and axis which is perpendicular to the gravity normal and
+	* rotated by the given yaw angle clockwise (when looking down in direction of
+	* gravity) around it. 
+	* 
+	* @param[in] leanYawAngleDegrees The angle of the axis around which the player will
+	* lean clockwise, itself rotated clockwise from straight forward.
+	* 0.0 leans right, 180.0 leans left, 90.0 leans forward, 270.0 leans backward
+	*
+	*/
 	void ToggleLean
 	(
 		float leanYawAngleDegrees
 	);
 
-	// This method returns true if a lean movement is being executed
-	// or is still cancelling.
-	// It only returns false if the lean is fully off.
+	/*!
+	* This method tests if the player is in the middle of a leaning
+	* movement.
+	*
+	* @return the result of the test
+	* @retval true if the player is changing lean
+	* @retval false if the player is not changing lean
+	*/
 	__inline bool IsLeaning();
 
-	// These are called from idPlayer to adjust the camera viewpoint before
-	// rendering
+	/*!
+	* This is called from idPlayer to adjust the camera before
+	* rendering
+	*/
 	idAngles GetViewLeanAngles();
+
+	/*
+	* This is called from idPlayer to adjust the camera before
+	* rendering
+	*/
 	idVec3 GetViewLeanTranslation();
 
 
