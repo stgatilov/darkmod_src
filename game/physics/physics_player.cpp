@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.13  2005/08/14 23:29:04  sophisticatedzombie
  * Broke methods into smaller more logical units.
  * Changed header documentation to use doxygen format and doxygen tags.
@@ -1276,6 +1279,64 @@ idPhysics_Player::CheckWaterJump
 =============
 */
 bool idPhysics_Player::CheckWaterJump( void ) {
+#ifdef MOD_WATERPHYSICS
+	idVec3	spot;
+	int		cont;
+	idVec3	flatforward;
+	// inolen
+	idBounds bounds;
+
+	if ( current.movementTime ) {
+		return false;
+	}
+
+	// check for water jump
+	if ( waterLevel != WATERLEVEL_WAIST ) {
+		return false;
+	}
+
+	// inolen
+	bounds = clipModel->GetBounds();
+
+	flatforward = viewForward - (viewForward * gravityNormal) * gravityNormal;
+	flatforward.Normalize();
+
+	// inolen
+	spot = current.origin + (bounds[1][0]+1.0f) * flatforward;
+	spot -= 4.0f * gravityNormal;
+
+	// debugging
+	//gameRenderWorld->DebugBox( colorGreen, idBox( idBounds( idVec3( -2.0f, -2.0f, -2.0f ), idVec3( 2.0f, 2.0f, 2.0f ) ), spot, mat3_identity ) );
+
+	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
+
+	if ( !(cont & CONTENTS_SOLID) ) {
+		return false;
+	}
+
+	// inolen
+	spot -= (bounds[1][2] + 4.0f) * gravityNormal;
+	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
+
+	// debugging
+	//gameRenderWorld->DebugArrow( colorRed, current.origin, spot, 2 );
+
+	if( cont ) {
+		return false;
+	}
+	
+	// jump out of water
+	// inolen
+	current.velocity = ((flatforward + -gravityNormal)/2.0f);
+	current.velocity.Normalize();
+	current.velocity *= 650.0f;
+
+	current.movementFlags |= PMF_TIME_WATERJUMP;
+	current.movementTime = 2000;
+
+	return true;
+#else
+
 	idVec3	spot;
 	int		cont;
 	idVec3	flatforward;
@@ -1311,13 +1372,16 @@ bool idPhysics_Player::CheckWaterJump( void ) {
 	current.movementTime = 2000;
 
 	return true;
+#endif
 }
 
 /*
 =============
 idPhysics_Player::SetWaterLevel
+For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 =============
 */
+#ifndef MOD_WATERPHYSICS
 void idPhysics_Player::SetWaterLevel( void ) {
 	idVec3		point;
 	idBounds	bounds;
@@ -1355,6 +1419,7 @@ void idPhysics_Player::SetWaterLevel( void ) {
 		}
 	}
 }
+#endif
 
 /*
 ================
@@ -1525,9 +1590,11 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 }
 
+#ifndef MOD_WATERPHYSICS
 /*
 ================
 idPhysics_Player::GetWaterLevel
+For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 ================
 */
 waterLevel_t idPhysics_Player::GetWaterLevel( void ) const {
@@ -1537,11 +1604,13 @@ waterLevel_t idPhysics_Player::GetWaterLevel( void ) const {
 /*
 ================
 idPhysics_Player::GetWaterType
+For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 ================
 */
 int idPhysics_Player::GetWaterType( void ) const {
 	return waterType;
 }
+#endif
 
 /*
 ================

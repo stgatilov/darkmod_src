@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.15  2005/04/23 01:47:25  ishtvan
  * Minor fix to volume modifier for propagated sounds
  *
@@ -148,6 +151,10 @@ const idEventDef EV_StartFx( "startFx", "s" );
 const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
+#ifdef MOD_WATERPHYSICS
+const idEventDef EV_GetMass( "getMass", "d" , 'f' );
+const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
+#endif      // MOD_WATERPHYSICS
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetName,				idEntity::Event_GetName )
@@ -213,6 +220,10 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
+#ifdef MOD_WATERPHYSICS
+	EVENT( EV_GetMass,              idEntity::Event_GetMass )
+	EVENT( EV_IsInLiquid,           idEntity::Event_IsInLiquid )
+#endif		// MOD_WATERPHYSICS
 END_CLASS
 
 /*
@@ -4902,6 +4913,26 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 	fl.neverDormant	= ( enable != 0 );
 	dormantStart = 0;
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+================
+idEntity::Event_GetMass		MOD_WATERPHYSICS
+================
+*/
+void idEntity::Event_GetMass( int id ) {
+	idThread::ReturnFloat(physics->GetMass(id));
+}
+
+/*
+================
+idEntity::Event_IsInLiquid	MOD_WATERPHYSICS
+================
+*/
+void idEntity::Event_IsInLiquid( void ) {
+	idThread::ReturnInt(physics->GetWater() != NULL);
+}
+#endif		// MOD_WATERPHYSICS
 
 /***********************************************************************
 

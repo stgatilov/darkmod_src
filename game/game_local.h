@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.5  2005/04/23 10:07:26  ishtvan
  * added fix for pm_walkspeed being reset to 140 by the engine on map load
  *
@@ -45,6 +48,9 @@
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+// enables water physics
+#define MOD_WATERPHYSICS
 
 /*
 ===============================================================================
@@ -773,6 +779,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "physics/Physics_Parametric.h"
 #include "physics/Physics_RigidBody.h"
 #include "physics/Physics_AF.h"
+#include "physics/Physics_Liquid.h"
 
 #include "SmokeParticles.h"
 
@@ -800,6 +807,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Fx.h"
 #include "SecurityCamera.h"
 #include "BrittleFracture.h"
+#include "Liquid.h"
 
 #include "ai/AI.h"
 #include "anim/Anim_Testmodel.h"

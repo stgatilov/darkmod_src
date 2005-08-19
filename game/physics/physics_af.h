@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.2  2004/11/28 09:20:34  sparhawk
  * SDK V2 merge
  *
@@ -684,6 +687,14 @@ public:
 	void					SetFrictionDirection( const idVec3 &dir );
 	bool					GetFrictionDirection( idVec3 &dir ) const;
 
+#ifdef MOD_WATERPHYSICS
+	float					GetVolume( void ) const { return volume; }
+	// returns the depth of the object in the water
+	// 0.0f if out of water
+	float					GetWaterLevel() const;	// MOD_WATERPHYSICS
+	float					SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal, bool fixedDensityBuoyancy ); 	// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS`
+
 	void					SetContactMotorDirection( const idVec3 &dir );
 	bool					GetContactMotorDirection( idVec3 &dir ) const;
 	void					SetContactMotorVelocity( float vel ) { contactMotorVelocity = vel; }
@@ -711,6 +722,9 @@ private:
 	float					angularFriction;			// rotational friction
 	float					contactFriction;			// friction with contact surfaces
 	float					bouncyness;					// bounce
+#ifdef MOD_WATERPHYSICS
+	float					volume;						// volume of body MOD_WATERPHYSICS
+#endif 	// MOD_WATERPHYSICS
 	int						clipMask;					// contents this body collides with
 	idVec3					frictionDir;				// specifies a single direction of friction in body space
 	idVec3					contactMotorDir;			// contact motor direction
@@ -720,6 +734,11 @@ private:
 							// derived properties
 	float					mass;						// mass of body
 	float					invMass;					// inverse mass
+#ifdef MOD_WATERPHYSICS
+	float					liquidMass;					// mass of object in a liquid MOD_WATERPHYSICS
+	float					invLiquidMass;				// inverse liquid mass MOD_WATERPHYSICS
+	float					waterLevel;					// percent of body in water MOD_WATERPHYSICS
+#endif 	// MOD_WATERPHYSICS
 	idVec3					centerOfMass;				// center of mass of body
 	idMat3					inertiaTensor;				// inertia tensor
 	idMat3					inverseInertiaTensor;		// inverse inertia tensor
@@ -881,6 +900,15 @@ public:
 							// update the clip model positions
 	void					UpdateClipModels( void );
 
+#ifdef MOD_WATERPHYSICS
+	// buoyancy stuff
+	void					SetLiquidDensity( float density ); // MOD_WATERPHYSICS
+	float					GetLiquidDensity() const; 		// MOD_WATERPHYSICS
+	// this will reset liquidDensity so be careful when using it
+	void					SetFixedDensityBuoyancy( bool fixed ); // MOD_WATERPHYSICS
+	bool					GetFixedDensityBuoyancy() const; // MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
+
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -1004,6 +1032,13 @@ private:
 							// physics state
 	AFPState_t				current;
 	AFPState_t				saved;
+
+#ifdef MOD_WATERPHYSICS
+// treats liquid Density as THE density for each body when the AF is in liquid.
+// otherwise liquidDensity is just a gravity scalar for the AF in any liquid.
+	bool					fixedDensityBuoyancy;		// MOD_WATERPHYSICS
+	float					liquidDensity;				// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver

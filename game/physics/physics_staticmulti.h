@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -129,6 +132,14 @@ public:	// common physics interface
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+
+#ifdef MOD_WATERPHYSICS
+	// gets/sets the water
+	// just some functions to avoid making this class abstract.  Water has no effect on a static object
+	// so it sort of makes sense these functions do nothing.
+	virtual idPhysics_Liquid	*GetWater() { return NULL; } // MOD_WATERPHYSICS
+	virtual void				SetWater( idPhysics_Liquid *e ) {} // MOD_WATERPHYSICS
+#endif
 
 protected:
 	idEntity *				self;					// entity using this physics object

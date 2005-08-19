@@ -1,42 +1,22 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="7.10"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
 	RootNamespace="Game"
-	Keyword="Win32Proj"
-	>
+	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
-			Name="Win32"
-		/>
+			Name="Win32"/>
 	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="Game/DebugDLL"
 			IntermediateDirectory="Game/DebugDLL"
 			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/I &quot;E:\Programme\Microsoft Visual Studio\VC98\Include&quot;"
@@ -59,17 +39,9 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="4"
-				CompileAs="0"
-			/>
+				CompileAs="0"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
@@ -86,55 +58,37 @@
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
 				SupportUnloadOfDelayLoadedDLL="TRUE"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="ReleaseDLL"
 			IntermediateDirectory="Game/ReleaseDLL"
 			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/O2 /Og /Ob2 /Oi /Ot /Oy"
 				Optimization="2"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
@@ -160,17 +114,9 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
+				CompileAs="0"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
@@ -191,53 +137,36 @@
 				EnableCOMDATFolding="2"
 				EntryPointSymbol=""
 				SupportUnloadOfDelayLoadedDLL="FALSE"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"
-			/>
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines|Win32"
 			OutputDirectory="Game/InlineDebugDLL"
 			IntermediateDirectory="Game/InlineDebugDLL"
 			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -261,18 +190,9 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
+				CompileAs="0"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				ShowProgress="TRUE"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./inlinedebugdll/idLib.lib"
@@ -289,53 +209,35 @@
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
 				SupportUnloadOfDelayLoadedDLL="FALSE"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCResourceCompilerTool"
+				ShowProgress="TRUE"/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines and memory log|Win32"
 			OutputDirectory="Game/InlineDebugMemoryDLL"
 			IntermediateDirectory="Game/InlineDebugMemoryDLL"
 			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine=".\TypeInfo\typeinfo.exe"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -359,17 +261,9 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
 				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
+				CompileAs="0"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FORCE:MULTIPLE"
@@ -387,755 +281,586 @@
 				StackReserveSize="16000000"
 				StackCommitSize="16000000"
 				SupportUnloadOfDelayLoadedDLL="TRUE"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"
+				CommandLine=".\TypeInfo\typeinfo.exe"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
 		<Filter
-			Name="Game"
-			>
+			Name="Game">
 			<File
-				RelativePath="game\Actor.cpp"
-				>
+				RelativePath="game\Actor.cpp">
 			</File>
 			<File
-				RelativePath="game\Actor.h"
-				>
+				RelativePath="game\Actor.h">
 			</File>
 			<File
-				RelativePath="game\AF.cpp"
-				>
+				RelativePath="game\AF.cpp">
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
+					Name="Debug|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
+						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
+					Name="Release|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
+						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug with inlines|Win32"
-					>
+					Name="Debug with inlines|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
+						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug with inlines and memory log|Win32"
-					>
+					Name="Debug with inlines and memory log|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
+						UsePrecompiledHeader="1"/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="game\AF.h"
-				>
+				RelativePath="game\AF.h">
 			</File>
 			<File
-				RelativePath="game\AFEntity.cpp"
-				>
+				RelativePath="game\AFEntity.cpp">
 			</File>
 			<File
-				RelativePath="game\AFEntity.h"
-				>
+				RelativePath="game\AFEntity.h">
 			</File>
 			<File
-				RelativePath="game\BrittleFracture.cpp"
-				>
+				RelativePath="game\BrittleFracture.cpp">
 			</File>
 			<File
-				RelativePath="game\BrittleFracture.h"
-				>
+				RelativePath="game\BrittleFracture.h">
 			</File>
 			<File
-				RelativePath="game\Camera.cpp"
-				>
+				RelativePath="game\Camera.cpp">
 			</File>
 			<File
-				RelativePath="game\Camera.h"
-				>
+				RelativePath="game\Camera.h">
 			</File>
 			<File
-				RelativePath="game\Entity.cpp"
-				>
+				RelativePath="game\Entity.cpp">
 			</File>
 			<File
-				RelativePath="game\Entity.h"
-				>
+				RelativePath="game\Entity.h">
 			</File>
 			<File
-				RelativePath="game\Fx.cpp"
-				>
+				RelativePath="game\Fx.cpp">
 			</File>
 			<File
-				RelativePath="game\Fx.h"
-				>
+				RelativePath="game\Fx.h">
 			</File>
 			<File
-				RelativePath="game\Game.h"
-				>
+				RelativePath="game\Game.h">
 			</File>
 			<File
-				RelativePath="game\Game_local.cpp"
-				>
+				RelativePath="game\Game_local.cpp">
 			</File>
 			<File
-				RelativePath="game\Game_local.h"
-				>
+				RelativePath="game\Game_local.h">
 			</File>
 			<File
-				RelativePath="game\Game_network.cpp"
-				>
+				RelativePath="game\Game_network.cpp">
 			</File>
 			<File
-				RelativePath="game\GameEdit.cpp"
-				>
+				RelativePath="game\GameEdit.cpp">
 			</File>
 			<File
-				RelativePath="game\GameEdit.h"
-				>
+				RelativePath="game\GameEdit.h">
 			</File>
 			<File
-				RelativePath="game\IK.cpp"
-				>
+				RelativePath="game\IK.cpp">
 			</File>
 			<File
-				RelativePath="game\IK.h"
-				>
+				RelativePath="game\IK.h">
 			</File>
 			<File
-				RelativePath="game\Item.cpp"
-				>
+				RelativePath="game\Item.cpp">
 			</File>
 			<File
-				RelativePath="game\Item.h"
-				>
+				RelativePath="game\Item.h">
 			</File>
 			<File
-				RelativePath="game\Light.cpp"
-				>
+				RelativePath="game\Light.cpp">
 			</File>
 			<File
-				RelativePath="game\Light.h"
-				>
+				RelativePath="game\Light.h">
 			</File>
 			<File
-				RelativePath="game\Misc.cpp"
-				>
+				RelativePath=".\game\Liquid.cpp">
 			</File>
 			<File
-				RelativePath="game\Misc.h"
-				>
+				RelativePath=".\game\Liquid.h">
 			</File>
 			<File
-				RelativePath="game\Moveable.cpp"
-				>
+				RelativePath="game\Misc.cpp">
 			</File>
 			<File
-				RelativePath="game\Moveable.h"
-				>
+				RelativePath="game\Misc.h">
 			</File>
 			<File
-				RelativePath="game\Mover.cpp"
-				>
+				RelativePath="game\Moveable.cpp">
 			</File>
 			<File
-				RelativePath="game\Mover.h"
-				>
+				RelativePath="game\Moveable.h">
 			</File>
 			<File
-				RelativePath="game\MultiplayerGame.cpp"
-				>
+				RelativePath="game\Mover.cpp">
 			</File>
 			<File
-				RelativePath="game\MultiplayerGame.h"
-				>
+				RelativePath="game\Mover.h">
 			</File>
 			<File
-				RelativePath="game\Player.cpp"
-				>
+				RelativePath="game\MultiplayerGame.cpp">
 			</File>
 			<File
-				RelativePath="game\Player.h"
-				>
+				RelativePath="game\MultiplayerGame.h">
 			</File>
 			<File
-				RelativePath="game\PlayerIcon.cpp"
-				>
+				RelativePath="game\Player.cpp">
 			</File>
 			<File
-				RelativePath="game\PlayerIcon.h"
-				>
+				RelativePath="game\Player.h">
 			</File>
 			<File
-				RelativePath="game\PlayerView.cpp"
-				>
+				RelativePath="game\PlayerIcon.cpp">
 			</File>
 			<File
-				RelativePath="game\PlayerView.h"
-				>
+				RelativePath="game\PlayerIcon.h">
 			</File>
 			<File
-				RelativePath="game\Projectile.cpp"
-				>
+				RelativePath="game\PlayerView.cpp">
 			</File>
 			<File
-				RelativePath="game\Projectile.h"
-				>
+				RelativePath="game\PlayerView.h">
 			</File>
 			<File
-				RelativePath="game\Pvs.cpp"
-				>
+				RelativePath="game\Projectile.cpp">
 			</File>
 			<File
-				RelativePath="game\Pvs.h"
-				>
+				RelativePath="game\Projectile.h">
 			</File>
 			<File
-				RelativePath="game\SecurityCamera.cpp"
-				>
+				RelativePath="game\Pvs.cpp">
 			</File>
 			<File
-				RelativePath="game\SecurityCamera.h"
-				>
+				RelativePath="game\Pvs.h">
 			</File>
 			<File
-				RelativePath="game\SmokeParticles.cpp"
-				>
+				RelativePath="game\SecurityCamera.cpp">
 			</File>
 			<File
-				RelativePath="game\SmokeParticles.h"
-				>
+				RelativePath="game\SecurityCamera.h">
 			</File>
 			<File
-				RelativePath="game\Sound.cpp"
-				>
+				RelativePath="game\SmokeParticles.cpp">
 			</File>
 			<File
-				RelativePath="game\Sound.h"
-				>
+				RelativePath="game\SmokeParticles.h">
 			</File>
 			<File
-				RelativePath="game\Target.cpp"
-				>
+				RelativePath="game\Sound.cpp">
 			</File>
 			<File
-				RelativePath="game\Target.h"
-				>
+				RelativePath="game\Sound.h">
 			</File>
 			<File
-				RelativePath="game\Trigger.cpp"
-				>
+				RelativePath="game\Target.cpp">
 			</File>
 			<File
-				RelativePath="game\Trigger.h"
-				>
+				RelativePath="game\Target.h">
 			</File>
 			<File
-				RelativePath="game\Weapon.cpp"
-				>
+				RelativePath="game\Trigger.cpp">
 			</File>
 			<File
-				RelativePath="game\Weapon.h"
-				>
+				RelativePath="game\Trigger.h">
 			</File>
 			<File
-				RelativePath="game\WorldSpawn.cpp"
-				>
+				RelativePath="game\Weapon.cpp">
 			</File>
 			<File
-				RelativePath="game\WorldSpawn.h"
-				>
+				RelativePath="game\Weapon.h">
+			</File>
+			<File
+				RelativePath="game\WorldSpawn.cpp">
+			</File>
+			<File
+				RelativePath="game\WorldSpawn.h">
 			</File>
 			<Filter
-				Name="AI"
-				>
+				Name="AI">
 				<File
-					RelativePath="game\ai\AAS.cpp"
-					>
+					RelativePath="game\ai\AAS.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS.h"
-					>
+					RelativePath="game\ai\AAS.h">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_debug.cpp"
-					>
+					RelativePath="game\ai\AAS_debug.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_local.h"
-					>
+					RelativePath="game\ai\AAS_local.h">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_pathing.cpp"
-					>
+					RelativePath="game\ai\AAS_pathing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AAS_routing.cpp"
-					>
+					RelativePath="game\ai\AAS_routing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI.cpp"
-					>
+					RelativePath="game\ai\AI.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI.h"
-					>
+					RelativePath="game\ai\AI.h">
 				</File>
 				<File
-					RelativePath="game\ai\AI_events.cpp"
-					>
+					RelativePath="game\ai\AI_events.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI_pathing.cpp"
-					>
+					RelativePath="game\ai\AI_pathing.cpp">
 				</File>
 				<File
-					RelativePath="game\ai\AI_Vagary.cpp"
-					>
+					RelativePath="game\ai\AI_Vagary.cpp">
 				</File>
 			</Filter>
 			<Filter
-				Name="Anim"
-				>
+				Name="Anim">
 				<File
-					RelativePath="game\anim\Anim.cpp"
-					>
+					RelativePath="game\anim\Anim.cpp">
 				</File>
 				<File
-					RelativePath="game\anim\Anim.h"
-					>
+					RelativePath="game\anim\Anim.h">
 				</File>
 				<File
-					RelativePath="game\anim\Anim_Blend.cpp"
-					>
+					RelativePath="game\anim\Anim_Blend.cpp">
 				</File>
 				<File
-					RelativePath=".\game\anim\anim_import.cpp"
-					>
+					RelativePath=".\game\anim\anim_import.cpp">
 				</File>
 				<File
-					RelativePath="game\anim\Anim_Testmodel.cpp"
-					>
+					RelativePath="game\anim\Anim_Testmodel.cpp">
 				</File>
 				<File
-					RelativePath="game\anim\Anim_Testmodel.h"
-					>
+					RelativePath="game\anim\Anim_Testmodel.h">
 				</File>
 			</Filter>
 			<Filter
-				Name="GameSys"
-				>
+				Name="GameSys">
 				<File
-					RelativePath="game\gamesys\Class.cpp"
-					>
+					RelativePath="game\gamesys\Class.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\Class.h"
-					>
+					RelativePath="game\gamesys\Class.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\DebugGraph.cpp"
-					>
+					RelativePath="game\gamesys\DebugGraph.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\DebugGraph.h"
-					>
+					RelativePath="game\gamesys\DebugGraph.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\Event.cpp"
-					>
+					RelativePath="game\gamesys\Event.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\Event.h"
-					>
+					RelativePath="game\gamesys\Event.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\NoGameTypeInfo.h"
-					>
+					RelativePath="game\gamesys\NoGameTypeInfo.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\SaveGame.cpp"
-					>
+					RelativePath="game\gamesys\SaveGame.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\SaveGame.h"
-					>
+					RelativePath="game\gamesys\SaveGame.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\SysCmds.cpp"
-					>
+					RelativePath="game\gamesys\SysCmds.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\SysCmds.h"
-					>
+					RelativePath="game\gamesys\SysCmds.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\SysCvar.cpp"
-					>
+					RelativePath="game\gamesys\SysCvar.cpp">
 				</File>
 				<File
-					RelativePath="game\gamesys\SysCvar.h"
-					>
+					RelativePath="game\gamesys\SysCvar.h">
 				</File>
 				<File
-					RelativePath="game\gamesys\TypeInfo.cpp"
-					>
+					RelativePath="game\gamesys\TypeInfo.cpp">
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
+						Name="Debug|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							UsePrecompiledHeader="0"
-							PrecompiledHeaderFile="$(IntDir)/game.pch"
-						/>
+							PrecompiledHeaderFile="$(IntDir)/game.pch"/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
+						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							UsePrecompiledHeader="0"
-							PrecompiledHeaderFile="$(IntDir)/game.pch"
-						/>
+							PrecompiledHeaderFile="$(IntDir)/game.pch"/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug with inlines|Win32"
-						>
+						Name="Debug with inlines|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							UsePrecompiledHeader="0"
-							PrecompiledHeaderFile="$(IntDir)/game.pch"
-						/>
+							PrecompiledHeaderFile="$(IntDir)/game.pch"/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug with inlines and memory log|Win32"
-						>
+						Name="Debug with inlines and memory log|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
 							UsePrecompiledHeader="0"
-							PrecompiledHeaderFile=""
-						/>
+							PrecompiledHeaderFile=""/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="game\gamesys\TypeInfo.h"
-					>
+					RelativePath="game\gamesys\TypeInfo.h">
 				</File>
 			</Filter>
 			<Filter
-				Name="Physics"
-				>
+				Name="Physics">
 				<File
-					RelativePath="game\physics\Clip.cpp"
-					>
+					RelativePath="game\physics\Clip.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Clip.h"
-					>
+					RelativePath="game\physics\Clip.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force.cpp"
-					>
+					RelativePath="game\physics\Force.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force.h"
-					>
+					RelativePath="game\physics\Force.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Constant.cpp"
-					>
+					RelativePath="game\physics\Force_Constant.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Constant.h"
-					>
+					RelativePath="game\physics\Force_Constant.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Drag.cpp"
-					>
+					RelativePath="game\physics\Force_Drag.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Drag.h"
-					>
+					RelativePath="game\physics\Force_Drag.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Field.cpp"
-					>
+					RelativePath="game\physics\Force_Field.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Field.h"
-					>
+					RelativePath="game\physics\Force_Field.h">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Spring.cpp"
-					>
+					RelativePath="game\physics\Force_Spring.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Force_Spring.h"
-					>
+					RelativePath="game\physics\Force_Spring.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics.cpp"
-					>
+					RelativePath="game\physics\Physics.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics.h"
-					>
+					RelativePath="game\physics\Physics.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Actor.cpp"
-					>
+					RelativePath="game\physics\Physics_Actor.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Actor.h"
-					>
+					RelativePath="game\physics\Physics_Actor.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_AF.cpp"
-					>
+					RelativePath="game\physics\Physics_AF.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_AF.h"
-					>
+					RelativePath="game\physics\Physics_AF.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Base.cpp"
-					>
+					RelativePath="game\physics\Physics_Base.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Base.h"
-					>
+					RelativePath="game\physics\Physics_Base.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Monster.cpp"
-					>
+					RelativePath=".\game\physics\Physics_Liquid.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Monster.h"
-					>
+					RelativePath=".\game\physics\Physics_Liquid.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Parametric.cpp"
-					>
+					RelativePath="game\physics\Physics_Monster.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Parametric.h"
-					>
+					RelativePath="game\physics\Physics_Monster.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Player.cpp"
-					>
+					RelativePath="game\physics\Physics_Parametric.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Player.h"
-					>
+					RelativePath="game\physics\Physics_Parametric.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_RigidBody.cpp"
-					>
+					RelativePath="game\physics\Physics_Player.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_RigidBody.h"
-					>
+					RelativePath="game\physics\Physics_Player.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Static.cpp"
-					>
+					RelativePath="game\physics\Physics_RigidBody.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_Static.h"
-					>
+					RelativePath="game\physics\Physics_RigidBody.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_StaticMulti.cpp"
-					>
+					RelativePath="game\physics\Physics_Static.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_StaticMulti.h"
-					>
+					RelativePath="game\physics\Physics_Static.h">
 				</File>
 				<File
-					RelativePath="game\physics\Push.cpp"
-					>
+					RelativePath="game\physics\Physics_StaticMulti.cpp">
 				</File>
 				<File
-					RelativePath="game\physics\Push.h"
-					>
+					RelativePath="game\physics\Physics_StaticMulti.h">
+				</File>
+				<File
+					RelativePath="game\physics\Push.cpp">
+				</File>
+				<File
+					RelativePath="game\physics\Push.h">
 				</File>
 			</Filter>
 			<Filter
-				Name="Script"
-				>
+				Name="Script">
 				<File
-					RelativePath="game\script\Script_Compiler.cpp"
-					>
+					RelativePath="game\script\Script_Compiler.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Compiler.h"
-					>
+					RelativePath="game\script\Script_Compiler.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Interpreter.cpp"
-					>
+					RelativePath="game\script\Script_Interpreter.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Interpreter.h"
-					>
+					RelativePath="game\script\Script_Interpreter.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Program.cpp"
-					>
+					RelativePath="game\script\Script_Program.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Program.h"
-					>
+					RelativePath="game\script\Script_Program.h">
 				</File>
 				<File
-					RelativePath="game\script\Script_Thread.cpp"
-					>
+					RelativePath="game\script\Script_Thread.cpp">
 				</File>
 				<File
-					RelativePath="game\script\Script_Thread.h"
-					>
+					RelativePath="game\script\Script_Thread.h">
 				</File>
 			</Filter>
 			<Filter
-				Name="DarkMod"
-				>
+				Name="DarkMod">
 				<File
-					RelativePath=".\DarkMod\DarkModGlobals.cpp"
-					>
+					RelativePath=".\DarkMod\DarkModGlobals.cpp">
 					<FileConfiguration
-						Name="Release|Win32"
-						>
+						Name="Release|Win32">
 						<Tool
 							Name="VCCLCompilerTool"
-							ForcedIncludeFiles="c:\compiled.h"
-						/>
+							ForcedIncludeFiles="c:\compiled.h"/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\DarkMod\DarkModGlobals.h"
-					>
+					RelativePath=".\DarkMod\DarkModGlobals.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\fdchar.cpp"
-					>
+					RelativePath=".\DarkMod\fdchar.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\FrobDoor.cpp"
-					>
+					RelativePath=".\DarkMod\FrobDoor.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\FrobDoor.h"
-					>
+					RelativePath=".\DarkMod\FrobDoor.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Intersection.cpp"
-					>
+					RelativePath=".\DarkMod\Intersection.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Intersection.h"
-					>
+					RelativePath=".\DarkMod\Intersection.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\MatrixSq.h"
-					>
+					RelativePath=".\DarkMod\MatrixSq.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Misc.h"
-					>
+					RelativePath=".\DarkMod\Misc.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\PlayerData.cpp"
-					>
+					RelativePath=".\DarkMod\PlayerData.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\PlayerData.h"
-					>
+					RelativePath=".\DarkMod\PlayerData.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Profile.cpp"
-					>
+					RelativePath=".\DarkMod\Profile.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Profile.h"
-					>
+					RelativePath=".\DarkMod\Profile.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\rdline.cpp"
-					>
+					RelativePath=".\DarkMod\rdline.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\README.txt"
-					>
+					RelativePath=".\DarkMod\README.txt">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Relations.cpp"
-					>
+					RelativePath=".\DarkMod\Relations.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Relations.h"
-					>
+					RelativePath=".\DarkMod\Relations.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\sndProp.cpp"
-					>
+					RelativePath=".\DarkMod\sndProp.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\sndProp.h"
-					>
+					RelativePath=".\DarkMod\sndProp.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\sndPropLoader.cpp"
-					>
+					RelativePath=".\DarkMod\sndPropLoader.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\sndPropLoader.h"
-					>
+					RelativePath=".\DarkMod\sndPropLoader.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Strip.cpp"
-					>
+					RelativePath=".\DarkMod\Strip.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\ToUpper.cpp"
-					>
+					RelativePath=".\DarkMod\ToUpper.cpp">
 				</File>
 			</Filter>
 		</Filter>

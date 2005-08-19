@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -37,6 +40,11 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	masterYaw = 0.0f;
 	masterDeltaYaw = 0.0f;
 	groundEntityPtr = NULL;
+
+#ifdef MOD_WATERPHYSICS
+	waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
+	waterType = 0;					// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 }
 
 /*
@@ -68,6 +76,11 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( masterYaw );
 	savefile->WriteFloat( masterDeltaYaw );
 
+#ifdef MOD_WATERPHYSICS
+	savefile->WriteInt( (int)waterLevel );	// MOD_WATERPHYSICS
+	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
+#endif 		// MOD_WATERPHYSICS
+
 	groundEntityPtr.Save( savefile );
 }
 
@@ -87,6 +100,11 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( masterEntity ) );
 	savefile->ReadFloat( masterYaw );
 	savefile->ReadFloat( masterDeltaYaw );
+
+#ifdef MOD_WATERPHYSICS
+	savefile->ReadInt( (int &)waterLevel );		// MOD_WATERPHYSICS
+	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
+#endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Restore( savefile );
 }
@@ -369,3 +387,73 @@ bool idPhysics_Actor::EvaluateContacts( void ) {
 
 	return ( contacts.Num() != 0 );
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+=============
+idPhysics_Actor::SetWaterLevel
+=============
+*/
+void idPhysics_Actor::SetWaterLevel( void ) {
+	idVec3		point;
+	idVec3		origin;
+	idBounds	bounds;
+	int			contents;
+
+	//
+	// get waterlevel, accounting for ducking
+	//
+	waterLevel = WATERLEVEL_NONE;
+	waterType = 0;
+
+	origin = this->GetOrigin();
+	bounds = clipModel->GetBounds();
+
+	// check at feet level
+	point = origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
+	contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+	if ( contents & MASK_WATER ) {
+		// sets water entity
+		this->SetWaterLevelf();
+
+		waterType = contents;
+		waterLevel = WATERLEVEL_FEET;
+
+		// check at waist level
+		point = origin - ( bounds[1][2] - bounds[0][2] ) * 0.5f * gravityNormal;
+		contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+		if ( contents & MASK_WATER ) {
+
+			waterLevel = WATERLEVEL_WAIST;
+
+			// check at head level
+			point = origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
+			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+			if ( contents & MASK_WATER ) {
+				waterLevel = WATERLEVEL_HEAD;
+			}
+		}
+	}
+	else
+		this->SetWater(NULL);
+}
+
+/*
+================
+idPhysics_Actor::GetWaterLevel
+================
+*/
+waterLevel_t idPhysics_Actor::GetWaterLevel( void ) const {
+	return waterLevel;
+}
+
+/*
+================
+idPhysics_Actor::GetWaterType
+================
+*/
+int idPhysics_Actor::GetWaterType( void ) const {
+	return waterType;
+}
+
+#endif	// MOD_WATERPHYSICS

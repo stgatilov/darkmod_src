@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.8  2005/08/14 23:29:04  sophisticatedzombie
  * Broke methods into smaller more logical units.
  * Changed header documentation to use doxygen format and doxygen tags.
@@ -64,12 +67,15 @@ typedef enum {
 	PM_NOCLIP				// flying without collision detection nor gravity
 } pmtype_t;
 
+#ifndef MOD_WATERPHYSICS
+// waterLevel_t has been moved to Physics_Actor.h
 typedef enum {
-	WATERLEVEL_NONE,
-	WATERLEVEL_FEET,
-	WATERLEVEL_WAIST,
-	WATERLEVEL_HEAD
+  WATERLEVEL_NONE,
+  WATERLEVEL_FEET,
+  WATERLEVEL_WAIST,
+  WATERLEVEL_HEAD
 } waterLevel_t;
+#endif		// MOD_WATERPHYSICS
 
 #define	MAXTOUCH					32
 
@@ -118,8 +124,10 @@ public:
 	void					SetKnockBack( const int knockBackTime );
 	void					SetDebugLevel( bool set );
 							// feed back from last physics frame
-	waterLevel_t			GetWaterLevel( void ) const;
-	int						GetWaterType( void ) const;
+#ifndef MOD_WATERPHYSICS
+	waterLevel_t            GetWaterLevel( void ) const;
+	int                     GetWaterType( void ) const;
+#endif
 	bool					HasJumped( void ) const;
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
@@ -193,8 +201,10 @@ private:
 	idVec3					ladderNormal;
 
 	// results of last evaluate
-	waterLevel_t			waterLevel;
-	int						waterType;
+#ifndef MOD_WATERPHYSICS
+  waterLevel_t            waterLevel;
+  int                     waterType;
+#endif
 
 private:
 	float					CmdScale( const usercmd_t &cmd ) const;
@@ -216,7 +226,9 @@ private:
 	void					CheckLadder( void );
 	bool					CheckJump( void );
 	bool					CheckWaterJump( void );
+#ifndef MOD_WATERPHYSICS
 	void					SetWaterLevel( void );
+#endif
 	void					DropTimers( void );
 	void					MovePlayer( int msec );
 

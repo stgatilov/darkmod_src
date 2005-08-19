@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/08/19 00:27:55  lloyd
+ * *** empty log message ***
+ *
  * Revision 1.5  2005/04/23 10:10:56  ishtvan
  * *) pm_walkspeed is now archived and not synced with the network
  *
@@ -230,6 +233,10 @@ idCVar af_useLinearTime(			"af_useLinearTime",			"1",			CVAR_GAME | CVAR_BOOL, "
 idCVar af_useImpulseFriction(		"af_useImpulseFriction",	"0",			CVAR_GAME | CVAR_BOOL, "use impulse based contact friction" );
 idCVar af_useJointImpulseFriction(	"af_useJointImpulseFriction","0",			CVAR_GAME | CVAR_BOOL, "use impulse based joint friction" );
 idCVar af_useSymmetry(				"af_useSymmetry",			"1",			CVAR_GAME | CVAR_BOOL, "use constraint matrix symmetry" );
+#ifdef MOD_WATERPHYSICS
+idCVar af_useBodyDensityBuoyancy(   "af_useBodyDensityBuoyancy","0",            CVAR_GAME | CVAR_BOOL, "uses density of each body to calculate buoyancy"); // MOD_WATERPHYSICS
+idCVar af_useFixedDensityBuoyancy(  "af_useFixedDensityBuoyancy","1",           CVAR_GAME | CVAR_BOOL, "if set, use liquidDensity as a fixed density for each body when calculating buoyancy.  If clear, bodies are floated uniformly by a scalar liquidDensity as defined in the decls." ); // MOD_WATERPHYSICS
+#endif  // MOD_WATERPHYSICS
 idCVar af_skipSelfCollision(		"af_skipSelfCollision",		"0",			CVAR_GAME | CVAR_BOOL, "skip self collision detection" );
 idCVar af_skipLimits(				"af_skipLimits",			"0",			CVAR_GAME | CVAR_BOOL, "skip joint limits" );
 idCVar af_skipFriction(				"af_skipFriction",			"0",			CVAR_GAME | CVAR_BOOL, "skip friction" );
@@ -263,6 +270,9 @@ idCVar rb_showMass(					"rb_showMass",				"0",			CVAR_GAME | CVAR_BOOL, "show th
 idCVar rb_showInertia(				"rb_showInertia",			"0",			CVAR_GAME | CVAR_BOOL, "show the inertia tensor of each rigid body" );
 idCVar rb_showVelocity(				"rb_showVelocity",			"0",			CVAR_GAME | CVAR_BOOL, "show the velocity of each rigid body" );
 idCVar rb_showActive(				"rb_showActive",			"0",			CVAR_GAME | CVAR_BOOL, "show rigid bodies that are not at rest" );
+#ifdef MOD_WATERPHYSICS
+idCVar rb_showBuoyancy(             "rb_showBuoyancy",          "0",            CVAR_GAME | CVAR_BOOL, "show rigid body buoyancy information" ); // MOD_WATERPHYSICS
+#endif //   MOD_WATERPHYSICS
 
 // The default values for player movement cvars are set in def/player.def
 idCVar pm_jumpheight(				"pm_jumpheight",			"48",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "approximate hieght the player can jump" );
