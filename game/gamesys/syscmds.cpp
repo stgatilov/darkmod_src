@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/08/22 05:09:00  ishtvan
+ * removed call to old soundprop file IO function, replaced with placeholder
+ *
  * Revision 1.4  2005/04/07 09:49:16  ishtvan
  * Added soundprop file I/O debugging command "testsndIO"
  *
@@ -52,8 +55,10 @@ void Cmd_TestSndIO_f( const idCmdArgs &args )
 	{
 		goto Quit;
 	}
-	gameLocal.Printf( "Testing sound prop. IO for file %s\n", inFN.c_str() );
-	gameLocal.m_sndPropLoader->testReadWrite( inFN );
+	
+//	New file IO not yet implemented
+//	gameLocal.Printf( "Testing sound prop. IO for file %s\n", inFN.c_str() );
+	gameLocal.Printf( "New soundprop file IO not yet implemented\n");
 Quit:
 	return;
 }
