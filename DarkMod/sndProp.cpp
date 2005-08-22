@@ -35,8 +35,6 @@
 #include "frobDoor.h"
 #include "../game/ai/ai.h"
 
-//TODO: Fix adding up of sounds in PropToPoint (30 dB + 40 dB != 70 dB!!!!)
-
 // NOTES:
 // ALL LOSSES ARE POSITIVE (ie, loss of +10dB subtracts 10dB from vol)
 
@@ -45,6 +43,24 @@
 const float s_DOOM_TO_METERS = 0.0254f;					// doom to meters
 const float s_METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
 
+/**
+* Max number of areas to flood when doing wavefront expansion
+*
+* When the expansion goes above this number, it is terminated, and
+* "fake" (straight distance) propagation is used instead
+**/
+const int s_MAX_FLOODNODES = 200;
+
+/**
+* Volume ( SPL [dB] ) threshold after which the sound stops propagating
+* 
+* Should correspond to the absolute lowest volume we want AI to be
+* able to detect
+*
+* TODO: Read this from soundprop def file
+**/
+const float s_MIN_AUD_THRESH = 15;
+
 
 /**************************************************
 * BEGIN CsndProp Implementation
@@ -52,36 +68,59 @@ const float s_METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
 
 CsndProp::CsndProp ( void )
 {
-	if ((m_LossMatrix = new CMatRUT<SLMEntry>) == NULL)
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating gameplay loss matrix\r");
-		//TODO: Call gameLocal.Error as well to force a quit at this point?
-
 	m_bLoadSuccess = false;
 	m_bDefaultSpherical = false;
+
+	m_EventAreas = NULL;
 }
 
 void CsndProp::Clear( void )
 {
-	m_LossMatrix->Clear();
+	float *fPtr;
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Clearing sound prop gameplay object.\r");
+
 	m_AreaPropsG.Clear();
-	m_DoorIDHash.Clear();
 
 	m_bLoadSuccess = false;
 	m_bDefaultSpherical = false;
-	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Clearing sound prop gameplay object.\r");
+
+	if( m_EventAreas != NULL )
+	{
+		// delete portal loss arrays
+		for( int i=0; i < m_numAreas; i++ )
+		{
+			fPtr = m_EventAreas[i].LossAtPortal;
+			if( fPtr != NULL )
+				delete[] fPtr;
+			
+			fPtr = m_EventAreas[i].DistAtPortal;
+			if( fPtr != NULL )
+				delete[] fPtr;
+
+			fPtr = m_EventAreas[i].AttAtPortal;
+			if( fPtr != NULL )
+				delete[] fPtr;
+		}
+
+		delete[] m_EventAreas;
+		m_EventAreas = NULL;
+	}
+
+	// delete m_sndAreas
+	DestroyAreasData();
 }
 
 CsndProp::~CsndProp ( void )
 {
 	Clear();
-
-	delete m_LossMatrix;
 }
 
 
 void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 {
 	SAreaProp defaultArea;
+	int tempint(0);
 
 	Clear();
 
@@ -97,8 +136,9 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 		//gameLocal.Warning("[DM SPR] SndPropLoader failed to load from the .spr file.");
 		//gameLocal.Warning("[DM SPR] "SndProp is the using default (simple, single area) setup.");
 
+		//TODO : Need better default behavior for bad file, this isn't going to work
 		defaultArea.area = 0;
-		defaultArea.LossMult = 1.0;
+		defaultArea.LossMult = 1.0 * m_SndGlobals.kappa0;;
 		defaultArea.SpherSpread = 0;
 
 		m_AreaPropsG.Append( defaultArea );
@@ -109,56 +149,110 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 
 	m_bLoadSuccess = true;
 
-	// copy the needed members from sndPropLoader
-	m_LossMatrix->Copy( in->m_LossMatrix );
+	m_numAreas = in->m_numAreas;
+
+	// copy the connectivity database from sndPropLoader
+	if( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
+	{
+		DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when copying area connectivity database to gameplay object\r");
+		goto Quit;
+	}
+
+	// copy the areas array, element by element
+	for( int i=0; i < m_numAreas; i++ )
+	{
+		m_sndAreas[i].LossMult = in->m_sndAreas[i].LossMult;
+		m_sndAreas[i].SpherSpread = in->m_sndAreas[i].SpherSpread;
+		
+		tempint = in->m_sndAreas[i].numPortals;
+		m_sndAreas[i].numPortals = tempint;
+
+		m_sndAreas[i].center = in->m_sndAreas[i].center;
+
+		m_sndAreas[i].portals = new SsndPortal[ tempint ];
+		for( int k=0; k < tempint; k++ )
+			m_sndAreas[i].portals[k] = in->m_sndAreas[i].portals[k];
+
+		m_sndAreas[i].portalDists = new CMatRUT<float>;
+		m_sndAreas[i].portalDists->Copy( in->m_sndAreas[i].portalDists );
+	}
+
 
 	m_bDefaultSpherical = in->m_bDefaultSpherical;
 	m_AreaPropsG = in->m_AreaPropsG;
+
+	m_DoorRefs = in->m_DoorRefs;
 	
-	// fill door ID hash index (must be run after doors spawn)
-	FillDoorIDHash( in );
+	// fill in door entity pointers on portals in m_sndAreas
+	FillDoorEnts();
+
+
+	// initialize Event Areas
+	if( (m_EventAreas = new SEventArea[m_numAreas]) == NULL )
+	{
+		DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing m_EventAreas\r");
+		goto Quit;
+	}
+	
+	// initialize portal loss arrays within Event Areas
+	for( int j=0; j<m_numAreas; j++ )
+	{
+		m_EventAreas[j].bVisited = false;
+		if( (m_EventAreas[j].LossAtPortal = new float[ m_sndAreas[j].numPortals ])
+			== NULL )
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing loss array %d in m_EventAreas\r", j);
+			goto Quit;
+		}
+
+		if( (m_EventAreas[j].DistAtPortal = new float[ m_sndAreas[j].numPortals ])
+			== NULL )
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing distance array %d in m_EventAreas\r", j);
+			goto Quit;
+		}
+
+		if( (m_EventAreas[j].AttAtPortal = new float[ m_sndAreas[j].numPortals ])
+			== NULL )
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing attenuation array %d in m_EventAreas\r", j);
+			goto Quit;
+		}
+
+
+	}
 
 Quit:
 	return;
 }
 
-void CsndProp::FillDoorIDHash( const CsndPropLoader *in )
+void CsndProp::FillDoorEnts( void )
 {
 	idEntity *gent;
-	int doorID;
+	int anum, pnum;
 
-	m_DoorIDHash.Clear();
-
-	for ( int i = 0; i < in->m_DoorNameTable.Num(); i++ )
+	for ( int i = 0; i < m_DoorRefs.Num(); i++ )
 	{
-	gent = gameLocal.FindEntity(in->m_DoorNameTable[i].name.c_str());
-	doorID = in->m_DoorNameTable[i].doorID;
+	gent = gameLocal.FindEntity( m_DoorRefs[i].doorName );
 
-	m_DoorIDHash.Add(doorID, gent->entityNumber);
-	DM_LOG(LC_SOUND, LT_DEBUG).LogString("FillDoorIDHash: Added door %s with ID %d to ID hash with gentity number %d\r", in->m_DoorRefs[i].doorName, doorID, gent->entityNumber);
+	if (gent == NULL)
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Could not find door ent for doorname %s.\r", m_DoorRefs[i].doorName );
+		continue;
+	}
+
+	// Add to m_sndAreas
+	anum = m_DoorRefs[i].area;
+	pnum = m_DoorRefs[i].portalNum;
+
+	m_sndAreas[ anum ].portals[ pnum ].doorEnt = gent;
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("FillDoorEnts: Added pointer for door %s to area %d, portal %d\r", m_DoorRefs[i].doorName, anum, pnum);
 	}
 }
 
-idEntity *CsndProp::GetDoorEnt( int doorID )
-{
-	int gentNum;
-	idEntity *ent;
-	if ((gentNum = m_DoorIDHash.First(doorID)) == -1)
-	{
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("GetDoorEnt: Failed to find a gentity number for doorID number %d\r", doorID);
-		ent = NULL;
-		goto Quit;
-	}
-	if ((ent = gameLocal.entities[gentNum]) == NULL)
-	{
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("GetDoorEnt: No gentity for gentity number %d\r", gentNum);
-	}
-Quit:
-	return ent;
-}
-
-// note: Does not call checksound itself, so this should be called before
-// calling this to make sure the sound exists somewhere.
+// NOTE: Propagate does not call CheckSound.  CheckSound should be called before
+//	calling Propagate, in order to make sure the sound exists somewhere.
 
 void CsndProp::Propagate 
 	( float volMod, float durMod, idStr sndName,
@@ -166,25 +260,31 @@ void CsndProp::Propagate
 	 USprFlags *addFlags )
 
 {
-	idBounds	bounds(origin), envBounds(origin);
-	
-	bool bValidTeam(false), bSameArea(false);
-	int			mteam;
+	bool bValidTeam(false), bSameArea(false), bExpandFinished(false);
+	int			mteam, popIndex;
 	float		range, vol0, propVol(0), noise(0);
 	
+	idTimer		timer_Prop;
 	UTeamMask	tmask, compMask;
 	SSprParms	propParms;
-	
+	idBounds	bounds(origin), envBounds(origin);
 	idEntity *			testEnt;
-	idAI				*testAI, *AI;
+	idAI				*testAI;
 	idList<idEntity *>	validTypeEnts, validEnts;
 	const idDict *		parms;
+	SPopArea			tempEntry;
+
+	timer_Prop.Clear();
+	timer_Prop.Start();
 
 	if( cv_spr_debug.GetBool() )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \r", maker->name.c_str(), sndName.c_str(), volMod, durMod );
 		gameLocal.Printf("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \n", maker->name.c_str(), sndName.c_str(), volMod, durMod );
 	}
+
+	// clear leftover AI from other propagations
+	m_PopAreas.Clear();
 
 	// initialize the comparison team mask
 	compMask.m_field = 0;
@@ -195,6 +295,8 @@ void CsndProp::Propagate
 	// redundancy
 	if(!parms)
 		goto Quit;
+
+	propParms.name = sndName.c_str();
 
 	vol0 = parms->GetFloat("vol","0") + volMod;
 	// DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found modified sound volume %f\r", vol0 );
@@ -227,7 +329,7 @@ void CsndProp::Propagate
 	// keep in mind that due to FOV compression, visual distances in FPS look shorter
 	// than they actually are.
 
-//	range = pow(2, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
+	range = pow(2, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
 
 	bounds.ExpandSelf( range );
 
@@ -259,6 +361,7 @@ void CsndProp::Propagate
 		// TODO : Do something else in the case of Listeners, since they're not AI
 		testAI = static_cast<idAI *>( validTypeEnts[i] );
 
+		
 		if( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
 		{
 			if( cv_spr_debug.GetBool() )
@@ -327,186 +430,65 @@ void CsndProp::Propagate
 	}
 	*/
 
-// EFFICIENCY STEP: Note the origin of the propagation
-// if soundprop is triggered AGAIN, with an origin very close to the last,
-// do not bother recalculating the list of env. sounds to check
-// (note, if the env. list is re-used, keep the original origin for which it
-// was calculated in memory, to deal with footstep situation.
-
-// EFFICIENCY STEP:
-// keep the last propagation TIME in memory too.  If the time and origin have
-// not changed significantly, do not update the list of AI's to prop. to
-// (must account for bad AI pointers for AI's that get destroyed though)
-
-// EFFICIENCY STEP: Sparhawk suggestion: If an AI is on the very edge of the
-// max radius, do not prop to them, but let them know that they "may have"
-// heard a sound.  If they get enough of these "maybes," actually prop to them.
-
-// Add all the remaining inrange entities with env. sounds to the list
-// For efficiency reasons, we want to count env. sounds in the first radius
-// when we go thru all the entities in the 1st bounds
-// ideally we want to subtract the first bounds from these 2nd bounds
-// so entities aren't counted twice.  I'm not sure if it's possible to
-// subtract bounds that way though.
-
-	// begin prop to each AI
+	// Don't bother propagation if no one is in range
+	if (validEnts.Num() == 0)
+		goto Quit;
 
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Beginning propagation to %d targets\r", validEnts.Num() );
 
+
+// ======================== BEGIN WAVEFRONT EXPANSION ===================
+
+// Add each populated area to the popAreas array, and fill their AI lists
+	
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Filling populated areas array with AI\r" );
 	for(int j = 0; j < validEnts.Num(); j++)
 	{
-		AI = static_cast<idAI *>( validEnts[j] );
+		int AIAreaNum = gameRenderWorld->PointInArea( validEnts[j]->GetPhysics()->GetOrigin() );
+		
+		//Sometimes PointInArea returns -1, don't know why
+		if (AIAreaNum < 0)
+			continue;
 
-		// PropToPoint sets propagated sound parameters based on Loss Matrix lookup
-		propVol = PropToPoint( vol0, origin, AI->GetEyePosition(), &propParms, &bSameArea );	
-	
-		if( cv_spr_debug.GetBool() )
+		if( (popIndex = FindPopIndex( AIAreaNum )) == -1 )
 		{
-			gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
-							  sndName.c_str(), AI->name.c_str(), origin.ToString(), propVol, propParms.direction.ToString() );
+			tempEntry.areaNum = AIAreaNum;
+			tempEntry.bVisited = false;
 
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
-											  sndName.c_str(), AI->name.c_str(), origin.ToString(), propVol, propParms.direction.ToString() );
-		}
+			tempEntry.AIContents.Clear();
+			tempEntry.VisitedPorts.Clear();
 
-		// finish filling propParms for ease of passing args to AI
-		propParms.name = sndName.c_str();
-		propParms.propVol = propVol;
-		
-		// check if the AI would normally hear the sound before calculating env. sound masking.
+			// add the first AI to the contents list
+			tempEntry.AIContents.Append( static_cast< idAI * >(validEnts[j]) );
 
-		AI->SPLtoLoudness( &propParms );
-		
-		if (  AI->CheckHearing( &propParms ) )
-		{
-			// TODO: Add env. sound masking check here
-			// GetEnvNoise should check all the env. noises on the list we made, plus global ones
-			
-			// noiseVol = GetEnvNoise( &propParms, origin, AI->GetEyePosition() );
-
-			noise = 0;
-		
-			//message the AI
-			AI->HearSound( &propParms, noise, origin, bSameArea );
-		}
-
-	}
-
-Quit:
-
-// Clean up pointers and idLists
-	return;
-
-}
-
-//TODO: Fix adding of sounds coming from different paths here so they add properly!
-
-float CsndProp::PropToPoint
-	( float volInit, idVec3 origin, 
-	  idVec3 target, SSprParms *propParms,
-	  bool *bSameArea )
-{
-	bool bReversed(false);
-	float volTotal(0), volPath, loudestVol(0);
-	SLMEntry *Entry;
-	int areaOrig, areaTarg, loudestPath;
-	
-	// if we failed to load the soundprop file for the map,
-	// use the default area (0) and do not check Loss Matrix
-	if (!m_bLoadSuccess)
-	{
-		areaOrig = 0;
-		areaTarg = 0;
-	}
-	else
-	{
-		areaOrig = gameRenderWorld->PointInArea(origin);
-		areaTarg = gameRenderWorld->PointInArea(target);
-	}
-
-	// if target is in the same area as origin, just use point to point propagation
-	// and set the loudest direction to the origin of the sound
-	if( areaOrig == areaTarg )
-	{
-		volTotal = volInit - p2pLoss( origin, target, areaOrig );
-		propParms->direction = origin;
-		*bSameArea = true;
-		goto Quit;
-	}
-
-	// Otherwise, do a Loss Matrix lookup
-	Entry = GetLM( areaOrig, areaTarg, &bReversed );
-
-	for(int i=0; i < Entry->numPaths; i++)
-	{
-		// vol and loss are both in dB, so subtract to get new volume
-		volPath = volInit - Entry->paths[i].loss;
-		volPath -= GetDoorLoss( &Entry->paths[i] );
-		
-		// add in spatial loss from origin to startportal, endportal to target
-		if(bReversed)
-		{
-			volPath -= p2pLoss( origin, Entry->paths[i].end, areaOrig );
-			volPath -= p2pLoss( target, Entry->paths[i].start, areaTarg );
+			m_PopAreas.Append( tempEntry );
 		}
 		else
 		{
-			volPath -= p2pLoss( origin, Entry->paths[i].start, areaOrig );
-			volPath -= p2pLoss( target, Entry->paths[i].end, areaTarg );
+			m_PopAreas[popIndex].AIContents.Append( static_cast< idAI * >(validEnts[j]) );
 		}
-		
-		volTotal += volPath;
-		if ( volPath > loudestVol || i == 0)
-		{
-			loudestVol = volPath;
-			loudestPath = i;
-		}
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Processed AI %s in area %d\r", validEnts[j]->name.c_str(), AIAreaNum );
 	}
-	// if indices were reversed (ie, if row > col )
-	if( bReversed )
-	{
-		propParms->direction = Entry->paths[loudestPath].start;
-	}
-	else
-	{
-		propParms->direction = Entry->paths[loudestPath].end;
-	}
+
+	bExpandFinished = ExpandWave( vol0, origin, &propParms );
+
+	//TODO: If bExpandFinished == false, either fake propagation or
+	// delay further expansion until later frame
+	if(bExpandFinished == false)
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Expansion was stopped when max node number %d was exceeded\r", s_MAX_FLOODNODES );
+
+
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Expansion done, processing AI\r" );
+	ProcessPopulated( vol0, origin, &propParms );
+
+	timer_Prop.Stop();
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Total TIME for propagation: %d [ms]\r", (int) timer_Prop.Milliseconds() );
 
 Quit:
-	return volTotal;
-}
 
-float CsndProp::p2pLoss( idVec3 point1, idVec3 point2, int area )
-{
-	idVec3 delta;
-	float distsqr, kappa, lossTot;
-	
-	// Multiply the default attenuation constant by the loss multiplier
-	kappa = m_AreaPropsG[area].LossMult * m_SndGlobals.kappa0;
+	return;
 
-	delta = point1 - point2;
-	//TODO: If optimization is needed, use delta.LengthFast()
-	distsqr = delta.LengthSqr();
-	distsqr *= s_DOOM_TO_METERS * s_DOOM_TO_METERS;
-	
-	if( m_AreaPropsG[area].SpherSpread == TRUE )
-	{
-		// spherical spreading, hemi-free field
-		// assume most sounds take place near the ground => hemi-free field
-		lossTot = m_SndGlobals.Falloff_Outd*log10(distsqr) + 8;
-	}
-	else
-	{
-		// Indoor propagation:
-		lossTot = m_SndGlobals.Falloff_Ind*log10(distsqr) + 8;
-	}
-
-	// add in attenuation (material loss)
-	// kappa is in dB / meter so multiply distsqr by 1/2
-	// (the actual non-dB formula is loss = e^(-k * dist), then take 10log10(that)
-	lossTot += 0.5 * kappa * distsqr;
-
-	return lossTot;
 }
 
 void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags *addFlags, UTeamMask *tmask )
@@ -557,35 +539,32 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	return;
 }
 
-float CsndProp::GetDoorLoss( SPropPath *path )
+float CsndProp::GetDoorLoss( idEntity *doorEnt )
 {
-	bool hadErr(false);
-	int i, num;
-	idEntity *doorEnt;
 	float doorLoss(0);
 
-	num = path->numDoors;
-
-	for( i=0; i < num; i++)
+	if( doorEnt == NULL )		
 	{
-		doorEnt = GetDoorEnt( path->doors[i] );
-		if( doorEnt == NULL )
-		{
-			// report the error
-			hadErr = true;
-			goto Quit;
-		}
+		// do not log this, since it's supposed to be NULL when no door exists
+		doorLoss = 0;
+		goto Quit;
+	}
 		
-		if( doorEnt->IsType(CFrobDoor::Type) )
-			doorLoss += static_cast<CFrobDoor *>( doorEnt )->GetSoundLoss();
-		
-		else
-			doorLoss += m_SndGlobals.DefaultDoorLoss;
+	if( doorEnt->IsType(CFrobDoor::Type) )
+	{
+		doorLoss += static_cast<CFrobDoor *>( doorEnt )->GetSoundLoss();
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Added door loss %f from door %s\r", doorLoss, doorEnt->name.c_str());
+	}
+	
+	else
+	{
+		//TODO : Modify func_door to store a loss when open/closed?  Maybe an FM author
+		//	wants to have a door that is not a CFrobDoor, but wants unique acoustical loss
+
+		doorLoss += m_SndGlobals.DefaultDoorLoss;
 	}
 
 Quit:
-	if(hadErr)
-		doorLoss = 0;
 
 	return doorLoss;
 }
@@ -619,3 +598,382 @@ bool CsndProp::CheckSound( const char *sndNameGlobal, bool isEnv )
 Quit:
 	return returnval;
 }
+
+bool CsndProp::ExpandWave( float volInit, idVec3 origin, 
+							SSprParms *propParms )
+{
+	bool				returnval;
+	int					popIndex(-1), floods(0), nodes(0), area, LocalPort;
+	float				tempDist(0), tempAtt(1), tempLoss(0), AddedDist(0);
+	idList<SExpQue>		NextAreas; // expansion queue
+	idList<SExpQue>		AddedAreas; // temp storage for next expansion queue
+	SExpQue				tempQEntry;
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Starting wavefront expansion\r" );
+
+	// clear the visited settings on m_EventAreas from previous propagations
+	for(int i=0; i < m_numAreas; i++)
+		m_EventAreas[i].bVisited = false;
+
+	NextAreas.Clear();
+	AddedAreas.Clear();
+
+	
+	// ======================== Handle the initial area =========================
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Processing initial area\r" );
+
+	int initArea = gameRenderWorld->PointInArea( origin );
+
+	m_EventAreas[ initArea ].bVisited = true;
+
+	// Check for AI and update m_PopAreas
+	popIndex = FindPopIndex( initArea );
+	if ( popIndex != -1 )
+	{
+		m_PopAreas[ popIndex ].bVisited = true;
+	}
+
+	// calculate initial portal losses from the sound origin point
+	for( int i2=0; i2 < m_sndAreas[ initArea ].numPortals; i2++)
+	{
+		idVec3 portalCoord = m_sndAreas[ initArea ].portals[i2].center;
+
+		tempDist = (origin - portalCoord).LengthFast() * s_DOOM_TO_METERS;
+		// calculate and set initial portal losses
+		tempAtt = m_AreaPropsG[ initArea ].LossMult * tempDist;
+		
+		// add the door loss
+		tempAtt += GetDoorLoss( m_sndAreas[ initArea ].portals[i2].doorEnt );
+
+		// get the current loss
+		tempLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
+
+		m_EventAreas[ initArea ].LossAtPortal[i2] = tempLoss;
+		m_EventAreas[ initArea ].DistAtPortal[i2] = tempDist;
+		m_EventAreas[ initArea ].AttAtPortal[i2] = tempAtt;
+
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Loss at portal %d is %f [dB]\r", i2, tempLoss);
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Dist at portal %d is %f [m]\r", i2, tempDist);
+
+
+		// add the portal destination to flooding queue if the sound has
+		//	not dropped below threshold at the portal
+		if( (volInit - tempLoss) > s_MIN_AUD_THRESH )
+		{
+			tempQEntry.area = m_sndAreas[ initArea ].portals[i2].to;
+			tempQEntry.curDist = tempDist;
+			tempQEntry.curAtt = tempAtt;
+			tempQEntry.curLoss = tempLoss;
+			tempQEntry.portalH = m_sndAreas[ initArea ].portals[i2].handle;
+
+			NextAreas.Append( tempQEntry );
+		}
+		else
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Wavefront intensity dropped below threshold at portal %d\r", i2);
+	}
+
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Starting main loop\r" );
+	
+	
+	// done with initial area, begin main loop
+	while( NextAreas.Num() > 0 && nodes < s_MAX_FLOODNODES )
+	{
+		floods++;
+
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Expansion loop, iteration %d\r", floods );
+
+		AddedAreas.Clear();
+
+		for(int j=0; j < NextAreas.Num(); j++)
+		{
+			nodes++;
+
+			area = NextAreas[j].area;
+
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Flooding area %d thru portal handle %d\r", area, NextAreas[j].portalH );
+
+			// find the local portal number associated with the portal handle
+			LocalPort = -1;
+			for( int ind = 0; ind < m_sndAreas[area].numPortals; ind++ )
+			{
+				if( m_sndAreas[area].portals[ind].handle == NextAreas[j].portalH )
+				{
+					LocalPort = ind;
+					break;
+				}
+			}
+			
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Identified portal handle with local port %d\r", LocalPort );
+
+			if( LocalPort == -1 )
+			{
+				DM_LOG(LC_SOUND, LT_ERROR).LogString("Couldn't find portal handle %d in area %d\r", NextAreas[j].portalH, area);
+				goto Quit;
+			}
+
+			// copy information from the portal's other side
+			m_EventAreas[area].DistAtPortal[ LocalPort ] = NextAreas[j].curDist;
+			m_EventAreas[area].AttAtPortal[ LocalPort ] = NextAreas[j].curAtt;
+			m_EventAreas[area].LossAtPortal[ LocalPort ] = NextAreas[j].curLoss;
+
+
+			// check for AI in the area
+			popIndex = FindPopIndex( area );
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Checked for AI, popIndex = %d\r", popIndex );
+			
+			if ( popIndex != -1 )
+			{
+				m_PopAreas[ popIndex ].bVisited = true;
+				m_PopAreas[ popIndex ].VisitedPorts.Append( LocalPort );
+			}
+
+			// Flood to portals in this area
+			for( int i=0; i < m_sndAreas[area].numPortals; i++)
+			{
+				// do not flood back thru same portal we came in
+				if( LocalPort == i)
+					continue;
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Calculating loss from portal %d to portal %d in area %d\r", LocalPort, i, area);
+				// Obtain loss at this portal and store in temp var
+				tempDist = NextAreas[j].curDist;
+				AddedDist = *m_sndAreas[area].portalDists->GetRev( LocalPort, i );
+				tempDist += AddedDist;
+
+				tempAtt = NextAreas[j].curAtt;
+				tempAtt += AddedDist * m_AreaPropsG[ area ].LossMult;
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Total distance now %f\r", tempDist );
+				
+				// add the door loss
+				tempAtt += GetDoorLoss( m_sndAreas[area].portals[i].doorEnt );
+	
+
+				tempLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
+
+				// check if we've visited the area, and do not add destination area 
+				//	if loss is greater this time
+				if( m_EventAreas[area].bVisited 
+					&& tempLoss >= m_EventAreas[area].LossAtPortal[i] )
+				{
+					DM_LOG(LC_SOUND, LT_DEBUG).LogString("Cancelling flood thru portal %d in previously visited area %d\r", i, area);
+					continue;
+				}
+
+				if( ( volInit - tempLoss ) < s_MIN_AUD_THRESH )
+				{
+					DM_LOG(LC_SOUND, LT_DEBUG).LogString("Wavefront intensity dropped below abs min audibility at portal %d in area %d\r", i, area);
+					continue;
+				}
+
+				// path has been determined to be minimal loss, above cutoff intensity
+				// store the loss value
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Further expansion valid thru portal %d in area %d\r", i, area);
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Set loss at portal %d to %f [dB]", i, tempLoss);
+				
+				m_EventAreas[area].LossAtPortal[i] = tempLoss;
+				m_EventAreas[area].DistAtPortal[i] = tempDist;
+				m_EventAreas[area].AttAtPortal[i] = tempAtt;
+
+				// add the portal destination to flooding queue
+				tempQEntry.area = m_sndAreas[ area ].portals[i].to;
+				tempQEntry.curDist = tempDist;
+				tempQEntry.curAtt = tempAtt;
+				tempQEntry.curLoss = tempLoss;
+				tempQEntry.portalH = m_sndAreas[ area ].portals[i].handle;				
+
+				AddedAreas.Append( tempQEntry );
+			
+			} // end portal flood loop
+
+			m_EventAreas[j].bVisited = true;
+		} // end area flood loop
+
+		// create the next expansion queue
+		NextAreas = AddedAreas;
+
+	} // end main loop
+
+	// return true if the expansion died out naturally rather than being stopped
+	returnval = ( !NextAreas.Num() );
+
+Quit:
+	return returnval;
+} // end function
+
+int	CsndProp::FindPopIndex( int areaNum )
+{
+	// linear search O(N)
+	int ind(-1);
+
+	for( int i=0; i < m_PopAreas.Num(); i++ )
+	{
+		if( m_PopAreas[i].areaNum == areaNum )
+		{
+			ind = i;
+			break;
+		}
+	}
+
+	return ind;
+}
+
+void CsndProp::ProcessPopulated( float volInit, idVec3 origin, 
+								SSprParms *propParms )
+{
+	float LeastLoss, TestLoss, tempDist, tempAtt, tempLoss;
+	int area, LoudPort, portNum, i(0), j(0), k(0);
+	idAI *AIPtr;
+	idVec3 testLoc;
+	
+	int initArea = gameRenderWorld->PointInArea( origin );
+
+	for( i=0; i < m_PopAreas.Num(); i++ )
+	{
+		area = m_PopAreas[i].areaNum;
+
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Processing pop. area %d\r", area);
+		
+		// Special case: AI area = initial area - no portal flooded in on in this case
+		if( area == initArea )
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Special case: AI in initial area %d\r", area);
+
+			propParms->bSameArea = true;
+			propParms->direction = origin;
+
+			for( j=0; j < m_PopAreas[i].AIContents.Num(); j++)
+			{
+				AIPtr = m_PopAreas[i].AIContents[j];
+				
+				if (AIPtr == NULL)
+					continue;
+
+				tempDist = (origin - AIPtr->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
+				tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;
+				tempLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
+
+				propParms->propVol = volInit - tempLoss;
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Messaging AI %s in (source area) area %d\r", AIPtr->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Dist to AI: %f [m], Propagated volume found to be %f [dB]\r", tempDist, propParms->propVol);
+				
+				ProcessAI( AIPtr, origin, propParms );
+			}
+		}
+
+		// Normal propagation to a surrounding area
+		else if ( m_PopAreas[i].bVisited == true )
+		{
+			propParms->bSameArea = false;
+
+			// figure out the least loss portal
+			// May be different for each AI (esp. in large rooms)
+			// TODO OPTIMIZATION: Don't do this extra loop for each AI if 
+			//		we only visited one portal in the area
+
+			for( int aiNum = 0; aiNum < m_PopAreas[i].AIContents.Num(); aiNum++ )
+			{
+				AIPtr = m_PopAreas[i].AIContents[ aiNum ];
+
+				if (AIPtr == NULL)
+				{
+					DM_LOG(LC_SOUND, LT_WARNING).LogString("NULL AI pointer for AI %d in area %d\r", aiNum, area);
+					continue;
+				}
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Calculating least loss for AI %s in area %d\r", AIPtr->name.c_str(), area);
+
+				LeastLoss = 999999999.0f;
+
+				for( k=0; k < m_PopAreas[i].VisitedPorts.Num(); k++ )
+				{
+					portNum = m_PopAreas[i].VisitedPorts[ k ];
+
+					//DM_LOG(LC_SOUND, LT_DEBUG).LogString("Calculating loss from portal %d, DEBUG k=%d, portsnum = %d\r", portNum, k, m_PopAreas[i].VisitedPorts.Num());
+
+					testLoc = m_sndAreas[area].portals[portNum].center;
+
+					tempDist = (testLoc - AIPtr->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
+					DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI Calc: Distance to AI = %f [m]\r", tempDist);
+
+					tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;
+					tempDist += m_EventAreas[area].DistAtPortal[ portNum ];
+					DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI Calc: Total Dist = %f [m]\r", tempDist);
+
+					// add loss from portal to AI to total loss at portal
+					TestLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
+					DM_LOG(LC_SOUND, LT_DEBUG).LogString("AI Calc: Total Loss = %f [m]\r", TestLoss);
+
+					if( TestLoss < LeastLoss )
+					{
+						LeastLoss = TestLoss;
+						LoudPort = portNum;
+					}
+				}
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Portal %d has least loss %f [dB]\r", LoudPort, LeastLoss );
+
+				propParms->direction = m_sndAreas[area].portals[ LoudPort ].center;
+				propParms->propVol = volInit - LeastLoss;
+
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Propagated volume found to be %f\r", propParms->propVol);
+				
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Messaging AI %s in area %d\r", AIPtr->name.c_str(), area);
+				ProcessAI( AIPtr, origin, propParms );
+			}
+		}
+
+		// Propagation was stopped before this area was reached
+		else if ( m_PopAreas[i].bVisited == false )
+		{
+			// Do nothing for now
+			// TODO: Keep track of these areas for delayed calculation?
+		}
+
+	}
+
+} // End function
+
+void CsndProp::ProcessAI( idAI *AI, idVec3 origin, SSprParms *propParms )
+{
+	float noise(0);
+
+	// check AI hearing, get environmental noise, etc
+	
+	if( AI == NULL )
+		goto Quit;
+
+	if( cv_spr_debug.GetBool() )
+	{
+		gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
+						  propParms->name, AI->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
+
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
+											  propParms->name, AI->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
+	}
+
+	// convert the SPL to loudness and store it in parms
+	AI->SPLtoLoudness( propParms );
+
+	if (  AI->CheckHearing( propParms ) )
+	{
+		// TODO: Add env. sound masking check here
+		// GetEnvNoise should check all the env. noises on the list we made, plus global ones
+		
+		// noiseVol = GetEnvNoise( &propParms, origin, AI->GetEyePosition() );
+		noise = 0;
+		
+		//message the AI
+		AI->HearSound( propParms, noise, origin );
+	}
+
+Quit:
+	return;
+}
+
+
+
+	
+

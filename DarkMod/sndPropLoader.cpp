@@ -31,37 +31,18 @@
 
 // TODO: Write the mapfile timestamp to the .spr file and compare them
 
+const float s_DOOM_TO_METERS = 0.0254f;					// doom to meters
+const float s_METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
+
+
+const float s_DBM_TO_M = 1.0/(10*log10( idMath::E )); // convert between dB/m and 1/m
+
 /*********************************************************
 *
 *	CsndPropBase Implementation
 *
 **********************************************************/
 
-SLMEntry *CsndPropBase::GetLM(int row, int col, bool *reversed)
-{
-	bool rev;
-	int temp;
-	idVec3 tempV;
-	SLMEntry *Entry;
-
-	rev = false;
-
-	if (row>col)
-	{
-		rev = true;
-		temp = col;
-		col = row;
-		row = temp;
-	}
-
-	Entry = m_LossMatrix->Get(row, col);
-
-	// Since reverse is an optional argument set to NULL by default,
-	// don't set the pointer if an argument was not provided
-	if (reversed != NULL)
-		reversed = &rev;
-	return Entry;
-}
 
 void CsndPropBase::GlobalsFromDef( void )
 {
@@ -143,16 +124,12 @@ CsndPropLoader::CsndPropLoader ( void )
 	m_numAreas = 0;
 	m_bDefaultSpherical = false;
 	m_bLoadSuccess = false;
-
-	m_LossMatrix = new CMatRUT<SLMEntry>;
 }
 
 CsndPropLoader::~CsndPropLoader ( void )
 {
 	// Call shutdown in case it was not called before destruction
 	Shutdown();
-
-	delete m_LossMatrix;
 }
 
 /**
@@ -312,7 +289,6 @@ void CsndPropLoader::ParseMapEntities ( idMapFile *MapFile )
 	idDict		args;
 	idBounds    doorB;
 	bool doorParsed(false);
-	SDNEntry     tempEntry;
 	
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Soundprop: Parsing Map entities\r");
 	for (i = 0; i < ( MapFile->GetNumEntities() ); i++ )
@@ -342,10 +318,7 @@ void CsndPropLoader::ParseMapEntities ( idMapFile *MapFile )
 			}
 			if (doorParsed)
 			{ 
-				tempEntry.name = args.GetString("name");
-				tempEntry.doorID = count;
-				m_DoorNameTable.Append( static_cast<const SDNEntry>(tempEntry) );
-				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Added door %s to table with ID %d\r",args.GetString("name"), count);
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsed door %s\r",args.GetString("name"));
 				count++;
 			}
 			else
@@ -412,7 +385,9 @@ void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 		DM_LOG(LC_SOUND, LT_WARNING).LogString("Warning: Sound area properties entity %s is not placed in any area.  It will be ignored\r", args.GetString("name") );
 		goto Quit;
 	}
-	propEntry.LossMult = lossMult;
+
+	// multiply by default attenuation constant
+	propEntry.LossMult = lossMult * m_SndGlobals.kappa0;
 	propEntry.area = area;
 
 	SpherSpread = args.GetBool("outdoor_prop","0");
@@ -440,7 +415,7 @@ void CsndPropLoader::FillAPGfromAP ( int numAreas )
 	// set default values on each area
 	for (i=0; i<numAreas; i++)
 	{
-		m_AreaPropsG[i].LossMult = 1.0;
+		m_AreaPropsG[i].LossMult = 1.0 * m_SndGlobals.kappa0;
 		m_AreaPropsG[i].SpherSpread = m_bDefaultSpherical;
 	}
 
@@ -541,6 +516,7 @@ Quit:
 void CsndPropLoader::CreateAreasData ( void )
 {
 	int i, j, k, np, anum, anum2, propscount(0), numAreas(0);
+	SDoorRef TempDoorRef;
 	sndAreaPtr area;
 	exitPortal_t portalTmp;
 	idVec3 pCenters;
@@ -579,14 +555,14 @@ void CsndPropLoader::CreateAreasData ( void )
 			area->portals[j].center = portalTmp.w->GetCenter();
 			
 			pCenters += area->portals[j].center;
-			area->portals[j].doorName = NULL; // this will be set later
+			area->portals[j].doorEnt = NULL; // this will be set on map start
 		}
 		
 		// average the portal center coordinates to obtain the area center
 		if ( np )
 		{
 			area->center = pCenters / np;
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Area %d has center %s\r", i, area->center.ToString() );
+			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Area %d has approximate center %s\r", i, area->center.ToString() );
 		}
 	}
 
@@ -602,33 +578,104 @@ void CsndPropLoader::CreateAreasData ( void )
 
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("%d Area specific losses applied\r", propscount);
 	
-	// Attach door identifiers to the portals
-	for (k = 0; k < m_DoorRefs.Num(); k++)
+	// Append a new m_doorrefs for the reverse portals
+
+	// store this initially since it will change during the loop
+	int numDoors = m_DoorRefs.Num();
+
+	for (k = 0; k < numDoors; k++)
 	{
-		// check thru all portals in the area until matching handle is found
 		anum2 = m_DoorRefs[k].area;
 		sndAreaPtr areaP2 = &m_sndAreas[anum2];
 		
 		int pInd = m_DoorRefs[k].portalNum;
-		areaP2->portals[pInd].doorName = const_cast<char *>( m_DoorRefs[k].doorName );
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Assigned Doorname %s to portal %d in area %d.\r", m_DoorRefs[k].doorName, pInd, anum2);
 		
-		// Find the portal in the area it leads to and assign it to the door too
+		// Find the portal in the area it leads to and add a door reference to the list for that too
 		int toArea = areaP2->portals[pInd].to;
 		sndAreaPtr areaP3 = &m_sndAreas[toArea];
 		int pInd2 = FindSndPortal(toArea, m_DoorRefs[k].portalH);
 		
-		// Don't need error handling here, since if the 'from' portal matches, this one must also
-		areaP3->portals[pInd2].doorName = const_cast<char *>( m_DoorRefs[k].doorName );
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Reverse portal: Assigned Doorname %s to portal %d in area %d.\r", m_DoorRefs[k].doorName, pInd2, toArea);
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Reverse portal: Adding door ref for door %s to portal %d in area %d.\r", m_DoorRefs[k].doorName, pInd2, toArea);
+		
+		TempDoorRef.area = toArea;
+		TempDoorRef.portalNum = pInd2;
+		TempDoorRef.doorName = m_DoorRefs[k].doorName;
+		TempDoorRef.portalH = m_DoorRefs[k].portalH;
+
+		m_DoorRefs.Append( TempDoorRef );
 	}
 
-    DM_LOG(LC_SOUND, LT_DEBUG).LogString("Create Areas arrays finished.\r");
+	m_DoorRefs.Condense();
+
+	// calculate the portal losses and populate the losses array for each area
+	WritePortLosses();
+
+    DM_LOG(LC_SOUND, LT_DEBUG).LogString("Create Areas array finished.\r");
 Quit:
 	return;
 }
 
-void CsndPropLoader::DestroyAreasData( void )
+
+void CsndPropLoader::WritePortLosses( void )
+{
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Writing portal losses...\r");
+	
+	int row, col, area(0), numPorts(0);
+	float lossval(0);
+
+	for( area=0; area < m_numAreas; area++ )
+	{
+		numPorts = m_sndAreas[area].numPortals;
+
+		if ( (m_sndAreas[area].portalDists = new CMatRUT<float>) == NULL)
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing portal losses array for area %d\r", area);
+			goto Quit;
+		}
+
+		// no need to write a matrix if the area only has one portal
+		if (numPorts == 1)
+			continue;
+
+		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Initializing area %d with %d portals\r", area, numPorts);
+
+		// initialize the RUT matrix to the right size
+		m_sndAreas[area].portalDists->Init( numPorts );
+
+		// fill the RUT matrix
+		for( row=0; row < numPorts; row++ )
+		{	
+			for( col=(row + 1); col < numPorts; col++ )
+			{
+				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Setting loss for portal %d to portal %d in area %d\r", row, col, area );
+				lossval = CalcPortDist( area, row, col );
+
+				m_sndAreas[area].portalDists->Set( row, col, lossval );
+			}
+		}
+	}
+Quit:
+	return;
+}
+
+float CsndPropLoader::CalcPortDist(	int area, int port1, int port2)
+{
+	float dist;
+	idVec3 center1, center2, delta;
+	// TODO: PHASE 3 SOUNDPROP: Implement design for geometrically calculating loss between portals
+	// for now, just take center to center distance, correct in a lot of cases
+	center1 = m_sndAreas[area].portals[port1].center;
+	center2 = m_sndAreas[area].portals[port2].center;
+
+	delta = center1 - center2;
+	//TODO: If optimization is needed, use delta.LengthFast()
+	dist  = delta.Length();
+	dist *= s_DOOM_TO_METERS;
+
+	return dist;
+}
+
+void CsndPropBase::DestroyAreasData( void )
 {
 	int i;
 	SsndPortal *portalPtr;
@@ -641,6 +688,8 @@ void CsndPropLoader::DestroyAreasData( void )
 	{
 		portalPtr = m_sndAreas[i].portals;
 		delete[] portalPtr;
+
+		m_sndAreas[i].portalDists->Clear();
 	}
 
 	delete[] m_sndAreas;
@@ -650,8 +699,6 @@ void CsndPropLoader::DestroyAreasData( void )
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Destroy Areas data finished.\r");
 	
 Quit:
-	// clear the area properties
-	m_AreaProps.Clear();
 	return;
 }
 
@@ -660,10 +707,12 @@ void CsndPropLoader::CompileMap( idMapFile *MapFile  )
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Sound propagation system initializing...\r");
 
 	m_DoorRefs.Clear();
-	m_DoorNameTable.Clear();
 
 	// Just in case this was somehow not done before now
 	DestroyAreasData();
+
+	// clear the area properties
+	m_AreaProps.Clear();
 
 	m_numAreas = gameRenderWorld->NumAreas();
 
@@ -671,579 +720,26 @@ void CsndPropLoader::CompileMap( idMapFile *MapFile  )
 
 	CreateAreasData();
 
-	// Build the Loss Matrix here with pathfinding algorithm!!!
-
-	// Write loss matrix to file
-
-	DestroyAreasData();
-
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Sound propagation system finished loading.\r");
+
+	//TODO: Temporarily this is set to true always. Replace when we do precompiling!
+	m_bLoadSuccess = true;
 }
 
 void CsndPropLoader::Shutdown( void )
 {
-	//Destroy the AALDB data when switching to a new map, game ends, etc
-	DestroyAreasData();
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Clearing sound propagation data loader.\r");
+	DestroyAreasData();
 
-	if( !m_LossMatrix->IsCleared() )
-	{
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Clearing loss matrix.\r");
-		m_LossMatrix->Clear();
-	}
+	// clear the area properties
+	m_AreaProps.Clear();
 
 	m_bDefaultSpherical = false;
 	m_bLoadSuccess = false;
 
 	m_AreaPropsG.Clear();
 	m_DoorRefs.Clear();
-	m_DoorNameTable.Clear();
 }
 
-bool CsndPropLoader::LoadSprFile (const char *pFN)
-{
-	idStr qpath;
-	idToken token;
-	idLexer src;
-	bool inLM(false), inEntry(false), mismatch, success(false);
-	int level(0); // Nesting level for brackets
-	int dim(0); // dimension of the given loss matrix
-	int indices[2], pathNum(-1);
-	float *tempLosses;
-	int *tempPropmodels;
-	SLMEntry LMEntry;
-	
-	qpath = pFN;
-	qpath.StripFileExtension();
 
-	qpath.DefaultPath( "./Maps/" );
-
-	qpath += ".";
-	qpath += m_SndGlobals.fileExt;
-	
-	if ( !src.LoadFile(qpath.c_str()) )
-	{
-		DM_LOG(LC_SOUND, LT_WARNING).LogString("Could not read file %s\r", qpath.c_str());
-		idLib::common->Printf( "Could not read file %s\n", qpath.c_str() );
-		goto Quit;
-	}
-
-	m_DoorNameTable.Clear();
-
-	while(1)
-	{
-		if(!src.ReadToken(&token))
-			goto Quit;
-
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
-		if (token == "LossMatrix")
-		{
-			inLM = true;
-			dim = src.ParseInt();
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Loss matrix dimension = %d\r", dim);
-			if (!dim)
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Bad or no dimension provided for loss matrix, aborting.\r");
-				goto Quit;
-			}
-			if (!m_LossMatrix->Init(dim))
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Error initializing loss matrix.  Aborting.\r");
-				goto Quit;
-			}
-			continue;
-		}
-
-		else if(token == "{")
-		{
-			level++;
-			if ((level == 2 && inEntry) )
-			{
-				mismatch = true;
-				goto Quit;
-			}
-			continue;
-		}
-		
-		else if(token == "}")
-		{
-			level--;
-			if (inEntry && level == 1 && indices != NULL)
-			{
-				// put the entry in to the lossmatrix before exiting entry
-				m_LossMatrix->Set(indices[0],indices[1], LMEntry);
-				inEntry = false;
-				pathNum = -1;
-			}
-			else if(level <= -1)
-			{
-				mismatch = true;
-				goto Quit;
-			}
-			continue;
-		}
-		
-		// parse an entry
-		else if( token.Icmpn("Entry", 5) == 0 && level == 1 && inLM )
-		{
-			inEntry = true;
-			src.Parse1DMatrix( 2, indices );
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsing LM Entry with indices %d, %d\r", indices[0], indices[1]);
-			if (!src.ExpectTokenString( "{" ))
-			{
-				mismatch = true;
-				goto Quit;
-			}
-			level++;
-			if (indices == NULL)
-				goto Quit;
-			if (!src.ExpectTokenString( "nump" ))
-				goto Quit;
-			LMEntry.from = indices[0];
-			LMEntry.to = indices[1];
-			LMEntry.numPaths = src.ParseInt();
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Number of paths = %d\r", LMEntry.numPaths);
-			if (!LMEntry.numPaths)
-				goto Quit;
-			if (!(LMEntry.paths = new SPropPath[LMEntry.numPaths]))
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating path array for entry %d, %d.\r", indices[0], indices[1]);
-				goto Quit;
-			}
-			continue;
-		}
-		
-		else if( token.Icmpn("path",4) == 0 && level == 2 && inLM && LMEntry.numPaths )
-		{
-			pathNum++;
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsing Path %d in Entry %d, %d ...\r", pathNum, indices[0], indices[1]);
-			if ( !ParsePath( &src, pathNum, indices, &LMEntry ) )
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Error Parsing Path %d in Entry %d, %d, aborting.\r", pathNum, indices[0], indices[1]);
-				goto Quit;
-			}
-			continue;
-		}
-		
-		else if(token.Icmpn("DoorTable", 9) == 0)
-		{
-			if( ParseDoorTable( &src ) == false )
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Parse door name table failed, aborting.\r");
-				goto Quit;
-			}
-			continue;
-		}
-		
-		else if(token.Icmpn("AreaLossMults", 13) == 0)
-		{
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsing area loss multipliers...\r");
-
-			if ((tempLosses = new float[dim]) == NULL)
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating area properties array for %d areas (temp losses array)\r", dim);
-				goto Quit;
-			}
-
-			if( !(src.Parse1DMatrix(dim, tempLosses)) )
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Parse area loss multiplier table failed, aborting.\r");
-				goto Quit;
-			}
-
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsed area loss data for %d areas\r", dim);
-			continue;
-		}
-		else if(token.Icmpn("AreaPropModels", 14) == 0)
-		{
-			if ((tempPropmodels = new int[dim]) == NULL)
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating area properties array for %d areas (temp propmodels array)\r", dim);
-				goto Quit;
-			}
-
-			if( !(src.Parse1DMatrix(dim, tempPropmodels)) )
-			{
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Parse area prop. model table failed, aborting.\r");
-				goto Quit;
-			}
-			
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parsed area prop. model data for %d areas.\r", dim);
-			// should be done parsing now
-			success = true;
-			break;
-		}
-	}
-
-	if(success)
-	{
-		//assign the losses and propmodels to the m_AreaPropsG array
-		m_AreaPropsG.SetNum( dim );
-
-		for (int ind = 0; ind < dim; ind++)
-		{
-			m_AreaPropsG[ind].LossMult = tempLosses[ind];
-			
-			if(tempPropmodels[ind] > 0)
-				m_AreaPropsG[ind].SpherSpread = true;
-			else
-				m_AreaPropsG[ind].SpherSpread = false;
-		}
-
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Parse sound prop file COMPLETED.\r");
-	}
-
-Quit:	
-	if(success == false)
-	{
-		if ( !m_LossMatrix->IsCleared() )
-			m_LossMatrix->Clear();
-		m_DoorNameTable.Clear();
-	}
-	if (tempLosses !=NULL)
-		delete[] tempLosses;
-	if (tempPropmodels != NULL)
-		delete[] tempPropmodels;
-
-	// set the member var according to whether we successfully loaded
-	m_bLoadSuccess = success;
-
-	return success;
-}
-
-bool CsndPropLoader::ParsePath( idLexer *src, int pathNum, int *indices, SLMEntry *pLMEntry )
-{
-	bool returnval(true), mismatch, floatErr;
-	idToken token2;
-	SPropPath *pathEntry;
-	float loss;
-	float start[3], end[3];
-	int *doors;
-	int num;
-	idVec3 Vstart, Vend;
-
-	if((pathEntry = new SPropPath) == NULL)
-	{
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating path %d in entry %d,%d\r", pathNum, indices[0], indices[1]);
-		returnval = false;
-		goto Quit;
-	}
-	if ( !src->ExpectTokenString( "{" ) )
-	{
-		returnval = false;
-		mismatch = true;
-		goto Quit;
-	}
-	
-	while(1)
-	{
-		if(!src->ReadToken(&token2))
-		{
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("Unexpected EOF in sound prop file\r");
-		returnval = false;
-		goto Quit;
-		}
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("[Parse Path] Token: [%s]\r", token2.c_str());
-
-		if(token2.Icmpn("loss", 4) == 0)
-		{
-			loss = src->ParseFloat(&floatErr);
-			if (floatErr)
-			{
-				DM_LOG(LC_SOUND, LT_WARNING).LogString("Error parsing loss for path %d in entry %d,%d, default huge loss applied\r", pathNum, indices[0], indices[1]);
-				loss = 10000.0f;
-			}
-			pathEntry->loss = loss;
-			continue;
-		}
-		else if(token2.Icmpn("start", 5) == 0)
-		{
-			if(!src->Parse1DMatrix( 3, start ))
-			{
-				returnval = false;
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Error parsing start coords of path %d in entry %d,%d\r", pathNum, indices[0], indices[1]);
-				goto Quit;
-			}
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Added start vector for path %d: ( %f %f %f )\r", pathNum, start[0], start[1], start[2]);
-			Vstart.Set(start[0], start[1], start[2]);
-			pathEntry->start = Vstart;
-			continue;
-		}
-
-		else if(token2.Icmpn("end", 3) == 0)
-		{
-			if(!src->Parse1DMatrix( 3, end ))
-			{
-				returnval = false;
-				DM_LOG(LC_SOUND, LT_ERROR).LogString("Error parsing end coords of path %d in entry %d,%d\r", pathNum, indices[0], indices[1]);
-				goto Quit;
-			}
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Added end vector for path %d: ( %f %f %f )\r", pathNum, end[0], end[1], end[2]);
-			Vend.Set(end[0], end[1], end[2]);
-			pathEntry->end = Vend;
-			continue;
-		}
-
-		else if(token2.Icmpn("doors", 5) == 0)
-		{
-			num = src->ParseInt(); // get the number of doors
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("[Parse Path] Number of doors = %d\r", num );
-			if (num != 0 )
-			{
-				if ((doors = new int[num]) == NULL)
-				{
-					DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when creating door array for path %d in Entry %d, %d\r", pathNum, indices[0], indices[1]);
-					returnval = false;
-					goto Quit;
-				}
-				if(!src->Parse1DMatrix(num, doors))
-				{
-					returnval = false;
-					DM_LOG(LC_SOUND, LT_ERROR).LogString("Error parsing door array of path %d in entry %d,%d\r", pathNum, indices[0], indices[1]);
-					goto Quit;
-				}
-				pathEntry->numDoors = num;
-				pathEntry->doors = doors;
-			}
-			// this was the last path variable.  We should be done parsing the path now.
-			pLMEntry->paths[pathNum] = *pathEntry;
-			break;
-		}
-	}
-	if ( !src->ExpectTokenString( "}" ) ) 
-	{
-		returnval = false;
-		mismatch = true;
-	}
-Quit:
-	if (returnval == false)
-	{
-		delete pathEntry;
-		pathEntry = NULL;
-		if(doors)
-			delete[] doors;
-		if(mismatch)
-			DM_LOG(LC_SOUND, LT_WARNING).LogString("Mismatched brace in path %d in Entry %d,%d\r", pathNum, indices[0], indices[1]);
-	}
-	return returnval;
-}
-
-bool CsndPropLoader::ParseDoorTable( idLexer *src )
-{
-	bool returnval(true);
-	idToken token3;
-	idStr doorID, *pName(NULL);
-	SDNEntry tableEntry;
-
-	if ( !src->ExpectTokenString( "{" ) )
-	{
-		returnval = false;
-		DM_LOG(LC_SOUND, LT_ERROR).LogString("Missing brace in door name table\r");
-		goto Quit;
-	}
-	while( src->ReadToken(&token3) )
-	{
-		if(token3 == "}")
-			goto Quit;
-		src->UnreadToken(&token3);
-		src->ExpectTokenType( TT_STRING, 0, &token3 );
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("[ParseDoorNames] Token: [%s]\r", token3.c_str());
-		if ( token3.IsEmpty() )
-		{
-			returnval = false;
-			DM_LOG(LC_SOUND,LT_ERROR).LogString("Error reading door name string in Door Name table.  (Could also be brace mismatch)\r");
-			goto Quit;
-		}
-
-		tableEntry.name = token3;
-		if( !src->ParseRestOfLine( doorID ) || !doorID.IsNumeric() )
-		{
-			returnval = false;
-			DM_LOG(LC_SOUND, LT_ERROR).LogString("Bad or missing door ID in Door Name table\r");
-			goto Quit;
-		}
-		tableEntry.doorID = atoi(doorID.c_str());
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("[DoorTable] Added door %s with ID %d\r", tableEntry.name.c_str(), tableEntry.doorID);
-		m_DoorNameTable.Append( static_cast<const SDNEntry>(tableEntry) );
-	}
-Quit:
-	if(returnval == false)
-		m_DoorNameTable.Clear();
-	else
-		m_DoorNameTable.Condense();
-	return returnval;
-}
-
-bool CsndPropLoader::WriteSprFile (const char *MapFN, bool fromBasePath, unsigned mapTS )
-{
-	bool returnval(true);
-	int i,j, dim;
-	idStr qpath;
-	idFile *fp;
-
-	qpath = MapFN;
-	qpath.SetFileExtension( m_SndGlobals.fileExt );
-
-	idLib::common->Printf( "Sound prop writing %s...\n", qpath.c_str() );
-	if ( fromBasePath ) 
-	{
-		fp = idLib::fileSystem->OpenFileWrite( qpath, "fs_devpath" );
-	}
-	else 
-	{
-		fp = idLib::fileSystem->OpenExplicitFileWrite( qpath );
-	}
-
-	if ( !fp ) 
-	{
-		idLib::common->Warning( "Sound prop couldn't open %s for writing\n", qpath.c_str() );
-		returnval = false;
-		goto Quit;
-	}
-	if ( m_LossMatrix->IsCleared() || !m_LossMatrix->Dim() )
-	{
-		idLib::common->Warning( "Loss matrix missing or bad.  Aborting the write of %s.\n", qpath.c_str() );
-		returnval = false;	
-		goto Quit;
-	}
-
-	dim = m_LossMatrix->Dim();
-	fp->WriteFloatString( "// Map Time Stamp\n" );
-	fp->WriteFloatString( "%d\n", mapTS);
-
-	fp->WriteFloatString( "LossMatrix %d\n", dim );
-	fp->WriteFloatString( "{\n" );
-	
-	//Write RUT matrix entries
-	for (i=0; i<( dim - 1); i++)
-	{
-		for(j=i+1; j<dim; j++)
-		{
-			if( !(WriteLMEntry(fp, i, j)) )
-			{
-				returnval = false;
-				idLib::common->Warning( "Bad loss matrix element %d, %d.  Aborting the write of %s.\n", i, j, qpath.c_str() );
-				goto Quit;
-			}
-		}
-	}
-	fp->WriteFloatString( "}\n" );
-	fp->WriteFloatString( "\n" );
-	fp->WriteFloatString("// End loss matrix, begin door name table\n");
-	fp->WriteFloatString( "DoorTable\n{\n" );
-	for( int k=0; k < m_DoorNameTable.Num(); k++)
-	{
-		fp->WriteFloatString( " \"%s\" %d\n", m_DoorNameTable[k].name.c_str(), m_DoorNameTable[k].doorID );
-	}
-	fp->WriteFloatString( "}\n");
-	fp->WriteFloatString( "\n" );
-	
-	fp->WriteFloatString( "// Area Loss Multipliers\n" );
-	fp->WriteFloatString( "AreaLossMults\n" );
-	fp->WriteFloatString( "( " );
-	for( int u=0; u < dim; u++ )
-	{
-		fp->WriteFloatString( "%f ", m_AreaPropsG[u].LossMult );
-	}
-	fp->WriteFloatString( ")\n" );
-	
-	fp->WriteFloatString( "// Area Sound Propagation Models\n" );
-	fp->WriteFloatString( "AreaPropModels\n" );
-	fp->WriteFloatString( "( " );
-	for( int u2=0; u2 < dim; u2++ )
-	{
-		fp->WriteFloatString( "%d ", int(m_AreaPropsG[u2].SpherSpread) );
-	}
-	fp->WriteFloatString( ")\n" );
-	// done writing
-
-Quit:
-	if( fp )
-		idLib::fileSystem->CloseFile( fp );
-	return returnval;
-}
-
-bool CsndPropLoader::WriteLMEntry( idFile *fp, int i, int j )
-{
-	bool returnval(true);
-	SLMEntry *Entry;
-	int dim;
-	dim = m_LossMatrix->Dim();
-	if( ((Entry = m_LossMatrix->Get(i, j)) == NULL) || (i>j || i>dim) )
-	{
-		returnval = false;
-		goto Quit;
-	}
-	fp->WriteFloatString( " Entry (%d %d)\n", i, j );
-	fp->WriteFloatString( " {\n" );
-	fp->WriteFloatString( "  nump %d\n", Entry->numPaths );
-	if (Entry->numPaths <= 0)
-		goto Quit;
-	for (int i=0; i < Entry->numPaths; i++)
-	if(!WriteLMPath( fp, Entry, i ))
-	{
-		returnval = false;
-		goto Quit;
-	}
-	fp->WriteFloatString( " }\n" );
-Quit:
-	return returnval;
-}
-
-bool CsndPropLoader::WriteLMPath( idFile *fp, SLMEntry *Entry, int pathNum )
-{
-	bool returnval(true);
-	SPropPath *path;
-	if ( (path = &Entry->paths[pathNum]) == NULL )
-	{
-		returnval = false;
-		idLib::common->Warning( "Bad path %d.\n", pathNum );
-		goto Quit;
-	}
-	fp->WriteFloatString( "  path\n  {\n" );
-	fp->WriteFloatString( "   loss\n   %f\n", path->loss );
-	fp->WriteFloatString( "   start\n   ");
-	fp->WriteFloatString( "(%s)\n", path->start.ToString() );
-	fp->WriteFloatString( "   end\n   ");
-	fp->WriteFloatString( "(%s)\n", path->end.ToString() );
-	fp->WriteFloatString( "   doors %d", path->numDoors );
-	if(path->numDoors > 0)
-	{
-		fp->WriteFloatString("\n   ( ");
-		for (int i=0; i < path->numDoors; i++)
-		{
-			fp->WriteFloatString("%d ", path->doors[i]);
-		}
-		fp->WriteFloatString(")");
-	}
-	fp->WriteFloatString("\n  }\n");
-Quit:
-	return returnval;
-}
-
-void CsndPropLoader::testReadWrite( const char *MapFN )
-{
-	idStr temp = MapFN;
-
-	temp += ".map";
-	
-	DestroyAreasData();
-
-	m_DoorRefs.Clear();
-	m_DoorNameTable.Clear();
-
-	idLib::common->Printf( "Testing read/write with file %s...\n", MapFN );
-
-	const char *OutFN = "sndtest.spr";
-	unsigned int testStamp(171717);
-
-	if (LoadSprFile (temp.c_str()) == false)
-		goto Quit;
-
-	idLib::common->Printf( "Finished reading in %s, beginning write of %s...\n", MapFN, OutFN );
-	
-	WriteSprFile( OutFN, false, testStamp );
-	idLib::common->Printf( "Finished writing %s.  Sound prop file IO test done.\n", OutFN );
-Quit:
-	Shutdown();
-}
+// ============================ TODO : REWRITE FILE IO ===============================

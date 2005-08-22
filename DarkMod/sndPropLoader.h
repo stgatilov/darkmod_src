@@ -160,29 +160,46 @@ typedef struct SAreaProp_s
 } SAreaProp;
 
 /**
-* SsndPortal and SSndArea are structures for intermediate data
-* that is stored when compiling sound propagation info from a mapfile
+* SsndPortal and SSndArea are structures for storing the area/portal
+*	connectivity database.  They will be copied over to the gameplay object.
 **/
-
 typedef struct SsndPortal_s
 {
 	qhandle_t handle; // portal handle
+
 	int portalNum; // integer ID of the portal in the area
+
 	int from; // area the portal is in
+
 	int to; // area the portal goes to
+
 	idVec3 center; // coordinates of the center of the portal
-	char *doorName; // name of door entity associated with portal, if any
+
+	idVec3 normal; // normal vector of portal (by convention, this points into the room)
+
+	idEntity *doorEnt; // Entity pointer to door - will be written on map startup
+
 } SsndPortal;
 
 typedef SsndPortal* sndPortalPtr;
 
+/**
+* Array entry for the area->portals tree
+**/
 typedef struct SsndArea_s 
 {
 	float				LossMult; // loss multiplier (in dB/meter, less than 1 => less loss)
+
 	bool				SpherSpread; // if TRUE, sound spreads spherically in this area.  Otherwise cyllindrical spreading is assumed
+	
 	int					numPortals;	// number of portals in this area
+	
 	idVec3				center; // approximate center of the area
+	
 	SsndPortal_s		*portals;	// array containing the portals of this area
+
+	CMatRUT<float>		*portalDists; // acoustical distances from each portal in room to each other portal
+
 } SsndArea;
 
 typedef SsndArea* sndAreaPtr; 
@@ -198,35 +215,6 @@ typedef struct SDoorRef_s
 	qhandle_t		portalH; //handle to the portal that corresponds to the door name
 }SDoorRef;
 
-/**
-* Structure for referencing door names to door IDs
-**/
-
-typedef struct SDNEntry_s
-{
-	idStr		name;
-	int			doorID;
-}SDNEntry;
-
-/**
-* Structure for an entry in the Loss Matrix that will be used during gameplay
-**/
-
-typedef struct SPropPath_s
-{
-	float			loss; // total path loss in dB
-	idVec3			start; // coordinates of the center of first portal in path
-	idVec3			end; // same for last portal in path
-	int				numDoors; // size of door array
-	int *			doors; // array of doorIDs (doorID is the door's index in m_doorRef list)
-}SPropPath;
-
-typedef struct SLMEntry_s
-{
-	int				from, to; // the 2 areas we are propagating to/from
-	int				numPaths; // size of path array
-	SPropPath *		paths; // sound paths.  Dynamic array for now. Consider idList
-}SLMEntry;
 
 /**
 * CLASS DESCRIPTION: CsndPropBase has functions and members
@@ -259,13 +247,6 @@ public:
 protected:
 
 	/**
-	* Return a pointer to the loss matrix entry for given areas
-	* if row > col, they will be reversed to get the entry, and the 
-	* start/finish coords of the SLMEntry will also be reversed.
-	**/
-	SLMEntry *GetLM(int row, int col, bool *reversed=NULL);
-
-	/**
 	* Updates any global sound properties that are linked 
 	* to console vars or other realtime vars
 	**/
@@ -276,6 +257,11 @@ protected:
 	* def is missing.
 	**/
 	void DefaultGlobals( void );
+
+	/**
+	* Delete the m_sndAreas array
+	**/
+	void DestroyAreasData( void );
 
 protected:
 
@@ -289,20 +275,24 @@ protected:
 	* If set to true, the default sound model will be indoor propagation
 	* This bool is read from the worldspawn entity, and defaults to false
 	**/
-	bool				m_bDefaultSpherical;
+	bool				m_bDefaultSpherical;	
+	
+	/**
+	* Count of the number of areas in a map
+	**/
+	int					m_numAreas;
 
 
 	/********************************************************************
 	* GAMEPLAY MEMBERS
 	* Members after this point must be passed along to be used in gameplay!
 	*********************************************************************/
-	
+
 	/**
-	* m_LossMatrix is the Area to Area Loss Matrix for the map
-	* This is the matrix used in gameplay to actually propagate sounds
-	* It is a right upper triangular (RUT) matrix with zero diagonals
+	* Area and portal connectivity database
+	* Created by loader, used during gameplay
 	**/
-	CMatRUT<SLMEntry>	*m_LossMatrix;
+	SsndArea			*m_sndAreas;
 
 	/**
 	* m_AreaPropsG contains the area properties of ALL areas for use
@@ -311,12 +301,19 @@ protected:
 	**/
 	idList<SAreaProp>	 m_AreaPropsG;
 
+	/**
+	* DoorRefs References door name strings to portals
+	* UPDATE: This gets written to the file and carried over to gameplay obj now
+	* Needs to be on gameplay object for map reloads (door pointers may change)
+	**/
+	idList <SDoorRef>	 m_DoorRefs;
+
 };
 
 
 /**
 * CLASS DESCRIPTION: CsndPropLoader class.  Handles parsing of mapfile
-* into sound prop data, pathfinding to create loss matrix.  Also handles
+* into sound prop data, precalculating portal losses.  Also handles
 * loading of existing sound propagation files (.spr) for a given map,
 * and writing of these files after the mapfile compilation is done.
 * 
@@ -348,34 +345,11 @@ public:
 	* something else to pass it.
 	**/
 	void CompileMap( idMapFile *MapFile );
-
-	/**
-	* Read the loss matrix, door hash and area losses from
-	* a sound propagation file associated with a map name (.spr?)
-	* calls common->Error if the sound file is not found.
-	**/
-	bool LoadSprFile (const char *pFN);
-
-	/**
-	* Write the loss matrix and door hash to a sound prop file.
-	* MapFN is the filename of the associated map.  MapTS is the
-	* timestamp of the associated map file for verification purposes.
-	* if fromBasePath is true, file will be written to Doom3 directory
-	* TODO: Write the file to maps directory by default
-	**/
-	bool WriteSprFile (const char *MapFN, bool fromBasePath, unsigned mapTS = 0 );
 	
 	/**
 	* Destroy sound prop data when switching to a new map, game ends, etc
 	**/
 	void Shutdown( void );
-
-	/**
-	* Test the file IO system by reading in a mapfile and outputting a different name
-	* Right now the output name is defined in the function.
-	* TODO: pass the output name as a 2nd argument instead of defining it in the function.
-	**/
-	void testReadWrite( const char *MapFN );
 
 private:
 	
@@ -458,12 +432,23 @@ private:
 	void ExpandBoundsMinAxis( idBounds *bounds, float percent );
 	
 	/**
-	* Create and destroy the Areas array that stores which portals connect which areas
+	* Create the Areas array that stores which portals connect which areas
 	* as well as area sound loss multipliers.
-	* CreateAreasData must be run AFTER ParseLossEntities.
+	* NOTE: Destroy is on base class
 	**/
 	void CreateAreasData ( void );
-	void DestroyAreasData( void );
+
+	/**
+	* Precalculated the portal-to-portal losses and write them to m_sndAreas
+	* To be called by or after CreateAreasData
+	**/
+	void WritePortLosses( void );
+
+	/**
+	* Calculate the distance a sound wave would travel between two
+	* portal centers Often this is a straight line, but sometimes it bounces.
+	**/
+	float CalcPortDist( int area, int port1, int port2 );
 
 	/**
 	* Fill the m_AreaPropsG array from the m_AreaProps array.
@@ -471,23 +456,10 @@ private:
 	**/
 	void FillAPGfromAP ( int numAreas );
 
-	/**
-	* Write the loss matrix entry i,j
-	* Returns false if it encounters a bad matrix element
-	**/
-	bool WriteLMEntry(idFile *fp, int i, int j);
 	
 	/**
-	* Write loss matrix path entry
+	* TODO : Rewrite file IO for new format
 	**/
-	bool WriteLMPath( idFile *fp, SLMEntry *Entry, int pathNum );
-
-	/**
-	* Helper functions used by LoadSprFile
-	**/
-
-	bool ParsePath( idLexer *src, int pathNum, int *indices, SLMEntry *pLMEntry );
-	bool ParseDoorTable( idLexer *src );
 
 protected:
 
@@ -496,39 +468,12 @@ protected:
 	* These members are only used by the pre-gameplay object and don't need
 	* to be copied to the gameplay object.
 	***********************************************************/
-	
-	/**
-	* Area and portal connectivity database
-	* Intermediate data that gets destroyed when Loss Matrix is created.
-	**/
-	SsndArea			*m_sndAreas;
-
-	/**
-	* DoorRefs References door name strings to portals
-	* Intermediate data that gets destroyed
-	**/
-	idList <SDoorRef>	 m_DoorRefs;
-
-	/**
-	* DoorName hash References door name strings to doorIDs
-	* This data must be kept around in case the map is restarted
-	* at a different difficulty level, or entity spawns otherwise change
-	* it is stored in the file .spr file and may be deleted during a single
-	* map run (after it is used to create m_DoorIDHash), then reloaded on
-	* map restart to save RAM.
-	**/
-	idList<SDNEntry>	m_DoorNameTable;
 
 	/**
 	* List of area properties.
 	* Only contains areas with non-default properties.
 	**/
 	idList<SAreaProp>	m_AreaProps;
-
-	/**
-	* Count of the number of areas in a map
-	**/
-	int					m_numAreas;
 
 };
 

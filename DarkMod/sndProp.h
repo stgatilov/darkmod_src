@@ -57,6 +57,56 @@ typedef union UTeamMask_s
 	STeamBits m_bits;
 } UTeamMask;
 
+/**
+* Array entry in populated areas array
+**/
+typedef struct SPopArea_s
+{
+	int				areaNum;
+	
+	bool			bVisited; // area was visited at least once in wavefront expansion
+
+	idList<idAI *>	AIContents; // list of AI that are present in area
+
+	//TODO: Handle Listeners in another list here
+
+	idList<int>		VisitedPorts; // portals that the sound flooded in on (reduces comp. time to store this)
+} SPopArea;
+
+/**
+* Array entry in event areas array (storing visited areas information)
+**/
+typedef struct SEventArea_s
+{
+	bool	bVisited; // area was visited at least once in wavefront expansion
+
+	float	*LossAtPortal; // dynamic array to store the current loss at the portal
+
+	float	*DistAtPortal; // distance at portal (used to add AI loss to existing loss)
+
+	float	*AttAtPortal; // attenuation at portal (again used for final AI calculation)
+
+} SEventArea;
+
+/**
+* Expansion queue entry for the wavefront expansion algorithm
+**/
+typedef struct SExpQue_s
+{
+	int		area; // area number
+
+	int		portalH; // portal handle of the portal flooded in on
+
+	float	curDist; // total distance travelled by wave so far
+
+	float	curAtt; // total attenuation due to material losses so far
+
+	float	curLoss; // total loss so far
+
+} SExpQue;
+
+
+
 
 class CsndProp : public CsndPropBase {
 
@@ -73,6 +123,9 @@ public:
 	/**
 	* Get the appropriate vars from the sndPropLoader after
 	* it has loaded data for the map.
+	*
+	* Also looks up door entity pointers for current map and 
+	*	puts them into area/portal tree
 	**/
 	void SetupFromLoader( const CsndPropLoader *in );
 
@@ -92,32 +145,46 @@ protected:
 	* Fill the door gentity ID hash index based on the
 	* gentity numbers of doors.  Must be run AFTER entities spawn.
 	**/
+	void FillDoorEnts ( void );
 
-	void FillDoorIDHash ( const CsndPropLoader * in );
-
-	/**
-	* GetDoorEnt returns a pointer to the door entity for a given door ID
-	**/
-	idEntity *GetDoorEnt( int doorID );
-
-	float p2pLoss( idVec3 point1, idVec3 point2, int area );
-
-	float CsndProp::PropToPoint
+	bool ExpandWave
 		( float volInit, idVec3 origin, 
-		  idVec3 target, SSprParms *propParms,
-		  bool *bSameArea );
+		  SSprParms *propParms );
+
+	void ProcessPopulated( float volInit, idVec3 origin, SSprParms *propParms );
+
+	void ProcessAI( idAI* AI, idVec3 origin, SSprParms *propParms );
+
 
 	void SetupParms( const idDict *parms, SSprParms *propParms,
 					 USprFlags *addFlags, UTeamMask *tmask );
 
-	float GetDoorLoss( SPropPath *path );
+	float GetDoorLoss( idEntity *doorEnt );
+
+	/**
+	* Linear search to find the index of the given area in the populated
+	* areas array.  Returns -1 if the area is not present
+	**/
+	int FindPopIndex( int areaNum );
 
 protected:
 
 	/**
-	* DoorIDHash references door IDs to game entity numbers
+	* Populated areas : Areas that contain AI within the cutoff distance
+	* these should eventually be propagated to
 	**/
-	idHashIndex			m_DoorIDHash;
+	idList<SPopArea>		m_PopAreas;
+
+	/**
+	* (sparse) array of areas.  Areas that have been visited will have the 
+	* current loss at each portal.  Size is the total number of areas, most
+	* entries are NULL
+	*
+	* For now, this is cleared and re-written for every new sound event
+	* later on, we might see if we can re-use it for multiple events that
+	* come from close to the same spot, for optimization.
+	**/
+	SEventArea				*m_EventAreas;
 
 };
 
