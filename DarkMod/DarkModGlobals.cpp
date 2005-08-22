@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.19  2005/08/22 07:44:20  ishtvan
+ * added the #include C:\compiled.h back in
+ *
  * Revision 1.18  2005/08/14 23:26:41  sophisticatedzombie
  * Added mantling and leaning constants to g_Global
  *
@@ -82,7 +85,7 @@
 #pragma warning(disable : 4996)
 
 #ifdef _WINDOWS_
-//#include "c:\compiled.h"
+#include "c:\compiled.h"
 #endif
 
 #include "DarkModGlobals.h"
