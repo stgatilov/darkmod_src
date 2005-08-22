@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/08/22 04:55:24  ishtvan
+ * minor changes in soundprop parms and function names
+ *
  * Revision 1.6  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -239,14 +242,16 @@ typedef struct SSprParms_s
 {
 	USprFlags flags;
 
-	const char *name; // sound name
-	float propVol; // propagated volume
-	idVec3 direction; // direction of the loudest sound
-	float duration; // duration
-	int frequency; // int representing the octave of the sound
-	float bandwidth; // sound bandwidth
+	const char	*name; // sound name
+	float		propVol; // propagated volume
+	idVec3		direction; // direction of the loudest sound
+	float		duration; // duration
+	int			frequency; // int representing the octave of the sound
+	float		bandwidth; // sound bandwidth
 
-	float loudness; // this is set by AI hearing response
+	float		loudness; // this is set by AI hearing response
+
+	bool		bSameArea; // true if the sound came from same portal area
 
 	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
 
