@@ -16,6 +16,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2005/08/22 04:43:22  ishtvan
+ * fixed math error in CMatRUT::Ind2dTo1d
+ *
  * Revision 1.2  2005/03/30 18:16:20  sparhawk
  * CVS Header added
  *
@@ -53,6 +56,8 @@ public:
 
 		/**
 		* Set the appropriate entry to the provided type
+		*
+		* The following applies to derived class CMatRUT only:
 		* NOTE: The indices provided here are those of a normal matrix
 		* HOWEVER, columns must be greater than rows due to matrix being
 		* right upper triangular (entries with row > col are empty)
@@ -167,6 +172,19 @@ public:
 	explicit CMatRUT(int dim) : CMatrixSq<type>(dim) {};
 
 	virtual ~CMatRUT<type>(void);
+
+	/**
+	* Works like CMatrixSq::Set, except it automatically reverses the indices
+	* if row > column
+	**/
+	bool SetRev(int row, int col, type &src);
+
+	/**
+	* Works like CMatrixSq::Get, except it automatically reverses the indices
+	* if row > column
+	**/
+	type *GetRev(int row, int col);
+
 
 protected:
 		/**
@@ -521,6 +539,58 @@ inline CMatRUT<type>::~CMatRUT( void )
 	Clear();
 }
 
+template <class type>
+inline type *CMatRUT<type>::GetRev(int row, int col)
+{
+	int temp;
+	type *p;
+
+	if (row > col)
+	{
+		temp = row;
+		row = col;
+		col = temp;
+	}
+	int ind = Ind2dTo1d( row, col );
+	
+	if ( ind < 0 )
+	{
+		// error reporting is handled by Ind2dTo1d, omitted here
+		p = NULL;
+		goto Quit;
+	}
+
+	p = &m_mat[ind];
+Quit:
+	return p;
+}
+
+template <class type>
+inline bool CMatRUT<type>::SetRev(int row, int col, type &src )
+{
+	bool returnval;
+	int ind, temp;
+
+	if( row > col )
+	{
+		temp = row;
+		row = col;
+		col = temp;
+	}
+
+	ind = Ind2dTo1d( row, col );
+	if (ind<0)
+	{
+		returnval = false;
+	}
+	else
+	{
+		m_mat[ind] = src;
+		returnval = true;
+	}
+	return returnval;
+}
+
 
 /**
 * BEGIN PRIVATE METHODS:
@@ -552,7 +622,8 @@ inline int CMatRUT<type>::Ind2dTo1d ( int row, int col )
 {
 	int rowIndex, colOffset, returnval;
 
-	rowIndex = row*m_dim - (row >> 1 )*(row+1);
+	rowIndex = row*m_dim - ( (row*(row+1)) >> 1);
+
 	colOffset = (col - row - 1);
 	returnval = rowIndex + colOffset;
 
