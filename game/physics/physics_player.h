@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/09/04 20:38:20  sophisticatedzombie
+ * The collision/render model leaning of the player model is now accomplished by rotation of the waist joint of the model skeleton.
+ *
  * Revision 1.9  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -534,25 +537,41 @@ protected:
 	*/
 	idBounds boundsWithoutLeaning;
 
-	/*!
-	* This method is required for leaning to work right.
-	* By default, Doom 3 does not orient the player's clipmodel at all.
-	* (Physics_Player::Rotate is never caled).  So the player's clipmodel
-	* always faces north.
-	* Leaning is orientation sensitive, so this method is used to set
-	* the clip model orientation to match the portions of the 
-	* view direction perpendicular to the gravity normal. (appropriate for mouse look)
-	* This is called within LeanMove whether or not a lean is taking place.
+
+	/*! Lean the player model at the waist joint
 	*/
-	void UpdateClipModelOrientation();
+	void LeanPlayerModelAtWaistJoint();
+
+	/*!
+	* This method is required to prevent collisions between the
+	* player's torso and other objects due to rotation of the body
+	* between physics frames, while leaning. or not a lean is taking place.
+	*/
+	void TestForViewRotationBasedCollisions();
 
 	/*!
 	* This method is used to update the view lean angles and view translation
 	* that result from the lean.
 	*
-	* This is an internal method called by LeanMove.
+	* This is an internal method called by LeanPlayerModelAtWaistJoint.
+	*
+	* @param viewpointHeight
+	*	The distance of the viewpoint height above the 
+	*   player origin
+	*	This is typically the player's pm_normalviewheight 
+	*	or pm_crouchviewheightagainst the gravity normal from 
+	*	the model origin.
+	*
+	* @param distanceFromWaistToViewpoint
+	*	The distance from the waist joint height to the 
+	*   viewpointHeight
+	*
 	*/
-	void UpdateViewLeanAnglesAndTranslation();
+	void UpdateViewLeanAnglesAndTranslation
+	(
+		float viewpointHeight,
+		float distanceFromWaistToViewpoint
+	);
 
 	/*!
 	* This method updates the lean by as much of the delta amount given

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2005/09/04 20:38:20  sophisticatedzombie
+ * The collision/render model leaning of the player model is now accomplished by rotation of the waist joint of the model skeleton.
+ *
  * Revision 1.14  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -456,7 +459,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	}
 
 	// step down
-	if ( stepDown && groundPlane ) {
+	if ( stepDown && groundPlane ) 
+	{
 		stepEnd = current.origin + gravityNormal * maxStepHeight;
 		gameLocal.clip.Translation( downTrace, current.origin, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 		if ( downTrace.fraction > 1e-4f && downTrace.fraction < 1.0f ) {
@@ -464,6 +468,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			current.origin = downTrace.endpos;
 			current.movementFlags |= PMF_STEPPED_DOWN;
 			current.velocity *= PM_STEPSCALE;
+
+			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("performing step down, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
 		}
 	}
 
@@ -688,6 +694,7 @@ void idPhysics_Player::AirMove( void ) {
 	}
 
 	idPhysics_Player::SlideMove( true, gameLocal.isMultiplayer, false, false );
+
 }
 
 /*
@@ -777,6 +784,7 @@ void idPhysics_Player::WalkMove( void ) {
 	// slide along the ground plane
 	current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
 
+
 	// if not clipped into the opposite direction
 	if ( oldVelocity * current.velocity > 0.0f ) {
 		newVel = current.velocity.LengthSqr();
@@ -798,6 +806,8 @@ void idPhysics_Player::WalkMove( void ) {
 	gameLocal.push.InitSavingPushedEntityPositions();
 
 	idPhysics_Player::SlideMove( false, true, true, true );
+
+
 }
 
 /*
@@ -1055,7 +1065,9 @@ void idPhysics_Player::CheckGround( void ) {
 	}
 
 	// if the trace didn't hit anything, we are in free fall
-	if ( groundTrace.fraction == 1.0f ) {
+	if ( groundTrace.fraction == 1.0f ) 
+	{
+
 		groundPlane = false;
 		walking = false;
 		groundEntityPtr = NULL;
@@ -1446,9 +1458,11 @@ idPhysics_Player::MovePlayer
 */
 void idPhysics_Player::MovePlayer( int msec ) {
 
+
 	// this counter lets us debug movement problems with a journal
 	// by setting a conditional breakpoint for the previous frame
 	c_pmove++;
+
 
 	walking = false;
 	groundPlane = false;
@@ -1484,10 +1498,9 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	viewRight = gravityNormal.Cross( viewForward );
 	viewRight.Normalize();
 
-	// Leaning Mod: Orient clip model to have same yaw as view angles
-	// and account for leaning
-	UpdateClipModelOrientation();
-
+	// Leaning Mod: Test for clipping collisions caused between
+	// physics frames due to looking around while leaning
+	TestForViewRotationBasedCollisions();
 
 	// fly in spectator mode
 	if ( current.movementType == PM_SPECTATOR ) {
@@ -3290,7 +3303,11 @@ idVec3 idPhysics_Player::GetViewLeanTranslation()
 
 //----------------------------------------------------------------------
 
-void idPhysics_Player::UpdateViewLeanAnglesAndTranslation()
+void idPhysics_Player::UpdateViewLeanAnglesAndTranslation
+(
+	float viewpointHeight,
+	float distanceFromWaistToViewpoint
+)
 {
 
 	// Set lean view angles
@@ -3303,26 +3320,31 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation()
 	m_viewLeanAngles.Set ( pitchAngle, 0.0, rollAngle);
 
 	// Set lean translate vector
-	float playerHeight;
-	if ( current.movementFlags & PMF_DUCKED ) 
-	{
-		playerHeight = pm_crouchheight.GetFloat();
-	}
-	else
-	{
-		playerHeight = pm_normalheight.GetFloat();
-	}
 	
-	m_viewLeanTranslation.x = playerHeight * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
-	m_viewLeanTranslation.y = playerHeight * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.x = distanceFromWaistToViewpoint * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.y = distanceFromWaistToViewpoint * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
 	m_viewLeanTranslation.z = 0.0;
 	
 	m_viewLeanTranslation.ProjectSelfOntoSphere
 	(
-		playerHeight
+		distanceFromWaistToViewpoint
 	);
-	m_viewLeanTranslation.z = m_viewLeanTranslation.z - playerHeight;
 
+	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"spherical projection gives translation.z = %e\n",
+		m_viewLeanTranslation.z
+	);
+
+	m_viewLeanTranslation.z = m_viewLeanTranslation.z - distanceFromWaistToViewpoint;
+
+	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"distanceFromWaistHeightToViewHeight = %e, viewHeight = %e, translation.z = %e\n",
+		distanceFromWaistToViewpoint,
+		viewpointHeight,
+		m_viewLeanTranslation.z
+	);
 
 	// Rotate to player's facing
 	idMat4 rotMat = viewAngles.ToMat4();
@@ -3338,78 +3360,11 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation()
 }
 //----------------------------------------------------------------------
 
-void idPhysics_Player::UpdateClipModelOrientation()
+void idPhysics_Player::TestForViewRotationBasedCollisions()
 {
-	
-	// ASSUMES viewForward and viewRight have already been set
-
-
-	// Make rotation due to view direction perpendicular to gravity
-	idVec3 upVector = -GetGravityNormal();
-
-	idVec3 forwardPerpGravityVector = viewForward;
-	forwardPerpGravityVector.ProjectAlongPlane (upVector, 0.0);
-	forwardPerpGravityVector.Normalize();
-
-
-	idVec3 rightPerpGravityVector = viewRight;
-	rightPerpGravityVector.ProjectAlongPlane (upVector, 0.0);
-	rightPerpGravityVector.Normalize();
-
-    idMat3 playerYawAxis;
-	
-	playerYawAxis[0][0] = forwardPerpGravityVector.x;
-	playerYawAxis[0][1] = forwardPerpGravityVector.y;
-	playerYawAxis[0][2] = forwardPerpGravityVector.z;
-	playerYawAxis[1][0] = -rightPerpGravityVector.x; // Actually, wants left
-	playerYawAxis[1][1] = -rightPerpGravityVector.y; // Actually, wants left
-	playerYawAxis[1][2] = -rightPerpGravityVector.z; // Actually, wants left
-	playerYawAxis[2][0] = upVector.x;
-	playerYawAxis[2][1] = upVector.y;
-	playerYawAxis[2][2] = upVector.z;
-
-		
-	// Make rotation due to lean, after reorientation
-	// (independent of player facing)
-
-	idAngles leanYawOnly;
-	leanYawOnly.yaw = m_leanYawAngleDegrees;
-	leanYawOnly.pitch = 0.0;
-	leanYawOnly.roll = 0.0;
-
-	idMat3 leanTiltYawMat;
-	leanTiltYawMat = leanYawOnly.ToMat3();
-
-	// Rotate axis by lean yaw rotation
-	idVec3 leanTiltAxis (-1.0, 0.0, 0.0);
-	leanTiltAxis *= leanTiltYawMat;
-	leanTiltAxis.Normalize();
-
-	// Rotate the lean tilt axis by the player's yaw
-	leanTiltAxis *= playerYawAxis;
-
-	// Make rotation around the lean tilt axis
-	idRotation leanTiltRotation;
-	leanTiltRotation.Set
-	(
-		idVec3(0.0, 0.0, 0.0),
-		leanTiltAxis,
-		m_currentLeanTiltDegrees
-	);
-
-	// Build new physics axii by
-	// leaning around the lean tilt
-	// axis.
-	idMat3 finalAxii;
-	finalAxii = leanTiltRotation.ToMat3();
-	finalAxii.OrthoNormalizeSelf();
-
-
-
-	// Does the rotation from the old
-	// model to the new one cause a collision.
-	// If so, then undo lean.
-	idMat3 oldAxii = clipModel->GetAxis();
+	// This checks to see if player view facing changes
+	// cause a collision with another object in between render
+	// frames when the player turns their body (triggered by turning viewpoint)
 
 	idAngles deltaAngles;
 	deltaAngles.Zero();
@@ -3466,27 +3421,146 @@ void idPhysics_Player::UpdateClipModelOrientation()
 			m_leanMoveEndTilt = 0.0;
 			m_leanTime = 0.0;
 
-			// Update view angles
-			UpdateViewLeanAnglesAndTranslation();
-
-			// Set orientation for no lean
-			leanTiltRotation.Set
-			(
-				idVec3(0.0, 0.0, 0.0),
-				leanTiltAxis,
-				m_currentLeanTiltDegrees
-			);
-			finalAxii = leanTiltRotation.ToMat3();
-			finalAxii.OrthoNormalizeSelf();
-
+			// Update player model
+			LeanPlayerModelAtWaistJoint();
 
 		}
 	}
 
-	// Set new axii for clip model
-	SetAxis (finalAxii);
-	clipModelAxis = finalAxii;
 
+}
+//----------------------------------------------------------------------
+
+void idPhysics_Player::LeanPlayerModelAtWaistJoint()
+{
+
+	// Get player view height
+	float playerViewHeight;
+	if ( current.movementFlags & PMF_DUCKED )
+	{
+		playerViewHeight = pm_crouchviewheight.GetFloat();
+	}
+	else
+	{
+		playerViewHeight = pm_normalviewheight.GetFloat();
+	}
+
+	// Get thie distance from the waist to the viewpoint
+	// We set this to a little under half the model height in case
+	// there is no model
+	float distanceFromWaistToViewpoint = playerViewHeight * 0.6;
+
+	// Use the idPlayer object's animator to get and change
+	// the waist joint rotation in the player model skeleton.
+	if (self != NULL)
+	{
+		idPlayer* p_player = (idPlayer*) self;
+
+		// Get more accureate interpolated eye height used elsewhere since
+		// we have the player
+		playerViewHeight = p_player->EyeHeight();
+
+		idAnimator* p_animator = p_player->GetAnimator();
+		if (p_animator != NULL)
+		{
+			// Get name of waist joint
+			idStr jointName = p_player->spawnArgs.GetString( "waist_joint" );
+			if (jointName.IsEmpty())
+			{
+				jointName = "Waist";
+			}
+
+			// Get waist joint handle
+			jointHandle_t hWaistJoint = p_animator->GetJointHandle(jointName);
+
+			// Only set if able to find waist
+			if (hWaistJoint != INVALID_JOINT )
+			{
+				// Default player height to waist ratio
+				float PlayerHeightToWaistRatio = 2.1;
+
+				// Get offset of waist from model origin
+				idVec3 waistOffset;
+				idMat3 waistAxis;
+				if (p_animator->GetJointTransform 
+				(
+					hWaistJoint,
+					0,
+					waistOffset,
+					waistAxis
+				))
+				{
+					// Compute waist height
+					float waistHeight = idMath::Fabs(waistOffset * GetGravityNormal());
+
+					// Waist must be below view. If the model animation doesn't
+					// match the view heights well when crouching, this can get messed up.
+					// This is the case with the default player model from Doom3, where
+					// the pm_crouchviewheight is 32, but the waist height in the crouch
+					// animation is 39.
+					if (waistHeight > (playerViewHeight * 0.75))
+					{
+						waistHeight = (playerViewHeight * 0.75);
+					}
+	                				
+					// compute player height to waist ratio
+					if (waistHeight > 0.0f)
+					{
+						PlayerHeightToWaistRatio = playerViewHeight / waistHeight;
+					}
+
+					distanceFromWaistToViewpoint = playerViewHeight - waistHeight;
+
+				} // Got waist origin 
+
+				// Build rotation matrix for the waist
+				idAngles waistLeanAngles;
+				waistLeanAngles.yaw = 0.0;
+				waistLeanAngles.pitch = m_leanYawAngleDegrees;
+				waistLeanAngles.roll = 0.0;
+
+				idMat3 waistLeanAxisRotateMat;
+				waistLeanAxisRotateMat = waistLeanAngles.ToMat3();
+
+				idVec3 waistRotateAxis(0.0, 0.0, -1.0);
+				waistRotateAxis *= waistLeanAxisRotateMat;
+				waistRotateAxis.Normalize();
+
+				idRotation waistJointRotation;
+				waistJointRotation.Set
+				(
+					idVec3(0.0, 0.0, 0.0),
+					waistRotateAxis,
+					m_currentLeanTiltDegrees * PlayerHeightToWaistRatio
+				);
+
+				p_animator->SetJointAxis( hWaistJoint, JOINTMOD_LOCAL, waistJointRotation.ToMat3() );
+				
+			}
+			else
+			{
+				DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player skeleton's waist joint was not found\n");
+			}
+		}
+		else
+		{
+			DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player has no idPlayer.animator object assigned\n");
+		}
+
+	} // Had access to player object
+	else
+	{
+		DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player has no idPlayer object assigned\n");
+	}
+
+	// Update view lean angles and translation for first person
+	// view (and translation only for third person view)
+	UpdateViewLeanAnglesAndTranslation 
+	(
+		playerViewHeight,
+		distanceFromWaistToViewpoint	
+	);
+	
 
 }
 
@@ -3557,7 +3631,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 
 	// Lift origin off of ground a little
 	idVec3 originSave = current.origin;
-	current.origin += -GetGravityNormal() * 0.25;
+	current.origin += -GetGravityNormal() * 0.5;
 	clipModel->SetPosition (current.origin, clipModel->GetAxis());
 
 	// build rotation
@@ -3606,9 +3680,56 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 		
 
 	// Adjust lean angle by delta which was allowed
-
 	m_currentLeanTiltDegrees += deltaLeanTiltDegrees;
-	
+
+	// Bend at waist in player skeleton
+	LeanPlayerModelAtWaistJoint();
+
+	// Make sure player didn't hit head
+	TestForViewRotationBasedCollisions();
+
+	// To remove "bump up" required for rotation test, translate
+	// player downward from the bumped up origin toward the new one
+	// as far as they can go before hitting the ground
+	trace_t regroundTrace;
+	idVec3 regroundTranslateVector = originSave - current.origin;
+
+	ClipTranslation 
+	(
+		regroundTrace, 
+		regroundTranslateVector, 
+		NULL // Not comparing against one specific clip model
+	);
+
+	// New origin is point of just barely touching the ground
+	idVec3 regroundedOrigin = current.origin + (regroundTranslateVector * regroundTrace.fraction); 
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"Player regrounded after lean collision test trace fraction of %.3f\n", 
+		regroundTrace.fraction
+	);
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	(
+		"Pre rotation test origin %.2f %.2f %.2f\n rotation test origin was %.2f %.2f %.2f\n regrounded at %.2f %.2f %.2f\n current velocity is %.4f %.4f %.4f\n", 
+		originSave.x,
+		originSave.y,
+		originSave.z,
+		current.origin.x,
+		current.origin.y,
+		current.origin.z,
+		regroundedOrigin.x,
+		regroundedOrigin.y,
+		regroundedOrigin.z,
+		current.velocity.x,
+		current.velocity.y,
+		current.velocity.z
+	);
+
+	// Move player to regrounded origin
+	current.origin = regroundedOrigin;
+	clipModel->SetPosition (current.origin, clipModel->GetAxis());
+
+		
 	// Log activity
 	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 	(
@@ -3666,13 +3787,12 @@ void idPhysics_Player::LeanMove()
 		// are accurate (player may have rotated mid-lean)
 		UpdateLeanAngle (deltaLeanTiltDegrees);
 	}
-
-	// Update clip model again to account for any changes in orientation
-	// This is either the first call if deltaLeanTiltDegrees was 0.0, or
-	// the second call if the lean has changed. In either case, it is necessary.
-	UpdateClipModelOrientation();
-
-	UpdateViewLeanAnglesAndTranslation();
+	else
+	{
+		// Update player model for smooth animation 
+		// incase player is entering or exiting a crouch
+		LeanPlayerModelAtWaistJoint();
+	}
 
 
 }
