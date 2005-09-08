@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/09/08 04:42:34  sophisticatedzombie
+ * Added mantle and lean states to the save/restore methods.
+ *
  * Revision 1.15  2005/09/04 20:38:20  sophisticatedzombie
  * The collision/render model leaning of the player model is now accomplished by rotation of the waist joint of the model skeleton.
  *
@@ -1459,10 +1462,10 @@ idPhysics_Player::MovePlayer
 void idPhysics_Player::MovePlayer( int msec ) {
 
 
+
 	// this counter lets us debug movement problems with a journal
 	// by setting a conditional breakpoint for the previous frame
 	c_pmove++;
-
 
 	walking = false;
 	groundPlane = false;
@@ -1600,7 +1603,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	);
 	*/
 
-
 }
 
 #ifndef MOD_WATERPHYSICS
@@ -1704,8 +1706,8 @@ idPhysics_Player::idPhysics_Player( void ) {
 	// Mantle Mod
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0;
-	p_mantledEntity = NULL;
-	mantledEntityID = 0;
+	m_p_mantledEntity = NULL;
+	m_mantledEntityID = 0;
 	m_jumpHeldDownTime = 0.0;
 
 	// Leaning Mod
@@ -1787,6 +1789,29 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
+
+	// Mantle mod
+	savefile->WriteInt (m_mantlePhase);
+	savefile->WriteVec3 (m_mantlePullStartPos);
+	savefile->WriteVec3 (m_mantlePullEndPos);
+	savefile->WriteVec3 (m_mantlePushEndPos);
+	savefile->WriteString (m_mantledEntityName);
+	savefile->WriteFloat (m_mantleTime);
+	savefile->WriteFloat (m_jumpHeldDownTime);
+
+	// Lean mod
+	savefile->WriteFloat (m_leanYawAngleDegrees);
+	savefile->WriteFloat (m_currentLeanTiltDegrees);
+	savefile->WriteFloat (m_leanMoveStartTilt);
+	savefile->WriteFloat (m_leanMoveEndTilt);
+	savefile->WriteBool (m_b_leanFinished);
+	savefile->WriteFloat (m_leanTime);
+	savefile->WriteAngles (m_lastPlayerViewAngles);
+	savefile->WriteAngles (m_viewLeanAngles);
+	savefile->WriteVec3 (m_viewLeanTranslation);
+
+
+
 }
 
 /*
@@ -1824,6 +1849,55 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );
+
+	// Mantle mod
+	savefile->ReadInt ((int&) m_mantlePhase);
+	savefile->ReadVec3 (m_mantlePullStartPos);
+	savefile->ReadVec3 (m_mantlePullEndPos);
+	savefile->ReadVec3 (m_mantlePushEndPos);
+	savefile->ReadString (m_mantledEntityName);
+	savefile->ReadFloat (m_mantleTime);
+	savefile->ReadFloat (m_jumpHeldDownTime);
+
+	// Mantle mod... it would be nice to restore the mantled
+	// entity pointers here, but we can't, because during a load
+	// this method is called before the entites are created.
+	// (Yes, I tried this and checked).
+	// Therefore, we have a section in "MantleMove" that
+	// finds the entity if we have not found it yet, and cancels
+	// the mantle if it can not be found.
+	m_mantledEntityID = 0;
+	m_p_mantledEntity = NULL;
+
+	// Lean mod
+	savefile->ReadFloat (m_leanYawAngleDegrees);
+	savefile->ReadFloat (m_currentLeanTiltDegrees);
+	savefile->ReadFloat (m_leanMoveStartTilt);
+	savefile->ReadFloat (m_leanMoveEndTilt);
+	savefile->ReadBool (m_b_leanFinished);
+	savefile->ReadFloat (m_leanTime);
+	savefile->ReadAngles (m_lastPlayerViewAngles);
+	savefile->ReadAngles (m_viewLeanAngles);
+	savefile->ReadVec3 (m_viewLeanTranslation);
+
+	
+	if (!m_mantledEntityName.IsEmpty())
+	{
+		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
+		if (m_p_mantledEntity == NULL)
+		{
+			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
+			m_mantledEntityID = 0;
+		}
+		else
+		{
+			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("Found entity %s\n", m_mantledEntityName.c_str());
+			m_mantledEntityID = 0;
+		}
+	}
+
+
+	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("REstore finished\n");
 }
 
 /*
@@ -2366,12 +2440,32 @@ void idPhysics_Player::MantleMove()
 
 	}
 
+	// Try to re-establish mantled entity if we have its name
+	// When the player save state is loaded, the entities were not
+	// re-created yet, so we need to look now that the whole engine
+	// is running
+	if ( (!m_mantledEntityName.IsEmpty()) && (m_p_mantledEntity == NULL))
+	{
+		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
+		if (m_p_mantledEntity == NULL)
+		{
+			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("MantleMove: Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
+			m_mantledEntityID = 0;
+			CancelMantle();
+		}
+		else
+		{
+			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("MantleMove: Found entity %s\n", m_mantledEntityName.c_str());
+			m_mantledEntityID = 0;
+		}
+	}
+
 	// If there is a mantled entity, positions are relative to it.
 	// Transform position to be relative to world origin.
 	// (For now, translation only, TODO: Add rotation)
-	if (p_mantledEntity != NULL)
+	if (m_p_mantledEntity != NULL)
 	{
-		idPhysics* p_physics = p_mantledEntity->GetPhysics();
+		idPhysics* p_physics = m_p_mantledEntity->GetPhysics();
 		if (p_physics != NULL)
 		{
 			idVec3 mantledEntityOrigin = p_physics->GetOrigin();
@@ -2380,7 +2474,6 @@ void idPhysics_Player::MantleMove()
 		}
 	}
 
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("New position is %f,%f,%f\n", newPosition.x, newPosition.y, newPosition.z);
 	SetOrigin (newPosition);
 	
 }
@@ -2529,14 +2622,14 @@ void idPhysics_Player::StartMantle
 		);
 
 		// Impart a force on mantled object?
-		if ((p_mantledEntity != NULL) && (self != NULL))
+		if ((m_p_mantledEntity != NULL) && (self != NULL))
 		{
 			impactInfo_t info;
-			p_mantledEntity->GetImpactInfo( self, mantledEntityID, endPos, &info );
+			m_p_mantledEntity->GetImpactInfo( self, m_mantledEntityID, endPos, &info );
 			if ( info.invMass != 0.0f ) 
 			{
-				p_mantledEntity->ActivatePhysics(self);
-				p_mantledEntity->ApplyImpulse( self, mantledEntityID, endPos, current.velocity / ( info.invMass * 2.0f ) );
+				m_p_mantledEntity->ActivatePhysics(self);
+				m_p_mantledEntity->ApplyImpulse( self, m_mantledEntityID, endPos, current.velocity / ( info.invMass * 2.0f ) );
 			}
 		}
 
@@ -2571,9 +2664,9 @@ void idPhysics_Player::StartMantle
 	m_mantleTime = getMantleTimeForPhase (m_mantlePhase);
 
 	// Make positions relative to entity
-	if (p_mantledEntity != NULL)
+	if (m_p_mantledEntity != NULL)
 	{
-		idPhysics* p_physics = p_mantledEntity->GetPhysics();
+		idPhysics* p_physics = m_p_mantledEntity->GetPhysics();
 		if (p_physics != NULL)
 		{
 			idVec3 mantledEntityOrigin = p_physics->GetOrigin();
@@ -2736,14 +2829,15 @@ void idPhysics_Player::MantleTargetTrace
 	{
 
 		// Track entity which is was the chosen target
-		p_mantledEntity = gameLocal.entities[out_trace.c.entityNum];
-		mantledEntityID = out_trace.c.id;
+		m_p_mantledEntity = gameLocal.entities[out_trace.c.entityNum];
+		m_mantledEntityName = m_p_mantledEntity->name;
+		m_mantledEntityID = out_trace.c.id;
 
 		idStr targetMessage;
 		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
 		(
 			"Mantle target entity is called '%s'\n", 
-			p_mantledEntity->name.c_str()
+			m_p_mantledEntity->name.c_str()
 		);
 	}
 
@@ -3113,8 +3207,8 @@ void idPhysics_Player::PerformMantle()
 
 	// Clear mantled entity members to indicate nothing is
 	// being mantled
-	p_mantledEntity = NULL;
-	mantledEntityID = 0;
+	m_p_mantledEntity = NULL;
+	m_mantledEntityID = 0;
 
 	// Forward vector is direction player is looking
 	idVec3 forward = viewAngles.ToForward();
@@ -3330,21 +3424,7 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation
 		distanceFromWaistToViewpoint
 	);
 
-	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString
-	(
-		"spherical projection gives translation.z = %e\n",
-		m_viewLeanTranslation.z
-	);
-
 	m_viewLeanTranslation.z = m_viewLeanTranslation.z - distanceFromWaistToViewpoint;
-
-	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString
-	(
-		"distanceFromWaistHeightToViewHeight = %e, viewHeight = %e, translation.z = %e\n",
-		distanceFromWaistToViewpoint,
-		viewpointHeight,
-		m_viewLeanTranslation.z
-	);
 
 	// Rotate to player's facing
 	idMat4 rotMat = viewAngles.ToMat4();

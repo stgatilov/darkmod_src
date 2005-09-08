@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/09/08 04:42:34  sophisticatedzombie
+ * Added mantle and lean states to the save/restore methods.
+ *
  * Revision 1.10  2005/09/04 20:38:20  sophisticatedzombie
  * The collision/render model leaning of the player model is now accomplished by rotation of the waist joint of the model skeleton.
  *
@@ -279,13 +282,18 @@ protected:
 	* Pointer to the entity being mantled.
 	* This is undefined if m_mantlePhase == notMantling_DarkModMantlePhase
 	*/
-	idEntity* p_mantledEntity;
+	idEntity* m_p_mantledEntity;
 
 	/*!
 	* ID number of the entity being mantled
 	* This is 0 if m_mantlePhase == notMantling_DarkModMantlePhase
 	*/
-	int mantledEntityID;
+	int m_mantledEntityID;
+
+	/*!
+	* The mantled entity name
+	*/
+	idStr m_mantledEntityName;
 
 	/*!
 	* How long will the current phase of the mantle operation take?
@@ -531,11 +539,6 @@ protected:
 	* The current resulting view lean translation
 	*/
 	idVec3 m_viewLeanTranslation;
-
-	/*!
-	* The bounds without leaning
-	*/
-	idBounds boundsWithoutLeaning;
 
 
 	/*! Lean the player model at the waist joint
