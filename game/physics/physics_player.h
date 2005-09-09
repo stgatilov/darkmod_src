@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/09/09 19:56:02  ishtvan
+ * removed water jump, allowed mantling out of water
+ *
  * Revision 1.11  2005/09/08 04:42:34  sophisticatedzombie
  * Added mantle and lean states to the save/restore methods.
  *
@@ -74,14 +77,23 @@ typedef enum {
 } pmtype_t;
 
 #ifndef MOD_WATERPHYSICS
+
 // waterLevel_t has been moved to Physics_Actor.h
+
 typedef enum {
+
   WATERLEVEL_NONE,
+
   WATERLEVEL_FEET,
+
   WATERLEVEL_WAIST,
+
   WATERLEVEL_HEAD
+
 } waterLevel_t;
+
 #endif		// MOD_WATERPHYSICS
+
 
 #define	MAXTOUCH					32
 
@@ -131,9 +143,13 @@ public:
 	void					SetDebugLevel( bool set );
 							// feed back from last physics frame
 #ifndef MOD_WATERPHYSICS
+
 	waterLevel_t            GetWaterLevel( void ) const;
+
 	int                     GetWaterType( void ) const;
+
 #endif
+
 	bool					HasJumped( void ) const;
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
@@ -208,16 +224,19 @@ private:
 
 	// results of last evaluate
 #ifndef MOD_WATERPHYSICS
+
   waterLevel_t            waterLevel;
+
   int                     waterType;
+
 #endif
+
 
 private:
 	float					CmdScale( const usercmd_t &cmd ) const;
 	void					Accelerate( const idVec3 &wishdir, const float wishspeed, const float accel );
 	bool					SlideMove( bool gravity, bool stepUp, bool stepDown, bool push );
 	void					Friction( void );
-	void					WaterJumpMove( void );
 	void					WaterMove( void );
 	void					FlyMove( void );
 	void					AirMove( void );
@@ -231,7 +250,7 @@ private:
 	void					CheckDuck( void );
 	void					CheckLadder( void );
 	bool					CheckJump( void );
-	bool					CheckWaterJump( void );
+
 #ifndef MOD_WATERPHYSICS
 	void					SetWaterLevel( void );
 #endif

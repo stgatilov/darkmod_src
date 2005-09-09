@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/09/09 19:56:02  ishtvan
+ * removed water jump, allowed mantling out of water
+ *
  * Revision 1.16  2005/09/08 04:42:34  sophisticatedzombie
  * Added mantle and lean states to the save/restore methods.
  *
@@ -560,22 +563,11 @@ void idPhysics_Player::Friction( void ) {
 idPhysics_Player::WaterJumpMove
 
 Flying out of the water
+
+REMOVED from DarkMod
 ===================
 */
-void idPhysics_Player::WaterJumpMove( void ) {
 
-	// waterjump has no control, but falls
-	idPhysics_Player::SlideMove( true, true, false, false );
-
-	// add gravity
-	current.velocity += gravityNormal * frametime;
-	// if falling down
-	if ( current.velocity * gravityNormal > 0.0f ) {
-		// cancel as soon as we are falling down again
-		current.movementFlags &= ~PMF_ALL_TIMES;
-		current.movementTime = 0;
-	}
-}
 
 /*
 ===================
@@ -589,10 +581,15 @@ void idPhysics_Player::WaterMove( void ) {
 	float	scale;
 	float	vel;
 
-	if ( idPhysics_Player::CheckWaterJump() ) {
-		idPhysics_Player::WaterJumpMove();
-		return;
+
+	// Keep track of whether jump is held down for mantling out of water
+	if ( command.upmove > 10 ) 
+	{
+		current.movementFlags |= PMF_JUMP_HELD;
 	}
+	else	
+		current.movementFlags &= ~PMF_JUMP_HELD;
+
 
 	idPhysics_Player::Friction();
 
@@ -1291,150 +1288,101 @@ bool idPhysics_Player::CheckJump( void ) {
 /*
 =============
 idPhysics_Player::CheckWaterJump
+
+REMOVED from DarkMod
 =============
 */
-bool idPhysics_Player::CheckWaterJump( void ) {
-#ifdef MOD_WATERPHYSICS
-	idVec3	spot;
-	int		cont;
-	idVec3	flatforward;
-	// inolen
-	idBounds bounds;
-
-	if ( current.movementTime ) {
-		return false;
-	}
-
-	// check for water jump
-	if ( waterLevel != WATERLEVEL_WAIST ) {
-		return false;
-	}
-
-	// inolen
-	bounds = clipModel->GetBounds();
-
-	flatforward = viewForward - (viewForward * gravityNormal) * gravityNormal;
-	flatforward.Normalize();
-
-	// inolen
-	spot = current.origin + (bounds[1][0]+1.0f) * flatforward;
-	spot -= 4.0f * gravityNormal;
-
-	// debugging
-	//gameRenderWorld->DebugBox( colorGreen, idBox( idBounds( idVec3( -2.0f, -2.0f, -2.0f ), idVec3( 2.0f, 2.0f, 2.0f ) ), spot, mat3_identity ) );
-
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-
-	if ( !(cont & CONTENTS_SOLID) ) {
-		return false;
-	}
-
-	// inolen
-	spot -= (bounds[1][2] + 4.0f) * gravityNormal;
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-
-	// debugging
-	//gameRenderWorld->DebugArrow( colorRed, current.origin, spot, 2 );
-
-	if( cont ) {
-		return false;
-	}
-	
-	// jump out of water
-	// inolen
-	current.velocity = ((flatforward + -gravityNormal)/2.0f);
-	current.velocity.Normalize();
-	current.velocity *= 650.0f;
-
-	current.movementFlags |= PMF_TIME_WATERJUMP;
-	current.movementTime = 2000;
-
-	return true;
-#else
-
-	idVec3	spot;
-	int		cont;
-	idVec3	flatforward;
-
-	if ( current.movementTime ) {
-		return false;
-	}
-
-	// check for water jump
-	if ( waterLevel != WATERLEVEL_WAIST ) {
-		return false;
-	}
-
-	flatforward = viewForward - (viewForward * gravityNormal) * gravityNormal;
-	flatforward.Normalize();
-
-	spot = current.origin + 30.0f * flatforward;
-	spot -= 4.0f * gravityNormal;
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-	if ( !(cont & CONTENTS_SOLID) ) {
-		return false;
-	}
-
-	spot -= 16.0f * gravityNormal;
-	cont = gameLocal.clip.Contents( spot, NULL, mat3_identity, -1, self );
-	if ( cont ) {
-		return false;
-	}
-
-	// jump out of water
-	current.velocity = 200.0f * viewForward - 350.0f * gravityNormal;
-	current.movementFlags |= PMF_TIME_WATERJUMP;
-	current.movementTime = 2000;
-
-	return true;
-#endif
-}
 
 /*
+
 =============
+
 idPhysics_Player::SetWaterLevel
+
 For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
+
 =============
+
 */
+
 #ifndef MOD_WATERPHYSICS
+
 void idPhysics_Player::SetWaterLevel( void ) {
+
 	idVec3		point;
+
 	idBounds	bounds;
+
 	int			contents;
 
+
+
 	//
+
 	// get waterlevel, accounting for ducking
+
 	//
+
 	waterLevel = WATERLEVEL_NONE;
+
 	waterType = 0;
+
+
 
 	bounds = clipModel->GetBounds();
 
+
+
 	// check at feet level
+
 	point = current.origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
+
 	contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+
 	if ( contents & MASK_WATER ) {
 
+
+
 		waterType = contents;
+
 		waterLevel = WATERLEVEL_FEET;
 
+
+
 		// check at waist level
+
 		point = current.origin - ( bounds[1][2] - bounds[0][2] ) * 0.5f * gravityNormal;
+
 		contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+
 		if ( contents & MASK_WATER ) {
+
+
 
 			waterLevel = WATERLEVEL_WAIST;
 
+
+
 			// check at head level
+
 			point = current.origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
+
 			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+
 			if ( contents & MASK_WATER ) {
+
 				waterLevel = WATERLEVEL_HEAD;
+
 			}
+
 		}
+
 	}
+
 }
+
 #endif
+
 
 /*
 ================
@@ -1568,10 +1516,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	{
 		idPhysics_Player::MantleMove();
 	}
-	else if ( current.movementFlags & PMF_TIME_WATERJUMP ) {
-		// jumping out of water
-		idPhysics_Player::WaterJumpMove();
-	}
 	else if ( waterLevel > 1 ) {
 		// swimming
 		idPhysics_Player::WaterMove();
@@ -1606,26 +1550,47 @@ void idPhysics_Player::MovePlayer( int msec ) {
 }
 
 #ifndef MOD_WATERPHYSICS
-/*
-================
-idPhysics_Player::GetWaterLevel
-For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
-================
-*/
-waterLevel_t idPhysics_Player::GetWaterLevel( void ) const {
-	return waterLevel;
-}
 
 /*
+
 ================
-idPhysics_Player::GetWaterType
+
+idPhysics_Player::GetWaterLevel
+
 For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
+
 ================
+
 */
-int idPhysics_Player::GetWaterType( void ) const {
-	return waterType;
+
+waterLevel_t idPhysics_Player::GetWaterLevel( void ) const {
+
+	return waterLevel;
+
 }
+
+
+
+/*
+
+================
+
+idPhysics_Player::GetWaterType
+
+For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
+
+================
+
+*/
+
+int idPhysics_Player::GetWaterType( void ) const {
+
+	return waterType;
+
+}
+
 #endif
+
 
 /*
 ================
