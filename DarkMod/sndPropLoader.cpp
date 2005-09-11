@@ -20,6 +20,7 @@
  * $Date$
  * $Author$
  * $Name$
+ *
  ******************************************************************************/
 
 #pragma hdrstop
@@ -553,6 +554,7 @@ void CsndPropLoader::CreateAreasData ( void )
 			area->portals[j].from = portalTmp.areas[0]; // areas[0] is the 'from' area
 			area->portals[j].to = portalTmp.areas[1];
 			area->portals[j].center = portalTmp.w->GetCenter();
+			area->portals[j].winding = portalTmp.w;
 			
 			pCenters += area->portals[j].center;
 			area->portals[j].doorEnt = NULL; // this will be set on map start

@@ -24,6 +24,7 @@
  * $Date$
  * $Author$
  * $Name$
+ *
  ******************************************************************************/
 
 
@@ -176,6 +177,8 @@ typedef struct SsndPortal_s
 	idVec3 center; // coordinates of the center of the portal
 
 	idVec3 normal; // normal vector of portal (by convention, this points into the room)
+
+	const idWinding *winding; // point information 	 
 
 	idEntity *doorEnt; // Entity pointer to door - will be written on map startup
 
