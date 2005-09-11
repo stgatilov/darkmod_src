@@ -21,6 +21,7 @@
  * $Date$
  * $Author$
  * $Name$
+ *
  ******************************************************************************/
 
 #ifndef SNDPROP_H
@@ -80,11 +81,17 @@ typedef struct SEventArea_s
 {
 	bool	bVisited; // area was visited at least once in wavefront expansion
 
+// TODO: Consolidate ALL these separate arrays into an array of one structure!!
+
 	float	*LossAtPortal; // dynamic array to store the current loss at the portal
 
 	float	*DistAtPortal; // distance at portal (used to add AI loss to existing loss)
 
 	float	*AttAtPortal; // attenuation at portal (again used for final AI calculation)
+
+	int		*FloodsAtPortal; // How many floods did it take to get to that particular portal
+
+	SsndPortal **PrevPortAtPort; // the portal visited immediately before each portal
 
 } SEventArea;
 
@@ -93,15 +100,17 @@ typedef struct SEventArea_s
 **/
 typedef struct SExpQue_s
 {
-	int		area; // area number
+	int			area; // area number
 
-	int		portalH; // portal handle of the portal flooded in on
+	int			portalH; // portal handle of the portal flooded in on
 
-	float	curDist; // total distance travelled by wave so far
+	float		curDist; // total distance travelled by wave so far
 
-	float	curAtt; // total attenuation due to material losses so far
+	float		curAtt; // total attenuation due to material losses so far
 
-	float	curLoss; // total loss so far
+	float		curLoss; // total loss so far
+
+	SsndPortal *PrevPort; // previous portal flooded through along path
 
 } SExpQue;
 

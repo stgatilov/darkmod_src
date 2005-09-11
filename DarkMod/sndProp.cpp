@@ -21,6 +21,7 @@
  * $Date$
  * $Author$
  * $Name$
+ *
  ******************************************************************************/
 
 #pragma hdrstop
@@ -46,8 +47,9 @@ const float s_METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
 /**
 * Max number of areas to flood when doing wavefront expansion
 *
-* When the expansion goes above this number, it is terminated, and
-* "fake" (straight distance) propagation is used instead
+* When the expansion goes above this number, it is terminated
+*
+* TODO: Read this from soundprop def file!
 **/
 const int s_MAX_FLOODNODES = 200;
 
@@ -57,9 +59,18 @@ const int s_MAX_FLOODNODES = 200;
 * Should correspond to the absolute lowest volume we want AI to be
 * able to detect
 *
-* TODO: Read this from soundprop def file
+* TODO: Read this from soundprop def file!
 **/
 const float s_MIN_AUD_THRESH = 15;
+
+/**
+* Max number of expansion nodes within which to use detailed path minimization
+* (That is, trace the path back from AI thru the portals to find the optimum
+*  points on the portal surface the path travels thru).
+*
+* TODO: Read this from soundprop def file!
+**/
+const float s_MAX_DETAILNODES = 3;
 
 
 /**************************************************
@@ -121,6 +132,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 {
 	SAreaProp defaultArea;
 	int tempint(0);
+	int numPorts;
 
 	Clear();
 
@@ -198,24 +210,41 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	for( int j=0; j<m_numAreas; j++ )
 	{
 		m_EventAreas[j].bVisited = false;
-		if( (m_EventAreas[j].LossAtPortal = new float[ m_sndAreas[j].numPortals ])
+
+		numPorts = m_sndAreas[j].numPortals;
+
+		if( (m_EventAreas[j].LossAtPortal = new float[ numPorts ])
 			== NULL )
 		{
 			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing loss array %d in m_EventAreas\r", j);
 			goto Quit;
 		}
 
-		if( (m_EventAreas[j].DistAtPortal = new float[ m_sndAreas[j].numPortals ])
+		if( (m_EventAreas[j].DistAtPortal = new float[ numPorts ])
 			== NULL )
 		{
 			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing distance array %d in m_EventAreas\r", j);
 			goto Quit;
 		}
 
-		if( (m_EventAreas[j].AttAtPortal = new float[ m_sndAreas[j].numPortals ])
+		if( (m_EventAreas[j].AttAtPortal = new float[ numPorts ])
 			== NULL )
 		{
 			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing attenuation array %d in m_EventAreas\r", j);
+			goto Quit;
+		}
+
+		if( (m_EventAreas[j].FloodsAtPortal = new int[ numPorts ])
+			== NULL )
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing flood number array %d in m_EventAreas\r", j);
+			goto Quit;
+		}
+
+		if( (m_EventAreas[j].PrevPortAtPort = new SsndPortal*[ numPorts ])
+			== NULL )
+		{
+			DM_LOG(LC_SOUND, LT_ERROR).LogString("Out of memory when initializing previous portal array %d in m_EventAreas\r", j);
 			goto Quit;
 		}
 
@@ -478,7 +507,6 @@ void CsndProp::Propagate
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Expansion was stopped when max node number %d was exceeded\r", s_MAX_FLOODNODES );
 
 
-
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("Expansion done, processing AI\r" );
 	ProcessPopulated( vol0, origin, &propParms );
 
@@ -634,24 +662,30 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 		m_PopAreas[ popIndex ].bVisited = true;
 	}
 
+	// array index pointers to save on calculation
+	SsndArea *pSndAreas = &m_sndAreas[ initArea ];
+	SEventArea *pEventAreas = &m_EventAreas[ initArea ];
+
 	// calculate initial portal losses from the sound origin point
-	for( int i2=0; i2 < m_sndAreas[ initArea ].numPortals; i2++)
+	for( int i2=0; i2 < pSndAreas->numPortals; i2++)
 	{
-		idVec3 portalCoord = m_sndAreas[ initArea ].portals[i2].center;
+		idVec3 portalCoord = pSndAreas->portals[i2].center;
 
 		tempDist = (origin - portalCoord).LengthFast() * s_DOOM_TO_METERS;
 		// calculate and set initial portal losses
 		tempAtt = m_AreaPropsG[ initArea ].LossMult * tempDist;
 		
 		// add the door loss
-		tempAtt += GetDoorLoss( m_sndAreas[ initArea ].portals[i2].doorEnt );
+		tempAtt += GetDoorLoss( pSndAreas->portals[i2].doorEnt );
 
 		// get the current loss
 		tempLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
 
-		m_EventAreas[ initArea ].LossAtPortal[i2] = tempLoss;
-		m_EventAreas[ initArea ].DistAtPortal[i2] = tempDist;
-		m_EventAreas[ initArea ].AttAtPortal[i2] = tempAtt;
+		pEventAreas->LossAtPortal[i2] = tempLoss;
+		pEventAreas->DistAtPortal[i2] = tempDist;
+		pEventAreas->AttAtPortal[i2] = tempAtt;
+		pEventAreas->FloodsAtPortal[i2] = 0;
+		pEventAreas->PrevPortAtPort[i2] = NULL;
 
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Loss at portal %d is %f [dB]\r", i2, tempLoss);
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Dist at portal %d is %f [m]\r", i2, tempDist);
@@ -661,11 +695,12 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 		//	not dropped below threshold at the portal
 		if( (volInit - tempLoss) > s_MIN_AUD_THRESH )
 		{
-			tempQEntry.area = m_sndAreas[ initArea ].portals[i2].to;
+			tempQEntry.area = pSndAreas->portals[i2].to;
 			tempQEntry.curDist = tempDist;
 			tempQEntry.curAtt = tempAtt;
 			tempQEntry.curLoss = tempLoss;
-			tempQEntry.portalH = m_sndAreas[ initArea ].portals[i2].handle;
+			tempQEntry.portalH = pSndAreas->portals[i2].handle;
+			tempQEntry.PrevPort = NULL;
 
 			NextAreas.Append( tempQEntry );
 		}
@@ -693,11 +728,15 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 
 			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Flooding area %d thru portal handle %d\r", area, NextAreas[j].portalH );
 
+			// array index pointers to save on calculation
+			pSndAreas = &m_sndAreas[ area ];
+			pEventAreas = &m_EventAreas[ area ];
+
 			// find the local portal number associated with the portal handle
 			LocalPort = -1;
-			for( int ind = 0; ind < m_sndAreas[area].numPortals; ind++ )
+			for( int ind = 0; ind < pSndAreas->numPortals; ind++ )
 			{
-				if( m_sndAreas[area].portals[ind].handle == NextAreas[j].portalH )
+				if( pSndAreas->portals[ind].handle == NextAreas[j].portalH )
 				{
 					LocalPort = ind;
 					break;
@@ -713,9 +752,11 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 			}
 
 			// copy information from the portal's other side
-			m_EventAreas[area].DistAtPortal[ LocalPort ] = NextAreas[j].curDist;
-			m_EventAreas[area].AttAtPortal[ LocalPort ] = NextAreas[j].curAtt;
-			m_EventAreas[area].LossAtPortal[ LocalPort ] = NextAreas[j].curLoss;
+			pEventAreas->DistAtPortal[ LocalPort ] = NextAreas[j].curDist;
+			pEventAreas->AttAtPortal[ LocalPort ] = NextAreas[j].curAtt;
+			pEventAreas->LossAtPortal[ LocalPort ] = NextAreas[j].curLoss;
+			pEventAreas->FloodsAtPortal[ LocalPort ] = floods - 1;
+			pEventAreas->PrevPortAtPort[ LocalPort ] = NextAreas[j].PrevPort;
 
 
 			// check for AI in the area
@@ -729,7 +770,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 			}
 
 			// Flood to portals in this area
-			for( int i=0; i < m_sndAreas[area].numPortals; i++)
+			for( int i=0; i < pSndAreas->numPortals; i++)
 			{
 				// do not flood back thru same portal we came in
 				if( LocalPort == i)
@@ -738,7 +779,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Calculating loss from portal %d to portal %d in area %d\r", LocalPort, i, area);
 				// Obtain loss at this portal and store in temp var
 				tempDist = NextAreas[j].curDist;
-				AddedDist = *m_sndAreas[area].portalDists->GetRev( LocalPort, i );
+				AddedDist = *pSndAreas->portalDists->GetRev( LocalPort, i );
 				tempDist += AddedDist;
 
 				tempAtt = NextAreas[j].curAtt;
@@ -746,15 +787,15 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Total distance now %f\r", tempDist );
 				
 				// add the door loss
-				tempAtt += GetDoorLoss( m_sndAreas[area].portals[i].doorEnt );
+				tempAtt += GetDoorLoss( pSndAreas->portals[i].doorEnt );
 	
 
 				tempLoss = m_SndGlobals.Falloff_Ind * log10(tempDist) + tempAtt + 8;
 
 				// check if we've visited the area, and do not add destination area 
 				//	if loss is greater this time
-				if( m_EventAreas[area].bVisited 
-					&& tempLoss >= m_EventAreas[area].LossAtPortal[i] )
+				if( pEventAreas->bVisited 
+					&& tempLoss >= pEventAreas->LossAtPortal[i] )
 				{
 					DM_LOG(LC_SOUND, LT_DEBUG).LogString("Cancelling flood thru portal %d in previously visited area %d\r", i, area);
 					continue;
@@ -772,16 +813,19 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Further expansion valid thru portal %d in area %d\r", i, area);
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Set loss at portal %d to %f [dB]", i, tempLoss);
 				
-				m_EventAreas[area].LossAtPortal[i] = tempLoss;
-				m_EventAreas[area].DistAtPortal[i] = tempDist;
-				m_EventAreas[area].AttAtPortal[i] = tempAtt;
+				pEventAreas->LossAtPortal[i] = tempLoss;
+				pEventAreas->DistAtPortal[i] = tempDist;
+				pEventAreas->AttAtPortal[i] = tempAtt;
+				pEventAreas->FloodsAtPortal[i] = floods;
+				pEventAreas->PrevPortAtPort[i] = &pSndAreas->portals[ LocalPort ];
 
 				// add the portal destination to flooding queue
-				tempQEntry.area = m_sndAreas[ area ].portals[i].to;
+				tempQEntry.area = pSndAreas->portals[i].to;
 				tempQEntry.curDist = tempDist;
 				tempQEntry.curAtt = tempAtt;
 				tempQEntry.curLoss = tempLoss;
-				tempQEntry.portalH = m_sndAreas[ area ].portals[i].handle;				
+				tempQEntry.portalH = pSndAreas->portals[i].handle;	
+				tempQEntry.PrevPort = pEventAreas->PrevPortAtPort[i];
 
 				AddedAreas.Append( tempQEntry );
 			
@@ -802,9 +846,9 @@ Quit:
 	return returnval;
 } // end function
 
+// linear search O(N)
 int	CsndProp::FindPopIndex( int areaNum )
 {
-	// linear search O(N)
 	int ind(-1);
 
 	for( int i=0; i < m_PopAreas.Num(); i++ )
@@ -831,7 +875,9 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 
 	for( i=0; i < m_PopAreas.Num(); i++ )
 	{
-		area = m_PopAreas[i].areaNum;
+		SPopArea *pPopArea = &m_PopAreas[i];
+
+		area = pPopArea->areaNum;
 
 		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Processing pop. area %d\r", area);
 		
@@ -843,9 +889,9 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 			propParms->bSameArea = true;
 			propParms->direction = origin;
 
-			for( j=0; j < m_PopAreas[i].AIContents.Num(); j++)
+			for( j=0; j < pPopArea->AIContents.Num(); j++)
 			{
-				AIPtr = m_PopAreas[i].AIContents[j];
+				AIPtr = pPopArea->AIContents[j];
 				
 				if (AIPtr == NULL)
 					continue;
@@ -864,7 +910,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 		}
 
 		// Normal propagation to a surrounding area
-		else if ( m_PopAreas[i].bVisited == true )
+		else if ( pPopArea->bVisited == true )
 		{
 			propParms->bSameArea = false;
 
@@ -873,9 +919,9 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 			// TODO OPTIMIZATION: Don't do this extra loop for each AI if 
 			//		we only visited one portal in the area
 
-			for( int aiNum = 0; aiNum < m_PopAreas[i].AIContents.Num(); aiNum++ )
+			for( int aiNum = 0; aiNum < pPopArea->AIContents.Num(); aiNum++ )
 			{
-				AIPtr = m_PopAreas[i].AIContents[ aiNum ];
+				AIPtr = pPopArea->AIContents[ aiNum ];
 
 				if (AIPtr == NULL)
 				{
@@ -887,9 +933,9 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 
 				LeastLoss = 999999999.0f;
 
-				for( k=0; k < m_PopAreas[i].VisitedPorts.Num(); k++ )
+				for( k=0; k < pPopArea->VisitedPorts.Num(); k++ )
 				{
-					portNum = m_PopAreas[i].VisitedPorts[ k ];
+					portNum = pPopArea->VisitedPorts[ k ];
 
 					//DM_LOG(LC_SOUND, LT_DEBUG).LogString("Calculating loss from portal %d, DEBUG k=%d, portsnum = %d\r", portNum, k, m_PopAreas[i].VisitedPorts.Num());
 
@@ -926,7 +972,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 		}
 
 		// Propagation was stopped before this area was reached
-		else if ( m_PopAreas[i].bVisited == false )
+		else if ( pPopArea->bVisited == false )
 		{
 			// Do nothing for now
 			// TODO: Keep track of these areas for delayed calculation?
