@@ -75,23 +75,31 @@ typedef struct SPopArea_s
 } SPopArea;
 
 /**
+* Portal data stored in an event area
+**/
+typedef struct SPortEvent_s
+{
+	float	Loss; // dynamic array to store the current loss at the portal
+
+	float	Dist; // distance at portal (used to add AI loss to existing loss)
+
+	float	Att; // attenuation at portal (again used for final AI calculation)
+
+	int		Floods; // How many floods did it take to get to that particular portal
+
+	SsndPortal *PrevPort; // the portal visited immediately before each portal
+
+} SPortEvent;
+
+
+/**
 * Array entry in event areas array (storing visited areas information)
 **/
 typedef struct SEventArea_s
 {
 	bool	bVisited; // area was visited at least once in wavefront expansion
 
-// TODO: Consolidate ALL these separate arrays into an array of one structure!!
-
-	float	*LossAtPortal; // dynamic array to store the current loss at the portal
-
-	float	*DistAtPortal; // distance at portal (used to add AI loss to existing loss)
-
-	float	*AttAtPortal; // attenuation at portal (again used for final AI calculation)
-
-	int		*FloodsAtPortal; // How many floods did it take to get to that particular portal
-
-	SsndPortal **PrevPortAtPort; // the portal visited immediately before each portal
+	SPortEvent_s	*PortalDat; // Array of event data for each portal in the area
 
 } SEventArea;
 
