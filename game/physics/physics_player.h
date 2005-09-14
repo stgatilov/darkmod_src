@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/09/14 04:21:07  domarius
+ * no message
+ *
  * Revision 1.12  2005/09/09 19:56:02  ishtvan
  * removed water jump, allowed mantling out of water
  *
@@ -154,6 +157,7 @@ public:
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
+    bool					OnRope( void ) const;
 	bool					OnLadder( void ) const;
 	const idVec3 &			PlayerGetOrigin( void ) const;	// != GetOrigin
 
@@ -218,6 +222,9 @@ private:
 	trace_t					groundTrace;
 	const idMaterial *		groundMaterial;
 
+    // rope movement
+    bool rope;
+
 	// ladder movement
 	bool					ladder;
 	idVec3					ladderNormal;
@@ -244,10 +251,12 @@ private:
 	void					DeadMove( void );
 	void					NoclipMove( void );
 	void					SpectatorMove( void );
+	void					RopeMove( void );
 	void					LadderMove( void );
 	void					CorrectAllSolid( trace_t &trace, int contents );
 	void					CheckGround( void );
 	void					CheckDuck( void );
+	void					CheckRope( void );
 	void					CheckLadder( void );
 	bool					CheckJump( void );
 

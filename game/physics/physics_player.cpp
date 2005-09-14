@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2005/09/14 04:21:07  domarius
+ * no message
+ *
  * Revision 1.17  2005/09/09 19:56:02  ishtvan
  * removed water jump, allowed mantling out of water
  *
@@ -80,6 +83,7 @@ END_CLASS
 // movement parameters
 const float PM_STOPSPEED		= 100.0f;
 const float PM_SWIMSCALE		= 0.5f;
+const float PM_ROPESPEED		= 100.0f;
 const float PM_LADDERSPEED		= 100.0f;
 const float PM_STEPSCALE		= 1.0f;
 
@@ -916,6 +920,15 @@ void idPhysics_Player::SpectatorMove( void ) {
 
 /*
 ============
+idPhysics_Player::RopeMove
+============
+*/
+void idPhysics_Player::RopeMove( void ) {
+    //TODO: Rope climbing :)
+}
+
+/*
+============
 idPhysics_Player::LadderMove
 ============
 */
@@ -1194,6 +1207,27 @@ void idPhysics_Player::CheckDuck( void ) {
 
 /*
 ================
+idPhysics_Player::CheckRope
+================
+*/
+void idPhysics_Player::CheckRope( void )
+{
+    idEntity *ent;
+    for ( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
+    {
+        if (idStr::Cmp( ent->GetEntityDefName(), "env_rope" ) == 0 )
+        {
+            if ( clipModel->GetAbsBounds().IntersectsBounds(ent->GetPhysics()->GetAbsBounds() ) )
+            {
+	            //rope=true;
+                gameLocal.Printf( "Rope Climb activated\n");
+            }
+        }
+    }
+}
+
+/*
+================
 idPhysics_Player::CheckLadder
 ================
 */
@@ -1417,6 +1451,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 	walking = false;
 	groundPlane = false;
+    rope = false;
 	ladder = false;
 
 	// determine the time
@@ -1480,6 +1515,9 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// check for ground
 	idPhysics_Player::CheckGround();
 
+	// check if intersecting with rope
+	idPhysics_Player::CheckRope();
+
 	// check if up against a ladder
 	idPhysics_Player::CheckLadder();
 
@@ -1505,6 +1543,10 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	if ( current.movementType == PM_DEAD ) {
 		// dead
 		idPhysics_Player::DeadMove();
+	}
+	else if ( rope ) {
+		// going up or down a  rope
+		idPhysics_Player::RopeMove();
 	}
 	else if ( ladder ) {
 		// going up or down a ladder
@@ -1630,6 +1672,16 @@ bool idPhysics_Player::IsCrouching( void ) const {
 
 /*
 ================
+idPhysics_Player::OnRope
+================
+*/
+bool idPhysics_Player::OnRope( void ) const {
+	return rope;
+}
+
+
+/*
+================
 idPhysics_Player::OnLadder
 ================
 */
@@ -1663,6 +1715,7 @@ idPhysics_Player::idPhysics_Player( void ) {
 	groundPlane = false;
 	memset( &groundTrace, 0, sizeof( groundTrace ) );
 	groundMaterial = NULL;
+    rope = false;
 	ladder = false;
 	ladderNormal.Zero();
 	waterLevel = WATERLEVEL_NONE;
@@ -1749,6 +1802,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteTrace( groundTrace );
 	savefile->WriteMaterial( groundMaterial );
 
+    savefile->WriteBool( rope );
+
 	savefile->WriteBool( ladder );
 	savefile->WriteVec3( ladderNormal );
 
@@ -1808,6 +1863,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( groundPlane );
 	savefile->ReadTrace( groundTrace );
 	savefile->ReadMaterial( groundMaterial );
+
+	savefile->ReadBool( rope );
 
 	savefile->ReadBool( ladder );
 	savefile->ReadVec3( ladderNormal );
