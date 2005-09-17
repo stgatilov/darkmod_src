@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.18  2005/09/17 07:13:34  sophisticatedzombie
+ * Added constants that control the scale by which damage can occur when mantling at a high relative velocity.
+ *
  * Revision 1.17  2005/08/14 23:26:41  sophisticatedzombie
  * Added mantling and leaning constants to g_Global
  *
@@ -235,6 +238,18 @@ public:
 	// Mantle trigger timer for holding jump key
 	float m_jumpHoldMantleTrigger_Milliseconds;
 	
+	/*!
+	* The meters per second of relative velocity beyond which the player takes damage 
+	* when trying to mantle a target 
+	*/
+	float m_minimumVelocityForMantleDamage;
+
+	/*!
+	* The damage points per meter per second over the damage
+	* velocity minimum
+	*/
+	float m_damagePointsPerMetersPerSecondOverMinimum;
+
 	/*!
 	* Milliseconds of time that player hangs if mantle begins
 	* with the player's feet of the ground

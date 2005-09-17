@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.20  2005/09/17 07:13:34  sophisticatedzombie
+ * Added constants that control the scale by which damage can occur when mantling at a high relative velocity.
+ *
  * Revision 1.19  2005/08/22 07:44:20  ishtvan
  * added the #include C:\compiled.h back in
  *
@@ -112,6 +115,14 @@
 #define DARKMOD_MANTLE_MILLISECONDS_PULL		750.0f
 #define DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS	500.0f
 #define DARKMOD_MANTLE_MILLISECONDS_PUSH		800.0f
+
+// Default damage scale for mantling at high velocities
+// The 15.0 m/s minimum limit is based on OCEA guidance (United States labor laws)
+#define DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE 15.0f
+
+// TODO: The 0.5 damager/m/s scale is completely made up based on a scarce
+// few tests and should be tweaked for gameplay
+#define DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY 0.5f
 
 // Default time value for phases of leaning
 #define DARKMOD_NUM_MILLISECONDS_FOR_LEAN_MOVE 600.0f
@@ -234,6 +245,10 @@ CGlobal::CGlobal(void)
 
 	// Default angle for leaning
 	m_leanMove_DegreesTilt = DARKMOD_MAX_LEAN_TILT_DEGREES;
+
+	// Default minimum velocity for mantling damage and damage scale
+	m_minimumVelocityForMantleDamage = DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE;
+	m_damagePointsPerMetersPerSecondOverMinimum = DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY;
 
 }
 
@@ -573,6 +588,16 @@ void CGlobal::LoadINISettings(void *p)
 		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != -1)
 		{
 			m_mantlePush_Milliseconds = atof(pm->Value);
+		}
+
+		if(FindMap(ps, "Mantle_MinimumMetersPerSecondForDamage", TRUE, &pm) != -1)
+		{
+			m_minimumVelocityForMantleDamage = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "Mantle_DamagerPerMetersPerSecondOverMinimum", TRUE, &pm) != -1)
+		{
+			m_damagePointsPerMetersPerSecondOverMinimum = atof(pm->Value);
 		}
 
 		if (FindMap(ps, "Lean_Milliseconds", TRUE, &pm) != -1)
