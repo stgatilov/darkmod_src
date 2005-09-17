@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/09/17 07:15:28  sophisticatedzombie
+ * Added function that applies damage to the player when mantling at a high relative velocity. The damage amount is computed from minimum and scale constants in DarkModGlobals.
+ *
  * Revision 1.19  2005/09/17 00:32:39  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -2622,6 +2625,71 @@ void idPhysics_Player::CancelMantle()
 
 //----------------------------------------------------------------------
 
+int idPhysics_Player::CalculateMantleCollisionDamage
+(
+	idEntity* p_mantledEntityRef,
+	idVec3 mantlePos
+)
+{
+	int damageAmount = 0;
+	idVec3 relativeVelocity = current.velocity;
+
+	
+	if (p_mantledEntityRef)
+	{
+		idPhysics* p_targetPhysics = p_mantledEntityRef->GetPhysics();
+		if (p_targetPhysics != NULL)
+		{
+			relativeVelocity -= p_targetPhysics->GetLinearVelocity();
+			idVec3 relativeAngularVelocity = p_targetPhysics->GetAngularVelocity();
+
+			// Multiply angular velocity by distance from center to get
+			// linear velocity due to angular velocity and add it
+			// to the other linear velocity.
+			idVec3 linearVelocityDueToAngularVelocity;
+			idVec3 targetOrigin = p_targetPhysics->GetOrigin();
+			idVec3 forceArm = mantlePos - targetOrigin;
+			
+			linearVelocityDueToAngularVelocity.x =  relativeAngularVelocity.x * forceArm.x;
+			linearVelocityDueToAngularVelocity.y =  relativeAngularVelocity.y * forceArm.y;
+			linearVelocityDueToAngularVelocity.z =  relativeAngularVelocity.z * forceArm.z;
+
+			relativeVelocity += linearVelocityDueToAngularVelocity;
+		}
+
+	}
+
+	// Analyze velocity: TODO make constant somewhere global
+	float velocityMagnitude_MetersPerSecond = relativeVelocity.Length() * 0.0254f;
+	
+
+	if (velocityMagnitude_MetersPerSecond > g_Global.m_minimumVelocityForMantleDamage)
+	{
+		// 15.0 m/s over 1 second is bad for you according to restraining harness laws, so
+		// we will use that as a guideline
+		// How we scale this is fairly arbitrary
+		// I should move the scale and velocity to the darkmod globals
+
+		damageAmount = (velocityMagnitude_MetersPerSecond - g_Global.m_minimumVelocityForMantleDamage) * g_Global.m_damagePointsPerMetersPerSecondOverMinimum;
+
+	}
+
+	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString 
+	(
+		"Velocity = %.5f, damage = %d", 
+		velocityMagnitude_MetersPerSecond, 
+		damageAmount
+	);
+
+	// Return amount
+	return damageAmount;
+
+			
+
+}
+
+//----------------------------------------------------------------------
+
 void idPhysics_Player::StartMantle
 (
 	EDarkMod_MantlePhase initialMantlePhase,
@@ -2630,6 +2698,37 @@ void idPhysics_Player::StartMantle
 	idVec3 endPos
 )
 {
+	// 9/17/05:
+	// SophisticatedZombie
+	// Check the player's velocity.  If they are moving
+	// at a very high velocity relative to the mantle target, then
+	// apply damage to the player.
+	int damageAmount = CalculateMantleCollisionDamage
+	(
+		m_p_mantledEntity,
+		startPos
+	);
+
+	if ((self != NULL) && (damageAmount != 0))
+	{
+		idPlayer* p_Player = (idPlayer*) self;
+		p_Player->Damage
+		(
+			NULL, // no inflictor
+			NULL, // no attacker,
+			startPos - current.origin, // direction damage came from
+			"damage_hardfall",
+			1.0f,
+			0
+		);
+
+		if (p_Player->health <= 0)
+		{
+			// Can't start mantle if dead
+			return;
+		}
+	}
+
 	// If mantling from a jump, cancel any velocity so that it does
 	// not continue after the mantle is completed.
 	current.velocity.Zero();
