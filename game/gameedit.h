@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -40,6 +43,7 @@ public:
 
 	idForce_Drag			drag;
 	idVec3					draggedPosition;
+	bool					showCursor;
 };
 
 

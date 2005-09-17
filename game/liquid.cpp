@@ -228,7 +228,7 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	// spawn the particle
-	gameLocal.smokeParticles->EmitSmoke(splash,gameLocal.time,gameLocal.random.RandomFloat(),splashSpot,mat3_identity);
+	gameLocal.smokeParticles->EmitSmoke( splash, gameLocal.time, gameLocal.random.RandomFloat(), splashSpot, collision.endAxis );
 	return true;
 }
 

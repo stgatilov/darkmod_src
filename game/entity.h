@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
  * Revision 1.10  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -85,6 +88,7 @@ extern const idEventDef EV_CacheSoundShader;
 extern const idEventDef EV_GetMass;				// MOD_WATERPHYSICS
 extern const idEventDef EV_IsInLiquid;			// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
+extern const idEventDef EV_CopyBind;
 
 // Think flags
 enum {
@@ -656,6 +660,7 @@ private:
 	void					Event_GetMass( int body );	// MOD_WATERPHYSICS
 	void					Event_IsInLiquid( void );	// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
+	void					Event_CopyBind( idEntity *other );
 };
 
 /*

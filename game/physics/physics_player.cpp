@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2005/09/17 00:32:39  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
  * Revision 1.18  2005/09/14 04:21:07  domarius
  * no message
  *
@@ -3579,7 +3582,7 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 			if (hWaistJoint != INVALID_JOINT )
 			{
 				// Default player height to waist ratio
-				float PlayerHeightToWaistRatio = 2.1;
+				float PlayerHeightToWaistRatio = 2.1f;
 
 				// Get offset of waist from model origin
 				idVec3 waistOffset;

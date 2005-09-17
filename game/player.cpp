@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
  * Revision 1.23  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -4115,6 +4118,10 @@ void idPlayer::UpdateWeapon( void ) {
 		HideTip();
 	}
 	
+	if( g_Global.m_DarkModPlayer->grabber.GetSelected() ) {
+		g_Global.m_DarkModPlayer->grabber.Update( this, true );
+	}
+
 	if ( g_dragEntity.GetBool() ) {
 		StopFiring();
 		weapon.GetEntity()->LowerWeapon();
@@ -5742,8 +5749,17 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 
 			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
-			if(bFrob == true && frob != NULL)
-				frob->FrobAction(true);
+			if(bFrob == true && frob != NULL) {
+				frob->FrobAction(true); 
+			}
+			else {
+				// if the objct is not frobbable or we've already used it then just grab it instead
+				//
+				// ** Note from Lloyd:  This is a WIP, if you want to see it you're welcome to uncomment this line.
+				// The object moves around and if you hold the ZOOM button you can rotate it using the mouse.
+				// It's buggy and the pickup distance is too far but at least you can see kind of what's going on.
+				// g_Global.m_DarkModPlayer->grabber.Update( this );
+			}
 		}
 		break;
 

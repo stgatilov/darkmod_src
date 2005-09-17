@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
  * Revision 1.2  2004/11/28 09:16:33  sparhawk
  * SDK V2 merge
  *
@@ -856,7 +859,20 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// bind the projectile to the impact entity if necesary
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
-		Bind( gameLocal.entities[collision.c.entityNum], true );
+		idEntity *ent = gameLocal.entities[ collision.c.entityNum ];
+
+		if( ent->IsType( idAFEntity_Base::Type ) ) {
+			jointHandle_t newJoint;
+			idAFEntity_Base *af = static_cast<idAFEntity_Base *>(ent);
+
+			// joint being dragged
+			newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id );
+
+			this->BindToJoint( ent, newJoint, true );
+		}
+		else {
+			this->Bind( ent, true );
+		} 
 	}
 
 	// splash damage

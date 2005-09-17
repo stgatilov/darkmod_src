@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
  * Revision 1.16  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -155,6 +158,7 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
 const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
 #endif      // MOD_WATERPHYSICS
+const idEventDef EV_CopyBind( "copyBind", "e", NULL );
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetName,				idEntity::Event_GetName )
@@ -224,6 +228,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetMass,              idEntity::Event_GetMass )
 	EVENT( EV_IsInLiquid,           idEntity::Event_IsInLiquid )
 #endif		// MOD_WATERPHYSICS
+	EVENT( EV_CopyBind,				idEntity::Event_CopyBind )
 END_CLASS
 
 /*
@@ -2358,7 +2363,10 @@ void idEntity::RemoveBinds( void ) {
 		next = ent->teamChain;
 		if ( ent->bindMaster == this ) {
 			ent->Unbind();
-			ent->PostEventMS( &EV_Remove, 0 );
+
+			if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+				ent->PostEventMS( &EV_Remove, 0 );
+			}
 			next = teamChain;
 		}
 	}
@@ -4933,6 +4941,30 @@ void idEntity::Event_IsInLiquid( void ) {
 	idThread::ReturnInt(physics->GetWater() != NULL);
 }
 #endif		// MOD_WATERPHYSICS
+
+/*
+================
+idEntity::Event_CopyBind
+================
+*/
+void idEntity::Event_CopyBind( idEntity *other ) {
+	idEntity *master = other->GetBindMaster();
+	jointHandle_t joint = other->GetBindJoint();
+	int body = other->GetBindBody();
+
+	if( joint != INVALID_JOINT ) {
+		// joint is specified so bind to that joint
+		this->BindToJoint( master, joint, true );
+	}
+	else if( body >= 0 ) { 
+		// body is specified so bind to it
+		this->BindToBody( master, body, true );
+	}
+	else {
+		// no joint and no body specified to bind to master
+		this->Bind( master, true );
+	}
+}
 
 /***********************************************************************
 
