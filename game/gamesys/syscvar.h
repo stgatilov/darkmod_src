@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/09/20 06:16:58  ishtvan
+ * added dm_showsprop cvar to show sound prop paths for ingame debugging
+ *
  * Revision 1.5  2005/08/19 00:27:55  lloyd
  * *** empty log message ***
  *
@@ -42,6 +45,7 @@ extern idCVar cv_ai_sightmindist;
 extern idCVar cv_ai_tactalert;
 extern idCVar cv_ai_debug;
 extern idCVar cv_spr_debug;
+extern idCVar cv_spr_show;
 
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
@@ -277,9 +281,14 @@ extern idCVar	si_spectators;
 extern const char *ui_skinArgs[];
 
 #ifdef MOD_WATERPHYSICS
+
 extern idCVar af_useBodyDensityBuoyancy;			// MOD_WATERPHYSICS
+
 extern idCVar af_useFixedDensityBuoyancy;			// MOD_WATERPHYSICS
+
 extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
+
 #endif
+
 
 #endif /* !__SYS_CVAR_H__ */
