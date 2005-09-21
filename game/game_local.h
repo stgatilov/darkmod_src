@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/09/21 05:42:04  ishtvan
+ * Modified sound prop propParms
+ *
  * Revision 1.7  2005/08/22 04:55:24  ishtvan
  * minor changes in soundprop parms and function names
  *
@@ -244,7 +247,11 @@ typedef struct SSprParms_s
 
 	const char	*name; // sound name
 	float		propVol; // propagated volume
-	idVec3		direction; // direction of the loudest sound
+
+	// Apparent direction of the sound, determined by the path point on the portal
+	idVec3		direction; 
+	// actual origin of the sound, used for some localization simulation
+	idVec3		origin; 
 	float		duration; // duration
 	int			frequency; // int representing the octave of the sound
 	float		bandwidth; // sound bandwidth
@@ -252,6 +259,8 @@ typedef struct SSprParms_s
 	float		loudness; // this is set by AI hearing response
 
 	bool		bSameArea; // true if the sound came from same portal area
+	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path
+	int			floods; // number of portals the sound travelled thru before it hit the AI
 
 	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
 
