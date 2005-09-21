@@ -63,7 +63,7 @@ typedef union UTeamMask_s
 **/
 typedef struct SPopArea_s
 {
-	int				areaNum;
+	int				addedTime; // timestamp at which this entry was added from the AI list
 	
 	bool			bVisited; // area was visited at least once in wavefront expansion
 
@@ -72,6 +72,7 @@ typedef struct SPopArea_s
 	//TODO: Handle Listeners in another list here
 
 	idList<int>		VisitedPorts; // portals that the sound flooded in on (reduces comp. time to store this)
+
 } SPopArea;
 
 /**
@@ -87,7 +88,9 @@ typedef struct SPortEvent_s
 
 	int		Floods; // How many floods did it take to get to that particular portal
 
-	SsndPortal *PrevPort; // the portal visited immediately before each portal
+	SsndPortal *ThisPort; // pointer to the snd portal object for this portal 
+
+	SPortEvent_s *PrevPort; // the portal visited immediately before each portal
 
 } SPortEvent;
 
@@ -97,9 +100,9 @@ typedef struct SPortEvent_s
 **/
 typedef struct SEventArea_s
 {
-	bool	bVisited; // area was visited at least once in wavefront expansion
+	bool		bVisited; // area was visited at least once in wavefront expansion
 
-	SPortEvent_s	*PortalDat; // Array of event data for each portal in the area
+	SPortEvent	*PortalDat; // Array of event data for each portal in the area
 
 } SEventArea;
 
@@ -118,7 +121,7 @@ typedef struct SExpQue_s
 
 	float		curLoss; // total loss so far
 
-	SsndPortal *PrevPort; // previous portal flooded through along path
+	SPortEvent *PrevPort; // previous portal flooded through along path
 
 } SExpQue;
 
@@ -143,6 +146,8 @@ public:
 	*
 	* Also looks up door entity pointers for current map and 
 	*	puts them into area/portal tree
+	*
+	* Also initializes various members
 	**/
 	void SetupFromLoader( const CsndPropLoader *in );
 
@@ -164,33 +169,81 @@ protected:
 	**/
 	void FillDoorEnts ( void );
 
+	/**
+	* Wavefront expansion algorithm, starts with volume volInit at point origin
+	**/
 	bool ExpandWave
 		( float volInit, idVec3 origin, 
 		  SSprParms *propParms );
-
+	
+	/**
+	* Process the populated areas after a sound propagation event.
+	**/
 	void ProcessPopulated( float volInit, idVec3 origin, SSprParms *propParms );
 
+	/**
+	* Process individual AI.  Messages the individual AI, and will later calculate
+	*	the effects of environmental sounds in the signal/noise response of the AI.
+	*
+	* Called by ProcessPopulated
+	**/
 	void ProcessAI( idAI* AI, idVec3 origin, SSprParms *propParms );
 
-
+	/**
+	* Copy parms from loader object, and also initialize several member vars
+	**/
 	void SetupParms( const idDict *parms, SSprParms *propParms,
 					 USprFlags *addFlags, UTeamMask *tmask );
 
+	/**
+	* Obtain the loss in [dB] for a given door entity
+	**/
 	float GetDoorLoss( idEntity *doorEnt );
 
 	/**
-	* Linear search to find the index of the given area in the populated
-	* areas array.  Returns -1 if the area is not present
+	* Detailed path minimization.  Finds the optimum path taking points along the portal surfaces
+	* Writes the final loss info and apparent location of the sound to propParms.
 	**/
-	int FindPopIndex( int areaNum );
+	void DetailedMin( idAI* AI, SSprParms *propParms, 
+					  SPortEvent *pPortEv, int AIArea, float volInit );
+
+	/**
+	* Takes point 1, point 2, a winding, and the center point of the winding
+	* Returns the point on the winding surface that is closest
+	*	to the line p1-p2.
+	* 
+	* If the line intersects the portal surface, the optimum point will
+	*	be the intersection point.  Otherwise, the point will be somewhere
+	*	along the outer boundary of the surface.
+	*
+	* Assumes a rectangular portal with 4 winding points.
+	**/
+	idVec3 OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVec3 WCenter );
+
+	/**
+	* Draws debug lines between a list of points.  Used for soundprop debugging
+	**/
+	void DrawLines( idList<idVec3> *pointlist );
+
 
 protected:
 
+	int				m_TimeStamp; // time stamp for the current propagation event [ms]
+
 	/**
-	* Populated areas : Areas that contain AI within the cutoff distance
-	* these should eventually be propagated to
+	* Populated areas : List of indices of AI populated areas for this expansion
 	**/
-	idList<SPopArea>		m_PopAreas;
+	idList<int>		m_PopAreasInd;
+
+	/**
+	* Populated areas array: Lists the AI present in each area
+	*	and which portals the sound flowed in on, for later AI processing.
+	* 
+	* Stays in memory between events.  Each entry has a timestamp,
+	*	and only entries whose indices are in the m_PopAreasInd list are
+	*	checked when processing AI.
+	**/
+	SPopArea		*m_PopAreas;
 
 	/**
 	* (sparse) array of areas.  Areas that have been visited will have the 
@@ -201,7 +254,7 @@ protected:
 	* later on, we might see if we can re-use it for multiple events that
 	* come from close to the same spot, for optimization.
 	**/
-	SEventArea				*m_EventAreas;
+	SEventArea		*m_EventAreas;
 
 };
 
