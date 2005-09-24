@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2005/09/24 03:15:39  lloyd
+ * Prevent player from zooming when holding object, disabled weapon when player holding an object
+ *
  * Revision 1.24  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -1282,7 +1285,7 @@ void idPlayer::Init( void ) {
 	bobFrac					= 0.0f;
 	landChange				= 0;
 	landTime				= 0;
-	zoomFov.Init( 0, 0, 0, 0 );
+	zoomFov.Init( 0, 0, g_fov.GetInteger(), g_fov.GetInteger() );
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
 
@@ -4117,10 +4120,6 @@ void idPlayer::UpdateWeapon( void ) {
 	if ( hiddenWeapon && tipUp && usercmd.buttons & BUTTON_ATTACK ) {
 		HideTip();
 	}
-	
-	if( g_Global.m_DarkModPlayer->grabber.GetSelected() ) {
-		g_Global.m_DarkModPlayer->grabber.Update( this, true );
-	}
 
 	if ( g_dragEntity.GetBool() ) {
 		StopFiring();
@@ -4131,6 +4130,10 @@ void idPlayer::UpdateWeapon( void ) {
 		Weapon_GUI();
 	} else 	if ( focusCharacter && ( focusCharacter->health > 0 ) ) {
 		Weapon_NPC();
+	} else if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+		this->StopFiring();
+		weapon.GetEntity()->LowerWeapon();
+		g_Global.m_DarkModPlayer->grabber->Update( this, true );
 	} else {
 		Weapon_Combat();
 	}
@@ -4350,7 +4353,8 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	other = gameLocal.entities[ collision.c.entityNum ];
-	if ( other ) {
+	// don't let player collide with grabber entity
+	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		other->Signal( SIG_TOUCH );
 		if ( !spectating ) {
 			if ( other->RespondsTo( EV_Touch ) ) {
@@ -5758,7 +5762,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				// ** Note from Lloyd:  This is a WIP, if you want to see it you're welcome to uncomment this line.
 				// The object moves around and if you hold the ZOOM button you can rotate it using the mouse.
 				// It's buggy and the pickup distance is too far but at least you can see kind of what's going on.
-				// g_Global.m_DarkModPlayer->grabber.Update( this );
+				g_Global.m_DarkModPlayer->grabber->Update( this );
 			}
 		}
 		break;
@@ -6470,7 +6474,8 @@ void idPlayer::Think( void ) {
 	}
 
 	// zooming
-	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
+	// Added:  Don't zoom if the player is holding something...
+	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ) {
 			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), weapon.GetEntity()->GetZoomFov() );
 		} else {
@@ -7192,7 +7197,8 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return influenceFov;
 	}
 
-	if ( zoomFov.IsDone( gameLocal.time ) ) {
+	// prevent FOV from zooming if the player is holding an object
+	if ( zoomFov.IsDone( gameLocal.time ) && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
 	} else {
 		fov = zoomFov.GetCurrentValue( gameLocal.time );
