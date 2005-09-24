@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/09/24 03:17:53  lloyd
+ * Restored file to it's original state
+ *
  * Revision 1.2  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -75,10 +78,8 @@ void idCursor3D::Present( void ) {
 	const idVec3 &origin = GetPhysics()->GetOrigin();
 	const idMat3 &axis = GetPhysics()->GetAxis();
 
-	if( this->showCursor ) {
-		gameRenderWorld->DebugArrow( colorYellow, origin + axis[1] * -5.0f + axis[2] * 5.0f, origin, 2 );
-		gameRenderWorld->DebugArrow( colorRed, origin, draggedPosition, 2 );
-	}
+	gameRenderWorld->DebugArrow( colorYellow, origin + axis[1] * -5.0f + axis[2] * 5.0f, origin, 2 );
+	gameRenderWorld->DebugArrow( colorRed, origin, draggedPosition, 2 );
 }
 
 /*

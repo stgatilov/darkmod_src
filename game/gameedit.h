@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/09/24 03:17:53  lloyd
+ * Restored file to it's original state
+ *
  * Revision 1.2  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -43,7 +46,6 @@ public:
 
 	idForce_Drag			drag;
 	idVec3					draggedPosition;
-	bool					showCursor;
 };
 
 
