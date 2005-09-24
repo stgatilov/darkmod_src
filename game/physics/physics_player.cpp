@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2005/09/24 03:16:34  lloyd
+ * Stop player from banging into objects he's picked up
+ *
  * Revision 1.20  2005/09/17 07:15:28  sophisticatedzombie
  * Added function that applies damage to the player when mantling at a high relative velocity. The damage amount is computed from minimum and scale constants in DarkModGlobals.
  *
@@ -82,6 +85,7 @@
 
 #include "../Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS
@@ -1025,7 +1029,14 @@ void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 
 	// SophisticatedZombie
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("performing CorrectAllSolid due to player inside solid object\n");
-	current.origin -= (GetGravityNormal() * 0.2f);
+	//
+	// Don't bump player up if they're standing in a previously picked up objects.
+	// This is complicated but because we want free object movement, we have to temporarily disable player clipping.
+	// But, if a players releases an object when they're inside it they float to the surface.  By doing this check
+	// we can avoid that.
+	if( !g_Global.m_DarkModPlayer->grabber->HasClippedEntity() ) {
+		current.origin -= (GetGravityNormal() * 0.2f);
+	}
 
 
 	// FIXME: jitter around to find a free spot ?
