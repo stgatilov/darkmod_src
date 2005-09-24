@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2005/09/24 03:13:49  lloyd
+ * Changed CGrabber grabber to CGrabber *grabber
+ *
  * Revision 1.6  2005/09/17 00:32:23  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -104,7 +107,7 @@ public:
 	~CDarkModPlayer(void);
 
 	// grabber to help with object manipulation
-	CGrabber		grabber;
+	CGrabber		*grabber;
 
 	/**
 	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
