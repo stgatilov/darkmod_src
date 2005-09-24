@@ -11,21 +11,47 @@
 #ifndef __GRABBER_H__
 #define __GRABBER_H__
 
-#include "../game/GameEdit.h"
-#include "../game/Entity.h"
+#include "../Game/Entity.h"
+//#include "Force_Grab.h"
 
-class CGrabber : idEntity {
+class idPlayer;
+
+extern const idEventDef EV_Grabber_CheckClipList;
+
+class CGrabbedEnt {
+	public: 
+		idEntity	*ent;
+		int			clipMask;
+
+		bool operator==( const CGrabbedEnt &right ) const {
+			if( right.ent == this->ent )
+				return true;
+			return false;
+		}
+};
+
+class CGrabber : public idEntity {
 	public:
+		CLASS_PROTOTYPE( CGrabber );
+
 								CGrabber( void );
 								~CGrabber( void );
 
-		void					Clear();
+		void					Clear( void );
 		void					Update( idPlayer *player, bool hold = false );
+
+		void					Spawn( void );
 
 		idEntity *				GetSelected( void ) const { return dragEnt.GetEntity(); }
 
+		bool					IsInClipList( idEntity *ent ) const;
+		bool					HasClippedEntity( void ) const;
+
 	protected:
 		void					ManipulateObject( idPlayer *player );
+		
+		void					AddToClipList( idEntity *ent );
+		void					RemoveFromClipList( int index );
 
 	private:
 		idEntityPtr<idEntity>	dragEnt;			// entity being dragged
@@ -34,13 +60,19 @@ class CGrabber : idEntity {
 		idVec3					localEntityPoint;	// dragged point in entity space
 		idVec3					localPlayerPoint;	// dragged point in player space
 		idStr					bodyName;			// name of the body being dragged
-		idCursor3D *			cursor;				// cursor entity
-		idEntityPtr<idEntity>	selected;			// last dragged entity
 
-		idVec3					rotatePosition;
-		idVec2					mousePosition;
+		idPlayer				*player;
+		idForce_Drag			drag;
+
+		idVec3					rotatePosition;		// how much to rotate the object
+		idVec2					mousePosition;		// mouse position when user pressed BUTTON_ZOOM
+		int						rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
+
+		idList<CGrabbedEnt>		clipList;
 
 		void					StopDrag( void );
+		
+		void					Event_CheckClipList( void );
 };
 
 

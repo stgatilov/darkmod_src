@@ -23,12 +23,22 @@
 ===============================================================================
 */
 
-const int MAX_PICKUP_DISTANCE =			200.0f;
-const int MOUSE_SCALE =					2.5f;
-const int DAMPER =						0.4f;
+const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
 
-const idVec3 rotateMin( -20.0f, -20.0f, -20.0f );
-const idVec3 rotateMax( 20.0f, 20.0f, 20.0f );
+const int CHECK_CLIP_LIST_INTERVAL =	1000;
+
+const int MAX_PICKUP_DISTANCE =			50.0f;
+const int MOUSE_SCALE =					1.0f;
+const int ROTATION_DAMPER =				0.9f;
+const int MAX_ROTATION_SPEED =			30.0f;
+
+const idVec3 rotateMin( -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED );
+const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPEED );
+
+
+CLASS_DECLARATION( idEntity, CGrabber )
+	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
+END_CLASS
 
 /*
 ==============
@@ -36,7 +46,6 @@ CGrabber::CGrabber
 ==============
 */
 CGrabber::CGrabber( void ) {
-	cursor = NULL;
 	Clear();
 }
 
@@ -47,9 +56,6 @@ CGrabber::~CGrabber
 */
 CGrabber::~CGrabber( void ) {
 	StopDrag();
-	selected = NULL;
-	delete cursor;
-	cursor = NULL;
 }
 
 
@@ -58,14 +64,25 @@ CGrabber::~CGrabber( void ) {
 CGrabber::Clear
 ==============
 */
-void CGrabber::Clear() {
+void CGrabber::Clear( void ) {
 	dragEnt			= NULL;
 	joint			= INVALID_JOINT;
 	id				= 0;
 	localEntityPoint.Zero();
 	localPlayerPoint.Zero();
 	bodyName.Clear();
-	selected		= NULL;
+}
+
+/*
+==============
+CGrabber::Spawn
+==============
+*/
+void CGrabber::Spawn( void ) {
+	//TODO: Change constants at the start of the file and assign them here
+	//	using spawnArgs.
+	//
+	// This will also require moving the values into the class def .h file
 }
 
 /*
@@ -74,10 +91,7 @@ CGrabber::StopDrag
 ==============
 */
 void CGrabber::StopDrag( void ) {
-	dragEnt = NULL;
-	if ( cursor ) {
-		cursor->BecomeInactive( TH_THINK );
-	}
+	this->dragEnt = NULL;
 }
 
 /*
@@ -93,6 +107,9 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 	idAngles angles;
 	jointHandle_t newJoint;
 	idStr newBodyName;
+
+	// set this just in case we need it later
+	this->player = player;
 
 	// if there is an entity selected, we let it go and exit
 	if( !hold && this->dragEnt.GetEntity() ) {
@@ -147,19 +164,10 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 				}
 			}
 			if ( newEnt ) {
-				// grabbed entity so reset rotation and lower player weapon
-				player->LowerWeapon();
-
 				dragEnt = newEnt;
-				selected = newEnt;
 				joint = newJoint;
 				id = trace.c.id;
 				bodyName = newBodyName;
-
-				if ( !cursor ) {
-					cursor = ( idCursor3D * )gameLocal.SpawnEntityType( idCursor3D::Type );
-					cursor->showCursor = false;
-				}
 
 				idPhysics *phys = dragEnt.GetEntity()->GetPhysics();
 				localPlayerPoint = ( trace.c.point - viewPoint ) * viewAxis.Transpose();
@@ -167,15 +175,12 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 				axis = phys->GetAxis( id );
 				localEntityPoint = ( trace.c.point - origin ) * axis.Transpose();
 
-				cursor->drag.Init( g_dragDamping.GetFloat() );
-				cursor->drag.SetPhysics( phys, id, localEntityPoint );
-				cursor->Show();
+				// prevent collision with player
+				// set the clipMask so that the objet only collides with the world
+				this->AddToClipList( this->dragEnt.GetEntity() );
 
-				if ( phys->IsType( idPhysics_AF::Type ) ||
-						phys->IsType( idPhysics_RigidBody::Type ) ||
-							phys->IsType( idPhysics_Monster::Type ) ) {
-					cursor->BecomeActive( TH_THINK );
-				}
+				this->drag.Init( g_dragDamping.GetFloat() );
+				this->drag.SetPhysics( phys, id, localEntityPoint );
 			}
 		}
 	}
@@ -183,25 +188,25 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 	// if there is an entity selected for dragging
 	idEntity *drag = dragEnt.GetEntity();
 	if ( drag ) {
+		idVec3 draggedPosition;
+
+		draggedPosition = viewPoint + localPlayerPoint * viewAxis;
+		this->drag.SetDragPosition( draggedPosition );
+
+		// evaluate physics
+		// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
+		// calculations which is what we want so that the manipulation works properly
+		this->drag.Evaluate( gameLocal.time );
 		this->ManipulateObject( player );
-
-		cursor->SetOrigin( viewPoint + localPlayerPoint * viewAxis );
-		cursor->SetAxis( viewAxis );
-
-		cursor->drag.SetDragPosition( cursor->GetPhysics()->GetOrigin() );
 
 		renderEntity_t *renderEntity = drag->GetRenderEntity();
 		idAnimator *dragAnimator = drag->GetAnimator();
 
 		if ( joint != INVALID_JOINT && renderEntity && dragAnimator ) {
-			dragAnimator->GetJointTransform( joint, gameLocal.time, cursor->draggedPosition, axis );
-			cursor->draggedPosition = renderEntity->origin + cursor->draggedPosition * renderEntity->axis;
-		} else {
-			cursor->draggedPosition = cursor->GetPhysics()->GetOrigin();
+			dragAnimator->GetJointTransform( joint, gameLocal.time, draggedPosition, axis );
 		}
 	}
 }
-
 
 /*
 ==============
@@ -222,21 +227,186 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		return;
 	}
 
-	// if the player holds ZOOM, make the object rotated based on mouse movement
+	// NOTES ON OBJECT ROTATION
+	// 
+	// The way the object rotation works is as follows:
+	//	1) Player must be holding BUTTON_ZOOM
+	//	2) if the player is holding BUTTON_RUN, rotate about the x-axis
+	//	   else then if the mouse first moves along the x axis, rotate about the z-axis
+	//				 else if the mouse first moves along the y axis, rotate about the y-axis
+	//
+	// This system may seem complicated but I found after playing with it for a few minutes
+	// it's quite easy to use.  It also offers some throttling of rotation speed. (Besides, 
+	// who uses the ZOOM button anyway?)
+	//
+	// If the player releases the ZOOM button rotation slows down.
+	// To sum it all up...
+	//
+	// If the player holds ZOOM, make the object rotated based on mouse movement.
 	if( player->usercmd.buttons & BUTTON_ZOOM ) {
 
-		this->rotatePosition.x = (player->usercmd.my - this->mousePosition.y) * MOUSE_SCALE;
-		this->rotatePosition.z = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;
+		switch( this->rotationAxis ) {
+			case 1:
+				this->rotatePosition.x = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;				
+				this->rotationAxis = 1;
+				break;
+
+			case 2:
+				this->rotatePosition.y = (player->usercmd.my - this->mousePosition.y) * MOUSE_SCALE;				
+				this->rotationAxis = 2;
+				break;
+
+			case 3:
+				this->rotatePosition.z = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;
+				this->rotationAxis = 3;
+				break;
+
+			default:
+				// wait for motion on the x-axis, if nothing, check the y-axis.
+				if( (player->usercmd.mx - this->mousePosition.x) != 0 ) {
+					// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
+					if( player->usercmd.buttons & BUTTON_RUN ) {
+						this->rotationAxis = 1;
+					}
+					else {
+						this->rotationAxis = 3;
+					}
+				}
+				else if( (player->usercmd.my - this->mousePosition.y) != 0 ) {
+					this->rotationAxis = 2;
+				}
+		}
 
 		this->rotatePosition.Clamp( rotateMin, rotateMax );
-
-		physics->SetAngularVelocity( this->rotatePosition );
+		physics->SetAngularVelocity( this->rotatePosition, this->id );
 	}
 	else {
 		// reset these coordinates so that next time they press zoom the rotation will be fresh
 		this->mousePosition.x = player->usercmd.mx;
 		this->mousePosition.y = player->usercmd.my;
 
-		physics->SetAngularVelocity( physics->GetAngularVelocity() * DAMPER );
+		// reset rotation information so when the next zoom is pressed we can freely rotate again
+		if( this->rotationAxis ) {
+			this->rotationAxis = 0;
+			this->rotatePosition = vec3_origin;
+		}
+
+		physics->SetAngularVelocity( physics->GetAngularVelocity() * ROTATION_DAMPER, this->id );
 	}
+}
+
+/*
+==============
+CGrabber::AddToClipList
+==============
+*/
+void CGrabber::AddToClipList( idEntity *ent ) {
+	CGrabbedEnt obj;
+	idPhysics *phys = ent->GetPhysics();
+	int clipMask = phys->GetClipMask();
+
+	obj.ent = ent;
+	obj.clipMask = clipMask;
+
+	this->clipList.AddUnique( obj );
+
+	// set the clipMask so that the player won't colide with the object but it still
+	// collides with the world
+	phys->SetClipMask( clipMask & (~MASK_PLAYERSOLID) );
+	phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
+
+	if( this->HasClippedEntity() ) {
+		this->PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	}
+}
+
+/*
+==============
+CGrabber::RemoveFromClipList
+==============
+*/
+void CGrabber::RemoveFromClipList( int index ) {
+	// remove the entity and reset the clipMask
+	if( index != -1 ) {
+		this->clipList[index].ent->GetPhysics()->SetClipMask( this->clipList[index].clipMask );
+		this->clipList.RemoveIndex( index );
+	}
+
+	if( !this->HasClippedEntity() ) {
+		// cancel CheckClipList because the list is empty
+		this->CancelEvents( &EV_Grabber_CheckClipList );
+	}
+}
+
+/*
+==============
+CGrabber::Event_CheckClipList
+==============
+*/
+void CGrabber::Event_CheckClipList( void ) {
+	idEntity *ent[MAX_GENTITIES];
+	bool keep;
+	int i, j, num;	
+
+	// Check for any entity touching the players bounds
+	// If the entity is not in our list, remove it.
+	num = gameLocal.clip.EntitiesTouchingBounds( this->player->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	for( i = 0; i < this->clipList.Num(); i++ ) {
+		// Check clipEntites against entites touching player
+
+		// We keep an entity if it is the one we're dragging 
+		if( this->GetSelected() == this->clipList[i].ent ) {
+			keep = true;
+		}
+		else {
+			keep = false;
+
+			// OR if it's touching the player and still in the clipList
+			for( j = 0; !keep && j < num; j++ ) {
+				if( this->clipList[i].ent == ent[j] ) {
+					keep = true;
+				}
+			}
+		}
+
+		// Note we have to decrement i otherwise we skip entities
+		if( !keep ) {
+			this->RemoveFromClipList( i );
+			i -= 1;
+		}
+	}
+
+	if( this->HasClippedEntity() ) {
+		this->PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	}
+}
+
+/*
+==============
+CGrabber::IsInClipList
+==============
+*/
+bool CGrabber::IsInClipList( idEntity *ent ) const {
+	CGrabbedEnt obj;
+	
+	obj.ent = ent;
+	
+	// check if the entity is in the clipList
+	if( this->clipList.FindIndex( obj ) == -1 ) {
+		return false;
+	}
+	return true;
+}
+
+
+/*
+==============
+CGrabber::HasClippedEntity
+==============
+*/
+bool CGrabber::HasClippedEntity( void ) const {
+	if( this->clipList.Num() > 0 ) {
+		return true;
+	}
+	return false;
 }
