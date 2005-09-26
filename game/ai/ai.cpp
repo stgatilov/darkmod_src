@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/09/26 03:11:01  ishtvan
+ * *) tactile alert fixed, added idAI::CheckTactile
+ *
+ * *) removed old tactile alert methods
+ *
  * Revision 1.5  2005/08/22 04:58:21  ishtvan
  * eliminated unnecessary arguments in idAI::HearSound
  *
@@ -54,6 +59,9 @@ static const float s_VisFDMin = 0.0f;
 
 // full bright maximum distance is zero (because probability is always zero anyway)
 static const float s_VisFDMax = 0.0f;
+
+// TODO: Move this to def file or INI
+static const float s_AITactDist = 1.0f;
 
 const float s_DOOM_TO_METERS = 0.0254f;
 
@@ -998,9 +1006,6 @@ void idAI::Spawn( void ) {
 
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
-
-	// init DarkMod variables
-	m_BlockingActor = NULL;
 }
 
 /*
@@ -1206,13 +1211,6 @@ void idAI::Think( void ) {
 	if ( af_push_moveables ) 
 	{
 		PushWithAF();
-	}
-
-	// Don't check tactile alerts if AI is already enganged in combat
-	if( !GetEnemy() && m_BlockingActor )
-	{
-		HadTactile( m_BlockingActor );
-		m_BlockingActor = NULL;
 	}
 
 	if ( fl.hidden && allowHiddenMovement ) {
@@ -2702,11 +2700,6 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	{
 		if ( obstacle->IsType( idActor::Type ) ) 
 		{
-			// DarkMod: Set the blocking actor for tactile alert tests
-			// uncomment for tactile alert debugging
-			//DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s is bumping into entity %s\r", name.c_str(), obstacle->name.c_str() );
-			m_BlockingActor = static_cast<idActor *>( obstacle );
-
 			// monsters aren't kickable
 			if ( obstacle == enemy.GetEntity() ) 
 			{
@@ -2840,6 +2833,7 @@ void idAI::AnimMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
+		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -2969,6 +2963,7 @@ void idAI::SlideMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
+		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -3216,6 +3211,7 @@ void idAI::FlyMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
+		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -5515,6 +5511,13 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 	
 	if( entest != NULL )
 	{
+		// aesthetic touch: Don't alert when the AI touches the dead player
+		if ( entest->IsType(idPlayer::Type) 
+			&& ( static_cast< idPlayer * >( entest )->health < 0 ) )
+		{
+			goto Quit;
+		}
+
 		AlertAI( "tact", amount );
 		m_TactAlertEnt = entest;
 		
@@ -5527,6 +5530,9 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 			gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), entest->name.c_str() );
 		}
 	}
+
+Quit:
+	return;
 }
 	
 idActor *idAI::FindEnemy( bool useFOV ) 
@@ -5704,4 +5710,48 @@ float idAI::GetMovementVolMod( void )
 
 	return returnval;
 }
+
+/*
+=====================
+idAI::CheckTactile
+
+Based on KickObstacles.
+=====================
+*/
+
+// TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
+void idAI::CheckTactile( idVec3 &dir )
+{
+	int i, numListedClipModels;
+	idBounds clipBounds;
+	idEntity *obEnt;
+	idClipModel *clipModel;
+	idClipModel *clipModelList[ MAX_GENTITIES ];
+
+	idVec3 org;
+
+	org = physicsObj.GetOrigin();
+
+	// find all possible AI ahead of this AI in the direction of motion
+	clipBounds = physicsObj.GetAbsBounds();
+	clipBounds.TranslateSelf( dir * s_AITactDist );
+	clipBounds.AddPoint( org );
+
+	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_BODY, clipModelList, MAX_GENTITIES );
 	
+	for ( i = 0; i < numListedClipModels; i++ ) 
+	{
+		clipModel = clipModelList[i];
+		obEnt = clipModel->GetEntity();
+
+		// don't touch yourself :)
+		if( obEnt == this )
+			continue;
+
+		if ( obEnt->IsType( idActor::Type ) ) 
+		{
+			//DM_LOG(LC_AI, LT_DEBUG).LogString("TACT: Actor %s is touching AI %s.\r", obEnt->name.c_str(), name.c_str() );
+			HadTactile( static_cast<idActor *>(obEnt) );
+		}
+	}
+}

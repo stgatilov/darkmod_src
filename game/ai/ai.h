@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/09/26 03:11:01  ishtvan
+ * *) tactile alert fixed, added idAI::CheckTactile
+ *
+ * *) removed old tactile alert methods
+ *
  * Revision 1.4  2005/08/22 04:58:21  ishtvan
  * eliminated unnecessary arguments in idAI::HearSound
  *
@@ -367,6 +372,12 @@ public:
 	idActor *VisualScan( float time = 1/60 );
 
 	/**
+	* Translate the AI's bounds ahead in the direction that it's walking
+	*	and call HadTactile if an enemy is within those bounds.
+	**/
+	void CheckTactile( idVec3 &dir );
+
+	/**
 	* Tactile Alerts:
 	*
 	* If no amount is entered, of the alert is defined in the global AI 
@@ -648,16 +659,6 @@ protected:
 	**/
 	idEntity *				m_TactAlertEnt;
 
-	/**
-	* The entity that is currently blocking the AI's attempt to move
-	* This is used for tactile alert checks.
-	*
-	* NOTE: idAI already has a member variable that is supposed to store
-	*		this info, but in testing I found that it was bugged in certain
-	*		situations.  This one works in all situations.
-	**/
-	idActor *				m_BlockingActor;
-
 	//
 	// ai/ai.cpp
 	//
@@ -808,7 +809,7 @@ protected:
 * So it will only go off if the AI is bumped by an enemy that moves into it.
 * This is NOT called when an AI moves into an enemy.
 *
-* AI bumping by inanimate objects is handled separately in idMoveable::Collide.
+* AI bumping by inanimate objects is handled separately by CheckTactile.
 ****/
 	void					Event_Touch( idEntity *other, trace_t *trace );
 

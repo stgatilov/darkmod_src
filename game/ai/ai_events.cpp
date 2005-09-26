@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/09/26 03:11:01  ishtvan
+ * *) tactile alert fixed, added idAI::CheckTactile
+ *
+ * *) removed old tactile alert methods
+ *
  * Revision 1.2  2005/04/07 09:23:09  ishtvan
  * Added scripting events to interface with DarkMod AI
  *
@@ -344,14 +349,16 @@ AI bumping by inanimate objects is handled separately in idMoveable::Collide.
 
 void idAI::Event_Touch( idEntity *other, trace_t *trace ) 
 {
-	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
+	if ( !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
 	{
 		Activate( other );
 	}
 	AI_PUSHED = true;
 
-	if( other && other->IsType(idPlayer::Type) )
-		TactileAlert( other );
+	if( other && other->IsType(idActor::Type) )
+	{
+		HadTactile( static_cast<idActor *>(other) );
+	}
 }
 
 /*
