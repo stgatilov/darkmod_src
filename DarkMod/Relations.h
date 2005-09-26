@@ -37,6 +37,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2005/09/26 01:12:21  ishtvan
+ * no longer tries to access relationship matrix when loading it has failed
+ *
  * Revision 1.2  2005/03/30 18:16:20  sparhawk
  * CVS Header added
  *
@@ -163,6 +166,12 @@ protected:
 * The relationship matrix uses class CMatrixSq to store a square matrix
 **/
 	CMatrixSq<int> *	m_RelMat;
+
+/**
+* Boolean to store whether the relations matrix failed to load
+* Accessors will check this and return the default relation if true
+**/
+	bool				m_bMatFailed;
 
 };
 

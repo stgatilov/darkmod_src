@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2005/09/26 01:12:21  ishtvan
+ * no longer tries to access relationship matrix when loading it has failed
+ *
  * Revision 1.3  2005/04/07 08:40:16  ishtvan
  * Fixes in the worldspawn parsing, removed warnings that displayed to the console
  *
@@ -29,9 +32,6 @@
  * CVS Header added
  *
  ******************************************************************************/
-
-// TODO: Go thru game_local and call Save and Restore relations when game
-// is saved or restored.
 
 #pragma hdrstop
 
@@ -41,9 +41,14 @@
 #include "matrixsq.h"
 #include "../game/game_local.h"
 
+
+/**
+* TODO: Move these constants to def file or .ini file
+**/
 static const int s_DefaultRelation = -1;
 
 static const int s_DefaultSameTeamRel = 5;
+
 
 CLASS_DECLARATION( idClass, CRelations )
 END_CLASS
@@ -89,16 +94,24 @@ int CRelations::Size( void )
 
 int CRelations::GetRelNum(int i, int j)
 {
-	int *pval, returnval;
+	int *pval, RelDefault, returnval;
 
-	// uncomment for debugging of relationship checks (happens rather frequently and spams the log file)
+	// uncomment for debugging of relationship checks
 	// DM_LOG(LC_AI, LT_DEBUG).LogString("Checking relationship matrix for team %d towards team %d.\r", i, j);
+	
+	// return the default and don't attempt to check the matrix if it failed to load
+	if( m_bMatFailed )
+	{
+		RelDefault = s_DefaultRelation;
+		pval = &RelDefault;
+		goto Quit;
+	}
+	
 	pval = m_RelMat->Get( i , j );
 
 	if ( pval == NULL )
 	{
 		// uncomment for reporting errors when doing relationship checks
-		//idLib::common->Warning( "Warning: Bad indices given for relationship matrix.  Assuming slight enemy relationship.\n" );
 		//DM_LOG(LC_AI, LT_ERROR).LogString("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
 		
 		returnval = s_DefaultRelation;
@@ -177,6 +190,8 @@ bool CRelations::SetFromArgs( idDict *args )
 	idStr tempKey, tempVal, row, col, val;
 
 	bool hadSynError(false), hadLogicError(false);
+
+	m_bMatFailed = false;
 	
 	const idKeyValue *Entry = args->MatchPrefix( "rel ", NULL );
 	while ( Entry ) 
@@ -322,6 +337,8 @@ Quit:
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
 		idLib::common->Warning("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
+
+		m_bMatFailed = true;
 	}
 
 	if(hadLogicError)
@@ -329,6 +346,7 @@ Quit:
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
 		idLib::common->Warning("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
+		m_bMatFailed = true;
 	}
 
 	return !(hadSynError || hadLogicError);
