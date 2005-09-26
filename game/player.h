@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/09/26 03:09:02  ishtvan
+ * Event_Touch no longer necessary, removed
+ *
  * Revision 1.7  2005/08/14 23:27:31  sophisticatedzombie
  * Updated handling of leaning to use doxygen style comments
  *
@@ -719,15 +722,10 @@ private:
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
 
-	/**
-	* DarkMod Events
-	**/
+/**
+* DarkMod Events
+**/
 
-	/**
-	* Event touch on the player is used to trigger tactile alert on an AI 
-	* when the AI touches the player.
-	**/
-	void					Event_Touch( idEntity *other, trace_t *trace );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

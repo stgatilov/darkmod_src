@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2005/09/26 03:09:02  ishtvan
+ * Event_Touch no longer necessary, removed
+ *
  * Revision 1.25  2005/09/24 03:15:39  lloyd
  * Prevent player from zooming when holding object, disabled weapon when player holding an object
  *
@@ -170,7 +173,6 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
 	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
-	EVENT( EV_Touch,						idPlayer::Event_Touch )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -5129,8 +5131,11 @@ void idPlayer::UpdateAir( void ) {
 	}
 
 #ifdef MOD_WATERPHYSICS
+
 	idPhysics_Player *phys = dynamic_cast<idPhysics_Player *>(this->GetPhysics());   // MOD_WATERPHYSICS
+
 #endif		// MOD_WATERPHYSICS
+
 
 	// see if the player is connected to the info_vacuum
 	bool	newAirless = false;
@@ -5153,9 +5158,13 @@ void idPlayer::UpdateAir( void ) {
 	}
 
 #ifdef MOD_WATERPHYSICS // check if the player is in water
+
 	if( phys != NULL && phys->GetWaterLevel() >= WATERLEVEL_HEAD )      // MOD_WATERPHYSICS
+
 		newAirless = true;	// MOD_WATERPHYSICS
+
 #endif		// MOD_WATERPHYSICS
+
 
 	if ( newAirless ) {
 		if ( !airless ) {
@@ -8906,26 +8915,6 @@ void idPlayer::AdjustLightgem(void)
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
-}
-
-void idPlayer::Event_Touch( idEntity *other, trace_t *trace ) 
-{
-	idAI *AItest;
-	
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Entity %s is touching the player.\r", other->name.c_str() );
-	if( !other->IsType( idAI::Type ) )
-		goto Quit;
-	
-	AItest = static_cast<idAI *>(other);
-
-	// note the reversed order of the team check.  We need to check
-	// if the other team hates the player, not the other way around.
-	if( gameLocal.m_RelationsManager->IsEnemy( AItest->team, team ) )
-		AItest->TactileAlert( this );
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Did team comparison between AI team %d and player team %d.\r", AItest->team, team );
-
-Quit:
-	return;
 }
 
 void idPlayer::UpdateMoveVolumes( void )
