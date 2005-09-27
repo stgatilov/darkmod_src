@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/09/27 08:05:43  ishtvan
+ * *) Doors now activate/deactivate visportals that are touching them
+ *
+ * *) Fixed multifrob problem, implemented stopping of doors partway by frobbing
+ *
+ * *) Only returns the closed acoustical loss when completely closed
+ *
  * Revision 1.5  2005/04/07 08:42:38  ishtvan
  * Added placeholder method GetSoundLoss, which is called by CsndProp
  *
@@ -67,6 +74,8 @@ CFrobDoor::CFrobDoor(void)
 	m_Open = false;
 	m_Locked = false;
 	m_Pickable = true;
+	m_bInterrupted = false;
+	m_bIntentOpen = false;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -91,6 +100,7 @@ void CFrobDoor::Spawn( void )
 	idMover::Spawn();
 	idEntity *e;
 	CFrobDoor *master;
+	idAngles tempAngle;
 
 	LoadTDMSettings();
 
@@ -138,6 +148,35 @@ void CFrobDoor::Spawn( void )
 
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
+
+
+	// Check for a visportal within this door (NOTE: areaPortal is a member from idMover)
+	areaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
+	if( areaPortal > 0 )
+		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Door [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
+
+	physicsObj.GetLocalAngles( tempAngle );
+
+	if ( !m_Open ) 
+	{
+		// Door starts closed
+
+		Event_ClosePortal();
+
+		m_ClosedAngles = tempAngle;
+		m_OpenAngles = m_Rotate;
+	}
+	else
+	{
+		m_ClosedAngles = -1*m_Rotate;
+		m_OpenAngles = tempAngle;
+	}
+
+	// set the first intent according to the initial doorstate
+	m_bIntentOpen = !m_Open;
+
+	//TODO: Add portal/door pair to soundprop data here, 
+	//	replacing the old way in sndPropLoader
 }
 
 void CFrobDoor::Lock(bool bMaster)
@@ -247,10 +286,13 @@ void CFrobDoor::Open(bool bMaster)
 {
 	CFrobDoor *ent;
 	idEntity *e;
+	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true)
+	if(m_Open == true && !m_bInterrupted)
 		return;
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opening\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -288,9 +330,16 @@ void CFrobDoor::Open(bool bMaster)
 			StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
 		else
 		{
-			StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-			Event_RotateOnce(m_Rotate);
+			// don't play the sound if the door was not closed all the way
+			if( !m_bInterrupted )
+				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+
+			physicsObj.GetLocalAngles( tempAng );
+			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
 			m_Open = true;
+
+			// Open visportal
+			Event_OpenPortal();
 		}
 	}
 }
@@ -299,10 +348,13 @@ void CFrobDoor::Close(bool bMaster)
 {
 	CFrobDoor *ent;
 	idEntity *e;
+	idAngles tempAng;
 
 	// If the door is already closed, we don't have anything to do. :)
 	if(m_Open == false)
 		return;
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closing\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -336,19 +388,46 @@ void CFrobDoor::Close(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		idAngles angle = m_Rotate * (-1);
-		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-		Event_RotateOnce(angle);
-		m_Open = false;
+		physicsObj.GetLocalAngles( tempAng );
+		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
+
 	}
 }
 
 void CFrobDoor::ToggleOpen(void)
 {
-	if(m_Open == true)
-		Close(true);
-	else
-		Open(true);
+
+	// Check if the door is stopped.
+	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Was stationary on frobbing\r" );
+
+
+		if(m_bIntentOpen == true)
+		{
+			Open(true);
+		}
+		else
+		{
+			Close(true);
+		}
+
+		m_bInterrupted = false;
+		
+		goto Quit;
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Interrupted!  Stopping door\r" );
+
+	// Otherwise, door is moving.  Stop it
+	m_bInterrupted = true;
+	Event_StopRotating();
+
+	// reverse the intent
+	m_bIntentOpen = !m_bIntentOpen;
+
+Quit:
+	return;
 }
 
 bool CFrobDoor::UsedBy(idEntity *ent)
@@ -413,4 +492,38 @@ float CFrobDoor::GetSoundLoss(void)
 	}
 
 	return returnval;
+}
+
+void CFrobDoor::DoneRotating(void)
+{
+	idMover::DoneRotating();
+
+	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Done rotating\r" );
+	
+	// if the door is not completely opened or closed, do nothing
+	if( m_bInterrupted )
+		goto Quit;
+
+	// door has completely closed
+	if( !m_bIntentOpen )
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closed completely\r" );
+		// close the visportal
+		Event_ClosePortal();
+
+		m_bIntentOpen = true;
+		m_Open = false;
+
+		// play the closing sound when the door closes completely
+		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+	}
+	// door has completely opened
+	else
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opened completely\r" );
+		m_bIntentOpen = false;
+	}
+
+Quit:
+	return;
 }
