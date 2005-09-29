@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/09/29 04:03:08  ishtvan
+ * added support for double doors
+ *
  * Revision 1.6  2005/09/27 08:05:43  ishtvan
  * *) Doors now activate/deactivate visportals that are touching them
  *
@@ -57,6 +60,7 @@ const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
 const idEventDef EV_TDM_Door_Lock( "Lock", NULL );
 const idEventDef EV_TDM_Door_Unlock( "Unlock", NULL );
 const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
+const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 
 CLASS_DECLARATION( idMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
@@ -65,6 +69,7 @@ CLASS_DECLARATION( idMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
 	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
 	EVENT( EV_TDM_Door_ToggleLock,			CFrobDoor::ToggleLock)
+	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
 END_CLASS
 
 CFrobDoor::CFrobDoor(void)
@@ -76,6 +81,7 @@ CFrobDoor::CFrobDoor(void)
 	m_Pickable = true;
 	m_bInterrupted = false;
 	m_bIntentOpen = false;
+	m_DoubleDoor = NULL;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -150,17 +156,15 @@ void CFrobDoor::Spawn( void )
 	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
 
 
-	// Check for a visportal within this door (NOTE: areaPortal is a member from idMover)
-	areaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
+	// log if visportal was found
 	if( areaPortal > 0 )
-		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Door [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
+		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
 	physicsObj.GetLocalAngles( tempAngle );
 
 	if ( !m_Open ) 
 	{
 		// Door starts closed
-
 		Event_ClosePortal();
 
 		m_ClosedAngles = tempAngle;
@@ -174,6 +178,9 @@ void CFrobDoor::Spawn( void )
 
 	// set the first intent according to the initial doorstate
 	m_bIntentOpen = !m_Open;
+
+	//schedule finding the double doors for after all entities have spawned
+	PostEventMS( &EV_TDM_Door_FindDouble, 0 );
 
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
@@ -292,7 +299,7 @@ void CFrobDoor::Open(bool bMaster)
 	if(m_Open == true && !m_bInterrupted)
 		return;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opening\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opening\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -400,7 +407,7 @@ void CFrobDoor::ToggleOpen(void)
 	// Check if the door is stopped.
 	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Was stationary on frobbing\r" );
+//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Was stationary on frobbing\r" );
 
 
 		if(m_bIntentOpen == true)
@@ -417,7 +424,7 @@ void CFrobDoor::ToggleOpen(void)
 		goto Quit;
 	}
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Interrupted!  Stopping door\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Interrupted!  Stopping door\r" );
 
 	// Otherwise, door is moving.  Stop it
 	m_bInterrupted = true;
@@ -474,15 +481,15 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 float CFrobDoor::GetSoundLoss(void)
 {
 	float returnval;
+	bool bDoubleOpen(false);
 
-	// TODO: Get open/closed state
+	if( m_DoubleDoor )
+		bDoubleOpen = m_DoubleDoor->m_Open;
 
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
 
-	// TODO: Account for double doors, get state of other door
-
-	if (m_Open == true)
+	if (m_Open == true || bDoubleOpen)
 	{
 		returnval = 1;
 	}
@@ -498,7 +505,7 @@ void CFrobDoor::DoneRotating(void)
 {
 	idMover::DoneRotating();
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Done rotating\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Done rotating\r" );
 	
 	// if the door is not completely opened or closed, do nothing
 	if( m_bInterrupted )
@@ -507,23 +514,61 @@ void CFrobDoor::DoneRotating(void)
 	// door has completely closed
 	if( !m_bIntentOpen )
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closed completely\r" );
-		// close the visportal
-		Event_ClosePortal();
+//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closed completely\r" );
 
 		m_bIntentOpen = true;
 		m_Open = false;
 
 		// play the closing sound when the door closes completely
 		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+
+		//make sure the Doubledoor is also closed before closing the visportal
+		if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
+			Event_ClosePortal();
 	}
 	// door has completely opened
 	else
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opened completely\r" );
+//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opened completely\r" );
 		m_bIntentOpen = false;
 	}
 
 Quit:
 	return;
+}
+
+void CFrobDoor::FindDoubleDoor(void)
+{
+	int i, numListedClipModels, testPortal;
+	idBounds clipBounds;
+	idEntity *obEnt;
+	idClipModel *clipModel;
+	idClipModel *clipModelList[ MAX_GENTITIES ];
+
+	clipBounds = physicsObj.GetAbsBounds();
+	clipBounds.ExpandSelf( 10.0f );
+
+	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
+
+	for ( i = 0; i < numListedClipModels; i++ ) 
+	{
+		clipModel = clipModelList[i];
+		obEnt = clipModel->GetEntity();
+
+		// Ignore self
+		if( obEnt == this )
+			continue;
+
+		if ( obEnt->IsType( CFrobDoor::Type ) ) 
+		{
+			// check the visportal inside the other door, if it's the same as this one, double door
+			testPortal = gameRenderWorld->FindPortal( obEnt->GetPhysics()->GetAbsBounds() );
+
+			if( testPortal == areaPortal && testPortal != 0 )
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str() );
+				m_DoubleDoor = static_cast<CFrobDoor *>( obEnt );
+			}
+		}
+	}
 }
