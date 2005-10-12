@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2005/10/12 14:52:52  domarius
+ * Rope arrow - initial stage, just sticks you to the rope point of origin... permanently.
+ *
  * Revision 1.21  2005/09/24 03:16:34  lloyd
  * Stop player from banging into objects he's picked up
  *
@@ -934,7 +937,29 @@ idPhysics_Player::RopeMove
 ============
 */
 void idPhysics_Player::RopeMove( void ) {
+   idVec3	wishdir, wishvel, right;
+	float	scale;
+	float	upscale;
+
     //TODO: Rope climbing :)
+   current.origin.x = ropeEntity->GetPhysics()->GetOrigin().x;
+   current.origin.z = ropeEntity->GetPhysics()->GetOrigin().z;
+
+   upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
+	if ( upscale > 1.0f ) {
+		upscale = 1.0f;
+	}
+	else if ( upscale < -1.0f ) {
+		upscale = -1.0f;
+	}
+
+	scale = idPhysics_Player::CmdScale( command );
+	wishvel = -0.9f * gravityNormal * upscale * scale * (float)command.forwardmove;
+   	// up down movement
+	if ( command.upmove ) {
+		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
+	}
+
 }
 
 /*
@@ -1236,8 +1261,8 @@ void idPhysics_Player::CheckRope( void )
         {
             if ( clipModel->GetAbsBounds().IntersectsBounds(ent->GetPhysics()->GetAbsBounds() ) )
             {
-	            //rope=true;
-                gameLocal.Printf( "Rope Climb activated\n");
+	            rope=true;
+               ropeEntity = ent;
             }
         }
     }
@@ -1468,7 +1493,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 	walking = false;
 	groundPlane = false;
-    rope = false;
+   rope = false;
+   ropeEntity = NULL;
 	ladder = false;
 
 	// determine the time
@@ -1732,7 +1758,8 @@ idPhysics_Player::idPhysics_Player( void ) {
 	groundPlane = false;
 	memset( &groundTrace, 0, sizeof( groundTrace ) );
 	groundMaterial = NULL;
-    rope = false;
+   rope = false;
+   ropeEntity = NULL;
 	ladder = false;
 	ladderNormal.Zero();
 	waterLevel = WATERLEVEL_NONE;
@@ -1819,7 +1846,9 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteTrace( groundTrace );
 	savefile->WriteMaterial( groundMaterial );
 
-    savefile->WriteBool( rope );
+   savefile->WriteBool( rope );
+   //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
+   //savefile->WriteObject( ropeEntity );
 
 	savefile->WriteBool( ladder );
 	savefile->WriteVec3( ladderNormal );
@@ -1882,6 +1911,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadMaterial( groundMaterial );
 
 	savefile->ReadBool( rope );
+   //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
+   //savefile->ReadObject( ropeEntity );
 
 	savefile->ReadBool( ladder );
 	savefile->ReadVec3( ladderNormal );
