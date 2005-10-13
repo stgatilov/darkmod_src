@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2005/10/13 06:54:51  ishtvan
+ * fixed RopeMove so that it moves player up and down
+ *
  * Revision 1.22  2005/10/12 14:52:52  domarius
  * Rope arrow - initial stage, just sticks you to the rope point of origin... permanently.
  *
@@ -938,27 +941,69 @@ idPhysics_Player::RopeMove
 */
 void idPhysics_Player::RopeMove( void ) {
    idVec3	wishdir, wishvel, right;
-	float	scale;
+	float	wishspeed, scale;
 	float	upscale;
 
     //TODO: Rope climbing :)
    current.origin.x = ropeEntity->GetPhysics()->GetOrigin().x;
-   current.origin.z = ropeEntity->GetPhysics()->GetOrigin().z;
+   current.origin.y = ropeEntity->GetPhysics()->GetOrigin().y;
 
    upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
-	if ( upscale > 1.0f ) {
+	if ( upscale > 1.0f ) 
+	{
 		upscale = 1.0f;
 	}
-	else if ( upscale < -1.0f ) {
+	else if ( upscale < -1.0f ) 
+	{
 		upscale = -1.0f;
 	}
 
 	scale = idPhysics_Player::CmdScale( command );
 	wishvel = -0.9f * gravityNormal * upscale * scale * (float)command.forwardmove;
    	// up down movement
-	if ( command.upmove ) {
+	if ( command.upmove ) 
+	{
 		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
 	}
+
+	// accelerate
+	wishspeed = wishvel.Normalize();
+	idPhysics_Player::Accelerate( wishvel, wishspeed, PM_ACCELERATE );
+
+	// cap the vertical velocity
+	upscale = current.velocity * -gravityNormal;
+	if ( upscale < -PM_LADDERSPEED ) 
+	{
+		current.velocity += gravityNormal * (upscale + PM_LADDERSPEED);
+	}
+	else if ( upscale > PM_LADDERSPEED ) 
+	{
+		current.velocity += gravityNormal * (upscale - PM_LADDERSPEED);
+	}
+
+	// stop the player from sliding down or up when they let go of the button
+	if ( (wishvel * gravityNormal) == 0.0f ) 
+	{
+		if ( current.velocity * gravityNormal < 0.0f ) 
+		{
+			current.velocity += gravityVector * frametime;
+			if ( current.velocity * gravityNormal > 0.0f ) 
+			{
+				current.velocity -= (gravityNormal * current.velocity) * gravityNormal;
+			}
+		}
+		else 
+		{
+			current.velocity -= gravityVector * frametime;
+			if ( current.velocity * gravityNormal < 0.0f ) 
+			{
+				current.velocity -= (gravityNormal * current.velocity) * gravityNormal;
+			}
+		}
+	}
+
+
+	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
 
 }
 
