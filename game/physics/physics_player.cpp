@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2005/10/14 22:58:16  ishtvan
+ * rope movement: crouch to detach, properly detects top and bottom of rope
+ *
  * Revision 1.24  2005/10/14 09:04:18  ishtvan
  * updated rope climbing
  *
@@ -961,12 +964,14 @@ idPhysics_Player::RopeMove
 */
 void idPhysics_Player::RopeMove( void ) 
 {
-   idVec3	wishdir, wishvel, right, ropePoint, offset;
-	float	wishspeed, scale;
+	idVec3	wishdir, wishvel, right, ropePoint, offset;
+	float	wishspeed, scale, temp;
 	float	upscale;
+	float	ropeTop, ropeBot; // z coordinates of the top and bottom of rope
+	idBounds ropeBounds;
 
-	// detach the player from the rope if they jump
-	if ( idPhysics_Player::CheckRopeJump() ) 
+	// detach the player from the rope if they jump, or if they hit crouch
+	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
 	{
 		RopeDetach();
 		goto Quit;
@@ -988,6 +993,22 @@ void idPhysics_Player::RopeMove( void )
 	current.origin.x = ropePoint.x + offset.x;
 	current.origin.y = ropePoint.y + offset.y;
 
+	// Find the top and bottom of the rope
+	// This must be done every frame since the rope may be deforming
+	ropeBounds = m_RopeEntity->GetPhysics()->GetAbsBounds();
+	ropeTop = ropeBounds[0].z;
+	ropeBot = ropeBounds[1].z;
+
+	if( ropeTop < ropeBot )
+	{
+		// switch 'em
+		temp = ropeTop;
+		ropeTop = ropeBot;
+		ropeBot = temp;
+	}
+	
+	
+	// read control input for climbing movement
 	upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
 	if ( upscale > 1.0f ) 
 	{
@@ -1007,10 +1028,18 @@ void idPhysics_Player::RopeMove( void )
 	}
 
 	// if the player is above the top of the rope, don't climb up
-	// subtract a small amount to represent pushing up off the rope holder
+	// if the player is at the bottom of the rope, don't climb down
+	// subtract some amount to represent hanging on with arms above head
 	if  ( 
-		(wishvel * gravityNormal) <= 0.0f 
-		&& ((current.origin.z + ROPE_GRABHEIGHT - 20.0f) > ropePoint.z)
+			(
+				wishvel * gravityNormal <= 0.0f 
+				&& ((current.origin.z + ROPE_GRABHEIGHT ) > ropeTop)
+			)
+			||
+			(
+				wishvel * gravityNormal >= 0.0f
+				&& ((current.origin.z + ROPE_GRABHEIGHT + 35.0f) < ropeBot)
+			)
 		)
 	{
 		current.velocity.z = 0;
@@ -1337,8 +1366,8 @@ void idPhysics_Player::CheckDuck( void ) {
 	if ( current.movementType == PM_DEAD ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
-		// stand up when up against a ladder
-		if ( command.upmove < 0 && !ladder ) {
+		// stand up when up against a ladder or rope
+		if ( command.upmove < 0 && !ladder && !m_bRopeAttached ) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		}
@@ -2034,9 +2063,10 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteTrace( groundTrace );
 	savefile->WriteMaterial( groundMaterial );
 
+	savefile->WriteBool( m_bRopeContact );
 	savefile->WriteBool( m_bRopeAttached );
-   //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
-   //savefile->WriteObject( ropeEntity );
+	savefile->WriteInt( m_RopeDetachTimer );
+	savefile->WriteObject( m_RopeEntity );
 
 	savefile->WriteBool( ladder );
 	savefile->WriteVec3( ladderNormal );
@@ -2098,9 +2128,10 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadTrace( groundTrace );
 	savefile->ReadMaterial( groundMaterial );
 
+	savefile->ReadBool( m_bRopeContact );
 	savefile->ReadBool( m_bRopeAttached );
-   //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
-   //savefile->ReadObject( ropeEntity );
+	savefile->ReadInt( m_RopeDetachTimer );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_RopeEntity ) );
 
 	savefile->ReadBool( ladder );
 	savefile->ReadVec3( ladderNormal );
