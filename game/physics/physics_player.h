@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/10/14 09:04:19  ishtvan
+ * updated rope climbing
+ *
  * Revision 1.15  2005/10/12 14:52:52  domarius
  * Rope arrow - initial stage, just sticks you to the rope point of origin... permanently.
  *
@@ -229,8 +232,26 @@ private:
 	const idMaterial *		groundMaterial;
 
     // rope movement
-    bool rope;
-    idEntity *ropeEntity;
+
+	/**
+	* Set to true if the player is moving and contacts a rope
+	**/
+    bool					m_bRopeContact;
+
+	/**
+	* The rope entity that the player last attached to
+	**/
+    idEntity				*m_RopeEntity;
+
+	/**
+	* The gametime since the last detachment (used for detach-reattach timer)
+	**/
+	int						m_RopeDetachTimer;
+	
+	/**
+	* toggled based on whether the player should stay attached to rope
+	**/
+	bool					m_bRopeAttached;
 
 	// ladder movement
 	bool					ladder;
@@ -263,9 +284,10 @@ private:
 	void					CorrectAllSolid( trace_t &trace, int contents );
 	void					CheckGround( void );
 	void					CheckDuck( void );
-	void					CheckRope( void );
 	void					CheckLadder( void );
 	bool					CheckJump( void );
+	bool					CheckRopeJump( void );
+	void					RopeDetach( void );
 
 #ifndef MOD_WATERPHYSICS
 	void					SetWaterLevel( void );

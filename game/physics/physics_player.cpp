@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2005/10/14 09:04:18  ishtvan
+ * updated rope climbing
+ *
  * Revision 1.23  2005/10/13 06:54:51  ishtvan
  * fixed RopeMove so that it moves player up and down
  *
@@ -132,6 +135,23 @@ const float PM_NOFRICTION_SPEED = 69.0f;
 
 const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
 const float OVERCLIP			= 1.001f;
+
+// TODO (ishtvan): Move to player def file or somewhere else
+
+/**
+* Defines the spot above the player's origin where they are attached to the rope
+**/
+const float ROPE_GRABHEIGHT		= 50.0f;
+
+/**
+* Distance the player is set back from the rope
+**/
+const float ROPE_DISTANCE		= 20.0f;
+
+/**
+* Time the system waits before reattaching to the same rope after detaching [ms]
+**/
+const int	ROPE_REATTACHTIME	= 600;
 
 // movementFlags
 const int PMF_DUCKED			= 1;		// set when ducking
@@ -939,16 +959,36 @@ void idPhysics_Player::SpectatorMove( void ) {
 idPhysics_Player::RopeMove
 ============
 */
-void idPhysics_Player::RopeMove( void ) {
-   idVec3	wishdir, wishvel, right;
+void idPhysics_Player::RopeMove( void ) 
+{
+   idVec3	wishdir, wishvel, right, ropePoint, offset;
 	float	wishspeed, scale;
 	float	upscale;
 
-    //TODO: Rope climbing :)
-   current.origin.x = ropeEntity->GetPhysics()->GetOrigin().x;
-   current.origin.y = ropeEntity->GetPhysics()->GetOrigin().y;
+	// detach the player from the rope if they jump
+	if ( idPhysics_Player::CheckRopeJump() ) 
+	{
+		RopeDetach();
+		goto Quit;
+	}
 
-   upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
+	// kill the player's transverse velocity
+	current.velocity.x = 0;
+	current.velocity.y = 0;
+
+	// stick the player to the rope
+	ropePoint = m_RopeEntity->GetPhysics()->GetOrigin();
+	
+	offset = (current.origin - ropePoint);
+	offset.ProjectOntoPlane( -gravityNormal );
+	offset.Normalize();
+	offset *= ROPE_DISTANCE;
+
+	// stick the player to the correct point
+	current.origin.x = ropePoint.x + offset.x;
+	current.origin.y = ropePoint.y + offset.y;
+
+	upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
 	if ( upscale > 1.0f ) 
 	{
 		upscale = 1.0f;
@@ -964,6 +1004,17 @@ void idPhysics_Player::RopeMove( void ) {
 	if ( command.upmove ) 
 	{
 		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
+	}
+
+	// if the player is above the top of the rope, don't climb up
+	// subtract a small amount to represent pushing up off the rope holder
+	if  ( 
+		(wishvel * gravityNormal) <= 0.0f 
+		&& ((current.origin.z + ROPE_GRABHEIGHT - 20.0f) > ropePoint.z)
+		)
+	{
+		current.velocity.z = 0;
+		goto Quit;
 	}
 
 	// accelerate
@@ -1002,9 +1053,41 @@ void idPhysics_Player::RopeMove( void ) {
 		}
 	}
 
+	// If the player is climbing down and hits the ground, detach them from the rope
+	if ( (wishvel * gravityNormal) > 0.0f && groundPlane )
+	{
+		RopeDetach();
+		goto Quit;
+	}
 
+	// slide the player up and down with their calculated velocity
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
 
+Quit:
+	return;
+}
+
+/*
+============
+idPhysics_Player::RopeDetach
+============
+*/
+void idPhysics_Player::RopeDetach( void ) 
+{
+		m_bRopeAttached = false;
+
+		// start the reattach timer
+		m_RopeDetachTimer = gameLocal.time;
+
+		// switch movement modes to the appropriate one
+		if ( waterLevel > WATERLEVEL_FEET ) 
+		{
+			idPhysics_Player::WaterMove();
+		}
+		else 
+		{
+			idPhysics_Player::AirMove();
+		}
 }
 
 /*
@@ -1294,27 +1377,6 @@ void idPhysics_Player::CheckDuck( void ) {
 
 /*
 ================
-idPhysics_Player::CheckRope
-================
-*/
-void idPhysics_Player::CheckRope( void )
-{
-    idEntity *ent;
-    for ( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
-    {
-        if (idStr::Cmp( ent->GetEntityDefName(), "env_rope" ) == 0 )
-        {
-            if ( clipModel->GetAbsBounds().IntersectsBounds(ent->GetPhysics()->GetAbsBounds() ) )
-            {
-	            rope=true;
-               ropeEntity = ent;
-            }
-        }
-    }
-}
-
-/*
-================
 idPhysics_Player::CheckLadder
 ================
 */
@@ -1322,6 +1384,7 @@ void idPhysics_Player::CheckLadder( void ) {
 	idVec3		forward, start, end;
 	trace_t		trace;
 	float		tracedist;
+	idEntity    *testEnt;
 	
 	if ( current.movementTime ) {
 		return;
@@ -1344,14 +1407,44 @@ void idPhysics_Player::CheckLadder( void ) {
 	}
 
 	end = current.origin + tracedist * forward;
-	gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
+	// modified to check contents_corpse to check for ropes
+	gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask | CONTENTS_CORPSE, self );
 
 	// if near a surface
-	if ( trace.fraction < 1.0f ) {
+	if ( trace.fraction < 1.0f ) 
+	{
+
+		testEnt = gameLocal.entities[trace.c.entityNum];
+
+// DarkMod: Rope test
+// TODO: Check the class type instead of the stringname, make new rope class
+		// this is kind've a hack, but the rope has a different attach distance than the ladder
+		if( 
+			testEnt && idStr::Cmp( testEnt->GetEntityDefName(), "env_rope" ) == 0
+			&& !m_bRopeAttached
+			&& ( (trace.endpos - current.origin).Length() <= 2.0f ) 
+			)
+		{
+			// do not reattach to the same rope until the reattach timer has elapsed
+			// do not reattach if the player is not pressing forward
+			if ( 
+				testEnt == m_RopeEntity &&
+				gameLocal.time - m_RopeDetachTimer < ROPE_REATTACHTIME 
+				)
+			{
+				// do nothing
+			}
+
+			else
+			{
+				m_bRopeContact = true;
+				m_RopeEntity = testEnt;
+			}
+		}
 
 		// if a ladder surface
-		if ( trace.c.material && ( trace.c.material->GetSurfaceFlags() & SURF_LADDER ) ) {
-
+		else if ( trace.c.material && ( trace.c.material->GetSurfaceFlags() & SURF_LADDER ) ) 
+		{
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
 			gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
@@ -1401,6 +1494,46 @@ bool idPhysics_Player::CheckJump( void ) {
 
 	addVelocity = 2.0f * maxJumpHeight * -gravityVector;
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
+	current.velocity += addVelocity;
+
+	return true;
+}
+
+/*
+=============
+idPhysics_Player::CheckRopeJump
+=============
+*/
+bool idPhysics_Player::CheckRopeJump( void ) {
+	idVec3 addVelocity;
+	idVec3 jumpDir;
+
+	if ( command.upmove < 10 ) {
+		// not holding jump
+		return false;
+	}
+
+	// must wait for jump to be released
+	if ( current.movementFlags & PMF_JUMP_HELD ) {
+		return false;
+	}
+
+	// don't jump if we can't stand up
+	if ( current.movementFlags & PMF_DUCKED ) {
+		return false;
+	}
+
+	groundPlane = false;		// jumping away
+	walking = false;
+	current.movementFlags |= PMF_JUMP_HELD | PMF_JUMPED;
+
+	// the jump direction is an equal sum of up and the direction we're looking
+	jumpDir = viewForward - gravityNormal;
+	jumpDir *= 1.0f/idMath::Sqrt(2.0f);
+
+	addVelocity = 2.0f * maxJumpHeight * gravityVector.Length() * jumpDir;
+	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
+
 	current.velocity += addVelocity;
 
 	return true;
@@ -1538,8 +1671,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 	walking = false;
 	groundPlane = false;
-   rope = false;
-   ropeEntity = NULL;
+	
+	m_bRopeContact = false;
 	ladder = false;
 
 	// determine the time
@@ -1603,10 +1736,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// check for ground
 	idPhysics_Player::CheckGround();
 
-	// check if intersecting with rope
-	idPhysics_Player::CheckRope();
-
-	// check if up against a ladder
+	// check if up against a ladder or a rope
 	idPhysics_Player::CheckLadder();
 
 	// set clip model size
@@ -1632,11 +1762,19 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		// dead
 		idPhysics_Player::DeadMove();
 	}
-	else if ( rope ) {
-		// going up or down a  rope
+	// continue moving on the rope if still attached
+	else if ( m_bRopeAttached )
+	{
 		idPhysics_Player::RopeMove();
 	}
-	else if ( ladder ) {
+	else if ( m_bRopeContact ) 
+	{
+		// toggle m_bRopeAttached
+		m_bRopeAttached = true;
+		idPhysics_Player::RopeMove();
+	}
+	else if ( ladder ) 
+	{
 		// going up or down a ladder
 		idPhysics_Player::LadderMove();
 	}
@@ -1764,7 +1902,7 @@ idPhysics_Player::OnRope
 ================
 */
 bool idPhysics_Player::OnRope( void ) const {
-	return rope;
+	return m_bRopeAttached;
 }
 
 
@@ -1803,8 +1941,13 @@ idPhysics_Player::idPhysics_Player( void ) {
 	groundPlane = false;
 	memset( &groundTrace, 0, sizeof( groundTrace ) );
 	groundMaterial = NULL;
-   rope = false;
-   ropeEntity = NULL;
+	
+	// rope climbing
+	m_bRopeContact = false;
+	m_bRopeAttached = false;
+	m_RopeEntity = NULL;
+	m_RopeDetachTimer = 0;
+
 	ladder = false;
 	ladderNormal.Zero();
 	waterLevel = WATERLEVEL_NONE;
@@ -1891,7 +2034,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteTrace( groundTrace );
 	savefile->WriteMaterial( groundMaterial );
 
-   savefile->WriteBool( rope );
+	savefile->WriteBool( m_bRopeAttached );
    //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
    //savefile->WriteObject( ropeEntity );
 
@@ -1955,7 +2098,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadTrace( groundTrace );
 	savefile->ReadMaterial( groundMaterial );
 
-	savefile->ReadBool( rope );
+	savefile->ReadBool( m_bRopeAttached );
    //TODO: (Domarius) Okay how do we save a fucking entity, I don't know yet...
    //savefile->ReadObject( ropeEntity );
 
