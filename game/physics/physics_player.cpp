@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2005/10/16 02:18:31  ishtvan
+ * *) completed rope orbiting
+ *
+ * *) added failsafe for rope arrow attachment
+ *
  * Revision 1.25  2005/10/14 22:58:16  ishtvan
  * rope movement: crouch to detach, properly detects top and bottom of rope
  *
@@ -133,13 +138,12 @@ const float MANTLE_TEST_INCREMENT = 1.0;
 * This was determined for PM_FRICTION = 6.0 and should change if
 *	PM_FRICTION changes from 6.0.
 **/
-
 const float PM_NOFRICTION_SPEED = 69.0f;
 
 const float MIN_WALK_NORMAL		= 0.7f;		// can't walk on very steep slopes
 const float OVERCLIP			= 1.001f;
 
-// TODO (ishtvan): Move to player def file or somewhere else
+// TODO (ishtvan): Move the following to INI file or player def file:
 
 /**
 * Defines the spot above the player's origin where they are attached to the rope
@@ -155,6 +159,16 @@ const float ROPE_DISTANCE		= 20.0f;
 * Time the system waits before reattaching to the same rope after detaching [ms]
 **/
 const int	ROPE_REATTACHTIME	= 600;
+
+/**
+* Angular tolarance for looking at a rope and grabbing it [deg]
+**/
+const float ROPE_ATTACHANGLE = 45.0f*idMath::PI/180.0f;
+/**
+* Angular tolerance for when to start rotating around the rope
+* (This one doesn't have to be in the def file)
+**/
+const float ROPE_ROTANG_TOL = 1.0f*idMath::PI/180.0f;
 
 // movementFlags
 const int PMF_DUCKED			= 1;		// set when ducking
@@ -964,18 +978,12 @@ idPhysics_Player::RopeMove
 */
 void idPhysics_Player::RopeMove( void ) 
 {
-	idVec3	wishdir, wishvel, right, ropePoint, offset;
-	float	wishspeed, scale, temp;
-	float	upscale;
-	float	ropeTop, ropeBot; // z coordinates of the top and bottom of rope
+	idVec3	wishdir, wishvel, right, ropePoint, offset, newOrigin;
+	float	wishspeed, scale, temp, deltaYaw, deltaAng1, deltaAng2;
+	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
 	idBounds ropeBounds;
-
-	// detach the player from the rope if they jump, or if they hit crouch
-	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
-	{
-		RopeDetach();
-		goto Quit;
-	}
+	trace_t transTrace; // used for clipping tests when moving the player
+	idVec3 transVec, forward, zeros(0,0,0);
 
 	// kill the player's transverse velocity
 	current.velocity.x = 0;
@@ -989,9 +997,15 @@ void idPhysics_Player::RopeMove( void )
 	offset.Normalize();
 	offset *= ROPE_DISTANCE;
 
-	// stick the player to the correct point
-	current.origin.x = ropePoint.x + offset.x;
-	current.origin.y = ropePoint.y + offset.y;
+	newOrigin = ropePoint + offset;
+	newOrigin.z = current.origin.z;
+	transVec = newOrigin - current.origin;
+
+	// check whether the player will clip anything, and only translate up to that point
+	ClipTranslation(transTrace, transVec, NULL);
+	newOrigin = current.origin + (transVec * transTrace.fraction); 
+	Translate( newOrigin - current.origin );
+
 
 	// Find the top and bottom of the rope
 	// This must be done every frame since the rope may be deforming
@@ -1006,9 +1020,52 @@ void idPhysics_Player::RopeMove( void )
 		ropeTop = ropeBot;
 		ropeBot = temp;
 	}
+
+	// ============== read mouse input and orbit around the rope ===============
+
+	// recalculate offset because the player may have moved to stick point
+	offset = (ropePoint - current.origin);
+	offset.ProjectOntoPlane( -gravityNormal );
+	offset.Normalize();
+
+	// forward vector orthogonal to gravity
+	forward = viewForward - (gravityNormal * viewForward) * gravityNormal;
+	forward.Normalize();
+
+	deltaAng1 = offset * forward;
+	deltaYaw = command.angles[1] - m_lastCommandViewYaw;
+
+	// use a different tolerance for rotating toward the rope vs away
+	// rotate forward by deltaAng to see if we are rotating towards or away from the rope
+	idRotation rotateView( zeros, -gravityNormal, -SHORT2ANGLE(deltaYaw) );
+	rotateView.RotatePoint( forward );
+
+	deltaAng2 = offset * forward;
+
 	
+	// only rotate around the rope if looking at the rope to within some angular tolerance
+	// always rotate if shifting view away
+	if( deltaAng1 >= idMath::Cos( ROPE_ROTANG_TOL ) 
+		|| ( (deltaAng2 < deltaAng1) && deltaAng1 > 0 ) )
+	{
+
+		newOrigin = current.origin;
+
+		// define the counter-rotation around the rope point using gravity axis
+		idRotation rotatePlayer( ropePoint, -gravityNormal, -SHORT2ANGLE(deltaYaw) );
+		rotatePlayer.RotatePoint( newOrigin );
+
+		// check whether the player will clip anything when orbiting
+		transVec = newOrigin - current.origin;
+		ClipTranslation(transTrace, transVec, NULL);
+		newOrigin = current.origin + (transVec * transTrace.fraction); 
+
+		Translate( newOrigin - current.origin );
+	}
 	
-	// read control input for climbing movement
+
+	// ================ read control input for climbing movement ===============
+
 	upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
 	if ( upscale > 1.0f ) 
 	{
@@ -1025,6 +1082,13 @@ void idPhysics_Player::RopeMove( void )
 	if ( command.upmove ) 
 	{
 		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
+	}
+
+	// detach the player from the rope if they jump, or if they hit crouch
+	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
+	{
+		RopeDetach();
+		goto Quit;
 	}
 
 	// if the player is above the top of the rope, don't climb up
@@ -1052,13 +1116,13 @@ void idPhysics_Player::RopeMove( void )
 
 	// cap the vertical velocity
 	upscale = current.velocity * -gravityNormal;
-	if ( upscale < -PM_LADDERSPEED ) 
+	if ( upscale < -PM_ROPESPEED ) 
 	{
-		current.velocity += gravityNormal * (upscale + PM_LADDERSPEED);
+		current.velocity += gravityNormal * (upscale + PM_ROPESPEED);
 	}
-	else if ( upscale > PM_LADDERSPEED ) 
+	else if ( upscale > PM_ROPESPEED ) 
 	{
-		current.velocity += gravityNormal * (upscale - PM_LADDERSPEED);
+		current.velocity += gravityNormal * (upscale - PM_ROPESPEED);
 	}
 
 	// stop the player from sliding down or up when they let go of the button
@@ -1107,6 +1171,8 @@ void idPhysics_Player::RopeDetach( void )
 
 		// start the reattach timer
 		m_RopeDetachTimer = gameLocal.time;
+
+		static_cast<idPlayer *>(self)->RaiseWeapon();
 
 		// switch movement modes to the appropriate one
 		if ( waterLevel > WATERLEVEL_FEET ) 
@@ -1409,10 +1475,12 @@ void idPhysics_Player::CheckDuck( void ) {
 idPhysics_Player::CheckLadder
 ================
 */
-void idPhysics_Player::CheckLadder( void ) {
-	idVec3		forward, start, end;
+void idPhysics_Player::CheckLadder( void ) 
+{
+	idVec3		forward, start, end, delta;
 	trace_t		trace;
-	float		tracedist;
+	float		tracedist, angleOff, dist, lookUpAng;
+	bool		bLookingUp;
 	idEntity    *testEnt;
 	
 	if ( current.movementTime ) {
@@ -1442,37 +1510,40 @@ void idPhysics_Player::CheckLadder( void ) {
 	// if near a surface
 	if ( trace.fraction < 1.0f ) 
 	{
-
 		testEnt = gameLocal.entities[trace.c.entityNum];
-
-// DarkMod: Rope test
+		
+// DarkMod: Check if we're looking at a rope and airborne
 // TODO: Check the class type instead of the stringname, make new rope class
-		// this is kind've a hack, but the rope has a different attach distance than the ladder
-		if( 
-			testEnt && idStr::Cmp( testEnt->GetEntityDefName(), "env_rope" ) == 0
-			&& !m_bRopeAttached
-			&& ( (trace.endpos - current.origin).Length() <= 2.0f ) 
-			)
+		if( testEnt && idStr::Cmp( testEnt->GetEntityDefName(), "env_rope" ) == 0 )
 		{
-			// do not reattach to the same rope until the reattach timer has elapsed
-			// do not reattach if the player is not pressing forward
-			if ( 
-				testEnt == m_RopeEntity &&
-				gameLocal.time - m_RopeDetachTimer < ROPE_REATTACHTIME 
-				)
-			{
-				// do nothing
-			}
+			m_RopeEntTouched = testEnt;
 
-			else
+			delta = (trace.c.point - current.origin);
+			delta = delta - (gravityNormal * delta) * gravityNormal;
+			dist = delta.LengthFast();
+
+			delta.Normalize();
+			angleOff = delta * forward;
+
+			// must be in the air to attach to the rope
+			// this is kind've a hack, but the rope has a different attach distance than the ladder
+			if( 
+				!m_bRopeAttached
+				&& ( (trace.endpos - current.origin).Length() <= 2.0f )
+				&& !groundPlane
+				&& angleOff >= idMath::Cos( ROPE_ATTACHANGLE )
+				&& (testEnt != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
+				)
 			{
 				m_bRopeContact = true;
 				m_RopeEntity = testEnt;
+
+				goto Quit;
 			}
 		}
 
 		// if a ladder surface
-		else if ( trace.c.material && ( trace.c.material->GetSurfaceFlags() & SURF_LADDER ) ) 
+		if ( trace.c.material && ( trace.c.material->GetSurfaceFlags() & SURF_LADDER ) ) 
 		{
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
@@ -1482,16 +1553,56 @@ void idPhysics_Player::CheckLadder( void ) {
 			gameLocal.clip.Translation( trace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
 
 			// if also near a surface a step height higher
-			if ( trace.fraction < 1.0f ) {
+			if ( trace.fraction < 1.0f ) 
+			{
 
 				// if it also is a ladder surface
-				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) {
+				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
+				{
 					ladder = true;
 					ladderNormal = trace.c.normal;
+					goto Quit;
 				}
 			}
 		}
 	}
+
+	// Rope attachment failsafe: Check intersection with the rope as well
+	if 
+		( 
+			!m_bRopeAttached 
+			&& m_RopeEntTouched
+			&& m_RopeEntTouched->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
+			&& !groundPlane
+		)
+	{
+		delta = (m_RopeEntTouched->GetPhysics()->GetOrigin() - current.origin);
+		delta = delta - (gravityNormal * delta) * gravityNormal;
+		dist = delta.LengthFast();
+
+		delta.Normalize();
+		angleOff = delta * forward;
+
+		// if the player is looking high up, override the angle check
+		lookUpAng = viewForward * -gravityNormal;
+		// set lookup to true if the player is looking 60 deg up or more
+		bLookingUp = lookUpAng >= idMath::Cos(idMath::PI/6);
+
+		if
+			(	
+				dist <= ROPE_DISTANCE
+				&& ( angleOff >= idMath::Cos( ROPE_ATTACHANGLE ) || bLookingUp )
+				&& (m_RopeEntTouched != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME) 
+			)
+		{
+				m_bRopeContact = true;
+				m_RopeEntity = m_RopeEntTouched;
+				goto Quit;
+		}
+	}
+
+Quit:
+	return;
 }
 
 /*
@@ -1800,6 +1911,10 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	{
 		// toggle m_bRopeAttached
 		m_bRopeAttached = true;
+
+		// lower weapon
+		static_cast<idPlayer *>(self)->LowerWeapon();
+
 		idPhysics_Player::RopeMove();
 	}
 	else if ( ladder ) 
@@ -1843,6 +1958,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		idVec3 (0.0, 0.0, 0.0)
 	);
 	*/
+
+	m_lastCommandViewYaw = command.angles[1];
 
 }
 
@@ -1930,7 +2047,8 @@ bool idPhysics_Player::IsCrouching( void ) const {
 idPhysics_Player::OnRope
 ================
 */
-bool idPhysics_Player::OnRope( void ) const {
+bool idPhysics_Player::OnRope( void ) const 
+{
 	return m_bRopeAttached;
 }
 
@@ -1975,7 +2093,9 @@ idPhysics_Player::idPhysics_Player( void ) {
 	m_bRopeContact = false;
 	m_bRopeAttached = false;
 	m_RopeEntity = NULL;
+	m_RopeEntTouched = NULL;
 	m_RopeDetachTimer = 0;
+	m_lastCommandViewYaw = 0;
 
 	ladder = false;
 	ladderNormal.Zero();
@@ -2067,6 +2187,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bRopeAttached );
 	savefile->WriteInt( m_RopeDetachTimer );
 	savefile->WriteObject( m_RopeEntity );
+	savefile->WriteFloat( m_lastCommandViewYaw );
 
 	savefile->WriteBool( ladder );
 	savefile->WriteVec3( ladderNormal );
@@ -2132,6 +2253,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bRopeAttached );
 	savefile->ReadInt( m_RopeDetachTimer );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_RopeEntity ) );
+	savefile->ReadFloat( m_lastCommandViewYaw );
 
 	savefile->ReadBool( ladder );
 	savefile->ReadVec3( ladderNormal );

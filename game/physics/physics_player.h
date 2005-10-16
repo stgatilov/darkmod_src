@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/10/16 02:18:31  ishtvan
+ * *) completed rope orbiting
+ *
+ * *) added failsafe for rope arrow attachment
+ *
  * Revision 1.16  2005/10/14 09:04:19  ishtvan
  * updated rope climbing
  *
@@ -242,6 +247,12 @@ private:
 	* The rope entity that the player last attached to
 	**/
     idEntity				*m_RopeEntity;
+
+	/**
+	* The rope entity that the player last touched (not necessarily attached to)
+	* Used for the case where the player starts inside a rope and jumps up
+	**/
+	idEntity				*m_RopeEntTouched;
 
 	/**
 	* The gametime since the last detachment (used for detach-reattach timer)
@@ -605,6 +616,8 @@ protected:
 	* necessary to prevent passing through solid objects
 	*/
 	idAngles m_lastPlayerViewAngles;
+
+	float m_lastCommandViewYaw;
 	
 	/*!
 	* The current resulting view lean angles
