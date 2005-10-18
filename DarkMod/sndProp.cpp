@@ -368,7 +368,7 @@ void CsndProp::Propagate
 	// keep in mind that due to FOV compression, visual distances in FPS look shorter
 	// than they actually are.
 
-	range = pow( 2.0f, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
+	range = pow((float)2, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
 
 	bounds.ExpandSelf( range );
 
