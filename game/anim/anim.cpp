@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/10/18 14:09:46  sparhawk
+ * Fixed an unneccessary warning about unused lables.
+ *
  * Revision 1.2  2005/04/23 01:43:53  ishtvan
  * Added SetFrameRate frame command, for re-using animations but slowing them down or speeding them up on the fly
  *
@@ -916,7 +919,7 @@ void idMD5Anim::SetFrameRate( int frRate )
 {
 	frameRate = frRate;
 	DM_LOG(LC_SOUND, LT_DEBUG).LogString("ChangeFrameRate: Set rate to %d\r", frameRate);
-Quit:
+
 	return;
 }
 
