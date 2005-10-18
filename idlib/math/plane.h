@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/10/18 14:08:37  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.2  2005/03/21 23:15:16  sparhawk
  * Added function for logging purposes.
  *
@@ -340,10 +343,18 @@ ID_INLINE int idPlane::Side( const idVec3 &v, const float epsilon ) const {
 	}
 }
 
-ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end, float *fract ) const {
+ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end, float *fract ) const{
 	float d1, d2, fraction;
 
-	d1 = Normal() * start + d;
+	// This code is a copy of the lineintersection code from Id. Because of a bug
+	// Because of a bug in the calcualtion it doesn't always correctly report the intersection. Until 
+	// it is confirmed that it can be fixed in the plane.h file, without braking any existing code that
+	// might rely on the current behaviour I keep this code here as a copy.
+	// Update: According to a mail from Brian (id) he says that the code is correct and is based on
+	// a slightly different assumption. I don't think so, because the exact same code doesn't work in 
+	// some cases while my fix does, so I keep my version instead.
+	// d1 = Normal() * start + d;
+	d1 = -(Normal() * start + d);
 	d2 = Normal() * end + d;
 	if ( d1 == d2 ) {
 		return false;
