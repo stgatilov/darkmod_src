@@ -21,7 +21,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/I &quot;E:\Programme\Microsoft Visual Studio\VC98\Include&quot;"
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include"
+				AdditionalIncludeDirectories="mssdk/include; DarkMod;include"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
@@ -31,6 +31,7 @@
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough=""
 				PrecompiledHeaderFile="$(IntDir)/game.pch"
+				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
 				ProgramDataBaseFileName="$(IntDir)/"
@@ -45,10 +46,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib DevIL.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -62,7 +64,8 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -88,7 +91,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/O2 /Og /Ob2 /Oi /Ot /Oy"
 				Optimization="2"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
@@ -413,12 +415,6 @@
 				RelativePath="game\Light.h">
 			</File>
 			<File
-				RelativePath=".\game\Liquid.cpp">
-			</File>
-			<File
-				RelativePath=".\game\Liquid.h">
-			</File>
-			<File
 				RelativePath="game\Misc.cpp">
 			</File>
 			<File
@@ -710,10 +706,10 @@
 					RelativePath="game\physics\Physics_Base.h">
 				</File>
 				<File
-					RelativePath=".\game\physics\Physics_Liquid.cpp">
+					RelativePath=".\game\physics\physics_liquid.cpp">
 				</File>
 				<File
-					RelativePath=".\game\physics\Physics_Liquid.h">
+					RelativePath=".\game\physics\physics_liquid.h">
 				</File>
 				<File
 					RelativePath="game\physics\Physics_Monster.cpp">
