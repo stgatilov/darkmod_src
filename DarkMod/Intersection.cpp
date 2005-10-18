@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.2  2005/10/18 13:56:09  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.1  2005/03/21 23:10:19  sparhawk
  * Intersection code for ellipsoids, triangles and planes.
  *
@@ -432,7 +435,8 @@ void R_SetLightProject(idPlane lightProject[4],
 	// set the falloff vector
 	normal = stop - start;
 	dist = normal.Normalize();
-	if (dist <= 0) {
+	if (dist <= 0)
+	{
 		dist = 1;
 	}
 	lightProject[3] = normal * (1.0f / dist);
@@ -457,7 +461,8 @@ void R_SetLightFrustum(const idPlane lightProject[4], idPlane frustum[6])
 	frustum[5][3] -= 1.0f;
 	frustum[5] = -frustum[5];
 
-	for (i = 0 ; i < 6 ; i++) {
+	for (i = 0 ; i < 6 ; i++)
+	{
 		float	l;
 
 		frustum[i] = -frustum[i];
@@ -473,7 +478,7 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 {
 	EIntersection rc = INTERSECT_COUNT;
 	int i, n, l, x;
-	float t;
+	float t, angle;
 	idPlane lightProject[4];
 	idPlane frustum[6];
 	int Start[6];
@@ -501,6 +506,20 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 */
 	n = format.Length();
 
+	// Calculate the angle between the player and the lightvector.
+	angle = rkCone[ELA_TARGET].Length() * rkLine[LSG_DIRECTION].Length();
+	DM_LOG(LC_MATH, LT_DEBUG).LogString("Denominator: %f\r", angle);
+	if(angle >= idMath::FLT_EPSILON)
+	{
+		angle = idMath::ACos((rkCone[ELA_TARGET] * rkLine[LSG_DIRECTION])/angle);
+//		if(t > (idMath::PI/2))
+//			angle = idMath::PI  - angle;
+
+		DM_LOG(LC_MATH, LT_DEBUG).LogString("Angle: %f\r", angle);
+	}
+	else
+		DM_LOG(LC_MATH, LT_DEBUG).LogString("Impossible line!\r");
+
 	bCalcIntersection = false;
 	l = 0;
 	for(i = 0; i < 6; i++)
@@ -519,8 +538,13 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 			bCalcIntersection = true;
 	}
 
+	DM_LOG(LC_MATH, LT_DEBUG).LogString("CalcIntersection: %u\r", bCalcIntersection);
 	if(bCalcIntersection == true)
 	{
+		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "PlayerOrigin", rkLine[LSG_ORIGIN]);
+		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "PlayerDirection", rkLine[LSG_DIRECTION]);
+		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Endpoint", EndPoint);
+
 		for(i = 0; i < 6; i++)
 		{
 			if(frustum[i].LineIntersection(rkLine[LSG_ORIGIN], rkLine[LSG_DIRECTION], &t) == true)

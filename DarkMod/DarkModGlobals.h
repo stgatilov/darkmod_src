@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.19  2005/10/18 13:56:09  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.18  2005/09/17 07:13:34  sophisticatedzombie
  * Added constants that control the scale by which damage can occur when mantling at a high relative velocity.
  *
@@ -173,6 +176,7 @@ public:
 	void GetModName(void);
 	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
+	void LogMat3(idStr const &Name, idMat3 const &Matrix);
 	void LogString(char *Format, ...);
 	CLightMaterial *GetMaterial(idStr const &MaterialName);
 
@@ -299,6 +303,14 @@ public:
 	**/
 	idStrList m_AcuityNames;
 	idHashIndex m_AcuityHash;
+
+	/**
+	 * WeakLigthgem is set to true if the mathemmatical lightgem should be used.
+	 * The prefered solution will be to use the rendersnapshot mechanism, but 
+	 * this may not work for slower computers and the old solution is still available.
+	 * This solution is less accurate, though. Default for this value is false.
+	 */
+	bool m_WeakLightgem;
 };
 
 extern CGlobal g_Global;
@@ -307,6 +319,7 @@ extern char *g_LCString[];
 #define DM_LOG(lc, lt)				if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
 #define DM_LOGVECTOR3(lc, lt, s, v)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogVector(s, v)
 #define DM_LOGPLANE(lc, lt, s, p)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogPlane(s, p)
+#define DM_LOGMAT3(lc, lt, s, m)	if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global.LogMat3(s, m)
 
 /**
 * The DARKMOD_NOTE macro makes it easy to add reminders which are shown when code is compiled. 
@@ -322,4 +335,8 @@ extern char *g_LCString[];
 #define DARKMOD_NOTE_AUX_MAKESTR( _M_, _L_ )    _M_(_L_) 
 #define DARKMOD_NOTE_AUX_LINE                   DARKMOD_NOTE_AUX_MAKESTR(DARKMOD_NOTE_AUX_STR,__LINE__) 
 #define DARKMOD_NOTE                            __FILE__ "(" DARKMOD_NOTE_AUX_LINE ") : DARKMOD_NOTE: " 
+
+// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
+#define DARKMOD_LIGHTGEM_VIEWID			-1
+
 #endif

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/10/18 13:56:41  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.8  2005/09/26 03:09:02  ishtvan
  * Event_Touch no longer necessary, removed
  *
@@ -337,6 +340,12 @@ public:
 
 	idDragEntity			dragEntity;
 
+	/**
+	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
+	 * is constantly required and therfore we store it permanently.
+	 */
+	idEntity				*LightgemSurface;
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -541,6 +550,11 @@ public:
 	 * AdjustLightgem will calculate how much the lightgem should light up
 	 */
 	void AdjustLightgem(void);
+
+	/**
+	 * GetHeadEntity will return the entity for the head of the playermodel
+	 */
+	idEntity *GetHeadEntity(void) { return head.GetEntity(); };
 
 	/**
 	* Update movement volumes: Reads the movement volume

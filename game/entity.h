@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.11  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -295,7 +298,7 @@ public:
 	idVec3					GetWorldCoordinates( const idVec3 &vec ) const;
 	bool					GetMasterPosition( idVec3 &masterOrigin, idMat3 &masterAxis ) const;
 	void					GetWorldVelocities( idVec3 &linearVelocity, idVec3 &angularVelocity ) const;
-
+	int						GetModelDefHandle(void) const  { return modelDefHandle; }; 
 	// physics
 							// set a new physics object to be used by this entity
 	void					SetPhysics( idPhysics *phys );

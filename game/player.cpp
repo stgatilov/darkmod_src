@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.26  2005/09/26 03:09:02  ishtvan
  * Event_Touch no longer necessary, removed
  *
@@ -112,6 +115,8 @@
 
 ===============================================================================
 */
+
+bool NextFrame = true;
 
 // distance between ladder rungs (actually is half that distance, but this sounds better)
 const int LADDER_RUNG_DISTANCE = 32;
@@ -1191,6 +1196,7 @@ idPlayer::idPlayer() {
 
 	isLagged				= false;
 	isChatting				= false;
+	LightgemSurface			= NULL;
 }
 
 /*
@@ -1471,6 +1477,10 @@ void idPlayer::Init( void ) {
 	}
 
 	isChatting = false;
+	LightgemSurface = gameLocal.FindEntity("lightgem_surface");
+	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LIGHTGEM_VIEWID;
+	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
+	DM_LOG(LC_LIGHT, LT_INFO).LogString("LightgemSurface: [%08lX]\r", LightgemSurface);
 }
 
 /*
@@ -2677,6 +2687,31 @@ idPlayer::DrawHUD
 */
 void idPlayer::DrawHUD(idUserInterface *_hud)
 {
+	idStr strText;
+	idVec3 a, b, c;
+/*	int y;
+
+	// TODO: Remove this when no longer needed.
+	y = 200;
+	sprintf(strText, "ViewOrg:    x: %f   y: %f   z: %f", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	renderView->viewaxis.GetMat3Params(a, b, c);
+	sprintf(strText, "ViewMatrix:", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", a.x, a.y, a.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", b.x, b.y, b.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", c.x, c.y, c.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "FOV x: %f   y: %f", renderView->fov_x, renderView->fov_y);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+*/
 	if(_hud)
 		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
 	else
@@ -2699,7 +2734,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 	_hud->Redraw( gameLocal.realClientTime );
 
-	AdjustLightgem();
+	// Only use this if the old lightgem is selected. This may be usefull for
+	// slower machines.
+	if(cv_lg_weak.GetBool() == true)
+		AdjustLightgem();
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
+	hud->SetStateInt("lightgem_val", g_Global.m_DarkModPlayer->m_LightgemValue);
 }
 
 /*
@@ -5798,7 +5839,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 			{
 					physicsObj.ToggleLean(90.0);
 			}
-
 		}
 		break;
 
@@ -6422,9 +6462,9 @@ idPlayer::Think
 Called every tic for each player
 ==============
 */
-void idPlayer::Think( void ) {
+void idPlayer::Think( void )
+{
 	renderEntity_t *headRenderEnt;
-
 	UpdatePlayerIcons();
 
 	// latch button actions
@@ -6562,6 +6602,19 @@ void idPlayer::Think( void ) {
 
 	inventory.UpdateArmor();
 
+	idStr strText;
+/*
+	// TODO: remove this because it is just to determine how to fill out the renderstructure.
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("RenderViewId: %u\r", renderView->viewID);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("x: %u   y: %u   w: %u   h: %u\r", renderView->x, renderView->y, renderView->width, renderView->height);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("FovX: %f   FovY: %f\r", renderView->fov_x, renderView->fov_y);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "vieworg", renderView->vieworg);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("cramZNear: %u   forceUpdate: %u\r", renderView->cramZNear, renderView->forceUpdate);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->time);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->globalMaterial);
+	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++)
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Param[%u]: %f\r", i, renderView->shaderParms[i]);
+*/
 	if ( spectating ) {
 		UpdateSpectating();
 	} else if ( health > 0 ) {
@@ -8771,6 +8824,7 @@ void idPlayer::AdjustLightgem(void)
 
 	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
 
+	NextFrame = true;
 	fLightgemVal = 0;
 	n = pDM->m_LightList.Num();
 
@@ -8912,9 +8966,6 @@ void idPlayer::AdjustLightgem(void)
 	// one step higher.
 	if(bMinOneLight == true && pDM->m_LightgemValue <= LIGHTGEM_MIN)
 		pDM->m_LightgemValue++;
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", pDM->m_LightgemValue, hud);
-	hud->SetStateInt("lightgem_val", pDM->m_LightgemValue);
 }
 
 void idPlayer::UpdateMoveVolumes( void )

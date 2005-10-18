@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/10/18 13:57:06  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.7  2005/09/20 06:16:58  ishtvan
  * added dm_showsprop cvar to show sound prop paths for ingame debugging
  *
@@ -99,6 +102,29 @@ idCVar cv_pm_stepvol_creep(		"pm_stepvol_creep",	"-10",					CVAR_GAME | CVAR_ARC
 idCVar cv_pm_stepvol_crouch_walk(	"pm_stepvol_crouch_walk",	"-4",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch walking footsteps" );
 idCVar cv_pm_stepvol_crouch_run(	"pm_stepvol_crouch_run",	"2",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch running footsteps" );
 idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-11.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch creeping footsteps" );
+
+/**
+ * Darkmod lightgem variables. These are only for debuggingpurpose to tweak the lightgem
+ * in a release version they should be disabled.
+ */
+idCVar cv_lg_distance("dm_lg_distance",	"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the distance for camera of the lightgem testmodel." );
+idCVar cv_lg_xoffs("dm_lg_xoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the camera on the testmodel" );
+idCVar cv_lg_yoffs("dm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the camera on the testmodel" );
+idCVar cv_lg_zoffs("dm_lg_zoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
+idCVar cv_lg_oxoffs("dm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
+idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"2",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
+idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
+idCVar cv_lg_fovx("dm_lg_fovx",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the x value for the field of view on the lightgem testmodel." );
+idCVar cv_lg_fovy("dm_lg_fovy",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
+idCVar cv_lg_toggle("dm_lg_toggle",		"1",		CVAR_GAME | CVAR_BOOL,		"Toggles the processing of the lightgem on(1) or off(0)." );
+idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..4> of the lightgem on-screen. If 0 none is shown." );
+idCVar cv_lg_width("dm_lg_width",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderwidth of the lightgem screenshot" );
+idCVar cv_lg_height("dm_lg_height",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderheight of the lightgem screenshot" );
+idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
+idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
+idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"4",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..4)" );
+idCVar cv_lg_file("dm_lg_file",	"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file." );
+
 /**
 * End DarkMod cvars
 **/

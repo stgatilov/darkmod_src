@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.14  2005/08/22 04:55:24  ishtvan
  * minor changes in soundprop parms and function names
  *
@@ -2507,7 +2510,8 @@ idGameLocal::Draw
 makes rendering and sound system calls
 ================
 */
-bool idGameLocal::Draw( int clientNum ) {
+bool idGameLocal::Draw( int clientNum )
+{
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2518,8 +2522,33 @@ bool idGameLocal::Draw( int clientNum ) {
 		return false;
 	}
 
+	float fColVal;
+
+	if(cv_lg_weak.GetBool() == false)
+	{
+		if(cv_lg_toggle.GetBool() == true && cv_lg_hud.GetInteger() == 0)
+			fColVal = CalcLightgem(player);
+	}
+
 	// render the scene
 	player->playerView.RenderPlayerView( player->hud );
+
+	if(cv_lg_weak.GetBool() == false)
+	{
+		CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+		if(cv_lg_toggle.GetBool() == true && cv_lg_hud.GetInteger() != 0)
+			fColVal = CalcLightgem(player);
+
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue total: %f\r", fColVal);
+
+		pDM->m_LightgemValue = LIGHTGEM_MAX * fColVal;
+		if(pDM->m_LightgemValue < LIGHTGEM_MIN)
+			pDM->m_LightgemValue = LIGHTGEM_MIN;
+		else
+		if(pDM->m_LightgemValue > LIGHTGEM_MAX)
+			pDM->m_LightgemValue = LIGHTGEM_MAX;
+	}
 
 	return true;
 }
@@ -4459,3 +4488,208 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 Quit:
 	return;
 }
+
+float idGameLocal::CalcLightgem(idPlayer *player)
+{
+//		int dist = 25;		// 10 < n < 15
+	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
+	float fColVal[4];
+	float fRetVal = 0.0;
+	int playerid;			// player viewid
+	int headid;				// head viewid
+	int pdef;				// player modeldef
+	int hdef;				// head modeldef
+	int psid;				// player shadow viewid
+	int hsid;				// head shadow viewid
+	int i, n, k;
+	idStr name;
+	renderView_t rv;
+	idEntity *lg;
+	renderEntity_t *prent;			// Player renderentity
+	renderEntity_t *hrent;			// Head renderentity
+	renderEntity_t *lgrend;
+
+	lg = player->LightgemSurface;
+	idVec3 Cam = player->GetPhysics()->GetOrigin();
+	idVec3 Pos = lg->GetPhysics()->GetOrigin();
+	idVec3 LGPos = Cam;
+	LGPos.x += cv_lg_oxoffs.GetInteger();
+	LGPos.y += cv_lg_oyoffs.GetInteger();
+	LGPos.z += cv_lg_ozoffs.GetInteger();
+	lg->SetOrigin(LGPos);
+	LGPos.z += fabs(player->GetEyePosition().z - Cam.z) / 2;
+	memset(&rv, 0, sizeof(rv));
+
+	for(i = 0; i < 4; i++)
+		fColVal[i] = 0.0;
+
+	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
+		rv.shaderParms[i] = gameLocal.globalShaderParms[i];
+
+	rv.globalMaterial = gameLocal.GetGlobalMaterial();
+	rv.width = SCREEN_WIDTH;
+	rv.height = SCREEN_HEIGHT;
+	// Good width seems to be between 10 and 20. A realistic default is 90.
+//	renderView.fov_x = 15;		// Bigger values means broader view
+//	rv.fov_x = 90;
+	rv.fov_x = cv_lg_fovx.GetInteger();
+	// Good height seems to be between 34 and 44. A realistic default 74.
+//	renderView.fov_y = 40;
+//	rv.fov_y = 74;
+	rv.fov_y = cv_lg_fovy.GetInteger();		// Bigger values means more compressed view
+	rv.forceUpdate = true;
+	rv.x = 0;
+	rv.y = 0;
+	rv.time = gameLocal.time;
+
+	n = cv_lg_renderpasses.GetInteger();
+	// limit the renderpasses between 1 and 4
+	if(n < 1) n = 1;
+	if(n > 4) n = 4;
+
+	k = cv_lg_hud.GetInteger()-1;
+	lgrend = lg->GetRenderEntity();
+
+	for(i = 0; i < n; i++)
+	{
+		sprintf(name, "test_%u.tga", i);
+		rv.vieworg = LGPos;
+		rv.vieworg.x += cv_lg_xoffs.GetInteger();
+		rv.vieworg.y += cv_lg_yoffs.GetInteger();
+		rv.vieworg.z += cv_lg_zoffs.GetInteger();
+
+		if(i == 0)
+		{
+			// Forwardview
+			rv.vieworg.x -= dist;
+			rv.viewaxis = idMat3(
+				1, 0, 0,
+				0, 1, 0,
+				0, 0, 1
+			);
+		}
+		else if(i == 1)
+		{
+			// Rearview
+			rv.vieworg.x += dist;
+			rv.viewaxis = idMat3(	
+				-1, 0, 0,
+				0, -1, 0,
+				0, 0, 1
+			);
+		}
+		else if(i == 2)
+		{
+			// Left view
+			rv.vieworg.y -= dist;
+			rv.viewaxis = idMat3(	
+				0.0, 1.0, 0.0,
+				-1.0, 0.0, 0.0,
+				0.0, 0.0, 1.0
+			);
+		}
+		else if(i == 3)
+		{
+			// Right view
+			rv.vieworg.y += dist;
+			rv.viewaxis = idMat3(	
+				0.0, -1.0, 0.0,
+				1.0, 0.0, 0.0,
+				0.0, 0.0, 1.0
+			);
+		}
+
+		// if the hud is enabled we either process all of them in case it is set to 0,
+		// then we don't care which one is actually displayed (most likely the last or
+		// the first one), or we only show the one that should be shown.
+		if(k == -1 || k == i)
+		{
+			// Set the viewid to our private screenshot snapshot. If this number is changed 
+			// for some reason, it has to be changed in player.cpp as well.
+			rv.viewID = DARKMOD_LIGHTGEM_VIEWID;
+			lgrend->suppressShadowInViewID = 0;
+
+			if(cv_lg_player.GetBool() == false)
+				lgrend->allowSurfaceInViewID = rv.viewID;
+			else
+				lgrend->allowSurfaceInViewID = 0;
+
+			prent = player->GetRenderEntity();
+			hrent = player->GetHeadEntity()->GetRenderEntity();
+
+			playerid = prent->suppressSurfaceInViewID;
+			psid = prent->suppressShadowInViewID;
+			prent->suppressShadowInViewID = rv.viewID;
+			prent->suppressSurfaceInViewID = rv.viewID;
+
+			headid = hrent->suppressSurfaceInViewID;
+			hsid = hrent->suppressShadowInViewID;
+			hrent->suppressShadowInViewID = rv.viewID;
+			hrent->suppressSurfaceInViewID = rv.viewID;
+
+			// Tell the renderengine about the change for this entity.
+			if((pdef = player->GetModelDefHandle()) != -1)
+				gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+			if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
+				gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
+			// defaults is 20:15
+			renderSystem->CropRenderSize(cv_lg_width.GetInteger(), cv_lg_height.GetInteger(), true);
+			gameRenderWorld->RenderScene(&rv);
+			if(cv_lg_file.GetBool() == true)
+				renderSystem->CaptureRenderToFile(name);
+			else
+				renderSystem->CaptureRenderToImage("_scratch");
+			renderSystem->UnCrop();
+
+			prent->suppressSurfaceInViewID = playerid;
+			prent->suppressShadowInViewID = psid;
+			hrent->suppressSurfaceInViewID = headid;
+			hrent->suppressShadowInViewID = hsid;
+
+			// and switch back our renderdefinition.
+			if(pdef != -1)
+				gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+			if(hdef != -1)
+				gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
+			// we can quit as soon as we have a maximum value
+			if((fColVal[i] = AnalyzeRenderImage(name)) >= 1.0)
+				break;
+		}
+	}
+
+	// We only take the brightest value that we could find.
+	for(i = 0; i < n; i++)
+	{
+		if(fColVal[i] > fRetVal)
+			fRetVal = fColVal[i];
+	}
+
+	return(fRetVal);
+}
+
+float idGameLocal::AnalyzeRenderImage(idStr &Filename)
+{
+	float fImgVal;
+	float fColVal = 0.0;
+	CImage im(Filename);
+	unsigned char *buffer = im.GetImage();
+	int i, n;
+
+	// We always assume a BPP 4 here.
+	// The order is RGBA.
+	n = im.m_Height * im.m_Width;
+	for(i = 0; i < n; i++)
+	{
+		fColVal += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+		buffer += im.m_Bpp;
+	}
+
+	fImgVal = fColVal/n;
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue from image(%s): %f\r", Filename.c_str(), fImgVal);
+	return(fImgVal);
+}
+

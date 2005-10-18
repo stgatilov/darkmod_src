@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.17  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -346,7 +349,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	renderEntity->shaderParms[ 8 ]					= args->GetFloat( "shaderParm8", "0" );
 	renderEntity->shaderParms[ 9 ]					= args->GetFloat( "shaderParm9", "0" );
 	renderEntity->shaderParms[ 10 ]					= args->GetFloat( "shaderParm10", "0" );
-	renderEntity->shaderParms[ 11 ]					= args->GetFloat( "shaderParm11", "0" );
+	renderEntity->shaderParms[ 11 ]	= args->GetFloat( "shaderParm11", "0" );
 
 	// check noDynamicInteractions flag
 	renderEntity->noDynamicInteractions = args->GetBool( "noDynamicInteractions" );
@@ -1491,10 +1494,11 @@ void idEntity::Present(void)
 /*
 	if(m_FrobDistance != 0)
 	{
+*/
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderEntity: %08lX\r", renderEntity);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderModel: %08lX\r", renderEntity.hModel);
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
+/*		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderModel: %08lX\r", renderEntity.hModel);
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("CustomShader: %08lX\r", renderEntity.customShader);
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
 		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
@@ -2765,70 +2769,81 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] test for clipmodel\r", name.c_str());
 
-	// check if a clipmodel key/value pair is set
-	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
-		if ( idClipModel::CheckModel( temp ) ) {
-			clipModel = new idClipModel( temp );
-		}
-	}
-
-	if(!spawnArgs.GetBool( "noclipmodel", "0" ))
+	// We need to make sure that the lightgem surface doesn't have a clipmodel
+	if(name != "lightgem_surface")
 	{
-		// check if mins/maxs or size key/value pairs are set
-		if ( !clipModel )
+		// check if a clipmodel key/value pair is set
+		if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
+			if ( idClipModel::CheckModel( temp ) ) {
+				clipModel = new idClipModel( temp );
+			}
+		}
+
+		if(!spawnArgs.GetBool( "noclipmodel", "0" ))
 		{
-			idVec3 size;
-			idBounds bounds;
-			bool setClipModel = false;
+			// check if mins/maxs or size key/value pairs are set
+			if ( !clipModel )
+			{
+				idVec3 size;
+				idBounds bounds;
+				bool setClipModel = false;
 
-			if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
-				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
-			{
-				setClipModel = true;
-				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
+				if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
+					spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
 				{
-					gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
-				}
-			} 
-			else
-			if ( spawnArgs.GetVector( "size", NULL, size ) )
-			{
-				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
+					setClipModel = true;
+					if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
+					{
+						gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
+					}
+				} 
+				else
+				if ( spawnArgs.GetVector( "size", NULL, size ) )
 				{
-					gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
+					if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
+					{
+						gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
+					}
+					bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
+					bounds[1].Set( size.x * 0.5f, size.y * 0.5f, size.z );
+					setClipModel = true;
 				}
-				bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
-				bounds[1].Set( size.x * 0.5f, size.y * 0.5f, size.z );
-				setClipModel = true;
+
+				if ( setClipModel ) {
+					int numSides;
+					idTraceModel trm;
+
+					if ( spawnArgs.GetInt( "cylinder", "0", numSides ) && numSides > 0 ) {
+						trm.SetupCylinder( bounds, numSides < 3 ? 3 : numSides );
+					} else if ( spawnArgs.GetInt( "cone", "0", numSides ) && numSides > 0 ) {
+						trm.SetupCone( bounds, numSides < 3 ? 3 : numSides );
+					} else {
+						trm.SetupBox( bounds );
+					}
+					clipModel = new idClipModel( trm );
+				}
 			}
 
-			if ( setClipModel ) {
-				int numSides;
-				idTraceModel trm;
-
-				if ( spawnArgs.GetInt( "cylinder", "0", numSides ) && numSides > 0 ) {
-					trm.SetupCylinder( bounds, numSides < 3 ? 3 : numSides );
-				} else if ( spawnArgs.GetInt( "cone", "0", numSides ) && numSides > 0 ) {
-					trm.SetupCone( bounds, numSides < 3 ? 3 : numSides );
-				} else {
-					trm.SetupBox( bounds );
+			// check if the visual model can be used as collision model
+			if ( !clipModel ) {
+				temp = spawnArgs.GetString( "model" );
+				if ( ( temp != NULL ) && ( *temp != 0 ) ) {
+					if ( idClipModel::CheckModel( temp ) ) {
+						clipModel = new idClipModel( temp );
+					}
 				}
-				clipModel = new idClipModel( trm );
 			}
 		}
-
-		// check if the visual model can be used as collision model
-		if ( !clipModel ) {
-			temp = spawnArgs.GetString( "model" );
-			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-				if ( idClipModel::CheckModel( temp ) ) {
-					clipModel = new idClipModel( temp );
-				}
-			}
-		}
+		else
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] does not contain a clipmodel\r", name.c_str());
 	}
 	else
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] does not contain a clipmodel\r", name.c_str());
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] ignores clipmodel check and disable all shadows\r", name.c_str());
+		renderEntity.noDynamicInteractions = false;
+		renderEntity.noShadow = true;
+		renderEntity.noSelfShadow = true;
+	}
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );

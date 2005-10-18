@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.21  2005/10/18 13:56:09  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.20  2005/09/17 07:13:34  sophisticatedzombie
  * Added constants that control the scale by which damage can occur when mantling at a high relative velocity.
  *
@@ -199,6 +202,7 @@ CGlobal::CGlobal(void)
 	m_LogType = LT_DEBUG;
 	m_Filename = "undefined";
 	m_Linenumber = 0;
+	m_WeakLightgem = false;
 
 	m_LogFile = NULL;
 
@@ -370,6 +374,18 @@ void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)
 void CGlobal::LogVector(idStr const &Name, idVec3 const &Vector)
 {
 	LogString("Vector %s:    x: %f   y: %f   z: %f\r", Name.c_str(), Vector.x, Vector.y, Vector.z);
+}
+
+void CGlobal::LogMat3(idStr const &Name, idMat3 const &Mat)
+{
+	idVec3 a, b, c;
+
+	Mat.GetMat3Params(a, b, c);
+	LogString("Matrix %s:\r\t%f  %f  %f\r\t%f  %f  %f\r\t%f  %f  %f\r", Name.c_str(), 
+		a.x, a.y, a.z,
+		b.x, b.y, b.z,
+		c.x, c.y, c.z
+		);
 }
 
 void CGlobal::LogString(char *fmt, ...)
@@ -608,6 +624,11 @@ void CGlobal::LoadINISettings(void *p)
 		if (FindMap(ps, "Lean_Degrees", TRUE, &pm) != -1)
 		{
 			m_leanMove_DegreesTilt = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != -1)
+		{
+			m_WeakLightgem = atof(pm->Value);
 		}
 
 		DM_LOG(LC_FORCE, LT_FORCE).LogString("FrobDistance: %f\r", m_DefaultFrobDistance);

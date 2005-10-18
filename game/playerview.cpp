@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/10/18 13:56:41  sparhawk
+ * Lightgem updates
+ *
  * Revision 1.2  2004/10/30 16:55:57  sparhawk
  * Compile errors fixed. float cast added.
  *
@@ -686,12 +689,16 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 idPlayerView::RenderPlayerView
 ===================
 */
-void idPlayerView::RenderPlayerView( idUserInterface *hud ) {
+void idPlayerView::RenderPlayerView( idUserInterface *hud )
+{
 	const renderView_t *view = player->GetRenderView();
 
-	if ( g_skipViewEffects.GetBool() ) {
+	if(g_skipViewEffects.GetBool())
+	{
 		SingleView( hud, view );
-	} else {
+	}
+	else 
+	{
 		if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
 			InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
@@ -704,4 +711,5 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud ) {
 		ScreenFade();
 	}
 }
+
 
