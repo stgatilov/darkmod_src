@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/10/20 21:23:28  sparhawk
+ * Updated lightgem zoffset.
+ *
  * Revision 1.8  2005/10/18 13:57:06  sparhawk
  * Lightgem updates
  *
@@ -110,7 +113,7 @@ idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-11.5",	CVAR_GAME
 idCVar cv_lg_distance("dm_lg_distance",	"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the distance for camera of the lightgem testmodel." );
 idCVar cv_lg_xoffs("dm_lg_xoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the camera on the testmodel" );
 idCVar cv_lg_yoffs("dm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the camera on the testmodel" );
-idCVar cv_lg_zoffs("dm_lg_zoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
+idCVar cv_lg_zoffs("dm_lg_zoffs",		"20",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
 idCVar cv_lg_oxoffs("dm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
 idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"2",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
 idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
