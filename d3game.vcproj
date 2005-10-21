@@ -39,7 +39,7 @@
 				BrowseInformationFile="$(IntDir)/"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -48,7 +48,6 @@
 				AdditionalOptions="/FIXED:no"
 				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib DevIL.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
-				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="lib"
 				ModuleDefinitionFile=".\game\game.def"
@@ -863,6 +862,129 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\ToUpper.cpp">
+				</File>
+				<Filter
+					Name="SourceHook"
+					Filter="">
+					<File
+						RelativePath=".\DarkMod\sourcehook\FastDelegate.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_list.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_memfuncinfo.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_memory.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_stack.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_string.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_tinyhash.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_vector.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook_impl.h">
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="Framework"
+				Filter="">
+				<File
+					RelativePath=".\framework\builddefines.h">
+				</File>
+				<File
+					RelativePath=".\framework\buildversion.h">
+				</File>
+				<File
+					RelativePath=".\framework\cmdsystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\common.h">
+				</File>
+				<File
+					RelativePath=".\framework\cvarsystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\declaf.h">
+				</File>
+				<File
+					RelativePath=".\framework\declentitydef.h">
+				</File>
+				<File
+					RelativePath=".\framework\declfx.h">
+				</File>
+				<File
+					RelativePath=".\framework\declmanager.h">
+				</File>
+				<File
+					RelativePath=".\framework\declparticle.h">
+				</File>
+				<File
+					RelativePath=".\framework\declpda.h">
+				</File>
+				<File
+					RelativePath=".\framework\declskin.h">
+				</File>
+				<File
+					RelativePath=".\framework\decltable.h">
+				</File>
+				<File
+					RelativePath=".\framework\file.h">
+				</File>
+				<File
+					RelativePath=".\framework\filesystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\licensee.h">
+				</File>
+				<File
+					RelativePath=".\framework\usercmdgen.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="renderer"
+				Filter="">
+				<File
+					RelativePath=".\renderer\cinematic.h">
+				</File>
+				<File
+					RelativePath=".\renderer\glext.h">
+				</File>
+				<File
+					RelativePath=".\renderer\material.h">
+				</File>
+				<File
+					RelativePath=".\renderer\model.h">
+				</File>
+				<File
+					RelativePath=".\renderer\modelmanager.h">
+				</File>
+				<File
+					RelativePath=".\renderer\qgl.h">
+				</File>
+				<File
+					RelativePath=".\renderer\qgl_linked.h">
+				</File>
+				<File
+					RelativePath=".\renderer\rendersystem.h">
+				</File>
+				<File
+					RelativePath=".\renderer\renderworld.h">
 				</File>
 			</Filter>
 		</Filter>
