@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.20  2005/10/21 21:56:13  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.19  2005/10/18 13:56:09  sparhawk
  * Lightgem updates
  *
@@ -216,6 +219,7 @@ public:
 	char			m_ModPath[1024];
 	char			m_ModName[256];
 	char			*m_Filename;
+	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;
 	CDarkModPlayer	*m_DarkModPlayer;
 
@@ -338,5 +342,12 @@ extern char *g_LCString[];
 
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
 #define DARKMOD_LIGHTGEM_VIEWID			-1
+
+// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
+// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
+// shape would be sufficient to cover all lighting situations. For silouhette detection we might
+// consider more stages though.
+#define LIGHTGEM_MAX_RENDERPASSES		6
+#define LIGHTEM_RENDER_DIRECTORY		"snapshot"
 
 #endif

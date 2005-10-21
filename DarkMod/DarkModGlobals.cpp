@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.22  2005/10/21 21:56:13  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.21  2005/10/18 13:56:09  sparhawk
  * Lightgem updates
  *
@@ -88,7 +91,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#pragma warning(disable : 4996)
+#pragma warning(disable : 4996 4800)
 
 #ifdef _WINDOWS_
 #include "c:\compiled.h"
@@ -104,7 +107,8 @@
 #include "sndprop.h"
 #include "relations.h"
 #include "../game/ai/ai.h"
-
+#include "sourcehook/sourcehook.h"
+#include "sourcehook/sourcehook_impl.h"
 
 // Default length of time for holding down jump key to start
 // mantling.
@@ -165,8 +169,19 @@ static char *LCString[LC_COUNT+1] = {
 	"(empty)"
 };
 
-// declare various global objects
+SourceHook::CSourceHookImpl g_SourceHook;
+SourceHook::ISourceHook *g_SHPtr = NULL;
+int g_PLID = 0;
+const char *DM_OSPathToRelativePath(const char *OSPath);
+const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath = "fs_devpath");
+const char *DM_BuildOSPath(const char *base, const char *game, const char *relativePath);
 
+// Intercept declarations
+//SH_DECL_HOOK1(idFileSystem, OSPathToRelativePath, SH_NOATTRIB, 0, const char *, const char *);
+//SH_DECL_HOOK2(idFileSystem, RelativePathToOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *);
+SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *, const char *);
+
+// declare various global objects
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
@@ -254,6 +269,8 @@ CGlobal::CGlobal(void)
 	m_minimumVelocityForMantleDamage = DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE;
 	m_damagePointsPerMetersPerSecondOverMinimum = DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY;
 
+	/* initialize Sourcehook required global */
+	g_SHPtr = static_cast<SourceHook::ISourceHook*>(&g_SourceHook); 
 }
 
 CGlobal::~CGlobal(void)
@@ -332,6 +349,32 @@ void CGlobal::Init()
 {
 	char ProfilePath[1024];
 	PROFILE_HANDLE *pfh = NULL;
+
+	// We create the rendershot directory before we set to hook to 
+	// avoid unneccessary complications.
+	idStr Drive;
+	int n;
+
+	Drive = cv_lg_renderdrive.GetString();
+	if((n = Drive.Length()) > 1)
+		idLib::common->Warning( "dm_lg_renderdrive contains an illegal driveletter. Drive will be ignored!" );
+	else
+	{
+		char *p = new char[strlen(LIGHTEM_RENDER_DIRECTORY)+4];
+		p[0] = Drive[0];
+		strcat(p, ":\\");
+		strcat(p, LIGHTEM_RENDER_DIRECTORY);
+		mkdir(p);
+	}
+
+//	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
+//	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);
+
+	// Do we need this on Linux as well? I guess not, because in linux the targetdirectory can be
+	// redericted by a link. This has to be tested though but should be no problem.
+#ifdef _WINDOWS_
+	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
+#endif
 
 	GetModName();
 
@@ -856,3 +899,57 @@ Quit:
 	return rc;
 }
 
+/*
+const char *DM_OSPathToRelativePath(const char *OSPath)
+{
+	DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_OSPathToRelativePath: [%s]\r", (OSPath) ? OSPath: "NULL");
+	RETURN_META_VALUE(MRES_HANDLED, NULL);
+}
+
+const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath)
+{
+	DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_RelativePathToOSPath: RelativePath [%s]   basePath: [%s]\r", 
+		(relativePath) ? relativePath : "NULL",
+		(basePath) ? basePath : "NULL"
+		);
+	RETURN_META_VALUE(MRES_HANDLED, NULL);
+}
+*/
+
+const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)
+{
+	idStr Drive;
+	int n;
+
+	Drive = cv_lg_renderdrive.GetString();
+	if((n = Drive.Length()) > 1)
+	{
+		idLib::common->Warning( "dm_lg_renderdrive contains an illegal driveletter. Drive will be ignored!" );
+		RETURN_META_VALUE(MRES_HANDLED, NULL);
+	}
+
+	// If we have a drive letter, we check if the path should be adjusted.
+	if(n == 1)
+	{
+		if(idStr::Cmpn(LIGHTEM_RENDER_DIRECTORY, relativePath, strlen(LIGHTEM_RENDER_DIRECTORY)) == 0)
+		{
+			static char p[1024];
+			p[0] = Drive[0];
+			strcpy(&p[1], ":\\");
+			if(p[0] != g_Global.m_DriveLetter && p[0] != 0)
+			{
+				// create the directory if the letter has been changed, to make sure the path exists.
+				strcpy(&p[3], LIGHTEM_RENDER_DIRECTORY);
+				mkdir(p);
+				p[3] = 0;
+				g_Global.m_DriveLetter = p[0];
+			}
+
+			strcpy(&p[3], relativePath);
+			DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_BuildOSPath returns [%s]\r", p);
+			RETURN_META_VALUE(MRES_SUPERCEDE, p);
+		}
+	}
+
+	RETURN_META_VALUE(MRES_HANDLED, NULL);
+}

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2005/10/21 21:57:17  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.27  2005/10/18 13:56:40  sparhawk
  * Lightgem updates
  *
@@ -2687,9 +2690,9 @@ idPlayer::DrawHUD
 */
 void idPlayer::DrawHUD(idUserInterface *_hud)
 {
-	idStr strText;
+/*	idStr strText;
 	idVec3 a, b, c;
-/*	int y;
+	int y;
 
 	// TODO: Remove this when no longer needed.
 	y = 200;

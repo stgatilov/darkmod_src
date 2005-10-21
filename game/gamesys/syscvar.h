@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/10/21 21:57:55  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.7  2005/10/18 13:57:06  sparhawk
  * Lightgem updates
  *
@@ -79,6 +82,7 @@ extern idCVar cv_lg_width;
 extern idCVar cv_lg_height;
 extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_file;
+extern idCVar cv_lg_renderdrive;
 
 /**
 * End DarkMod cvars

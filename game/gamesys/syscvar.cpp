@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/10/21 21:57:55  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.9  2005/10/20 21:23:28  sparhawk
  * Updated lightgem zoffset.
  *
@@ -120,13 +123,14 @@ idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z a
 idCVar cv_lg_fovx("dm_lg_fovx",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the x value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_fovy("dm_lg_fovy",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_toggle("dm_lg_toggle",		"1",		CVAR_GAME | CVAR_BOOL,		"Toggles the processing of the lightgem on(1) or off(0)." );
-idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..4> of the lightgem on-screen. If 0 none is shown." );
+idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
 idCVar cv_lg_width("dm_lg_width",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderwidth of the lightgem screenshot" );
 idCVar cv_lg_height("dm_lg_height",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderheight of the lightgem screenshot" );
 idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
 idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
-idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"4",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..4)" );
-idCVar cv_lg_file("dm_lg_file",	"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file." );
+idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..6)" );
+idCVar cv_lg_file("dm_lg_file",			"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file (testing only, lightgem will not work with a texture)." );
+idCVar cv_lg_renderdrive("dm_lg_renderdrive",	"",	CVAR_GAME | CVAR_ARCHIVE,	"Contains the driveletter for the disc where the rendering should go. If not set, or more than one letter, it is ignored." );
 
 /**
 * End DarkMod cvars

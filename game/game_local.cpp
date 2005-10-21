@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/10/21 21:57:17  sparhawk
+ * Ramdisk support added.
+ *
  * Revision 1.15  2005/10/18 13:56:40  sparhawk
  * Lightgem updates
  *
@@ -2522,7 +2525,7 @@ bool idGameLocal::Draw( int clientNum )
 		return false;
 	}
 
-	float fColVal;
+	float fColVal = 0.0;
 
 	if(cv_lg_weak.GetBool() == false)
 	{
@@ -4493,7 +4496,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 {
 //		int dist = 25;		// 10 < n < 15
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
-	float fColVal[4];
+	float fColVal[LIGHTGEM_MAX_RENDERPASSES];
 	float fRetVal = 0.0;
 	int playerid;			// player viewid
 	int headid;				// head viewid
@@ -4520,7 +4523,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	LGPos.z += fabs(player->GetEyePosition().z - Cam.z) / 2;
 	memset(&rv, 0, sizeof(rv));
 
-	for(i = 0; i < 4; i++)
+	for(i = 0; i < LIGHTGEM_MAX_RENDERPASSES; i++)
 		fColVal[i] = 0.0;
 
 	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
@@ -4545,58 +4548,118 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	n = cv_lg_renderpasses.GetInteger();
 	// limit the renderpasses between 1 and 4
 	if(n < 1) n = 1;
-	if(n > 4) n = 4;
+	if(n > LIGHTGEM_MAX_RENDERPASSES) n = LIGHTGEM_MAX_RENDERPASSES;
 
 	k = cv_lg_hud.GetInteger()-1;
 	lgrend = lg->GetRenderEntity();
 
+	// Set the viewid to our private screenshot snapshot. If this number is changed 
+	// for some reason, it has to be changed in player.cpp as well.
+	rv.viewID = DARKMOD_LIGHTGEM_VIEWID;
+	lgrend->suppressShadowInViewID = 0;
+
+	if(cv_lg_player.GetBool() == false)
+		lgrend->allowSurfaceInViewID = rv.viewID;
+	else
+		lgrend->allowSurfaceInViewID = 0;
+
+	prent = player->GetRenderEntity();
+	hrent = player->GetHeadEntity()->GetRenderEntity();
+
+	playerid = prent->suppressSurfaceInViewID;
+	psid = prent->suppressShadowInViewID;
+	prent->suppressShadowInViewID = rv.viewID;
+	prent->suppressSurfaceInViewID = rv.viewID;
+
+	headid = hrent->suppressSurfaceInViewID;
+	hsid = hrent->suppressShadowInViewID;
+	hrent->suppressShadowInViewID = rv.viewID;
+	hrent->suppressSurfaceInViewID = rv.viewID;
+
+	// Tell the renderengine about the change for this entity.
+	if((pdef = player->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
 	for(i = 0; i < n; i++)
 	{
-		sprintf(name, "test_%u.tga", i);
+		sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
 		rv.vieworg = LGPos;
 		rv.vieworg.x += cv_lg_xoffs.GetInteger();
 		rv.vieworg.y += cv_lg_yoffs.GetInteger();
 		rv.vieworg.z += cv_lg_zoffs.GetInteger();
 
-		if(i == 0)
+		switch(i)
 		{
-			// Forwardview
-			rv.vieworg.x -= dist;
-			rv.viewaxis = idMat3(
-				1, 0, 0,
-				0, 1, 0,
-				0, 0, 1
-			);
-		}
-		else if(i == 1)
-		{
-			// Rearview
-			rv.vieworg.x += dist;
-			rv.viewaxis = idMat3(	
-				-1, 0, 0,
-				0, -1, 0,
-				0, 0, 1
-			);
-		}
-		else if(i == 2)
-		{
-			// Left view
-			rv.vieworg.y -= dist;
-			rv.viewaxis = idMat3(	
-				0.0, 1.0, 0.0,
-				-1.0, 0.0, 0.0,
-				0.0, 0.0, 1.0
-			);
-		}
-		else if(i == 3)
-		{
-			// Right view
-			rv.vieworg.y += dist;
-			rv.viewaxis = idMat3(	
-				0.0, -1.0, 0.0,
-				1.0, 0.0, 0.0,
-				0.0, 0.0, 1.0
-			);
+			case 0:	// Forwardview
+			{
+				rv.vieworg.x -= dist;
+				rv.viewaxis = idMat3(
+					1, 0, 0,
+					0, 1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 1:	// Rearview
+			{
+				rv.vieworg.x += dist;
+				rv.viewaxis = idMat3(	
+					-1, 0, 0,
+					0, -1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 2:	// Left view
+			{
+				rv.vieworg.y -= dist;
+				rv.viewaxis = idMat3(	
+					0.0, 1.0, 0.0,
+					-1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
+
+			case 3:
+			{
+				// Right view
+				rv.vieworg.y += dist;
+				rv.viewaxis = idMat3(	
+					0.0, -1.0, 0.0,
+					1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
+
+			case 4:	// From the top to bottom
+			{
+				rv.vieworg.z += dist;
+				rv.viewaxis = idMat3(	
+					0.0, 0.0, -1.0,
+					0.0, 1.0, 0.0,
+					1.0, 0.0, 0.0
+				);
+			}
+			break;
+
+			case 5:
+			{
+				// From bottom to top
+				rv.vieworg.z -= dist;
+				rv.viewaxis = idMat3(	
+					0.0, 0.0, 1.0,
+					0.0, 1.0, 0.0,
+					-1.0, 0.0, 0.0
+				);
+			}
+			break;
 		}
 
 		// if the hud is enabled we either process all of them in case it is set to 0,
@@ -4604,62 +4667,34 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			// Set the viewid to our private screenshot snapshot. If this number is changed 
-			// for some reason, it has to be changed in player.cpp as well.
-			rv.viewID = DARKMOD_LIGHTGEM_VIEWID;
-			lgrend->suppressShadowInViewID = 0;
-
-			if(cv_lg_player.GetBool() == false)
-				lgrend->allowSurfaceInViewID = rv.viewID;
-			else
-				lgrend->allowSurfaceInViewID = 0;
-
-			prent = player->GetRenderEntity();
-			hrent = player->GetHeadEntity()->GetRenderEntity();
-
-			playerid = prent->suppressSurfaceInViewID;
-			psid = prent->suppressShadowInViewID;
-			prent->suppressShadowInViewID = rv.viewID;
-			prent->suppressSurfaceInViewID = rv.viewID;
-
-			headid = hrent->suppressSurfaceInViewID;
-			hsid = hrent->suppressShadowInViewID;
-			hrent->suppressShadowInViewID = rv.viewID;
-			hrent->suppressSurfaceInViewID = rv.viewID;
-
-			// Tell the renderengine about the change for this entity.
-			if((pdef = player->GetModelDefHandle()) != -1)
-				gameRenderWorld->UpdateEntityDef(pdef, prent);
-
-			if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
-				gameRenderWorld->UpdateEntityDef(hdef, hrent);
-
 			// defaults is 20:15
 			renderSystem->CropRenderSize(cv_lg_width.GetInteger(), cv_lg_height.GetInteger(), true);
 			gameRenderWorld->RenderScene(&rv);
 			if(cv_lg_file.GetBool() == true)
+			{
+				DM_LOG(LC_LIGHT, LT_INFO).LogString("Rendering to file [%s]\r", name.c_str());
 				renderSystem->CaptureRenderToFile(name);
+			}
 			else
 				renderSystem->CaptureRenderToImage("_scratch");
 			renderSystem->UnCrop();
 
-			prent->suppressSurfaceInViewID = playerid;
-			prent->suppressShadowInViewID = psid;
-			hrent->suppressSurfaceInViewID = headid;
-			hrent->suppressShadowInViewID = hsid;
-
-			// and switch back our renderdefinition.
-			if(pdef != -1)
-				gameRenderWorld->UpdateEntityDef(pdef, prent);
-
-			if(hdef != -1)
-				gameRenderWorld->UpdateEntityDef(hdef, hrent);
-
 			// we can quit as soon as we have a maximum value
-			if((fColVal[i] = AnalyzeRenderImage(name)) >= 1.0)
-				break;
+			fColVal[i] = AnalyzeRenderImage(name);
 		}
 	}
+
+	prent->suppressSurfaceInViewID = playerid;
+	prent->suppressShadowInViewID = psid;
+	hrent->suppressSurfaceInViewID = headid;
+	hrent->suppressShadowInViewID = hsid;
+
+	// and switch back our renderdefinition.
+	if(pdef != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+	if(hdef != -1)
+		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
 	// We only take the brightest value that we could find.
 	for(i = 0; i < n; i++)
