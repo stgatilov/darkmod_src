@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/10/22 14:15:46  sparhawk
+ * Fixed flickering in lightgem when player is moving.
+ *
  * Revision 1.16  2005/10/21 21:57:17  sparhawk
  * Ramdisk support added.
  *
@@ -4513,14 +4516,24 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	renderEntity_t *lgrend;
 
 	lg = player->LightgemSurface;
-	idVec3 Cam = player->GetPhysics()->GetOrigin();
-	idVec3 Pos = lg->GetPhysics()->GetOrigin();
+	idVec3 Cam = player->GetEyePosition();
+	idVec3 Pos = player->GetPhysics()->GetOrigin();
 	idVec3 LGPos = Cam;
+	// We want to have the camera on the eyepositionbut at the footheight. The player 
+	// base position is adjusted according to viewbobs and other influences. Only the 
+	// eyeposition is stable, therfero we use the values from the eye and move it to the base.
+	LGPos.z = Pos.z;
+
+	// Adjust the cameraposition with userdefined offsets.
 	LGPos.x += cv_lg_oxoffs.GetInteger();
 	LGPos.y += cv_lg_oyoffs.GetInteger();
 	LGPos.z += cv_lg_ozoffs.GetInteger();
+
+	// Move the lightgem testmodel to the players feet based on the eye position
 	lg->SetOrigin(LGPos);
-	LGPos.z += fabs(player->GetEyePosition().z - Cam.z) / 2;
+
+	// Move the camerapostion to half of the player height.
+	LGPos.z += fabs(Cam.z - Pos.z) / 2;
 	memset(&rv, 0, sizeof(rv));
 
 	for(i = 0; i < LIGHTGEM_MAX_RENDERPASSES; i++)
@@ -4563,6 +4576,11 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	else
 		lgrend->allowSurfaceInViewID = 0;
 
+	// Tell the renderengine about the change for this entity.
+	prent = lg->GetRenderEntity();
+	if((pdef = lg->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
 	prent = player->GetRenderEntity();
 	hrent = player->GetHeadEntity()->GetRenderEntity();
 
@@ -4576,7 +4594,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	hrent->suppressShadowInViewID = rv.viewID;
 	hrent->suppressSurfaceInViewID = rv.viewID;
 
-	// Tell the renderengine about the change for this entity.
 	if((pdef = player->GetModelDefHandle()) != -1)
 		gameRenderWorld->UpdateEntityDef(pdef, prent);
 

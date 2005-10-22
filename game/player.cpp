@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2005/10/22 14:15:46  sparhawk
+ * Fixed flickering in lightgem when player is moving.
+ *
  * Revision 1.28  2005/10/21 21:57:17  sparhawk
  * Ramdisk support added.
  *
@@ -2683,19 +2686,14 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 	}
 }
 
-/*
-===============
-idPlayer::DrawHUD
-===============
-*/
-void idPlayer::DrawHUD(idUserInterface *_hud)
+void idPlayer::PrintDebugHUD(void)
 {
-/*	idStr strText;
+	idStr strText;
 	idVec3 a, b, c;
 	int y;
 
 	// TODO: Remove this when no longer needed.
-	y = 200;
+	y = 100;
 	sprintf(strText, "ViewOrg:    x: %f   y: %f   z: %f", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
 	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
 	y += 12;
@@ -2714,7 +2712,28 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	y += 12;
 	sprintf(strText, "FOV x: %f   y: %f", renderView->fov_x, renderView->fov_y);
 	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "ViewAngles Pitch: %f   Yaw: %f   Roll: %f", viewAngles.pitch, viewAngles.yaw, viewAngles.roll);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "ViewBobAngles Pitch: %f   Yaw: %f   Roll: %f", viewBobAngles.pitch, viewBobAngles.yaw, viewBobAngles.roll);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	a = GetEyePosition();
+	sprintf(strText, "EyePosition x: %f   y: %f   z: %f", a.x, a.y, a.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+}
+
+/*
+===============
+idPlayer::DrawHUD
+===============
 */
+void idPlayer::DrawHUD(idUserInterface *_hud)
+{
+	if(cv_lg_debug.GetBool() == true)
+		PrintDebugHUD();
+
 	if(_hud)
 		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
 	else
