@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/10/22 14:16:21  sparhawk
+ * Added a debug print variable
+ *
  * Revision 1.8  2005/10/21 21:57:55  sparhawk
  * Ramdisk support added.
  *
@@ -83,6 +86,7 @@ extern idCVar cv_lg_height;
 extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_file;
 extern idCVar cv_lg_renderdrive;
+extern idCVar cv_lg_debug;
 
 /**
 * End DarkMod cvars

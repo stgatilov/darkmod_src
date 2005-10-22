@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/10/22 14:16:21  sparhawk
+ * Added a debug print variable
+ *
  * Revision 1.10  2005/10/21 21:57:55  sparhawk
  * Ramdisk support added.
  *
@@ -131,6 +134,7 @@ idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the li
 idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..6)" );
 idCVar cv_lg_file("dm_lg_file",			"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file (testing only, lightgem will not work with a texture)." );
 idCVar cv_lg_renderdrive("dm_lg_renderdrive",	"",	CVAR_GAME | CVAR_ARCHIVE,	"Contains the driveletter for the disc where the rendering should go. If not set, or more than one letter, it is ignored." );
+idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
 
 /**
 * End DarkMod cvars
