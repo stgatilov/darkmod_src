@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/10/23 18:11:42  sparhawk
+ * Lightgem entity spawn implemented
+ *
  * Revision 1.10  2005/10/23 13:51:30  sparhawk
  * Top lightgem shot implemented. Image analyzing now assumes a
  * foursided triangulated rendershot instead of a single surface.
@@ -90,6 +93,7 @@ extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_file;
 extern idCVar cv_lg_renderdrive;
 extern idCVar cv_lg_debug;
+extern idCVar cv_lg_model;
 
 /**
 * End DarkMod cvars

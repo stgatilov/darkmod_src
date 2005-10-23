@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
  * Revision 1.19  2005/10/23 14:14:15  sparhawk
  * Bug fixed where lightgem uses only the last image for analysis instead of using the brightest value from all images.
  *
@@ -1314,6 +1317,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// precache the player
 	FindEntityDef( "player_doommarine", false );
+
+	SpawnLightgemEntity();
 
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
@@ -3299,6 +3304,10 @@ void idGameLocal::SpawnMapEntities( void ) {
 
 	SetSkill( g_skill.GetInteger() );
 
+	// Add the lightgem to the map before anything else happened
+	// so it will be included as if it were a regular map entity.
+	SpawnLightgemEntity();
+
 	numEntities = mapFile->GetNumEntities();
 	if ( numEntities == 0 ) {
 		Error( "...no entities" );
@@ -3320,6 +3329,14 @@ void idGameLocal::SpawnMapEntities( void ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
+		for(int x = 0; x < args.GetNumKeyVals(); x++)
+		{
+			const idKeyValue *p = args.GetKeyVal(x);
+			const idStr k = p->GetKey();
+			const idStr v = p->GetValue();
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+		}
+
 		if ( !InhibitEntitySpawn( args ) ) {
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
@@ -3332,6 +3349,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 	}
 
 	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
 /*
@@ -4767,8 +4785,6 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 	h = kn/2;
 	in = im.m_Width;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Startwerte in: %u   kn: %u   h: %u\r", in, kn, h);
-
 	// First we do the top half
 	for(k = 0; k < h; k++)
 	{
@@ -4787,8 +4803,6 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 			buffer += im.m_Bpp;
 		}
 	}
-
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Lower half\r");
 
 	// Then we do the bottom half where the triangles are inverted.
 	for(k = (h-1); k >= 0; k--)
@@ -4812,5 +4826,25 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 	// Calculate the average for each value
 	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 		fColVal[i] = fColVal[i]/counter[x];
+}
+
+void idGameLocal::SpawnLightgemEntity(void)
+{
+	static const char *LightgemName = LIGHTEM_RENDER_NAME;
+	idMapEntity *mapEnt = NULL;
+
+	mapEnt = mapFile->FindEntity(LightgemName);
+	if(mapEnt == NULL)
+	{
+		mapEnt = new idMapEntity();
+		mapFile->AddEntity(mapEnt);
+		mapEnt->epairs.Set("classname", "func_static");
+		mapEnt->epairs.Set("name", LightgemName);
+		if(strlen(cv_lg_model.GetString()) == 0)
+			mapEnt->epairs.Set("model", LIGHTEM_RENDER_MODEL);
+		else
+			mapEnt->epairs.Set("model", cv_lg_model.GetString());
+		mapEnt->epairs.Set("origin", "0 0 0");
+	}
 }
 

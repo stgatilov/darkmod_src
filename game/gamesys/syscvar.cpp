@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/10/23 18:11:42  sparhawk
+ * Lightgem entity spawn implemented
+ *
  * Revision 1.12  2005/10/23 13:51:30  sparhawk
  * Top lightgem shot implemented. Image analyzing now assumes a
  * foursided triangulated rendershot instead of a single surface.
@@ -138,7 +141,7 @@ idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER |
 idCVar cv_lg_file("dm_lg_file",			"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file (testing only, lightgem will not work with a texture)." );
 idCVar cv_lg_renderdrive("dm_lg_renderdrive",	"",	CVAR_GAME | CVAR_ARCHIVE,	"Contains the driveletter for the disc where the rendering should go. If not set, or more than one letter, it is ignored." );
 idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
-
+idCVar cv_lg_model("dm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
 /**
 * End DarkMod cvars
 **/

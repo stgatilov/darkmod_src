@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
  * Revision 1.29  2005/10/22 14:15:46  sparhawk
  * Fixed flickering in lightgem when player is moving.
  *
@@ -1483,7 +1486,7 @@ void idPlayer::Init( void ) {
 	}
 
 	isChatting = false;
-	LightgemSurface = gameLocal.FindEntity("lightgem_surface");
+	LightgemSurface = gameLocal.FindEntity(LIGHTEM_RENDER_NAME);
 	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LIGHTGEM_VIEWID;
 	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
 	DM_LOG(LC_LIGHT, LT_INFO).LogString("LightgemSurface: [%08lX]\r", LightgemSurface);

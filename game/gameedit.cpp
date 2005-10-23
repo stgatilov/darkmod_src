@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
  * Revision 1.3  2005/09/24 03:17:53  lloyd
  * Restored file to it's original state
  *
@@ -25,7 +28,6 @@
 #pragma hdrstop
 
 #include "Game_local.h"
-
 
 /*
 ===============================================================================
@@ -1063,7 +1065,8 @@ int idGameEdit::MapGetUniqueMatchingKeyVals( const char *key, const char *list[]
 idGameEdit::MapAddEntity
 ================
 */
-void idGameEdit::MapAddEntity( const idDict *dict ) const {
+void idGameEdit::MapAddEntity( const idDict *dict ) const
+{
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	if ( mapFile ) {
 		idMapEntity *ent = new idMapEntity();
