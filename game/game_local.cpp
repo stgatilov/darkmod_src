@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2005/10/23 14:14:15  sparhawk
+ * Bug fixed where lightgem uses only the last image for analysis instead of using the brightest value from all images.
+ *
  * Revision 1.18  2005/10/23 13:51:06  sparhawk
  * Top lightgem shot implemented. Image analyzing now assumes a
  * foursided triangulated rendershot instead of a single surface.
@@ -4615,6 +4618,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 	dim = cv_lg_dimension.GetInteger();
 
+	// We only take the brightest value that we could find.
+	fRetVal = 0.0;
 	for(i = 0; i < n; i++)
 	{
 		sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
@@ -4718,6 +4723,15 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			// we can quit as soon as we have a maximum value
 			AnalyzeRenderImage(name, fColVal);
+
+			// Check which of the images has the brightest value, and this is what we will use.
+			for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+			{
+				if(fColVal[i] > fRetVal)
+					fRetVal = fColVal[i];
+
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+			}
 		}
 	}
 
@@ -4732,16 +4746,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 	if(hdef != -1)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
-
-	// We only take the brightest value that we could find.
-	fRetVal = 0.0;
-	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
-	{
-		if(fColVal[i] > fRetVal)
-			fRetVal = fColVal[i];
-
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
-	}
 
 	return(fRetVal);
 }
