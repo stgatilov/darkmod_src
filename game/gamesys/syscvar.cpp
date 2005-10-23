@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/10/23 13:51:30  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
  * Revision 1.11  2005/10/22 14:16:21  sparhawk
  * Added a debug print variable
  *
@@ -122,16 +126,15 @@ idCVar cv_lg_yoffs("dm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adj
 idCVar cv_lg_zoffs("dm_lg_zoffs",		"20",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
 idCVar cv_lg_oxoffs("dm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
 idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"2",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
-idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
+idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"-17",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
 idCVar cv_lg_fovx("dm_lg_fovx",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the x value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_fovy("dm_lg_fovy",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_toggle("dm_lg_toggle",		"1",		CVAR_GAME | CVAR_BOOL,		"Toggles the processing of the lightgem on(1) or off(0)." );
 idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
-idCVar cv_lg_width("dm_lg_width",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderwidth of the lightgem screenshot" );
-idCVar cv_lg_height("dm_lg_height",		"2",		CVAR_GAME | CVAR_INTEGER,	"Set the renderheight of the lightgem screenshot" );
+idCVar cv_lg_dimension("dm_lg_width",	"50",		CVAR_GAME | CVAR_INTEGER,	"Set the renderdimensions (width/height) of the lightgem screenshot" );
 idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
 idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
-idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..6)" );
+idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..2)" );
 idCVar cv_lg_file("dm_lg_file",			"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file (testing only, lightgem will not work with a texture)." );
 idCVar cv_lg_renderdrive("dm_lg_renderdrive",	"",	CVAR_GAME | CVAR_ARCHIVE,	"Contains the driveletter for the disc where the rendering should go. If not set, or more than one letter, it is ignored." );
 idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );

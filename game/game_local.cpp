@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2005/10/23 13:51:06  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
  * Revision 1.17  2005/10/22 14:15:46  sparhawk
  * Fixed flickering in lightgem when player is moving.
  *
@@ -4497,17 +4501,16 @@ Quit:
 
 float idGameLocal::CalcLightgem(idPlayer *player)
 {
-//		int dist = 25;		// 10 < n < 15
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
-	float fColVal[LIGHTGEM_MAX_RENDERPASSES];
-	float fRetVal = 0.0;
+	float fColVal[LIGHTGEM_MAX_IMAGESPLIT];
+	float fRetVal;
 	int playerid;			// player viewid
 	int headid;				// head viewid
 	int pdef;				// player modeldef
 	int hdef;				// head modeldef
 	int psid;				// player shadow viewid
 	int hsid;				// head shadow viewid
-	int i, n, k;
+	int i, n, k, dim;
 	idStr name;
 	renderView_t rv;
 	idEntity *lg;
@@ -4519,24 +4522,34 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	idVec3 Cam = player->GetEyePosition();
 	idVec3 Pos = player->GetPhysics()->GetOrigin();
 	idVec3 LGPos = Cam;
-	// We want to have the camera on the eyepositionbut at the footheight. The player 
-	// base position is adjusted according to viewbobs and other influences. Only the 
-	// eyeposition is stable, therfero we use the values from the eye and move it to the base.
-	LGPos.z = Pos.z;
 
-	// Adjust the cameraposition with userdefined offsets.
+	// Adjust the modelposition with userdefined offsets.
+	// Move the lightgem testmodel to the players feet based on the eye position
 	LGPos.x += cv_lg_oxoffs.GetInteger();
 	LGPos.y += cv_lg_oyoffs.GetInteger();
 	LGPos.z += cv_lg_ozoffs.GetInteger();
-
-	// Move the lightgem testmodel to the players feet based on the eye position
 	lg->SetOrigin(LGPos);
 
+/*
+	idStr strText;
+	int y;
+	y = 100;
+	sprintf(strText, "LGPos  x: %f   y: %f   z: %f", LGPos.x, LGPos.y, LGPos.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "EyePos  x: %f   y: %f   z: %f", Cam.x, Cam.y, Cam.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "PlayerPos  x: %f   y: %f   z: %f", Pos.x, Pos.y, Pos.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+*/
+
 	// Move the camerapostion to half of the player height.
-	LGPos.z += fabs(Cam.z - Pos.z) / 2;
+//	LGPos.z += fabs(Cam.z - Pos.z) / 2;
 	memset(&rv, 0, sizeof(rv));
 
-	for(i = 0; i < LIGHTGEM_MAX_RENDERPASSES; i++)
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 		fColVal[i] = 0.0;
 
 	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
@@ -4600,6 +4613,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
+	dim = cv_lg_dimension.GetInteger();
+
 	for(i = 0; i < n; i++)
 	{
 		sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
@@ -4610,52 +4625,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 		switch(i)
 		{
-			case 0:	// Forwardview
-			{
-				rv.vieworg.x -= dist;
-				rv.viewaxis = idMat3(
-					1, 0, 0,
-					0, 1, 0,
-					0, 0, 1
-				);
-			}
-			break;
-
-			case 1:	// Rearview
-			{
-				rv.vieworg.x += dist;
-				rv.viewaxis = idMat3(	
-					-1, 0, 0,
-					0, -1, 0,
-					0, 0, 1
-				);
-			}
-			break;
-
-			case 2:	// Left view
-			{
-				rv.vieworg.y -= dist;
-				rv.viewaxis = idMat3(	
-					0.0, 1.0, 0.0,
-					-1.0, 0.0, 0.0,
-					0.0, 0.0, 1.0
-				);
-			}
-			break;
-
-			case 3:
-			{
-				// Right view
-				rv.vieworg.y += dist;
-				rv.viewaxis = idMat3(	
-					0.0, -1.0, 0.0,
-					1.0, 0.0, 0.0,
-					0.0, 0.0, 1.0
-				);
-			}
-			break;
-
-			case 4:	// From the top to bottom
+			case 0:	// From the top to bottom
 			{
 				rv.vieworg.z += dist;
 				rv.viewaxis = idMat3(	
@@ -4666,7 +4636,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			}
 			break;
 
-			case 5:
+			case 1:
 			{
 				// From bottom to top
 				rv.vieworg.z -= dist;
@@ -4677,27 +4647,77 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 				);
 			}
 			break;
+
+			case 2:	// Forwardview
+			{
+				rv.vieworg.x -= dist;
+				rv.viewaxis = idMat3(
+					1, 0, 0,
+					0, 1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 3:	// Rearview
+			{
+				rv.vieworg.x += dist;
+				rv.viewaxis = idMat3(	
+					-1, 0, 0,
+					0, -1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 4:	// Left view
+			{
+				rv.vieworg.y -= dist;
+				rv.viewaxis = idMat3(	
+					0.0, 1.0, 0.0,
+					-1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
+
+			case 5:
+			{
+				// Right view
+				rv.vieworg.y += dist;
+				rv.viewaxis = idMat3(	
+					0.0, -1.0, 0.0,
+					1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
 		}
 
+/*
+	sprintf(strText, "ViewOrg[%u] x: %f   y: %f   z: %f", i, rv.vieworg.x, rv.vieworg.y, rv.vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+*/
 		// if the hud is enabled we either process all of them in case it is set to 0,
 		// then we don't care which one is actually displayed (most likely the last or
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			// defaults is 20:15
-			renderSystem->CropRenderSize(cv_lg_width.GetInteger(), cv_lg_height.GetInteger(), true);
+			// We always use a square image, because we render now an overhead shot which
+			// covers all four side of the player at once, using a diamond or pyramid shape.
+			// The result is an image that is split in four triangles with an angle of 
+			// 45 degree, thus the square shape.
+			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->RenderScene(&rv);
 			if(cv_lg_file.GetBool() == true)
-			{
-				DM_LOG(LC_LIGHT, LT_INFO).LogString("Rendering to file [%s]\r", name.c_str());
 				renderSystem->CaptureRenderToFile(name);
-			}
 			else
 				renderSystem->CaptureRenderToImage("_scratch");
 			renderSystem->UnCrop();
 
 			// we can quit as soon as we have a maximum value
-			fColVal[i] = AnalyzeRenderImage(name);
+			AnalyzeRenderImage(name, fColVal);
 		}
 	}
 
@@ -4714,34 +4734,79 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
 	// We only take the brightest value that we could find.
-	for(i = 0; i < n; i++)
+	fRetVal = 0.0;
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 	{
 		if(fColVal[i] > fRetVal)
 			fRetVal = fColVal[i];
+
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
 	}
 
 	return(fRetVal);
 }
 
-float idGameLocal::AnalyzeRenderImage(idStr &Filename)
+void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
 {
-	float fImgVal;
-	float fColVal = 0.0;
 	CImage im(Filename);
 	unsigned char *buffer = im.GetImage();
-	int i, n;
+	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
+	int i, in, k, kn, h, x;
 
-	// We always assume a BPP 4 here.
-	// The order is RGBA.
-	n = im.m_Height * im.m_Width;
-	for(i = 0; i < n; i++)
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		counter[i] = 0;
+
+	// We always assume a BPP 4 here. We also always assume a square image with an even 
+	// number of lines. An odd number might have only a very small influence though and
+	// most likely get canceled out if a bigger image is used.
+	kn = im.m_Height;
+	h = kn/2;
+	in = im.m_Width;
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Startwerte in: %u   kn: %u   h: %u\r", in, kn, h);
+
+	// First we do the top half
+	for(k = 0; k < h; k++)
 	{
-		fColVal += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
-		buffer += im.m_Bpp;
+		for(i = 0; i < in; i++)
+		{
+			if(i < k)
+				x = 0;
+			else if(i > kn-k-1)
+				x = 2;
+			else
+				x = 1;
+
+			// The order is RGBA.
+			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			counter[x]++;
+			buffer += im.m_Bpp;
+		}
 	}
 
-	fImgVal = fColVal/n;
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue from image(%s): %f\r", Filename.c_str(), fImgVal);
-	return(fImgVal);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Lower half\r");
+
+	// Then we do the bottom half where the triangles are inverted.
+	for(k = (h-1); k >= 0; k--)
+	{
+		for(i = 0; i < in; i++)
+		{
+			if(i < k)
+				x = 0;
+			else if(i > kn-k-1)
+				x = 2;
+			else
+				x = 3;
+
+			// The order is RGBA.
+			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			counter[x]++;
+			buffer += im.m_Bpp;
+		}
+	}
+
+	// Calculate the average for each value
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		fColVal[i] = fColVal[i]/counter[x];
 }
 

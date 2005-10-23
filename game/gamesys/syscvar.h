@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/10/23 13:51:30  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
  * Revision 1.9  2005/10/22 14:16:21  sparhawk
  * Added a debug print variable
  *
@@ -81,8 +85,7 @@ extern idCVar cv_lg_toggle;
 extern idCVar cv_lg_hud;
 extern idCVar cv_lg_weak;
 extern idCVar cv_lg_player;
-extern idCVar cv_lg_width;
-extern idCVar cv_lg_height;
+extern idCVar cv_lg_dimension;
 extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_file;
 extern idCVar cv_lg_renderdrive;

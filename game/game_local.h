@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/10/23 13:51:06  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
  * Revision 1.9  2005/10/18 13:56:40  sparhawk
  * Lightgem updates
  *
@@ -60,6 +64,15 @@
 
 // enables water physics
 #define MOD_WATERPHYSICS
+
+// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
+// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
+// shape would be sufficient to cover all lighting situations. For silouhette detection we might
+// consider more stages though.
+#define LIGHTGEM_MAX_RENDERPASSES		2
+#define LIGHTGEM_MAX_IMAGESPLIT			4
+#define LIGHTEM_RENDER_DIRECTORY		"snapshot"
+
 
 /*
 ===============================================================================
@@ -640,7 +653,7 @@ public:
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
 	 * determining the lightvalue for the given image.
 	 */
-	float					AnalyzeRenderImage(idStr &Filename);
+	void					AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT]);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
