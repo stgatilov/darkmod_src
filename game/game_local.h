@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/10/23 18:42:30  sparhawk
+ * Lightgem cleanup
+ *
  * Revision 1.11  2005/10/23 18:11:21  sparhawk
  * Lightgem entity spawn implemented
  *
@@ -77,6 +80,8 @@
 #define LIGHTEM_RENDER_DIRECTORY		"snapshot"
 #define LIGHTEM_RENDER_MODEL			"models/props/misc/lightgem.lwo"
 #define LIGHTEM_RENDER_NAME				"lightgem_surface"
+// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
+#define LIGHTGEM_VIEWID					-1
 
 /*
 ===============================================================================

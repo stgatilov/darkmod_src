@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.21  2005/10/23 18:41:06  sparhawk
+ * Lightgem cleanup
+ *
  * Revision 1.20  2005/10/21 21:56:13  sparhawk
  * Ramdisk support added.
  *
@@ -339,15 +342,5 @@ extern char *g_LCString[];
 #define DARKMOD_NOTE_AUX_MAKESTR( _M_, _L_ )    _M_(_L_) 
 #define DARKMOD_NOTE_AUX_LINE                   DARKMOD_NOTE_AUX_MAKESTR(DARKMOD_NOTE_AUX_STR,__LINE__) 
 #define DARKMOD_NOTE                            __FILE__ "(" DARKMOD_NOTE_AUX_LINE ") : DARKMOD_NOTE: " 
-
-// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
-#define DARKMOD_LIGHTGEM_VIEWID			-1
-
-// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
-// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
-// shape would be sufficient to cover all lighting situations. For silouhette detection we might
-// consider more stages though.
-#define LIGHTGEM_MAX_RENDERPASSES		6
-#define LIGHTEM_RENDER_DIRECTORY		"snapshot"
 
 #endif
