@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2005/10/24 21:01:12  sparhawk
+ * Lightgem interleave added.
+ *
  * Revision 1.7  2005/09/24 03:13:49  lloyd
  * Changed CGrabber grabber to CGrabber *grabber
  *
@@ -167,6 +170,10 @@ public:
 	 * 1 <= N <= 16
 	 */
 	int							m_LightgemValue;
+	/**
+	 * Contains the last lightgem value. This is stored for interleaving.
+	 */
+	float						m_fColVal;
 
 	/**
 	 * Each light entity must register here itself. This is used

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2005/10/24 21:00:37  sparhawk
+ * Lightgem interleave added.
+ *
  * Revision 1.21  2005/10/23 18:42:30  sparhawk
  * Lightgem cleanup
  *
@@ -2533,6 +2536,9 @@ makes rendering and sound system calls
 */
 bool idGameLocal::Draw( int clientNum )
 {
+	int n;
+	static int FPS_Interleave = 0;
+
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2543,12 +2549,25 @@ bool idGameLocal::Draw( int clientNum )
 		return false;
 	}
 
-	float fColVal = 0.0;
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	float fColVal = pDM->m_fColVal;
 
+	n = cv_lg_interleave.GetInteger();
 	if(cv_lg_weak.GetBool() == false)
 	{
-		if(cv_lg_toggle.GetBool() == true && cv_lg_hud.GetInteger() == 0)
-			fColVal = CalcLightgem(player);
+		if(cv_lg_hud.GetInteger() == 0)
+		{
+			if(n > 0)
+			{
+				// Skip every nth frame according to the value set in 
+				FPS_Interleave++;
+				if(FPS_Interleave >= n)
+				{
+					FPS_Interleave = 0;
+					fColVal = CalcLightgem(player);
+				}
+			}
+		}
 	}
 
 	// render the scene
@@ -2556,13 +2575,23 @@ bool idGameLocal::Draw( int clientNum )
 
 	if(cv_lg_weak.GetBool() == false)
 	{
-		CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-
-		if(cv_lg_toggle.GetBool() == true && cv_lg_hud.GetInteger() != 0)
-			fColVal = CalcLightgem(player);
+		if(cv_lg_hud.GetInteger() != 0)
+		{
+			if(n > 0)
+			{
+				// Skip every nth frame according to the value set in 
+				FPS_Interleave++;
+				if(FPS_Interleave >= n)
+				{
+					FPS_Interleave = 0;
+					fColVal = CalcLightgem(player);
+				}
+			}
+		}
 
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue total: %f\r", fColVal);
 
+		pDM->m_fColVal = fColVal;
 		pDM->m_LightgemValue = LIGHTGEM_MAX * fColVal;
 		if(pDM->m_LightgemValue < LIGHTGEM_MIN)
 			pDM->m_LightgemValue = LIGHTGEM_MIN;

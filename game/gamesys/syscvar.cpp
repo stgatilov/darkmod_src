@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2005/10/24 21:00:54  sparhawk
+ * Lightgem interleave added.
+ *
  * Revision 1.14  2005/10/23 21:24:15  sparhawk
  * Lightgem zoffset adjusted to new model.
  *
@@ -135,7 +138,7 @@ idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"2",		CVAR_GAME | CVAR_FLOAT,	"Sets the y a
 idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"-17",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
 idCVar cv_lg_fovx("dm_lg_fovx",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the x value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_fovy("dm_lg_fovy",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
-idCVar cv_lg_toggle("dm_lg_toggle",		"1",		CVAR_GAME | CVAR_BOOL,		"Toggles the processing of the lightgem on(1) or off(0)." );
+idCVar cv_lg_interleave("dm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );
 idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
 idCVar cv_lg_dimension("dm_lg_width",	"50",		CVAR_GAME | CVAR_INTEGER,	"Set the renderdimensions (width/height) of the lightgem screenshot" );
 idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
