@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.23  2005/10/26 21:12:42  sparhawk
+ * Lightgem renderpipe implemented
+ *
  * Revision 1.22  2005/10/21 21:56:13  sparhawk
  * Ramdisk support added.
  *
@@ -218,6 +221,7 @@ CGlobal::CGlobal(void)
 	m_Filename = "undefined";
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
+	m_RenderPipe = INVALID_HANDLE_VALUE;
 
 	m_LogFile = NULL;
 
@@ -762,6 +766,35 @@ CImage *CGlobal::GetImage(idStr const &Name, int &Index)
 	return NULL;
 }
 
+
+void CGlobal::CreateRenderPipe(void)
+{
+#ifdef _WINDOWS_
+	m_RenderPipe = CreateNamedPipe (DARKMOD_RENDERPIPE_NAME,
+		PIPE_ACCESS_DUPLEX, // read/write access
+		PIPE_TYPE_MESSAGE | // message type pipe
+		PIPE_READMODE_MESSAGE | // message-read mode
+		PIPE_WAIT, // blocking mode
+		PIPE_UNLIMITED_INSTANCES, // max. instances
+		DARKMOD_RENDERPIPE_BUFSIZE, // output buffer size
+		DARKMOD_RENDERPIPE_BUFSIZE, // input buffer size
+		DARKMOD_RENDERPIPE_TIMEOUT, // client time-out
+		NULL); // no security attribute
+#endif
+}
+
+void CGlobal::CloseRenderPipe(void)
+{
+	if(m_RenderPipe != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(m_RenderPipe);
+		m_RenderPipe = INVALID_HANDLE_VALUE;
+	}
+}
+
+
+
+
 CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName)
 {
 	bool added;
@@ -831,38 +864,117 @@ CImage::CImage(idStr const &Name)
 	m_Bpp = 0;
 }
 
+CImage::CImage(void)
+{
+	m_Image = NULL;
+	m_BufferLength = 0L;
+	m_ImageId = -1;
+	m_Width = 0;
+	m_Height = 0;
+	m_Loaded = false;
+	m_Bpp = 0;
+}
+
 CImage::~CImage(void)
 {
+	Unload(true);
+}
+
+void CImage::Unload(bool FreeMemory)
+{
+	m_Loaded = false;
+	if(FreeMemory == true)
+	{
+		if(m_Image != NULL)
+			delete [] m_Image;
+
+		m_Image = NULL;
+	}
 	if(m_ImageId != -1)
 		ilDeleteImages(1, &m_ImageId);
 
-	if(m_Image != NULL)
-		delete [] m_Image;
+	m_ImageId = -1;
 }
 
-unsigned char *CImage::GetImage(void)
+unsigned char *CImage::GetImage(const char *Filename)
 {
 	unsigned char *rc = NULL;
 	idFile *fl = NULL;
 
+	if(Filename != NULL)
+	{
+		Unload(false);
+		m_Name = Filename;
+	}
+
 	if(m_Loaded == false)
 	{
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_Name.c_str());
-
-		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
+		if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE && m_Name.CmpPrefix("\\\\.\\") == 0)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_Name.c_str());
-			goto Quit;
+			static char pipe_buf[DARKMOD_RENDERPIPE_BUFSIZE];
+			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
+
+			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Reading from renderpipe [%s]\r", m_Name.c_str());
+
+			dwBufSize = DARKMOD_RENDERPIPE_BUFSIZE;
+			BufLen = 0;
+			while(1)
+			{
+				ReadFile(g_Global.m_RenderPipe, // handle to pipe
+					&pipe_buf[BufLen],								// buffer to receive data
+					dwBufSize,								// size of buffer
+					&cbBytesRead,							// number of bytes read
+					NULL);									// not overlapped I/O
+				dwLastError = GetLastError();
+//				DM_LOG(LC_SYSTEM, LT_INFO).LogString("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image, dwLastError);
+
+				BufLen += cbBytesRead;
+				dwBufSize -= cbBytesRead;
+
+				if(cbBytesRead == 0 || dwLastError == ERROR_BROKEN_PIPE)
+					break;
+				
+				if(dwBufSize <= 0)
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Bufferoverflow when reading from renderpipe\r");
+					goto Quit;
+				}
+			}
+
+			if(BufLen > m_BufferLength || m_Image == NULL)
+			{
+				Unload(true);
+				m_BufferLength = BufLen;
+				if((m_Image = new unsigned char[m_BufferLength]) == NULL)
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+					goto Quit;
+				}
+			}
+			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
+
+			memcpy(m_Image, pipe_buf, m_BufferLength);
+		}
+		else
+		{
+			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_Name.c_str());
+
+			if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
+			{
+				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_Name.c_str());
+				goto Quit;
+			}
+
+			m_BufferLength = fl->Length();
+			if((m_Image = new unsigned char[m_BufferLength]) == NULL)
+			{
+				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+				goto Quit;
+			}
+
+			fl->Read(m_Image, m_BufferLength);
 		}
 
-		m_BufferLength = fl->Length();
-		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
-		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
-			goto Quit;
-		}
-
-		fl->Read(m_Image, m_BufferLength);
 		ilGenImages(1, &m_ImageId);
 		ilBindImage(m_ImageId);
 
@@ -918,38 +1030,59 @@ const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePa
 
 const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)
 {
+	static char p[1024];
+	char *pRet = NULL;
 	idStr Drive;
 	int n;
+	META_RES Ret = MRES_HANDLED;
 
 	Drive = cv_lg_renderdrive.GetString();
 	if((n = Drive.Length()) > 1)
 	{
 		idLib::common->Warning( "dm_lg_renderdrive contains an illegal driveletter. Drive will be ignored!" );
-		RETURN_META_VALUE(MRES_HANDLED, NULL);
+		RETURN_META_VALUE(Ret, pRet);
 	}
 
 	// If we have a drive letter, we check if the path should be adjusted.
 	if(n == 1)
 	{
-		if(idStr::Cmpn(LIGHTEM_RENDER_DIRECTORY, relativePath, strlen(LIGHTEM_RENDER_DIRECTORY)) == 0)
+		// If we were able to create the renderpipe, then we will use it instead, otherwise we fall
+		// back to regular file usage.
+		if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE && idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
 		{
-			static char p[1024];
-			p[0] = Drive[0];
-			strcpy(&p[1], ":\\");
-			if(p[0] != g_Global.m_DriveLetter && p[0] != 0)
+			strcpy(p, DARKMOD_RENDERPIPE_NAME);
+			Ret = MRES_SUPERCEDE;
+			pRet = p;
+		}
+		else
+		{
+			if(idStr::Cmpn(LIGHTEM_RENDER_DIRECTORY, relativePath, strlen(LIGHTEM_RENDER_DIRECTORY)) == 0)
 			{
-				// create the directory if the letter has been changed, to make sure the path exists.
-				strcpy(&p[3], LIGHTEM_RENDER_DIRECTORY);
-				mkdir(p);
-				p[3] = 0;
-				g_Global.m_DriveLetter = p[0];
-			}
+				// If we were able to create the renderpipe, then we will use it instead, otherwise we fall
+				// back to regular file usage.
+				if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
+					strcpy(p, DARKMOD_RENDERPIPE_NAME);
+				else
+				{
+					p[0] = Drive[0];
+					strcpy(&p[1], ":\\");
+					if(p[0] != g_Global.m_DriveLetter && p[0] != 0)
+					{
+						// create the directory if the letter has been changed, to make sure the path exists.
+						strcpy(&p[3], LIGHTEM_RENDER_DIRECTORY);
+						mkdir(p);
+						p[3] = 0;
+						g_Global.m_DriveLetter = p[0];
+					}
 
-			strcpy(&p[3], relativePath);
-			DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_BuildOSPath returns [%s]\r", p);
-			RETURN_META_VALUE(MRES_SUPERCEDE, p);
+					strcpy(&p[3], relativePath);
+					DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_BuildOSPath returns [%s]\r", p);
+				}
+				Ret = MRES_SUPERCEDE;
+				pRet = p;
+			}
 		}
 	}
 
-	RETURN_META_VALUE(MRES_HANDLED, NULL);
+	RETURN_META_VALUE(Ret, pRet);
 }

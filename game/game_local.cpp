@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2005/10/26 21:12:59  sparhawk
+ * Lightgem renderpipe implemented
+ *
  * Revision 1.22  2005/10/24 21:00:37  sparhawk
  * Lightgem interleave added.
  *
@@ -4666,22 +4669,30 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
-	dim = cv_lg_dimension.GetInteger();
+	dim = DARKMOD_RENDER_WIDTH;
+//	DM_LOG(LC_LIGHT, LT_INFO).LogString("ImageDimension: %u\r", dim);
 
 	// We only take the brightest value that we could find.
 	fRetVal = 0.0;
 	for(i = 0; i < n; i++)
 	{
-		sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
+		// The Doom 3 renderengine uses CreateFile to write it's screenshot.
+		// Unfortunately it's seems as if the pipe is closed when D3 closes 
+		// it's filehandle. Since we can't change that part of the code, we
+		// have to open the pipe each time before we try to create a snapshot.
+		g_Global.CreateRenderPipe();
+		if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
+			name = DARKMOD_RENDERPIPE_NAME;
+		else
+			sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
+
 		rv.vieworg = LGPos;
-		rv.vieworg.x += cv_lg_xoffs.GetInteger();
-		rv.vieworg.y += cv_lg_yoffs.GetInteger();
-		rv.vieworg.z += cv_lg_zoffs.GetInteger();
 
 		switch(i)
 		{
 			case 0:	// From the top to bottom
 			{
+				rv.vieworg.z += cv_lg_zoffs.GetInteger();
 				rv.vieworg.z += dist;
 				rv.viewaxis = idMat3(	
 					0.0, 0.0, -1.0,
@@ -4694,6 +4705,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			case 1:
 			{
 				// From bottom to top
+				rv.vieworg.z -= cv_lg_zoffs.GetInteger();
 				rv.vieworg.z -= dist;
 				rv.viewaxis = idMat3(	
 					0.0, 0.0, 1.0,
@@ -4705,6 +4717,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			case 2:	// Forwardview
 			{
+				rv.vieworg.x -= cv_lg_xoffs.GetInteger();
 				rv.vieworg.x -= dist;
 				rv.viewaxis = idMat3(
 					1, 0, 0,
@@ -4716,6 +4729,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			case 3:	// Rearview
 			{
+				rv.vieworg.x += cv_lg_xoffs.GetInteger();
 				rv.vieworg.x += dist;
 				rv.viewaxis = idMat3(	
 					-1, 0, 0,
@@ -4727,6 +4741,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			case 4:	// Left view
 			{
+				rv.vieworg.y -= cv_lg_yoffs.GetInteger();
 				rv.vieworg.y -= dist;
 				rv.viewaxis = idMat3(	
 					0.0, 1.0, 0.0,
@@ -4739,6 +4754,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			case 5:
 			{
 				// Right view
+				rv.vieworg.y += cv_lg_yoffs.GetInteger();
 				rv.vieworg.y += dist;
 				rv.viewaxis = idMat3(	
 					0.0, -1.0, 0.0,
@@ -4773,6 +4789,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			// we can quit as soon as we have a maximum value
 			AnalyzeRenderImage(name, fColVal);
+			g_Global.m_RenderPipe = INVALID_HANDLE_VALUE;
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
@@ -4780,9 +4797,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 				if(fColVal[i] > fRetVal)
 					fRetVal = fColVal[i];
 
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+//				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
 			}
 		}
+		g_Global.CloseRenderPipe();
 	}
 
 	prent->suppressSurfaceInViewID = playerid;
@@ -4806,6 +4824,23 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 	unsigned char *buffer = im.GetImage();
 	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
+
+	if(buffer == NULL)
+	{
+		static int indicator = 0;
+		static int lasttime;
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Unable to read image from renderpipe\r");
+		for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+			fColVal[i] = indicator;
+
+		if(gameLocal.time/1000 != lasttime)
+		{
+			lasttime = gameLocal.time/1000;
+			indicator = !indicator;
+		}
+
+		return;
+	}
 
 	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 		counter[i] = 0;

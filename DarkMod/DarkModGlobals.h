@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.22  2005/10/26 21:12:42  sparhawk
+ * Lightgem renderpipe implemented
+ *
  * Revision 1.21  2005/10/23 18:41:06  sparhawk
  * Lightgem cleanup
  *
@@ -132,14 +135,34 @@ typedef enum {
 	LC_COUNT
 } LC_LogClass;
 
+#define DARKMOD_RENDERPIPE_NAME				"\\\\.\\pipe\\dm_renderpipe"
+#define DARKMOD_RENDERPIPE_BUFSIZE			50*1024		// Buffersize for the renderpipe
+#define DARKMOD_RENDERPIPE_TIMEOUT			5000
+#define DARKMOD_RENDER_WIDTH				50
+
 class CDarkModPlayer;
 
 class CImage {
 public:
 	CImage(idStr const &Name);
+	CImage(void);
 	~CImage(void);
 
-	unsigned char *GetImage(void);
+	/**
+	 * Load the image into memory and allow access to it. If the filename is not
+	 * NULL, it is assumed that a new image is to be loaded and the old one is unloaded.
+	 */
+	unsigned char *GetImage(const char *Filename = NULL);
+
+	/**
+	 * Unload will set the image to not loaded. If FreeMemory == false then the memory is not
+	 * discarded and when you next load another image and it fits in the previous memory
+	 * it will be loaded there. If it does not fit, then the memory is reallocated. This means that
+	 * you can grow the memory usage by subsequently calling this with every groing imagesizes
+	 * but on the other hand it will not constantly allocate and deallocate in case like the
+	 * renderimages.
+	 */
+	void Unload(bool FreeMemory);
 
 protected:
 	unsigned long	m_BufferLength;
@@ -204,6 +227,19 @@ public:
 	CImage *GetImage(int Index);
 	CImage *GetImage(idStr const &Name, int &Index);
 
+	/**
+	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
+	 * Currently this works under Windows only. This is neccessary, because we have to store
+	 * the rendersnapshots somehwere and the only way to do this is via a pipe if we want to
+	 * avoid writing it constantly to disc.
+	 */
+	void CreateRenderPipe(void);
+
+	/**
+	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
+	 */
+	void CloseRenderPipe(void);
+
 private:
 	void LoadINISettings(void *);
 
@@ -228,6 +264,9 @@ public:
 
 	idList<CLightMaterial *>		m_LightMaterial;
 	idList<CImage *>				m_Image;
+
+	CImage			m_RenderImage;
+	HANDLE			m_RenderPipe;
 
 public:
 

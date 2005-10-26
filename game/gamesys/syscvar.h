@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/10/26 21:13:15  sparhawk
+ * Lightgem renderpipe implemented
+ *
  * Revision 1.12  2005/10/24 21:00:54  sparhawk
  * Lightgem interleave added.
  *
@@ -91,7 +94,6 @@ extern idCVar cv_lg_interleave;
 extern idCVar cv_lg_hud;
 extern idCVar cv_lg_weak;
 extern idCVar cv_lg_player;
-extern idCVar cv_lg_dimension;
 extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_file;
 extern idCVar cv_lg_renderdrive;

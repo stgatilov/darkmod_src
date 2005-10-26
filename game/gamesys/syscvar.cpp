@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2005/10/26 21:13:15  sparhawk
+ * Lightgem renderpipe implemented
+ *
  * Revision 1.15  2005/10/24 21:00:54  sparhawk
  * Lightgem interleave added.
  *
@@ -140,12 +143,13 @@ idCVar cv_lg_fovx("dm_lg_fovx",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the x v
 idCVar cv_lg_fovy("dm_lg_fovy",			"20",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_interleave("dm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );
 idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
-idCVar cv_lg_dimension("dm_lg_width",	"50",		CVAR_GAME | CVAR_INTEGER,	"Set the renderdimensions (width/height) of the lightgem screenshot" );
+idCVar cv_lg_width("dm_lg_width",		"50",		CVAR_GAME | CVAR_INTEGER,	"Set the renderwidth (width/height) of the lightgem screenshot. If this value is changed then dm_lg_renderpipe may have to be adjusted." );
 idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
 idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
 idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"Set number of renderpasses used for the lightgem calculation (1..2)" );
 idCVar cv_lg_file("dm_lg_file",			"1",		CVAR_GAME | CVAR_BOOL,		"Switches between rendering to a texture or a file (testing only, lightgem will not work with a texture)." );
 idCVar cv_lg_renderdrive("dm_lg_renderdrive",	"",	CVAR_GAME | CVAR_ARCHIVE,	"Contains the driveletter for the disc where the rendering should go. If not set, or more than one letter, it is ignored." );
+idCVar cv_lg_renderpipe("dm_lg_renderpipe",		"50",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"The size of the buffer for the renderpipe in Kb. If dm_lg_width is made larger, then this value as to be set accordingly." );
 idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
 idCVar cv_lg_model("dm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
 /**
