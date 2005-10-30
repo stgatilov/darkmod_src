@@ -7,8 +7,8 @@
  * $Author$
  *
  * $Log$
- * Revision 1.24  2005/10/30 22:15:49  sparhawk
- * Renderpipe creation removed because D3 can handle the pipename on it's own.
+ * Revision 1.25  2005/10/30 23:02:43  sparhawk
+ * Removed commented out code for old lightgem version.
  *
  * Revision 1.23  2005/10/26 21:12:59  sparhawk
  * Lightgem renderpipe implemented
@@ -4768,15 +4768,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			// The Doom 3 renderengine uses CreateFile to write it's screenshot.
-			// Unfortunately it's seems as if the pipe is closed when D3 closes 
-			// it's filehandle. Since we can't change that part of the code, we
-			// have to open the pipe each time before we try to create a snapshot.
-//			g_Global.CreateRenderPipe();
-//			if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
-				name = DARKMOD_RENDERPIPE_NAME;
-//			else
-//				sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
+			name = DARKMOD_RENDERPIPE_NAME;
 
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
@@ -4795,7 +4787,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 			// we can quit as soon as we have a maximum value
 			AnalyzeRenderImage(name, fColVal);
-//			g_Global.CloseRenderPipe();
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
