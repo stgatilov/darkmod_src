@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2005/10/30 22:15:49  sparhawk
+ * Renderpipe creation removed because D3 can handle the pipename on it's own.
+ *
  * Revision 1.23  2005/10/26 21:12:59  sparhawk
  * Lightgem renderpipe implemented
  *
@@ -4676,16 +4679,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	fRetVal = 0.0;
 	for(i = 0; i < n; i++)
 	{
-		// The Doom 3 renderengine uses CreateFile to write it's screenshot.
-		// Unfortunately it's seems as if the pipe is closed when D3 closes 
-		// it's filehandle. Since we can't change that part of the code, we
-		// have to open the pipe each time before we try to create a snapshot.
-		g_Global.CreateRenderPipe();
-		if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
-			name = DARKMOD_RENDERPIPE_NAME;
-		else
-			sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
-
 		rv.vieworg = LGPos;
 
 		switch(i)
@@ -4775,6 +4768,16 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
+			// The Doom 3 renderengine uses CreateFile to write it's screenshot.
+			// Unfortunately it's seems as if the pipe is closed when D3 closes 
+			// it's filehandle. Since we can't change that part of the code, we
+			// have to open the pipe each time before we try to create a snapshot.
+//			g_Global.CreateRenderPipe();
+//			if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
+				name = DARKMOD_RENDERPIPE_NAME;
+//			else
+//				sprintf(name, LIGHTEM_RENDER_DIRECTORY "\\test_%u.tga", i);
+
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
 			// The result is an image that is split in four triangles with an angle of 
@@ -4782,14 +4785,17 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->RenderScene(&rv);
 			if(cv_lg_file.GetBool() == true)
+			{
 				renderSystem->CaptureRenderToFile(name);
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+			}
 			else
 				renderSystem->CaptureRenderToImage("_scratch");
 			renderSystem->UnCrop();
 
 			// we can quit as soon as we have a maximum value
 			AnalyzeRenderImage(name, fColVal);
-			g_Global.m_RenderPipe = INVALID_HANDLE_VALUE;
+//			g_Global.CloseRenderPipe();
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
@@ -4800,7 +4806,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 //				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
 			}
 		}
-		g_Global.CloseRenderPipe();
 	}
 
 	prent->suppressSurfaceInViewID = playerid;
@@ -4820,10 +4825,12 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
 {
-	CImage im(Filename);
-	unsigned char *buffer = im.GetImage();
+	CImage *im = &g_Global.m_RenderImage ;
 	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
+
+	im->GetImage(Filename);
+	unsigned char *buffer = im->GetImage();
 
 	if(buffer == NULL)
 	{
@@ -4839,7 +4846,7 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 			indicator = !indicator;
 		}
 
-		return;
+		goto Quit;
 	}
 
 	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
@@ -4848,9 +4855,9 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 	// We always assume a BPP 4 here. We also always assume a square image with an even 
 	// number of lines. An odd number might have only a very small influence though and
 	// most likely get canceled out if a bigger image is used.
-	kn = im.m_Height;
+	kn = im->m_Height;
 	h = kn/2;
-	in = im.m_Width;
+	in = im->m_Width;
 
 	// First we do the top half
 	for(k = 0; k < h; k++)
@@ -4867,7 +4874,7 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 			// The order is RGBA.
 			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
 			counter[x]++;
-			buffer += im.m_Bpp;
+			buffer += im->m_Bpp;
 		}
 	}
 
@@ -4886,13 +4893,16 @@ void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX
 			// The order is RGBA.
 			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
 			counter[x]++;
-			buffer += im.m_Bpp;
+			buffer += im->m_Bpp;
 		}
 	}
 
 	// Calculate the average for each value
 	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 		fColVal[i] = fColVal[i]/counter[x];
+
+Quit:
+	return;
 }
 
 void idGameLocal::SpawnLightgemEntity(void)

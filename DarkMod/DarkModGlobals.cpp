@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.24  2005/10/30 22:15:26  sparhawk
+ * Renderpipe creation removed because D3 can handle the pipename on it's own.
+ *
  * Revision 1.23  2005/10/26 21:12:42  sparhawk
  * Lightgem renderpipe implemented
  *
@@ -182,7 +185,7 @@ const char *DM_BuildOSPath(const char *base, const char *game, const char *relat
 // Intercept declarations
 //SH_DECL_HOOK1(idFileSystem, OSPathToRelativePath, SH_NOATTRIB, 0, const char *, const char *);
 //SH_DECL_HOOK2(idFileSystem, RelativePathToOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *);
-SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *, const char *);
+//SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *, const char *);
 
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
@@ -221,7 +224,6 @@ CGlobal::CGlobal(void)
 	m_Filename = "undefined";
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
-	m_RenderPipe = INVALID_HANDLE_VALUE;
 
 	m_LogFile = NULL;
 
@@ -376,9 +378,9 @@ void CGlobal::Init()
 
 	// Do we need this on Linux as well? I guess not, because in linux the targetdirectory can be
 	// redericted by a link. This has to be tested though but should be no problem.
-#ifdef _WINDOWS_
-	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
-#endif
+//#ifdef _WINDOWS_
+//	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
+//#endif
 
 	GetModName();
 
@@ -767,34 +769,6 @@ CImage *CGlobal::GetImage(idStr const &Name, int &Index)
 }
 
 
-void CGlobal::CreateRenderPipe(void)
-{
-#ifdef _WINDOWS_
-	m_RenderPipe = CreateNamedPipe (DARKMOD_RENDERPIPE_NAME,
-		PIPE_ACCESS_DUPLEX, // read/write access
-		PIPE_TYPE_MESSAGE | // message type pipe
-		PIPE_READMODE_MESSAGE | // message-read mode
-		PIPE_WAIT, // blocking mode
-		PIPE_UNLIMITED_INSTANCES, // max. instances
-		DARKMOD_RENDERPIPE_BUFSIZE, // output buffer size
-		DARKMOD_RENDERPIPE_BUFSIZE, // input buffer size
-		DARKMOD_RENDERPIPE_TIMEOUT, // client time-out
-		NULL); // no security attribute
-#endif
-}
-
-void CGlobal::CloseRenderPipe(void)
-{
-	if(m_RenderPipe != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(m_RenderPipe);
-		m_RenderPipe = INVALID_HANDLE_VALUE;
-	}
-}
-
-
-
-
 CLightMaterial::CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName)
 {
 	bool added;
@@ -890,6 +864,7 @@ void CImage::Unload(bool FreeMemory)
 
 		m_Image = NULL;
 	}
+
 	if(m_ImageId != -1)
 		ilDeleteImages(1, &m_ImageId);
 
@@ -909,71 +884,22 @@ unsigned char *CImage::GetImage(const char *Filename)
 
 	if(m_Loaded == false)
 	{
-		if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE && m_Name.CmpPrefix("\\\\.\\") == 0)
+//		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_Name.c_str());
+
+		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
 		{
-			static char pipe_buf[DARKMOD_RENDERPIPE_BUFSIZE];
-			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
-
-			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Reading from renderpipe [%s]\r", m_Name.c_str());
-
-			dwBufSize = DARKMOD_RENDERPIPE_BUFSIZE;
-			BufLen = 0;
-			while(1)
-			{
-				ReadFile(g_Global.m_RenderPipe, // handle to pipe
-					&pipe_buf[BufLen],								// buffer to receive data
-					dwBufSize,								// size of buffer
-					&cbBytesRead,							// number of bytes read
-					NULL);									// not overlapped I/O
-				dwLastError = GetLastError();
-//				DM_LOG(LC_SYSTEM, LT_INFO).LogString("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image, dwLastError);
-
-				BufLen += cbBytesRead;
-				dwBufSize -= cbBytesRead;
-
-				if(cbBytesRead == 0 || dwLastError == ERROR_BROKEN_PIPE)
-					break;
-				
-				if(dwBufSize <= 0)
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Bufferoverflow when reading from renderpipe\r");
-					goto Quit;
-				}
-			}
-
-			if(BufLen > m_BufferLength || m_Image == NULL)
-			{
-				Unload(true);
-				m_BufferLength = BufLen;
-				if((m_Image = new unsigned char[m_BufferLength]) == NULL)
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
-					goto Quit;
-				}
-			}
-			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
-
-			memcpy(m_Image, pipe_buf, m_BufferLength);
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load imagefile [%s]\r", m_Name.c_str());
+			goto Quit;
 		}
-		else
+
+		m_BufferLength = fl->Length();
+		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Loading Image [%s]\r", m_Name.c_str());
-
-			if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
-			{
-				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load LightFallOffImage [%s]\r", m_Name.c_str());
-				goto Quit;
-			}
-
-			m_BufferLength = fl->Length();
-			if((m_Image = new unsigned char[m_BufferLength]) == NULL)
-			{
-				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
-				goto Quit;
-			}
-
-			fl->Read(m_Image, m_BufferLength);
+			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+			goto Quit;
 		}
+		fl->Read(m_Image, m_BufferLength);
+		fileSystem->CloseFile(fl);
 
 		ilGenImages(1, &m_ImageId);
 		ilBindImage(m_ImageId);
@@ -987,7 +913,7 @@ unsigned char *CImage::GetImage(const char *Filename)
 		m_Width = ilGetInteger(IL_IMAGE_WIDTH);
 		m_Height = ilGetInteger(IL_IMAGE_HEIGHT);
 		m_Bpp = ilGetInteger(IL_IMAGE_BPP);
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
+//		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
 	}
 
 	if(m_Image != NULL)
@@ -1004,9 +930,6 @@ Quit:
 		delete [] m_Image;
 		m_Image = NULL;
 	}
-
-	if(fl)
-		fileSystem->CloseFile(fl);
 
 	return rc;
 }
@@ -1028,6 +951,7 @@ const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePa
 }
 */
 
+/*
 const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)
 {
 	static char p[1024];
@@ -1058,26 +982,7 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 		{
 			if(idStr::Cmpn(LIGHTEM_RENDER_DIRECTORY, relativePath, strlen(LIGHTEM_RENDER_DIRECTORY)) == 0)
 			{
-				// If we were able to create the renderpipe, then we will use it instead, otherwise we fall
-				// back to regular file usage.
-				if(g_Global.m_RenderPipe != INVALID_HANDLE_VALUE)
-					strcpy(p, DARKMOD_RENDERPIPE_NAME);
-				else
-				{
-					p[0] = Drive[0];
-					strcpy(&p[1], ":\\");
-					if(p[0] != g_Global.m_DriveLetter && p[0] != 0)
-					{
-						// create the directory if the letter has been changed, to make sure the path exists.
-						strcpy(&p[3], LIGHTEM_RENDER_DIRECTORY);
-						mkdir(p);
-						p[3] = 0;
-						g_Global.m_DriveLetter = p[0];
-					}
-
-					strcpy(&p[3], relativePath);
-					DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_BuildOSPath returns [%s]\r", p);
-				}
+				strcpy(p, DARKMOD_RENDERPIPE_NAME);
 				Ret = MRES_SUPERCEDE;
 				pRet = p;
 			}
@@ -1086,3 +991,4 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 
 	RETURN_META_VALUE(Ret, pRet);
 }
+*/
