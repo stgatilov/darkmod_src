@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/10/31 19:35:53  sparhawk
+ * Fixed a mapload crash when AI is present
+ *
  * Revision 1.6  2005/09/26 03:11:01  ishtvan
  * *) tactile alert fixed, added idAI::CheckTactile
  *
@@ -818,6 +821,8 @@ void idAI::Spawn( void ) {
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
 	current_cinematic = 0;
 
+	LinkScriptVariables();
+
 	/**
 	* Initialize Darkmod AI vars
 	**/
@@ -830,7 +835,6 @@ void idAI::Spawn( void ) {
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
 
-	LinkScriptVariables();
 
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
 	enemy				= NULL;
