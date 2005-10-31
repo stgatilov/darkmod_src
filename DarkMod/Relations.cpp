@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2005/10/31 19:36:47  sparhawk
+ * Uninitialized variable in CRelations::GetRelNum causes a crash in debug build.
+ *
  * Revision 1.4  2005/09/26 01:12:21  ishtvan
  * no longer tries to access relationship matrix when loading it has failed
  *
@@ -94,7 +97,8 @@ int CRelations::Size( void )
 
 int CRelations::GetRelNum(int i, int j)
 {
-	int *pval, RelDefault, returnval;
+	int returnval = 0;
+	int *pval, RelDefault;
 
 	// uncomment for debugging of relationship checks
 	// DM_LOG(LC_AI, LT_DEBUG).LogString("Checking relationship matrix for team %d towards team %d.\r", i, j);
