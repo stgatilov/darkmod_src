@@ -414,6 +414,12 @@
 				RelativePath="game\Light.h">
 			</File>
 			<File
+				RelativePath=".\game\liquid.cpp">
+			</File>
+			<File
+				RelativePath=".\game\liquid.h">
+			</File>
+			<File
 				RelativePath="game\Misc.cpp">
 			</File>
 			<File
