@@ -881,6 +881,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 	idVec3 testLoc;
 	SPortEvent *pPortEv;
 	SPopArea *pPopArea;
+	idList<idVec3> showPoints;
 	
 	int initArea = gameRenderWorld->PointInArea( origin );
 
@@ -917,6 +918,15 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 				DM_LOG(LC_SOUND, LT_DEBUG).LogString("Dist to AI: %f [m], Propagated volume found to be %f [dB]\r", tempDist, propParms->propVol);
 				
 				ProcessAI( AIPtr, origin, propParms );
+
+				// draw debug lines if show soundprop cvar is set
+				if( cv_spr_show.GetBool() )
+				{
+					showPoints.Clear();
+					showPoints.Append( AIPtr->GetEyePosition() );
+					showPoints.Append( propParms->origin );
+					DrawLines( &showPoints );
+				}
 			}
 		}
 
