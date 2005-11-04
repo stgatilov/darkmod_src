@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2005/11/04 07:28:43  ishtvan
+ * fixed bugs relating to the combination of mantling and ropes
+ *
  * Revision 1.26  2005/10/16 02:18:31  ishtvan
  * *) completed rope orbiting
  *
@@ -1483,23 +1486,27 @@ void idPhysics_Player::CheckLadder( void )
 	bool		bLookingUp;
 	idEntity    *testEnt;
 	
-	if ( current.movementTime ) {
-		return;
-	}
+	if ( current.movementTime ) 
+		goto Quit;
 
 	// if on the ground moving backwards
-	if ( walking && command.forwardmove <= 0 ) {
-		return;
-	}
+	if ( walking && command.forwardmove <= 0 ) 
+		goto Quit;
+
+	// Don't attach to ropes or ladders in the middle of a mantle
+	if ( IsMantling() )
+		goto Quit;
 
 	// forward vector orthogonal to gravity
 	forward = viewForward - (gravityNormal * viewForward) * gravityNormal;
 	forward.Normalize();
 
-	if ( walking ) {
+	if ( walking ) 
+	{
 		// don't want to get sucked towards the ladder when still walking
 		tracedist = 1.0f;
-	} else {
+	} else 
+	{
 		tracedist = 48.0f;
 	}
 
@@ -3110,6 +3117,13 @@ void idPhysics_Player::StartMantle
 			// Can't start mantle if dead
 			return;
 		}
+	}
+
+	// Ishtvan 10/16/05
+	// If mantling starts while on a rope, detach from that rope
+	if ( m_bRopeAttached )
+	{
+		RopeDetach();
 	}
 
 	// If mantling from a jump, cancel any velocity so that it does
