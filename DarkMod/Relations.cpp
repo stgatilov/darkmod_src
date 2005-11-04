@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.6  2005/11/04 07:29:39  ishtvan
+ * AI relations matrix error no longer displays when there is no matrix entered
+ *
  * Revision 1.5  2005/10/31 19:36:47  sparhawk
  * Uninitialized variable in CRelations::GetRelNum causes a crash in debug build.
  *
@@ -345,7 +348,8 @@ Quit:
 		m_bMatFailed = true;
 	}
 
-	if(hadLogicError)
+// Don't output the error if there are no matrix entries
+	if(hadLogicError && EntryList.Num() )
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
