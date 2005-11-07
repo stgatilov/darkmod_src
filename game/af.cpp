@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -908,6 +911,18 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 				name.c_str(), self->name.c_str(), self->GetPhysics()->GetOrigin().ToString(0), animator->GetJointName( (jointHandle_t)i ) );
 		}
 	}
+
+#ifdef MOD_WATERPHYSICS
+	// load how the body will be floated in liquid
+	bool isFixedDensity;
+	if( ent->spawnArgs.GetBool( "fixedDensityBuoyancy", "1", isFixedDensity ) )
+		physicsObj.SetFixedDensityBuoyancy( isFixedDensity );
+
+// load liquid density from file
+	float liquidDensity;
+	if( ent->spawnArgs.GetFloat( "liquidDensity", "", liquidDensity ) )
+		physicsObj.SetLiquidDensity( liquidDensity );
+#endif		// MOD_WATERPHYSICS
 
 	physicsObj.SetMass( file->totalMass );
 	physicsObj.SetChanged();

@@ -7,8 +7,106 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.32  2005/11/02 20:41:19  sparhawk
+ * Fixed NOCLIP crash.
+ *
+ * Revision 1.31  2005/10/23 18:42:30  sparhawk
+ * Lightgem cleanup
+ *
+ * Revision 1.30  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.29  2005/10/22 14:15:46  sparhawk
+ * Fixed flickering in lightgem when player is moving.
+ *
+ * Revision 1.28  2005/10/21 21:57:17  sparhawk
+ * Ramdisk support added.
+ *
+ * Revision 1.27  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.26  2005/09/26 03:09:02  ishtvan
+ * Event_Touch no longer necessary, removed
+ *
+ * Revision 1.25  2005/09/24 03:15:39  lloyd
+ * Prevent player from zooming when holding object, disabled weapon when player holding an object
+ *
+ * Revision 1.24  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
+ * Revision 1.23  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.22  2005/08/14 23:27:31  sophisticatedzombie
+ * Updated handling of leaning to use doxygen style comments
+ *
+ * Revision 1.21  2005/07/30 01:29:09  sophisticatedzombie
+ * Fixed 3rd person viewpoint with leaning enabled.
+ *
+ * Revision 1.20  2005/07/27 20:44:34  sophisticatedzombie
+ * Added variables to handle view roll and translate during lean.
+ *
+ * Revision 1.19  2005/07/01 21:22:31  sophisticatedzombie
+ * I added a case statement for Impule 24 to the impulse handler which triggers a mantling attempt.
+ *
+ * Revision 1.18  2005/04/23 10:08:02  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
+ * Revision 1.17  2005/04/23 01:48:58  ishtvan
+ * *) Removed the effect of stamina on everything but the heartbeat sound
+ *
+ * *) Added additional movement speeds (creep, crouch-creep and crouch-run) for 6 total movement speeds
+ *
+ * Revision 1.16  2005/04/07 09:43:31  ishtvan
+ * *) Added an Event_Touch so that players will alert any enemy AI that they bump while moving
+ *
+ * Revision 1.15  2005/03/26 16:01:59  sparhawk
+ * Linefeeds
+ *
+ * Revision 1.14  2005/03/26 16:01:00  sparhawk
+ * Lightgem implemented
+ *
+ * Revision 1.13  2005/01/24 00:17:16  sparhawk
+ * Lightgem shadow problem fixed.
+ *
+ * Revision 1.12  2005/01/20 19:37:49  sparhawk
+ * Lightgem now calculates projected lights as well as parallel lights.
+ *
+ * Revision 1.11  2005/01/19 23:22:04  sparhawk
+ * Bug fixed for ambient lights
+ *
+ * Revision 1.10  2005/01/19 23:01:48  sparhawk
+ * Lightgem updated to do proper projected lights with occlusion.
+ *
+ * Revision 1.9  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.8  2004/11/28 09:16:32  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.7  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.6  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.5  2004/11/14 20:25:24  sparhawk
+ * Unneccessary logstatement removed.
+ *
+ * Revision 1.4  2004/11/14 00:42:37  sparhawk
+ * Added USE/Frob Key.
+ *
+ * Revision 1.3  2004/11/06 17:17:43  sparhawk
+ * Removed Frobangles as we don't need them anymore.
+ *
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +117,10 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/intersection.h"
+#include "../darkmod/relations.h"
 
 /*
 ===============================================================================
@@ -28,6 +130,8 @@
 
 ===============================================================================
 */
+
+bool NextFrame = true;
 
 // distance between ladder rungs (actually is half that distance, but this sounds better)
 const int LADDER_RUNG_DISTANCE = 32;
@@ -67,6 +171,8 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
+const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -85,6 +191,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_HideTip,				idPlayer::Event_HideTip )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
+
+	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -1103,6 +1211,7 @@ idPlayer::idPlayer() {
 
 	isLagged				= false;
 	isChatting				= false;
+	LightgemSurface			= NULL;
 }
 
 /*
@@ -1132,6 +1241,8 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_TELEPORT.LinkTo(			scriptObject, "AI_TELEPORT" );
 	AI_TURN_LEFT.LinkTo(		scriptObject, "AI_TURN_LEFT" );
 	AI_TURN_RIGHT.LinkTo(		scriptObject, "AI_TURN_RIGHT" );
+
+	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP" );
 }
 
 /*
@@ -1197,7 +1308,7 @@ void idPlayer::Init( void ) {
 	bobFrac					= 0.0f;
 	landChange				= 0;
 	landTime				= 0;
-	zoomFov.Init( 0, 0, 0, 0 );
+	zoomFov.Init( 0, 0, g_fov.GetInteger(), g_fov.GetInteger() );
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
 
@@ -1343,6 +1454,8 @@ void idPlayer::Init( void ) {
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
 
+	AI_CREEP		= false;
+
 	// reset the script object
 	ConstructScriptObject();
 
@@ -1379,6 +1492,10 @@ void idPlayer::Init( void ) {
 	}
 
 	isChatting = false;
+	LightgemSurface = gameLocal.FindEntity(LIGHTEM_RENDER_NAME);
+	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = LIGHTGEM_VIEWID;
+	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
+	DM_LOG(LC_LIGHT, LT_INFO).LogString("LightgemSurface: [%08lX]\r", LightgemSurface);
 }
 
 /*
@@ -1544,6 +1661,9 @@ void idPlayer::Spawn( void ) {
 	inventory.pdaOpened = false;
 	inventory.selPDA = 0;
 
+	// copy step volumes over from cvars
+	UpdateMoveVolumes();
+
 	if ( !gameLocal.isMultiplayer ) {
 		if ( g_skill.GetInteger() < 2 ) {
 			if ( health < 25 ) {
@@ -1563,6 +1683,9 @@ void idPlayer::Spawn( void ) {
 #endif
 		}
 	}
+
+	//FIX: Set the walkspeed back to the stored value.
+	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 }
 
 /*
@@ -2476,7 +2599,8 @@ void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
 idPlayer::UpdateHudStats
 ===============
 */
-void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
+void idPlayer::UpdateHudStats( idUserInterface *_hud )
+{
 	int staminapercentage;
 	float max_stamina;
 
@@ -2492,7 +2616,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud ) {
 
 	_hud->SetStateInt( "player_health", health );
 	_hud->SetStateInt( "player_stamina", staminapercentage );
-	_hud->SetStateInt( "player_armor", inventory.armor );
+	_hud->SetStateInt( "player_shadow", 1 );
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -2571,12 +2695,58 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 	}
 }
 
+void idPlayer::PrintDebugHUD(void)
+{
+	idStr strText;
+	idVec3 a, b, c;
+	int y;
+
+	// TODO: Remove this when no longer needed.
+	y = 100;
+	sprintf(strText, "ViewOrg:    x: %f   y: %f   z: %f", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	renderView->viewaxis.GetMat3Params(a, b, c);
+	sprintf(strText, "ViewMatrix:", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", a.x, a.y, a.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", b.x, b.y, b.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "x: %f   y: %f   z: %f", c.x, c.y, c.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "FOV x: %f   y: %f", renderView->fov_x, renderView->fov_y);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "ViewAngles Pitch: %f   Yaw: %f   Roll: %f", viewAngles.pitch, viewAngles.yaw, viewAngles.roll);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "ViewBobAngles Pitch: %f   Yaw: %f   Roll: %f", viewBobAngles.pitch, viewBobAngles.yaw, viewBobAngles.roll);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	a = GetEyePosition();
+	sprintf(strText, "EyePosition x: %f   y: %f   z: %f", a.x, a.y, a.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+}
+
 /*
 ===============
 idPlayer::DrawHUD
 ===============
 */
-void idPlayer::DrawHUD( idUserInterface *_hud ) {
+void idPlayer::DrawHUD(idUserInterface *_hud)
+{
+	if(cv_lg_debug.GetBool() == true)
+		PrintDebugHUD();
+
+	if(_hud)
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
+	else
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: NULL\r");
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
 		return;
@@ -2595,12 +2765,13 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 
 	_hud->Redraw( gameLocal.realClientTime );
 
-	// weapon targeting crosshair
-	if ( !GuiActive() ) {
-		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
-			cursor->Redraw( gameLocal.realClientTime );
-		}
-	}
+	// Only use this if the old lightgem is selected. This may be usefull for
+	// slower machines.
+	if(cv_lg_weak.GetBool() == true)
+		AdjustLightgem();
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
+	hud->SetStateInt("lightgem_val", g_Global.m_DarkModPlayer->m_LightgemValue);
 }
 
 /*
@@ -2645,6 +2816,8 @@ void idPlayer::EnterCinematic( void ) {
 	AI_TELEPORT		= false;
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
+
+	AI_CREEP		= false;
 }
 
 /*
@@ -2702,8 +2875,13 @@ void idPlayer::UpdateConditions( void ) {
 		AI_STRAFE_RIGHT	= false;
 	}
 
-	AI_RUN			= ( usercmd.buttons & BUTTON_RUN ) && ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) );
+	// stamina disabled, always run regardless of stamina
+	//AI_RUN			= ( usercmd.buttons & BUTTON_RUN ) && ( ( !pm_stamina.GetFloat() ) || ( stamina > pm_staminathreshold.GetFloat() ) );
+	AI_RUN = ( usercmd.buttons & BUTTON_RUN ) && true ;
 	AI_DEAD			= ( health <= 0 );
+	
+	// DarkMod: Catch the creep modifier
+	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
 }
 
 /*
@@ -3716,7 +3894,8 @@ idPlayer::StealWeapon
 steal the target player's current weapon
 =================
 */
-void idPlayer::StealWeapon( idPlayer *player ) {
+void idPlayer::StealWeapon( idPlayer *player )
+{
 	assert( !gameLocal.isClient );
 
 	// make sure there's something to steal
@@ -4015,7 +4194,7 @@ void idPlayer::UpdateWeapon( void ) {
 	if ( hiddenWeapon && tipUp && usercmd.buttons & BUTTON_ATTACK ) {
 		HideTip();
 	}
-	
+
 	if ( g_dragEntity.GetBool() ) {
 		StopFiring();
 		weapon.GetEntity()->LowerWeapon();
@@ -4025,6 +4204,10 @@ void idPlayer::UpdateWeapon( void ) {
 		Weapon_GUI();
 	} else 	if ( focusCharacter && ( focusCharacter->health > 0 ) ) {
 		Weapon_NPC();
+	} else if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+		this->StopFiring();
+		weapon.GetEntity()->LowerWeapon();
+		g_Global.m_DarkModPlayer->grabber->Update( this, true );
 	} else {
 		Weapon_Combat();
 	}
@@ -4244,7 +4427,8 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	other = gameLocal.entities[ collision.c.entityNum ];
-	if ( other ) {
+	// don't let player collide with grabber entity
+	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		other->Signal( SIG_TOUCH );
 		if ( !spectating ) {
 			if ( other->RespondsTo( EV_Touch ) ) {
@@ -4814,6 +4998,7 @@ void idPlayer::UpdateDeltaViewAngles( const idAngles &angles ) {
 	for( int i = 0; i < 3; i++ ) {
 		delta[ i ] = angles[ i ] - SHORT2ANGLE( usercmd.angles[ i ] );
 	}
+
 	SetDeltaViewAngles( delta );
 }
 
@@ -4890,7 +5075,8 @@ void idPlayer::UpdateViewAngles( void ) {
 	UpdateDeltaViewAngles( viewAngles );
 
 	// orient the model towards the direction we're looking
-	SetAngles( idAngles( 0, viewAngles.yaw, 0 ) );
+	// LeanMod: SophisticatedZombie: Added roll to this
+	SetAngles( idAngles( 0.0f, viewAngles.yaw, viewAngles.roll ) );
 
 	// save in the log for analyzing weapon angle offsets
 	loggedViewAngles[ gameLocal.framenum & (NUM_LOGGED_VIEW_ANGLES-1) ] = viewAngles;
@@ -5016,6 +5202,13 @@ void idPlayer::UpdateAir( void ) {
 		return;
 	}
 
+#ifdef MOD_WATERPHYSICS
+
+	idPhysics_Player *phys = dynamic_cast<idPhysics_Player *>(this->GetPhysics());   // MOD_WATERPHYSICS
+
+#endif		// MOD_WATERPHYSICS
+
+
 	// see if the player is connected to the info_vacuum
 	bool	newAirless = false;
 
@@ -5035,6 +5228,15 @@ void idPlayer::UpdateAir( void ) {
 			newAirless = gameRenderWorld->AreasAreConnected( gameLocal.vacuumAreaNum, areaNum, PS_BLOCK_AIR );
 		}
 	}
+
+#ifdef MOD_WATERPHYSICS // check if the player is in water
+
+	if( phys != NULL && phys->GetWaterLevel() >= WATERLEVEL_HEAD )      // MOD_WATERPHYSICS
+
+		newAirless = true;	// MOD_WATERPHYSICS
+
+#endif		// MOD_WATERPHYSICS
+
 
 	if ( newAirless ) {
 		if ( !airless ) {
@@ -5576,6 +5778,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 		}
+
+		case IMPULSE_24: {
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.PerformMantle();
+			}
+			break;
+		}
 		case IMPULSE_28: {
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
 				gameLocal.mpGame.CastVote( gameLocal.localClientNum, true );
@@ -5592,6 +5802,102 @@ void idPlayer::PerformImpulse( int impulse ) {
 			UseVehicle();
 			break;
 		}
+
+		case IMPULSE_41:		// TDM Use/Frob
+		{
+			bool bFrob = true;
+			idEntity *ent, *frob;
+			int i;
+			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+			frob = pDM->m_FrobEntity;
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
+			// If the player has an item that is selected we need to check if this
+			// is a usable item (like a key). In this case the use action takes
+			// precedence over the frobaction.
+			if((i = pDM->m_Selection) != 0)
+			{
+				ent = pDM->GetEntity(i);
+				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
+				if(ent != NULL)
+				{
+					if(ent->spawnArgs.GetBool("usable"))
+					{
+						DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Item is usable\r");
+						if(frob)
+							bFrob = !frob->UsedBy(ent);
+						else
+							bFrob = !ent->UsedBy(NULL);
+					}
+				}
+			}
+
+			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+			if(bFrob == true && frob != NULL) {
+				frob->FrobAction(true); 
+			}
+			else {
+				// if the objct is not frobbable or we've already used it then just grab it instead
+				//
+				// ** Note from Lloyd:  This is a WIP, if you want to see it you're welcome to uncomment this line.
+				// The object moves around and if you hold the ZOOM button you can rotate it using the mouse.
+				// It's buggy and the pickup distance is too far but at least you can see kind of what's going on.
+				g_Global.m_DarkModPlayer->grabber->Update( this );
+			}
+		}
+		break;
+
+		case IMPULSE_42:		// Inventory prev
+		{
+			g_Global.m_DarkModPlayer->SelectPrev();
+		}
+		break;
+
+		case IMPULSE_43:		// Inventory next
+		{
+			g_Global.m_DarkModPlayer->SelectNext();
+		}
+		break;
+
+		/*!
+		* Lean forward is impulse 44
+		*/
+		case IMPULSE_44:		// Lean forward
+		{
+			//common->Printf ("Impulse 44, lean forward\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(90.0);
+			}
+		}
+		break;
+
+		/*!
+		* Lean left is impulse 45
+		*/
+		case IMPULSE_45:		// Lean left
+		{
+			//common->Printf ("Impulse 45, lean left\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(180.0);
+			}
+		}
+		break;
+
+		/*!
+		* Lean left is impulse 46
+		*/
+		case IMPULSE_46:		// Lean right
+		{
+			//common->Printf ("Impulse 46, lean right\n");
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			{
+					physicsObj.ToggleLean(0.0);
+			}
+		}
+		break;
 	} 
 }
 
@@ -5651,20 +5957,35 @@ void idPlayer::EvaluateControls( void ) {
 /*
 ==============
 idPlayer::AdjustSpeed
+
+DarkMod Note: Wow... this was pretty badly written
 ==============
 */
-void idPlayer::AdjustSpeed( void ) {
+void idPlayer::AdjustSpeed( void ) 
+{
 	float speed;
+	float crouchspeed;
 	float rate;
 
-	if ( spectating ) {
+	// Intialize crouchspeed
+	speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
+	crouchspeed = speed * cv_pm_crouchmod.GetFloat();
+	if ( spectating )
+	{
 		speed = pm_spectatespeed.GetFloat();
 		bobFrac = 0.0f;
-	} else if ( noclip ) {
+	}
+	else if ( noclip )
+	{
 		speed = pm_noclipspeed.GetFloat();
 		bobFrac = 0.0f;
-	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
-		if ( !gameLocal.isMultiplayer && !physicsObj.IsCrouching() && !PowerUpActive( ADRENALINE ) ) {
+
+	// running case
+	// DarkMod: removed check for not crouching..
+	} 
+	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
+	{
+		if ( !gameLocal.isMultiplayer && !PowerUpActive( ADRENALINE ) ) {
 			stamina -= MS2SEC( gameLocal.msec );
 		}
 		if ( stamina < 0 ) {
@@ -5677,30 +5998,53 @@ void idPlayer::AdjustSpeed( void ) {
 		} else {
 			bobFrac = stamina / pm_staminathreshold.GetFloat();
 		}
-		speed = pm_walkspeed.GetFloat() * ( 1.0f - bobFrac ) + pm_runspeed.GetFloat() * bobFrac;
-	} else {
+
+		/**
+		*  DarkMod : Removed the effect of stamina on speed
+		* uncomment for stamina effecting speed
+		**/
+		//speed = pm_walkspeed.GetFloat() * ( 1.0f - bobFrac ) + pm_walkspeed*cv_pm_runmod.GetFloat() * bobFrac;
+		speed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat();
+		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
+
+	} else 
+
+	// standing still, walking, or creeping case
+	{
 		rate = pm_staminarate.GetFloat();
 		
 		// increase 25% faster when not moving
-		if ( ( usercmd.forwardmove == 0 ) && ( usercmd.rightmove == 0 ) && ( !physicsObj.OnLadder() || ( usercmd.upmove == 0 ) ) ) {
+		if ( ( usercmd.forwardmove == 0 ) && ( usercmd.rightmove == 0 ) && ( !physicsObj.OnLadder() || ( usercmd.upmove == 0 ) ) ) 
+		{
 			 rate *= 1.25f;
 		}
 
 		stamina += rate * MS2SEC( gameLocal.msec );
-		if ( stamina > pm_stamina.GetFloat() ) {
+		if ( stamina > pm_stamina.GetFloat() ) 
+		{
 			stamina = pm_stamina.GetFloat();
 		}
+
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
+
+		// apply creep modifier; creep is on button_5
+		if( usercmd.buttons & BUTTON_5 )
+			speed *= cv_pm_creepmod.GetFloat();
+
+		// apply movement multipliers to crouch as well
+		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
 	}
 
+	// leave this in for speed potions or something
 	speed *= PowerUpModifier(SPEED);
 
-	if ( influenceActive == INFLUENCE_LEVEL3 ) {
+	if ( influenceActive == INFLUENCE_LEVEL3 ) 
+	{
 		speed *= 0.33f;
 	}
 
-	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() );
+	physicsObj.SetSpeed( speed, crouchspeed );
 }
 
 /*
@@ -6156,9 +6500,9 @@ idPlayer::Think
 Called every tic for each player
 ==============
 */
-void idPlayer::Think( void ) {
+void idPlayer::Think( void )
+{
 	renderEntity_t *headRenderEnt;
-
 	UpdatePlayerIcons();
 
 	// latch button actions
@@ -6217,7 +6561,8 @@ void idPlayer::Think( void ) {
 	}
 
 	// zooming
-	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
+	// Added:  Don't zoom if the player is holding something...
+	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ) {
 			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), weapon.GetEntity()->GetZoomFov() );
 		} else {
@@ -6295,6 +6640,19 @@ void idPlayer::Think( void ) {
 
 	inventory.UpdateArmor();
 
+	idStr strText;
+/*
+	// TODO: remove this because it is just to determine how to fill out the renderstructure.
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("RenderViewId: %u\r", renderView->viewID);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("x: %u   y: %u   w: %u   h: %u\r", renderView->x, renderView->y, renderView->width, renderView->height);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("FovX: %f   FovY: %f\r", renderView->fov_x, renderView->fov_y);
+	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "vieworg", renderView->vieworg);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("cramZNear: %u   forceUpdate: %u\r", renderView->cramZNear, renderView->forceUpdate);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->time);
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->globalMaterial);
+	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++)
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Param[%u]: %f\r", i, renderView->shaderParms[i]);
+*/
 	if ( spectating ) {
 		UpdateSpectating();
 	} else if ( health > 0 ) {
@@ -6308,6 +6666,10 @@ void idPlayer::Think( void ) {
 	UpdatePowerUps();
 
 	UpdateDeathSkin( false );
+
+	if ( gameLocal.isMultiplayer ) {
+		DrawPlayerIcons();
+	}
 
 	if ( head.GetEntity() ) {
 		headRenderEnt = head.GetEntity()->GetRenderEntity();
@@ -6935,7 +7297,8 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return influenceFov;
 	}
 
-	if ( zoomFov.IsDone( gameLocal.time ) ) {
+	// prevent FOV from zooming if the player is holding an object
+	if ( zoomFov.IsDone( gameLocal.time ) && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
 	} else {
 		fov = zoomFov.GetCurrentValue( gameLocal.time );
@@ -7194,6 +7557,15 @@ idVec3 idPlayer::GetEyePosition( void ) const {
 	} else {
 		org = GetPhysics()->GetOrigin();
 	}
+
+	/*!
+	* Lean Mod
+	* @author sophisticatedZombie (DH)
+	* Move eye position due to leaning
+	*/
+	org += ((idPhysics_Player*)GetPhysics())->GetViewLeanTranslation();
+
+	// This was in SDK untouched
 	return org + ( GetPhysics()->GetGravityNormal() * -eyeOffset.z );
 }
 
@@ -7214,7 +7586,7 @@ void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 		origin = GetEyePosition();
 	} else {
 		origin = GetEyePosition() + viewBob;
-		angles = viewAngles + viewBobAngles + playerView.AngleOffset();
+		angles = viewAngles + viewBobAngles + ((idPhysics_Player*)GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
 
 		axis = angles.ToMat3() * physicsObj.GetGravityAxis();
 
@@ -7237,12 +7609,20 @@ void idPlayer::CalculateFirstPersonView( void ) {
 		idVec3 origin;
 		idAngles ang;
 
-		ang = viewBobAngles + playerView.AngleOffset();
+		/*!
+		* Lean mod: 
+		* @author: sophisticatedZombie
+		* Original line commented out
+		* ang = viewBobAngles + playerView.AngleOffset();
+		*/
+		ang = viewBobAngles + ((idPhysics_Player*) GetPhysics())->GetViewLeanAngles() + playerView.AngleOffset();
+
+		
 		ang.yaw += viewAxis[ 0 ].ToYaw();
 		
 		jointHandle_t joint = animator.GetJointHandle( "camera" );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		firstPersonViewOrigin = ( origin + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() ) + physicsObj.GetOrigin() + viewBob;
+		firstPersonViewOrigin = ( origin + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() ) + physicsObj.GetOrigin() + viewBob + physicsObj.GetViewLeanTranslation();
 		firstPersonViewAxis = axis * ang.ToMat3() * physicsObj.GetGravityAxis();
 	} else {
 		// offset for local bobbing and kicks
@@ -8459,4 +8839,230 @@ idPlayer::NeedsIcon
 */
 bool idPlayer::NeedsIcon( void ) {
 	return ( isLagged || isChatting );
+}
+
+void idPlayer::AddToInventory(idEntity *ent)
+{
+	g_Global.m_DarkModPlayer->AddEntity(ent);
+}
+
+void idPlayer::AdjustLightgem(void)
+{
+	idVec3 vDifference;
+	double fx, fy;
+	double fDistance;
+	double fLightgemVal;
+	idVec3 vLightColor;
+	idVec3 vPlayer;
+	idLight *light, *helper;
+	trace_t trace;
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	int i, n, h = -1, l;
+	bool bMinOneLight = false, bStump;
+
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
+
+	NextFrame = true;
+	fLightgemVal = 0;
+	n = pDM->m_LightList.Num();
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
+	idVec3 vStart(GetEyePosition());
+	idVec3 vPlayerPos(GetPhysics()->GetOrigin());
+	idVec3 vPlayerSeg[LSG_COUNT];
+	idVec3 vLightCone[ELC_COUNT];
+	idVec3 vResult[2];
+	EIntersection inter;
+
+	vPlayerSeg[LSG_ORIGIN] = vPlayerPos;
+	vPlayerSeg[LSG_DIRECTION] = vStart - vPlayerPos;
+
+	for(i = 0; i < n; i++)
+	{
+		if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
+			continue;
+
+		vPlayer = vPlayerPos;
+		idVec3 vLight(light->GetPhysics()->GetOrigin());
+		vPlayer.z = vLight.z;
+		vDifference = vPlayer - vLight;
+		fDistance = vDifference.Length();
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
+			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
+
+		// Fast and cheap test to see if the player could be in the area of the light.
+		// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
+		if(fDistance > light->m_MaxLightRadius)
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
+			if(h == -1)
+				h = i;
+			continue;
+		}
+
+		if(light->IsPointlight())
+		{
+			light->GetLightCone(vLightCone[ELL_ORIGIN], vLightCone[ELA_AXIS], vLightCone[ELA_CENTER]);
+			inter = IntersectLineEllipsoid(vPlayerSeg, vLightCone, vResult);
+
+			// If this is a centerlight we have to move the origin from the original origin to where the
+			// center of the light is supposed to be.
+			// Centerlight means that the center of the ellipsoid is not the same as the origin. It has to
+			// be adjusted because if it casts shadows we have to trace to it, and in this case the light
+			// might be inside geometry and would be reported as not being visible even though it casts
+			// a visible light outside the geometry it is embedded. If it is not a centerlight and has
+			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
+			// be blocked by the geometry.
+			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineEllipsoid returned %u\r", inter);
+		}
+		else
+		{
+			bStump = false;
+			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
+			inter = IntersectLineCone(vPlayerSeg, vLightCone, vResult, bStump);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineCone returned %u\r", inter);
+		}
+
+		// The line intersection can only return three states. Either the line is passing
+		// through the lightcone in which case we will get two intersection points, the line
+		// is not passing through which means that the player is fully outside, or the line
+		// is touching the cone in exactly one point. The last case is not really helpfull in
+		// our case and doesn't make a difference for the gameplay so we simply ignore it and
+		// consider only cases where the player is at least partially inside the cone.
+		if(inter != INTERSECT_FULL)
+			continue;
+
+		if(light->CastsShadow() == true)
+		{
+			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, this);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+			if(trace.fraction < 1.0f)
+			{
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s] can not be seen\r", light->name.c_str());
+				continue;
+			}
+		}
+
+		if(vResult[0].z < vResult[1].z)
+			l = 0;
+		else
+			l = 1;
+
+		if(vResult[l].z < vPlayerPos.z)
+		{
+			fx = vPlayerPos.x;
+			fy = vPlayerPos.y;
+		}
+		else
+		{
+			fx = vResult[l].x;
+			fy = vResult[l].y;
+		}
+
+		if(bMinOneLight == false)
+			bMinOneLight = true;
+
+		fLightgemVal += light->GetDistanceColor(fDistance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
+			light->name.c_str(), fx, fy, fLightgemVal, fDistance, light->m_MaxLightRadius);
+
+		// Exchange the position of these lights, so that nearer lights are more
+		// at the beginning of the list. You may not use the arrayentry from this point on now.
+		// This sorting is not exactly good, but it is very cheap and we don't want to waste
+		// time to sort an everchanging array.
+		if(h != -1)
+		{
+			helper = pDM->m_LightList[h];
+			pDM->m_LightList[h] = light;
+			pDM->m_LightList[i] = helper;
+			h = -1;
+		}
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal >= 1.0f)
+				continue;
+
+		// No need to do further calculations when we are fully lit. 0 < n < 1
+		if(fLightgemVal >= 1.0f)
+		{
+			fLightgemVal = 1.0;
+			break;
+		}
+	}
+
+	pDM->m_LightgemValue = LIGHTGEM_MAX * fLightgemVal;
+	if(pDM->m_LightgemValue < LIGHTGEM_MIN)
+		pDM->m_LightgemValue = LIGHTGEM_MIN;
+	else
+	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
+		pDM->m_LightgemValue = LIGHTGEM_MAX;
+
+	// if the player is in a lit area and the lightgem would be totaly dark we set it to at least
+	// one step higher.
+	if(bMinOneLight == true && pDM->m_LightgemValue <= LIGHTGEM_MIN)
+		pDM->m_LightgemValue++;
+}
+
+void idPlayer::UpdateMoveVolumes( void )
+{
+	// copy step volumes from current cvar value
+	m_stepvol_walk = cv_pm_stepvol_walk.GetFloat();
+	m_stepvol_run = cv_pm_stepvol_run.GetFloat();
+	m_stepvol_creep = cv_pm_stepvol_creep.GetFloat();
+
+	m_stepvol_crouch_walk = cv_pm_stepvol_crouch_walk.GetFloat();
+	m_stepvol_crouch_creep = cv_pm_stepvol_crouch_creep.GetFloat();
+	m_stepvol_crouch_run = cv_pm_stepvol_crouch_run.GetFloat();
+}
+
+/*
+=====================
+idPlayer::GetMovementVolMod
+=====================
+*/
+
+float idPlayer::GetMovementVolMod( void )
+{
+	float returnval;
+	bool bCrouched(false);
+	
+	if( AI_CROUCH )
+		bCrouched = true;
+
+	// figure out which of the 6 cases we have:
+	if( !AI_RUN && !AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_walk;
+		else
+			returnval = m_stepvol_crouch_walk;
+	}
+
+	// NOTE: running always has priority over creeping
+	else if( AI_RUN )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_run;
+		else
+			returnval = m_stepvol_crouch_run;
+	}
+
+	else if( AI_CREEP )
+	{
+		if( !bCrouched )
+			returnval = m_stepvol_creep;
+		else
+			returnval = m_stepvol_crouch_creep;
+	}
+
+	else
+	{
+		// something unexpected happened
+		returnval = 0;
+	}
+
+	return returnval;
 }

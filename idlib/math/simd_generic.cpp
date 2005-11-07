@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:56:52  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -31,6 +34,14 @@
 #define UNROLL2(Y) { int _IX, _NM = count&0xfffffffe; for (_IX=0;_IX<_NM;_IX+=2){Y(_IX+0);Y(_IX+1);} if (_IX < count) {Y(_IX);}}
 #define UNROLL4(Y) { int _IX, _NM = count&0xfffffffc; for (_IX=0;_IX<_NM;_IX+=4){Y(_IX+0);Y(_IX+1);Y(_IX+2);Y(_IX+3);}for(;_IX<count;_IX++){Y(_IX);}}
 #define UNROLL8(Y) { int _IX, _NM = count&0xfffffff8; for (_IX=0;_IX<_NM;_IX+=8){Y(_IX+0);Y(_IX+1);Y(_IX+2);Y(_IX+3);Y(_IX+4);Y(_IX+5);Y(_IX+6);Y(_IX+7);} _NM = count&0xfffffffe; for(;_IX<_NM;_IX+=2){Y(_IX); Y(_IX+1);} if (_IX < count) {Y(_IX);} }
+
+#ifdef _DEBUG
+#define NODEFAULT	default: assert( 0 )
+#elif _WIN32
+#define NODEFAULT	default: __assume( 0 )
+#else
+#define NODEFAULT
+#endif
 
 
 /*
@@ -339,6 +350,7 @@ void VPCALL idSIMD_Generic::Dot( float &dot, const float *src1, const float *src
 				s3 += src1[i+7] * src2[i+7];
 			}
 			switch( count - i ) {
+				NODEFAULT;
 				case 7: s0 += src1[i+6] * src2[i+6];
 				case 6: s1 += src1[i+5] * src2[i+5];
 				case 5: s2 += src1[i+4] * src2[i+4];
@@ -346,6 +358,7 @@ void VPCALL idSIMD_Generic::Dot( float &dot, const float *src1, const float *src
 				case 3: s0 += src1[i+2] * src2[i+2];
 				case 2: s1 += src1[i+1] * src2[i+1];
 				case 1: s2 += src1[i+0] * src2[i+0];
+				case 0: break;
 			}
 			double sum;
 			sum = s3;
@@ -1795,6 +1808,7 @@ void VPCALL idSIMD_Generic::MatX_LowerTriangularSolve( const idMatX &L, float *x
 			s3 += lptr[j+7] * x[j+7];
 		}
 		switch( i - j ) {
+			NODEFAULT;
 			case 7: s0 += lptr[j+6] * x[j+6];
 			case 6: s1 += lptr[j+5] * x[j+5];
 			case 5: s2 += lptr[j+4] * x[j+4];
@@ -1802,6 +1816,7 @@ void VPCALL idSIMD_Generic::MatX_LowerTriangularSolve( const idMatX &L, float *x
 			case 3: s0 += lptr[j+2] * x[j+2];
 			case 2: s1 += lptr[j+1] * x[j+1];
 			case 1: s2 += lptr[j+0] * x[j+0];
+			case 0: break;
 		}
 		double sum;
 		sum = s3;
@@ -2105,9 +2120,11 @@ bool VPCALL idSIMD_Generic::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const
 			v[k+3] = diag[k+3] * mptr[k+3]; s3 += v[k+3] * mptr[k+3];
 		}
 		switch( i - k ) {
+			NODEFAULT;
 			case 3: v[k+2] = diag[k+2] * mptr[k+2]; s0 += v[k+2] * mptr[k+2];
 			case 2: v[k+1] = diag[k+1] * mptr[k+1]; s1 += v[k+1] * mptr[k+1];
 			case 1: v[k+0] = diag[k+0] * mptr[k+0]; s2 += v[k+0] * mptr[k+0];
+			case 0: break;
 		}
 		sum = s3;
 		sum += s2;
@@ -2144,6 +2161,7 @@ bool VPCALL idSIMD_Generic::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const
 				s3 += mptr[k+7] * v[k+7];
 			}
 			switch( i - k ) {
+				NODEFAULT;
 				case 7: s0 += mptr[k+6] * v[k+6];
 				case 6: s1 += mptr[k+5] * v[k+5];
 				case 5: s2 += mptr[k+4] * v[k+4];
@@ -2151,6 +2169,7 @@ bool VPCALL idSIMD_Generic::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const
 				case 3: s0 += mptr[k+2] * v[k+2];
 				case 2: s1 += mptr[k+1] * v[k+1];
 				case 1: s2 += mptr[k+0] * v[k+0];
+				case 0: break;
 			}
 			sum = s3;
 			sum += s2;

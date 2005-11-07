@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2005/10/18 14:08:37  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -392,6 +395,8 @@ public:
 
 	friend void		TransposeMultiply( const idMat3 &inv, const idMat3 &b, idMat3 &dst );
 	friend idMat3	SkewSymmetric( idVec3 const &src );
+
+	void			GetMat3Params(idVec3 &a, idVec3 &b, idVec3 &c) const { a = mat[0]; b = mat[1], c = mat[2]; };
 
 private:
 	idVec3			mat[ 3 ];

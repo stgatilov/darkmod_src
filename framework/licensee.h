@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:15:24  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -25,12 +28,15 @@
 
 #define GAME_NAME						"DOOM 3"		// appears on window titles and errors
 
-#define	ENGINE_VERSION					"DOOM 1.0"		// printed in console
+#define ENGINE_VERSION					"DOOM 1.1"		// printed in console
 
 // paths
 #define	CD_BASEDIR						"Doom"
-#define	BASE_GAMEDIR					"base"
-#define	DEMO_GAMEDIR					"demo"
+#ifdef ID_DEMO_BUILD
+	#define BASE_GAMEDIR					"demo"
+#else
+	#define	BASE_GAMEDIR					"base"
+#endif
 
 // filenames
 #define	CD_EXE							"doom.exe"
@@ -67,7 +73,6 @@
 #define SAVEGAME_VERSION				16
 
 // editor info
-#define EDITOR_REGISTRY_INFO			"Software\\id\\QuakeEd4"		// FIXME: change to DoomEd
 #define EDITOR_DEFAULT_PROJECT			"doom.qe4"
 #define EDITOR_REGISTRY_KEY				"DOOMRadiant"
 #define EDITOR_WINDOWTEXT				"DOOMEdit"
@@ -78,10 +83,15 @@
 #define	WIN32_FAKE_WINDOW_CLASS_NAME	"DOOM3_WGL_FAKE"
 
 // Linux info
-#define LINUX_DEFAULT_PATH				"/usr/local/games/doom3"
+#ifdef ID_DEMO_BUILD
+	#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3-demo"
+#else
+	#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
+#endif
 
 // CD Key file info
 #define CDKEY_FILE						"doomkey"
 #define CDKEY_TEXT						"\n// Do not give this file to ANYONE.\n" \
 										"// id Software and Activision will NOT ask you to send this file to them.\n"
+
 #define CONFIG_SPEC						"config.spec"

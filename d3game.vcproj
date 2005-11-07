@@ -1,27 +1,10 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.1  2004/10/30 15:52:03  sparhawk
- * Initial revision
- *
- ***************************************************************************/
-
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="Game"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57430}"
-	SccProjectName=""
-	SccAuxPath=""
-	SccLocalPath=""
-	SccProvider=""
+	RootNamespace="Game"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -36,34 +19,37 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/I &quot;E:\Programme\Microsoft Visual Studio\VC98\Include&quot;"
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include"
+				AdditionalIncludeDirectories="mssdk/include; DarkMod;include"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough=""
 				PrecompiledHeaderFile="$(IntDir)/game.pch"
+				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
 				ProgramDataBaseFileName="$(IntDir)/"
+				BrowseInformation="1"
 				BrowseInformationFile="$(IntDir)/"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib DevIL.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
-				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
@@ -77,7 +63,8 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -87,11 +74,17 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Game/ReleaseDLL"
+			OutputDirectory="ReleaseDLL"
 			IntermediateDirectory="Game/ReleaseDLL"
 			ConfigurationType="2"
 			CharacterSet="2">
@@ -103,11 +96,10 @@
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="2"
-				AdditionalIncludeDirectories="mssdk/include"
-				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS"
+				AdditionalIncludeDirectories="mssdk/include,include"
+				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,NDEBUG,_WINDOWS,IL_STATIC_LIB"
 				StringPooling="TRUE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
 				ForceConformanceInForLoopScope="TRUE"
@@ -115,10 +107,10 @@
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough=""
 				PrecompiledHeaderFile="$(IntDir)/game.pch"
+				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
-				ProgramDataBaseFileName="$(IntDir)/"
-				BrowseInformation="0"
+				BrowseInformation="1"
 				BrowseInformationFile="$(IntDir)/"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="FALSE"
@@ -129,15 +121,17 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /fixed:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ./releasedll/idLib.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib idLib.lib Advapi32.lib devil.lib "
 				OutputFile="./ReleaseDLL/gamex86.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="releasedll;lib"
 				ModuleDefinitionFile=".\game\game.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/game.pdb"
 				GenerateMapFile="TRUE"
 				MapFileName="$(OutDir)/game.map"
+				MapExports="TRUE"
 				SubSystem="0"
 				StackReserveSize="4194304"
 				OptimizeReferences="2"
@@ -148,9 +142,11 @@
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+				CommandLine="cmd /C echo #define COMPILE_STR (&quot;DLL compiled on &quot; __DATE__ &quot; &quot; __TIME__ &quot;\r\r&quot;) &gt; c:\compiled.h"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -158,7 +154,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines|Win32"
@@ -174,7 +176,7 @@
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS,_INLINEDEBUG"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				BufferSecurityCheck="FALSE"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
@@ -223,7 +225,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines and memory log|Win32"
@@ -239,7 +247,7 @@
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS,_INLINEDEBUG,ID_REDIRECT_NEWDELETE,ID_DEBUG_MEMORY,ID_DEBUG_UNINITIALIZED_MEMORY"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				BufferSecurityCheck="FALSE"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
@@ -289,13 +297,26 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
-			Name="Game"
-			Filter="">
+			Name="Game">
+			<File
+				RelativePath="game\Actor.cpp">
+			</File>
+			<File
+				RelativePath="game\Actor.h">
+			</File>
 			<File
 				RelativePath="game\AF.cpp">
 				<FileConfiguration
@@ -333,12 +354,6 @@
 				RelativePath="game\AFEntity.h">
 			</File>
 			<File
-				RelativePath="game\Actor.cpp">
-			</File>
-			<File
-				RelativePath="game\Actor.h">
-			</File>
-			<File
 				RelativePath="game\BrittleFracture.cpp">
 			</File>
 			<File
@@ -366,12 +381,6 @@
 				RelativePath="game\Game.h">
 			</File>
 			<File
-				RelativePath="game\GameEdit.cpp">
-			</File>
-			<File
-				RelativePath="game\GameEdit.h">
-			</File>
-			<File
 				RelativePath="game\Game_local.cpp">
 			</File>
 			<File
@@ -379,6 +388,12 @@
 			</File>
 			<File
 				RelativePath="game\Game_network.cpp">
+			</File>
+			<File
+				RelativePath="game\GameEdit.cpp">
+			</File>
+			<File
+				RelativePath="game\GameEdit.h">
 			</File>
 			<File
 				RelativePath="game\IK.cpp">
@@ -397,6 +412,12 @@
 			</File>
 			<File
 				RelativePath="game\Light.h">
+			</File>
+			<File
+				RelativePath=".\game\liquid.cpp">
+			</File>
+			<File
+				RelativePath=".\game\liquid.h">
 			</File>
 			<File
 				RelativePath="game\Misc.cpp">
@@ -495,8 +516,7 @@
 				RelativePath="game\WorldSpawn.h">
 			</File>
 			<Filter
-				Name="AI"
-				Filter="">
+				Name="AI">
 				<File
 					RelativePath="game\ai\AAS.cpp">
 				</File>
@@ -522,18 +542,17 @@
 					RelativePath="game\ai\AI.h">
 				</File>
 				<File
-					RelativePath="game\ai\AI_Vagary.cpp">
-				</File>
-				<File
 					RelativePath="game\ai\AI_events.cpp">
 				</File>
 				<File
 					RelativePath="game\ai\AI_pathing.cpp">
 				</File>
+				<File
+					RelativePath="game\ai\AI_Vagary.cpp">
+				</File>
 			</Filter>
 			<Filter
-				Name="Anim"
-				Filter="">
+				Name="Anim">
 				<File
 					RelativePath="game\anim\Anim.cpp">
 				</File>
@@ -544,6 +563,9 @@
 					RelativePath="game\anim\Anim_Blend.cpp">
 				</File>
 				<File
+					RelativePath=".\game\anim\anim_import.cpp">
+				</File>
+				<File
 					RelativePath="game\anim\Anim_Testmodel.cpp">
 				</File>
 				<File
@@ -551,8 +573,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="GameSys"
-				Filter="">
+				Name="GameSys">
 				<File
 					RelativePath="game\gamesys\Class.cpp">
 				</File>
@@ -628,8 +649,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Physics"
-				Filter="">
+				Name="Physics">
 				<File
 					RelativePath="game\physics\Clip.cpp">
 				</File>
@@ -673,22 +693,28 @@
 					RelativePath="game\physics\Physics.h">
 				</File>
 				<File
-					RelativePath="game\physics\Physics_AF.cpp">
-				</File>
-				<File
-					RelativePath="game\physics\Physics_AF.h">
-				</File>
-				<File
 					RelativePath="game\physics\Physics_Actor.cpp">
 				</File>
 				<File
 					RelativePath="game\physics\Physics_Actor.h">
 				</File>
 				<File
+					RelativePath="game\physics\Physics_AF.cpp">
+				</File>
+				<File
+					RelativePath="game\physics\Physics_AF.h">
+				</File>
+				<File
 					RelativePath="game\physics\Physics_Base.cpp">
 				</File>
 				<File
 					RelativePath="game\physics\Physics_Base.h">
+				</File>
+				<File
+					RelativePath=".\game\physics\physics_liquid.cpp">
+				</File>
+				<File
+					RelativePath=".\game\physics\physics_liquid.h">
 				</File>
 				<File
 					RelativePath="game\physics\Physics_Monster.cpp">
@@ -734,8 +760,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Script"
-				Filter="">
+				Name="Script">
 				<File
 					RelativePath="game\script\Script_Compiler.cpp">
 				</File>
@@ -761,10 +786,214 @@
 					RelativePath="game\script\Script_Thread.h">
 				</File>
 			</Filter>
+			<Filter
+				Name="DarkMod">
+				<File
+					RelativePath=".\DarkMod\DarkModGlobals.cpp">
+					<FileConfiguration
+						Name="Release|Win32">
+						<Tool
+							Name="VCCLCompilerTool"
+							ForcedIncludeFiles="c:\compiled.h"/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\DarkMod\DarkModGlobals.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\fdchar.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobDoor.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobDoor.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Grabber.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Grabber.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Intersection.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Intersection.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MatrixSq.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Misc.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PlayerData.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PlayerData.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Profile.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Profile.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\rdline.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\README.txt">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Relations.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Relations.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndProp.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndProp.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndPropLoader.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\sndPropLoader.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Strip.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\ToUpper.cpp">
+				</File>
+				<Filter
+					Name="SourceHook"
+					Filter="">
+					<File
+						RelativePath=".\DarkMod\sourcehook\FastDelegate.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_list.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_memfuncinfo.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_memory.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_stack.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_string.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_tinyhash.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sh_vector.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\sourcehook\sourcehook_impl.h">
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="Framework"
+				Filter="">
+				<File
+					RelativePath=".\framework\builddefines.h">
+				</File>
+				<File
+					RelativePath=".\framework\buildversion.h">
+				</File>
+				<File
+					RelativePath=".\framework\cmdsystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\common.h">
+				</File>
+				<File
+					RelativePath=".\framework\cvarsystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\declaf.h">
+				</File>
+				<File
+					RelativePath=".\framework\declentitydef.h">
+				</File>
+				<File
+					RelativePath=".\framework\declfx.h">
+				</File>
+				<File
+					RelativePath=".\framework\declmanager.h">
+				</File>
+				<File
+					RelativePath=".\framework\declparticle.h">
+				</File>
+				<File
+					RelativePath=".\framework\declpda.h">
+				</File>
+				<File
+					RelativePath=".\framework\declskin.h">
+				</File>
+				<File
+					RelativePath=".\framework\decltable.h">
+				</File>
+				<File
+					RelativePath=".\framework\file.h">
+				</File>
+				<File
+					RelativePath=".\framework\filesystem.h">
+				</File>
+				<File
+					RelativePath=".\framework\licensee.h">
+				</File>
+				<File
+					RelativePath=".\framework\usercmdgen.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="renderer"
+				Filter="">
+				<File
+					RelativePath=".\renderer\cinematic.h">
+				</File>
+				<File
+					RelativePath=".\renderer\glext.h">
+				</File>
+				<File
+					RelativePath=".\renderer\material.h">
+				</File>
+				<File
+					RelativePath=".\renderer\model.h">
+				</File>
+				<File
+					RelativePath=".\renderer\modelmanager.h">
+				</File>
+				<File
+					RelativePath=".\renderer\qgl.h">
+				</File>
+				<File
+					RelativePath=".\renderer\qgl_linked.h">
+				</File>
+				<File
+					RelativePath=".\renderer\rendersystem.h">
+				</File>
+				<File
+					RelativePath=".\renderer\renderworld.h">
+				</File>
+			</Filter>
 		</Filter>
-		<File
-			RelativePath="game\Game.def">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

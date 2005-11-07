@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:34:48  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,8 +21,6 @@
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
-#define _D3SDK
-
 #ifdef __cplusplus
 
 //-----------------------------------------------------
@@ -28,6 +29,7 @@
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// prevent auto literal to string conversion
 
+#ifndef _D3SDK
 #ifndef GAME_DLL
 
 #define WINVER				0x501
@@ -53,6 +55,7 @@
 #include "../mssdk/include/dxerr8.h"
 
 #endif /* !GAME_DLL */
+#endif /* !_D3SDK */
 
 #pragma warning(disable : 4100)				// unreferenced formal parameter
 #pragma warning(disable : 4244)				// conversion to smaller type, possible loss of data
@@ -147,13 +150,15 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 //-----------------------------------------------------
 
+#ifndef _D3SDK
+
 #ifdef GAME_DLL
 
 #include "../game/Game_local.h"
 
 #else
 
-//#include "../framework/DemoChecksum.h"
+#include "../framework/DemoChecksum.h"
 
 // framework
 #include "../framework/Compressor.h"
@@ -175,6 +180,8 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "../tools/compilers/compiler_public.h"
 
 #endif /* !GAME_DLL */
+
+#endif /* !_D3SDK */
 
 //-----------------------------------------------------
 

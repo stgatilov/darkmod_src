@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -529,6 +532,7 @@ private:
 ===============================================================================
 */
 
+#ifndef MOD_WATERPHYSICS
 class idRenderModelLiquid;
 
 class idLiquid : public idEntity {
@@ -546,7 +550,7 @@ private:
 
 	idRenderModelLiquid *model;
 };
-
+#endif
 
 /*
 ===============================================================================

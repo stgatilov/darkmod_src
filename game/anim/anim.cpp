@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.3  2005/10/18 14:09:46  sparhawk
+ * Fixed an unneccessary warning about unused lables.
+ *
+ * Revision 1.2  2005/04/23 01:43:53  ishtvan
+ * Added SetFrameRate frame command, for re-using animations but slowing them down or speeding them up on the fly
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +25,7 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../darkmod/darkmodglobals.h"
 
 bool idAnimManager::forceExport = false;
 
@@ -898,6 +905,22 @@ void idMD5Anim::CheckModelHierarchy( const idRenderModel *model ) const {
 			gameLocal.Error( "Model '%s' has different joint hierarchy than anim '%s'", model->Name(), name.c_str() );
 		}
 	}
+}
+
+/*
+====================
+idMD5Anim::SetFrameRate
+
+(DarkMod Addition)
+====================
+*/
+
+void idMD5Anim::SetFrameRate( int frRate )
+{
+	frameRate = frRate;
+	DM_LOG(LC_SOUND, LT_DEBUG).LogString("ChangeFrameRate: Set rate to %d\r", frameRate);
+
+	return;
 }
 
 /***********************************************************************

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -146,6 +149,9 @@ private:
 	float					angularFriction;			// rotational friction
 	float					contactFriction;			// friction with contact surfaces
 	float					bouncyness;					// bouncyness
+#ifdef MOD_WATERPHYSICS
+	float					volume;						// MOD_WATERPHYSICS object volume 
+#endif		// MOD_WATERPHYSICS
 	idClipModel *			clipModel;					// clip model used for collision detection
 
 	// derived properties
@@ -165,6 +171,11 @@ private:
 	bool					hasMaster;
 	bool					isOrientated;
 
+#ifdef MOD_WATERPHYSICS
+	// buoyancy
+	int						noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
+#endif
+
 private:
 	friend void				RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives );
 	void					Integrate( const float deltaTime, rigidBodyPState_t &next );
@@ -172,9 +183,21 @@ private:
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
 	void					ContactFriction( float deltaTime );
 	void					DropToFloorAndRest( void );
+#ifdef MOD_WATERPHYSICS
+	bool					TestIfAtRest( void );
+#else 		// MOD_WATERPHYSICS
 	bool					TestIfAtRest( void ) const;
+#endif 		// MOD_WATERPHYSICS
 	void					Rest( void );
 	void					DebugDraw( void );
+
+#ifdef MOD_WATERPHYSICS
+	// Buoyancy stuff
+	// Approximates the center of mass of the submerged portion of the rigid body.
+	virtual bool			GetBuoyancy( const idVec3 &pos, const idMat3 &rotation, idVec3 &bCenter, float &percent ) const;	// MOD_WATERPHYSICS
+	// Returns rough a percentage of which percent of the body is in water.
+	virtual float			GetSubmergedPercent( const idVec3 &pos, const idMat3 &rotation ) const;	// MOD_WATERPHYSICS
+#endif
 };
 
 #endif /* !__PHYSICS_RIGIDBODY_H__ */

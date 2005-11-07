@@ -7,9 +7,20 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.5  2004/11/28 09:56:51  sparhawk
+ * SDK V2 merge
  *
+ * Revision 1.3  2004/11/14 09:58:17  sparhawk
+ * Fixed a typo
+ *
+ * Revision 1.2  2004/11/14 08:06:51  nexenizer
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
+ * Revision 1.1.1.2  2004/11/14 10:11:02  nexenizer
+ * Updated #pragma at bool idMatX::Cholesky_UpdateRowColumn to create compatible code
+ * 
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -5378,6 +5389,8 @@ idMatX::Cholesky_UpdateRowColumn
   where: a = v[0,r-1], b = v[r], c = v[r+1,numRows-1]
 ============
 */
+#pragma optimize( "", off )
+
 bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	int i, j;
 	double sum;
@@ -5393,8 +5406,10 @@ bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	if ( r == 0 ) {
 
 		if ( numColumns == 1 ) {
+			double v0 = v[0];
 			sum = (*this)[0][0];
-			sum = sum * sum + v[0];
+			sum = sum * sum; 
+			sum = sum + v0; 
 			if ( sum <= 0.0f ) {
 				return false;
 			}
@@ -5546,6 +5561,8 @@ bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	return true;
 }
 
+#pragma optimize( "", off )
+
 /*
 ============
 idMatX::Cholesky_UpdateIncrement
@@ -5617,7 +5634,14 @@ bool idMatX::Cholesky_UpdateDecrement( const idVecX &v, int r ) {
 	v1 = -v;
 	v1[r] += 1.0f;
 
+	// NOTE:	msvc compiler bug: the this pointer stored in edi is expected to stay
+	//			untouched when calling Cholesky_UpdateRowColumn in the if statement
+#if 0
 	if ( !Cholesky_UpdateRowColumn( v1, r ) ) {
+#else
+	bool ret = Cholesky_UpdateRowColumn( v1, r );
+	if ( !ret ) {
+#endif
 		return false;
 	}
 

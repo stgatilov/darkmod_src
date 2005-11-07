@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -2276,6 +2279,7 @@ void idBeam::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 ===============================================================================
 */
 
+#ifndef MOD_WATERPHYSICS
 CLASS_DECLARATION( idEntity, idLiquid )
 	EVENT( EV_Touch,			idLiquid::Event_Touch )
 END_CLASS
@@ -2329,7 +2333,7 @@ void idLiquid::Event_Touch( idEntity *other, trace_t *trace ) {
 	model->IntersectBounds( other->GetPhysics()->GetBounds().Translate( pos ), -10.0f );
 */
 }
-
+#endif
 
 /*
 ===============================================================================

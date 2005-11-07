@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.3  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
+ * Revision 1.2  2004/11/28 09:16:33  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -198,7 +204,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 
 	memset( &renderLight, 0, sizeof( renderLight ) );
 	shaderName = spawnArgs.GetString( "mtr_light_shader" );
-	if ( *shaderName ) {
+	if ( *(const char*)shaderName ) {
 		renderLight.shader = declManager->FindMaterial( shaderName, false );
 		renderLight.pointLight = true;
 		renderLight.lightRadius[0] =
@@ -853,7 +859,20 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// bind the projectile to the impact entity if necesary
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
-		Bind( gameLocal.entities[collision.c.entityNum], true );
+		idEntity *ent = gameLocal.entities[ collision.c.entityNum ];
+
+		if( ent->IsType( idAFEntity_Base::Type ) ) {
+			jointHandle_t newJoint;
+			idAFEntity_Base *af = static_cast<idAFEntity_Base *>(ent);
+
+			// joint being dragged
+			newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id );
+
+			this->BindToJoint( ent, newJoint, true );
+		}
+		else {
+			this->Bind( ent, true );
+		} 
 	}
 
 	// splash damage
@@ -1754,7 +1773,7 @@ void idBFGProjectile::Think( void ) {
 			beamTargets[i].renderEntity.shaderParms[ SHADERPARM_ALPHA ] = 1.0f;
 			if ( gameLocal.time > nextDamageTime ) {
 				bool bfgVision = true;
-				if ( damageFreq && *damageFreq && beamTargets[i].target.GetEntity() && beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), org ) ) {
+				if ( damageFreq && *(const char *)damageFreq && beamTargets[i].target.GetEntity() && beamTargets[i].target.GetEntity()->CanDamage( GetPhysics()->GetOrigin(), org ) ) {
 					org = beamTargets[i].target.GetEntity()->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 					org.Normalize();
 					beamTargets[i].target.GetEntity()->Damage( this, owner.GetEntity(), org, damageFreq, ( damagePower ) ? damagePower : 1.0f, INVALID_JOINT );

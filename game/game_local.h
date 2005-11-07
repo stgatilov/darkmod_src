@@ -7,16 +7,81 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.12  2005/10/23 18:42:30  sparhawk
+ * Lightgem cleanup
+ *
+ * Revision 1.11  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.10  2005/10/23 13:51:06  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
+ * Revision 1.9  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.8  2005/09/21 05:42:04  ishtvan
+ * Modified sound prop propParms
+ *
+ * Revision 1.7  2005/08/22 04:55:24  ishtvan
+ * minor changes in soundprop parms and function names
+ *
+ * Revision 1.6  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.5  2005/04/23 10:07:26  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
+ * Revision 1.4  2005/04/07 09:38:10  ishtvan
+ * *) Added members for global sound prop and sound prop loader objects
+ *
+ * *) Added global typedef for sound propagation flags which are needed by several different classes
+ *
+ * Revision 1.3  2005/03/29 07:43:42  ishtvan
+ * Added forward declared pointer to global AI relations object: m_RelationsManager
+ *
+ * Revision 1.2  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
 //
 
+/** DarkMod AI Note:
+* The following members in class idGameLocal:
+* lastAIAlertEntity, lastAIAlertTime and idGameLocal::AlertAI
+* ALL have nothing to do with DarkMod AI.
+*
+* DarkMod AI alerts are handled in class idAI
+*
+* AIAlertEntity alerts ALL AI to the entity in vanilla D3
+*
+* Unfortunately idGameLocal::AlertAI has the same name as
+* our DarkMod alert function, idAI::AlertAI.  DarkMod
+* alerts do not directly make use of idGameLocal::AlertAI.
+**/
+
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+// enables water physics
+#define MOD_WATERPHYSICS
+
+// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
+// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
+// shape would be sufficient to cover all lighting situations. For silouhette detection we might
+// consider more stages though.
+#define LIGHTGEM_MAX_RENDERPASSES		2
+#define LIGHTGEM_MAX_IMAGESPLIT			4
+#define LIGHTEM_RENDER_DIRECTORY		"snapshot"
+#define LIGHTEM_RENDER_MODEL			"models/props/misc/lightgem.lwo"
+#define LIGHTEM_RENDER_NAME				"lightgem_surface"
+// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
+#define LIGHTGEM_VIEWID					-1
 
 /*
 ===============================================================================
@@ -90,6 +155,11 @@ class idLocationEntity;
 
 //============================================================================
 
+class CLightMaterial;
+class CsndPropLoader;
+class CsndProp;
+class CRelations;
+
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
 const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
@@ -161,6 +231,65 @@ typedef struct {
 	idEntity	*ent;
 	int			dist;
 } spawnSpot_t;
+
+//===========Dark Mod Global Typedefs===========
+
+/**
+* Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
+* Therefore they are global.
+* See sound prop doc file for definitions of these flags.
+**/
+
+typedef struct SSprFlagBits_s
+{
+	// team alert flags
+	unsigned int friendly : 1;
+	unsigned int neutral : 1;
+	unsigned int enemy : 1;
+	unsigned int same : 1;
+
+	// propagation flags
+	unsigned int omni_dir : 1; // omnidirectional
+	unsigned int unique_loc : 1; // sound comes from a unique location
+	unsigned int urgent : 1; // urgent (AI tries to respond ASAP)
+	unsigned int global_vol : 1; // sound has same volume over whole map
+	unsigned int check_touched : 1; // for non-AI, check who last touched the entity
+} SSprFlagBits;
+
+typedef union USprFlags_s
+{
+	unsigned int m_field;
+	SSprFlagBits m_bits;
+} USprFlags;
+
+/**
+* Sound propagation parameters: needed for function arguments
+**/
+
+typedef struct SSprParms_s
+{
+	USprFlags flags;
+
+	const char	*name; // sound name
+	float		propVol; // propagated volume
+
+	// Apparent direction of the sound, determined by the path point on the portal
+	idVec3		direction; 
+	// actual origin of the sound, used for some localization simulation
+	idVec3		origin; 
+	float		duration; // duration
+	int			frequency; // int representing the octave of the sound
+	float		bandwidth; // sound bandwidth
+
+	float		loudness; // this is set by AI hearing response
+
+	bool		bSameArea; // true if the sound came from same portal area
+	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path
+	int			floods; // number of portals the sound travelled thru before it hit the AI
+
+	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
+
+} SSprParms;
 
 //============================================================================
 
@@ -316,6 +445,28 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+/**
+* Pointer to global AI Relations object
+**/
+	CRelations *			m_RelationsManager;
+
+/**
+* Pointer to global sound prop loader object
+**/
+	CsndPropLoader *		m_sndPropLoader;
+
+/**
+* Pointer to global sound prop gameplay object
+**/
+	CsndProp *				m_sndProp;
+
+/**
+* Temporary storage of the walkspeed.  This is a workaround
+*	because the walkspeed keeps getting reset.
+**/
+	float					m_walkSpeed;
+
+
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -495,6 +646,30 @@ public:
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
 
+	/**
+	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
+	 * textures are only loaded when the light is spawned and requests the texture.
+	 */
+	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
+
+	/**
+	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
+	 * that no multiple copies of it will exist.
+	 */
+	void					SpawnLightgemEntity(void);
+
+	/**
+	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
+	 * to determine the lightvalue for the lightgem.
+	 */
+	float					CalcLightgem(idPlayer *);
+
+	/**
+	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
+	 * determining the lightvalue for the given image.
+	 */
+	void					AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT]);
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -661,6 +836,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "physics/Physics_Parametric.h"
 #include "physics/Physics_RigidBody.h"
 #include "physics/Physics_AF.h"
+#include "physics/Physics_Liquid.h"
 
 #include "SmokeParticles.h"
 
@@ -688,6 +864,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Fx.h"
 #include "SecurityCamera.h"
 #include "BrittleFracture.h"
+#include "Liquid.h"
 
 #include "ai/AI.h"
 #include "anim/Anim_Testmodel.h"
