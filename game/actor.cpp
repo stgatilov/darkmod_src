@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/07 01:58:25  ishtvan
+ * added getEyePos scriptfunction to get eye position
+ *
  * Revision 1.4  2005/04/23 01:46:51  ishtvan
  * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
  *
@@ -360,6 +363,7 @@ const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
+const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
 
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
@@ -404,6 +408,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
+	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
 END_CLASS
 
 /*
@@ -3346,4 +3351,14 @@ idActor::Event_GetHead
 */
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
+}
+
+/*
+=====================
+idActor::Event_GetEyePos
+=====================
+*/
+void idActor::Event_GetEyePos( void )
+{
+	idThread::ReturnVector( GetEyePosition() );
 }

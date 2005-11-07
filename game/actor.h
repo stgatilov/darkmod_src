@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/07 01:58:25  ishtvan
+ * added getEyePos scriptfunction to get eye position
+ *
  * Revision 1.4  2005/04/23 01:46:51  ishtvan
  * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
  *
@@ -342,6 +345,7 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
+	void					Event_GetEyePos( void );
 };
 
 #endif /* !__GAME_ACTOR_H__ */
