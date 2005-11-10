@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2004/11/28 09:15:24  sparhawk
  * SDK V2 merge
  *
@@ -104,7 +107,7 @@ public:
 	int			sequence;						// just for debugging
 
 public:
-	void		ByteSwap();						// on big endien systems, byte swap the shorts and ints
+	void		ByteSwap();						// on big endian systems, byte swap the shorts and ints
 	bool		operator==( const usercmd_t &rhs ) const;
 };
 

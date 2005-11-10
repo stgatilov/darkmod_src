@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:15:24  sparhawk
  * SDK V2 merge
  *
@@ -28,7 +31,7 @@
 
 #define GAME_NAME						"DOOM 3"		// appears on window titles and errors
 
-#define ENGINE_VERSION					"DOOM 1.1"		// printed in console
+#define ENGINE_VERSION					"DOOM 1.3"		// printed in console
 
 // paths
 #define	CD_BASEDIR						"Doom"
@@ -69,8 +72,15 @@
 #define ASYNC_PROTOCOL_MAJOR			1
 
 // Savegame Version
-// Update when you can no longer maintain compatibility with previous savegames.
-#define SAVEGAME_VERSION				16
+// Update when you can no longer maintain compatibility with previous savegames
+// NOTE: a seperate core savegame version and game savegame version could be useful
+// 16: Doom v1.1
+// 17: Doom v1.2 / D3XP. Can still read old v16 with defaults for new data
+#define SAVEGAME_VERSION				17
+
+// <= Doom v1.1: 1. no DS_VERSION token ( default )
+// Doom v1.2: 2
+#define RENDERDEMO_VERSION				2
 
 // editor info
 #define EDITOR_DEFAULT_PROJECT			"doom.qe4"
@@ -90,8 +100,12 @@
 #endif
 
 // CD Key file info
+// goes into BASE_GAMEDIR whatever the fs_game is set to
+// two distinct files for easier win32 installer job
 #define CDKEY_FILE						"doomkey"
+#define XPKEY_FILE						"xpkey"
 #define CDKEY_TEXT						"\n// Do not give this file to ANYONE.\n" \
 										"// id Software and Activision will NOT ask you to send this file to them.\n"
 
 #define CONFIG_SPEC						"config.spec"
+

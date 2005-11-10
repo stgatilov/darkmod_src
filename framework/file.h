@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:15:24  sparhawk
  * SDK V2 merge
  *
@@ -53,7 +56,7 @@ public:
 							// Returns the length of the file.
 	virtual int				Length( void );
 							// Return a time value for reload operations.
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 							// Returns offset in file.
 	virtual int				Tell( void );
 							// Forces flush on files being writting to.
@@ -65,14 +68,12 @@ public:
 							// Go back to the beginning of the file.
 	virtual void			Rewind( void );
 							// Like fprintf.
-	virtual int				Printf( const char *fmt, ... );
+	virtual int				Printf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 							// Like fprintf but with argument pointer
 	virtual int				VPrintf( const char *fmt, va_list arg );
 							// Write a string with high precision floating point numbers to the file.
-	virtual int				WriteFloatString( const char *fmt, ... );
-
-	// TMP: only the Linux 1.1 build has those, the SDK game source doesn't use them
-#ifdef __linux__
+	virtual int				WriteFloatString( const char *fmt, ... ) id_attribute((format(printf,2,3)));
+	
 	// Endian portable alternatives to Read(...)
 	virtual int				ReadInt( int &value );
 	virtual int				ReadUnsignedInt( unsigned int &value );
@@ -104,7 +105,6 @@ public:
 	virtual int				WriteVec4( const idVec4 &vec );
 	virtual int				WriteVec6( const idVec6 &vec );
 	virtual int				WriteMat3( const idMat3 &mat );
-#endif
 };
 
 
@@ -123,7 +123,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -165,7 +165,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -190,13 +190,13 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
 	virtual int				Seek( long offset, fsOrigin_t origin );
 
-							// returns file pointer
+	// returns file pointer
 	FILE *					GetFilePtr( void ) { return o; }
 
 private:
@@ -221,7 +221,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -88,6 +91,13 @@ public:
 						// Base for decl name auto-completion.
 	virtual void		ArgCompletion_DeclName( const idCmdArgs &args, void(*callback)( const char *s ), int type ) = 0;
 
+						// Adds to the command buffer in tokenized form ( CMD_EXEC_NOW or CMD_EXEC_APPEND only )
+	virtual void		BufferCommandArgs( cmdExecution_t exec, const idCmdArgs &args ) = 0;
+
+						// Setup a reloadEngine to happen on next command run, and give a command to execute after reload
+	virtual void		SetupReloadEngine( const idCmdArgs &args ) = 0;
+	virtual bool		PostReloadEngine( void ) = 0;
+
 						// Default argument completion functions.
 	static void			ArgCompletion_Boolean( const idCmdArgs &args, void(*callback)( const char *s ) );
 	template<int min,int max>
@@ -140,7 +150,7 @@ ID_INLINE void idCmdSystem::ArgCompletion_MapName( const idCmdArgs &args, void(*
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ModelName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_SoundName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
