@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 21:11:28  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:17:20  sparhawk
  * SDK V2 merge
  *
@@ -631,7 +634,7 @@ void idTestModel::KeepTestModel_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	gameLocal.Printf( "modelDef %i kept\n", gameLocal.testmodel->renderEntity.hModel );
+	gameLocal.Printf( "modelDef %p kept\n", gameLocal.testmodel->renderEntity.hModel );
 
 	gameLocal.testmodel = NULL;
 }
@@ -706,7 +709,7 @@ void idTestModel::TestShaderParm_f( const idCmdArgs &args ) {
 	}
 
 	float	value;
-	if ( !stricmp( args.Argv( 2 ), "time" ) ) {
+	if ( !idStr::Icmp( args.Argv( 2 ), "time" ) ) {
 		value = gameLocal.time * -0.001;
 	} else {
 		value = atof( args.Argv( 2 ) );
