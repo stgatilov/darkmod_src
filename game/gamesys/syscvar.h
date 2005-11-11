@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.13  2005/10/26 21:13:15  sparhawk
  * Lightgem renderpipe implemented
  *
@@ -192,6 +195,8 @@ extern idCVar	g_vehicleSuspensionKCompress;
 extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
 
+extern idCVar	g_enablePortalSky;
+
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
 
@@ -319,6 +324,11 @@ extern idCVar	si_fragLimit;
 extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
+
+extern idCVar	net_clientSelfSmoothing;
+extern idCVar	net_clientLagOMeter;
+
+extern const char *si_gameTypeArgs[];
 
 extern const char *ui_skinArgs[];
 

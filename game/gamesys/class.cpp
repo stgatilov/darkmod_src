@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -198,10 +201,14 @@ from the class list since the program is shutting down.
 */
 void idTypeInfo::Shutdown() {
 	// free up the memory used for event lookups
-	if ( eventMap && freeEventMap ) {
-		delete[] eventMap;
+	if ( eventMap ) {
+		if ( freeEventMap ) {
+			delete[] eventMap;
+		}
 		eventMap = NULL;
 	}
+	typeNum = 0;
+	lastChild = 0;
 }
 
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.5  2005/08/22 05:09:00  ishtvan
  * removed call to old soundprop file IO function, replaced with placeholder
  *
@@ -117,7 +120,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 			continue;
 		}
 
-		if ( !check->name.Filter( match ) ) {
+		if ( !check->name.Filter( match, true ) ) {
 			continue;
 		}
 

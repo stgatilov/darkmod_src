@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -601,7 +604,12 @@ idEvent::Save
 ================
 */
 void idEvent::Save( idSaveGame *savefile ) {
+	char *str;
+	int i, size;
 	idEvent	*event;
+	byte *dataPtr;
+	bool validTrace;
+	const char	*format;
 
 	savefile->WriteInt( EventQueue.Num() );
 
@@ -612,8 +620,44 @@ void idEvent::Save( idSaveGame *savefile ) {
 		savefile->WriteString( event->typeinfo->classname );
 		savefile->WriteObject( event->object );
 		savefile->WriteInt( event->eventdef->GetArgSize() );
-		savefile->Write( event->data, event->eventdef->GetArgSize() );
-
+		format = event->eventdef->GetArgFormat();
+		for ( i = 0, size = 0; i < event->eventdef->GetNumArgs(); ++i) {
+			dataPtr = &event->data[ event->eventdef->GetArgOffset( i ) ];
+			switch( format[ i ] ) {
+				case D_EVENT_FLOAT :
+					savefile->WriteFloat( *reinterpret_cast<float *>( dataPtr ) );
+					size += sizeof( float );
+					break;
+				case D_EVENT_INTEGER :
+				case D_EVENT_ENTITY :
+				case D_EVENT_ENTITY_NULL :
+					savefile->WriteInt( *reinterpret_cast<int *>( dataPtr ) );
+					size += sizeof( int );
+					break;
+				case D_EVENT_VECTOR :
+					savefile->WriteVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
+					size += sizeof( idVec3 );
+					break;
+				case D_EVENT_TRACE :
+					validTrace = *reinterpret_cast<bool *>( dataPtr );
+					savefile->WriteBool( validTrace );
+					size += sizeof( bool );
+					if ( validTrace ) {
+						size += sizeof( trace_t );
+						const trace_t &t = *reinterpret_cast<trace_t *>( dataPtr + sizeof( bool ) );
+						SaveTrace( savefile, t );
+						if ( t.c.material ) {
+							size += MAX_STRING_LEN;
+							str = reinterpret_cast<char *>( dataPtr + sizeof( bool ) + sizeof( trace_t ) );
+							savefile->Write( str, MAX_STRING_LEN );
+						}
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		assert( size == event->eventdef->GetArgSize() );
 		event = event->eventNode.Next();
 	}
 }
@@ -624,11 +668,12 @@ idEvent::Restore
 ================
 */
 void idEvent::Restore( idRestoreGame *savefile ) {
-	int		i;
-	int		num;
-	int		argsize;
+	char    *str;
+	int		num, argsize, i, j, size;
 	idStr	name;
+	byte *dataPtr;
 	idEvent	*event;
+	const char	*format;
 
 	savefile->ReadInt( num );
 
@@ -666,12 +711,99 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 		}
 		if ( argsize ) {
 			event->data = eventDataAllocator.Alloc( argsize );
-			savefile->Read( event->data, argsize );
+			format = event->eventdef->GetArgFormat();
+			assert( format );
+			for ( j = 0, size = 0; j < event->eventdef->GetNumArgs(); ++j) {
+				dataPtr = &event->data[ event->eventdef->GetArgOffset( j ) ];
+				switch( format[ j ] ) {
+					case D_EVENT_FLOAT :
+						savefile->ReadFloat( *reinterpret_cast<float *>( dataPtr ) );
+						size += sizeof( float );
+						break;
+					case D_EVENT_INTEGER :
+					case D_EVENT_ENTITY :
+					case D_EVENT_ENTITY_NULL :
+						savefile->ReadInt( *reinterpret_cast<int *>( dataPtr ) );
+						size += sizeof( int );
+						break;
+					case D_EVENT_VECTOR :
+						savefile->ReadVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
+						size += sizeof( idVec3 );
+						break;
+					case D_EVENT_TRACE :
+						savefile->ReadBool( *reinterpret_cast<bool *>( dataPtr ) );
+						size += sizeof( bool );
+						if ( *reinterpret_cast<bool *>( dataPtr ) ) {
+							size += sizeof( trace_t );
+							trace_t &t = *reinterpret_cast<trace_t *>( dataPtr + sizeof( bool ) );
+							RestoreTrace( savefile,  t) ;
+							if ( t.c.material ) {
+								size += MAX_STRING_LEN;
+								str = reinterpret_cast<char *>( dataPtr + sizeof( bool ) + sizeof( trace_t ) );
+								savefile->Read( str, MAX_STRING_LEN );
+							}
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			assert( size == event->eventdef->GetArgSize() );
 		} else {
 			event->data = NULL;
 		}
 	}
 }
+
+/*
+ ================
+ idEvent::ReadTrace
+ 
+ idRestoreGame has a ReadTrace procedure, but unfortunately idEvent wants the material
+ string name at the of the data structure rather than in the middle
+ ================
+ */
+void idEvent::RestoreTrace( idRestoreGame *savefile, trace_t &trace ) {
+	savefile->ReadFloat( trace.fraction );
+	savefile->ReadVec3( trace.endpos );
+	savefile->ReadMat3( trace.endAxis );
+	savefile->ReadInt( (int&)trace.c.type );
+	savefile->ReadVec3( trace.c.point );
+	savefile->ReadVec3( trace.c.normal );
+	savefile->ReadFloat( trace.c.dist );
+	savefile->ReadInt( trace.c.contents );
+	savefile->ReadInt( (int&)trace.c.material );
+	savefile->ReadInt( trace.c.contents );
+	savefile->ReadInt( trace.c.modelFeature );
+	savefile->ReadInt( trace.c.trmFeature );
+	savefile->ReadInt( trace.c.id );
+}
+
+/*
+ ================
+ idEvent::WriteTrace
+
+ idSaveGame has a WriteTrace procedure, but unfortunately idEvent wants the material
+ string name at the of the data structure rather than in the middle
+================
+ */
+void idEvent::SaveTrace( idSaveGame *savefile, const trace_t &trace ) {
+	savefile->WriteFloat( trace.fraction );
+	savefile->WriteVec3( trace.endpos );
+	savefile->WriteMat3( trace.endAxis );
+	savefile->WriteInt( trace.c.type );
+	savefile->WriteVec3( trace.c.point );
+	savefile->WriteVec3( trace.c.normal );
+	savefile->WriteFloat( trace.c.dist );
+	savefile->WriteInt( trace.c.contents );
+	savefile->WriteInt( (int&)trace.c.material );
+	savefile->WriteInt( trace.c.contents );
+	savefile->WriteInt( trace.c.modelFeature );
+	savefile->WriteInt( trace.c.trmFeature );
+	savefile->WriteInt( trace.c.id );
+}
+
+
 
 #ifdef CREATE_EVENT_CODE
 /*
