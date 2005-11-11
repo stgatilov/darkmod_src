@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/11/11 20:51:43  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.7  2005/10/31 19:35:53  sparhawk
  * Fixed a mapload crash when AI is present
  *
@@ -3352,7 +3355,7 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		}
 	}
 
-	return AI_PAIN;
+	return ( AI_PAIN != 0 );
 }
 
 
@@ -3546,6 +3549,7 @@ void idAI::PlayCinematic( void ) {
 		}
 		current_cinematic = 0;
 		ActivateTargets( gameLocal.GetLocalPlayer() );
+		fl.neverDormant = false;
 		return;
 	}
 
@@ -3597,6 +3601,8 @@ void idAI::PlayCinematic( void ) {
 		head.GetEntity()->UpdateVisuals();
 		head.GetEntity()->Present();
 	}
+
+	fl.neverDormant = true;
 }
 
 /*
