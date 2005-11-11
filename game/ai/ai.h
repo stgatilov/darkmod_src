@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/11/11 21:00:34  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.5  2005/09/26 03:11:01  ishtvan
  * *) tactile alert fixed, added idAI::CheckTactile
  *
@@ -46,7 +49,7 @@ const float	AI_TURN_SCALE				= 60.0f;
 const float	AI_SEEK_PREDICTION			= 0.3f;
 const float	AI_FLY_DAMPENING			= 0.15f;
 const float	AI_HEARING_RANGE			= 2048.0f;
-const int	DEFAULT_FLY_OFFSET			= 68.0f;
+const int	DEFAULT_FLY_OFFSET			= 68;
 
 
 // used to declare the Dark Mod Acuity values array.
@@ -917,7 +920,7 @@ protected:
 	void					Event_TravelDistanceBetweenEntities( idEntity *source, idEntity *dest );
 	void					Event_LookAtEntity( idEntity *ent, float duration );
 	void					Event_LookAtEnemy( float duration );
-	void					Event_SetJointMod( bool allowJointMod );
+	void					Event_SetJointMod( int allowJointMod );
 	void					Event_ThrowMoveable( void );
 	void					Event_ThrowAF( void );
 	void					Event_SetAngles( idAngles const &ang );

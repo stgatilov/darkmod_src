@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/11 21:00:34  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2005/09/26 03:11:01  ishtvan
  * *) tactile alert fixed, added idAI::CheckTactile
  *
@@ -349,7 +352,7 @@ AI bumping by inanimate objects is handled separately in idMoveable::Collide.
 
 void idAI::Event_Touch( idEntity *other, trace_t *trace ) 
 {
-	if ( !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
+	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
 	{
 		Activate( other );
 	}
@@ -368,14 +371,31 @@ idAI::Event_FindEnemy
 */
 void idAI::Event_FindEnemy( int useFOV ) 
 {
+	int			i;
+	idEntity	*ent;
 	idActor		*actor;
-	
-	actor = FindEnemy( useFOV != 0);
-	
-	if (!actor)
-		idThread::ReturnEntity( NULL );
-	else
-		idThread::ReturnEntity( actor );
+
+	if ( gameLocal.InPlayerPVS( this ) ) {
+		for ( i = 0; i < gameLocal.numClients ; i++ ) {
+			ent = gameLocal.entities[ i ];
+
+			if ( !ent || !ent->IsType( idActor::Type ) ) {
+				continue;
+			}
+
+			actor = static_cast<idActor *>( ent );
+			if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
+				continue;
+			}
+
+			if ( CanSee( actor, useFOV != 0 ) ) {
+				idThread::ReturnEntity( actor );
+				return;
+			}
+		}
+	}
+
+	idThread::ReturnEntity( NULL );
 }
 
 /*
@@ -520,8 +540,19 @@ void idAI::Event_ClosestReachableEnemyOfEntity( idEntity *team_mate ) {
 idAI::Event_HeardSound
 =====================
 */
-void idAI::Event_HeardSound( int ignore_team ) 
-{
+void idAI::Event_HeardSound( int ignore_team ) {
+	// check if we heard any sounds in the last frame
+	idActor	*actor = gameLocal.GetAlertEntity();
+	if ( actor && ( !ignore_team || ( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) && gameLocal.InPlayerPVS( this ) ) {
+		idVec3 pos = actor->GetPhysics()->GetOrigin();
+		idVec3 org = physicsObj.GetOrigin();
+		float dist = ( pos - org ).LengthSqr();
+		if ( dist < Square( AI_HEARING_RANGE ) ) {
+			idThread::ReturnEntity( actor );
+			return;
+		}
+	}
+
 	idThread::ReturnEntity( NULL );
 }
 
@@ -573,6 +604,7 @@ void idAI::Event_CreateMissile( const char *jointname ) {
 
 	if ( !projectileDef ) {
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
+		idThread::ReturnEntity( NULL );
 		return;
 	}
 
@@ -2336,7 +2368,7 @@ idAI::Event_SetJointMod
 ===============
 */
 void idAI::Event_SetJointMod( bool allow ) {
-	allowJointMod = allow;
+	allowJointMod = ( allow != 0 );
 }
 
 /*
@@ -2708,11 +2740,13 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 
 	if ( move.moveType != MOVETYPE_FLY ) {
 		if ( !ent->GetFloorPos( 64.0f, pos ) ) {
-			idThread::ReturnInt( false );
+			// NOTE: not a good way to return 'false'
+			idThread::ReturnVector( vec3_zero );
 			return;
 		}
 		if ( ent->IsType( idActor::Type ) && static_cast<idActor *>( ent )->OnLadder() ) {
-			idThread::ReturnInt( false );
+			// NOTE: not a good way to return 'false'
+			idThread::ReturnVector( vec3_zero );
 			return;
 		}
 	} else {
