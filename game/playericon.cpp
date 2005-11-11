@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:16:33  sparhawk
  * SDK V2 merge
  *
@@ -75,7 +78,7 @@ idPlayerIcon::Draw
 */
 void idPlayerIcon::Draw( idPlayer *player, const idVec3 &origin ) {
 	idPlayer *localPlayer = gameLocal.GetLocalPlayer();
-	if ( !localPlayer ) {
+	if ( !localPlayer || !localPlayer->GetRenderView() ) {
 		FreeIcon();
 		return;
 	}

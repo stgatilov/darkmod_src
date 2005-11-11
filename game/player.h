@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.10  2005/10/22 14:15:46  sparhawk
  * Fixed flickering in lightgem when player is moving.
  *
@@ -379,7 +382,7 @@ public:
 	void					RestorePersistantInfo( void );
 	void					SetLevelTrigger( const char *levelName, const char *triggerName );
 
-	bool					UserInfoChanged( void );
+	bool					UserInfoChanged( bool canModify );
 	idDict *				GetUserInfo( void );
 	bool					BalanceTDM( void );
 
@@ -543,6 +546,9 @@ public:
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
 
+	bool					SelfSmooth( void );
+	void					SetSelfSmooth( bool b );
+
 	/**
 	 * AddToInventory maps to a scriptfunction which will store an entity into
 	 * the inventory.
@@ -683,6 +689,8 @@ private:
 
 	idPlayerIcon			playerIcon;
 
+	bool					selfSmooth;
+
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
@@ -769,6 +777,14 @@ ID_INLINE void idPlayer::SetLeader( bool lead ) {
 
 ID_INLINE bool idPlayer::IsLeader( void ) {
 	return leader;
+}
+
+ID_INLINE bool idPlayer::SelfSmooth( void ) {
+	return selfSmooth;
+}
+
+ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
+	selfSmooth = b;
 }
 
 #endif /* !__GAME_PLAYER_H__ */

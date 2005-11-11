@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.26  2005/11/01 16:12:47  sparhawk
  * Bottomshot fixed. It didn't work because the loopvariable was reused inside the loop.
  *
@@ -325,6 +328,12 @@ void idGameLocal::Clear( void ) {
 
 	eventQueue.Init();
 	savedEventQueue.Init();
+	memset( lagometer, 0, sizeof( lagometer ) );
+
+	portalSkyEnt			= NULL;
+	portalSkyActive			= false;
+
+//	ResetSlowTimeVars();
 }
 
 /*
@@ -629,6 +638,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( isNewFrame );
 	savegame.WriteFloat( clientSmoothing );
 
+	portalSkyEnt.Save( &savegame );
+	savegame.WriteBool( portalSkyActive );
+
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
 
@@ -821,7 +833,7 @@ void idGameLocal::SetLocalClient( int clientNum ) {
 idGameLocal::SetUserInfo
 ============
 */
-const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, bool isClient ) {
+const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify ) {
 	int i;
 	bool modifiedInfo = false;
 
@@ -831,7 +843,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		idGameLocal::userInfo[ clientNum ] = userInfo;
 
 		// server sanity
-		if ( !isClient ) {
+		if ( canModify  ) {
 
 			// don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
 			if ( idStr::IsNumeric( this->userInfo[ clientNum ].GetString( "ui_name" ) ) ) {
@@ -856,7 +868,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		}
 
 		if ( entities[ clientNum ] && entities[ clientNum ]->IsType( idPlayer::Type ) ) {
-			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged();
+			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged(canModify);
 		}
 
 		if ( !isClient ) {
@@ -866,6 +878,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	}
 
 	if ( modifiedInfo ) {
+		assert( canModify );
 		newInfo = idGameLocal::userInfo[ clientNum ];
 		return &newInfo;
 	}
@@ -981,6 +994,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	framenum		= 0;
 	sessionCommand = "";
 	nextGibTime		= 0;
+
+	portalSkyEnt			= NULL;
+	portalSkyActive			= false;
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
@@ -1444,6 +1460,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( realClientTime );
 	savegame.ReadBool( isNewFrame );
 	savegame.ReadFloat( clientSmoothing );
+
+	portalSkyEnt.Restore( &savegame );
+	savegame.ReadBool( portalSkyActive );
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -2096,6 +2115,23 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			playerConnectedAreas = GetClientPVS( player, PVS_CONNECTED_AREAS );
 		} else {
 			otherPVS = GetClientPVS( player, PVS_CONNECTED_AREAS );
+			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
+			pvs.FreeCurrentPVS( playerConnectedAreas );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerConnectedAreas = newPVS;
+		}
+
+		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
+		if ( portalSkyEnt.GetEntity() ) {
+			idEntity *skyEnt = portalSkyEnt.GetEntity();
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
+			pvs.FreeCurrentPVS( playerPVS );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerPVS = newPVS;
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
 			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
 			pvs.FreeCurrentPVS( playerConnectedAreas );
 			pvs.FreeCurrentPVS( otherPVS );
@@ -4160,7 +4196,7 @@ void idGameLocal::SpreadLocations() {
 		idVec3	point = ent->spawnArgs.GetVector( "origin" );
 		int areaNum = gameRenderWorld->PointInArea( point );
 		if ( areaNum < 0 ) {
-			Printf( "SpreadLocations: location '%' is not in a valid area\n", ent->spawnArgs.GetString( "name" ) );
+			Printf( "SpreadLocations: location '%s' is not in a valid area\n", ent->spawnArgs.GetString( "name" ) );
 			continue;
 		}
 		if ( areaNum >= numAreas ) {
@@ -4430,6 +4466,110 @@ idGameLocal::ThrottleUserInfo
 */
 void idGameLocal::ThrottleUserInfo( void ) {
 	mpGame.ThrottleUserInfo();
+}
+
+/*
+=================
+idPlayer::SetPortalSkyEnt
+=================
+*/
+void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
+	portalSkyEnt = ent;
+}
+
+/*
+=================
+idPlayer::IsPortalSkyAcive
+=================
+*/
+bool idGameLocal::IsPortalSkyAcive() {
+	return portalSkyActive;
+}
+
+/*
+===========
+idGameLocal::SelectTimeGroup
+============
+*/
+void idGameLocal::SelectTimeGroup( int timeGroup ) { }
+
+/*
+===========
+idGameLocal::GetTimeGroupTime
+============
+*/
+int idGameLocal::GetTimeGroupTime( int timeGroup ) {
+	return gameLocal.time;
+}
+
+/*
+===========
+idGameLocal::GetBestGameType
+============
+*/
+idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
+	return gametype;
+}
+
+/*
+===========
+idGameLocal::NeedRestart
+============
+*/
+bool idGameLocal::NeedRestart() {
+
+	idDict		newInfo;
+	const idKeyValue *keyval, *keyval2;
+
+	newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
+
+	for ( int i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
+		keyval = newInfo.GetKeyVal( i );
+		keyval2 = serverInfo.FindKey( keyval->GetKey() );
+		if ( !keyval2 ) {
+			return true;
+		}
+		// a select set of si_ changes will cause a full restart of the server
+		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
+idGameLocal::GetClientStats
+================
+*/
+void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
+	mpGame.PlayerStats( clientNum, data, len );
+}
+
+
+/*
+================
+idGameLocal::SwitchTeam
+================
+*/
+void idGameLocal::SwitchTeam( int clientNum, int team ) {
+
+	idPlayer *   player;
+	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
+
+	if ( !player )
+		return;
+
+	int oldTeam = player->team;
+
+	// Put in spectator mode
+	if ( team == -1 ) {
+		static_cast< idPlayer * >( entities[ clientNum ] )->Spectate( true );
+	}
+	// Switch to a team
+	else {
+		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
+	}
 }
 
 void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)

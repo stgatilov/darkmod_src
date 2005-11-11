@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.12  2005/10/23 18:42:30  sparhawk
  * Lightgem cleanup
  *
@@ -90,6 +93,13 @@
 
 ===============================================================================
 */
+
+#define LAGO_IMG_WIDTH 64
+#define LAGO_IMG_HEIGHT 64
+#define LAGO_WIDTH	64
+#define LAGO_HEIGHT	44
+#define LAGO_MATERIAL	"textures/sfx/lagometer"
+#define LAGO_IMAGE		"textures/sfx/lagometer.tga"
 
 // if set to 1 the server sends the client PVS with snapshots and the client compares against what it sees
 #ifndef ASYNC_WRITE_PVS
@@ -500,6 +510,12 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	idEntityPtr<idEntity>	portalSkyEnt;
+	bool					portalSkyActive;
+
+	void					SetPortalSkyEnt( idEntity *ent );
+	bool					IsPortalSkyAcive();
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -508,7 +524,7 @@ public:
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
 	virtual void			ThrottleUserInfo( void );
-	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient );
+	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
 	virtual void			SetServerInfo( const idDict &serverInfo );
 
@@ -533,18 +549,23 @@ public:
 	virtual void			ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &msg, byte *clientInPVS, int numPVSClients );
 	virtual bool			ServerApplySnapshot( int clientNum, int sequence );
 	virtual void			ServerProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const idBitMsg &msg );
+	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
 	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds );
 
+	virtual void			GetClientStats( int clientNum, char *data, const int len );
+	virtual void			SwitchTeam( int clientNum, int team );
+
+	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
-	void					Printf( const char *fmt, ... ) const;
-	void					DPrintf( const char *fmt, ... ) const;
-	void					Warning( const char *fmt, ... ) const;
-	void					DWarning( const char *fmt, ... ) const;
-	void					Error( const char *fmt, ... ) const;
+	void					Printf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					DPrintf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					DWarning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 
 							// Initializes all map variables common to both save games and spawned games
 	void					LoadMap( const char *mapName, int randseed );
@@ -586,6 +607,8 @@ public:
 
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
+
+	pvsHandle_t				GetPlayerPVS()			{ return playerPVS; };
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -645,6 +668,8 @@ public:
 
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
+
+	bool					NeedRestart();
 
 	/**
 	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
@@ -720,6 +745,8 @@ private:
 
 	idStrList				shakeSounds;
 
+	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
 	bool					InhibitEntitySpawn( idDict &spawnArgs );
@@ -751,7 +778,7 @@ private:
 	bool					ApplySnapshot( int clientNum, int sequence );
 	void					WriteGameStateToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadGameStateFromSnapshot( const idBitMsgDelta &msg );
-	void					NetworkEventWarning( const entityNetEvent_t *event, const char *fmt, ... );
+	void					NetworkEventWarning( const entityNetEvent_t *event, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	void					ServerProcessEntityNetworkEventQueue( void );
 	void					ClientProcessEntityNetworkEventQueue( void );
 	void					ClientShowSnapshot( int clientNum ) const;
@@ -762,6 +789,13 @@ private:
 
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
+	void					SelectTimeGroup( int timeGroup );
+	int						GetTimeGroupTime( int timeGroup );
+	idStr					GetBestGameType( const char* map, const char* gametype );
+
+	void					Tokenize( idStrList &out, const char *in );
+
+	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 };
 
 //============================================================================

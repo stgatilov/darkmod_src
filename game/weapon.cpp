@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/01/07 02:10:36  sparhawk
  * Lightgem updates
  *
@@ -311,7 +314,8 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lowAmmo );
 	savefile->WriteBool( powerAmmo );
 
-	savefile->WriteInt( clipPredictTime );
+	// savegames <= 17
+	savefile->WriteInt( 0 );
 
 	savefile->WriteInt( zoomFov );
 
@@ -381,6 +385,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
+	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -462,7 +467,9 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lowAmmo );
 	savefile->ReadBool( powerAmmo );
 
-	savefile->ReadInt( clipPredictTime );
+	// savegame versions <= 17
+	int foo;
+	savefile->ReadInt( foo );
 
 	savefile->ReadInt( zoomFov );
 
@@ -532,6 +539,7 @@ void idWeapon::Clear( void ) {
 	WEAPON_RELOAD.Unlink();
 	WEAPON_NETRELOAD.Unlink();
 	WEAPON_NETENDRELOAD.Unlink();
+	WEAPON_NETFIRING.Unlink();
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
 
@@ -687,7 +695,7 @@ void idWeapon::Clear( void ) {
 	isLinked			= false;
 	projectileEnt		= NULL;
 
-	clipPredictTime		= 0;
+	isFiring			= false;
 }
 
 /*
@@ -974,6 +982,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	WEAPON_RELOAD.LinkTo(		scriptObject, "WEAPON_RELOAD" );
 	WEAPON_NETRELOAD.LinkTo(	scriptObject, "WEAPON_NETRELOAD" );
 	WEAPON_NETENDRELOAD.LinkTo(	scriptObject, "WEAPON_NETENDRELOAD" );
+	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
 
@@ -1375,7 +1384,7 @@ void idWeapon::OwnerDied( void ) {
 idWeapon::BeginAttack
 ================
 */
-void idWeapon::BeginAttack( void ) {
+void idWeapon::BeginAttack( void ) {	
 	if ( status != WP_OUTOFAMMO ) {
 		lastAttack = gameLocal.time;
 	}
@@ -1443,6 +1452,7 @@ idWeapon::ShowCrosshair
 */
 bool idWeapon::ShowCrosshair( void ) const {
 //	return !( state == idStr( WP_RISING ) || state == idStr( WP_LOWERING ) || state == idStr( WP_HOLSTERED ) );
+	// Never show the crosshair in TDM.
 	return false;
 }
 
@@ -1998,6 +2008,7 @@ void idWeapon::EnterCinematic( void ) {
 		WEAPON_RELOAD		= false;
 		WEAPON_NETRELOAD	= false;
 		WEAPON_NETENDRELOAD	= false;
+		WEAPON_NETFIRING	= false;
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
 	}
@@ -2240,6 +2251,7 @@ void idWeapon::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( ammoClip, ASYNC_PLAYER_INV_CLIP_BITS );
 	msg.WriteBits( worldModel.GetSpawnId(), 32 );
 	msg.WriteBits( lightOn, 1 );
+	msg.WriteBits( isFiring ? 1 : 0, 1 );
 }
 
 /*
@@ -2247,10 +2259,22 @@ void idWeapon::WriteToSnapshot( idBitMsgDelta &msg ) const {
 idWeapon::ReadFromSnapshot
 ================
 */
-void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {	
 	ammoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
 	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
 	bool snapLight = msg.ReadBits( 1 ) != 0;
+	isFiring = msg.ReadBits( 1 ) != 0;
+
+	// WEAPON_NETFIRING is only turned on for other clients we're predicting. not for local client
+	if ( owner && gameLocal.localClientNum != owner->entityNumber && WEAPON_NETFIRING.IsLinked() ) {
+
+		// immediately go to the firing state so we don't skip fire animations
+		if ( !WEAPON_NETFIRING && isFiring ) {
+			idealState = "Fire";
+		}
+
+		WEAPON_NETFIRING = isFiring;
+	}
 
 	if ( snapLight != lightOn ) {
 		Reload();
@@ -2335,6 +2359,13 @@ void idWeapon::Event_WeaponState( const char *statename, int blendFrames ) {
 	}
 
 	idealState = statename;
+
+	if ( !idealState.Icmp( "Fire" ) ) {
+		isFiring = true;
+	} else {
+		isFiring = false;
+	}
+
 	animBlendFrames = blendFrames;
 	thread->DoneProcessing();
 }
@@ -2420,6 +2451,10 @@ idWeapon::Event_UseAmmo
 ===============
 */
 void idWeapon::Event_UseAmmo( int amount ) {
+	if ( gameLocal.isClient ) {
+		return;
+	}
+
 	owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	if ( clipSize && ammoRequired ) {
 		ammoClip -= powerAmmo ? amount : ( amount * ammoRequired );
@@ -2556,6 +2591,7 @@ void idWeapon::Event_PlayAnim( int channel, const char *animname ) {
 		}
 	}
 	animBlendFrames = 0;
+	idThread::ReturnInt( 0 );
 }
 
 /*
@@ -2583,6 +2619,7 @@ void idWeapon::Event_PlayCycle( int channel, const char *animname ) {
 		}
 	}
 	animBlendFrames = 0;
+	idThread::ReturnInt( 0 );
 }
 
 /*
@@ -2875,6 +2912,11 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
 			}
 
+			if ( projectileDict.GetBool( "net_instanthit" ) ) {
+				// don't synchronize this on top of the already predicted effect
+				ent->fl.networkSync = false;
+			}
+
 			proj = static_cast<idProjectile *>(ent);
 			proj->Create( owner, muzzleOrigin, dir );
 
@@ -2949,6 +2991,7 @@ void idWeapon::Event_Melee( void ) {
 			idVec3 impulse = -push * owner->PowerUpModifier( SPEED ) * tr.c.normal;
 
 			if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) && ( ent->IsType( idActor::Type ) || ent->IsType( idAFAttachment::Type) ) ) {
+				idThread::ReturnInt( 0 );
 				return;
 			}
 
@@ -3020,8 +3063,11 @@ void idWeapon::Event_Melee( void ) {
 		}
 
 		idThread::ReturnInt( hit );
+		owner->WeaponFireFeedback( &weaponDef->dict );
+		return;
 	}
 
+	idThread::ReturnInt( 0 );
 	owner->WeaponFireFeedback( &weaponDef->dict );
 }
 
@@ -3060,6 +3106,10 @@ void idWeapon::Event_EjectBrass( void ) {
 	}
 
 	if ( ejectJointView == INVALID_JOINT || !brassDict.GetNumKeyVals() ) {
+		return;
+	}
+
+	if ( gameLocal.isClient ) {
 		return;
 	}
 

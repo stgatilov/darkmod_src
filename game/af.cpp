@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -612,6 +615,8 @@ idAF::LoadConstraint
 */
 bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 	idAFBody *body1, *body2;
+	idAngles angles;
+	idMat3 axis;
 
 	body1 = physicsObj.GetBody( fc->body1 );
 	body2 = physicsObj.GetBody( fc->body2 );
@@ -649,9 +654,9 @@ bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 					break;
 				}
 				case idDeclAF_Constraint::LIMIT_PYRAMID: {
-					idAngles angles = fc->limitAxis.ToVec3().ToAngles();
+					angles = fc->limitAxis.ToVec3().ToAngles();
 					angles.roll = fc->limitAngles[2];
-					idMat3 axis = angles.ToMat3();
+					axis = angles.ToMat3();
 					c->SetPyramidLimit( axis[0], axis[1], fc->limitAngles[0], fc->limitAngles[1], fc->shaft[0].ToVec3() );
 					break;
 				}
@@ -682,9 +687,9 @@ bool idAF::LoadConstraint( const idDeclAF_Constraint *fc ) {
 					break;
 				}
 				case idDeclAF_Constraint::LIMIT_PYRAMID: {
-					idAngles angles = fc->limitAxis.ToVec3().ToAngles();
+					angles = fc->limitAxis.ToVec3().ToAngles();
 					angles.roll = fc->limitAngles[2];
-					idMat3 axis = angles.ToMat3();
+					axis = angles.ToMat3();
 					c->SetPyramidLimit( axis[0], axis[1], fc->limitAngles[0], fc->limitAngles[1] );
 					break;
 				}

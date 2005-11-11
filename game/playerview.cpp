@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2005/10/18 13:56:41  sparhawk
  * Lightgem updates
  *
@@ -26,6 +29,13 @@
 
 #include "Game_local.h"
 
+static int MakePowerOfTwo( int num ) {
+	int		pot;
+	for (pot = 1 ; pot < num ; pot<<=1) {
+	}
+	return pot;
+}
+
 const int IMPULSE_DELAY = 150;
 /*
 ==============
@@ -43,6 +53,7 @@ idPlayerView::idPlayerView() {
 	irGogglesMaterial = declManager->FindMaterial( "textures/decals/irblend" );
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
 	bfgMaterial = declManager->FindMaterial( "textures/decals/bfgvision" );
+	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
 	bfgVision = false;
 	dvFinishTime = 0;
 	kickFinishTime = 0;
@@ -55,6 +66,14 @@ idPlayerView::idPlayerView() {
 	fadeColor.Zero();
 	shakeAng.Zero();
 
+/*
+	fxManager = NULL;
+
+	if ( !fxManager ) {
+		fxManager = new FullscreenFXManager;
+		fxManager->Initialize( this );
+	}
+*/
 	ClearEffects();
 }
 
@@ -429,7 +448,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 	}
 
 	// place the sound origin for the player
-	gameSoundWorld->PlaceListener( view->vieworg, view->viewaxis, player->entityNumber + 1, gameLocal.time );
+	gameSoundWorld->PlaceListener( view->vieworg, view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
 
 	// if the objective system is up, don't do normal drawing
 	if ( player->objectiveSystemOpen ) {
@@ -441,7 +460,42 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 	renderView_t	hackedView = *view;
 	hackedView.viewaxis = hackedView.viewaxis * ShakeAxis();
 
+	//gameRenderWorld->RenderScene( &hackedView );
+
+	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool() ) {
+		renderView_t	portalView = hackedView;
+		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+
+		// setup global fixup projection vars
+		if ( 1 ) {
+			int vidWidth, vidHeight;
+			idVec2 shiftScale;
+
+			renderSystem->GetGLSettings( vidWidth, vidHeight );
+
+			float pot;
+			int	 w = vidWidth;
+			pot = MakePowerOfTwo( w );
+			shiftScale.x = (float)w / pot;
+
+			int	 h = vidHeight;
+			pot = MakePowerOfTwo( h );
+			shiftScale.y = (float)h / pot;
+
+			hackedView.shaderParms[4] = shiftScale.x;
+			hackedView.shaderParms[5] = shiftScale.y;
+		}
+
+		gameRenderWorld->RenderScene( &portalView );
+		renderSystem->CaptureRenderToImage( "_currentRender" );
+
+		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+
+		
+	}
 	gameRenderWorld->RenderScene( &hackedView );
+	// process the frame
+//	fxManager->Process( &hackedView );
 
 	if ( player->spectating ) {
 		return;
@@ -673,6 +727,7 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 	}
 	if ( player->GetInfluenceMaterial() ) {
 		SingleView( hud, view );
+		renderSystem->CaptureRenderToImage( "_currentRender" );
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
 	} else if ( player->GetInfluenceEntity() == NULL ) {
@@ -710,6 +765,10 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		}
 		ScreenFade();
 	}
+	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
+		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
+	}	
 }
 
 

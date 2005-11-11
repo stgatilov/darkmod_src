@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.5  2005/11/07 01:58:25  ishtvan
  * added getEyePos scriptfunction to get eye position
  *
@@ -2659,7 +2662,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		} else {
 			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
-		idThread::ReturnInt( false );
+		idThread::ReturnInt( 0 );
 		return;
 	}
 
@@ -2719,7 +2722,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		gameLocal.Error( "Unknown anim group" );
 		break;
 	}
-	idThread::ReturnInt( true );
+	idThread::ReturnInt( 1 );
 }
 
 /*

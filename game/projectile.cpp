@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2005/09/17 00:32:29  lloyd
  * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
  *
@@ -74,7 +77,10 @@ idProjectile::idProjectile( void ) {
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	memset( &renderLight, 0, sizeof( renderLight ) );
 
-	fl.networkSync = true;
+	// note: for net_instanthit projectiles, we will force this back to false at spawn time
+	fl.networkSync		= true;
+
+	netSyncPhysics		= false;
 }
 
 /*
@@ -100,7 +106,9 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 
 	owner.Save( savefile );
 
-	savefile->Write( &projectileFlags, sizeof( projectileFlags ) );
+	projectileFlags_s flags = projectileFlags;
+	LittleBitField( &flags, sizeof( flags ) );
+	savefile->Write( &flags, sizeof( flags ) );
 
 	savefile->WriteFloat( thrust );
 	savefile->WriteInt( thrust_end );
@@ -133,6 +141,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 	owner.Restore( savefile );
 
 	savefile->Read( &projectileFlags, sizeof( projectileFlags ) );
+	LittleBitField( &projectileFlags, sizeof( projectileFlags ) );
 
 	savefile->ReadFloat( thrust );
 	savefile->ReadInt( thrust_end );
@@ -228,6 +237,10 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 	UpdateVisuals();
 
 	state = CREATED;
+
+	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
+		netSyncPhysics = true;
+	}
 }
 
 /*
@@ -637,7 +650,7 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
 
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer && fl.networkSync ) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 		int			excludeClient;
@@ -793,7 +806,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	// default remove time
 	removeTime = spawnArgs.GetInt( "remove_time", "1500" );
 
-	// change the model, usually to an IPS
+	// change the model, usually to a PRT
 	fxname = NULL;
 	if ( g_testParticle.GetInteger() == TEST_PARTICLE_IMPACT ) {
 		fxname = g_testParticleName.GetString();
@@ -859,20 +872,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// bind the projectile to the impact entity if necesary
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
-		idEntity *ent = gameLocal.entities[ collision.c.entityNum ];
-
-		if( ent->IsType( idAFEntity_Base::Type ) ) {
-			jointHandle_t newJoint;
-			idAFEntity_Base *af = static_cast<idAFEntity_Base *>(ent);
-
-			// joint being dragged
-			newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id );
-
-			this->BindToJoint( ent, newJoint, true );
-		}
-		else {
-			this->Bind( ent, true );
-		} 
+		Bind( gameLocal.entities[collision.c.entityNum], true );
 	}
 
 	// splash damage
@@ -1079,7 +1079,22 @@ void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( owner.GetSpawnId(), 32 );
 	msg.WriteBits( state, 3 );
 	msg.WriteBits( fl.hidden, 1 );
-	physicsObj.WriteToSnapshot( msg );
+	if ( netSyncPhysics ) {
+		msg.WriteBits( 1, 1 );
+		physicsObj.WriteToSnapshot( msg );
+	} else {
+		msg.WriteBits( 0, 1 );
+		const idVec3 &origin	= physicsObj.GetOrigin();
+		const idVec3 &velocity	= physicsObj.GetLinearVelocity();
+
+		msg.WriteFloat( origin.x );
+		msg.WriteFloat( origin.y );
+		msg.WriteFloat( origin.z );
+
+		msg.WriteDeltaFloat( 0.0f, velocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+		msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+		msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );		
+	}
 }
 
 /*
@@ -1133,10 +1148,35 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		}
 	}
 
-	physicsObj.ReadFromSnapshot( msg );
+	if ( msg.ReadBits( 1 ) ) {
+		physicsObj.ReadFromSnapshot( msg );
+	} else {
+		idVec3 origin;
+		idVec3 velocity;
+		idVec3 tmp;
+		idMat3 axis;
+
+		origin.x = msg.ReadFloat();
+		origin.y = msg.ReadFloat();
+		origin.z = msg.ReadFloat();
+
+		velocity.x = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+		velocity.y = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+		velocity.z = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
+		physicsObj.SetOrigin( origin );
+		physicsObj.SetLinearVelocity( velocity );
+
+		// align z-axis of model with the direction
+		velocity.NormalizeFast();
+		axis = velocity.ToMat3();
+		tmp = axis[2];
+		axis[2] = axis[0];
+		axis[0] = -tmp;
+		physicsObj.SetAxis( axis );
+	}
 
 	if ( msg.HasChanged() ) {
-		//Show();
 		UpdateVisuals();
 	}
 }
@@ -1935,7 +1975,7 @@ void idBFGProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	idEntity *	ownerEnt;
 
 	ownerEnt = owner.GetEntity();
-	if ( ownerEnt->IsType( idPlayer::Type ) ) {
+	if ( ownerEnt && ownerEnt->IsType( idPlayer::Type ) ) {
 		player = static_cast< idPlayer * >( ownerEnt );
 	} else {
 		player = NULL;

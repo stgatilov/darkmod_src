@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -106,7 +109,7 @@ public:
 	// updates frag counts and potentially ends the match in sudden death
 	void			PlayerDeath( idPlayer *dead, idPlayer *killer, bool telefrag );
 
-	void			AddChatLine( const char *fmt, ... );
+	void			AddChatLine( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 
 	void			UpdateMainGui( void );
 	idUserInterface*StartMenu( void );
@@ -222,6 +225,8 @@ public:
 	void			ClientReadWarmupTime( const idBitMsg &msg );
 
 	void			ServerClientConnect( int clientNum );
+
+	void			PlayerStats( int clientNum, char *data, const int len );
 
 private:
 	static const char	*MPGuis[];

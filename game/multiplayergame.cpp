@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -180,8 +183,6 @@ idMultiplayerGame::SpawnPlayer
 void idMultiplayerGame::SpawnPlayer( int clientNum ) {
 
 	bool ingame = playerState[ clientNum ].ingame;
-	// keep ingame to true if needed, that should only happen for local player
-	assert( !ingame || clientNum == gameLocal.localClientNum );
 
 	memset( &playerState[ clientNum ], 0, sizeof( playerState[ clientNum ] ) );
 	if ( !gameLocal.isClient ) {		
@@ -360,6 +361,8 @@ idMultiplayerGame::UpdateScoreboard
 void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer *player ) {
 	int i, j, iline, k;
 	idStr gameinfo;
+	idStr livesinfo;
+	idStr timeinfo;
 	idEntity *ent;
 	idPlayer *p;
 	int value;
@@ -483,22 +486,25 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 		iline++;
 	}
 
-	gameinfo = va( "Game Type:%s", gameLocal.serverInfo.GetString( "si_gameType" ) );
+	gameinfo = va( "%s: %s", common->GetLanguageDict()->GetString( "#str_02376" ), gameLocal.serverInfo.GetString( "si_gameType" ) );
 	if ( gameLocal.gameType == GAME_LASTMAN ) {
 		if ( gameState == GAMEON || gameState == SUDDENDEATH ) {
-			gameinfo += va( "     Max Lives:%i", startFragLimit );
+			livesinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_04264" ), startFragLimit );
 		} else {
-			gameinfo += va( "     Max Lives:%i", gameLocal.serverInfo.GetInt( "si_fragLimit" ) );
+			livesinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_04264" ), gameLocal.serverInfo.GetInt( "si_fragLimit" ) );
 		}
+
 	} else {
-		gameinfo += va( "     Frag Limit:%i", gameLocal.serverInfo.GetInt( "si_fragLimit" ) );
-	}
+		livesinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_01982" ), gameLocal.serverInfo.GetInt( "si_fragLimit" ) );
+	} 
 	if ( gameLocal.serverInfo.GetInt( "si_timeLimit" ) > 0 ) {
-		gameinfo += va( "     Time Limit:%i", gameLocal.serverInfo.GetInt( "si_timeLimit" ) );
+		timeinfo = va( "%s: %i", common->GetLanguageDict()->GetString( "#str_01983" ), gameLocal.serverInfo.GetInt( "si_timeLimit" ) );
 	} else {
-		gameinfo += "     No Time Limit";
+		timeinfo = va("%s", common->GetLanguageDict()->GetString( "#str_07209" ));
 	}
 	scoreBoard->SetStateString( "gameinfo", gameinfo );
+	scoreBoard->SetStateString( "livesinfo", livesinfo );
+	scoreBoard->SetStateString( "timeinfo", timeinfo );
 
 	scoreBoard->Redraw( gameLocal.time );
 }
@@ -898,6 +904,37 @@ void idMultiplayerGame::PlayerDeath( idPlayer *dead, idPlayer *killer, bool tele
 
 /*
 ================
+idMultiplayerGame::PlayerStats
+================
+*/
+void idMultiplayerGame::PlayerStats( int clientNum, char *data, const int len ) {
+
+	idEntity *ent;
+	int team;
+
+	*data = 0;
+
+	// make sure we don't exceed the client list
+	if ( clientNum < 0 || clientNum > gameLocal.numClients ) {
+		return;
+	}
+
+	// find which team this player is on
+	ent = gameLocal.entities[ clientNum ]; 
+	if ( ent && ent->IsType( idPlayer::Type ) ) {
+		team = static_cast< idPlayer * >(ent)->team;
+	} else {
+		return;
+	}
+
+	idStr::snPrintf( data, len, "team=%d score=%ld tks=%ld", team, playerState[ clientNum ].fragCount, playerState[ clientNum ].teamFragCount );
+
+	return;
+
+}
+
+/*
+================
 idMultiplayerGame::PlayerVote
 ================
 */
@@ -1152,17 +1189,26 @@ we assume that they are still legit when reaching here
 ================
 */
 void idMultiplayerGame::ExecuteVote( void ) {
+	bool needRestart;
 	switch ( vote ) {
 		case VOTE_RESTART:
 			gameLocal.MapRestart();
 			break;
 		case VOTE_TIMELIMIT:
 			si_timeLimit.SetInteger( atoi( voteValue ) );
+			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
+			if ( needRestart ) {
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+			}
 			break;
 		case VOTE_FRAGLIMIT:
 			si_fragLimit.SetInteger( atoi( voteValue ) );
+			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
+			if ( needRestart ) {
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+			}
 			break;
 		case VOTE_GAMETYPE:
 			si_gameType.SetString( voteValue );
@@ -1177,7 +1223,11 @@ void idMultiplayerGame::ExecuteVote( void ) {
 			break;
 		case VOTE_SPECTATORS:
 			si_spectators.SetBool( !si_spectators.GetBool() );
+			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
+			if ( needRestart ) {
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+			}
 			break;
 		case VOTE_NEXTMAP:
 			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "serverNextMap\n" );
@@ -1427,6 +1477,12 @@ void idMultiplayerGame::UpdateMainGui( void ) {
 		mainGui->SetStateString( keyval->GetKey(), keyval->GetValue() );
 	}
 	mainGui->StateChanged( gameLocal.time );
+#if defined( __linux__ )
+	// replacing the oh-so-useful s_reverse with sound backend prompt
+	mainGui->SetStateString( "driver_prompt", "1" );
+#else
+	mainGui->SetStateString( "driver_prompt", "0" );
+#endif
 }
 
 /*
@@ -1527,26 +1583,13 @@ idMultiplayerGame::SetMapShot
 ================
 */
 void idMultiplayerGame::SetMapShot( void ) {
-	idStr screenshot = "guis/assets/splash/pdtempa";
-
+	char screenshot[ MAX_STRING_CHARS ];
 	int mapNum = mapList->GetSelection( NULL, 0 );
+	const idDict *dict = NULL;
 	if ( mapNum >= 0 ) {
-		const idDecl *mapDecl = declManager->DeclByIndex( DECL_MAPDEF, mapNum );
-		if ( mapDecl ) {
-			idStr mapname = mapDecl->GetName();
-			mapname.StripPath();
-			mapname.StripFileExtension();
-
-			screenshot = va( "guis/assets/splash/%s.tga", mapname.c_str() );
-			if ( fileSystem->ReadFile( screenshot, NULL, NULL ) == -1 ) {
-				screenshot = va( "guis/assets/splash/%s.tga", mapname.c_str() );
-				if ( fileSystem->ReadFile( screenshot, NULL, NULL ) == -1 ) {
-					screenshot = "guis/assets/splash/pdtempa";
-				}
-			}
-		}
+		dict = fileSystem->GetMapDecl( mapNum );
 	}
-
+	fileSystem->FindMapScreenshot( dict ? dict->GetString( "path" ) : "", screenshot, MAX_STRING_CHARS );
 	mainGui->SetStateString( "current_levelshot", screenshot );
 }
 
@@ -1670,9 +1713,9 @@ const char* idMultiplayerGame::HandleGuiCommands( const char *_menuCommand ) {
 			if ( voteIndex == VOTE_MAP ) {
 				int mapNum = mapList->GetSelection( NULL, 0 );
 				if ( mapNum >= 0 ) {
-					const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( declManager->DeclByIndex( DECL_MAPDEF, mapNum ) );
-					if ( mapDef ) {
-						ClientCallVote(	VOTE_MAP, mapDef->GetName() );
+					const idDict *dict = fileSystem->GetMapDecl( mapNum );
+					if ( dict ) {
+						ClientCallVote( VOTE_MAP, dict->GetString( "path" ) );
 					}
 				}
 			} else {
@@ -1717,19 +1760,34 @@ const char* idMultiplayerGame::HandleGuiCommands( const char *_menuCommand ) {
 
 			int i, num;
 			idStr si_map = gameLocal.serverInfo.GetString("si_map");
+			const idDict *dict;
 
 			mapList->Clear();
 			mapList->SetSelection( -1 );
-			num = declManager->GetNumDecls( DECL_MAPDEF );
+			num = fileSystem->GetNumMaps();
 			for ( i = 0; i < num; i++ ) {
-				const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( declManager->DeclByIndex( DECL_MAPDEF, i ) );
-
-				if ( mapDef && mapDef->dict.GetBool( gametype ) ) {
-					const char *mapName = common->GetLanguageDict()->GetString( mapDef->dict.GetString( "name", mapDef->GetName() ) );
-					mapList->Add( i, mapName );
-
-					if ( idStr::Icmp(mapDef->GetName(), si_map) == 0 ) {
-						mapList->SetSelection( mapList->Num() - 1 );
+				dict = fileSystem->GetMapDecl( i );
+				if ( dict ) {
+					// any MP gametype supported
+					bool isMP = false;
+					int igt = GAME_SP + 1;
+					while ( si_gameTypeArgs[ igt ] ) {
+						if ( dict->GetBool( si_gameTypeArgs[ igt ] ) ) {
+							isMP = true;
+							break;
+						}
+						igt++;
+					}
+					if ( isMP ) {
+						const char *mapName = dict->GetString( "name" );
+						if ( mapName[0] == '\0' ) {
+							mapName = dict->GetString( "path" );
+						}
+						mapName = common->GetLanguageDict()->GetString( mapName );
+						mapList->Add( i, mapName );
+						if ( !si_map.Icmp( dict->GetString( "path" ) ) ) {
+							mapList->SetSelection( mapList->Num() - 1 );
+						}
 					}
 				}
 			}
@@ -1739,6 +1797,9 @@ const char* idMultiplayerGame::HandleGuiCommands( const char *_menuCommand ) {
 		} else if (	!idStr::Icmp( cmd, "click_maplist" ) ) {
 			SetMapShot(	);
 			return "continue";
+		} else if ( strstr( cmd, "sound" ) == cmd ) {
+			// pass that back to the core, will know what to do with it
+			return _menuCommand;
 		}
 		common->Printf(	"idMultiplayerGame::HandleGuiCommands: '%s'	unknown\n",	cmd	);
 
@@ -2175,7 +2236,7 @@ void idMultiplayerGame::PrintMessageEvent( int to, msg_evt_t evt, int parm1, int
 			}
 			break;
 		case MSG_JOINTEAM:
-			AddChatLine( common->GetLanguageDict()->GetString( "#str_04280" ), gameLocal.userInfo[ parm1 ].GetString( "ui_name" ), parm2 ? "Blue" : "Red" );
+			AddChatLine( common->GetLanguageDict()->GetString( "#str_04280" ), gameLocal.userInfo[ parm1 ].GetString( "ui_name" ), parm2 ? common->GetLanguageDict()->GetString( "#str_02500" ) : common->GetLanguageDict()->GetString( "#str_02499" ) );
 			break;
 		case MSG_HOLYSHIT:
 			AddChatLine( common->GetLanguageDict()->GetString( "#str_06732" ) );
@@ -2297,7 +2358,10 @@ void idMultiplayerGame::CheckRespawns( idPlayer *spectator ) {
 								// so set the fragCount to something silly ( used in scoreboard and player ranking )
 								playerState[ i ].fragCount = LASTMAN_NOLIVES;
 								p->ServerSpectate( true );
-#ifdef _DEBUG
+								
+								//Check for a situation where the last two player dies at the same time and don't
+								//try to respawn manually...This was causing all players to go into spectate mode
+								//and the server got stuck
 								{
 									int j;
 									for ( j = 0; j < gameLocal.numClients; j++ ) {
@@ -2311,9 +2375,12 @@ void idMultiplayerGame::CheckRespawns( idPlayer *spectator ) {
 											break;
 										}
 									}
-									assert( j != gameLocal.numClients );
+									if( j == gameLocal.numClients) {
+										//Everyone is dead so don't allow this player to spectate
+										//so the match will end
+										p->ServerSpectate( false );
+									}
 								}
-#endif
 							}
 						}
 					}
@@ -2630,9 +2697,7 @@ idMultiplayerGame::ServerCallVote
 void idMultiplayerGame::ServerCallVote( int clientNum, const idBitMsg &msg ) {
 	vote_flags_t	voteIndex;
 	int				vote_timeLimit, vote_fragLimit, vote_clientNum, vote_gameTypeIndex; //, vote_kickIndex;
-	char			buf[ MAX_STRING_CHARS ];
 	char			value[ MAX_STRING_CHARS ];
-	const idDeclEntityDef *mapDef;
 
 	assert( clientNum != -1 );
 	assert( !gameLocal.isClient );
@@ -2720,28 +2785,32 @@ void idMultiplayerGame::ServerCallVote( int clientNum, const idBitMsg &msg ) {
 			ServerStartVote( clientNum, voteIndex, va( "%d", vote_clientNum ) );
 			ClientStartVote( clientNum, va( common->GetLanguageDict()->GetString( "#str_04302" ), vote_clientNum, gameLocal.userInfo[ vote_clientNum ].GetString( "ui_name" ) ) );
 			break;
-		case VOTE_MAP:
+		case VOTE_MAP: {
 			if ( idStr::FindText( gameLocal.serverInfo.GetString( "si_map" ), value ) != -1 ) {
 				gameLocal.ServerSendChatMessage( clientNum, "server", va( common->GetLanguageDict()->GetString( "#str_04295" ), value ) );
 				common->DPrintf( "client %d: already running the voted map: %s\n", clientNum, value );
 				return;
 			}
-			idStr::snPrintf( buf, MAX_STRING_CHARS, "maps/%s.map", value );
-			if ( fileSystem->ReadFile( buf, NULL, NULL ) == -1 ) {
-				gameLocal.ServerSendChatMessage( clientNum, "server", va( common->GetLanguageDict()->GetString( "#str_04296" ), buf ) );
-				common->DPrintf( "client %d: map not found: %s\n", clientNum, buf );
+			int				num = fileSystem->GetNumMaps();
+			int				i;
+			const idDict	*dict;
+			bool			haveMap = false;
+			for ( i = 0; i < num; i++ ) {
+				dict = fileSystem->GetMapDecl( i );
+				if ( dict && !idStr::Icmp( dict->GetString( "path" ), value ) ) {
+					haveMap = true;
+					break;
+				}
+			}
+			if ( !haveMap ) {
+				gameLocal.ServerSendChatMessage( clientNum, "server", va( common->GetLanguageDict()->GetString( "#str_04296" ), value ) );
+				common->Printf( "client %d: map not found: %s\n", clientNum, value );
 				return;
 			}
 			ServerStartVote( clientNum, voteIndex, value );
-
-			mapDef = static_cast<const idDeclEntityDef *>( declManager->FindType( DECL_MAPDEF, value ) );
-			if ( mapDef ) {
-				const char *mapName = common->GetLanguageDict()->GetString( mapDef->dict.GetString( "name", mapDef->GetName() ) );
-				ClientStartVote( clientNum, va( common->GetLanguageDict()->GetString( "#str_04256" ), mapName ) );
-			} else {
-				ClientStartVote( clientNum, va( common->GetLanguageDict()->GetString( "#str_04256" ), value ) );
-			}
+			ClientStartVote( clientNum, va( common->GetLanguageDict()->GetString( "#str_04256" ), common->GetLanguageDict()->GetString( dict ? dict->GetString( "name" ) : value ) ) );
 			break;
+		}
 		case VOTE_SPECTATORS:
 			if ( gameLocal.serverInfo.GetBool( "si_spectators" ) ) {
 				ServerStartVote( clientNum, voteIndex, "" );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.19  2005/10/23 18:11:21  sparhawk
  * Lightgem entity spawn implemented
  *
@@ -732,7 +735,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 		targets[ i ].Save( savefile );
 	}
 
-	savefile->Write( &fl, sizeof( fl ) );
+	entityFlags_s flags = fl;
+	LittleBitField( &flags, sizeof( flags ) );
+	savefile->Write( &flags, sizeof( flags ) );
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -808,6 +813,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	}
 
 	savefile->Read( &fl, sizeof( fl ) );
+	LittleBitField( &fl, sizeof( fl ) );
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
@@ -1519,7 +1525,7 @@ void idEntity::Present(void)
 		return;
 
 	// don't present to the renderer if the entity hasn't changed
-	if( !( thinkFlags & TH_UPDATEVISUALS))
+	if(!(thinkFlags & TH_UPDATEVISUALS))
 		return;
 
 	if(m_FrobDistance == 0)
@@ -1679,7 +1685,7 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 	if ( !spawnArgs.GetString( soundName, "", &sound ) ) 
 		return false;
 
-	if ( *sound == NULL ) 
+	if ( sound[0] == '\0' ) 
 		return false;
 
 	if ( !gameLocal.isNewFrame ) 
@@ -4139,7 +4145,7 @@ void idEntity::Event_GetTarget( float index ) {
 	if ( ( i < 0 ) || i >= targets.Num() ) {
 		idThread::ReturnEntity( NULL );
 	} else {
-		idThread::ReturnEntity( targets[ index ].GetEntity() );
+		idThread::ReturnEntity( targets[ i ].GetEntity() );
 	}
 }
 

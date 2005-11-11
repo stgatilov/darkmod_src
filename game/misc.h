@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/08/19 00:27:48  lloyd
  * *** empty log message ***
  *
@@ -77,8 +80,7 @@ private:
 	int					teleportStage;
 
 	void				Event_TeleportPlayer( idEntity *activator );
-	void				Event_TeleportStage( idPlayer *player );
-	void				Event_ResetCamera( idPlayer *player );
+	void				Event_TeleportStage( idEntity *player );
 	void				TeleportPlayer( idPlayer *player );
 };
 
@@ -754,6 +756,25 @@ private:
 	idEntityPtr<idActor>target;
 	idList<int>			targetTime;
 	idList<idVec3>		lastTargetPos;
+};
+
+/*
+===============================================================================
+
+idPortalSky
+
+===============================================================================
+*/
+class idPortalSky : public idEntity {
+public:
+	CLASS_PROTOTYPE( idPortalSky );
+
+	idPortalSky();
+	~idPortalSky();
+
+	void				Spawn( void );
+	void				Event_PostSpawn();
+	void				Event_Activate( idEntity *activator );
 };
 
 #endif /* !__GAME_MISC_H__ */

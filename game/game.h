@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -55,6 +58,9 @@ typedef enum {
 	ESC_GUI			// set an explicit GUI
 } escReply_t;
 
+#define TIME_GROUP1		0
+#define TIME_GROUP2		1
+
 class idGame {
 public:
 	virtual						~idGame() {}
@@ -69,8 +75,9 @@ public:
 	virtual void				SetLocalClient( int clientNum ) = 0;
 
 	// Sets the user info for a client.
-	// The game can modify the user info in the returned dictionary pointer, server will forward back.
-	virtual const idDict *		SetUserInfo( int clientNum, const idDict &userInfo, bool isClient ) = 0;
+	// if canModify is true, the game can modify the user info in the returned dictionary pointer, server will forward the change back
+	// canModify is never true on network client
+	virtual const idDict *		SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify ) = 0;
 
 	// Retrieve the game's userInfo dict for a client.
 	virtual const idDict *		GetUserInfo( int clientNum ) = 0;
@@ -146,7 +153,7 @@ public:
 	virtual void				ServerProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
 
 	// Reads a snapshot and updates the client game state.
-	virtual void				ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const idBitMsg &msg ) = 0;
+	virtual void				ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg ) = 0;
 
 	// Patches the network entity states at the client with a snapshot.
 	virtual bool				ClientApplySnapshot( int clientNum, int sequence ) = 0;
@@ -156,6 +163,20 @@ public:
 
 	// Runs prediction on entities at the client.
 	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds ) = 0;
+
+	// Used to manage divergent time-lines
+	virtual void				SelectTimeGroup( int timeGroup ) = 0;
+	virtual int					GetTimeGroupTime( int timeGroup ) = 0;
+
+	virtual idStr				GetBestGameType( const char* map, const char* gametype ) = 0;
+
+	// Returns a summary of stats for a given client
+	virtual void				GetClientStats( int clientNum, char *data, const int len ) = 0;
+
+	// Switch a player to a particular team
+	virtual void				SwitchTeam( int clientNum, int team ) = 0;
+
+	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
 };
 
 extern idGame *					game;
@@ -284,7 +305,7 @@ extern idGameEdit *				gameEdit;
 ===============================================================================
 */
 
-const int GAME_API_VERSION		= 2;
+const int GAME_API_VERSION		= 6;
 
 typedef struct {
 

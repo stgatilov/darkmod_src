@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.7  2004/11/17 00:00:38  sparhawk
  * Frobcode has been generalized now and resides for all entities in the base classe.
  *
@@ -180,6 +183,20 @@ void idMover::Save( idSaveGame *savefile ) const
 
 	savefile->WriteStaticObject( physicsObj );
 
+	savefile->WriteInt( move.stage );
+	savefile->WriteInt( move.acceleration );
+	savefile->WriteInt( move.movetime );
+	savefile->WriteInt( move.deceleration );
+	savefile->WriteVec3( move.dir );
+	
+	savefile->WriteInt( rot.stage );
+	savefile->WriteInt( rot.acceleration );
+	savefile->WriteInt( rot.movetime );
+	savefile->WriteInt( rot.deceleration );
+	savefile->WriteFloat( rot.rot.pitch );
+	savefile->WriteFloat( rot.rot.yaw );
+	savefile->WriteFloat( rot.rot.roll );
+
 	savefile->Write( &move, sizeof( move ) );
 	savefile->Write( &rot, sizeof( rot ) );
 
@@ -237,6 +254,20 @@ void idMover::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
+
+	savefile->ReadInt( (int&)move.stage );
+	savefile->ReadInt( move.acceleration );
+	savefile->ReadInt( move.movetime );
+	savefile->ReadInt( move.deceleration );
+	savefile->ReadVec3( move.dir );
+	
+	savefile->ReadInt( (int&)rot.stage );
+	savefile->ReadInt( rot.acceleration );
+	savefile->ReadInt( rot.movetime );
+	savefile->ReadInt( rot.deceleration );
+	savefile->ReadFloat( rot.rot.pitch );
+	savefile->ReadFloat( rot.rot.yaw );
+	savefile->ReadFloat( rot.rot.roll );
 
 	savefile->Read( &move, sizeof( move ) );
 	savefile->Read( &rot, sizeof( rot ) );
@@ -296,7 +327,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 idMover::Event_PostRestore
 ================
 */
-void idMover::Event_PostRestore( int start, int total, int accel, int decel, bool useSplineAng ) {
+void idMover::Event_PostRestore( int start, int total, int accel, int decel, int useSplineAng ) {
 	idCurve_Spline<idVec3> *spline;
 
 	idEntity *splineEntity = splineEnt.GetEntity();
@@ -311,7 +342,7 @@ void idMover::Event_PostRestore( int start, int total, int accel, int decel, boo
 	spline->MakeUniform( total );
 	spline->ShiftTime( start - spline->GetTime( 0 ) );
 
-	physicsObj.SetSpline( spline, accel, decel, useSplineAng );
+	physicsObj.SetSpline( spline, accel, decel, ( useSplineAng != 0 ) );
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
 }
 
@@ -2628,6 +2659,8 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 		
 		// fire targets
 		ActivateTargets( moveMaster->GetActivator() );
+
+		SetBlocked(false);
 	} else if ( moverState == MOVER_2TO1 ) {
 		// reached pos1
 		idThread::ObjectMoveDone( move_thread, this );
@@ -2647,6 +2680,8 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 		if ( enabled && wait >= 0 && spawnArgs.GetBool( "continuous" ) ) {
 			PostEventSec( &EV_Activate, wait, this );
 		}
+
+		SetBlocked(false);
 	} else {
 		gameLocal.Error( "Event_Reached_BinaryMover: bad moverState" );
 	}
@@ -3105,6 +3140,7 @@ CLASS_DECLARATION( idMover_Binary, idDoor )
 	EVENT( EV_Door_Lock,				idDoor::Event_Lock )
 	EVENT( EV_Door_IsOpen,				idDoor::Event_IsOpen )
 	EVENT( EV_Door_IsLocked,			idDoor::Event_Locked )
+	EVENT( EV_ReachedPos,				idDoor::Event_Reached_BinaryMover )
 	EVENT( EV_SpectatorTouch,			idDoor::Event_SpectatorTouch )
 	EVENT( EV_Mover_OpenPortal,			idDoor::Event_OpenPortal )
 	EVENT( EV_Mover_ClosePortal,		idDoor::Event_ClosePortal )

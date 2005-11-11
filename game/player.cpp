@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.32  2005/11/02 20:41:19  sparhawk
  * Fixed NOCLIP crash.
  *
@@ -539,7 +542,10 @@ void idInventory::Save( idSaveGame *savefile ) const {
 		savefile->WriteDict( items[ i ] );
 	}
 
-	savefile->Write( pdasViewed, 4*sizeof(int) );
+	savefile->WriteInt( pdasViewed[0] );
+	savefile->WriteInt( pdasViewed[1] );
+	savefile->WriteInt( pdasViewed[2] );
+	savefile->WriteInt( pdasViewed[3] );
 
 	savefile->WriteInt( selPDA );
 	savefile->WriteInt( selVideo );
@@ -636,7 +642,10 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 	}
 
 	// pdas
-	savefile->Read( pdasViewed, 4*sizeof(int) );
+	savefile->ReadInt( pdasViewed[0] );
+	savefile->ReadInt( pdasViewed[1] );
+	savefile->ReadInt( pdasViewed[2] );
+	savefile->ReadInt( pdasViewed[3] );
 
 	savefile->ReadInt( selPDA );
 	savefile->ReadInt( selVideo );
@@ -1211,6 +1220,7 @@ idPlayer::idPlayer() {
 
 	isLagged				= false;
 	isChatting				= false;
+	selfSmooth				= false;
 	LightgemSurface			= NULL;
 }
 
@@ -1308,7 +1318,7 @@ void idPlayer::Init( void ) {
 	bobFrac					= 0.0f;
 	landChange				= 0;
 	landTime				= 0;
-	zoomFov.Init( 0, 0, g_fov.GetInteger(), g_fov.GetInteger() );
+	zoomFov.Init( 0, 0, 0, 0 );
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
 
@@ -1491,7 +1501,7 @@ void idPlayer::Init( void ) {
 		hud->HandleNamedEvent( "aim_clear" );
 	}
 
-	isChatting = false;
+	cvarSystem->SetCVarBool( "ui_chat", false );
 	LightgemSurface = gameLocal.FindEntity(LIGHTEM_RENDER_NAME);
 	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = LIGHTGEM_VIEWID;
 	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
@@ -1571,7 +1581,7 @@ void idPlayer::Spawn( void ) {
 	// initialize user info related settings
 	// on server, we wait for the userinfo broadcast, as this controls when the player is initially spawned in game
 	if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
-		UserInfoChanged();
+		UserInfoChanged(false);
 	}
 
 	// create combat collision hull for exact collision detection
@@ -2500,7 +2510,7 @@ bool idPlayer::BalanceTDM( void ) {
 idPlayer::UserInfoChanged
 ==============
 */
-bool idPlayer::UserInfoChanged( void ) {
+bool idPlayer::UserInfoChanged( bool canModify ) {
 	idDict	*userInfo;
 	bool	modifiedInfo;
 	bool	spec;
@@ -2518,7 +2528,7 @@ bool idPlayer::UserInfoChanged( void ) {
 	spec = ( idStr::Icmp( userInfo->GetString( "ui_spectate" ), "Spectate" ) == 0 );
 	if ( gameLocal.serverInfo.GetBool( "si_spectators" ) ) {
 		// never let spectators go back to game while sudden death is on
-		if ( gameLocal.mpGame.GetGameState() == idMultiplayerGame::SUDDENDEATH && !spec && wantSpectate == true ) {
+		if ( canModify && gameLocal.mpGame.GetGameState() == idMultiplayerGame::SUDDENDEATH && !spec && wantSpectate == true ) {
 			userInfo->Set( "ui_spectate", "Spectate" );
 			modifiedInfo |= true;
 		} else {
@@ -2529,11 +2539,11 @@ bool idPlayer::UserInfoChanged( void ) {
 			wantSpectate = spec;
 		}
 	} else {
-		if ( spec ) {
+		if ( canModify && spec ) {
 			userInfo->Set( "ui_spectate", "Play" );
 			modifiedInfo |= true;
 		} else if ( spectating ) {  
-			// allow player to leaving spectator mode if they were in it when it was disallowed
+			// allow player to leaving spectator mode if they were in it when si_spectators got turned off
 			forceRespawn = true;
 		}
 		wantSpectate = false;
@@ -2545,13 +2555,13 @@ bool idPlayer::UserInfoChanged( void ) {
 	ready = newready;
 	team = ( idStr::Icmp( userInfo->GetString( "ui_team" ), "Blue" ) == 0 );
 	// server maintains TDM balance
-	if ( !gameLocal.isClient && gameLocal.gameType == GAME_TDM && !gameLocal.mpGame.IsInGame( entityNumber ) && g_balanceTDM.GetBool() ) {
+	if ( canModify && gameLocal.gameType == GAME_TDM && !gameLocal.mpGame.IsInGame( entityNumber ) && g_balanceTDM.GetBool() ) {
 		modifiedInfo |= BalanceTDM( );
 	}
 	UpdateSkinSetup( false );
 	
 	isChatting = userInfo->GetBool( "ui_chat", "0" );
-	if ( isChatting && AI_DEAD ) {
+	if ( canModify && isChatting && AI_DEAD ) {
 		// if dead, always force chat icon off.
 		isChatting = false;
 		userInfo->SetBool( "ui_chat", false );
@@ -2617,6 +2627,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	_hud->SetStateInt( "player_health", health );
 	_hud->SetStateInt( "player_stamina", staminapercentage );
 	_hud->SetStateInt( "player_shadow", 1 );
+	_hud->SetStateInt( "player_armor", inventory.armor );
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -2764,6 +2775,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	weapon.GetEntity()->UpdateGUI();
 
 	_hud->Redraw( gameLocal.realClientTime );
+
+	// weapon targeting crosshair
+	if ( !GuiActive() ) {
+		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
+			cursor->Redraw( gameLocal.realClientTime );
+		}
+	}
 
 	// Only use this if the old lightgem is selected. This may be usefull for
 	// slower machines.
@@ -6728,6 +6746,9 @@ void idPlayer::Think( void )
 		}
 		gameLocal.Printf( "%d: enemies\n", num );
 	}
+
+	// determine if portal sky is in pvs
+	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
 }
 
 /*
@@ -8145,6 +8166,12 @@ void idPlayer::ClientPredictionThink( void ) {
 	oldButtons = usercmd.buttons;
 
 	usercmd = gameLocal.usercmds[ entityNumber ];
+
+	if ( entityNumber != gameLocal.localClientNum ) {
+		// ignore attack button of other clients. that's no good for predictions
+		usercmd.buttons &= ~BUTTON_ATTACK;
+	}
+
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
 
@@ -8271,6 +8298,11 @@ void idPlayer::ClientPredictionThink( void ) {
 	if ( gameLocal.isNewFrame && entityNumber == gameLocal.localClientNum ) {
 		playerView.CalculateShake();
 	}
+
+	// determine if portal sky is in pvs
+	pvsHandle_t	clientPVS = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( clientPVS, GetPhysics()->GetOrigin() );
+	gameLocal.pvs.FreeCurrentPVS( clientPVS );
 }
 
 /*
@@ -8285,8 +8317,7 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 	}
 
 	// smoothen the rendered origin and angles of other clients
-	if ( gameLocal.isClient && gameLocal.framenum >= smoothedFrame && entityNumber != gameLocal.localClientNum ) {
-
+	if ( gameLocal.isClient && gameLocal.framenum >= smoothedFrame && ( entityNumber != gameLocal.localClientNum || selfSmooth ) ) {
 		// render origin and axis
 		idMat3 renderAxis = viewAxis * GetPhysics()->GetAxis();
 		idVec3 renderOrigin = GetPhysics()->GetOrigin() + modelOffset * renderAxis;
@@ -8296,7 +8327,12 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 			idVec2 originDiff = renderOrigin.ToVec2() - smoothedOrigin.ToVec2();
 			if ( originDiff.LengthSqr() < Square( 100.0f ) ) {
 				// smoothen by pushing back to the previous position
-				renderOrigin.ToVec2() -= gameLocal.clientSmoothing * originDiff;
+				if ( selfSmooth ) {
+					assert( entityNumber == gameLocal.localClientNum );
+					renderOrigin.ToVec2() -= net_clientSelfSmoothing.GetFloat() * originDiff;
+				} else {
+					renderOrigin.ToVec2() -= gameLocal.clientSmoothing * originDiff;
+				}
 			}
 			smoothedOrigin = renderOrigin;
 
@@ -8460,12 +8496,20 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 				AI_PAIN = Pain( NULL, NULL, oldHealth - health, lastDamageDir, lastDamageLocation );
 				lastDmgTime = gameLocal.time;
 			} else {
-				common->Warning( "NET: no damage def for damage feedback '%s'\n", lastDamageDef );
+				common->Warning( "NET: no damage def for damage feedback '%d'\n", lastDamageDef );
 			}
 		}
 	} else if ( health > oldHealth && PowerUpActive( MEGAHEALTH ) && !stateHitch ) {
 		// just pulse, for any health raise
 		healthPulse = true;
+	}
+
+	// If the player is alive, restore proper physics object
+	if ( health > 0 && IsActiveAF() ) {
+		StopRagdoll();
+		SetPhysics( &physicsObj );
+		physicsObj.EnableClip();
+		SetCombatContents( true );
 	}
 
 	if ( idealWeapon != newIdealWeapon ) {
@@ -8838,7 +8882,8 @@ idPlayer::NeedsIcon
 ==============
 */
 bool idPlayer::NeedsIcon( void ) {
-	return ( isLagged || isChatting );
+	// local clients don't render their own icons... they're only info for other clients
+	return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
 }
 
 void idPlayer::AddToInventory(idEntity *ent)
