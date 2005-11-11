@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -249,7 +252,7 @@ sample the data for non-dynamic values.
 
 ***********************************************************************/
 
-typedef idScriptVariable<bool, ev_boolean, bool>			idScriptBool;
+typedef idScriptVariable<int, ev_boolean, int>				idScriptBool;
 typedef idScriptVariable<float, ev_float, float>			idScriptFloat;
 typedef idScriptVariable<float, ev_float, int>				idScriptInt;
 typedef idScriptVariable<idVec3, ev_vector, idVec3>			idScriptVector;

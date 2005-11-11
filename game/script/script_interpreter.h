@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -82,8 +85,8 @@ public:
 	int					CurrentLine( void ) const;
 	const char			*CurrentFile( void ) const;
 
-	void				Error( char *fmt, ... ) const;
-	void				Warning( char *fmt, ... ) const;
+	void				Error( char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void				Warning( char *fmt, ... ) const id_attribute((format(printf,2,3)));
 	void				DisplayInfo( void ) const;
 
 	bool				BeginMultiFrameEvent( idEntity *ent, const idEventDef *event );

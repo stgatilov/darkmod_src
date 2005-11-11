@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:21:56  sparhawk
  * SDK V2 merge
  *
@@ -279,7 +282,7 @@ ID_INLINE idVarDef *idCompiler::VirtualFunctionConstant( idVarDef *func ) {
 	memset( &eval, 0, sizeof( eval ) );
 	eval._int = func->scope->TypeDef()->GetFunctionNumber( func->value.functionPtr );
 	if ( eval._int < 0 ) {
-		Error( "Function '%s' not found in scope '%s'", func->Name() );
+		Error( "Function '%s' not found in scope '%s'", func->Name(), func->scope->Name() );
 	}
     
 	return GetImmediate( &type_virtualfunction, &eval, "" );
@@ -2170,7 +2173,7 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 	func->firstStatement = gameLocal.program.NumStatements();
 
 	// check if we should call the super class constructor
-	if ( oldscope->TypeDef()->Inherits( &type_object ) && !stricmp( name, "init" ) ) {
+	if ( oldscope->TypeDef()->Inherits( &type_object ) && !idStr::Icmp( name, "init" ) ) {
 		idTypeDef *superClass;
 		function_t *constructorFunc = NULL;
 
@@ -2197,7 +2200,7 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 	}
 
 	// check if we should call the super class destructor
-	if ( oldscope->TypeDef()->Inherits( &type_object ) && !stricmp( name, "destroy" ) ) {
+	if ( oldscope->TypeDef()->Inherits( &type_object ) && !idStr::Icmp( name, "destroy" ) ) {
 		idTypeDef *superClass;
 		function_t *destructorFunc = NULL;
 
@@ -2211,14 +2214,14 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 
 		if ( destructorFunc ) {
 			if ( func->firstStatement < gameLocal.program.NumStatements() ) {
-			// change all returns to point to the call to the destructor
-			pos = &gameLocal.program.GetStatement( func->firstStatement );
-			for( i = func->firstStatement; i < gameLocal.program.NumStatements(); i++, pos++ ) {
-				if ( pos->op == OP_RETURN ) {
-					pos->op = OP_GOTO;
-					pos->a = JumpDef( i, gameLocal.program.NumStatements() );
+				// change all returns to point to the call to the destructor
+				pos = &gameLocal.program.GetStatement( func->firstStatement );
+				for( i = func->firstStatement; i < gameLocal.program.NumStatements(); i++, pos++ ) {
+					if ( pos->op == OP_RETURN ) {
+						pos->op = OP_GOTO;
+						pos->a = JumpDef( i, gameLocal.program.NumStatements() );
+					}
 				}
-			}
 			}
 
 			// emit the call to the destructor

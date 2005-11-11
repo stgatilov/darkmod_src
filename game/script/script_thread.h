@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/03/29 07:53:32  ishtvan
  * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
  *
@@ -255,8 +258,8 @@ public:
 	void						SetThreadName( const char *name );
 	const char					*GetThreadName( void );
 
-	void						Error( const char *fmt, ... ) const;
-	void						Warning( const char *fmt, ... ) const;
+	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void						Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 								
 	static idThread				*CurrentThread( void );
 	static int					CurrentThreadNum( void );

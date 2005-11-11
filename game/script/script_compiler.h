@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -208,8 +211,8 @@ private:
 	const idVarDef	*basetype;			// for accessing fields
 
 	float			Divide( float numerator, float denominator );
-	void			Error( const char *error, ... ) const;
-	void			Warning( const char *message, ... ) const;
+	void			Error( const char *error, ... ) const id_attribute((format(printf,2,3)));
+	void			Warning( const char *message, ... ) const id_attribute((format(printf,2,3)));
 	idVarDef		*OptimizeOpcode( const opcode_t *op, idVarDef *var_a, idVarDef *var_b );
 	idVarDef		*EmitOpcode( const opcode_t *op, idVarDef *var_a, idVarDef *var_b );
 	idVarDef		*EmitOpcode( int op, idVarDef *var_a, idVarDef *var_b );
