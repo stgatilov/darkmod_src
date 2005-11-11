@@ -12,6 +12,9 @@
 #* $Author$
 #*
 #* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
 #* Revision 1.2  2004/11/28 19:23:11  sparhawk
 #* Added header and Id Copyright.
 #*
@@ -62,6 +65,7 @@ game_string = ' \
 	ai/AI_events.cpp \
 	ai/AI_pathing.cpp \
 	ai/AI_Vagary.cpp \
+	gamesys/DebugGraph.cpp \
 	gamesys/Class.cpp \
 	gamesys/Event.cpp \
 	gamesys/SaveGame.cpp \
@@ -94,18 +98,26 @@ game_string = ' \
 	physics/Physics_StaticMulti.cpp \
 	physics/Push.cpp'
 
-game_list = scons_utils.BuildList( 'game', game_string )
+if ( local_d3xp ):
+	game_string += ' \
+	Grabber.cpp \
+	physics/Force_Grab.cpp'
+	game_list = scons_utils.BuildList( 'd3xp', game_string )
+else:
+	game_list = scons_utils.BuildList( 'game', game_string )
 
 for i in range( len( game_list ) ):
 	game_list[ i ] = '../../' + game_list[ i ]
 
 local_env = g_game_env.Copy()
+if ( local_d3xp ):
+	local_env.Append( CPPDEFINES = [ '_D3XP', 'CTF' ] )
 
 if ( local_demo == 1 ):
-	local_env.Append( CPPFLAGS = [ '-DID_DEMO_BUILD' ] )
+	local_env.Append( CPPDEFINES = [ 'ID_DEMO_BUILD' ] )
 
 if ( local_gamedll == 1 ):
-	local_env.Append( CPPFLAGS = '-DGAME_DLL' )
+	local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 	ret = local_env.SharedLibrarySafe( local_env, 'game', game_list + idlib_objects )
 	Return( 'ret' )
 else:

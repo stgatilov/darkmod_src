@@ -994,6 +994,68 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="Sound"
+			Filter="">
+			<File
+				RelativePath=".\sound\sound.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Sys"
+			Filter="">
+			<File
+				RelativePath=".\sys\sys_public.h">
+			</File>
+			<Filter
+				Name="Scons"
+				Filter="">
+				<File
+					RelativePath=".\sys\scons\scons_utils.py">
+				</File>
+				<File
+					RelativePath=".\sys\scons\SConscript.game">
+				</File>
+				<File
+					RelativePath=".\sys\scons\SConscript.idlib">
+				</File>
+			</Filter>
+			<Filter
+				Name="linux"
+				Filter="">
+				<File
+					RelativePath=".\sys\linux\qgl_enforce.h">
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="tools"
+			Filter="">
+			<Filter
+				Name="compilers"
+				Filter="">
+				<Filter
+					Name="aas"
+					Filter="">
+					<File
+						RelativePath=".\tools\compilers\aas\aasfile.h">
+					</File>
+					<File
+						RelativePath=".\tools\compilers\aas\aasfilemanager.h">
+					</File>
+				</Filter>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="ui"
+			Filter="">
+			<File
+				RelativePath=".\ui\listgui.h">
+			</File>
+			<File
+				RelativePath=".\ui\userinterface.h">
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

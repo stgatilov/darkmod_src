@@ -12,6 +12,9 @@
 #* $Author$
 #*
 #* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
 #* Revision 1.2  2004/11/28 19:23:11  sparhawk
 #* Added header and Id Copyright.
 #*
@@ -74,13 +77,25 @@ idlib_list = scons_utils.BuildList( 'idlib', idlib_string )
 for i in range( len( idlib_list ) ):
 	idlib_list[ i ] = '../../' + idlib_list[ i ]
 
+local_env = g_env.Copy()
+local_env_noopt = g_env.Copy()
+
+# max allowed -O1
+flags = OPTCPPFLAGS
+try:
+	flags.remove( '-O3' )
+	flags.insert( 0, '-O1' )
+except:
+	pass
+local_env_noopt.Append( CPPFLAGS = flags )
+
 ret_list = []
 if ( local_idlibpic == 0 ):
 	for f in idlib_list:
-		ret_list += g_env.StaticObject( source = f )
-	ret_list += g_env_noopt.StaticObject( source = [ '../../idlib/bv/Frustum-linux.cpp' ] )
+		ret_list += local_env.StaticObject( source = f )
+	ret_list += local_env_noopt.StaticObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
 else:
 	for f in idlib_list:
-		ret_list += g_env.SharedObject( source = f )
-	ret_list += g_env_noopt.SharedObject( source = [ '../../idlib/bv/Frustum-linux.cpp' ] )
+		ret_list += local_env.SharedObject( source = f )
+	ret_list += local_env_noopt.SharedObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
 Return( 'ret_list' )

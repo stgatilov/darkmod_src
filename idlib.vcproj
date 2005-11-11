@@ -362,6 +362,9 @@
 					RelativePath="idlib\bv\Frustum.h">
 				</File>
 				<File
+					RelativePath=".\idlib\bv\frustum_gcc.cpp">
+				</File>
+				<File
 					RelativePath="idlib\bv\Sphere.cpp">
 				</File>
 				<File

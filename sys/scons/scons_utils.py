@@ -9,16 +9,16 @@
 #* $Author$
 #*
 #* $Log$
+#* Revision 1.3  2005/11/11 22:50:09  sparhawk
+#* SDK 1.3 Merge
+#*
 #* Revision 1.2  2004/11/28 19:23:10  sparhawk
 #* Added header and Id Copyright.
 #*
 #*
 #***************************************************************************
 
-# Copyright (C) 2004 Id Software, Inc.
-#
-
-import sys, os, string, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile
+import sys, os, string, time, commands, re, pickle, StringIO, popen2, commands, pdb, zipfile, tempfile
 import SCons
 
 # need an Environment and a matching buffered_spawn API .. encapsulate
@@ -80,7 +80,7 @@ class idSetupBase:
 			if ( p.match( i ) ):
 				major = p.match( i ).group(1)
 				break
-	
+
 		f = open( 'framework/async/AsyncNetwork.h' )
 		l = f.readlines()
 		f.close()
@@ -147,9 +147,22 @@ def SharedLibrarySafe( env, target, source ):
 	env.AddPostAction( ret, checkLDD )
 	return ret
 
-def NotImplementedStub( ):
+def NotImplementedStub( *whatever ):
 	print 'Not Implemented'
 	sys.exit( 1 )
+
+# --------------------------------------------------------------------
+
+class idGamePaks( idSetupBase ):
+
+	def BuildGamePak( self, target = None, source = None, env = None ):
+		# NOTE: ew should have done with zipfile module
+		temp_dir = tempfile.mkdtemp( prefix = 'gamepak' )
+		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, 'gamex86.so' ) ) )
+		self.SimpleCommand( 'echo 2 > %s' % ( os.path.join( temp_dir, 'binary.conf' ) ) )
+		self.SimpleCommand( 'cd %s ; zip %s gamex86.so binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ) ) )
+		self.SimpleCommand( 'rm -r %s' % temp_dir )
+		return None
 
 # --------------------------------------------------------------------
 
@@ -161,6 +174,8 @@ def SetupBufferedOutput( env ):
 
 # setup utilities on an environement
 def SetupUtils( env ):
+	gamepaks = idGamePaks()
+	env.BuildGamePak = gamepaks.BuildGamePak
 	env.SharedLibrarySafe = SharedLibrarySafe
 	try:
 		import SDK
@@ -168,6 +183,7 @@ def SetupUtils( env ):
 		env.PreBuildSDK = sdk.PreBuildSDK
 		env.BuildSDK = sdk.BuildSDK
 	except:
+		print 'SDK.py hookup failed'
 		env.PreBuildSDK = NotImplementedStub
 		env.BuildSDK = NotImplementedStub
 	try:
@@ -175,6 +191,7 @@ def SetupUtils( env ):
 		setup = Setup.idSetup()
 		env.BuildSetup = setup.BuildSetup
 	except:
+		print 'Setup.py hookup failed'
 		env.BuildSetup = NotImplementedStub
 
 def BuildList( s_prefix, s_string ):
