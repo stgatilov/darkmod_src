@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:42:32  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -77,6 +80,9 @@ public:
 
 	// called during vid_restart
 	virtual	void			FreeModelVertexCaches() = 0;
+
+	// print memory info
+	virtual	void			PrintMemInfo( MemInfo_t *mi ) = 0;
 };
 
 // this will be statically pointed at a private implementation

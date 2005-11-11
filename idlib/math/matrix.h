@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:35:08  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/10/18 14:08:37  sparhawk
  * Lightgem updates
  *
@@ -2607,7 +2610,6 @@ ID_INLINE bool idMatX::InverseSelf( void ) {
 		default:
 			return InverseSelfGeneric();
 	}
-	return false;
 }
 
 ID_INLINE idMatX idMatX::InverseFast( void ) const {

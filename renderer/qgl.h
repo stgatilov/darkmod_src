@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:42:32  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:59:39  sparhawk
  * SDK V2 merge
  *
@@ -28,9 +31,11 @@
 
 #include <gl/gl.h>
 
-#elif defined( __APPLE__ ) && defined( __MACH__ )
+#elif defined( MACOS_X )
 
-#include <OpenGL/gl.h>
+// magic flag to keep tiger gl.h from loading glext.h
+#define GL_GLEXT_LEGACY
+#include <gl.h>
 
 #elif defined( __linux__ )
 

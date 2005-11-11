@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:37  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:44:06  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:37  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -150,7 +153,7 @@ public:
 	virtual void			UpdateEmitter( const idVec3 &origin, int listenerId, const soundShaderParms_t *parms ) = 0;
 
 	// returns the length of the started sound in msec
-	virtual int				StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0 ) = 0;
+	virtual int				StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true ) = 0;
 
 	// pass SCHANNEL_ANY to effect all channels
 	virtual void			ModifySound( const s_channelType channel, const soundShaderParms_t *parms ) = 0;
@@ -204,7 +207,7 @@ public:
 	// listenerId allows listener-private and antiPrivate sounds to be filtered
 	// gameTime is in msec, and is used to time sound queries and removals so that they are independent
 	// of any race conditions with the async update
-	virtual	void			PlaceListener( const idVec3 &origin, const idMat3 &axis, const int listenerId, const int gameTime ) = 0;
+	virtual	void			PlaceListener( const idVec3 &origin, const idMat3 &axis, const int listenerId, const int gameTime, const idStr& areaName ) = 0;
 
 	// fade all sounds in the world with a given shader soundClass
 	// to is in Db (sigh), over is in seconds
@@ -240,6 +243,10 @@ public:
 	// SaveGame / demo Support
 	virtual void			WriteToSaveGame( idFile *savefile ) = 0;
 	virtual void			ReadFromSaveGame( idFile *savefile ) = 0;
+
+	virtual void			SetSlowmo( bool active ) = 0;
+	virtual void			SetSlowmoSpeed( float speed ) = 0;
+	virtual void			SetEnviroSuit( bool active ) = 0;
 };
 
 
@@ -285,7 +292,10 @@ public:
 	virtual bool			ShutdownHW( void ) = 0;
 
 	// asyn loop, called at 60Hz
-	virtual int				AsyncUpdate( void ) = 0;
+	virtual int				AsyncUpdate( int time ) = 0;
+
+	// async loop, when the sound driver uses a write strategy
+	virtual int				AsyncUpdateWrite( int time ) = 0;
 
 	// it is a good idea to mute everything when starting a new level,
 	// because sounds may be started before a valid listener origin
@@ -315,10 +325,16 @@ public:
 	// Free all soundSamples marked as unused
 	// We might want to defer the loading of new sounds to this point,
 	// as we do with images, to avoid having a union in memory at one time.
-	virtual	void			EndLevelLoad( void ) = 0;
+	virtual	void			EndLevelLoad( const char *mapString ) = 0;
 
 	// direct mixing for OSes that support it
 	virtual int				AsyncMix( int soundTime, float *mixBuffer ) = 0;
+
+	// prints memory info
+	virtual void			PrintMemInfo( MemInfo_t *mi ) = 0;
+
+	// is EAX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
+	virtual int				IsEAXAvailable( void ) = 0;
 };
 
 extern idSoundSystem	*soundSystem;
