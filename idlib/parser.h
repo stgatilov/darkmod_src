@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:34:48  sparhawk
  * SDK V2 merge
  *
@@ -157,9 +160,9 @@ public:
 					// returns the current line number
 	const int		GetLineNum( void ) const;
 					// print an error message
-	void			Error( const char *str, ... ) const;
+	void			Error( const char *str, ... ) const id_attribute((format(printf,2,3)));
 					// print a warning message
-	void			Warning( const char *str, ... ) const;
+	void			Warning( const char *str, ... ) const id_attribute((format(printf,2,3)));
 
 					// add a global define that will be added to all opened sources
 	static int		AddGlobalDefine( const char *string );

@@ -7,14 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.2  2004/11/28 19:09:02  sparhawk
- * Added header and Id Copyright.
+ * Revision 1.1  2005/11/11 22:20:51  sparhawk
+ * SDK 1.3 Merge
  *
  *
  ***************************************************************************/
-
-// Copyright (C) 2004 Id Software, Inc.
-//
 
 #include "../precompiled.h"
 

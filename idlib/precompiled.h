@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2004/11/28 09:34:48  sparhawk
  * SDK V2 merge
  *
@@ -93,6 +96,10 @@
 // id lib
 #include "../idlib/Lib.h"
 
+#if !defined( _D3SDK ) && defined( __WITH_PB__ )
+	#include "../punkbuster/pbcommon.h"
+#endif
+
 // framework
 #include "../framework/BuildVersion.h"
 #include "../framework/BuildDefines.h"
@@ -146,7 +153,11 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "../tools/compilers/aas/AASFileManager.h"
 
 // game
+#if defined(_D3XP) && defined(GAME_DLL)
+#include "../d3xp/Game.h"
+#else
 #include "../game/Game.h"
+#endif
 
 //-----------------------------------------------------
 
@@ -154,7 +165,11 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 #ifdef GAME_DLL
 
+#if defined(_D3XP)
+#include "../d3xp/Game_local.h"
+#else
 #include "../game/Game_local.h"
+#endif
 
 #else
 

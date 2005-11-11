@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -70,9 +73,9 @@ ID_INLINE idTimer::idTimer( void ) {
 idTimer::idTimer
 =================
 */
-ID_INLINE idTimer::idTimer( double clockTicks ) {
+ID_INLINE idTimer::idTimer( double _clockTicks ) {
 	state = TS_STOPPED;
-	this->clockTicks = clockTicks;
+	clockTicks = _clockTicks;
 }
 
 /*

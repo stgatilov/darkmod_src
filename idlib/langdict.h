@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -38,7 +41,7 @@ public:
 							~idLangDict( void );
 
 	void					Clear( void );
-	bool					Load( const char *fileName );
+	bool					Load( const char *fileName, bool clear = true );
 	void					Save( const char *fileName );
 
 	const char *			AddString( const char *str );
@@ -50,6 +53,8 @@ public:
 	int						GetNumKeyVals( void ) const;
 	const idLangKeyValue *	GetKeyVal( int i ) const;
 
+	void					SetBaseID(int id) { baseID = id; };
+
 private:
 	idList<idLangKeyValue>	args;
 	idHashIndex				hash;
@@ -57,6 +62,8 @@ private:
 	bool					ExcludeString( const char *str ) const;
 	int						GetNextId( void ) const;
 	int						GetHashKey( const char *str ) const;
+
+	int						baseID;
 };
 
 #endif /* !__LANGDICT_H__ */

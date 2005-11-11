@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,6 +21,20 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+/*
+============
+idCmdArgs::operator=
+============
+*/
+void idCmdArgs::operator=( const idCmdArgs &args ) {
+	int i;
+
+	argc = args.argc;
+	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
+	for ( i = 0; i < argc; i++ ) {
+		argv[ i ] = tokenized + ( args.argv[ i ] - args.tokenized );
+	}
+}
 
 /*
 ============
