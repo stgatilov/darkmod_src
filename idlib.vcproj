@@ -363,6 +363,12 @@
 				</File>
 				<File
 					RelativePath=".\idlib\bv\frustum_gcc.cpp">
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="TRUE">
+						<Tool
+							Name="VCCLCompilerTool"/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="idlib\bv\Sphere.cpp">
@@ -609,6 +615,12 @@
 				</File>
 				<File
 					RelativePath="idlib\math\Simd_AltiVec.cpp">
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="TRUE">
+						<Tool
+							Name="VCCLCompilerTool"/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="idlib\math\Simd_AltiVec.h">

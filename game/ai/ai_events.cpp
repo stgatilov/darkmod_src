@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/12 14:59:34  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.4  2005/11/11 21:00:34  sparhawk
  * SDK 1.3 Merge
  *
@@ -2367,7 +2370,7 @@ void idAI::Event_LookAtEnemy( float duration ) {
 idAI::Event_SetJointMod
 ===============
 */
-void idAI::Event_SetJointMod( bool allow ) {
+void idAI::Event_SetJointMod( int allow ) {
 	allowJointMod = ( allow != 0 );
 }
 

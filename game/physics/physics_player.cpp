@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2005/11/12 14:59:51  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.27  2005/11/04 07:28:43  ishtvan
  * fixed bugs relating to the combination of mantling and ropes
  *
@@ -128,11 +131,13 @@ const float PM_WATERFRICTION	= 1.0f;
 const float PM_FLYFRICTION		= 3.0f;
 const float PM_NOCLIPFRICTION	= 12.0f;
 
-// Height unit increment for mantle test
-// This value should be >= 1.0
-// A larger value reduces the number of tests during a mantle
-// initiation, but may not find some small mantleable "nooks"
-// in a surface.
+/**
+*  Height unit increment for mantle test
+* This value should be >= 1.0
+* A larger value reduces the number of tests during a mantle
+* initiation, but may not find some small mantleable "nooks"
+* in a surface.
+**/
 const float MANTLE_TEST_INCREMENT = 1.0;
 
 /**
@@ -753,8 +758,7 @@ void idPhysics_Player::AirMove( void ) {
 		current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
 	}
 
-	idPhysics_Player::SlideMove( true, gameLocal.isMultiplayer, false, false );
-
+	idPhysics_Player::SlideMove( true, false, false, false );
 }
 
 /*
@@ -1709,81 +1713,43 @@ For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 #ifndef MOD_WATERPHYSICS
 
 void idPhysics_Player::SetWaterLevel( void ) {
-
 	idVec3		point;
-
 	idBounds	bounds;
-
 	int			contents;
 
-
-
 	//
-
 	// get waterlevel, accounting for ducking
-
 	//
-
 	waterLevel = WATERLEVEL_NONE;
-
 	waterType = 0;
-
-
 
 	bounds = clipModel->GetBounds();
 
-
-
 	// check at feet level
-
 	point = current.origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
-
 	contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
-
 	if ( contents & MASK_WATER ) {
 
-
-
 		waterType = contents;
-
 		waterLevel = WATERLEVEL_FEET;
 
-
-
 		// check at waist level
-
 		point = current.origin - ( bounds[1][2] - bounds[0][2] ) * 0.5f * gravityNormal;
-
 		contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
-
 		if ( contents & MASK_WATER ) {
-
-
 
 			waterLevel = WATERLEVEL_WAIST;
 
-
-
 			// check at head level
-
 			point = current.origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
-
 			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
-
 			if ( contents & MASK_WATER ) {
-
 				waterLevel = WATERLEVEL_HEAD;
-
 			}
-
 		}
-
 	}
-
 }
-
 #endif
-
 
 /*
 ================
@@ -1809,8 +1775,6 @@ idPhysics_Player::MovePlayer
 ================
 */
 void idPhysics_Player::MovePlayer( int msec ) {
-
-
 
 	// this counter lets us debug movement problems with a journal
 	// by setting a conditional breakpoint for the previous frame
@@ -1973,41 +1937,27 @@ void idPhysics_Player::MovePlayer( int msec ) {
 #ifndef MOD_WATERPHYSICS
 
 /*
-
 ================
-
 idPhysics_Player::GetWaterLevel
 
 For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 
 ================
-
 */
-
 waterLevel_t idPhysics_Player::GetWaterLevel( void ) const {
-
 	return waterLevel;
-
 }
 
-
-
 /*
-
 ================
-
 idPhysics_Player::GetWaterType
 
 For MOD_WATERPHYSICS this is moved to Physics_Actor.cpp
 
 ================
-
 */
-
 int idPhysics_Player::GetWaterType( void ) const {
-
 	return waterType;
-
 }
 
 #endif

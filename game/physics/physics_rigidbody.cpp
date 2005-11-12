@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/12 14:59:51  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.2  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -1713,19 +1716,6 @@ void idPhysics_RigidBody::SetMaster( idEntity *master, const bool orientated ) {
 		}
 	}
 }
-
-const float	RB_VELOCITY_MAX				= 16000;
-const int	RB_VELOCITY_TOTAL_BITS		= 16;
-const int	RB_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_VELOCITY_MAX ) ) + 1;
-const int	RB_VELOCITY_MANTISSA_BITS	= RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS;
-const float	RB_MOMENTUM_MAX				= 1e20f;
-const int	RB_MOMENTUM_TOTAL_BITS		= 16;
-const int	RB_MOMENTUM_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_MOMENTUM_MAX ) ) + 1;
-const int	RB_MOMENTUM_MANTISSA_BITS	= RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS;
-const float	RB_FORCE_MAX				= 1e20f;
-const int	RB_FORCE_TOTAL_BITS			= 16;
-const int	RB_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( RB_FORCE_MAX ) ) + 1;
-const int	RB_FORCE_MANTISSA_BITS		= RB_FORCE_TOTAL_BITS - 1 - RB_FORCE_EXPONENT_BITS;
 
 /*
 ================

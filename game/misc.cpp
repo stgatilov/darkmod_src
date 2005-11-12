@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/12 14:59:20  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -137,7 +140,7 @@ idPlayerStart::Event_TeleportStage
 FIXME: add functionality to fx system ( could be done with player scripting too )
 ================
 */
-void idPlayerStart::Event_TeleportStage( idPlayer *_player ) {
+void idPlayerStart::Event_TeleportStage( idEntity *_player ) {
 	idPlayer *player;
 	if ( !_player->IsType( idPlayer::Type ) ) {
 		common->Warning( "idPlayerStart::Event_TeleportStage: entity is not an idPlayer\n" );
