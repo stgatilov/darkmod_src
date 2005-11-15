@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2004/11/28 09:16:33  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -59,8 +65,8 @@ void idPlayerIcon::Draw( idPlayer *player, jointHandle_t joint ) {
 		return;
 	}
 
-		player->GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-		origin.z += 16.0f;
+	player->GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+	origin.z += 16.0f;
 
 	Draw( player, origin );
 }
@@ -71,7 +77,13 @@ idPlayerIcon::Draw
 ===============
 */
 void idPlayerIcon::Draw( idPlayer *player, const idVec3 &origin ) {
-	idMat3 axis = gameLocal.GetLocalPlayer()->GetRenderView()->viewaxis;
+	idPlayer *localPlayer = gameLocal.GetLocalPlayer();
+	if ( !localPlayer || !localPlayer->GetRenderView() ) {
+		FreeIcon();
+		return;
+	}
+
+	idMat3 axis = localPlayer->GetRenderView()->viewaxis;
 
 	if ( player->isLagged ) {
 		// create the icon if necessary, or update if already created

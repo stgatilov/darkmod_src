@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 21:52:44  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -151,8 +154,8 @@ void idClipModel::SaveTraceModels( idSaveGame *savefile ) {
 	savefile->WriteInt( traceModelCache.Num() );
 	for ( i = 0; i < traceModelCache.Num(); i++ ) {
 		trmCache_t *entry = traceModelCache[i];
-
-		savefile->Write( &entry->trm, sizeof( entry->trm ) );
+		
+		savefile->WriteTraceModel( entry->trm );
 		savefile->WriteFloat( entry->volume );
 		savefile->WriteVec3( entry->centerOfMass );
 		savefile->WriteMat3( entry->inertiaTensor );
@@ -171,10 +174,12 @@ void idClipModel::RestoreTraceModels( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( num );
 	traceModelCache.SetNum( num );
+
 	for ( i = 0; i < num; i++ ) {
 		trmCache_t *entry = new trmCache_t;
+		
+		savefile->ReadTraceModel( entry->trm );
 
-		savefile->Read( &entry->trm, sizeof( entry->trm ) );
 		savefile->ReadFloat( entry->volume );
 		savefile->ReadVec3( entry->centerOfMass );
 		savefile->ReadMat3( entry->inertiaTensor );

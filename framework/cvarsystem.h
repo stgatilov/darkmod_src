@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -88,9 +91,7 @@ typedef enum {
 	CVAR_INIT				= BIT(15),	// can only be set from the command-line
 	CVAR_ROM				= BIT(16),	// display only, cannot be set by user at all
 	CVAR_ARCHIVE			= BIT(17),	// set to cause it to be saved to a config file
-	CVAR_LATCH				= BIT(18),	// will only change to the new value when UpdateLatched is called
-										// the modified flag is still set when the latched string changes
-	CVAR_MODIFIED			= BIT(19)	// set when the variable is modified
+	CVAR_MODIFIED			= BIT(18)	// set when the variable is modified
 } cvarFlags_t;
 
 
@@ -128,7 +129,6 @@ public:
 	bool					IsModified( void ) const { return ( internalVar->flags & CVAR_MODIFIED ) != 0; }
 	void					SetModified( void ) { internalVar->flags |= CVAR_MODIFIED; }
 	void					ClearModified( void ) { internalVar->flags &= ~CVAR_MODIFIED; }
-	void					UpdateLatched( void ) { internalVar->InternalUpdateLatched(); }
 
 	const char *			GetString( void ) const { return internalVar->value; }
 	bool					GetBool( void ) const { return ( internalVar->integerValue != 0 ); }
@@ -162,7 +162,6 @@ private:
 	void					Init( const char *name, const char *value, int flags, const char *description,
 									float valueMin, float valueMax, const char **valueStrings, argCompletion_t valueCompletion );
 
-	virtual void			InternalUpdateLatched( void ) {}
 	virtual void			InternalSetString( const char *newValue ) {}
 	virtual void			InternalSetBool( const bool newValue ) {}
 	virtual void			InternalSetInteger( const int newValue ) {}

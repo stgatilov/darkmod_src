@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -439,6 +442,11 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idMat3 masterAxis;
 	float timeStep;
 
+#ifdef MOD_WATERPHYSICS
+	waterLevel = WATERLEVEL_NONE;		// MOD_WATERPHYSICS
+	waterType = 0;						// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
+
 	timeStep = MS2SEC( timeStepMSec );
 
 	moveResult = MM_OK;
@@ -468,6 +476,11 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	current.velocity -= current.pushVelocity;
 
 	clipModel->Unlink();
+
+#ifdef MOD_WATERPHYSICS
+	// check water level / type
+	idPhysics_Monster::SetWaterLevel();		// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	// check if on the ground
 	idPhysics_Monster::CheckGround( current );

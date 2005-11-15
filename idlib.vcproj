@@ -1,27 +1,9 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.1  2004/10/30 15:52:03  sparhawk
- * Initial revision
- *
- ***************************************************************************/
-
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="idLib"
 	ProjectGUID="{49BEC5C6-B964-417A-851E-808886B57400}"
-	SccProjectName=""
-	SccAuxPath=""
-	SccLocalPath=""
-	SccProvider=""
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -41,7 +23,7 @@
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,_DEBUG,_WINDOWS,GAME_DLL"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
@@ -72,6 +54,12 @@
 				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -81,17 +69,17 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/O2 /Og /Ob2 /Oi /Ot /Oy"
 				Optimization="2"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				OptimizeForProcessor="2"
 				AdditionalIncludeDirectories="mssdk/include"
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,NDEBUG,_WINDOWS,GAME_DLL"
 				StringPooling="TRUE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
 				ForceConformanceInForLoopScope="TRUE"
@@ -99,6 +87,7 @@
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough=""
 				PrecompiledHeaderFile="$(IntDir)/idLib.pch"
+				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
 				ProgramDataBaseFileName="$(IntDir)/"
@@ -125,6 +114,12 @@
 				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines|Win32"
@@ -140,7 +135,7 @@
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,_DEBUG,_WINDOWS,_INLINEDEBUG,GAME_DLL"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				BufferSecurityCheck="FALSE"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
@@ -174,6 +169,12 @@
 				ShowProgress="TRUE"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines and memory log|Win32"
@@ -189,7 +190,7 @@
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,_DEBUG,_WINDOWS,_INLINEDEBUG,ID_REDIRECT_NEWDELETE,ID_DEBUG_MEMORY,ID_DEBUG_UNINITIALIZED_MEMORY,GAME_DLL"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				BufferSecurityCheck="FALSE"
 				ForceConformanceInForLoopScope="TRUE"
 				RuntimeTypeInfo="TRUE"
@@ -222,12 +223,19 @@
 				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
-			Name="idLib"
-			Filter="">
+			Name="idLib">
 			<File
 				RelativePath="idlib\Base64.cpp">
 				<FileConfiguration
@@ -313,6 +321,9 @@
 				RelativePath="idlib\Parser.h">
 			</File>
 			<File
+				RelativePath="idlib\precompiled.h">
+			</File>
+			<File
 				RelativePath="idlib\Str.cpp">
 			</File>
 			<File
@@ -330,12 +341,8 @@
 			<File
 				RelativePath="idlib\Token.h">
 			</File>
-			<File
-				RelativePath="idlib\precompiled.h">
-			</File>
 			<Filter
-				Name="BV"
-				Filter="">
+				Name="BV">
 				<File
 					RelativePath="idlib\bv\Bounds.cpp">
 				</File>
@@ -355,6 +362,15 @@
 					RelativePath="idlib\bv\Frustum.h">
 				</File>
 				<File
+					RelativePath=".\idlib\bv\frustum_gcc.cpp">
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="TRUE">
+						<Tool
+							Name="VCCLCompilerTool"/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="idlib\bv\Sphere.cpp">
 				</File>
 				<File
@@ -362,13 +378,12 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Containers"
-				Filter="">
-				<File
-					RelativePath="idlib\containers\BTree.h">
-				</File>
+				Name="Containers">
 				<File
 					RelativePath="idlib\containers\BinSearch.h">
+				</File>
+				<File
+					RelativePath="idlib\containers\BTree.h">
 				</File>
 				<File
 					RelativePath="idlib\containers\HashIndex.cpp">
@@ -411,8 +426,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Geometry"
-				Filter="">
+				Name="Geometry">
 				<File
 					RelativePath="idlib\geometry\DrawVert.cpp">
 				</File>
@@ -469,8 +483,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Hashing"
-				Filter="">
+				Name="Hashing">
 				<File
 					RelativePath="idlib\hashing\CRC16.cpp">
 				</File>
@@ -509,8 +522,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Math"
-				Filter="">
+				Name="Math">
 				<File
 					RelativePath="idlib\math\Angles.cpp">
 				</File>
@@ -603,6 +615,12 @@
 				</File>
 				<File
 					RelativePath="idlib\math\Simd_AltiVec.cpp">
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="TRUE">
+						<Tool
+							Name="VCCLCompilerTool"/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="idlib\math\Simd_AltiVec.h">

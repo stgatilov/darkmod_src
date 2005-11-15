@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -38,7 +41,8 @@ typedef enum {
 	EDITOR_AF					= BIT(8),
 	EDITOR_PARTICLE				= BIT(9),
 	EDITOR_PDA					= BIT(10),
-	EDITOR_AAS					= BIT(11)
+	EDITOR_AAS					= BIT(11),
+	EDITOR_MATERIAL				= BIT(12)
 } toolFlag_t;
 
 #define STRTABLE_ID				"#str_"
@@ -78,6 +82,24 @@ extern HWND			com_hwndMsg;
 extern bool			com_outputMsg;
 #endif
 
+struct MemInfo_t {
+	idStr			filebase;
+
+	int				total;
+	int				assetTotals;
+
+	// memory manager totals
+	int				memoryManagerTotal;
+
+	// subsystem totals
+	int				gameSubsystemTotal;
+	int				renderSubsystemTotal;
+
+	// asset totals
+	int				imageAssetsTotal;
+	int				modelAssetsTotal;
+	int				soundAssetsTotal;
+};
 
 class idCommon {
 public:
@@ -101,7 +123,7 @@ public:
 	virtual void				Frame( void ) = 0;
 
 								// Called repeatedly by blocking function calls with GUI interactivity.
-	virtual void				GUIFrame( bool execCmd ) = 0;
+	virtual void				GUIFrame( bool execCmd, bool network ) = 0;
 
 								// Called 60 times a second from a background thread for sound mixing,
 								// and input generation. Not called until idCommon::Init() has completed.
@@ -110,7 +132,8 @@ public:
 								// Checks for and removes command line "+set var arg" constructs.
 								// If match is NULL, all set commands will be executed, otherwise
 								// only a set with the exact name.  Only used during startup.
-	virtual void				StartupVariable( const char *match ) = 0;
+								// set once to clear the cvar from +set for early init code
+	virtual void				StartupVariable( const char *match, bool once ) = 0;
 
 								// Initializes a tool with the given dictionary.
 	virtual void				InitTool( const toolFlag_t tool, const idDict *dict ) = 0;
@@ -134,20 +157,20 @@ public:
 	virtual void				SetRefreshOnPrint( bool set ) = 0;
 
 								// Prints message to the console, which may cause a screen update if com_refreshOnPrint is set.
-	virtual void				Printf( const char *fmt, ... ) = 0;
+	virtual void				Printf( const char *fmt, ... )id_attribute((format(printf,2,3))) = 0;
 
 								// Same as Printf, with a more usable API - Printf pipes to this.
 	virtual void				VPrintf( const char *fmt, va_list arg ) = 0;
 
 								// Prints message that only shows up if the "developer" cvar is set,
 								// and NEVER forces a screen update, which could cause reentrancy problems.
-	virtual void				DPrintf( const char *fmt, ... ) = 0;
+	virtual void				DPrintf( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 
 								// Prints WARNING %s message and adds the warning message to a queue for printing later on.
-	virtual void				Warning( const char *fmt, ... ) = 0;
+	virtual void				Warning( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 
 								// Prints WARNING %s message in yellow that only shows up if the "developer" cvar is set.
-	virtual void				DWarning( const char *fmt, ...) = 0;
+	virtual void				DWarning( const char *fmt, ...) id_attribute((format(printf,2,3))) = 0;
 
 								// Prints all queued warnings.
 	virtual void				PrintWarnings( void ) = 0;
@@ -157,15 +180,14 @@ public:
 
 								// Issues a C++ throw. Normal errors just abort to the game loop,
 								// which is appropriate for media or dynamic logic errors.
-	virtual void				Error( const char *fmt, ... ) = 0;
+	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 
 								// Fatal errors quit all the way to a system dialog box, which is appropriate for
 								// static internal errors or cases where the system may be corrupted.
-	virtual void				FatalError( const char *fmt, ... ) = 0;
+	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 
 								// Returns a pointer to the dictionary with language specific strings.
 	virtual const idLangDict *	GetLanguageDict( void ) = 0;
-
 };
 
 extern idCommon *		common;

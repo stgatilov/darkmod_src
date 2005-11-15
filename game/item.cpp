@@ -7,8 +7,32 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.9  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
+ * Revision 1.8  2004/11/11 23:52:27  sparhawk
+ * Fixed frob highlight for items and doors.
+ *
+ * Revision 1.7  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.6  2004/11/05 18:58:09  sparhawk
+ * Moved frobcode to idEntity to make it available for all entities.
+ *
+ * Revision 1.5  2004/11/03 21:47:38  sparhawk
+ * Changed debug LogString for better performance and group settings
+ *
+ * Revision 1.4  2004/11/03 00:06:08  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.3  2004/10/31 20:01:56  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
+ * Revision 1.2  2004/10/30 17:19:40  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,8 +42,10 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Game_local.h"
+#pragma warning(disable : 4996)
 
+#include "Game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 /*
 ===============================================================================
@@ -50,7 +76,10 @@ END_CLASS
 idItem::idItem
 ================
 */
-idItem::idItem() {
+idItem::idItem()
+{
+	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+
 	spin = false;
 	inView = false;
 	inViewTime = 0;
@@ -61,6 +90,8 @@ idItem::idItem() {
 	orgOrigin.Zero();
 	canPickUp = true;
 	fl.networkSync = true;
+
+	m_FrobActionScript = "frob_item";
 }
 
 /*
@@ -122,75 +153,97 @@ void idItem::Restore( idRestoreGame *savefile ) {
 idItem::UpdateRenderEntity
 ================
 */
-bool idItem::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
+bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t *renderView)
+{
+	bool bRc = true;
 
-	if ( lastRenderViewTime == renderView->time ) {
-		return false;
+	if(pulse == false)
+	{
+//		bRc = Frob(CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
+// |CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+// |CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, &renderEntity->shaderParms[11]);
 	}
+	else
+	{
+		if(lastRenderViewTime == renderView->time)
+			return false;
 
-	lastRenderViewTime = renderView->time;
+		lastRenderViewTime = renderView->time;
 
-	// check for glow highlighting if near the center of the view
-	idVec3 dir = renderEntity->origin - renderView->vieworg;
-	dir.Normalize();
-	float d = dir * renderView->viewaxis[0];
+		// check for glow highlighting if near the center of the view
+		idVec3 dir = renderEntity->origin - renderView->vieworg;
+		dir.Normalize();
+		float d = dir * renderView->viewaxis[0];
 
-	// two second pulse cycle
-	float cycle = ( renderView->time - inViewTime ) / 2000.0f;
+		// two second pulse cycle
+		float cycle = ( renderView->time - inViewTime ) / 2000.0f;
 
-	if ( d > 0.94f ) {
-		if ( !inView ) {
-			inView = true;
-			if ( cycle > lastCycle ) {
-				// restart at the beginning
-				inViewTime = renderView->time;
-				cycle = 0.0f;
+		if(d > 0.94f)
+		{
+			if(!inView)
+			{
+				inView = true;
+				if(cycle > lastCycle)
+				{
+					// restart at the beginning
+					inViewTime = renderView->time;
+					cycle = 0.0f;
+				}
 			}
 		}
-	} else {
-		if ( inView ) {
-			inView = false;
-			lastCycle = ceil( cycle );
+		else
+		{
+			if(inView)
+			{
+				inView = false;
+				lastCycle = ceil(cycle);
+			}
 		}
-	}
 
-	// fade down after the last pulse finishes 
-	if ( !inView && cycle > lastCycle ) {
-		renderEntity->shaderParms[4] = 0.0f;
-	} else {
-		// pulse up in 1/4 second
-		cycle -= (int)cycle;
-		if ( cycle < 0.1f ) {
-			renderEntity->shaderParms[4] = cycle * 10.0f;
-		} else if ( cycle < 0.2f ) {
-			renderEntity->shaderParms[4] = 1.0f;
-		} else if ( cycle < 0.3f ) {
-			renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
-		} else {
-			// stay off between pulses
+		if(!inView && cycle > lastCycle)
+		{
 			renderEntity->shaderParms[4] = 0.0f;
+		}
+		else
+		{
+			// pulse up in 1/4 second
+			cycle -= (int)cycle;
+			if ( cycle < 0.1f ) {
+				renderEntity->shaderParms[4] = cycle * 10.0f;
+			} else if ( cycle < 0.2f ) {
+				renderEntity->shaderParms[4] = 1.0f;
+			} else if ( cycle < 0.3f ) {
+				renderEntity->shaderParms[4] = 1.0f - ( cycle - 0.2f ) * 10.0f;
+			} else {
+				// stay off between pulses
+				renderEntity->shaderParms[4] = 0.0f;
+			}
 		}
 	}
 
 	// update every single time this is in view
-	return true;
+	return bRc;
 }
+
 
 /*
 ================
 idItem::ModelCallback
 ================
 */
-bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView ) {
-	const idItem *ent;
+bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView )
+{
+	idItem *ent;
 
 	// this may be triggered by a model trace or other non-view related source
-	if ( !renderView ) {
+	if ( !renderView )
+	{
 		return false;
 	}
 
 	ent = static_cast<idItem *>(gameLocal.entities[ renderEntity->entityNum ]);
-	if ( !ent ) {
+	if(!ent)
+	{
 		gameLocal.Error( "idItem::ModelCallback: callback with NULL game entity" );
 	}
 
@@ -202,9 +255,12 @@ bool idItem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *re
 idItem::Think
 ================
 */
-void idItem::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		if ( spin ) {
+void idItem::Think( void )
+{
+	if ( thinkFlags & TH_THINK )
+	{
+		if(spin)
+		{
 			idAngles	ang;
 			idVec3		org;
 
@@ -228,10 +284,12 @@ void idItem::Think( void ) {
 idItem::Present
 ================
 */
-void idItem::Present( void ) {
+void idItem::Present( void )
+{
 	idEntity::Present();
 
-	if ( !fl.hidden && pulse ) {
+	if(!fl.hidden && pulse)
+	{
 		// also add a highlight shell model
 		renderEntity_t	shell;
 
@@ -239,15 +297,21 @@ void idItem::Present( void ) {
 
 		// we will mess with shader parms when the item is in view
 		// to give the "item pulse" effect
-		shell.callback = idItem::ModelCallback;
+		if(m_FrobDistance == 0)
+			shell.callback = idItem::ModelCallback;
+		else
+			m_FrobCallbackChain = idItem::ModelCallback;
+
 		shell.entityNum = entityNumber;
 		shell.customShader = shellMaterial;
-		if ( itemShellHandle == -1 ) {
+		if ( itemShellHandle == -1 )
+		{
 			itemShellHandle = gameRenderWorld->AddEntityDef( &shell );
-		} else {
+		}
+		else
+		{
 			gameRenderWorld->UpdateEntityDef( itemShellHandle, &shell );
 		}
-
 	}
 }
 
@@ -256,12 +320,14 @@ void idItem::Present( void ) {
 idItem::Spawn
 ================
 */
-void idItem::Spawn( void ) {
+void idItem::Spawn( void )
+{
 	idStr		giveTo;
 	idEntity *	ent;
 	float		tsize;
 
-	if ( spawnArgs.GetBool( "dropToFloor" ) ) {
+	if ( spawnArgs.GetBool( "dropToFloor" ) )
+	{
 		PostEventMS( &EV_DropToFloor, 0 );
 	}
 
@@ -270,23 +336,28 @@ void idItem::Spawn( void ) {
 		GetPhysics()->GetClipModel()->Link( gameLocal.clip );
 	}
 
-	if ( spawnArgs.GetBool( "start_off" ) ) {
+	if ( spawnArgs.GetBool( "start_off" ) )
+	{
 		GetPhysics()->SetContents( 0 );
 		Hide();
-	} else {
+	} else
+	{
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
 
 	giveTo = spawnArgs.GetString( "owner" );
-	if ( giveTo.Length() ) {
+	if ( giveTo.Length() )
+	{
 		ent = gameLocal.FindEntity( giveTo );
-		if ( !ent ) {
+		if ( !ent )
+		{
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
 		PostEventMS( &EV_Touch, 0, ent, NULL );
 	}
 
-	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
+	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer )
+	{
 		spin = true;
 		BecomeActive( TH_THINK );
 	}
@@ -302,6 +373,8 @@ void idItem::Spawn( void ) {
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	LoadTDMSettings();
 }
 
 /*
@@ -309,7 +382,8 @@ void idItem::Spawn( void ) {
 idItem::GetAttributes
 ================
 */
-void idItem::GetAttributes( idDict &attributes ) {
+void idItem::GetAttributes( idDict &attributes )
+{
 	int					i;
 	const idKeyValue	*arg;
 
@@ -326,12 +400,15 @@ void idItem::GetAttributes( idDict &attributes ) {
 idItem::GiveToPlayer
 ================
 */
-bool idItem::GiveToPlayer( idPlayer *player ) {
-	if ( player == NULL ) {
+bool idItem::GiveToPlayer( idPlayer *player )
+{
+	if ( player == NULL )
+	{
 		return false;
 	}
 
-	if ( spawnArgs.GetBool( "inv_carry" ) ) {
+	if ( spawnArgs.GetBool( "inv_carry" ) )
+	{
 		return player->GiveInventoryItem( &spawnArgs );
 	} 
 	
@@ -343,13 +420,15 @@ bool idItem::GiveToPlayer( idPlayer *player ) {
 idItem::Pickup
 ================
 */
-bool idItem::Pickup( idPlayer *player ) {
-	
-	if ( !GiveToPlayer( player ) ) {
+bool idItem::Pickup( idPlayer *player )
+{
+	if ( !GiveToPlayer( player ) )
+	{
 		return false;
 	}
 
-	if ( gameLocal.isServer ) {
+	if ( gameLocal.isServer )
+	{
 		ServerSendEvent( EVENT_PICKUP, NULL, false, -1 );
 	}
 
@@ -366,7 +445,8 @@ bool idItem::Pickup( idPlayer *player ) {
 	Hide();
 
 	// add the highlight shell
-	if ( itemShellHandle != -1 ) {
+	if ( itemShellHandle != -1 )
+	{
 		gameRenderWorld->FreeEntityDef( itemShellHandle );
 		itemShellHandle = -1;
 	}
@@ -711,14 +791,17 @@ void idObjective::Event_CamShot( ) {
 idObjective::Event_Trigger
 ================
 */
-void idObjective::Event_Trigger( idEntity *activator ) {
+void idObjective::Event_Trigger( idEntity *activator )
+{
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
 
 		//Pickup( player );
 
-		if ( spawnArgs.GetString( "inv_objective", NULL ) ) {
-	 		if ( player && player->hud ) {
+		if ( spawnArgs.GetString( "inv_objective", NULL ) )
+		{
+	 		if ( player && player->hud )
+			{
 				idStr shotName = gameLocal.GetMapName();
 				shotName.StripFileExtension();
 				shotName += "/";
@@ -731,9 +814,12 @@ void idObjective::Event_Trigger( idEntity *activator ) {
 				player->GiveObjective( spawnArgs.GetString( "objectivetitle" ), spawnArgs.GetString( "objectivetext" ), shotName );
 
 				// a tad slow but keeps from having to update all objectives in all maps with a name ptr
-				for( int i = 0; i < gameLocal.num_entities; i++ ) {
-					if ( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType( idObjectiveComplete::Type ) ) {
-						if ( idStr::Icmp( spawnArgs.GetString( "objectivetitle" ), gameLocal.entities[ i ]->spawnArgs.GetString( "objectivetitle" ) ) == 0 ){
+				for( int i = 0; i < gameLocal.num_entities; i++ )
+				{
+					if ( gameLocal.entities[ i ] && gameLocal.entities[ i ]->IsType( idObjectiveComplete::Type ) )
+					{
+						if ( idStr::Icmp( spawnArgs.GetString( "objectivetitle" ), gameLocal.entities[ i ]->spawnArgs.GetString( "objectivetitle" ) ) == 0 )
+						{
 							gameLocal.entities[ i ]->spawnArgs.SetBool( "objEnabled", true );
 							break;
 						}
@@ -1341,3 +1427,4 @@ void idObjectiveComplete::Event_HideObjective( idEntity *e ) {
 		}
 	}
 }
+

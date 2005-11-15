@@ -7,8 +7,22 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.5  2005/11/07 01:58:25  ishtvan
+ * added getEyePos scriptfunction to get eye position
+ *
+ * Revision 1.4  2005/04/23 01:46:51  ishtvan
+ * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
+ *
+ * Revision 1.3  2005/04/07 09:28:54  ishtvan
+ * *) Moved Relations methods to idAI.  They did not belong on idActor.
+ *
+ * *) Added calling of Soundprop in method PlayFootstepSound
+ *
+ * Revision 1.2  2005/03/29 07:40:30  ishtvan
+ * Added AI Relations functions to be used by scripting
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -194,6 +208,13 @@ public:
 	bool					AnimDone( int channel, int blendFrames ) const;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
+	/**
+	* Returns the modification to movement volume based on the movement type
+	* (crouch walk, creep, run, etc)
+	* Called in derived classes idPlayer and idAI.
+	**/
+	virtual float			GetMovementVolMod( void ) { return 0; };
+
 protected:
 	friend class			idAnimState;
 
@@ -249,6 +270,20 @@ protected:
 
 	idList<idAttachInfo>	attachments;
 
+	/**
+	* Movement volume modifiers.  Ones for the player are taken from 
+	* cvars (for now), ones for AI are taken from spawnargs.
+	* Walking and not crouching is the default volume.
+	**/
+
+	float					m_stepvol_walk;
+	float					m_stepvol_run;
+	float					m_stepvol_creep;
+
+	float					m_stepvol_crouch_walk;
+	float					m_stepvol_crouch_creep;
+	float					m_stepvol_crouch_run;
+
 	virtual void			Gib( const idVec3 &dir, const char *damageDefName );
 
 							// removes attachments with "remove" set for when character dies
@@ -256,6 +291,13 @@ protected:
 
 							// copies animation from body to head joints
 	void					CopyJointsFromBodyToHead( void );
+
+	/**
+	* Updates the volume offsets for various movement modes
+	* (eg walk, run, creep + crouch ).  
+	* Used by derived classes idPlayer and idAI.
+	**/
+	virtual void			UpdateMoveVolumes( void ) {};
 
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
@@ -303,6 +345,7 @@ private:
 	void					Event_SetState( const char *name );
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
+	void					Event_GetEyePos( void );
 };
 
 #endif /* !__GAME_ACTOR_H__ */

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -323,6 +326,32 @@ protected:
 	const idDeclParticle *	dustSmoke;
 
 	float					GetSteerAngle( void );
+};
+
+
+/*
+===============================================================================
+
+idAFEntity_VehicleSimple
+
+===============================================================================
+*/
+
+class idAFEntity_VehicleSimple : public idAFEntity_Vehicle {
+public:
+	CLASS_PROTOTYPE( idAFEntity_VehicleSimple );
+
+							idAFEntity_VehicleSimple( void );
+							~idAFEntity_VehicleSimple( void );
+
+	void					Spawn( void );
+	virtual void			Think( void );
+
+protected:
+	idClipModel *			wheelModel;
+	idAFConstraint_Suspension *	suspension[4];
+	jointHandle_t			wheelJoints[4];
+	float					wheelAngles[4];
 };
 
 

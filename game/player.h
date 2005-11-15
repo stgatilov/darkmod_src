@@ -7,8 +7,43 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.11  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.10  2005/10/22 14:15:46  sparhawk
+ * Fixed flickering in lightgem when player is moving.
+ *
+ * Revision 1.9  2005/10/18 13:56:41  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.8  2005/09/26 03:09:02  ishtvan
+ * Event_Touch no longer necessary, removed
+ *
+ * Revision 1.7  2005/08/14 23:27:31  sophisticatedzombie
+ * Updated handling of leaning to use doxygen style comments
+ *
+ * Revision 1.6  2005/04/23 01:48:58  ishtvan
+ * *) Removed the effect of stamina on everything but the heartbeat sound
+ *
+ * *) Added additional movement speeds (creep, crouch-creep and crouch-run) for 6 total movement speeds
+ *
+ * Revision 1.5  2005/04/07 10:02:42  ishtvan
+ * added event_touch method for triggering AI's tactile alert when player bumps them
+ *
+ * Revision 1.4  2005/01/07 02:10:36  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.3  2004/11/24 22:00:05  sparhawk
+ * *) Multifrob implemented
+ * *) Usage of items against other items implemented.
+ * *) Basic Inventory system added.
+ * *) Inventory keys added
+ *
+ * Revision 1.2  2004/10/31 19:09:53  sparhawk
+ * Added CDarkModPlayer to player
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -234,7 +269,14 @@ public:
 	idScriptBool			AI_TURN_LEFT;
 	idScriptBool			AI_TURN_RIGHT;
 
-	// inventory
+	/**
+	* Set to true if the player is creeping
+	**/
+	idScriptBool			AI_CREEP;
+
+	/*!
+	* container for the player's inventory
+	*/
 	idInventory				inventory;
 
 	idEntityPtr<idWeapon>	weapon;
@@ -304,6 +346,12 @@ public:
 
 	idDragEntity			dragEntity;
 
+	/**
+	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
+	 * is constantly required and therfore we store it permanently.
+	 */
+	idEntity				*LightgemSurface;
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -334,7 +382,7 @@ public:
 	void					RestorePersistantInfo( void );
 	void					SetLevelTrigger( const char *levelName, const char *triggerName );
 
-	bool					UserInfoChanged( void );
+	bool					UserInfoChanged( bool canModify );
 	idDict *				GetUserInfo( void );
 	bool					BalanceTDM( void );
 
@@ -498,6 +546,38 @@ public:
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
 
+	bool					SelfSmooth( void );
+	void					SetSelfSmooth( bool b );
+
+	/**
+	 * AddToInventory maps to a scriptfunction which will store an entity into
+	 * the inventory.
+	 */
+	void AddToInventory(idEntity *ent);
+
+	/**
+	 * AdjustLightgem will calculate how much the lightgem should light up
+	 */
+	void AdjustLightgem(void);
+
+	/**
+	 * GetHeadEntity will return the entity for the head of the playermodel
+	 */
+	idEntity *GetHeadEntity(void) { return head.GetEntity(); };
+
+	/**
+	* Update movement volumes: Reads the movement volume
+	* modifiers from cvars (for now)
+	**/
+	void UpdateMoveVolumes( void );
+
+	/**
+	* Get the volume modifier for a given movement type
+	**/
+	float GetMovementVolMod( void );
+
+	void PrintDebugHUD(void);
+
 private:
 	jointHandle_t			hipJoint;
 	jointHandle_t			chestJoint;
@@ -609,6 +689,8 @@ private:
 
 	idPlayerIcon			playerIcon;
 
+	bool					selfSmooth;
+
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
@@ -666,6 +748,11 @@ private:
 	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
+
+/**
+* DarkMod Events
+**/
+
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
@@ -690,6 +777,14 @@ ID_INLINE void idPlayer::SetLeader( bool lead ) {
 
 ID_INLINE bool idPlayer::IsLeader( void ) {
 	return leader;
+}
+
+ID_INLINE bool idPlayer::SelfSmooth( void ) {
+	return selfSmooth;
+}
+
+ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
+	selfSmooth = b;
 }
 
 #endif /* !__GAME_PLAYER_H__ */

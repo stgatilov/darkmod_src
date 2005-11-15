@@ -7,8 +7,17 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.4  2005/11/15 22:24:05  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.3  2005/08/19 00:28:02  lloyd
+ * water physics
+ *
+ * Revision 1.2  2004/11/28 09:20:34  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -47,6 +56,7 @@ class idAFConstraint_Contact;
 class idAFConstraint_ContactFriction;
 class idAFConstraint_ConeLimit;
 class idAFConstraint_PyramidLimit;
+class idAFConstraint_Suspension;
 class idAFBody;
 class idAFTree;
 class idPhysics_AF;
@@ -66,7 +76,8 @@ typedef enum {
 	CONSTRAINT_CONTACT,
 	CONSTRAINT_FRICTION,
 	CONSTRAINT_CONELIMIT,
-	CONSTRAINT_PYRAMIDLIMIT
+	CONSTRAINT_PYRAMIDLIMIT,
+	CONSTRAINT_SUSPENSION
 } constraintType_t;
 
 
@@ -584,6 +595,48 @@ protected:
 	virtual void			ApplyFriction( float invTimeStep );
 };
 
+// vehicle suspension
+class idAFConstraint_Suspension : public idAFConstraint {
+
+public:
+							idAFConstraint_Suspension( void );
+
+	void					Setup( const char *name, idAFBody *body, const idVec3 &origin, const idMat3 &axis, idClipModel *clipModel );
+	void					SetSuspension( const float up, const float down, const float k, const float d, const float f );
+
+	void					SetSteerAngle( const float degrees ) { steerAngle = degrees; }
+	void					EnableMotor( const bool enable ) { motorEnabled = enable; }
+	void					SetMotorForce( const float force ) { motorForce = force; }
+	void					SetMotorVelocity( const float vel ) { motorVelocity = vel; }
+	void					SetEpsilon( const float e ) { epsilon = e; }
+	const idVec3			GetWheelOrigin( void ) const;
+
+	virtual void			DebugDraw( void );
+	virtual void			Translate( const idVec3 &translation );
+	virtual void			Rotate( const idRotation &rotation );
+
+protected:
+	idVec3					localOrigin;				// position of suspension relative to body1
+	idMat3					localAxis;					// orientation of suspension relative to body1
+	float					suspensionUp;				// suspension up movement
+	float					suspensionDown;				// suspension down movement
+	float					suspensionKCompress;		// spring compress constant
+	float					suspensionDamping;			// spring damping
+	float					steerAngle;					// desired steer angle in degrees
+	float					friction;					// friction
+	bool					motorEnabled;				// whether the motor is enabled or not
+	float					motorForce;					// motor force
+	float					motorVelocity;				// desired velocity
+	idClipModel *			wheelModel;					// wheel model
+	idVec3					wheelOffset;				// wheel position relative to body1
+	trace_t					trace;						// contact point with the ground
+	float					epsilon;					// lcp epsilon
+
+protected:
+	virtual void			Evaluate( float invTimeStep );
+	virtual void			ApplyFriction( float invTimeStep );
+};
+
 
 //===============================================================
 //
@@ -633,9 +686,16 @@ public:
 	void					SetDensity( float density, const idMat3 &inertiaScale = mat3_identity );
 	float					GetInverseMass( void ) const { return invMass; }
 	idMat3					GetInverseWorldInertia( void ) const { return current->worldAxis.Transpose() * inverseInertiaTensor * current->worldAxis; }
-
 	void					SetFrictionDirection( const idVec3 &dir );
 	bool					GetFrictionDirection( idVec3 &dir ) const;
+
+#ifdef MOD_WATERPHYSICS
+	float					GetVolume( void ) const { return volume; }
+	// returns the depth of the object in the water
+	// 0.0f if out of water
+	float					GetWaterLevel() const;	// MOD_WATERPHYSICS
+	float					SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal, bool fixedDensityBuoyancy ); 	// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS`
 
 	void					SetContactMotorDirection( const idVec3 &dir );
 	bool					GetContactMotorDirection( idVec3 &dir ) const;
@@ -664,6 +724,9 @@ private:
 	float					angularFriction;			// rotational friction
 	float					contactFriction;			// friction with contact surfaces
 	float					bouncyness;					// bounce
+#ifdef MOD_WATERPHYSICS
+	float					volume;						// volume of body MOD_WATERPHYSICS
+#endif 	// MOD_WATERPHYSICS
 	int						clipMask;					// contents this body collides with
 	idVec3					frictionDir;				// specifies a single direction of friction in body space
 	idVec3					contactMotorDir;			// contact motor direction
@@ -673,6 +736,11 @@ private:
 							// derived properties
 	float					mass;						// mass of body
 	float					invMass;					// inverse mass
+#ifdef MOD_WATERPHYSICS
+	float					liquidMass;					// mass of object in a liquid MOD_WATERPHYSICS
+	float					invLiquidMass;				// inverse liquid mass MOD_WATERPHYSICS
+	float					waterLevel;					// percent of body in water MOD_WATERPHYSICS
+#endif 	// MOD_WATERPHYSICS
 	idVec3					centerOfMass;				// center of mass of body
 	idMat3					inertiaTensor;				// inertia tensor
 	idMat3					inverseInertiaTensor;		// inverse inertia tensor
@@ -834,6 +902,16 @@ public:
 							// update the clip model positions
 	void					UpdateClipModels( void );
 
+#ifdef MOD_WATERPHYSICS
+	// buoyancy stuff
+	void					SetLiquidDensity( float density ); // MOD_WATERPHYSICS
+	float					GetLiquidDensity() const; 		// MOD_WATERPHYSICS
+	// this will reset liquidDensity so be careful when using it
+	void					SetFixedDensityBuoyancy( bool fixed ); // MOD_WATERPHYSICS
+	bool					GetFixedDensityBuoyancy() const; // MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
+
+
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -957,6 +1035,12 @@ private:
 							// physics state
 	AFPState_t				current;
 	AFPState_t				saved;
+#ifdef MOD_WATERPHYSICS
+// treats liquid Density as THE density for each body when the AF is in liquid.
+// otherwise liquidDensity is just a gravity scalar for the AF in any liquid.
+	bool					fixedDensityBuoyancy;		// MOD_WATERPHYSICS
+	float					liquidDensity;				// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	idAFBody *				masterBody;						// master body
 	idLCP *					lcp;							// linear complementarity problem solver

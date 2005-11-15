@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:42:32  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -32,6 +35,12 @@ class idUserInterface;
 class idMegaTexture;
 
 // moved from image.h for default parm
+typedef enum {
+	TF_LINEAR,
+	TF_NEAREST,
+	TF_DEFAULT				// use the user-specified r_textureFilter
+} textureFilter_t;
+
 typedef enum {
 	TR_REPEAT,
 	TR_CLAMP,
@@ -68,6 +77,7 @@ typedef enum {
 	DI_SCRATCH,		// video, screen wipe, etc
 	DI_CUBE_RENDER,
 	DI_MIRROR_RENDER,
+	DI_XRAY_RENDER,
 	DI_REMOTE_RENDER
 } dynamicidImage_t;
 
@@ -133,7 +143,9 @@ typedef enum {
 	TG_REFLECT_CUBE,
 	TG_SKYBOX_CUBE,
 	TG_WOBBLESKY_CUBE,
-	TG_SCREEN			// screen aligned, for mirrorRenders and screen space temporaries
+	TG_SCREEN,			// screen aligned, for mirrorRenders and screen space temporaries
+	TG_SCREEN2,
+	TG_GLASSWARP
 } texgen_t;
 
 typedef struct {
@@ -208,6 +220,9 @@ typedef enum {
 	SS_GUI = -2,		// guis
 	SS_BAD = -1,
 	SS_OPAQUE,			// opaque
+
+	SS_PORTAL_SKY,
+
 	SS_DECAL,			// scorch marks, etc.
 
 	SS_FAR,
@@ -327,6 +342,9 @@ public:
 	virtual bool		Parse( const char *text, const int textLength );
 	virtual void		FreeData( void );
 	virtual void		Print( void ) const;
+
+	//BSM Nerve: Added for material editor
+	bool				Save( const char *fileName = NULL );
 
 						// returns the internal image name for stage 0, which can be used
 						// for the renderer CaptureRenderToImage() call
@@ -557,6 +575,10 @@ public:
 						// to be called.  If NULL is returned, EvaluateRegisters must be used.
 	const float *		ConstantRegisters() const;
 
+	bool				SuppressInSubview() const				{ return suppressInSubview; };
+	bool				IsPortalSky() const						{ return portalSky; };
+	void				AddReference();
+
 private:
 	// parse the entire material
 	void				CommonInit();
@@ -650,6 +672,10 @@ private:
 	idStr				editorImageName;
 	mutable idImage *	editorImage;		// image used for non-shaded preview
 	float				editorAlpha;
+
+	bool				suppressInSubview;
+	bool				portalSky;
+	int					refCount;
 };
 
 typedef idList<const idMaterial *> idMatList;

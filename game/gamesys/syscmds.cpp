@@ -7,8 +7,23 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.6  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.5  2005/08/22 05:09:00  ishtvan
+ * removed call to old soundprop file IO function, replaced with placeholder
+ *
+ * Revision 1.4  2005/04/07 09:49:16  ishtvan
+ * Added soundprop file I/O debugging command "testsndIO"
+ *
+ * Revision 1.3  2005/03/29 07:50:45  ishtvan
+ * AI Relations: Added command "PrintAIRelations," which prints the AI relationship matrix to the console for debugging purposes
+ *
+ * Revision 1.2  2004/11/28 09:17:51  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,8 +34,48 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../../darkmod/sndproploader.h"
+#include "../../darkmod/relations.h"
 
 #include "TypeInfo.h"
+
+/*
+==================
+Cmd_TestSndIO_f
+==================
+*/
+void Cmd_TestSndIO_f( const idCmdArgs &args ) 
+{
+	idStr inFN;
+
+	if ( args.Argc() < 2 ) {
+		gameLocal.Printf( "usage: dm_spr_testIO <file name without extension>\n" );
+		goto Quit;
+	}
+	inFN = args.Args();
+
+	if ( inFN.Length() == 0 ) 
+	{
+		goto Quit;
+	}
+	
+//	New file IO not yet implemented
+//	gameLocal.Printf( "Testing sound prop. IO for file %s\n", inFN.c_str() );
+	gameLocal.Printf( "New soundprop file IO not yet implemented\n");
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_PrintAIRelations_f
+==================
+*/
+void Cmd_PrintAIRelations_f( const idCmdArgs &args ) 
+{
+	gameLocal.m_RelationsManager->DebugPrintMat();
+	return;
+}
 
 /*
 ==================
@@ -65,7 +120,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 			continue;
 		}
 
-		if ( !check->name.Filter( match ) ) {
+		if ( !check->name.Filter( match, true ) ) {
 			continue;
 		}
 
@@ -1319,7 +1374,6 @@ Cmd_ExportModels_f
 ==================
 */
 static void Cmd_ExportModels_f( const idCmdArgs &args ) {
-#ifndef _D3SDK
 	idModelExport	exporter;
 	idStr			name;
 
@@ -1337,7 +1391,6 @@ static void Cmd_ExportModels_f( const idCmdArgs &args ) {
 		name.DefaultFileExtension( ".def" );
 		exporter.ExportDefFile( name );
 	}
-#endif
 }
 
 /*
@@ -1346,7 +1399,6 @@ Cmd_ReexportModels_f
 ==================
 */
 static void Cmd_ReexportModels_f( const idCmdArgs &args ) {
-#ifndef _D3SDK
 	idModelExport	exporter;
 	idStr			name;
 
@@ -1366,7 +1418,6 @@ static void Cmd_ReexportModels_f( const idCmdArgs &args ) {
 		exporter.ExportDefFile( name );
 	}
 	idAnimManager::forceExport = false;
-#endif
 }
 
 /*
@@ -2360,6 +2411,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "saveParticles",			Cmd_SaveParticles_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"saves all lights to the .map file" );
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
+
+	cmdSystem->AddCommand( "dm_spr_testIO",				Cmd_TestSndIO_f,		CMD_FL_GAME,				"test soundprop file IO (needs a .spr file)" );
+	cmdSystem->AddCommand( "dm_ai_Relations",			Cmd_PrintAIRelations_f,	CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );

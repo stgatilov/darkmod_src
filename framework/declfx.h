@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -35,7 +38,8 @@ enum {
 	FX_SHAKE,
 	FX_ATTACHLIGHT,
 	FX_ATTACHENTITY,
-	FX_LAUNCH
+	FX_LAUNCH,
+	FX_SHOCKWAVE
 };
 
 //

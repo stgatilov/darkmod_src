@@ -7,8 +7,84 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.27  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.26  2005/11/01 16:12:47  sparhawk
+ * Bottomshot fixed. It didn't work because the loopvariable was reused inside the loop.
+ *
+ * Revision 1.25  2005/10/30 23:02:43  sparhawk
+ * Removed commented out code for old lightgem version.
+ *
+ * Revision 1.23  2005/10/26 21:12:59  sparhawk
+ * Lightgem renderpipe implemented
+ *
+ * Revision 1.22  2005/10/24 21:00:37  sparhawk
+ * Lightgem interleave added.
+ *
+ * Revision 1.21  2005/10/23 18:42:30  sparhawk
+ * Lightgem cleanup
+ *
+ * Revision 1.20  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.19  2005/10/23 14:14:15  sparhawk
+ * Bug fixed where lightgem uses only the last image for analysis instead of using the brightest value from all images.
+ *
+ * Revision 1.18  2005/10/23 13:51:06  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
+ * Revision 1.17  2005/10/22 14:15:46  sparhawk
+ * Fixed flickering in lightgem when player is moving.
+ *
+ * Revision 1.16  2005/10/21 21:57:17  sparhawk
+ * Ramdisk support added.
+ *
+ * Revision 1.15  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.14  2005/08/22 04:55:24  ishtvan
+ * minor changes in soundprop parms and function names
+ *
+ * Revision 1.13  2005/04/23 10:07:25  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
+ * Revision 1.12  2005/04/07 09:35:57  ishtvan
+ * Added pointer to the global sound prop class, initialization and loading of soundprop data at the proper times
+ *
+ * Revision 1.11  2005/03/29 07:45:20  ishtvan
+ * AI Relations: global AI relations object initializes from map, is saved & restored, and cleared on map shutdown
+ *
+ * Revision 1.10  2005/03/26 20:59:30  sparhawk
+ * Logging initialization added for automatic mod name detection.
+ *
+ * Revision 1.9  2005/01/24 00:16:25  sparhawk
+ * AmbientLight parameter added to material parser
+ *
+ * Revision 1.8  2005/01/20 19:36:56  sparhawk
+ * Materialparser improved to also load projection textures for lights.
+ *
+ * Revision 1.7  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.6  2004/11/28 19:51:56  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.5  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.4  2004/11/03 00:06:07  sparhawk
+ * Frob highlight finished and working.
+ *
+ * Revision 1.3  2004/10/31 20:01:55  sparhawk
+ * Frob highlights now only for one item at a time.
+ *
+ * Revision 1.2  2004/10/30 17:19:39  sparhawk
+ * Frob highlight added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,7 +94,29 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4996 4805)
+
 #include "Game_local.h"
+
+#include "../darkmod/darkmodglobals.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/misc.h"
+#include "../darkmod/relations.h"
+#include "../darkmod/sndproploader.h"
+#include "../darkmod/sndprop.h"
+
+#include "il/config.h"
+#include "il/il.h"
+
+CGlobal g_Global;
+
+extern CRelations		g_globalRelations;
+
+extern CsndPropLoader	g_SoundPropLoader;
+
+extern CsndProp			g_SoundProp;
+
+#define BUFFER_LEN 4096
 
 #ifdef GAME_DLL
 
@@ -63,7 +161,13 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 GetGameAPI
 ============
 */
+#if __MWERKS__
+#pragma export on
+#endif
 extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
+#if __MWERKS__
+#pragma export off
+#endif
 
 	if ( import->version == GAME_API_VERSION ) {
 
@@ -93,6 +197,9 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 	gameExport.version = GAME_API_VERSION;
 	gameExport.game = game;
 	gameExport.gameEdit = gameEdit;
+
+	// Initialize logging and all the global stuff for darkmod
+	g_Global.Init();
 
 	return &gameExport;
 }
@@ -128,7 +235,12 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
-idGameLocal::idGameLocal() {
+idGameLocal::idGameLocal() 
+{
+	m_sndPropLoader = &g_SoundPropLoader;
+	m_sndProp = &g_SoundProp;
+	m_RelationsManager = &g_globalRelations;
+	
 	Clear();
 }
 
@@ -216,6 +328,12 @@ void idGameLocal::Clear( void ) {
 
 	eventQueue.Init();
 	savedEventQueue.Init();
+	memset( lagometer, 0, sizeof( lagometer ) );
+
+	portalSkyEnt			= NULL;
+	portalSkyActive			= false;
+
+//	ResetSlowTimeVars();
 }
 
 /*
@@ -234,6 +352,9 @@ void idGameLocal::Init( void ) {
 	TestGameAPI();
 
 #else
+
+	// Initialize the image library, so we can use it later on.
+	ilInit();
 
 	// initialize idLib
 	idLib::Init();
@@ -296,6 +417,16 @@ void idGameLocal::Init( void ) {
 	Printf( "...%d aas types\n", aasList.Num() );
 	Printf( "game initialized.\n" );
 	Printf( "--------------------------------------\n" );
+	Printf( "Parsing material files\n" );
+
+	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
+
+	// load the soundprop globals from the def file
+	m_sndPropLoader->GlobalsFromDef();
+
+	//FIX: pm_walkspeed keeps getting reset whenever a map loads.
+	// Copy the old value here and set it when the map starts up.
+	m_walkSpeed = pm_walkspeed.GetFloat();
 }
 
 /*
@@ -306,7 +437,6 @@ idGameLocal::Shutdown
 ============
 */
 void idGameLocal::Shutdown( void ) {
-
 	if ( !common ) {
 		return;
 	}
@@ -322,10 +452,8 @@ void idGameLocal::Shutdown( void ) {
 
 	idAI::FreeObstacleAvoidanceNodes();
 
-#ifndef _D3SDK
 	// shutdown the model exporter
 	idModelExport::Shutdown();
-#endif
 
 	idEvent::Shutdown();
 
@@ -418,6 +546,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.AddObject( threads[i] );
 	}
 
+	// DarkMod: Add darkmod specific objects here:
+
+	// Add relationship matrix object
+	savegame.AddObject( m_RelationsManager );
 	// write out complete object list
 	savegame.WriteObjectList();
 
@@ -505,6 +637,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( realClientTime );
 	savegame.WriteBool( isNewFrame );
 	savegame.WriteFloat( clientSmoothing );
+
+	portalSkyEnt.Save( &savegame );
+	savegame.WriteBool( portalSkyActive );
 
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
@@ -698,7 +833,7 @@ void idGameLocal::SetLocalClient( int clientNum ) {
 idGameLocal::SetUserInfo
 ============
 */
-const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, bool isClient ) {
+const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify ) {
 	int i;
 	bool modifiedInfo = false;
 
@@ -708,7 +843,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		idGameLocal::userInfo[ clientNum ] = userInfo;
 
 		// server sanity
-		if ( !isClient ) {
+		if ( canModify  ) {
 
 			// don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
 			if ( idStr::IsNumeric( this->userInfo[ clientNum ].GetString( "ui_name" ) ) ) {
@@ -733,7 +868,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 		}
 
 		if ( entities[ clientNum ] && entities[ clientNum ]->IsType( idPlayer::Type ) ) {
-			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged();
+			modifiedInfo |= static_cast<idPlayer *>( entities[ clientNum ] )->UserInfoChanged(canModify);
 		}
 
 		if ( !isClient ) {
@@ -743,6 +878,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	}
 
 	if ( modifiedInfo ) {
+		assert( canModify );
 		newInfo = idGameLocal::userInfo[ clientNum ];
 		return &newInfo;
 	}
@@ -859,6 +995,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	sessionCommand = "";
 	nextGibTime		= 0;
 
+	portalSkyEnt			= NULL;
+	portalSkyActive			= false;
+
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
 	if ( !editEntities ) {
@@ -877,6 +1016,10 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	clip.Init();
 	pvs.Init();
+
+	// this will always fail for now, have not yet written the map compile
+	m_sndPropLoader->CompileMap( mapFile );
+
 	playerPVS.i = -1;
 	playerConnectedAreas.i = -1;
 
@@ -1084,6 +1227,7 @@ void idGameLocal::NextMap_f( const idCmdArgs &args ) {
 /*
 ===================
 idGameLocal::MapPopulate
+Sound prop: Added filling sndProp doorID hash
 ===================
 */
 void idGameLocal::MapPopulate( void ) {
@@ -1101,6 +1245,11 @@ void idGameLocal::MapPopulate( void ) {
 	RandomizeInitialSpawns( );
 
 	mapSpawnCount = spawnCount;
+
+	// Transfer sound prop data from loader to gameplay object
+	m_sndProp->SetupFromLoader( m_sndPropLoader );
+
+	m_sndPropLoader->Shutdown();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
@@ -1137,6 +1286,8 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	MapPopulate();
 
+	// initialize the AI relationships based on worldspawn
+	m_RelationsManager->SetFromArgs( &world->spawnArgs );
 	mpGame.Reset();
 
 	mpGame.Precache();
@@ -1197,6 +1348,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// precache the player
 	FindEntityDef( "player_doommarine", false );
+
+	SpawnLightgemEntity();
 
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
@@ -1307,6 +1460,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( realClientTime );
 	savegame.ReadBool( isNewFrame );
 	savegame.ReadFloat( clientSmoothing );
+
+	portalSkyEnt.Restore( &savegame );
+	savegame.ReadBool( portalSkyActive );
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -1442,6 +1598,9 @@ void idGameLocal::MapShutdown( void ) {
 	}
 
 	pvs.Shutdown();
+
+	m_sndProp->Clear();
+	m_RelationsManager->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
@@ -1779,7 +1938,8 @@ void idGameLocal::InitScriptForMap( void ) {
 idGameLocal::SpawnPlayer
 ============
 */
-void idGameLocal::SpawnPlayer( int clientNum ) {
+void idGameLocal::SpawnPlayer( int clientNum )
+{
 	idEntity	*ent;
 	idDict		args;
 
@@ -1801,6 +1961,9 @@ void idGameLocal::SpawnPlayer( int clientNum ) {
 	if ( clientNum >= numClients ) {
 		numClients = clientNum + 1;
 	}
+
+	idPlayer *player;	
+	player = GetLocalPlayer();
 
 	mpGame.SpawnPlayer( clientNum );
 }
@@ -1952,6 +2115,23 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			playerConnectedAreas = GetClientPVS( player, PVS_CONNECTED_AREAS );
 		} else {
 			otherPVS = GetClientPVS( player, PVS_CONNECTED_AREAS );
+			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
+			pvs.FreeCurrentPVS( playerConnectedAreas );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerConnectedAreas = newPVS;
+		}
+
+		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
+		if ( portalSkyEnt.GetEntity() ) {
+			idEntity *skyEnt = portalSkyEnt.GetEntity();
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
+			pvs.FreeCurrentPVS( playerPVS );
+			pvs.FreeCurrentPVS( otherPVS );
+			playerPVS = newPVS;
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
 			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
 			pvs.FreeCurrentPVS( playerConnectedAreas );
 			pvs.FreeCurrentPVS( otherPVS );
@@ -2399,7 +2579,11 @@ idGameLocal::Draw
 makes rendering and sound system calls
 ================
 */
-bool idGameLocal::Draw( int clientNum ) {
+bool idGameLocal::Draw( int clientNum )
+{
+	int n;
+	static int FPS_Interleave = 0;
+
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2410,8 +2594,56 @@ bool idGameLocal::Draw( int clientNum ) {
 		return false;
 	}
 
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	float fColVal = pDM->m_fColVal;
+
+	n = cv_lg_interleave.GetInteger();
+	if(cv_lg_weak.GetBool() == false)
+	{
+		if(cv_lg_hud.GetInteger() == 0)
+		{
+			if(n > 0)
+			{
+				// Skip every nth frame according to the value set in 
+				FPS_Interleave++;
+				if(FPS_Interleave >= n)
+				{
+					FPS_Interleave = 0;
+					fColVal = CalcLightgem(player);
+				}
+			}
+		}
+	}
+
 	// render the scene
 	player->playerView.RenderPlayerView( player->hud );
+
+	if(cv_lg_weak.GetBool() == false)
+	{
+		if(cv_lg_hud.GetInteger() != 0)
+		{
+			if(n > 0)
+			{
+				// Skip every nth frame according to the value set in 
+				FPS_Interleave++;
+				if(FPS_Interleave >= n)
+				{
+					FPS_Interleave = 0;
+					fColVal = CalcLightgem(player);
+				}
+			}
+		}
+
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue total: %f\r", fColVal);
+
+		pDM->m_fColVal = fColVal;
+		pDM->m_LightgemValue = LIGHTGEM_MAX * fColVal;
+		if(pDM->m_LightgemValue < LIGHTGEM_MIN)
+			pDM->m_LightgemValue = LIGHTGEM_MIN;
+		else
+		if(pDM->m_LightgemValue > LIGHTGEM_MAX)
+			pDM->m_LightgemValue = LIGHTGEM_MAX;
+	}
 
 	return true;
 }
@@ -3149,6 +3381,10 @@ void idGameLocal::SpawnMapEntities( void ) {
 
 	SetSkill( g_skill.GetInteger() );
 
+	// Add the lightgem to the map before anything else happened
+	// so it will be included as if it were a regular map entity.
+	SpawnLightgemEntity();
+
 	numEntities = mapFile->GetNumEntities();
 	if ( numEntities == 0 ) {
 		Error( "...no entities" );
@@ -3170,6 +3406,14 @@ void idGameLocal::SpawnMapEntities( void ) {
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
+		for(int x = 0; x < args.GetNumKeyVals(); x++)
+		{
+			const idKeyValue *p = args.GetKeyVal(x);
+			const idStr k = p->GetKey();
+			const idStr v = p->GetValue();
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+		}
+
 		if ( !InhibitEntitySpawn( args ) ) {
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
@@ -3182,6 +3426,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 	}
 
 	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
 /*
@@ -3951,7 +4196,7 @@ void idGameLocal::SpreadLocations() {
 		idVec3	point = ent->spawnArgs.GetVector( "origin" );
 		int areaNum = gameRenderWorld->PointInArea( point );
 		if ( areaNum < 0 ) {
-			Printf( "SpreadLocations: location '%' is not in a valid area\n", ent->spawnArgs.GetString( "name" ) );
+			Printf( "SpreadLocations: location '%s' is not in a valid area\n", ent->spawnArgs.GetString( "name" ) );
 			continue;
 		}
 		if ( areaNum >= numAreas ) {
@@ -4222,3 +4467,595 @@ idGameLocal::ThrottleUserInfo
 void idGameLocal::ThrottleUserInfo( void ) {
 	mpGame.ThrottleUserInfo();
 }
+
+/*
+=================
+idPlayer::SetPortalSkyEnt
+=================
+*/
+void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
+	portalSkyEnt = ent;
+}
+
+/*
+=================
+idPlayer::IsPortalSkyAcive
+=================
+*/
+bool idGameLocal::IsPortalSkyAcive() {
+	return portalSkyActive;
+}
+
+/*
+===========
+idGameLocal::SelectTimeGroup
+============
+*/
+void idGameLocal::SelectTimeGroup( int timeGroup ) { }
+
+/*
+===========
+idGameLocal::GetTimeGroupTime
+============
+*/
+int idGameLocal::GetTimeGroupTime( int timeGroup ) {
+	return gameLocal.time;
+}
+
+/*
+===========
+idGameLocal::GetBestGameType
+============
+*/
+idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
+	return gametype;
+}
+
+/*
+===========
+idGameLocal::NeedRestart
+============
+*/
+bool idGameLocal::NeedRestart() {
+
+	idDict		newInfo;
+	const idKeyValue *keyval, *keyval2;
+
+	newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
+
+	for ( int i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
+		keyval = newInfo.GetKeyVal( i );
+		keyval2 = serverInfo.FindKey( keyval->GetKey() );
+		if ( !keyval2 ) {
+			return true;
+		}
+		// a select set of si_ changes will cause a full restart of the server
+		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/*
+================
+idGameLocal::GetClientStats
+================
+*/
+void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
+	mpGame.PlayerStats( clientNum, data, len );
+}
+
+
+/*
+================
+idGameLocal::SwitchTeam
+================
+*/
+void idGameLocal::SwitchTeam( int clientNum, int team ) {
+
+	idPlayer *   player;
+	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
+
+	if ( !player )
+		return;
+
+	int oldTeam = player->team;
+
+	// Put in spectator mode
+	if ( team == -1 ) {
+		static_cast< idPlayer * >( entities[ clientNum ] )->Spectate( true );
+	}
+	// Switch to a team
+	else {
+		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
+	}
+}
+
+void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
+{
+	idToken token;
+	idLexer src;
+	idStr Material, FallOff, Map, *add;
+	int level;		// Nestinglevel for brackets
+	bool bAmbient;
+	CLightMaterial *mat;
+
+	if(pFN == NULL || ml == NULL)
+		goto Quit;
+
+	src.LoadFile(pFN);
+
+	level = 0;
+	add = NULL;
+	bAmbient = false;
+
+	while(1)
+	{
+		if(!src.ReadToken(&token))
+			goto Quit;
+
+//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
+
+		if(token == "table")
+		{
+			src.SkipBracedSection(true);
+			continue;
+		}
+
+		if(token == "lights")
+		{
+			Material = token;
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				Material += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", token.c_str());
+			}
+
+			continue;
+		}
+		else if(level == 1 && token == "ambientLight")
+		{
+			bAmbient = true;
+			continue;
+		}
+		else if(token == "{")
+		{
+			level++;
+			if(level == 1)
+				bAmbient = false;
+
+			continue;
+		}
+		else if(token == "}")
+		{
+			level--;
+			if(level == 0)
+			{
+				if(FallOff.Length()  == 0 && Map.Length() == 0)
+					continue;
+
+				mat = new CLightMaterial(Material, FallOff, Map);
+				mat->m_AmbientLight = bAmbient;
+				ml->Append(mat);
+				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
+			}
+			continue;
+		}
+		else if(token == "map")
+		{
+			Map = "";
+			while(src.ReadTokenOnLine(&token) == true)
+			{
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+					Map += token;
+//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Map: [%s]\r", token.c_str());
+			}
+			continue;
+		}
+		else if(token == "lightFalloffImage")
+		{
+			FallOff = "";
+
+			while(1)
+			{
+				if(!src.ReadToken(&token))
+				{
+					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Invalid material file structure on line %u\r", src.GetLineNum());
+					goto Quit;
+				}
+
+				// Ignore makeintensity tag
+				if(token == "makeintensity")
+					continue;
+				else if(token == "(")
+					continue;
+				else if(token == ")")
+					break;
+				else
+				{
+					do
+					{
+						if(token == ")")
+							break;
+
+						FallOff += token;
+//						DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FallOff: [%s]\r", token.c_str());
+					}
+					while(src.ReadTokenOnLine(&token) == true);
+					break;
+				}
+			}
+			continue;
+		}
+	}
+
+
+Quit:
+	return;
+}
+
+float idGameLocal::CalcLightgem(idPlayer *player)
+{
+	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
+	float fColVal[LIGHTGEM_MAX_IMAGESPLIT];
+	float fRetVal;
+	int playerid;			// player viewid
+	int headid;				// head viewid
+	int pdef;				// player modeldef
+	int hdef;				// head modeldef
+	int psid;				// player shadow viewid
+	int hsid;				// head shadow viewid
+	int i, n, k, dim, l;
+	idStr name;
+	renderView_t rv;
+	idEntity *lg;
+	renderEntity_t *prent;			// Player renderentity
+	renderEntity_t *hrent;			// Head renderentity
+	renderEntity_t *lgrend;
+
+	lg = player->LightgemSurface;
+	idVec3 Cam = player->GetEyePosition();
+	idVec3 Pos = player->GetPhysics()->GetOrigin();
+	idVec3 LGPos = Cam;
+
+	// Adjust the modelposition with userdefined offsets.
+	// Move the lightgem testmodel to the players feet based on the eye position
+	LGPos.x += cv_lg_oxoffs.GetInteger();
+	LGPos.y += cv_lg_oyoffs.GetInteger();
+	LGPos.z += cv_lg_ozoffs.GetInteger();
+	lg->SetOrigin(LGPos);
+
+/*
+	idStr strText;
+	int y;
+	y = 100;
+	sprintf(strText, "LGPos  x: %f   y: %f   z: %f", LGPos.x, LGPos.y, LGPos.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "EyePos  x: %f   y: %f   z: %f", Cam.x, Cam.y, Cam.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+	sprintf(strText, "PlayerPos  x: %f   y: %f   z: %f", Pos.x, Pos.y, Pos.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+*/
+
+	// Move the camerapostion to half of the player height.
+//	LGPos.z += fabs(Cam.z - Pos.z) / 2;
+	memset(&rv, 0, sizeof(rv));
+
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		fColVal[i] = 0.0;
+
+	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
+		rv.shaderParms[i] = gameLocal.globalShaderParms[i];
+
+	rv.globalMaterial = gameLocal.GetGlobalMaterial();
+	rv.width = SCREEN_WIDTH;
+	rv.height = SCREEN_HEIGHT;
+	// Good width seems to be between 10 and 20. A realistic default is 90.
+//	renderView.fov_x = 15;		// Bigger values means broader view
+//	rv.fov_x = 90;
+	rv.fov_x = cv_lg_fovx.GetInteger();
+	// Good height seems to be between 34 and 44. A realistic default 74.
+//	renderView.fov_y = 40;
+//	rv.fov_y = 74;
+	rv.fov_y = cv_lg_fovy.GetInteger();		// Bigger values means more compressed view
+	rv.forceUpdate = true;
+	rv.x = 0;
+	rv.y = 0;
+	rv.time = gameLocal.time;
+
+	n = cv_lg_renderpasses.GetInteger();
+	// limit the renderpasses between 1 and 4
+	if(n < 1) n = 1;
+	if(n > LIGHTGEM_MAX_RENDERPASSES) n = LIGHTGEM_MAX_RENDERPASSES;
+
+	k = cv_lg_hud.GetInteger()-1;
+	lgrend = lg->GetRenderEntity();
+
+	// Set the viewid to our private screenshot snapshot. If this number is changed 
+	// for some reason, it has to be changed in player.cpp as well.
+	rv.viewID = LIGHTGEM_VIEWID;
+	lgrend->suppressShadowInViewID = 0;
+
+	if(cv_lg_player.GetBool() == false)
+		lgrend->allowSurfaceInViewID = rv.viewID;
+	else
+		lgrend->allowSurfaceInViewID = 0;
+
+	// Tell the renderengine about the change for this entity.
+	prent = lg->GetRenderEntity();
+	if((pdef = lg->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+	prent = player->GetRenderEntity();
+	hrent = player->GetHeadEntity()->GetRenderEntity();
+
+	playerid = prent->suppressSurfaceInViewID;
+	psid = prent->suppressShadowInViewID;
+	prent->suppressShadowInViewID = rv.viewID;
+	prent->suppressSurfaceInViewID = rv.viewID;
+
+	headid = hrent->suppressSurfaceInViewID;
+	hsid = hrent->suppressShadowInViewID;
+	hrent->suppressShadowInViewID = rv.viewID;
+	hrent->suppressSurfaceInViewID = rv.viewID;
+
+	if((pdef = player->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
+		gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
+	dim = DARKMOD_RENDER_WIDTH;
+//	DM_LOG(LC_LIGHT, LT_INFO).LogString("ImageDimension: %u\r", dim);
+
+	// We only take the brightest value that we could find.
+	fRetVal = 0.0;
+	for(i = 0; i < n; i++)
+	{
+		rv.vieworg = LGPos;
+
+		switch(i)
+		{
+			case 0:	// From the top to bottom
+			{
+				rv.vieworg.z += cv_lg_zoffs.GetInteger();
+				rv.vieworg.z += dist;
+				rv.viewaxis = idMat3(	
+					0.0, 0.0, -1.0,
+					0.0, 1.0, 0.0,
+					1.0, 0.0, 0.0
+				);
+			}
+			break;
+
+			case 1:
+			{
+				// From bottom to top
+				rv.vieworg.z -= cv_lg_zoffs.GetInteger();
+				rv.vieworg.z -= dist;
+				rv.viewaxis = idMat3(	
+					0.0, 0.0, 1.0,
+					0.0, 1.0, 0.0,
+					-1.0, 0.0, 0.0
+				);
+			}
+			break;
+
+			case 2:	// Forwardview
+			{
+				rv.vieworg.x -= cv_lg_xoffs.GetInteger();
+				rv.vieworg.x -= dist;
+				rv.viewaxis = idMat3(
+					1, 0, 0,
+					0, 1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 3:	// Rearview
+			{
+				rv.vieworg.x += cv_lg_xoffs.GetInteger();
+				rv.vieworg.x += dist;
+				rv.viewaxis = idMat3(	
+					-1, 0, 0,
+					0, -1, 0,
+					0, 0, 1
+				);
+			}
+			break;
+
+			case 4:	// Left view
+			{
+				rv.vieworg.y -= cv_lg_yoffs.GetInteger();
+				rv.vieworg.y -= dist;
+				rv.viewaxis = idMat3(	
+					0.0, 1.0, 0.0,
+					-1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
+
+			case 5:
+			{
+				// Right view
+				rv.vieworg.y += cv_lg_yoffs.GetInteger();
+				rv.vieworg.y += dist;
+				rv.viewaxis = idMat3(	
+					0.0, -1.0, 0.0,
+					1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0
+				);
+			}
+			break;
+		}
+
+/*
+	sprintf(strText, "ViewOrg[%u] x: %f   y: %f   z: %f", i, rv.vieworg.x, rv.vieworg.y, rv.vieworg.z);
+	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+	y += 12;
+*/
+		// if the hud is enabled we either process all of them in case it is set to 0,
+		// then we don't care which one is actually displayed (most likely the last or
+		// the first one), or we only show the one that should be shown.
+		if(k == -1 || k == i)
+		{
+			name = DARKMOD_RENDERPIPE_NAME;
+
+			// We always use a square image, because we render now an overhead shot which
+			// covers all four side of the player at once, using a diamond or pyramid shape.
+			// The result is an image that is split in four triangles with an angle of 
+			// 45 degree, thus the square shape.
+			renderSystem->CropRenderSize(dim, dim, true);
+			gameRenderWorld->RenderScene(&rv);
+			if(cv_lg_file.GetBool() == true)
+			{
+				renderSystem->CaptureRenderToFile(name);
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+			}
+			else
+				renderSystem->CaptureRenderToImage("_scratch");
+			renderSystem->UnCrop();
+
+			// we can quit as soon as we have a maximum value
+			AnalyzeRenderImage(name, fColVal);
+
+			// Check which of the images has the brightest value, and this is what we will use.
+			for(l = 0; l < LIGHTGEM_MAX_IMAGESPLIT; l++)
+			{
+				if(fColVal[l] > fRetVal)
+					fRetVal = fColVal[l];
+
+//				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+			}
+		}
+	}
+
+	prent->suppressSurfaceInViewID = playerid;
+	prent->suppressShadowInViewID = psid;
+	hrent->suppressSurfaceInViewID = headid;
+	hrent->suppressShadowInViewID = hsid;
+
+	// and switch back our renderdefinition.
+	if(pdef != -1)
+		gameRenderWorld->UpdateEntityDef(pdef, prent);
+
+	if(hdef != -1)
+		gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
+	return(fRetVal);
+}
+
+void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
+{
+	CImage *im = &g_Global.m_RenderImage ;
+	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
+	int i, in, k, kn, h, x;
+
+	im->GetImage(Filename);
+	unsigned char *buffer = im->GetImage();
+
+	if(buffer == NULL)
+	{
+		static int indicator = 0;
+		static int lasttime;
+		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Unable to read image from renderpipe\r");
+		for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+			fColVal[i] = indicator;
+
+		if(gameLocal.time/1000 != lasttime)
+		{
+			lasttime = gameLocal.time/1000;
+			indicator = !indicator;
+		}
+
+		goto Quit;
+	}
+
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		counter[i] = 0;
+
+	// We always assume a BPP 4 here. We also always assume a square image with an even 
+	// number of lines. An odd number might have only a very small influence though and
+	// most likely get canceled out if a bigger image is used.
+	kn = im->m_Height;
+	h = kn/2;
+	in = im->m_Width;
+
+	// First we do the top half
+	for(k = 0; k < h; k++)
+	{
+		for(i = 0; i < in; i++)
+		{
+			if(i < k)
+				x = 0;
+			else if(i > kn-k-1)
+				x = 2;
+			else
+				x = 1;
+
+			// The order is RGBA.
+			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			counter[x]++;
+			buffer += im->m_Bpp;
+		}
+	}
+
+	// Then we do the bottom half where the triangles are inverted.
+	for(k = (h-1); k >= 0; k--)
+	{
+		for(i = 0; i < in; i++)
+		{
+			if(i < k)
+				x = 0;
+			else if(i > kn-k-1)
+				x = 2;
+			else
+				x = 3;
+
+			// The order is RGBA.
+			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			counter[x]++;
+			buffer += im->m_Bpp;
+		}
+	}
+
+	// Calculate the average for each value
+	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		fColVal[i] = fColVal[i]/counter[x];
+
+Quit:
+	return;
+}
+
+void idGameLocal::SpawnLightgemEntity(void)
+{
+	static const char *LightgemName = LIGHTEM_RENDER_NAME;
+	idMapEntity *mapEnt = NULL;
+
+	mapEnt = mapFile->FindEntity(LightgemName);
+	if(mapEnt == NULL)
+	{
+		mapEnt = new idMapEntity();
+		mapFile->AddEntity(mapEnt);
+		mapEnt->epairs.Set("classname", "func_static");
+		mapEnt->epairs.Set("name", LightgemName);
+		if(strlen(cv_lg_model.GetString()) == 0)
+			mapEnt->epairs.Set("model", LIGHTEM_RENDER_MODEL);
+		else
+			mapEnt->epairs.Set("model", cv_lg_model.GetString());
+		mapEnt->epairs.Set("origin", "0 0 0");
+	}
+}
+

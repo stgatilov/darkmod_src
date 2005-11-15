@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -1647,3 +1650,86 @@ void idStr::ShowMemoryUsage_f( const idCmdArgs &args ) {
 			stringDataAllocator.GetNumFreeBlocks(), stringDataAllocator.GetNumEmptyBaseBlocks() );
 #endif
 }
+
+/*
+================
+idStr::FormatNumber
+================
+*/
+struct formatList_t {
+	int			gran;
+	int			count;
+};
+
+// elements of list need to decend in size
+formatList_t formatList[] = {
+	{ 1000000000, 0 },
+	{ 1000000, 0 },
+	{ 1000, 0 }
+};
+
+int numFormatList = sizeof(formatList) / sizeof( formatList[0] );
+
+
+idStr idStr::FormatNumber( int number ) {
+	idStr string;
+	bool hit;
+
+	// reset
+	for ( int i = 0; i < numFormatList; i++ ) {
+		formatList_t *li = formatList + i;
+		li->count = 0;
+	}
+
+	// main loop
+	do {
+		hit = false;
+
+		for ( int i = 0; i < numFormatList; i++ ) {
+			formatList_t *li = formatList + i;
+
+			if ( number >= li->gran ) {
+				li->count++;
+				number -= li->gran;
+				hit = true;
+				break;
+			}
+		}
+	} while ( hit );
+
+	// print out
+	bool found = false;
+
+	for ( int i = 0; i < numFormatList; i++ ) {
+		formatList_t *li = formatList + i;
+
+		if ( li->count ) {
+			if ( !found ) {
+				string += va( "%i,", li->count );
+			} else {
+				string += va( "%3.3i,", li->count );
+			}
+			found = true;
+		}
+		else if ( found ) {
+			string += va( "%3.3i,", li->count );
+		}
+	}
+
+	if ( found ) {
+		string += va( "%3.3i", number );
+	}
+	else {
+		string += va( "%i", number );
+	}
+
+	// pad to proper size
+	int count = 11 - string.Length();
+
+	for ( int i = 0; i < count; i++ ) {
+		string.Insert( " ", 0 );
+	}
+
+	return string;
+}
+
