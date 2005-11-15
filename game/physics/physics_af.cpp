@@ -7,11 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.4  2005/11/12 14:59:51  sparhawk
+ * Revision 1.5  2005/11/15 22:24:04  sparhawk
  * SDK 1.3 Merge
  *
  * Revision 1.3  2005/08/19 00:28:02  lloyd
- * *** empty log message ***
+ * water physics
  *
  * Revision 1.2  2004/11/28 09:20:33  sparhawk
  * SDK V2 merge
@@ -39,17 +39,6 @@ const float LCP_EPSILON						= 1e-7f;
 const float LIMIT_LCP_EPSILON				= 1e-4f;
 const float CONTACT_LCP_EPSILON				= 1e-6f;
 const float CENTER_OF_MASS_EPSILON			= 1e-4f;
-const float NO_MOVE_TRANSLATION_TOLERANCE	= 10.0f;
-const float NO_MOVE_ROTATION_TOLERANCE		= 10.0f;
-const float MIN_MOVE_TIME					= -1.0f;
-const float MAX_MOVE_TIME					= -1.0f;
-const float SUSPEND_LINEAR_VELOCITY			= 10.0f;
-const float SUSPEND_ANGULAR_VELOCITY		= 15.0f;
-const float SUSPEND_LINEAR_ACCELERATION		= 20.0f;
-const float SUSPEND_ANGULAR_ACCELERATION	= 30.0f;
-const idVec6 vec6_lcp_epsilon				= idVec6( LCP_EPSILON, LCP_EPSILON, LCP_EPSILON,
-													 LCP_EPSILON, LCP_EPSILON, LCP_EPSILON );
-
 #ifdef MOD_WATERPHYSICS
 const float NO_MOVE_TIME					= 2.0f;
 const float IMPULSE_THRESHOLD				= 1500.0f;
@@ -61,6 +50,16 @@ const float LIQUID_MASS_MUL                 = 3.0f;     // I'm not sure how to e
 const float NO_MOVE_TIME					= 1.0f;
 const float IMPULSE_THRESHOLD				= 500.0f;
 #endif
+const float NO_MOVE_TRANSLATION_TOLERANCE	= 10.0f;
+const float NO_MOVE_ROTATION_TOLERANCE		= 10.0f;
+const float MIN_MOVE_TIME					= -1.0f;
+const float MAX_MOVE_TIME					= -1.0f;
+const float SUSPEND_LINEAR_VELOCITY			= 10.0f;
+const float SUSPEND_ANGULAR_VELOCITY		= 15.0f;
+const float SUSPEND_LINEAR_ACCELERATION		= 20.0f;
+const float SUSPEND_ANGULAR_ACCELERATION	= 30.0f;
+const idVec6 vec6_lcp_epsilon				= idVec6( LCP_EPSILON, LCP_EPSILON, LCP_EPSILON,
+													 LCP_EPSILON, LCP_EPSILON, LCP_EPSILON );
 
 #define AF_TIMINGS
 
@@ -3033,9 +3032,8 @@ void idAFConstraint_Contact::Setup( idAFBody *b1, idAFBody *b2, contactInfo_t &c
 	}
 
 	if ( body1->GetBouncyness() > 0.0f && -vel > minBounceVelocity ) {
-		c1[0] = body1->GetBouncyness() * -vel;
-	}
-	else {
+		c1[0] = body1->GetBouncyness() * vel;
+	} else {
 		c1[0] = 0.0f;
 	}
 
@@ -4207,7 +4205,6 @@ void idAFBody::Init( void ) {
 	centerOfMass				= vec3_zero;
 	inertiaTensor				= mat3_identity;
 	inverseInertiaTensor		= mat3_identity;
-
 #ifdef MOD_WATERPHYSICS
 	this->volume                = 1.0f;
 	this->liquidMass            = 1.0f;
@@ -4326,7 +4323,6 @@ void idAFBody::SetDensity( float density, const idMat3 &inertiaScale ) {
 	else {
 		inverseInertiaTensor = inertiaTensor.Inverse();
 	}
-
 #ifdef MOD_WATERPHYSICS
 	this->volume = mass / density;
 	this->liquidMass = this->mass;
@@ -4480,6 +4476,7 @@ void idAFBody::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadFloat( liquidMass );
 	saveFile->ReadFloat( invLiquidMass );
 #endif
+
 	saveFile->ReadFloat( mass );
 	saveFile->ReadFloat( invMass );
 	saveFile->ReadVec3( centerOfMass );
@@ -4579,7 +4576,6 @@ float idAFBody::SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal,
 }
 
 #endif
-
 
 //===============================================================
 //                                                        M
@@ -5775,6 +5771,7 @@ void idPhysics_AF::CheckForCollisions( float timeStep ) {
 			}
 #endif
 
+		
 #ifdef TEST_COLLISION_DETECTION
 			if ( gameLocal.clip.Contents( body->next->worldOrigin, body->clipModel,
 														body->next->worldAxis, body->clipMask, passEntity ) ) {

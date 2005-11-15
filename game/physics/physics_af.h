@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/15 22:24:05  sparhawk
+ * SDK 1.3 Merge
+ *
  * Revision 1.3  2005/08/19 00:28:02  lloyd
- * *** empty log message ***
+ * water physics
  *
  * Revision 1.2  2004/11/28 09:20:34  sparhawk
  * SDK V2 merge
@@ -683,7 +686,6 @@ public:
 	void					SetDensity( float density, const idMat3 &inertiaScale = mat3_identity );
 	float					GetInverseMass( void ) const { return invMass; }
 	idMat3					GetInverseWorldInertia( void ) const { return current->worldAxis.Transpose() * inverseInertiaTensor * current->worldAxis; }
-
 	void					SetFrictionDirection( const idVec3 &dir );
 	bool					GetFrictionDirection( idVec3 &dir ) const;
 
@@ -909,6 +911,7 @@ public:
 	bool					GetFixedDensityBuoyancy() const; // MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
 
+
 public:	// common physics interface
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -1032,7 +1035,6 @@ private:
 							// physics state
 	AFPState_t				current;
 	AFPState_t				saved;
-
 #ifdef MOD_WATERPHYSICS
 // treats liquid Density as THE density for each body when the AF is in liquid.
 // otherwise liquidDensity is just a gravity scalar for the AF in any liquid.
