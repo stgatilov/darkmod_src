@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2005/11/17 09:11:41  ishtvan
+ * modified surface types
+ *
  * Revision 1.27  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -153,7 +156,10 @@ idGame *					game = &gameLocal;	// statically pointed at an idGameLocal
 
 const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
-	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
+	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15",
+	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
+	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "armor", 
+	"armorleath", "climbable"
 };
 
 /*
