@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2005/11/17 09:14:15  ishtvan
+ * rope arrow fixes
+ * *) attaches to closest AF body of the rope, allowing climbing of draped ropes
+ *
+ * *) shouldn't attach to ropes that are lying on the ground
+ *
  * Revision 1.28  2005/11/12 14:59:51  sparhawk
  * SDK 1.3 Merge
  *
@@ -996,8 +1002,9 @@ void idPhysics_Player::RopeMove( void )
 	current.velocity.x = 0;
 	current.velocity.y = 0;
 
-	// stick the player to the rope
-	ropePoint = m_RopeEntity->GetPhysics()->GetOrigin();
+	// stick the player to the rope at an AF origin point closest to their arms
+	idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
+	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint );
 	
 	offset = (current.origin - ropePoint);
 	offset.ProjectOntoPlane( -gravityNormal );
@@ -1480,6 +1487,7 @@ void idPhysics_Player::CheckDuck( void ) {
 /*
 ================
 idPhysics_Player::CheckLadder
+DarkMod: Also checks ropes
 ================
 */
 void idPhysics_Player::CheckLadder( void ) 
@@ -1527,7 +1535,7 @@ void idPhysics_Player::CheckLadder( void )
 // TODO: Check the class type instead of the stringname, make new rope class
 		if( testEnt && idStr::Cmp( testEnt->GetEntityDefName(), "env_rope" ) == 0 )
 		{
-			m_RopeEntTouched = testEnt;
+			m_RopeEntTouched = static_cast<idAFEntity_Base *>(testEnt);
 
 			delta = (trace.c.point - current.origin);
 			delta = delta - (gravityNormal * delta) * gravityNormal;
@@ -1546,10 +1554,15 @@ void idPhysics_Player::CheckLadder( void )
 				&& (testEnt != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
 				)
 			{
-				m_bRopeContact = true;
-				m_RopeEntity = testEnt;
+				// make sure rope segment is not touching the ground
+				int bodyID = m_RopeEntTouched->BodyForClipModelId( trace.c.id );
+				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->HasGroundContacts( bodyID ) )
+				{
+					m_bRopeContact = true;
+					m_RopeEntity = static_cast<idAFEntity_Base *>(testEnt);
 
-				goto Quit;
+					goto Quit;
+				}
 			}
 		}
 
@@ -1587,7 +1600,13 @@ void idPhysics_Player::CheckLadder( void )
 			&& !groundPlane
 		)
 	{
-		delta = (m_RopeEntTouched->GetPhysics()->GetOrigin() - current.origin);
+		// test distance against the nearest rope body
+
+		int touchedBody = -1;
+		idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
+		idVec3 RopeSegPoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint, &touchedBody );
+
+		delta = ( RopeSegPoint - PlayerPoint);
 		delta = delta - (gravityNormal * delta) * gravityNormal;
 		dist = delta.LengthFast();
 
@@ -1603,7 +1622,8 @@ void idPhysics_Player::CheckLadder( void )
 			(	
 				dist <= ROPE_DISTANCE
 				&& ( angleOff >= idMath::Cos( ROPE_ATTACHANGLE ) || bLookingUp )
-				&& (m_RopeEntTouched != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME) 
+				&& (m_RopeEntTouched != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
+				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->HasGroundContacts( touchedBody )
 			)
 		{
 				m_bRopeContact = true;
