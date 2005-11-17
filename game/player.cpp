@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2005/11/17 22:59:47  lloyd
+ * Fixed player zoom bug when holding an object
+ *
  * Revision 1.33  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -6579,8 +6582,7 @@ void idPlayer::Think( void )
 	}
 
 	// zooming
-	// Added:  Don't zoom if the player is holding something...
-	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ) {
 			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), weapon.GetEntity()->GetZoomFov() );
 		} else {
@@ -7318,8 +7320,12 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return influenceFov;
 	}
 
+	if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+		return DefaultFov();
+	}
+
 	// prevent FOV from zooming if the player is holding an object
-	if ( zoomFov.IsDone( gameLocal.time ) && !g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+	if ( zoomFov.IsDone( gameLocal.time ) ) {
 		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
 	} else {
 		fov = zoomFov.GetCurrentValue( gameLocal.time );
