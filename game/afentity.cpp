@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/17 09:11:06  ishtvan
+ * added scriptfunctions for applying velocity to individual AF bodies
+ *
  * Revision 1.2  2004/11/28 09:16:31  sparhawk
  * SDK V2 merge
  *
@@ -506,9 +509,20 @@ void idAFAttachment::UnlinkCombat( void ) {
 */
 
 const idEventDef EV_SetConstraintPosition( "SetConstraintPosition", "sv" );
+const idEventDef EV_GetLinearVelocityB( "getLinearVelocityB", "d", 'v' );
+const idEventDef EV_GetAngularVelocityB( "getAngularVelocityB", "d", 'v' );
+const idEventDef EV_SetLinearVelocityB( "setLinearVelocityB", "vd" );
+const idEventDef EV_SetAngularVelocityB( "setAngularVelocityB", "vd" );
+const idEventDef EV_GetNumBodies( "getNumBodies", NULL, 'd' );
 
 CLASS_DECLARATION( idAnimatedEntity, idAFEntity_Base )
 	EVENT( EV_SetConstraintPosition,	idAFEntity_Base::Event_SetConstraintPosition )
+	EVENT( EV_GetLinearVelocityB,		idAFEntity_Base::Event_GetLinearVelocityB )
+	EVENT( EV_GetAngularVelocityB,		idAFEntity_Base::Event_GetAngularVelocityB )
+	EVENT( EV_SetLinearVelocityB,		idAFEntity_Base::Event_SetLinearVelocityB )
+	EVENT( EV_SetAngularVelocityB,		idAFEntity_Base::Event_SetAngularVelocityB )
+	EVENT( EV_GetNumBodies,				idAFEntity_Base::Event_GetNumBodies )
+
 END_CLASS
 
 static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
@@ -925,6 +939,32 @@ idAFEntity_Base::Event_SetConstraintPosition
 void idAFEntity_Base::Event_SetConstraintPosition( const char *name, const idVec3 &pos ) {
 	af.SetConstraintPosition( name, pos );
 }
+
+void idAFEntity_Base::Event_SetLinearVelocityB( idVec3 &NewVelocity, int id )
+{
+	GetPhysics()->SetLinearVelocity( NewVelocity, id );
+}
+
+void idAFEntity_Base::Event_SetAngularVelocityB( idVec3 &NewVelocity, int id )
+{
+	GetPhysics()->SetAngularVelocity( NewVelocity, id );
+}
+
+void idAFEntity_Base::Event_GetLinearVelocityB( int id )
+{
+	idThread::ReturnVector( GetPhysics()->GetLinearVelocity( id ) );
+}
+
+void idAFEntity_Base::Event_GetAngularVelocityB( int id )
+{
+	idThread::ReturnVector( GetPhysics()->GetAngularVelocity( id ) );
+}
+
+void idAFEntity_Base::Event_GetNumBodies( void )
+{
+	idThread::ReturnInt( static_cast<idPhysics_AF *>( GetPhysics() )->GetNumBodies() );
+}
+
 
 /*
 ===============================================================================
