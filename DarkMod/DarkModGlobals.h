@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.24  2005/11/17 22:40:13  sparhawk
+ * Lightgem renderpipe fixed
+ *
  * Revision 1.23  2005/10/30 22:15:26  sparhawk
  * Renderpipe creation removed because D3 can handle the pipename on it's own.
  *
@@ -155,7 +158,24 @@ public:
 	 * Load the image into memory and allow access to it. If the filename is not
 	 * NULL, it is assumed that a new image is to be loaded and the old one is unloaded.
 	 */
-	unsigned char *GetImage(const char *Filename = NULL);
+	bool LoadImage(const char *Filename = NULL);
+
+	/**
+	 * Load the image into memory and allow access to it. This method requires
+	 * an already open filehandle.
+	 */
+	bool LoadImage(HANDLE &FileHandle);
+
+	/**
+	 * Initialize Imageinfo like bitmap width, height and other stuff.
+	 */
+	void InitImageInfo(void);
+
+	/**
+	 * GetImage returns the pointer to the actual image data. the image has to be already
+	 * loaded, otherwise NULL is returned.
+	 */
+	unsigned char *GetImage(void);
 
 	/**
 	 * Unload will set the image to not loaded. If FreeMemory == false then the memory is not
@@ -229,6 +249,19 @@ public:
 	 */
 	CImage *GetImage(int Index);
 	CImage *GetImage(idStr const &Name, int &Index);
+
+	/**
+	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
+	 * Currently this works under Windows only. This is neccessary, because we have to store
+	 * the rendersnapshots somehwere and the only way to do this is via a pipe if we want to
+	 * avoid writing it constantly to disc.
+	 */
+	HANDLE CreateRenderPipe(void);
+
+	/**
+	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
+	 */
+	void CloseRenderPipe(HANDLE &hPipe);
 
 private:
 	void LoadINISettings(void *);
@@ -346,6 +379,10 @@ public:
 	 * This solution is less accurate, though. Default for this value is false.
 	 */
 	bool m_WeakLightgem;
+
+private:
+	SECURITY_ATTRIBUTES		m_saPipeSecurity;
+	PSECURITY_DESCRIPTOR	m_pPipeSD;
 };
 
 extern CGlobal g_Global;

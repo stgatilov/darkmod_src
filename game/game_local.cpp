@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2005/11/17 22:40:37  sparhawk
+ * Lightgem renderpipe fixed
+ *
  * Revision 1.28  2005/11/17 09:11:41  ishtvan
  * modified surface types
  *
@@ -4725,6 +4728,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	renderEntity_t *prent;			// Player renderentity
 	renderEntity_t *hrent;			// Head renderentity
 	renderEntity_t *lgrend;
+	HANDLE hPipe;
 
 	lg = player->LightgemSurface;
 	idVec3 Cam = player->GetEyePosition();
@@ -4826,6 +4830,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 	// We only take the brightest value that we could find.
 	fRetVal = 0.0;
+
 	for(i = 0; i < n; i++)
 	{
 		rv.vieworg = LGPos;
@@ -4917,6 +4922,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
+			hPipe = g_Global.CreateRenderPipe();
 			name = DARKMOD_RENDERPIPE_NAME;
 
 			// We always use a square image, because we render now an overhead shot which
@@ -4935,7 +4941,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			renderSystem->UnCrop();
 
 			// we can quit as soon as we have a maximum value
-			AnalyzeRenderImage(name, fColVal);
+			AnalyzeRenderImage(hPipe, fColVal);
+			g_Global.CloseRenderPipe(hPipe);
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(l = 0; l < LIGHTGEM_MAX_IMAGESPLIT; l++)
@@ -4963,13 +4970,13 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	return(fRetVal);
 }
 
-void idGameLocal::AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
+void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
 {
 	CImage *im = &g_Global.m_RenderImage ;
 	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 
-	im->GetImage(Filename);
+	im->LoadImage(hPipe);
 	unsigned char *buffer = im->GetImage();
 
 	if(buffer == NULL)

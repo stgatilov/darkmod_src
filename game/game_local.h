@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2005/11/17 22:40:37  sparhawk
+ * Lightgem renderpipe fixed
+ *
  * Revision 1.14  2005/11/12 14:59:20  sparhawk
  * SDK 1.3 Merge
  *
@@ -696,7 +699,7 @@ public:
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
 	 * determining the lightvalue for the given image.
 	 */
-	void					AnalyzeRenderImage(idStr &Filename, float fColVal[LIGHTGEM_MAX_IMAGESPLIT]);
+	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IMAGESPLIT]);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
