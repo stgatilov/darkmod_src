@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2005/11/17 09:12:33  ishtvan
+ * minor ropearrow update, variable type change
+ *
  * Revision 1.18  2005/11/12 14:59:51  sparhawk
  * SDK 1.3 Merge
  *
@@ -86,6 +89,8 @@
 
 ===================================================================================
 */
+
+class idAFEntity_Base;
 
 // movementType
 typedef enum {
@@ -245,13 +250,13 @@ private:
 	/**
 	* The rope entity that the player last attached to
 	**/
-    idEntity				*m_RopeEntity;
+    idAFEntity_Base			*m_RopeEntity;
 
 	/**
 	* The rope entity that the player last touched (not necessarily attached to)
 	* Used for the case where the player starts inside a rope and jumps up
 	**/
-	idEntity				*m_RopeEntTouched;
+	idAFEntity_Base			*m_RopeEntTouched;
 
 	/**
 	* The gametime since the last detachment (used for detach-reattach timer)
