@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2005/11/17 09:15:43  ishtvan
+ * *) added function to find nearest AF body to a point
+ *
+ * *) added function to check ground contact on specific body
+ *
  * Revision 1.5  2005/11/15 22:24:04  sparhawk
  * SDK 1.3 Merge
  *
@@ -8332,6 +8337,71 @@ void idPhysics_AF::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 
 	UpdateClipModels();
+}
+/*
+================
+idPhysics_AF::NearestBodyOrig
+
+Linear search to find the body origin nearest to the given point
+================
+*/
+idVec3 idPhysics_AF::NearestBodyOrig( idVec3 point, int *bodyID )
+{
+	idVec3 bodyOrigin, delta, returnVec;
+	float tempDist;
+	float minDist = idMath::INFINITY;
+	int numBods(0), returnBody(-1);
+
+	// return (0,0,0) if something unexpected happens
+	returnVec.Zero();
+
+	numBods = GetNumBodies();
+	for( int i = 0; i < numBods; i++ )
+	{
+		if( GetBody( i ) )
+		{
+			bodyOrigin = GetBody( i )->GetWorldOrigin();
+			delta = bodyOrigin - point;
+
+			tempDist = delta.LengthSqr();
+			if (tempDist < minDist)
+			{
+				minDist = tempDist;
+				returnVec = bodyOrigin;
+				returnBody = i;
+			}
+		}
+	}
+
+	if( bodyID )
+		*bodyID = returnBody;
+
+	return returnVec;
+}
+
+bool idPhysics_AF::HasGroundContacts( int id )
+{
+	int numContacts;
+	idAFConstraint_Contact *contacts[5];
+	bool bReturnVal(false);
+	idEntity *contactEnt(NULL);
+
+	numContacts = GetBodyContactConstraints( id, contacts, 5 );
+
+	for ( int i = 0; i < numContacts; i++ ) 
+	{
+		contactEnt = gameLocal.entities[ contacts[i]->GetContact().entityNum ];
+
+		if( contacts[i]->GetContact().normal * -gravityNormal > 0.0f
+			&& contactEnt && contactEnt != self )
+		{
+			bReturnVal = true;
+			goto Quit;
+		}
+	}
+
+Quit:
+	return bReturnVal;
 }
 
 #ifdef MOD_WATERPHYSICS

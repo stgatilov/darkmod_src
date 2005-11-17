@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/17 09:15:43  ishtvan
+ * *) added function to find nearest AF body to a point
+ *
+ * *) added function to check ground contact on specific body
+ *
  * Revision 1.4  2005/11/15 22:24:05  sparhawk
  * SDK 1.3 Merge
  *
@@ -901,6 +906,20 @@ public:
 	void					SetForcePushable( const bool enable ) { forcePushable = enable; }
 							// update the clip model positions
 	void					UpdateClipModels( void );
+	/**
+	* DarkMod:
+	* Returns the origin of the AF body nearest to the given point
+	* 
+	* If int pointer body is non-NULL, the body Id of the nearest body is written
+	*	to this pointer.  Will be set to -1 if no body was found.
+	**/
+	idVec3					NearestBodyOrig( idVec3 point, int *bodyID = NULL );
+
+	/**
+	* Returns true if the specified body is in contact with the ground
+	* (Called by the rope climbing code)
+	**/
+	bool					HasGroundContacts( int id );
 
 #ifdef MOD_WATERPHYSICS
 	// buoyancy stuff
