@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.26  2005/11/18 21:03:59  sparhawk
+ * Particle effect fix
+ *
  * Revision 1.25  2005/11/17 22:40:13  sparhawk
  * Lightgem renderpipe fixed
  *
@@ -934,7 +937,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					&cbBytesRead,							// number of bytes read
 					NULL);									// not overlapped I/O
 				dwLastError = GetLastError();
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), BufLen, m_Image, dwLastError);
+//				DM_LOG(LC_SYSTEM, LT_INFO).LogString("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), BufLen, m_Image, dwLastError);
 
 				BufLen += cbBytesRead;
 				dwBufSize -= cbBytesRead;
@@ -959,7 +962,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					goto Quit;
 				}
 			}
-			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
+//			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
 
 			memcpy(m_Image, pipe_buf, m_BufferLength);
 			InitImageInfo();

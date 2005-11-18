@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2005/11/18 21:04:23  sparhawk
+ * Particle effect fix
+ *
  * Revision 1.29  2005/11/17 22:40:37  sparhawk
  * Lightgem renderpipe fixed
  *
@@ -249,6 +252,7 @@ idGameLocal::idGameLocal()
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
+	m_Interleave = 0;
 	
 	Clear();
 }
@@ -2310,6 +2314,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idPlayer	*player;
 	const renderView_t *view;
 
+	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u   Frame: %u\r", time, previousTime, framenum);
 #ifdef _DEBUG
 	if ( isMultiplayer ) {
 		assert( !isClient );
@@ -2501,6 +2506,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	RunDebugInfo();
 	D_DrawDebugLines();
 
+	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u   Frame: %u\r", time, previousTime, framenum);
 	return ret;
 }
 
@@ -2591,7 +2597,8 @@ makes rendering and sound system calls
 bool idGameLocal::Draw( int clientNum )
 {
 	int n;
-	static int FPS_Interleave = 0;
+
+	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u\r", time, previousTime);
 
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
@@ -2614,10 +2621,10 @@ bool idGameLocal::Draw( int clientNum )
 			if(n > 0)
 			{
 				// Skip every nth frame according to the value set in 
-				FPS_Interleave++;
-				if(FPS_Interleave >= n)
+				m_Interleave++;
+				if(m_Interleave >= n)
 				{
-					FPS_Interleave = 0;
+					m_Interleave = 0;
 					fColVal = CalcLightgem(player);
 				}
 			}
@@ -2625,7 +2632,7 @@ bool idGameLocal::Draw( int clientNum )
 	}
 
 	// render the scene
-	player->playerView.RenderPlayerView( player->hud );
+	player->playerView.RenderPlayerView(player->hud);
 
 	if(cv_lg_weak.GetBool() == false)
 	{
@@ -2634,10 +2641,10 @@ bool idGameLocal::Draw( int clientNum )
 			if(n > 0)
 			{
 				// Skip every nth frame according to the value set in 
-				FPS_Interleave++;
-				if(FPS_Interleave >= n)
+				m_Interleave++;
+				if(m_Interleave >= n)
 				{
-					FPS_Interleave = 0;
+					m_Interleave = 0;
 					fColVal = CalcLightgem(player);
 				}
 			}
@@ -4710,6 +4717,7 @@ Quit:
 	return;
 }
 
+
 float idGameLocal::CalcLightgem(idPlayer *player)
 {
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
@@ -4723,7 +4731,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	int hsid;				// head shadow viewid
 	int i, n, k, dim, l;
 	idStr name;
-	renderView_t rv;
+	renderView_t rv, rv1;
 	idEntity *lg;
 	renderEntity_t *prent;			// Player renderentity
 	renderEntity_t *hrent;			// Head renderentity
@@ -4778,10 +4786,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 //	renderView.fov_y = 40;
 //	rv.fov_y = 74;
 	rv.fov_y = cv_lg_fovy.GetInteger();		// Bigger values means more compressed view
-	rv.forceUpdate = true;
+	rv.forceUpdate = false;
 	rv.x = 0;
 	rv.y = 0;
-	rv.time = gameLocal.time;
+	rv.time = time;
 
 	n = cv_lg_renderpasses.GetInteger();
 	// limit the renderpasses between 1 and 4
@@ -4831,13 +4839,22 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	// We only take the brightest value that we could find.
 	fRetVal = 0.0;
 
-	for(i = 0; i < n; i++)
+	name = DARKMOD_RENDERPIPE_NAME;
+	rv1 = rv;
+	for(i = 0; i < n+1; i++)
 	{
+		rv = rv1;
 		rv.vieworg = LGPos;
 
 		switch(i)
 		{
-			case 0:	// From the top to bottom
+			case 0:
+			{
+				rv = *player->GetRenderView();
+			}
+			break;
+
+			case 1:	// From the top to bottom
 			{
 				rv.vieworg.z += cv_lg_zoffs.GetInteger();
 				rv.vieworg.z += dist;
@@ -4849,7 +4866,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			}
 			break;
 
-			case 1:
+			case 2:
 			{
 				// From bottom to top
 				rv.vieworg.z -= cv_lg_zoffs.GetInteger();
@@ -4862,7 +4879,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			}
 			break;
 
-			case 2:	// Forwardview
+/*			case 2:	// Forwardview
 			{
 				rv.vieworg.x -= cv_lg_xoffs.GetInteger();
 				rv.vieworg.x -= dist;
@@ -4910,7 +4927,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 				);
 			}
 			break;
-		}
+*/		}
 
 /*
 	sprintf(strText, "ViewOrg[%u] x: %f   y: %f   z: %f", i, rv.vieworg.x, rv.vieworg.y, rv.vieworg.z);
@@ -4922,35 +4939,44 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			hPipe = g_Global.CreateRenderPipe();
-			name = DARKMOD_RENDERPIPE_NAME;
+			if(i != 0)
+				hPipe = g_Global.CreateRenderPipe();
 
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
 			// The result is an image that is split in four triangles with an angle of 
 			// 45 degree, thus the square shape.
-			renderSystem->CropRenderSize(dim, dim, true);
-			gameRenderWorld->RenderScene(&rv);
-			if(cv_lg_file.GetBool() == true)
-			{
-				renderSystem->CaptureRenderToFile(name);
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
-			}
+			if(i == 0)
+				renderSystem->CropRenderSize(1, 1, true);
 			else
-				renderSystem->CaptureRenderToImage("_scratch");
+				renderSystem->CropRenderSize(dim, dim, true);
+			gameRenderWorld->RenderScene(&rv);
+			if(i != 0)
+			{
+				if(cv_lg_file.GetBool() == true)
+				{
+					renderSystem->CaptureRenderToFile(name);
+					DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+				}
+				else
+					renderSystem->CaptureRenderToImage("_scratch");
+			}
 			renderSystem->UnCrop();
 
 			// we can quit as soon as we have a maximum value
-			AnalyzeRenderImage(hPipe, fColVal);
-			g_Global.CloseRenderPipe(hPipe);
-
-			// Check which of the images has the brightest value, and this is what we will use.
-			for(l = 0; l < LIGHTGEM_MAX_IMAGESPLIT; l++)
+			if(i != 0)
 			{
-				if(fColVal[l] > fRetVal)
-					fRetVal = fColVal[l];
+				AnalyzeRenderImage(hPipe, fColVal);
+				g_Global.CloseRenderPipe(hPipe);
 
-//				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+				// Check which of the images has the brightest value, and this is what we will use.
+				for(l = 0; l < LIGHTGEM_MAX_IMAGESPLIT; l++)
+				{
+					if(fColVal[l] > fRetVal)
+						fRetVal = fColVal[l];
+
+//					DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+				}
 			}
 		}
 	}
