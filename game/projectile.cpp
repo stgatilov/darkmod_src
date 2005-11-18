@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/18 17:14:29  lloyd
+ * Fixed bug when doing bindOnImpact
+ *
  * Revision 1.4  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -870,9 +873,19 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	// alert the ai
 	gameLocal.AlertAI( owner.GetEntity() );
 
+	//
 	// bind the projectile to the impact entity if necesary
+	// NOW: with special handling for the bind to AFEntity case.
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
-		Bind( gameLocal.entities[collision.c.entityNum], true );
+		idEntity *e = gameLocal.entities[ collision.c.entityNum ];
+
+		if( e->IsType( idAFEntity_Base::Type ) ) {
+			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
+			this->BindToBody( e, af->BodyForClipModelId( collision.c.id ), true );
+		}
+		else {
+			Bind( gameLocal.entities[collision.c.entityNum], true );
+		}
 	}
 
 	// splash damage
