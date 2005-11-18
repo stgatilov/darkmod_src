@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2005/11/18 21:14:36  sparhawk
+ * Particle effect fix
+ *
  * Revision 1.30  2005/11/18 21:04:23  sparhawk
  * Particle effect fix
  *
@@ -4850,6 +4853,11 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		{
 			case 0:
 			{
+				// This is a hack to make the particles behave.
+				// The problem is, that these rendersnapshots are done before the playerview
+				// is rendered. Since the lightem is turned upside down, the particles are
+				// oriented to match them and are cahced this way through all renderings within 
+				// this frame. 
 				rv = *player->GetRenderView();
 			}
 			break;
@@ -4878,56 +4886,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 				);
 			}
 			break;
-
-/*			case 2:	// Forwardview
-			{
-				rv.vieworg.x -= cv_lg_xoffs.GetInteger();
-				rv.vieworg.x -= dist;
-				rv.viewaxis = idMat3(
-					1, 0, 0,
-					0, 1, 0,
-					0, 0, 1
-				);
-			}
-			break;
-
-			case 3:	// Rearview
-			{
-				rv.vieworg.x += cv_lg_xoffs.GetInteger();
-				rv.vieworg.x += dist;
-				rv.viewaxis = idMat3(	
-					-1, 0, 0,
-					0, -1, 0,
-					0, 0, 1
-				);
-			}
-			break;
-
-			case 4:	// Left view
-			{
-				rv.vieworg.y -= cv_lg_yoffs.GetInteger();
-				rv.vieworg.y -= dist;
-				rv.viewaxis = idMat3(	
-					0.0, 1.0, 0.0,
-					-1.0, 0.0, 0.0,
-					0.0, 0.0, 1.0
-				);
-			}
-			break;
-
-			case 5:
-			{
-				// Right view
-				rv.vieworg.y += cv_lg_yoffs.GetInteger();
-				rv.vieworg.y += dist;
-				rv.viewaxis = idMat3(	
-					0.0, -1.0, 0.0,
-					1.0, 0.0, 0.0,
-					0.0, 0.0, 1.0
-				);
-			}
-			break;
-*/		}
+		}
 
 /*
 	sprintf(strText, "ViewOrg[%u] x: %f   y: %f   z: %f", i, rv.vieworg.x, rv.vieworg.y, rv.vieworg.z);
