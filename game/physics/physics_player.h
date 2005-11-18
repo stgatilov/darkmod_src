@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/11/18 10:31:44  ishtvan
+ * rope arrow fixes
+ *
  * Revision 1.19  2005/11/17 09:12:33  ishtvan
  * minor ropearrow update, variable type change
  *
@@ -267,6 +270,11 @@ private:
 	* toggled based on whether the player should stay attached to rope
 	**/
 	bool					m_bRopeAttached;
+
+	/**
+	* toggled on in the frame that the player first attaches to the rope
+	**/
+	bool					m_bJustHitRope;
 
 	// ladder movement
 	bool					ladder;

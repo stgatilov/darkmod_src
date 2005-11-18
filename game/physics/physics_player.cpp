@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2005/11/18 10:31:44  ishtvan
+ * rope arrow fixes
+ *
  * Revision 1.29  2005/11/17 09:14:15  ishtvan
  * rope arrow fixes
  * *) attaches to closest AF body of the rope, allowing climbing of draped ropes
@@ -996,16 +999,33 @@ void idPhysics_Player::RopeMove( void )
 	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
 	idBounds ropeBounds;
 	trace_t transTrace; // used for clipping tests when moving the player
-	idVec3 transVec, forward, zeros(0,0,0);
+	idVec3 transVec, forward, zeros(0,0,0), playerVel;
+	int bodID(0);
 
-	// kill the player's transverse velocity
+	// store and kill the player's transverse velocity
+	playerVel = current.velocity;
 	current.velocity.x = 0;
 	current.velocity.y = 0;
 
 	// stick the player to the rope at an AF origin point closest to their arms
 	idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
-	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint );
+	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint, &bodID );
 	
+	// apply the player's weight to the AF body - COMMENTED OUT DUE TO AF CRAZINESS
+//	static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce(bodID, ropePoint, mass * gravityVector );
+
+	// if the player has hit the rope this frame, apply an impulse based on their velocity
+	// pretend the deceleration takes place over a number of frames for realism (100 ms?)
+	if( m_bJustHitRope )
+	{
+		m_bJustHitRope = false;
+
+		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
+		vImpulse *= mass;
+
+		static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1 );
+	}
+
 	offset = (current.origin - ropePoint);
 	offset.ProjectOntoPlane( -gravityNormal );
 	offset.Normalize();
@@ -1559,6 +1579,7 @@ void idPhysics_Player::CheckLadder( void )
 				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->HasGroundContacts( bodyID ) )
 				{
 					m_bRopeContact = true;
+					m_bJustHitRope = true;
 					m_RopeEntity = static_cast<idAFEntity_Base *>(testEnt);
 
 					goto Quit;
@@ -1579,7 +1600,6 @@ void idPhysics_Player::CheckLadder( void )
 			// if also near a surface a step height higher
 			if ( trace.fraction < 1.0f ) 
 			{
-
 				// if it also is a ladder surface
 				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
 				{
@@ -1601,10 +1621,9 @@ void idPhysics_Player::CheckLadder( void )
 		)
 	{
 		// test distance against the nearest rope body
-
 		int touchedBody = -1;
 		idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
-		idVec3 RopeSegPoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint, &touchedBody );
+		idVec3 RopeSegPoint = static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->NearestBodyOrig( PlayerPoint, &touchedBody );
 
 		delta = ( RopeSegPoint - PlayerPoint);
 		delta = delta - (gravityNormal * delta) * gravityNormal;
@@ -1627,6 +1646,7 @@ void idPhysics_Player::CheckLadder( void )
 			)
 		{
 				m_bRopeContact = true;
+				m_bJustHitRope = true;
 				m_RopeEntity = m_RopeEntTouched;
 				goto Quit;
 		}
@@ -2069,6 +2089,7 @@ idPhysics_Player::idPhysics_Player( void ) {
 	// rope climbing
 	m_bRopeContact = false;
 	m_bRopeAttached = false;
+	m_bJustHitRope = false;
 	m_RopeEntity = NULL;
 	m_RopeEntTouched = NULL;
 	m_RopeDetachTimer = 0;
@@ -2161,6 +2182,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteMaterial( groundMaterial );
 
 	savefile->WriteBool( m_bRopeContact );
+	savefile->WriteBool( m_bJustHitRope );
 	savefile->WriteBool( m_bRopeAttached );
 	savefile->WriteInt( m_RopeDetachTimer );
 	savefile->WriteObject( m_RopeEntity );
@@ -2227,6 +2249,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadMaterial( groundMaterial );
 
 	savefile->ReadBool( m_bRopeContact );
+	savefile->ReadBool( m_bJustHitRope );
 	savefile->ReadBool( m_bRopeAttached );
 	savefile->ReadInt( m_RopeDetachTimer );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_RopeEntity ) );
