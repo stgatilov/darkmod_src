@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.28  2005/11/19 19:54:09  sparhawk
+ * Logging disabler added.
+ *
  * Revision 1.27  2005/11/19 19:41:52  sparhawk
  * Logging disabler added.
  *
@@ -398,7 +401,7 @@ private:
 extern CGlobal g_Global;
 extern char *g_LCString[];
 
-//#undef LOGBUILD
+#define LOGBUILD
 
 #ifdef LOGBUILD
 #define DM_LOG(lc, lt)				if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
