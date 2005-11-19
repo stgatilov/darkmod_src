@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.25  2005/11/19 17:06:05  sparhawk
+ * Frame marker added
+ *
  * Revision 1.24  2005/11/17 22:40:13  sparhawk
  * Lightgem renderpipe fixed
  *
@@ -138,6 +141,7 @@ typedef enum {
 	LC_WEAPON,
 	LC_MATH,
 	LC_MOVEMENT,		// mantling, leaning, ledge hanging, etc...
+	LC_FRAME,			// This is intended only as a framemarker and will always switched on if at least one other option is on.
 	LC_COUNT
 } LC_LogClass;
 

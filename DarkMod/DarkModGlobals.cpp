@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.27  2005/11/19 17:06:05  sparhawk
+ * Frame marker added
+ *
  * Revision 1.26  2005/11/18 21:03:59  sparhawk
  * Particle effect fix
  *
@@ -178,6 +181,7 @@ static char *LCString[LC_COUNT+1] = {
 	"WEAPON",
 	"MATH",
 	"MOVEMENT",
+	"FRAME",
 	"(empty)"
 };
 
@@ -483,6 +487,7 @@ void CGlobal::LoadINISettings(void *p)
 	PROFILE_SECTION *ps;
 	PROFILE_MAP *pm;
 	FILE *logfile;
+	bool Frame = false;
 
 	DM_LOG(LC_INIT, LT_INIT).LogString("Loading INI settings\r");
 
@@ -559,81 +564,116 @@ void CGlobal::LoadINISettings(void *p)
 		if(FindMap(ps, "LogClass_SYSTEM", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_SYSTEM] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_SYSTEM: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_MISC] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MISC: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_FROBBING] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_FROBBING: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_AI", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_AI] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_AI: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_SOUND", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_SOUND] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_SOUND: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_FUNCTION", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_FUNCTION] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_FUNCTION: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_INVENTORY] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_INVENTORY: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_LIGHT] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_LIGHT: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_WEAPON", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_WEAPON] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_WEAPON: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_MATH] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MATH: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
+			{
 				m_ClassArray[LC_MOVEMENT] = true;
+				Frame = true;
+			}
 
 			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MOVEMENT: %c\r", pm->Value[0]);
 		}
 	}
+	m_ClassArray[LC_FRAME] = Frame;
+
 
 	if(FindSection(pfh, "GlobalParams", &ps) != -1)
 	{
