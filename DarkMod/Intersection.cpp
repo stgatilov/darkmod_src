@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.3  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.2  2005/10/18 13:56:09  sparhawk
  * Lightgem updates
  *
@@ -65,10 +68,10 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
 
     // no intersection if Q(t) has no real roots
     float fDiscr = fB*fB - fA*fC;
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
     if(fDiscr < 0.0)
     {
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 		rc = INTERSECT_OUTSIDE;
         riQuantity = 0;
     }
@@ -81,7 +84,7 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
 
 		if(afT[0] > 1.0 || afT[1] < 0.0)
 		{
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 			rc = INTERSECT_NONE;
             riQuantity = 0;
 		}
@@ -89,7 +92,7 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
         {
             if(afT[1] > 1.0)
             {
-				DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
 				rc = INTERSECT_PARTIAL;
 				riQuantity = 1;
 
@@ -97,7 +100,7 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
             }
             else
             {
-				DM_LOG(LC_MATH, LT_DEBUG).LogString("Found two intersections\r");
+				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found two intersections\r");
 				rc = INTERSECT_FULL;
                 riQuantity = 2;
                 Contained[0] = Segment[LSG_ORIGIN]+afT[0]*Segment[LSG_DIRECTION];
@@ -106,7 +109,7 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
         }
         else  // afT[1] >= 0
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
 			rc = INTERSECT_PARTIAL;
 			riQuantity = 1;
 			Contained[0] = Segment[LSG_ORIGIN]+afT[1]*Segment[LSG_DIRECTION];
@@ -117,23 +120,23 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
         afT[0] = -fB/fA;
         if(0.0 <= afT[0] && afT[0] <= 1.0)
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
             riQuantity = 1;
             Contained[0] = Segment[LSG_ORIGIN]+afT[0]*Segment[LSG_DIRECTION];
         }
         else
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 			rc = INTERSECT_OUTSIDE;
 			riQuantity = 0;
         }
     }
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[0]", Contained[0]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[1]", Contained[1]);
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("rc: %u   riQuantity %f\r", rc, riQuantity);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rc: %u   riQuantity %f\r", rc, riQuantity);
 
 	return rc;
 }
@@ -174,10 +177,10 @@ EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT],
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "MatDiff", kMatDiff);
 
     float fDiscr = fB*fB - fA*fC;
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
     if(fDiscr < 0.0)
     {
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 		rc = INTERSECT_OUTSIDE;
         riQuantity = 0;
     }
@@ -190,7 +193,7 @@ EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT],
 
         if(afT[0] >= 0.0)
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found two intersections\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found two intersections\r");
 			rc = INTERSECT_FULL;
             riQuantity = 2;
             Contained[0] = Ray[LSG_ORIGIN] + afT[0]*Ray[LSG_DIRECTION];
@@ -198,14 +201,14 @@ EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT],
         }
         else if(afT[1] >= 0.0)
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
 			rc = INTERSECT_PARTIAL;
             riQuantity = 1;
             Contained[0] = Ray[LSG_ORIGIN] + afT[1]*Ray[LSG_DIRECTION];
         }
         else
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 			rc = INTERSECT_OUTSIDE;
             riQuantity = 0;
         }
@@ -215,22 +218,22 @@ EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT],
         afT[0] = -fB/fA;
         if(afT[0] >= 0.0)
         {
- 			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+ 			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
 			riQuantity = 1;
             Contained[0] = Ray[LSG_ORIGIN] + afT[0]*Ray[LSG_DIRECTION];
         }
         else
         {
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
             riQuantity = 0;
         }
     }
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[0]", Contained[0]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[1]", Contained[1]);
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("rc: %u   riQuantity %f\r", rc, riQuantity);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rc: %u   riQuantity %f\r", rc, riQuantity);
 
 	return rc;
 }
@@ -268,10 +271,10 @@ EIntersection IntersectLineEllipsoid(const idVec3 Line[LSG_COUNT],
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "MatDiff", kMatDiff);
 
     float fDiscr = fB*fB - fA*fC;
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("fA: %f   fB: %f   fC: %f   fDiscr: %f\r", fA, fB, fC, fDiscr);
     if(fDiscr < 0.0)
     {
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Found no intersections\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found no intersections\r");
 		rc = INTERSECT_OUTSIDE;
         riQuantity = 0;
     }
@@ -282,7 +285,7 @@ EIntersection IntersectLineEllipsoid(const idVec3 Line[LSG_COUNT],
         riQuantity = 2;
         afT[0] = (-fB - fRoot)*fInvA;
         afT[1] = (-fB + fRoot)*fInvA;
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Found two intersections\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found two intersections\r");
 		rc = INTERSECT_FULL;
         riQuantity = 2;
         Contained[0] = Line[LSG_ORIGIN] + afT[0]*Line[LSG_DIRECTION];
@@ -290,18 +293,18 @@ EIntersection IntersectLineEllipsoid(const idVec3 Line[LSG_COUNT],
     }
     else
     {
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Found one intersection\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Found one intersection\r");
 		rc = INTERSECT_PARTIAL;
         riQuantity = 1;
         afT[0] = -fB/fA;
         Contained[0] = Line[LSG_ORIGIN] + afT[0]*Line[LSG_DIRECTION];
     }
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("afT[0]: %f   afT[1]: %f\r", afT[0], afT[1]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[0]", Contained[0]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Contained[1]", Contained[1]);
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("rc: %u   riQuantity %f\r", rc, riQuantity);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rc: %u   riQuantity %f\r", rc, riQuantity);
 
 	return rc;
 }
@@ -329,11 +332,11 @@ bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Tri[3], idVec3
 
 	if(tmp > -idMath::FLT_EPSILON && tmp < idMath::FLT_EPSILON)
 	{
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("No triangle intersection: tmp = %f\r", tmp);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection: tmp = %f\r", tmp);
 		goto Quit;
 	}
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("tmp = %f\r", tmp);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("tmp = %f\r", tmp);
 	tmp = 1.0/tmp;
 	s = Seg[LSG_ORIGIN] - Tri[0];
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "s", s);
@@ -341,7 +344,7 @@ bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Tri[3], idVec3
 	u = tmp * (s * p);
 	if(u < 0.0 || u > 1.0)
 	{
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("No triangle intersection: u = %f\r", u);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection: u = %f\r", u);
 		goto Quit;
 	}
 
@@ -350,14 +353,14 @@ bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Tri[3], idVec3
 	v = tmp * (Seg[LSG_DIRECTION] * q);
 	if(v < 0.0 || v > 1.0)
 	{
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("No triangle intersection: v = %f\r", v);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection: v = %f\r", v);
 		goto Quit;
 	}
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("u = %f   v = %f\r", u, v);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("u = %f   v = %f\r", u, v);
 	if((u + v) > 1.0)
 	{
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("No triangle intersection  (u + v) = %f\r", u + v);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection  (u + v) = %f\r", u + v);
 		goto Quit;
 	}
 
@@ -369,11 +372,11 @@ bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Tri[3], idVec3
 /*
 	if(t < 0.0 || t > 1.0)
 	{
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("No triangle intersection  t = %f\r", t);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection  t = %f\r", t);
 		goto Quit;
 	}
 */
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("Triangle intersection t = %f\r", t);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Triangle intersection t = %f\r", t);
 
 	rc = true;
 
@@ -508,17 +511,17 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 
 	// Calculate the angle between the player and the lightvector.
 	angle = rkCone[ELA_TARGET].Length() * rkLine[LSG_DIRECTION].Length();
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("Denominator: %f\r", angle);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Denominator: %f\r", angle);
 	if(angle >= idMath::FLT_EPSILON)
 	{
 		angle = idMath::ACos((rkCone[ELA_TARGET] * rkLine[LSG_DIRECTION])/angle);
 //		if(t > (idMath::PI/2))
 //			angle = idMath::PI  - angle;
 
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Angle: %f\r", angle);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Angle: %f\r", angle);
 	}
 	else
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Impossible line!\r");
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Impossible line!\r");
 
 	bCalcIntersection = false;
 	l = 0;
@@ -531,14 +534,14 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		Start[i] = frustum[i].Side(rkLine[LSG_ORIGIN], idMath::FLT_EPSILON);
 		End[i] = frustum[i].Side(EndPoint, idMath::FLT_EPSILON);
 
-		DM_LOG(LC_MATH, LT_DEBUG).LogString("Frustum[%u]: Start %u   End: %u\r", i, Start[i], End[i]);
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u]: Start %u   End: %u\r", i, Start[i], End[i]);
 
 		// If the points are all on the outside there will be no intersections
 		if(Start[i] == PLANESIDE_BACK || End[i] == PLANESIDE_BACK)
 			bCalcIntersection = true;
 	}
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("CalcIntersection: %u\r", bCalcIntersection);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("CalcIntersection: %u\r", bCalcIntersection);
 	if(bCalcIntersection == true)
 	{
 		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "PlayerOrigin", rkLine[LSG_ORIGIN]);
@@ -549,7 +552,7 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		{
 			if(frustum[i].LineIntersection(rkLine[LSG_ORIGIN], rkLine[LSG_DIRECTION], &t) == true)
 			{
-				DM_LOG(LC_MATH, LT_DEBUG).LogString("Frustum[%u] intersects\r", i);
+				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u] intersects\r", i);
 				Intersect[l] = rkLine[LSG_ORIGIN] + t*rkLine[LSG_DIRECTION];
 				l++;
 
@@ -568,12 +571,12 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		for(i = 0; i < 6; i++)
 		{
 			x = frustum[i].Side(Intersect[0], idMath::FLT_EPSILON);
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Frustum[%u/0] intersection test returns %u\r", i, x);
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/0] intersection test returns %u\r", i, x);
 			if(x != PLANESIDE_BACK)
 				bStart = false;
 
 			x = frustum[i].Side(Intersect[1], idMath::FLT_EPSILON);
-			DM_LOG(LC_MATH, LT_DEBUG).LogString("Frustum[%u/1] intersection test returns %u\r", i, x);
+			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/1] intersection test returns %u\r", i, x);
 			if(x != PLANESIDE_BACK)
 				bEnd = false;
 		}
@@ -582,7 +585,7 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 			rc = INTERSECT_OUTSIDE;
 	}
 
-	DM_LOG(LC_MATH, LT_DEBUG).LogString("Intersection count = %u\r", l);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Intersection count = %u\r", l);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "akPoint[0]", Intersect[0]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "akPoint[1]", Intersect[1]);
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/19 17:29:09  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.3  2005/11/11 21:11:28  sparhawk
  * SDK 1.3 Merge
  *
@@ -611,7 +614,7 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 	{
 		if( !src.ReadTokenOnLine( &token ) ) 
 		{
-			DM_LOG(LC_MISC, LT_ERROR).LogString("ANIMRATE: Did not find rate, exiting\r");
+			DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("ANIMRATE: Did not find rate, exiting\r");
 			return "Unexpected end of line";
 		}
 
@@ -949,7 +952,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to ) const {
 					for( int ind = 0; ind < numAnims; ind++ )
 					{
 						// debug for SetRate debugging
-						//DM_LOG(LC_SOUND, LT_DEBUG).LogString("SETFRAMERATE: Setting frame rate: %d, on entity %s, channel %d\r", newRate, ent->name.c_str(), ind );
+						//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("SETFRAMERATE: Setting frame rate: %d, on entity %s, channel %d\r", newRate, ent->name.c_str(), ind );
 						const_cast<idMD5Anim *>(anims[ ind ])->SetFrameRate( newRate );
 					}
 					break;

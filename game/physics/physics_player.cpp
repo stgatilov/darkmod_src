@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2005/11/19 17:29:21  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.30  2005/11/18 10:31:44  ishtvan
  * rope arrow fixes
  *
@@ -549,7 +552,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			current.movementFlags |= PMF_STEPPED_DOWN;
 			current.velocity *= PM_STEPSCALE;
 
-			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("performing step down, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step down, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
 		}
 	}
 
@@ -1310,7 +1313,7 @@ void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 	}
 
 	// SophisticatedZombie
-	//DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("performing CorrectAllSolid due to player inside solid object\n");
+	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing CorrectAllSolid due to player inside solid object\n");
 	//
 	// Don't bump player up if they're standing in a previously picked up objects.
 	// This is complicated but because we want free object movement, we have to temporarily disable player clipping.
@@ -2297,18 +2300,18 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
 		if (m_p_mantledEntity == NULL)
 		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
+			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
 			m_mantledEntityID = 0;
 		}
 		else
 		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("Found entity %s\n", m_mantledEntityName.c_str());
+			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Found entity %s\n", m_mantledEntityName.c_str());
 			m_mantledEntityID = 0;
 		}
 	}
 
 
-	DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("REstore finished\n");
+	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("REstore finished\n");
 }
 
 /*
@@ -2860,13 +2863,13 @@ void idPhysics_Player::MantleMove()
 		m_p_mantledEntity = gameLocal.FindEntity (m_mantledEntityName.c_str());
 		if (m_p_mantledEntity == NULL)
 		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("MantleMove: Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
+			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMove: Entity being mantled during save, '%s', was not found\n", m_mantledEntityName.c_str());
 			m_mantledEntityID = 0;
 			CancelMantle();
 		}
 		else
 		{
-			DM_LOG (LC_MOVEMENT, LT_DEBUG).LogString ("MantleMove: Found entity %s\n", m_mantledEntityName.c_str());
+			DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMove: Found entity %s\n", m_mantledEntityName.c_str());
 			m_mantledEntityID = 0;
 		}
 	}
@@ -2924,17 +2927,17 @@ void idPhysics_Player::UpdateMantleTimers()
 			switch (m_mantlePhase)
 			{
 			case hang_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Pulling up...\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r\n");
 				m_mantlePhase = pull_DarkModMantlePhase;
 				break;
 
 			case pull_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Shifting hand position...\r\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Shifting hand position...\r\r\n");
 				m_mantlePhase = shiftHands_DarkModMantlePhase;
 				break;
 
 			case shiftHands_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: Pushing self up...\r\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pushing self up...\r\r\n");
 				m_mantlePhase = push_DarkModMantlePhase;
 
 				// Go into crouch
@@ -2942,7 +2945,7 @@ void idPhysics_Player::UpdateMantleTimers()
 				break;
 
 			case push_DarkModMantlePhase:
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("MantleMod: mantle completed\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r\n");
 				m_mantlePhase = notMantling_DarkModMantlePhase;
 
 				break;
@@ -3000,7 +3003,7 @@ EDarkMod_MantlePhase idPhysics_Player::GetMantlePhase (void) const
 
 void idPhysics_Player::CancelMantle()
 {
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Mantle cancelled\r\n");
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Mantle cancelled\r\n");
 
 	m_mantlePhase = notMantling_DarkModMantlePhase;
 	m_mantleTime = 0.0f;
@@ -3057,7 +3060,7 @@ int idPhysics_Player::CalculateMantleCollisionDamage
 
 	}
 
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString 
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING 
 	(
 		"Velocity = %.5f, damage = %d", 
 		velocityMagnitude_MetersPerSecond, 
@@ -3130,7 +3133,7 @@ void idPhysics_Player::StartMantle
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle starting with hang\n"
 		);
@@ -3150,14 +3153,14 @@ void idPhysics_Player::StartMantle
 	}
 	else if (initialMantlePhase == pull_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle starting with pull upward\n"
 		);
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle starting with shift hands\n"
 		);
@@ -3168,7 +3171,7 @@ void idPhysics_Player::StartMantle
 		current.movementFlags |= PMF_DUCKED;
 
 		// Start with push upward
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle starting with push upward\n"
 		);
@@ -3311,7 +3314,7 @@ void idPhysics_Player::MantleTargetTrace
 			clipModel->LoadModel( idTraceModel( bounds ) );
 		}
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle gaze trace didn't hit anything, so doing forward movement trace for mantle target\n"
 		);
@@ -3348,7 +3351,7 @@ void idPhysics_Player::MantleTargetTrace
 		m_mantledEntityID = out_trace.c.id;
 
 		idStr targetMessage;
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle target entity is called '%s'\n", 
 			m_p_mantledEntity->name.c_str()
@@ -3400,7 +3403,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 
 	float verticalReachDistanceUsed = (componentParallelToGravity - originParallelToGravity).Length();
 	
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Initial vertical reach distance used = %f out of maximum of %f\n", 
 		verticalReachDistanceUsed, 
@@ -3473,7 +3476,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 				componentParallelToGravity += (-gravityNormal * testIncrementAmount);
 				verticalReachDistanceUsed = (componentParallelToGravity - originParallelToGravity).Length();
 
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 				(
 					"Ledge Search: Vertical reach distance used = %f out of maximum of %f\n", 
 					verticalReachDistanceUsed, 
@@ -3489,7 +3492,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 				// No surface we could fit on against gravity from raytrace hit point
 				// up as far as we can reach
 				b_keepTesting = false;
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("No mantleable surface within reach distance\r\n");
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("No mantleable surface within reach distance\r\n");
 			}
 		}
 		
@@ -3592,7 +3595,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 	// Log
 	if (roomForMoveUpTrace.fraction < 1.0)
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Collision test from (%f %f %f) to (%f %f %f) yieled trace fraction %f\n",
 			MoveUpStart.x,
@@ -3603,7 +3606,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 			MoveUpEnd.z,
 			roomForMoveUpTrace.fraction
 		);
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Not enough vertical clearance along mantle path\r\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Not enough vertical clearance along mantle path\r\n");
 		return false;
 	}
 	else
@@ -3673,7 +3676,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 			// Check the calculated distances
 			if (upDist < 0.0)
 			{
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 				(
 					"Mantleable surface was below player's feet. No belly slide allowed.\n"
 				);
@@ -3686,7 +3689,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 			)
 			{
 				// Its too far away either horizontally or vertically
-				DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 				(
 					"Distance to end point was (%f, %f) (horizontal, vertical) which is greater than limits of (%f %f), so mantle cannot be done\n",
 					upDist,
@@ -3749,7 +3752,7 @@ void idPhysics_Player::PerformMantle()
 	idPlayer* p_player = (idPlayer*) self;
 	if (p_player == NULL)
 	{
-		DM_LOG(LC_MOVEMENT, LT_ERROR).LogString
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING
 		(
 			"p_player is NULL\n"
 		);
@@ -3757,7 +3760,7 @@ void idPhysics_Player::PerformMantle()
 	}
 	else
 	{
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("Getting eye position\r\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Getting eye position\r\n");
 		eyePos = p_player->GetEyePosition();
 	}
 
@@ -3775,7 +3778,7 @@ void idPhysics_Player::PerformMantle()
 	if ( trace.fraction < 1.0f ) 
 	{
 		// Log trace hit point
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
 			"Mantle target trace collision point (%f %f %f)\n", 
 			trace.c.point.x,
@@ -3796,7 +3799,7 @@ void idPhysics_Player::PerformMantle()
 		))
 		{
 			// Log the end point
-			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString 
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING 
 			(
 				"Mantle end position = (%f %f %f)\n", 
 				mantleEndPoint.x,
@@ -3863,7 +3866,7 @@ void idPhysics_Player::ToggleLean
 
 		m_b_leanFinished = false;
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean staring lean\r\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("ToggleLean staring lean\r\n");
 	}
 	else
 	{
@@ -3875,7 +3878,7 @@ void idPhysics_Player::ToggleLean
 
 		m_b_leanFinished = false;
 
-		DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString ("ToggleLean ending lean\r\n");
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("ToggleLean ending lean\r\n");
 	}
 
 }
@@ -3989,7 +3992,7 @@ void idPhysics_Player::TestForViewRotationBasedCollisions()
 
 		if (rotationTraceResults.fraction < 1.0)
 		{
-			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 			(
 				"Orientation change by delta angles pitch %e yaw %e roll %e\n",
 				deltaAngles.pitch,
@@ -3997,7 +4000,7 @@ void idPhysics_Player::TestForViewRotationBasedCollisions()
 				deltaAngles.roll
 			);
 
-			DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 			(
 				"Orientation change by %e degrees around axis %e %e %e yielded trace fraction %e",
 				testRotation.GetVec()[0],
@@ -4133,18 +4136,18 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 			}
 			else
 			{
-				DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player skeleton's waist joint was not found\n");
+				DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING ("Cannot lean player at waist, as player skeleton's waist joint was not found\n");
 			}
 		}
 		else
 		{
-			DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player has no idPlayer.animator object assigned\n");
+			DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING ("Cannot lean player at waist, as player has no idPlayer.animator object assigned\n");
 		}
 
 	} // Had access to player object
 	else
 	{
-		DM_LOG(LC_MOVEMENT, LT_ERROR).LogString ("Cannot lean player at waist, as player has no idPlayer object assigned\n");
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING ("Cannot lean player at waist, as player has no idPlayer object assigned\n");
 	}
 
 	// Update view lean angles and translation for first person
@@ -4183,7 +4186,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	}
 
 	// Log max possible lean
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Currently leaning %.2f degrees, can lean up to %.2f more degrees this frame\n",
 		m_currentLeanTiltDegrees,
@@ -4208,7 +4211,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	leanTiltAxis *= leanTiltYawMat;
 	leanTiltAxis.Normalize();
 
-    DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+    DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"view forward axis (%.2f %.2f %.2f), leanTiltAxis is (%.2f %.2f %.2f)\n",
 		viewForward.x,
@@ -4247,7 +4250,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	);
 	
 	// Log max possible lean with clipping
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Rotation test around axis (%.2f %.2f %.2f) by %.2f degrees yielded trace fraction of %.2f\n",
 		leanTiltAxis.x,
@@ -4297,12 +4300,12 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 
 	// New origin is point of just barely touching the ground
 	idVec3 regroundedOrigin = current.origin + (regroundTranslateVector * regroundTrace.fraction); 
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Player regrounded after lean collision test trace fraction of %.3f\n", 
 		regroundTrace.fraction
 	);
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Pre rotation test origin %.2f %.2f %.2f\n rotation test origin was %.2f %.2f %.2f\n regrounded at %.2f %.2f %.2f\n current velocity is %.4f %.4f %.4f\n", 
 		originSave.x,
@@ -4325,7 +4328,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 
 		
 	// Log activity
-	DM_LOG(LC_MOVEMENT, LT_DEBUG).LogString
+	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Lean tilt is now %.2f degrees\n",
 		m_currentLeanTiltDegrees

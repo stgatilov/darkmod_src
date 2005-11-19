@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.9  2004/11/17 00:00:38  sparhawk
  * Frobcode has been generalized now and resides for all entities in the base classe.
  *
@@ -78,7 +81,7 @@ idItem::idItem
 */
 idItem::idItem()
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	spin = false;
 	inView = false;

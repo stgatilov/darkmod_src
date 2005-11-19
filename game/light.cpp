@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.7  2005/04/01 21:03:22  sparhawk
  * Fixed the maximum distance calculation for the lightgem.
  *
@@ -200,7 +203,7 @@ idLight::idLight
 */
 idLight::idLight()
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX %s\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
 	memset( &renderLight, 0, sizeof( renderLight ) );
 	localLightOrigin	= vec3_zero;
@@ -443,29 +446,29 @@ void idLight::Spawn( void )
 		idVec3 max = renderLight.target + renderLight.right + renderLight.up;
 		m_MaxLightRadius = max.Length();
 	}
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
 
 	m_MaterialName = NULL;
 	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
 	if(m_MaterialName != NULL)
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %s\r", m_MaterialName);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %s\r", m_MaterialName);
 
 	idImage *pImage;
 	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light has an image: %08lX\r", pImage);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %08lX\r", pImage);
 	}
 
 	g_Global.m_DarkModPlayer->AddLight(this);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
 		this, name.c_str(),
 		renderLight.noShadows,
 		renderLight.noSpecular,
 		renderLight.pointLight,
 		renderLight.parallel);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
 
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Origin", GetPhysics()->GetOrigin());
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Radius", renderLight.lightRadius);
@@ -757,7 +760,7 @@ idLight::PresentLightDefChange
 void idLight::PresentLightDefChange( void )
 {
 /*
-DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s] Radius ( %0.3f / %0.3f / %03f )\r", this, name.c_str(),
+DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s] Radius ( %0.3f / %0.3f / %03f )\r", this, name.c_str(),
 		renderLight.lightRadius[0],		// x
 		renderLight.lightRadius[1],		// y
 		renderLight.lightRadius[2]);	// z
@@ -1218,7 +1221,7 @@ int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 	int rc = 0;
 	float w2, h2;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Calculating texture index: x/y: %f/%f w/h: %u/%u\r", x, y, w, h);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Calculating texture index: x/y: %f/%f w/h: %u/%u\r", x, y, w, h);
 
 	w2 = ((float)w)/2.0;
 	h2 = ((float)h)/2.0;
@@ -1256,7 +1259,7 @@ int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 		y = 0;
 
 	rc = ((int)y * (w*bpp)) + ((int)x*bpp);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Index result: %u   x/y: %f/%f\r", rc, x, y);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Index result: %u   x/y: %f/%f\r", rc, x, y);
 
 	return rc;
 }
@@ -1273,7 +1276,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 	{
 		if((m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL)
 		{
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Material found for [%s]\r", name.c_str());
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Material found for [%s]\r", name.c_str());
 			fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
 			img = m_LightMaterial->GetImage(iw, ih, ibpp);
 		}
@@ -1285,7 +1288,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 	}
 
 	fColVal = (baseColor.x * LIGHTGEM_RED + baseColor.y * LIGHTGEM_GREEN + baseColor.z * LIGHTGEM_BLUE);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
 		baseColor.x, baseColor.x * LIGHTGEM_RED,
 		baseColor.y, baseColor.y * LIGHTGEM_GREEN,
 		baseColor.z, baseColor.z * LIGHTGEM_BLUE,
@@ -1303,7 +1306,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 #pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
 		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
 		fImgVal = 1;
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("No textures defined using distance: [%f]\r", fDistance);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("No textures defined using distance: [%f]\r", fDistance);
 	}
 	else
 	{
@@ -1312,7 +1315,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), fw, fh, fbpp);
 			fColVal = fColVal * (fot[i] * LIGHTGEM_SCALE);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * LIGHTGEM_SCALE));
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * LIGHTGEM_SCALE));
 		}
 		else
 			fColVal = 1;
@@ -1322,13 +1325,13 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), iw, ih, ibpp);
 			fImgVal = img[i] * LIGHTGEM_SCALE;
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * LIGHTGEM_SCALE));
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * LIGHTGEM_SCALE));
 		}
 		else
 			fImgVal = 1;
 	}
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
 
 	return (fColVal*fImgVal);
 }

@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.28  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.27  2005/11/19 17:06:05  sparhawk
  * Frame marker added
  *
@@ -238,7 +241,7 @@ CGlobal::CGlobal(void)
 	m_LogFile = NULL;
 
 	if((m_LogFile = fopen("c:\\d3modlogger.log", "w+b")) != NULL)
-		DM_LOG(LC_INIT, LT_INIT).LogString("Initialzing mod logging\r");
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Initialzing mod logging\r");
 
 	// initialize the AI Acuities hash
 
@@ -302,7 +305,7 @@ void CGlobal::GetModName()
 	const char *modpath = fileSystem->RelativePathToOSPath(".");
 	char name[256];
 
-	DM_LOG(LC_INIT, LT_INIT).LogString("Modpath: %08lx - [%s]\r", modpath, modpath);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modpath: %08lx - [%s]\r", modpath, modpath);
 
 #ifdef _WINDOWS_
 		PathSep = '\\';
@@ -356,8 +359,8 @@ void CGlobal::GetModName()
 	}
 
 Quit:
-	DM_LOG(LC_INIT, LT_INIT).LogString("Modpath: [%s]\r", m_ModPath);
-	DM_LOG(LC_INIT, LT_INIT).LogString("Modname: [%s]\r", m_ModName);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modpath: [%s]\r", m_ModPath);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modname: [%s]\r", m_ModName);
 	return;
 }
 
@@ -407,16 +410,16 @@ void CGlobal::Init()
 	strcat(ProfilePath, "/.darkmod.ini");
 #endif
 
-	DM_LOG(LC_INIT, LT_INIT).LogString("Trying to open %s\r", ProfilePath);
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Trying to open %s\r", ProfilePath);
 	if((pfh = OpenProfile(ProfilePath, TRUE, FALSE)) == NULL)
 	{
-		DM_LOG(LC_INIT, LT_INIT).LogString("%s.ini not found at %s\r", m_ModName, ProfilePath);
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s.ini not found at %s\r", m_ModName, ProfilePath);
 	}
 
 	if(pfh != NULL)
 		LoadINISettings(pfh);
 	else
-		DM_LOG(LC_INIT, LT_INIT).LogString("Unable to open %s.ini\r", m_ModName);
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open %s.ini\r", m_ModName);
 
 	CloseProfile(pfh);
 
@@ -489,7 +492,7 @@ void CGlobal::LoadINISettings(void *p)
 	FILE *logfile;
 	bool Frame = false;
 
-	DM_LOG(LC_INIT, LT_INIT).LogString("Loading INI settings\r");
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Loading INI settings\r");
 
 	if(FindSection(pfh, "Debug", &ps) != -1)
 	{
@@ -503,17 +506,17 @@ void CGlobal::LoadINISettings(void *p)
 
 			if((logfile = fopen(pm->Value, "w+b")) != NULL)
 			{
-				DM_LOG(LC_INIT, LT_INIT).LogString("Switching logfile to [%s].\r", pm->Value);
+				DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Switching logfile to [%s].\r", pm->Value);
 				if(m_LogFile != NULL)
 				{
 					fclose(m_LogFile);
 					m_LogFile = logfile;
 				}
 
-				DM_LOG(LC_INIT, LT_INIT).LogString("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
+				DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 							t->tm_year+1900, t->tm_mon, t->tm_mday, 
 							t->tm_hour, t->tm_min, t->tm_sec);
-				DM_LOG(LC_INIT, LT_INIT).LogString("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
+				DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
 			}
 		}
 
@@ -522,7 +525,7 @@ void CGlobal::LoadINISettings(void *p)
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_ERROR] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogError: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogError: %c\r", pm->Value[0]);
 		}
 
 		if(FindMap(ps, "LogBegin", TRUE, &pm) != -1)
@@ -530,35 +533,35 @@ void CGlobal::LoadINISettings(void *p)
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_BEGIN] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogBegin: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogBegin: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogEnd", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_END] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogEnd: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogEnd: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogDebug", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_DEBUG] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogDebug: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogDebug: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogWarning", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_WARNING] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogWarning: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogWarning: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogInfo", TRUE, &pm) != -1)
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_INFO] = true;
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogInfo: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %c\r", pm->Value[0]);
 		}
 
 		if(FindMap(ps, "LogClass_SYSTEM", TRUE, &pm) != -1)
@@ -569,7 +572,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_SYSTEM: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SYSTEM: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != -1)
 		{
@@ -579,7 +582,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MISC: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MISC: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != -1)
 		{
@@ -589,7 +592,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_FROBBING: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FROBBING: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_AI", TRUE, &pm) != -1)
 		{
@@ -599,7 +602,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_AI: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_AI: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_SOUND", TRUE, &pm) != -1)
 		{
@@ -609,7 +612,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_SOUND: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SOUND: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_FUNCTION", TRUE, &pm) != -1)
 		{
@@ -619,7 +622,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_FUNCTION: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FUNCTION: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != -1)
 		{
@@ -629,7 +632,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_INVENTORY: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_INVENTORY: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != -1)
 		{
@@ -639,7 +642,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_LIGHT: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LIGHT: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_WEAPON", TRUE, &pm) != -1)
 		{
@@ -649,7 +652,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_WEAPON: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_WEAPON: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != -1)
 		{
@@ -659,7 +662,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MATH: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MATH: %c\r", pm->Value[0]);
 		}
 		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != -1)
 		{
@@ -669,7 +672,7 @@ void CGlobal::LoadINISettings(void *p)
 				Frame = true;
 			}
 
-			DM_LOG(LC_FORCE, LT_FORCE).LogString("LogClass_MOVEMENT: %c\r", pm->Value[0]);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MOVEMENT: %c\r", pm->Value[0]);
 		}
 	}
 	m_ClassArray[LC_FRAME] = Frame;
@@ -735,16 +738,16 @@ void CGlobal::LoadINISettings(void *p)
 			m_WeakLightgem = atof(pm->Value);
 		}
 
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("FrobDistance: %f\r", m_DefaultFrobDistance);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
 		
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle pull milliseconds: %f\r", m_mantlePull_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle shift hands milliseconds: %f\r", m_mantleShiftHands_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Mantle push milliseconds: %f\r", m_mantlePush_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle pull milliseconds: %f\r", m_mantlePull_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle shift hands milliseconds: %f\r", m_mantleShiftHands_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle push milliseconds: %f\r", m_mantlePush_Milliseconds);
 
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Lean milliseconds: %f\r", m_leanMove_Milliseconds);
-		DM_LOG(LC_FORCE, LT_FORCE).LogString("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean milliseconds: %f\r", m_leanMove_Milliseconds);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
 
 	}
 
@@ -792,7 +795,7 @@ CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 		}
 	}
 
-	DM_LOG(LC_SYSTEM, LT_INFO).LogString("GetFallOffTexture returns: [%s] for [%s]\r", (rc == NULL) ? "(null)" : rc->m_MaterialName.c_str(), mn.c_str());
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("GetFallOffTexture returns: [%s] for [%s]\r", (rc == NULL) ? "(null)" : rc->m_MaterialName.c_str(), mn.c_str());
 	return rc;
 }
 
@@ -875,7 +878,7 @@ unsigned char *CLightMaterial::GetFallOffTexture(int &Width, int &Height, int &B
 	{
 		if((im = g_Global.GetImage(m_FallOffIndex)) != NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Falloff [%s]\r", im->m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Falloff [%s]\r", im->m_Name.c_str());
 			rc = im->GetImage();
 			Width = im->m_Width;
 			Height = im->m_Height;
@@ -895,7 +898,7 @@ unsigned char *CLightMaterial::GetImage(int &Width, int &Height, int &Bpp)
 	{
 		if((im = g_Global.GetImage(m_MapIndex)) != NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Image [%s]\r", im->m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Image [%s]\r", im->m_Name.c_str());
 			rc = im->GetImage();
 			Width = im->m_Width;
 			Height = im->m_Height;
@@ -965,7 +968,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 			static char pipe_buf[DARKMOD_RENDERPIPE_BUFSIZE];
 			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
-			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Reading from renderpipe [%s]\r", m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%s]\r", m_Name.c_str());
 
 			dwBufSize = DARKMOD_RENDERPIPE_BUFSIZE;
 			BufLen = 0;
@@ -977,7 +980,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					&cbBytesRead,							// number of bytes read
 					NULL);									// not overlapped I/O
 				dwLastError = GetLastError();
-//				DM_LOG(LC_SYSTEM, LT_INFO).LogString("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), BufLen, m_Image, dwLastError);
+//				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), BufLen, m_Image, dwLastError);
 
 				BufLen += cbBytesRead;
 				dwBufSize -= cbBytesRead;
@@ -987,7 +990,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 				
 				if(dwBufSize <= 0)
 				{
-					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Bufferoverflow when reading from renderpipe\r");
+					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Bufferoverflow when reading from renderpipe\r");
 					goto Quit;
 				}
 			}
@@ -998,11 +1001,11 @@ bool CImage::LoadImage(HANDLE &Handle)
 				m_BufferLength = BufLen;
 				if((m_Image = new unsigned char[m_BufferLength]) == NULL)
 				{
-					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
 					goto Quit;
 				}
 			}
-//			DM_LOG(LC_SYSTEM, LT_INFO).LogString("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
+//			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
 
 			memcpy(m_Image, pipe_buf, m_BufferLength);
 			InitImageInfo();
@@ -1035,14 +1038,14 @@ bool CImage::LoadImage(const char *Filename)
 	{
 		if((fl = fileSystem->OpenFileRead(m_Name)) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Unable to load imagefile [%s]\r", m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to load imagefile [%s]\r", m_Name.c_str());
 			goto Quit;
 		}
 
 		m_BufferLength = fl->Length();
 		if((m_Image = new unsigned char[m_BufferLength]) == NULL)
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Out of memory while allocating %lu bytes for [%s]\r", m_BufferLength, m_Name.c_str());
 			goto Quit;
 		}
 		fl->Read(m_Image, m_BufferLength);
@@ -1050,7 +1053,7 @@ bool CImage::LoadImage(const char *Filename)
 
 		InitImageInfo();
 		m_Loaded = true;
-//		DM_LOG(LC_SYSTEM, LT_INFO).LogString("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
+//		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("ImageWidth: %u   ImageHeight: %u   ImageDepth: %u   BPP: %u   Buffer: %u\r", m_Width, m_Height, ilGetInteger(IL_IMAGE_DEPTH), m_Bpp, m_BufferLength);
 	}
 
 Quit:
@@ -1070,7 +1073,7 @@ void CImage::InitImageInfo(void)
 
 	if(ilLoadL(IL_TYPE_UNKNOWN, m_Image, m_BufferLength) == IL_FALSE)
 	{
-		DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Error while loading image [%s]\r", m_Name.c_str());
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Error while loading image [%s]\r", m_Name.c_str());
 		goto Quit;
 	}
 
@@ -1099,13 +1102,13 @@ unsigned char *CImage::GetImage(void)
 /*
 const char *DM_OSPathToRelativePath(const char *OSPath)
 {
-	DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_OSPathToRelativePath: [%s]\r", (OSPath) ? OSPath: "NULL");
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("DM_OSPathToRelativePath: [%s]\r", (OSPath) ? OSPath: "NULL");
 	RETURN_META_VALUE(MRES_HANDLED, NULL);
 }
 
 const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath)
 {
-	DM_LOG(LC_LIGHT, LT_INFO).LogString("DM_RelativePathToOSPath: RelativePath [%s]   basePath: [%s]\r", 
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("DM_RelativePathToOSPath: RelativePath [%s]   basePath: [%s]\r", 
 		(relativePath) ? relativePath : "NULL",
 		(basePath) ? basePath : "NULL"
 		);

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.34  2005/11/17 22:59:47  lloyd
  * Fixed player zoom bug when holding an object
  *
@@ -1508,7 +1511,7 @@ void idPlayer::Init( void ) {
 	LightgemSurface = gameLocal.FindEntity(LIGHTEM_RENDER_NAME);
 	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = LIGHTGEM_VIEWID;
 	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
-	DM_LOG(LC_LIGHT, LT_INFO).LogString("LightgemSurface: [%08lX]\r", LightgemSurface);
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", LightgemSurface);
 }
 
 /*
@@ -2758,9 +2761,9 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		PrintDebugHUD();
 
 	if(_hud)
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());
 	else
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("PlayerHUD: NULL\r");
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: NULL\r");
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
 		return;
@@ -2791,7 +2794,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	if(cv_lg_weak.GetBool() == true)
 		AdjustLightgem();
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", g_Global.m_DarkModPlayer->m_LightgemValue, hud);
 	hud->SetStateInt("lightgem_val", g_Global.m_DarkModPlayer->m_LightgemValue);
 }
 
@@ -5833,19 +5836,19 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			frob = pDM->m_FrobEntity;
 
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
 			// If the player has an item that is selected we need to check if this
 			// is a usable item (like a key). In this case the use action takes
 			// precedence over the frobaction.
 			if((i = pDM->m_Selection) != 0)
 			{
 				ent = pDM->GetEntity(i);
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Inventory selection %08lX\r", ent);
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
 				if(ent != NULL)
 				{
 					if(ent->spawnArgs.GetBool("usable"))
 					{
-						DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Item is usable\r");
+						DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
 						if(frob)
 							bFrob = !frob->UsedBy(ent);
 						else
@@ -5854,7 +5857,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				}
 			}
 
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
 			if(bFrob == true && frob != NULL) {
 				frob->FrobAction(true); 
 			}
@@ -6663,15 +6666,15 @@ void idPlayer::Think( void )
 	idStr strText;
 /*
 	// TODO: remove this because it is just to determine how to fill out the renderstructure.
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("RenderViewId: %u\r", renderView->viewID);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("x: %u   y: %u   w: %u   h: %u\r", renderView->x, renderView->y, renderView->width, renderView->height);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("FovX: %f   FovY: %f\r", renderView->fov_x, renderView->fov_y);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderViewId: %u\r", renderView->viewID);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("x: %u   y: %u   w: %u   h: %u\r", renderView->x, renderView->y, renderView->width, renderView->height);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("FovX: %f   FovY: %f\r", renderView->fov_x, renderView->fov_y);
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "vieworg", renderView->vieworg);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("cramZNear: %u   forceUpdate: %u\r", renderView->cramZNear, renderView->forceUpdate);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->time);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("time: %u\r", renderView->globalMaterial);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("cramZNear: %u   forceUpdate: %u\r", renderView->cramZNear, renderView->forceUpdate);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("time: %u\r", renderView->time);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("time: %u\r", renderView->globalMaterial);
 	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++)
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Param[%u]: %f\r", i, renderView->shaderParms[i]);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Param[%u]: %f\r", i, renderView->shaderParms[i]);
 */
 	if ( spectating ) {
 		UpdateSpectating();
@@ -8911,13 +8914,13 @@ void idPlayer::AdjustLightgem(void)
 	int i, n, h = -1, l;
 	bool bMinOneLight = false, bStump;
 
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("[%s]\r", __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("[%s]\r", __FUNCTION__);
 
 	NextFrame = true;
 	fLightgemVal = 0;
 	n = pDM->m_LightList.Num();
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%u entities found within lightradius\r", n);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%u entities found within lightradius\r", n);
 	idVec3 vStart(GetEyePosition());
 	idVec3 vPlayerPos(GetPhysics()->GetOrigin());
 	idVec3 vPlayerSeg[LSG_COUNT];
@@ -8938,14 +8941,14 @@ void idPlayer::AdjustLightgem(void)
 		vPlayer.z = vLight.z;
 		vDifference = vPlayer - vLight;
 		fDistance = vDifference.Length();
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Ligth: [%s]  %i  px: %f   py: %f   pz: %f   -   lx: %f   ly: %f   lz: %f   Distance: %f\r", 
 			light->name.c_str(), i, vPlayer.x, vPlayer.y, vPlayer.z, vLight.x, vLight.y, vLight.z, fDistance);
 
 		// Fast and cheap test to see if the player could be in the area of the light.
 		// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
 		if(fDistance > light->m_MaxLightRadius)
 		{
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s is outside distance: %f/%f\r", light->name.c_str(), light->m_MaxLightRadius, fDistance);
 			if(h == -1)
 				h = i;
 			continue;
@@ -8965,14 +8968,14 @@ void idPlayer::AdjustLightgem(void)
 			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
 			// be blocked by the geometry.
 			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineEllipsoid returned %u\r", inter);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineEllipsoid returned %u\r", inter);
 		}
 		else
 		{
 			bStump = false;
 			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
 			inter = IntersectLineCone(vPlayerSeg, vLightCone, vResult, bStump);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineCone returned %u\r", inter);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineCone returned %u\r", inter);
 		}
 
 		// The line intersection can only return three states. Either the line is passing
@@ -8989,10 +8992,10 @@ void idPlayer::AdjustLightgem(void)
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
 				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, this);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 			if(trace.fraction < 1.0f)
 			{
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s] can not be seen\r", light->name.c_str());
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s] can not be seen\r", light->name.c_str());
 				continue;
 			}
 		}
@@ -9017,7 +9020,7 @@ void idPlayer::AdjustLightgem(void)
 			bMinOneLight = true;
 
 		fLightgemVal += light->GetDistanceColor(fDistance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
 			light->name.c_str(), fx, fy, fLightgemVal, fDistance, light->m_MaxLightRadius);
 
 		// Exchange the position of these lights, so that nearer lights are more

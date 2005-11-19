@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.31  2005/11/18 21:14:36  sparhawk
  * Particle effect fix
  *
@@ -2316,8 +2319,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	gameReturn_t ret;
 	idPlayer	*player;
 	const renderView_t *view;
+	int curframe = framenum;
 
-	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u   Frame: %u\r", time, previousTime, framenum);
+	DM_LOG(LC_FRAME, LT_FORCE)LOGSTRING("Frame start %u\r", curframe);
+
 #ifdef _DEBUG
 	if ( isMultiplayer ) {
 		assert( !isClient );
@@ -2509,7 +2514,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	RunDebugInfo();
 	D_DrawDebugLines();
 
-	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u   Frame: %u\r", time, previousTime, framenum);
+	DM_LOG(LC_FRAME, LT_FORCE)LOGSTRING("Frame end %u\r", curframe);
 	return ret;
 }
 
@@ -2601,8 +2606,6 @@ bool idGameLocal::Draw( int clientNum )
 {
 	int n;
 
-	DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("time: %u    prevTime: %u\r", time, previousTime);
-
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2653,7 +2656,7 @@ bool idGameLocal::Draw( int clientNum )
 			}
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Averaged colorvalue total: %f\r", fColVal);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fColVal);
 
 		pDM->m_fColVal = fColVal;
 		pDM->m_LightgemValue = LIGHTGEM_MAX * fColVal;
@@ -3430,7 +3433,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 			const idKeyValue *p = args.GetKeyVal(x);
 			const idStr k = p->GetKey();
 			const idStr v = p->GetValue();
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity[%u] Key:[%s] = [%s]\r", i, k.c_str(), v.c_str());
 		}
 
 		if ( !InhibitEntitySpawn( args ) ) {
@@ -3445,7 +3448,7 @@ void idGameLocal::SpawnMapEntities( void ) {
 	}
 
 	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("... %i entities spawned, %i inhibited\r", num, inhibit);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
 /*
@@ -4614,7 +4617,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 		if(!src.ReadToken(&token))
 			goto Quit;
 
-//		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Token: [%s]\r", token.c_str());
+//		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Token: [%s]\r", token.c_str());
 
 		if(token == "table")
 		{
@@ -4628,7 +4631,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 			while(src.ReadTokenOnLine(&token) == true)
 			{
 				Material += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Material: [%s]\r", token.c_str());
+//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Material: [%s]\r", token.c_str());
 			}
 
 			continue;
@@ -4657,7 +4660,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 				mat = new CLightMaterial(Material, FallOff, Map);
 				mat->m_AmbientLight = bAmbient;
 				ml->Append(mat);
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
 			}
 			continue;
 		}
@@ -4674,7 +4677,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 					break;
 				else
 					Map += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("Map: [%s]\r", token.c_str());
+//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Map: [%s]\r", token.c_str());
 			}
 			continue;
 		}
@@ -4686,7 +4689,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 			{
 				if(!src.ReadToken(&token))
 				{
-					DM_LOG(LC_SYSTEM, LT_ERROR).LogString("Invalid material file structure on line %u\r", src.GetLineNum());
+					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Invalid material file structure on line %u\r", src.GetLineNum());
 					goto Quit;
 				}
 
@@ -4705,7 +4708,7 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 							break;
 
 						FallOff += token;
-//						DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FallOff: [%s]\r", token.c_str());
+//						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FallOff: [%s]\r", token.c_str());
 					}
 					while(src.ReadTokenOnLine(&token) == true);
 					break;
@@ -4837,7 +4840,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
 	dim = DARKMOD_RENDER_WIDTH;
-//	DM_LOG(LC_LIGHT, LT_INFO).LogString("ImageDimension: %u\r", dim);
+//	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("ImageDimension: %u\r", dim);
 
 	// We only take the brightest value that we could find.
 	fRetVal = 0.0;
@@ -4915,7 +4918,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 				if(cv_lg_file.GetBool() == true)
 				{
 					renderSystem->CaptureRenderToFile(name);
-					DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
 				}
 				else
 					renderSystem->CaptureRenderToImage("_scratch");
@@ -4934,7 +4937,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 					if(fColVal[l] > fRetVal)
 						fRetVal = fColVal[l];
 
-//					DM_LOG(LC_LIGHT, LT_DEBUG).LogString("fColVal[%u]: %f\r", i, fColVal[i]);
+//					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u]: %f\r", i, fColVal[i]);
 				}
 			}
 		}
@@ -4968,7 +4971,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IM
 	{
 		static int indicator = 0;
 		static int lasttime;
-		DM_LOG(LC_SYSTEM, LT_INFO).LogString("Unable to read image from renderpipe\r");
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Unable to read image from renderpipe\r");
 		for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
 			fColVal[i] = indicator;
 

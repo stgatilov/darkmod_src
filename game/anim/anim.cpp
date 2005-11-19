@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/19 17:29:09  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.3  2005/10/18 14:09:46  sparhawk
  * Fixed an unneccessary warning about unused lables.
  *
@@ -918,7 +921,7 @@ idMD5Anim::SetFrameRate
 void idMD5Anim::SetFrameRate( int frRate )
 {
 	frameRate = frRate;
-	DM_LOG(LC_SOUND, LT_DEBUG).LogString("ChangeFrameRate: Set rate to %d\r", frameRate);
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("ChangeFrameRate: Set rate to %d\r", frameRate);
 
 	return;
 }

@@ -16,6 +16,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.3  2005/08/22 04:43:22  ishtvan
  * fixed math error in CMatRUT::Ind2dTo1d
  *
@@ -209,7 +212,7 @@ inline CMatrixSq<type>::CMatrixSq( void )
 	m_dim = 0;
 	m_filled = 0;
 	m_mat = NULL;
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("CMatrixSq constructor called, set vars.\r" );
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("CMatrixSq constructor called, set vars.\r" );
 }
 
 template <class type>
@@ -239,7 +242,7 @@ inline CMatrixSq<type> &CMatrixSq<type>::operator=(const CMatrixSq<type> &in)
 		Clear();
 		if (!Init( in.m_dim ) )
 		{
-			DM_LOG(LC_MISC, LT_ERROR).LogString("Out of memory when creating RUT Loss Matrix.\r");
+			DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Out of memory when creating RUT Loss Matrix.\r");
 			Clear();
 			goto Quit;
 		}
@@ -312,7 +315,7 @@ inline type *CMatrixSq<type>::Get1d( int ind )
 	
 	if ( ind < 0 || ind > m_filled )
 	{
-		DM_LOG(LC_MISC, LT_ERROR).LogString("Tried to access matrix with 1d index out of bounds: index %d\r", ind );
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access matrix with 1d index out of bounds: index %d\r", ind );
 		p = NULL;
 		goto Quit;
 	}
@@ -352,11 +355,11 @@ inline bool CMatrixSq<type>::Init( int dim )
 	Clear();
 	filled = NumFromDim( dim );
 	
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("Initializing matrix of dimension %d with %d elements.\r", dim, filled);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Initializing matrix of dimension %d with %d elements.\r", dim, filled);
 	
 	if ((m_mat = new type[filled]) == NULL)
 	{
-		DM_LOG(LC_MISC, LT_ERROR).LogString("Out of memory allocating for matrix with %d elements\r", filled);
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Out of memory allocating for matrix with %d elements\r", filled);
 		returnval = false;
 	}
 	else
@@ -377,7 +380,7 @@ inline void CMatrixSq<type>::Clear( void )
 		m_mat = NULL;
 
 	}
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("Cleared CMatrixSq with %d elements\r", m_filled);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Cleared CMatrixSq with %d elements\r", m_filled);
 	m_dim = 0;
 	m_filled = 0;
 }
@@ -398,7 +401,7 @@ template <>
 inline void CMatrixSq<int>::SaveElement ( idSaveGame *savefile, int &Entry )
 {
 	savefile->WriteInt( Entry );
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("Wrote int: %d to savefile\r", Entry);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Wrote int: %d to savefile\r", Entry);
 }
 
 template <>
@@ -421,7 +424,7 @@ template <>
 inline void CMatrixSq<int>::ReadElement ( idRestoreGame *savefile, int ind )
 {
 	savefile->ReadInt( m_mat[ind] );
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("Read int: %d from savefile\r", m_mat[ind]);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Read int: %d from savefile\r", m_mat[ind]);
 }
 
 template <>
@@ -438,7 +441,7 @@ inline void CMatrixSq<type>::SaveMatrixSq ( idSaveGame *savefile )
 	
 	if ( IsCleared() )
 	{
-		DM_LOG(LC_MISC, LT_ERROR).LogString("Tried to save an empty CMatrixSq/r" );
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to save an empty CMatrixSq/r" );
 		goto Quit;
 	}
 
@@ -461,7 +464,7 @@ inline void CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
 	int i, dim, num;
 
 	savefile->ReadInt( dim );
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("[Relations matrix] Loaded dimension %d from savefile\r", dim);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("[Relations matrix] Loaded dimension %d from savefile\r", dim);
 	
 	if (!Init( dim ))
 		goto Quit;
@@ -470,10 +473,10 @@ inline void CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
 
 	for(i=0; i<num; i++)
 	{
-		DM_LOG(LC_MISC, LT_DEBUG).LogString("Reading element %d from savefile\r", i);
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Reading element %d from savefile\r", i);
 		ReadElement( savefile, i );
 	}
-	DM_LOG(LC_MISC, LT_DEBUG).LogString("num_filled = %d, dim = %d\r", m_filled, m_dim);
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("num_filled = %d, dim = %d\r", m_filled, m_dim);
 
 Quit:
 	return;
@@ -521,7 +524,7 @@ inline int CMatrixSq<type>::Ind2dTo1d ( int row, int col )
 	//check if the index is out of bounds
 	if ( returnval < 0 || returnval >= m_filled || m_filled == 0 )
 	{
-		DM_LOG(LC_MISC, LT_ERROR).LogString("Tried to access matrix with index out of bounds: row %d, col %d.\r", row, col);
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access matrix with index out of bounds: row %d, col %d.\r", row, col);
 		returnval = -1;
 	}
 	return returnval;
@@ -630,7 +633,7 @@ inline int CMatRUT<type>::Ind2dTo1d ( int row, int col )
 	//check if the index is out of bounds
 	if ( row > col || returnval < 0 || returnval >= m_filled )
 	{
-		DM_LOG(LC_MISC, LT_ERROR).LogString("Tried to access RUT matrix with bad index (out of bounds or empty): row: %d, col: %d.\r", row, col);
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access RUT matrix with bad index (out of bounds or empty): row: %d, col: %d.\r", row, col);
 		returnval = -1;
 	}
 

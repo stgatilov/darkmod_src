@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.6  2005/10/18 13:56:09  sparhawk
  * Lightgem updates
  *
@@ -84,7 +87,7 @@ void CDarkModPlayer::AddEntity(idEntity *ent)
 	bool bFound = false;
 	CInventoryItem new_item;
 
-	DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	n = m_Inventory.Num();
 	for(i = 0; i < n; i++)
 	{
@@ -102,7 +105,7 @@ void CDarkModPlayer::AddEntity(idEntity *ent)
 		new_item.m_Entity = ent;
 		m_Inventory.Append(new_item);
 		m_Selection = m_Inventory.Num()-1;
-		DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("[%s] added to inventory (%u)\r", ent->name.c_str(), m_Inventory.Num());
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("[%s] added to inventory (%u)\r", ent->name.c_str(), m_Inventory.Num());
 		ent->Hide();
 	}
 }
@@ -141,7 +144,7 @@ long CDarkModPlayer::GetEntity(idEntity *ent)
 
 idEntity *CDarkModPlayer::GetEntity(long i)
 {
-	DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("%u requested from %u Inventory items\r", i, m_Inventory.Num());
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("%u requested from %u Inventory items\r", i, m_Inventory.Num());
 	if(i <= m_Inventory.Num())
 		return m_Inventory[i].m_Entity;
 	else
@@ -153,7 +156,7 @@ unsigned long CDarkModPlayer::AddLight(idLight *light)
 	if(light)
 	{
 		m_LightList.Append(light);
-		DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("%08lX [%s] %lu added to LightList\r", light, light->name.c_str(), m_LightList.Num());
+		DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu added to LightList\r", light, light->name.c_str(), m_LightList.Num());
 	}
 
 	return m_LightList.Num();
@@ -168,7 +171,7 @@ unsigned long CDarkModPlayer::RemoveLight(idLight *light)
 		if((n = m_LightList.FindIndex(light)) != -1)
 		{
 			m_LightList.RemoveIndex(n);
-			DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
+			DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
 		}
 	}
 

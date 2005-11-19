@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.6  2005/11/04 07:29:39  ishtvan
  * AI relations matrix error no longer displays when there is no matrix entered
  *
@@ -104,7 +107,7 @@ int CRelations::GetRelNum(int i, int j)
 	int *pval, RelDefault;
 
 	// uncomment for debugging of relationship checks
-	// DM_LOG(LC_AI, LT_DEBUG).LogString("Checking relationship matrix for team %d towards team %d.\r", i, j);
+	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Checking relationship matrix for team %d towards team %d.\r", i, j);
 	
 	// return the default and don't attempt to check the matrix if it failed to load
 	if( m_bMatFailed )
@@ -119,7 +122,7 @@ int CRelations::GetRelNum(int i, int j)
 	if ( pval == NULL )
 	{
 		// uncomment for reporting errors when doing relationship checks
-		//DM_LOG(LC_AI, LT_ERROR).LogString("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
+		//DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
 		
 		returnval = s_DefaultRelation;
 		goto Quit;
@@ -213,7 +216,7 @@ bool CRelations::SetFromArgs( idDict *args )
 		end = tempKey.Find(',');
 		end--;
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: arg %d, start = %d, end(comma-1) = %d\r", num, start, end);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, start = %d, end(comma-1) = %d\r", num, start, end);
 
 		if(end < 0 )
 		{
@@ -235,7 +238,7 @@ bool CRelations::SetFromArgs( idDict *args )
 
 		val = args->GetString( tempKey.c_str(), "" );
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: arg %d, row = %s, col = %s, val = %d\r", num, row.c_str(), col.c_str(), atoi(val.c_str()) );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: arg %d, row = %s, col = %s, val = %d\r", num, row.c_str(), col.c_str(), atoi(val.c_str()) );
 
 		if( !row.IsNumeric() || !col.IsNumeric() || !val.IsNumeric() )
 		{
@@ -268,7 +271,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			EntryList.Append(EntryDat);
 			DiagsAdded.Append(EntryDat.row);
 
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.row, EntryDat.row );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.row, EntryDat.row );
 
 			//set EntryDat back the way it was for further checks
 			EntryDat.col = tempint;
@@ -292,7 +295,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			EntryList.Append(EntryDat);
 			DiagsAdded.Append(EntryDat.col);
 
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.col, EntryDat.col );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing diagonal %d, %d\r", EntryDat.col, EntryDat.col );
 
 			//set EntryDat back the way it was for further checks
 			EntryDat.row = tempint;
@@ -308,7 +311,7 @@ bool CRelations::SetFromArgs( idDict *args )
 			EntryDat.col = tempint;
 
 			EntryList.Append(EntryDat);
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Relmat Parser: Added missing asymmetric element %d, %d\r", EntryDat.row, EntryDat.col );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Relmat Parser: Added missing asymmetric element %d, %d\r", EntryDat.row, EntryDat.col );
 		}
 
 		Entry = args->MatchPrefix( "rel ", Entry );
@@ -342,7 +345,7 @@ bool CRelations::SetFromArgs( idDict *args )
 Quit:
 	if(hadSynError)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
 		idLib::common->Warning("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
 
 		m_bMatFailed = true;
@@ -351,8 +354,8 @@ Quit:
 // Don't output the error if there are no matrix entries
 	if(hadLogicError && EntryList.Num() )
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
-		DM_LOG(LC_AI, LT_ERROR).LogString("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
 		idLib::common->Warning("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 		m_bMatFailed = true;
 	}
@@ -363,13 +366,13 @@ Quit:
 
 void CRelations::Save( idSaveGame *save ) const
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Saving Relationship Matrix data\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Saving Relationship Matrix data\r");
 	m_RelMat->SaveMatrixSq( save );
 }
 
 void CRelations::Restore( idRestoreGame *save )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Loading Relationship Matrix data from save\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Loading Relationship Matrix data from save\r");
 	m_RelMat->RestoreMatrixSq( save );
 
 	CopyThisToGlobal();
@@ -385,7 +388,7 @@ void CRelations::DebugPrintMat( void )
 	int i, row, col, val;
 	
 	idLib::common->Printf("Printing Relations Matrix with %d elements:\n", m_RelMat->NumFilled() );
-	DM_LOG(LC_AI, LT_DEBUG).LogString("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat->IsCleared() );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("DebugPrintMat: m_RelMat::IsCleared = %d\r", m_RelMat->IsCleared() );
 	if( m_RelMat->IsCleared() )
 	{
 		idLib::common->Printf("Relations Matrix is Empty.\n");

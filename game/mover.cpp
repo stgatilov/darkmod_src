@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.8  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -149,7 +152,7 @@ idMover::idMover
 */
 idMover::idMover(void)
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	memset( &move, 0, sizeof( move ) );
 	memset( &rot, 0, sizeof( rot ) );
@@ -2120,7 +2123,7 @@ idMover_Binary::idMover_Binary()
 */
 idMover_Binary::idMover_Binary()
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	pos1.Zero();
 	pos2.Zero();
@@ -3153,7 +3156,7 @@ idDoor::idDoor
 */
 idDoor::idDoor( void )
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	triggersize = 1.0f;
 	crusher = false;

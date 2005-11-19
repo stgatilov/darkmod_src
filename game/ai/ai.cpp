@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/11/19 17:28:52  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.8  2005/11/11 20:51:43  sparhawk
  * SDK 1.3 Merge
  *
@@ -818,7 +821,7 @@ void idAI::Spawn( void ) {
 	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
 	{
 		spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100", m_Acuities[ind] );
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
 
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
@@ -5320,7 +5323,7 @@ void idAI::HearSound
 		m_SoundDir = propParms->direction;
 
 		AlertAI( "aud", psychLoud );
-		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s HEARD a sound\r", name.c_str() );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
@@ -5334,7 +5337,7 @@ void idAI::AlertAI( const char *type, float amount )
 	mod = GetAcuity( type );	
 	AI_AlertNum = AI_AlertNum + amount*mod/100.0;
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
 	
 	if( cv_ai_debug.GetBool() )
 		gameLocal.Printf("[DM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
@@ -5349,18 +5352,18 @@ float idAI::GetAcuity( const char *type )
 	int ind;
 	
 	ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey( type, false ) );
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Retrived Acuity index %d for type %s\r", ind, type);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Retrived Acuity index %d for type %s\r", ind, type);
 
 	if (ind == -1)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("Script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
 		gameLocal.Warning("[AI] AI script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
 		returnval = -1;
 		goto Quit;
 	}
 
 	returnval = m_Acuities[ind];
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Acuity %s = %f\r", type, returnval);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
 
 Quit:
 	return returnval;
@@ -5374,7 +5377,7 @@ void idAI::SetAcuity( const char *type, float acuity )
 
 	if (ind == -1)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("Script on %s attempted to set nonexistant acuity type: %s\r",name.c_str(), type);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Script on %s attempted to set nonexistant acuity type: %s\r",name.c_str(), type);
 		gameLocal.Warning("[AI] Script on %s attempted to set nonexistant acuity type: %s",name.c_str(), type);
 		goto Quit;
 	}
@@ -5420,18 +5423,18 @@ idActor *idAI::VisualScan( float timecheck )
 
 	visFrac = GetVisibility( actor );
 	// uncomment for visibility fraction debugging (spams the log)
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Visibility fraction for %s = %f\r", actor->name.c_str(), visFrac );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visibility fraction for %s = %f\r", actor->name.c_str(), visFrac );
 
 	// Do the percentage check
 	randFrac = gameLocal.random.RandomFloat( );
 	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sightmod.GetFloat()) * visFrac ) )
 	{
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
 		actor = NULL;
 		goto Quit;
 	}
 
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Random number check succeeded.\r");
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check succeeded.\r");
 	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 
 	// set AI_VISALERT and the vector for last sighted position
@@ -5449,7 +5452,7 @@ idActor *idAI::VisualScan( float timecheck )
 
 	if ( actor )
 	{
-		DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
 	}
@@ -5483,7 +5486,7 @@ float idAI::GetVisibility( idEntity *ent )
 
 	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 	// debug for formula checking
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Current lightgem value = %f\r", lgem );
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
 
 	clampdist = (lgem -1) * ( cv_ai_sightmindist.GetFloat() / 31 );
 	safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
@@ -5536,7 +5539,7 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 		if( cv_ai_debug.GetBool() )
 		{
 			// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
-			DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s FELT entity %s\r", name.c_str(), entest->name.c_str() );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", name.c_str(), entest->name.c_str() );
 			gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), entest->name.c_str() );
 		}
 	}
@@ -5760,7 +5763,7 @@ void idAI::CheckTactile( idVec3 &dir )
 
 		if ( obEnt->IsType( idActor::Type ) ) 
 		{
-			//DM_LOG(LC_AI, LT_DEBUG).LogString("TACT: Actor %s is touching AI %s.\r", obEnt->name.c_str(), name.c_str() );
+			//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: Actor %s is touching AI %s.\r", obEnt->name.c_str(), name.c_str() );
 			HadTactile( static_cast<idActor *>(obEnt) );
 		}
 	}

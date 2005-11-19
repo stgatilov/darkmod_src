@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2005/11/19 17:26:48  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.7  2005/09/29 04:03:08  ishtvan
  * added support for double doors
  *
@@ -74,7 +77,7 @@ END_CLASS
 
 CFrobDoor::CFrobDoor(void)
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
 	m_Open = false;
 	m_Locked = false;
@@ -118,13 +121,13 @@ void CFrobDoor::Spawn( void )
 			{
 				if(AddToMasterList(master->m_OpenList, str) == true)
 					m_MasterOpen = str;
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
 			}
 			else
-				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
 		}
 		else
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
 	if(spawnArgs.GetString("master_lock", "", str))
@@ -135,30 +138,30 @@ void CFrobDoor::Spawn( void )
 			{
 				if(AddToMasterList(master->m_LockList, str) == true)
 					m_MasterLock = str;
-				DM_LOG(LC_SYSTEM, LT_INFO).LogString("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
 			}
 			else
-				DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
 		}
 		else
-			DM_LOG(LC_SYSTEM, LT_ERROR).LogString("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
 
 	m_Open = spawnArgs.GetBool("open");
-	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] open (%u)\r", name.c_str(), m_Open);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
 
 	m_Locked = spawnArgs.GetBool("locked");
-	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] locked (%u)\r", name.c_str(), m_Locked);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
 
 	m_Pickable = spawnArgs.GetBool("pickable");
-	DM_LOG(LC_SYSTEM, LT_INFO).LogString("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
 
 
 	// log if visportal was found
 	if( areaPortal > 0 )
-		DM_LOG(LC_SYSTEM, LT_DEBUG).LogString("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
 	physicsObj.GetLocalAngles( tempAngle );
 
@@ -199,7 +202,7 @@ void CFrobDoor::Lock(bool bMaster)
 			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				ent->Lock(false);
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
 	}
 	else
@@ -209,22 +212,22 @@ void CFrobDoor::Lock(bool bMaster)
 		n = m_LockList.Num();
 		for(i = 0; i < n; i++)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
 			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
 			{
 				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				{
-					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
 					ent->Lock(false);
 				}
 				else
-					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 			}
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] Door is locked\r", name.c_str());
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
 		m_Locked = true;
 	}
 }
@@ -242,7 +245,7 @@ void CFrobDoor::Unlock(bool bMaster)
 			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				ent->Unlock(false);
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
 	}
 	else
@@ -252,22 +255,22 @@ void CFrobDoor::Unlock(bool bMaster)
 		n = m_LockList.Num();
 		for(i = 0; i < n; i++)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
 			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
 			{
 				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				{
-					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
 					ent->Unlock(false);
 				}
 				else
-					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 			}
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] Door is unlocked\r", name.c_str());
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
 		m_Locked = false;
 
 		ToggleOpen();
@@ -299,7 +302,7 @@ void CFrobDoor::Open(bool bMaster)
 	if(m_Open == true && !m_bInterrupted)
 		return;
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opening\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -308,7 +311,7 @@ void CFrobDoor::Open(bool bMaster)
 			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				ent->Open(false);
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
 	}
 	else
@@ -318,19 +321,19 @@ void CFrobDoor::Open(bool bMaster)
 		n = m_LockList.Num();
 		for(i = 0; i < n; i++)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
 			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
 			{
 				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				{
-					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
 					ent->Open(false);
 				}
 				else
-					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 			}
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
 		if(m_Locked == true)
@@ -361,7 +364,7 @@ void CFrobDoor::Close(bool bMaster)
 	if(m_Open == false)
 		return;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closing\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -370,7 +373,7 @@ void CFrobDoor::Close(bool bMaster)
 			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				ent->Close(false);
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
 	}
 	else
@@ -380,19 +383,19 @@ void CFrobDoor::Close(bool bMaster)
 		n = m_LockList.Num();
 		for(i = 0; i < n; i++)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
 			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
 			{
 				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				{
-					DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
 					ent->Close(false);
 				}
 				else
-					DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 			}
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_LockList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
@@ -407,7 +410,7 @@ void CFrobDoor::ToggleOpen(void)
 	// Check if the door is stopped.
 	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
 	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Was stationary on frobbing\r" );
+//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
 
 
 		if(m_bIntentOpen == true)
@@ -424,7 +427,7 @@ void CFrobDoor::ToggleOpen(void)
 		goto Quit;
 	}
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Interrupted!  Stopping door\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
 
 	// Otherwise, door is moving.  Stop it
 	m_bInterrupted = true;
@@ -447,7 +450,7 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 	if(ent == NULL)
 		return false;
 
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
 		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
 
 	// When we are here we know that the item is usable
@@ -471,7 +474,7 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
 				bRc = master->UsedBy(ent);
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
 	}
 
@@ -505,7 +508,7 @@ void CFrobDoor::DoneRotating(void)
 {
 	idMover::DoneRotating();
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Done rotating\r" );
+//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
 	
 	// if the door is not completely opened or closed, do nothing
 	if( m_bInterrupted )
@@ -514,7 +517,7 @@ void CFrobDoor::DoneRotating(void)
 	// door has completely closed
 	if( !m_bIntentOpen )
 	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Closed completely\r" );
+//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
 
 		m_bIntentOpen = true;
 		m_Open = false;
@@ -529,7 +532,7 @@ void CFrobDoor::DoneRotating(void)
 	// door has completely opened
 	else
 	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor: Opened completely\r" );
+//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opened completely\r" );
 		m_bIntentOpen = false;
 	}
 
@@ -566,7 +569,7 @@ void CFrobDoor::FindDoubleDoor(void)
 
 			if( testPortal == areaPortal && testPortal != 0 )
 			{
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str() );
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str() );
 				m_DoubleDoor = static_cast<CFrobDoor *>( obEnt );
 			}
 		}

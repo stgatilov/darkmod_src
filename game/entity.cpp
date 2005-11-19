@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2005/11/19 17:27:56  sparhawk
+ * LogString with macro replaced
+ *
  * Revision 1.20  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -463,7 +466,7 @@ idEntity::idEntity
 */
 idEntity::idEntity()
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX %s\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
@@ -602,7 +605,7 @@ void idEntity::Spawn( void )
 	// every object will have a unique name
 	temp = spawnArgs.GetString( "name", va( "%s_%s_%d", GetClassname(), spawnArgs.GetString( "classname" ), entityNumber));
 	SetName(temp);
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("this: %08lX   Name: [%s]\r", this, temp);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
 
 	// if we have targets, wait until all entities are spawned to get them
 	if ( spawnArgs.MatchPrefix( "target" ) || spawnArgs.MatchPrefix( "guiTarget" ) ) {
@@ -654,7 +657,7 @@ idEntity::~idEntity
 */
 idEntity::~idEntity( void )
 {
-	DM_LOG(LC_FUNCTION, LT_DEBUG).LogString("this: %08lX [%s]\r", this, __FUNCTION__);
+	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;
@@ -1504,18 +1507,18 @@ void idEntity::Present(void)
 	if(m_FrobDistance != 0)
 	{
 */
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderEntity: %08lX\r", renderEntity);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
-/*		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("RenderModel: %08lX\r", renderEntity.hModel);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("CustomShader: %08lX\r", renderEntity.customShader);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderEntity: %08lX\r", renderEntity);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
+/*		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderModel: %08lX\r", renderEntity.hModel);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("CustomShader: %08lX\r", renderEntity.customShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
 
 		for(int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++)
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Shaderparam[%u]: %f\r", i, renderEntity.shaderParms[i]);
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Shaderparam[%u]: %f\r", i, renderEntity.shaderParms[i]);
 
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("ForceUpdate: %u\r", renderEntity.forceUpdate);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ForceUpdate: %u\r", renderEntity.forceUpdate);
 
 		renderEntity.customShader = gameLocal.GetGlobalMaterial();
 	}
@@ -1573,7 +1576,7 @@ idEntity::UpdateRenderEntity
 bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
 {
 	if(m_FrobDistance != 0)
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("%s this: %08lX    FrobDistance: %lu\r", __FUNCTION__, this, m_FrobDistance);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("%s this: %08lX    FrobDistance: %lu\r", __FUNCTION__, this, m_FrobDistance);
 
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
@@ -1867,12 +1870,12 @@ void idEntity::PropSoundS( const char *localName, const char *globalName )
 	if( localName == NULL )
 	{
 		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, false );
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundS: Propagating global sound %s without checking local sound\r", globalName);
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Propagating global sound %s without checking local sound\r", globalName);
 		// note: if we are doing the global only, gName remains set to globalName
 		goto Quit;
 	}
 
-	DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundS: Found local sound %s, parsing local sound modifiers\r", localName);
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Found local sound %s, parsing local sound modifiers\r", localName);
 
 	locName = localName;
 
@@ -1894,12 +1897,12 @@ void idEntity::PropSoundS( const char *localName, const char *globalName )
 		if( !tempstr.IsNumeric() || start >= end )
 		{
 			gameLocal.Warning( "[Soundprop] Bad volume multiplier for sound %s on entity %s.", localName, name.c_str() );
-			DM_LOG(LC_SOUND, LT_WARNING).LogString("Bad volume multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Bad volume multiplier for sound %s on entity %s.\r", localName, name.c_str() );
 		}
 		else
 		{
 			volMod = atof( tempstr.c_str() );
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local volume modifier %f \r", volMod);
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local volume modifier %f \r", volMod);
 		}
 	}
 
@@ -1914,12 +1917,12 @@ void idEntity::PropSoundS( const char *localName, const char *globalName )
 		if( !tempstr.IsNumeric() || start >= end )
 		{
 			gameLocal.Warning( "[Soundprop] Bad duration multiplier for sound %s on entity %s.", localName, name.c_str() );
-			DM_LOG(LC_SOUND, LT_WARNING).LogString("Bad duration multiplier for sound %s on entity %s.\r", localName, name.c_str() );
+			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Bad duration multiplier for sound %s on entity %s.\r", localName, name.c_str() );
 		}
 		else
 		{
 			durMod = atof( tempstr.c_str() );
-			DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local duration modifier %f \r", durMod);
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local duration modifier %f \r", durMod);
 		}
 	}
 
@@ -1998,7 +2001,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	bool bIsSusp(false), bIsEnv(false);
 
 	// uncomment for debugging (spams the logfile since it plays for every sound that happens)
-	// DM_LOG(LC_SOUND, LT_DEBUG).LogString("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
+	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
 	
 	sprName = sndName;
 
@@ -2011,7 +2014,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 		 || ( !bIsSusp && !bIsEnv ) ) )  
 	{
 		// uncomment for debugging
-		// DM_LOG(LC_SOUND, LT_WARNING).LogString("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
+		// DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)\r", sndName );
 		// gameLocal.Warning("[PropSound] Attempted to propagate nonexistant local sound \"%s\" (forceLocal = true)", sndName );
 		goto Quit;
 	}
@@ -2026,14 +2029,14 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	if (bIsSusp)
 	{
 		PropSoundS( sprName.c_str(), sprNameSG.c_str() );
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
 		// exit here, because we don't want to allow playing both
 		// env. sound AND susp. sound for the same sound and entity
 		goto Quit;
 	}
 	if (bIsEnv)
 	{
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
 		PropSoundE( sprName.c_str(), sprNameEG.c_str() );
 		goto Quit;
 	}
@@ -2041,13 +2044,13 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	// play the global sound directly.
 	if ( bAssumeEnv )
 	{
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
 		PropSoundE( NULL, sprNameEG.c_str() );
 		goto Quit;
 	}
 	else
 	{
-		DM_LOG(LC_SOUND, LT_DEBUG).LogString("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
 		PropSoundS( NULL, sprNameSG.c_str() );
 	}
 
@@ -2776,7 +2779,7 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 	const char *temp;
 	idClipModel *clipModel = NULL;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] test for clipmodel\r", name.c_str());
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] test for clipmodel\r", name.c_str());
 
 	// We need to make sure that the lightgem surface doesn't have a clipmodel
 	if(name != LIGHTEM_RENDER_NAME)
@@ -2844,11 +2847,11 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 			}
 		}
 		else
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] does not contain a clipmodel\r", name.c_str());
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] does not contain a clipmodel\r", name.c_str());
 	}
 	else
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Entity [%s] ignores clipmodel check and disable all shadows\r", name.c_str());
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] ignores clipmodel check and disable all shadows\r", name.c_str());
 		renderEntity.noDynamicInteractions = false;
 		renderEntity.noShadow = true;
 		renderEntity.noSelfShadow = true;
@@ -5842,10 +5845,10 @@ bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 	if(str == name)
 		goto Quit;
 
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
 	if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
 		i = 0;
 		n = MasterList.Num();
 		bFound = false;
@@ -5862,7 +5865,7 @@ bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 	}
 	else
 	{
-		DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", str.c_str());
+		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", str.c_str());
 		goto Quit;
 	}
 
@@ -5907,19 +5910,19 @@ void idEntity::LoadTDMSettings(void)
 	// If this is a frobable entity we need to activate the frobcode.
 	if(m_FrobDistance != 0)
 	{
-		DM_LOG(LC_FROBBING, LT_INFO).LogString("Frob activated: %08lX\r", this);
+		DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Frob activated: %08lX\r", this);
 		if(renderEntity.callback != NULL && renderEntity.callback != idEntity::FrobModelCallback)
 			m_FrobCallbackChain = renderEntity.callback;
 
 		renderEntity.callback = idEntity::FrobModelCallback;
 	}
 
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
 
 bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView_t *pRenderView)
 {
-	DM_LOG(LC_FROBBING, LT_INFO).LogString("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, pRenderEntity, pRenderView);
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, pRenderEntity, pRenderView);
 
 	// this may be triggered by a model trace or other non-view related source
 	if(!pRenderView)
@@ -5965,11 +5968,11 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 	bHighlight = false;
 	param = 0.0f;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Player: [%s]\r", player->name.c_str());
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Player: [%s]\r", player->name.c_str());
 
 	v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 	fDistance = v3Difference.Length();
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
 		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance, fDistance);
 
 	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
@@ -5987,14 +5990,14 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 		end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
 
 		gameLocal.clip.TracePoint(trace, start, end, cm, player);
-//		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 		if(trace.fraction < 1.0f)
 		{
 			if(fDistance <= m_FrobDistance)
 			{
 				idEntity *ent = gameLocal.GetTraceEntity(trace);
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
 
 				if(ent == this)
 					bHighlight = true;
@@ -6016,17 +6019,17 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 	}
 
 	*ShaderParam = param;
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
 
 Quit:
 	if(m_FrobCallbackChain != NULL)
 	{
 		if(m_FrobCallbackChain == idEntity::FrobModelCallback)
-			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Internal Error: Chainfunction set to FrobModelCallback. Please file a bugreport!\r\r");
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Internal Error: Chainfunction set to FrobModelCallback. Please file a bugreport!\r\r");
 		else
 		{
 			// The return value is always true if this function returns true as well
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling chainfunction: %08lX - %08lX\r\r", renderEntity.callback, m_FrobCallbackChain);
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling chainfunction: %08lX - %08lX\r\r", renderEntity.callback, m_FrobCallbackChain);
 			if(m_FrobCallbackChain(pRenderEntity, pRenderView) == true)
 				bRc = true;
 		}
@@ -6043,11 +6046,11 @@ void idEntity::FrobAction(bool bMaster)
 
 	if(m_FrobActionScript.Length() == 0)
 	{
-		DM_LOG(LC_FROBBING, LT_ERROR).LogString("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
+		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
 		return;
 	}
 
-	DM_LOG(LC_FROBBING, LT_DEBUG).LogString("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
 
 	// The player can frob any entity in a chain so we must make sure that all 
 	// others, in the chain, are also called. The master has no special meaning
@@ -6055,11 +6058,11 @@ void idEntity::FrobAction(bool bMaster)
 	// to be the same entity type.
 	if(bMaster == true && m_MasterFrob.Length() != 0)
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Master entity [%s] is called.\r", m_MasterFrob.c_str());
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity [%s] is called.\r", m_MasterFrob.c_str());
 		if((ent = gameLocal.FindEntity(m_MasterFrob.c_str())) != NULL)
 			ent->FrobAction(false);
 		else
-			DM_LOG(LC_FROBBING, LT_ERROR).LogString("Master entity [%s] not found.\r", m_MasterFrob.c_str());
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", m_MasterFrob.c_str());
 	}
 	else
 	{
@@ -6068,27 +6071,27 @@ void idEntity::FrobAction(bool bMaster)
 		n = m_FrobList.Num();
 		for(i = 0; i < n; i++)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Trying linked entity [%s]\r", m_FrobList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_FrobList[i].c_str());
 			if((ent = gameLocal.FindEntity(m_FrobList[i].c_str())) != NULL)
 			{
-				DM_LOG(LC_FROBBING, LT_DEBUG).LogString("Calling linked entity [%s]\r", m_FrobList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s]\r", m_FrobList[i].c_str());
 				ent->FrobAction(false);
 			}
 			else
-				DM_LOG(LC_FROBBING, LT_ERROR).LogString("Linked entity [%s] not found\r", m_FrobList[i].c_str());
+				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_FrobList[i].c_str());
 		}
 
 		function_t *pScriptFkt = gameLocal.program.FindFunction(m_FrobActionScript.c_str());
 		if(pScriptFkt)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG).LogString("[%s] FrobAction has been triggered using %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobAction has been triggered using %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
 			idThread *pThread = new idThread(pScriptFkt);
 			pThread->CallFunction(this, pScriptFkt, true);
 			pThread->DelayedStart(0);
 			StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 		else
-			DM_LOG(LC_FROBBING, LT_ERROR).LogString("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
 	}
 }
 
@@ -6099,23 +6102,23 @@ void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
 	int x, y;
 	bool bFound;
 
-	DM_LOG(LC_MISC, LT_INFO).LogString("Parsing [%s]\r", s.c_str());
+	DM_LOG(LC_MISC, LT_INFO)LOGSTRING("Parsing [%s]\r", s.c_str());
 	i = 0;
 	while(1)
 	{
-//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 1: %u:%u [%s]\r", i, n, &s[i]);
+//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 1: %u:%u [%s]\r", i, n, &s[i]);
 		// If no seperator is found, the remainder of the string
 		// is copied.
 		if((n = s.Find(';', i)) == -1)
 			n = s.Length();
 
-//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 2: %u:%u [%s]\r", i, n, &s[i]);
+//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 2: %u:%u [%s]\r", i, n, &s[i]);
 		n -= i;
 		s.Mid(i, n, str);
 		i += n;
 		if(s[i] == ';')
 			i++;
-//		DM_LOG(LC_MISC, LT_DEBUG).LogString("Offset - 3: %u:%u [%s]\r", i, n, &s[i]);
+//		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Offset - 3: %u:%u [%s]\r", i, n, &s[i]);
 		if(str.Length() == 0)
 			break;
 
@@ -6132,7 +6135,7 @@ void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
 
 		if(bFound == false)
 		{
-			DM_LOG(LC_MISC, LT_DEBUG).LogString("Append [%s] to uselist\r", str.c_str());
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Append [%s] to uselist\r", str.c_str());
 			list.Append(str);
 		}
 	}
