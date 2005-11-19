@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/11/19 11:57:29  ishtvan
+ * added unique footstep sounds in water
+ *
  * Revision 1.6  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -2452,6 +2455,18 @@ void idActor::PlayFootStepSound( void ) {
 		localSound = va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] );
 		sound = spawnArgs.GetString( localSound.c_str() );
 	}
+	// If player is walking in liquid, replace the bottom surface sound with water sounds
+	if ( static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel() == WATERLEVEL_FEET )
+	{
+		localSound = "snd_footstep_puddle";
+		sound = spawnArgs.GetString( localSound.c_str() );
+	}
+	else if ( static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel() == WATERLEVEL_WAIST )
+	{
+		localSound = "snd_footstep_wading";
+		sound = spawnArgs.GetString( localSound.c_str() );
+	}
+
 	if ( *sound == '\0' ) 
 	{
 		localSound = "snd_footstep";
