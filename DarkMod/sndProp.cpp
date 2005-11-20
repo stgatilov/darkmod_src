@@ -13,14 +13,13 @@
 *
 *****************************************************************************/
 
-/******************************************************************************
+/***************************************************************************
  *
- * PROJECT: DarkMod
+ * PROJECT: The Dark Mod
  * $Source$
  * $Revision$
  * $Date$
  * $Author$
- * $Name$
  *
  ******************************************************************************/
 
@@ -398,6 +397,9 @@ void CsndProp::Propagate
 		// TODO : Do something else in the case of Listeners, since they're not AI
 		testAI = static_cast<idAI *>( validTypeEnts[i] );
 
+		// do not propagate to dead AI
+		if( testAI->health <= 0 )
+			continue;
 		
 		if( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
 		{
