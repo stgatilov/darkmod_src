@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2005/11/20 21:50:42  sparhawk
+ * Some cvars removed. dm_lg_drive, dm_lg_vof[x/y] and dm_lg_file
+ *
  * Revision 1.32  2005/11/19 17:27:56  sparhawk
  * LogString with macro replaced
  *
@@ -4784,14 +4787,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	rv.globalMaterial = gameLocal.GetGlobalMaterial();
 	rv.width = SCREEN_WIDTH;
 	rv.height = SCREEN_HEIGHT;
-	// Good width seems to be between 10 and 20. A realistic default is 90.
-//	renderView.fov_x = 15;		// Bigger values means broader view
-//	rv.fov_x = 90;
-	rv.fov_x = cv_lg_fovx.GetInteger();
-	// Good height seems to be between 34 and 44. A realistic default 74.
-//	renderView.fov_y = 40;
-//	rv.fov_y = 74;
-	rv.fov_y = cv_lg_fovy.GetInteger();		// Bigger values means more compressed view
+	rv.fov_x = cv_lg_fov.GetInteger();
+	rv.fov_y = cv_lg_fov.GetInteger();		// Bigger values means more compressed view
 	rv.forceUpdate = false;
 	rv.x = 0;
 	rv.y = 0;
@@ -4915,13 +4912,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			gameRenderWorld->RenderScene(&rv);
 			if(i != 0)
 			{
-				if(cv_lg_file.GetBool() == true)
-				{
-					renderSystem->CaptureRenderToFile(name);
-					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
-				}
-				else
-					renderSystem->CaptureRenderToImage("_scratch");
+				renderSystem->CaptureRenderToFile(name);
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
 			}
 			renderSystem->UnCrop();
 
