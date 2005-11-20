@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.29  2005/11/20 21:49:30  sparhawk
+ * *) Proper returncode for renderhook
+ * *) Errorvalue while rendering to pipe.
+ *
  * Revision 1.28  2005/11/19 17:26:48  sparhawk
  * LogString with macro replaced
  *
@@ -368,23 +372,6 @@ void CGlobal::Init()
 {
 	char ProfilePath[1024];
 	PROFILE_HANDLE *pfh = NULL;
-
-	// We create the rendershot directory before we set to hook to 
-	// avoid unneccessary complications.
-	idStr Drive;
-	int n;
-
-	Drive = cv_lg_renderdrive.GetString();
-	if((n = Drive.Length()) > 1)
-		idLib::common->Warning( "dm_lg_renderdrive contains an illegal driveletter. Drive will be ignored!" );
-	else
-	{
-		char *p = new char[strlen(LIGHTEM_RENDER_DIRECTORY)+4];
-		p[0] = Drive[0];
-		strcat(p, ":\\");
-		strcat(p, LIGHTEM_RENDER_DIRECTORY);
-		mkdir(p);
-	}
 
 	// Do we need this on Linux as well? I guess not, because in linux the targetdirectory can be
 	// redericted by a link. This has to be tested though but should be no problem.
@@ -968,7 +955,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 			static char pipe_buf[DARKMOD_RENDERPIPE_BUFSIZE];
 			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%s]\r", m_Name.c_str());
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", Handle);
 
 			dwBufSize = DARKMOD_RENDERPIPE_BUFSIZE;
 			BufLen = 0;
@@ -980,7 +967,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					&cbBytesRead,							// number of bytes read
 					NULL);									// not overlapped I/O
 				dwLastError = GetLastError();
-//				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%s]   %lu (%08lX) %lu\r", cbBytesRead, m_Name.c_str(), BufLen, m_Image, dwLastError);
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu (%08lX) %lu\r", cbBytesRead, Handle, BufLen, m_Image, dwLastError);
 
 				BufLen += cbBytesRead;
 				dwBufSize -= cbBytesRead;
@@ -1121,7 +1108,7 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 	static char p[1024];
 	char *pRet = NULL;
 	idStr Drive;
-	META_RES Ret = MRES_HANDLED;
+	META_RES Ret = MRES_IGNORED;
 
 	if(idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
 	{
