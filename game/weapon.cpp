@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/11/20 10:38:48  ishtvan
+ * added tactile alert to AI when melee hit occurs
+ *
  * Revision 1.3  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -3012,6 +3015,13 @@ void idWeapon::Event_Melee( void ) {
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
 				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), tr.c.id );
+
+				// apply a LARGE tactile alert to AI
+				if( ent->IsType(idAI::Type) )
+				{
+					static_cast<idAI *>(ent)->TactileAlert( GetOwner(), 100 );
+				}
+
 				hit = true;
 			}
 
