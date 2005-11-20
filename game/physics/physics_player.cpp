@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2005/11/20 19:22:49  ishtvan
+ * weapons lowered when on rope arrow
+ *
  * Revision 1.31  2005/11/19 17:29:21  sparhawk
  * LogString with macro replaced
  *
@@ -1210,6 +1213,7 @@ void idPhysics_Player::RopeDetach( void )
 		m_RopeDetachTimer = gameLocal.time;
 
 		static_cast<idPlayer *>(self)->RaiseWeapon();
+		static_cast<idPlayer *>(self)->hiddenWeapon = false;
 
 		// switch movement modes to the appropriate one
 		if ( waterLevel > WATERLEVEL_FEET ) 
@@ -1928,6 +1932,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 		// lower weapon
 		static_cast<idPlayer *>(self)->LowerWeapon();
+		static_cast<idPlayer *>(self)->hiddenWeapon = true;
 
 		idPhysics_Player::RopeMove();
 	}
