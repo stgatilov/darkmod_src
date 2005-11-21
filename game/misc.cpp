@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/11/21 07:54:33  ishtvan
+ * AI can no longer see thru static models
+ *
  * Revision 1.4  2005/11/12 14:59:20  sparhawk
  * SDK 1.3 Merge
  *
@@ -1400,7 +1403,7 @@ void idStaticEntity::Spawn( void ) {
 	hidden = spawnArgs.GetBool( "hide" );
 
 	if ( solid && !hidden ) {
-		GetPhysics()->SetContents( CONTENTS_SOLID );
+		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	} else {
 		GetPhysics()->SetContents( 0 );
 	}
@@ -1501,7 +1504,7 @@ idStaticEntity::Show
 void idStaticEntity::Show( void ) {
 	idEntity::Show();
 	if ( spawnArgs.GetBool( "solid" ) ) {
-		GetPhysics()->SetContents( CONTENTS_SOLID );
+		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
 }
 
