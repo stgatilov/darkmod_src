@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2005/11/21 07:53:59  ishtvan
+ * AI can no longer see through movable objects
+ *
  * Revision 1.2  2005/04/07 09:40:23  ishtvan
  * A movable will now call the idAI::TactileAlert method if it collides with an AI
  *
@@ -144,7 +147,7 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetBouncyness( bouncyness );
 	physicsObj.SetFriction( 0.6f, 0.6f, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
-	physicsObj.SetContents( CONTENTS_SOLID );
+	physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
 
@@ -247,7 +250,7 @@ idMoveable::Show
 void idMoveable::Show( void ) {
 	idEntity::Show();
 	if ( !spawnArgs.GetBool( "nonsolid" ) ) {
-		physicsObj.SetContents( CONTENTS_SOLID );
+		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
 }
 
