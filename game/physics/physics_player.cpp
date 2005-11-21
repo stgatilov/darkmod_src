@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2005/11/21 06:41:06  ishtvan
+ * lowered weapons when swimming, mantling
+ *
  * Revision 1.32  2005/11/20 19:22:49  ishtvan
  * weapons lowered when on rope arrow
  *
@@ -670,6 +673,13 @@ void idPhysics_Player::WaterMove( void ) {
 	else	
 		current.movementFlags &= ~PMF_JUMP_HELD;
 
+	// Lower weapons while swimming
+// TODO : In future, only disable some weapons, keep the sword for underwater bashing?
+	if( !static_cast<idPlayer *>(self)->hiddenWeapon )
+	{
+		static_cast<idPlayer *>(self)->LowerWeapon();
+		static_cast<idPlayer *>(self)->hiddenWeapon = true;
+	}
 
 	idPhysics_Player::Friction();
 
@@ -792,6 +802,7 @@ void idPhysics_Player::WalkMove( void ) {
 
 	if ( waterLevel > WATERLEVEL_WAIST && ( viewForward * groundTrace.c.normal ) > 0.0f ) {
 		// begin swimming
+
 		idPhysics_Player::WaterMove();
 		return;
 	}
@@ -1029,7 +1040,7 @@ void idPhysics_Player::RopeMove( void )
 		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
 		vImpulse *= mass;
 
-		static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1 );
+		static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1f );
 	}
 
 	offset = (current.origin - ropePoint);
@@ -1958,6 +1969,16 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	else {
 		// airborne
 		idPhysics_Player::AirMove();
+	}
+
+	// raise weapon if not swimming, mantling or on a rope
+	if( m_mantlePhase == notMantling_DarkModMantlePhase && waterLevel <= 1 && !m_bRopeAttached )
+	{
+		if( static_cast<idPlayer *>(self)->hiddenWeapon )
+		{
+			static_cast<idPlayer *>(self)->RaiseWeapon();
+			static_cast<idPlayer *>(self)->hiddenWeapon = false;
+		}
 	}
 
 	// set watertype, waterlevel and groundentity
@@ -2968,6 +2989,9 @@ void idPhysics_Player::UpdateMantleTimers()
 			if (m_mantlePhase == notMantling_DarkModMantlePhase)
 			{
 				// Handle end of mantle
+				// Ishtvan 11/20/05 - Raise weapons after mantle is done
+				static_cast<idPlayer *>(self)->RaiseWeapon();
+				static_cast<idPlayer *>(self)->hiddenWeapon = false;
 				
 			}
 					
@@ -3126,6 +3150,10 @@ void idPhysics_Player::StartMantle
 	{
 		RopeDetach();
 	}
+
+	// Ishtvan 11/20/05 - Lower weapons when mantling
+	static_cast<idPlayer *>(self)->LowerWeapon();
+	static_cast<idPlayer *>(self)->hiddenWeapon = true;
 
 	// If mantling from a jump, cancel any velocity so that it does
 	// not continue after the mantle is completed.
