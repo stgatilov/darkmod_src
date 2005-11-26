@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/11 22:01:38  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2005/03/29 07:53:32  ishtvan
+ * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -62,6 +68,10 @@ extern const idEventDef EV_Thread_FadeIn;
 extern const idEventDef EV_Thread_FadeOut;
 extern const idEventDef EV_Thread_FadeTo;
 extern const idEventDef EV_Thread_Restart;
+
+extern const idEventDef EV_AI_GetRelationSys;
+extern const idEventDef EV_AI_SetRelation;
+extern const idEventDef EV_AI_OffsetRelation;
 
 class idThread : public idClass {
 private:
@@ -173,6 +183,17 @@ private:
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
 
+	/**
+	* The following events are a frontend for the AI relationship
+	* manager (stored in game_local).
+	* See CRelations definition for descriptions of functions called
+	**/
+	void						Event_GetRelation( int team1, int team2 );
+	void						Event_SetRelation( int team1, int team2, int val );
+	void						Event_OffsetRelation( int team1, int team2, int offset );
+
+
+
 public:							
 								CLASS_PROTOTYPE( idThread );
 								
@@ -237,8 +258,8 @@ public:
 	void						SetThreadName( const char *name );
 	const char					*GetThreadName( void );
 
-	void						Error( const char *fmt, ... ) const;
-	void						Warning( const char *fmt, ... ) const;
+	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void						Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 								
 	static idThread				*CurrentThread( void );
 	static int					CurrentThreadNum( void );

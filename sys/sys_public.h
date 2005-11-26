@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:03  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/11 22:49:58  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2004/11/28 10:00:42  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:03  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -53,6 +59,8 @@
 // Mac OSX
 #if defined(MACOS_X) || defined(__APPLE__)
 
+#include "osx/apple_bool.h"
+
 #ifdef __ppc__
 	#define BUILD_STRING				"MacOSX-ppc"
 	#define BUILD_OS_ID					1
@@ -68,6 +76,7 @@
 #define ALIGN16( x )					x
 #ifdef __MWERKS__
 #define PACKED
+#include <alloca.h>
 #else
 #define PACKED							__attribute__((packed))
 #endif
@@ -122,6 +131,11 @@
 
 #endif
 
+#ifdef __GNUC__
+#define id_attribute(x) __attribute__(x)
+#else
+#define id_attribute(x)  
+#endif
 
 typedef enum {
 	CPUID_NONE							= 0x00000,
@@ -233,10 +247,10 @@ void			Sys_SetClipboardData( const char *string );
 
 // will go to the various text consoles
 // NOT thread safe - never use in the async paths
-void			Sys_Printf( const char *msg, ... );
+void			Sys_Printf( const char *msg, ... )id_attribute((format(printf,1,2)));
 
 // guaranteed to be thread-safe
-void			Sys_DebugPrintf( const char *fmt, ... );
+void			Sys_DebugPrintf( const char *fmt, ... )id_attribute((format(printf,1,2)));
 void			Sys_DebugVPrintf( const char *fmt, va_list arg );
 
 // a decent minimum sleep time to avoid going below the process scheduler speeds
@@ -326,15 +340,15 @@ void			Sys_ShutdownInput( void );
 void			Sys_InitScanTable( void );
 const unsigned char *Sys_GetScanTable( void );
 unsigned char	Sys_GetConsoleKey( bool shifted );
+// map a scancode key to a char
+// does nothing on win32, as SE_KEY == SE_CHAR there
+// on other OSes, consider the keyboard mapping
+unsigned char	Sys_MapCharForKey( int key );
 
 // keyboard input polling
 int				Sys_PollKeyboardInputEvents( void );
 int				Sys_ReturnKeyboardInputEvent( const int n, int &ch, bool &state );
 void			Sys_EndKeyboardInputEvents( void );
-
-// keyboard mapping
-// unused?
-int				Sys_MapKeyChar( int k );
 
 // mouse input polling
 int				Sys_PollMouseInputEvents( void );
@@ -364,6 +378,11 @@ const char *	Sys_EXEPath( void );
 // returns -1 if directory was not found (the list is cleared)
 int				Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list );
 
+// know early if we are performing a fatal error shutdown so the error message doesn't get lost
+void			Sys_SetFatalError( const char *error );
+
+// display perference dialog
+void			Sys_DoPreferences( void );
 
 /*
 ==============================================================
@@ -395,7 +414,8 @@ public:
 
 	// if the InitForPort fails, the idPort.port field will remain 0
 	bool		InitForPort( int portNumber );
-	int			GetPort( void ) const { return port; }
+	int			GetPort( void ) const { return bound_to.port; }
+	netadr_t	GetAdr( void ) const { return bound_to; }
 	void		Close();
 
 	bool		GetPacket( netadr_t &from, void *data, int &size, int maxSize );
@@ -409,7 +429,7 @@ public:
 	int			bytesWritten;
 
 private:
-	int			port;			// UDP port
+	netadr_t	bound_to;		// interface and port
 	int			netSocket;		// OS specific socket
 };
 
@@ -442,9 +462,6 @@ bool			Sys_StringToNetAdr( const char *s, netadr_t *a, bool doDNSResolve );
 const char *	Sys_NetAdrToString( const netadr_t a );
 bool			Sys_IsLANAddress( const netadr_t a );
 bool			Sys_CompareNetAdrBase( const netadr_t a, const netadr_t b );
-
-int				Sys_GetLocalIPCount( void );
-const char *	Sys_GetLocalIP( int i );
 
 void			Sys_InitNetworking( void );
 void			Sys_ShutdownNetworking( void );
@@ -517,7 +534,7 @@ void				Sys_TriggerEvent( int index = TRIGGER_EVENT_ZERO );
 
 class idSys {
 public:
-	virtual void			DebugPrintf( const char *fmt, ... ) = 0;
+	virtual void			DebugPrintf( const char *fmt, ... )id_attribute((format(printf,2,3))) = 0;
 	virtual void			DebugVPrintf( const char *fmt, va_list arg ) = 0;
 
 	virtual double			GetClockTicks( void ) = 0;
@@ -528,6 +545,8 @@ public:
 	virtual bool			FPU_StackIsEmpty( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
+
+	virtual void			FPU_EnableExceptions( int exceptions ) = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;
@@ -550,5 +569,8 @@ public:
 };
 
 extern idSys *				sys;
+
+bool Sys_LoadOpenAL( void );
+void Sys_FreeOpenAL( void );
 
 #endif /* !__SYS_PUBLIC__ */

@@ -7,8 +7,26 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.7  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.6  2004/11/21 01:03:27  sparhawk
+ * Doors can now be properly opened and have sound.
+ *
+ * Revision 1.5  2004/11/17 00:00:38  sparhawk
+ * Frobcode has been generalized now and resides for all entities in the base classe.
+ *
+ * Revision 1.4  2004/11/14 19:24:56  sparhawk
+ * Added frobcode to idMover
+ *
+ * Revision 1.3  2004/11/12 18:38:38  sparhawk
+ * Moved frobcode from idDoor to baseclass.
+ *
+ * Revision 1.2  2004/11/11 22:15:40  sparhawk
+ * Frobcode is now more generalized. Doors are now frobable.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -120,7 +138,7 @@ protected:
 	virtual void			BeginRotation( idThread *thread, bool stopwhendone );
 	moveState_t				move;
 
-private:
+protected:
 	rotationState_t			rot;
 
 	int						move_thread;
@@ -179,7 +197,7 @@ private:
 	void					Event_StartSpline( idEntity *splineEntity );
 	void					Event_StopSpline( void );
 	void					Event_Activate( idEntity *activator );
-	void					Event_PostRestore( int start, int total, int accel, int decel, bool useSplineAng );
+	void					Event_PostRestore( int start, int total, int accel, int decel, int useSplineAng );
 	void					Event_IsMoving( void );
 	void					Event_IsRotating( void );
 };
@@ -344,7 +362,7 @@ protected:
 	void					Event_SetCallback( void );
 	void					Event_ReturnToPos1( void );
 	void					Event_Use_BinaryMover( idEntity *activator );
-	virtual void			Event_Reached_BinaryMover( void );
+	void					Event_Reached_BinaryMover( void );
 	void					Event_MatchActivateTeam( moverState_t newstate, int time );
 	void					Event_Enable( void );
 	void					Event_Disable( void );
@@ -356,7 +374,8 @@ protected:
 	static void				GetMovedir( float dir, idVec3 &movedir );
 };
 
-class idDoor : public idMover_Binary {
+class idDoor : public idMover_Binary
+{
 public:
 	CLASS_PROTOTYPE( idDoor );
 
@@ -405,7 +424,7 @@ private:
 	void					GetLocalTriggerPosition( const idClipModel *trigger );
 	void					CalcTriggerBounds( float size, idBounds &bounds );
 
-	virtual void			Event_Reached_BinaryMover( void );
+	void					Event_Reached_BinaryMover( void );
 	void					Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEntity );
 	void					Event_PartBlocked( idEntity *blockingEntity );
 	void					Event_Touch( idEntity *other, trace_t *trace );

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -30,6 +33,8 @@ class idCmdArgs {
 public:
 							idCmdArgs( void ) { argc = 0; }
 							idCmdArgs( const char *text, bool keepAsStrings ) { TokenizeString( text, keepAsStrings ); }
+
+	void					operator=( const idCmdArgs &args );
 
 							// The functions that execute commands get their parameters with these functions.
 	int						Argc( void ) const { return argc; }

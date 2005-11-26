@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:35:08  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -18,6 +21,12 @@
 #ifndef __MATH_MATH_H__
 #define __MATH_MATH_H__
 
+#ifdef MACOS_X
+// for square root estimate instruction
+#include <ppc_intrinsics.h>
+// for FLT_MIN
+#include <float.h>
+#endif
 /*
 ===============================================================================
 
@@ -222,6 +231,7 @@ private:
 };
 
 ID_INLINE float idMath::RSqrt( float x ) {
+
 	long i;
 	float y, r;
 
@@ -234,6 +244,7 @@ ID_INLINE float idMath::RSqrt( float x ) {
 }
 
 ID_INLINE float idMath::InvSqrt16( float x ) {
+
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
@@ -247,6 +258,7 @@ ID_INLINE float idMath::InvSqrt16( float x ) {
 }
 
 ID_INLINE float idMath::InvSqrt( float x ) {
+
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
@@ -792,6 +804,15 @@ ID_INLINE int idMath::FtoiFast( float f ) {
 	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
 	shift = e - IEEE_FLT_MANTISSA_BITS;
 	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
+//#elif defined( __i386__ )
+#elif 0
+	int i = 0;
+	__asm__ __volatile__ (
+						  "fld %1\n" \
+						  "fistp %0\n" \
+						  : "=m" (i) \
+						  : "m" (f) );
+	return i;
 #else
 	return (int) f;
 #endif
@@ -803,6 +824,7 @@ ID_INLINE unsigned long idMath::Ftol( float f ) {
 
 ID_INLINE unsigned long idMath::FtolFast( float f ) {
 #ifdef _WIN32
+	// FIXME: this overflows on 31bits still .. same as FtoiFast
 	unsigned long i;
 	__asm fld		f
 	__asm fistp		i		// use default rouding mode (round nearest)
@@ -815,6 +837,16 @@ ID_INLINE unsigned long idMath::FtolFast( float f ) {
 	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
 	shift = e - IEEE_FLT_MANTISSA_BITS;
 	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
+//#elif defined( __i386__ )
+#elif 0
+	// for some reason, on gcc I need to make sure i == 0 before performing a fistp
+	int i = 0;
+	__asm__ __volatile__ (
+						  "fld %1\n" \
+						  "fistp %0\n" \
+						  : "=m" (i) \
+						  : "m" (f) );
+	return i;
 #else
 	return (unsigned long) f;
 #endif

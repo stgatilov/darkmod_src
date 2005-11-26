@@ -7,8 +7,17 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.4  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.3  2005/09/24 03:17:53  lloyd
+ * Restored file to it's original state
+ *
+ * Revision 1.2  2005/09/17 00:32:29  lloyd
+ * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,7 +28,6 @@
 #pragma hdrstop
 
 #include "Game_local.h"
-
 
 /*
 ===============================================================================
@@ -71,6 +79,7 @@ void idCursor3D::Present( void ) {
 
 	const idVec3 &origin = GetPhysics()->GetOrigin();
 	const idMat3 &axis = GetPhysics()->GetAxis();
+
 	gameRenderWorld->DebugArrow( colorYellow, origin + axis[1] * -5.0f + axis[2] * 5.0f, origin, 2 );
 	gameRenderWorld->DebugArrow( colorRed, origin, draggedPosition, 2 );
 }
@@ -1056,7 +1065,8 @@ int idGameEdit::MapGetUniqueMatchingKeyVals( const char *key, const char *list[]
 idGameEdit::MapAddEntity
 ================
 */
-void idGameEdit::MapAddEntity( const idDict *dict ) const {
+void idGameEdit::MapAddEntity( const idDict *dict ) const
+{
 	idMapFile *mapFile = gameLocal.GetLevelMap();
 	if ( mapFile ) {
 		idMapEntity *ent = new idMapEntity();

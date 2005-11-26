@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -30,6 +33,9 @@ idPhysics_Base::idPhysics_Base
 */
 idPhysics_Base::idPhysics_Base( void ) {
 	self = NULL;
+#ifdef MOD_WATERPHYSICS
+	water = NULL;	// MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 	clipMask = 0;
 	SetGravity( gameLocal.GetGravity() );
 	ClearContacts();
@@ -824,3 +830,78 @@ idPhysics_Base::ReadFromSnapshot
 */
 void idPhysics_Base::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 }
+
+#ifdef MOD_WATERPHYSICS
+/*
+================
+idPhysics_Base::SetWater
+================
+*/
+void idPhysics_Base::SetWater( idPhysics_Liquid *e ) {
+	this->water = e;
+}
+
+/*
+================
+idPhysics_Base::GetWater
+================
+*/
+idPhysics_Liquid *idPhysics_Base::GetWater()
+{
+	return this->water;
+}
+
+/*
+================
+idPhysics_Base::SetWaterLevelf
+
+	Returns 1.0f if the object is in a liquid, 0.0f otherwise.
+
+	If the object's not in a liquid it double checks to make sure it's really not.
+	Normally we only set this->water when an object collides with a water material but
+	what happens if an object spawns inside a liquid or something?  Nothing, it'll just sit
+	there.  This function sets the water level for an object that's already inside the water.
+
+	This was most noticeable when I had monsters walking into the water and of course, they'd 
+	sink to the bottom.  After I'd kill them they'd die normally and not float.  After adding
+	this function they float after they're killed.
+
+================
+*/
+float idPhysics_Base::SetWaterLevelf() {
+	if( this->water == NULL ) {
+		idEntity *e[2];
+		trace_t result;
+		idBounds bounds = this->GetBounds();
+
+		bounds += this->GetOrigin();
+
+		// trace for a water contact
+		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e,2) ) {
+			if( e[0]->GetPhysics()->IsType(idPhysics_Liquid::Type) ) {
+				this->water = static_cast<idPhysics_Liquid *>(e[0]->GetPhysics());
+				return 1.0f;
+			}
+		}
+
+		return 0.0f;
+	}
+	else
+		return 1.0f;
+}
+
+/*
+================
+idPhysics_Base::GetWaterLevelf
+
+	The water level for this object, 0.0f if not in the water, 1.0f if in water
+================
+*/
+float idPhysics_Base::GetWaterLevelf() const {
+	if( this->water == NULL )
+		return 0.0f;
+	else
+		return 1.0f;
+}
+
+#endif		// MOD_WATERPHYSICS

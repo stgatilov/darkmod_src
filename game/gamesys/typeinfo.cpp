@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -605,7 +608,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 		} else if ( token == "long" ) {
 
 			typeSize = sizeof( signed long );
-			Write( varName, varType, scope, prefix, "", va( "%d", *((signed long *)varPtr) ), varPtr, typeSize );
+			Write( varName, varType, scope, prefix, "", va( "%ld", *((signed long *)varPtr) ), varPtr, typeSize );
 
 		} else {
 
@@ -637,7 +640,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 		} else if ( token == "long" ) {
 
 			typeSize = sizeof( unsigned long );
-			Write( varName, varType, scope, prefix, "", va( "%d", *((unsigned long *)varPtr) ), varPtr, typeSize );
+			Write( varName, varType, scope, prefix, "", va( "%lu", *((unsigned long *)varPtr) ), varPtr, typeSize );
 
 		} else {
 
@@ -683,7 +686,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 	} else if ( token == "long" ) {
 
 		typeSize = sizeof( long );
-		Write( varName, varType, scope, prefix, "", va( "%d", *((long *)varPtr) ), varPtr, typeSize );
+		Write( varName, varType, scope, prefix, "", va( "%ld", *((long *)varPtr) ), varPtr, typeSize );
 
 	} else if ( token == "float" ) {
 
@@ -1032,7 +1035,7 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 
 		const idScriptBool *scriptBool = ((idScriptBool *)varPtr);
 		if ( scriptBool->IsLinked() ) {
-			Write( varName, varType, scope, prefix, "", (bool)*scriptBool ? "true" : "false", varPtr, typeSize );
+			Write( varName, varType, scope, prefix, "", ( *scriptBool != 0 ) ? "true" : "false", varPtr, typeSize );
 		} else {
 			Write( varName, varType, scope, prefix, "", "<not linked>", varPtr, typeSize );
 		}
@@ -1402,7 +1405,7 @@ void ListTypeInfo_f( const idCmdArgs &args ) {
 	int i, j;
 	idList<int> index;
 
-	common->Printf( "%-32s : %-32s size (B)\n", "type name", "super type name", "size" );
+	common->Printf( "%-32s : %-32s size (B)\n", "type name", "super type name" );
 	for ( i = 0; classTypeInfo[i].typeName != NULL; i++ ) {
 		index.Append( i );
 	}

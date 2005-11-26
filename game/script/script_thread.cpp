@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/03/29 07:53:32  ishtvan
+ * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +22,9 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../../darkmod/relations.h"
+
+class CRelations;
 
 const idEventDef EV_Thread_Execute( "<execute>", NULL );
 const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
@@ -100,6 +106,12 @@ const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
 const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
 const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
 
+//AI relationship manager events
+const idEventDef EV_AI_GetRelationSys( "getRelation", "dd", 'd' );
+const idEventDef EV_AI_SetRelation( "setRelation", "ddd" );
+const idEventDef EV_AI_OffsetRelation( "offsetRelation", "ddd" );
+
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -179,6 +191,11 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugBounds,			idThread::Event_DebugBounds )
 	EVENT( EV_Thread_DrawText,				idThread::Event_DrawText )
 	EVENT( EV_Thread_InfluenceActive,		idThread::Event_InfluenceActive )
+
+	EVENT( EV_AI_GetRelationSys,			idThread::Event_GetRelation )
+	EVENT( EV_AI_SetRelation,				idThread::Event_SetRelation )
+	EVENT( EV_AI_OffsetRelation,			idThread::Event_OffsetRelation )
+
 END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -1830,3 +1847,23 @@ void idThread::Event_InfluenceActive( void ) {
 		idThread::ReturnInt( false );
 	}
 }
+
+/**
+* DarkMod: The following script events are a frontend for
+* the global AI relationship manager (stored in game_local)
+**/
+void	idThread::Event_GetRelation( int team1, int team2 )
+{
+	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team1, team2 ) );
+}
+
+void	idThread::Event_SetRelation( int team1, int team2, int val )
+{
+	gameLocal.m_RelationsManager->SetRel( team1, team2, val );
+}
+
+void	idThread::Event_OffsetRelation( int team1, int team2, int offset )
+{
+	gameLocal.m_RelationsManager->ChangeRel( team1, team2, offset );
+}
+

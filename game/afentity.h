@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/17 09:11:06  ishtvan
+ * added scriptfunctions for applying velocity to individual AF bodies
+ *
+ * Revision 1.2  2004/11/28 09:16:31  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -186,6 +192,27 @@ protected:
 	int						nextSoundTime;	// next time this can make a sound
 
 	void					Event_SetConstraintPosition( const char *name, const idVec3 &pos );
+
+	/**
+	* GetNumBodies returns the number of bodies in the AF.
+	* If the AF physics pointer is NULL, it returns 0.
+	**/
+	void					Event_GetNumBodies( void );
+
+	/**
+	* Set the linear and angular velocities of a particular body given by ID argument
+	* If the ID is invalid, no velocity is set.
+	**/
+	void					Event_SetLinearVelocityB( idVec3 &NewVelocity, int id );
+	void					Event_SetAngularVelocityB( idVec3 &NewVelocity, int id );
+
+	/**
+	* Get the linear and angular velocities of a particular body given by int ID.  
+	* If the body ID is invalid, returns (0,0,0)
+	**/
+	void					Event_GetLinearVelocityB( int id );
+	void					Event_GetAngularVelocityB( int id );
+
 };
 
 /*
@@ -323,6 +350,32 @@ protected:
 	const idDeclParticle *	dustSmoke;
 
 	float					GetSteerAngle( void );
+};
+
+
+/*
+===============================================================================
+
+idAFEntity_VehicleSimple
+
+===============================================================================
+*/
+
+class idAFEntity_VehicleSimple : public idAFEntity_Vehicle {
+public:
+	CLASS_PROTOTYPE( idAFEntity_VehicleSimple );
+
+							idAFEntity_VehicleSimple( void );
+							~idAFEntity_VehicleSimple( void );
+
+	void					Spawn( void );
+	virtual void			Think( void );
+
+protected:
+	idClipModel *			wheelModel;
+	idAFConstraint_Suspension *	suspension[4];
+	jointHandle_t			wheelJoints[4];
+	float					wheelAngles[4];
 };
 
 

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:42:32  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -83,8 +86,6 @@ typedef struct glconfig_s {
 	bool				allowNV10Path;
 	bool				allowR200Path;
 	bool				allowARB2Path;
-	bool				allowCgPath;
-	bool				allowExpPath;
 
 	bool				isInitialized;
 } glconfig_t;
@@ -191,6 +192,11 @@ public:
 											bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f ) = 0;
 	virtual void			DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) = 0;
 
+	virtual void			DrawStretchTri ( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) = 0;
+	virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) = 0;
+	virtual void			GetGLSettings( int& width, int& height ) = 0;
+	virtual void			PrintMemInfo( MemInfo_t *mi ) = 0;
+
 	virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material ) = 0;
 	virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material ) = 0;
 	virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material ) = 0;
@@ -230,13 +236,18 @@ public:
 	// to render to a texture, first set the crop size with makePowerOfTwo = true,
 	// then perform all desired rendering, then capture to an image
 	// if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
-	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false ) = 0;
+	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) = 0;
 	virtual void			CaptureRenderToImage( const char *imageName ) = 0;
 	// fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
 	// to use the default tga loading code without having dimmed down areas in many places
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha = false ) = 0;
 	virtual void			UnCrop() = 0;
 	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 ) = 0;
+
+	// the image has to be already loaded ( most straightforward way would be through a FindMaterial )
+	// texture filter / mipmapping / repeat won't be modified by the upload
+	// returns false if the image wasn't found
+	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height ) = 0;
 };
 
 extern idRenderSystem *			renderSystem;

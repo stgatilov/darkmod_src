@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:42:32  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -26,41 +29,41 @@
 ===============================================================================
 */
 
-#define PROC_FILE_EXT					"proc"
-#define	PROC_FILE_ID					"mapProcFile003"
+#define PROC_FILE_EXT				"proc"
+#define	PROC_FILE_ID				"mapProcFile003"
 
 // shader parms
-const int MAX_GLOBAL_SHADER_PARMS		= 12;
+const int MAX_GLOBAL_SHADER_PARMS	= 12;
 
-const int SHADERPARM_RED				= 0;
-const int SHADERPARM_GREEN				= 1;
-const int SHADERPARM_BLUE				= 2;
-const int SHADERPARM_ALPHA				= 3;
-const int SHADERPARM_TIMESCALE			= 3;
-const int SHADERPARM_TIMEOFFSET			= 4;
-const int SHADERPARM_DIVERSITY			= 5;	// random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
-const int SHADERPARM_MODE				= 7;	// for selecting which shader passes to enable
-const int SHADERPARM_TIME_OF_DEATH		= 7;	// for the monster skin-burn-away effect enable and time offset
+const int SHADERPARM_RED			= 0;
+const int SHADERPARM_GREEN			= 1;
+const int SHADERPARM_BLUE			= 2;
+const int SHADERPARM_ALPHA			= 3;
+const int SHADERPARM_TIMESCALE		= 3;
+const int SHADERPARM_TIMEOFFSET		= 4;
+const int SHADERPARM_DIVERSITY		= 5;	// random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
+const int SHADERPARM_MODE			= 7;	// for selecting which shader passes to enable
+const int SHADERPARM_TIME_OF_DEATH	= 7;	// for the monster skin-burn-away effect enable and time offset
 
 // model parms
-const int SHADERPARM_MD5_SKINSCALE		= 8;	// for scaling vertex offsets on md5 models (jack skellington effect)
+const int SHADERPARM_MD5_SKINSCALE	= 8;	// for scaling vertex offsets on md5 models (jack skellington effect)
 
-const int SHADERPARM_MD3_FRAME			= 8;
-const int SHADERPARM_MD3_LASTFRAME		= 9;
-const int SHADERPARM_MD3_BACKLERP		= 10;
+const int SHADERPARM_MD3_FRAME		= 8;
+const int SHADERPARM_MD3_LASTFRAME	= 9;
+const int SHADERPARM_MD3_BACKLERP	= 10;
 
-const int SHADERPARM_BEAM_END_X			= 8;	// for _beam models
-const int SHADERPARM_BEAM_END_Y			= 9;
-const int SHADERPARM_BEAM_END_Z			= 10;
-const int SHADERPARM_BEAM_WIDTH			= 11;
+const int SHADERPARM_BEAM_END_X		= 8;	// for _beam models
+const int SHADERPARM_BEAM_END_Y		= 9;
+const int SHADERPARM_BEAM_END_Z		= 10;
+const int SHADERPARM_BEAM_WIDTH		= 11;
 
 const int SHADERPARM_SPRITE_WIDTH		= 8;
 const int SHADERPARM_SPRITE_HEIGHT		= 9;
 
-const int SHADERPARM_PARTICLE_STOPTIME	= 8;	// don't spawn any more particles after this time
+const int SHADERPARM_PARTICLE_STOPTIME = 8;	// don't spawn any more particles after this time
 
 // guis
-const int MAX_RENDERENTITY_GUI			= 3;
+const int MAX_RENDERENTITY_GUI		= 3;
 
 
 typedef bool(*deferredEntityCallback_t)( renderEntity_s *, const renderView_s * );
@@ -138,6 +141,8 @@ typedef struct renderEntity_s {
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 													// this automatically implies noShadow
 	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
+	int						timeGroup;
+	int						xrayIndex;
 } renderEntity_t;
 
 
@@ -214,17 +219,17 @@ typedef struct renderView_s {
 
 // exitPortal_t is returned by idRenderWorld::GetPortal()
 typedef struct {
-	int						areas[2];			// areas connected by this portal
-	const idWinding	*		w;					// winding points have counter clockwise ordering seen from areas[0]
-	int						blockingBits;		// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
-	qhandle_t				portalHandle;
+	int					areas[2];		// areas connected by this portal
+	const idWinding	*	w;				// winding points have counter clockwise ordering seen from areas[0]
+	int					blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
+	qhandle_t			portalHandle;
 } exitPortal_t;
 
 
 // guiPoint_t is returned by idRenderWorld::GuiTrace()
 typedef struct {
-	float					x, y;				// 0.0 to 1.0 range if trace hit a gui, otherwise -1
-	int						guiId;				// id of gui ( 0, 1, or 2 ) that the trace happened against
+	float				x, y;			// 0.0 to 1.0 range if trace hit a gui, otherwise -1
+	int					guiId;			// id of gui ( 0, 1, or 2 ) that the trace happened against
 } guiPoint_t;
 
 
@@ -278,6 +283,9 @@ public:
 	// Force the generation of all light / surface interactions at the start of a level
 	// If this isn't called, they will all be dynamically generated
 	virtual	void			GenerateAllInteractions() = 0;
+
+	// returns true if this area model needs portal sky to draw
+	virtual bool			CheckAreaForPortalSky( int areaNum ) = 0;
 
 	//-------------- Decals and Overlays  -----------------
 
@@ -358,7 +366,7 @@ public:
 	virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius ) const = 0;
 
 	// Traces vs the whole rendered world. FIXME: we need some kind of material flags.
-	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true ) const = 0;
+	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const = 0;
 
 	// Traces vs the world model bsp tree.
 	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const = 0;
@@ -390,7 +398,7 @@ public:
 	virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime = 0 ) = 0;
 	virtual void			DebugWinding( const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime = 0, const bool depthTest = false ) = 0;
 	virtual void			DebugCircle( const idVec4 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const int lifetime = 0, const bool depthTest = false ) = 0;
-	virtual void			DebugSphere( const idVec4 &color, const idSphere &sphere, const int lifetime = 0 ) = 0;
+	virtual void			DebugSphere( const idVec4 &color, const idSphere &sphere, const int lifetime = 0, bool depthTest = false ) = 0;
 	virtual void			DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org = vec3_origin, const int lifetime = 0 ) = 0;
 	virtual void			DebugBox( const idVec4 &color, const idBox &box, const int lifetime = 0 ) = 0;
 	virtual void			DebugFrustum( const idVec4 &color, const idFrustum &frustum, const bool showFromOrigin = false, const int lifetime = 0 ) = 0;
@@ -402,7 +410,7 @@ public:
 	virtual void			DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime = 0, const bool depthTest = false ) = 0;
 
 	// Text drawing for debug visualization.
-	virtual void			DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0) = 0;
+	virtual void			DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false ) = 0;
 };
 
 #endif /* !__RENDERWORLD_H__ */

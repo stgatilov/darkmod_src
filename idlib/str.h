@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -181,7 +184,7 @@ public:
 
 	int					Find( const char c, int start = 0, int end = -1 ) const;
 	int					Find( const char *text, bool casesensitive = true, int start = 0, int end = -1 ) const;
-	bool				Filter( const char *filter, bool casesensitive = true ) const;
+	bool				Filter( const char *filter, bool casesensitive ) const;
 	int					Last( const char c ) const;						// return the index to the last occurance of 'c', returns -1 if not found
 	const char *		Left( int len, idStr &result ) const;			// store the leftmost 'len' characters in the result
 	const char *		Right( int len, idStr &result ) const;			// store the rightmost 'len' characters in the result
@@ -237,11 +240,11 @@ public:
 	static int			IcmpnPath( const char *s1, const char *s2, int n );	// compares paths and makes sure folders come first
 	static void			Append( char *dest, int size, const char *src );
 	static void			Copynz( char *dest, const char *src, int destsize );
-	static int			snPrintf( char *dest, int size, const char *fmt, ... );
+	static int			snPrintf( char *dest, int size, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	static int			vsnPrintf( char *dest, int size, const char *fmt, va_list argptr );
 	static int			FindChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			FindText( const char *str, const char *text, bool casesensitive = true, int start = 0, int end = -1 );
-	static bool			Filter( const char *filter, const char *name, bool casesensitive = true );
+	static bool			Filter( const char *filter, const char *name, bool casesensitive );
 	static void			StripMediaName( const char *name, idStr &mediaName );
 	static bool			CheckExtension( const char *name, const char *ext );
 	static const char *	FloatArrayToString( const float *array, const int length, const int precision );
@@ -281,6 +284,9 @@ public:
 	static void			PurgeMemory( void );
 	static void			ShowMemoryUsage_f( const idCmdArgs &args );
 
+	int					DynamicMemoryUsed() const;
+	static idStr		FormatNumber( int number );
+
 protected:
 	int					len;
 	char *				data;
@@ -291,7 +297,7 @@ protected:
 	void				EnsureAlloced( int amount, bool keepold = true );	// ensure string data buffer is large anough
 };
 
-char *					va( const char *fmt, ... );
+char *					va( const char *fmt, ... ) id_attribute((format(printf,1,2)));
 
 
 ID_INLINE void idStr::EnsureAlloced( int amount, bool keepold ) {
@@ -1004,6 +1010,10 @@ ID_INLINE bool idStr::CharIsTab( char c ) {
 
 ID_INLINE int idStr::ColorIndex( int c ) {
 	return ( c & 15 );
+}
+
+ID_INLINE int idStr::DynamicMemoryUsed() const {
+	return ( data == baseBuffer ) ? 0 : alloced;
 }
 
 #endif /* !__STR_H__ */

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -155,7 +158,7 @@ idSaveGame::WriteInt
 ================
 */
 void idSaveGame::WriteInt( const int value ) {
-	file->Write( &value, sizeof( value ) );
+	file->WriteInt( value );
 }
 
 /*
@@ -164,7 +167,7 @@ idSaveGame::WriteJoint
 ================
 */
 void idSaveGame::WriteJoint( const jointHandle_t value ) {
-	file->Write( &value, sizeof( value ) );
+	file->WriteInt( (int&)value );
 }
 
 /*
@@ -173,7 +176,7 @@ idSaveGame::WriteShort
 ================
 */
 void idSaveGame::WriteShort( const short value ) {
-	file->Write( &value, sizeof( value ) );
+	file->WriteShort( value );
 }
 
 /*
@@ -200,7 +203,7 @@ idSaveGame::WriteFloat
 ================
 */
 void idSaveGame::WriteFloat( const float value ) {
-	file->Write( &value, sizeof( value ) );
+	file->WriteFloat( value );
 }
 
 /*
@@ -209,14 +212,14 @@ idSaveGame::WriteBool
 ================
 */
 void idSaveGame::WriteBool( const bool value ) {
-	file->Write( &value, sizeof( value ) );
+	file->WriteBool( value );
 }
 
 /*
 ================
 idSaveGame::WriteString
 ================
-*/
+*/  
 void idSaveGame::WriteString( const char *string ) {
 	int len;
 
@@ -231,7 +234,7 @@ idSaveGame::WriteVec2
 ================
 */
 void idSaveGame::WriteVec2( const idVec2 &vec ) {
-	file->Write( &vec, sizeof( vec ) );
+	file->WriteVec2( vec );
 }
 
 /*
@@ -240,7 +243,7 @@ idSaveGame::WriteVec3
 ================
 */
 void idSaveGame::WriteVec3( const idVec3 &vec ) {
-	file->Write( &vec, sizeof( vec ) );
+	file->WriteVec3( vec );
 }
 
 /*
@@ -249,7 +252,7 @@ idSaveGame::WriteVec4
 ================
 */
 void idSaveGame::WriteVec4( const idVec4 &vec ) {
-	file->Write( &vec, sizeof( vec ) );
+	file->WriteVec4( vec );
 }
 
 /*
@@ -258,7 +261,7 @@ idSaveGame::WriteVec6
 ================
 */
 void idSaveGame::WriteVec6( const idVec6 &vec ) {
-	file->Write( &vec, sizeof( vec ) );
+	file->WriteVec6( vec );
 }
 
 /*
@@ -267,7 +270,9 @@ idSaveGame::WriteBounds
 ================
 */
 void idSaveGame::WriteBounds( const idBounds &bounds ) {
-	file->Write( &bounds, sizeof( bounds ) );
+	idBounds b = bounds;
+	LittleRevBytes( &b, sizeof(float), sizeof(b)/sizeof(float) );
+	file->Write( &b, sizeof( b ) );
 }
 
 /*
@@ -279,9 +284,11 @@ void idSaveGame::WriteWinding( const idWinding &w )
 {
 	int i, num;
 	num = w.GetNumPoints();
-	file->Write( &num, sizeof(num) );
+	file->WriteInt( num );
 	for ( i = 0; i < num; i++ ) {
-		file->Write( &w[i], sizeof(idVec5) );
+		idVec5 v = w[i];
+		LittleRevBytes(&v, sizeof(float), sizeof(v)/sizeof(float) );
+		file->Write( &v, sizeof(v) );
 	}
 }
 
@@ -292,7 +299,7 @@ idSaveGame::WriteMat3
 ================
 */
 void idSaveGame::WriteMat3( const idMat3 &mat ) {
-	file->Write( &mat, sizeof( mat ) );
+	file->WriteMat3( mat );
 }
 
 /*
@@ -301,7 +308,9 @@ idSaveGame::WriteAngles
 ================
 */
 void idSaveGame::WriteAngles( const idAngles &angles ) {
-	file->Write( &angles, sizeof( angles ) );
+	idAngles v = angles;
+	LittleRevBytes(&v, sizeof(float), sizeof(v)/sizeof(float) );
+	file->Write( &v, sizeof( v ) );
 }
 
 /*
@@ -677,6 +686,44 @@ void idSaveGame::WriteTrace( const trace_t &trace ) {
 }
 
 /*
+ ===================
+ idRestoreGame::WriteTraceModel
+ ===================
+ */
+void idSaveGame::WriteTraceModel( const idTraceModel &trace ) {
+	int j, k;
+	
+	WriteInt( (int&)trace.type );
+	WriteInt( trace.numVerts );
+	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
+		WriteVec3( trace.verts[j] );
+	}
+	WriteInt( trace.numEdges );
+	for ( j = 0; j < (MAX_TRACEMODEL_EDGES+1); j++ ) {
+		WriteInt( trace.edges[j].v[0] );
+		WriteInt( trace.edges[j].v[1] );
+		WriteVec3( trace.edges[j].normal );
+	}
+	WriteInt( trace.numPolys );
+	for ( j = 0; j < MAX_TRACEMODEL_POLYS; j++ ) {
+		WriteVec3( trace.polys[j].normal );
+		WriteFloat( trace.polys[j].dist );
+		WriteBounds( trace.polys[j].bounds );
+		WriteInt( trace.polys[j].numEdges );
+		for ( k = 0; k < MAX_TRACEMODEL_POLYEDGES; k++ ) {
+			WriteInt( trace.polys[j].edges[k] );
+		}
+	}
+	WriteVec3( trace.offset );
+	WriteBounds( trace.bounds );
+	WriteBool( trace.isConvex );
+	// padding win32 native structs
+	char tmp[3];
+	memset( tmp, 0, sizeof( tmp ) );
+	file->Write( tmp, 3 );
+}
+
+/*
 ===================
 idSaveGame::WriteClipModel
 ===================
@@ -705,7 +752,7 @@ idSaveGame::WriteBuildNumber
 ======================
 */
 void idSaveGame::WriteBuildNumber( const int value ) {
-	file->Write( &BUILD_NUMBER, sizeof( BUILD_NUMBER ) );
+	file->WriteInt( BUILD_NUMBER );
 }
 
 /***********************************************************************
@@ -860,7 +907,7 @@ idRestoreGame::ReadInt
 ================
 */
 void idRestoreGame::ReadInt( int &value ) {
-	file->Read( &value, sizeof( value ) );
+	file->ReadInt( value );
 }
 
 /*
@@ -869,7 +916,7 @@ idRestoreGame::ReadJoint
 ================
 */
 void idRestoreGame::ReadJoint( jointHandle_t &value ) {
-	file->Read( &value, sizeof( value ) );
+	file->ReadInt( (int&)value );
 }
 
 /*
@@ -878,7 +925,7 @@ idRestoreGame::ReadShort
 ================
 */
 void idRestoreGame::ReadShort( short &value ) {
-	file->Read( &value, sizeof( value ) );
+	file->ReadShort( value );
 }
 
 /*
@@ -905,7 +952,7 @@ idRestoreGame::ReadFloat
 ================
 */
 void idRestoreGame::ReadFloat( float &value ) {
-	file->Read( &value, sizeof( value ) );
+	file->ReadFloat( value );
 }
 
 /*
@@ -914,7 +961,7 @@ idRestoreGame::ReadBool
 ================
 */
 void idRestoreGame::ReadBool( bool &value ) {
-	file->Read( &value, sizeof( value ) );
+	file->ReadBool( value );
 }
 
 /*
@@ -940,7 +987,7 @@ idRestoreGame::ReadVec2
 ================
 */
 void idRestoreGame::ReadVec2( idVec2 &vec ) {
-	file->Read( &vec, sizeof( vec ) );
+	file->ReadVec2( vec );
 }
 
 /*
@@ -949,7 +996,7 @@ idRestoreGame::ReadVec3
 ================
 */
 void idRestoreGame::ReadVec3( idVec3 &vec ) {
-	file->Read( &vec, sizeof( vec ) );
+	file->ReadVec3( vec );
 }
 
 /*
@@ -958,7 +1005,7 @@ idRestoreGame::ReadVec4
 ================
 */
 void idRestoreGame::ReadVec4( idVec4 &vec ) {
-	file->Read( &vec, sizeof( vec ) );
+	file->ReadVec4( vec );
 }
 
 /*
@@ -967,7 +1014,7 @@ idRestoreGame::ReadVec6
 ================
 */
 void idRestoreGame::ReadVec6( idVec6 &vec ) {
-	file->Read( &vec, sizeof( vec ) );
+	file->ReadVec6( vec );
 }
 
 /*
@@ -977,6 +1024,7 @@ idRestoreGame::ReadBounds
 */
 void idRestoreGame::ReadBounds( idBounds &bounds ) {
 	file->Read( &bounds, sizeof( bounds ) );
+	LittleRevBytes( &bounds, sizeof(float), sizeof(bounds)/sizeof(float) );
 }
 
 /*
@@ -987,10 +1035,11 @@ idRestoreGame::ReadWinding
 void idRestoreGame::ReadWinding( idWinding &w )
 {
 	int i, num;
-	file->Read( &num, sizeof(num) );
+	file->ReadInt( num );
 	w.SetNumPoints( num );
 	for ( i = 0; i < num; i++ ) {
 		file->Read( &w[i], sizeof(idVec5) );
+		LittleRevBytes(&w[i], sizeof(float), sizeof(idVec5)/sizeof(float) );
 	}
 }
 
@@ -1000,7 +1049,7 @@ idRestoreGame::ReadMat3
 ================
 */
 void idRestoreGame::ReadMat3( idMat3 &mat ) {
-	file->Read( &mat, sizeof( mat ) );
+	file->ReadMat3( mat );
 }
 
 /*
@@ -1010,6 +1059,7 @@ idRestoreGame::ReadAngles
 */
 void idRestoreGame::ReadAngles( idAngles &angles ) {
 	file->Read( &angles, sizeof( angles ) );
+	LittleRevBytes(&angles, sizeof(float), sizeof(idAngles)/sizeof(float) );
 }
 
 /*
@@ -1407,6 +1457,43 @@ void idRestoreGame::ReadTrace( trace_t &trace ) {
 }
 
 /*
+ ===================
+ idRestoreGame::ReadTraceModel
+ ===================
+ */
+void idRestoreGame::ReadTraceModel( idTraceModel &trace ) {
+	int j, k;
+	
+	ReadInt( (int&)trace.type );
+	ReadInt( trace.numVerts );
+	for ( j = 0; j < MAX_TRACEMODEL_VERTS; j++ ) {
+		ReadVec3( trace.verts[j] );
+	}
+	ReadInt( trace.numEdges );
+	for ( j = 0; j < (MAX_TRACEMODEL_EDGES+1); j++ ) {
+		ReadInt( trace.edges[j].v[0] );
+		ReadInt( trace.edges[j].v[1] );
+		ReadVec3( trace.edges[j].normal );
+	}
+	ReadInt( trace.numPolys );
+	for ( j = 0; j < MAX_TRACEMODEL_POLYS; j++ ) {
+		ReadVec3( trace.polys[j].normal );
+		ReadFloat( trace.polys[j].dist );
+		ReadBounds( trace.polys[j].bounds );
+		ReadInt( trace.polys[j].numEdges );
+		for ( k = 0; k < MAX_TRACEMODEL_POLYEDGES; k++ ) {
+			ReadInt( trace.polys[j].edges[k] );
+		}
+	}
+	ReadVec3( trace.offset );
+	ReadBounds( trace.bounds );
+	ReadBool( trace.isConvex );
+	// padding win32 native structs
+	char tmp[3];
+	file->Read( tmp, 3 );
+}
+
+/*
 =====================
 idRestoreGame::ReadClipModel
 =====================
@@ -1439,7 +1526,7 @@ idRestoreGame::ReadBuildNumber
 =====================
 */
 void idRestoreGame::ReadBuildNumber( void ) {
-	file->Read( &buildNumber, sizeof( buildNumber ) );
+	file->ReadInt( buildNumber );
 }
 
 /*

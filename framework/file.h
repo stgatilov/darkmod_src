@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/10 19:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2004/11/28 09:15:24  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -50,7 +56,7 @@ public:
 							// Returns the length of the file.
 	virtual int				Length( void );
 							// Return a time value for reload operations.
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 							// Returns offset in file.
 	virtual int				Tell( void );
 							// Forces flush on files being writting to.
@@ -62,11 +68,43 @@ public:
 							// Go back to the beginning of the file.
 	virtual void			Rewind( void );
 							// Like fprintf.
-	virtual int				Printf( const char *fmt, ... );
+	virtual int				Printf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 							// Like fprintf but with argument pointer
 	virtual int				VPrintf( const char *fmt, va_list arg );
 							// Write a string with high precision floating point numbers to the file.
-	virtual int				WriteFloatString( const char *fmt, ... );
+	virtual int				WriteFloatString( const char *fmt, ... ) id_attribute((format(printf,2,3)));
+	
+	// Endian portable alternatives to Read(...)
+	virtual int				ReadInt( int &value );
+	virtual int				ReadUnsignedInt( unsigned int &value );
+	virtual int				ReadShort( short &value );
+	virtual int				ReadUnsignedShort( unsigned short &value );
+	virtual int				ReadChar( char &value );
+	virtual int				ReadUnsignedChar( unsigned char &value );
+	virtual int				ReadFloat( float &value );
+	virtual int				ReadBool( bool &value );
+	virtual int				ReadString( idStr &string );
+	virtual int				ReadVec2( idVec2 &vec );
+	virtual int				ReadVec3( idVec3 &vec );
+	virtual int				ReadVec4( idVec4 &vec );
+	virtual int				ReadVec6( idVec6 &vec );
+	virtual int				ReadMat3( idMat3 &mat );
+	
+	// Endian portable alternatives to Write(...)
+	virtual int				WriteInt( const int value );
+	virtual int				WriteUnsignedInt( const unsigned int value );
+	virtual int				WriteShort( const short value );
+	virtual int				WriteUnsignedShort( unsigned short value );
+	virtual int				WriteChar( const char value );
+	virtual int				WriteUnsignedChar( const unsigned char value );
+	virtual int				WriteFloat( const float value );
+	virtual int				WriteBool( const bool value );
+	virtual int				WriteString( const char *string );
+	virtual int				WriteVec2( const idVec2 &vec );
+	virtual int				WriteVec3( const idVec3 &vec );
+	virtual int				WriteVec4( const idVec4 &vec );
+	virtual int				WriteVec6( const idVec6 &vec );
+	virtual int				WriteMat3( const idMat3 &mat );
 };
 
 
@@ -85,7 +123,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -127,7 +165,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -152,13 +190,13 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
 	virtual int				Seek( long offset, fsOrigin_t origin );
 
-							// returns file pointer
+	// returns file pointer
 	FILE *					GetFilePtr( void ) { return o; }
 
 private:
@@ -183,7 +221,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual unsigned		Timestamp( void );
+	virtual unsigned int	Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );

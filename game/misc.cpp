@@ -7,8 +7,20 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.5  2005/11/21 07:54:33  ishtvan
+ * AI can no longer see thru static models
+ *
+ * Revision 1.4  2005/11/12 14:59:20  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.3  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -131,7 +143,13 @@ idPlayerStart::Event_TeleportStage
 FIXME: add functionality to fx system ( could be done with player scripting too )
 ================
 */
-void idPlayerStart::Event_TeleportStage( idPlayer *player ) {
+void idPlayerStart::Event_TeleportStage( idEntity *_player ) {
+	idPlayer *player;
+	if ( !_player->IsType( idPlayer::Type ) ) {
+		common->Warning( "idPlayerStart::Event_TeleportStage: entity is not an idPlayer\n" );
+		return;
+	}
+	player = static_cast<idPlayer*>(_player);
 	float teleportDelay = spawnArgs.GetFloat( "teleportDelay" );
 	switch ( teleportStage ) {
 		case 0:
@@ -1385,7 +1403,7 @@ void idStaticEntity::Spawn( void ) {
 	hidden = spawnArgs.GetBool( "hide" );
 
 	if ( solid && !hidden ) {
-		GetPhysics()->SetContents( CONTENTS_SOLID );
+		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	} else {
 		GetPhysics()->SetContents( 0 );
 	}
@@ -1394,8 +1412,7 @@ void idStaticEntity::Spawn( void ) {
 	active = false;
 
 	idStr model = spawnArgs.GetString( "model" );
-	// FIXME: temp also catch obsolete .ips extension
-	if ( model.Find( ".ips" ) >= 0 || model.Find( ".prt" ) >= 0 ) {
+	if ( model.Find( ".prt" ) >= 0 ) {
 		// we want the parametric particles out of sync with each other
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
 	}
@@ -1487,7 +1504,7 @@ idStaticEntity::Show
 void idStaticEntity::Show( void ) {
 	idEntity::Show();
 	if ( spawnArgs.GetBool( "solid" ) ) {
-		GetPhysics()->SetContents( CONTENTS_SOLID );
+		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
 }
 
@@ -2276,6 +2293,7 @@ void idBeam::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 ===============================================================================
 */
 
+#ifndef MOD_WATERPHYSICS
 CLASS_DECLARATION( idEntity, idLiquid )
 	EVENT( EV_Touch,			idLiquid::Event_Touch )
 END_CLASS
@@ -2329,7 +2347,7 @@ void idLiquid::Event_Touch( idEntity *other, trace_t *trace ) {
 	model->IntersectBounds( other->GetPhysics()->GetBounds().Translate( pos ), -10.0f );
 */
 }
-
+#endif
 
 /*
 ===============================================================================
@@ -3130,4 +3148,64 @@ void idPhantomObjects::Think( void ) {
 	if ( !num ) {
 		BecomeInactive( TH_THINK );
 	}
+}
+
+/*
+===============================================================================
+
+idPortalSky
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idEntity, idPortalSky )
+	EVENT( EV_PostSpawn,			idPortalSky::Event_PostSpawn )
+	EVENT( EV_Activate,				idPortalSky::Event_Activate )
+END_CLASS
+
+/*
+===============
+idPortalSky::idPortalSky
+===============
+*/
+idPortalSky::idPortalSky( void ) {
+
+}
+
+/*
+===============
+idPortalSky::~idPortalSky
+===============
+*/
+idPortalSky::~idPortalSky( void ) {
+
+}
+
+/*
+===============
+idPortalSky::Spawn
+===============
+*/
+void idPortalSky::Spawn( void ) {
+	if ( !spawnArgs.GetBool( "triggered" ) ) {
+		PostEventMS( &EV_PostSpawn, 1 );
+	}
+}
+
+/*
+================
+idPortalSky::Event_PostSpawn
+================
+*/
+void idPortalSky::Event_PostSpawn() {
+	gameLocal.SetPortalSkyEnt( this );
+}
+
+/*
+================
+idPortalSky::Event_Activate
+================
+*/
+void idPortalSky::Event_Activate( idEntity *activator ) {
+	gameLocal.SetPortalSkyEnt( this );
 }

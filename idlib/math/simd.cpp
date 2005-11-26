@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:35:09  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -168,6 +171,7 @@ double ticksPerNanosecond;
 
 #define TIME_TYPE uint64_t
 
+#ifdef __MWERKS__ //time_in_millisec is missing
 /*
 
     .text
@@ -189,13 +193,33 @@ done:
 	        blr		;  return
 
 */
-
-/*
-
 typedef struct {
 	unsigned int hi;
 	unsigned int lo;
 } U64;
+
+
+asm void GetTB(U64 *in)
+{
+	nofralloc			// suppress prolog
+	machine 603			// allows the use of mftb & mftbu functions
+	
+loop:	
+	mftbu	r5			// grab the upper time base register (TBU)
+	mftb	r4			// grab the lower time base register (TBL)
+	mftbu	r6			// grab the upper time base register (TBU) again 
+	
+	cmpw	r6,r5		// see if old TBU == new TBU
+	bne-	loop		// loop if carry occurred (predict branch not taken)
+	
+	stw  	r4,4(r3)	// store TBL in the low 32 bits of the return value
+	stw  	r5,0(r3)	// store TBU in the high 32 bits of the return value
+
+	blr
+}
+
+
+
 
 double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond );
 
@@ -249,14 +273,14 @@ TIME_TYPE time_in_millisec( void ) {
 #define StopRecordTime( end )				\
 	end = time_in_millisec();
 
-*/
 
+#else
 #define StartRecordTime( start )			\
 	start = mach_absolute_time(); 
 
 #define StopRecordTime( end )				\
 	end = mach_absolute_time();
-
+#endif
 #else
 
 #define TIME_TYPE int
@@ -288,7 +312,7 @@ void PrintClocks( char *string, int dataCount, int clocks, int otherClocks = 0 )
 		idLib::common->Printf(" ");
 	}
 	clocks -= baseClocks;
-	if ( otherClocks ) {
+	if ( otherClocks && clocks ) {
 		otherClocks -= baseClocks;
 		int p = (int) ( (float) ( otherClocks - clocks ) * 100.0f / (float) otherClocks );
 		idLib::common->Printf( "c = %4d, clcks = %5d, %d%%\n", dataCount, clocks, p );
@@ -322,10 +346,10 @@ TestAdd
 void TestAdd( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -752,10 +776,12 @@ void TestDot( void ) {
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 		fsrc1[i] = srnd.CRandomFloat() * 10.0f;
-		for ( j = 0; j < 3; j++ ) {
-			v3src0[i][j] = srnd.CRandomFloat() * 10.0f;
-			v3src1[i][j] = srnd.CRandomFloat() * 10.0f;
-		}
+		v3src0[i][0] = srnd.CRandomFloat() * 10.0f;
+		v3src0[i][1] = srnd.CRandomFloat() * 10.0f;
+		v3src0[i][2] = srnd.CRandomFloat() * 10.0f;
+		v3src1[i][0] = srnd.CRandomFloat() * 10.0f;
+		v3src1[i][1] = srnd.CRandomFloat() * 10.0f;
+		v3src1[i][2] = srnd.CRandomFloat() * 10.0f;
 		v4src0[i] = v3src0[i];
 		v4src0[i][3] = srnd.CRandomFloat() * 10.0f;
 		drawVerts[i].xyz = v3src0[i];
@@ -2419,9 +2445,11 @@ void TestConvertJointMatsToJointQuats( void ) {
 
 	for ( i = 0; i < COUNT; i++ ) {
 		if ( !joints1[i].q.Compare( joints2[i].q, 1e-4f ) ) {
+			idLib::common->Printf("ConvertJointMatsToJointQuats: broken q %i\n", i );
 			break;
 		}
 		if ( !joints1[i].t.Compare( joints2[i].t, 1e-4f ) ) {
+			idLib::common->Printf("ConvertJointMatsToJointQuats: broken t %i\n", i );
 			break;
 		}
 	}
@@ -2914,6 +2942,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].normal;
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
+			idLib::common->Printf("DeriveTangents: broken at normal %i\n -- expecting %s got %s", i, v1.ToString(), v2.ToString());
 			break;
 		}
 		v1 = drawVerts1[i].tangents[0];
@@ -2921,6 +2950,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].tangents[0];
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
+			idLib::common->Printf("DeriveTangents: broken at tangent0 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
 			break;
 		}
 		v1 = drawVerts1[i].tangents[1];
@@ -2928,6 +2958,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].tangents[1];
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
+			idLib::common->Printf("DeriveTangents: broken at tangent1 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
 			break;
 		}
 		if ( !planes1[i].Compare( planes2[i], 1e-1f, 1e-1f ) ) {
@@ -3228,9 +3259,9 @@ void TestCreateShadowCache( void ) {
 	idRandom srnd( RANDOM_SEED );
 
 	for ( i = 0; i < COUNT; i++ ) {
-		for ( j = 0; j < 3; j++ ) {
-			drawVerts[i].xyz[j] = srnd.CRandomFloat() * 100.0f;
-		}
+		drawVerts[i].xyz[0] = srnd.CRandomFloat() * 100.0f;
+		drawVerts[i].xyz[1] = srnd.CRandomFloat() * 100.0f;
+		drawVerts[i].xyz[2] = srnd.CRandomFloat() * 100.0f;
 		originalVertRemap[i] = ( srnd.CRandomFloat() > 0.0f ) ? -1 : 0;
 	}
 	lightOrigin[0] = srnd.CRandomFloat() * 100.0f;
@@ -3999,6 +4030,64 @@ void TestMath( void ) {
 
 /*
 ============
+TestNegate
+============
+*/
+
+// this wasn't previously in the test
+void TestNegate( void ) {
+	int i;
+	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
+	ALIGN16( float fsrc0[COUNT]; )
+	ALIGN16( float fsrc1[COUNT]; )
+	ALIGN16( float fsrc2[COUNT]; )
+	
+	const char *result;
+
+	idRandom srnd( RANDOM_SEED );
+
+	for ( i = 0; i < COUNT; i++ ) {
+		fsrc0[i] = fsrc1[i] = fsrc2[i] = srnd.CRandomFloat() * 10.0f;
+		//fsrc1[i] = srnd.CRandomFloat() * 10.0f;
+	}
+
+	idLib::common->Printf("====================================\n" );
+
+	bestClocksGeneric = 0;
+	for ( i = 0; i < NUMTESTS; i++ ) {
+	
+		memcpy( &fsrc1[0], &fsrc0[0], COUNT * sizeof(float) );
+	
+		StartRecordTime( start );
+		p_generic->Negate16( fsrc1, COUNT );
+		StopRecordTime( end );
+		GetBest( start, end, bestClocksGeneric );
+	}
+	PrintClocks( "generic->Negate16( float[] )", COUNT, bestClocksGeneric );
+
+	bestClocksSIMD = 0;
+	for ( i = 0; i < NUMTESTS; i++ ) {
+	
+		memcpy( &fsrc2[0], &fsrc0[0], COUNT * sizeof(float) );
+	
+		StartRecordTime( start );
+		p_simd->Negate16( fsrc2, COUNT );
+		StopRecordTime( end );
+		GetBest( start, end, bestClocksSIMD );
+	}
+
+	for ( i = 0; i < COUNT; i++ ) {
+		if ( fsrc1[i] != fsrc2[i] ) {
+			break;
+		}
+	}
+	result = ( i >= COUNT ) ? "ok" : S_COLOR_RED"X";
+	PrintClocks( va( "   simd->Negate16( float[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
+}
+
+
+/*
+============
 idSIMD::Test_f
 ============
 */
@@ -4078,6 +4167,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	TestClamp();
 	TestMemcpy();
 	TestMemset();
+	TestNegate();
 
 	TestMatXMultiplyVecX();
 	TestMatXMultiplyAddVecX();

@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -116,6 +119,7 @@ float	BigFloat( float l );
 float	LittleFloat( float l );
 void	BigRevBytes( void *bp, int elsize, int elcount );
 void	LittleRevBytes( void *bp, int elsize, int elcount );
+void	LittleBitField( void *bp, int elsize );
 void	Swap_Init( void );
 
 bool	Swap_IsBigEndian( void );

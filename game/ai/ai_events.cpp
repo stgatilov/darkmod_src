@@ -7,8 +7,22 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.5  2005/11/12 14:59:34  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.4  2005/11/11 21:00:34  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.3  2005/09/26 03:11:01  ishtvan
+ * *) tactile alert fixed, added idAI::CheckTactile
+ *
+ * *) removed old tactile alert methods
+ *
+ * Revision 1.2  2005/04/07 09:23:09  ishtvan
+ * Added scripting events to interface with DarkMod AI
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -19,6 +33,11 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
+#include "../darkmod/relations.h"
+#include "../../darkmod/darkmodglobals.h"
+
+class CRelations;
+
 
 /***********************************************************************
 
@@ -150,6 +169,24 @@ const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
 
+// DarkMod AI Relations Events
+const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
+const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
+const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
+const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
+
+// Alert events
+const idEventDef AI_Alert( "alert", "sf" );
+const idEventDef AI_VisScan( "visScan", NULL, 'e' );
+const idEventDef AI_GetSndDir( "getSndDir", NULL, 'v' );
+const idEventDef AI_GetVisDir( "getVisDir", NULL, 'v' );
+const idEventDef AI_GetTactEnt( "getTactEnt", NULL, 'e');
+const idEventDef AI_SetAcuity( "setAcuity", "sf" );
+const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
+
+const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
+
+
 CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_Activate,							idAI::Event_Activate )
 	EVENT( EV_Touch,							idAI::Event_Touch )
@@ -279,6 +316,19 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
+		
+	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
+	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
+	EVENT( AI_IsFriend,							idAI::Event_IsFriend )
+	EVENT( AI_IsNeutral,						idAI::Event_IsNeutral )
+	EVENT( AI_Alert,							idAI::Event_Alert )
+	EVENT( AI_GetSndDir,						idAI::Event_GetSndDir )
+	EVENT( AI_GetVisDir,						idAI::Event_GetVisDir )
+	EVENT( AI_GetTactEnt,						idAI::Event_GetTactEnt )
+	EVENT( AI_SetAcuity,						idAI::Event_SetAcuity )
+	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
+	EVENT( AI_VisScan,							idAI::Event_VisScan )
+	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
 END_CLASS
 
 /*
@@ -293,13 +343,28 @@ void idAI::Event_Activate( idEntity *activator ) {
 /*
 =====================
 idAI::Event_Touch
+
+DarkMod: Modified to issue a tactile alert.
+
+Note: Event_Touch checks ReactionTo, which checks our DarkMod Relations
+So it will only go off if the AI is bumped by an enemy that moves toward it.
+
+AI bumping by inanimate objects is handled separately in idMoveable::Collide.
 =====================
 */
-void idAI::Event_Touch( idEntity *other, trace_t *trace ) {
-	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) {
+
+void idAI::Event_Touch( idEntity *other, trace_t *trace ) 
+{
+	if ( !enemy.GetEntity() && !other->fl.notarget && ( ReactionTo( other ) & ATTACK_ON_ACTIVATE ) ) 
+	{
 		Activate( other );
 	}
 	AI_PUSHED = true;
+
+	if( other && other->IsType(idActor::Type) )
+	{
+		HadTactile( static_cast<idActor *>(other) );
+	}
 }
 
 /*
@@ -307,7 +372,8 @@ void idAI::Event_Touch( idEntity *other, trace_t *trace ) {
 idAI::Event_FindEnemy
 =====================
 */
-void idAI::Event_FindEnemy( int useFOV ) {
+void idAI::Event_FindEnemy( int useFOV ) 
+{
 	int			i;
 	idEntity	*ent;
 	idActor		*actor;
@@ -541,6 +607,7 @@ void idAI::Event_CreateMissile( const char *jointname ) {
 
 	if ( !projectileDef ) {
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
+		idThread::ReturnEntity( NULL );
 		return;
 	}
 
@@ -2303,8 +2370,8 @@ void idAI::Event_LookAtEnemy( float duration ) {
 idAI::Event_SetJointMod
 ===============
 */
-void idAI::Event_SetJointMod( bool allow ) {
-	allowJointMod = allow;
+void idAI::Event_SetJointMod( int allow ) {
+	allowJointMod = ( allow != 0 );
 }
 
 /*
@@ -2676,11 +2743,13 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 
 	if ( move.moveType != MOVETYPE_FLY ) {
 		if ( !ent->GetFloorPos( 64.0f, pos ) ) {
-			idThread::ReturnInt( false );
+			// NOTE: not a good way to return 'false'
+			idThread::ReturnVector( vec3_zero );
 			return;
 		}
 		if ( ent->IsType( idActor::Type ) && static_cast<idActor *>( ent )->OnLadder() ) {
-			idThread::ReturnInt( false );
+			// NOTE: not a good way to return 'false'
+			idThread::ReturnVector( vec3_zero );
 			return;
 		}
 	} else {
@@ -2694,3 +2763,113 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 
 	idThread::ReturnVector( pos );
 }
+
+/**
+* DarkMod: Begin Team Relationship Events.  See the definitions on CRelations
+* for descriptions of the Relations functions that are called.
+**/
+
+void idAI::Event_GetRelationEnt( idEntity *ent )
+{
+	idActor *actor;
+
+	if ( !ent->IsType( idActor::Type ) ) 
+	{
+		// inanimate objects are neutral to everyone
+		idThread::ReturnInt( 0 );
+	}
+
+	actor = static_cast<idActor *>( ent );
+	idThread::ReturnInt( gameLocal.m_RelationsManager->GetRelNum( team, actor->team ) );
+}
+
+void idAI::Event_IsEnemy( idEntity *ent )
+{
+	idThread::ReturnInt( (int) IsEnemy( ent ) );
+}
+
+void idAI::Event_IsFriend( idEntity *ent )
+{
+	idActor *actor;
+
+	if ( !ent->IsType( idActor::Type ) ) 
+	{
+		idThread::ReturnInt( 0 );
+	}
+
+	actor = static_cast<idActor *>( ent );
+	idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
+}
+
+void idAI::Event_IsNeutral( idEntity *ent )
+{
+	idActor *actor;
+
+	if ( !ent->IsType( idActor::Type ) ) 
+	{
+		// inanimate objects are neutral to everyone
+		idThread::ReturnInt( 1 );
+	}
+
+	actor = static_cast<idActor *>( ent );
+	idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, actor->team ) );
+}
+
+void idAI::Event_GetAcuity( const char *type )
+{
+	idThread::ReturnFloat( GetAcuity( type ) );
+}
+
+void idAI::Event_SetAcuity( const char *type, float val )
+{
+	SetAcuity( type, val );
+}
+
+void idAI::Event_Alert( const char *type, float amount )
+{
+	AlertAI( type, amount );
+}
+
+void idAI::Event_GetSndDir( void )
+{
+	idThread::ReturnVector( m_SoundDir );
+}
+
+void idAI::Event_GetVisDir( void )
+{
+	idThread::ReturnVector( m_LastSight );
+}
+
+void idAI::Event_GetTactEnt( void )
+{
+	idEntity *ent = GetTactEnt();
+
+	if(!ent)
+		idThread::ReturnEntity( NULL );		
+	else
+	idThread::ReturnEntity( ent );
+}
+
+
+void idAI::Event_VisScan( void )
+{
+	idActor *actor;
+	float time;
+	
+	// assume we are checking over one frame
+	time = 1.0f/60.0f;
+
+	actor = VisualScan( time );
+	
+	if (!actor)
+		idThread::ReturnEntity( NULL );
+	else
+		idThread::ReturnEntity( actor );
+}
+
+void idAI::Event_ClosestReachableEnemy( void ) 
+{
+	Event_ClosestReachableEnemyOfEntity( static_cast<idEntity *>(this) );
+}
+
+

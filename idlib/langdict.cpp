@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:35  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:17:26  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -28,6 +31,7 @@ idLangDict::idLangDict( void ) {
 	args.SetGranularity( 256 );
 	hash.SetGranularity( 256 );
 	hash.Clear( 4096, 8192 );
+	baseID = 0;
 }
 
 /*
@@ -54,8 +58,12 @@ void idLangDict::Clear( void ) {
 idLangDict::Load
 ============
 */
-bool idLangDict::Load( const char *fileName ) {
-	Clear();
+bool idLangDict::Load( const char *fileName, bool clear /* _D3XP */ ) {
+	
+	if ( clear ) {
+		Clear();
+	}
+	
 	const char *buffer = NULL;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
@@ -170,7 +178,9 @@ const char *idLangDict::AddString( const char *str ) {
 
 	int id = GetNextId();
 	idLangKeyValue kv;
-	kv.key = va( "#str_%05i", id );
+	// _D3XP
+	kv.key = va( "#str_%08i", id );
+	// kv.key = va( "#str_%05i", id );
 	kv.value = str;
 	c = args.Append( kv );
 	assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
@@ -256,7 +266,14 @@ idLangDict::GetNextId
 */
 int idLangDict::GetNextId( void ) const {
 	int c = args.Num();
-	int id = -1;
+
+	//Let and external user supply the base id for this dictionary
+	int id = baseID;
+
+	if ( c == 0 ) {
+		return id;
+	}
+
 	idStr work;
 	for ( int j = 0; j < c; j++ ) {
 		work = args[j].key;

@@ -7,8 +7,28 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.7  2005/11/19 11:57:29  ishtvan
+ * added unique footstep sounds in water
+ *
+ * Revision 1.6  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.5  2005/11/07 01:58:25  ishtvan
+ * added getEyePos scriptfunction to get eye position
+ *
+ * Revision 1.4  2005/04/23 01:46:51  ishtvan
+ * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
+ *
+ * Revision 1.3  2005/04/07 09:28:53  ishtvan
+ * *) Moved Relations methods to idAI.  They did not belong on idActor.
+ *
+ * *) Added calling of Soundprop in method PlayFootstepSound
+ *
+ * Revision 1.2  2005/03/29 07:40:30  ishtvan
+ * Added AI Relations functions to be used by scripting
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -349,6 +369,8 @@ const idEventDef AI_SetNextState( "setNextState", "s" );
 const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
+const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
+
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -392,6 +414,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_SetState,					idActor::Event_SetState )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
+	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
 END_CLASS
 
 /*
@@ -2372,38 +2395,125 @@ const char *idActor::GetDamageGroup( int location ) {
 	return damageGroups[ location ];
 }
 
+/*
+=====================
+idActor::PlayFootStepSound
+=====================
+*/
+void idActor::PlayFootStepSound( void ) {
+	const char			*sound = NULL;
+	idStr				moveType, localSound;
+	const idMaterial	*material;
+	idPlayer			*thisPlayer(NULL);
+	idAI				*thisAI(NULL);
+
+	if ( !GetPhysics()->HasGroundContacts() ) {
+		return;
+	}
+
+	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
+	// Currently only players have movement flags set up this way, not AI.  We could change that later.
+	if ( IsType( idPlayer::Type ) )
+	{
+		thisPlayer =  static_cast<idPlayer *>(this);
+		moveType.Clear();
+
+		UpdateMoveVolumes();
+
+		if( thisPlayer->AI_CROUCH )
+			moveType = "_crouch";
+
+		if( thisPlayer->AI_RUN )
+			moveType += "_run";
+		else if ( thisPlayer->AI_CREEP )
+			moveType += "_creep";
+		else
+			moveType += "_walk";
+	}
+
+	else if ( IsType( idAI::Type ) )
+	{
+		thisAI =  static_cast<idAI *>(this);
+		moveType.Clear();
+
+		if( thisAI->AI_CROUCH )
+			moveType = "_crouch";
+
+		if( thisAI->AI_RUN )
+			moveType += "_run";
+		else if ( thisAI->AI_CREEP )
+			moveType += "_creep";
+		else
+			moveType += "_walk";
+	}
+
+
+	// start footstep sound based on material type
+	material = GetPhysics()->GetContact( 0 ).material;
+	if ( material != NULL ) 
+	{
+		localSound = va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] );
+		sound = spawnArgs.GetString( localSound.c_str() );
+	}
+	// If player is walking in liquid, replace the bottom surface sound with water sounds
+	if ( static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel() == WATERLEVEL_FEET )
+	{
+		localSound = "snd_footstep_puddle";
+		sound = spawnArgs.GetString( localSound.c_str() );
+	}
+	else if ( static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel() == WATERLEVEL_WAIST )
+	{
+		localSound = "snd_footstep_wading";
+		sound = spawnArgs.GetString( localSound.c_str() );
+	}
+
+	if ( *sound == '\0' ) 
+	{
+		localSound = "snd_footstep";
+	}
+	
+	sound = spawnArgs.GetString( localSound.c_str() );
+
+	// if a sound was not found for that specific material, use default
+	if( *sound == '\0' )
+	{
+		sound = spawnArgs.GetString( "snd_footstep" );
+		localSound = "snd_footstep";
+	}
+
+	// The player always considers the movement type when propagating
+	if( thisPlayer )
+	{
+		localSound += moveType;
+	}
+/***
+* AI footsteps always propagate as snd_footstep for now
+* If we want to add in AI soundprop based on movement speed later,
+*	here is the place to do it.
+**/
+/*
+	localSound += moveType;
+	if( !gameLocal.m_sndProp->CheckSound( localSound.c_str(), false ) )
+		localSound -= moveType;
+*/
+
+	if ( *sound != '\0' ) 
+	{
+		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
+		
+		// apply the movement type modifier to the volume
+		SetSoundVolume( GetMovementVolMod() );
+
+		// propagate the suspicious sound to other AI
+		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
+	}
+}
 
 /***********************************************************************
 
 	Events
 
 ***********************************************************************/
-
-/*
-=====================
-idActor::Event_EnableEyeFocus
-=====================
-*/
-void idActor::PlayFootStepSound( void ) {
-	const char *sound = NULL;
-	const idMaterial *material;
-
-	if ( !GetPhysics()->HasGroundContacts() ) {
-		return;
-	}
-
-	// start footstep sound based on material type
-	material = GetPhysics()->GetContact( 0 ).material;
-	if ( material != NULL ) {
-		sound = spawnArgs.GetString( va( "snd_footstep_%s", gameLocal.sufaceTypeNames[ material->GetSurfaceType() ] ) );
-	}
-	if ( *sound == '\0' ) {
-		sound = spawnArgs.GetString( "snd_footstep" );
-	}
-	if ( *sound != '\0' ) {
-		StartSoundShader( declManager->FindSound( sound ), SND_CHANNEL_BODY, 0, false, NULL );
-	}
-}
 
 /*
 =====================
@@ -2567,7 +2677,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		} else {
 			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
-		idThread::ReturnInt( false );
+		idThread::ReturnInt( 0 );
 		return;
 	}
 
@@ -2627,7 +2737,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		gameLocal.Error( "Unknown anim group" );
 		break;
 	}
-	idThread::ReturnInt( true );
+	idThread::ReturnInt( 1 );
 }
 
 /*
@@ -3259,4 +3369,14 @@ idActor::Event_GetHead
 */
 void idActor::Event_GetHead( void ) {
 	idThread::ReturnEntity( head.GetEntity() );
+}
+
+/*
+=====================
+idActor::Event_GetEyePos
+=====================
+*/
+void idActor::Event_GetEyePos( void )
+{
+	idThread::ReturnVector( GetEyePosition() );
 }

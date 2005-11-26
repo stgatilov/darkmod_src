@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/11 21:11:28  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.2  2004/11/28 09:17:20  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -303,6 +309,15 @@ void idTestModel::Think( void ) {
 					headAnimator->PlayAnim( ANIMCHANNEL_ALL, headAnim, gameLocal.time, FRAME2MS( g_testModelBlend.GetInteger() ) );
 				}
 				break;
+
+			case 5:
+				// frame by frame with fixed origin
+				animator.SetFrame( ANIMCHANNEL_ALL, anim, frame, gameLocal.time, FRAME2MS( g_testModelBlend.GetInteger() ) );
+				animator.RemoveOriginOffset( true );
+				if ( headAnim ) {
+					headAnimator->SetFrame( ANIMCHANNEL_ALL, headAnim, frame, gameLocal.time, FRAME2MS( g_testModelBlend.GetInteger() ) );
+				}
+				break;
 			}
 			
 			mode = g_testModelAnimate.GetInteger();
@@ -462,7 +477,7 @@ idTestModel::NextFrame
 ================
 */
 void idTestModel::NextFrame( const idCmdArgs &args ) {
-	if ( !anim || ( g_testModelAnimate.GetInteger() != 3 ) ) {
+	if ( !anim || ( ( g_testModelAnimate.GetInteger() != 3 ) && ( g_testModelAnimate.GetInteger() != 5 ) ) ) {
 		return;
 	}
 
@@ -483,7 +498,7 @@ idTestModel::PrevFrame
 ================
 */
 void idTestModel::PrevFrame( const idCmdArgs &args ) {
-	if ( !anim || ( g_testModelAnimate.GetInteger() != 3 ) ) {
+	if ( !anim || ( ( g_testModelAnimate.GetInteger() != 3 ) && ( g_testModelAnimate.GetInteger() != 5 ) ) ) {
 		return;
 	}
 
@@ -619,7 +634,7 @@ void idTestModel::KeepTestModel_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	gameLocal.Printf( "modelDef %i kept\n", gameLocal.testmodel->renderEntity.hModel );
+	gameLocal.Printf( "modelDef %p kept\n", gameLocal.testmodel->renderEntity.hModel );
 
 	gameLocal.testmodel = NULL;
 }
@@ -694,7 +709,7 @@ void idTestModel::TestShaderParm_f( const idCmdArgs &args ) {
 	}
 
 	float	value;
-	if ( !stricmp( args.Argv( 2 ), "time" ) ) {
+	if ( !idStr::Icmp( args.Argv( 2 ), "time" ) ) {
 		value = gameLocal.time * -0.001;
 	} else {
 		value = atof( args.Argv( 2 ) );
@@ -747,13 +762,13 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 			if ( name[ 0 ] != '_' ) {
 				name.DefaultFileExtension( ".ase" );
 			} 
-#ifndef _D3SDK
+			
 			if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
 				idModelExport exporter;
 				exporter.ExportModel( name );
 				name.SetFileExtension( MD5_MESH_EXT );
 			}
-#endif
+
 			if ( !renderModelManager->CheckModel( name ) ) {
 				gameLocal.Printf( "Can't register model\n" );
 				return;

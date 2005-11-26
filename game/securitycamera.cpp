@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -73,7 +76,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 							
 	savefile->WriteInt( pvsArea );
 	savefile->WriteStaticObject( physicsObj );
-	savefile->Write( &trm, sizeof( trm ) );
+	savefile->WriteTraceModel( trm );
 }
 
 /*
@@ -101,7 +104,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 							
 	savefile->ReadInt( pvsArea );
 	savefile->ReadStaticObject( physicsObj );
-	savefile->Read( &trm, sizeof( trm ) );
+	savefile->ReadTraceModel( trm );
 }
 
 /*

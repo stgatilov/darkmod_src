@@ -7,16 +7,114 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.18  2005/11/26 22:50:07  sparhawk
+ * Keyboardhandler added.
+ *
+ * Revision 1.17  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
+ * Revision 1.16  2005/11/18 21:04:23  sparhawk
+ * Particle effect fix
+ *
+ * Revision 1.15  2005/11/17 22:40:37  sparhawk
+ * Lightgem renderpipe fixed
+ *
+ * Revision 1.14  2005/11/12 14:59:20  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.13  2005/11/11 20:38:16  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.12  2005/10/23 18:42:30  sparhawk
+ * Lightgem cleanup
+ *
+ * Revision 1.11  2005/10/23 18:11:21  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.10  2005/10/23 13:51:06  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
+ * Revision 1.9  2005/10/18 13:56:40  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.8  2005/09/21 05:42:04  ishtvan
+ * Modified sound prop propParms
+ *
+ * Revision 1.7  2005/08/22 04:55:24  ishtvan
+ * minor changes in soundprop parms and function names
+ *
+ * Revision 1.6  2005/08/19 00:27:48  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.5  2005/04/23 10:07:26  ishtvan
+ * added fix for pm_walkspeed being reset to 140 by the engine on map load
+ *
+ * Revision 1.4  2005/04/07 09:38:10  ishtvan
+ * *) Added members for global sound prop and sound prop loader objects
+ *
+ * *) Added global typedef for sound propagation flags which are needed by several different classes
+ *
+ * Revision 1.3  2005/03/29 07:43:42  ishtvan
+ * Added forward declared pointer to global AI relations object: m_RelationsManager
+ *
+ * Revision 1.2  2005/01/07 02:10:35  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
 //
 
+/** DarkMod AI Note:
+* The following members in class idGameLocal:
+* lastAIAlertEntity, lastAIAlertTime and idGameLocal::AlertAI
+* ALL have nothing to do with DarkMod AI.
+*
+* DarkMod AI alerts are handled in class idAI
+*
+* AIAlertEntity alerts ALL AI to the entity in vanilla D3
+*
+* Unfortunately idGameLocal::AlertAI has the same name as
+* our DarkMod alert function, idAI::AlertAI.  DarkMod
+* alerts do not directly make use of idGameLocal::AlertAI.
+**/
+
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+// enables water physics
+#define MOD_WATERPHYSICS
+
+// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
+// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
+// shape would be sufficient to cover all lighting situations. For silouhette detection we might
+// consider more stages though.
+#define DARKMOD_LG_MAX_RENDERPASSES			2
+#define DARKMOD_LG_MAX_IMAGESPLIT			4
+#define DARKMOD_LG_RENDER_MODEL				"models/props/misc/lightgem.lwo"
+#define DARKMOD_LG_ENTITY_NAME				"lightgem_surface"
+// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
+#define DARKMOD_LG_VIEWID					-1
+#define DARKMOD_LG_RENDERPIPE_NAME			"\\\\.\\pipe\\dm_renderpipe"
+#define DARKMOD_LG_RENDERPIPE_BUFSIZE		50*1024		// Buffersize for the renderpipe
+#define DARKMOD_LG_RENDERPIPE_TIMEOUT		1000
+#define DARKMOD_LG_RENDER_WIDTH				50
+// The colour is converted to a grayscale value which determines the state
+// of the lightgem.
+// LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
+
+#define DARKMOD_LG_MIN						1
+#define DARKMOD_LG_MAX						32
+#define DARKMOD_LG_FRACTION					(1.0f/32.0f)
+#define DARKMOD_LG_RED						0.29900f
+#define DARKMOD_LG_GREEN					0.58700f
+#define DARKMOD_LG_BLUE						0.11400f
+#define DARKMOD_LG_SCALE					(1.0/255.0)			// scaling factor for grayscale value
+
 
 /*
 ===============================================================================
@@ -25,6 +123,13 @@
 
 ===============================================================================
 */
+
+#define LAGO_IMG_WIDTH 64
+#define LAGO_IMG_HEIGHT 64
+#define LAGO_WIDTH	64
+#define LAGO_HEIGHT	44
+#define LAGO_MATERIAL	"textures/sfx/lagometer"
+#define LAGO_IMAGE		"textures/sfx/lagometer.tga"
 
 // if set to 1 the server sends the client PVS with snapshots and the client compares against what it sees
 #ifndef ASYNC_WRITE_PVS
@@ -89,6 +194,11 @@ class idLocationEntity;
 #include "MultiplayerGame.h"
 
 //============================================================================
+
+class CLightMaterial;
+class CsndPropLoader;
+class CsndProp;
+class CRelations;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -161,6 +271,105 @@ typedef struct {
 	idEntity	*ent;
 	int			dist;
 } spawnSpot_t;
+
+//===========Dark Mod Global Typedefs===========
+
+// Any key that is to be changed from an impulse to a button behaviour
+// has to be listed here. The id gives the index in the array which slot
+// is reserved for that function.
+typedef enum {
+	IR_FROB,
+	IR_INVENTORY_NEXT,
+	IR_INVENTORY_PREV,
+	IR_LEAN_FORWARD,
+	IR_LEAN_LEFT,
+	IR_LEAN_RIGHT,
+	IR_COUNT
+} ImpulseFunction_t;
+
+typedef enum {
+	KS_UPDATED,			// Keyinfo has been updated by the hook
+	KS_PROCESSED,		// Key has been processed by the gameengine
+	KS_FREE,			// Keyslot is currently free.
+	KS_COUNT
+} KeyState_t;
+
+/**
+ * KeyCode is a structure that contains the information for a key which is related
+ * to an IMPULSE.
+ */
+typedef struct KeyCode_s
+{
+	KeyState_t	KeyState;		// protocoll state for the interface with the gameengine
+	int		Impulse;			// Impulsevalue this is associated with.
+	int		VirtualKeyCode;
+	int		RepeatCount;
+	int		ScanCode;			// The value depends on the OEM.
+	bool	Extended;			// Specifies whether the key is an extended key, such as a function key or
+								// a key on the numeric keypad. The value is 1 if the key is an extended key,
+								// otherwise, it is 0.
+	int		Reserved;
+	bool	Context;			// Specifies the context code. The value is 1 if the ALT key is down; otherwise, it is 0.
+	bool	PreviousKeyState;	// The value is 1 if the key is down before the message is sent or 0 if the key is up.
+	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
+} KeyCode_t;
+
+/**
+* Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
+* Therefore they are global.
+* See sound prop doc file for definitions of these flags.
+**/
+
+typedef struct SSprFlagBits_s
+{
+	// team alert flags
+	unsigned int friendly : 1;
+	unsigned int neutral : 1;
+	unsigned int enemy : 1;
+	unsigned int same : 1;
+
+	// propagation flags
+	unsigned int omni_dir : 1; // omnidirectional
+	unsigned int unique_loc : 1; // sound comes from a unique location
+	unsigned int urgent : 1; // urgent (AI tries to respond ASAP)
+	unsigned int global_vol : 1; // sound has same volume over whole map
+	unsigned int check_touched : 1; // for non-AI, check who last touched the entity
+} SSprFlagBits;
+
+typedef union USprFlags_s
+{
+	unsigned int m_field;
+	SSprFlagBits m_bits;
+} USprFlags;
+
+/**
+* Sound propagation parameters: needed for function arguments
+**/
+
+typedef struct SSprParms_s
+{
+	USprFlags flags;
+
+	const char	*name; // sound name
+	float		propVol; // propagated volume
+
+	// Apparent direction of the sound, determined by the path point on the portal
+	idVec3		direction; 
+	// actual origin of the sound, used for some localization simulation
+	idVec3		origin; 
+	float		duration; // duration
+	int			frequency; // int representing the octave of the sound
+	float		bandwidth; // sound bandwidth
+
+	float		loudness; // this is set by AI hearing response
+
+	bool		bSameArea; // true if the sound came from same portal area
+	bool		bDetailedPath; // true if detailed path minimization was used to obtain the sound path
+	int			floods; // number of portals the sound travelled thru before it hit the AI
+
+	idEntity *maker; // it turns out the AI needs to know who made the sound to avoid bugs in some cases
+
+} SSprParms;
 
 //============================================================================
 
@@ -316,6 +525,28 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+/**
+* Pointer to global AI Relations object
+**/
+	CRelations *			m_RelationsManager;
+
+/**
+* Pointer to global sound prop loader object
+**/
+	CsndPropLoader *		m_sndPropLoader;
+
+/**
+* Pointer to global sound prop gameplay object
+**/
+	CsndProp *				m_sndProp;
+
+/**
+* Temporary storage of the walkspeed.  This is a workaround
+*	because the walkspeed keeps getting reset.
+**/
+	float					m_walkSpeed;
+
+
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -327,6 +558,7 @@ public:
 	int						framenum;
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
+	int						m_Interleave;			// How often should the lightgem calculation be skipped?
 	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
@@ -349,6 +581,16 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	idEntityPtr<idEntity>	portalSkyEnt;
+	bool					portalSkyActive;
+
+	HHOOK					m_KeyboardHook;
+	KeyCode_t				m_KeyPress;				// Current keypress
+	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSE
+
+	void					SetPortalSkyEnt( idEntity *ent );
+	bool					IsPortalSkyAcive();
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -357,7 +599,7 @@ public:
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
 	virtual void			ThrottleUserInfo( void );
-	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient );
+	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
 	virtual void			SetServerInfo( const idDict &serverInfo );
 
@@ -382,18 +624,23 @@ public:
 	virtual void			ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &msg, byte *clientInPVS, int numPVSClients );
 	virtual bool			ServerApplySnapshot( int clientNum, int sequence );
 	virtual void			ServerProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const idBitMsg &msg );
+	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
 	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds );
 
+	virtual void			GetClientStats( int clientNum, char *data, const int len );
+	virtual void			SwitchTeam( int clientNum, int team );
+
+	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
+
 	// ---------------------- Public idGameLocal Interface -------------------
 
-	void					Printf( const char *fmt, ... ) const;
-	void					DPrintf( const char *fmt, ... ) const;
-	void					Warning( const char *fmt, ... ) const;
-	void					DWarning( const char *fmt, ... ) const;
-	void					Error( const char *fmt, ... ) const;
+	void					Printf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					DPrintf( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					DWarning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+	void					Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
 
 							// Initializes all map variables common to both save games and spawned games
 	void					LoadMap( const char *mapName, int randseed );
@@ -435,6 +682,8 @@ public:
 
 	bool					InPlayerPVS( idEntity *ent ) const;
 	bool					InPlayerConnectedArea( idEntity *ent ) const;
+
+	pvsHandle_t				GetPlayerPVS()			{ return playerPVS; };
 
 	void					SetCamera( idCamera *cam );
 	idCamera *				GetCamera( void ) const;
@@ -495,6 +744,78 @@ public:
 	void					SetGibTime( int _time ) { nextGibTime = _time; };
 	int						GetGibTime() { return nextGibTime; };
 
+	bool					NeedRestart();
+
+	/**
+	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
+	 * textures are only loaded when the light is spawned and requests the texture.
+	 */
+	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
+
+	/**
+	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
+	 * Currently this works under Windows only. This is neccessary, because we have to store
+	 * the rendersnapshots somehwere and the only way to do this is via a pipe if we want to
+	 * avoid writing it constantly to disc.
+	 */
+	HANDLE					CreateRenderPipe(int timeout = DARKMOD_LG_RENDERPIPE_TIMEOUT);
+
+	/**
+	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
+	 */
+	void					CloseRenderPipe(HANDLE &hPipe);
+
+	/**
+	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
+	 * that no multiple copies of it will exist.
+	 */
+	void					SpawnLightgemEntity(void);
+
+	/**
+	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
+	 * to determine the lightvalue for the lightgem.
+	 */
+	float					CalcLightgem(idPlayer *);
+
+	/**
+	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
+	 * determining the lightvalue for the given image.
+	 */
+	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+
+	/**
+	 * ImpulseInit will initialize a slot with the current keypress if it is empty.
+	 * The function returns true if the slot has already been initialized for this 
+	 * keypress. If false is returned the slot was free before and is now ready to use
+	 * This should always be the first function to be called in order to determine wether
+	 * an impulse has been triggered already for continous use.
+	 */
+	bool					ImpulseInit(ImpulseFunction_t Function, int Impulse);
+
+	/**
+	 * ImpulseIsUpdated checks wether the slot has been updated since the last time the impulse
+	 * has been processed.
+	 */
+	bool					ImpulseIsUpdated(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseProcessed has to be called whenever the impulse function has processed it's
+	 * keystate, but is not finished yet.
+	 */
+	void					ImpulseProcessed(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseFree is called when the processing of the impulse is finished and no further
+	 * reporting should be done. This would usually be when the key is released.
+	 */
+	void					ImpulseFree(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
+	 * via this pointer.
+	 */
+	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -545,6 +866,16 @@ private:
 
 	idStrList				shakeSounds;
 
+	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	/**
+	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
+	 * is constantly required and therfore we store it permanently.
+	 */
+	idEntity				*m_LightgemSurface;
+	SECURITY_ATTRIBUTES		m_saPipeSecurity;
+	PSECURITY_DESCRIPTOR	m_pPipeSD;
+
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
 	bool					InhibitEntitySpawn( idDict &spawnArgs );
@@ -576,7 +907,7 @@ private:
 	bool					ApplySnapshot( int clientNum, int sequence );
 	void					WriteGameStateToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadGameStateFromSnapshot( const idBitMsgDelta &msg );
-	void					NetworkEventWarning( const entityNetEvent_t *event, const char *fmt, ... );
+	void					NetworkEventWarning( const entityNetEvent_t *event, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	void					ServerProcessEntityNetworkEventQueue( void );
 	void					ClientProcessEntityNetworkEventQueue( void );
 	void					ClientShowSnapshot( int clientNum ) const;
@@ -587,6 +918,13 @@ private:
 
 	void					DumpOggSounds( void );
 	void					GetShakeSounds( const idDict *dict );
+	void					SelectTimeGroup( int timeGroup );
+	int						GetTimeGroupTime( int timeGroup );
+	idStr					GetBestGameType( const char* map, const char* gametype );
+
+	void					Tokenize( idStrList &out, const char *in );
+
+	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
 };
 
 //============================================================================
@@ -661,6 +999,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "physics/Physics_Parametric.h"
 #include "physics/Physics_RigidBody.h"
 #include "physics/Physics_AF.h"
+#include "physics/Physics_Liquid.h"
 
 #include "SmokeParticles.h"
 
@@ -688,6 +1027,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Fx.h"
 #include "SecurityCamera.h"
 #include "BrittleFracture.h"
+#include "Liquid.h"
 
 #include "ai/AI.h"
 #include "anim/Anim_Testmodel.h"
@@ -695,5 +1035,18 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "script/Script_Compiler.h"
 #include "script/Script_Interpreter.h"
 #include "script/Script_Thread.h"
+
+const float	RB_VELOCITY_MAX				= 16000;
+const int	RB_VELOCITY_TOTAL_BITS		= 16;
+const int	RB_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_VELOCITY_MAX ) ) + 1;
+const int	RB_VELOCITY_MANTISSA_BITS	= RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS;
+const float	RB_MOMENTUM_MAX				= 1e20f;
+const int	RB_MOMENTUM_TOTAL_BITS		= 16;
+const int	RB_MOMENTUM_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_MOMENTUM_MAX ) ) + 1;
+const int	RB_MOMENTUM_MANTISSA_BITS	= RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS;
+const float	RB_FORCE_MAX				= 1e20f;
+const int	RB_FORCE_TOTAL_BITS			= 16;
+const int	RB_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( RB_FORCE_MAX ) ) + 1;
+const int	RB_FORCE_MANTISSA_BITS		= RB_FORCE_TOTAL_BITS - 1 - RB_FORCE_EXPONENT_BITS;
 
 #endif	/* !__GAME_LOCAL_H__ */

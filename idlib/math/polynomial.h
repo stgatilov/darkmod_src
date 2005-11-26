@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2005/11/11 22:35:09  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -428,6 +431,7 @@ ID_INLINE idPolynomial idPolynomial::GetDerivative( void ) const {
 	for ( int i = 1; i <= degree; i++ ) {
 		n.coefficient[i-1] = i * coefficient[i];
 	}
+	return n;
 }
 
 ID_INLINE idPolynomial idPolynomial::GetAntiDerivative( void ) const {
@@ -441,6 +445,7 @@ ID_INLINE idPolynomial idPolynomial::GetAntiDerivative( void ) const {
 	for ( int i = 0; i <= degree; i++ ) {
 		n.coefficient[i+1] = coefficient[i] / ( i + 1 );
 	}
+	return n;
 }
 
 ID_INLINE int idPolynomial::GetRoots1( float a, float b, float *roots ) {

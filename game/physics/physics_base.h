@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:34  sparhawk
- * Initial revision
+ * Revision 1.2  2005/08/19 00:28:02  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -42,6 +45,9 @@ public:
 public:	// common physics interface
 
 	void					SetSelf( idEntity *e );
+#ifdef MOD_WATERPHYSICS
+	inline const idEntity  *GetSelf() { return this->self; } // MOD_WATERPHYSICS
+#endif		// MOD_WATERPHYSICS
 
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );
 	idClipModel *			GetClipModel( int id = 0 ) const;
@@ -130,6 +136,13 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+#ifdef MOD_WATERPHYSICS
+	idPhysics_Liquid *		GetWater();				// MOD_WATERPHYSICS
+	void					SetWater( idPhysics_Liquid *e );	// MOD_WATERPHYSICS
+	float					SetWaterLevelf();		// MOD_WATERPHYSICS
+	float					GetWaterLevelf() const;	// MOD_WATERPHYSICS
+#endif	// MOD_WATERPHYSICS
+
 protected:
 	idEntity *				self;					// entity using this physics object
 	int						clipMask;				// contents the physics object collides with
@@ -137,6 +150,11 @@ protected:
 	idVec3					gravityNormal;			// normalized direction of gravity
 	idList<contactInfo_t>	contacts;				// contacts with other physics objects
 	idList<contactEntity_t>	contactEntities;		// entities touching this physics object
+
+#ifdef MOD_WATERPHYSICS
+// the water object the object is in, we use this to check density/viscosity
+	idPhysics_Liquid		*water;					// MOD_WATERPHYSICS
+#endif
 
 protected:
 							// add ground contacts for the clip model

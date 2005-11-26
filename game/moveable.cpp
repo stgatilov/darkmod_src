@@ -7,8 +7,14 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
+ * Revision 1.3  2005/11/21 07:53:59  ishtvan
+ * AI can no longer see through movable objects
+ *
+ * Revision 1.2  2005/04/07 09:40:23  ishtvan
+ * A movable will now call the idAI::TactileAlert method if it collides with an AI
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -141,7 +147,7 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetBouncyness( bouncyness );
 	physicsObj.SetFriction( 0.6f, 0.6f, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
-	physicsObj.SetContents( CONTENTS_SOLID );
+	physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
 
@@ -244,7 +250,7 @@ idMoveable::Show
 void idMoveable::Show( void ) {
 	idEntity::Show();
 	if ( !spawnArgs.GetBool( "nonsolid" ) ) {
-		physicsObj.SetContents( CONTENTS_SOLID );
+		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
 }
 
@@ -277,6 +283,20 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			dir.NormalizeFast();
 			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
 			nextDamageTime = gameLocal.time + 1000;
+		}
+	}
+
+	/** 
+	* Darkmod: Cause a tactile alert if it collides with an AI
+	**/
+	
+	ent = gameLocal.entities[ collision.c.entityNum ];
+	if ( ent )
+	{
+		if( ent->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(ent);
+			alertee->TactileAlert( this );
 		}
 	}
 

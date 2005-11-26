@@ -7,8 +7,53 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.15  2005/11/20 21:51:15  sparhawk
+ * Some cvars removed. dm_lg_drive, dm_lg_vof[x/y] and dm_lg_file
+ *
+ * Revision 1.14  2005/11/11 21:21:04  sparhawk
+ * SDK 1.3 Merge
+ *
+ * Revision 1.13  2005/10/26 21:13:15  sparhawk
+ * Lightgem renderpipe implemented
+ *
+ * Revision 1.12  2005/10/24 21:00:54  sparhawk
+ * Lightgem interleave added.
+ *
+ * Revision 1.11  2005/10/23 18:11:42  sparhawk
+ * Lightgem entity spawn implemented
+ *
+ * Revision 1.10  2005/10/23 13:51:30  sparhawk
+ * Top lightgem shot implemented. Image analyzing now assumes a
+ * foursided triangulated rendershot instead of a single surface.
+ *
+ * Revision 1.9  2005/10/22 14:16:21  sparhawk
+ * Added a debug print variable
+ *
+ * Revision 1.8  2005/10/21 21:57:55  sparhawk
+ * Ramdisk support added.
+ *
+ * Revision 1.7  2005/10/18 13:57:06  sparhawk
+ * Lightgem updates
+ *
+ * Revision 1.6  2005/09/20 06:16:58  ishtvan
+ * added dm_showsprop cvar to show sound prop paths for ingame debugging
+ *
+ * Revision 1.5  2005/08/19 00:27:55  lloyd
+ * *** empty log message ***
+ *
+ * Revision 1.4  2005/04/23 01:45:16  ishtvan
+ * *) changed DarkMod cvar names to cv_*
+ *
+ * *) Added movement speed and footstep volume cvars for ingame tweaking
+ *
+ * Revision 1.3  2005/04/07 09:47:07  ishtvan
+ * Added darkmod Cvars for ingame developer tweaking of soundprop and AI
+ *
+ * Revision 1.2  2004/11/28 09:17:51  sparhawk
+ * SDK V2 merge
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -17,6 +62,50 @@
 
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
+
+/**
+* DarkMod cvars - See text description in syscvar.cpp for descriptions
+**/
+extern idCVar cv_ai_sndvol;
+extern idCVar cv_ai_sightmod;
+extern idCVar cv_ai_sightmaxdist;
+extern idCVar cv_ai_sightmindist;
+extern idCVar cv_ai_tactalert;
+extern idCVar cv_ai_debug;
+extern idCVar cv_spr_debug;
+extern idCVar cv_spr_show;
+
+extern idCVar cv_pm_runmod;
+extern idCVar cv_pm_crouchmod;
+extern idCVar cv_pm_creepmod;
+
+extern idCVar cv_pm_stepvol_walk;
+extern idCVar cv_pm_stepvol_run;
+extern idCVar cv_pm_stepvol_creep;
+extern idCVar cv_pm_stepvol_crouch_walk;
+extern idCVar cv_pm_stepvol_crouch_creep;
+extern idCVar cv_pm_stepvol_crouch_run;
+
+// Lightgem
+extern idCVar cv_lg_distance;
+extern idCVar cv_lg_xoffs;
+extern idCVar cv_lg_yoffs;
+extern idCVar cv_lg_zoffs;
+extern idCVar cv_lg_oxoffs;
+extern idCVar cv_lg_oyoffs;
+extern idCVar cv_lg_ozoffs;
+extern idCVar cv_lg_fov;
+extern idCVar cv_lg_interleave;
+extern idCVar cv_lg_hud;
+extern idCVar cv_lg_weak;
+extern idCVar cv_lg_player;
+extern idCVar cv_lg_renderpasses;
+extern idCVar cv_lg_debug;
+extern idCVar cv_lg_model;
+
+/**
+* End DarkMod cvars
+**/
 
 extern idCVar	developer;
 
@@ -100,6 +189,13 @@ extern idCVar	g_dropItemRotation;
 
 extern idCVar	g_vehicleVelocity;
 extern idCVar	g_vehicleForce;
+extern idCVar	g_vehicleSuspensionUp;
+extern idCVar	g_vehicleSuspensionDown;
+extern idCVar	g_vehicleSuspensionKCompress;
+extern idCVar	g_vehicleSuspensionDamping;
+extern idCVar	g_vehicleTireFriction;
+
+extern idCVar	g_enablePortalSky;
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -144,9 +240,9 @@ extern idCVar	rb_showActive;
 
 extern idCVar	pm_jumpheight;
 extern idCVar	pm_stepsize;
-extern idCVar	pm_crouchspeed;
+//extern idCVar	pm_crouchspeed;
 extern idCVar	pm_walkspeed;
-extern idCVar	pm_runspeed;
+//extern idCVar	pm_runspeed;
 extern idCVar	pm_noclipspeed;
 extern idCVar	pm_spectatespeed;
 extern idCVar	pm_spectatebbox;
@@ -229,6 +325,22 @@ extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
 
+extern idCVar	net_clientSelfSmoothing;
+extern idCVar	net_clientLagOMeter;
+
+extern const char *si_gameTypeArgs[];
+
 extern const char *ui_skinArgs[];
+
+#ifdef MOD_WATERPHYSICS
+
+extern idCVar af_useBodyDensityBuoyancy;			// MOD_WATERPHYSICS
+
+extern idCVar af_useFixedDensityBuoyancy;			// MOD_WATERPHYSICS
+
+extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
+
+#endif
+
 
 #endif /* !__SYS_CVAR_H__ */
