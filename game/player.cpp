@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2005/11/26 22:50:07  sparhawk
+ * Keyboardhandler added.
+ *
  * Revision 1.36  2005/11/26 17:44:44  sparhawk
  * Lightgem cleaned up
  *
@@ -5890,7 +5893,38 @@ void idPlayer::PerformImpulse( int impulse ) {
 			//common->Printf ("Impulse 44, lean forward\n");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
+				// FIXME: We should make sure that, when we enter or leave the
+				// leaning state, that the position is indeed the one that we assume.
+				// It can happen, when a key is being lost, that the state is 
+				// the other way around, which is not exactly nice. It will be corrected
+				// automatically, but it wouldn't hurt anyway.
+
+				// Do we need to enter the leaning state?
+				if(gameLocal.ImpulseInit(IR_LEAN_FORWARD, IMPULSE_44) == false)
+				{
+					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning started\r");
 					physicsObj.ToggleLean(90.0);
+					gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+				}
+				else if(gameLocal.ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+				{
+					KeyCode_t *t;
+
+					// Check if the key is just reported as repeating or released.
+					// If it is released we can unlean, as we don't care about repeats.
+					t = gameLocal.ImpulseData(IR_LEAN_FORWARD);
+					if(t->TransitionState == true)
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning stopped\r");
+						physicsObj.ToggleLean(90.0);
+						gameLocal.ImpulseFree(IR_LEAN_FORWARD);
+					}
+					else
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning ignored\r");
+						gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+					}
+				}
 			}
 		}
 		break;
@@ -5903,7 +5937,38 @@ void idPlayer::PerformImpulse( int impulse ) {
 			//common->Printf ("Impulse 45, lean left\n");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
+				// FIXME: We should make sure that, when we enter or leave the
+				// leaning state, that the position is indeed the one that we assume.
+				// It can happen, when a key is being lost, that the state is 
+				// the other way around, which is not exactly nice. It will be corrected
+				// automatically, but it wouldn't hurt anyway.
+
+				// Do we need to enter the leaning state?
+				if(gameLocal.ImpulseInit(IR_LEAN_FORWARD, IMPULSE_44) == false)
+				{
+					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning started\r");
 					physicsObj.ToggleLean(180.0);
+					gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+				}
+				else if(gameLocal.ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+				{
+					KeyCode_t *t;
+
+					// Check if the key is just reported as repeating or released.
+					// If it is released we can unlean, as we don't care about repeats.
+					t = gameLocal.ImpulseData(IR_LEAN_FORWARD);
+					if(t->TransitionState == true)
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning stopped\r");
+						physicsObj.ToggleLean(180.0);
+						gameLocal.ImpulseFree(IR_LEAN_FORWARD);
+					}
+					else
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning ignored\r");
+						gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+					}
+				}
 			}
 		}
 		break;
@@ -5916,7 +5981,38 @@ void idPlayer::PerformImpulse( int impulse ) {
 			//common->Printf ("Impulse 46, lean right\n");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
+				// FIXME: We should make sure that, when we enter or leave the
+				// leaning state, that the position is indeed the one that we assume.
+				// It can happen, when a key is being lost, that the state is 
+				// the other way around, which is not exactly nice. It will be corrected
+				// automatically, but it wouldn't hurt anyway.
+
+				// Do we need to enter the leaning state?
+				if(gameLocal.ImpulseInit(IR_LEAN_FORWARD, IMPULSE_44) == false)
+				{
+					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning started\r");
 					physicsObj.ToggleLean(0.0);
+					gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+				}
+				else if(gameLocal.ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+				{
+					KeyCode_t *t;
+
+					// Check if the key is just reported as repeating or released.
+					// If it is released we can unlean, as we don't care about repeats.
+					t = gameLocal.ImpulseData(IR_LEAN_FORWARD);
+					if(t->TransitionState == true)
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning stopped\r");
+						physicsObj.ToggleLean(0.0);
+						gameLocal.ImpulseFree(IR_LEAN_FORWARD);
+					}
+					else
+					{
+						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Leaning ignored\r");
+						gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+					}
+				}
 			}
 		}
 		break;
@@ -5962,7 +6058,8 @@ void idPlayer::EvaluateControls( void ) {
 		gameLocal.sessionCommand = "died";
 	}
 
-	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) ) {
+	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) )
+	{
 		PerformImpulse( usercmd.impulse );
 	}
 

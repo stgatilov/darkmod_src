@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2005/11/26 22:50:07  sparhawk
+ * Keyboardhandler added.
+ *
  * Revision 1.34  2005/11/26 17:44:44  sparhawk
  * Lightgem cleaned up
  *
@@ -115,7 +118,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#pragma warning(disable : 4996 4805)
+#pragma warning(disable : 4996 4805 4800)
 
 #include "Game_local.h"
 
@@ -254,6 +257,55 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
+
+LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	KeyCode_t kc;
+	int i, n;
+
+	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook - nCode: %u   wParam: %04X   lParam: %08lX\r", nCode, wParam, lParam);
+
+	if(nCode >= 0)
+	{
+		kc.VirtualKeyCode = wParam;
+		kc.RepeatCount =		(lParam & 0x0000FFFF);
+		kc.ScanCode =			(lParam & 0x00FF0000) >> 16;
+		kc.Extended =			(lParam & 0x01000000) >> 24;
+		kc.Reserved =			(lParam & 0x1E000000) >> 25;
+		kc.Context =			(lParam & 0x20000000) >> 29;
+		kc.PreviousKeyState =	(lParam & 0x40000000) >> 30;
+		kc.TransitionState =	(lParam & 0x80000000) >> 31;
+
+		memcpy(&gameLocal.m_KeyPress, &kc, sizeof(KeyCode_t));
+
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			"VirtualKeyCode: %u   RepeatCount: %u   ScanCode: %02X   Extended: %u   Reserved; %02X   Context: %u   PreviousKeyState: %u   TransitionState: %u\r",
+			kc.VirtualKeyCode,
+			kc.RepeatCount,
+			kc.ScanCode,
+			kc.Extended,
+			kc.Reserved,
+			kc.Context,
+			kc.PreviousKeyState,
+			kc.TransitionState
+			);
+
+		for(i = 0; i < IR_COUNT; i++)
+		{
+			// If the keypress is associated with an impulse then we update it.
+			if(gameLocal.m_KeyData[i].VirtualKeyCode == wParam && gameLocal.m_KeyData[i].KeyState != KS_FREE)
+			{
+				n = gameLocal.m_KeyData[i].Impulse;
+				memcpy(&gameLocal.m_KeyData[i], &kc, sizeof(KeyCode_t));
+				gameLocal.m_KeyData[i].Impulse = n;
+				gameLocal.m_KeyData[i].KeyState = KS_UPDATED;
+			}
+		}
+	}
+
+	return CallNextHookEx(gameLocal.m_KeyboardHook, nCode, wParam, lParam);
+}
+
 /*
 ===========
 idGameLocal::idGameLocal
@@ -261,6 +313,8 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
+	int i;
+
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
@@ -278,6 +332,12 @@ idGameLocal::idGameLocal()
 	m_saPipeSecurity.bInheritHandle = FALSE;
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
 #endif
+
+	for(i = 0; i < IR_COUNT; i++)
+	{
+		m_KeyData[i].KeyState = KS_FREE;
+		m_KeyData[i].Impulse = -1;
+	}
 }
 
 /*
@@ -368,6 +428,7 @@ void idGameLocal::Clear( void ) {
 
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
+	m_KeyboardHook			= NULL;
 
 //	ResetSlowTimeVars();
 }
@@ -391,6 +452,9 @@ void idGameLocal::Init( void ) {
 
 	// Initialize the image library, so we can use it later on.
 	ilInit();
+//	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
+	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
+	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook: %08lX\r", m_KeyboardHook);
 
 	// initialize idLib
 	idLib::Init();
@@ -2337,6 +2401,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idPlayer	*player;
 	const renderView_t *view;
 	int curframe = framenum;
+	KeyCode_t *k;
+	usercmd_t ucmd;
 
 	DM_LOG(LC_FRAME, LT_FORCE)LOGSTRING("Frame start %u\r", curframe);
 
@@ -2347,6 +2413,22 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 #endif
 
 	player = GetLocalPlayer();
+
+	// Before we do the actual impulse, we check if there are some impulses pending for processing.
+	// FIXME: It MIGHT be that this can cause problems in case if usercmd is evaluated while the
+	// impulse is processed, because it would use the same usercmd states as the actual impulse
+	// key that is triggered, which could cause inconsistencies.
+	for(int i = 0; i < IR_COUNT; i++)
+	{
+		k = &m_KeyData[i];
+		if(k->KeyState == KS_UPDATED)
+		{
+			ucmd = player->usercmd;
+			player->usercmd.impulse = k->Impulse;
+			player->PerformImpulse(k->Impulse);
+			player->usercmd = ucmd;
+		}
+	}
 
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame
@@ -5098,5 +5180,42 @@ void idGameLocal::SpawnLightgemEntity(void)
 		mapEnt->epairs.Set("origin", "0 0 0");
 		mapEnt->epairs.Set("noclipmodel", "1");
 	}
+}
+
+bool idGameLocal::ImpulseInit(ImpulseFunction_t Function, int Impulse)
+{
+	bool rc;
+
+	if(m_KeyData[Function].KeyState == KS_FREE)
+	{
+		memcpy(&m_KeyData[Function], &m_KeyPress, sizeof(KeyCode_t));
+		m_KeyData[Function].Impulse = Impulse;
+		m_KeyData[Function].KeyState = KS_UPDATED;
+		rc = false;
+	}
+	else
+		rc = true;
+
+	return rc;
+}
+
+bool idGameLocal::ImpulseIsUpdated(ImpulseFunction_t Function)
+{
+	if(m_KeyData[Function].KeyState != KS_UPDATED)
+		return false;
+	else
+		return true;
+}
+
+
+void idGameLocal::ImpulseProcessed(ImpulseFunction_t Function)
+{
+	m_KeyData[Function].KeyState = KS_PROCESSED;
+}
+
+void idGameLocal::ImpulseFree(ImpulseFunction_t Function)
+{
+	m_KeyData[Function].KeyState = KS_FREE;
+	m_KeyData[Function].Impulse = -1;
 }
 

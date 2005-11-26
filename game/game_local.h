@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2005/11/26 22:50:07  sparhawk
+ * Keyboardhandler added.
+ *
  * Revision 1.17  2005/11/26 17:44:44  sparhawk
  * Lightgem cleaned up
  *
@@ -270,6 +273,46 @@ typedef struct {
 } spawnSpot_t;
 
 //===========Dark Mod Global Typedefs===========
+
+// Any key that is to be changed from an impulse to a button behaviour
+// has to be listed here. The id gives the index in the array which slot
+// is reserved for that function.
+typedef enum {
+	IR_FROB,
+	IR_INVENTORY_NEXT,
+	IR_INVENTORY_PREV,
+	IR_LEAN_FORWARD,
+	IR_LEAN_LEFT,
+	IR_LEAN_RIGHT,
+	IR_COUNT
+} ImpulseFunction_t;
+
+typedef enum {
+	KS_UPDATED,			// Keyinfo has been updated by the hook
+	KS_PROCESSED,		// Key has been processed by the gameengine
+	KS_FREE,			// Keyslot is currently free.
+	KS_COUNT
+} KeyState_t;
+
+/**
+ * KeyCode is a structure that contains the information for a key which is related
+ * to an IMPULSE.
+ */
+typedef struct KeyCode_s
+{
+	KeyState_t	KeyState;		// protocoll state for the interface with the gameengine
+	int		Impulse;			// Impulsevalue this is associated with.
+	int		VirtualKeyCode;
+	int		RepeatCount;
+	int		ScanCode;			// The value depends on the OEM.
+	bool	Extended;			// Specifies whether the key is an extended key, such as a function key or
+								// a key on the numeric keypad. The value is 1 if the key is an extended key,
+								// otherwise, it is 0.
+	int		Reserved;
+	bool	Context;			// Specifies the context code. The value is 1 if the ALT key is down; otherwise, it is 0.
+	bool	PreviousKeyState;	// The value is 1 if the key is down before the message is sent or 0 if the key is up.
+	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
+} KeyCode_t;
 
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
@@ -541,6 +584,10 @@ public:
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 
+	HHOOK					m_KeyboardHook;
+	KeyCode_t				m_KeyPress;				// Current keypress
+	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSE
+
 	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();
 
@@ -735,6 +782,39 @@ public:
 	 * determining the lightvalue for the given image.
 	 */
 	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+
+	/**
+	 * ImpulseInit will initialize a slot with the current keypress if it is empty.
+	 * The function returns true if the slot has already been initialized for this 
+	 * keypress. If false is returned the slot was free before and is now ready to use
+	 * This should always be the first function to be called in order to determine wether
+	 * an impulse has been triggered already for continous use.
+	 */
+	bool					ImpulseInit(ImpulseFunction_t Function, int Impulse);
+
+	/**
+	 * ImpulseIsUpdated checks wether the slot has been updated since the last time the impulse
+	 * has been processed.
+	 */
+	bool					ImpulseIsUpdated(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseProcessed has to be called whenever the impulse function has processed it's
+	 * keystate, but is not finished yet.
+	 */
+	void					ImpulseProcessed(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseFree is called when the processing of the impulse is finished and no further
+	 * reporting should be done. This would usually be when the key is released.
+	 */
+	void					ImpulseFree(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
+	 * via this pointer.
+	 */
+	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
