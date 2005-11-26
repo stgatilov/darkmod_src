@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.35  2005/11/19 17:27:56  sparhawk
  * LogString with macro replaced
  *
@@ -1227,7 +1230,6 @@ idPlayer::idPlayer() {
 	isLagged				= false;
 	isChatting				= false;
 	selfSmooth				= false;
-	LightgemSurface			= NULL;
 }
 
 /*
@@ -1508,10 +1510,6 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
-	LightgemSurface = gameLocal.FindEntity(LIGHTEM_RENDER_NAME);
-	LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = LIGHTGEM_VIEWID;
-	LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
-	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", LightgemSurface);
 }
 
 /*
@@ -9047,16 +9045,16 @@ void idPlayer::AdjustLightgem(void)
 		}
 	}
 
-	pDM->m_LightgemValue = LIGHTGEM_MAX * fLightgemVal;
-	if(pDM->m_LightgemValue < LIGHTGEM_MIN)
-		pDM->m_LightgemValue = LIGHTGEM_MIN;
+	pDM->m_LightgemValue = DARKMOD_LG_MAX * fLightgemVal;
+	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
+		pDM->m_LightgemValue = DARKMOD_LG_MIN;
 	else
-	if(pDM->m_LightgemValue > LIGHTGEM_MAX)
-		pDM->m_LightgemValue = LIGHTGEM_MAX;
+	if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
+		pDM->m_LightgemValue = DARKMOD_LG_MAX;
 
 	// if the player is in a lit area and the lightgem would be totaly dark we set it to at least
 	// one step higher.
-	if(bMinOneLight == true && pDM->m_LightgemValue <= LIGHTGEM_MIN)
+	if(bMinOneLight == true && pDM->m_LightgemValue <= DARKMOD_LG_MIN)
 		pDM->m_LightgemValue++;
 }
 

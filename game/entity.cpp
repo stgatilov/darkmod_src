@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2005/11/26 17:44:55  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.21  2005/11/19 17:27:56  sparhawk
  * LogString with macro replaced
  *
@@ -2779,83 +2782,72 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 	const char *temp;
 	idClipModel *clipModel = NULL;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] test for clipmodel\r", name.c_str());
+	DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity [%s] test for clipmodel\r", name.c_str());
 
-	// We need to make sure that the lightgem surface doesn't have a clipmodel
-	if(name != LIGHTEM_RENDER_NAME)
+	// check if a clipmodel key/value pair is set
+	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
+		if ( idClipModel::CheckModel( temp ) ) {
+			clipModel = new idClipModel( temp );
+		}
+	}
+
+	if(!spawnArgs.GetBool( "noclipmodel", "0" ))
 	{
-		// check if a clipmodel key/value pair is set
-		if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
-			if ( idClipModel::CheckModel( temp ) ) {
-				clipModel = new idClipModel( temp );
-			}
-		}
-
-		if(!spawnArgs.GetBool( "noclipmodel", "0" ))
+		// check if mins/maxs or size key/value pairs are set
+		if ( !clipModel )
 		{
-			// check if mins/maxs or size key/value pairs are set
-			if ( !clipModel )
+			idVec3 size;
+			idBounds bounds;
+			bool setClipModel = false;
+
+			if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
+				spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
 			{
-				idVec3 size;
-				idBounds bounds;
-				bool setClipModel = false;
-
-				if ( spawnArgs.GetVector( "mins", NULL, bounds[0] ) &&
-					spawnArgs.GetVector( "maxs", NULL, bounds[1] ) )
+				setClipModel = true;
+				if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
 				{
-					setClipModel = true;
-					if ( bounds[0][0] > bounds[1][0] || bounds[0][1] > bounds[1][1] || bounds[0][2] > bounds[1][2] )
-					{
-						gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
-					}
-				} 
-				else
-				if ( spawnArgs.GetVector( "size", NULL, size ) )
+					gameLocal.Error( "Invalid bounds '%s'-'%s' on entity '%s'", bounds[0].ToString(), bounds[1].ToString(), name.c_str() );
+				}
+			} 
+			else
+			if ( spawnArgs.GetVector( "size", NULL, size ) )
+			{
+				if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
 				{
-					if ( ( size.x < 0.0f ) || ( size.y < 0.0f ) || ( size.z < 0.0f ) )
-					{
-						gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
-					}
-					bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
-					bounds[1].Set( size.x * 0.5f, size.y * 0.5f, size.z );
-					setClipModel = true;
+					gameLocal.Error( "Invalid size '%s' on entity '%s'", size.ToString(), name.c_str() );
 				}
-
-				if ( setClipModel ) {
-					int numSides;
-					idTraceModel trm;
-
-					if ( spawnArgs.GetInt( "cylinder", "0", numSides ) && numSides > 0 ) {
-						trm.SetupCylinder( bounds, numSides < 3 ? 3 : numSides );
-					} else if ( spawnArgs.GetInt( "cone", "0", numSides ) && numSides > 0 ) {
-						trm.SetupCone( bounds, numSides < 3 ? 3 : numSides );
-					} else {
-						trm.SetupBox( bounds );
-					}
-					clipModel = new idClipModel( trm );
-				}
+				bounds[0].Set( size.x * -0.5f, size.y * -0.5f, 0.0f );
+				bounds[1].Set( size.x * 0.5f, size.y * 0.5f, size.z );
+				setClipModel = true;
 			}
 
-			// check if the visual model can be used as collision model
-			if ( !clipModel ) {
-				temp = spawnArgs.GetString( "model" );
-				if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-					if ( idClipModel::CheckModel( temp ) ) {
-						clipModel = new idClipModel( temp );
-					}
+			if ( setClipModel ) {
+				int numSides;
+				idTraceModel trm;
+
+				if ( spawnArgs.GetInt( "cylinder", "0", numSides ) && numSides > 0 ) {
+					trm.SetupCylinder( bounds, numSides < 3 ? 3 : numSides );
+				} else if ( spawnArgs.GetInt( "cone", "0", numSides ) && numSides > 0 ) {
+					trm.SetupCone( bounds, numSides < 3 ? 3 : numSides );
+				} else {
+					trm.SetupBox( bounds );
+				}
+				clipModel = new idClipModel( trm );
+			}
+		}
+
+		// check if the visual model can be used as collision model
+		if ( !clipModel ) {
+			temp = spawnArgs.GetString( "model" );
+			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
+				if ( idClipModel::CheckModel( temp ) ) {
+					clipModel = new idClipModel( temp );
 				}
 			}
 		}
-		else
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] does not contain a clipmodel\r", name.c_str());
 	}
 	else
-	{
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Entity [%s] ignores clipmodel check and disable all shadows\r", name.c_str());
-		renderEntity.noDynamicInteractions = false;
-		renderEntity.noShadow = true;
-		renderEntity.noSelfShadow = true;
-	}
+		DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity [%s] does not contain a clipmodel\r", name.c_str());
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );

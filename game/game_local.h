@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.16  2005/11/18 21:04:23  sparhawk
  * Particle effect fix
  *
@@ -87,13 +90,28 @@
 // from all sides. This is not needed though, because a top and a bottom render with a pyramidic
 // shape would be sufficient to cover all lighting situations. For silouhette detection we might
 // consider more stages though.
-#define LIGHTGEM_MAX_RENDERPASSES		2
-#define LIGHTGEM_MAX_IMAGESPLIT			4
-#define LIGHTEM_RENDER_DIRECTORY		"snapshot"
-#define LIGHTEM_RENDER_MODEL			"models/props/misc/lightgem.lwo"
-#define LIGHTEM_RENDER_NAME				"lightgem_surface"
+#define DARKMOD_LG_MAX_RENDERPASSES			2
+#define DARKMOD_LG_MAX_IMAGESPLIT			4
+#define DARKMOD_LG_RENDER_MODEL				"models/props/misc/lightgem.lwo"
+#define DARKMOD_LG_ENTITY_NAME				"lightgem_surface"
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
-#define LIGHTGEM_VIEWID					-1
+#define DARKMOD_LG_VIEWID					-1
+#define DARKMOD_LG_RENDERPIPE_NAME			"\\\\.\\pipe\\dm_renderpipe"
+#define DARKMOD_LG_RENDERPIPE_BUFSIZE		50*1024		// Buffersize for the renderpipe
+#define DARKMOD_LG_RENDERPIPE_TIMEOUT		1000
+#define DARKMOD_LG_RENDER_WIDTH				50
+// The colour is converted to a grayscale value which determines the state
+// of the lightgem.
+// LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
+
+#define DARKMOD_LG_MIN						1
+#define DARKMOD_LG_MAX						32
+#define DARKMOD_LG_FRACTION					(1.0f/32.0f)
+#define DARKMOD_LG_RED						0.29900f
+#define DARKMOD_LG_GREEN					0.58700f
+#define DARKMOD_LG_BLUE						0.11400f
+#define DARKMOD_LG_SCALE					(1.0/255.0)			// scaling factor for grayscale value
+
 
 /*
 ===============================================================================
@@ -688,6 +706,19 @@ public:
 	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
 	/**
+	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
+	 * Currently this works under Windows only. This is neccessary, because we have to store
+	 * the rendersnapshots somehwere and the only way to do this is via a pipe if we want to
+	 * avoid writing it constantly to disc.
+	 */
+	HANDLE					CreateRenderPipe(int timeout = DARKMOD_LG_RENDERPIPE_TIMEOUT);
+
+	/**
+	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
+	 */
+	void					CloseRenderPipe(HANDLE &hPipe);
+
+	/**
 	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
 	 * that no multiple copies of it will exist.
 	 */
@@ -703,7 +734,7 @@ public:
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
 	 * determining the lightvalue for the given image.
 	 */
-	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IMAGESPLIT]);
+	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
@@ -756,6 +787,14 @@ private:
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
+
+	/**
+	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
+	 * is constantly required and therfore we store it permanently.
+	 */
+	idEntity				*m_LightgemSurface;
+	SECURITY_ATTRIBUTES		m_saPipeSecurity;
+	PSECURITY_DESCRIPTOR	m_pPipeSD;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level

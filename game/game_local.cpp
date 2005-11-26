@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.33  2005/11/20 21:50:42  sparhawk
  * Some cvars removed. dm_lg_drive, dm_lg_vof[x/y] and dm_lg_file
  *
@@ -262,8 +265,19 @@ idGameLocal::idGameLocal()
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
 	m_Interleave = 0;
-	
+	m_LightgemSurface = NULL;
+
 	Clear();
+
+#ifdef _WINDOWS_
+	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
+	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
+	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
+	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
+	m_saPipeSecurity.bInheritHandle = FALSE;
+	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+#endif
 }
 
 /*
@@ -2662,12 +2676,12 @@ bool idGameLocal::Draw( int clientNum )
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fColVal);
 
 		pDM->m_fColVal = fColVal;
-		pDM->m_LightgemValue = LIGHTGEM_MAX * fColVal;
-		if(pDM->m_LightgemValue < LIGHTGEM_MIN)
-			pDM->m_LightgemValue = LIGHTGEM_MIN;
+		pDM->m_LightgemValue = DARKMOD_LG_MAX * fColVal;
+		if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
+			pDM->m_LightgemValue = DARKMOD_LG_MIN;
 		else
-		if(pDM->m_LightgemValue > LIGHTGEM_MAX)
-			pDM->m_LightgemValue = LIGHTGEM_MAX;
+		if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
+			pDM->m_LightgemValue = DARKMOD_LG_MAX;
 	}
 
 	return true;
@@ -3449,6 +3463,14 @@ void idGameLocal::SpawnMapEntities( void ) {
 			inhibit++;
 		}
 	}
+
+	m_LightgemSurface = gameLocal.FindEntity(DARKMOD_LG_ENTITY_NAME);
+	m_LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LG_VIEWID;
+	m_LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
+	m_LightgemSurface->GetRenderEntity()->noDynamicInteractions = false;
+	m_LightgemSurface->GetRenderEntity()->noShadow = true;
+	m_LightgemSurface->GetRenderEntity()->noSelfShadow = true;
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface);
 
 	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
@@ -4727,10 +4749,35 @@ Quit:
 }
 
 
+HANDLE idGameLocal::CreateRenderPipe(int timeout)
+{
+#ifdef _WINDOWS_
+	return CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
+		PIPE_ACCESS_DUPLEX,				// read/write access
+		PIPE_TYPE_MESSAGE |				// message type pipe
+		PIPE_READMODE_MESSAGE |			// message-read mode
+		PIPE_WAIT,						// blocking mode
+		PIPE_UNLIMITED_INSTANCES,		// max. instances
+		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// output buffer size
+		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// input buffer size
+		timeout,						// client time-out
+		&m_saPipeSecurity);				// no security attribute
+#endif
+}
+
+void idGameLocal::CloseRenderPipe(HANDLE &hPipe)
+{
+	if(hPipe != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hPipe);
+		hPipe = INVALID_HANDLE_VALUE;
+	}
+}
+
 float idGameLocal::CalcLightgem(idPlayer *player)
 {
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
-	float fColVal[LIGHTGEM_MAX_IMAGESPLIT];
+	float fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 	float fRetVal;
 	int playerid;			// player viewid
 	int headid;				// head viewid
@@ -4747,7 +4794,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	renderEntity_t *lgrend;
 	HANDLE hPipe;
 
-	lg = player->LightgemSurface;
+	lg = m_LightgemSurface;
 	idVec3 Cam = player->GetEyePosition();
 	idVec3 Pos = player->GetPhysics()->GetOrigin();
 	idVec3 LGPos = Cam;
@@ -4778,7 +4825,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 //	LGPos.z += fabs(Cam.z - Pos.z) / 2;
 	memset(&rv, 0, sizeof(rv));
 
-	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 		fColVal[i] = 0.0;
 
 	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
@@ -4797,14 +4844,14 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	n = cv_lg_renderpasses.GetInteger();
 	// limit the renderpasses between 1 and 4
 	if(n < 1) n = 1;
-	if(n > LIGHTGEM_MAX_RENDERPASSES) n = LIGHTGEM_MAX_RENDERPASSES;
+	if(n > DARKMOD_LG_MAX_RENDERPASSES) n = DARKMOD_LG_MAX_RENDERPASSES;
 
 	k = cv_lg_hud.GetInteger()-1;
 	lgrend = lg->GetRenderEntity();
 
 	// Set the viewid to our private screenshot snapshot. If this number is changed 
 	// for some reason, it has to be changed in player.cpp as well.
-	rv.viewID = LIGHTGEM_VIEWID;
+	rv.viewID = DARKMOD_LG_VIEWID;
 	lgrend->suppressShadowInViewID = 0;
 
 	if(cv_lg_player.GetBool() == false)
@@ -4836,13 +4883,13 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
-	dim = DARKMOD_RENDER_WIDTH;
+	dim = DARKMOD_LG_RENDER_WIDTH;
 //	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("ImageDimension: %u\r", dim);
 
 	// We only take the brightest value that we could find.
 	fRetVal = 0.0;
 
-	name = DARKMOD_RENDERPIPE_NAME;
+	name = DARKMOD_LG_RENDERPIPE_NAME;
 	rv1 = rv;
 	for(i = 0; i < n+1; i++)
 	{
@@ -4899,7 +4946,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		if(k == -1 || k == i)
 		{
 			if(i != 0)
-				hPipe = g_Global.CreateRenderPipe();
+				hPipe = CreateRenderPipe();
 
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
@@ -4921,10 +4968,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			if(i != 0)
 			{
 				AnalyzeRenderImage(hPipe, fColVal);
-				g_Global.CloseRenderPipe(hPipe);
+				CloseRenderPipe(hPipe);
 
 				// Check which of the images has the brightest value, and this is what we will use.
-				for(l = 0; l < LIGHTGEM_MAX_IMAGESPLIT; l++)
+				for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
 				{
 					if(fColVal[l] > fRetVal)
 						fRetVal = fColVal[l];
@@ -4950,10 +4997,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	return(fRetVal);
 }
 
-void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IMAGESPLIT])
+void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 {
 	CImage *im = &g_Global.m_RenderImage ;
-	unsigned long counter[LIGHTGEM_MAX_IMAGESPLIT];
+	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 
 	im->LoadImage(hPipe);
@@ -4964,7 +5011,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IM
 		static int indicator = 0;
 		static int lasttime;
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Unable to read image from renderpipe\r");
-		for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+		for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 			fColVal[i] = indicator;
 
 		if(gameLocal.time/1000 != lasttime)
@@ -4976,7 +5023,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IM
 		goto Quit;
 	}
 
-	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 		counter[i] = 0;
 
 	// We always assume a BPP 4 here. We also always assume a square image with an even 
@@ -4999,7 +5046,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IM
 				x = 1;
 
 			// The order is RGBA.
-			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			fColVal[x] += ((buffer[0] * DARKMOD_LG_RED + buffer[1] * DARKMOD_LG_GREEN + buffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
 			counter[x]++;
 			buffer += im->m_Bpp;
 		}
@@ -5018,14 +5065,14 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[LIGHTGEM_MAX_IM
 				x = 3;
 
 			// The order is RGBA.
-			fColVal[x] += ((buffer[0] * LIGHTGEM_RED + buffer[1] * LIGHTGEM_GREEN + buffer[2] * LIGHTGEM_BLUE) * LIGHTGEM_SCALE);
+			fColVal[x] += ((buffer[0] * DARKMOD_LG_RED + buffer[1] * DARKMOD_LG_GREEN + buffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
 			counter[x]++;
 			buffer += im->m_Bpp;
 		}
 	}
 
 	// Calculate the average for each value
-	for(i = 0; i < LIGHTGEM_MAX_IMAGESPLIT; i++)
+	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 		fColVal[i] = fColVal[i]/counter[x];
 
 Quit:
@@ -5034,7 +5081,7 @@ Quit:
 
 void idGameLocal::SpawnLightgemEntity(void)
 {
-	static const char *LightgemName = LIGHTEM_RENDER_NAME;
+	static const char *LightgemName = DARKMOD_LG_ENTITY_NAME;
 	idMapEntity *mapEnt = NULL;
 
 	mapEnt = mapFile->FindEntity(LightgemName);
@@ -5045,10 +5092,11 @@ void idGameLocal::SpawnLightgemEntity(void)
 		mapEnt->epairs.Set("classname", "func_static");
 		mapEnt->epairs.Set("name", LightgemName);
 		if(strlen(cv_lg_model.GetString()) == 0)
-			mapEnt->epairs.Set("model", LIGHTEM_RENDER_MODEL);
+			mapEnt->epairs.Set("model", DARKMOD_LG_RENDER_MODEL);
 		else
 			mapEnt->epairs.Set("model", cv_lg_model.GetString());
 		mapEnt->epairs.Set("origin", "0 0 0");
+		mapEnt->epairs.Set("noclipmodel", "1");
 	}
 }
 

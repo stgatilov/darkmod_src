@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2005/11/26 17:48:03  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.21  2005/11/23 19:32:35  sparhawk
  * FOV changed to 50
  *
@@ -152,7 +155,7 @@ idCVar cv_lg_xoffs("dm_lg_xoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adj
 idCVar cv_lg_yoffs("dm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the camera on the testmodel" );
 idCVar cv_lg_zoffs("dm_lg_zoffs",		"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
 idCVar cv_lg_oxoffs("dm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
-idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"2",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
+idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
 idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"-20",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
 idCVar cv_lg_fov("dm_lg_fov",			"50",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
 idCVar cv_lg_interleave("dm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );

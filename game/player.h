@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.11  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -346,12 +349,6 @@ public:
 
 	idDragEntity			dragEntity;
 
-	/**
-	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
-	 * is constantly required and therfore we store it permanently.
-	 */
-	idEntity				*LightgemSurface;
-
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -556,7 +553,9 @@ public:
 	void AddToInventory(idEntity *ent);
 
 	/**
-	 * AdjustLightgem will calculate how much the lightgem should light up
+	 * AdjustLightgem will calculate how much the lightgem should light up.
+	 * This function is obsolote now and replaced by a different version.
+	 * TODO: Shall it be removed completely?
 	 */
 	void AdjustLightgem(void);
 

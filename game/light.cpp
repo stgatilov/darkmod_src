@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/11/26 17:44:44  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.8  2005/11/19 17:27:56  sparhawk
  * LogString with macro replaced
  *
@@ -1287,11 +1290,11 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		img = m_LightMaterial->GetImage(iw, ih, ibpp);
 	}
 
-	fColVal = (baseColor.x * LIGHTGEM_RED + baseColor.y * LIGHTGEM_GREEN + baseColor.z * LIGHTGEM_BLUE);
+	fColVal = (baseColor.x * DARKMOD_LG_RED + baseColor.y * DARKMOD_LG_GREEN + baseColor.z * DARKMOD_LG_BLUE);
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
-		baseColor.x, baseColor.x * LIGHTGEM_RED,
-		baseColor.y, baseColor.y * LIGHTGEM_GREEN,
-		baseColor.z, baseColor.z * LIGHTGEM_BLUE,
+		baseColor.x, baseColor.x * DARKMOD_LG_RED,
+		baseColor.y, baseColor.y * DARKMOD_LG_GREEN,
+		baseColor.z, baseColor.z * DARKMOD_LG_BLUE,
 		fColVal);
 
 	// If we have neither falloff texture nor a projection image, we do a 
@@ -1314,8 +1317,8 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		if(fot != NULL)
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), fw, fh, fbpp);
-			fColVal = fColVal * (fot[i] * LIGHTGEM_SCALE);
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * LIGHTGEM_SCALE));
+			fColVal = fColVal * (fot[i] * DARKMOD_LG_SCALE);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * DARKMOD_LG_SCALE));
 		}
 		else
 			fColVal = 1;
@@ -1324,8 +1327,8 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		if(img != NULL)
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), iw, ih, ibpp);
-			fImgVal = img[i] * LIGHTGEM_SCALE;
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * LIGHTGEM_SCALE));
+			fImgVal = img[i] * DARKMOD_LG_SCALE;
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * DARKMOD_LG_SCALE));
 		}
 		else
 			fImgVal = 1;

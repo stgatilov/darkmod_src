@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.9  2005/11/26 17:42:45  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.8  2005/10/24 21:01:12  sparhawk
  * Lightgem interleave added.
  *
@@ -182,15 +185,4 @@ public:
 	idList<idLight *>				m_LightList;
 };
 
-// The colour is converted to a grayscale value which determines the state
-// of the lightgem.
-// LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
-
-#define LIGHTGEM_MIN			1
-#define LIGHTGEM_MAX			32
-#define LIGHTGEM_FRACTION		(1.0f/32.0f)
-#define LIGHTGEM_RED			0.29900f
-#define LIGHTGEM_GREEN			0.58700f
-#define LIGHTGEM_BLUE			0.11400f
-#define LIGHTGEM_SCALE			(1.0/255.0)			// scaling factor for grayscale value
 #endif

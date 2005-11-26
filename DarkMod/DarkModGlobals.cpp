@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.30  2005/11/26 17:42:45  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.29  2005/11/20 21:49:30  sparhawk
  * *) Proper returncode for renderhook
  * *) Errorvalue while rendering to pipe.
@@ -409,16 +412,6 @@ void CGlobal::Init()
 		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open %s.ini\r", m_ModName);
 
 	CloseProfile(pfh);
-
-#ifdef _WINDOWS_
-	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
-	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
-	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
-	m_saPipeSecurity.bInheritHandle = FALSE;
-	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-#endif
 }
 
 void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)
@@ -737,35 +730,8 @@ void CGlobal::LoadINISettings(void *p)
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
 
 	}
-
-
 }
 
-
-HANDLE CGlobal::CreateRenderPipe(void)
-{
-#ifdef _WINDOWS_
-	return CreateNamedPipe (DARKMOD_RENDERPIPE_NAME,
-		PIPE_ACCESS_DUPLEX,				// read/write access
-		PIPE_TYPE_MESSAGE |				// message type pipe
-		PIPE_READMODE_MESSAGE |			// message-read mode
-		PIPE_WAIT,						// blocking mode
-		PIPE_UNLIMITED_INSTANCES,		// max. instances
-		DARKMOD_RENDERPIPE_BUFSIZE,		// output buffer size
-		DARKMOD_RENDERPIPE_BUFSIZE,		// input buffer size
-		DARKMOD_RENDERPIPE_TIMEOUT,		// client time-out
-		&m_saPipeSecurity);				// no security attribute
-#endif
-}
-
-void CGlobal::CloseRenderPipe(HANDLE &hPipe)
-{
-	if(hPipe != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(hPipe);
-		hPipe = INVALID_HANDLE_VALUE;
-	}
-}
 
 CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 {
@@ -952,12 +918,12 @@ bool CImage::LoadImage(HANDLE &Handle)
 	{
 		if(Handle != INVALID_HANDLE_VALUE)
 		{
-			static char pipe_buf[DARKMOD_RENDERPIPE_BUFSIZE];
+			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
 			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
 			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", Handle);
 
-			dwBufSize = DARKMOD_RENDERPIPE_BUFSIZE;
+			dwBufSize = DARKMOD_LG_RENDERPIPE_BUFSIZE;
 			BufLen = 0;
 			while(1)
 			{
@@ -1112,7 +1078,7 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 
 	if(idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
 	{
-		strcpy(p, DARKMOD_RENDERPIPE_NAME);
+		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME);
 		Ret = MRES_SUPERCEDE;
 		pRet = p;
 	}

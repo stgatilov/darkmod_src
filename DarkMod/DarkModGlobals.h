@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.29  2005/11/26 17:42:45  sparhawk
+ * Lightgem cleaned up
+ *
  * Revision 1.28  2005/11/19 19:54:09  sparhawk
  * Logging disabler added.
  *
@@ -154,11 +157,6 @@ typedef enum {
 	LC_COUNT
 } LC_LogClass;
 
-#define DARKMOD_RENDERPIPE_NAME				"\\\\.\\pipe\\dm_renderpipe"
-#define DARKMOD_RENDERPIPE_BUFSIZE			50*1024		// Buffersize for the renderpipe
-#define DARKMOD_RENDERPIPE_TIMEOUT			1000
-#define DARKMOD_RENDER_WIDTH				50
-
 class CDarkModPlayer;
 
 class CImage {
@@ -262,19 +260,6 @@ public:
 	 */
 	CImage *GetImage(int Index);
 	CImage *GetImage(idStr const &Name, int &Index);
-
-	/**
-	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
-	 * Currently this works under Windows only. This is neccessary, because we have to store
-	 * the rendersnapshots somehwere and the only way to do this is via a pipe if we want to
-	 * avoid writing it constantly to disc.
-	 */
-	HANDLE CreateRenderPipe(void);
-
-	/**
-	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
-	 */
-	void CloseRenderPipe(HANDLE &hPipe);
 
 private:
 	void LoadINISettings(void *);
@@ -392,10 +377,6 @@ public:
 	 * This solution is less accurate, though. Default for this value is false.
 	 */
 	bool m_WeakLightgem;
-
-private:
-	SECURITY_ATTRIBUTES		m_saPipeSecurity;
-	PSECURITY_DESCRIPTOR	m_pPipeSD;
 };
 
 extern CGlobal g_Global;
