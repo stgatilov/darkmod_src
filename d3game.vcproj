@@ -804,6 +804,12 @@
 					RelativePath=".\DarkMod\fdchar.cpp">
 				</File>
 				<File
+					RelativePath=".\DarkMod\force_grab.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\force_grab.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\FrobDoor.cpp">
 				</File>
 				<File
