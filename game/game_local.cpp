@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2005/12/02 21:26:15  sparhawk
+ * dm_lg_hud re-enabled
+ *
  * Revision 1.36  2005/12/02 19:45:07  sparhawk
  * Lightgem update. Particle and waterreflection fixed.
  *
@@ -2724,12 +2727,10 @@ bool idGameLocal::Draw( int clientNum )
 		return false;
 	}
 
-//	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
-
 	// render the scene
 	player->playerView.RenderPlayerView(player->hud);
 
-//	ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
+	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
 
 	m_DoLightgem = true;
 	return true;
