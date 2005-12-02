@@ -6,6 +6,13 @@
  * $Date$
  * $Author$
  *
+ * $Log$
+ * Revision 1.3  2005/12/02 18:21:04  lloyd
+ * Objects start oriented with player
+ *
+ * Revision 1.1.1.1  2005/09/22 15:52:33  Lloyd
+ * Initial release
+ *
  ***************************************************************************/
 
 #include "....//idlib/precompiled.h"
@@ -27,10 +34,11 @@ const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
 
 const int CHECK_CLIP_LIST_INTERVAL =	1000;
 
-const int MAX_PICKUP_DISTANCE =			50.0f;
-const int MOUSE_SCALE =					1.0f;
-const int ROTATION_DAMPER =				0.9f;
-const int MAX_ROTATION_SPEED =			30.0f;
+const float MAX_PICKUP_DISTANCE =		1000.0f;
+const float MOUSE_SCALE =				1.0f;
+const float ROTATION_SPEED =			0.9f;
+const float ROTATION_DAMPER =			0.9f;
+const float MAX_ROTATION_SPEED =		30.0f;
 
 const idVec3 rotateMin( -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED );
 const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPEED );
@@ -56,6 +64,7 @@ CGrabber::~CGrabber
 */
 CGrabber::~CGrabber( void ) {
 	StopDrag();
+	Clear();
 }
 
 
@@ -71,6 +80,9 @@ void CGrabber::Clear( void ) {
 	localEntityPoint.Zero();
 	localPlayerPoint.Zero();
 	bodyName.Clear();
+
+	while( this->HasClippedEntity() )
+		this->RemoveFromClipList( 0 );
 }
 
 /*
@@ -179,6 +191,11 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 				// set the clipMask so that the objet only collides with the world
 				this->AddToClipList( this->dragEnt.GetEntity() );
 
+				// signal object manipulator to update drag position so it's relative to the objects
+				// center of mass instead of its origin
+				this->rotationAxis = -1;
+				this->grabbedPosition = localPlayerPoint;
+
 				this->drag.Init( g_dragDamping.GetFloat() );
 				this->drag.SetPhysics( phys, id, localEntityPoint );
 			}
@@ -214,8 +231,16 @@ CGrabber::ManipulateObject
 ==============
 */
 void CGrabber::ManipulateObject( idPlayer *player ) {
+	idVec3 viewPoint;
+	idMat3 viewAxis;
+
+	player->GetViewPos( viewPoint, viewAxis );
+
 	idEntity *ent;
+	idVec3 angularVelocity;
 	idPhysics *physics;
+	idVec3 rotationVec;
+	bool rotating;
 
 	ent = this->dragEnt.GetEntity();
 	if( !ent ) {
@@ -227,12 +252,14 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		return;
 	}
 
+	angularVelocity = vec3_origin;
+
 	// NOTES ON OBJECT ROTATION
 	// 
 	// The way the object rotation works is as follows:
 	//	1) Player must be holding BUTTON_ZOOM
-	//	2) if the player is holding BUTTON_RUN, rotate about the x-axis
-	//	   else then if the mouse first moves along the x axis, rotate about the z-axis
+	//	2) if the player is holding BUTTON_RUN, rotate about the z-axis
+	//	   else then if the mouse first moves along the x axis, rotate about the x-axis
 	//				 else if the mouse first moves along the y axis, rotate about the y-axis
 	//
 	// This system may seem complicated but I found after playing with it for a few minutes
@@ -245,19 +272,25 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	// If the player holds ZOOM, make the object rotated based on mouse movement.
 	if( player->usercmd.buttons & BUTTON_ZOOM ) {
 
+		float angle = 0.0f;
+		rotating = true;
+
 		switch( this->rotationAxis ) {
 			case 1:
-				this->rotatePosition.x = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;				
+				angle = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;				
+				rotationVec.Set( 1.0f, 0.0f, 0.0f );
 				this->rotationAxis = 1;
 				break;
 
 			case 2:
-				this->rotatePosition.y = (player->usercmd.my - this->mousePosition.y) * MOUSE_SCALE;				
+				angle = (player->usercmd.my - this->mousePosition.y) * MOUSE_SCALE;				
+				rotationVec.Set( 0.0f, 1.0f, 0.0f );
 				this->rotationAxis = 2;
 				break;
 
 			case 3:
-				this->rotatePosition.z = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;
+				angle = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;
+				rotationVec.Set( 0.0f, 0.0f, 1.0f );
 				this->rotationAxis = 3;
 				break;
 
@@ -266,21 +299,27 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 				if( (player->usercmd.mx - this->mousePosition.x) != 0 ) {
 					// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
 					if( player->usercmd.buttons & BUTTON_RUN ) {
-						this->rotationAxis = 1;
+						this->rotationAxis = 3;
 					}
 					else {
-						this->rotationAxis = 3;
+						this->rotationAxis = 1;
 					}
 				}
 				else if( (player->usercmd.my - this->mousePosition.y) != 0 ) {
 					this->rotationAxis = 2;
 				}
+
+				rotationVec.Set( 0.0f, 0.0f, 0.0f );
 		}
 
-		this->rotatePosition.Clamp( rotateMin, rotateMax );
-		physics->SetAngularVelocity( this->rotatePosition, this->id );
+		angle = idMath::ClampFloat( -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, angle );
+
+		this->rotation.Set( vec3_origin, rotationVec * viewAxis, angle );
+		angularVelocity += this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
 	}
 	else {
+		rotating = false;
+
 		// reset these coordinates so that next time they press zoom the rotation will be fresh
 		this->mousePosition.x = player->usercmd.mx;
 		this->mousePosition.y = player->usercmd.my;
@@ -289,10 +328,42 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		if( this->rotationAxis ) {
 			this->rotationAxis = 0;
 			this->rotatePosition = vec3_origin;
+
+			// redo the trace after a rotation so the object maintains it's new orientation
+			trace_t trace;
+			idVec3 p;
+
+			gameLocal.clip.TracePoint( trace, viewPoint, this->drag.GetCenterOfMass(), (CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_BODY), player );
+			p = ( trace.c.point - this->drag.GetCenterOfMass() ) * physics->GetAxis( id ).Transpose();
+			this->drag.SetPhysics( physics, id, p );
 		}
 
-		physics->SetAngularVelocity( physics->GetAngularVelocity() * ROTATION_DAMPER, this->id );
+		angularVelocity += physics->GetAngularVelocity() * ROTATION_DAMPER;
 	}
+
+	// rotate object so it stays oriented with the player
+	if( !rotating && this->grabbedPosition != this->drag.GetDraggedPosition() ) {
+		idVec3 dir1, dir2, normal;
+
+		dir1 = this->grabbedPosition - viewPoint;
+		dir2 = physics->GetOrigin() - this->drag.GetDraggedPosition();
+		normal = physics->GetGravityNormal();
+
+		// only adjust yaw so we flatten against the gravity normal
+		dir1 -= ( dir1 * normal ) * normal;
+		dir2 -= ( dir2 * normal ) * normal;
+
+		// set new grabbed position closer to where it should be
+		this->grabbedPosition += ( this->drag.GetDraggedPosition() - this->grabbedPosition ) * ROTATION_SPEED;
+
+		dir1.Normalize();
+		dir2.Normalize();
+
+		this->rotation.Set( player->GetPhysics()->GetOrigin(), dir2.Cross( dir1 ), RAD2DEG( idMath::ACos( dir1 * dir2 ) ) );
+		angularVelocity += this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+	}
+
+	physics->SetAngularVelocity( angularVelocity, this->id );
 }
 
 /*
