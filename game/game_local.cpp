@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2005/12/02 19:45:07  sparhawk
+ * Lightgem update. Particle and waterreflection fixed.
+ *
  * Revision 1.35  2005/11/26 22:50:07  sparhawk
  * Keyboardhandler added.
  *
@@ -313,31 +316,7 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
-	int i;
-
-	m_sndPropLoader = &g_SoundPropLoader;
-	m_sndProp = &g_SoundProp;
-	m_RelationsManager = &g_globalRelations;
-	m_Interleave = 0;
-	m_LightgemSurface = NULL;
-
 	Clear();
-
-#ifdef _WINDOWS_
-	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
-	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
-	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
-	m_saPipeSecurity.bInheritHandle = FALSE;
-	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-#endif
-
-	for(i = 0; i < IR_COUNT; i++)
-	{
-		m_KeyData[i].KeyState = KS_FREE;
-		m_KeyData[i].Impulse = -1;
-	}
 }
 
 /*
@@ -345,8 +324,16 @@ idGameLocal::idGameLocal()
 idGameLocal::Clear
 ============
 */
-void idGameLocal::Clear( void ) {
+void idGameLocal::Clear( void )
+{
 	int i;
+
+	m_sndPropLoader = &g_SoundPropLoader;
+	m_sndProp = &g_SoundProp;
+	m_RelationsManager = &g_globalRelations;
+	m_Interleave = 0;
+	m_LightgemSurface = NULL;
+	m_DoLightgem = true;
 
 	serverInfo.Clear();
 	numClients = 0;
@@ -431,6 +418,21 @@ void idGameLocal::Clear( void ) {
 	m_KeyboardHook			= NULL;
 
 //	ResetSlowTimeVars();
+#ifdef _WINDOWS_
+	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
+	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
+	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
+	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
+	m_saPipeSecurity.bInheritHandle = FALSE;
+	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+#endif
+
+	for(i = 0; i < IR_COUNT; i++)
+	{
+		m_KeyData[i].KeyState = KS_FREE;
+		m_KeyData[i].Impulse = -1;
+	}
 }
 
 /*
@@ -2550,6 +2552,12 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		timer_events.Clear();
 		timer_events.Start();
 
+		if(m_DoLightgem == true)
+		{
+			ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
+			m_DoLightgem = false;
+		}
+
 		// service any pending events
 		idEvent::ServiceEvents();
 
@@ -2613,7 +2621,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	RunDebugInfo();
 	D_DrawDebugLines();
 
-	DM_LOG(LC_FRAME, LT_FORCE)LOGSTRING("Frame end %u\r", curframe);
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %u - %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
+		curframe, time, timer_think.Milliseconds() + timer_events.Milliseconds(),
+		timer_think.Milliseconds(), timer_events.Milliseconds(), num );
+
 	return ret;
 }
 
@@ -2703,8 +2714,6 @@ makes rendering and sound system calls
 */
 bool idGameLocal::Draw( int clientNum )
 {
-	int n;
-
 	if ( isMultiplayer ) {
 		return mpGame.Draw( clientNum );
 	}
@@ -2715,13 +2724,27 @@ bool idGameLocal::Draw( int clientNum )
 		return false;
 	}
 
+//	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
+
+	// render the scene
+	player->playerView.RenderPlayerView(player->hud);
+
+//	ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
+
+	m_DoLightgem = true;
+	return true;
+}
+
+void idGameLocal::ProcessLightgem(idPlayer *player, bool bProcessing)
+{
+	int n;
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 	float fColVal = pDM->m_fColVal;
 
 	n = cv_lg_interleave.GetInteger();
 	if(cv_lg_weak.GetBool() == false)
 	{
-		if(cv_lg_hud.GetInteger() == 0)
+		if(bProcessing == true)
 		{
 			if(n > 0)
 			{
@@ -2736,37 +2759,15 @@ bool idGameLocal::Draw( int clientNum )
 		}
 	}
 
-	// render the scene
-	player->playerView.RenderPlayerView(player->hud);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fColVal);
 
-	if(cv_lg_weak.GetBool() == false)
-	{
-		if(cv_lg_hud.GetInteger() != 0)
-		{
-			if(n > 0)
-			{
-				// Skip every nth frame according to the value set in 
-				m_Interleave++;
-				if(m_Interleave >= n)
-				{
-					m_Interleave = 0;
-					fColVal = CalcLightgem(player);
-				}
-			}
-		}
-
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fColVal);
-
-		pDM->m_fColVal = fColVal;
-		pDM->m_LightgemValue = DARKMOD_LG_MAX * fColVal;
-		if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
-			pDM->m_LightgemValue = DARKMOD_LG_MIN;
-		else
-		if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
-			pDM->m_LightgemValue = DARKMOD_LG_MAX;
-	}
-
-	return true;
+	pDM->m_fColVal = fColVal;
+	pDM->m_LightgemValue = DARKMOD_LG_MAX * fColVal;
+	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
+		pDM->m_LightgemValue = DARKMOD_LG_MIN;
+	else
+	if(pDM->m_LightgemValue > DARKMOD_LG_MAX)
+		pDM->m_LightgemValue = DARKMOD_LG_MAX;
 }
 
 /*
@@ -4973,25 +4974,14 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 
 	name = DARKMOD_LG_RENDERPIPE_NAME;
 	rv1 = rv;
-	for(i = 0; i < n+1; i++)
+	for(i = 0; i < n; i++)
 	{
 		rv = rv1;
 		rv.vieworg = LGPos;
 
 		switch(i)
 		{
-			case 0:
-			{
-				// This is a hack to make the particles behave.
-				// The problem is, that these rendersnapshots are done before the playerview
-				// is rendered. Since the lightem is turned upside down, the particles are
-				// oriented to match them and are cahced this way through all renderings within 
-				// this frame. 
-				rv = *player->GetRenderView();
-			}
-			break;
-
-			case 1:	// From the top to bottom
+			case 0:	// From the top to bottom
 			{
 				rv.vieworg.z += cv_lg_zoffs.GetInteger();
 				rv.vieworg.z += dist;
@@ -5003,7 +4993,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			}
 			break;
 
-			case 2:
+			case 1:
 			{
 				// From bottom to top
 				rv.vieworg.z -= cv_lg_zoffs.GetInteger();
@@ -5027,19 +5017,15 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			if(i != 0)
-				hPipe = CreateRenderPipe();
+			hPipe = CreateRenderPipe();
 
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
 			// The result is an image that is split in four triangles with an angle of 
 			// 45 degree, thus the square shape.
-			if(i == 0)
-				renderSystem->CropRenderSize(1, 1, true);
-			else
-				renderSystem->CropRenderSize(dim, dim, true);
+			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->RenderScene(&rv);
-			if(i != 0)
+			if(i != 2)
 			{
 				renderSystem->CaptureRenderToFile(name);
 				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
@@ -5047,19 +5033,16 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			renderSystem->UnCrop();
 
 			// we can quit as soon as we have a maximum value
-			if(i != 0)
-			{
-				AnalyzeRenderImage(hPipe, fColVal);
-				CloseRenderPipe(hPipe);
+			AnalyzeRenderImage(hPipe, fColVal);
+			CloseRenderPipe(hPipe);
 
-				// Check which of the images has the brightest value, and this is what we will use.
-				for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
-				{
-					if(fColVal[l] > fRetVal)
-						fRetVal = fColVal[l];
+			// Check which of the images has the brightest value, and this is what we will use.
+			for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
+			{
+				if(fColVal[l] > fRetVal)
+					fRetVal = fColVal[l];
 
 //					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u]: %f\r", i, fColVal[i]);
-				}
 			}
 		}
 	}

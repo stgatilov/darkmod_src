@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2005/12/02 19:45:07  sparhawk
+ * Lightgem update. Particle and waterreflection fixed.
+ *
  * Revision 1.18  2005/11/26 22:50:07  sparhawk
  * Keyboardhandler added.
  *
@@ -772,6 +775,11 @@ public:
 	void					SpawnLightgemEntity(void);
 
 	/**
+	 * ProcessLightgem will trigger the actual lightgem processing.
+	 */
+	void					ProcessLightgem(idPlayer *pPlayer, bool bProcessing);
+
+	/**
 	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
 	 * to determine the lightvalue for the lightgem.
 	 */
@@ -873,6 +881,7 @@ private:
 	 * is constantly required and therfore we store it permanently.
 	 */
 	idEntity				*m_LightgemSurface;
+	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	SECURITY_ATTRIBUTES		m_saPipeSecurity;
 	PSECURITY_DESCRIPTOR	m_pPipeSD;
 
