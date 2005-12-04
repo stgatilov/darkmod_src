@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.30  2005/12/04 02:42:29  ishtvan
+ * added GetSurfName function for surface names
+ *
  * Revision 1.29  2005/11/26 17:42:45  sparhawk
  * Lightgem cleaned up
  *
@@ -260,6 +263,12 @@ public:
 	 */
 	CImage *GetImage(int Index);
 	CImage *GetImage(idStr const &Name, int &Index);
+
+	/**
+	* Lookup the name of a the surface for a given material
+	* Needed to incorporate new surface types
+	**/
+	const char *GetSurfName(const idMaterial *material);
 
 private:
 	void LoadINISettings(void *);
