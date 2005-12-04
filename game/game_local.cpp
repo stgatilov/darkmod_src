@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2005/12/04 01:14:22  ishtvan
+ * split surface types into old and new
+ *
  * Revision 1.37  2005/12/02 21:26:15  sparhawk
  * dm_lg_hud re-enabled
  *
@@ -183,11 +186,14 @@ idGame *					game = &gameLocal;	// statically pointed at an idGameLocal
 
 const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
-	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15",
+	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
+};
+
+const char *idGameLocal::newSurfaceTypes[ MAX_SURFACE_TYPES * 2 ] = {
 	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
 	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "armor", 
 	"armorleath", "climbable"
-};
+}
 
 /*
 ===========
