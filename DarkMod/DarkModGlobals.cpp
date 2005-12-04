@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.31  2005/12/04 02:41:53  ishtvan
+ * fixed surface type variable names
+ *
  * Revision 1.30  2005/11/26 17:42:45  sparhawk
  * Lightgem cleaned up
  *
@@ -1084,4 +1087,28 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 	}
 
 	RETURN_META_VALUE(Ret, pRet);
+}
+
+const char *CGlobal::GetSurfName(const idMaterial *material)
+{
+	int end;
+	idStr returnStr;
+	int surftype = material->GetSurfaceType();
+	if( surftype != SURFTYPE_15 )
+	{
+		returnStr = gameLocal.sufaceTypeNames[ surftype ];
+		goto Quit;
+	}
+
+	// return the first word of the description if it has surftype_15
+	returnStr = material->GetDescription();
+	end = returnStr.Find(' ');
+	if ( end == -1 )
+		goto Quit;
+
+	returnStr = returnStr.Left( end );
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
+
+Quit:
+	return returnStr.c_str();
 }
