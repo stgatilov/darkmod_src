@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2005/12/04 02:45:02  ishtvan
+ * fixed errors in surface variable names
+ *
  * Revision 1.19  2005/12/02 19:45:07  sparhawk
  * Lightgem update. Particle and waterreflection fixed.
  *
@@ -580,6 +583,10 @@ public:
 	int						entityDefBits;			// bits required to store an entity def number
 
 	static const char *		sufaceTypeNames[ MAX_SURFACE_TYPES ];	// text names for surface types
+	/**
+	* DarkMod: text names for new surface types
+	**/
+	static const char *		m_NewSurfaceTypes[ MAX_SURFACE_TYPES*2 ];
 
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
