@@ -22,6 +22,11 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2005/12/04 22:48:53  ishtvan
+ * *) fixed bug in setting m_bMatFailed
+ *
+ * *) AI on the same team no longer attack eachother when no relationship matrix is present
+ *
  * Revision 1.7  2005/11/19 17:26:48  sparhawk
  * LogString with macro replaced
  *
@@ -65,6 +70,7 @@ END_CLASS
 CRelations::CRelations( void )
 {
 	m_RelMat = new CMatrixSq<int>;
+	m_bMatFailed = false;
 }
 
 CRelations::~CRelations( void )
@@ -104,16 +110,19 @@ int CRelations::Size( void )
 int CRelations::GetRelNum(int i, int j)
 {
 	int returnval = 0;
-	int *pval, RelDefault;
+	int *pval;
 
 	// uncomment for debugging of relationship checks
-	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Checking relationship matrix for team %d towards team %d.\r", i, j);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Checking relationship matrix for team %d towards team %d.\r", i, j);
 	
 	// return the default and don't attempt to check the matrix if it failed to load
 	if( m_bMatFailed )
 	{
-		RelDefault = s_DefaultRelation;
-		pval = &RelDefault;
+		if( i == j )
+			returnval = s_DefaultSameTeamRel;
+		else
+			returnval = s_DefaultRelation;
+
 		goto Quit;
 	}
 	
@@ -122,7 +131,7 @@ int CRelations::GetRelNum(int i, int j)
 	if ( pval == NULL )
 	{
 		// uncomment for reporting errors when doing relationship checks
-		//DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
 		
 		returnval = s_DefaultRelation;
 		goto Quit;
@@ -347,8 +356,6 @@ Quit:
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
 		idLib::common->Warning("[AI Relations] Syntax error when parsing Worldspawn args to Relationship Manager (arg number %d from the top)\r", num);
-
-		m_bMatFailed = true;
 	}
 
 // Don't output the error if there are no matrix entries
@@ -357,8 +364,10 @@ Quit:
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("[AI Relations] (number of elements = %d, required elements = %d)\r", EntryList.Num(), (maxrow*maxrow));
 		idLib::common->Warning("[AI Relations] Logical error when parsing Worldspawn args to Relationship Manager (matrix indices are incorrect or missing)\r");
-		m_bMatFailed = true;
 	}
+
+	if ( hadSynError || hadLogicError )
+		m_bMatFailed = true;
 
 	return !(hadSynError || hadLogicError);
 }
