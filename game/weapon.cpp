@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2005/12/04 02:43:50  ishtvan
+ * updated surface checks to check new surface types
+ *
  * Revision 1.4  2005/11/20 10:38:48  ishtvan
  * added tactile alert to AI when melee hit occurs
  *
@@ -28,6 +31,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/darkmodglobals.h"
 
 /***********************************************************************
 
@@ -3033,14 +3037,16 @@ void idWeapon::Event_Melee( void ) {
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
-				} else {
+				} else 
+				{
 
+					const char *materialType;
 					int type = tr.c.material->GetSurfaceType();
-					if ( type == SURFTYPE_NONE ) {
-						type = GetDefaultSurfaceType();
-					}
 
-					const char *materialType = gameLocal.sufaceTypeNames[ type ];
+					if ( type == SURFTYPE_NONE ) 
+						materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+					else
+						materialType = g_Global.GetSurfName( tr.c.material );
 
 					// start impact sound based on material type
 					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType ) );

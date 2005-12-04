@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2005/12/04 02:44:30  ishtvan
+ * updated surface checks to check new surface types
+ *
  * Revision 1.22  2005/11/26 17:44:55  sparhawk
  * Lightgem cleaned up
  *
@@ -3400,7 +3403,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 		return;
 	}
 
-	const char *materialType = gameLocal.sufaceTypeNames[ collision.c.material->GetSurfaceType() ];
+	const char *materialType = g_Global.GetSurfName( collision.c.material );
 
 	// start impact sound based on material type
 	key = va( "snd_%s", materialType );
@@ -5597,11 +5600,14 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	dir = localDir * axis;
 
 	int type = collisionMaterial->GetSurfaceType();
+	const char *materialType;
 	if ( type == SURFTYPE_NONE ) {
-		type = GetDefaultSurfaceType();
+		materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
 	}
-
-	const char *materialType = gameLocal.sufaceTypeNames[ type ];
+	else
+	{
+		materialType = g_Global.GetSurfName( collisionMaterial );
+	}
 
 	// start impact sound based on material type
 	key = va( "snd_%s", materialType );
