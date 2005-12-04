@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/12/04 01:18:20  ishtvan
+ * removed new surface types
+ *
  * Revision 1.3  2005/11/17 09:16:38  ishtvan
  * updated surface types
  *
@@ -290,7 +293,7 @@ typedef enum {
 } contentsFlags_t;
 
 // surface types
-const int NUM_SURFACE_BITS		= 6;
+const int NUM_SURFACE_BITS		= 4;
 const int MAX_SURFACE_TYPES		= 1 << NUM_SURFACE_BITS;
 
 typedef enum {
@@ -309,28 +312,7 @@ typedef enum {
 	SURFTYPE_12,
 	SURFTYPE_13,
 	SURFTYPE_14,
-	SURFTYPE_15,
-	SURFTYPE_TILE,
-	SURFTYPE_CARPET,
-	SURFTYPE_DIRT,
-	SURFTYPE_GRAVEL,
-	SURFTYPE_GRASS,
-	SURFTYPE_ROCK,
-	SURFTYPE_TWIGS,
-	SURFTYPE_FOLIAGE,
-	SURFTYPE_SAND,
-	SURFTYPE_MUD,
-	SURFTYPE_BROKEGLASS,
-	SURFTYPE_SNOW,
-	SURFTYPE_ICE,
-	SURFTYPE_SQUEAKBOARD,
-	SURFTYPE_PUDDLE,
-	SURFTYPE_MOSS,
-	SURFTYPE_CLOTH,
-	SURFTYPE_CERAMIC,
-	SURFTYPE_ARMOR,
-	SURFTYPE_ARMORLEATH,
-	SURFTYPE_CLIMBABLE
+	SURFTYPE_15
 } surfTypes_t;
 
 // surface flags
