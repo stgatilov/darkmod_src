@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/12/05 08:47:54  ishtvan
+ * removed limit of 1.0 on linear friction
+ *
  * Revision 1.3  2005/11/12 14:59:51  sparhawk
  * SDK 1.3 Merge
  *
@@ -971,7 +974,7 @@ idPhysics_RigidBody::SetFriction
 ================
 */
 void idPhysics_RigidBody::SetFriction( const float linear, const float angular, const float contact ) {
-	if (	linear < 0.0f || linear > 1.0f ||
+	if (	linear < 0.0f ||
 			angular < 0.0f || angular > 1.0f ||
 			contact < 0.0f || contact > 1.0f ) {
 		return;
