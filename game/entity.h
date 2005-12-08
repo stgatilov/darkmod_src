@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/12/08 21:33:53  sparhawk
+ * Stim/Response files added.
+ *
  * Revision 1.12  2005/10/18 13:56:40  sparhawk
  * Lightgem updates
  *
@@ -57,6 +60,8 @@
 
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
+
+class CStimResponseCollection;
 
 /*
 ===============================================================================
@@ -559,6 +564,8 @@ protected:
 	 * in order to ensure that it is also called.
 	 */
 	deferredEntityCallback_t	m_FrobCallbackChain;
+
+	CStimResponseCollection		*m_StimResponseColl;
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object

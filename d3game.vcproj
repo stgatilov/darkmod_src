@@ -870,6 +870,12 @@
 					RelativePath=".\DarkMod\sndPropLoader.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\StimResponse.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\StimResponse.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Strip.cpp">
 				</File>
 				<File

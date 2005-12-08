@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2005/12/08 21:33:53  sparhawk
+ * Stim/Response files added.
+ *
  * Revision 1.23  2005/12/04 02:44:30  ishtvan
  * updated surface checks to check new surface types
  *
@@ -97,6 +100,7 @@
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
 #include "../darkmod/sndprop.h"
+#include "../darkmod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -514,6 +518,9 @@ idEntity::idEntity()
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
+
+	// Not every entity has a stim/response
+	m_StimResponseColl = NULL;
 }
 
 /*
