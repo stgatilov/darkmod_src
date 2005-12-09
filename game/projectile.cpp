@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2005/12/09 05:33:27  lloyd
+ * fixed bug when binding projectile to animated entity (see bindOnImpact)
+ *
  * Revision 1.6  2005/12/04 02:43:50  ishtvan
  * updated surface checks to check new surface types
  *
@@ -879,12 +882,14 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	//
 	// bind the projectile to the impact entity if necesary
 	// NOW: with special handling for the bind to AFEntity case.
+	// Lloyd: Fixed binding objects to bodies: this doesn't work for animated objects, 
+	//		need to bind to joints instead
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
 		idEntity *e = gameLocal.entities[ collision.c.entityNum ];
 
 		if( e->IsType( idAFEntity_Base::Type ) ) {
 			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
-			this->BindToBody( e, af->BodyForClipModelId( collision.c.id ), true );
+			this->BindToJoint( e, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), true );
 		}
 		else {
 			Bind( gameLocal.entities[collision.c.entityNum], true );
