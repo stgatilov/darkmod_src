@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/12/09 05:12:48  lloyd
+ * Various bug fixes (AF grabbing, mouse deadzone, mouse sensitivty, ...)
+ *
  * Revision 1.3  2005/12/02 18:21:04  lloyd
  * Objects start oriented with player
  *
@@ -80,7 +83,8 @@ class CGrabber : public idEntity {
 		idList<CGrabbedEnt>		clipList;
 
 		void					StopDrag( void );
-		
+		bool					DeadMouse( void );	// returns true if the mouse is inside the dead zone
+
 		void					Event_CheckClipList( void );
 };
 

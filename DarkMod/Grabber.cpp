@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2005/12/09 05:12:48  lloyd
+ * Various bug fixes (AF grabbing, mouse deadzone, mouse sensitivty, ...)
+ *
  * Revision 1.3  2005/12/02 18:21:04  lloyd
  * Objects start oriented with player
  *
@@ -34,8 +37,10 @@ const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
 
 const int CHECK_CLIP_LIST_INTERVAL =	1000;
 
+const int MOUSE_DEADZONE =				5;
+const float MOUSE_SCALE =				0.7f;
+
 const float MAX_PICKUP_DISTANCE =		1000.0f;
-const float MOUSE_SCALE =				1.0f;
 const float ROTATION_SPEED =			0.9f;
 const float ROTATION_DAMPER =			0.9f;
 const float MAX_ROTATION_SPEED =		30.0f;
@@ -270,49 +275,63 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	// To sum it all up...
 	//
 	// If the player holds ZOOM, make the object rotated based on mouse movement.
-	if( player->usercmd.buttons & BUTTON_ZOOM ) {
+	if( !ent->IsType( idAFEntity_Base::Type ) && player->usercmd.buttons & BUTTON_ZOOM ) {
 
 		float angle = 0.0f;
 		rotating = true;
+		
+		if( !this->DeadMouse() ) {
+			switch( this->rotationAxis ) {
+				case 1:
+					angle = idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) - MOUSE_DEADZONE;
+					if( player->usercmd.mx < this->mousePosition.x )
+						angle = -angle;
 
-		switch( this->rotationAxis ) {
-			case 1:
-				angle = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;				
-				rotationVec.Set( 1.0f, 0.0f, 0.0f );
-				this->rotationAxis = 1;
-				break;
+					rotationVec.Set( 1.0f, 0.0f, 0.0f );
+					this->rotationAxis = 1;
 
-			case 2:
-				angle = (player->usercmd.my - this->mousePosition.y) * MOUSE_SCALE;				
-				rotationVec.Set( 0.0f, 1.0f, 0.0f );
-				this->rotationAxis = 2;
-				break;
+					break;
 
-			case 3:
-				angle = (player->usercmd.mx - this->mousePosition.x) * MOUSE_SCALE;
-				rotationVec.Set( 0.0f, 0.0f, 1.0f );
-				this->rotationAxis = 3;
-				break;
+				case 2:
+					angle = idMath::Fabs( player->usercmd.my - this->mousePosition.y ) - MOUSE_DEADZONE;
+					if( player->usercmd.my < this->mousePosition.y )
+						angle = -angle;
 
-			default:
-				// wait for motion on the x-axis, if nothing, check the y-axis.
-				if( (player->usercmd.mx - this->mousePosition.x) != 0 ) {
-					// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
-					if( player->usercmd.buttons & BUTTON_RUN ) {
-						this->rotationAxis = 3;
+					rotationVec.Set( 0.0f, -1.0f, 0.0f );
+					this->rotationAxis = 2;
+
+					break;
+
+				case 3:
+					angle = idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) - MOUSE_DEADZONE;
+					if( player->usercmd.mx < this->mousePosition.x )
+						angle = -angle;
+
+					rotationVec.Set( 0.0f, 0.0f, 1.0f );
+					this->rotationAxis = 3;
+
+					break;
+
+				default:
+					// wait for motion on the x-axis, if nothing, check the y-axis.
+					if( idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) > idMath::Fabs( player->usercmd.my - this->mousePosition.y ) ) {
+						// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
+						if( player->usercmd.buttons & BUTTON_RUN ) {
+							this->rotationAxis = 3;
+						}
+						else {
+							this->rotationAxis = 1;
+						}
 					}
 					else {
-						this->rotationAxis = 1;
+						this->rotationAxis = 2;
 					}
-				}
-				else if( (player->usercmd.my - this->mousePosition.y) != 0 ) {
-					this->rotationAxis = 2;
-				}
 
-				rotationVec.Set( 0.0f, 0.0f, 0.0f );
+					rotationVec.Set( 0.0f, 0.0f, 0.0f );
+			}
 		}
 
-		angle = idMath::ClampFloat( -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, angle );
+		angle = idMath::ClampFloat( -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, angle * MOUSE_SCALE );
 
 		this->rotation.Set( vec3_origin, rotationVec * viewAxis, angle );
 		angularVelocity += this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
@@ -342,7 +361,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	}
 
 	// rotate object so it stays oriented with the player
-	if( !rotating && this->grabbedPosition != this->drag.GetDraggedPosition() ) {
+	if( !ent->IsType( idAFEntity_Base::Type ) && !rotating && this->grabbedPosition != this->drag.GetDraggedPosition() ) {
 		idVec3 dir1, dir2, normal;
 
 		dir1 = this->grabbedPosition - viewPoint;
@@ -364,6 +383,20 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	}
 
 	physics->SetAngularVelocity( angularVelocity, this->id );
+}
+
+/*
+==============
+CGrabber::DeadMouse
+==============
+*/
+bool CGrabber::DeadMouse( void ) {
+	// check mouse is in the deadzone along the x-axis or the y-axis
+	if( idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) > MOUSE_DEADZONE ||
+		idMath::Fabs( player->usercmd.my - this->mousePosition.y ) > MOUSE_DEADZONE )
+		return false;
+
+	return true;
 }
 
 /*
