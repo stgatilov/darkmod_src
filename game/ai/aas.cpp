@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2005/12/10 17:26:51  sophisticatedzombie
+ * Added 2 new functions to aas which provide information about AAS areas
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -262,3 +265,43 @@ void idAASLocal::GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const {
 	start = file->GetVertex( v[INTSIGNBITSET(edgeNum)] );
 	end = file->GetVertex( v[INTSIGNBITNOTSET(edgeNum)] );
 }
+
+
+/*
+**********************************************************8
+Added for Darkmod by SophisticatedZombie
+**********************************************************8
+*/
+
+/*
+============
+idAASLocal::GetAreaBounds
+============
+*/
+idBounds idAASLocal::GetAreaBounds( int areaNum ) const {
+	if ( !file ) 
+	{
+		idBounds emptyBounds;
+		return emptyBounds;
+	}
+	return file->AreaBounds(areaNum);
+}
+
+/*
+============
+idAASLocal::GetNumAreas
+============
+*/
+int	idAASLocal::GetNumAreas() const
+{
+	if (!file)
+	{
+		return -1;
+	}
+	else
+	{
+		return file->GetNumAreas();
+	}
+
+}
+

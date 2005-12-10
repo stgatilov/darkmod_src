@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2005/12/10 17:26:51  sophisticatedzombie
+ * Added 2 new functions to aas which provide information about AAS areas
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -125,6 +128,11 @@ public:
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const = 0;
 								// Find the nearest goal which satisfies the callback.
 	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const = 0;
+
+								// Added for DarkMod by SophisticatedZombie(DMH)
+	virtual idBounds			GetAreaBounds (int areaNum) const = 0;
+	virtual int					GetNumAreas() const = 0;
+
 };
 
 #endif /* !__AAS_H__ */
