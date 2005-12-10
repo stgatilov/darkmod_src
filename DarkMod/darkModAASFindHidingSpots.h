@@ -1,0 +1,215 @@
+
+#pragma once
+
+// Required includes
+#include "..\game\ai\aas.h"
+#include "..\game\pvs.h"
+#include "..\game\Game_local.h"
+#include "..\game\Entity.h"
+#include "..\darkMod\PVSToAASMapping.h"
+
+/*!
+* This defines hiding spot characteristics as bit flags
+*/
+typedef enum darkModHidingSpotType
+{
+	NONE_HIDING_SPOT_TYPE				= 0x00,				
+	PVS_AREA_HIDING_SPOT_TYPE			= 0x01,				// Hidden by the world geometry (ie, around a corner, through a closed portal)
+	DARKNESS_HIDING_SPOT_TYPE			= 0x02,				// Hidden by darkness
+	VISUAL_OCCLUSION_HIDING_SPOT_TYPE	= 0x04,				// Hidden by visual occlusions (objects, entities, water, etc..)
+	ANY_HIDING_SPOT_TYPE				= 0xFFFFFFFF		// Utility combination value
+
+};
+
+
+/*!
+// @structure darkModHidingSpot_t
+// @author SophisticatedAZombie (DMH)
+// This structure holds information about a hiding spot.
+*/
+typedef struct darkModHidingSpot
+{
+	aasGoal_t goal;
+
+	// The hiding spot characteristic bit flags
+	// as defined by the darkModHidingSpotType enumeration
+	int hidingSpotTypes;
+
+} darkModHidingSpot_t;
+
+/*!
+// @class darkmodAASFindHidingSpots
+// @author SophisticatedZombie (DMH)
+// 
+// This class acts similarly to an AAS goal locator, but does not use the
+// AAS callback scheme due to its single goal response system.
+// Rathewr, this creates a list of goals.  A goal is simply a place within 
+// the map. In this case, the goals found are potential hiding spots.
+//
+// This can be used both for hiding and searching behavior.
+// - An actor wishing to hide can evaluate hiding spots and choose one.
+// - An actor looking for something hiding can evaluate hiding
+//  spots in determining how to proceed.
+// 
+//
+*/
+class darkModAASFindHidingSpots
+{
+protected:
+
+
+	// The handle to the PVS system
+	pvsHandle_t h_hidePVS;
+
+	// Local PVS area list used to hold the areas we need to test further
+	int	PVSAreas[ idEntity::MAX_PVS_AREAS ];
+
+	// The position from which the entity may be hiding
+	idVec3 hideFromPosition;
+
+
+	/*!
+	* This internal method is used for finding hiding spots within an area that
+	* is visible from the hideFromPosition.
+	*
+	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
+	* @param aas Pointer to the Area Awareness System in use
+	* @param AASAreaNum The index of the AAS area being tested for hiding spots
+	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
+			searched.  The searched region is the intersection of the two.
+	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	*/
+	void FindHidingSpotsInVisibleAASArea
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots, 
+		const idAAS* aas, 
+		int AASAreaNum, 
+		idBounds searchLimits, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
+	/*!
+	* This internal method is used to test if a visible point would make a good hiding
+	* spot due to visibility occlusion or lighting.
+	*
+	* If it is a good hiding point, it is added to out_areaHidingSpots with some
+	* flags set for why it is a good hiding spot.
+	*
+	* @param testPoint The point to be tested for hiding spot characteristics
+	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	*
+	* @return An integer with the bit flags for the allowed hiding spot characteristics
+	*   that were found to be true
+	*/
+	int TestHidingPoint 
+	(
+		idVec3 testPoint, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
+	/*!
+	* The following static variables are used for rendering a debug display of
+	* hiding spot find results
+	*/
+	static idList<darkModHidingSpot_t> DebugDrawList;
+
+
+public:
+
+	/*!
+	* Constructor
+	* We use this to set up the aspects of the PVS which are used
+	* to determine visibility of adjacent areas for the actor.
+	*
+	* @param hideFromPos[in] This defines the position from which
+	*  the actor is seeking to find hiding spots.  It can be their
+	*  own positoin, when considering the general case, or the posiiton
+	*  of an entity to be avoided, in the specific case.
+	*
+	*/
+	darkModAASFindHidingSpots(const idVec3 &hideFromPos , idAAS* p_aas);
+
+	/*!
+	* Destructor
+	*/
+	virtual ~darkModAASFindHidingSpots(void);
+
+	/*!
+	* This tests for hiding spots within the given search bounds.
+	*
+	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
+	* @param aas Pointer to the Area Awareness System in use
+	* @param searchLimits The limiting bounds of the world to consider.
+	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	*
+	*/
+	virtual void FindHidingSpots
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots, 
+		const idAAS *aas, 
+		idBounds searchLimits, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
+
+	/*!
+	* This method searches within the given search bounds for hiding spots and returns
+	* a list of them as darkModHidingSpot structures.
+	*
+	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
+	* @param aas Pointer to the Area Awareness System in use
+	* @param areaNum The index of the area being tested for hiding spots
+	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
+			searched.  The searched region is the intersection of the two.
+	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	*/
+	void getNearbyHidingSpots
+	(
+		idList<darkModHidingSpot_t>& out_hidingSpots,
+		idAAS *p_aas, 
+		idBounds searchLimits, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
+
+	/*!
+	* This method clears the debug rendering hiding spot list. After this call,
+	* if debug hiding spot rendering is on, no hiding spots will be drawn until
+	* hiding spots are again added to the debug draw list.
+	*/
+	static void debugClearHidingSpotDrawList();
+
+	/*!
+	* This method appends a copy of the hiding spot list into the set of hiding
+	* spots drawn during a debug draw of the hiding spots.
+	*
+	* @param hidingSpotsToAppend The list of hiding spots to be appended to the hiding spot debug list
+	*/
+	static void debugAppendHidingSpotsToDraw (const idList<darkModHidingSpot_t>& hidingSpotsToAppend);
+
+	/*!
+	* This method renders a display of all the hiding spots in the debug draw hiding
+	* spot list. It is intended for testing of the results of the hiding spot identification algorithm
+	*
+	* @param viewLifetime: The lifetime of the debugging visualization, passed to the render world
+	*/
+	static void debugDrawHidingSpots(int viewLifetime);
+
+	/*!
+	* This method is used as a test stub for the hiding
+	* spot finding routine. It uses the LAS to find hiding spots near
+	* the player's current position
+	*/
+	static void testFindHidingSpots (idVec3 hideFromLocation, idBounds hideSearchBounds, idEntity* p_ignoreEntity, idAAS* p_aas);
+
+
+
+};
