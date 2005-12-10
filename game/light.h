@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2005/12/10 17:24:52  sophisticatedzombie
+ * Lights add themselves to and remove themselves from the LAS on initialization and destruction
+ *
  * Revision 1.8  2005/03/26 16:00:33  sparhawk
  * double changed to float
  *
@@ -188,11 +191,18 @@ private:
 	CLightMaterial	*m_LightMaterial;
 
 public:
+
 	/**
 	 * Each light also gets the maxlightradius, which determines which value
 	 * is the maximum radius for that particular light,
 	 */
 	float			m_MaxLightRadius;
+
+	/*!
+	* Darkmod LAS
+	* The area the light is in, assigned by The Dark Mod Lighting Awareness System (LAS)
+	*/
+	int LASAreaIndex;
 
 };
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2005/12/10 17:24:52  sophisticatedzombie
+ * Lights add themselves to and remove themselves from the LAS on initialization and destruction
+ *
  * Revision 1.9  2005/11/26 17:44:44  sparhawk
  * Lightgem cleaned up
  *
@@ -226,6 +229,12 @@ idLight::idLight()
 	soundWasPlaying		= false;
 	m_MaxLightRadius	= 0.0f;
 	m_LightMaterial		= NULL;
+
+	/*!
+	Darkmod LAS
+	*/
+	LASAreaIndex = -1;
+
 }
 
 /*
@@ -238,7 +247,22 @@ idLight::~idLight()
 	if ( lightDefHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( lightDefHandle );
 	}
+
+	/*!
+	* Darkmod LAS
+	*/
+	// Remove light from LAS
+	if (LASAreaIndex != -1)
+	{
+		LAS.removeLight(this);
+	}
+
+	/*!
+	Darkmod player lighting
+	*/
 	g_Global.m_DarkModPlayer->RemoveLight(this);
+
+
 }
 
 /*
