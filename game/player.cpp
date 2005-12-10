@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2005/12/10 17:25:45  sophisticatedzombie
+ * Set impulse 25 to simple test of hiding spot detection with visual feedback
+ *
  * Revision 1.37  2005/11/26 22:50:07  sparhawk
  * Keyboardhandler added.
  *
@@ -136,6 +139,7 @@
 #include "../darkmod/playerdata.h"
 #include "../darkmod/intersection.h"
 #include "../darkmod/relations.h"
+#include "../darkmod/darkModAASFindHidingSpots.h"
 
 /*
 ===============================================================================
@@ -5811,6 +5815,49 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 		}
+
+		// DarkMod: Sophisticated Zombie: For testing purposes only
+	    // This tests the hiding spot search function relative to the player
+		case IMPULSE_25:
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Attempting hiding spot test");
+			idVec3 searchOrigin = GetEyePosition();
+			idBounds searchBounds (searchOrigin);
+			
+			idVec3 forward;
+			idVec3 right;
+			viewAngles.ToVectors (&forward, &right);
+			right.Normalize();
+			forward.Normalize();
+
+			idVec3 widthPoint = searchOrigin + (right * 300.0f);
+			searchBounds.AddPoint (widthPoint);
+			idVec3 widthPoint2 = searchOrigin - (right * 300.0f);
+			searchBounds.AddPoint (widthPoint2);  
+			idVec3 endPoint = searchOrigin + (forward * 1000.0f);
+			searchBounds.AddPoint (endPoint);
+
+			// Get AAS
+			idAAS* p_aas = gameLocal.GetAAS( 0 );
+			if (p_aas != NULL)
+			{
+				darkModAASFindHidingSpots::testFindHidingSpots 
+				(
+					searchOrigin,
+					searchBounds,
+					this, // Ignore self as a hiding screen
+					p_aas
+				);
+				DM_LOG(LC_AI, LT_DEBUG).LogString("Done hiding spot test");
+			}				
+			else
+			{
+				DM_LOG(LC_AI, LT_WARNING).LogString("No default AAS is present for map");
+			}
+			
+		}
+		break;
+
 		case IMPULSE_28: {
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
 				gameLocal.mpGame.CastVote( gameLocal.localClientNum, true );
