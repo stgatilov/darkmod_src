@@ -789,6 +789,12 @@
 			<Filter
 				Name="DarkMod">
 				<File
+					RelativePath=".\DarkMod\darkModAASFindHidingSpots.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\darkModAASFindHidingSpots.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\DarkModGlobals.cpp">
 					<FileConfiguration
 						Name="Release|Win32">
@@ -799,6 +805,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\darkModLAS.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\darkModLAS.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\fdchar.cpp">
@@ -844,6 +856,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\Profile.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PVSToAASMapping.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PVSToAASMapping.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\rdline.cpp">
