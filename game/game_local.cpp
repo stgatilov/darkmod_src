@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2005/12/10 17:22:07  sophisticatedzombie
+ * Added initialization and shutdown of LAS on map start, end
+ *
  * Revision 1.39  2005/12/04 02:45:02  ishtvan
  * fixed errors in surface variable names
  *
@@ -140,6 +143,7 @@
 #include "../darkmod/relations.h"
 #include "../darkmod/sndproploader.h"
 #include "../darkmod/sndprop.h"
+#include "../darkmod/darkModLAS.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -1131,6 +1135,11 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	clip.Init();
 	pvs.Init();
 
+	/*!
+	* The Dark Mod LAS: Init the Light Awareness System
+	*/
+	LAS.initialize();
+
 	// this will always fail for now, have not yet written the map compile
 	m_sndPropLoader->CompileMap( mapFile );
 
@@ -1183,6 +1192,11 @@ void idGameLocal::LocalMapRestart( ) {
 	if ( gameSoundWorld ) {
 		gameSoundWorld->ClearAllSoundEmitters();
 	}
+
+	/*!
+	* The Dark Mod LAS: Init the LAS
+	*/
+	LAS.initialize();
 
 	// the spawnCount is reset to zero temporarily to spawn the map entities with the same spawnId
 	// if we don't do that, network clients are confused and don't show any map entities
@@ -1710,6 +1724,11 @@ void idGameLocal::MapShutdown( void ) {
 	if ( smokeParticles ) {
 		smokeParticles->Shutdown();
 	}
+
+	/*!
+	* The Dark Mod LAS: shut down the LAS
+	*/
+	LAS.shutDown();
 
 	pvs.Shutdown();
 
@@ -2500,6 +2519,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		// create a merged pvs for all players
 		SetupPlayerPVS();
+
+		// The Dark Mod
+		// 10/9/2005: SophisticatedZombie
+		// Update the Light Awareness System
+		LAS.updateLASState();
 
 		// sort the active entity list
 		SortActiveEntityList();
