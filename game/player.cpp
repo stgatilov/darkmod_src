@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2005/12/11 18:11:52  ishtvan
+ * Added m_NoViewChange, disables player view change due to mouse movement
+ *
  * Revision 1.38  2005/12/10 17:25:45  sophisticatedzombie
  * Set impulse 25 to simple test of hiding spot detection with visual feedback
  *
@@ -1237,6 +1240,7 @@ idPlayer::idPlayer() {
 	isLagged				= false;
 	isChatting				= false;
 	selfSmooth				= false;
+	m_NoViewChange			= false;
 }
 
 /*
@@ -1517,6 +1521,7 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
+	m_NoViewChange = false;
 }
 
 /*
@@ -1923,6 +1928,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( leader );
 	savefile->WriteInt( lastSpectateChange );
 	savefile->WriteInt( lastTeleFX );
+	savefile->WriteBool( m_NoViewChange );
 
 	savefile->WriteFloat( pm_stamina.GetFloat() );
 
@@ -2164,6 +2170,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( leader );
 	savefile->ReadInt( lastSpectateChange );
 	savefile->ReadInt( lastTeleFX );
+	savefile->ReadBool( m_NoViewChange );
 
 	// set the pm_ cvars
 	const idKeyValue	*kv;
@@ -5050,7 +5057,7 @@ void idPlayer::UpdateViewAngles( void ) {
 	int i;
 	idAngles delta;
 
-	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen ) ) {
+	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || m_NoViewChange) ) {
 		// no view changes at all, but we still want to update the deltas or else when
 		// we get out of this mode, our view will snap to a kind of random angle
 		UpdateDeltaViewAngles( viewAngles );

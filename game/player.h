@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2005/12/11 18:11:52  ishtvan
+ * Added m_NoViewChange, disables player view change due to mouse movement
+ *
  * Revision 1.12  2005/11/26 17:44:44  sparhawk
  * Lightgem cleaned up
  *
@@ -281,6 +284,12 @@ public:
 	* container for the player's inventory
 	*/
 	idInventory				inventory;
+
+	/**
+	* Set to true if you don't want the player's view to change
+	* during some action. (Like when mouse axes are overloaded)
+	**/
+	bool					m_NoViewChange;
 
 	idEntityPtr<idWeapon>	weapon;
 	idUserInterface *		hud;				// MP: is NULL if not local player
