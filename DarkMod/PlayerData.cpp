@@ -15,6 +15,11 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2005/12/12 02:57:33  ishtvan
+ * ammo items that are frobbed go into the D3 inventory
+ *
+ * added inventory clearing function
+ *
  * Revision 1.7  2005/11/19 17:26:48  sparhawk
  * LogString with macro replaced
  *
@@ -87,6 +92,16 @@ void CDarkModPlayer::AddEntity(idEntity *ent)
 	bool bFound = false;
 	CInventoryItem new_item;
 
+	// Ammo items get added to weapon ammo slots
+	// These are handled by D3's old inventory, so we need to call this:
+	if( ent->IsType(idItem::Type) && ent->spawnArgs.MatchPrefix("inv_ammo_", NULL) )
+	{
+		gameLocal.GetLocalPlayer()->GiveItem( static_cast<idItem *>(ent) );
+		ent->Hide();
+
+		goto Quit;
+	}
+
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	n = m_Inventory.Num();
 	for(i = 0; i < n; i++)
@@ -108,6 +123,9 @@ void CDarkModPlayer::AddEntity(idEntity *ent)
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("[%s] added to inventory (%u)\r", ent->name.c_str(), m_Inventory.Num());
 		ent->Hide();
 	}
+
+Quit:
+	return;
 }
 
 void CDarkModPlayer::SelectNext(void)
@@ -177,4 +195,17 @@ unsigned long CDarkModPlayer::RemoveLight(idLight *light)
 
 	return m_LightList.Num();
 }
+
+void CDarkModPlayer::ClearInventory(void)
+{
+	CInventoryItem inv_item;
+	m_FrobEntity = NULL;
+	
+	m_Inventory.Clear();
+
+	// The first entry in the inventory is always empty and selected by default.
+	m_Selection = 0;
+	m_Inventory.Append(inv_item);
+}
+
 
