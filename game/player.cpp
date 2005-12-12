@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2005/12/12 03:01:52  ishtvan
+ * moved grabber calls to the frob code on idEntity
+ *
  * Revision 1.39  2005/12/11 18:11:52  ishtvan
  * Added m_NoViewChange, disables player view change due to mouse movement
  *
@@ -5915,14 +5918,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
 			if(bFrob == true && frob != NULL) {
 				frob->FrobAction(true); 
-			}
-			else {
-				// if the objct is not frobbable or we've already used it then just grab it instead
-				//
-				// ** Note from Lloyd:  This is a WIP, if you want to see it you're welcome to uncomment this line.
-				// The object moves around and if you hold the ZOOM button you can rotate it using the mouse.
-				// It's buggy and the pickup distance is too far but at least you can see kind of what's going on.
-				g_Global.m_DarkModPlayer->grabber->Update( this );
 			}
 		}
 		break;
