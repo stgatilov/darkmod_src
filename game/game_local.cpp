@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2005/12/12 03:03:27  ishtvan
+ * added inventory clear inbetween maps
+ *
  * Revision 1.40  2005/12/10 17:22:07  sophisticatedzombie
  * Added initialization and shutdown of LAS on map start, end
  *
@@ -1734,6 +1737,9 @@ void idGameLocal::MapShutdown( void ) {
 
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();
+
+	// clear Dark Mod inventory
+	g_Global.m_DarkModPlayer->ClearInventory();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
