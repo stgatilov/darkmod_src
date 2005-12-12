@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2005/12/12 02:51:09  ishtvan
+ * integrated grabber into frob code
+ *
+ * temporarily disabled frobbing of AF entities until source of crash is found
+ *
  * Revision 1.24  2005/12/08 21:33:53  sparhawk
  * Stim/Response files added.
  *
@@ -5892,6 +5897,16 @@ void idEntity::LoadTDMSettings(void)
 	if(m_FrobDistance == 0)
 	{
 		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+
+		// Temporary fix for AF entities, because their spawnargs are different
+		// TODO: Figure out the best way to read frobable/not frobable from AF file
+		// For now, all AFs are frobable
+// Commented due to frob code crashing when dealing with AFEntity
+//		if( IsType( idAFEntity_Base::Type ) )
+//		{
+//				m_FrobDistance = g_Global.m_DefaultFrobDistance;
+//		}
+//		else if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
 		if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
@@ -5963,22 +5978,17 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 		goto Quit;
 
 	float param;
-	float fDistance;
 	bool bHighlight;
 	trace_t trace;
 	idVec3 start;
 	idVec3 end;
-	idVec3 v3Difference;
 
 	bHighlight = false;
 	param = 0.0f;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Player: [%s]\r", player->name.c_str());
-
-	v3Difference = player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-	fDistance = v3Difference.Length();
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u   ObjectDistance: %f\r",
-		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance, fDistance);
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u\r",
+		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance);
 
 	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
@@ -5999,14 +6009,12 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 		if(trace.fraction < 1.0f)
 		{
-			if(fDistance <= m_FrobDistance)
-			{
-				idEntity *ent = gameLocal.GetTraceEntity(trace);
-				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trace succeeded\r");
+			idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
 
-				if(ent == this)
-					bHighlight = true;
-			}
+			if(ent == this)
+				bHighlight = true;
 		}
 	}
 
@@ -6052,6 +6060,11 @@ void idEntity::FrobAction(bool bMaster)
 	if(m_FrobActionScript.Length() == 0)
 	{
 		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
+
+		// Default: grab it if it is one of the grabbable classes
+		if( IsType( idMoveable::Type ) || IsType( idAFEntity_Base::Type ) ) 
+			g_Global.m_DarkModPlayer->grabber->Update( gameLocal.GetLocalPlayer() );
+
 		return;
 	}
 
