@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2005/12/12 05:23:05  ishtvan
+ * *) frobaction no longer called on hidden items
+ *
+ * *) frob entity variable reset to NULL in that frame after frob action is called
+ *
  * Revision 1.25  2005/12/12 02:51:09  ishtvan
  * integrated grabber into frob code
  *
@@ -182,10 +187,15 @@ const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 #ifdef MOD_WATERPHYSICS
+
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
+
 const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
+
 #endif      // MOD_WATERPHYSICS
+
 const idEventDef EV_CopyBind( "copyBind", "e", NULL );
+
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetName,				idEntity::Event_GetName )
@@ -252,10 +262,15 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
 #ifdef MOD_WATERPHYSICS
+
 	EVENT( EV_GetMass,              idEntity::Event_GetMass )
+
 	EVENT( EV_IsInLiquid,           idEntity::Event_IsInLiquid )
+
 #endif		// MOD_WATERPHYSICS
+
 	EVENT( EV_CopyBind,				idEntity::Event_CopyBind )
+
 END_CLASS
 
 /*
@@ -757,8 +772,11 @@ void idEntity::Save( idSaveGame *savefile ) const
 	}
 
 	entityFlags_s flags = fl;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
+
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -835,6 +853,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
+
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
@@ -4957,48 +4976,90 @@ void idEntity::Event_SetNeverDormant( int enable ) {
 }
 
 #ifdef MOD_WATERPHYSICS
-/*
-================
-idEntity::Event_GetMass		MOD_WATERPHYSICS
-================
-*/
-void idEntity::Event_GetMass( int id ) {
-	idThread::ReturnFloat(physics->GetMass(id));
-}
 
 /*
+
 ================
-idEntity::Event_IsInLiquid	MOD_WATERPHYSICS
+
+idEntity::Event_GetMass		MOD_WATERPHYSICS
+
 ================
+
 */
-void idEntity::Event_IsInLiquid( void ) {
-	idThread::ReturnInt(physics->GetWater() != NULL);
+
+void idEntity::Event_GetMass( int id ) {
+
+	idThread::ReturnFloat(physics->GetMass(id));
+
 }
+
+
+
+/*
+
+================
+
+idEntity::Event_IsInLiquid	MOD_WATERPHYSICS
+
+================
+
+*/
+
+void idEntity::Event_IsInLiquid( void ) {
+
+	idThread::ReturnInt(physics->GetWater() != NULL);
+
+}
+
 #endif		// MOD_WATERPHYSICS
 
+
 /*
+
 ================
+
 idEntity::Event_CopyBind
+
 ================
+
 */
+
 void idEntity::Event_CopyBind( idEntity *other ) {
+
 	idEntity *master = other->GetBindMaster();
+
 	jointHandle_t joint = other->GetBindJoint();
+
 	int body = other->GetBindBody();
 
+
+
 	if( joint != INVALID_JOINT ) {
+
 		// joint is specified so bind to that joint
+
 		this->BindToJoint( master, joint, true );
+
 	}
+
 	else if( body >= 0 ) { 
+
 		// body is specified so bind to it
+
 		this->BindToBody( master, body, true );
+
 	}
+
 	else {
+
 		// no joint and no body specified to bind to master
+
 		this->Bind( master, true );
+
 	}
+
 }
+
 
 /***********************************************************************
 
@@ -6057,6 +6118,9 @@ void idEntity::FrobAction(bool bMaster)
 {
 	idEntity *ent;
 
+	if( IsHidden() )
+		goto Quit;
+
 	if(m_FrobActionScript.Length() == 0)
 	{
 		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
@@ -6065,7 +6129,7 @@ void idEntity::FrobAction(bool bMaster)
 		if( IsType( idMoveable::Type ) || IsType( idAFEntity_Base::Type ) ) 
 			g_Global.m_DarkModPlayer->grabber->Update( gameLocal.GetLocalPlayer() );
 
-		return;
+		goto Quit;
 	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("This: [%s]   Master: %08lX (%u)\r", name.c_str(), m_MasterFrob.c_str(), bMaster);
@@ -6106,11 +6170,19 @@ void idEntity::FrobAction(bool bMaster)
 			idThread *pThread = new idThread(pScriptFkt);
 			pThread->CallFunction(this, pScriptFkt, true);
 			pThread->DelayedStart(0);
+
 			StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 		}
 		else
 			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] FrobActionScript not found! %08lX->[%s] (%u)\r", name.c_str(), pScriptFkt, m_FrobActionScript.c_str(), bMaster);
 	}
+
+Quit:
+	
+	// clear the frob entity for now, it will get set the next frame if this object
+	// is still here and the player is still looking at it.
+	g_Global.m_DarkModPlayer->m_FrobEntity = NULL;
+	return;
 }
 
 void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
