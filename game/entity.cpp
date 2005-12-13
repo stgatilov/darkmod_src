@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2005/12/13 18:18:05  ishtvan
+ * frob distance check updates
+ *
  * Revision 1.26  2005/12/12 05:23:05  ishtvan
  * *) frobaction no longer called on hidden items
  *
@@ -538,6 +541,7 @@ idEntity::idEntity()
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
+	m_bWithinFrobDist = false;
 
 	// Not every entity has a stim/response
 	m_StimResponseColl = NULL;
@@ -5972,6 +5976,10 @@ void idEntity::LoadTDMSettings(void)
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
 
+	// update the max frobdistance if necessary
+	if( m_FrobDistance > g_Global.m_MaxFrobDistance )
+		g_Global.m_MaxFrobDistance = m_FrobDistance;
+
 	// Override the frob action script to apply custom events to 
 	// specific entities.
 	if(spawnArgs.GetString("frob_action_script", "", str))
@@ -6035,8 +6043,12 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 	pDM = g_Global.m_DarkModPlayer;
 
 	// If we have no player there is no point in doing this. :)
-	if(player == NULL || pDM == NULL)
+	// also quit if we are not within the player's frobbing range (set in idPlayer::Think)
+	if(player == NULL || pDM == NULL || !m_bWithinFrobDist)
 		goto Quit;
+
+	// set m_bWithinFrobDist back to false for next frame
+	ToggleWithinFrobDist();
 
 	float param;
 	bool bHighlight;
@@ -6234,4 +6246,14 @@ void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
 bool idEntity::UsedBy(idEntity *ent)
 {
 	return false;
+}
+
+void idEntity::ToggleWithinFrobDist( void )
+{
+	m_bWithinFrobDist = !m_bWithinFrobDist;
+}
+
+bool idEntity::IsWithinFrobDist( void )
+{
+	return m_bWithinFrobDist;
 }
