@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.32  2005/12/13 18:19:40  ishtvan
+ * added m_MaxFrobDistance for frob distance cube around player
+ *
  * Revision 1.31  2005/12/04 02:41:53  ishtvan
  * fixed surface type variable names
  *
@@ -242,6 +245,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_MOVEMENT] = false;
 
 	m_DefaultFrobDistance = 100.0f;
+	m_MaxFrobDistance = 0;
 	m_LogClass = LC_SYSTEM;
 	m_LogType = LT_DEBUG;
 	m_Filename = "undefined";
@@ -380,12 +384,20 @@ void CGlobal::Init()
 	PROFILE_HANDLE *pfh = NULL;
 
 	// Do we need this on Linux as well? I guess not, because in linux the targetdirectory can be
+
 	// redericted by a link. This has to be tested though but should be no problem.
+
 #ifdef _WINDOWS_
+
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
+
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
+
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);
+
 #endif
+
+
 
 	GetModName();
 
@@ -924,17 +936,27 @@ bool CImage::LoadImage(HANDLE &Handle)
 			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
 			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
+
 			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", Handle);
 
 			dwBufSize = DARKMOD_LG_RENDERPIPE_BUFSIZE;
+
 			BufLen = 0;
+
 			while(1)
+
 			{
+
 				ReadFile(Handle, // handle to pipe
+
 					&pipe_buf[BufLen],						// buffer to receive data
+
 					dwBufSize,								// size of buffer
+
 					&cbBytesRead,							// number of bytes read
+
 					NULL);									// not overlapped I/O
+
 				dwLastError = GetLastError();
 				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu (%08lX) %lu\r", cbBytesRead, Handle, BufLen, m_Image, dwLastError);
 
@@ -950,6 +972,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					goto Quit;
 				}
 			}
+
 
 			if(BufLen > m_BufferLength || m_Image == NULL)
 			{

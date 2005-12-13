@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.32  2005/12/13 18:19:40  ishtvan
+ * added m_MaxFrobDistance for frob distance cube around player
+ *
  * Revision 1.31  2005/12/10 17:18:58  sophisticatedzombie
  * Added header references for LAS and hding spot detection
  *
@@ -312,9 +315,14 @@ public:
 	*/
 
 	/*!
-	* Maximum distance of reach for frobbing
+	* Default distance of reach for frobbing
 	*/
 	float m_DefaultFrobDistance;
+
+	/**
+	* Maximum distance of reach for frobbing (updated based on map objects)
+	**/
+	float m_MaxFrobDistance;
 
 	/*!
 	* Arm length for mantling
