@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2005/12/13 18:44:17  ishtvan
+ * fixed frob distance check to center around player's eyes, not feet
+ *
  * Revision 1.41  2005/12/13 18:18:05  ishtvan
  * frob distance check updates
  *
@@ -6900,7 +6903,7 @@ void idPlayer::Think( void )
 	}
 
 	// Check for entities within max frobdistance and toggle them for frobbing
-	idBounds FrobBounds( physicsObj.GetOrigin() );
+	idBounds FrobBounds( GetEyePosition() );
 	FrobBounds.ExpandSelf( g_Global.m_MaxFrobDistance );
 	idEntity *FrobRangeEnts[ MAX_GENTITIES ];
 
