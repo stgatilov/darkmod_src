@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2005/12/15 04:06:06  ishtvan
+ * temporary ModelCallback fix for frobable AFs
+ *
  * Revision 1.27  2005/12/13 18:18:05  ishtvan
  * frob distance check updates
  *
@@ -5966,13 +5969,12 @@ void idEntity::LoadTDMSettings(void)
 		// Temporary fix for AF entities, because their spawnargs are different
 		// TODO: Figure out the best way to read frobable/not frobable from AF file
 		// For now, all AFs are frobable
-// Commented due to frob code crashing when dealing with AFEntity
-//		if( IsType( idAFEntity_Base::Type ) )
-//		{
-//				m_FrobDistance = g_Global.m_DefaultFrobDistance;
-//		}
-//		else if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
-		if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+
+		if( IsType( idAFEntity_Base::Type ) )
+		{
+				m_FrobDistance = g_Global.m_DefaultFrobDistance;
+		}
+		else if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
 
@@ -6120,6 +6122,11 @@ Quit:
 				bRc = true;
 		}
 	}
+
+// FIXME / TODO: This should be unnecessary, but FrobCallbackChain, which should contain
+// idEntity::ModelCallback, is not getting called on AFs
+	if( IsType( idAFEntity_Base::Type ) )
+		ModelCallback(pRenderEntity, pRenderView);
 
 	return bRc;
 }
