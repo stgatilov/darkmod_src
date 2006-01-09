@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/01/09 04:36:28  ishtvan
+ * made Event_CopyBind protected instead of private
+ *
  * Revision 1.14  2005/12/13 18:18:05  ishtvan
  * frob distance check updates
  *
@@ -535,7 +538,13 @@ public:
 	* with the unmodified global definition.
 	**/
 	void PropSoundDirect( const char *sndName, bool bForceLocal = false, 
-						  bool bAssumeEnv = false );	
+						  bool bAssumeEnv = false );
+
+protected:
+	/**
+	* Bind to the same object that the "other" argument is bound to
+	**/
+	void					Event_CopyBind( idEntity *other );
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
@@ -689,7 +698,6 @@ private:
 	void					Event_GetMass( int body );	// MOD_WATERPHYSICS
 	void					Event_IsInLiquid( void );	// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
-	void					Event_CopyBind( idEntity *other );
 };
 
 /*
