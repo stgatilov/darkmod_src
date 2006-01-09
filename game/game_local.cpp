@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2006/01/09 05:12:58  ishtvan
+ * no message
+ *
  * Revision 1.42  2006/01/09 04:29:17  ishtvan
  * added new surface type straw
  *
@@ -205,7 +208,7 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 const char *idGameLocal::m_NewSurfaceTypes[ MAX_SURFACE_TYPES * 2 ] = {
 	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
 	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "slate",
-	"straw, "armor_leath", "armor_chain", "armor_plate", "climbable"
+	"straw", "armor_leath", "armor_chain", "armor_plate", "climbable"
 };
 
 /*
@@ -435,26 +438,44 @@ void idGameLocal::Clear( void )
 	savedEventQueue.Init();
 	memset( lagometer, 0, sizeof( lagometer ) );
 
+
+
 	portalSkyEnt			= NULL;
+
 	portalSkyActive			= false;
+
 	m_KeyboardHook			= NULL;
 
+
+
 //	ResetSlowTimeVars();
+
 #ifdef _WINDOWS_
 	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
+
 	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+
 	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
+
 	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
+
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
+
 	m_saPipeSecurity.bInheritHandle = FALSE;
+
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+
 #endif
+
 
 	for(i = 0; i < IR_COUNT; i++)
 	{
 		m_KeyData[i].KeyState = KS_FREE;
+
 		m_KeyData[i].Impulse = -1;
+
 	}
+
 }
 
 /*
@@ -763,7 +784,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteFloat( clientSmoothing );
 
 	portalSkyEnt.Save( &savegame );
+
 	savegame.WriteBool( portalSkyActive );
+
+
 
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
@@ -1003,6 +1027,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 
 	if ( modifiedInfo ) {
 		assert( canModify );
+
 		newInfo = idGameLocal::userInfo[ clientNum ];
 		return &newInfo;
 	}
@@ -1120,7 +1145,10 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	nextGibTime		= 0;
 
 	portalSkyEnt			= NULL;
+
 	portalSkyActive			= false;
+
+
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
@@ -1596,7 +1624,10 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadFloat( clientSmoothing );
 
 	portalSkyEnt.Restore( &savegame );
+
 	savegame.ReadBool( portalSkyActive );
+
+
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -2263,22 +2294,39 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			playerConnectedAreas = newPVS;
 		}
 
+
 		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
+
 		if ( portalSkyEnt.GetEntity() ) {
+
 			idEntity *skyEnt = portalSkyEnt.GetEntity();
 
-			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
-			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
-			pvs.FreeCurrentPVS( playerPVS );
-			pvs.FreeCurrentPVS( otherPVS );
-			playerPVS = newPVS;
+
 
 			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
-			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
-			pvs.FreeCurrentPVS( playerConnectedAreas );
+
+			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
+
+			pvs.FreeCurrentPVS( playerPVS );
+
 			pvs.FreeCurrentPVS( otherPVS );
+
+			playerPVS = newPVS;
+
+
+
+			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+
+			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
+
+			pvs.FreeCurrentPVS( playerConnectedAreas );
+
+			pvs.FreeCurrentPVS( otherPVS );
+
 			playerConnectedAreas = newPVS;
+
 		}
+
 	}
 }
 
@@ -4642,108 +4690,212 @@ void idGameLocal::ThrottleUserInfo( void ) {
 }
 
 /*
+
 =================
+
 idPlayer::SetPortalSkyEnt
+
 =================
+
 */
+
 void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
+
 	portalSkyEnt = ent;
+
 }
 
+
+
 /*
+
 =================
+
 idPlayer::IsPortalSkyAcive
+
 =================
+
 */
+
 bool idGameLocal::IsPortalSkyAcive() {
+
 	return portalSkyActive;
+
 }
 
+
+
 /*
+
 ===========
+
 idGameLocal::SelectTimeGroup
+
 ============
+
 */
+
 void idGameLocal::SelectTimeGroup( int timeGroup ) { }
 
+
+
 /*
+
 ===========
+
 idGameLocal::GetTimeGroupTime
+
 ============
+
 */
+
 int idGameLocal::GetTimeGroupTime( int timeGroup ) {
+
 	return gameLocal.time;
+
 }
 
+
+
 /*
+
 ===========
+
 idGameLocal::GetBestGameType
+
 ============
+
 */
+
 idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
+
 	return gametype;
+
 }
 
+
+
 /*
+
 ===========
+
 idGameLocal::NeedRestart
+
 ============
+
 */
+
 bool idGameLocal::NeedRestart() {
 
+
+
 	idDict		newInfo;
+
 	const idKeyValue *keyval, *keyval2;
+
+
 
 	newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
 
+
+
 	for ( int i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
+
 		keyval = newInfo.GetKeyVal( i );
+
 		keyval2 = serverInfo.FindKey( keyval->GetKey() );
+
 		if ( !keyval2 ) {
+
 			return true;
+
 		}
+
 		// a select set of si_ changes will cause a full restart of the server
+
 		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
+
 			return true;
+
 		}
+
 	}
+
 	return false;
+
 }
 
+
+
 /*
+
 ================
+
 idGameLocal::GetClientStats
+
 ================
+
 */
+
 void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
+
 	mpGame.PlayerStats( clientNum, data, len );
+
 }
 
 
+
+
+
 /*
+
 ================
+
 idGameLocal::SwitchTeam
+
 ================
+
 */
+
 void idGameLocal::SwitchTeam( int clientNum, int team ) {
 
+
+
 	idPlayer *   player;
+
 	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
 
+
+
 	if ( !player )
+
 		return;
+
+
 
 	int oldTeam = player->team;
 
+
+
 	// Put in spectator mode
+
 	if ( team == -1 ) {
+
 		static_cast< idPlayer * >( entities[ clientNum ] )->Spectate( true );
+
 	}
+
 	// Switch to a team
+
 	else {
+
 		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
+
 	}
+
 }
+
+
 
 void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
 {
@@ -4879,25 +5031,41 @@ HANDLE idGameLocal::CreateRenderPipe(int timeout)
 {
 #ifdef _WINDOWS_
 	return CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
+
 		PIPE_ACCESS_DUPLEX,				// read/write access
+
 		PIPE_TYPE_MESSAGE |				// message type pipe
+
 		PIPE_READMODE_MESSAGE |			// message-read mode
+
 		PIPE_WAIT,						// blocking mode
+
 		PIPE_UNLIMITED_INSTANCES,		// max. instances
+
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// output buffer size
+
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// input buffer size
+
 		timeout,						// client time-out
+
 		&m_saPipeSecurity);				// no security attribute
+
 #endif
+
 }
 
 void idGameLocal::CloseRenderPipe(HANDLE &hPipe)
 {
 	if(hPipe != INVALID_HANDLE_VALUE)
+
 	{
+
 		CloseHandle(hPipe);
+
 		hPipe = INVALID_HANDLE_VALUE;
+
 	}
+
 }
 
 float idGameLocal::CalcLightgem(idPlayer *player)
@@ -5072,6 +5240,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			{
 				renderSystem->CaptureRenderToFile(name);
 				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+
 			}
 			renderSystem->UnCrop();
 
