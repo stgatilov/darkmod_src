@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2006/01/09 04:29:17  ishtvan
+ * added new surface type straw
+ *
  * Revision 1.41  2005/12/12 03:03:27  ishtvan
  * added inventory clear inbetween maps
  *
@@ -202,7 +205,7 @@ const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
 const char *idGameLocal::m_NewSurfaceTypes[ MAX_SURFACE_TYPES * 2 ] = {
 	"tile", "carpet", "dirt", "gravel", "grass", "rock", "twigs", "foliage", "sand", "mud",
 	"brokeglass", "snow", "ice", "squeakboard", "puddle", "moss", "cloth", "ceramic", "slate",
-	"armor_leath", "armor_chain", "armor_plate", "climbable"
+	"straw, "armor_leath", "armor_chain", "armor_plate", "climbable"
 };
 
 /*
