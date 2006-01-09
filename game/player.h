@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/01/09 04:30:33  ishtvan
+ * added getEyePos script event more exact than one on idActor
+ *
  * Revision 1.13  2005/12/11 18:11:52  ishtvan
  * Added m_NoViewChange, disables player view change due to mouse movement
  *
@@ -760,6 +763,7 @@ private:
 /**
 * DarkMod Events
 **/
+	void					Event_GetEyePos( void );
 
 };
 

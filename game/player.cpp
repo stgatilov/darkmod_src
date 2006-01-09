@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.44  2006/01/09 04:30:33  ishtvan
+ * added getEyePos script event more exact than one on idActor
+ *
  * Revision 1.43  2005/12/15 04:15:47  ishtvan
  * fixed being able to frob things while holding something in your hands
  *
@@ -206,6 +209,7 @@ const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
 const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
+const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -227,6 +231,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
 	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
+	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -9296,4 +9301,14 @@ float idPlayer::GetMovementVolMod( void )
 	}
 
 	return returnval;
+}
+
+/*
+=====================
+idPlayer::Event_GetEyePos
+=====================
+*/
+void idPlayer::Event_GetEyePos( void )
+{
+	idThread::ReturnVector( firstPersonViewOrigin );
 }
