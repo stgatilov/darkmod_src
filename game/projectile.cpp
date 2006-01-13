@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/01/13 04:08:56  ishtvan
+ * added spawning of projectile result objects when appropriate
+ *
  * Revision 1.7  2005/12/09 05:33:27  lloyd
  * fixed bug when binding projectile to animated entity (see bindOnImpact)
  *
@@ -38,6 +41,7 @@
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
+#include "../darkmod/ProjectileResult.h"
 
 /*
 ===============================================================================
@@ -778,9 +782,11 @@ idProjectile::Explode
 */
 void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	const char *fxname, *light_shader, *sndExplode;
+	idStr		SurfTypeName;
 	float		light_fadetime;
-	idVec3		normal;
+	idVec3		normal, tempVel, tempAngVel;
 	int			removeTime;
+	bool		bActivated;
 
 	if ( state == EXPLODED || state == FIZZLED ) {
 		return;
@@ -788,6 +794,13 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// stop sound
 	StopSound( SND_CHANNEL_BODY2, false );
+
+	// DarkMod: Check material list to see if it's activated
+	SurfTypeName = g_Global.GetSurfName( collision.c.material );
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s \r", SurfTypeName.c_str() );
+
+	bActivated = TestActivated( SurfTypeName.c_str() );
+// TODO: Add spawnarg option to only play explode sound and explode light on activate
 
 	// play explode sound
 	switch ( ( int ) damagePower ) {
@@ -866,6 +879,10 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		BecomeActive( TH_THINK );
 	}
 
+	// store the last known velocity and angular velocity for later use
+	tempVel = GetPhysics()->GetLinearVelocity();
+	tempAngVel = GetPhysics()->GetAngularVelocity();
+
 	fl.takedamage = false;
 	physicsObj.SetContents( 0 );
 	physicsObj.PutToRest();
@@ -875,9 +892,6 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	if ( gameLocal.isClient ) {
 		return;
 	}
-
-	// alert the ai
-	gameLocal.AlertAI( owner.GetEntity() );
 
 	//
 	// bind the projectile to the impact entity if necesary
@@ -953,6 +967,48 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 				debris->Create( owner.GetEntity(), physicsObj.GetOrigin(), dir.ToMat3() );
 				debris->Launch();
 			}
+		}
+	}
+
+	// DarkMod: Spawn projectile result entity
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Checking projectile result:\r" );
+	if( spawnArgs.GetBool( "has_result", "0" ) )
+	{
+		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Has_result set to true\r" );
+		const char* resultName = spawnArgs.GetString("result_object");
+
+		const idDict *resultDef = gameLocal.FindEntityDefDict( resultName, false );
+		if( resultDef )
+		{
+			idEntity *ent2;
+
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Result object found for projectile %s\r", name.c_str());
+
+			gameLocal.SpawnEntityDef( *resultDef, &ent2, false );
+			if ( !ent2 || !ent2->IsType( CProjectileResult::Type ) ) 
+			{
+				DM_LOG(LC_WEAPON, LT_ERROR)LOGSTRING("Projectile %s has a non projectile result entity in projectile_result.\r", name.c_str());
+				gameLocal.Error( "'projectile_result' is not a CProjectileResult" );
+			}
+
+			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Spawned projectile result\r" );
+
+			CProjectileResult *result = static_cast<CProjectileResult *>( ent2 );
+
+			// Populate the data object to pass to the projectile result object
+			SFinalProjData DataIn;
+			
+			DataIn.FinalOrigin = collision.endpos;
+			DataIn.FinalAxis = GetPhysics()->GetAxis();
+			DataIn.LinVelocity = tempVel;
+			DataIn.AngVelocity = tempAngVel;
+			// rotate the axial direction by the axis to get world direction vector
+			DataIn.AxialDir = DataIn.FinalAxis * spawnArgs.GetVector( "axial_dir", "0 0 1" );
+			DataIn.mass = GetPhysics()->GetMass();
+			DataIn.SurfaceType = SurfTypeName;
+
+			// Set up the projectile result with the last known results of the projectile
+			result->Init( &DataIn, collision, this, bActivated );
 		}
 	}
 
@@ -1231,6 +1287,51 @@ bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg 
 		}
 	}
 	return false;
+}
+
+/*
+================
+idProjectile::TestActivated
+DarkMod Addition
+================
+*/
+
+bool idProjectile::TestActivated( const char *typeName ) 
+{
+	bool		bReturnVal(false), bAssumeActive(false);
+	idStr		MaterialsList;
+
+	if( !spawnArgs.GetBool( "assume_active", "0" ) )
+	{
+		if( !spawnArgs.GetString( "active_surfaces", "", MaterialsList )
+			|| !typeName )
+		{
+			// return false if the surfaces list is blank
+			goto Quit;
+		}
+	}
+	else
+	{
+		bAssumeActive = true;
+
+		if( !spawnArgs.GetString( "dud_surfaces", "", MaterialsList )
+			|| !typeName )
+		{
+			// return true if the surfaces list is blank and we assume active
+			// (returns false && false)
+			goto Quit;
+		}
+	}
+
+	// pad front and back with spaces for unique name searching
+	MaterialsList.Insert(' ', 0 );
+	MaterialsList.Append(' ');
+
+	bReturnVal = ( MaterialsList.Find( va(" %s ", typeName) ) != -1 );
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("TestActive: Searched for A %s A in list A %s A\r", va(" %s ", typeName), MaterialsList.c_str());
+
+Quit:
+	return bReturnVal && !bAssumeActive;
 }
 
 /*
@@ -1972,7 +2073,7 @@ void idBFGProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVe
 
 /*
 ================
-idProjectile::Event_RemoveBeams
+idBFGProjectile::Event_RemoveBeams
 ================
 */
 void idBFGProjectile::Event_RemoveBeams() {
@@ -1982,7 +2083,7 @@ void idBFGProjectile::Event_RemoveBeams() {
 
 /*
 ================
-idProjectile::Explode
+idBFGProjectile::Explode
 ================
 */
 void idBFGProjectile::Explode( const trace_t &collision, idEntity *ignore ) {

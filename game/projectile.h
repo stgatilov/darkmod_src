@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/01/13 04:08:56  ishtvan
+ * added spawning of projectile result objects when appropriate
+ *
  * Revision 1.2  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -20,6 +23,55 @@
 
 #ifndef __GAME_PROJECTILE_H__
 #define __GAME_PROJECTILE_H__
+
+/**
+* SFinalProjData: Structure storing the final projectile data at impact
+* Passed on to CProjectileResult object
+**/
+typedef struct SFinalProjData_s
+{
+	/**
+	* Final world position of the origin of the projectile on impact
+	**/
+	idVec3	FinalOrigin;
+
+	/**
+	* Final orientation of the projectile on impact
+	**/
+	idMat3	FinalAxis;
+
+	/**
+	* Final linear velocity of the projectile just before impact
+	**/
+	idVec3	LinVelocity;
+
+	/**
+	* Final angular velocity of the projectile just before impact
+	**/
+	idVec3	AngVelocity;
+
+	/**
+	* Direction vector for the axis of the arrow.  Needed for pushing it in.
+	**/
+	idVec3	AxialDir;
+
+	/**
+	* Max Angle of incidence when projectile hits surface
+	* (Calculated in CProjectileResult::Init )
+	**/
+	float IncidenceAngle;
+
+	/**
+	* Mass of the projectile (might be useful)
+	**/
+	float mass;
+
+	/**
+	* Name of the surface that was struck
+	**/
+	const char		*SurfaceType;
+
+} SFinalProjData;
 
 /*
 ===============================================================================
@@ -108,6 +160,14 @@ protected:
 	} projectileState_t;
 	
 	projectileState_t		state;
+
+protected:
+	/**
+	* Determine whether the projectile "activates" based on the surface type argument
+	* This checks a space-delimited spawnarg list of activating materials and
+	* returns true if the struck material activates this projectile
+	**/
+	bool TestActivated( const char *typeName );
 
 private:
 	bool					netSyncPhysics;
@@ -252,7 +312,6 @@ private:
 	const idDeclParticle *	smokeFly;
 	int						smokeFlyTime;
 	const idSoundShader *	sndBounce;
-
 
 	void					Event_Explode( void );
 	void					Event_Fizzle( void );
