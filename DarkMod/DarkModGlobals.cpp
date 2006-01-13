@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.33  2006/01/13 04:24:53  ishtvan
+ * commented out some unnecessary logging in GetSurfTypeName
+ *
  * Revision 1.32  2005/12/13 18:19:40  ishtvan
  * added m_MaxFrobDistance for frob distance cube around player
  *
@@ -1130,8 +1133,8 @@ const char *CGlobal::GetSurfName(const idMaterial *material)
 		goto Quit;
 
 	returnStr = returnStr.Left( end );
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
 
 Quit:
+//	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
 	return returnStr.c_str();
 }
