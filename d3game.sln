@@ -1,39 +1,35 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "d3game.vcproj", "{49BEC5C6-B964-417A-851E-808886B57430}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idLib", "idlib.vcproj", "{49BEC5C6-B964-417A-851E-808886B57400}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Debug with inlines = Debug with inlines
-		Debug with inlines and memory log = Debug with inlines and memory log
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug with inlines and memory log|Win32 = Debug with inlines and memory log|Win32
+		Debug with inlines|Win32 = Debug with inlines|Win32
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug.ActiveCfg = Debug|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug.Build.0 = Debug|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines.ActiveCfg = Debug with inlines|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines.Build.0 = Debug with inlines|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines and memory log.ActiveCfg = Debug with inlines and memory log|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines and memory log.Build.0 = Debug with inlines and memory log|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Release.ActiveCfg = Release|Win32
-		{49BEC5C6-B964-417A-851E-808886B57430}.Release.Build.0 = Release|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug.ActiveCfg = Debug|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug.Build.0 = Debug|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines.ActiveCfg = Debug with inlines|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines.Build.0 = Debug with inlines|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines and memory log.ActiveCfg = Debug with inlines and memory log|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines and memory log.Build.0 = Debug with inlines and memory log|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Release.ActiveCfg = Release|Win32
-		{49BEC5C6-B964-417A-851E-808886B57400}.Release.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines and memory log|Win32.ActiveCfg = Debug with inlines and memory log|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines and memory log|Win32.Build.0 = Debug with inlines and memory log|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines|Win32.ActiveCfg = Debug with inlines|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug with inlines|Win32.Build.0 = Debug with inlines|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug|Win32.ActiveCfg = Debug|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Debug|Win32.Build.0 = Debug|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Release|Win32.ActiveCfg = Release|Win32
+		{49BEC5C6-B964-417A-851E-808886B57430}.Release|Win32.Build.0 = Release|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines and memory log|Win32.ActiveCfg = Debug with inlines and memory log|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines and memory log|Win32.Build.0 = Debug with inlines and memory log|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines|Win32.ActiveCfg = Debug with inlines|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug with inlines|Win32.Build.0 = Debug with inlines|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug|Win32.ActiveCfg = Debug|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Debug|Win32.Build.0 = Debug|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Release|Win32.ActiveCfg = Release|Win32
+		{49BEC5C6-B964-417A-851E-808886B57400}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
