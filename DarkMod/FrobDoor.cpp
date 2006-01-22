@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/01/22 09:20:24  ishtvan
+ * rewrote to match new soundprop interface
+ *
  * Revision 1.9  2005/12/14 23:20:18  ishtvan
  * rotation relative to orientation bugfix
  *
@@ -52,6 +55,7 @@
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"
 #include "FrobDoor.h"
+#include "sndProp.h"
 
 // TODO: A parameter must be added to translate doors. Currently they
 // can be only rotated when they are opened.
@@ -355,6 +359,9 @@ void CFrobDoor::Open(bool bMaster)
 
 			// Open visportal
 			Event_OpenPortal();
+
+			// Update soundprop
+			UpdateSoundLoss();
 		}
 	}
 }
@@ -486,10 +493,10 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 	return bRc;
 }
 
-float CFrobDoor::GetSoundLoss(void)
+void CFrobDoor::UpdateSoundLoss(void)
 {
-	float returnval;
-	bool bDoubleOpen(false);
+	float SetVal(0.0f);
+	bool bDoubleOpen(true);
 
 	if( m_DoubleDoor )
 		bDoubleOpen = m_DoubleDoor->m_Open;
@@ -497,16 +504,24 @@ float CFrobDoor::GetSoundLoss(void)
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
 
-	if (m_Open == true || bDoubleOpen)
+	if (m_Open && bDoubleOpen)
 	{
-		returnval = 1;
+		SetVal = spawnArgs.GetFloat( "loss_open", "1.0");
+	}
+	else if (m_Open && !bDoubleOpen)
+	{
+		SetVal = spawnArgs.GetFloat( "loss_double_open", "1.0");
 	}
 	else
 	{
-		returnval = 15;
+		SetVal = spawnArgs.GetFloat( "loss_closed", "15.0");
 	}
-
-	return returnval;
+	
+	// NOTE: areaPortal is a member var of idMover that stores the portal handle
+	if ( areaPortal ) 
+	{
+		gameLocal.m_sndProp->SetPortalLoss( areaPortal, SetVal );
+	}
 }
 
 void CFrobDoor::DoneRotating(void)
@@ -542,6 +557,9 @@ void CFrobDoor::DoneRotating(void)
 	}
 
 Quit:
+	
+	UpdateSoundLoss();
+
 	return;
 }
 

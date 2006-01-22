@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/01/22 09:20:24  ishtvan
+ * rewrote to match new soundprop interface
+ *
  * Revision 1.7  2005/09/29 04:03:08  ishtvan
  * added support for double doors
  *
@@ -72,7 +75,11 @@ public:
 
 	bool					UsedBy(idEntity *);
 
-	float					GetSoundLoss(void);
+	/**
+	* Write the proper sound loss value to the soundprop portal data
+	* Called when door spawns, is and when it is opened or closed
+	**/
+	void					UpdateSoundLoss(void);
 
 	/**
 	* Overloading idMover::DoneRotating in order to close the portal when door closes
