@@ -46,7 +46,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FIXED:no"
-				AdditionalDependencies="odbc32.lib odbccp32.lib dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib DevIL.lib"
+				AdditionalDependencies="dbghelp.lib ./DebugDLL/idLib.lib Advapi32.lib DevIL.lib"
 				OutputFile="./DebugDLL/gamex86.dll"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="lib"
