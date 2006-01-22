@@ -121,8 +121,10 @@ void CsndPropBase::UpdateGlobals( void )
 
 CsndPropLoader::CsndPropLoader ( void )
 {
+	m_PortData = NULL;
 	m_sndAreas = NULL;
 	m_numAreas = 0;
+	m_numPortals = 0;
 	m_bDefaultSpherical = false;
 	m_bLoadSuccess = false;
 }
@@ -168,13 +170,13 @@ bool CsndPropLoader::MapEntBounds( idBounds &bounds, idMapEntity *mapEnt )
 		cmHandle = collisionModelManager->LoadModel( modelName, false );
 		if ( cmHandle == 0)
 		{
-			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Failed to load collision model for door %s with model %s.  Door will be ignored.\r", args.GetString("name"), modelName);
+			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Failed to load collision model for entity %s with model %s.  Entity will be ignored.\r", args.GetString("name"), modelName);
 			returnval = false;
 			goto Quit;
 		}
 
 		collisionModelManager->GetModelBounds( cmHandle, bounds );
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found bounds with volume %f for door %s with model %s.\r", bounds.GetVolume(), args.GetString("name"), modelName);
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found bounds with volume %f for entity %s with model %s.\r", bounds.GetVolume(), args.GetString("name"), modelName);
 		// Rotation copied from Entity::ParseSpawnArgsToRenderEntity()
 		// get the rotation matrix in either full form, or single angle form
 		if ( !args.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", rotation ) ) 
@@ -288,8 +290,6 @@ void CsndPropLoader::ParseMapEntities ( idMapFile *MapFile )
 {
 	int			i, count(0), missedCount(0);
 	idDict		args;
-	idBounds    doorB;
-	bool doorParsed(false);
 	
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Soundprop: Parsing Map entities\r");
 	for (i = 0; i < ( MapFile->GetNumEntities() ); i++ )
@@ -307,35 +307,13 @@ void CsndPropLoader::ParseMapEntities ( idMapFile *MapFile )
 		{
 			ParseWorldSpawn(args);
 		}
-
-		if( !strcmp(classname,m_SndGlobals.doorName) 
-			|| !strcmp(classname,m_SndGlobals.d3DoorName) )
-		{
-			doorB.Clear();
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Parsing door (entity %d)\r", i);
-			if (MapEntBounds( doorB, mapEnt ) )
-			{
-				doorParsed = ParseMapDoor(args, &doorB);
-			}
-			if (doorParsed)
-			{ 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Parsed door %s\r",args.GetString("name"));
-				count++;
-			}
-			else
-			{
-				missedCount++;
-			}
-			doorParsed = false;
-		}
 	}
 
 	m_AreaProps.Condense();
-	m_DoorRefs.Condense();
+
 	FillAPGfromAP( gameRenderWorld->NumAreas() );
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Finished parsing map entities\r");
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("DOORS: %d / %d doors parsed successfully\r",count,(count+missedCount));
 }
 
 void CsndPropLoader::ParseWorldSpawn ( idDict args )
@@ -431,69 +409,6 @@ void CsndPropLoader::FillAPGfromAP ( int numAreas )
 	return;
 }
 
-
-bool CsndPropLoader::ParseMapDoor( idDict args, idBounds *b )
-{
-	bool		returnval(false);
-	// BoundsInAreas seems to cause a crash if it finds more areas than
-	// the array you give it (even though you specify a max number of areas to find)
-	// So, quick hack: initialize the array of areas to contain 10.
-	// TODO: Try this again now that code is fixed, to make sure it was in
-	// fact BoundsInAreas causing the crash.
-	int			boundAreas[10]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}; 
-	int			numAreas(0), pnum;
-	SDoorRef	doorEntry;
-	qhandle_t	pHandle = -1;
-
-	numAreas = gameRenderWorld->BoundsInAreas( static_cast<const idBounds>(*b), boundAreas, 10 );
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("DEBUG:numAreas = %d\r", numAreas);
-
-	if ( numAreas == 2 && boundAreas[0] != -1 )
-	{
-		// find the portal inside bounds b
-		pHandle = gameRenderWorld->FindPortal( *b );
-		
-		if ( pHandle == -1 ) 
-		{
-			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Sound prop did not find a portal inside func_door object %s.  Door will be ignored.\r", args.GetString("name") );
-			goto Quit;
-		}
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found portal handle %d for door %s\r", pHandle, args.GetString("name"));
-		pnum = FindSndPortal(boundAreas[0], pHandle);
-		
-		if ( pnum == -1 )
-		{
-			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Sound prop failed to match a door name to a portal handle.\r");
-			goto Quit;
-		}
-		
-		doorEntry.area = boundAreas[0]; //arbitrarily pick area 0, it doesn't matter since we will get the return portal later
-		doorEntry.doorName = args.GetString("name");
-		doorEntry.portalH = pHandle;
-		doorEntry.portalNum = pnum;
-		
-		m_DoorRefs.Append( static_cast<const SDoorRef>(doorEntry) );
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Assigned portal number %d in area %d to DoorRef entry for door %s.\r", doorEntry.portalNum, boundAreas[0], doorEntry.doorName);
-
-		returnval = true;
-		goto Quit;
-	}
-	else
-	{
-		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("DEBUG: Door object %s contacted %d areas.\r", args.GetString("name"), numAreas );
-		if (numAreas < 2)
-		{
-			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Portal in door %s is not touching two areas.  Door will be ignored.\r", args.GetString("name") );
-		}
-		if (numAreas > 2)
-		{
-			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Sound prop found more than two areas for func_door object %s.  Door will be ignored.\r", args.GetString("name") );
-		}
-	}
-Quit:
-	return returnval;
-}
-
 int CsndPropLoader::FindSndPortal(int area, qhandle_t pHandle)
 {
 	int np, val(-1);
@@ -516,22 +431,39 @@ Quit:
 
 void CsndPropLoader::CreateAreasData ( void )
 {
-	int i, j, k, np, anum, anum2, propscount(0), numAreas(0);
-	SDoorRef TempDoorRef;
+	int i, j, k, np, anum, propscount(0), numAreas(0), numPortals(0), PortIndex;
 	sndAreaPtr area;
 	exitPortal_t portalTmp;
 	idVec3 pCenters;
 
 	numAreas = gameRenderWorld->NumAreas();
+	numPortals = gameRenderWorld->NumPortals();
 	pCenters.Zero();
 
-	if( (m_sndAreas = new SsndArea[numAreas]) == NULL )
+	if( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
 	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when allocating array of %d Areas\r", numAreas);
+		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when allocating array of %d Areas\r", m_numAreas);
 			goto Quit;
 	}
+
+	if( (m_PortData = new SPortData[m_numPortals]) == NULL )
+	{
+		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when allocating array of %d portals\r", m_numPortals);
+			goto Quit;
+	}
+
+	// Initialize portal data array
+	for ( int k2 = 0; k2 < m_numPortals; k2++ )
+	{
+		m_PortData[k2].loss = 0;
+
+		m_PortData[k2].LocalIndex[0] = -1;
+		m_PortData[k2].LocalIndex[1] = -1;
+		m_PortData[k2].Areas[0] = -1;
+		m_PortData[k2].Areas[1] = -1;
+	}
 	
-	for ( i = 0; i < numAreas; i++ ) 
+	for ( i = 0; i < m_numAreas; i++ ) 
 	{
 		area = &m_sndAreas[i];
 		area->LossMult = 1.0;
@@ -557,7 +489,19 @@ void CsndPropLoader::CreateAreasData ( void )
 			area->portals[j].winding = portalTmp.w;
 			
 			pCenters += area->portals[j].center;
-			area->portals[j].doorEnt = NULL; // this will be set on map start
+
+			// enter the data into the portal data array
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Setting up portal handle %d from area %d\r",portalTmp.portalHandle, i);
+			SPortData *pPortData = &m_PortData[ portalTmp.portalHandle - 1 ];
+			
+			// make sure we don't overwrite the data from the area on the other side
+			if(pPortData->Areas[0] == -1 )
+				PortIndex = 0;
+			else
+				PortIndex = 1;
+
+			pPortData->Areas[ PortIndex ] = i;
+			pPortData->LocalIndex[ PortIndex ] = j;
 		}
 		
 		// average the portal center coordinates to obtain the area center
@@ -569,7 +513,6 @@ void CsndPropLoader::CreateAreasData ( void )
 	}
 
 	// Apply special area Properties (loss and indoor/outdoor)
-
 	for(k = 0; k < m_AreaProps.Num(); k++)
 	{
 		anum = m_AreaProps[k].area;
@@ -579,35 +522,6 @@ void CsndPropLoader::CreateAreasData ( void )
 	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("%d Area specific losses applied\r", propscount);
-	
-	// Append a new m_doorrefs for the reverse portals
-
-	// store this initially since it will change during the loop
-	int numDoors = m_DoorRefs.Num();
-
-	for (k = 0; k < numDoors; k++)
-	{
-		anum2 = m_DoorRefs[k].area;
-		sndAreaPtr areaP2 = &m_sndAreas[anum2];
-		
-		int pInd = m_DoorRefs[k].portalNum;
-		
-		// Find the portal in the area it leads to and add a door reference to the list for that too
-		int toArea = areaP2->portals[pInd].to;
-		sndAreaPtr areaP3 = &m_sndAreas[toArea];
-		int pInd2 = FindSndPortal(toArea, m_DoorRefs[k].portalH);
-		
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Reverse portal: Adding door ref for door %s to portal %d in area %d.\r", m_DoorRefs[k].doorName, pInd2, toArea);
-		
-		TempDoorRef.area = toArea;
-		TempDoorRef.portalNum = pInd2;
-		TempDoorRef.doorName = m_DoorRefs[k].doorName;
-		TempDoorRef.portalH = m_DoorRefs[k].portalH;
-
-		m_DoorRefs.Append( TempDoorRef );
-	}
-
-	m_DoorRefs.Condense();
 
 	// calculate the portal losses and populate the losses array for each area
 	WritePortLosses();
@@ -682,33 +596,44 @@ void CsndPropBase::DestroyAreasData( void )
 	int i;
 	SsndPortal *portalPtr;
 
-	if( m_sndAreas == NULL || m_numAreas == 0)
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Clearing m_sndAreas \r");
+	if( m_sndAreas )
 	{
-		goto Quit;
+		for( i=0; i < m_numAreas; i++ )
+		{
+			portalPtr = m_sndAreas[i].portals;
+			delete[] portalPtr;
+	
+			m_sndAreas[i].portalDists->Clear();
+		}
+	
+		delete[] m_sndAreas;
+		m_sndAreas = NULL;
+		m_numAreas = 0;
 	}
-	for( i=0; i < m_numAreas; i++ )
+	
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Clearing m_PortData with %d portals \r", m_numPortals);
+	if( m_PortData )
 	{
-		portalPtr = m_sndAreas[i].portals;
-		delete[] portalPtr;
-
-		m_sndAreas[i].portalDists->Clear();
+		delete[] m_PortData;
+		m_PortData = NULL;
+		m_numPortals = 0;
 	}
-
-	delete[] m_sndAreas;
-	m_sndAreas = NULL;
-	m_numAreas = 0;
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Destroy Areas data finished.\r");
-	
-Quit:
-	return;
 }
+
+void CsndPropBase::SetPortalLoss( int handle, float value )
+{
+	m_PortData[ handle - 1 ].loss = value;
+}
+
+
+// ======================= CsndPropLoader =============================
 
 void CsndPropLoader::CompileMap( idMapFile *MapFile  )
 {
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound propagation system initializing...\r");
-
-	m_DoorRefs.Clear();
 
 	// Just in case this was somehow not done before now
 	DestroyAreasData();
@@ -717,6 +642,8 @@ void CsndPropLoader::CompileMap( idMapFile *MapFile  )
 	m_AreaProps.Clear();
 
 	m_numAreas = gameRenderWorld->NumAreas();
+
+	m_numPortals = gameRenderWorld->NumPortals();
 
 	ParseMapEntities(MapFile);
 
@@ -740,8 +667,4 @@ void CsndPropLoader::Shutdown( void )
 	m_bLoadSuccess = false;
 
 	m_AreaPropsG.Clear();
-	m_DoorRefs.Clear();
 }
-
-
-// ============================ TODO : REWRITE FILE IO ===============================

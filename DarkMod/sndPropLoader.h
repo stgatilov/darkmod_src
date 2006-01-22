@@ -148,15 +148,28 @@ typedef struct SsndPGlobals_s
 * An alert unit of 10 corresponds to hearing twice as loud a sound.
 **/
 
+/**
+* Portal data stored in portal data array indexed by handles
+* Contains local portal numbers and attenuation for that portal
+**/
+typedef struct SPortData_s
+{
+	// indices of the portal in the two areas connected by it
+	// order is arbitrary
+	int LocalIndex[2];
+	int Areas[2]; // area numbers that match up with the local index numbers
+	float loss; // acoustical loss [dB] when going through the portal
+} SPortData;
 
 /**
-* Structure for containing special area properties
+* Structure containing special area properties
 * lossMultiplier defaults to 1.0 if not set.
 **/
 typedef struct SAreaProp_s
 {
 	int area; // number of the area, for list lookup
 	float LossMult; // loss multiplier
+	float VolMod; // added to volume of all sounds originating in this area
 	bool SpherSpread; // if TRUE, sound spreads spherically in this area.  Otherwise cyllindrical spreading is assumed
 } SAreaProp;
 
@@ -179,8 +192,6 @@ typedef struct SsndPortal_s
 	idVec3 normal; // normal vector of portal (by convention, this points into the room)
 
 	const idWinding *winding; // point information 	 
-
-	idEntity *doorEnt; // Entity pointer to door - will be written on map startup
 
 } SsndPortal;
 
@@ -207,18 +218,7 @@ typedef struct SsndArea_s
 
 typedef SsndArea* sndAreaPtr; 
 
-/**
-* Structure for linking doors to portals
-**/
-typedef struct SDoorRef_s
-{
-	int				area; // area the door is in
-	int				portalNum; // portal ID of the portal in the area
-	const char *	doorName; //string name of the door
-	qhandle_t		portalH; //handle to the portal that corresponds to the door name
-}SDoorRef;
-
-
+// ====================================================================
 /**
 * CLASS DESCRIPTION: CsndPropBase has functions and members
 * inherited by both CsndPropLoader and CsndProp (the gameplay class)
@@ -245,6 +245,12 @@ public:
 	* for soundprop_globals.
 	**/
 	void GlobalsFromDef( void );
+
+	/**
+	* Insert the loss argument into the portal data array entry for 
+	* the given portal handle
+	**/
+	void SetPortalLoss( int handle, float value );
 
 
 protected:
@@ -285,6 +291,11 @@ protected:
 	**/
 	int					m_numAreas;
 
+	/**
+	* Count of the number of unique portals in a map
+	**/
+	int					m_numPortals;
+
 
 	/********************************************************************
 	* GAMEPLAY MEMBERS
@@ -305,12 +316,11 @@ protected:
 	idList<SAreaProp>	 m_AreaPropsG;
 
 	/**
-	* DoorRefs References door name strings to portals
-	* UPDATE: This gets written to the file and carried over to gameplay obj now
-	* Needs to be on gameplay object for map reloads (door pointers may change)
+	* Portal data array indexed by portal handle
+	* Used to optimize lookup of local portal number
+	* Also stores the current attenuation value of the portal
 	**/
-	idList <SDoorRef>	 m_DoorRefs;
-
+	SPortData			*m_PortData;
 };
 
 
@@ -376,30 +386,6 @@ private:
 	* the area properties array.
 	**/
 	void ParseAreaPropEnt ( idDict args );
-
-	/**
-	* ParseMapDoor 
-	* Takes spawn args of the door and the bounds of the door,
-	* adds it to sound propagation data if the door contains a portal
-	* and if the bounds of the door are touching at least two areas.
-	*
-	* Doors are ignored if the door bounds do not contain a visportal,
-	* or if the door bounds contact less than or greater than two areas.
-	*
-	* Due to the varying placement of "origins" within doors with models,
-	* some doors with models that should be parsed are skipped.
-	* 
-	* Check the sound prop map compile output to see which doors were ignored.
-	*
-	* To counteract this error, one can tweak the sound prop variable
-	* s_DoorExpand.  This expands the bounds of the door in their thinnest
-	* direction.  Default is 100% expansion (corresponding to a value of 1.0)
-	* 
-	* Keep in mind if door bounds expand TOO much, they can touch more than
-	* 1 portal, and soundprop will ignore them for that reason.
-	**/
-
-	bool ParseMapDoor ( idDict args, idBounds *b );
 	
 	/**
 	* Searches the provided area number for the portal handle pHandle.
@@ -407,7 +393,6 @@ private:
 	* of that area. (As defined in gameRenderWorld->GetPortal(area num,portal num))
 	* Returns -1 if the portal is not found.
 	**/
-
 	int  FindSndPortal( int area, qhandle_t pHandle );
 
 	/**
@@ -424,7 +409,6 @@ private:
 	* This function is currently only used for finding the bounds of doors
 	* to check if a given door contains a portal.
 	**/
-
 	bool MapEntBounds( idBounds &bounds, idMapEntity *mapEnt );
 	
 	/**
@@ -458,11 +442,6 @@ private:
 	* Default loss multiplier = 1.0, default sound model = indoor
 	**/
 	void FillAPGfromAP ( int numAreas );
-
-	
-	/**
-	* TODO : Rewrite file IO for new format
-	**/
 
 protected:
 
