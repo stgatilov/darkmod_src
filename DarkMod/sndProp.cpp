@@ -90,6 +90,11 @@ CsndProp::CsndProp ( void )
 
 	m_EventAreas = NULL;
 	m_PopAreas = NULL;
+	m_sndAreas = NULL;
+	m_PortData = NULL;
+
+	m_numAreas = 0;
+	m_numPortals = 0;
 }
 
 void CsndProp::Clear( void )
@@ -129,7 +134,7 @@ void CsndProp::Clear( void )
 		m_PopAreas = NULL;
 	}
 
-	// delete m_sndAreas
+	// delete m_sndAreas and m_PortData
 	DestroyAreasData();
 }
 
@@ -145,6 +150,8 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	int			tempint(0);
 	int			numPorts;
 	SEventArea *pEvArea;
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Setting up soundprop gameplay object\r");
 
 	Clear();
 
@@ -174,11 +181,21 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	m_bLoadSuccess = true;
 
 	m_numAreas = in->m_numAreas;
+	m_numPortals = in->m_numPortals;
 
 	// copy the connectivity database from sndPropLoader
 	if( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
 	{
 		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when copying area connectivity database to gameplay object\r");
+		goto Quit;
+	}
+
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Attempting to copy m_PortData with %d portals\r", m_numPortals);
+	// copy the handle-indexed portal data from sndPropLoader
+	if( (m_PortData = new SPortData[m_numPortals]) == NULL )
+	{
+		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when copying portal data array to gameplay object\r");
 		goto Quit;
 	}
 
@@ -202,14 +219,19 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	}
 
 
+	// copy the portal data array, element by element
+	for( int k=0; k < m_numPortals; k++ )
+	{
+		m_PortData[k].loss = in->m_PortData[k].loss;
+		
+		m_PortData[k].Areas[0] = in->m_PortData[k].Areas[0];
+		m_PortData[k].Areas[1] = in->m_PortData[k].Areas[1];
+		m_PortData[k].LocalIndex[0] = in->m_PortData[k].LocalIndex[0];
+		m_PortData[k].LocalIndex[1] = in->m_PortData[k].LocalIndex[1];
+	}
+
 	m_bDefaultSpherical = in->m_bDefaultSpherical;
 	m_AreaPropsG = in->m_AreaPropsG;
-
-	m_DoorRefs = in->m_DoorRefs;
-	
-	// fill in door entity pointers on portals in m_sndAreas
-	FillDoorEnts();
-
 
 	// initialize Event Areas
 	if( (m_EventAreas = new SEventArea[m_numAreas]) == NULL )
@@ -257,32 +279,8 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	}
 
 Quit:
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Soundprop gameplay object finished loading\r");
 	return;
-}
-
-void CsndProp::FillDoorEnts( void )
-{
-	idEntity *gent;
-	int anum, pnum;
-
-	for ( int i = 0; i < m_DoorRefs.Num(); i++ )
-	{
-	gent = gameLocal.FindEntity( m_DoorRefs[i].doorName );
-
-	if (gent == NULL)
-	{
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Could not find door ent for doorname %s.\r", m_DoorRefs[i].doorName );
-		continue;
-	}
-
-	// Add to m_sndAreas
-	anum = m_DoorRefs[i].area;
-	pnum = m_DoorRefs[i].portalNum;
-
-	m_sndAreas[ anum ].portals[ pnum ].doorEnt = gent;
-
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("FillDoorEnts: Added pointer for door %s to area %d, portal %d\r", m_DoorRefs[i].doorName, anum, pnum);
-	}
 }
 
 // NOTE: Propagate does not call CheckSound.  CheckSound should be called before
@@ -586,36 +584,6 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	return;
 }
 
-float CsndProp::GetDoorLoss( idEntity *doorEnt )
-{
-	float doorLoss(0);
-
-	if( doorEnt == NULL )		
-	{
-		// do not log this, since it's supposed to be NULL when no door exists
-		doorLoss = 0;
-		goto Quit;
-	}
-		
-	if( doorEnt->IsType(CFrobDoor::Type) )
-	{
-		doorLoss += static_cast<CFrobDoor *>( doorEnt )->GetSoundLoss();
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Added door loss %f from door %s\r", doorLoss, doorEnt->name.c_str());
-	}
-	
-	else
-	{
-		//TODO : Modify func_door to store a loss when open/closed?  Maybe an FM author
-		//	wants to have a door that is not a CFrobDoor, but wants unique acoustical loss
-
-		doorLoss += m_SndGlobals.DefaultDoorLoss;
-	}
-
-Quit:
-
-	return doorLoss;
-}
-
 bool CsndProp::CheckSound( const char *sndNameGlobal, bool isEnv )
 {
 	const idDict *parms;
@@ -693,7 +661,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 		tempAtt = m_AreaPropsG[ initArea ].LossMult * tempDist;
 		
 		// add the door loss
-		tempAtt += GetDoorLoss( pSndAreas->portals[i2].doorEnt );
+		tempAtt += m_PortData[ pSndAreas->portals[i2].handle - 1 ].loss;
 
 		// get the current loss
 		tempLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
@@ -753,24 +721,16 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 			pEventAreas = &m_EventAreas[ area ];
 			pPopArea = &m_PopAreas[area];
 
-			// find the local portal number associated with the portal handle
-			LocalPort = -1;
-			for( int ind = 0; ind < pSndAreas->numPortals; ind++ )
-			{
-				if( pSndAreas->portals[ind].handle == NextAreas[j].portalH )
-				{
-					LocalPort = ind;
-					break;
-				}
-			}
-			
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Identified portal handle with local port %d\r", LocalPort );
+			// find the local portal number in area for the portal handle
+			int portHandle = NextAreas[j].portalH;
 
-			if( LocalPort == -1 )
-			{
-				DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Couldn't find portal handle %d in area %d\r", NextAreas[j].portalH, area);
-				goto Quit;
-			}
+			SPortData *pPortData = &m_PortData[ portHandle - 1 ];
+			if( pPortData->Areas[0] == area )
+				LocalPort = pPortData->LocalIndex[0];
+			else
+				LocalPort = pPortData->LocalIndex[1];
+			
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Identified local portal index %d\r", LocalPort );
 
 			pPortEv = &pEventAreas->PortalDat[ LocalPort ];
 
@@ -814,9 +774,8 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 				tempAtt += AddedDist * m_AreaPropsG[ area ].LossMult;
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total distance now %f\r", tempDist );
 				
-				// add the door loss
-				tempAtt += GetDoorLoss( pSndAreas->portals[i].doorEnt );
-	
+				// add any specific loss on the portal
+				tempAtt += m_PortData[ pSndAreas->portals[i].handle - 1 ].loss;
 
 				tempLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
 
@@ -852,7 +811,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 				tempQEntry.curDist = tempDist;
 				tempQEntry.curAtt = tempAtt;
 				tempQEntry.curLoss = tempLoss;
-				tempQEntry.portalH = pSndAreas->portals[i].handle;	
+				tempQEntry.portalH = pSndAreas->portals[i].handle;
 				tempQEntry.PrevPort = pPortEv->PrevPort;
 
 				AddedAreas.Append( tempQEntry );
@@ -870,7 +829,6 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 	// return true if the expansion died out naturally rather than being stopped
 	returnval = ( !NextAreas.Num() );
 
-Quit:
 	return returnval;
 } // end function
 

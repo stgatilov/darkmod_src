@@ -94,7 +94,6 @@ typedef struct SPortEvent_s
 
 } SPortEvent;
 
-
 /**
 * Array entry in event areas array (storing visited areas information)
 **/
@@ -162,15 +161,12 @@ public:
 	static float s_SPROP_DEFAULT_TRESHOLD;
 
 protected:
-	
-	/**
-	* Fill the door gentity ID hash index based on the
-	* gentity numbers of doors.  Must be run AFTER entities spawn.
-	**/
-	void FillDoorEnts ( void );
 
 	/**
 	* Wavefront expansion algorithm, starts with volume volInit at point origin
+	*
+	* Returns true if the expansion died out naturally rather than being stopped
+	*	by a computation limit.
 	**/
 	bool ExpandWave
 		( float volInit, idVec3 origin, 
@@ -194,11 +190,6 @@ protected:
 	**/
 	void SetupParms( const idDict *parms, SSprParms *propParms,
 					 USprFlags *addFlags, UTeamMask *tmask );
-
-	/**
-	* Obtain the loss in [dB] for a given door entity
-	**/
-	float GetDoorLoss( idEntity *doorEnt );
 
 	/**
 	* Detailed path minimization.  Finds the optimum path taking points along the portal surfaces
@@ -246,9 +237,9 @@ protected:
 	SPopArea		*m_PopAreas;
 
 	/**
-	* (sparse) array of areas.  Areas that have been visited will have the 
-	* current loss at each portal.  Size is the total number of areas, most
-	* entries are NULL
+	* Array of areas.  Areas that have been visited will have the 
+	* current loss at each portal.  Size is the total number of areas
+	* Entries for areas not visited in this propagation are NULL
 	*
 	* For now, this is cleared and re-written for every new sound event
 	* later on, we might see if we can re-use it for multiple events that
