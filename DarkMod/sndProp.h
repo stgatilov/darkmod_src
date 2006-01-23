@@ -171,6 +171,16 @@ protected:
 	bool ExpandWave
 		( float volInit, idVec3 origin, 
 		  SSprParms *propParms );
+
+	/**
+	* Faster and less accurate wavefront expansion algorithm.
+	* Only visits areas once.
+	*
+	* The wave expands until it reaches the maxDist argument distance, in meters
+	**/
+	bool ExpandWaveFast
+		( float volInit, idVec3 origin, 
+		  SSprParms *propParms, float maxDist );
 	
 	/**
 	* Process the populated areas after a sound propagation event.
