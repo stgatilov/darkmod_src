@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/01/23 00:22:01  ishtvan
+ * added sound prop updating and sound loss for breakable windows
+ *
  * Revision 1.2  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -22,6 +25,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/sndProp.h"
 
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
@@ -61,6 +65,8 @@ idBrittleFracture::idBrittleFracture( void ) {
 	changed = false;
 
 	fl.networkSync = true;
+
+	m_AreaPortal = 0;
 }
 
 /*
@@ -91,8 +97,11 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( health );
 	entityFlags_s flags = fl;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
+
 
 	// setttings
 	savefile->WriteMaterial( material );
@@ -230,6 +239,8 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 			shards[i]->clipModel = shards[i]->physicsObj.GetClipModel();
 		}
 	}
+
+	UpdateSoundLoss();
 }
 
 /*
@@ -277,6 +288,11 @@ void idBrittleFracture::Spawn( void ) {
 	renderEntity.noShadow = true;
 	renderEntity.noSelfShadow = true;
 	renderEntity.noDynamicInteractions = false;
+
+	// Dark Mod: see if we are on a visportal
+	m_AreaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
+
+	UpdateSoundLoss();
 }
 
 /*
@@ -958,6 +974,8 @@ idBrittleFracture::Break
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
 	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_TRIGGER );
+
+	UpdateSoundLoss();
 }
 
 /*
@@ -1275,3 +1293,27 @@ bool idBrittleFracture::ClientReceiveEvent( int event, int time, const idBitMsg 
 	}
 	return false;
 }
+
+/*
+================
+idBrittleFracture::UpdateSoundLoss (Dark Mod )
+================
+*/
+void idBrittleFracture::UpdateSoundLoss( void )
+{
+	float SetVal(0.0f);
+
+	if ( !m_AreaPortal )
+		goto Quit;
+
+	if( IsBroken() )
+		SetVal = spawnArgs.GetFloat( "loss_broken", "0.0");
+	else
+		SetVal = spawnArgs.GetFloat( "loss_unbroken", "15.0");
+
+	gameLocal.m_sndProp->SetPortalLoss( m_AreaPortal, SetVal );
+
+Quit:
+	return;
+}
+		
