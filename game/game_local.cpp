@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.44  2006/01/23 00:22:46  ishtvan
+ * moved soundprop gameplay object initialization in MapPopulate to before gentities spawn
+ *
  * Revision 1.43  2006/01/09 05:12:58  ishtvan
  * no message
  *
@@ -1397,6 +1400,12 @@ void idGameLocal::MapPopulate( void ) {
 	if ( isMultiplayer ) {
 		cvarSystem->SetCVarBool( "r_skipSpecular", false );
 	}
+
+	// Transfer sound prop data from loader to gameplay object
+	m_sndProp->SetupFromLoader( m_sndPropLoader );
+
+	m_sndPropLoader->Shutdown();
+
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
 
@@ -1407,11 +1416,6 @@ void idGameLocal::MapPopulate( void ) {
 	RandomizeInitialSpawns( );
 
 	mapSpawnCount = spawnCount;
-
-	// Transfer sound prop data from loader to gameplay object
-	m_sndProp->SetupFromLoader( m_sndPropLoader );
-
-	m_sndPropLoader->Shutdown();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
