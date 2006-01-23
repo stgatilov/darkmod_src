@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/01/23 00:18:56  ishtvan
+ * fix - soundprop data now updated at spawn
+ *
  * Revision 1.10  2006/01/22 09:20:24  ishtvan
  * rewrote to match new soundprop interface
  *
@@ -498,6 +501,9 @@ void CFrobDoor::UpdateSoundLoss(void)
 	float SetVal(0.0f);
 	bool bDoubleOpen(true);
 
+	if( !areaPortal )
+		goto Quit;
+
 	if( m_DoubleDoor )
 		bDoubleOpen = m_DoubleDoor->m_Open;
 
@@ -517,11 +523,10 @@ void CFrobDoor::UpdateSoundLoss(void)
 		SetVal = spawnArgs.GetFloat( "loss_closed", "15.0");
 	}
 	
-	// NOTE: areaPortal is a member var of idMover that stores the portal handle
-	if ( areaPortal ) 
-	{
-		gameLocal.m_sndProp->SetPortalLoss( areaPortal, SetVal );
-	}
+	gameLocal.m_sndProp->SetPortalLoss( areaPortal, SetVal );
+
+Quit:
+	return;
 }
 
 void CFrobDoor::DoneRotating(void)
@@ -597,4 +602,7 @@ void CFrobDoor::FindDoubleDoor(void)
 			}
 		}
 	}
+
+	// Wait until here for the first update of sound loss, in case double door is open
+	UpdateSoundLoss();
 }
