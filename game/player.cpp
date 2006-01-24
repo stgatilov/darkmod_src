@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2006/01/24 22:03:46  sparhawk
+ * Stim/Response implementation preliminary
+ *
  * Revision 1.44  2006/01/09 04:30:33  ishtvan
  * added getEyePos script event more exact than one on idActor
  *
@@ -158,6 +161,7 @@
 #include "../darkmod/intersection.h"
 #include "../darkmod/relations.h"
 #include "../darkmod/darkModAASFindHidingSpots.h"
+#include "../darkmod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -1077,7 +1081,8 @@ void idInventory::UpdateArmor( void ) {
 idPlayer::idPlayer
 ==============
 */
-idPlayer::idPlayer() {
+idPlayer::idPlayer()
+{
 	memset( &usercmd, 0, sizeof( usercmd ) );
 
 	noclip					= false;
@@ -1258,6 +1263,27 @@ idPlayer::idPlayer() {
 	isChatting				= false;
 	selfSmooth				= false;
 	m_NoViewChange			= false;
+
+	// Add the default stims to the player. These are stims
+	// that can be performed by the actual player, while the
+	// other stims like water, damage, kill, etc. are rather
+	// properties of the respective weapon or equipment.
+	// None of these stims require a radius in this case
+	// as they are determined by the various parts of the code
+	// that is responsible for handling it. It might be needed
+	// if these stims are added to an AI though.
+	CStim *pStim;
+	pStim = AddStim(ST_FROB, 0.0f, false, true);
+	pStim->EnableStim();
+
+	pStim = AddStim(ST_TOUCH, 0.0f, false, true);
+	pStim->EnableStim();
+
+	pStim = AddStim(ST_SOUND, 0.0f, false, true);
+	pStim->EnableStim();
+
+	pStim = AddStim(ST_VISUAL, 0.0f, false, true);
+	pStim->EnableStim();
 }
 
 /*

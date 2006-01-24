@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/01/24 22:03:46  sparhawk
+ * Stim/Response implementation preliminary
+ *
  * Revision 1.28  2005/12/15 04:06:06  ishtvan
  * temporary ModelCallback fix for frobable AFs
  *
@@ -192,6 +195,16 @@ const idEventDef EV_StartFx( "startFx", "s" );
 const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
+
+// The Dark Mod Stim/Response interface functions for scripting
+// Normally I don't like names, which are "the other way around"
+// but I think in this case it would be ok, because the interface
+// for stims and responses are pretty much the same.
+const idEventDef EV_StimAdd( "StimAdd", "df" );
+const idEventDef EV_StimRemove( "StimRemove", "d" );
+const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
+const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
+
 #ifdef MOD_WATERPHYSICS
 
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
@@ -267,6 +280,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
+
+	EVENT( EV_StimAdd,				idEntity::StimAdd)
+	EVENT( EV_StimRemove,			idEntity::StimRemove)
+	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
+	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
+
 #ifdef MOD_WATERPHYSICS
 
 	EVENT( EV_GetMass,              idEntity::Event_GetMass )
@@ -546,8 +565,11 @@ idEntity::idEntity()
 	m_FrobCallbackChain = NULL;
 	m_bWithinFrobDist = false;
 
-	// Not every entity has a stim/response
-	m_StimResponseColl = NULL;
+	// We give all the entities a Stim/Response collection so that we wont have to worry
+	// about the pointer being available all the time. The memory footprint of that 
+	// object is rather small (about 40 bytes in total), so this doesn't really hurt that 
+	// much and makes the code easier to control.
+	m_StimResponseColl = new CStimResponseCollection;
 }
 
 /*
@@ -6264,3 +6286,36 @@ bool idEntity::IsWithinFrobDist( void )
 {
 	return m_bWithinFrobDist;
 }
+
+void idEntity::StimAdd(int Type, float Radius)
+{
+	AddStim(Type, Radius);
+}
+
+void idEntity::StimRemove(int Type)
+{
+}
+
+void idEntity::ResponseAdd(int Type)
+{
+	AddResponse(Type);
+}
+
+void idEntity::ResponseRemove(int Type)
+{
+}
+
+CStim *idEntity::AddStim(int Type, float Radius, bool Removable, bool Default)
+{
+	CStim *pStim;
+	pStim = m_StimResponseColl->AddStim(this, Type, Radius, Removable, Default);
+	return pStim;
+}
+
+CResponse *idEntity::AddResponse(int Type, bool Removable, bool Default)
+{
+	CResponse *pResp;
+	pResp = m_StimResponseColl->AddResponse(this, Type, Removable, Default);
+	return pResp;
+}
+

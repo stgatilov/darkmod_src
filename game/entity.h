@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/01/24 22:03:46  sparhawk
+ * Stim/Response implementation preliminary
+ *
  * Revision 1.15  2006/01/09 04:36:28  ishtvan
  * made Event_CopyBind protected instead of private
  *
@@ -68,6 +71,8 @@
 #define __GAME_ENTITY_H__
 
 class CStimResponseCollection;
+class CStim;
+class CResponse;
 
 /*
 ===============================================================================
@@ -464,7 +469,7 @@ public:
 	virtual void FrobAction(bool bMaster);
 
 	/**
-	 * AddToMasterList adds a string entry to a list and checks is a) the new entry
+	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
 	 * is not the current entities name and b) if the name already exists in the list.
 	 * If both conditions are met, the name is added to the list and true is returned,
 	 * otherwise false is returned and the name is not added to the list.
@@ -540,11 +545,16 @@ public:
 	void PropSoundDirect( const char *sndName, bool bForceLocal = false, 
 						  bool bAssumeEnv = false );
 
+	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
+
 protected:
 	/**
 	* Bind to the same object that the "other" argument is bound to
 	**/
 	void					Event_CopyBind( idEntity *other );
+
+	CStim					*AddStim(int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
+	CResponse				*AddResponse(int Type, bool Removable = true, bool Default = false);
 
 protected:
 	renderEntity_t			renderEntity;						// used to present a model to the renderer
@@ -694,6 +704,11 @@ private:
 	void					Event_HasFunction( const char *name );
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
+	void					StimAdd(int Type, float Radius);
+	void					StimRemove(int Type);
+	void					ResponseAdd(int Type);
+	void					ResponseRemove(int Type);
+
 #ifdef MOD_WATERPHYSICS
 	void					Event_GetMass( int body );	// MOD_WATERPHYSICS
 	void					Event_IsInLiquid( void );	// MOD_WATERPHYSICS

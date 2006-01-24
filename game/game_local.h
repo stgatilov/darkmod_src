@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/01/24 22:03:46  sparhawk
+ * Stim/Response implementation preliminary
+ *
  * Revision 1.20  2005/12/04 02:45:02  ishtvan
  * fixed errors in surface variable names
  *
@@ -552,7 +555,8 @@ public:
 **/
 	float					m_walkSpeed;
 
-
+	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
+	idList<idEntity *>		m_RespEntity;			// all entities that currently have a response regardless of it's state
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -830,6 +834,11 @@ public:
 	 * via this pointer.
 	 */
 	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+
+	/**
+	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.
+	 */
+	void					ProcessStimResponse(void);
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
