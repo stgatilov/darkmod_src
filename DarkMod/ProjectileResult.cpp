@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/01/25 22:05:51  sparhawk
+ * Added additional entries to support stims on projectiles.
+ *
  * Revision 1.1  2006/01/20 08:47:45  ishtvan
  * initial version
  *
@@ -25,6 +28,7 @@
 #include "ProjectileResult.h"
 #include "../game/Game_local.h"
 #include "../game/projectile.h"
+#include "StimResponse.h"
 #include "DarkModGlobals.h"
 
 //===============================================================================
@@ -90,6 +94,8 @@ void CProjectileResult::Init
 {
 	idVec3 dotprod, LinVelocity;
 	float fTemp;
+	int StimType = ST_DEFAULT;
+	float StimRadius = 10.0; // we use a (hopefully) reasonable default radius if none is set.
 
 	// copy in the data
 	m_Collision = collision;
@@ -119,6 +125,17 @@ void CProjectileResult::Init
 	Hide();
 	GetPhysics()->SetOrigin( pData->FinalOrigin );
 	GetPhysics()->SetAxis( pData->FinalAxis );
+
+	// The stim type of the projectile result is defined on the projectile itself
+	// even though it is not used there. Logically, the stim type is a part of the
+	// projectile definition though, since this class is only a helper class.
+	pProj->spawnArgs.GetInt("stim_type", "-1", StimType);
+	if(StimType != ST_DEFAULT)
+	{
+		pProj->spawnArgs.GetFloat("stim_radius", "10", StimRadius);
+		AddStim(StimType, StimRadius);
+        DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim type %u with radius %f added to entity %08lX\r", StimType, StimRadius, this);
+	}
 
 	// Handle binding
 	if( spawnArgs.GetBool( "copy_bind", "0") && pProj 
