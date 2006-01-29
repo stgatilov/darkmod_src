@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/01/29 04:06:53  ishtvan
+ * changes to soundprop systems
+ *
  * Revision 1.3  2006/01/23 00:22:01  ishtvan
  * added sound prop updating and sound loss for breakable windows
  *
@@ -27,10 +30,13 @@
 #include "Game_local.h"
 #include "../darkmod/sndProp.h"
 
+const idEventDef EV_TDM_UpdateSoundLoss( "updateSoundLoss", NULL );
+
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )
 	EVENT( EV_Touch, idBrittleFracture::Event_Touch )
+	EVENT( EV_TDM_UpdateSoundLoss, idBrittleFracture::UpdateSoundLoss )
 END_CLASS
 
 const int SHARD_ALIVE_TIME	= 5000;
@@ -292,7 +298,8 @@ void idBrittleFracture::Spawn( void ) {
 	// Dark Mod: see if we are on a visportal
 	m_AreaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
 
-	UpdateSoundLoss();
+	//schedule updating the sound loss for after soundprop gameplay has initialized
+	PostEventMS( &EV_TDM_UpdateSoundLoss, 0 );
 }
 
 /*
