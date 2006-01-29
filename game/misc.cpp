@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/01/29 04:09:29  ishtvan
+ * added soundprop interface for idLocation objects
+ *
  * Revision 1.5  2005/11/21 07:54:33  ishtvan
  * AI can no longer see thru static models
  *
@@ -36,6 +39,7 @@ Various utility objects and functions.
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/sndprop.h"
 
 /*
 ===============================================================================
@@ -145,11 +149,17 @@ FIXME: add functionality to fx system ( could be done with player scripting too 
 */
 void idPlayerStart::Event_TeleportStage( idEntity *_player ) {
 	idPlayer *player;
+
 	if ( !_player->IsType( idPlayer::Type ) ) {
+
 		common->Warning( "idPlayerStart::Event_TeleportStage: entity is not an idPlayer\n" );
+
 		return;
+
 	}
+
 	player = static_cast<idPlayer*>(_player);
+
 	float teleportDelay = spawnArgs.GetFloat( "teleportDelay" );
 	switch ( teleportStage ) {
 		case 0:
@@ -1413,6 +1423,7 @@ void idStaticEntity::Spawn( void ) {
 
 	idStr model = spawnArgs.GetString( "model" );
 	if ( model.Find( ".prt" ) >= 0 ) {
+
 		// we want the parametric particles out of sync with each other
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
 	}
@@ -2005,15 +2016,27 @@ END_CLASS
 idLocationSeparatorEntity::Spawn
 ================
 */
-void idLocationSeparatorEntity::Spawn() {
+void idLocationSeparatorEntity::Spawn() 
+{
 	idBounds b;
+	float SoundLoss;
 
 	b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
 	qhandle_t portal = gameRenderWorld->FindPortal( b );
-	if ( !portal ) {
+
+	if ( !portal ) 
+	{
 		gameLocal.Warning( "LocationSeparator '%s' didn't contact a portal", spawnArgs.GetString( "name" ) );
+		goto Quit;
 	}
 	gameLocal.SetPortalState( portal, PS_BLOCK_LOCATION );
+
+	// update the sound loss for the associated portal (Note sound loss must be positive)
+	SoundLoss = spawnArgs.GetFloat("sound_loss", "0.0");
+	gameLocal.m_sndPropLoader->SetPortalLoss( portal, idMath::Fabs(SoundLoss) );
+
+Quit:
+		return;
 }
 
 
@@ -2060,18 +2083,34 @@ END_CLASS
 
 /*
 ======================
+idLocationEntity::idLocationEntity
+======================
+*/
+idLocationEntity::idLocationEntity( void )
+{
+	m_SndLossMult = 1.0;
+	m_SndVolMod = 0.0;
+}
+
+/*
+======================
 idLocationEntity::Spawn
 ======================
 */
-void idLocationEntity::Spawn() {
+void idLocationEntity::Spawn() 
+{
 	idStr realName;
 
 	// this just holds dict information
 
 	// if "location" not already set, use the entity name.
-	if ( !spawnArgs.GetString( "location", "", realName ) ) {
+	if ( !spawnArgs.GetString( "location", "", realName ) ) 
+	{
 		spawnArgs.Set( "location", name );
 	}
+
+	m_SndLossMult = idMath::Fabs( spawnArgs.GetFloat("sound_loss_mult", "1.0") );
+	m_SndVolMod = spawnArgs.GetFloat( "sound_vol_offset", "0.0" );
 }
 
 /*
@@ -3151,61 +3190,120 @@ void idPhantomObjects::Think( void ) {
 }
 
 /*
+
 ===============================================================================
+
+
 
 idPortalSky
 
+
+
 ===============================================================================
+
 */
+
+
 
 CLASS_DECLARATION( idEntity, idPortalSky )
+
 	EVENT( EV_PostSpawn,			idPortalSky::Event_PostSpawn )
+
 	EVENT( EV_Activate,				idPortalSky::Event_Activate )
+
 END_CLASS
 
+
+
 /*
+
 ===============
+
 idPortalSky::idPortalSky
+
 ===============
+
 */
+
 idPortalSky::idPortalSky( void ) {
 
+
+
 }
 
+
+
 /*
+
 ===============
+
 idPortalSky::~idPortalSky
+
 ===============
+
 */
+
 idPortalSky::~idPortalSky( void ) {
 
+
+
 }
 
+
+
 /*
+
 ===============
+
 idPortalSky::Spawn
+
 ===============
+
 */
+
 void idPortalSky::Spawn( void ) {
+
 	if ( !spawnArgs.GetBool( "triggered" ) ) {
+
 		PostEventMS( &EV_PostSpawn, 1 );
+
 	}
+
 }
 
+
+
 /*
+
 ================
+
 idPortalSky::Event_PostSpawn
+
 ================
+
 */
+
 void idPortalSky::Event_PostSpawn() {
+
 	gameLocal.SetPortalSkyEnt( this );
+
 }
 
+
+
 /*
+
 ================
+
 idPortalSky::Event_Activate
+
 ================
+
 */
+
 void idPortalSky::Event_Activate( idEntity *activator ) {
+
 	gameLocal.SetPortalSkyEnt( this );
+
 }
+

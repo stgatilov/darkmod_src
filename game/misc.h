@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/01/29 04:09:29  ishtvan
+ * added soundprop interface for idLocation objects
+ *
  * Revision 1.3  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -445,9 +448,21 @@ class idLocationEntity : public idEntity {
 public:
 	CLASS_PROTOTYPE( idLocationEntity );
 
+	idLocationEntity( void );
+
 	void				Spawn( void );
 
 	const char *		GetLocation( void ) const;
+
+public:
+	/**
+	* Soundprop: Loss multiplier for atmospheric attenuation
+	**/
+	float				m_SndLossMult;
+	/**
+	* Soundprop: Volume offset for sounds originating in location
+	**/
+	float				m_SndVolMod;
 
 private:
 };
@@ -759,22 +774,42 @@ private:
 };
 
 /*
+
 ===============================================================================
+
+
 
 idPortalSky
 
+
+
 ===============================================================================
+
 */
+
 class idPortalSky : public idEntity {
+
 public:
+
 	CLASS_PROTOTYPE( idPortalSky );
 
+
+
 	idPortalSky();
+
 	~idPortalSky();
 
+
+
 	void				Spawn( void );
+
 	void				Event_PostSpawn();
+
 	void				Event_Activate( idEntity *activator );
+
 };
 
+
+
 #endif /* !__GAME_MISC_H__ */
+
