@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/01/29 04:18:10  ishtvan
+ * added scriptfunction to get and dynamically set soundprop losses at portals
+ *
  * Revision 1.2  2005/03/29 07:53:32  ishtvan
  * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
  *
@@ -23,8 +26,10 @@
 
 #include "../Game_local.h"
 #include "../../darkmod/relations.h"
+#include "../../darkmod/sndprop.h"
 
 class CRelations;
+class CsndProp;
 
 const idEventDef EV_Thread_Execute( "<execute>", NULL );
 const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
@@ -111,6 +116,10 @@ const idEventDef EV_AI_GetRelationSys( "getRelation", "dd", 'd' );
 const idEventDef EV_AI_SetRelation( "setRelation", "ddd" );
 const idEventDef EV_AI_OffsetRelation( "offsetRelation", "ddd" );
 
+// Dark Mod soundprop events
+const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", "df" );
+const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
+
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -195,6 +204,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_AI_GetRelationSys,			idThread::Event_GetRelation )
 	EVENT( EV_AI_SetRelation,				idThread::Event_SetRelation )
 	EVENT( EV_AI_OffsetRelation,			idThread::Event_OffsetRelation )
+	EVENT( EV_TDM_SetPortSoundLoss,			idThread::Event_SetPortSoundLoss )
+	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
 
 END_CLASS
 
@@ -1865,5 +1876,15 @@ void	idThread::Event_SetRelation( int team1, int team2, int val )
 void	idThread::Event_OffsetRelation( int team1, int team2, int offset )
 {
 	gameLocal.m_RelationsManager->ChangeRel( team1, team2, offset );
+}
+
+void	idThread::Event_SetPortSoundLoss( int handle, float value )
+{
+	gameLocal.m_sndProp->SetPortalLoss( handle, value );
+}
+
+void	idThread::Event_GetPortSoundLoss( int handle )
+{
+	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalLoss( handle ) );
 }
 

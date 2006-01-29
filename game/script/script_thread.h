@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/01/29 04:18:10  ishtvan
+ * added scriptfunction to get and dynamically set soundprop losses at portals
+ *
  * Revision 1.3  2005/11/11 22:01:38  sparhawk
  * SDK 1.3 Merge
  *
@@ -72,6 +75,9 @@ extern const idEventDef EV_Thread_Restart;
 extern const idEventDef EV_AI_GetRelationSys;
 extern const idEventDef EV_AI_SetRelation;
 extern const idEventDef EV_AI_OffsetRelation;
+
+extern const idEventDef EV_TDM_SetPortSoundLoss;
+extern const idEventDef EV_TDM_GetPortSoundLoss;
 
 class idThread : public idClass {
 private:
@@ -192,6 +198,14 @@ private:
 	void						Event_SetRelation( int team1, int team2, int val );
 	void						Event_OffsetRelation( int team1, int team2, int offset );
 
+	/**
+	* TDM Soundprop Events:
+	* Set or get the acoustical loss for a portal with a given handle.
+	* Handle must be greater than zero and less than the number of portals in the map.
+	**/
+	void						Event_SetPortSoundLoss( int handle, float value );
+	void						Event_GetPortSoundLoss( int handle );
+
 
 
 public:							
@@ -259,7 +273,9 @@ public:
 	const char					*GetThreadName( void );
 
 	void						Error( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+
 	void						Warning( const char *fmt, ... ) const id_attribute((format(printf,2,3)));
+
 								
 	static idThread				*CurrentThread( void );
 	static int					CurrentThreadNum( void );
