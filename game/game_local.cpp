@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2006/01/29 04:28:00  ishtvan
+ * *) Added GetLocationForArea, used by soundprop
+ *
  * Revision 1.45  2006/01/24 22:03:46  sparhawk
  * Stim/Response implementation preliminary
  *
@@ -156,7 +159,6 @@
 #include "../darkmod/playerdata.h"
 #include "../darkmod/misc.h"
 #include "../darkmod/relations.h"
-#include "../darkmod/sndproploader.h"
 #include "../darkmod/sndprop.h"
 #include "../darkmod/darkModLAS.h"
 #include "../darkmod/stimresponse.h"
@@ -1396,7 +1398,7 @@ void idGameLocal::NextMap_f( const idCmdArgs &args ) {
 /*
 ===================
 idGameLocal::MapPopulate
-Sound prop: Added filling sndProp doorID hash
+Dark Mod: Sound prop initialization added
 ===================
 */
 void idGameLocal::MapPopulate( void ) {
@@ -1404,11 +1406,6 @@ void idGameLocal::MapPopulate( void ) {
 	if ( isMultiplayer ) {
 		cvarSystem->SetCVarBool( "r_skipSpecular", false );
 	}
-
-	// Transfer sound prop data from loader to gameplay object
-	m_sndProp->SetupFromLoader( m_sndPropLoader );
-
-	m_sndPropLoader->Shutdown();
 
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
@@ -1420,6 +1417,14 @@ void idGameLocal::MapPopulate( void ) {
 	RandomizeInitialSpawns( );
 
 	mapSpawnCount = spawnCount;
+
+	// read in the soundprop data for various locations
+	m_sndPropLoader->FillLocationData();
+
+	// Transfer sound prop data from loader to gameplay object
+	m_sndProp->SetupFromLoader( m_sndPropLoader );
+
+	m_sndPropLoader->Shutdown();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
@@ -5446,5 +5451,27 @@ void idGameLocal::ProcessStimResponse(void)
 			}
 		}
 	}
+}
+
+/*
+===================
+Dark Mod:
+idGameLocal::LocationForArea
+===================
+*/
+idLocationEntity *idGameLocal::LocationForArea( const int areaNum ) 
+{
+	idLocationEntity *pReturnval( NULL );
+	
+	if ( !locationEntities || areaNum < 0 || areaNum >= gameRenderWorld->NumAreas() ) 
+	{
+		pReturnval = NULL;
+		goto Quit;
+	}
+
+	pReturnval = locationEntities[ areaNum ];
+
+Quit:
+	return pReturnval;
 }
 
