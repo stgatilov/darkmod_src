@@ -156,6 +156,14 @@ public:
 	bool CheckSound( const char *sndNameGlobal, bool isEnv );
 
 	/**
+	* Insert the loss argument into the portal data array entry for 
+	* the given portal handle.
+	*
+	* This one calls the base class function, plus updates the portal losses timestamp
+	**/
+	void SetPortalLoss( int handle, float value );
+
+	/**
 	* Static var for AI checking the default threshold
 	**/
 	static float s_SPROP_DEFAULT_TRESHOLD;
@@ -176,11 +184,15 @@ protected:
 	* Faster and less accurate wavefront expansion algorithm.
 	* Only visits areas once.
 	*
-	* The wave expands until it reaches the maxDist argument distance, in meters
+	* The wave expands until it reaches the maxDist argument distance or until
+	* the number of nodes traversed exceeds the MaxNodes argument.  Note the float/int
+	* difference between the last two default-valued arguments.  
+	*
+	* If MaxDist is set to -1, no distance limit is applied.
+	* If MaxFloods is set to -1, the global maximum flood limit is used.
 	**/
-	bool ExpandWaveFast
-		( float volInit, idVec3 origin, 
-		  SSprParms *propParms, float maxDist );
+	bool ExpandWaveFast( float volInit, idVec3 origin, 
+						SSprParms *propParms, float MaxDist = -1, int MaxFloods = -1 );
 	
 	/**
 	* Process the populated areas after a sound propagation event.
@@ -229,7 +241,16 @@ protected:
 
 protected:
 
-	int				m_TimeStamp; // time stamp for the current propagation event [ms]
+	/**
+	* Time stamp for the current propagation event [ms]
+	**/
+	int				m_TimeStampProp;
+
+	/**
+	* Time stamp for the last time portal losses were updated 
+	* Used to see if env. sounds need to be repropagated when doors/windows change state
+	**/
+	int				m_TimeStampPortLoss;
 
 	/**
 	* Populated areas : List of indices of AI populated areas for this expansion

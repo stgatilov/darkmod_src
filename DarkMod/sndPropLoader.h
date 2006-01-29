@@ -170,7 +170,7 @@ typedef struct SAreaProp_s
 	int area; // number of the area, for list lookup
 	float LossMult; // loss multiplier
 	float VolMod; // added to volume of all sounds originating in this area
-	bool SpherSpread; // if TRUE, sound spreads spherically in this area.  Otherwise cyllindrical spreading is assumed
+	bool DataEntered; // set to true if this area has specific data (used for area<-locatoin overriding)
 } SAreaProp;
 
 /**
@@ -203,9 +203,9 @@ typedef SsndPortal* sndPortalPtr;
 typedef struct SsndArea_s 
 {
 	float				LossMult; // loss multiplier (in dB/meter, less than 1 => less loss)
-
-	bool				SpherSpread; // if TRUE, sound spreads spherically in this area.  Otherwise cyllindrical spreading is assumed
 	
+	float				VolMod; // Volume offset of sounds originating in this area, in dB.
+
 	int					numPortals;	// number of portals in this area
 	
 	idVec3				center; // approximate center of the area
@@ -217,6 +217,8 @@ typedef struct SsndArea_s
 } SsndArea;
 
 typedef SsndArea* sndAreaPtr; 
+
+
 
 // ====================================================================
 /**
@@ -251,6 +253,12 @@ public:
 	* the given portal handle
 	**/
 	void SetPortalLoss( int handle, float value );
+
+	/**
+	* Get the acoustical loss for the given portal handle
+	* Portal handle must be between 1 and the number of portals in the map
+	**/
+	float GetPortalLoss( int handle );
 
 
 protected:
@@ -311,7 +319,7 @@ protected:
 	/**
 	* m_AreaPropsG contains the area properties of ALL areas for use
 	* during propagation.
-	* defaults are loss multiplier = 1.0, and spherical spreading = false.
+	* defaults are loss multiplier = 1.0, and VolMod = 0.0.
 	**/
 	idList<SAreaProp>	 m_AreaPropsG;
 
@@ -363,6 +371,12 @@ public:
 	* Destroy sound prop data when switching to a new map, game ends, etc
 	**/
 	void Shutdown( void );
+
+	/**
+	* To be run AFTER entities spawn.  Goes through the location areas and fills
+	* in location data for each area.  Note area data objects override location data.
+	**/
+	void FillLocationData( void );
 
 private:
 	

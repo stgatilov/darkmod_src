@@ -73,6 +73,7 @@ const float s_MIN_AUD_THRESH = 15;
 **/
 const float s_MAX_DETAILNODES = 3;
 
+
 /**
 * 1/log(10), useful for change of base between log and log10
 **/
@@ -95,6 +96,9 @@ CsndProp::CsndProp ( void )
 
 	m_numAreas = 0;
 	m_numPortals = 0;
+
+	m_TimeStampProp = 0;
+	m_TimeStampPortLoss = 0;
 }
 
 void CsndProp::Clear( void )
@@ -169,8 +173,8 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 
 		//TODO : Need better default behavior for bad file, this isn't going to work
 		defaultArea.area = 0;
-		defaultArea.LossMult = 1.0 * m_SndGlobals.kappa0;;
-		defaultArea.SpherSpread = 0;
+		defaultArea.LossMult = 1.0 * m_SndGlobals.kappa0;
+		defaultArea.VolMod = 0.0;
 
 		m_AreaPropsG.Append( defaultArea );
 		m_AreaPropsG.Condense();
@@ -203,7 +207,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	for( int i=0; i < m_numAreas; i++ )
 	{
 		m_sndAreas[i].LossMult = in->m_sndAreas[i].LossMult;
-		m_sndAreas[i].SpherSpread = in->m_sndAreas[i].SpherSpread;
+		m_sndAreas[i].VolMod = in->m_sndAreas[i].VolMod;
 		
 		tempint = in->m_sndAreas[i].numPortals;
 		m_sndAreas[i].numPortals = tempint;
@@ -309,7 +313,7 @@ void CsndProp::Propagate
 	timer_Prop.Clear();
 	timer_Prop.Start();
 
-	m_TimeStamp = gameLocal.time;
+	m_TimeStampProp= gameLocal.time;
 
 	if( cv_spr_debug.GetBool() )
 	{
@@ -333,7 +337,9 @@ void CsndProp::Propagate
 	propParms.name = sndName.c_str();
 
 	vol0 = parms->GetFloat("vol","0") + volMod;
-	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified sound volume %f\r", vol0 );
+
+	// add the area-specific volMod
+	vol0 += m_AreaPropsG[ gameRenderWorld->PointInArea(origin) ].VolMod;
 
 	// scale the volume by some amount that is be a cvar for now for tweaking
 	// later we will put a permananet value in the def for globals->Vol
@@ -386,6 +392,9 @@ void CsndProp::Propagate
 	if( cv_spr_debug.GetBool() )
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
 
+	timer_Prop.Stop();
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished finding all AI entities, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	timer_Prop.Start();
 	// cull the list by testing distance and valid team flag
 
 	for ( int i=0; i<validTypeEnts.Num(); i++ )
@@ -449,6 +458,10 @@ void CsndProp::Propagate
 
 	}
 
+	timer_Prop.Stop();
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished culling AI list, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	timer_Prop.Start();
+
 	/* handle environmental sounds here
 
 	envBounds = bounds;
@@ -490,13 +503,13 @@ void CsndProp::Propagate
 		if( pPopArea == NULL )
 			continue;
 
-		//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("TimeStamp Debug: Area timestamp %d, new timestamp %d \r", pPopArea->addedTime, m_TimeStamp);
+		//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("TimeStamp Debug: Area timestamp %d, new timestamp %d \r", pPopArea->addedTime, m_TimeStampProp);
 
 		// check if this is the first update to the pop. area in this propagation
-		if( pPopArea->addedTime != m_TimeStamp )
+		if( pPopArea->addedTime != m_TimeStampProp )
 		{
 			//update the timestamp
-			pPopArea->addedTime = m_TimeStamp;
+			pPopArea->addedTime = m_TimeStampProp;
 
 			pPopArea->bVisited = false;
 			pPopArea->AIContents.Clear();
@@ -515,6 +528,11 @@ void CsndProp::Propagate
 		}
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processed AI %s in area %d\r", validEnts[j]->name.c_str(), AIAreaNum );
 	}
+	
+	timer_Prop.Stop();
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished filling populated areas, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	timer_Prop.Start();
+
 
 	bExpandFinished = ExpandWave( vol0, origin, &propParms );
 
@@ -523,12 +541,14 @@ void CsndProp::Propagate
 	if(bExpandFinished == false)
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion was stopped when max node number %d was exceeded\r", s_MAX_FLOODNODES );
 
-
+	timer_Prop.Stop();
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: COMPTIME=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	timer_Prop.Start();
 	ProcessPopulated( vol0, origin, &propParms );
 
 	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total TIME for propagation: %d [ms]\r", (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total TIME for propagation: %d [ms]\r", (int) (int) timer_Prop.Milliseconds() );
 
 Quit:
 
@@ -655,8 +675,8 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 	for( int i2=0; i2 < pSndAreas->numPortals; i2++)
 	{
 		idVec3 portalCoord = pSndAreas->portals[i2].center;
-
 		tempDist = (origin - portalCoord).LengthFast() * s_DOOM_TO_METERS;
+
 		// calculate and set initial portal losses
 		tempAtt = m_AreaPropsG[ initArea ].LossMult * tempDist;
 		
@@ -746,7 +766,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 			// Only do this for populated areas that matter (ie, they've been updated
 			//	on this propagation
 			
-			if ( pPopArea->addedTime == m_TimeStamp )
+			if ( pPopArea->addedTime == m_TimeStampProp )
 			{
 				pPopArea->bVisited = true;
 				// note the portal flooded in on for later processing
@@ -1272,19 +1292,35 @@ void CsndProp::DrawLines( idList<idVec3> *pointlist )
 	}
 }
 
-bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, 
-								SSprParms *propParms, float maxDist )
+void CsndProp::SetPortalLoss( int handle, float value )
 {
-	bool				returnval;
-	int					popIndex(-1), floods(1), nodes(0), area, LocalPort;
-	float				tempDist(0), tempAtt(1), tempLoss(0), AddedDist(0);
+	CsndPropBase::SetPortalLoss( handle, value );
+
+	// update the portal loss info timestamp
+	m_TimeStampPortLoss = gameLocal.time;
+}
+
+bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, 
+								SSprParms *propParms, float MaxDist, int MaxFloods )
+{
+	bool				bDistLimit(false);
+	int					popIndex(-1), floods(1), nodes(0), area, LocalPort, FloodLimit;
+	float				tempDist(0), tempAtt(1), AddedDist(0);
 	idList<SExpQue>		NextAreas; // expansion queue
 	idList<SExpQue>		AddedAreas; // temp storage for next expansion queue
 	SExpQue				tempQEntry;
 	SPortEvent			*pPortEv; // pointer to portal event data
 	SPopArea			*pPopArea; // pointer to populated area data
 
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting wavefront expansion\r" );
+	if( MaxDist != -1 )
+		bDistLimit = true;
+
+	if( MaxFloods == -1 )
+		FloodLimit = s_MAX_FLOODNODES;
+	else
+		FloodLimit = MaxFloods;
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting wavefront expansion (fast), DistLimit = %f, NodeLimit = %d\r", MaxDist, FloodLimit );
 
 	// clear the visited settings on m_EventAreas from previous propagations
 	for(int i=0; i < m_numAreas; i++)
@@ -1328,13 +1364,12 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 		pPortEv->Floods = 1;
 		pPortEv->PrevPort = NULL;
 
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Loss at portal %d is %f [dB]\r", i2, tempLoss);
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist at portal %d is %f [m]\r", i2, tempDist);
 
 
 		// add the portal destination to flooding queue if the sound has
 		//	not dropped below threshold at the portal
-		if( tempDist < maxDist )
+		if( !bDistLimit || tempDist < MaxDist )
 		{
 			tempQEntry.area = pSndAreas->portals[i2].to;
 			tempQEntry.curDist = tempDist;
@@ -1353,7 +1388,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 	
 // done with initial area, begin main loop
 
-	while( NextAreas.Num() > 0 && nodes < s_MAX_FLOODNODES )
+	while( NextAreas.Num() > 0 && ( (floods < FloodLimit) ) )
 	{
 		floods++;
 
@@ -1398,7 +1433,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 			// Only do this for populated areas that matter (ie, they've been updated
 			//	on this propagation
 
-			if ( pPopArea->addedTime == m_TimeStamp )
+			if ( pPopArea->addedTime == m_TimeStampProp )
 			{
 				pPopArea->bVisited = true;
 				// note the portal flooded in on for later processing
@@ -1429,8 +1464,6 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 				// add any specific loss on the portal
 				tempAtt += m_PortData[ pSndAreas->portals[i].handle - 1 ].loss;
 
-				tempLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
-
 				// check if we've visited the area.  Fast prop only visits an area once
 				if( pEventAreas->bVisited )
 				{
@@ -1438,14 +1471,11 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 					continue;
 				}
 
-				if( tempDist > maxDist )
+				if( bDistLimit && tempDist > MaxDist )
 				{
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Distance rose above max distance at portal %d in area %d\r", i, area);
 					continue;
 				}
-
-				// path has been determined to be minimal loss, above cutoff intensity
-				// store the loss value
 
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Further expansion valid thru portal %d in area %d\r", i, area);
 				
@@ -1474,9 +1504,5 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 	} // end main loop
 
 	// return true if the expansion died out naturally rather than being stopped
-	returnval = ( !NextAreas.Num() );
-
-	return returnval;
-} // end function
-	
-
+	return !NextAreas.Num();
+}

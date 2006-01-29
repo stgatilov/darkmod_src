@@ -29,6 +29,9 @@
 
 #include "sndproploader.h"
 #include "matrixsq.h"
+#include "../game/misc.h"
+
+class idLocationEntity;
 
 // TODO: Write the mapfile timestamp to the .spr file and compare them
 
@@ -337,45 +340,46 @@ void CsndPropLoader::ParseWorldSpawn ( idDict args )
 void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 {
 	int area;
-	float lossMult;
+	float lossMult, VolMod;
 	bool SpherSpread(false);
 	SAreaProp propEntry;
+	idStr lossvalue, VolOffset;
 
-	// define these strings for the log reporting 
-	// (because I'm too lazy to put in another if statement)
-	idStr modelnames[2];
-	modelnames[0] = "indoor propagation model";
-	modelnames[1] = "outdoor propagation model";
-	
-	idStr lossvalue = args.GetString("loss_mult");
-
-	if(!( lossvalue.IsNumeric() ))
-	{
-		lossMult = 1.0;
-		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Non-numeric loss_mult value on sound area entity: %s.  Default loss value assumed\r", args.GetString("name") );
-	}
-	else
-	{
-		lossMult = fabs(atof(lossvalue));
-	}
-	
 	if ( ( area = gameRenderWorld->PointInArea(args.GetVector("origin")) ) == -1 )
 	{
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Sound area properties entity %s is not placed in any area.  It will be ignored\r", args.GetString("name") );
 		goto Quit;
 	}
+	
+	lossvalue = args.GetString("sound_loss_mult", "1.0");
 
-	// multiply by default attenuation constant
+	if(!( lossvalue.IsNumeric() ))
+	{
+		lossMult = 1.0;
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Non-numeric loss_mult value on area data entity: %s.  Default value assumed\r", args.GetString("name") );
+	}
+	else
+		lossMult = fabs(atof(lossvalue));
+
+	VolOffset = args.GetString("sound_vol_offset", "0.0");
+
+	if(!( VolOffset.IsNumeric() ))
+	{
+		VolMod = 0.0;
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Non-numeric volume offset value on area data entity: %s.  Default value assumed\r", args.GetString("name") );
+	}
+	else
+		VolMod = atof(VolOffset);
+
+	// multiply Loss Mult by default attenuation constant
 	propEntry.LossMult = lossMult * m_SndGlobals.kappa0;
+	propEntry.VolMod = VolMod;
 	propEntry.area = area;
-
-	SpherSpread = args.GetBool("outdoor_prop","0");
-	propEntry.SpherSpread = SpherSpread;
 
 	//add to the area properties list
 	m_AreaProps.Append( static_cast<const SAreaProp>(propEntry) );
 			
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Entity %s is a sound area entity.  Applied loss multiplier %f, using %s\r", args.GetString("name"), fabs(atof(lossvalue)), modelnames[ int(SpherSpread) ] );
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Entity %s is a sound area entity.  Applied loss multiplier %f, volume modifier %f\r", args.GetString("name"), lossMult, VolMod );
 	
 Quit:
 	return;
@@ -395,15 +399,18 @@ void CsndPropLoader::FillAPGfromAP ( int numAreas )
 	for (i=0; i<numAreas; i++)
 	{
 		m_AreaPropsG[i].LossMult = 1.0 * m_SndGlobals.kappa0;
-		m_AreaPropsG[i].SpherSpread = m_bDefaultSpherical;
+		m_AreaPropsG[i].VolMod = 0.0;
+		m_AreaPropsG[i].DataEntered = false;
 	}
 
 	for(j=0; j < m_AreaProps.Num(); j++)
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Applying area property entity %d to gameplay properties array\r", j );
+		
 		area = m_AreaProps[j].area;
 		m_AreaPropsG[area].LossMult = m_AreaProps[j].LossMult;
-		m_AreaPropsG[area].SpherSpread = m_AreaProps[j].SpherSpread;
+		m_AreaPropsG[area].VolMod = m_AreaProps[j].VolMod;
+		m_AreaPropsG[area].DataEntered = true;
 	}
 
 	return;
@@ -512,12 +519,12 @@ void CsndPropLoader::CreateAreasData ( void )
 		}
 	}
 
-	// Apply special area Properties (loss and indoor/outdoor)
+	// Apply special area Properties
 	for(k = 0; k < m_AreaProps.Num(); k++)
 	{
 		anum = m_AreaProps[k].area;
 		m_sndAreas[anum].LossMult = m_AreaProps[k].LossMult;
-		m_sndAreas[anum].SpherSpread = m_AreaProps[k].SpherSpread;
+		m_sndAreas[anum].VolMod = m_AreaProps[k].VolMod;
 		propscount++;
 	}
 
@@ -625,7 +632,39 @@ void CsndPropBase::DestroyAreasData( void )
 
 void CsndPropBase::SetPortalLoss( int handle, float value )
 {
+	// make sure the handle is valid
+	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
+	{
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("SetPortalLoss called with invalid portal handle %d.\r", handle );
+		gameLocal.Warning( "SetPortalLoss called with invalid portal handle %d.\n", handle );
+
+		goto Quit;
+	}
+
 	m_PortData[ handle - 1 ].loss = value;
+
+Quit:
+	return;
+}
+
+float CsndPropBase::GetPortalLoss( int handle )
+{
+	float returnval;
+
+	// make sure the handle is valid
+	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
+	{
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("GetPortalLoss called with invalid portal handle %d, returning zero loss.\r", handle );
+		gameLocal.Warning( "GetPortalLoss called with invalid portal handle %d, returning zero loss.\n", handle );
+
+		returnval = 0.0;
+		goto Quit;
+	}
+
+	returnval = m_PortData[ handle - 1 ].loss;
+
+Quit:
+	return returnval;
 }
 
 
@@ -651,8 +690,43 @@ void CsndPropLoader::CompileMap( idMapFile *MapFile  )
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound propagation system finished loading.\r");
 
-	//TODO: Temporarily this is set to true always. Replace when we do precompiling!
 	m_bLoadSuccess = true;
+}
+
+void CsndPropLoader::FillLocationData( void )
+{
+	idLocationEntity *pLocEnt;
+	SAreaProp *pAreaProp;
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Filling location soundprop data.\r");
+
+	if ( !m_AreaPropsG.Num() )
+		goto Quit;
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Checking %d areas\r", gameRenderWorld->NumAreas() );
+	for(int i = 0; i < gameRenderWorld->NumAreas(); i++)
+	{
+		pAreaProp = &m_AreaPropsG[i];
+		if( pAreaProp->DataEntered )
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Data already entered for are %d, skipping\r", i );
+			continue;
+		}
+
+		pLocEnt = gameLocal.LocationForArea( i );
+		if ( !pLocEnt )
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("No location for area %d, skipping\r", i );
+			continue;
+		}
+
+		pAreaProp->LossMult = pLocEnt->m_SndLossMult;
+		pAreaProp->VolMod = pLocEnt->m_SndVolMod;
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found location data for area %d, entering lossmult %f, volmod %f\r", i, pAreaProp->LossMult, pAreaProp->VolMod );
+	}
+
+Quit:
+	return;
 }
 
 void CsndPropLoader::Shutdown( void )
