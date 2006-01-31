@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2006/01/31 22:34:44  sparhawk
+ * StimReponse first working version
+ *
  * Revision 1.3  2006/01/25 22:05:51  sparhawk
  * Added additional entries to support stims on projectiles.
  *
@@ -32,8 +35,6 @@
 
 #ifndef STIMRESPONSE_H
 #define STIMRESPONSE_H
-
-#include "list.h"
 
 /******************************************************************************
 The Stim/Response system consists of a collection class, which handles the
@@ -116,6 +117,9 @@ protected:
 };
 
 
+// If default stims are to be added here, the static array in the CPP file
+// also must be updated. USER and UNDEFINED are not to be added though, as
+// they have special meanings.
 typedef enum {
 	ST_FROB,			// Frobbed
 	ST_FIRE,			// Fire
@@ -135,6 +139,7 @@ typedef enum {
 	ST_SIT,				// can be used to sit down
 	ST_READ,			// Can be read
 	ST_RANDOM,			// Random response is selected
+	ST_TIMER,			// Timer trigger
 	ST_USER				= 1000,	// User defined types should use this as it's base
 	ST_DEFAULT			= -1
 } StimType;
@@ -147,11 +152,47 @@ typedef enum {
 } StimState;
 
 /**
- * CStimulus is a base class for the stims. The constructor and destructors
+ * CStimResponse is the baseclass for stims and responses
+ */
+class CStimResponse {
+friend CStimResponseCollection;
+protected:
+	CStimResponse(idEntity *Owner, int Type);
+	virtual ~CStimResponse(void);
+
+public:
+	/**
+	 * Id for the stimulus that uniquely identifies a stim, so they can
+	 * be associated to each other.
+	 */
+	int					m_StimTypeId;
+
+	// This is only populated with the Id as used in the entity definition. We
+	// store the name here to reference the script action key.
+	idStr				m_StimTypeName;
+
+	/**
+	 * If set to true, then the stim can be removed from an entity. This is mistly needed
+	 * for an external app lication later on, so that the defauls can not be accidently
+	 * removed.
+	 */
+	bool				m_Removable;
+
+	/**
+	 * Default means that this is a stim which has been added as default to this entity.
+	 * Thiw would also mainly be used for an editor.
+	 */
+	bool				m_Default;
+
+	idEntity			*m_Owner;
+};
+
+/**
+ * CStim is a base class for the stims. The constructor and destructors
  * are declared protected so that only the collection can actually create
  * destroy them.
  */
-class CStim {
+class CStim : public CStimResponse {
 friend CStimResponseCollection;
 
 protected:
@@ -169,18 +210,12 @@ protected:
 	 */
 	CStimResponseTimer	*m_Timer;
 
-	/**
-	 * Id for the stimulus that uniquely identifies a stim, so they can
-	 * be associated to each other.
-	 */
-	int					m_StimTypeId;
-
+public:
 	/**
 	 * State of this stimuls.
 	 */
 	StimState			m_State;
 
-public:
 	/**
 	 * Radius defines the radius the action can reach out
 	 */
@@ -237,26 +272,14 @@ public:
 	 */
 	int					m_ApplyTimer;
 	int					m_ApplyTimerVal;
-
-	/**
-	 * If set to true, then the stim can be removed from an entity. This is mistly needed
-	 * for an external app lication later on, so that the defauls can not be accidently
-	 * removed.
-	 */
-	bool				m_Removable;
-
-	/**
-	 * Default means that this is a stim which has been added as default to this entity.
-	 * Thiw would also mainly be used for an editor.
-	 */
-	bool				m_Default;
-
-	idEntity			*m_Owner;
 };
 
 
-class CResponse {
+class CResponse : public CStimResponse {
 friend CStimResponseCollection;
+
+public:
+	void TriggerResponse(idEntity *Stim);
 
 protected:
 	CResponse(idEntity *Owner, int Type);
@@ -274,13 +297,7 @@ protected:
 	 * Scriptfunction that is to be executed when this response 
 	 * is triggered.
 	 */
-	char				*m_ScriptFunction;
-
-	/**
-	 * Id for the stimulus that uniquely identifies a stim, so they can
-	 * be associated to each other.
-	 */
-	int					m_StimTypeId;
+	idStr				m_ScriptFunction;
 
 	/**
 	 * How much damage must be applied for this response?
@@ -299,20 +316,6 @@ protected:
 	 */
 
 	float				m_Chance;
-	/**
-	 * If set to true, then the stim can be removed from an entity. This is mistly needed
-	 * for an external app lication later on, so that the defauls can not be accidently
-	 * removed.
-	 */
-	bool				m_Removable;
-
-	/**
-	 * Default means that this is a stim which has been added as default to this entity.
-	 * Thiw would also mainly be used for an editor.
-	 */
-	bool				m_Default;
-
-	idEntity			*m_Owner;
 };
 
 /**
@@ -339,10 +342,21 @@ public:
 	CResponse			*AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
 
 	/**
+	 * AddStim/Response with already configured objects. If the type already exists, the new object is not added 
+	 * and the pointer to the existing object is returned, otherwise the added pointer is returned.
+	 */
+	CStim				*AddStim(CStim *);
+	CResponse			*AddResponse(CResponse *);
+
+	/**
 	 * RemoveStim will remove the stim of the given type and the object is destroyed.
 	 * Any pointer that still exists will become invalid after that.
+	 * The number of remaining stims are returned.
 	 */
-	void				RemoveStim(int Type);
+	int				RemoveStim(int Type);
+	int				RemoveResponse(int Type);
+	int				RemoveStim(CStim *);
+	int				RemoveResponse(CResponse *);
 
 	/**
 	 * AddEntityToList will add the given entity to the list exactly once. If the entity
@@ -353,13 +367,14 @@ public:
 	idList<CStim *>		&GetStimList(void) { return m_Stim; };
 	idList<CResponse *>	&GetResponseList(void) { return m_Response; };
 
-protected:
-	/**
-	 * MaxRadius is the biggest radius for any given stimulus, currently in 
-	 * the collection.
-	 */
-	float				m_MaxRadius;
+	CStimResponse		*GetStimResponse(int StimType, bool Stim);
+	CStim				*GetStim(int StimType);
+	CResponse			*GetResponse(int StimType);
 
+	void				ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner);
+	bool				ParseSpawnArg(const idDict *args, idEntity *Owner, const char Class, int Counter);
+
+protected:
 	idList<CStim *>		m_Stim;
 	idList<CResponse *>	m_Response;
 };

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2006/01/31 22:35:07  sparhawk
+ * StimReponse first working version
+ *
  * Revision 1.46  2006/01/29 04:28:00  ishtvan
  * *) Added GetLocationForArea, used by soundprop
  *
@@ -3998,7 +4001,6 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	}
 
 	bounds = idBounds( origin ).Expand( radius );
-
 	// get all entities touching the bounds
 	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
 
@@ -5429,12 +5431,91 @@ void idGameLocal::ImpulseFree(ImpulseFunction_t Function)
 	m_KeyData[Function].Impulse = -1;
 }
 
+int idGameLocal::CheckStimResponse(idList<idEntity *> &l, idEntity *e)
+{
+	int rc = -1;
+	int i, n;
+
+	n = l.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(l[i] == e)
+		{
+			rc = i;
+			break;
+		}
+	}
+
+	return(rc);
+}
+
+
+bool idGameLocal::AddStim(idEntity *e)
+{
+	bool rc = true;
+
+	if(CheckStimResponse(m_StimEntity, e) == -1)
+		m_StimEntity.Append(e);
+
+	return rc;
+}
+
+void idGameLocal::RemoveStim(idEntity *e)
+{
+	int i;
+
+	if((i = CheckStimResponse(m_StimEntity, e)) != -1)
+		m_StimEntity.RemoveIndex(i);
+}
+
+bool idGameLocal::AddResponse(idEntity *e)
+{
+	bool rc = true;
+
+	if(CheckStimResponse(m_RespEntity, e) == -1)
+		m_RespEntity.Append(e);
+
+	return rc;
+}
+
+
+void idGameLocal::RemoveResponse(idEntity *e)
+{
+	int i;
+
+	if((i = CheckStimResponse(m_RespEntity, e)) != -1)
+		m_RespEntity.RemoveIndex(i);
+}
+
+void idGameLocal::DoResponseAction(int StimType, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
+{
+	int i;
+	CResponse *r;
+
+	for(i = 0; i < n; i++)
+	{
+		// ignore the original entity because an entity shouldn't respond 
+		// to it's own stims.
+		if(Ent[i] == e)
+			continue;
+
+		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(StimType)) != NULL)
+			r->TriggerResponse(e);
+	}
+}
+
 void idGameLocal::ProcessStimResponse(void)
 {
 	idEntity *e;
 	int ei, en;
 	int si, sn;
+	int n;
+	float radius;
+	idVec3 origin;
+
 	CStimResponseCollection *src;
+	idBounds bounds;
+	idEntity *Ent[MAX_GENTITIES];
 
 	en = m_StimEntity.Num();
 
@@ -5443,11 +5524,20 @@ void idGameLocal::ProcessStimResponse(void)
 		e = m_StimEntity[ei];
 		if((src = e->GetStimResponseCollection()) != NULL)
 		{
+			origin = e->GetPhysics()->GetOrigin();
+
 			idList<CStim *> &stim = src->GetStimList();
 
 			sn = stim.Num();
 			for(si = 0; si < sn; si++)
 			{
+				if(stim[si]->m_State != SS_DISABLED && (radius = stim[si]->m_Radius) != 0.0)
+				{
+					bounds = idBounds(origin).ExpandSelf(radius);
+					n = clip.EntitiesTouchingBounds(bounds, -1, Ent, MAX_GENTITIES);
+					if(n != 0)
+						DoResponseAction(stim[si]->m_StimTypeId, Ent, n, e);
+				}
 			}
 		}
 	}

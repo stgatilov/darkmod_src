@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/01/31 22:34:44  sparhawk
+ * StimReponse first working version
+ *
  * Revision 1.2  2006/01/25 22:05:51  sparhawk
  * Added additional entries to support stims on projectiles.
  *
@@ -132,8 +135,10 @@ void CProjectileResult::Init
 	pProj->spawnArgs.GetInt("stim_type", "-1", StimType);
 	if(StimType != ST_DEFAULT)
 	{
+		CStim *s;
 		pProj->spawnArgs.GetFloat("stim_radius", "10", StimRadius);
-		AddStim(StimType, StimRadius);
+		s = AddStim(StimType, StimRadius);
+		s->m_State = SS_ENABLED;
         DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim type %u with radius %f added to entity %08lX\r", StimType, StimRadius, this);
 	}
 

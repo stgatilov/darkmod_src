@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/01/31 22:35:07  sparhawk
+ * StimReponse first working version
+ *
  * Revision 1.22  2006/01/29 04:28:00  ishtvan
  * *) Added GetLocationForArea, used by soundprop
  *
@@ -97,6 +100,8 @@
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+class CStim;
 
 // enables water physics
 #define MOD_WATERPHYSICS
@@ -843,6 +848,14 @@ public:
 	 * via this pointer.
 	 */
 	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+
+	bool					AddStim(idEntity *);
+	void					RemoveStim(idEntity *);
+	bool					AddResponse(idEntity *);
+	void					RemoveResponse(idEntity *);
+	int						CheckStimResponse(idList<idEntity *> &, idEntity *);
+
+	void					DoResponseAction(int StimType, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
 
 	/**
 	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.

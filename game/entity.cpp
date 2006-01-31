@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/01/31 22:35:07  sparhawk
+ * StimReponse first working version
+ *
  * Revision 1.29  2006/01/24 22:03:46  sparhawk
  * Stim/Response implementation preliminary
  *
@@ -567,7 +570,7 @@ idEntity::idEntity()
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
-	// object is rather small (about 40 bytes in total), so this doesn't really hurt that 
+	// object is rather small, so this doesn't really hurt that 
 	// much and makes the code easier to control.
 	m_StimResponseColl = new CStimResponseCollection;
 }
@@ -709,6 +712,8 @@ void idEntity::Spawn( void )
 		ConstructScriptObject();
 	}
 
+	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
+
 	LoadTDMSettings();
 }
 
@@ -764,6 +769,9 @@ idEntity::~idEntity( void )
 	FreeSoundEmitter( false );
 
 	gameLocal.UnregisterEntity( this );
+	gameLocal.RemoveStim(this);
+	gameLocal.RemoveResponse(this);
+	delete m_StimResponseColl;
 }
 
 /*
@@ -6294,6 +6302,7 @@ void idEntity::StimAdd(int Type, float Radius)
 
 void idEntity::StimRemove(int Type)
 {
+	RemoveStim(Type);
 }
 
 void idEntity::ResponseAdd(int Type)
@@ -6303,12 +6312,28 @@ void idEntity::ResponseAdd(int Type)
 
 void idEntity::ResponseRemove(int Type)
 {
+	RemoveResponse(Type);
 }
+
+void idEntity::RemoveStim(int Type)
+{
+	if(m_StimResponseColl->RemoveStim(Type) == 0)
+		gameLocal.RemoveStim(this);
+}
+
+void idEntity::RemoveResponse(int Type)
+{
+	if(m_StimResponseColl->RemoveResponse(Type) == 0)
+		gameLocal.RemoveResponse(this);
+}
+
 
 CStim *idEntity::AddStim(int Type, float Radius, bool Removable, bool Default)
 {
 	CStim *pStim;
 	pStim = m_StimResponseColl->AddStim(this, Type, Radius, Removable, Default);
+	gameLocal.AddStim(this);
+
 	return pStim;
 }
 
@@ -6316,6 +6341,8 @@ CResponse *idEntity::AddResponse(int Type, bool Removable, bool Default)
 {
 	CResponse *pResp;
 	pResp = m_StimResponseColl->AddResponse(this, Type, Removable, Default);
+	gameLocal.AddResponse(this);
+
 	return pResp;
 }
 
