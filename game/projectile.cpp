@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/02/01 04:51:39  ishtvan
+ * fixed bug with assume_active projectile setting
+ *
  * Revision 1.9  2006/01/13 08:53:18  ishtvan
  * added texture dependent damage multipliers
  *
@@ -95,9 +98,13 @@ idProjectile::idProjectile( void ) {
 	memset( &renderLight, 0, sizeof( renderLight ) );
 
 	// note: for net_instanthit projectiles, we will force this back to false at spawn time
+
 	fl.networkSync		= true;
 
+
+
 	netSyncPhysics		= false;
+
 }
 
 /*
@@ -124,8 +131,11 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 	owner.Save( savefile );
 
 	projectileFlags_s flags = projectileFlags;
+
 	LittleBitField( &flags, sizeof( flags ) );
+
 	savefile->Write( &flags, sizeof( flags ) );
+
 
 	savefile->WriteFloat( thrust );
 	savefile->WriteInt( thrust_end );
@@ -159,6 +169,7 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 
 	savefile->Read( &projectileFlags, sizeof( projectileFlags ) );
 	LittleBitField( &projectileFlags, sizeof( projectileFlags ) );
+
 
 	savefile->ReadFloat( thrust );
 	savefile->ReadInt( thrust_end );
@@ -255,9 +266,13 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 
 	state = CREATED;
 
+
 	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
+
 		netSyncPhysics = true;
+
 	}
+
 }
 
 /*
@@ -676,6 +691,7 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
 
 	if ( gameLocal.isServer && fl.networkSync ) {
+
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 		int			excludeClient;
@@ -913,13 +929,22 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	if ( gameLocal.entities[collision.c.entityNum] && spawnArgs.GetBool( "bindOnImpact" ) ) {
 		idEntity *e = gameLocal.entities[ collision.c.entityNum ];
 
+
+
 		if( e->IsType( idAFEntity_Base::Type ) ) {
+
 			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
+
 			this->BindToJoint( e, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), true );
+
 		}
+
 		else {
+
 			Bind( gameLocal.entities[collision.c.entityNum], true );
+
 		}
+
 	}
 
 	// splash damage
@@ -1166,24 +1191,43 @@ idProjectile::WriteToSnapshot
 */
 void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( owner.GetSpawnId(), 32 );
+
 	msg.WriteBits( state, 3 );
+
 	msg.WriteBits( fl.hidden, 1 );
+
 	if ( netSyncPhysics ) {
+
 		msg.WriteBits( 1, 1 );
+
 		physicsObj.WriteToSnapshot( msg );
+
 	} else {
+
 		msg.WriteBits( 0, 1 );
+
 		const idVec3 &origin	= physicsObj.GetOrigin();
+
 		const idVec3 &velocity	= physicsObj.GetLinearVelocity();
 
+
+
 		msg.WriteFloat( origin.x );
+
 		msg.WriteFloat( origin.y );
+
 		msg.WriteFloat( origin.z );
 
+
+
 		msg.WriteDeltaFloat( 0.0f, velocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );		
+
 	}
+
 }
 
 /*
@@ -1238,36 +1282,67 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 
 	if ( msg.ReadBits( 1 ) ) {
+
 		physicsObj.ReadFromSnapshot( msg );
+
 	} else {
+
 		idVec3 origin;
+
 		idVec3 velocity;
+
 		idVec3 tmp;
+
 		idMat3 axis;
 
+
+
 		origin.x = msg.ReadFloat();
+
 		origin.y = msg.ReadFloat();
+
 		origin.z = msg.ReadFloat();
 
+
+
 		velocity.x = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		velocity.y = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+
 		velocity.z = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 
+
+
 		physicsObj.SetOrigin( origin );
+
 		physicsObj.SetLinearVelocity( velocity );
 
+
+
 		// align z-axis of model with the direction
+
 		velocity.NormalizeFast();
+
 		axis = velocity.ToMat3();
+
 		tmp = axis[2];
+
 		axis[2] = axis[0];
+
 		axis[0] = -tmp;
+
 		physicsObj.SetAxis( axis );
+
 	}
 
+
+
 	if ( msg.HasChanged() ) {
+
 		UpdateVisuals();
+
 	}
+
 }
 
 /*
@@ -1330,7 +1405,7 @@ bool idProjectile::TestActivated( const char *typeName )
 			|| !typeName )
 		{
 			// return true if the surfaces list is blank and we assume active
-			// (returns false && false)
+			bReturnVal = true;
 			goto Quit;
 		}
 	}
@@ -1340,10 +1415,11 @@ bool idProjectile::TestActivated( const char *typeName )
 	MaterialsList.Append(' ');
 
 	bReturnVal = ( MaterialsList.Find( va(" %s ", typeName) ) != -1 );
-	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("TestActive: Searched for A %s A in list A %s A\r", va(" %s ", typeName), MaterialsList.c_str());
+	// this XOR should cover both cases, assumed active and found dud, assumed dud found active
+	bReturnVal ^= bAssumeActive;
 
 Quit:
-	return bReturnVal && !bAssumeActive;
+	return bReturnVal;
 }
 
 /*
