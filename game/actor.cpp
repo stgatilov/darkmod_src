@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/02/03 10:57:11  ishtvan
+ * added framework for knockouts
+ *
  * Revision 1.8  2005/12/04 02:43:50  ishtvan
  * updated surface checks to check new surface types
  *
@@ -332,6 +335,9 @@ bool idAnimState::UpdateState( void ) {
 
 ***********************************************************************/
 
+// DarkMod: TODO: Move this to config file or cvar
+const char *s_KNOCKOUT_LOCATION_NAME = "head";
+
 const idEventDef AI_EnableEyeFocus( "enableEyeFocus" );
 const idEventDef AI_DisableEyeFocus( "disableEyeFocus" );
 const idEventDef EV_Footstep( "footstep" );
@@ -373,6 +379,8 @@ const idEventDef AI_SetState( "setState", "s" );
 const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
+
+const idEventDef AI_Knockout( "knockout" );
 
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
@@ -418,6 +426,8 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
+
+	EVENT( AI_Knockout,					idActor::Knockout )
 END_CLASS
 
 /*
@@ -2194,22 +2204,50 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
-	if ( damage > 0 ) {
+
+	// check for KO and knockout if appropriate
+	// TODO: May have to check KO location elsewhere if specifying by location doesn't work
+	if( damageDef->GetBool( "knockout" )
+		 && !strcmp( GetDamageGroup( location ), s_KNOCKOUT_LOCATION_NAME ) )
+	{
+		// only skip the rest if we go from conscious to unconscious
+		// For now, do not damage with first KO
+		if( Knockout(dir) )
+		{
+			if ( (attacker && attacker->IsType( idPlayer::Type ) ) ) 
+			{
+				// TODO: Add a KO to the stats (not yet implemented)
+				// static_cast< idPlayer* >( attacker )->AddAIKO();
+
+				goto Quit;
+			}
+		}
+	}
+
+	if ( damage > 0 )
+	{
 		health -= damage;
-		if ( health <= 0 ) {
-			if ( health < -999 ) {
+		if ( health <= 0 ) 
+		{
+			if ( health < -999 ) 
+			{
 				health = -999;
 			}
 			Killed( inflictor, attacker, damage, dir, location );
-			if ( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) {
+			if ( ( health < -20 ) && spawnArgs.GetBool( "gib" ) && damageDef->GetBool( "gib" ) ) 
+			{
 				Gib( dir, damageDefName );
 			}
-		} else {
+		} 
+		else
+		{
 			Pain( inflictor, attacker, damage, dir, location );
 		}
-	} else {
+	} else 
+	{
 		// don't accumulate knockback
-		if ( af.IsLoaded() ) {
+		if ( af.IsLoaded() ) 
+		{
 			// clear impacts
 			af.Rest();
 
@@ -2217,6 +2255,9 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			BecomeActive( TH_PHYSICS );
 		}
 	}
+
+Quit:
+	return;
 }
 
 /*
@@ -2234,7 +2275,7 @@ idActor::Pain
 =====================
 */
 bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	if ( af.IsLoaded() ) {
+	if ( af.IsLoaded() && !IsKnockedOut() ) {
 		// clear impacts
 		af.Rest();
 
