@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2006/02/03 05:30:09  ishtvan
+ * added soundprop scriptfunction to propagate sounds
+ *
  * Revision 1.17  2006/01/31 22:35:07  sparhawk
  * StimReponse first working version
  *
@@ -107,10 +110,15 @@ extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
 #ifdef MOD_WATERPHYSICS
+
 extern const idEventDef EV_GetMass;				// MOD_WATERPHYSICS
+
 extern const idEventDef EV_IsInLiquid;			// MOD_WATERPHYSICS
+
 #endif		// MOD_WATERPHYSICS
+
 extern const idEventDef EV_CopyBind;
+
 
 // Think flags
 enum {
@@ -526,12 +534,12 @@ public:
 	/**
 	* Propagate a suspicious sound
 	**/
-	void PropSoundS( const char *localName, const char *globalName );
+	void PropSoundS( const char *localName, const char *globalName, float VolModIn = 0.0f );
 
 	/**
 	* Propagate an environmental sound (called by PropSound)
 	**/
-	void PropSoundE( const char *localName, const char *globalName );
+	void PropSoundE( const char *localName, const char *globalName, float VolModIn = 0.0f );
 
 	/**
 	* Propagate a sound directly, outside of StartSound
@@ -544,9 +552,12 @@ public:
 	*
 	* If the local definition is not found, it calls sound prop
 	* with the unmodified global definition.
+	*
+	* VolModIn is a modifier in dB added to the volume, in addition to 
+	* any modifier that might be present in the local sound def.
 	**/
 	void PropSoundDirect( const char *sndName, bool bForceLocal = false, 
-						  bool bAssumeEnv = false );
+						  bool bAssumeEnv = false, float VolModIn = 0.0f );
 
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
@@ -719,11 +730,19 @@ private:
 	void					StimRemove(int Type);
 	void					ResponseAdd(int Type);
 	void					ResponseRemove(int Type);
+	/**
+	* Used to propagate a sound directly via scripting, without playing the audible sound
+	**/
+	void					Event_PropSound( const char *sndName, float VolModIn = 0.0 );
 
 #ifdef MOD_WATERPHYSICS
+
 	void					Event_GetMass( int body );	// MOD_WATERPHYSICS
+
 	void					Event_IsInLiquid( void );	// MOD_WATERPHYSICS
+
 #endif		// MOD_WATERPHYSICS
+
 };
 
 /*

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/02/03 05:30:09  ishtvan
+ * added soundprop scriptfunction to propagate sounds
+ *
  * Revision 1.30  2006/01/31 22:35:07  sparhawk
  * StimReponse first working version
  *
@@ -208,6 +211,11 @@ const idEventDef EV_StimRemove( "StimRemove", "d" );
 const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
 
+// soundprop event: Propagate sound directly from scripting
+const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
+// I don't think scripting supports optional argument, so I must do this
+const idEventDef EV_TDM_PropSound( "propSound", "s" );
+
 #ifdef MOD_WATERPHYSICS
 
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
@@ -288,6 +296,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
 	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
+	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
+	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSound )
 
 #ifdef MOD_WATERPHYSICS
 
@@ -1932,7 +1942,7 @@ idEntity::PropSoundS
 // the last two values should be optional, so <global sound name>:volMod,
 // and <global sound name>,durMod also work.
 
-void idEntity::PropSoundS( const char *localName, const char *globalName )
+void idEntity::PropSoundS( const char *localName, const char *globalName, float VolModIn )
 {
 	int start, end, len;
 	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
@@ -2013,6 +2023,9 @@ void idEntity::PropSoundS( const char *localName, const char *globalName )
 
 	gName = gName.Mid(0, end);
 
+	// add the input volume modifier
+	volMod += VolModIn;
+
 	bFoundSnd = gameLocal.m_sndProp->CheckSound( gName.c_str(), false );
 
 Quit:
@@ -2032,10 +2045,10 @@ idEntity::PropSoundE
 ================
 */
 
-void idEntity::PropSoundE( const char *localName, const char *globalName )
+void idEntity::PropSoundE( const char *localName, const char *globalName, float VolModIn )
 {
 	bool bFoundSnd(false);
-	float volMod(1.0);
+	float volMod(0.0);
 	idStr gName(globalName), locName(localName), tempstr;
 
 	if( localName == NULL )
@@ -2048,6 +2061,9 @@ void idEntity::PropSoundE( const char *localName, const char *globalName )
 	// do the parsing of the local vars that modify the Env. sound
 
 	// strip gName of all modifiers at the end
+
+	// add the input volume modifier
+	volMod += VolModIn;
 
 Quit:
 	
@@ -2069,7 +2085,7 @@ idEntity::PropSoundDirect
 ================
 */
 
-void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv )
+void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn )
 {
 	idStr sprName, sprNameSG, sprNameEG;
 	bool bIsSusp(false), bIsEnv(false);
@@ -2102,7 +2118,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 
 	if (bIsSusp)
 	{
-		PropSoundS( sprName.c_str(), sprNameSG.c_str() );
+		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
 		// exit here, because we don't want to allow playing both
 		// env. sound AND susp. sound for the same sound and entity
@@ -2111,7 +2127,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	if (bIsEnv)
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
-		PropSoundE( sprName.c_str(), sprNameEG.c_str() );
+		PropSoundE( sprName.c_str(), sprNameEG.c_str(), VolModIn );
 		goto Quit;
 	}
 
@@ -2119,13 +2135,13 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	if ( bAssumeEnv )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global environmental\r", sprNameEG.c_str() );
-		PropSoundE( NULL, sprNameEG.c_str() );
+		PropSoundE( NULL, sprNameEG.c_str(), VolModIn );
 		goto Quit;
 	}
 	else
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
-		PropSoundS( NULL, sprNameSG.c_str() );
+		PropSoundS( NULL, sprNameSG.c_str(), VolModIn );
 	}
 
 Quit:
@@ -6318,31 +6334,50 @@ void idEntity::ResponseRemove(int Type)
 void idEntity::RemoveStim(int Type)
 {
 	if(m_StimResponseColl->RemoveStim(Type) == 0)
+
 		gameLocal.RemoveStim(this);
+
 }
 
 void idEntity::RemoveResponse(int Type)
 {
 	if(m_StimResponseColl->RemoveResponse(Type) == 0)
+
 		gameLocal.RemoveResponse(this);
+
 }
 
 
 CStim *idEntity::AddStim(int Type, float Radius, bool Removable, bool Default)
 {
 	CStim *pStim;
+
 	pStim = m_StimResponseColl->AddStim(this, Type, Radius, Removable, Default);
+
 	gameLocal.AddStim(this);
 
+
+
 	return pStim;
+
 }
 
 CResponse *idEntity::AddResponse(int Type, bool Removable, bool Default)
 {
 	CResponse *pResp;
+
 	pResp = m_StimResponseColl->AddResponse(this, Type, Removable, Default);
+
 	gameLocal.AddResponse(this);
 
+
+
 	return pResp;
+
+}
+
+void idEntity::Event_PropSound( const char *sndName, float VolModIn )
+{
+	PropSoundDirect( sndName, false, false, VolModIn );
 }
 
