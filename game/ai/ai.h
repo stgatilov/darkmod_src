@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/02/03 10:57:49  ishtvan
+ * added knockouts
+ *
  * Revision 1.6  2005/11/11 21:00:34  sparhawk
  * SDK 1.3 Merge
  *
@@ -435,6 +438,11 @@ public:
 	**/
 	float GetMovementVolMod( void );
 
+	/**
+	* Returns true if AI is knocked out
+	**/
+	bool  IsKnockedOut( void ) { return AI_KNOCKEDOUT; };
+
 public:
 	/**
 	* DarkMod AI Member Vars
@@ -581,6 +589,7 @@ protected:
 	idScriptBool			AI_PAIN;
 	idScriptFloat			AI_SPECIAL_DAMAGE;
 	idScriptBool			AI_DEAD;
+	idScriptBool			AI_KNOCKEDOUT;
 	idScriptBool			AI_ENEMY_VISIBLE;
 	idScriptBool			AI_ENEMY_IN_FOV;
 	idScriptBool			AI_ENEMY_DEAD;
@@ -701,6 +710,12 @@ protected:
 	// damage
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	/**
+	* Knockout - Knocks the AI unconscious with a blow from direction dir
+	* Returns true if going from conscious to unconscious, false otherwise
+	* Does nothing if already unconscious
+	**/
+	bool					Knockout( idVec3 dir = vec3_origin );
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );

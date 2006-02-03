@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/02/03 10:57:49  ishtvan
+ * added knockouts
+ *
  * Revision 1.10  2005/11/20 10:39:19  ishtvan
  * added tactile alert to AI when melee hit occurs
  *
@@ -1265,6 +1268,7 @@ void idAI::LinkScriptVariables( void )
 	AI_PAIN.LinkTo(				scriptObject, "AI_PAIN" );
 	AI_SPECIAL_DAMAGE.LinkTo(	scriptObject, "AI_SPECIAL_DAMAGE" );
 	AI_DEAD.LinkTo(				scriptObject, "AI_DEAD" );
+	AI_KNOCKEDOUT.LinkTo(		scriptObject, "AI_KNOCKEDOUT" );
 	AI_ENEMY_VISIBLE.LinkTo(	scriptObject, "AI_ENEMY_VISIBLE" );
 	AI_ENEMY_IN_FOV.LinkTo(		scriptObject, "AI_ENEMY_IN_FOV" );
 	AI_ENEMY_DEAD.LinkTo(		scriptObject, "AI_ENEMY_DEAD" );
@@ -3246,7 +3250,7 @@ idAI::StaticMove
 void idAI::StaticMove( void ) {
 	idActor	*enemyEnt = enemy.GetEntity();
 
-	if ( AI_DEAD ) {
+	if ( AI_DEAD || AI_KNOCKEDOUT ) {
 		return;
 	}
 
@@ -3556,6 +3560,7 @@ void idAI::PlayCinematic( void ) {
 		current_cinematic = 0;
 		ActivateTargets( gameLocal.GetLocalPlayer() );
 		fl.neverDormant = false;
+
 		return;
 	}
 
@@ -3608,7 +3613,9 @@ void idAI::PlayCinematic( void ) {
 		head.GetEntity()->Present();
 	}
 
+
 	fl.neverDormant = true;
+
 }
 
 /*
@@ -3624,8 +3631,8 @@ only the alert state scripts.
 void idAI::Activate( idEntity *activator ) {
 	idPlayer *player;
 
-	if ( AI_DEAD ) {
-		// ignore it when they're dead
+	if ( AI_DEAD || AI_KNOCKEDOUT ) {
+		// ignore it when they're dead or KO'd
 		return;
 	}
 
@@ -3959,7 +3966,7 @@ idAI::SetEnemy
 void idAI::SetEnemy( idActor *newEnemy ) {
 	int enemyAreaNum;
 
-	if ( AI_DEAD ) {
+	if ( AI_DEAD || AI_KNOCKEDOUT ) {
 		ClearEnemy();
 		return;
 	}
@@ -4762,7 +4769,7 @@ Used for playing chatter sounds on monsters.
 ================
 */
 bool idAI::CanPlayChatterSounds( void ) const {
-	if ( AI_DEAD ) {
+	if ( AI_DEAD || AI_KNOCKEDOUT ) {
 		return false;
 	}
 
@@ -4788,7 +4795,7 @@ idAI::PlayChatter
 */
 void idAI::PlayChatter( void ) {
 	// check if it's time to play a chat sound
-	if ( AI_DEAD || !chat_snd || ( chat_time > gameLocal.time ) ) {
+	if ( AI_DEAD || AI_KNOCKEDOUT || !chat_snd || ( chat_time > gameLocal.time ) ) {
 		return;
 	}
 
@@ -4886,7 +4893,8 @@ bool idAI::UpdateAnimationControllers( void ) {
 	idAngles	jointAng;
 	float		orientationJointYaw;
 
-	if ( AI_DEAD ) {
+	if ( AI_DEAD || AI_KNOCKEDOUT ) 
+	{
 		return idActor::UpdateAnimationControllers();
 	}
 
@@ -5776,4 +5784,103 @@ void idAI::CheckTactile( idVec3 &dir )
 			HadTactile( static_cast<idActor *>(obEnt) );
 		}
 	}
+}
+
+/*
+=====================
+idAI::Knockout
+
+Based on idAI::Killed
+=====================
+*/
+
+bool idAI::Knockout( idVec3 dir )
+{
+	bool bReturnVal(false);
+	idAngles ang;
+	const char *modelKOd;
+
+	if( AI_KNOCKEDOUT )
+	{
+		AI_PAIN = true;
+		AI_DAMAGE = true;
+
+		goto Quit;
+	}
+	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was KOd\r", name.c_str());
+
+// TODO: Check alert state and do not KO if alerted
+
+	EndAttack();
+
+	// stop all voice sounds
+	StopSound( SND_CHANNEL_VOICE, false );
+	if ( head.GetEntity() ) 
+	{
+		head.GetEntity()->StopSound( SND_CHANNEL_VOICE, false );
+		head.GetEntity()->GetAnimator()->ClearAllAnims( gameLocal.time, 100 );
+	}
+
+	disableGravity = false;
+	move.moveType = MOVETYPE_DEAD;
+	af_push_moveables = false;
+
+	physicsObj.UseFlyMove( false );
+	physicsObj.ForceDeltaMove( false );
+
+	// end our looping ambient sound
+	StopSound( SND_CHANNEL_AMBIENT, false );
+
+	RemoveAttachments();
+	RemoveProjectile();
+	StopMove( MOVE_STATUS_DONE );
+
+	ClearEnemy();
+
+	AI_KNOCKEDOUT = true;
+
+	// make original self nonsolid
+	physicsObj.SetContents( 0 );
+	physicsObj.GetClipModel()->Unlink();
+
+	Unbind();
+
+	if ( StartRagdoll() ) 
+	{
+		StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
+	}
+
+	if ( spawnArgs.GetString( "model_knockedout", "", &modelKOd ) ) 
+	{
+		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
+		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
+		SetModel( modelKOd );
+		physicsObj.SetLinearVelocity( vec3_zero );
+		physicsObj.PutToRest();
+		physicsObj.DisableImpact();
+	}
+
+	restartParticles = false;
+
+	state = GetScriptFunction( "state_KnockedOut" );
+	SetState( state );
+	SetWaitState( "" );
+
+	// drop items
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
+	while( kv ) 
+	{
+		idDict args;
+
+		args.Set( "classname", kv->GetValue() );
+		args.Set( "origin", physicsObj.GetOrigin().ToString() );
+		gameLocal.SpawnEntityDef( args );
+		kv = spawnArgs.MatchPrefix( "def_drops", kv );
+	}
+
+	bReturnVal = true;
+
+Quit:
+	return bReturnVal;
 }
