@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/02/04 09:44:07  ishtvan
+ * modified damage to take collision data argument
+ *
+ * knockout updates
+ *
  * Revision 1.9  2006/02/03 10:57:11  ishtvan
  * added framework for knockouts
  *
@@ -334,9 +339,6 @@ bool idAnimState::UpdateState( void ) {
 	idActor
 
 ***********************************************************************/
-
-// DarkMod: TODO: Move this to config file or cvar
-const char *s_KNOCKOUT_LOCATION_NAME = "head";
 
 const idEventDef AI_EnableEyeFocus( "enableEyeFocus" );
 const idEventDef AI_DisableEyeFocus( "disableEyeFocus" );
@@ -2171,6 +2173,8 @@ dir			direction of the attack for knockback in global space
 point		point at which the damage is being inflicted, used for headshots
 damage		amount of damage being inflicted
 
+collision	trace info for the collision that caused the damage.  Defaults to NULL.
+
 inflictor, attacker, dir, and point can be NULL for environmental effects
 
 Bleeding wounds and surface overlays are applied in the collision code that
@@ -2178,7 +2182,11 @@ calls Damage()
 ============
 */
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
+					  const char *damageDefName, const float damageScale, const int location,
+					  trace_t *collision ) 
+{
+	idVec3 KO_Spot(vec3_zero), delta(vec3_zero);
+	
 	if ( !fl.takedamage ) {
 		return;
 	}
@@ -2208,21 +2216,33 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// check for KO and knockout if appropriate
 	// TODO: May have to check KO location elsewhere if specifying by location doesn't work
 	if( damageDef->GetBool( "knockout" )
-		 && !strcmp( GetDamageGroup( location ), s_KNOCKOUT_LOCATION_NAME ) )
+		&& !strcmp( GetDamageGroup( location ), spawnArgs.GetString("ko_zone") )
+		&& collision )
 	{
-		// only skip the rest if we go from conscious to unconscious
-		// For now, do not damage with first KO
-		if( Knockout(dir) )
-		{
-			if ( (attacker && attacker->IsType( idPlayer::Type ) ) ) 
-			{
-				// TODO: Add a KO to the stats (not yet implemented)
-				// static_cast< idPlayer* >( attacker )->AddAIKO();
+		// check to see if we hit within the "knockout cone"
+		KO_Spot = GetEyePosition() + spawnArgs.GetVector("ko_spot_offset");
+		delta = KO_Spot - collision->c.point;
+		delta.NormalizeFast();
 
+		float minDot = (float)cos( DEG2RAD( spawnArgs.GetFloat("ko_angle") * 0.5f ) );
+
+		if( (delta * viewAxis[0]) >= minDot )
+		{
+
+			if( Knockout(dir, true) )
+			{
+				if ( (attacker && attacker->IsType( idPlayer::Type ) ) ) 
+				{
+					// TODO: Add a KO to the stats (not yet implemented)
+					// static_cast< idPlayer* >( attacker )->AddAIKO();	
+				}
+
+				// For now, first KO blow does no additional damage
 				goto Quit;
 			}
 		}
 	}
+
 
 	if ( damage > 0 )
 	{

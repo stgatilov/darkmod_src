@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2006/02/04 09:44:07  ishtvan
+ * modified damage to take collision data argument
+ *
+ * knockout updates
+ *
  * Revision 1.46  2006/01/27 14:07:16  sparhawk
  * numFrobEntities should be int and not float.
  *
@@ -7267,7 +7272,9 @@ inflictor, attacker, dir, and point can be NULL for environmental effects
 ============
 */
 void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
-					   const char *damageDefName, const float damageScale, const int location ) {
+					   const char *damageDefName, const float damageScale, const int location, 
+					   trace_t *collision ) 
+{
 	idVec3		kick;
 	int			damage;
 	int			armorSave;

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/02/04 09:44:07  ishtvan
+ * modified damage to take collision data argument
+ *
+ * knockout updates
+ *
  * Revision 1.6  2006/02/03 10:57:11  ishtvan
  * added framework for knockouts
  *
@@ -167,7 +172,13 @@ public:
 
 							// damage
 	void					SetupDamageGroups( void );
-	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
+	// DarkMod: Added trace reference to damage
+	virtual	void			Damage
+							( 
+								idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
+								const char *damageDefName, const float damageScale, const int location,
+								trace_t *collision = NULL
+							);
 	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
 	void					ClearPain( void );
@@ -308,7 +319,8 @@ protected:
 	* Knockout, only defined in derived classes
 	* Returns true if going from conscious to unconscious
 	**/
-	virtual bool			Knockout( idVec3 dir = vec3_origin ) { return false; };
+	virtual bool			Knockout( idVec3 dir = vec3_origin, bool bCheckAlert = false ) 
+							{ return false; };
 
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
