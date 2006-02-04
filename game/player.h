@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/02/04 10:26:43  gildoran
+ * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
+ *
  * Revision 1.15  2006/02/04 09:44:07  ishtvan
  * modified damage to take collision data argument
  *
@@ -300,6 +303,8 @@ public:
 	bool					m_NoViewChange;
 
 	idEntityPtr<idWeapon>	weapon;
+	bool					m_guiOverlayOn;
+	idUserInterface *		m_guiOverlay;
 	idUserInterface *		hud;				// MP: is NULL if not local player
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
@@ -566,7 +571,10 @@ public:
 	bool					NeedsIcon( void );
 
 	bool					SelfSmooth( void );
+
 	void					SetSelfSmooth( bool b );
+
+
 
 	/**
 	 * AddToInventory maps to a scriptfunction which will store an entity into
@@ -712,6 +720,7 @@ private:
 
 	bool					selfSmooth;
 
+
 	void					LookAtKiller( idEntity *inflictor, idEntity *attacker );
 
 	void					StopFiring( void );
@@ -774,6 +783,8 @@ private:
 * DarkMod Events
 **/
 	void					Event_GetEyePos( void );
+	void					Event_SetGuiOverlay( const char *guiFile );
+	void					Event_GetGuiOverlay( void );
 
 };
 
@@ -802,12 +813,20 @@ ID_INLINE bool idPlayer::IsLeader( void ) {
 }
 
 ID_INLINE bool idPlayer::SelfSmooth( void ) {
+
 	return selfSmooth;
+
 }
 
+
+
 ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
+
 	selfSmooth = b;
+
 }
+
+
 
 #endif /* !__GAME_PLAYER_H__ */
 

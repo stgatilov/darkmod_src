@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2006/02/04 10:26:43  gildoran
+ * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
+ *
  * Revision 1.47  2006/02/04 09:44:07  ishtvan
  * modified damage to take collision data argument
  *
@@ -222,6 +225,8 @@ const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
 const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
 const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
+const idEventDef EV_Player_SetGuiOverlay( "setGuiOverlay", "s" );
+const idEventDef EV_Player_GetGuiOverlay( "getGuiOverlay", NULL, 's' );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -244,6 +249,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
+	EVENT( EV_Player_SetGuiOverlay,			idPlayer::Event_SetGuiOverlay )
+	EVENT( EV_Player_GetGuiOverlay,			idPlayer::Event_GetGuiOverlay )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -591,9 +598,13 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteInt( pdasViewed[0] );
+
 	savefile->WriteInt( pdasViewed[1] );
+
 	savefile->WriteInt( pdasViewed[2] );
+
 	savefile->WriteInt( pdasViewed[3] );
+
 
 	savefile->WriteInt( selPDA );
 	savefile->WriteInt( selVideo );
@@ -691,9 +702,13 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 
 	// pdas
 	savefile->ReadInt( pdasViewed[0] );
+
 	savefile->ReadInt( pdasViewed[1] );
+
 	savefile->ReadInt( pdasViewed[2] );
+
 	savefile->ReadInt( pdasViewed[3] );
+
 
 	savefile->ReadInt( selPDA );
 	savefile->ReadInt( selVideo );
@@ -1111,6 +1126,8 @@ idPlayer::idPlayer()
 
 	weapon					= NULL;
 
+	m_guiOverlayOn			= false;
+	m_guiOverlay			= NULL;
 	hud						= NULL;
 	objectiveSystem			= NULL;
 	objectiveSystemOpen		= false;
@@ -1270,28 +1287,51 @@ idPlayer::idPlayer()
 	isLagged				= false;
 	isChatting				= false;
 	selfSmooth				= false;
+
 	m_NoViewChange			= false;
 
+
+
 	// Add the default stims to the player. These are stims
+
 	// that can be performed by the actual player, while the
+
 	// other stims like water, damage, kill, etc. are rather
+
 	// properties of the respective weapon or equipment.
+
 	// None of these stims require a radius in this case
+
 	// as they are determined by the various parts of the code
+
 	// that is responsible for handling it. It might be needed
+
 	// if these stims are added to an AI though.
+
 	CStim *pStim;
+
 	pStim = AddStim(ST_FROB, 0.0f, false, true);
+
 	pStim->EnableStim();
+
+
 
 	pStim = AddStim(ST_TOUCH, 0.0f, false, true);
+
 	pStim->EnableStim();
+
+
 
 	pStim = AddStim(ST_SOUND, 0.0f, false, true);
+
 	pStim->EnableStim();
 
+
+
 	pStim = AddStim(ST_VISUAL, 0.0f, false, true);
+
 	pStim->EnableStim();
+
 }
 
 /*
@@ -1389,6 +1429,7 @@ void idPlayer::Init( void ) {
 	landChange				= 0;
 	landTime				= 0;
 	zoomFov.Init( 0, 0, 0, 0 );
+
 	centerView.Init( 0, 0, 0, 0 );
 	fxFov					= false;
 
@@ -1572,7 +1613,9 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
+
 	m_NoViewChange = false;
+
 }
 
 /*
@@ -1633,6 +1676,8 @@ void idPlayer::Spawn( void ) {
 
 		objectiveSystem = uiManager->FindGui( "guis/pda.gui", true, false, true );
 		objectiveSystemOpen = false;
+
+		m_guiOverlayOn = false;
 	}
 
 	SetLastHitTime( 0 );
@@ -1809,6 +1854,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	inventory.Save( savefile );
 	weapon.Save( savefile );
 
+	savefile->WriteBool( m_guiOverlayOn );
+	savefile->WriteUserInterface( m_guiOverlay, false );
 	savefile->WriteUserInterface( hud, false );
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
@@ -2034,6 +2081,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		GetPDA()->AddEmail( inventory.emails[i] );
 	}
 
+	savefile->ReadBool( m_guiOverlayOn );
+	savefile->ReadUserInterface( m_guiOverlay );
 	savefile->ReadUserInterface( hud );
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
@@ -2598,6 +2647,7 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	if ( gameLocal.serverInfo.GetBool( "si_spectators" ) ) {
 		// never let spectators go back to game while sudden death is on
 		if ( canModify && gameLocal.mpGame.GetGameState() == idMultiplayerGame::SUDDENDEATH && !spec && wantSpectate == true ) {
+
 			userInfo->Set( "ui_spectate", "Spectate" );
 			modifiedInfo |= true;
 		} else {
@@ -2609,10 +2659,12 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 		}
 	} else {
 		if ( canModify && spec ) {
+
 			userInfo->Set( "ui_spectate", "Play" );
 			modifiedInfo |= true;
 		} else if ( spectating ) {  
 			// allow player to leaving spectator mode if they were in it when si_spectators got turned off
+
 			forceRespawn = true;
 		}
 		wantSpectate = false;
@@ -2625,12 +2677,14 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	team = ( idStr::Icmp( userInfo->GetString( "ui_team" ), "Blue" ) == 0 );
 	// server maintains TDM balance
 	if ( canModify && gameLocal.gameType == GAME_TDM && !gameLocal.mpGame.IsInGame( entityNumber ) && g_balanceTDM.GetBool() ) {
+
 		modifiedInfo |= BalanceTDM( );
 	}
 	UpdateSkinSetup( false );
 	
 	isChatting = userInfo->GetBool( "ui_chat", "0" );
 	if ( canModify && isChatting && AI_DEAD ) {
+
 		// if dead, always force chat icon off.
 		isChatting = false;
 		userInfo->SetBool( "ui_chat", false );
@@ -2697,6 +2751,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	_hud->SetStateInt( "player_stamina", staminapercentage );
 	_hud->SetStateInt( "player_shadow", 1 );
 	_hud->SetStateInt( "player_armor", inventory.armor );
+
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -2846,11 +2901,17 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	_hud->Redraw( gameLocal.realClientTime );
 
 	// weapon targeting crosshair
+
 	if ( !GuiActive() ) {
+
 		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
+
 			cursor->Redraw( gameLocal.realClientTime );
+
 		}
+
 	}
+
 
 	// Only use this if the old lightgem is selected. This may be usefull for
 	// slower machines.
@@ -4038,6 +4099,10 @@ idPlayer::ActiveGui
 idUserInterface *idPlayer::ActiveGui( void ) {
 	if ( objectiveSystemOpen ) {
 		return objectiveSystem;
+	}
+
+	if ( m_guiOverlayOn ) {
+		return m_guiOverlay;
 	}
 
 	return focusUI;
@@ -6134,6 +6199,12 @@ bool idPlayer::HandleESC( void ) {
 		return true;
 	}
 
+	if ( m_guiOverlayOn ) {
+		// Handle the escape?
+		// Not yet implemented.
+		// return true?
+	}
+
 	return false;
 }
 
@@ -6969,7 +7040,9 @@ void idPlayer::Think( void )
 	}
 
 	// determine if portal sky is in pvs
+
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
+
 }
 
 /*
@@ -8395,9 +8468,14 @@ void idPlayer::ClientPredictionThink( void ) {
 	usercmd = gameLocal.usercmds[ entityNumber ];
 
 	if ( entityNumber != gameLocal.localClientNum ) {
+
 		// ignore attack button of other clients. that's no good for predictions
+
 		usercmd.buttons &= ~BUTTON_ATTACK;
+
 	}
+
+
 
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
@@ -8527,9 +8605,13 @@ void idPlayer::ClientPredictionThink( void ) {
 	}
 
 	// determine if portal sky is in pvs
+
 	pvsHandle_t	clientPVS = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( clientPVS, GetPhysics()->GetOrigin() );
+
 	gameLocal.pvs.FreeCurrentPVS( clientPVS );
+
 }
 
 /*
@@ -8545,6 +8627,7 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 
 	// smoothen the rendered origin and angles of other clients
 	if ( gameLocal.isClient && gameLocal.framenum >= smoothedFrame && ( entityNumber != gameLocal.localClientNum || selfSmooth ) ) {
+
 		// render origin and axis
 		idMat3 renderAxis = viewAxis * GetPhysics()->GetAxis();
 		idVec3 renderOrigin = GetPhysics()->GetOrigin() + modelOffset * renderAxis;
@@ -8555,9 +8638,13 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 			if ( originDiff.LengthSqr() < Square( 100.0f ) ) {
 				// smoothen by pushing back to the previous position
 				if ( selfSmooth ) {
+
 					assert( entityNumber == gameLocal.localClientNum );
+
 					renderOrigin.ToVec2() -= net_clientSelfSmoothing.GetFloat() * originDiff;
+
 				} else {
+
 					renderOrigin.ToVec2() -= gameLocal.clientSmoothing * originDiff;
 				}
 			}
@@ -8732,12 +8819,20 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 
 	// If the player is alive, restore proper physics object
+
 	if ( health > 0 && IsActiveAF() ) {
+
 		StopRagdoll();
+
 		SetPhysics( &physicsObj );
+
 		physicsObj.EnableClip();
+
 		SetCombatContents( true );
+
 	}
+
+
 
 	if ( idealWeapon != newIdealWeapon ) {
 		if ( stateHitch ) {
@@ -9110,7 +9205,9 @@ idPlayer::NeedsIcon
 */
 bool idPlayer::NeedsIcon( void ) {
 	// local clients don't render their own icons... they're only info for other clients
+
 	return entityNumber != gameLocal.localClientNum && ( isLagged || isChatting );
+
 }
 
 void idPlayer::AddToInventory(idEntity *ent)
@@ -9347,4 +9444,50 @@ idPlayer::Event_GetEyePos
 void idPlayer::Event_GetEyePos( void )
 {
 	idThread::ReturnVector( firstPersonViewOrigin );
+}
+
+/*
+=====================
+idPlayer::Event_SetGuiOverlay
+=====================
+*/
+void idPlayer::Event_SetGuiOverlay( const char* guiFile )
+{
+	// If we already have a temporary gui running, let's be nice
+	// and tell it that it's about to disappear.
+	if ( m_guiOverlayOn ) {
+		m_guiOverlay->Activate( false, gameLocal.time );
+		m_guiOverlayOn = false;
+	}
+
+	// If they want us to load a new gui, it'll have an address.
+	// I should probably change this condition.
+	if ( guiFile[0] != '\0' ) { 	// guifile != "" ?
+
+		if ( uiManager->CheckGui(guiFile) ) {
+			if ( !m_guiOverlay ) {
+				m_guiOverlay = uiManager->Alloc();
+			}
+
+			m_guiOverlay->InitFromFile( guiFile );
+			m_guiOverlayOn = true;
+			m_guiOverlay->Activate( true, gameLocal.time );
+		} else {
+			gameLocal.Warning( "Unable to load gui file: %s\n", guiFile );
+		}
+
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetGuiOverlay
+=====================
+*/
+void idPlayer::Event_GetGuiOverlay( void )
+{
+	if ( m_guiOverlayOn )
+		idThread::ReturnString( m_guiOverlay->Name() );
+	else
+		idThread::ReturnString( "" );
 }
