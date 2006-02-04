@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/02/04 23:52:32  sparhawk
+ * Added support for arbitrary arguments being passed to a scriptfunction.
+ *
  * Revision 1.3  2006/01/29 04:18:10  ishtvan
  * added scriptfunction to get and dynamically set soundprop losses at portals
  *
@@ -1886,5 +1889,26 @@ void	idThread::Event_SetPortSoundLoss( int handle, float value )
 void	idThread::Event_GetPortSoundLoss( int handle )
 {
 	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalLoss( handle ) );
+}
+
+/*
+================
+idThread::CallFunctionArgs
+
+NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
+================
+*/
+bool idThread::CallFunctionArgs(const function_t *func, bool clearStack, const char *fmt, ...)
+{
+	bool rc = false;
+	va_list argptr;
+
+	ClearWaitFor();
+
+	va_start(argptr, fmt);
+	rc = interpreter.EnterFunctionVarArgVN(func, clearStack, fmt, argptr);
+	va_end(argptr);
+
+	return rc;
 }
 

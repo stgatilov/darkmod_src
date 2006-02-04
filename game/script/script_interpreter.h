@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/02/04 23:52:32  sparhawk
+ * Added support for arbitrary arguments being passed to a scriptfunction.
+ *
  * Revision 1.2  2005/11/11 22:01:38  sparhawk
  * SDK 1.3 Merge
  *
@@ -96,6 +99,21 @@ public:
 	void				ThreadCall( idInterpreter *source, const function_t *func, int args );
 	void				EnterFunction( const function_t *func, bool clearStack );
 	void				EnterObjectFunction( idEntity *self, const function_t *func, bool clearStack );
+
+	/**
+	 * EnterVarArgFunction runs a script function, but allows to pass parameters to the script.
+	 * The format string specifies which parameters are passed and in which order. The parameters
+	 * are the same as used in event.h.
+	 * e = entity
+	 * s = string  (char *)
+	 * f = float
+	 * v = vector
+	 *
+	 * NOTICE! All variables have to be passed in as a pointer.
+	 * Example: EnterVarArgFunction(ftk, true|false, "eesf", player, damage, (char *)"radius", &float(10.0));
+	 */
+	bool				EnterFunctionVarArgVN(const function_t *func, bool clearStack, const char *fmt, va_list args);
+	bool				EnterFunctionVarArg(const function_t *func, bool clearStack, const char *fmt, ...);
 
 	bool				Execute( void );
 	void				Reset( void );

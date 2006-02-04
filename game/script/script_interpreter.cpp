@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:33  sparhawk
- * Initial revision
+ * Revision 1.2  2006/02/04 23:52:32  sparhawk
+ * Added support for arbitrary arguments being passed to a scriptfunction.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -1822,3 +1825,78 @@ bool idInterpreter::Execute( void ) {
 
 	return threadDying;
 }
+
+bool idInterpreter::EnterFunctionVarArg(const function_t *func, bool clearStack, const char *fmt, ...)
+{
+	bool rc = false;
+	va_list argptr;
+
+	va_start(argptr, fmt);
+	rc = EnterFunctionVarArgVN(func, clearStack, fmt, argptr);
+	va_end(argptr);
+
+	return rc;
+}
+
+bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStack, const char *fmt, va_list args)
+{
+	bool rc = false;
+	char c;
+	char *p;
+	idEntity *e;
+	float *f;
+	int *d;
+	idVec3 *v;
+
+	if(func == NULL)
+		goto Quit;
+
+	if(clearStack)
+		Reset();
+
+	while((c = *fmt) != 0)
+	{
+		switch(c)
+		{
+			case 'e':
+				e = va_arg(args, idEntity *);
+				Push(e->entityNumber + 1);
+			break;
+
+			case 'v':
+				v = va_arg(args, idVec3 *);
+				Push(*reinterpret_cast<int *>(&v->x));
+				Push(*reinterpret_cast<int *>(&v->y));
+				Push(*reinterpret_cast<int *>(&v->z));
+			break;
+
+			case 's':
+				p = va_arg(args, char *);
+				PushString(p);
+			break;
+
+			case 'f':
+				f = va_arg(args, float *);
+				Push(*reinterpret_cast<int *>(f));
+			break;
+
+			case 'd':
+				d = va_arg(args, int *);
+				Push(*d);
+			break;
+
+			default:		// Unknown argument, so we clear the stack and exit
+				Reset();
+				goto Quit;
+		}
+		fmt++;
+	}
+
+	EnterFunction(func, false);
+
+	rc = true;
+
+Quit:
+	return rc;
+}
+
