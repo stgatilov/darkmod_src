@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/02/04 10:29:06  ishtvan
+ * knockout now checks alert states
+ *
  * Revision 1.7  2006/02/03 10:57:49  ishtvan
  * added knockouts
  *
@@ -712,10 +715,13 @@ protected:
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	/**
 	* Knockout - Knocks the AI unconscious with a blow from direction dir
+	*
+	* bCheckAlert sets whether to check current alert state (blackjakc) or not (gas arrow)
+	*
 	* Returns true if going from conscious to unconscious, false otherwise
 	* Does nothing if already unconscious
 	**/
-	bool					Knockout( idVec3 dir = vec3_origin );
+	bool					Knockout( idVec3 dir = vec3_origin, bool bCheckAlert = false );
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );

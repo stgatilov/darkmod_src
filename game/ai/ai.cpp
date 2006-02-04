@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/02/04 10:29:06  ishtvan
+ * knockout now checks alert states
+ *
  * Revision 1.11  2006/02/03 10:57:49  ishtvan
  * added knockouts
  *
@@ -5794,11 +5797,21 @@ Based on idAI::Killed
 =====================
 */
 
-bool idAI::Knockout( idVec3 dir )
+bool idAI::Knockout( idVec3 dir, bool bCheckAlert )
 {
+	idVec3 KOSpot;
 	bool bReturnVal(false);
 	idAngles ang;
 	const char *modelKOd;
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), state->Name());
+
+	// Do not KO if AI is at Alert State 2 or above
+	// TODO: Probably a better way to check this?
+	if( AI_AlertNum > spawnArgs.GetFloat("alert_thresh2") && bCheckAlert )
+	{
+		goto Quit;
+	}
 
 	if( AI_KNOCKEDOUT )
 	{
@@ -5808,9 +5821,6 @@ bool idAI::Knockout( idVec3 dir )
 		goto Quit;
 	}
 	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was KOd\r", name.c_str());
-
-// TODO: Check alert state and do not KO if alerted
-
 	EndAttack();
 
 	// stop all voice sounds
