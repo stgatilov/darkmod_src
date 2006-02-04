@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/02/04 10:27:20  ishtvan
+ * weapon now passes trace info as arg in damage to idActors
+ *
  * Revision 1.6  2006/02/03 10:48:57  ishtvan
  * D3 bugfix for melee defs getting damage zone
  *
@@ -3021,7 +3024,19 @@ void idWeapon::Event_Melee( void ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
-				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id) );
+
+				// Quick hack: Actors need to be sent the location they took damage from for the KO check
+				if (ent->IsType( idActor::Type ))
+				{
+					static_cast<idActor *>(ent)->Damage
+						( 
+						owner, owner, globalKickDir, meleeDefName, 
+						owner->PowerUpModifier( MELEE_DAMAGE ), 
+						CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
+						);
+				}
+				else
+					ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id) );
 
 				// apply a LARGE tactile alert to AI
 				if( ent->IsType(idAI::Type) )
