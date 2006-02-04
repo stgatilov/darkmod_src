@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2006/02/04 23:51:39  sparhawk
+ * Finished the Stim/Response for radius types.
+ *
  * Revision 1.4  2006/01/31 22:34:44  sparhawk
  * StimReponse first working version
  *
@@ -44,6 +47,9 @@ primary interactions with stims and responses are done via this collection.
 ******************************************************************************/
 class CStimResponseCollection;
 class CStim;
+
+extern char *cStimType[];
+
 
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.
@@ -378,6 +384,5 @@ protected:
 	idList<CStim *>		m_Stim;
 	idList<CResponse *>	m_Response;
 };
-
 
 #endif

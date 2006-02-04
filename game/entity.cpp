@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/02/04 23:51:56  sparhawk
+ * Finished the Stim/Response for radius types.
+ *
  * Revision 1.31  2006/02/03 05:30:09  ishtvan
  * added soundprop scriptfunction to propagate sounds
  *
@@ -735,6 +738,9 @@ idEntity::~idEntity
 idEntity::~idEntity( void )
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
+
+	gameLocal.RemoveResponse(this);
+	gameLocal.RemoveStim(this);
 
 	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
 		idBitMsg	msg;

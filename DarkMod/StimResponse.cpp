@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.4  2006/02/04 23:51:39  sparhawk
+ * Finished the Stim/Response for radius types.
+ *
  * Revision 1.3  2006/01/31 22:34:44  sparhawk
  * StimReponse first working version
  *
@@ -40,7 +43,7 @@
 // they have special meanings. This array allows us to reuse
 // the name in the key in the entity definition for the 
 // predefined stim/responses instead of their numerical values.
-static char *cStimType[] = {
+char *cStimType[] = {
 	"STIM_FROB",
 	"STIM_FIRE",
 	"STIM_WATER",
@@ -572,7 +575,7 @@ CResponse::~CResponse(void)
 {
 }
 
-void CResponse::TriggerResponse(idEntity *e)
+void CResponse::TriggerResponse(idEntity *StimEnt)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
@@ -581,7 +584,8 @@ void CResponse::TriggerResponse(idEntity *e)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
 		idThread *pThread = new idThread(pScriptFkt);
-		pThread->CallFunction(m_Owner, pScriptFkt, true);
+		float n = pThread->GetThreadNum();
+		pThread->CallFunctionArgs(pScriptFkt, true, "eef", m_Owner, StimEnt, &n);
 		pThread->DelayedStart(0);
 	}
 	else
@@ -591,7 +595,7 @@ void CResponse::TriggerResponse(idEntity *e)
 	if(m_FollowUp != NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Followup: %08lX\r", m_FollowUp);
-		m_FollowUp->TriggerResponse(e);
+		m_FollowUp->TriggerResponse(StimEnt);
 	}
 }
 
