@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/02/05 22:03:29  sparhawk
+ * StimEnable event added.
+ *
  * Revision 1.19  2006/02/05 07:12:14  ishtvan
  * redefined function Damage to take additional trace pointer argument
  *
@@ -733,8 +736,10 @@ private:
 	void					Event_SetNeverDormant( int enable );
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);
+	void					StimEnable(int Type, int State);
 	void					ResponseAdd(int Type);
 	void					ResponseRemove(int Type);
+
 	/**
 	* Used to propagate a sound directly via scripting, without playing the audible sound
 	**/

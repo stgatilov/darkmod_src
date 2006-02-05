@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2006/02/05 22:03:29  sparhawk
+ * StimEnable event added.
+ *
  * Revision 1.33  2006/02/05 07:12:14  ishtvan
  * redefined function Damage to take additional trace pointer argument
  *
@@ -214,6 +217,7 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 // for stims and responses are pretty much the same.
 const idEventDef EV_StimAdd( "StimAdd", "df" );
 const idEventDef EV_StimRemove( "StimRemove", "d" );
+const idEventDef EV_StimEnable( "StimEnable", "dd" );
 const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
 
@@ -300,6 +304,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
+	EVENT( EV_StimEnable,			idEntity::StimEnable)
 	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
@@ -6330,6 +6335,14 @@ void idEntity::StimAdd(int Type, float Radius)
 void idEntity::StimRemove(int Type)
 {
 	RemoveStim(Type);
+}
+
+void idEntity::StimEnable(int Type, int State)
+{
+	CStim *stim;
+
+	if((stim = m_StimResponseColl->GetStim(Type)) != NULL)
+		stim->EnableStim(State);
 }
 
 void idEntity::ResponseAdd(int Type)
