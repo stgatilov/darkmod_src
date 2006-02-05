@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/02/05 07:12:14  ishtvan
+ * redefined function Damage to take additional trace pointer argument
+ *
  * Revision 1.3  2005/11/21 07:53:59  ishtvan
  * AI can no longer see through movable objects
  *
@@ -1072,7 +1075,8 @@ idExplodingBarrel::Damage
 ================
 */
 void idExplodingBarrel::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
-					  const char *damageDefName, const float damageScale, const int location ) {
+					  const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
+{
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
@@ -1081,7 +1085,7 @@ void idExplodingBarrel::Damage( idEntity *inflictor, idEntity *attacker, const i
 	if ( damageDef->FindKey( "radius" ) && GetPhysics()->GetContents() != 0 && GetBindMaster() == NULL ) {
 		PostEventMS( &EV_Explode, 400 );
 	} else {
-		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location );
+		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
 	}
 }
 

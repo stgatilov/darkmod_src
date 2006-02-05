@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/02/05 07:12:14  ishtvan
+ * redefined function Damage to take additional trace pointer argument
+ *
  * Revision 1.3  2005/11/17 09:11:06  ishtvan
  * added scriptfunctions for applying velocity to individual AF bodies
  *
@@ -114,7 +117,9 @@ public:
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 
-	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+									const char *damageDefName, const float damageScale,
+									const int location, trace_t *tr = NULL );
 	virtual void			AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
 
 	void					SetCombatModel( void );
@@ -237,7 +242,8 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 	virtual void			Present( void );
-	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
+									const float damageScale, const int location, trace_t *tr = NULL );
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
 protected:

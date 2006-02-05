@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/02/05 07:12:14  ishtvan
+ * redefined function Damage to take additional trace pointer argument
+ *
  * Revision 1.10  2006/02/04 09:44:07  ishtvan
  * modified damage to take collision data argument
  *
@@ -382,8 +385,6 @@ const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
 
-const idEventDef AI_Knockout( "knockout" );
-
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -428,8 +429,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
-
-	EVENT( AI_Knockout,					idActor::Knockout )
 END_CLASS
 
 /*
@@ -2185,7 +2184,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  const char *damageDefName, const float damageScale, const int location,
 					  trace_t *collision ) 
 {
-	idVec3 KO_Spot(vec3_zero), delta(vec3_zero);
+	bool bKO, bKOPowerBlow;
 	
 	if ( !fl.takedamage ) {
 		return;
@@ -2213,34 +2212,23 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 
-	// check for KO and knockout if appropriate
-	// TODO: May have to check KO location elsewhere if specifying by location doesn't work
-	if( damageDef->GetBool( "knockout" )
-		&& !strcmp( GetDamageGroup( location ), spawnArgs.GetString("ko_zone") )
-		&& collision )
+	// DarkMod: check for KO damage type and knockout AI if appropriate
+	bKO = damageDef->GetBool( "knockout" );
+	bKOPowerBlow = damageDef->GetBool( "knockout_power" );
+	
+	if( (bKO || bKOPowerBlow) && collision )
 	{
-		// check to see if we hit within the "knockout cone"
-		KO_Spot = GetEyePosition() + spawnArgs.GetVector("ko_spot_offset");
-		delta = KO_Spot - collision->c.point;
-		delta.NormalizeFast();
-
-		float minDot = (float)cos( DEG2RAD( spawnArgs.GetFloat("ko_angle") * 0.5f ) );
-
-		if( (delta * viewAxis[0]) >= minDot )
-		{
-
-			if( Knockout(dir, true) )
+			if( TestKnockoutBlow( dir, collision, bKOPowerBlow ) )
 			{
 				if ( (attacker && attacker->IsType( idPlayer::Type ) ) ) 
 				{
-					// TODO: Add a KO to the stats (not yet implemented)
+					// TODO: Add a KO to the player stats (not yet implemented)
 					// static_cast< idPlayer* >( attacker )->AddAIKO();	
 				}
 
-				// For now, first KO blow does no additional damage
+				// For now, first KO blow does no health damage
 				goto Quit;
 			}
-		}
 	}
 
 

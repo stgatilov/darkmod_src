@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/02/05 07:12:14  ishtvan
+ * redefined function Damage to take additional trace pointer argument
+ *
  * Revision 1.7  2006/02/04 10:27:20  ishtvan
  * weapon now passes trace info as arg in damage to idActors
  *
@@ -3025,18 +3028,7 @@ void idWeapon::Event_Melee( void ) {
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
 
-				// Quick hack: Actors need to be sent the location they took damage from for the KO check
-				if (ent->IsType( idActor::Type ))
-				{
-					static_cast<idActor *>(ent)->Damage
-						( 
-						owner, owner, globalKickDir, meleeDefName, 
-						owner->PowerUpModifier( MELEE_DAMAGE ), 
-						CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
-						);
-				}
-				else
-					ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id) );
+				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr );
 
 				// apply a LARGE tactile alert to AI
 				if( ent->IsType(idAI::Type) )

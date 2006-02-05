@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/02/05 07:12:14  ishtvan
+ * redefined function Damage to take additional trace pointer argument
+ *
  * Revision 1.7  2006/02/04 09:44:07  ishtvan
  * modified damage to take collision data argument
  *
@@ -316,11 +319,10 @@ protected:
 	virtual void			UpdateMoveVolumes( void ) {};
 
 	/**
-	* Knockout, only defined in derived classes
+	* TestKnockoutBlow, only defined in derived classes
 	* Returns true if going from conscious to unconscious
 	**/
-	virtual bool			Knockout( idVec3 dir = vec3_origin, bool bCheckAlert = false ) 
-							{ return false; };
+	virtual bool TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow ) {return false;} ;
 
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
