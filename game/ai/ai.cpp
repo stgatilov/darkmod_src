@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/02/05 07:09:46  ishtvan
+ * fix: dead AI can no longer be KO'd
+ *
  * Revision 1.13  2006/02/05 06:51:10  ishtvan
  * knockout updates
  *
@@ -5875,7 +5878,7 @@ void idAI::Knockout( void )
 	idAngles ang;
 	const char *modelKOd;
 
-	if( AI_KNOCKEDOUT )
+	if( AI_KNOCKEDOUT || AI_DEAD )
 	{
 		AI_PAIN = true;
 		AI_DAMAGE = true;
