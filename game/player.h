@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/02/05 05:34:42  gildoran
+ * Added basic functions to keep track of immobilization. They don't affect the player yet.
+ *
  * Revision 1.16  2006/02/04 10:26:43  gildoran
  * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
  *
@@ -151,6 +154,22 @@ enum {
 	INFLUENCE_LEVEL3,			// slow player movement
 };
 
+// Player control immobilization categories.
+enum {
+	EIM_ALL					= -1,
+	EIM_UPDATE				= BIT( 0),	// For internal use only. True if immobilization needs to be recalculated.
+	EIM_VIEW_ANGLE			= BIT( 1),	// Looking around (NYI)
+	EIM_MOVEMENT			= BIT( 2),	// Forwards/backwards, strafing and swimming. (NYI)
+	EIM_CROUCH				= BIT( 3),	// Crouching (NYI)
+	EIM_JUMP				= BIT( 4),	// Jumping (NYI)
+	EIM_CLIMB				= BIT( 5),	// Climbing ladders, ropes and mantling. (NYI)
+	EIM_FROB				= BIT( 6),	// Frobbing (NYI)
+	EIM_ATTACK				= BIT( 7),	// Using weapons (NYI)
+	EIM_WEAPON_SELECT		= BIT( 8),	// Selecting weapons (NYI)
+	EIM_ITEM				= BIT( 9),	// Using items (NYI)
+	EIM_ITEM_SELECT			= BIT(10),	// Selecting items (NYI)
+};
+
 class idInventory {
 public:
 	int						maxHealth;
@@ -261,6 +280,9 @@ public:
 	int						buttonMask;
 	int						oldButtons;
 	int						oldFlags;
+
+	idDict					m_immobilization;	// Immobilization flags from various sources.
+	int						m_immobilizationCache;
 
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
@@ -411,6 +433,8 @@ public:
 	void					ExitCinematic( void );
 	bool					HandleESC( void );
 	bool					SkipCinematic( void );
+
+	int						GetImmobilization();
 
 	void					UpdateConditions( void );
 	void					SetViewAngles( const idAngles &angles );
@@ -785,6 +809,8 @@ private:
 	void					Event_GetEyePos( void );
 	void					Event_SetGuiOverlay( const char *guiFile );
 	void					Event_GetGuiOverlay( void );
+	void					Event_SetImmobilization( const char *source, int type );
+	void					Event_GetImmobilization( const char *source );
 
 };
 

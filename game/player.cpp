@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2006/02/05 05:34:42  gildoran
+ * Added basic functions to keep track of immobilization. They don't affect the player yet.
+ *
  * Revision 1.48  2006/02/04 10:26:43  gildoran
  * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
  *
@@ -227,6 +230,9 @@ const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
 const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
 const idEventDef EV_Player_SetGuiOverlay( "setGuiOverlay", "s" );
 const idEventDef EV_Player_GetGuiOverlay( "getGuiOverlay", NULL, 's' );
+const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
+const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
+
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -251,6 +257,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
 	EVENT( EV_Player_SetGuiOverlay,			idPlayer::Event_SetGuiOverlay )
 	EVENT( EV_Player_GetGuiOverlay,			idPlayer::Event_GetGuiOverlay )
+	EVENT( EV_Player_SetImmobilization,		idPlayer::Event_SetImmobilization )
+	EVENT( EV_Player_GetImmobilization,		idPlayer::Event_GetImmobilization )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -1120,6 +1128,9 @@ idPlayer::idPlayer()
 	buttonMask				= 0;
 	oldFlags				= 0;
 
+	// m_immobilization.Clear();
+	m_immobilizationCache	= 0;
+
 	lastHitTime				= 0;
 	lastSndHitTime			= 0;
 	lastSavingThrowTime		= 0;
@@ -1417,7 +1428,6 @@ void idPlayer::Init( void ) {
 	weapon_fists			= SlotForWeapon( "weapon_fists" );
 	showWeaponViewModel		= GetUserInfo()->GetBool( "ui_showGun" );
 
-
 	lastDmgTime				= 0;
 	lastArmorPulse			= -10000;
 	lastHeartAdjust			= 0;
@@ -1642,6 +1652,9 @@ void idPlayer::Spawn( void ) {
 		spectating = true;
 	}
 
+	m_immobilization.Clear();
+	m_immobilizationCache = 0;
+
 	// set our collision model
 	physicsObj.SetSelf( this );
 	SetClipModel();
@@ -1844,6 +1857,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( buttonMask );
 	savefile->WriteInt( oldButtons );
 	savefile->WriteInt( oldFlags );
+
+	savefile->WriteDict( &m_immobilization );
+	savefile->WriteInt( m_immobilizationCache );
 
 	savefile->WriteInt( lastHitTime );
 	savefile->WriteInt( lastSndHitTime );
@@ -2066,6 +2082,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	usercmd.flags = 0;
 	oldFlags = 0;
+
+	savefile->ReadDict( &m_immobilization );
+	savefile->ReadInt( m_immobilizationCache );
 
 	savefile->ReadInt( lastHitTime );
 	savefile->ReadInt( lastSndHitTime );
@@ -6213,6 +6232,29 @@ bool idPlayer::SkipCinematic( void ) {
 	return gameLocal.SkipCinematic();
 }
 
+
+/*
+==============
+idPlayer::GetImmobilization
+==============
+*/
+int idPlayer::GetImmobilization( void ) {
+	// Has something changed since the cache was last calculated?
+	if (m_immobilizationCache & EIM_UPDATE) {
+		const idKeyValue *kv;
+
+		// Recalculate the immobilization from scratch.
+		m_immobilizationCache = 0;
+		kv = m_immobilization.MatchPrefix( "", NULL );
+		while ( kv ) {
+			//m_immobilizationCache |= m_immobilization.GetInt(kv->GetKey());
+			m_immobilizationCache |= atoi(kv->GetValue());
+			kv = m_immobilization.MatchPrefix( "", kv );
+		}
+	}
+	return m_immobilizationCache;
+}
+
 /*
 ==============
 idPlayer::EvaluateControls
@@ -7054,7 +7096,20 @@ void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 	sysEvent_t ev;
 	const char *command;
 
-	if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
+	if (m_guiOverlayOn && gui == m_guiOverlay) {
+		// Ensure that guiOverlays are always able to execute commands.
+		// The following code is plagarized from UpdateFocus().
+
+		// clamp the mouse to the corner
+		ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
+		command = gui->HandleEvent( &ev, gameLocal.time );
+		HandleGuiCommands( this, command );
+
+		// move to an absolute position
+		ev = sys->GenerateMouseMoveEvent( usercmd.mx, usercmd.my );
+		command = gui->HandleEvent( &ev, gameLocal.time );
+		HandleGuiCommands( this, command );
+	} else if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
 		command = gui->HandleEvent( &ev, gameLocal.time );
 		oldMouseX = usercmd.mx;
@@ -9461,8 +9516,7 @@ void idPlayer::Event_SetGuiOverlay( const char* guiFile )
 	}
 
 	// If they want us to load a new gui, it'll have an address.
-	// I should probably change this condition.
-	if ( guiFile[0] != '\0' ) { 	// guifile != "" ?
+	if ( idStr::Length(guiFile) ) {
 
 		if ( uiManager->CheckGui(guiFile) ) {
 			if ( !m_guiOverlay ) {
@@ -9486,8 +9540,46 @@ idPlayer::Event_GetGuiOverlay
 */
 void idPlayer::Event_GetGuiOverlay( void )
 {
-	if ( m_guiOverlayOn )
+	if ( m_guiOverlayOn ) {
 		idThread::ReturnString( m_guiOverlay->Name() );
-	else
+	} else {
 		idThread::ReturnString( "" );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_SetImmobilization
+=====================
+*/
+void idPlayer::Event_SetImmobilization( const char *source, int type )
+{
+	if (idStr::Length(source)) {
+		// The user cannot set the update bit directly.
+		type &= ~EIM_UPDATE;
+
+		if (type) {
+			m_immobilization.SetInt( source, type );
+		} else {
+			m_immobilization.Delete( source );
+		}
+
+		m_immobilizationCache |= EIM_UPDATE;
+	} else {
+		gameLocal.Warning( "source was empty; no immobilization set\n" );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetImmobilization
+=====================
+*/
+void idPlayer::Event_GetImmobilization( const char *source )
+{
+	if (idStr::Length(source)) {
+		idThread::ReturnInt( m_immobilization.GetInt(source) );
+	} else {
+		idThread::ReturnInt( GetImmobilization() );
+	}
 }
