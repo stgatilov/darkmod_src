@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2006/02/05 22:14:20  sparhawk
+ * Response now looks on the local object for the script function, before it looks for a global function.
+ *
  * Revision 1.4  2006/02/04 23:51:39  sparhawk
  * Finished the Stim/Response for radius types.
  *
@@ -579,7 +582,10 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
-	function_t *pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
+	const function_t *pScriptFkt = StimEnt->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	if(pScriptFkt)
+		pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
+
 	if(pScriptFkt)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
