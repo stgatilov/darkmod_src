@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2006/02/05 09:29:36  gildoran
+ * I added some of the effects for some immobilization types. The code for certain immobilization types (such as movement) will probably need to be rewritten, but for now it at least does something
+ *
  * Revision 1.17  2006/02/05 05:34:42  gildoran
  * Added basic functions to keep track of immobilization. They don't affect the player yet.
  *
@@ -158,16 +161,17 @@ enum {
 enum {
 	EIM_ALL					= -1,
 	EIM_UPDATE				= BIT( 0),	// For internal use only. True if immobilization needs to be recalculated.
-	EIM_VIEW_ANGLE			= BIT( 1),	// Looking around (NYI)
-	EIM_MOVEMENT			= BIT( 2),	// Forwards/backwards, strafing and swimming. (NYI)
-	EIM_CROUCH				= BIT( 3),	// Crouching (NYI)
-	EIM_JUMP				= BIT( 4),	// Jumping (NYI)
-	EIM_CLIMB				= BIT( 5),	// Climbing ladders, ropes and mantling. (NYI)
-	EIM_FROB				= BIT( 6),	// Frobbing (NYI)
-	EIM_ATTACK				= BIT( 7),	// Using weapons (NYI)
-	EIM_WEAPON_SELECT		= BIT( 8),	// Selecting weapons (NYI)
-	EIM_ITEM				= BIT( 9),	// Using items (NYI)
-	EIM_ITEM_SELECT			= BIT(10),	// Selecting items (NYI)
+	EIM_VIEW_ANGLE			= BIT( 1),	// Looking around
+	EIM_MOVEMENT			= BIT( 2),	// Forwards/backwards, strafing and swimming.
+	EIM_CROUCH				= BIT( 3),	// Crouching.
+	EIM_CROUCH_HOLD			= BIT( 4),	// Prevent changes to crouching state. (NYI)
+	EIM_JUMP				= BIT( 5),	// Jumping.
+	EIM_CLIMB				= BIT( 6),	// Climbing ladders, ropes and mantling. (NYI)
+	EIM_FROB				= BIT( 7),	// Frobbing.
+	EIM_ATTACK				= BIT( 8),	// Using weapons (NYI)
+	EIM_WEAPON_SELECT		= BIT( 9),	// Selecting weapons (NYI)
+	EIM_ITEM				= BIT(10),	// Using items (NYI)
+	EIM_ITEM_SELECT			= BIT(11),	// Selecting items (NYI)
 };
 
 class idInventory {
@@ -280,9 +284,6 @@ public:
 	int						buttonMask;
 	int						oldButtons;
 	int						oldFlags;
-
-	idDict					m_immobilization;	// Immobilization flags from various sources.
-	int						m_immobilizationCache;
 
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
@@ -690,6 +691,14 @@ private:
 	const idDeclSkin *		influenceSkin;
 
 	idCamera *				privateCameraView;
+
+	/**
+	* m_immobilization keeps track of sources of immobilization.
+	* m_immobilizationCache caches the total immobilization so it
+	* only gets recalculated when something is changed.
+	**/
+	idDict					m_immobilization;
+	int						m_immobilizationCache;
 
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]

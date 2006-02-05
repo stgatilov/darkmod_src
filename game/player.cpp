@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.50  2006/02/05 09:29:35  gildoran
+ * I added some of the effects for some immobilization types. The code for certain immobilization types (such as movement) will probably need to be rewritten, but for now it at least does something
+ *
  * Revision 1.49  2006/02/05 05:34:42  gildoran
  * Added basic functions to keep track of immobilization. They don't affect the player yet.
  *
@@ -1128,9 +1131,6 @@ idPlayer::idPlayer()
 	buttonMask				= 0;
 	oldFlags				= 0;
 
-	// m_immobilization.Clear();
-	m_immobilizationCache	= 0;
-
 	lastHitTime				= 0;
 	lastSndHitTime			= 0;
 	lastSavingThrowTime		= 0;
@@ -1232,6 +1232,9 @@ idPlayer::idPlayer()
 	influenceSkin			= NULL;
 
 	privateCameraView		= NULL;
+
+	// m_immobilization.Clear();
+	m_immobilizationCache	= 0;
 
 	memset( loggedViewAngles, 0, sizeof( loggedViewAngles ) );
 	memset( loggedAccel, 0, sizeof( loggedAccel ) );
@@ -1858,9 +1861,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( oldButtons );
 	savefile->WriteInt( oldFlags );
 
-	savefile->WriteDict( &m_immobilization );
-	savefile->WriteInt( m_immobilizationCache );
-
 	savefile->WriteInt( lastHitTime );
 	savefile->WriteInt( lastSndHitTime );
 	savefile->WriteInt( lastSavingThrowTime );
@@ -2002,6 +2002,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( privateCameraView );
 
+	savefile->WriteDict( &m_immobilization );
+	savefile->WriteInt( m_immobilizationCache );
+
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
 	}
@@ -2082,9 +2085,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	usercmd.flags = 0;
 	oldFlags = 0;
-
-	savefile->ReadDict( &m_immobilization );
-	savefile->ReadInt( m_immobilizationCache );
 
 	savefile->ReadInt( lastHitTime );
 	savefile->ReadInt( lastSndHitTime );
@@ -2247,6 +2247,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadSkin( influenceSkin );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( privateCameraView ) );
+
+	savefile->ReadDict( &m_immobilization );
+	savefile->ReadInt( m_immobilizationCache );
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
@@ -5192,7 +5195,7 @@ void idPlayer::UpdateViewAngles( void ) {
 	int i;
 	idAngles delta;
 
-	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || m_NoViewChange) ) {
+	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || m_NoViewChange || GetImmobilization() & EIM_VIEW_ANGLE ) ) {
 		// no view changes at all, but we still want to update the deltas or else when
 		// we get out of this mode, our view will snap to a kind of random angle
 		UpdateDeltaViewAngles( viewAngles );
@@ -5898,6 +5901,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 	}
 
 	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) {
+		// Prevent the player from choosing to switch weapons.
+		if ( GetImmobilization() & EIM_WEAPON_SELECT ) {
+			return;
+		}
+
 		SelectWeapon( impulse, false );
 		return;
 	}
@@ -6023,6 +6031,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 			idEntity *ent, *frob;
 			int i;
 			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+			// Ignore frobs if player-frobbing is immobilized.
+			if ( GetImmobilization() & EIM_FROB ) {
+				break;
+			}
 
 			// if the grabber is currently holding something and frob is pressed,
 			// release it.  Do not frob anything new since you're holding an item.
@@ -6875,6 +6888,22 @@ void idPlayer::Think( void )
 		usercmd.upmove = 0;
 	}
 
+	// I'm not sure if this is the best way to do things, since it doesn't yet
+	// take into account whether the player is swimming/climbing, etc. But it
+	// should be good enough for now. I'll improve it later.
+	// -Gildoran
+	if ( GetImmobilization() & EIM_MOVEMENT ) {
+		usercmd.forwardmove = 0;
+		usercmd.rightmove = 0;
+	}
+	// Note to self: I should probably be thinking about having some sort of
+	// flag where the player is kept crouching if that's how they started out.
+	if ( GetImmobilization() & EIM_CROUCH && usercmd.upmove < 0 ) {
+		usercmd.upmove = 0;
+	} else if ( GetImmobilization() & EIM_JUMP && usercmd.upmove > 0 ) {
+		usercmd.upmove = 0;
+	}
+
 	// log movement changes for weapon bobbing effects
 	if ( usercmd.forwardmove != oldCmd.forwardmove ) {
 		loggedAccel_t	*acc = &loggedAccel[currentLoggedAccel&(NUM_LOGGED_ACCELS-1)];
@@ -7097,18 +7126,13 @@ void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 	const char *command;
 
 	if (m_guiOverlayOn && gui == m_guiOverlay) {
-		// Ensure that guiOverlays are always able to execute commands.
-		// The following code is plagarized from UpdateFocus().
-
-		// clamp the mouse to the corner
-		ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
+		// Ensure that guiOverlays are always able to execute commands,
+		// even if the player isn't moving the mouse.
+		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
 		command = gui->HandleEvent( &ev, gameLocal.time );
 		HandleGuiCommands( this, command );
-
-		// move to an absolute position
-		ev = sys->GenerateMouseMoveEvent( usercmd.mx, usercmd.my );
-		command = gui->HandleEvent( &ev, gameLocal.time );
-		HandleGuiCommands( this, command );
+		oldMouseX = usercmd.mx;
+		oldMouseY = usercmd.my;
 	} else if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
 		command = gui->HandleEvent( &ev, gameLocal.time );
