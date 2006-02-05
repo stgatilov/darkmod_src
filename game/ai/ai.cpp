@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/02/05 06:51:10  ishtvan
+ * knockout updates
+ *
  * Revision 1.12  2006/02/04 10:29:06  ishtvan
  * knockout now checks alert states
  *
@@ -5791,27 +5794,86 @@ void idAI::CheckTactile( idVec3 &dir )
 
 /*
 =====================
+idAI::TestKnockoutBlow
+=====================
+*/
+
+bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
+{
+	bool bReturnVal(false);
+	float KOAng(0), MinDot(1);
+	idVec3 KOSpot, delta;
+	const char *LocationName;
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), state->Name());
+	
+	if( AI_KNOCKEDOUT )
+	{
+		AI_PAIN = true;
+		AI_DAMAGE = true;
+
+		goto Quit;
+	}
+
+	LocationName = GetDamageGroup( CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
+	
+	// check if we're hitting the right zone (usually the head)
+	if( strcmp(LocationName, spawnArgs.GetString("ko_zone")) )
+		goto Quit;
+
+	// Check if the AI is above the alert threshold for KOing
+	// Defined the name of the alert threshold in the AI def for generality
+	if( AI_AlertNum > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	{
+		// abort KO if the AI is immune when alerted
+		if( spawnArgs.GetBool("ko_alert_immmune") )
+			goto Quit;
+
+		// reduce the angle on alert, if needed
+		const char *temp = spawnArgs.GetString("ko_angle_alert");
+		if( temp[0] != '\0' )
+			KOAng = atof( temp );
+		else
+			KOAng = spawnArgs.GetFloat( "ko_angle" );
+	}
+	else
+		KOAng = spawnArgs.GetFloat( "ko_angle" );
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Calculated KO angle = %f\r", KOAng);
+
+	// check if we hit within the cone
+
+	MinDot = (float)cos( DEG2RAD( KOAng * 0.5f ) );
+
+	KOSpot = GetEyePosition() + spawnArgs.GetVector("ko_spot_offset");
+	delta = KOSpot - tr->c.point;
+	delta.NormalizeFast();
+	
+	if( (delta * viewAxis[0]) < MinDot )
+		goto Quit;
+
+	// if we made it to this point, AI just got knocked the taff out!
+	Knockout();
+	bReturnVal = true;
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was KOd by a blow to the head\r", name.c_str());
+
+Quit:
+	return bReturnVal;
+}
+
+/*
+=====================
 idAI::Knockout
 
 Based on idAI::Killed
 =====================
 */
 
-bool idAI::Knockout( idVec3 dir, bool bCheckAlert )
+void idAI::Knockout( void )
 {
-	idVec3 KOSpot;
-	bool bReturnVal(false);
 	idAngles ang;
 	const char *modelKOd;
-
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), state->Name());
-
-	// Do not KO if AI is at Alert State 2 or above
-	// TODO: Probably a better way to check this?
-	if( AI_AlertNum > spawnArgs.GetFloat("alert_thresh2") && bCheckAlert )
-	{
-		goto Quit;
-	}
 
 	if( AI_KNOCKEDOUT )
 	{
@@ -5820,7 +5882,6 @@ bool idAI::Knockout( idVec3 dir, bool bCheckAlert )
 
 		goto Quit;
 	}
-	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was KOd\r", name.c_str());
 	EndAttack();
 
 	// stop all voice sounds
@@ -5889,8 +5950,6 @@ bool idAI::Knockout( idVec3 dir, bool bCheckAlert )
 		kv = spawnArgs.MatchPrefix( "def_drops", kv );
 	}
 
-	bReturnVal = true;
-
 Quit:
-	return bReturnVal;
+	return;
 }

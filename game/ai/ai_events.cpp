@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/02/05 06:51:10  ishtvan
+ * knockout updates
+ *
  * Revision 1.5  2005/11/12 14:59:34  sparhawk
  * SDK 1.3 Merge
  *
@@ -186,6 +189,8 @@ const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
 
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
 
+const idEventDef AI_Knockout( "knockout" );
+
 
 CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_Activate,							idAI::Event_Activate )
@@ -329,6 +334,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
 	EVENT( AI_VisScan,							idAI::Event_VisScan )
 	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
+	EVENT( AI_Knockout,							idAI::Knockout )
 END_CLASS
 
 /*
@@ -375,30 +381,55 @@ idAI::Event_FindEnemy
 void idAI::Event_FindEnemy( int useFOV ) 
 {
 	int			i;
+
 	idEntity	*ent;
+
 	idActor		*actor;
 
+
+
 	if ( gameLocal.InPlayerPVS( this ) ) {
+
 		for ( i = 0; i < gameLocal.numClients ; i++ ) {
+
 			ent = gameLocal.entities[ i ];
 
+
+
 			if ( !ent || !ent->IsType( idActor::Type ) ) {
+
 				continue;
+
 			}
+
+
 
 			actor = static_cast<idActor *>( ent );
+
 			if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
+
 				continue;
+
 			}
+
+
 
 			if ( CanSee( actor, useFOV != 0 ) ) {
+
 				idThread::ReturnEntity( actor );
+
 				return;
+
 			}
+
 		}
+
 	}
 
+
+
 	idThread::ReturnEntity( NULL );
+
 }
 
 /*
@@ -544,20 +575,35 @@ idAI::Event_HeardSound
 =====================
 */
 void idAI::Event_HeardSound( int ignore_team ) {
+
 	// check if we heard any sounds in the last frame
+
 	idActor	*actor = gameLocal.GetAlertEntity();
+
 	if ( actor && ( !ignore_team || ( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) && gameLocal.InPlayerPVS( this ) ) {
+
 		idVec3 pos = actor->GetPhysics()->GetOrigin();
+
 		idVec3 org = physicsObj.GetOrigin();
+
 		float dist = ( pos - org ).LengthSqr();
+
 		if ( dist < Square( AI_HEARING_RANGE ) ) {
+
 			idThread::ReturnEntity( actor );
+
 			return;
+
 		}
+
 	}
 
+
+
 	idThread::ReturnEntity( NULL );
+
 }
+
 
 /*
 =====================
@@ -608,6 +654,7 @@ void idAI::Event_CreateMissile( const char *jointname ) {
 	if ( !projectileDef ) {
 		gameLocal.Warning( "%s (%s) doesn't have a projectile specified", name.c_str(), GetEntityDefName() );
 		idThread::ReturnEntity( NULL );
+
 		return;
 	}
 
@@ -2739,29 +2786,53 @@ idAI::Event_GetReachableEntityPosition
 */
 void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 	int		toAreaNum;
+
 	idVec3	pos;
 
+
+
 	if ( move.moveType != MOVETYPE_FLY ) {
+
 		if ( !ent->GetFloorPos( 64.0f, pos ) ) {
+
 			// NOTE: not a good way to return 'false'
+
 			idThread::ReturnVector( vec3_zero );
+
 			return;
+
 		}
+
 		if ( ent->IsType( idActor::Type ) && static_cast<idActor *>( ent )->OnLadder() ) {
+
 			// NOTE: not a good way to return 'false'
+
 			idThread::ReturnVector( vec3_zero );
+
 			return;
+
 		}
+
 	} else {
+
 		pos = ent->GetPhysics()->GetOrigin();
+
 	}
+
+
 
 	if ( aas ) {
+
 		toAreaNum = PointReachableAreaNum( pos );
+
 		aas->PushPointIntoAreaNum( toAreaNum, pos );
+
 	}
 
+
+
 	idThread::ReturnVector( pos );
+
 }
 
 /**

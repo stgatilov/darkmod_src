@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/02/05 06:51:10  ishtvan
+ * knockout updates
+ *
  * Revision 1.8  2006/02/04 10:29:06  ishtvan
  * knockout now checks alert states
  *
@@ -714,14 +717,21 @@ protected:
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	/**
-	* Knockout - Knocks the AI unconscious with a blow from direction dir
+	* TestKnockOutBlow is called when the AI is hit with a weapon with knockout capability.
+	* This function tests the location hit, angle of the blow, and alert state of the AI.
 	*
-	* bCheckAlert sets whether to check current alert state (blackjakc) or not (gas arrow)
+	* The "dir" vector is from the knockback of the weapon.  It is not used for now.
 	*
-	* Returns true if going from conscious to unconscious, false otherwise
-	* Does nothing if already unconscious
+	* tr is the trace from the weapon collision, bIsPowerBlow is set if the BJ was powered up
+	*
+	* Returns false if BJ attempt failed, or if already knocked out
 	**/
-	bool					Knockout( idVec3 dir = vec3_origin, bool bCheckAlert = false );
+	bool					TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow );  
+	
+	/**
+	* Tells the AI to go unconscious.
+	**/
+	void					Knockout( void );
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
