@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.6  2006/02/06 22:13:51  sparhawk
+ * Added ignore list for responses.
+ *
  * Revision 1.5  2006/02/04 23:51:39  sparhawk
  * Finished the Stim/Response for radius types.
  *
@@ -209,6 +212,14 @@ public:
 	void EnableStim(bool Enable = true);
 	void ActivateStim(void);
 
+	/**
+	 * Add a responseentity to the ignore list. If the response is already
+	 * in the list, it is not entered again.
+	 */
+	void AddResponseIgnore(idEntity *);
+	void RemoveResponseIgnore(idEntity *);
+	bool CheckResponseIgnore(idEntity *);
+
 protected:
 	/**
 	 * Timer for the stimulus. If no timer is set, then it is assumed
@@ -217,6 +228,16 @@ protected:
 	CStimResponseTimer	*m_Timer;
 
 public:
+	/**
+	 * This is the list of all responses that should be ignored for this stim.
+	 * This is required for stims, which are having a livespan during which they
+	 * can fire. Each response would fire on each frame as long as the stim is
+	 * enabled. This is not really usefull in most cases, so we can add a response,
+	 * which already has fired, to the ignorelist. Until the response is removed
+	 * it will no longer fire.
+	 */
+	idList<idEntity *>		m_ResponseIgnore;
+
 	/**
 	 * State of this stimuls.
 	 */

@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.6  2006/02/06 22:13:51  sparhawk
+ * Added ignore list for responses.
+ *
  * Revision 1.5  2006/02/05 22:14:20  sparhawk
  * Response now looks on the local object for the script function, before it looks for a global function.
  *
@@ -486,6 +489,12 @@ void CStimResponseCollection::ParseSpawnArgsToStimResponse(const idDict *args, i
 	int i;
 	char sr_class;
 
+	if(Owner == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Owner set to NULL is not allowed!\r");
+		goto Quit;
+	}
+
 	i = 1;
 	while(i != 0)
 	{
@@ -560,6 +569,36 @@ void CStim::ActivateStim(void)
 	m_State = SS_ACTIVE;
 }
 
+void CStim::AddResponseIgnore(idEntity *e)
+{
+	if(CheckResponseIgnore(e) != true)
+		m_ResponseIgnore.Append(e);
+}
+
+void CStim::RemoveResponseIgnore(idEntity *e)
+{
+	m_ResponseIgnore.Remove(e);
+}
+
+bool CStim::CheckResponseIgnore(idEntity *e)
+{
+	bool rc = false;
+	int i, n;
+
+	n = m_ResponseIgnore.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(m_ResponseIgnore[i] == e)
+		{
+			rc = true;
+			break;
+		}
+	}
+
+	return rc;
+}
+
+
 
 /********************************************************************/
 /*                   CResponse                                      */
@@ -582,9 +621,12 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
-	const function_t *pScriptFkt = StimEnt->scriptObject.GetFunction(m_ScriptFunction.c_str());
-	if(pScriptFkt)
+	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	if(pScriptFkt == NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
 		pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
+	}
 
 	if(pScriptFkt)
 	{

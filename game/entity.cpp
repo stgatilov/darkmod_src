@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/02/06 22:14:27  sparhawk
+ * Added ignore list for responses.
+ *
  * Revision 1.34  2006/02/05 22:03:29  sparhawk
  * StimEnable event added.
  *
@@ -220,6 +223,9 @@ const idEventDef EV_StimRemove( "StimRemove", "d" );
 const idEventDef EV_StimEnable( "StimEnable", "dd" );
 const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
+const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
+const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
+
 
 // soundprop event: Propagate sound directly from scripting
 const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
@@ -307,6 +313,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StimEnable,			idEntity::StimEnable)
 	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
+	EVENT( EV_ResponseIgnore,		idEntity::ResponseIgnore)
+	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
+
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSound )
 
@@ -6358,17 +6367,13 @@ void idEntity::ResponseRemove(int Type)
 void idEntity::RemoveStim(int Type)
 {
 	if(m_StimResponseColl->RemoveStim(Type) == 0)
-
 		gameLocal.RemoveStim(this);
-
 }
 
 void idEntity::RemoveResponse(int Type)
 {
 	if(m_StimResponseColl->RemoveResponse(Type) == 0)
-
 		gameLocal.RemoveResponse(this);
-
 }
 
 
@@ -6377,10 +6382,7 @@ CStim *idEntity::AddStim(int Type, float Radius, bool Removable, bool Default)
 	CStim *pStim;
 
 	pStim = m_StimResponseColl->AddStim(this, Type, Radius, Removable, Default);
-
 	gameLocal.AddStim(this);
-
-
 
 	return pStim;
 
@@ -6391,14 +6393,28 @@ CResponse *idEntity::AddResponse(int Type, bool Removable, bool Default)
 	CResponse *pResp;
 
 	pResp = m_StimResponseColl->AddResponse(this, Type, Removable, Default);
-
 	gameLocal.AddResponse(this);
-
-
 
 	return pResp;
 
 }
+
+void idEntity::ResponseIgnore(int StimType, idEntity *e)
+{
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+
+	if(stim)
+		stim->AddResponseIgnore(e);
+}
+
+void idEntity::ResponseAllow(int StimType, idEntity *e)
+{
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+
+	if(stim)
+		stim->RemoveResponseIgnore(e);
+}
+
 
 void idEntity::Event_PropSound( const char *sndName, float VolModIn )
 {

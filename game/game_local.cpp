@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2006/02/06 22:14:27  sparhawk
+ * Added ignore list for responses.
+ *
  * Revision 1.47  2006/01/31 22:35:07  sparhawk
  * StimReponse first working version
  *
@@ -5487,7 +5490,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 		m_RespEntity.RemoveIndex(i);
 }
 
-void idGameLocal::DoResponseAction(int StimType, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
+void idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
 {
 	int i;
 	CResponse *r;
@@ -5499,8 +5502,11 @@ void idGameLocal::DoResponseAction(int StimType, idEntity *Ent[MAX_GENTITIES], i
 		if(Ent[i] == e)
 			continue;
 
-		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(StimType)) != NULL)
-			r->TriggerResponse(e);
+		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
+		{
+			if(stim->CheckResponseIgnore(Ent[i]) == false)
+				r->TriggerResponse(e);
+		}
 	}
 }
 
@@ -5536,7 +5542,7 @@ void idGameLocal::ProcessStimResponse(void)
 					bounds = idBounds(origin).ExpandSelf(radius);
 					n = clip.EntitiesTouchingBounds(bounds, -1, Ent, MAX_GENTITIES);
 					if(n != 0)
-						DoResponseAction(stim[si]->m_StimTypeId, Ent, n, e);
+						DoResponseAction(stim[si], Ent, n, e);
 				}
 			}
 		}
