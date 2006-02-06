@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.52  2006/02/06 12:34:26  gildoran
+ * Just a few tweaks to give slightly better error messages in the gui overlay interaction script functions.
+ *
  * Revision 1.51  2006/02/06 01:31:39  gildoran
  * Added some functions to make it easier for scripts to communicate with the gui overlay.
  *
@@ -9564,6 +9567,7 @@ void idPlayer::Event_SetGuiOverlay( const char* guiFile )
 			m_guiOverlayOn = true;
 			m_guiOverlay->Activate( true, gameLocal.time );
 		} else {
+			m_guiOverlayOn = false;
 			gameLocal.Warning( "Unable to load gui file: %s\n", guiFile );
 		}
 
@@ -9631,7 +9635,7 @@ void idPlayer::Event_SetGuiParm( const char *key, const char *val ) {
 		m_guiOverlay->SetStateString( key, val );
 		m_guiOverlay->StateChanged( gameLocal.time );
 	} else {
-		gameLocal.Warning( "Unable to set parm; no gui overlay is active.\n" );
+		gameLocal.Warning( "Unable to set \"%s\"; no gui overlay is active.\n", key );
 	}
 }
 
@@ -9645,7 +9649,7 @@ void idPlayer::Event_SetGuiFloat( const char *key, float f ) {
 		m_guiOverlay->SetStateString( key, va( "%f", f ) );
 		m_guiOverlay->StateChanged( gameLocal.time );
 	} else {
-		gameLocal.Warning( "Unable to set parm; no gui overlay is active.\n" );
+		gameLocal.Warning( "Unable to set \"%s\"; no gui overlay is active.\n", key );
 	}
 }
 
@@ -9658,7 +9662,7 @@ void idPlayer::Event_GetGuiParm( const char *key ) {
 	if (m_guiOverlayOn) {
 		idThread::ReturnString( m_guiOverlay->GetStateString( key ) );
 	} else {
-		gameLocal.Warning( "Unable to get parm; no gui overlay is active.\n" );
+		gameLocal.Warning( "Unable to get \"%s\"; no gui overlay is active.\n", key );
 		idThread::ReturnString( "" );
 	}
 }
@@ -9672,7 +9676,7 @@ void idPlayer::Event_GetGuiFloat( const char *key ) {
 	if (m_guiOverlayOn) {
 		idThread::ReturnFloat( atof( m_guiOverlay->GetStateString( key, "0" ) ) );
 	} else {
-		gameLocal.Warning( "Unable to get parm; no gui overlay is active.\n" );
+		gameLocal.Warning( "Unable to get \"%s\"; no gui overlay is active.\n", key );
 		idThread::ReturnFloat( 0 );
 	}
 }
@@ -9686,7 +9690,7 @@ void idPlayer::Event_CallGuiOverlay( const char *namedEvent ) {
 	if (m_guiOverlayOn) {
 		m_guiOverlay->HandleNamedEvent( namedEvent );
 	} else {
-		gameLocal.Warning( "No gui overlay is active.\n" );
+		gameLocal.Warning( "Unable to call named event \"%s\"; no gui overlay is active.\n", namedEvent );
 	}
 }
 
