@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.51  2006/02/06 01:31:39  gildoran
+ * Added some functions to make it easier for scripts to communicate with the gui overlay.
+ *
  * Revision 1.50  2006/02/05 09:29:35  gildoran
  * I added some of the effects for some immobilization types. The code for certain immobilization types (such as movement) will probably need to be rewritten, but for now it at least does something
  *
@@ -235,6 +238,11 @@ const idEventDef EV_Player_SetGuiOverlay( "setGuiOverlay", "s" );
 const idEventDef EV_Player_GetGuiOverlay( "getGuiOverlay", NULL, 's' );
 const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
 const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
+const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
+const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
+const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
+const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
+const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
 
 
 CLASS_DECLARATION( idActor, idPlayer )
@@ -262,6 +270,11 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetGuiOverlay,			idPlayer::Event_GetGuiOverlay )
 	EVENT( EV_Player_SetImmobilization,		idPlayer::Event_SetImmobilization )
 	EVENT( EV_Player_GetImmobilization,		idPlayer::Event_GetImmobilization )
+	EVENT( EV_SetGuiParm, 					idPlayer::Event_SetGuiParm )
+	EVENT( EV_SetGuiFloat, 					idPlayer::Event_SetGuiFloat )
+	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
+	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
+	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -9607,3 +9620,73 @@ void idPlayer::Event_GetImmobilization( const char *source )
 		idThread::ReturnInt( GetImmobilization() );
 	}
 }
+
+/*
+================
+idPlayer::Event_SetGuiParm
+================
+*/
+void idPlayer::Event_SetGuiParm( const char *key, const char *val ) {
+	if (m_guiOverlayOn) {
+		m_guiOverlay->SetStateString( key, val );
+		m_guiOverlay->StateChanged( gameLocal.time );
+	} else {
+		gameLocal.Warning( "Unable to set parm; no gui overlay is active.\n" );
+	}
+}
+
+/*
+================
+idPlayer::Event_SetGuiFloat
+================
+*/
+void idPlayer::Event_SetGuiFloat( const char *key, float f ) {
+	if (m_guiOverlayOn) {
+		m_guiOverlay->SetStateString( key, va( "%f", f ) );
+		m_guiOverlay->StateChanged( gameLocal.time );
+	} else {
+		gameLocal.Warning( "Unable to set parm; no gui overlay is active.\n" );
+	}
+}
+
+/*
+================
+idPlayer::Event_GetGuiParm
+================
+*/
+void idPlayer::Event_GetGuiParm( const char *key ) {
+	if (m_guiOverlayOn) {
+		idThread::ReturnString( m_guiOverlay->GetStateString( key ) );
+	} else {
+		gameLocal.Warning( "Unable to get parm; no gui overlay is active.\n" );
+		idThread::ReturnString( "" );
+	}
+}
+
+/*
+================
+idPlayer::Event_GetGuiFloat
+================
+*/
+void idPlayer::Event_GetGuiFloat( const char *key ) {
+	if (m_guiOverlayOn) {
+		idThread::ReturnFloat( atof( m_guiOverlay->GetStateString( key, "0" ) ) );
+	} else {
+		gameLocal.Warning( "Unable to get parm; no gui overlay is active.\n" );
+		idThread::ReturnFloat( 0 );
+	}
+}
+
+/*
+================
+idPlayer::Event_CallGuiOverlay
+================
+*/
+void idPlayer::Event_CallGuiOverlay( const char *namedEvent ) {
+	if (m_guiOverlayOn) {
+		m_guiOverlay->HandleNamedEvent( namedEvent );
+	} else {
+		gameLocal.Warning( "No gui overlay is active.\n" );
+	}
+}
+

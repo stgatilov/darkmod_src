@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/02/06 01:31:39  gildoran
+ * Added some functions to make it easier for scripts to communicate with the gui overlay.
+ *
  * Revision 1.18  2006/02/05 09:29:36  gildoran
  * I added some of the effects for some immobilization types. The code for certain immobilization types (such as movement) will probably need to be rewritten, but for now it at least does something
  *
@@ -821,6 +824,11 @@ private:
 	void					Event_SetImmobilization( const char *source, int type );
 	void					Event_GetImmobilization( const char *source );
 
+	void					Event_SetGuiParm( const char *key, const char *val );
+	void					Event_SetGuiFloat( const char *key, float f );
+	void					Event_GetGuiParm( const char *key );
+	void					Event_GetGuiFloat( const char *key );
+	void					Event_CallGuiOverlay( const char *namedEvent );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
