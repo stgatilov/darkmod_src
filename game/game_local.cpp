@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2006/02/07 18:55:24  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.48  2006/02/06 22:14:27  sparhawk
  * Added ignore list for responses.
  *
@@ -5504,7 +5508,7 @@ void idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], in
 
 		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
 		{
-			if(stim->CheckResponseIgnore(Ent[i]) == false)
+			if(r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
 				r->TriggerResponse(e);
 		}
 	}

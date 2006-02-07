@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2006/02/07 18:55:01  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.6  2006/02/06 22:13:51  sparhawk
  * Added ignore list for responses.
  *
@@ -428,21 +432,21 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 
 	sr->m_StimTypeName = str;
 
+	sprintf(name, "sr_state_%u", Counter);
+	args->GetInt(name, "1", (int &)state);
+	if(state != SS_DISABLED
+		&& state != SS_ENABLED)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_WARNING)LOGSTRING("Invalid state %u for %s defaulting to enabled (%u)\r", state, sr->m_StimTypeName.c_str(), SS_ENABLED);
+		state = SS_ENABLED;
+	}
+	sr->m_State = state;
+
 	// A stim also may have a radius
 	if(sr_class == 'S')
 	{
 		sprintf(name, "sr_radius_%u", Counter);
 		args->GetFloat(name, "0.0", Radius);
-
-		sprintf(name, "sr_radius_%u", Counter);
-		args->GetInt(name, "1", (int &)state);
-		if(state != SS_DISABLED
-			&& state != SS_ENABLED
-			&& state != SS_ACTIVE)
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_WARNING)LOGSTRING("Invalid state %u for %s defaulting to enabled (%u)\r", state, sr->m_StimTypeName.c_str(), SS_ENABLED);
-			state = SS_ENABLED;
-		}
 	}
 	else	// this is only for responses
 	{
@@ -522,6 +526,7 @@ CStimResponse::CStimResponse(idEntity *Owner, int Type)
 {
 	m_StimTypeId = Type;
 	m_Owner = Owner;
+	m_State = SS_DISABLED;
 	m_Removable = true;
 	m_Default = false;
 }
@@ -530,6 +535,13 @@ CStimResponse::~CStimResponse(void)
 {
 }
 
+void CStimResponse::EnableSR(bool bEnable)
+{
+	if(bEnable == true)
+		m_State = SS_ENABLED;
+	else
+		m_State = SS_DISABLED;
+}
 
 /********************************************************************/
 /*                     CStim                                        */
@@ -538,7 +550,6 @@ CStim::CStim(idEntity *e, int Type)
 : CStimResponse(e, Type)
 {
 	m_Timer = NULL;
-	m_State = SS_DISABLED;
 	m_Radius = 0.0;
 	m_TriggerDamage = 0.0;
 	m_DurationDamage = 0.0;
@@ -554,19 +565,6 @@ CStim::~CStim(void)
 {
 	if(m_Timer != NULL)
 		delete m_Timer;
-}
-
-void CStim::EnableStim(bool bEnable)
-{
-	if(bEnable == true)
-		m_State = SS_ENABLED;
-	else
-		m_State = SS_DISABLED;
-}
-
-void CStim::ActivateStim(void)
-{
-	m_State = SS_ACTIVE;
 }
 
 void CStim::AddResponseIgnore(idEntity *e)

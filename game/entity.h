@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/02/07 18:55:24  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.21  2006/02/06 22:14:27  sparhawk
  * Added ignore list for responses.
  *
@@ -742,6 +746,7 @@ private:
 	void					StimEnable(int Type, int State);
 	void					ResponseAdd(int Type);
 	void					ResponseRemove(int Type);
+	void					ResponseEnable(int Type, int State);
 
 	// Add/Remove the response to/from the stim with the given type
 	void					ResponseIgnore(int StimType, idEntity *);

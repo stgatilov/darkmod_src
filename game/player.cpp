@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.53  2006/02/07 18:55:25  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.52  2006/02/06 12:34:26  gildoran
  * Just a few tweaks to give slightly better error messages in the gui overlay interaction script functions.
  *
@@ -1320,48 +1324,28 @@ idPlayer::idPlayer()
 
 	m_NoViewChange			= false;
 
-
-
 	// Add the default stims to the player. These are stims
-
 	// that can be performed by the actual player, while the
-
 	// other stims like water, damage, kill, etc. are rather
-
 	// properties of the respective weapon or equipment.
-
 	// None of these stims require a radius in this case
-
 	// as they are determined by the various parts of the code
-
 	// that is responsible for handling it. It might be needed
-
 	// if these stims are added to an AI though.
-
-	CStim *pStim;
+/*	CStim *pStim;
 
 	pStim = AddStim(ST_FROB, 0.0f, false, true);
-
-	pStim->EnableStim();
-
-
+	pStim->EnableSR();
 
 	pStim = AddStim(ST_TOUCH, 0.0f, false, true);
-
-	pStim->EnableStim();
-
-
+	pStim->EnableSR();
 
 	pStim = AddStim(ST_SOUND, 0.0f, false, true);
-
-	pStim->EnableStim();
-
-
+	pStim->EnableSR();
 
 	pStim = AddStim(ST_VISUAL, 0.0f, false, true);
-
-	pStim->EnableStim();
-
+	pStim->EnableSR();
+*/
 }
 
 /*

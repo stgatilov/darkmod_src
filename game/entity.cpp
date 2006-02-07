@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/02/07 18:55:24  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.35  2006/02/06 22:14:27  sparhawk
  * Added ignore list for responses.
  *
@@ -221,6 +225,7 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 const idEventDef EV_StimAdd( "StimAdd", "df" );
 const idEventDef EV_StimRemove( "StimRemove", "d" );
 const idEventDef EV_StimEnable( "StimEnable", "dd" );
+const idEventDef EV_ResponseEnable( "ResponseEnable", "dd" );
 const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
 const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
@@ -6351,7 +6356,15 @@ void idEntity::StimEnable(int Type, int State)
 	CStim *stim;
 
 	if((stim = m_StimResponseColl->GetStim(Type)) != NULL)
-		stim->EnableStim(State);
+		stim->EnableSR(State);
+}
+
+void idEntity::ResponseEnable(int Type, int State)
+{
+	CResponse *resp;
+
+	if((resp = m_StimResponseColl->GetResponse(Type)) != NULL)
+		resp->EnableSR(State);
 }
 
 void idEntity::ResponseAdd(int Type)

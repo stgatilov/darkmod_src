@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.7  2006/02/07 18:55:01  sparhawk
+ * 1. State is now moved to CStimResponse so responses can now also be disabled.
+ * 2. Removed state SS_ACTIVE (what was that again for???)
+ *
  * Revision 1.6  2006/02/06 22:13:51  sparhawk
  * Added ignore list for responses.
  *
@@ -156,7 +160,6 @@ typedef enum {
 typedef enum {
 	SS_DISABLED,		// Stim is disabled and can not be triggered
 	SS_ENABLED,			// Stim is enabled and waits for activation
-	SS_ACTIVE,			// Stim has been activated
 	SS_DEFAULT
 } StimState;
 
@@ -168,6 +171,9 @@ friend CStimResponseCollection;
 protected:
 	CStimResponse(idEntity *Owner, int Type);
 	virtual ~CStimResponse(void);
+
+public:
+	void EnableSR(bool Enable = true);
 
 public:
 	/**
@@ -186,6 +192,11 @@ public:
 	 * removed.
 	 */
 	bool				m_Removable;
+
+	/**
+	 * State for the stim/response.
+	 */
+	StimState			m_State;
 
 	/**
 	 * Default means that this is a stim which has been added as default to this entity.
@@ -209,9 +220,6 @@ protected:
 	virtual ~CStim(void);
 
 public:
-	void EnableStim(bool Enable = true);
-	void ActivateStim(void);
-
 	/**
 	 * Add a responseentity to the ignore list. If the response is already
 	 * in the list, it is not entered again.
@@ -237,11 +245,6 @@ public:
 	 * it will no longer fire.
 	 */
 	idList<idEntity *>		m_ResponseIgnore;
-
-	/**
-	 * State of this stimuls.
-	 */
-	StimState			m_State;
 
 	/**
 	 * Radius defines the radius the action can reach out
