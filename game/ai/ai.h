@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/02/07 06:31:25  ishtvan
+ * drowning code framework added - still WIP
+ *
  * Revision 1.9  2006/02/05 06:51:10  ishtvan
  * knockout updates
  *
@@ -831,6 +834,11 @@ protected:
 	void					LinkScriptVariables( void );
 	void					UpdateAIScript( void );
 
+	/**
+	* Returns true if AI's mouth is underwater
+	**/
+	bool MouthIsUnderwater( void );
+
 	//
 	// ai/ai_events.cpp
 	//
@@ -1022,7 +1030,7 @@ protected:
 	*
 	* For some reason this was left out of D3.
 	**/
-	void idAI::Event_ClosestReachableEnemy( void );
+	void Event_ClosestReachableEnemy( void );
 
 };
 

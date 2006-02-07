@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/02/07 06:31:25  ishtvan
+ * drowning code framework added - still WIP
+ *
  * Revision 1.14  2006/02/05 07:09:46  ishtvan
  * fix: dead AI can no longer be KO'd
  *
@@ -5955,4 +5958,49 @@ void idAI::Knockout( void )
 
 Quit:
 	return;
+}
+
+bool idAI::MouthIsUnderwater( void )
+{
+	bool bReturnVal( false );
+	idVec3 MouthOffset, MouthPosition;
+
+	idEntity *headEnt = head.GetEntity();
+
+	// def file will store the coordinates of the mouth relative to the head origin
+	// this will be entered by the modeler
+	
+	// TODO: Only load this once at spawn, make it a member var.
+	MouthOffset = spawnArgs.GetVector("mouth_offset");
+	
+	// check for attached head
+	if( headEnt )
+	{
+		MouthPosition = headEnt->GetPhysics()->GetOrigin();
+	
+		// add in the mouth offset oriented by head axis
+		MouthPosition += headEnt->GetPhysics()->GetAxis() * MouthOffset;
+	}
+	else if( af.IsLoaded() )
+	{
+		// TODO: Only load this once at spawn, make it a member var
+		const char *HeadName = spawnArgs.GetString("head_bodyname");
+	
+		// this will call gameLocal.Error if the joint name is wrong
+		int headID = af.GetPhysics()->GetBodyId( HeadName );
+		MouthPosition = af.GetPhysics()->GetOrigin( headID );
+		
+		// add in the mouth offset oriented by head axis
+		MouthPosition += af.GetPhysics()->GetAxis( headID ) * MouthOffset;
+	}
+	else
+		MouthPosition = GetEyePosition();
+	
+	// check if the mouth position is underwater
+	
+	int contents = gameLocal.clip.Contents( MouthPosition, NULL, mat3_identity, -1, this );
+	
+	bReturnVal = (contents & MASK_WATER) > 0;
+	
+	return bReturnVal;
 }
