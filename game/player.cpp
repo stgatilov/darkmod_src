@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.54  2006/02/12 07:26:51  ishtvan
+ * fixed drowning SFX, added underwater death sound option
+ *
  * Revision 1.53  2006/02/07 18:55:25  sparhawk
  * 1. State is now moved to CStimResponse so responses can now also be disabled.
  * 2. Removed state SS_ACTIVE (what was that again for???)
@@ -7234,7 +7237,12 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	}
 
 	physicsObj.SetMovementType( PM_DEAD );
-	StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+
+	if( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD )
+		StartSound( "snd_death_liquid", SND_CHANNEL_VOICE, 0, false, NULL );
+	else
+		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+
 	StopSound( SND_CHANNEL_BODY2, false );
 
 	fl.takedamage = true;		// can still be gibbed
@@ -7502,12 +7510,9 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		lastArmorPulse = gameLocal.time;
 	}
 	
-	if ( damageDef->dict.GetBool( "burn" ) ) {
+	if ( damageDef->dict.GetBool( "burn" ) ) 
+	{
 		StartSound( "snd_burn", SND_CHANNEL_BODY3, 0, false, NULL );
-	} else if ( damageDef->dict.GetBool( "no_air" ) ) {
-		if ( !armorSave && health > 0 ) {
-			StartSound( "snd_airGasp", SND_CHANNEL_ITEM, 0, false, NULL );
-		}
 	}
 
 	if ( g_debugDamage.GetInteger() ) {
@@ -7569,6 +7574,17 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 			// let the anim script know we took damage
 			AI_PAIN = Pain( inflictor, attacker, damage, dir, location );
+			
+			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
+			if ( damageDef->dict.GetBool( "no_air" ) ) 
+			{
+				if ( !armorSave && health > 0 ) 
+				{
+					StopSound( SND_CHANNEL_VOICE, false );
+					StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
+				}
+			}
+
 			if ( !g_testDeath.GetBool() ) {
 				lastDmgTime = gameLocal.time;
 			}
