@@ -404,8 +404,8 @@ void CsndProp::Propagate
 		// TODO : Do something else in the case of Listeners, since they're not AI
 		testAI = static_cast<idAI *>( validTypeEnts[i] );
 
-		// do not propagate to dead AI
-		if( testAI->health <= 0 )
+		// do not propagate to dead or unconscious AI
+		if( testAI->health <= 0 || testAI->IsKnockedOut() )
 			continue;
 		
 		if( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
