@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/02/12 07:32:22  ishtvan
+ * drowning implemented
+ *
  * Revision 1.15  2006/02/07 06:31:25  ishtvan
  * drowning code framework added - still WIP
  *
@@ -452,6 +455,11 @@ idAI::idAI() {
 
 	m_TactAlertEnt = NULL;
 
+	m_AirCheckTimer = 0;
+	m_AirTics = 0;
+	m_AirTicksMax = 0;
+	m_HeadBodyID = 0;
+	m_MouthOffset = vec3_zero;
 }
 
 /*
@@ -1025,6 +1033,22 @@ void idAI::Spawn( void ) {
 	// set up monster chatter
 	SetChatSound();
 
+	// Dark Mod: set up drowning
+	m_MouthOffset = spawnArgs.GetVector("mouth_offset");
+	if( !head.GetEntity() )
+	{
+		const char *headName = spawnArgs.GetString("head_bodyname", "head");
+		// this will call gameLocal.Error if the joint name is wrong
+		m_HeadBodyID = af.GetPhysics()->GetBodyId( headName );
+	}
+
+	// set up drowning timer (add a random bit to make it asynchronous w/ respect to other AI)
+	m_AirCheckTimer = gameLocal.time + gameLocal.random.RandomInt( 8000 );
+	m_AirTicksMax = spawnArgs.GetInt( "max_air_tics", "5" );
+	m_AirTics = m_AirTicksMax;
+	m_AirCheckInterval = (int) 1000.0f * spawnArgs.GetFloat( "air_check_interval", "4.0" );
+	// end drowning setup
+
 	BecomeActive( TH_THINK );
 
 	if ( af_push_moveables ) {
@@ -1169,6 +1193,10 @@ void idAI::Think( void ) {
 		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
 		deltaViewAngles.Zero();
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+
+		// Check if drowning
+		if( gameLocal.time > m_AirCheckTimer )
+			UpdateAir();
 
 		if ( num_cinematics ) {
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
@@ -3513,8 +3541,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	Unbind();
 
-	if ( StartRagdoll() ) {
-		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+	if ( StartRagdoll() ) 
+	{
+		if( MouthIsUnderwater() )
+			StartSound( "snd_death_liquid", SND_CHANNEL_VOICE, 0, false, NULL );
+		else
+			StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
 
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
@@ -5970,28 +6002,20 @@ bool idAI::MouthIsUnderwater( void )
 	// def file will store the coordinates of the mouth relative to the head origin
 	// this will be entered by the modeler
 	
-	// TODO: Only load this once at spawn, make it a member var.
-	MouthOffset = spawnArgs.GetVector("mouth_offset");
-	
 	// check for attached head
 	if( headEnt )
 	{
 		MouthPosition = headEnt->GetPhysics()->GetOrigin();
 	
 		// add in the mouth offset oriented by head axis
-		MouthPosition += headEnt->GetPhysics()->GetAxis() * MouthOffset;
+		MouthPosition += headEnt->GetPhysics()->GetAxis() * m_MouthOffset;
 	}
-	else if( af.IsLoaded() )
+	else if( af.IsLoaded() && AI_KNOCKEDOUT )
 	{
-		// TODO: Only load this once at spawn, make it a member var
-		const char *HeadName = spawnArgs.GetString("head_bodyname");
-	
-		// this will call gameLocal.Error if the joint name is wrong
-		int headID = af.GetPhysics()->GetBodyId( HeadName );
-		MouthPosition = af.GetPhysics()->GetOrigin( headID );
+		MouthPosition = af.GetPhysics()->GetOrigin( m_HeadBodyID );
 		
 		// add in the mouth offset oriented by head axis
-		MouthPosition += af.GetPhysics()->GetAxis( headID ) * MouthOffset;
+		MouthPosition += af.GetPhysics()->GetAxis( m_HeadBodyID ) * m_MouthOffset;
 	}
 	else
 		MouthPosition = GetEyePosition();
@@ -6003,4 +6027,36 @@ bool idAI::MouthIsUnderwater( void )
 	bReturnVal = (contents & MASK_WATER) > 0;
 	
 	return bReturnVal;
+}
+
+void idAI::UpdateAir( void )
+{
+	if( MouthIsUnderwater() )
+	{
+		// don't let KO'd AI hold their breath
+		if( AI_KNOCKEDOUT )
+			m_AirTics = 0;
+
+		m_AirTics--;
+	}
+	else
+	{
+		// regain breath twice as fast as losing
+		m_AirTics += 2;
+		
+		if( m_AirTics > m_AirTicksMax )
+			m_AirTics = m_AirTicksMax;
+	}
+
+
+	if( m_AirTics < 0 )
+	{
+		m_AirTics = 0;
+
+		// do the damage, damage_noair is already defined for the player
+		Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
+	}
+
+	// set the timer
+	m_AirCheckTimer += m_AirCheckInterval;
 }

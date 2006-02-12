@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/02/12 07:32:22  ishtvan
+ * drowning implemented
+ *
  * Revision 1.10  2006/02/07 06:31:25  ishtvan
  * drowning code framework added - still WIP
  *
@@ -680,6 +683,27 @@ protected:
 	**/
 	idEntity *				m_TactAlertEnt;
 
+	/**
+	* Used for drowning
+	**/
+	int						m_AirCheckTimer;
+
+	int						m_HeadBodyID;
+
+	int						m_AirTics;
+
+	int						m_AirTicksMax;
+
+	/**
+	* number of seconds between air checks
+	**/
+	int						m_AirCheckInterval;
+
+	/**
+	* Offset relative to the eye position, used to locate the mouth
+	**/
+	idVec3					m_MouthOffset;
+
 	//
 	// ai/ai.cpp
 	//
@@ -838,6 +862,11 @@ protected:
 	* Returns true if AI's mouth is underwater
 	**/
 	bool MouthIsUnderwater( void );
+
+	/**
+	* Checks for drowning, damages if drowning
+	**/
+	void UpdateAir( void );
 
 	//
 	// ai/ai_events.cpp
