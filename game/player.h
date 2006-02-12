@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/02/12 15:34:28  gildoran
+ * Added first version of setHinderance(), etc. Not yet tied to player speeds.
+ * Also added getNextImmobilization(), since I figured it could be useful for debugging purposes.
+ *
  * Revision 1.19  2006/02/06 01:31:39  gildoran
  * Added some functions to make it easier for scripts to communicate with the gui overlay.
  *
@@ -439,6 +443,7 @@ public:
 	bool					SkipCinematic( void );
 
 	int						GetImmobilization();
+	float					GetHinderance();
 
 	void					UpdateConditions( void );
 	void					SetViewAngles( const idAngles &angles );
@@ -703,6 +708,14 @@ private:
 	idDict					m_immobilization;
 	int						m_immobilizationCache;
 
+	/**
+	* m_hinderance keeps track of sources of hinderance. (slowing the player)
+	* m_hinderanceCache caches the current hinderance level so it
+	* only gets recalculated when something is changed.
+	**/
+	idDict					m_hinderance;
+	float					m_hinderanceCache;
+
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]
 	static const int		NUM_LOGGED_ACCELS = 16;			// for weapon turning angle offsets
@@ -823,6 +836,10 @@ private:
 	void					Event_GetGuiOverlay( void );
 	void					Event_SetImmobilization( const char *source, int type );
 	void					Event_GetImmobilization( const char *source );
+	void					Event_GetNextImmobilization( const char *prefix, const char *lastMatch );
+	void					Event_SetHinderance( const char *source, float mCap, float aCap );
+	void					Event_GetHinderance( const char *source );
+	void					Event_GetNextHinderance( const char *prefix, const char *lastMatch );
 
 	void					Event_SetGuiParm( const char *key, const char *val );
 	void					Event_SetGuiFloat( const char *key, float f );

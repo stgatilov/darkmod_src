@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.55  2006/02/12 15:34:28  gildoran
+ * Added first version of setHinderance(), etc. Not yet tied to player speeds.
+ * Also added getNextImmobilization(), since I figured it could be useful for debugging purposes.
+ *
  * Revision 1.54  2006/02/12 07:26:51  ishtvan
  * fixed drowning SFX, added underwater death sound option
  *
@@ -248,6 +252,10 @@ const idEventDef EV_Player_SetGuiOverlay( "setGuiOverlay", "s" );
 const idEventDef EV_Player_GetGuiOverlay( "getGuiOverlay", NULL, 's' );
 const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
 const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
+const idEventDef EV_Player_GetNextImmobilization( "getNextImmobilization", "ss", 's' );
+const idEventDef EV_Player_SetHinderance( "setHinderance", "sff" );
+const idEventDef EV_Player_GetHinderance( "getHinderance", "s", 'v' );
+const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
 const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
 const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
 const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
@@ -280,6 +288,10 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetGuiOverlay,			idPlayer::Event_GetGuiOverlay )
 	EVENT( EV_Player_SetImmobilization,		idPlayer::Event_SetImmobilization )
 	EVENT( EV_Player_GetImmobilization,		idPlayer::Event_GetImmobilization )
+	EVENT( EV_Player_GetNextImmobilization,	idPlayer::Event_GetNextImmobilization )
+	EVENT( EV_Player_SetHinderance,			idPlayer::Event_SetHinderance )
+	EVENT( EV_Player_GetHinderance,			idPlayer::Event_GetHinderance )
+	EVENT( EV_Player_GetNextHinderance,		idPlayer::Event_GetNextHinderance )
 	EVENT( EV_SetGuiParm, 					idPlayer::Event_SetGuiParm )
 	EVENT( EV_SetGuiFloat, 					idPlayer::Event_SetGuiFloat )
 	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
@@ -1259,6 +1271,9 @@ idPlayer::idPlayer()
 	// m_immobilization.Clear();
 	m_immobilizationCache	= 0;
 
+	// m_hinderance.Clear();
+	m_hinderanceCache	= 1.0f;
+
 	memset( loggedViewAngles, 0, sizeof( loggedViewAngles ) );
 	memset( loggedAccel, 0, sizeof( loggedAccel ) );
 	currentLoggedAccel	= 0;
@@ -1661,6 +1676,9 @@ void idPlayer::Spawn( void ) {
 	m_immobilization.Clear();
 	m_immobilizationCache = 0;
 
+	m_hinderance.Clear();
+	m_hinderanceCache = 1.0f;
+
 	// set our collision model
 	physicsObj.SetSelf( this );
 	SetClipModel();
@@ -2008,6 +2026,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteDict( &m_immobilization );
 	savefile->WriteInt( m_immobilizationCache );
 
+	savefile->WriteDict( &m_hinderance );
+	savefile->WriteFloat( m_hinderanceCache );
+
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
 	}
@@ -2253,6 +2274,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadDict( &m_immobilization );
 	savefile->ReadInt( m_immobilizationCache );
+
+	savefile->ReadDict( &m_hinderance );
+	savefile->ReadFloat( m_hinderanceCache );
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
@@ -6256,7 +6280,7 @@ idPlayer::GetImmobilization
 */
 int idPlayer::GetImmobilization( void ) {
 	// Has something changed since the cache was last calculated?
-	if (m_immobilizationCache & EIM_UPDATE) {
+	if ( m_immobilizationCache & EIM_UPDATE ) {
 		const idKeyValue *kv;
 
 		// Recalculate the immobilization from scratch.
@@ -6269,6 +6293,36 @@ int idPlayer::GetImmobilization( void ) {
 		}
 	}
 	return m_immobilizationCache;
+}
+
+/*
+==============
+idPlayer::GetHinderance
+==============
+*/
+float idPlayer::GetHinderance( void ) {
+	// Has something changed since the cache was last calculated?
+	if ( m_hinderanceCache < 0.0f ) {
+		const idKeyValue *kv;
+
+		// Recalculate the hinderance from scratch.
+		float mCap = 1.0f, aCap = 1.0f;
+		kv = m_hinderance.MatchPrefix( "", NULL );
+		while ( kv ) {
+			idVec3 vec = m_hinderance.GetVector(kv->GetKey());
+			mCap *= vec[0];
+			if ( aCap > vec[1] ) {
+				aCap = vec[1];
+			}
+			kv = m_hinderance.MatchPrefix( "", kv );
+		}
+
+		if ( aCap > mCap ) {
+			aCap = mCap;
+		}
+		m_hinderanceCache = aCap;
+	}
+	return m_hinderanceCache;
 }
 
 /*
@@ -9622,6 +9676,109 @@ void idPlayer::Event_GetImmobilization( const char *source )
 		idThread::ReturnInt( m_immobilization.GetInt(source) );
 	} else {
 		idThread::ReturnInt( GetImmobilization() );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetNextImmobilization
+=====================
+*/
+void idPlayer::Event_GetNextImmobilization( const char *prefix, const char *lastMatch )
+{
+	// Code is plagarized from getNextKey()
+	const idKeyValue *kv;
+	const idKeyValue *previous;
+
+	if ( *lastMatch ) {
+		previous = m_immobilization.FindKey( lastMatch );
+	} else {
+		previous = NULL;
+	}
+
+	kv = m_immobilization.MatchPrefix( prefix, previous );
+	if ( !kv ) {
+		idThread::ReturnString( "" );
+	} else {
+		idThread::ReturnString( kv->GetKey() );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_SetHinderance
+=====================
+*/
+void idPlayer::Event_SetHinderance( const char *source, float mCap, float aCap )
+{
+	if (idStr::Length(source)) {
+
+		if ( mCap < 0.0f ) {
+			mCap = 0.0f;
+			gameLocal.Warning( "mCap < 0; mCap set to 0\n" );
+		} else if ( mCap > 1.0f ) {
+			mCap = 1.0f;
+			gameLocal.Warning( "mCap > 1; mCap set to 1\n" );
+		}
+		if ( aCap < 0.0f ) {
+			aCap = 0.0f;
+			gameLocal.Warning( "aCap < 0; aCap set to 0\n" );
+		} else if ( aCap > 1.0f ) {
+			aCap = 1.0f;
+			gameLocal.Warning( "aCap > 1; aCap set to 1\n" );
+		}
+
+		if ( mCap < 1.0f || aCap < 1.0f ) {
+			idVec3 vec( mCap, aCap, 0.0f );
+			m_hinderance.SetVector( source, vec );
+		} else {
+			m_hinderance.Delete( source );
+		}
+
+		m_hinderanceCache = -1;
+	} else {
+		gameLocal.Warning( "source was empty; no hinderance set\n" );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetHinderance
+=====================
+*/
+void idPlayer::Event_GetHinderance( const char *source )
+{
+	if (idStr::Length(source)) {
+		idThread::ReturnVector( m_hinderance.GetVector( source, "1 1 0" ) );
+	} else {
+		float h = GetHinderance();
+		idVec3 vec( h, h, 0.0f );
+		idThread::ReturnVector( vec );
+	}
+}
+
+/*
+=====================
+idPlayer::Event_GetNextHinderance
+=====================
+*/
+void idPlayer::Event_GetNextHinderance( const char *prefix, const char *lastMatch )
+{
+	// Code is plagarized from getNextKey()
+	const idKeyValue *kv;
+	const idKeyValue *previous;
+
+	if ( *lastMatch ) {
+		previous = m_hinderance.FindKey( lastMatch );
+	} else {
+		previous = NULL;
+	}
+
+	kv = m_hinderance.MatchPrefix( prefix, previous );
+	if ( !kv ) {
+		idThread::ReturnString( "" );
+	} else {
+		idThread::ReturnString( kv->GetKey() );
 	}
 }
 
