@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/02/15 19:48:23  gildoran
+ * Added a kludge, copyKeyToGuiParm() to get around string length limits in scripts.
+ *
  * Revision 1.20  2006/02/12 15:34:28  gildoran
  * Added first version of setHinderance(), etc. Not yet tied to player speeds.
  * Also added getNextImmobilization(), since I figured it could be useful for debugging purposes.
@@ -846,6 +849,7 @@ private:
 	void					Event_GetGuiParm( const char *key );
 	void					Event_GetGuiFloat( const char *key );
 	void					Event_CallGuiOverlay( const char *namedEvent );
+	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.56  2006/02/15 19:48:22  gildoran
+ * Added a kludge, copyKeyToGuiParm() to get around string length limits in scripts.
+ *
  * Revision 1.55  2006/02/12 15:34:28  gildoran
  * Added first version of setHinderance(), etc. Not yet tied to player speeds.
  * Also added getNextImmobilization(), since I figured it could be useful for debugging purposes.
@@ -261,6 +264,7 @@ const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
 const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
 const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
 const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
+const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 
 
 CLASS_DECLARATION( idActor, idPlayer )
@@ -297,6 +301,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
 	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
 	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
+	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -9848,6 +9853,28 @@ void idPlayer::Event_CallGuiOverlay( const char *namedEvent ) {
 		m_guiOverlay->HandleNamedEvent( namedEvent );
 	} else {
 		gameLocal.Warning( "Unable to call named event \"%s\"; no gui overlay is active.\n", namedEvent );
+	}
+}
+
+/*
+================
+idPlayer::Event_CopyKeyToGuiParm
+
+This is a kludge. It's hopefully temporary, but probably not.
+Anyway, it's used by readables to bypass the 127 char limit
+on string variables in scripts.
+================
+*/
+void idPlayer::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm ) {
+	if (src == NULL) {
+		gameLocal.Warning( "Unable to get key, since the object was null.\n" );
+	} else if (!m_guiOverlayOn) {
+		gameLocal.Warning( "No gui overlay is active.\n" );
+	} else {
+		const char *value;
+		src->spawnArgs.GetString( key, "", &value );
+		m_guiOverlay->SetStateString( guiparm, value );
+		m_guiOverlay->StateChanged( gameLocal.time );
 	}
 }
 
