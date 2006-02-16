@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/02/16 06:38:58  ishtvan
+ * soundprop scriptfunction optional argument fix
+ *
  * Revision 1.22  2006/02/07 18:55:24  sparhawk
  * 1. State is now moved to CStimResponse so responses can now also be disabled.
  * 2. Removed state SS_ACTIVE (what was that again for???)
@@ -754,8 +757,11 @@ private:
 
 	/**
 	* Used to propagate a sound directly via scripting, without playing the audible sound
+	* VolModIn is a volume modifier added to the sound's volume.
 	**/
-	void					Event_PropSound( const char *sndName, float VolModIn = 0.0 );
+	void					Event_PropSoundMod( const char *sndName, float VolModIn = 0.0 );
+
+	void					Event_PropSound( const char *sndName );
 
 #ifdef MOD_WATERPHYSICS
 
