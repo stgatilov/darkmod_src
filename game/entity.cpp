@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2006/02/17 21:40:50  gildoran
+ * Added CopyKeyToGuiParm() to entities.
+ *
  * Revision 1.37  2006/02/16 06:38:58  ishtvan
  * soundprop scriptfunction optional argument fix
  *
@@ -221,6 +224,8 @@ const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
+const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
+
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
@@ -315,6 +320,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
+
+	EVENT( EV_CopyKeyToGuiParm, 	idEntity::Event_CopyKeyToGuiParm )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -6441,3 +6448,32 @@ void idEntity::Event_PropSoundMod( const char *sndName, float VolModIn )
 {
 	PropSoundDirect( sndName, false, false, VolModIn );
 }
+
+/*
+================
+idEntity::Event_CopyKeyToGuiParm
+
+This is a kludge. It's hopefully temporary, but probably not.
+Anyway, it's used by readables to bypass the 127 char limit
+on string variables in scripts.
+================
+*/
+void idEntity::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm ) {
+	if (src == NULL) {
+		gameLocal.Warning( "Unable to get key, since the object was null.\n" );
+	} else {
+		const char *value;
+		src->spawnArgs.GetString( key, "", &value );
+		if ( idStr::Icmpn( guiparm, "gui_", 4 ) == 0 ) {
+			spawnArgs.Set( guiparm, value );
+		}
+		for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
+			if ( renderEntity.gui[ i ] ) {
+				renderEntity.gui[ i ]->SetStateString( guiparm, value );
+				renderEntity.gui[ i ]->StateChanged( gameLocal.time );
+			}
+		}
+	}
+}
+
+

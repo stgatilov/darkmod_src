@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/02/17 21:40:50  gildoran
+ * Added CopyKeyToGuiParm() to entities.
+ *
  * Revision 1.23  2006/02/16 06:38:58  ishtvan
  * soundprop scriptfunction optional argument fix
  *
@@ -744,6 +747,9 @@ private:
 	void					Event_HasFunction( const char *name );
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
+
+	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
+
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);
 	void					StimEnable(int Type, int State);
