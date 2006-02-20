@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2006/02/20 07:53:39  gildoran
+ * Added setGui() so that readables can change which gui is displayed in-level.
+ *
  * Revision 1.38  2006/02/17 21:40:50  gildoran
  * Added CopyKeyToGuiParm() to entities.
  *
@@ -224,6 +227,7 @@ const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
+const idEventDef EV_SetGui( "setGui", "ds" );
 const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 
 // The Dark Mod Stim/Response interface functions for scripting
@@ -321,6 +325,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
 
+	EVENT( EV_SetGui,			 	idEntity::Event_SetGui )
 	EVENT( EV_CopyKeyToGuiParm, 	idEntity::Event_CopyKeyToGuiParm )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
@@ -6451,6 +6456,26 @@ void idEntity::Event_PropSoundMod( const char *sndName, float VolModIn )
 
 /*
 ================
+idEntity::Event_SetGui
+================
+*/
+void idEntity::Event_SetGui( int guiNum, const char *guiFile ) {
+	if ( guiNum < 1 || guiNum > MAX_RENDERENTITY_GUI ) {
+		gameLocal.Warning( "GUI ID out of range: %d.\n", guiNum );
+	} else if ( !uiManager->CheckGui(guiFile) ) {
+		gameLocal.Warning( "Unable load GUI file: %s\n", guiFile );
+	} else {
+		if ( renderEntity.gui[ guiNum-1 ] ) {
+			renderEntity.gui[ guiNum-1 ]->InitFromFile( guiFile );
+			UpdateGuiParms( renderEntity.gui[ guiNum-1 ], &spawnArgs );
+		} else {
+			AddRenderGui( guiFile, &renderEntity.gui[ guiNum-1 ], &spawnArgs );
+		}
+	}
+}
+
+/*
+================
 idEntity::Event_CopyKeyToGuiParm
 
 This is a kludge. It's hopefully temporary, but probably not.
@@ -6458,18 +6483,18 @@ Anyway, it's used by readables to bypass the 127 char limit
 on string variables in scripts.
 ================
 */
-void idEntity::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm ) {
+void idEntity::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm ) {
 	if (src == NULL) {
 		gameLocal.Warning( "Unable to get key, since the object was null.\n" );
 	} else {
 		const char *value;
 		src->spawnArgs.GetString( key, "", &value );
-		if ( idStr::Icmpn( guiparm, "gui_", 4 ) == 0 ) {
-			spawnArgs.Set( guiparm, value );
+		if ( idStr::Icmpn( guiParm, "gui_", 4 ) == 0 ) {
+			spawnArgs.Set( guiParm, value );
 		}
 		for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
 			if ( renderEntity.gui[ i ] ) {
-				renderEntity.gui[ i ]->SetStateString( guiparm, value );
+				renderEntity.gui[ i ]->SetStateString( guiParm, value );
 				renderEntity.gui[ i ]->StateChanged( gameLocal.time );
 			}
 		}

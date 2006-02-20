@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/02/20 07:53:39  gildoran
+ * Added setGui() so that readables can change which gui is displayed in-level.
+ *
  * Revision 1.24  2006/02/17 21:40:50  gildoran
  * Added CopyKeyToGuiParm() to entities.
  *
@@ -748,7 +751,8 @@ private:
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
 
-	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
+	void					Event_SetGui( int guiNum, const char *guiFile );
+	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm );
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);
