@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/02/23 10:19:49  ishtvan
+ * added throwing related cvars
+ *
  * Revision 1.15  2005/11/20 21:51:15  sparhawk
  * Some cvars removed. dm_lg_drive, dm_lg_vof[x/y] and dm_lg_file
  *
@@ -78,6 +81,10 @@ extern idCVar cv_spr_show;
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
+
+extern idCVar cv_throw_min;
+extern idCVar cv_throw_max;
+extern idCVar cv_throw_time;
 
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;
@@ -196,6 +203,8 @@ extern idCVar	g_vehicleSuspensionDamping;
 extern idCVar	g_vehicleTireFriction;
 
 extern idCVar	g_enablePortalSky;
+
+
 
 extern idCVar	ik_enable;
 extern idCVar	ik_debug;
@@ -326,9 +335,13 @@ extern idCVar	si_map;
 extern idCVar	si_spectators;
 
 extern idCVar	net_clientSelfSmoothing;
+
 extern idCVar	net_clientLagOMeter;
 
+
+
 extern const char *si_gameTypeArgs[];
+
 
 extern const char *ui_skinArgs[];
 
