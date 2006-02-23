@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/02/23 10:20:19  ishtvan
+ * throw implemented
+ *
  * Revision 1.4  2005/12/09 05:12:48  lloyd
  * Various bug fixes (AF grabbing, mouse deadzone, mouse sensitivty, ...)
  *
@@ -44,6 +47,7 @@ class CGrabber : public idEntity {
 	public:
 		CLASS_PROTOTYPE( CGrabber );
 
+
 								CGrabber( void );
 								~CGrabber( void );
 
@@ -62,6 +66,13 @@ class CGrabber : public idEntity {
 		
 		void					AddToClipList( idEntity *ent );
 		void					RemoveFromClipList( int index );
+
+		/**
+		* Throws the current item.
+		* Argument is the amount of time the throw button has been held,
+		* used to determine strength of the throw
+		**/
+		void					Throw( int HeldTime );
 
 	private:
 		idEntityPtr<idEntity>	dragEnt;			// entity being dragged
@@ -84,6 +95,15 @@ class CGrabber : public idEntity {
 
 		void					StopDrag( void );
 		bool					DeadMouse( void );	// returns true if the mouse is inside the dead zone
+
+		/**
+		* Set to true if the attack button has been pressed (used by throwing)
+		**/
+		bool					m_bAttackPressed;
+		/**
+		* Timestamp of when attack button was last pressed (used by throwing)
+		**/
+		int						m_ThrowTimer;
 
 		void					Event_CheckClipList( void );
 };

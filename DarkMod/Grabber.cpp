@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/02/23 10:20:19  ishtvan
+ * throw implemented
+ *
  * Revision 1.5  2005/12/11 18:08:05  ishtvan
  * disabled player view changes when using mouse axes to rotate
  *
@@ -25,6 +28,7 @@
 #pragma hdrstop
 
 #include "../game/Game_local.h"
+#include "darkmodglobals.h"
 
 #include "Grabber.h"
 
@@ -52,9 +56,13 @@ const idVec3 rotateMin( -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED, -MAX_ROTATION_
 const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPEED );
 
 
+
 CLASS_DECLARATION( idEntity, CGrabber )
+
 	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
+
 END_CLASS
+
 
 /*
 ==============
@@ -88,6 +96,8 @@ void CGrabber::Clear( void ) {
 	localEntityPoint.Zero();
 	localPlayerPoint.Zero();
 	bodyName.Clear();
+	m_bAttackPressed = false;
+	m_ThrowTimer = 0;
 
 	while( this->HasClippedEntity() )
 		this->RemoveFromClipList( 0 );
@@ -136,7 +146,8 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 		// stop dragging so better put the players gun back
 		player->RaiseWeapon();
 		this->StopDrag();
-		return;
+		
+		goto Quit;
 	}
 
 	player->GetViewPos( viewPoint, viewAxis );
@@ -212,8 +223,31 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 
 	// if there is an entity selected for dragging
 	idEntity *drag = dragEnt.GetEntity();
-	if ( drag ) {
+	if ( drag ) 
+	{
 		idVec3 draggedPosition;
+
+		// Ishtvan: Check for throwing:
+		bool bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+
+		if( m_bAttackPressed && !bAttackHeld )
+		{
+			int HeldTime = gameLocal.time - m_ThrowTimer;
+
+			Throw( HeldTime );
+			m_bAttackPressed = false;
+
+			goto Quit;
+		}
+
+		if( !m_bAttackPressed && bAttackHeld )
+		{
+			m_bAttackPressed = true;
+
+			// start the throw timer
+			m_ThrowTimer = gameLocal.time;
+		}
+
 
 		draggedPosition = viewPoint + localPlayerPoint * viewAxis;
 		this->drag.SetDragPosition( draggedPosition );
@@ -231,6 +265,9 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 			dragAnimator->GetJointTransform( joint, gameLocal.time, draggedPosition, axis );
 		}
 	}
+
+Quit:
+	return;
 }
 
 /*
@@ -522,4 +559,33 @@ bool CGrabber::HasClippedEntity( void ) const {
 		return true;
 	}
 	return false;
+}
+
+/*
+==============
+CGrabber::Throw
+==============
+*/
+void CGrabber::Throw( int HeldTime )
+{
+	float ThrowImpulse(0), FracPower(0);
+	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1);
+
+	idEntity *ent = dragEnt.GetEntity();
+	ImpulseVec = player->firstPersonViewAxis[0];
+	ImpulseVec.Normalize();
+
+	FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
+
+	if( FracPower > 1.0 )
+		FracPower = 1.0;
+
+	// Try out a linear scaling between max and min
+	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
+	ImpulseVec *= ThrowImpulse;  
+
+	ent->ApplyImpulse( player, id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+
+	player->RaiseWeapon();
+	StopDrag();
 }
