@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2006/02/23 10:17:11  ishtvan
+ * fixed grabbing of conscious AI
+ *
  * Revision 1.39  2006/02/20 07:53:39  gildoran
  * Added setGui() so that readables can change which gui is displayed in-level.
  *
@@ -6236,8 +6239,19 @@ void idEntity::FrobAction(bool bMaster)
 		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("(%08lX->[%s]) FrobAction has been triggered with empty FrobActionScript!\r", this, name.c_str());
 
 		// Default: grab it if it is one of the grabbable classes
-		if( IsType( idMoveable::Type ) || IsType( idAFEntity_Base::Type ) ) 
+		if( IsType( idMoveable::Type ) || IsType( idAFEntity_Base::Type )
+			|| IsType( idMoveableItem::Type ) )
+		{
+			// Fix : Do not pick up live, conscious AI
+			if( IsType( idAI::Type ) )
+			{
+				idAI *AISelf = static_cast<idAI *>(this);
+				if( AISelf->health > 0 && !AISelf->IsKnockedOut() )
+					goto Quit;
+			}
+
 			g_Global.m_DarkModPlayer->grabber->Update( gameLocal.GetLocalPlayer() );
+		}
 
 		goto Quit;
 	}
