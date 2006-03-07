@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/03/07 19:27:29  sparhawk
+ * Lightgem adjustement variable added.
+ *
  * Revision 1.24  2006/02/23 10:19:49  ishtvan
  * added throwing related cvars
  *
@@ -179,6 +182,8 @@ idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the li
 idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER,	"Set number of renderpasses used for the lightgem calculation (1..2)" );
 idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
 idCVar cv_lg_model("dm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
+idCVar cv_lg_adjust("dm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
+
 /**
 * End DarkMod cvars
 **/

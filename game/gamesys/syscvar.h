@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/03/07 19:27:29  sparhawk
+ * Lightgem adjustement variable added.
+ *
  * Revision 1.16  2006/02/23 10:19:49  ishtvan
  * added throwing related cvars
  *
@@ -109,6 +112,7 @@ extern idCVar cv_lg_player;
 extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_debug;
 extern idCVar cv_lg_model;
+extern idCVar cv_lg_adjust;
 
 /**
 * End DarkMod cvars
