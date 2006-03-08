@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/03/08 06:30:44  ishtvan
+ * knockout updates, ko cone should now be correct
+ *
  * Revision 1.16  2006/02/12 07:32:22  ishtvan
  * drowning implemented
  *
@@ -459,7 +462,9 @@ idAI::idAI() {
 	m_AirTics = 0;
 	m_AirTicksMax = 0;
 	m_HeadBodyID = 0;
+	m_HeadJointID = INVALID_JOINT;
 	m_MouthOffset = vec3_zero;
+	m_KoOffset = vec3_zero;
 }
 
 /*
@@ -1049,6 +1054,18 @@ void idAI::Spawn( void ) {
 	m_AirCheckInterval = (int) 1000.0f * spawnArgs.GetFloat( "air_check_interval", "4.0" );
 	// end drowning setup
 
+	// Set up KOing
+	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
+
+	m_HeadJointID = animator.GetJointHandle(HeadJointName);
+	if( m_HeadJointID == INVALID_JOINT )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint %s on AI %s \r", HeadJointName, name.c_str());
+	}
+
+	m_KoOffset = spawnArgs.GetVector("ko_spot_offset");
+	// end KO setup
+
 	BecomeActive( TH_THINK );
 
 	if ( af_push_moveables ) {
@@ -1278,6 +1295,11 @@ void idAI::Think( void ) {
 		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 */
+	// DarkMod: Show knockout debugging
+	if( cv_ko_show.GetBool() )
+	{
+		KnockoutDebugDraw();
+	}
 
 	UpdateMuzzleFlash();
 	UpdateAnimation();
@@ -5840,7 +5862,8 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 {
 	bool bReturnVal(false);
 	float KOAng(0), MinDot(1);
-	idVec3 KOSpot, delta;
+	idVec3 KOSpot(vec3_zero), delta(vec3_zero);
+	idMat3 HeadAxis(mat3_zero);
 	const char *LocationName;
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), state->Name());
@@ -5877,27 +5900,87 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	else
 		KOAng = spawnArgs.GetFloat( "ko_angle" );
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Calculated KO angle = %f\r", KOAng);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Calculated KO angle = %f\r", KOAng);
 
 	// check if we hit within the cone
-
 	MinDot = (float)cos( DEG2RAD( KOAng * 0.5f ) );
 
-	KOSpot = GetEyePosition() + spawnArgs.GetVector("ko_spot_offset");
+	if( m_HeadJointID == INVALID_JOINT )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint found on AI %s when KO attempted \r", name.c_str());
+		goto Quit;
+	}
+
+	// store head joint base position to KOSpot, axis to HeadAxis
+	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
+
+	KOSpot += HeadAxis * m_KoOffset;
+
 	delta = KOSpot - tr->c.point;
 	delta.NormalizeFast();
 	
-	if( (delta * viewAxis[0]) < MinDot )
+	// check if hit was within the cone
+	if( (delta * HeadAxis[0]) < MinDot )
 		goto Quit;
 
-	// if we made it to this point, AI just got knocked the taff out!
+	// if we made it to this point, this AI just got knocked the taff out!
 	Knockout();
 	bReturnVal = true;
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was KOd by a blow to the head\r", name.c_str());
+	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was knocked out by a blow to the head\r", name.c_str());
 
 Quit:
 	return bReturnVal;
+}
+
+void idAI::KnockoutDebugDraw( void )
+{
+	float KOAng(0), radius(0);
+	idVec3 KOSpot(vec3_zero), ConeDir(vec3_zero);
+	idMat3 HeadAxis(mat3_zero);
+	
+	const char * testZone = spawnArgs.GetString("ko_zone");
+	if( AI_KNOCKEDOUT || AI_DEAD || testZone[0] == '\0' )
+	{
+		goto Quit;
+	}
+
+	// Check if the AI is above the alert threshold for KOing
+	// Defined the name of the alert threshold in the AI def for generality
+	if( AI_AlertNum > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	{
+		// Do not display if immune
+		if( spawnArgs.GetBool("ko_alert_immmune") )
+			goto Quit;
+
+		// reduce the angle on alert, if needed
+		const char *temp = spawnArgs.GetString("ko_angle_alert");
+		if( temp[0] != '\0' )
+			KOAng = atof( temp );
+		else
+			KOAng = spawnArgs.GetFloat( "ko_angle" );
+	}
+	else
+		KOAng = spawnArgs.GetFloat( "ko_angle" );
+
+	if( m_HeadJointID == INVALID_JOINT )
+	{
+		goto Quit;
+	}
+
+	// store head joint base position to KOSpot, axis to HeadAxis
+	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
+
+	KOSpot += HeadAxis * m_KoOffset;
+
+	// Assumes the head joint is facing the same way as the look joint
+	ConeDir = -HeadAxis[0];
+	radius = DEG2RAD( KOAng * 0.5f ) * 30.0f;
+
+	gameRenderWorld->DebugCone( colorGreen, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
+
+Quit:
+	return;
 }
 
 /*

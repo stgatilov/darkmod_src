@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/03/08 06:30:44  ishtvan
+ * knockout updates, ko cone should now be correct
+ *
  * Revision 1.11  2006/02/12 07:32:22  ishtvan
  * drowning implemented
  *
@@ -688,7 +691,15 @@ protected:
 	**/
 	int						m_AirCheckTimer;
 
+	/**
+	* Head body ID on the AF, used by drowning
+	**/
 	int						m_HeadBodyID;
+
+	/**
+	* Head joint ID on the living AI (used by KOing)
+	**/
+	jointHandle_t			m_HeadJointID;
 
 	int						m_AirTics;
 
@@ -703,6 +714,12 @@ protected:
 	* Offset relative to the eye position, used to locate the mouth
 	**/
 	idVec3					m_MouthOffset;
+
+	/**
+	* KO Offset in head body coordinates, relative to head joint
+	* Should be approximately the center of the head
+	**/
+	idVec3					m_KoOffset;
 
 	//
 	// ai/ai.cpp
@@ -756,7 +773,8 @@ protected:
 	bool					TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow );  
 	
 	/**
-	* Tells the AI to go unconscious.
+	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,
+	* also can be called by itself and is called by scriptevent Event_Knockout.
 	**/
 	void					Knockout( void );
 
@@ -828,7 +846,13 @@ protected:
 * IMO we should leave it in though, as we might use it for something later,
 * like determining what targets to engage with ranged weapons.
 **/	
-	idActor * FindNearestEnemy( bool useFOV = true );				
+	idActor * FindNearestEnemy( bool useFOV = true );
+
+/**
+* Draw the debug cone representing valid knockout area
+* Called every frame when cvar cv_ko_show is set to true.
+**/
+	void KnockoutDebugDraw( void );
 		
 			
 
