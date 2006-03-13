@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.8  2006/03/13 21:05:20  sparhawk
+ * SIT stimtype replaced with INVITE to name it more generic
+ *
  * Revision 1.7  2006/02/07 18:55:01  sparhawk
  * 1. State is now moved to CStimResponse so responses can now also be disabled.
  * 2. Removed state SS_ACTIVE (what was that again for???)
@@ -149,7 +152,7 @@ typedef enum {
 	ST_LIGHT,			// triggered by light
 	ST_SOUND,			// triggered by sound
 	ST_VISUAL,			// visual contact
-	ST_SIT,				// can be used to sit down
+	ST_INVITE,			// can be used to trigger special behaviour (like a stool can invite an AI to sit down)
 	ST_READ,			// Can be read
 	ST_RANDOM,			// Random response is selected
 	ST_TIMER,			// Timer trigger
