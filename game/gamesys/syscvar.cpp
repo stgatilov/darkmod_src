@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2006/03/21 20:55:16  sparhawk
+ * dm_distance added
+ *
  * Revision 1.26  2006/03/08 06:37:29  ishtvan
  * added knockout debug visualization cvar: cv_ko_show
  *
@@ -187,6 +190,8 @@ idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER,	
 idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
 idCVar cv_lg_model("dm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
 idCVar cv_lg_adjust("dm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
+
+idCVar cv_dm_distance("dm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
 /**
 * End DarkMod cvars

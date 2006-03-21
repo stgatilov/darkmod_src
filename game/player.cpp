@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.57  2006/03/21 20:53:56  sparhawk
+ * dm_distance added
+ *
  * Revision 1.56  2006/02/15 19:48:22  gildoran
  * Added a kludge, copyKeyToGuiParm() to get around string length limits in scripts.
  *
@@ -2931,6 +2934,25 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 {
 	if(cv_lg_debug.GetBool() == true)
 		PrintDebugHUD();
+
+	const char *name;
+	if((name = cv_dm_distance.GetString()) != NULL)
+	{
+		idEntity *e;
+
+		if((e = gameLocal.FindEntity(name)) != NULL)
+		{
+			idStr strText;
+			float d;
+			int y;
+
+			d = (GetPhysics()->GetOrigin() - e->GetPhysics()->GetOrigin()).Length();
+
+			y = 100;
+			sprintf(strText, "Entity [%s]   distance: %f", name, d);
+			renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
+		}
+	}
 
 	if(_hud)
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("PlayerHUD: [%s]\r", (_hud->Name() == NULL)?"null":_hud->Name());

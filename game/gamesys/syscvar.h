@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/03/21 20:55:16  sparhawk
+ * dm_distance added
+ *
  * Revision 1.18  2006/03/08 06:37:29  ishtvan
  * added knockout debug visualization cvar: cv_ko_show
  *
@@ -117,6 +120,8 @@ extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_debug;
 extern idCVar cv_lg_model;
 extern idCVar cv_lg_adjust;
+
+extern idCVar cv_dm_distance;
 
 /**
 * End DarkMod cvars
