@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/03/22 20:50:33  sparhawk
+ * cvars renamed to TDM_ prefix
+ *
  * Revision 1.27  2006/03/21 20:55:16  sparhawk
  * dm_distance added
  *
@@ -174,24 +177,24 @@ idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-11.5",	CVAR_GAME
  * Darkmod lightgem variables. These are only for debuggingpurpose to tweak the lightgem
  * in a release version they should be disabled.
  */
-idCVar cv_lg_distance("dm_lg_distance",	"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the distance for camera of the lightgem testmodel." );
-idCVar cv_lg_xoffs("dm_lg_xoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the camera on the testmodel" );
-idCVar cv_lg_yoffs("dm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the camera on the testmodel" );
-idCVar cv_lg_zoffs("dm_lg_zoffs",		"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
-idCVar cv_lg_oxoffs("dm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
-idCVar cv_lg_oyoffs("dm_lg_oyoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
-idCVar cv_lg_ozoffs("dm_lg_ozoffs",		"-20",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
-idCVar cv_lg_fov("dm_lg_fov",			"35",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
-idCVar cv_lg_interleave("dm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );
-idCVar cv_lg_hud("dm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
-idCVar cv_lg_weak("dm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
-idCVar cv_lg_player("dm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
-idCVar cv_lg_renderpasses("dm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER,	"Set number of renderpasses used for the lightgem calculation (1..2)" );
-idCVar cv_lg_debug("dm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
-idCVar cv_lg_model("dm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
-idCVar cv_lg_adjust("dm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
+idCVar cv_lg_distance("tdm_lg_distance",	"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the distance for camera of the lightgem testmodel." );
+idCVar cv_lg_xoffs("tdm_lg_xoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the camera on the testmodel" );
+idCVar cv_lg_yoffs("tdm_lg_yoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the camera on the testmodel" );
+idCVar cv_lg_zoffs("tdm_lg_zoffs",		"17",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the camera on the testmodel" );
+idCVar cv_lg_oxoffs("tdm_lg_oxoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the x adjustment value for the testmodels object position" );
+idCVar cv_lg_oyoffs("tdm_lg_oyoffs",		"0",		CVAR_GAME | CVAR_FLOAT,	"Sets the y adjustment value for the testmodels object position" );
+idCVar cv_lg_ozoffs("tdm_lg_ozoffs",		"-20",		CVAR_GAME | CVAR_FLOAT,	"Sets the z adjustment value for the testmodels object position" );
+idCVar cv_lg_fov("tdm_lg_fov",			"35",		CVAR_GAME | CVAR_INTEGER,	"Sets the y value for the field of view on the lightgem testmodel." );
+idCVar cv_lg_interleave("tdm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );
+idCVar cv_lg_hud("tdm_lg_hud",			"0",		CVAR_GAME | CVAR_INTEGER,	"Shows the rendersnaphost n = <1..6> of the lightgem on-screen. If 0 none is shown." );
+idCVar cv_lg_weak("tdm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
+idCVar cv_lg_player("tdm_lg_player",		"0",		CVAR_GAME | CVAR_BOOL,		"Shows the lightem testmodel in the gamescreen if set to 1." );
+idCVar cv_lg_renderpasses("tdm_lg_renderpasses",		"2",	CVAR_GAME | CVAR_INTEGER,	"Set number of renderpasses used for the lightgem calculation (1..2)" );
+idCVar cv_lg_debug("tdm_lg_debug",		"0",		CVAR_GAME | CVAR_BOOL,	"switch on debug prints." );
+idCVar cv_lg_model("tdm_lg_model",		"models/props/misc/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
+idCVar cv_lg_adjust("tdm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
 
-idCVar cv_dm_distance("dm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
+idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
 /**
 * End DarkMod cvars
