@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.51  2006/03/23 06:24:53  gildoran
+ * Added external data declarations for scripts to use. Readables can now have
+ * their contents stored in a file.
+ *
  * Revision 1.50  2006/03/07 19:27:05  sparhawk
  * Lightgem adjustement variable added.
  *
@@ -541,6 +545,8 @@ void idGameLocal::Init( void ) {
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
+	// TDM specific DECLs
+	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
@@ -548,6 +554,8 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclFolder( "particles",		".prt",				DECL_PARTICLE );
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
 	declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
+	// TDM specific DECLs
+	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
 
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
@@ -2107,6 +2115,14 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 			declManager->FindType( DECL_AUDIO, kv->GetValue().c_str(), false );
 		}
 		kv = dict->MatchPrefix( "audio", kv );
+	}
+
+	kv = dict->MatchPrefix( "mdat", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->FindType( DECL_XDATA, kv->GetValue().c_str(), false );
+		}
+		kv = dict->MatchPrefix( "mdat", kv );
 	}
 }
 

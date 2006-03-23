@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2006/03/23 06:24:53  gildoran
+ * Added external data declarations for scripts to use. Readables can now have
+ * their contents stored in a file.
+ *
  * Revision 1.40  2006/02/23 10:17:11  ishtvan
  * fixed grabbing of conscious AI
  *
@@ -233,6 +237,8 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 const idEventDef EV_SetGui( "setGui", "ds" );
 const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 
+const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
+
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
@@ -330,6 +336,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_SetGui,			 	idEntity::Event_SetGui )
 	EVENT( EV_CopyKeyToGuiParm, 	idEntity::Event_CopyKeyToGuiParm )
+
+	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -6515,4 +6523,31 @@ void idEntity::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const cha
 	}
 }
 
+/*
+================
+idEntity::Event_LoadExternalData
 
+Used to load an external xdata declaration into this
+object's spawn args. The prefix will be prepended to
+the names of all keys in the declaration.
+================
+*/
+void idEntity::Event_LoadExternalData( const char *mdFile, const char* prefix ) {
+	const tdmDeclXData *md = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, mdFile, false ) );
+	if ( md != NULL ) {
+		const idDict *data = &(md->m_data);
+		const idKeyValue * kv;
+
+		int i;
+		int max = data->GetNumKeyVals();
+		for ( i=0; i<max; i++ ) {
+			kv = data->GetKeyVal(i);
+			spawnArgs.Set( prefix + kv->GetKey(), kv->GetValue() );
+		}
+
+		idThread::ReturnInt( 1 );
+	} else {
+		gameLocal.Warning( "Non-existant xdata declaration: %s\n", mdFile );
+		idThread::ReturnInt( 0 );
+	}
+}

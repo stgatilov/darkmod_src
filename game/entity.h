@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/03/23 06:24:53  gildoran
+ * Added external data declarations for scripts to use. Readables can now have
+ * their contents stored in a file.
+ *
  * Revision 1.25  2006/02/20 07:53:39  gildoran
  * Added setGui() so that readables can change which gui is displayed in-level.
  *
@@ -753,6 +757,8 @@ private:
 
 	void					Event_SetGui( int guiNum, const char *guiFile );
 	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm );
+
+	void					Event_LoadExternalData( const char *mdFile, const char* prefix );
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);

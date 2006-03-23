@@ -1,19 +1,37 @@
 /***************************************************************************
+
  *
+
  * PROJECT: The Dark Mod
+
  * $Source$
+
  * $Revision$
+
  * $Date$
+
  * $Author$
+
  *
+
  * $Log$
+ * Revision 1.3  2006/03/23 06:24:46  gildoran
+ * Added external data declarations for scripts to use. Readables can now have
+ * their contents stored in a file.
+ *
  * Revision 1.2  2005/11/10 19:21:04  sparhawk
  * SDK 1.3 Merge
  *
+
  * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
+
  * Initial release
+
  *
+
  ***************************************************************************/
+
+
 
 // Copyright (C) 2004 Id Software, Inc.
 //
@@ -71,6 +89,8 @@ typedef enum {
 	DECL_MODELEXPORT,
 	DECL_MAPDEF,
 
+	// TDM specific DECLs
+	DECL_XDATA, // External data, for scripts
 	// new decl types can be added here
 
 	DECL_MAX_TYPES			= 32
