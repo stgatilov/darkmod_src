@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/03/23 11:34:08  gildoran
+ * Added some documentation describing the type of lexing idLexer does.
+ *
  * Revision 1.4  2005/11/11 22:17:26  sparhawk
  * SDK 1.3 Merge
  *
@@ -131,7 +134,73 @@ typedef struct punctuation_s
 	int n;							// punctuation id
 } punctuation_t;
 
-
+/// A lexer created by ID software.
+/** This is a lexer for C-like languages. Whitespace and C-style comments are
+ *  ignored. The input line is broken up into tokens which consist of string
+ *  literals, numeric literals, identifiers and operators.
+ *  
+ *  String literals are of the form "blah blah blah" or 'c', just like in C.
+ *  Double-quoted strings can be of any length, but single-quoted strings are
+ *  expected to contain a single character. (escape sequences are considered
+ *  to form a single character, so '\n' is a valid string literal) The same
+ *  escape characters as C are allowed. Adjacent (ignoring whitespace) string
+ *  literals are considered to represent one long string literal who's
+ *  contents is the concatenation of the smaller strings. For example,
+ *  "foo" "bar" is equivelant to "foobar", and will be returned as a single
+ *  token.
+ *  Lexer flags relavent to string literals:
+ *  LEXFL_NOSTRINGCONCAT: Adjacent string literals aren't considered to form
+ *    one long string. Instead, each string is considered its own token.
+ *    This will cause "foo" "bar" to be treated as two tokens instead of one.
+ *  LEXFL_ALLOWBACKSLASHSTRINGCONCAT: Backslashes may be used to concatenate
+ *    string literals. (whitespace is ignored) For example "foo" \ "bar" is
+ *    equivelant to "foobar". If LEXFL_NOSTRINGCONCAT is also turned on, then
+ *    "foo" "bar" is treated as two tokens, but "foo" \ "bar" is treated as
+ *    one.
+ *  LEXFL_ALLOWMULTICHARLITERALS: Single-quoted string literals such as 'x'
+ *    may to contain multiple characters. So 'blah' is considered a valid
+ *    string literal. 'foo' 'bar' is equivelant to 'foobar' unless
+ *    LEXFL_NOSTRINGCONCAT is turned on. LEXFL_ALLOWBACKSLASHSTRINGCONCAT
+ *    does not have an effect on single-quoted string literals.
+ *  LEXFL_NOSTRINGESCAPECHARS: Escape characters aren't allowed in strings.
+ *    Instead, backslashes are treated as the contents of the string.
+ *    For example, "\\" would be a string of two characters, not one.
+ *    Because of this, '\n' would no longer be a valid string literal,
+ *    unless LEXFL_ALLOWMULTICHARLITERALS is turned on.
+ *  
+ *  I haven't learned much about numeric literals. As such, this section is a
+ *  stub.
+ *  Lexer flags relavent to numeric literals:
+ *  LEXFL_ALLOWIPADDRESSES: allow ip addresses to be parsed as numbers
+ *  LEXFL_ALLOWFLOATEXCEPTIONS: allow float exceptions like 1.#INF or 1.#IND to be parsed
+ *  
+ *  Identifiers (names) are the same as in C. They may contain letters,
+ *  numbers and underscores, but may not start with numbers.
+ *  Lexer flags relavent to identifiers:
+ *  LEXFL_ALLOWPATHNAMES: Identifiers are also allowed to have slashes,
+ *  backslashes, colons and periods in them.
+ *  LEXFL_ALLOWNUMBERNAMES: An identifier may start with a numeric literal.
+ *  LEXFL_ONLYSTRINGS: Tokens are only returned as strings and identifiers.
+ *  Identifiers may contain dashes in them. I beleive this flag is buggy,
+ *  since it looks like +blah is considered a single token, but blah+ is
+ *  considered two.
+ *  
+ *  Generic lexer flags:
+ *  LEXFL_NOERRORS: Errors are disabled.
+ *  LEXFL_NOWARNINGS: Warnings are disabled.
+ *  LEXFL_NOFATALERRORS: Errors are converted to warnings. This flag is
+ *    redundant if LEXFL_NOERRORS is turned on. Even if LEXFL_NOWARNINGS is
+ *    turned on, warnings that were converted from errors will not be ignored.
+ *  
+ *  Lexer flags that are used by the parser instead of the lexer:
+ *  LEXFL_NODOLLARPRECOMPILE: don't use the $ sign for precompilation
+ *  LEXFL_NOBASEINCLUDES: don't include files embraced with < >
+ *  
+ *  Other notes: UnreadToken() appears to be incompatible with many other
+ *    functions, such as the Check or Peek functions. You should Either use
+ *    UnreadToken() or the Peek/Check functions but not both.
+ *
+ */
 class idLexer {
 
 	friend class idParser;
@@ -238,8 +307,11 @@ public:
 	const int		GetLineNum( void );
 					// print an error message
 	void			Error( const char *str, ... ) id_attribute((format(printf,2,3)));
+
 					// print a warning message
+
 	void			Warning( const char *str, ... ) id_attribute((format(printf,2,3)));
+
 					// returns true if Error() was called with LEXFL_NOFATALERRORS or LEXFL_NOERRORS set
 	bool			HadError( void ) const;
 
