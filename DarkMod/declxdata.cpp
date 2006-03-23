@@ -1,3 +1,19 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ * $Log$
+ * Revision 1.2  2006/03/23 14:13:38  gildoran
+ * Added import command to xdata decls.
+ *
+ *
+ *
+ ***************************************************************************/
+
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
@@ -39,6 +55,12 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 	bool		precache = false;
 	idStr		value;
+	idDict		importKeys;
+	const tdmDeclXData *xd;
+	const idDict *importData;
+	const idKeyValue *kv;
+	const idKeyValue *kv2;
+	int i;
 
 	while (1)
 	{
@@ -48,26 +70,21 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 			break;
 		}
 
-		if ( tKey.type != TT_STRING && tKey.type != TT_NAME ) {
-			src.Warning( "Invalid key or command: %s", tKey.c_str() );
-			MakeDefault();
-			return false;
-		}
+		if ( tKey.type == TT_STRING ) {
 
-		// Are we parsing a key:value pair or parsing a command?
-		int notEOF = src.ReadToken( &tVal );
-		if ( notEOF &&
-			 tVal.type == TT_PUNCTUATION && tVal.subtype == P_COLON ) {
-
-			// We're parsing a key/value pair.
-			if ( !src.ReadToken( &tVal ) ) {
-				src.Warning("Unexpected end of file in key:value pair.");
+			if ( !src.ReadToken( &tVal ) ||
+				 tVal.type != TT_PUNCTUATION ||
+				 tVal.subtype != P_COLON ) {
+				src.Warning( "Abandoned key: %s", tKey.c_str() );
 				MakeDefault();
 				return false;
 			}
 
-			if ( m_data.FindKey( tKey.c_str() ) ) {
-				src.Warning( "Redefinition of key: %s", tKey.c_str() );
+			// We're parsing a key/value pair.
+			if ( !src.ReadToken( &tVal ) ) {
+				src.Warning("Unexpected EOF in key:value pair.");
+				MakeDefault();
+				return false;
 			}
 
 			if ( tVal.type == TT_STRING ) {
@@ -81,7 +98,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 				while (1) {
 					if ( !src.ReadToken( &tVal ) ) {
-						src.Warning("EOF encounter inside value block.");
+						src.Warning("EOF encountered inside value block.");
 						MakeDefault();
 						return false;
 					}
@@ -108,30 +125,130 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 				return false;
 			}
 
-		} else {
-
-			// We're parsing a command.
-
-			// We're not parsing a key:value pair, so
-			// let's pretend we never read that far.
-			if (notEOF) {
-				src.UnreadToken( &tVal );
-			}
-
-			if (tKey.type == TT_STRING ) {
-				// unfinished key:value pair?
-				src.Warning( "Lone key encountered: %s", tKey.c_str() );
-				MakeDefault();
-				return false;
-			}
+		} else if ( tKey.type == TT_NAME ) {
 
 			if ( tKey.Icmp("precache") == 0 ) {
 				precache = true;
+			} else if ( tKey.Icmp("import") == 0 ) {
+
+				if ( !src.ReadToken( &tKey ) )
+				{
+					src.Warning("Unexpected EOF in import statement.");
+					MakeDefault();
+					return false;
+				}
+
+				if ( tKey.type == TT_PUNCTUATION && tKey.subtype == P_BRACEOPEN ) {
+
+					// Initialize the list of keys to copy over.
+					importKeys.Clear();
+
+					while (1) {
+
+						if ( !src.ReadToken( &tKey ) ) {
+							src.Warning("Unexpected EOF in import block.");
+							MakeDefault();
+							return false;
+						}
+
+						if ( tKey.type == TT_PUNCTUATION && tKey.subtype == P_BRACECLOSE ) {
+							break;
+						}
+
+						if ( tKey.type != TT_STRING ) {
+							src.Warning( "Invalid source key: %s", tKey.c_str() );
+							MakeDefault();
+							return false;
+						}
+
+						if ( !src.ReadToken( &tVal ) ) {
+							src.Warning("Unexpected EOF in import block.");
+							MakeDefault();
+							return false;
+						}
+
+						if ( tVal.type == TT_PUNCTUATION && tVal.subtype == P_POINTERREF ) {
+
+							if ( !src.ReadToken( &tVal ) ) {
+								src.Warning("Unexpected EOF in import block.");
+								MakeDefault();
+								return false;
+							}
+
+							if ( tVal.type != TT_STRING ) {
+								src.Warning( "Invalid target key: %s", tVal.c_str() );
+								MakeDefault();
+								return false;
+							}
+
+							importKeys.Set( tKey.c_str(), tVal.c_str() );
+
+						} else {
+
+							// We accidently read too far.
+							src.UnreadToken( &tVal );
+
+							importKeys.Set( tKey.c_str(), tKey.c_str() );
+						}
+
+					}
+
+					if ( !src.ReadToken( &tKey ) ||
+						 tKey.type != TT_NAME ||
+						 tKey.Icmp("from") != 0 ) {
+						src.Warning( "Missing from statement.", tKey.c_str() );
+						MakeDefault();
+						return false;
+					}
+
+					if ( !src.ReadToken( &tKey ) ||
+						 tKey.type != TT_STRING ) {
+						src.Warning( "Invalid xdata for importation." );
+						MakeDefault();
+						return false;
+					}
+
+					xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, tKey.c_str(), false ) );
+					if ( xd != NULL ) {
+
+						importData = &(xd->m_data);
+
+						i = importKeys.GetNumKeyVals();
+						while (i--) {
+							kv = importKeys.GetKeyVal(i);
+							kv2 = importData->FindKey( kv->GetKey() );
+							m_data.Set( kv->GetValue(), kv2->GetValue() );
+						}
+
+					} else {
+						src.Warning( "Unable to load xdata for importation: %s", tKey.c_str() );
+						MakeDefault();
+						return false;
+					}
+
+				} else if ( tKey.type == TT_STRING ) {
+
+					xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, tKey.c_str(), false ) );
+					if ( xd != NULL ) {
+						m_data.Copy( xd->m_data );
+					} else {
+						src.Warning( "Unable to load xdata for importation: %s", tKey.c_str() );
+						MakeDefault();
+						return false;
+					}
+
+				} else {
+					src.Warning("Syntax error immediately after import statement.");
+					MakeDefault();
+					return false;
+				}
+
 			} else {
 				src.Warning( "Unrecognized command: %s", tKey.c_str() );
 				MakeDefault();
 				return false;
 			}
+
 		}
 	}
 
@@ -139,6 +256,5 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 		gameLocal.CacheDictionaryMedia( &m_data );
 	}
 
-	//We return true to say we parsed it okay
 	return true;
 }

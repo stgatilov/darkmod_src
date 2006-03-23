@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2006/03/23 14:13:51  gildoran
+ * Added import command to xdata decls.
+ *
  * Revision 1.41  2006/03/23 06:24:53  gildoran
  * Added external data declarations for scripts to use. Readables can now have
  * their contents stored in a file.
@@ -6533,14 +6536,13 @@ the names of all keys in the declaration.
 ================
 */
 void idEntity::Event_LoadExternalData( const char *mdFile, const char* prefix ) {
-	const tdmDeclXData *md = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, mdFile, false ) );
-	if ( md != NULL ) {
-		const idDict *data = &(md->m_data);
-		const idKeyValue * kv;
+	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, mdFile, false ) );
+	if ( xd != NULL ) {
+		const idDict *data = &(xd->m_data);
+		const idKeyValue *kv;
 
-		int i;
-		int max = data->GetNumKeyVals();
-		for ( i=0; i<max; i++ ) {
+		int i = data->GetNumKeyVals();
+		while ( i-- ) {
 			kv = data->GetKeyVal(i);
 			spawnArgs.Set( prefix + kv->GetKey(), kv->GetValue() );
 		}
