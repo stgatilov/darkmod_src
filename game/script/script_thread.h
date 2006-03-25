@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/03/25 08:14:03  gildoran
+ * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
+ *
  * Revision 1.5  2006/02/04 23:52:32  sparhawk
  * Added support for arbitrary arguments being passed to a scriptfunction.
  *
@@ -191,6 +194,9 @@ private:
 	void						Event_DebugBounds( const idVec3 &color, const idVec3 &mins, const idVec3 &maxs, const float lifetime );
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
+
+	// For test purposes only.
+	void						Event_DebugTDM_MatInfo( const char *mat );
 
 	/**
 	* The following events are a frontend for the AI relationship

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/03/25 08:13:58  gildoran
+ * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
+ *
  * Revision 1.25  2006/03/23 06:24:53  gildoran
  * Added external data declarations for scripts to use. Readables can now have
  * their contents stored in a file.
@@ -1092,8 +1095,8 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 
 // DarkMod specific includes
 
-// Why doesn't this work?
 #include "../darkmod/declxdata.h"
+#include "../darkmod/decltdm_matinfo.h"
 
 const float	RB_VELOCITY_MAX				= 16000;
 const int	RB_VELOCITY_TOTAL_BITS		= 16;

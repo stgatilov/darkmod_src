@@ -15,6 +15,9 @@
  *
 
  * $Log$
+ * Revision 1.4  2006/03/25 08:13:52  gildoran
+ * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
+ *
  * Revision 1.3  2006/03/23 06:24:46  gildoran
  * Added external data declarations for scripts to use. Readables can now have
  * their contents stored in a file.
@@ -91,6 +94,7 @@ typedef enum {
 
 	// TDM specific DECLs
 	DECL_XDATA, // External data, for scripts
+	DECL_TDM_MATINFO, // Material information local to TDM.
 	// new decl types can be added here
 
 	DECL_MAX_TYPES			= 32

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/03/25 08:14:03  gildoran
+ * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
+ *
  * Revision 1.4  2006/02/04 23:52:32  sparhawk
  * Added support for arbitrary arguments being passed to a scriptfunction.
  *
@@ -123,6 +126,7 @@ const idEventDef EV_AI_OffsetRelation( "offsetRelation", "ddd" );
 const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", "df" );
 const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
 
+const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -209,6 +213,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_AI_OffsetRelation,			idThread::Event_OffsetRelation )
 	EVENT( EV_TDM_SetPortSoundLoss,			idThread::Event_SetPortSoundLoss )
 	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
+
+	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
 
 END_CLASS
 
@@ -1912,3 +1918,13 @@ bool idThread::CallFunctionArgs(const function_t *func, bool clearStack, const c
 	return rc;
 }
 
+void idThread::Event_DebugTDM_MatInfo( const char *mat )
+{
+	const tdmDeclTDM_MatInfo *tdmat = static_cast< const tdmDeclTDM_MatInfo* >( declManager->FindType( DECL_TDM_MATINFO, mat, false ) );
+	if ( tdmat != NULL ) {
+		gameLocal.Printf( "Information for tdm material declaration: %s\n", mat );
+		gameLocal.Printf( "surfacetype: %s\n", tdmat->surfaceType.c_str() );
+	} else {
+		gameLocal.Warning( "Non-existant tdm material declaration: %s", mat );
+	}
+}

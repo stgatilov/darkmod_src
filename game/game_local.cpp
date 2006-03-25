@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.53  2006/03/25 08:13:58  gildoran
+ * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
+ *
  * Revision 1.52  2006/03/23 09:06:19  gildoran
  * Whoops, looks like I forgot to add the actual declaration files.
  * Here they are now, along with a couple of fixes.
@@ -551,6 +554,7 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
 	// TDM specific DECLs
 	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
+	declManager->RegisterDeclType( "tdm_matinfo",		DECL_TDM_MATINFO,	idDeclAllocator<tdmDeclTDM_MatInfo> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
@@ -560,6 +564,7 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclFolder( "newpdas",			".pda",				DECL_PDA );
 	// TDM specific DECLs
 	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
+	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
 
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
