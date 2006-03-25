@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/03/25 09:52:43  gildoran
+ * Altered the parse functions for the decls I wrote to adhere to our coding standards.
+ *
  * Revision 1.1  2006/03/25 08:13:46  gildoran
  * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
  *
@@ -42,8 +45,12 @@ void tdmDeclTDM_MatInfo::FreeData()
 	surfaceType = "";
 }
 
+// Note Our coding standards require using gotos in this sort of code.
 bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 {
+	// Only set to true if we have successfully parsed the decl.
+	bool		successfulParse = false;
+
 	idLexer		src;
 	idToken		token;
 
@@ -55,8 +62,7 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 	if ( !src.ReadToken( &token ) ||
 		 token.type != TT_NAME ||
 		 token.Icmp( "tdm_matinfo" ) != 0 ) {
-		MakeDefault();
-		return false;
+		goto Quit;
 	}
 
 	// Skip until the opening brace. I don't trust using the
@@ -75,8 +81,7 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 		// If there's an EOF, fail to load.
 		if ( !src.ReadToken( &token ) ) {
 			src.Warning( "Unclosed tdm_matinfo decl." );
-			MakeDefault();
-			return false;
+			goto Quit;
 		}
 
 		// Quit upon encountering the closing brace.
@@ -93,12 +98,10 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 
 				if ( !src.ReadToken( &token ) ) {
 					src.Warning( "Unexpected EOF encountered." );
-					MakeDefault();
-					return false;
+					goto Quit;
 				} else if ( token.type != TT_NAME ) {
 					src.Warning( "Invalid surface type: %s", token.c_str() );
-					MakeDefault();
-					return false;
+					goto Quit;
 				}
 
 				if ( surfaceType.Length() > 0 ) {
@@ -109,15 +112,19 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 
 			} else {
 				src.Warning( "Unrecognized keyword: %s", token.c_str() );
-				MakeDefault();
-				return false;
+				goto Quit;
 			}
 		} else {
 			src.Warning( "Invalid keyword: %s", token.c_str() );
-			MakeDefault();
-			return false;
+			goto Quit;
 		}
 	}
 
-	return true;
+	successfulParse = true;
+
+	Quit:
+	if (!successfulParse) {
+		MakeDefault();
+	}
+	return successfulParse;
 }

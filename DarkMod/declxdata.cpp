@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/03/25 09:52:43  gildoran
+ * Altered the parse functions for the decls I wrote to adhere to our coding standards.
+ *
  * Revision 1.3  2006/03/25 08:13:45  gildoran
  * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
  *
@@ -44,8 +47,12 @@ void tdmDeclXData::FreeData()
 	m_data.Clear();
 }
 
+// Note Our coding standards require using gotos in this sort of code.
 bool tdmDeclXData::Parse( const char *text, const int textLength )
 {
+	// Only set to true if we have successfully parsed the decl.
+	bool		successfulParse = false;
+
 	idLexer		src;
 	idToken		tKey;
 	idToken		tVal;
@@ -67,8 +74,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 	// a string containing a brace.
 	do {
 		if ( !src.ReadToken( &tKey ) ) {
-			MakeDefault();
-			return false;
+			goto Quit;
 		}
 	} while ( tKey.type != TT_PUNCTUATION || tKey.subtype != P_BRACEOPEN );
 	//src.SkipUntilString( "{" );
@@ -78,8 +84,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 		// If there's an EOF, fail to load.
 		if ( !src.ReadToken( &tKey ) ) {
 			src.Warning( "Unclosed xdata decl." );
-			MakeDefault();
-			return false;
+			goto Quit;
 		}
 
 		// Quit upon encountering the closing brace.
@@ -93,15 +98,13 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 				 tVal.type != TT_PUNCTUATION ||
 				 tVal.subtype != P_COLON ) {
 				src.Warning( "Abandoned key: %s", tKey.c_str() );
-				MakeDefault();
-				return false;
+				goto Quit;
 			}
 
 			// We're parsing a key/value pair.
 			if ( !src.ReadToken( &tVal ) ) {
 				src.Warning("Unexpected EOF in key:value pair.");
-				MakeDefault();
-				return false;
+				goto Quit;
 			}
 
 			if ( tVal.type == TT_STRING ) {
@@ -116,8 +119,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 				while (1) {
 					if ( !src.ReadToken( &tVal ) ) {
 						src.Warning("EOF encountered inside value block.");
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 					if ( tVal.type == TT_PUNCTUATION && tVal.subtype == P_BRACECLOSE ) {
@@ -126,8 +128,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 					if ( tVal.type != TT_STRING ) {
 						src.Warning( "Non-string encountered in value block: %s", tVal.c_str() );
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 					value += tVal + "\n";
@@ -138,8 +139,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 			} else {
 				src.Warning( "Invalid value: %s", tVal.c_str() );
-				MakeDefault();
-				return false;
+				goto Quit;
 			}
 
 		} else if ( tKey.type == TT_NAME ) {
@@ -151,8 +151,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 				if ( !src.ReadToken( &tKey ) )
 				{
 					src.Warning("Unexpected EOF in import statement.");
-					MakeDefault();
-					return false;
+					goto Quit;
 				}
 
 				if ( tKey.type == TT_PUNCTUATION && tKey.subtype == P_BRACEOPEN ) {
@@ -164,8 +163,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 						if ( !src.ReadToken( &tKey ) ) {
 							src.Warning("Unexpected EOF in import block.");
-							MakeDefault();
-							return false;
+							goto Quit;
 						}
 
 						if ( tKey.type == TT_PUNCTUATION && tKey.subtype == P_BRACECLOSE ) {
@@ -174,28 +172,24 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 						if ( tKey.type != TT_STRING ) {
 							src.Warning( "Invalid source key: %s", tKey.c_str() );
-							MakeDefault();
-							return false;
+							goto Quit;
 						}
 
 						if ( !src.ReadToken( &tVal ) ) {
 							src.Warning("Unexpected EOF in import block.");
-							MakeDefault();
-							return false;
+							goto Quit;
 						}
 
 						if ( tVal.type == TT_PUNCTUATION && tVal.subtype == P_POINTERREF ) {
 
 							if ( !src.ReadToken( &tVal ) ) {
 								src.Warning("Unexpected EOF in import block.");
-								MakeDefault();
-								return false;
+								goto Quit;
 							}
 
 							if ( tVal.type != TT_STRING ) {
 								src.Warning( "Invalid target key: %s", tVal.c_str() );
-								MakeDefault();
-								return false;
+								goto Quit;
 							}
 
 							importKeys.Set( tKey.c_str(), tVal.c_str() );
@@ -214,15 +208,13 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 						 tKey.type != TT_NAME ||
 						 tKey.Icmp("from") != 0 ) {
 						src.Warning( "Missing from statement.", tKey.c_str() );
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 					if ( !src.ReadToken( &tKey ) ||
 						 tKey.type != TT_STRING ) {
 						src.Warning( "Invalid xdata for importation." );
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 					xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, tKey.c_str(), false ) );
@@ -239,8 +231,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 
 					} else {
 						src.Warning( "Unable to load xdata for importation: %s", tKey.c_str() );
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 				} else if ( tKey.type == TT_STRING ) {
@@ -250,20 +241,17 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 						m_data.Copy( xd->m_data );
 					} else {
 						src.Warning( "Unable to load xdata for importation: %s", tKey.c_str() );
-						MakeDefault();
-						return false;
+						goto Quit;
 					}
 
 				} else {
 					src.Warning("Syntax error immediately after import statement.");
-					MakeDefault();
-					return false;
+					goto Quit;
 				}
 
 			} else {
 				src.Warning( "Unrecognized command: %s", tKey.c_str() );
-				MakeDefault();
-				return false;
+				goto Quit;
 			}
 
 		}
@@ -273,5 +261,11 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 		gameLocal.CacheDictionaryMedia( &m_data );
 	}
 
-	return true;
+	successfulParse = true;
+
+	Quit:
+	if (!successfulParse) {
+		MakeDefault();
+	}
+	return successfulParse;
 }
