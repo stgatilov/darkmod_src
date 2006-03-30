@@ -7,8 +7,15 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2006/03/30 19:45:45  gildoran
+ * I made three main changes:
+ * 1. I moved the new decl headers out of game_local.h and into the few files
+ * that actually use them.
+ * 2. I added two new functions to idLinkList: next/prevNodeCircular().
+ * 3. I added the first version of the tdmInventory objects. I've been working on
+ * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
+ * just fine.
+ *
  *
  ***************************************************************************/
 
@@ -55,6 +62,8 @@ public:
 	idLinkList *		ListHead( void ) const;
 	idLinkList *		NextNode( void ) const;
 	idLinkList *		PrevNode( void ) const;
+	idLinkList *		NextNodeCircular( void ) const;
+	idLinkList *		PrevNodeCircular( void ) const;
 
 private:
 	idLinkList *		head;
@@ -302,6 +311,30 @@ idLinkList<type> *idLinkList<type>::PrevNode( void ) const {
 	if ( prev == head ) {
 		return NULL;
 	}
+	return prev;
+}
+
+/*
+================
+idLinkList<type>::NextNodeCircular
+
+Returns the next node in the list, possibly returning the head.
+================
+*/
+template< class type >
+idLinkList<type> *idLinkList<type>::NextNodeCircular( void ) const {
+	return next;
+}
+
+/*
+================
+idLinkList<type>::PrevNodeCircular
+
+Returns the previous node in the list, possibly returning the head.
+================
+*/
+template< class type >
+idLinkList<type> *idLinkList<type>::PrevNodeCircular( void ) const {
 	return prev;
 }
 
