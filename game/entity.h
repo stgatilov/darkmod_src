@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2006/03/31 00:41:08  gildoran
+ * Linked entities to inventories, and added some basic script functions to interact
+ * with them.
+ *
  * Revision 1.26  2006/03/23 06:24:53  gildoran
  * Added external data declarations for scripts to use. Readables can now have
  * their contents stored in a file.
@@ -101,6 +105,8 @@
 
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
+
+#include "../darkmod/tdmInventory.h"
 
 class CStimResponseCollection;
 class CStim;
@@ -589,6 +595,11 @@ public:
 
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
+	/// Returns (and creates if necessary) this entity's inventory.
+	tdmInventoryObj*		Inventory();
+	/// Returns (and creates if necessary) this entity's inventory item.
+	tdmInventoryItemObj*	InventoryItem();
+
 protected:
 	/**
 	* Bind to the same object that the "other" argument is bound to
@@ -670,6 +681,11 @@ private:
 	signalList_t *			signals;
 
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
+
+	/// A pointer to our inventory.
+	tdmInventoryObj*		m_inventory;
+	/// A pointer to our item, so that we can be added/removed to/from inventories.
+	tdmInventoryItemObj*	m_inventoryItem;
 
 private:
 	void					FixupLocalizedStrings();
@@ -759,6 +775,10 @@ private:
 	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm );
 
 	void					Event_LoadExternalData( const char *mdFile, const char* prefix );
+
+	void					Event_MoveToInventory( idEntity* ent );
+	void					Event_IterateInventory( idEntity* lastMatch );
+	void					Event_GetContainer();
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);

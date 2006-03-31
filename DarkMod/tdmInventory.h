@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/03/31 00:41:02  gildoran
+ * Linked entities to inventories, and added some basic script functions to interact
+ * with them.
+ *
  * Revision 1.1  2006/03/30 19:45:50  gildoran
  * I made three main changes:
  * 1. I moved the new decl headers out of game_local.h and into the few files
@@ -45,6 +49,9 @@ class tdmInventoryObj : public idClass {
 	void	Restore( idRestoreGame *savefile );
 
 	int		debugNumSlots() const;
+
+	/// The inventory item's owner.
+	idEntityPtr<idEntity>	m_owner;
 
   private:
 
@@ -95,13 +102,16 @@ class tdmInventoryItemObj : public idClass {
 
 	/// Puts the item into an inventory or removes it.
 	void				setInventory( tdmInventoryObj* inventory );
-	/// Returns the inventory this cursor points to.
+	/// Returns the inventory this item is contained by.
 	tdmInventoryObj*	inventory() const;
 
 	/// Sets the item's group. (any active cursors pointing to the item will remain pointing to it)
 	void				setGroup( const char* groupName );
 	/// Gets the item's group.
 	const char*			group() const;
+
+	/// The inventory item's owner.
+	idEntityPtr<idEntity>	m_owner;
 
   private:
 

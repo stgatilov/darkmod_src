@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/03/31 00:41:02  gildoran
+ * Linked entities to inventories, and added some basic script functions to interact
+ * with them.
+ *
  * Revision 1.1  2006/03/30 19:45:50  gildoran
  * I made three main changes:
  * 1. I moved the new decl headers out of game_local.h and into the few files
@@ -70,6 +74,8 @@ tdmInventoryObj::~tdmInventoryObj() {
 
 void tdmInventoryObj::Save( idSaveGame *savefile ) const {
 
+	m_owner.Save( savefile );
+
 	// Write out our ungrouped slots.
 	savefile->WriteInt( m_itemList.Num() );
 	idLinkList<tdmInventorySlot>* sNode = m_itemList.NextNode();
@@ -100,8 +106,9 @@ void tdmInventoryObj::Save( idSaveGame *savefile ) const {
 void tdmInventoryObj::Restore( idRestoreGame *savefile ) {
 	unsigned int numSlots;
 	unsigned int numGroups;
-
 	tdmInventorySlot* slot;
+
+	m_owner.Restore( savefile );
 
 	// Read in our ungrouped slots.
 	savefile->ReadInt( reinterpret_cast<int &>( numSlots ) );
@@ -402,6 +409,7 @@ tdmInventoryItemObj::~tdmInventoryItemObj() {
 }
 
 void tdmInventoryItemObj::Save( idSaveGame *savefile ) const {
+	m_owner.Save( savefile );
 	savefile->WriteString( m_groupName );
 	savefile->WriteObject( m_inventory );
 	savefile->WriteInt( m_inventory->GroupToIndex( m_group ) );
@@ -410,6 +418,7 @@ void tdmInventoryItemObj::Save( idSaveGame *savefile ) const {
 }
 
 void tdmInventoryItemObj::Restore( idRestoreGame *savefile ) {
+	m_owner.Restore( savefile );
 	savefile->ReadString( m_groupName );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
 	savefile->ReadInt( reinterpret_cast<int &>( m_groupNum ) );

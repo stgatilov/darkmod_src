@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2006/03/31 00:41:08  gildoran
+ * Linked entities to inventories, and added some basic script functions to interact
+ * with them.
+ *
  * Revision 1.44  2006/03/30 19:45:34  gildoran
  * I made three main changes:
  * 1. I moved the new decl headers out of game_local.h and into the few files
@@ -255,6 +259,10 @@ const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 
 const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 
+const idEventDef EV_MoveToInventory( "moveToInventory", "E" );
+const idEventDef EV_IterateInventory( "iterateInventory", "E", 'E' );
+const idEventDef EV_GetContainer( "getContainer", NULL, 'E' );
+
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
@@ -354,6 +362,10 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_CopyKeyToGuiParm, 	idEntity::Event_CopyKeyToGuiParm )
 
 	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
+
+	EVENT( EV_MoveToInventory,		idEntity::Event_MoveToInventory )
+	EVENT( EV_IterateInventory,		idEntity::Event_IterateInventory )
+	EVENT( EV_GetContainer,			idEntity::Event_GetContainer )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -650,6 +662,12 @@ idEntity::idEntity()
 	// object is rather small, so this doesn't really hurt that 
 	// much and makes the code easier to control.
 	m_StimResponseColl = new CStimResponseCollection;
+
+	// Since we have a function to return inventories/etc, and many entities won't
+	// have anything to do with inventories, I figure I'd better wait until
+	// absolutely necessary to create these.
+	m_inventory		= NULL;
+	m_inventoryItem	= NULL;
 }
 
 /*
@@ -852,6 +870,14 @@ idEntity::~idEntity( void )
 	gameLocal.RemoveStim(this);
 	gameLocal.RemoveResponse(this);
 	delete m_StimResponseColl;
+
+	// Delete our inventory/item, if necessary.
+	if ( m_inventory != NULL ) {
+		delete m_inventory;
+	}
+	if ( m_inventoryItem != NULL ) {
+		delete m_inventoryItem;
+	}
 }
 
 /*
@@ -926,6 +952,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	}
 
 	savefile->WriteInt( mpGUIState );
+
+	savefile->WriteObject( m_inventory );
+	savefile->WriteObject( m_inventoryItem );
 }
 
 /*
@@ -1009,6 +1038,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	}
 
 	savefile->ReadInt( mpGUIState );
+
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventoryItem ) );
 
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {
@@ -6481,6 +6513,47 @@ void idEntity::ResponseAllow(int StimType, idEntity *e)
 		stim->RemoveResponseIgnore(e);
 }
 
+/*
+================
+idEntity::Inventory
+
+This returns the inventory object of this entity. If this entity doesn't
+have one, it creates the inventory.
+================
+*/
+tdmInventoryObj* idEntity::Inventory() {
+	if ( m_inventory != NULL ) {
+		return m_inventory;
+	}
+	m_inventory = new tdmInventoryObj();
+	if ( m_inventory != NULL ) {
+		m_inventory->m_owner = this;
+		return m_inventory;
+	}
+	gameLocal.Error("Unable to allocate enough memory for an inventory.");
+	return NULL;
+}
+
+/*
+================
+idEntity::InventoryItem
+
+This returns the inventory item object of this entity. If this entity
+doesn't have one, it creates the inventor item.
+================
+*/
+tdmInventoryItemObj* idEntity::InventoryItem() {
+	if ( m_inventoryItem != NULL ) {
+		return m_inventoryItem;
+	}
+	m_inventoryItem = new tdmInventoryItemObj();
+	if ( m_inventoryItem != NULL ) {
+		m_inventoryItem->m_owner = this;
+		return m_inventoryItem;
+	}
+	gameLocal.Error("Unable to allocate enough memory for an inventory.");
+	return NULL;
+}
 
 void idEntity::Event_PropSound( const char *sndName )
 {
@@ -6566,3 +6639,99 @@ void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix ) 
 		idThread::ReturnInt( 0 );
 	}
 }
+
+/*
+================
+idEntity::Event_MoveToInventory
+
+Moves our inventory item to the other entity's inventory.
+================
+*/
+void idEntity::Event_MoveToInventory( idEntity* ent ) {
+	tdmInventoryItemObj* item = InventoryItem();
+	tdmInventoryObj* inv = ent->Inventory();
+	if ( item != NULL && inv != NULL ) {
+		item->setInventory( inv );
+	} else {
+		gameLocal.Warning( "Unable to move item into inventory." );
+	}
+}
+
+/*
+================
+idEntity::Event_IterateInventory
+
+Iterates through an inventory, similar to getNextKey.
+================
+*/
+void idEntity::Event_IterateInventory( idEntity* lastMatch ) {
+	idEntity* match = NULL;
+	tdmInventoryCursorObj cursor;
+
+	// If we don't have an inventory, then it's empty.
+	tdmInventoryObj* inv = Inventory();
+	if ( inv == NULL ) {
+		goto Quit;
+	}
+
+	// Normally it would be a bad idea to allocate a tdmInventoryCursorObj
+	// on the stack, but since the game can't get saved in the middle of this
+	// function call, it's ok.
+	cursor.setInventory( inv );
+
+	// Obtain the first item in the inventory.
+	cursor.next( true );
+	tdmInventoryItemObj* firstitem = cursor.item();
+	// If there wasn't one, then the inventory is empty.
+	if ( firstitem == NULL ) {
+		goto Quit;
+	}
+
+	// If we were passed NULL as the last match, then return
+	// the first item in the inventory.
+	// Treat items outside of our inventory as NULL.
+	tdmInventoryItemObj* item = NULL;
+	if ( lastMatch != NULL ) {
+		item = lastMatch->InventoryItem();
+	}
+	if ( item == NULL || item->inventory() != inv ) {
+		match = firstitem->m_owner.GetEntity();
+		goto Quit;
+	}
+
+	// Find the next item after the last match.
+	cursor.selectItem( item, true );
+	cursor.next( true );
+	// If it's the first item in the inventory, we've hit the end
+	// and looped around. We should return NULL to signify that we
+	// hit the end.
+	if ( cursor.item() == firstitem ) {
+		goto Quit;
+	}
+
+	// Return the next item.
+	match =  cursor.item()->m_owner.GetEntity();
+
+	Quit:
+	idThread::ReturnEntity( match );
+}
+
+/*
+================
+idEntity::Event_GetContainer
+
+Returns the entity containing us.
+================
+*/
+void idEntity::Event_GetContainer() {
+	tdmInventoryItemObj* item = InventoryItem();
+	if ( item == NULL ) {
+		idThread::ReturnEntity( NULL );
+	}
+	tdmInventoryObj* inv = item->inventory();
+	if ( inv == NULL ) {
+		idThread::ReturnEntity( NULL );
+	}
+	idThread::ReturnEntity( inv->m_owner.GetEntity() );
+}
+
