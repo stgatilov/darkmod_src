@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.58  2006/03/31 23:52:40  gildoran
+ * Renamed inventory objects, and added cursor script functions.
+ *
  * Revision 1.57  2006/03/21 20:53:56  sparhawk
  * dm_distance added
  *
@@ -1853,6 +1856,9 @@ void idPlayer::Spawn( void ) {
 
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
+
+	// Have the player's cursor point to their own inventory by default.
+	InventoryCursor()->setInventory( Inventory() );
 }
 
 /*

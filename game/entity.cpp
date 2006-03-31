@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2006/03/31 23:52:40  gildoran
+ * Renamed inventory objects, and added cursor script functions.
+ *
  * Revision 1.45  2006/03/31 00:41:08  gildoran
  * Linked entities to inventories, and added some basic script functions to interact
  * with them.
@@ -262,6 +265,11 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 const idEventDef EV_MoveToInventory( "moveToInventory", "E" );
 const idEventDef EV_IterateInventory( "iterateInventory", "E", 'E' );
 const idEventDef EV_GetContainer( "getContainer", NULL, 'E' );
+const idEventDef EV_SetCursorInventory( "setCursorInventory", "E" );
+const idEventDef EV_GetCursorInventory( "getCursorInventory", NULL, 'E' );
+const idEventDef EV_CursorItem( "cursorItem", NULL, 'E' );
+const idEventDef EV_CopyCursor( "copyCursor", "ed" );
+const idEventDef EV_IterateCursor( "iterateCursor", "d" );
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
@@ -366,6 +374,11 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_MoveToInventory,		idEntity::Event_MoveToInventory )
 	EVENT( EV_IterateInventory,		idEntity::Event_IterateInventory )
 	EVENT( EV_GetContainer,			idEntity::Event_GetContainer )
+	EVENT( EV_SetCursorInventory,	idEntity::Event_SetCursorInventory )
+	EVENT( EV_GetCursorInventory,	idEntity::Event_GetCursorInventory )
+	EVENT( EV_CursorItem,			idEntity::Event_CursorItem )
+	EVENT( EV_CopyCursor,			idEntity::Event_CopyCursor )
+	EVENT( EV_IterateCursor,		idEntity::Event_IterateCursor )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -666,8 +679,9 @@ idEntity::idEntity()
 	// Since we have a function to return inventories/etc, and many entities won't
 	// have anything to do with inventories, I figure I'd better wait until
 	// absolutely necessary to create these.
-	m_inventory		= NULL;
-	m_inventoryItem	= NULL;
+	m_inventory			= NULL;
+	m_inventoryItem		= NULL;
+	m_inventoryCursor	= NULL;
 }
 
 /*
@@ -6521,11 +6535,11 @@ This returns the inventory object of this entity. If this entity doesn't
 have one, it creates the inventory.
 ================
 */
-tdmInventoryObj* idEntity::Inventory() {
+tdmInventory* idEntity::Inventory() {
 	if ( m_inventory != NULL ) {
 		return m_inventory;
 	}
-	m_inventory = new tdmInventoryObj();
+	m_inventory = new tdmInventory();
 	if ( m_inventory != NULL ) {
 		m_inventory->m_owner = this;
 		return m_inventory;
@@ -6539,17 +6553,40 @@ tdmInventoryObj* idEntity::Inventory() {
 idEntity::InventoryItem
 
 This returns the inventory item object of this entity. If this entity
-doesn't have one, it creates the inventor item.
+doesn't have one, it creates the inventory item.
 ================
 */
-tdmInventoryItemObj* idEntity::InventoryItem() {
+tdmInventoryItem* idEntity::InventoryItem() {
 	if ( m_inventoryItem != NULL ) {
 		return m_inventoryItem;
 	}
-	m_inventoryItem = new tdmInventoryItemObj();
+	m_inventoryItem = new tdmInventoryItem();
 	if ( m_inventoryItem != NULL ) {
 		m_inventoryItem->m_owner = this;
 		return m_inventoryItem;
+	}
+	gameLocal.Error("Unable to allocate enough memory for an inventory.");
+	return NULL;
+}
+
+/*
+================
+idEntity::InventoryCursor
+
+This returns the inventory cursor object of this entity. If this entity
+doesn't have one, it creates the inventory cursor.
+
+The cursor is intended for arbitrary use, and need not point to this
+entity's inventory.
+================
+*/
+tdmInventoryCursor* idEntity::InventoryCursor() {
+	if ( m_inventoryCursor != NULL ) {
+		return m_inventoryCursor;
+	}
+	m_inventoryCursor = new tdmInventoryCursor();
+	if ( m_inventoryCursor != NULL ) {
+		return m_inventoryCursor;
 	}
 	gameLocal.Error("Unable to allocate enough memory for an inventory.");
 	return NULL;
@@ -6648,13 +6685,25 @@ Moves our inventory item to the other entity's inventory.
 ================
 */
 void idEntity::Event_MoveToInventory( idEntity* ent ) {
-	tdmInventoryItemObj* item = InventoryItem();
-	tdmInventoryObj* inv = ent->Inventory();
-	if ( item != NULL && inv != NULL ) {
-		item->setInventory( inv );
-	} else {
-		gameLocal.Warning( "Unable to move item into inventory." );
+	tdmInventoryItem* item = InventoryItem();
+	tdmInventory* inv = NULL;
+
+	if ( item == NULL ) {
+		gameLocal.Warning( "Unable load inventory item.\n" );
+		goto Quit;
 	}
+	if ( ent != NULL ) {
+		inv = ent->Inventory();
+		if ( inv == NULL ) {
+			gameLocal.Warning( "Unable load inventory.\n" );
+			goto Quit;
+		}
+	}
+
+	item->setInventory( inv );
+
+	Quit:
+	return;
 }
 
 /*
@@ -6666,22 +6715,22 @@ Iterates through an inventory, similar to getNextKey.
 */
 void idEntity::Event_IterateInventory( idEntity* lastMatch ) {
 	idEntity* match = NULL;
-	tdmInventoryCursorObj cursor;
+	tdmInventoryCursor cursor;
 
 	// If we don't have an inventory, then it's empty.
-	tdmInventoryObj* inv = Inventory();
+	tdmInventory* inv = Inventory();
 	if ( inv == NULL ) {
 		goto Quit;
 	}
 
-	// Normally it would be a bad idea to allocate a tdmInventoryCursorObj
+	// Normally it would be a bad idea to allocate a tdmInventoryCursor
 	// on the stack, but since the game can't get saved in the middle of this
 	// function call, it's ok.
 	cursor.setInventory( inv );
 
 	// Obtain the first item in the inventory.
 	cursor.next( true );
-	tdmInventoryItemObj* firstitem = cursor.item();
+	tdmInventoryItem* firstitem = cursor.item();
 	// If there wasn't one, then the inventory is empty.
 	if ( firstitem == NULL ) {
 		goto Quit;
@@ -6690,7 +6739,7 @@ void idEntity::Event_IterateInventory( idEntity* lastMatch ) {
 	// If we were passed NULL as the last match, then return
 	// the first item in the inventory.
 	// Treat items outside of our inventory as NULL.
-	tdmInventoryItemObj* item = NULL;
+	tdmInventoryItem* item = NULL;
 	if ( lastMatch != NULL ) {
 		item = lastMatch->InventoryItem();
 	}
@@ -6724,14 +6773,145 @@ Returns the entity containing us.
 ================
 */
 void idEntity::Event_GetContainer() {
-	tdmInventoryItemObj* item = InventoryItem();
+	tdmInventoryItem* item = InventoryItem();
 	if ( item == NULL ) {
 		idThread::ReturnEntity( NULL );
+		return;
 	}
-	tdmInventoryObj* inv = item->inventory();
+	tdmInventory* inv = item->inventory();
 	if ( inv == NULL ) {
 		idThread::ReturnEntity( NULL );
+		return;
 	}
 	idThread::ReturnEntity( inv->m_owner.GetEntity() );
 }
 
+/*
+================
+idEntity::Event_SetCursorInventory
+
+Sets the inventory this entity's cursor points to.
+================
+*/
+void idEntity::Event_SetCursorInventory( idEntity* ent ) {
+	tdmInventoryCursor* cursor = InventoryCursor();
+	tdmInventory* inv = NULL;
+
+	if ( cursor == NULL ) {
+		gameLocal.Warning( "Unable load inventory cursor.\n" );
+		goto Quit;
+	}
+	if ( ent != NULL ) {
+		inv = ent->Inventory();
+		if ( inv == NULL ) {
+			gameLocal.Warning( "Unable load inventory.\n" );
+			goto Quit;
+		}
+	}
+
+	cursor->setInventory( inv );
+
+	Quit:
+	return;
+}
+
+/*
+================
+idEntity::Event_GetCursorInventory
+
+Gets the inventory that this entity's cursor points to.
+================
+*/
+void idEntity::Event_GetCursorInventory() {
+	tdmInventoryCursor* cursor = InventoryCursor();
+	if ( cursor == NULL ) {
+		idThread::ReturnEntity( NULL );
+		return;
+	}
+	tdmInventory* inv = cursor->inventory();
+	if ( inv == NULL ) {
+		idThread::ReturnEntity( NULL );
+		return;
+	}
+	idThread::ReturnEntity( inv->m_owner.GetEntity() );
+}
+
+/*
+================
+idEntity::Event_CursorItem
+
+Returns the item this entity's cursor currently points to.
+================
+*/
+void idEntity::Event_CursorItem() {
+	tdmInventoryCursor* cursor = InventoryCursor();
+	if ( cursor == NULL ) {
+		idThread::ReturnEntity( NULL );
+		return;
+	}
+	tdmInventoryItem* item = cursor->item();
+	if ( item == NULL ) {
+		idThread::ReturnEntity( NULL );
+		return;
+	}
+	idThread::ReturnEntity( item->m_owner.GetEntity() );
+}
+
+/*
+================
+idEntity::Event_CopyCursor
+
+Copies another entity's cursor.
+================
+*/
+void idEntity::Event_CopyCursor( idEntity* ent, int type ) {
+	if ( ent == NULL ) {
+		gameLocal.Warning( "Null passed to copyCursor.\n" );
+		return;
+	}
+	tdmInventoryCursor* cursor = InventoryCursor();
+	tdmInventoryCursor* other = ent->InventoryCursor();
+	if ( cursor == NULL || other == NULL ) {
+		gameLocal.Warning( "Unable load inventory cursor.\n" );
+		return;
+	}
+	if ( type == CURSOR_NOHISTORY ) {
+		cursor->copyActiveCursor( *other );
+	} else if ( type == 0 || type == CURSOR_ALL ) {
+		*cursor = *other;
+	} else {
+		gameLocal.Warning( "Invalid type passed to copyCursor.\n" );
+	}
+}
+
+/*
+================
+idEntity::Event_IterateCursor
+
+Iterates this entity's cursor.
+================
+*/
+void idEntity::Event_IterateCursor( int type ) {
+	tdmInventoryCursor* cursor = InventoryCursor();
+	if ( cursor == NULL ) {
+		gameLocal.Warning( "Unable load inventory cursor.\n" );
+		return;
+	}
+	if ( type < 0 || type > 15 ) {
+		gameLocal.Warning( "Invalid type passed to iterateCursor.\n" );
+		return;
+	}
+
+	static void (tdmInventoryCursor::*funcList[8])( bool ) = {
+		&tdmInventoryCursor::next,
+		&tdmInventoryCursor::prev,
+		&tdmInventoryCursor::nextHybrid,
+		&tdmInventoryCursor::prevHybrid,
+		&tdmInventoryCursor::nextGroup,
+		&tdmInventoryCursor::prevGroup,
+		&tdmInventoryCursor::nextItem,
+		&tdmInventoryCursor::prevItem
+	};
+
+	( cursor->*funcList[ type >> 1 ] )( type & 1 );
+}

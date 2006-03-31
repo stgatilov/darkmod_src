@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/03/31 23:52:31  gildoran
+ * Renamed inventory objects, and added cursor script functions.
+ *
  * Revision 1.2  2006/03/31 00:41:02  gildoran
  * Linked entities to inventories, and added some basic script functions to interact
  * with them.
@@ -44,20 +47,20 @@ void tdmInventorySaveObjectList( idSaveGame *savefile ) {
 
 }
 
-  /////////////////////
- // tdmInventoryObj //
-/////////////////////
+  //////////////////
+ // tdmInventory //
+//////////////////
 
-CLASS_DECLARATION( idClass, tdmInventoryObj )
+CLASS_DECLARATION( idClass, tdmInventory )
 END_CLASS
 
-tdmInventoryObj::tdmInventoryObj() {
+tdmInventory::tdmInventory() {
 	m_numSlots = 0;
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventoryObj::~tdmInventoryObj() {
+tdmInventory::~tdmInventory() {
 	// Remove all cursors.
 	while ( m_cursors.NextNode() ) {
 		m_cursors.NextNode()->Owner()->setInventory( NULL );
@@ -72,7 +75,7 @@ tdmInventoryObj::~tdmInventoryObj() {
 
 }
 
-void tdmInventoryObj::Save( idSaveGame *savefile ) const {
+void tdmInventory::Save( idSaveGame *savefile ) const {
 
 	m_owner.Save( savefile );
 
@@ -103,7 +106,7 @@ void tdmInventoryObj::Save( idSaveGame *savefile ) const {
 	}
 }
 
-void tdmInventoryObj::Restore( idRestoreGame *savefile ) {
+void tdmInventory::Restore( idRestoreGame *savefile ) {
 	unsigned int numSlots;
 	unsigned int numGroups;
 	tdmInventorySlot* slot;
@@ -179,12 +182,12 @@ void tdmInventoryObj::Restore( idRestoreGame *savefile ) {
 	return;
 }
 
-int tdmInventoryObj::debugNumSlots() const {
+int tdmInventory::debugNumSlots() const {
 	return m_numSlots;
 }
 
 /// Return the group with the given name. Create it if neccessary.
-tdmInventoryGroup* tdmInventoryObj::obtainGroup( const char* groupName )
+tdmInventoryGroup* tdmInventory::obtainGroup( const char* groupName )
 {
 	// Try to find the requested group.
 	// This loop will either set gNode to the requested group,
@@ -226,7 +229,7 @@ tdmInventoryGroup* tdmInventoryObj::obtainGroup( const char* groupName )
 	return group;
 }
 
-void tdmInventoryObj::checkGroup( tdmInventoryGroup* group ) {
+void tdmInventory::checkGroup( tdmInventoryGroup* group ) {
 	// If this group contains no items, but has cursors on it,
 	// we may be able to consolidate all the cursors into a
 	// single slot, to reduce memory usage, or better yet remove
@@ -238,11 +241,11 @@ void tdmInventoryObj::checkGroup( tdmInventoryGroup* group ) {
 		// lot, so I'd like to keep a direct reference to it handy.
 		tdmInventorySlot* firstSlot = group->m_itemList.NextNodeCircular()->Owner();
 		// The current cursor.
-		tdmInventoryCursorObj* cursor;
+		tdmInventoryCursor* cursor;
 
 		// Consolidate active cursors to the first slot,
 		// and count how many there were.
-		idLinkList<tdmInventoryCursorObj>* cNode = m_cursors.NextNodeCircular();
+		idLinkList<tdmInventoryCursor>* cNode = m_cursors.NextNodeCircular();
 		while ( cNode != &m_cursors ) {
 
 			cursor = cNode->Owner();
@@ -311,7 +314,7 @@ void tdmInventoryObj::checkGroup( tdmInventoryGroup* group ) {
 }
 
 // Consider inlining?
-void tdmInventoryObj::checkSlot( tdmInventorySlot* slot ) {
+void tdmInventory::checkSlot( tdmInventorySlot* slot ) {
 	// If the slot is empty and no cursors depend on it, delete it.
 	if ( slot->m_item == NULL && slot->m_numCursors == 0 ) {
 		delete slot;
@@ -320,7 +323,7 @@ void tdmInventoryObj::checkSlot( tdmInventorySlot* slot ) {
 }
 
 /// Converts a slot into an index.
-unsigned int tdmInventoryObj::SlotToIndex( const tdmInventorySlot* slot ) const {
+unsigned int tdmInventory::SlotToIndex( const tdmInventorySlot* slot ) const {
 	if ( slot == NULL ) {
 		return 0;
 	}
@@ -337,7 +340,7 @@ unsigned int tdmInventoryObj::SlotToIndex( const tdmInventorySlot* slot ) const 
 }
 
 /// Converts an index into a slot.
-tdmInventorySlot* tdmInventoryObj::IndexToSlot( unsigned int index, const tdmInventoryGroup* group ) const {
+tdmInventorySlot* tdmInventory::IndexToSlot( unsigned int index, const tdmInventoryGroup* group ) const {
 	if ( index == 0 ) {
 		return NULL;
 	}
@@ -356,7 +359,7 @@ tdmInventorySlot* tdmInventoryObj::IndexToSlot( unsigned int index, const tdmInv
 }
 
 /// Converts a group into an index.
-unsigned int tdmInventoryObj::GroupToIndex( const tdmInventoryGroup* group ) const {
+unsigned int tdmInventory::GroupToIndex( const tdmInventoryGroup* group ) const {
 	if ( group == NULL ) {
 		return 0;
 	}
@@ -373,7 +376,7 @@ unsigned int tdmInventoryObj::GroupToIndex( const tdmInventoryGroup* group ) con
 }
 
 /// Converts an index into a group.
-tdmInventoryGroup* tdmInventoryObj::IndexToGroup( unsigned int index ) const {
+tdmInventoryGroup* tdmInventory::IndexToGroup( unsigned int index ) const {
 	if ( index == 0 ) {
 		return NULL;
 	}
@@ -387,15 +390,15 @@ tdmInventoryGroup* tdmInventoryObj::IndexToGroup( unsigned int index ) const {
 }
 
 
-  /////////////////////////
- // tdmInventoryItemObj //
-/////////////////////////
+  //////////////////////
+ // tdmInventoryItem //
+//////////////////////
 
-CLASS_DECLARATION( idClass, tdmInventoryItemObj )
-	EVENT( EV_PostRestore,	tdmInventoryItemObj::Event_PostRestore )
+CLASS_DECLARATION( idClass, tdmInventoryItem )
+	EVENT( EV_PostRestore,	tdmInventoryItem::Event_PostRestore )
 END_CLASS
 
-tdmInventoryItemObj::tdmInventoryItemObj() {
+tdmInventoryItem::tdmInventoryItem() {
 	m_inventory		= NULL;
 	m_group			= NULL;
 	m_groupedSlot	= NULL;
@@ -404,11 +407,11 @@ tdmInventoryItemObj::tdmInventoryItemObj() {
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventoryItemObj::~tdmInventoryItemObj() {
+tdmInventoryItem::~tdmInventoryItem() {
 	setInventory( NULL );
 }
 
-void tdmInventoryItemObj::Save( idSaveGame *savefile ) const {
+void tdmInventoryItem::Save( idSaveGame *savefile ) const {
 	m_owner.Save( savefile );
 	savefile->WriteString( m_groupName );
 	savefile->WriteObject( m_inventory );
@@ -417,7 +420,7 @@ void tdmInventoryItemObj::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_inventory->SlotToIndex( m_ungroupedSlot ) );
 }
 
-void tdmInventoryItemObj::Restore( idRestoreGame *savefile ) {
+void tdmInventoryItem::Restore( idRestoreGame *savefile ) {
 	m_owner.Restore( savefile );
 	savefile->ReadString( m_groupName );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
@@ -427,13 +430,13 @@ void tdmInventoryItemObj::Restore( idRestoreGame *savefile ) {
 	PostEventMS( &EV_PostRestore, 0 );
 }
 
-void tdmInventoryItemObj::Event_PostRestore() {
+void tdmInventoryItem::Event_PostRestore() {
 	m_group = m_inventory->IndexToGroup( m_groupNum );
 	m_groupedSlot = m_inventory->IndexToSlot( m_groupedSlotNum, m_group );
 	m_ungroupedSlot = m_inventory->IndexToSlot( m_ungroupedSlotNum );
 }
 
-void tdmInventoryItemObj::setInventory( tdmInventoryObj *inventory ) {
+void tdmInventoryItem::setInventory( tdmInventory *inventory ) {
 	// Set to true if allocated memory should be freed upon quitting.
 	bool cancelMemory = true;
 
@@ -515,11 +518,11 @@ void tdmInventoryItemObj::setInventory( tdmInventoryObj *inventory ) {
 }
 
 // Consider inlining?
-tdmInventoryObj* tdmInventoryItemObj::inventory() const {
+tdmInventory* tdmInventoryItem::inventory() const {
 	return m_inventory;
 }
 
-void tdmInventoryItemObj::setGroup( const char* name ) {
+void tdmInventoryItem::setGroup( const char* name ) {
 	if ( m_groupName == name ) {
 		goto Quit;
 	}
@@ -527,7 +530,7 @@ void tdmInventoryItemObj::setGroup( const char* name ) {
 	// If we're in an inventory, we'll need to change inventory groups.
 	if ( m_inventory != NULL ) {
 
-		tdmInventoryObj* inventory = m_inventory;
+		tdmInventory* inventory = m_inventory;
 		tdmInventorySlot* prevSlot = m_groupedSlot;
 
 		// Let the other code properly handle putting us in the correct group.
@@ -539,7 +542,7 @@ void tdmInventoryItemObj::setGroup( const char* name ) {
 
 			// If there were any active cursors that were pointing to us,
 			// keep them pointing to us.
-			idLinkList<tdmInventoryCursorObj>* cNode = inventory->m_cursors.NextNode();
+			idLinkList<tdmInventoryCursor>* cNode = inventory->m_cursors.NextNode();
 			while ( cNode != NULL ) {
 				if ( cNode->Owner()->m_groupedSlot == prevSlot ) {
 					cNode->Owner()->selectItem( this );
@@ -558,19 +561,19 @@ void tdmInventoryItemObj::setGroup( const char* name ) {
 }
 
 // Consider inlining?
-const char* tdmInventoryItemObj::group( void ) const {
+const char* tdmInventoryItem::group( void ) const {
 	return m_groupName.c_str();
 }
 
-  ///////////////////////////
- // tdmInventoryCursorObj //
-///////////////////////////
+  ////////////////////////
+ // tdmInventoryCursor //
+////////////////////////
 
-CLASS_DECLARATION( idClass, tdmInventoryCursorObj )
-	EVENT( EV_PostRestore,	tdmInventoryCursorObj::Event_PostRestore )
+CLASS_DECLARATION( idClass, tdmInventoryCursor )
+	EVENT( EV_PostRestore,	tdmInventoryCursor::Event_PostRestore )
 END_CLASS
 
-tdmInventoryCursorObj::tdmInventoryCursorObj() {
+tdmInventoryCursor::tdmInventoryCursor() {
 	m_node.SetOwner( this );
 	m_inventory		= NULL;
 	m_group			= NULL;
@@ -580,11 +583,11 @@ tdmInventoryCursorObj::tdmInventoryCursorObj() {
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventoryCursorObj::~tdmInventoryCursorObj() {
+tdmInventoryCursor::~tdmInventoryCursor() {
 	setInventory( NULL );
 }
 
-tdmInventoryCursorObj::tdmInventoryCursorObj( const tdmInventoryCursorObj& source ) {
+tdmInventoryCursor::tdmInventoryCursor( const tdmInventoryCursor& source ) {
 	m_node.SetOwner( this );
 	m_inventory		= NULL;
 	// The following three lines probably aren't strictly necessary.
@@ -595,7 +598,7 @@ tdmInventoryCursorObj::tdmInventoryCursorObj( const tdmInventoryCursorObj& sourc
 	*this = source;
 }
 
-tdmInventoryCursorObj& tdmInventoryCursorObj::operator = ( const tdmInventoryCursorObj& source ) {
+tdmInventoryCursor& tdmInventoryCursor::operator = ( const tdmInventoryCursor& source ) {
 	if ( this == &source ) {
 		goto Quit;
 	}
@@ -627,7 +630,7 @@ tdmInventoryCursorObj& tdmInventoryCursorObj::operator = ( const tdmInventoryCur
 	return *this;
 }
 
-void tdmInventoryCursorObj::Save( idSaveGame *savefile ) const {
+void tdmInventoryCursor::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject( m_inventory );
 	savefile->WriteInt( m_inventory->GroupToIndex( m_group ) );
 	savefile->WriteInt( m_inventory->SlotToIndex( m_groupedSlot ) );
@@ -644,7 +647,7 @@ void tdmInventoryCursorObj::Save( idSaveGame *savefile ) const {
 	}
 }
 
-void tdmInventoryCursorObj::Restore( idRestoreGame *savefile ) {
+void tdmInventoryCursor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
 	if ( m_inventory != NULL ) {
 		m_node.AddToEnd( m_inventory->m_cursors );
@@ -681,7 +684,7 @@ void tdmInventoryCursorObj::Restore( idRestoreGame *savefile ) {
 	return;
 }
 
-void tdmInventoryCursorObj::Event_PostRestore() {
+void tdmInventoryCursor::Event_PostRestore() {
 	m_group = m_inventory->IndexToGroup( m_groupNum );
 	m_groupedSlot = m_inventory->IndexToSlot( m_groupedSlotNum, m_group );
 	if ( m_groupedSlot != NULL ) {
@@ -708,7 +711,7 @@ void tdmInventoryCursorObj::Event_PostRestore() {
 }
 
 /// Copies only the active cursor position, not any cursor histories.
-void tdmInventoryCursorObj::copyActiveCursor( const tdmInventoryCursorObj& source ) {
+void tdmInventoryCursor::copyActiveCursor( const tdmInventoryCursor& source ) {
 	if ( this == &source ) {
 		goto Quit;
 	}
@@ -730,7 +733,7 @@ void tdmInventoryCursorObj::copyActiveCursor( const tdmInventoryCursorObj& sourc
 	return;
 }
 
-void tdmInventoryCursorObj::setInventory( tdmInventoryObj* inventory ) {
+void tdmInventoryCursor::setInventory( tdmInventory* inventory ) {
 
 	if ( m_inventory != NULL ) {
 		// Remove ourself from our current inventory.
@@ -781,11 +784,11 @@ void tdmInventoryCursorObj::setInventory( tdmInventoryObj* inventory ) {
 }
 
 // Consider inlining?
-tdmInventoryObj* tdmInventoryCursorObj::inventory() const {
+tdmInventory* tdmInventoryCursor::inventory() const {
 	return m_inventory;
 }
 
-const char* tdmInventoryCursorObj::group( bool nullOk ) const {
+const char* tdmInventoryCursor::group( bool nullOk ) const {
 	if ( m_group == NULL ) {
 		return nullOk ? NULL : "" ;
 	} else {
@@ -793,9 +796,9 @@ const char* tdmInventoryCursorObj::group( bool nullOk ) const {
 	}
 }
 
-void tdmInventoryCursorObj::selectItem( tdmInventoryItemObj* item, bool noHistory ) {
+void tdmInventoryCursor::selectItem( tdmInventoryItem* item, bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("selectItem() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("selectItem() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 	if ( item->m_inventory != m_inventory ) {
@@ -824,7 +827,7 @@ void tdmInventoryCursorObj::selectItem( tdmInventoryItemObj* item, bool noHistor
 	return;
 }
 
-tdmInventoryItemObj* tdmInventoryCursorObj::item() const {
+tdmInventoryItem* tdmInventoryCursor::item() const {
 	// It's intentional that we're only paying attention to
 	// m_groupedSlot, and not m_ungroupedSlot.
 	if ( m_groupedSlot != NULL ) {
@@ -834,9 +837,9 @@ tdmInventoryItemObj* tdmInventoryCursorObj::item() const {
 	}
 }
 
-void tdmInventoryCursorObj::next( bool noHistory ) {
+void tdmInventoryCursor::next( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("next() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("next() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -876,9 +879,9 @@ void tdmInventoryCursorObj::next( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::prev( bool noHistory ) {
+void tdmInventoryCursor::prev( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prev() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("prev() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -918,13 +921,13 @@ void tdmInventoryCursorObj::prev( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::nextHybrid( bool noHistory ) {
+void tdmInventoryCursor::nextHybrid( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextHybrid() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("nextHybrid() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
-	tdmInventoryItemObj* item = NULL;
+	tdmInventoryItem* item = NULL;
 	idLinkList<tdmInventorySlot>* sNode;
 
 	if ( m_groupedSlot != NULL ) {
@@ -1000,13 +1003,13 @@ void tdmInventoryCursorObj::nextHybrid( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::prevHybrid( bool noHistory ) {
+void tdmInventoryCursor::prevHybrid( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prevHybrid() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("prevHybrid() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
-	tdmInventoryItemObj* item = NULL;
+	tdmInventoryItem* item = NULL;
 	idLinkList<tdmInventorySlot>* sNode;
 
 	if ( m_groupedSlot != NULL ) {
@@ -1082,9 +1085,9 @@ void tdmInventoryCursorObj::prevHybrid( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::nextGroup( bool noHistory ) {
+void tdmInventoryCursor::nextGroup( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextGroup() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("nextGroup() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -1171,9 +1174,9 @@ void tdmInventoryCursorObj::nextGroup( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::prevGroup( bool noHistory ) {
+void tdmInventoryCursor::prevGroup( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prevGroup() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("prevGroup() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -1266,9 +1269,9 @@ void tdmInventoryCursorObj::prevGroup( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::nextItem( bool noHistory ) {
+void tdmInventoryCursor::nextItem( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -1296,9 +1299,9 @@ void tdmInventoryCursorObj::nextItem( bool noHistory ) {
 	return;
 }
 
-void tdmInventoryCursorObj::prevItem( bool noHistory ) {
+void tdmInventoryCursor::prevItem( bool noHistory ) {
 	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursorObj.");
+		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
 
@@ -1326,7 +1329,7 @@ void tdmInventoryCursorObj::prevItem( bool noHistory ) {
 	return;
 }
 
-tdmInventoryGroupHistory* tdmInventoryCursorObj::getGroupHistory( tdmInventoryGroup* group ) const {
+tdmInventoryGroupHistory* tdmInventoryCursor::getGroupHistory( tdmInventoryGroup* group ) const {
 	// Find the requested node. Maybe return NULL.
 	idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNodeCircular();
 	while ( ghNode != &m_groupHistory && ghNode->Owner()->m_group != group ) {
@@ -1336,7 +1339,7 @@ tdmInventoryGroupHistory* tdmInventoryCursorObj::getGroupHistory( tdmInventoryGr
 }
 
 /// Selects the grouped slot, updating history, etc.
-void tdmInventoryCursorObj::selectGroupedSlot( tdmInventoryGroup* group, tdmInventorySlot* slot, bool noHistory ) {
+void tdmInventoryCursor::selectGroupedSlot( tdmInventoryGroup* group, tdmInventorySlot* slot, bool noHistory ) {
 	// We'll need these to clean up after we've done the move.
 	tdmInventorySlot* prevGroupedSlot = m_groupedSlot;
 	tdmInventoryGroup* prevGroup = m_group;

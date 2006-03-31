@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/03/31 23:52:40  gildoran
+ * Renamed inventory objects, and added cursor script functions.
+ *
  * Revision 1.27  2006/03/31 00:41:08  gildoran
  * Linked entities to inventories, and added some basic script functions to interact
  * with them.
@@ -196,6 +199,17 @@ public:
 	idList<signal_t> signal[ NUM_SIGNALS ];
 };
 
+// Cursor flags
+enum {
+	CURSOR_ALL				= -1,
+	CURSOR_NOHISTORY		=  1,		// Don't set cursor history.
+	CURSOR_NEXT				=  0,		// Iterate forwards. (default)
+	CURSOR_PREV				=  2,		// Iterate backwards.
+	CURSOR_UNGROUPED		=  0,		// Iterate through the entire inventory. (default)
+	CURSOR_HYBRID			=  4,		// Iterate through the entire inventory, ordered based on groups.
+	CURSOR_GROUP			=  8,		// Iterate through the groups.
+	CURSOR_ITEM				= 12,		// Iterate through the items in the current group.
+};
 
 class idEntity : public idClass {
 public:
@@ -596,9 +610,12 @@ public:
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
 	/// Returns (and creates if necessary) this entity's inventory.
-	tdmInventoryObj*		Inventory();
+	tdmInventory*		Inventory();
 	/// Returns (and creates if necessary) this entity's inventory item.
-	tdmInventoryItemObj*	InventoryItem();
+	tdmInventoryItem*	InventoryItem();
+	/// Returns (and creates if necessary) this entity's inventory cursor.
+	tdmInventoryCursor*	InventoryCursor();
+
 
 protected:
 	/**
@@ -683,9 +700,11 @@ private:
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
 
 	/// A pointer to our inventory.
-	tdmInventoryObj*		m_inventory;
+	tdmInventory*		m_inventory;
 	/// A pointer to our item, so that we can be added/removed to/from inventories.
-	tdmInventoryItemObj*	m_inventoryItem;
+	tdmInventoryItem*	m_inventoryItem;
+	/// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
+	tdmInventoryCursor*	m_inventoryCursor;
 
 private:
 	void					FixupLocalizedStrings();
@@ -779,6 +798,11 @@ private:
 	void					Event_MoveToInventory( idEntity* ent );
 	void					Event_IterateInventory( idEntity* lastMatch );
 	void					Event_GetContainer();
+	void					Event_SetCursorInventory( idEntity* ent );
+	void					Event_GetCursorInventory();
+	void					Event_CursorItem();
+	void					Event_CopyCursor( idEntity* ent, int type );
+	void					Event_IterateCursor( int type );
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);

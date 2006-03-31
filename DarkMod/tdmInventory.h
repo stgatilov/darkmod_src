@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/03/31 23:52:31  gildoran
+ * Renamed inventory objects, and added cursor script functions.
+ *
  * Revision 1.2  2006/03/31 00:41:02  gildoran
  * Linked entities to inventories, and added some basic script functions to interact
  * with them.
@@ -26,9 +29,9 @@
 #ifndef __DARKMOD_TDMINVENTORY_H__
 #define __DARKMOD_TDMINVENTORY_H__
 
-class tdmInventoryObj;
-class tdmInventoryItemObj;
-class tdmInventoryCursorObj;
+class tdmInventory;
+class tdmInventoryItem;
+class tdmInventoryCursor;
 
 struct tdmInventoryGroup;
 struct tdmInventorySlot;
@@ -38,12 +41,12 @@ struct tdmInventoryGroupHistory;
 void tdmInventorySaveObjectList( idSaveGame *savefile );
 
 /// An inventory that can hold items.
-class tdmInventoryObj : public idClass {
-	CLASS_PROTOTYPE( tdmInventoryObj );
+class tdmInventory : public idClass {
+	CLASS_PROTOTYPE( tdmInventory );
   public:
 
-	tdmInventoryObj();
-	~tdmInventoryObj();
+	tdmInventory();
+	~tdmInventory();
 
 	void	Save( idSaveGame *savefile ) const;
 	void	Restore( idRestoreGame *savefile );
@@ -55,10 +58,10 @@ class tdmInventoryObj : public idClass {
 
   private:
 
-	friend class tdmInventoryItemObj;
-	friend class tdmInventoryCursorObj;
-	tdmInventoryObj(				const tdmInventoryObj& source ) { /* do nothing */}
-	tdmInventoryObj& operator = (	const tdmInventoryObj& source ) { /* do nothing */}
+	friend class tdmInventoryItem;
+	friend class tdmInventoryCursor;
+	tdmInventory(				const tdmInventory& source ) { /* do nothing */}
+	tdmInventory& operator = (	const tdmInventory& source ) { /* do nothing */}
 
 	/// Returns a pointer to the group with the given name. Creates the group if it must.
 	tdmInventoryGroup*	obtainGroup( const char* groupName );
@@ -85,25 +88,25 @@ class tdmInventoryObj : public idClass {
 	/// List of groups.
 	idLinkList<tdmInventoryGroup>		m_groupList;
 	/// List of cursors pointing to this inventory.
-	idLinkList<tdmInventoryCursorObj>	m_cursors;
+	idLinkList<tdmInventoryCursor>	m_cursors;
 };
 
 /// An item that can be put in an inventory.
-class tdmInventoryItemObj : public idClass {
-	CLASS_PROTOTYPE( tdmInventoryItemObj );
+class tdmInventoryItem : public idClass {
+	CLASS_PROTOTYPE( tdmInventoryItem );
   public:
 
-	tdmInventoryItemObj();
-	~tdmInventoryItemObj();
+	tdmInventoryItem();
+	~tdmInventoryItem();
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 	void				Event_PostRestore();
 
 	/// Puts the item into an inventory or removes it.
-	void				setInventory( tdmInventoryObj* inventory );
+	void				setInventory( tdmInventory* inventory );
 	/// Returns the inventory this item is contained by.
-	tdmInventoryObj*	inventory() const;
+	tdmInventory*	inventory() const;
 
 	/// Sets the item's group. (any active cursors pointing to the item will remain pointing to it)
 	void				setGroup( const char* groupName );
@@ -115,17 +118,17 @@ class tdmInventoryItemObj : public idClass {
 
   private:
 
-	friend class tdmInventoryObj;
-	friend class tdmInventoryCursorObj;
-	tdmInventoryItemObj(				const tdmInventoryItemObj& source ) { /* do nothing */}
-	tdmInventoryItemObj& operator = (	const tdmInventoryItemObj& source ) { /* do nothing */}
+	friend class tdmInventory;
+	friend class tdmInventoryCursor;
+	tdmInventoryItem(				const tdmInventoryItem& source ) { /* do nothing */}
+	tdmInventoryItem& operator = (	const tdmInventoryItem& source ) { /* do nothing */}
 
 	/// Used to keep track of all inventory-related objects.
 	idLinkList<idClass>	m_inventoryObjListNode;
 	/// The name of this item's group.
 	idStr				m_groupName;
 	/// The inventory this item belongs to.
-	tdmInventoryObj*	m_inventory;
+	tdmInventory*	m_inventory;
 	union {
 		/// The group this item belongs to.
 		tdmInventoryGroup*	m_group;
@@ -148,35 +151,35 @@ class tdmInventoryItemObj : public idClass {
 };
 
 /// A full-blown group-remembering cursor that can handle T1-style iteration and grouped iteration simultaneously.
-class tdmInventoryCursorObj : public idClass {
-	CLASS_PROTOTYPE( tdmInventoryCursorObj );
+class tdmInventoryCursor : public idClass {
+	CLASS_PROTOTYPE( tdmInventoryCursor );
   public:
 
-	tdmInventoryCursorObj();
-	~tdmInventoryCursorObj();
+	tdmInventoryCursor();
+	~tdmInventoryCursor();
 
-	tdmInventoryCursorObj(				const tdmInventoryCursorObj& source );
-	tdmInventoryCursorObj& operator = (	const tdmInventoryCursorObj& source );
+	tdmInventoryCursor(				const tdmInventoryCursor& source );
+	tdmInventoryCursor& operator = (	const tdmInventoryCursor& source );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 	void					Event_PostRestore();
 
 	/// Copies only the active cursor position, not any cursor histories.
-	void					copyActiveCursor( const tdmInventoryCursorObj& source );
+	void					copyActiveCursor( const tdmInventoryCursor& source );
 
 	/// Sets the inventory that this cursor is pointing to.
-	void					setInventory( tdmInventoryObj* inventory );
+	void					setInventory( tdmInventory* inventory );
 	/// Returns the inventory this cursor points to.
-	tdmInventoryObj*		inventory() const;
+	tdmInventory*		inventory() const;
 
 	/// Returns the name of the current inventory group. 'nullOk' causes it to return NULL instead of "" when outside any group.
 	const char*				group( bool nullOk = false ) const;
 
 	/// Selects a specific item. (note: cursor must be pointing to the correct inventory)
-	void					selectItem( tdmInventoryItemObj* item, bool noHistory = false );
+	void					selectItem( tdmInventoryItem* item, bool noHistory = false );
 	/// Returns the item this cursor is pointing to.
-	tdmInventoryItemObj*	item() const;
+	tdmInventoryItem*	item() const;
 
 	// Iterates through the inventory as though completely ungrouped.
 	void					next( bool noHistory = false );
@@ -195,8 +198,8 @@ class tdmInventoryCursorObj : public idClass {
 
   private:
 
-	friend class tdmInventoryObj;
-	friend class tdmInventoryItemObj;
+	friend class tdmInventory;
+	friend class tdmInventoryItem;
 
 	/// Find a group history, if it exists. May return NULL.
 	tdmInventoryGroupHistory*	getGroupHistory( tdmInventoryGroup* group ) const;
@@ -206,9 +209,9 @@ class tdmInventoryCursorObj : public idClass {
 	/// Used to keep track of all inventory-related objects.
 	idLinkList<idClass>	m_inventoryObjListNode;
 	/// A node so the cursor can be kept in a list by inventories.
-	idLinkList<tdmInventoryCursorObj>		m_node;
+	idLinkList<tdmInventoryCursor>		m_node;
 	/// The inventory we're pointing to.
-	tdmInventoryObj*						m_inventory;
+	tdmInventory*						m_inventory;
 	union {
 		/// The group our item belongs to.
 		tdmInventoryGroup*					m_group;
@@ -231,7 +234,7 @@ class tdmInventoryCursorObj : public idClass {
 	idLinkList<tdmInventoryGroupHistory>	m_groupHistory;
 };
 
-/// Used by tdmInventoryObj
+/// Used by tdmInventory
 struct tdmInventoryGroup {
 	/// A node so the group can be kept in a list, by inventores.
 	idLinkList<tdmInventoryGroup>	m_node;
@@ -243,17 +246,17 @@ struct tdmInventoryGroup {
 	unsigned long					m_numItems;
 };
 
-/// Used by tdmInventoryObj and tdmInventoryGroup
+/// Used by tdmInventory and tdmInventoryGroup
 struct tdmInventorySlot {
 	/// A node so this slot can be kept in a list, by inventories and groups.
 	idLinkList<tdmInventorySlot>	m_node;
 	/// The item contained in this slot. (can be NULL representing an empty slot with cursors)
-	tdmInventoryItemObj*			m_item;
+	tdmInventoryItem*			m_item;
 	/// The number of cursors and histories pointing to this slot.
 	unsigned int					m_numCursors;
 };
 
-/// Used by tdmInventoryCursorObj
+/// Used by tdmInventoryCursor
 struct tdmInventoryGroupHistory {
 	/// A node so this group history can be kept in a list, by cursors.
 	idLinkList<tdmInventoryGroupHistory>	m_node;
