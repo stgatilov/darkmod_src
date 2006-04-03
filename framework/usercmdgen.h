@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/04/03 02:04:04  gildoran
+ * Added some code for an inventory prototype.
+ *
  * Revision 1.4  2005/11/10 19:21:04  sparhawk
  * SDK 1.3 Merge
  *
@@ -81,11 +84,15 @@ const int IMPULSE_28			= 28;			// vote yes
 const int IMPULSE_29			= 29;			// vote no
 const int IMPULSE_40			= 40;			// use vehicle
 const int IMPULSE_41			= 41;			// TDM Use/Frob key
-const int IMPULSE_42			= 42;			// Inventory prev
-const int IMPULSE_43			= 43;			// Inventory next
+const int IMPULSE_42			= 42;			// Inventory prev (unused)
+const int IMPULSE_43			= 43;			// Inventory next (unused)
 const int IMPULSE_44			= 44;			// Lean forward
 const int IMPULSE_45			= 45;			// Lean left
 const int IMPULSE_46			= 46;			// Lean right
+const int IMPULSE_47			= 47;			// Inventory prev item
+const int IMPULSE_48			= 48;			// Inventory next item
+const int IMPULSE_49			= 49;			// Inventory prev group
+const int IMPULSE_50			= 50;			// Inventory next group
 
 // usercmd_t->flags
 const int UCF_IMPULSE_SEQUENCE	= 0x0001;		// toggled every time an impulse command is sent

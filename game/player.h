@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/04/03 02:04:32  gildoran
+ * Added some code for an inventory prototype.
+ *
  * Revision 1.21  2006/02/15 19:48:23  gildoran
  * Added a kludge, copyKeyToGuiParm() to get around string length limits in scripts.
  *
@@ -640,6 +643,17 @@ public:
 	* Get the volume modifier for a given movement type
 	**/
 	float GetMovementVolMod( void );
+
+	/// Cycles to the next item in the inventory.
+	void inventoryNextItem( void );
+	/// Cycles to the previous item in the inventory.
+	void inventoryPrevItem( void );
+	/// Cycles to the next group in the inventory.
+	void inventoryNextGroup( void );
+	/// Cycles to the previous group in the inventory.
+	void inventoryPrevGroup( void );
+	/// Copies inventory item info to the HUD.
+	void inventoryUpdateHUD( void );
 
 	void PrintDebugHUD(void);
 

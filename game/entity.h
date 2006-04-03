@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/04/03 02:04:32  gildoran
+ * Added some code for an inventory prototype.
+ *
  * Revision 1.28  2006/03/31 23:52:40  gildoran
  * Renamed inventory objects, and added cursor script functions.
  *
@@ -201,14 +204,14 @@ public:
 
 // Cursor flags
 enum {
-	CURSOR_ALL				= -1,
-	CURSOR_NOHISTORY		=  1,		// Don't set cursor history.
-	CURSOR_NEXT				=  0,		// Iterate forwards. (default)
-	CURSOR_PREV				=  2,		// Iterate backwards.
-	CURSOR_UNGROUPED		=  0,		// Iterate through the entire inventory. (default)
-	CURSOR_HYBRID			=  4,		// Iterate through the entire inventory, ordered based on groups.
-	CURSOR_GROUP			=  8,		// Iterate through the groups.
-	CURSOR_ITEM				= 12,		// Iterate through the items in the current group.
+	ECURSOR_ALL				= -1,
+	ECURSOR_NOHISTORY		=  1,		// Don't set cursor history.
+	ECURSOR_NEXT			=  0,		// Iterate forwards. (default)
+	ECURSOR_PREV			=  2,		// Iterate backwards.
+	ECURSOR_UNGROUPED		=  0,		// Iterate through the entire inventory. (default)
+	ECURSOR_HYBRID			=  4,		// Iterate through the entire inventory, ordered based on groups.
+	ECURSOR_GROUP			=  8,		// Iterate through the groups.
+	ECURSOR_ITEM			= 12,		// Iterate through the items in the current group.
 };
 
 class idEntity : public idClass {
@@ -801,6 +804,7 @@ private:
 	void					Event_SetCursorInventory( idEntity* ent );
 	void					Event_GetCursorInventory();
 	void					Event_CursorItem();
+	void					Event_CursorSelectItem( idEntity* ent, int type );
 	void					Event_CopyCursor( idEntity* ent, int type );
 	void					Event_IterateCursor( int type );
 

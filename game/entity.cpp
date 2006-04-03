@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2006/04/03 02:04:32  gildoran
+ * Added some code for an inventory prototype.
+ *
  * Revision 1.46  2006/03/31 23:52:40  gildoran
  * Renamed inventory objects, and added cursor script functions.
  *
@@ -268,6 +271,7 @@ const idEventDef EV_GetContainer( "getContainer", NULL, 'E' );
 const idEventDef EV_SetCursorInventory( "setCursorInventory", "E" );
 const idEventDef EV_GetCursorInventory( "getCursorInventory", NULL, 'E' );
 const idEventDef EV_CursorItem( "cursorItem", NULL, 'E' );
+const idEventDef EV_CursorSelectItem( "cursorSelectItem", "ed" );
 const idEventDef EV_CopyCursor( "copyCursor", "ed" );
 const idEventDef EV_IterateCursor( "iterateCursor", "d" );
 
@@ -377,6 +381,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetCursorInventory,	idEntity::Event_SetCursorInventory )
 	EVENT( EV_GetCursorInventory,	idEntity::Event_GetCursorInventory )
 	EVENT( EV_CursorItem,			idEntity::Event_CursorItem )
+	EVENT( EV_CursorSelectItem,		idEntity::Event_CursorSelectItem )
 	EVENT( EV_CopyCursor,			idEntity::Event_CopyCursor )
 	EVENT( EV_IterateCursor,		idEntity::Event_IterateCursor )
 
@@ -6859,6 +6864,43 @@ void idEntity::Event_CursorItem() {
 
 /*
 ================
+idEntity::Event_CursorItem
+
+Selects an item in the cursor's inventory.
+================
+*/
+void idEntity::Event_CursorSelectItem( idEntity* ent, int type ) {
+	if ( ent == NULL ) {
+		gameLocal.Warning( "Null passed to cursorSelectItem.\n" );
+		goto Quit;
+	}
+	tdmInventoryCursor* cursor = InventoryCursor();
+	tdmInventoryItem* item = ent->InventoryItem();
+	if ( cursor == NULL ) {
+		gameLocal.Warning( "Unable load inventory cursor.\n" );
+		goto Quit;
+	}
+	if ( item == NULL ) {
+		gameLocal.Warning( "Unable load inventory item.\n" );
+		goto Quit;
+	}
+	if ( cursor->inventory() == NULL || cursor->inventory() != item->inventory() ) {
+		gameLocal.Warning( "Cursor doesn't point to the inventory containing item.\n" );
+		goto Quit;
+	}
+	if ( type & ECURSOR_NOHISTORY != type ) {
+		gameLocal.Warning( "Invalid type passed to cursorSelectItem.\n" );
+		goto Quit;
+	}
+
+	cursor->selectItem( item, type );
+
+	Quit:
+	return;
+}
+
+/*
+================
 idEntity::Event_CopyCursor
 
 Copies another entity's cursor.
@@ -6875,9 +6917,9 @@ void idEntity::Event_CopyCursor( idEntity* ent, int type ) {
 		gameLocal.Warning( "Unable load inventory cursor.\n" );
 		return;
 	}
-	if ( type == CURSOR_NOHISTORY ) {
+	if ( type == ECURSOR_NOHISTORY ) {
 		cursor->copyActiveCursor( *other );
-	} else if ( type == 0 || type == CURSOR_ALL ) {
+	} else if ( type == 0 || type == ECURSOR_ALL ) {
 		*cursor = *other;
 	} else {
 		gameLocal.Warning( "Invalid type passed to copyCursor.\n" );
