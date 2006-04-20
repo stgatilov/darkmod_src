@@ -813,6 +813,18 @@
 					RelativePath=".\DarkMod\darkModLAS.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\decltdm_matinfo.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\decltdm_matinfo.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\declxdata.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\declxdata.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\fdchar.cpp">
 				</File>
 				<File
@@ -901,6 +913,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\Strip.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\tdmInventory.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\tdmInventory.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\ToUpper.cpp">
