@@ -16,6 +16,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.5  2006/04/23 18:39:30  ishtvan
+ * saveing/loading fix for empty matrices
+ *
  * Revision 1.4  2005/11/19 17:26:48  sparhawk
  * LogString with macro replaced
  *
@@ -114,7 +117,7 @@ public:
 
 		void SaveMatrixSq (idSaveGame *savefile);
 
-		void RestoreMatrixSq (idRestoreGame *savefile);
+		bool RestoreMatrixSq (idRestoreGame *savefile);
 
 protected:
 
@@ -441,9 +444,15 @@ inline void CMatrixSq<type>::SaveMatrixSq ( idSaveGame *savefile )
 	
 	if ( IsCleared() )
 	{
-		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to save an empty CMatrixSq/r" );
+		DM_LOG(LC_MISC, LT_WARNING)LOGSTRING("Tried to save an empty CMatrixSq/r" );
+		
+		// write false to the first bool in the savefile which determines validity
+		savefile->WriteBool( false );
 		goto Quit;
 	}
+
+	// matrix is filled
+	savefile->WriteBool( true );
 
 	// write the dimension of the matrix
 	savefile->WriteInt( m_dim );
@@ -459,9 +468,17 @@ Quit:
 }
 
 template <class type>
-inline void CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
+inline bool CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
 {
 	int i, dim, num;
+	bool IsFilled, bReturnVal(false);
+
+	Clear();
+	
+	// check whether matrix is empty
+	savefile->ReadBool( IsFilled );
+	if( !IsFilled )
+		goto Quit;
 
 	savefile->ReadInt( dim );
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("[Relations matrix] Loaded dimension %d from savefile\r", dim);
@@ -476,10 +493,12 @@ inline void CMatrixSq<type>::RestoreMatrixSq( idRestoreGame *savefile )
 		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Reading element %d from savefile\r", i);
 		ReadElement( savefile, i );
 	}
+	
+	bReturnVal = true;
 	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("num_filled = %d, dim = %d\r", m_filled, m_dim);
 
 Quit:
-	return;
+	return bReturnVal;
 }
 
 template <class type>
