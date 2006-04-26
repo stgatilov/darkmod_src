@@ -5,8 +5,11 @@
 #include "..\darkmod\darkmodglobals.h"
 #include "..\darkmod\darkModLAS.h"
 
-#define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.1f
+// What amount of light is acceptable for a minimal quality hiding spot
+#define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.05f
 
+// Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
+#define OCCLUSION_HIDING_SPOT_QUALITY 0.5
 
 
 // Static member for debugging hiding spot results
@@ -66,6 +69,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 (
 	idList<darkModHidingSpot_t>& inout_hidingSpots, 
 	const idAAS *aas, 
+	float hidingHeight,
 	idBounds searchLimits, 
 	int hidingSpotTypesAllowed, 
 	idEntity* p_ignoreEntity
@@ -126,7 +130,8 @@ void darkModAASFindHidingSpots::FindHidingSpots
 					hidingSpot.goal.areaNum = aasAreaIndex;
 					hidingSpot.goal.origin = aas->AreaCenter(aasAreaIndex);
 					hidingSpot.hidingSpotTypes = PVS_AREA_HIDING_SPOT_TYPE;
-					inout_hidingSpots.Insert (hidingSpot);
+					hidingSpot.quality = 1.0; // Least suspicious assumption
+					insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
 	
 					DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d\n", PVSAreas[pvsResultIndex], hidingSpot.goal.areaNum);
 				}
@@ -159,6 +164,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 					FindHidingSpotsInVisibleAASArea 
 					(
 						inout_hidingSpots,
+						hidingHeight,
 						aas, 
 						aasAreaIndex,
 						searchLimits,
@@ -181,6 +187,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea 
 (
 	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	float hidingHeight,
 	const idAAS* aas, 
 	int AASAreaNum, 
 	idBounds searchLimits,
@@ -229,8 +236,10 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 			hidingSpot.hidingSpotTypes = TestHidingPoint 
 			(
 				testPoint, 
+				hidingHeight,
 				hidingSpotTypesAllowed,
-				p_ignoreEntity
+				p_ignoreEntity,
+				hidingSpot.quality
 			);
 
 			// If there are any hiding qualities, insert a hiding spot
@@ -239,7 +248,7 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 				// Insert a hiding spot for this test point
 				hidingSpot.goal.areaNum = AASAreaNum;
 				hidingSpot.goal.origin = hidingSpot.goal.origin = testPoint;
-				inout_hidingSpots.Insert (hidingSpot);
+				insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
 				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d\n", AASAreaNum, testPoint.x, testPoint.y, testPoint.z, hidingSpot.hidingSpotTypes);
 			}
 
@@ -281,19 +290,22 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 int darkModAASFindHidingSpots::TestHidingPoint 
 (
 	idVec3 testPoint, 
+	float hidingHeight,
 	int hidingSpotTypesAllowed, 
-	idEntity* p_ignoreEntity
+	idEntity* p_ignoreEntity,
+	float& out_quality
 )
 {
 	int out_hidingSpotTypesThatApply = NONE_HIDING_SPOT_TYPE;
+	out_quality = 0.0f; // none found yet
 
 	// Is it dark?
 	if ((hidingSpotTypesAllowed & DARKNESS_HIDING_SPOT_TYPE) != 0)
 	{
 		// Test the lighting level of this position
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 		idVec3 testLineTop = testPoint;
-		testLineTop.z += 15.0f;
+		testLineTop.z += hidingHeight;
 		
 		float LightQuotient = LAS.queryLightingAlongLine 
 		(
@@ -302,11 +314,19 @@ int darkModAASFindHidingSpots::TestHidingPoint
 			p_ignoreEntity,
 			true
 		);
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
-		if (LightQuotient <= HIDING_SPOT_MAX_LIGHT_QUOTIENT)
+
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		if (LightQuotient < HIDING_SPOT_MAX_LIGHT_QUOTIENT)
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Found hidable darkness of %f at point %f,%f,%f\n", LightQuotient, testPoint.x, testPoint.y, testPoint.z);
+			//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hidable darkness of %f at point %f,%f,%f\n", LightQuotient, testPoint.x, testPoint.y, testPoint.z);
 			out_hidingSpotTypesThatApply |= DARKNESS_HIDING_SPOT_TYPE;
+
+			float darknessQuality = 0.0;
+			darknessQuality = (HIDING_SPOT_MAX_LIGHT_QUOTIENT - LightQuotient) / HIDING_SPOT_MAX_LIGHT_QUOTIENT;
+			if (darknessQuality > out_quality)
+			{
+				out_quality = darknessQuality;
+			}
 		}
 	}
 
@@ -316,8 +336,16 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		//idVec3 fakePoint = hideFromPosition;
 		//fakePoint.z -= 5.0f;
 
+		// Check a point above the test point to account for the size
+		// of a hiding object. Generally, we use the "top" of the hiding
+		// object size, because AI's don't expect something to hang
+		// from the back of the occluder and pull its feet upward.
+		idVec3 occlusionTestPoint = testPoint;
+		occlusionTestPoint.z += hidingHeight;
+
+
 		trace_t rayResult;
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 		if (gameLocal.clip.TracePoint 
 		(
 			rayResult, 
@@ -329,17 +357,68 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		))
 		{
 			// Some sort of occlusion
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding-spot occlusion at point %f,%f,%f, fraction of %f\n", testPoint.x, testPoint.y, testPoint.z, rayResult.fraction);
+			//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding-spot occlusion at point %f,%f,%f, fraction of %f\n", testPoint.x, testPoint.y, testPoint.z, rayResult.fraction);
 			out_hidingSpotTypesThatApply |= VISUAL_OCCLUSION_HIDING_SPOT_TYPE;
+
+			// Occlusions are 50% good
+			if (out_quality < OCCLUSION_HIDING_SPOT_QUALITY)
+			{
+				out_quality = OCCLUSION_HIDING_SPOT_QUALITY;
+			}
 		}
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	}
 
 	// Done
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	return out_hidingSpotTypesThatApply;
 }
+
+//----------------------------------------------------------------------------
+
+void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
+(
+	darkModHidingSpot_t& hidingSpot,
+	idList<darkModHidingSpot_t>& inout_hidingSpots
+)
+{
+	// Find the right place
+	int numSpots = inout_hidingSpots.Num();
+
+	int spotIndex = 0;
+	for (spotIndex = 0; spotIndex < numSpots; spotIndex ++)
+	{
+		if (inout_hidingSpots[spotIndex].quality <= hidingSpot.quality)
+		{
+			// Insert it before this spot (at this spot and move all rest down)
+			break;
+		}
+	}
+
+	// Do insertion
+	inout_hidingSpots.Insert (hidingSpot, spotIndex);
 	
+}
+
+//----------------------------------------------------------------------------
+
+void darkModAASFindHidingSpots::CombineRedundantHidingSpots
+(
+	idList<darkModHidingSpot_t>& inout_hidingSpots
+)
+{
+	/*
+	int listLength = inout_hidingSpots.Num();
+
+	for (int index = 0; index < listLength; index ++)
+	{
+		// Get the hiding spot
+		darkModHidingSpot_t spot = inout_hidingSpots[index];
+
+	}
+	*/
+
+}
 
 //----------------------------------------------------------------------------
 
@@ -349,6 +428,7 @@ void darkModAASFindHidingSpots::getNearbyHidingSpots
 (
 	idList<darkModHidingSpot_t>& out_hidingSpots,
 	idAAS *p_aas, 
+	float hidingHeight,
 	idBounds searchLimits, 
 	int hidingSpotTypesAllowed, 
 	idEntity* p_ignoreEntity
@@ -369,7 +449,7 @@ void darkModAASFindHidingSpots::getNearbyHidingSpots
 	}
 
 	// Test the search region for hiding spots
-	FindHidingSpots( out_hidingSpots, p_aas, searchLimits, hidingSpotTypesAllowed, p_ignoreEntity);
+	FindHidingSpots( out_hidingSpots, p_aas, hidingHeight, searchLimits, hidingSpotTypesAllowed, p_ignoreEntity);
 
 
 	// Done
@@ -430,6 +510,12 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 			markerColor += OcclusionMarkerColor;
 		}
 
+		// Scale from blackness to the color
+		for (int i = 0; i < 4; i ++)
+		{
+			markerColor[i] *= DebugDrawList[spotIndex].quality;
+		}
+
 		// Render this hiding spot
 		gameRenderWorld->DebugArrow
 		(
@@ -450,6 +536,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 void darkModAASFindHidingSpots::testFindHidingSpots 
 (
 	idVec3 hideFromLocation, 
+	float hidingHeight,
 	idBounds hideSearchBounds, 
 	idEntity* p_ignoreEntity, 
 	idAAS* p_aas
@@ -467,6 +554,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 	(
 		hidingSpotList,
 		p_aas,
+		hidingHeight,
 		hideSearchBounds,
 		ANY_HIDING_SPOT_TYPE,
 		p_ignoreEntity

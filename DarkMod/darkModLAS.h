@@ -86,7 +86,7 @@ protected:
    * @param b_useShadows if true, then shadow volumes are considered
    * @returns the total intensity on the point from lights in the test area
    */
-   void accumulateEffectOfInLightsInArea 
+   void accumulateEffectOfLightsInArea 
 	( 
 		float& inout_totalIllumination,
 		int areaIndex, 

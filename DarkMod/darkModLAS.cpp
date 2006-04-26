@@ -92,7 +92,7 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 
 //----------------------------------------------------------------------------
 
-void darkModLAS::accumulateEffectOfInLightsInArea 
+void darkModLAS::accumulateEffectOfLightsInArea 
 ( 
 	float& inout_totalIllumination,
 	int areaIndex, 
@@ -131,7 +131,7 @@ void darkModLAS::accumulateEffectOfInLightsInArea
 
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString
 		(
-			"accumulateEffectOfInLightsInArea (area=%d): accounting for light '%s'", 
+			"accumulateEffectOfLightsInArea (area=%d): accounting for light '%s'", 
 			areaIndex,
 			p_LASLight->p_idLight->name.c_str()
 		);
@@ -206,6 +206,7 @@ void darkModLAS::accumulateEffectOfInLightsInArea
 			if (testDistance > p_LASLight->p_idLight->m_MaxLightRadius)
 			{
 				b_excludeLight = true;
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s]: exluded due to max light radius\r", p_LASLight->p_idLight->name.c_str());
 			}
 			else if ((b_useShadows) && (p_LASLight->p_idLight->CastsShadow()) ) 
 			{
@@ -411,7 +412,21 @@ void darkModLAS::removeLight (idLight* p_idLight)
 	if (p_idLight->LASAreaIndex < 0)
 	{
 		// Log error
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Attempted to remove a light '%s' with no assigned LAS area index", p_idLight->name.c_str());
+		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Attempted to remove the light '%s' with no assigned LAS area index", p_idLight->name.c_str());
+		return;
+	}
+	else if (p_idLight->LASAreaIndex >= m_numAreas)
+	{
+		// Log error
+		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Attempted to remove the light '%s' with out of bounds area index %d", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
+		return;
+	}
+
+
+	if (m_pp_areaLightLists == NULL)
+	{
+		// Log error
+		DM_LOG(LC_LIGHT, LT_ERROR).LogString("LAS not initialized. Remove light '%s' request ignored", p_idLight->name.c_str());
 		return;
 	}
 
@@ -421,8 +436,17 @@ void darkModLAS::removeLight (idLight* p_idLight)
 	{
 		if (p_cursor->Owner()->p_idLight == p_idLight)
 		{
+			// Keep track of header, bass ackward idLinkedList can't
+			// update the header pointer on its own because of the inverted
+			// way it handles the container arrangement.
+			if (m_pp_areaLightLists[p_idLight->LASAreaIndex] == p_cursor)
+			{
+				m_pp_areaLightLists[p_idLight->LASAreaIndex]= p_cursor->NextNode();
+			}
+
 			// Remove this node from its list and destroy the record
 			p_cursor->Remove();
+
 
 			// Light not in an LAS area
 			int tempIndex = p_idLight->LASAreaIndex;
@@ -454,14 +478,20 @@ void darkModLAS::removeLight (idLight* p_idLight)
 
 void darkModLAS::shutDown()
 {
+	// Log activity
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown initiated...\n");
+
 	// Delete all records in each list
 	for (int areaIndex = 0; areaIndex < m_numAreas; areaIndex ++)
 	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown clearing light records for areaIndex %d...\n", areaIndex);
+	
 		// Destroy each light record
 		idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
 		while (p_cursor != NULL)
 		{
 			darkModLightRecord_t* p_LASLight = p_cursor->Owner();
+
 			if (p_LASLight != NULL)
 			{
 				delete p_LASLight;
@@ -470,6 +500,8 @@ void darkModLAS::shutDown()
 			p_cursor = p_cursor->NextNode();
 		}
 
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
+
 		// Clear the list of nodes
 		if (m_pp_areaLightLists[areaIndex] != NULL)
 		{
@@ -477,7 +509,12 @@ void darkModLAS::shutDown()
 			m_pp_areaLightLists[areaIndex] = NULL;
 		}
 
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown destroyed list for for areaIndex %d\n", areaIndex);
+
 	} // Next area
+
+	// Log activity
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown deleting array of per-area list pointers...\n");
 
 	// Delete array of list pointers
 	if (m_pp_areaLightLists != NULL)
@@ -489,6 +526,7 @@ void darkModLAS::shutDown()
 	// No areas
 	m_numAreas = 0;
 
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown deleted array of per-area list pointers...\n");
 
 	// Log activity
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shut down and empty");
@@ -671,7 +709,7 @@ float darkModLAS::queryLightingAlongLine
 	{
 		// Add the effect of lights in this visible area to the effect at the
 		// point
-		accumulateEffectOfInLightsInArea 
+		accumulateEffectOfLightsInArea 
 		(
 			totalIllumination,
 			pvsTestAreaIndices[pvsTestResultIndex],

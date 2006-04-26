@@ -35,6 +35,9 @@ typedef struct darkModHidingSpot
 	// as defined by the darkModHidingSpotType enumeration
 	int hidingSpotTypes;
 
+	// The hiding spot "hidingness" quality, from 0 to 1.0
+	float quality;
+
 } darkModHidingSpot_t;
 
 /*!
@@ -73,6 +76,7 @@ protected:
 	* is visible from the hideFromPosition.
 	*
 	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
+	* @param hidingHeight Height of the hiding object in world units
 	* @param aas Pointer to the Area Awareness System in use
 	* @param AASAreaNum The index of the AAS area being tested for hiding spots
 	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
@@ -83,6 +87,7 @@ protected:
 	void FindHidingSpotsInVisibleAASArea
 	(
 		idList<darkModHidingSpot_t>& inout_hidingSpots, 
+		float hidingHeight,
 		const idAAS* aas, 
 		int AASAreaNum, 
 		idBounds searchLimits, 
@@ -98,8 +103,10 @@ protected:
 	* flags set for why it is a good hiding spot.
 	*
 	* @param testPoint The point to be tested for hiding spot characteristics
+	* @param hidingHeight The height in the z plane above the test point taken up by the hider's height
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	* @param out_quality Returns the quality of any hiding spot found as a ratio from 0.0 to 1.0 where 1.0 is perfect.
 	*
 	* @return An integer with the bit flags for the allowed hiding spot characteristics
 	*   that were found to be true
@@ -107,8 +114,10 @@ protected:
 	int TestHidingPoint 
 	(
 		idVec3 testPoint, 
+		float hidingHeight,
 		int hidingSpotTypesAllowed, 
-		idEntity* p_ignoreEntity
+		idEntity* p_ignoreEntity,
+		float& out_quality
 	);
 
 	/*!
@@ -116,6 +125,29 @@ protected:
 	* hiding spot find results
 	*/
 	static idList<darkModHidingSpot_t> DebugDrawList;
+
+
+	/*!
+	* This method combines hiding spots which are in the same area
+	* and have the same qualities 
+	*/
+	static void CombineRedundantHidingSpots
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots
+	);
+
+
+	/*!
+	* This method inserts a hiding spot into the given list
+	* and keeps the list sorted from highest to lowest
+	* quality, assuming that it was already sorted or empty.
+	*/
+	static void insertHidingSpotWithQualitySorting
+	(
+		darkModHidingSpot_t& hidingSpot,
+		idList<darkModHidingSpot_t>& inout_hidingSpots
+	);
+
 
 
 public:
@@ -139,10 +171,17 @@ public:
 	virtual ~darkModAASFindHidingSpots(void);
 
 	/*!
+	* This hiding spot list which is a member of the object can be used for the first
+	* parameter of findHidingSpots if so desired.
+	*/
+	idList<darkModHidingSpot_t> hidingSpotList;
+
+	/*!
 	* This tests for hiding spots within the given search bounds.
 	*
 	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
 	* @param aas Pointer to the Area Awareness System in use
+	* @param hidingHeight The height of the object that would be hiding
 	* @param searchLimits The limiting bounds of the world to consider.
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
@@ -152,6 +191,7 @@ public:
 	(
 		idList<darkModHidingSpot_t>& inout_hidingSpots, 
 		const idAAS *aas, 
+		float hidingHeight,
 		idBounds searchLimits, 
 		int hidingSpotTypesAllowed, 
 		idEntity* p_ignoreEntity
@@ -162,9 +202,10 @@ public:
 	* This method searches within the given search bounds for hiding spots and returns
 	* a list of them as darkModHidingSpot structures.
 	*
-	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
+	* @param out_hidingSpots On return, the list of hiding spots.
 	* @param aas Pointer to the Area Awareness System in use
 	* @param areaNum The index of the area being tested for hiding spots
+	* @param hidingHeight The height of the object that would be hiding
 	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
 			searched.  The searched region is the intersection of the two.
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
@@ -174,6 +215,7 @@ public:
 	(
 		idList<darkModHidingSpot_t>& out_hidingSpots,
 		idAAS *p_aas, 
+		float hidingHeight,
 		idBounds searchLimits, 
 		int hidingSpotTypesAllowed, 
 		idEntity* p_ignoreEntity
@@ -208,8 +250,14 @@ public:
 	* spot finding routine. It uses the LAS to find hiding spots near
 	* the player's current position
 	*/
-	static void testFindHidingSpots (idVec3 hideFromLocation, idBounds hideSearchBounds, idEntity* p_ignoreEntity, idAAS* p_aas);
-
+	static void testFindHidingSpots 
+	(
+		idVec3 hideFromLocation, 
+		float hidingHeight,
+		idBounds hideSearchBounds, 
+		idEntity* p_ignoreEntity, 
+		idAAS* p_aas
+	);
 
 
 };
