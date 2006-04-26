@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.9  2006/04/26 21:29:46  sparhawk
+ * Timed stim/response core added.
+ *
  * Revision 1.8  2006/03/13 21:05:20  sparhawk
  * SIT stimtype replaced with INVITE to name it more generic
  *
@@ -60,10 +63,22 @@ class CStim;
 
 extern char *cStimType[];
 
+#define GetHours(x)		((x >> 24) & 0xff)
+#define GetMinutes(x)	((x >> 16) & 0xff)
+#define GetSeconds(x)	((x >> 8) & 0xff)
+#define GetMSeconds(x)	(x & 0xff)
+
+#define SetHours(x)		(x << 24)
+#define SetMinutes(x)	(x << 16)
+#define SetSeconds(x)	(x << 8)
+#define SetMSeconds(x)	(x)
+
+#define TIMER_UNDEFINED		-1
+typedef unsigned int	TimerValue;
 
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.
- * Each of the values as a copy, which is used to store the actual value at runtime.
+ * Each of the values as a copy, which is used to store the actual value at runtime (<X>Val).
  * The original value is used for initialisation but is never changed during runtime
  * as only the Val counterparts will be used to track the current state.
  */
@@ -86,6 +101,20 @@ public:
 		SRTS_DEFAULT
 	} TimerState;
 
+public:
+	/**
+	 * If the stim contains information for a timed event, this function parses the string
+	 * and returns a timervalue.
+	 *
+	 * The timer is initialized by a string on the entity which reads like this:
+	 * HH:MM:SS
+	 *
+	 * HH are the hours in 24 hour format 0-23.
+	 * MM are the minutes 0-59.
+	 * SS are the seconds 0-59.
+	 */
+	static TimerValue ParseTimeString(idStr &s);
+
 protected:
 	CStimResponseTimer(void);
 	virtual ~CStimResponseTimer(void);
@@ -95,7 +124,7 @@ protected:
 	TimerState		m_State;
 
 	/**
-	 * How often can the stimulus be reused. 0 = unlimited
+	 * How often can the stimulus be reused. -1 = unlimited
 	 */
 	int				m_Reload;
 	int				m_ReloadVal;
@@ -104,8 +133,8 @@ protected:
 	 * How long does it take until this stimulus can be used again.
 	 * 0 = immediately
 	 */
-	int				m_ReloadTimer;
-	int				m_ReloadTimerVal;
+	TimerValue		m_ReloadTimer;
+	TimerValue		m_ReloadTimerVal;
 
 	/**
 	 * How long does the stimulus need to be applied, before the action is
@@ -114,8 +143,8 @@ protected:
 	 * it catches fire.
 	 * 0 = no limit
 	 */
-	int				m_Apply;
-	int				m_ApplyVal;
+	TimerValue		m_Apply;
+	TimerValue		m_ApplyVal;
 
 	/**
 	 * How often can the stimulus be applied before it is depleted.
@@ -128,8 +157,8 @@ protected:
 	 * How long is the stim performing it's action.
 	 * 0 = unlimited
 	 */
-	int				m_Duration;
-	int				m_DurationVal;
+	TimerValue		m_Duration;
+	TimerValue		m_DurationVal;
 };
 
 
@@ -395,9 +424,22 @@ public:
 	 * AddEntityToList will add the given entity to the list exactly once. If the entity
 	 * is already in the list, then nothing will happen and the entity stays in it.
 	 */
-	void				AddEntityToList(idList<idEntity *> &List, idEntity *);
+	void				AddEntityToList(idList<void *> &List, void *);
+ 
+	/**
+	 * If the stim contains information for a timed event, this function parses the string
+	 * and creates the appropriate timer structure.
+	 *
+	 * The timer is initialized by a string on the entity which reads like this:
+	 * HH:MM:SS
+	 *
+	 * HH are the hours in 24 hour format 0-23.
+	 * MM are the minutes 0-59.
+	 * SS are the seconds 0-59.
+	 */
+	void				CreateTimer(const idDict *args, CStim *Owner);
 
-	idList<CStim *>		&GetStimList(void) { return m_Stim; };
+ 	idList<CStim *>		&GetStimList(void) { return m_Stim; };
 	idList<CResponse *>	&GetResponseList(void) { return m_Response; };
 
 	CStimResponse		*GetStimResponse(int StimType, bool Stim);

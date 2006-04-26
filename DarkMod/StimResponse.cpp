@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.9  2006/04/26 21:29:46  sparhawk
+ * Timed stim/response core added.
+ *
  * Revision 1.8  2006/03/13 21:05:20  sparhawk
  * SIT stimtype replaced with INVITE to name it more generic
  *
@@ -115,7 +118,8 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 		pRet->m_Radius = fRadius;
 		pRet->m_State = SS_DISABLED;
 
-		AddEntityToList(gameLocal.m_StimEntity, Owner);
+		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, Owner); 
+//		AddEntityToList(gameLocal.m_StimEntity, Owner);
 	}
 
 	return pRet;
@@ -147,7 +151,8 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 		pRet->m_Default = bDefault;
 		pRet->m_Removable = bRemovable;
 
-		AddEntityToList(gameLocal.m_RespEntity, Owner);
+		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, Owner); 
+//		AddEntityToList(gameLocal.m_RespEntity, Owner);
 	}
 
 	return pRet;
@@ -175,7 +180,9 @@ CStim *CStimResponseCollection::AddStim(CStim *s)
 	{
 		pRet = s;
 		m_Stim.Append(pRet);
-		AddEntityToList(gameLocal.m_StimEntity, s->m_Owner);
+
+		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, s->m_Owner); 
+//		AddEntityToList(gameLocal.m_StimEntity, s->m_Owner);
 	}
 
 Quit:
@@ -204,7 +211,9 @@ CResponse *CStimResponseCollection::AddResponse(CResponse *r)
 	{
 		pRet = r;
 		m_Response.Append(pRet);
-		AddEntityToList(gameLocal.m_RespEntity, r->m_Owner);
+
+		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, r->m_Owner);
+//		AddEntityToList(gameLocal.m_RespEntity, r->m_Owner);
 	}
 
 Quit:
@@ -305,7 +314,7 @@ int CStimResponseCollection::RemoveResponse(CResponse *r)
 }
 
 
-void CStimResponseCollection::AddEntityToList(idList<idEntity *> &oList, idEntity *e)
+void CStimResponseCollection::AddEntityToList(idList<void *> &oList, void *e)
 {
 	bool add = true;
 	int i, n;
@@ -450,6 +459,10 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	{
 		sprintf(name, "sr_radius_%u", Counter);
 		args->GetFloat(name, "0.0", Radius);
+		stim->m_Radius = Radius;
+
+		// Check if we have a timer on this stim.
+		CreateTimer(args, stim); 
 	}
 	else	// this is only for responses
 	{
@@ -521,6 +534,49 @@ Quit:
 	return;
 }
 
+
+void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
+{
+	idStr str;
+	int n;
+	CStimResponseTimer *t = NULL;
+
+	t = new CStimResponseTimer;
+
+	args->GetString("sr_timer_duration", "", str);
+	if((t->m_Duration = t->ParseTimeString(str)) == TIMER_UNDEFINED)
+		goto Quit;
+
+	args->GetInt("sr_timer_reload", "-1", n);
+	t->m_Reload = n;
+
+	args->GetInt("sr_timer_apply_counter", "-1", n);
+	t->m_ApplyCounter = n;
+
+	args->GetString("sr_timer_type", "RELOAD", str);
+	if(str.Cmp("RELOAD") == 0)
+		t->m_Type = CStimResponseTimer::SRTT_RELOAD;
+	else
+		t->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
+
+	AddEntityToList((idList<void *>	&)gameLocal.m_StimTimer, stim);
+
+	args->GetString("sr_timer_reload_duration", "", str);
+	t->m_ReloadTimer = t->ParseTimeString(str);
+
+	args->GetString("sr_timer_apply_duration", "", str);
+	t->m_Apply = t->ParseTimeString(str);
+
+	stim->m_Timer = t;
+	t = NULL;
+	AddEntityToList((idList<void *>	&)gameLocal.m_StimTimer, stim); 
+
+Quit:
+	if(t)
+		delete t;
+
+	return;
+}
 
 /********************************************************************/
 /*                    CStimResponse                                 */
@@ -654,7 +710,7 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 /********************************************************************/
 CStimResponseTimer::CStimResponseTimer(void)
 {
-	m_Type = SRTT_RELOAD;
+	m_Type = SRTT_SINGLESHOT;
 	m_State = SRTS_DISABLED;
 	m_Reload = 0;
 	m_ReloadVal = 0;
@@ -670,5 +726,65 @@ CStimResponseTimer::CStimResponseTimer(void)
 
 CStimResponseTimer::~CStimResponseTimer(void)
 {
+}
+
+TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
+{
+	TimerValue v = TIMER_UNDEFINED;
+	int i, h, m, s;
+
+	if(str.Length() == 0)
+		goto Quit;
+
+	if(str[2] != ':' && str[5]  != ':')
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid timer string [%s]\r", str.c_str());
+		goto Quit;
+	}
+
+	h = m = s = 0;
+	for(i = 0; i < 3; i++)
+	{
+		switch(i)
+		{
+			case 0:
+			{
+				h = atoi(str.c_str());
+				if(!(h >= 0 && h <= 23))
+				{
+					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid hour string [%s]\r", str.c_str());
+					goto Quit;
+				}
+			}
+			break;
+
+			case 1:
+			{
+				m = atoi(str.c_str());
+				if(!(m >= 0 && m <= 59))
+				{
+					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid minute string [%s]\r", str.c_str());
+					goto Quit;
+				}
+			}
+			break;
+
+			case 2:
+			{
+				s = atoi(str.c_str());
+				if(!(s >= 0 && s <= 59))
+				{
+					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid minute string [%s]\r", str.c_str());
+					goto Quit;
+				}
+			}
+			break;
+		}
+	}
+
+	v = SetHours(h) + SetMinutes(m) + SetSeconds(s);
+
+Quit:
+	return v;
 }
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2006/04/26 21:29:16  sparhawk
+ * Timed stim/response core added.
+ *
  * Revision 1.47  2006/04/03 02:04:32  gildoran
  * Added some code for an inventory prototype.
  *
@@ -6888,7 +6891,7 @@ void idEntity::Event_CursorSelectItem( idEntity* ent, int type ) {
 		gameLocal.Warning( "Cursor doesn't point to the inventory containing item.\n" );
 		goto Quit;
 	}
-	if ( type & ECURSOR_NOHISTORY != type ) {
+	if ( (type & ECURSOR_NOHISTORY) != type ) {
 		gameLocal.Warning( "Invalid type passed to cursorSelectItem.\n" );
 		goto Quit;
 	}
