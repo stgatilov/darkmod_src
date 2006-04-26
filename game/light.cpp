@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/04/26 22:29:10  sophisticatedzombie
+ * I fixed a crash bug in the LAS classes, so I'm having the lights add to the LAS table again.
+ *
  * Revision 1.10  2005/12/10 17:24:52  sophisticatedzombie
  * Lights add themselves to and remove themselves from the LAS on initialization and destruction
  *
@@ -487,6 +490,10 @@ void idLight::Spawn( void )
 	}
 
 	g_Global.m_DarkModPlayer->AddLight(this);
+
+	// Sophisiticated Zombie (DMH)
+	// Darkmod Light Awareness System: Also need to add light to LAS
+	LAS.addLight (this);
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
 		this, name.c_str(),
