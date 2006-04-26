@@ -86,7 +86,7 @@ bool PVSToAASMapping::buildMappings(int aasNumber)
 	idAAS* p_aas = gameLocal.GetAAS (aasNumber);
 	if (p_aas == NULL)
 	{
-		DM_LOG (LC_AI, LT_ERROR).LogString ("No aas files exist for this map, AI entities scheduled for decephalization...\n");
+		DM_LOG (LC_AI, LT_ERROR).LogString ("No aas files exist for this map, AI will not be able to locate darkness...\n");
 		return false;
 	}
 
