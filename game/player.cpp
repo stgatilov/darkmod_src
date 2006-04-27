@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.61  2006/04/27 22:53:57  sophisticatedzombie
+ * Changed the constant 70 to 0.35, which is what I have been testing with
+ *
  * Revision 1.60  2006/04/27 17:37:53  sparhawk
  * darkModAASFindHidingSpots::testFindHidingSpots currently
  * hardcoded with a value of 70.0. Has to be fixed by sohpistcatedZombie.
@@ -6061,7 +6064,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				darkModAASFindHidingSpots::testFindHidingSpots 
 				(
 					searchOrigin,
-					70.0,
+					0.35f,
 					searchBounds,
 					this, // Ignore self as a hiding screen
 					p_aas
