@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/04/27 22:49:15  sophisticatedzombie
+ * The hiding spot search functions have been added as script exposted event functions.
+ *
  * Revision 1.12  2006/03/08 06:30:44  ishtvan
  * knockout updates, ko cone should now be correct
  *
@@ -196,6 +199,13 @@ extern const idEventDef AI_Alert;
 extern const idEventDef AI_GetAcuity;
 extern const idEventDef AI_SetAcuity;
 extern const idEventDef AI_ClosestReachableEnemy;
+
+// DarkMod hiding spot finding events
+extern const idEventDef AI_SearchForHidingSpots;
+extern const idEventDef AI_CloseHidingSpotSearch;
+extern const idEventDef AI_GetNumHidingSpots;
+extern const idEventDef AI_GetNthHidingSpotLocation;
+extern const idEventDef AI_GetNthHidingSpotType;
 
 class idPathCorner;
 
@@ -687,6 +697,12 @@ protected:
 	idEntity *				m_TactAlertEnt;
 
 	/**
+	* The current mod hiding spot search of this AI, usually NULL (0)
+	*/
+	int m_HidingSpotSearchHandle;
+
+
+	/**
 	* Used for drowning
 	**/
 	int						m_AirCheckTimer;
@@ -721,9 +737,18 @@ protected:
 	**/
 	idVec3					m_KoOffset;
 
+
 	//
 	// ai/ai.cpp
 	//
+
+
+	/**
+	* This internal method destroys the current hiding spot search
+	* if it is not null.
+	*/
+	void destroyCurrentHidingSpotSearch();
+
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
@@ -1051,6 +1076,15 @@ protected:
 	void Event_Alert( const char *type, float amount );
 	void Event_GetAcuity( const char *type );
 	void Event_SetAcuity( const char *type, float val );
+
+    /**
+	* Script frontend for DarkMod hiding spot detection functions
+	**/
+	void Event_SearchForHidingSpots (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
+	void Event_CloseHidingSpotSearch ();
+	void Event_GetNumHidingSpots ();
+	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
+	void Event_GetNthHidingSpotType (int hidingSpotIndex);
 
 	/**
 	* Scan for the player in FOV, and cause a visual alert if found

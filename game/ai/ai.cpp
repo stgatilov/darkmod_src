@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2006/04/27 22:49:15  sophisticatedzombie
+ * The hiding spot search functions have been added as script exposted event functions.
+ *
  * Revision 1.17  2006/03/08 06:30:44  ishtvan
  * knockout updates, ko cone should now be correct
  *
@@ -458,6 +461,11 @@ idAI::idAI() {
 
 	m_TactAlertEnt = NULL;
 
+	/**
+	* Darkmod: No hiding spot search by default
+	*/
+	m_HidingSpotSearchHandle = 0;
+
 	m_AirCheckTimer = 0;
 	m_AirTics = 0;
 	m_AirTicksMax = 0;
@@ -480,6 +488,12 @@ idAI::~idAI() {
 		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
 		worldMuzzleFlashHandle = -1;
 	}
+
+	/**
+	* Darkmod: Get rid of current hiding spot search if there is one.
+	*/
+	destroyCurrentHidingSpotSearch();
+	
 }
 
 /*

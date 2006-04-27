@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/04/27 22:49:15  sophisticatedzombie
+ * The hiding spot search functions have been added as script exposted event functions.
+ *
  * Revision 1.6  2006/02/05 06:51:10  ishtvan
  * knockout updates
  *
@@ -38,6 +41,7 @@
 #include "../Game_local.h"
 #include "../darkmod/relations.h"
 #include "../../darkmod/darkmodglobals.h"
+#include "../../darkmod/darkModAASFindHidingSpots.h"
 
 class CRelations;
 
@@ -189,9 +193,63 @@ const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
 
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
 
+// DarkMod Hiding spot detection Events
+/*!
+* This event finds hiding spots in the bounds given by two vectors.
+*
+* The first paramter is a vector which gives the location of the
+* eye from which hiding is desired.
+*
+* The second vector gives the minimums in each dimension for the
+* search space.  
+*
+* The third vector gives the maximums. 
+*
+* The fourth parameter gives the bit flags of the types of hiding spots
+* for which the search should look.
+*
+* The fifth parameter indicates an entity that should be ignored in
+* the visual occlusion checks.  This is usually the searcher itself but
+* can be NULL.
+*
+* The return value is a 0 for failure, 1 for success.
+*/
+const idEventDef AI_SearchForHidingSpots ("searchForHidingSpots", "vvvdE", 'd');
+
+/*!
+* This should be called when the script is done with the hiding spot 
+* search to free up memory.
+*/
+const idEventDef AI_CloseHidingSpotSearch ("closeHidingSpotSearch", "");
+
+/*!
+* This event returns the number of hiding spots by the current
+* hiding spot query. If there is no current query, this returns -1
+*/
+const idEventDef AI_GetNumHidingSpots ("getNumHidingSpots", "", 'd');
+
+/*!
+* This event returns the Nth hiding spot location. 
+* Param is 0 based hiding spot index
+*/
+const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", "d", 'v');
+
+/*!
+* This event returns the Nth hiding spot type. 
+* Param is 0 based hiding spot index
+*/
+const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
+
+/*!
+* This event handles a knockout of the AI
+*/
 const idEventDef AI_Knockout( "knockout" );
 
 
+/*
+* This is the AI event table class for a generic NPC actor.
+*
+*/
 CLASS_DECLARATION( idActor, idAI )
 	EVENT( EV_Activate,							idAI::Event_Activate )
 	EVENT( EV_Touch,							idAI::Event_Touch )
@@ -334,6 +392,12 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
 	EVENT( AI_VisScan,							idAI::Event_VisScan )
 	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
+	EVENT ( AI_SearchForHidingSpots,			idAI::Event_SearchForHidingSpots )
+	EVENT ( AI_CloseHidingSpotSearch,			idAI::Event_CloseHidingSpotSearch )
+	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
+	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
+	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
+
 	EVENT( AI_Knockout,							idAI::Knockout )
 END_CLASS
 
@@ -2944,3 +3008,221 @@ void idAI::Event_ClosestReachableEnemy( void )
 }
 
 
+void idAI::destroyCurrentHidingSpotSearch()
+{
+	// Check to see if there is one
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		// .. there is, so destroy it
+		darkModAASFindHidingSpots* p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
+		delete p_hidingSpotFinder;
+
+		// No hiding spot search anymore
+		m_HidingSpotSearchHandle = 0;
+
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Last hiding spot search destroyed\n");
+
+	}
+
+	
+}
+
+void idAI::Event_SearchForHidingSpots
+(
+	const idVec3& hideFromLocation,
+	const idVec3& minBounds, 
+	const idVec3& maxBounds, 
+	int hidingSpotTypesAllowed, 
+	idEntity* p_ignoreEntity
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_SearchForHidingSpots called.\n");
+
+
+	// Destroy any current search
+	destroyCurrentHidingSpotSearch();
+
+	// Make caller's search bounds
+	idBounds searchBounds (minBounds, maxBounds);
+
+	// Get aas
+	if (aas != NULL)
+	{
+		// Allocate object that handles the search
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
+		darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots (hideFromLocation, aas);
+
+		// Remember search handle;
+		m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
+
+		// TODO: Parameterize this
+#define HIDING_OBJECT_HEIGHT 0.35f
+
+		// Run search
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Searching for hiding spots\n");
+		p_hidingSpotFinder->getNearbyHidingSpots
+		(
+			p_hidingSpotFinder->hidingSpotList,
+			aas, 
+			HIDING_OBJECT_HEIGHT,
+			searchBounds,
+			hidingSpotTypesAllowed,
+			p_ignoreEntity
+		);
+
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Script event hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.Num());
+
+		// DEBUGGING
+		p_hidingSpotFinder->debugClearHidingSpotDrawList();
+		p_hidingSpotFinder->debugAppendHidingSpotsToDraw (p_hidingSpotFinder->hidingSpotList);
+		p_hidingSpotFinder->debugDrawHidingSpots (1000);
+
+
+
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_SearchForHidingSpots if no AAS is set for the AI\n");
+	}
+
+	// Search is done
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search is done\n");
+
+	// Return result
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		// Return success
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search successful\n");
+		idThread::ReturnInt(1);
+	}
+	else
+	{
+		// Return failure
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search failed\n");
+		idThread::ReturnInt(0);
+	}
+
+}
+
+
+void idAI::Event_CloseHidingSpotSearch ()
+{
+       
+	// Destroy current hiding spot search
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\n");
+	destroyCurrentHidingSpotSearch();
+}
+
+void idAI::Event_GetNumHidingSpots ()
+{
+
+	// Get the search by the handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
+	}
+
+	// Get the number of hiding spots
+	int numSpots = 0;
+	if (p_hidingSpotFinder != NULL)
+	{
+		numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("No hiding spot test currently exists\n");
+	}
+
+	// Return count
+	idThread::ReturnInt (numSpots);
+}
+
+void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
+{
+	idVec3 outLocation (0.0f, 0.0f, 0.0f);
+
+
+	// Get the search by the handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
+	}
+
+	// Get the hiding spot count
+	if (p_hidingSpotFinder != NULL)
+	{
+		int numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+
+		// In bounds?
+		if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
+		{
+			outLocation = p_hidingSpotFinder->hidingSpotList[hidingSpotIndex].goal.origin;
+
+			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
+			idVec3 arrowLength (0.0, 0.0, 50.0);
+
+			gameRenderWorld->DebugArrow
+			(
+				markerColor,
+				outLocation + arrowLength,
+				outLocation,
+				2.0f,
+				5000
+			);
+
+        }
+		else
+		{
+			DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\n", hidingSpotIndex, numSpots);
+		}
+
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("No hiding spot test currently exists\n");
+	}
+
+
+	// Return the location
+	idThread::ReturnVector (outLocation);
+
+}
+
+void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
+{
+	int outTypeFlags = 0;
+
+
+	// Get the search by the handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
+	}
+
+	// Get the hiding spot count
+	if (p_hidingSpotFinder != NULL)
+	{
+		int numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+
+		// In bounds?
+		if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
+		{
+			outTypeFlags = p_hidingSpotFinder->hidingSpotList[hidingSpotIndex].hidingSpotTypes;
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\n", hidingSpotIndex, numSpots);
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("No hiding spot test currently exists\n");
+	}
+
+	// Return the type
+	idThread::ReturnInt (outTypeFlags);
+
+}
