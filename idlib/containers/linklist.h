@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/04/27 07:30:35  sophisticatedzombie
+ * Added RemoveHeadsafe, which updates the node head pointers if removing the list head. (bad ID, bad ID!)
+ *
  * Revision 1.2  2006/03/30 19:45:45  gildoran
  * I made three main changes:
  * 1. I moved the new decl headers out of game_local.h and into the few files
@@ -52,6 +55,12 @@ public:
 	void				AddToFront( idLinkList &node );
 
 	void				Remove( void );
+
+	// Added by SophisticatedZombie for DarkMod
+	// This method removes a node from the list and updates the head pointer of
+	// every node in the list to prevent the list form becoming circular when the head
+	// is removed.
+	void				RemoveHeadsafe( void );
 
 	type *				Next( void ) const;
 	type *				Prev( void ) const;
@@ -177,6 +186,41 @@ void idLinkList<type>::Remove( void ) {
 	next = this;
 	prev = this;
 	head = this;
+}
+
+/*
+================
+idLinkList<type>::RemoveHeadsafe
+
+Removes node from list and updates
+the list's head pointer if this was the head
+================
+*/
+template< class type >
+void idLinkList<type>::RemoveHeadsafe( void ) {
+
+	// If this is the head, must walk list and tell all our little buddies
+	// that we are no longer the head, and that the next node now is.
+	if (head == this)
+	{
+		idLinkList<type>* p_cursor = next;
+
+		while ((p_cursor != NULL) && (p_cursor != this))
+		{
+			p_cursor->head = next;
+			p_cursor = p_cursor->next;
+		}
+	}
+
+	// Now back to ID's original code
+	prev->next = next;
+	next->prev = prev;
+
+	next = this;
+	prev = this;
+	head = this;
+
+
 }
 
 /*
