@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/04/29 22:10:56  sparhawk
+ * Added some script functions to query the state of a door.
+ *
  * Revision 1.8  2006/01/22 09:20:24  ishtvan
  * rewrote to match new soundprop interface
  *
@@ -72,6 +75,9 @@ public:
 
 	void					ToggleOpen(void);
 	void					ToggleLock(void);
+	void					GetOpen(void);
+	void					GetLock(void);
+	void					GetPickable(void);
 
 	bool					UsedBy(idEntity *);
 

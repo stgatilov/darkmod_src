@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/04/29 22:10:56  sparhawk
+ * Added some script functions to query the state of a door.
+ *
  * Revision 1.11  2006/01/23 00:18:56  ishtvan
  * fix - soundprop data now updated at spawn
  *
@@ -74,6 +77,9 @@ const idEventDef EV_TDM_Door_Lock( "Lock", NULL );
 const idEventDef EV_TDM_Door_Unlock( "Unlock", NULL );
 const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
 const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
+const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
+const idEventDef EV_TDM_Door_GetLock( "GetLock", NULL, 'f' );
+const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 
 CLASS_DECLARATION( idMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
@@ -83,7 +89,11 @@ CLASS_DECLARATION( idMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
 	EVENT( EV_TDM_Door_ToggleLock,			CFrobDoor::ToggleLock)
 	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
+	EVENT( EV_TDM_Door_GetOpen,				CFrobDoor::GetOpen)
+	EVENT( EV_TDM_Door_GetLock,				CFrobDoor::GetLock)
+	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 END_CLASS
+
 
 CFrobDoor::CFrobDoor(void)
 {
@@ -605,4 +615,19 @@ void CFrobDoor::FindDoubleDoor(void)
 
 	// Wait until here for the first update of sound loss, in case double door is open
 	UpdateSoundLoss();
+}
+
+void CFrobDoor::GetOpen(void)
+{
+	idThread::ReturnFloat(m_Open);
+}
+
+void CFrobDoor::GetLock(void)
+{
+	idThread::ReturnFloat(m_Locked);
+}
+
+void CFrobDoor::GetPickable(void)
+{
+	idThread::ReturnFloat(m_Pickable);
 }
