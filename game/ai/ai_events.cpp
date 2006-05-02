@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/05/02 00:10:32  sophisticatedzombie
+ * AI debug graphics now drawn only in response to the value of g_global.m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
+ *
  * Revision 1.7  2006/04/27 22:49:15  sophisticatedzombie
  * The hiding spot search functions have been added as script exposted event functions.
  *
@@ -3073,9 +3076,12 @@ void idAI::Event_SearchForHidingSpots
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Script event hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.Num());
 
 		// DEBUGGING
-		p_hidingSpotFinder->debugClearHidingSpotDrawList();
-		p_hidingSpotFinder->debugAppendHidingSpotsToDraw (p_hidingSpotFinder->hidingSpotList);
-		p_hidingSpotFinder->debugDrawHidingSpots (1000);
+		if (g_Global.m_drawAIDebugGraphics >= 1.0)
+		{
+			p_hidingSpotFinder->debugClearHidingSpotDrawList();
+			p_hidingSpotFinder->debugAppendHidingSpotsToDraw (p_hidingSpotFinder->hidingSpotList);
+			p_hidingSpotFinder->debugDrawHidingSpots (g_Global.m_drawAIDebugGraphics);
+		}
 
 
 
@@ -3160,17 +3166,20 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 		{
 			outLocation = p_hidingSpotFinder->hidingSpotList[hidingSpotIndex].goal.origin;
 
-			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
-			idVec3 arrowLength (0.0, 0.0, 50.0);
+			if (g_Global.m_drawAIDebugGraphics >= 1.0)
+			{
+				idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
+				idVec3 arrowLength (0.0, 0.0, 50.0);
 
-			gameRenderWorld->DebugArrow
-			(
-				markerColor,
-				outLocation + arrowLength,
-				outLocation,
-				2.0f,
-				5000
-			);
+				gameRenderWorld->DebugArrow
+				(
+					markerColor,
+					outLocation + arrowLength,
+					outLocation,
+					2.0f,
+					g_Global.m_drawAIDebugGraphics
+				);
+			}
 
         }
 		else
