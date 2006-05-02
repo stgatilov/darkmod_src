@@ -11,6 +11,8 @@
 // Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
 #define OCCLUSION_HIDING_SPOT_QUALITY 0.5
 
+// The distance at which hiding spots will be combined if they have the same "type" properties
+#define HIDING_SPOT_COMBINATION_DISTANCE 50.0f
 
 // Static member for debugging hiding spot results
 idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
@@ -177,6 +179,9 @@ void darkModAASFindHidingSpots::FindHidingSpots
 		} // PVS area is not fully occluded, search within it for local hiding regions
 
 	} // Consider next PVS area within our search limits
+
+	// Combine redundant hiding spots
+	CombineRedundantHidingSpots (inout_hidingSpots, HIDING_SPOT_COMBINATION_DISTANCE);
 
 	// Done
 }
@@ -404,10 +409,12 @@ void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
 
 void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots
+	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	float distanceAtWhichToCombine
 )
 {
-	/*
+	//idList<darkModHidingSpot_t> consolidatedList;
+
 	int listLength = inout_hidingSpots.Num();
 
 	for (int index = 0; index < listLength; index ++)
@@ -415,8 +422,24 @@ void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 		// Get the hiding spot
 		darkModHidingSpot_t spot = inout_hidingSpots[index];
 
+		// compare with other hiding spots later in the list
+		for (int otherIndex = index+1; otherIndex < listLength; otherIndex ++)
+		{
+			darkModHidingSpot_t otherSpot = inout_hidingSpots[otherIndex];
+			float distance = abs((spot.goal.origin - otherSpot.goal.origin).Length());
+			if ((spot.hidingSpotTypes == otherSpot.hidingSpotTypes) && (distance < distanceAtWhichToCombine))
+			{
+				// Remove the other spot 
+				inout_hidingSpots.RemoveIndex(otherIndex);
+				listLength --;
+
+				// A point may have been pulled down into this other index
+				otherIndex --;
+			}
+		}
+
 	}
-	*/
+	
 
 }
 

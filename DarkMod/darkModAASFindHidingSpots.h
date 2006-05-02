@@ -133,7 +133,8 @@ protected:
 	*/
 	static void CombineRedundantHidingSpots
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		float distanceAtWhichToCombine
 	);
 
 
