@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/05/02 20:39:33  sparhawk
+ * Translation added
+ *
  * Revision 1.9  2006/04/29 22:10:56  sparhawk
  * Added some script functions to query the state of a door.
  *
@@ -154,6 +157,17 @@ protected:
 	idAngles					m_Rotate;
 
 	/**
+	 * Original position
+	 */
+	idVec3						m_StartPos;
+
+	/**
+	 * Vector that specifies the direction and length of the translation.
+	 * This is needed for doors that don't rotate, but slide to open.
+	 */
+	idVec3						m_Translation;
+
+	/**
 	* Door angles when completely closed
 	**/
 	idAngles					m_ClosedAngles;
@@ -172,6 +186,14 @@ protected:
 	*	it could be independently opened.
 	**/
 	CFrobDoor					*m_DoubleDoor;
+
+	/**
+	 * Scriptfunction that is called, whenever the door is finished rotating
+	 * or translating. i.E. when the statechange is completed.
+	 * The function gets as parameters the current state:
+	 * DoorComplete(boolean open, boolean locked, boolean interrupted);
+	 */
+	idStr						m_CompletionScript;
 
 private:
 };

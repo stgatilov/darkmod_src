@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/05/02 20:39:32  sparhawk
+ * Translation added
+ *
  * Revision 1.12  2006/04/29 22:10:56  sparhawk
  * Added some script functions to query the state of a door.
  *
@@ -186,6 +189,10 @@ void CFrobDoor::Spawn( void )
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
 	physicsObj.GetLocalAngles( tempAngle );
+
+	// Original starting position of the door in case it is a sliding door.
+	m_StartPos = physicsObj.GetOrigin();
+	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 
 	if ( !m_Open ) 
 	{
@@ -368,6 +375,8 @@ void CFrobDoor::Open(bool bMaster)
 
 			physicsObj.GetLocalAngles( tempAng );
 			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
+			Event_MoveToPos(m_StartPos +  m_Translation);
+
 			m_Open = true;
 
 			// Open visportal
@@ -425,7 +434,7 @@ void CFrobDoor::Close(bool bMaster)
 
 		physicsObj.GetLocalAngles( tempAng );
 		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
-
+		Event_MoveToPos(m_StartPos);
 	}
 }
 
