@@ -1,3 +1,18 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ * $Log$
+ * Revision 1.3  2006/05/02 18:41:24  sparhawk
+ * Logheader added
+ *
+ *
+ ***************************************************************************/
+
 #pragma once
 
 //class darkModLAS;
