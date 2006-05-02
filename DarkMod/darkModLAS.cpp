@@ -53,7 +53,7 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 		if (p_thisLASLight == p_LASLight)
 		{
 			// Remove this node from its list
-			p_cursor->Remove();
+			p_cursor->RemoveHeadsafe();
 			break;
 		}
 		else
@@ -441,11 +441,20 @@ void darkModLAS::removeLight (idLight* p_idLight)
 			// way it handles the container arrangement.
 			if (m_pp_areaLightLists[p_idLight->LASAreaIndex] == p_cursor)
 			{
-				m_pp_areaLightLists[p_idLight->LASAreaIndex]= p_cursor->NextNode();
+				m_pp_areaLightLists[p_idLight->LASAreaIndex] = p_cursor->NextNode();
+				if (m_pp_areaLightLists[p_idLight->LASAreaIndex] == p_cursor)
+				{
+					// If only one node left in the list, it makes circular link because idLinkList::Remove doesn't 
+					// update the head. Also because of this, on removing the first node in the list, the head
+					// of the list is no longer real and all iterations become circular. That is a problem.
+					// pointer tracked in each node.  Its a logical error in idLinkList::Remove that
+					// really should be fixed.
+					m_pp_areaLightLists[p_idLight->LASAreaIndex] = NULL;
+				}
 			}
 
 			// Remove this node from its list and destroy the record
-			p_cursor->Remove();
+			p_cursor->RemoveHeadsafe();
 
 
 			// Light not in an LAS area
@@ -488,16 +497,21 @@ void darkModLAS::shutDown()
 	
 		// Destroy each light record
 		idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
+		idLinkList<darkModLightRecord_t>* p_temp;
 		while (p_cursor != NULL)
 		{
 			darkModLightRecord_t* p_LASLight = p_cursor->Owner();
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light list iterating node %d ", p_cursor);
 
 			if (p_LASLight != NULL)
 			{
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light list clear is deleting light '%s' ", p_LASLight->p_idLight->GetName());
 				delete p_LASLight;
 			}
 
-			p_cursor = p_cursor->NextNode();
+			// Next node
+			p_temp = p_cursor->NextNode();
+			p_cursor = p_temp;
 		}
 
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
