@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.36  2006/05/02 00:09:23  sophisticatedzombie
+ * Added m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
+ *
  * Revision 1.35  2006/01/31 22:34:44  sparhawk
  * StimReponse first working version
  *
@@ -311,6 +314,9 @@ CGlobal::CGlobal(void)
 	// Default minimum velocity for mantling damage and damage scale
 	m_minimumVelocityForMantleDamage = DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE;
 	m_damagePointsPerMetersPerSecondOverMinimum = DARKMOD_POINTS_DAMAGE_PER_METERS_PER_SECOND_OVER_MINIMUM_VELOCITY;
+
+	// By default AI debug graphics are off
+	m_drawAIDebugGraphics = 0.0;
 
 	/* initialize Sourcehook required global */
 	g_SHPtr = static_cast<SourceHook::ISourceHook*>(&g_SourceHook); 
@@ -751,6 +757,11 @@ void CGlobal::LoadINISettings(void *p)
 		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != -1)
 		{
 			m_WeakLightgem = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != -1)
+		{
+			m_drawAIDebugGraphics = atof(pm->Value);
 		}
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
