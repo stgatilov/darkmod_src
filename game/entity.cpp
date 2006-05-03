@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.50  2006/05/03 21:40:14  sparhawk
+ * Fixed text in debugstring.
+ *
  * Revision 1.49  2006/05/03 21:32:40  sparhawk
  * Added an easier interface for calling scriptfunctions
  *
@@ -6978,7 +6981,7 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 
 	if(pScriptFkt)
 	{
-		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction\r");
 		pThread = new idThread(pScriptFkt);
 		va_start(argptr, fmt);
 		pThread->CallFunctionArgsVN(pScriptFkt, ClearStack, fmt, argptr);
