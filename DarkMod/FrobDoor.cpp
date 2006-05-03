@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/05/03 21:31:21  sparhawk
+ * Statechange callback script added.
+ *
  * Revision 1.13  2006/05/02 20:39:32  sparhawk
  * Translation added
  *
@@ -107,6 +110,7 @@ CFrobDoor::CFrobDoor(void)
 	m_Pickable = true;
 	m_bInterrupted = false;
 	m_bIntentOpen = false;
+	m_StateChange = false;
 	m_DoubleDoor = NULL;
 }
 
@@ -258,6 +262,7 @@ void CFrobDoor::Lock(bool bMaster)
 
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
 		m_Locked = true;
+		CallStateScript();
 	}
 }
 
@@ -331,7 +336,7 @@ void CFrobDoor::Open(bool bMaster)
 	if(m_Open == true && !m_bInterrupted)
 		return;
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
@@ -374,10 +379,9 @@ void CFrobDoor::Open(bool bMaster)
 				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
 
 			physicsObj.GetLocalAngles( tempAng );
+			m_StateChange = true;
 			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
 			Event_MoveToPos(m_StartPos +  m_Translation);
-
-			m_Open = true;
 
 			// Open visportal
 			Event_OpenPortal();
@@ -433,6 +437,7 @@ void CFrobDoor::Close(bool bMaster)
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
+		m_StateChange = true;
 		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
 		Event_MoveToPos(m_StartPos);
 	}
@@ -548,43 +553,17 @@ Quit:
 	return;
 }
 
+void CFrobDoor::DoneMoving(void)
+{
+	idMover::DoneMoving();
+	DoneStateChange();
+}
+
+
 void CFrobDoor::DoneRotating(void)
 {
 	idMover::DoneRotating();
-
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
-	
-	// if the door is not completely opened or closed, do nothing
-	if( m_bInterrupted )
-		goto Quit;
-
-	// door has completely closed
-	if( !m_bIntentOpen )
-	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
-
-		m_bIntentOpen = true;
-		m_Open = false;
-
-		// play the closing sound when the door closes completely
-		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-
-		//make sure the Doubledoor is also closed before closing the visportal
-		if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
-			Event_ClosePortal();
-	}
-	// door has completely opened
-	else
-	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opened completely\r" );
-		m_bIntentOpen = false;
-	}
-
-Quit:
-	
-	UpdateSoundLoss();
-
-	return;
+	DoneStateChange();
 }
 
 void CFrobDoor::FindDoubleDoor(void)
@@ -628,15 +607,74 @@ void CFrobDoor::FindDoubleDoor(void)
 
 void CFrobDoor::GetOpen(void)
 {
-	idThread::ReturnFloat(m_Open);
+	idThread::ReturnInt(m_Open);
 }
 
 void CFrobDoor::GetLock(void)
 {
-	idThread::ReturnFloat(m_Locked);
+	idThread::ReturnInt(m_Locked);
 }
 
 void CFrobDoor::GetPickable(void)
 {
-	idThread::ReturnFloat(m_Pickable);
+	idThread::ReturnInt(m_Pickable);
 }
+
+void CFrobDoor::DoneStateChange(void)
+{
+	bool CallScript = false;
+
+//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
+
+	// Ignore it if we already did it.
+	if(m_StateChange == false)
+		goto Quit;
+
+	CallScript = true;
+	m_StateChange = false;
+
+	// if the door is not completely opened or closed, do nothing
+	if( m_bInterrupted )
+		goto Quit;
+
+	// door has completely closed
+	if(!m_bIntentOpen)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
+
+		m_bIntentOpen = true;
+		m_Open = false;
+
+		// play the closing sound when the door closes completely
+		StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+
+		//make sure the Doubledoor is also closed before closing the visportal
+		if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
+			Event_ClosePortal();
+	}
+	else	// door has completely opened
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opened completely\r" );
+		m_Open = true;
+		m_bIntentOpen = false;
+	}
+
+Quit:
+	UpdateSoundLoss();
+	if(CallScript == true)
+		CallStateScript();
+
+	return;
+}
+
+void CFrobDoor::CallStateScript(void)
+{
+	idStr str;
+	if(spawnArgs.GetString("state_change_callback", "", str))
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript Open: %d  Locked: %d   Pickable: %d   Interrupt: %d\r", m_Open, m_Locked, m_Pickable, m_bInterrupted);
+		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
+	}
+}
+
+

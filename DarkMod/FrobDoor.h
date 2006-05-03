@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/05/03 21:31:21  sparhawk
+ * Statechange callback script added.
+ *
  * Revision 1.10  2006/05/02 20:39:33  sparhawk
  * Translation added
  *
@@ -96,6 +99,17 @@ public:
 	void					DoneRotating( void );
 
 	/**
+	 *
+	 */
+	void					DoneMoving(void);
+
+	/**
+	 * A helper function that implements the finalisation for rotations or movings.
+	 */
+	void					DoneStateChange(void);
+	void					CallStateScript(void);
+
+	/**
 	* Find out if this door is touching another door, and if they share the same portal
 	* If so, store a pointer to the other door m_DoubleDoor on this door.
 	*
@@ -145,6 +159,8 @@ protected:
 	*	Useful for determining what to do when the door is stopped midway.
 	**/
 	bool						m_bIntentOpen;
+
+	bool						m_StateChange;
 
 	/**
 	* Set to true if the door was stopped mid-rotation
