@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/05/03 21:32:40  sparhawk
+ * Added an easier interface for calling scriptfunctions
+ *
  * Revision 1.29  2006/04/03 02:04:32  gildoran
  * Added some code for an inventory prototype.
  *
@@ -619,6 +622,11 @@ public:
 	/// Returns (and creates if necessary) this entity's inventory cursor.
 	tdmInventoryCursor*	InventoryCursor();
 
+	/**
+	 * Generic function for calling a scriptfunction with arbitrary arguments.
+	 * The the thread is returned or NULL.
+	 */
+	idThread *CallScriptFunctionArgs(const char *ScriptFunction, bool ClearStack, int Delay, const char *Format, ...);
 
 protected:
 	/**

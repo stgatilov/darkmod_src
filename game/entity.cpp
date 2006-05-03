@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2006/05/03 21:32:40  sparhawk
+ * Added an easier interface for calling scriptfunctions
+ *
  * Revision 1.48  2006/04/26 21:29:16  sparhawk
  * Timed stim/response core added.
  *
@@ -6960,3 +6963,31 @@ void idEntity::Event_IterateCursor( int type ) {
 
 	( cursor->*funcList[ type >> 1 ] )( type & 1 );
 }
+
+idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int delay, const char *fmt, ...)
+{
+	idThread *pThread = NULL;
+	va_list argptr;
+
+	const function_t *pScriptFkt = scriptObject.GetFunction(fkt);
+	if(pScriptFkt == NULL)
+	{
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global namespace.\r", fkt);
+		pScriptFkt = gameLocal.program.FindFunction(fkt);
+	}
+
+	if(pScriptFkt)
+	{
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
+		pThread = new idThread(pScriptFkt);
+		va_start(argptr, fmt);
+		pThread->CallFunctionArgsVN(pScriptFkt, ClearStack, fmt, argptr);
+		va_end(argptr);
+		pThread->DelayedStart(delay);
+	}
+	else
+		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Scriptfunction not found! [%s]\r", fkt);
+
+	return pThread;
+}
+
