@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/05/03 21:35:03  sparhawk
+ * Added support for booleans for scriptfunctions.
+ *
  * Revision 1.6  2006/03/25 08:14:03  gildoran
  * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
  *
@@ -246,6 +249,7 @@ public:
 	void						CallFunction(const function_t	*func, bool clearStack );
 
 	bool						CallFunctionArgs(const function_t *func, bool clearStack, const char *fmt, ...);
+	bool						CallFunctionArgsVN(const function_t *func, bool clearStack, const char *fmt, va_list args);
 
 								// NOTE: If this is called from within a event called by this thread, the function arguments will be invalid after calling this function.
 	void						CallFunction( idEntity *obj, const function_t *func, bool clearStack );

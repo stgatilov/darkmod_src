@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/05/03 21:35:03  sparhawk
+ * Added support for booleans for scriptfunctions.
+ *
  * Revision 1.2  2006/02/04 23:52:32  sparhawk
  * Added support for arbitrary arguments being passed to a scriptfunction.
  *
@@ -1842,10 +1845,10 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 {
 	bool rc = false;
 	char c;
-	char *p;
+	int i;
+	float f;
+	bool b;
 	idEntity *e;
-	float *f;
-	int *d;
 	idVec3 *v;
 
 	if(func == NULL)
@@ -1871,18 +1874,24 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 			break;
 
 			case 's':
-				p = va_arg(args, char *);
-				PushString(p);
+				PushString(va_arg(args, char *));
 			break;
 
 			case 'f':
-				f = va_arg(args, float *);
-				Push(*reinterpret_cast<int *>(f));
+				f = va_arg(args, float);
+				i = static_cast<int>(f);
+				Push(i);
 			break;
 
 			case 'd':
-				d = va_arg(args, int *);
-				Push(*d);
+				i = va_arg(args, int);
+				Push(i);
+			break;
+
+			case 'b':
+				b = va_arg(args, bool);
+				i = b;
+				Push(i);
 			break;
 
 			default:		// Unknown argument, so we clear the stack and exit
