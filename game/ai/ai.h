@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/05/06 19:39:02  sophisticatedzombie
+ * Added method Event_spawnThrowableProjectile which creates a projectile and binds it to a joint of the AI's model, to be used as the next fired projectile.
+ *
  * Revision 1.13  2006/04/27 22:49:15  sophisticatedzombie
  * The hiding spot search functions have been added as script exposted event functions.
  *
@@ -199,6 +202,9 @@ extern const idEventDef AI_Alert;
 extern const idEventDef AI_GetAcuity;
 extern const idEventDef AI_SetAcuity;
 extern const idEventDef AI_ClosestReachableEnemy;
+
+// Darkmod: Glass Houses events
+extern const idEventDef AI_SpawnThrowableProjectile;
 
 // DarkMod hiding spot finding events
 extern const idEventDef AI_SearchForHidingSpots;
@@ -1085,6 +1091,17 @@ protected:
 	void Event_GetNumHidingSpots ();
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
 	void Event_GetNthHidingSpotType (int hidingSpotIndex);
+
+	/*!
+	* Spawns a new stone projectile that the AI can throw
+	*
+	* @param pstr_projectileName Name of the projectile type to
+	*	be spawned (as given in .def file)
+	*
+	* @param pstr_jointName Name of the model joint to which the
+	*	stone projectile will be bound until thrown.
+	*/
+	void Event_SpawnThrowableProjectile ( const char* pstr_projectileName, const char* pstr_jointName );
 
 	/**
 	* Scan for the player in FOV, and cause a visual alert if found

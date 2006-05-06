@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/05/06 19:39:02  sophisticatedzombie
+ * Added method Event_spawnThrowableProjectile which creates a projectile and binds it to a joint of the AI's model, to be used as the next fired projectile.
+ *
  * Revision 1.8  2006/05/02 00:10:32  sophisticatedzombie
  * AI debug graphics now drawn only in response to the value of g_global.m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
  *
@@ -195,6 +198,23 @@ const idEventDef AI_SetAcuity( "setAcuity", "sf" );
 const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
 
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
+
+/*!
+* script callable: spawnThrowableProjectile
+*
+* @param pstr_projectileName The name of the prjectile to spawn
+*	(as seen in a .def file) Must be descended from idProjectile
+*
+* @param pstr_attachJointName The name of the joint on the model
+*	to which the particle should be attached for throwing. If this
+*	is NULL or the empty string, then it is attached to the model center.
+*
+* @returns a pointer to a projectile entity that can be 
+*   thrown by the AI. You can use AI_LaunchMissle (e* = launchMissle(v,v) )
+*   to throw the stone.
+*
+*/
+const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 'e');
 
 // DarkMod Hiding spot detection Events
 /*!
@@ -402,6 +422,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
 
 	EVENT( AI_Knockout,							idAI::Knockout )
+	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
+
 END_CLASS
 
 /*
@@ -707,6 +729,61 @@ void idAI::Event_MuzzleFlash( const char *jointname ) {
 
 	GetMuzzle( jointname, muzzle, axis );
 	TriggerWeaponEffects( muzzle );
+}
+
+
+
+/*
+=====================
+idAI::Event_SpawnThrowableProjectile
+=====================
+*/
+void idAI::Event_SpawnThrowableProjectile
+(
+	const char* pstr_projectileName,
+	const char* pstr_jointName
+)
+{
+	const char *clsname;
+
+	// Load definition from movable.def
+	projectileDef = gameLocal.FindEntityDefDict( pstr_projectileName );
+	if (!projectileDef)
+	{
+		DM_LOG(LC_AI, LT_WARNING).LogString ("Projectile with name '%s' was not found\n", pstr_projectileName);
+		idThread::ReturnEntity (NULL);
+	}
+
+	// Create the projectile
+	idVec3 projectileDir = viewAxis[ 0 ] * physicsObj.GetGravityAxis();
+	idVec3 projectileOrigin = physicsObj.GetOrigin();
+	CreateProjectile (projectileOrigin, projectileDir);
+
+	// Create a clip model for the projectile
+	if (projectile.GetEntity() == NULL)
+	{
+		idThread::ReturnEntity (NULL);
+	}
+
+	// Create clip model
+	if ( projectileClipModel == NULL ) 
+	{
+		CreateProjectileClipModel();
+	}
+
+	// Bind to joint
+	if ( !pstr_jointName || !pstr_jointName[ 0 ] ) 
+	{
+		projectile.GetEntity()->Bind( this, true );
+	}	
+	else
+	{
+		projectile.GetEntity()->BindToJoint( this, pstr_jointName, true );
+	}
+
+	// Return it
+	idThread::ReturnEntity (projectile.GetEntity());
+
 }
 
 /*
