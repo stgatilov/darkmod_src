@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/05/06 20:23:35  sparhawk
+ * Fixed problem with determining when the animation is finished.
+ *
  * Revision 1.14  2006/05/03 21:31:21  sparhawk
  * Statechange callback script added.
  *
@@ -112,6 +115,8 @@ CFrobDoor::CFrobDoor(void)
 	m_bIntentOpen = false;
 	m_StateChange = false;
 	m_DoubleDoor = NULL;
+	m_Rotating = false;
+	m_Translating = false;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -380,6 +385,8 @@ void CFrobDoor::Open(bool bMaster)
 
 			physicsObj.GetLocalAngles( tempAng );
 			m_StateChange = true;
+			m_Rotating = true;
+			m_Translating = true;
 			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
 			Event_MoveToPos(m_StartPos +  m_Translation);
 
@@ -438,6 +445,8 @@ void CFrobDoor::Close(bool bMaster)
 
 		physicsObj.GetLocalAngles( tempAng );
 		m_StateChange = true;
+		m_Rotating = true;
+		m_Translating = true;
 		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
 		Event_MoveToPos(m_StartPos);
 	}
@@ -556,6 +565,7 @@ Quit:
 void CFrobDoor::DoneMoving(void)
 {
 	idMover::DoneMoving();
+    m_Translating = false;
 	DoneStateChange();
 }
 
@@ -563,6 +573,7 @@ void CFrobDoor::DoneMoving(void)
 void CFrobDoor::DoneRotating(void)
 {
 	idMover::DoneRotating();
+    m_Rotating = false;
 	DoneStateChange();
 }
 
@@ -630,12 +641,16 @@ void CFrobDoor::DoneStateChange(void)
 	if(m_StateChange == false)
 		goto Quit;
 
-	CallScript = true;
+    if(m_Rotating == true || m_Translating == true)
+        goto Quit;
+
 	m_StateChange = false;
 
 	// if the door is not completely opened or closed, do nothing
 	if( m_bInterrupted )
 		goto Quit;
+
+	CallScript = true;
 
 	// door has completely closed
 	if(!m_bIntentOpen)

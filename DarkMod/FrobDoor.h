@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/05/06 20:23:35  sparhawk
+ * Fixed problem with determining when the animation is finished.
+ *
  * Revision 1.11  2006/05/03 21:31:21  sparhawk
  * Statechange callback script added.
  *
@@ -210,6 +213,9 @@ protected:
 	 * DoorComplete(boolean open, boolean locked, boolean interrupted);
 	 */
 	idStr						m_CompletionScript;
+
+	bool						m_Rotating;
+	bool						m_Translating;
 
 private:
 };
