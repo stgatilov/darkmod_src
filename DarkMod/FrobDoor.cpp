@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/05/06 21:02:45  sparhawk
+ * Fixed crash when door callback called itself.
+ *
  * Revision 1.15  2006/05/06 20:23:35  sparhawk
  * Fixed problem with determining when the animation is finished.
  *
@@ -79,11 +82,11 @@
 //CFrobDoor
 //===============================================================================
 
-const idEventDef EV_TDM_Door_Open( "Open", NULL );
-const idEventDef EV_TDM_Door_Close( "Close", NULL );
+const idEventDef EV_TDM_Door_Open( "Open", "f" );
+const idEventDef EV_TDM_Door_Close( "Close", "f" );
 const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_Door_Lock( "Lock", NULL );
-const idEventDef EV_TDM_Door_Unlock( "Unlock", NULL );
+const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
+const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
 const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
 const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
