@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/05/07 21:52:12  ishtvan
+ * *) fixed interruption on opening problem
+ * *) Added 'interruptable' spawnarg
+ * *) Added offset position for translation in case the item starts inbetween states
+ * *) Added translation speed variable
+ *
  * Revision 1.16  2006/05/06 21:02:45  sparhawk
  * Fixed crash when door callback called itself.
  *
@@ -75,9 +81,6 @@
 #include "FrobDoor.h"
 #include "sndProp.h"
 
-// TODO: A parameter must be added to translate doors. Currently they
-// can be only rotated when they are opened.
-
 //===============================================================================
 //CFrobDoor
 //===============================================================================
@@ -114,12 +117,14 @@ CFrobDoor::CFrobDoor(void)
 	m_Open = false;
 	m_Locked = false;
 	m_Pickable = true;
+	m_bInterruptable = true;
 	m_bInterrupted = false;
 	m_bIntentOpen = false;
 	m_StateChange = false;
 	m_DoubleDoor = NULL;
 	m_Rotating = false;
 	m_Translating = false;
+	m_TransSpeed = 0;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -195,6 +200,8 @@ void CFrobDoor::Spawn( void )
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
 
+	m_bInterruptable = spawnArgs.GetBool("interruptable");
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] interruptable (%u)\r", name.c_str(), m_bInterruptable);
 
 	// log if visportal was found
 	if( areaPortal > 0 )
@@ -203,8 +210,12 @@ void CFrobDoor::Spawn( void )
 	physicsObj.GetLocalAngles( tempAngle );
 
 	// Original starting position of the door in case it is a sliding door.
-	m_StartPos = physicsObj.GetOrigin();
+	// Add the initial position offset in case the mapper makes the door start out inbetween states
+	m_StartPos = physicsObj.GetOrigin() + spawnArgs.GetVector("start_position", "0 0 0");
+	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
+
+	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
 
 	if ( !m_Open ) 
 	{
@@ -384,17 +395,27 @@ void CFrobDoor::Open(bool bMaster)
 		{
 			// don't play the sound if the door was not closed all the way
 			if( !m_bInterrupted )
+			{	
+				m_StateChange = true;
+				
 				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+				
+				// Open visportal
+				Event_OpenPortal();
+			}
 
 			physicsObj.GetLocalAngles( tempAng );
-			m_StateChange = true;
+			
+			m_Open = true;
 			m_Rotating = true;
 			m_Translating = true;
-			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
-			Event_MoveToPos(m_StartPos +  m_Translation);
 
-			// Open visportal
-			Event_OpenPortal();
+			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
+			
+			if( m_TransSpeed )
+				Event_SetMoveSpeed( m_TransSpeed );
+
+			Event_MoveToPos(m_StartPos +  m_Translation);
 
 			// Update soundprop
 			UpdateSoundLoss();
@@ -447,10 +468,16 @@ void CFrobDoor::Close(bool bMaster)
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
+		
 		m_StateChange = true;
 		m_Rotating = true;
 		m_Translating = true;
+
 		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
+		
+		if( m_TransSpeed )
+				Event_SetMoveSpeed( m_TransSpeed );
+
 		Event_MoveToPos(m_StartPos);
 	}
 }
@@ -459,7 +486,8 @@ void CFrobDoor::ToggleOpen(void)
 {
 
 	// Check if the door is stopped.
-	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
+//	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
+	if( !m_Rotating && !m_Translating )
 	{
 //		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
 
@@ -480,12 +508,16 @@ void CFrobDoor::ToggleOpen(void)
 
 //	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
 
-	// Otherwise, door is moving.  Stop it
-	m_bInterrupted = true;
-	Event_StopRotating();
+	// Otherwise, door is moving.  Stop it if it is interruptable
+	if( m_bInterruptable )
+	{
+		m_bInterrupted = true;
+		Event_StopRotating();
+		Event_StopMoving();
 
-	// reverse the intent
-	m_bIntentOpen = !m_bIntentOpen;
+		// reverse the intent
+		m_bIntentOpen = !m_bIntentOpen;
+	}
 
 Quit:
 	return;
@@ -569,6 +601,7 @@ void CFrobDoor::DoneMoving(void)
 {
 	idMover::DoneMoving();
     m_Translating = false;
+
 	DoneStateChange();
 }
 
@@ -577,6 +610,7 @@ void CFrobDoor::DoneRotating(void)
 {
 	idMover::DoneRotating();
     m_Rotating = false;
+
 	DoneStateChange();
 }
 
@@ -647,12 +681,11 @@ void CFrobDoor::DoneStateChange(void)
     if(m_Rotating == true || m_Translating == true)
         goto Quit;
 
-	m_StateChange = false;
-
 	// if the door is not completely opened or closed, do nothing
 	if( m_bInterrupted )
 		goto Quit;
 
+	m_StateChange = false;
 	CallScript = true;
 
 	// door has completely closed
