@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/05/09 01:49:48  ishtvan
+ * changed HearSound so AI know exactly where sound came from for testing
+ *
  * Revision 1.18  2006/04/27 22:49:15  sophisticatedzombie
  * The hiding spot search functions have been added as script exposted event functions.
  *
@@ -5417,7 +5420,7 @@ void idAI::HearSound
 	if (GetAcuity("aud") > 0)
 	{
 		AI_HEARDSOUND = true;
-		m_SoundDir = propParms->direction;
+		m_SoundDir = origin;
 
 		AlertAI( "aud", psychLoud );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
