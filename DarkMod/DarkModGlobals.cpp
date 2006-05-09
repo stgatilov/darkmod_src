@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.37  2006/05/09 03:17:46  sophisticatedzombie
+ * Moved AIDebugGraphics key to [Debug] section.
+ *
  * Revision 1.36  2006/05/02 00:09:23  sophisticatedzombie
  * Added m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
  *
@@ -507,6 +510,7 @@ void CGlobal::LoadINISettings(void *p)
 
 	if(FindSection(pfh, "Debug", &ps) != -1)
 	{
+
 		if(FindMap(ps, "LogFile", TRUE, &pm) != -1)
 		{
 			struct tm *t;
@@ -530,6 +534,8 @@ void CGlobal::LoadINISettings(void *p)
 				DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r\r");
 			}
 		}
+
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found Debug section \r");
 
 		if(FindMap(ps, "LogError", TRUE, &pm) != -1)
 		{
@@ -695,12 +701,22 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_STIM_RESPONSE: %c\r", pm->Value[0]);
 		}
+
+		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != -1)
+		{
+			m_drawAIDebugGraphics = atof(pm->Value);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AI Debug Grpahics display milliseconds: %f\r", m_drawAIDebugGraphics);
+		}
+
 	}
 	m_ClassArray[LC_FRAME] = Frame;
 
 
 	if(FindSection(pfh, "GlobalParams", &ps) != -1)
 	{
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
+
+
 		if(FindMap(ps, "DefaultFrobDistance", TRUE, &pm) != -1)
 			m_DefaultFrobDistance = abs(atof(pm->Value));
 
@@ -759,10 +775,6 @@ void CGlobal::LoadINISettings(void *p)
 			m_WeakLightgem = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != -1)
-		{
-			m_drawAIDebugGraphics = atof(pm->Value);
-		}
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
 		
