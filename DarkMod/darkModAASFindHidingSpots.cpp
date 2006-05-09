@@ -6,7 +6,7 @@
 #include "..\darkmod\darkModLAS.h"
 
 // What amount of light is acceptable for a minimal quality hiding spot
-#define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.05f
+#define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.10f
 
 // Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
 #define OCCLUSION_HIDING_SPOT_QUALITY 0.5
