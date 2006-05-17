@@ -97,12 +97,15 @@ protected:
 
 	/*!
 	* This internal method is used to test if a visible point would make a good hiding
-	* spot due to visibility occlusion or lighting.
+	* spot due to visibility occlusion or lighting.  Hiding spot quality is reduced by being
+	* further from the center of the search.
 	*
 	* If it is a good hiding point, it is added to out_areaHidingSpots with some
 	* flags set for why it is a good hiding spot.
 	*
 	* @param testPoint The point to be tested for hiding spot characteristics
+	* @param searchCenter The center of the search area.
+	* @param searchRadius The radius of the search area
 	* @param hidingHeight The height in the z plane above the test point taken up by the hider's height
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
@@ -113,7 +116,9 @@ protected:
 	*/
 	int TestHidingPoint 
 	(
-		idVec3 testPoint, 
+		idVec3 testPoint,
+		idVec3 searchCenter,
+		float searchRadius,
 		float hidingHeight,
 		int hidingSpotTypesAllowed, 
 		idEntity* p_ignoreEntity,
@@ -135,6 +140,14 @@ protected:
 	(
 		idList<darkModHidingSpot_t>& inout_hidingSpots,
 		float distanceAtWhichToCombine
+	);
+
+	/*!
+	* This method sorts the hiding spots by quality.
+	*/
+	static void sortByQuality
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots
 	);
 
 

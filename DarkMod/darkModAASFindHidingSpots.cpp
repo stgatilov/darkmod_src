@@ -80,6 +80,12 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	// Holds the center of the AAS area
 	idVec3	areaCenter;
 
+	// Center of the search bounds
+	idVec3 searchCenter;
+
+	// Radius of the search bounds
+	float searchRadius;
+
 	// The number of PVS areas held in local testing
 	int		numPVSAreas;
 
@@ -89,6 +95,10 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
 	LAS.pvsToAASMappingTable.buildMappings(0);
+
+	// Compute center of bounds and radius of the bounds
+	searchCenter = searchLimits.GetCenter();
+	searchRadius = searchLimits.GetRadius();
 
 	// Get the PVS areas intersecting the search bounds
 	// Note, the id code below did this by expanding a bound out from the area center, regardless
@@ -100,6 +110,8 @@ void darkModAASFindHidingSpots::FindHidingSpots
 		PVSAreas, 
 		idEntity::MAX_PVS_AREAS 
 	);
+
+	
 
 	// Iterate the PVS areas
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Iterating PVS areas, there are %d in the set\n", numPVSAreas);
@@ -132,10 +144,30 @@ void darkModAASFindHidingSpots::FindHidingSpots
 					hidingSpot.goal.areaNum = aasAreaIndex;
 					hidingSpot.goal.origin = aas->AreaCenter(aasAreaIndex);
 					hidingSpot.hidingSpotTypes = PVS_AREA_HIDING_SPOT_TYPE;
-					hidingSpot.quality = 1.0; // Least suspicious assumption
-					insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
+
+					// Since there is total occlusion, base quality on the distance from the center
+					// of the search compared to the total search radius
+					float distanceFromCenter = (searchCenter - hidingSpot.goal.origin).Length();
+					if (searchRadius > 0.0)
+					{
+						hidingSpot.quality = (searchRadius - distanceFromCenter) / searchRadius;
+						if (hidingSpot.quality < 0.0)
+						{
+							hidingSpot.quality = (float) 0.0;
+						}
+					}
+					else
+					{
+						hidingSpot.quality = (float) 0.1;
+					}
+
+					// Insert if it is any good
+					if (hidingSpot.quality > 0.0)
+					{
+						insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
+					}
 	
-					DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d\n", PVSAreas[pvsResultIndex], hidingSpot.goal.areaNum);
+					DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \n", PVSAreas[pvsResultIndex], hidingSpot.goal.areaNum);
 				}
 
 			}
@@ -183,6 +215,8 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	// Combine redundant hiding spots
 	CombineRedundantHidingSpots (inout_hidingSpots, HIDING_SPOT_COMBINATION_DISTANCE);
 
+	// Already sorted during list insertion
+
 	// Done
 }
 
@@ -209,6 +243,10 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 	// Get the area bounds
 	idBounds areaBounds = aas->GetAreaBounds (AASAreaNum);
 
+	// Get search area properties
+	idVec3 searchCenter = searchLimits.GetCenter();
+	float searchRadius = searchLimits.GetRadius();
+
 	// Hiding search bounds is intersection of search bounds and area bounds
 	idBounds hidingBounds = searchLimits.Intersect (areaBounds);
 
@@ -217,6 +255,7 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 	
 	idVec3 boundMins = hidingBounds[0];
 	idVec3 boundMaxes = hidingBounds[1];
+
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Iterating hide gridding for AAS area %d,  X:%f to %f, Y:%f to %f, Z:%f to %f \n", AASAreaNum, boundMins.x, boundMaxes.x, boundMins.y, boundMaxes.y, boundMins.z, boundMaxes.z);
 
@@ -241,6 +280,8 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 			hidingSpot.hidingSpotTypes = TestHidingPoint 
 			(
 				testPoint, 
+				searchCenter,
+				searchRadius,
 				hidingHeight,
 				hidingSpotTypesAllowed,
 				p_ignoreEntity,
@@ -248,13 +289,17 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 			);
 
 			// If there are any hiding qualities, insert a hiding spot
-			if (hidingSpot.hidingSpotTypes != NONE_HIDING_SPOT_TYPE)
+			if 
+			(
+				(hidingSpot.hidingSpotTypes != NONE_HIDING_SPOT_TYPE) && 
+				(hidingSpot.quality > 0.0)
+			)
 			{
 				// Insert a hiding spot for this test point
 				hidingSpot.goal.areaNum = AASAreaNum;
-				hidingSpot.goal.origin = hidingSpot.goal.origin = testPoint;
+				hidingSpot.goal.origin = testPoint;
 				insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d\n", AASAreaNum, testPoint.x, testPoint.y, testPoint.z, hidingSpot.hidingSpotTypes);
+				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\n", AASAreaNum, testPoint.x, testPoint.y, testPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
 			// Increase search coordinate. Ensure we search along bounds, which might be a
@@ -295,6 +340,8 @@ void darkModAASFindHidingSpots::FindHidingSpotsInVisibleAASArea
 int darkModAASFindHidingSpots::TestHidingPoint 
 (
 	idVec3 testPoint, 
+	idVec3 searchCenter,
+	float searchRadius,
 	float hidingHeight,
 	int hidingSpotTypesAllowed, 
 	idEntity* p_ignoreEntity,
@@ -332,6 +379,7 @@ int darkModAASFindHidingSpots::TestHidingPoint
 			{
 				out_quality = darknessQuality;
 			}
+
 		}
 	}
 
@@ -373,6 +421,22 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		}
 		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	}
+
+	// Reduce quality by distance from search center
+	float distanceFromCenter = (searchCenter - testPoint).Length();
+	if ((searchRadius > 0.0) && (out_quality > 0.0))
+	{
+		out_quality = out_quality * ((searchRadius - distanceFromCenter) / searchRadius);
+		if (out_quality < 0.0)
+		{
+			out_quality = 0.0;
+		}
+	}
+	else
+	{
+		out_quality = 0.0;
+	}
+
 
 	// Done
 	//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
@@ -441,6 +505,120 @@ void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 	}
 	
 
+}
+
+//----------------------------------------------------------------------------
+
+/*
+void pivotOp
+(
+	int pivotIndex,
+	idList<darkModHidingSpot_t>& inout_List
+)
+{
+	idList<darkModHidingSpot_t>& lessThanPivot;
+	idList<darkModHidingSpot_t>& notLessThanPivot;
+	int listLength;
+	int nextPivotIndex;
+
+	// Get pivot
+	darkModHidingSpot_t pivotSpot = inout_List[pivotIndex];
+
+	// 1) Split list on pivot
+	int listLength = inout_List.Num();
+	while (listLength > 0)
+	{
+		// Remove spot from input list
+		darkModHidingSpot_t spot = inout_List[0];
+		inout_List.RemoveIndex(0);
+
+		// Test against pivot
+		if (spot.quality < pivotSpot.quality)
+		{
+			// Add to the less than list
+			lessThanPivot.Append (spot);
+		}
+		else
+		{
+			// Add to the not less than list
+			notLessThanPivot.Append (spot);
+		}
+
+		// One less in input list
+		listLength --;
+	}
+
+	// 2) Now perform the pivot operation on both the less than pivot list and the
+	// not less than pivot list
+	listLength = lessThanPivot.Num();
+	if (listLength > 0)
+	{
+		int pivotIndexA = lessThanPivot[listLength/2];
+		pivotOp (pivotIndexA, lessThanPivot);
+	}
+
+	listLength = notLessThanPivot.Num();
+	if (listLength > 0)
+	{
+		int pivotIndexB = notLessThanPivot[listLength/2];
+		pivotOp (pivotIndexB, notLessThanPivot);
+	}
+
+	// 3) Concatenate our two sorted lists into the output
+	inout_List = lessThanPivot;
+	inout_List.Append (notLessThanPivot);
+
+	// Done
+}
+*/
+
+//----------------------------------------------------------------------------
+
+int DarkModHidingSpotList_SortCompareQuality (const darkModHidingSpot_t* p_a, const darkModHidingSpot_t* p_b)
+{
+	if (p_a->quality > p_b->quality)
+	{
+		// Sort highest to lowest
+		return -1;
+	}
+	else if (p_a->quality < p_b->quality)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+//----------------------------------------------------------------------------
+
+void darkModAASFindHidingSpots::sortByQuality
+(
+	idList<darkModHidingSpot_t>& inout_hidingSpots
+)
+{
+	idList<darkModHidingSpot_t>::cmp_t* p_compareFunction = &DarkModHidingSpotList_SortCompareQuality;
+	inout_hidingSpots.Sort (p_compareFunction);
+
+	/*
+	// Choose a pivot;
+	int listLength = inout_hidingSpots.Num();
+	if (listLength > 0)
+	{
+		int pivotIndex = listLength / 2;
+		pivotOp (pivotIndex, inout_hidingSpots;
+	}
+	darkModHidingSpot_t pivotSpot = inout_hidingSpots[pivotIndex];
+
+	idList<darkModHidingSpot_t> lessThanPivot;
+	idList<darkModHidingSpot_t> notLessThanPivot;
+
+	for (int index = 0; index < listLength; index ++)
+	{
+		// Get the hiding spot
+		darkModHidingSpot_t spot = inout_hidingSpots[pivotIndex];	
+	*/
 }
 
 //----------------------------------------------------------------------------
