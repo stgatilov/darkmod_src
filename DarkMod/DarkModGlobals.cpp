@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.38  2006/05/17 05:39:16  sophisticatedzombie
+ * Added new variables related to AIComm_Messsage and AIComm_StimResponse modules.
+ *
  * Revision 1.37  2006/05/09 03:17:46  sophisticatedzombie
  * Moved AIDebugGraphics key to [Debug] section.
  *
@@ -183,6 +186,10 @@
 // Default lean angle
 #define DARKMOD_MAX_LEAN_TILT_DEGREES 12.0f
 
+// Default readius of the AI COMMUNICATIONS STIM
+#define DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS 5000.0
+
+
 class idAI;
 
 static char *LTString[LT_COUNT+1] = {
@@ -267,6 +274,7 @@ CGlobal::CGlobal(void)
 	m_Filename = "undefined";
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
+	m_AICommStimRadius = DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS;
 
 	m_LogFile = NULL;
 
@@ -775,9 +783,19 @@ void CGlobal::LoadINISettings(void *p)
 			m_WeakLightgem = atof(pm->Value);
 		}
 
+		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != -1)
+		{
+			m_WeakLightgem = atof(pm->Value);
+		}
+
+		if (FindMap(ps, "AICommStimRadius", TRUE, &pm) != -1)
+		{
+			m_AICommStimRadius = atof(pm->Value);
+		}
+		
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
-		
+
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Jump hold mantle milliseconds: %f\r", m_jumpHoldMantleTrigger_Milliseconds);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle hang milliseconds: %f\r", m_mantleHang_Milliseconds);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Mantle pull milliseconds: %f\r", m_mantlePull_Milliseconds);
@@ -786,6 +804,8 @@ void CGlobal::LoadINISettings(void *p)
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean milliseconds: %f\r", m_leanMove_Milliseconds);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
+
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AICommStimRadius: %f\r", m_AICommStimRadius);
 
 	}
 }
