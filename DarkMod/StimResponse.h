@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.10  2006/05/17 05:40:43  sophisticatedzombie
+ * Made TriggerResponse virtual.
+ * Added virtual PostFired event to CStim to handle state cleanup in descended classes after stim fired.
+ *
  * Revision 1.9  2006/04/26 21:29:46  sparhawk
  * Timed stim/response core added.
  *
@@ -185,6 +189,7 @@ typedef enum {
 	ST_READ,			// Can be read
 	ST_RANDOM,			// Random response is selected
 	ST_TIMER,			// Timer trigger
+	ST_COMMUNICATION,	// A communication stimulus (see CommunicationStim.h)
 	ST_USER				= 1000,	// User defined types should use this as it's base
 	ST_DEFAULT			= -1
 } StimType;
@@ -334,6 +339,16 @@ public:
 	 */
 	int					m_ApplyTimer;
 	int					m_ApplyTimerVal;
+
+	/**
+	* This virtual member is called after the stimulus has been fired to allow the stim
+	* to adjust itself according to any stim class specific logic.
+	*
+	* @param numResponses The number of responses triggered by the stim.  It may be 0 to
+	* indicate there were no active responders present.
+	*/
+	virtual void PostFired (int numResponses);
+
 };
 
 
@@ -341,7 +356,13 @@ class CResponse : public CStimResponse {
 friend CStimResponseCollection;
 
 public:
-	void TriggerResponse(idEntity *Stim);
+	/**
+	* This method is called when the response should
+	* make its script callback. It is virtual
+	* so that the container can reach overriden
+	* versions from a CStimResponse base pointer.
+	*/
+	virtual void TriggerResponse(idEntity *Stim);
 
 protected:
 	CResponse(idEntity *Owner, int Type);
@@ -448,6 +469,30 @@ public:
 
 	void				ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner);
 	bool				ParseSpawnArg(const idDict *args, idEntity *Owner, const char Class, int Counter);
+
+	/*
+	* This static method is used to allocate, on the heap, a stim of a given type.
+	* Some stim types create descended classes with virtual overrides of some stim methods.
+	* It is important to always uses this instead of allocating a CStim object yourself so
+	* that the correct descended class is created.
+	*
+	* @param p_owner A pointer to the entity which owns this stim
+	*
+	* @param type The enumerated stim type value
+	*/
+	static CStim* createStim (idEntity* p_Owner, StimType type);
+
+	/*
+	* This static method is used to allocate, on the heap, a response of a given type.
+	* Some response types create descended classes with virtual overrides of some response methods.
+	* It is important to always uses this instead of allocating a CResponse object yourself so
+	* that the correct descended class is created.
+	*
+	* @param p_owner A pointer to the entity which owns this response
+	*
+	* @param type The enumerated stim type value for the response
+	*/
+	static CResponse* createResponse (idEntity* p_owner, StimType type);
 
 protected:
 	idList<CStim *>		m_Stim;

@@ -15,6 +15,10 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2006/05/17 05:40:43  sophisticatedzombie
+ * Made TriggerResponse virtual.
+ * Added virtual PostFired event to CStim to handle state cleanup in descended classes after stim fired.
+ *
  * Revision 1.10  2006/05/03 21:32:02  sparhawk
  * Scripthread interface changed. Now it takes
  * values instead of pointer to values.
@@ -57,6 +61,7 @@
 
 #include "DarkModGlobals.h"
 #include "StimResponse.h"
+#include "AIComm_StimResponse.h"
 
 // If default stims are to be added, this array also must be
 // updated. USER and UNDEFINED are not to be added though, as
@@ -83,6 +88,7 @@ char *cStimType[] = {
 	"STIM_READ",
 	"STIM_RANDOM",
 	"STIM_TIMER",
+	"STIM_COMMUNICATION",
 	NULL
 };
 
@@ -92,6 +98,42 @@ CStimResponseCollection::CStimResponseCollection(void)
 
 CStimResponseCollection::~CStimResponseCollection(void)
 {
+}
+
+CStim* CStimResponseCollection::createStim (idEntity* p_owner, StimType type)
+{
+		CStim* pRet;
+
+		if (type == ST_COMMUNICATION)
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Stim");
+			pRet = new CAIComm_Stim (p_owner, type);
+		}
+		else
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CStim");
+			pRet = new CStim(p_owner, type);
+		}
+
+		return pRet;
+}
+
+CResponse* CStimResponseCollection::createResponse (idEntity* p_owner, StimType type)
+{
+		CResponse* pRet;
+
+		if (type == ST_COMMUNICATION)
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Response");
+			pRet = new CAIComm_Response (p_owner, type);
+		}
+		else
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CResponse");
+			pRet = new CResponse(p_owner, type);
+		}
+
+		return pRet;
 }
 
 CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius, bool bRemovable, bool bDefault)
@@ -104,6 +146,8 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 	{
 		if(m_Stim[i]->m_StimTypeId == Type)
 		{
+
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Stim of that type is already in collection, returning it");
 			pRet = m_Stim[i];
 			break;
 		}
@@ -111,7 +155,8 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 
 	if(pRet == NULL)
 	{
-		pRet = new CStim(Owner, Type);
+		// Create either type specific descended class, or the default base class
+		pRet = createStim (Owner, (StimType) Type);
 		m_Stim.Append(pRet);
 	}
 
@@ -139,6 +184,7 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 	{
 		if(m_Response[i]->m_StimTypeId == Type)
 		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Response of that type is already in collection, returning it");
 			pRet = m_Response[i];
 			break;
 		}
@@ -146,7 +192,7 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 
 	if(pRet == NULL)
 	{
-		pRet = new CResponse(Owner, Type);
+		pRet = createResponse (Owner, (StimType) Type);
 		m_Response.Append(pRet);
 	}
 
@@ -385,31 +431,21 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		goto Quit;
 	}
 
-	if(sr_class == 'S')
-	{
-		stim = new CStim(Owner, ST_DEFAULT);
-		sr = stim;
-	}
-	else if (sr_class == 'R')
-	{
-		resp = new CResponse(Owner, ST_DEFAULT);
-		sr = resp;
-	}
-
-	// Get the id of the stim/response type.
+	// Get the id of the stim/response type so we know what sub-class to create
 	sprintf(name, "sr_type_%u", Counter);
 	args->GetString(name, "-1", str);
 
 	// This is invalid as an entity definition
 	if(str == "-1")
 	{
-		delete sr;
 		sr = NULL;
 		goto Quit;
 	}
 
 	// If the first character is alphanumeric, we check if it 
 	// is a known id and convert it.
+	StimType typeOfStim = ST_DEFAULT;
+
 	if((str[0] >= 'a' && str[0] <= 'z')
 		|| (str[0] >= 'A' && str[0] <= 'Z'))
 	{
@@ -420,7 +456,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		{
 			if(str == cStimType[i])
 			{
-				sr->m_StimTypeId = i;
+				typeOfStim = (StimType) i;
 				found = true;
 				break;
 			}
@@ -431,23 +467,40 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		if(found == false)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_type id [%s]\r", str.c_str());
-			delete sr;
 			sr = NULL;
 			goto Quit;
 		}
 	}
-	else if(str[0] >= '0' && str[0] <= '9')		// Is it numeric?
-		sr->m_StimTypeId = atol(str.c_str());
+	else if(str[0] >= '0' && str[0] <= '9') // Is it numeric?
+	{	
+		typeOfStim = (StimType) atol(str.c_str());
+	}
 	else		// neither a character nor a number, thus it is invalid.
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_type id [%s]\r", str.c_str());
-		delete sr;
 		sr = NULL;
 		goto Quit;
 	}
 
+
+	if(sr_class == 'S')
+	{
+		stim = createStim (Owner, typeOfStim);
+		sr = stim;
+	}
+	else if (sr_class == 'R')
+	{
+		resp = createResponse (Owner, typeOfStim);
+		sr = resp;
+	}
+
+	// Set stim response type
+	sr->m_StimTypeId = typeOfStim;
+
+	// Set stim response name string
 	sr->m_StimTypeName = str;
 
+	// Read stim response state from the def file
 	sprintf(name, "sr_state_%u", Counter);
 	args->GetInt(name, "1", (int &)state);
 	if(state != SS_DISABLED
@@ -659,6 +712,14 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 	return rc;
 }
 
+void CStim::PostFired (int numResponses)
+{
+	// Default implementation does nothing with this event
+	int blah;
+	blah = 0;
+
+}
+
 
 
 /********************************************************************/
@@ -680,6 +741,8 @@ CResponse::~CResponse(void)
 
 void CResponse::TriggerResponse(idEntity *StimEnt)
 {
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse::TriggerResponse \r");
+
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
 	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
@@ -698,7 +761,9 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 		pThread->DelayedStart(0);
 	}
 	else
+	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
+	}
 
 	// Continue the chain if we have a followup response to be triggered.
 	if(m_FollowUp != NULL)
