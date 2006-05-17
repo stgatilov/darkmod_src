@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/05/17 05:44:15  sophisticatedzombie
+ * DoResponseAction now returns the number of CResponse objects triggered.
+ * Added call to PostFired method of CStim after firing off a Stim.
+ *
  * Revision 1.28  2006/04/26 21:29:16  sparhawk
  * Timed stim/response core added.
  *
@@ -878,7 +882,13 @@ public:
 	void					RemoveResponse(idEntity *);
 	int						CheckStimResponse(idList<idEntity *> &, idEntity *);
 
-	void					DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
+	/**
+	* Fires off all the enabled responses to this stim of the entities in the given entites list.
+	* 
+	* @return The number of responses triggered
+	*
+	*/
+	int						DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
 
 	/**
 	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.

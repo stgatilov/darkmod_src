@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.55  2006/05/17 05:44:14  sophisticatedzombie
+ * DoResponseAction now returns the number of CResponse objects triggered.
+ * Added call to PostFired method of CStim after firing off a Stim.
+ *
  * Revision 1.54  2006/03/30 19:45:34  gildoran
  * I made three main changes:
  * 1. I moved the new decl headers out of game_local.h and into the few files
@@ -5485,6 +5489,7 @@ void idGameLocal::ImpulseFree(ImpulseFunction_t Function)
 
 int idGameLocal::CheckStimResponse(idList<idEntity *> &l, idEntity *e)
 {
+
 	int rc = -1;
 	int i, n;
 
@@ -5539,10 +5544,12 @@ void idGameLocal::RemoveResponse(idEntity *e)
 		m_RespEntity.RemoveIndex(i);
 }
 
-void idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
+int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
 {
 	int i;
 	CResponse *r;
+	int numRespones = 0;
+
 
 	for(i = 0; i < n; i++)
 	{
@@ -5554,9 +5561,15 @@ void idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], in
 		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
 		{
 			if(r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
+			{
 				r->TriggerResponse(e);
+				numRespones ++;
+			}
 		}
 	}
+
+	// Return number of responses triggered
+	return numRespones;
 }
 
 void idGameLocal::ProcessStimResponse(void)
@@ -5572,6 +5585,8 @@ void idGameLocal::ProcessStimResponse(void)
 	idBounds bounds;
 	idEntity *Ent[MAX_GENTITIES];
 
+
+
 	en = m_StimEntity.Num();
 
 	for(ei = 0; ei < en; ei++)
@@ -5586,16 +5601,29 @@ void idGameLocal::ProcessStimResponse(void)
 			sn = stim.Num();
 			for(si = 0; si < sn; si++)
 			{
+				// If stim is not disabled and has a radius
 				if(stim[si]->m_State != SS_DISABLED && (radius = stim[si]->m_Radius) != 0.0)
 				{
+					int numResponses = 0;
+
+					// Find entities in the radius of the stim
 					bounds = idBounds(origin).ExpandSelf(radius);
 					n = clip.EntitiesTouchingBounds(bounds, -1, Ent, MAX_GENTITIES);
 					if(n != 0)
-						DoResponseAction(stim[si], Ent, n, e);
+					{
+						// Do responses for entities within the radius of the stim
+						numResponses = DoResponseAction(stim[si], Ent, n, e);
+					}
+
+					// The stim has fired, let it do any post-firing activity it may have
+					stim[si]->PostFired(numResponses);
+
 				}
 			}
 		}
 	}
+
+
 }
 
 /*
