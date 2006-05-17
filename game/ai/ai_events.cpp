@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/05/17 05:46:35  sophisticatedzombie
+ * Added Event_IssueCommunication and variants (Each variant is named by which parameters it takes)
+ *
  * Revision 1.9  2006/05/06 19:39:02  sophisticatedzombie
  * Added method Event_spawnThrowableProjectile which creates a projectile and binds it to a joint of the AI's model, to be used as the next fired projectile.
  *
@@ -48,6 +51,8 @@
 #include "../darkmod/relations.h"
 #include "../../darkmod/darkmodglobals.h"
 #include "../../darkmod/darkModAASFindHidingSpots.h"
+#include "../../darkmod/stimResponse.h"
+#include "../../darkmod/AIComm_StimResponse.h"
 
 class CRelations;
 
@@ -198,6 +203,12 @@ const idEventDef AI_SetAcuity( "setAcuity", "sf" );
 const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
 
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
+
+const idEventDef AI_IssueCommunication_IR_DOE ("issueCommunication_IR_DOE", "ffeev");
+const idEventDef AI_IssueCommunication_IR ( "issueCommunication_IR", "ffev");
+const idEventDef AI_IssueCommunication_DOE ( "issueCommunication_DOE", "ffev" );
+const idEventDef AI_IssueCommunication ("issueCommunication", "ffv" );
+
 
 /*!
 * script callable: spawnThrowableProjectile
@@ -423,6 +434,10 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
+	EVENT ( AI_IssueCommunication_IR_DOE,		idAI::Event_IssueCommunication_IR_DOE)
+	EVENT ( AI_IssueCommunication_DOE,			idAI::Event_IssueCommunication_DOE)
+	EVENT ( AI_IssueCommunication_IR,			idAI::Event_IssueCommunication_IR)
+	EVENT ( AI_IssueCommunication,				idAI::Event_IssueCommunication)
 
 END_CLASS
 
@@ -723,7 +738,8 @@ void idAI::Event_ClearEnemy( void ) {
 idAI::Event_MuzzleFlash
 =====================
 */
-void idAI::Event_MuzzleFlash( const char *jointname ) {
+void idAI::Event_MuzzleFlash( const char *jointname ) 
+{
 	idVec3	muzzle;
 	idMat3	axis;
 
@@ -732,6 +748,73 @@ void idAI::Event_MuzzleFlash( const char *jointname ) {
 }
 
 
+/*
+=====================
+idAI::Event_IssueCommunication
+=====================
+*/
+
+void idAI::Event_IssueCommunication_IR_DOE ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation)
+{
+	IssueCommunication_Internal (messageType, maxRadius, intendedRecipientEntity, directObjectEntity, directObjectLocation);
+}
+
+/*---------------------------------------------------------------------------------------------------*/
+
+void idAI::Event_IssueCommunication_IR ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, const idVec3& directObjectLocation)
+{
+	IssueCommunication_Internal (messageType, maxRadius, intendedRecipientEntity, NULL, directObjectLocation);
+}
+
+/*---------------------------------------------------------------------------------------------------*/
+
+void idAI::Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation)
+{
+	IssueCommunication_Internal (messageType, maxRadius, NULL, directObjectEntity, directObjectLocation);
+}
+
+/*---------------------------------------------------------------------------------------------------*/
+
+void idAI::Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation)
+{
+	IssueCommunication_Internal (messageType, maxRadius, NULL, NULL, directObjectLocation);
+}
+
+/*---------------------------------------------------------------------------------------------------*/
+
+void idAI::IssueCommunication_Internal
+( 
+	float messageType, 
+	float maxRadius, 
+	idEntity* intendedRecipientEntity, 
+	idEntity* directObjectEntity, 
+	const idVec3& directObjectLocation
+)
+{
+	// Get the communication stim (outbound messgaes)
+	CStim* p_stim;
+	p_stim = NULL;
+    
+	p_stim = m_StimResponseColl->AddStim (this, ST_COMMUNICATION, g_Global.m_AICommStimRadius, true, false);
+	p_stim->EnableSR(true);
+	
+	if (p_stim != NULL)
+	{
+		CAIComm_Stim* p_commStim = (CAIComm_Stim*) p_stim;
+		CAIComm_Message::TCommType messageTypeEnumVal = (CAIComm_Message::TCommType) (unsigned long) messageType;
+
+		if (!p_commStim->addMessage ( messageTypeEnumVal, maxRadius, this, intendedRecipientEntity, directObjectEntity, directObjectLocation ))
+		{
+			DM_LOG(LC_AI, LT_WARNING).LogString ("Failed to add message to communication stim");
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_WARNING).LogString ("Failed to make or get communication stim");
+	}
+
+
+}
 
 /*
 =====================

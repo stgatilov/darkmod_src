@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/05/17 05:46:02  sophisticatedzombie
+ * Added Event_IssueCommunication and variants (Each variant is named by which parameters it takes)
+ *
  * Revision 1.14  2006/05/06 19:39:02  sophisticatedzombie
  * Added method Event_spawnThrowableProjectile which creates a projectile and binds it to a joint of the AI's model, to be used as the next fired projectile.
  *
@@ -212,6 +215,9 @@ extern const idEventDef AI_CloseHidingSpotSearch;
 extern const idEventDef AI_GetNumHidingSpots;
 extern const idEventDef AI_GetNthHidingSpotLocation;
 extern const idEventDef AI_GetNthHidingSpotType;
+
+// Darkmod communication issuing event
+extern const idEventDef AI_IssueCommunication;
 
 class idPathCorner;
 
@@ -1091,6 +1097,35 @@ protected:
 	void Event_GetNumHidingSpots ();
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
 	void Event_GetNthHidingSpotType (int hidingSpotIndex);
+
+	/*!
+	* This event is used by an AI script to issue a message to other AI's through
+	* the communication stim/response mechanism.  The message is added to the
+	* caller's Communication Stim in their Stim/Response Collection. Because
+	* there is no way to pass a NULL entity, there are several forms of the
+	* functions. Here are the naming conventions:
+	*	IR = intended recipient included
+	*	DOE = direct object entity included
+	* 
+	* @param a message type enumeration value
+	*
+	* @param The maximum distance of the communications stim
+	*
+	* @param Pointer to the intended recipient entity. This can be NULL if there
+	*		is no specific intended recipient.
+	*
+	* @param directObjectEntity Pointer to the entity this communication is about, 
+	*		this can be null if it doesn't apply to the message type
+	*
+	* @param directObjectLocation World position that the communication is aobut,
+	*		this can be null if it doesn't apply to the message type
+	*
+	*/
+	void IssueCommunication_Internal (float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
+	void Event_IssueCommunication_IR_DOE ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, idEntity* directObjectEntity, const idVec3& directObjectLocation);
+	void Event_IssueCommunication_IR ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, const idVec3& directObjectLocation);
+	void Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation);
+	void Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation);
 
 	/*!
 	* Spawns a new stone projectile that the AI can throw
