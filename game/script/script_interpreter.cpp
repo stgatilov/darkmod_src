@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/05/17 05:48:44  sophisticatedzombie
+ * In function to call a script function with a var_args list of parameters, changed the way floating points are put on the stack to allow proper value to be returned when popped.  Also, for type "e" (idEntity*) NULL entity pointers can now be passed (inserts entity number 0)
+ *
  * Revision 1.3  2006/05/03 21:35:03  sparhawk
  * Added support for booleans for scriptfunctions.
  *
@@ -1863,7 +1866,15 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 		{
 			case 'e':
 				e = va_arg(args, idEntity *);
-				Push(e->entityNumber + 1);
+				// SZ: Allow pushing of null entity pointers (entity ID 0)
+				if (e != NULL)
+				{
+					Push(e->entityNumber + 1);
+				}
+				else
+				{
+					Push (0);
+				}
 			break;
 
 			case 'v':
@@ -1878,8 +1889,9 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 			break;
 
 			case 'f':
-				f = va_arg(args, float);
-				i = static_cast<int>(f);
+				f = va_arg(args, double);
+				// i = static_cast<int>(f);
+				i = *( (int*) &f);
 				Push(i);
 			break;
 
