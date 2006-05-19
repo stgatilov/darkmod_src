@@ -4,6 +4,20 @@
 * Copyright 2006: Damon Hill (sophisticatedZombie), USA
 *
 */
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Source$
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ * $Log$
+ * Revision 1.3  2006/05/19 19:56:50  sparhawk
+ * CVSHeader added
+ *
+ *
+ ***************************************************************************/
 
 
 /*
