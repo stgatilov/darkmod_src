@@ -789,6 +789,18 @@
 			<Filter
 				Name="DarkMod">
 				<File
+					RelativePath=".\DarkMod\AIComm_Message.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AIComm_Message.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AIComm_StimResponse.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AIComm_StimResponse.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\darkModAASFindHidingSpots.cpp">
 				</File>
 				<File
