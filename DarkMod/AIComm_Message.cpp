@@ -55,12 +55,12 @@ CAIComm_Message::CAIComm_Message
 		}
 		else
 		{
-			DM_LOG (LC_STIM_RESPONSE, LT_WARNING, "Issuer has no physics object, so stim considered to be issued from 0,0,0");
+			DM_LOG (LC_STIM_RESPONSE, LT_WARNING)LOGSTRING("Issuer has no physics object, so stim considered to be issued from 0,0,0");
 		}
 	}
 	else
 	{
-		DM_LOG (LC_STIM_RESPONSE, LT_WARNING, "No issuing entity, so stim considered to be issued from 0,0,0");
+		DM_LOG (LC_STIM_RESPONSE, LT_WARNING)LOGSTRING("No issuing entity, so stim considered to be issued from 0,0,0");
 	}
 
 	// Done
