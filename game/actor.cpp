@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/05/24 08:49:06  ishtvan
+ * added AI group and innocence to idActor
+ *
  * Revision 1.12  2006/02/12 07:28:45  ishtvan
  * fixed drowning SFX
  *
@@ -448,6 +451,8 @@ idActor::idActor( void ) {
 	head				= NULL;
 
 	team				= 0;
+	m_AItype			= 0;
+	m_Innocent			= false;
 	rank				= 0;
 	fovDot				= 0.0f;
 	eyeOffset.Zero();
@@ -534,6 +539,8 @@ void idActor::Spawn( void ) {
 
 	spawnArgs.GetInt( "rank", "0", rank );
 	spawnArgs.GetInt( "team", "0", team );
+	spawnArgs.GetInt( "type", "0", m_AItype );
+	spawnArgs.GetBool( "innocent", "0", m_Innocent );
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
 
 	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
@@ -794,6 +801,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( team );
 	savefile->WriteInt( rank );
+	savefile->WriteInt( m_AItype );
+	savefile->WriteBool( m_Innocent );
 	savefile->WriteMat3( viewAxis );
 
 	savefile->WriteInt( enemyList.Num() );
@@ -908,6 +917,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( team );
 	savefile->ReadInt( rank );
+	savefile->ReadInt( m_AItype );
+	savefile->ReadBool( m_Innocent );
 	savefile->ReadMat3( viewAxis );
 
 	savefile->ReadInt( num );
