@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.62  2006/05/25 08:32:58  ishtvan
+ * added event_playstartsound to play the mission start sound (not yet implemented)
+ *
  * Revision 1.61  2006/04/27 22:53:57  sophisticatedzombie
  * Changed the constant 70 to 0.35, which is what I have been testing with
  *
@@ -281,6 +284,7 @@ const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
 const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
 const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
 const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
+const idEventDef EV_Player_PlayStartSound( "PlayStartSound", NULL );
 
 
 CLASS_DECLARATION( idActor, idPlayer )
@@ -318,6 +322,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
 	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
 	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
+	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -10039,5 +10044,10 @@ void idPlayer::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const cha
 		m_guiOverlay->SetStateString( guiparm, value );
 		m_guiOverlay->StateChanged( gameLocal.time );
 	}
+}
+
+void idPlayer::Event_PlayStartSound( void )
+{
+	StartSound("snd_mission_start", SND_CHANNEL_ANY, 0, false, NULL);
 }
 
