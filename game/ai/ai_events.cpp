@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/05/25 02:39:23  sophisticatedzombie
+ * no message
+ *
  * Revision 1.10  2006/05/17 05:46:35  sophisticatedzombie
  * Added Event_IssueCommunication and variants (Each variant is named by which parameters it takes)
  *
@@ -3173,9 +3176,11 @@ void idAI::Event_ClosestReachableEnemy( void )
 
 void idAI::destroyCurrentHidingSpotSearch()
 {
+
 	// Check to see if there is one
 	if (m_HidingSpotSearchHandle != 0)
 	{
+	
 		// .. there is, so destroy it
 		darkModAASFindHidingSpots* p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
 		delete p_hidingSpotFinder;
@@ -3213,7 +3218,7 @@ void idAI::Event_SearchForHidingSpots
 	{
 		// Allocate object that handles the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
-		darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots (hideFromLocation, aas);
+		darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots (hideFromLocation, aas, NULL);
 
 		// Remember search handle;
 		m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
@@ -3311,7 +3316,7 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 
 	// Get the search by the handle
 	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
-	if (m_HidingSpotSearchHandle != 0)
+	if ( m_HidingSpotSearchHandle != 0) 
 	{
 		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
 	}
@@ -3366,7 +3371,7 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 
 	// Get the search by the handle
 	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
-	if (m_HidingSpotSearchHandle != 0)
+	if ( m_HidingSpotSearchHandle != 0)
 	{
 		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
 	}
