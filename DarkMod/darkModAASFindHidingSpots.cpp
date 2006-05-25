@@ -1,23 +1,10 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.6  2006/05/19 19:56:50  sparhawk
- * CVSHeader added
- *
- *
- ***************************************************************************/
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
 #include ".\darkmodaasfindhidingspots.h"
 #include "..\darkmod\darkmodglobals.h"
 #include "..\darkmod\darkModLAS.h"
+#include "..\sys\sys_public.h"
 
 // What amount of light is acceptable for a minimal quality hiding spot
 #define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.10f
@@ -35,7 +22,7 @@ idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
 //----------------------------------------------------------------------------
 
 // Constructor
-darkModAASFindHidingSpots::darkModAASFindHidingSpots(const idVec3 &hideFromPos, idAAS* p_aas)
+darkModAASFindHidingSpots::darkModAASFindHidingSpots(const idVec3 &hideFromPos, idAAS* in_p_aas, idScriptBool* in_p_bool_threadDone)
 {
 	/*
 	* Note that most of this code is similar to idAASFindCover for now
@@ -49,6 +36,19 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots(const idVec3 &hideFromPos, 
 
 	// Remember the hide form position
 	hideFromPosition = hideFromPos;
+
+	// Remember variable to trigger when thread done running (in lieu of real sys level EVENT objects, use an atomic type)
+	p_bool_threadDone = in_p_bool_threadDone;
+
+	// Thread parameters not initialized
+	p_inout_hidingSpots = NULL;
+	p_aas = NULL;
+	p_ignoreEntity = NULL;
+
+	// No thread started yet
+	searchThread.name = "";
+	searchThread.threadHandle = 0;
+	searchThread.threadId = 0;
 
 	// Have the PVS system identify locations containing the hide from position
 	PVSAreas[0] = gameLocal.pvs.GetPVSArea(hideFromPosition);
@@ -69,6 +69,13 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots(const idVec3 &hideFromPos, 
 // Destructor
 darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 {
+	// If there is a thread running, destroy it
+	if (searchThread.threadHandle != 0)
+	{
+		// Threading support not in SDK
+		//Sys_DestroyThread (searchThread);
+	}
+
 	// Be certain we free our PVS node graph
 	if ((h_hidePVS.h != NULL) || (h_hidePVS.i != -1))
 	{
@@ -80,15 +87,10 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 
 //----------------------------------------------------------------------------
 
-// The primary interface
-void darkModAASFindHidingSpots::FindHidingSpots
+// The search thread function
+unsigned int darkModAASFindHidingSpots::FindHidingSpots_BackgroundThreadFunc
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots, 
-	const idAAS *aas, 
-	float hidingHeight,
-	idBounds searchLimits, 
-	int hidingSpotTypesAllowed, 
-	idEntity* p_ignoreEntity
+	void* p_voidThis
 ) 
 {
 	// Holds the center of the AAS area
@@ -106,13 +108,20 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	// An array for testing PVS areas
 	int		PVSAreas[ idEntity::MAX_PVS_AREAS ];
 
+	// Cast pointer to instance on which this thread is running
+	darkModAASFindHidingSpots* p_this = (darkModAASFindHidingSpots*) p_voidThis;
+	if (p_this == NULL)
+	{
+		return 55;
+	}
+
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
 	LAS.pvsToAASMappingTable.buildMappings(0);
 
 	// Compute center of bounds and radius of the bounds
-	searchCenter = searchLimits.GetCenter();
-	searchRadius = searchLimits.GetRadius();
+	searchCenter = p_this->searchLimits.GetCenter();
+	searchRadius = p_this->searchLimits.GetRadius();
 
 	// Get the PVS areas intersecting the search bounds
 	// Note, the id code below did this by expanding a bound out from the area center, regardless
@@ -120,7 +129,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	// hold the intersecting PVS Areas.
 	numPVSAreas = gameLocal.pvs.GetPVSAreas
 	(
-		searchLimits, 
+		p_this->searchLimits, 
 		PVSAreas, 
 		idEntity::MAX_PVS_AREAS 
 	);
@@ -137,10 +146,10 @@ void darkModAASFindHidingSpots::FindHidingSpots
 		// the "hide from" point.
 		// If the area is not in our h_hidePVS set, then it cannot be seen, and it is 
 		// thus considered hidden.
-		if ( !gameLocal.pvs.InCurrentPVS( h_hidePVS, PVSAreas[pvsResultIndex]) )
+		if ( !gameLocal.pvs.InCurrentPVS( p_this->h_hidePVS, PVSAreas[pvsResultIndex]) )
 		{
 			// Only put these in here if PVS based hiding spots are allowed
-			if ((hidingSpotTypesAllowed & PVS_AREA_HIDING_SPOT_TYPE) != 0)
+			if ((p_this->hidingSpotTypesAllowed & PVS_AREA_HIDING_SPOT_TYPE) != 0)
 			{
 				// Add a goal for the center of each area within this pvs area
 				idList<int> aasAreaIndices;
@@ -156,7 +165,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 					// Add its center and we are done
 					darkModHidingSpot_t hidingSpot;
 					hidingSpot.goal.areaNum = aasAreaIndex;
-					hidingSpot.goal.origin = aas->AreaCenter(aasAreaIndex);
+					hidingSpot.goal.origin = p_this->p_aas->AreaCenter(aasAreaIndex);
 					hidingSpot.hidingSpotTypes = PVS_AREA_HIDING_SPOT_TYPE;
 
 					// Since there is total occlusion, base quality on the distance from the center
@@ -178,7 +187,7 @@ void darkModAASFindHidingSpots::FindHidingSpots
 					// Insert if it is any good
 					if (hidingSpot.quality > 0.0)
 					{
-						insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
+						p_this->insertHidingSpotWithQualitySorting (hidingSpot, *(p_this->p_inout_hidingSpots));
 					}
 	
 					DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \n", PVSAreas[pvsResultIndex], hidingSpot.goal.areaNum);
@@ -203,21 +212,21 @@ void darkModAASFindHidingSpots::FindHidingSpots
 				int aasAreaIndex = aasAreaIndices[ia];
 
 				// Check area flags
-				int areaFlags = aas->AreaFlags (aasAreaIndex);
+				int areaFlags = p_this->p_aas->AreaFlags (aasAreaIndex);
 
 				if ((areaFlags & AREA_FLOOR) != 0)
 				{
 					// This area is traversable by the hiding entity
 					// Test for other reasons for hidability such as lighting, visual occlusion etc...
-					FindHidingSpotsInVisibleAASArea 
+					p_this->FindHidingSpotsInVisibleAASArea 
 					(
-						inout_hidingSpots,
-						hidingHeight,
-						aas, 
+						*(p_this->p_inout_hidingSpots),
+						p_this->hidingHeight,
+						p_this->p_aas, 
 						aasAreaIndex,
-						searchLimits,
-						hidingSpotTypesAllowed,
-						p_ignoreEntity
+						p_this->searchLimits,
+						p_this->hidingSpotTypesAllowed,
+						p_this->p_ignoreEntity
 					);
 				}
 			}
@@ -227,11 +236,18 @@ void darkModAASFindHidingSpots::FindHidingSpots
 	} // Consider next PVS area within our search limits
 
 	// Combine redundant hiding spots
-	CombineRedundantHidingSpots (inout_hidingSpots, HIDING_SPOT_COMBINATION_DISTANCE);
+	p_this->CombineRedundantHidingSpots ( *(p_this->p_inout_hidingSpots), HIDING_SPOT_COMBINATION_DISTANCE);
 
 	// Already sorted during list insertion
 
-	// Done
+	// Trigger thread exited flag
+	if (p_this->p_bool_threadDone != NULL)
+	{
+		*(p_this->p_bool_threadDone) = TRUE;
+	}
+
+	// Done: no error
+	return 0;
 }
 
 //----------------------------------------------------------------------------
@@ -635,6 +651,7 @@ void darkModAASFindHidingSpots::sortByQuality
 	*/
 }
 
+
 //----------------------------------------------------------------------------
 
 
@@ -642,11 +659,11 @@ void darkModAASFindHidingSpots::sortByQuality
 void darkModAASFindHidingSpots::getNearbyHidingSpots 
 (
 	idList<darkModHidingSpot_t>& out_hidingSpots,
-	idAAS *p_aas, 
-	float hidingHeight,
-	idBounds searchLimits, 
-	int hidingSpotTypesAllowed, 
-	idEntity* p_ignoreEntity
+	idAAS *in_p_aas, 
+	float in_hidingHeight,
+	idBounds in_searchLimits, 
+	int in_hidingSpotTypesAllowed, 
+	idEntity* in_p_ignoreEntity
 )
 {
 	// Clear hiding spot list
@@ -656,19 +673,39 @@ void darkModAASFindHidingSpots::getNearbyHidingSpots
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Hide from position %f, %f, %f\n", hideFromPosition.x, hideFromPosition.y, hideFromPosition.z);
 
 	// Test paramters
-	if (p_aas == NULL)
+	if (in_p_aas == NULL)
 	{
 		// TODO: Log error
-		DM_LOG(LC_AI, LT_ERROR).LogString("Parameter p_aas is NULL");
+		DM_LOG(LC_AI, LT_ERROR).LogString("Parameter in_p_aas is NULL");
 		return;
 	}
 
-	// Test the search region for hiding spots
-	FindHidingSpots( out_hidingSpots, p_aas, hidingHeight, searchLimits, hidingSpotTypesAllowed, p_ignoreEntity);
+	// Set parameters in this instance
+	p_inout_hidingSpots = &out_hidingSpots;
+	p_aas = in_p_aas;
+	hidingHeight = in_hidingHeight;
+	searchLimits = in_searchLimits;
+    hidingSpotTypesAllowed = in_hidingSpotTypesAllowed;
+	p_ignoreEntity = in_p_ignoreEntity;
 
+	/*
+	// Start the background thread
+	Sys_CreateThread
+	(
+		darkModAASFindHidingSpots::FindHidingSpots_BackgroundThreadFunc, 
+		(void*) this,
+		THREAD_NORMAL,
+		searchThread,
+		"HidingSpotSearch",
+		g_threads,
+		&g_thread_count
+	);
+	// Search thread will run in background while we continue on with other things
+	*/
 
-	// Done
-	return;
+	// Not running in background thread, sincy Sys_CreateThread is not exposed in the
+	// SDK and there is no mutex support even declared
+	unsigned int Res = FindHidingSpots_BackgroundThreadFunc ((void*) this);
 
  }
 
@@ -758,7 +795,9 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 )
 {
 
-	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, p_aas);
+	idScriptBool b_threadDone;
+	b_threadDone = FALSE;
+	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, p_aas, &b_threadDone);
 
 	idList<darkModHidingSpot_t> hidingSpotList;
 
@@ -774,6 +813,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 		ANY_HIDING_SPOT_TYPE,
 		p_ignoreEntity
 	);
+
 
 	// Clear the debug list and add these
 	darkModAASFindHidingSpots::debugClearHidingSpotDrawList();

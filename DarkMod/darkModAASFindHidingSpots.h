@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/05/25 02:30:12  sophisticatedzombie
+ * Hiding spot search is setup to be accessible from a static member function for thread function compatibility. But, we don't have an os independent threading library so we won't be doing that for now.
+ *
  * Revision 1.5  2006/05/19 19:56:50  sparhawk
  * CVSHeader added
  *
@@ -74,6 +77,11 @@ class darkModAASFindHidingSpots
 {
 protected:
 
+	// The background thread on which this is running
+	xthreadInfo searchThread;
+
+	// The script boolean to set to true when the search thread exits
+	idScriptBool* p_bool_threadDone;
 
 	// The handle to the PVS system
 	pvsHandle_t h_hidePVS;
@@ -84,8 +92,17 @@ protected:
 	// The position from which the entity may be hiding
 	idVec3 hideFromPosition;
 
+	/* These are set when the background thread is created */
+	idList<darkModHidingSpot_t>* p_inout_hidingSpots;
+	idAAS *p_aas;
+	float hidingHeight;
+	idBounds searchLimits;
+	int hidingSpotTypesAllowed;
+	idEntity* p_ignoreEntity;
 
-	/*!
+
+
+	/*
 	* This internal method is used for finding hiding spots within an area that
 	* is visible from the hideFromPosition.
 	*
@@ -176,6 +193,16 @@ protected:
 		idList<darkModHidingSpot_t>& inout_hidingSpots
 	);
 
+	/*!
+	* This is a thread functoin which tests for hiding spots within the given search bounds.
+	*
+	* @p_voidThis Pointer to the darkModAASFindHidingSpots instance cast as a void pointer
+	*
+	*/
+	static unsigned int FindHidingSpots_BackgroundThreadFunc
+	(
+		void* p_voidThis
+	);
 
 
 public:
@@ -190,8 +217,13 @@ public:
 	*  own positoin, when considering the general case, or the posiiton
 	*  of an entity to be avoided, in the specific case.
 	*
+	* @param in_p_aas[in] The Area Awareness System to use
+	*
+	* @param in_p_bool_threadDone Pointer to the atomic variable to set
+	*	true when the thread is done running (does not start until getNearbyHidingSpots
+	*	is called)
 	*/
-	darkModAASFindHidingSpots(const idVec3 &hideFromPos , idAAS* p_aas);
+	darkModAASFindHidingSpots(const idVec3 &hideFromPos , idAAS* in_p_aas, idScriptBool* in_p_bool_threadDone);
 
 	/*!
 	* Destructor
@@ -204,26 +236,6 @@ public:
 	*/
 	idList<darkModHidingSpot_t> hidingSpotList;
 
-	/*!
-	* This tests for hiding spots within the given search bounds.
-	*
-	* @param inout_hidingSpots The list of hiding spots to which found spots will be added
-	* @param aas Pointer to the Area Awareness System in use
-	* @param hidingHeight The height of the object that would be hiding
-	* @param searchLimits The limiting bounds of the world to consider.
-	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
-	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
-	*
-	*/
-	virtual void FindHidingSpots
-	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots, 
-		const idAAS *aas, 
-		float hidingHeight,
-		idBounds searchLimits, 
-		int hidingSpotTypesAllowed, 
-		idEntity* p_ignoreEntity
-	);
 
 
 	/*!
