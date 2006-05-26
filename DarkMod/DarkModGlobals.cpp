@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.40  2006/05/26 10:25:15  ishtvan
+ * added mission data global object
+ *
  * Revision 1.39  2006/05/26 04:42:01  sophisticatedzombie
  * Added variable which gives maximum number of hiding spot point tests per AI frame
  *
@@ -151,6 +154,7 @@
 
 #include "DarkModGlobals.h"
 #include "PlayerData.h"
+#include "MissionData.h"
 #include "Misc.h"
 #include "Profile.h"
 #include "direct.h"
@@ -246,6 +250,7 @@ SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const cha
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
+CMissionData	g_MissionData;
 
 CGlobal::CGlobal(void)
 {
