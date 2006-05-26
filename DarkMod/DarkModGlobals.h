@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.36  2006/05/26 04:42:01  sophisticatedzombie
+ * Added variable which gives maximum number of hiding spot point tests per AI frame
+ *
  * Revision 1.35  2006/05/17 05:39:16  sophisticatedzombie
  * Added new variables related to AIComm_Messsage and AIComm_StimResponse modules.
  *
@@ -438,6 +441,11 @@ public:
 	*/
 	float m_AICommStimRadius;
 
+	/**
+	* This is the maximum number of hiding spot point tests to do in a single AI frame.
+	* Values in the 100 range seem to maintain decent frame rates
+	*/
+	int m_maxNumHidingSpotPointTestsPerAIFrame;
 
 
 };

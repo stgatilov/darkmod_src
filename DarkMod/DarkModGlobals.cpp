@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.39  2006/05/26 04:42:01  sophisticatedzombie
+ * Added variable which gives maximum number of hiding spot point tests per AI frame
+ *
  * Revision 1.38  2006/05/17 05:39:16  sophisticatedzombie
  * Added new variables related to AIComm_Messsage and AIComm_StimResponse modules.
  *
@@ -189,6 +192,9 @@
 // Default readius of the AI COMMUNICATIONS STIM
 #define DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS 5000.0
 
+// Darkmod 
+#define DEFAULT_MAX_NUL_HIDING_SPOT_TESTS_PER_AI_FRAME 100.0
+
 
 class idAI;
 
@@ -275,6 +281,7 @@ CGlobal::CGlobal(void)
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
 	m_AICommStimRadius = DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS;
+	m_maxNumHidingSpotPointTestsPerAIFrame = DEFAULT_MAX_NUL_HIDING_SPOT_TESTS_PER_AI_FRAME;
 
 	m_LogFile = NULL;
 
@@ -792,6 +799,16 @@ void CGlobal::LoadINISettings(void *p)
 		{
 			m_AICommStimRadius = atof(pm->Value);
 		}
+
+		if (FindMap (ps, "maxHidingSpotTestsPerAIFrame", TRUE, &pm) != -1)
+		{
+			m_maxNumHidingSpotPointTestsPerAIFrame = atoi(pm->Value);
+			if (m_maxNumHidingSpotPointTestsPerAIFrame < 10)
+			{
+				DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame cannot be less than 10");
+				m_maxNumHidingSpotPointTestsPerAIFrame = 10;
+			}
+		}
 		
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("FrobDistance: %f\r", m_DefaultFrobDistance);
@@ -806,6 +823,7 @@ void CGlobal::LoadINISettings(void *p)
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Lean degrees tilt: %f\r", m_leanMove_DegreesTilt);
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AICommStimRadius: %f\r", m_AICommStimRadius);
+		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame: %d\r", m_maxNumHidingSpotPointTestsPerAIFrame);
 
 	}
 }
