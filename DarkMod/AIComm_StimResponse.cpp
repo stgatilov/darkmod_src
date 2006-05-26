@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/05/26 04:28:41  sophisticatedzombie
+ * Knocked out AIs no longer respond to communications. (No hypnosis allowed)
+ *
  * Revision 1.2  2006/05/19 19:56:50  sparhawk
  * CVSHeader added
  *
@@ -42,6 +45,22 @@ CAIComm_Response::~CAIComm_Response(void)
 
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt)
 {
+	// Can't respond if we are unconscious or dead
+	if (m_Owner != NULL)
+	{
+		// If we are descended from AI ...
+		if (m_Owner->IsType(idAI::Type))
+		{
+			// check if dead or knocked out
+			idAI* p_AIOwner = static_cast< idAI * >( m_Owner );
+			if (p_AIOwner->IsKnockedOut() )
+			{
+				return;
+			}
+		}
+	
+	}
+
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
 	// Get the communications stim
