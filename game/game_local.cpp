@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.57  2006/05/26 10:26:24  ishtvan
+ * added mission data object, which gets updated in runframe
+ *
  * Revision 1.56  2006/05/26 04:44:27  sophisticatedzombie
  * Moved LAS init down below loading AAS when loading a new map.  This prevents using wrong PVS to AAS mappings after a new map is loaded. (Prevents crash bug, searches actually work)
  *
@@ -205,6 +208,7 @@
 #include "../darkmod/sndprop.h"
 #include "../darkmod/stimresponse.h"
 #include "../darkmod/tdmInventory.h"
+#include "../darkmod/MissionData.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -212,9 +216,8 @@
 CGlobal g_Global;
 
 extern CRelations		g_globalRelations;
-
+extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
-
 extern CsndProp			g_SoundProp;
 
 #define BUFFER_LEN 4096
@@ -408,6 +411,7 @@ void idGameLocal::Clear( void )
 	m_sndPropLoader = &g_SoundPropLoader;
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
+	m_MissionData = &g_MissionData;
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
 	m_DoLightgem = true;
@@ -2658,6 +2662,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		LAS.updateLASState();
 
 		ProcessStimResponse();
+
+		// TDM: Update objective system
+		m_MissionData->UpdateObjectives();
 
 		// sort the active entity list
 		SortActiveEntityList();

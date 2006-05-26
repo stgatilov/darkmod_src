@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/05/26 10:26:24  ishtvan
+ * added mission data object, which gets updated in runframe
+ *
  * Revision 1.29  2006/05/17 05:44:15  sophisticatedzombie
  * DoResponseAction now returns the number of CResponse objects triggered.
  * Added call to PostFired method of CStim after firing off a Stim.
@@ -242,6 +245,7 @@ class CLightMaterial;
 class CsndPropLoader;
 class CsndProp;
 class CRelations;
+class CMissionData;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -572,6 +576,11 @@ public:
 * Pointer to global AI Relations object
 **/
 	CRelations *			m_RelationsManager;
+
+/**
+* Pointer to global Mission Data object (objectives & stats)
+**/
+	CMissionData *			m_MissionData;
 
 /**
 * Pointer to global sound prop loader object
