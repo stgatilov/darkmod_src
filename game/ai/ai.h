@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/05/26 04:46:19  sophisticatedzombie
+ * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
+ *
  * Revision 1.15  2006/05/17 05:46:02  sophisticatedzombie
  * Added Event_IssueCommunication and variants (Each variant is named by which parameters it takes)
  *
@@ -210,7 +213,8 @@ extern const idEventDef AI_ClosestReachableEnemy;
 extern const idEventDef AI_SpawnThrowableProjectile;
 
 // DarkMod hiding spot finding events
-extern const idEventDef AI_SearchForHidingSpots;
+extern const idEventDef AI_StartSearchForHidingSpots;
+extern const idEventDef AI_ContinueSearchForHidingSpots;
 extern const idEventDef AI_CloseHidingSpotSearch;
 extern const idEventDef AI_GetNumHidingSpots;
 extern const idEventDef AI_GetNthHidingSpotLocation;
@@ -1092,7 +1096,8 @@ protected:
     /**
 	* Script frontend for DarkMod hiding spot detection functions
 	**/
-	void Event_SearchForHidingSpots (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
+	void Event_StartSearchForHidingSpots (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
+	void Event_ContinueSearchForHidingSpots(); 
 	void Event_CloseHidingSpotSearch ();
 	void Event_GetNumHidingSpots ();
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);

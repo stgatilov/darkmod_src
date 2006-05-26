@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/05/26 04:46:19  sophisticatedzombie
+ * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
+ *
  * Revision 1.11  2006/05/25 02:39:23  sophisticatedzombie
  * no message
  *
@@ -249,9 +252,24 @@ const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 
 * the visual occlusion checks.  This is usually the searcher itself but
 * can be NULL.
 *
+* This method will only start the search, if it returns 1, you should call
+* continueSearchForHidingSpots every frame to do more processing until that function
+* returns 0.
+*
 * The return value is a 0 for failure, 1 for success.
 */
-const idEventDef AI_SearchForHidingSpots ("searchForHidingSpots", "vvvdE", 'd');
+const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", "vvvdE", 'd');
+
+/*
+* This method continues searching for hiding spots. It will only find so many before
+* returning so as not to cause long delays.  Detected spots are added to the currently
+* building hiding spot list.
+*
+* The return value is 0 if the end of the search was reached, or 1 if there
+* is more processing to do (call this method again next AI frame)
+*
+*/
+const idEventDef AI_ContinueSearchForHidingSpots ("continueSearchForHidingSpots", NULL, 'd');
 
 /*!
 * This should be called when the script is done with the hiding spot 
@@ -429,7 +447,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
 	EVENT( AI_VisScan,							idAI::Event_VisScan )
 	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
-	EVENT ( AI_SearchForHidingSpots,			idAI::Event_SearchForHidingSpots )
+	EVENT ( AI_StartSearchForHidingSpots,		idAI::Event_StartSearchForHidingSpots )
+	EVENT ( AI_ContinueSearchForHidingSpots,	idAI::Event_ContinueSearchForHidingSpots )
 	EVENT ( AI_CloseHidingSpotSearch,			idAI::Event_CloseHidingSpotSearch )
 	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
 	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
@@ -3173,6 +3192,7 @@ void idAI::Event_ClosestReachableEnemy( void )
 	Event_ClosestReachableEnemyOfEntity( static_cast<idEntity *>(this) );
 }
 
+//-----------------------------------------------------------------------------------------------------
 
 void idAI::destroyCurrentHidingSpotSearch()
 {
@@ -3195,7 +3215,13 @@ void idAI::destroyCurrentHidingSpotSearch()
 	
 }
 
-void idAI::Event_SearchForHidingSpots
+//-----------------------------------------------------------------------------------------------------
+
+// TODO: Parameterize these as darkmod globals
+#define HIDING_OBJECT_HEIGHT 0.35f
+#define MAX_SPOTS_PER_SEARCH_CALL 100
+
+void idAI::Event_StartSearchForHidingSpots
 (
 	const idVec3& hideFromLocation,
 	const idVec3& minBounds, 
@@ -3204,8 +3230,7 @@ void idAI::Event_SearchForHidingSpots
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_SearchForHidingSpots called.\n");
-
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -3218,19 +3243,9 @@ void idAI::Event_SearchForHidingSpots
 	{
 		// Allocate object that handles the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
-		darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots (hideFromLocation, aas, NULL);
-
-		// Remember search handle;
-		m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
-
-		// TODO: Parameterize this
-#define HIDING_OBJECT_HEIGHT 0.35f
-
-		// Run search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Searching for hiding spots\n");
-		p_hidingSpotFinder->getNearbyHidingSpots
+		darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots 
 		(
-			p_hidingSpotFinder->hidingSpotList,
+			hideFromLocation, 
 			aas, 
 			HIDING_OBJECT_HEIGHT,
 			searchBounds,
@@ -3238,7 +3253,18 @@ void idAI::Event_SearchForHidingSpots
 			p_ignoreEntity
 		);
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Script event hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.Num());
+
+		// Remember search handle;
+		m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
+
+		// Run search
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Starting search for hiding spots\n");
+		bool b_moreProcessingToDo = p_hidingSpotFinder->startHidingSpotSearch
+		(
+			p_hidingSpotFinder->hidingSpotList,
+			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame
+		);
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.Num());
 
 		// DEBUGGING
 		if (g_Global.m_drawAIDebugGraphics >= 1.0)
@@ -3248,33 +3274,73 @@ void idAI::Event_SearchForHidingSpots
 			p_hidingSpotFinder->debugDrawHidingSpots (g_Global.m_drawAIDebugGraphics);
 		}
 
-
+		// Return result
+		if (b_moreProcessingToDo)
+		{
+			idThread::ReturnInt(1);
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed during Event_StartSearchForHidingSpots call\n");
+			idThread::ReturnInt(0);
+		}
 
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_SearchForHidingSpots if no AAS is set for the AI\n");
-	}
-
-	// Search is done
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search is done\n");
-
-	// Return result
-	if (m_HidingSpotSearchHandle != 0)
-	{
-		// Return success
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search successful\n");
-		idThread::ReturnInt(1);
-	}
-	else
-	{
-		// Return failure
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search failed\n");
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\n");
+	
+		// Search is done since there is no search
 		idThread::ReturnInt(0);
 	}
 
+
 }
 
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_ContinueSearchForHidingSpots()
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_ContinueSearchForHidingSpots called.\n");
+
+	// Get hiding spot search instance from handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != 0)
+	{
+		p_hidingSpotFinder = (darkModAASFindHidingSpots*) m_HidingSpotSearchHandle;
+	}
+
+	// Make sure search still around
+	if (p_hidingSpotFinder == NULL)
+	{
+		// No hiding spot search to continue
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\n");
+		idThread::ReturnInt(0);
+	}
+	else
+	{
+		// Call finder method to continue search
+		bool b_moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
+		(
+			p_hidingSpotFinder->hidingSpotList,
+			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame
+		);
+
+		// Return result
+		if (b_moreProcessingToDo)
+		{
+			idThread::ReturnInt(1);
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
+			idThread::ReturnInt(0);
+		}
+	}
+}
+
+
+//-----------------------------------------------------------------------------------------------------
 
 void idAI::Event_CloseHidingSpotSearch ()
 {
@@ -3283,6 +3349,8 @@ void idAI::Event_CloseHidingSpotSearch ()
 	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\n");
 	destroyCurrentHidingSpotSearch();
 }
+
+//-----------------------------------------------------------------------------------------------------
 
 void idAI::Event_GetNumHidingSpots ()
 {

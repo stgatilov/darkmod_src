@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/05/26 04:46:19  sophisticatedzombie
+ * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
+ *
  * Revision 1.19  2006/05/09 01:49:48  ishtvan
  * changed HearSound so AI know exactly where sound came from for testing
  *
@@ -1325,8 +1328,6 @@ void idAI::Think( void ) {
 	UpdateDamageEffects();
 	LinkCombat();
 
-	// Clear DarkMod per frame vars now that the script was updated.
-	AI_ALERTED = false;
 }
 
 /***********************************************************************
@@ -1382,7 +1383,8 @@ void idAI::LinkScriptVariables( void )
 idAI::UpdateAIScript
 =====================
 */
-void idAI::UpdateAIScript( void ) {
+void idAI::UpdateAIScript( void ) 
+{
 	UpdateScript();
 
 	// clear the hit enemy flag so we catch the next time we hit someone
@@ -1392,6 +1394,10 @@ void idAI::UpdateAIScript( void ) {
 		// update the animstate if we're not hidden
 		UpdateAnimState();
 	}
+
+	// Clear DarkMod per frame vars now that the script was updated.
+	AI_ALERTED = false;
+
 }
 
 /***********************************************************************
