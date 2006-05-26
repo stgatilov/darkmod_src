@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/05/26 04:43:17  sophisticatedzombie
+ * The search for hiding spots has been broken into two functions:
+ * startSearchForHidingSpots and continueSearchForHidingSpots.  The hiding spot search object remembers its state so it can pick up where it left off on the next continueSearchForHidingSpots call.
+ *
  * Revision 1.6  2006/05/25 02:30:12  sophisticatedzombie
  * Hiding spot search is setup to be accessible from a static member function for thread function compatibility. But, we don't have an os independent threading library so we won't be doing that for now.
  *
@@ -58,6 +62,22 @@ typedef struct darkModHidingSpot
 } darkModHidingSpot_t;
 
 /*!
+* This enumeration is used to track the hiding spot search
+* state so that the search can be broken up among a sequence
+* of function calls on different AI frames.
+*
+*/
+typedef enum
+{
+	buildingPVSList_searchState,
+	newPVSArea_searchState,
+	iteratingVisibleAASAreas_searchState,
+	iteratingNonVisibleAASAreas_searchState,
+	testingInsideVisibleAASArea_searchState,
+	done_searchState
+} TDarkModHidingSpotSearchState;
+
+/*!
 // @class darkmodAASFindHidingSpots
 // @author SophisticatedZombie (DMH)
 // 
@@ -77,28 +97,52 @@ class darkModAASFindHidingSpots
 {
 protected:
 
-	// The background thread on which this is running
-	xthreadInfo searchThread;
 
-	// The script boolean to set to true when the search thread exits
-	idScriptBool* p_bool_threadDone;
-
-	// The handle to the PVS system
-	pvsHandle_t h_hidePVS;
-
-	// Local PVS area list used to hold the areas we need to test further
-	int	PVSAreas[ idEntity::MAX_PVS_AREAS ];
+	// The search state
+	TDarkModHidingSpotSearchState searchState;
 
 	// The position from which the entity may be hiding
 	idVec3 hideFromPosition;
 
+	// Local PVS area list used to hold the areas being hidden FROM
+	int	hideFromPVSAreas[ idEntity::MAX_PVS_AREAS ];
+	int numHideFromPVSAreas;
+
+	// The handle to the PVS system describing the PVS areas we are hiding from
+	pvsHandle_t h_hideFromPVS;
+
+	// PVS areas we need to test as good hiding spots
+	int numPVSAreas;
+	int	PVSAreas[ idEntity::MAX_PVS_AREAS ];
+
+	// The number of PVS areas iterated so far
+	int numPVSAreasIterated;
+
+	// The list of aas areas in the current pvs area
+	idList<int> aasAreaIndices;
+
+	// The number of aas areas in the current pvs area already searched
+	int numAASAreaIndicesSearched;
+
+
 	/* These are set when the background thread is created */
-	idList<darkModHidingSpot_t>* p_inout_hidingSpots;
 	idAAS *p_aas;
 	float hidingHeight;
 	idBounds searchLimits;
+	idVec3 searchCenter;
+	float searchRadius;
 	int hidingSpotTypesAllowed;
 	idEntity* p_ignoreEntity;
+
+	// These variables are for doing a gridded sweep of a visible AAS area
+	// for lighting and occlusion tests
+	int currentGridSearchAASAreaNum;
+	idBounds currentGridSearchBounds;
+	idVec3 currentGridSearchBoundMins;
+	idVec3 currentGridSearchBoundMaxes;
+	idVec3 currentGridSearchPoint;
+	//idVec3 currentareaCenter = aas->AreaCenter (AASAreaNum);
+	
 
 
 
@@ -194,14 +238,66 @@ protected:
 	);
 
 	/*!
-	* This is a thread functoin which tests for hiding spots within the given search bounds.
+	* These methods handle the search when it is being picked back
+	* up in a particular state
 	*
-	* @p_voidThis Pointer to the darkModAASFindHidingSpots instance cast as a void pointer
+	* @return true if there is mor search to go
+	* @return false if end of search was reached
 	*
 	*/
-	static unsigned int FindHidingSpots_BackgroundThreadFunc
+	bool testNewPVSArea 
 	(
-		void* p_voidThis
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass,
+		int& inout_numPointsTestedThisPass
+	);
+	bool testingAASAreas_InNonVisiblePVSArea
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass,
+		int& inout_numPointsTestedThisPass
+	);
+	bool testingAASAreas_InVisiblePVSArea
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass,
+		int& inout_numPointsTestedThisPass
+	);
+	bool testingInsideVisibleAASArea
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass,
+		int& inout_numPointsTestedThisPass
+	);
+
+	/*!
+	* This method resumes the hiding spot test where it
+	* left off and tests up to numPointsToTestThisPass
+	* points before returning.
+	*
+	* @param inout_hidingSpotList The list to which
+	*	hiding spots found will be inserted. The list
+	*	is kept in quality order from highest to lowest.
+	*
+	* @param numPointsToTestThisPass The number of points
+	*	to test this pass before returning
+	*
+	* @param inout_numPointsTestedThisPass The number of points
+	*	that were tested in this pass. This should be set
+	*	to 0 if this is the first call in the pass. It is
+	*	updated during this call.
+	*
+	* @return true if their are more points to search
+	*
+	* @return false if ther are no more points to search,
+	*	so no need to call this again the search is done
+	*
+	*/
+	bool darkModAASFindHidingSpots::findMoreHidingSpots
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass,
+		int& inout_numPointsTestedThisPass
 	);
 
 
@@ -219,11 +315,22 @@ public:
 	*
 	* @param in_p_aas[in] The Area Awareness System to use
 	*
-	* @param in_p_bool_threadDone Pointer to the atomic variable to set
-	*	true when the thread is done running (does not start until getNearbyHidingSpots
-	*	is called)
+	* @param in_p_aas Pointer to the Area Awareness System in use
+	* @param hidingHeight The height of the object that would be hiding
+	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
+			searched.  The searched region is the intersection of the two.
+	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
 	*/
-	darkModAASFindHidingSpots(const idVec3 &hideFromPos , idAAS* in_p_aas, idScriptBool* in_p_bool_threadDone);
+	darkModAASFindHidingSpots
+	(
+		const idVec3 &hideFromPos , 
+		idAAS* in_p_aas, 
+		float in_hidingHeight,
+		idBounds in_searchLimits, 
+		int in_hidingSpotTypesAllowed, 
+		idEntity* in_p_ignoreEntity
+	);
 
 	/*!
 	* Destructor
@@ -237,28 +344,43 @@ public:
 	idList<darkModHidingSpot_t> hidingSpotList;
 
 
-
 	/*!
-	* This method searches within the given search bounds for hiding spots and returns
+	* This method starts a search within the given search bounds for hiding spots and returns
 	* a list of them as darkModHidingSpot structures.
 	*
-	* @param out_hidingSpots On return, the list of hiding spots.
-	* @param aas Pointer to the Area Awareness System in use
-	* @param areaNum The index of the area being tested for hiding spots
-	* @param hidingHeight The height of the object that would be hiding
-	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
-			searched.  The searched region is the intersection of the two.
-	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
-	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	* @param out_hidingSpots The list of hiding spots being generated by this call. Will
+	*	be cleared before we start testing points
+	*
+	* @param numPointsToTestThisPass The maximum number of hiding spots to test during this
+	* call before remembering the search state and returning
+	*
+	* @return true if there are more spots to search
+	*
+	* @return false if there are no more spots to search (end of the search)
 	*/
-	void getNearbyHidingSpots
+	bool startHidingSpotSearch
 	(
 		idList<darkModHidingSpot_t>& out_hidingSpots,
-		idAAS *p_aas, 
-		float hidingHeight,
-		idBounds searchLimits, 
-		int hidingSpotTypesAllowed, 
-		idEntity* p_ignoreEntity
+		int maxSpotsPerRound
+	);
+
+	/*
+	* This method is used to continue a hiding spot search that was started with startHidingSpotSearch.
+	*
+	* @param inout_hidingSPots The list of hiding spots to which new ones found will be added
+	*	by this call
+	*
+	* @param numPointsToTestThisPass The maximum number of hiding spots to test during this
+	* call before remembering the search state and returning
+	*
+	* @return true if there are more spots to search
+	*
+	* @return false if there are no more spots to search (end of the search)
+	*/
+	bool continueSearchForHidingSpots
+	(
+		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		int numPointsToTestThisPass
 	);
 
 
