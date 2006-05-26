@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.56  2006/05/26 04:44:27  sophisticatedzombie
+ * Moved LAS init down below loading AAS when loading a new map.  This prevents using wrong PVS to AAS mappings after a new map is loaded. (Prevents crash bug, searches actually work)
+ *
  * Revision 1.55  2006/05/17 05:44:14  sophisticatedzombie
  * DoResponseAction now returns the number of CResponse objects triggered.
  * Added call to PostFired method of CStim after firing off a Stim.
@@ -1227,10 +1230,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	clip.Init();
 	pvs.Init();
 
-	/*!
-	* The Dark Mod LAS: Init the Light Awareness System
-	*/
-	LAS.initialize();
 
 	// this will always fail for now, have not yet written the map compile
 	m_sndPropLoader->CompileMap( mapFile );
@@ -1242,6 +1241,12 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	for( i = 0; i < aasNames.Num(); i++ ) {
 		aasList[ i ]->Init( idStr( mapFileName ).SetFileExtension( aasNames[ i ] ).c_str(), mapFile->GetGeometryCRC() );
 	}
+
+	/*!
+	* The Dark Mod LAS: Init the Light Awareness System
+	* This must occur AFTER the AAS list is loaded
+	*/
+	LAS.initialize();
 
 	// clear the smoke particle free list
 	smokeParticles->Init();
