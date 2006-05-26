@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/05/26 10:29:21  ishtvan
+ * *) better tactile alert method
+ * *) added kill and KO objective callbacks
+ *
  * Revision 1.20  2006/05/26 04:46:19  sophisticatedzombie
  * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
  *
@@ -79,6 +83,7 @@
 
 #include "../Game_local.h"
 #include "../../darkmod/relations.h"
+#include "../../darkmod/MissionData.h"
 #include "../../darkmod/darkmodglobals.h"
 #include "../../darkmod/playerdata.h"
 #include "../../darkmod/sndprop.h"
@@ -111,6 +116,7 @@ const float s_DOOM_TO_METERS = 0.0254f;
 class CRelations;
 class CsndProp;
 class CDarkModPlayer;
+class CMissionData;
 
 static const char *moveCommandString[ NUM_MOVE_COMMANDS ] = {
 	"MOVE_NONE",
@@ -1230,6 +1236,9 @@ void idAI::Think( void ) {
 		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
 		deltaViewAngles.Zero();
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+
+		// Check for tactile alert due to AI movement
+		CheckTactile();
 
 		// Check if drowning
 		if( gameLocal.time > m_AirCheckTimer )
@@ -2935,7 +2944,6 @@ void idAI::AnimMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
-		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -3065,7 +3073,6 @@ void idAI::SlideMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
-		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -3313,7 +3320,6 @@ void idAI::FlyMove( void ) {
 	idVec3 org = physicsObj.GetOrigin();
 	if ( oldorigin != org ) {
 		TouchTriggers();
-		CheckTactile( viewAxis[0] );
 	}
 
 	if ( ai_debugMove.GetBool() ) {
@@ -3623,6 +3629,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) ) {
 		static_cast< idPlayer* >( attacker )->AddAIKill();
 	}
+
+	// Update TDM objective system
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, true );
 }
 
 /***********************************************************************
@@ -5769,6 +5778,10 @@ void idAI::HadTactile( idActor *actor )
 
 	if( gameLocal.m_RelationsManager->IsEnemy( team, actor->team ) )
 		TactileAlert( actor );
+	else
+	{
+		// FLAG BLOCKED BY FRIENDLY SO THE SCRIPT CAN DO SOMETHING ABOUT IT
+	}
 
 	// alert both AI if they bump into eachother
 	if( gameLocal.m_RelationsManager->IsEnemy( actor->team, team ) 
@@ -5834,45 +5847,20 @@ float idAI::GetMovementVolMod( void )
 =====================
 idAI::CheckTactile
 
-Based on KickObstacles.
+Modified 5/25/06 , removed trace computation, found better way of checking
 =====================
 */
 
 // TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
-void idAI::CheckTactile( idVec3 &dir )
+void idAI::CheckTactile( void )
 {
-	int i, numListedClipModels;
-	idBounds clipBounds;
-	idEntity *obEnt;
-	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
+		idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
 
-	idVec3 org;
-
-	org = physicsObj.GetOrigin();
-
-	// find all possible AI ahead of this AI in the direction of motion
-	clipBounds = physicsObj.GetAbsBounds();
-	clipBounds.TranslateSelf( dir * s_AITactDist );
-	clipBounds.AddPoint( org );
-
-	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_BODY, clipModelList, MAX_GENTITIES );
-	
-	for ( i = 0; i < numListedClipModels; i++ ) 
-	{
-		clipModel = clipModelList[i];
-		obEnt = clipModel->GetEntity();
-
-		// don't touch yourself :)
-		if( obEnt == this )
-			continue;
-
-		if ( obEnt->IsType( idActor::Type ) ) 
+		if ( BlockEnt && BlockEnt->IsType( idActor::Type ) ) 
 		{
-			//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: Actor %s is touching AI %s.\r", obEnt->name.c_str(), name.c_str() );
-			HadTactile( static_cast<idActor *>(obEnt) );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
+			HadTactile( static_cast<idActor *>(BlockEnt) );
 		}
-	}
 }
 
 /*
@@ -6093,6 +6081,9 @@ void idAI::Knockout( void )
 		gameLocal.SpawnEntityDef( args );
 		kv = spawnArgs.MatchPrefix( "def_drops", kv );
 	}
+
+	// Update TDM objective system
+	gameLocal.m_MissionData->MissionEvent( COMP_KO, this, true );
 
 Quit:
 	return;

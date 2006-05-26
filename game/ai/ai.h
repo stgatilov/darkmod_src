@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/05/26 10:29:21  ishtvan
+ * *) better tactile alert method
+ * *) added kill and KO objective callbacks
+ *
  * Revision 1.16  2006/05/26 04:46:19  sophisticatedzombie
  * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
  *
@@ -419,10 +423,10 @@ public:
 	idActor *VisualScan( float time = 1/60 );
 
 	/**
-	* Translate the AI's bounds ahead in the direction that it's walking
-	*	and call HadTactile if an enemy is within those bounds.
+	* Checks to see if the AI is being blocked by an actor when it tries to move,
+	*	call HadTactile on both this AI and the other actor if this is so.
 	**/
-	void CheckTactile( idVec3 &dir );
+	void CheckTactile( void );
 
 	/**
 	* Tactile Alerts:
