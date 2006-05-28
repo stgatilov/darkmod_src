@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/05/28 08:40:15  ishtvan
+ * modified death, mission failure
+ *
  * Revision 1.23  2006/05/25 08:32:58  ishtvan
  * added event_playstartsound to play the mission start sound (not yet implemented)
  *
@@ -109,6 +112,8 @@ extern const idEventDef EV_Player_ExitTeleporter;
 extern const idEventDef EV_Player_SelectWeapon;
 extern const idEventDef EV_SpectatorTouch;
 extern const idEventDef EV_Player_PlayStartSound;
+extern const idEventDef EV_Player_DeathMenu;
+extern const idEventDef EV_Player_MissionFailed;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -869,6 +874,8 @@ private:
 	void					Event_CallGuiOverlay( const char *namedEvent );
 	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
 	void					Event_PlayStartSound( void );
+	void					Event_MissionFailed( void );
+	void					Event_LoadDeathMenu( void );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

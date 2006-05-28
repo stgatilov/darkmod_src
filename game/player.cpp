@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.63  2006/05/28 08:40:15  ishtvan
+ * modified death, mission failure
+ *
  * Revision 1.62  2006/05/25 08:32:58  ishtvan
  * added event_playstartsound to play the mission start sound (not yet implemented)
  *
@@ -218,6 +221,7 @@
 #include "../darkmod/relations.h"
 #include "../darkmod/darkModAASFindHidingSpots.h"
 #include "../darkmod/StimResponse.h"
+#include "../darkmod/MissionData.h"
 
 /*
 ===============================================================================
@@ -284,7 +288,9 @@ const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
 const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
 const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
 const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
-const idEventDef EV_Player_PlayStartSound( "PlayStartSound", NULL );
+const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
+const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
+const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
 
 
 CLASS_DECLARATION( idActor, idPlayer )
@@ -323,6 +329,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
 	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
+	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
+	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -6402,13 +6410,7 @@ idPlayer::EvaluateControls
 */
 void idPlayer::EvaluateControls( void ) {
 	// check for respawning
-	if ( health <= 0 ) {
-		if ( ( gameLocal.time > minRespawnTime ) && ( usercmd.buttons & BUTTON_ATTACK ) ) {
-			forceRespawn = true;
-		} else if ( gameLocal.time > maxRespawnTime ) {
-			forceRespawn = true;
-		}
-	}
+	// TDM: Section removed, click-to-respawn functionality not needed for TDM
 
 	// in MP, idMultiplayerGame decides spawns
 	if ( forceRespawn && !gameLocal.isMultiplayer && !g_testDeath.GetBool() ) {
@@ -7337,17 +7339,17 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	heartInfo.Init( 0, 0, 0, BASE_HEARTRATE );
 	AdjustHeartRate( DEAD_HEARTRATE, 10.0f, 0.0f, true );
 
-	if ( !g_testDeath.GetBool() ) {
-		playerView.Fade( colorBlack, 12000 );
-	}
-
 	AI_DEAD = true;
+
+	this->PostEventMS( &EV_Player_MissionFailed, spawnArgs.GetInt("death_transit_time", "2000") );
+
 	SetAnimState( ANIMCHANNEL_LEGS, "Legs_Death", 4 );
 	SetAnimState( ANIMCHANNEL_TORSO, "Torso_Death", 4 );
 	SetWaitState( "" );
 
 	animator.ClearAllJoints();
 
+// NOTE: RespawnTime not used anymore in TDM except maybe for third person death later?
 	if ( StartRagdoll() ) {
 		pm_modelView.SetInteger( 0 );
 		minRespawnTime = gameLocal.time + RAGDOLL_DEATH_TIME;
@@ -10051,3 +10053,12 @@ void idPlayer::Event_PlayStartSound( void )
 	StartSound("snd_mission_start", SND_CHANNEL_ANY, 0, false, NULL);
 }
 
+void idPlayer::Event_MissionFailed( void )
+{
+	gameLocal.m_MissionData->Event_MissionFailed();
+}
+
+void idPlayer::Event_LoadDeathMenu( void )
+{
+	forceRespawn = true;
+}
