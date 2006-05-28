@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/05/28 08:41:22  ishtvan
+ * mission failure now calls death menu event on player
+ *
  * Revision 1.1  2006/05/26 10:24:39  ishtvan
  * Initial release
  *
@@ -19,6 +22,10 @@
 #pragma warning(disable : 4996)
 
 #include "MissionData.h"
+#include "../game/player.h"
+
+// TODO: Move to config file or player spawnargs
+const int s_FAILURE_FADE_TIME = 3000;
 
 CObjectiveComponent::CObjectiveComponent( void )
 {
@@ -507,7 +514,13 @@ void CMissionData::Event_MissionFailed( void )
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
-	// Go to mission failed GUI (wah-wah-wah)
+	
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if(player)
+	{
+		player->playerView.Fade( colorBlack, s_FAILURE_FADE_TIME );
+		player->PostEventMS( &EV_Player_DeathMenu, s_FAILURE_FADE_TIME + 1 );
+	}
 }
 
 
@@ -776,6 +789,64 @@ void CMissionData::RunTest( void )
 
 	m_Objectives.Append( TestObj );
 }
+
+
+/*
+// Objective parsing:
+// TODO: Figure out how to parse/"compile" arbitrary boolean logic.  For now, don't
+// returns the index of the first objective added, for scripting purposes
+int CMissionData::AddObjsFromEnt( idEntity *ent )
+{
+	SObjective			ObjTemp;
+	idDict				*args;
+	idStr				StrTemp;
+	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
+	int					returnVal(-1), tempRetVal;
+
+	if( !ent )
+		goto Quit;
+
+	args = &ent->SpawnArgs;
+	if( !args )
+		goto Quit;
+
+	// store the first index of first added objective
+	tempRetVal = m_Objectives.Num();
+
+	// go thru all the objective-related spawnargs
+	while( args->MatchPrefix( va("obj%d_", Counter) ) != NULL )
+	{
+		StrTemp = va("obj%d_", Counter);
+		ObjTemp.state = args->GetInt( StrTemp + "state", "0");
+		ObjTemp.bMandatory = args->GetBool( StrTemp + "mandatory", "1");
+		ObjTemp.bVisible = args->GetBool( StrTemp + "visible", "1");
+		ObjTemp.bOngoing = args->GetBool( StrTemp + "ongoing", "0");
+// TODO: Parse difficulty level
+		// parse components
+		Counter2 = 1;
+		while( args->MatchPrefix( va("obj%d_%d_", Counter, Counter2) ) != NULL )
+		{
+			StrTemp += va("%d_", Counter2);
+			CObjectiveComponent CompTemp;
+			
+			CompTemp.m_bState = args->GetBool( StrTemp + "state", "0" );
+			CompTemp.m_bNotted = args->GetBool( StrTemp + "not", "0" );
+			CompTemp.m_CustomClockedScript = args->GetString( StrTemp + "clocked_script" );
+			CompTemp.m_CustomClockInterval = args->GetString( StrTemp + "clock_interval" );
+			CompTemp.m_Type = args->GetInt( StrTemp + type );
+			
+			// switch case for specifier...
+
+		Counter2++;
+		}
+
+	Counter++;
+	}
+
+Quit:
+	return;
+}
+*/
 	
 
 
