@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/05/30 06:23:39  ishtvan
+ * worldspawn now triggers its targets when the map starts
+ *
  * Revision 1.4  2006/02/05 07:12:14  ishtvan
  * redefined function Damage to take additional trace pointer argument
  *
@@ -28,6 +31,7 @@
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../DarkMod/MissionData.h"
 
 /*
 ===============================================================================
@@ -338,6 +342,8 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 	ActivateTargets( this );
 
 	fl.takedamage = false;
+
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
 }
 
 /*

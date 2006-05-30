@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2006/05/30 06:24:14  ishtvan
+ * worldspawn now triggers its targets when the map starts
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -85,6 +88,9 @@ void idWorldspawn::Spawn( void ) {
 		thread->DelayedStart( 0 );
 		kv = spawnArgs.MatchPrefix( "call", kv );
 	}
+
+	// activate worldspawn's targets when it spawns
+	PostEventMS( &EV_ActivateTargets, 0, this );
 }
 
 /*
