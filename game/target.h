@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2006/05/30 06:22:58  ishtvan
+ * added CTarget_AddObjectives entity, for adding objectives on map load or during play
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -550,6 +553,22 @@ public:
 private:
 	void				Event_Activate( idEntity *activator );
 	void				Event_RestoreVolume();
+};
+
+/**
+* CTarget_AddObjectives
+* Helper entity for the objectives system.  When triggered, adds the
+* objectives on it into the objectives system.
+*
+* It sets the spawnargs "obj_num_offset" on itself for the numerical offset
+* of the first objective it added, used for later addressing that objective.
+**/
+class CTarget_AddObjectives : public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_AddObjectives );
+private:
+	void				Event_Activate( idEntity *activator );
 };
 
 

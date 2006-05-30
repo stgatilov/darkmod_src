@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:31  sparhawk
- * Initial revision
+ * Revision 1.2  2006/05/30 06:22:58  ishtvan
+ * added CTarget_AddObjectives entity, for adding objectives on map load or during play
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -24,6 +27,7 @@ Invisible entities that affect other entities or the world when activated.
 #pragma hdrstop
 
 #include "Game_local.h"
+#include "../darkmod/MissionData.h"
 
 /*
 ===============================================================================
@@ -1752,3 +1756,25 @@ void idTarget_FadeSoundClass::Event_RestoreVolume() {
 	gameSoundWorld->FadeSoundClasses( 0, fadeDB, fadeTime );
 }
 
+/*
+===============================================================================
+
+CTarget_AddObjectives
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_AddObjectives )
+	EVENT( EV_Activate,	CTarget_AddObjectives::Event_Activate )
+END_CLASS
+
+void CTarget_AddObjectives::Event_Activate( idEntity *activator )
+{
+	int SetVal(-1);
+
+	if( gameLocal.m_MissionData )
+	{
+		SetVal = gameLocal.m_MissionData->AddObjsFromEnt( this );
+	}
+
+	spawnArgs.Set( "obj_num_offset", va("%d", SetVal) );
+}
