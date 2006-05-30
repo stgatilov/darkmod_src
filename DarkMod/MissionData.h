@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/05/30 06:22:04  ishtvan
+ * added parsing of objectives from entity
+ *
  * Revision 1.1  2006/05/26 10:24:39  ishtvan
  * Initial release
  *
@@ -195,6 +198,7 @@ typedef struct SObjective_s
 	SObjective_s( void )
 	{
 		state = STATE_INCOMPLETE;
+		text = "";
 		bNeedsUpdate = false;
 		bMandatory = false;
 		bVisible = true;
@@ -209,6 +213,8 @@ typedef struct SObjective_s
 	}
 	
 	EObjCompletionState	state;
+
+	idStr text; // text description of the objective in the objectives GUI
 
 	// Set to true if one of the components changed this frame.  Test resets it to false.
 	bool bNeedsUpdate;
@@ -422,6 +428,8 @@ public:
 	**/
 	void EntityReachedPosition( idStr EntName, idStr PositionName, bool bPresent );
 
+	int AddObjsFromEnt( idEntity *ent );
+
 // Events
 	/**
 	* The following set the various objective states, called internally and in external scripts
@@ -435,7 +443,7 @@ public:
 	void Event_MissionFailed( void );
 
 
-private:
+protected:
 
 	/**
 	* Do the numerical comparison
@@ -469,12 +477,32 @@ private:
 	// Temporary test method: sets up an objective
 	void RunTest( void );
 
-private:
+protected:
+	/**
+	* Set to true if any of the objective states have changed and objectives need updating
+	**/
 	bool m_bObjsNeedUpdate;
 
+	/**
+	* List of current objectives
+	**/
 	idList<SObjective> m_Objectives;
 
+	/**
+	* Object holding all mission stats relating to AI, damage to player and AI
+	* Loot stats are maintained by the inventory
+	* TODO: Also put in a persistent stats object 
+	**/
 	SMissionStats m_Stats;
+
+	/**
+	* Hash indices to store string->enum conversions for objective component type and
+	* specification method type.
+	* Used for parsing objectives from spawnargs.
+	**/
+	idHashIndex m_CompTypeHash;
+	idHashIndex m_SpecTypeHash;
+
 }; // CMissionData
 
 

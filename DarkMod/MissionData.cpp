@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/05/30 06:22:04  ishtvan
+ * added parsing of objectives from entity
+ *
  * Revision 1.2  2006/05/28 08:41:22  ishtvan
  * mission failure now calls death menu event on player
  *
@@ -73,8 +76,53 @@ CMissionData::CMissionData( void )
 {
 	Clear();
 
-	// Test case:
-	RunTest();
+// Initialize Hash indexes used for parsing string names to enum index
+	idStrList CompTypeNames, SpecTypeNames;
+
+/**
+* Add new component type names here.  Must be in exact same order as EComponentType
+*	enum, defined in MissionData.h
+**/
+	CompTypeNames.Append("kill");
+	CompTypeNames.Append("ko");
+	CompTypeNames.Append("ai_find_item");
+	CompTypeNames.Append("ai_find_body");
+	CompTypeNames.Append("alert");
+	CompTypeNames.Append("item");
+	CompTypeNames.Append("location");
+	CompTypeNames.Append("distance");
+	CompTypeNames.Append("custom_clocked");
+	CompTypeNames.Append("custom");
+
+/**
+* Add in new specification types here.  Must be in exact same order as
+*	ESpecificationMethod enum, defined in MissionData.h
+**/
+	SpecTypeNames.Append("none");
+	SpecTypeNames.Append("name");
+	SpecTypeNames.Append("overall");
+	SpecTypeNames.Append("group");
+	SpecTypeNames.Append("classname");
+	SpecTypeNames.Append("spawnclass");
+	SpecTypeNames.Append("ai_type");
+	SpecTypeNames.Append("ai_team");
+	SpecTypeNames.Append("ai_innocence");
+
+	CompTypeNames.Condense();
+	SpecTypeNames.Condense();
+
+	for( int i=0; i < CompTypeNames.Num(); i++ )
+	{
+		m_CompTypeHash.Add( m_CompTypeHash.GenerateKey( CompTypeNames[i].c_str(), false ), i );
+	}
+	for( int i=0; i < SpecTypeNames.Num(); i++ )
+	{
+		m_SpecTypeHash.Add( m_SpecTypeHash.GenerateKey( SpecTypeNames[i].c_str(), false ), i );
+	}
+
+
+	// Test case: (hardcoded objectives)
+	//RunTest();
 }
 
 CMissionData::~CMissionData( void )
@@ -128,7 +176,7 @@ void CMissionData::MissionEvent
 		bool bBoolArg 
 	)
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Mission event called \n");
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Mission event called \r");
 	SStat *pStat(NULL);
 	bool bCompState;
 
@@ -791,62 +839,132 @@ void CMissionData::RunTest( void )
 }
 
 
-/*
 // Objective parsing:
 // TODO: Figure out how to parse/"compile" arbitrary boolean logic.  For now, don't
 // returns the index of the first objective added, for scripting purposes
 int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
 	SObjective			ObjTemp;
+	idLexer				src;
 	idDict				*args;
-	idStr				StrTemp;
+	idStr				StrTemp, StrTemp2;
 	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
-	int					returnVal(-1), tempRetVal;
+	int					ReturnVal(-1);
 
 	if( !ent )
 		goto Quit;
 
-	args = &ent->SpawnArgs;
+	args = &ent->spawnArgs;
 	if( !args )
 		goto Quit;
 
 	// store the first index of first added objective
-	tempRetVal = m_Objectives.Num();
+	ReturnVal = m_Objectives.Num();
 
 	// go thru all the objective-related spawnargs
 	while( args->MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
+		ObjTemp.Components.Clear();
+
 		StrTemp = va("obj%d_", Counter);
-		ObjTemp.state = args->GetInt( StrTemp + "state", "0");
+		ObjTemp.state = (EObjCompletionState) args->GetInt( StrTemp + "state", "0");
+		ObjTemp.text = args->GetString( StrTemp + "desc", "" );
 		ObjTemp.bMandatory = args->GetBool( StrTemp + "mandatory", "1");
 		ObjTemp.bVisible = args->GetBool( StrTemp + "visible", "1");
 		ObjTemp.bOngoing = args->GetBool( StrTemp + "ongoing", "0");
-// TODO: Parse difficulty level
-		// parse components
+// TODO: Parse difficulty level when that is coded
+
+		// parse objective components
 		Counter2 = 1;
 		while( args->MatchPrefix( va("obj%d_%d_", Counter, Counter2) ) != NULL )
 		{
-			StrTemp += va("%d_", Counter2);
+			StrTemp2 = StrTemp + va("%d_", Counter2);
 			CObjectiveComponent CompTemp;
 			
-			CompTemp.m_bState = args->GetBool( StrTemp + "state", "0" );
-			CompTemp.m_bNotted = args->GetBool( StrTemp + "not", "0" );
-			CompTemp.m_CustomClockedScript = args->GetString( StrTemp + "clocked_script" );
-			CompTemp.m_CustomClockInterval = args->GetString( StrTemp + "clock_interval" );
-			CompTemp.m_Type = args->GetInt( StrTemp + type );
+			CompTemp.m_bState = args->GetBool( StrTemp2 + "state", "0" );
+			CompTemp.m_bNotted = args->GetBool( StrTemp2 + "not", "0" );
 			
-			// switch case for specifier...
+			// use comp. type hash to convert text type to EComponentType
+			idStr TypeString = args->GetString( StrTemp2 + "type", "");
+			int TypeNum = m_CompTypeHash.First(m_CompTypeHash.GenerateKey( TypeString, false ));
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing objective component type '%s' \r", TypeString.c_str() );
+			
+			if( TypeNum == -1 )
+			{
+				DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
+				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString, Counter, Counter2 ); 
+				continue;
+			}
+			CompTemp.m_Type = (EComponentType) TypeNum;
+			
+			for( int ind=0; ind<2; ind++ )
+			{
+				// Use spec. type hash to convert text specifier to ESpecificationMethod enum
+				idStr SpecString = args->GetString(va(StrTemp2 + "spec%d", ind + 1), "none");
+				int SpecNum = m_SpecTypeHash.First(m_SpecTypeHash.GenerateKey( SpecString, false ));
+				
+				if( SpecNum == -1 )
+				{
+					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
+					gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 ); 
+					SpecNum = 0;
+				}
+				CompTemp.m_SpecMethod[ind] = (ESpecificationMethod) SpecNum;
+			}
 
-		Counter2++;
+			for( int ind=0; ind < 2; ind++ )
+			{
+				CompTemp.m_SpecStrVal[ind] = args->GetString( va(StrTemp2 + "spec_strval%d", ind + 1), "" );
+				CompTemp.m_SpecIntVal[ind] = args->GetInt( va(StrTemp2 + "spec_intval%d", ind + 1), "0" );
+			}
+
+			// Read in string args and int args, space delimited list...
+			// Use idLexer here?
+			idStr TempStr2;
+			idToken	token;
+			
+			TempStr2 = args->GetString( StrTemp2 + "args_str", "" );
+			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS );
+			
+			while( src.ReadToken( &token ) )
+				CompTemp.m_StrArgs.Append( token.c_str() );
+			src.FreeSource();
+			// same for int args:
+			TempStr2 = args->GetString( StrTemp2 + "args_int", "" );
+			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+			while( src.ReadToken( &token ) )
+			{
+				if( token.IsNumeric() )
+					CompTemp.m_IntArgs.Append( token.GetIntValue() );
+			}
+			src.FreeSource();
+
+			// Pad args with dummies to prevent a hard crash when they are read, if otherwise empty
+			CompTemp.m_StrArgs.Append("");
+			CompTemp.m_StrArgs.Append("");
+			CompTemp.m_IntArgs.Append(0);
+			CompTemp.m_IntArgs.Append(0);
+
+			// NOT YET IMPLEMENTED: Read in the clocked objectives script and interval
+			CompTemp.m_CustomClockedScript = args->GetString( StrTemp2 + "clocked_script" );
+			CompTemp.m_CustomClockInterval = args->GetInt( StrTemp2 + "clock_interval" );
+
+			ObjTemp.Components.Append( CompTemp );
+			Counter2++;
 		}
-
-	Counter++;
+		
+		if( ObjTemp.Components.Num() > 0 )
+			m_Objectives.Append( ObjTemp );
+		Counter++;
 	}
 
+	// check if any objectives were actually added, if not return -1
+	if( m_Objectives.Num() == ReturnVal )
+		ReturnVal = -1;
 Quit:
-	return;
+	return ReturnVal;
 }
-*/
 	
 
 
