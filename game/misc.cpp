@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/05/30 06:25:00  ishtvan
+ * objective system updates
+ *
  * Revision 1.6  2006/01/29 04:09:29  ishtvan
  * added soundprop interface for idLocation objects
  *
@@ -39,7 +42,8 @@ Various utility objects and functions.
 #pragma hdrstop
 
 #include "Game_local.h"
-#include "../darkmod/sndprop.h"
+#include "../DarkMod/sndprop.h"
+#include "../DarkMod/MissionData.h"
 
 /*
 ===============================================================================
@@ -563,6 +567,7 @@ void idDamagable::Killed( idEntity *inflictor, idEntity *attacker, int damage, c
 		return;
 	}
 
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
 	BecomeBroken( attacker );
 }
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/05/30 06:25:00  ishtvan
+ * objective system updates
+ *
  * Revision 1.9  2005/11/19 17:27:56  sparhawk
  * LogString with macro replaced
  *
@@ -44,6 +47,7 @@
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/MissionData.h"
 
 // a mover will update any gui entities in it's target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent
@@ -187,18 +191,31 @@ void idMover::Save( idSaveGame *savefile ) const
 	savefile->WriteStaticObject( physicsObj );
 
 	savefile->WriteInt( move.stage );
+
 	savefile->WriteInt( move.acceleration );
+
 	savefile->WriteInt( move.movetime );
+
 	savefile->WriteInt( move.deceleration );
+
 	savefile->WriteVec3( move.dir );
+
 	
+
 	savefile->WriteInt( rot.stage );
+
 	savefile->WriteInt( rot.acceleration );
+
 	savefile->WriteInt( rot.movetime );
+
 	savefile->WriteInt( rot.deceleration );
+
 	savefile->WriteFloat( rot.rot.pitch );
+
 	savefile->WriteFloat( rot.rot.yaw );
+
 	savefile->WriteFloat( rot.rot.roll );
+
 
 	savefile->Write( &move, sizeof( move ) );
 	savefile->Write( &rot, sizeof( rot ) );
@@ -259,18 +276,31 @@ void idMover::Restore( idRestoreGame *savefile ) {
 	RestorePhysics( &physicsObj );
 
 	savefile->ReadInt( (int&)move.stage );
+
 	savefile->ReadInt( move.acceleration );
+
 	savefile->ReadInt( move.movetime );
+
 	savefile->ReadInt( move.deceleration );
+
 	savefile->ReadVec3( move.dir );
+
 	
+
 	savefile->ReadInt( (int&)rot.stage );
+
 	savefile->ReadInt( rot.acceleration );
+
 	savefile->ReadInt( rot.movetime );
+
 	savefile->ReadInt( rot.deceleration );
+
 	savefile->ReadFloat( rot.rot.pitch );
+
 	savefile->ReadFloat( rot.rot.yaw );
+
 	savefile->ReadFloat( rot.rot.roll );
+
 
 	savefile->Read( &move, sizeof( move ) );
 	savefile->Read( &rot, sizeof( rot ) );
@@ -437,6 +467,8 @@ idMover::Killed
 void idMover::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
 	fl.takedamage = false;
 	ActivateTargets( this );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
 }
 
 
@@ -2663,7 +2695,9 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 		// fire targets
 		ActivateTargets( moveMaster->GetActivator() );
 
+
 		SetBlocked(false);
+
 	} else if ( moverState == MOVER_2TO1 ) {
 		// reached pos1
 		idThread::ObjectMoveDone( move_thread, this );
@@ -2684,7 +2718,9 @@ void idMover_Binary::Event_Reached_BinaryMover( void ) {
 			PostEventSec( &EV_Activate, wait, this );
 		}
 
+
 		SetBlocked(false);
+
 	} else {
 		gameLocal.Error( "Event_Reached_BinaryMover: bad moverState" );
 	}
@@ -3144,6 +3180,7 @@ CLASS_DECLARATION( idMover_Binary, idDoor )
 	EVENT( EV_Door_IsOpen,				idDoor::Event_IsOpen )
 	EVENT( EV_Door_IsLocked,			idDoor::Event_Locked )
 	EVENT( EV_ReachedPos,				idDoor::Event_Reached_BinaryMover )
+
 	EVENT( EV_SpectatorTouch,			idDoor::Event_SpectatorTouch )
 	EVENT( EV_Mover_OpenPortal,			idDoor::Event_OpenPortal )
 	EVENT( EV_Mover_ClosePortal,		idDoor::Event_ClosePortal )

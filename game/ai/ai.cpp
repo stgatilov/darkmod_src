@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/05/30 06:26:29  ishtvan
+ * objective system updates
+ *
  * Revision 1.21  2006/05/26 10:29:21  ishtvan
  * *) better tactile alert method
  * *) added kill and KO objective callbacks
@@ -3628,10 +3631,15 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) ) {
 		static_cast< idPlayer* >( attacker )->AddAIKill();
+		if( attacker == gameLocal.GetLocalPlayer() )
+		{
+			gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, true );
+		}
+
 	}
 
 	// Update TDM objective system
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, true );
+	//gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );
 }
 
 /***********************************************************************

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.58  2006/05/30 06:25:00  ishtvan
+ * objective system updates
+ *
  * Revision 1.57  2006/05/26 10:26:24  ishtvan
  * added mission data object, which gets updated in runframe
  *
@@ -1842,6 +1845,7 @@ void idGameLocal::MapShutdown( void ) {
 
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();
+	m_MissionData->Clear();
 
 	// clear Dark Mod inventory
 	g_Global.m_DarkModPlayer->ClearInventory();
