@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.12  2006/05/31 20:24:55  sparhawk
+ * Added timerstim skeleton
+ *
  * Revision 1.11  2006/05/17 05:40:43  sophisticatedzombie
  * Made TriggerResponse virtual.
  * Added virtual PostFired event to CStim to handle state cleanup in descended classes after stim fired.
@@ -100,7 +103,7 @@ CStimResponseCollection::~CStimResponseCollection(void)
 {
 }
 
-CStim* CStimResponseCollection::createStim (idEntity* p_owner, StimType type)
+CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
 {
 		CStim* pRet;
 
@@ -118,7 +121,7 @@ CStim* CStimResponseCollection::createStim (idEntity* p_owner, StimType type)
 		return pRet;
 }
 
-CResponse* CStimResponseCollection::createResponse (idEntity* p_owner, StimType type)
+CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType type)
 {
 		CResponse* pRet;
 
@@ -156,7 +159,7 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 	if(pRet == NULL)
 	{
 		// Create either type specific descended class, or the default base class
-		pRet = createStim (Owner, (StimType) Type);
+		pRet = createStim(Owner, (StimType) Type);
 		m_Stim.Append(pRet);
 	}
 
@@ -168,7 +171,6 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 		pRet->m_State = SS_DISABLED;
 
 		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, Owner); 
-//		AddEntityToList(gameLocal.m_StimEntity, Owner);
 	}
 
 	return pRet;
@@ -202,7 +204,6 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 		pRet->m_Removable = bRemovable;
 
 		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, Owner); 
-//		AddEntityToList(gameLocal.m_RespEntity, Owner);
 	}
 
 	return pRet;
@@ -232,7 +233,6 @@ CStim *CStimResponseCollection::AddStim(CStim *s)
 		m_Stim.Append(pRet);
 
 		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, s->m_Owner); 
-//		AddEntityToList(gameLocal.m_StimEntity, s->m_Owner);
 	}
 
 Quit:
@@ -263,7 +263,6 @@ CResponse *CStimResponseCollection::AddResponse(CResponse *r)
 		m_Response.Append(pRet);
 
 		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, r->m_Owner);
-//		AddEntityToList(gameLocal.m_RespEntity, r->m_Owner);
 	}
 
 Quit:
@@ -607,9 +606,6 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 	args->GetInt("sr_timer_reload", "-1", n);
 	t->m_Reload = n;
 
-	args->GetInt("sr_timer_apply_counter", "-1", n);
-	t->m_ApplyCounter = n;
-
 	args->GetString("sr_timer_type", "RELOAD", str);
 	if(str.Cmp("RELOAD") == 0)
 		t->m_Type = CStimResponseTimer::SRTT_RELOAD;
@@ -787,8 +783,6 @@ CStimResponseTimer::CStimResponseTimer(void)
 	m_ReloadTimerVal = 0;
 	m_Apply = 0;
 	m_ApplyVal = 0;
-	m_ApplyCounter = -1;
-	m_ApplyCounterVal = -1;
 	m_Duration = 0;
 	m_DurationVal = 0;
 }

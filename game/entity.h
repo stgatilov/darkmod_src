@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/05/31 20:24:12  sparhawk
+ * Added timerstim skeleton
+ *
  * Revision 1.30  2006/05/03 21:32:40  sparhawk
  * Added an easier interface for calling scriptfunctions
  *
@@ -826,6 +829,12 @@ private:
 	// Add/Remove the response to/from the stim with the given type
 	void					ResponseIgnore(int StimType, idEntity *);
 	void					ResponseAllow(int StimType, idEntity *);
+
+	void					Event_TimerSet(int StimType, int Hour, int Minute, int Milisecond);
+	void					Event_TimerStop(int StimType);
+	void					Event_TimerPause(int StimType);
+	void					Event_TimerRestart(int StimType);
+	void					Event_TimerReset(int StimType);
 
 	/**
 	* Used to propagate a sound directly via scripting, without playing the audible sound

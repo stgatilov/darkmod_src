@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.51  2006/05/31 20:24:12  sparhawk
+ * Added timerstim skeleton
+ *
  * Revision 1.50  2006/05/03 21:40:14  sparhawk
  * Fixed text in debugstring.
  *
@@ -297,6 +300,12 @@ const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
 const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
 const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
 
+// StimType, Hours, minutes, seconds, miliseconds(?)
+const idEventDef EV_TimerSet( "SetTimer", "ddddd" );
+const idEventDef EV_TimerStop( "StopTimer", "d" );
+const idEventDef EV_TimerPause( "PauseTimer", "d" );
+const idEventDef EV_TimerRestart( "RestartTimer", "d" );
+const idEventDef EV_TimerReset( "ResetTimer", "d" );
 
 // soundprop event: Propagate sound directly from scripting
 const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
@@ -401,6 +410,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
 	EVENT( EV_ResponseIgnore,		idEntity::ResponseIgnore)
 	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
+
+	EVENT( EV_TimerSet,				idEntity::Event_TimerSet )
+	EVENT( EV_TimerStop,			idEntity::Event_TimerStop )
+	EVENT( EV_TimerPause,			idEntity::Event_TimerPause )
+	EVENT( EV_TimerRestart,			idEntity::Event_TimerRestart )
+	EVENT( EV_TimerReset,			idEntity::Event_TimerReset )
 
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
@@ -6992,5 +7007,26 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Scriptfunction not found! [%s]\r", fkt);
 
 	return pThread;
+}
+
+
+void idEntity::Event_TimerSet(int StimType, int Hour, int Minute, int Milisecond)
+{
+}
+
+void idEntity::Event_TimerStop(int StimType)
+{
+}
+
+void idEntity::Event_TimerPause(int StimType)
+{
+}
+
+void idEntity::Event_TimerRestart(int StimType)
+{
+}
+
+void idEntity::Event_TimerReset(int StimType)
+{
 }
 

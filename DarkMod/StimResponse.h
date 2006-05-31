@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2006/05/31 20:24:55  sparhawk
+ * Added timerstim skeleton
+ *
  * Revision 1.10  2006/05/17 05:40:43  sophisticatedzombie
  * Made TriggerResponse virtual.
  * Added virtual PostFired event to CStim to handle state cleanup in descended classes after stim fired.
@@ -149,13 +152,6 @@ protected:
 	 */
 	TimerValue		m_Apply;
 	TimerValue		m_ApplyVal;
-
-	/**
-	 * How often can the stimulus be applied before it is depleted.
-	 * -1 = unlimited
-	 */
-	int				m_ApplyCounter;
-	int				m_ApplyCounterVal;
 
 	/**
 	 * How long is the stim performing it's action.
@@ -451,14 +447,34 @@ public:
 	 * If the stim contains information for a timed event, this function parses the string
 	 * and creates the appropriate timer structure.
 	 *
-	 * The timer is initialized by a string on the entity which reads like this:
+	 * The timer is comfigured by several strings on the entity:
+	 * Key: sr_timer_duration
+	 * Value: TimeString
+	 * 
 	 * HH:MM:SS
 	 *
 	 * HH are the hours in 24 hour format 0-23.
 	 * MM are the minutes 0-59.
 	 * SS are the seconds 0-59.
+	 *
+	 *
+	 * Key: sr_timer_reload
+	 * Value: N
+	 *
+	 * N = 0-N for the number of times it should be reloaded.
+	 * A value of -1 means that it is infinitely reloaded (until disabled).
+	 *
+	 * Key: sr_timer_type
+	 * Value: { RELOAD | SINGLESHOT }
+	 *
+	 * Key: sr_timer_reload_duration
+	 * Value: TimeString
+	 *
+	 * Key: sr_timer_apply_duration
+	 * Value: TimeString
 	 */
 	void				CreateTimer(const idDict *args, CStim *Owner);
+	void				CreateTimer(CStim *Owner);
 
  	idList<CStim *>		&GetStimList(void) { return m_Stim; };
 	idList<CResponse *>	&GetResponseList(void) { return m_Response; };

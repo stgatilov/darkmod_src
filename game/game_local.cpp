@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.59  2006/05/31 20:24:32  sparhawk
+ * Added timerstim skeleton
+ *
  * Revision 1.58  2006/05/30 06:25:00  ishtvan
  * objective system updates
  *
@@ -5600,8 +5603,6 @@ void idGameLocal::ProcessStimResponse(void)
 	CStimResponseCollection *src;
 	idBounds bounds;
 	idEntity *Ent[MAX_GENTITIES];
-
-
 
 	en = m_StimEntity.Num();
 
