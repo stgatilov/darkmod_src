@@ -166,7 +166,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 {
 
 	// Loop until we change states (go to test inside a PVS area)
-	while (searchState == newPVSArea_searchState)
+ 	while (searchState == newPVSArea_searchState)
 	{
 
 		// Test if all PVS areas have been iterated
@@ -464,6 +464,9 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 			currentGridSearchPoint.x += hideSearchGridSpacing;
 		}
 
+		// Reset y iteration
+		currentGridSearchPoint.y = currentGridSearchBoundMins.y;
+
 	} // X iteration
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\n", currentGridSearchAASAreaNum);
@@ -496,14 +499,16 @@ int darkModAASFindHidingSpots::TestHidingPoint
 	int out_hidingSpotTypesThatApply = NONE_HIDING_SPOT_TYPE;
 	out_quality = 0.0f; // none found yet
 
+	idVec3 testLineTop = testPoint;
+	testLineTop.z += hidingHeight;
+
 	// Is it dark?
 	if ((hidingSpotTypesAllowed & DARKNESS_HIDING_SPOT_TYPE) != 0)
 	{
 		// Test the lighting level of this position
 		//DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
-		idVec3 testLineTop = testPoint;
-		testLineTop.z += hidingHeight;
-		
+
+
 		float LightQuotient = LAS.queryLightingAlongLine 
 		(
 			testPoint,
