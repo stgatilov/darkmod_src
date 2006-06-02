@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/06/02 02:43:16  sophisticatedzombie
+ * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
+ *
  * Revision 1.2  2005/12/10 17:26:51  sophisticatedzombie
  * Added 2 new functions to aas which provide information about AAS areas
  *
@@ -110,6 +113,7 @@ public:
 	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
+	virtual bool				FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
 
 	// Added for DarkMod by SophisticatedZombie(DMH)
 	virtual idBounds			GetAreaBounds (int areaNum) const;

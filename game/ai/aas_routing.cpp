@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:32  sparhawk
- * Initial revision
+ * Revision 1.2  2006/06/02 02:43:16  sophisticatedzombie
+ * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -20,6 +23,8 @@
 
 #include "AAS_local.h"
 #include "../Game_local.h"		// for print and error
+
+#include "../../darkmod/darkmodglobals.h"
 
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2
@@ -1329,6 +1334,225 @@ bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 ori
 	}
 
 	if ( bestAreaNum ) {
+		goal.areaNum = bestAreaNum;
+		goal.origin = AreaCenter( bestAreaNum );
+		return true;
+	}
+
+	return false;
+}
+
+/*
+============
+idAASLocal::FindClosestTargetToGoal
+============
+*/
+bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const 
+{
+	int i, j, k, badTravelFlags, nextAreaNum, bestAreaNum;
+	bool b_haveClosestDistance;
+	float closestDistanceToTarget;
+	float distanceToTarget;
+	idRoutingUpdate *updateListStart, *updateListEnd, *curUpdate, *nextUpdate;
+	idReachability *reach;
+	const aasArea_t *nextArea;
+	idVec3 v1, v2, p;
+	float targetDist, dist;
+
+	if ( file == NULL || areaNum <= 0 ) 
+	{
+		goal.areaNum = areaNum;
+		goal.origin = origin;
+		return false;
+	}
+
+	/*
+	// We want closest to target, not closest to us
+	// if the first area is valid goal, just return the origin
+	if ( callback.TestArea( this, areaNum ) ) 
+	{
+		goal.areaNum = areaNum;
+		goal.origin = origin;
+		return true;
+	}
+	*/
+
+	// setup obstacles
+	for ( k = 0; k < numObstacles; k++ ) 
+	{
+		obstacles[k].expAbsBounds[0] = obstacles[k].absBounds[0] - file->GetSettings().boundingBoxes[0][1];
+		obstacles[k].expAbsBounds[1] = obstacles[k].absBounds[1] - file->GetSettings().boundingBoxes[0][0];
+	}
+	
+	badTravelFlags = ~travelFlags;
+	SIMDProcessor->Memset( goalAreaTravelTimes, 0, file->GetNumAreas() * sizeof( unsigned short ) );
+
+	targetDist = (target - origin).Length();
+
+	// Clear the area update tmpTravelTime members, as we use those as breadcrumbs
+	int numAreas = file->GetNumAreas();
+	for (int ai = 0; ai < numAreas; ai ++)
+	{
+		areaUpdate[ai].tmpTravelTime = 0.0;
+	}
+
+
+	// initialize first update
+	curUpdate = &areaUpdate[areaNum];
+	curUpdate->areaNum = areaNum;
+	curUpdate->tmpTravelTime = 0;
+	curUpdate->start = origin;
+	curUpdate->next = NULL;
+	curUpdate->prev = NULL;
+	updateListStart = curUpdate;
+	updateListEnd = curUpdate;
+
+ 	closestDistanceToTarget = 0.0;
+	b_haveClosestDistance = false;
+	bestAreaNum = 0;
+
+	// while there are updates in the list
+	while ( updateListStart ) 
+	{
+
+		curUpdate = updateListStart;
+		if ( curUpdate->next ) 
+		{
+			curUpdate->next->prev = NULL;
+		}
+		else 
+		{
+			updateListEnd = NULL;
+		}
+		updateListStart = curUpdate->next;
+
+		curUpdate->isInList = false;
+
+		// If we already checked this area, we are done with it
+		// We use the tmpTravelTime as a boolean flag to indicate if we have searched an area or not
+		if (curUpdate->tmpTravelTime > 1.0)
+		{
+			continue;
+		}
+		else
+		{
+			// We are checking it
+			curUpdate->tmpTravelTime = 2.0;
+		}
+
+
+		// What is the distance to the target
+		distanceToTarget = (file->AreaCenter(curUpdate->areaNum) - target).Length();
+
+		// if we already found a closer location we are done
+		if 
+		(
+			( b_haveClosestDistance) && 
+			((closestDistanceToTarget * 2.0) <= distanceToTarget)
+		)
+		{
+			continue;
+		}
+
+		for ( i = 0, reach = file->GetArea( curUpdate->areaNum ).reach; reach; reach = reach->next, i++ )
+		{
+			// if the reachability uses an undesired travel type
+			if ( reach->travelType & badTravelFlags ) 
+			{
+				continue;
+			}
+
+			// next area the reversed reachability leads to
+			nextAreaNum = reach->toAreaNum;
+			nextArea = &file->GetArea( nextAreaNum );
+
+			// if traveling through the next area requires an undesired travel flag
+			if ( nextArea->travelFlags & badTravelFlags ) 
+			{
+				continue;
+			}
+
+			// path may not go through any obstacles
+			for ( k = 0; k < numObstacles; k++ ) 
+			{
+				// if the movement vector intersects the expanded obstacle bounds
+				if ( obstacles[k].expAbsBounds.LineIntersection( curUpdate->start, reach->end ) ) 
+				{
+					break;
+				}
+			}
+			if ( k < numObstacles ) 
+			{
+				continue;
+			}
+
+			nextUpdate = &areaUpdate[nextAreaNum];
+			nextUpdate->areaNum = nextAreaNum;
+			nextUpdate->start = reach->end;
+			
+
+			// if we are not allowed to fly
+			if ( badTravelFlags & TFL_FLY ) 
+			{
+				// avoid areas near ledges
+				if ( file->GetArea( nextAreaNum ).flags & AREA_LEDGE ) 
+				{
+					continue;
+				}
+			}
+
+			if ( !nextUpdate->isInList ) 
+			{
+				nextUpdate->next = NULL;
+				nextUpdate->prev = updateListEnd;
+				if ( updateListEnd ) 
+				{
+					updateListEnd->next = nextUpdate;
+				} 
+				else 
+				{
+					updateListStart = nextUpdate;
+				}
+				updateListEnd = nextUpdate;
+				nextUpdate->isInList = true;
+
+				/*
+				if (g_Global.m_drawAIDebugGraphics >= 1.0)
+				{
+					idBounds areaBounds = file->AreaBounds(nextUpdate->areaNum);
+					gameRenderWorld->DebugBounds
+					(
+						idVec4 (1.0,1.0,1.0,1.0),
+						areaBounds,
+						vec3_origin,
+						10000
+					);
+				}
+				*/
+						
+			}
+
+			// don't put goal near a ledge
+			distanceToTarget = (file->AreaCenter(reach->toAreaNum) - target).Length();
+			if ( !( nextArea->flags & AREA_LEDGE ) ) 
+			{
+				// If is closest so far
+				if ( !b_haveClosestDistance || distanceToTarget < closestDistanceToTarget) 
+				{
+					// if the area is not visible to the target
+					if ( callback.TestArea( this, reach->toAreaNum ) ) 
+					{
+						closestDistanceToTarget = distanceToTarget;
+						b_haveClosestDistance = true;
+						bestAreaNum = reach->toAreaNum;
+					}
+				}
+			}
+		}
+	}
+
+	if ( bestAreaNum ) 
+	{
 		goal.areaNum = bestAreaNum;
 		goal.origin = AreaCenter( bestAreaNum );
 		return true;
