@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/06/02 02:48:50  sophisticatedzombie
+ * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
+ *
  * Revision 1.22  2006/05/30 06:26:29  ishtvan
  * objective system updates
  *
@@ -364,6 +367,106 @@ bool idAASFindAttackPosition::TestArea( const idAAS *aas, int areaNum ) {
 	fromPos = areaCenter + fireOffset * axis;
 
 	return self->GetAimDir( fromPos, target, self, dir );
+}
+
+
+/*
+============
+idAASFindObservationPosition::idAASFindObservationPosition
+============
+*/
+idAASFindObservationPosition::idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset ) 
+{
+	int	numPVSAreas;
+
+	this->targetPos		= targetPos;
+	this->eyeOffset		= eyeOffset;
+	this->self			= self;
+	this->gravityAxis	= gravityAxis;
+
+	// setup PVS
+	idBounds bounds( targetPos - idVec3( 16, 16, 0 ), targetPos + idVec3( 16, 16, 64 ) );
+	numPVSAreas = gameLocal.pvs.GetPVSAreas( bounds, PVSAreas, idEntity::MAX_PVS_AREAS );
+	targetPVS	= gameLocal.pvs.SetupCurrentPVS( PVSAreas, numPVSAreas );
+}
+
+/*
+============
+idAASFindObservationPosition::~idAASFindObservationPosition
+============
+*/
+idAASFindObservationPosition::~idAASFindObservationPosition() {
+	gameLocal.pvs.FreeCurrentPVS( targetPVS );
+}
+
+/*
+============
+idAASFindObservationPosition::TestArea
+============
+*/
+bool idAASFindObservationPosition::TestArea( const idAAS *aas, int areaNum ) 
+{
+	idVec3	dir;
+	idVec3	local_dir;
+	idVec3	fromPos;
+	idMat3	axis;
+	idVec3	areaCenter;
+	int		numPVSAreas;
+	int		PVSAreas[ idEntity::MAX_PVS_AREAS ];
+
+	areaCenter = aas->AreaCenter( areaNum );
+	areaCenter[ 2 ] += 1.0f;
+
+	/*
+	numPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( areaCenter ).Expand( 16.0f ), PVSAreas, idEntity::MAX_PVS_AREAS );
+	if ( !gameLocal.pvs.InCurrentPVS( targetPVS, PVSAreas, numPVSAreas ) ) {
+		return false;
+	}
+	*/
+
+	// calculate the world transform of the view position
+	dir = targetPos - areaCenter;
+	gravityAxis.ProjectVector( dir, local_dir );
+	local_dir.z = 0.0f;
+	local_dir.ToVec2().Normalize();
+	axis = local_dir.ToMat3();
+
+	fromPos = areaCenter + eyeOffset * axis;
+
+	// Run trace
+	trace_t results;
+	gameLocal.clip.TracePoint( results, fromPos, targetPos, MASK_SOLID, self );
+	if (  results.fraction >= 1.0f )
+	{
+		/*
+		gameRenderWorld->DebugLine
+		(
+			idVec4 (0.0, 1.0, 0.0, 1.0),
+			fromPos,
+			targetPos,
+			10000.0,
+			true
+		);
+		*/
+
+		return true;
+	}
+	else
+	{
+		/*
+		gameRenderWorld->DebugLine
+		(
+			idVec4 (1.0, 0.0, 0.0, 1.0),
+			fromPos,
+			targetPos,
+			10000.0,
+			true
+		);
+		*/
+
+		return false;
+	}
+
 }
 
 /*
@@ -4041,14 +4144,19 @@ void idAI::UpdateEnemyPosition( void ) {
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
 
-	if ( CanSee( enemyEnt, false ) ) {
+	if ( CanSee( enemyEnt, false ) && !IsEntityHiddenByDarkness(enemyEnt) ) 
+	{
+
 		AI_ENEMY_VISIBLE = true;
-		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) ) {
+		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) ) 
+		{
 			AI_ENEMY_IN_FOV = true;
 		}
 
 		SetEnemyPosition();
-	} else {
+	} 
+	else 
+	{
 		// check if we heard any sounds in the last frame
 		if ( enemyEnt == gameLocal.GetAlertEntity() ) {
 			float dist = ( enemyEnt->GetPhysics()->GetOrigin() - org ).LengthSqr();
@@ -5568,8 +5676,14 @@ idActor *idAI::VisualScan( float timecheck )
 		AI_VISALERT = true;
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
-		// convert to alert units ( 0.6931472 = log(2) )
+		// Convert to alert units ( 0.6931472 = log(2) )
 		incAlert = 4*log( visFrac * lgem ) / 0.6931472;
+
+		// Scale by distance to the source. We consider the above value to be normalized
+		// to something 10 meters away
+				
+
+
 		AlertAI( "vis", incAlert );
 	}
 
@@ -5704,6 +5818,36 @@ idActor *idAI::FindEnemy( bool useFOV )
 Quit:
 	return actor;
 }
+
+/*---------------------------------------------------------------------------------*/
+
+bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity)
+{
+	// Quick test using LAS at entity origin
+	idPhysics* p_physics = p_entity->GetPhysics();
+	if (p_physics != NULL)
+	{
+		idBounds entityBounds = p_physics->GetAbsBounds();
+		idVec3 bottomPoint = p_physics->GetOrigin();
+		
+		idVec3 topPoint = p_physics->GetOrigin();
+		topPoint.z = entityBounds[1].z;
+		
+		float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, p_entity, true);
+		
+		if (lightQuotient < 0.5) // TODO: Make this cutoff dependent on visual acuity and ini settings
+		{
+			return true;
+		}
+	}
+
+	// Not in darkness
+	return false;
+
+
+}
+
+/*---------------------------------------------------------------------------------*/
 
 idActor *idAI::FindNearestEnemy( bool useFOV ) 
 {

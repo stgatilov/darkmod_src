@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/06/02 02:48:50  sophisticatedzombie
+ * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
+ *
  * Revision 1.12  2006/05/26 04:46:19  sophisticatedzombie
  * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
  *
@@ -296,6 +299,14 @@ const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", "d", '
 const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
 
 /*!
+* This event is used to get a position that the AI can move to observe a 
+* given position.  It is useful for looking at hiding spots that can't be reached,
+* and performing other investigation functions.
+*/
+const idEventDef AI_GetObservationPosition ("getObservationPosition", "v", 'v');
+
+
+/*!
 * This event handles a knockout of the AI
 */
 const idEventDef AI_Knockout( "knockout" );
@@ -453,6 +464,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
 	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
 	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
+	EVENT ( AI_GetObservationPosition,			idAI::Event_GetObservationPosition)
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
@@ -1346,6 +1358,108 @@ idAI::Event_MoveOutOfRange
 void idAI::Event_MoveOutOfRange( idEntity *entity, float range ) {
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	MoveOutOfRange( entity, range );
+}
+
+/*
+=====================
+idAI::Event_GetObservationPosition
+by SophisticatedZobmie for The Dark Mod
+This is an adaptation of the find attack position
+query that is within MoveToAttackPosition
+=====================
+*/
+void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
+{
+	int				areaNum;
+	aasObstacle_t	obstacle;
+	aasGoal_t		goal;
+	idBounds		bounds;
+	idVec3			observeFromPos;
+
+	if ( !aas ) 
+	{	
+		observeFromPos = GetPhysics()->GetOrigin();
+		idThread::ReturnVector (observeFromPos);
+		AI_DEST_UNREACHABLE = true;
+		return;
+	}
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	areaNum	= PointReachableAreaNum( org );
+
+	// Raise point up just a bit so it isn't on the floor of the aas
+	idVec3 pointToObserve2 = pointToObserve;
+	pointToObserve2.z += 15.0;
+	
+	idAASFindObservationPosition findGoal
+	(
+		this, 
+		physicsObj.GetGravityAxis(), 
+		pointToObserve2, 
+		GetEyePosition() - org  // Offset of eye from origin
+	);
+
+	if ( !aas->FindGoalClosestToTarget
+	(
+		goal, 
+		areaNum, 
+		GetPhysics()->GetOrigin(),
+		pointToObserve2, // It is also the goal target
+		travelFlags, 
+		NULL, 
+		0, 
+		findGoal 
+	) ) 
+	{
+		observeFromPos = GetPhysics()->GetOrigin();
+		AI_DEST_UNREACHABLE = true;
+	
+		// Draw the AI Debug Graphics
+		if (g_Global.m_drawAIDebugGraphics > 0)
+		{
+			idVec4 markerColor (1.0, 0.0, 0.0, 1.0);
+			idVec3 arrowLength (0.0, 0.0, 50.0);
+
+			gameRenderWorld->DebugArrow
+			(
+				markerColor,
+				observeFromPos + arrowLength,
+				observeFromPos,
+				2.0f,
+				g_Global.m_drawAIDebugGraphics
+			);
+		}
+		
+		idThread::ReturnVector (observeFromPos);
+
+		
+		return;
+	}
+	else
+	{
+		observeFromPos = goal.origin;
+		AI_DEST_UNREACHABLE = false;
+
+		// Draw the AI Debug Graphics
+		if (g_Global.m_drawAIDebugGraphics > 0)
+		{
+			idVec4 markerColor (0.0, 1.0, 0.0, 1.0);
+			idVec3 arrowLength (0.0, 0.0, 50.0);
+
+			gameRenderWorld->DebugArrow
+			(
+				markerColor,
+				observeFromPos + arrowLength,
+				observeFromPos,
+				2.0f,
+				g_Global.m_drawAIDebugGraphics
+			);
+		}
+
+		idThread::ReturnVector (observeFromPos);
+		return;
+	}
+	
 }
 
 /*
@@ -2783,7 +2897,11 @@ void idAI::Event_LocateEnemy( void ) {
 	}
 
 	enemyEnt->GetAASLocation( aas, lastReachableEnemyPos, areaNum );
-	SetEnemyPosition();
+
+	// SZ: Why is this in here if we are unsure of where the enemy is. We have to update it first
+	// Update was already after SetEnemyPosition so I'm just commenting out SetEnemyPosition (which
+	// is called form in UpdateEnemyPosition if we can see them)
+	//SetEnemyPosition();
 	UpdateEnemyPosition();
 }
 

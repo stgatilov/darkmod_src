@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2006/06/02 02:48:50  sophisticatedzombie
+ * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
+ *
  * Revision 1.17  2006/05/26 10:29:21  ishtvan
  * *) better tactile alert method
  * *) added kill and KO objective callbacks
@@ -224,6 +227,9 @@ extern const idEventDef AI_GetNumHidingSpots;
 extern const idEventDef AI_GetNthHidingSpotLocation;
 extern const idEventDef AI_GetNthHidingSpotType;
 
+// This event is used to get a position from which a given position can be observed
+extern const idEventDef AI_GetObservationPosition;
+
 // Darkmod communication issuing event
 extern const idEventDef AI_IssueCommunication;
 
@@ -304,6 +310,23 @@ private:
 	idBounds			excludeBounds;
 	idVec3				targetPos;
 	idVec3				fireOffset;
+	idMat3				gravityAxis;
+	pvsHandle_t			targetPVS;
+	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
+};
+
+class idAASFindObservationPosition : public idAASCallback {
+public:
+						idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset );
+						~idAASFindObservationPosition();
+
+	virtual bool		TestArea( const idAAS *aas, int areaNum );
+
+private:
+	const idAI			*self;
+	idBounds			excludeBounds;
+	idVec3				targetPos;
+	idVec3				eyeOffset;
 	idMat3				gravityAxis;
 	pvsHandle_t			targetPVS;
 	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
@@ -835,6 +858,16 @@ protected:
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 	void					BlockedFailSafe( void );
 
+	/**
+	* Darkmod enemy tracking: Is an entity shrouded in darkness?
+	* @author: SophisticatedZombie
+	*
+	* @return true if the entity is in darkness
+	* @return false if not
+	*/
+	bool IsEntityHiddenByDarkness (idEntity* p_entity);
+
+
 	// movement control
 	void					StopMove( moveStatus_t status );
 	bool					FaceEnemy( void );
@@ -1106,6 +1139,7 @@ protected:
 	void Event_GetNumHidingSpots ();
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
 	void Event_GetNthHidingSpotType (int hidingSpotIndex);
+	void Event_GetObservationPosition (const idVec3& pointToObserve);
 
 	/*!
 	* This event is used by an AI script to issue a message to other AI's through
