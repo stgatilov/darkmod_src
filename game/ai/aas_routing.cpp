@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/06/03 19:47:32  sparhawk
+ * Removed unused variables.
+ *
  * Revision 1.2  2006/06/02 02:43:16  sophisticatedzombie
  * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
  *
@@ -1349,7 +1352,7 @@ idAASLocal::FindClosestTargetToGoal
 */
 bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const 
 {
-	int i, j, k, badTravelFlags, nextAreaNum, bestAreaNum;
+	int i, k, badTravelFlags, nextAreaNum, bestAreaNum;
 	bool b_haveClosestDistance;
 	float closestDistanceToTarget;
 	float distanceToTarget;
@@ -1357,7 +1360,7 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 	idReachability *reach;
 	const aasArea_t *nextArea;
 	idVec3 v1, v2, p;
-	float targetDist, dist;
+	float targetDist;
 
 	if ( file == NULL || areaNum <= 0 ) 
 	{

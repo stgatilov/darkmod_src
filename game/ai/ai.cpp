@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/06/03 19:47:32  sparhawk
+ * Removed unused variables.
+ *
  * Revision 1.23  2006/06/02 02:48:50  sophisticatedzombie
  * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
  *
@@ -411,8 +414,6 @@ bool idAASFindObservationPosition::TestArea( const idAAS *aas, int areaNum )
 	idVec3	fromPos;
 	idMat3	axis;
 	idVec3	areaCenter;
-	int		numPVSAreas;
-	int		PVSAreas[ idEntity::MAX_PVS_AREAS ];
 
 	areaCenter = aas->AreaCenter( areaNum );
 	areaCenter[ 2 ] += 1.0f;
