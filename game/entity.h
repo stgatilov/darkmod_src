@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/06/05 21:33:25  sparhawk
+ * Stimtimer code updated/added
+ *
  * Revision 1.31  2006/05/31 20:24:12  sparhawk
  * Added timerstim skeleton
  *
@@ -830,11 +833,13 @@ private:
 	void					ResponseIgnore(int StimType, idEntity *);
 	void					ResponseAllow(int StimType, idEntity *);
 
-	void					Event_TimerSet(int StimType, int Hour, int Minute, int Milisecond);
+	void					Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
+	void					Event_TimerSetDuration(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
 	void					Event_TimerStop(int StimType);
-	void					Event_TimerPause(int StimType);
+	void					Event_TimerStart(int StimType);
 	void					Event_TimerRestart(int StimType);
 	void					Event_TimerReset(int StimType);
+	void					Event_TimerSetState(int StimType, int State);
 
 	/**
 	* Used to propagate a sound directly via scripting, without playing the audible sound

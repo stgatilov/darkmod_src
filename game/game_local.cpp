@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.60  2006/06/05 21:33:25  sparhawk
+ * Stimtimer code updated/added
+ *
  * Revision 1.59  2006/05/31 20:24:32  sparhawk
  * Added timerstim skeleton
  *
@@ -5563,18 +5566,19 @@ void idGameLocal::RemoveResponse(idEntity *e)
 		m_RespEntity.RemoveIndex(i);
 }
 
-int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
+int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e, bool Timer)
 {
 	int i;
 	CResponse *r;
 	int numRespones = 0;
 
-
 	for(i = 0; i < n; i++)
 	{
 		// ignore the original entity because an entity shouldn't respond 
-		// to it's own stims.
-		if(Ent[i] == e)
+		// to it's own stims. In case of a normal event the trigger and the
+		// entity must be different. When the response is triggered by a timer
+		// the entity and the trigger are always the same.
+		if(Timer == false && Ent[i] == e)
 			continue;
 
 		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
@@ -5582,7 +5586,7 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 			if(r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
 			{
 				r->TriggerResponse(e);
-				numRespones ++;
+				numRespones++;
 			}
 		}
 	}
@@ -5601,11 +5605,34 @@ void idGameLocal::ProcessStimResponse(void)
 	idVec3 origin;
 
 	CStimResponseCollection *src;
+	CStimResponseTimer *timer;
 	idBounds bounds;
 	idEntity *Ent[MAX_GENTITIES];
+	double ts = sys->GetClockTicks();
 
+	// Check the timed stims first.
+	en = m_StimTimer.Num();
+	for(ei = 0; ei < en; ei++)
+	{
+		CStim *stim = m_StimTimer[ei];
+
+		// Advance the timer
+		timer = stim->GetTimer();
+
+		if(timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
+			timer->Tick(ts);
+
+		if(timer->GetState() == CStimResponseTimer::SRTS_EXPIRED)
+		{
+			Ent[0] = stim->m_Owner;
+			e = Ent[0];
+			n = 1;
+			DoResponseAction(stim, Ent, n, e, true);
+		}
+	}
+
+	// Now check the rest of the stims.
 	en = m_StimEntity.Num();
-
 	for(ei = 0; ei < en; ei++)
 	{
 		e = m_StimEntity[ei];
@@ -5629,18 +5656,15 @@ void idGameLocal::ProcessStimResponse(void)
 					if(n != 0)
 					{
 						// Do responses for entities within the radius of the stim
-						numResponses = DoResponseAction(stim[si], Ent, n, e);
+						numResponses = DoResponseAction(stim[si], Ent, n, e, false);
 					}
 
 					// The stim has fired, let it do any post-firing activity it may have
 					stim[si]->PostFired(numResponses);
-
 				}
 			}
 		}
 	}
-
-
 }
 
 /*

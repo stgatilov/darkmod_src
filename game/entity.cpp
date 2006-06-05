@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.52  2006/06/05 21:33:25  sparhawk
+ * Stimtimer code updated/added
+ *
  * Revision 1.51  2006/05/31 20:24:12  sparhawk
  * Added timerstim skeleton
  *
@@ -301,11 +304,13 @@ const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
 const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
 
 // StimType, Hours, minutes, seconds, miliseconds(?)
-const idEventDef EV_TimerSet( "SetTimer", "ddddd" );
+const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
+const idEventDef EV_TimerSetDuration( "SetTimerDuration", "ddddd" );
 const idEventDef EV_TimerStop( "StopTimer", "d" );
-const idEventDef EV_TimerPause( "PauseTimer", "d" );
+const idEventDef EV_TimerStart( "StartTimer", "d" );
 const idEventDef EV_TimerRestart( "RestartTimer", "d" );
 const idEventDef EV_TimerReset( "ResetTimer", "d" );
+const idEventDef EV_TimerSetState( "SetTimerState", "dd" );
 
 // soundprop event: Propagate sound directly from scripting
 const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
@@ -411,11 +416,13 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ResponseIgnore,		idEntity::ResponseIgnore)
 	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
 
-	EVENT( EV_TimerSet,				idEntity::Event_TimerSet )
+	EVENT( EV_TimerCreate,			idEntity::Event_TimerCreate )
+	EVENT( EV_TimerSetDuration,		idEntity::Event_TimerSetDuration )
 	EVENT( EV_TimerStop,			idEntity::Event_TimerStop )
-	EVENT( EV_TimerPause,			idEntity::Event_TimerPause )
+	EVENT( EV_TimerStart,			idEntity::Event_TimerStart )
 	EVENT( EV_TimerRestart,			idEntity::Event_TimerRestart )
 	EVENT( EV_TimerReset,			idEntity::Event_TimerReset )
+	EVENT( EV_TimerSetState,		idEntity::Event_TimerSetState )
 
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
@@ -7010,23 +7017,101 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 }
 
 
-void idEntity::Event_TimerSet(int StimType, int Hour, int Minute, int Milisecond)
+void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond)
 {
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->SetTimer(Hour, Minute, Seconds, Milisecond);
+
+Quit:
+	return;
+}
+
+void idEntity::Event_TimerSetDuration(int StimType, int Hour, int Minute, int Seconds, int Milisecond)
+{
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->SetDuration(Hour, Minute, Seconds, Milisecond);
+
+Quit:
+	return;
 }
 
 void idEntity::Event_TimerStop(int StimType)
 {
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->Stop();
+
+Quit:
+	return;
 }
 
-void idEntity::Event_TimerPause(int StimType)
+void idEntity::Event_TimerStart(int StimType)
 {
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->Start();
+
+Quit:
+	return;
 }
 
 void idEntity::Event_TimerRestart(int StimType)
 {
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->Restart();
+
+Quit:
+	return;
 }
 
 void idEntity::Event_TimerReset(int StimType)
 {
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->Reset();
+
+Quit:
+	return;
+}
+
+void idEntity::Event_TimerSetState(int StimType, int State)
+{
+	CStim *stim = m_StimResponseColl->GetStim(StimType);
+	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+
+	if(timer == NULL)
+		goto Quit;
+
+	timer->SetState((CStimResponseTimer::TimerState)State);
+
+Quit:
+	return;
 }
 
