@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.13  2006/06/05 21:32:18  sparhawk
+ * Timercode updated
+ *
  * Revision 1.12  2006/05/31 20:24:55  sparhawk
  * Added timerstim skeleton
  *
@@ -597,7 +600,7 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 	int n;
 	CStimResponseTimer *t = NULL;
 
-	t = new CStimResponseTimer;
+	t = new CStimResponseTimer(sys->ClockTicksPerSecond());
 
 	args->GetString("sr_timer_duration", "", str);
 	if((t->m_Duration = t->ParseTimeString(str)) == TIMER_UNDEFINED)
@@ -612,17 +615,10 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 	else
 		t->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
 
-	AddEntityToList((idList<void *>	&)gameLocal.m_StimTimer, stim);
-
-	args->GetString("sr_timer_reload_duration", "", str);
-	t->m_ReloadTimer = t->ParseTimeString(str);
-
-	args->GetString("sr_timer_apply_duration", "", str);
-	t->m_Apply = t->ParseTimeString(str);
+	gameLocal.m_StimTimer.AddUnique(stim);
 
 	stim->m_Timer = t;
 	t = NULL;
-	AddEntityToList((idList<void *>	&)gameLocal.m_StimTimer, stim); 
 
 Quit:
 	if(t)
@@ -708,6 +704,31 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 	return rc;
 }
 
+
+CStimResponseTimer *CStim::CreateTimer(void)
+{
+	CStimResponseTimer *rc = NULL;
+
+	if(m_Timer == NULL)
+	{
+		m_Timer = new CStimResponseTimer(sys->ClockTicksPerSecond());
+		gameLocal.m_StimTimer.AddUnique(this);
+	}
+
+	rc = m_Timer;
+
+	return(rc);
+}
+
+void CStim::RemoveTimer(void)
+{
+	if(m_Timer != NULL)
+	{
+		gameLocal.m_StimTimer.Remove(this);
+		delete m_Timer;
+	}
+}
+
 void CStim::PostFired (int numResponses)
 {
 	// Default implementation does nothing with this event
@@ -773,18 +794,20 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 /********************************************************************/
 /*                 CStimResponseTimer                               */
 /********************************************************************/
-CStimResponseTimer::CStimResponseTimer(void)
+CStimResponseTimer::CStimResponseTimer(double const &TicksPerSecond)
 {
 	m_Type = SRTT_SINGLESHOT;
 	m_State = SRTS_DISABLED;
 	m_Reload = 0;
 	m_ReloadVal = 0;
-	m_ReloadTimer = 0;
-	m_ReloadTimerVal = 0;
-	m_Apply = 0;
-	m_ApplyVal = 0;
-	m_Duration = 0;
-	m_DurationVal = 0;
+	m_Timer = TIMER_UNDEFINED;
+	m_TimerVal = TIMER_UNDEFINED;
+	m_Duration = TIMER_UNDEFINED;
+	m_DurationVal = TIMER_UNDEFINED;
+	m_LastTick = 0.0;
+	m_Ticker = 0.0;
+	m_TicksPerSecond = TicksPerSecond;
+	m_TicksPerMilliSecond = TicksPerSecond/1000.0;
 }
 
 CStimResponseTimer::~CStimResponseTimer(void)
@@ -849,5 +872,93 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 
 Quit:
 	return v;
+}
+
+void CStimResponseTimer::SetReload(int Reload)
+{
+	m_Reload = Reload;
+	m_ReloadVal = Reload;
+}
+
+void CStimResponseTimer::SetTimer(int Hour, int Minute, int Seconds, int Milisecond)
+{
+	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
+	m_TimerVal = m_Timer;
+}
+
+void CStimResponseTimer::SetDuration(int Hour, int Minute, int Seconds, int Milisecond)
+{
+	m_Duration = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
+	m_DurationVal = m_Duration;
+}
+
+void CStimResponseTimer::Stop(void)
+{
+	SetState(SRTS_DISABLED);
+}
+
+void CStimResponseTimer::Start(void)
+{
+	SetState(SRTS_RUNNING);
+}
+
+void CStimResponseTimer::Restart(void)
+{
+	// Switch to the next timer cycle if reloading is still possible or 
+	// reloading is ignored.
+	if(m_Reload > 0 || m_Reload == -1)
+	{
+		m_Duration = m_DurationVal;
+		m_Timer = m_TimerVal;
+		m_Reload--;
+		Start();
+	}
+	else
+		Stop();
+}
+
+void CStimResponseTimer::Reset(void)
+{
+	m_Timer = m_TimerVal;
+	m_Reload = m_ReloadVal;
+	m_Duration = m_DurationVal;
+}
+
+void CStimResponseTimer::SetState(TimerState State)
+{
+	m_State = State;
+}
+
+void CStimResponseTimer::Tick(double const &t)
+{
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
+
+	if(m_LastTick == 0.0)
+		goto Quit;
+
+	// We don't really care for an overrun of the ticckcounter. If 
+	// it really happens, the worst thing would be that a particular
+	// timer object would take longer to complete, because for this
+	// one cycle, the tick would become negative and thus would subtract
+	// the value instead of adding it. In the next cylce, everything 
+	// should work again though, since we always store the current
+	// value to remember it for the next cycle.
+	double tick = t - m_LastTick;
+
+	// If the overrun happened, we just ignore this tick. It's the easiest
+	// thing to do and the safest.
+	if(tick < 0.0)
+		goto Quit;
+
+	m_Ticker =+ tick;
+
+	// If we are below one millisecond we can exit;
+	if(m_Ticker < m_TicksPerMilliSecond)
+		goto Quit;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f%f\r", m_TicksPerMilliSecond, m_Ticker);
+
+Quit:
+	m_LastTick = t;
 }
 

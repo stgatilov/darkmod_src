@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/06/05 21:32:18  sparhawk
+ * Timercode updated
+ *
  * Revision 1.18  2006/05/07 22:51:49  ishtvan
  * fixed door closing sound
  *
@@ -215,12 +218,12 @@ void CFrobDoor::Spawn( void )
 	// Original starting position of the door in case it is a sliding door.
 	// Add the initial position offset in case the mapper makes the door start out inbetween states
 	m_StartPos = physicsObj.GetOrigin() + spawnArgs.GetVector("start_position", "0 0 0");
+
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
-
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
 
-	if ( !m_Open ) 
+	if(!m_Open) 
 	{
 		// Door starts _completely_ closed
 		Event_ClosePortal();
@@ -487,13 +490,11 @@ void CFrobDoor::Close(bool bMaster)
 
 void CFrobDoor::ToggleOpen(void)
 {
-
 	// Check if the door is stopped.
 //	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
 	if( !m_Rotating && !m_Translating )
 	{
 //		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
-
 
 		if(m_bIntentOpen == true)
 		{
@@ -505,14 +506,13 @@ void CFrobDoor::ToggleOpen(void)
 		}
 
 		m_bInterrupted = false;
-		
 		goto Quit;
 	}
 
 //	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
 
 	// Otherwise, door is moving.  Stop it if it is interruptable
-	if( m_bInterruptable )
+	if(m_bInterruptable)
 	{
 		m_bInterrupted = true;
 		Event_StopRotating();

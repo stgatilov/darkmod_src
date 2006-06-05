@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.12  2006/06/05 21:32:18  sparhawk
+ * Timercode updated
+ *
  * Revision 1.11  2006/05/31 20:24:55  sparhawk
  * Added timerstim skeleton
  *
@@ -88,6 +91,15 @@ typedef unsigned int	TimerValue;
  * Each of the values as a copy, which is used to store the actual value at runtime (<X>Val).
  * The original value is used for initialisation but is never changed during runtime
  * as only the Val counterparts will be used to track the current state.
+ *
+ * m_Timer is the actual timer that determines how long it takes before the stim
+ * is firing. After this timer is expired, the stim will start to fire. If a duration
+ * timer is also set, it will fire as long as the duration lasts. If no duration is
+ * specified, the timer will fire exactly once, and then reset itself if it is a
+ * restartable timer (SRTT_RELOAD) and the cycle will begin again. If a reload value
+ * is set, it will only be restarted until the reloadcounter has been depleted (0).
+ * If the reloadvalue is -1, it means that it will reset itself infinitely (or until
+ * manually stopped).
  */
 class CStimResponseTimer {
 friend CStim;
@@ -122,11 +134,50 @@ public:
 	 */
 	static TimerValue ParseTimeString(idStr &s);
 
+	void SetTimer(int Hour, int Minute, int Seconds, int Milisecond);
+	void SetDuration(int Hour, int Minute, int Seconds, int Milisecond);
+	void SetReload(int Reload);
+
+	/**
+	 * Stop will simply stop the timer without any changes
+	 */
+	void Stop(void);
+
+	/**
+	 * Restart will restart the timer with the next cycle. If a reload
+	 * is specified it will be decreased, which means that if no more
+	 * reloads are possible, restart will have no effect.
+	 */
+	void Restart(void);
+	
+	/**
+	 * Start the timer again, after it has been stopped. If the timer 
+	 * has been stopped before, but has not yet bee expired, it will
+	 * just continue where it stopped which is different to Restart().
+	 */
+	void Start(void);
+
+	/**
+	 * Reset will reset the timer. This means that also the reload
+	 * value will be reset as well.
+	 */
+	void Reset(void);
+
+	void SetState(TimerState State);
+	inline TimerState GetState(void) { return m_State; };
+
+	void Tick(double const &Ticks);
+
 protected:
-	CStimResponseTimer(void);
+	CStimResponseTimer(double const &TicksPerSecond);
 	virtual ~CStimResponseTimer(void);
 
 protected:
+	double			m_LastTick;
+	double			m_Ticker;
+	double			m_TicksPerSecond;
+	double			m_TicksPerMilliSecond;
+
 	TimerType		m_Type;
 	TimerState		m_State;
 
@@ -137,21 +188,10 @@ protected:
 	int				m_ReloadVal;
 
 	/**
-	 * How long does it take until this stimulus can be used again.
-	 * 0 = immediately
+	 * Timer
 	 */
-	TimerValue		m_ReloadTimer;
-	TimerValue		m_ReloadTimerVal;
-
-	/**
-	 * How long does the stimulus need to be applied, before the action is
-	 * triggered.
-	 * i.E. When a candle is hold to a book, it will take some time until
-	 * it catches fire.
-	 * 0 = no limit
-	 */
-	TimerValue		m_Apply;
-	TimerValue		m_ApplyVal;
+	TimerValue		m_Timer;
+	TimerValue		m_TimerVal;
 
 	/**
 	 * How long is the stim performing it's action.
@@ -260,6 +300,10 @@ public:
 	void AddResponseIgnore(idEntity *);
 	void RemoveResponseIgnore(idEntity *);
 	bool CheckResponseIgnore(idEntity *);
+
+	CStimResponseTimer *CreateTimer(void);
+	void RemoveTimer(void);
+	CStimResponseTimer *GetTimer(void) { return m_Timer; };
 
 protected:
 	/**
