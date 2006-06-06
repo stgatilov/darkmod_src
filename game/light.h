@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/06/06 04:38:07  ishtvan
+ * added setLightOrigin and getLightOrigin scriptfunctions for use with moving lights
+ *
  * Revision 1.9  2005/12/10 17:24:52  sophisticatedzombie
  * Lights add themselves to and remove themselves from the LAS on initialization and destruction
  *
@@ -175,6 +178,13 @@ private:
 	void			Event_SetSoundHandles( void );
 	void			Event_FadeOut( float time );
 	void			Event_FadeIn( float time );
+	/**
+	* Allows script to get and set the light origin separate from model origin.
+	* Used to achieve moving lights with a stationary model
+	**/
+	void			Event_GetLightOrigin( void );
+	void			Event_SetLightOrigin( idVec3 &pos );
+
 
 	/**
 	 * Texturename for the falloff image

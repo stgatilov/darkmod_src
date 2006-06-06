@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/06/06 04:38:07  ishtvan
+ * added setLightOrigin and getLightOrigin scriptfunctions for use with moving lights
+ *
  * Revision 1.11  2006/04/26 22:29:10  sophisticatedzombie
  * I fixed a crash bug in the LAS classes, so I'm having the lights add to the LAS table again.
  *
@@ -71,6 +74,11 @@ const idEventDef EV_Light_Off( "Off", NULL );
 const idEventDef EV_Light_FadeOut( "fadeOutLight", "f" );
 const idEventDef EV_Light_FadeIn( "fadeInLight", "f" );
 
+// TDM Additions:
+const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", NULL, 'v' );
+const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
+
+
 CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_SetShader,		idLight::Event_SetShader )
 	EVENT( EV_Light_GetLightParm,	idLight::Event_GetLightParm )
@@ -86,6 +94,9 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_PostSpawn,			idLight::Event_SetSoundHandles )
 	EVENT( EV_Light_FadeOut,		idLight::Event_FadeOut )
 	EVENT( EV_Light_FadeIn,			idLight::Event_FadeIn )
+
+	EVENT( EV_Light_SetLightOrigin, idLight::Event_SetLightOrigin )
+	EVENT( EV_Light_GetLightOrigin, idLight::Event_GetLightOrigin )
 END_CLASS
 
 
@@ -1409,5 +1420,17 @@ bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center)
 
 	return rc;
 }
+
+void idLight::Event_SetLightOrigin( idVec3 &pos )
+{
+	localLightOrigin = pos;
+	BecomeActive( TH_UPDATEVISUALS );
+}
+
+void idLight::Event_GetLightOrigin( void )
+{
+	idThread::ReturnVector( localLightOrigin );
+}
+
 
 
