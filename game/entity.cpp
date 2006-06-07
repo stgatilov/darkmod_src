@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.53  2006/06/07 04:15:54  ishtvan
+ * m_bIsObjective added for objective system
+ *
  * Revision 1.52  2006/06/05 21:33:25  sparhawk
  * Stimtimer code updated/added
  *
@@ -705,6 +708,7 @@ idEntity::idEntity()
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
 	m_bWithinFrobDist = false;
+	m_bIsObjective = false;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
@@ -6197,6 +6201,8 @@ void idEntity::LoadTDMSettings(void)
 	// Check if this entity can be used by others.
 	if(spawnArgs.GetString("used_by", "", str))
 		ParseUsedByList(m_UsedBy, str);
+
+	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
 	// If this is a frobable entity we need to activate the frobcode.
 	if(m_FrobDistance != 0)

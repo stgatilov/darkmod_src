@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2006/06/07 04:15:54  ishtvan
+ * m_bIsObjective added for objective system
+ *
  * Revision 1.32  2006/06/05 21:33:25  sparhawk
  * Stimtimer code updated/added
  *
@@ -283,6 +286,13 @@ public:
 	 * and addtionaly by the entity named holy_cross.
 	 */
 	idList<idStr>			m_UsedBy;
+
+	/**
+	* Set to true if objective locations should update the objectives system when
+	* this entity the objective area.
+	* May also determine inventory callbacks to objective system.
+	**/
+	bool					m_bIsObjective;
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
