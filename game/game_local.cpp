@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.61  2006/06/07 20:37:13  sparhawk
+ * Changes to stimtimer interface. Start and Reset require now a parameter
+ * to initialize the tickcounter.
+ *
  * Revision 1.60  2006/06/05 21:33:25  sparhawk
  * Stimtimer code updated/added
  *
@@ -5615,14 +5619,15 @@ void idGameLocal::ProcessStimResponse(void)
 	for(ei = 0; ei < en; ei++)
 	{
 		CStim *stim = m_StimTimer[ei];
+		CStimResponseTimer::TimerState tst = CStimResponseTimer::SRTS_DISABLED;
 
 		// Advance the timer
 		timer = stim->GetTimer();
 
 		if(timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
-			timer->Tick(ts);
+			tst = timer->Tick(ts);
 
-		if(timer->GetState() == CStimResponseTimer::SRTS_EXPIRED)
+		if(tst == CStimResponseTimer::SRTS_EXPIRED)
 		{
 			Ent[0] = stim->m_Owner;
 			e = Ent[0];

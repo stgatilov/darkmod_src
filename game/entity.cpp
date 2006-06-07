@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.54  2006/06/07 20:37:13  sparhawk
+ * Changes to stimtimer interface. Start and Reset require now a parameter
+ * to initialize the tickcounter.
+ *
  * Revision 1.53  2006/06/07 04:15:54  ishtvan
  * m_bIsObjective added for objective system
  *
@@ -308,7 +312,6 @@ const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
 
 // StimType, Hours, minutes, seconds, miliseconds(?)
 const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
-const idEventDef EV_TimerSetDuration( "SetTimerDuration", "ddddd" );
 const idEventDef EV_TimerStop( "StopTimer", "d" );
 const idEventDef EV_TimerStart( "StartTimer", "d" );
 const idEventDef EV_TimerRestart( "RestartTimer", "d" );
@@ -420,7 +423,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
 
 	EVENT( EV_TimerCreate,			idEntity::Event_TimerCreate )
-	EVENT( EV_TimerSetDuration,		idEntity::Event_TimerSetDuration )
 	EVENT( EV_TimerStop,			idEntity::Event_TimerStop )
 	EVENT( EV_TimerStart,			idEntity::Event_TimerStart )
 	EVENT( EV_TimerRestart,			idEntity::Event_TimerRestart )
@@ -7037,20 +7039,6 @@ Quit:
 	return;
 }
 
-void idEntity::Event_TimerSetDuration(int StimType, int Hour, int Minute, int Seconds, int Milisecond)
-{
-	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
-
-	if(timer == NULL)
-		goto Quit;
-
-	timer->SetDuration(Hour, Minute, Seconds, Milisecond);
-
-Quit:
-	return;
-}
-
 void idEntity::Event_TimerStop(int StimType)
 {
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
@@ -7073,7 +7061,7 @@ void idEntity::Event_TimerStart(int StimType)
 	if(timer == NULL)
 		goto Quit;
 
-	timer->Start();
+	timer->Start(sys->GetClockTicks());
 
 Quit:
 	return;
@@ -7087,7 +7075,7 @@ void idEntity::Event_TimerRestart(int StimType)
 	if(timer == NULL)
 		goto Quit;
 
-	timer->Restart();
+	timer->Restart(sys->GetClockTicks());
 
 Quit:
 	return;

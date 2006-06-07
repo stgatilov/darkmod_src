@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2006/06/07 20:37:13  sparhawk
+ * Changes to stimtimer interface. Start and Reset require now a parameter
+ * to initialize the tickcounter.
+ *
  * Revision 1.33  2006/06/07 04:15:54  ishtvan
  * m_bIsObjective added for objective system
  *
@@ -844,7 +848,6 @@ private:
 	void					ResponseAllow(int StimType, idEntity *);
 
 	void					Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
-	void					Event_TimerSetDuration(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
 	void					Event_TimerStop(int StimType);
 	void					Event_TimerStart(int StimType);
 	void					Event_TimerRestart(int StimType);
