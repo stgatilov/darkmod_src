@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/06/07 09:03:28  ishtvan
+ * location component updates
+ *
  * Revision 1.3  2006/05/30 06:22:04  ishtvan
  * added parsing of objectives from entity
  *
@@ -271,7 +274,7 @@ void CMissionData::MissionEvent
 	(
 	EComponentType CompType,
 	idEntity *Ent1, idEntity *Ent2,
-	bool bPlayerResponsible, bool bWhileAirborne
+	bool bBoolArg, bool bWhileAirborne
 	)
 {
 	SObjEntParms data1, data2;
@@ -286,11 +289,11 @@ void CMissionData::MissionEvent
 	data1.bWhileAirborne = bWhileAirborne;
 
 	if( !Ent2 )
-		MissionEvent( CompType, &data1, NULL, bPlayerResponsible );
+		MissionEvent( CompType, &data1, NULL, bBoolArg );
 	else
 	{
 		FillParmsData( Ent2, &data2 );
-		MissionEvent( CompType, &data1, &data2, bPlayerResponsible );
+		MissionEvent( CompType, &data1, &data2, bBoolArg );
 	}
 
 Quit:
@@ -475,15 +478,16 @@ void CMissionData::UpdateObjectives( void )
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i);
 			Event_ObjectiveComplete( i );
 		}
-		else
-		{
 // TODO: This is temporary and should be replaced with a failure logic check
 // For now: If ANY components of an ongoing objective are false, the objective is failed
-			if( pObj->bOngoing && !(pObj->state == STATE_INVALID) )
-			{
+		else if( pObj->bOngoing && !(pObj->state == STATE_INVALID) )
+		{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i);
 				Event_ObjectiveFailed( i );
-			}
+		}
+		else
+		{
+			pObj->state = STATE_INCOMPLETE;
 		}
 	}
 
@@ -964,6 +968,130 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		ReturnVal = -1;
 Quit:
 	return ReturnVal;
+}
+
+
+
+/*=========================================================================== 
+* 
+*CObjectiveLocation
+*
+*============================================================================*/
+CLASS_DECLARATION( idEntity, CObjectiveLocation )
+END_CLASS
+
+CObjectiveLocation::CObjectiveLocation( void )
+{
+	m_Interval = 1000;
+	m_TimeStamp = 0;
+
+	m_EntsInBounds.Clear();
+}
+
+void CObjectiveLocation::Spawn()
+{
+	m_Interval = (int) 1000.0f * spawnArgs.GetFloat( "interval", "1.0" );
+	m_TimeStamp = gameLocal.time;
+
+	BecomeActive( TH_THINK );
+}
+
+void CObjectiveLocation::Think()
+{
+	int NumEnts(0);
+	idEntity *Ents[MAX_GENTITIES];
+	idStrList current, added, missing;
+	bool bFound(false);
+
+	// only check on clock ticks
+	if( (gameLocal.time - m_TimeStamp) < m_Interval )
+		goto Quit;
+
+	m_TimeStamp = gameLocal.time;
+
+	// bounding box test
+	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+	for( int i=0; i<NumEnts; i++ )
+	{
+		if( Ents[i] && Ents[i]->m_bIsObjective )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+			current.Append( Ents[i]->name );
+		}
+	}
+
+	// compare current list to previous cock tick list to generate added list
+	for( int i = 0; i < current.Num(); i++ )
+	{
+		bFound = false;
+		for( int j = 0; j < m_EntsInBounds.Num(); j++ )
+		{
+			if( current[i] == m_EntsInBounds[j] )
+			{
+                  bFound = true;
+                  break;
+            }
+		}
+
+		if( !bFound )
+		{
+			added.Append( current[i] );
+		}
+	}
+
+	// compare again the other way to generate missing list
+	for( int i = 0; i < m_EntsInBounds.Num(); i++ )
+	{
+		bFound = false;
+		for( int j = 0; j < current.Num(); j++ )
+		{
+			if( m_EntsInBounds[i] == current[j] )
+			{
+                  bFound = true;
+                  break;
+            }
+		}
+
+		if( !bFound )
+		{
+			missing.Append( m_EntsInBounds[i] );
+		}
+	}
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location: Missing check cleared \r");
+
+	// call objectives system for all missing or added ents
+	for( int i=0; i<added.Num(); i++ )
+	{
+		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
+		if( Ent )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent, this, true );
+		}
+	}
+
+	for( int j=0; j<missing.Num(); j++ )
+	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location: Missing loop called\r" );
+		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
+		if( Ent2 )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent2, this, false );
+		}
+	}
+
+	// copy over the list
+	m_EntsInBounds.Clear();
+	m_EntsInBounds = current;
+	
+	current.Clear();
+	missing.Clear();
+	added.Clear();
+
+Quit:
+	idEntity::Think();
+	return;
 }
 	
 

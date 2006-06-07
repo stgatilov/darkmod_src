@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/06/07 09:03:28  ishtvan
+ * location component updates
+ *
  * Revision 1.2  2006/05/30 06:22:04  ishtvan
  * added parsing of objectives from entity
  *
@@ -20,7 +23,7 @@
 // Copyright (C) 2006 Chris Sarantos <csarantos@gmail.com>
 //
 
-// TODO: Add support for irreversible objectives
+// TODO: Add support for irreversible objectives/components
 
 // TODO: Item in inventory?  Could put the inventory name in the second entdata parms
 // that would allow automatic handling of objectives like put so many things in a chest,
@@ -365,9 +368,17 @@ public:
 		( 
 		EComponentType CompType, 					 
 		SObjEntParms *EntDat1, 				 
-		SObjEntParms *EntDat2 = NULL,
+		SObjEntParms *EntDat2,
 		bool bBoolArg = false
 		);
+
+	void CMissionData::MissionEvent
+		( 
+		EComponentType CompType, 					 
+		SObjEntParms *EntDat1, 				 
+		bool bBoolArg = false
+		)
+	{ MissionEvent( CompType, EntDat1, NULL, bBoolArg ); };
 
 	/**
 	* Overloaded MissionEvent with entities instead of parms 
@@ -504,6 +515,36 @@ protected:
 	idHashIndex m_SpecTypeHash;
 
 }; // CMissionData
+
+// Helper entity for objective locations
+class CObjectiveLocation : public idEntity
+{
+public:
+	CLASS_PROTOTYPE( CObjectiveLocation );
+	
+	CObjectiveLocation( void );
+
+	void Think( void );
+	void Spawn( void );
+
+//	void Save( idSaveGame *savefile ) const;
+//	void Restore( idRestoreGame *savefile );
+
+protected:
+	/**
+	* Clock interval [seconds]
+	**/
+	int m_Interval;
+
+	int m_TimeStamp;
+
+	/**
+	* List of entity names that intersected bounds in previous clock tick
+	**/
+	idStrList m_EntsInBounds;
+
+}; // CObjectiveLocation
+	
 
 
 #endif // MISSIONDATA_H
