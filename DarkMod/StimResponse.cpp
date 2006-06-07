@@ -15,6 +15,12 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.14  2006/06/07 20:36:12  sparhawk
+ * Timer implemented and interface streamlined. Timers now are only
+ * timer and nothing more. If duration or other stuff should be added,
+ * the interface is now virtual and such add-ons would have to be
+ * implemented in a derived class.
+ *
  * Revision 1.13  2006/06/05 21:32:18  sparhawk
  * Timercode updated
  *
@@ -602,10 +608,6 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 
 	t = new CStimResponseTimer(sys->ClockTicksPerSecond());
 
-	args->GetString("sr_timer_duration", "", str);
-	if((t->m_Duration = t->ParseTimeString(str)) == TIMER_UNDEFINED)
-		goto Quit;
-
 	args->GetInt("sr_timer_reload", "-1", n);
 	t->m_Reload = n;
 
@@ -619,10 +621,6 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 
 	stim->m_Timer = t;
 	t = NULL;
-
-Quit:
-	if(t)
-		delete t;
 
 	return;
 }
@@ -800,10 +798,8 @@ CStimResponseTimer::CStimResponseTimer(double const &TicksPerSecond)
 	m_State = SRTS_DISABLED;
 	m_Reload = 0;
 	m_ReloadVal = 0;
-	m_Timer = TIMER_UNDEFINED;
-	m_TimerVal = TIMER_UNDEFINED;
-	m_Duration = TIMER_UNDEFINED;
-	m_DurationVal = TIMER_UNDEFINED;
+	m_Timer.Flags = TIMER_UNDEFINED;
+	m_TimerVal.Flags = TIMER_UNDEFINED;
 	m_LastTick = 0.0;
 	m_Ticker = 0.0;
 	m_TicksPerSecond = TicksPerSecond;
@@ -816,8 +812,10 @@ CStimResponseTimer::~CStimResponseTimer(void)
 
 TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 {
-	TimerValue v = TIMER_UNDEFINED;
-	int i, h, m, s;
+	TimerValue v;
+	int i, h, m, s, ms;
+
+	v.Flags = TIMER_UNDEFINED;
 
 	if(str.Length() == 0)
 		goto Quit;
@@ -828,8 +826,8 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 		goto Quit;
 	}
 
-	h = m = s = 0;
-	for(i = 0; i < 3; i++)
+	h = m = s = ms = 0;
+	for(i = 0; i < 4; i++)
 	{
 		switch(i)
 		{
@@ -860,7 +858,18 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 				s = atoi(str.c_str());
 				if(!(s >= 0 && s <= 59))
 				{
-					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid minute string [%s]\r", str.c_str());
+					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid second string [%s]\r", str.c_str());
+					goto Quit;
+				}
+			}
+			break;
+
+			case 3:
+			{
+				ms = atoi(str.c_str());
+				if(!(ms >= 0 && ms <= 999))
+				{
+					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid millisecond string [%s]\r", str.c_str());
 					goto Quit;
 				}
 			}
@@ -868,7 +877,12 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 		}
 	}
 
-	v = SetHours(h) + SetMinutes(m) + SetSeconds(s);
+	v.Hour = h;
+	v.Minute = m;
+	v.Second = s;
+	v.Millisecond = ms;
+
+//	v = SetHours(h) + SetMinutes(m) + SetSeconds(s);
 
 Quit:
 	return v;
@@ -880,16 +894,14 @@ void CStimResponseTimer::SetReload(int Reload)
 	m_ReloadVal = Reload;
 }
 
-void CStimResponseTimer::SetTimer(int Hour, int Minute, int Seconds, int Milisecond)
+void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisecond)
 {
-	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
+//	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
+	m_Timer.Hour = Hour;
+	m_Timer.Minute = Minute;
+	m_Timer.Second = Second;
+	m_Timer.Millisecond = Millisecond;
 	m_TimerVal = m_Timer;
-}
-
-void CStimResponseTimer::SetDuration(int Hour, int Minute, int Seconds, int Milisecond)
-{
-	m_Duration = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
-	m_DurationVal = m_Duration;
 }
 
 void CStimResponseTimer::Stop(void)
@@ -897,21 +909,23 @@ void CStimResponseTimer::Stop(void)
 	SetState(SRTS_DISABLED);
 }
 
-void CStimResponseTimer::Start(void)
+void CStimResponseTimer::Start(double const &t)
 {
+	m_LastTick = t;
 	SetState(SRTS_RUNNING);
 }
 
-void CStimResponseTimer::Restart(void)
+void CStimResponseTimer::Restart(double const &t)
 {
 	// Switch to the next timer cycle if reloading is still possible or 
 	// reloading is ignored.
+	m_Ticker = t;
+
 	if(m_Reload > 0 || m_Reload == -1)
 	{
-		m_Duration = m_DurationVal;
-		m_Timer = m_TimerVal;
+		memset(&m_Timer, 0, sizeof(TimerValue));
 		m_Reload--;
-		Start();
+		Start(t);
 	}
 	else
 		Stop();
@@ -919,9 +933,8 @@ void CStimResponseTimer::Restart(void)
 
 void CStimResponseTimer::Reset(void)
 {
-	m_Timer = m_TimerVal;
+	memset(&m_Timer, 0, sizeof(TimerValue));
 	m_Reload = m_ReloadVal;
-	m_Duration = m_DurationVal;
 }
 
 void CStimResponseTimer::SetState(TimerState State)
@@ -929,12 +942,22 @@ void CStimResponseTimer::SetState(TimerState State)
 	m_State = State;
 }
 
-void CStimResponseTimer::Tick(double const &t)
+void CStimResponseTimer::GetTimerValueDiff(TimerValue const &A, TimerValue const &B, TimerValue &rc) const
 {
+}
+
+
+
+CStimResponseTimer::TimerState CStimResponseTimer::Tick(double const &t)
+{
+	TimerState rc = SRTS_DISABLED;
+
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
-	if(m_LastTick == 0.0)
+	if(m_State != SRTS_RUNNING)
 		goto Quit;
+
+	rc = SRTS_RUNNING;
 
 	// We don't really care for an overrun of the ticckcounter. If 
 	// it really happens, the worst thing would be that a particular
@@ -952,13 +975,60 @@ void CStimResponseTimer::Tick(double const &t)
 
 	m_Ticker =+ tick;
 
-	// If we are below one millisecond we can exit;
-	if(m_Ticker < m_TicksPerMilliSecond)
-		goto Quit;
+	// It could be possible that one haertbeat took longer than one millisecond.
+	// In this case we loop and advance the timer for each millisecond that 
+	// expired. The expectation is, that this will not happen most of the time
+	// of if it does, then mostly on slow machines.
+	while(m_Ticker > m_TicksPerMilliSecond)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f%f\r", m_TicksPerMilliSecond, m_Ticker);
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f%f\r", m_TicksPerMilliSecond, m_Ticker);
+		m_Ticker -= m_TicksPerMilliSecond;
+		m_Timer.Millisecond++;
+		if(m_Timer.Millisecond > 999)
+		{
+			m_Timer.Millisecond = 0;
+			m_Timer.Second++;
+
+			if(m_Timer.Second > 59)
+			{
+				m_Timer.Second = 0;
+				m_Timer.Minute++;
+
+				if(m_Timer.Minute > 59)
+				{
+					m_Timer.Minute = 0;
+					m_Timer.Hour++;
+				}
+			}
+		}
+
+		// Now check if the timer already expired.
+		if(m_Timer.Millisecond >= m_TimerVal.Millisecond)
+		{
+			if(m_Timer.Second >= m_TimerVal.Second)
+			{
+				if(m_Timer.Minute >= m_TimerVal.Minute)
+				{
+					if(m_Timer.Hour >= m_TimerVal.Hour)
+					{
+						rc = SRTS_EXPIRED;
+						if(m_Type == SRTT_SINGLESHOT)
+							Stop();
+						else
+							Restart(t);
+
+						break;
+					}
+				}
+			}
+		}
+	}
+
 
 Quit:
 	m_LastTick = t;
+
+	return rc;
 }
 

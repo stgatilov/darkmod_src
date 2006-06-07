@@ -15,6 +15,12 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.13  2006/06/07 20:36:12  sparhawk
+ * Timer implemented and interface streamlined. Timers now are only
+ * timer and nothing more. If duration or other stuff should be added,
+ * the interface is now virtual and such add-ons would have to be
+ * implemented in a derived class.
+ *
  * Revision 1.12  2006/06/05 21:32:18  sparhawk
  * Timercode updated
  *
@@ -73,6 +79,7 @@ class CStim;
 
 extern char *cStimType[];
 
+/*
 #define GetHours(x)		((x >> 24) & 0xff)
 #define GetMinutes(x)	((x >> 16) & 0xff)
 #define GetSeconds(x)	((x >> 8) & 0xff)
@@ -82,9 +89,24 @@ extern char *cStimType[];
 #define SetMinutes(x)	(x << 16)
 #define SetSeconds(x)	(x << 8)
 #define SetMSeconds(x)	(x)
+*/
 
 #define TIMER_UNDEFINED		-1
-typedef unsigned int	TimerValue;
+
+typedef union {
+public:
+	struct {
+		signed char Flags;
+		signed char Hour;
+		signed char Minute;
+		signed char Second;
+		signed short Millisecond;
+	};
+	struct {
+        signed long TimerVal;
+		signed short Millisecond;
+	};
+} TimerValue;
 
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.
@@ -134,39 +156,50 @@ public:
 	 */
 	static TimerValue ParseTimeString(idStr &s);
 
-	void SetTimer(int Hour, int Minute, int Seconds, int Milisecond);
-	void SetDuration(int Hour, int Minute, int Seconds, int Milisecond);
-	void SetReload(int Reload);
+	virtual void SetTimer(int Hour, int Minute, int Seconds, int Milisecond);
+	virtual void SetReload(int Reload);
+
+	/**
+	 * Start the timer again, after it has been stopped. If the timer 
+	 * has been stopped before, but has not yet bee expired, it will
+	 * just continue where it stopped which is different to Restart().
+	 */
+	virtual void Start(double const &t);
 
 	/**
 	 * Stop will simply stop the timer without any changes
 	 */
-	void Stop(void);
+	virtual void Stop(void);
 
 	/**
 	 * Restart will restart the timer with the next cycle. If a reload
 	 * is specified it will be decreased, which means that if no more
 	 * reloads are possible, restart will have no effect.
 	 */
-	void Restart(void);
+	virtual void Restart(double const &t);
 	
-	/**
-	 * Start the timer again, after it has been stopped. If the timer 
-	 * has been stopped before, but has not yet bee expired, it will
-	 * just continue where it stopped which is different to Restart().
-	 */
-	void Start(void);
-
 	/**
 	 * Reset will reset the timer. This means that also the reload
 	 * value will be reset as well.
 	 */
-	void Reset(void);
+	virtual void Reset(void);
 
 	void SetState(TimerState State);
 	inline TimerState GetState(void) { return m_State; };
 
-	void Tick(double const &Ticks);
+	virtual TimerState Tick(double const &Ticks);
+
+	/**
+	 * Calculate the difference between two timervalues. This is usefull
+	 * if you want a countdown instead of a normal clock. In this case, you
+	 * can use the timer just like normal, but if you want to know the 
+	 * state of the countdown just calculate the difference to your
+	 * original value.
+	 *
+	 * The parameters are:
+	 * A - B = Result
+	 */
+	void GetTimerValueDiff(TimerValue const &A, TimerValue const &B, TimerValue &Result) const;
 
 protected:
 	CStimResponseTimer(double const &TicksPerSecond);
@@ -192,13 +225,6 @@ protected:
 	 */
 	TimerValue		m_Timer;
 	TimerValue		m_TimerVal;
-
-	/**
-	 * How long is the stim performing it's action.
-	 * 0 = unlimited
-	 */
-	TimerValue		m_Duration;
-	TimerValue		m_DurationVal;
 };
 
 
@@ -461,15 +487,15 @@ public:
 	 * may NEVER be used to delete the object, and it should not be passed around
 	 * extensively, because it may become invalid.
 	 */
-	CStim				*AddStim(idEntity *Owner, int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
-	CResponse			*AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
+	CStim			*AddStim(idEntity *Owner, int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
+	CResponse		*AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
 
 	/**
 	 * AddStim/Response with already configured objects. If the type already exists, the new object is not added 
 	 * and the pointer to the existing object is returned, otherwise the added pointer is returned.
 	 */
-	CStim				*AddStim(CStim *);
-	CResponse			*AddResponse(CResponse *);
+	CStim			*AddStim(CStim *);
+	CResponse		*AddResponse(CResponse *);
 
 	/**
 	 * RemoveStim will remove the stim of the given type and the object is destroyed.
@@ -485,7 +511,7 @@ public:
 	 * AddEntityToList will add the given entity to the list exactly once. If the entity
 	 * is already in the list, then nothing will happen and the entity stays in it.
 	 */
-	void				AddEntityToList(idList<void *> &List, void *);
+	void			AddEntityToList(idList<void *> &List, void *);
  
 	/**
 	 * If the stim contains information for a timed event, this function parses the string
@@ -517,18 +543,18 @@ public:
 	 * Key: sr_timer_apply_duration
 	 * Value: TimeString
 	 */
-	void				CreateTimer(const idDict *args, CStim *Owner);
-	void				CreateTimer(CStim *Owner);
+	void			CreateTimer(const idDict *args, CStim *Owner);
+	void			CreateTimer(CStim *Owner);
 
- 	idList<CStim *>		&GetStimList(void) { return m_Stim; };
+ 	idList<CStim *>	&GetStimList(void) { return m_Stim; };
 	idList<CResponse *>	&GetResponseList(void) { return m_Response; };
 
-	CStimResponse		*GetStimResponse(int StimType, bool Stim);
-	CStim				*GetStim(int StimType);
-	CResponse			*GetResponse(int StimType);
+	CStimResponse	*GetStimResponse(int StimType, bool Stim);
+	CStim			*GetStim(int StimType);
+	CResponse		*GetResponse(int StimType);
 
-	void				ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner);
-	bool				ParseSpawnArg(const idDict *args, idEntity *Owner, const char Class, int Counter);
+	void			ParseSpawnArgsToStimResponse(const idDict *args, idEntity *Owner);
+	bool			ParseSpawnArg(const idDict *args, idEntity *Owner, const char Class, int Counter);
 
 	/*
 	* This static method is used to allocate, on the heap, a stim of a given type.
@@ -540,7 +566,7 @@ public:
 	*
 	* @param type The enumerated stim type value
 	*/
-	static CStim* createStim (idEntity* p_Owner, StimType type);
+	static			CStim *createStim(idEntity* p_Owner, StimType type);
 
 	/*
 	* This static method is used to allocate, on the heap, a response of a given type.
@@ -552,7 +578,7 @@ public:
 	*
 	* @param type The enumerated stim type value for the response
 	*/
-	static CResponse* createResponse (idEntity* p_owner, StimType type);
+	static			CResponse *createResponse (idEntity* p_owner, StimType type);
 
 protected:
 	idList<CStim *>		m_Stim;
