@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.55  2006/06/13 22:32:15  sparhawk
+ * Finished first working version of StimTimer
+ *
  * Revision 1.54  2006/06/07 20:37:13  sparhawk
  * Changes to stimtimer interface. Start and Reset require now a parameter
  * to initialize the tickcounter.
@@ -309,6 +312,7 @@ const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
 const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
 const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
+const idEventDef EV_ResponseSetAction( "ResponseSetAction", "ds" );
 
 // StimType, Hours, minutes, seconds, miliseconds(?)
 const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
@@ -417,10 +421,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
 	EVENT( EV_StimEnable,			idEntity::StimEnable)
+	EVENT( EV_ResponseEnable,		idEntity::ResponseEnable)
 	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
 	EVENT( EV_ResponseIgnore,		idEntity::ResponseIgnore)
 	EVENT( EV_ResponseAllow,		idEntity::ResponseAllow)
+	EVENT( EV_ResponseSetAction,	idEntity::ResponseSetAction)
 
 	EVENT( EV_TimerCreate,			idEntity::Event_TimerCreate )
 	EVENT( EV_TimerStop,			idEntity::Event_TimerStop )
@@ -6571,6 +6577,14 @@ void idEntity::ResponseAllow(int StimType, idEntity *e)
 		stim->RemoveResponseIgnore(e);
 }
 
+void idEntity::ResponseSetAction(int StimType, const char *s)
+{
+	CResponse *resp = m_StimResponseColl->GetResponse(StimType);
+
+	if(resp)
+		resp->SetResponseAction(s);
+}
+
 /*
 ================
 idEntity::Inventory
@@ -7025,18 +7039,15 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 }
 
 
-void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond)
+void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Millisecond)
 {
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
-	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
+	CStimResponseTimer *timer;
 
-	if(timer == NULL)
-		goto Quit;
-
-	timer->SetTimer(Hour, Minute, Seconds, Milisecond);
-
-Quit:
-	return;
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Create Timer: Stimtype-%d Hour: %d  Minute: %d   Seconds: %d   Milliseconds: %d\r",
+		StimType, Hour, Minute, Seconds, Millisecond);
+	timer = stim->CreateTimer();
+	timer->SetTimer(Hour, Minute, Seconds, Millisecond);
 }
 
 void idEntity::Event_TimerStop(int StimType)
@@ -7044,6 +7055,7 @@ void idEntity::Event_TimerStop(int StimType)
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StopTimer: Stimtype-%d \r", StimType);
 	if(timer == NULL)
 		goto Quit;
 
@@ -7058,6 +7070,7 @@ void idEntity::Event_TimerStart(int StimType)
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StartTimer: Stimtype-%d \r", StimType);
 	if(timer == NULL)
 		goto Quit;
 
@@ -7072,6 +7085,7 @@ void idEntity::Event_TimerRestart(int StimType)
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("RestartTimer: Stimtype-%d \r", StimType);
 	if(timer == NULL)
 		goto Quit;
 
@@ -7086,6 +7100,7 @@ void idEntity::Event_TimerReset(int StimType)
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("ResetTimer: Stimtype-%d \r", StimType);
 	if(timer == NULL)
 		goto Quit;
 
@@ -7100,6 +7115,7 @@ void idEntity::Event_TimerSetState(int StimType, int State)
 	CStim *stim = m_StimResponseColl->GetStim(StimType);
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("SetTimerState: Stimtype-%d State: %d\r", StimType, State);
 	if(timer == NULL)
 		goto Quit;
 

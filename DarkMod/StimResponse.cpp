@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.15  2006/06/13 22:31:49  sparhawk
+ * Finished first working version of StimTimer
+ *
  * Revision 1.14  2006/06/07 20:36:12  sparhawk
  * Timer implemented and interface streamlined. Timers now are only
  * timer and nothing more. If duration or other stuff should be added,
@@ -606,7 +609,8 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 	int n;
 	CStimResponseTimer *t = NULL;
 
-	t = new CStimResponseTimer(sys->ClockTicksPerSecond());
+
+	t = stim->GetTimer();
 
 	args->GetInt("sr_timer_reload", "-1", n);
 	t->m_Reload = n;
@@ -618,9 +622,7 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
 		t->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
 
 	gameLocal.m_StimTimer.AddUnique(stim);
-
-	stim->m_Timer = t;
-	t = NULL;
+	t->SetTicks(sys->ClockTicksPerSecond());
 
 	return;
 }
@@ -655,7 +657,6 @@ void CStimResponse::EnableSR(bool bEnable)
 CStim::CStim(idEntity *e, int Type)
 : CStimResponse(e, Type)
 {
-	m_Timer = NULL;
 	m_Radius = 0.0;
 	m_TriggerDamage = 0.0;
 	m_DurationDamage = 0.0;
@@ -669,8 +670,7 @@ CStim::CStim(idEntity *e, int Type)
 
 CStim::~CStim(void)
 {
-	if(m_Timer != NULL)
-		delete m_Timer;
+	gameLocal.m_StimTimer.Remove(this);
 }
 
 void CStim::AddResponseIgnore(idEntity *e)
@@ -705,34 +705,19 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 
 CStimResponseTimer *CStim::CreateTimer(void)
 {
-	CStimResponseTimer *rc = NULL;
+	gameLocal.m_StimTimer.AddUnique(this);
+	m_Timer.SetTicks(sys->ClockTicksPerSecond());
 
-	if(m_Timer == NULL)
-	{
-		m_Timer = new CStimResponseTimer(sys->ClockTicksPerSecond());
-		gameLocal.m_StimTimer.AddUnique(this);
-	}
-
-	rc = m_Timer;
-
-	return(rc);
+	return(&m_Timer);
 }
 
 void CStim::RemoveTimer(void)
 {
-	if(m_Timer != NULL)
-	{
-		gameLocal.m_StimTimer.Remove(this);
-		delete m_Timer;
-	}
+	gameLocal.m_StimTimer.Remove(this);
 }
 
 void CStim::PostFired (int numResponses)
 {
-	// Default implementation does nothing with this event
-	int blah;
-	blah = 0;
-
 }
 
 
@@ -788,11 +773,15 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 	}
 }
 
+void CResponse::SetResponseAction(idStr const &action)
+{
+	m_ScriptFunction = action;
+}
 
 /********************************************************************/
 /*                 CStimResponseTimer                               */
 /********************************************************************/
-CStimResponseTimer::CStimResponseTimer(double const &TicksPerSecond)
+CStimResponseTimer::CStimResponseTimer()
 {
 	m_Type = SRTT_SINGLESHOT;
 	m_State = SRTS_DISABLED;
@@ -802,12 +791,18 @@ CStimResponseTimer::CStimResponseTimer(double const &TicksPerSecond)
 	m_TimerVal.Flags = TIMER_UNDEFINED;
 	m_LastTick = 0.0;
 	m_Ticker = 0.0;
-	m_TicksPerSecond = TicksPerSecond;
-	m_TicksPerMilliSecond = TicksPerSecond/1000.0;
+	m_TicksPerSecond = 0.0;
+	m_TicksPerMilliSecond = 0.0;
 }
 
 CStimResponseTimer::~CStimResponseTimer(void)
 {
+}
+
+void CStimResponseTimer::SetTicks(double const &TicksPerSecond)
+{
+	m_TicksPerSecond = TicksPerSecond;
+	m_TicksPerMilliSecond = TicksPerSecond/1000.0;
 }
 
 TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
@@ -897,11 +892,11 @@ void CStimResponseTimer::SetReload(int Reload)
 void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisecond)
 {
 //	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
-	m_Timer.Hour = Hour;
-	m_Timer.Minute = Minute;
-	m_Timer.Second = Second;
-	m_Timer.Millisecond = Millisecond;
-	m_TimerVal = m_Timer;
+	m_TimerVal.Hour = Hour;
+	m_TimerVal.Minute = Minute;
+	m_TimerVal.Second = Second;
+	m_TimerVal.Millisecond = Millisecond;
+	memset(&m_Timer, 0, sizeof(TimerValue));
 }
 
 void CStimResponseTimer::Stop(void)
@@ -947,17 +942,16 @@ void CStimResponseTimer::GetTimerValueDiff(TimerValue const &A, TimerValue const
 }
 
 
-
-CStimResponseTimer::TimerState CStimResponseTimer::Tick(double const &t)
+int CStimResponseTimer::Tick(double const &t)
 {
-	TimerState rc = SRTS_DISABLED;
+	int rc = -1;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
 	if(m_State != SRTS_RUNNING)
 		goto Quit;
 
-	rc = SRTS_RUNNING;
+	rc = 0;
 
 	// We don't really care for an overrun of the ticckcounter. If 
 	// it really happens, the worst thing would be that a particular
@@ -981,7 +975,7 @@ CStimResponseTimer::TimerState CStimResponseTimer::Tick(double const &t)
 	// of if it does, then mostly on slow machines.
 	while(m_Ticker > m_TicksPerMilliSecond)
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f%f\r", m_TicksPerMilliSecond, m_Ticker);
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f/%f\r", m_TicksPerMilliSecond, m_Ticker);
 
 		m_Ticker -= m_TicksPerMilliSecond;
 		m_Timer.Millisecond++;
@@ -1012,7 +1006,7 @@ CStimResponseTimer::TimerState CStimResponseTimer::Tick(double const &t)
 				{
 					if(m_Timer.Hour >= m_TimerVal.Hour)
 					{
-						rc = SRTS_EXPIRED;
+						rc++;
 						if(m_Type == SRTT_SINGLESHOT)
 							Stop();
 						else

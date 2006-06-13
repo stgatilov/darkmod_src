@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.14  2006/06/13 22:31:50  sparhawk
+ * Finished first working version of StimTimer
+ *
  * Revision 1.13  2006/06/07 20:36:12  sparhawk
  * Timer implemented and interface streamlined. Timers now are only
  * timer and nothing more. If duration or other stuff should be added,
@@ -156,6 +159,7 @@ public:
 	 */
 	static TimerValue ParseTimeString(idStr &s);
 
+	virtual void SetTicks(double const &TicksPerSecond);
 	virtual void SetTimer(int Hour, int Minute, int Seconds, int Milisecond);
 	virtual void SetReload(int Reload);
 
@@ -187,7 +191,14 @@ public:
 	void SetState(TimerState State);
 	inline TimerState GetState(void) { return m_State; };
 
-	virtual TimerState Tick(double const &Ticks);
+	/**
+	 * The timer returns -1 if it is not working. Otherwise it will
+	 * return the number of times it was triggered since the last
+	 * time it was avanced. Usually this should be 1. If the number is
+	 * consequently higher, it could mean that the machine is to slow
+	 * to handle this timer frequency.
+	 */
+	virtual int Tick(double const &Ticks);
 
 	/**
 	 * Calculate the difference between two timervalues. This is usefull
@@ -202,7 +213,7 @@ public:
 	void GetTimerValueDiff(TimerValue const &A, TimerValue const &B, TimerValue &Result) const;
 
 protected:
-	CStimResponseTimer(double const &TicksPerSecond);
+	CStimResponseTimer();
 	virtual ~CStimResponseTimer(void);
 
 protected:
@@ -329,14 +340,14 @@ public:
 
 	CStimResponseTimer *CreateTimer(void);
 	void RemoveTimer(void);
-	CStimResponseTimer *GetTimer(void) { return m_Timer; };
+	CStimResponseTimer *GetTimer(void) { return &m_Timer; };
 
 protected:
 	/**
 	 * Timer for the stimulus. If no timer is set, then it is assumed
 	 * that this stimulus is always working whenever it is applied.
 	 */
-	CStimResponseTimer	*m_Timer;
+	CStimResponseTimer	m_Timer;
 
 public:
 	/**
@@ -429,6 +440,11 @@ public:
 	* versions from a CStimResponse base pointer.
 	*/
 	virtual void TriggerResponse(idEntity *Stim);
+
+	/**
+	 * Set the response script action.
+	 */
+	void SetResponseAction(idStr const &ActionScriptName);
 
 protected:
 	CResponse(idEntity *Owner, int Type);

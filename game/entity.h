@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/06/13 22:32:16  sparhawk
+ * Finished first working version of StimTimer
+ *
  * Revision 1.34  2006/06/07 20:37:13  sparhawk
  * Changes to stimtimer interface. Start and Reset require now a parameter
  * to initialize the tickcounter.
@@ -846,6 +849,7 @@ private:
 	// Add/Remove the response to/from the stim with the given type
 	void					ResponseIgnore(int StimType, idEntity *);
 	void					ResponseAllow(int StimType, idEntity *);
+	void					ResponseSetAction(int StimType, const char *Action);
 
 	void					Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Milisecond);
 	void					Event_TimerStop(int StimType);
