@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/06/15 06:47:27  ishtvan
+ * AI FOV should now turn with head bone
+ *
  * Revision 1.18  2006/06/02 02:48:50  sophisticatedzombie
  * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
  *
@@ -857,6 +860,10 @@ protected:
 	bool					MoveDone( void ) const;
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 	void					BlockedFailSafe( void );
+	/**
+	* Overloaded idActor::CheckFOV with FOV check that depends on head joint orientation
+	**/
+	bool					CheckFOV( const idVec3 &pos );
 
 	/**
 	* Darkmod enemy tracking: Is an entity shrouded in darkness?
@@ -928,9 +935,15 @@ protected:
 
 /**
 * Draw the debug cone representing valid knockout area
-* Called every frame when cvar cv_ko_show is set to true.
+* Called every frame when cvar cv_ai_ko_show is set to true.
 **/
 	void KnockoutDebugDraw( void );
+
+/**
+* Draw the debug cone representing the FOV
+* Called every frame when cvar cv_ai_fov_show is set to true.
+**/
+	void FOVDebugDraw( void );
 		
 			
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/06/15 06:47:27  ishtvan
+ * AI FOV should now turn with head bone
+ *
  * Revision 1.24  2006/06/03 19:47:32  sparhawk
  * Removed unused variables.
  *
@@ -1432,9 +1435,14 @@ void idAI::Think( void ) {
 	}
 */
 	// DarkMod: Show knockout debugging
-	if( cv_ko_show.GetBool() )
+	if( cv_ai_ko_show.GetBool() )
 	{
 		KnockoutDebugDraw();
+	}
+
+	if( cv_ai_fov_show.GetBool() )
+	{
+		FOVDebugDraw();
 	}
 
 	UpdateMuzzleFlash();
@@ -6016,6 +6024,10 @@ void idAI::CheckTactile( void )
 		}
 }
 
+/**
+* ========================== BEGIN  TDM KNOCKOUT CODE =============================
+**/
+
 /*
 =====================
 idAI::TestKnockoutBlow
@@ -6237,6 +6249,73 @@ void idAI::Knockout( void )
 
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KO, this, true );
+
+Quit:
+	return;
+}
+
+/**
+* ========================== END TDM KNOCKOUT CODE =============================
+**/
+
+
+/*
+=====================
+idAI::CheckFOV
+=====================
+*/
+bool idAI::CheckFOV( const idVec3 &pos ) 
+{
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CHeckFOV called \r");
+
+	if ( fovDot == 1.0f ) 
+	{
+		return true;
+	}
+
+	float	dot;
+	idVec3	delta, HeadCenter;
+	idMat3	HeadAxis;
+
+	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+
+	//GetJointWorldTransform just gives the head attachment joint coordinate.
+	//Offset this by the head center offset (same as KO offset) to get the real head center point
+	// TODO: Rename m_KoOffset to m_HeadCenterOffset?
+	HeadCenter += HeadAxis * m_KoOffset;
+	
+	delta = pos - HeadCenter;
+	delta.Normalize();
+
+	dot = HeadAxis[ 0 ] * delta;
+
+	return ( dot >= fovDot );
+}
+
+void idAI::FOVDebugDraw( void )
+{
+	float FOVAng(0), radius(0);
+	idVec3 HeadCenter(vec3_zero), ConeDir(vec3_zero);
+	idMat3 HeadAxis(mat3_zero);
+	
+	if( AI_KNOCKEDOUT || AI_DEAD || m_HeadJointID == INVALID_JOINT )
+	{
+		goto Quit;
+	}
+
+	// probably expensive, but that's okay since this is just for debug mode
+	FOVAng = idMath::ACos( fovDot );
+
+	// store head joint base position to HeadCenter, axis to HeadAxis
+	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+
+	// offset from head joint position to get the true head center
+	HeadCenter += HeadAxis * m_KoOffset;
+
+	ConeDir = HeadAxis[0];
+	radius = FOVAng * 0.5f * 60.0f;
+
+	gameRenderWorld->DebugCone( colorRed, HeadCenter, 60.0f * ConeDir, 0, radius, gameLocal.msec );
 
 Quit:
 	return;
