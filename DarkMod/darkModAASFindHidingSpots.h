@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/06/16 20:26:15  sophisticatedzombie
+ * no message
+ *
  * Revision 1.7  2006/05/26 04:43:17  sophisticatedzombie
  * The search for hiding spots has been broken into two functions:
  * startSearchForHidingSpots and continueSearchForHidingSpots.  The hiding spot search object remembers its state so it can pick up where it left off on the next continueSearchForHidingSpots call.
@@ -331,6 +334,11 @@ public:
 		int in_hidingSpotTypesAllowed, 
 		idEntity* in_p_ignoreEntity
 	);
+
+	/*!
+	* This constuctor is NOT suitable for starting a search
+	*/
+	darkModAASFindHidingSpots();
 
 	/*!
 	* Destructor
