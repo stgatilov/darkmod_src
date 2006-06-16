@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/06/16 21:10:10  sophisticatedzombie
+ * Added cv_ai_ko_show and cv_ai_fov_show to the list of Darkmod cvars.
+ *
  * Revision 1.19  2006/03/21 20:55:16  sparhawk
  * dm_distance added
  *
@@ -122,6 +125,12 @@ extern idCVar cv_lg_model;
 extern idCVar cv_lg_adjust;
 
 extern idCVar cv_dm_distance;
+
+/**
+* CVars added for Darkmod knockout and field of vision changes
+*/
+extern idCVar cv_ai_fov_show;
+extern idCVar cv_ai_ko_show;
 
 /**
 * End DarkMod cvars

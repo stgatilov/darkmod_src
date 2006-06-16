@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/06/16 21:10:10  sophisticatedzombie
+ * Added cv_ai_ko_show and cv_ai_fov_show to the list of Darkmod cvars.
+ *
  * Revision 1.29  2006/04/29 03:35:47  ishtvan
  * ishtvan's cvars renamed to tdm prefix
  *
@@ -148,6 +151,10 @@ idCVar cv_ai_debug(					"tdm_ai_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVA
 idCVar cv_spr_debug(				"tdm_spr_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
 idCVar cv_spr_show(					"tdm_showsprop",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines." );
 idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, knockout zones will be shown for debugging." );
+
+idCVar cv_ai_fov_show ( "cv_ai_fov_show",						"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the field of vision of the AI will be drawn.");
+idCVar cv_ai_ko_show ( "cv_ai_ko_show",						"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the knockout region of the AI will be drawn.");
+
 
 /**
 * DarkMod player movement
