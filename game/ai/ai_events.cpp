@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/06/16 20:19:05  sophisticatedzombie
+ * no message
+ *
  * Revision 1.14  2006/06/03 19:47:32  sparhawk
  * Removed unused variables.
  *
@@ -221,6 +224,32 @@ const idEventDef AI_IssueCommunication_IR ( "issueCommunication_IR", "ffev");
 const idEventDef AI_IssueCommunication_DOE ( "issueCommunication_DOE", "ffev" );
 const idEventDef AI_IssueCommunication ("issueCommunication", "ffv" );
 
+/*!
+* A look at event that just looks at a position in space
+*
+* @param lookAtWorldPosition The position in space to look at
+*
+* @param durationInSeconds The duration to look in seconds
+*/
+const idEventDef AI_LookAtPosition ("lookAtPosition", "vf");
+
+/*!
+* A look at event that just looks at a set of angles relative
+* to the current body facing of the AI
+*
+* @param yawAngleClockwise Negative angles are to the left of the AIs body
+*	and positive angles are to the right.
+*
+* @param pitchAngleUp Negative values are down and positive values are up
+*	where down and up are defined by the body axis.
+*
+* @param rollAngle This is currently unused and does nothing
+*
+* @param durationInSeconds The duration to look in seconds
+*
+*/
+const idEventDef AI_LookAtAngles ("lookAtAngles", "ffff");
+
 
 /*!
 * script callable: spawnThrowableProjectile
@@ -300,6 +329,29 @@ const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", "d", '
 * Param is 0 based hiding spot index
 */
 const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
+
+/*!
+* This event splits off half of the hiding spot list of another entity
+* and sets our hiding spot list to the "taken" points.
+*
+* As such, it is useful for getting hiding spots from a seraching AI that this
+* AI is trying to assist.
+*
+* @param p_otherEntity The other entity who's hiding spots we are taking
+* 
+* @return The number of points in the list gotten
+*/
+const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitiesHidingSpotList", "e", 'd');
+
+/*!
+* This event gets the alert number of another AI (AI_alertNum variable value)
+*
+* @param p_otherEntity The other AI entity who's alert number is being querried
+*
+* @return The alert number of the other AI, 0.0 if its not an AI or is NULL
+*/
+const idEventDef AI_GetAlertNumOfOtherAI ("getAlertNumOfOtherAI", "e", 'f');
+
 
 /*!
 * This event is used to get a position that the AI can move to observe a 
@@ -467,7 +519,12 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
 	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
 	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
+	EVENT ( AI_GetSomeOfOtherEntitiesHidingSpotList, idAI::Event_GetSomeOfOtherEntitiesHidingSpotList)
 	EVENT ( AI_GetObservationPosition,			idAI::Event_GetObservationPosition)
+	EVENT ( AI_LookAtPosition,					idAI::Event_LookAtPosition)
+	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
+
+	EVENT ( AI_GetAlertNumOfOtherAI,			idAI::Event_GetAlertNumOfOtherAI)
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
@@ -2739,6 +2796,59 @@ void idAI::Event_TravelDistanceBetweenEntities( idEntity *source, idEntity *dest
 
 /*
 =====================
+idAI::Event_LookAtPosition
+=====================
+*/
+void idAI::Event_LookAtPosition (const idVec3& lookAtWorldPosition, float duration)
+{
+	if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+	{
+		focusEntity	= NULL;
+		currentFocusPos = lookAtWorldPosition;
+		alignHeadTime = gameLocal.time;
+		forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
+		blink_time = 0;
+	}
+
+	focusTime = gameLocal.time + SEC2MS( duration );
+
+}
+
+
+void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, float rollAngle, float durationInSeconds)
+{
+	// Get our physical axis
+	idMat3 physicalAxis = GetPhysics()->GetAxis();
+	idAngles physicalAngles = physicalAxis.ToAngles ();
+
+	// Now rotate it by the given angles
+	idAngles lookAngles = idAngles(pitchAngleUp, yawAngleClockwise, rollAngle);
+
+	lookAngles += physicalAngles;
+	lookAngles.Normalize180();
+
+	// Determine the look at world position
+	idVec3 lookAtPositionDelta = lookAngles.ToForward() * 10.0;
+	idVec3 lookAtWorldPosition = GetEyePosition() + lookAtPositionDelta;
+
+	//gameRenderWorld->DebugArrow (idVec4(1.0,0.0,0.0,1.0), GetEyePosition(), lookAtWorldPosition, 1, 5000);
+
+	// Update focus position
+	if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+	{
+		focusEntity	= NULL;
+		currentFocusPos = lookAtWorldPosition;
+		alignHeadTime = gameLocal.time;
+		forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
+		blink_time = 0;
+	}
+
+	focusTime = gameLocal.time + SEC2MS( durationInSeconds );
+
+}
+
+/*
+=====================
 idAI::Event_LookAtEntity
 =====================
 */
@@ -3587,3 +3697,201 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 	idThread::ReturnInt (outTypeFlags);
 
 }
+
+void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
+{
+	// Test parameters
+	if (p_otherEntity == NULL) 
+	{
+		idThread::ReturnFloat (0.0);
+		return;
+	}
+
+
+	// The other entity must be an AI
+	idAI* p_otherAI = dynamic_cast<idAI*>(p_otherEntity);
+	if (p_otherAI == NULL)
+	{
+		// Not an AI
+		idThread::ReturnFloat (0.0);
+		return;
+	}
+
+	// Return the other AI's alert num
+	idThread::ReturnFloat (p_otherAI->AI_AlertNum);
+
+}
+
+
+void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch)
+{
+	// Test parameters
+	if (p_ownerOfSearch == NULL) 
+	{
+		idThread::ReturnInt (0);
+		return;
+	}
+
+
+	// The other entity must be an AI
+	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
+	if (p_otherAI == NULL)
+	{
+		// Not an AI
+		idThread::ReturnInt (0);
+		return;
+	}
+
+	// Get its list
+	darkModAASFindHidingSpots* p_othersFinder = (darkModAASFindHidingSpots*) (p_otherAI->m_HidingSpotSearchHandle);
+	if (p_othersFinder == NULL)
+	{
+		// No current spots
+		idThread::ReturnInt (0);
+		return;
+	}
+
+	idList<darkModHidingSpot_t>* p_othersList = &(p_othersFinder->hidingSpotList);
+	if (p_othersList->Num() <= 1)
+	{
+		// No points
+		idThread::ReturnInt (0);
+		return;
+	}
+
+	// We must clear our current hiding spot search
+	destroyCurrentHidingSpotSearch();
+
+	// Make new one
+	darkModAASFindHidingSpots* p_hidingSpotFinder = new darkModAASFindHidingSpots();
+	if (p_hidingSpotFinder == NULL)
+	{
+		idThread::ReturnInt (0);
+		return;
+	}
+	m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
+
+	// Move points from their list to ours... 
+	// split goegraphically?
+
+	// Iterate the list quickly and determine its extents
+	idBounds listBounds;
+	listBounds[0] = (*p_othersList)[0].goal.origin;
+	listBounds[1] = (*p_othersList)[0].goal.origin;
+	for (int i = 1; i < p_othersList->Num(); i ++)
+	{
+		// Get the point
+		aasGoal_t goal = (*p_othersList)[i].goal;
+
+		// Expand the bounds to account for this point
+		if (goal.origin.x < listBounds[0].x )
+		{
+			listBounds[0].x = goal.origin.x;
+		}
+		if (goal.origin.y < listBounds[0].y )
+		{
+			listBounds[0].y = goal.origin.y;
+		}
+		if (goal.origin.z < listBounds[0].z )
+		{
+			listBounds[0].z = goal.origin.z;
+		}
+		if (goal.origin.x > listBounds[1].x )
+		{
+			listBounds[1].x = goal.origin.x;
+		}
+		if (goal.origin.y > listBounds[1].y )
+		{
+			listBounds[1].y = goal.origin.y;
+		}
+		if (goal.origin.z > listBounds[1].z )
+		{
+			listBounds[1].z = goal.origin.z;
+		}
+
+	}
+
+	// Which is the biggest dimension, we'll split on that
+	int splitAxis = 0;
+	double diffX = listBounds[1].x - listBounds[0].x;
+	double diffY = listBounds[1].y - listBounds[0].y;
+	double diffZ = listBounds[1].z - listBounds[0].z;
+
+	if (diffY > diffX)
+	{
+		splitAxis = 1;
+
+		if (diffZ > diffY)
+		{
+			splitAxis = 2;
+		}
+	}
+	else if (diffZ > diffX)
+	{
+		splitAxis = 2;
+	}
+
+	// Get the split coord
+	double splitValue;
+	if (splitAxis == 0)
+	{
+		splitValue = listBounds[0].x + (diffX / 2.0);
+	}
+	else if (splitAxis == 1)
+	{
+		splitValue = listBounds[0].y + (diffY / 2.0);
+	}
+	else if (splitAxis == 2)
+	{
+		splitValue = listBounds[0].z + (diffZ / 2.0);
+	}
+	
+	// Split up the list
+	for (int i = 0; i < p_othersList->Num(); i ++)
+	{
+		bool b_move = false;
+		aasGoal_t goal = (*p_othersList)[i].goal;
+		switch (splitAxis)
+		{
+		case 0:
+			if (goal.origin.x >= splitValue)
+			{
+				b_move = true;
+			}
+			break;
+
+		case 1:
+			if (goal.origin.y >= splitValue)
+			{
+				b_move = true;
+			}
+			break;
+
+		default:
+			if (goal.origin.z >= splitValue)
+			{
+				b_move = true;
+			}
+			break;
+		}
+
+		if (b_move)
+		{
+			// Remove the goal.origin
+			darkModHidingSpot_t spot = (*p_othersList)[i];
+			p_othersList->RemoveIndex (i);
+
+			// Add to our list
+			p_hidingSpotFinder->hidingSpotList.Append (spot);
+
+			// Indices moved down, so need to check this one again
+			i --;
+		}
+	}
+
+	// Done
+	idThread::ReturnInt (p_hidingSpotFinder->hidingSpotList.Num());
+
+
+}
+

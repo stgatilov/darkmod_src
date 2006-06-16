@@ -21,6 +21,34 @@ idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
 
 //----------------------------------------------------------------------------
 
+darkModAASFindHidingSpots::darkModAASFindHidingSpots()
+{
+	// Start empty
+	h_hideFromPVS.i = -1;
+	h_hideFromPVS.h = NULL;
+
+	// Remember the hide form position
+	hideFromPosition = vec3_origin;
+
+	// Set search parameters
+	p_aas = NULL;
+	hidingHeight = 0;
+	searchLimits[0] = vec3_origin;
+	searchLimits[1] = vec3_origin;
+	searchCenter = vec3_origin;
+	searchRadius = 0.0;
+	hidingSpotTypesAllowed = 0;
+	p_ignoreEntity = NULL;
+
+	// No hiding spot PVS areas identified yet
+	numPVSAreas = 0;
+	numPVSAreasIterated = 0;
+
+	numHideFromPVSAreas = 0;
+}
+
+//----------------------------------------------------------------------------
+
 // Constructor
 darkModAASFindHidingSpots::darkModAASFindHidingSpots
 (

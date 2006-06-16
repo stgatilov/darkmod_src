@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/06/16 20:19:05  sophisticatedzombie
+ * no message
+ *
  * Revision 1.19  2006/06/15 06:47:27  ishtvan
  * AI FOV should now turn with head bone
  *
@@ -74,6 +77,9 @@
 
 #ifndef __AI_H__
 #define __AI_H__
+
+#include "../../darkmod/relations.h"
+
 
 /*
 ===============================================================================
@@ -229,6 +235,10 @@ extern const idEventDef AI_CloseHidingSpotSearch;
 extern const idEventDef AI_GetNumHidingSpots;
 extern const idEventDef AI_GetNthHidingSpotLocation;
 extern const idEventDef AI_GetNthHidingSpotType;
+extern const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList;
+
+// Darkmod AI additions
+extern const idEventDef AI_GetAlertNumOfOtherAI;
 
 // This event is used to get a position from which a given position can be observed
 extern const idEventDef AI_GetObservationPosition;
@@ -513,6 +523,8 @@ public:
 	* Returns true if AI is knocked out
 	**/
 	bool  IsKnockedOut( void ) { return AI_KNOCKEDOUT; };
+
+
 
 public:
 	/**
@@ -1103,6 +1115,8 @@ protected:
 	void					Event_TravelDistanceBetweenEntities( idEntity *source, idEntity *dest );
 	void					Event_LookAtEntity( idEntity *ent, float duration );
 	void					Event_LookAtEnemy( float duration );
+	void					Event_LookAtPosition (const idVec3& lookAtWorldPosition, float duration);
+	void					Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, float rollAngle, float durationInSeconds);
 	void					Event_SetJointMod( int allowJointMod );
 	void					Event_ThrowMoveable( void );
 	void					Event_ThrowAF( void );
@@ -1153,6 +1167,13 @@ protected:
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
 	void Event_GetNthHidingSpotType (int hidingSpotIndex);
 	void Event_GetObservationPosition (const idVec3& pointToObserve);
+	void Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch);
+
+	/**
+	* Gets the alert number of an entity that is another AI.
+	* Will return 0.0 to script if other entity is NULL or not an AI.
+	*/
+	void Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity);
 
 	/*!
 	* This event is used by an AI script to issue a message to other AI's through
