@@ -34,7 +34,6 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "matrixsq.h"
 #include "darkmodglobals.h"
 #include "relations.h"
-#include "frobDoor.h"
 #include "../game/ai/ai.h"
 
 // NOTES:
