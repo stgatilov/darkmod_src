@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.63  2006/06/21 10:12:45  sparhawk
+ * Added version tracking per file
+ *
  * Revision 1.62  2006/06/13 22:32:16  sparhawk
  * Finished first working version of StimTimer
  *
@@ -211,6 +214,8 @@
 #pragma hdrstop
 
 #pragma warning(disable : 4996 4805 4800)
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
 

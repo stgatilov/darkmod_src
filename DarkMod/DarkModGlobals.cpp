@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.41  2006/06/21 10:12:25  sparhawk
+ * Added version tracking per file
+ *
  * Revision 1.40  2006/05/26 10:25:15  ishtvan
  * added mission data global object
  *
@@ -148,6 +151,8 @@
 
 #pragma warning(disable : 4996 4800)
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 #ifdef _WINDOWS_
 #include "c:\compiled.h"
 #endif
@@ -251,6 +256,29 @@ CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
 CMissionData	g_MissionData;
+
+static idList<const char *> *s_FileVersion = NULL;
+
+bool FileVersionList(const char *str, bool state)
+{
+	if(s_FileVersion == NULL)
+		s_FileVersion = new idList<const char *>;
+
+	if(state == false)
+		s_FileVersion->AddUnique(str);
+
+	return true;
+}
+
+void FileVersionDump(void)
+{
+	int i, n;
+
+	n = s_FileVersion->Num();
+	for(i = 0; i < n; i++)
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s\r", (*s_FileVersion)[i]);
+}
+
 
 CGlobal::CGlobal(void)
 {
@@ -423,20 +451,15 @@ void CGlobal::Init()
 	PROFILE_HANDLE *pfh = NULL;
 
 	// Do we need this on Linux as well? I guess not, because in linux the targetdirectory can be
-
 	// redericted by a link. This has to be tested though but should be no problem.
 
 #ifdef _WINDOWS_
 
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
-
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
-
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);
 
 #endif
-
-
 
 	GetModName();
 
@@ -466,6 +489,7 @@ void CGlobal::Init()
 		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Unable to open %s.ini\r", m_ModName);
 
 	CloseProfile(pfh);
+	FileVersionDump();
 }
 
 void CGlobal::LogPlane(idStr const &Name, idPlane const &Plane)

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/06/21 10:12:45  sparhawk
+ * Added version tracking per file
+ *
  * Revision 1.31  2006/06/05 21:33:25  sparhawk
  * Stimtimer code updated/added
  *
@@ -132,6 +135,12 @@
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+/**
+ * Global function to keep track of the files and it's version.
+ */
+bool FileVersionList(const char *str, bool state);
+
 
 class CStim;
 
