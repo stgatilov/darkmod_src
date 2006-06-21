@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.16  2006/06/21 13:05:32  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.15  2006/06/13 22:31:49  sparhawk
  * Finished first working version of StimTimer
  *
@@ -73,6 +76,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "DarkModGlobals.h"
 #include "StimResponse.h"

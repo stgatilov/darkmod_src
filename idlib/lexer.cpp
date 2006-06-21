@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/06/21 13:06:22  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.5  2006/03/22 14:26:34  gildoran
  * Fixed a bug where the first character after a set of block comments is ignored.
  *
@@ -29,6 +32,8 @@
 
 #include "precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #define PUNCTABLE
 

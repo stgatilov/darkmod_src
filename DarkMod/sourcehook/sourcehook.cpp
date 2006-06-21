@@ -16,6 +16,8 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 #if defined __GNUC__
 #include <stdint.h>
 #endif

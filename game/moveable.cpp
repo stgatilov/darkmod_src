@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/06/21 13:05:10  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.5  2006/05/30 06:23:39  ishtvan
  * worldspawn now triggers its targets when the map starts
  *
@@ -29,6 +32,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
 #include "../DarkMod/MissionData.h"

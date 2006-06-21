@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/06/21 13:04:47  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.25  2006/06/15 06:47:27  ishtvan
  * AI FOV should now turn with head bone
  *
@@ -92,6 +95,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 #include "../../darkmod/relations.h"

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/06/21 13:07:08  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.34  2005/12/11 19:53:11  ishtvan
  * disabled mantling when holding objects
  *
@@ -126,6 +129,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"

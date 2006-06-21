@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/06/21 13:07:08  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.4  2005/12/05 08:47:54  ishtvan
  * removed limit of 1.0 on linear friction
  *
@@ -26,6 +29,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 

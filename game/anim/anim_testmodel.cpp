@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/06/21 13:06:07  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.3  2005/11/11 21:11:28  sparhawk
  * SDK 1.3 Merge
  *
@@ -45,6 +48,8 @@ move around it to view it from different angles.
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 

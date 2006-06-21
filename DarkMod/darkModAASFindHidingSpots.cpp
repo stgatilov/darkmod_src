@@ -1,6 +1,8 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 #include ".\darkmodaasfindhidingspots.h"
 #include "..\darkmod\darkmodglobals.h"
 #include "..\darkmod\darkModLAS.h"

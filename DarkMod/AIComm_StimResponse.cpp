@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/06/21 13:05:31  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.3  2006/05/26 04:28:41  sophisticatedzombie
  * Knocked out AIs no longer respond to communications. (No hypnosis allowed)
  *
@@ -17,6 +20,8 @@
  ***************************************************************************/
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "DarkModGlobals.h"
 #include "AIComm_StimResponse.h"

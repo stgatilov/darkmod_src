@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/06/21 13:08:06  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.7  2006/05/03 21:35:03  sparhawk
  * Added support for booleans for scriptfunctions.
  *
@@ -41,6 +44,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/decltdm_matinfo.h"

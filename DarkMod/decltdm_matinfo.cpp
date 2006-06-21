@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/06/21 13:05:32  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.2  2006/03/25 09:52:43  gildoran
  * Altered the parse functions for the decls I wrote to adhere to our coding standards.
  *
@@ -18,6 +21,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "decltdm_matinfo.h"
 

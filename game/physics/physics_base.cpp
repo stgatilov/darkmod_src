@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/06/21 13:07:07  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.2  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -20,6 +23,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 

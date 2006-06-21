@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/06/21 13:06:07  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.4  2005/11/19 17:29:09  sparhawk
  * LogString with macro replaced
  *
@@ -26,6 +29,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/darkmodglobals.h"

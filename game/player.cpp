@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.64  2006/06/21 13:05:10  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.63  2006/05/28 08:40:15  ishtvan
  * modified death, mission failure
  *
@@ -213,6 +216,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"

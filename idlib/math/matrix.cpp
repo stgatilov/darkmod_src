@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/06/21 13:05:51  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.5  2004/11/28 09:56:51  sparhawk
  * SDK V2 merge
  *
@@ -29,6 +32,7 @@
 #include "../precompiled.h"
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 //===============================================================
 //

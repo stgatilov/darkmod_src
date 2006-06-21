@@ -22,6 +22,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2006/06/21 13:05:32  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.10  2006/04/23 18:39:30  ishtvan
  * saveing/loading fix for empty matrices
  *
@@ -54,6 +57,8 @@
  ******************************************************************************/
 
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #pragma warning(disable : 4996)
 

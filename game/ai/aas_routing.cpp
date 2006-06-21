@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/06/21 13:04:47  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.3  2006/06/03 19:47:32  sparhawk
  * Removed unused variables.
  *
@@ -23,6 +26,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "AAS_local.h"
 #include "../Game_local.h"		// for print and error

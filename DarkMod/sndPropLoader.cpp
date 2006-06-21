@@ -25,6 +25,8 @@
 
 #pragma hdrstop
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 #pragma warning(disable : 4996)
 
 #include "sndproploader.h"

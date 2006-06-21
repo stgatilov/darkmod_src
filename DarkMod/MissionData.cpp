@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/06/21 13:05:32  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.5  2006/06/07 09:56:15  ishtvan
  * fixed CObjecitveLocation so that the clipmodel is actually detected as the bounds
  *
@@ -27,6 +30,8 @@
  ***************************************************************************/
 
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #pragma warning(disable : 4996)
 

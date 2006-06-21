@@ -16,6 +16,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.2  2006/06/21 13:05:32  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.1  2004/10/30 17:06:36  sparhawk
  * DarkMod added to project.
  *
@@ -41,6 +44,8 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include <string.h>
 

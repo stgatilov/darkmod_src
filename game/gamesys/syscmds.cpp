@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/06/21 13:06:52  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.6  2005/11/11 21:21:04  sparhawk
  * SDK 1.3 Merge
  *
@@ -32,6 +35,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 #include "../../darkmod/sndproploader.h"

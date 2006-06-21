@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/06/21 13:06:52  sparhawk
+ * Added version tracking per cpp module
+ *
  * Revision 1.30  2006/06/16 21:10:10  sophisticatedzombie
  * Added cv_ai_ko_show and cv_ai_fov_show to the list of Darkmod cvars.
  *
@@ -109,6 +112,8 @@
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
 
