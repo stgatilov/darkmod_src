@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/06/21 15:02:27  sparhawk
+ * FrobDoor derived now from BinaryFrobMover
+ *
  * Revision 1.20  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -89,6 +92,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"
+#include "BinaryFrobMover.h"
 #include "FrobDoor.h"
 #include "sndProp.h"
 
@@ -101,41 +105,26 @@ const idEventDef EV_TDM_Door_Close( "Close", "f" );
 const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
 const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
 const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
-const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
 const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
-const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
-const idEventDef EV_TDM_Door_GetLock( "GetLock", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 
-CLASS_DECLARATION( idMover, CFrobDoor )
+CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
 	EVENT( EV_TDM_Door_Close,				CFrobDoor::Close)
-	EVENT( EV_TDM_Door_ToggleOpen,			CFrobDoor::ToggleOpen)
 	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
 	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
-	EVENT( EV_TDM_Door_ToggleLock,			CFrobDoor::ToggleLock)
 	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
-	EVENT( EV_TDM_Door_GetOpen,				CFrobDoor::GetOpen)
-	EVENT( EV_TDM_Door_GetLock,				CFrobDoor::GetLock)
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 END_CLASS
 
 
 CFrobDoor::CFrobDoor(void)
+: CBinaryFrobMover()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
-	m_Open = false;
-	m_Locked = false;
 	m_Pickable = true;
-	m_bInterruptable = true;
-	m_bInterrupted = false;
-	m_bIntentOpen = false;
-	m_StateChange = false;
 	m_DoubleDoor = NULL;
-	m_Rotating = false;
-	m_Translating = false;
-	m_TransSpeed = 0;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -161,6 +150,8 @@ void CFrobDoor::Spawn( void )
 	idEntity *e;
 	CFrobDoor *master;
 	idAngles tempAngle, partialAngle;
+
+	CBinaryFrobMover::Spawn();
 
 	LoadTDMSettings();
 
@@ -198,52 +189,8 @@ void CFrobDoor::Spawn( void )
 			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
-	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
-
-	m_Open = spawnArgs.GetBool("open");
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
-
-	partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
-
-	m_Locked = spawnArgs.GetBool("locked");
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
-
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
-
-	m_bInterruptable = spawnArgs.GetBool("interruptable");
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] interruptable (%u)\r", name.c_str(), m_bInterruptable);
-
-	// log if visportal was found
-	if( areaPortal > 0 )
-		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
-
-	physicsObj.GetLocalAngles( tempAngle );
-
-	// Original starting position of the door in case it is a sliding door.
-	// Add the initial position offset in case the mapper makes the door start out inbetween states
-	m_StartPos = physicsObj.GetOrigin() + spawnArgs.GetVector("start_position", "0 0 0");
-
-	// m_Translation is the vector between start position and end position
-	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
-	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
-
-	if(!m_Open) 
-	{
-		// Door starts _completely_ closed
-		Event_ClosePortal();
-
-		m_ClosedAngles = tempAngle;
-		m_OpenAngles = tempAngle + m_Rotate;
-	}
-	else
-	{
-		m_ClosedAngles = tempAngle - partialAngle;
-		m_OpenAngles = tempAngle + m_Rotate - partialAngle;
-	}
-
-	// set the first intent according to the initial doorstate
-	m_bIntentOpen = !m_Open;
 
 	//schedule finding the double doors for after all entities have spawned
 	PostEventMS( &EV_TDM_Door_FindDouble, 0 );
@@ -257,7 +204,6 @@ void CFrobDoor::Lock(bool bMaster)
 	CFrobDoor *ent;
 	idEntity *e;
 
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
@@ -290,9 +236,7 @@ void CFrobDoor::Lock(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
-		m_Locked = true;
-		CallStateScript();
+		CBinaryFrobMover::Lock(bMaster);
 	}
 }
 
@@ -301,7 +245,6 @@ void CFrobDoor::Unlock(bool bMaster)
 	CFrobDoor *ent;
 	idEntity *e;
 
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
@@ -334,26 +277,8 @@ void CFrobDoor::Unlock(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
-		m_Locked = false;
-
-		ToggleOpen();
+		CBinaryFrobMover::Unlock(bMaster);
 	}
-}
-
-void CFrobDoor::ToggleLock(void)
-{
-	// A door can only be un/locked when it is closed.
-	if(m_Open == true)
-	{
-		ToggleOpen();
-		return;
-	}
-
-	if(m_Locked == true)
-		Unlock(true);
-	else
-		Lock(true);
 }
 
 void CFrobDoor::Open(bool bMaster)
@@ -493,44 +418,6 @@ void CFrobDoor::Close(bool bMaster)
 	}
 }
 
-void CFrobDoor::ToggleOpen(void)
-{
-	// Check if the door is stopped.
-//	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
-	if( !m_Rotating && !m_Translating )
-	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
-
-		if(m_bIntentOpen == true)
-		{
-			Open(true);
-		}
-		else
-		{
-			Close(true);
-		}
-
-		m_bInterrupted = false;
-		goto Quit;
-	}
-
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
-
-	// Otherwise, door is moving.  Stop it if it is interruptable
-	if(m_bInterruptable)
-	{
-		m_bInterrupted = true;
-		Event_StopRotating();
-		Event_StopMoving();
-
-		// reverse the intent
-		m_bIntentOpen = !m_bIntentOpen;
-	}
-
-Quit:
-	return;
-}
-
 bool CFrobDoor::UsedBy(idEntity *ent)
 {
 	bool bRc = false;
@@ -661,79 +548,8 @@ void CFrobDoor::FindDoubleDoor(void)
 	UpdateSoundLoss();
 }
 
-void CFrobDoor::GetOpen(void)
-{
-	idThread::ReturnInt(m_Open);
-}
-
-void CFrobDoor::GetLock(void)
-{
-	idThread::ReturnInt(m_Locked);
-}
-
 void CFrobDoor::GetPickable(void)
 {
 	idThread::ReturnInt(m_Pickable);
 }
-
-void CFrobDoor::DoneStateChange(void)
-{
-	bool CallScript = false;
-
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
-
-	// Ignore it if we already did it.
-	if(m_StateChange == false)
-		goto Quit;
-
-    if(m_Rotating == true || m_Translating == true)
-        goto Quit;
-
-	// if the door is not completely opened or closed, do nothing
-	if( m_bInterrupted )
-		goto Quit;
-
-	m_StateChange = false;
-	CallScript = true;
-
-	// door has completely closed
-	if(!m_bIntentOpen)
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
-
-		m_bIntentOpen = true;
-		m_Open = false;
-
-		// play the closing sound when the door closes completely
-		StartSound( "snd_close", SND_CHANNEL_ANY, 0, false, NULL );
-
-		//make sure the Doubledoor is also closed before closing the visportal
-		if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
-			Event_ClosePortal();
-	}
-	else	// door has completely opened
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opened completely\r" );
-		m_Open = true;
-		m_bIntentOpen = false;
-	}
-
-Quit:
-	UpdateSoundLoss();
-	if(CallScript == true)
-		CallStateScript();
-
-	return;
-}
-
-void CFrobDoor::CallStateScript(void)
-{
-	idStr str;
-	if(spawnArgs.GetString("state_change_callback", "", str))
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript Open: %d  Locked: %d   Pickable: %d   Interrupt: %d\r", m_Open, m_Locked, m_Pickable, m_bInterrupted);
-		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
-	}
-}
-
 

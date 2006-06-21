@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/06/21 15:02:27  sparhawk
+ * FrobDoor derived now from BinaryFrobMover
+ *
  * Revision 1.13  2006/05/07 21:52:12  ishtvan
  * *) fixed interruption on opening problem
  * *) Added 'interruptable' spawnarg
@@ -69,7 +72,7 @@
  * them but this doesn't work with normal idDoors. So CFrobDoor is a mixture
  * of idDoor and idMover.
  */
-class CFrobDoor : public idMover {
+class CFrobDoor : public CBinaryFrobMover {
 public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
@@ -88,10 +91,6 @@ public:
 	void					Lock(bool Master);
 	void					Unlock(bool Master);
 
-	void					ToggleOpen(void);
-	void					ToggleLock(void);
-	void					GetOpen(void);
-	void					GetLock(void);
 	void					GetPickable(void);
 
 	bool					UsedBy(idEntity *);
@@ -111,12 +110,6 @@ public:
 	 *
 	 */
 	void					DoneMoving(void);
-
-	/**
-	 * A helper function that implements the finalisation for rotations or movings.
-	 */
-	void					DoneStateChange(void);
-	void					CallStateScript(void);
 
 	/**
 	* Find out if this door is touching another door, and if they share the same portal
@@ -155,64 +148,7 @@ protected:
 	idStr						m_MasterLock;
 	idList<idStr>				m_LockList;
 
-	/**
-	* m_Open is only set to false when the door is completely closed
-	**/
-	bool						m_Open;
-
-	bool						m_Locked;
 	bool						m_Pickable;
-
-	/**
-	* Stores whether the player intends to open or close the door
-	*	Useful for determining what to do when the door is stopped midway.
-	**/
-	bool						m_bIntentOpen;
-
-	bool						m_StateChange;
-
-	/**
-	* Determines whether the door may be interrupted.  Read from spawnargs.
-	**/
-	bool						m_bInterruptable;
-
-	/**
-	* Set to true if the door was stopped mid-rotation
-	**/
-	bool						m_bInterrupted;
-
-	/**
-	* Read from the spawnargs, interpreted into m_OpenAngles and m_ClosedAngles
-	**/
-	idAngles					m_Rotate;
-
-	/**
-	 * Original position
-	 */
-	idVec3						m_StartPos;
-
-	/**
-	 * Vector that specifies the direction and length of the translation.
-	 * This is needed for doors that don't rotate, but slide to open.
-	 */
-	idVec3						m_Translation;
-
-	/**
-	* Translation speed in doom units per second, read from spawnargs.
-	* Defaults to zero.  
-	* If set to zero, D3's physics chooses the speed based on a constant time of movement.
-	**/
-	float						m_TransSpeed;
-
-	/**
-	* Door angles when completely closed
-	**/
-	idAngles					m_ClosedAngles;
-
-	/**
-	* Door angles when completely open
-	**/
-	idAngles					m_OpenAngles;
 
 	/**
 	* Pointer to the door's partner in a double door.
@@ -223,17 +159,6 @@ protected:
 	*	it could be independently opened.
 	**/
 	CFrobDoor					*m_DoubleDoor;
-
-	/**
-	 * Scriptfunction that is called, whenever the door is finished rotating
-	 * or translating. i.E. when the statechange is completed.
-	 * The function gets as parameters the current state:
-	 * DoorComplete(boolean open, boolean locked, boolean interrupted);
-	 */
-	idStr						m_CompletionScript;
-
-	bool						m_Rotating;
-	bool						m_Translating;
 
 private:
 };
