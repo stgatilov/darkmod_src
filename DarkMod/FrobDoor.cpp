@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/06/27 08:33:57  ishtvan
+ * fixed closing of portals
+ *
  * Revision 1.21  2006/06/21 15:02:27  sparhawk
  * FrobDoor derived now from BinaryFrobMover
  *
@@ -546,10 +549,19 @@ void CFrobDoor::FindDoubleDoor(void)
 
 	// Wait until here for the first update of sound loss, in case double door is open
 	UpdateSoundLoss();
+
+	// Open the portal if either of the doors is open
+	if( m_Open || (m_DoubleDoor && m_DoubleDoor->m_Open) )
+		Event_OpenPortal();
 }
 
 void CFrobDoor::GetPickable(void)
 {
 	idThread::ReturnInt(m_Pickable);
+}
+
+CFrobDoor* CFrobDoor::GetDoubleDoor( void )
+{
+	return m_DoubleDoor;
 }
 

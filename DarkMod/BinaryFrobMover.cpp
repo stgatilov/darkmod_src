@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/06/27 08:33:57  ishtvan
+ * fixed closing of portals
+ *
  * Revision 1.1  2006/06/21 15:02:27  sparhawk
  * FrobDoor derived now from BinaryFrobMover
  *
@@ -93,6 +96,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
+#include "FrobDoor.h"
 #include "sndProp.h"
 
 //===============================================================================
@@ -387,6 +391,18 @@ void CBinaryFrobMover::DoneStateChange(void)
 
 		// play the closing sound when the door closes completely
 		StartSound( "snd_close", SND_CHANNEL_ANY, 0, false, NULL );
+		
+		// close visportal.  
+		// If we are a door, make sure the double door is also closed before closing portal
+		if( IsType( CFrobDoor::Type ) )
+		{
+			CFrobDoor *DoubleDoor = static_cast<CFrobDoor *>(this)->GetDoubleDoor();
+			// Skip the closing of the portal if the other door is open
+			if(DoubleDoor && DoubleDoor->m_Open)
+				goto Quit;
+		}
+
+		Event_ClosePortal();
 	}
 	else	// door has completely opened
 	{
