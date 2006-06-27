@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/06/27 01:30:32  ishtvan
+ * fixed to stop sounds on detonation
+ *
  * Revision 1.13  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -833,6 +836,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// stop sound
 	StopSound( SND_CHANNEL_BODY2, false );
+	StopSound( SND_CHANNEL_BODY, false );
 
 	// DarkMod: Check material list to see if it's activated
 	SurfTypeName = g_Global.GetSurfName( collision.c.material );
