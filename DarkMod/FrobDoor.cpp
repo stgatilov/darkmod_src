@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/06/27 08:48:45  ishtvan
+ * fixed closing of portals more cleanly
+ *
  * Revision 1.22  2006/06/27 08:33:57  ishtvan
  * fixed closing of portals
  *
@@ -563,5 +566,11 @@ void CFrobDoor::GetPickable(void)
 CFrobDoor* CFrobDoor::GetDoubleDoor( void )
 {
 	return m_DoubleDoor;
+}
+
+void CFrobDoor::ClosePortal( void )
+{
+	if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
+		Event_ClosePortal();
 }
 

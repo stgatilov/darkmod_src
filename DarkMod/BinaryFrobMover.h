@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/06/27 08:48:45  ishtvan
+ * fixed closing of portals more cleanly
+ *
  * Revision 1.1  2006/06/21 15:02:27  sparhawk
  * FrobDoor derived now from BinaryFrobMover
  *
@@ -111,6 +114,11 @@ public:
 	 */
 	virtual void			DoneStateChange(void);
 	virtual void			CallStateScript(void);
+
+	/**
+	* Close the portal.  Overloaded on CFrobDoor
+	**/
+	virtual void			ClosePortal(void);
 
 protected:
 	/**
