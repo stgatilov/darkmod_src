@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.57  2006/06/27 05:53:00  ishtvan
+ * added setting clipmodel contents with spawnArg "clipmodel_contents"
+ *
  * Revision 1.56  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -875,6 +878,10 @@ void idEntity::Spawn( void )
 	}
 
 	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
+
+	// TDM: Set contents based on new spawnArg
+	if( spawnArgs.FindKey( "clipmodel_contents" ) )
+		GetPhysics()->SetContents( spawnArgs.GetInt("clipmodel_contents") );
 
 	LoadTDMSettings();
 }
