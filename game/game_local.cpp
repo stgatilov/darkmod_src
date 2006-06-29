@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.64  2006/06/29 08:20:38  ishtvan
+ * stim response updates
+ *
  * Revision 1.63  2006/06/21 10:12:45  sparhawk
  * Added version tracking per file
  *
@@ -5633,7 +5636,10 @@ void idGameLocal::ProcessStimResponse(void)
 		timer = stim->GetTimer();
 
 		if(timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
+		{
 			tst = timer->Tick(ts);
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("StimTimer: Updating active timer at clock val %d, num stims = %d.\r", ts, tst);
+		}
 
 		while(tst > 0)
 		{
@@ -5659,22 +5665,36 @@ void idGameLocal::ProcessStimResponse(void)
 			sn = stim.Num();
 			for(si = 0; si < sn; si++)
 			{
-				// If stim is not disabled and has a radius
-				if(stim[si]->m_State != SS_DISABLED && (radius = stim[si]->m_Radius) != 0.0)
+				CStim *pStim = stim[si];
+
+				// Check the interleaving timer and don't eval stim if it's not up yet
+				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
+					continue;
+
+				pStim->m_TimeInterleaveStamp = gameLocal.time;
+
+				// If stim is not disabled and has a radius or uses the ent bounds
+				if(pStim->m_State != SS_DISABLED && ( (radius = pStim->m_Radius) != 0.0 || pStim->m_bUseEntBounds))
 				{
 					int numResponses = 0;
 
 					// Find entities in the radius of the stim
-					bounds = idBounds(origin).ExpandSelf(radius);
+					if( pStim->m_bUseEntBounds )
+						bounds = e->GetPhysics()->GetAbsBounds();
+					else
+						bounds = idBounds(origin);
+					
+					bounds.ExpandSelf(radius);
+
 					n = clip.EntitiesTouchingBounds(bounds, -1, Ent, MAX_GENTITIES);
 					if(n != 0)
 					{
 						// Do responses for entities within the radius of the stim
-						numResponses = DoResponseAction(stim[si], Ent, n, e, false);
+						numResponses = DoResponseAction(pStim, Ent, n, e, false);
 					}
 
 					// The stim has fired, let it do any post-firing activity it may have
-					stim[si]->PostFired(numResponses);
+					pStim->PostFired(numResponses);
 				}
 			}
 		}
