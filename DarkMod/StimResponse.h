@@ -15,6 +15,13 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.15  2006/06/29 08:22:06  ishtvan
+ * *) Added option to use entity bounds + radius instead of a cube area
+ *
+ * *) Added time interleaving
+ *
+ * *) Attempted to fix parsing of StimTimer from spawnArgs
+ *
  * Revision 1.14  2006/06/13 22:31:50  sparhawk
  * Finished first working version of StimTimer
  *
@@ -361,6 +368,24 @@ public:
 	idList<idEntity *>		m_ResponseIgnore;
 
 	/**
+	* If set to true, the stim uses the entity's bounds in the stim intersection test.
+	* This makes it possible to get accurate stims with non-cube objects.
+	* Note that radius further expands on these bounds.
+	**/
+	bool					m_bUseEntBounds;
+
+	/**
+	* Milliseconds between interleaving for use with frame-based timer check (not StimTimer)
+	**/
+	int						m_TimeInterleave;
+
+	/**
+	* Timestamp used with time interleaving code.
+	**/
+	int						m_TimeInterleaveStamp;
+
+
+	/**
 	 * Radius defines the radius the action can reach out
 	 */
 	float				m_Radius;
@@ -558,8 +583,15 @@ public:
 	 *
 	 * Key: sr_timer_apply_duration
 	 * Value: TimeString
+	 *
+	 * Key: sr_timer_time
+	 * Value: Time in the format: HOURS:MINUTES:SECONDS:MILLISECONDS
+	 *
+	 * Key: sr_timer_waitforstart
+	 * Value: { 0 | 1 } - Set true if timer should wait for StartTimer to start
+	 * Otherwise starts on spawn.
 	 */
-	void			CreateTimer(const idDict *args, CStim *Owner);
+	void			CreateTimer(const idDict *args, CStim *Owner, int Counter);
 	void			CreateTimer(CStim *Owner);
 
  	idList<CStim *>	&GetStimList(void) { return m_Stim; };

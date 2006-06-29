@@ -15,6 +15,13 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.17  2006/06/29 08:22:06  ishtvan
+ * *) Added option to use entity bounds + radius instead of a cube area
+ *
+ * *) Added time interleaving
+ *
+ * *) Attempted to fix parsing of StimTimer from spawnArgs
+ *
  * Revision 1.16  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -534,8 +541,15 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		args->GetFloat(name, "0.0", Radius);
 		stim->m_Radius = Radius;
 
+		sprintf(name, "sr_use_bounds_%u", Counter);
+		stim->m_bUseEntBounds = args->GetBool(name, "0");
+
+		// set up time interleaving so the stim isn't fired every frame
+		sprintf(name, "sr_time_interval_%u", Counter);
+		stim->m_TimeInterleave = args->GetInt(name, "0");
+
 		// Check if we have a timer on this stim.
-		CreateTimer(args, stim); 
+		CreateTimer(args, stim, Counter);
 	}
 	else	// this is only for responses
 	{
@@ -608,28 +622,40 @@ Quit:
 }
 
 
-void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim)
+void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int Counter)
 {
 	idStr str;
-	int n;
+	int n, Milliseconds(0);
 	CStimResponseTimer *t = NULL;
 
 
 	t = stim->GetTimer();
 
-	args->GetInt("sr_timer_reload", "-1", n);
+	args->GetInt( va("sr_timer_reload_%u",Counter) , "-1", n);
 	t->m_Reload = n;
 
-	args->GetString("sr_timer_type", "RELOAD", str);
+	args->GetString( va("sr_timer_type_%u",Counter), "RELOAD", str);
 	if(str.Cmp("RELOAD") == 0)
 		t->m_Type = CStimResponseTimer::SRTT_RELOAD;
 	else
 		t->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
 
-	gameLocal.m_StimTimer.AddUnique(stim);
-	t->SetTicks(sys->ClockTicksPerSecond());
+	args->GetString( va("sr_timer_time_%u",Counter), "0:0:0:0", str );
+    TimerValue val;
+	val = CStimResponseTimer::ParseTimeString( str );
+	
+	// if timer is actually set
+	if( val.Hour || val.Minute || val.Second || val.Millisecond )
+	{
+		// TODO: Return a bool here so that the outer function knows not to add this to m_Stim in the collection?
 
-	return;
+		stim->CreateTimer();
+		t->SetTimer(0,0,0, Milliseconds);
+		
+		// timer starts on map startup by default, otherwise wait for start
+		if( !(args->GetBool( va("sr_timer_waitforstart_%u",Counter), "0" )) )
+			t->Start(sys->GetClockTicks());
+	}
 }
 
 /********************************************************************/
@@ -662,6 +688,9 @@ void CStimResponse::EnableSR(bool bEnable)
 CStim::CStim(idEntity *e, int Type)
 : CStimResponse(e, Type)
 {
+	m_bUseEntBounds = false;
+	m_TimeInterleave = 0;
+	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0;
 	m_TriggerDamage = 0.0;
 	m_DurationDamage = 0.0;
