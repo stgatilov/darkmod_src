@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/07/03 01:27:59  ishtvan
+ * attempted fix for surface type sounds
+ *
  * Revision 1.14  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -2478,10 +2481,11 @@ const char *idActor::GetDamageGroup( int location ) {
 idActor::PlayFootStepSound
 =====================
 */
-void idActor::PlayFootStepSound( void ) {
+void idActor::PlayFootStepSound( void ) 
+{
 	const char			*sound = NULL;
 	idStr				moveType, localSound;
-	const idMaterial	*material;
+	idMaterial			*material = NULL;
 	idPlayer			*thisPlayer(NULL);
 	idAI				*thisAI(NULL);
 
@@ -2527,10 +2531,14 @@ void idActor::PlayFootStepSound( void ) {
 
 
 	// start footstep sound based on material type
-	material = GetPhysics()->GetContact( 0 ).material;
+	material = const_cast<idMaterial *>( GetPhysics()->GetContact( 0 ).material );
 	if ( material != NULL ) 
 	{
-		localSound = va( "snd_footstep_%s", g_Global.GetSurfName(material) );
+		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Actor %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
+		localSound = g_Global.GetSurfName(material);
+		localSound = "snd_footstep_" + localSound;
+
+		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() );  
 		sound = spawnArgs.GetString( localSound.c_str() );
 	}
 	// If player is walking in liquid, replace the bottom surface sound with water sounds
