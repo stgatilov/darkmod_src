@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/07/09 02:40:47  ishtvan
+ * rope arrow removal bugfix
+ *
  * Revision 1.24  2006/05/28 08:40:15  ishtvan
  * modified death, mission failure
  *
@@ -853,6 +856,7 @@ private:
 	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
+	void					Event_RopeRemovalCleanup( idEntity *RopeEnt );
 
 /**
 * DarkMod Events

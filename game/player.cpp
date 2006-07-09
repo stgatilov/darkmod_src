@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.65  2006/07/09 02:40:47  ishtvan
+ * rope arrow removal bugfix
+ *
  * Revision 1.64  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -297,6 +300,8 @@ const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
 const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
 
+const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
+
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -336,6 +341,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
+	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -10066,4 +10072,9 @@ void idPlayer::Event_MissionFailed( void )
 void idPlayer::Event_LoadDeathMenu( void )
 {
 	forceRespawn = true;
+}
+
+void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
+{
+	static_cast<idPhysics_Player *>( GetPhysics() )->RopeRemovalCleanup( RopeEnt );
 }

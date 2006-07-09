@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/07/09 02:40:13  ishtvan
+ * rope arrow removal bugfix
+ *
  * Revision 1.35  2006/06/21 13:07:08  sparhawk
  * Added version tracking per cpp module
  *
@@ -1024,8 +1027,14 @@ void idPhysics_Player::RopeMove( void )
 	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
 	idBounds ropeBounds;
 	trace_t transTrace; // used for clipping tests when moving the player
-	idVec3 transVec, forward, zeros(0,0,0), playerVel;
+	idVec3 transVec, forward, zeros(0,0,0), playerVel(0,0,0), PlayerPoint(0,0,0);
 	int bodID(0);
+
+	if( !m_RopeEntity )
+	{
+		RopeDetach();
+		goto Quit;
+	}
 
 	// store and kill the player's transverse velocity
 	playerVel = current.velocity;
@@ -1033,7 +1042,7 @@ void idPhysics_Player::RopeMove( void )
 	current.velocity.y = 0;
 
 	// stick the player to the rope at an AF origin point closest to their arms
-	idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
+	PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
 	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint, &bodID );
 	
 	// apply the player's weight to the AF body - COMMENTED OUT DUE TO AF CRAZINESS
@@ -4436,4 +4445,12 @@ void idPhysics_Player::LeanMove()
 	}
 
 
+}
+
+void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
+{
+	if( RopeEnt && m_RopeEntity && m_RopeEntity == RopeEnt )
+		m_RopeEntity = NULL;
+	if( RopeEnt && m_RopeEntTouched && m_RopeEntTouched == RopeEnt )
+		m_RopeEntTouched = NULL;
 }
