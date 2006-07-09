@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/07/09 02:09:07  ishtvan
+ * FrobMovers now toggle their state when triggered
+ *
  * Revision 1.3  2006/06/27 08:48:45  ishtvan
  * fixed closing of portals more cleanly
  *
@@ -123,6 +126,7 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
 	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
 	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
+	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
 END_CLASS
 
 
@@ -432,6 +436,11 @@ void CBinaryFrobMover::GetLock(void)
 }
 void CBinaryFrobMover::ClosePortal(void)
 {
-		Event_ClosePortal();
+	Event_ClosePortal();
+}
+
+void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
+{
+	ToggleOpen();
 }
 
