@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/07/09 01:41:02  ishtvan
+ * added material-dependent bounce sound to moveables
+ *
  * Revision 1.6  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -275,11 +278,25 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	float v, f;
 	idVec3 dir;
 	idEntity *ent;
+	const idMaterial *material(NULL);
+	const char *SndNameLocal(NULL);
+	const char *SndName(NULL);
 
 	v = -( velocity * collision.c.normal );
-	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
+	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
+	{
+		material = collision.c.material;
+		if( material != NULL)
+		{
+			SndNameLocal = va( "snd_bounce_%s", g_Global.GetSurfName(material) );
+			SndName = spawnArgs.GetString( SndNameLocal );
+
+			if( *SndName == '\0' )
+				SndNameLocal = "snd_bounce";
+		}
+
 		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-		if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
+		if ( StartSound( SndNameLocal, SND_CHANNEL_ANY, 0, false, NULL ) ) {
 			// don't set the volume unless there is a bounce sound as it overrides the entire channel
 			// which causes footsteps on ai's to not honor their shader parms
 			SetSoundVolume( f );
