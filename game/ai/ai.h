@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/07/11 03:52:19  ishtvan
+ * added drowning immunity and KO immunity
+ *
  * Revision 1.20  2006/06/16 20:19:05  sophisticatedzombie
  * no message
  *
@@ -765,18 +768,26 @@ protected:
 	**/
 	int						m_AirCheckTimer;
 
+	bool					m_bCanDrown;
+
 	/**
 	* Head body ID on the AF, used by drowning
 	**/
 	int						m_HeadBodyID;
 
 	/**
-	* Head joint ID on the living AI (used by KOing)
+	* Head joint ID on the living AI (used by FOV and KOing)
 	**/
 	jointHandle_t			m_HeadJointID;
 
+	/**
+	* Current number of air ticks left for drowning
+	**/
 	int						m_AirTics;
 
+	/**
+	* Max number of air ticks for drowning
+	**/
 	int						m_AirTicksMax;
 
 	/**
@@ -788,6 +799,11 @@ protected:
 	* Offset relative to the eye position, used to locate the mouth
 	**/
 	idVec3					m_MouthOffset;
+
+	/**
+	* Set to true if the AI can be KO'd (defaults to true)
+	**/
+	bool					m_bCanBeKnockedOut;
 
 	/**
 	* KO Offset in head body coordinates, relative to head joint
