@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/07/12 01:10:58  ishtvan
+ * surface type name now stored as idStr
+ *
  * Revision 1.5  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -221,7 +224,8 @@ void CProjectileResult::Event_GetProjMass( void )
 
 void CProjectileResult::Event_GetSurfType( void ) 
 {
-	idThread::ReturnString( m_ProjData.SurfaceType );
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("WEAPON: Surface type returned by GetSurfType was: %s \r", m_ProjData.SurfaceType.c_str() );
+	idThread::ReturnString( m_ProjData.SurfaceType.c_str() );
 }
 
 void CProjectileResult::Event_GetSurfNormal( void ) 
