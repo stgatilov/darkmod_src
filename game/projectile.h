@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/07/12 01:11:42  ishtvan
+ * arrow penetration fix: surface type now stored on result as idStr
+ *
  * Revision 1.3  2006/01/13 04:08:56  ishtvan
  * added spawning of projectile result objects when appropriate
  *
@@ -69,7 +72,7 @@ typedef struct SFinalProjData_s
 	/**
 	* Name of the surface that was struck
 	**/
-	const char		*SurfaceType;
+	idStr	SurfaceType;
 
 } SFinalProjData;
 
