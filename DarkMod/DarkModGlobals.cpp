@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.42  2006/07/13 06:24:31  ishtvan
+ * attempted surface type fix
+ *
  * Revision 1.41  2006/06/21 10:12:25  sparhawk
  * Added version tracking per file
  *
@@ -1225,7 +1228,7 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 const char *CGlobal::GetSurfName(const idMaterial *material)
 {
 	int end;
-	idStr returnStr;
+	idStr returnStr = "none";
 	int surftype = material->GetSurfaceType();
 	if( surftype != SURFTYPE_15 )
 	{
@@ -1236,15 +1239,19 @@ const char *CGlobal::GetSurfName(const idMaterial *material)
 	// return the first word of the description if it has surftype_15
 	returnStr = material->GetDescription();
 	end = returnStr.Find(' ');
+
 	if ( end == -1 )
+	{
 		goto Quit;
+	}
 
 	returnStr = returnStr.Left( end );
 
 Quit:
-//	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
-	if ( returnStr.IsEmpty() )
+	if( returnStr.IsEmpty() )
 		returnStr = "none";
+
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
 
 	return returnStr.c_str();
 }
