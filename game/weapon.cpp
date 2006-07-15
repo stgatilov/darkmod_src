@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/07/15 02:15:46  ishtvan
+ * surface type name fix
+ *
  * Revision 1.9  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -3055,17 +3058,18 @@ void idWeapon::Event_Melee( void ) {
 				} else 
 				{
 
-					const char *materialType;
+					idStr materialType;
 					int type = tr.c.material->GetSurfaceType();
 
 					if ( type == SURFTYPE_NONE ) 
 						materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
 					else
-						materialType = g_Global.GetSurfName( tr.c.material );
+						g_Global.GetSurfName( tr.c.material, materialType );
 
 					// start impact sound based on material type
-					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType ) );
-					if ( *hitSound == '\0' ) {
+					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType.c_str() ) );
+					if ( *hitSound == '\0' ) 
+					{
 						hitSound = meleeDef->dict.GetString( "snd_metal" );
 					}
 

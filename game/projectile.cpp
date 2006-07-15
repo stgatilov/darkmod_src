@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/07/15 02:15:46  ishtvan
+ * surface type name fix
+ *
  * Revision 1.14  2006/06/27 01:30:32  ishtvan
  * fixed to stop sounds on detonation
  *
@@ -620,7 +623,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 
 		// scale the damage by the surface type multiplier, if any
-		SurfTypeName = g_Global.GetSurfName( collision.c.material );
+		g_Global.GetSurfName( collision.c.material, SurfTypeName );
 		SurfTypeName = "damage_mult_" + SurfTypeName;
 
 		damageScale *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
@@ -662,11 +665,12 @@ idProjectile::DefaultDamageEffect
 =================
 */
 void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projectileDef, const trace_t &collision, const idVec3 &velocity ) {
-	const char *decal, *sound, *typeName;
+	const char *decal, *sound;
+	idStr typeName;
 
 	if ( collision.c.material != NULL ) 
 	{
-		typeName = g_Global.GetSurfName( collision.c.material );
+		g_Global.GetSurfName( collision.c.material, typeName );
 	} 
 	else 
 	{
@@ -674,7 +678,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	}
 	
 	// play impact sound
-	sound = projectileDef.GetString( va( "snd_%s", typeName ) );
+	sound = projectileDef.GetString( va( "snd_%s", typeName.c_str() ) );
 	if ( *sound == '\0' ) {
 		sound = projectileDef.GetString( "snd_metal" );
 	}
@@ -686,7 +690,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	}
 
 	// project decal
-	decal = projectileDef.GetString( va( "mtr_detonate_%s", typeName ) );
+	decal = projectileDef.GetString( va( "mtr_detonate_%s", typeName.c_str() ) );
 	if ( *decal == '\0' ) {
 		decal = projectileDef.GetString( "mtr_detonate" );
 	}
@@ -839,7 +843,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	StopSound( SND_CHANNEL_BODY, false );
 
 	// DarkMod: Check material list to see if it's activated
-	SurfTypeName = g_Global.GetSurfName( collision.c.material );
+	g_Global.GetSurfName( collision.c.material, SurfTypeName );
 	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s \r", SurfTypeName.c_str() );
 
 	bActivated = TestActivated( SurfTypeName.c_str() );

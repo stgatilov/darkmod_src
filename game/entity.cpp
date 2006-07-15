@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.58  2006/07/15 02:15:46  ishtvan
+ * surface type name fix
+ *
  * Revision 1.57  2006/06/27 05:53:00  ishtvan
  * added setting clipmodel contents with spawnArg "clipmodel_contents"
  *
@@ -3659,16 +3662,17 @@ idEntity::AddDamageEffect
 */
 void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
 	const char *sound, *decal, *key;
+	idStr surfName;
 
 	const idDeclEntityDef *def = gameLocal.FindEntityDef( damageDefName, false );
 	if ( def == NULL ) {
 		return;
 	}
 
-	const char *materialType = g_Global.GetSurfName( collision.c.material );
+	g_Global.GetSurfName( collision.c.material, surfName );
 
 	// start impact sound based on material type
-	key = va( "snd_%s", materialType );
+	key = va( "snd_%s", surfName.c_str() );
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -3679,7 +3683,7 @@ void idEntity::AddDamageEffect( const trace_t &collision, const idVec3 &velocity
 
 	if ( g_decals.GetBool() ) {
 		// place a wound overlay on the model
-		key = va( "mtr_wound_%s", materialType );
+		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
 		if ( *decal == '\0' ) {
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
@@ -5896,6 +5900,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	damageEffect_t	*de;
 	idVec3 origin, dir;
 	idMat3 axis;
+	idStr surfName;
 
 	axis = renderEntity.joints[jointNum].ToMat3() * renderEntity.axis;
 	origin = renderEntity.origin + renderEntity.joints[jointNum].ToVec3() * renderEntity.axis;
@@ -5904,17 +5909,17 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	dir = localDir * axis;
 
 	int type = collisionMaterial->GetSurfaceType();
-	const char *materialType;
+
 	if ( type == SURFTYPE_NONE ) {
-		materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+		surfName = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
 	}
 	else
 	{
-		materialType = g_Global.GetSurfName( collisionMaterial );
+		g_Global.GetSurfName( collisionMaterial, surfName );
 	}
 
 	// start impact sound based on material type
-	key = va( "snd_%s", materialType );
+	key = va( "snd_%s", surfName.c_str() );
 	sound = spawnArgs.GetString( key );
 	if ( *sound == '\0' ) {
 		sound = def->dict.GetString( key );
@@ -5924,7 +5929,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	}
 
 	// blood splats are thrown onto nearby surfaces
-	key = va( "mtr_splat_%s", materialType );
+	key = va( "mtr_splat_%s", surfName.c_str() );
 	splat = spawnArgs.RandomPrefix( key, gameLocal.random );
 	if ( *splat == '\0' ) {
 		splat = def->dict.RandomPrefix( key, gameLocal.random );
@@ -5936,7 +5941,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	// can't see wounds on the player model in single player mode
 	if ( !( IsType( idPlayer::Type ) && !gameLocal.isMultiplayer ) ) {
 		// place a wound overlay on the model
-		key = va( "mtr_wound_%s", materialType );
+		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
 		if ( *decal == '\0' ) {
 			decal = def->dict.RandomPrefix( key, gameLocal.random );
@@ -5947,7 +5952,7 @@ void idAnimatedEntity::AddLocalDamageEffect( jointHandle_t jointNum, const idVec
 	}
 
 	// a blood spurting wound is added
-	key = va( "smoke_wound_%s", materialType );
+	key = va( "smoke_wound_%s", surfName.c_str() );
 	bleed = spawnArgs.GetString( key );
 	if ( *bleed == '\0' ) {
 		bleed = def->dict.GetString( key );

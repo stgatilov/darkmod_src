@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/07/15 02:15:46  ishtvan
+ * surface type name fix
+ *
  * Revision 1.16  2006/07/13 06:27:20  ishtvan
  * attempted surface type fix
  *
@@ -2537,11 +2540,10 @@ void idActor::PlayFootStepSound( void )
 	if ( material != NULL ) 
 	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Actor %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
-		localSound = g_Global.GetSurfName(material);
+		g_Global.GetSurfName(material, localSound);
 		localSound = "snd_footstep_" + localSound;
 
-		//DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() );
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type: start%send \r", g_Global.GetSurfName(material) );  
+		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() ); 
 		sound = spawnArgs.GetString( localSound.c_str() );
 	}
 	// If player is walking in liquid, replace the bottom surface sound with water sounds
