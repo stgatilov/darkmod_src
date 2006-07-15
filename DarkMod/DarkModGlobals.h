@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.37  2006/07/15 02:14:52  ishtvan
+ * surface name fix (for real this time)
+ *
  * Revision 1.36  2006/05/26 04:42:01  sophisticatedzombie
  * Added variable which gives maximum number of hiding spot point tests per AI frame
  *
@@ -291,8 +294,10 @@ public:
 	/**
 	* Lookup the name of a the surface for a given material
 	* Needed to incorporate new surface types
+	* Stores the result in the strIn argument.
+	* If the surface is not found or invalid, stores "none"
 	**/
-	const char *GetSurfName(const idMaterial *material);
+	void GetSurfName(const idMaterial *material, idStr &strIn);
 
 private:
 	void LoadINISettings(void *);

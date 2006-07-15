@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.44  2006/07/15 02:14:52  ishtvan
+ * surface name fix (for real this time)
+ *
  * Revision 1.43  2006/07/14 06:29:13  ishtvan
  * attempted surface type fix #2
  *
@@ -1228,33 +1231,33 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 	RETURN_META_VALUE(Ret, pRet);
 }
 
-const char *CGlobal::GetSurfName(const idMaterial *material)
+void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )
 {
 	int end = -1;
-	idStr returnStr = "none";
 	int surftype = material->GetSurfaceType();
+
 	if( surftype != SURFTYPE_15 )
 	{
-		returnStr = gameLocal.sufaceTypeNames[ surftype ];
+		strIn = gameLocal.sufaceTypeNames[ surftype ];
 		goto Quit;
 	}
 
 	// return the first word of the description if it has surftype_15
-	returnStr = material->GetDescription();
-	end = returnStr.Find(' ');
+	strIn = material->GetDescription();
+	end = strIn.Find(' ');
 
 	if ( end == -1 )
 	{
 		goto Quit;
 	}
 
-	returnStr = returnStr.Left( end );
+	strIn = strIn.Left( end );
 
 Quit:
-	if( returnStr.IsEmpty() )
-		returnStr = "none";
+	if( strIn.IsEmpty() )
+		strIn = "none";
 
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Found new material name %s\r", returnStr.c_str());
+	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("GetSurfName: Found surface type name %s\r", strIn.c_str());
 
-	return va("%s", returnStr.c_str());
+	return;
 }
