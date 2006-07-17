@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/07/17 02:42:25  ishtvan
+ * fixes to comp_custom_clocked and comp_distance
+ *
  * Revision 1.7  2006/07/17 01:45:59  ishtvan
  * updates: custom objectives, distance objectives, custom clocked objectives
  *
@@ -71,7 +74,6 @@ CObjectiveComponent::~CObjectiveComponent( void )
 
 	m_IntArgs.Clear();
 	m_StrArgs.Clear();
-	m_CustomClockedScript.Clear();
 }
 
 bool CObjectiveComponent::SetState( bool bState )
@@ -474,7 +476,7 @@ void CMissionData::UpdateObjectives( void )
 		if( !pComp || (gameLocal.time - pComp->m_TimeStamp < pComp->m_ClockInterval) )
 			continue;
 
-		// COMP_DISTANCE - Do distance check
+		// COMP_DISTANCE - Do a distance check
 		else if( pComp->m_Type == COMP_DISTANCE )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
@@ -483,8 +485,8 @@ void CMissionData::UpdateObjectives( void )
 			idVec3 delta;
 			int dist(0);
 
-			ent1 = gameLocal.FindEntity( pComp->m_StrArgs[0] );
-			ent2 = gameLocal.FindEntity( pComp->m_StrArgs[1] );
+			ent1 = gameLocal.FindEntity( pComp->m_StrArgs[0].c_str() );
+			ent2 = gameLocal.FindEntity( pComp->m_StrArgs[1].c_str() );
 			
 			if( !ent1 || !ent2 )
 			{
@@ -498,8 +500,7 @@ void CMissionData::UpdateObjectives( void )
 			dist = pComp->m_IntArgs[0];
 			dist *= dist;
 
-			if( delta.LengthSqr() < dist )
-				SetComponentState( pComp, true );
+			SetComponentState( pComp, ( delta.LengthSqr() < dist ) );
 		}
 
 		// COMP_CUSTOM_CLOCKED
@@ -507,7 +508,7 @@ void CMissionData::UpdateObjectives( void )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
 
-			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_StrArgs[0] );
+			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_StrArgs[0].c_str() );
 			
 			if(pScriptFun)
 			{
@@ -517,8 +518,8 @@ void CMissionData::UpdateObjectives( void )
 			}
 			else
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0] );
-				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0] );
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
+				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
 			}
 		}
 
@@ -990,7 +991,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			
 			TempStr2 = args->GetString( StrTemp2 + "args_str", "" );
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
-			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS );
+			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
 			
 			while( src.ReadToken( &token ) )
 				CompTemp.m_StrArgs.Append( token.c_str() );
@@ -1011,8 +1012,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CompTemp.m_IntArgs.Append(0);
 			CompTemp.m_IntArgs.Append(0);
 
-			CompTemp.m_ClockInterval = args->GetInt( StrTemp2 + "clock_interval" );
-			CompTemp.m_CustomClockedScript = args->GetString( StrTemp2 + "clocked_script" );
+			CompTemp.m_ClockInterval = (int) 1000 * args->GetFloat( StrTemp2 + "clock_interval", "1.0" );
 
 			CompTemp.m_Index[0] = Counter;
 			CompTemp.m_Index[1] = Counter2;

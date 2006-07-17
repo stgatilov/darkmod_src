@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/07/17 02:42:25  ishtvan
+ * fixes to comp_custom_clocked and comp_distance
+ *
  * Revision 1.4  2006/07/17 01:45:59  ishtvan
  * updates: custom objectives, distance objectives, custom clocked objectives
  *
@@ -206,8 +209,6 @@ private:
 	int			m_ClockInterval; // milliseconds
 	
 	int			m_TimeStamp;
-
-	idStr		m_CustomClockedScript;
 
 	/**
 	* Whether the objective component latches after it changes once
