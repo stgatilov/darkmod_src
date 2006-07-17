@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.66  2006/07/17 01:48:00  ishtvan
+ * added scriptfunction for changing objective states: setObjectiveState
+ *
  * Revision 1.65  2006/07/09 02:40:47  ishtvan
  * rope arrow removal bugfix
  *
@@ -301,6 +304,7 @@ const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
+const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", "ddd" );
 
 
 CLASS_DECLARATION( idActor, idPlayer )
@@ -342,6 +346,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
 	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
+	EVENT( EV_Player_SetObjectiveState,		idPlayer::Event_SetObjectiveState )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -10077,4 +10082,9 @@ void idPlayer::Event_LoadDeathMenu( void )
 void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
 {
 	static_cast<idPhysics_Player *>( GetPhysics() )->RopeRemovalCleanup( RopeEnt );
+}
+
+void idPlayer::Event_SetObjectiveState( int ObjIndex, int CompIndex, int bState )
+{
+	gameLocal.m_MissionData->SetComponentState( ObjIndex, CompIndex, (bool) bState );
 }
