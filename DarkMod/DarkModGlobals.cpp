@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.45  2006/07/17 01:45:27  ishtvan
+ * eliminated unnecessary logging in GetSurfName
+ *
  * Revision 1.44  2006/07/15 02:14:52  ishtvan
  * surface name fix (for real this time)
  *
@@ -1257,7 +1260,7 @@ Quit:
 	if( strIn.IsEmpty() )
 		strIn = "none";
 
-	DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("GetSurfName: Found surface type name %s\r", strIn.c_str());
+	//DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("GetSurfName: Found surface type name %s\r", strIn.c_str());
 
 	return;
 }
