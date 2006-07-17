@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/07/17 01:45:59  ishtvan
+ * updates: custom objectives, distance objectives, custom clocked objectives
+ *
  * Revision 1.6  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -45,6 +48,7 @@ CObjectiveComponent::CObjectiveComponent( void )
 {
 	m_bNotted = false;
 	m_bState = false;
+	m_bReversible = true;
 	m_Type = COMP_ITEM;
 	m_SpecMethod[0] = SPEC_NONE;
 	m_SpecMethod[1] = SPEC_NONE;
@@ -53,7 +57,11 @@ CObjectiveComponent::CObjectiveComponent( void )
 	m_IntArgs.Clear();
 	m_StrArgs.Clear();
 
-	m_CustomClockInterval = 1000;
+	m_ClockInterval = 1000;
+	m_TimeStamp = 0;
+
+	m_Index[0] = 0;
+	m_Index[1] = 0;
 }
 
 CObjectiveComponent::~CObjectiveComponent( void )
@@ -69,6 +77,8 @@ CObjectiveComponent::~CObjectiveComponent( void )
 bool CObjectiveComponent::SetState( bool bState )
 {
 	bool bReturnVal(false);
+
+// TODO: Check for irreversible, if it is irreversible and already changed, do not change back
 
 	if( m_bNotted )
 		bState = !bState;
@@ -101,9 +111,9 @@ CMissionData::CMissionData( void )
 	CompTypeNames.Append("alert");
 	CompTypeNames.Append("item");
 	CompTypeNames.Append("location");
-	CompTypeNames.Append("distance");
-	CompTypeNames.Append("custom_clocked");
 	CompTypeNames.Append("custom");
+	CompTypeNames.Append("custom_clocked");
+	CompTypeNames.Append("distance");
 
 /**
 * Add in new specification types here.  Must be in exact same order as
@@ -130,10 +140,6 @@ CMissionData::CMissionData( void )
 	{
 		m_SpecTypeHash.Add( m_SpecTypeHash.GenerateKey( SpecTypeNames[i].c_str(), false ), i );
 	}
-
-
-	// Test case: (hardcoded objectives)
-	//RunTest();
 }
 
 CMissionData::~CMissionData( void )
@@ -145,6 +151,7 @@ void CMissionData::Clear( void )
 {
 	m_bObjsNeedUpdate = false;
 	m_Objectives.Clear();
+	m_ClockedComponents.Clear();
 
 	// Clear all the stats (this is kind've ugly)
 	// create a cleared stat to copy to all the SStat fields
@@ -237,12 +244,12 @@ void CMissionData::MissionEvent
 
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
-		SObjective *pObj = &m_Objectives[i];
+		CObjective *pObj = &m_Objectives[i];
 
-		for( int j=0; j < pObj->Components.Num(); j++ )
+		for( int j=0; j < pObj->m_Components.Num(); j++ )
 		{
 			CObjectiveComponent *pComp;
-			pComp = &pObj->Components[j];
+			pComp = &pObj->m_Components[j];
 
 			// match component type
 			if( pComp->m_Type != CompType )
@@ -264,12 +271,12 @@ void CMissionData::MissionEvent
 			bCompState = EvaluateObjective( pComp, EntDat1, EntDat2, bBoolArg );
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective component evaluation result: %d \r", (int) bCompState );
 
-			// notify the component of the currents state. If the state changed,
+			// notify the component of the current state. If the state changed,
 			// this will return true and we must mark this objective for update.
 			if( pComp->SetState( bCompState ) )
 			{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i, j );
-				pObj->bNeedsUpdate = true;
+				pObj->m_bNeedsUpdate = true;
 				m_bObjsNeedUpdate = true;
 			}
 		}
@@ -457,6 +464,69 @@ void CMissionData::UpdateObjectives( void )
 {
 	bool bTest(true);
 
+// =============== Begin Handling of Clocked Objective Components ===============
+	
+	for( int k=0; k < m_ClockedComponents.Num(); k++ )
+	{
+		CObjectiveComponent *pComp = m_ClockedComponents[k];
+
+		// check if timer is due to fire
+		if( !pComp || (gameLocal.time - pComp->m_TimeStamp < pComp->m_ClockInterval) )
+			continue;
+
+		// COMP_DISTANCE - Do distance check
+		else if( pComp->m_Type == COMP_DISTANCE )
+		{
+			pComp->m_TimeStamp = gameLocal.time;
+
+			idEntity *ent1, *ent2;
+			idVec3 delta;
+			int dist(0);
+
+			ent1 = gameLocal.FindEntity( pComp->m_StrArgs[0] );
+			ent2 = gameLocal.FindEntity( pComp->m_StrArgs[1] );
+			
+			if( !ent1 || !ent2 )
+			{
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0], pComp->m_StrArgs[1] ); 
+				continue;
+			}
+
+			delta = ent1->GetPhysics()->GetOrigin();
+			delta = delta - ent2->GetPhysics()->GetOrigin();
+
+			dist = pComp->m_IntArgs[0];
+			dist *= dist;
+
+			if( delta.LengthSqr() < dist )
+				SetComponentState( pComp, true );
+		}
+
+		// COMP_CUSTOM_CLOCKED
+		else if( pComp->m_Type == COMP_CUSTOM_CLOCKED )
+		{
+			pComp->m_TimeStamp = gameLocal.time;
+
+			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_StrArgs[0] );
+			
+			if(pScriptFun)
+			{
+				idThread *pThread = new idThread( pScriptFun );
+				pThread->CallFunction( pScriptFun, true );
+				pThread->DelayedStart( 0 );
+			}
+			else
+			{
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0] );
+				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0] );
+			}
+		}
+
+	}
+
+// ============== End Handling of  Clocked Objective Components =============
+
+	// Check if any objective states have changed:
 	if( !m_bObjsNeedUpdate )
 		goto Quit;
 	m_bObjsNeedUpdate = false;
@@ -465,19 +535,19 @@ void CMissionData::UpdateObjectives( void )
 
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
-		SObjective *pObj = &m_Objectives[i];
+		CObjective *pObj = &m_Objectives[i];
 		
 		// skip objectives that don't need updating
-		if( !pObj->bNeedsUpdate || pObj->state == STATE_INVALID )
+		if( !pObj->m_bNeedsUpdate || pObj->m_state == STATE_INVALID )
 			continue;
-		pObj->bNeedsUpdate = false;
+		pObj->m_bNeedsUpdate = false;
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i);
 
 // TODO: Implement arbitrary boolean logic here, for mission failure and mission success
 // For now, just AND everything, and fail the objective if it's ongoing and not successful
-		for( int j=0; j<pObj->Components.Num(); j++ )
+		for( int j=0; j<pObj->m_Components.Num(); j++ )
 		{
-			bTest = bTest && pObj->Components[j].m_bState;
+			bTest = bTest && pObj->m_Components[j].m_bState;
 		}
 
 		// Objective was just completed
@@ -488,14 +558,14 @@ void CMissionData::UpdateObjectives( void )
 		}
 // TODO: This is temporary and should be replaced with a failure logic check
 // For now: If ANY components of an ongoing objective are false, the objective is failed
-		else if( pObj->bOngoing && !(pObj->state == STATE_INVALID) )
+		else if( pObj->m_bOngoing && !(pObj->m_state == STATE_INVALID) )
 		{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i);
 				Event_ObjectiveFailed( i );
 		}
 		else
 		{
-			pObj->state = STATE_INCOMPLETE;
+			pObj->m_state = STATE_INCOMPLETE;
 		}
 	}
 
@@ -508,13 +578,13 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	bool bTest(true), bTemp(false);
 
 	// don't do anything if already complete
-	if( m_Objectives[ind].state == STATE_COMPLETE )
+	if( m_Objectives[ind].m_state == STATE_COMPLETE )
 		goto Quit;
 
 	SetCompletionState( ind, STATE_COMPLETE );
 
 	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
-	if( !m_Objectives[ind].bOngoing )
+	if( !m_Objectives[ind].m_bOngoing )
 	{
 		idPlayer *   player;
 		player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
@@ -529,9 +599,9 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	// If so, the mission is complete
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
-		SObjective *pObj = &m_Objectives[i];
-		bTemp = ( pObj->state == STATE_COMPLETE || pObj->state == STATE_INVALID 
-					 || !pObj->bMandatory );
+		CObjective *pObj = &m_Objectives[i];
+		bTemp = ( pObj->m_state == STATE_COMPLETE || pObj->m_state == STATE_INVALID 
+					 || !pObj->m_bMandatory );
 		bTest = bTest && bTemp;
 	}
 
@@ -545,13 +615,13 @@ Quit:
 void CMissionData::Event_ObjectiveFailed( int ind )
 {
 	// don't do anything if already failed
-	if( m_Objectives[ind].state == STATE_FAILED )
+	if( m_Objectives[ind].m_state == STATE_FAILED )
 		goto Quit;
 
 	SetCompletionState( ind, STATE_FAILED );
 
 	// if the objective was mandatory, fail the mission
-	if( m_Objectives[ind].bMandatory )
+	if( m_Objectives[ind].m_bMandatory )
 		Event_MissionFailed();
 	else
 	{
@@ -709,23 +779,52 @@ Quit:
 	return;
 }
 
-void CMissionData::Event_SetComponentState( int ObjIndex, int CompIndex, bool bState )
+void CMissionData::SetComponentState( int ObjIndex, int CompIndex, bool bState )
 {
 	CObjectiveComponent *pComp(NULL);
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0  )
+	
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("SetComponentState: Called for obj %d, comp %d, state %d. \r", ObjIndex, CompIndex, (int) bState );
+
+	// Offset the indices into C++ values
+	ObjIndex--;
+	CompIndex--;
+
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
-		// log error
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
 		goto Quit;
 	}
-	if( CompIndex > m_Objectives[ObjIndex].Components.Num() || CompIndex < 0 )
+	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
-		// log error
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		goto Quit;
 	}
 
-	pComp = &m_Objectives[ObjIndex].Components[CompIndex];
-	if( pComp )
-		pComp->SetState( bState );
+	pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
+	
+	if( !pComp )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: NULL component found \r" );
+		goto Quit;
+	}
+
+	if( pComp->SetState( bState ) )
+	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("SetComponentState: Objective %d, Component %d state changed, needs updating", (ObjIndex+1), (CompIndex+1) );
+		m_Objectives[ObjIndex].m_bNeedsUpdate = true;
+		m_bObjsNeedUpdate = true;
+	}
+
+Quit:
+	return;
+}
+
+void CMissionData::SetComponentState( CObjectiveComponent *pComp, bool bState )
+{
+	if( !pComp )
+		goto Quit;
+
+	SetComponentState( pComp->m_Index[0], pComp->m_Index[1], bState );
 
 Quit:
 	return;
@@ -739,7 +838,7 @@ void CMissionData::SetCompletionState( int ObjIndex, EObjCompletionState State )
 		goto Quit;
 	}
 
-	m_Objectives[ObjIndex].state = State;
+	m_Objectives[ObjIndex].m_state = State;
 
 Quit:
 	return;
@@ -770,7 +869,7 @@ void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
 		// log error
 		goto Quit;
 	}
-	m_Objectives[ObjIndex].bVisible = bVal;
+	m_Objectives[ObjIndex].m_bVisible = bVal;
 
 Quit:
 	return;
@@ -783,7 +882,7 @@ void CMissionData::Event_SetObjMandatory( int ObjIndex, bool bVal )
 		// log error
 		goto Quit;
 	}
-	m_Objectives[ObjIndex].bMandatory = bVal;
+	m_Objectives[ObjIndex].m_bMandatory = bVal;
 
 Quit:
 	return;
@@ -796,58 +895,10 @@ void CMissionData::Event_SetObjOngoing( int ObjIndex, bool bVal )
 		// log error
 		goto Quit;
 	}
-	m_Objectives[ObjIndex].bOngoing = bVal;
+	m_Objectives[ObjIndex].m_bOngoing = bVal;
 
 Quit:
 	return;
-}
-
-// Temporary test method!
-void CMissionData::RunTest( void )
-{
-	SObjective TestObj;
-	TestObj.bMandatory = true;
-	TestObj.bVisible = true;
-	TestObj.MinDifficulty = -1;
-	TestObj.state = STATE_INCOMPLETE;
-
-	// add a component
-	CObjectiveComponent TestComp;
-
-//	TestComp.m_SpecMethod[0] = SPEC_NAME;
-//	TestComp.m_SpecStrVal[0] = "test_KO_obj";
-	TestComp.m_Type = COMP_KO;
-	TestComp.m_SpecMethod[0] = SPEC_AI_TEAM;
-	TestComp.m_SpecIntVal[0] = 2;
-	TestComp.m_IntArgs.Append( 2 );
-
-
-	TestComp.m_bNotted = false;
-	TestComp.m_bState = false;
-	
-	// put them together
-	TestObj.Components.Append( TestComp );
-
-	// Add to mission objectives list
-	m_Objectives.Append( TestObj );
-
-// Another objective!  No kills
-	TestComp.m_Type = COMP_KILL;
-	TestComp.m_SpecMethod[0] = SPEC_OVERALL;
-	TestComp.m_bNotted = true;
-	TestComp.m_bState = true;
-	
-	TestComp.m_IntArgs.Clear();
-	TestComp.m_IntArgs.Append( 1 );
-
-	TestObj.bMandatory = true;
-	TestObj.bOngoing = true;
-	TestObj.state = STATE_COMPLETE;
-
-	TestObj.Components.Clear();
-	TestObj.Components.Append(TestComp);
-
-	m_Objectives.Append( TestObj );
 }
 
 
@@ -856,7 +907,7 @@ void CMissionData::RunTest( void )
 // returns the index of the first objective added, for scripting purposes
 int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
-	SObjective			ObjTemp;
+	CObjective			ObjTemp;
 	idLexer				src;
 	idDict				*args;
 	idStr				StrTemp, StrTemp2;
@@ -876,14 +927,15 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 	// go thru all the objective-related spawnargs
 	while( args->MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
-		ObjTemp.Components.Clear();
+		ObjTemp.m_Components.Clear();
 
 		StrTemp = va("obj%d_", Counter);
-		ObjTemp.state = (EObjCompletionState) args->GetInt( StrTemp + "state", "0");
-		ObjTemp.text = args->GetString( StrTemp + "desc", "" );
-		ObjTemp.bMandatory = args->GetBool( StrTemp + "mandatory", "1");
-		ObjTemp.bVisible = args->GetBool( StrTemp + "visible", "1");
-		ObjTemp.bOngoing = args->GetBool( StrTemp + "ongoing", "0");
+		ObjTemp.m_state = (EObjCompletionState) args->GetInt( StrTemp + "state", "0");
+		ObjTemp.m_text = args->GetString( StrTemp + "desc", "" );
+		ObjTemp.m_bMandatory = args->GetBool( StrTemp + "mandatory", "1");
+		ObjTemp.m_bReversible = !args->GetBool (StrTemp + "irreversible", "0" );
+		ObjTemp.m_bVisible = args->GetBool( StrTemp + "visible", "1");
+		ObjTemp.m_bOngoing = args->GetBool( StrTemp + "ongoing", "0");
 // TODO: Parse difficulty level when that is coded
 
 		// parse objective components
@@ -895,6 +947,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			
 			CompTemp.m_bState = args->GetBool( StrTemp2 + "state", "0" );
 			CompTemp.m_bNotted = args->GetBool( StrTemp2 + "not", "0" );
+			CompTemp.m_bReversible = !args->GetBool( StrTemp2 + "irreversible", "0" );
 			
 			// use comp. type hash to convert text type to EComponentType
 			idStr TypeString = args->GetString( StrTemp2 + "type", "");
@@ -918,7 +971,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 				if( SpecNum == -1 )
 				{
 					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
-					gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 ); 
+					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 ); 
 					SpecNum = 0;
 				}
 				CompTemp.m_SpecMethod[ind] = (ESpecificationMethod) SpecNum;
@@ -958,17 +1011,30 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CompTemp.m_IntArgs.Append(0);
 			CompTemp.m_IntArgs.Append(0);
 
-			// NOT YET IMPLEMENTED: Read in the clocked objectives script and interval
+			CompTemp.m_ClockInterval = args->GetInt( StrTemp2 + "clock_interval" );
 			CompTemp.m_CustomClockedScript = args->GetString( StrTemp2 + "clocked_script" );
-			CompTemp.m_CustomClockInterval = args->GetInt( StrTemp2 + "clock_interval" );
 
-			ObjTemp.Components.Append( CompTemp );
+			CompTemp.m_Index[0] = Counter;
+			CompTemp.m_Index[1] = Counter2;
+
+			ObjTemp.m_Components.Append( CompTemp );
 			Counter2++;
 		}
 		
-		if( ObjTemp.Components.Num() > 0 )
+		if( ObjTemp.m_Components.Num() > 0 )
 			m_Objectives.Append( ObjTemp );
 		Counter++;
+	}
+
+	// Process the objectives and add clocked components to clocked components list
+	for( int ind = 0; ind < m_Objectives.Num(); ind++ )
+	{
+		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
+		{
+			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
+			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) )
+				m_ClockedComponents.Append( pComp );
+		}	
 	}
 
 	// check if any objectives were actually added, if not return -1
@@ -1070,7 +1136,6 @@ void CObjectiveLocation::Think()
 			missing.Append( m_EntsInBounds[i] );
 		}
 	}
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location: Missing check cleared \r");
 
 	// call objectives system for all missing or added ents
 	for( int i=0; i<added.Num(); i++ )
@@ -1085,7 +1150,6 @@ void CObjectiveLocation::Think()
 
 	for( int j=0; j<missing.Num(); j++ )
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location: Missing loop called\r" );
 		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
 		if( Ent2 )
 		{

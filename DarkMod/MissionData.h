@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/07/17 01:45:59  ishtvan
+ * updates: custom objectives, distance objectives, custom clocked objectives
+ *
  * Revision 1.3  2006/06/07 09:03:28  ishtvan
  * location component updates
  *
@@ -100,12 +103,13 @@ typedef enum
 // END AI components that must be kept together
 	COMP_ALERT,
 	COMP_ITEM, // Add inventory item or imaginary loot
-	COMP_LOCATION,
+	COMP_LOCATION, // Item X is at location Y
+	COMP_CUSTOM_ASYNC, // asynchronously updated custom objective (updated by mapper from script)
 
-// Special components, called separately
-	COMP_DISTANCE, // distance of X from Y, this check will be triggered by a clock (same clock that triggers custom_clocked)
+// The following are special clocked components, updated in CMissionData::UpdateObjectives
 	COMP_CUSTOM_CLOCKED,
-	COMP_CUSTOM_ASYNC
+	COMP_DISTANCE // distance from origin of ent X to that of ent Y
+
 } EComponentType;
 
 // TODO: Two overloads of the CheckObjectie function, one passing in the ent pointer
@@ -161,6 +165,14 @@ public:
 	**/
 	bool SetState( bool bState );
 
+public:
+	/**
+	* Index of this component in the form of [objective num, component num]
+	* NOTE: This index is that from the external scripting.
+	* So it starts at 1, not at zero.
+	**/
+	int m_Index[2]; 
+
 private:
 
 /**
@@ -190,60 +202,95 @@ private:
 	idList<int>	m_IntArgs;
 	idStrList	m_StrArgs;
 
-	// Only used by custom clocked objectives
+// Only used by clocked objectives:
+	int			m_ClockInterval; // milliseconds
+	
+	int			m_TimeStamp;
+
 	idStr		m_CustomClockedScript;
-	int			m_CustomClockInterval; // milliseconds
+
+	/**
+	* Whether the objective component latches after it changes once
+	* Default is reversible.
+	* NOT YET IMPLEMENTED
+	**/
+	bool m_bReversible;
+
 }; // CObjectiveComponent
 
-typedef struct SObjective_s
-{
-	// constructor for default values
-	SObjective_s( void )
-	{
-		state = STATE_INCOMPLETE;
-		text = "";
-		bNeedsUpdate = false;
-		bMandatory = false;
-		bVisible = true;
-		bOngoing = false;
-		MinDifficulty = 0;
+/**
+* Abstract class for storing objective data
+* This class contains all the objective components
+**/
 
-		Components.Clear();
-	}
-	~SObjective_s( void )
+class CObjective
+{
+public:
+
+	CObjective( void )
 	{
-		Components.Clear();
+		m_state = STATE_INCOMPLETE;
+		m_text = "";
+		m_bNeedsUpdate = false;
+		m_bMandatory = false;
+		m_bReversible = true;
+		m_bVisible = true;
+		m_bOngoing = false;
+		m_MinDifficulty = 0;
+
+		m_Components.Clear();
+	}
+
+	~CObjective( void )
+	{
+		m_Components.Clear();
 	}
 	
-	EObjCompletionState	state;
+	EObjCompletionState	m_state;
 
-	idStr text; // text description of the objective in the objectives GUI
+	/** 
+	* Text description of the objective in the objectives GUI
+	**/
+	idStr m_text; 
 
-	// Set to true if one of the components changed this frame.  Test resets it to false.
-	bool bNeedsUpdate;
+	/**
+	* Set to true if one of the components changed this frame.  Test resets it to false.
+	*/
+	bool m_bNeedsUpdate;
 
-	// Do we need optional objectives? 
-	bool bMandatory;
+	/** 
+	* Set to false if an objective is optional
+	**/
+	bool m_bMandatory;
 
-	// sets whether the objective is shown in the objectives screen and at the beginning of the mission
-	bool bVisible;
+	/**
+	* Sets whether the objective is shown in the objectives screen
+	**/
+	bool m_bVisible;
 	
 	/**
 	* True if an objective is ongoing throughout the mission.
 	* Will not be checked off as complete until the mission is over
 	**/
-	bool bOngoing;
+	bool m_bOngoing;
 
 	/**
 	* Sets the difficulty level of this objective. Objective only appears at and above this difficutly level
 	* TODO: Change to bitfield so objectives can also disappear at higher difficulties
 	**/
-	int MinDifficulty;
+	int m_MinDifficulty;
+
+	/**
+	* Whether the objective may change state again once it initially changes to FAILED or SUCCESSFUL
+	* Default is reversible.
+	* NOT YET IMPLEMENTED
+	**/
+	bool m_bReversible;
 	
 	// internal stuff from this point on
 	
 	// list of objective components (steal this, kill that, etc)
-	idList<CObjectiveComponent> Components;
+	idList<CObjectiveComponent> m_Components;
 	
 // TODO: Add these
 	// boolean relationship among objective components required for definite success
@@ -251,8 +298,10 @@ typedef struct SObjective_s
 	// boolean relationship among objective components required for definite failure
 
 	// script to call when objective is completed
+
+	// other objectives that must be completed before this one?
 	
-} SObjective;
+};
 
 typedef struct SStat_s
 {
@@ -309,7 +358,12 @@ public:
 	* Sets a given component state.  
 	* Used mostly by script callbacks for custom objectives
 	**/
-	void Event_SetComponentState( int ObjIndex, int CompIndex, bool bState );
+	void SetComponentState( int ObjIndex, int CompIndex, bool bState );
+
+	/**
+	* Set component state when indexed by a pointer to a component
+	**/
+	void SetComponentState( CObjectiveComponent *pComp, bool bState );
 
 	/**
 	* Set an objective state to one of the completion states (used by external scripting)
@@ -485,9 +539,6 @@ protected:
 	**/
 	void SetCompletionState( int ObjIndex, EObjCompletionState State );
 
-	// Temporary test method: sets up an objective
-	void RunTest( void );
-
 protected:
 	/**
 	* Set to true if any of the objective states have changed and objectives need updating
@@ -497,7 +548,14 @@ protected:
 	/**
 	* List of current objectives
 	**/
-	idList<SObjective> m_Objectives;
+	idList<CObjective> m_Objectives;
+
+	/**
+	* Pointers to objective components that are centrally clocked
+	* Components that fall under this domain are:
+	* CUSTOM_CLOCKED, DISTANCE, and TIMER
+	**/
+	idList<CObjectiveComponent *> m_ClockedComponents;
 
 	/**
 	* Object holding all mission stats relating to AI, damage to player and AI
