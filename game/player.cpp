@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.68  2006/07/19 21:50:10  ishtvan
+ * new objective related scriptfunctions
+ *
  * Revision 1.67  2006/07/19 09:09:35  ishtvan
  * addd objectives scriptfunctions
  *
@@ -307,8 +310,13 @@ const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
+// NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
 const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", "dd" );
+const idEventDef EV_Player_GetObjectiveState( "getObjectiveState", "d", 'd');
 const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", "ddd" );
+const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", "dd", 'd' );
+const idEventDef EV_Player_ObjectiveUnlatch( "objectiveUnlatch", "d" );
+const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", "dd" );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -350,7 +358,12 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
 	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
 	EVENT( EV_Player_SetObjectiveState,		idPlayer::Event_SetObjectiveState )
+	EVENT( EV_Player_GetObjectiveState,		idPlayer::Event_GetObjectiveState )
 	EVENT( EV_Player_SetObjectiveComp,		idPlayer::Event_SetObjectiveComp )
+	EVENT( EV_Player_GetObjectiveComp,		idPlayer::Event_GetObjectiveComp )
+	EVENT( EV_Player_ObjectiveUnlatch,		idPlayer::Event_ObjectiveUnlatch )
+	EVENT( EV_Player_ObjectiveCompUnlatch,	idPlayer::Event_ObjectiveComponentUnlatch )
+
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -10095,7 +10108,30 @@ void idPlayer::Event_SetObjectiveState( int ObjIndex, int State )
 	gameLocal.m_MissionData->SetCompletionState( ObjIndex - 1, State );
 }
 
+void idPlayer::Event_GetObjectiveState( int ObjIndex )
+{
+	int CompState = gameLocal.m_MissionData->GetCompletionState( ObjIndex - 1 );
+	idThread::ReturnInt( CompState );
+}
+
 void idPlayer::Event_SetObjectiveComp( int ObjIndex, int CompIndex, int bState )
 {
-	gameLocal.m_MissionData->SetComponentState( ObjIndex, CompIndex, (bState != 0) );
+	gameLocal.m_MissionData->SetComponentState_Ext( ObjIndex, CompIndex, (bState != 0) );
+}
+
+void idPlayer::Event_GetObjectiveComp( int ObjIndex, int CompIndex )
+{
+	bool bCompState = gameLocal.m_MissionData->GetComponentState( ObjIndex -1, CompIndex -1 );
+
+	idThread::ReturnInt( (int) bCompState );
+}
+
+void idPlayer::Event_ObjectiveUnlatch( int ObjIndex )
+{
+	gameLocal.m_MissionData->UnlatchObjective( ObjIndex - 1 );
+}
+
+void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
+{
+	gameLocal.m_MissionData->UnlatchObjectiveComp( ObjIndex - 1, CompIndex -1 );
 }

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/07/19 21:50:10  ishtvan
+ * new objective related scriptfunctions
+ *
  * Revision 1.27  2006/07/19 09:09:35  ishtvan
  * addd objectives scriptfunctions
  *
@@ -863,11 +866,10 @@ private:
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
 	void					Event_RopeRemovalCleanup( idEntity *RopeEnt );
-	void					Event_SetObjectiveState( int ObjIndex, int State );
-	void					Event_SetObjectiveComp( int ObjIndex, int CompIndex, int bState );
+
 
 /**
-* DarkMod Events
+* TDM Events
 **/
 	void					Event_GetEyePos( void );
 	void					Event_SetGuiOverlay( const char *guiFile );
@@ -888,6 +890,20 @@ private:
 	void					Event_PlayStartSound( void );
 	void					Event_MissionFailed( void );
 	void					Event_LoadDeathMenu( void );
+
+/**
+* NOTE: The following objective functions all take the "user" objective indices
+* That is, the indices start at 1 instead of 0
+*
+* If the objective/component for that index was not found
+* The getters return -1 for completion state and FALSE for component state
+**/
+	void					Event_SetObjectiveState( int ObjIndex, int State );
+	void					Event_GetObjectiveState( int ObjIndex );
+	void					Event_SetObjectiveComp( int ObjIndex, int CompIndex, int bState );
+	void					Event_GetObjectiveComp( int ObjIndex, int CompIndex );
+	void					Event_ObjectiveUnlatch( int ObjIndex );
+	void					Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
