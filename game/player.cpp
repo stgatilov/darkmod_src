@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.67  2006/07/19 09:09:35  ishtvan
+ * addd objectives scriptfunctions
+ *
  * Revision 1.66  2006/07/17 01:48:00  ishtvan
  * added scriptfunction for changing objective states: setObjectiveState
  *
@@ -304,8 +307,8 @@ const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
-const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", "ddd" );
-
+const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", "dd" );
+const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", "ddd" );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -347,6 +350,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
 	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
 	EVENT( EV_Player_SetObjectiveState,		idPlayer::Event_SetObjectiveState )
+	EVENT( EV_Player_SetObjectiveComp,		idPlayer::Event_SetObjectiveComp )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -10084,7 +10088,14 @@ void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
 	static_cast<idPhysics_Player *>( GetPhysics() )->RopeRemovalCleanup( RopeEnt );
 }
 
-void idPlayer::Event_SetObjectiveState( int ObjIndex, int CompIndex, int bState )
+void idPlayer::Event_SetObjectiveState( int ObjIndex, int State )
 {
-	gameLocal.m_MissionData->SetComponentState( ObjIndex, CompIndex, (bool) bState );
+	// when calling this function externally, the "user" indices are
+	// used, so subtract one from the index
+	gameLocal.m_MissionData->SetCompletionState( ObjIndex - 1, State );
+}
+
+void idPlayer::Event_SetObjectiveComp( int ObjIndex, int CompIndex, int bState )
+{
+	gameLocal.m_MissionData->SetComponentState( ObjIndex, CompIndex, (bState != 0) );
 }
