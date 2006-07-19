@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/07/19 21:51:03  ishtvan
+ * added irreversible behavior, modified some internal functions
+ *
  * Revision 1.7  2006/07/19 09:10:09  ishtvan
  * bugfixes
  *
@@ -208,6 +211,11 @@ protected:
 	**/
 	bool		m_bState;
 
+	/**
+	* Whether the irreversible component has latched into a state
+	**/
+	bool		m_bLatched;
+
 	idList<int>	m_IntArgs;
 	idStrList	m_StrArgs;
 
@@ -243,17 +251,10 @@ public:
 	void Clear( void );
 
 public:
-	EObjCompletionState	m_state;
-
 	/** 
 	* Text description of the objective in the objectives GUI
 	**/
-	idStr m_text; 
-
-	/**
-	* Set to true if one of the components changed this frame.  Test resets it to false.
-	*/
-	bool m_bNeedsUpdate;
+	idStr m_text;
 
 	/** 
 	* Set to false if an objective is optional
@@ -277,14 +278,28 @@ public:
 	**/
 	int m_MinDifficulty;
 
+protected:
+	/**
+	* Completion state.  Either COMP_INCOMPLETE, COMP_COMPLETE, COMP_FAILED or COMP_INVALID
+	**/
+	EObjCompletionState	m_state;
+
+	/**
+	* Set to true if one of the components changed this frame.  Test resets it to false.
+	*/
+	bool m_bNeedsUpdate;
+
 	/**
 	* Whether the objective may change state again once it initially changes to FAILED or SUCCESSFUL
 	* Default is reversible.
-	* NOT YET IMPLEMENTED
 	**/
 	bool m_bReversible;
 
-protected:
+	/**
+	* Set to true if the objective is irreversible and has latched into a state
+	**/
+	bool m_bLatched;
+
 	/**
 	* List of objective components (steal this, kill that, etc)
 	**/
@@ -364,22 +379,40 @@ public:
 	void UpdateObjectives( void );
 
 	/**
-	* Sets a given component state.  
-	* Used mostly by script callbacks for custom objectives
-	**/
-	void SetComponentState( int ObjIndex, int CompIndex, bool bState );
-
-	/**
-	* Set component state when indexed by a pointer to a component
-	* NOTE: Uses the "user" index number (internal + 1)
-	**/
-	void SetComponentState( CObjectiveComponent *pComp, bool bState );
-
-	/**
 	* Set the completion state of an objective.  Called both externally and internally.
 	* NOTE: Uses the "internal" index number, so subtract the index by 1 if calling it with "user" index
 	**/
 	void SetCompletionState( int ObjIndex, int State );
+
+	/**
+	* Get completion state.  Uses "internal" index (starts at 0)
+	**/
+	int GetCompletionState( int ObjIndex );
+
+	/**
+	* Get component state.  Uses "internal" index (starts at 0)
+	**/
+	bool GetComponentState( int ObjIndex, int CompIndex );
+
+	/**
+	* Sets a given component state.  
+	* Externally called version: Checks and reports index validity
+	* Uses "user" index (starts at 1 instead of 0)
+	* Calls internal SetComponentState.
+	**/
+	void SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState );
+
+	/**
+	* Unlatch an irreversible objective (used by scripting)
+	* Uses internal index (starts at 0)
+	**/
+	void UnlatchObjective( int ObjIndex );
+
+	/**
+	* Unlatch an irreversible component (used by scripting)
+	* Uses internal indeces(starts at 0)
+	**/
+	void UnlatchObjectiveComp( int ObjIndex, int CompIndex );
 
 
 /**
@@ -390,10 +423,6 @@ public:
 	void Event_SetObjMandatory( int ObjIndex, bool bVal );
 	void Event_SetObjOngoing( int ObjIndex, bool bVal );
 //	void Event_SetObjDifficulty( int ObjIndex, int value );
-
-//	int AddObjective( void );
-
-//	int AddComponent( int ObjIndex );
 
 /**
 * Getters for the mission stats.  Takes an objective component event type,
@@ -482,27 +511,12 @@ public:
 	**/
 	void AIDamagedByPlayer( int DamageAmount );
 
-
-// Other
-
 	/**
-	* // TODO: Repeat the check or don't... items that have to stay in a position
-	* // One way to do this would be the entity has to keep getting the stim
-	* // We must figure out how to handle items that must stay at position
-	*
-	* Called when an entity reaches an objective position.
-	* 
-	* In practice, this will usually be called by a scriptfunction, either
-	* by a trigger or by stim/response.
-	*
-	* This general function handles several potential objectives:
-	* Player getting to a place,
-	* AI getting to a place (used for escort missions ala T2M1?),
-	* Player dropping object in a place,
-	* Player dropping KO'd AI in a place
+	* Parse the objective data on an entity and add it to the objectives system
+	* Called by CTarget_AddObjectives
+	* This may be done during gameplay to add new objectives
+	* Returns the index of the LAST objective added, for later addressing
 	**/
-	void EntityReachedPosition( idStr EntName, idStr PositionName, bool bPresent );
-
 	int AddObjsFromEnt( idEntity *ent );
 
 // Events
@@ -515,8 +529,19 @@ public:
 	void Event_MissionComplete( void );
 	void Event_MissionFailed( void );
 
-
 protected:
+	
+	/**
+	* Sets a given component state.  
+	* Internally used version: Doesn't check/report index validity
+	* Uses "internal" index (starts at 0 instead of 1)
+	**/
+	void SetComponentState( int ObjIndex, int CompIndex, bool bState );
+
+	/**
+	* Set component state when indexed by a pointer to a component
+	**/
+	void SetComponentState( CObjectiveComponent *pComp, bool bState );
 
 	/**
 	* Do the numerical comparison
@@ -540,6 +565,7 @@ protected:
 	* A component has a max of two specificaton checks, so ind should never be > 1.
 	**/
 	bool	MatchSpec( CObjectiveComponent *pComp, SObjEntParms *EntDat, int ind );
+
 protected:
 	/**
 	* Set to true if any of the objective states have changed and objectives need updating

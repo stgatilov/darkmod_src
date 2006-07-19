@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/07/19 21:51:03  ishtvan
+ * added irreversible behavior, modified some internal functions
+ *
  * Revision 1.10  2006/07/19 09:10:09  ishtvan
  * bugfixes
  *
@@ -58,6 +61,7 @@ CObjectiveComponent::CObjectiveComponent( void )
 	m_bNotted = false;
 	m_bState = false;
 	m_bReversible = true;
+	m_bLatched = false;
 	m_Type = COMP_ITEM;
 	m_SpecMethod[0] = SPEC_NONE;
 	m_SpecMethod[1] = SPEC_NONE;
@@ -93,9 +97,21 @@ bool CObjectiveComponent::SetState( bool bState )
 
 	if(bState != m_bState)
 	{
-		// state has changed, mark overall objective for testing
-		m_bState = bState;
-		bReturnVal = true;
+		// state has changed, check for latching to see if it can change
+		if( !m_bReversible )
+		{
+			if( !m_bLatched )
+			{
+				m_bLatched = true;
+				m_bState = bState;
+				bReturnVal = true;
+			}
+		}
+		else
+		{
+			m_bState = bState;
+			bReturnVal = true;
+		}
 	}
 
 	return bReturnVal;
@@ -809,13 +825,11 @@ Quit:
 	return;
 }
 
-void CMissionData::SetComponentState( int ObjIndex, int CompIndex, bool bState )
+void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState )
 {
-	CObjectiveComponent *pComp(NULL);
-	
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("SetComponentState: Called for obj %d, comp %d, state %d. \r", ObjIndex, CompIndex, (int) bState );
 
-	// Offset the indices into C++ values
+	// Offset the indices into "internal" values (start at 0)
 	ObjIndex--;
 	CompIndex--;
 
@@ -829,6 +843,17 @@ void CMissionData::SetComponentState( int ObjIndex, int CompIndex, bool bState )
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		goto Quit;
 	}
+
+	// call internal SetComponentState
+	SetComponentState( ObjIndex, CompIndex, bState );
+
+Quit:
+	return;
+}
+
+void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
+{
+	CObjectiveComponent *pComp(NULL);
 
 	pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
 	
@@ -854,7 +879,7 @@ void CMissionData::SetComponentState( CObjectiveComponent *pComp, bool bState )
 	if( !pComp )
 		goto Quit;
 
-	SetComponentState( pComp->m_Index[0], pComp->m_Index[1], bState );
+	SetComponentState( pComp->m_Index[0]-1, pComp->m_Index[1]-1, bState );
 
 Quit:
 	return;
@@ -862,6 +887,8 @@ Quit:
 
 void CMissionData::SetCompletionState( int ObjIndex, int State )
 {
+	CObjective *pObj = NULL;
+
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt was made to set completion state of invalid objective index: %d \r", ObjIndex );
@@ -877,11 +904,32 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 		goto Quit;
 	}
 
+	pObj = &m_Objectives[ObjIndex];
+	if( !pObj )
+	{
+		DM_LOG(LC_AI,LT_ERROR)LOGSTRING("SetCompletionState: NULL Objective found for obj %d \r", ObjIndex );
+		goto Quit;
+	}
+
 	// Don't do anything if we are already in that state
-	if( m_Objectives[ObjIndex].m_state == State )
+	if( pObj->m_state == State )
 		goto Quit;
 
+	// Check for latching:
+	if( !pObj->m_bReversible )
+	{
+		// do not do anything if latched
+		if( pObj->m_bLatched )
+			goto Quit;
+
+		// Irreversible objectives latch to either complete or failed
+		if( State == STATE_COMPLETE || State == STATE_FAILED )
+			pObj->m_bLatched = true;
+	}
+
+
 	m_Objectives[ObjIndex].m_state = (EObjCompletionState) State;
+
 	if( State == STATE_COMPLETE )
 		Event_ObjectiveComplete( ObjIndex );
 	else if( State == STATE_FAILED )
@@ -892,6 +940,82 @@ Quit:
 
 // for scripters:
 
+int CMissionData::GetCompletionState( int ObjIndex )
+{
+	int returnInt = -1;
+
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex );
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to get completion state of invalid objective index: %d \n", ObjIndex);
+		goto Quit;
+	}
+
+	returnInt = m_Objectives[ObjIndex].m_state;
+
+Quit:
+	return returnInt;
+}
+
+bool CMissionData::GetComponentState( int ObjIndex, int CompIndex )
+{
+	bool bReturnVal(false);
+
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
+		gameLocal.Printf("WARNING: Objective System: GetComponentState: Objective num %d out of bounds. \n", (ObjIndex+1) ); 
+		goto Quit;
+	}
+	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
+		gameLocal.Printf("WARNING: Objective System: GetComponentState: Component num %d out of bounds for objective %d. \n", (CompIndex+1), (ObjIndex+1) );
+		goto Quit;
+	}
+
+	bReturnVal = m_Objectives[ObjIndex].m_Components[CompIndex].m_bState;
+
+Quit:
+	return bReturnVal;
+}
+
+void CMissionData::UnlatchObjective( int ObjIndex )
+{
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch an invalid objective index: %d \n", ObjIndex);
+		goto Quit;
+	}
+
+	m_Objectives[ObjIndex].m_bLatched = false;
+
+Quit:
+	return;
+}
+
+void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
+{
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch a component of invalid objective index: %d \n", ObjIndex);
+		goto Quit;
+	}
+
+	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch invalid component: %d of objective: %d \n", (CompIndex+1), (ObjIndex+1) );
+		goto Quit;
+	}
+
+	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
+
+Quit:
+	return;
+}
 
 void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
 {
@@ -1108,6 +1232,7 @@ void CObjective::Clear( void )
 	m_bNeedsUpdate = false;
 	m_bMandatory = false;
 	m_bReversible = true;
+	m_bLatched = false;
 	m_bVisible = true;
 	m_bOngoing = false;
 	m_MinDifficulty = 0;
