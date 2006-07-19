@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/07/19 05:14:28  ishtvan
+ * AI no longer check for tactile alerts when they're unconscious
+ *
  * Revision 1.27  2006/07/11 03:52:19  ishtvan
  * added drowning immunity and KO immunity
  *
@@ -6028,13 +6031,18 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 // TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
 void idAI::CheckTactile( void )
 {
-		idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
+	if( AI_KNOCKEDOUT || AI_DEAD )
+		goto Quit;
 
-		if ( BlockEnt && BlockEnt->IsType( idActor::Type ) ) 
-		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
-			HadTactile( static_cast<idActor *>(BlockEnt) );
-		}
+	idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
+
+	if ( BlockEnt && BlockEnt->IsType( idActor::Type ) ) 
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
+		HadTactile( static_cast<idActor *>(BlockEnt) );
+	}
+Quit:
+		return;
 }
 
 /**
