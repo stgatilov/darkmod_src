@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/07/19 09:10:09  ishtvan
+ * bugfixes
+ *
  * Revision 1.9  2006/07/19 05:19:49  ishtvan
  * added enabling objectives and scripts to call when objective completes
  *
@@ -560,25 +563,26 @@ void CMissionData::UpdateObjectives( void )
 			// Check for enabling objectives
 			for( int k=0; k < pObj->m_EnablingObjs.Num(); k++ )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Obj %d found enabling objective %d \r", i+1, pObj->m_EnablingObjs[k] );
 				int ObjNum = pObj->m_EnablingObjs[k] - 1;
 				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 )
 					continue;
 
-				bObjEnabled = bObjEnabled && (m_Objectives[ObjNum].m_state == STATE_COMPLETE);
+				EObjCompletionState CompState = m_Objectives[ObjNum].m_state;
+
+				bObjEnabled = bObjEnabled && (CompState == STATE_COMPLETE || CompState == STATE_INVALID);
 			}
 			if( !bObjEnabled )
 				goto Quit;
 
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
-			Event_ObjectiveComplete( i );
+			SetCompletionState( i, STATE_COMPLETE );
 		}
 // TODO: This is temporary and should be replaced with a failure logic check
 // For now: If ANY components of an ongoing objective are false, the objective is failed
 		else if( pObj->m_bOngoing && !(pObj->m_state == STATE_INVALID) )
 		{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i);
-				Event_ObjectiveFailed( i );
+				SetCompletionState(i, STATE_FAILED );
 		}
 		else
 		{
@@ -593,12 +597,6 @@ Quit:
 void CMissionData::Event_ObjectiveComplete( int ind )
 {
 	bool bTest(true), bTemp(false);
-
-	// don't do anything if already complete
-	if( m_Objectives[ind].m_state == STATE_COMPLETE )
-		goto Quit;
-
-	SetCompletionState( ind, STATE_COMPLETE );
 
 	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
 	if( !m_Objectives[ind].m_bOngoing )
@@ -634,19 +632,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 
 	if( bTest )
 		Event_MissionComplete();
-
-Quit:
-	return;
 }
 
 void CMissionData::Event_ObjectiveFailed( int ind )
 {
-	// don't do anything if already failed
-	if( m_Objectives[ind].m_state == STATE_FAILED )
-		goto Quit;
-
-	SetCompletionState( ind, STATE_FAILED );
-
 	// if the objective was mandatory, fail the mission
 	if( m_Objectives[ind].m_bMandatory )
 		Event_MissionFailed();
@@ -663,17 +652,22 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 			pThread->DelayedStart( 0 );
 		}
 	}
-
-Quit:
-	return;
 }
 
 void CMissionData::Event_MissionComplete( void )
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
 	gameLocal.Printf("MISSION COMPLETED\n");
-	// Go to mission successful GUI
-	// Read off which map to go to next
+	
+	// TODO: Go to mission successful GUI
+	// TODO: Read off which map to go to next
+
+	// for now, just play the sound (later it will be played in the GUI)
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if(player)
+	{
+		player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
+	}
 }
 
 void CMissionData::Event_MissionFailed( void )
@@ -866,37 +860,38 @@ Quit:
 	return;
 }
 
-void CMissionData::SetCompletionState( int ObjIndex, EObjCompletionState State )
+void CMissionData::SetCompletionState( int ObjIndex, int State )
 {
-	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
-		// log error
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt was made to set completion state of invalid objective index: %d \r", ObjIndex );
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to set completion state of invalid objective index: %d \n", ObjIndex);
 		goto Quit;
 	}
 
-	m_Objectives[ObjIndex].m_state = State;
+	// check if the state int is valid by comparing to highest number in enum
+	if( State < 0 || State > STATE_FAILED )
+	{
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt was made to set objective index: %d to invalid completion state: %d \r", ObjIndex, State);
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to set objective index: %d to invalid completion state: %d \n", ObjIndex, State);
+		goto Quit;
+	}
 
+	// Don't do anything if we are already in that state
+	if( m_Objectives[ObjIndex].m_state == State )
+		goto Quit;
+
+	m_Objectives[ObjIndex].m_state = (EObjCompletionState) State;
+	if( State == STATE_COMPLETE )
+		Event_ObjectiveComplete( ObjIndex );
+	else if( State == STATE_FAILED )
+		Event_ObjectiveFailed( ObjIndex );
 Quit:
 	return;
 }
 
 // for scripters:
-void CMissionData::Event_SetObjComplete( int ObjIndex )
-{
-	SetCompletionState( ObjIndex, STATE_COMPLETE );
-}
-void CMissionData::Event_SetObjInComplete( int ObjIndex )
-{
-	SetCompletionState( ObjIndex, STATE_INCOMPLETE );
-}
-void CMissionData::Event_SetObjFailed( int ObjIndex )
-{
-	SetCompletionState( ObjIndex, STATE_FAILED );
-}
-void CMissionData::Event_SetObjInvalid( int ObjIndex )
-{
-	SetCompletionState( ObjIndex, STATE_INVALID );
-}
+
 
 void CMissionData::Event_SetObjVisible( int ObjIndex, bool bVal )
 {

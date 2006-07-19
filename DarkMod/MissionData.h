@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/07/19 09:10:09  ishtvan
+ * bugfixes
+ *
  * Revision 1.6  2006/07/19 05:19:49  ishtvan
  * added enabling objectives and scripts to call when objective completes
  *
@@ -368,16 +371,17 @@ public:
 
 	/**
 	* Set component state when indexed by a pointer to a component
+	* NOTE: Uses the "user" index number (internal + 1)
 	**/
 	void SetComponentState( CObjectiveComponent *pComp, bool bState );
 
 	/**
-	* Set an objective state to one of the completion states (used by external scripting)
+	* Set the completion state of an objective.  Called both externally and internally.
+	* NOTE: Uses the "internal" index number, so subtract the index by 1 if calling it with "user" index
 	**/
-	void Event_SetObjComplete( int ObjIndex );
-	void Event_SetObjInComplete( int ObjIndex );
-	void Event_SetObjFailed( int ObjIndex );
-	void Event_SetObjInvalid( int ObjIndex );
+	void SetCompletionState( int ObjIndex, int State );
+
+
 /**
 * Set whether an objective shows up in the player's objectives screen
 **/
@@ -503,12 +507,10 @@ public:
 
 // Events
 	/**
-	* The following set the various objective states, called internally and in external scripts
+	* The following are called internally when an objective completes or fails
 	**/
 	void Event_ObjectiveComplete( int ObjIndex );
 	void Event_ObjectiveFailed( int ObjIndex );
-	void Event_ObjectiveInvalid( int ObjIndex );
-	void Event_ObjectiveIncomplete( int ObjIndex );
 
 	void Event_MissionComplete( void );
 	void Event_MissionFailed( void );
@@ -538,13 +540,6 @@ protected:
 	* A component has a max of two specificaton checks, so ind should never be > 1.
 	**/
 	bool	MatchSpec( CObjectiveComponent *pComp, SObjEntParms *EntDat, int ind );
-
-	/**
-	* Set the completion state of an objective.  This will be called by separate event functions
-	* for each state, for userfriendliness (so the scripter doesn't need to remember state numbers)
-	**/
-	void SetCompletionState( int ObjIndex, EObjCompletionState State );
-
 protected:
 	/**
 	* Set to true if any of the objective states have changed and objectives need updating
