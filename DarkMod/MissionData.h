@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/07/19 05:19:49  ishtvan
+ * added enabling objectives and scripts to call when objective completes
+ *
  * Revision 1.5  2006/07/17 02:42:25  ishtvan
  * fixes to comp_custom_clocked and comp_distance
  *
@@ -147,9 +150,9 @@ typedef struct SObjEntParms_s
 
 class CObjectiveComponent
 {
-	friend class CMissionData;
-
 public:
+	friend class CMissionData;
+	friend class CObjective;
 
 	CObjectiveComponent( void );
 	virtual ~CObjectiveComponent( void );
@@ -176,7 +179,7 @@ public:
 	**/
 	int m_Index[2]; 
 
-private:
+protected:
 
 /**
 * Set to true if the FM author has NOTted this component
@@ -227,26 +230,16 @@ private:
 class CObjective
 {
 public:
+	friend class CObjectiveComponent;
+	friend class CMissionData;
 
-	CObjective( void )
-	{
-		m_state = STATE_INCOMPLETE;
-		m_text = "";
-		m_bNeedsUpdate = false;
-		m_bMandatory = false;
-		m_bReversible = true;
-		m_bVisible = true;
-		m_bOngoing = false;
-		m_MinDifficulty = 0;
+	CObjective( void );
 
-		m_Components.Clear();
-	}
+	virtual ~CObjective( void );
 
-	~CObjective( void )
-	{
-		m_Components.Clear();
-	}
-	
+	void Clear( void );
+
+public:
 	EObjCompletionState	m_state;
 
 	/** 
@@ -287,20 +280,34 @@ public:
 	* NOT YET IMPLEMENTED
 	**/
 	bool m_bReversible;
-	
-	// internal stuff from this point on
-	
-	// list of objective components (steal this, kill that, etc)
+
+protected:
+	/**
+	* List of objective components (steal this, kill that, etc)
+	**/
 	idList<CObjectiveComponent> m_Components;
+
+	/**
+	* Other objectives that must be completed prior to the completion of this objective
+	**/
+	idList<int> m_EnablingObjs;
+
+	/**
+	* String storing the script to call when this objective is completed
+	* (optional)
+	**/
+	idStr m_CompletionScript;
+
+	/**
+	* String storing the script to call when this objective is failed
+	* (optional)
+	**/
+	idStr m_FailureScript;
 	
 // TODO: Add these
 	// boolean relationship among objective components required for definite success
 	
 	// boolean relationship among objective components required for definite failure
-
-	// script to call when objective is completed
-
-	// other objectives that must be completed before this one?
 	
 };
 
@@ -341,8 +348,6 @@ typedef struct SMissionStats_s
 
 class CMissionData 
 {	
-	friend class CObjectiveComponent;
-
 public:
 	CMissionData( void );
 	virtual ~CMissionData( void );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/07/19 05:19:49  ishtvan
+ * added enabling objectives and scripts to call when objective completes
+ *
  * Revision 1.8  2006/07/17 02:42:25  ishtvan
  * fixes to comp_custom_clocked and comp_distance
  *
@@ -256,19 +259,19 @@ void CMissionData::MissionEvent
 			// match component type
 			if( pComp->m_Type != CompType )
 				continue;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i, j );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i+1, j+1 );
 			
 			// check if the specifiers match, for first spec and second if it exists
 			if( !MatchSpec(pComp, EntDat1, 0) )
 				continue;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: First specification check matched: %d, %d\r", i, j );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: First specification check matched: %d, %d\r", i+1, j+1 );
 
 			if( pComp->m_SpecMethod[1] != SPEC_NONE )
 			{
 				if( !MatchSpec(pComp, EntDat2, 1) )
 					continue;
 			}
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Second specification check matched or absent: %d, %d\r", i, j );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Second specification check matched or absent: %d, %d\r", i+1, j+1 );
 
 			bCompState = EvaluateObjective( pComp, EntDat1, EntDat2, bBoolArg );
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective component evaluation result: %d \r", (int) bCompState );
@@ -277,7 +280,7 @@ void CMissionData::MissionEvent
 			// this will return true and we must mark this objective for update.
 			if( pComp->SetState( bCompState ) )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i, j );
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i+1, j+1 );
 				pObj->m_bNeedsUpdate = true;
 				m_bObjsNeedUpdate = true;
 			}
@@ -464,7 +467,7 @@ Quit:
 
 void CMissionData::UpdateObjectives( void )
 {
-	bool bTest(true);
+	bool bTest(true), bObjEnabled(true);
 
 // =============== Begin Handling of Clocked Objective Components ===============
 	
@@ -542,11 +545,11 @@ void CMissionData::UpdateObjectives( void )
 		if( !pObj->m_bNeedsUpdate || pObj->m_state == STATE_INVALID )
 			continue;
 		pObj->m_bNeedsUpdate = false;
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i);
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i+1);
 
 // TODO: Implement arbitrary boolean logic here, for mission failure and mission success
 // For now, just AND everything, and fail the objective if it's ongoing and not successful
-		for( int j=0; j<pObj->m_Components.Num(); j++ )
+		for( int j=0; j < pObj->m_Components.Num(); j++ )
 		{
 			bTest = bTest && pObj->m_Components[j].m_bState;
 		}
@@ -554,7 +557,20 @@ void CMissionData::UpdateObjectives( void )
 		// Objective was just completed
 		if( bTest )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i);
+			// Check for enabling objectives
+			for( int k=0; k < pObj->m_EnablingObjs.Num(); k++ )
+			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Obj %d found enabling objective %d \r", i+1, pObj->m_EnablingObjs[k] );
+				int ObjNum = pObj->m_EnablingObjs[k] - 1;
+				if( ObjNum >= m_Objectives.Num() || ObjNum < 0 )
+					continue;
+
+				bObjEnabled = bObjEnabled && (m_Objectives[ObjNum].m_state == STATE_COMPLETE);
+			}
+			if( !bObjEnabled )
+				goto Quit;
+
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
 			Event_ObjectiveComplete( i );
 		}
 // TODO: This is temporary and should be replaced with a failure logic check
@@ -593,7 +609,17 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		// TODO: Play this sound on the player, not the world, because global channel will cut off ambients
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
-		// TODO: Update the GUI to mark the objective as complete
+		// call completion script
+		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
+		if(pScriptFun)
+		{
+			idThread *pThread = new idThread( pScriptFun );
+			pThread->CallFunction( pScriptFun, true );
+			pThread->DelayedStart( 0 );
+		}		
+
+// TODO: Update the GUI to mark the objective as complete
+
 	}
 
 	// check if all mandatory, valid and active objectives have been completed
@@ -626,7 +652,16 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 		Event_MissionFailed();
 	else
 	{
-		// play an objectie failed sound for optional objectives?
+		// play an objective failed sound for optional objectives?
+		
+		// call failure script
+		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
+		if(pScriptFun)
+		{
+			idThread *pThread = new idThread( pScriptFun );
+			pThread->CallFunction( pScriptFun, true );
+			pThread->DelayedStart( 0 );
+		}
 	}
 
 Quit:
@@ -910,8 +945,9 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
 	CObjective			ObjTemp;
 	idLexer				src;
+	idToken				token;
 	idDict				*args;
-	idStr				StrTemp, StrTemp2;
+	idStr				StrTemp, StrTemp2, TempStr2;
 	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
 	int					ReturnVal(-1);
 
@@ -937,6 +973,19 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		ObjTemp.m_bReversible = !args->GetBool (StrTemp + "irreversible", "0" );
 		ObjTemp.m_bVisible = args->GetBool( StrTemp + "visible", "1");
 		ObjTemp.m_bOngoing = args->GetBool( StrTemp + "ongoing", "0");
+		ObjTemp.m_CompletionScript = args->GetString( StrTemp + "script_complete" );
+		ObjTemp.m_FailureScript = args->GetString( StrTemp + "script_failed" );
+
+		// parse in the int list of "enabling objectives"
+		TempStr2 = args->GetString( StrTemp + "enabling_objs", "" );
+		src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+		while( src.ReadToken( &token ) )
+		{
+			if( token.IsNumeric() )
+				ObjTemp.m_EnablingObjs.Append( token.GetIntValue() );
+		}
+		src.FreeSource();
+
 // TODO: Parse difficulty level when that is coded
 
 		// parse objective components
@@ -984,11 +1033,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 				CompTemp.m_SpecIntVal[ind] = args->GetInt( va(StrTemp2 + "spec_intval%d", ind + 1), "0" );
 			}
 
-			// Read in string args and int args, space delimited list...
-			// Use idLexer here?
-			idStr TempStr2;
-			idToken	token;
-			
+			// Use idLexer to read in string args and int args, space delimited lists
 			TempStr2 = args->GetString( StrTemp2 + "args_str", "" );
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
@@ -1022,7 +1067,10 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		}
 		
 		if( ObjTemp.m_Components.Num() > 0 )
+		{
 			m_Objectives.Append( ObjTemp );
+			ObjTemp.Clear();
+		}
 		Counter++;
 	}
 
@@ -1044,7 +1092,35 @@ Quit:
 	return ReturnVal;
 }
 
+/**==========================================================================
+* CObjective
+*==========================================================================**/
 
+CObjective::CObjective( void )
+{
+	Clear();
+}
+
+CObjective::~CObjective( void )
+{
+	Clear();
+}
+
+void CObjective::Clear( void )
+{
+	m_state = STATE_INCOMPLETE;
+	m_text = "";
+	m_bNeedsUpdate = false;
+	m_bMandatory = false;
+	m_bReversible = true;
+	m_bVisible = true;
+	m_bOngoing = false;
+	m_MinDifficulty = 0;
+	m_Components.Clear();
+	m_EnablingObjs.Clear();
+	m_CompletionScript.Clear();
+	m_FailureScript.Clear();
+}
 
 /*=========================================================================== 
 * 
