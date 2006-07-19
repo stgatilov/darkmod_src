@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.59  2006/07/19 16:15:23  sparhawk
+ * peer_highlight added
+ *
  * Revision 1.58  2006/07/15 02:15:46  ishtvan
  * surface type name fix
  *
@@ -6223,6 +6226,9 @@ void idEntity::LoadTDMSettings(void)
 			m_MasterFrob = str;
 	}
 
+	// Get the name of an associated entity to highlight.
+	spawnArgs.GetString("peer_highlight", "", m_PeerHighlight);
+
 	// Check if this entity can be used by others.
 	if(spawnArgs.GetString("used_by", "", str))
 		ParseUsedByList(m_UsedBy, str);
@@ -6269,32 +6275,28 @@ bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView
 bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderView, unsigned long cm, float *ShaderParam)
 {
 	bool bRc = false;
+	bool bHighlight = false;
 	idPlayer *player;
-	CDarkModPlayer *pDM;
+	idEntity *peer;
+	renderEntity_s *re;
 
 	player = gameLocal.GetLocalPlayer();
-	pDM = g_Global.m_DarkModPlayer;
 
 	// If we have no player there is no point in doing this. :)
 	// also quit if we are not within the player's frobbing range (set in idPlayer::Think)
-	if(player == NULL || pDM == NULL || !m_bWithinFrobDist)
+	if(player == NULL || !m_bWithinFrobDist)
 		goto Quit;
 
 	// set m_bWithinFrobDist back to false for next frame
 	ToggleWithinFrobDist();
 
-	float param;
-	bool bHighlight;
 	trace_t trace;
 	idVec3 start;
 	idVec3 end;
 
-	bHighlight = false;
-	param = 0.0f;
-
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Player: [%s]\r", player->name.c_str());
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u\r",
-		name.c_str(), this, pDM->m_FrobEntity, m_FrobDistance);
+		name.c_str(), this, g_Global.m_DarkModPlayer->m_FrobEntity, m_FrobDistance);
 
 	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
@@ -6324,23 +6326,50 @@ bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderVi
 		}
 	}
 
+	FrobHighlight(bHighlight, pRenderEntity, pRenderView, ShaderParam, NULL);
+
+	if(m_PeerHighlight.Length() == 0)
+		goto Quit;
+
+	if((peer = gameLocal.FindEntity(m_PeerHighlight.c_str())) == NULL)
+	{
+		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Entity %s has the peer %s to highlight, but it can not be found!\r", name.c_str(), m_PeerHighlight.c_str());
+		goto Quit;
+	}
+
+	re = peer->GetRenderEntity();
+	peer->FrobHighlight(bHighlight, re, peer->GetRenderView(), &re->shaderParms[11], this);
+
+Quit:
+	return bRc;
+}
+
+bool idEntity::FrobHighlight(bool bHighlight, renderEntity_s *pRenderEntity, const renderView_t *pRenderView, float *ShaderParam, idEntity *pCaller)
+{
+	bool bRc = false;
+	float param = 0.0f;
+	CDarkModPlayer *pDM;
+
+	pDM = g_Global.m_DarkModPlayer;
+
 	if(bHighlight == true)
 	{
-		pDM->m_FrobEntity = this;
+		if(pCaller == this)
+			pDM->m_FrobEntity = this;
+
 		param = 1.0f;
 		bRc = true;
 	}
 	else
 	{
-		// Only switch it off if we are the current highlight
-		if(pDM->m_FrobEntity == this)
+		// Only switch it off if we are the current highlighter
+		if(pDM->m_FrobEntity == this && pCaller == NULL)
 			pDM->m_FrobEntity = NULL;
 	}
 
 	*ShaderParam = param;
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
 
-Quit:
 	if(m_FrobCallbackChain != NULL)
 	{
 		if(m_FrobCallbackChain == idEntity::FrobModelCallback)

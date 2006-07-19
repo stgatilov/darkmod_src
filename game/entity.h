@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/07/19 16:15:23  sparhawk
+ * peer_highlight added
+ *
  * Revision 1.35  2006/06/13 22:32:16  sparhawk
  * Finished first working version of StimTimer
  *
@@ -532,6 +535,20 @@ public:
 	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView, unsigned long CollisionMask, float *ShaderArray);
 
 	/**
+	 * FrobHighlight performs the actual highlighting of the entity if the object is frobbable.
+	 * Caller is needed to determine who called the highlight. If two entities are connected
+	 * to each other, they should highlight both if either one is targeted. In this case
+	 * we would get an endless loop, so the caller must be specified, in order to prevent this.
+	 * If the call came from the original highlighttest, it will be NULL.
+	 *
+	 * Usually this will be needed for doors and their handles, but may be usefull for other stuff as well.
+	 * However, a door doesn't need to specify a peer highlight (and in fact shouldn't) because if it
+	 * has a handle, it automatically highlights it. The handle itself should set the door as it's peer
+	 * in order to highlight the door, if it is targeted.
+	 */
+	virtual bool			FrobHighlight(bool bHighlight, renderEntity_s *pRenderEntity, const renderView_t *pRenderView, float *ShaderParam, idEntity *Caller);
+
+	/**
 	 * FrobModelCallback is the callback function that is installed to enable the frobcode.
 	 * This callback will be called by the renderengine when the object in question is
 	 * visible by the camera view.
@@ -691,6 +708,12 @@ protected:
 	 * by the property "frob_action_script" in the entity defintion file.
 	 */
 	idStr						m_FrobActionScript;
+
+	/**
+	 * PeerHighlight defines the name of another entity, that is to be highlighted
+	 * as well, if this entity is also highlighted.
+	 */
+	idStr						m_PeerHighlight;
 
 	/**
 	 * If AssociatedFrob is set then MasterFrob contains
