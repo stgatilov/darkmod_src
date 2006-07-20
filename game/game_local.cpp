@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.65  2006/07/20 21:07:31  sparhawk
+ * Frame logging fixed.
+ *
  * Revision 1.64  2006/06/29 08:20:38  ishtvan
  * stim response updates
  *
@@ -2598,7 +2601,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	KeyCode_t *k;
 	usercmd_t ucmd;
 
-	DM_LOG(LC_FRAME, LT_FORCE)LOGSTRING("Frame start %u\r", curframe);
+	g_Global.m_Frame = curframe;
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
 
 #ifdef _DEBUG
 	if ( isMultiplayer ) {
@@ -2823,9 +2827,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	RunDebugInfo();
 	D_DrawDebugLines();
 
-	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %u - %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
-		curframe, time, timer_think.Milliseconds() + timer_events.Milliseconds(),
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %- %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
+		time, timer_think.Milliseconds() + timer_events.Milliseconds(),
 		timer_think.Milliseconds(), timer_events.Milliseconds(), num );
+
+	g_Global.m_Frame = 0;
 
 	return ret;
 }

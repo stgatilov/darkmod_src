@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.47  2006/07/20 21:07:25  sparhawk
+ * Frame logging fixed.
+ *
  * Revision 1.46  2006/07/20 18:51:24  sparhawk
  * Frame setting loaded from INI.
  *
@@ -321,6 +324,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_FUNCTION] = false;
 	m_ClassArray[LC_MOVEMENT] = false;
 
+	m_Frame = 0;
 	m_DefaultFrobDistance = 100.0f;
 	m_MaxFrobDistance = 0;
 	m_LogClass = LC_SYSTEM;
@@ -549,7 +553,7 @@ void CGlobal::LogString(char *fmt, ...)
 	va_list arg;
 	va_start(arg, fmt);
 
-	fprintf(m_LogFile, "[%s:%s (%s) - %4u] ", m_Filename, LTString[lt], LCString[lc], m_Linenumber);
+	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);
@@ -779,7 +783,7 @@ void CGlobal::LoadINISettings(void *p)
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AI Debug Grpahics display milliseconds: %f\r", m_drawAIDebugGraphics);
 		}
 	}
-	m_ClassArray[LC_FRAME] = Frame;
+//	m_ClassArray[LC_FRAME] = Frame;
 
 
 	if(FindSection(pfh, "GlobalParams", &ps) != -1)
