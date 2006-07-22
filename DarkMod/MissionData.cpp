@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/07/22 21:09:14  ishtvan
+ * comp_info_location preliminary checkin
+ *
  * Revision 1.11  2006/07/19 21:51:03  ishtvan
  * added irreversible behavior, modified some internal functions
  *
@@ -495,8 +498,16 @@ void CMissionData::UpdateObjectives( void )
 		CObjectiveComponent *pComp = m_ClockedComponents[k];
 
 		// check if timer is due to fire
-		if( !pComp || (gameLocal.time - pComp->m_TimeStamp < pComp->m_ClockInterval) )
+		if( !pComp  )
 			continue;
+
+		// if parent objective is invalid or the timer hasn't fired or it's latched, don't do anything
+		if( m_Objectives[ pComp->m_Index[0] ].m_state == STATE_INVALID
+			|| (gameLocal.time - pComp->m_TimeStamp < pComp->m_ClockInterval)
+			|| pComp->m_bLatched )
+		{
+			continue;
+		}
 
 		// COMP_DISTANCE - Do a distance check
 		else if( pComp->m_Type == COMP_DISTANCE )
@@ -543,6 +554,12 @@ void CMissionData::UpdateObjectives( void )
 				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
 				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
 			}
+		}
+
+		// COMP_INFO_LOCATION
+		else if( pComp->m_Type = COMP_INFO_LOCATION )
+		{
+			// check the info on info_location against objective arguments
 		}
 
 	}
