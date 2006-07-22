@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/07/22 02:25:55  ishtvan
+ * added weapon attachments
+ *
  * Revision 1.2  2005/11/11 20:38:16  sparhawk
  * SDK 1.3 Merge
  *
@@ -135,6 +138,11 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	/**
+	* TDM: Add ability to put AF attachments on weapon AFs
+	**/
+	void					Attach( idEntity *ent );
+
 	enum {
 		EVENT_RELOAD = idEntity::EVENT_MAXEVENTS,
 		EVENT_ENDRELOAD,
@@ -167,6 +175,22 @@ private:
 
 	idPlayer *				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
+
+	/**
+	* TDM: Struct for storing weapon attachment info
+	**/
+	typedef struct SWeaponAttachInfo
+	{
+		idEntityPtr<idEntity>	entPtr;
+		jointHandle_t			joint;
+		idVec3					originOffset;
+		idMat3					angleOffsetMat;
+	} SWeaponAttachInfo;
+
+	/**
+	* TDM: List of attachments attached to weapon
+	**/
+	idList<SWeaponAttachInfo>	m_Attachments;
 
 	// hiding (for GUIs and NPCs)
 	int						hideTime;
@@ -326,6 +350,13 @@ private:
 	void					Event_GetBlendFrames( int channel );
 	void					Event_Next( void );
 	void					Event_SetSkin( const char *skinname );
+/**
+* TDM: Show or hide the weapon attachments
+* The first argument is an index to the attachments list, starting at 1
+* Second argument is set to true if it should be shown, false for hiding.
+**/
+	void					Event_ShowAttachment( int id, bool bShow );
+
 	void					Event_Flashlight( int enable );
 	void					Event_GetLightParm( int parmnum );
 	void					Event_SetLightParm( int parmnum, float value );

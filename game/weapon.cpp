@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/07/22 02:25:55  ishtvan
+ * added weapon attachments
+ *
  * Revision 1.10  2006/07/15 02:15:46  ishtvan
  * surface type name fix
  *
@@ -86,6 +89,7 @@ const idEventDef EV_Weapon_AutoReload( "autoReload", NULL, 'f' );
 const idEventDef EV_Weapon_NetReload( "netReload" );
 const idEventDef EV_Weapon_IsInvisible( "isInvisible", NULL, 'f' );
 const idEventDef EV_Weapon_NetEndReload( "netEndReload" );
+const idEventDef EV_Weapon_ShowAttachment( "showAttachment", "dd" );
 
 //
 // class def
@@ -113,6 +117,7 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( AI_AnimDone,							idWeapon::Event_AnimDone )
 	EVENT( EV_Weapon_Next,						idWeapon::Event_Next )
 	EVENT( EV_SetSkin,							idWeapon::Event_SetSkin )
+	EVENT( EV_Weapon_ShowAttachment,			idWeapon::Event_ShowAttachment )
 	EVENT( EV_Weapon_Flashlight,				idWeapon::Event_Flashlight )
 	EVENT( EV_Light_GetLightParm,				idWeapon::Event_GetLightParm )
 	EVENT( EV_Light_SetLightParm,				idWeapon::Event_SetLightParm )
@@ -174,7 +179,16 @@ idWeapon::idWeapon() {
 idWeapon::~idWeapon()
 ================
 */
-idWeapon::~idWeapon() {
+idWeapon::~idWeapon() 
+{
+	// destroy weapon attachments
+	for( int i=0; i<m_Attachments.Num(); i++ )
+	{
+		idEntity *ent = m_Attachments[i].entPtr.GetEntity();
+		if( ent )
+			ent->Event_Remove();
+	}
+
 	Clear();
 	delete worldModel.GetEntity();
 }
@@ -720,6 +734,8 @@ void idWeapon::Clear( void ) {
 	projectileEnt		= NULL;
 
 	isFiring			= false;
+
+	m_Attachments.Clear();
 }
 
 /*
@@ -992,6 +1008,30 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	weaponOffsetTime = weaponDef->dict.GetFloat( "weaponOffsetTime", "400" );
 	weaponOffsetScale = weaponDef->dict.GetFloat( "weaponOffsetScale", "0.005" );
+
+	// spawn any weapon attachments we might have
+// TODO: Set their view ID so they only appear in the player view??
+// TODO: Sep. attachments for viewmodel/ worldmodel?
+	const idKeyValue *KeyVal = weaponDef->dict.MatchPrefix( "def_attach", NULL );
+	idEntity *ent(NULL);
+
+	while ( KeyVal ) 
+	{
+		idDict args2;
+
+		args2.Set( "classname", KeyVal->GetValue().c_str() );
+
+		// don't let them drop to the floor
+		args2.Set( "dropToFloor", "0" );
+		
+		gameLocal.SpawnEntityDef( args2, &ent );
+		if ( !ent ) {
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", KeyVal->GetValue().c_str(), name.c_str() );
+		} else {
+			Attach( ent );
+		}
+		KeyVal = weaponDef->dict.MatchPrefix( "def_attach", KeyVal );
+	}
 
 	if ( !weaponDef->dict.GetString( "weapon_scriptobject", NULL, &objectType ) ) {
 		gameLocal.Error( "No 'weapon_scriptobject' set on '%s'.", objectname );
@@ -1343,6 +1383,12 @@ void idWeapon::HideWeapon( void ) {
 		worldModel.GetEntity()->Hide();
 	}
 	muzzleFlashEnd = 0;
+
+	// hide attachments:
+	for(int i=0; i<m_Attachments.Num(); i++)
+	{
+		m_Attachments[i].entPtr.GetEntity()->Hide();
+	}
 }
 
 /*
@@ -1357,6 +1403,12 @@ void idWeapon::ShowWeapon( void ) {
 	}
 	if ( lightOn ) {
 		MuzzleFlashLight();
+	}
+
+	// show attachments
+	for(int i=0; i<m_Attachments.Num(); i++)
+	{
+		m_Attachments[i].entPtr.GetEntity()->Show();
 	}
 }
 
@@ -2008,6 +2060,22 @@ void idWeapon::PresentWeapon( bool showViewModel ) {
 			guiLightHandle = gameRenderWorld->AddLightDef( &guiLight );
 		}
 	}
+
+	// update attachment positions (because apparently bind doesn't work on weapons)
+	for( int i=0; i<m_Attachments.Num(); i++ )
+	{
+		idEntity *Att = m_Attachments[i].entPtr.GetEntity();
+		if( !Att )
+			continue;
+
+		idVec3 AttOrigin;
+		idMat3 AttAxis;
+		
+		GetGlobalJointTransform( true, m_Attachments[i].joint, AttOrigin, AttAxis );
+		Att->SetOrigin( AttOrigin + AttAxis * m_Attachments[i].originOffset );
+		Att->SetAxis( m_Attachments[i].angleOffsetMat * AttAxis );
+	}
+
 
 	if ( status != WP_READY && sndHum ) {
 		StopSound( SND_CHANNEL_BODY, false );
@@ -2718,6 +2786,26 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 	}
 }
 
+void idWeapon::Event_ShowAttachment(int id, bool bShow)
+{
+	id--;
+
+	if( id < 0 || id >= m_Attachments.Num() )
+		goto Quit;
+
+	idEntity *ent = m_Attachments[id].entPtr.GetEntity();
+	if( ent )
+	{
+		if( bShow )
+			ent->Show();
+		else
+			ent->Hide();
+	}
+
+Quit:
+	return;
+}
+
 /*
 ================
 idWeapon::Event_Flashlight
@@ -3191,4 +3279,40 @@ idWeapon::ClientPredictionThink
 */
 void idWeapon::ClientPredictionThink( void ) {
 	UpdateAnimation();	
+}
+
+/*
+================
+idWeapon::Attach
+================
+*/
+void idWeapon::Attach( idEntity *ent ) 
+{
+	jointHandle_t		joint;
+	idStr				jointName;
+	idAngles			angleOffset;
+	SWeaponAttachInfo	attachment;
+
+	jointName = ent->spawnArgs.GetString( "joint" );
+	joint = animator.GetJointHandle( jointName );
+	if ( joint == INVALID_JOINT ) {
+		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+	}
+	attachment.joint = joint;
+
+	attachment.originOffset = ent->spawnArgs.GetVector( "origin" );
+	angleOffset = ent->spawnArgs.GetAngles( "angles" );
+	attachment.angleOffsetMat = angleOffset.ToMat3();
+
+	// set up the same rendering conditions as the weapon viewmodel
+	ent->GetRenderEntity()->allowSurfaceInViewID = owner->entityNumber+1;
+	ent->GetRenderEntity()->weaponDepthHack = true;
+
+	idEntityPtr<idEntity> attachPtr;
+	attachPtr = ent;
+	attachment.entPtr = attachPtr;
+
+	m_Attachments.Append( attachment );
+
+	DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("Spawned attachment %s, bound to weapon %s, joint %s \r", ent->name.c_str(), name.c_str(), jointName.c_str() );
 }
