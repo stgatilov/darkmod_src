@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/07/24 01:29:03  ishtvan
+ * optional distance test added to func_portal
+ *
  * Revision 1.8  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -2670,9 +2673,15 @@ END_CLASS
 idFuncPortal::idFuncPortal
 ===============
 */
-idFuncPortal::idFuncPortal() {
+idFuncPortal::idFuncPortal() 
+{
 	portal = 0;
 	state = false;
+	m_bDistDependent = false;
+	m_Distance = 0;
+
+	m_TimeStamp = 0;
+	m_Interval = 1000;
 }
 
 /*
@@ -2701,12 +2710,33 @@ void idFuncPortal::Restore( idRestoreGame *savefile ) {
 idFuncPortal::Spawn
 ===============
 */
-void idFuncPortal::Spawn( void ) {
+void idFuncPortal::Spawn( void ) 
+{
 	portal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds().Expand( 32.0f ) );
-	if ( portal > 0 ) {
+	if ( portal > 0 ) 
+	{
 		state = spawnArgs.GetBool( "start_on" );
 		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
 	}
+
+	if( (m_Distance = spawnArgs.GetFloat( "portal_dist", "0.0" )) <= 0 )
+		goto Quit;
+
+	// distance dependent portals from this point on:
+	m_bDistDependent = true;
+	m_Distance *= m_Distance;
+	m_Interval = (int) (1000.0f * spawnArgs.GetFloat( "distcheck_period", "1.0" ));
+
+	// add some phase diversity to the checks so that they don't all run in one frame
+	// make sure they all run on the first frame though, by initializing m_TimeStamp to
+	// be at least one interval early.
+	m_TimeStamp = gameLocal.time - (int) (m_Interval * (1.0f + 0.5f*gameLocal.random.RandomFloat()) );
+
+	// only start thinking if it's distance dependent.
+	BecomeActive( TH_THINK );
+
+Quit:
+	return;
 }
 
 /*
@@ -2714,11 +2744,45 @@ void idFuncPortal::Spawn( void ) {
 idFuncPortal::Event_Activate
 ================
 */
-void idFuncPortal::Event_Activate( idEntity *activator ) {
-	if ( portal > 0 ) {
+void idFuncPortal::Event_Activate( idEntity *activator ) 
+{
+	if ( portal > 0 ) 
+	{
 		state = !state;
 		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
 	}
+
+	// activate our targets
+	PostEventMS( &EV_ActivateTargets, 0, activator );
+}
+
+void idFuncPortal::Think( void )
+{
+	idVec3 delta;
+
+	if( !m_bDistDependent )
+		goto Quit;
+
+	if( (gameLocal.time - m_TimeStamp) < m_Interval )
+		goto Quit;
+
+	m_TimeStamp = gameLocal.time;
+	bool bWithinDist(false);
+
+	delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
+	delta -= GetPhysics()->GetOrigin();
+
+	bWithinDist = (delta.LengthSqr() < m_Distance);
+
+	if( (!state && !bWithinDist) || (state && bWithinDist) )
+	{
+		// toggle portal and trigger targets
+		Event_Activate( gameLocal.GetLocalPlayer() );
+	}
+
+Quit:
+	idEntity::Think();
+	return;
 }
 
 /*

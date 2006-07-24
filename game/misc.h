@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/07/24 01:29:03  ishtvan
+ * optional distance test added to func_portal
+ *
  * Revision 1.4  2006/01/29 04:09:29  ishtvan
  * added soundprop interface for idLocation objects
  *
@@ -650,10 +653,26 @@ public:
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
+	void				Think( void );
 
 private:
 	qhandle_t			portal;
 	bool				state;
+
+	/**
+	* Set to true if the portal state depends on distance from player
+	**/
+	bool				m_bDistDependent;
+	
+	/**
+	* Timestamp and interval between checks, in milliseconds
+	**/
+	int					m_TimeStamp;
+	int					m_Interval;
+	/**
+	* Distance at which the portal shuts off, if it is distance dependent
+	**/
+	float				m_Distance;
 
 	void				Event_Activate( idEntity *activator );
 };
