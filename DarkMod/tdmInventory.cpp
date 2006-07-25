@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/07/25 01:40:28  gildoran
+ * Completely revamped inventory code.
+ *
  * Revision 1.4  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -52,20 +55,20 @@ void tdmInventorySaveObjectList( idSaveGame *savefile ) {
 
 }
 
-  //////////////////
- // tdmInventory //
-//////////////////
 
-CLASS_DECLARATION( idClass, tdmInventory )
+  ///////////////////
+ // CtdmInventory //
+///////////////////
+
+CLASS_DECLARATION( idClass, CtdmInventory )
 END_CLASS
 
-tdmInventory::tdmInventory() {
-	m_numSlots = 0;
+CtdmInventory::CtdmInventory() {
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventory::~tdmInventory() {
+CtdmInventory::~CtdmInventory() {
 	// Remove all cursors.
 	while ( m_cursors.NextNode() ) {
 		m_cursors.NextNode()->Owner()->setInventory( NULL );
@@ -77,16 +80,15 @@ tdmInventory::~tdmInventory() {
 	while ( m_itemList.NextNode() ) {
 		m_itemList.NextNode()->Owner()->m_item->setInventory( NULL );
 	}
-
 }
 
-void tdmInventory::Save( idSaveGame *savefile ) const {
+void CtdmInventory::Save( idSaveGame *savefile ) const {
 
 	m_owner.Save( savefile );
 
 	// Write out our ungrouped slots.
 	savefile->WriteInt( m_itemList.Num() );
-	idLinkList<tdmInventorySlot>* sNode = m_itemList.NextNode();
+	idLinkList<CtdmInventorySlot>* sNode = m_itemList.NextNode();
 	while ( sNode != NULL ) {
 		savefile->WriteObject( sNode->Owner()->m_item );
 		sNode = sNode->NextNode();
@@ -94,7 +96,7 @@ void tdmInventory::Save( idSaveGame *savefile ) const {
 
 	// Write out our groups and grouped slots.
 	savefile->WriteInt( m_groupList.Num() );
-	idLinkList<tdmInventoryGroup>* gNode = m_groupList.NextNode();
+	idLinkList<CtdmInventoryGroup>* gNode = m_groupList.NextNode();
 	while ( gNode != NULL ) {
 
 		savefile->WriteString( gNode->Owner()->m_name );
@@ -111,10 +113,10 @@ void tdmInventory::Save( idSaveGame *savefile ) const {
 	}
 }
 
-void tdmInventory::Restore( idRestoreGame *savefile ) {
+void CtdmInventory::Restore( idRestoreGame *savefile ) {
 	unsigned int numSlots;
 	unsigned int numGroups;
-	tdmInventorySlot* slot;
+	CtdmInventorySlot* slot;
 
 	m_owner.Restore( savefile );
 
@@ -122,55 +124,44 @@ void tdmInventory::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( reinterpret_cast<int &>( numSlots ) );
 	while ( numSlots-- ) {
 
-		slot = new tdmInventorySlot();
+		slot = new CtdmInventorySlot();
 		if ( slot == NULL ) {
 			gameLocal.Error("Unable to allocate memory for ungrouped slot.");
 			goto Quit;
 		}
 
-		// Setup the new slot.
-		slot->m_node.SetOwner( slot );
-		slot->m_numCursors = 0;
-		m_numSlots++;
 		// Load the slot's item.
 		savefile->ReadObject( reinterpret_cast<idClass *&>( slot->m_item ) );
 
 		slot->m_node.AddToEnd( m_itemList );
 	}
 
-	tdmInventoryGroup* group;
+	CtdmInventoryGroup* group;
 
 	// Read in our groups and grouped slots.
 	savefile->ReadInt( reinterpret_cast<int &>( numGroups ) );
 	while ( numGroups-- ) {
 
-		group = new tdmInventoryGroup();
+		group = new CtdmInventoryGroup();
 		if ( group == NULL ) {
 			gameLocal.Error("Unable to allocate memory for group.");
 			goto Quit;
 		}
 
 		// Setup the new group.
-		group->m_node.SetOwner( group );
 		savefile->ReadString( group->m_name );
-		group->m_numItems = 0;
-
 		group->m_node.AddToEnd( m_groupList );
 
 		// Read in the group's slots.
 		savefile->ReadInt( reinterpret_cast<int &>( numSlots ) );
 		while ( numSlots-- ) {
 
-			slot = new tdmInventorySlot();
+			slot = new CtdmInventorySlot();
 			if ( slot == NULL ) {
 				gameLocal.Error("Unable to allocate memory for ungrouped slot.");
 				goto Quit;
 			}
 
-			// Setup the new slot.
-			slot->m_node.SetOwner( slot );
-			slot->m_numCursors = 0;
-			m_numSlots++;
 			// Load the slot's item.
 			savefile->ReadObject( reinterpret_cast<idClass *&>( slot->m_item ) );
 
@@ -187,25 +178,21 @@ void tdmInventory::Restore( idRestoreGame *savefile ) {
 	return;
 }
 
-int tdmInventory::debugNumSlots() const {
-	return m_numSlots;
-}
-
 /// Return the group with the given name. Create it if neccessary.
-tdmInventoryGroup* tdmInventory::obtainGroup( const char* groupName )
+CtdmInventoryGroup* CtdmInventory::obtainGroup( const char* groupName )
 {
 	// Try to find the requested group.
 	// This loop will either set gNode to the requested group,
 	// or the group node we would need to add a new group before.
-	idLinkList<tdmInventoryGroup>* gNode = m_groupList.NextNodeCircular();
-	while ( gNode != &m_groupList && gNode->Owner()->m_name.Cmp( groupName ) < 0 ) {
-		gNode = gNode->NextNodeCircular();
+	idLinkList<CtdmInventoryGroup>* gNode = m_groupList.NextNode();
+	while ( gNode != NULL && gNode->Owner()->m_name.Cmp( groupName ) < 0 ) {
+		gNode = gNode->NextNode();
 	}
 
-	tdmInventoryGroup* group;
+	CtdmInventoryGroup* group = NULL;
 
 	// Did we find our correct group?
-	if ( gNode != &m_groupList && gNode->Owner()->m_name.Cmp( groupName ) == 0 ) {
+	if ( gNode != NULL && gNode->Owner()->m_name.Cmp( groupName ) == 0 ) {
 
 		// We found the group. Let's return it.
 		group = gNode->Owner();
@@ -215,127 +202,63 @@ tdmInventoryGroup* tdmInventory::obtainGroup( const char* groupName )
 		// No, we need to create a new group of the correct type, and add it.
 
 		// Alloc a new group.
-		group = new tdmInventoryGroup();
-		if ( group != NULL ) {
-
-			group->m_node.SetOwner( group );
-			group->m_name = groupName;
-			group->m_numItems = 0;
-
-			// Insert the group into the inventory.
-			group->m_node.InsertBefore( *gNode );
-
-		} else {
+		group = new CtdmInventoryGroup( groupName );
+		if ( group == NULL ) {
 			gameLocal.Error("Unable to allocate memory for inventory group.");
+			goto Quit;
+		}
+
+		// Insert the group into the inventory.
+		if ( gNode != NULL ) {
+			group->m_node.InsertBefore( *gNode );
+		} else {
+			group->m_node.AddToEnd( m_groupList );
 		}
 
 	}
-
+	Quit:
 	return group;
 }
 
-void tdmInventory::checkGroup( tdmInventoryGroup* group ) {
-	// If this group contains no items, but has cursors on it,
-	// we may be able to consolidate all the cursors into a
-	// single slot, to reduce memory usage, or better yet remove
-	// this group entirely.
-	if ( group->m_numItems == 0 && !group->m_itemList.IsListEmpty() ) {
-		// The number of active cursors encountered.
-		unsigned int activeCursors = 0;
-		// The first slot in the group... We'll be moving cursors here a
-		// lot, so I'd like to keep a direct reference to it handy.
-		tdmInventorySlot* firstSlot = group->m_itemList.NextNodeCircular()->Owner();
-		// The current cursor.
-		tdmInventoryCursor* cursor;
+/// Checks if an ungrouped slot should be deallocated.
+void CtdmInventory::check( CtdmInventorySlot* slot ) {
+	// If the slot is empty and no cursors depend on it, delete it.
+	if ( slot->m_item == NULL && slot->m_numCursors == 0 ) {
+		delete slot;
+	}
+}
 
-		// Consolidate active cursors to the first slot,
-		// and count how many there were.
-		idLinkList<tdmInventoryCursor>* cNode = m_cursors.NextNodeCircular();
-		while ( cNode != &m_cursors ) {
+/// Checks if a group and slot should be deallocated.
+void CtdmInventory::check( CtdmInventoryGroup* group, CtdmInventorySlot* slot ) {
+	if ( slot != NULL ) {
+		// Possible optimization: Potentially move history cursors to
+		// previous slot, if both are empty? Note: If you implement it,
+		// be sure to check over the cursor code to ensure it doesn't
+		// fubar it.
 
-			cursor = cNode->Owner();
-			// Is there an active cursor pointing to this group?
-			if ( cursor->m_group == group ) {
-				activeCursors++;
-
-				// Move the active cursor to the first slot.
-				cursor->m_groupedSlot->m_numCursors--;
-				firstSlot->m_numCursors++;
-				cursor->m_groupedSlot = firstSlot;
-			}
-
-			cNode = cNode->NextNodeCircular();
+		// If the slot is empty and no cursors depend on it, delete it.
+		if ( slot->m_item == NULL &&
+			 slot->m_numCursors == 0 &&
+			 slot->m_historyCursors.IsListEmpty() ) {
+			delete slot;
 		}
-
-		tdmInventoryGroupHistory* groupHistory;
-
-		// Consolidate history cursors to the first slot,
-		// or if there were no active cursors, then delete them entirely,
-		// since we'll be deleting this group.
-		cNode = m_cursors.NextNodeCircular();
-		while ( cNode != &m_cursors ) {
-
-			cursor = cNode->Owner();
-
-			groupHistory = cursor->getGroupHistory( group );
-			if ( groupHistory != NULL ) {
-				if ( activeCursors != 0 ) {
-					// We're merely moving the group history to the first slot.
-					groupHistory->m_slot->m_numCursors--;
-					firstSlot->m_numCursors++;
-					groupHistory->m_slot = firstSlot;
-				} else {
-					// We're going to be deleting this group, so let's delete its group history.
-					groupHistory->m_slot->m_numCursors--;
-					delete groupHistory;
-				}
-			}
-
-			cNode = cNode->NextNodeCircular();
-		}
-
-		// Delete all but the first slot.
-		// ( We've consolidate all cursors to the first slot,
-		// and we know they don't have items, so it's ok to delete
-		// directly, instead of calling checkItem(). )
-		idLinkList<tdmInventorySlot>* sNode = firstSlot->m_node.NextNodeCircular();
-		tdmInventorySlot* tempSlot;
-		while ( sNode != &group->m_itemList ) {
-			tempSlot = sNode->Owner();
-			sNode = sNode->NextNodeCircular();
-			delete tempSlot;
-			m_numSlots--;
-		}
-
-		// Possibly delete the first slot.
-		checkSlot( firstSlot );
 	}
 
-	// If the group has no slots, (and thus nothing pointing to it)
-	// delete it.
-	if ( group->m_itemList.IsListEmpty() ) {
+	// If the group is empty and has no active cursors, remove it.
+	if ( group->m_numItems == 0 && group->m_numCursors == 0 ) {
 		delete group;
 	}
 }
 
-// Consider inlining?
-void tdmInventory::checkSlot( tdmInventorySlot* slot ) {
-	// If the slot is empty and no cursors depend on it, delete it.
-	if ( slot->m_item == NULL && slot->m_numCursors == 0 ) {
-		delete slot;
-		m_numSlots--;
-	}
-}
-
 /// Converts a slot into an index.
-unsigned int tdmInventory::SlotToIndex( const tdmInventorySlot* slot ) const {
+unsigned int CtdmInventory::SlotToIndex( const CtdmInventorySlot* slot ) const {
 	if ( slot == NULL ) {
 		return 0;
 	}
 
 	int index = 1;
 
-	idLinkList<tdmInventorySlot>* sNode = slot->m_node.PrevNode();
+	idLinkList<CtdmInventorySlot>* sNode = slot->m_node.PrevNode();
 	while ( sNode != NULL ) {
 		index++;
 		sNode = sNode->PrevNode();
@@ -345,12 +268,12 @@ unsigned int tdmInventory::SlotToIndex( const tdmInventorySlot* slot ) const {
 }
 
 /// Converts an index into a slot.
-tdmInventorySlot* tdmInventory::IndexToSlot( unsigned int index, const tdmInventoryGroup* group ) const {
+CtdmInventorySlot* CtdmInventory::IndexToSlot( unsigned int index, const CtdmInventoryGroup* group ) const {
 	if ( index == 0 ) {
 		return NULL;
 	}
 
-	idLinkList<tdmInventorySlot>* sNode;
+	idLinkList<CtdmInventorySlot>* sNode;
 	if ( group == NULL ) {
 		sNode = m_itemList.NextNode();
 	} else {
@@ -364,14 +287,14 @@ tdmInventorySlot* tdmInventory::IndexToSlot( unsigned int index, const tdmInvent
 }
 
 /// Converts a group into an index.
-unsigned int tdmInventory::GroupToIndex( const tdmInventoryGroup* group ) const {
+unsigned int CtdmInventory::GroupToIndex( const CtdmInventoryGroup* group ) const {
 	if ( group == NULL ) {
 		return 0;
 	}
 
 	int index = 1;
 
-	idLinkList<tdmInventoryGroup>* gNode = group->m_node.PrevNode();
+	idLinkList<CtdmInventoryGroup>* gNode = group->m_node.PrevNode();
 	while ( gNode != NULL ) {
 		index++;
 		gNode = gNode->PrevNode();
@@ -381,12 +304,12 @@ unsigned int tdmInventory::GroupToIndex( const tdmInventoryGroup* group ) const 
 }
 
 /// Converts an index into a group.
-tdmInventoryGroup* tdmInventory::IndexToGroup( unsigned int index ) const {
+CtdmInventoryGroup* CtdmInventory::IndexToGroup( unsigned int index ) const {
 	if ( index == 0 ) {
 		return NULL;
 	}
 
-	idLinkList<tdmInventoryGroup>* gNode = m_groupList.NextNode();
+	idLinkList<CtdmInventoryGroup>* gNode = m_groupList.NextNode();
 	while ( --index ) {
 		gNode = gNode->NextNode();
 	}
@@ -395,39 +318,38 @@ tdmInventoryGroup* tdmInventory::IndexToGroup( unsigned int index ) const {
 }
 
 
-  //////////////////////
- // tdmInventoryItem //
-//////////////////////
+  ///////////////////////
+ // CtdmInventoryItem //
+///////////////////////
 
-CLASS_DECLARATION( idClass, tdmInventoryItem )
-	EVENT( EV_PostRestore,	tdmInventoryItem::Event_PostRestore )
+CLASS_DECLARATION( idClass, CtdmInventoryItem )
+	EVENT( EV_PostRestore,	CtdmInventoryItem::Event_PostRestore )
 END_CLASS
 
-tdmInventoryItem::tdmInventoryItem() {
+CtdmInventoryItem::CtdmInventoryItem() {
+	m_inventoryObjListNode.SetOwner( this );
+	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
+
 	m_inventory		= NULL;
 	m_group			= NULL;
 	m_groupedSlot	= NULL;
 	m_ungroupedSlot	= NULL;
-	m_inventoryObjListNode.SetOwner( this );
-	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventoryItem::~tdmInventoryItem() {
+CtdmInventoryItem::~CtdmInventoryItem() {
 	setInventory( NULL );
 }
 
-void tdmInventoryItem::Save( idSaveGame *savefile ) const {
+void CtdmInventoryItem::Save( idSaveGame *savefile ) const {
 	m_owner.Save( savefile );
-	savefile->WriteString( m_groupName );
 	savefile->WriteObject( m_inventory );
 	savefile->WriteInt( m_inventory->GroupToIndex( m_group ) );
 	savefile->WriteInt( m_inventory->SlotToIndex( m_groupedSlot ) );
 	savefile->WriteInt( m_inventory->SlotToIndex( m_ungroupedSlot ) );
 }
 
-void tdmInventoryItem::Restore( idRestoreGame *savefile ) {
+void CtdmInventoryItem::Restore( idRestoreGame *savefile ) {
 	m_owner.Restore( savefile );
-	savefile->ReadString( m_groupName );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
 	savefile->ReadInt( reinterpret_cast<int &>( m_groupNum ) );
 	savefile->ReadInt( reinterpret_cast<int &>( m_groupedSlotNum ) );
@@ -435,19 +357,125 @@ void tdmInventoryItem::Restore( idRestoreGame *savefile ) {
 	PostEventMS( &EV_PostRestore, 0 );
 }
 
-void tdmInventoryItem::Event_PostRestore() {
+void CtdmInventoryItem::Event_PostRestore() {
 	m_group = m_inventory->IndexToGroup( m_groupNum );
 	m_groupedSlot = m_inventory->IndexToSlot( m_groupedSlotNum, m_group );
 	m_ungroupedSlot = m_inventory->IndexToSlot( m_ungroupedSlotNum );
 }
 
-void tdmInventoryItem::setInventory( tdmInventory *inventory ) {
-	// Set to true if allocated memory should be freed upon quitting.
-	bool cancelMemory = true;
+/// Puts the item in a specific location in an inventory.
+/**	This is used to add/remove an item to/from an inventory, or move it
+ *	around within an inventory.
+ *	
+ *	When called, setInventory() moves the item into 'inventory', in the
+ *	group of 'groupName'. Its ungrouped position is immediately before or
+ *	after the slot referenced by 'ungroupedItem'. Its grouped position is
+ *	immediately before or after the slot referenced by 'groupedItem'.
+ *	
+ *	If 'groupName' is NULL and 'groupedItem' is NULL, 'groupName' is
+ *	assumed to be "". If 'groupName' is NULL, but 'groupedItem' is not
+ *	NULL, 'groupName' is assumed to refer to the same group as
+ *	'groupedItem'.
+ *	
+ *	If 'ungroupedItem' is NULL, it is assumed to reference an imaginary
+ *	slot that is (circularly) between the last and first slots of the
+ *	inventory. If 'groupedItem' is NULL, it is assumed to reference an
+ *	imaginary slot that is (circularly) between the last and first slots
+ *	of the group referenced by 'groupName'.
+ *	
+ *	The average usage of setInventory is as follows:
+ *		item.setInventory( inventory, group );
+ *	That will place 'item' in 'group' of 'inventory', at the end.
+ *
+ *	It is an error if 'ungroupedItem' is non-NULL, and not in 'inventory'.
+ *	It is an error if 'groupedItem' is non-NULL, and not in 'inventory'.
+ *	It is an error if 'groupName' and 'groupedItem' are non-NULL, and
+ *	'groupName' isn't the group of 'groupedItem'.
+ */
+void CtdmInventoryItem::setInventory(	CtdmInventory* inventory,
+										const char* groupName,
+										bool afterUngrouped,
+										CtdmInventoryItem* ungroupedItem,
+										bool afterGrouped,
+										CtdmInventoryItem* groupedItem ) {
 
-	// Make sure we're actually changing inventories.
-	if ( inventory == m_inventory ) {
+	CtdmInventorySlot* ungroupedSlot = NULL;
+	CtdmInventorySlot* groupedSlot = NULL;
+	CtdmInventoryGroup*	group;
+
+	if ( ungroupedItem != NULL && ungroupedItem->m_inventory != inventory ) {
+		gameLocal.Warning("Ungrouped target item isn't in target inventory.");
 		goto Quit;
+	}
+	if ( groupedItem != NULL && groupedItem->m_inventory != inventory ) {
+		gameLocal.Warning("Grouped target item isn't in target inventory.");
+		goto Quit;
+	}
+	if ( groupedItem != NULL && groupName != NULL &&
+		 groupedItem->m_group->m_name.Cmp( groupName ) != 0 ) {
+		gameLocal.Warning("Grouped target is in a different group.");
+		goto Quit;
+	}
+
+	// If we're moving to another (or the same) inventory, prepare the
+	// destination slots.
+	if ( inventory != NULL )
+	{
+		ungroupedSlot = new CtdmInventorySlot( this );
+		groupedSlot   = new CtdmInventorySlot( this );
+		if ( ungroupedSlot == NULL || groupedSlot == NULL ) {
+			gameLocal.Error("Unable to allocate memory for inventory slot.");
+			goto Quit;
+		}
+
+		// If the group name is omitted, default to groupedItem's group, or
+		// if that's omitted, default to "".
+		if ( groupName == NULL ) {
+			groupName = (groupedItem != NULL) ? groupedItem->m_group->m_name.c_str() : "";
+		}
+
+		// Obtain the inventory group we'll be put in.
+		group = inventory->obtainGroup( groupName );
+		if ( group == NULL ) {
+			// I'm assuming obtainGroup would have already made an error
+			// message, so this doesn't need to.
+			//gameLocal.Error("Unable to allocate memory for inventory group.");
+			goto Quit;
+		}
+
+		// Insert the ungrouped slot in the correct spot of the inventory.
+		if ( ungroupedItem != NULL ) {
+			if ( afterUngrouped ) {
+				ungroupedSlot->m_node.InsertAfter( ungroupedItem->m_ungroupedSlot->m_node );
+			} else {
+				ungroupedSlot->m_node.InsertBefore( ungroupedItem->m_ungroupedSlot->m_node );
+			}
+		} else {
+			if ( afterUngrouped ) {
+				ungroupedSlot->m_node.AddToFront( inventory->m_itemList );
+			} else {
+				ungroupedSlot->m_node.AddToEnd( inventory->m_itemList );
+			}
+		}
+		// Insert the grouped slot in the correct spot of the inventory.
+		if ( groupedItem != NULL ) {
+			if ( afterGrouped ) {
+				groupedSlot->m_node.InsertAfter( groupedItem->m_groupedSlot->m_node );
+			} else {
+				groupedSlot->m_node.InsertBefore( groupedItem->m_groupedSlot->m_node );
+			}
+		} else {
+			if ( afterGrouped ) {
+				groupedSlot->m_node.AddToFront( group->m_itemList );
+			} else {
+				groupedSlot->m_node.AddToEnd( group->m_itemList );
+			}
+		}
+
+		group->m_numItems++;
+
+		// At this point, we may potentially have two slots in a group pointing to
+		// us, but that's ok... there'll only be one slot by the end of this function.
 	}
 
 	if ( m_inventory != NULL ) {
@@ -456,9 +484,8 @@ void tdmInventoryItem::setInventory( tdmInventory *inventory ) {
 		m_groupedSlot->m_item = NULL;
 		m_ungroupedSlot->m_item = NULL;
 		m_group->m_numItems--;
-		m_inventory->checkSlot( m_groupedSlot );
-		m_inventory->checkSlot( m_ungroupedSlot );
-		m_inventory->checkGroup( m_group );
+		m_inventory->check( m_ungroupedSlot );
+		m_inventory->check( m_group, m_groupedSlot );
 
 		m_inventory		= NULL;
 		m_group			= NULL;
@@ -467,135 +494,108 @@ void tdmInventoryItem::setInventory( tdmInventory *inventory ) {
 	}
 
 	if ( inventory != NULL ) {
+		// We know that inventory, group, ungroupedSlot and groupedSlot
+		// are non-null and don't point to garbage, due to the code
+		// in the previous (inventory!=NULL) block.
+		m_inventory		= inventory;
+		m_group			= group;
+		m_ungroupedSlot	= ungroupedSlot;
+		m_groupedSlot	= groupedSlot;
 
-		// Allocate a new group slot for us.
-		m_groupedSlot = new tdmInventorySlot();
-		if ( m_groupedSlot == NULL ) {
-			gameLocal.Error("Unable to allocate memory for inventory slot.");
-			goto Quit;
-		}
-		// Allocate a new inventory slot for us.
-		m_ungroupedSlot = new tdmInventorySlot();
-		if ( m_ungroupedSlot == NULL ) {
-			gameLocal.Error("Unable to allocate memory for inventory slot.");
-			goto Quit;
-		}
-		// Obtain the inventory group we belong in.
-		m_group = inventory->obtainGroup( m_groupName );
-		if ( m_group == NULL ) {
-			// I'm assuming obtainGroup would have already made an error
-			// message, so this doesn't need to.
-			//gameLocal.Error("Unable to allocate memory for inventory group.");
-			goto Quit;
-		}
-
-		// Setup the slots.
-		m_groupedSlot->m_node.SetOwner( m_groupedSlot );
-		m_groupedSlot->m_item = this;
-		m_groupedSlot->m_numCursors = 0;
-		m_ungroupedSlot->m_node.SetOwner( m_ungroupedSlot );
-		m_ungroupedSlot->m_item = this;
-		m_ungroupedSlot->m_numCursors = 0;
-
-		// Add the slots to the inventory/group.
-		m_groupedSlot->m_node.AddToEnd( m_group->m_itemList );
-		m_ungroupedSlot->m_node.AddToEnd( inventory->m_itemList );
-		m_group->m_numItems++;
-		inventory->m_numSlots += 2;
-
-		m_inventory = inventory;
+		// Since we've gotten this far, the new slots we've created
+		// should not be cleaned up.
+		ungroupedSlot = NULL;
+		groupedSlot = NULL;
 	}
 
-	cancelMemory = false;
+	// Add message propagation code.
 
 	Quit:
-	if ( cancelMemory ) {
-		if ( m_groupedSlot != NULL ) {
-			delete m_groupedSlot;
-			m_groupedSlot = NULL;
-		}
-		if ( m_ungroupedSlot != NULL ) {
-			delete m_ungroupedSlot;
-			m_ungroupedSlot = NULL;
-		}
+	if ( ungroupedSlot != NULL ) {
+		delete ungroupedSlot;
+		ungroupedSlot = NULL;
 	}
-	return;
+	if ( groupedSlot != NULL ) {
+		delete groupedSlot;
+		groupedSlot = NULL;
+	}
 }
 
-// Consider inlining?
-tdmInventory* tdmInventoryItem::inventory() const {
-	return m_inventory;
-}
+/// Replaces one item with another.
+void CtdmInventoryItem::replaceItem( CtdmInventoryItem* item ) {
 
-void tdmInventoryItem::setGroup( const char* name ) {
-	if ( m_groupName == name ) {
+	// If we're in an inventory, exit it.
+	if ( m_inventory != NULL ) {
+		setInventory( NULL );
+	}
+
+	// Make sure there's actually work to be done.
+	if ( item == NULL || item->m_inventory == NULL ) {
 		goto Quit;
 	}
 
-	// If we're in an inventory, we'll need to change inventory groups.
-	if ( m_inventory != NULL ) {
+	// Replace the given item.
+	m_inventory		= item->m_inventory;
+	m_group			= item->m_group;
+	m_ungroupedSlot	= item->m_ungroupedSlot;
+	m_groupedSlot	= item->m_groupedSlot;
 
-		tdmInventory* inventory = m_inventory;
-		tdmInventorySlot* prevSlot = m_groupedSlot;
+	m_ungroupedSlot->m_item = this;
+	m_groupedSlot->m_item = this;
 
-		// Let the other code properly handle putting us in the correct group.
-		setInventory( NULL );
-		m_groupName = name;
-		setInventory( inventory );
+	item->m_inventory		= NULL;
+	item->m_group			= NULL;
+	item->m_ungroupedSlot	= NULL;
+	item->m_groupedSlot		= NULL;
 
-		if ( prevSlot != NULL ) {
-
-			// If there were any active cursors that were pointing to us,
-			// keep them pointing to us.
-			idLinkList<tdmInventoryCursor>* cNode = inventory->m_cursors.NextNode();
-			while ( cNode != NULL ) {
-				if ( cNode->Owner()->m_groupedSlot == prevSlot ) {
-					cNode->Owner()->selectItem( this );
-				}
-				cNode = cNode->NextNode();
-			}
-
-		}
-
-	} else {
-		m_groupName = name;
-	}
+	// Add message propagation code.
 
 	Quit:
 	return;
 }
 
 // Consider inlining?
-const char* tdmInventoryItem::group( void ) const {
-	return m_groupName.c_str();
+/// Returns the inventory this item is contained by.
+CtdmInventory* CtdmInventoryItem::inventory() const {
+	return m_inventory;
 }
 
-  ////////////////////////
- // tdmInventoryCursor //
-////////////////////////
+// Consider inlining?
+/// Gets the item's group.
+const char* CtdmInventoryItem::group() const {
+	return m_group->m_name.c_str();
+}
 
-CLASS_DECLARATION( idClass, tdmInventoryCursor )
-	EVENT( EV_PostRestore,	tdmInventoryCursor::Event_PostRestore )
+
+  /////////////////////////
+ // CtdmInventoryCursor //
+/////////////////////////
+
+CLASS_DECLARATION( idClass, CtdmInventoryCursor )
+	EVENT( EV_PostRestore,	CtdmInventoryCursor::Event_PostRestore )
 END_CLASS
 
-tdmInventoryCursor::tdmInventoryCursor() {
+CtdmInventoryCursor::CtdmInventoryCursor() {
+	m_inventoryObjListNode.SetOwner( this );
+	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
+
 	m_node.SetOwner( this );
 	m_inventory		= NULL;
 	m_group			= NULL;
 	m_groupedSlot	= NULL;
 	m_ungroupedSlot	= NULL;
-	m_inventoryObjListNode.SetOwner( this );
-	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
 
-tdmInventoryCursor::~tdmInventoryCursor() {
+CtdmInventoryCursor::~CtdmInventoryCursor() {
 	setInventory( NULL );
 }
 
-tdmInventoryCursor::tdmInventoryCursor( const tdmInventoryCursor& source ) {
+CtdmInventoryCursor::CtdmInventoryCursor( const CtdmInventoryCursor& source ) {
+	m_inventoryObjListNode.SetOwner( this );
+	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
+
 	m_node.SetOwner( this );
 	m_inventory		= NULL;
-	// The following three lines probably aren't strictly necessary.
 	m_group			= NULL;
 	m_groupedSlot	= NULL;
 	m_ungroupedSlot	= NULL;
@@ -603,7 +603,7 @@ tdmInventoryCursor::tdmInventoryCursor( const tdmInventoryCursor& source ) {
 	*this = source;
 }
 
-tdmInventoryCursor& tdmInventoryCursor::operator = ( const tdmInventoryCursor& source ) {
+CtdmInventoryCursor& CtdmInventoryCursor::operator = ( const CtdmInventoryCursor& source ) {
 	if ( this == &source ) {
 		goto Quit;
 	}
@@ -612,20 +612,19 @@ tdmInventoryCursor& tdmInventoryCursor::operator = ( const tdmInventoryCursor& s
 	copyActiveCursor( source );
 
 	// Copy over their histories.
-	tdmInventoryGroupHistory* groupHistory;
+	CtdmInventoryGroupHistory* groupHistory;
 
-	idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
+	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
 	while ( ghNode != NULL ) {
-		groupHistory = new tdmInventoryGroupHistory();
+		groupHistory = new CtdmInventoryGroupHistory();
 		if ( groupHistory == NULL ) {
 			gameLocal.Error("Unable to allocate memory for group history; group histories only partially copied.");
 			goto Quit;
 		}
 		// Copy over the group history information.
-		groupHistory->m_node.SetOwner( groupHistory );
 		groupHistory->m_group = ghNode->Owner()->m_group;
 		groupHistory->m_slot = ghNode->Owner()->m_slot;
-		groupHistory->m_slot->m_numCursors++;
+		groupHistory->m_slotNode.InsertAfter( ghNode->Owner()->m_slotNode );
 		groupHistory->m_node.AddToEnd( m_groupHistory );
 
 		ghNode = ghNode->NextNode();
@@ -635,7 +634,7 @@ tdmInventoryCursor& tdmInventoryCursor::operator = ( const tdmInventoryCursor& s
 	return *this;
 }
 
-void tdmInventoryCursor::Save( idSaveGame *savefile ) const {
+void CtdmInventoryCursor::Save( idSaveGame *savefile ) const {
 	savefile->WriteObject( m_inventory );
 	savefile->WriteInt( m_inventory->GroupToIndex( m_group ) );
 	savefile->WriteInt( m_inventory->SlotToIndex( m_groupedSlot ) );
@@ -643,7 +642,7 @@ void tdmInventoryCursor::Save( idSaveGame *savefile ) const {
 
 	// Write out our grouped histories.
 	savefile->WriteInt( this->m_groupHistory.Num() );
-	idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
+	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
 	while ( ghNode != NULL ) {
 		savefile->WriteInt( m_inventory->GroupToIndex( ghNode->Owner()->m_group ) );
 		savefile->WriteInt( m_inventory->SlotToIndex( ghNode->Owner()->m_slot ) );
@@ -652,7 +651,7 @@ void tdmInventoryCursor::Save( idSaveGame *savefile ) const {
 	}
 }
 
-void tdmInventoryCursor::Restore( idRestoreGame *savefile ) {
+void CtdmInventoryCursor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
 	if ( m_inventory != NULL ) {
 		m_node.AddToEnd( m_inventory->m_cursors );
@@ -662,13 +661,13 @@ void tdmInventoryCursor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( reinterpret_cast<int &>( m_ungroupedSlotNum ) );
 
 	unsigned int numGroupHistories;
-	tdmInventoryGroupHistory* groupHistory;
+	CtdmInventoryGroupHistory* groupHistory;
 
 	// Read in our group histories.
 	savefile->ReadInt( reinterpret_cast<int &>( numGroupHistories ) );
 	while ( numGroupHistories-- ) {
 
-		groupHistory = new tdmInventoryGroupHistory();
+		groupHistory = new CtdmInventoryGroupHistory();
 		if ( groupHistory == NULL ) {
 			gameLocal.Error("Unable to allocate memory for group history.");
 			goto Quit;
@@ -689,8 +688,11 @@ void tdmInventoryCursor::Restore( idRestoreGame *savefile ) {
 	return;
 }
 
-void tdmInventoryCursor::Event_PostRestore() {
+void CtdmInventoryCursor::Event_PostRestore() {
 	m_group = m_inventory->IndexToGroup( m_groupNum );
+	if ( m_group != NULL ) {
+		m_group->m_numCursors++;
+	}
 	m_groupedSlot = m_inventory->IndexToSlot( m_groupedSlotNum, m_group );
 	if ( m_groupedSlot != NULL ) {
 		m_groupedSlot->m_numCursors++;
@@ -700,88 +702,64 @@ void tdmInventoryCursor::Event_PostRestore() {
 		m_ungroupedSlot->m_numCursors++;
 	}
 
-	tdmInventoryGroupHistory* groupHistory;
-	idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
+	CtdmInventoryGroupHistory* groupHistory;
+	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
 	while ( ghNode != NULL ) {
 
 		groupHistory = ghNode->Owner();
 		groupHistory->m_group = m_inventory->IndexToGroup( groupHistory->m_groupNum );
 		groupHistory->m_slot = m_inventory->IndexToSlot( groupHistory->m_slotNum, groupHistory->m_group );
-		if ( groupHistory->m_slot != NULL ) {
-			groupHistory->m_slot->m_numCursors++;
-		}
+		groupHistory->m_slotNode.AddToEnd( groupHistory->m_slot->m_historyCursors );
 
 		ghNode = ghNode->NextNode();
 	}
 }
 
 /// Copies only the active cursor position, not any cursor histories.
-void tdmInventoryCursor::copyActiveCursor( const tdmInventoryCursor& source ) {
+void CtdmInventoryCursor::copyActiveCursor(	const CtdmInventoryCursor& source,
+											bool noHistory ) {
 	if ( this == &source ) {
 		goto Quit;
 	}
 
 	// Switch to the same inventory.
 	setInventory( source.m_inventory );
-	// Copy over their active cursors.
-	m_group = source.m_group;
-	m_groupedSlot = source.m_groupedSlot;
-	if ( m_groupedSlot != NULL ) {
-		m_groupedSlot->m_numCursors++;
-	}
-	m_ungroupedSlot = source.m_ungroupedSlot;
-	if ( m_ungroupedSlot != NULL ) {
-		m_ungroupedSlot->m_numCursors++;
-	}
+	// Copy over their active cursor.
+	select( source.m_group, source.m_groupedSlot, source.m_ungroupedSlot, noHistory );
 
 	Quit:
 	return;
 }
 
-void tdmInventoryCursor::setInventory( tdmInventory* inventory ) {
+void CtdmInventoryCursor::setInventory( CtdmInventory* inventory ) {
 
 	if ( m_inventory != NULL ) {
 		// Remove ourself from our current inventory.
 
-		// Remove ourself from the cursor list of the inventory,
-		// so checkGroup() doesn't try to fiddle with our data
-		// while we're busy removing it.
+		// Remove our active cursor from the inventory.
+		select( NULL, NULL, NULL );
 		m_node.Remove();
 
-		// Remove any direct cursor references.
-		if ( m_groupedSlot != NULL ) {
-			m_groupedSlot->m_numCursors--;
-			m_inventory->checkSlot( m_groupedSlot );
-		}
-		if ( m_ungroupedSlot != NULL ) {
-			m_ungroupedSlot->m_numCursors--;
-			m_inventory->checkSlot( m_ungroupedSlot );
-		}
-		if ( m_group != NULL ) {
-			m_inventory->checkGroup( m_group );
-		}
-
-		// Remove our histories.
-		idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNodeCircular();
-		tdmInventoryGroupHistory* tempGroupHistory;
-		while ( ghNode != &m_groupHistory ) {
-
+		// Remove our group histories.
+		idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
+		CtdmInventoryGroupHistory* tempGroupHistory;
+		CtdmInventoryGroup* tempGroup;
+		CtdmInventorySlot* tempSlot;
+		while ( ghNode != NULL ) {
 			tempGroupHistory = ghNode->Owner();
-			ghNode = ghNode->NextNodeCircular();
+			tempGroup = tempGroupHistory->m_group;
+			tempSlot = tempGroupHistory->m_slot;
+			ghNode = ghNode->NextNode();
 
-			tempGroupHistory->m_slot->m_numCursors--;
-			m_inventory->checkSlot( tempGroupHistory->m_slot );
-			m_inventory->checkGroup( tempGroupHistory->m_group );
 			delete tempGroupHistory;
+			m_inventory->check( tempGroup, tempSlot );
 		}
 
-		m_inventory		= NULL;
-		m_group			= NULL;
-		m_groupedSlot	= NULL;
-		m_ungroupedSlot	= NULL;
+		m_inventory = NULL;
 	}
 
 	if ( inventory != NULL ) {
+		// Add ourself to the new inventory.
 		m_node.AddToEnd( inventory->m_cursors );
 		m_inventory	= inventory;
 	}
@@ -789,19 +767,23 @@ void tdmInventoryCursor::setInventory( tdmInventory* inventory ) {
 }
 
 // Consider inlining?
-tdmInventory* tdmInventoryCursor::inventory() const {
+/// Returns the inventory this cursor points to.
+CtdmInventory* CtdmInventoryCursor::inventory() const {
 	return m_inventory;
 }
 
-const char* tdmInventoryCursor::group( bool nullOk ) const {
+// Consider inlining?
+/// Returns the name of the current inventory group. 'nullOk' causes it to return NULL instead of "" when outside any group.
+const char* CtdmInventoryCursor::group( bool nullOk ) const {
 	if ( m_group == NULL ) {
-		return nullOk ? NULL : "" ;
+		return nullOk ? NULL : "";
 	} else {
 		return m_group->m_name.c_str();
 	}
 }
 
-void tdmInventoryCursor::selectItem( tdmInventoryItem* item, bool noHistory ) {
+/// Selects a specific item. (note: cursor must be pointing to the correct inventory)
+void CtdmInventoryCursor::selectItem( CtdmInventoryItem* item, bool noHistory ) {
 	if ( m_inventory == NULL ) {
 		gameLocal.Warning("selectItem() called on an independant tdmInventoryCursor.");
 		goto Quit;
@@ -811,599 +793,619 @@ void tdmInventoryCursor::selectItem( tdmInventoryItem* item, bool noHistory ) {
 		goto Quit;
 	}
 
-	// We'll need these to clean up after we've done the move.
-	tdmInventorySlot* prevUngroupedSlot = m_ungroupedSlot;
+	select( item->m_group, item->m_groupedSlot, item->m_ungroupedSlot, noHistory );
 
-	// Move our active cursors to the item's slots.
-	m_ungroupedSlot = item->m_ungroupedSlot;
-	m_ungroupedSlot->m_numCursors++;
+	Quit:
+	return;
+}
+
+// Consider inlining?
+/// Returns the item this cursor is pointing to.
+CtdmInventoryItem* CtdmInventoryCursor::item() const {
+	// It's important that this queries the grouped slot and not the
+	// ungrouped one; the grouped slot is always up-to-date, but the
+	// ungrouped slot might not be. How is that possible, you may wonder?
+	// If you have a group history pointing to a slot that's now empty,
+	// and you switch groups to the one containing that history, the
+	// grouped slot will be changed to point to an empty slot...
+	// unfortunately, since there's no item, we have no way of knowing
+	// the associated ungrouped slot (and it might have even been
+	// cleaned up), so we are forced to leave the ungrouped slot as it
+	// is, or set it to NULL. Either way, it won't be pointing to the
+	// current item. The reason the grouped slot can't be out of
+	// date, is because ungrouped slots don't have histories, so you
+	// can only select an ungrouped slot if it contains an item, which
+	// allows the grouped slot to be updated.
+	return ( m_groupedSlot != NULL ) ? m_groupedSlot->m_item : NULL;
+}
+
+/// Iterates through an inventory.
+/**	Iterates this cursor through an inventory. The cursor scan through the
+ *	inventory in the specified order, stopping when it finds an item.
+ *	
+ *	'type' specifies the style of iteration:
+ *	
+ *		TDMINV_UNGROUPED: Iterate through the inventory while completely
+ *		ignoring grouping. The inventory is treated as circular, with an
+ *		imaginary empty slot between the last and first items.
+ *	
+ *		TDMINV_HYBRID: Iterate through the inventory with items from the
+ *		same group placed consecutively. The inventory is treated as
+ *		circular, with an imaginary slot between the last and first items.
+ *	
+ *		TDMINV_GROUP: Iterate through the groups of the inventory.
+ *	
+ *		TDMINV_ITEM: Iterate through the items of the current group. The
+ *		group is treated as circular, with an imaginary empty slot between
+ *		the last and first items.
+ *	
+ *	'backwards' indicates that the iteration should be done in the reverse
+ *	direction.
+ *	
+ *	'noHistory' indicates that the interation should have no effect on
+ *	group histories.
+ *	
+ *	'filter' is a function that can be used to skip over certain items
+ *	during the iteration. One possible use it to prevent the iteration
+ *	from landing on an imaginary empty slot. It is important to note that
+ *	the filter function should not do anything that could interfere with
+ *	the current inventory or any of its items or cursors pointing to it.
+ *	In particular, this means you probably should not let a D3script
+ *	function act as a filter-function, since a malicious scripter might
+ *	be able to cause memory corruption.
+ */
+void CtdmInventoryCursor::iterate(	EtdmInventoryIterationMethod type,
+									bool backwards,
+									bool noHistory,
+									bool (*filter)( CtdmInventoryItem* ) ) {
+	if ( m_inventory == NULL ) {
+		gameLocal.Warning("iterate() called on an independant tdmInventoryCursor.");
+		goto Quit;
+	}
+
+	switch (type) {
+		case TDMINV_UNGROUPED:
+			iterateUngrouped( backwards, noHistory, filter );
+			break;
+		case TDMINV_HYBRID:
+			iterateHybrid( backwards, noHistory, filter );
+			break;
+		case TDMINV_GROUP:
+			iterateGroup( backwards, noHistory, filter );
+			break;
+		case TDMINV_ITEM:
+			iterateItem( backwards, noHistory, filter );
+			break;
+		default:
+			gameLocal.Warning("Invalid inventory iteration type.");
+	}
+
+	Quit:
+	return;
+}
+
+/// Selects the given group and slots, updating reference counts.
+void CtdmInventoryCursor::select(	CtdmInventoryGroup* group,
+									CtdmInventorySlot* groupedSlot,
+									CtdmInventorySlot* ungroupedSlot,
+									bool noHistory ) {
+	// Since this function is a central cog of much of the cursor and hence
+	// inventory code, I figured it'd be a good place to put many assertions
+	// that I'd like to ensure.
+	assert( m_inventory != NULL );
+	// Assert correctness of current position
+	assert( m_group != NULL || (m_groupedSlot == NULL && m_ungroupedSlot == NULL) ); // (m_group == NULL) implies (m_groupedSlot == NULL && m_ungroupedSlot == NULL)
+	assert( m_ungroupedSlot == NULL || m_groupedSlot != NULL );  // (m_ungroupedSlot != NULL) implies (m_groupedSlot != NULL)
+	assert( m_group == NULL || m_group->m_node.ListHead() == &m_inventory->m_groupList ); // (m_group != NULL) implies (m_group exists in m_inventory)
+	assert( m_groupedSlot == NULL || m_groupedSlot->m_node.ListHead() == &m_group->m_itemList ); // (m_groupedSlot != NULL) implies (m_groupedSlot exists in m_group)
+	assert( m_ungroupedSlot == NULL || m_ungroupedSlot->m_node.ListHead() == &m_inventory->m_itemList ); // (m_ungroupedSlot != NULL) implies (m_ungroupedSlot exists in m_inventory)
+	// Assert correctness of new position
+	assert( group != NULL || (groupedSlot == NULL && ungroupedSlot == NULL) ); // (group == NULL) implies (groupedSlot == NULL && ungroupedSlot == NULL)
+	assert( ungroupedSlot == NULL || groupedSlot != NULL );  // (ungroupedSlot != NULL) implies (groupedSlot != NULL)
+	assert( group == NULL || group->m_node.ListHead() == &m_inventory->m_groupList ); // (group != NULL) implies (group exists in m_inventory)
+	assert( groupedSlot == NULL || groupedSlot->m_node.ListHead() == &group->m_itemList ); // (groupedSlot != NULL) implies (groupedSlot exists in group)
+	assert( ungroupedSlot == NULL || ungroupedSlot->m_node.ListHead() == &m_inventory->m_itemList ); // (ungroupedSlot != NULL) implies (ungroupedSlot exists in m_inventory)
+
+	// Change positions.
+	CtdmInventoryGroup* prevGroup			= m_group;
+	CtdmInventorySlot* prevGroupedSlot		= m_groupedSlot;
+	CtdmInventorySlot* prevUngroupedSlot	= m_ungroupedSlot;
+	m_group			= group;
+	m_groupedSlot	= groupedSlot;
+	m_ungroupedSlot	= ungroupedSlot;
+
+	// Update group histories.
+	if ( group != NULL && noHistory == false ) {
+
+		CtdmInventoryGroupHistory* groupHistory = getGroupHistory( group );
+
+		if ( groupedSlot != NULL ) {
+
+			// We're moving to a slot and need to save a history.
+
+			// Ensure that a correct history exists.
+			if ( groupHistory == NULL ) {
+				// There isn't yet a group history. Create one.
+				groupHistory = new CtdmInventoryGroupHistory( group );
+				if ( groupHistory == NULL ) {
+					gameLocal.Error("Unable to allocate memory for group history.");
+					goto Quit;
+				}
+
+				groupHistory->m_node.AddToEnd( m_groupHistory );
+			}
+
+			groupHistory->m_slot = groupedSlot;
+			groupHistory->m_slotNode.AddToEnd( groupedSlot->m_historyCursors );
+
+		} else {
+
+			// We're moving to the imaginary empty slot of some group.
+			// We should save that as a history by deleting
+			// the group history for that group.
+			if ( groupHistory != NULL ) {
+				delete groupHistory;
+			}
+
+		}
+	}
+
+	// Increment reference counts in the new position.
+	if ( group != NULL ) {
+		group->m_numCursors++;
+	}
+	if ( groupedSlot != NULL ) {
+		groupedSlot->m_numCursors++;
+	}
+	if ( ungroupedSlot != NULL ) {
+		ungroupedSlot->m_numCursors++;
+	}
+
+	// Decrement reference counts in the old position.
+	if ( prevGroup != NULL ) {
+		prevGroup->m_numCursors--;
+	}
+	if ( prevGroupedSlot != NULL ) {
+		prevGroupedSlot->m_numCursors--;
+	}
 	if ( prevUngroupedSlot != NULL ) {
 		prevUngroupedSlot->m_numCursors--;
 	}
 
-	selectGroupedSlot( item->m_group, item->m_groupedSlot, noHistory );
 
-	// Clean up the ungrouped slot our ungrouped cursor used to point at.
-	if ( prevUngroupedSlot != NULL ) {
-		m_inventory->checkSlot( prevUngroupedSlot );
-	}
-
-	Quit:
-	return;
-}
-
-tdmInventoryItem* tdmInventoryCursor::item() const {
-	// It's intentional that we're only paying attention to
-	// m_groupedSlot, and not m_ungroupedSlot.
-	if ( m_groupedSlot != NULL ) {
-		return m_groupedSlot->m_item;
-	} else {
-		return NULL;
-	}
-}
-
-void tdmInventoryCursor::next( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("next() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	idLinkList<tdmInventorySlot>* sNode;
-
-	if ( m_ungroupedSlot == NULL ) {
-
-		// Search for an ungrouped slot with an item in it.
-		sNode = m_inventory->m_itemList.NextNodeCircular();
-		while ( sNode != &m_inventory->m_itemList ) {
-			if ( sNode->Owner()->m_item != NULL ) {
-				break;
-			}
-			sNode = sNode->NextNodeCircular();
-		}
-
-	} else {
-
-		// Search for the next ungrouped slot with an item in it.
-		sNode = m_ungroupedSlot->m_node.NextNodeCircular();
-		while ( sNode != &m_ungroupedSlot->m_node ) {
-			if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-				break;
-			}
-			sNode = sNode->NextNodeCircular();
-		}
-
-	}
-	if ( sNode->Owner() == NULL || sNode->Owner()->m_item == NULL ) {
-		// Apparently the inventory is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	selectItem( sNode->Owner()->m_item, noHistory );
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::prev( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prev() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	idLinkList<tdmInventorySlot>* sNode;
-
-	if ( m_ungroupedSlot == NULL ) {
-
-		// Search for an ungrouped slot with an item in it.
-		sNode = m_inventory->m_itemList.PrevNodeCircular();
-		while ( sNode != &m_inventory->m_itemList ) {
-			if ( sNode->Owner()->m_item != NULL ) {
-				break;
-			}
-			sNode = sNode->PrevNodeCircular();
-		}
-
-	} else {
-
-		// Search for the next ungrouped slot with an item in it.
-		sNode = m_ungroupedSlot->m_node.PrevNodeCircular();
-		while ( sNode != &m_ungroupedSlot->m_node ) {
-			if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-				break;
-			}
-			sNode = sNode->PrevNodeCircular();
-		}
-
-	}
-	if ( sNode->Owner() == NULL || sNode->Owner()->m_item == NULL ) {
-		// Apparently the inventory is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	selectItem( sNode->Owner()->m_item, noHistory );
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::nextHybrid( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextHybrid() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	tdmInventoryItem* item = NULL;
-	idLinkList<tdmInventorySlot>* sNode;
-
-	if ( m_groupedSlot != NULL ) {
-
-		// If we have a group selected, search for the next item
-		// in that group.
-		sNode = m_groupedSlot->m_node.NextNodeCircular();
-		while ( sNode != &m_group->m_itemList ) {
-			if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-				item = sNode->Owner()->m_item;
-				break;
-			}
-			sNode = sNode->NextNodeCircular();
-		}
-
-	}
-
-	if ( item == NULL ) {
-		// If we haven't found an item, look for the next group
-		// that has an item.
-
-		idLinkList<tdmInventoryGroup>* gNode;
-
-		// Find
-		if ( m_group == NULL ) {
-
-			// Search for the first group with an item in it.
-			gNode = m_inventory->m_groupList.NextNodeCircular();
-			while ( gNode != &m_inventory->m_groupList ) {
-				if ( gNode->Owner()->m_numItems != 0 ) {
-					break;
-				}
-				gNode = gNode->NextNodeCircular();
-			}
-
-		} else {
-
-			// Search for the next group with an item in it.
-			gNode = m_group->m_node.NextNodeCircular();
-			while ( gNode != &m_group->m_node ) {
-				if ( gNode->Owner() != NULL && gNode->Owner()->m_numItems != 0 ) {
-					break;
-				}
-				gNode = gNode->NextNodeCircular();
-			}
-
-		}
-		if ( gNode->Owner() == NULL || gNode->Owner()->m_numItems == 0 ) {
-			// Apparently the inventory is empty. Let's just stay where we are.
-			goto Quit;
-		}
-
-		// Search for the item in our group.
-		sNode = gNode->Owner()->m_itemList.NextNodeCircular();
-		while ( sNode != &gNode->Owner()->m_itemList ) {
-			if ( sNode->Owner()->m_item != NULL ) {
-				item = sNode->Owner()->m_item;
-				break;
-			}
-			sNode = sNode->NextNodeCircular();
-		}
-
-		if ( item == NULL ) {
-			// Shouldn't be possible :P
-			gameLocal.Error("Corrupt inventory detected.");
-			goto Quit;
-		}
-	}
-
-	selectItem( item, noHistory );
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::prevHybrid( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prevHybrid() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	tdmInventoryItem* item = NULL;
-	idLinkList<tdmInventorySlot>* sNode;
-
-	if ( m_groupedSlot != NULL ) {
-
-		// If we have a group selected, search for the next item
-		// in that group.
-		sNode = m_groupedSlot->m_node.PrevNodeCircular();
-		while ( sNode != &m_group->m_itemList ) {
-			if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-				item = sNode->Owner()->m_item;
-				break;
-			}
-			sNode = sNode->PrevNodeCircular();
-		}
-
-	}
-
-	if ( item == NULL ) {
-		// If we haven't found an item, look for the next group
-		// that has an item.
-
-		idLinkList<tdmInventoryGroup>* gNode;
-
-		// Find
-		if ( m_group == NULL ) {
-
-			// Search for the first group with an item in it.
-			gNode = m_inventory->m_groupList.PrevNodeCircular();
-			while ( gNode != &m_inventory->m_groupList ) {
-				if ( gNode->Owner()->m_numItems != 0 ) {
-					break;
-				}
-				gNode = gNode->PrevNodeCircular();
-			}
-
-		} else {
-
-			// Search for the next group with an item in it.
-			gNode = m_group->m_node.PrevNodeCircular();
-			while ( gNode != &m_group->m_node ) {
-				if ( gNode->Owner() != NULL && gNode->Owner()->m_numItems != 0 ) {
-					break;
-				}
-				gNode = gNode->PrevNodeCircular();
-			}
-
-		}
-		if ( gNode->Owner() == NULL || gNode->Owner()->m_numItems == 0 ) {
-			// Apparently the inventory is empty. Let's just stay where we are.
-			goto Quit;
-		}
-
-		// Search for the first item in the group.
-		sNode = gNode->Owner()->m_itemList.PrevNodeCircular();
-		while ( sNode != &gNode->Owner()->m_itemList ) {
-			if ( sNode->Owner()->m_item != NULL ) {
-				item = sNode->Owner()->m_item;
-				break;
-			}
-			sNode = sNode->PrevNodeCircular();
-		}
-
-		if ( item == NULL ) {
-			// Shouldn't be possible :P
-			gameLocal.Error("Corrupt inventory detected.");
-			goto Quit;
-		}
-	}
-
-	selectItem( item, noHistory );
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::nextGroup( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextGroup() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	idLinkList<tdmInventoryGroup>* gNode;
-	if ( m_group == NULL ) {
-
-		// Search for the first group with an item in it.
-		gNode = m_inventory->m_groupList.NextNodeCircular();
-		while ( gNode != &m_inventory->m_groupList ) {
-			if ( gNode->Owner()->m_numItems != 0 ) {
-				break;
-			}
-			gNode = gNode->NextNodeCircular();
-		}
-
-	} else {
-
-		// Search for the next group with an item in it.
-		gNode = m_group->m_node.NextNodeCircular();
-		while ( gNode != &m_group->m_node ) {
-			if ( gNode->Owner() != NULL &&
-				 gNode->Owner()->m_numItems != 0 ) {
-				break;
-			}
-			gNode = gNode->NextNodeCircular();
-		}
-
-	}
-	if ( gNode->Owner() == NULL || gNode->Owner()->m_numItems == 0 ) {
-		// Apparently the inventory is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	tdmInventoryGroupHistory* groupHistory = getGroupHistory( gNode->Owner() );
-	if ( groupHistory == NULL ) {
-
-		tdmInventorySlot* slot;
-
-		// Is there a blank slot at the start of the group?
-		if ( gNode->Owner()->m_itemList.NextNode() == NULL ||
-			 gNode->Owner()->m_itemList.NextNode()->Owner()->m_item != NULL ) {
-
-			// No, add a new blank slot at the beginning of the group.
-			slot = new tdmInventorySlot();
-			if ( slot == NULL ) {
-				gameLocal.Error("Unable to allocate memory for inventory slot.");
-				goto Quit;
-			}
-
-			// Setup the new slot.
-			slot->m_node.SetOwner( slot );
-			slot->m_item = NULL;
-			slot->m_numCursors = 0;
-			// Add the new slot to the start of the group.
-			slot->m_node.AddToFront( gNode->Owner()->m_itemList );
-			m_inventory->m_numSlots++;
-
-		} else {
-
-			// Yes, move our grouped cursor to that blank slot.
-			slot = gNode->Owner()->m_itemList.NextNode()->Owner();
-
-		}
-		selectGroupedSlot( gNode->Owner(), slot, noHistory );
-
-	} else {
-
-		// Set our grouped slot to its last value in this group.
-
-		tdmInventorySlot* prevSlot = m_groupedSlot;
-		tdmInventoryGroup* prevGroup = m_group;
-
-		m_group = groupHistory->m_group;
-		m_groupedSlot = groupHistory->m_slot;
-		m_groupedSlot->m_numCursors++;
-		if ( prevSlot != NULL ) {
-			prevSlot->m_numCursors--;
-			m_inventory->checkSlot( prevSlot );
-			m_inventory->checkGroup( prevGroup );
-		}
-	}
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::prevGroup( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("prevGroup() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	idLinkList<tdmInventoryGroup>* gNode;
-	if ( m_group == NULL ) {
-
-		// Search for the first group with an item in it.
-		gNode = m_inventory->m_groupList.PrevNodeCircular();
-		while ( gNode != &m_inventory->m_groupList ) {
-			if ( gNode->Owner()->m_numItems != 0 ) {
-				break;
-			}
-			gNode = gNode->PrevNodeCircular();
-		}
-
-	} else {
-
-		// Search for the next group with an item in it.
-		gNode = m_group->m_node.PrevNodeCircular();
-		while ( gNode != &m_group->m_node ) {
-			if ( gNode->Owner() != NULL &&
-				 gNode->Owner()->m_numItems != 0 ) {
-				break;
-			}
-			gNode = gNode->PrevNodeCircular();
-		}
-
-	}
-	if ( gNode->Owner() == NULL || gNode->Owner()->m_numItems == 0 ) {
-		// Apparently the inventory is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	tdmInventoryGroupHistory* groupHistory = getGroupHistory( gNode->Owner() );
-	if ( groupHistory == NULL ) {
-
-		// Note: This part is intentionally assymetrical to nextGroup.
-		// Regardless of whether you're moving forward or backwards through
-		// groups, you should start out at the front of a group you've never
-		// been to before.
-
-		tdmInventorySlot* slot;
-
-		// Is there a blank slot at the start of the group?
-		if ( gNode->Owner()->m_itemList.NextNode() == NULL ||
-			 gNode->Owner()->m_itemList.NextNode()->Owner()->m_item != NULL ) {
-
-			// No, add a new blank slot at the beginning of the group.
-			slot = new tdmInventorySlot();
-			if ( slot == NULL ) {
-				gameLocal.Error("Unable to allocate memory for inventory slot.");
-				goto Quit;
-			}
-
-			// Setup the new slot.
-			slot->m_node.SetOwner( slot );
-			slot->m_item = NULL;
-			slot->m_numCursors = 0;
-
-			// Add the new slot to the start of the group.
-			slot->m_node.AddToFront( gNode->Owner()->m_itemList );
-			m_inventory->m_numSlots++;
-
-		} else {
-
-			// Yes, move our grouped cursor to that blank slot.
-			slot = gNode->Owner()->m_itemList.NextNode()->Owner();
-
-		}
-		selectGroupedSlot( gNode->Owner(), slot, noHistory );
-
-	} else {
-
-		// Set our grouped slot to its last value in this group.
-
-		tdmInventorySlot* prevSlot = m_groupedSlot;
-		tdmInventoryGroup* prevGroup = m_group;
-
-		m_group = groupHistory->m_group;
-		m_groupedSlot = groupHistory->m_slot;
-		m_groupedSlot->m_numCursors++;
-		if ( prevSlot != NULL ) {
-			prevSlot->m_numCursors--;
-			m_inventory->checkSlot( prevSlot );
-			m_inventory->checkGroup( prevGroup );
-		}
-	}
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::nextItem( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	if ( m_groupedSlot == NULL ) {
-		// We're not in an inventory group so this call was meaningless.
-		goto Quit;
-	}
-
-	// Search for the next item in our group.
-	idLinkList<tdmInventorySlot>* sNode = m_groupedSlot->m_node.NextNodeCircular();
-	while ( sNode != &m_groupedSlot->m_node ) {
-		if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-			break;
-		}
-		sNode = sNode->NextNodeCircular();
-	}
-	if ( sNode->Owner() == NULL || sNode->Owner()->m_item == NULL ) {
-		// Apparently the group is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	selectItem( sNode->Owner()->m_item, noHistory );
-
-	Quit:
-	return;
-}
-
-void tdmInventoryCursor::prevItem( bool noHistory ) {
-	if ( m_inventory == NULL ) {
-		gameLocal.Warning("nextItem() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	if ( m_groupedSlot == NULL ) {
-		// We're not in an inventory group so this call was meaningless.
-		goto Quit;
-	}
-
-	// Search for the next item in our group.
-	idLinkList<tdmInventorySlot>* sNode = m_groupedSlot->m_node.PrevNodeCircular();
-	while ( sNode != &m_groupedSlot->m_node ) {
-		if ( sNode->Owner() != NULL && sNode->Owner()->m_item != NULL ) {
-			break;
-		}
-		sNode = sNode->PrevNodeCircular();
-	}
-	if ( sNode->Owner() == NULL || sNode->Owner()->m_item == NULL ) {
-		// Apparently the group is empty. Let's just stay where we are.
-		goto Quit;
-	}
-
-	selectItem( sNode->Owner()->m_item, noHistory );
-
-	Quit:
-	return;
-}
-
-tdmInventoryGroupHistory* tdmInventoryCursor::getGroupHistory( tdmInventoryGroup* group ) const {
-	// Find the requested node. Maybe return NULL.
-	idLinkList<tdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNodeCircular();
-	while ( ghNode != &m_groupHistory && ghNode->Owner()->m_group != group ) {
-		ghNode = ghNode->NextNodeCircular();
-	}
-	return ghNode->Owner();
-}
-
-/// Selects the grouped slot, updating history, etc.
-void tdmInventoryCursor::selectGroupedSlot( tdmInventoryGroup* group, tdmInventorySlot* slot, bool noHistory ) {
-	// We'll need these to clean up after we've done the move.
-	tdmInventorySlot* prevGroupedSlot = m_groupedSlot;
-	tdmInventoryGroup* prevGroup = m_group;
-
-	// Move our active grouped cursor to the slot.
-	m_groupedSlot = slot;
-	m_groupedSlot->m_numCursors++;
-	if ( prevGroupedSlot != NULL ) {
-		prevGroupedSlot->m_numCursors--;
-	}
-	m_group = group;
-
-	// Setting these to null shouldn't be necessary.
-	tdmInventoryGroupHistory* groupHistory = NULL;
-	tdmInventorySlot* prevGroupHistorySlot = NULL;
-	if ( noHistory == false ) {
-		// Update our history.
-
-		// Find or create the associated group history.
-		groupHistory = getGroupHistory( group );
-		if ( groupHistory == NULL ) {
-			groupHistory = new tdmInventoryGroupHistory();
-			if ( groupHistory == NULL ) {
-				gameLocal.Error("Unable to allocate memory for group history.");
-				goto Quit;
-			}
-			groupHistory->m_node.SetOwner( groupHistory );
-			groupHistory->m_group = group;
-			groupHistory->m_slot = NULL;
-
-			groupHistory->m_node.AddToEnd( m_groupHistory );
-		}
-
-		prevGroupHistorySlot = groupHistory->m_slot;
-
-		// Move the group history's cursor to the new slot.
-		groupHistory->m_slot = m_groupedSlot;
-		groupHistory->m_slot->m_numCursors++;
-		if ( prevGroupHistorySlot != NULL ) {
-			prevGroupHistorySlot->m_numCursors--;
-		}
-	}
-
-	// Clean up the slots and groups our cursors used to point at.
-	if ( prevGroupedSlot != NULL ) {
-		m_inventory->checkSlot( prevGroupedSlot );
-	}
-	if ( noHistory == false &&
-		 prevGroupHistorySlot != NULL ) {
-		m_inventory->checkSlot( prevGroupHistorySlot );
-	}
+	// Perform cleanup.
 	if ( prevGroup != NULL ) {
-		m_inventory->checkGroup( prevGroup );
+		m_inventory->check( prevGroup, prevGroupedSlot );
 	}
-	if ( noHistory == false &&
-		 groupHistory->m_group != NULL && groupHistory->m_group != prevGroup ) {
-		m_inventory->checkGroup( groupHistory->m_group );
+	if ( prevUngroupedSlot != NULL ) {
+		m_inventory->check( prevUngroupedSlot );
 	}
 
 	Quit:
 	return;
+}
+
+/// Find a group history, if it exists. May return NULL.
+CtdmInventoryGroupHistory* CtdmInventoryCursor::getGroupHistory( CtdmInventoryGroup* group ) const {
+	// Find the requested node. Maybe return NULL.
+	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
+	while ( ghNode != NULL && ghNode->Owner()->m_group != group ) {
+		ghNode = ghNode->NextNode();
+	}
+	return (ghNode != NULL) ? ghNode->Owner() : NULL;
+}
+
+/// Iterates without regard to groups.
+void CtdmInventoryCursor::iterateUngrouped( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) ) {
+	// The slot we're currently scanning. Initialize it to our current
+	// ungrouped position. Use the head of the linked list to signify
+	// the imaginary empty slot.
+	idLinkList<CtdmInventorySlot>* sNode;
+	if ( m_ungroupedSlot != NULL ) {
+		sNode = &m_ungroupedSlot->m_node; // current slot
+	} else {
+		sNode = &m_inventory->m_itemList; // imaginary empty slot
+	}
+
+	while ( true ) {
+
+		// Step to the next slot.
+		sNode = backwards ? sNode->PrevNode() : sNode->NextNode();
+		if ( sNode == NULL ) {
+			sNode = &m_inventory->m_itemList;
+		}
+
+		// If we've passed full-circle through the inventory, we need
+		// to just quit and not iterate at all.
+		if ( sNode->Owner() == m_ungroupedSlot ) {
+			break;
+		}
+
+		// If we're in an empty slot, but it's not the imaginary empty slot,
+		// then we need to continue scanning.
+		if ( sNode->Owner() != NULL && sNode->Owner()->m_item == NULL ) {
+			continue;
+		}
+
+		// Did the user supply an item filter?
+		if ( filter != NULL ) {
+
+			// Construct the value we'll be sending to the filter.
+			// (NULL signifies imaginary empty slot)
+			CtdmInventoryItem* item = NULL;
+			if ( sNode->Owner() != NULL ) {
+				item = sNode->Owner()->m_item;
+			}
+
+			// If the item filter didn't like the item, then we need to
+			// continue scanning.
+			if ( (*filter)( item ) == false ) {
+				continue;
+			}
+		}
+
+		// Ok, we've found a slot we can iterate to!
+		if ( sNode->Owner() != NULL ) {
+			selectItem( sNode->Owner()->m_item, noHistory );
+		} else {
+			select( NULL, NULL, NULL, noHistory );
+		}
+		break;
+	}
+}
+
+/// Iterates with items grouped together.
+void CtdmInventoryCursor::iterateHybrid( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) ) {
+	// The group and slot we're currently scanning. Initialize it to our
+	// current grouped position. Use the head of the linked list for groups
+	// groups to signify the imaginary empty slot.
+	idLinkList<CtdmInventoryGroup>* gNode;
+	idLinkList<CtdmInventorySlot>* sNode;
+	if ( m_groupedSlot != NULL ) {
+		// current grouped position
+		gNode = &m_group->m_node;
+		sNode = &m_groupedSlot->m_node;
+	} else {
+		// imaginary empty slot
+		gNode = &m_inventory->m_groupList;
+		// sNode = doesn't matter
+	}
+
+	// There are 3 possible states:
+	// Imaginary empty slot:
+	//   gNode = &m_inventory->m_groupList
+	//   sNode = *
+	//   Used for when the cursor is at the imaginary empty slot.
+	// At a group:
+	//   gNode = &group->m_node
+	//   sNode = &group->m_itemList
+	//   A temporary state used to check over a group when we don't yet care about any specific slot.
+	// At a specific slot:
+	//   gNode = &group->m_node
+	//   sNode = &slot->m_node
+	//   Used for when the cursor is pointing to a specific slot.
+
+	while ( true ) {
+
+		if ( gNode->Owner() != NULL ) {
+
+			// We're entering/in a group.
+
+			// If we're entering the same empty group we started at,
+			// this is our only chance to catch it.
+			if ( sNode->Owner() == NULL &&
+				gNode->Owner()->m_numItems == 0 &&
+				gNode->Owner() == m_group &&
+				m_groupedSlot != NULL) {
+				// We've gone full-circle and need to quit.
+				break;
+			}
+
+			// Move onto the first/next slot. (may set sNode to NULL)
+			sNode = backwards ? sNode->PrevNode() : sNode->NextNode();
+			// Do we need to go onto the next group?
+			if ( sNode == NULL || gNode->Owner()->m_numItems == 0 ) {
+
+				gNode = backwards ? gNode->PrevNode() : gNode->NextNode();
+				if ( gNode == NULL ) {
+					gNode = &m_inventory->m_groupList; // imaginary empty slot
+					// We need to fall down to the rest of the code, so the
+					// cursor can potentially iterate to this spot.
+				} else {
+					sNode = &gNode->Owner()->m_itemList; // entering new group
+					// We're entering a new group so we have nothing to check for. Loop back.
+					continue;
+				}
+			}
+
+		} else {
+
+			// We're currently at the imaginary empty slot.
+
+			// Go to the first group.
+			gNode = backwards ? gNode->PrevNode() : gNode->NextNode();
+			// If there's nothing in the inventory, then we need to quit.
+			if ( gNode == NULL ) {
+				break;
+			}
+			sNode = &gNode->Owner()->m_itemList;
+
+			// We're entering a new group so we have nothing to check for. Loop back.
+			continue;
+		}
+
+		// It shouldn't be possible for the execution to reach this point
+		// while in an "entering new group" state.
+		assert( gNode->Owner() == NULL || sNode != &gNode->Owner()->m_itemList );
+
+		if ( gNode->Owner() == NULL ) {
+			// Have we looped back to the imaginary empty slot?
+			if (m_groupedSlot == NULL) {
+				// We've gone full-circle and need to quit.
+				break;
+			}
+		} else if ( sNode->Owner() == m_groupedSlot ) {
+			// We've gone full-circle and need to quit.
+			break;
+		}
+
+		// If we're in an empty slot, but it's not the imaginary empty slot,
+		// then we need to continue scanning.
+		if ( gNode->Owner() != NULL && sNode->Owner()->m_item == NULL ) {
+			continue;
+		}
+
+		// Did the user supply an item filter?
+		if ( filter != NULL ) {
+
+			// Construct the value we'll be sending to the filter.
+			// (NULL signifies imaginary empty slot)
+			CtdmInventoryItem* item = NULL;
+			if ( gNode->Owner() != NULL ) {
+				item = sNode->Owner()->m_item;
+			}
+
+			// If the item filter didn't like the item, then we need to
+			// continue scanning.
+			if ( (*filter)( item ) == false ) {
+				continue;
+			}
+		}
+
+		// Ok, we've found a slot we can iterate to!
+		if ( gNode->Owner() != NULL ) {
+			selectItem( sNode->Owner()->m_item, noHistory );
+		} else {
+			select( NULL, NULL, NULL, noHistory );
+		}
+		break;
+	}
+}
+
+/// Iterates through the list of groups.
+void CtdmInventoryCursor::iterateGroup( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) ) {
+	// Set gNode to the node of our current group.
+	idLinkList<CtdmInventoryGroup>* gNode;
+	if ( m_group != NULL ) {
+		gNode = &m_group->m_node; // some group
+	} else {
+		gNode = &m_inventory->m_groupList; // no group
+	}
+
+	while ( true ) {
+
+		// Step to the next slot.
+		gNode = backwards ? gNode->PrevNode() : gNode->NextNode();
+		if ( gNode == NULL ) {
+			gNode = &m_inventory->m_groupList;
+		}
+
+		// If we've passed full-circle through the inventory we need
+		// to quit.
+		if ( gNode->Owner() == m_group ) {
+			// If there are no items in the starting group, then
+			// there are no items in the inventory, so we should
+			// unselect everything.
+			if ( m_group->m_numItems == 0 ) {
+				select( NULL, NULL, NULL, noHistory );
+			}
+			break;
+		}
+
+		// If we're in an empty group or none at all, then we need to
+		// continue scanning.
+		if ( gNode->Owner() == NULL || gNode->Owner()->m_numItems == 0 ) {
+			continue;
+		}
+
+		// Ok, we've found a group we can iterate to!
+
+		// Do we have a group history for it?
+		CtdmInventoryGroupHistory* groupHistory = getGroupHistory( gNode->Owner() );
+		if ( groupHistory != NULL ) {
+
+			// Yes, we have a group history.
+
+			// Set our grouped slot to its last value in this group.
+			select( gNode->Owner(), groupHistory->m_slot, NULL );
+
+		} else {
+
+			// No, we don't have a group history.
+
+			select( NULL, NULL, NULL, noHistory );
+		}
+
+		break;
+	}
+}
+
+/// Iterates through the items in a group.
+void CtdmInventoryCursor::iterateItem( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) ) {
+	// Make sure we're in a group, or we can't iterate.
+	if ( m_group == NULL ) {
+		goto Quit;
+	}
+
+	// The slot we're currently scanning. Initialize it to our current
+	// ungrouped position. Use the head of the linked list to signify
+	// the imaginary empty slot.
+	idLinkList<CtdmInventorySlot>* sNode;
+	if ( m_groupedSlot != NULL ) {
+		sNode = &m_groupedSlot->m_node; // current slot
+	} else {
+		sNode = &m_group->m_itemList; // imaginary empty slot
+	}
+
+	while ( true ) {
+
+		// Step to the next slot.
+		sNode = backwards ? sNode->PrevNode() : sNode->NextNode();
+		if ( sNode == NULL ) {
+			sNode = &m_group->m_itemList;
+		}
+
+		// If we've passed full-circle through the inventory, we need
+		// to just quit and not iterate at all.
+		if ( sNode->Owner() == m_groupedSlot ) {
+			break;
+		}
+
+		// If we're in an empty slot, but it's not the imaginary empty slot,
+		// then we need to continue scanning.
+		if ( sNode->Owner() != NULL && sNode->Owner()->m_item == NULL ) {
+			continue;
+		}
+
+		// Did the user supply an item filter?
+		if ( filter != NULL ) {
+
+			// Construct the value we'll be sending to the filter.
+			// (NULL signifies imaginary empty slot)
+			CtdmInventoryItem* item = NULL;
+			if ( sNode->Owner() != NULL ) {
+				item = sNode->Owner()->m_item;
+			}
+
+			// If the item filter didn't like the item, then we need to
+			// continue scanning.
+			if ( (*filter)( item ) == false ) {
+				continue;
+			}
+		}
+
+		// Ok, we've found a slot we can iterate to!
+		if ( sNode->Owner() != NULL ) {
+			// Select the item at our slot.
+			selectItem( sNode->Owner()->m_item, noHistory );
+		} else {
+			select( NULL, NULL, NULL, noHistory );
+		}
+		break;
+	}
+
+	Quit:
+	return;
+}
+
+
+  ////////////////////////
+ // CtdmInventoryGroup //
+////////////////////////
+
+#ifdef TDMINVENTORY_DEBUG
+int CtdmInventoryGroup::numGroups = 0;
+#endif
+
+CtdmInventoryGroup::CtdmInventoryGroup( const char* name ) {
+	m_node.SetOwner( this );
+	m_name = name;
+	m_numItems = 0;
+	m_numCursors = 0;
+
+#ifdef TDMINVENTORY_DEBUG
+	numGroups++;
+#endif
+}
+
+CtdmInventoryGroup::~CtdmInventoryGroup() {
+	// A group should never be removed if it has items or cursors.
+	// If it is, it's caused by a bug.
+	assert( m_numItems == 0 );
+	assert( m_numCursors == 0 );
+
+	// If there's still history cursors pointing to us, delete them.
+	idLinkList<CtdmInventorySlot>* sNode = m_itemList.NextNode();
+	CtdmInventorySlot* slot;
+	while ( sNode != NULL ) {
+		slot = sNode->Owner();
+		sNode = sNode->NextNode();
+
+		assert( slot->m_item == NULL );
+		assert( slot->m_numCursors == 0 );
+
+		// Go through the group histories pointing to this slot and delete them.
+		idLinkList<CtdmInventoryGroupHistory>* ghNode = slot->m_historyCursors.NextNode();
+		CtdmInventoryGroupHistory* groupHistory;
+		while ( ghNode != NULL ) {
+			groupHistory = ghNode->Owner();
+			ghNode = ghNode->NextNode();
+
+			assert( groupHistory->m_group == this );
+			assert( groupHistory->m_slot == slot );
+
+			delete groupHistory;
+		}
+
+		delete slot;
+	}
+
+#ifdef TDMINVENTORY_DEBUG
+	numGroups--;
+#endif
+}
+
+#ifdef TDMINVENTORY_DEBUG
+int CtdmInventoryGroup::groups() {
+	return numGroups;
+}
+#endif
+
+  ///////////////////////
+ // CtdmInventorySlot //
+///////////////////////
+
+#ifdef TDMINVENTORY_DEBUG
+int CtdmInventorySlot::numSlots = 0;
+#endif
+
+CtdmInventorySlot::CtdmInventorySlot( CtdmInventoryItem* item ) {
+	m_node.SetOwner( this );
+	m_item = item;
+	m_numCursors = 0;
+
+#ifdef TDMINVENTORY_DEBUG
+	numSlots++;
+#endif
+}
+
+#ifdef TDMINVENTORY_DEBUG
+CtdmInventorySlot::~CtdmInventorySlot() {
+	numSlots--;
+}
+
+int CtdmInventorySlot::slots() {
+	return numSlots;
+}
+#endif
+
+  ///////////////////////////////
+ // CtdmInventoryGroupHistory //
+///////////////////////////////
+
+CtdmInventoryGroupHistory::CtdmInventoryGroupHistory( CtdmInventoryGroup* group ) {
+	m_node.SetOwner( this );
+	m_slotNode.SetOwner( this );
+	m_group = group;
+	m_slot = NULL;
 }

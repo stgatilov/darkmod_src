@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2006/07/25 01:40:35  gildoran
+ * Completely revamped inventory code.
+ *
  * Revision 1.36  2006/07/19 16:15:23  sparhawk
  * peer_highlight added
  *
@@ -224,17 +227,20 @@ public:
 	idList<signal_t> signal[ NUM_SIGNALS ];
 };
 
-// Cursor flags
+// Inventory-related flags.
 enum {
-	ECURSOR_ALL				= -1,
-	ECURSOR_NOHISTORY		=  1,		// Don't set cursor history.
-	ECURSOR_NEXT			=  0,		// Iterate forwards. (default)
-	ECURSOR_PREV			=  2,		// Iterate backwards.
-	ECURSOR_UNGROUPED		=  0,		// Iterate through the entire inventory. (default)
-	ECURSOR_HYBRID			=  4,		// Iterate through the entire inventory, ordered based on groups.
-	ECURSOR_GROUP			=  8,		// Iterate through the groups.
-	ECURSOR_ITEM			= 12,		// Iterate through the items in the current group.
+	EINV_AFTER_UNGROUPED	=  1,	// Used by Event_SetInvAdvanced()
+	EINV_AFTER_GROUPED		=  2,	// Used by Event_SetInvAdvanced()
+	EINV_UNGROUPED			=  0,	// Iterate through the entire inventory. (default)
+	EINV_HYBRID				=  1,	// Iterate through the entire inventory, ordered based on groups.
+	EINV_GROUP				=  2,	// Iterate through the groups.
+	EINV_ITEM				=  3,	// Iterate through the items in the current group.
+	EINV_PREV				=  4,	// Iterate backwards.
+	EINV_NOHISTORY			=  8,	// Iterate without setting group histories.
+	EINV_NONULL				= 16,	// Don't select the imaginary empty slot.
 };
+
+
 
 class idEntity : public idClass {
 public:
@@ -656,11 +662,11 @@ public:
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
 	/// Returns (and creates if necessary) this entity's inventory.
-	tdmInventory*		Inventory();
+	CtdmInventory*			Inventory();
 	/// Returns (and creates if necessary) this entity's inventory item.
-	tdmInventoryItem*	InventoryItem();
+	CtdmInventoryItem*		InventoryItem();
 	/// Returns (and creates if necessary) this entity's inventory cursor.
-	tdmInventoryCursor*	InventoryCursor();
+	CtdmInventoryCursor*	InventoryCursor();
 
 	/**
 	 * Generic function for calling a scriptfunction with arbitrary arguments.
@@ -757,11 +763,11 @@ private:
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
 
 	/// A pointer to our inventory.
-	tdmInventory*		m_inventory;
+	CtdmInventory*			m_inventory;
 	/// A pointer to our item, so that we can be added/removed to/from inventories.
-	tdmInventoryItem*	m_inventoryItem;
+	CtdmInventoryItem*		m_inventoryItem;
 	/// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
-	tdmInventoryCursor*	m_inventoryCursor;
+	CtdmInventoryCursor*	m_inventoryCursor;
 
 private:
 	void					FixupLocalizedStrings();
@@ -852,14 +858,15 @@ private:
 
 	void					Event_LoadExternalData( const char *mdFile, const char* prefix );
 
-	void					Event_MoveToInventory( idEntity* ent );
-	void					Event_IterateInventory( idEntity* lastMatch );
-	void					Event_GetContainer();
+	void					Event_SetInventory( idEntity* ent );
+	void					Event_SetInvAdvanced( idEntity* ent, const char* group, int flags, idEntity* entU, idEntity* entG );
+	void					Event_GetInventory();
+	void					Event_GetNextItem( idEntity* lastMatch );
 	void					Event_SetCursorInventory( idEntity* ent );
 	void					Event_GetCursorInventory();
-	void					Event_CursorItem();
-	void					Event_CursorSelectItem( idEntity* ent, int type );
-	void					Event_CopyCursor( idEntity* ent, int type );
+	void					Event_SetCursorItem( idEntity* ent, int noHistory );
+	void					Event_GetCursorItem();
+	void					Event_CopyCursor( idEntity* ent, int noHistory );
 	void					Event_IterateCursor( int type );
 
 	void					StimAdd(int Type, float Radius);
