@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/07/25 06:00:05  ishtvan
+ * enemies no longer considered an obstacle
+ *
  * Revision 1.2  2006/06/21 13:04:47  sparhawk
  * Added version tracking per cpp module
  *
@@ -300,7 +303,8 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 GetObstacles
 ============
 */
-int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, idBounds &clipBounds ) {
+int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, idBounds &clipBounds ) 
+{
 	int i, j, numListedClipModels, numObstacles, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
 	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
 	float stepHeight, headHeight, blockingScale, min, max;
@@ -312,6 +316,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	idEntity *obEnt;
 	idClipModel *clipModel;
 	idClipModel *clipModelList[ MAX_GENTITIES ];
+	// TDM: Store our team.  const correctness in idPhysics SUCKS!!!
+//	int team = static_cast<const idActor *>( const_cast<idPhysics_Base *>(static_cast<const idPhysics_Base *>(physics))->GetSelf() )->team;
+	int team = static_cast<idActor *>( const_cast<idPhysics *>(physics)->GetSelf() )->team;
 
 	numObstacles = 0;
 
@@ -339,10 +346,17 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			continue;
 		}
 
-		if ( obEnt->IsType( idActor::Type ) ) {
+		if ( obEnt->IsType( idActor::Type ) ) 
+		{
 			obPhys = obEnt->GetPhysics();
 			// ignore myself, my enemy, and dead bodies
-			if ( ( obPhys == physics ) || ( obEnt == ignore ) || ( obEnt->health <= 0 ) ) {
+			// TDM: Also ignore ALL enemies
+			if	( 
+				( obPhys == physics ) || ( obEnt == ignore ) 
+				|| ( obEnt->health <= 0 ) 
+				|| gameLocal.m_RelationsManager->IsEnemy( team, static_cast<idActor *>(obEnt)->team )
+				)
+			{
 				continue;
 			}
 			// if the actor is moving
