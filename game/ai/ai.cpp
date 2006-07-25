@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/07/25 06:00:40  ishtvan
+ * added tactile alert to PushWithAF
+ *
  * Revision 1.28  2006/07/19 05:14:28  ishtvan
  * AI no longer check for tactile alerts when they're unconscious
  *
@@ -4843,7 +4846,23 @@ void idAI::PushWithAF( void ) {
 				ent->GetPhysics()->SetLinearVelocity( 100.0f * vel, touchList[ i ].touchedClipModel->GetId() );
 			}
 
-
+			if( ent->IsType(idActor::Type) )
+			{
+				if( ent->IsType(idPlayer::Type) )
+				{
+					// aesthetics: Dont react to dead player?
+					if( ent->health > 0 )
+						HadTactile( static_cast<idActor *>(ent) );
+				}
+				else if( ent->IsType(idAI::Type) && (ent->health > 0) && !static_cast<idAI *>(ent)->AI_KNOCKEDOUT )
+				{
+					HadTactile( static_cast<idActor *>(ent) );
+				}
+				else
+				{
+					// TODO: Touched a dead or unconscious body, should issue a body alert
+				}
+			}
 		}
 	}
 }
