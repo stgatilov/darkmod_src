@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/07/25 05:59:02  ishtvan
+ * removed some annoying const correctness on GetSelf
+ *
  * Revision 1.2  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -46,7 +49,7 @@ public:	// common physics interface
 
 	void					SetSelf( idEntity *e );
 #ifdef MOD_WATERPHYSICS
-	inline const idEntity  *GetSelf() { return this->self; } // MOD_WATERPHYSICS
+	idEntity				*GetSelf() { return self; } // MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
 
 	void					SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true );

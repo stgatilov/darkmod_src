@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/07/25 05:59:02  ishtvan
+ * removed some annoying const correctness on GetSelf
+ *
  * Revision 1.2  2005/08/19 00:28:02  lloyd
  * *** empty log message ***
  *
@@ -83,6 +86,7 @@ public:
 public:	// common physics interface
 								// set pointer to entity using physics
 	virtual void				SetSelf( idEntity *e ) = 0;
+	virtual idEntity *			GetSelf( void ) { return NULL; }
 								// clip models
 	virtual void				SetClipModel( idClipModel *model, float density, int id = 0, bool freeOld = true ) = 0;
 	virtual void				SetClipBox( const idBounds &bounds, float density );
