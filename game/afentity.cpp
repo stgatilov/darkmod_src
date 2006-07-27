@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.5  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -87,11 +90,19 @@ void idMultiModelAF::SetModelForId( int id, const idStr &modelName ) {
 idMultiModelAF::Present
 ================
 */
-void idMultiModelAF::Present( void ) {
+void idMultiModelAF::Present( void ) 
+{
 	int i;
 
+	if( m_FrobDistance )
+	{
+		UpdateFrob();
+		UpdateFrobDisplay();
+	}
+
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) 
+	{
 		return;
 	}
 	BecomeInactive( TH_UPDATEVISUALS );

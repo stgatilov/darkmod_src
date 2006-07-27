@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.5  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -548,10 +551,17 @@ bool idBrittleFracture::ModelCallback( renderEntity_s *renderEntity, const rende
 idBrittleFracture::Present
 ================
 */
-void idBrittleFracture::Present() {
+void idBrittleFracture::Present() 
+{
+	if( m_FrobDistance )
+	{
+		UpdateFrob();
+		UpdateFrobDisplay();
+	}
 
 	// don't present to the renderer if the entity hasn't changed
-	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
+	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) 
+	{
 		return;
 	}
 	BecomeInactive( TH_UPDATEVISUALS );

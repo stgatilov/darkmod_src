@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.70  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.69  2006/07/26 05:07:04  gildoran
  * I forgot to commit one file... (this is for the update to the inventory code)
  *
@@ -7168,6 +7171,8 @@ void idPlayer::Think( void )
 	// this may use firstPersonView, or a thirdPeroson / camera view
 	CalculateRenderView();
 
+	FrobCheck();
+
 	inventory.UpdateArmor();
 
 	idStr strText;
@@ -7257,22 +7262,6 @@ void idPlayer::Think( void )
 			num++;
 		}
 		gameLocal.Printf( "%d: enemies\n", num );
-	}
-
-	// Check for entities within max frobdistance and toggle them for frobbing
-	idBounds FrobBounds( GetEyePosition() );
-	FrobBounds.ExpandSelf( g_Global.m_MaxFrobDistance );
-	idEntity *FrobRangeEnts[ MAX_GENTITIES ];
-
-	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds( FrobBounds, -1, FrobRangeEnts, MAX_GENTITIES );
-
-	for( int i=0; i < numFrobEnt; i++ )
-	{
-		if( FrobRangeEnts[i] )
-		{
-			// Within frob Dist should always initially be set to false, so it's toggled
-			FrobRangeEnts[i]->ToggleWithinFrobDist();
-		}
 	}
 
 	// determine if portal sky is in pvs
@@ -10139,4 +10128,91 @@ void idPlayer::Event_ObjectiveUnlatch( int ObjIndex )
 void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
 {
 	gameLocal.m_MissionData->UnlatchObjectiveComp( ObjIndex - 1, CompIndex -1 );
+}
+
+void idPlayer::FrobCheck( void )
+{
+	trace_t trace;
+	float	TraceDist;
+	idVec3 delta, VecForward;
+
+	idVec3	EyePos = GetEyePosition();
+	idVec3 start = EyePos;
+	idVec3 end = start + viewAngles.ToForward() * g_Global.m_MaxFrobDistance;
+	// Do frob trace first, along view axis, record distance traveled
+	// Frob collision mask:
+	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
+		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
+		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER;
+
+	gameLocal.clip.TracePoint(trace, start, end, cm, this);
+	TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
+
+	if( trace.fraction < 1.0f )
+	{
+		idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
+		if( TraceDist < ent->m_FrobDistance )
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
+			// TODO: Mark as frobbed for this frame
+			ent->SetFrobbed(true);
+
+			// we have found our frobbed entity, so exit
+			goto Quit;
+		}
+	}
+
+	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
+	// IF the trace didn't hit anything frobable, do the radius test:
+
+	idBounds FrobBounds( trace.endpos );
+	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
+
+// Uncomment for debug drawing of the frob bounds
+//	gameRenderWorld->DebugBounds( colorBlue, FrobBounds );
+
+	idEntity *FrobRangeEnts[ MAX_GENTITIES ];
+
+	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds( FrobBounds, -1, FrobRangeEnts, MAX_GENTITIES );
+
+	VecForward = viewAngles.ToForward();
+	float BestDot = 0;
+	float CurrentDot = 0;
+	float FrobDistSqr = 0;
+	idEntity *BestEnt = NULL;
+
+	for( int i=0; i < numFrobEnt; i++ )
+	{
+		idEntity *ent = FrobRangeEnts[i];
+		if( !ent )
+			continue;
+		if( !ent->m_FrobDistance )
+			continue;
+
+		FrobDistSqr = ent->m_FrobDistance;
+		FrobDistSqr *= FrobDistSqr;
+		delta = ent->GetPhysics()->GetOrigin() - EyePos;
+		
+		if( delta.LengthSqr() > FrobDistSqr )
+			continue;
+
+		delta.NormalizeFast();
+		CurrentDot = delta * VecForward;
+		if( CurrentDot > BestDot )
+		{
+			BestDot = CurrentDot;
+			BestEnt = ent;
+		}
+	}
+
+	if( BestEnt )
+	{
+		DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
+		// Mark the entity as frobbed this frame
+		BestEnt->SetFrobbed(true);
+	}
+
+Quit:
+	return;
 }

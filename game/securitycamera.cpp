@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.3  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -558,7 +561,14 @@ idSecurityCamera::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
-void idSecurityCamera::Present( void ) {
+void idSecurityCamera::Present( void ) 
+{
+	if( m_FrobDistance )
+	{
+		UpdateFrob();
+		UpdateFrobDisplay();
+	}
+
 	// don't present to the renderer if the entity hasn't changed
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;

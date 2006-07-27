@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.61  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.60  2006/07/25 01:40:35  gildoran
  * Completely revamped inventory code.
  *
@@ -735,7 +738,10 @@ idEntity::idEntity()
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
 	m_FrobCallbackChain = NULL;
-	m_bWithinFrobDist = false;
+	m_bFrobbed = false;
+	m_bFrobHighlightState = false;
+	m_FrobFadeCountdown = 0;
+	m_FrobChangeTime = 0;
 	m_bIsObjective = false;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
@@ -967,6 +973,8 @@ idEntity::~idEntity( void )
 	if ( m_inventoryCursor != NULL ) {
 		delete m_inventoryCursor;
 	}
+
+	m_FrobPeers.Clear();
 }
 
 /*
@@ -1599,10 +1607,7 @@ void idEntity::UpdateModel( void ) {
 	if(animator && animator->ModelHandle())
 	{
 		// set the callback to update the joints
-		if(m_FrobDistance == 0)
-			renderEntity.callback = idEntity::ModelCallback;
-		else
-			m_FrobCallbackChain = idEntity::ModelCallback;
+		renderEntity.callback = idEntity::ModelCallback;
 	}
 
 	// set to invalid number to force an update the next time the PVS areas are retrieved
@@ -1784,10 +1789,11 @@ void idEntity::Present(void)
 	if(m_FrobDistance != 0)
 	{
 */
+/*
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX    FrobDistance: %lu\r", this, m_FrobDistance);
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderEntity: %08lX\r", renderEntity);
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("SurfaceInView: %u\r", renderEntity.allowSurfaceInViewID);
-/*		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderModel: %08lX\r", renderEntity.hModel);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("RenderModel: %08lX\r", renderEntity.hModel);
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("CustomShader: %08lX\r", renderEntity.customShader);
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("ReferenceShader: %08lX\r", renderEntity.referenceShader);
@@ -1803,6 +1809,12 @@ void idEntity::Present(void)
 
 	if(!gameLocal.isNewFrame )
 		return;
+
+	if( m_FrobDistance )
+	{
+		UpdateFrob();
+		UpdateFrobDisplay();
+	}
 
 	// don't present to the renderer if the entity hasn't changed
 	if(!(thinkFlags & TH_UPDATEVISUALS))
@@ -5678,10 +5690,7 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 	if ( animator.ModelHandle() )
 	{
 		// set the callback to update the joints
-		if(m_FrobDistance == 0)
-			renderEntity.callback = idEntity::ModelCallback;
-		else
-			m_FrobCallbackChain = idEntity::ModelCallback;
+		renderEntity.callback = idEntity::ModelCallback;
 
 		animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 		animator.GetBounds( gameLocal.time, renderEntity.bounds );
@@ -5783,10 +5792,7 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 	}
 
 	// set the callback to update the joints
-	if(m_FrobDistance == 0)
-		renderEntity.callback = idEntity::ModelCallback;
-	else
-		m_FrobCallbackChain = idEntity::ModelCallback;
+	renderEntity.callback = idEntity::ModelCallback;
 
 	animator.GetJoints( &renderEntity.numJoints, &renderEntity.joints );
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
@@ -6237,8 +6243,15 @@ void idEntity::LoadTDMSettings(void)
 			m_MasterFrob = str;
 	}
 
-	// Get the name of an associated entity to highlight.
-	spawnArgs.GetString("peer_highlight", "", m_PeerHighlight);
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "frob_peer", NULL );
+	// Fill the list of frob peers
+	while( kv )
+	{
+		idStr temp = kv->GetValue();
+		if( !temp.IsEmpty() )
+			m_FrobPeers.Append( temp );
+		kv = spawnArgs.MatchPrefix( "frob_peer", kv );
+	}
 
 	// Check if this entity can be used by others.
 	if(spawnArgs.GetString("used_by", "", str))
@@ -6246,160 +6259,139 @@ void idEntity::LoadTDMSettings(void)
 
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
-	// If this is a frobable entity we need to activate the frobcode.
-	if(m_FrobDistance != 0)
-	{
-		DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Frob activated: %08lX\r", this);
-		if(renderEntity.callback != NULL && renderEntity.callback != idEntity::FrobModelCallback)
-			m_FrobCallbackChain = renderEntity.callback;
-
-		renderEntity.callback = idEntity::FrobModelCallback;
-	}
-
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
 
-bool idEntity::FrobModelCallback(renderEntity_s *pRenderEntity, const renderView_t *pRenderView)
+void idEntity::UpdateFrob(void)
 {
-	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("%s: RenderEntity: %08lX  RenderView: %08lX\r", __FUNCTION__, pRenderEntity, pRenderView);
-
-	// this may be triggered by a model trace or other non-view related source
-	if(!pRenderView)
-		return false;
-
-	bool bRc = false;
-	bool bCallback = false;
-	idEntity *ent;
-
-	ent = static_cast<idEntity *>(gameLocal.entities[pRenderEntity->entityNum]);
-	if(!ent)
-	{
-		gameLocal.Error("%s: callback with NULL game entity", __FUNCTION__);
-		bRc = false;
-	}
-	else
-		bRc = ent->Frob(pRenderEntity, pRenderView, CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_RENDERMODEL, &ent->renderEntity.shaderParms[11]);
-
-	return bRc;
-}
-
-bool idEntity::Frob(renderEntity_s *pRenderEntity, const renderView_t *pRenderView, unsigned long cm, float *ShaderParam)
-{
-	bool bRc = false;
-	bool bHighlight = false;
 	idPlayer *player;
-	idEntity *peer;
-	renderEntity_s *re;
-
-	player = gameLocal.GetLocalPlayer();
-
-	// If we have no player there is no point in doing this. :)
-	// also quit if we are not within the player's frobbing range (set in idPlayer::Think)
-	if(player == NULL || !m_bWithinFrobDist)
-		goto Quit;
-
-	// set m_bWithinFrobDist back to false for next frame
-	ToggleWithinFrobDist();
-
-	trace_t trace;
-	idVec3 start;
-	idVec3 end;
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Player: [%s]\r", player->name.c_str());
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] This: %08lX   Frobentity: %08lX   FrobDistance: %u\r",
-		name.c_str(), this, g_Global.m_DarkModPlayer->m_FrobEntity, m_FrobDistance);
-
-	cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-			|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-			|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER;
-
-	// Uncomment this code if you want to test which mask is needed for a given entity.
-	// When this code is uncommented you look at the entity, you wish to test, and then
-	// check the logfile.
-//	for(int i = 0; i < 32; i++)			// Uncomment for bitmasktest
-	{
-//		cm = CONTENTS_SOLID | (i << 1);			// Uncomment for bitmasktest
-
-		start = player->GetEyePosition( );
-		end = start + player->viewAngles.ToForward( ) * m_FrobDistance;
-
-		gameLocal.clip.TracePoint(trace, start, end, cm, player);
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Collision Bitmask: %u\r", i);			// Uncomment for bitmasktest
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
-		if(trace.fraction < 1.0f)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trace succeeded\r");
-			idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("this: %08lX   Entity: %08lX  [%s]\r", this, ent, ent->name.c_str());
-
-			if(ent == this)
-				bHighlight = true;
-		}
-	}
-
-	FrobHighlight(bHighlight, pRenderEntity, pRenderView, ShaderParam, NULL);
-
-	if(m_PeerHighlight.Length() == 0)
-		goto Quit;
-
-	if((peer = gameLocal.FindEntity(m_PeerHighlight.c_str())) == NULL)
-	{
-		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Entity %s has the peer %s to highlight, but it can not be found!\r", name.c_str(), m_PeerHighlight.c_str());
-		goto Quit;
-	}
-
-	re = peer->GetRenderEntity();
-	peer->FrobHighlight(bHighlight, re, peer->GetRenderView(), &re->shaderParms[11], this);
-
-Quit:
-	return bRc;
-}
-
-bool idEntity::FrobHighlight(bool bHighlight, renderEntity_s *pRenderEntity, const renderView_t *pRenderView, float *ShaderParam, idEntity *pCaller)
-{
-	bool bRc = false;
-	float param = 0.0f;
 	CDarkModPlayer *pDM;
 
+	player = gameLocal.GetLocalPlayer();
 	pDM = g_Global.m_DarkModPlayer;
 
-	if(bHighlight == true)
-	{
-		if(pCaller == this)
-			pDM->m_FrobEntity = this;
+	// If we have no player there is no point in doing this. :)
+	if(player == NULL || pDM == NULL )
+		goto Quit;
 
-		param = 1.0f;
-		bRc = true;
-	}
-	else
+	if( !m_bFrobbed )	
 	{
-		// Only switch it off if we are the current highlighter
-		if(pDM->m_FrobEntity == this && pCaller == NULL)
-			pDM->m_FrobEntity = NULL;
-	}
+		// Check if we just stopped being highlighted
+		// Some tricks here due to the fact that we don't know which will
+		// update first: The entity that used to be frobbed and now is not, or 
+		// a new entity that is now frobbed.
 
-	*ShaderParam = param;
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frobentity: %08lX  Param: %f\r\r", pDM->m_FrobEntity, *ShaderParam);
-
-	if(m_FrobCallbackChain != NULL)
-	{
-		if(m_FrobCallbackChain == idEntity::FrobModelCallback)
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Internal Error: Chainfunction set to FrobModelCallback. Please file a bugreport!\r\r");
-		else
+		// If this is true, this entity is updating before the newly frobbed entity
+		if(pDM->m_FrobEntity == this)
 		{
-			// The return value is always true if this function returns true as well
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling chainfunction: %08lX - %08lX\r\r", renderEntity.callback, m_FrobCallbackChain);
-			if(m_FrobCallbackChain(pRenderEntity, pRenderView) == true)
-				bRc = true;
+			pDM->m_FrobEntity = NULL;
+			pDM->m_FrobEntityPrevious = NULL;
+
+			// stop highlight, tell peers
+			FrobHighlight( false, this );
 		}
+		// Otherwise, we are updating AFTER the newly frobbed entity
+		// and should not set m_FrobEntity to NULL.
+		else if( pDM->m_FrobEntityPrevious == this )
+		{
+			// if this one updates last, set the previous frob entity to 
+			// the newly frobbed ent for the next frame.
+			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity;
+
+			// stop highlight, tell peers
+			FrobHighlight(false, this );
+		}
+
+		goto Quit;
 	}
 
-// FIXME / TODO: This should be unnecessary, but FrobCallbackChain, which should contain
-// idEntity::ModelCallback, is not getting called on AFs
-	if( IsType( idAFEntity_Base::Type ) )
-		ModelCallback(pRenderEntity, pRenderView);
+	// We are frobbed this frame
+	// set m_bFrobbed back to false for next frame
+	m_bFrobbed = false;
 
-	return bRc;
+	// Check if we are newly frobbed this frame
+	if( pDM->m_FrobEntity != this )
+	{
+		pDM->m_FrobEntity = this;
+		FrobHighlight( true, this );
+
+		// again there's a trick here for syncronicity
+		// we don't want to overwrite it if the old frob entity has not updated yet,
+		// so if it's NULL, we know that old frob ent already updated.
+		if( pDM->m_FrobEntityPrevious == NULL )
+			pDM->m_FrobEntityPrevious = this;
+	}
+
+Quit:
+	return;
+}
+
+void idEntity::FrobHighlight( bool bVal, idEntity *caller )
+{
+	idEntity *ent = NULL;
+/*
+* NOTE:
+* It's possible that if someone shifts the focus from a frob peer to
+* another frob peer in the same chain, and in the same frame, two frob
+* update commands will be given in the same frame, one to turn off the chain
+* from the part that lost focus, and one to turn on the chain from the part 
+* that got focus.
+*
+* We don't know what order these commands could come in, since we don't
+* know which of the ents will call Present() on themselves first.
+*
+* Therefore, the timestamp is checked, and if it's been updated this frame,
+* we ignore a command to turn off the chain. (i.e., given simultaneous commands
+* to turn on the chain and turn off the chain, turn on is given priority).
+*/
+	if( (m_FrobChangeTime == gameLocal.time) && !bVal )
+		goto Quit;
+
+	m_bFrobHighlightState = bVal;
+
+	// update our timestamp
+	m_FrobChangeTime = gameLocal.time;
+	// start the fade in / out counter
+	m_FrobFadeCountdown = cv_frob_fadetime.GetInteger();
+
+	// resolve the peer names into entities
+	// TODO: Only do this once?  That wouldn't allow new ones to be added ingame though
+	for( int i=0; i < m_FrobPeers.Num(); i++ )
+	{
+		if( m_FrobPeers[i].IsEmpty() )
+			continue;
+
+		ent = gameLocal.FindEntity( m_FrobPeers[i].c_str() );
+		// don't call it on self, would get stuck in a loop
+		if( ent && ent != caller )
+			ent->FrobHighlight( bVal, this );
+	}
+
+Quit:
+	return;
+}
+
+void idEntity::UpdateFrobDisplay( void )
+{
+	float param = 0.0;
+	if( !m_FrobFadeCountdown )
+		goto Quit;
+
+	m_FrobFadeCountdown = cv_frob_fadetime.GetInteger() - ( gameLocal.time - m_FrobChangeTime );
+	if( m_FrobFadeCountdown < 0 )
+		m_FrobFadeCountdown = 0;
+
+	param = (float) m_FrobFadeCountdown / (float) cv_frob_fadetime.GetInteger();
+	if( m_bFrobHighlightState )
+		param = 1 - param;
+
+	// just in case something crazy happened:
+	param = idMath::ClampFloat(0.0, 1.0, param);
+	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f, fade countdown = %d\r", name.c_str(), param, m_FrobFadeCountdown );
+	SetShaderParm(11, param);
+
+Quit:
+	return;
 }
 
 // Default for entities that are frobable and movable is to pick it up and
@@ -6537,14 +6529,14 @@ bool idEntity::UsedBy(idEntity *ent)
 	return false;
 }
 
-void idEntity::ToggleWithinFrobDist( void )
+void idEntity::SetFrobbed( bool val )
 {
-	m_bWithinFrobDist = !m_bWithinFrobDist;
+	m_bFrobbed = val;
 }
 
-bool idEntity::IsWithinFrobDist( void )
+bool idEntity::IsFrobbed( void )
 {
-	return m_bWithinFrobDist;
+	return m_bFrobbed;
 }
 
 void idEntity::StimAdd(int Type, float Radius)

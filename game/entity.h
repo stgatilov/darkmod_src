@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.37  2006/07/25 01:40:35  gildoran
  * Completely revamped inventory code.
  *
@@ -310,6 +313,12 @@ public:
 	**/
 	bool					m_bIsObjective;
 
+	/**
+	* Frobdistance determines the distance in renderunits. If set to 0
+	* the entity is not frobable.
+	**/
+	int							m_FrobDistance;
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -529,39 +538,6 @@ public:
 	virtual void			LoadTDMSettings(void);
 
 	/**
-	 * Frob will test if the item is in frobrange. If this is the case it also checks
-	 * if the player is looking at it. If it is the nearest looked at item, the item 
-	 * will be highlighted. If another item is highlighted, the frobeffect for that
-	 * item will be disabled. This code should be put in the UpdateRenderer function
-	 * if available. Usually you should install a modelcallback which is called whenever
-	 * the model can be seen.
-	 * CollisionMask specifies the bits needed for TracePoint to determine if the player
-	 * is looking at the item or not.
-	 */
-	bool					Frob(renderEntity_s *renderEntity, const renderView_t *renderView, unsigned long CollisionMask, float *ShaderArray);
-
-	/**
-	 * FrobHighlight performs the actual highlighting of the entity if the object is frobbable.
-	 * Caller is needed to determine who called the highlight. If two entities are connected
-	 * to each other, they should highlight both if either one is targeted. In this case
-	 * we would get an endless loop, so the caller must be specified, in order to prevent this.
-	 * If the call came from the original highlighttest, it will be NULL.
-	 *
-	 * Usually this will be needed for doors and their handles, but may be usefull for other stuff as well.
-	 * However, a door doesn't need to specify a peer highlight (and in fact shouldn't) because if it
-	 * has a handle, it automatically highlights it. The handle itself should set the door as it's peer
-	 * in order to highlight the door, if it is targeted.
-	 */
-	virtual bool			FrobHighlight(bool bHighlight, renderEntity_s *pRenderEntity, const renderView_t *pRenderView, float *ShaderParam, idEntity *Caller);
-
-	/**
-	 * FrobModelCallback is the callback function that is installed to enable the frobcode.
-	 * This callback will be called by the renderengine when the object in question is
-	 * visible by the camera view.
-	 */
-	static bool				FrobModelCallback(renderEntity_s *renderEntity, const renderView_t *renderView);
-
-	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
 	 * The actual action depends on the type of the entity.
 	 * Loot is being picked up and counted to the loot.
@@ -604,15 +580,15 @@ public:
 	void ParseUsedByList(idList<idStr> &, idStr &);
 
 	/**
-	* Toggle whether the entity is within player's max frob distance.  Called by idPlayer
+	* Toggle whether the entity has been frobbed.  Called by idPlayer
 	**/
-	void ToggleWithinFrobDist( void );
+	void SetFrobbed( bool val );
 
 	/**
 	* Return whether the entity is within player's max frob distance.
 	* Should be false at the beginning of the frame
 	**/
-	bool IsWithinFrobDist( void );
+	bool IsFrobbed( void );
 
 	/**
 	* DarkMod sound prop functions (called by StartSound and StopSound)
@@ -676,6 +652,28 @@ public:
 
 protected:
 	/**
+	* Update frob highlighting and frob entity if frobbed.
+	* Also stops highlighting and clears itself from the frob entity
+	* if it's no longer frobbed.
+	* Depends on frob variables set in idPlayer::Think()
+	* Called in idEntity::Present
+	**/
+	void UpdateFrob( void );
+
+	/**
+	* Used to fade frob highlight in and out smoothly
+	* Called in idEntity::Present().
+	**/
+	void UpdateFrobDisplay( void );
+
+	/**
+	* Activate/deactivate frob highlighting on an entity
+	* Also calls this on any of the entity's peers
+	* Needs a caller so that the peer highlighting chain doesn't loop back on itself
+	**/
+	void FrobHighlight( bool bVal, idEntity *caller );
+
+	/**
 	* Bind to the same object that the "other" argument is bound to
 	**/
 	void					Event_CopyBind( idEntity *other );
@@ -697,15 +695,31 @@ protected:
 	refSound_t				refSound;							// used to present sound to the audio engine
 
 	/**
-	 * Frobdistance determines the distance in renderunits. If set to 0
-	 * the entity is not frobable.
-	 */
-	int							m_FrobDistance;
+	* This is set by idPlayer if the player is looking at the entity in a way
+	* that will frob it.
+	**/
+	bool						m_bFrobbed;
 
 	/**
-	* This is set to true if the entity is within the player's max frob distance
+	* This is separate from m_bFrobbed due to peer frob highlighting,
+	* to let an entity display the highlight when not frobbed.
 	**/
-	bool						m_bWithinFrobDist;
+	bool						m_bFrobHighlightState;
+
+	/**
+	* Timestamp indicating when the frob highlight last changed
+	* This is needed for peer highlight chains where the frob switched from
+	* one peer to the other in one frame, and we don't know what
+	* order the frob checks will run in.
+	* Also, may be used in the future for continuous fade in / fade out.
+	**/
+	int							m_FrobChangeTime;
+
+	/**
+	* Used by idEntity::DisplayFrobHighlight to fade the highlight in and out
+	* Measured in milliseconds.
+	**/
+	int							m_FrobFadeCountdown;
 
 	/**
 	 * FrobActionScript will contain the name of the script that is to be
@@ -716,10 +730,10 @@ protected:
 	idStr						m_FrobActionScript;
 
 	/**
-	 * PeerHighlight defines the name of another entity, that is to be highlighted
-	 * as well, if this entity is also highlighted.
+	 * FrobPeers lists the names of other entites that will also be
+	 * frobbed when this entity is frobbed.
 	 */
-	idStr						m_PeerHighlight;
+	idStrList					m_FrobPeers;
 
 	/**
 	 * If AssociatedFrob is set then MasterFrob contains

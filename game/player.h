@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/07/27 09:02:22  ishtvan
+ * frobbing updates
+ *
  * Revision 1.28  2006/07/19 21:50:10  ishtvan
  * new objective related scriptfunctions
  *
@@ -635,6 +638,10 @@ public:
 	void					SetSelfSmooth( bool b );
 
 
+	/**
+	* Do the frobbing trace and bounds intersection to mark entities as frobable
+	**/
+	void					FrobCheck( void );
 
 	/**
 	 * AddToInventory maps to a scriptfunction which will store an entity into
