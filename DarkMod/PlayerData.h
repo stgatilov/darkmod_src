@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2006/07/27 09:01:07  ishtvan
+ * added m_FrobEntityPrevious var to store the frob entity of the previous frame
+ *
  * Revision 1.10  2005/12/12 02:57:33  ishtvan
  * ammo items that are frobbed go into the D3 inventory
  *
@@ -125,6 +128,14 @@ public:
 	 * to the entity which is currently highlighted.
 	 */
 	idEntity	*m_FrobEntity;
+
+	/**
+	* Frob entity in the previous frame
+	* We need this to detect when something was frobbed but now is not
+	* Cannot rely on m_FrobEntity for this, because it could change to a new
+	* entity before the old entity is updated.
+	**/
+	idEntity	*m_FrobEntityPrevious;
 
 	/**
 	 * Adds an entity to the inventory. If this entity is a single one it is simply

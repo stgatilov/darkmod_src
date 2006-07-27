@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.11  2006/07/27 09:01:07  ishtvan
+ * added m_FrobEntityPrevious var to store the frob entity of the previous frame
+ *
  * Revision 1.10  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -77,6 +80,7 @@ CInventoryItem::CInventoryItem(void)
 CDarkModPlayer::CDarkModPlayer(void)
 {
 	m_FrobEntity = NULL;
+	m_FrobEntityPrevious = NULL;
 	CInventoryItem inv_item;
 
 	// The first entry in the inventory is always empty and selected by default.
