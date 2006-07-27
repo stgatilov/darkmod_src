@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.71  2006/07/27 22:39:14  ishtvan
+ * frob fixes
+ *
  * Revision 1.70  2006/07/27 09:02:22  ishtvan
  * frobbing updates
  *
@@ -10187,7 +10190,7 @@ void idPlayer::FrobCheck( void )
 		idEntity *ent = FrobRangeEnts[i];
 		if( !ent )
 			continue;
-		if( !ent->m_FrobDistance )
+		if( !ent->m_FrobDistance || ent->IsHidden() )
 			continue;
 
 		FrobDistSqr = ent->m_FrobDistance;

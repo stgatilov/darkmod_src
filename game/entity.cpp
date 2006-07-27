@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.62  2006/07/27 22:39:14  ishtvan
+ * frob fixes
+ *
  * Revision 1.61  2006/07/27 09:02:22  ishtvan
  * frobbing updates
  *
@@ -740,7 +743,6 @@ idEntity::idEntity()
 	m_FrobCallbackChain = NULL;
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
-	m_FrobFadeCountdown = 0;
 	m_FrobChangeTime = 0;
 	m_bIsObjective = false;
 
@@ -6271,7 +6273,7 @@ void idEntity::UpdateFrob(void)
 	pDM = g_Global.m_DarkModPlayer;
 
 	// If we have no player there is no point in doing this. :)
-	if(player == NULL || pDM == NULL )
+	if(player == NULL || pDM == NULL || IsHidden() )
 		goto Quit;
 
 	if( !m_bFrobbed )	
@@ -6351,11 +6353,9 @@ void idEntity::FrobHighlight( bool bVal, idEntity *caller )
 
 	// update our timestamp
 	m_FrobChangeTime = gameLocal.time;
-	// start the fade in / out counter
-	m_FrobFadeCountdown = cv_frob_fadetime.GetInteger();
 
 	// resolve the peer names into entities
-	// TODO: Only do this once?  That wouldn't allow new ones to be added ingame though
+	// TODO: Bad for performance?  Only happens on the frame it's hilighted/unhilighted though
 	for( int i=0; i < m_FrobPeers.Num(); i++ )
 	{
 		if( m_FrobPeers[i].IsEmpty() )
@@ -6373,21 +6373,25 @@ Quit:
 
 void idEntity::UpdateFrobDisplay( void )
 {
-	float param = 0.0;
-	if( !m_FrobFadeCountdown )
+	float param = renderEntity.shaderParms[ 11 ];
+	int TimePassed = 0;
+	
+	if( (!param && !m_bFrobHighlightState) || ((param == 1.0) && m_bFrobHighlightState)  )
 		goto Quit;
 
-	m_FrobFadeCountdown = cv_frob_fadetime.GetInteger() - ( gameLocal.time - m_FrobChangeTime );
-	if( m_FrobFadeCountdown < 0 )
-		m_FrobFadeCountdown = 0;
+	TimePassed = ( gameLocal.time - m_FrobChangeTime );
 
-	param = (float) m_FrobFadeCountdown / (float) cv_frob_fadetime.GetInteger();
+	
 	if( m_bFrobHighlightState )
-		param = 1 - param;
+		param += (float) TimePassed / (float) cv_frob_fadetime.GetInteger();
+	else
+		param -= (float) TimePassed / (float) cv_frob_fadetime.GetInteger();
 
-	// just in case something crazy happened:
+	m_FrobChangeTime = gameLocal.time;
+
+	// clamp between 0 and 1
 	param = idMath::ClampFloat(0.0, 1.0, param);
-	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f, fade countdown = %d\r", name.c_str(), param, m_FrobFadeCountdown );
+	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f\r", name.c_str(), param );
 	SetShaderParm(11, param);
 
 Quit:
@@ -6474,7 +6478,14 @@ Quit:
 	
 	// clear the frob entity for now, it will get set the next frame if this object
 	// is still here and the player is still looking at it.
-	g_Global.m_DarkModPlayer->m_FrobEntity = NULL;
+	// Otherwise we may get stale pointers if it's destroyed by the frobaction
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+	if( pDM && pDM->m_FrobEntity == this )
+		pDM->m_FrobEntity = NULL;
+	if( pDM->m_FrobEntityPrevious == this )
+		pDM->m_FrobEntityPrevious = NULL;
+
 	return;
 }
 
