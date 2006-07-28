@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.63  2006/07/28 01:36:19  ishtvan
+ * frobbing bugfixes
+ *
  * Revision 1.62  2006/07/27 22:39:14  ishtvan
  * frob fixes
  *
@@ -360,7 +363,9 @@ const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
 
 #endif      // MOD_WATERPHYSICS
 
-const idEventDef EV_CopyBind( "copyBind", "e", NULL );
+const idEventDef EV_CopyBind( "copyBind", "e" );
+const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
+const idEventDef EV_SetFrobable( "setFrobable", "d" );
 
 
 ABSTRACT_DECLARATION( idClass, idEntity )
@@ -473,6 +478,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 #endif		// MOD_WATERPHYSICS
 
 	EVENT( EV_CopyBind,				idEntity::Event_CopyBind )
+	EVENT( EV_IsFrobable,			idEntity::Event_IsFrobable )
+	EVENT( EV_SetFrobable,			idEntity::Event_SetFrobable )
 
 END_CLASS
 
@@ -738,9 +745,9 @@ idEntity::idEntity()
 
 	mpGUIState = -1;
 
+	m_bFrobable = false;
 	m_FrobDistance = 0;
 	m_FrobActionScript = "";
-	m_FrobCallbackChain = NULL;
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
 	m_FrobChangeTime = 0;
@@ -1487,12 +1494,7 @@ void idEntity::SetModel( const char *modelname ) {
 		renderEntity.hModel->Reset();
 	}
 
-	// If we have a callback for our frob installed
-	// we should not deactivate it.
-	if(m_FrobDistance == 0)
-		renderEntity.callback = NULL;
-	else
-		m_FrobCallbackChain = NULL;
+	renderEntity.callback = NULL;
 
 	renderEntity.numJoints = 0;
 	renderEntity.joints = NULL;
@@ -1788,7 +1790,7 @@ Present is called to allow entities to generate refEntities, lights, etc for the
 void idEntity::Present(void)
 {
 /*
-	if(m_FrobDistance != 0)
+	if( m_bFrobable )
 	{
 */
 /*
@@ -1812,7 +1814,7 @@ void idEntity::Present(void)
 	if(!gameLocal.isNewFrame )
 		return;
 
-	if( m_FrobDistance )
+	if( m_bFrobable )
 	{
 		UpdateFrob();
 		UpdateFrobDisplay();
@@ -1822,7 +1824,7 @@ void idEntity::Present(void)
 	if(!(thinkFlags & TH_UPDATEVISUALS))
 		return;
 
-	if(m_FrobDistance == 0)
+	if( !m_bFrobable )
 		BecomeInactive( TH_UPDATEVISUALS );
 
 	// camera target for remote render views
@@ -1866,9 +1868,6 @@ idEntity::UpdateRenderEntity
 */
 bool idEntity::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView )
 {
-	if(m_FrobDistance != 0)
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("%s this: %08lX    FrobDistance: %lu\r", __FUNCTION__, this, m_FrobDistance);
-
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -6215,17 +6214,10 @@ void idEntity::LoadTDMSettings(void)
 	// If the frobsetting is alread initialized we can skip this.
 	if(m_FrobDistance == 0)
 	{
+		spawnArgs.GetBool("frobable", "0", m_bFrobable );
 		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
 
-		// Temporary fix for AF entities, because their spawnargs are different
-		// TODO: Figure out the best way to read frobable/not frobable from AF file
-		// For now, all AFs are frobable
-
-		if( IsType( idAFEntity_Base::Type ) )
-		{
-				m_FrobDistance = g_Global.m_DefaultFrobDistance;
-		}
-		else if(m_FrobDistance == 0 && spawnArgs.GetBool("frobable"))
+		if( m_FrobDistance <= 0  )
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
 	}
 
@@ -6475,17 +6467,6 @@ void idEntity::FrobAction(bool bMaster)
 	}
 
 Quit:
-	
-	// clear the frob entity for now, it will get set the next frame if this object
-	// is still here and the player is still looking at it.
-	// Otherwise we may get stale pointers if it's destroyed by the frobaction
-	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-
-	if( pDM && pDM->m_FrobEntity == this )
-		pDM->m_FrobEntity = NULL;
-	if( pDM->m_FrobEntityPrevious == this )
-		pDM->m_FrobEntityPrevious = NULL;
-
 	return;
 }
 
@@ -7213,5 +7194,15 @@ void idEntity::Event_TimerSetState(int StimType, int State)
 
 Quit:
 	return;
+}
+
+void idEntity::Event_SetFrobable( bool bVal )
+{
+	m_bFrobable = bVal;
+}
+
+void idEntity::Event_IsFrobable( void )
+{
+	idThread::ReturnInt( (int) m_bFrobable );
 }
 

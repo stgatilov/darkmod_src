@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/07/28 01:36:19  ishtvan
+ * frobbing bugfixes
+ *
  * Revision 1.11  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -305,10 +308,7 @@ void idItem::Present( void )
 
 		// we will mess with shader parms when the item is in view
 		// to give the "item pulse" effect
-		if(m_FrobDistance == 0)
-			shell.callback = idItem::ModelCallback;
-		else
-			m_FrobCallbackChain = idItem::ModelCallback;
+		shell.callback = idItem::ModelCallback;
 
 		shell.entityNum = entityNumber;
 		shell.customShader = shellMaterial;

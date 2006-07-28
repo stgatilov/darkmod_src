@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/07/28 01:36:19  ishtvan
+ * frobbing bugfixes
+ *
  * Revision 1.6  2006/07/27 09:02:22  ishtvan
  * frobbing updates
  *
@@ -553,7 +556,7 @@ idBrittleFracture::Present
 */
 void idBrittleFracture::Present() 
 {
-	if( m_FrobDistance )
+	if( m_bFrobable )
 	{
 		UpdateFrob();
 		UpdateFrobDisplay();

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2006/07/28 01:36:19  ishtvan
+ * frobbing bugfixes
+ *
  * Revision 1.39  2006/07/27 22:39:14  ishtvan
  * frob fixes
  *
@@ -187,6 +190,8 @@ extern const idEventDef EV_IsInLiquid;			// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
 
 extern const idEventDef EV_CopyBind;
+extern const idEventDef EV_IsFrobable;
+extern const idEventDef EV_SetFrobable;
 
 
 // Think flags
@@ -317,10 +322,15 @@ public:
 	bool					m_bIsObjective;
 
 	/**
+	* Set to true if the entity is frobable.  May be dynamically changed.
+	**/
+	bool					m_bFrobable;
+
+	/**
 	* Frobdistance determines the distance in renderunits. If set to 0
 	* the entity is not frobable.
 	**/
-	int							m_FrobDistance;
+	int						m_FrobDistance;
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
@@ -583,12 +593,12 @@ public:
 	void ParseUsedByList(idList<idStr> &, idStr &);
 
 	/**
-	* Toggle whether the entity has been frobbed.  Called by idPlayer
+	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::CheckFrob
 	**/
 	void SetFrobbed( bool val );
 
 	/**
-	* Return whether the entity is within player's max frob distance.
+	* Return whether the entity is currently frobbed.
 	* Should be false at the beginning of the frame
 	**/
 	bool IsFrobbed( void );
@@ -745,17 +755,16 @@ protected:
 	 * is frobbed. Each entity in this list is called as if it were the one being
 	 * frobbed.
 	 */
-	idList<idStr>			m_FrobList;
-
-	/**
-	 * FrobCallbackChain is used to store the callbackfunction in case
-	 * the entity whishes to install a callback itself. The Frob function
-	 * will call this callback after it is determined the frob state 
-	 * in order to ensure that it is also called.
-	 */
-	deferredEntityCallback_t	m_FrobCallbackChain;
+	idList<idStr>				m_FrobList;
 
 	CStimResponseCollection		*m_StimResponseColl;
+
+	/**
+	* Set and get whether the entity is frobable
+	* Note: IsFrobable is only used by scripting, since we can check public var m_bFrobable
+	**/
+	void					Event_IsFrobable( void );
+	void					Event_SetFrobable( bool bVal );
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object
