@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/07/28 01:38:36  ishtvan
+ * info_location objective
+ *
  * Revision 1.12  2006/07/22 21:09:14  ishtvan
  * comp_info_location preliminary checkin
  *
@@ -140,6 +143,7 @@ CMissionData::CMissionData( void )
 	CompTypeNames.Append("location");
 	CompTypeNames.Append("custom");
 	CompTypeNames.Append("custom_clocked");
+	CompTypeNames.Append("info_location");
 	CompTypeNames.Append("distance");
 
 /**
@@ -509,7 +513,7 @@ void CMissionData::UpdateObjectives( void )
 			continue;
 		}
 
-		// COMP_DISTANCE - Do a distance check
+// COMP_DISTANCE - Do a distance check
 		else if( pComp->m_Type == COMP_DISTANCE )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
@@ -536,7 +540,34 @@ void CMissionData::UpdateObjectives( void )
 			SetComponentState( pComp, ( delta.LengthSqr() < dist ) );
 		}
 
-		// COMP_CUSTOM_CLOCKED
+// COMP_INFO_LOCATION - Check if an ent by name is in an info_location or info_location group
+		else if( pComp->m_Type = COMP_INFO_LOCATION )
+		{
+			bool bEval(false);
+			idEntity *checkEnt = NULL;
+
+			// Spec method 0 is always by name, so no need to check it.
+			// we should indicate this in the objective setup GUI
+			checkEnt = gameLocal.FindEntity( pComp->m_SpecStrVal[0].c_str() );
+			if( !checkEnt )
+			{
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_locatoin objective could not find entity: %s \r", pComp->m_SpecStrVal[0].c_str() );
+				continue;
+			}
+
+			idLocationEntity *loc = gameLocal.LocationForPoint( checkEnt->GetPhysics()->GetOrigin() );
+			if( loc )
+			{
+				if( pComp->m_SpecMethod[1] == SPEC_GROUP )
+					bEval = (pComp->m_SpecIntVal[1] == loc->m_ObjectiveGroup );
+				else
+					bEval = ( pComp->m_SpecStrVal[1] == loc->name );
+			}
+
+			SetComponentState( pComp, bEval );
+		}
+
+// COMP_CUSTOM_CLOCKED - Run a clocked script
 		else if( pComp->m_Type == COMP_CUSTOM_CLOCKED )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
@@ -555,16 +586,9 @@ void CMissionData::UpdateObjectives( void )
 				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
 			}
 		}
-
-		// COMP_INFO_LOCATION
-		else if( pComp->m_Type = COMP_INFO_LOCATION )
-		{
-			// check the info on info_location against objective arguments
-		}
-
 	}
 
-// ============== End Handling of  Clocked Objective Components =============
+// ============== End Handling of Clocked Objective Components =============
 
 	// Check if any objective states have changed:
 	if( !m_bObjsNeedUpdate )

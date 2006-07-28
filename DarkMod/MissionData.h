@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/07/28 01:38:36  ishtvan
+ * info_location objective
+ *
  * Revision 1.9  2006/07/22 21:09:14  ishtvan
  * comp_info_location preliminary checkin
  *
@@ -93,7 +96,7 @@ typedef enum
 	SPEC_NONE,
 	SPEC_NAME,
 	SPEC_OVERALL,
-	SPEC_GROUP, // for inventory items
+	SPEC_GROUP, // for inventory items, info_location groups, etc
 	SPEC_CLASSNAME, // soft/scripting classname
 	SPEC_SPAWNCLASS, // hard / SDK classname
 
