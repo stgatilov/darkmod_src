@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/07/28 01:37:17  ishtvan
+ * objective system updates
+ *
  * Revision 1.5  2006/07/24 01:29:03  ishtvan
  * optional distance test added to func_portal
  *
@@ -466,6 +469,10 @@ public:
 	* Soundprop: Volume offset for sounds originating in location
 	**/
 	float				m_SndVolMod;
+	/**
+	* Objective system: Location's objective index int for objective checks
+	**/
+	int					m_ObjectiveGroup;
 
 private:
 };

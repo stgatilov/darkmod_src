@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.72  2006/07/28 01:37:17  ishtvan
+ * objective system updates
+ *
  * Revision 1.71  2006/07/27 22:39:14  ishtvan
  * frob fixes
  *
@@ -326,6 +329,9 @@ const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", "ddd" );
 const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", "dd", 'd' );
 const idEventDef EV_Player_ObjectiveUnlatch( "objectiveUnlatch", "d" );
 const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", "dd" );
+const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", "dd" );
+const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", "dd" );
+const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -372,6 +378,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetObjectiveComp,		idPlayer::Event_GetObjectiveComp )
 	EVENT( EV_Player_ObjectiveUnlatch,		idPlayer::Event_ObjectiveUnlatch )
 	EVENT( EV_Player_ObjectiveCompUnlatch,	idPlayer::Event_ObjectiveComponentUnlatch )
+	EVENT( EV_Player_SetObjectiveVisible,	idPlayer::Event_SetObjectiveVisible )
+	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
+	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 
 END_CLASS
 
@@ -10133,6 +10142,21 @@ void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
 	gameLocal.m_MissionData->UnlatchObjectiveComp( ObjIndex - 1, CompIndex -1 );
 }
 
+void idPlayer::Event_SetObjectiveVisible( int ObjIndex, bool bVal )
+{
+	gameLocal.m_MissionData->Event_SetObjVisible( ObjIndex, bVal );
+}
+
+void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
+{
+	gameLocal.m_MissionData->Event_SetObjMandatory( ObjIndex, !bVal );
+}
+
+void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )
+{
+	gameLocal.m_MissionData->Event_SetObjOngoing( ObjIndex, bVal );
+}
+
 void idPlayer::FrobCheck( void )
 {
 	trace_t trace;
@@ -10155,7 +10179,9 @@ void idPlayer::FrobCheck( void )
 	{
 		idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
-		if( TraceDist < ent->m_FrobDistance )
+		
+		// only frob frobable, non-hidden entities within their frobdistance
+		if( ent->m_bFrobable && !ent->IsHidden() && (TraceDist < ent->m_FrobDistance) )
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 			// TODO: Mark as frobbed for this frame
@@ -10190,7 +10216,7 @@ void idPlayer::FrobCheck( void )
 		idEntity *ent = FrobRangeEnts[i];
 		if( !ent )
 			continue;
-		if( !ent->m_FrobDistance || ent->IsHidden() )
+		if( !ent->m_FrobDistance || ent->IsHidden() || !ent->m_bFrobable )
 			continue;
 
 		FrobDistSqr = ent->m_FrobDistance;
