@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/07/28 01:37:56  ishtvan
+ * added frob pointer cleanup to desctructor
+ *
  * Revision 1.3  2006/06/21 13:06:51  sparhawk
  * Added version tracking per cpp module
  *
@@ -33,6 +36,7 @@ instancing of objects.
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
+#include "../../darkmod/playerdata.h"
 
 #include "TypeInfo.h"
 
@@ -1041,7 +1045,17 @@ http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/
 idClass::Event_Remove
 ================
 */
-void idClass::Event_Remove( void ) {
+void idClass::Event_Remove( void ) 
+{
+	// If we are removing a currently frobbed entity,
+	// set the frob pointers to NULL to avoid stale pointers
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+	if( pDM && pDM->m_FrobEntity == this )
+		pDM->m_FrobEntity = NULL;
+	if( pDM && pDM->m_FrobEntityPrevious == this )
+		pDM->m_FrobEntityPrevious = NULL;
+
 	delete this;
 }
 
