@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/07/28 01:39:30  ishtvan
+ * AI now set themselves frobable when KO'd or dead
+ *
  * Revision 1.29  2006/07/25 06:00:40  ishtvan
  * added tactile alert to PushWithAF
  *
@@ -3665,9 +3668,11 @@ const idDeclParticle *idAI::SpawnParticlesOnJoint( particleEmitter_t &pe, const 
 idAI::Killed
 =====================
 */
-void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
 	idAngles ang;
 	const char *modelDeath;
+	bool bPlayerResponsible(false);
 
 	// make sure the monster is activated
 	EndAttack();
@@ -3744,6 +3749,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		physicsObj.DisableImpact();
 	}
 
+	// AI becomes frobable on death
+	Event_SetFrobable( true );
+
 	restartParticles = false;
 
 	state = GetScriptFunction( "state_Killed" );
@@ -3760,17 +3768,14 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		kv = spawnArgs.MatchPrefix( "def_drops", kv );
 	}
 
-	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) ) {
+	if ( ( attacker && attacker->IsType( idPlayer::Type ) ) && ( inflictor && !inflictor->IsType( idSoulCubeMissile::Type ) ) ) 
+	{
 		static_cast< idPlayer* >( attacker )->AddAIKill();
-		if( attacker == gameLocal.GetLocalPlayer() )
-		{
-			gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, true );
-		}
-
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
 	}
 
 	// Update TDM objective system
-	//gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );
 }
 
 /***********************************************************************
@@ -6272,6 +6277,9 @@ void idAI::Knockout( void )
 		physicsObj.DisableImpact();
 	}
 
+	// AI becomes frobable on KO
+	Event_SetFrobable( true );
+
 	restartParticles = false;
 
 	state = GetScriptFunction( "state_KnockedOut" );
@@ -6291,6 +6299,7 @@ void idAI::Knockout( void )
 	}
 
 	// Update TDM objective system
+	// TODO: Need a way to determine if player was responsible for the KO
 	gameLocal.m_MissionData->MissionEvent( COMP_KO, this, true );
 
 Quit:
