@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.73  2006/07/30 23:38:44  ishtvan
+ * *) Added frob bias
+ *
+ * *) new objective script event setObjectiveEnabling
+ *
  * Revision 1.72  2006/07/28 01:37:17  ishtvan
  * objective system updates
  *
@@ -332,6 +337,7 @@ const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", "dd" );
 const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", "dd" );
 const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", "dd" );
 const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
+const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -381,6 +387,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveVisible,	idPlayer::Event_SetObjectiveVisible )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
+	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
 
 END_CLASS
 
@@ -10157,6 +10164,12 @@ void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )
 	gameLocal.m_MissionData->Event_SetObjOngoing( ObjIndex, bVal );
 }
 
+void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
+{
+	idStr StrArg = strIn;
+	gameLocal.m_MissionData->Event_SetObjEnabling( ObjIndex, StrArg );
+}
+
 void idPlayer::FrobCheck( void )
 {
 	trace_t trace;
@@ -10228,6 +10241,8 @@ void idPlayer::FrobCheck( void )
 
 		delta.NormalizeFast();
 		CurrentDot = delta * VecForward;
+		CurrentDot *= ent->m_FrobBias;
+
 		if( CurrentDot > BestDot )
 		{
 			BestDot = CurrentDot;
