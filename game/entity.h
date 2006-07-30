@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2006/07/30 23:33:18  ishtvan
+ * *) frob bugfixes
+ *
+ * *) generalized attachment system for all entities
+ *
  * Revision 1.40  2006/07/28 01:36:19  ishtvan
  * frobbing bugfixes
  *
@@ -331,6 +336,13 @@ public:
 	* the entity is not frobable.
 	**/
 	int						m_FrobDistance;
+
+	/**
+	* Frob bias: Multiplies the angle deviation cosine test in idPlayer::FrobCheck
+	* Effectively biases the frob selection toward this object.  Used for small objects
+	* To make them easier to frob when placed next to large objects.
+	**/
+	float						m_FrobBias;
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
@@ -663,6 +675,13 @@ public:
 	 */
 	idThread *CallScriptFunctionArgs(const char *ScriptFunction, bool ClearStack, int Delay, const char *Format, ...);
 
+	/**
+	* Attach another entity to this entity.  The base version assumes single-clipmodel
+	* rigid body physics and simply calls idEntity::Bind.  
+	* Will be overloaded in derived classes with joints to call BindToJoint.
+	**/
+	virtual void Attach( idEntity *ent );
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.
@@ -682,9 +701,8 @@ protected:
 	/**
 	* Activate/deactivate frob highlighting on an entity
 	* Also calls this on any of the entity's peers
-	* Needs a caller so that the peer highlighting chain doesn't loop back on itself
 	**/
-	void FrobHighlight( bool bVal, idEntity *caller );
+	void FrobHighlight( bool bVal );
 
 	/**
 	* Bind to the same object that the "other" argument is bound to
@@ -720,11 +738,15 @@ protected:
 	bool						m_bFrobHighlightState;
 
 	/**
+	* Records the frame number of when the ent was frob peer flooded
+	* Also counts an object hilighting itself as peer flooding
+	**/
+	int							m_FrobPeerFloodFrame;
+
+	/**
 	* Timestamp indicating when the frob highlight last changed
-	* This is needed for peer highlight chains where the frob switched from
-	* one peer to the other in one frame, and we don't know what
-	* order the frob checks will run in.
-	* Also, may be used in the future for continuous fade in / fade out.
+	* Used for continuous fade in and fade out, distinct from
+	* m_FrobPeerFloodFrame which is used for flooding the frob to peers.
 	**/
 	int							m_FrobChangeTime;
 
@@ -970,6 +992,11 @@ public:
 	void					UpdateDamageEffects( void );
 
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
+
+	/**
+	* Overloads idEntity::Attach to bind to a joint
+	**/
+	virtual void			Attach( idEntity *ent );
 
 	enum {
 		EVENT_ADD_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,

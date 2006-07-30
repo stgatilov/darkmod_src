@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.64  2006/07/30 23:33:18  ishtvan
+ * *) frob bugfixes
+ *
+ * *) generalized attachment system for all entities
+ *
  * Revision 1.63  2006/07/28 01:36:19  ishtvan
  * frobbing bugfixes
  *
@@ -747,10 +752,12 @@ idEntity::idEntity()
 
 	m_bFrobable = false;
 	m_FrobDistance = 0;
+	m_FrobBias = 1.0f;
 	m_FrobActionScript = "";
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
 	m_FrobChangeTime = 0;
+	m_FrobPeerFloodFrame = 0;
 	m_bIsObjective = false;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
@@ -796,6 +803,7 @@ void idEntity::Spawn( void )
 	const idKeyValue	*networkSync;
 	const char			*classname;
 	const char			*scriptObjectName;
+	idEntity			*ent;
 
 	gameLocal.RegisterEntity( this );
 
@@ -882,13 +890,38 @@ void idEntity::Spawn( void )
 	SetAxis( axis );
 
 	temp = spawnArgs.GetString( "model" );
-	if ( temp && *temp ) {
+	if ( temp && *temp ) 
+	{
 		SetModel( temp );
 	}
 
-	if ( spawnArgs.GetString( "bind", "", &temp ) ) {
+	if ( spawnArgs.GetString( "bind", "", &temp ) ) 
+	{
 		PostEventMS( &EV_SpawnBind, 0 );
 	}
+
+	//TDM: Spawn and attach any attachments
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
+	while ( kv ) {
+		idDict args;
+
+		args.Set( "classname", kv->GetValue().c_str() );
+
+		// make items non-touchable so the player can't take them out of the character's hands
+		args.Set( "no_touch", "1" );
+
+		// don't let them drop to the floor
+		args.Set( "dropToFloor", "0" );
+		
+		gameLocal.SpawnEntityDef( args, &ent );
+		if ( !ent ) {
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
+		} else {
+			Attach( ent );
+		}
+		kv = spawnArgs.MatchPrefix( "def_attach", kv );
+	}
+
 
 	// auto-start a sound on the entity
 	if ( refSound.shader && !refSound.waitfortrigger ) {
@@ -6065,6 +6098,40 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 
 /*
 ================
+idAnimatedEntity::Attach( idEntity *ent )
+================
+*/
+void idAnimatedEntity::Attach( idEntity *ent ) 
+{
+	idVec3			origin;
+	idMat3			axis;
+	jointHandle_t	joint;
+	idStr			jointName;
+	idAngles		angleOffset;
+	idVec3			originOffset;
+
+	jointName = ent->spawnArgs.GetString( "joint" );
+	joint = animator.GetJointHandle( jointName );
+	if ( joint == INVALID_JOINT ) 
+	{
+		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+	}
+
+	angleOffset = ent->spawnArgs.GetAngles( "angles" );
+	originOffset = ent->spawnArgs.GetVector( "origin" );
+
+	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+
+	ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	idMat3 rotate = angleOffset.ToMat3();
+	idMat3 newAxis = rotate * axis;
+	ent->SetAxis( newAxis );
+	ent->BindToJoint( this, joint, true );
+	ent->cinematic = cinematic;
+}
+
+/*
+================
 idAnimatedEntity::Event_GetJointHandle
 
 looks up the number of the specified joint.  returns INVALID_JOINT if the joint is not found.
@@ -6214,8 +6281,9 @@ void idEntity::LoadTDMSettings(void)
 	// If the frobsetting is alread initialized we can skip this.
 	if(m_FrobDistance == 0)
 	{
-		spawnArgs.GetBool("frobable", "0", m_bFrobable );
+		spawnArgs.GetBool("frobable", "0", m_bFrobable);
 		spawnArgs.GetInt("frob_distance", "0", m_FrobDistance);
+		spawnArgs.GetFloat("frob_bias", "1.0", m_FrobBias);
 
 		if( m_FrobDistance <= 0  )
 			m_FrobDistance = g_Global.m_DefaultFrobDistance;
@@ -6282,7 +6350,7 @@ void idEntity::UpdateFrob(void)
 			pDM->m_FrobEntityPrevious = NULL;
 
 			// stop highlight, tell peers
-			FrobHighlight( false, this );
+			FrobHighlight( false );
 		}
 		// Otherwise, we are updating AFTER the newly frobbed entity
 		// and should not set m_FrobEntity to NULL.
@@ -6293,7 +6361,7 @@ void idEntity::UpdateFrob(void)
 			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity;
 
 			// stop highlight, tell peers
-			FrobHighlight(false, this );
+			FrobHighlight(false );
 		}
 
 		goto Quit;
@@ -6307,7 +6375,7 @@ void idEntity::UpdateFrob(void)
 	if( pDM->m_FrobEntity != this )
 	{
 		pDM->m_FrobEntity = this;
-		FrobHighlight( true, this );
+		FrobHighlight( true );
 
 		// again there's a trick here for syncronicity
 		// we don't want to overwrite it if the old frob entity has not updated yet,
@@ -6320,31 +6388,23 @@ Quit:
 	return;
 }
 
-void idEntity::FrobHighlight( bool bVal, idEntity *caller )
+void idEntity::FrobHighlight( bool bVal )
 {
 	idEntity *ent = NULL;
-/*
-* NOTE:
-* It's possible that if someone shifts the focus from a frob peer to
-* another frob peer in the same chain, and in the same frame, two frob
-* update commands will be given in the same frame, one to turn off the chain
-* from the part that lost focus, and one to turn on the chain from the part 
-* that got focus.
-*
-* We don't know what order these commands could come in, since we don't
-* know which of the ents will call Present() on themselves first.
-*
-* Therefore, the timestamp is checked, and if it's been updated this frame,
-* we ignore a command to turn off the chain. (i.e., given simultaneous commands
-* to turn on the chain and turn off the chain, turn on is given priority).
-*/
-	if( (m_FrobChangeTime == gameLocal.time) && !bVal )
+
+	// Stop flooding the frob peers if we've been updated this frame
+	// NOTE: Also, a bVal of true overrides a bVal of false in the case where
+	// focus shifts to one frob peer to another (one will flood a false and one will flood a true)
+	if( (m_FrobPeerFloodFrame == gameLocal.framenum) && (bVal == m_bFrobHighlightState
+		|| !bVal ) )
 		goto Quit;
 
 	m_bFrobHighlightState = bVal;
 
 	// update our timestamp
 	m_FrobChangeTime = gameLocal.time;
+
+	m_FrobPeerFloodFrame = gameLocal.framenum;
 
 	// resolve the peer names into entities
 	// TODO: Bad for performance?  Only happens on the frame it's hilighted/unhilighted though
@@ -6355,8 +6415,8 @@ void idEntity::FrobHighlight( bool bVal, idEntity *caller )
 
 		ent = gameLocal.FindEntity( m_FrobPeers[i].c_str() );
 		// don't call it on self, would get stuck in a loop
-		if( ent && ent != caller )
-			ent->FrobHighlight( bVal, this );
+		if( ent )
+			ent->FrobHighlight( bVal );
 	}
 
 Quit:
@@ -7109,6 +7169,26 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 	return pThread;
 }
 
+void idEntity::Attach( idEntity *ent ) 
+{
+	idVec3			origin;
+	idMat3			axis;
+	idAngles		angleOffset;
+	idVec3			originOffset;
+
+	angleOffset = ent->spawnArgs.GetAngles( "angles" );
+	originOffset = ent->spawnArgs.GetVector( "origin" );
+
+	origin = GetPhysics()->GetOrigin();
+	axis = GetPhysics()->GetAxis();
+
+	ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	idMat3 rotate = angleOffset.ToMat3();
+	idMat3 newAxis = rotate * axis;
+	ent->SetAxis( newAxis );
+	ent->Bind( this, true );
+	ent->cinematic = cinematic;
+}
 
 void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Millisecond)
 {
