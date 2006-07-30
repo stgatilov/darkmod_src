@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/07/30 23:39:42  ishtvan
+ * new objective script event setObjectiveEnabling
+ *
  * Revision 1.10  2006/07/28 01:38:36  ishtvan
  * info_location objective
  *
@@ -429,6 +432,11 @@ public:
 // self explanatory
 	void Event_SetObjMandatory( int ObjIndex, bool bVal );
 	void Event_SetObjOngoing( int ObjIndex, bool bVal );
+/**
+* Replace an objective's list of enabling components with a new one
+* Takes a string list of space-delimited ints and parses it in.
+**/
+	void Event_SetObjEnabling( int ObjIndex, idStr StrIn );
 //	void Event_SetObjDifficulty( int ObjIndex, int value );
 
 /**

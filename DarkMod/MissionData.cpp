@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/07/30 23:39:43  ishtvan
+ * new objective script event setObjectiveEnabling
+ *
  * Revision 1.13  2006/07/28 01:38:36  ishtvan
  * info_location objective
  *
@@ -1097,6 +1100,32 @@ Quit:
 	return;
 }
 
+void CMissionData::Event_SetObjEnabling(int ObjIndex, idStr StrIn)
+{
+	idLexer				src;
+	idToken				token;
+	idList<int>			ObjList;
+
+	if( ObjIndex > m_Objectives.Num() || ObjIndex < 0 )
+	{
+		// log error
+		goto Quit;
+	}
+
+	// parse in the int list of "enabling objectives"
+	src.LoadMemory( StrIn.c_str(), StrIn.Length(), "" );
+	while( src.ReadToken( &token ) )
+	{
+		if( token.IsNumeric() )
+			ObjList.Append( token.GetIntValue() );
+	}
+	src.FreeSource();
+
+	m_Objectives[ObjIndex].m_EnablingObjs = ObjList;
+
+Quit:
+	return;
+}
 
 // Objective parsing:
 // TODO: Figure out how to parse/"compile" arbitrary boolean logic.  For now, don't
