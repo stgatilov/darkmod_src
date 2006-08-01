@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2006/08/01 21:13:20  sparhawk
+ * Lightgem splitcode
+ *
  * Revision 1.32  2006/06/21 10:12:45  sparhawk
  * Added version tracking per file
  *
@@ -975,6 +978,8 @@ private:
 	 */
 	idEntity				*m_LightgemSurface;
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
+	int						m_LightgemShotSpot;
+	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	SECURITY_ATTRIBUTES		m_saPipeSecurity;
 	PSECURITY_DESCRIPTOR	m_pPipeSD;
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.66  2006/08/01 21:13:19  sparhawk
+ * Lightgem splitcode
+ *
  * Revision 1.65  2006/07/20 21:07:31  sparhawk
  * Frame logging fixed.
  *
@@ -441,6 +444,9 @@ void idGameLocal::Clear( void )
 	m_MissionData = &g_MissionData;
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
+	m_LightgemShotSpot = 0;
+	for(i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
+		m_LightgemShotValue[i] = 0.0;
 	m_DoLightgem = true;
 
 	serverInfo.Clear();
@@ -521,44 +527,28 @@ void idGameLocal::Clear( void )
 	savedEventQueue.Init();
 	memset( lagometer, 0, sizeof( lagometer ) );
 
-
-
 	portalSkyEnt			= NULL;
-
 	portalSkyActive			= false;
-
 	m_KeyboardHook			= NULL;
 
-
-
-//	ResetSlowTimeVars();
+	//	ResetSlowTimeVars();
 
 #ifdef _WINDOWS_
 	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
 
 	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-
 	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
-
 	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
-
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
-
 	m_saPipeSecurity.bInheritHandle = FALSE;
-
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-
 #endif
-
 
 	for(i = 0; i < IR_COUNT; i++)
 	{
 		m_KeyData[i].KeyState = KS_FREE;
-
 		m_KeyData[i].Impulse = -1;
-
 	}
-
 }
 
 /*
@@ -2827,7 +2817,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	RunDebugInfo();
 	D_DrawDebugLines();
 
-	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %- %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
+	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame end %d - %d: all:%.1f th:%.1f ev:%.1f %d ents \r", 
 		time, timer_think.Milliseconds() + timer_events.Milliseconds(),
 		timer_think.Milliseconds(), timer_events.Milliseconds(), num );
 
@@ -5189,7 +5179,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 {
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
 	float fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
-	float fRetVal;
+	float fRetVal = 0.0;
 	int playerid;			// player viewid
 	int headid;				// head viewid
 	int pdef;				// player modeldef
@@ -5217,23 +5207,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	LGPos.z += cv_lg_ozoffs.GetInteger();
 	lg->SetOrigin(LGPos);
 
-/*
-	idStr strText;
-	int y;
-	y = 100;
-	sprintf(strText, "LGPos  x: %f   y: %f   z: %f", LGPos.x, LGPos.y, LGPos.z);
-	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
-	y += 12;
-	sprintf(strText, "EyePos  x: %f   y: %f   z: %f", Cam.x, Cam.y, Cam.z);
-	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
-	y += 12;
-	sprintf(strText, "PlayerPos  x: %f   y: %f   z: %f", Pos.x, Pos.y, Pos.z);
-	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
-	y += 12;
-*/
-
-	// Move the camerapostion to half of the player height.
-//	LGPos.z += fabs(Cam.z - Pos.z) / 2;
 	memset(&rv, 0, sizeof(rv));
 
 	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
@@ -5295,16 +5268,25 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
 	dim = DARKMOD_LG_RENDER_WIDTH;
-//	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("ImageDimension: %u\r", dim);
-
 	fRetVal = 0.0;
 
 	name = DARKMOD_LG_RENDERPIPE_NAME;
 	rv1 = rv;
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderTurn %u", m_LightgemShotSpot);
 	for(i = 0; i < n; i++)
 	{
 		rv = rv1;
 		rv.vieworg = LGPos;
+
+		// If it's not the turn for this lightgem shot, then
+		// we skip over it. We also skip it if the splitting is disabled.
+		if(cv_lg_split.GetBool() == true)
+		{
+			if(m_LightgemShotSpot != i)
+				continue;
+		}
+
+		m_LightgemShotValue[i] = 0.0;
 
 		switch(i)
 		{
@@ -5334,12 +5316,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			break;
 		}
 
-/*
-	sprintf(strText, "ViewOrg[%u] x: %f   y: %f   z: %f", i, rv.vieworg.x, rv.vieworg.y, rv.vieworg.z);
-	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
-	y += 12;
-*/
-		// if the hud is enabled we either process all of them in case it is set to 0,
+		// If the hud is enabled we either process all of them in case it is set to 0,
 		// then we don't care which one is actually displayed (most likely the last or
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
@@ -5360,19 +5337,27 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			}
 			renderSystem->UnCrop();
 
-			// we can quit as soon as we have a maximum value
 			AnalyzeRenderImage(hPipe, fColVal);
 			CloseRenderPipe(hPipe);
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
 			{
-				if(fColVal[l] > fRetVal)
-					fRetVal = fColVal[l];
-
-//					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u]: %f\r", i, fColVal[i]);
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u] = %f/%f", l, fColVal[l], m_LightgemShotValue[i]);
+				if(fColVal[l] > m_LightgemShotValue[i])
+					m_LightgemShotValue[i] = fColVal[l];
 			}
 		}
+	}
+
+	m_LightgemShotSpot++;
+	if(m_LightgemShotSpot >= n)
+		m_LightgemShotSpot = 0;
+
+	for(i = 0; i < n; i++)
+	{
+		if(m_LightgemShotValue[i] > fRetVal)
+			fRetVal = m_LightgemShotValue[i];
 	}
 
 	prent->suppressSurfaceInViewID = playerid;

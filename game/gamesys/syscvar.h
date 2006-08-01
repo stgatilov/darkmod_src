@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/08/01 21:13:27  sparhawk
+ * Lightgem splitcode
+ *
  * Revision 1.21  2006/07/27 09:03:41  ishtvan
  * added frobbing cvars cv_frob_width and cv_frob_fadetime
  *
@@ -129,6 +132,7 @@ extern idCVar cv_lg_renderpasses;
 extern idCVar cv_lg_debug;
 extern idCVar cv_lg_model;
 extern idCVar cv_lg_adjust;
+extern idCVar cv_lg_split;
 
 extern idCVar cv_dm_distance;
 
