@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/08/01 06:44:23  ishtvan
+ * added response to physics impulses
+ *
  * Revision 1.4  2006/07/09 02:09:07  ishtvan
  * FrobMovers now toggle their state when triggered
  *
@@ -144,6 +147,10 @@ CBinaryFrobMover::CBinaryFrobMover(void)
 	m_Rotating = false;
 	m_Translating = false;
 	m_TransSpeed = 0;
+	m_ImpulseThreshCloseSq = 0;
+	m_ImpulseThreshOpenSq = 0;
+	m_vImpulseDirOpen.Zero();
+	m_vImpulseDirClose.Zero();
 }
 
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
@@ -196,6 +203,18 @@ void CBinaryFrobMover::Spawn( void )
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
+
+	// set up physics impulse behavior
+	spawnArgs.GetFloat("impulse_thresh_open", "0", m_ImpulseThreshOpenSq );
+	spawnArgs.GetFloat("impulse_thresh_close", "0", m_ImpulseThreshCloseSq );
+	m_ImpulseThreshOpenSq *= m_ImpulseThreshOpenSq;
+	m_ImpulseThreshCloseSq *= m_ImpulseThreshCloseSq;
+	spawnArgs.GetVector("impulse_dir_open", "0 0 0", m_vImpulseDirOpen );
+	spawnArgs.GetVector("impulse_dir_close", "0 0 0", m_vImpulseDirClose );
+	if( m_vImpulseDirOpen.LengthSqr() > 0 )
+		m_vImpulseDirOpen.Normalize();
+	if( m_vImpulseDirClose.LengthSqr() > 0 )
+		m_vImpulseDirClose.Normalize();
 
 	if(!m_Open) 
 	{
@@ -442,5 +461,40 @@ void CBinaryFrobMover::ClosePortal(void)
 void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
 {
 	ToggleOpen();
+}
+
+void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse)
+{
+	idVec3 SwitchDir;
+	float SwitchThreshSq(0), ImpulseMagSq(0);
+
+	if( (m_Open && (m_ImpulseThreshCloseSq > 0)) || (!m_Open && (m_ImpulseThreshOpenSq > 0)) )
+	{
+		if( m_Open )
+		{
+			SwitchDir = m_vImpulseDirClose;
+			SwitchThreshSq = m_ImpulseThreshCloseSq;
+		}
+		else
+		{
+			SwitchDir = m_vImpulseDirOpen;
+			SwitchThreshSq = m_ImpulseThreshOpenSq;
+		}
+		
+		// only resolve along the axis if it is set.  Defaults to (0,0,0) if not set
+		if( SwitchDir.LengthSqr() )
+		{
+			SwitchDir = GetPhysics()->GetAxis() * SwitchDir;
+			ImpulseMagSq = impulse*SwitchDir;
+			ImpulseMagSq *= ImpulseMagSq;
+		}
+		else
+			ImpulseMagSq = impulse.LengthSqr();
+
+		if( ImpulseMagSq >= SwitchThreshSq )
+			ToggleOpen();
+	}
+
+	idEntity::ApplyImpulse( ent, id, point, impulse);
 }
 

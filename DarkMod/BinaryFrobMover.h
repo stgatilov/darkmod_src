@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/08/01 06:44:23  ishtvan
+ * added response to physics impulses
+ *
  * Revision 1.3  2006/07/09 02:09:07  ishtvan
  * FrobMovers now toggle their state when triggered
  *
@@ -103,6 +106,15 @@ public:
 	virtual void			GetLock(void);
 
 	/**
+	* Overload the apply impulse function to see if we should change mover
+	* state when impulse is applied
+	*
+	* Description of function from idEntity::ApplyImpulse
+	* apply an impulse to the physics object, 'ent' is the entity applying the impulse
+	**/
+	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
+
+	/**
 	* Overloading idMover::DoneRotating in order to close the portal when door closes
 	**/
 	virtual void			DoneRotating( void );
@@ -197,6 +209,28 @@ protected:
 
 	bool						m_Rotating;
 	bool						m_Translating;
+
+	/**
+	* The following variables determine the behavior when the binary mover
+	* receives an impulse from the physics system.
+	*
+	* Square of the impulse magnitude thresholds for "opening" and "closing"
+	* If these are set to 0 or below, it does nothing.
+	**/
+	float						m_ImpulseThreshCloseSq;
+	float						m_ImpulseThreshOpenSq;
+
+	/**
+	* Normalized direction vectors to resolve the impulse along
+	* when opening and closing.
+	* I.e., the impulse vector * this axis yields the impulse magnitude 
+	* that is compared to the threshold.
+	*
+	* (NOTE: These default to zero, and if they are set to zero,
+	* the axis of the impulse is not checked, impulse magnitude is used in comparison)
+	**/
+	idVec3						m_vImpulseDirOpen;
+	idVec3						m_vImpulseDirClose;
 
 private:
 };
