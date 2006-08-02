@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/08/02 07:49:30  ishtvan
+ * manipulation - rotation updates/fixes
+ *
  * Revision 1.7  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -134,11 +137,12 @@ void CGrabber::StopDrag( void ) {
 CGrabber::Update
 ==============
 */
-void CGrabber::Update( idPlayer *player, bool hold ) {
+void CGrabber::Update( idPlayer *player, bool hold ) 
+{
 	idVec3 viewPoint, origin;
 	idMat3 viewAxis, axis;
 	trace_t trace;
-	idEntity *newEnt;
+	idEntity *newEnt(NULL);
 	idAngles angles;
 	jointHandle_t newJoint;
 	idStr newBodyName;
@@ -158,7 +162,8 @@ void CGrabber::Update( idPlayer *player, bool hold ) {
 	player->GetViewPos( viewPoint, viewAxis );
 
 	// if no entity selected for dragging
-    if ( !dragEnt.GetEntity() ) {
+    if ( !dragEnt.GetEntity() ) 
+	{
 		gameLocal.clip.TracePoint( trace, viewPoint, viewPoint + viewAxis[0] * MAX_PICKUP_DISTANCE, (CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_BODY), player );
 		if ( trace.fraction < 1.0f ) {
 
@@ -381,10 +386,17 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 
 		angle = idMath::ClampFloat( -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, angle * MOUSE_SCALE );
 
-		this->rotation.Set( vec3_origin, rotationVec * viewAxis, angle );
+		idAngles viewAnglesXY = viewAxis.ToAngles();
+		// ignore the change in player pitch angles
+		viewAnglesXY[0] = 0;
+		idMat3 viewAxisXY = viewAnglesXY.ToMat3();
+
+//		this->rotation.Set( vec3_origin, rotationVec * viewAxis, angle );
+		this->rotation.Set( this->drag.GetCenterOfMass() - physics->GetOrigin(), rotationVec * viewAxisXY, angle );
 		angularVelocity += this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
 	}
-	else {
+	else 
+	{
 		rotating = false;
 
 		// Ishtvan: Enable player view change
@@ -412,7 +424,8 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	}
 
 	// rotate object so it stays oriented with the player
-	if( !ent->IsType( idAFEntity_Base::Type ) && !rotating && this->grabbedPosition != this->drag.GetDraggedPosition() ) {
+	if( !ent->IsType( idAFEntity_Base::Type ) && !rotating && this->grabbedPosition != this->drag.GetDraggedPosition() ) 
+	{
 		idVec3 dir1, dir2, normal;
 
 		dir1 = this->grabbedPosition - viewPoint;
