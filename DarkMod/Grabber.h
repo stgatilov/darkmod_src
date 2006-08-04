@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/08/04 10:53:26  ishtvan
+ * preliminary grabber fixes
+ *
  * Revision 1.5  2006/02/23 10:20:19  ishtvan
  * throw implemented
  *
@@ -44,7 +47,7 @@ class CGrabbedEnt {
 };
 
 class CGrabber : public idEntity {
-	public:
+public:
 		CLASS_PROTOTYPE( CGrabber );
 
 
@@ -61,7 +64,18 @@ class CGrabber : public idEntity {
 		bool					IsInClipList( idEntity *ent ) const;
 		bool					HasClippedEntity( void ) const;
 
-	protected:
+		/**
+		* Clamp the current velocity to max velocity
+		**/
+		void					ClampVelocity( float maxLin, float maxAng, int idVal = 0 );
+
+public:
+		/**
+		* Set to true if the grabbed entity is colliding this frame
+		**/
+		bool					m_bIsColliding;
+
+protected:
 		void					ManipulateObject( idPlayer *player );
 		
 		void					AddToClipList( idEntity *ent );
@@ -74,7 +88,7 @@ class CGrabber : public idEntity {
 		**/
 		void					Throw( int HeldTime );
 
-	private:
+private:
 		idEntityPtr<idEntity>	dragEnt;			// entity being dragged
 		jointHandle_t			joint;				// joint being dragged
 		int						id;					// id of body being dragged
