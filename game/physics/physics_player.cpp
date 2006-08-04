@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2006/08/04 10:55:08  ishtvan
+ * added GetDeltaYaw function to get player view change
+ *
  * Revision 1.36  2006/07/09 02:40:13  ishtvan
  * rope arrow removal bugfix
  *
@@ -1101,11 +1104,11 @@ void idPhysics_Player::RopeMove( void )
 	forward.Normalize();
 
 	deltaAng1 = offset * forward;
-	deltaYaw = command.angles[1] - m_lastCommandViewYaw;
+	deltaYaw = m_DeltaViewYaw;
 
 	// use a different tolerance for rotating toward the rope vs away
 	// rotate forward by deltaAng to see if we are rotating towards or away from the rope
-	idRotation rotateView( zeros, -gravityNormal, -SHORT2ANGLE(deltaYaw) );
+	idRotation rotateView( zeros, -gravityNormal, -deltaYaw );
 	rotateView.RotatePoint( forward );
 
 	deltaAng2 = offset * forward;
@@ -1120,7 +1123,7 @@ void idPhysics_Player::RopeMove( void )
 		newOrigin = current.origin;
 
 		// define the counter-rotation around the rope point using gravity axis
-		idRotation rotatePlayer( ropePoint, -gravityNormal, -SHORT2ANGLE(deltaYaw) );
+		idRotation rotatePlayer( ropePoint, -gravityNormal, -deltaYaw );
 		rotatePlayer.RotatePoint( newOrigin );
 
 		// check whether the player will clip anything when orbiting
@@ -2163,6 +2166,8 @@ idPhysics_Player::idPhysics_Player( void ) {
 	m_viewLeanAngles = ang_zero;
 	m_viewLeanTranslation = vec3_zero;
 
+	m_DeltaViewYaw = 0.0;
+
 }
 
 /*
@@ -2362,9 +2367,20 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 idPhysics_Player::SetPlayerInput
 ================
 */
-void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &newViewAngles ) {
+void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &newViewAngles ) 
+{
 	command = cmd;
 	viewAngles = newViewAngles;		// can't use cmd.angles cause of the delta_angles
+
+	// TDM: Set m_DeltaViewYaw
+	m_DeltaViewYaw = command.angles[1] - m_lastCommandViewYaw;
+	m_DeltaViewYaw = SHORT2ANGLE(m_DeltaViewYaw);
+	
+	// don't return a change if the player's view is locked in place
+	if( static_cast<idPlayer *>(self)->m_NoViewChange )
+		m_DeltaViewYaw = 0;
+
+	m_lastCommandViewYaw = command.angles[1];
 }
 
 /*
@@ -4453,4 +4469,9 @@ void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
 		m_RopeEntity = NULL;
 	if( RopeEnt && m_RopeEntTouched && m_RopeEntTouched == RopeEnt )
 		m_RopeEntTouched = NULL;
+}
+
+float idPhysics_Player::GetDeltaViewYaw( void )
+{
+	return m_DeltaViewYaw;
 }
