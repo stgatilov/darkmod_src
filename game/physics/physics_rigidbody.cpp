@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/08/04 10:54:20  ishtvan
+ * grabber fixes
+ *
  * Revision 1.5  2006/06/21 13:07:08  sparhawk
  * Added version tracking per cpp module
  *
@@ -33,6 +36,8 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/grabber.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS
@@ -44,6 +49,8 @@ const int STOP_SPEED            = 10.0f;
 const idVec3 WATER_STOP_LINEAR(10.0f,10.0f,10.0f);
 const idVec3 WATER_STOP_ANGULAR(500000.0f,500000.0f,500000.0f);
 const int NO_MOVE_TIME          = 200;
+static const float MAX_GRABBER_EXT_VELOCITY		= 120.0f;
+static const float MAX_GRABBER_EXT_ANGVEL		= 5.0f;
 #else
 const float STOP_SPEED		= 10.0f;
 #endif
@@ -283,6 +290,13 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	// get info from other entity involved
 	ent = gameLocal.entities[collision.c.entityNum];
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
+	
+	// Check if we are grabbed by the grabber, and limit collision speed to the maximum grabber external speed
+	if( self == g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	{
+		g_Global.m_DarkModPlayer->grabber->ClampVelocity( MAX_GRABBER_EXT_VELOCITY, MAX_GRABBER_EXT_ANGVEL );
+		g_Global.m_DarkModPlayer->grabber->m_bIsColliding = true;
+	}
 
 	// collision point relative to the body center of mass
 	r = collision.c.point - ( current.i.position + centerOfMass * current.i.orientation );

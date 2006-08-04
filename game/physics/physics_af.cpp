@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/08/04 10:54:20  ishtvan
+ * grabber fixes
+ *
  * Revision 1.7  2006/06/21 13:07:07  sparhawk
  * Added version tracking per cpp module
  *
@@ -38,6 +41,8 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
+#include "../darkmod/playerdata.h"
+#include "../darkmod/grabber.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_AF )
 END_CLASS
@@ -70,6 +75,9 @@ const float SUSPEND_LINEAR_ACCELERATION		= 20.0f;
 const float SUSPEND_ANGULAR_ACCELERATION	= 30.0f;
 const idVec6 vec6_lcp_epsilon				= idVec6( LCP_EPSILON, LCP_EPSILON, LCP_EPSILON,
 													 LCP_EPSILON, LCP_EPSILON, LCP_EPSILON );
+
+static const float MAX_GRABBER_EXT_VELOCITY		= 120.0f;
+static const float MAX_GRABBER_EXT_ANGVEL		= 5.0f;
 
 #define AF_TIMINGS
 
@@ -5579,6 +5587,13 @@ bool idPhysics_AF::CollisionImpulse( float timeStep, idAFBody *body, trace_t &co
 		invMass = body->invMass;
 	}
 #endif
+
+	// Check if we are grabbed by the grabber, and limit collision speed to the maximum grabber external speed
+	if( self == g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	{
+		g_Global.m_DarkModPlayer->grabber->ClampVelocity( MAX_GRABBER_EXT_VELOCITY, MAX_GRABBER_EXT_ANGVEL, collision.c.id );
+		g_Global.m_DarkModPlayer->grabber->m_bIsColliding = true;
+	}
 
 	// get info from other entity involved
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
