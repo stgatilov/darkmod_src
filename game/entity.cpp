@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.65  2006/08/05 19:54:30  ishtvan
+ * removed block on binding to world (might have to put it back in if this causes problems later)
+ *
  * Revision 1.64  2006/07/30 23:33:18  ishtvan
  * *) frob bugfixes
  *
@@ -2456,7 +2459,11 @@ bool idEntity::InitBind( idEntity *master )
 		static_cast<idAFEntity_Base *>(this)->AddBindConstraints();
 	}
 
-	if ( !master || master == gameLocal.world ) {
+// TDM: Removed the inability to bind something to the world
+// Might have to put it back in if something unforseen happens later because of this
+//	if ( !master || master == gameLocal.world ) 
+	if ( !master ) 
+	{
 		// this can happen in scripts, so safely exit out.
 		return false;
 	}
