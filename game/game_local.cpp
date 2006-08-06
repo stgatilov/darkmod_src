@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.67  2006/08/06 19:44:08  sparhawk
+ * Some changes which will hopefully fix the lightgem flickering.
+ *
  * Revision 1.66  2006/08/01 21:13:19  sparhawk
  * Lightgem splitcode
  *
@@ -2628,7 +2631,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		if ( player ) {
 			player->Think();
 		}
-	} else do {
+	}
+	else do
+	{
 		// update the game time
 		framenum++;
 		previousTime = time;
@@ -2748,12 +2753,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		timer_events.Clear();
 		timer_events.Start();
 
-		if(m_DoLightgem == true)
-		{
-			ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
-			m_DoLightgem = false;
-		}
-
 		// service any pending events
 		idEvent::ServiceEvents();
 
@@ -2804,6 +2803,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
 			skipCinematic = false;
 			break;
+		}
+		if(m_DoLightgem == true)
+		{
+			ProcessLightgem(player, (cv_lg_hud.GetInteger() == 0));
+			m_DoLightgem = false;
 		}
 	} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
 
@@ -2925,7 +2929,7 @@ bool idGameLocal::Draw( int clientNum )
 	// render the scene
 	player->playerView.RenderPlayerView(player->hud);
 
-	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
+//	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
 
 	m_DoLightgem = true;
 	return true;
@@ -5221,8 +5225,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	rv.fov_x = cv_lg_fov.GetInteger();
 	rv.fov_y = cv_lg_fov.GetInteger();		// Bigger values means more compressed view
 	rv.forceUpdate = false;
-	rv.x = 0;
-	rv.y = 0;
+	rv.x = 0+100;
+	rv.y = 0+100;
 	rv.time = time;
 
 	n = cv_lg_renderpasses.GetInteger();
