@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/08/07 06:52:08  ishtvan
+ * *) added distance control
+ *
+ * *) Grabber now always grabs the center of mass
+ *
+ * *) StartGrab function added that may be called by the inventory to drop stuff to hands
+ *
  * Revision 1.6  2006/08/04 10:53:26  ishtvan
  * preliminary grabber fixes
  *
@@ -69,17 +76,40 @@ public:
 		**/
 		void					ClampVelocity( float maxLin, float maxAng, int idVal = 0 );
 
+		/**
+		* Increment the distance at which the held item is held.
+		* Decrements the distance if the argument is false
+		**/
+		void					IncrementDistance( bool bIncrease );
+
+		/**
+		* Start grabbing an item.  Called internally and by the inventory
+		**/
+		void					StartGrab( idPlayer *player, idEntity *newEnt = NULL, int bodyID = 0 );
+
 public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
 		**/
 		bool					m_bIsColliding;
 
+		/**
+		* Set to true if the grabbed entity collided in the previous frame
+		**/
+		bool					m_bPrevFrameCollided;
+
 protected:
+
+		/**
+		* Performs object rotation
+		* Also turns the item to face the player when they yaw their view.
+		**/
 		void					ManipulateObject( idPlayer *player );
 		
 		void					AddToClipList( idEntity *ent );
 		void					RemoveFromClipList( int index );
+
+		void					Event_CheckClipList( void );
 
 		/**
 		* Throws the current item.
@@ -88,13 +118,13 @@ protected:
 		**/
 		void					Throw( int HeldTime );
 
-private:
+protected:
+
 		idEntityPtr<idEntity>	dragEnt;			// entity being dragged
 		jointHandle_t			joint;				// joint being dragged
 		int						id;					// id of body being dragged
 		idVec3					localEntityPoint;	// dragged point in entity space
-		idVec3					localPlayerPoint;	// dragged point in player space
-		idStr					bodyName;			// name of the body being dragged
+		idVec3					localPlayerPoint;	// dragged point in player space (not used anymore)
 
 		idPlayer				*player;
 		CForce_Grab				drag;
@@ -102,7 +132,6 @@ private:
 		idRotation				rotation;
 		int						rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
 		idVec3					rotatePosition;		// how much to rotate the object
-		idVec3					grabbedPosition;	// where the player was looking when the object was grabbed
 		idVec2					mousePosition;		// mouse position when user pressed BUTTON_ZOOM
 
 		idList<CGrabbedEnt>		clipList;
@@ -119,7 +148,32 @@ private:
 		**/
 		int						m_ThrowTimer;
 
-		void					Event_CheckClipList( void );
+		/**
+		* Int storing the distance increments for held item distance.
+		* When this is equal to m_MaxDistCount, it is held at the maximum
+		* distance (the frob distance).
+		**/
+		int						m_DistanceCount;
+
+		/**
+		* Maximum distance increments at which the item can be held.
+		* Corresponds to 1.0 * the max distance.
+		**/
+		int						m_MaxDistCount;
+
+		/**
+		* Minimum held distance (can be unique to each entity)
+		* NOTE: The maximum held distance is always the frob distance of that ent
+		**/
+		int						m_MinHeldDist;
+
+		/**
+		* When colliding, the held distance gets locked to +/- two increments
+		* around this value.  This is to prevent the player from going way
+		* past the collision point and having to increment all the way back
+		* before they see any response.
+		**/
+		int						m_LockedHeldDist;
 };
 
 

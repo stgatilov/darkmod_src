@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/08/07 06:52:08  ishtvan
+ * *) added distance control
+ *
+ * *) Grabber now always grabs the center of mass
+ *
+ * *) StartGrab function added that may be called by the inventory to drop stuff to hands
+ *
  * Revision 1.9  2006/08/04 10:53:26  ishtvan
  * preliminary grabber fixes
  *
@@ -39,7 +46,8 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../game/Game_local.h"
-#include "darkmodglobals.h"
+#include "DarkModGlobals.h"
+#include "PlayerData.h"
 
 #include "Grabber.h"
 
@@ -63,8 +71,14 @@ const float MAX_PICKUP_DISTANCE =		1000.0f;
 const float ROTATION_SPEED	=			1.0f;
 const float ROTATION_DAMPER =			0.9f;
 const float MAX_ROTATION_SPEED =		30.0f;
+// when you let go of an item, the velocity is clamped to this value
 const float MAX_RELEASE_LINVEL =		30.0f;
+// when you let go of an item, the angular velocity is clamped to this value
 const float MAX_RELEASE_ANGVEL =		10.0f;
+// limits how close you can hold an item to the player view point
+const float MIN_HELD_DISTANCE  =		35.0f;
+// granularity of the distance control
+const int	DIST_GRANULARITY	=		12;
 
 const idVec3 rotateMin( -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED );
 const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPEED );
@@ -103,16 +117,23 @@ CGrabber::~CGrabber( void ) {
 CGrabber::Clear
 ==============
 */
-void CGrabber::Clear( void ) {
+void CGrabber::Clear( void ) 
+{
 	dragEnt			= NULL;
+	player			= NULL;
 	joint			= INVALID_JOINT;
 	id				= 0;
 	localEntityPoint.Zero();
 	localPlayerPoint.Zero();
-	bodyName.Clear();
 	m_bAttackPressed = false;
 	m_ThrowTimer = 0;
 	m_bIsColliding = false;
+	m_bPrevFrameCollided = false;
+
+	m_DistanceCount = 0;
+	m_MinHeldDist	= 0;
+	m_MaxDistCount	= DIST_GRANULARITY;
+	m_LockedHeldDist = 0;
 
 	while( this->HasClippedEntity() )
 		this->RemoveFromClipList( 0 );
@@ -123,7 +144,8 @@ void CGrabber::Clear( void ) {
 CGrabber::Spawn
 ==============
 */
-void CGrabber::Spawn( void ) {
+void CGrabber::Spawn( void ) 
+{
 	//TODO: Change constants at the start of the file and assign them here
 	//	using spawnArgs.
 	//
@@ -138,7 +160,14 @@ CGrabber::StopDrag
 void CGrabber::StopDrag( void ) 
 {
 	m_bIsColliding = false;
+	m_bPrevFrameCollided = false;
+	m_DistanceCount = 0;
 	this->dragEnt = NULL;
+
+	player->m_bDraggingBody = false;
+	player->m_bGrabberActive = false;
+	player->SetImmobilization( "Grabber", 0 );
+	player->RaiseWeapon();
 }
 
 /*
@@ -152,22 +181,15 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	idMat3 viewAxis, axis;
 	trace_t trace;
 	idEntity *newEnt(NULL);
-	idAngles angles;
-	jointHandle_t newJoint;
-	idStr newBodyName;
+	jointHandle_t newJoint(INVALID_JOINT);
 
-	// set this just in case we need it later
 	this->player = player;
 
 	// if there is an entity selected, we let it go and exit
 	if( !hold && this->dragEnt.GetEntity() ) 
 	{
 		ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, this->id );
-		// stop dragging so better put the players gun back
-		player->RaiseWeapon();
-		// unlock view. 
-// TODO: Use Gildoran's univeral encumbrance system for this
-		player->m_NoViewChange = false;
+
 		this->StopDrag();
 		
 		goto Quit;
@@ -175,106 +197,16 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	player->GetViewPos( viewPoint, viewAxis );
 
-	// if no entity selected for dragging
+	// if no entity is currently selected for dragging, start grabbing the frobbed entity
     if ( !dragEnt.GetEntity() ) 
-	{
-		gameLocal.clip.TracePoint( trace, viewPoint, viewPoint + viewAxis[0] * MAX_PICKUP_DISTANCE, (CONTENTS_SOLID|CONTENTS_RENDERMODEL|CONTENTS_BODY), player );
-		if ( trace.fraction < 1.0f ) {
+		StartGrab( player );
 
-			newEnt = gameLocal.entities[ trace.c.entityNum ];
-			if ( newEnt ) {
-
-				if ( newEnt->GetBindMaster() ) {
-					if ( newEnt->GetBindJoint() ) {
-						trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
-					} else {
-						trace.c.id = newEnt->GetBindBody();
-					}
-					newEnt = newEnt->GetBindMaster();
-				}
-
-				if ( newEnt->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base *>(newEnt)->IsActiveAF() ) {
-					idAFEntity_Base *af = static_cast<idAFEntity_Base *>(newEnt);
-
-					// joint being dragged
-					newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( trace.c.id );
-					// get the body id from the trace model id which might be a joint handle
-					trace.c.id = af->BodyForClipModelId( trace.c.id );
-					// get the name of the body being dragged
-					newBodyName = af->GetAFPhysics()->GetBody( trace.c.id )->GetName();
-
-				} else if ( !newEnt->IsType( idWorldspawn::Type ) ) {
-
-					if ( trace.c.id < 0 ) {
-						newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( trace.c.id );
-					} else {
-						newJoint = INVALID_JOINT;
-					}
-					newBodyName = "";
-
-				} else {
-
-					newJoint = INVALID_JOINT;
-					newEnt = NULL;
-				}
-			}
-			if ( newEnt ) 
-			{
-				// TODO: The !idStaticEntity here is temporary to fix a bug that should go away once frobbing moveables works again
-				if( newEnt->IsType(idStaticEntity::Type) )
-					goto Quit;
-
-				dragEnt = newEnt;
-				joint = newJoint;
-				id = trace.c.id;
-				bodyName = newBodyName;
-
-				// get the center of mass
-				idPhysics *phys = dragEnt.GetEntity()->GetPhysics();
-				idClipModel *clipModel;
-
-
-				if ( (clipModel = phys->GetClipModel( id )) && clipModel->IsTraceModel() ) 
-				{
-						float mass;
-						idMat3 inertiaTensor;
-						clipModel->GetMassProperties( 1.0f, mass, COM, inertiaTensor );
-				} else 
-				{
-					COM.Zero();
-				}
-				COMWorld = phys->GetOrigin( id ) + COM * phys->GetAxis( id );
-//				localPlayerPoint = ( trace.c.point - viewPoint ) * viewAxis.Transpose();
-				localPlayerPoint = (COMWorld - viewPoint) * viewAxis.Transpose();
-
-				origin = phys->GetOrigin( id );
-				axis = phys->GetAxis( id );
-//				localEntityPoint = ( trace.c.point - origin ) * axis.Transpose();
-				localEntityPoint = COM;
-
-				// prevent collision with player
-				// set the clipMask so that the objet only collides with the world
-				this->AddToClipList( this->dragEnt.GetEntity() );
-
-				// signal object manipulator to update drag position so it's relative to the objects
-				// center of mass instead of its origin
-				this->rotationAxis = -1;
-				this->grabbedPosition = localPlayerPoint;
-				//this->grabbedPosition = COMWorld;
-
-				this->drag.Init( g_dragDamping.GetFloat() );
-				this->drag.SetPhysics( phys, id, localEntityPoint );
-			}
-		}
-	}
-
-	// if there is an entity selected for dragging
 	idEntity *drag = dragEnt.GetEntity();
 	if ( drag ) 
 	{
 		idVec3 draggedPosition;
 
-		// Ishtvan: Check for throwing:
+		// Check for throwing:
 		bool bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
 
 		if( m_bAttackPressed && !bAttackHeld )
@@ -295,14 +227,31 @@ void CGrabber::Update( idPlayer *player, bool hold )
 			m_ThrowTimer = gameLocal.time;
 		}
 
+		// Update the held distance
 
-		draggedPosition = viewPoint + localPlayerPoint * viewAxis;
+		// Lock the held distance to +/- a few increments around the current held dist
+		// when collision occurs.
+		// Otherwise the player would have to increment all the way back
+		if(m_bIsColliding)
+		{
+			if(!m_bPrevFrameCollided)
+				m_LockedHeldDist = m_DistanceCount;
+
+			m_DistanceCount = idMath::ClampInt( (m_LockedHeldDist-2), (m_LockedHeldDist+1), m_DistanceCount );
+		}
+
+		idVec3 vPlayerPoint(1.0f,0.0f,0.0f);
+		float distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
+		vPlayerPoint *= m_MinHeldDist + (dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+
+		draggedPosition = viewPoint + vPlayerPoint * viewAxis;
+
+
 		this->drag.SetDragPosition( draggedPosition );
 
 		// evaluate physics
 		// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
 		// calculations which is what we want so that the manipulation works properly
-		//this->grabbedPosition = this->drag.GetCenterOfMass();
 		this->drag.Evaluate( gameLocal.time );
 		this->ManipulateObject( player );
 
@@ -313,6 +262,144 @@ void CGrabber::Update( idPlayer *player, bool hold )
 			dragAnimator->GetJointTransform( joint, gameLocal.time, draggedPosition, axis );
 		}
 	}
+
+Quit:
+	m_bPrevFrameCollided = m_bIsColliding;
+	
+	// reset this, it gets set by physics if the object collides
+	m_bIsColliding = false;
+	return;
+}
+
+void CGrabber::StartGrab( idPlayer *player, idEntity *newEnt, int bodyID )
+{
+	idVec3 viewPoint, origin, COM, COMWorld, delta2;
+	idEntity *FrobEnt;
+	idMat3 viewAxis, axis;
+	trace_t trace;
+	jointHandle_t newJoint;
+
+	// Just in case we were called while holding another item:
+	StopDrag();
+
+	player->GetViewPos( viewPoint, viewAxis );
+
+	// If an entity was not explictly passed in, use the frob entity
+    if ( !newEnt ) 
+	{
+		if( !(FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity) )
+			goto Quit;
+
+		newEnt = FrobEnt;
+
+		trace = g_Global.m_DarkModPlayer->m_FrobTrace;
+		
+		// If the ent was not hit directly and is an AF, we must fill in the joint and body ID
+		if( trace.c.entityNum != FrobEnt->entityNumber && FrobEnt->IsType(idAFEntity_Base::Type) )
+		{
+			static_cast<idPhysics_AF *>(FrobEnt->GetPhysics())->NearestBodyOrig( trace.c.point, &trace.c.id );
+		}
+	}
+	else
+	{
+		// An entity was passed in to grab directly
+		trace.c.id = bodyID;
+	}
+
+	if ( newEnt->GetBindMaster() ) 
+	{
+		if ( newEnt->GetBindJoint() ) 
+		{
+		trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
+		} else 
+		{
+			trace.c.id = newEnt->GetBindBody();
+		}
+		newEnt = newEnt->GetBindMaster();			
+	}
+
+	if ( newEnt->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base *>(newEnt)->IsActiveAF() ) 
+	{
+		idAFEntity_Base *af = static_cast<idAFEntity_Base *>(newEnt);
+
+		// joint being dragged
+		newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( trace.c.id );
+		// get the body id from the trace model id which might be a joint handle
+		trace.c.id = af->BodyForClipModelId( trace.c.id );
+	} 
+	else if ( !newEnt->IsType( idWorldspawn::Type ) ) 
+	{
+		if ( trace.c.id < 0 ) 
+		{
+			newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( trace.c.id );
+		} else 
+		{
+			newJoint = INVALID_JOINT;
+		}
+	} else 
+	{
+			newJoint = INVALID_JOINT;
+			newEnt = NULL;
+	}
+	
+	// If the new entity still wasn't set at this point, it was a frobbed
+	// ent but was found to be invalid.
+
+	if ( !newEnt ) 
+		goto Quit;
+	
+// Set up the distance and orientation and stuff
+
+	// TODO: The !idStaticEntity here is temporary to fix a bug that should go away once frobbing moveables works again
+	if( newEnt->IsType(idStaticEntity::Type) )
+		goto Quit;
+
+	this->dragEnt = newEnt;
+	this->joint = newJoint;
+	this->id = trace.c.id;
+
+	// get the center of mass
+	idPhysics *phys = dragEnt.GetEntity()->GetPhysics();
+	idClipModel *clipModel;
+
+	if ( (clipModel = phys->GetClipModel( id )) && clipModel->IsTraceModel() ) 
+	{
+		float mass;
+		idMat3 inertiaTensor;
+		clipModel->GetMassProperties( 1.0f, mass, COM, inertiaTensor );
+	} else 
+	{
+		COM.Zero();
+	}
+	COMWorld = phys->GetOrigin( id ) + COM * phys->GetAxis( id );
+
+	origin = phys->GetOrigin( id );
+	axis = phys->GetAxis( id );
+	localEntityPoint = COM;
+
+	// find the nearest distance and set it to that
+	m_MinHeldDist = newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" );
+	if( m_MinHeldDist < 0 )
+		m_MinHeldDist = MIN_HELD_DISTANCE;
+
+	delta2 = COMWorld - viewPoint;
+	m_DistanceCount = idMath::Floor( m_MaxDistCount * (delta2.Length() - m_MinHeldDist) / (newEnt->m_FrobDistance - m_MinHeldDist ) );
+	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
+
+	// prevent collision with player
+	// set the clipMask so that the objet only collides with the world
+	this->AddToClipList( this->dragEnt.GetEntity() );
+
+	// signal object manipulator to update drag position so it's relative to the objects
+	// center of mass instead of its origin
+	this->rotationAxis = -1;
+
+	this->drag.Init( g_dragDamping.GetFloat() );
+	this->drag.SetPhysics( phys, id, localEntityPoint );
+
+	player->m_bGrabberActive = true;
+	// don't let the player switch weapons or items
+	player->SetImmobilization( "Grabber", EIM_ITEM_SELECT | EIM_WEAPON_SELECT );
 
 Quit:
 	return;
@@ -369,8 +456,8 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		float angle = 0.0f;
 		rotating = true;
 
-		// Ishtvan: Disable player view change
-		player->m_NoViewChange = true;
+		// Disable player view change while rotating
+		player->SetImmobilization( "Grabber", player->GetImmobilization("Grabber") | EIM_VIEW_ANGLE );
 		
 		if( !this->DeadMouse() ) 
 		{
@@ -446,7 +533,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		rotating = false;
 
 		// Ishtvan: Enable player view change
-		player->m_NoViewChange = false;
+		player->SetImmobilization( "Grabber", player->GetImmobilization("Grabber") & (~EIM_VIEW_ANGLE) );
 
 		// reset these coordinates so that next time they press zoom the rotation will be fresh
 		this->mousePosition.x = player->usercmd.mx;
@@ -648,8 +735,6 @@ void CGrabber::Throw( int HeldTime )
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, this->id );
 	ent->ApplyImpulse( player, id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
 
-	player->m_NoViewChange = false;
-	player->RaiseWeapon();
 	StopDrag();
 }
 
@@ -674,5 +759,21 @@ void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
 		if( lengthAng > 0 )
 			ent->GetPhysics()->SetAngularVelocity( angular * (lengthAng2/lengthAng), idVal );
 	}
+}
+
+void CGrabber::IncrementDistance( bool bIncrease )
+{
+	int increment = 1;
+	if( !dragEnt.GetEntity() )
+		goto Quit;
+	
+	if( !bIncrease )
+		increment *= -1;
+
+	m_DistanceCount += increment;
+	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
+
+Quit:
+	return;
 }
 		
