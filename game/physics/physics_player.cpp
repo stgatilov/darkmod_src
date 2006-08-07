@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2006/08/07 06:54:37  ishtvan
+ * got rid of m_NoViewChange and replaced it with Gildoran's immobilization system
+ *
  * Revision 1.37  2006/08/04 10:55:08  ishtvan
  * added GetDeltaYaw function to get player view change
  *
@@ -2377,7 +2380,7 @@ void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &new
 	m_DeltaViewYaw = SHORT2ANGLE(m_DeltaViewYaw);
 	
 	// don't return a change if the player's view is locked in place
-	if( static_cast<idPlayer *>(self)->m_NoViewChange )
+	if( static_cast<idPlayer *>(self)->GetImmobilization() & EIM_VIEW_ANGLE )
 		m_DeltaViewYaw = 0;
 
 	m_lastCommandViewYaw = command.angles[1];
