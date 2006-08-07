@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/08/07 06:43:47  ishtvan
+ * grabber updates
+ *
  * Revision 1.31  2006/07/30 23:38:44  ishtvan
  * *) Added frob bias
  *
@@ -214,9 +217,9 @@ enum {
 	EIM_CLIMB				= BIT( 6),	// Climbing ladders, ropes and mantling. (NYI)
 	EIM_FROB				= BIT( 7),	// Frobbing.
 	EIM_ATTACK				= BIT( 8),	// Using weapons (NYI)
-	EIM_WEAPON_SELECT		= BIT( 9),	// Selecting weapons (NYI)
+	EIM_WEAPON_SELECT		= BIT( 9),	// Selecting weapons.
 	EIM_ITEM				= BIT(10),	// Using items (NYI)
-	EIM_ITEM_SELECT			= BIT(11),	// Selecting items (NYI)
+	EIM_ITEM_SELECT			= BIT(11),	// Selecting items.
 };
 
 class idInventory {
@@ -365,10 +368,21 @@ public:
 	idInventory				inventory;
 
 	/**
-	* Set to true if you don't want the player's view to change
-	* during some action. (Like when mouse axes are overloaded)
+	* Set to true if the player is holding an item with the Grabber
 	**/
-	bool					m_NoViewChange;
+	bool					m_bGrabberActive;
+
+	/**
+	* Set to true if the player is dragging a body
+	* NOT YET IMPLEMENTED
+	**/
+	bool					m_bDraggingBody;
+
+	/**
+	* Set to true if the player is shouldering a body
+	* NOT YET IMPLEMENTED
+	**/
+	bool					m_bShoulderingBody;
 
 	idEntityPtr<idWeapon>	weapon;
 	bool					m_guiOverlayOn;
@@ -481,6 +495,9 @@ public:
 	bool					SkipCinematic( void );
 
 	int						GetImmobilization();
+	int						GetImmobilization( const char *source );
+	void					SetImmobilization( const char *source, int type );
+
 	float					GetHinderance();
 
 	void					UpdateConditions( void );

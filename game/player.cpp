@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.74  2006/08/07 06:43:47  ishtvan
+ * grabber updates
+ *
  * Revision 1.73  2006/07/30 23:38:44  ishtvan
  * *) Added frob bias
  *
@@ -1432,7 +1435,9 @@ idPlayer::idPlayer()
 	isChatting				= false;
 	selfSmooth				= false;
 
-	m_NoViewChange			= false;
+	m_bGrabberActive		= false;
+	m_bDraggingBody			= false;
+	m_bShoulderingBody		= false;
 
 	// Add the default stims to the player. These are stims
 	// that can be performed by the actual player, while the
@@ -1736,9 +1741,6 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
-
-	m_NoViewChange = false;
-
 }
 
 /*
@@ -2164,9 +2166,12 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( leader );
 	savefile->WriteInt( lastSpectateChange );
 	savefile->WriteInt( lastTeleFX );
-	savefile->WriteBool( m_NoViewChange );
 
 	savefile->WriteFloat( pm_stamina.GetFloat() );
+
+	savefile->WriteBool( m_bGrabberActive );
+	savefile->WriteBool( m_bDraggingBody );
+	savefile->WriteBool( m_bShoulderingBody );
 
 	if ( hud ) {
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -2414,7 +2419,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( leader );
 	savefile->ReadInt( lastSpectateChange );
 	savefile->ReadInt( lastTeleFX );
-	savefile->ReadBool( m_NoViewChange );
 
 	// set the pm_ cvars
 	const idKeyValue	*kv;
@@ -2426,6 +2430,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat( set );
 	pm_stamina.SetFloat( set );
+
+	savefile->ReadBool( m_bGrabberActive );
+	savefile->ReadBool( m_bDraggingBody );
+	savefile->ReadBool( m_bShoulderingBody );
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -5336,7 +5344,8 @@ void idPlayer::UpdateViewAngles( void ) {
 	int i;
 	idAngles delta;
 
-	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || m_NoViewChange || GetImmobilization() & EIM_VIEW_ANGLE ) ) {
+	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || GetImmobilization() & EIM_VIEW_ANGLE ) ) 
+	{
 		// no view changes at all, but we still want to update the deltas or else when
 		// we get out of this mode, our view will snap to a kind of random angle
 		UpdateDeltaViewAngles( viewAngles );
@@ -6041,9 +6050,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 		ClientSendEvent( EVENT_IMPULSE, &msg );
 	}
 
-	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) {
+	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) 
+	{
 		// Prevent the player from choosing to switch weapons.
-		if ( GetImmobilization() & EIM_WEAPON_SELECT ) {
+		if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
+		{
 			return;
 		}
 
@@ -6056,11 +6067,33 @@ void idPlayer::PerformImpulse( int impulse ) {
 			Reload();
 			break;
 		}
-		case IMPULSE_14: {
+		case IMPULSE_14: 
+		{
+			// If the grabber is active, next weapon increments the distance
+			if(m_bGrabberActive)
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
+
+			// Prevent the player from choosing to switch weapons.
+			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
+			{
+				return;
+			}
+
 			NextWeapon();
 			break;
 		}
-		case IMPULSE_15: {
+		case IMPULSE_15: 
+		{
+			// If the grabber is active, next weapon increments the distance
+			if(m_bGrabberActive)
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
+
+			// Prevent the player from choosing to switch weapons.
+			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
+			{
+				return;
+			}
+
 			PrevWeapon();
 			break;
 		}
@@ -6219,12 +6252,22 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_42:		// Inventory prev
 		{
+			if ( GetImmobilization() & EIM_ITEM_SELECT ) 
+			{
+				return;
+			}
+
 			g_Global.m_DarkModPlayer->SelectPrev();
 		}
 		break;
 
 		case IMPULSE_43:		// Inventory next
 		{
+			if ( GetImmobilization() & EIM_ITEM_SELECT ) 
+			{
+				return;
+			}
+
 			g_Global.m_DarkModPlayer->SelectNext();
 		}
 		break;
@@ -10199,6 +10242,7 @@ void idPlayer::FrobCheck( void )
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 			// TODO: Mark as frobbed for this frame
 			ent->SetFrobbed(true);
+			g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 
 			// we have found our frobbed entity, so exit
 			goto Quit;
@@ -10255,8 +10299,29 @@ void idPlayer::FrobCheck( void )
 		DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
 		// Mark the entity as frobbed this frame
 		BestEnt->SetFrobbed(true);
+		g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 	}
 
 Quit:
 	return;
+}
+
+int idPlayer::GetImmobilization( const char *source )
+{
+	int returnVal = 0;
+
+	if (idStr::Length(source)) 
+	{
+		returnVal = m_immobilization.GetInt(source);
+	} else 
+	{
+		returnVal = GetImmobilization();
+	}
+
+	return returnVal;
+}
+
+void idPlayer::SetImmobilization( const char *source, int type )
+{
+	Event_SetImmobilization( source, type );
 }
