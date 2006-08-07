@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.12  2006/08/07 06:52:55  ishtvan
+ * added m_FrobTrace variable that gets set by idPlayer::FrobCheck
+ *
  * Revision 1.11  2006/07/27 09:01:07  ishtvan
  * added m_FrobEntityPrevious var to store the frob entity of the previous frame
  *
@@ -127,7 +130,20 @@ public:
 	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
 	 * to the entity which is currently highlighted.
 	 */
-	idEntity	*m_FrobEntity;
+	idEntity		*m_FrobEntity;
+
+	/**
+	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed
+	* Set to INVALID and -1 if the frobbed entity is not an AF
+	**/
+	jointHandle_t	m_FrobJoint;
+	int				m_FrobID;
+
+	/**
+	* The trace that was done for frobbing
+	* Read off by idEntity::UpdateFrob when something has been newly frobbed
+	**/
+	trace_t			m_FrobTrace;
 
 	/**
 	* Frob entity in the previous frame

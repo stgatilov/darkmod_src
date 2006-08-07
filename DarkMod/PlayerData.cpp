@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.12  2006/08/07 06:52:55  ishtvan
+ * added m_FrobTrace variable that gets set by idPlayer::FrobCheck
+ *
  * Revision 1.11  2006/07/27 09:01:07  ishtvan
  * added m_FrobEntityPrevious var to store the frob entity of the previous frame
  *
@@ -80,6 +83,8 @@ CInventoryItem::CInventoryItem(void)
 CDarkModPlayer::CDarkModPlayer(void)
 {
 	m_FrobEntity = NULL;
+	m_FrobJoint = INVALID_JOINT;
+	m_FrobID = 0;
 	m_FrobEntityPrevious = NULL;
 	CInventoryItem inv_item;
 
