@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/08/07 06:51:10  ishtvan
+ * force grab no longer clears m_bIsColliding on the grabber, the grabber clears it itself
+ *
  * Revision 1.3  2006/08/04 10:53:26  ishtvan
  * preliminary grabber fixes
  *
@@ -168,7 +171,6 @@ void CForce_Grab::Evaluate( int time )
 	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
 	{
 		g_Global.m_DarkModPlayer->grabber->ClampVelocity( 1.0f, 0.0f, m_id );
-		g_Global.m_DarkModPlayer->grabber->m_bIsColliding = false;
 	}
 
 Quit:
