@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.48  2006/08/08 21:27:45  sparhawk
+ * Added an accessor for the bufferlength in th CImage class.
+ *
  * Revision 1.47  2006/07/20 21:07:25  sparhawk
  * Frame logging fixed.
  *
@@ -1202,6 +1205,11 @@ void CImage::InitImageInfo(void)
 
 Quit:
 	return;
+}
+
+unsigned long CImage::GetBufferLen(void)
+{
+	return m_BufferLength;
 }
 
 unsigned char *CImage::GetImage(void)
