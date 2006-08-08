@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.68  2006/08/08 20:18:52  sparhawk
+ * Fixed a bug where D3 crashed with a message saying that variable x is uninitialized.
+ *
  * Revision 1.67  2006/08/06 19:44:08  sparhawk
  * Some changes which will hopefully fix the lightgem flickering.
  *
@@ -5333,12 +5336,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			// 45 degree, thus the square shape.
 			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->RenderScene(&rv);
-			if(i != 2)
-			{
-				renderSystem->CaptureRenderToFile(name);
-				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
-
-			}
+			renderSystem->CaptureRenderToFile(name);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
 			renderSystem->UnCrop();
 
 			AnalyzeRenderImage(hPipe, fColVal);
@@ -5392,7 +5391,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_
 	{
 		static int indicator = 0;
 		static int lasttime;
-		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Unable to read image from renderpipe\r");
+		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to read image from renderpipe\r");
 		for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 			fColVal[i] = indicator;
 
@@ -5455,7 +5454,7 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_
 
 	// Calculate the average for each value
 	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
-		fColVal[i] = fColVal[i]/counter[x];
+		fColVal[i] = fColVal[i]/counter[i];
 
 Quit:
 	return;
