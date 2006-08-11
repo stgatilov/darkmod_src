@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/08/11 05:52:42  ishtvan
+ * preliminary boolean parsing check-in (placeholders)
+ *
  * Revision 1.11  2006/07/30 23:39:42  ishtvan
  * new objective script event setObjectiveEnabling
  *
@@ -250,6 +253,17 @@ protected:
 
 class CObjective
 {
+	/**
+	* Structure for parsing boolean logic
+	**/
+	typedef struct SBoolParseNode_s
+	{
+		int CompNum;
+		bool bNotted; // set to true if this node is NOTed
+
+		idList< idList< SBoolParseNode_s > > Rows;
+	} SBoolParseNode;
+
 public:
 	friend class CObjectiveComponent;
 	friend class CMissionData;
@@ -259,6 +273,21 @@ public:
 	virtual ~CObjective( void );
 
 	void Clear( void );
+
+	/**
+	* Evaluate the boolean relationships for objective failure and success
+	**/
+	bool CheckFailure( void );
+	bool CheckSuccess( void );
+
+	/**
+	* Parse m_SuccessLogicStr and m_FailureLogicStr into boolean evaluation
+	* matrices to be evaluated by CheckFailure and CheckSuccess.
+	* Returns false if the logic parse failed
+	*
+	* This should be run after CMissionData parsing sets those two strings
+	**/
+	bool ParseLogicStrs( void );
 
 public:
 	/** 
@@ -289,6 +318,19 @@ public:
 	int m_MinDifficulty;
 
 protected:
+	/**
+	* Internal function used by CheckFailure and CheckSuccess
+	**/
+	bool ParseBoolLogic( SBoolParseNode *input );
+
+	/**
+	* Internal function used by ParseLogicStrs
+	**/
+	bool ParseLogicStr( idStr *input, SBoolParseNode &output );
+
+protected:
+
+
 	/**
 	* Completion state.  Either COMP_INCOMPLETE, COMP_COMPLETE, COMP_FAILED or COMP_INVALID
 	**/
@@ -332,11 +374,17 @@ protected:
 	**/
 	idStr m_FailureScript;
 	
-// TODO: Add these
-	// boolean relationship among objective components required for definite success
-	
-	// boolean relationship among objective components required for definite failure
-	
+	/**
+	* Success and failure logic strings.  Used to reload the parse matrix on save/restore
+	**/
+	idStr m_SuccessLogicStr;
+	idStr m_FailureLogicStr;
+
+	/**
+	* Success and failure boolean parsing matrices
+	**/
+	SBoolParseNode m_SuccessLogic;
+	SBoolParseNode m_FailureLogic;
 };
 
 typedef struct SStat_s
@@ -375,7 +423,7 @@ typedef struct SMissionStats_s
 **/
 
 class CMissionData 
-{	
+{
 public:
 	CMissionData( void );
 	virtual ~CMissionData( void );
@@ -644,7 +692,5 @@ protected:
 	idStrList m_EntsInBounds;
 
 }; // CObjectiveLocation
-	
-
 
 #endif // MISSIONDATA_H

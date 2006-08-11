@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/08/11 05:52:43  ishtvan
+ * preliminary boolean parsing check-in (placeholders)
+ *
  * Revision 1.14  2006/07/30 23:39:43  ishtvan
  * new objective script event setObjectiveEnabling
  *
@@ -1436,6 +1439,44 @@ Quit:
 	idEntity::Think();
 	return;
 }
-	
+
+
+
+// =============== Boolean Logic Parsing for Objective Failure/Success ==============
+
+bool CObjective::CheckFailure( void )
+{
+	return ParseBoolLogic( &m_FailureLogic );
+}
+
+bool CObjective::CheckSuccess( void )
+{
+	return ParseBoolLogic( &m_SuccessLogic );
+}
+
+bool CObjective::ParseBoolLogic( SBoolParseNode *input )
+{
+	bool bReturnVal(false);
+
+	return bReturnVal;
+}
+
+bool CObjective::ParseLogicStrs( void )
+{
+	bool bReturnVal(false);
+
+	bReturnVal = ParseLogicStr( &m_SuccessLogicStr, m_SuccessLogic );
+	bReturnVal = bReturnVal && ParseLogicStr( &m_FailureLogicStr, m_FailureLogic );
+
+	return bReturnVal;
+}
+
+bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
+{
+	bool bReturnVal(false);
+
+	return bReturnVal;
+}
+
 
 
