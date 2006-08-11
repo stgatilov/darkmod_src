@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/08/11 12:32:44  gildoran
+ * Added some code so I can start work on the inventory GUI.
+ *
  * Revision 1.4  2006/07/25 01:40:28  gildoran
  * Completely revamped inventory code.
  *
@@ -164,9 +167,6 @@ class CtdmInventoryItem : public idClass {
 	/// The inventory item's owner.
 	idEntityPtr<idEntity>	m_owner;
 
-	/// The level of invisibility of the item; cursors with a lower level skip over the item.
-	unsigned int			m_invisibility;
-
   private:
 
 	friend class CtdmInventory;
@@ -274,9 +274,6 @@ class CtdmInventoryCursor : public idClass {
 
 	/// The inventory cursor's owner.
 	idEntityPtr<idEntity>	m_owner;
-
-	/// The level of invisibility of the cursor; it skips over items with a higher invisibility.
-	unsigned int			m_invisibility;
 
   private:
 

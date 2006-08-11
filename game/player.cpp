@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.75  2006/08/11 12:32:50  gildoran
+ * Added some code so I can start work on the inventory GUI.
+ *
  * Revision 1.74  2006/08/07 06:43:47  ishtvan
  * grabber updates
  *
@@ -323,7 +326,10 @@ const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
 const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
 const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
 const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
+const idEventDef EV_SetHudParm( "setHudParm", "ss" );
+const idEventDef EV_SetHudFloat( "setHudFloat", "sf" );
 const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
+const idEventDef EV_CallHud( "callHud", "s" );
 const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
 const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
@@ -376,6 +382,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
 	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
 	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
+	EVENT( EV_CallHud,		 				idPlayer::Event_CallHud )
 	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
@@ -1439,6 +1446,9 @@ idPlayer::idPlayer()
 	m_bDraggingBody			= false;
 	m_bShoulderingBody		= false;
 
+	m_invGuiFallback		= NULL;
+	m_invGuiFading			= NULL;
+
 	// Add the default stims to the player. These are stims
 	// that can be performed by the actual player, while the
 	// other stims like water, damage, kill, etc. are rather
@@ -1942,6 +1952,12 @@ void idPlayer::Spawn( void ) {
 
 	// Have the player's cursor point to their own inventory by default.
 	InventoryCursor()->setInventory( Inventory() );
+
+	m_invGuiFallback =	new CtdmInventoryCursor();
+	m_invGuiFading =	new CtdmInventoryCursor();
+	// Perhaps I should do full-blown code to write an error if this occurs,
+	// since I've just allocated it?
+	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
 }
 
 /*
@@ -1954,6 +1970,10 @@ Release any resources used by the player.
 idPlayer::~idPlayer() {
 	delete weapon.GetEntity();
 	weapon = NULL;
+
+	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
+	delete m_invGuiFallback;
+	delete m_invGuiFading;
 }
 
 /*
@@ -2172,6 +2192,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bGrabberActive );
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
+
+	savefile->WriteObject( m_invGuiFallback );
+	savefile->WriteObject( m_invGuiFading );
 
 	if ( hud ) {
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -2434,6 +2457,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
+
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFallback ) );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFading ) );
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -9750,19 +9776,21 @@ idPlayer::inventoryNextItem
 =====================
 */
 void idPlayer::inventoryNextItem() {
-	assert( hud );
-	//InventoryCursor()->next();
-	//inventoryUpdateHUD();
-	//hud->HandleNamedEvent( "touchInventory" );
-	hud->HandleNamedEvent( "inventoryShiftLeft" );
+	assert( hud && InventoryCursor() );
+	InventoryCursor()->iterate( TDMINV_UNGROUPED, false );
+	if ( inventoryChangeSelection() )
+	{
+		hud->HandleNamedEvent( "inventoryShiftLeft" );
+	}
 }
 
 void idPlayer::inventoryPrevItem() {
-	assert( hud );
-	//InventoryCursor()->prev();
-	//inventoryUpdateHUD();
-	//hud->HandleNamedEvent( "touchInventory" );
-	hud->HandleNamedEvent( "inventoryShiftRight" );
+	assert( hud && InventoryCursor() );
+	InventoryCursor()->iterate( TDMINV_UNGROUPED, true );
+	if ( inventoryChangeSelection() )
+	{
+		hud->HandleNamedEvent( "inventoryShiftRight" );
+	}
 }
 
 void idPlayer::inventoryPrevGroup() {
@@ -9848,6 +9876,100 @@ void idPlayer::inventoryUpdateHUD() {
 
 }
 */
+
+bool idPlayer::inventoryChangeSelection( void ) {
+
+	// Important note: Whenever m_invGuiFallback or m_invGuiFading are
+	// pointing to an empty slot, it is set so its group is NULL.
+	// This is not neccesarily the case for InventoryCursor(), however.
+
+	assert( hud != NULL );
+	assert( InventoryCursor() != NULL );
+	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
+
+	bool fadeInGui = false;
+	bool fadeOutGui = false;
+
+	// Was there a change in the selected item?
+	if ( InventoryCursor()->item() != m_invGuiFallback->item() ||
+		 ( InventoryCursor()->item() == NULL && m_invGuiFallback->group( true ) != NULL ) ) {
+
+		CtdmInventoryItem* item;
+		idThread* thread;
+
+		idEntity* selectEnt = NULL;
+		idEntity* unselectEnt = NULL;
+		idEntity* unviewEnt = NULL;
+
+		// If m_invGuiFallback isn't empty, we need to move it to m_invGuiFading.
+		if ( m_invGuiFallback->group( true ) != NULL ) {
+
+			// If m_invGuiFading has an item, notify it that it's no longer on screen.
+			item = m_invGuiFading->item();
+			if ( item != NULL ) {
+				unviewEnt = item->m_owner.GetEntity();
+				assert( unviewEnt != NULL );
+			}
+
+			// If m_invGuiFallback has an item, notify it that it's fading.
+			item = m_invGuiFallback->item();
+			if ( item != NULL ) {
+				unselectEnt = item->m_owner.GetEntity();
+				assert( unselectEnt != NULL );
+			}
+
+			// Copy m_invGuiFallback to m_invGuiFading.
+			m_invGuiFading->copyActiveCursor( *m_invGuiFallback, true );
+			fadeOutGui = true;
+		}
+
+		// Copy InventoryCursor() to m_invGuiFallback, but represent an
+		// empty slot by a NULL group.
+		if ( InventoryCursor()->item() != NULL ) {
+			m_invGuiFallback->copyActiveCursor( *InventoryCursor(), true );
+		} else {
+			m_invGuiFallback->setInventory( NULL );
+		}
+
+		// If InventoryCursor() has an item, notify it that it's selected.
+		item = InventoryCursor()->item();
+		if ( item != NULL ) {
+			selectEnt = item->m_owner.GetEntity();
+			assert( selectEnt != NULL );
+
+			fadeInGui = true; // also tell the GUI to fade it in
+		}
+
+		if ( unviewEnt != NULL ) {
+			thread = unviewEnt->CallScriptFunctionArgs( "inventoryStopUpdate", true, 0, "ee", unviewEnt, this );
+			if (thread) {
+				thread->Start(); // Start the thread immediately.
+			}
+		}
+		if ( fadeOutGui ) {
+			hud->HandleNamedEvent( "inventoryFadeOut" );
+		}
+		// The order of these calls is intentional, though not necessarily critical.
+		if ( unselectEnt != NULL ) {
+			thread = unselectEnt->CallScriptFunctionArgs( "inventoryUnselect", true, 0, "ee", unselectEnt, this );
+			if (thread) {
+				thread->Start(); // Start the thread immediately.
+			}
+		}
+		if ( selectEnt != NULL ) {
+			thread = selectEnt->CallScriptFunctionArgs( "inventorySelect", true, 0, "ee", selectEnt, this );
+			if (thread) {
+				thread->Start(); // Start the thread immediately.
+			}
+		}
+		if ( fadeInGui ) {
+			hud->HandleNamedEvent( "inventoryFadeIn" );
+		}
+
+	}
+
+	return fadeInGui || fadeOutGui;
+}
 
 /*
 =====================
@@ -10104,6 +10226,28 @@ void idPlayer::Event_GetGuiFloat( const char *key ) {
 
 /*
 ================
+idPlayer::Event_SetHudParm
+================
+*/
+void idPlayer::Event_SetHudParm( const char *key, const char *val ) {
+	assert( hud );
+	hud->SetStateString( key, val );
+	hud->StateChanged( gameLocal.time );
+}
+
+/*
+================
+idPlayer::Event_SetHudFloat
+================
+*/
+void idPlayer::Event_SetHudFloat( const char *key, float f ) {
+	assert( hud );
+	hud->SetStateString( key, va( "%f", f ) );
+	hud->StateChanged( gameLocal.time );
+}
+
+/*
+================
 idPlayer::Event_CallGuiOverlay
 ================
 */
@@ -10113,6 +10257,16 @@ void idPlayer::Event_CallGuiOverlay( const char *namedEvent ) {
 	} else {
 		gameLocal.Warning( "Unable to call named event \"%s\"; no gui overlay is active.\n", namedEvent );
 	}
+}
+
+/*
+================
+idPlayer::Event_CallHud
+================
+*/
+void idPlayer::Event_CallHud( const char *namedEvent ) {
+	assert( hud );
+	hud->HandleNamedEvent( namedEvent );
 }
 
 /*

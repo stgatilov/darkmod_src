@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2006/08/11 12:32:50  gildoran
+ * Added some code so I can start work on the inventory GUI.
+ *
  * Revision 1.32  2006/08/07 06:43:47  ishtvan
  * grabber updates
  *
@@ -391,6 +394,11 @@ public:
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
 
+	/// Used by the inventory GUI to know what the original item was when the cursor is moved.
+	CtdmInventoryCursor*	m_invGuiFallback;
+	/// Used by the inventory GUI to know what is currently fading out of view.
+	CtdmInventoryCursor*	m_invGuiFading;
+
 	int						weapon_soulcube;
 	int						weapon_pda;
 	int						weapon_fists;
@@ -707,6 +715,8 @@ public:
 	void inventoryPrevGroup( void );
 	/// Copies inventory item info to the HUD.
 	void inventoryUpdateHUD( void );
+	/// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
+	bool inventoryChangeSelection( void );
 
 	void PrintDebugHUD(void);
 
@@ -917,7 +927,11 @@ private:
 	void					Event_SetGuiFloat( const char *key, float f );
 	void					Event_GetGuiParm( const char *key );
 	void					Event_GetGuiFloat( const char *key );
+	void					Event_SetHudParm( const char *key, const char *val );
+	void					Event_SetHudFloat( const char *key, float f );
+
 	void					Event_CallGuiOverlay( const char *namedEvent );
+	void					Event_CallHud( const char *namedEvent );
 	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
 	void					Event_PlayStartSound( void );
 	void					Event_MissionFailed( void );
@@ -967,20 +981,12 @@ ID_INLINE bool idPlayer::IsLeader( void ) {
 }
 
 ID_INLINE bool idPlayer::SelfSmooth( void ) {
-
 	return selfSmooth;
-
 }
-
-
 
 ID_INLINE void idPlayer::SetSelfSmooth( bool b ) {
-
 	selfSmooth = b;
-
 }
-
-
 
 #endif /* !__GAME_PLAYER_H__ */
 
