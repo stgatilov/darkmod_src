@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/08/11 01:48:18  ishtvan
+ * dealt with simultaneous alerts in one frame
+ *
+ * added alertedbyactor and scriptevent to get it
+ *
  * Revision 1.21  2006/07/11 03:52:19  ishtvan
  * added drowning immunity and KO immunity
  *
@@ -540,6 +545,14 @@ public:
 	idScriptBool			AI_ALERTED;
 
 	/**
+	* Stores the actor ultimately responsible for the alert.
+	* If they find a body, this gets set to whoever killed/KO'd the body.
+	* If they get hit by an item, or hear it fall, this gets set to whoever 
+	*	threw the item, and so on
+	**/
+	idEntityPtr<idActor>	m_AlertedByActor;
+
+	/**
 	* Set these flags so we can tell if the AI is running or creeping
 	* for the purposes of playing audible sounds and propagated sounds.
 	**/
@@ -722,11 +735,23 @@ protected:
 	idScriptBool			AI_TACTALERT;
 
 	/**
+	* Set to true if the actor responsible for alert is the player
+	**/
+	idScriptBool			AI_ALERTED_BY_PLAYER;
+
+	/**
 	* The current alert number of the AI.
 	* This is checked by scripting to see if the AI should
 	* change alertstates.  This var is very important!
 	**/
 	idScriptFloat			AI_AlertNum;
+
+	/**
+	* Stores the amount alerted in this frame
+	* Used to compare simultaneous alerts, the smaller one is ignored
+	* Should be cleared at the start of each frame.
+	**/
+	float					m_AlertNumThisFrame;
 
 	/**
 	* Array containing the various AI acuities (visual, aural, tactile, etc)
@@ -755,7 +780,7 @@ protected:
 	/**
 	* The entity that last issued a tactile alert
 	**/
-	idEntity *				m_TactAlertEnt;
+	idEntityPtr<idEntity>	m_TactAlertEnt;
 
 	/**
 	* The current mod hiding spot search of this AI, usually NULL (0)
@@ -1172,6 +1197,11 @@ protected:
 	void Event_Alert( const char *type, float amount );
 	void Event_GetAcuity( const char *type );
 	void Event_SetAcuity( const char *type, float val );
+
+	/**
+	* Get the actor that alerted the AI this frame
+	**/
+	void Event_GetAlertActor( void );
 
     /**
 	* Script frontend for DarkMod hiding spot detection functions

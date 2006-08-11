@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/08/11 01:48:18  ishtvan
+ * dealt with simultaneous alerts in one frame
+ *
+ * added alertedbyactor and scriptevent to get it
+ *
  * Revision 1.30  2006/07/28 01:39:30  ishtvan
  * AI now set themselves frobable when KO'd or dead
  *
@@ -597,6 +602,8 @@ idAI::idAI() {
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
+	m_AlertNumThisFrame = 0.0f;
+	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
 
@@ -766,6 +773,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteJoint( focusJoint );
 	savefile->WriteJoint( orientationJoint );
 	savefile->WriteJoint( flyTiltJoint );
+	
+	// TDM Alerts:
+	savefile->WriteVec3( m_SoundDir );
+	savefile->WriteVec3( m_LastSight );
+	savefile->WriteFloat( m_AlertNumThisFrame );
+
+	m_AlertedByActor.Save( savefile );
+	m_TactAlertEnt.Save( savefile );
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 }
@@ -915,6 +930,14 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadJoint( orientationJoint );
 	savefile->ReadJoint( flyTiltJoint );
 
+	// TDM Alerts:
+	savefile->ReadVec3( m_SoundDir );
+	savefile->ReadVec3( m_LastSight );
+	savefile->ReadFloat( m_AlertNumThisFrame );
+
+	m_AlertedByActor.Restore( savefile );
+	m_TactAlertEnt.Restore( savefile );
+
 	savefile->ReadBool( restorePhysics );
 
 	// Set the AAS if the character has the correct gravity vector
@@ -1027,6 +1050,7 @@ void idAI::Spawn( void ) {
 	AI_HEARDSOUND = false;
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
+	AI_ALERTED_BY_PLAYER = false;
 
 
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
@@ -1518,6 +1542,7 @@ void idAI::LinkScriptVariables( void )
 	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
 	AI_VISALERT.LinkTo(			scriptObject, "AI_VISALERT");
 	AI_TACTALERT.LinkTo(		scriptObject, "AI_TACTALERT");
+	AI_ALERTED_BY_PLAYER.LinkTo(	scriptObject, "AI_ALERTED_BY_PLAYER");
 
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH");
 	AI_RUN.LinkTo(				scriptObject, "AI_RUN");
@@ -1543,7 +1568,8 @@ void idAI::UpdateAIScript( void )
 
 	// Clear DarkMod per frame vars now that the script was updated.
 	AI_ALERTED = false;
-
+	m_AlertNumThisFrame = 0;
+	m_AlertedByActor = NULL;
 }
 
 /***********************************************************************
@@ -3524,9 +3550,10 @@ DarkMod : Added call to AI Relationship Manager
 		  testing purposes.
 =====================
 */
-int idAI::ReactionTo( const idEntity *ent ) {
-
-	if ( ent->fl.hidden ) {
+int idAI::ReactionTo( const idEntity *ent ) 
+{
+	if ( ent->fl.hidden ) 
+	{
 		// ignore hidden entities
 		return ATTACK_IGNORE;
 	}
@@ -3577,16 +3604,21 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 	blink_time = 0;
 
 	// ignore damage from self
-	if ( attacker != this ) {
-		if ( inflictor ) {
+	if ( attacker != this ) 
+	{
+		if ( inflictor ) 
+		{
 			AI_SPECIAL_DAMAGE = inflictor->spawnArgs.GetInt( "special_damage" );
-		} else {
+		} else 
+		{
 			AI_SPECIAL_DAMAGE = 0;
 		}
 
 		if ( enemy.GetEntity() != attacker && attacker->IsType( idActor::Type ) ) {
 			actor = ( idActor * )attacker;
-			if ( ReactionTo( actor ) & ATTACK_ON_DAMAGE ) {
+			if ( ReactionTo( actor ) & ATTACK_ON_DAMAGE ) 
+			{
+				// being attacked always overrides the previous alert
 				gameLocal.AlertAI( actor );
 				SetEnemy( actor );
 			}
@@ -5596,8 +5628,9 @@ void idAI::HearSound
 
 	psychLoud = 1 + (propParms->loudness - threshold);
 
-	// quick fix for deaf AI:
-	if (GetAcuity("aud") > 0)
+	// don't alert the AI if they're deaf, or this is not a strong enough
+	// alert to overwrite another alert this frame
+	if (GetAcuity("aud") > 0 && psychLoud > m_AlertNumThisFrame)
 	{
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
@@ -5624,6 +5657,9 @@ void idAI::AlertAI( const char *type, float amount )
 
 	if( gameLocal.isNewFrame )
 		AI_ALERTED = true;
+
+	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
+	m_AlertNumThisFrame = amount;
 }
 
 float idAI::GetAcuity( const char *type )
@@ -5680,7 +5716,7 @@ idVec3 idAI::GetVisDir( void )
 
 idEntity *idAI::GetTactEnt( void )
 {
-	return m_TactAlertEnt;
+	return m_TactAlertEnt.GetEntity();
 }
 
 idActor *idAI::VisualScan( float timecheck )
@@ -5727,13 +5763,9 @@ idActor *idAI::VisualScan( float timecheck )
 
 		// Convert to alert units ( 0.6931472 = log(2) )
 		incAlert = 4*log( visFrac * lgem ) / 0.6931472;
-
-		// Scale by distance to the source. We consider the above value to be normalized
-		// to something 10 meters away
-				
-
-
-		AlertAI( "vis", incAlert );
+		
+		if( incAlert > m_AlertNumThisFrame )
+			AlertAI( "vis", incAlert );
 	}
 
 	if ( actor )
@@ -5741,6 +5773,7 @@ idActor *idAI::VisualScan( float timecheck )
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
+		m_AlertedByActor = actor;
 	}
 
 Quit:
@@ -5817,6 +5850,7 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 			goto Quit;
 		}
 
+		// NOTE: Latest tactile alert always overrides other alerts
 		AlertAI( "tact", amount );
 		m_TactAlertEnt = entest;
 		
@@ -6440,4 +6474,9 @@ void idAI::UpdateAir( void )
 
 	// set the timer
 	m_AirCheckTimer += m_AirCheckInterval;
+}
+
+void idAI::Event_GetAlertActor( void )
+{
+	idThread::ReturnEntity( m_AlertedByActor.GetEntity() );
 }
