@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.76  2006/08/11 15:49:19  gildoran
+ * Another inventory related update.
+ *
  * Revision 1.75  2006/08/11 12:32:50  gildoran
  * Added some code so I can start work on the inventory GUI.
  *
@@ -381,6 +384,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_SetGuiFloat, 					idPlayer::Event_SetGuiFloat )
 	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
 	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
+	EVENT( EV_SetHudParm, 					idPlayer::Event_SetHudParm )
+	EVENT( EV_SetHudFloat, 					idPlayer::Event_SetHudFloat )
 	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
 	EVENT( EV_CallHud,		 				idPlayer::Event_CallHud )
 	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
@@ -2965,6 +2970,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	}
 
 	UpdateHudAmmo( _hud );
+	inventoryChangeSelection( _hud );
 }
 
 /*
@@ -9778,7 +9784,7 @@ idPlayer::inventoryNextItem
 void idPlayer::inventoryNextItem() {
 	assert( hud && InventoryCursor() );
 	InventoryCursor()->iterate( TDMINV_UNGROUPED, false );
-	if ( inventoryChangeSelection() )
+	if ( inventoryChangeSelection( hud ) )
 	{
 		hud->HandleNamedEvent( "inventoryShiftLeft" );
 	}
@@ -9787,7 +9793,7 @@ void idPlayer::inventoryNextItem() {
 void idPlayer::inventoryPrevItem() {
 	assert( hud && InventoryCursor() );
 	InventoryCursor()->iterate( TDMINV_UNGROUPED, true );
-	if ( inventoryChangeSelection() )
+	if ( inventoryChangeSelection( hud ) )
 	{
 		hud->HandleNamedEvent( "inventoryShiftRight" );
 	}
@@ -9877,15 +9883,15 @@ void idPlayer::inventoryUpdateHUD() {
 }
 */
 
-bool idPlayer::inventoryChangeSelection( void ) {
+bool idPlayer::inventoryChangeSelection( idUserInterface *_hud ) {
 
 	// Important note: Whenever m_invGuiFallback or m_invGuiFading are
 	// pointing to an empty slot, it is set so its group is NULL.
 	// This is not neccesarily the case for InventoryCursor(), however.
 
-	assert( hud != NULL );
-	assert( InventoryCursor() != NULL );
-	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
+	assert( _hud );
+	assert( InventoryCursor() );
+	assert( m_invGuiFallback && m_invGuiFading );
 
 	bool fadeInGui = false;
 	bool fadeOutGui = false;
@@ -9947,7 +9953,7 @@ bool idPlayer::inventoryChangeSelection( void ) {
 			}
 		}
 		if ( fadeOutGui ) {
-			hud->HandleNamedEvent( "inventoryFadeOut" );
+			_hud->HandleNamedEvent( "inventoryFadeOut" );
 		}
 		// The order of these calls is intentional, though not necessarily critical.
 		if ( unselectEnt != NULL ) {
@@ -9961,9 +9967,11 @@ bool idPlayer::inventoryChangeSelection( void ) {
 			if (thread) {
 				thread->Start(); // Start the thread immediately.
 			}
+		} else {
+			_hud->HandleNamedEvent( "inventoryClearSelected" );
 		}
 		if ( fadeInGui ) {
-			hud->HandleNamedEvent( "inventoryFadeIn" );
+			_hud->HandleNamedEvent( "inventoryFadeIn" );
 		}
 
 	}
