@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/08/11 20:03:48  gildoran
+ * Another update for inventories.
+ *
  * Revision 1.5  2006/07/25 01:40:28  gildoran
  * Completely revamped inventory code.
  *
@@ -725,7 +728,14 @@ void CtdmInventoryCursor::copyActiveCursor(	const CtdmInventoryCursor& source,
 	// Switch to the same inventory.
 	setInventory( source.m_inventory );
 	// Copy over their active cursor.
-	select( source.m_group, source.m_groupedSlot, source.m_ungroupedSlot, noHistory );
+	if ( m_inventory != NULL ) {
+		select( source.m_group, source.m_groupedSlot, source.m_ungroupedSlot, noHistory );
+	}
+
+	assert( m_inventory == source.m_inventory );
+	assert( m_group == source.m_group );
+	assert( m_groupedSlot == source.m_groupedSlot );
+	assert( m_ungroupedSlot == source.m_ungroupedSlot );
 
 	Quit:
 	return;

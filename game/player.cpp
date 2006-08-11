@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.77  2006/08/11 20:03:57  gildoran
+ * Another update for inventories.
+ *
  * Revision 1.76  2006/08/11 15:49:19  gildoran
  * Another inventory related update.
  *
@@ -9883,7 +9886,7 @@ void idPlayer::inventoryUpdateHUD() {
 }
 */
 
-bool idPlayer::inventoryChangeSelection( idUserInterface *_hud ) {
+bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 
 	// Important note: Whenever m_invGuiFallback or m_invGuiFading are
 	// pointing to an empty slot, it is set so its group is NULL.
@@ -9896,31 +9899,33 @@ bool idPlayer::inventoryChangeSelection( idUserInterface *_hud ) {
 	bool fadeInGui = false;
 	bool fadeOutGui = false;
 
-	// Was there a change in the selected item?
-	if ( InventoryCursor()->item() != m_invGuiFallback->item() ||
-		 ( InventoryCursor()->item() == NULL && m_invGuiFallback->group( true ) != NULL ) ) {
+	CtdmInventoryItem* invItem		= InventoryCursor()->item();
+	CtdmInventoryItem* fallbackItem	= m_invGuiFallback->item();
+	CtdmInventoryItem* fadingItem	= m_invGuiFading->item();
 
-		CtdmInventoryItem* item;
-		idThread* thread;
+	// Was there a change in the selected item?
+	if ( invItem != fallbackItem ||
+		 ( invItem == NULL && m_invGuiFallback->group( true ) != NULL ) ) {
 
 		idEntity* selectEnt = NULL;
 		idEntity* unselectEnt = NULL;
 		idEntity* unviewEnt = NULL;
 
 		// If m_invGuiFallback isn't empty, we need to move it to m_invGuiFading.
-		if ( m_invGuiFallback->group( true ) != NULL ) {
+		// Or if the item being faded out is the one being faded in,
+		// we need to delete what's in m_invGuiFading.
+		if ( m_invGuiFallback->group( true ) != NULL || 
+			 ( fadingItem == invItem && fadingItem != NULL ) ) {
 
 			// If m_invGuiFading has an item, notify it that it's no longer on screen.
-			item = m_invGuiFading->item();
-			if ( item != NULL ) {
-				unviewEnt = item->m_owner.GetEntity();
+			if ( fadingItem != NULL ) {
+				unviewEnt = fadingItem->m_owner.GetEntity();
 				assert( unviewEnt != NULL );
 			}
 
 			// If m_invGuiFallback has an item, notify it that it's fading.
-			item = m_invGuiFallback->item();
-			if ( item != NULL ) {
-				unselectEnt = item->m_owner.GetEntity();
+			if ( fallbackItem != NULL ) {
+				unselectEnt = fallbackItem->m_owner.GetEntity();
 				assert( unselectEnt != NULL );
 			}
 
@@ -9931,20 +9936,21 @@ bool idPlayer::inventoryChangeSelection( idUserInterface *_hud ) {
 
 		// Copy InventoryCursor() to m_invGuiFallback, but represent an
 		// empty slot by a NULL group.
-		if ( InventoryCursor()->item() != NULL ) {
+		if ( invItem != NULL ) {
 			m_invGuiFallback->copyActiveCursor( *InventoryCursor(), true );
 		} else {
 			m_invGuiFallback->setInventory( NULL );
 		}
 
 		// If InventoryCursor() has an item, notify it that it's selected.
-		item = InventoryCursor()->item();
-		if ( item != NULL ) {
-			selectEnt = item->m_owner.GetEntity();
+		if ( invItem != NULL ) {
+			selectEnt = invItem->m_owner.GetEntity();
 			assert( selectEnt != NULL );
 
 			fadeInGui = true; // also tell the GUI to fade it in
 		}
+
+		idThread* thread;
 
 		if ( unviewEnt != NULL ) {
 			thread = unviewEnt->CallScriptFunctionArgs( "inventoryStopUpdate", true, 0, "ee", unviewEnt, this );
