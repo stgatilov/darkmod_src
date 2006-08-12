@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/08/12 14:44:23  gildoran
+ * Fixed some minor bugs with inventory group iteration.
+ *
  * Revision 1.7  2006/08/12 12:47:13  gildoran
  * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
  *
@@ -1240,13 +1243,17 @@ void CtdmInventoryCursor::iterateGroup( bool backwards, bool noHistory, bool (*f
 			// Yes, we have a group history.
 
 			// Set our grouped slot to its last value in this group.
-			select( gNode->Owner(), groupHistory->m_slot, NULL );
+			if ( groupHistory->m_slot->m_item != NULL ) {
+				selectItem( groupHistory->m_slot->m_item, noHistory );
+			} else {
+				select( gNode->Owner(), groupHistory->m_slot, NULL, noHistory );
+			}
 
 		} else {
 
 			// No, we don't have a group history.
 
-			select( NULL, NULL, NULL, noHistory );
+			select( gNode->Owner(), NULL, NULL, noHistory );
 		}
 
 		break;

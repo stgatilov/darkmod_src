@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.79  2006/08/12 14:44:29  gildoran
+ * Fixed some minor bugs with inventory group iteration.
+ *
  * Revision 1.78  2006/08/12 12:47:24  gildoran
  * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
  *
@@ -1969,6 +1972,8 @@ void idPlayer::Spawn( void ) {
 	// Perhaps I should do full-blown code to write an error if this occurs,
 	// since I've just allocated it?
 	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
+
+	cv_tdm_inv_opacity.SetModified();
 }
 
 /*
@@ -9954,30 +9959,28 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 		if ( fadeInGui ) {
 			_hud->HandleNamedEvent( "inventoryFadeIn" );
 		}
-
-		// Update the group if the user wants a grouped inventory.
-		if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
-			_hud->SetStateString( "inventoryGroup", InventoryCursor()->group() );
-			_hud->StateChanged( gameLocal.time );
-			_hud->HandleNamedEvent( "inventoryUpdateGroup" );
-		}
-
 	}
 
-	if ( cv_tdm_inv_grouping.IsModified() || cv_tdm_inv_opacity.IsModified() ) {
+	const char* str;
+	if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
+		str = InventoryCursor()->group();
+	} else {
+		str = "";
+	}
+	// Only tell the GUI to update if something has changed:
+	// Unfortunately, I don't know how to do string comparisons
+	// in the GUI, so I have to do them here.
+	if ( idStr::Cmp( _hud->GetStateString( "inventoryGroup" ), str ) != 0 ) {
+		_hud->SetStateString( "inventoryGroup", str );
+		_hud->StateChanged( gameLocal.time );
+		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
+	}
 
-		cv_tdm_inv_grouping.ClearModified();
+	if ( cv_tdm_inv_opacity.IsModified() ) {
 		cv_tdm_inv_opacity.ClearModified();
 
-		if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
-			_hud->SetStateString( "inventoryGroup", InventoryCursor()->group() );
-		} else {
-			_hud->SetStateString( "inventoryGroup", "" );
-		}
 		_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
 		_hud->StateChanged( gameLocal.time );
-
-		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
 		_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
 	}
 
