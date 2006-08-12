@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/08/12 12:47:19  gildoran
+ * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
+ *
  * Revision 1.22  2006/08/01 21:13:27  sparhawk
  * Lightgem splitcode
  *
@@ -107,6 +110,9 @@ extern idCVar cv_frob_fadetime;
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
 extern idCVar cv_throw_time;
+
+extern idCVar cv_tdm_inv_grouping;
+extern idCVar cv_tdm_inv_opacity;
 
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;

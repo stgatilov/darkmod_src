@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.78  2006/08/12 12:47:24  gildoran
+ * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
+ *
  * Revision 1.77  2006/08/11 20:03:57  gildoran
  * Another update for inventories.
  *
@@ -2203,6 +2206,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( m_invGuiFallback );
 	savefile->WriteObject( m_invGuiFading );
+	savefile->WriteInt( cv_tdm_inv_grouping.GetInteger() );
 
 	if ( hud ) {
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -2468,6 +2472,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFallback ) );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFading ) );
+	savefile->ReadInt( num );
+	cv_tdm_inv_grouping.SetInteger( num );
+	cv_tdm_inv_opacity.SetModified();
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -9786,7 +9793,22 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem() {
 	assert( hud && InventoryCursor() );
-	InventoryCursor()->iterate( TDMINV_UNGROUPED, false );
+
+	switch ( cv_tdm_inv_grouping.GetInteger() ) {
+		case 0:
+			InventoryCursor()->iterate( TDMINV_UNGROUPED, false );
+			break;
+		case 1:
+			InventoryCursor()->iterate( TDMINV_ITEM, false );
+			break;
+		case 2:
+			InventoryCursor()->iterate( TDMINV_HYBRID, false );
+			break;
+		default:
+			gameLocal.Error( "Unknown value of %s.", cv_tdm_inv_grouping.GetName() );
+			return;
+	}
+
 	if ( inventoryChangeSelection( hud ) )
 	{
 		hud->HandleNamedEvent( "inventoryShiftLeft" );
@@ -9795,96 +9817,49 @@ void idPlayer::inventoryNextItem() {
 
 void idPlayer::inventoryPrevItem() {
 	assert( hud && InventoryCursor() );
-	InventoryCursor()->iterate( TDMINV_UNGROUPED, true );
+
+	switch ( cv_tdm_inv_grouping.GetInteger() ) {
+		case 0:
+			InventoryCursor()->iterate( TDMINV_UNGROUPED, true );
+			break;
+		case 1:
+			InventoryCursor()->iterate( TDMINV_ITEM, true );
+			break;
+		case 2:
+			InventoryCursor()->iterate( TDMINV_HYBRID, true );
+			break;
+		default:
+			gameLocal.Error( "Unknown value of %s.", cv_tdm_inv_grouping.GetName() );
+			return;
+	}
+
 	if ( inventoryChangeSelection( hud ) )
 	{
 		hud->HandleNamedEvent( "inventoryShiftRight" );
 	}
 }
 
-void idPlayer::inventoryPrevGroup() {
-}
-
 void idPlayer::inventoryNextGroup() {
+	assert( hud && InventoryCursor() );
+
+	if ( cv_tdm_inv_grouping.GetInteger() != 1 ) {
+		return;
+	}
+
+	InventoryCursor()->iterate( TDMINV_GROUP, false );
+	inventoryChangeSelection( hud );
 }
 
-/*
-void idPlayer::inventoryUpdateHUD() {
-	assert( hud );
+void idPlayer::inventoryPrevGroup() {
+	assert( hud && InventoryCursor() );
 
-	CtdmInventoryCursor* cur = InventoryCursor();
-
-	// Normally having cursors on the stack would be a bad idea, but the
-	// game cannot be saved in the middle of this function call, so it's ok.
-	CtdmInventoryCursor lCur; // left cursor
-	CtdmInventoryCursor rCur; // right cursor
-
-	// The list of inventory items to potentially be shown.
-	idEntity* items[7] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
-
-	lCur.copyActiveCursor( *cur );
-	rCur.copyActiveCursor( *cur );
-
-	if ( cur->item() != NULL ) {
-		items[3] = cur->item()->m_owner.GetEntity();
-	}
-	lCur.prev();
-	if ( lCur.item() != NULL ) {
-		items[2] = lCur.item()->m_owner.GetEntity();
-	}
-	rCur.next();
-	if ( rCur.item() != NULL ) {
-		items[4] = rCur.item()->m_owner.GetEntity();
-	}
-	lCur.prev();
-	if ( lCur.item() != NULL ) {
-		items[1] = lCur.item()->m_owner.GetEntity();
-	}
-	rCur.next();
-	if ( rCur.item() != NULL ) {
-		items[5] = rCur.item()->m_owner.GetEntity();
-	}
-	lCur.prev();
-	if ( lCur.item() != NULL ) {
-		items[0] = lCur.item()->m_owner.GetEntity();
-	}
-	rCur.next();
-	if ( rCur.item() != NULL ) {
-		items[6] = rCur.item()->m_owner.GetEntity();
+	if ( cv_tdm_inv_grouping.GetInteger() != 1 ) {
+		return;
 	}
 
-	int i;
-
-	// Figure out inventory visibility. (which items should appear
-	// in which slots)
-	bool visible[7] = { false, false, false, false, false, false, false };
-	static const int visOrder[5] = { 3, 4, 2, 5, 1 };
-	idEntity* lastVis = NULL;
-	for ( i = 0; i < 5; i++ ) {
-		if ( items[ visOrder[i] ] == lastVis ) {
-			break;
-		}
-		visible[ visOrder[i] ] = true;
-		lastVis = items[ visOrder[i] ];
-	}
-
-	// Copy over the state variables to the HUD
-	for ( i = 0; i < 7; i++ ) {
-		if ( items[i] == NULL ) {
-			hud->SetStateString( va( "inv_item%i_name", i ), "nothing" );
-		} else {
-			//gameLocal.Warning( "Item %i: %s %i\n", i, items[i]->spawnArgs.GetString( "inv_name", "" ), visible[i] );
-			hud->SetStateString( va( "inv_item%i_name", i ), items[i]->spawnArgs.GetString( "inv_name", "" ) );
-			hud->SetStateString( va( "inv_item%i_icon", i ), items[i]->spawnArgs.GetString( "inv_icon", "" ) );
-		}
-		hud->SetStateBool( va( "inv_item%i_vis", i ), visible[i] );
-	}
-
-	hud->StateChanged( gameLocal.time );
-	hud->HandleNamedEvent( "inventoryUpdateItems" );
-
+	InventoryCursor()->iterate( TDMINV_GROUP, true );
+	inventoryChangeSelection( hud );
 }
-*/
 
 bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 
@@ -9980,6 +9955,30 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 			_hud->HandleNamedEvent( "inventoryFadeIn" );
 		}
 
+		// Update the group if the user wants a grouped inventory.
+		if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
+			_hud->SetStateString( "inventoryGroup", InventoryCursor()->group() );
+			_hud->StateChanged( gameLocal.time );
+			_hud->HandleNamedEvent( "inventoryUpdateGroup" );
+		}
+
+	}
+
+	if ( cv_tdm_inv_grouping.IsModified() || cv_tdm_inv_opacity.IsModified() ) {
+
+		cv_tdm_inv_grouping.ClearModified();
+		cv_tdm_inv_opacity.ClearModified();
+
+		if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
+			_hud->SetStateString( "inventoryGroup", InventoryCursor()->group() );
+		} else {
+			_hud->SetStateString( "inventoryGroup", "" );
+		}
+		_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
+		_hud->StateChanged( gameLocal.time );
+
+		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
+		_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
 	}
 
 	return fadeInGui || fadeOutGui;

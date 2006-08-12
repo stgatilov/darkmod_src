@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/08/12 12:47:13  gildoran
+ * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
+ *
  * Revision 1.6  2006/08/11 20:03:48  gildoran
  * Another update for inventories.
  *
@@ -1309,7 +1312,7 @@ void CtdmInventoryCursor::iterateItem( bool backwards, bool noHistory, bool (*fi
 			// Select the item at our slot.
 			selectItem( sNode->Owner()->m_item, noHistory );
 		} else {
-			select( NULL, NULL, NULL, noHistory );
+			select( m_group, NULL, NULL, noHistory );
 		}
 		break;
 	}
