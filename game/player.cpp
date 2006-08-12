@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.80  2006/08/12 18:47:48  gildoran
+ * Changed the code so it updates the inventory opacity every frame. This isn't optimal, but it will fix the opacity bug until I figure out why setting the cvar as modified when the player was loaded didn't seem to work.
+ *
  * Revision 1.79  2006/08/12 14:44:29  gildoran
  * Fixed some minor bugs with inventory group iteration.
  *
@@ -1972,8 +1975,6 @@ void idPlayer::Spawn( void ) {
 	// Perhaps I should do full-blown code to write an error if this occurs,
 	// since I've just allocated it?
 	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
-
-	cv_tdm_inv_opacity.SetModified();
 }
 
 /*
@@ -2479,7 +2480,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFading ) );
 	savefile->ReadInt( num );
 	cv_tdm_inv_grouping.SetInteger( num );
-	cv_tdm_inv_opacity.SetModified();
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -9976,13 +9976,11 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
 	}
 
-	if ( cv_tdm_inv_opacity.IsModified() ) {
-		cv_tdm_inv_opacity.ClearModified();
-
-		_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
-		_hud->StateChanged( gameLocal.time );
-		_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
-	}
+	// I eventually want to run this only if cv_tdm_inv_opacity.getModified()
+	// is true, but for now I'm running it every frame.
+	_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
+	_hud->StateChanged( gameLocal.time );
+	_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
 
 	return fadeInGui || fadeOutGui;
 }
