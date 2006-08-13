@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.66  2006/08/13 22:48:01  gildoran
+ * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
+ *
  * Revision 1.65  2006/08/05 19:54:30  ishtvan
  * removed block on binding to world (might have to put it back in if this causes problems later)
  *
@@ -327,6 +330,7 @@ const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 const idEventDef EV_SetInventory( "setInventory", "E" );
 const idEventDef EV_SetInvAdvanced( "setInvAdvanced", "EsdEE" );
 const idEventDef EV_GetInventory( "getInventory", NULL, 'E' );
+const idEventDef EV_ReplaceItem( "replaceItem", "E" );
 const idEventDef EV_GetNextItem( "getNextItem", "E", 'E' );
 const idEventDef EV_GetContainer( "getContainer", NULL, 'E' );
 const idEventDef EV_SetCursorInventory( "setCursorInventory", "E" );
@@ -449,6 +453,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetInventory,			idEntity::Event_SetInventory )
 	EVENT( EV_SetInvAdvanced,		idEntity::Event_SetInvAdvanced )
 	EVENT( EV_GetInventory,			idEntity::Event_GetInventory )
+	EVENT( EV_ReplaceItem,			idEntity::Event_ReplaceItem )
 	EVENT( EV_GetNextItem,			idEntity::Event_GetNextItem )
 	EVENT( EV_SetCursorInventory,	idEntity::Event_SetCursorInventory )
 	EVENT( EV_GetCursorInventory,	idEntity::Event_GetCursorInventory )
@@ -6859,11 +6864,12 @@ void idEntity::Event_SetInventory( idEntity* ent ) {
 	}
 	if ( ent != NULL ) {
 		inv = ent->Inventory();
-		if ( inv == NULL ) {
-			gameLocal.Warning( "Unable to load inventory.\n" );
-			goto Quit;
-		}
 	}
+	if ( inv == NULL ) {
+		gameLocal.Warning( "Unable to load inventory.\n" );
+		goto Quit;
+	}
+
 
 	const char* group;
 	spawnArgs.GetString( "inventory_group", "", &group );
@@ -6940,6 +6946,36 @@ void idEntity::Event_GetInventory() {
 			idThread::ReturnEntity( NULL );
 		}
 	}
+}
+
+/*
+================
+idEntity::Event_ReplaceItem
+
+Replaces another entity's item with our own, keeping the same
+spot in the inventory and moving its cursors to point to us.
+================
+*/
+void idEntity::Event_ReplaceItem( idEntity* ent ) {
+	CtdmInventoryItem* item = InventoryItem();
+	CtdmInventoryItem* item2 = NULL;
+
+	if ( item == NULL ) {
+		gameLocal.Warning( "Unable to load inventory item.\n" );
+		goto Quit;
+	}
+	if ( ent != NULL ) {
+		item2 = ent->InventoryItem();
+	}
+	if ( item2 == NULL ) {
+		gameLocal.Warning( "Unable to load inventory item.\n" );
+		goto Quit;
+	}
+
+	item->replaceItem( item2 );
+
+	Quit:
+	return;
 }
 
 /*

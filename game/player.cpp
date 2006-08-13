@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.81  2006/08/13 22:48:01  gildoran
+ * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
+ *
  * Revision 1.80  2006/08/12 18:47:48  gildoran
  * Changed the code so it updates the inventory opacity every frame. This isn't optimal, but it will fix the opacity bug until I figure out why setting the cvar as modified when the player was loaded didn't seem to work.
  *
@@ -9847,7 +9850,7 @@ void idPlayer::inventoryPrevItem() {
 void idPlayer::inventoryNextGroup() {
 	assert( hud && InventoryCursor() );
 
-	if ( cv_tdm_inv_grouping.GetInteger() != 1 ) {
+	if ( cv_tdm_inv_grouping.GetInteger() == 0 ) {
 		return;
 	}
 
@@ -9858,7 +9861,7 @@ void idPlayer::inventoryNextGroup() {
 void idPlayer::inventoryPrevGroup() {
 	assert( hud && InventoryCursor() );
 
-	if ( cv_tdm_inv_grouping.GetInteger() != 1 ) {
+	if ( cv_tdm_inv_grouping.GetInteger() == 0 ) {
 		return;
 	}
 
@@ -9932,6 +9935,7 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 
 		idThread* thread;
 
+		// The order of these calls is intentional, though not necessarily critical.
 		if ( unviewEnt != NULL ) {
 			thread = unviewEnt->CallScriptFunctionArgs( "inventoryStopUpdate", true, 0, "ee", unviewEnt, this );
 			if (thread) {
@@ -9941,7 +9945,6 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 		if ( fadeOutGui ) {
 			_hud->HandleNamedEvent( "inventoryFadeOut" );
 		}
-		// The order of these calls is intentional, though not necessarily critical.
 		if ( unselectEnt != NULL ) {
 			thread = unselectEnt->CallScriptFunctionArgs( "inventoryUnselect", true, 0, "ee", unselectEnt, this );
 			if (thread) {
@@ -9962,7 +9965,7 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 	}
 
 	const char* str;
-	if ( cv_tdm_inv_grouping.GetInteger() == 1 ) {
+	if ( cv_tdm_inv_grouping.GetInteger() != 0 ) {
 		str = InventoryCursor()->group();
 	} else {
 		str = "";

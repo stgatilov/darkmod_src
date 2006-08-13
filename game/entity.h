@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2006/08/13 22:48:01  gildoran
+ * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
+ *
  * Revision 1.41  2006/07/30 23:33:18  ishtvan
  * *) frob bugfixes
  *
@@ -903,6 +906,7 @@ private:
 	void					Event_SetInventory( idEntity* ent );
 	void					Event_SetInvAdvanced( idEntity* ent, const char* group, int flags, idEntity* entU, idEntity* entG );
 	void					Event_GetInventory();
+	void					Event_ReplaceItem( idEntity* ent );
 	void					Event_GetNextItem( idEntity* lastMatch );
 	void					Event_SetCursorInventory( idEntity* ent );
 	void					Event_GetCursorInventory();
