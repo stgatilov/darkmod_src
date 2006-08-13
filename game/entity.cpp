@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.67  2006/08/13 22:51:26  gildoran
+ * A couple of minor fixes to inventory script events.
+ *
  * Revision 1.66  2006/08/13 22:48:01  gildoran
  * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
  *
@@ -6957,15 +6960,17 @@ spot in the inventory and moving its cursors to point to us.
 ================
 */
 void idEntity::Event_ReplaceItem( idEntity* ent ) {
+	if ( ent == NULL ) {
+		gameLocal.Warning( "Null passed to replaceItem.\n" );
+		goto Quit;
+	}
+
 	CtdmInventoryItem* item = InventoryItem();
-	CtdmInventoryItem* item2 = NULL;
+	CtdmInventoryItem* item2 = ent->InventoryItem();
 
 	if ( item == NULL ) {
 		gameLocal.Warning( "Unable to load inventory item.\n" );
 		goto Quit;
-	}
-	if ( ent != NULL ) {
-		item2 = ent->InventoryItem();
 	}
 	if ( item2 == NULL ) {
 		gameLocal.Warning( "Unable to load inventory item.\n" );
