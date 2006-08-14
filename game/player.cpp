@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.82  2006/08/14 01:12:43  ishtvan
+ * added preliminary drop item in impulse51
+ *
  * Revision 1.81  2006/08/13 22:48:01  gildoran
  * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
  *
@@ -6474,6 +6477,60 @@ void idPlayer::PerformImpulse( int impulse ) {
 			inventoryNextGroup();
 			break;
 		}
+		
+		// TDM: test dropping of items
+		case IMPULSE_51: {
+			idEntity *dropEnt(NULL);
+			idThread *thread;
+			
+			// if item is held in hands, drop it
+			if( (dropEnt = g_Global.m_DarkModPlayer->grabber->GetSelected()) )
+			{
+				// only call the drop scriptfunction if it is defined locally
+				const function_t *func;
+				func = dropEnt->scriptObject.GetFunction( "drop_hands" );
+				if( func )
+				{
+					thread = dropEnt->CallScriptFunctionArgs( "drop_hands", true, 0, NULL );
+					if (thread) 
+					{
+						thread->Start();
+						break;
+					}
+				}
+
+				g_Global.m_DarkModPlayer->grabber->Update( this, false );
+				break;
+			}
+
+			// otherwise, drop the inventory item
+			CtdmInventoryItem* invItem	= InventoryCursor()->item();
+			if( invItem && (dropEnt = invItem->m_owner.GetEntity()) )
+			{
+				// only call the drop scriptfunction if it is defined locally
+				const function_t *func;
+				func = dropEnt->scriptObject.GetFunction( "drop_inv" );
+				if( func )
+				{
+					thread = dropEnt->CallScriptFunctionArgs( "drop_inv", true, 0, NULL );
+					if (thread) 
+					{
+						thread->Start();
+						break;
+					}
+				}
+
+				// otherwise drop to hands
+
+			// TODO: for now always grab by bodyID 0, later on, maybe read this from a spawnArg?
+			// TODO: Also read "drop orientation" from a spawnarg and rotate it to this orientation
+			
+				// Only remove the inventory item if there was space to drop it
+				if( g_Global.m_DarkModPlayer->grabber->PutInHands( dropEnt, this, 0) )
+					invItem->setInventory( NULL );
+			}
+			break;
+		}
 	} 
 }
 
@@ -7972,11 +8029,11 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return influenceFov;
 	}
 
+	// prevent FOV from zooming if the player is holding an object
 	if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		return DefaultFov();
 	}
 
-	// prevent FOV from zooming if the player is holding an object
 	if ( zoomFov.IsDone( gameLocal.time ) ) {
 		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
 	} else {
