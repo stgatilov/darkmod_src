@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/08/14 01:07:02  ishtvan
+ * fixed hide/show in idMoveableItem to disable the clipmodel
+ *
  * Revision 1.12  2006/07/28 01:36:19  ishtvan
  * frobbing bugfixes
  *
@@ -1259,6 +1262,20 @@ idMoveableItem::Event_Gib
 */
 void idMoveableItem::Event_Gib( const char *damageDefName ) {
 	Gib( idVec3( 0, 0, 1 ), damageDefName );
+}
+
+void idMoveableItem::Hide( void )
+{
+	idEntity::Hide();
+	physicsObj.SetContents( 0 );
+	trigger->SetContents( 0 );
+}
+
+void idMoveableItem::Show( void )
+{
+	idEntity::Show();
+	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+	trigger->SetContents( CONTENTS_TRIGGER );
 }
 
 /*

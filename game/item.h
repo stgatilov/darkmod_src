@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/08/14 01:07:02  ishtvan
+ * fixed hide/show in idMoveableItem to disable the clipmodel
+ *
  * Revision 1.4  2004/11/05 18:58:09  sparhawk
  * Moved frobcode to idEntity to make it available for all entities.
  *
@@ -164,6 +167,10 @@ public:
 
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
+
+protected:
+	void					Hide();
+	void					Show();
 
 private:
 	idPhysics_RigidBody		physicsObj;
