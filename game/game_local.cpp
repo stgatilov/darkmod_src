@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.69  2006/08/14 01:07:38  ishtvan
+ * grabber update
+ *
  * Revision 1.68  2006/08/08 20:18:52  sparhawk
  * Fixed a bug where D3 crashed with a message saying that variable x is uninitialized.
  *
@@ -1869,6 +1872,8 @@ void idGameLocal::MapShutdown( void ) {
 
 	// clear Dark Mod inventory
 	g_Global.m_DarkModPlayer->ClearInventory();
+
+	g_Global.m_DarkModPlayer->grabber->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
