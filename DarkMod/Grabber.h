@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/08/14 01:06:27  ishtvan
+ * PutInHands added
+ *
+ * fixed member vars to conform to naming conventions
+ *
  * Revision 1.7  2006/08/07 06:52:08  ishtvan
  * *) added distance control
  *
@@ -66,7 +71,7 @@ public:
 
 		void					Spawn( void );
 
-		idEntity *				GetSelected( void ) const { return dragEnt.GetEntity(); }
+		idEntity *				GetSelected( void ) const { return m_dragEnt.GetEntity(); }
 
 		bool					IsInClipList( idEntity *ent ) const;
 		bool					HasClippedEntity( void ) const;
@@ -83,9 +88,14 @@ public:
 		void					IncrementDistance( bool bIncrease );
 
 		/**
-		* Start grabbing an item.  Called internally and by the inventory
+		* Attempts to teleport an entity to the minimum hold distance and start holding it
+		* Returns false and does nothing if there was not space to teleport in the entity
+		* Body ID may be optionally set for AF or multi-clipmodel entities
+		*
+		* NOTE: Rotation of the entity to the desired orientation should be done externally
+		* before calling this.
 		**/
-		void					StartGrab( idPlayer *player, idEntity *newEnt = NULL, int bodyID = 0 );
+		bool					PutInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
 
 public:
 		/**
@@ -99,6 +109,11 @@ public:
 		bool					m_bPrevFrameCollided;
 
 protected:
+
+		/**
+		* Start grabbing an item.  Called internally and by the inventory
+		**/
+		void					StartDrag( idPlayer *player, idEntity *newEnt = NULL, int bodyID = 0 );
 
 		/**
 		* Performs object rotation
@@ -118,26 +133,31 @@ protected:
 		**/
 		void					Throw( int HeldTime );
 
+		/**
+		* Stop dragging and drop the current item if there is one
+		**/
+		void					StopDrag( void );
+		
+		/**
+		*  returns true if the mouse is inside the dead zone
+		**/
+		bool					DeadMouse( void );
+
 protected:
 
-		idEntityPtr<idEntity>	dragEnt;			// entity being dragged
-		jointHandle_t			joint;				// joint being dragged
-		int						id;					// id of body being dragged
-		idVec3					localEntityPoint;	// dragged point in entity space
-		idVec3					localPlayerPoint;	// dragged point in player space (not used anymore)
+		idEntityPtr<idEntity>	m_dragEnt;			// entity being dragged
+		jointHandle_t			m_joint;				// joint being dragged
+		int						m_id;					// id of body being dragged
+		idVec3					m_localEntityPoint;	// dragged point in entity space
 
-		idPlayer				*player;
-		CForce_Grab				drag;
+		idPlayer				*m_player;
+		CForce_Grab				m_drag;
 
-		idRotation				rotation;
-		int						rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
-		idVec3					rotatePosition;		// how much to rotate the object
-		idVec2					mousePosition;		// mouse position when user pressed BUTTON_ZOOM
+		idRotation				m_rotation;
+		int						m_rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
+		idVec2					m_mousePosition;		// mouse position when user pressed BUTTON_ZOOM
 
-		idList<CGrabbedEnt>		clipList;
-
-		void					StopDrag( void );
-		bool					DeadMouse( void );	// returns true if the mouse is inside the dead zone
+		idList<CGrabbedEnt>		m_clipList;
 
 		/**
 		* Set to true if the attack button has been pressed (used by throwing)

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/08/14 01:06:28  ishtvan
+ * PutInHands added
+ *
+ * fixed member vars to conform to naming conventions
+ *
  * Revision 1.10  2006/08/07 06:52:08  ishtvan
  * *) added distance control
  *
@@ -119,12 +124,11 @@ CGrabber::Clear
 */
 void CGrabber::Clear( void ) 
 {
-	dragEnt			= NULL;
-	player			= NULL;
-	joint			= INVALID_JOINT;
-	id				= 0;
-	localEntityPoint.Zero();
-	localPlayerPoint.Zero();
+	m_dragEnt			= NULL;
+	m_player			= NULL;
+	m_joint			= INVALID_JOINT;
+	m_id				= 0;
+	m_localEntityPoint.Zero();
 	m_bAttackPressed = false;
 	m_ThrowTimer = 0;
 	m_bIsColliding = false;
@@ -162,12 +166,15 @@ void CGrabber::StopDrag( void )
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
 	m_DistanceCount = 0;
-	this->dragEnt = NULL;
+	m_dragEnt = NULL;
 
-	player->m_bDraggingBody = false;
-	player->m_bGrabberActive = false;
-	player->SetImmobilization( "Grabber", 0 );
-	player->RaiseWeapon();
+	if(m_player)
+	{
+		m_player->m_bDraggingBody = false;
+		m_player->m_bGrabberActive = false;
+		m_player->SetImmobilization( "Grabber", 0 );
+		m_player->RaiseWeapon();
+	}
 }
 
 /*
@@ -183,12 +190,12 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	idEntity *newEnt(NULL);
 	jointHandle_t newJoint(INVALID_JOINT);
 
-	this->player = player;
+	m_player = player;
 
 	// if there is an entity selected, we let it go and exit
-	if( !hold && this->dragEnt.GetEntity() ) 
+	if( !hold && m_dragEnt.GetEntity() ) 
 	{
-		ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, this->id );
+		ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
 		this->StopDrag();
 		
@@ -198,10 +205,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	player->GetViewPos( viewPoint, viewAxis );
 
 	// if no entity is currently selected for dragging, start grabbing the frobbed entity
-    if ( !dragEnt.GetEntity() ) 
-		StartGrab( player );
+    if ( !m_dragEnt.GetEntity() ) 
+		StartDrag( player );
 
-	idEntity *drag = dragEnt.GetEntity();
+	idEntity *drag = m_dragEnt.GetEntity();
 	if ( drag ) 
 	{
 		idVec3 draggedPosition;
@@ -242,24 +249,24 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 		idVec3 vPlayerPoint(1.0f,0.0f,0.0f);
 		float distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
-		vPlayerPoint *= m_MinHeldDist + (dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+		vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
 
 		draggedPosition = viewPoint + vPlayerPoint * viewAxis;
 
 
-		this->drag.SetDragPosition( draggedPosition );
+		m_drag.SetDragPosition( draggedPosition );
 
 		// evaluate physics
 		// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
 		// calculations which is what we want so that the manipulation works properly
-		this->drag.Evaluate( gameLocal.time );
+		m_drag.Evaluate( gameLocal.time );
 		this->ManipulateObject( player );
 
 		renderEntity_t *renderEntity = drag->GetRenderEntity();
 		idAnimator *dragAnimator = drag->GetAnimator();
 
-		if ( joint != INVALID_JOINT && renderEntity && dragAnimator ) {
-			dragAnimator->GetJointTransform( joint, gameLocal.time, draggedPosition, axis );
+		if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) {
+			dragAnimator->GetJointTransform( m_joint, gameLocal.time, draggedPosition, axis );
 		}
 	}
 
@@ -271,7 +278,7 @@ Quit:
 	return;
 }
 
-void CGrabber::StartGrab( idPlayer *player, idEntity *newEnt, int bodyID )
+void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 {
 	idVec3 viewPoint, origin, COM, COMWorld, delta2;
 	idEntity *FrobEnt;
@@ -354,28 +361,29 @@ void CGrabber::StartGrab( idPlayer *player, idEntity *newEnt, int bodyID )
 	if( newEnt->IsType(idStaticEntity::Type) )
 		goto Quit;
 
-	this->dragEnt = newEnt;
-	this->joint = newJoint;
-	this->id = trace.c.id;
-
 	// get the center of mass
-	idPhysics *phys = dragEnt.GetEntity()->GetPhysics();
+	idPhysics *phys = newEnt->GetPhysics();
 	idClipModel *clipModel;
 
-	if ( (clipModel = phys->GetClipModel( id )) && clipModel->IsTraceModel() ) 
+	if ( (clipModel = phys->GetClipModel( m_id )) && clipModel->IsTraceModel() ) 
 	{
 		float mass;
 		idMat3 inertiaTensor;
 		clipModel->GetMassProperties( 1.0f, mass, COM, inertiaTensor );
 	} else 
 	{
-		COM.Zero();
+		// don't drag it if its clipmodel is not a trace model
+		goto Quit;
 	}
-	COMWorld = phys->GetOrigin( id ) + COM * phys->GetAxis( id );
+	COMWorld = phys->GetOrigin( m_id ) + COM * phys->GetAxis( m_id );
 
-	origin = phys->GetOrigin( id );
-	axis = phys->GetAxis( id );
-	localEntityPoint = COM;
+	m_dragEnt = newEnt;
+	m_joint = newJoint;
+	m_id = trace.c.id;
+
+	origin = phys->GetOrigin( m_id );
+	axis = phys->GetAxis( m_id );
+	m_localEntityPoint = COM;
 
 	// find the nearest distance and set it to that
 	m_MinHeldDist = newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" );
@@ -388,14 +396,14 @@ void CGrabber::StartGrab( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// prevent collision with player
 	// set the clipMask so that the objet only collides with the world
-	this->AddToClipList( this->dragEnt.GetEntity() );
+	this->AddToClipList( m_dragEnt.GetEntity() );
 
 	// signal object manipulator to update drag position so it's relative to the objects
 	// center of mass instead of its origin
-	this->rotationAxis = -1;
+	m_rotationAxis = -1;
 
-	this->drag.Init( g_dragDamping.GetFloat() );
-	this->drag.SetPhysics( phys, id, localEntityPoint );
+	this->m_drag.Init( g_dragDamping.GetFloat() );
+	this->m_drag.SetPhysics( phys, m_id, m_localEntityPoint );
 
 	player->m_bGrabberActive = true;
 	// don't let the player switch weapons or items
@@ -422,7 +430,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	idVec3 rotationVec;
 	bool rotating;
 
-	ent = this->dragEnt.GetEntity();
+	ent = m_dragEnt.GetEntity();
 	if( !ent ) {
 		return;
 	}
@@ -461,53 +469,53 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		
 		if( !this->DeadMouse() ) 
 		{
-			switch( this->rotationAxis ) 
+			switch( m_rotationAxis ) 
 			{
 				case 1:
-					angle = idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) - MOUSE_DEADZONE;
-					if( player->usercmd.mx < this->mousePosition.x )
+					angle = idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) - MOUSE_DEADZONE;
+					if( player->usercmd.mx < m_mousePosition.x )
 						angle = -angle;
 
 					rotationVec.Set( 1.0f, 0.0f, 0.0f );
-					this->rotationAxis = 1;
+					m_rotationAxis = 1;
 
 					break;
 
 				case 2:
-					angle = idMath::Fabs( player->usercmd.my - this->mousePosition.y ) - MOUSE_DEADZONE;
-					if( player->usercmd.my < this->mousePosition.y )
+					angle = idMath::Fabs( player->usercmd.my - m_mousePosition.y ) - MOUSE_DEADZONE;
+					if( player->usercmd.my < m_mousePosition.y )
 						angle = -angle;
 
 					rotationVec.Set( 0.0f, -1.0f, 0.0f );
-					this->rotationAxis = 2;
+					m_rotationAxis = 2;
 
 					break;
 
 				case 3:
-					angle = idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) - MOUSE_DEADZONE;
-					if( player->usercmd.mx < this->mousePosition.x )
+					angle = idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) - MOUSE_DEADZONE;
+					if( player->usercmd.mx < m_mousePosition.x )
 						angle = -angle;
 
 					rotationVec.Set( 0.0f, 0.0f, 1.0f );
-					this->rotationAxis = 3;
+					m_rotationAxis = 3;
 
 					break;
 
 				default:
 					// wait for motion on the x-axis, if nothing, check the y-axis.
-					if( idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) > idMath::Fabs( player->usercmd.my - this->mousePosition.y ) ) {
+					if( idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) > idMath::Fabs( player->usercmd.my - m_mousePosition.y ) ) {
 						// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
 						if( player->usercmd.buttons & BUTTON_RUN ) {
-							this->rotationAxis = 3;
+							m_rotationAxis = 3;
 						}
 						else 
 						{
-							this->rotationAxis = 1;
+							m_rotationAxis = 1;
 						}
 					}
 					else 
 					{
-						this->rotationAxis = 2;
+						m_rotationAxis = 2;
 					}
 
 					rotationVec.Set( 0.0f, 0.0f, 0.0f );
@@ -522,11 +530,11 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		idMat3 viewAxisXY = viewAnglesXY.ToMat3();
 		
 		idVec3 LocalCoord;
-		LocalCoord = this->drag.GetCenterOfMass()  - physics->GetOrigin();
-		LocalCoord *= physics->GetAxis( this->id );
+		LocalCoord = m_drag.GetCenterOfMass()  - physics->GetOrigin();
+		LocalCoord *= physics->GetAxis( m_id );
 
-		this->rotation.Set( LocalCoord, rotationVec * viewAxisXY, angle );
-		angularVelocity += this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+		m_rotation.Set( LocalCoord, rotationVec * viewAxisXY, angle );
+		angularVelocity += m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
 	}
 	else 
 	{
@@ -536,16 +544,14 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		player->SetImmobilization( "Grabber", player->GetImmobilization("Grabber") & (~EIM_VIEW_ANGLE) );
 
 		// reset these coordinates so that next time they press zoom the rotation will be fresh
-		this->mousePosition.x = player->usercmd.mx;
-		this->mousePosition.y = player->usercmd.my;
+		m_mousePosition.x = player->usercmd.mx;
+		m_mousePosition.y = player->usercmd.my;
 
 		// reset rotation information so when the next zoom is pressed we can freely rotate again
-		if( this->rotationAxis ) {
-			this->rotationAxis = 0;
-			this->rotatePosition = vec3_origin;
-		}
+		if( m_rotationAxis )
+			m_rotationAxis = 0;
 
-		//angularVelocity += physics->GetAngularVelocity(this->id) * ROTATION_DAMPER;
+		//angularVelocity += physics->GetAngularVelocity(m_id) * ROTATION_DAMPER;
 		angularVelocity = vec3_zero;
 	}
 
@@ -558,21 +564,19 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		normal = physics->GetGravityNormal();
 
 		deltaYawAng = static_cast<idPhysics_Player *>(player->GetPhysics())->GetDeltaViewYaw();
-
-		//this->rotation.Set( this->drag.GetCenterOfMass(), normal, deltaYawAng );
-		this->rotation.Set(this->drag.GetCenterOfMass(), normal, deltaYawAng );
+		m_rotation.Set(m_drag.GetCenterOfMass(), normal, deltaYawAng );
 		
 		// rotate the object directly
 		trace_t trResults;
-		physics->ClipRotation( trResults, this->rotation, NULL );
-		physics->Rotate( this->rotation * trResults.fraction );
+		physics->ClipRotation( trResults, m_rotation, NULL );
+		physics->Rotate( m_rotation * trResults.fraction );
 		
 		//I can't seem to get setting the angular velocity to work here for some reason
 		// Might be due to disparity between actual frame integration time and 1/60 sec
-		//angularVelocity = this->rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+		//angularVelocity = m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
 	}
 
-	physics->SetAngularVelocity( angularVelocity, this->id );
+	physics->SetAngularVelocity( angularVelocity, m_id );
 }
 
 /*
@@ -583,8 +587,8 @@ CGrabber::DeadMouse
 bool CGrabber::DeadMouse( void ) 
 {
 	// check mouse is in the deadzone along the x-axis or the y-axis
-	if( idMath::Fabs( player->usercmd.mx - this->mousePosition.x ) > MOUSE_DEADZONE ||
-		idMath::Fabs( player->usercmd.my - this->mousePosition.y ) > MOUSE_DEADZONE )
+	if( idMath::Fabs( m_player->usercmd.mx - m_mousePosition.x ) > MOUSE_DEADZONE ||
+		idMath::Fabs( m_player->usercmd.my - m_mousePosition.y ) > MOUSE_DEADZONE )
 		return false;
 
 	return true;
@@ -604,7 +608,7 @@ void CGrabber::AddToClipList( idEntity *ent )
 	obj.ent = ent;
 	obj.clipMask = clipMask;
 
-	this->clipList.AddUnique( obj );
+	m_clipList.AddUnique( obj );
 
 	// set the clipMask so that the player won't colide with the object but it still
 	// collides with the world
@@ -625,8 +629,8 @@ void CGrabber::RemoveFromClipList( int index )
 {
 	// remove the entity and reset the clipMask
 	if( index != -1 ) {
-		this->clipList[index].ent->GetPhysics()->SetClipMask( this->clipList[index].clipMask );
-		this->clipList.RemoveIndex( index );
+		m_clipList[index].ent->GetPhysics()->SetClipMask( m_clipList[index].clipMask );
+		m_clipList.RemoveIndex( index );
 	}
 
 	if( !this->HasClippedEntity() ) {
@@ -648,12 +652,12 @@ void CGrabber::Event_CheckClipList( void )
 
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
-	num = gameLocal.clip.EntitiesTouchingBounds( this->player->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
-	for( i = 0; i < this->clipList.Num(); i++ ) {
+	num = gameLocal.clip.EntitiesTouchingBounds( m_player->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	for( i = 0; i < m_clipList.Num(); i++ ) {
 		// Check clipEntites against entites touching player
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == this->clipList[i].ent ) {
+		if( this->GetSelected() == m_clipList[i].ent ) {
 			keep = true;
 		}
 		else {
@@ -661,7 +665,7 @@ void CGrabber::Event_CheckClipList( void )
 
 			// OR if it's touching the player and still in the clipList
 			for( j = 0; !keep && j < num; j++ ) {
-				if( this->clipList[i].ent == ent[j] ) {
+				if( m_clipList[i].ent == ent[j] ) {
 					keep = true;
 				}
 			}
@@ -690,7 +694,7 @@ bool CGrabber::IsInClipList( idEntity *ent ) const {
 	obj.ent = ent;
 	
 	// check if the entity is in the clipList
-	if( this->clipList.FindIndex( obj ) == -1 ) {
+	if( m_clipList.FindIndex( obj ) == -1 ) {
 		return false;
 	}
 	return true;
@@ -703,7 +707,7 @@ CGrabber::HasClippedEntity
 ==============
 */
 bool CGrabber::HasClippedEntity( void ) const {
-	if( this->clipList.Num() > 0 ) {
+	if( m_clipList.Num() > 0 ) {
 		return true;
 	}
 	return false;
@@ -719,8 +723,8 @@ void CGrabber::Throw( int HeldTime )
 	float ThrowImpulse(0), FracPower(0);
 	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1);
 
-	idEntity *ent = dragEnt.GetEntity();
-	ImpulseVec = player->firstPersonViewAxis[0];
+	idEntity *ent = m_dragEnt.GetEntity();
+	ImpulseVec = m_player->firstPersonViewAxis[0];
 	ImpulseVec.Normalize();
 
 	FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
@@ -732,8 +736,8 @@ void CGrabber::Throw( int HeldTime )
 	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
 	ImpulseVec *= ThrowImpulse;  
 
-	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, this->id );
-	ent->ApplyImpulse( player, id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
+	ent->ApplyImpulse( m_player, m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
 
 	StopDrag();
 }
@@ -743,9 +747,9 @@ void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
 	idVec3 linear, angular;
 	float  lengthLin(0), lengthAng(0), lengthLin2(0), lengthAng2(0);
 
-	if( dragEnt.GetEntity() )
+	if( m_dragEnt.GetEntity() )
 	{
-		idEntity *ent = dragEnt.GetEntity();
+		idEntity *ent = m_dragEnt.GetEntity();
 		linear = ent->GetPhysics()->GetLinearVelocity( idVal );
 		angular = ent->GetPhysics()->GetAngularVelocity( idVal );
 		// only do this when we let go or throw, so can afford to do a sqrt here
@@ -764,7 +768,7 @@ void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
 void CGrabber::IncrementDistance( bool bIncrease )
 {
 	int increment = 1;
-	if( !dragEnt.GetEntity() )
+	if( !m_dragEnt.GetEntity() )
 		goto Quit;
 	
 	if( !bIncrease )
@@ -775,5 +779,79 @@ void CGrabber::IncrementDistance( bool bIncrease )
 
 Quit:
 	return;
+}
+
+bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
+{
+	idClipModel *ClipModel = NULL;
+	bool bReturnVal = false, bStartedHidden(false);
+	int ContentsMask = 0;
+	float HeldDist = 0.0f;
+	trace_t trace;
+	idVec3 orig(vec3_zero), targetCOM(vec3_zero), COMLocal(vec3_zero);
+	idVec3 forward(1.0f, 0.0f, 0.0f), viewPoint, initOrigin;
+	idMat3 viewAxis;
+	idVec3 FarAway(0.0f, 0.0f, -4096.0f);
+
+	if( !ent || !player )
+		goto Quit;
+
+	player->GetViewPos( viewPoint, viewAxis );
+
+	bStartedHidden = ent->IsHidden();
+	// Momentarily show the entity if it was hidden, to enable the clipmodel
+	ent->Show();
+
+	// calculate where the origin should end up based on center of mass location and orientation
+	// also based on the minimum held distance
+	HeldDist = ent->spawnArgs.GetFloat("hold_distance_min", "-1" );
+	if( HeldDist < 0 )
+		HeldDist = MIN_HELD_DISTANCE;
+
+	// get the center of mass
+	if ( (ClipModel = ent->GetPhysics()->GetClipModel( bodyID )) && ClipModel->IsTraceModel() ) 
+	{
+		float mass;
+		idMat3 inertiaTensor;
+		ClipModel->GetMassProperties( 1.0f, mass, COMLocal, inertiaTensor );
+	} else 
+	{
+		COMLocal.Zero();
+	}
+
+	targetCOM = (HeldDist * forward ) * viewAxis;
+	targetCOM += viewPoint;
+
+	orig = targetCOM - ( ent->GetPhysics()->GetAxis( bodyID ) * COMLocal );
+
+	ContentsMask = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL;
+	
+	// This is a hack:  We want the trace to ignore both the entity itself and the player
+	// But can only pass one entity in to ignore.  Therefore, we teleport it far away before doing the trace
+	// And put it back afterwards
+	initOrigin = ent->GetPhysics()->GetOrigin();
+	ent->SetOrigin( FarAway );
+
+	gameLocal.clip.TraceBounds( trace, orig, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
+
+	if( trace.fraction < 1.0f )
+	{
+		// object collided, return false, hide it
+		if(bStartedHidden)
+			ent->Hide();
+
+		ent->SetOrigin( initOrigin );
+
+		goto Quit;
+	}
+
+	bReturnVal = true;
+	
+	// otherwise teleport in the object
+	ent->SetOrigin( orig );
+	StartDrag( player, ent, bodyID );
+
+Quit:
+	return bReturnVal;
 }
 		

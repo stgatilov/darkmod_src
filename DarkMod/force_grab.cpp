@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/08/14 01:06:27  ishtvan
+ * PutInHands added
+ *
+ * fixed member vars to conform to naming conventions
+ *
  * Revision 1.4  2006/08/07 06:51:10  ishtvan
  * force grab no longer clears m_bIsColliding on the grabber, the grabber clears it itself
  *
@@ -151,21 +156,6 @@ void CForce_Grab::Evaluate( int time )
 
 	l1 = dir1.Normalize();
 
-// If the object hasn't moved much and the velocity is really high, stop it
-// and don't apply more velocity.
-/*	idVec3 delta = m_physics->GetOrigin( m_id ) - m_prevOrigin;
-	if( ((delta.LengthSqr()) < 1.0f) && (m_physics->GetLinearVelocity( m_id ).LengthSqr() > 100.0f) )
-	{
-		m_physics->SetLinearVelocity( vec3_zero );
-		m_physics->SetAngularVelocity( vec3_zero );
-		goto Quit;
-	}
-*/
-/*
-	rotation.Set( COM, dir2.Cross( dir1 ), RAD2DEG( idMath::ACos( dir1 * dir2 ) ) );
-	m_physics->SetAngularVelocity( rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC ), m_id );
-*/
-
 	velocity = m_physics->GetLinearVelocity( m_id ) * m_damping + dir1 * ( l1 * ( 1.0f - m_damping ) / MS2SEC( USERCMD_MSEC ) );
 	m_physics->SetLinearVelocity( velocity, m_id );
 	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
@@ -173,7 +163,6 @@ void CForce_Grab::Evaluate( int time )
 		g_Global.m_DarkModPlayer->grabber->ClampVelocity( 1.0f, 0.0f, m_id );
 	}
 
-Quit:
 	m_prevOrigin = m_physics->GetOrigin( m_id );
 }
 
