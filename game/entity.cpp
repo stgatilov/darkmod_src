@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.68  2006/08/15 16:35:52  gildoran
+ * A couple more inventory fixes. (setInventory() now reads "inv_group" rather than "inventory_group")
+ *
  * Revision 1.67  2006/08/13 22:51:26  gildoran
  * A couple of minor fixes to inventory script events.
  *
@@ -6875,7 +6878,7 @@ void idEntity::Event_SetInventory( idEntity* ent ) {
 
 
 	const char* group;
-	spawnArgs.GetString( "inventory_group", "", &group );
+	spawnArgs.GetString( "inv_group", "", &group );
 	item->setInventory( inv, group );
 
 	Quit:

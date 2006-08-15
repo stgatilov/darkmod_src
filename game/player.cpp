@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.84  2006/08/15 16:35:52  gildoran
+ * A couple more inventory fixes. (setInventory() now reads "inv_group" rather than "inventory_group")
+ *
  * Revision 1.83  2006/08/15 15:48:35  gildoran
  * Another inventory related change.
  *
@@ -9916,7 +9919,6 @@ void idPlayer::inventoryNextGroup() {
 
 	InventoryCursor()->iterate( TDMINV_GROUP, false );
 	inventoryChangeSelection( hud );
-	hud->HandleNamedEvent( "inventoryFlashGroupTempVis" );
 }
 
 void idPlayer::inventoryPrevGroup() {
@@ -9928,7 +9930,6 @@ void idPlayer::inventoryPrevGroup() {
 
 	InventoryCursor()->iterate( TDMINV_GROUP, true );
 	inventoryChangeSelection( hud );
-	hud->HandleNamedEvent( "inventoryFlashGroupTempVis" );
 }
 
 bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
