@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/08/15 15:48:28  gildoran
+ * Another inventory related change.
+ *
  * Revision 1.35  2006/08/12 12:47:19  gildoran
  * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
  *
@@ -198,11 +201,15 @@ idCVar cv_throw_time(				"tdm_throw_time",		"1700",			CVAR_GAME | CVAR_ARCHIVE |
 * DarkMod Inventory
 **/
 
-idCVar cv_tdm_inv_grouping(	"tdm_inv_grouping",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"The opacity of the inventory GUI.\n"
+idCVar cv_tdm_inv_grouping(	"tdm_inv_grouping",	"2",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"The opacity of the inventory GUI.\n"
 																									"0 = ungrouped inventory\n"
 																									"1 = grouped inventory\n"
 																									"2 = hybrid inventory", 0, 2 );
 idCVar cv_tdm_inv_opacity(	"tdm_inv_opacity",	"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"The opacity of the inventory GUI.", 0, 1 );
+idCVar cv_tdm_inv_groupvis(	"tdm_inv_groupVis",	"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"Controls group visibility. (not yet functional)\n"
+																							        "0 = never visible\n"
+																									"1 = temporarily visible\n"
+																									"2 = always visibility", 0, 2 );
 
 /**
 * DarkMod movement volumes.  Walking volume is zero dB, other volumes are added to that

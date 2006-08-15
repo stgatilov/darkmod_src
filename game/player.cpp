@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.83  2006/08/15 15:48:35  gildoran
+ * Another inventory related change.
+ *
  * Revision 1.82  2006/08/14 01:12:43  ishtvan
  * added preliminary drop item in impulse51
  *
@@ -9913,6 +9916,7 @@ void idPlayer::inventoryNextGroup() {
 
 	InventoryCursor()->iterate( TDMINV_GROUP, false );
 	inventoryChangeSelection( hud );
+	hud->HandleNamedEvent( "inventoryFlashGroupTempVis" );
 }
 
 void idPlayer::inventoryPrevGroup() {
@@ -9924,6 +9928,7 @@ void idPlayer::inventoryPrevGroup() {
 
 	InventoryCursor()->iterate( TDMINV_GROUP, true );
 	inventoryChangeSelection( hud );
+	hud->HandleNamedEvent( "inventoryFlashGroupTempVis" );
 }
 
 bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {

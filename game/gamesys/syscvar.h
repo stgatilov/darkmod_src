@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/08/15 15:48:28  gildoran
+ * Another inventory related change.
+ *
  * Revision 1.23  2006/08/12 12:47:19  gildoran
  * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
  *
@@ -113,6 +116,7 @@ extern idCVar cv_throw_time;
 
 extern idCVar cv_tdm_inv_grouping;
 extern idCVar cv_tdm_inv_opacity;
+extern idCVar cv_tdm_inv_groupvis;
 
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;
