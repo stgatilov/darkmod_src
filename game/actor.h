@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/08/20 20:24:21  ishtvan
+ * added new attachment functions
+ *
  * Revision 1.9  2006/05/24 08:49:06  ishtvan
  * added AI group and innocence to idActor
  *
@@ -219,7 +222,34 @@ public:
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
 
+	/**
+	* Attach an entity.  Entity spawnArgs checked for attachments are:
+	* "origin", "angles", and "joint".
+	**/
 	void					Attach( idEntity *ent );
+
+	/**
+	* Reattach an existing attachment
+	* Effects the attachment at index ind (where the first attachment starts at 1)
+	* For example to effect the first item that was attached, ind should be = 1
+	* 
+	* The next arguments are the name of the joint to attach to, the translation
+	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
+	* rotation of the attachment relative to the joint's orientation.
+	**/
+	void ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec );
+
+	/**
+	* Show or hide an attachment.  Index works the same as in ReAttach described above.
+	**/
+	void ShowAttachment( int ind, bool bShow );
+
+	/**
+	* Drop an attached item.  This is different from def_drop dropping
+	* Because the entity is actually the same one that's attached,
+	* it just gets unbound and falls to the ground from its current position.
+	**/
+	void DropAttachment( int ind );
 
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 
@@ -298,7 +328,7 @@ protected:
 
 	int						painTime;
 
-	idList<idAttachInfo>	attachments;
+	idList<idAttachInfo>	m_attachments;
 
 	/**
 	* Movement volume modifiers.  Ones for the player are taken from 

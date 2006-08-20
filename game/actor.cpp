@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/08/20 20:24:21  ishtvan
+ * added new attachment functions
+ *
  * Revision 1.18  2006/07/30 23:37:43  ishtvan
  * removed attachment code from spawn, now done on idEntity
  *
@@ -500,7 +503,7 @@ idActor::idActor( void ) {
 
 	finalBoss			= false;
 
-	attachments.SetGranularity( 1 );
+	m_attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
@@ -529,10 +532,10 @@ idActor::~idActor( void ) {
 	}
 
 	// remove any attached entities
-	for( i = 0; i < attachments.Num(); i++ ) {
-		ent = attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_attachments.Num(); i++ ) {
+		ent = m_attachments[ i ].ent.GetEntity();
 		if ( ent ) {
-			ent->PostEventMS( &EV_Remove, 0 );
+			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
 	}
 
@@ -727,7 +730,7 @@ void idActor::SetupHead( void ) {
 
 		idVec3		origin;
 		idMat3		axis;
-		idAttachInfo &attach = attachments.Alloc();
+		idAttachInfo &attach = m_attachments.Alloc();
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 		origin = renderEntity.origin + ( origin + modelOffset ) * renderEntity.axis;
@@ -863,10 +866,10 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( painTime );
 
-	savefile->WriteInt( attachments.Num() );
-	for ( i = 0; i < attachments.Num(); i++ ) {
-		attachments[i].ent.Save( savefile );
-		savefile->WriteInt( attachments[i].channel );
+	savefile->WriteInt( m_attachments.Num() );
+	for ( i = 0; i < m_attachments.Num(); i++ ) {
+		m_attachments[i].ent.Save( savefile );
+		savefile->WriteInt( m_attachments[i].channel );
 	}
 
 	savefile->WriteBool( finalBoss );
@@ -990,7 +993,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) {
-		idAttachInfo &attach = attachments.Alloc();
+		idAttachInfo &attach = m_attachments.Alloc();
 		attach.ent.Restore( savefile );
 		savefile->ReadInt( attach.channel );
 	}
@@ -1730,10 +1733,10 @@ void idActor::RemoveAttachments( void ) {
 	idEntity *ent;
 
 	// remove any attached entities
-	for( i = 0; i < attachments.Num(); i++ ) {
-		ent = attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_attachments.Num(); i++ ) {
+		ent = m_attachments[ i ].ent.GetEntity();
 		if ( ent && ent->spawnArgs.GetBool( "remove" ) ) {
-			ent->PostEventMS( &EV_Remove, 0 );
+			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
 	}
 }
@@ -1746,10 +1749,10 @@ idActor::Attach
 void idActor::Attach( idEntity *ent ) 
 {
 	idVec3			origin;
-	idMat3			axis;
+	idMat3			axis, rotate, newAxis;
 	jointHandle_t	joint;
 	idStr			jointName;
-	idAttachInfo	&attach = attachments.Alloc();
+	idAttachInfo	&attach = m_attachments.Alloc();
 	idAngles		angleOffset;
 	idVec3			originOffset;
 
@@ -1766,9 +1769,11 @@ void idActor::Attach( idEntity *ent )
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
 	attach.ent = ent;
 
-	ent->SetOrigin( origin + originOffset * renderEntity.axis );
-	idMat3 rotate = angleOffset.ToMat3();
-	idMat3 newAxis = rotate * axis;
+	// Use the local joint axis instead of the overall AI axis
+	//ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	ent->SetOrigin( origin + originOffset * axis );
+	rotate = angleOffset.ToMat3();
+	newAxis = rotate * axis;
 	ent->SetAxis( newAxis );
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
@@ -2582,6 +2587,118 @@ void idActor::PlayFootStepSound( void )
 		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
 	}
 }
+
+/*
+========================
+idActor::ReAttach
+========================
+*/
+void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec  ) 
+{
+	idEntity		*ent( NULL );
+	idVec3			origin;
+	idMat3			axis, rotate, newAxis;
+	jointHandle_t	joint;
+	idAngles		angleOffset;
+	idAttachInfo	*attachment;
+
+	ind--;
+	if( ind < 0 || ind >= m_attachments.Num() )
+	{
+		// log invalid index error
+		goto Quit;
+	}
+
+	attachment = &m_attachments[ind-1];
+	ent = attachment->ent.GetEntity();
+
+	if( !ent || !attachment->ent.IsValid() )
+	{
+		// log bad attachment entity error
+		goto Quit;
+	}
+
+	joint = animator.GetJointHandle( jointName );
+	if ( joint == INVALID_JOINT )
+	{
+		// log error
+		gameLocal.Warning( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+		goto Quit;
+	}
+
+	angleOffset = angleVec.ToAngles();
+
+	attachment->channel = animator.GetChannelForJoint( joint );
+	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+
+
+	// Use the local joint axis instead of the overall AI axis
+	//ent->SetOrigin( origin + offset * renderEntity.axis );
+	ent->SetOrigin( origin + offset * axis );
+	rotate = angleOffset.ToMat3();
+	newAxis = rotate * axis;
+	ent->SetAxis( newAxis );
+	ent->BindToJoint( this, joint, true );
+	ent->cinematic = cinematic;
+
+Quit:
+	return;
+}
+
+void idActor::ShowAttachment( int ind, bool bShow )
+{
+	idEntity *ent( NULL );
+
+	ind--;
+	if( ind < 0 || ind >= m_attachments.Num() )
+	{
+		// log invalid index error
+		goto Quit;
+	}
+
+	ent = m_attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_attachments[ind].ent.IsValid() )
+	{
+		// log bad attachment entity error
+		goto Quit;
+	}
+
+	if( bShow )
+		ent->Show();
+	else
+		ent->Hide();
+
+Quit:
+	return;
+}
+
+void idActor::DropAttachment( int ind )
+{
+	idEntity *ent = NULL;
+
+	ind--;
+	if( ind < 0 || ind >= m_attachments.Num() )
+	{
+		// log invalid index error
+		goto Quit;
+	}
+
+	ent = m_attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_attachments[ind].ent.IsValid() )
+	{
+		// log bad attachment entity error
+		goto Quit;
+	}
+
+	ent->Unbind();
+	m_attachments[ind].ent = NULL;
+
+Quit:
+	return;
+}
+
 
 /***********************************************************************
 
