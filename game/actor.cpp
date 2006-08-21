@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/08/21 06:24:14  ishtvan
+ * *) added event_getattachment
+ *
+ * *) moved other attachment scriptevents from idAI to idActor
+ *
  * Revision 1.22  2006/08/21 05:53:53  ishtvan
  * added GetAttachedEnt to get an entity attached at the given index
  *
@@ -420,6 +425,13 @@ const idEventDef AI_GetState( "getState", NULL, 's' );
 const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
 
+// Attachment Related Events:
+const idEventDef AI_Attach( "attach", "e" );
+const idEventDef AI_ReAttach( "reAttach", "dsvv" );
+const idEventDef AI_DropAttachment( "dropAttachment", "d" );
+const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
+const idEventDef AI_GetAttachment( "getAttachment", "d", 'e' );
+
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -464,6 +476,12 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetState,					idActor::Event_GetState )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
+	
+	EVENT ( AI_Attach,					idActor::Attach )
+	EVENT ( AI_ReAttach,				idActor::ReAttach )
+	EVENT ( AI_DropAttachment,			idActor::DropAttachment )
+	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
+	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
 END_CLASS
 
 /*
@@ -2716,7 +2734,6 @@ bool idActor::GetAttachInfo( int ind, idStr &jointName, idVec3 &offset,
 {
 	bool bReturnVal = false;
 	idEntity *ent = NULL;
-	jointHandle_t joint;
 
 	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
@@ -3638,4 +3655,15 @@ idActor::Event_GetEyePos
 void idActor::Event_GetEyePos( void )
 {
 	idThread::ReturnVector( GetEyePosition() );
+}
+
+/*
+=====================
+idActor::Event_GetAttachment
+=====================
+*/
+void idActor::Event_GetAttachment( int ind )
+{
+	idEntity *ent = GetAttachedEnt( ind );
+	idThread::ReturnEntity( ent );
 }

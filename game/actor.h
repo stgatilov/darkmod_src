@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/08/21 06:24:14  ishtvan
+ * *) added event_getattachment
+ *
+ * *) moved other attachment scriptevents from idAI to idActor
+ *
  * Revision 1.12  2006/08/21 05:53:52  ishtvan
  * added GetAttachedEnt to get an entity attached at the given index
  *
@@ -431,6 +436,7 @@ private:
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
+	void					Event_GetAttachment( int ind );
 };
 
 #endif /* !__GAME_ACTOR_H__ */
