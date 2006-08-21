@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/08/21 05:04:00  ishtvan
+ * attachment updates/fixes
+ *
  * Revision 1.19  2006/08/20 20:24:21  ishtvan
  * added new attachment functions
  *
@@ -1769,12 +1772,12 @@ void idActor::Attach( idEntity *ent )
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
 	attach.ent = ent;
 
-	// Use the local joint axis instead of the overall AI axis
-	//ent->SetOrigin( origin + originOffset * renderEntity.axis );
-	ent->SetOrigin( origin + originOffset * axis );
 	rotate = angleOffset.ToMat3();
 	newAxis = rotate * axis;
 	ent->SetAxis( newAxis );
+	// Use the local joint axis instead of the overall AI axis
+	ent->SetOrigin( origin + originOffset * axis );
+
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
 }
@@ -2593,13 +2596,12 @@ void idActor::PlayFootStepSound( void )
 idActor::ReAttach
 ========================
 */
-void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec  ) 
+void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles  ) 
 {
 	idEntity		*ent( NULL );
 	idVec3			origin;
 	idMat3			axis, rotate, newAxis;
 	jointHandle_t	joint;
-	idAngles		angleOffset;
 	idAttachInfo	*attachment;
 
 	ind--;
@@ -2609,7 +2611,7 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec
 		goto Quit;
 	}
 
-	attachment = &m_attachments[ind-1];
+	attachment = &m_attachments[ind];
 	ent = attachment->ent.GetEntity();
 
 	if( !ent || !attachment->ent.IsValid() )
@@ -2626,20 +2628,24 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec
 		goto Quit;
 	}
 
-	angleOffset = angleVec.ToAngles();
-
 	attachment->channel = animator.GetChannelForJoint( joint );
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
 
-
-	// Use the local joint axis instead of the overall AI axis
-	//ent->SetOrigin( origin + offset * renderEntity.axis );
-	ent->SetOrigin( origin + offset * axis );
-	rotate = angleOffset.ToMat3();
+	rotate = angles.ToMat3();
 	newAxis = rotate * axis;
+
+	ent->Unbind();
 	ent->SetAxis( newAxis );
+	// Use the local joint axis instead of the overall AI axis
+	ent->SetOrigin( origin + offset * axis );
+
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
+	
+	// set the spawnargs for later retrieval as well
+	ent->spawnArgs.Set( "joint", jointName.c_str() );
+	ent->spawnArgs.SetVector( "origin", offset );
+	ent->spawnArgs.SetAngles( "angles", angles );
 
 Quit:
 	return;
@@ -2698,6 +2704,39 @@ void idActor::DropAttachment( int ind )
 Quit:
 	return;
 }
+
+bool idActor::GetAttachInfo( int ind, idStr &jointName, idVec3 &offset, 
+							idAngles &angles )
+{
+	bool bReturnVal = false;
+	idEntity *ent = NULL;
+	jointHandle_t joint;
+
+	ind--;
+	if( ind < 0 || ind >= m_attachments.Num() )
+	{
+		// log invalid index error
+		goto Quit;
+	}
+
+	ent = m_attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_attachments[ind].ent.IsValid() )
+	{
+		// log bad attachment entity error
+		goto Quit;
+	}
+
+	jointName = ent->spawnArgs.GetString( "joint", "" );
+	offset = ent->spawnArgs.GetVector( "origin" );
+	angles = ent->spawnArgs.GetAngles( "angles" );
+
+	bReturnVal = true;
+
+Quit:
+	return bReturnVal;
+}
+
 
 
 /***********************************************************************

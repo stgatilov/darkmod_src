@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/08/21 05:04:00  ishtvan
+ * attachment updates/fixes
+ *
  * Revision 1.10  2006/08/20 20:24:21  ishtvan
  * added new attachment functions
  *
@@ -237,7 +240,7 @@ public:
 	* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
 	* rotation of the attachment relative to the joint's orientation.
 	**/
-	void ReAttach( int ind, idStr jointName, idVec3 offset, idVec3 angleVec );
+	void ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles );
 
 	/**
 	* Show or hide an attachment.  Index works the same as in ReAttach described above.
@@ -250,6 +253,13 @@ public:
 	* it just gets unbound and falls to the ground from its current position.
 	**/
 	void DropAttachment( int ind );
+
+	/**
+	* Store the attachment info in the argument references given.
+	* Returns false if the attachment index was invalid.
+	* (Note: The attachment index starts at 1)
+	**/
+	bool GetAttachInfo( int ind, idStr &joint, idVec3 &offset, idAngles &angles );
 
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 
