@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2006/08/21 05:06:49  ishtvan
+ * added PlayerTraceEntity which returns the ent the player is looking at out to 512 units
+ *
  * Revision 1.33  2006/08/01 21:13:20  sparhawk
  * Lightgem splitcode
  *
@@ -750,6 +753,9 @@ public:
 
 	bool					RequirementMet( idEntity *activator, const idStr &requires, int removeItem );
 
+/**
+* The following are vanilla D3 functions that have nothing to do with TDM's AI alert system
+**/
 	void					AlertAI( idEntity *ent );
 	idActor *				GetAlertEntity( void );
 
@@ -775,6 +781,13 @@ public:
 	idEntity *				FindEntity( const char *name ) const;
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
 	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
+
+	/**
+	* Get the entity that the player is looking at
+	* Currently called by console commands, does a long trace so should not be
+	* called every frame.
+	**/
+	idEntity *				PlayerTraceEntity( void );
 
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );

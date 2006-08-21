@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.70  2006/08/21 05:06:49  ishtvan
+ * added PlayerTraceEntity which returns the ent the player is looking at out to 512 units
+ *
  * Revision 1.69  2006/08/14 01:07:38  ishtvan
  * grabber update
  *
@@ -5722,3 +5725,37 @@ Quit:
 	return pReturnval;
 }
 
+/*
+===================
+Dark Mod:
+idGameLocal::PlayerTraceEntity
+===================
+*/
+idEntity *idGameLocal::PlayerTraceEntity( void )
+{
+	idVec3		start, end;
+	idEntity	*returnEnt = NULL;
+	idPlayer	*player = NULL;
+	trace_t		trace;
+	int			cm = 0;
+
+	if( !( player = gameLocal.GetLocalPlayer() ) )
+		goto Quit;
+
+	start = player->GetEyePosition();
+	// do a trace 512 doom units ahead
+	end = start + 512.0f * (player->viewAngles.ToForward());
+
+	cm = CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_TRIGGER;
+	gameLocal.clip.TracePoint( trace, start, end, cm, player );
+	if( trace.fraction < 1.0f )
+	{
+		returnEnt = gameLocal.entities[ trace.c.entityNum ];
+		// don't return the world
+		if( returnEnt == gameLocal.world )
+			returnEnt = NULL;
+	}
+	
+Quit:
+	return returnEnt;
+}
