@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/08/21 05:53:52  ishtvan
+ * added GetAttachedEnt to get an entity attached at the given index
+ *
  * Revision 1.11  2006/08/21 05:04:00  ishtvan
  * attachment updates/fixes
  *
@@ -260,6 +263,12 @@ public:
 	* (Note: The attachment index starts at 1)
 	**/
 	bool GetAttachInfo( int ind, idStr &joint, idVec3 &offset, idAngles &angles );
+
+	/**
+	* Retrieve the attached entity at index ind.  NOTE: ind starts at 1, not zero
+	* Returns NULL if ind or entity is invalid.
+	**/
+	idEntity *GetAttachedEnt( int ind );
 
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 

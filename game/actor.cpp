@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/08/21 05:53:53  ishtvan
+ * added GetAttachedEnt to get an entity attached at the given index
+ *
  * Revision 1.21  2006/08/21 05:08:05  ishtvan
  * attachment fixes
  *
@@ -2740,6 +2743,29 @@ Quit:
 	return bReturnVal;
 }
 
+idEntity *idActor::GetAttachedEnt( int ind )
+{
+	idEntity *ent = NULL;
+
+	ind--;
+	if( ind < 0 || ind >= m_attachments.Num() )
+	{
+		// TODO: log invalid index error
+		goto Quit;
+	}
+
+	ent = m_attachments[ind].ent.GetEntity();
+
+	if( !ent || !m_attachments[ind].ent.IsValid() )
+	{
+		// TODO: log bad attachment entity error
+		ent = NULL;
+		goto Quit;
+	}
+
+Quit:
+	return ent;
+}
 
 
 /***********************************************************************
