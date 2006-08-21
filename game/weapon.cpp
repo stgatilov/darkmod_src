@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/08/21 05:07:34  ishtvan
+ * fixed attachment so that rotation was done first, then translation
+ *
  * Revision 1.12  2006/07/22 03:47:06  ishtvan
  * fix for weapon attachments staying around in midair
  *
@@ -2082,8 +2085,8 @@ void idWeapon::PresentWeapon( bool showViewModel ) {
 		idMat3 AttAxis;
 		
 		GetGlobalJointTransform( true, m_Attachments[i].joint, AttOrigin, AttAxis );
-		Att->SetOrigin( AttOrigin + AttAxis * m_Attachments[i].originOffset );
 		Att->SetAxis( m_Attachments[i].angleOffsetMat * AttAxis );
+		Att->SetOrigin( AttOrigin + AttAxis * m_Attachments[i].originOffset );
 	}
 
 
