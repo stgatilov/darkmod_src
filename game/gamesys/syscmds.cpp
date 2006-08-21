@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/08/21 05:09:09  ishtvan
+ * added attachment-related console commands
+ *
  * Revision 1.7  2006/06/21 13:06:52  sparhawk
  * Added version tracking per cpp module
  *
@@ -79,6 +82,191 @@ Cmd_PrintAIRelations_f
 void Cmd_PrintAIRelations_f( const idCmdArgs &args ) 
 {
 	gameLocal.m_RelationsManager->DebugPrintMat();
+	return;
+}
+
+/*
+==================
+Cmd_AttachmentOffset_f
+==================
+*/
+void Cmd_AttachmentOffset_f( const idCmdArgs &args )
+{
+	idEntity	*LookedAt;
+	int			ind = 0;
+	idVec3		offset(vec3_zero);
+	idAngles	angles;
+	idStr		joint;
+
+	if( args.Argc() != 5 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_offset <attachment index> <x> <y> <z>\n" );
+		goto Quit;
+	}
+
+	LookedAt = gameLocal.PlayerTraceEntity();
+	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_offset must be called when looking at an AI\n" );
+		goto Quit;
+	}
+
+	ind = atoi( args.Argv(1) );
+
+	// write the attachment info to our vars, check if the index and entity are valid
+	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	{
+		// GetAttachInfo returned false => bad index or entity
+		gameLocal.Printf("tdm_attach_offset: Bad index or bad entity at index %d\n", atoi(args.Argv(1)) );
+		goto Quit;
+	}
+
+	// overwrite the attachment with our new attachment
+	offset.x = atof(args.Argv( 2 ));
+	offset.y = atof(args.Argv( 3 ));
+	offset.z = atof(args.Argv( 4 ));
+
+	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_AttachmentRot_f
+==================
+*/
+void Cmd_AttachmentRot_f( const idCmdArgs &args )
+{
+	idEntity	*LookedAt;
+	int			ind = 0;
+	idVec3		offset(vec3_zero);
+	idAngles	angles;
+	idStr		joint;
+
+	if( args.Argc() != 5 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_rot <attachment index> <pitch> <yaw> <roll>\n" );
+		goto Quit;
+	}
+
+	LookedAt = gameLocal.PlayerTraceEntity();
+	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_rot must be called when looking at an AI\n" );
+		goto Quit;
+	}
+
+	ind = atoi( args.Argv(1) );
+
+	// write the attachment info to our vars, check if the index and entity are valid
+	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	{
+		// GetAttachInfo returned false => bad index or entity
+		gameLocal.Printf("tdm_attach_rot: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
+		goto Quit;
+	}
+
+	// overwrite the attachment rotation with our new one
+	angles.pitch = atof(args.Argv( 2 ));
+	angles.yaw = atof(args.Argv( 3 ));
+	angles.roll = atof(args.Argv( 4 ));
+
+	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_AttachmentJoint_f
+==================
+*/
+void Cmd_AttachmentJoint_f( const idCmdArgs &args )
+{
+	idEntity	*LookedAt;
+	int			ind = 0;
+	idVec3		offset(vec3_zero);
+	idAngles	angles;
+	idStr		joint;
+
+	if( args.Argc() != 3 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_joint <attachment index> <joint name>\n" );
+		goto Quit;
+	}
+
+	LookedAt = gameLocal.PlayerTraceEntity();
+	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_joint must be called when looking at an AI\n" );
+		goto Quit;
+	}
+
+	ind = atoi( args.Argv(1) );
+
+	// write the attachment info to our vars, check if the index and entity are valid
+	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	{
+		// GetAttachInfo returned false => bad index or entity
+		gameLocal.Printf("tdm_attach_joint: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
+		goto Quit;
+	}
+
+	// overwrite the attachment joint with our new one
+	joint = args.Argv(2);
+
+	static_cast<idActor *>(LookedAt)->ReAttach( ind, joint, offset, angles );
+
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_AttachmentPrint_f
+==================
+*/
+void Cmd_AttachmentPrint_f( const idCmdArgs &args )
+{
+	idEntity	*LookedAt;
+	int			ind = 0;
+	idVec3		offset(vec3_zero);
+	idAngles	angles;
+	idStr		joint;
+
+	if( args.Argc() != 2 )
+	{
+		gameLocal.Printf( "usage: tdm_attach_print <attachment index>\n" );
+		goto Quit;
+	}
+
+	LookedAt = gameLocal.PlayerTraceEntity();
+	if( !LookedAt || !(LookedAt->IsType(idActor::Type)) )
+	{
+		gameLocal.Printf( "tdm_attach_print must be called while looking at an AI\n" );
+		goto Quit;
+	}
+
+	ind = atoi( args.Argv(1) );
+
+	// write the attachment info to our vars, check if the index and entity are valid
+	if( !(static_cast<idActor *>(LookedAt)->GetAttachInfo( ind, joint, offset, angles )) )
+	{
+		// GetAttachInfo returned false => bad index or entity
+		gameLocal.Printf("tdm_attach_print: Bad index or bad entity attached at index %d\n", atoi(args.Argv(1)) );
+		goto Quit;
+	}
+
+	gameLocal.Printf("Attachment info for attachment %d on AI %s: \n", ind, LookedAt->name.c_str() );
+	gameLocal.Printf("Joint: %s\n", joint.c_str() );
+	gameLocal.Printf("Offset: %s\n", offset.ToString() );
+	gameLocal.Printf("Angles relative to joint (pitch yaw roll) : %s\n", angles.ToString() );
+	gameLocal.Printf("======= End Attachment Info =======\n \n", ind, LookedAt->name.c_str() );
+
+Quit:
 	return;
 }
 
@@ -2417,8 +2605,13 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "clearLights",			Cmd_ClearLights_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"clears all lights" );
 	cmdSystem->AddCommand( "gameError",				Cmd_GameError_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"causes a game error" );
 
-	cmdSystem->AddCommand( "dm_spr_testIO",				Cmd_TestSndIO_f,		CMD_FL_GAME,				"test soundprop file IO (needs a .spr file)" );
-	cmdSystem->AddCommand( "dm_ai_Relations",			Cmd_PrintAIRelations_f,	CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
+	cmdSystem->AddCommand( "tdm_spr_testIO",		Cmd_TestSndIO_f,			CMD_FL_GAME,				"test soundprop file IO (needs a .spr file)" );
+	cmdSystem->AddCommand( "tdm_ai_rel_print",		Cmd_PrintAIRelations_f,		CMD_FL_GAME,				"print the relationship matrix determining relations between AI teams." );
+
+	cmdSystem->AddCommand( "tdm_attach_offset",		Cmd_AttachmentOffset_f,		CMD_FL_GAME,				"Set the vector offset (x y z) for an attachment on an AI you are looking at.  Usage: tdm_attach_offset <attachment index> <x> <y> <z>" );
+	cmdSystem->AddCommand( "tdm_attach_rot",		Cmd_AttachmentRot_f,		CMD_FL_GAME,				"Set the rotation (pitch yaw roll) for an attachment on an AI you are looking at.  Usage: tdm_attach_rot <atachment index> <pitch> <yaw> <roll>  (NOTE: Rotation is applied before translation, angles are relative to the joint orientation)" );
+	cmdSystem->AddCommand( "tdm_attach_joint",		Cmd_AttachmentJoint_f,		CMD_FL_GAME,				"Set the attachment joint name for an attachment on an AI you are looking at.  Usage: tdm_attach_joint <attachment index> <string name of joint>" );
+	cmdSystem->AddCommand( "tdm_attach_print",		Cmd_AttachmentPrint_f,		CMD_FL_GAME,				"Print the attachment info for the given attachment on the AI you are looking at.  Usage: tdm_attach_print <attachment index>" );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
