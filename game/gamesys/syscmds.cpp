@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/08/21 05:54:39  ishtvan
+ * updated print attachment info to list name of attached ent
+ *
  * Revision 1.8  2006/08/21 05:09:09  ishtvan
  * added attachment-related console commands
  *
@@ -231,11 +234,11 @@ Cmd_AttachmentPrint_f
 */
 void Cmd_AttachmentPrint_f( const idCmdArgs &args )
 {
-	idEntity	*LookedAt;
+	idEntity	*LookedAt(NULL), *ent(NULL);
 	int			ind = 0;
 	idVec3		offset(vec3_zero);
 	idAngles	angles;
-	idStr		joint;
+	idStr		joint, entName("NULL");
 
 	if( args.Argc() != 2 )
 	{
@@ -260,11 +263,16 @@ void Cmd_AttachmentPrint_f( const idCmdArgs &args )
 		goto Quit;
 	}
 
+	ent = static_cast<idActor *>(LookedAt)->GetAttachedEnt( ind );
+	if( ent )
+		entName = ent->name;
+
 	gameLocal.Printf("Attachment info for attachment %d on AI %s: \n", ind, LookedAt->name.c_str() );
+	gameLocal.Printf("Entity attached: %s\n", entName.c_str() );
 	gameLocal.Printf("Joint: %s\n", joint.c_str() );
 	gameLocal.Printf("Offset: %s\n", offset.ToString() );
 	gameLocal.Printf("Angles relative to joint (pitch yaw roll) : %s\n", angles.ToString() );
-	gameLocal.Printf("======= End Attachment Info =======\n \n", ind, LookedAt->name.c_str() );
+	gameLocal.Printf("======= End Attachment Info =======\n \n" );
 
 Quit:
 	return;
