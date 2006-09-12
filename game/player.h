@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/09/12 14:25:55  gildoran
+ * Finished up the SDK inventory code.
+ *
  * Revision 1.34  2006/08/11 15:49:19  gildoran
  * Another inventory related update.
  *
@@ -716,8 +719,10 @@ public:
 	void inventoryNextGroup( void );
 	/// Cycles to the previous group in the inventory.
 	void inventoryPrevGroup( void );
-	/// Copies inventory item info to the HUD.
-	void inventoryUpdateHUD( void );
+	/// Drops the currently held/selected item.
+	void inventoryDropItem( void );
+	/// Uses the currently held/selected item.
+	void inventoryUseItem( void );
 	/// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	bool inventoryChangeSelection( idUserInterface *_hud );
 
@@ -939,6 +944,9 @@ private:
 	void					Event_PlayStartSound( void );
 	void					Event_MissionFailed( void );
 	void					Event_LoadDeathMenu( void );
+
+	void					Event_HoldEntity( idEntity *ent );
+	void					Event_HeldEntity( void );
 
 /**
 * NOTE: The following objective functions all take the "user" objective indices

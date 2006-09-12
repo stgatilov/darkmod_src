@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.85  2006/09/12 14:25:55  gildoran
+ * Finished up the SDK inventory code.
+ *
  * Revision 1.84  2006/08/15 16:35:52  gildoran
  * A couple more inventory fixes. (setInventory() now reads "inv_group" rather than "inventory_group")
  *
@@ -361,6 +364,8 @@ const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
 const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
 const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
+const idEventDef EV_HoldEntity( "holdEntity", "E", 'f' );
+const idEventDef EV_HeldEntity( "heldEntity", NULL, 'E' );
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
 // NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
@@ -416,6 +421,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
+	EVENT( EV_HoldEntity,					idPlayer::Event_HoldEntity )
+	EVENT( EV_HeldEntity,					idPlayer::Event_HeldEntity )
 	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
 	EVENT( EV_Player_SetObjectiveState,		idPlayer::Event_SetObjectiveState )
 	EVENT( EV_Player_GetObjectiveState,		idPlayer::Event_GetObjectiveState )
@@ -6483,58 +6490,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 			inventoryNextGroup();
 			break;
 		}
-		
-		// TDM: test dropping of items
+ 		/// Inventory next group
 		case IMPULSE_51: {
-			idEntity *dropEnt(NULL);
-			idThread *thread;
-			
-			// if item is held in hands, drop it
-			if( (dropEnt = g_Global.m_DarkModPlayer->grabber->GetSelected()) )
-			{
-				// only call the drop scriptfunction if it is defined locally
-				const function_t *func;
-				func = dropEnt->scriptObject.GetFunction( "drop_hands" );
-				if( func )
-				{
-					thread = dropEnt->CallScriptFunctionArgs( "drop_hands", true, 0, NULL );
-					if (thread) 
-					{
-						thread->Start();
-						break;
-					}
-				}
-
-				g_Global.m_DarkModPlayer->grabber->Update( this, false );
-				break;
-			}
-
-			// otherwise, drop the inventory item
-			CtdmInventoryItem* invItem	= InventoryCursor()->item();
-			if( invItem && (dropEnt = invItem->m_owner.GetEntity()) )
-			{
-				// only call the drop scriptfunction if it is defined locally
-				const function_t *func;
-				func = dropEnt->scriptObject.GetFunction( "drop_inv" );
-				if( func )
-				{
-					thread = dropEnt->CallScriptFunctionArgs( "drop_inv", true, 0, NULL );
-					if (thread) 
-					{
-						thread->Start();
-						break;
-					}
-				}
-
-				// otherwise drop to hands
-
-			// TODO: for now always grab by bodyID 0, later on, maybe read this from a spawnArg?
-			// TODO: Also read "drop orientation" from a spawnarg and rotate it to this orientation
-			
-				// Only remove the inventory item if there was space to drop it
-				if( g_Global.m_DarkModPlayer->grabber->PutInHands( dropEnt, this, 0) )
-					invItem->setInventory( NULL );
-			}
+			inventoryUseItem();
+			break;
+		}
+ 		/// Inventory next group
+		case IMPULSE_52: {
+			inventoryDropItem();
 			break;
 		}
 	} 
@@ -9932,6 +9895,72 @@ void idPlayer::inventoryPrevGroup() {
 	inventoryChangeSelection( hud );
 }
 
+void idPlayer::inventoryUseItem() {
+	CtdmInventoryItem* item;
+	idEntity* useEnt;
+	idThread* thread;
+
+	// Is there anything in our hands?
+	useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
+	if ( useEnt != NULL ) {
+
+		thread = useEnt->CallScriptFunctionArgs( "inventoryUseHeld", true, 0, "ee", useEnt, this );
+		if (thread)
+			thread->Start(); // Start the thread immediately.
+
+		goto Quit;
+	}
+
+	// Do we have anything selected?
+	item = InventoryCursor()->item();
+	useEnt = item ? item->m_owner.GetEntity() : NULL;
+	if ( useEnt != NULL ) {
+
+		thread = useEnt->CallScriptFunctionArgs( "inventoryUseInv", true, 0, "ee", useEnt, this );
+		if (thread)
+			thread->Start(); // Start the thread immediately.
+
+		goto Quit;
+	}
+
+	Quit:
+	return;
+}
+
+void idPlayer::inventoryDropItem() {
+	CtdmInventoryItem* item;
+	idEntity* useEnt;
+	idThread* thread;
+
+	// Is there anything in our hands?
+	useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
+	if ( useEnt != NULL ) {
+
+		thread = useEnt->CallScriptFunctionArgs( "inventoryDropHeld", true, 0, "ee", useEnt, this );
+		if (thread)
+			thread->Start(); // Start the thread immediately.
+		else
+			g_Global.m_DarkModPlayer->grabber->Update( this, false ); // drop whatever is held
+
+		goto Quit;
+	}
+
+	// Do we have anything selected?
+	item = InventoryCursor()->item();
+	useEnt = item ? item->m_owner.GetEntity() : NULL;
+	if ( useEnt != NULL ) {
+
+		thread = useEnt->CallScriptFunctionArgs( "inventoryDropInv", true, 0, "ee", useEnt, this );
+		if (thread)
+			thread->Start(); // Start the thread immediately.
+
+		goto Quit;
+	}
+
+	Quit:
+	return;
+}
+
 bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 
 	// Important note: Whenever m_invGuiFallback or m_invGuiFading are
@@ -10384,6 +10413,33 @@ void idPlayer::Event_MissionFailed( void )
 void idPlayer::Event_LoadDeathMenu( void )
 {
 	forceRespawn = true;
+}
+
+/*
+================
+idPlayer::Event_HoldEntity
+================
+*/
+void idPlayer::Event_HoldEntity( idEntity *ent ) {
+	if ( ent )
+	{
+		bool successful = g_Global.m_DarkModPlayer->grabber->PutInHands( ent, this, 0 );
+		idThread::ReturnInt( successful );
+	}
+	else
+	{
+		g_Global.m_DarkModPlayer->grabber->Update( this, false );
+		idThread::ReturnInt( 1 );
+	}
+}
+
+/*
+================
+idPlayer::Event_HeldEntity
+================
+*/
+void idPlayer::Event_HeldEntity( void ) {
+	idThread::ReturnEntity( g_Global.m_DarkModPlayer->grabber->GetSelected() );
 }
 
 void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)
