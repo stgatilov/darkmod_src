@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.69  2006/09/12 15:03:47  gildoran
+ * Fixed a small error preventing setInventory($null) from working.
+ *
  * Revision 1.68  2006/08/15 16:35:52  gildoran
  * A couple more inventory fixes. (setInventory() now reads "inv_group" rather than "inventory_group")
  *
@@ -6870,12 +6873,11 @@ void idEntity::Event_SetInventory( idEntity* ent ) {
 	}
 	if ( ent != NULL ) {
 		inv = ent->Inventory();
+		if ( inv == NULL ) {
+			gameLocal.Warning( "Unable to load inventory.\n" );
+			goto Quit;
+		}
 	}
-	if ( inv == NULL ) {
-		gameLocal.Warning( "Unable to load inventory.\n" );
-		goto Quit;
-	}
-
 
 	const char* group;
 	spawnArgs.GetString( "inv_group", "", &group );
