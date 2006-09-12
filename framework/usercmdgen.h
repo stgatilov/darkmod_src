@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/09/12 19:56:37  gildoran
+ * Forgot to upload usercmdgen.h
+ *
  * Revision 1.6  2006/08/14 01:08:42  ishtvan
  * added impulse51 for dropping
  *
@@ -96,7 +99,8 @@ const int IMPULSE_47			= 47;			// Inventory prev item
 const int IMPULSE_48			= 48;			// Inventory next item
 const int IMPULSE_49			= 49;			// Inventory prev group
 const int IMPULSE_50			= 50;			// Inventory next group
-const int IMPULSE_51			= 51;			// Inventory drop item
+const int IMPULSE_51			= 51;			// Inventory use item
+const int IMPULSE_52			= 52;			// Inventory drop item
 
 // usercmd_t->flags
 const int UCF_IMPULSE_SEQUENCE	= 0x0001;		// toggled every time an impulse command is sent
