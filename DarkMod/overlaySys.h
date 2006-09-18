@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/09/18 18:56:50  gildoran
+ * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
+ *
  * Revision 1.1  2006/09/18 13:38:13  gildoran
  * Added the first version of a unified interface for GUIs.
  *
@@ -68,6 +71,14 @@ class COverlaySys
 	bool					isOpaque();
 	/// Returns the interactive GUI.
 	idUserInterface*		findInteractive();
+	/// Used for iterating through the overlays in drawing-order.
+	/**	Very efficient if used properly:
+	 *	    int h = 0;
+	 *	    while ( (h = o.getNextOverlay(h) ) != 0 )
+	 *	        o.doSomethingWith( h );
+	 *	It loses efficiency if a handle is accessed other than the one returned.
+	 */
+	int						getNextOverlay( int handle );
 
 	/// Create a new overlay, returning a handle for that overlay.
 	int						createOverlay( int layer, int handle = OVERLAYS_MIN_HANDLE-1 );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.87  2006/09/18 18:56:58  gildoran
+ * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
+ *
  * Revision 1.86  2006/09/18 13:37:51  gildoran
  * Added the first version of a unified interface for GUIs.
  *
@@ -1825,9 +1828,13 @@ void idPlayer::Spawn( void ) {
 
 		// load HUD
 		if ( gameLocal.isMultiplayer ) {
-			hud = uiManager->FindGui( "guis/mphud.gui", true, false, true );
+			// I need the HUD uniqued for the inventory code to interact with it.
+			//hud = uiManager->FindGui( "guis/mphud.gui", true, false, true );
+			hud = uiManager->FindGui( "guis/mphud.gui", true, true );
 		} else if ( spawnArgs.GetString( "hud", "", temp ) ) {
-			hud = uiManager->FindGui( temp, true, false, true );
+			// I need the HUD uniqued for the inventory code to interact with it.
+			//hud = uiManager->FindGui( temp, true, false, true );
+			hud = uiManager->FindGui( temp, true, true );
 		}
 		if ( hud ) {
 			hud->Activate( true, gameLocal.time );
@@ -10281,11 +10288,12 @@ void idPlayer::Event_CreateOverlay( const char *guiFile, int layer ) {
 		if ( handle >= OVERLAYS_MIN_HANDLE ) {
 			m_overlays.setGui( handle, guiFile );
 			idUserInterface *gui = m_overlays.getGui( handle );
-			if ( gui )
+			if ( gui ) {
 				gui->Activate( true, gameLocal.time );
+				// Let's set a good default value for whether or not the overlay is interactive.
+				m_overlays.setInteractive( handle, gui->IsInteractive() );
+			}
 
-			// for temporary testing purposes
-			m_overlays.setInteractive( handle, true );
 		} else {
 			gameLocal.Warning( "Unable to create overlay.\n" );
 		}
