@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/09/18 13:37:51  gildoran
+ * Added the first version of a unified interface for GUIs.
+ *
  * Revision 1.35  2006/09/12 14:25:55  gildoran
  * Finished up the SDK inventory code.
  *
@@ -394,8 +397,6 @@ public:
 	bool					m_bShoulderingBody;
 
 	idEntityPtr<idWeapon>	weapon;
-	bool					m_guiOverlayOn;
-	idUserInterface *		m_guiOverlay;
 	idUserInterface *		hud;				// MP: is NULL if not local player
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
@@ -922,8 +923,6 @@ private:
 * TDM Events
 **/
 	void					Event_GetEyePos( void );
-	void					Event_SetGuiOverlay( const char *guiFile );
-	void					Event_GetGuiOverlay( void );
 	void					Event_SetImmobilization( const char *source, int type );
 	void					Event_GetImmobilization( const char *source );
 	void					Event_GetNextImmobilization( const char *prefix, const char *lastMatch );
@@ -931,16 +930,10 @@ private:
 	void					Event_GetHinderance( const char *source );
 	void					Event_GetNextHinderance( const char *prefix, const char *lastMatch );
 
-	void					Event_SetGuiParm( const char *key, const char *val );
-	void					Event_SetGuiFloat( const char *key, float f );
-	void					Event_GetGuiParm( const char *key );
-	void					Event_GetGuiFloat( const char *key );
-	void					Event_SetHudParm( const char *key, const char *val );
-	void					Event_SetHudFloat( const char *key, float f );
+	void					Event_SetGui( int handle, const char *guiFile );
+	void					Event_CreateOverlay( const char *guiFile, int layer );
+	void					Event_DestroyOverlay( int handle );
 
-	void					Event_CallGuiOverlay( const char *namedEvent );
-	void					Event_CallHud( const char *namedEvent );
-	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm );
 	void					Event_PlayStartSound( void );
 	void					Event_MissionFailed( void );
 	void					Event_LoadDeathMenu( void );

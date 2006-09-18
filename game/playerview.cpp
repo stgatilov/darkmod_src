@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/09/18 13:37:51  gildoran
+ * Added the first version of a unified interface for GUIs.
+ *
  * Revision 1.6  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -581,14 +584,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 			}
 		}
 		player->DrawHUD( hud );
-
-		// Draw another gui on top of the hud.
-		// Later on, I should add support for occluding the whole screen.
-		if ( player->m_guiOverlayOn ) {
-			player->m_guiOverlay->Redraw( gameLocal.time );
-			return;
-		}
-
 
 		// armor impulse feedback
 		float	armorPulse = ( gameLocal.time - player->lastArmorPulse ) / 250.0f;

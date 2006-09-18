@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2006/09/18 13:37:51  gildoran
+ * Added the first version of a unified interface for GUIs.
+ *
  * Revision 1.42  2006/08/13 22:48:01  gildoran
  * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
  *
@@ -154,6 +157,7 @@
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
+#include "../darkmod/overlaySys.h"
 #include "../darkmod/tdmInventory.h"
 
 class CStimResponseCollection;
@@ -729,6 +733,11 @@ protected:
 	refSound_t				refSound;							// used to present sound to the audio engine
 
 	/**
+	* Used to keep track of the GUIs used by this entity.
+	**/
+	COverlaySys				m_overlays;
+
+	/**
 	* This is set by idPlayer if the player is looking at the entity in a way
 	* that will frob it.
 	**/
@@ -878,8 +887,6 @@ private:
 	void					Event_GetMins( void );
 	void					Event_GetMaxs( void );
 	void					Event_Touches( idEntity *ent );
-	void					Event_SetGuiParm( const char *key, const char *val );
-	void					Event_SetGuiFloat( const char *key, float f );
 	void					Event_GetNextKey( const char *prefix, const char *lastMatch );
 	void					Event_SetKey( const char *key, const char *value );
 	void					Event_GetKey( const char *key );
@@ -898,10 +905,16 @@ private:
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
 
-	void					Event_SetGui( int guiNum, const char *guiFile );
-	void					Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm );
+	void					Event_SetGui( int handle, const char *guiFile );
+	void					Event_GetGui( int handle );
+	void					Event_SetGuiString( int handle, const char *key, const char *val );
+	void					Event_GetGuiString( int handle, const char *key );
+	void					Event_SetGuiFloat( int handle, const char *key, float f );
+	void					Event_GetGuiFloat( int handle, const char *key );
+	void					Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg );
+	void					Event_CallGui( int handle, const char *namedEvent );
 
-	void					Event_LoadExternalData( const char *mdFile, const char* prefix );
+	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
 	void					Event_SetInventory( idEntity* ent );
 	void					Event_SetInvAdvanced( idEntity* ent, const char* group, int flags, idEntity* entU, idEntity* entG );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.86  2006/09/18 13:37:51  gildoran
+ * Added the first version of a unified interface for GUIs.
+ *
  * Revision 1.85  2006/09/12 14:25:55  gildoran
  * Finished up the SDK inventory code.
  *
@@ -344,28 +347,22 @@ const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
 const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
 const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
-const idEventDef EV_Player_SetGuiOverlay( "setGuiOverlay", "s" );
-const idEventDef EV_Player_GetGuiOverlay( "getGuiOverlay", NULL, 's' );
 const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
 const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
 const idEventDef EV_Player_GetNextImmobilization( "getNextImmobilization", "ss", 's' );
 const idEventDef EV_Player_SetHinderance( "setHinderance", "sff" );
 const idEventDef EV_Player_GetHinderance( "getHinderance", "s", 'v' );
 const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
-const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
-const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
-const idEventDef EV_GetGuiParm( "getGuiParm", "s", 's' );
-const idEventDef EV_GetGuiFloat( "getGuiFloat", "s", 'f' );
-const idEventDef EV_SetHudParm( "setHudParm", "ss" );
-const idEventDef EV_SetHudFloat( "setHudFloat", "sf" );
-const idEventDef EV_CallGuiOverlay( "callGuiOverlay", "s" );
-const idEventDef EV_CallHud( "callHud", "s" );
-const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
+
+const idEventDef EV_Player_SetGui( "setGui", "ds" );
+const idEventDef EV_Player_CreateOverlay( "createOverlay", "sd", 'd' );
+const idEventDef EV_Player_DestroyOverlay( "destroyOverlay", "d" );
+
 const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
 const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
 const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
-const idEventDef EV_HoldEntity( "holdEntity", "E", 'f' );
-const idEventDef EV_HeldEntity( "heldEntity", NULL, 'E' );
+const idEventDef EV_Player_HoldEntity( "holdEntity", "E", 'f' );
+const idEventDef EV_Player_HeldEntity( "heldEntity", NULL, 'E' );
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
 // NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
@@ -401,28 +398,22 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
-	EVENT( EV_Player_SetGuiOverlay,			idPlayer::Event_SetGuiOverlay )
-	EVENT( EV_Player_GetGuiOverlay,			idPlayer::Event_GetGuiOverlay )
 	EVENT( EV_Player_SetImmobilization,		idPlayer::Event_SetImmobilization )
 	EVENT( EV_Player_GetImmobilization,		idPlayer::Event_GetImmobilization )
 	EVENT( EV_Player_GetNextImmobilization,	idPlayer::Event_GetNextImmobilization )
 	EVENT( EV_Player_SetHinderance,			idPlayer::Event_SetHinderance )
 	EVENT( EV_Player_GetHinderance,			idPlayer::Event_GetHinderance )
 	EVENT( EV_Player_GetNextHinderance,		idPlayer::Event_GetNextHinderance )
-	EVENT( EV_SetGuiParm, 					idPlayer::Event_SetGuiParm )
-	EVENT( EV_SetGuiFloat, 					idPlayer::Event_SetGuiFloat )
-	EVENT( EV_GetGuiParm, 					idPlayer::Event_GetGuiParm )
-	EVENT( EV_GetGuiFloat, 					idPlayer::Event_GetGuiFloat )
-	EVENT( EV_SetHudParm, 					idPlayer::Event_SetHudParm )
-	EVENT( EV_SetHudFloat, 					idPlayer::Event_SetHudFloat )
-	EVENT( EV_CallGuiOverlay, 				idPlayer::Event_CallGuiOverlay )
-	EVENT( EV_CallHud,		 				idPlayer::Event_CallHud )
-	EVENT( EV_CopyKeyToGuiParm, 			idPlayer::Event_CopyKeyToGuiParm )
+
+	EVENT( EV_Player_SetGui,				idPlayer::Event_SetGui )
+	EVENT( EV_Player_CreateOverlay,			idPlayer::Event_CreateOverlay )
+	EVENT( EV_Player_DestroyOverlay,		idPlayer::Event_DestroyOverlay )
+
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
 	EVENT( EV_Player_DeathMenu,				idPlayer::Event_LoadDeathMenu )
-	EVENT( EV_HoldEntity,					idPlayer::Event_HoldEntity )
-	EVENT( EV_HeldEntity,					idPlayer::Event_HeldEntity )
+	EVENT( EV_Player_HoldEntity,			idPlayer::Event_HoldEntity )
+	EVENT( EV_Player_HeldEntity,			idPlayer::Event_HeldEntity )
 	EVENT( EV_Player_RopeRemovalCleanup,	idPlayer::Event_RopeRemovalCleanup )
 	EVENT( EV_Player_SetObjectiveState,		idPlayer::Event_SetObjectiveState )
 	EVENT( EV_Player_GetObjectiveState,		idPlayer::Event_GetObjectiveState )
@@ -1310,8 +1301,6 @@ idPlayer::idPlayer()
 
 	weapon					= NULL;
 
-	m_guiOverlayOn			= false;
-	m_guiOverlay			= NULL;
 	hud						= NULL;
 	objectiveSystem			= NULL;
 	objectiveSystemOpen		= false;
@@ -1797,6 +1786,7 @@ Prepare any resources used by the player.
 ==============
 */
 void idPlayer::Spawn( void ) {
+	int			i;
 	idStr		temp;
 	idBounds	bounds;
 
@@ -1853,9 +1843,17 @@ void idPlayer::Spawn( void ) {
 
 		objectiveSystem = uiManager->FindGui( "guis/pda.gui", true, false, true );
 		objectiveSystemOpen = false;
-
-		m_guiOverlayOn = false;
 	}
+
+	// Remove entity GUIs from our overlay system.
+	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
+		m_overlays.destroyOverlay( OVERLAYS_MIN_HANDLE + i );
+	// Add the HUD.
+	if ( m_overlays.createOverlay( 0, OVERLAYS_MIN_HANDLE ) >= OVERLAYS_MIN_HANDLE )
+		m_overlays.setGui( OVERLAYS_MIN_HANDLE , hud );
+	else
+		gameLocal.Warning( "Unable to create overlay for HUD.\n" );
+
 
 	SetLastHitTime( 0 );
 
@@ -2044,8 +2042,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	inventory.Save( savefile );
 	weapon.Save( savefile );
 
-	savefile->WriteBool( m_guiOverlayOn );
-	savefile->WriteUserInterface( m_guiOverlay, false );
 	savefile->WriteUserInterface( hud, false );
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
@@ -2284,8 +2280,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		GetPDA()->AddEmail( inventory.emails[i] );
 	}
 
-	savefile->ReadBool( m_guiOverlayOn );
-	savefile->ReadUserInterface( m_guiOverlay );
 	savefile->ReadUserInterface( hud );
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
@@ -2502,6 +2496,12 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
+
+	// Necessary, since the overlay system can't save external GUI pointers.
+	if ( m_overlays.isExternal( OVERLAYS_MIN_HANDLE  ) )
+		m_overlays.setGui( OVERLAYS_MIN_HANDLE, hud );
+	else
+		gameLocal.Warning( "Unable to relink HUD to overlay system.\n" );
 }
 
 /*
@@ -3135,7 +3135,8 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 
 	weapon.GetEntity()->UpdateGUI();
 
-	_hud->Redraw( gameLocal.realClientTime );
+	//_hud->Redraw( gameLocal.realClientTime );
+	m_overlays.drawOverlays();
 
 	// weapon targeting crosshair
 
@@ -4334,13 +4335,11 @@ idPlayer::ActiveGui
 ===============
 */
 idUserInterface *idPlayer::ActiveGui( void ) {
-	if ( objectiveSystemOpen ) {
+	if ( objectiveSystemOpen )
 		return objectiveSystem;
-	}
 
-	if ( m_guiOverlayOn ) {
-		return m_guiOverlay;
-	}
+	if ( m_overlays.findInteractive() )
+		return m_overlays.findInteractive();
 
 	return focusUI;
 }
@@ -6513,7 +6512,7 @@ bool idPlayer::HandleESC( void ) {
 		return true;
 	}
 
-	if ( m_guiOverlayOn ) {
+	if ( m_overlays.findInteractive() ) {
 		// Handle the escape?
 		// Not yet implemented.
 		// return true?
@@ -7417,15 +7416,17 @@ void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 	sysEvent_t ev;
 	const char *command;
 
-	if (m_guiOverlayOn && gui == m_guiOverlay) {
-		// Ensure that guiOverlays are always able to execute commands,
+	/*if ( gui == m_overlays.findInteractive() ) {
+		// Ensure that gui overlays are always able to execute commands,
 		// even if the player isn't moving the mouse.
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
 		command = gui->HandleEvent( &ev, gameLocal.time );
 		HandleGuiCommands( this, command );
 		oldMouseX = usercmd.mx;
 		oldMouseY = usercmd.my;
-	} else if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
+	}*/
+		
+	if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
 		command = gui->HandleEvent( &ev, gameLocal.time );
 		oldMouseX = usercmd.mx;
@@ -10092,53 +10093,6 @@ void idPlayer::Event_GetEyePos( void )
 
 /*
 =====================
-idPlayer::Event_SetGuiOverlay
-=====================
-*/
-void idPlayer::Event_SetGuiOverlay( const char* guiFile )
-{
-	// If we already have a temporary gui running, let's be nice
-	// and tell it that it's about to disappear.
-	if ( m_guiOverlayOn ) {
-		m_guiOverlay->Activate( false, gameLocal.time );
-		m_guiOverlayOn = false;
-	}
-
-	// If they want us to load a new gui, it'll have an address.
-	if ( idStr::Length(guiFile) ) {
-
-		if ( uiManager->CheckGui(guiFile) ) {
-			if ( !m_guiOverlay ) {
-				m_guiOverlay = uiManager->Alloc();
-			}
-
-			m_guiOverlay->InitFromFile( guiFile );
-			m_guiOverlayOn = true;
-			m_guiOverlay->Activate( true, gameLocal.time );
-		} else {
-			m_guiOverlayOn = false;
-			gameLocal.Warning( "Unable to load gui file: %s\n", guiFile );
-		}
-
-	}
-}
-
-/*
-=====================
-idPlayer::Event_GetGuiOverlay
-=====================
-*/
-void idPlayer::Event_GetGuiOverlay( void )
-{
-	if ( m_guiOverlayOn ) {
-		idThread::ReturnString( m_guiOverlay->Name() );
-	} else {
-		idThread::ReturnString( "" );
-	}
-}
-
-/*
-=====================
 idPlayer::Event_SetImmobilization
 =====================
 */
@@ -10278,125 +10232,84 @@ void idPlayer::Event_GetNextHinderance( const char *prefix, const char *lastMatc
 }
 
 /*
-================
-idPlayer::Event_SetGuiParm
-================
+=====================
+idPlayer::Event_SetGui
+=====================
 */
-void idPlayer::Event_SetGuiParm( const char *key, const char *val ) {
-	if (m_guiOverlayOn) {
-		m_guiOverlay->SetStateString( key, val );
-		m_guiOverlay->StateChanged( gameLocal.time );
-	} else {
-		gameLocal.Warning( "Unable to set \"%s\"; no gui overlay is active.\n", key );
+void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
+	if ( !uiManager->CheckGui(guiFile) ) {
+		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+		goto Quit;
 	}
-}
 
-/*
-================
-idPlayer::Event_SetGuiFloat
-================
-*/
-void idPlayer::Event_SetGuiFloat( const char *key, float f ) {
-	if (m_guiOverlayOn) {
-		m_guiOverlay->SetStateString( key, va( "%f", f ) );
-		m_guiOverlay->StateChanged( gameLocal.time );
-	} else {
-		gameLocal.Warning( "Unable to set \"%s\"; no gui overlay is active.\n", key );
+	if ( !m_overlays.exists( handle ) ) {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		goto Quit;
 	}
-}
 
-/*
-================
-idPlayer::Event_GetGuiParm
-================
-*/
-void idPlayer::Event_GetGuiParm( const char *key ) {
-	if (m_guiOverlayOn) {
-		idThread::ReturnString( m_guiOverlay->GetStateString( key ) );
+	// Entity GUIs are handled differently from regular ones.
+	if ( handle == OVERLAYS_MIN_HANDLE ) {
+
+		assert( m_overlays.isExternal( handle ) );
+		gameLocal.Warning( "Cannot change the HUD.\n" );
+		// FIXME: Add HUD changing support
+
+	} else if ( !m_overlays.isExternal( handle ) ) {
+
+		bool result = m_overlays.setGui( handle, guiFile );
+		assert( result );
+
 	} else {
-		gameLocal.Warning( "Unable to get \"%s\"; no gui overlay is active.\n", key );
-		idThread::ReturnString( "" );
+		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
 	}
+
+	Quit:
+	return;
 }
 
 /*
-================
-idPlayer::Event_GetGuiFloat
-================
+=====================
+idPlayer::Event_CreateOverlay
+=====================
 */
-void idPlayer::Event_GetGuiFloat( const char *key ) {
-	if (m_guiOverlayOn) {
-		idThread::ReturnFloat( atof( m_guiOverlay->GetStateString( key, "0" ) ) );
+void idPlayer::Event_CreateOverlay( const char *guiFile, int layer ) {
+	int handle = OVERLAYS_MIN_HANDLE - 1;
+
+	if ( uiManager->CheckGui(guiFile) ) {
+
+		handle = m_overlays.createOverlay( layer );
+		if ( handle >= OVERLAYS_MIN_HANDLE ) {
+			m_overlays.setGui( handle, guiFile );
+			idUserInterface *gui = m_overlays.getGui( handle );
+			if ( gui )
+				gui->Activate( true, gameLocal.time );
+
+			// for temporary testing purposes
+			m_overlays.setInteractive( handle, true );
+		} else {
+			gameLocal.Warning( "Unable to create overlay.\n" );
+		}
+
 	} else {
-		gameLocal.Warning( "Unable to get \"%s\"; no gui overlay is active.\n", key );
-		idThread::ReturnFloat( 0 );
+		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
 	}
+
+	idThread::ReturnInt( handle );
 }
 
 /*
-================
-idPlayer::Event_SetHudParm
-================
+=====================
+idPlayer::Event_DestroyOverlay
+=====================
 */
-void idPlayer::Event_SetHudParm( const char *key, const char *val ) {
-	assert( hud );
-	hud->SetStateString( key, val );
-	hud->StateChanged( gameLocal.time );
-}
-
-/*
-================
-idPlayer::Event_SetHudFloat
-================
-*/
-void idPlayer::Event_SetHudFloat( const char *key, float f ) {
-	assert( hud );
-	hud->SetStateString( key, va( "%f", f ) );
-	hud->StateChanged( gameLocal.time );
-}
-
-/*
-================
-idPlayer::Event_CallGuiOverlay
-================
-*/
-void idPlayer::Event_CallGuiOverlay( const char *namedEvent ) {
-	if (m_guiOverlayOn) {
-		m_guiOverlay->HandleNamedEvent( namedEvent );
+void idPlayer::Event_DestroyOverlay( int handle ) {
+	if ( handle != OVERLAYS_MIN_HANDLE ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui )
+			gui->Activate( false, gameLocal.time );
+		m_overlays.destroyOverlay( handle );
 	} else {
-		gameLocal.Warning( "Unable to call named event \"%s\"; no gui overlay is active.\n", namedEvent );
-	}
-}
-
-/*
-================
-idPlayer::Event_CallHud
-================
-*/
-void idPlayer::Event_CallHud( const char *namedEvent ) {
-	assert( hud );
-	hud->HandleNamedEvent( namedEvent );
-}
-
-/*
-================
-idPlayer::Event_CopyKeyToGuiParm
-
-This is a kludge. It's hopefully temporary, but probably not.
-Anyway, it's used by readables to bypass the 127 char limit
-on string variables in scripts.
-================
-*/
-void idPlayer::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiparm ) {
-	if (src == NULL) {
-		gameLocal.Warning( "Unable to get key, since the object was null.\n" );
-	} else if (!m_guiOverlayOn) {
-		gameLocal.Warning( "No gui overlay is active.\n" );
-	} else {
-		const char *value;
-		src->spawnArgs.GetString( key, "", &value );
-		m_guiOverlay->SetStateString( guiparm, value );
-		m_guiOverlay->StateChanged( gameLocal.time );
+		gameLocal.Warning( "Cannot destroy HUD.\n" );
 	}
 }
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.70  2006/09/18 13:37:51  gildoran
+ * Added the first version of a unified interface for GUIs.
+ *
  * Revision 1.69  2006/09/12 15:03:47  gildoran
  * Fixed a small error preventing setInventory($null) from working.
  *
@@ -313,8 +316,6 @@ const idEventDef EV_StartSoundShader( "startSoundShader", "sd", 'f' );
 const idEventDef EV_StartSound( "startSound", "sdd", 'f' );
 const idEventDef EV_StopSound( "stopSound", "dd" );
 const idEventDef EV_FadeSound( "fadeSound", "dff" );
-const idEventDef EV_SetGuiParm( "setGuiParm", "ss" );
-const idEventDef EV_SetGuiFloat( "setGuiFloat", "sf" );
 const idEventDef EV_GetNextKey( "getNextKey", "ss", 's' );
 const idEventDef EV_SetKey( "setKey", "ss" );
 const idEventDef EV_GetKey( "getKey", "s", 's' );
@@ -332,7 +333,13 @@ const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
 const idEventDef EV_SetGui( "setGui", "ds" );
-const idEventDef EV_CopyKeyToGuiParm( "copyKeyToGuiParm", "ess" );
+const idEventDef EV_GetGui( "getGui", "d", 's' );
+const idEventDef EV_SetGuiString( "setGuiString", "dss" );
+const idEventDef EV_GetGuiString( "getGuiString", "ds", 's' );
+const idEventDef EV_SetGuiFloat( "setGuiFloat", "dsf" );
+const idEventDef EV_GetGuiFloat( "getGuiFloat", "ds", 'f' );
+const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", "dses" );
+const idEventDef EV_CallGui( "callGui", "ds" );
 
 const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 
@@ -434,8 +441,6 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetMins,				idEntity::Event_GetMins)
 	EVENT( EV_GetMaxs,				idEntity::Event_GetMaxs )
 	EVENT( EV_Touches,				idEntity::Event_Touches )
-	EVENT( EV_SetGuiParm, 			idEntity::Event_SetGuiParm )
-	EVENT( EV_SetGuiFloat, 			idEntity::Event_SetGuiFloat )
 	EVENT( EV_GetNextKey,			idEntity::Event_GetNextKey )
 	EVENT( EV_SetKey,				idEntity::Event_SetKey )
 	EVENT( EV_GetKey,				idEntity::Event_GetKey )
@@ -454,8 +459,14 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
 
-	EVENT( EV_SetGui,			 	idEntity::Event_SetGui )
-	EVENT( EV_CopyKeyToGuiParm, 	idEntity::Event_CopyKeyToGuiParm )
+	EVENT( EV_SetGui,				idEntity::Event_SetGui )
+	EVENT( EV_GetGui,				idEntity::Event_GetGui )
+	EVENT( EV_SetGuiString,			idEntity::Event_SetGuiString )
+	EVENT( EV_GetGuiString,			idEntity::Event_GetGuiString )
+	EVENT( EV_SetGuiFloat,			idEntity::Event_SetGuiFloat )
+	EVENT( EV_GetGuiFloat,			idEntity::Event_GetGuiFloat )
+	EVENT( EV_SetGuiStringFromKey,	idEntity::Event_SetGuiStringFromKey )
+	EVENT( EV_CallGui,				idEntity::Event_CallGui )
 
 	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
 
@@ -859,6 +870,13 @@ void idEntity::Spawn( void )
 
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
 		UpdateGuiParms( renderEntity.gui[ i ], &spawnArgs );
+
+		// Add the (potentially NULL) GUI as an external GUI to our overlaysys,
+		// so that the script functions to interact with GUIs can interact with it.
+		if ( m_overlays.createOverlay( 0, OVERLAYS_MIN_HANDLE + i ) >= OVERLAYS_MIN_HANDLE )
+			m_overlays.setGui( OVERLAYS_MIN_HANDLE + i, renderEntity.gui[ i ] );
+		else
+			gameLocal.Warning( "Unable to create overlay for renderentity GUI: %d\n", OVERLAYS_MIN_HANDLE + i );
 	}
 
 	fl.solidForTeam = spawnArgs.GetBool( "solidForTeam", "0" );
@@ -1081,6 +1099,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
 
+	m_overlays.Save( savefile );
+
 	savefile->WriteObject( bindMaster );
 	savefile->WriteJoint( bindJoint );
 	savefile->WriteInt( bindBody );
@@ -1157,10 +1177,20 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
 
-
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
+
+	m_overlays.Restore( savefile );
+	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
+		// Add the (potentially NULL) GUI as an external GUI to our overlaysys,
+		// so that the script functions to interact with GUIs can interact with it.
+		// If the overlay isn't external, then the entity inheriting us must have
+		// messed with the overlays, and doesn't want us to set it. If it IS
+		// external, then they'll be resetting it anyways, so no harm done.
+		if ( m_overlays.isExternal( OVERLAYS_MIN_HANDLE + i ) )
+			m_overlays.setGui( OVERLAYS_MIN_HANDLE + i, renderEntity.gui[ i ] );
+	}
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( bindMaster ) );
 	savefile->ReadJoint( bindJoint );
@@ -4970,37 +5000,6 @@ void idEntity::Event_Touches( idEntity *ent ) {
 
 /*
 ================
-idEntity::Event_SetGuiParm
-================
-*/
-void idEntity::Event_SetGuiParm( const char *key, const char *val ) {
-	for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		if ( renderEntity.gui[ i ] ) {
-			if ( idStr::Icmpn( key, "gui_", 4 ) == 0 ) {
-				spawnArgs.Set( key, val );
-			}
-			renderEntity.gui[ i ]->SetStateString( key, val );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
-		}
-	}
-}
-
-/*
-================
-idEntity::Event_SetGuiParm
-================
-*/
-void idEntity::Event_SetGuiFloat( const char *key, float f ) {
-	for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-		if ( renderEntity.gui[ i ] ) {
-			renderEntity.gui[ i ]->SetStateString( key, va( "%f", f ) );
-			renderEntity.gui[ i ]->StateChanged( gameLocal.time );
-		}
-	}
-}
-
-/*
-================
 idEntity::Event_GetNextKey
 ================
 */
@@ -6783,47 +6782,221 @@ void idEntity::Event_PropSoundMod( const char *sndName, float VolModIn )
 /*
 ================
 idEntity::Event_SetGui
+
+Changes the GUI file that's loaded by an overlay. Overlays 1, 2 and 3 are
+reserved for the entity GUIs, and special code is implemented to change them.
+A changed GUI does not see gui_parm spawn args. (for one thing, if there's a
+script changing GUIs, then the script could easily send spawnargs to the GUI
+if it wanted to.)
 ================
 */
-void idEntity::Event_SetGui( int guiNum, const char *guiFile ) {
-	if ( guiNum < 1 || guiNum > MAX_RENDERENTITY_GUI ) {
-		gameLocal.Warning( "GUI ID out of range: %d.\n", guiNum );
-	} else if ( !uiManager->CheckGui(guiFile) ) {
-		gameLocal.Warning( "Unable load GUI file: %s\n", guiFile );
-	} else {
-		if ( renderEntity.gui[ guiNum-1 ] ) {
-			renderEntity.gui[ guiNum-1 ]->InitFromFile( guiFile );
-			UpdateGuiParms( renderEntity.gui[ guiNum-1 ], &spawnArgs );
+void idEntity::Event_SetGui( int handle, const char *guiFile ) {
+	if ( !uiManager->CheckGui(guiFile) ) {
+		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+		goto Quit;
+	}
+
+	if ( !m_overlays.exists( handle ) ) {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		goto Quit;
+	}
+
+	// Entity GUIs are handled differently from regular ones.
+	if ( handle >= 1 && handle <= MAX_RENDERENTITY_GUI ) {
+
+		assert( m_overlays.isExternal( handle ) );
+
+		if ( renderEntity.gui[ handle-1 ] && renderEntity.gui[ handle-1 ]->IsUniqued() ) {
+
+			// We're dealing with an existing unique GUI.
+			// We need to read a new GUI into it.
+			// FIXME: I need to find a way to clear the GUI parms.
+			//renderEntity.gui[ handle-1 ]->State().Clear(); // clear previous GUI parms.
+			renderEntity.gui[ handle-1 ]->InitFromFile( guiFile );
+
 		} else {
-			AddRenderGui( guiFile, &renderEntity.gui[ guiNum-1 ], &spawnArgs );
+
+			// We're either dealing with a non-existant GUI, or a non-unique one.
+			// It's safe to just set the render entity to point to a new GUI without
+			// bothering to deallocate the previous GUI.
+			renderEntity.gui[ handle-1 ] = uiManager->FindGui( guiFile, true, true );
+			m_overlays.setGui( handle, renderEntity.gui[ handle - 1 ] );
+			assert( renderEntity.gui[ handle-1 ] );
+
 		}
+
+	} else if ( !m_overlays.isExternal( handle ) ) {
+
+		bool result = m_overlays.setGui( handle, guiFile );
+		assert( result );
+
+	} else {
+		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
+	}
+
+	Quit:
+	return;
+}
+
+/*
+================
+idEntity::Event_GetGui
+
+Returns the file loaded by a specific GUI.
+================
+*/
+void idEntity::Event_GetGui( int handle ) {
+	idUserInterface *gui = m_overlays.getGui( handle );
+	if ( gui )
+		idThread::ReturnString( gui->Name() );
+	else
+		idThread::ReturnString( "" );
+}
+
+/*
+================
+idEntity::Event_SetGuiString
+
+Sets a parameter for a GUI. (note that the GUI needs to be unique)
+================
+*/
+void idEntity::Event_SetGuiString( int handle, const char *key, const char *val ) {
+	if ( m_overlays.exists( handle ) ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( !gui )
+			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+		else if ( !gui->IsUniqued() )
+			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
+		else {
+			gui->SetStateString( key, val );
+			gui->StateChanged( gameLocal.time );
+		}
+	} else {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 	}
 }
 
 /*
 ================
-idEntity::Event_CopyKeyToGuiParm
+idEntity::Event_GetGuiString
 
-This is a kludge. It's hopefully temporary, but probably not.
-Anyway, it's used by readables to bypass the 127 char limit
-on string variables in scripts.
+Returns a parameter from a GUI.
 ================
 */
-void idEntity::Event_CopyKeyToGuiParm( idEntity *src, const char *key, const char *guiParm ) {
-	if (src == NULL) {
-		gameLocal.Warning( "Unable to get key, since the object was null.\n" );
+void idEntity::Event_GetGuiString( int handle, const char *key ) {
+	const char* retStr = "";
+	if ( m_overlays.exists( handle ) ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui )
+			retStr = gui->GetStateString( key );
+		else
+			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
 	} else {
-		const char *value;
-		src->spawnArgs.GetString( key, "", &value );
-		if ( idStr::Icmpn( guiParm, "gui_", 4 ) == 0 ) {
-			spawnArgs.Set( guiParm, value );
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+	}
+	idThread::ReturnString( retStr );
+}
+
+/*
+================
+idEntity::Event_SetGuiFloat
+
+Sets a parameter for a GUI. (note that the GUI needs to be unique)
+================
+*/
+void idEntity::Event_SetGuiFloat( int handle, const char *key, float f ) {
+	if ( m_overlays.exists( handle ) ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( !gui )
+			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+		else if ( !gui->IsUniqued() )
+			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
+		else {
+			gui->SetStateString( key, va( "%f", f ) );
+			gui->StateChanged( gameLocal.time );
 		}
-		for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
-			if ( renderEntity.gui[ i ] ) {
-				renderEntity.gui[ i ]->SetStateString( guiParm, value );
-				renderEntity.gui[ i ]->StateChanged( gameLocal.time );
-			}
+	} else {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+	}
+}
+
+/*
+================
+idEntity::Event_GetGuiFloat
+
+Returns a parameter from a GUI.
+================
+*/
+void idEntity::Event_GetGuiFloat( int handle, const char *key ) {
+	float retVal = 0;
+	if ( m_overlays.exists( handle ) ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui )
+			retVal = atof( gui->GetStateString( key, "0" ) );
+		else
+			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+	} else {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+	}
+	idThread::ReturnFloat( retVal );
+}
+
+/*
+================
+idEntity::Event_SetGuiStringFromKey
+
+This is a kludge. It's hopefully temporary, but probably not. Anyway, it's
+used by readables to bypass the 127 char limit on string variables in scripts.
+================
+*/
+void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg ) {
+	if ( !src ) {
+		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
+		goto Quit;
+	}
+
+	if ( !m_overlays.exists( handle ) ) {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		goto Quit;
+	}
+
+	idUserInterface *gui = m_overlays.getGui( handle );
+	if ( !gui ) {
+		gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+		goto Quit;
+	}
+
+	if ( !gui->IsUniqued() ) {
+		gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
+		goto Quit;
+	}
+
+	gui->SetStateString( key, src->spawnArgs.GetString( spawnArg, "" ) );
+	gui->StateChanged( gameLocal.time );
+
+	Quit:
+	return;
+}
+
+/*
+================
+idEntity::Event_CallGui
+
+Calls a named event in a GUI. (note that the GUI needs to be unique)
+================
+*/
+void idEntity::Event_CallGui( int handle, const char *namedEvent ) {
+	if ( m_overlays.exists( handle ) ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( !gui )
+			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+		else if ( !gui->IsUniqued() )
+			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
+		else {
+			gui->HandleNamedEvent( namedEvent );
 		}
+	} else {
+		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 	}
 }
 
