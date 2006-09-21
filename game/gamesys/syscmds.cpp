@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/09/21 00:43:52  gildoran
+ * Added inventory hotkey support.
+ *
  * Revision 1.9  2006/08/21 05:54:39  ishtvan
  * updated print attachment info to list name of attached ent
  *
@@ -275,6 +278,90 @@ void Cmd_AttachmentPrint_f( const idCmdArgs &args )
 	gameLocal.Printf("======= End Attachment Info =======\n \n" );
 
 Quit:
+	return;
+}
+
+/*
+==================
+Cmd_InventoryHotkey_f
+==================
+*/
+void Cmd_InventoryHotkey_f( const idCmdArgs &args )
+{
+	static const char *key = "inv_hotkey";
+
+	if ( 0 > args.Argc() || args.Argc() > 2 ) {
+		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
+		goto Quit;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		goto Quit;
+	}
+	CtdmInventoryCursor *pCur = gameLocal.GetLocalPlayer()->InventoryCursor();
+	CtdmInventoryItem *item;
+	idEntity *ent;
+	const char *hotkey;
+
+	if( args.Argc() == 2 ) {
+
+		// Skip to the item with the given hotkey.
+
+
+		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
+
+			item = NULL;
+			if ( pCur && pCur->inventory() ) {
+
+				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
+				// that save/restore can't be called while this function is running.
+				CtdmInventoryCursor cur;
+
+				cur.setInventory( pCur->inventory() );
+				cur.iterate( TDMINV_UNGROUPED, false, true );
+				while ( cur.item() ) {
+
+					ent = cur.item()->m_owner.GetEntity();
+					hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
+					if ( idStr::Cmp( hotkey, args.Argv(1) ) == 0 ) {
+						item = cur.item();
+						break;
+					}
+
+					cur.iterate( TDMINV_UNGROUPED, false, true );
+				}
+
+			}
+
+			if ( item )
+				pCur->selectItem( item );
+			else
+				gameLocal.Printf( "%s: Unable to find item: \"%s\"", args.Argv(0), args.Argv(1) );
+
+		} else {
+			// Clear the current slot.
+			if ( pCur && pCur->inventory() )
+				pCur->selectItem( NULL );
+		}
+
+	} else {
+
+		// List the hotkey of the current item.
+
+		item = pCur ? pCur->item() : NULL;
+		ent = item ? item->m_owner.GetEntity() : NULL;
+		hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
+
+		if ( idStr::Cmp( hotkey, "" ) != 0 )
+			gameLocal.Printf( "%s: Hotkey found: \"%s\"\n", args.Argv(0), hotkey );
+		else
+			gameLocal.Printf( "%s: No hotkey found.\n", args.Argv(0) );
+
+	}
+
+	Quit:
 	return;
 }
 
@@ -2620,6 +2707,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_attach_rot",		Cmd_AttachmentRot_f,		CMD_FL_GAME,				"Set the rotation (pitch yaw roll) for an attachment on an AI you are looking at.  Usage: tdm_attach_rot <atachment index> <pitch> <yaw> <roll>  (NOTE: Rotation is applied before translation, angles are relative to the joint orientation)" );
 	cmdSystem->AddCommand( "tdm_attach_joint",		Cmd_AttachmentJoint_f,		CMD_FL_GAME,				"Set the attachment joint name for an attachment on an AI you are looking at.  Usage: tdm_attach_joint <attachment index> <string name of joint>" );
 	cmdSystem->AddCommand( "tdm_attach_print",		Cmd_AttachmentPrint_f,		CMD_FL_GAME,				"Print the attachment info for the given attachment on the AI you are looking at.  Usage: tdm_attach_print <attachment index>" );
+
+	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );

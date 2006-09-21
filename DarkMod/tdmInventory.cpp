@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/09/21 00:43:45  gildoran
+ * Added inventory hotkey support.
+ *
  * Revision 1.8  2006/08/12 14:44:23  gildoran
  * Fixed some minor bugs with inventory group iteration.
  *
@@ -804,6 +807,12 @@ void CtdmInventoryCursor::selectItem( CtdmInventoryItem* item, bool noHistory ) 
 		gameLocal.Warning("selectItem() called on an independant tdmInventoryCursor.");
 		goto Quit;
 	}
+
+	if ( item == NULL ) {
+		select( NULL, NULL, NULL, noHistory );
+		goto Quit;
+	}
+
 	if ( item->m_inventory != m_inventory ) {
 		gameLocal.Warning("Attempted to move cursor to item outside current inventory.");
 		goto Quit;
