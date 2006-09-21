@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/09/21 22:48:19  gildoran
+ * Allow portalskies to rotate. (should be helpful if any mappers want to create an airship)
+ *
  * Revision 1.8  2006/09/21 22:10:50  gildoran
  * Possible fix for particle flickering problem?
  *
@@ -500,61 +503,32 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 		renderView_t	portalView = hackedView;
 
 		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
-
-
+		portalView.viewaxis = portalView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
 
 		// setup global fixup projection vars
-
 		if ( 1 ) {
-
 			int vidWidth, vidHeight;
-
 			idVec2 shiftScale;
-
-
 
 			renderSystem->GetGLSettings( vidWidth, vidHeight );
 
-
-
 			float pot;
-
 			int	 w = vidWidth;
-
 			pot = MakePowerOfTwo( w );
-
 			shiftScale.x = (float)w / pot;
 
-
-
 			int	 h = vidHeight;
-
 			pot = MakePowerOfTwo( h );
-
 			shiftScale.y = (float)h / pot;
 
-
-
 			hackedView.shaderParms[4] = shiftScale.x;
-
 			hackedView.shaderParms[5] = shiftScale.y;
-
 		}
 
-
-
 		gameRenderWorld->RenderScene( &portalView );
-
 		renderSystem->CaptureRenderToImage( "_currentRender" );
 
-
-
 		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
-
-
-
-		
-
 	}
 
 	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
