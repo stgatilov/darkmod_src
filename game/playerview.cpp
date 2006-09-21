@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/09/21 22:10:50  gildoran
+ * Possible fix for particle flickering problem?
+ *
  * Revision 1.7  2006/09/18 13:37:51  gildoran
  * Added the first version of a unified interface for GUIs.
  *
@@ -554,6 +557,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 
 	}
 
+	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
 	gameRenderWorld->RenderScene( &hackedView );
 	// process the frame
 
