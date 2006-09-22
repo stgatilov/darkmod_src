@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.71  2006/09/22 06:00:35  gildoran
+ * Added code to cache TDM_MatInfo declarations for textures applied to surfaces of a map.
+ *
  * Revision 1.70  2006/08/21 05:06:49  ishtvan
  * added PlayerTraceEntity which returns the ent the player is looking at out to 512 units
  *
@@ -1189,6 +1192,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 			mapFile = NULL;
 			Error( "Couldn't load %s", mapName );
 		}
+		tdmDeclTDM_MatInfo::precacheMap( mapFile );
 	}
 	mapFileName = mapFile->GetName();
 
