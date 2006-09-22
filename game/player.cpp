@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.88  2006/09/22 00:34:29  gildoran
+ * Made setGui() scriptevent clear a GUI's state before loading a new file into it.
+ *
  * Revision 1.87  2006/09/18 18:56:58  gildoran
  * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
  *
@@ -10257,9 +10260,19 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 	// Entity GUIs are handled differently from regular ones.
 	if ( handle == OVERLAYS_MIN_HANDLE ) {
 
+		assert( hud );
 		assert( m_overlays.isExternal( handle ) );
-		gameLocal.Warning( "Cannot change the HUD.\n" );
-		// FIXME: Add HUD changing support
+
+		// We're dealing with an existing unique GUI.
+		// We need to read a new GUI into it.
+
+		// Clear the state.
+		const idDict &state = hud->State();
+		const idKeyValue *kv;
+		while ( ( kv = state.MatchPrefix( "" ) ) != NULL )
+			hud->DeleteStateVar( kv->GetKey() );
+
+		hud->InitFromFile( guiFile );
 
 	} else if ( !m_overlays.isExternal( handle ) ) {
 

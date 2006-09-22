@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.71  2006/09/22 00:34:29  gildoran
+ * Made setGui() scriptevent clear a GUI's state before loading a new file into it.
+ *
  * Revision 1.70  2006/09/18 13:37:51  gildoran
  * Added the first version of a unified interface for GUIs.
  *
@@ -6810,8 +6813,13 @@ void idEntity::Event_SetGui( int handle, const char *guiFile ) {
 
 			// We're dealing with an existing unique GUI.
 			// We need to read a new GUI into it.
-			// FIXME: I need to find a way to clear the GUI parms.
-			//renderEntity.gui[ handle-1 ]->State().Clear(); // clear previous GUI parms.
+
+			// Clear the state.
+			const idDict &state = renderEntity.gui[ handle-1 ]->State();
+			const idKeyValue *kv;
+			while ( ( kv = state.MatchPrefix( "" ) ) != NULL )
+				renderEntity.gui[ handle-1 ]->DeleteStateVar( kv->GetKey() );
+
 			renderEntity.gui[ handle-1 ]->InitFromFile( guiFile );
 
 		} else {
