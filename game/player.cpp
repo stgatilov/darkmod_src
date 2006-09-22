@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.89  2006/09/22 20:16:59  sparhawk
+ * Fixed warning
+ *
  * Revision 1.88  2006/09/22 00:34:29  gildoran
  * Made setGui() scriptevent clear a GUI's state before loading a new file into it.
  *
@@ -3103,8 +3106,8 @@ idPlayer::DrawHUD
 */
 void idPlayer::DrawHUD(idUserInterface *_hud)
 {
-	if(cv_lg_debug.GetBool() == true)
-		PrintDebugHUD();
+//	if(cv_lg_debug.GetInteger() != 0)
+//		PrintDebugHUD();
 
 	const char *name;
 	if((name = cv_dm_distance.GetString()) != NULL)
@@ -7412,9 +7415,7 @@ void idPlayer::Think( void )
 	}
 
 	// determine if portal sky is in pvs
-
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
-
 }
 
 /*
@@ -10442,6 +10443,7 @@ void idPlayer::FrobCheck( void )
 	trace_t trace;
 	float	TraceDist;
 	idVec3 delta, VecForward;
+	idBounds FrobBounds;
 
 	idVec3	EyePos = GetEyePosition();
 	idVec3 start = EyePos;
@@ -10476,7 +10478,7 @@ void idPlayer::FrobCheck( void )
 	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
 	// IF the trace didn't hit anything frobable, do the radius test:
 
-	idBounds FrobBounds( trace.endpos );
+	FrobBounds += trace.endpos;
 	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
 
 // Uncomment for debug drawing of the frob bounds
