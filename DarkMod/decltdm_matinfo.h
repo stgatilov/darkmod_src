@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/09/22 14:32:18  gildoran
+ * Added precaching tdm_matinfo decls for models.
+ *
  * Revision 1.2  2006/09/22 06:00:28  gildoran
  * Added code to cache TDM_MatInfo declarations for textures applied to surfaces of a map.
  *
@@ -35,6 +38,7 @@ public:
 
 	/// Used to cache the TDM_MatInfos for all the materials applied to surfaces of a map.
 	static void precacheMap( idMapFile *map );
+	static void precacheModel( idRenderModel *model );
 
 	/// The surface type of the material.
 	idStr	surfaceType;

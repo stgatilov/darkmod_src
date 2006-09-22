@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/09/22 14:32:18  gildoran
+ * Added precaching tdm_matinfo decls for models.
+ *
  * Revision 1.4  2006/09/22 06:00:28  gildoran
  * Added code to cache TDM_MatInfo declarations for textures applied to surfaces of a map.
  *
@@ -45,7 +48,7 @@ size_t tdmDeclTDM_MatInfo::Size() const
 
 const char *tdmDeclTDM_MatInfo::DefaultDefinition() const
 {
-	return "{}";
+	return "tdm_matinfo {}";
 }
 
 void tdmDeclTDM_MatInfo::FreeData()
@@ -77,9 +80,10 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 	// skipUntilString function, since it could be fooled by
 	// a string containing a brace.
 	do {
-		if ( !src.ReadToken( &token ) ) {
-			MakeDefault();
-			return false;
+		if ( !src.ReadToken( &token ) )
+		{
+			src.Warning( "Unable to find tdm_matinfo decl." );
+			goto Quit;
 		}
 	} while ( token.type != TT_PUNCTUATION || token.subtype != P_BRACEOPEN );
 	//src.SkipUntilString( "{" );
@@ -93,9 +97,8 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 		}
 
 		// Quit upon encountering the closing brace.
-		if ( token.type == TT_PUNCTUATION && token.subtype == P_BRACECLOSE) {
+		if ( token.type == TT_PUNCTUATION && token.subtype == P_BRACECLOSE)
 			break;
-		}
 
 		if ( token.type == TT_NAME ) {
 			if ( token.Icmp( "surfacetype" ) == 0 ) {
@@ -138,8 +141,7 @@ bool tdmDeclTDM_MatInfo::Parse( const char *text, const int textLength )
 }
 
 /// Used to cache the TDM_MatInfos for all the materials applied to surfaces of a map.
-void tdmDeclTDM_MatInfo::precacheMap( idMapFile *map )
-{
+void tdmDeclTDM_MatInfo::precacheMap( idMapFile *map ) {
 	int numEntities = map->GetNumEntities();
 	int e;
 	for ( e = 0 ; e < numEntities ; e++ ) {
@@ -154,16 +156,26 @@ void tdmDeclTDM_MatInfo::precacheMap( idMapFile *map )
 				int s;
 				for ( s = 0 ; s < numSides ; s++ ) {
 					idMapBrushSide *side = brush->GetSide(s);
-					declManager->FindType( DECL_TDM_MATINFO, side->GetMaterial(), false );
-					//gameLocal.Printf( "Caching: %s\n", side->GetMaterial() );
+					declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", side->GetMaterial() );
+					declManager->FindType( DECL_TDM_MATINFO, side->GetMaterial() );
 				}
 			} else if ( prim->GetType() == idMapPrimitive::TYPE_PATCH ) {
 				idMapPatch *patch = dynamic_cast<idMapPatch*>(prim);
-				declManager->FindType( DECL_TDM_MATINFO, patch->GetMaterial(), false );
-				//gameLocal.Printf( "Caching: %s\n", patch->GetMaterial() );
+				declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", patch->GetMaterial() );
+				declManager->FindType( DECL_TDM_MATINFO, patch->GetMaterial() );
 			} else {
 				gameLocal.Warning( "tdmDeclTDM_MatInfo(): unknown primitive type: %d\n", prim->GetType() );
 			}
 		}
+	}
+}
+
+void tdmDeclTDM_MatInfo::precacheModel( idRenderModel *model ) {
+	int numSurfaces = model->NumSurfaces();
+	int s;
+	for ( s = 0 ; s < numSurfaces ; s++ ) {
+		const modelSurface_t *surface = model->Surface(s);
+		declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", surface->shader->GetName() );
+		declManager->FindType( DECL_TDM_MATINFO, surface->shader->GetName() );
 	}
 }
