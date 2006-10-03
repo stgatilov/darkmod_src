@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2006/10/03 13:13:39  sparhawk
+ * Changes for door handles
+ *
  * Revision 1.1  2006/07/27 20:30:40  sparhawk
  * Initial release. Just the skeleton of the spawnable CFrobDoorHandle class.
  *
@@ -43,6 +46,7 @@ CFrobDoorHandle::CFrobDoorHandle(void)
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_Door = NULL;
+	m_FrobLock = false;
 }
 
 void CFrobDoorHandle::Save(idSaveGame *savefile) const
@@ -70,6 +74,10 @@ void CFrobDoorHandle::Spawn(void)
 
 	spawnArgs.GetString("door_body", "", str);
 	m_Door = FindDoor(str);
+	if(m_Door)
+		m_Door->SetDoorhandle(this);
+	else
+		DM_LOG(LC_SYSTEM, LT_WARNING)LOGSTRING("door_body [%s] for handle [%s] not found\r", str.c_str(), name.c_str());
 }
 
 
@@ -89,21 +97,6 @@ CFrobDoor *CFrobDoorHandle::FindDoor(idStr &name)
 	return rc;
 }
 
-void CFrobDoorHandle::DoneMoving(void)
-{
-	idMover::DoneMoving();
-
-	DoneStateChange();
-}
-
-
-void CFrobDoorHandle::DoneRotating(void)
-{
-	idMover::DoneRotating();
-
-	DoneStateChange();
-}
-
 CFrobDoor *CFrobDoorHandle::GetDoor(void)
 {
 	return m_Door;
@@ -112,4 +105,39 @@ CFrobDoor *CFrobDoorHandle::GetDoor(void)
 void CFrobDoorHandle::Event_GetDoor(void)
 {
 	return idThread::ReturnEntity(m_Door);
+}
+
+void CFrobDoorHandle::SetFrobbed(bool val)
+{
+	if(m_FrobLock == false)		// Prevent an infinte loop here.
+	{
+		m_FrobLock = true;
+		idEntity::SetFrobbed(val);
+		if(m_Door)
+			m_Door->SetFrobbed(val);
+		m_FrobLock = false;
+	}
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_handle [%s] %08lX is frobbed\r", name.c_str(), this);
+}
+
+bool CFrobDoorHandle::IsFrobbed(void)
+{
+	// A handle without a door doesn't really make sense, but we don't 
+	// want to crash the game just because of it. And after all, a handle
+	// MIGHT be used for some other purpose, so it acts like a normal entity
+	// if it doesn't has a door.
+	if(m_Door)
+		return m_Door->IsFrobbed();
+	else
+		return idEntity::IsFrobbed();
+}
+
+// A handle itself can not be used by other objects, so we only
+// forward it in case of a door.
+bool CFrobDoorHandle::UsedBy(idEntity *e)
+{
+	if(m_Door)
+		return m_Door->UsedBy(e);
+
+	return false;
 }

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/10/03 13:13:39  sparhawk
+ * Changes for door handles
+ *
  * Revision 1.23  2006/06/27 08:48:45  ishtvan
  * fixed closing of portals more cleanly
  *
@@ -100,6 +103,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
 #include "FrobDoor.h"
+#include "FrobDoorHandle.h"
 #include "sndProp.h"
 
 //===============================================================================
@@ -131,6 +135,7 @@ CFrobDoor::CFrobDoor(void)
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
 	m_DoubleDoor = NULL;
+	m_Doorhandle = NULL;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -294,6 +299,9 @@ void CFrobDoor::Open(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
+	if(m_Doorhandle)
+		m_Doorhandle->Open(bMaster);
+
 	if(m_Open == true && !m_bInterrupted)
 		return;
 
@@ -372,6 +380,9 @@ void CFrobDoor::Close(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already closed, we don't have anything to do. :)
+	if(m_Doorhandle)
+		m_Doorhandle->Close(bMaster);
+
 	if(m_Open == false)
 		return;
 
@@ -574,3 +585,62 @@ void CFrobDoor::ClosePortal( void )
 		Event_ClosePortal();
 }
 
+void CFrobDoor::SetDoorhandle(CFrobDoorHandle *h)
+{
+	m_Doorhandle = h;
+	m_FrobPeers.AddUnique(h->name);
+	h->m_FrobPeers.AddUnique(name);
+
+	// Now we have to copy the moving information to the door 
+	// handle, so that it moves accordingly.
+	h->m_Rotate = m_Rotate;
+	h->m_ClosedAngles = m_ClosedAngles;
+	h->m_OpenAngles = m_OpenAngles;
+	h->m_Translation = m_Translation;
+	h->m_TransSpeed = m_TransSpeed;
+	h->m_StartPos = m_StartPos;
+}
+
+void CFrobDoor::SetFrobbed(bool val)
+{
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
+	idEntity::SetFrobbed(val);
+	if(m_Doorhandle)
+		m_Doorhandle->SetFrobbed(val);
+}
+
+bool CFrobDoor::IsFrobbed(void)
+{
+	// If the door has a handle and it is frobbed, then we are also considered 
+	// to be frobbed. Maybe this changes later, when the lockpicking is
+	// implemented, but usually this should be true.
+	if(m_Doorhandle)
+	{
+		if(m_Doorhandle->IsFrobbed() == true)
+			return true;
+	}
+
+	return idEntity::IsFrobbed();
+}
+
+void CFrobDoor::DoneStateChange(void)
+{
+	CBinaryFrobMover::DoneStateChange();
+
+	if(m_Doorhandle)
+		m_Doorhandle->DoneStateChange();
+}
+
+void CFrobDoor::ToggleOpen(void)
+{
+	CBinaryFrobMover::ToggleOpen();
+	if(m_Doorhandle)
+		m_Doorhandle->ToggleOpen();
+}
+
+void CFrobDoor::ToggleLock(void)
+{
+	CBinaryFrobMover::ToggleLock();
+	if(m_Doorhandle)
+		m_Doorhandle->ToggleLock();
+}

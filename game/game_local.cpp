@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.73  2006/10/03 13:13:33  sparhawk
+ * Changes for door handles
+ *
  * Revision 1.72  2006/09/22 14:32:26  gildoran
  * Added precaching tdm_matinfo decls for models.
  *
@@ -2951,7 +2954,9 @@ bool idGameLocal::Draw( int clientNum )
 	// render the scene
 	player->playerView.RenderPlayerView(player->hud);
 
-//	ProcessLightgem(player, (cv_lg_hud.GetInteger() != 0));
+	// Make the rendershot appear on the hud
+	if(cv_lg_hud.GetInteger() != 0)
+		ProcessLightgem(player, true);
 
 	m_DoLightgem = true;
 	return true;
@@ -4833,39 +4838,26 @@ idPlayer::SetPortalSkyEnt
 */
 
 void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
-
 	portalSkyEnt = ent;
-
 }
 
 
 
 /*
-
 =================
-
 idPlayer::IsPortalSkyAcive
-
 =================
-
 */
-
 bool idGameLocal::IsPortalSkyAcive() {
-
 	return portalSkyActive;
-
 }
 
 
 
 /*
-
 ===========
-
 idGameLocal::SelectTimeGroup
-
 ============
-
 */
 
 void idGameLocal::SelectTimeGroup( int timeGroup ) { }
@@ -4873,89 +4865,49 @@ void idGameLocal::SelectTimeGroup( int timeGroup ) { }
 
 
 /*
-
 ===========
-
 idGameLocal::GetTimeGroupTime
-
 ============
-
 */
-
 int idGameLocal::GetTimeGroupTime( int timeGroup ) {
-
 	return gameLocal.time;
-
 }
 
 
 
 /*
-
 ===========
-
 idGameLocal::GetBestGameType
-
 ============
-
 */
-
 idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
-
 	return gametype;
-
 }
 
-
-
 /*
-
 ===========
-
 idGameLocal::NeedRestart
-
 ============
-
 */
-
 bool idGameLocal::NeedRestart() {
-
-
-
 	idDict		newInfo;
-
 	const idKeyValue *keyval, *keyval2;
-
-
 
 	newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
 
-
-
 	for ( int i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
-
 		keyval = newInfo.GetKeyVal( i );
-
 		keyval2 = serverInfo.FindKey( keyval->GetKey() );
-
 		if ( !keyval2 ) {
-
 			return true;
-
 		}
 
 		// a select set of si_ changes will cause a full restart of the server
-
 		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
-
 			return true;
-
 		}
-
 	}
-
 	return false;
-
 }
 
 
@@ -4973,10 +4925,7 @@ idGameLocal::GetClientStats
 void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
 
 	mpGame.PlayerStats( clientNum, data, len );
-
 }
-
-
 
 
 
@@ -4990,42 +4939,26 @@ idGameLocal::SwitchTeam
 
 */
 
-void idGameLocal::SwitchTeam( int clientNum, int team ) {
-
-
-
+void idGameLocal::SwitchTeam( int clientNum, int team )
+{
 	idPlayer *   player;
 
 	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
 
-
-
 	if ( !player )
-
 		return;
-
-
 
 	int oldTeam = player->team;
 
-
-
 	// Put in spectator mode
-
 	if ( team == -1 ) {
-
 		static_cast< idPlayer * >( entities[ clientNum ] )->Spectate( true );
-
 	}
 
 	// Switch to a team
-
 	else {
-
 		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
-
 	}
-
 }
 
 
@@ -5154,7 +5087,6 @@ void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *m
 		}
 	}
 
-
 Quit:
 	return;
 }
@@ -5164,41 +5096,25 @@ HANDLE idGameLocal::CreateRenderPipe(int timeout)
 {
 #ifdef _WINDOWS_
 	return CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
-
 		PIPE_ACCESS_DUPLEX,				// read/write access
-
 		PIPE_TYPE_MESSAGE |				// message type pipe
-
 		PIPE_READMODE_MESSAGE |			// message-read mode
-
 		PIPE_WAIT,						// blocking mode
-
 		PIPE_UNLIMITED_INSTANCES,		// max. instances
-
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// output buffer size
-
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// input buffer size
-
 		timeout,						// client time-out
-
 		&m_saPipeSecurity);				// no security attribute
-
 #endif
-
 }
 
 void idGameLocal::CloseRenderPipe(HANDLE &hPipe)
 {
 	if(hPipe != INVALID_HANDLE_VALUE)
-
 	{
-
 		CloseHandle(hPipe);
-
 		hPipe = INVALID_HANDLE_VALUE;
-
 	}
-
 }
 
 float idGameLocal::CalcLightgem(idPlayer *player)
@@ -5213,13 +5129,14 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	int psid;				// player shadow viewid
 	int hsid;				// head shadow viewid
 	int i, n, k, dim, l;
-	idStr name;
+	idStr name, dps;
 	renderView_t rv, rv1;
 	idEntity *lg;
 	renderEntity_t *prent;			// Player renderentity
 	renderEntity_t *hrent;			// Head renderentity
 	renderEntity_t *lgrend;
 	HANDLE hPipe;
+	const char *dp = NULL;
 
 	lg = m_LightgemSurface;
 	idVec3 Cam = player->GetEyePosition();
@@ -5356,7 +5273,17 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->RenderScene(&rv);
 			renderSystem->CaptureRenderToFile(name);
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)", name.c_str(), GetLastError());
+			dp = cv_lg_path.GetString();
+			if(dp != NULL && strlen(dp) != 0)
+			{
+				sprintf(dps, "%s_%u.tga", dp, i);
+				dp = dps.c_str();
+				renderSystem->CaptureRenderToFile(dp);
+			}
+			else
+				dp = NULL;
+
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s] (%lu)\r", name.c_str(), GetLastError());
 			renderSystem->UnCrop();
 
 			AnalyzeRenderImage(hPipe, fColVal);
@@ -5365,7 +5292,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
 			{
-				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u] = %f/%f", l, fColVal[l], m_LightgemShotValue[i]);
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u] = %f/%f\r", l, fColVal[l], m_LightgemShotValue[i]);
 				if(fColVal[l] > m_LightgemShotValue[i])
 					m_LightgemShotValue[i] = fColVal[l];
 			}
@@ -5406,6 +5333,8 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_
 	im->LoadImage(hPipe);
 	unsigned char *buffer = im->GetImage();
 
+	// This is just an errorhandling to inform the player that something is wrong.
+	// The lightgem will simply blink if the renderpipe doesn't work.
 	if(buffer == NULL)
 	{
 		static int indicator = 0;
