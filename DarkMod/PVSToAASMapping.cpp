@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/10/08 16:36:48  sophisticatedzombie
+ * Changed this data class to use an AAS given by name, rather than index.
+ *
  * Revision 1.4  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -31,7 +34,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 PVSToAASMapping::PVSToAASMapping(void)
 {
 	// No allocated mapping
-	aasFileIndex = -1;
+	aasName.Empty();
 	numPVSAreas = 0;
 	m_p_AASAreaIndicesPerPVSArea = NULL;
 }
@@ -85,15 +88,15 @@ void PVSToAASMapping::clear()
 	}
 
 	numPVSAreas = 0;
-	aasFileIndex = -1;
+	aasName.Empty();
 }
 
 //----------------------------------------------------------------------------
 
-bool PVSToAASMapping::buildMappings(int aasNumber)
+bool PVSToAASMapping::buildMappings(idStr in_aasName)
 {
 	// If we already map this one, we are done
-	if (aasNumber == aasFileIndex)
+	if (aasName == in_aasName)
 	{
 		return true;
 	}
@@ -102,10 +105,10 @@ bool PVSToAASMapping::buildMappings(int aasNumber)
 	clear();
 
 	// Get the aas 
-	idAAS* p_aas = gameLocal.GetAAS (aasNumber);
+	idAAS* p_aas = gameLocal.GetAAS (in_aasName);
 	if (p_aas == NULL)
 	{
-		DM_LOG (LC_AI, LT_ERROR).LogString ("No aas files exist for this map, AI will not be able to locate darkness...\n");
+		DM_LOG (LC_AI, LT_ERROR).LogString ("No aas with name '%s' exists for this map, AI will not be able to locate darkness...\n", in_aasName.c_str());
 		return false;
 	}
 
@@ -147,7 +150,7 @@ bool PVSToAASMapping::buildMappings(int aasNumber)
 	}
 
 	// Remember file
-	aasFileIndex = aasNumber;
+	aasName = in_aasName;
 
 	// Log success
 	DM_LOG(LC_AI, LT_DEBUG).LogString 
