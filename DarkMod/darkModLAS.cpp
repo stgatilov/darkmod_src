@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/10/08 16:38:14  sophisticatedzombie
+ * AAS48 is typically at index 0 for a map's aas list.  Now that we are no longer using
+ * aas48, but rather aas32, we have to ask for that one by name.  I changed the
+ * system to now ask for aas32, and if that doesn't exist, then aas48.  This prevents
+ * failure of the LAS system when aas48 is not present.
+ *
  * Revision 1.5  2006/06/21 13:05:32  sparhawk
  * Added version tracking per cpp module
  *
@@ -352,11 +358,19 @@ void darkModLAS::initialize()
 
 	// Build default PVS to AAS Mapping table
 	pvsToAASMappingTable.clear();
-	if (!pvsToAASMappingTable.buildMappings(0))
+	if (!pvsToAASMappingTable.buildMappings("aas32"))
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Failed to initialize PVS to AAS(0) mapping table");
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Failed to initialize PVS to aas32 mapping table, trying aas48");
+
+		if (!pvsToAASMappingTable.buildMappings("aas48"))
+		{
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Failed to initialize PVS to aas48 mapping table");
+		}
 	}
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("PVS to AAS(0) mapping table initialized");
+	else
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("PVS to aas32 mapping table initialized");
+	}
 
 }
 

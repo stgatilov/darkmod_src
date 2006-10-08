@@ -828,7 +828,10 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
-	LAS.pvsToAASMappingTable.buildMappings(0);
+	if (!LAS.pvsToAASMappingTable.buildMappings("aas32"))
+	{
+		LAS.pvsToAASMappingTable.buildMappings("aas48");
+	}
 
 	// Get the PVS areas intersecting the search bounds
 	// Note, the id code below did this by expanding a bound out from the area center, regardless
