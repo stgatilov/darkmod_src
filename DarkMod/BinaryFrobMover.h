@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/10/08 17:16:45  sophisticatedzombie
+ * Added some functions for getting property states from within C++ code, rather than
+ * from script objects.
+ *
  * Revision 1.4  2006/08/01 06:44:23  ishtvan
  * added response to physics impulses
  *
@@ -106,12 +110,30 @@ public:
 	virtual void			GetLock(void);
 
 	/**
+	* This is the non-script version of GetOpen 
+	*/
+	bool					isOpen()
+	{
+		return m_Open;
+	}
+
+	/**
+	* This is the non-script version of GetLock
+	*/
+	bool					isLocked()
+	{
+		return m_Locked;
+	}
+
+
+	/**
 	* Overload the apply impulse function to see if we should change mover
 	* state when impulse is applied
 	*
 	* Description of function from idEntity::ApplyImpulse
 	* apply an impulse to the physics object, 'ent' is the entity applying the impulse
 	**/
+
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 
 	/**
@@ -134,6 +156,11 @@ public:
 	* Close the portal.  Overloaded on CFrobDoor
 	**/
 	virtual void			ClosePortal(void);
+
+	/**
+	* This is used to test if the mover is moving
+	*/
+	virtual bool			isMoving();
 
 protected:
 	/**

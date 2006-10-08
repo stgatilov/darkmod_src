@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/10/08 17:16:45  sophisticatedzombie
+ * Added some functions for getting property states from within C++ code, rather than
+ * from script objects.
+ *
  * Revision 1.5  2006/08/01 06:44:23  ishtvan
  * added response to physics impulses
  *
@@ -498,3 +502,7 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 	idEntity::ApplyImpulse( ent, id, point, impulse);
 }
 
+bool CBinaryFrobMover::isMoving()
+{
+	return ((m_Translating) || (m_Rotating));
+}
