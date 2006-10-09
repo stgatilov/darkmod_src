@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.73  2006/10/09 15:20:36  sparhawk
+ * Fixed a problem with peer hilighting
+ *
  * Revision 1.72  2006/10/03 13:13:33  sparhawk
  * Changes for door handles
  *
@@ -256,7 +259,7 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
-#pragma warning(disable : 4533 )
+#pragma warning(disable : 4533 4800)
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
@@ -6421,15 +6424,13 @@ void idEntity::FrobHighlight( bool bVal )
 	// Stop flooding the frob peers if we've been updated this frame
 	// NOTE: Also, a bVal of true overrides a bVal of false in the case where
 	// focus shifts to one frob peer to another (one will flood a false and one will flood a true)
-	if( (m_FrobPeerFloodFrame == gameLocal.framenum) && (bVal == m_bFrobHighlightState
-		|| !bVal ) )
+	if(m_FrobPeerFloodFrame == gameLocal.framenum || bVal == m_bFrobHighlightState)
 		goto Quit;
 
 	m_bFrobHighlightState = bVal;
 
 	// update our timestamp
 	m_FrobChangeTime = gameLocal.time;
-
 	m_FrobPeerFloodFrame = gameLocal.framenum;
 
 	// resolve the peer names into entities
@@ -6441,7 +6442,7 @@ void idEntity::FrobHighlight( bool bVal )
 
 		ent = gameLocal.FindEntity( m_FrobPeers[i].c_str() );
 		// don't call it on self, would get stuck in a loop
-		if( ent )
+		if(ent != NULL && ent != this)
 			ent->FrobHighlight( bVal );
 	}
 
