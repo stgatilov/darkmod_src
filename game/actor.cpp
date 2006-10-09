@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/10/09 19:35:46  sparhawk
+ * Added a offsetHeadModel vector
+ *
  * Revision 1.23  2006/08/21 06:24:14  ishtvan
  * *) added event_getattachment
  *
@@ -590,6 +593,7 @@ void idActor::Spawn( void )
 	spawnArgs.GetInt( "type", "0", m_AItype );
 	spawnArgs.GetBool( "innocent", "0", m_Innocent );
 	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
+	spawnArgs.GetVector( "offsetHeadModel", "0 0 0", mHeadModelOffset );
 
 	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
 
@@ -760,7 +764,7 @@ void idActor::SetupHead( void ) {
 		idAttachInfo &attach = m_attachments.Alloc();
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + ( origin + modelOffset ) * renderEntity.axis;
+		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
 		attach.ent = headEnt;
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
