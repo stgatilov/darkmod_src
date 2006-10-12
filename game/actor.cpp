@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/10/12 21:19:35  sparhawk
+ * Generic headoffset implemented
+ *
  * Revision 1.24  2006/10/09 19:35:46  sparhawk
  * Added a offsetHeadModel vector
  *
@@ -592,8 +595,8 @@ void idActor::Spawn( void )
 	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetInt( "type", "0", m_AItype );
 	spawnArgs.GetBool( "innocent", "0", m_Innocent );
-	spawnArgs.GetVector( "offsetModel", "0 0 0", modelOffset );
-	spawnArgs.GetVector( "offsetHeadModel", "0 0 0", mHeadModelOffset );
+	spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset);
+	spawnArgs.GetVector("offsetHeadModel", "0 0 0", mHeadModelOffset);
 
 	spawnArgs.GetBool( "use_combat_bbox", "0", use_combat_bbox );	
 
@@ -724,13 +727,21 @@ void idActor::SetupHead( void ) {
 	jointHandle_t		damageJoint;
 	int					i;
 	const idKeyValue	*sndKV;
+	idStr				oHeadOffsetName;
+	idVec3				oHeadOffset;
 
-	if ( gameLocal.isClient ) {
+	if(gameLocal.isClient)
 		return;
-	}
 
 	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
+	if(headModel[0])
+	{
+		// We look if the head model is defined as a key to have a specific offset.
+		// If that is not the case, then we use the defaul value, if it exists, 
+		// otherwise there is no offset at all.
+		if(spawnArgs.GetVector(headModel, "0 0 0", oHeadOffset) == true)
+			mHeadModelOffset = oHeadOffset;
+
 		jointName = spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) {
