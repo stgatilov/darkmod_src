@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/10/13 01:46:17  sophisticatedzombie
+ * CheckObstacleAvoidance now has the AI open doors from a distance calculated
+ * based on the size of the door bounds perpendicular to the gravity vector.
+ *
  * Revision 1.31  2006/08/11 01:48:18  ishtvan
  * dealt with simultaneous alerts in one frame
  *
@@ -121,6 +125,10 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../../darkmod/darkmodglobals.h"
 #include "../../darkmod/playerdata.h"
 #include "../../darkmod/sndprop.h"
+
+// For handling the opening of doors and other binary Frob movers
+#include "../../darkmod/BinaryFrobMover.h"
+#include "../../darkmod/FrobDoor.h"
 
 //TODO: Move these to AI def:
 
@@ -2912,6 +2920,10 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	float			dist;
 	bool			foundPath;
 
+	// If there is an obstacle, this is the distance from it we should stop to
+	// take action
+	float stopDistance = 0.0f;
+
 	if ( ignore_obstacles ) {
 		newPos = goalPos;
 		move.obstacle = NULL;
@@ -2930,17 +2942,54 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 
 	if ( !foundPath ) {
 		// couldn't get around obstacles
-		if ( path.firstObstacle ) {
+		if ( path.firstObstacle ) 
+		{
 			AI_OBSTACLE_IN_PATH = true;
-			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) ) {
-				obstacle = path.firstObstacle;
+
+			/* SZ: Further distance for Binary Frob Movers (eg: doors) */
+			if (path.firstObstacle->IsType (CBinaryFrobMover::Type))
+			{
+				// Calculate distance far enough away that we won't hit swinging door
+				// opening toward us
+				idVec3 delta;
+				idVec3 gravity;
+				idVec3 sizePerpGrav;
+
+				idBounds avoidBounds = path.firstObstacle->GetPhysics()->GetBounds();
+				delta.x = avoidBounds[0][1] - avoidBounds[0][0];
+				delta.y = avoidBounds[1][1] - avoidBounds[1][0];
+				delta.z = avoidBounds[2][1] - avoidBounds[2][0];
+
+				gravity = gameLocal.GetGravity();
+				gravity.Normalize();
+
+				sizePerpGrav = gravity.Cross (delta);
+
+				stopDistance = sizePerpGrav.Length();
+                
+				// The door becomes an active dynamic pathing obstacle when we
+				// reach that distance (we will open the door at that point)
+				if ( physicsObj.GetAbsBounds().Expand( stopDistance * 1.5 ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) ) 
+				{
+					obstacle = path.firstObstacle;
+				}
 			}
-		} else if ( path.startPosObstacle ) {
+			else 
+			{
+				if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) ) 
+				{
+					obstacle = path.firstObstacle;
+				}
+			}
+		} 
+		else if ( path.startPosObstacle ) 
+		{
 			AI_OBSTACLE_IN_PATH = true;
 			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.startPosObstacle->GetPhysics()->GetAbsBounds() ) ) {
 				obstacle = path.startPosObstacle;
 			}
-		} else {
+		} else 
+		{
 			// Blocked by wall
 			move.moveStatus = MOVE_STATUS_BLOCKED_BY_WALL;
 		}
@@ -2982,15 +3031,58 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 			{
 				move.moveStatus = MOVE_STATUS_BLOCKED_BY_MONSTER;
 			}
-		} else 
+		} 
+		else 
 		{
-			// try kicking the object out of the way
-			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+			// If its a door try opening it
+			if (obstacle->IsType (CFrobDoor::Type))
+			{
+				// Try to open doors
+				CFrobDoor* p_door = (CFrobDoor*) obstacle;
+				if (!p_door->isOpen())
+				{
+					bool b_canOpen = true;
+					if (p_door->isLocked())
+					{
+						// TODO: Call script to see if I have this key. For now
+						// answer is always yes.
+
+					}
+		
+					// Open the door
+					if (b_canOpen)
+					{
+						p_door->Open (false);
+					}
+				}
+
+				newPos = obstacle->GetPhysics()->GetOrigin();
+				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
+					GetPhysics()->GetOrigin();
+
+				obstacleDelta.Normalize();
+				obstacleDelta *= stopDistance;
+
+				newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+				
+				//newPos = path.seekPos;
+				move.obstacle = obstacle;
+				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+
+			}
+			else
+			{
+				// try kicking the object out of the way
+				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+				newPos = obstacle->GetPhysics()->GetOrigin();
+			}
 		}
-		newPos = obstacle->GetPhysics()->GetOrigin();
-		//newPos = path.seekPos;
+
 		move.obstacle = obstacle;
-	} else {
+
+	} 
+	else 
+	{
 		newPos = path.seekPos;
 		move.obstacle = NULL;
 	}
