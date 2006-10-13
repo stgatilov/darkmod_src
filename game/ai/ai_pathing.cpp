@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/10/13 01:45:09  sophisticatedzombie
+ * GetObstacles now includes BinaryFrobMover objects as dynamic pathing obstacles.
+ * This allows AIs to avoid opening swinging doors etc...
+ *
  * Revision 1.3  2006/07/25 06:00:05  ishtvan
  * enemies no longer considered an obstacle
  *
@@ -27,6 +31,9 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../Game_local.h"
+
+#include "../darkmod/BinaryFrobMover.h"
+#include "../darkmod/FrobDoor.h"
 
 /*
 ===============================================================================
@@ -316,6 +323,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	idEntity *obEnt;
 	idClipModel *clipModel;
 	idClipModel *clipModelList[ MAX_GENTITIES ];
+
+	/* TDM: SZ: This variable tracks if the obstacle is a binary mover or not
+	* If NULL its not, if non NULL it is, and the pointer is a cast to it
+	* as a binary mover
+	*/
+	CBinaryFrobMover* p_binaryFrobMover = NULL;
+
 	// TDM: Store our team.  const correctness in idPhysics SUCKS!!!
 //	int team = static_cast<const idActor *>( const_cast<idPhysics_Base *>(static_cast<const idPhysics_Base *>(physics))->GetSelf() )->team;
 	int team = static_cast<idActor *>( const_cast<idPhysics *>(physics)->GetSelf() )->team;
@@ -338,13 +352,20 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	// find all obstacles touching the clip bounds
 	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
 
-	for ( i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) {
+	for ( i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) 
+	{
 		clipModel = clipModelList[i];
 		obEnt = clipModel->GetEntity();
 
+		/*
+		* SZ: Oct 9, 2006: Not all binary frob movers have trace models as clip models
+		* so I am commenting this out.
+		*/
+		/*
 		if ( !clipModel->IsTraceModel() ) {
 			continue;
 		}
+		*/
 
 		if ( obEnt->IsType( idActor::Type ) ) 
 		{
@@ -370,12 +391,27 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 					}
 				}
 			}
-		} else if ( obEnt->IsType( idMoveable::Type ) ) {
+		} else if ( obEnt->IsType( idMoveable::Type ) ) 
+		{
 			// moveables are considered obstacles
-		} else {
+		} 
+		/* SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too */
+		else if (obEnt->IsType (CBinaryFrobMover::Type) )
+		{
+			p_binaryFrobMover = (CBinaryFrobMover*) obEnt;
+		}
+		else 
+		{
 			// ignore everything else
+
+			// TDM: SZ Oct 9, 2006: Comment this continue out, and the AI will path around func_statics
+			// and the like, even without monster-clip brushes around them.  
+			// However, the CPU load is higher and the weapon an AI is carrying
+			// is an obstacle (bad).
+
 			continue;
 		}
+		
 
 		// check if we can step over the object
 		clipModel->GetAbsBounds().AxisProjection( -physics->GetGravityNormal(), min, max );
@@ -384,8 +420,46 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			continue;
 		}
 
-		// project a box containing the obstacle onto the floor plane
+		// Get the box boundign the obstacle
 		box = idBox( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+
+		/* TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
+		* the current position to where it is winding up, so the AI knows to stay clear
+		*/
+		if (p_binaryFrobMover != NULL)
+		{
+			// This isn't working due to rotation problem
+
+			/*
+			// Get remaining movement
+			idVec3 deltaPosition;
+			idAngles deltaAngles;
+			idRotation rotation;
+			idBox moveBox;
+
+			p_binaryFrobMover->getRemainingMovement
+			(
+				deltaPosition,
+				deltaAngles
+			);
+
+			// Make translated version of self and add to bounds
+
+			moveBox = box.Translate (deltaPosition);
+			box.AddBox (moveBox);
+
+			rotation = deltaAngles.ToRotation();
+			rotation.SetOrigin (p_binaryFrobMover->GetPhysics()->GetOrigin());
+
+			// Now both rotate and translate
+			moveBox.TranslateSelf (deltaPosition);
+			box.AddBox (moveBox);
+		*/
+
+
+		}
+
+		// project the box containing the obstacle onto the floor plane
 		numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
 
 		// create a 2D winding for the obstacle;
