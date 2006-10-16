@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/10/16 20:52:21  sparhawk
+ * Individual offset added for joints.
+ *
  * Revision 1.25  2006/10/12 21:19:35  sparhawk
  * Generic headoffset implemented
  *
@@ -1797,6 +1800,8 @@ void idActor::Attach( idEntity *ent )
 	idAttachInfo	&attach = m_attachments.Alloc();
 	idAngles		angleOffset;
 	idVec3			originOffset;
+	idStr			nm;
+	idStr			ClassName;
 
 	jointName = ent->spawnArgs.GetString( "joint" );
 	joint = animator.GetJointHandle( jointName );
@@ -1804,8 +1809,14 @@ void idActor::Attach( idEntity *ent )
 		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
 	}
 
-	angleOffset = ent->spawnArgs.GetAngles( "angles" );
-	originOffset = ent->spawnArgs.GetVector( "origin" );
+	spawnArgs.GetString("classname", "", ClassName);
+	sprintf(nm, "angles_%s", ClassName.c_str());
+	if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
+		angleOffset = ent->spawnArgs.GetAngles( "angles" );
+
+	sprintf(nm, "origin_%s", ClassName.c_str());
+	if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
+		originOffset = ent->spawnArgs.GetVector( "origin" );
 
 	attach.channel = animator.GetChannelForJoint( joint );
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
