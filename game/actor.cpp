@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2006/10/22 07:49:12  ishtvan
+ * added scriptfunction GetNumAttached
+ *
+ * added some logging to track damage locations
+ *
  * Revision 1.26  2006/10/16 20:52:21  sparhawk
  * Individual offset added for joints.
  *
@@ -440,7 +445,7 @@ const idEventDef AI_ReAttach( "reAttach", "dsvv" );
 const idEventDef AI_DropAttachment( "dropAttachment", "d" );
 const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
 const idEventDef AI_GetAttachment( "getAttachment", "d", 'e' );
-
+const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -491,6 +496,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_DropAttachment,			idActor::DropAttachment )
 	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
 	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
+	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
 END_CLASS
 
 /*
@@ -751,8 +757,9 @@ void idActor::SetupHead( void ) {
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
 
-		// set the damage joint to be part of the head damage group
+		// set the damage joint to be part of the head damage group (if possible)
 		damageJoint = joint;
+
 		for( i = 0; i < damageGroups.Num(); i++ ) {
 			if ( damageGroups[ i ] == "head" ) {
 				damageJoint = static_cast<jointHandle_t>( i );
@@ -771,7 +778,10 @@ void idActor::SetupHead( void ) {
 		headEnt = static_cast<idAFAttachment *>( gameLocal.SpawnEntityType( idAFAttachment::Type, &args ) );
 		headEnt->SetName( va( "%s_head", name.c_str() ) );
 		headEnt->SetBody( this, headModel, damageJoint );
+		headEnt->SetCombatModel();
 		head = headEnt;
+
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("SETBODY: AI %s : damage joint %d on is part of damage group %s\r", name.c_str(), (int) damageJoint, damageGroups[ damageJoint ].c_str() );
 
 		idVec3		origin;
 		idMat3		axis;
@@ -1830,6 +1840,14 @@ void idActor::Attach( idEntity *ent )
 
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
+
+	// If the ent we're attaching is an AFEntity, call SetBody to set up damage propagation, physics propagation, etc.
+	if( ent->IsType(idAFAttachment::Type) )
+	{
+		// TODO: Is this line correct?  Won't know until we test.
+		idStr modelName = ent->spawnArgs.GetString("model","");
+		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), joint );
+	}
 }
 
 /*
@@ -2277,6 +2295,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	int	damage = damageDef->GetInt( "damage" ) * damageScale;
 	damage = GetDamageForLocation( damage, location );
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, location, damageGroups[ location ].c_str() );
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
@@ -3692,4 +3712,14 @@ void idActor::Event_GetAttachment( int ind )
 {
 	idEntity *ent = GetAttachedEnt( ind );
 	idThread::ReturnEntity( ent );
+}
+
+/*
+=====================
+idActor::Event_GetAttachment
+=====================
+*/
+void idActor::Event_GetNumAttachments( void )
+{
+	idThread::ReturnInt( m_attachments.Num() );
 }

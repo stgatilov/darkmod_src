@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/10/22 07:49:12  ishtvan
+ * added scriptfunction GetNumAttached
+ *
+ * added some logging to track damage locations
+ *
  * Revision 1.14  2006/10/09 19:35:46  sparhawk
  * Added a offsetHeadModel vector
  *
@@ -441,6 +446,7 @@ private:
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
 	void					Event_GetAttachment( int ind );
+	void					Event_GetNumAttachments( void );
 };
 
 #endif /* !__GAME_ACTOR_H__ */
