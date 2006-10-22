@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2006/10/22 07:50:04  ishtvan
+ * additional logging for knockout blows
+ *
  * Revision 1.32  2006/10/13 01:46:17  sophisticatedzombie
  * CheckObstacleAvoidance now has the AI open doors from a distance calculated
  * based on the size of the door bounds perpendicular to the gravity vector.
@@ -6224,6 +6227,8 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	}
 
 	LocationName = GetDamageGroup( CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s hit with KO object in location %s\r", name.c_str(), LocationName);
 	
 	// check if we're hitting the right zone (usually the head)
 	if( strcmp(LocationName, spawnArgs.GetString("ko_zone")) )
