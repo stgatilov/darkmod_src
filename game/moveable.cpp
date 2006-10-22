@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/10/22 20:17:47  ishtvan
+ * updated moveable damage to pass along the joint at which it struck
+ *
  * Revision 1.8  2006/07/15 02:15:46  ishtvan
  * surface type name fix
  *
@@ -310,11 +313,12 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
 		ent = gameLocal.entities[ collision.c.entityNum ];
-		if ( ent && v > minDamageVelocity ) {
+		if ( ent && v > minDamageVelocity ) 
+		{
 			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
 			dir = velocity;
 			dir.NormalizeFast();
-			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, INVALID_JOINT );
+			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
 			nextDamageTime = gameLocal.time + 1000;
 		}
 	}
