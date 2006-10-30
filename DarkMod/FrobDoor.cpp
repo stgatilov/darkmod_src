@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/10/30 17:29:05  sparhawk
+ * Doorhandles should inherit the frobable flag, according to their doorsetting.
+ *
  * Revision 1.25  2006/10/30 17:10:25  sparhawk
  * Doorhandles are now working in the first stage.
  *
@@ -576,6 +579,7 @@ void CFrobDoor::SetDoorhandle(CFrobDoorHandle *h)
 	m_Doorhandle = h;
 	m_FrobPeers.AddUnique(h->name);
 	h->m_FrobPeers.AddUnique(name);
+	h->m_bFrobable = m_bFrobable;
 
 	h->Bind(this, true);
 }
