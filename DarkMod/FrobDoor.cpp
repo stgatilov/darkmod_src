@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/10/30 17:10:25  sparhawk
+ * Doorhandles are now working in the first stage.
+ *
  * Revision 1.24  2006/10/03 13:13:39  sparhawk
  * Changes for door handles
  *
@@ -299,8 +302,8 @@ void CFrobDoor::Open(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
-	if(m_Doorhandle)
-		m_Doorhandle->Open(bMaster);
+//	if(m_Doorhandle)
+//		m_Doorhandle->Open(bMaster);
 
 	if(m_Open == true && !m_bInterrupted)
 		return;
@@ -380,8 +383,8 @@ void CFrobDoor::Close(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already closed, we don't have anything to do. :)
-	if(m_Doorhandle)
-		m_Doorhandle->Close(bMaster);
+//	if(m_Doorhandle)
+//		m_Doorhandle->Close(bMaster);
 
 	if(m_Open == false)
 		return;
@@ -429,7 +432,7 @@ void CFrobDoor::Close(bool bMaster)
 		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
 		
 		if( m_TransSpeed )
-				Event_SetMoveSpeed( m_TransSpeed );
+			Event_SetMoveSpeed( m_TransSpeed );
 
 		Event_MoveToPos(m_StartPos);
 	}
@@ -509,23 +512,6 @@ Quit:
 	return;
 }
 
-void CFrobDoor::DoneMoving(void)
-{
-	idMover::DoneMoving();
-    m_Translating = false;
-
-	DoneStateChange();
-}
-
-
-void CFrobDoor::DoneRotating(void)
-{
-	idMover::DoneRotating();
-    m_Rotating = false;
-
-	DoneStateChange();
-}
-
 void CFrobDoor::FindDoubleDoor(void)
 {
 	int i, numListedClipModels, testPortal;
@@ -591,14 +577,7 @@ void CFrobDoor::SetDoorhandle(CFrobDoorHandle *h)
 	m_FrobPeers.AddUnique(h->name);
 	h->m_FrobPeers.AddUnique(name);
 
-	// Now we have to copy the moving information to the door 
-	// handle, so that it moves accordingly.
-	h->m_Rotate = m_Rotate;
-	h->m_ClosedAngles = m_ClosedAngles;
-	h->m_OpenAngles = m_OpenAngles;
-	h->m_Translation = m_Translation;
-	h->m_TransSpeed = m_TransSpeed;
-	h->m_StartPos = m_StartPos;
+	h->Bind(this, true);
 }
 
 void CFrobDoor::SetFrobbed(bool val)
@@ -626,9 +605,6 @@ bool CFrobDoor::IsFrobbed(void)
 void CFrobDoor::DoneStateChange(void)
 {
 	CBinaryFrobMover::DoneStateChange();
-
-	if(m_Doorhandle)
-		m_Doorhandle->DoneStateChange();
 }
 
 void CFrobDoor::ToggleOpen(void)

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/10/30 17:10:25  sparhawk
+ * Doorhandles are now working in the first stage.
+ *
  * Revision 1.2  2006/10/03 13:13:39  sparhawk
  * Changes for door handles
  *
@@ -65,6 +68,17 @@ public:
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
 	bool					UsedBy(idEntity *);
+	void					FrobAction(bool bMaster);
+
+	// These functions need to be disabled on the handle. Therefore
+	// they are provided but empty.
+	void					ClosePortal(void);
+	void					DoneStateChange(void);
+	void					DoneRotating(void);
+	void					DoneMoving(void);
+
+	void					ToggleOpen(void);
+	void					ToggleLock(void);
 
 protected:
 	/**

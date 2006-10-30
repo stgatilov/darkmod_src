@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/10/30 17:10:25  sparhawk
+ * Doorhandles are now working in the first stage.
+ *
  * Revision 1.6  2006/10/08 17:16:45  sophisticatedzombie
  * Added some functions for getting property states from within C++ code, rather than
  * from script objects.
@@ -297,7 +300,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
-		
+
 		m_Open = true;
 		m_Rotating = true;
 		m_Translating = true;

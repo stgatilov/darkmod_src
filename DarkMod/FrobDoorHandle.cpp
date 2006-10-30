@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/10/30 17:10:25  sparhawk
+ * Doorhandles are now working in the first stage.
+ *
  * Revision 1.2  2006/10/03 13:13:39  sparhawk
  * Changes for door handles
  *
@@ -140,4 +143,36 @@ bool CFrobDoorHandle::UsedBy(idEntity *e)
 		return m_Door->UsedBy(e);
 
 	return false;
+}
+
+void CFrobDoorHandle::FrobAction(bool bMaster)
+{
+	if(m_Door)
+		m_Door->FrobAction(bMaster);
+}
+
+// A handle can't close a portal, so we block it. The same is true for the Done* and statechanges
+void CFrobDoorHandle::ClosePortal(void)
+{
+}
+
+void CFrobDoorHandle::DoneRotating(void)
+{
+}
+
+void CFrobDoorHandle::DoneMoving(void)
+{
+}
+
+void CFrobDoorHandle::DoneStateChange(void)
+{
+}
+
+
+void CFrobDoorHandle::ToggleOpen(void)
+{
+}
+
+void CFrobDoorHandle::ToggleLock(void)
+{
 }
