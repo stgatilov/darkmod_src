@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/10/31 22:44:00  sparhawk
+ * Handle rotation added
+ *
  * Revision 1.4  2006/10/31 12:33:37  sparhawk
  * Doorhandle rotation added
  *
@@ -41,7 +44,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 //===============================================================================
 
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
-const idEventDef EV_TDM_Handle_Tap( "Tap", "ee" );
+const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoorHandle )
 	EVENT( EV_TDM_Handle_GetDoor,		CFrobDoorHandle::Event_GetDoor )
@@ -186,8 +189,10 @@ void CFrobDoorHandle::DoneMoving(void)
 
 void CFrobDoorHandle::Tap(void)
 {
+	int signal = 0;
+
 	if(m_DoorHandleScript.Length() == 0 || m_Door == NULL)
 		return;
 
-	CallScriptFunctionArgs(m_DoorHandleScript, true, 0, "ee", this, m_Door);
+	CallScriptFunctionArgs(m_DoorHandleScript.c_str(), true, 0, "eed", this, m_Door, signal);
 }

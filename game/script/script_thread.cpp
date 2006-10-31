@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/10/31 22:44:10  sparhawk
+ * Handle rotation added
+ *
  * Revision 1.8  2006/06/21 13:08:06  sparhawk
  * Added version tracking per cpp module
  *
@@ -1939,13 +1942,10 @@ bool idThread::CallFunctionArgs(const function_t *func, bool clearStack, const c
 bool idThread::CallFunctionArgsVN(const function_t *func, bool clearStack, const char *fmt, va_list args)
 {
 	bool rc = false;
-//	va_list argptr;
 
 	ClearWaitFor();
 
-//	va_start(argptr, fmt);
 	rc = interpreter.EnterFunctionVarArgVN(func, clearStack, fmt, args);
-//	va_end(argptr);
 
 	return rc;
 }
