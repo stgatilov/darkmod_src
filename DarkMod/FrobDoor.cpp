@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2006/10/31 12:33:37  sparhawk
+ * Doorhandle rotation added
+ *
  * Revision 1.26  2006/10/30 17:29:05  sparhawk
  * Doorhandles should inherit the frobable flag, according to their doorsetting.
  *
@@ -123,6 +126,7 @@ const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
 const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
 const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
+const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
@@ -131,6 +135,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
 	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
+	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
 END_CLASS
 
 
@@ -305,11 +310,12 @@ void CFrobDoor::Open(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
-//	if(m_Doorhandle)
-//		m_Doorhandle->Open(bMaster);
-
 	if(m_Open == true && !m_bInterrupted)
 		return;
+
+	// If we have a doorhandle we want to tap it before the door starts to open.
+	if(m_Doorhandle)
+		m_Doorhandle->Tap();
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
@@ -385,12 +391,13 @@ void CFrobDoor::Close(bool bMaster)
 	idEntity *e;
 	idAngles tempAng;
 
-	// If the door is already closed, we don't have anything to do. :)
-//	if(m_Doorhandle)
-//		m_Doorhandle->Close(bMaster);
-
 	if(m_Open == false)
 		return;
+
+	// When we close the door, we don't want to do the handle tap, as 
+	// it looks a bit strange
+//	if(m_Doorhandle)
+//		m_Doorhandle->Tap();
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
@@ -561,6 +568,11 @@ void CFrobDoor::FindDoubleDoor(void)
 void CFrobDoor::GetPickable(void)
 {
 	idThread::ReturnInt(m_Pickable);
+}
+
+void CFrobDoor::GetDoorhandle(void)
+{
+	idThread::ReturnEntity(m_Doorhandle);
 }
 
 CFrobDoor* CFrobDoor::GetDoubleDoor( void )

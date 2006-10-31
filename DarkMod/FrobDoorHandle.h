@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/10/31 12:33:37  sparhawk
+ * Doorhandle rotation added
+ *
  * Revision 1.3  2006/10/30 17:10:25  sparhawk
  * Doorhandles are now working in the first stage.
  *
@@ -56,6 +59,7 @@ public:
 	 */
 	CFrobDoor				*GetDoor(void);
 	void					Event_GetDoor(void);
+	void					Event_Tap(void);
 
 	/**
 	 * Find the door, that is associated with this handle.
@@ -77,8 +81,7 @@ public:
 	void					DoneRotating(void);
 	void					DoneMoving(void);
 
-	void					ToggleOpen(void);
-	void					ToggleLock(void);
+	void					Tap(void);
 
 protected:
 	/**
@@ -86,6 +89,7 @@ protected:
 	**/
 	CFrobDoor				*m_Door;
 	bool					m_FrobLock;
+	idStr					m_DoorHandleScript;
 
 private:
 };

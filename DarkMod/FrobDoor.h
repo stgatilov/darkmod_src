@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2006/10/31 12:33:37  sparhawk
+ * Doorhandle rotation added
+ *
  * Revision 1.18  2006/10/30 17:10:25  sparhawk
  * Doorhandles are now working in the first stage.
  *
@@ -106,6 +109,7 @@ public:
 	void					Unlock(bool Master);
 
 	void					GetPickable(void);
+	void					GetDoorhandle(void);
 
 	bool					UsedBy(idEntity *);
 

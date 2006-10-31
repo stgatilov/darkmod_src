@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/10/31 12:33:37  sparhawk
+ * Doorhandle rotation added
+ *
  * Revision 1.3  2006/10/30 17:10:25  sparhawk
  * Doorhandles are now working in the first stage.
  *
@@ -38,9 +41,11 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 //===============================================================================
 
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
+const idEventDef EV_TDM_Handle_Tap( "Tap", "ee" );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoorHandle )
 	EVENT( EV_TDM_Handle_GetDoor,		CFrobDoorHandle::Event_GetDoor )
+	EVENT( EV_TDM_Handle_Tap,			CFrobDoorHandle::Event_Tap )
 END_CLASS
 
 
@@ -71,18 +76,22 @@ void CFrobDoorHandle::ReadFromSnapshot( const idBitMsgDelta &msg )
 void CFrobDoorHandle::Spawn(void)
 {
 	idStr str;
+	idEntity *cst;
 
 	CBinaryFrobMover::Spawn();
 	LoadTDMSettings();
 
 	spawnArgs.GetString("door_body", "", str);
-	m_Door = FindDoor(str);
-	if(m_Door)
-		m_Door->SetDoorhandle(this);
+	spawnArgs.GetString("door_handle_script", "door_handle_rotate", m_DoorHandleScript);
+
+	if(str.Length() > 0 && (cst = FindDoor(str)) != NULL)
+	{
+		if((m_Door = dynamic_cast<CFrobDoor *>(cst)) != NULL)
+			m_Door->SetDoorhandle(this);
+	}
 	else
 		DM_LOG(LC_SYSTEM, LT_WARNING)LOGSTRING("door_body [%s] for handle [%s] not found\r", str.c_str(), name.c_str());
 }
-
 
 CFrobDoor *CFrobDoorHandle::FindDoor(idStr &name)
 {
@@ -108,6 +117,11 @@ CFrobDoor *CFrobDoorHandle::GetDoor(void)
 void CFrobDoorHandle::Event_GetDoor(void)
 {
 	return idThread::ReturnEntity(m_Door);
+}
+
+void CFrobDoorHandle::Event_Tap(void)
+{
+	Tap();
 }
 
 void CFrobDoorHandle::SetFrobbed(bool val)
@@ -156,23 +170,24 @@ void CFrobDoorHandle::ClosePortal(void)
 {
 }
 
+void CFrobDoorHandle::DoneStateChange(void)
+{
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("doorhandle [%s] finished state_change.\r", name.c_str());
+}
+
 void CFrobDoorHandle::DoneRotating(void)
 {
+	CBinaryFrobMover::DoneRotating();
 }
 
 void CFrobDoorHandle::DoneMoving(void)
 {
 }
 
-void CFrobDoorHandle::DoneStateChange(void)
+void CFrobDoorHandle::Tap(void)
 {
-}
+	if(m_DoorHandleScript.Length() == 0 || m_Door == NULL)
+		return;
 
-
-void CFrobDoorHandle::ToggleOpen(void)
-{
-}
-
-void CFrobDoorHandle::ToggleLock(void)
-{
+	CallScriptFunctionArgs(m_DoorHandleScript, true, 0, "ee", this, m_Door);
 }
