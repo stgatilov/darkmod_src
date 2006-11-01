@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/11/01 11:57:51  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.27  2006/10/31 12:33:37  sparhawk
  * Doorhandle rotation added
  *
@@ -137,6 +140,21 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
 END_CLASS
+
+E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData)
+{
+	E_SDK_SIGNAL_STATE rc = SIG_REMOVE;
+	CFrobDoor *e;
+
+	if((e = dynamic_cast<CFrobDoor *>(oEntity)) == NULL)
+		goto Quit;
+
+	e->OpenDoor(false);
+
+Quit:
+	return rc;
+}
+
 
 
 CFrobDoor::CFrobDoor(void)
@@ -305,8 +323,6 @@ void CFrobDoor::Unlock(bool bMaster)
 
 void CFrobDoor::Open(bool bMaster)
 {
-	CFrobDoor *ent;
-	idEntity *e;
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
@@ -316,6 +332,15 @@ void CFrobDoor::Open(bool bMaster)
 	// If we have a doorhandle we want to tap it before the door starts to open.
 	if(m_Doorhandle)
 		m_Doorhandle->Tap();
+	else
+		OpenDoor(bMaster);
+}
+
+void CFrobDoor::OpenDoor(bool bMaster)
+{
+	CFrobDoor *ent;
+	idEntity *e;
+	idAngles tempAng;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 

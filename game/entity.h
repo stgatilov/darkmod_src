@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2006/11/01 11:57:38  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.44  2006/10/03 13:13:33  sparhawk
  * Changes for door handles
  *
@@ -166,6 +169,26 @@
 class CStimResponseCollection;
 class CStim;
 class CResponse;
+
+/**
+* SDK_SIGNALS are used to signal either from a script to the SDK code or
+* inside the SDK code itself. It can not signal from SDK to a script. In order
+* to do this, you can use the regular signal mechanism from id.
+*/
+#define SDK_SIGNAL			int
+typedef enum {
+	SIG_REMOVE,
+	SIG_CONTINUE,
+	SIG_COUNT
+} E_SDK_SIGNAL_STATE;
+
+typedef struct {
+	SDK_SIGNAL	m_Id;
+	bool		m_Signaled;
+	idEntity	*m_Object;
+	void		*m_Data;
+	E_SDK_SIGNAL_STATE	(*m_Fkt)(idEntity *oObject, void *pData);
+} SDKSignalInfo;
 
 /*
 ===============================================================================
@@ -692,6 +715,27 @@ public:
 	**/
 	virtual void Attach( idEntity *ent );
 
+	/**
+	 * GetSignalId assignes a unique Id to be used in a signal function. To differentiate these
+	 * from the script signals I named them SDKSignal. These signal mechanism can be used for both.
+	 * So you can have a SDK function signaling, or a script. You can not signal a script, though, only
+	 * from a signal to SDK. To signal a script use the regular signal functions.
+	 */
+	SDK_SIGNAL			GetSDKSignalId(void);
+
+	/**
+	 * Adds a new signal funktion that can be triggered. The object pointer must always be set. 
+	 * The datapointer can be NULL and would contain a pointer to data that the signal function
+	 * may need. If the SIGNAL is 0 an error occured and the signal was not added to the list.
+	 */
+	SDK_SIGNAL		AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, void *pData), void *pData);
+	void			CheckSDKSignal(void);
+
+	/**
+	 * SDKSignal will trigger a signal that a script has finished.
+	 */
+	void SDKSignal(SDK_SIGNAL SDKSignalId, int bState);
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.
@@ -795,6 +839,9 @@ protected:
 	idList<idStr>				m_FrobList;
 
 	CStimResponseCollection		*m_StimResponseColl;
+
+	SDK_SIGNAL				m_Signal;
+	idList<SDKSignalInfo *>	m_SignalList;
 
 	/**
 	* Set and get whether the entity is frobable

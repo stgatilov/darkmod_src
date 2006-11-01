@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2006/11/01 11:57:28  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.22  2006/08/11 01:48:18  ishtvan
  * dealt with simultaneous alerts in one frame
  *
@@ -531,8 +534,6 @@ public:
 	* Returns true if AI is knocked out
 	**/
 	bool  IsKnockedOut( void ) { return AI_KNOCKEDOUT; };
-
-
 
 public:
 	/**

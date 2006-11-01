@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/11/01 11:57:38  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.34  2006/08/21 05:06:49  ishtvan
  * added PlayerTraceEntity which returns the ent the player is looking at out to 512 units
  *
@@ -146,7 +149,6 @@
  * Global function to keep track of the files and it's version.
  */
 bool FileVersionList(const char *str, bool state);
-
 
 class CStim;
 
@@ -933,6 +935,12 @@ public:
 	 */
 	void					ProcessStimResponse(void);
 
+	/**
+	 * CheckSignal will call all entites registered for a signal actacvtion.
+	 */
+	void					CheckSDKSignal(void);
+	void					AddSDKSignal(idEntity *oObject);
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -995,6 +1003,7 @@ private:
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	SECURITY_ATTRIBUTES		m_saPipeSecurity;
 	PSECURITY_DESCRIPTOR	m_pPipeSD;
+	idList<idEntity *>		m_SignalList;
 
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level

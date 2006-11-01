@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.74  2006/11/01 11:57:38  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.73  2006/10/03 13:13:33  sparhawk
  * Changes for door handles
  *
@@ -2645,6 +2648,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			player->usercmd = ucmd;
 		}
 	}
+
+	// Check for any activated signals, and trigger them.
+	CheckSDKSignal();
 
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame
@@ -5698,4 +5704,19 @@ idEntity *idGameLocal::PlayerTraceEntity( void )
 	
 Quit:
 	return returnEnt;
+}
+
+void idGameLocal::AddSDKSignal(idEntity *oObject)
+{
+	if(oObject != NULL)
+		m_SignalList.Append(oObject);
+}
+
+void idGameLocal::CheckSDKSignal(void)
+{
+	int i, n;
+
+	n = m_SignalList.Num();
+	for(i = 0; i < n; i++)
+		m_SignalList[i]->CheckSDKSignal();
 }

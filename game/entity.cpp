@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.74  2006/11/01 11:57:38  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.73  2006/10/09 15:20:36  sparhawk
  * Fixed a problem with peer hilighting
  *
@@ -392,6 +395,8 @@ const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
 // I don't think scripting supports optional argument, so I must do this
 const idEventDef EV_TDM_PropSound( "propSound", "s" );
 
+const idEventDef EV_TDM_SDKSignal( "SDKSignal", "dd" );
+
 #ifdef MOD_WATERPHYSICS
 
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
@@ -510,6 +515,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_TDM_PropSound,		idEntity::Event_PropSound )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
+
+	EVENT( EV_TDM_SDKSignal,		idEntity::SDKSignal )
 
 #ifdef MOD_WATERPHYSICS
 
@@ -750,6 +757,7 @@ idEntity::idEntity()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
+	m_Signal = 0;
 	entityNumber	= ENTITYNUM_NONE;
 	entityDefNumber = -1;
 
@@ -7523,5 +7531,83 @@ void idEntity::Event_SetFrobable( bool bVal )
 void idEntity::Event_IsFrobable( void )
 {
 	idThread::ReturnInt( (int) m_bFrobable );
+}
+
+SDK_SIGNAL idEntity::GetSDKSignalId(void)
+{
+	SDK_SIGNAL rc = ++m_Signal;
+
+	if(rc == 0)
+		rc = ++m_Signal;
+
+	return rc;
+}
+
+SDK_SIGNAL idEntity::AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, void *pData), void *pData)
+{
+	SDK_SIGNAL rc  = 0;
+	SDKSignalInfo *s;
+
+	if(oFkt == NULL)
+		goto Quit;
+
+	s = new SDKSignalInfo;
+	s->m_Object = this;
+	s->m_Data = pData;
+	s->m_Signaled = false;
+	s->m_Fkt = oFkt;
+	s->m_Id = GetSDKSignalId();
+	m_SignalList.Append(s);
+	gameLocal.AddSDKSignal(this);
+
+	rc = s->m_Id;
+
+Quit:
+	return rc;
+}
+
+void idEntity::CheckSDKSignal(void)
+{
+	int i, n;
+	SDKSignalInfo *s;
+
+	// Since we are modifying the loopvariable, we use a 'while' her instead of 'for'.
+	n = m_SignalList.Num();
+	i = 0;
+	while(i < n)
+	{
+		s = m_SignalList[i];
+		if(s->m_Signaled == true)
+		{
+			if(s->m_Fkt(s->m_Object, s->m_Data) == SIG_CONTINUE)
+				s->m_Signaled = false;
+			else
+			{
+				m_SignalList.Remove(s);
+				delete s;
+				i--;
+				n--;
+			}
+		}
+
+		i++;
+	}
+}
+
+void idEntity::SDKSignal(SDK_SIGNAL Id, int bState)
+{
+	int i, n;
+	SDKSignalInfo *s;
+
+	n = m_SignalList.Num();
+	for(i = 0; i < n; i++)
+	{
+		s = m_SignalList[i];
+		if(s->m_Id == Id)
+		{
+			s->m_Signaled = bState;
+			break;
+		}
+	}
 }
 

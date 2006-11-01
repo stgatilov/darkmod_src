@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/11/01 11:57:51  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.19  2006/10/31 12:33:37  sparhawk
  * Doorhandle rotation added
  *
@@ -104,6 +107,7 @@ public:
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
 	void					Open(bool Master);
+	void					OpenDoor(bool Master);		// Needed for the handle to riger the open state
 	void					Close(bool Master);
 	void					Lock(bool Master);
 	void					Unlock(bool Master);

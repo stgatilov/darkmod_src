@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/11/01 11:57:51  sparhawk
+ * Signals method added to entity.
+ *
  * Revision 1.5  2006/10/31 22:44:00  sparhawk
  * Handle rotation added
  *
@@ -42,6 +45,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 //===============================================================================
 //CFrobDoorHandle
 //===============================================================================
+extern E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData);
 
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
 const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
@@ -50,6 +54,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoorHandle )
 	EVENT( EV_TDM_Handle_GetDoor,		CFrobDoorHandle::Event_GetDoor )
 	EVENT( EV_TDM_Handle_Tap,			CFrobDoorHandle::Event_Tap )
 END_CLASS
+
 
 
 CFrobDoorHandle::CFrobDoorHandle(void)
@@ -189,10 +194,11 @@ void CFrobDoorHandle::DoneMoving(void)
 
 void CFrobDoorHandle::Tap(void)
 {
-	int signal = 0;
+	double signal = 0;
 
 	if(m_DoorHandleScript.Length() == 0 || m_Door == NULL)
 		return;
 
-	CallScriptFunctionArgs(m_DoorHandleScript.c_str(), true, 0, "eed", this, m_Door, signal);
+	signal = m_Door->AddSDKSignal(SigOpen, NULL);
+	CallScriptFunctionArgs(m_DoorHandleScript.c_str(), true, 0, "eef", this, m_Door, signal);
 }
