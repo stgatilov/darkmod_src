@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/11/01 16:12:48  sparhawk
+ * Fixed some minor issue with the handle.
+ *
  * Revision 1.6  2006/11/01 11:57:51  sparhawk
  * Signals method added to entity.
  *
@@ -190,6 +193,7 @@ void CFrobDoorHandle::DoneRotating(void)
 
 void CFrobDoorHandle::DoneMoving(void)
 {
+	CBinaryFrobMover::DoneMoving();
 }
 
 void CFrobDoorHandle::Tap(void)

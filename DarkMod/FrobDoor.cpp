@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/11/01 16:12:48  sparhawk
+ * Fixed some minor issue with the handle.
+ *
  * Revision 1.28  2006/11/01 11:57:51  sparhawk
  * Signals method added to entity.
  *
@@ -331,7 +334,10 @@ void CFrobDoor::Open(bool bMaster)
 
 	// If we have a doorhandle we want to tap it before the door starts to open.
 	if(m_Doorhandle)
+	{
+		m_StateChange = true;
 		m_Doorhandle->Tap();
+	}
 	else
 		OpenDoor(bMaster);
 }
