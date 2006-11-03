@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2006/11/03 22:51:02  sparhawk
+ * Typedef for stringlists added.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -935,5 +938,7 @@ ID_INLINE void idList<type>::Swap( idList<type> &other ) {
 	idSwap( granularity, other.granularity );
 	idSwap( list, other.list );
 }
+
+typedef idList<idStr> CStringList;
 
 #endif /* !__LIST_H__ */
