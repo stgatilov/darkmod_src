@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.40  2006/11/03 23:20:17  sparhawk
+ * Lockpick Logclass added.
+ *
  * Revision 1.39  2006/08/08 21:27:45  sparhawk
  * Added an accessor for the bufferlength in th CImage class.
  *
@@ -188,6 +191,7 @@ typedef enum {
 	LC_WEAPON,
 	LC_MATH,
 	LC_MOVEMENT,		// mantling, leaning, ledge hanging, etc...
+	LC_LOCKPICK,
 	LC_FRAME,			// This is intended only as a framemarker and will always switched on if at least one other option is on.
 	LC_STIM_RESPONSE,
 	LC_COUNT

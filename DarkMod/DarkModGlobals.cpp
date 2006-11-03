@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.49  2006/11/03 23:20:17  sparhawk
+ * Lockpick Logclass added.
+ *
  * Revision 1.48  2006/08/08 21:27:45  sparhawk
  * Added an accessor for the bufferlength in th CImage class.
  *
@@ -255,6 +258,7 @@ static char *LCString[LC_COUNT+1] = {
 	"WEAPON",
 	"MATH",
 	"MOVEMENT",
+	"LOCKPICK",
 	"FRAME",
 	"STIMRESP",
 	"(empty)"
@@ -778,6 +782,16 @@ void CGlobal::LoadINISettings(void *p)
 			}
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_STIM_RESPONSE: %c\r", pm->Value[0]);
+		}
+		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != -1)
+		{
+			if(pm->Value[0] == '1')
+			{
+				m_ClassArray[LC_LOCKPICK] = true;
+				Frame = true;
+			}
+
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LOCKPICK: %c\r", pm->Value[0]);
 		}
 
 		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != -1)
