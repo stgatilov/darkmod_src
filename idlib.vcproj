@@ -674,6 +674,28 @@
 					RelativePath="idlib\math\Vector.h">
 				</File>
 			</Filter>
+			<Filter
+				Name="randomizer"
+				Filter="">
+				<File
+					RelativePath=".\DarkMod\randomizer\mersenne.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\randomizer\mother.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\randomizer\rancombi.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\randomizer\randomc.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\randomizer\ranrotb.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\randomizer\ranrotw.cpp">
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
