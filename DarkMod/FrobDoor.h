@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/11/04 11:00:20  sparhawk
+ * Randomizer for lockpicking added.
+ *
  * Revision 1.20  2006/11/01 11:57:51  sparhawk
  * Signals method added to entity.
  *
@@ -85,6 +88,14 @@
 
 class CFrobDoorHandle;
 
+// Number of clicksounds available
+#define	MAX_PIN_CLICKS			14
+
+// Number of clicks that have to be set as a minimum. A pattern of less than 
+// 5 clicks is very easy to recognize, so it doesn't make sense to allow less than that.
+#define MIN_CLICK_NUM			5
+#define MAX_CLICK_NUM			10
+
 /**
  * CFrobDoor is a replacement for idDoor. The reason for this replacement is
  * because idDoor is derived from idMover_binary and can only slide from one
@@ -150,6 +161,12 @@ public:
 	void					ToggleLock(void);
 
 protected:
+	// Create a random pin pattern for a given pin. Clicks defines the required 
+	// number of clicks for this pin, and BaseCount, defines the minimum number
+	// of clicks, which is always added.
+	CStringList				*CreatePinPattern(int Clicks, int BaseCount);
+
+protected:
 	/**
 	 * LinkedOpen will point to a door that is to be switched when this
 	 * one is triggered. Note that the next door is flipped! This means
@@ -178,6 +195,9 @@ protected:
 	idStr						m_MasterLock;
 	idList<idStr>				m_LockList;
 
+	idList<CStringList *>		m_Pins;
+	// Once a pin is successfully picked it should stay so, so we have to remember that state.
+	idList<bool>				m_PinsPicked;
 	bool						m_Pickable;
 
 	/**
