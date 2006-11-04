@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.75  2006/11/04 10:59:30  sparhawk
+ * Advanced randomizer added.
+ *
  * Revision 1.74  2006/11/01 11:57:38  sparhawk
  * Signals method added to entity.
  *
@@ -266,8 +269,10 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "il/config.h"
 #include "il/il.h"
+#include "../darkmod/randomizer/randomc.h"
 
 CGlobal g_Global;
+TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
 extern CRelations		g_globalRelations;
 extern CMissionData		g_MissionData;
