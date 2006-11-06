@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.75  2006/11/06 06:36:33  ishtvan
+ * fix to SetFrobable scriptevent
+ *
  * Revision 1.74  2006/11/01 11:57:38  sparhawk
  * Signals method added to entity.
  *
@@ -7526,6 +7529,9 @@ Quit:
 void idEntity::Event_SetFrobable( bool bVal )
 {
 	m_bFrobable = bVal;
+
+	if( m_bFrobable )
+		BecomeActive( TH_UPDATEVISUALS );
 }
 
 void idEntity::Event_IsFrobable( void )
