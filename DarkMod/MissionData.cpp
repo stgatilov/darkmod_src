@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2006/11/06 09:44:18  ishtvan
+ * comp_info_location bugfix
+ *
  * Revision 1.16  2006/11/06 08:13:41  ishtvan
  * preliminary boolean logic matrix evaluation code (not yet functional)
  *
@@ -222,8 +225,6 @@ void CMissionData::Clear( void )
 	m_Stats.DamageReceived = 0;
 	m_Stats.LootOverall = 0;
 }
-
-
 
 
 void CMissionData::MissionEvent
@@ -550,7 +551,7 @@ void CMissionData::UpdateObjectives( void )
 		}
 
 // COMP_INFO_LOCATION - Check if an ent by name is in an info_location or info_location group
-		else if( pComp->m_Type = COMP_INFO_LOCATION )
+		else if( pComp->m_Type == COMP_INFO_LOCATION )
 		{
 			bool bEval(false);
 			idEntity *checkEnt = NULL;
@@ -560,7 +561,7 @@ void CMissionData::UpdateObjectives( void )
 			checkEnt = gameLocal.FindEntity( pComp->m_SpecStrVal[0].c_str() );
 			if( !checkEnt )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_locatoin objective could not find entity: %s \r", pComp->m_SpecStrVal[0].c_str() );
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_location objective could not find entity: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_SpecStrVal[0].c_str() );
 				continue;
 			}
 
@@ -1198,7 +1199,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			// use comp. type hash to convert text type to EComponentType
 			idStr TypeString = args->GetString( StrTemp2 + "type", "");
 			int TypeNum = m_CompTypeHash.First(m_CompTypeHash.GenerateKey( TypeString, false ));
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing objective component type '%s' \r", TypeString.c_str() );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing objective component type '%s', typenum %d \r", TypeString.c_str(), TypeNum );
 			
 			if( TypeNum == -1 )
 			{
@@ -1276,7 +1277,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
 		{
 			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
-			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) )
+			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) || (pComp->m_Type == COMP_INFO_LOCATION) )
 				m_ClockedComponents.Append( pComp );
 		}	
 	}

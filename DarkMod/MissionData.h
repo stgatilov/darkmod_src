@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/11/06 09:44:18  ishtvan
+ * comp_info_location bugfix
+ *
  * Revision 1.13  2006/11/06 08:13:41  ishtvan
  * preliminary boolean logic matrix evaluation code (not yet functional)
  *
@@ -118,6 +121,7 @@ typedef enum
 /**
 * Objective component action types
 * TODO: Move to game_local.h so that it can be used in external calls
+* NOTE: Any change to these must be kept up to date in CompTypeNames hash, defined in MissionData.cpp
 **/
 typedef enum
 {
@@ -135,16 +139,12 @@ typedef enum
 
 // The following are special clocked components, updated in CMissionData::UpdateObjectives
 	COMP_CUSTOM_CLOCKED,
-	COMP_INFO_LOCATION, // like location, but uses existing info_location areas instead of a brush
+	COMP_INFO_LOCATION, // like location, but uses existing info_location areas instead of an info_objectivelocation entity
 	COMP_DISTANCE // distance from origin of ent X to that of ent Y
 
 } EComponentType;
 
-// TODO: Two overloads of the CheckObjectie function, one passing in the ent pointer
-// and one passing in a filled in data object (For fake items and scripts that don't
-// have an actual entity)
-
-// move to game_local.h?
+// TODO: move to game_local.h?
 typedef struct SObjEntParms_s
 {
 	idStr	name;
