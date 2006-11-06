@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/11/06 08:13:41  ishtvan
+ * preliminary boolean logic matrix evaluation code (not yet functional)
+ *
  * Revision 1.15  2006/08/11 05:52:43  ishtvan
  * preliminary boolean parsing check-in (placeholders)
  *
@@ -1157,6 +1160,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 	while( args->MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
 		ObjTemp.m_Components.Clear();
+		ObjTemp.m_ObjNum = Counter - 1;
 
 		StrTemp = va("obj%d_", Counter);
 		ObjTemp.m_state = (EObjCompletionState) args->GetInt( StrTemp + "state", "0");
@@ -1300,6 +1304,7 @@ CObjective::~CObjective( void )
 
 void CObjective::Clear( void )
 {
+	m_ObjNum = -1;
 	m_state = STATE_INCOMPLETE;
 	m_text = "";
 	m_bNeedsUpdate = false;
@@ -1446,19 +1451,12 @@ Quit:
 
 bool CObjective::CheckFailure( void )
 {
-	return ParseBoolLogic( &m_FailureLogic );
+	return EvalBoolLogic( &m_FailureLogic );
 }
 
 bool CObjective::CheckSuccess( void )
 {
-	return ParseBoolLogic( &m_SuccessLogic );
-}
-
-bool CObjective::ParseBoolLogic( SBoolParseNode *input )
-{
-	bool bReturnVal(false);
-
-	return bReturnVal;
+	return EvalBoolLogic( &m_SuccessLogic );
 }
 
 bool CObjective::ParseLogicStrs( void )
@@ -1478,5 +1476,126 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	return bReturnVal;
 }
 
+/**
+* Evaluates the boolean logic matrix, using components of the objective 
+*	that calls this function.
+**/
+bool CObjective::EvalBoolLogic( SBoolParseNode *StartNode )
+{
+
+	int level(0); // current level of branching
+	bool bReturnVal(false);
+	bool bResolvedLevel(false); // have we completely evaluated the lower level in the previous pass of the loop?
+	bool bLowerLevResult(false); // the result of evaluating the lower level in the prev. pass of loop
+	SBoolParseNode *CurrentNode = NULL;
+
+	int CurrentCol(0), CurrentRow(0); // matrix coordinates in the current level
+	
+
+	if(!StartNode)
+	{
+		// Log error
+		goto Quit;
+	}
+
+	CurrentNode = StartNode;
 
 
+/* PSUEDOCODE:
+Will always do 1 of 3 things:
+1. Back up a level because we hit a leaf
+2. Advance the matrix and back up a level because the matrix is "done"
+3. Advance the matrix and go down a level because the matrix is not yet done
+
+Going down one level can only happen because we finished an evaluation in
+	the previous step, and we now want to advance to the next matrix spot and
+	go down a level at the node at that next matrix spot
+
+When we advance to the next matrix spot, it can happen in two ways:
+1. We have evaluated TRUE in the previous step
+	
+	If there is a next column, go to the first row of that next column and go down a level
+	
+	If there is no next column, we are done with this level, eval it as TRUE and go up
+
+2. We have evaluated FALSE in the previous step
+	If there is another row, go to that next column and go down a level
+
+	If there is no next row, we are done with this level, eval it as FALSE and go up
+*/
+
+	while( level >= 0 )
+	{
+		// check if the node on this level contains a matrix (branch)
+		// If it does not, it must be directly addressing a component (leaf)
+		if( CurrentNode->Cols.Num() <= 0 )
+		{
+			// Leaf found, evaluate and go up a level
+			bLowerLevResult = gameLocal.m_MissionData->GetComponentState( m_ObjNum, CurrentNode->CompNum );
+			bResolvedLevel = true;
+
+			CurrentNode = CurrentNode->PrevNode;
+			CurrentCol = CurrentNode->PrevCol;
+			CurrentRow = CurrentNode->PrevRow;
+			
+			level--;
+			continue;
+		}
+
+		// if we have just backed up a level, advance the matrix appropriately
+
+		// If we evaluate TRUE in the lower level:
+		if( bResolvedLevel && bLowerLevResult )
+		{
+			// if there is no next column, this level evals to TRUE due to AND logic success
+			if( CurrentCol >= CurrentNode->Cols.Num() )
+			{
+				bLowerLevResult = true;
+
+				CurrentNode = CurrentNode->PrevNode;
+				CurrentCol = CurrentNode->PrevCol;
+				CurrentRow = CurrentNode->PrevRow;
+				
+				level--;
+				continue;
+			}
+			// else, advance to next column and go down a level
+			else
+			{
+				CurrentCol++;
+				CurrentRow = 0;
+			}
+		}
+		// If we came back up after we evaluated to FALSE in the lower level
+		if( bResolvedLevel && !bLowerLevResult )
+		{
+			// If there are no more rows in this column, evaluate this level to FALSE (Due to AND logic failure)
+			if( CurrentRow >= CurrentNode->Cols.operator[](CurrentCol).Num() )
+			{
+				bLowerLevResult = false;
+
+				CurrentNode = CurrentNode->PrevNode;
+				CurrentCol = CurrentNode->PrevCol;
+				CurrentRow = CurrentNode->PrevRow;
+				
+				level--;
+				continue;
+			}
+			// else, advance to the next row
+			{
+				CurrentRow++;
+			}
+		}
+
+		// If we get to this point in the loop, we must be going down a level
+		bResolvedLevel = false;
+		CurrentNode = &CurrentNode->Cols[CurrentCol].operator[](CurrentRow);
+		
+		level++;
+	}
+
+	bReturnVal = bLowerLevResult;
+
+Quit:
+	return bReturnVal;
+}

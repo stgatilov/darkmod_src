@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/11/06 08:13:41  ishtvan
+ * preliminary boolean logic matrix evaluation code (not yet functional)
+ *
  * Revision 1.12  2006/08/11 05:52:42  ishtvan
  * preliminary boolean parsing check-in (placeholders)
  *
@@ -261,7 +264,14 @@ class CObjective
 		int CompNum;
 		bool bNotted; // set to true if this node is NOTed
 
-		idList< idList< SBoolParseNode_s > > Rows;
+		idList< idList< SBoolParseNode_s > > Cols; // list of columns, each can contain a different number of rows
+
+		// Link back to previous node this one branched off from
+		SBoolParseNode_s *PrevNode;
+
+		// matrix coordinates of this node within the matrix of the previous node
+		int PrevCol; 
+		int PrevRow;
 	} SBoolParseNode;
 
 public:
@@ -321,7 +331,7 @@ protected:
 	/**
 	* Internal function used by CheckFailure and CheckSuccess
 	**/
-	bool ParseBoolLogic( SBoolParseNode *input );
+	bool EvalBoolLogic( SBoolParseNode *input );
 
 	/**
 	* Internal function used by ParseLogicStrs
@@ -330,6 +340,10 @@ protected:
 
 protected:
 
+	/**
+	* Integer index of this objective in the array
+	**/
+	int	m_ObjNum;
 
 	/**
 	* Completion state.  Either COMP_INCOMPLETE, COMP_COMPLETE, COMP_FAILED or COMP_INVALID
