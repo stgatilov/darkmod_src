@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2006/11/07 07:13:06  sparhawk
+ * Doorhandles made uninterruptable.
+ *
  * Revision 1.7  2006/11/01 16:12:48  sparhawk
  * Fixed some minor issue with the handle.
  *
@@ -102,6 +105,9 @@ void CFrobDoorHandle::Spawn(void)
 	}
 	else
 		DM_LOG(LC_SYSTEM, LT_WARNING)LOGSTRING("door_body [%s] for handle [%s] not found\r", str.c_str(), name.c_str());
+
+	// Dorhandles are always non-interruptable
+	m_bInterruptable = false;
 }
 
 CFrobDoor *CFrobDoorHandle::FindDoor(idStr &name)
