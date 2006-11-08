@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.90  2006/11/08 09:27:16  ishtvan
+ * added frob bounds debug draw
+ *
  * Revision 1.89  2006/09/22 20:16:59  sparhawk
  * Fixed warning
  *
@@ -10481,8 +10484,9 @@ void idPlayer::FrobCheck( void )
 	FrobBounds += trace.endpos;
 	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
 
-// Uncomment for debug drawing of the frob bounds
-//	gameRenderWorld->DebugBounds( colorBlue, FrobBounds );
+	// Optional debug drawing of frob bounds
+	if( cv_frob_debug_bounds.GetBool() )
+		gameRenderWorld->DebugBounds( colorBlue, FrobBounds );
 
 	idEntity *FrobRangeEnts[ MAX_GENTITIES ];
 
