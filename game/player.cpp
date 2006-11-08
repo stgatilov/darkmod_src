@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.91  2006/11/08 10:11:26  ishtvan
+ * fixed bug in frob bounds generation
+ *
  * Revision 1.90  2006/11/08 09:27:16  ishtvan
  * added frob bounds debug draw
  *
@@ -10481,6 +10484,7 @@ void idPlayer::FrobCheck( void )
 	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
 	// IF the trace didn't hit anything frobable, do the radius test:
 
+	FrobBounds.Zero();
 	FrobBounds += trace.endpos;
 	FrobBounds.ExpandSelf( cv_frob_width.GetFloat() );
 
