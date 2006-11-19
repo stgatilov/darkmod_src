@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/11/19 05:21:21  ishtvan
+ * fixed melee attacks to attached heads in event_melee
+ *
  * Revision 1.13  2006/08/21 05:07:34  ishtvan
  * fixed attachment so that rotation was done first, then translation
  *
@@ -3094,9 +3097,12 @@ void idWeapon::Event_Melee( void ) {
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
-		if ( tr.fraction < 1.0f ) {
-			ent = gameLocal.GetTraceEntity( tr );
-		} else {
+		if ( tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum] ) 
+		{
+			//ent = gameLocal.GetTraceEntity( tr );
+			ent = gameLocal.entities[ tr.c.entityNum ];
+		} else 
+		{
 			ent = NULL;
 		}
 
