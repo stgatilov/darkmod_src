@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2006/11/20 05:35:44  ishtvan
+ * more preliminary objectives parsing
+ *
  * Revision 1.17  2006/11/06 09:44:18  ishtvan
  * comp_info_location bugfix
  *
@@ -1321,131 +1324,6 @@ void CObjective::Clear( void )
 	m_FailureScript.Clear();
 }
 
-/*=========================================================================== 
-* 
-*CObjectiveLocation
-*
-*============================================================================*/
-CLASS_DECLARATION( idEntity, CObjectiveLocation )
-END_CLASS
-
-CObjectiveLocation::CObjectiveLocation( void )
-{
-	m_Interval = 1000;
-	m_TimeStamp = 0;
-
-	m_EntsInBounds.Clear();
-}
-
-void CObjectiveLocation::Spawn()
-{
-	m_Interval = (int) 1000.0f * spawnArgs.GetFloat( "interval", "1.0" );
-	m_TimeStamp = gameLocal.time;
-
-// Set the contents to a useless trigger so that the collision model will be loaded
-// FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
-	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
-	GetPhysics()->EnableClip();
-
-	BecomeActive( TH_THINK );
-}
-
-void CObjectiveLocation::Think()
-{
-	int NumEnts(0);
-	idEntity *Ents[MAX_GENTITIES];
-	idStrList current, added, missing;
-	bool bFound(false);
-
-	// only check on clock ticks
-	if( (gameLocal.time - m_TimeStamp) < m_Interval )
-		goto Quit;
-
-	m_TimeStamp = gameLocal.time;
-
-	// bounding box test
-	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
-	for( int i=0; i<NumEnts; i++ )
-	{
-		if( Ents[i] && Ents[i]->m_bIsObjective )
-		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
-			current.Append( Ents[i]->name );
-		}
-	}
-
-	// compare current list to previous cock tick list to generate added list
-	for( int i = 0; i < current.Num(); i++ )
-	{
-		bFound = false;
-		for( int j = 0; j < m_EntsInBounds.Num(); j++ )
-		{
-			if( current[i] == m_EntsInBounds[j] )
-			{
-                  bFound = true;
-                  break;
-            }
-		}
-
-		if( !bFound )
-		{
-			added.Append( current[i] );
-		}
-	}
-
-	// compare again the other way to generate missing list
-	for( int i = 0; i < m_EntsInBounds.Num(); i++ )
-	{
-		bFound = false;
-		for( int j = 0; j < current.Num(); j++ )
-		{
-			if( m_EntsInBounds[i] == current[j] )
-			{
-                  bFound = true;
-                  break;
-            }
-		}
-
-		if( !bFound )
-		{
-			missing.Append( m_EntsInBounds[i] );
-		}
-	}
-
-	// call objectives system for all missing or added ents
-	for( int i=0; i<added.Num(); i++ )
-	{
-		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
-		if( Ent )
-		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
-			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent, this, true );
-		}
-	}
-
-	for( int j=0; j<missing.Num(); j++ )
-	{
-		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
-		if( Ent2 )
-		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
-			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent2, this, false );
-		}
-	}
-
-	// copy over the list
-	m_EntsInBounds.Clear();
-	m_EntsInBounds = current;
-	
-	current.Clear();
-	missing.Clear();
-	added.Clear();
-
-Quit:
-	idEntity::Think();
-	return;
-}
-
 
 
 // =============== Boolean Logic Parsing for Objective Failure/Success ==============
@@ -1460,6 +1338,11 @@ bool CObjective::CheckSuccess( void )
 	return EvalBoolLogic( &m_SuccessLogic );
 }
 
+
+/**
+* Parse the boolean logic strings into matrices.
+* Returns false if there was an error in the parsing.
+**/
 bool CObjective::ParseLogicStrs( void )
 {
 	bool bReturnVal(false);
@@ -1470,10 +1353,116 @@ bool CObjective::ParseLogicStrs( void )
 	return bReturnVal;
 }
 
+/**
+* Parse a string into a logic matrix.
+* Returns false if there was an error in the parsing
+**/
 bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 {
+	idLexer		src;
+	idToken		token;
+	idDict		*args;
+	int			col(0), row(0), level(0);
+
+	// Clear existing parse node structure
+	output.Clear();
+
+	src.LoadMemory( input->c_str(), input->Length(), "" );
+
+
 	bool bReturnVal(false);
 
+/**
+* PSUEDOCODE:
+* Parenthesis define a level
+* 
+if ("OR")
+{
+	if( bExpectIntOrOpen )
+	{
+		// report error
+		goto Quit;
+	}
+	// We expect next either an identifier or a "("
+	bExpectIntOrOpen = true;
+
+	Row++
+	bRowAdvanced = true;
+	continue;
+}
+
+if ("AND")
+{
+	if( bExpectIntOrOpen )
+	{
+		// report error
+		goto Quit;
+	}
+	bExpectIntOrOpen = true;
+
+	Col++;
+	bColAdvanced = true;
+	continue;
+}
+
+if( "(" OR <INTEGER> )
+{
+	if( !bExpectIntOrOpen )
+	{
+		// report error
+		goto Quit;
+	}
+	// We expect next either an operator or a ")"
+	bExpectIntOrOpen = false;
+
+	create a new ParseNode
+
+	if "("
+	{
+		// node is a branch
+		level++;
+		enter previous levels' row and column, pointer, to new entry
+	}
+	else if <INTEGER>
+	{
+		// node is a leaf
+		set CompNum to the identifier
+		leave this node's lists empty
+	}
+
+	// Step 2. add node to the appropriate point in the matrix-tree - same for both "(" and <INTEGER>
+
+	if( bRowAdvanced )
+	{
+		append this node as a new row to the Cols[current col] vector
+	}
+	else if( bColAdvanced )
+	{
+		Create new entry for Cols list, and append this node as the first row entry in the new Cols list
+	}
+}
+
+if( ")" )
+{
+	if( bExpectIntOrOpen )
+	{
+		// report error
+		goto Quit;
+	}
+	bExpectIntOrOpen = false;
+
+	level--;
+	
+	// retrieve the rows/columns for the higher level from the lower level parse node data
+}
+			 
+**/
+
+	goto Quit;
+
+Quit:
+
+	src.FreeSource();
 	return bReturnVal;
 }
 
@@ -1599,4 +1588,129 @@ When we advance to the next matrix spot, it can happen in two ways:
 
 Quit:
 	return bReturnVal;
+}
+
+/*=========================================================================== 
+* 
+*CObjectiveLocation
+*
+*============================================================================*/
+CLASS_DECLARATION( idEntity, CObjectiveLocation )
+END_CLASS
+
+CObjectiveLocation::CObjectiveLocation( void )
+{
+	m_Interval = 1000;
+	m_TimeStamp = 0;
+
+	m_EntsInBounds.Clear();
+}
+
+void CObjectiveLocation::Spawn()
+{
+	m_Interval = (int) 1000.0f * spawnArgs.GetFloat( "interval", "1.0" );
+	m_TimeStamp = gameLocal.time;
+
+// Set the contents to a useless trigger so that the collision model will be loaded
+// FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
+	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	GetPhysics()->EnableClip();
+
+	BecomeActive( TH_THINK );
+}
+
+void CObjectiveLocation::Think()
+{
+	int NumEnts(0);
+	idEntity *Ents[MAX_GENTITIES];
+	idStrList current, added, missing;
+	bool bFound(false);
+
+	// only check on clock ticks
+	if( (gameLocal.time - m_TimeStamp) < m_Interval )
+		goto Quit;
+
+	m_TimeStamp = gameLocal.time;
+
+	// bounding box test
+	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+	for( int i=0; i<NumEnts; i++ )
+	{
+		if( Ents[i] && Ents[i]->m_bIsObjective )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+			current.Append( Ents[i]->name );
+		}
+	}
+
+	// compare current list to previous cock tick list to generate added list
+	for( int i = 0; i < current.Num(); i++ )
+	{
+		bFound = false;
+		for( int j = 0; j < m_EntsInBounds.Num(); j++ )
+		{
+			if( current[i] == m_EntsInBounds[j] )
+			{
+                  bFound = true;
+                  break;
+            }
+		}
+
+		if( !bFound )
+		{
+			added.Append( current[i] );
+		}
+	}
+
+	// compare again the other way to generate missing list
+	for( int i = 0; i < m_EntsInBounds.Num(); i++ )
+	{
+		bFound = false;
+		for( int j = 0; j < current.Num(); j++ )
+		{
+			if( m_EntsInBounds[i] == current[j] )
+			{
+                  bFound = true;
+                  break;
+            }
+		}
+
+		if( !bFound )
+		{
+			missing.Append( m_EntsInBounds[i] );
+		}
+	}
+
+	// call objectives system for all missing or added ents
+	for( int i=0; i<added.Num(); i++ )
+	{
+		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
+		if( Ent )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent, this, true );
+		}
+	}
+
+	for( int j=0; j<missing.Num(); j++ )
+	{
+		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
+		if( Ent2 )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent2, this, false );
+		}
+	}
+
+	// copy over the list
+	m_EntsInBounds.Clear();
+	m_EntsInBounds = current;
+	
+	current.Clear();
+	missing.Clear();
+	added.Clear();
+
+Quit:
+	idEntity::Think();
+	return;
 }

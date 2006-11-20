@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2006/11/20 05:35:44  ishtvan
+ * more preliminary objectives parsing
+ *
  * Revision 1.14  2006/11/06 09:44:18  ishtvan
  * comp_info_location bugfix
  *
@@ -243,7 +246,6 @@ protected:
 	/**
 	* Whether the objective component latches after it changes once
 	* Default is reversible.
-	* NOT YET IMPLEMENTED
 	**/
 	bool m_bReversible;
 
@@ -272,6 +274,25 @@ class CObjective
 		// matrix coordinates of this node within the matrix of the previous node
 		int PrevCol; 
 		int PrevRow;
+
+		// Functions:
+
+		SBoolParseNode_s( void ) { Clear(); }
+		~SBoolParseNode_s( void ) { Clear(); }
+
+		/**
+		* Clear the parse node
+		**/
+		void Clear( void )
+		{
+			CompNum = -1;
+			PrevCol = -1;
+			PrevRow = -1;
+	
+			bNotted = false;
+			Cols.Clear();
+			PrevNode = NULL;
+		}
 	} SBoolParseNode;
 
 public:
