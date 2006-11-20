@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/11/20 08:43:41  ishtvan
+ * added Spar's head offset code to idAFEntity_WithAttachedHead
+ *
  * Revision 1.9  2006/10/22 19:12:13  ishtvan
  * damage bugfixes
  *
@@ -1478,12 +1481,23 @@ void idAFEntity_WithAttachedHead::SetupHead( void ) {
 	jointHandle_t		joint;
 	idVec3				origin;
 	idMat3				axis;
+	idVec3				vHeadOffset(vec3_origin), HeadModelOffset, modelOffset;
 
 	headModel = spawnArgs.GetString( "def_head", "" );
-	if ( headModel[ 0 ] ) {
+	spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset);
+	spawnArgs.GetVector("offsetHeadModel", "0 0 0", HeadModelOffset);
+	if ( headModel[ 0 ] ) 
+	{
+		// We look if the head model is defined as a key to have a specific offset.
+		// If that is not the case, then we use the default value, if it exists, 
+		// otherwise there is no offset at all.
+		if(spawnArgs.GetVector(headModel, "0 0 0", vHeadOffset) == true)
+			 HeadModelOffset = vHeadOffset;
+
 		jointName = spawnArgs.GetString( "head_joint" );
 		joint = animator.GetJointHandle( jointName );
-		if ( joint == INVALID_JOINT ) {
+		if ( joint == INVALID_JOINT ) 
+		{
 			gameLocal.Error( "Joint '%s' not found for 'head_joint' on '%s'", jointName.c_str(), name.c_str() );
 		}
 
@@ -1494,7 +1508,7 @@ void idAFEntity_WithAttachedHead::SetupHead( void ) {
 		head = headEnt;
 
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		origin = renderEntity.origin + origin * renderEntity.axis;
+		origin = renderEntity.origin + ( origin + modelOffset + HeadModelOffset ) * renderEntity.axis;
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
 		headEnt->BindToJoint( this, joint, true );
