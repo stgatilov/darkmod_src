@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/11/20 05:35:17  ishtvan
+ * simplified rotation code
+ *
  * Revision 1.11  2006/08/14 01:06:28  ishtvan
  * PutInHands added
  *
@@ -529,12 +532,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		viewAnglesXY[0] = 0;
 		idMat3 viewAxisXY = viewAnglesXY.ToMat3();
 		
-		idVec3 LocalCoord;
-		LocalCoord = m_drag.GetCenterOfMass()  - physics->GetOrigin();
-		LocalCoord *= physics->GetAxis( m_id );
-
-		m_rotation.Set( LocalCoord, rotationVec * viewAxisXY, angle );
-		angularVelocity += m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+		angularVelocity = rotationVec * viewAxisXY * angle;
 	}
 	else 
 	{
@@ -551,7 +549,6 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		if( m_rotationAxis )
 			m_rotationAxis = 0;
 
-		//angularVelocity += physics->GetAngularVelocity(m_id) * ROTATION_DAMPER;
 		angularVelocity = vec3_zero;
 	}
 
