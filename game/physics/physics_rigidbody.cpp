@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/11/20 05:02:34  ishtvan
+ * setAngularVelocity bugfix
+ *
  * Revision 1.6  2006/08/04 10:54:20  ishtvan
  * grabber fixes
  *
@@ -1533,7 +1536,7 @@ idPhysics_RigidBody::SetAngularVelocity
 ================
 */
 void idPhysics_RigidBody::SetAngularVelocity( const idVec3 &newAngularVelocity, int id ) {
-	current.i.angularMomentum = newAngularVelocity * inertiaTensor;
+	current.i.angularMomentum = newAngularVelocity * current.i.orientation.Transpose() * inertiaTensor * current.i.orientation;
 	Activate();
 }
 
