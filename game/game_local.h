@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/11/20 05:34:19  ishtvan
+ * added PauseGame function
+ *
  * Revision 1.35  2006/11/01 11:57:38  sparhawk
  * Signals method added to entity.
  *
@@ -210,6 +213,10 @@ class CStim;
 
 extern idRenderWorld *				gameRenderWorld;
 extern idSoundWorld *				gameSoundWorld;
+/**
+* place to store the sound world pointer when we temporarily set it to NULL
+**/
+extern idSoundWorld *			gameSoundWorldBuf;
 
 // the "gameversion" client command will print this plus compile date
 #define	GAME_VERSION		"baseDOOM-1"
@@ -690,6 +697,11 @@ public:
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
+
+	/**
+	* TDM: Pause/Unpause game
+	**/
+	virtual void			PauseGame( bool bPauseState );
 	virtual bool			Draw( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );

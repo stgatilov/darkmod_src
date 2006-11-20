@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.76  2006/11/20 05:34:19  ishtvan
+ * added PauseGame function
+ *
  * Revision 1.75  2006/11/04 10:59:30  sparhawk
  * Advanced randomizer added.
  *
@@ -304,6 +307,7 @@ idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL|CVAR_SYSTEM,
 
 idRenderWorld *				gameRenderWorld = NULL;		// all drawing is done to this world
 idSoundWorld *				gameSoundWorld = NULL;		// all audio goes to this world
+idSoundWorld *				gameSoundWorldBuf = NULL;
 
 static gameExport_t			gameExport;
 
@@ -5724,4 +5728,23 @@ void idGameLocal::CheckSDKSignal(void)
 	n = m_SignalList.Num();
 	for(i = 0; i < n; i++)
 		m_SignalList[i]->CheckSDKSignal();
+}
+
+void idGameLocal::PauseGame( bool bPauseState )
+{
+	if( bPauseState )
+	{
+		gameSoundWorldBuf = soundSystem->GetPlayingSoundWorld();
+		gameSoundWorldBuf->Pause();
+		soundSystem->SetPlayingSoundWorld( NULL );
+	
+		g_stopTime.SetBool( true );
+	}
+	else
+	{
+		soundSystem->SetPlayingSoundWorld( gameSoundWorldBuf );
+		soundSystem->GetPlayingSoundWorld()->UnPause();
+		
+		g_stopTime.SetBool( false );
+	}
 }
