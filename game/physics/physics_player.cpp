@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2006/11/30 09:21:20  ishtvan
+ * *) leaning: removed the bending of 3rd person model
+ * *) added leaning cvars
+ *
  * Revision 1.38  2006/08/07 06:54:37  ishtvan
  * got rid of m_NoViewChange and replaced it with Gildoran's immobilization system
  *
@@ -3931,10 +3935,10 @@ void idPhysics_Player::ToggleLean
 	{
 		// Start the lean
 		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
-		m_leanMoveEndTilt = g_Global.m_leanMove_DegreesTilt;
+		m_leanMoveEndTilt = cv_pm_lean_angle.GetFloat();
 
 		m_leanYawAngleDegrees = leanYawAngleDegrees;
-		m_leanTime = g_Global.m_leanMove_Milliseconds;
+		m_leanTime = cv_pm_lean_time.GetFloat();
 
 		m_b_leanFinished = false;
 
@@ -3946,7 +3950,7 @@ void idPhysics_Player::ToggleLean
 		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
 		m_leanMoveEndTilt = 0.0;
 
-		m_leanTime = g_Global.m_leanMove_Milliseconds;
+		m_leanTime = cv_pm_lean_time.GetFloat();
 
 		m_b_leanFinished = false;
 
@@ -4114,7 +4118,7 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 		playerViewHeight = pm_normalviewheight.GetFloat();
 	}
 
-	// Get thie distance from the waist to the viewpoint
+	// Get the distance from the waist to the viewpoint
 	// We set this to a little under half the model height in case
 	// there is no model
 	float distanceFromWaistToViewpoint = playerViewHeight * 0.6;
@@ -4129,92 +4133,14 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 		// we have the player
 		playerViewHeight = p_player->EyeHeight();
 
-		idAnimator* p_animator = p_player->GetAnimator();
-		if (p_animator != NULL)
-		{
-			// Get name of waist joint
-			idStr jointName = p_player->spawnArgs.GetString( "waist_joint" );
-			if (jointName.IsEmpty())
-			{
-				jointName = "Waist";
-			}
+		/**
+		* Commented out 3rd person model joint rotation, since we now have lean animations
+		* See previous CVS version for joint-rotating the code
+		*	-Ishtvan
+		**/
 
-			// Get waist joint handle
-			jointHandle_t hWaistJoint = p_animator->GetJointHandle(jointName);
-
-			// Only set if able to find waist
-			if (hWaistJoint != INVALID_JOINT )
-			{
-				// Default player height to waist ratio
-				float PlayerHeightToWaistRatio = 2.1f;
-
-				// Get offset of waist from model origin
-				idVec3 waistOffset;
-				idMat3 waistAxis;
-				if (p_animator->GetJointTransform 
-				(
-					hWaistJoint,
-					0,
-					waistOffset,
-					waistAxis
-				))
-				{
-					// Compute waist height
-					float waistHeight = idMath::Fabs(waistOffset * GetGravityNormal());
-
-					// Waist must be below view. If the model animation doesn't
-					// match the view heights well when crouching, this can get messed up.
-					// This is the case with the default player model from Doom3, where
-					// the pm_crouchviewheight is 32, but the waist height in the crouch
-					// animation is 39.
-					if (waistHeight > (playerViewHeight * 0.75))
-					{
-						waistHeight = (playerViewHeight * 0.75);
-					}
-	                				
-					// compute player height to waist ratio
-					if (waistHeight > 0.0f)
-					{
-						PlayerHeightToWaistRatio = playerViewHeight / waistHeight;
-					}
-
-					distanceFromWaistToViewpoint = playerViewHeight - waistHeight;
-
-				} // Got waist origin 
-
-				// Build rotation matrix for the waist
-				idAngles waistLeanAngles;
-				waistLeanAngles.yaw = 0.0;
-				waistLeanAngles.pitch = m_leanYawAngleDegrees;
-				waistLeanAngles.roll = 0.0;
-
-				idMat3 waistLeanAxisRotateMat;
-				waistLeanAxisRotateMat = waistLeanAngles.ToMat3();
-
-				idVec3 waistRotateAxis(0.0, 0.0, -1.0);
-				waistRotateAxis *= waistLeanAxisRotateMat;
-				waistRotateAxis.Normalize();
-
-				idRotation waistJointRotation;
-				waistJointRotation.Set
-				(
-					idVec3(0.0, 0.0, 0.0),
-					waistRotateAxis,
-					m_currentLeanTiltDegrees * PlayerHeightToWaistRatio
-				);
-
-				p_animator->SetJointAxis( hWaistJoint, JOINTMOD_LOCAL, waistJointRotation.ToMat3() );
-				
-			}
-			else
-			{
-				DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING ("Cannot lean player at waist, as player skeleton's waist joint was not found\n");
-			}
-		}
-		else
-		{
-			DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING ("Cannot lean player at waist, as player has no idPlayer.animator object assigned\n");
-		}
+		float waistHeight = (playerViewHeight * 0.75);
+		distanceFromWaistToViewpoint = playerViewHeight - waistHeight;
 
 	} // Had access to player object
 	else
@@ -4249,10 +4175,10 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
-	else if (newLeanTiltDegrees > g_Global.m_leanMove_DegreesTilt)
+	else if (newLeanTiltDegrees > cv_pm_lean_angle.GetFloat())
 	{
 		// Adjust delta
-		deltaLeanTiltDegrees = g_Global.m_leanMove_DegreesTilt - m_currentLeanTiltDegrees;
+		deltaLeanTiltDegrees = cv_pm_lean_angle.GetFloat() - m_currentLeanTiltDegrees;
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
@@ -4429,7 +4355,7 @@ void idPhysics_Player::LeanMove()
 
 		// Try sinusoidal movement
 		float timeRatio = 0.0;
-		timeRatio = ( g_Global.m_leanMove_Milliseconds - m_leanTime) /  g_Global.m_leanMove_Milliseconds;
+		timeRatio = ( cv_pm_lean_time.GetFloat() - m_leanTime) /  cv_pm_lean_time.GetFloat();
 
 		float timeRadians = (idMath::PI/2.0f) * timeRatio;
 		
