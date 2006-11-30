@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.92  2006/11/30 09:16:03  ishtvan
+ * leaning updates
+ *
  * Revision 1.91  2006/11/08 10:11:26  ishtvan
  * fixed bug in frob bounds generation
  *
@@ -1540,7 +1543,9 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_TELEPORT.LinkTo(			scriptObject, "AI_TELEPORT" );
 	AI_TURN_LEFT.LinkTo(		scriptObject, "AI_TURN_LEFT" );
 	AI_TURN_RIGHT.LinkTo(		scriptObject, "AI_TURN_RIGHT" );
-
+	AI_LEAN_LEFT.LinkTo(		scriptObject, "AI_LEAN_LEFT" );
+	AI_LEAN_RIGHT.LinkTo(		scriptObject, "AI_LEAN_RIGHT" );
+	AI_LEAN_FORWARD.LinkTo(		scriptObject, "AI_LEAN_FORWARD" );
 	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP" );
 }
 
@@ -1753,7 +1758,13 @@ void idPlayer::Init( void ) {
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
 
+	AI_LEAN_LEFT	= false;
+	AI_LEAN_RIGHT	= false;
+	AI_LEAN_FORWARD	= false;
+
 	AI_CREEP		= false;
+
+
 
 	// reset the script object
 	ConstructScriptObject();
@@ -3221,6 +3232,10 @@ void idPlayer::EnterCinematic( void ) {
 	AI_TELEPORT		= false;
 	AI_TURN_LEFT	= false;
 	AI_TURN_RIGHT	= false;
+
+	AI_LEAN_LEFT	= false;
+	AI_LEAN_RIGHT	= false;
+	AI_LEAN_FORWARD	= false;
 
 	AI_CREEP		= false;
 }

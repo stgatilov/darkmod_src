@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2006/11/30 09:16:03  ishtvan
+ * leaning updates
+ *
  * Revision 1.36  2006/09/18 13:37:51  gildoran
  * Added the first version of a unified interface for GUIs.
  *
@@ -368,6 +371,12 @@ public:
 	idScriptBool			AI_TELEPORT;
 	idScriptBool			AI_TURN_LEFT;
 	idScriptBool			AI_TURN_RIGHT;
+	/**
+	* Leaning
+	**/
+	idScriptBool			AI_LEAN_LEFT;
+	idScriptBool			AI_LEAN_RIGHT;
+	idScriptBool			AI_LEAN_FORWARD;
 
 	/**
 	* Set to true if the player is creeping
