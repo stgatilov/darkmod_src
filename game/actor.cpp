@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/11/30 08:04:54  ishtvan
+ * bugfix for footstep volume
+ *
  * Revision 1.28  2006/10/22 19:12:13  ishtvan
  * damage bugfixes
  *
@@ -2654,10 +2657,9 @@ void idActor::PlayFootStepSound( void )
 
 	if ( !sound.IsEmpty() ) 
 	{
-		StartSoundShader( declManager->FindSound( sound.c_str() ), SND_CHANNEL_BODY, 0, false, NULL );
-		
 		// apply the movement type modifier to the volume
 		SetSoundVolume( GetMovementVolMod() );
+		StartSoundShader( declManager->FindSound( sound.c_str() ), SND_CHANNEL_BODY, 0, false, NULL );
 
 		// propagate the suspicious sound to other AI
 		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
