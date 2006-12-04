@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2006/12/04 00:32:15  ishtvan
+ * *) added stretching of body to lean
+ *
+ * *) Leaning now checks cvars instead of ini file vars
+ *
+ * *) Disabled manual tilting of model in lean code (NOTE: Lean collision test does not work, WIP at the moment)
+ *
  * Revision 1.39  2006/11/30 09:21:20  ishtvan
  * *) leaning: removed the bending of 3rd person model
  * *) added leaning cvars
@@ -2166,6 +2173,7 @@ idPhysics_Player::idPhysics_Player( void ) {
 	// Leaning Mod
 	m_leanYawAngleDegrees = 0.0;
 	m_currentLeanTiltDegrees = 0.0;
+	m_CurrentLeanStretch = 0.0;
 	m_b_leanFinished = true;
 	m_leanMoveStartTilt = 0.0;
 	m_leanMoveEndTilt = 0.0;
@@ -2264,6 +2272,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	// Lean mod
 	savefile->WriteFloat (m_leanYawAngleDegrees);
 	savefile->WriteFloat (m_currentLeanTiltDegrees);
+	savefile->WriteFloat (m_CurrentLeanStretch);
 	savefile->WriteFloat (m_leanMoveStartTilt);
 	savefile->WriteFloat (m_leanMoveEndTilt);
 	savefile->WriteBool (m_b_leanFinished);
@@ -2341,6 +2350,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	// Lean mod
 	savefile->ReadFloat (m_leanYawAngleDegrees);
 	savefile->ReadFloat (m_currentLeanTiltDegrees);
+	savefile->ReadFloat (m_CurrentLeanStretch);
 	savefile->ReadFloat (m_leanMoveStartTilt);
 	savefile->ReadFloat (m_leanMoveEndTilt);
 	savefile->ReadBool (m_b_leanFinished);
@@ -3996,7 +4006,7 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation
 	float distanceFromWaistToViewpoint
 )
 {
-
+	float stretchedDist(0.0f);
 	// Set lean view angles
 	float pitchAngle = m_currentLeanTiltDegrees;
 	float rollAngle = pitchAngle;
@@ -4007,17 +4017,15 @@ void idPhysics_Player::UpdateViewLeanAnglesAndTranslation
 	m_viewLeanAngles.Set ( pitchAngle, 0.0, rollAngle);
 
 	// Set lean translate vector
+	stretchedDist = distanceFromWaistToViewpoint * (1.0f + cv_pm_lean_stretch.GetFloat() * m_CurrentLeanStretch );
 	
-	m_viewLeanTranslation.x = distanceFromWaistToViewpoint * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
-	m_viewLeanTranslation.y = distanceFromWaistToViewpoint * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.x = stretchedDist * idMath::Sin (-pitchAngle * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanTranslation.y = stretchedDist * idMath::Sin(rollAngle * ((2.0 * idMath::PI) / 360.0) );
 	m_viewLeanTranslation.z = 0.0;
 	
-	m_viewLeanTranslation.ProjectSelfOntoSphere
-	(
-		distanceFromWaistToViewpoint
-	);
+	m_viewLeanTranslation.ProjectSelfOntoSphere( stretchedDist );
 
-	m_viewLeanTranslation.z = m_viewLeanTranslation.z - distanceFromWaistToViewpoint;
+	m_viewLeanTranslation.z = m_viewLeanTranslation.z - stretchedDist;
 
 	// Rotate to player's facing
 	idMat4 rotMat = viewAngles.ToMat4();
@@ -4088,8 +4096,10 @@ void idPhysics_Player::TestForViewRotationBasedCollisions()
 
 			// Can't do it.
 			// Must undo lean
+			// TODO: Make this smoother than just lurching back?
 			m_b_leanFinished = true;
 			m_currentLeanTiltDegrees = 0.0;
+			m_CurrentLeanStretch = 0.0;
 			m_leanMoveStartTilt = 0.0;
 			m_leanMoveEndTilt = 0.0;
 			m_leanTime = 0.0;
@@ -4108,7 +4118,9 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 {
 
 	// Get player view height
-	float playerViewHeight;
+	float playerViewHeight(0.0f);
+	float waistHeight(0.0f);
+
 	if ( current.movementFlags & PMF_DUCKED )
 	{
 		playerViewHeight = pm_crouchviewheight.GetFloat();
@@ -4121,7 +4133,7 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 	// Get the distance from the waist to the viewpoint
 	// We set this to a little under half the model height in case
 	// there is no model
-	float distanceFromWaistToViewpoint = playerViewHeight * 0.6;
+	float distanceFromWaistToViewpoint = playerViewHeight * cv_pm_lean_height.GetFloat();
 
 	// Use the idPlayer object's animator to get and change
 	// the waist joint rotation in the player model skeleton.
@@ -4139,7 +4151,7 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 		*	-Ishtvan
 		**/
 
-		float waistHeight = (playerViewHeight * 0.75);
+		waistHeight = playerViewHeight * cv_pm_lean_height.GetFloat();
 		distanceFromWaistToViewpoint = playerViewHeight - waistHeight;
 
 	} // Had access to player object
@@ -4155,15 +4167,14 @@ void idPhysics_Player::LeanPlayerModelAtWaistJoint()
 		playerViewHeight,
 		distanceFromWaistToViewpoint	
 	);
-	
 
 }
 
 //----------------------------------------------------------------------
 
-void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
+void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaLeanStretch)
 {
-	
+	// TODO: Redo clipping calculation
 	float newLeanTiltDegrees = 0.0;
 
 	// What would the new lean angle be?
@@ -4172,6 +4183,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	{
 		// Adjust delta
 		deltaLeanTiltDegrees = 0.0 - m_currentLeanTiltDegrees;
+		deltaLeanStretch = 0.0 - m_CurrentLeanStretch;
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
@@ -4179,6 +4191,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	{
 		// Adjust delta
 		deltaLeanTiltDegrees = cv_pm_lean_angle.GetFloat() - m_currentLeanTiltDegrees;
+		deltaLeanStretch = cv_pm_lean_stretch.GetFloat() - m_CurrentLeanStretch;
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
 	}
@@ -4269,6 +4282,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 		// Lean is finished
 		m_leanTime = 0.0;
 		deltaLeanTiltDegrees *= rotationTraceResults.fraction;
+		deltaLeanStretch *= rotationTraceResults.fraction;
 		m_b_leanFinished = true;
 
 	}
@@ -4276,8 +4290,9 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 
 	// Adjust lean angle by delta which was allowed
 	m_currentLeanTiltDegrees += deltaLeanTiltDegrees;
+	m_CurrentLeanStretch += deltaLeanStretch;
 
-	// Bend at waist in player skeleton
+	// Bend at waist
 	LeanPlayerModelAtWaistJoint();
 
 	// Make sure player didn't hit head
@@ -4300,12 +4315,12 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	idVec3 regroundedOrigin = current.origin + (regroundTranslateVector * regroundTrace.fraction); 
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
-		"Player regrounded after lean collision test trace fraction of %.3f\n", 
+		"Player regrounded after lean collision test trace fraction of %.3f\r", 
 		regroundTrace.fraction
 	);
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
-		"Pre rotation test origin %.2f %.2f %.2f\n rotation test origin was %.2f %.2f %.2f\n regrounded at %.2f %.2f %.2f\n current velocity is %.4f %.4f %.4f\n", 
+		"Pre rotation test origin %.2f %.2f %.2f\n rotation test origin was %.2f %.2f %.2f\r regrounded at %.2f %.2f %.2f\n current velocity is %.4f %.4f %.4f\r", 
 		originSave.x,
 		originSave.y,
 		originSave.z,
@@ -4328,8 +4343,9 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees)
 	// Log activity
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
-		"Lean tilt is now %.2f degrees\n",
-		m_currentLeanTiltDegrees
+		"Lean tilt is now %.2f degrees, lean stretch is now %.2f fractional\r",
+		m_currentLeanTiltDegrees,
+		m_CurrentLeanStretch
 	);
 
 }
@@ -4341,6 +4357,9 @@ void idPhysics_Player::LeanMove()
 
 	// Change in lean tilt this frame
 	float deltaLeanTiltDegrees = 0.0;
+	float deltaLeanStretch = 0.0;
+	float newLeanTiltDegrees = 0.0;
+	float newLeanStretch = 0.0;
 
 	if ( !m_b_leanFinished) 
 	{
@@ -4359,19 +4378,20 @@ void idPhysics_Player::LeanMove()
 
 		float timeRadians = (idMath::PI/2.0f) * timeRatio;
 		
-		float newLeanTiltDegrees = 0.0;
-		
 		if (m_leanMoveEndTilt > m_leanMoveStartTilt)
 		{
 			newLeanTiltDegrees = (idMath::Sin(timeRadians) * (m_leanMoveEndTilt - m_leanMoveStartTilt))
 			 + m_leanMoveStartTilt;
+			newLeanStretch = idMath::Sin(timeRadians);
 		}
 		else if (m_leanMoveStartTilt > m_leanMoveEndTilt)
 		{
 			newLeanTiltDegrees = m_leanMoveStartTilt - (idMath::Sin(timeRadians) * (m_leanMoveStartTilt - m_leanMoveEndTilt));
+			newLeanStretch = idMath::Sin( (idMath::PI/2.0f) * (1.0f - timeRatio) );
 		}
 
 		deltaLeanTiltDegrees = newLeanTiltDegrees - m_currentLeanTiltDegrees;
+		deltaLeanStretch = newLeanStretch - m_CurrentLeanStretch;
 
 	}
 
@@ -4380,7 +4400,7 @@ void idPhysics_Player::LeanMove()
 	{
 		// Re-orient clip model before change so that collision tests
 		// are accurate (player may have rotated mid-lean)
-		UpdateLeanAngle (deltaLeanTiltDegrees);
+		UpdateLeanAngle (deltaLeanTiltDegrees, deltaLeanStretch);
 	}
 	else
 	{
