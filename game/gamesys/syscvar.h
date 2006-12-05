@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/12/05 05:17:01  ishtvan
+ * leaning cvars added
+ *
  * Revision 1.28  2006/11/30 09:17:01  ishtvan
  * added leaning cvars
  *
@@ -124,6 +127,8 @@ extern idCVar cv_pm_creepmod;
 **/
 extern idCVar cv_pm_lean_angle;
 extern idCVar cv_pm_lean_time;
+extern idCVar cv_pm_lean_height;
+extern idCVar cv_pm_lean_stretch;
 
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
