@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2006/12/07 09:54:26  ishtvan
+ * modified lean variable defaults
+ *
  * Revision 1.41  2006/12/05 05:17:01  ishtvan
  * leaning cvars added
  *
@@ -200,10 +203,10 @@ idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE 
 /**
 * Dark Mod Leaning
 **/
-idCVar cv_pm_lean_angle(			"pm_lean_angle",		"20.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
-idCVar cv_pm_lean_time(				"pm_lean_time",			"600.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
-idCVar cv_pm_lean_height(			"pm_lean_height",		"0.55",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"0.1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+idCVar cv_pm_lean_angle(			"pm_lean_angle",		"35.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
+idCVar cv_pm_lean_time(				"pm_lean_time",			"700.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
+idCVar cv_pm_lean_height(			"pm_lean_height",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
+idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
 
 /**
 * Dark Mod Frobbing
