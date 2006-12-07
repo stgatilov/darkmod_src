@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.94  2006/12/07 09:56:26  ishtvan
+ * leaning controls work as either buttons or toggles
+ *
  * Revision 1.93  2006/12/04 00:28:33  ishtvan
  * *) temporarily made lean controls toggles to debug lean code
  *
@@ -1818,7 +1821,8 @@ idPlayer::Spawn
 Prepare any resources used by the player.
 ==============
 */
-void idPlayer::Spawn( void ) {
+void idPlayer::Spawn( void ) 
+{
 	int			i;
 	idStr		temp;
 	idBounds	bounds;
@@ -6414,24 +6418,18 @@ void idPlayer::PerformImpulse( int impulse ) {
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left lean impulse pressed\r");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
-				physicsObj.ToggleLean(180.0);
+				//physicsObj.ToggleLean(180.0);
 				// FIXME: We should make sure that, when we enter or leave the
 				// leaning state, that the position is indeed the one that we assume.
 				// It can happen, when a key is being lost, that the state is 
 				// the other way around, which is not exactly nice. It will be corrected
 				// automatically, but it wouldn't hurt anyway.
 
-				/*
 				// Do we need to enter the leaning state?
-				if(gameLocal.ImpulseInit(IR_LEAN_LEFT, IMPULSE_45) == false)
-				{
-					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
-					physicsObj.ToggleLean(180.0);
-					gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
-
-					m_LeanButtonTimeStamp = gameLocal.framenum;
-				}
-				*/
+				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
+				physicsObj.ToggleLean(180.0);
+				gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
+				//m_LeanButtonTimeStamp = gameLocal.framenum;
 			}
 		}
 		break;
@@ -6593,7 +6591,7 @@ void idPlayer::EvaluateControls( void )
 		gameLocal.sessionCommand = "died";
 	}
 
-	CheckLeanKeys();
+	CheckHeldKeys();
 
 	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) )
 	{
@@ -10542,16 +10540,11 @@ void idPlayer::SetImmobilization( const char *source, int type )
 	Event_SetImmobilization( source, type );
 }
 
-void idPlayer::CheckLeanKeys( void )
+void idPlayer::CheckHeldKeys( void )
 {
 	KeyCode_t *t(NULL);
-/**
-* Ideal way to do things:
-* If the keyboard handler was working right, we would only check these
-* when key is updated, but it never gets marked as updated with the current code.
-**/
 
-/*
+// NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
 
 // Forward lean
 	if(gameLocal.ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
@@ -10570,7 +10563,7 @@ void idPlayer::CheckLeanKeys( void )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped\r");
 			physicsObj.ToggleLean(90.0);
-			gameLocal.ImpulseFree(IR_LEAN_FORWARD);
+			gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
 		}
 		else
 		{
@@ -10580,8 +10573,7 @@ void idPlayer::CheckLeanKeys( void )
 	}
 
 // Left lean
-// Hack: Give the keyboard handler a few frames to update since lean was pressed
-	if( (gameLocal.framenum - m_LeanButtonTimeStamp) > 3 )
+	if( gameLocal.ImpulseIsUpdated(IR_LEAN_LEFT) == true )
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
@@ -10593,16 +10585,16 @@ void idPlayer::CheckLeanKeys( void )
 			physicsObj.ToggleLean(180.0);
 			gameLocal.ImpulseFree(IR_LEAN_LEFT);
 		}
-		else if(t->KeyState == KS_UPDATED && t->TransitionState == false )
+		else if(t->TransitionState == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning ignored\r");
 			gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
 		}
-		else if(t->TransitionState == true && t->KeyState != KS_FREE)
+		else if(t->KeyState == KS_UPDATED && t->TransitionState == true)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped\r");
 			physicsObj.ToggleLean(180.0);
-			gameLocal.ImpulseFree(IR_LEAN_LEFT);
+			gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
 		}
 	}
 
@@ -10623,7 +10615,7 @@ void idPlayer::CheckLeanKeys( void )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped\r");
 			physicsObj.ToggleLean(0.0);
-			gameLocal.ImpulseFree(IR_LEAN_RIGHT);
+			gameLocal.ImpulseProcessed(IR_LEAN_RIGHT);
 		}
 		else
 		{
@@ -10631,5 +10623,4 @@ void idPlayer::CheckLeanKeys( void )
 			gameLocal.ImpulseProcessed(IR_LEAN_RIGHT);
 		}
 	}
-*/
 }
