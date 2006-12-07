@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/12/07 09:53:52  ishtvan
+ * added tdm_keycapture command for binding new buttons
+ *
  * Revision 1.10  2006/09/21 00:43:52  gildoran
  * Added inventory hotkey support.
  *
@@ -276,6 +279,28 @@ void Cmd_AttachmentPrint_f( const idCmdArgs &args )
 	gameLocal.Printf("Offset: %s\n", offset.ToString() );
 	gameLocal.Printf("Angles relative to joint (pitch yaw roll) : %s\n", angles.ToString() );
 	gameLocal.Printf("======= End Attachment Info =======\n \n" );
+
+Quit:
+	return;
+}
+
+/*
+==================
+Cmd_KeyCapture_f
+==================
+*/
+void Cmd_KeyCapture_f( const idCmdArgs &args )
+{
+	ImpulseFunction_t action(IR_COUNT);
+
+	if( args.Argc() != 2 )
+	{
+		gameLocal.Printf( "usage: tdm_keycapture <action index>\n" );
+		goto Quit;
+	}
+
+	action = (ImpulseFunction_t) atoi( args.Argv(1) );
+	gameLocal.KeyCaptureStart( action );
 
 Quit:
 	return;
@@ -2709,6 +2734,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_attach_print",		Cmd_AttachmentPrint_f,		CMD_FL_GAME,				"Print the attachment info for the given attachment on the AI you are looking at.  Usage: tdm_attach_print <attachment index>" );
 
 	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
+
+	cmdSystem->AddCommand( "tdm_keycapture",		Cmd_KeyCapture_f,			CMD_FL_GAME,				"Used internally.  Usage: tdm_keycapture <TDM action ID>.  Waits for the next keypress and assigns it to the desired action ID.  Action ID corresponds to a given action (e.g., lean left), and must be within the range specified by the enum in gameLocal.h" );
 
 #ifndef	ID_DEMO_BUILD
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
