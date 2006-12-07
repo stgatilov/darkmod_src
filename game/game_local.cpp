@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.78  2006/12/07 09:55:35  ishtvan
+ * *) key handler updates
+ *
+ * *) Added working method for binding new buttons
+ *
  * Revision 1.77  2006/12/04 00:27:03  ishtvan
  * added logging of frame number in keyboard handler logs
  *
@@ -410,13 +415,16 @@ void TestGameAPI( void ) {
 LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	KeyCode_t kc;
-	int i, n;
+	int i;
 
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook - nCode: %u   wParam: %04X   lParam: %08lX FRAME: %d\r", nCode, wParam, lParam, gameLocal.framenum);
+	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
 
-	if(nCode >= 0)
+//	if(nCode >= 0) // 0 seems to be junk
+	if(nCode > 0)
 	{
-		kc.VirtualKeyCode = wParam;
+		gameLocal.m_KeyPressCount++;
+
+		kc.VirtualKeyCode = (int) wParam;
 		kc.RepeatCount =		(lParam & 0x0000FFFF);
 		kc.ScanCode =			(lParam & 0x00FF0000) >> 16;
 		kc.Extended =			(lParam & 0x01000000) >> 24;
@@ -424,11 +432,12 @@ LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 		kc.Context =			(lParam & 0x20000000) >> 29;
 		kc.PreviousKeyState =	(lParam & 0x40000000) >> 30;
 		kc.TransitionState =	(lParam & 0x80000000) >> 31;
+		kc.KeyPressCount =		gameLocal.m_KeyPressCount;
 
 		memcpy(&gameLocal.m_KeyPress, &kc, sizeof(KeyCode_t));
 
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
-			"VirtualKeyCode: %u   RepeatCount: %u   ScanCode: %02X   Extended: %u   Reserved; %02X   Context: %u   PreviousKeyState: %u   TransitionState: %u\r",
+			"VirtualKeyCode: %d   RepeatCount: %u   ScanCode: %02X   Extended: %u   Reserved; %02X   Context: %u   PreviousKeyState: %u   TransitionState: %u KeyPressCount: %d\r",
 			kc.VirtualKeyCode,
 			kc.RepeatCount,
 			kc.ScanCode,
@@ -436,22 +445,29 @@ LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 			kc.Reserved,
 			kc.Context,
 			kc.PreviousKeyState,
-			kc.TransitionState
+			kc.TransitionState,
+			kc.KeyPressCount
 			);
 
-		for(i = 0; i < IR_COUNT; i++)
+		// Only update impulses when the player has already spawned
+		if( gameLocal.GetLocalPlayer() )
 		{
-			// If the keypress is associated with an impulse then we update it.
-			if(gameLocal.m_KeyData[i].VirtualKeyCode == wParam && gameLocal.m_KeyData[i].KeyState != KS_FREE)
+			for(i = 0; i < IR_COUNT; i++)
 			{
-				n = gameLocal.m_KeyData[i].Impulse;
-				memcpy(&gameLocal.m_KeyData[i], &kc, sizeof(KeyCode_t));
-				gameLocal.m_KeyData[i].Impulse = n;
-				gameLocal.m_KeyData[i].KeyState = KS_UPDATED;
-				gameLocal.m_KeyData[i].FrameUpdated = gameLocal.framenum;
-				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
+				// If the keypress is associated with an impulse then we update it.
+				if( gameLocal.m_KeyData[i].KeyState != KS_FREE
+					&& gameLocal.m_KeyData[i].VirtualKeyCode == kc.VirtualKeyCode )
+				{
+					memcpy(&gameLocal.m_KeyData[i], &kc, sizeof(KeyCode_t));
+					gameLocal.m_KeyData[i].KeyState = KS_UPDATED;
+					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
+				}
 			}
 		}
+
+		// Run key capture for keybinding if it is active
+		if( gameLocal.m_bKeyCapActive )
+			gameLocal.KeyCapture();
 	}
 
 	return CallNextHookEx(gameLocal.m_KeyboardHook, nCode, wParam, lParam);
@@ -486,6 +502,11 @@ void idGameLocal::Clear( void )
 	for(i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
 		m_LightgemShotValue[i] = 0.0;
 	m_DoLightgem = true;
+
+	m_KeyPressCount = 0;
+	m_bKeyCapActive = false;
+	m_KeyCapImpulse = IR_COUNT;
+	m_KeyCapStartCount = 0;
 
 	serverInfo.Clear();
 	numClients = 0;
@@ -2633,8 +2654,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idPlayer	*player;
 	const renderView_t *view;
 	int curframe = framenum;
-	KeyCode_t *k;
-	usercmd_t ucmd;
 
 	g_Global.m_Frame = curframe;
 	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
@@ -2647,12 +2666,17 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	player = GetLocalPlayer();
 
+/*
+* Ishtvan: I don't think we need this anymore.
+* Will delete it soon if there are no objections.
+
 	// Before we do the actual impulse, we check if there are some impulses pending for processing.
 	// FIXME: It MIGHT be that this can cause problems in case if usercmd is evaluated while the
 	// impulse is processed, because it would use the same usercmd states as the actual impulse
 	// key that is triggered, which could cause inconsistencies.
 	for(int i = 0; i < IR_COUNT; i++)
 	{
+		/*
 		k = &m_KeyData[i];
 		if(k->KeyState == KS_UPDATED)
 		{
@@ -2662,6 +2686,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			player->usercmd = ucmd;
 		}
 	}
+*/
 
 	// Check for any activated signals, and trigger them.
 	CheckSDKSignal();
@@ -5752,4 +5777,45 @@ void idGameLocal::PauseGame( bool bPauseState )
 		
 		g_stopTime.SetBool( false );
 	}
+}
+
+bool idGameLocal::KeyCapture( void )
+{
+	bool bReturnVal( false );
+
+	// make sure key press happened since we started listening
+	if( m_KeyPress.KeyPressCount < m_KeyCapStartCount )
+		goto Quit;
+
+	// NOTE: We don't really use the "impulse" argument of ImpulseInit anymore.
+	ImpulseInit(m_KeyCapImpulse, -1);
+	m_bKeyCapActive = false;
+	bReturnVal = true;
+	
+	DM_LOG(LC_SYSTEM,LT_DEBUG)LOGSTRING("KeyCap: Grabbed virtual keycode %d for impulse function %d \r", m_KeyData[ m_KeyCapImpulse ].VirtualKeyCode, m_KeyCapImpulse );
+	// Temporary print to console. TODO: Remove this
+	gameLocal.Printf( "KeyCap: Grabbed virtual keycode %d for impulse function %d \n", m_KeyData[ m_KeyCapImpulse ].VirtualKeyCode, m_KeyCapImpulse );
+
+Quit:
+	return bReturnVal;
+}
+
+void idGameLocal::KeyCaptureStart( ImpulseFunction_t action )
+{
+	if( action >= IR_COUNT || action < 0 )
+	{
+		DM_LOG(LC_SYSTEM,LT_WARNING)LOGSTRING("WARNING: KeyCaptureStart called with invalid TDM impulse index: %d \r", action);
+		goto Quit;
+	}
+	// Clear the old data
+	ImpulseFree( action );
+	m_bKeyCapActive = true;
+	// When using the console command for testing, we need to add a few more keypresses
+	// so that it doesn't pick up the still held down return key
+	// TODO: Remove this for the GUI-called version
+	m_KeyCapStartCount = m_KeyPressCount + 2;
+	m_KeyCapImpulse = action;
+	
+Quit:
+	return;
 }

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2006/12/07 09:55:35  ishtvan
+ * *) key handler updates
+ *
+ * *) Added working method for binding new buttons
+ *
  * Revision 1.37  2006/12/04 00:27:03  ishtvan
  * added logging of frame number in keyboard handler logs
  *
@@ -389,7 +394,7 @@ typedef struct KeyCode_s
 	bool	Context;			// Specifies the context code. The value is 1 if the ALT key is down; otherwise, it is 0.
 	bool	PreviousKeyState;	// The value is 1 if the key is down before the message is sent or 0 if the key is up.
 	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
-	int		FrameUpdated;		// Frame number in which this key state was last updated (used to update impulses only once per frame)
+	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
 } KeyCode_t;
 
 /**
@@ -628,6 +633,30 @@ public:
 *	because the walkspeed keeps getting reset.
 **/
 	float					m_walkSpeed;
+
+/**
+* Key press count.  Used by the keyboard callback to count up key presses
+* starting from the first.  Used to test up-to-dateness.  
+* Incremented on each recorded keypress with nCode > 0.
+**/
+	int						m_KeyPressCount;
+
+/**
+* Set to true if key capture is active, for identifying impulse
+*	keys for the keyboard handler.
+**/
+	bool					m_bKeyCapActive;
+
+/**
+* Impulse ID to associate with the key we're currently capturing
+**/
+	ImpulseFunction_t		m_KeyCapImpulse;
+
+/**
+* The value of the current key press count when the key capture started, 
+*	used to tell if	keypress is current or from before.
+**/
+	int						m_KeyCapStartCount;
 
 	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
 	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
@@ -930,6 +959,19 @@ public:
 	 * via this pointer.
 	 */
 	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+
+	/**
+	*	Called in the frame loop when we are binding keys to TDM buttons.  Attempts to capture
+	* the currently pressed key to the desired impulse.  Returns true if key has been
+	* captured, otherwise false.
+	**/
+	bool					KeyCapture( void );
+
+	/**
+	*	Called to activate KeyCapture and initialize the impulse we are binding
+	* It takes the impulse ID for the action we want to bind the key to.
+	**/
+	void					KeyCaptureStart( ImpulseFunction_t action );
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
