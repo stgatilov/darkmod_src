@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2006/12/09 17:36:24  sophisticatedzombie
+ * Hiding spot search/iteration now uses new darkmodhidingSpotTree class.
+ * Fixed a problem with hiding spot debug drawing that was not showing all
+ * the points.
+ *
  * Revision 1.19  2006/08/21 06:21:08  ishtvan
  * moved attachment scriptevents to idActor
  *
@@ -1450,6 +1455,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
 	aasGoal_t		goal;
 	idBounds		bounds;
 	idVec3			observeFromPos;
+	aasPath_t	path;
 
 	if ( !aas ) 
 	{	
@@ -1464,21 +1470,34 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
 
 	// Raise point up just a bit so it isn't on the floor of the aas
 	idVec3 pointToObserve2 = pointToObserve;
-	pointToObserve2.z += 15.0;
-	
+	pointToObserve2.z += 45.0;
+
+	// What is the lighting along the line where the thing to be observed
+	// might be.
+	float LightQuotient = LAS.queryLightingAlongLine 
+	(
+		pointToObserve,
+		pointToObserve2,
+		NULL,
+		true
+	);
+
+	float maxDistanceToObserve = LightQuotient * g_Global.m_lightingQuotientObservationDistanceScale;
+		
 	idAASFindObservationPosition findGoal
 	(
 		this, 
 		physicsObj.GetGravityAxis(), 
 		pointToObserve2, 
-		GetEyePosition() - org  // Offset of eye from origin
+		GetEyePosition() - org,  // Offset of eye from origin
+		maxDistanceToObserve // Maximum distance from which we can observe
 	);
 
-	if ( !aas->FindGoalClosestToTarget
+	if (!aas->FindNearestGoal
 	(
 		goal, 
 		areaNum, 
-		GetPhysics()->GetOrigin(),
+		org,
 		pointToObserve2, // It is also the goal target
 		travelFlags, 
 		NULL, 
@@ -1486,9 +1505,30 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
 		findGoal 
 	) ) 
 	{
-		observeFromPos = GetPhysics()->GetOrigin();
-		AI_DEST_UNREACHABLE = true;
-	
+		float bestDistance;
+
+		// See if we can get to the point itself since noplace was good enough
+		// for just looking from a distance due to lighting/occlusion/reachability.
+		if (PathToGoal( path, areaNum, physicsObj.GetOrigin(), areaNum, org ) ) 
+		{
+			// Can reach the point itself, so walk right up to it
+			observeFromPos = pointToObserve; 
+		}
+		else if (findGoal.getBestGoalResult
+		(
+			bestDistance,
+			goal
+		))
+		{
+			// Use closest reachable observation point that we found
+			observeFromPos = goal.origin;
+		}
+		else
+		{
+			// No choice but to try to walk up to it as much as we can
+			observeFromPos = pointToObserve; 
+		}
+		
 		// Draw the AI Debug Graphics
 		if (g_Global.m_drawAIDebugGraphics > 0)
 		{
@@ -2492,9 +2532,9 @@ void idAI::Event_SetMoveType( int moveType ) {
 
 	move.moveType = static_cast<moveType_t>( moveType );
 	if ( move.moveType == MOVETYPE_FLY ) {
-		travelFlags = TFL_WALK|TFL_AIR|TFL_FLY;
+		travelFlags = TFL_WALK|TFL_AIR|TFL_FLY|TFL_DOOR;
 	} else {
-		travelFlags = TFL_WALK|TFL_AIR;
+		travelFlags = TFL_WALK|TFL_AIR|TFL_DOOR;
 	}
 }
 
@@ -3510,15 +3550,8 @@ void idAI::Event_StartSearchForHidingSpots
 			p_hidingSpotFinder->hidingSpotList,
 			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame
 		);
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.Num());
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\n", p_hidingSpotFinder->hidingSpotList.getNumSpots());
 
-		// DEBUGGING
-		if (g_Global.m_drawAIDebugGraphics >= 1.0)
-		{
-			p_hidingSpotFinder->debugClearHidingSpotDrawList();
-			p_hidingSpotFinder->debugAppendHidingSpotsToDraw (p_hidingSpotFinder->hidingSpotList);
-			p_hidingSpotFinder->debugDrawHidingSpots (g_Global.m_drawAIDebugGraphics);
-		}
 
 		// Return result
 		if (b_moreProcessingToDo)
@@ -3572,6 +3605,7 @@ void idAI::Event_ContinueSearchForHidingSpots()
 			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame
 		);
 
+
 		// Return result
 		if (b_moreProcessingToDo)
 		{
@@ -3579,6 +3613,15 @@ void idAI::Event_ContinueSearchForHidingSpots()
 		}
 		else
 		{
+			// DEBUGGING
+			if (g_Global.m_drawAIDebugGraphics >= 1.0)
+			{
+				// Clear the debug draw list and then fill with our results
+				p_hidingSpotFinder->debugClearHidingSpotDrawList();
+				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (p_hidingSpotFinder->hidingSpotList);
+				p_hidingSpotFinder->debugDrawHidingSpots (g_Global.m_drawAIDebugGraphics);
+			}
+
 			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
 			idThread::ReturnInt(0);
 		}
@@ -3612,7 +3655,7 @@ void idAI::Event_GetNumHidingSpots ()
 	int numSpots = 0;
 	if (p_hidingSpotFinder != NULL)
 	{
-		numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+		numSpots = p_hidingSpotFinder->hidingSpotList.getNumSpots();
 	}
 	else
 	{
@@ -3622,6 +3665,8 @@ void idAI::Event_GetNumHidingSpots ()
 	// Return count
 	idThread::ReturnInt (numSpots);
 }
+
+/*------------------------------------------------------------------------------*/
 
 void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 {
@@ -3638,12 +3683,22 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 	// Get the hiding spot count
 	if (p_hidingSpotFinder != NULL)
 	{
-		int numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+		int numSpots = p_hidingSpotFinder->hidingSpotList.getNumSpots();
 
 		// In bounds?
 		if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
 		{
-			outLocation = p_hidingSpotFinder->hidingSpotList[hidingSpotIndex].goal.origin;
+			darkModHidingSpot_t* p_spot = p_hidingSpotFinder->hidingSpotList.getNthSpot(hidingSpotIndex);
+			if (p_spot == NULL)
+			{
+				outLocation.x = 0;
+				outLocation.y = 0;
+				outLocation.z = 0;
+			}
+			else
+			{
+				outLocation = p_spot->goal.origin;
+			}
 
 			if (g_Global.m_drawAIDebugGraphics >= 1.0)
 			{
@@ -3678,6 +3733,8 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 
 }
 
+/*------------------------------------------------------------------------------*/
+
 void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 {
 	int outTypeFlags = 0;
@@ -3693,12 +3750,20 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 	// Get the hiding spot count
 	if (p_hidingSpotFinder != NULL)
 	{
-		int numSpots = p_hidingSpotFinder->hidingSpotList.Num();
+		int numSpots = p_hidingSpotFinder->hidingSpotList.getNumSpots();
 
 		// In bounds?
 		if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
 		{
-			outTypeFlags = p_hidingSpotFinder->hidingSpotList[hidingSpotIndex].hidingSpotTypes;
+			darkModHidingSpot_t* p_spot = p_hidingSpotFinder->hidingSpotList.getNthSpot(hidingSpotIndex);
+			if (p_spot == NULL)
+			{
+				outTypeFlags = 0;
+			}
+			else
+			{
+				outTypeFlags = p_spot->hidingSpotTypes;
+			}
 		}
 		else
 		{
@@ -3739,6 +3804,7 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 
 }
 
+/*---------------------------------------------------------------------------------*/
 
 void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch)
 {
@@ -3768,8 +3834,8 @@ void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch
 		return;
 	}
 
-	idList<darkModHidingSpot_t>* p_othersList = &(p_othersFinder->hidingSpotList);
-	if (p_othersList->Num() <= 1)
+	CDarkmodHidingSpotTree* p_othersTree = &(p_othersFinder->hidingSpotList);
+	if (p_othersTree->getNumSpots() <= 1)
 	{
 		// No points
 		idThread::ReturnInt (0);
@@ -3788,126 +3854,13 @@ void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch
 	}
 	m_HidingSpotSearchHandle = (int) p_hidingSpotFinder;
 
-	// Move points from their list to ours... 
-	// split goegraphically?
-
-	// Iterate the list quickly and determine its extents
-	idBounds listBounds;
-	listBounds[0] = (*p_othersList)[0].goal.origin;
-	listBounds[1] = (*p_othersList)[0].goal.origin;
-	for (int i = 1; i < p_othersList->Num(); i ++)
-	{
-		// Get the point
-		aasGoal_t goal = (*p_othersList)[i].goal;
-
-		// Expand the bounds to account for this point
-		if (goal.origin.x < listBounds[0].x )
-		{
-			listBounds[0].x = goal.origin.x;
-		}
-		if (goal.origin.y < listBounds[0].y )
-		{
-			listBounds[0].y = goal.origin.y;
-		}
-		if (goal.origin.z < listBounds[0].z )
-		{
-			listBounds[0].z = goal.origin.z;
-		}
-		if (goal.origin.x > listBounds[1].x )
-		{
-			listBounds[1].x = goal.origin.x;
-		}
-		if (goal.origin.y > listBounds[1].y )
-		{
-			listBounds[1].y = goal.origin.y;
-		}
-		if (goal.origin.z > listBounds[1].z )
-		{
-			listBounds[1].z = goal.origin.z;
-		}
-
-	}
-
-	// Which is the biggest dimension, we'll split on that
-	int splitAxis = 0;
-	double diffX = listBounds[1].x - listBounds[0].x;
-	double diffY = listBounds[1].y - listBounds[0].y;
-	double diffZ = listBounds[1].z - listBounds[0].z;
-
-	if (diffY > diffX)
-	{
-		splitAxis = 1;
-
-		if (diffZ > diffY)
-		{
-			splitAxis = 2;
-		}
-	}
-	else if (diffZ > diffX)
-	{
-		splitAxis = 2;
-	}
-
-	// Get the split coord
-	double splitValue;
-	if (splitAxis == 0)
-	{
-		splitValue = listBounds[0].x + (diffX / 2.0);
-	}
-	else if (splitAxis == 1)
-	{
-		splitValue = listBounds[0].y + (diffY / 2.0);
-	}
-	else if (splitAxis == 2)
-	{
-		splitValue = listBounds[0].z + (diffZ / 2.0);
-	}
-	
-	// Split up the list
-	for (int i = 0; i < p_othersList->Num(); i ++)
-	{
-		bool b_move = false;
-		aasGoal_t goal = (*p_othersList)[i].goal;
-		switch (splitAxis)
-		{
-		case 0:
-			if (goal.origin.x >= splitValue)
-			{
-				b_move = true;
-			}
-			break;
-
-		case 1:
-			if (goal.origin.y >= splitValue)
-			{
-				b_move = true;
-			}
-			break;
-
-		default:
-			if (goal.origin.z >= splitValue)
-			{
-				b_move = true;
-			}
-			break;
-		}
-
-		if (b_move)
-		{
-			// Remove the goal.origin
-			darkModHidingSpot_t spot = (*p_othersList)[i];
-			p_othersList->RemoveIndex (i);
-
-			// Add to our list
-			p_hidingSpotFinder->hidingSpotList.Append (spot);
-
-			// Indices moved down, so need to check this one again
-			i --;
-		}
-	}
+	// Move points from their tree to ours
+	p_othersTree->splitInTwain 
+	(
+		&(p_hidingSpotFinder->hidingSpotList) 
+	);
 
 	// Done
-	idThread::ReturnInt (p_hidingSpotFinder->hidingSpotList.Num());
-
+	idThread::ReturnInt (p_hidingSpotFinder->hidingSpotList.getNumSpots());
 
 }
