@@ -7,8 +7,12 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:37  sparhawk
- * Initial revision
+ * Revision 1.2  2006/12/09 17:53:26  sophisticatedzombie
+ * Added flags for doors to TravelFlags (TFL_DOOR) and Area (AREA_DOOR) bit flags.
+ * Added two methods for setting and removing area flags.
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:37  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -45,6 +49,7 @@
 #define TFL_SPECIAL					BIT(12)		// special
 #define TFL_WATER					BIT(21)		// travel through water
 #define TFL_AIR						BIT(22)		// travel through air
+#define TFL_DOOR					BIT(23)		// travel through a not-open door
 
 // face flags
 #define FACE_SOLID					BIT(0)		// solid at the other side
@@ -62,6 +67,7 @@
 #define AREA_CROUCH					BIT(5)		// AI cannot walk but can only crouch in this area
 #define AREA_REACHABLE_WALK			BIT(6)		// area is reachable by walking or swimming
 #define AREA_REACHABLE_FLY			BIT(7)		// area is reachable by flying
+#define AREA_DOOR					BIT(8)		// area contains one ore more doors
 
 // area contents flags
 #define AREACONTENTS_SOLID			BIT(0)		// solid, not a valid area
@@ -302,6 +308,8 @@ public:
 
 	void						SetPortalMaxTravelTime( int index, int time ) { portals[index].maxAreaTravelTime = time; }
 	void						SetAreaTravelFlag( int index, int flag ) { areas[index].travelFlags |= flag; }
+	void						SetAreaFlag( int index, int flag ) { areas[index].flags |= flag; }
+	void						RemoveAreaFlag( int index, int flag ) { areas[index].flags &= ~flag; }
 	void						RemoveAreaTravelFlag( int index, int flag ) { areas[index].travelFlags &= ~flag; }
 
 	virtual idVec3				EdgeCenter( int edgeNum ) const = 0;
