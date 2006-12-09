@@ -7,6 +7,18 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2006/12/09 22:45:52  sophisticatedzombie
+ * 1) The AI now correctly stores the last known enemy location on tactile alerts.
+ * That way, the scripts can correctly use that instead of the last visual stimulus
+ * location if they lose track of their combat target.
+ * 2) The maxObservationDistance is now a function in the idAI class so that different
+ * methods (including isEntityHiddenByDarkness0 can use it.
+ * 3) The ai now uses the lightgem value to see if a player has slipped into shadow
+ * and is not visible. it takes into account the ai visual accuity, and it has been
+ * tweaked to be more realisticly difficult.
+ * 4) The player's visual stimulus amount due to their lightgem value is now
+ * a callable function of idAI so it can be used in multiple places
+ *
  * Revision 1.20  2006/12/09 17:36:24  sophisticatedzombie
  * Hiding spot search/iteration now uses new darkmodhidingSpotTree class.
  * Fixed a problem with hiding spot debug drawing that was not showing all
@@ -380,7 +392,7 @@ const idEventDef AI_GetAlertNumOfOtherAI ("getAlertNumOfOtherAI", "e", 'f');
 * given position.  It is useful for looking at hiding spots that can't be reached,
 * and performing other investigation functions.
 */
-const idEventDef AI_GetObservationPosition ("getObservationPosition", "v", 'v');
+const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v');
 
 
 /**
@@ -1448,7 +1460,7 @@ This is an adaptation of the find attack position
 query that is within MoveToAttackPosition
 =====================
 */
-void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
+void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
 {
 	int				areaNum;
 	aasObstacle_t	obstacle;
@@ -1482,7 +1494,9 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve)
 		true
 	);
 
-	float maxDistanceToObserve = LightQuotient * g_Global.m_lightingQuotientObservationDistanceScale;
+	float maxDistanceToObserve = LightQuotient 
+		* g_Global.m_lightingQuotientObservationDistanceScale 
+		* visualAcuityZeroToOne;
 		
 	idAASFindObservationPosition findGoal
 	(

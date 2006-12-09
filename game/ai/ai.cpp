@@ -7,6 +7,18 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2006/12/09 22:45:52  sophisticatedzombie
+ * 1) The AI now correctly stores the last known enemy location on tactile alerts.
+ * That way, the scripts can correctly use that instead of the last visual stimulus
+ * location if they lose track of their combat target.
+ * 2) The maxObservationDistance is now a function in the idAI class so that different
+ * methods (including isEntityHiddenByDarkness0 can use it.
+ * 3) The ai now uses the lightgem value to see if a player has slipped into shadow
+ * and is not visible. it takes into account the ai visual accuity, and it has been
+ * tweaked to be more realisticly difficult.
+ * 4) The player's visual stimulus amount due to their lightgem value is now
+ * a callable function of idAI so it can be used in multiple places
+ *
  * Revision 1.34  2006/12/09 17:34:34  sophisticatedzombie
  * FindObservationPosition now allows a maximum distance to be specified.
  * It also tracks the best spot found so far, even if it doesn't meet the specified
@@ -5843,7 +5855,7 @@ idEntity *idAI::GetTactEnt( void )
 
 idActor *idAI::VisualScan( float timecheck )
 {
-	float visFrac, randFrac, lgem, incAlert(0);
+	float visFrac, randFrac, incAlert(0);
 	idActor *actor;
 	
 	actor = FindEnemy( true );
@@ -5872,9 +5884,6 @@ idActor *idAI::VisualScan( float timecheck )
 		goto Quit;
 	}
 
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check succeeded.\r");
-	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
-
 	// set AI_VISALERT and the vector for last sighted position
 	
 	//quick fix for blind AI:
@@ -5883,11 +5892,12 @@ idActor *idAI::VisualScan( float timecheck )
 		AI_VISALERT = true;
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
-		// Convert to alert units ( 0.6931472 = log(2) )
-		incAlert = 4*log( visFrac * lgem ) / 0.6931472;
-		
+		incAlert = getPlayerVisualStimulusAmount(actor);
+
 		if( incAlert > m_AlertNumThisFrame )
+		{
 			AlertAI( "vis", incAlert );
+		}
 	}
 
 	if ( actor )
@@ -5975,6 +5985,14 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 		// NOTE: Latest tactile alert always overrides other alerts
 		AlertAI( "tact", amount );
 		m_TactAlertEnt = entest;
+
+		// Set last visual contact location to this location as that is used in case
+		// the target gets away
+		m_LastSight = entest->GetPhysics()->GetOrigin();
+		if (enemy.GetEntity()== NULL)
+		{
+			lastVisibleEnemyPos = entest->GetPhysics()->GetOrigin();
+		}
 		
 		AI_TACTALERT = true;
 
@@ -6026,23 +6044,88 @@ Quit:
 
 /*---------------------------------------------------------------------------------*/
 
+float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity)
+{
+	float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, p_ignoreEntity, true);
+	float visualAcuityZeroToOne = GetAcuity("vis")/ 100.0; 
+
+	float maxDistanceToObserve = lightQuotient 
+		* g_Global.m_lightingQuotientObservationDistanceScale 
+		* visualAcuityZeroToOne;
+
+	return maxDistanceToObserve;
+}
+
+/*---------------------------------------------------------------------------------*/
+
+float idAI::getPlayerVisualStimulusAmount(idEntity* p_playerEntity)
+{
+	float alertAmount = 0.0;
+
+	//Quick fix for blind AI:
+	if( GetAcuity("vis") > 0 )
+	{
+		float visFrac = GetVisibility( p_playerEntity );
+		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+
+		// Convert to alert units ( 0.6931472 = log(2) )
+		alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
+	}
+
+	return alertAmount;
+}
+
+
+/*---------------------------------------------------------------------------------*/
+
 bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity)
 {
 	// Quick test using LAS at entity origin
 	idPhysics* p_physics = p_entity->GetPhysics();
 	if (p_physics != NULL)
 	{
-		idBounds entityBounds = p_physics->GetAbsBounds();
-		idVec3 bottomPoint = p_physics->GetOrigin();
-		
-		idVec3 topPoint = p_physics->GetOrigin();
-		topPoint.z = entityBounds[1].z;
-		
-		float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, p_entity, true);
-		
-		if (lightQuotient < 0.5) // TODO: Make this cutoff dependent on visual acuity and ini settings
+		// Use lightgem if it is the player
+		if (p_entity->IsType(idPlayer::Type ))
 		{
-			return true;
+			float incAlert = getPlayerVisualStimulusAmount(p_entity);
+
+			// Very low threshold for visibility
+			if( incAlert > 0.2) // TODO: Make this configurable
+			{
+				return true;
+			}
+			else
+			{
+				// Not perceptable
+				return false;
+			}
+		}
+		else // Not the player
+		{
+			idBounds entityBounds = p_physics->GetAbsBounds();
+			idVec3 bottomPoint = p_physics->GetOrigin();
+			
+			idVec3 topPoint = p_physics->GetOrigin();
+			topPoint.z = entityBounds[1].z;
+
+			float maxDistanceToObserve = getMaximumObservationDistance 
+			(
+				bottomPoint,
+				topPoint,
+				p_entity
+			);
+
+			// Expand a bit as we are seeing if something we know is there is visible
+			maxDistanceToObserve *= 2.0;
+			
+			if ( (GetPhysics()->GetOrigin() - bottomPoint).Length() > maxDistanceToObserve)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 
