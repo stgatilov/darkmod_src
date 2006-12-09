@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2006/12/09 17:46:09  sophisticatedzombie
+ * Fixed an ID Software problem with disabling map aas obstacles not making areas
+ * accessible again.
+ *
  * Revision 1.4  2006/06/21 13:04:47  sparhawk
  * Added version tracking per cpp module
  *
@@ -496,9 +500,15 @@ void idAASLocal::SetObstacleState( const idRoutingObstacle *obstacle, bool enabl
 
 		for ( rev_reach = area->rev_reach; rev_reach; rev_reach = rev_reach->rev_next ) {
 
+		
+			/** SZ: I'm commenting this out as it prevents disabling obstacles from making areas
+			* Accessible again
+			*/
+			/*
 			if ( rev_reach->travelType & TFL_INVALID ) {
 				continue;
 			}
+			*/
 
 			inside = false;
 
@@ -514,8 +524,14 @@ void idAASLocal::SetObstacleState( const idRoutingObstacle *obstacle, bool enabl
 				}
 			}
 
+			// SZ: I'm commenting out the original Doom3 code below because it is broken 
+			// It appears as if the if ( enable ) line is supposed to be if ( !enable)
+			// Enable refers to the obstacle being on or off, not to the reachability being
+			// enabled or disabled. If the obstacle is enabled, then the reachability is
+			// disabled.  This appears to have thus been a semantic error by Id.
 			if ( inside ) {
-				if ( enable ) {
+				//if ( enable ) {
+				if (!enable) {
 					rev_reach->disableCount--;
 					if ( rev_reach->disableCount <= 0 ) {
 						rev_reach->travelType &= ~TFL_INVALID;
@@ -1452,7 +1468,20 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 		// What is the distance to the target
 		distanceToTarget = (file->AreaCenter(curUpdate->areaNum) - target).Length();
 
+		// If is closest so far
+		if ( !b_haveClosestDistance || distanceToTarget < closestDistanceToTarget) 
+		{
+			// if the area is not visible to the target
+			if ( callback.TestArea( this, curUpdate->areaNum ) ) 
+			{
+				closestDistanceToTarget = distanceToTarget;
+				b_haveClosestDistance = true;
+				bestAreaNum = curUpdate->areaNum;
+			}
+		}
+
 		// if we already found a closer location we are done
+		/*
 		if 
 		(
 			( b_haveClosestDistance) && 
@@ -1461,6 +1490,7 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 		{
 			continue;
 		}
+		*/
 
 		for ( i = 0, reach = file->GetArea( curUpdate->areaNum ).reach; reach; reach = reach->next, i++ )
 		{
@@ -1523,23 +1553,10 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 				}
 				updateListEnd = nextUpdate;
 				nextUpdate->isInList = true;
-
-				/*
-				if (g_Global.m_drawAIDebugGraphics >= 1.0)
-				{
-					idBounds areaBounds = file->AreaBounds(nextUpdate->areaNum);
-					gameRenderWorld->DebugBounds
-					(
-						idVec4 (1.0,1.0,1.0,1.0),
-						areaBounds,
-						vec3_origin,
-						10000
-					);
-				}
-				*/
-						
+	
 			}
 
+			/*
 			// don't put goal near a ledge
 			distanceToTarget = (file->AreaCenter(reach->toAreaNum) - target).Length();
 			if ( !( nextArea->flags & AREA_LEDGE ) ) 
@@ -1556,6 +1573,7 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 					}
 				}
 			}
+			*/
 		}
 	}
 
