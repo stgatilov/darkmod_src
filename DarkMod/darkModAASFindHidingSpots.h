@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/12/09 17:31:20  sophisticatedzombie
+ * This now uses the new darkmodeHidingspotTree class to store and
+ * iterate a set of hiding spots.
+ *
  * Revision 1.8  2006/06/16 20:26:15  sophisticatedzombie
  * no message
  *
@@ -31,6 +35,7 @@
 #include "..\game\Game_local.h"
 #include "..\game\Entity.h"
 #include "..\darkMod\PVSToAASMapping.h"
+#include "..\darkMod\darkmodHidingSpotTree.h"
 
 /*!
 * This defines hiding spot characteristics as bit flags
@@ -45,24 +50,6 @@ typedef enum darkModHidingSpotType
 
 };
 
-
-/*!
-// @structure darkModHidingSpot_t
-// @author SophisticatedAZombie (DMH)
-// This structure holds information about a hiding spot.
-*/
-typedef struct darkModHidingSpot
-{
-	aasGoal_t goal;
-
-	// The hiding spot characteristic bit flags
-	// as defined by the darkModHidingSpotType enumeration
-	int hidingSpotTypes;
-
-	// The hiding spot "hidingness" quality, from 0 to 1.0
-	float quality;
-
-} darkModHidingSpot_t;
 
 /*!
 * This enumeration is used to track the hiding spot search
@@ -100,6 +87,9 @@ class darkModAASFindHidingSpots
 {
 protected:
 
+	// The distance from each other which is the minimum for two points
+	// to not be considered redundant hiding spots
+	float hidingSpotRedundancyDistance;
 
 	// The search state
 	TDarkModHidingSpotSearchState searchState;
@@ -127,7 +117,7 @@ protected:
 	// The number of aas areas in the current pvs area already searched
 	int numAASAreaIndicesSearched;
 
-
+    
 	/* These are set when the background thread is created */
 	idAAS *p_aas;
 	float hidingHeight;
@@ -216,7 +206,8 @@ protected:
 	*/
 	static void CombineRedundantHidingSpots
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		float distanceAtWhichToCombine
 	);
 
@@ -225,7 +216,8 @@ protected:
 	*/
 	static void sortByQuality
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots
+		//idList<darkModHidingSpot_t>& inout_hidingSpots
+		CDarkmodHidingSpotTree& inout_hidingSpots
 	);
 
 
@@ -234,11 +226,14 @@ protected:
 	* and keeps the list sorted from highest to lowest
 	* quality, assuming that it was already sorted or empty.
 	*/
+	/*
+	// DEPRECATED
 	static void insertHidingSpotWithQualitySorting
 	(
 		darkModHidingSpot_t& hidingSpot,
 		idList<darkModHidingSpot_t>& inout_hidingSpots
 	);
+	*/
 
 	/*!
 	* These methods handle the search when it is being picked back
@@ -250,25 +245,32 @@ protected:
 	*/
 	bool testNewPVSArea 
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
+
 	bool testingAASAreas_InNonVisiblePVSArea
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
+
 	bool testingAASAreas_InVisiblePVSArea
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
+
 	bool testingInsideVisibleAASArea
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
@@ -298,7 +300,8 @@ protected:
 	*/
 	bool darkModAASFindHidingSpots::findMoreHidingSpots
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
 	);
@@ -349,8 +352,7 @@ public:
 	* This hiding spot list which is a member of the object can be used for the first
 	* parameter of findHidingSpots if so desired.
 	*/
-	idList<darkModHidingSpot_t> hidingSpotList;
-
+	CDarkmodHidingSpotTree hidingSpotList;
 
 	/*!
 	* This method starts a search within the given search bounds for hiding spots and returns
@@ -368,7 +370,8 @@ public:
 	*/
 	bool startHidingSpotSearch
 	(
-		idList<darkModHidingSpot_t>& out_hidingSpots,
+		//idList<darkModHidingSpot_t>& out_hidingSpots,
+		CDarkmodHidingSpotTree& out_hidingSpots,
 		int maxSpotsPerRound
 	);
 
@@ -387,7 +390,8 @@ public:
 	*/
 	bool continueSearchForHidingSpots
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass
 	);
 
@@ -405,7 +409,11 @@ public:
 	*
 	* @param hidingSpotsToAppend The list of hiding spots to be appended to the hiding spot debug list
 	*/
-	static void debugAppendHidingSpotsToDraw (const idList<darkModHidingSpot_t>& hidingSpotsToAppend);
+	static void debugAppendHidingSpotsToDraw 
+	(
+		// const idList<darkModHidingSpot_t>& hidingSpotsToAppend
+		CDarkmodHidingSpotTree& inout_hidingSpots
+	);
 
 	/*!
 	* This method renders a display of all the hiding spots in the debug draw hiding

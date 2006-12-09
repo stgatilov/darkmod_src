@@ -8,14 +8,11 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "..\darkmod\darkModLAS.h"
 #include "..\sys\sys_public.h"
 
-// What amount of light is acceptable for a minimal quality hiding spot
-#define HIDING_SPOT_MAX_LIGHT_QUOTIENT 0.10f
-
 // Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
 #define OCCLUSION_HIDING_SPOT_QUALITY 0.5
 
 // The distance at which hiding spots will be combined if they have the same "type" properties
-#define HIDING_SPOT_COMBINATION_DISTANCE 50.0f
+#define HIDING_SPOT_COMBINATION_DISTANCE 100.0f
 
 // Static member for debugging hiding spot results
 idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
@@ -25,6 +22,9 @@ idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
 
 darkModAASFindHidingSpots::darkModAASFindHidingSpots()
 {
+	// Default value
+	hidingSpotRedundancyDistance = 200.0;
+
 	// Start empty
 	h_hideFromPVS.i = -1;
 	h_hideFromPVS.h = NULL;
@@ -62,9 +62,9 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 	idEntity* in_p_ignoreEntity
 )
 {
-	/*
-	* Note that most of this code is similar to idAASFindCover for now
-	*/
+
+	// Default value
+	hidingSpotRedundancyDistance = 500.0;
 
 	// Start empty
 	h_hideFromPVS.i = -1;
@@ -119,7 +119,8 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 
 bool darkModAASFindHidingSpots::findMoreHidingSpots
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
@@ -189,7 +190,8 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 
 bool darkModAASFindHidingSpots::testNewPVSArea 
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
@@ -268,7 +270,8 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 
 bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
@@ -276,6 +279,10 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 	for (; numAASAreaIndicesSearched < aasAreaIndices.Num(); numAASAreaIndicesSearched ++)
 	{
 		int aasAreaIndex = aasAreaIndices[numAASAreaIndicesSearched];
+
+		// No aas area in hiding spot tree yet
+		TDarkmodHidingSpotAreaNode* p_hidingAreaNode = NULL;
+	
 
 		// This whole area is not visible
 		// Add its center and we are done
@@ -303,7 +310,33 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 		// Insert if it is any good
 		if (hidingSpot.quality > 0.0)
 		{
-			insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
+			// ensure area index is in hiding spot tree
+			if (p_hidingAreaNode == NULL)
+			{
+				inout_hidingSpots.getArea
+				(
+					aasAreaIndex
+				);
+				if (p_hidingAreaNode == NULL)
+				{
+					p_hidingAreaNode = inout_hidingSpots.insertArea(aasAreaIndex);
+					if (p_hidingAreaNode == NULL)
+					{
+						return false;
+					}
+				}
+			}
+			
+			// Add spot under this index in the hiding spot tree
+			inout_hidingSpots.insertHidingSpot
+			(
+				p_hidingAreaNode, 
+				hidingSpot.goal, 
+				hidingSpot.hidingSpotTypes,
+				hidingSpot.quality,
+				hidingSpotRedundancyDistance
+			);
+			
 			DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \n", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum);
 		}
 
@@ -340,7 +373,8 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 
 bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea 
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
@@ -357,7 +391,8 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 		// Check area flags
 		int areaFlags = p_aas->AreaFlags (aasAreaIndex);
 
-		if ((areaFlags & AREA_FLOOR) != 0)
+
+		if ((areaFlags & AREA_REACHABLE_WALK) != 0)
 		{
 			// Initialize grid search for inside visible AAS area
 			idBounds currentAASAreaBounds = p_aas->GetAreaBounds (aasAreaIndex);
@@ -405,7 +440,8 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 
 bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
@@ -423,6 +459,9 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	// Iterate the coordinates to search
 	// We don't use for loops here so that we can control the end of the iteration
 	// to check up against the boundary regardless of divisibility
+
+	// No hiding spot area node yet used
+	TDarkmodHidingSpotAreaNode* p_hidingAreaNode = NULL;
 
 	// Iterate X grid
 	while (currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x)
@@ -461,7 +500,34 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 				// Insert a hiding spot for this test point
 				hidingSpot.goal.areaNum = currentGridSearchAASAreaNum;
 				hidingSpot.goal.origin = currentGridSearchPoint;
-				insertHidingSpotWithQualitySorting (hidingSpot, inout_hidingSpots);
+
+				// ensure area index is in hiding spot tree
+				if (p_hidingAreaNode == NULL)
+				{
+					inout_hidingSpots.getArea
+					(
+						currentGridSearchAASAreaNum
+					);
+					if (p_hidingAreaNode == NULL)
+					{
+						p_hidingAreaNode = inout_hidingSpots.insertArea(currentGridSearchAASAreaNum);
+						if (p_hidingAreaNode == NULL)
+						{
+							return false;
+						}
+					}
+				}
+				
+				// Add spot under this index in the hiding spot tree
+				inout_hidingSpots.insertHidingSpot
+				(
+					p_hidingAreaNode, 
+					hidingSpot.goal, 
+					hidingSpot.hidingSpotTypes,
+					hidingSpot.quality,
+					hidingSpotRedundancyDistance
+				);
+
 				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\n", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
@@ -548,13 +614,13 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		);
 
 		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
-		if (LightQuotient < HIDING_SPOT_MAX_LIGHT_QUOTIENT)
+		if ((LightQuotient < g_Global.m_hidingSpotMaxLightQuotient) && (LightQuotient >= 0.0))
 		{
 			//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hidable darkness of %f at point %f,%f,%f\n", LightQuotient, testPoint.x, testPoint.y, testPoint.z);
 			out_hidingSpotTypesThatApply |= DARKNESS_HIDING_SPOT_TYPE;
 
 			float darknessQuality = 0.0;
-			darknessQuality = (HIDING_SPOT_MAX_LIGHT_QUOTIENT - LightQuotient) / HIDING_SPOT_MAX_LIGHT_QUOTIENT;
+			darknessQuality = (g_Global.m_hidingSpotMaxLightQuotient - LightQuotient) / g_Global.m_hidingSpotMaxLightQuotient;
 			if (darknessQuality > out_quality)
 			{
 				out_quality = darknessQuality;
@@ -617,6 +683,10 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		out_quality = 0.0;
 	}
 
+	// Modify by random factor to prevent all searches in same location from being
+	// similar
+	out_quality += ((gameLocal.random.CRandomFloat() * out_quality) / 3.0);
+
 
 	// Done
 	//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
@@ -625,10 +695,12 @@ int darkModAASFindHidingSpots::TestHidingPoint
 
 //----------------------------------------------------------------------------
 
+/*
 void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
 (
 	darkModHidingSpot_t& hidingSpot,
-	idList<darkModHidingSpot_t>& inout_hidingSpots
+	//idList<darkModHidingSpot_t>& inout_hidingSpots
+	CDarkmodHidingSpotTree& inout_hidingSpots
 )
 {
 	// Find the right place
@@ -648,17 +720,19 @@ void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
 	inout_hidingSpots.Insert (hidingSpot, spotIndex);
 	
 }
+*/
 
 //----------------------------------------------------------------------------
 
 void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	//idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	float distanceAtWhichToCombine
 )
 {
 	//idList<darkModHidingSpot_t> consolidatedList;
-
+	/*
 	int listLength = inout_hidingSpots.Num();
 
 	for (int index = 0; index < listLength; index ++)
@@ -683,7 +757,7 @@ void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 		}
 
 	}
-	
+	*/
 
 }
 
@@ -700,8 +774,28 @@ void darkModAASFindHidingSpots::debugClearHidingSpotDrawList()
 
 //----------------------------------------------------------------------------
 
-void darkModAASFindHidingSpots::debugAppendHidingSpotsToDraw (const idList<darkModHidingSpot_t>& hidingSpotsToAppend)
+void darkModAASFindHidingSpots::debugAppendHidingSpotsToDraw 
+(
+	//const idList<darkModHidingSpot_t>& hidingSpotsToAppend
+	CDarkmodHidingSpotTree& inout_hidingSpots
+)
 {
+	idList<darkModHidingSpot_t> hidingSpotsToAppend;
+	darkModHidingSpot_t* p_spot;
+
+	unsigned long numSpots = inout_hidingSpots.getNumSpots();
+
+	for (unsigned long spotIndex = 0; spotIndex < numSpots; spotIndex ++)
+	{
+
+		p_spot = inout_hidingSpots.getNthSpot (spotIndex);
+
+		darkModHidingSpot_t spotCopy;
+		spotCopy = *p_spot;
+
+		hidingSpotsToAppend.Insert (spotCopy, spotIndex);
+	}
+
 	// Append to the list
 	darkModAASFindHidingSpots::DebugDrawList.Append (hidingSpotsToAppend);
 
@@ -716,7 +810,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 	idVec4 OcclusionMarkerColor(0.0f, 1.0f, 0.0f, 0.0);
 	idVec4 PortalMarkerColor(1.0f, 0.0f, 0.0f, 0.0);
 
-	idVec3 markerArrowLength (0.0, 0.0, 1.0f);
+	idVec3 markerArrowLength (0.0, 0.0, 25.0f);
 
 	
 	// Iterate the hiding spot debug draw list
@@ -752,7 +846,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 			markerColor,
 			DebugDrawList[spotIndex].goal.origin + markerArrowLength,
 			DebugDrawList[spotIndex].goal.origin,
-			1.0f,
+			2.0f,
 			viewLifetime
 		);
 	}
@@ -775,7 +869,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 
 	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, in_p_aas, in_hidingHeight, in_hideSearchBounds, ANY_HIDING_SPOT_TYPE, in_p_ignoreEntity);
 
-	idList<darkModHidingSpot_t> hidingSpotList;
+	CDarkmodHidingSpotTree hidingSpotList;
 
 	DM_LOG(LC_AI, LT_DEBUG).LogVector ("Hide search mins", in_hideSearchBounds[0]);
 	DM_LOG(LC_AI, LT_DEBUG).LogVector ("Hide search maxes", in_hideSearchBounds[1]);
@@ -816,7 +910,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 // The search start function
 bool darkModAASFindHidingSpots::startHidingSpotSearch
 (
-	idList<darkModHidingSpot_t>& out_hidingSpots,
+	CDarkmodHidingSpotTree& out_hidingSpots,
 	int numPointsToTestThisPass
 ) 
 {
@@ -865,7 +959,7 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 // The search continue function
 bool darkModAASFindHidingSpots::continueSearchForHidingSpots
 (
-	idList<darkModHidingSpot_t>& inout_hidingSpots,
+	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass
 )
 {
