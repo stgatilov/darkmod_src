@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/12/09 17:43:50  sophisticatedzombie
+ * Added some utility functions for seeing how doors interact with the AAS.
+ * These may be useful for long-distance routing involving doors.
+ *
  * Revision 1.3  2006/06/02 02:43:16  sophisticatedzombie
  * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
  *
@@ -84,6 +88,7 @@ public:
 	virtual						~idAASLocal( void );
 	virtual bool				Init( const idStr &mapName, unsigned int mapFileCRC );
 	virtual void				Shutdown( void );
+
 	virtual void				Stats( void ) const;
 	virtual void				Test( const idVec3 &origin );
 	virtual const idAASSettings *GetSettings( void ) const;
@@ -118,6 +123,27 @@ public:
 	// Added for DarkMod by SophisticatedZombie(DMH)
 	virtual idBounds			GetAreaBounds (int areaNum) const;
 	virtual int					GetNumAreas() const;
+	virtual idReachability*		GetAreaFirstReachability(int areaNum) const;
+
+	/*!
+	* See base class for interface definition
+	*/
+	virtual bool BuildReachabilityImpactList
+	(
+		TReachabilityTrackingList& inout_reachabilityList,
+		idBounds impactBounds
+	) const ;
+
+	/*!
+	* See base class for interface definition
+	*/
+	virtual bool TestIfBarrierIsolatesReachability
+	(
+		idReachability* p_reachability,
+		int areaIndex,
+		idBounds barrierBounds
+	) const;
+
 
 private:
 	idAASFile *					file;
