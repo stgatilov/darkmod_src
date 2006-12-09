@@ -7,6 +7,15 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2006/12/09 17:34:34  sophisticatedzombie
+ * FindObservationPosition now allows a maximum distance to be specified.
+ * It also tracks the best spot found so far, even if it doesn't meet the specified
+ * maximum distance.
+ * These two in combination allow for more intelligent searches that
+ * A) stop if a good enough spot is found
+ * B) can report the best spot found at the end of the search if nothing met the
+ * search criteria.
+ *
  * Revision 1.23  2006/11/01 11:57:28  sparhawk
  * Signals method added to entity.
  *
@@ -341,10 +350,17 @@ private:
 
 class idAASFindObservationPosition : public idAASCallback {
 public:
-						idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset );
+						idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset, float maxDistanceFromWhichToObserve );
 						~idAASFindObservationPosition();
 
 	virtual bool		TestArea( const idAAS *aas, int areaNum );
+
+	// Gets the best goal result, even if it didn't meet the maximum distance
+	bool getBestGoalResult
+	(
+		float& out_bestGoalDistance,
+		aasGoal_t& out_bestGoal
+	);
 
 private:
 	const idAI			*self;
@@ -354,6 +370,12 @@ private:
 	idMat3				gravityAxis;
 	pvsHandle_t			targetPVS;
 	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
+	float				maxObservationDistance;
+
+	// The best goal found, even if it was greater than the maxObservationDistance
+	float bestGoalDistance;
+	bool b_haveBestGoal;
+	aasGoal_t		bestGoal; 
 };
 
 class idAI : public idActor {

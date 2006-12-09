@@ -7,6 +7,15 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2006/12/09 17:34:34  sophisticatedzombie
+ * FindObservationPosition now allows a maximum distance to be specified.
+ * It also tracks the best spot found so far, even if it doesn't meet the specified
+ * maximum distance.
+ * These two in combination allow for more intelligent searches that
+ * A) stop if a good enough spot is found
+ * B) can report the best spot found at the end of the search if nothing met the
+ * search criteria.
+ *
  * Revision 1.33  2006/10/22 07:50:04  ishtvan
  * additional logging for knockout blows
  *
@@ -414,7 +423,7 @@ bool idAASFindAttackPosition::TestArea( const idAAS *aas, int areaNum ) {
 idAASFindObservationPosition::idAASFindObservationPosition
 ============
 */
-idAASFindObservationPosition::idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset ) 
+idAASFindObservationPosition::idAASFindObservationPosition( const idAI *self, const idMat3 &gravityAxis, const idVec3 &targetPos, const idVec3 &eyeOffset, float maxDistanceFromWhichToObserve ) 
 {
 	int	numPVSAreas;
 
@@ -422,6 +431,9 @@ idAASFindObservationPosition::idAASFindObservationPosition( const idAI *self, co
 	this->eyeOffset		= eyeOffset;
 	this->self			= self;
 	this->gravityAxis	= gravityAxis;
+	this->maxObservationDistance = maxDistanceFromWhichToObserve;
+	this->b_haveBestGoal = false;
+
 
 	// setup PVS
 	idBounds bounds( targetPos - idVec3( 16, 16, 0 ), targetPos + idVec3( 16, 16, 64 ) );
@@ -475,36 +487,51 @@ bool idAASFindObservationPosition::TestArea( const idAAS *aas, int areaNum )
 	gameLocal.clip.TracePoint( results, fromPos, targetPos, MASK_SOLID, self );
 	if (  results.fraction >= 1.0f )
 	{
-		/*
-		gameRenderWorld->DebugLine
-		(
-			idVec4 (0.0, 1.0, 0.0, 1.0),
-			fromPos,
-			targetPos,
-			10000.0,
-			true
-		);
-		*/
+		// What is the observation distance?
+		float distance = (fromPos - targetPos).Length();
 
+		// Remember best result, even if outside max distance allowed
+		if ((!b_haveBestGoal) || (distance < bestGoalDistance))
+		{
+			b_haveBestGoal = true;
+			bestGoalDistance = distance;
+			bestGoal.areaNum = areaNum;
+			bestGoal.origin = areaCenter;
+		}
+		if (distance > maxObservationDistance)
+		{
+			// Can't use this point, its too far
+			return false;
+		}
 		return true;
 	}
 	else
 	{
-		/*
-		gameRenderWorld->DebugLine
-		(
-			idVec4 (1.0, 0.0, 0.0, 1.0),
-			fromPos,
-			targetPos,
-			10000.0,
-			true
-		);
-		*/
-
 		return false;
 	}
 
 }
+
+//------------------------------------------------------------------------------
+
+bool idAASFindObservationPosition::getBestGoalResult
+(
+	float& out_bestGoalDistance,
+	aasGoal_t& out_bestGoal
+)
+{
+	if (b_haveBestGoal)
+	{
+		out_bestGoalDistance = bestGoalDistance;
+		out_bestGoal = bestGoal;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 
 /*
 =====================
