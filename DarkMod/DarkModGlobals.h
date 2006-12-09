@@ -15,6 +15,11 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.41  2006/12/09 17:30:20  sophisticatedzombie
+ * Added  a configurable scale for computing maximum observation distance from
+ * a lighting quotient given for a point by the LAS.  Visual acuity of the AI still needs
+ * to be factored in afterword.
+ *
  * Revision 1.40  2006/11/03 23:20:17  sparhawk
  * Lockpick Logclass added.
  *
@@ -360,6 +365,12 @@ public:
 	float m_MaxFrobDistance;
 
 	/*!
+	* Hiding spot search light quotient. This value probably needs tweaking.
+	*/
+	float m_hidingSpotMaxLightQuotient;
+
+
+	/*!
 	* Arm length for mantling
 	* @author: sophisticatedZombie (DH)
 	*/
@@ -425,8 +436,19 @@ public:
 	float m_leanMove_DegreesTilt;
 
 	/*!
-	* This is a boolean that indicates if the AI hiding spot detection routines
-	* should draw debug graphics on the screen.
+	* This is a variable that specifies a linear multiplier that is multiplied
+	* by the LAS lighting quotient for a point to see how far away an AI can be 
+	* from a given point and still think it is adequately searching it.
+	*
+	* A reasonable value seems to be in the 300-600 range.
+	*
+	*/
+	float m_lightingQuotientObservationDistanceScale;
+
+	/*!
+	* This is a float that indicates for how many milliseconds the AI hiding spot 
+	* detection routines should draw debug graphics on the screen. A value of
+	* 0.0 indicates that they should not be drawn at all.
 	*
 	* The default value is 0.0
 	*

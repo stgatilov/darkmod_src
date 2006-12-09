@@ -15,6 +15,11 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.50  2006/12/09 17:30:20  sophisticatedzombie
+ * Added  a configurable scale for computing maximum observation distance from
+ * a lighting quotient given for a point by the LAS.  Visual acuity of the AI still needs
+ * to be factored in afterword.
+ *
  * Revision 1.49  2006/11/03 23:20:17  sparhawk
  * Lockpick Logclass added.
  *
@@ -208,6 +213,9 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #define DARKMOD_MANTLE_MILLISECONDS_SHIFTHANDS	500.0f
 #define DARKMOD_MANTLE_MILLISECONDS_PUSH		800.0f
 
+// The default max light quotient for hiding spots
+#define MAX_HIDING_SPOT_MAX_LIGHT_QUOTIENT 1.0
+
 // Default damage scale for mantling at high velocities
 // The 15.0 m/s minimum limit is based on OCEA guidance (United States labor laws)
 #define DARKMOD_MINIMUM_METERS_PER_SECOND_FOR_MANTLING_DAMAGE 15.0f
@@ -226,8 +234,10 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #define DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS 5000.0
 
 // Darkmod 
-#define DEFAULT_MAX_NUL_HIDING_SPOT_TESTS_PER_AI_FRAME 100.0
+#define DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME 10.0
 
+// Default lighting quotient observation distance scale
+#define DEFAULT_LIGHTING_QUOTIENT_OBSERVATION_DISTANCE_SCALE 500.0
 
 class idAI;
 
@@ -340,7 +350,9 @@ CGlobal::CGlobal(void)
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
 	m_AICommStimRadius = DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS;
-	m_maxNumHidingSpotPointTestsPerAIFrame = DEFAULT_MAX_NUL_HIDING_SPOT_TESTS_PER_AI_FRAME;
+	m_maxNumHidingSpotPointTestsPerAIFrame = DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME;
+	m_hidingSpotMaxLightQuotient = MAX_HIDING_SPOT_MAX_LIGHT_QUOTIENT;
+	m_lightingQuotientObservationDistanceScale = DEFAULT_LIGHTING_QUOTIENT_OBSERVATION_DISTANCE_SCALE;
 
 	m_LogFile = NULL;
 
@@ -884,6 +896,22 @@ void CGlobal::LoadINISettings(void *p)
 				DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame cannot be less than 10");
 				m_maxNumHidingSpotPointTestsPerAIFrame = 10;
 			}
+		}
+
+		if (FindMap (ps, "hidingSpotMaxLightQuotient", TRUE, &pm) != -1)
+		{
+			m_hidingSpotMaxLightQuotient = atof(pm->Value);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_hidingSpotMaxLightQuotient set to %f", m_hidingSpotMaxLightQuotient);
+		}
+
+		if (FindMap (ps, "observationDistanceLightQuotientScale", TRUE, &pm) != -1)
+		{
+			m_lightingQuotientObservationDistanceScale = atof(pm->Value);
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_lightingQuotientObservationDistanceScale set to %f", m_lightingQuotientObservationDistanceScale);
+		}
+		else
+		{
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_lightingQuotientObservationDistanceScale set to default of %f", m_lightingQuotientObservationDistanceScale);
 		}
 		
 
