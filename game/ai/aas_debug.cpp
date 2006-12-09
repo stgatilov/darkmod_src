@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/12/09 17:42:49  sophisticatedzombie
+ * Added some door detection features to the function which does debug drawing
+ * of reachabilities. (They draw differently if doors were marked int he reachability
+ * by some other process)
+ *
  * Revision 1.2  2006/06/21 13:04:47  sparhawk
  * Added version tracking per cpp module
  *
@@ -58,8 +63,14 @@ void idAASLocal::DrawCone( const idVec3 &origin, const idVec3 &dir, float radius
 idAASLocal::DrawReachability
 ============
 */
-void idAASLocal::DrawReachability( const idReachability *reach ) const {
-	gameRenderWorld->DebugArrow( colorCyan, reach->start, reach->end, 2 );
+void idAASLocal::DrawReachability( const idReachability *reach ) const 
+{
+	idVec4 reachColor = colorCyan;
+	if (reach->travelType & TFL_DOOR)
+	{
+		reachColor = colorRed;
+	}
+	gameRenderWorld->DebugArrow( reachColor, reach->start, reach->end, 2 );
 
 	if ( gameLocal.GetLocalPlayer() ) {
 		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis );
@@ -204,6 +215,10 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 		gameLocal.Printf( "area %d: ", areaNum );
 		if ( area->flags & AREA_LEDGE ) {
 			gameLocal.Printf( "AREA_LEDGE " );
+		}
+		if (area->flags & AREA_DOOR)
+		{
+			gameLocal.Printf( "AREA_DOOR " );
 		}
 		if ( area->flags & AREA_REACHABLE_WALK ) {
 			gameLocal.Printf( "AREA_REACHABLE_WALK " );
