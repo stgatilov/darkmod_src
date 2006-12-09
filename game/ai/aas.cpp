@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/12/09 17:41:16  sophisticatedzombie
+ * Added some methods for testing if blocking a section of the map (by a door etc)
+ * would impact reachabilities.  They are not used anywhere yet but could
+ * be useful for adding more planning about doors to AI long-distance routing.
+ *
  * Revision 1.3  2006/06/21 13:04:47  sparhawk
  * Added version tracking per cpp module
  *
@@ -27,6 +32,9 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "AAS_local.h"
+#include "../../darkmod/BinaryFrobMover.h"
+#include "../../darkmod/FrobDoor.h"
+
 
 /*
 ============
@@ -81,6 +89,7 @@ bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
 			common->DWarning( "Couldn't load AAS file: '%s'", mapName.c_str() );
 			return false;
 		}
+
 		SetupRouting();
 	}
 	return true;
@@ -99,6 +108,89 @@ void idAASLocal::Shutdown( void ) {
 		file = NULL;
 	}
 }
+
+/*
+============
+idAASLocal::TestIfBarrierIsolatesReachability
+============
+*/
+bool idAASLocal::TestIfBarrierIsolatesReachability
+(
+	idReachability* p_reachability,
+	int areaIndex,
+	idBounds barrierBounds
+) const
+{
+	/*
+	* Test params
+	*/
+	if ( p_reachability == NULL)
+	{
+		return false;
+	}
+
+	// Test the paths from the reachability to all other reachabilities leaving
+	// the area.  If a reachability has no path to another reachability that does not 
+	// intersect the barrier, then return true. Also if there are no other reachbilities
+	// return true.  Otherwise return false;
+
+	// Iterate the other reachabilities
+	bool b_hadPath = false;
+	bool b_foundClearPath = false;
+	idReachability* p_reach2 = GetAreaFirstReachability(areaIndex);
+
+	while (p_reach2 != NULL)
+	{
+		if (p_reach2 != p_reachability)
+		{
+			b_hadPath = true;
+
+			// Test if path between the reachabilities is blocked by the barrier bounds
+			if (barrierBounds.LineIntersection (p_reachability->start, p_reach2->start))
+			{
+				// Blocked
+				return true;
+			}
+			/*
+				// Its not blocked
+				b_foundClearPath = true;
+			}
+			*/
+
+		} // Not same reachability
+
+		// Is it blocked?
+		if (b_foundClearPath)
+		{
+			// End iteration early if we already found a clear path
+			p_reach2 = NULL;
+		}
+		else
+		{
+			p_reach2 = p_reach2->next;
+		}
+	
+	} // Next other reachability on same area
+
+	return false;
+
+	/*
+
+	// Return result of test
+	if ( (b_hadPath) && (!b_foundClearPath) )
+	{
+		// Its isolated by the bounds given
+		return true;
+	}
+	else
+	{
+		// Its not isolated by the bounds given
+		return false;
+	}
+	*/
+
+}
+
 
 /*
 ============
@@ -278,6 +370,7 @@ Added for Darkmod by SophisticatedZombie
 **********************************************************8
 */
 
+
 /*
 ============
 idAASLocal::GetAreaBounds
@@ -310,3 +403,63 @@ int	idAASLocal::GetNumAreas() const
 
 }
 
+/*
+============
+idAASLocal::GetAreaFirstReachability
+============
+*/
+
+idReachability* idAASLocal::GetAreaFirstReachability(int areaNum) const
+{
+	if ( !file ) 
+	{
+		return NULL;
+	}
+	aasArea_t area = file->GetArea (areaNum);
+	return area.reach;
+	
+}
+
+/*
+============
+idAASLocal::BuildReachbilityImpactList
+============
+*/
+
+bool idAASLocal::BuildReachabilityImpactList
+(
+	TReachabilityTrackingList& inout_reachabilityList,
+	idBounds impactBounds
+) const
+{
+
+	// Start with empty list
+	inout_reachabilityList.Clear();
+
+	// For each area
+	int numAreas = GetNumAreas();
+	for (int areaIndex = 0; areaIndex < numAreas; areaIndex ++)
+	{
+		// Test this area's reachabilties
+		idReachability* p_reach = GetAreaFirstReachability (areaIndex);
+
+		while (p_reach != NULL)
+		{
+			// If this reachability is isolated by the impact bounds, then ad it to the list
+			if (TestIfBarrierIsolatesReachability (p_reach, areaIndex, impactBounds))
+			{
+				inout_reachabilityList.Append (p_reach);
+			}
+
+			// Next reachability
+			p_reach = p_reach->next;
+		
+		} // Reachability intersects given bounds
+
+
+	} // Next area
+
+	// Done
+	return true;
+
+}

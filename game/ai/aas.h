@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/12/09 17:41:16  sophisticatedzombie
+ * Added some methods for testing if blocking a section of the map (by a door etc)
+ * would impact reachabilities.  They are not used anywhere yet but could
+ * be useful for adding more planning about doors to AI long-distance routing.
+ *
  * Revision 1.3  2006/06/02 02:43:16  sophisticatedzombie
  * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
  *
@@ -24,6 +29,9 @@
 #ifndef __AAS_H__
 #define __AAS_H__
 
+// Need linked list
+#include "../idLib/Containers/List.h"
+
 /*
 ===============================================================================
 
@@ -36,7 +44,8 @@ enum {
 	PATHTYPE_WALK,
 	PATHTYPE_WALKOFFLEDGE,
 	PATHTYPE_BARRIERJUMP,
-	PATHTYPE_JUMP
+	PATHTYPE_JUMP,
+	PATHTYPE_DOOR
 };
 
 typedef struct aasPath_s {
@@ -66,6 +75,12 @@ public:
 };
 
 typedef int aasHandle_t;
+
+/**
+* This is the typedef for a reachability tracking list
+*/
+typedef idList<idReachability*> TReachabilityTrackingList;
+
 
 class idAAS {
 public:
@@ -138,6 +153,56 @@ public:
 								// Added for DarkMod by SophisticatedZombie(DMH)
 	virtual idBounds			GetAreaBounds (int areaNum) const = 0;
 	virtual int					GetNumAreas() const = 0;
+	virtual idReachability*		GetAreaFirstReachability(int areaNum) const = 0;
+
+	/**
+	* This function fills a reachability list
+	* given an aas and the bounds for which any
+	* intersecting reachabilities should be considered
+	* impacted.
+	*
+	* @param inout_reachbilityList The list which will be
+	*	initialized to only the idReachability pointers
+	*	which are intersected by the impactBounds parameter
+	*
+	* @param impactBounds The bounds we check against
+	*	reachabilities for intersection to determine impact.
+	*
+	* @return true on success
+	* 
+	* @return false on failure
+	*/
+	virtual bool BuildReachabilityImpactList
+	(
+		TReachabilityTrackingList& inout_reachabilityList,
+		idBounds impactBounds
+	) const = 0;
+
+	/**
+	* This method tests if a reachability is cut off from all
+	* other reachabilities in the same area by the bounds
+	* given. Note that iff there are no other reachabilities on 
+	* then the reachability is NOT considered isolated.
+	* 
+	* @param p_reachability The reachability that we are testing
+	*		to see if the given barrierBounds isolate it from any
+	*		other reachabilities on the same area. 
+	*
+	* @param areaIndex The index of the area to which the reachability belongs
+	*
+	* @param barrierBounds The bounds of the barrier we are considering
+	*
+	* @return true if the reachability is isolated by the given bounds
+	*	from all other reachbailities on the same area 
+	*
+	* @return false otherwise
+	*/
+	virtual bool TestIfBarrierIsolatesReachability
+	(
+		idReachability* p_reachability,
+		int areaIndex,
+		idBounds barrierBounds
+	) const = 0;
 
 };
 
