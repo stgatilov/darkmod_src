@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2006/12/10 02:55:15  ishtvan
+ * *) attempted to make AI vision better
+ *
+ * *) added some debugging cvars to display state and alert (alert is always displaying 0.0 for some reason)
+ *
  * Revision 1.35  2006/12/09 22:45:52  sophisticatedzombie
  * 1) The AI now correctly stores the last known enemy location on tactile alerts.
  * That way, the scripts can correctly use that instead of the last visual stimulus
@@ -1530,7 +1535,15 @@ void idAI::Think( void ) {
 		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 */
-	// DarkMod: Show knockout debugging
+
+	UpdateMuzzleFlash();
+	UpdateAnimation();
+	UpdateParticles();
+	Present();
+	UpdateDamageEffects();
+	LinkCombat();
+
+	// DarkMod: Show debug info
 	if( cv_ai_ko_show.GetBool() )
 	{
 		KnockoutDebugDraw();
@@ -1541,13 +1554,15 @@ void idAI::Think( void ) {
 		FOVDebugDraw();
 	}
 
-	UpdateMuzzleFlash();
-	UpdateAnimation();
-	UpdateParticles();
-	Present();
-	UpdateDamageEffects();
-	LinkCombat();
+	if( cv_ai_state_show.GetBool() )
+	{
+		gameRenderWorld->DrawText( state->Name(), (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
 
+	if( cv_ai_alertnum_show.GetBool() )
+	{
+		gameRenderWorld->DrawText( va("Alert: %f", AI_AlertNum), (GetEyePosition() - physicsObj.GetGravityNormal()*32.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
 }
 
 /***********************************************************************
@@ -5877,7 +5892,7 @@ idActor *idAI::VisualScan( float timecheck )
 
 	// Do the percentage check
 	randFrac = gameLocal.random.RandomFloat( );
-	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sightmod.GetFloat()) * visFrac ) )
+	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat()) * visFrac ) )
 	{
 		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
 		actor = NULL;
@@ -6068,8 +6083,25 @@ float idAI::getPlayerVisualStimulusAmount(idEntity* p_playerEntity)
 		float visFrac = GetVisibility( p_playerEntity );
 		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 
-		// Convert to alert units ( 0.6931472 = log(2) )
-		alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
+		// Convert to alert units ( 0.6931472 = ln(2) )
+		
+		// Old method, commented out
+		// alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
+
+		float CurAlert = AI_AlertNum;
+		// convert current alert from log to linear scale, add, then convert back
+		// this might not be as good for performance, but it lets us keep all alerts
+		// on the same scale.
+		if( CurAlert > 0 )
+		{
+			CurAlert = idMath::Pow16(2,(CurAlert - 1)/10.0f );
+			CurAlert += cv_ai_sight_mag.GetFloat() * 1.0;
+			// convert back to linear
+			CurAlert = 1 + 10.0f * idMath::Log16(CurAlert) / 0.6931472f;
+			alertAmount = CurAlert - AI_AlertNum;
+		}
+		else
+			alertAmount = 1;
 	}
 
 	return alertAmount;
