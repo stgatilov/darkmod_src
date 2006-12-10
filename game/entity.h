@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2006/12/10 04:53:23  gildoran
+ * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
+ *
  * Revision 1.45  2006/11/01 11:57:38  sparhawk
  * Signals method added to entity.
  *
@@ -164,11 +167,14 @@
 #define __GAME_ENTITY_H__
 
 #include "../darkmod/overlaySys.h"
-#include "../darkmod/tdmInventory.h"
 
 class CStimResponseCollection;
 class CStim;
 class CResponse;
+
+class CtdmInventory;
+class CtdmInventoryItem;
+class CtdmInventoryCursor;
 
 /**
 * SDK_SIGNALS are used to signal either from a script to the SDK code or
@@ -278,15 +284,9 @@ public:
 
 // Inventory-related flags.
 enum {
-	EINV_AFTER_UNGROUPED	=  1,	// Used by Event_SetInvAdvanced()
-	EINV_AFTER_GROUPED		=  2,	// Used by Event_SetInvAdvanced()
-	EINV_UNGROUPED			=  0,	// Iterate through the entire inventory. (default)
-	EINV_HYBRID				=  1,	// Iterate through the entire inventory, ordered based on groups.
-	EINV_GROUP				=  2,	// Iterate through the groups.
-	EINV_ITEM				=  3,	// Iterate through the items in the current group.
-	EINV_PREV				=  4,	// Iterate backwards.
-	EINV_NOHISTORY			=  8,	// Iterate without setting group histories.
-	EINV_NONULL				= 16,	// Don't select the imaginary empty slot.
+	EINV_GROUP	= 1, // Jump to the next/previous group.
+	EINV_PREV	= 2, // Iterate backwards.
+	EINV_FAST	= 4, // Don't use group histories.
 };
 
 
@@ -966,8 +966,7 @@ private:
 
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
-	void					Event_SetInventory( idEntity* ent );
-	void					Event_SetInvAdvanced( idEntity* ent, const char* group, int flags, idEntity* entU, idEntity* entG );
+	void					Event_EnterInventory( idEntity* ent, const char* group, int after, idEntity* position );
 	void					Event_GetInventory();
 	void					Event_ReplaceItem( idEntity* ent );
 	void					Event_GetNextItem( idEntity* lastMatch );

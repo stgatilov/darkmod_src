@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.96  2006/12/10 04:53:23  gildoran
+ * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
+ *
  * Revision 1.95  2006/12/09 17:49:12  sophisticatedzombie
  * Commented out assert that fails due to m_invGuiFading being
  * NULL during map start.
@@ -325,6 +328,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../darkmod/darkModAASFindHidingSpots.h"
 #include "../darkmod/StimResponse.h"
 #include "../darkmod/MissionData.h"
+#include "../darkmod/tdmInventory.h"
 
 /*
 ===============================================================================
@@ -2030,7 +2034,7 @@ void idPlayer::Spawn( void )
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
 	// Have the player's cursor point to their own inventory by default.
-	InventoryCursor()->setInventory( Inventory() );
+	InventoryCursor()->SetInventory( Inventory() );
 
 	m_invGuiFallback =	new CtdmInventoryCursor();
 	m_invGuiFading =	new CtdmInventoryCursor();
@@ -9831,20 +9835,7 @@ idPlayer::inventoryNextItem
 void idPlayer::inventoryNextItem() {
 	assert( hud && InventoryCursor() );
 
-	switch ( cv_tdm_inv_grouping.GetInteger() ) {
-		case 0:
-			InventoryCursor()->iterate( TDMINV_UNGROUPED, false );
-			break;
-		case 1:
-			InventoryCursor()->iterate( TDMINV_ITEM, false );
-			break;
-		case 2:
-			InventoryCursor()->iterate( TDMINV_HYBRID, false );
-			break;
-		default:
-			gameLocal.Error( "Unknown value of %s.", cv_tdm_inv_grouping.GetName() );
-			return;
-	}
+	InventoryCursor()->IterateItem( false );
 
 	if ( inventoryChangeSelection( hud ) )
 	{
@@ -9855,20 +9846,7 @@ void idPlayer::inventoryNextItem() {
 void idPlayer::inventoryPrevItem() {
 	assert( hud && InventoryCursor() );
 
-	switch ( cv_tdm_inv_grouping.GetInteger() ) {
-		case 0:
-			InventoryCursor()->iterate( TDMINV_UNGROUPED, true );
-			break;
-		case 1:
-			InventoryCursor()->iterate( TDMINV_ITEM, true );
-			break;
-		case 2:
-			InventoryCursor()->iterate( TDMINV_HYBRID, true );
-			break;
-		default:
-			gameLocal.Error( "Unknown value of %s.", cv_tdm_inv_grouping.GetName() );
-			return;
-	}
+	InventoryCursor()->IterateItem( true );
 
 	if ( inventoryChangeSelection( hud ) )
 	{
@@ -9879,22 +9857,14 @@ void idPlayer::inventoryPrevItem() {
 void idPlayer::inventoryNextGroup() {
 	assert( hud && InventoryCursor() );
 
-	if ( cv_tdm_inv_grouping.GetInteger() == 0 ) {
-		return;
-	}
-
-	InventoryCursor()->iterate( TDMINV_GROUP, false );
+	InventoryCursor()->IterateGroup( false );
 	inventoryChangeSelection( hud );
 }
 
 void idPlayer::inventoryPrevGroup() {
 	assert( hud && InventoryCursor() );
 
-	if ( cv_tdm_inv_grouping.GetInteger() == 0 ) {
-		return;
-	}
-
-	InventoryCursor()->iterate( TDMINV_GROUP, true );
+	InventoryCursor()->IterateGroup( true );
 	inventoryChangeSelection( hud );
 }
 
@@ -9915,7 +9885,7 @@ void idPlayer::inventoryUseItem() {
 	}
 
 	// Do we have anything selected?
-	item = InventoryCursor()->item();
+	item = InventoryCursor()->Item();
 	useEnt = item ? item->m_owner.GetEntity() : NULL;
 	if ( useEnt != NULL ) {
 
@@ -9949,7 +9919,7 @@ void idPlayer::inventoryDropItem() {
 	}
 
 	// Do we have anything selected?
-	item = InventoryCursor()->item();
+	item = InventoryCursor()->Item();
 	useEnt = item ? item->m_owner.GetEntity() : NULL;
 	if ( useEnt != NULL ) {
 
@@ -9977,13 +9947,13 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 	bool fadeInGui = false;
 	bool fadeOutGui = false;
 
-	CtdmInventoryItem* invItem		= InventoryCursor()->item();
-	CtdmInventoryItem* fallbackItem	= m_invGuiFallback->item();
-	CtdmInventoryItem* fadingItem	= m_invGuiFading->item();
+	CtdmInventoryItem* invItem		= InventoryCursor()->Item();
+	CtdmInventoryItem* fallbackItem	= m_invGuiFallback->Item();
+	CtdmInventoryItem* fadingItem	= m_invGuiFading->Item();
 
 	// Was there a change in the selected item?
 	if ( invItem != fallbackItem ||
-		 ( invItem == NULL && m_invGuiFallback->group( true ) != NULL ) ) {
+		 ( invItem == NULL && m_invGuiFallback->Group( true ) != NULL ) ) {
 
 		idEntity* selectEnt = NULL;
 		idEntity* unselectEnt = NULL;
@@ -9992,7 +9962,7 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 		// If m_invGuiFallback isn't empty, we need to move it to m_invGuiFading.
 		// Or if the item being faded out is the one being faded in,
 		// we need to delete what's in m_invGuiFading.
-		if ( m_invGuiFallback->group( true ) != NULL || 
+		if ( m_invGuiFallback->Group( true ) != NULL || 
 			 ( fadingItem == invItem && fadingItem != NULL ) ) {
 
 			// If m_invGuiFading has an item, notify it that it's no longer on screen.
@@ -10008,16 +9978,16 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 			}
 
 			// Copy m_invGuiFallback to m_invGuiFading.
-			m_invGuiFading->copyActiveCursor( *m_invGuiFallback, true );
+			m_invGuiFading->CopyActiveCursor( *m_invGuiFallback, true );
 			fadeOutGui = true;
 		}
 
 		// Copy InventoryCursor() to m_invGuiFallback, but represent an
 		// empty slot by a NULL group.
 		if ( invItem != NULL ) {
-			m_invGuiFallback->copyActiveCursor( *InventoryCursor(), true );
+			m_invGuiFallback->CopyActiveCursor( *InventoryCursor(), true );
 		} else {
-			m_invGuiFallback->setInventory( NULL );
+			m_invGuiFallback->SetInventory( NULL );
 		}
 
 		// If InventoryCursor() has an item, notify it that it's selected.
@@ -10061,7 +10031,7 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 
 	const char* str;
 	if ( cv_tdm_inv_grouping.GetInteger() != 0 ) {
-		str = InventoryCursor()->group();
+		str = InventoryCursor()->Group();
 	} else {
 		str = "";
 	}

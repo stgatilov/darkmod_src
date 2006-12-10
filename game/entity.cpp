@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.76  2006/12/10 04:53:23  gildoran
+ * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
+ *
  * Revision 1.75  2006/11/06 06:36:33  ishtvan
  * fix to SetFrobable scriptevent
  *
@@ -273,6 +276,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../darkmod/playerdata.h"
 #include "../darkmod/sndprop.h"
 #include "../darkmod/StimResponse.h"
+#include "../darkmod/tdmInventory.h"
 
 /*
 ===============================================================================
@@ -358,8 +362,7 @@ const idEventDef EV_CallGui( "callGui", "ds" );
 
 const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
 
-const idEventDef EV_SetInventory( "setInventory", "E" );
-const idEventDef EV_SetInvAdvanced( "setInvAdvanced", "EsdEE" );
+const idEventDef EV_EnterInventory( "enterInventory", "EsdE" );
 const idEventDef EV_GetInventory( "getInventory", NULL, 'E' );
 const idEventDef EV_ReplaceItem( "replaceItem", "E" );
 const idEventDef EV_GetNextItem( "getNextItem", "E", 'E' );
@@ -487,8 +490,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
 
-	EVENT( EV_SetInventory,			idEntity::Event_SetInventory )
-	EVENT( EV_SetInvAdvanced,		idEntity::Event_SetInvAdvanced )
+	EVENT( EV_EnterInventory,		idEntity::Event_EnterInventory )
 	EVENT( EV_GetInventory,			idEntity::Event_GetInventory )
 	EVENT( EV_ReplaceItem,			idEntity::Event_ReplaceItem )
 	EVENT( EV_GetNextItem,			idEntity::Event_GetNextItem )
@@ -7054,53 +7056,19 @@ void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix ) 
 
 /*
 ================
-idEntity::Event_SetInventory
-
-Moves our inventory item to the other entity's inventory.
-(or possibly out of any inventory)
-================
-*/
-void idEntity::Event_SetInventory( idEntity* ent ) {
-	CtdmInventoryItem* item = InventoryItem();
-	CtdmInventory* inv = NULL;
-
-	if ( item == NULL ) {
-		gameLocal.Warning( "Unable to load inventory item.\n" );
-		goto Quit;
-	}
-	if ( ent != NULL ) {
-		inv = ent->Inventory();
-		if ( inv == NULL ) {
-			gameLocal.Warning( "Unable to load inventory.\n" );
-			goto Quit;
-		}
-	}
-
-	const char* group;
-	spawnArgs.GetString( "inv_group", "", &group );
-	item->setInventory( inv, group );
-
-	Quit:
-	return;
-}
-
-/*
-================
-idEntity::Event_SetInvAdvanced
+idEntity::Event_EnterInventory
 
 Moves our inventory item to another entity's inventory,
 with the group and position completely specified.
 ================
 */
-void idEntity::Event_SetInvAdvanced(	idEntity* ent,
+void idEntity::Event_EnterInventory(	idEntity* ent,
 										const char* group,
-										int flags,
-										idEntity* entU,
-										idEntity* entG ) {
+										int after,
+										idEntity* posEnt ) {
 	CtdmInventoryItem* item = InventoryItem();
 	CtdmInventory* inv = NULL;
-	CtdmInventoryItem* itemU = NULL;
-	CtdmInventoryItem* itemG = NULL;
+	CtdmInventoryItem* posItem = NULL;
 
 	if ( item == NULL ) {
 		gameLocal.Warning( "Unable to load inventory item.\n" );
@@ -7113,22 +7081,15 @@ void idEntity::Event_SetInvAdvanced(	idEntity* ent,
 			goto Quit;
 		}
 	}
-	if ( entU != NULL ) {
-		itemU = entU->InventoryItem();
-		if ( itemU == NULL ) {
-			gameLocal.Warning( "Unable to load inventory item.\n" );
-			goto Quit;
-		}
-	}
-	if ( entG != NULL ) {
-		itemG = entG->InventoryItem();
-		if ( itemG == NULL ) {
+	if ( posEnt != NULL ) {
+		posItem = posEnt->InventoryItem();
+		if ( posItem == NULL ) {
 			gameLocal.Warning( "Unable to load inventory item.\n" );
 			goto Quit;
 		}
 	}
 
-	item->setInventory( inv, group, flags&EINV_AFTER_UNGROUPED, itemU, flags&EINV_AFTER_GROUPED, itemG );
+	item->EnterInventory( inv, group, after, posItem );
 
 	Quit:
 	return;
@@ -7144,7 +7105,7 @@ Returns the entity containing us.
 void idEntity::Event_GetInventory() {
 	CtdmInventoryItem* item = InventoryItem();
 	if ( item != NULL ) {
-		CtdmInventory* inv = item->inventory();
+		CtdmInventory* inv = item->Inventory();
 		if ( inv != NULL ) {
 			idThread::ReturnEntity( inv->m_owner.GetEntity() );
 		} else {
@@ -7179,7 +7140,7 @@ void idEntity::Event_ReplaceItem( idEntity* ent ) {
 		goto Quit;
 	}
 
-	item->replaceItem( item2 );
+	item->ReplaceItem( item2 );
 
 	Quit:
 	return;
@@ -7205,23 +7166,23 @@ void idEntity::Event_GetNextItem( idEntity* lastMatch ) {
 		goto Quit;
 	}
 
-	cursor.setInventory( inv );
+	cursor.SetInventory( inv );
 
 	// If a last match was specified, then select it with our cursor.
 	if ( lastMatch != NULL ) {
 		CtdmInventoryItem* item = lastMatch->InventoryItem();
-		if ( item == NULL || item->inventory() != inv ) {
+		if ( item == NULL || item->Inventory() != inv ) {
 			gameLocal.Warning("Last match not in inventory... assuming last match is null.\n");
 		} else {
-			cursor.selectItem( item, true );
+			cursor.SelectItem( item, true );
 		}
 	}
 
 	// Find the next item after the last match.
-	cursor.iterate( TDMINV_UNGROUPED, false, true );
+	cursor.IterateItem( false, true );
 
-	if ( cursor.item() != NULL ) {
-		match = cursor.item()->m_owner.GetEntity();
+	if ( cursor.Item() != NULL ) {
+		match = cursor.Item()->m_owner.GetEntity();
 	}
 
 	Quit:
@@ -7251,7 +7212,7 @@ void idEntity::Event_SetCursorInventory( idEntity* ent ) {
 		}
 	}
 
-	cursor->setInventory( inv );
+	cursor->SetInventory( inv );
 
 	Quit:
 	return;
@@ -7267,7 +7228,7 @@ Gets the inventory that this entity's cursor points to.
 void idEntity::Event_GetCursorInventory() {
 	CtdmInventoryCursor* cursor = InventoryCursor();
 	if ( cursor != NULL ) {
-		CtdmInventory* inv = cursor->inventory();
+		CtdmInventory* inv = cursor->Inventory();
 		if ( inv != NULL ) {
 			idThread::ReturnEntity( inv->m_owner.GetEntity() );
 		} else {
@@ -7298,16 +7259,16 @@ void idEntity::Event_SetCursorItem( idEntity* ent, int noHistory ) {
 		gameLocal.Warning( "Unable load inventory item.\n" );
 		goto Quit;
 	}
-	if ( cursor->inventory() == NULL || cursor->inventory() != item->inventory() ) {
+	if ( cursor->Inventory() == NULL || cursor->Inventory() != item->Inventory() ) {
 		gameLocal.Warning( "Cursor doesn't point to the inventory containing item.\n" );
 		goto Quit;
 	}
-	if ( (noHistory & EINV_NOHISTORY) != noHistory ) {
+	if ( (noHistory & EINV_FAST) != noHistory ) {
 		gameLocal.Warning( "Invalid type passed to cursorSelectItem.\n" );
 		goto Quit;
 	}
 
-	cursor->selectItem( item, noHistory );
+	cursor->SelectItem( item, noHistory );
 
 	Quit:
 	return;
@@ -7323,7 +7284,7 @@ Returns the item this entity's cursor currently points to.
 void idEntity::Event_GetCursorItem() {
 	CtdmInventoryCursor* cursor = InventoryCursor();
 	if ( cursor != NULL ) {
-		CtdmInventoryItem* item = cursor->item();
+		CtdmInventoryItem* item = cursor->Item();
 		if ( item != NULL ) {
 			idThread::ReturnEntity( item->m_owner.GetEntity() );
 		} else {
@@ -7350,9 +7311,9 @@ void idEntity::Event_CopyCursor( idEntity* ent, int noHistory ) {
 		gameLocal.Warning( "Unable load inventory cursor.\n" );
 		return;
 	}
-	if ( (noHistory & EINV_NOHISTORY) == noHistory ) {
+	if ( (noHistory & EINV_FAST) == noHistory ) {
 		if ( noHistory != 0 ) {
-			cursor->copyActiveCursor( *other, true );
+			cursor->CopyActiveCursor( *other, true );
 		} else {
 			*cursor = *other;
 		}
@@ -7379,14 +7340,16 @@ void idEntity::Event_IterateCursor( int type ) {
 		gameLocal.Warning( "Unable load inventory cursor.\n" );
 		goto Quit;
 	}
-	if ( type < 0 || type >= 32 ) {
+	if ( type < 0 || type >= 8 ) {
 		gameLocal.Warning( "Invalid type passed to iterateCursor.\n" );
 		goto Quit;
 	}
 
-	cursor->iterate( (EtdmInventoryIterationMethod)(type & 3),
-					 type & EINV_PREV, type & EINV_NOHISTORY,
-					 (type & EINV_NONULL) ? inventoryFilter_noNull : NULL );
+	if ( type & EINV_GROUP ) {
+		cursor->IterateGroup( type & EINV_PREV, type & EINV_FAST );
+	} else {
+		cursor->IterateItem( type & EINV_PREV, type & EINV_FAST );
+	}
 
 	Quit:
 	return;
