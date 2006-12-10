@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2006/12/10 12:07:36  ishtvan
+ * grace period bugfixes
+ *
+ * large lightgem value now overrides grace period faster
+ *
  * Revision 1.38  2006/12/10 10:23:09  ishtvan
  * *) grace period implemented
  * *) head turning fixed
@@ -672,6 +677,8 @@ idAI::idAI() {
 	m_AlertGraceStart = 0;
 	m_AlertGraceTime = 0;
 	m_AlertGraceThresh = 0;
+	m_AlertGraceCount = 0;
+	m_AlertGraceCountLimit = 0;
 
 	/**
 	* Darkmod: No hiding spot search by default
@@ -851,6 +858,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_AlertGraceStart );
 	savefile->WriteInt( m_AlertGraceTime );
 	savefile->WriteFloat( m_AlertGraceThresh );
+	savefile->WriteInt( m_AlertGraceCount );
+	savefile->WriteInt( m_AlertGraceCountLimit );
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 }
@@ -1011,6 +1020,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_AlertGraceStart );
 	savefile->ReadInt( m_AlertGraceTime );
 	savefile->ReadFloat( m_AlertGraceThresh );
+	savefile->ReadInt( m_AlertGraceCount );
+	savefile->ReadInt( m_AlertGraceCountLimit );
 
 	savefile->ReadBool( restorePhysics );
 
@@ -5838,10 +5849,19 @@ void idAI::AlertAI( const char *type, float amount )
 			m_AlertGraceActor = NULL;
 			m_AlertGraceStart = 0;
 			m_AlertGraceThresh = 0;
+			m_AlertGraceCount = 0;
+			m_AlertGraceCountLimit = 0;
 		}
-		else if( alertInc < m_AlertGraceThresh && act != NULL && act == m_AlertGraceActor.GetEntity() )
+		else if( alertInc < m_AlertGraceThresh 
+			&& act != NULL 
+			&& act == m_AlertGraceActor.GetEntity()
+			&& m_AlertGraceCount < m_AlertGraceCountLimit )
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period allowed, ignoring alert. \r");
+			m_AlertGraceCount++;
+// Quick hack: Large lightgem values and visual alerts override the grace period count faster
+			if( AI_VISALERT )
+				m_AlertGraceCount += idMath::Rint( g_Global.m_DarkModPlayer->m_LightgemValue / 8.0f );
 			goto Quit;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
@@ -5964,8 +5984,8 @@ idActor *idAI::VisualScan( float timecheck )
 
 		if( incAlert > m_AlertNumThisFrame )
 		{
-			AlertAI( "vis", incAlert );
 			m_AlertedByActor = actor;
+			AlertAI( "vis", incAlert );
 		}
 	}
 
@@ -6052,12 +6072,12 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 // TODO: Query responsible actor if the entity touched is not an actor (e.g., moveable)
 
 		// NOTE: Latest tactile alert always overrides other alerts
-		AlertAI( "tact", amount );
 		m_TactAlertEnt = entest;
-
 		if( entest->IsType(idActor::Type) )
 			m_AlertedByActor = static_cast<idActor *>(entest);
 
+		AlertAI( "tact", amount );
+		
 		// Set last visual contact location to this location as that is used in case
 		// the target gets away
 		m_LastSight = entest->GetPhysics()->GetOrigin();

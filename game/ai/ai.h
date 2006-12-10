@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2006/12/10 12:07:36  ishtvan
+ * grace period bugfixes
+ *
+ * large lightgem value now overrides grace period faster
+ *
  * Revision 1.26  2006/12/10 10:23:09  ishtvan
  * *) grace period implemented
  * *) head turning fixed
@@ -846,6 +851,18 @@ protected:
 	float					m_AlertGraceThresh;
 
 	/**
+	* Number of alerts ignored in this grace period
+	**/
+	int						m_AlertGraceCount;
+
+	/**
+	* Number of alerts it takes to override the grace period via sheer number
+	* (This is needed to make AI rapidly come up to alert due to visual alert,
+	* because visual alerts do not increase in magnitude but just come in more rapidly
+	**/
+	int						m_AlertGraceCountLimit;
+
+	/**
 	* The current mod hiding spot search of this AI, usually NULL (0)
 	*/
 	int m_HidingSpotSearchHandle;
@@ -1282,8 +1299,9 @@ protected:
 	* Set an alert grace period
 	* First argument is the fraction of the current alert this frame to ignore
 	* Second argument is the number of SECONDS the grace period lasts.
+	* Third argument is the number of events it takes to override the grace period
 	**/
-	void Event_SetAlertGracePeriod( float frac, float duration );
+	void Event_SetAlertGracePeriod( float frac, float duration, int count );
 
     /**
 	* Script frontend for DarkMod hiding spot detection functions
