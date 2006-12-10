@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2006/12/10 02:55:56  ishtvan
+ * added AI cvars to debug display state and alert number
+ *
  * Revision 1.42  2006/12/07 09:54:26  ishtvan
  * modified lean variable defaults
  *
@@ -179,17 +182,20 @@ idCVar g_version(					"g_version",				gameVersion.string,	CVAR_GAME | CVAR_ROM, 
 /**
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/
-idCVar cv_ai_sndvol(				"tdm_ai_sndvol",				"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifier to the volume of suspcious sounds that AI's hear.  Defaults to 0.0 dB" );
-idCVar cv_ai_sightmod(				"tdm_ai_sight",				"0.7",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the AI's chance of seeing you.  Small changes may have a large effect." );
+idCVar cv_ai_sndvol(				"tdm_ai_sndvol",			"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifier to the volume of suspcious sounds that AI's hear.  Defaults to 0.0 dB" );
+idCVar cv_ai_sight_prob(			"tdm_ai_sight_prob",		"0.7",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the AI's chance of seeing you.  Small changes may have a large effect." );
+idCVar cv_ai_sight_mag(				"tdm_ai_sight_mag",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the amount of visual alert that gets added on when the sight probability check succeeds and the AI do see you (default 1.0)." );
 idCVar cv_ai_sightmaxdist(			"tdm_ai_sightmax",			"60.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The distance (in meters) above which an AI will not see you even with a fullbright lightgem.  Defaults to 60m.  Effects visibility in a complicated way." );
 idCVar cv_ai_sightmindist(			"tdm_ai_sightmin",			"11.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The distance (in meters) below which an AI has a 100% chance of seeing you with a fullbright lightgem.  Defaults to 11m (~36 ft).  Effects visibility in a complicated way." );
 idCVar cv_ai_tactalert(				"tdm_ai_tact",				"20.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The default tactile alert if an AI bumps an enemy or an enemy bumps an AI.  Default value is 20 alert units (pretty much full alert)." );
 idCVar cv_ai_debug(					"tdm_ai_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, AI alert events will be sent to the console for debugging purposes." );
 idCVar cv_ai_fov_show (				"tdm_ai_showfov",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the field of vision of the AI will be drawn.");
 idCVar cv_ai_ko_show (				"tdm_ai_showko",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the knockout region of the AI will be drawn.");
+idCVar cv_ai_state_show (			"tdm_ai_showstate",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current state will be shown.");
+idCVar cv_ai_alertnum_show (		"tdm_ai_showalert",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the AI's current total alert units is shown (Note: This is not the alert state, use tdm_ai_showstate for that).");
 
-idCVar cv_spr_debug(				"tdm_spr_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
-idCVar cv_spr_show(					"tdm_showsprop",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines." );
+idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
+idCVar cv_spr_show(					"tdm_showsprop",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation paths to nearby AI will be shown as lines." );
 idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, knockout zones will be shown for debugging." );
 
 /**
