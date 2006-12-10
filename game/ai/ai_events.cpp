@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2006/12/10 10:23:09  ishtvan
+ * *) grace period implemented
+ * *) head turning fixed
+ *
  * Revision 1.21  2006/12/09 22:45:52  sophisticatedzombie
  * 1) The AI now correctly stores the last known enemy location on tactile alerts.
  * That way, the scripts can correctly use that instead of the last visual stimulus
@@ -250,6 +254,7 @@ const idEventDef AI_GetTactEnt( "getTactEnt", NULL, 'e');
 const idEventDef AI_SetAcuity( "setAcuity", "sf" );
 const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
 const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
+const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "ff" );
 
 const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
 
@@ -546,6 +551,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
 	EVENT( AI_VisScan,							idAI::Event_VisScan )
 	EVENT( AI_GetAlertActor,					idAI::Event_GetAlertActor )
+	EVENT( AI_SetAlertGracePeriod,				idAI::Event_SetAlertGracePeriod )
 	EVENT( AI_ClosestReachableEnemy,			idAI::Event_ClosestReachableEnemy )
 	EVENT ( AI_StartSearchForHidingSpots,		idAI::Event_StartSearchForHidingSpots )
 	EVENT ( AI_ContinueSearchForHidingSpots,	idAI::Event_ContinueSearchForHidingSpots )
@@ -2892,6 +2898,9 @@ void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, floa
 	idMat3 physicalAxis = GetPhysics()->GetAxis();
 	idAngles physicalAngles = physicalAxis.ToAngles ();
 
+	// FIX (Ishtvan)
+	physicalAngles.yaw = current_yaw;
+
 	// Now rotate it by the given angles
 	idAngles lookAngles = idAngles(pitchAngleUp, yawAngleClockwise, rollAngle);
 
@@ -2899,7 +2908,7 @@ void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, floa
 	lookAngles.Normalize180();
 
 	// Determine the look at world position
-	idVec3 lookAtPositionDelta = lookAngles.ToForward() * 10.0;
+	idVec3 lookAtPositionDelta = lookAngles.ToForward() * 15.0;
 	idVec3 lookAtWorldPosition = GetEyePosition() + lookAtPositionDelta;
 
 	//gameRenderWorld->DebugArrow (idVec4(1.0,0.0,0.0,1.0), GetEyePosition(), lookAtWorldPosition, 1, 5000);
@@ -3877,4 +3886,18 @@ void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch
 	// Done
 	idThread::ReturnInt (p_hidingSpotFinder->hidingSpotList.getNumSpots());
 
+}
+
+void idAI::Event_GetAlertActor( void )
+{
+	idThread::ReturnEntity( m_AlertedByActor.GetEntity() );
+}
+
+void idAI::Event_SetAlertGracePeriod( float frac, float duration )
+{
+	// set the parameters
+	m_AlertGraceActor = m_AlertedByActor.GetEntity();
+	m_AlertGraceStart = gameLocal.time;
+	m_AlertGraceTime = SEC2MS( duration );
+	m_AlertGraceThresh = m_AlertNumThisFrame * frac;
 }

@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2006/12/10 10:23:09  ishtvan
+ * *) grace period implemented
+ * *) head turning fixed
+ *
  * Revision 1.37  2006/12/10 03:29:43  ishtvan
  * fixed ai alert debug display so that it works
  *
@@ -664,6 +668,10 @@ idAI::idAI() {
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
+	m_AlertGraceActor = NULL;
+	m_AlertGraceStart = 0;
+	m_AlertGraceTime = 0;
+	m_AlertGraceThresh = 0;
 
 	/**
 	* Darkmod: No hiding spot search by default
@@ -839,6 +847,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	m_AlertedByActor.Save( savefile );
 	m_TactAlertEnt.Save( savefile );
+	m_AlertGraceActor.Save( savefile );
+	savefile->WriteInt( m_AlertGraceStart );
+	savefile->WriteInt( m_AlertGraceTime );
+	savefile->WriteFloat( m_AlertGraceThresh );
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 }
@@ -995,6 +1007,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	m_AlertedByActor.Restore( savefile );
 	m_TactAlertEnt.Restore( savefile );
+	m_AlertGraceActor.Restore( savefile );
+	savefile->ReadInt( m_AlertGraceStart );
+	savefile->ReadInt( m_AlertGraceTime );
+	savefile->ReadFloat( m_AlertGraceThresh );
 
 	savefile->ReadBool( restorePhysics );
 
@@ -5787,6 +5803,10 @@ void idAI::HearSound
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
 
+		if( propParms->maker->IsType(idActor::Type) )
+			m_AlertedByActor = static_cast<idActor *>(propParms->maker);
+// TODO: For sounds from other entities, such as moveables, query the responsible actor
+
 		AlertAI( "aud", psychLoud );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
 		if( cv_ai_debug.GetBool() )
@@ -5797,21 +5817,51 @@ void idAI::HearSound
 
 void idAI::AlertAI( const char *type, float amount )
 {
-	float mod;
+	float mod(0), alertInc(0);
+	idActor *act(NULL);
 
-	mod = GetAcuity( type );	
-	AI_AlertNum = AI_AlertNum + amount*mod/100.0;
+	mod = GetAcuity( type );
+	alertInc = amount * mod/100.0;
+
+	// Ignore actors in notarget mode
+	act = m_AlertedByActor.GetEntity();
+	if( act && act->fl.notarget )
+		goto Quit;
+
+	if( m_AlertGraceTime )
+	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period active, testing... \r");
+		if( gameLocal.time > (m_AlertGraceStart + m_AlertGraceTime) )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period found to have expired. Resetting. \r");
+			m_AlertGraceTime = 0;
+			m_AlertGraceActor = NULL;
+			m_AlertGraceStart = 0;
+			m_AlertGraceThresh = 0;
+		}
+		else if( alertInc < m_AlertGraceThresh && act != NULL && act == m_AlertGraceActor.GetEntity() )
+		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period allowed, ignoring alert. \r");
+			goto Quit;
+		}
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
+	}
+
+	AI_AlertNum = AI_AlertNum + alertInc;
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
 	
 	if( cv_ai_debug.GetBool() )
-		gameLocal.Printf("[DM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
 
 	if( gameLocal.isNewFrame )
 		AI_ALERTED = true;
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
 	m_AlertNumThisFrame = amount;
+
+Quit:
+	return;
 }
 
 float idAI::GetAcuity( const char *type )
@@ -5915,6 +5965,7 @@ idActor *idAI::VisualScan( float timecheck )
 		if( incAlert > m_AlertNumThisFrame )
 		{
 			AlertAI( "vis", incAlert );
+			m_AlertedByActor = actor;
 		}
 	}
 
@@ -5923,7 +5974,6 @@ idActor *idAI::VisualScan( float timecheck )
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
-		m_AlertedByActor = actor;
 	}
 
 Quit:
@@ -5999,10 +6049,14 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 		{
 			goto Quit;
 		}
+// TODO: Query responsible actor if the entity touched is not an actor (e.g., moveable)
 
 		// NOTE: Latest tactile alert always overrides other alerts
 		AlertAI( "tact", amount );
 		m_TactAlertEnt = entest;
+
+		if( entest->IsType(idActor::Type) )
+			m_AlertedByActor = static_cast<idActor *>(entest);
 
 		// Set last visual contact location to this location as that is used in case
 		// the target gets away
@@ -6716,9 +6770,4 @@ void idAI::UpdateAir( void )
 
 	// set the timer
 	m_AirCheckTimer += m_AirCheckInterval;
-}
-
-void idAI::Event_GetAlertActor( void )
-{
-	idThread::ReturnEntity( m_AlertedByActor.GetEntity() );
 }

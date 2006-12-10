@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/12/10 10:23:09  ishtvan
+ * *) grace period implemented
+ * *) head turning fixed
+ *
  * Revision 1.25  2006/12/09 22:45:52  sophisticatedzombie
  * 1) The AI now correctly stores the last known enemy location on tactile alerts.
  * That way, the scripts can correctly use that instead of the last visual stimulus
@@ -271,6 +275,9 @@ extern const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList;
 
 // Darkmod AI additions
 extern const idEventDef AI_GetAlertNumOfOtherAI;
+
+// Set a grace period for alerts
+extern const idEventDef AI_SetAlertGracePeriod;
 
 // This event is used to get a position from which a given position can be observed
 extern const idEventDef AI_GetObservationPosition;
@@ -818,6 +825,27 @@ protected:
 	idEntityPtr<idEntity>	m_TactAlertEnt;
 
 	/**
+	* Alert Grace period variables :
+	* Actor that the alert grace period applies to:
+	**/
+	idEntityPtr<idActor>	m_AlertGraceActor;
+
+	/**
+	* Time of the grace period start [ms]
+	**/
+	int						m_AlertGraceStart;
+
+	/**
+	* Duration of the grace period [ms]
+	**/
+	int						m_AlertGraceTime;
+
+	/**
+	* Alert number below which alerts are ignored during the grace period
+	**/
+	float					m_AlertGraceThresh;
+
+	/**
 	* The current mod hiding spot search of this AI, usually NULL (0)
 	*/
 	int m_HidingSpotSearchHandle;
@@ -1249,6 +1277,13 @@ protected:
 	* Get the actor that alerted the AI this frame
 	**/
 	void Event_GetAlertActor( void );
+
+	/**
+	* Set an alert grace period
+	* First argument is the fraction of the current alert this frame to ignore
+	* Second argument is the number of SECONDS the grace period lasts.
+	**/
+	void Event_SetAlertGracePeriod( float frac, float duration );
 
     /**
 	* Script frontend for DarkMod hiding spot detection functions
