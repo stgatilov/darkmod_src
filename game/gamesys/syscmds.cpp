@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2006/12/10 05:31:20  gildoran
+ * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
+ *
  * Revision 1.11  2006/12/07 09:53:52  ishtvan
  * added tdm_keycapture command for binding new buttons
  *
@@ -53,6 +56,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../Game_local.h"
 #include "../../darkmod/sndproploader.h"
 #include "../../darkmod/relations.h"
+#include "../darkmod/tdmInventory.h"
 
 #include "TypeInfo.h"
 
@@ -338,44 +342,44 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
 
 			item = NULL;
-			if ( pCur && pCur->inventory() ) {
+			if ( pCur && pCur->Inventory() ) {
 
 				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
 				// that save/restore can't be called while this function is running.
 				CtdmInventoryCursor cur;
 
-				cur.setInventory( pCur->inventory() );
-				cur.iterate( TDMINV_UNGROUPED, false, true );
-				while ( cur.item() ) {
+				cur.SetInventory( pCur->Inventory() );
+				cur.IterateItem( false, true );
+				while ( cur.Item() ) {
 
-					ent = cur.item()->m_owner.GetEntity();
+					ent = cur.Item()->m_owner.GetEntity();
 					hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
 					if ( idStr::Cmp( hotkey, args.Argv(1) ) == 0 ) {
-						item = cur.item();
+						item = cur.Item();
 						break;
 					}
 
-					cur.iterate( TDMINV_UNGROUPED, false, true );
+					cur.IterateItem( false, true );
 				}
 
 			}
 
 			if ( item )
-				pCur->selectItem( item );
+				pCur->SelectItem( item );
 			else
 				gameLocal.Printf( "%s: Unable to find item: \"%s\"", args.Argv(0), args.Argv(1) );
 
 		} else {
 			// Clear the current slot.
-			if ( pCur && pCur->inventory() )
-				pCur->selectItem( NULL );
+			if ( pCur && pCur->Inventory() )
+				pCur->SelectItem( NULL );
 		}
 
 	} else {
 
 		// List the hotkey of the current item.
 
-		item = pCur ? pCur->item() : NULL;
+		item = pCur ? pCur->Item() : NULL;
 		ent = item ? item->m_owner.GetEntity() : NULL;
 		hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
 
