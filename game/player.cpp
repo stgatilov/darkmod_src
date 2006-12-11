@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.97  2006/12/11 06:55:56  gildoran
+ * Added the ability to use items directly via hotkey.
+ *
  * Revision 1.96  2006/12/10 04:53:23  gildoran
  * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
  *
@@ -9869,69 +9872,52 @@ void idPlayer::inventoryPrevGroup() {
 }
 
 void idPlayer::inventoryUseItem() {
-	CtdmInventoryItem* item;
-	idEntity* useEnt;
-	idThread* thread;
+	assert( InventoryCursor() );
 
 	// Is there anything in our hands?
-	useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
-	if ( useEnt != NULL ) {
-
-		thread = useEnt->CallScriptFunctionArgs( "inventoryUseHeld", true, 0, "ee", useEnt, this );
-		if (thread)
-			thread->Start(); // Start the thread immediately.
-
-		goto Quit;
+	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
+	// If not, do we have anything selected?
+	if ( !useEnt ) {
+		CtdmInventoryItem* item = InventoryCursor()->Item();
+		useEnt = item ? item->m_owner.GetEntity() : NULL;
 	}
 
-	// Do we have anything selected?
-	item = InventoryCursor()->Item();
-	useEnt = item ? item->m_owner.GetEntity() : NULL;
-	if ( useEnt != NULL ) {
-
-		thread = useEnt->CallScriptFunctionArgs( "inventoryUseInv", true, 0, "ee", useEnt, this );
+	if ( useEnt ) {
+		// call script: useEnt.inventoryUse( thisPlayer );
+		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
 		if (thread)
 			thread->Start(); // Start the thread immediately.
-
-		goto Quit;
 	}
+}
 
-	Quit:
-	return;
+void idPlayer::inventoryUseItem( idEntity* useEnt ) {
+	assert( InventoryCursor() );
+
+	// If the item is outside our current inventory, it can't be used.
+	CtdmInventoryItem* item = useEnt->InventoryItem();
+	if ( item && item->Inventory() == InventoryCursor()->Inventory() ) {
+		// call script: useEnt.inventoryUse( thisPlayer );
+		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
+		if (thread)
+			thread->Start(); // Start the thread immediately.
+	}
 }
 
 void idPlayer::inventoryDropItem() {
-	CtdmInventoryItem* item;
-	idEntity* useEnt;
-	idThread* thread;
-
 	// Is there anything in our hands?
-	useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
-	if ( useEnt != NULL ) {
-
-		thread = useEnt->CallScriptFunctionArgs( "inventoryDropHeld", true, 0, "ee", useEnt, this );
-		if (thread)
-			thread->Start(); // Start the thread immediately.
-		else
-			g_Global.m_DarkModPlayer->grabber->Update( this, false ); // drop whatever is held
-
-		goto Quit;
+	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
+	// If not, do we have anything selected?
+	if ( !useEnt ) {
+		CtdmInventoryItem* item = InventoryCursor()->Item();
+		useEnt = item ? item->m_owner.GetEntity() : NULL;
 	}
 
-	// Do we have anything selected?
-	item = InventoryCursor()->Item();
-	useEnt = item ? item->m_owner.GetEntity() : NULL;
-	if ( useEnt != NULL ) {
-
-		thread = useEnt->CallScriptFunctionArgs( "inventoryDropInv", true, 0, "ee", useEnt, this );
+	if ( useEnt ) {
+		// call script: useEnt.inventoryDrop( thisPlayer );
+		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryDrop", true, 0, "ee", useEnt, this );
 		if (thread)
 			thread->Start(); // Start the thread immediately.
-
-		goto Quit;
 	}
-
-	Quit:
-	return;
 }
 
 bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {

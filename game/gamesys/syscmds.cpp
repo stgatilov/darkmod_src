@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2006/12/11 06:55:51  gildoran
+ * Added the ability to use items directly via hotkey.
+ *
  * Revision 1.12  2006/12/10 05:31:20  gildoran
  * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
  *
@@ -330,18 +333,15 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 		goto Quit;
 	}
 	CtdmInventoryCursor *pCur = gameLocal.GetLocalPlayer()->InventoryCursor();
-	CtdmInventoryItem *item;
+	CtdmInventoryItem *item = NULL;
 	idEntity *ent;
 	const char *hotkey;
 
 	if( args.Argc() == 2 ) {
 
 		// Skip to the item with the given hotkey.
-
-
 		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
 
-			item = NULL;
 			if ( pCur && pCur->Inventory() ) {
 
 				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
@@ -388,6 +388,77 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 		else
 			gameLocal.Printf( "%s: No hotkey found.\n", args.Argv(0) );
 
+	}
+
+	Quit:
+	return;
+}
+
+/*
+==================
+Cmd_InventoryUse_f
+==================
+*/
+void Cmd_InventoryUse_f( const idCmdArgs &args )
+{
+	static const char *key = "inv_hotkey";
+
+	if ( 0 > args.Argc() || args.Argc() > 2 ) {
+		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
+		goto Quit;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		goto Quit;
+	}
+	CtdmInventoryCursor *pCur = gameLocal.GetLocalPlayer()->InventoryCursor();
+	CtdmInventoryItem *item = NULL;
+	idEntity *ent = NULL;
+	const char *hotkey;
+
+	if( args.Argc() == 2 ) {
+
+		// Skip to the item with the given hotkey.
+		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
+
+			if ( pCur && pCur->Inventory() ) {
+
+				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
+				// that save/restore can't be called while this function is running.
+				CtdmInventoryCursor cur;
+
+				cur.SetInventory( pCur->Inventory() );
+				cur.IterateItem( false, true );
+				while ( cur.Item() ) {
+
+					ent = cur.Item()->m_owner.GetEntity();
+					hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
+					if ( idStr::Cmp( hotkey, args.Argv(1) ) == 0 ) {
+						item = cur.Item();
+						break;
+					}
+
+					cur.IterateItem( false, true );
+				}
+
+			}
+
+		}
+
+	} else if ( pCur ) {
+		item = pCur->Item();
+	}
+
+	if ( item ) {
+		ent = item->m_owner.GetEntity();
+	}
+
+	if ( ent ) {
+		player->inventoryUseItem( ent );
+	} else {
+		gameLocal.Printf( "%s: Unable to find item: \"%s\"", args.Argv(0), args.Argv(1) );
 	}
 
 	Quit:
@@ -2738,6 +2809,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_attach_print",		Cmd_AttachmentPrint_f,		CMD_FL_GAME,				"Print the attachment info for the given attachment on the AI you are looking at.  Usage: tdm_attach_print <attachment index>" );
 
 	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
+	cmdSystem->AddCommand( "inventory_use",			Cmd_InventoryUse_f,			CMD_FL_GAME,				"Usage: inventory_use [item]\nUses an item in the currently available inventory without selectign it. If 'item' is omitted, it will use the currently selected item." );
 
 	cmdSystem->AddCommand( "tdm_keycapture",		Cmd_KeyCapture_f,			CMD_FL_GAME,				"Used internally.  Usage: tdm_keycapture <TDM action ID>.  Waits for the next keypress and assigns it to the desired action ID.  Action ID corresponds to a given action (e.g., lean left), and must be within the range specified by the enum in gameLocal.h" );
 
