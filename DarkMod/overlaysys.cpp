@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/12/12 19:37:59  gildoran
+ * Fixed dangling else bugs.
+ *
  * Revision 1.2  2006/09/18 18:56:50  gildoran
  * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
  *
@@ -325,9 +328,9 @@ void COverlaySys::setLayer( int handle, int layer ) {
 
 int COverlaySys::getLayer( int handle ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		return overlay->m_layer;
-	else {
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 		return 0;
 	}
@@ -335,9 +338,9 @@ int COverlaySys::getLayer( int handle ) {
 
 bool COverlaySys::isExternal( int handle ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		return overlay->m_external;
-	else {
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
@@ -345,20 +348,21 @@ bool COverlaySys::isExternal( int handle ) {
 
 void COverlaySys::setOpaque( int handle, bool isOpaque ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		if ( overlay->m_opaque != isOpaque ) {
 			overlay->m_opaque = isOpaque;
 			m_updateOpaque = true;
 		}
-	else
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+	}
 }
 
 bool COverlaySys::isOpaque( int handle ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		return overlay->m_opaque;
-	else {
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
@@ -366,20 +370,21 @@ bool COverlaySys::isOpaque( int handle ) {
 
 void COverlaySys::setInteractive( int handle, bool isInteractive ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		if ( overlay->m_interactive != isInteractive ) {
 			overlay->m_interactive = isInteractive;
 			m_updateInteractive = true;
 		}
-	else
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+	}
 }
 
 bool COverlaySys::isInteractive( int handle ) {
 	SOverlay* overlay = findOverlay( handle );
-	if ( overlay )
+	if ( overlay ) {
 		return overlay->m_interactive;
-	else {
+	} else {
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
