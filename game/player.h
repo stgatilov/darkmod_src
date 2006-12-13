@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2006/12/13 19:29:58  gildoran
+ * Updated and simplified the inventory UI.
+ *
  * Revision 1.40  2006/12/11 06:55:57  gildoran
  * Added the ability to use items directly via hotkey.
  *
@@ -427,10 +430,8 @@ public:
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
 
-	/// Used by the inventory GUI to know what the original item was when the cursor is moved.
-	CtdmInventoryCursor*	m_invGuiFallback;
-	/// Used by the inventory GUI to know what is currently fading out of view.
-	CtdmInventoryCursor*	m_invGuiFading;
+	/// The item currently displaying an inventory UI. (may not be the same as the currently selected item)
+	CtdmInventoryCursor*	m_invDisplayed;
 
 	int						weapon_soulcube;
 	int						weapon_pda;
@@ -753,7 +754,7 @@ public:
 	/// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem( idEntity* useEnt );
 	/// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	bool inventoryChangeSelection( idUserInterface *_hud );
+	void inventoryChangeSelection( idUserInterface *_hud, float shift = 0 );
 
 	void PrintDebugHUD(void);
 

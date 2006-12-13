@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.98  2006/12/13 19:29:58  gildoran
+ * Updated and simplified the inventory UI.
+ *
  * Revision 1.97  2006/12/11 06:55:56  gildoran
  * Added the ability to use items directly via hotkey.
  *
@@ -1510,8 +1513,7 @@ idPlayer::idPlayer()
 
 	m_LeanButtonTimeStamp	= 0;
 
-	m_invGuiFallback		= NULL;
-	m_invGuiFading			= NULL;
+	m_invDisplayed			= NULL;
 
 	// Add the default stims to the player. These are stims
 	// that can be performed by the actual player, while the
@@ -2039,11 +2041,10 @@ void idPlayer::Spawn( void )
 	// Have the player's cursor point to their own inventory by default.
 	InventoryCursor()->SetInventory( Inventory() );
 
-	m_invGuiFallback =	new CtdmInventoryCursor();
-	m_invGuiFading =	new CtdmInventoryCursor();
+	m_invDisplayed = new CtdmInventoryCursor();
 	// Perhaps I should do full-blown code to write an error if this occurs,
 	// since I've just allocated it?
-	assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
+	assert( m_invDisplayed );
 }
 
 /*
@@ -2057,10 +2058,8 @@ idPlayer::~idPlayer() {
 	delete weapon.GetEntity();
 	weapon = NULL;
 
-	// SZ: Commenting this out as it causes problems
-	//assert( m_invGuiFallback != NULL && m_invGuiFading != NULL );
-	delete m_invGuiFallback;
-	delete m_invGuiFading;
+	assert( m_invDisplayed );
+	delete m_invDisplayed;
 }
 
 /*
@@ -2278,9 +2277,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
-	savefile->WriteObject( m_invGuiFallback );
-	savefile->WriteObject( m_invGuiFading );
-	savefile->WriteInt( cv_tdm_inv_grouping.GetInteger() );
+	savefile->WriteObject( m_invDisplayed );
 
 	if ( hud ) {
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -2542,10 +2539,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
 
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFallback ) );
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invGuiFading ) );
-	savefile->ReadInt( num );
-	cv_tdm_inv_grouping.SetInteger( num );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invDisplayed ) );
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -9839,22 +9833,14 @@ void idPlayer::inventoryNextItem() {
 	assert( hud && InventoryCursor() );
 
 	InventoryCursor()->IterateItem( false );
-
-	if ( inventoryChangeSelection( hud ) )
-	{
-		hud->HandleNamedEvent( "inventoryShiftLeft" );
-	}
+	inventoryChangeSelection( hud, 1 );
 }
 
 void idPlayer::inventoryPrevItem() {
 	assert( hud && InventoryCursor() );
 
 	InventoryCursor()->IterateItem( true );
-
-	if ( inventoryChangeSelection( hud ) )
-	{
-		hud->HandleNamedEvent( "inventoryShiftRight" );
-	}
+	inventoryChangeSelection( hud, -1 );
 }
 
 void idPlayer::inventoryNextGroup() {
@@ -9920,107 +9906,38 @@ void idPlayer::inventoryDropItem() {
 	}
 }
 
-bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
+void idPlayer::inventoryChangeSelection( idUserInterface *_hud, float shift ) {
 
-	// Important note: Whenever m_invGuiFallback or m_invGuiFading are
-	// pointing to an empty slot, it is set so its group is NULL.
-	// This is not neccesarily the case for InventoryCursor(), however.
-
-	assert( _hud );
 	assert( InventoryCursor() );
-	assert( m_invGuiFallback && m_invGuiFading );
+	assert( m_invDisplayed );
 
-	bool fadeInGui = false;
-	bool fadeOutGui = false;
+	CtdmInventoryItem* newItem = InventoryCursor()->Item();
+	CtdmInventoryItem* oldItem = m_invDisplayed->Item();
+	idEntity* itemEnt;
+	idThread* thread;
 
-	CtdmInventoryItem* invItem		= InventoryCursor()->Item();
-	CtdmInventoryItem* fallbackItem	= m_invGuiFallback->Item();
-	CtdmInventoryItem* fadingItem	= m_invGuiFading->Item();
+	if ( newItem != oldItem ) {
 
-	// Was there a change in the selected item?
-	if ( invItem != fallbackItem ||
-		 ( invItem == NULL && m_invGuiFallback->Group( true ) != NULL ) ) {
-
-		idEntity* selectEnt = NULL;
-		idEntity* unselectEnt = NULL;
-		idEntity* unviewEnt = NULL;
-
-		// If m_invGuiFallback isn't empty, we need to move it to m_invGuiFading.
-		// Or if the item being faded out is the one being faded in,
-		// we need to delete what's in m_invGuiFading.
-		if ( m_invGuiFallback->Group( true ) != NULL || 
-			 ( fadingItem == invItem && fadingItem != NULL ) ) {
-
-			// If m_invGuiFading has an item, notify it that it's no longer on screen.
-			if ( fadingItem != NULL ) {
-				unviewEnt = fadingItem->m_owner.GetEntity();
-				assert( unviewEnt != NULL );
-			}
-
-			// If m_invGuiFallback has an item, notify it that it's fading.
-			if ( fallbackItem != NULL ) {
-				unselectEnt = fallbackItem->m_owner.GetEntity();
-				assert( unselectEnt != NULL );
-			}
-
-			// Copy m_invGuiFallback to m_invGuiFading.
-			m_invGuiFading->CopyActiveCursor( *m_invGuiFallback, true );
-			fadeOutGui = true;
-		}
-
-		// Copy InventoryCursor() to m_invGuiFallback, but represent an
-		// empty slot by a NULL group.
-		if ( invItem != NULL ) {
-			m_invGuiFallback->CopyActiveCursor( *InventoryCursor(), true );
-		} else {
-			m_invGuiFallback->SetInventory( NULL );
-		}
-
-		// If InventoryCursor() has an item, notify it that it's selected.
-		if ( invItem != NULL ) {
-			selectEnt = invItem->m_owner.GetEntity();
-			assert( selectEnt != NULL );
-
-			fadeInGui = true; // also tell the GUI to fade it in
-		}
-
-		idThread* thread;
-
-		// The order of these calls is intentional, though not necessarily critical.
-		if ( unviewEnt != NULL ) {
-			thread = unviewEnt->CallScriptFunctionArgs( "inventoryStopUpdate", true, 0, "ee", unviewEnt, this );
-			if (thread) {
+		if ( oldItem ) {
+			itemEnt = oldItem->m_owner.GetEntity();
+			assert( itemEnt );
+			thread = itemEnt->CallScriptFunctionArgs( "inventoryUnselect", true, 0, "eef", itemEnt, this, shift );
+			if (thread)
 				thread->Start(); // Start the thread immediately.
-			}
 		}
-		if ( fadeOutGui ) {
-			_hud->HandleNamedEvent( "inventoryFadeOut" );
-		}
-		if ( unselectEnt != NULL ) {
-			thread = unselectEnt->CallScriptFunctionArgs( "inventoryUnselect", true, 0, "ee", unselectEnt, this );
-			if (thread) {
+
+		if ( newItem ) {
+			itemEnt = newItem->m_owner.GetEntity();
+			assert( itemEnt );
+			thread = itemEnt->CallScriptFunctionArgs( "inventorySelect", true, 0, "eef", itemEnt, this, shift );
+			if (thread)
 				thread->Start(); // Start the thread immediately.
-			}
 		}
-		if ( selectEnt != NULL ) {
-			thread = selectEnt->CallScriptFunctionArgs( "inventorySelect", true, 0, "ee", selectEnt, this );
-			if (thread) {
-				thread->Start(); // Start the thread immediately.
-			}
-		} else {
-			_hud->HandleNamedEvent( "inventoryClearSelected" );
-		}
-		if ( fadeInGui ) {
-			_hud->HandleNamedEvent( "inventoryFadeIn" );
-		}
+
+		m_invDisplayed->CopyActiveCursor( *InventoryCursor(), true );
 	}
 
-	const char* str;
-	if ( cv_tdm_inv_grouping.GetInteger() != 0 ) {
-		str = InventoryCursor()->Group();
-	} else {
-		str = "";
-	}
+	const char* str = InventoryCursor()->Group();
 	// Only tell the GUI to update if something has changed:
 	// Unfortunately, I don't know how to do string comparisons
 	// in the GUI, so I have to do them here.
@@ -10035,8 +9952,6 @@ bool idPlayer::inventoryChangeSelection( idUserInterface* _hud ) {
 	_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
 	_hud->StateChanged( gameLocal.time );
 	_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
-
-	return fadeInGui || fadeOutGui;
 }
 
 /*
@@ -10227,6 +10142,16 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 		bool result = m_overlays.setGui( handle, guiFile );
 		assert( result );
 
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui ) {
+			gui->SetStateInt( "handle", handle );
+			gui->Activate( true, gameLocal.time );
+			// Let's set a good default value for whether or not the overlay is interactive.
+			m_overlays.setInteractive( handle, gui->IsInteractive() );
+		} else {
+			gameLocal.Warning( "Unknown error: Unable to load GUI into overlay.\n" );
+		}
+
 	} else {
 		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
 	}
@@ -10247,12 +10172,16 @@ void idPlayer::Event_CreateOverlay( const char *guiFile, int layer ) {
 
 		handle = m_overlays.createOverlay( layer );
 		if ( handle >= OVERLAYS_MIN_HANDLE ) {
+
 			m_overlays.setGui( handle, guiFile );
 			idUserInterface *gui = m_overlays.getGui( handle );
 			if ( gui ) {
+				gui->SetStateInt( "handle", handle );
 				gui->Activate( true, gameLocal.time );
 				// Let's set a good default value for whether or not the overlay is interactive.
 				m_overlays.setInteractive( handle, gui->IsInteractive() );
+			} else {
+				gameLocal.Warning( "Unknown error: Unable to load GUI into overlay.\n" );
 			}
 
 		} else {
