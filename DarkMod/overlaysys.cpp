@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/12/13 18:54:05  gildoran
+ * Added SDK function names to error messages to help with debugging.
+ * Fixed a bug that allowed creation of duplicate handles.
+ * Added OVERLAYS_INVALID_HANDLE to be used instead of OVERLAYS_MIN_HANDLE - 1
+ *
  * Revision 1.3  2006/12/12 19:37:59  gildoran
  * Fixed dangling else bugs.
  *
@@ -46,6 +51,7 @@ COverlaySys::COverlaySys() {
 	m_highestOpaque = NULL;
 	m_updateInteractive = false;
 	m_highestInteractive = NULL;
+	m_nextHandle = OVERLAYS_MIN_HANDLE;
 }
 
 COverlaySys::~COverlaySys() {
@@ -77,7 +83,7 @@ void COverlaySys::Save( idSaveGame *savefile ) const {
 
 		oNode = oNode->NextNode();
 	}
-	savefile->WriteInt( OVERLAYS_MIN_HANDLE - 1 );
+	savefile->WriteInt( OVERLAYS_INVALID_HANDLE );
 }
 
 void COverlaySys::Restore( idRestoreGame *savefile ) {
@@ -131,16 +137,16 @@ bool COverlaySys::isOpaque() {
 }
 
 int COverlaySys::getNextOverlay( int handle ) {
-	int retHandle = OVERLAYS_MIN_HANDLE - 1;
+	int retHandle = OVERLAYS_INVALID_HANDLE;
 
 	idLinkList<SOverlay> *oNode;
 	SOverlay *overlay = findOverlay( handle, false );
 	if ( overlay )
 		oNode = overlay->m_node.NextNode();
-	else if ( handle == OVERLAYS_MIN_HANDLE - 1 )
+	else if ( handle == OVERLAYS_INVALID_HANDLE )
 		oNode = m_overlays.NextNode();
 	else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "getNextOverlay: Non-existant GUI handle: %d\n", handle );
 		goto Quit;
 	}
 
@@ -155,41 +161,74 @@ int COverlaySys::getNextOverlay( int handle ) {
 }
 
 int COverlaySys::createOverlay( int layer, int handle ) {
-	assert( handle >= OVERLAYS_MIN_HANDLE - 1 );
+	assert( handle >= OVERLAYS_MIN_HANDLE || handle == OVERLAYS_INVALID_HANDLE );
 
-	int retHandle = OVERLAYS_MIN_HANDLE - 1;
-	int h = handle >= OVERLAYS_MIN_HANDLE ? handle : OVERLAYS_MIN_HANDLE;
-	idLinkList<SOverlay>* position = &m_overlays; // insert the new overlay AFTER this position
-	SOverlay* overlay;
+	int retHandle = OVERLAYS_INVALID_HANDLE;
 
-	// Loop through all current overlays, and:
-	// a) Find a free handle using an easy method.
-	// b) Find a spot to insert the new overlay.
-	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	// Find a valid handle for our overlay.
+	idLinkList<SOverlay>* oNode;
+	if ( handle == OVERLAYS_INVALID_HANDLE ) {
+		// Any handle will do.
+
+		bool foundHandle = false;
+
+		// Iterate through all available handles until we come back to where we started.
+		handle = m_nextHandle;
+		do {
+
+			// Check if the overlay has the handle.
+			oNode = m_overlays.NextNode();			
+			while ( oNode ) {
+				if ( oNode->Owner()->m_handle == handle )
+					break;
+				oNode = oNode->NextNode();
+			}
+			// If we went all the way through the loop, the handle doesn't already exist.
+			if ( !oNode ) {
+				foundHandle = true;
+				break;
+			}
+
+			handle++;
+			if ( handle < OVERLAYS_MIN_HANDLE )
+				handle = OVERLAYS_MIN_HANDLE;
+		} while ( handle != m_nextHandle );
+
+		if ( !foundHandle ) {
+			gameLocal.Warning( "No more handles available.\n" );
+			goto Quit;
+		}
+
+		m_nextHandle = handle + 1;
+		if ( m_nextHandle < OVERLAYS_MIN_HANDLE )
+			m_nextHandle = OVERLAYS_MIN_HANDLE;
+
+	} else {
+		// There's a specific handle that is desired.
+
+		oNode = m_overlays.NextNode();
+		while ( oNode ) {
+			// If the handle is unavailable, don't create anything.
+			if ( oNode->Owner()->m_handle == handle )
+				goto Quit;
+			oNode = oNode->NextNode();
+		}
+
+	}
+
+	// At this point, 'handle' is the handle our overlay will have.
+
+	// Find the position after which we will insert our overlay.
+	idLinkList<SOverlay>* position = &m_overlays; // The position after which we will insert the new overlay
+	oNode = m_overlays.NextNode();
 	while ( oNode ) {
-
-		overlay = oNode->Owner();
-		if ( h == overlay->m_handle )
-			h++;
-		if ( layer >= overlay->m_layer )
+		if ( layer >= oNode->Owner()->m_layer )
 			position = oNode;
-
 		oNode = oNode->NextNode();
 	}
 
-	// Was there a prefered handle that we weren't able to obtain?
-	if ( handle >= OVERLAYS_MIN_HANDLE && h != handle )
-		goto Quit;
-
-	// Were there no free handles? (almost certainly no)
-	if ( h < OVERLAYS_MIN_HANDLE )
-	{
-		gameLocal.Warning( "No more handles available.\n" );
-		goto Quit;
-	}
-
-	overlay = new SOverlay;
-	if ( overlay == NULL )
+	SOverlay* overlay = new SOverlay;
+	if ( !overlay )
 	{
 		gameLocal.Warning( "Unable to allocate overlay.\n" );
 		goto Quit;
@@ -198,13 +237,13 @@ int COverlaySys::createOverlay( int layer, int handle ) {
 	overlay->m_node.SetOwner( overlay );
 	overlay->m_node.InsertAfter( *position );
 	overlay->m_gui = NULL;
-	overlay->m_handle = h;
+	overlay->m_handle = handle;
 	overlay->m_layer = layer;
 	overlay->m_external = true;
 	overlay->m_opaque = false;
 	overlay->m_interactive = false;
 
-	retHandle = h;
+	retHandle = handle;
 
 	Quit:
 	return retHandle;
@@ -214,13 +253,13 @@ void COverlaySys::destroyOverlay( int handle ) {
 	SOverlay* overlay = findOverlay( handle, false );
 	if ( overlay == NULL )
 	{
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "destroyOverlay: Non-existant GUI handle: %d\n", handle );
 		goto Quit;
 	}
 
 	// If the last-used cache points to the overlay, clear it.
 	if ( m_lastUsedOverlay == overlay ) {
-		m_lastUsedHandle = OVERLAYS_MIN_HANDLE - 1;
+		m_lastUsedHandle = OVERLAYS_INVALID_HANDLE;
 		m_lastUsedOverlay = NULL; // not necessary, but perhaps safer
 	}
 
@@ -256,7 +295,7 @@ void COverlaySys::setGui( int handle, idUserInterface* gui ) {
 
 		overlay->m_gui = gui;
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "setGui: Non-existant GUI handle: %d\n", handle );
 	}
 }
 
@@ -279,7 +318,7 @@ bool COverlaySys::setGui( int handle, const char* file ) {
 		}
 
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "setGui: Non-existant GUI handle: %d\n", handle );
 	}
 	return retVal;
 }
@@ -289,7 +328,7 @@ idUserInterface* COverlaySys::getGui( int handle ) {
 	if ( overlay )
 		return overlay->m_gui;
 	else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "getGui: Non-existant GUI handle: %d\n", handle );
 		return NULL;
 	}
 }
@@ -322,7 +361,7 @@ void COverlaySys::setLayer( int handle, int layer ) {
 		}
 
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "setLayer: Non-existant GUI handle: %d\n", handle );
 	}
 }
 
@@ -331,7 +370,7 @@ int COverlaySys::getLayer( int handle ) {
 	if ( overlay ) {
 		return overlay->m_layer;
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "getLayer: Non-existant GUI handle: %d\n", handle );
 		return 0;
 	}
 }
@@ -341,7 +380,7 @@ bool COverlaySys::isExternal( int handle ) {
 	if ( overlay ) {
 		return overlay->m_external;
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "isExternal: Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
 }
@@ -354,7 +393,7 @@ void COverlaySys::setOpaque( int handle, bool isOpaque ) {
 			m_updateOpaque = true;
 		}
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "setOpaque: Non-existant GUI handle: %d\n", handle );
 	}
 }
 
@@ -363,7 +402,7 @@ bool COverlaySys::isOpaque( int handle ) {
 	if ( overlay ) {
 		return overlay->m_opaque;
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "isOpaque: Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
 }
@@ -376,7 +415,7 @@ void COverlaySys::setInteractive( int handle, bool isInteractive ) {
 			m_updateInteractive = true;
 		}
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "setInteractive: Non-existant GUI handle: %d\n", handle );
 	}
 }
 
@@ -385,7 +424,7 @@ bool COverlaySys::isInteractive( int handle ) {
 	if ( overlay ) {
 		return overlay->m_interactive;
 	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "isInteractive: Non-existant GUI handle: %d\n", handle );
 		return false;
 	}
 }

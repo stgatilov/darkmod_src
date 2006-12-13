@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2006/12/13 18:54:05  gildoran
+ * Added SDK function names to error messages to help with debugging.
+ * Fixed a bug that allowed creation of duplicate handles.
+ * Added OVERLAYS_INVALID_HANDLE to be used instead of OVERLAYS_MIN_HANDLE - 1
+ *
  * Revision 1.2  2006/09/18 18:56:50  gildoran
  * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
  *
@@ -20,6 +25,7 @@
 #define __DARKMOD_OVERLAYSYS_H__
 
 const int OVERLAYS_MIN_HANDLE = 1;
+const int OVERLAYS_INVALID_HANDLE = 0;
 
 struct SOverlay;
 
@@ -73,15 +79,15 @@ class COverlaySys
 	idUserInterface*		findInteractive();
 	/// Used for iterating through the overlays in drawing-order.
 	/**	Very efficient if used properly:
-	 *	    int h = 0;
-	 *	    while ( (h = o.getNextOverlay(h) ) != 0 )
+	 *	    int h = OVERLAYS_INVALID_HANDLE;
+	 *	    while ( (h = o.getNextOverlay(h) ) != OVERLAYS_INVALID_HANDLE )
 	 *	        o.doSomethingWith( h );
 	 *	It loses efficiency if a handle is accessed other than the one returned.
 	 */
 	int						getNextOverlay( int handle );
 
 	/// Create a new overlay, returning a handle for that overlay.
-	int						createOverlay( int layer, int handle = OVERLAYS_MIN_HANDLE-1 );
+	int						createOverlay( int layer, int handle = OVERLAYS_INVALID_HANDLE );
 	/// Destroy an overlay.
 	void					destroyOverlay( int handle );
 	/// Returns whether or not an overlay exists.
@@ -131,6 +137,9 @@ class COverlaySys
 	bool					m_updateInteractive;
 	/// The cached value of the interactive overlay.
 	idUserInterface*		m_highestInteractive;
+
+	/// This is the next handle to try out when creating a new overlay.
+	int						m_nextHandle;
 };
 
 struct SOverlay
