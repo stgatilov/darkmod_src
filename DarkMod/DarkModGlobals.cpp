@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.52  2006/12/14 10:27:56  sophisticatedzombie
+ * Ugh tweak
+ *
  * Revision 1.51  2006/12/14 09:55:46  sophisticatedzombie
  * Some changes to light calculations for observation distance required changes
  * to default constant values.
@@ -241,7 +244,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #define DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME 10.0
 
 // Default lighting quotient observation distance scale
-#define DEFAULT_LIGHTING_QUOTIENT_OBSERVATION_DISTANCE_SCALE 500.0
+#define DEFAULT_LIGHTING_QUOTIENT_OBSERVATION_DISTANCE_SCALE 250.0
 
 class idAI;
 
