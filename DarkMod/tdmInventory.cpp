@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/12/14 01:38:28  gildoran
+ * Fixed two bugs in cursor's operator =
+ * 1. CopyActiveCursor was called without turning off group histories, which could create a duplicate group history.
+ * 2. It tried to copy group histories from itself instead of source.
+ *
  * Revision 1.10  2006/12/10 04:53:18  gildoran
  * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
  *
@@ -466,12 +471,11 @@ CtdmInventoryCursor& CtdmInventoryCursor::operator = ( const CtdmInventoryCursor
 	}
 
 	// Copy everything except their histories.
-	CopyActiveCursor( source );
+	CopyActiveCursor( source, true );
 
 	// Copy over their histories.
 	CtdmInventoryGroupHistory* groupHistory;
-
-	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistories.NextNode();
+	idLinkList<CtdmInventoryGroupHistory>* ghNode = source.m_groupHistories.NextNode();
 	while ( ghNode != NULL ) {
 		groupHistory = new CtdmInventoryGroupHistory( &m_groupHistories, ghNode->Owner()->m_slot );
 		if ( groupHistory == NULL ) {
