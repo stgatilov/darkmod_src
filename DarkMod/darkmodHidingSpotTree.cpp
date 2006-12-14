@@ -251,11 +251,14 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 	}
 
 	// Test if it is redundant
-	if (determineSpotRedundancy (p_areaNode, goal, hidingSpotTypes, quality, redundancyDistance))
+	if (redundancyDistance >= 0.0)
 	{
-		// Spot was redundant with other points. The other points may have
-		// been modified, but we do not add the new point
-		return true;
+		if (determineSpotRedundancy (p_areaNode, goal, hidingSpotTypes, quality, redundancyDistance))
+		{
+			// Spot was redundant with other points. The other points may have
+			// been modified, but we do not add the new point
+			return true;
+		}
 	}
 
 	// Not redundant, so adding new spot
@@ -536,8 +539,63 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 
 //-------------------------------------------------------------------------
 
-bool CDarkmodHidingSpotTree::splitInTwain
+bool CDarkmodHidingSpotTree::copy
 (
+	CDarkmodHidingSpotTree* p_out_otherTree
+)
+{
+	if (p_out_otherTree == NULL)
+	{
+		return false;
+	}
+
+	p_out_otherTree->clear();
+
+	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
+	while (p_areaCursor != NULL)
+	{
+		// Get or make area
+		TDarkmodHidingSpotAreaNode* p_otherArea = p_out_otherTree->getArea (p_areaCursor->aasAreaIndex);
+		if (p_otherArea == NULL)
+		{
+			p_otherArea = p_out_otherTree->insertArea (p_areaCursor->aasAreaIndex);
+			if (p_otherArea == NULL)
+			{
+				return false;
+			}
+		}
+
+		// Insert points
+		darkModHidingSpotNode* p_pointCursor = p_areaCursor->p_firstSpot;
+		while (p_pointCursor != NULL)
+		{
+			p_out_otherTree->insertHidingSpot
+			(
+				p_otherArea,
+				p_pointCursor->spot.goal,
+				p_pointCursor->spot.hidingSpotTypes,
+				p_pointCursor->spot.quality,
+				-1.0 // No redundancy combination
+			);
+
+			// Next point
+			p_pointCursor = p_pointCursor->p_next;
+		}
+
+		// Next area
+		p_areaCursor = p_areaCursor->p_nextSibling;
+		
+	}
+
+	// Done
+	return true;
+}
+
+//-------------------------------------------------------------------------
+
+bool CDarkmodHidingSpotTree::getOneNth
+(
+	unsigned int N,
 	CDarkmodHidingSpotTree* p_out_otherTree
 )
 {
@@ -552,12 +610,18 @@ bool CDarkmodHidingSpotTree::splitInTwain
 	// Other tree should be empty
 	p_out_otherTree->clear();
 
+	// Test params
+	if (N == 0)
+	{
+		return true;
+	}
+
 	// Split up our areas, as that is what human's would typically do, rather
 	// than splitting up points within areas.
 	if (numAreas > 1)
 	{
-		// Split number of areas in half
-		unsigned int areaSplit = numAreas / 2;
+		// Split number of areas
+		unsigned int areaSplit = numAreas - (numAreas / N);
 
 		TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
 		TDarkmodHidingSpotAreaNode* p_areaTrailer = NULL;
@@ -585,6 +649,12 @@ bool CDarkmodHidingSpotTree::splitInTwain
 		if (p_areaTrailer != NULL)
 		{
 			p_areaTrailer->p_nextSibling = NULL;
+			p_lastArea = p_areaTrailer;
+		}
+		else
+		{
+			p_lastArea = NULL;
+			p_firstArea = NULL;
 		}
 		numAreas = areaIndex;
 		
@@ -607,7 +677,7 @@ bool CDarkmodHidingSpotTree::splitInTwain
 	else
 	{
 
-		// Split points in half in the one and only area
+		// Split points in the one and only area
 		TDarkmodHidingSpotAreaNode* p_area = p_firstArea;
 		if (p_area == NULL)
 		{
@@ -621,7 +691,7 @@ bool CDarkmodHidingSpotTree::splitInTwain
 			return false;
 		}
 
-		unsigned int splitPointIndex = p_area->count / 2;
+		unsigned int splitPointIndex = p_area->count - (p_area->count / N);
 		unsigned int pointIndex = 0;
 		darkModHidingSpotNode* p_spotCursor = p_area->p_firstSpot;
 		darkModHidingSpotNode* p_spotTrailer = NULL;
@@ -648,6 +718,10 @@ bool CDarkmodHidingSpotTree::splitInTwain
 		{
 			p_spotTrailer->p_next = NULL;
 		}
+		else
+		{
+			p_area->p_firstSpot = NULL;
+		}
 		p_area->count -= numPointsMoved;
 
 	}
@@ -661,3 +735,4 @@ bool CDarkmodHidingSpotTree::splitInTwain
 	return true;
 
 }
+

@@ -167,8 +167,21 @@ public:
 	);
 
 	/*!
-	* Inserts a hiding spot into a given
-	*	area node
+	* Inserts a hiding spot into a given area node.
+	*
+	* @param p_areaNode The area node to which the point should be added
+	*
+	* @param goal The goal descriptor of the point
+	*
+	* @param hidingSpotTypes The types of hiding spot that apply to the point
+	*
+	* @param quality The measure of hiding spot quality from 0.0 to 1.0
+	*
+	* @param redundancyDistance The distance between points for a unique point
+	*	to be created. If the new point is within this distance from a point
+	*	already in the area, the points will be combined.
+	*	If this number is < 0.0, then no redundancy testing is done.
+	*
 	*/
 	bool insertHidingSpot
 	(
@@ -225,15 +238,32 @@ public:
 	);
 
 
+	/*!
+	* Attempts to split off one Nth of the tree (1/N) in a logical fashion
+	* for sharing a search. The caller provides a tree which after the call
+	* contains only the areas and spots removed from this tree.
+	*
+	* @param N The fraction 1/Nth of this tree will be moved to the other tree
+	*	If N is 0 nothing is moved.
+	* 
+	* @param p_out_otherTree This is the tree to which the fraction of the tree
+	*	will be moved.  The tree is cleared before any areas or spots are moved
+	*	to it.
+	*/
+	bool getOneNth
+	(
+		unsigned int N,
+		CDarkmodHidingSpotTree* p_out_otherTree
+	);
 
 	/*!
-	* Attempts to split the tree in two in a logical fashion
-	* for sharing a search
+	* This copies this tree into another tree.
 	*/
-	bool splitInTwain
+	bool copy
 	(
 		CDarkmodHidingSpotTree* p_out_otherTree
 	);
+
 
 };
 

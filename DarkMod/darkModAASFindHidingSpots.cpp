@@ -9,7 +9,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "..\sys\sys_public.h"
 
 // Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
-#define OCCLUSION_HIDING_SPOT_QUALITY 0.5
+#define OCCLUSION_HIDING_SPOT_QUALITY 1.0
 
 // The distance at which hiding spots will be combined if they have the same "type" properties
 #define HIDING_SPOT_COMBINATION_DISTANCE 100.0f
@@ -23,7 +23,7 @@ idList<darkModHidingSpot_t> darkModAASFindHidingSpots::DebugDrawList;
 darkModAASFindHidingSpots::darkModAASFindHidingSpots()
 {
 	// Default value
-	hidingSpotRedundancyDistance = 200.0;
+	hidingSpotRedundancyDistance = 50.0;
 
 	// Start empty
 	h_hideFromPVS.i = -1;
@@ -41,6 +41,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots()
 	searchRadius = 0.0;
 	hidingSpotTypesAllowed = 0;
 	p_ignoreEntity = NULL;
+	lastProcessingFrameNumber = -1;
 
 	// No hiding spot PVS areas identified yet
 	numPVSAreas = 0;
@@ -64,7 +65,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 {
 
 	// Default value
-	hidingSpotRedundancyDistance = 500.0;
+	hidingSpotRedundancyDistance = 50.0;
 
 	// Start empty
 	h_hideFromPVS.i = -1;
@@ -81,6 +82,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 	searchRadius = searchLimits.GetRadius();
 	hidingSpotTypesAllowed = in_hidingSpotTypesAllowed;
 	p_ignoreEntity = in_p_ignoreEntity;
+	lastProcessingFrameNumber = -1;
 
 	// No hiding spot PVS areas identified yet
 	numPVSAreas = 0;
@@ -97,6 +99,59 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 		numHideFromPVSAreas 
 	);
 
+}
+
+
+//----------------------------------------------------------------------------
+
+bool darkModAASFindHidingSpots::initialize
+(
+	const idVec3 &hideFromPos , 
+	idAAS* in_p_aas, 
+	float in_hidingHeight,
+	idBounds in_searchLimits, 
+	int in_hidingSpotTypesAllowed, 
+	idEntity* in_p_ignoreEntity
+)
+{
+	// Be certain we free our PVS node graph
+	if ((h_hideFromPVS.h != NULL) || (h_hideFromPVS.i != -1))
+	{
+		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
+		h_hideFromPVS.h = NULL;
+		h_hideFromPVS.i = -1;
+	}
+
+	// Remember the hide form position
+	hideFromPosition = hideFromPos;
+
+	// Set search parameters
+	p_aas = in_p_aas;
+	hidingHeight = in_hidingHeight;
+	searchLimits = in_searchLimits;
+	searchCenter = searchLimits.GetCenter();
+	searchRadius = searchLimits.GetRadius();
+	hidingSpotTypesAllowed = in_hidingSpotTypesAllowed;
+	p_ignoreEntity = in_p_ignoreEntity;
+	lastProcessingFrameNumber = -1;
+
+	// No hiding spot PVS areas identified yet
+	numPVSAreas = 0;
+	numPVSAreasIterated = 0;
+
+	// Have the PVS system identify locations containing the hide from position
+	hideFromPVSAreas[0] = gameLocal.pvs.GetPVSArea(hideFromPosition);
+	numHideFromPVSAreas = 1;
+
+    // Setup our local copy of the pvs node graph
+	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS
+	(
+		hideFromPVSAreas, 
+		numHideFromPVSAreas 
+	);
+	
+	// Done
+	return true;
 }
 
 //----------------------------------------------------------------------------
@@ -296,7 +351,9 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 		float distanceFromCenter = (searchCenter - hidingSpot.goal.origin).Length();
 		if (searchRadius > 0.0)
 		{
+			// Use power of 2 fallof
 			hidingSpot.quality = (searchRadius - distanceFromCenter) / searchRadius;
+			hidingSpot.quality *= hidingSpot.quality;
 			if (hidingSpot.quality < 0.0)
 			{
 				hidingSpot.quality = (float) 0.0;
@@ -313,7 +370,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 			// ensure area index is in hiding spot tree
 			if (p_hidingAreaNode == NULL)
 			{
-				inout_hidingSpots.getArea
+				p_hidingAreaNode = inout_hidingSpots.getArea
 				(
 					aasAreaIndex
 				);
@@ -454,7 +511,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	float searchRadius = searchLimits.GetRadius();
 
 	// Iterate a gridding within these bounds
-	float hideSearchGridSpacing = 40.0f;
+	float hideSearchGridSpacing = 20.0f;
 	
 	// Iterate the coordinates to search
 	// We don't use for loops here so that we can control the end of the iteration
@@ -504,7 +561,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 				// ensure area index is in hiding spot tree
 				if (p_hidingAreaNode == NULL)
 				{
-					inout_hidingSpots.getArea
+					p_hidingAreaNode = inout_hidingSpots.getArea
 					(
 						currentGridSearchAASAreaNum
 					);
@@ -668,11 +725,26 @@ int darkModAASFindHidingSpots::TestHidingPoint
 		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	}
 
+
+	// Modify by random factor to prevent all searches in same location from being
+	// similar
+	out_quality += ((gameLocal.random.CRandomFloat() * out_quality) / 3.0);
+	if (out_quality > 1.0)
+	{
+		out_quality = 1.0;
+	}
+	else if (out_quality < 0.0)
+	{
+		out_quality = 0.0;
+	}
+
 	// Reduce quality by distance from search center
 	float distanceFromCenter = (searchCenter - testPoint).Length();
 	if ((searchRadius > 0.0) && (out_quality > 0.0))
 	{
-		out_quality = out_quality * ((searchRadius - distanceFromCenter) / searchRadius);
+		float falloff = ((searchRadius - distanceFromCenter) / searchRadius);
+		// Use power of 2 fallof
+		out_quality = out_quality * falloff * falloff;
 		if (out_quality < 0.0)
 		{
 			out_quality = 0.0;
@@ -682,10 +754,6 @@ int darkModAASFindHidingSpots::TestHidingPoint
 	{
 		out_quality = 0.0;
 	}
-
-	// Modify by random factor to prevent all searches in same location from being
-	// similar
-	out_quality += ((gameLocal.random.CRandomFloat() * out_quality) / 3.0);
 
 
 	// Done
@@ -844,7 +912,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 		gameRenderWorld->DebugArrow
 		(
 			markerColor,
-			DebugDrawList[spotIndex].goal.origin + markerArrowLength,
+			DebugDrawList[spotIndex].goal.origin + markerArrowLength * DebugDrawList[spotIndex].quality,
 			DebugDrawList[spotIndex].goal.origin,
 			2.0f,
 			viewLifetime
@@ -880,14 +948,16 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 	b_searchContinues = HidingSpotFinder.startHidingSpotSearch
 	(
 		hidingSpotList,
-		MAX_SPOTS_PER_TEST_ROUND
+		MAX_SPOTS_PER_TEST_ROUND,
+		gameLocal.framenum
 	);
 	while (b_searchContinues)
 	{
 		b_searchContinues = HidingSpotFinder.continueSearchForHidingSpots
 		(
 			hidingSpotList,
-			MAX_SPOTS_PER_TEST_ROUND
+			MAX_SPOTS_PER_TEST_ROUND,
+			gameLocal.framenum
 		);
 	}
 
@@ -907,15 +977,35 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 ############################################################################################
 */
 
+
+bool darkModAASFindHidingSpots::isSearchCompleted()
+{
+	// Make sure search wasn't destroyed
+	if ((h_hideFromPVS.h == NULL) && (h_hideFromPVS.i == -1))
+	{
+		// Search was destroyed, search is done
+		return true;
+	}
+
+	// Doen if in searchDone state
+	return  (searchState == done_searchState);
+}
+
+//-----------------------------------------------------------------------------
+
 // The search start function
 bool darkModAASFindHidingSpots::startHidingSpotSearch
 (
 	CDarkmodHidingSpotTree& out_hidingSpots,
-	int numPointsToTestThisPass
+	int numPointsToTestThisPass,
+	int frameNumber
 ) 
 {
 	// The number of points this pass
 	int numPointsTestedThisPass = 0;
+
+	// Remember last frame that tested points
+	lastProcessingFrameNumber = frameNumber;
 
 	// Set search state
 	searchState = buildingPVSList_searchState;
@@ -960,9 +1050,23 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 bool darkModAASFindHidingSpots::continueSearchForHidingSpots
 (
 	CDarkmodHidingSpotTree& inout_hidingSpots,
-	int numPointsToTestThisPass
+	int numPointsToTestThisPass,
+	int frameNumber
 )
 {
+
+	// If we already tested points this frame, don't test any more
+	if (frameNumber == lastProcessingFrameNumber)
+	{
+		return !isSearchCompleted();
+	}
+	else
+	{
+		// Remember that we are testing points this frame
+		lastProcessingFrameNumber = frameNumber;
+	}
+
+
 	// The number of points this pass
 	int numPointsTestedThisPass = 0;
 

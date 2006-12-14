@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2006/12/14 09:54:14  sophisticatedzombie
+ * Now using hiding spot search collection. Added some uitility methods.
+ *
  * Revision 1.9  2006/12/09 17:31:20  sophisticatedzombie
  * This now uses the new darkmodeHidingspotTree class to store and
  * iterate a set of hiding spots.
@@ -126,6 +129,12 @@ protected:
 	float searchRadius;
 	int hidingSpotTypesAllowed;
 	idEntity* p_ignoreEntity;
+
+	/* This tracks the last game frame during which points were tested so 
+	* we don't test more and more points if more than one AI sharing the search
+	* tries to continue the search in the same game frame.
+	*/
+	int lastProcessingFrameNumber;
 
 	// These variables are for doing a gridded sweep of a visible AAS area
 	// for lighting and occlusion tests
@@ -339,9 +348,32 @@ public:
 	);
 
 	/*!
-	* This constuctor is NOT suitable for starting a search
+	* This constuctor is NOT suitable for starting a search unless Initialize
+	* is called immediately afterword.
 	*/
 	darkModAASFindHidingSpots();
+
+	/*!
+	* This should be called if the default (paramterless) constructor was
+	* used
+	*/
+	bool initialize
+	(
+		const idVec3 &hideFromPos , 
+		idAAS* in_p_aas, 
+		float in_hidingHeight,
+		idBounds in_searchLimits, 
+		int in_hidingSpotTypesAllowed, 
+		idEntity* in_p_ignoreEntity
+	);
+
+	/*!
+	* This method is used to test if the search has completed.
+	*
+	* @return true if search completed
+	* @return if search not yet completed
+	*/
+	bool isSearchCompleted();
 
 	/*!
 	* Destructor
@@ -355,6 +387,14 @@ public:
 	CDarkmodHidingSpotTree hidingSpotList;
 
 	/*!
+	* This gets the bounds of the search
+	*/
+	idBounds getSearchLimits()
+	{
+		return searchLimits;
+	}
+
+	/*!
 	* This method starts a search within the given search bounds for hiding spots and returns
 	* a list of them as darkModHidingSpot structures.
 	*
@@ -364,15 +404,20 @@ public:
 	* @param numPointsToTestThisPass The maximum number of hiding spots to test during this
 	* call before remembering the search state and returning
 	*
+	* @param frameNumber The current game frame number. This is used to prevent multiple
+	*	AI from continuing a search that has already processed during a given
+	*	game frame.
+	*
 	* @return true if there are more spots to search
 	*
 	* @return false if there are no more spots to search (end of the search)
 	*/
 	bool startHidingSpotSearch
 	(
-		//idList<darkModHidingSpot_t>& out_hidingSpots,
 		CDarkmodHidingSpotTree& out_hidingSpots,
-		int maxSpotsPerRound
+		int maxSpotsPerRound,
+		int frameNumber
+
 	);
 
 	/*
@@ -384,15 +429,19 @@ public:
 	* @param numPointsToTestThisPass The maximum number of hiding spots to test during this
 	* call before remembering the search state and returning
 	*
+	* @param frameNumber The current frame number.  This is used to determine if
+	*	the search has already tested points this game frame (possibly due to another
+	*	AI sharing the same search)
+	*
 	* @return true if there are more spots to search
 	*
 	* @return false if there are no more spots to search (end of the search)
 	*/
 	bool continueSearchForHidingSpots
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
-		int numPointsToTestThisPass
+		int numPointsToTestThisPass,
+		int frameNumber
 	);
 
 
