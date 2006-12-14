@@ -8,6 +8,8 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "..\darkmod\darkModLAS.h"
 #include "..\sys\sys_public.h"
 
+#define HIDE_GRID_SPACING 40.0
+
 // Quality of a hiding spot ranges from 0.0 (HIDING_SPOT_MAX_LIGHT_QUOTIENT) to 1.0 (pitch black)
 #define OCCLUSION_HIDING_SPOT_QUALITY 1.0
 
@@ -511,7 +513,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	float searchRadius = searchLimits.GetRadius();
 
 	// Iterate a gridding within these bounds
-	float hideSearchGridSpacing = 20.0f;
+	float hideSearchGridSpacing = HIDE_GRID_SPACING;
 	
 	// Iterate the coordinates to search
 	// We don't use for loops here so that we can control the end of the iteration
