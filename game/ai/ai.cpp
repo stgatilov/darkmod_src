@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2006/12/14 09:53:25  sophisticatedzombie
+ * Now using hiding spot collection
+ *
  * Revision 1.39  2006/12/10 12:07:36  ishtvan
  * grace period bugfixes
  *
@@ -683,7 +686,7 @@ idAI::idAI() {
 	/**
 	* Darkmod: No hiding spot search by default
 	*/
-	m_HidingSpotSearchHandle = 0;
+	m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
 	m_bCanDrown = true;
 	m_AirCheckTimer = 0;
