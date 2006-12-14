@@ -164,7 +164,7 @@ void CHidingSpotSearchCollection::dereference (THidingSpotSearchHandle searchHan
 
 			if (p_node->p_next != NULL)
 			{
-				p_node->p_next->p_prev = p_node;
+				p_node->p_next->p_prev = p_node->p_prev;
 			}
 
 			delete p_node;
