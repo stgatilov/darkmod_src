@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.79  2006/12/16 08:17:40  gildoran
+ * Added isHilighted()
+ *
  * Revision 1.78  2006/12/16 02:33:09  gildoran
  * Changed Event_CursorSelectItem() to allow $nulls to be passed to it.
  *
@@ -420,6 +423,7 @@ const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
 const idEventDef EV_CopyBind( "copyBind", "e" );
 const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
 const idEventDef EV_SetFrobable( "setFrobable", "d" );
+const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
 
 
 ABSTRACT_DECLARATION( idClass, idEntity )
@@ -540,6 +544,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_CopyBind,				idEntity::Event_CopyBind )
 	EVENT( EV_IsFrobable,			idEntity::Event_IsFrobable )
 	EVENT( EV_SetFrobable,			idEntity::Event_SetFrobable )
+	EVENT( EV_IsHilighted,			idEntity::Event_IsHilighted )
 
 END_CLASS
 
@@ -7503,6 +7508,24 @@ void idEntity::Event_IsFrobable( void )
 {
 	idThread::ReturnInt( (int) m_bFrobable );
 }
+
+void idEntity::Event_IsHilighted( void )
+{
+	int retVal = 0;
+	if ( m_bFrobHighlightState )
+		retVal++;
+	if ( m_bFrobbed )
+		retVal++;
+	idThread::ReturnInt( retVal );
+}
+
+/**
+* This is separate from m_bFrobbed due to peer frob highlighting,
+* to let an entity display the highlight when not frobbed.
+**/
+bool                    m_bFrobHighlightState;
+
+
 
 SDK_SIGNAL idEntity::GetSDKSignalId(void)
 {

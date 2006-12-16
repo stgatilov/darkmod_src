@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2006/12/16 08:17:40  gildoran
+ * Added isHilighted()
+ *
  * Revision 1.46  2006/12/10 04:53:23  gildoran
  * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
  *
@@ -849,6 +852,7 @@ protected:
 	**/
 	void					Event_IsFrobable( void );
 	void					Event_SetFrobable( bool bVal );
+	void					Event_IsHilighted( void );
 
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object
