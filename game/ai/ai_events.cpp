@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2006/12/21 02:00:24  sophisticatedzombie
+ * Event_CanSeeEntity (script call canSee) now takes lighting into consideration
+ * using the Lighting Awareness System.
+ *
  * Revision 1.24  2006/12/14 09:53:25  sophisticatedzombie
  * Now using hiding spot collection
  *
@@ -1933,6 +1937,13 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 	}
 
 	bool cansee = CanSee( ent, false );
+	
+	// Also consider lighting and visual acuity of AI
+	if (cansee)
+	{
+		cansee = !IsEntityHiddenByDarkness(ent);
+	}
+
 	idThread::ReturnInt( cansee );
 }
 
