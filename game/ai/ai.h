@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.29  2006/12/21 06:00:58  sophisticatedzombie
+ * Changed the way Event_CanSeeEntity works so that it just calls idAI::canSee directly.
+ * idAI::canSee is now a virtual override of idActor::canSee and takes lighting/visual acuity into
+ * account.
+ *
  * Revision 1.28  2006/12/14 09:53:25  sophisticatedzombie
  * Now using hiding spot collection
  *
@@ -506,7 +511,7 @@ public:
 	* The visibility can also be integrated over a number
 	* of frames if we need to do that for optimization later.
 	**/
-	float GetVisibility( idEntity *ent );
+	float GetVisibility( idEntity *ent ) const;
 
 	/**
 	* Checks enemies in the AI's FOV and calls Alert( "vis", amount )
@@ -566,7 +571,7 @@ public:
 	* Acuity type is a char, from the same list as alert types
 	* That list is defined in DarkModGlobals.cpp
 	**/
-	float GetAcuity( const char *type );
+	float GetAcuity( const char *type ) const;
 
 	/**
 	* Sets the AI acuity for a certain type of alert.
@@ -1002,6 +1007,12 @@ protected:
 	void					DrawRoute( void ) const;
 	bool					GetMovePos( idVec3 &seekPos );
 	bool					MoveDone( void ) const;
+	
+	/**
+	* This is a virtual override of the idActor method.  It takes lighting levels into consideration.
+	*/
+	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
+
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 	void					BlockedFailSafe( void );
 	/**
@@ -1016,7 +1027,7 @@ protected:
 	* @return true if the entity is in darkness
 	* @return false if not
 	*/
-	bool IsEntityHiddenByDarkness (idEntity* p_entity);
+	bool IsEntityHiddenByDarkness (idEntity* p_entity) const;
 
 
 	// movement control
@@ -1094,13 +1105,13 @@ protected:
 	* line segment that the segment is visible due to current light conditions
 	* at the segment
 	*/
-	float getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity);
+	float getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const;
 
 	/**
 	* The point of this function is to determine the visual stimulus level caused
 	* by the players current lightgem value.
 	*/
-	float getPlayerVisualStimulusAmount(idEntity* p_playerEntity);
+	float getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const;
 
 
 	// attacks
