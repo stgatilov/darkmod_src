@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/12/21 01:57:58  sophisticatedzombie
+ * The results now call Show() instead of Hide() so that the AI can test them for visibility.
+ *
  * Revision 1.6  2006/07/12 01:10:58  ishtvan
  * surface type name now stored as idStr
  *
@@ -140,10 +143,13 @@ void CProjectileResult::Init
 	
 	m_ProjData.IncidenceAngle = idMath::Abs( idMath::ACos( fTemp ) );
 
-	// Move to the point of the collision, hide self
-	Hide();
+	// Move to the point of the collision
 	GetPhysics()->SetOrigin( pData->FinalOrigin );
 	GetPhysics()->SetAxis( pData->FinalAxis );
+
+	// SZ: Dec 19: Had to change it from Hide() to Show() so the AI could see them
+	// Show self so AI can see it
+	Show();
 
 	// The stim type of the projectile result is defined on the projectile itself
 	// even though it is not used there. Logically, the stim type is a part of the
@@ -171,10 +177,11 @@ void CProjectileResult::Init
 		Event_CopyBind( pProj );
 	}
 
-	// Run scripts:
 
+	// Run scripts:
 	RunResultScript();
 }
+
 
 
 void CProjectileResult::RunResultScript( void )
