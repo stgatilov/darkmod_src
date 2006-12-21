@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2006/12/21 04:19:18  sophisticatedzombie
+ * Made Event_CanSee take FOV into account.
+ *
  * Revision 1.25  2006/12/21 02:00:24  sophisticatedzombie
  * Event_CanSeeEntity (script call canSee) now takes lighting into consideration
  * using the Lighting Awareness System.
@@ -1936,7 +1939,8 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 		return;
 	}
 
-	bool cansee = CanSee( ent, false );
+	// Test if it is occluded, and use field of vision in the check (true as second parameter)
+	bool cansee = CanSee( ent, true );
 	
 	// Also consider lighting and visual acuity of AI
 	if (cansee)
