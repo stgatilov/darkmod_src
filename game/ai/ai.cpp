@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2006/12/21 01:59:28  sophisticatedzombie
+ * Added work around for problem in lighting test that always produces 0 illumination
+ * if an entity is a point.
+ *
  * Revision 1.40  2006/12/14 09:53:25  sophisticatedzombie
  * Now using hiding spot collection
  *
@@ -6215,10 +6219,11 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity)
 		else // Not the player
 		{
 			idBounds entityBounds = p_physics->GetAbsBounds();
-			idVec3 bottomPoint = p_physics->GetOrigin();
-			
-			idVec3 topPoint = p_physics->GetOrigin();
-			topPoint.z = entityBounds[1].z;
+			entityBounds.ExpandSelf (0.1); // A single point doesn't work with ellipse intersection
+
+			idVec3 bottomPoint = entityBounds[0];
+			idVec3 topPoint = entityBounds[1];
+
 
 			float maxDistanceToObserve = getMaximumObservationDistance 
 			(
