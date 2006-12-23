@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.80  2006/12/23 20:17:44  sophisticatedzombie
+ * Added StimClearIgnoreList event that can be called on an object for a particular stim.
+ * The ignore list for that stim on that object will be cleared.
+ *
  * Revision 1.79  2006/12/16 08:17:40  gildoran
  * Added isHilighted()
  *
@@ -301,6 +305,7 @@ const idEventDef EV_FindTargets( "<findTargets>", NULL );
 const idEventDef EV_Touch( "<touch>", "et" );
 const idEventDef EV_GetName( "getName", NULL, 's' );
 const idEventDef EV_SetName( "setName", "s" );
+const idEventDef EV_IsType ( "isType", "s" , 'd' );
 const idEventDef EV_Activate( "activate", "e" );
 const idEventDef EV_ActivateTargets( "activateTargets", "e" );
 const idEventDef EV_NumTargets( "numTargets", NULL, 'f' );
@@ -390,6 +395,7 @@ const idEventDef EV_IterateCursor( "iterateCursor", "d" );
 const idEventDef EV_StimAdd( "StimAdd", "df" );
 const idEventDef EV_StimRemove( "StimRemove", "d" );
 const idEventDef EV_StimEnable( "StimEnable", "dd" );
+const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", "d" );
 const idEventDef EV_ResponseEnable( "ResponseEnable", "dd" );
 const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
 const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
@@ -429,6 +435,7 @@ const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetName,				idEntity::Event_GetName )
 	EVENT( EV_SetName,				idEntity::Event_SetName )
+	EVENT (EV_IsType,				idEntity::Event_IsType )
 	EVENT( EV_FindTargets,			idEntity::Event_FindTargets )
 	EVENT( EV_ActivateTargets,		idEntity::Event_ActivateTargets )
 	EVENT( EV_NumTargets,			idEntity::Event_NumTargets )
@@ -514,6 +521,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
 	EVENT( EV_StimEnable,			idEntity::StimEnable)
+	EVENT( EV_StimClearIgnoreList,	idEntity::StimClearIgnoreList)
 	EVENT( EV_ResponseEnable,		idEntity::ResponseEnable)
 	EVENT( EV_ResponseAdd,			idEntity::ResponseAdd)
 	EVENT( EV_ResponseRemove,		idEntity::ResponseRemove)
@@ -4512,6 +4520,32 @@ void idEntity::Event_SetName( const char *newname ) {
 }
 
 /*
+================
+idEntity::Event_GetTypeName
+================
+*/
+void idEntity::Event_IsType( const char *pstr_typeName ) 
+{
+	idTypeInfo* p_namedType = GetClass (pstr_typeName);
+	if (p_namedType == NULL)
+	{
+		idThread::ReturnInt (0);
+	}
+	else
+	{
+		if (IsType (*p_namedType))
+		{
+			idThread::ReturnInt (1);
+		}
+		else
+		{
+			idThread::ReturnInt (0);
+		}
+	}
+}
+
+
+/*
 ===============
 idEntity::Event_FindTargets
 ===============
@@ -6659,6 +6693,17 @@ void idEntity::StimEnable(int Type, int State)
 
 	if((stim = m_StimResponseColl->GetStim(Type)) != NULL)
 		stim->EnableSR(State);
+}
+
+void idEntity::StimClearIgnoreList (int Type)
+{
+	CStim *stim = m_StimResponseColl->GetStim(Type);
+
+	if(stim)
+	{
+		stim->m_ResponseIgnore.Clear();
+	}
+
 }
 
 void idEntity::ResponseEnable(int Type, int State)

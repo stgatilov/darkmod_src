@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2006/12/23 20:17:44  sophisticatedzombie
+ * Added StimClearIgnoreList event that can be called on an object for a particular stim.
+ * The ignore list for that stim on that object will be cleared.
+ *
  * Revision 1.47  2006/12/16 08:17:40  gildoran
  * Added isHilighted()
  *
@@ -228,6 +232,9 @@ extern const idEventDef EV_SetSkin;
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
+
+extern const idEventDef EV_IsType;
+
 #ifdef MOD_WATERPHYSICS
 
 extern const idEventDef EV_GetMass;				// MOD_WATERPHYSICS
@@ -394,6 +401,7 @@ public:
 	const char *			GetEntityDefName( void ) const;
 	void					SetName( const char *name );
 	const char *			GetName( void ) const;
+
 	virtual void			UpdateChangeableSpawnArgs( const idDict *source );
 
 							// clients generate views based on all the player specific options,
@@ -899,6 +907,7 @@ private:
 	// events
 	void					Event_GetName( void );
 	void					Event_SetName( const char *name );
+	void					Event_IsType ( const char *pstr_typeName );
 	void					Event_FindTargets( void );
 	void					Event_ActivateTargets( idEntity *activator );
 	void					Event_NumTargets( void );
@@ -984,6 +993,7 @@ private:
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);
 	void					StimEnable(int Type, int State);
+	void					StimClearIgnoreList (int Type);
 	void					ResponseAdd(int Type);
 	void					ResponseRemove(int Type);
 	void					ResponseEnable(int Type, int State);
