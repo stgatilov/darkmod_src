@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2006/12/23 20:17:02  sophisticatedzombie
+ * CanSee is now virutal. I forgot to check this in a few days ago and I apologize.
+ *
  * Revision 1.15  2006/10/22 07:49:12  ishtvan
  * added scriptfunction GetNumAttached
  *
@@ -202,7 +205,7 @@ public:
 	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					SetFOV( float fov );
 	bool					CheckFOV( const idVec3 &pos ) const;
-	bool					CanSee( idEntity *ent, bool useFOV ) const;
+	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 	bool					PointVisible( const idVec3 &point ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
 
