@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2006/12/23 20:18:44  sophisticatedzombie
+ * Added canSeeExt script event that lets the user specify if Field of Vision and
+ * /or Lighting should be taken into account.
+ *
  * Revision 1.42  2006/12/21 06:00:58  sophisticatedzombie
  * Changed the way Event_CanSeeEntity works so that it just calls idAI::canSee directly.
  * idAI::canSee is now a virtual override of idActor::canSee and takes lighting/visual acuity into
@@ -2775,7 +2779,7 @@ idAI::CanSee virtual override
 bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 {
 	// Test if it is occluded, and use field of vision in the check (true as second parameter)
-	bool cansee = idActor::CanSee( ent, true );
+	bool cansee = idActor::CanSee( ent, useFOV );
 
 	// Also consider lighting and visual acuity of AI
 	if (cansee)
@@ -2787,6 +2791,31 @@ bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 	return cansee;
 	
 }
+
+/*
+=====================
+The Dark Mod
+idAI::CanSeeExt
+
+This metohd can ignore lighting conditions and/or field of vision.
+=====================
+*/
+bool idAI::CanSeeExt( idEntity *ent, bool useFOV, bool useLighting ) const
+{
+	// Test if it is occluded
+	bool cansee = idActor::CanSee( ent, useFOV );
+
+	if ((cansee) && (useLighting))
+	{
+		cansee = !IsEntityHiddenByDarkness(ent);
+	}
+
+	// Return result
+	return cansee;
+	
+}
+
+
 
 
 /*
@@ -6249,7 +6278,7 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 		else // Not the player
 		{
 			idBounds entityBounds = p_physics->GetAbsBounds();
-			entityBounds.ExpandSelf (0.1); // A single point doesn't work with ellipse intersection
+			entityBounds.ExpandSelf (0.1f); // A single point doesn't work with ellipse intersection
 
 			idVec3 bottomPoint = entityBounds[0];
 			idVec3 topPoint = entityBounds[1];

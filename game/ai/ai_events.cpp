@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.28  2006/12/23 20:18:44  sophisticatedzombie
+ * Added canSeeExt script event that lets the user specify if Field of Vision and
+ * /or Lighting should be taken into account.
+ *
  * Revision 1.27  2006/12/21 06:00:58  sophisticatedzombie
  * Changed the way Event_CanSeeEntity works so that it just calls idAI::canSee directly.
  * idAI::canSee is now a virtual override of idActor::canSee and takes lighting/visual acuity into
@@ -186,6 +190,7 @@ const idEventDef AI_WaitMove( "waitMove" );
 const idEventDef AI_GetJumpVelocity( "getJumpVelocity", "vff", 'v' );
 const idEventDef AI_EntityInAttackCone( "entityInAttackCone", "E", 'd' );
 const idEventDef AI_CanSeeEntity( "canSee", "E", 'd' );
+const idEventDef AI_CanSeeEntityExt( "canSeeExt", "Edd", 'd' );
 const idEventDef AI_SetTalkTarget( "setTalkTarget", "E" );
 const idEventDef AI_GetTalkTarget( "getTalkTarget", NULL, 'e' );
 const idEventDef AI_SetTalkState( "setTalkState", "d" );
@@ -485,6 +490,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetJumpVelocity,					idAI::Event_GetJumpVelocity )
 	EVENT( AI_EntityInAttackCone,				idAI::Event_EntityInAttackCone )
 	EVENT( AI_CanSeeEntity,						idAI::Event_CanSeeEntity )
+	EVENT( AI_CanSeeEntityExt,					idAI::Event_CanSeeEntityExt )
 	EVENT( AI_SetTalkTarget,					idAI::Event_SetTalkTarget )
 	EVENT( AI_GetTalkTarget,					idAI::Event_GetTalkTarget )
 	EVENT( AI_SetTalkState,						idAI::Event_SetTalkState )
@@ -1949,6 +1955,27 @@ void idAI::Event_CanSeeEntity( idEntity *ent ) {
 	
 	idThread::ReturnInt( cansee );
 }
+
+/*
+=====================
+idAI::Event_CanSeeEntityExt
+=====================
+*/
+void idAI::Event_CanSeeEntityExt( idEntity *ent, int bool_useFOV, int bool_useLighting ) 
+{
+
+	if ( !ent ) 
+	{
+		idThread::ReturnInt( false );
+		return;
+	}
+
+	// Test if it is visible
+	bool cansee = CanSeeExt( ent, (bool_useFOV != 0), (bool_useLighting != 0) );
+	
+	idThread::ReturnInt( cansee );
+}
+
 
 /*
 =====================

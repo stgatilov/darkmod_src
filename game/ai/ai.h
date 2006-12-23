@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/12/23 20:18:44  sophisticatedzombie
+ * Added canSeeExt script event that lets the user specify if Field of Vision and
+ * /or Lighting should be taken into account.
+ *
  * Revision 1.29  2006/12/21 06:00:58  sophisticatedzombie
  * Changed the way Event_CanSeeEntity works so that it just calls idAI::canSee directly.
  * idAI::canSee is now a virtual override of idActor::canSee and takes lighting/visual acuity into
@@ -589,7 +593,7 @@ public:
 	/**
 	* Returns true if AI is knocked out
 	**/
-	bool  IsKnockedOut( void ) { return AI_KNOCKEDOUT; };
+	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
 
 public:
 	/**
@@ -1013,6 +1017,11 @@ protected:
 	*/
 	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 
+	/**
+	* This version can optionally use or not use lighting
+	*/
+	virtual bool			CanSeeExt (idEntity* ent, bool useFOV, bool useLighting ) const;
+
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 	void					BlockedFailSafe( void );
 	/**
@@ -1219,6 +1228,7 @@ protected:
 	void					Event_GetJumpVelocity( const idVec3 &pos, float speed, float max_height );
 	void					Event_EntityInAttackCone( idEntity *ent );
 	void					Event_CanSeeEntity( idEntity *ent );
+	void					Event_CanSeeEntityExt( idEntity *ent, int ignoreFOV, int ignoreLighting);
 	void					Event_SetTalkTarget( idEntity *target );
 	void					Event_GetTalkTarget( void );
 	void					Event_SetTalkState( int state );
