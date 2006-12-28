@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.44  2006/12/28 17:06:36  sophisticatedzombie
+ * Fixed '>' '<' inversion in IsEntityHiddenByDarkness idPlayer render pipeline lightgem
+ * based test case.
+ *
  * Revision 1.43  2006/12/23 20:18:44  sophisticatedzombie
  * Added canSeeExt script event that lets the user specify if Field of Vision and
  * /or Lighting should be taken into account.
@@ -1829,8 +1833,27 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 				return true;
 			}
 		} else {
-			idBounds bnds( idVec3( -16.0, -16.0f, -8.0f ), idVec3( 16.0, 16.0f, 64.0f ) );
+			//idBounds bnds( idVec3( -16.0, -16.0f, -8.0f ), idVec3( 16.0, 16.0f, 64.0f ) );
+			// SZ: We are using AAS48 for our characters so we are changing this to 24 in each direction
+			idBounds bnds( idVec3( -24.0, -24.0f, -8.0f ), idVec3( 24.0, 24.0f, 128.0f ) );
+
 			bnds.TranslateSelf( physicsObj.GetOrigin() );	
+
+			/*
+			// SZ: Padding height so that we reached it if we are underneath it and can't fly
+			// SZ: Not good, could be ledge above us. Better to detect this case and set move target to
+			// ground underneath object
+			*/
+			/*
+			if (move.moveType != MOVETYPE_FLY)
+			{
+				idVec3 abovePoint;
+				abovePoint = physicsObj.GetOrigin();
+				abovePoint -= physicsObj.GetGravityNormal() * 300.0;
+				bnds.AddPoint (abovePoint);
+			}
+			*/
+
 			if ( bnds.ContainsPoint( pos ) ) {
 				return true;
 			}
@@ -4453,7 +4476,7 @@ void idAI::UpdateEnemyPosition( void ) {
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
 
-	if ( CanSee( enemyEnt, false ) && !IsEntityHiddenByDarkness(enemyEnt) ) 
+	if ( CanSee( enemyEnt, false ) )
 	{
 
 		AI_ENEMY_VISIBLE = true;
@@ -6265,7 +6288,7 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 			float incAlert = getPlayerVisualStimulusAmount(p_entity);
 
 			// Very low threshold for visibility
-			if( incAlert > 0.2) // TODO: Make this configurable
+			if( incAlert < 0.2) // TODO: Make this configurable
 			{
 				return true;
 			}
