@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2006/12/29 07:45:07  sophisticatedzombie
+ * Added wasInterrupted and isChangingState methods.
+ *
  * Revision 1.8  2006/12/23 07:19:13  sophisticatedzombie
  * Added a function that we may be able to use to help AI better avoid
  * binary frob movers.
@@ -514,6 +517,13 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 bool CBinaryFrobMover::isMoving()
 {
 	return ((m_Translating) || (m_Rotating));
+}
+
+/*-------------------------------------------------------------------------*/
+
+bool CBinaryFrobMover::isChangingState()
+{
+	return m_StateChange;
 }
 
 /*-------------------------------------------------------------------------*/

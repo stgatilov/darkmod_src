@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.7  2006/12/29 07:44:22  sophisticatedzombie
+ * Added wasInterrupted and isChangingState methods.
+ *
  * Revision 1.6  2006/12/23 07:19:13  sophisticatedzombie
  * Added a function that we may be able to use to help AI better avoid
  * binary frob movers.
@@ -122,6 +125,14 @@ public:
 	}
 
 	/**
+	* This indicates if the door was interrupted in its last action
+	*/
+	bool wasInterrupted()
+	{
+		return m_bInterrupted;
+	}
+
+	/**
 	* This is the non-script version of GetLock
 	*/
 	bool					isLocked()
@@ -165,6 +176,11 @@ public:
 	* This is used to test if the mover is moving
 	*/
 	virtual bool			isMoving();
+
+	/**
+	* This is used to test if it is changing state
+	*/
+	virtual bool isChangingState();
 
 	/**
 	* This is used to get the remaining translation left on the clip model
