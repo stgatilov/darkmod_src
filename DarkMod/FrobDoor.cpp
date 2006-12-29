@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/12/29 07:46:31  sophisticatedzombie
+ * Handle tap only occurs if door wasn't interrupted.
+ * m_DoorHandle->Open(false) is called from within OpenDoor so that the handle
+ * stays on the door when AI opens it.
+ *
  * Revision 1.30  2006/11/04 11:00:20  sparhawk
  * Randomizer for lockpicking added.
  *
@@ -361,14 +366,17 @@ void CFrobDoor::Open(bool bMaster)
 	if(m_Open == true && !m_bInterrupted)
 		return;
 
-	// If we have a doorhandle we want to tap it before the door starts to open.
-	if(m_Doorhandle)
+	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
+	// already interrupted
+	if ((m_Doorhandle) && (!m_bInterrupted))
 	{
 		m_StateChange = true;
 		m_Doorhandle->Tap();
 	}
 	else
+	{
 		OpenDoor(bMaster);
+	}
 }
 
 void CFrobDoor::OpenDoor(bool bMaster)
@@ -379,6 +387,11 @@ void CFrobDoor::OpenDoor(bool bMaster)
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
+	// Open door handle if there is one
+	if(m_Doorhandle)
+		m_Doorhandle->Open(false);
+
+	// Handle master mode
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
@@ -459,8 +472,14 @@ void CFrobDoor::Close(bool bMaster)
 //	if(m_Doorhandle)
 //		m_Doorhandle->Tap();
 
+
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
+	// Open door handle if there is one
+	//if(m_Doorhandle)
+	//	m_Doorhandle->Open(false);
+
+	// Handle master mode
 	if(bMaster == true && m_MasterLock.Length() != 0)
 	{
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
