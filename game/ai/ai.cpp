@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2006/12/29 08:02:39  sophisticatedzombie
+ * AI will now only start to open a door if it is not currently changing state and is
+ * or door movement was interrupted.  This prevents it from turning the door
+ * handle forever and ever over and over again.
+ *
  * Revision 1.44  2006/12/28 17:06:36  sophisticatedzombie
  * Fixed '>' '<' inversion in IsEntityHiddenByDarkness idPlayer render pipeline lightgem
  * based test case.
@@ -3216,20 +3221,26 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				CFrobDoor* p_door = (CFrobDoor*) obstacle;
 				if (!p_door->isOpen())
 				{
-					bool b_canOpen = true;
-					if (p_door->isLocked())
+					// If it is not interrupted and not changing state
+					if ( (!p_door->isChangingState()) || (p_door->wasInterrupted() ) )
 					{
-						// TODO: Call script to see if I have this key. For now
-						// answer is always yes.
+						bool b_canOpen = true;
+						if (p_door->isLocked())
+						{
+							// TODO: Call script to see if I have this key. For now
+							// answer is always yes.
 
-					}
-		
-					// Open the door
-					if (b_canOpen)
-					{
-						p_door->Open (false);
-					}
-				}
+						}
+			
+						// Open the door
+						if (b_canOpen) 
+						{
+							p_door->OpenDoor(false);
+						}
+					
+					} // Door isn't changing state or was interrupted mid state-change
+
+				} // Door isn't open
 
 				newPos = obstacle->GetPhysics()->GetOrigin();
 				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
