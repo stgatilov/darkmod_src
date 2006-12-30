@@ -91,6 +91,7 @@ public:
 		idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
+		idBounds in_searchExclusionLimits, 
 		int in_hidingSpotTypesAllowed, 
 		idEntity* in_p_ignoreEntity,
 		int frameIndex,
@@ -128,7 +129,8 @@ protected:
 	*/
 	THidingSpotSearchHandle findSearchByBounds 
 	(
-		idBounds bounds
+		idBounds bounds,
+		idBounds exclusionBounds
 	);
 
 

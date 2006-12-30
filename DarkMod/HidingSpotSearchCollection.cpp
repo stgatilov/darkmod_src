@@ -180,18 +180,23 @@ void CHidingSpotSearchCollection::dereference (THidingSpotSearchHandle searchHan
 
 THidingSpotSearchHandle CHidingSpotSearchCollection::findSearchByBounds 
 (
-	idBounds bounds
+	idBounds bounds,
+	idBounds exclusionBounds
 )
 {
 	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
 	while (p_node != NULL)
 	{
 		idBounds existingBounds = p_node->search.getSearchLimits();
+		idBounds existingExclusionBounds = p_node->search.getSearchExclusionLimits();
 		if (existingBounds.Compare (bounds, 50.0))
 		{
-			// Reuse this one
-			p_node->refCount ++;
-			return (THidingSpotSearchHandle) p_node;
+			if (existingExclusionBounds.Compare (exclusionBounds, 50.0))
+			{
+				// Reuse this one
+				p_node->refCount ++;
+				return (THidingSpotSearchHandle) p_node;
+			}
 		}
 
 		p_node = p_node->p_next;
@@ -210,6 +215,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	idAAS* in_p_aas, 
 	float in_hidingHeight,
 	idBounds in_searchLimits, 
+	idBounds in_searchExclusionLimits, 
 	int in_hidingSpotTypesAllowed, 
 	idEntity* in_p_ignoreEntity,
 	int frameIndex,
@@ -217,7 +223,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 )
 {
 	/* Search with same bounds already? */
-	THidingSpotSearchHandle hSearch = findSearchByBounds (in_searchLimits);
+	THidingSpotSearchHandle hSearch = findSearchByBounds (in_searchLimits, in_searchExclusionLimits);
 	if (hSearch != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		darkModAASFindHidingSpots* p_search = getSearchByHandle(hSearch);
@@ -240,6 +246,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 		in_p_aas, 
 		in_hidingHeight,
 		in_searchLimits, 
+		in_searchExclusionLimits,
 		in_hidingSpotTypesAllowed, 
 		in_p_ignoreEntity
 	);

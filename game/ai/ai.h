@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/12/30 09:37:55  sophisticatedzombie
+ * Added search exclusion bounds that can be used during a search to ignore
+ * spots within a certain area. This is useful for expanding ring searches.
+ *
  * Revision 1.31  2006/12/30 08:18:25  sophisticatedzombie
  * Added a new event for accessing some AI script linked variables from sibling
  * AIs.  That way, an AI can check the mental state of a sibling AI from its own
@@ -1374,6 +1378,7 @@ protected:
 	* Script frontend for DarkMod hiding spot detection functions
 	**/
 	void Event_StartSearchForHidingSpots (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
+	void Event_StartSearchForHidingSpotsWithExclusionArea (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, const idVec3 &exclusionMinBounds, const idVec3 &exclusionMaxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
 	void Event_ContinueSearchForHidingSpots(); 
 	void Event_CloseHidingSpotSearch ();
 	void Event_GetNumHidingSpots ();

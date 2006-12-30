@@ -61,6 +61,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 	idAAS* in_p_aas, 
 	float in_hidingHeight,
 	idBounds in_searchLimits, 
+	idBounds in_searchExcludeLimits, 
 	int in_hidingSpotTypesAllowed, 
 	idEntity* in_p_ignoreEntity
 )
@@ -80,6 +81,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 	p_aas = in_p_aas;
 	hidingHeight = in_hidingHeight;
 	searchLimits = in_searchLimits;
+	searchIgnoreLimits = in_searchExcludeLimits;
 	searchCenter = searchLimits.GetCenter();
 	searchRadius = searchLimits.GetRadius();
 	hidingSpotTypesAllowed = in_hidingSpotTypesAllowed;
@@ -111,7 +113,8 @@ bool darkModAASFindHidingSpots::initialize
 	const idVec3 &hideFromPos , 
 	idAAS* in_p_aas, 
 	float in_hidingHeight,
-	idBounds in_searchLimits, 
+	idBounds in_searchLimits,
+	idBounds in_searchIgnoreLimits,
 	int in_hidingSpotTypesAllowed, 
 	idEntity* in_p_ignoreEntity
 )
@@ -131,6 +134,7 @@ bool darkModAASFindHidingSpots::initialize
 	p_aas = in_p_aas;
 	hidingHeight = in_hidingHeight;
 	searchLimits = in_searchLimits;
+	searchIgnoreLimits = in_searchIgnoreLimits;
 	searchCenter = searchLimits.GetCenter();
 	searchRadius = searchLimits.GetRadius();
 	hidingSpotTypesAllowed = in_hidingSpotTypesAllowed;
@@ -366,6 +370,12 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 			hidingSpot.quality = (float) 0.1;
 		}
 
+		// Test if it is inside the exclusion bounds
+		if (searchIgnoreLimits.ContainsPoint (hidingSpot.goal.origin))
+		{
+			hidingSpot.quality = -1.0;
+		}
+
 		// Insert if it is any good
 		if (hidingSpot.quality > 0.0)
 		{
@@ -538,16 +548,27 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 			currentGridSearchPoint.z = currentGridSearchBoundMaxes.z + 1.0;
 
 			darkModHidingSpot_t hidingSpot;
-			hidingSpot.hidingSpotTypes = TestHidingPoint 
-			(
-				currentGridSearchPoint, 
-				searchCenter,
-				searchRadius,
-				hidingHeight,
-				hidingSpotTypesAllowed,
-				p_ignoreEntity,
-				hidingSpot.quality
-			);
+
+			// Test if it is inside the exclusion bounds
+			if (searchIgnoreLimits.ContainsPoint (currentGridSearchPoint))
+			{
+				hidingSpot.quality = -1.0;
+				hidingSpot.hidingSpotTypes = NONE_HIDING_SPOT_TYPE;
+			}
+			else
+			{
+				// Not inside exclusion bounds, must test it
+				hidingSpot.hidingSpotTypes = TestHidingPoint 
+				(
+					currentGridSearchPoint, 
+					searchCenter,
+					searchRadius,
+					hidingHeight,
+					hidingSpotTypesAllowed,
+					p_ignoreEntity,
+					hidingSpot.quality
+				);
+			}
 
 			// If there are any hiding qualities, insert a hiding spot
 			if 
@@ -937,7 +958,11 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 )
 {
 
-	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, in_p_aas, in_hidingHeight, in_hideSearchBounds, ANY_HIDING_SPOT_TYPE, in_p_ignoreEntity);
+	idBounds emptyExcludeBounds;
+	emptyExcludeBounds.Clear();
+
+	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, in_p_aas, in_hidingHeight, in_hideSearchBounds, emptyExcludeBounds, ANY_HIDING_SPOT_TYPE, in_p_ignoreEntity);
+	HidingSpotFinder.searchIgnoreLimits.Clear();
 
 	CDarkmodHidingSpotTree hidingSpotList;
 

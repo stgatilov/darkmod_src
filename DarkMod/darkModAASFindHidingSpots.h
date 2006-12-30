@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2006/12/30 09:37:25  sophisticatedzombie
+ * Added search exclusion bounds that can be used during a search to ignore
+ * spots within a certain area. This is useful for expanding ring searches.
+ *
  * Revision 1.10  2006/12/14 09:54:14  sophisticatedzombie
  * Now using hiding spot search collection. Added some uitility methods.
  *
@@ -127,6 +131,7 @@ protected:
 	idBounds searchLimits;
 	idVec3 searchCenter;
 	float searchRadius;
+	idBounds searchIgnoreLimits;
 	int hidingSpotTypesAllowed;
 	idEntity* p_ignoreEntity;
 
@@ -331,10 +336,18 @@ public:
 	* @param in_p_aas[in] The Area Awareness System to use
 	*
 	* @param in_p_aas Pointer to the Area Awareness System in use
+	*
 	* @param hidingHeight The height of the object that would be hiding
-	* @param searchLimits The limiting bounds which may be smaller or greater than the area being 
-			searched.  The searched region is the intersection of the two.
+	*
+	* @param in_searchLimits The limiting bounds which may be smaller or greater than the area being 
+	*		searched.  The searched region is the intersection of the two.
+	*
+	* @param in_searchIgnoreLimits Any points inside these bounds are NOT considered during the
+	*	search. Hence if this overlaps the in_searchLimits parameter, it forms a hollow exlusion
+	*	area.
+	*
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
+	*
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
 	*/
 	darkModAASFindHidingSpots
@@ -343,6 +356,7 @@ public:
 		idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
+		idBounds in_searchIgnoreLimits, 
 		int in_hidingSpotTypesAllowed, 
 		idEntity* in_p_ignoreEntity
 	);
@@ -363,6 +377,7 @@ public:
 		idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
+		idBounds in_searchIgnoreLimits, 
 		int in_hidingSpotTypesAllowed, 
 		idEntity* in_p_ignoreEntity
 	);
@@ -392,6 +407,14 @@ public:
 	idBounds getSearchLimits()
 	{
 		return searchLimits;
+	}
+
+	/*!
+	* This gets the exclusion bounds of the search
+	*/
+	idBounds getSearchExclusionLimits()
+	{
+		return searchIgnoreLimits;
 	}
 
 	/*!
