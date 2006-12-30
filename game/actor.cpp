@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.30  2006/12/30 08:15:19  sophisticatedzombie
+ * idActor::CanSee now ignores the hidden flag on entities.  This is because the hidden
+ * flag is used sometimes to turn on and off the rendering of particle effects, such
+ * as on torches.  So a torch that was out would be hidden, preventing it from ever
+ * being seen.
+ *
  * Revision 1.29  2006/11/30 08:04:54  ishtvan
  * bugfix for footstep volume
  *
@@ -1554,9 +1560,13 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const {
 	idVec3		eye;
 	idVec3		toPos;
 
-	if ( ent->IsHidden() ) {
+	// TDM: We need to be able to see lights that are off and hence hidden
+	/*
+	if ( ent->IsHidden() ) 
+	{
 		return false;
 	}
+	*/
 
 	if ( ent->IsType( idActor::Type ) ) {
 		toPos = ( ( idActor * )ent )->GetEyePosition();
