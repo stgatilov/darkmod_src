@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2006/12/30 08:16:32  sophisticatedzombie
+ * CheckObstacleAvoidance now reacts to obstacles that are door handles by making
+ * the obstacle the door itself. This keeps the AI from getting hung up on door
+ * handles.
+ *
  * Revision 1.45  2006/12/29 08:02:39  sophisticatedzombie
  * AI will now only start to open a door if it is not currently changing state and is
  * or door movement was interrupted.  This prevents it from turning the door
@@ -195,6 +200,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 // For handling the opening of doors and other binary Frob movers
 #include "../../darkmod/BinaryFrobMover.h"
 #include "../../darkmod/FrobDoor.h"
+#include "../../darkmod/FrobDoorHandle.h"
 
 //TODO: Move these to AI def:
 
@@ -1210,8 +1216,20 @@ void idAI::Spawn( void ) {
 	headFocusRate		= spawnArgs.GetFloat( "head_focus_rate", "0.1" );
 	focusAlignTime		= SEC2MS( spawnArgs.GetFloat( "focus_align_time", "1" ) );
 
-	// DarkMod: Allow the FM author to set an initial alert number for AI
+	// DarkMod: State of mind, allow the FM author to set initial values
 	AI_AlertNum			= spawnArgs.GetFloat( "alert_initial", "0" );
+	stateOfMind_b_enemiesHaveBeenSeen = spawnArgs.GetBool ("stateOfMind_b_enemiesHaveBeenSeen");
+	stateOfMind_b_itemsHaveBeenStolen = spawnArgs.GetBool ("stateOfMind_b_itemsHaveBeenStolen");
+	stateOfMind_count_evidenceOfIntruders = spawnArgs.GetFloat ("stateOfMind_count_evidenceOfIntruders", "0.0");
+
+	/**
+	* This tracks how much indirect evidence of an intruder or intruders the AI
+	* has accumulated itself or heard about from other AIs.
+	* It is used for stateful communication with other AIs and can also influence behaivior.
+	**/
+	idScriptFloat			stateOfMind_count_evidenceOfIntruders;
+
+
 
 	flashJointWorld = animator.GetJointHandle( "flash" );
 
@@ -1657,6 +1675,10 @@ void idAI::LinkScriptVariables( void )
 	AI_ALERTED.LinkTo(			scriptObject, "AI_ALERTED" );
 
 	AI_AlertNum.LinkTo(			scriptObject, "AI_AlertNum" );
+	stateOfMind_b_enemiesHaveBeenSeen.LinkTo ( scriptObject, "stateOfMind_b_enemiesHaveBeenSeen" );
+	stateOfMind_b_itemsHaveBeenStolen.LinkTo ( scriptObject, "stateOfMind_b_itemsHaveBeenStolen" );
+	stateOfMind_count_evidenceOfIntruders.LinkTo ( scriptObject, "stateOfMind_count_evidenceOfIntruders" );
+
 
 	//these are set until unset by the script
 	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
@@ -3126,6 +3148,15 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		{
 			AI_OBSTACLE_IN_PATH = true;
 
+			// If its a door handle, switch the obstacle to the door so we don't get all hung
+			// up on door handles
+			if (path.firstObstacle->IsType (CFrobDoorHandle::Type))
+			{
+				// Make the obstacle the door itself
+				path.firstObstacle = ((CFrobDoorHandle*) (path.firstObstacle))->GetDoor();
+			}
+		
+
 			/* SZ: Further distance for Binary Frob Movers (eg: doors) */
 			if (path.firstObstacle->IsType (CBinaryFrobMover::Type))
 			{
@@ -3149,7 +3180,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
                 
 				// The door becomes an active dynamic pathing obstacle when we
 				// reach that distance (we will open the door at that point)
-				if ( physicsObj.GetAbsBounds().Expand( stopDistance * 1.5 ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) ) 
+				if ( physicsObj.GetAbsBounds().Expand( stopDistance).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) ) 
 				{
 					obstacle = path.firstObstacle;
 				}
@@ -3184,7 +3215,9 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 			obstacle = path.startPosObstacle;
 		}
 #endif
-	} else if ( path.seekPosObstacle ) {
+	} 
+	else if ( path.seekPosObstacle ) 
+	{
 		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
 		// then we want to push the path.seekPosObstacle entity out of the way
 		AI_OBSTACLE_IN_PATH = true;
@@ -3214,7 +3247,33 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		} 
 		else 
 		{
-			// If its a door try opening it
+			// If its a door handle, switch the obstacle to the door so we don't get all hung
+			// up on door handles
+			if (obstacle->IsType (CFrobDoorHandle::Type))
+			{
+				// Make the obstacle the door itself
+				obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
+
+				// Calculate distance far enough away that we won't hit swinging door
+				// opening toward us
+				idVec3 delta;
+				idVec3 gravity;
+				idVec3 sizePerpGrav;
+
+				idBounds avoidBounds = obstacle->GetPhysics()->GetBounds();
+				delta.x = avoidBounds[0][1] - avoidBounds[0][0];
+				delta.y = avoidBounds[1][1] - avoidBounds[1][0];
+				delta.z = avoidBounds[2][1] - avoidBounds[2][0];
+
+				gravity = gameLocal.GetGravity();
+				gravity.Normalize();
+
+				sizePerpGrav = gravity.Cross (delta);
+
+				stopDistance = sizePerpGrav.Length();
+			}
+
+			// Handle doors
 			if (obstacle->IsType (CFrobDoor::Type))
 			{
 				// Try to open doors
@@ -3253,14 +3312,26 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				
 				//newPos = path.seekPos;
 				move.obstacle = obstacle;
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+				//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 
 			}
 			else
 			{
 				// try kicking the object out of the way
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+				//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+				//newPos = obstacle->GetPhysics()->GetOrigin();
+
+				// Try backing away
 				newPos = obstacle->GetPhysics()->GetOrigin();
+				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
+					GetPhysics()->GetOrigin();
+
+				obstacleDelta.Normalize();
+				obstacleDelta *= 128.0;
+
+				newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+				move.obstacle = obstacle;
+				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 			}
 		}
 
