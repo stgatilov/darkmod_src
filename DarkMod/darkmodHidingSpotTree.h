@@ -51,6 +51,7 @@ typedef struct tagTDarkmodHidingSpotAreaNode
 	tagTDarkmodHidingSpotAreaNode* p_prevSibling;
 	tagTDarkmodHidingSpotAreaNode* p_nextSibling;
 	darkModHidingSpotNode* p_firstSpot;
+	darkModHidingSpotNode* p_lastSpot;
 
 	// Quality of the best spot in the area
 	float bestSpotQuality;

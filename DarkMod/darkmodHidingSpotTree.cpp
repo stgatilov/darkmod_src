@@ -117,6 +117,7 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::insertArea
 	p_node->count = 0;
 	p_node->bestSpotQuality = 0.0;
 	p_node->p_firstSpot = NULL;
+	p_node->p_lastSpot = NULL;
 
 	// Put at end (worst areas) of list for now
 	p_node->p_nextSibling = NULL;
@@ -272,9 +273,37 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 	p_spot->spot.hidingSpotTypes = hidingSpotTypes;
 	p_spot->spot.quality = quality;
 
-	p_spot->p_next = p_areaNode->p_firstSpot;
-	p_areaNode->p_firstSpot = p_spot;
-	p_areaNode->count ++;
+
+	// Add some randomness to the order of points in the areas.
+	// Randomly add to either front or back of the area list
+	if (gameLocal.random.RandomFloat() < 0.5)
+	{
+		// Add to front of list
+		p_spot->p_next = p_areaNode->p_firstSpot;
+		p_areaNode->p_firstSpot = p_spot;
+		if (p_areaNode->p_lastSpot == NULL)
+		{
+			p_areaNode->p_lastSpot = p_spot;
+		}
+		p_areaNode->count ++;
+	}
+	else
+	{
+		// Add to end of list
+		p_spot->p_next = NULL;
+		
+		if (p_areaNode->p_lastSpot == NULL)
+		{
+			p_areaNode->p_lastSpot = p_spot;
+			p_areaNode->p_firstSpot = p_spot;
+		}
+		else
+		{
+			p_areaNode->p_lastSpot->p_next = p_spot;
+			p_areaNode->p_lastSpot = p_spot;
+		}
+		p_areaNode->count ++;
+	}
 
 	numSpots ++;
 
@@ -709,17 +738,30 @@ bool CDarkmodHidingSpotTree::getOneNth
 		}
 
 		// Everything from p_spotCursor onward goes in other tree
-		p_otherArea->p_firstSpot = p_spotCursor;
+		if (p_spotCursor != NULL)
+		{
+			p_otherArea->p_lastSpot = p_area->p_lastSpot;
+			p_otherArea->p_firstSpot = p_spotCursor;
+		}
+		else
+		{
+			p_otherArea->p_lastSpot = NULL;
+			p_otherArea->p_firstSpot = NULL;
+		}
+		
+
 		numPointsMoved = p_area->count - splitPointIndex;
 		p_otherArea->count = numPointsMoved;
 
 		// Evertyhing up until p_spotTrailer stays in this tree
 		if (p_spotTrailer != NULL)
 		{
+			p_area->p_lastSpot = p_spotTrailer;
 			p_spotTrailer->p_next = NULL;
 		}
 		else
 		{
+			p_area->p_lastSpot = NULL;
 			p_area->p_firstSpot = NULL;
 		}
 		p_area->count -= numPointsMoved;
