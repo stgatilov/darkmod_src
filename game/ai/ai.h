@@ -7,6 +7,20 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/12/30 08:18:25  sophisticatedzombie
+ * Added a new event for accessing some AI script linked variables from sibling
+ * AIs.  That way, an AI can check the mental state of a sibling AI from its own
+ * script.
+ *
+ * Also added some new script variables:
+ * stateOfMind_b_enemiesHaveBeenSeen
+ * stateOfMind_b_itemsHaveBeenStolen
+ * stateOfMind_count_evidenceOfIntruders
+ *
+ * The new variables are used to affect behavior and can also be communicated
+ * from one AI to another to transfer context of what has been detected by an
+ * AI or AIs it has spoken to.
+ *
  * Revision 1.30  2006/12/23 20:18:44  sophisticatedzombie
  * Added canSeeExt script event that lets the user specify if Field of Vision and
  * /or Lighting should be taken into account.
@@ -293,6 +307,7 @@ extern const idEventDef AI_GetNthHidingSpotType;
 extern const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList;
 
 // Darkmod AI additions
+extern const idEventDef AI_GetVariableFromOtherAI;
 extern const idEventDef AI_GetAlertNumOfOtherAI;
 
 // Set a grace period for alerts
@@ -806,6 +821,26 @@ protected:
 	* change alertstates.  This var is very important!
 	**/
 	idScriptFloat			AI_AlertNum;
+
+	/**
+	* This tracks if the AI has information about any enemies having been spotted.
+	* It is used for stateful communication with other AIs and can also influence behaivior.
+	**/
+	idScriptBool			stateOfMind_b_enemiesHaveBeenSeen;
+
+	/**
+	* This tracks if the AI has information about any items having gone missing.
+	* It is used for stateful communication with other AIs and can also influence behaivior.
+	**/
+	idScriptBool			stateOfMind_b_itemsHaveBeenStolen;
+
+	/**
+	* This tracks how much indirect evidence of an intruder or intruders the AI
+	* has accumulated itself or heard about from other AIs.
+	* It is used for stateful communication with other AIs and can also influence behaivior.
+	**/
+	idScriptFloat			stateOfMind_count_evidenceOfIntruders;
+
 
 	/**
 	* Stores the amount alerted in this frame
@@ -1352,6 +1387,11 @@ protected:
 	* Will return 0.0 to script if other entity is NULL or not an AI.
 	*/
 	void Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity);
+
+	/**
+	* Gets the value of a script linked variable from another AI.
+	*/
+	void Event_GetVariableFromOtherAI (idEntity* p_otherEntity, const char* pstr_variableName);
 
 	/*!
 	* This event is used by an AI script to issue a message to other AI's through
