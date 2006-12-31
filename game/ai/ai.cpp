@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2006/12/31 12:08:51  sophisticatedzombie
+ * Added canSeePositionExt script method.
+ *
  * Revision 1.47  2006/12/31 02:30:49  crispy
  * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
  * - Cover search is fixed, and uses traces instead of PVS (at least for now)
@@ -2883,6 +2886,51 @@ bool idAI::CanSeeExt( idEntity *ent, bool useFOV, bool useLighting ) const
 	// Return result
 	return cansee;
 	
+}
+
+/*
+=====================
+The Dark Mod
+idAI::CanSeePositionExt
+
+This metohd can ignore lighting conditions and/or field of vision.
+=====================
+*/
+bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
+{
+	trace_t		tr;
+	idVec3		eye;
+	bool canSee;
+
+	if ( useFOV && !CheckFOV( position ) ) 
+	{
+		return false;
+	}
+
+	idVec3 ownOrigin = physicsObj.GetOrigin();
+
+	canSee = EntityCanSeePos (this, ownOrigin, position);
+
+	if (canSee && useLighting)
+	{
+		idVec3 bottomPoint = position;
+		idVec3 topPoint = position - (physicsObj.GetGravityNormal() * 32.0);
+		float maxDistanceToObserve = getMaximumObservationDistance 
+		(
+			bottomPoint,
+			topPoint,
+			NULL
+		);
+
+		if ((position - ownOrigin).Length() > maxDistanceToObserve)
+		{
+			canSee = false;
+		}
+
+	}
+
+	return canSee;
+
 }
 
 

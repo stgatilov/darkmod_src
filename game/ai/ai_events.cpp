@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2006/12/31 12:08:51  sophisticatedzombie
+ * Added canSeePositionExt script method.
+ *
  * Revision 1.31  2006/12/31 02:30:49  crispy
  * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
  * - Cover search is fixed, and uses traces instead of PVS (at least for now)
@@ -215,6 +218,7 @@ const idEventDef AI_GetJumpVelocity( "getJumpVelocity", "vff", 'v' );
 const idEventDef AI_EntityInAttackCone( "entityInAttackCone", "E", 'd' );
 const idEventDef AI_CanSeeEntity( "canSee", "E", 'd' );
 const idEventDef AI_CanSeeEntityExt( "canSeeExt", "Edd", 'd' );
+const idEventDef AI_CanSeePositionExt( "canSeePositionExt", "vdd", 'd' );
 const idEventDef AI_SetTalkTarget( "setTalkTarget", "E" );
 const idEventDef AI_GetTalkTarget( "getTalkTarget", NULL, 'e' );
 const idEventDef AI_SetTalkState( "setTalkState", "d" );
@@ -561,6 +565,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_EntityInAttackCone,				idAI::Event_EntityInAttackCone )
 	EVENT( AI_CanSeeEntity,						idAI::Event_CanSeeEntity )
 	EVENT( AI_CanSeeEntityExt,					idAI::Event_CanSeeEntityExt )
+	EVENT( AI_CanSeePositionExt,				idAI::Event_CanSeePositionExt )
 	EVENT( AI_SetTalkTarget,					idAI::Event_SetTalkTarget )
 	EVENT( AI_GetTalkTarget,					idAI::Event_GetTalkTarget )
 	EVENT( AI_SetTalkState,						idAI::Event_SetTalkState )
@@ -2072,6 +2077,17 @@ void idAI::Event_CanSeeEntityExt( idEntity *ent, int bool_useFOV, int bool_useLi
 	// Test if it is visible
 	bool cansee = CanSeeExt( ent, (bool_useFOV != 0), (bool_useLighting != 0) );
 	
+	idThread::ReturnInt( cansee );
+}
+
+/*
+=====================
+idAI::Event_CanSeePositionExt
+=====================
+*/
+void idAI::Event_CanSeePositionExt( const idVec3& position, int bool_useFOV, int bool_useLighting ) 
+{
+	bool cansee = CanSeePositionExt( position, (bool_useFOV != 0), (bool_useLighting != 0) );
 	idThread::ReturnInt( cansee );
 }
 
