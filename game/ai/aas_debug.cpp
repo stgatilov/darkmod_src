@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2006/12/31 02:30:48  crispy
+ * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
+ * - Cover search is fixed, and uses traces instead of PVS (at least for now)
+ * - The FindNearestGoal AAS search can now have a travel distance limit.
+ *
  * Revision 1.3  2006/12/09 17:42:49  sophisticatedzombie
  * Added some door detection features to the function which does debug drawing
  * of reachabilities. (They draw differently if doors were marked int he reachability
@@ -381,7 +386,7 @@ void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
 
 	DrawCone( target, idVec3(0,0,1), 16.0f, colorYellow );
 
-	idAASFindCover findCover( target );
+	idAASFindCover findCover( NULL, NULL, target );
 	if ( FindNearestGoal( goal, areaNum, origin, target, TFL_WALK|TFL_AIR, obstacles, numObstacles, findCover ) ) {
 		DrawArea( goal.areaNum );
 		ShowWalkPath( origin, goal.areaNum, goal.origin );

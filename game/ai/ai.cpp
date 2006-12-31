@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2006/12/31 02:30:49  crispy
+ * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
+ * - Cover search is fixed, and uses traces instead of PVS (at least for now)
+ * - The FindNearestGoal AAS search can now have a travel distance limit.
+ *
  * Revision 1.46  2006/12/30 08:16:32  sophisticatedzombie
  * CheckObstacleAvoidance now reacts to obstacles that are door handles by making
  * the obstacle the door itself. This keeps the AI from getting hung up on door
@@ -334,13 +339,10 @@ void idMoveState::Restore( idRestoreGame *savefile ) {
 idAASFindCover::idAASFindCover
 ============
 */
-idAASFindCover::idAASFindCover( const idVec3 &hideFromPos ) {
-	int			numPVSAreas;
-	idBounds	bounds( hideFromPos - idVec3( 16, 16, 0 ), hideFromPos + idVec3( 16, 16, 64 ) );
-
-	// setup PVS
-	numPVSAreas = gameLocal.pvs.GetPVSAreas( bounds, PVSAreas, idEntity::MAX_PVS_AREAS );
-	hidePVS		= gameLocal.pvs.SetupCurrentPVS( PVSAreas, numPVSAreas );
+idAASFindCover::idAASFindCover( const idEntity* hidingEntity, const idEntity* hideFromEnt, const idVec3 &hideFromPos ) {
+	this->hidingEntity = hidingEntity; // May be NULL
+	this->hideFromEnt = hideFromEnt; // Maybe NULL
+	this->hideFromPos = hideFromPos;
 }
 
 /*
@@ -349,7 +351,6 @@ idAASFindCover::~idAASFindCover
 ============
 */
 idAASFindCover::~idAASFindCover() {
-	gameLocal.pvs.FreeCurrentPVS( hidePVS );
 }
 
 /*
@@ -359,16 +360,30 @@ idAASFindCover::TestArea
 */
 bool idAASFindCover::TestArea( const idAAS *aas, int areaNum ) {
 	idVec3	areaCenter;
-	int		numPVSAreas;
-	int		PVSAreas[ idEntity::MAX_PVS_AREAS ];
+	trace_t trace;
 
 	areaCenter = aas->AreaCenter( areaNum );
-	areaCenter[ 2 ] += 1.0f;
+	areaCenter[ 2 ] += 6.0f;
 
-	numPVSAreas = gameLocal.pvs.GetPVSAreas( idBounds( areaCenter ).Expand( 16.0f ), PVSAreas, idEntity::MAX_PVS_AREAS );
-	if ( !gameLocal.pvs.InCurrentPVS( hidePVS, PVSAreas, numPVSAreas ) ) {
+	const idVec3 &org = hidingEntity->GetPhysics()->GetOrigin();
+	if (areaNum == aas->PointAreaNum(org)) {
+		// We're in this AAS area; use our eye position instead of the AAS area's center.
+		// This prevents problems where the AI decides not to move because the center
+		// of its AAS area is obscured, but the AI itself is still in full view.
+		if (dynamic_cast <const idActor*>(hidingEntity)) {
+			areaCenter = static_cast <const idActor*> (hidingEntity)->GetEyePosition();
+		} else {
+			areaCenter = org;
+			areaCenter[2] += 6.0f;
+		}
+	}
+
+	gameLocal.clip.TracePoint(trace, hideFromPos, areaCenter, MASK_OPAQUE, hideFromEnt);
+	if (trace.fraction < 1.0f) {
+		//gameRenderWorld->DebugLine( colorGreen, hideFromPos, areaCenter, 1000000, true);
 		return true;
 	}
+	//gameRenderWorld->DebugLine( colorRed, hideFromPos, areaCenter, 1000000, true);
 
 	return false;
 }
@@ -2461,13 +2476,15 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 idAI::MoveToCover
 =====================
 */
-bool idAI::MoveToCover( idEntity *entity, const idVec3 &hideFromPos ) {
+bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 	int				areaNum;
 	aasObstacle_t	obstacle;
 	aasGoal_t		hideGoal;
 	idBounds		bounds;
+	//common->Printf("MoveToCover called... ");
 
-	if ( !aas || !entity ) {
+	if ( !aas || !hideFromEnt ) {
+		common->Printf("MoveToCover failed: null aas or entity\n");
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
@@ -2477,23 +2494,25 @@ bool idAI::MoveToCover( idEntity *entity, const idVec3 &hideFromPos ) {
 	areaNum	= PointReachableAreaNum( org );
 
 	// consider the entity the monster tries to hide from as an obstacle
-	obstacle.absBounds = entity->GetPhysics()->GetAbsBounds();
+	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
 
-	idAASFindCover findCover( hideFromPos );
-	if ( !aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover ) ) {
+	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
+	if ( !aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") ) ) {
+		//common->Printf("MoveToCover failed: destination unreachable\n");
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
 
 	if ( ReachedPos( hideGoal.origin, move.moveCommand ) ) {
+		//common->Printf("MoveToCover succeeded: Already at hide position\n");
 		StopMove( MOVE_STATUS_DONE );
 		return true;
 	}
 
 	move.moveDest		= hideGoal.origin;
 	move.toAreaNum		= hideGoal.areaNum;
-	move.goalEntity		= entity;
+	move.goalEntity		= hideFromEnt;
 	move.moveCommand	= MOVE_TO_COVER;
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.startTime		= gameLocal.time;
@@ -2501,6 +2520,7 @@ bool idAI::MoveToCover( idEntity *entity, const idVec3 &hideFromPos ) {
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
 	AI_FORWARD			= true;
+	//common->Printf("MoveToCover succeeded: Now moving into cover\n");
 
 	return true;
 }

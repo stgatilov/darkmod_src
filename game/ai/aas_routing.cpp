@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2006/12/31 02:30:49  crispy
+ * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
+ * - Cover search is fixed, and uses traces instead of PVS (at least for now)
+ * - The FindNearestGoal AAS search can now have a travel distance limit.
+ *
  * Revision 1.5  2006/12/09 17:46:09  sophisticatedzombie
  * Fixed an ID Software problem with disabling map aas obstacles not making areas
  * accessible again.
@@ -1182,9 +1187,10 @@ int idAASLocal::TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goa
 /*
 ============
 idAASLocal::FindNearestGoal
+maxTravelCost is optional and defaults to 0, meaning no maximum
 ============
 */
-bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const {
+bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback, unsigned short maxTravelCost ) const {
 	int i, j, k, badTravelFlags, nextAreaNum, bestAreaNum;
 	unsigned short t, bestTravelTime;
 	idRoutingUpdate *updateListStart, *updateListEnd, *curUpdate, *nextUpdate;
@@ -1268,7 +1274,12 @@ bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 ori
 			t = curUpdate->tmpTravelTime +
 					AreaTravelTime( curUpdate->areaNum, curUpdate->start, reach->start ) +
 						reach->travelTime;
-
+			
+			// Don't travel too far
+			if (maxTravelCost && t >= maxTravelCost) {
+				continue;
+			}
+			
 			// project target origin onto movement vector through the area
 			v1 = reach->end - curUpdate->start;
 			v1.Normalize();

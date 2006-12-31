@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2006/12/31 02:30:49  crispy
+ * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
+ * - Cover search is fixed, and uses traces instead of PVS (at least for now)
+ * - The FindNearestGoal AAS search can now have a travel distance limit.
+ *
  * Revision 1.32  2006/12/30 09:37:55  sophisticatedzombie
  * Added search exclusion bounds that can be used during a search to ignore
  * spots within a certain area. This is useful for expanding ring searches.
@@ -366,14 +371,15 @@ public:
 
 class idAASFindCover : public idAASCallback {
 public:
-						idAASFindCover( const idVec3 &hideFromPos );
+						idAASFindCover( const idEntity* hidingEntity, const idEntity* hideFromEnt, const idVec3 &hideFromPos );
 						~idAASFindCover();
 
 	virtual bool		TestArea( const idAAS *aas, int areaNum );
 
 private:
-	pvsHandle_t			hidePVS;
-	int					PVSAreas[ idEntity::MAX_PVS_AREAS ];
+	const idEntity*		hidingEntity;
+	const idEntity*		hideFromEnt;
+	idVec3				hideFromPos;
 };
 
 class idAASFindAreaOutOfRange : public idAASCallback {
@@ -1249,6 +1255,7 @@ protected:
 	void					Event_MoveStatus( void );
 	void					Event_StopMove( void );
 	void					Event_MoveToCover( void );
+	void					Event_MoveToCoverFrom( idEntity *enemyEnt );
 	void					Event_MoveToEnemy( void );
 	void					Event_MoveToEnemyHeight( void );
 	void					Event_MoveOutOfRange( idEntity *entity, float range );

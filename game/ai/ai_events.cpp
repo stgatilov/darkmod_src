@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2006/12/31 02:30:49  crispy
+ * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
+ * - Cover search is fixed, and uses traces instead of PVS (at least for now)
+ * - The FindNearestGoal AAS search can now have a travel distance limit.
+ *
  * Revision 1.30  2006/12/30 09:37:55  sophisticatedzombie
  * Added search exclusion bounds that can be used during a search to ignore
  * spots within a certain area. This is useful for expanding ring searches.
@@ -191,6 +196,7 @@ const idEventDef AI_TurnToEntity( "turnToEntity", "E" );
 const idEventDef AI_MoveStatus( "moveStatus", NULL, 'd' );
 const idEventDef AI_StopMove( "stopMove" );
 const idEventDef AI_MoveToCover( "moveToCover" );
+const idEventDef AI_MoveToCoverFrom( "moveToCoverFrom", "E" );
 const idEventDef AI_MoveToEnemy( "moveToEnemy" );
 const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight" );
 const idEventDef AI_MoveOutOfRange( "moveOutOfRange", "ef" );
@@ -535,6 +541,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_MoveStatus,						idAI::Event_MoveStatus )
 	EVENT( AI_StopMove,							idAI::Event_StopMove )
 	EVENT( AI_MoveToCover,						idAI::Event_MoveToCover )
+	EVENT( AI_MoveToCoverFrom,					idAI::Event_MoveToCoverFrom )
 	EVENT( AI_MoveToEnemy,						idAI::Event_MoveToEnemy )
 	EVENT( AI_MoveToEnemyHeight,				idAI::Event_MoveToEnemyHeight )
 	EVENT( AI_MoveOutOfRange,					idAI::Event_MoveOutOfRange )
@@ -1510,9 +1517,36 @@ idAI::Event_MoveToCover
 */
 void idAI::Event_MoveToCover( void ) {
 	idActor *enemyEnt = enemy.GetEntity();
+	if (!enemyEnt) common->Printf("Warning: Entity is null\n");
 
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	if ( !enemyEnt || !MoveToCover( enemyEnt, lastVisibleEnemyPos ) ) {
+		return;
+	}
+}
+
+/*
+=====================
+idAI::Event_MoveToCoverFrom
+=====================
+*/
+void idAI::Event_MoveToCoverFrom( idEntity* enemyEnt ) {
+	if (!enemyEnt) enemyEnt = enemy.GetEntity();
+	if (!enemyEnt) { common->Printf("Warning: Entity is null\n"); return; }
+	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
+
+	// Hide from the eye position of the enemy, if the enemy is an actor;
+	// otherwise we have to make do with its origin plus an offset.
+	idVec3 hideFrom;
+	if (dynamic_cast <idActor*>(enemyEnt)) {
+		hideFrom = static_cast<idActor*> (enemyEnt)->GetEyePosition();
+	} else {
+		hideFrom = enemyEnt->GetPhysics()->GetOrigin();
+		hideFrom.z += 96.0f; // about 6 feet
+	}
+	
+	if (!MoveToCover( enemyEnt, hideFrom )) {
+		// failed
 		return;
 	}
 }
