@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2006/12/31 12:08:05  sophisticatedzombie
+ * Added script event for testing if a position is visible to an AI (rather than an entity being visible)
+ *
  * Revision 1.33  2006/12/31 02:30:49  crispy
  * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
  * - Cover search is fixed, and uses traces instead of PVS (at least for now)
@@ -1062,10 +1065,16 @@ protected:
 	*/
 	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 
+
 	/**
-	* This version can optionally use or not use lighting
+	* This version can optionally use or not use lighting and fov
 	*/
 	virtual bool			CanSeeExt (idEntity* ent, bool useFOV, bool useLighting ) const;
+
+	/**
+	* This tests if a position is visible.  it can optionally use lighting and fov.
+	*/
+	virtual bool			CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting );
 
 	bool					EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idVec3 &pos );
 	void					BlockedFailSafe( void );
@@ -1274,7 +1283,8 @@ protected:
 	void					Event_GetJumpVelocity( const idVec3 &pos, float speed, float max_height );
 	void					Event_EntityInAttackCone( idEntity *ent );
 	void					Event_CanSeeEntity( idEntity *ent );
-	void					Event_CanSeeEntityExt( idEntity *ent, int ignoreFOV, int ignoreLighting);
+	void					Event_CanSeeEntityExt( idEntity *ent, int useFOV, int useLighting);
+	void					Event_CanSeePositionExt( const idVec3& position, int useFOV, int useLighting);
 	void					Event_SetTalkTarget( idEntity *target );
 	void					Event_GetTalkTarget( void );
 	void					Event_SetTalkState( int state );
