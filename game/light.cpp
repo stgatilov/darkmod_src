@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2006/12/31 12:01:59  sophisticatedzombie
+ * Added script method for getting light level (> 0.0 is on, 0.0 is off )
+ *
  * Revision 1.13  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -82,6 +85,7 @@ const idEventDef EV_Light_FadeIn( "fadeInLight", "f" );
 // TDM Additions:
 const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", NULL, 'v' );
 const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
+const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
 
 
 CLASS_DECLARATION( idEntity, idLight )
@@ -102,6 +106,7 @@ CLASS_DECLARATION( idEntity, idLight )
 
 	EVENT( EV_Light_SetLightOrigin, idLight::Event_SetLightOrigin )
 	EVENT( EV_Light_GetLightOrigin, idLight::Event_GetLightOrigin )
+	EVENT( EV_Light_GetLightLevel,	idLight::Event_GetLightLevel )
 END_CLASS
 
 
@@ -1437,5 +1442,8 @@ void idLight::Event_GetLightOrigin( void )
 	idThread::ReturnVector( localLightOrigin );
 }
 
-
+void idLight::Event_GetLightLevel ( void )
+{
+	idThread::ReturnFloat( currentLevel );
+}
 
