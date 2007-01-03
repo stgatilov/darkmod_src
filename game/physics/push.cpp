@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2007/01/03 04:16:06  ishtvan
+ * added optional impulse modifier argument to ClipTranslationalPush
+ *
  * Revision 1.2  2006/06/21 13:07:08  sparhawk
  * Added version tracking per cpp module
  *
@@ -303,7 +306,9 @@ idPush::ClipTranslationalPush
 ============
 */
 float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const int flags,
-										const idVec3 &newOrigin, const idVec3 &translation ) {
+										const idVec3 &newOrigin, const idVec3 &translation, 
+										float ImpulseMod ) 
+{
 	int i, j, numListedEntities;
 	idEntity *curPusher, *ent, *entityList[ MAX_GENTITIES ];
 	float fraction;
@@ -1034,7 +1039,9 @@ idPush::ClipTranslationalPush
 ============
 */
 float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const int flags,
-										const idVec3 &newOrigin, const idVec3 &translation ) {
+										const idVec3 &newOrigin, const idVec3 &translation, 
+										float ImpulseMod ) 
+{
 	int			i, listedEntities, res;
 	idEntity	*check, *entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
@@ -1053,7 +1060,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	results.endAxis = clipModel->GetAxis();
 	memset( &results.c, 0, sizeof( results.c ) );
 
-	if ( translation == vec3_origin ) {
+	if ( translation == vec3_origin ) 
+	{
 		return totalMass;
 	}
 
@@ -1064,7 +1072,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 
 	// get bounds for the whole movement
 	bounds = clipModel->GetBounds();
-	if ( bounds[0].x >= bounds[1].x ) {
+	if ( bounds[0].x >= bounds[1].x ) 
+	{
 		return totalMass;
 	}
 	pushBounds.FromBoundsTranslation( bounds, clipModel->GetOrigin(), clipModel->GetAxis(), translation );
@@ -1079,25 +1088,30 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	// discard entities we cannot or should not push
 	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
 
-	if ( flags & PUSHFL_CLIP ) {
+	if ( flags & PUSHFL_CLIP ) 
+	{
 
 		// can only clip movement of a trace model
 		assert( clipModel->IsTraceModel() );
 
 		// disable to be pushed entities for collision detection
-		for ( i = 0; i < listedEntities; i++ ) {
+		for ( i = 0; i < listedEntities; i++ ) 
+		{
 			entityList[i]->GetPhysics()->DisableClip();
 		}
 
 		gameLocal.clip.Translation( results, clipModel->GetOrigin(), clipModel->GetOrigin() + translation, clipModel, clipModel->GetAxis(), pusher->GetPhysics()->GetClipMask(), NULL );
 
 		// enable to be pushed entities for collision detection
-		for ( i = 0; i < listedEntities; i++ ) {
+		for ( i = 0; i < listedEntities; i++ ) 
+		{
 			entityList[i]->GetPhysics()->EnableClip();
 		}
 
-		if ( results.fraction == 0.0f ) {
-			if ( wasEnabled ) {
+		if ( results.fraction == 0.0f ) 
+		{
+			if ( wasEnabled ) 
+			{
 				clipModel->Enable();
 			}
 			return totalMass;
@@ -1107,7 +1121,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		clipOrigin = results.endpos;
 
 	}
-	else {
+	else 
+	{
 
 		clipMove = translation;
 		clipOrigin = newOrigin;
@@ -1120,7 +1135,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	oldOrigin = clipModel->GetOrigin();
 
 	// try to push the entities
-	for ( i = 0; i < listedEntities; i++ ) {
+	for ( i = 0; i < listedEntities; i++ ) 
+	{
 
 		check = entityList[ i ];
 
@@ -1135,7 +1151,8 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		physics->EnableClip();
 
 		// if the entity is pushed
-		if ( res == PUSH_OK ) {
+		if ( res == PUSH_OK ) 
+		{
 			// set the pusher in the translated position
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), newOrigin, clipModel->GetAxis() );
 			// the entity might be pushed off the ground
@@ -1144,9 +1161,11 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 			clipModel->Link( gameLocal.clip, clipModel->GetEntity(), clipModel->GetId(), oldOrigin, clipModel->GetAxis() );
 
 			// wake up this object
-			if ( flags & PUSHFL_APPLYIMPULSE ) {
-				impulse = physics->GetMass() * dir;
-			} else {
+			if ( flags & PUSHFL_APPLYIMPULSE ) 
+			{
+				impulse = ImpulseMod * physics->GetMass() * dir;
+			} else 
+			{
 				impulse.Zero();
 			}
 			check->ApplyImpulse( clipModel->GetEntity(), clipModel->GetId(), clipModel->GetOrigin(), impulse );
@@ -1156,31 +1175,37 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		}
 
 		// if the entity is not blocking
-		if ( res != PUSH_BLOCKED ) {
+		if ( res != PUSH_BLOCKED ) 
+		{
 			continue;
 		}
 
 		// if the blocking entity is a projectile
-		if ( check->IsType( idProjectile::Type ) ) {
+		if ( check->IsType( idProjectile::Type ) ) 
+		{
 			check->ProcessEvent( &EV_Explode );
 			continue;
 		}
 
 		// if blocking entities should be crushed
-		if ( flags & PUSHFL_CRUSH ) {
+		if ( flags & PUSHFL_CRUSH ) 
+		{
 			check->Damage( clipModel->GetEntity(), clipModel->GetEntity(), vec3_origin, "damage_crush", 1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE( pushResults.c.id ) );
 			continue;
 		}
 
 		// if the entity is an active articulated figure and gibs
-		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
-			if ( static_cast<idAFEntity_Base *>(check)->IsActiveAF() ) {
+		if ( check->IsType( idAFEntity_Base::Type ) && check->spawnArgs.GetBool( "gib" ) ) 
+		{
+			if ( static_cast<idAFEntity_Base *>(check)->IsActiveAF() ) 
+			{
 				check->ProcessEvent( &EV_Gib, "damage_Gib" );
 			}
 		}
 
 		// if the entity is a moveable item and gibs
-		if ( check->IsType( idMoveableItem::Type ) && check->spawnArgs.GetBool( "gib" ) ) {
+		if ( check->IsType( idMoveableItem::Type ) && check->spawnArgs.GetBool( "gib" ) ) 
+		{
 			check->ProcessEvent( &EV_Gib, "damage_Gib" );
 		}
 
@@ -1192,14 +1217,16 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		results.c.entityNum = check->entityNumber;
 		results.c.id = 0;
 
-		if ( !wasEnabled ) {
+		if ( !wasEnabled ) 
+		{
 			clipModel->Disable();
 		}
 
 		return totalMass;
 	}
 
-	if ( !wasEnabled ) {
+	if ( !wasEnabled ) 
+	{
 		clipModel->Disable();
 	}
 
