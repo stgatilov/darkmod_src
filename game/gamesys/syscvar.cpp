@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.44  2007/01/03 04:18:34  ishtvan
+ * Added cvars cv_pm_pushmod and cv_ai_bumpobject_impulse
+ *
  * Revision 1.43  2006/12/10 02:55:56  ishtvan
  * added AI cvars to debug display state and alert number
  *
@@ -188,6 +191,7 @@ idCVar cv_ai_sight_mag(				"tdm_ai_sight_mag",			"1.0",			CVAR_GAME | CVAR_ARCHI
 idCVar cv_ai_sightmaxdist(			"tdm_ai_sightmax",			"60.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The distance (in meters) above which an AI will not see you even with a fullbright lightgem.  Defaults to 60m.  Effects visibility in a complicated way." );
 idCVar cv_ai_sightmindist(			"tdm_ai_sightmin",			"11.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The distance (in meters) below which an AI has a 100% chance of seeing you with a fullbright lightgem.  Defaults to 11m (~36 ft).  Effects visibility in a complicated way." );
 idCVar cv_ai_tactalert(				"tdm_ai_tact",				"20.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The default tactile alert if an AI bumps an enemy or an enemy bumps an AI.  Default value is 20 alert units (pretty much full alert)." );
+idCVar cv_ai_bumpobject_impulse(	"tdm_ai_bumpobject_impulse", "1500",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Impulse applied when an AI bumps into an object with its AF when animating.  Different from the kick force it applies to an object blocking its path." );
 idCVar cv_ai_debug(					"tdm_ai_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, AI alert events will be sent to the console for debugging purposes." );
 idCVar cv_ai_fov_show (				"tdm_ai_showfov",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the field of vision of the AI will be drawn.");
 idCVar cv_ai_ko_show (				"tdm_ai_showko",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the knockout region of the AI will be drawn.");
@@ -205,7 +209,7 @@ idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_B
 idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain run speed from pm_walkspeed." );
 idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
 idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
-
+idCVar cv_pm_pushmod(				"pm_pushmod",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Alters the impulse applied when the player runs into an object.  Fractional modifier that multiplies the default D3 impulse.  Default is 1.0" );
 /**
 * Dark Mod Leaning
 **/

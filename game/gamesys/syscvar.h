@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2007/01/03 04:18:34  ishtvan
+ * Added cvars cv_pm_pushmod and cv_ai_bumpobject_impulse
+ *
  * Revision 1.30  2006/12/10 02:55:56  ishtvan
  * added AI cvars to debug display state and alert number
  *
@@ -112,6 +115,7 @@
 * DarkMod cvars - See text description in syscvar.cpp for descriptions
 **/
 extern idCVar cv_ai_sndvol;
+extern idCVar cv_ai_bumpobject_impulse;
 extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;
 extern idCVar cv_ai_sightmaxdist;
@@ -127,6 +131,7 @@ extern idCVar cv_ko_show;
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
+extern idCVar cv_pm_pushmod;
 
 /**
 * TDM Leaning vars:
