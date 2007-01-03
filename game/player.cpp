@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.100  2007/01/03 04:24:29  ishtvan
+ * Stim/Response: Fixed the resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.99  2007/01/03 00:28:03  crispy
  * New script event rangedThreatTo. Added idWeapon::IsRanged.
  *
@@ -1867,6 +1870,10 @@ void idPlayer::Spawn( void )
 	SetClipModel();
 	physicsObj.SetMass( spawnArgs.GetFloat( "mass", "100" ) );
 	physicsObj.SetContents( CONTENTS_BODY );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+	
 	physicsObj.SetClipMask( MASK_PLAYERSOLID );
 	SetPhysics( &physicsObj );
 	InitAASLocation();
@@ -6931,6 +6938,9 @@ void idPlayer::Move( void ) {
 		physicsObj.SetContents( CONTENTS_BODY );
 		physicsObj.SetMovementType( PM_NORMAL );
 	}
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 
 	if ( spectating ) {
 		physicsObj.SetClipMask( MASK_DEADSOLID );
@@ -7567,6 +7577,9 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		gameLocal.mpGame.PlayerDeath( this, killer, isTelefragged );
 	} else {
 		physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
+		// SR CONTENTS_RESPONSE FIX
+		if( m_StimResponseColl->HasResponse() )
+			physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	}
 
 	ClearPowerUps();

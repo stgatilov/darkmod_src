@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.82  2007/01/03 04:24:29  ishtvan
+ * Stim/Response: Fixed the resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.81  2007/01/03 00:28:03  crispy
  * New script event rangedThreatTo. Added idWeapon::IsRanged.
  *
@@ -1022,12 +1025,12 @@ void idEntity::Spawn( void )
 
 		ConstructScriptObject();
 	}
-
-	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
-
+	
 	// TDM: Set contents based on new spawnArg
 	if( spawnArgs.FindKey( "clipmodel_contents" ) )
 		GetPhysics()->SetContents( spawnArgs.GetInt("clipmodel_contents") );
+
+	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
 
 	LoadTDMSettings();
 }
