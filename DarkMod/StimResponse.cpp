@@ -15,6 +15,15 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.18  2007/01/03 03:59:39  ishtvan
+ * *) added CONTENTS_RESPONSE optimization
+ *
+ * *) Added HasStim and HasResponse functions
+ *
+ * *) Added stim duration setting
+ *
+ * *) Preliminary framework for stim magnitude
+ *
  * Revision 1.17  2006/06/29 08:22:06  ishtvan
  * *) Added option to use entity bounds + radius instead of a cube area
  *
@@ -160,6 +169,9 @@ CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType t
 			pRet = new CResponse(p_owner, type);
 		}
 
+		// Optimization: Set contents to include CONTENTS_RESPONSE
+		p_owner->GetPhysics()->SetContents( p_owner->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
 		return pRet;
 }
 
@@ -229,6 +241,8 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 
 		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, Owner); 
 	}
+
+	// Optimization: Update clip contents to include contents_response
 
 	return pRet;
 }
@@ -319,6 +333,7 @@ int CStimResponseCollection::RemoveStim(int Type)
 
 int CStimResponseCollection::RemoveResponse(int Type)
 {
+	idEntity *owner = NULL;
 	CResponse *pRet = NULL;
 	int i, n;
 
@@ -330,12 +345,17 @@ int CStimResponseCollection::RemoveResponse(int Type)
 			pRet = m_Response[i];
 			if(pRet->m_Removable == true)
 			{
+				owner = pRet->m_Owner;
 				m_Response.RemoveIndex(i);
 				delete pRet;
 			}
 			break;
 		}
 	}
+
+	// Remove the CONTENTS_RESPONSE flag if no more responses
+	if( m_Response.Num() <= 0 && owner != NULL )
+		owner->GetPhysics()->SetContents( owner->GetPhysics()->GetContents() & ~CONTENTS_RESPONSE );
 
 	return m_Response.Num();
 }
@@ -526,13 +546,11 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	// Read stim response state from the def file
 	sprintf(name, "sr_state_%u", Counter);
 	args->GetInt(name, "1", (int &)state);
-	if(state != SS_DISABLED
-		&& state != SS_ENABLED)
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_WARNING)LOGSTRING("Invalid state %u for %s defaulting to enabled (%u)\r", state, sr->m_StimTypeName.c_str(), SS_ENABLED);
-		state = SS_ENABLED;
-	}
-	sr->m_State = state;
+	
+	if( args->GetBool(name, "1") )
+		sr->EnableSR(true);
+	else
+		sr->EnableSR(false);
 
 	// A stim also may have a radius
 	if(sr_class == 'S')
@@ -547,6 +565,13 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		// set up time interleaving so the stim isn't fired every frame
 		sprintf(name, "sr_time_interval_%u", Counter);
 		stim->m_TimeInterleave = args->GetInt(name, "0");
+
+		// userfriendly stim duration time
+		sprintf(name, "sr_duration_%u", Counter);
+		stim->m_Duration = args->GetInt(name, "0");
+
+		sprintf(name, "sr_magnitude_%u", Counter);
+		stim->m_Magnitude = args->GetFloat(name, "1.0");
 
 		// Check if we have a timer on this stim.
 		CreateTimer(args, stim, Counter);
@@ -658,6 +683,17 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int C
 	}
 }
 
+bool CStimResponseCollection::HasStim( void )
+{
+	return (m_Stim.Num() > 0);
+}
+
+bool CStimResponseCollection::HasResponse( void )
+{
+	return (m_Response.Num() > 0);
+}
+	bool			HasResponse( void );
+
 /********************************************************************/
 /*                    CStimResponse                                 */
 /********************************************************************/
@@ -668,6 +704,8 @@ CStimResponse::CStimResponse(idEntity *Owner, int Type)
 	m_State = SS_DISABLED;
 	m_Removable = true;
 	m_Default = false;
+	m_Duration = 0;
+	m_EnabledTimeStamp = 0;
 }
 
 CStimResponse::~CStimResponse(void)
@@ -677,7 +715,10 @@ CStimResponse::~CStimResponse(void)
 void CStimResponse::EnableSR(bool bEnable)
 {
 	if(bEnable == true)
+	{
 		m_State = SS_ENABLED;
+		m_EnabledTimeStamp = gameLocal.time;
+	}
 	else
 		m_State = SS_DISABLED;
 }
@@ -692,8 +733,7 @@ CStim::CStim(idEntity *e, int Type)
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0;
-	m_TriggerDamage = 0.0;
-	m_DurationDamage = 0.0;
+	m_Magnitude = 0.0;
 	m_Chance = 1.0;
 	m_ChanceTimer = false;
 	m_MaxResponses = 0;

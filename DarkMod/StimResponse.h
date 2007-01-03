@@ -15,6 +15,15 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.16  2007/01/03 03:59:39  ishtvan
+ * *) added CONTENTS_RESPONSE optimization
+ *
+ * *) Added HasStim and HasResponse functions
+ *
+ * *) Added stim duration setting
+ *
+ * *) Preliminary framework for stim magnitude
+ *
  * Revision 1.15  2006/06/29 08:22:06  ishtvan
  * *) Added option to use entity bounds + radius instead of a cube area
  *
@@ -321,6 +330,17 @@ public:
 	 */
 	bool				m_Default;
 
+	/**
+	* Timestamp for stims/responses with finite duration after they're enabled (milliseconds)
+	**/
+	int						m_EnabledTimeStamp;
+
+	/**
+	* Stim or response duration after being enabled (in milliseconds).  
+	* SR will automatically disable itself after this time.
+	**/
+	int						m_Duration;
+
 	idEntity			*m_Owner;
 };
 
@@ -384,32 +404,17 @@ public:
 	**/
 	int						m_TimeInterleaveStamp;
 
-
 	/**
 	 * Radius defines the radius the action can reach out
 	 */
 	float				m_Radius;
 
 	/**
-	 * Damage that can be dealt with this stimulus. Note that this
-	 * is not neccessarily a real damage always, because it depends on
-	 * the actual stimulus. For example you could create a stim
-	 * that deals damage (like a lava pit), but you can also create one
-	 * that heals as long as you are in the vicinity (holy shrine) while at
-	 * the same time deals damage to undead.
-	 */
-
-	/**
-	 * TriggerDamage defines the amount of damage the stimulus will
-	 * deal when it is triggered.
-	 */
-	float				m_TriggerDamage;
-
-	/**
-	 * DurationDamage defines the amount of damage this stimulus can deal
-	 * per time. Only relevant for stimulis that are running for some time.
-	 */
-	float				m_DurationDamage;
+	* Magnitude of stim, per stim firing.  This can be damage if the stim does damage,
+	*	or healing if it's a healing stim, or more abstract things like amount of water,
+	*	amount of energy transferred by heat, etc.
+	**/
+	float				m_Magnitude;
 
 	/**
 	 * Defines the chance that this stimulus works. Whenever the stim is activated
@@ -528,6 +533,7 @@ public:
 	 * may NEVER be used to delete the object, and it should not be passed around
 	 * extensively, because it may become invalid.
 	 */
+// TODO: Add additional parameters to AddStim: Magnitude, Interleave duration, duration
 	CStim			*AddStim(idEntity *Owner, int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
 	CResponse		*AddResponse(idEntity *Owner, int Type, bool Removable = true, bool Default = false);
 
@@ -547,6 +553,12 @@ public:
 	int				RemoveResponse(int Type);
 	int				RemoveStim(CStim *);
 	int				RemoveResponse(CResponse *);
+
+	/**
+	* Returns true if the stim response collection has any stims or responses
+	**/
+	bool			HasStim( void );
+	bool			HasResponse( void );
 
 	/**
 	 * AddEntityToList will add the given entity to the list exactly once. If the entity
