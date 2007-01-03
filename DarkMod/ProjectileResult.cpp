@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2007/01/03 04:00:05  ishtvan
+ * stim / response updates
+ *
  * Revision 1.7  2006/12/21 01:57:58  sophisticatedzombie
  * The results now call Show() instead of Hide() so that the AI can test them for visibility.
  *
@@ -118,6 +121,9 @@ void CProjectileResult::Init
 	float fTemp;
 	int StimType = ST_DEFAULT;
 	float StimRadius = 10.0; // we use a (hopefully) reasonable default radius if none is set.
+	int StimDuration(0), StimEvalInterval(0);
+	float StimMagnitude(1.0f);
+	bool bStimUseBounds(false);
 
 	// copy in the data
 	m_Collision = collision;
@@ -159,8 +165,24 @@ void CProjectileResult::Init
 	{
 		CStim *s;
 		pProj->spawnArgs.GetFloat("stim_radius", "10", StimRadius);
+		pProj->spawnArgs.GetInt("stim_duration", "0", StimDuration );
+		pProj->spawnArgs.GetInt("stim_eval_interval", "0", StimEvalInterval );
+		pProj->spawnArgs.GetBool("stim_use_bounds", "0", bStimUseBounds );
+		pProj->spawnArgs.GetFloat("stim_magnitude", "1.0", StimMagnitude );
+
 		s = AddStim(StimType, StimRadius);
-		s->m_State = SS_ENABLED;
+		
+		// TODO: Move these sets to the AddStim arguments once Addstim is rewritten
+		s->m_Duration = StimDuration;
+		s->m_TimeInterleave = StimEvalInterval;
+		s->m_bUseEntBounds = bStimUseBounds;
+		s->m_Magnitude = StimMagnitude;
+
+		if( pProj->spawnArgs.GetBool("stim_state", "1") )
+			s->EnableSR(true);
+		else
+			s->EnableSR(false);
+
 		idStr Name;
 		sprintf(Name, "%08lX_", this);
 		if(StimType < ST_USER)

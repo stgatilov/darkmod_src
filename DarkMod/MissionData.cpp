@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2007/01/03 04:00:05  ishtvan
+ * stim / response updates
+ *
  * Revision 1.18  2006/11/20 05:35:44  ishtvan
  * more preliminary objectives parsing
  *
@@ -73,6 +76,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "MissionData.h"
 #include "../game/player.h"
+#include "StimResponse.h"
 
 // TODO: Move to config file or player spawnargs
 const int s_FAILURE_FADE_TIME = 3000;
@@ -1614,6 +1618,11 @@ void CObjectiveLocation::Spawn()
 // Set the contents to a useless trigger so that the collision model will be loaded
 // FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
 	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+	
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
 	GetPhysics()->EnableClip();
 
 	BecomeActive( TH_THINK );
