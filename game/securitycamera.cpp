@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.5  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.4  2006/07/27 09:02:22  ishtvan
  * frobbing updates
  *
@@ -37,6 +40,7 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
+#include "../darkmod/StimResponse.h"
 
 
 /***********************************************************************
@@ -173,6 +177,10 @@ void idSecurityCamera::Spawn( void ) {
 	}
 
 	GetPhysics()->SetContents( CONTENTS_SOLID );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
 	GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	// setup the physics
 	UpdateChangeableSpawnArgs( NULL );

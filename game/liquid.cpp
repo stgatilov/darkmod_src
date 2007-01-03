@@ -5,6 +5,7 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
+#include "../DarkMod/StimResponse.h"
 
 #ifdef MOD_WATERPHYSICS
 
@@ -124,6 +125,9 @@ void idLiquid::Spawn() {
 	this->physicsObj.SetAxis(this->GetPhysics()->GetAxis());	
 	this->physicsObj.SetGravity( gameLocal.GetGravity() );
 	this->physicsObj.SetContents( CONTENTS_WATER | CONTENTS_TRIGGER );
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 
 	this->physicsObj.SetDensity(liquidDensity);
 	this->physicsObj.SetViscosity(liquidViscosity);

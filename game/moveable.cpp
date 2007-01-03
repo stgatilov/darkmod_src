@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.9  2006/10/22 20:17:47  ishtvan
  * updated moveable damage to pass along the joint at which it struck
  *
@@ -46,6 +49,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "Game_local.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -190,6 +194,10 @@ void idMoveable::Spawn( void ) {
 		BecomeNonSolid();
 	}
 
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_RESPONSE );
+
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
 
 	PostEventMS( &EV_SetOwnerFromSpawnArgs, 0 );
@@ -270,9 +278,13 @@ idMoveable::Show
 */
 void idMoveable::Show( void ) {
 	idEntity::Show();
-	if ( !spawnArgs.GetBool( "nonsolid" ) ) {
+	if ( !spawnArgs.GetBool( "nonsolid" ) ) 
+	{
 		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
+	// SR CONTENTS_RESPONSE FIX:
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE | CONTENTS_RESPONSE );
 }
 
 /*
@@ -394,6 +406,10 @@ void idMoveable::BecomeNonSolid( void ) {
 	// set CONTENTS_RENDERMODEL so bullets still collide with the moveable
 	physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_RENDERMODEL );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
+	
+	// SR CONTENTS_RESPONSE FIX:
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 }
 
 /*
@@ -1180,6 +1196,9 @@ void idExplodingBarrel::Event_Respawn() {
 	physicsObj.SetOrigin( spawnOrigin );
 	physicsObj.SetAxis( spawnAxis );
 	physicsObj.SetContents( CONTENTS_SOLID );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	physicsObj.DropToFloor();
 	state = NORMAL;
 	Show();

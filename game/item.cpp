@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.13  2006/08/14 01:07:02  ishtvan
  * fixed hide/show in idMoveableItem to disable the clipmodel
  *
@@ -60,6 +63,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -355,6 +359,9 @@ void idItem::Spawn( void )
 	{
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	giveTo = spawnArgs.GetString( "owner" );
 	if ( giveTo.Length() )
@@ -626,6 +633,10 @@ void idItem::Event_Respawn( void ) {
 	inViewTime = -1000;
 	lastCycle = -1;
 	GetPhysics()->SetContents( CONTENTS_TRIGGER );
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
 	SetOrigin( orgOrigin );
 	StartSound( "snd_respawn", SND_CHANNEL_ITEM, 0, false, NULL );
 	CancelEvents( &EV_RespawnItem ); // don't double respawn
@@ -999,7 +1010,8 @@ void idMoveableItem::Restore( idRestoreGame *savefile ) {
 idMoveableItem::Spawn
 ================
 */
-void idMoveableItem::Spawn( void ) {
+void idMoveableItem::Spawn( void ) 
+{
 	idTraceModel trm;
 	float density, friction, bouncyness, tsize;
 	idStr clipModelName;
@@ -1046,6 +1058,9 @@ void idMoveableItem::Spawn( void ) {
 	physicsObj.SetGravity( gameLocal.GetGravity() );
 	physicsObj.SetContents( CONTENTS_RENDERMODEL );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP );
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	SetPhysics( &physicsObj );
 
 	smoke = NULL;
@@ -1275,6 +1290,11 @@ void idMoveableItem::Show( void )
 {
 	idEntity::Show();
 	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+
+// SR CONTENTS_RESPONSE FIX:
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_RESPONSE );
+
 	trigger->SetContents( CONTENTS_TRIGGER );
 }
 

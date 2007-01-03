@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.10  2006/07/28 01:37:17  ishtvan
  * objective system updates
  *
@@ -55,6 +58,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "Game_local.h"
 #include "../DarkMod/sndprop.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -487,7 +491,8 @@ void idDamagable::Restore( idRestoreGame *savefile ) {
 idDamagable::Spawn
 ================
 */
-void idDamagable::Spawn( void ) {
+void idDamagable::Spawn( void ) 
+{
 	idStr broken;
 
 	health = spawnArgs.GetInt( "health", "5" );
@@ -502,6 +507,9 @@ void idDamagable::Spawn( void ) {
 
 	fl.takedamage = true;
 	GetPhysics()->SetContents( CONTENTS_SOLID );
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 }
 
 /*
@@ -1433,6 +1441,9 @@ void idStaticEntity::Spawn( void ) {
 	} else {
 		GetPhysics()->SetContents( 0 );
 	}
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	spawnTime = gameLocal.time;
 	active = false;
@@ -1533,6 +1544,9 @@ void idStaticEntity::Show( void ) {
 	if ( spawnArgs.GetBool( "solid" ) ) {
 		GetPhysics()->SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	}
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 }
 
 /*

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.8  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.7  2006/07/28 01:36:19  ishtvan
  * frobbing bugfixes
  *
@@ -40,6 +43,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "Game_local.h"
 #include "../darkmod/sndProp.h"
+#include "../DarkMod/StimResponse.h"
 
 const idEventDef EV_TDM_UpdateSoundLoss( "updateSoundLoss", NULL );
 
@@ -999,6 +1003,10 @@ idBrittleFracture::Break
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
 	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_TRIGGER );
+	
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 
 	UpdateSoundLoss();
 }

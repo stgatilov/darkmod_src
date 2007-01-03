@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.2  2006/06/21 13:05:10  sparhawk
  * Added version tracking per cpp module
  *
@@ -24,7 +27,7 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "Game_local.h"
-
+#include "../darkmod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -112,8 +115,13 @@ void idTrigger::DrawDebugInfo( void ) {
 idTrigger::Enable
 ================
 */
-void idTrigger::Enable( void ) {
+void idTrigger::Enable( void ) 
+{
 	GetPhysics()->SetContents( CONTENTS_TRIGGER );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
 	GetPhysics()->EnableClip();
 }
 
@@ -214,8 +222,12 @@ idTrigger::idTrigger() {
 idTrigger::Spawn
 ================
 */
-void idTrigger::Spawn( void ) {
+void idTrigger::Spawn( void ) 
+{
 	GetPhysics()->SetContents( CONTENTS_TRIGGER );
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	idStr funcname = spawnArgs.GetString( "call", "" );
 	if ( funcname.Length() ) {
@@ -356,6 +368,9 @@ void idTrigger_Multi::Spawn( void ) {
 	} else {
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 }
 
 /*
@@ -562,7 +577,8 @@ void idTrigger_EntityName::Restore( idRestoreGame *savefile ) {
 idTrigger_EntityName::Spawn
 ================
 */
-void idTrigger_EntityName::Spawn( void ) {
+void idTrigger_EntityName::Spawn( void ) 
+{
 	spawnArgs.GetFloat( "wait", "0.5", wait );
 	spawnArgs.GetFloat( "random", "0", random );
 	spawnArgs.GetFloat( "delay", "0", delay );
@@ -587,9 +603,13 @@ void idTrigger_EntityName::Spawn( void ) {
 
 	nextTriggerTime = 0;
 
-	if ( !spawnArgs.GetBool( "noTouch" ) ) {
+	if ( !spawnArgs.GetBool( "noTouch" ) ) 
+	{
 		GetPhysics()->SetContents( CONTENTS_TRIGGER );
 	}
+	// SR CONTENTS_RESPONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 }
 
 /*

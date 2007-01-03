@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/03 04:08:23  ishtvan
+ * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
+ *
  * Revision 1.14  2006/12/31 12:01:59  sophisticatedzombie
  * Added script method for getting light level (> 0.0 is on, 0.0 is off )
  *
@@ -62,6 +65,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
+#include "../DarkMod/StimResponse.h"
 
 /*
 ===============================================================================
@@ -478,7 +482,10 @@ void idLight::Spawn( void )
 		}
 
 		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
-	
+		// SR CONTENTS_RESONSE FIX
+		if( m_StimResponseColl->HasResponse() )
+			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+		
 		// make sure the collision model gets cached
 		idClipModel::CheckModel( brokenModel );
 	}
@@ -761,6 +768,9 @@ void idLight::BecomeBroken( idEntity *activator ) {
 		if ( !spawnArgs.GetBool( "nonsolid" ) ) {
 			GetPhysics()->SetClipModel( new idClipModel( brokenModel.c_str() ), 1.0f );
 			GetPhysics()->SetContents( CONTENTS_SOLID );
+			// SR CONTENTS_RESONSE FIX
+			if( m_StimResponseColl->HasResponse() )
+				GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 		}
 	} else if ( spawnArgs.GetBool( "hideModelOnBreak" ) ) {
 		SetModel( "" );
