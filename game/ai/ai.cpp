@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2007/01/03 04:01:48  ishtvan
+ * *) modified PushWithAF to apply impulse to objects instead of setting a velocity, should avoid pushing of huge objects.  They still apply a velocity to AI, but now only in the XY plane
+ *
+ * *) Stim/response updates
+ *
  * Revision 1.48  2006/12/31 12:08:51  sophisticatedzombie
  * Added canSeePositionExt script method.
  *
@@ -201,6 +206,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../Game_local.h"
 #include "../../darkmod/relations.h"
 #include "../../darkmod/MissionData.h"
+#include "../../darkmod/StimResponse.h"
 #include "../../darkmod/darkmodglobals.h"
 #include "../../darkmod/playerdata.h"
 #include "../../darkmod/sndprop.h"
@@ -1304,6 +1310,10 @@ void idAI::Spawn( void ) {
 		}
 		physicsObj.SetClipMask( MASK_MONSTERSOLID );
 	}
+
+// SR CONTENTS_RESPONSE fix:
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 
 	// move up to make sure the monster is at least an epsilon above the floor
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + idVec3( 0, 0, CM_CLIP_EPSILON ) );
@@ -5267,7 +5277,7 @@ void idAI::PushWithAF( void ) {
 	afTouch_t touchList[ MAX_GENTITIES ];
 	idEntity *pushed_ents[ MAX_GENTITIES ];
 	idEntity *ent;
-	idVec3 vel;
+	idVec3 vel( vec3_origin ), vGravNorm( vec3_origin );
 	int num_pushed;
 
 	num_pushed = 0;
@@ -5291,17 +5301,26 @@ void idAI::PushWithAF( void ) {
 			ent = touchList[ i ].touchedEnt;
 			pushed_ents[num_pushed++] = ent;
 			vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
-			vel.Normalize();
-			if ( attack.Length() && ent->IsType( idActor::Type ) ) 
-			{
-				ent->Damage( this, this, vel, attack, 1.0f, INVALID_JOINT );
-			} else 
-			{
-				ent->GetPhysics()->SetLinearVelocity( 100.0f * vel, touchList[ i ].touchedClipModel->GetId() );
-			}
 
 			if( ent->IsType(idActor::Type) )
 			{
+					
+				// Id code to stop from pushing the enemy back during melee
+				// TODO: This will change with new melee system
+				if ( attack.Length() ) 
+				{
+					// TODO: Don't need to do this right now, but keep in mind for future melee system
+					ent->Damage( this, this, vel, attack, 1.0f, INVALID_JOINT );
+				} else 
+				{
+					// Ishtvan: Resolve velocity on to XY plane to stop from pushing AI up
+					vGravNorm = physicsObj.GetGravityNormal();
+					vel -= (vel * vGravNorm ) * vGravNorm;
+					vel.Normalize();
+					ent->GetPhysics()->SetLinearVelocity( 80.0f * vel, touchList[ i ].touchedClipModel->GetId() );
+				}
+
+				// Tactile Alert:
 				if( ent->IsType(idPlayer::Type) )
 				{
 					// aesthetics: Dont react to dead player?
@@ -5316,6 +5335,12 @@ void idAI::PushWithAF( void ) {
 				{
 					// TODO: Touched a dead or unconscious body, should issue a body alert
 				}
+			}
+			// Ent was not an actor:
+			else
+			{
+				vel.Normalize();
+				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
 			}
 		}
 	}
@@ -5435,6 +5460,11 @@ void idAI::Show( void ) {
 	} else {
 		physicsObj.SetContents( CONTENTS_BODY );
 	}
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+
+
 	physicsObj.GetClipModel()->Link( gameLocal.clip );
 	fl.takedamage = !spawnArgs.GetBool( "noDamage" );
 	SetChatSound();
