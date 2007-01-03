@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/03 00:28:03  crispy
+ * New script event rangedThreatTo. Added idWeapon::IsRanged.
+ *
  * Revision 1.14  2006/11/19 05:21:21  ishtvan
  * fixed melee attacks to attached heads in event_melee
  *
@@ -2426,6 +2429,15 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 		}
 	}
 	return false;
+}
+
+/*
+idWeapon::IsRanged
+*/
+bool idWeapon::IsRanged() {
+	// If our projectile dictionary has entries, then we're probably a ranged weapon;
+	// otherwise we're definitely not.
+	return (bool)(projectileDict.GetNumKeyVals());
 }
 
 /***********************************************************************

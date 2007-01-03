@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.81  2007/01/03 00:28:03  crispy
+ * New script event rangedThreatTo. Added idWeapon::IsRanged.
+ *
  * Revision 1.80  2006/12/23 20:17:44  sophisticatedzombie
  * Added StimClearIgnoreList event that can be called on an object for a particular stim.
  * The ignore list for that stim on that object will be cleared.
@@ -418,6 +421,11 @@ const idEventDef EV_TDM_PropSound( "propSound", "s" );
 
 const idEventDef EV_TDM_SDKSignal( "SDKSignal", "dd" );
 
+// For detecting ranged enemies. Returns nonzero if this entity could
+// potentially attack the given entity (first parameter) at range.
+const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", "e", 'f' );
+
+
 #ifdef MOD_WATERPHYSICS
 
 const idEventDef EV_GetMass( "getMass", "d" , 'f' );
@@ -540,6 +548,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_TDM_PropSoundMod,		idEntity::Event_PropSoundMod )
 
 	EVENT( EV_TDM_SDKSignal,		idEntity::SDKSignal )
+
+	EVENT( EV_TDM_RangedThreatTo,	idEntity::Event_RangedThreatTo )
 
 #ifdef MOD_WATERPHYSICS
 
@@ -7650,3 +7660,32 @@ void idEntity::SDKSignal(SDK_SIGNAL Id, int bState)
 	}
 }
 
+/*
+================
+idEntity::Event_RangedThreatTo
+================
+*/
+void idEntity::Event_RangedThreatTo(idEntity* target)
+{
+	// This needs to be virtual, but I don't think events themselves
+	// can be virtual; so this just wraps a virtual method.
+	float result = this->RangedThreatTo(target);
+	idThread::ReturnFloat(result);
+}
+
+/*
+================
+idEntity::RangedThreatTo
+
+Return nonzero if this entity could potentially
+attack the given (target) entity at range, or
+entities in general if target is NULL.
+For example, for the player this should return 1
+if the player has a bow equipped and 0 otherwise.
+================
+*/
+float idEntity::RangedThreatTo(idEntity* target)
+{
+	// Most entities are not capable of attacking at range
+	return 0;
+}

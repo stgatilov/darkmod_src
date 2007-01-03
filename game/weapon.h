@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.4  2007/01/03 00:28:03  crispy
+ * New script event rangedThreatTo. Added idWeapon::IsRanged.
+ *
  * Revision 1.3  2006/07/22 02:25:55  ishtvan
  * added weapon attachments
  *
@@ -152,6 +155,11 @@ public:
 	virtual bool			ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
 	virtual void			ClientPredictionThink( void );
+	
+	/**
+	* TDM: Return true if this is a ranged weapon
+	**/
+	bool					IsRanged();
 
 private:
 	// script control
