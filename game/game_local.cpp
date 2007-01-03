@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.79  2007/01/03 04:14:50  ishtvan
+ * stim/response updates
+ *
  * Revision 1.78  2006/12/07 09:55:35  ishtvan
  * *) key handler updates
  *
@@ -5587,6 +5590,13 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 		{
 			if(r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
 			{
+				// Check duration, disable if past duration
+				if(r->m_Duration && (gameLocal.time - r->m_EnabledTimeStamp) > r->m_Duration )
+				{
+					r->EnableSR(false);
+					continue;
+				}
+
 				r->TriggerResponse(e);
 				numRespones++;
 			}
@@ -5654,9 +5664,20 @@ void idGameLocal::ProcessStimResponse(void)
 			{
 				CStim *pStim = stim[si];
 
+				if( pStim->m_State != SS_ENABLED )
+					continue;
+
 				// Check the interleaving timer and don't eval stim if it's not up yet
 				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
 					continue;
+
+				// If stim has a finite duration, check if it expired.  If so, disable the stim.
+				if( pStim->m_Duration 
+					&& (gameLocal.time - pStim->m_EnabledTimeStamp) > pStim->m_Duration )
+				{
+					pStim->EnableSR(false);
+					continue;
+				}
 
 				pStim->m_TimeInterleaveStamp = gameLocal.time;
 
@@ -5673,7 +5694,10 @@ void idGameLocal::ProcessStimResponse(void)
 					
 					bounds.ExpandSelf(radius);
 
-					n = clip.EntitiesTouchingBounds(bounds, -1, Ent, MAX_GENTITIES);
+// NOTE: CONTENTS_RESPONSE is temporarily disabled until we fix problems with order of calls
+// For some entities, SetContents ends up being called again after the SR setup and overwriting the CONTENTS_RESPONSE setting
+// UPDATE: I think we fixed most of these cases, on an individual basis
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, Ent, MAX_GENTITIES);
 					if(n != 0)
 					{
 						// Do responses for entities within the radius of the stim
