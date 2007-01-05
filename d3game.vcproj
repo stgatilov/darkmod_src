@@ -825,6 +825,12 @@
 					RelativePath=".\DarkMod\DarkModGlobals.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\darkmodHidingSpotTree.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\darkmodHidingSpotTree.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\darkModLAS.cpp">
 				</File>
 				<File
@@ -868,6 +874,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\Grabber.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\HidingSpotSearchCollection.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\HidingSpotSearchCollection.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Intersection.cpp">
