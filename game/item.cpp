@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/05 10:52:33  ishtvan
+ * dropped items no longer disappear after 5 minutes
+ *
  * Revision 1.14  2007/01/03 04:08:23  ishtvan
  * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
  *
@@ -1139,11 +1142,15 @@ idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin,
 		if ( activateDelay ) {
 			item->PostEventMS( &EV_Activate, activateDelay, item );
 		}
-		if ( !removeDelay ) {
-			removeDelay = 5 * 60 * 1000;
-		}
-		// always remove a dropped item after 5 minutes in case it dropped to an unreachable location
-		item->PostEventMS( &EV_Remove, removeDelay );
+
+/**
+* TDM: Do not automatically remove dropped items 
+* (Original Id code automatically removed it after 5 minutes)
+**/
+		if ( removeDelay ) 
+		{
+			item->PostEventMS( &EV_Remove, removeDelay );
+		}	
 	}
 	return item;
 }
