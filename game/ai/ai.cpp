@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.52  2007/01/06 10:06:15  ishtvan
+ * fov check fix
+ *
  * Revision 1.51  2007/01/06 04:27:50  sophisticatedzombie
  * rendering FOV cone now uses actual angle of cone.
  * Two cases to prevent gigantic cones at FOV > 45 degrees
@@ -6966,9 +6969,9 @@ Quit:
 idAI::CheckFOV
 =====================
 */
-bool idAI::CheckFOV( const idVec3 &pos ) 
+bool idAI::CheckFOV( const idVec3 &pos ) const
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CHeckFOV called \r");
+	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CheckFOV called \r");
 
 	if ( fovDot == 1.0f ) 
 	{
@@ -6979,7 +6982,8 @@ bool idAI::CheckFOV( const idVec3 &pos )
 	idVec3	delta, HeadCenter;
 	idMat3	HeadAxis;
 
-	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
+	// ugliness
+	const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
 
 	//GetJointWorldTransform just gives the head attachment joint coordinate.
 	//Offset this by the head center offset (same as KO offset) to get the real head center point

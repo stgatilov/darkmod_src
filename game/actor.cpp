@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.31  2007/01/06 10:06:49  ishtvan
+ * fov check fix
+ *
  * Revision 1.30  2006/12/30 08:15:19  sophisticatedzombie
  * idActor::CanSee now ignores the hidden flag on entities.  This is because the hidden
  * flag is used sometimes to turn on and off the rendering of particle effects, such
@@ -1528,7 +1531,10 @@ void idActor::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 idActor::CheckFOV
 =====================
 */
-bool idActor::CheckFOV( const idVec3 &pos ) const {
+bool idActor::CheckFOV( const idVec3 &pos ) const 
+{
+	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idActor::CheckFOV was called\r");
+
 	if ( fovDot == 1.0f ) {
 		return true;
 	}

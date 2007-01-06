@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2007/01/06 10:06:49  ishtvan
+ * fov check fix
+ *
  * Revision 1.16  2006/12/23 20:17:02  sophisticatedzombie
  * CanSee is now virutal. I forgot to check this in a few days ago and I apologize.
  *
@@ -204,7 +207,7 @@ public:
 	idVec3					GetEyePosition( void ) const;
 	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					SetFOV( float fov );
-	bool					CheckFOV( const idVec3 &pos ) const;
+	virtual bool			CheckFOV( const idVec3 &pos ) const;
 	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 	bool					PointVisible( const idVec3 &point ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
