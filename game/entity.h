@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.50  2007/01/08 00:46:33  ishtvan
+ * *) Added GetTeamChildren
+ * *) Added script support for getting number of bind children ents and a particular bind child
+ *
  * Revision 1.49  2007/01/03 00:28:03  crispy
  * New script event rangedThreatTo. Added idWeapon::IsRanged.
  *
@@ -483,6 +487,11 @@ public:
 	int						GetBindBody( void ) const;
 	idEntity *				GetTeamMaster( void ) const;
 	idEntity *				GetNextTeamEntity( void ) const;
+	/**
+	* TDM: Get a list of bound team members lower down on the chain than this one
+	* Populates the list in the argument argument with entity pointers
+	**/
+	void					GetTeamChildren( idList<idEntity *> *list );
 	void					ConvertLocalToWorldTransform( idVec3 &offset, idMat3 &axis );
 	idVec3					GetLocalVector( const idVec3 &vec ) const;
 	idVec3					GetLocalCoordinates( const idVec3 &vec ) const;
@@ -782,6 +791,20 @@ protected:
 	* Bind to the same object that the "other" argument is bound to
 	**/
 	void					Event_CopyBind( idEntity *other );
+
+	/**
+	* Returns the bindmaster
+	**/
+	void					Event_GetBindMaster( void );
+
+	/**
+	* Return the number of bind team members lower in the chain than this one
+	**/
+	void					Event_NumBindChildren( void );
+	/**
+	* Return the ind_th bind team member
+	**/
+	void					Event_GetBindChild( int ind );
 
 	CStim					*AddStim(int Type, float Radius = 0.0f, bool Removable = true, bool Default = false);
 	CResponse				*AddResponse(int Type, bool Removable = true, bool Default = false);

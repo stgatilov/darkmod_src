@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.83  2007/01/08 00:46:33  ishtvan
+ * *) Added GetTeamChildren
+ * *) Added script support for getting number of bind children ents and a particular bind child
+ *
  * Revision 1.82  2007/01/03 04:24:29  ishtvan
  * Stim/Response: Fixed the resetting of CONTENTS_RESPONSE contents flag
  *
@@ -320,6 +324,9 @@ const idEventDef EV_RandomTarget( "randomTarget", "s", 'e' );
 const idEventDef EV_Bind( "bind", "e" );
 const idEventDef EV_BindPosition( "bindPosition", "e" );
 const idEventDef EV_BindToJoint( "bindToJoint", "esf" );
+const idEventDef EV_GetBindMaster( "getBindMaster", NULL, 'e' );
+const idEventDef EV_NumBindChildren( "numBindChildren", NULL, 'd' );
+const idEventDef EV_GetBindChild( "getBindChild", "d", 'e' );
 const idEventDef EV_Unbind( "unbind", NULL );
 const idEventDef EV_RemoveBinds( "removeBinds" );
 const idEventDef EV_SpawnBind( "<spawnbind>", NULL );
@@ -458,6 +465,9 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_BindPosition,			idEntity::Event_BindPosition )
 	EVENT( EV_Unbind,				idEntity::Event_Unbind )
 	EVENT( EV_SpawnBind,			idEntity::Event_SpawnBind )
+	EVENT( EV_GetBindMaster,		idEntity::Event_GetBindMaster )
+	EVENT( EV_NumBindChildren,		idEntity::Event_NumBindChildren )
+	EVENT( EV_GetBindChild,			idEntity::Event_GetBindChild )
 	EVENT( EV_SetOwner,				idEntity::Event_SetOwner )
 	EVENT( EV_SetModel,				idEntity::Event_SetModel )
 	EVENT( EV_SetSkin,				idEntity::Event_SetSkin )
@@ -7692,3 +7702,42 @@ float idEntity::RangedThreatTo(idEntity* target)
 	// Most entities are not capable of attacking at range
 	return 0;
 }
+
+void idEntity::GetTeamChildren( idList<idEntity *> *list )
+{
+	idEntity *NextEnt = NULL;
+	
+	list->Clear();
+	for( NextEnt = GetNextTeamEntity(); NextEnt != NULL; NextEnt = NextEnt->GetNextTeamEntity() )
+	{
+		list->Append( NextEnt );
+	}
+}
+
+void idEntity::Event_GetBindMaster( void )
+{
+	idThread::ReturnEntity( GetBindMaster() );
+}
+
+void idEntity::Event_NumBindChildren( void )
+{
+	idList<idEntity *> ChildList;
+	GetTeamChildren( &ChildList );
+
+	idThread::ReturnInt( ChildList.Num() );
+}
+
+void idEntity::Event_GetBindChild( int ind )
+{
+	idEntity *pReturnVal( NULL );
+
+	idList<idEntity *> ChildList;
+	GetTeamChildren( &ChildList );
+
+	if( (ChildList.Num() - 1) >= ind )
+		pReturnVal = ChildList[ ind ];
+
+	idThread::ReturnEntity( pReturnVal );
+}
+
+
