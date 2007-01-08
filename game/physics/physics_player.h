@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2007/01/08 12:42:40  ishtvan
+ * leaning collision test updates
+ *
  * Revision 1.23  2006/12/04 00:32:15  ishtvan
  * *) added stretching of body to lean
  *
@@ -617,6 +620,11 @@ protected:
 
 protected:
 
+	/**
+	* Set to true if the player is leaning at all from the vertical
+	**/
+	bool m_bIsLeaning;
+
 	/*!
 	* An axis which is perpendicular to the gravity normal and
 	* rotated by the given yaw angle clockwise (when looking down in direction of
@@ -679,9 +687,15 @@ protected:
 	idVec3 m_viewLeanTranslation;
 
 
-	/*! Lean the player model at the waist joint
-	*/
-	void LeanPlayerModelAtWaistJoint();
+	/**
+	* Test clipping for the current eye position, plus delta in the lean direction
+	**/
+	bool TestLeanClip( float fDelta );
+
+	/**
+	* Convert a lean angle and stretch into a point in space, in world coordinates
+	**/
+	idVec3 LeanParmsToPoint( float AngTilt, float Stretch );
 
 	/*!
 	* This method is required to prevent collisions between the
@@ -689,30 +703,6 @@ protected:
 	* between physics frames, while leaning. or not a lean is taking place.
 	*/
 	void TestForViewRotationBasedCollisions();
-
-	/*!
-	* This method is used to update the view lean angles and view translation
-	* that result from the lean.
-	*
-	* This is an internal method called by LeanPlayerModelAtWaistJoint.
-	*
-	* @param viewpointHeight
-	*	The distance of the viewpoint height above the 
-	*   player origin
-	*	This is typically the player's pm_normalviewheight 
-	*	or pm_crouchviewheightagainst the gravity normal from 
-	*	the model origin.
-	*
-	* @param distanceFromWaistToViewpoint
-	*	The distance from the waist joint height to the 
-	*   viewpointHeight
-	*
-	*/
-	void UpdateViewLeanAnglesAndTranslation
-	(
-		float viewpointHeight,
-		float distanceFromWaistToViewpoint
-	);
 
 	/*!
 	* This method updates the lean by as much of the delta amount given
