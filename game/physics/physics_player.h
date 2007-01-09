@@ -7,6 +7,15 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2007/01/09 12:57:57  ishtvan
+ * *) lean collision test bugfixes
+ *
+ * *) view rotation while leaned fixed (m_leanTranslation now stored in local coordinates and multiplied by viewAngles minus pitch when needed)
+ *
+ * *) forward leaning fixed
+ *
+ * *) separate cvars for forward leaning
+ *
  * Revision 1.24  2007/01/08 12:42:40  ishtvan
  * leaning collision test updates
  *
@@ -653,6 +662,16 @@ protected:
 	*/
 	float m_leanMoveEndTilt;
 
+	/**
+	* Max lean angle (set dynamically depending on forward/sideways leans)
+	**/
+	float m_leanMoveMaxAngle;
+
+	/**
+	* Maximum lean stretch (set dynamically depending on forward/sideways leans) 
+	**/
+	float m_leanMoveMaxStretch;
+
 	/*!
 	* Is the lean finished
 	*/
@@ -683,26 +702,25 @@ protected:
 
 	/*!
 	* The current resulting view lean translation
+	* In local/player coordinates (along player model axes, not world axes)
 	*/
 	idVec3 m_viewLeanTranslation;
 
+	/**
+	* Lean bounds for collision testing.  Same as most view testing bounds, 10x10x10 box
+	* Also extends 15 units downwards.  Initialized once at spawn.
+	**/
+	idBounds m_LeanViewBounds;
 
 	/**
 	* Test clipping for the current eye position, plus delta in the lean direction
 	**/
-	bool TestLeanClip( float fDelta );
+	bool TestLeanClip( void );
 
 	/**
 	* Convert a lean angle and stretch into a point in space, in world coordinates
 	**/
 	idVec3 LeanParmsToPoint( float AngTilt, float Stretch );
-
-	/*!
-	* This method is required to prevent collisions between the
-	* player's torso and other objects due to rotation of the body
-	* between physics frames, while leaning. or not a lean is taking place.
-	*/
-	void TestForViewRotationBasedCollisions();
 
 	/*!
 	* This method updates the lean by as much of the delta amount given
@@ -748,6 +766,7 @@ public:
 	/*!
 	* This is called from idPlayer to adjust the camera before
 	* rendering
+	* Returns current view lean translation in world axes
 	*/
 	idAngles GetViewLeanAngles();
 
