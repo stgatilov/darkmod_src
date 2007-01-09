@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2007/01/09 13:00:19  ishtvan
+ * lean_forward cvars added
+ *
  * Revision 1.44  2007/01/03 04:18:34  ishtvan
  * Added cvars cv_pm_pushmod and cv_ai_bumpobject_impulse
  *
@@ -213,10 +216,15 @@ idCVar cv_pm_pushmod(				"pm_pushmod",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVA
 /**
 * Dark Mod Leaning
 **/
-idCVar cv_pm_lean_angle(			"pm_lean_angle",		"35.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
+idCVar cv_pm_lean_angle(			"pm_lean_angle",		"18.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
 idCVar cv_pm_lean_time(				"pm_lean_time",			"700.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
 idCVar cv_pm_lean_height(			"pm_lean_height",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+idCVar cv_pm_lean_forward_angle(	"pm_lean_forward_angle",	"18.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The tilt angle that the player can lean to at a full lean, in degrees." );
+idCVar cv_pm_lean_forward_time(		"pm_lean_forward_time",		"700.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Time it takes to get to a full lean, in milliseconds." );
+idCVar cv_pm_lean_forward_height(	"pm_lean_forward_height",	"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
+idCVar cv_pm_lean_forward_stretch(	"pm_lean_forward_stretch",	"2.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+
 
 /**
 * Dark Mod Frobbing
