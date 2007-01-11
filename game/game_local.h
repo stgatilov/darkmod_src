@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2007/01/11 09:48:19  thelvyn
+ * Initial Mouse hook implementation
+ *
  * Revision 1.38  2006/12/07 09:55:35  ishtvan
  * *) key handler updates
  *
@@ -155,6 +158,25 @@
 
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
+
+#pragma warning(disable : 4996)
+/**
+*	Message pragma so we can show file and line info in comments easily
+*	Same principle as the one below but simpler to implement and use.
+*   Been using it for about 8 or 9 years not sure where I found it
+*	but I did have a subscription to windows developer journal so maybe thats where.
+*	Usage: #pragma Message( "your message goes here")
+*	
+*	Submitted by Thelvyn
+*
+* Here since I cannot include the globals file here.
+*/
+#ifndef MacroStr2
+#define MacroStr(x)   #x
+#define MacroStr2(x)  MacroStr(x)
+#define Message(desc) message(__FILE__ "(" MacroStr2(__LINE__) ") :" #desc)
+#endif
+
 
 /**
  * Global function to keep track of the files and it's version.
@@ -396,6 +418,76 @@ typedef struct KeyCode_s
 	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
 	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
 } KeyCode_t;
+
+
+#if defined(_WINDOWS_) && ! defined(WM_MOUSEWHEEL)
+#define WM_MOUSEWHEEL                   0x020A
+#endif
+
+#pragma Message ("Mouse Defines. Linux and mac ports need to be added here.")
+typedef enum {
+	DM_NONE = 0, // invalid
+	// will have to define these for other OS as well
+#ifdef _WINDOWS_
+	DM_MOUSEMOVE     = WM_MOUSEMOVE,
+	DM_LBUTTONDOWN   = WM_LBUTTONDOWN,
+	DM_LBUTTONUP     = WM_LBUTTONUP,
+	DM_LBUTTONDBLCLK = WM_LBUTTONDBLCLK,
+	DM_RBUTTONDOWN   = WM_RBUTTONDOWN,
+	DM_RBUTTONUP     = WM_RBUTTONUP,
+	DM_RBUTTONDBLCLK = WM_RBUTTONDBLCLK,
+	DM_MBUTTONDOWN   = WM_MBUTTONDOWN,
+	DM_MBUTTONUP     = WM_MBUTTONUP,
+	DM_MBUTTONDBLCLK = WM_MBUTTONDBLCLK,
+	DM_MOUSEWHEEL    = WM_MOUSEWHEEL
+#endif
+} MouseDefs_t;
+
+/**/
+typedef struct MouseData_s
+{
+	unsigned int Action;
+	long X;
+	long Y;
+#ifdef _WINDOWS_
+	HWND hwnd;
+    UINT wHitTestCode;
+#endif
+
+	MouseData_s( MouseData_s& Clone )
+	{
+		*this = Clone;
+	}
+	MouseData_s()
+	{
+		Action = 0;
+		X = Y = 0;
+#ifdef _WINDOWS_
+		hwnd = NULL;
+		wHitTestCode = 0;
+#endif
+	}
+	MouseData_s& operator=( MouseData_s& Clone )
+	{
+		X = Clone.X;
+		Y = Clone.Y;
+		Action = Clone.Action;
+#ifdef _WINDOWS_
+		hwnd = Clone.hwnd;
+		wHitTestCode = Clone.wHitTestCode;
+#endif
+		return *this;
+	}
+#ifdef _WINDOWS_	
+	MouseData_s& operator=( const MOUSEHOOKSTRUCT* mhs ){
+		X = mhs->pt.x;
+		Y = mhs->pt.y;
+		hwnd = mhs->hwnd;
+		wHitTestCode = mhs->wHitTestCode;
+		return *this;
+	}
+#endif
+} MouseData_t;
 
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
@@ -702,7 +794,20 @@ public:
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 
+	LRESULT MouseProc( int nCode, WPARAM wParam, LPARAM lParam );
+
+#ifdef _WINDOWS_
 	HHOOK					m_KeyboardHook;
+	HHOOK                   m_MouseHook;
+#else // linux and mac ports to be added here
+#pragma Message ("Keyboard and Mouse hooks. Linux and mac ports need to be added here.")
+#endif
+	MouseData_t MouseDataPrevious; // everytime we get a new mouse message save old one here - Extraneous ?
+	MouseData_t MouseDataCurrent;  // most recent mouse message
+	bool m_Mouse_LBPressed; // true if currently pressed false otherwise
+	bool m_Mouse_RBPressed; // default value is false on init
+	bool m_Mouse_MBPressed;
+
 	KeyCode_t				m_KeyPress;				// Current keypress
 	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSE
 
@@ -712,6 +817,7 @@ public:
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
+							~idGameLocal();
 
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
