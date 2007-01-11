@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.32  2007/01/11 17:57:26  gildoran
+ * Changed movement volume modifiers to add to a sound shader's volume instead of overwriting it.
+ *
  * Revision 1.31  2007/01/06 10:06:49  ishtvan
  * fov check fix
  *
@@ -2576,6 +2579,7 @@ void idActor::PlayFootStepSound( void )
 	idMaterial			*material = NULL;
 	idPlayer			*thisPlayer(NULL);
 	idAI				*thisAI(NULL);
+	const idSoundShader	*sndShader = NULL;
 
 	if ( !GetPhysics()->HasGroundContacts() ) {
 		return;
@@ -2674,8 +2678,9 @@ void idActor::PlayFootStepSound( void )
 	if ( !sound.IsEmpty() ) 
 	{
 		// apply the movement type modifier to the volume
-		SetSoundVolume( GetMovementVolMod() );
-		StartSoundShader( declManager->FindSound( sound.c_str() ), SND_CHANNEL_BODY, 0, false, NULL );
+		sndShader = declManager->FindSound( sound.c_str() );
+		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() );
+		StartSoundShader( sndShader, SND_CHANNEL_BODY, 0, false, NULL );
 
 		// propagate the suspicious sound to other AI
 		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
