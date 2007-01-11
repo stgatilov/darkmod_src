@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2007/01/11 11:44:03  thelvyn
+ * Modifications as requested to MouseHook code handler and enums
+ *
  * Revision 1.39  2007/01/11 09:48:19  thelvyn
  * Initial Mouse hook implementation
  *
@@ -419,31 +422,23 @@ typedef struct KeyCode_s
 	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
 } KeyCode_t;
 
-
-#if defined(_WINDOWS_) && ! defined(WM_MOUSEWHEEL)
-#define WM_MOUSEWHEEL                   0x020A
-#endif
-
 #pragma Message ("Mouse Defines. Linux and mac ports need to be added here.")
 typedef enum {
-	DM_NONE = 0, // invalid
+	TDM_NONE = 0, // invalid
 	// will have to define these for other OS as well
 #ifdef _WINDOWS_
-	DM_MOUSEMOVE     = WM_MOUSEMOVE,
-	DM_LBUTTONDOWN   = WM_LBUTTONDOWN,
-	DM_LBUTTONUP     = WM_LBUTTONUP,
-	DM_LBUTTONDBLCLK = WM_LBUTTONDBLCLK,
-	DM_RBUTTONDOWN   = WM_RBUTTONDOWN,
-	DM_RBUTTONUP     = WM_RBUTTONUP,
-	DM_RBUTTONDBLCLK = WM_RBUTTONDBLCLK,
-	DM_MBUTTONDOWN   = WM_MBUTTONDOWN,
-	DM_MBUTTONUP     = WM_MBUTTONUP,
-	DM_MBUTTONDBLCLK = WM_MBUTTONDBLCLK,
-	DM_MOUSEWHEEL    = WM_MOUSEWHEEL
+	TDM_LBUTTONDOWN   = WM_LBUTTONDOWN,
+	TDM_LBUTTONUP     = WM_LBUTTONUP,
+	TDM_RBUTTONDOWN   = WM_RBUTTONDOWN,
+	TDM_RBUTTONUP     = WM_RBUTTONUP,
+	TDM_MBUTTONDOWN   = WM_MBUTTONDOWN,
+	TDM_MBUTTONUP     = WM_MBUTTONUP,
 #endif
 } MouseDefs_t;
 
-/**/
+/*
+*	Mouse input data
+*/
 typedef struct MouseData_s
 {
 	unsigned int Action;
@@ -458,10 +453,8 @@ typedef struct MouseData_s
 	{
 		*this = Clone;
 	}
-	MouseData_s()
+	MouseData_s():Action(TDM_NONE),X(0),Y(0)
 	{
-		Action = 0;
-		X = Y = 0;
 #ifdef _WINDOWS_
 		hwnd = NULL;
 		wHitTestCode = 0;
@@ -799,9 +792,9 @@ public:
 #ifdef _WINDOWS_
 	HHOOK					m_KeyboardHook;
 	HHOOK                   m_MouseHook;
-#else // linux and mac ports to be added here
-#pragma Message ("Keyboard and Mouse hooks. Linux and mac ports need to be added here.")
 #endif
+	#pragma Message ("Keyboard and Mouse hooks. Linux and mac ports need to be added here.")
+
 	MouseData_t MouseDataPrevious; // everytime we get a new mouse message save old one here - Extraneous ?
 	MouseData_t MouseDataCurrent;  // most recent mouse message
 	bool m_Mouse_LBPressed; // true if currently pressed false otherwise

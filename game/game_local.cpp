@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.81  2007/01/11 11:44:03  thelvyn
+ * Modifications as requested to MouseHook code handler and enums
+ *
  * Revision 1.80  2007/01/11 09:48:04  thelvyn
  * Initial Mouse hook implementation
  *
@@ -427,7 +430,6 @@ LRESULT CALLBACK TDM_MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
 	return gameLocal.MouseProc( nCode, wParam, lParam );
 }
-#else // linux and mac ports to be added here
 #endif
 #pragma Message( "Mouse hook callback. Linux and mac ports need to be added here." )
 /*
@@ -450,10 +452,6 @@ idGameLocal::MouseProc
 *	wParam Specifies the identifier of the mouse message.
 *	lParam contains MOUSEHOOKSTRUCT pointer
 */
-// Do we need doubleclicks here ? I think not.
-// I do not think we need to process them here either.
-// We should get for example DM_RBUTTONDOWN then if they do it again the doubleclick
-// message.
 LRESULT idGameLocal::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
 	// needs to be changed maybe ?
@@ -465,15 +463,12 @@ LRESULT idGameLocal::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 		// only ones we care about for the moment
 		switch( wParam )
 		{
-			
-		case DM_MOUSEMOVE:// need this ?
-		case DM_MOUSEWHEEL:// we probably do need this, add processing later
-		case DM_LBUTTONDOWN:
-		case DM_LBUTTONUP:
-		case DM_RBUTTONDOWN:
-		case DM_RBUTTONUP:
-		case DM_MBUTTONDOWN:
-		case DM_MBUTTONUP:
+		case TDM_LBUTTONDOWN:
+		case TDM_LBUTTONUP:
+		case TDM_RBUTTONDOWN:
+		case TDM_RBUTTONUP:
+		case TDM_MBUTTONDOWN:
+		case TDM_MBUTTONUP:
 			MouseDataPrevious = MouseDataCurrent; // previous processed message
 			MouseDataCurrent = (MOUSEHOOKSTRUCT*)lParam;// current
 			MouseDataCurrent.Action = wParam;// left button right button etc
@@ -483,26 +478,22 @@ LRESULT idGameLocal::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 		}
 		switch( wParam )
 		{
-		case DM_MOUSEMOVE:// need this ?
-			break;
-		case DM_MOUSEWHEEL:// we probably do need this, add processing later
-			break;
-		case DM_LBUTTONDOWN:
+		case TDM_LBUTTONDOWN:
 			m_Mouse_LBPressed = true;
 			break;
-		case DM_LBUTTONUP:
+		case TDM_LBUTTONUP:
 			m_Mouse_LBPressed = false;
 			break;
-		case DM_RBUTTONDOWN:
+		case TDM_RBUTTONDOWN:
 			m_Mouse_RBPressed = true;
 			break;
-		case DM_RBUTTONUP:
+		case TDM_RBUTTONUP:
 			m_Mouse_RBPressed = false;
 			break;
-		case DM_MBUTTONDOWN:
+		case TDM_MBUTTONDOWN:
 			m_Mouse_MBPressed = true;
 			break;
-		case DM_MBUTTONUP:
+		case TDM_MBUTTONUP:
 			m_Mouse_MBPressed = false;
 			break;
 		default:
