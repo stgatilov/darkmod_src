@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.85  2007/01/12 05:57:12  gildoran
+ * Added sys.waitForRender($entity)
+ *
  * Revision 1.84  2007/01/12 00:02:31  gildoran
  * Added inPVS() script event.
  *
@@ -456,6 +459,8 @@ const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
 
 
 ABSTRACT_DECLARATION( idClass, idEntity )
+	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
+
 	EVENT( EV_GetName,				idEntity::Event_GetName )
 	EVENT( EV_SetName,				idEntity::Event_SetName )
 	EVENT (EV_IsType,				idEntity::Event_IsType )
@@ -847,6 +852,12 @@ idEntity::idEntity()
 	modelDefHandle	= -1;
 	memset( &refSound, 0, sizeof( refSound ) );
 
+	memset( &m_renderTrigger, 0, sizeof( m_renderTrigger ) );
+	m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
+	m_renderTrigger.callbackData = &m_renderWaitingThread;
+	m_renderTriggerHandle = -1;
+	m_renderWaitingThread = 0;
+
 	mpGUIState = -1;
 
 	m_bFrobable = false;
@@ -1106,6 +1117,10 @@ idEntity::~idEntity( void )
 	FreeModelDef();
 	FreeSoundEmitter( false );
 
+	if ( m_renderTriggerHandle != -1 ) {
+		gameRenderWorld->FreeEntityDef( m_renderTriggerHandle );
+	}
+
 	gameLocal.UnregisterEntity( this );
 	gameLocal.RemoveStim(this);
 	gameLocal.RemoveResponse(this);
@@ -1169,6 +1184,10 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
+
+	savefile->WriteRenderEntity( m_renderTrigger );
+	savefile->WriteInt( m_renderTriggerHandle );
+	savefile->WriteInt( m_renderWaitingThread );
 
 	m_overlays.Save( savefile );
 
@@ -1252,6 +1271,10 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
 
+	savefile->ReadRenderEntity( m_renderTrigger );
+	savefile->ReadInt( m_renderTriggerHandle );
+	savefile->ReadInt( m_renderWaitingThread );
+
 	m_overlays.Restore( savefile );
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
 		// Add the (potentially NULL) GUI as an external GUI to our overlaysys,
@@ -1304,6 +1327,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
+	}
+
+	// restore must retrieve m_renderTriggerHandle from the renderer
+	if ( m_renderTriggerHandle != -1 ) {
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
 	}
 }
 
@@ -1992,6 +2020,8 @@ void idEntity::Present(void)
 	} else {
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
+
+	PresentRenderTrigger();
 }
 
 /*
@@ -6813,6 +6843,56 @@ void idEntity::ResponseSetAction(int StimType, const char *s)
 		resp->SetResponseAction(s);
 }
 
+/**	Called when m_renderTrigger is rendered.
+ *	It will resume the m_renderWaitingThread.
+ */
+bool idEntity::WaitForRenderTriggered( renderEntity_s* renderEntity, const renderView_s* view )
+{
+	// NOTE: We must avoid changing the game state from within this function.
+	// However, we'll add an event to resume the suspended thread.
+
+	idEntity* ent = gameLocal.entities[ renderEntity->entityNum ];
+	if ( !ent )
+		gameLocal.Error( "idEntity::WaitForRenderTriggered: callback with NULL game entity" );
+
+	if ( ent->m_renderWaitingThread )
+	{
+		// Fortunately, this doesn't execute the script immediately, so
+		// I think it's ok to call from here.
+		idThread::ObjectMoveDone( ent->m_renderWaitingThread, ent );
+		ent->m_renderWaitingThread = 0;
+	}
+
+	return false;
+}
+
+/**	Called to update m_renderTrigger after the render entity is modified.
+ *	Only updates the render trigger if a thread is waiting for it.
+ */
+void idEntity::PresentRenderTrigger()
+{
+	if ( !m_renderWaitingThread ) {
+		goto Quit;
+	}
+
+	// Update the renderTrigger to match renderEntity's bounding box.
+	m_renderTrigger.bounds = renderEntity.bounds;
+	m_renderTrigger.origin = renderEntity.origin;
+	m_renderTrigger.axis = renderEntity.axis;
+	// I haven't yet figured out where renderEntity.entityNum is set...
+	m_renderTrigger.entityNum = entityNumber;
+
+	// Update the renderTrigger in the render world.
+	if ( m_renderTriggerHandle == -1 ) {
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
+	} else {
+		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
+	}
+
+	Quit:
+	return;
+}
+
 /*
 ================
 idEntity::Inventory
@@ -6896,6 +6976,25 @@ Returns non-zero if this entity is in the player's PVS, zero otherwise.
 void idEntity::Event_InPVS()
 {
 	idThread::ReturnFloat( gameLocal.InPlayerPVS( this ) );
+}
+
+/*
+================
+idEntity::Event_WaitForRender
+
+Called by sys.waitForRender(ent) to find out if it can wait for this entity to render.
+================
+*/
+void idEntity::Event_WaitForRender()
+{
+	if ( !m_renderWaitingThread )
+	{
+		m_renderWaitingThread = idThread::CurrentThreadNum();
+		UpdateModel();
+		idThread::ReturnInt( true );
+	} else {
+		idThread::ReturnInt( false );
+	}
 }
 
 /*

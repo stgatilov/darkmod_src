@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.52  2007/01/12 05:57:12  gildoran
+ * Added sys.waitForRender($entity)
+ *
  * Revision 1.51  2007/01/12 00:02:31  gildoran
  * Added inPVS() script event.
  *
@@ -889,6 +892,24 @@ protected:
 	SDK_SIGNAL				m_Signal;
 	idList<SDKSignalInfo *>	m_SignalList;
 
+	/** Used to implement waitForRender()...
+	 *	This merely contains a bounding box and a callback.
+	 */
+	renderEntity_t			m_renderTrigger;
+	/// The render world handle for m_renderTrigger.
+	int						m_renderTriggerHandle;
+	///	The thread that's waiting for this entity to render. (via waitForRender())
+	int						m_renderWaitingThread;
+
+	/**	Called when m_renderTrigger is rendered.
+	 *	It will resume the m_renderWaitingThread.
+	 */
+	static bool				WaitForRenderTriggered( renderEntity_s* renderEntity, const renderView_s* view );
+	/**	Called to update m_renderTrigger after the render entity is modified.
+	 *	Only updates the render trigger if a thread is waiting for it.
+	 */
+	void					PresentRenderTrigger();
+
 	/**
 	* Set and get whether the entity is frobable
 	* Note: IsFrobable is only used by scripting, since we can check public var m_bFrobable
@@ -1004,6 +1025,7 @@ private:
 	void					Event_SetNeverDormant( int enable );
 
 	void					Event_InPVS( void );
+	void					Event_WaitForRender( void );
 
 	void					Event_SetGui( int handle, const char *guiFile );
 	void					Event_GetGui( int handle );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2007/01/12 05:57:17  gildoran
+ * Added sys.waitForRender($entity)
+ *
  * Revision 1.9  2006/10/31 22:44:10  sparhawk
  * Handle rotation added
  *
@@ -60,6 +63,7 @@ class CsndProp;
 
 const idEventDef EV_Thread_Execute( "<execute>", NULL );
 const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
+const idEventDef EV_Thread_SetRenderCallback( "<script_setrendercallback>", NULL );
 																	
 // script callable events
 const idEventDef EV_Thread_TerminateThread( "terminate", "d" );
@@ -68,6 +72,7 @@ const idEventDef EV_Thread_Wait( "wait", "f" );
 const idEventDef EV_Thread_WaitFrame( "waitFrame" );
 const idEventDef EV_Thread_WaitFor( "waitFor", "e" );
 const idEventDef EV_Thread_WaitForThread( "waitForThread", "d" );
+const idEventDef EV_Thread_WaitForRender( "waitForRender", "e" );
 const idEventDef EV_Thread_Print( "print", "s" );
 const idEventDef EV_Thread_PrintLn( "println", "s" );
 const idEventDef EV_Thread_Say( "say", "s" );
@@ -157,6 +162,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_WaitFrame,				idThread::Event_WaitFrame )
 	EVENT( EV_Thread_WaitFor,				idThread::Event_WaitFor )
 	EVENT( EV_Thread_WaitForThread,			idThread::Event_WaitForThread )
+	EVENT( EV_Thread_WaitForRender,			idThread::Event_WaitForRender )
 	EVENT( EV_Thread_Print,					idThread::Event_Print )
 	EVENT( EV_Thread_PrintLn,				idThread::Event_PrintLn )
 	EVENT( EV_Thread_Say,					idThread::Event_Say )
@@ -1035,6 +1041,24 @@ void idThread::Event_WaitForThread( int num ) {
 	} else {
 		Pause();
 		waitingForThread = thread;
+	}
+}
+
+/*
+================
+idThread::Event_WaitForRender
+
+Waits for an entity to render before resuming.
+================
+*/
+void idThread::Event_WaitForRender( idEntity* ent )
+{
+	if ( ent && ent->RespondsTo( EV_Thread_SetRenderCallback ) ) {
+		ent->ProcessEvent( &EV_Thread_SetRenderCallback );
+		if ( gameLocal.program.GetReturnedInteger() ) {
+			Pause();
+			waitingFor = ent->entityNumber;
+		}
 	}
 }
 
