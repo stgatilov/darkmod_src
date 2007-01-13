@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2007/01/13 02:01:27  gildoran
+ * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
+ *
  * Revision 1.15  2007/01/03 04:08:23  ishtvan
  * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
  *
@@ -111,6 +114,7 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_SetLightOrigin, idLight::Event_SetLightOrigin )
 	EVENT( EV_Light_GetLightOrigin, idLight::Event_GetLightOrigin )
 	EVENT( EV_Light_GetLightLevel,	idLight::Event_GetLightLevel )
+	EVENT( EV_InPVS,				idLight::Event_InPVS )
 END_CLASS
 
 
@@ -869,12 +873,17 @@ void idLight::Present( void ) {
 		return;
 	}
 
-	// add the model
-	idEntity::Present();
 
 	// current transformation
 	renderLight.axis	= localLightAxis * GetPhysics()->GetAxis();
 	renderLight.origin  = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * localLightOrigin;
+
+	// Note: I moved the call to idEntity::Present() to below the code that
+	// sets up the light origin/axis, so that PresentRenderTrigger() would be
+	// able to take into account the updated light origin/axis. -Gildoran
+
+	// add the model
+	idEntity::Present();
 
 	// reference the sound for shader synced effects
 	if ( lightParent ) {
@@ -1281,6 +1290,61 @@ bool idLight::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 }
 
 
+/**	Returns a bounding box surrounding the light.
+ */
+idBounds idLight::GetBounds()
+{
+	// NOTE: I need to add caching.
+
+	idBounds b;
+
+	if ( renderLight.pointLight )
+	{
+		b = idBounds( -renderLight.lightRadius, renderLight.lightRadius );
+	} else {
+		gameLocal.Warning("idLight::GetBounds() not correctly implemented for projected lights.");
+		// Fake a set of bounds. This might work ok for squarish spotlights with no start/stop specified.
+		// FIXME: These bounds are incorrect.
+		b.Zero();
+		b.AddPoint( renderLight.target );
+		b.AddPoint( renderLight.target + renderLight.up + renderLight.right );
+		b.AddPoint( renderLight.target + renderLight.up - renderLight.right );
+		b.AddPoint( renderLight.target - renderLight.up + renderLight.right );
+		b.AddPoint( renderLight.target - renderLight.up - renderLight.right );
+	}
+
+	return b;
+}
+
+
+/**	Called to update m_renderTrigger after the render entity is modified.
+ *	Only updates the render trigger if a thread is waiting for it.
+ */
+void idLight::PresentRenderTrigger()
+{
+	if ( !m_renderWaitingThread ) {
+		goto Quit;
+	}
+
+	// Update the renderTrigger to match renderEntity's bounding box.
+	m_renderTrigger.bounds = GetBounds(); // currently too innefficient but I'll worry about caching later
+	m_renderTrigger.origin = renderLight.origin;
+	m_renderTrigger.axis = renderLight.axis;
+	// I haven't yet figured out where renderEntity.entityNum is set...
+	m_renderTrigger.entityNum = entityNumber;
+
+	// Update the renderTrigger in the render world.
+	if ( m_renderTriggerHandle == -1 ) {
+		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
+	} else {
+		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
+	}
+
+	Quit:
+	return;
+}
+
+
 int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 {
 	int rc = 0;
@@ -1456,4 +1520,25 @@ void idLight::Event_GetLightLevel ( void )
 {
 	idThread::ReturnFloat( currentLevel );
 }
+
+/**	Returns 1 if the light is in PVS.
+ *	Doesn't take into account vis-area optimizations for shadowcasting lights.
+ */
+void idLight::Event_InPVS()
+// NOTE: Current extremely inefficent.
+// Caching needs to be done.
+{
+	int localNumPVSAreas, localPVSAreas[32];
+	idBounds modelAbsBounds;
+
+	m_renderTrigger.bounds = GetBounds(); // currently too innefficient but I'll worry about caching later
+	m_renderTrigger.origin = renderLight.origin;
+	m_renderTrigger.axis = renderLight.axis;
+
+	modelAbsBounds.FromTransformedBounds( m_renderTrigger.bounds, m_renderTrigger.origin, m_renderTrigger.axis );
+	localNumPVSAreas = gameLocal.pvs.GetPVSAreas( modelAbsBounds, localPVSAreas, sizeof( localPVSAreas ) / sizeof( localPVSAreas[0] ) );
+
+	idThread::ReturnFloat( gameLocal.pvs.InCurrentPVS( gameLocal.GetPlayerPVS(), localPVSAreas, localNumPVSAreas ) );
+}
+
 

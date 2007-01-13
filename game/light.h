@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2007/01/13 02:01:27  gildoran
+ * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
+ *
  * Revision 1.11  2006/12/31 12:01:59  sophisticatedzombie
  * Added script method for getting light level (> 0.0 is on, 0.0 is off )
  *
@@ -113,6 +116,14 @@ public:
 	virtual void	ReadFromSnapshot( const idBitMsgDelta &msg );
 	virtual bool	ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
+	/**	Returns a bounding box surrounding the light.
+	 */
+	idBounds		GetBounds();
+	/**	Called to update m_renderTrigger after the render light is modified.
+	 *	Only updates the render trigger if a thread is waiting for it.
+	 */
+	virtual void	PresentRenderTrigger();
+
 	/**
 	 * This will return a grayscale value dependent on the value from the light.
 	 * X and Y are the coordinates returned by calculating the position from the 
@@ -193,6 +204,11 @@ private:
 	* "On" light levels are > 0.0
 	*/
 	void			Event_GetLightLevel();
+
+	/**	Returns 1 if the light is in PVS.
+	 *	Doesn't take into account vis-area optimizations for shadowcasting lights.
+	 */
+	void			Event_InPVS();
 
 
 	/**

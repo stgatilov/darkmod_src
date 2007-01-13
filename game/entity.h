@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.53  2007/01/13 02:01:27  gildoran
+ * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
+ *
  * Revision 1.52  2007/01/12 05:57:12  gildoran
  * Added sys.waitForRender($entity)
  *
@@ -259,7 +262,7 @@ extern const idEventDef EV_IsInLiquid;			// MOD_WATERPHYSICS
 extern const idEventDef EV_CopyBind;
 extern const idEventDef EV_IsFrobable;
 extern const idEventDef EV_SetFrobable;
-
+extern const idEventDef EV_InPVS;
 
 // Think flags
 enum {
@@ -908,7 +911,7 @@ protected:
 	/**	Called to update m_renderTrigger after the render entity is modified.
 	 *	Only updates the render trigger if a thread is waiting for it.
 	 */
-	void					PresentRenderTrigger();
+	virtual void			PresentRenderTrigger();
 
 	/**
 	* Set and get whether the entity is frobable

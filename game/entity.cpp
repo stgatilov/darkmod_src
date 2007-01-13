@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.86  2007/01/13 02:01:27  gildoran
+ * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
+ *
  * Revision 1.85  2007/01/12 05:57:12  gildoran
  * Added sys.waitForRender($entity)
  *
@@ -853,8 +856,6 @@ idEntity::idEntity()
 	memset( &refSound, 0, sizeof( refSound ) );
 
 	memset( &m_renderTrigger, 0, sizeof( m_renderTrigger ) );
-	m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
-	m_renderTrigger.callbackData = &m_renderWaitingThread;
 	m_renderTriggerHandle = -1;
 	m_renderWaitingThread = 0;
 
@@ -6855,10 +6856,12 @@ bool idEntity::WaitForRenderTriggered( renderEntity_s* renderEntity, const rende
 	if ( !ent )
 		gameLocal.Error( "idEntity::WaitForRenderTriggered: callback with NULL game entity" );
 
+	renderEntity->callback = NULL;
+
 	if ( ent->m_renderWaitingThread )
 	{
 		// Fortunately, this doesn't execute the script immediately, so
-		// I think it's ok to call from here.
+		// I think it's safe to call from here.
 		idThread::ObjectMoveDone( ent->m_renderWaitingThread, ent );
 		ent->m_renderWaitingThread = 0;
 	}
@@ -6989,8 +6992,10 @@ void idEntity::Event_WaitForRender()
 {
 	if ( !m_renderWaitingThread )
 	{
+		m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
 		m_renderWaitingThread = idThread::CurrentThreadNum();
-		UpdateModel();
+		// Make sure Present() gets called.
+		BecomeActive( TH_UPDATEVISUALS );
 		idThread::ReturnInt( true );
 	} else {
 		idThread::ReturnInt( false );
