@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2007/01/14 17:15:31  gildoran
+ * Fixed sys.waitForRender($light)
+ *
  * Revision 1.16  2007/01/13 02:01:27  gildoran
  * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
  *
@@ -873,17 +876,16 @@ void idLight::Present( void ) {
 		return;
 	}
 
+	// Clear the bounds, so idLight::PresentRenderTrigger() has a way to know
+	// if idEntity::PresentRenderTrigger() added anything.
+	m_renderTrigger.bounds.Clear();
+
+	// add the model
+	idEntity::Present();
 
 	// current transformation
 	renderLight.axis	= localLightAxis * GetPhysics()->GetAxis();
 	renderLight.origin  = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * localLightOrigin;
-
-	// Note: I moved the call to idEntity::Present() to below the code that
-	// sets up the light origin/axis, so that PresentRenderTrigger() would be
-	// able to take into account the updated light origin/axis. -Gildoran
-
-	// add the model
-	idEntity::Present();
 
 	// reference the sound for shader synced effects
 	if ( lightParent ) {
@@ -898,6 +900,7 @@ void idLight::Present( void ) {
 	// update the renderLight and renderEntity to render the light and flare
 	PresentLightDefChange();
 	PresentModelDefChange();
+	PresentRenderTrigger();
 }
 
 /*
@@ -1326,19 +1329,31 @@ void idLight::PresentRenderTrigger()
 		goto Quit;
 	}
 
-	// Update the renderTrigger to match renderEntity's bounding box.
-	m_renderTrigger.bounds = GetBounds(); // currently too innefficient but I'll worry about caching later
-	m_renderTrigger.origin = renderLight.origin;
-	m_renderTrigger.axis = renderLight.axis;
+	// Have the bounds been set yet?
+	if ( m_renderTrigger.bounds.IsCleared() )
+	{
+		// No.
+
+		// Pre-rotate our bounds and give them to m_renderTrigger.
+		m_renderTrigger.origin = renderLight.origin;
+		m_renderTrigger.bounds = GetBounds() * renderLight.axis;
+
+	} else {
+		// Yes.
+
+		// Convert our light's bounds to be relative to m_renderTrigger,
+		// and add them to what already exists.
+		m_renderTrigger.bounds += GetBounds() * renderLight.axis + ( renderLight.origin - m_renderTrigger.origin );
+	}
+
 	// I haven't yet figured out where renderEntity.entityNum is set...
 	m_renderTrigger.entityNum = entityNumber;
 
 	// Update the renderTrigger in the render world.
-	if ( m_renderTriggerHandle == -1 ) {
+	if ( m_renderTriggerHandle == -1 )
 		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
-	} else {
+	else
 		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
-	}
 
 	Quit:
 	return;

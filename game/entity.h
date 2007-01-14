@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.54  2007/01/14 17:15:31  gildoran
+ * Fixed sys.waitForRender($light)
+ *
  * Revision 1.53  2007/01/13 02:01:27  gildoran
  * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
  *
@@ -315,7 +318,8 @@ enum {
 	EINV_FAST	= 4, // Don't use group histories.
 };
 
-
+// Used by m_renderTrigger
+#define EMPTY_MODEL "models/darkmod/props/misc/empty.lwo"
 
 class idEntity : public idClass {
 public:
@@ -911,7 +915,7 @@ protected:
 	/**	Called to update m_renderTrigger after the render entity is modified.
 	 *	Only updates the render trigger if a thread is waiting for it.
 	 */
-	virtual void			PresentRenderTrigger();
+	void					PresentRenderTrigger();
 
 	/**
 	* Set and get whether the entity is frobable

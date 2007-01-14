@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.87  2007/01/14 17:15:30  gildoran
+ * Fixed sys.waitForRender($light)
+ *
  * Revision 1.86  2007/01/13 02:01:27  gildoran
  * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
  *
@@ -856,6 +859,7 @@ idEntity::idEntity()
 	memset( &refSound, 0, sizeof( refSound ) );
 
 	memset( &m_renderTrigger, 0, sizeof( m_renderTrigger ) );
+	m_renderTrigger.axis.Identity();
 	m_renderTriggerHandle = -1;
 	m_renderWaitingThread = 0;
 
@@ -6874,23 +6878,26 @@ bool idEntity::WaitForRenderTriggered( renderEntity_s* renderEntity, const rende
  */
 void idEntity::PresentRenderTrigger()
 {
-	if ( !m_renderWaitingThread ) {
+	if ( !m_renderWaitingThread )
+	{
 		goto Quit;
 	}
 
 	// Update the renderTrigger to match renderEntity's bounding box.
-	m_renderTrigger.bounds = renderEntity.bounds;
+	// In order to ensure that other code can easily add to the bounding
+	// box, we're going to pre-rotate the bounding box, and keep the axis
+	// unrotated.
 	m_renderTrigger.origin = renderEntity.origin;
-	m_renderTrigger.axis = renderEntity.axis;
+	m_renderTrigger.bounds = renderEntity.bounds * renderEntity.axis;
 	// I haven't yet figured out where renderEntity.entityNum is set...
+	// but it looks like we have to manually set it for m_renderTrigger.
 	m_renderTrigger.entityNum = entityNumber;
 
 	// Update the renderTrigger in the render world.
-	if ( m_renderTriggerHandle == -1 ) {
+	if ( m_renderTriggerHandle == -1 )
 		m_renderTriggerHandle = gameRenderWorld->AddEntityDef( &m_renderTrigger );
-	} else {
+	else
 		gameRenderWorld->UpdateEntityDef( m_renderTriggerHandle, &m_renderTrigger );
-	}
 
 	Quit:
 	return;
@@ -6992,10 +6999,18 @@ void idEntity::Event_WaitForRender()
 {
 	if ( !m_renderWaitingThread )
 	{
+		// Give the renderTrigger an invisible model to prevent a black cube from showing up.
+		if ( !m_renderTrigger.hModel )
+			m_renderTrigger.hModel = renderModelManager->FindModel( EMPTY_MODEL );
+		if ( !m_renderTrigger.hModel )
+			gameLocal.Error( "Unable to load model: %s\n", EMPTY_MODEL );
+
 		m_renderTrigger.callback = idEntity::WaitForRenderTriggered;
 		m_renderWaitingThread = idThread::CurrentThreadNum();
+
 		// Make sure Present() gets called.
 		BecomeActive( TH_UPDATEVISUALS );
+
 		idThread::ReturnInt( true );
 	} else {
 		idThread::ReturnInt( false );

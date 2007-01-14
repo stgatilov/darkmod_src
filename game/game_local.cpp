@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.82  2007/01/14 17:15:31  gildoran
+ * Fixed sys.waitForRender($light)
+ *
  * Revision 1.81  2007/01/11 11:44:03  thelvyn
  * Modifications as requested to MouseHook code handler and enums
  *
@@ -1810,6 +1813,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// precache the player
 	FindEntityDef( "player_doommarine", false );
+
+	// precache the empty model (used by idEntity::m_renderTrigger)
+	renderModelManager->FindModel( EMPTY_MODEL );
 
 	SpawnLightgemEntity();
 
