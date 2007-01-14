@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2007/01/14 04:39:01  newhorizon
+ * Update to set tweaked and tested default values for T2X footstep volume modifiers
+ *  and for lean and lean forward settings.  - New Horizon
+ *
  * Revision 1.45  2007/01/09 13:00:19  ishtvan
  * lean_forward cvars added
  *
@@ -216,14 +220,14 @@ idCVar cv_pm_pushmod(				"pm_pushmod",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVA
 /**
 * Dark Mod Leaning
 **/
-idCVar cv_pm_lean_angle(			"pm_lean_angle",		"18.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
-idCVar cv_pm_lean_time(				"pm_lean_time",			"700.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
-idCVar cv_pm_lean_height(			"pm_lean_height",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
-idCVar cv_pm_lean_forward_angle(	"pm_lean_forward_angle",	"18.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The tilt angle that the player can lean to at a full lean, in degrees." );
-idCVar cv_pm_lean_forward_time(		"pm_lean_forward_time",		"700.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Time it takes to get to a full lean, in milliseconds." );
-idCVar cv_pm_lean_forward_height(	"pm_lean_forward_height",	"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
-idCVar cv_pm_lean_forward_stretch(	"pm_lean_forward_stretch",	"2.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+idCVar cv_pm_lean_angle(			"pm_lean_angle",		"15.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The tilt angle that the player can lean to at a full lean, in degrees." );
+idCVar cv_pm_lean_time(				"pm_lean_time",			"400.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Time it takes to get to a full lean, in milliseconds." );
+idCVar cv_pm_lean_height(			"pm_lean_height",		"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
+idCVar cv_pm_lean_stretch(			"pm_lean_stretch",		"2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
+idCVar cv_pm_lean_forward_angle(	"pm_lean_forward_angle",	"2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The tilt angle that the player can lean to at a full lean, in degrees." );
+idCVar cv_pm_lean_forward_time(		"pm_lean_forward_time",		"400.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Time it takes to get to a full lean, in milliseconds." );
+idCVar cv_pm_lean_forward_height(	"pm_lean_forward_height",	"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
+idCVar cv_pm_lean_forward_stretch(	"pm_lean_forward_stretch",	"15",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
 
 
 /**
@@ -260,12 +264,12 @@ idCVar cv_tdm_inv_groupvis(	"tdm_inv_groupVis",	"1",	CVAR_GAME | CVAR_ARCHIVE | 
 * DarkMod movement volumes.  Walking volume is zero dB, other volumes are added to that
 **/
 idCVar cv_pm_stepvol_walk(		"pm_stepvol_walk",	"0",					CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for walking footsteps (should be 0.0)" );
-idCVar cv_pm_stepvol_run(		"pm_stepvol_run",	"2",					CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible modifier for running footsteps." );
-idCVar cv_pm_stepvol_creep(		"pm_stepvol_creep",	"-10",					CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible modifier for creeping footsteps." );
+idCVar cv_pm_stepvol_run(		"pm_stepvol_run",	"8",					CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible modifier for running footsteps." );
+idCVar cv_pm_stepvol_creep(		"pm_stepvol_creep",	"-5",					CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible modifier for creeping footsteps." );
 
-idCVar cv_pm_stepvol_crouch_walk(	"pm_stepvol_crouch_walk",	"-4",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch walking footsteps" );
-idCVar cv_pm_stepvol_crouch_run(	"pm_stepvol_crouch_run",	"2",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch running footsteps" );
-idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-11.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch creeping footsteps" );
+idCVar cv_pm_stepvol_crouch_walk(	"pm_stepvol_crouch_walk",	"-2",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch walking footsteps" );
+idCVar cv_pm_stepvol_crouch_run(	"pm_stepvol_crouch_run",	"4",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch running footsteps" );
+idCVar cv_pm_stepvol_crouch_creep(	"pm_stepvol_crouch_creep",	"-7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Audible volume modifier for crouch creeping footsteps" );
 
 /**
  * Darkmod lightgem variables. These are only for debuggingpurpose to tweak the lightgem
@@ -501,10 +505,10 @@ idCVar pm_walkspeed(				"pm_walkspeed",				"60",			CVAR_GAME | CVAR_ARCHIVE | CV
 idCVar pm_noclipspeed(				"pm_noclipspeed",			"200",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while in noclip" );
 idCVar pm_spectatespeed(			"pm_spectatespeed",			"450",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "speed the player can move while spectating" );
 idCVar pm_spectatebbox(				"pm_spectatebbox",			"32",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "size of the spectator bounding box" );
-idCVar pm_usecylinder(				"pm_usecylinder",			"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL, "use a cylinder approximation instead of a bounding box for player collision detection" );
+idCVar pm_usecylinder(				"pm_usecylinder",			"1",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL, "use a cylinder approximation instead of a bounding box for player collision detection" );
 idCVar pm_minviewpitch(				"pm_minviewpitch",			"-89",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "amount player's view can look up (negative values are up)" );
 idCVar pm_maxviewpitch(				"pm_maxviewpitch",			"89",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "amount player's view can look down" );
-idCVar pm_stamina(					"pm_stamina",				"24",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "length of time player can run" );
+idCVar pm_stamina(				"pm_stamina",				"24",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "length of time player can run" );
 idCVar pm_staminathreshold(			"pm_staminathreshold",		"45",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "when stamina drops below this value, player gradually slows to a walk" );
 idCVar pm_staminarate(				"pm_staminarate",			"0.75",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "rate that player regains stamina. divide pm_stamina by this value to determine how long it takes to fully recharge." );
 idCVar pm_crouchheight(				"pm_crouchheight",			"38",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "height of player's bounding box while crouched" );
