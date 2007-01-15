@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.55  2007/01/15 16:50:19  gildoran
+ * Added removeKey() script event.
+ *
  * Revision 1.54  2007/01/14 17:15:31  gildoran
  * Fixed sys.waitForRender($light)
  *
@@ -1020,6 +1023,7 @@ private:
 	void					Event_GetFloatKey( const char *key );
 	void					Event_GetVectorKey( const char *key );
 	void					Event_GetEntityKey( const char *key );
+	void					Event_RemoveKey( const char *key );
 	void					Event_RestorePosition( void );
 	void					Event_UpdateCameraTarget( void );
 	void					Event_DistanceTo( idEntity *ent );
