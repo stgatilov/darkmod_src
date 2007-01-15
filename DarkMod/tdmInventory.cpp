@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2007/01/15 16:37:25  gildoran
+ * Added some documentation about the inventory. (though the documentation isn't finished)
+ *
  * Revision 1.11  2006/12/14 01:38:28  gildoran
  * Fixed two bugs in cursor's operator =
  * 1. CopyActiveCursor was called without turning off group histories, which could create a duplicate group history.
@@ -63,8 +66,19 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 const idEventDef EV_PostRestore( "postRestore", NULL );
 
+// The list used by tdmInventorySaveObjectList()
 static idLinkList<idClass>	tdmInventoryObjList;
 
+///	Adds all inventory-related objects to a savefile's object list.
+/**	When called, this adds all inventories, items and cursors into the
+ *	object list of 'savefile', allowing pointers to them to be saved.
+ *	This should be called at least once from idGameLocal::SaveGame().
+ *	@param savefile The savefile to add the inventories to.
+ *	@see idGameLocal::SaveGame()
+ *	@see CtdmInventory::m_inventoryObjListNode
+ *	@see CtdmInventoryItem::m_inventoryObjListNode
+ *	@see CtdmInventoryCursor::m_inventoryObjListNode
+ */
 void tdmInventorySaveObjectList( idSaveGame *savefile ) {
 
 	idLinkList<idClass>* iNode = tdmInventoryObjList.NextNode();
@@ -84,6 +98,7 @@ CLASS_DECLARATION( idClass, CtdmInventory )
 END_CLASS
 
 CtdmInventory::CtdmInventory() {
+	// Add us to the list of things that are saved/restored.
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 }
@@ -94,6 +109,8 @@ CtdmInventory::~CtdmInventory() {
 		m_cursors.Next()->SetInventory( NULL );
 	}
 
+	assert( !m_cursors.NextNode() );
+
 	// Remove all items.
 	// Because all cursors have been removed, every inventory slot
 	// should contain an item.
@@ -101,7 +118,6 @@ CtdmInventory::~CtdmInventory() {
 		m_slots.Next()->m_item->EnterInventory( NULL );
 	}
 
-	assert( !m_cursors.NextNode() );
 	assert( !m_slots.NextNode() );
 }
 
@@ -160,7 +176,13 @@ void CtdmInventory::Restore( idRestoreGame *savefile ) {
 	return;
 }
 
-/// Return the group with the given name. Create it if neccessary.
+///	Returns a pointer to the group with the given name.
+/**	Given the name of a group, it will return a pointer to that group.
+ *	If no group exists with the name 'groupName', one will be created.
+ *	It only returns NULL if it was unable to allocate a group.
+ *	@param groupName The name of the group to return.
+ *	@return The group named 'groupName'.
+ */
 CtdmInventoryGroup* CtdmInventory::ObtainGroup( const char* groupName )
 {
 	// Try to find the requested group.
@@ -203,7 +225,13 @@ CtdmInventoryGroup* CtdmInventory::ObtainGroup( const char* groupName )
 	return group;
 }
 
-/// Converts a slot into an index.
+///	Converts a slot into an index. (used for saving)
+/**	Given 'slot', it returns an index which may be saved.
+ *	IndexToSlot() can then be used to restore the index into a pointer.
+ *	@param slot The slot to which an index is desired.
+ *	@return The index of 'slot'.
+ *	@see IndexToSlot()
+ */
 unsigned int CtdmInventory::SlotToIndex( const CtdmInventorySlot* slot ) const {
 	if ( slot == NULL ) {
 		return 0;
@@ -220,7 +248,13 @@ unsigned int CtdmInventory::SlotToIndex( const CtdmInventorySlot* slot ) const {
 	return index;
 }
 
-/// Converts an index into a slot.
+///	Converts an index into a slot. (used for restoring)
+/**	Given an 'index', it returns the slot to which the index refers.
+ *	SlotToIndex() can be used to obtain a savable index.
+ *	@param index A slot's index.
+ *	@return A pointer to the slot refered to by 'index'.
+ *	@see SlotToIndex()
+ */
 CtdmInventorySlot* CtdmInventory::IndexToSlot( unsigned int index ) const {
 	if ( index == 0 ) {
 		return NULL;
@@ -244,6 +278,7 @@ CLASS_DECLARATION( idClass, CtdmInventoryItem )
 END_CLASS
 
 CtdmInventoryItem::CtdmInventoryItem() {
+	// Add us to the list of things that are saved/restored.
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 
@@ -264,34 +299,38 @@ void CtdmInventoryItem::Save( idSaveGame *savefile ) const {
 void CtdmInventoryItem::Restore( idRestoreGame *savefile ) {
 	m_owner.Restore( savefile );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventory ) );
-	savefile->ReadInt( reinterpret_cast<int &>( m_slotNum ) );
+	savefile->ReadInt( reinterpret_cast<int &>( m_slotIndex ) );
 	PostEventMS( &EV_PostRestore, 0 );
 }
 
 void CtdmInventoryItem::Event_PostRestore() {
-	m_slot = m_inventory->IndexToSlot( m_slotNum );
+	m_slot = m_inventory->IndexToSlot( m_slotIndex );
 }
 
-/// Puts the item in a specific location in an inventory.
+///	Puts the item in a specific location in an inventory.
 /**	This is used to add/remove an item to/from an inventory, or move it
- *	around within an inventory.
- *	
- *	When called, enterInventory() moves the item into 'inventory', in the
- *	group of 'groupName'.
- *	
- *	If 'groupName' is NULL, it is assumed to be "".
+ *	around within an inventory. When called, EnterInventory() moves this
+ *	item into the 'groupName' group of 'inventory'. If 'inventory' is
+ *	NULL, the rest of the arguments are ignored, and this item is moved
+ *	outside of any inventory.
  *	
  *	If 'position' isn't NULL, this item is placed immediately before
- *	(or after, if 'after' is true) it.
- *	
- *	If 'position' is NULL, this item is placed at the beginning (or end,
- *	if 'after' is true) of the group specified by 'groupName'.
- *	
- *	The average usage of enterInventory() is as follows:
- *		item.enterInventory( inventory, group );
- *	That will place 'item' in 'group' of 'inventory', at the end.
+ *	(or after, if 'after' is true) it. If 'position' is NULL, this item
+ *	is placed at the beginning (or end, if 'after is true) of the group
+ *	specified by 'groupName'.
  *
- *	It is an error if 'position' is non-NULL, and not in 'inventory'.
+ *	The average usage of enterInventory is as follows:
+ *		item.enterInventory( inventory, group );
+ *	That will place 'item' at the end of 'group' in 'inventory'.
+ *	
+ *	It is an error for 'position' to be non-NULL and not in 'inventory'.
+ *	It is an error for 'position' to be non-NULL not be in 'groupName'.
+ *	
+ *	@param inventory the inventory to move this item to
+ *	@param groupName the group to move this item to
+ *	@param after whether or not to place this item after 'position'
+ *	@param position the position to place this item
+ *	@see Inventory()
  */
 void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 										const char* groupName,
@@ -319,7 +358,6 @@ void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 		}
 	}
 
-
 	// If we're moving to another (or the same) inventory, prepare the
 	// destination slot.
 	if ( inventory != NULL ) {
@@ -339,6 +377,7 @@ void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 			goto Quit;
 		}
 
+		// Put the slot in the correct place in the group and inventory.
 		if ( position ) {
 			// We need to place the slot before/after a specific position.
 			if ( after ) {
@@ -350,6 +389,9 @@ void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 			}
 		} else {
 			// We need to place the slot at the beginning/end of the group.
+			// Our group may be empty (but other groups cannot be) so we unfortunately
+			// must place our slot's inventory node relative to slots from other groups,
+			// which unfortunately complicates this code a little bit.
 			if ( after ) {
 				if ( group->m_inventoryNode.Next() ) {
 					// There's a group after our current one - place our slot before its first item.
@@ -372,7 +414,8 @@ void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 		}
 
 		// At this point, we may potentially have two slots in a group pointing to
-		// us, but that's ok... there'll only be one slot by the end of this function.
+		// us, but that's ok... there'll only be one slot when the next if statement
+		// is executed.
 	}
 
 	if ( m_slot != NULL ) {
@@ -391,7 +434,22 @@ void CtdmInventoryItem::EnterInventory(	CtdmInventory* inventory,
 	}
 }
 
-/// Replaces one item with another.
+///	Replaces one item with another.
+/**	Replaces 'item' with this item. 'item' will be moved out of its
+ *	inventory, and this item will be put in its exact position. All
+ *	cursors that were pointing to 'item' will now point to this item.
+ *	
+ *	It is important to note that
+ *		newItem.ReplaceItem( oldItem );
+ *	is different from
+ *		newItem.EnterInventory( oldItem.Inventory(), oldItem.Group(), true, oldItem );
+ *		oldItem.EnterInventory( NULL );
+ *	With the latter code, any cursors that were pointing to 'oldItem'
+ *	will not point to 'newItem'. The former code doesn't suffer from
+ *	that problem.
+ *	
+ *	@param item The item to replace.
+ */
 void CtdmInventoryItem::ReplaceItem( CtdmInventoryItem* item ) {
 
 	// If we're in an inventory, exit it.
@@ -417,19 +475,21 @@ void CtdmInventoryItem::ReplaceItem( CtdmInventoryItem* item ) {
 	return;
 }
 
-// Consider inlining?
-/// Returns the inventory this item is contained by.
+///	Returns the inventory this item is contained by.
+/**	If this item isn't in an inventory, NULL is returned.
+ *	@return A pointer to the inventory this item resides in, or NULL.
+ *	@see EnterInventory()
+ */
 CtdmInventory* CtdmInventoryItem::Inventory() const {
 	return m_inventory;
 }
 
-// Consider inlining?
-/// Gets the item's group.
+///	Gets the item's group.
+/**	If this item isn't in an inventory, NULL is returned.
+ *	@return The name of the group this item is in, or NULL.
+ */
 const char* CtdmInventoryItem::Group() const {
-	if ( m_slot )
-		return m_slot->m_group->m_name.c_str();
-	else
-		return NULL;
+	return m_slot ? m_slot->m_group->m_name.c_str() : NULL;
 }
 
 
@@ -442,6 +502,7 @@ CLASS_DECLARATION( idClass, CtdmInventoryCursor )
 END_CLASS
 
 CtdmInventoryCursor::CtdmInventoryCursor() {
+	// Add us to the list of things that are saved/restored.
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 
@@ -455,6 +516,7 @@ CtdmInventoryCursor::~CtdmInventoryCursor() {
 }
 
 CtdmInventoryCursor::CtdmInventoryCursor( const CtdmInventoryCursor& source ) {
+	// Add us to the list of things that are saved/restored.
 	m_inventoryObjListNode.SetOwner( this );
 	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
 
@@ -555,7 +617,15 @@ void CtdmInventoryCursor::Event_PostRestore() {
 	}
 }
 
-/// Copies only the active cursor position, not any cursor histories.
+///	Copies only the active cursor position, not any cursor histories.
+/**	This copies the active cursor position from 'source'. It is useful
+ *	for cases where 'source' may be pointing to an empty slot. If 'source'
+ *	points to an item and 'noHistory' is false, this cursor's group
+ *	histories will be updated to reflect that the item was selected.
+ *	(this function is faster if 'noHistory' is true)
+ *	@param source The cursor to copy the active position from.
+ *	@param noHistory Whether or not to suppress updating the group histories.
+ */
 void CtdmInventoryCursor::CopyActiveCursor(	const CtdmInventoryCursor& source,
 											bool noHistory ) {
 	if ( this == &source ) {
@@ -576,7 +646,21 @@ void CtdmInventoryCursor::CopyActiveCursor(	const CtdmInventoryCursor& source,
 	return;
 }
 
+///	Sets which inventory this cursor points to.
+/**	When called, it sets this cursor to point to 'inventory'.
+ *	If 'inventory' isn't NULL, this cursor will point to it, initially
+ *  pointing to its null slot.
+ *	If inventory is NULL, this cursor will not point to any inventory.
+ *	When SetInventory() is used to change the inventory this cursor points
+ *	to, this cursor will lose any group history information it had.
+ *	@param inventory The inventory to point to.
+ *	@see Inventory()
+ */
 void CtdmInventoryCursor::SetInventory( CtdmInventory* inventory ) {
+	// Make sure there's actually work to do.
+	if ( inventory == m_inventory )
+		goto Quit;
+
 	if ( m_inventory ) {
 		// Remove ourself from our current inventory.
 
@@ -598,16 +682,26 @@ void CtdmInventoryCursor::SetInventory( CtdmInventory* inventory ) {
 	}
 
 	m_inventory	= inventory;
+
+	Quit:
+	return;
 }
 
-// Consider inlining?
-/// Returns the inventory this cursor points to.
+///	Returns the inventory this cursor points to.
+/** @return The inventory this cursor points to.
+ *	@see SetInventory()
+ */
 CtdmInventory* CtdmInventoryCursor::Inventory() const {
 	return m_inventory;
 }
 
-// Consider inlining?
-/// Returns the name of the current inventory group. 'nullOk' causes it to return NULL instead of "" when outside any group.
+///	Returns the name of the group currently pointed to.
+/**	If this cursor doesn't point to an inventory or it's pointing to
+ *	the inventory's null slot, "" (or NULL if 'nullOk' is true) will
+ *	be returned.
+ *	@param nullOk Whether it's ok to return NULL, or if "" should be returned instead.
+ *	@return The group this cursor points to.
+ */
 const char* CtdmInventoryCursor::Group( bool nullOk ) const {
 	if ( m_slot ) {
 		return m_slot->m_group->m_name.c_str();
@@ -616,7 +710,19 @@ const char* CtdmInventoryCursor::Group( bool nullOk ) const {
 	}
 }
 
-/// Selects a specific item. (note: cursor must be pointing to the correct inventory)
+///	Selects a specific item.
+/**	Selects 'item', or the null slot if 'item is NULL.
+ *	If 'nohistory' is false, it updates this cursor's group histories to
+ *	reflect that 'item' has been selected.
+ *	(this function is faster if 'noHistory' is true)
+ *	
+ *	It is an error if 'item' isn't in the inventory pointed to by
+ *	this cursor.
+ *	
+ *	@param item The item to select.
+ *	@param noHistory Whether or not to update this cursor's group histories.
+ *	@see Item()
+ */
 void CtdmInventoryCursor::SelectItem( CtdmInventoryItem* item, bool noHistory ) {
 	if ( !m_inventory ) {
 		gameLocal.Warning("selectItem() called on an independant tdmInventoryCursor.");
@@ -639,8 +745,10 @@ void CtdmInventoryCursor::SelectItem( CtdmInventoryItem* item, bool noHistory ) 
 	return;
 }
 
-// Consider inlining?
-/// Returns the item this cursor is pointing to.
+///	Returns the item this cursor points to.
+/**	@return The item this cursor points to, or NULL if it doesn't point to an item.
+ *	@see SelectItem()
+ */
 CtdmInventoryItem* CtdmInventoryCursor::Item() const {
 	return m_slot ? m_slot->m_item : NULL;
 }
