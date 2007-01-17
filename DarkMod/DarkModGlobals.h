@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.42  2007/01/17 03:44:19  thelvyn
+ * *** empty log message ***
+ *
  * Revision 1.41  2006/12/09 17:30:20  sophisticatedzombie
  * Added  a configurable scale for computing maximum observation distance from
  * a lighting quotient given for a point by the LAS.  Visual acuity of the AI still needs
@@ -512,6 +515,22 @@ extern char *g_LCString[];
 #define DM_LOGPLANE(lc, lt, s, p)
 #define DM_LOGMAT3(lc, lt, s, m)
 #endif
+
+/**
+*	Message pragma so we can show file and line info in comments easily
+*	Same principle as the one below but simpler to implement and use.
+*   Been using it for about 8 or 9 years not sure where I found it
+*	but I did have a subscription to windows developer journal so maybe thats where.
+*	Usage: #pragma Message( "your message goes here")
+*	
+*	Submitted by Thelvyn
+*/
+#ifndef MacroStr2
+#define MacroStr(x)   #x
+#define MacroStr2(x)  MacroStr(x)
+#define Message(desc) message(__FILE__ "(" MacroStr2(__LINE__) ") :" #desc)
+#endif
+
 
 /**
 * The DARKMOD_NOTE macro makes it easy to add reminders which are shown when code is compiled. 
