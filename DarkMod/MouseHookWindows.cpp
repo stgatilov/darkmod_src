@@ -3,45 +3,25 @@
 #include "MouseHookWindows.h"
 #include "../darkmod/MouseData.h"
 
-#ifndef WH_MOUSE_LL
-#define WH_MOUSE_LL        14
-#endif
-
 // global but NOT. anonymous namespace is only available to this file by design
 // not meant to be used by anyone else
-namespace {
+namespace
+{
 	CMouseHookWindows* g_WindowsHook = NULL;
-	typedef struct sMouseDefTranslation
-	{
-		tMouseDef TDM_Enum; // These will not change regardless of the OS
-		// This is what we send to the game code instead of OS Specific
-		int WindowsVersion;// The equivalent windows DEF
-		// We get this here but DO NOT send to the program rather we translate it
-	} MouseDefTranslation_t;
-	const MouseDefTranslation_t MouseDefTranslations[] =
-	{
-		{ TDM_LBUTTONDOWN, WM_LBUTTONDOWN },
-		{ TDM_LBUTTONUP,   WM_LBUTTONUP   },
-		{ TDM_RBUTTONDOWN, WM_RBUTTONDOWN },
-		{ TDM_RBUTTONUP,   WM_RBUTTONUP   },
-		{ TDM_MBUTTONDOWN, WM_MBUTTONDOWN },
-		{ TDM_MBUTTONUP,   WM_MBUTTONUP   },
-		{ TDM_NONE,        -1 }
-	};
-	
-	tMouseDef TranslateMouseAction( int ActionCode ) {
-		tMouseDef rc = TDM_NONE;
-		for( size_t t = 0; MouseDefTranslations[t].TDM_Enum != TDM_NONE; t++ )
-		{
-			if( MouseDefTranslations[t].WindowsVersion == ActionCode )
-			{
-				rc = MouseDefTranslations[t].TDM_Enum;
-				break;
-			}
-		}
-		return rc;
-	}
 }
+bool CMouseHookWindows::m_instanceFlag = false;
+CMouseHookWindows* CMouseHookWindows::m_single = NULL;
+
+CMouseHookWindows* CMouseHookWindows::getInstance( CMouseHook* pParent )
+{
+    if(! m_instanceFlag)
+    {
+        m_single = new CMouseHookWindows( pParent );
+        m_instanceFlag = true;
+    }
+	return m_single;
+}
+
 /*
 ===========
 MouseProc - Windows version of Mouse Hook, call class version to do the work.
@@ -50,8 +30,12 @@ MouseProc - Windows version of Mouse Hook, call class version to do the work.
 
 LRESULT CALLBACK TDM_MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-	exit(0);
-	return g_WindowsHook->MouseProc( nCode, wParam, lParam );
+	LRESULT rc = 0;
+	if( NULL != g_WindowsHook )
+	{
+		rc = g_WindowsHook->MouseProc( nCode, wParam, lParam );
+	}
+	return rc;
 }
 
 /*
@@ -76,71 +60,78 @@ idGameLocal::MouseProc
 
 LRESULT CMouseHookWindows::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-	exit(0);
-	if( nCode == HC_ACTION )
-	{
-/*
-		// Always save message or only ones we care about ?
-		// only ones we care about for the moment
-		switch( wParam )
-		{
-		case TDM_LBUTTONDOWN:
-		case TDM_LBUTTONUP:
-		case TDM_RBUTTONDOWN:
-		case TDM_RBUTTONUP:
-		case TDM_MBUTTONDOWN:
-		case TDM_MBUTTONUP:
-			m_MouseDataPrevious = m_MouseDataCurrent; // previous processed message
-			m_MouseDataCurrent = (MOUSEHOOKSTRUCT*)lParam;// current
-			m_MouseDataCurrent.Action = wParam;// left button right button etc
+
+#ifdef _DEBUG
+	switch( nCode ) {
+		case HC_ACTION:
+			gameLocal.Printf( "\nHC_ACTION in CMouseHookWindows::MouseProc" );
+			break;
+		case HC_GETNEXT:
+			gameLocal.Printf( "\nHC_GETNEXT in CMouseHookWindows::MouseProc" );
+			break;
+		case HC_SKIP:
+			gameLocal.Printf( "\nHC_SKIP in CMouseHookWindows::MouseProc" );
+			break;
+		case HC_NOREMOVE:
+			gameLocal.Printf( "\nHC_NOREMOVE in CMouseHookWindows::MouseProc" );
+			break;
+		case HC_SYSMODALON:
+			gameLocal.Printf( "\nHC_SYSMODALON in CMouseHookWindows::MouseProc" );
+			break;
+		case HC_SYSMODALOFF:
+			gameLocal.Printf( "\nHC_SYSMODALOFF in CMouseHookWindows::MouseProc" );
 			break;
 		default:
+			gameLocal.Printf( "\nUnknown action in CMouseHookWindows::MouseProc!" );
 			break;
-		}
-*/
+	};
+#endif
+
+	assert( NULL != m_parent );
+	if( nCode == HC_ACTION )
+	{
 		switch( wParam )
 		{
-		case TDM_LBUTTONDOWN:
-			m_Mouse_LBPressed = true;
+		case WM_LBUTTONDOWN:
+			m_parent->SetLeftStatus( true );
 			break;
-		case TDM_LBUTTONUP:
-			m_Mouse_LBPressed = false;
+		case WM_LBUTTONUP:
+			m_parent->SetLeftStatus( false );
 			break;
-		case TDM_RBUTTONDOWN:
-			m_Mouse_RBPressed = true;
+		case WM_RBUTTONDOWN:
+			m_parent->SetRightStatus( true );
 			break;
-		case TDM_RBUTTONUP:
-			m_Mouse_RBPressed = false;
+		case WM_RBUTTONUP:
+			m_parent->SetRightStatus( false );
 			break;			
-		case TDM_MBUTTONDOWN:
-			m_Mouse_MBPressed = true;
+		case WM_MBUTTONDOWN:
+			m_parent->SetMiddleStatus( true );
 			break;
-		case TDM_MBUTTONUP:
-			m_Mouse_MBPressed = false;
+		case WM_MBUTTONUP:
+			m_parent->SetMiddleStatus( false );
 			break;
 		default:
 			break;
 		}
 	}
 	// Be polite! Always call next hook proc in chain
-	return CallNextHookEx( m_MouseHook, nCode, wParam, lParam);
+	return CallNextHookEx( NULL, nCode, wParam, lParam);
 }
 
 CMouseHookWindows::CMouseHookWindows( CMouseHook* pParent )
 :CHookBase(NULL),m_parent(pParent), m_MouseHook(NULL)
 {
-	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
-	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
-	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId() );
+	g_WindowsHook = this;
+	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId());
+	//m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId() );
+	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, GetModuleHandle(NULL), 0);
 	m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, GetModuleHandle(NULL), 0 );
-	if( NULL == m_MouseHook )
-	{
-		exit(9);
-	}
+	assert( NULL != m_MouseHook );
 }
 
 CMouseHookWindows::~CMouseHookWindows(void)
 {
+	assert( NULL != m_MouseHook );
 	if( NULL !=	m_MouseHook )
 	{
 		UnhookWindowsHookEx( m_MouseHook );

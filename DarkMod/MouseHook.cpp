@@ -57,10 +57,13 @@ CMouseHook* CMouseHook::getInstance()
 }
 
 CMouseHook::CMouseHook(void)
-: m_hook(NULL)
+: m_hook(NULL),
+  m_Mouse_LBPressed(false),
+  m_Mouse_RBPressed(false),
+  m_Mouse_MBPressed(false)
 {
 #ifdef _WINDOWS_
-	m_hook = new CMouseHookWindows(this);
+	m_hook = CMouseHookWindows::getInstance(this);
 #endif
 }
 
@@ -68,28 +71,33 @@ CMouseHook::~CMouseHook(void)
 {
 	delete m_hook;
 }
-/*
-const MouseData_t* CMouseHook::GetPreviousMessage() const
+
+bool CMouseHook::GetLeftStatus() const
 {
-	return &m_hook->m_MouseDataPrevious;
+	return m_Mouse_LBPressed;
 }
 
-const MouseData_t* CMouseHook::GetCurrentMessage() const
+bool CMouseHook::GetRightStatus() const
 {
-	return &m_hook->m_MouseDataCurrent;
-}
-*/
-bool CMouseHook::LeftButtonPressed() const
-{
-	return m_hook->m_Mouse_LBPressed;
+	return m_Mouse_RBPressed;
 }
 
-bool CMouseHook::RightButtonPressed() const
+bool CMouseHook::GetMiddleStatus() const
 {
-	return m_hook->m_Mouse_RBPressed;
+	return m_Mouse_MBPressed;
 }
 
-bool CMouseHook::MiddleButtonPressed() const
+void CMouseHook::SetLeftStatus( bool Pressed )
 {
-	return m_hook->m_Mouse_MBPressed;
+	m_Mouse_LBPressed = Pressed;
+}
+
+void CMouseHook::SetRightStatus( bool Pressed )
+{
+	m_Mouse_RBPressed = Pressed;
+}
+
+void CMouseHook::SetMiddleStatus( bool Pressed )
+{
+	m_Mouse_MBPressed = Pressed;
 }
