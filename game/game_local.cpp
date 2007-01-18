@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.84  2007/01/18 22:28:20  thelvyn
+ * Keyboard hook now working.
+ *
  * Revision 1.83  2007/01/18 07:45:53  thelvyn
  * Modifications as requested to MouseHook code handler and enums
  * Decoupling from gamelocal.h
@@ -301,6 +304,15 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "../darkmod/MouseHook.h" // Added By Rich for mouse support encapsulation
 
+#ifndef WH_MOUSE_LL
+#define _WIN32_WINNT_SAVE _WIN32_WINNT
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x501
+#include <winuser.h>
+#undef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_SAVE
+#endif
+
 CGlobal g_Global;
 TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
@@ -430,17 +442,44 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
-#ifdef _WINDOWS_
+#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	KeyCode_t kc;
 	int i;
 
 	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Keyboard Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
+#ifdef _DEBUG
+	switch( nCode ) {
+		case HC_ACTION:
+			gameLocal.Printf( "\nHC_ACTION in TDMKeyboardHook" );
+			break;
+		case HC_GETNEXT:
+			gameLocal.Printf( "\nHC_GETNEXT in TDMKeyboardHook" );
+			break;
+		case HC_SKIP:
+			gameLocal.Printf( "\nHC_SKIP in TDMKeyboardHook" );
+			break;
+		case HC_NOREMOVE:
+			gameLocal.Printf( "\nHC_NOREMOVE in TDMKeyboardHook" );
+			break;
+		case HC_SYSMODALON:
+			gameLocal.Printf( "\nHC_SYSMODALON in TDMKeyboardHook" );
+			break;
+		case HC_SYSMODALOFF:
+			gameLocal.Printf( "\nHC_SYSMODALOFF in TDMKeyboardHook" );
+			break;
+		default:
+			gameLocal.Printf( "\nUnknown action in TDMKeyboardHook!" );
+			break;
+	};
+#endif // #ifdef _DEBUG
 
 //	if(nCode >= 0) // 0 seems to be junk
-	if(nCode > 0)
+	//if(nCode > 0)
+	if( nCode == HC_ACTION )
 	{
+		
 		gameLocal.m_KeyPressCount++;
 
 		kc.VirtualKeyCode = (int) wParam;
@@ -491,8 +530,6 @@ LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 
 	return CallNextHookEx(gameLocal.m_KeyboardHook, nCode, wParam, lParam);
 }
-#endif
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 
 /*
 ===========
@@ -501,10 +538,8 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
-	m_MouseHookHandler = CMouseHook::getInstance();//singleton
-#ifdef _WINDOWS_
+	m_MouseHookHandler = CMouseHook::getInstance();
 	m_KeyboardHook			= NULL;
-#endif
 #pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 	Clear();
 }
@@ -517,13 +552,12 @@ idGameLocal::~idGameLocal
 idGameLocal::~idGameLocal() 
 {
 	delete m_MouseHookHandler;
-#ifdef _WINDOWS_
+	assert( NULL != m_KeyboardHook );
 	if( NULL != m_KeyboardHook )
 	{
 		UnhookWindowsHookEx( m_KeyboardHook );
 
 	}
-#endif
 #pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 }
 
@@ -632,19 +666,16 @@ void idGameLocal::Clear( void )
 
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
-
-#ifdef _WINDOWS_
+/*
 	if( NULL != m_KeyboardHook )
 	{
 		UnhookWindowsHookEx( m_KeyboardHook );
 		m_KeyboardHook = NULL;
 	}
-#endif
-#pragma Message( "Keyboard Hook. Linux and mac ports need to be added here." )
-
+*/
+	#pragma Message( "Keyboard Hook. Linux and mac ports need to be added here." )
 	//	ResetSlowTimeVars();
 
-#ifdef _WINDOWS_
 	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
 
 	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
@@ -653,7 +684,6 @@ void idGameLocal::Clear( void )
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
 	m_saPipeSecurity.bInheritHandle = FALSE;
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-#endif
 
 	for(i = 0; i < IR_COUNT; i++)
 	{
@@ -681,13 +711,13 @@ void idGameLocal::Init( void ) {
 
 	// Initialize the image library, so we can use it later on.
 	ilInit();
-#ifdef _WINDOWS_
-//	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
-	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
+	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, GetModuleHandle(NULL), 0);
+	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
+	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
+	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
+	assert( NULL != m_KeyboardHook );
 	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook: %08lX\r", m_KeyboardHook);
-#else
-#endif
-	#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
+#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 
 	// initialize idLib
 	idLib::Init();
@@ -5198,7 +5228,6 @@ Quit:
 
 HANDLE idGameLocal::CreateRenderPipe(int timeout)
 {
-#ifdef _WINDOWS_
 	return CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
 		PIPE_ACCESS_DUPLEX,				// read/write access
 		PIPE_TYPE_MESSAGE |				// message type pipe
@@ -5209,7 +5238,6 @@ HANDLE idGameLocal::CreateRenderPipe(int timeout)
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// input buffer size
 		timeout,						// client time-out
 		&m_saPipeSecurity);				// no security attribute
-#endif
 }
 
 void idGameLocal::CloseRenderPipe(HANDLE &hPipe)
