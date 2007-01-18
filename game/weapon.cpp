@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2007/01/18 18:35:47  thelvyn
+ * Fixed Bool complaint quite simple, waste of time but it annoys me with spurious messages
+ *
  * Revision 1.15  2007/01/03 00:28:03  crispy
  * New script event rangedThreatTo. Added idWeapon::IsRanged.
  *
@@ -2437,7 +2440,7 @@ idWeapon::IsRanged
 bool idWeapon::IsRanged() {
 	// If our projectile dictionary has entries, then we're probably a ranged weapon;
 	// otherwise we're definitely not.
-	return (bool)(projectileDict.GetNumKeyVals());
+	return (projectileDict.GetNumKeyVals() > 0 );
 }
 
 /***********************************************************************
