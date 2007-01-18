@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.83  2007/01/18 07:45:53  thelvyn
+ * Modifications as requested to MouseHook code handler and enums
+ * Decoupling from gamelocal.h
+ * Separated OS specifics to separate files.
+ *
  * Revision 1.82  2007/01/14 17:15:31  gildoran
  * Fixed sys.waitForRender($light)
  *
@@ -294,6 +299,8 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "il/il.h"
 #include "../darkmod/randomizer/randomc.h"
 
+#include "../darkmod/MouseHook.h" // Added By Rich for mouse support encapsulation
+
 CGlobal g_Global;
 TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
@@ -423,92 +430,6 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
-/*
-===========
-MouseProc - Windows version of Mouse Hook, call class version to do the work.
-============
-*/
-#ifdef _WINDOWS_
-LRESULT CALLBACK TDM_MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
-{
-	return gameLocal.MouseProc( nCode, wParam, lParam );
-}
-#endif
-#pragma Message( "Mouse hook callback. Linux and mac ports need to be added here." )
-/*
-===========
-idGameLocal::MouseProc
-============
-*/
-#ifdef _WINDOWS_
-/*
-*	nCode possible values
-*		HC_ACTION           0
-*		HC_GETNEXT          1
-*		HC_SKIP             2
-*		HC_NOREMOVE         3
-*		HC_SYSMODALON       4
-*		HC_SYSMODALOFF      5
-*	I have never recieved anything except HC_ACTION and HC_NOREMOVE(At least when logging)
-*	If you also accept the NOREMOVE one you will end up with duplicate results AFAIK
-*
-*	wParam Specifies the identifier of the mouse message.
-*	lParam contains MOUSEHOOKSTRUCT pointer
-*/
-LRESULT idGameLocal::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
-{
-	// needs to be changed maybe ?
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Mouse Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
-	
-	if( nCode == HC_ACTION )
-	{
-		// Always save message or only ones we care about ?
-		// only ones we care about for the moment
-		switch( wParam )
-		{
-		case TDM_LBUTTONDOWN:
-		case TDM_LBUTTONUP:
-		case TDM_RBUTTONDOWN:
-		case TDM_RBUTTONUP:
-		case TDM_MBUTTONDOWN:
-		case TDM_MBUTTONUP:
-			MouseDataPrevious = MouseDataCurrent; // previous processed message
-			MouseDataCurrent = (MOUSEHOOKSTRUCT*)lParam;// current
-			MouseDataCurrent.Action = wParam;// left button right button etc
-			break;
-		default:
-			break;
-		}
-		switch( wParam )
-		{
-		case TDM_LBUTTONDOWN:
-			m_Mouse_LBPressed = true;
-			break;
-		case TDM_LBUTTONUP:
-			m_Mouse_LBPressed = false;
-			break;
-		case TDM_RBUTTONDOWN:
-			m_Mouse_RBPressed = true;
-			break;
-		case TDM_RBUTTONUP:
-			m_Mouse_RBPressed = false;
-			break;
-		case TDM_MBUTTONDOWN:
-			m_Mouse_MBPressed = true;
-			break;
-		case TDM_MBUTTONUP:
-			m_Mouse_MBPressed = false;
-			break;
-		default:
-			break;
-		}
-	}
-	// Be polite! Always call next hook proc in chain
-	return CallNextHookEx( m_MouseHook, nCode, wParam, lParam);
-}
-#endif
-#pragma Message( "Mouse hook. Linux and mac ports need to be added here." )
-
 #ifdef _WINDOWS_
 LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -580,11 +501,11 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
+	m_MouseHookHandler = CMouseHook::getInstance();//singleton
 #ifdef _WINDOWS_
 	m_KeyboardHook			= NULL;
-	m_MouseHook             = NULL;
 #endif
-#pragma Message( "Keyboard and Mouse hooks. Linux and mac ports need to be added here." )
+#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 	Clear();
 }
 
@@ -595,18 +516,15 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
+	delete m_MouseHookHandler;
 #ifdef _WINDOWS_
 	if( NULL != m_KeyboardHook )
 	{
 		UnhookWindowsHookEx( m_KeyboardHook );
 
 	}
-	if( NULL !=	m_MouseHook )
-	{
-		UnhookWindowsHookEx( m_MouseHook );
-	}
 #endif
-#pragma Message( "Keyboard and Mouse hooks. Linux and mac ports need to be added here." )
+#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 }
 
 /*
@@ -715,23 +633,14 @@ void idGameLocal::Clear( void )
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
 
-	m_Mouse_LBPressed = false;
-	m_Mouse_RBPressed = false;
-	m_Mouse_MBPressed = false;
 #ifdef _WINDOWS_
 	if( NULL != m_KeyboardHook )
 	{
 		UnhookWindowsHookEx( m_KeyboardHook );
 		m_KeyboardHook = NULL;
 	}
-	if( NULL !=	m_MouseHook )
-	{
-		UnhookWindowsHookEx( m_MouseHook );
-		m_MouseHook = NULL;
-	}
-#else
 #endif
-#pragma Message( "Keyboard and Mouse hooks. Linux and mac ports need to be added here." )
+#pragma Message( "Keyboard Hook. Linux and mac ports need to be added here." )
 
 	//	ResetSlowTimeVars();
 
@@ -779,14 +688,6 @@ void idGameLocal::Init( void ) {
 #else
 #endif
 	#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
-
-#ifdef _WINDOWS_
-	m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId() );
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Mouse Hook: %08lX\r", m_MouseHook );
-#else
-#endif
-	#pragma Message( "Mouse hook. Linux and mac ports need to be added here." )
-	
 
 	// initialize idLib
 	idLib::Init();

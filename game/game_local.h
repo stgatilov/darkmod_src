@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2007/01/18 07:45:53  thelvyn
+ * Modifications as requested to MouseHook code handler and enums
+ * Decoupling from gamelocal.h
+ * Separated OS specifics to separate files.
+ *
  * Revision 1.40  2007/01/11 11:44:03  thelvyn
  * Modifications as requested to MouseHook code handler and enums
  *
@@ -271,6 +276,8 @@ class idThread;
 class idEditEntities;
 class idLocationEntity;
 
+class CMouseHook; // Added by Rich
+
 #define	MAX_CLIENTS				32
 #define	GENTITYNUM_BITS			12
 #define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
@@ -298,6 +305,8 @@ class idLocationEntity;
 
 #include "Pvs.h"
 #include "MultiplayerGame.h"
+
+#include "../darkmod/MouseData.h"
 
 //============================================================================
 
@@ -421,66 +430,6 @@ typedef struct KeyCode_s
 	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
 	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
 } KeyCode_t;
-
-#pragma Message ("Mouse Defines. Linux and mac ports need to be added here.")
-typedef enum {
-	TDM_NONE = 0, // invalid
-	// will have to define these for other OS as well
-#ifdef _WINDOWS_
-	TDM_LBUTTONDOWN   = WM_LBUTTONDOWN,
-	TDM_LBUTTONUP     = WM_LBUTTONUP,
-	TDM_RBUTTONDOWN   = WM_RBUTTONDOWN,
-	TDM_RBUTTONUP     = WM_RBUTTONUP,
-	TDM_MBUTTONDOWN   = WM_MBUTTONDOWN,
-	TDM_MBUTTONUP     = WM_MBUTTONUP,
-#endif
-} MouseDefs_t;
-
-/*
-*	Mouse input data
-*/
-typedef struct MouseData_s
-{
-	unsigned int Action;
-	long X;
-	long Y;
-#ifdef _WINDOWS_
-	HWND hwnd;
-    UINT wHitTestCode;
-#endif
-
-	MouseData_s( MouseData_s& Clone )
-	{
-		*this = Clone;
-	}
-	MouseData_s():Action(TDM_NONE),X(0),Y(0)
-	{
-#ifdef _WINDOWS_
-		hwnd = NULL;
-		wHitTestCode = 0;
-#endif
-	}
-	MouseData_s& operator=( MouseData_s& Clone )
-	{
-		X = Clone.X;
-		Y = Clone.Y;
-		Action = Clone.Action;
-#ifdef _WINDOWS_
-		hwnd = Clone.hwnd;
-		wHitTestCode = Clone.wHitTestCode;
-#endif
-		return *this;
-	}
-#ifdef _WINDOWS_	
-	MouseData_s& operator=( const MOUSEHOOKSTRUCT* mhs ){
-		X = mhs->pt.x;
-		Y = mhs->pt.y;
-		hwnd = mhs->hwnd;
-		wHitTestCode = mhs->wHitTestCode;
-		return *this;
-	}
-#endif
-} MouseData_t;
 
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
@@ -791,15 +740,10 @@ public:
 
 #ifdef _WINDOWS_
 	HHOOK					m_KeyboardHook;
-	HHOOK                   m_MouseHook;
 #endif
-	#pragma Message ("Keyboard and Mouse hooks. Linux and mac ports need to be added here.")
+	#pragma Message ("Keyboard Hook. Linux and mac ports need to be added here.")
 
-	MouseData_t MouseDataPrevious; // everytime we get a new mouse message save old one here - Extraneous ?
-	MouseData_t MouseDataCurrent;  // most recent mouse message
-	bool m_Mouse_LBPressed; // true if currently pressed false otherwise
-	bool m_Mouse_RBPressed; // default value is false on init
-	bool m_Mouse_MBPressed;
+	CMouseHook*             m_MouseHookHandler;
 
 	KeyCode_t				m_KeyPress;				// Current keypress
 	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSE
