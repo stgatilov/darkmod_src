@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2007/01/19 10:08:41  thelvyn
+ * Removed old mouse handling code.
+ * Registered some fonts for gui screen display of text.
+ * Added function for same
+ *
  * Revision 1.9  2006/09/21 22:48:19  gildoran
  * Allow portalskies to rotate. (should be helpful if any mappers want to create an airship)
  *
@@ -41,6 +46,7 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
+#include "../darkmod/MouseHook.h"
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
@@ -562,6 +568,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 			}
 		}
 		player->DrawHUD( hud );
+
+#ifdef MOUSETEST
+		idStr strText;
+		sprintf( strText, "Mouse Left: %s Pressed    Middle: %s Pressed    Right: %s Pressed",
+			gameLocal.m_Mouse->GetLeftStatus()? "Is":"Not" ,
+			gameLocal.m_Mouse->GetMiddleStatus()? "Is":"Not",
+			gameLocal.m_Mouse->GetRightStatus()? "Is":"Not"
+			);
+		PrintMessage( 100, 60, strText, idVec4( 1, 1, 1, 1 ), font_an );
+		//PrintMessage( 100, 120, strText, idVec4( 1, 1, 1, 1 ), font_bank );
+		//PrintMessage( 100, 140, strText, idVec4( 1, 1, 1, 1 ), font_micro );
+#endif
 
 		// armor impulse feedback
 		float	armorPulse = ( gameLocal.time - player->lastArmorPulse ) / 250.0f;

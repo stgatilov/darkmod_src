@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/19 10:09:24  thelvyn
+ * Removed old mouse handling code.
+ * Registered some fonts for gui screen display of text.
+ * Added function for same
+ *
  * Revision 1.14  2007/01/19 02:30:55  thelvyn
  * Separated keyboard hook, same as mouse hook
  * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
@@ -311,11 +316,7 @@ void Cmd_KeyCapture_f( const idCmdArgs &args )
 		gameLocal.Printf( "usage: tdm_keycapture <action index>\n" );	
 	} else {
 		action = (ImpulseFunction_t) atoi( args.Argv(1) );
-#ifndef NEWKEYHANDLERCLASS
-		gameLocal.KeyCaptureStart( action );
-#else
 		gameLocal.m_Keyboard->KeyCaptureStart( action );
-#endif // #ifndef NEWKEYHANDLERCLASS
 	}
 	return;
 }

@@ -1,6 +1,10 @@
 #pragma hdrstop
 #include "MouseHook.h"
 #include "MouseHookWindows.h"
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+
+#include <winuser.h>
 
 // global but NOT. anonymous namespace is only available to this file by design
 // not meant to be used by anyone else
@@ -46,33 +50,6 @@ CMouseHookWindows::MouseProc
 
 LRESULT CMouseHookWindows::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-
-#ifdef _DEBUG
-	switch( nCode ) {
-		case HC_ACTION:
-			gameLocal.Printf( "\nHC_ACTION in CMouseHookWindows::MouseProc" );
-			break;
-		case HC_GETNEXT:
-			gameLocal.Printf( "\nHC_GETNEXT in CMouseHookWindows::MouseProc" );
-			break;
-		case HC_SKIP:
-			gameLocal.Printf( "\nHC_SKIP in CMouseHookWindows::MouseProc" );
-			break;
-		case HC_NOREMOVE:
-			gameLocal.Printf( "\nHC_NOREMOVE in CMouseHookWindows::MouseProc" );
-			break;
-		case HC_SYSMODALON:
-			gameLocal.Printf( "\nHC_SYSMODALON in CMouseHookWindows::MouseProc" );
-			break;
-		case HC_SYSMODALOFF:
-			gameLocal.Printf( "\nHC_SYSMODALOFF in CMouseHookWindows::MouseProc" );
-			break;
-		default:
-			gameLocal.Printf( "\nUnknown action in CMouseHookWindows::MouseProc!" );
-			break;
-	};
-#endif
-
 	assert( NULL != m_parent );
 	if( nCode == HC_ACTION )
 	{
@@ -122,9 +99,6 @@ CMouseHookWindows::CMouseHookWindows( CMouseHook* pParent )
 :CMouseHookBase(NULL),m_parent(pParent), m_MouseHook(NULL)
 {
 	g_WindowsHook = this;
-	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId());
-	//m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId() );
-	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, GetModuleHandle(NULL), 0);
 	m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, GetModuleHandle(NULL), 0 );
 	assert( NULL != m_MouseHook );
 }

@@ -48,7 +48,6 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 {
 	assert( NULL != m_parent );
 	
-//	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Keyboard Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
 	if( nCode == HC_ACTION )
 	{
 		//KeyCode_t kc;
@@ -146,10 +145,7 @@ m_parent( pParent ),
 m_KeyboardHook( NULL )
 {
 	g_WindowsHook = this;
-	//m_KeyboardHook = SetWindowsHookEx( WH_KEYBOARD, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId());
-	//m_KeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId() );
 	m_KeyboardHook = SetWindowsHookEx( WH_KEYBOARD, TDM_KeyboardProc, GetModuleHandle(NULL), 0);
-	//m_KeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL, TDM_MouseProc, GetModuleHandle(NULL), 0 );
 	assert( NULL != m_KeyboardHook );
 }
 

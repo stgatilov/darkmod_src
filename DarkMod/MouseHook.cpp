@@ -1,5 +1,5 @@
 #pragma hdrstop
-#include "MouseHook.h"
+#include "../darkmod/MouseHook.h"
 
 #ifdef _WINDOWS_
 #include "mousehookwindows.h"

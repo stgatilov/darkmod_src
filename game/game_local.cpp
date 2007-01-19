@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.87  2007/01/19 10:08:41  thelvyn
+ * Removed old mouse handling code.
+ * Registered some fonts for gui screen display of text.
+ * Added function for same
+ *
  * Revision 1.86  2007/01/19 09:05:21  thelvyn
  * register fonts in init
  *
@@ -463,97 +468,6 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
-#ifndef NEWKEYHANDLERCLASS
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
-LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
-{
-	KeyCode_t kc;
-	int i;
-
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Keyboard Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
-#ifdef _DEBUG
-	switch( nCode ) {
-		case HC_ACTION:
-			gameLocal.Printf( "\nHC_ACTION in TDMKeyboardHook" );
-			break;
-		case HC_GETNEXT:
-			gameLocal.Printf( "\nHC_GETNEXT in TDMKeyboardHook" );
-			break;
-		case HC_SKIP:
-			gameLocal.Printf( "\nHC_SKIP in TDMKeyboardHook" );
-			break;
-		case HC_NOREMOVE:
-			gameLocal.Printf( "\nHC_NOREMOVE in TDMKeyboardHook" );
-			break;
-		case HC_SYSMODALON:
-			gameLocal.Printf( "\nHC_SYSMODALON in TDMKeyboardHook" );
-			break;
-		case HC_SYSMODALOFF:
-			gameLocal.Printf( "\nHC_SYSMODALOFF in TDMKeyboardHook" );
-			break;
-		default:
-			gameLocal.Printf( "\nUnknown action in TDMKeyboardHook!" );
-			break;
-	};
-#endif // #ifdef _DEBUG
-
-//	if(nCode >= 0) // 0 seems to be junk
-	//if(nCode > 0)
-	if( nCode == HC_ACTION )
-	{
-		
-		gameLocal.m_KeyPressCount++;
-
-		kc.VirtualKeyCode = (int) wParam;
-		kc.RepeatCount =		(lParam & 0x0000FFFF);
-		kc.ScanCode =			(lParam & 0x00FF0000) >> 16;
-		kc.Extended =			(lParam & 0x01000000) >> 24;
-		kc.Reserved =			(lParam & 0x1E000000) >> 25;
-		kc.Context =			(lParam & 0x20000000) >> 29;
-		kc.PreviousKeyState =	(lParam & 0x40000000) >> 30;
-		kc.TransitionState =	(lParam & 0x80000000) >> 31;
-		kc.KeyPressCount =		gameLocal.m_KeyPressCount;
-
-		memcpy(&gameLocal.m_KeyPress, &kc, sizeof(KeyCode_t));
-
-		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
-			"VirtualKeyCode: %d   RepeatCount: %u   ScanCode: %02X   Extended: %u   Reserved; %02X   Context: %u   PreviousKeyState: %u   TransitionState: %u KeyPressCount: %d\r",
-			kc.VirtualKeyCode,
-			kc.RepeatCount,
-			kc.ScanCode,
-			kc.Extended,
-			kc.Reserved,
-			kc.Context,
-			kc.PreviousKeyState,
-			kc.TransitionState,
-			kc.KeyPressCount
-			);
-
-		// Only update impulses when the player has already spawned
-		if( gameLocal.GetLocalPlayer() )
-		{
-			for(i = 0; i < IR_COUNT; i++)
-			{
-				// If the keypress is associated with an impulse then we update it.
-				if( gameLocal.m_KeyData[i].KeyState != KS_FREE
-					&& gameLocal.m_KeyData[i].VirtualKeyCode == kc.VirtualKeyCode )
-				{
-					memcpy(&gameLocal.m_KeyData[i], &kc, sizeof(KeyCode_t));
-					gameLocal.m_KeyData[i].KeyState = KS_UPDATED;
-					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
-				}
-			}
-		}
-
-		// Run key capture for keybinding if it is active
-		if( gameLocal.m_bKeyCapActive )
-			gameLocal.KeyCapture();
-	}
-
-	return CallNextHookEx(gameLocal.m_KeyboardHook, nCode, wParam, lParam);
-}
-#endif // #ifndef NEWKEYHANDLERCLASS
-
 /*
 ===========
 idGameLocal::idGameLocal
@@ -563,13 +477,8 @@ idGameLocal::idGameLocal()
 {
 	m_Mouse = CMouseHook::getInstance();
 	assert( NULL != m_Mouse );
-#ifndef NEWKEYHANDLERCLASS
-	m_KeyboardHook			= NULL;
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
-#else
 	m_Keyboard = CKeyboardHook::getInstance();
 	assert( NULL != m_Keyboard );
-#endif // #ifndef NEWKEYHANDLERCLASS
 	Clear();
 }
 
@@ -580,18 +489,8 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
-#ifndef NEWKEYHANDLERCLASS
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
-	assert( NULL != m_KeyboardHook );
-	if( NULL != m_KeyboardHook )
-	{
-		UnhookWindowsHookEx( m_KeyboardHook );
-
-	}
-#else
 	assert( NULL != m_Keyboard );
 	delete m_Keyboard;
-#endif // #ifndef NEWKEYHANDLERCLASS
 	assert( NULL != m_Mouse );
 	delete m_Mouse;
 }
@@ -615,13 +514,6 @@ void idGameLocal::Clear( void )
 	for(i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
 		m_LightgemShotValue[i] = 0.0;
 	m_DoLightgem = true;
-
-#ifndef NEWKEYHANDLERCLASS
-	m_KeyPressCount = 0;
-	m_bKeyCapActive = false;
-	m_KeyCapImpulse = IR_COUNT;
-	m_KeyCapStartCount = 0;
-#endif // #ifndef NEWKEYHANDLERCLASS
 
 	serverInfo.Clear();
 	numClients = 0;
@@ -713,13 +605,6 @@ void idGameLocal::Clear( void )
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
 	m_saPipeSecurity.bInheritHandle = FALSE;
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-#ifndef NEWKEYHANDLERCLASS
-	for(i = 0; i < IR_COUNT; i++)
-	{
-		m_KeyData[i].KeyState = KS_FREE;
-		m_KeyData[i].Impulse = -1;
-	}
-#endif // #ifndef NEWKEYHANDLERCLASS
 }
 
 /*
@@ -741,16 +626,6 @@ void idGameLocal::Init( void ) {
 
 	// Initialize the image library, so we can use it later on.
 	ilInit();
-#ifndef NEWKEYHANDLERCLASS
-	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, GetModuleHandle(NULL), 0);
-	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
-	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
-	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
-	assert( NULL != m_KeyboardHook );
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook: %08lX\r", m_KeyboardHook);
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
-#endif // #ifndef NEWKEYHANDLERCLASS
-	
 
 	// initialize idLib
 	idLib::Init();
@@ -5600,47 +5475,6 @@ void idGameLocal::SpawnLightgemEntity(void)
 	}
 }
 
-#ifndef NEWKEYHANDLERCLASS
-
-bool idGameLocal::ImpulseInit(ImpulseFunction_t Function, int Impulse)
-{
-	bool rc;
-
-	if(m_KeyData[Function].KeyState == KS_FREE)
-	{
-		memcpy(&m_KeyData[Function], &m_KeyPress, sizeof(KeyCode_t));
-		m_KeyData[Function].Impulse = Impulse;
-		m_KeyData[Function].KeyState = KS_UPDATED;
-		rc = false;
-	}
-	else
-		rc = true;
-
-	return rc;
-}
-
-bool idGameLocal::ImpulseIsUpdated(ImpulseFunction_t Function)
-{
-	if(m_KeyData[Function].KeyState != KS_UPDATED)
-		return false;
-	else
-		return true;
-}
-
-
-void idGameLocal::ImpulseProcessed(ImpulseFunction_t Function)
-{
-	m_KeyData[Function].KeyState = KS_PROCESSED;
-}
-
-void idGameLocal::ImpulseFree(ImpulseFunction_t Function)
-{
-	m_KeyData[Function].KeyState = KS_FREE;
-	m_KeyData[Function].Impulse = -1;
-}
-
-#endif // #ifndef NEWKEYHANDLERCLASS
-
 int idGameLocal::CheckStimResponse(idList<idEntity *> &l, idEntity *e)
 {
 
@@ -5930,45 +5764,3 @@ void idGameLocal::PauseGame( bool bPauseState )
 	}
 }
 
-#ifndef NEWKEYHANDLERCLASS
-bool idGameLocal::KeyCapture( void )
-{
-	bool bReturnVal( false );
-
-	// make sure key press happened since we started listening
-	if( m_KeyPress.KeyPressCount < m_KeyCapStartCount )
-		goto Quit;
-
-	// NOTE: We don't really use the "impulse" argument of ImpulseInit anymore.
-	ImpulseInit(m_KeyCapImpulse, -1);
-	m_bKeyCapActive = false;
-	bReturnVal = true;
-	
-	DM_LOG(LC_SYSTEM,LT_DEBUG)LOGSTRING("KeyCap: Grabbed virtual keycode %d for impulse function %d \r", m_KeyData[ m_KeyCapImpulse ].VirtualKeyCode, m_KeyCapImpulse );
-	// Temporary print to console. TODO: Remove this
-	gameLocal.Printf( "KeyCap: Grabbed virtual keycode %d for impulse function %d \n", m_KeyData[ m_KeyCapImpulse ].VirtualKeyCode, m_KeyCapImpulse );
-
-Quit:
-	return bReturnVal;
-}
-
-void idGameLocal::KeyCaptureStart( ImpulseFunction_t action )
-{
-	if( action >= IR_COUNT || action < 0 )
-	{
-		DM_LOG(LC_SYSTEM,LT_WARNING)LOGSTRING("WARNING: KeyCaptureStart called with invalid TDM impulse index: %d \r", action);
-		goto Quit;
-	}
-	// Clear the old data
-	ImpulseFree( action );
-	m_bKeyCapActive = true;
-	// When using the console command for testing, we need to add a few more keypresses
-	// so that it doesn't pick up the still held down return key
-	// TODO: Remove this for the GUI-called version
-	m_KeyCapStartCount = m_KeyPressCount + 2;
-	m_KeyCapImpulse = action;
-	
-Quit:
-	return;
-}
-#endif // #ifndef NEWKEYHANDLERCLASS
