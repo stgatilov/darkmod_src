@@ -5,7 +5,7 @@
 #include "../idlib/precompiled.h"
 #include "MouseHook.h"
 
-class CMouseHookWindows : public CHookBase
+class CMouseHookWindows : public CMouseHookBase
 {
 public:
 	virtual ~CMouseHookWindows(void);

@@ -1,46 +1,32 @@
 #pragma hdrstop
 #include "MouseHook.h"
 #include "MouseHookWindows.h"
-#include "../darkmod/MouseData.h"
 
 // global but NOT. anonymous namespace is only available to this file by design
 // not meant to be used by anyone else
 namespace
 {
 	CMouseHookWindows* g_WindowsHook = NULL;
-}
-bool CMouseHookWindows::m_instanceFlag = false;
-CMouseHookWindows* CMouseHookWindows::m_single = NULL;
-
-CMouseHookWindows* CMouseHookWindows::getInstance( CMouseHook* pParent )
-{
-    if(! m_instanceFlag)
-    {
-        m_single = new CMouseHookWindows( pParent );
-        m_instanceFlag = true;
-    }
-	return m_single;
-}
-
-/*
-===========
-MouseProc - Windows version of Mouse Hook, call class version to do the work.
-============
-*/
-
-LRESULT CALLBACK TDM_MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
-{
-	LRESULT rc = 0;
-	if( NULL != g_WindowsHook )
+	
+	/*
+	===========
+	MouseProc - Windows version of Mouse Hook, call class version to do the work.
+	============
+	*/
+	LRESULT CALLBACK TDM_MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 	{
-		rc = g_WindowsHook->MouseProc( nCode, wParam, lParam );
+		LRESULT rc = 0;
+		if( NULL != g_WindowsHook )
+		{
+			rc = g_WindowsHook->MouseProc( nCode, wParam, lParam );
+		}
+		return rc;
 	}
-	return rc;
-}
+}// anonymous namespace - Only visible to this file
 
 /*
 ===========
-idGameLocal::MouseProc
+CMouseHookWindows::MouseProc
 ============
 */
 /*
@@ -118,8 +104,22 @@ LRESULT CMouseHookWindows::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 	return CallNextHookEx( NULL, nCode, wParam, lParam);
 }
 
+bool CMouseHookWindows::m_instanceFlag = false;
+CMouseHookWindows* CMouseHookWindows::m_single = NULL;
+
+CMouseHookWindows* CMouseHookWindows::getInstance( CMouseHook* pParent )
+{
+    if(! m_instanceFlag)
+    {
+        m_single = new CMouseHookWindows( pParent );
+        m_instanceFlag = true;
+    }
+	return m_single;
+}
+
+
 CMouseHookWindows::CMouseHookWindows( CMouseHook* pParent )
-:CHookBase(NULL),m_parent(pParent), m_MouseHook(NULL)
+:CMouseHookBase(NULL),m_parent(pParent), m_MouseHook(NULL)
 {
 	g_WindowsHook = this;
 	//m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, (HINSTANCE) NULL, GetCurrentThreadId());
@@ -131,9 +131,8 @@ CMouseHookWindows::CMouseHookWindows( CMouseHook* pParent )
 
 CMouseHookWindows::~CMouseHookWindows(void)
 {
-	assert( NULL != m_MouseHook );
-	if( NULL !=	m_MouseHook )
-	{
-		UnhookWindowsHookEx( m_MouseHook );
-	}
+	m_single = NULL;
+	m_instanceFlag = false;
+	g_WindowsHook = NULL;
+	UnhookWindowsHookEx( m_MouseHook );
 }

@@ -6,43 +6,6 @@
 #endif
 // We will add additional ones for other OS here later
 
-#ifdef MOUSE_TESTING
-
-const char* MouseDefs_Strings[] = {
-	"TDM_NONE", // invalid
-	"TDM_LBUTTONDOWN",
-	"TDM_LBUTTONUP",
-	"TDM_RBUTTONDOWN",
-	"TDM_RBUTTONUP",
-	"TDM_MBUTTONDOWN",
-	"TDM_MBUTTONUP",
-	NULL
-};
-
-const int MouseActions[] = {
-	TDM_NONE,
-	TDM_LBUTTONDOWN,
-	TDM_LBUTTONUP,
-	TDM_RBUTTONDOWN,
-	TDM_RBUTTONUP,
-	TDM_MBUTTONDOWN,
-	TDM_MBUTTONUP
-};
-
-const char* MouseGetActionString( const int ActionCode )
-{
-	for( int t = 0; NULL != MouseDefs_Strings[t];t++ )
-	{
-		if( ActionCode == MouseActions[t] )
-		{
-			return MouseDefs_Strings[t];
-		}
-	}
-	return MouseDefs_Strings[0];
-}
-
-#endif // #ifdef MOUSE_TESTING
-
 bool CMouseHook::m_instanceFlag = false;
 CMouseHook* CMouseHook::m_single = NULL;
 
