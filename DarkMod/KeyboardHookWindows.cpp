@@ -47,81 +47,73 @@ CKeyboardHookWindows::KeyboardProc
 LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
 	assert( NULL != m_parent );
-	KeyCode_t kc;
-	int i;
-
-	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Keyboard Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
-#ifdef _DEBUG
-	switch( nCode ) {
-		case HC_ACTION:
-			gameLocal.Printf( "\nHC_ACTION in TDMKeyboardHook" );
-			break;
-		case HC_GETNEXT:
-			gameLocal.Printf( "\nHC_GETNEXT in TDMKeyboardHook" );
-			break;
-		case HC_SKIP:
-			gameLocal.Printf( "\nHC_SKIP in TDMKeyboardHook" );
-			break;
-		case HC_NOREMOVE:
-			gameLocal.Printf( "\nHC_NOREMOVE in TDMKeyboardHook" );
-			break;
-		case HC_SYSMODALON:
-			gameLocal.Printf( "\nHC_SYSMODALON in TDMKeyboardHook" );
-			break;
-		case HC_SYSMODALOFF:
-			gameLocal.Printf( "\nHC_SYSMODALOFF in TDMKeyboardHook" );
-			break;
-		default:
-			gameLocal.Printf( "\nUnknown action in TDMKeyboardHook!" );
-			break;
-	};
-#endif // #ifdef _DEBUG
+	
+//	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Keyboard Hook - nCode: %u   wParam: %04X   lParam: %08lX TIME: %d\r", nCode, wParam, lParam, gameLocal.time);
 	if( nCode == HC_ACTION )
 	{
-		
-		m_parent->m_KeyPressCount++;
+		//KeyCode_t kc;
+		//KeyCode_t tc;
 
-		kc.VirtualKeyCode = (int) wParam;
-		kc.RepeatCount =		(lParam & 0x0000FFFF);
-		kc.ScanCode =			(lParam & 0x00FF0000) >> 16;
-
-		kc.Extended =			(lParam & 0x01000000) >> 24;// fix
-
-		kc.Reserved =			(lParam & 0x1E000000) >> 25;
-
-		kc.Context =			(lParam & 0x20000000) >> 29; // fix
-		kc.PreviousKeyState =	(lParam & 0x40000000) >> 30; // fix
-
-		kc.TransitionState =	(lParam & 0x80000000) >> 31; // fix
-
-
-		kc.KeyPressCount =		m_parent->m_KeyPressCount;
-
-		memcpy(&m_parent->m_KeyPress, &kc, sizeof(KeyCode_t));
+		m_parent->m_KeyPress.VirtualKeyCode = (int) wParam;
+		m_parent->m_KeyPress.RepeatCount =   (lParam & 0x0000FFFF);
+//		m_parent->m_KeyPress.RepeatCount =		( HIWORD(lParam) & KF_REPEAT ); // doesnt work right ?
+		m_parent->m_KeyPress.ScanCode =			(lParam & 0x00FF0000) >> 16;
+		//kc.Extended =			(lParam & 0x01000000) >> 24;// fix
+		m_parent->m_KeyPress.Extended =			(( HIWORD(lParam) & KF_EXTENDED ) == 1 );
+		m_parent->m_KeyPress.Reserved =			(lParam & 0x1E000000) >> 25;
+		//kc.Context =			(lParam & 0x20000000) >> 29; // fix
+		m_parent->m_KeyPress.Context =			(( HIWORD(lParam) & KF_ALTDOWN )==1);
+		m_parent->m_KeyPress.PreviousKeyState =	(((lParam & 0x40000000) >> 30)==1); // fix
+		//m_parent->m_KeyPress.PreviousKeyState =	(( HIWORD(lParam) & KF_REPEAT )==1);
+		m_parent->m_KeyPress.TransitionState = (((lParam & 0x80000000) >> 31)==1); // fix
+		//m_parent->m_KeyPress.TransitionState =	(( HIWORD(lParam) & KF_UP )==1);
+		//m_parent->m_KeyPressCount++;
+		m_parent->m_KeyPress.KeyPressCount =		m_parent->m_KeyPressCount++;
+		//memcpy(&m_parent->m_KeyPress, &kc, sizeof(KeyCode_t));
 
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
-			"VirtualKeyCode: %d   RepeatCount: %u   ScanCode: %02X   Extended: %u   Reserved; %02X   Context: %u   PreviousKeyState: %u   TransitionState: %u KeyPressCount: %d\r",
-			kc.VirtualKeyCode,
-			kc.RepeatCount,
-			kc.ScanCode,
-			kc.Extended,
-			kc.Reserved,
-			kc.Context,
-			kc.PreviousKeyState,
-			kc.TransitionState,
-			kc.KeyPressCount
+			"VirtualKeyCode: %d    ScanCode: %02X\r",
+			m_parent->m_KeyPress.VirtualKeyCode,
+			m_parent->m_KeyPress.ScanCode
 			);
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			"RepeatCount: %u    KeyPressCount: %d\r",
+			m_parent->m_KeyPress.RepeatCount,			
+			m_parent->m_KeyPress.KeyPressCount
+			);
+		
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			"Context(Alt): %s    Extended: %s\r",
+			m_parent->m_KeyPress.Context? "True" : "False",
+			m_parent->m_KeyPress.Extended ? "True":"False"
+			);
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			"PreviousKeyState: %s    TransitionState: %s \r",
+			m_parent->m_KeyPress.PreviousKeyState ? "Down" : "Up",
+			m_parent->m_KeyPress.TransitionState ? "Up":"Down"
+			);
+
+		TCHAR buffer[32];
+		if( GetKeyNameText( lParam, buffer, 32 ) ) 
+		{
+			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Key Name Text: \"%s\"\r", buffer );
+		}
+		else
+		{
+			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Key Name Text: Function Failed!\r" );
+		}
+
 
 		// Only update impulses when the player has already spawned
 		if( gameLocal.GetLocalPlayer() )
 		{
-			for(i = 0; i < IR_COUNT; i++)
+			for( int i = 0; i < IR_COUNT; i++)
 			{
 				// If the keypress is associated with an impulse then we update it.
 				if( m_parent->m_KeyData[i].KeyState != KS_FREE &&
-					m_parent->m_KeyData[i].VirtualKeyCode == kc.VirtualKeyCode )
+					m_parent->m_KeyData[i].VirtualKeyCode == m_parent->m_KeyPress.VirtualKeyCode )
 				{
-					memcpy(&m_parent->m_KeyData[i], &kc, sizeof(KeyCode_t));
+					memcpy(&m_parent->m_KeyData[i], &m_parent->m_KeyPress, sizeof(KeyCode_t));
 					m_parent->m_KeyData[i].KeyState = KS_UPDATED;
 					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
 				}
