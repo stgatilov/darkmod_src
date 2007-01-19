@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2007/01/19 20:57:51  thelvyn
+ * Moved impulse enum, keystate enum and keycode struct to keyhook.h
+ *
  * Revision 1.45  2007/01/19 10:08:41  thelvyn
  * Removed old mouse handling code.
  * Registered some fonts for gui screen display of text.
@@ -406,49 +409,6 @@ typedef struct {
 	idEntity	*ent;
 	int			dist;
 } spawnSpot_t;
-
-//===========Dark Mod Global Typedefs===========
-
-// Any key that is to be changed from an impulse to a button behaviour
-// has to be listed here. The id gives the index in the array which slot
-// is reserved for that function.
-typedef enum {
-	IR_FROB,
-	IR_INVENTORY_NEXT,
-	IR_INVENTORY_PREV,
-	IR_LEAN_FORWARD,
-	IR_LEAN_LEFT,
-	IR_LEAN_RIGHT,
-	IR_COUNT
-} ImpulseFunction_t;
-
-typedef enum {
-	KS_UPDATED,			// Keyinfo has been updated by the hook
-	KS_PROCESSED,		// Key has been processed by the gameengine
-	KS_FREE,			// Keyslot is currently free.
-	KS_COUNT
-} KeyState_t;
-
-/**
- * KeyCode is a structure that contains the information for a key which is related
- * to an IMPULSE.
- */
-typedef struct KeyCode_s
-{
-	KeyState_t	KeyState;		// protocoll state for the interface with the gameengine
-	int		Impulse;			// Impulsevalue this is associated with.
-	int		VirtualKeyCode;
-	int		RepeatCount;
-	int		ScanCode;			// The value depends on the OEM.
-	bool	Extended;			// Specifies whether the key is an extended key, such as a function key or
-								// a key on the numeric keypad. The value is 1 if the key is an extended key,
-								// otherwise, it is 0.
-	int		Reserved;
-	bool	Context;			// Specifies the context code. The value is 1 if the ALT key is down; otherwise, it is 0.
-	bool	PreviousKeyState;	// The value is 1 if the key is down before the message is sent or 0 if the key is up.
-	bool	TransitionState;	// The value is 0 if the key is being pressed and 1 if it is being released.
-	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
-} KeyCode_t;
 
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
