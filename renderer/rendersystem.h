@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2007/01/19 09:01:24  thelvyn
+ * font externs
+ * PrintMessage def
+ *
  * Revision 1.2  2005/11/11 22:42:32  sparhawk
  * SDK 1.3 Merge
  *
@@ -265,4 +269,9 @@ void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, id
 // used by the view shot taker
 void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName );
 
+extern fontInfoEx_t font_an;
+extern fontInfoEx_t font_bank;
+extern fontInfoEx_t font_micro;
+
+void PrintMessage( int x, int y, const char *szMessage, idVec4 colour, fontInfoEx_t &font );
 #endif /* !__RENDERER_H__ */
