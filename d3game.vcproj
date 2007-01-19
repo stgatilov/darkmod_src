@@ -888,6 +888,18 @@
 					RelativePath=".\DarkMod\Intersection.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\KeyboardHook.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\KeyboardHook.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\KeyboardHookWindows.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\KeyboardHookWindows.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\MatrixSq.h">
 				</File>
 				<File
@@ -898,6 +910,18 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\MissionData.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MouseHook.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MouseHook.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MouseHookWindows.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MouseHookWindows.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\overlaysys.cpp">
