@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2007/01/19 02:46:13  thelvyn
+ * removed unused argument - spurious warning
+ *
  * Revision 1.19  2007/01/03 04:00:05  ishtvan
  * stim / response updates
  *
@@ -1365,7 +1368,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 {
 	idLexer		src;
 	idToken		token;
-	idDict		*args;
+//	idDict		*args;
 	int			col(0), row(0), level(0);
 
 	// Clear existing parse node structure
