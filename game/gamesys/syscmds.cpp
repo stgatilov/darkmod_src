@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2007/01/19 02:30:55  thelvyn
+ * Separated keyboard hook, same as mouse hook
+ * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
+ * if it is considered an OK modification I will remove the old version.
+ *
  * Revision 1.13  2006/12/11 06:55:51  gildoran
  * Added the ability to use items directly via hotkey.
  *
@@ -60,6 +65,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../../darkmod/sndproploader.h"
 #include "../../darkmod/relations.h"
 #include "../darkmod/tdmInventory.h"
+#include "../darkmod/KeyboardHook.h"
 
 #include "TypeInfo.h"
 
@@ -302,14 +308,15 @@ void Cmd_KeyCapture_f( const idCmdArgs &args )
 
 	if( args.Argc() != 2 )
 	{
-		gameLocal.Printf( "usage: tdm_keycapture <action index>\n" );
-		goto Quit;
+		gameLocal.Printf( "usage: tdm_keycapture <action index>\n" );	
+	} else {
+		action = (ImpulseFunction_t) atoi( args.Argv(1) );
+#ifndef NEWKEYHANDLERCLASS
+		gameLocal.KeyCaptureStart( action );
+#else
+		gameLocal.m_Keyboard->KeyCaptureStart( action );
+#endif // #ifndef NEWKEYHANDLERCLASS
 	}
-
-	action = (ImpulseFunction_t) atoi( args.Argv(1) );
-	gameLocal.KeyCaptureStart( action );
-
-Quit:
 	return;
 }
 

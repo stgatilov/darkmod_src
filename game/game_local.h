@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2007/01/19 02:30:41  thelvyn
+ * Separated keyboard hook, same as mouse hook
+ * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
+ * if it is considered an OK modification I will remove the old version.
+ *
  * Revision 1.42  2007/01/18 22:28:20  thelvyn
  * Keyboard hook now working.
  *
@@ -196,6 +201,8 @@ bool FileVersionList(const char *str, bool state);
 
 class CStim;
 
+//#define NEWKEYHANDLERCLASS
+
 // enables water physics
 #define MOD_WATERPHYSICS
 
@@ -280,6 +287,7 @@ class idEditEntities;
 class idLocationEntity;
 
 class CMouseHook; // Added by Rich
+class CKeyboardHook;// Added by Rich
 
 #define	MAX_CLIENTS				32
 #define	GENTITYNUM_BITS			12
@@ -671,30 +679,6 @@ public:
 **/
 	float					m_walkSpeed;
 
-/**
-* Key press count.  Used by the keyboard callback to count up key presses
-* starting from the first.  Used to test up-to-dateness.  
-* Incremented on each recorded keypress with nCode > 0.
-**/
-	int						m_KeyPressCount;
-
-/**
-* Set to true if key capture is active, for identifying impulse
-*	keys for the keyboard handler.
-**/
-	bool					m_bKeyCapActive;
-
-/**
-* Impulse ID to associate with the key we're currently capturing
-**/
-	ImpulseFunction_t		m_KeyCapImpulse;
-
-/**
-* The value of the current key press count when the key capture started, 
-*	used to tell if	keypress is current or from before.
-**/
-	int						m_KeyCapStartCount;
-
 	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
 	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
 	idList<idEntity *>		m_RespEntity;			// all entities that currently have a response regardless of it's state
@@ -739,15 +723,97 @@ public:
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 
-	LRESULT MouseProc( int nCode, WPARAM wParam, LPARAM lParam );
+#ifndef NEWKEYHANDLERCLASS
+
+	/**
+	 * ImpulseInit will initialize a slot with the current keypress if it is empty.
+	 * The function returns true if the slot has already been initialized for this 
+	 * keypress. If false is returned the slot was free before and is now ready to use
+	 * This should always be the first function to be called in order to determine wether
+	 * an impulse has been triggered already for continous use.
+	 */
+	bool					ImpulseInit(ImpulseFunction_t Function, int Impulse);
+
+	/**
+	 * ImpulseIsUpdated checks wether the slot has been updated since the last time the impulse
+	 * has been processed.
+	 */
+	bool					ImpulseIsUpdated(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseProcessed has to be called whenever the impulse function has processed it's
+	 * keystate, but is not finished yet.
+	 */
+	void					ImpulseProcessed(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseFree is called when the processing of the impulse is finished and no further
+	 * reporting should be done. This would usually be when the key is released.
+	 */
+	void					ImpulseFree(ImpulseFunction_t Function);
+
+	/**
+	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
+	 * via this pointer.
+	 */
+	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+
+	/**
+	*	Called in the frame loop when we are binding keys to TDM buttons.  Attempts to capture
+	* the currently pressed key to the desired impulse.  Returns true if key has been
+	* captured, otherwise false.
+	**/
+	bool					KeyCapture( void );
+
+	/**
+	*	Called to activate KeyCapture and initialize the impulse we are binding
+	* It takes the impulse ID for the action we want to bind the key to.
+	**/
+	void					KeyCaptureStart( ImpulseFunction_t action );
+
+	/**
+	* Key press count.  Used by the keyboard callback to count up key presses
+	* starting from the first.  Used to test up-to-dateness.  
+	* Incremented on each recorded keypress with nCode > 0.
+	**/
+	int						m_KeyPressCount;
+	
+	/**
+	* Set to true if key capture is active, for identifying impulse
+	* keys for the keyboard handler.
+	**/
+	bool					m_bKeyCapActive;
+	
+	/**
+	* Impulse ID to associate with the key we're currently capturing
+	**/
+	ImpulseFunction_t		m_KeyCapImpulse;
+	
+	/**
+	* The value of the current key press count when the key capture started, 
+	* used to tell if keypress is current or from before.
+	**/
+	int						m_KeyCapStartCount;
 
 	HHOOK					m_KeyboardHook;
 	#pragma Message ("Keyboard Hook. Linux and mac ports need to be added here.")
-
-	CMouseHook*             m_MouseHookHandler;
-
 	KeyCode_t				m_KeyPress;				// Current keypress
 	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSE
+#else // #ifndef NEWKEYHANDLERCLASS
+	/**
+	* Darkmod: Os agnostic Keyboard handler. Loads OS specific class internally
+	* Added by Rich
+	**/
+	CKeyboardHook*             m_Keyboard;
+
+#endif // #ifndef NEWKEYHANDLERCLASS
+
+
+	/**
+	* Darkmod: Os agnostic mouse handler. Loads OS specific class internally
+	* Added by Rich
+	**/
+	CMouseHook*             m_Mouse;
 
 	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();
@@ -970,52 +1036,6 @@ public:
 	 * determining the lightvalue for the given image.
 	 */
 	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
-
-	/**
-	 * ImpulseInit will initialize a slot with the current keypress if it is empty.
-	 * The function returns true if the slot has already been initialized for this 
-	 * keypress. If false is returned the slot was free before and is now ready to use
-	 * This should always be the first function to be called in order to determine wether
-	 * an impulse has been triggered already for continous use.
-	 */
-	bool					ImpulseInit(ImpulseFunction_t Function, int Impulse);
-
-	/**
-	 * ImpulseIsUpdated checks wether the slot has been updated since the last time the impulse
-	 * has been processed.
-	 */
-	bool					ImpulseIsUpdated(ImpulseFunction_t Function);
-
-	/**
-	 * ImpulseProcessed has to be called whenever the impulse function has processed it's
-	 * keystate, but is not finished yet.
-	 */
-	void					ImpulseProcessed(ImpulseFunction_t Function);
-
-	/**
-	 * ImpulseFree is called when the processing of the impulse is finished and no further
-	 * reporting should be done. This would usually be when the key is released.
-	 */
-	void					ImpulseFree(ImpulseFunction_t Function);
-
-	/**
-	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
-	 * via this pointer.
-	 */
-	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
-
-	/**
-	*	Called in the frame loop when we are binding keys to TDM buttons.  Attempts to capture
-	* the currently pressed key to the desired impulse.  Returns true if key has been
-	* captured, otherwise false.
-	**/
-	bool					KeyCapture( void );
-
-	/**
-	*	Called to activate KeyCapture and initialize the impulse we are binding
-	* It takes the impulse ID for the action we want to bind the key to.
-	**/
-	void					KeyCaptureStart( ImpulseFunction_t action );
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);

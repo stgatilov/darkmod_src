@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.101  2007/01/19 02:30:41  thelvyn
+ * Separated keyboard hook, same as mouse hook
+ * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
+ * if it is considered an OK modification I will remove the old version.
+ *
  * Revision 1.100  2007/01/03 04:24:29  ishtvan
  * Stim/Response: Fixed the resetting of CONTENTS_RESPONSE contents flag
  *
@@ -341,7 +346,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../darkmod/StimResponse.h"
 #include "../darkmod/MissionData.h"
 #include "../darkmod/tdmInventory.h"
-
+#include "../darkmod/KeyboardHook.h"
 /*
 ===============================================================================
 
@@ -6444,7 +6449,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 				// Do we need to enter the leaning state?
 				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
 				physicsObj.ToggleLean(180.0);
+#ifndef NEWKEYHANDLERCLASS
 				gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
+#else
+				gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 				//m_LeanButtonTimeStamp = gameLocal.framenum;
 			}
 		}
@@ -10453,80 +10462,140 @@ void idPlayer::CheckHeldKeys( void )
 // NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
 
 // Forward lean
+#ifndef NEWKEYHANDLERCLASS
 	if(gameLocal.ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+#else
+	if(gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+#endif // #ifndef NEWKEYHANDLERCLASS
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
+#ifndef NEWKEYHANDLERCLASS
 		t = gameLocal.ImpulseData(IR_LEAN_FORWARD);
+#else
+		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_FORWARD);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(90.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseFree(IR_LEAN_FORWARD);
+#else
+			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_FORWARD);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 		else if(t->TransitionState == true)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped\r");
 			physicsObj.ToggleLean(90.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
+#endif//#ifndef NEWKEYHANDLERCLASS
 		}
 		else
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning ignored\r");
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 	}
 
 // Left lean
+#ifndef NEWKEYHANDLERCLASS
 	if( gameLocal.ImpulseIsUpdated(IR_LEAN_LEFT) == true )
+#else
+	if( gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_LEFT) == true )
+#endif // #ifndef NEWKEYHANDLERCLASS
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
+#ifndef NEWKEYHANDLERCLASS
 		t = gameLocal.ImpulseData(IR_LEAN_LEFT);
+#else
+		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_LEFT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(180.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseFree(IR_LEAN_LEFT);
+#else
+			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_LEFT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 		else if(t->TransitionState == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning ignored\r");
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
+#endif
 		}
 		else if(t->KeyState == KS_UPDATED && t->TransitionState == true)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped\r");
 			physicsObj.ToggleLean(180.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_LEFT);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 	}
 
 // Right lean
+#ifndef NEWKEYHANDLERCLASS
 	if(gameLocal.ImpulseIsUpdated(IR_LEAN_RIGHT) == true)
+#else
+	if(gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_RIGHT) == true)
+#endif // #ifndef NEWKEYHANDLERCLASS
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
+#ifndef NEWKEYHANDLERCLASS
 		t = gameLocal.ImpulseData(IR_LEAN_RIGHT);
+#else
+		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_RIGHT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(0.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseFree(IR_LEAN_RIGHT);
+#else
+			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_RIGHT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 		else if(t->TransitionState == true)
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped\r");
 			physicsObj.ToggleLean(0.0);
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_RIGHT);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 		else
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning ignored\r");
+#ifndef NEWKEYHANDLERCLASS
 			gameLocal.ImpulseProcessed(IR_LEAN_RIGHT);
+#else
+			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
+#endif // #ifndef NEWKEYHANDLERCLASS
 		}
 	}
 }

@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.85  2007/01/19 02:30:41  thelvyn
+ * Separated keyboard hook, same as mouse hook
+ * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
+ * if it is considered an OK modification I will remove the old version.
+ *
  * Revision 1.84  2007/01/18 22:28:20  thelvyn
  * Keyboard hook now working.
  *
@@ -303,7 +308,9 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../darkmod/randomizer/randomc.h"
 
 #include "../darkmod/MouseHook.h" // Added By Rich for mouse support encapsulation
+#include "../darkmod/KeyboardHook.h" // Added By Rich for keyboard support encapsulation
 
+/*
 #ifndef WH_MOUSE_LL
 #define _WIN32_WINNT_SAVE _WIN32_WINNT
 #undef _WIN32_WINNT
@@ -312,6 +319,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #undef _WIN32_WINNT
 #define _WIN32_WINNT _WIN32_WINNT_SAVE
 #endif
+*/
 
 CGlobal g_Global;
 TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
@@ -442,6 +450,7 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
+#ifndef NEWKEYHANDLERCLASS
 #pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -530,6 +539,7 @@ LRESULT CALLBACK TDMKeyboardHook(int nCode, WPARAM wParam, LPARAM lParam)
 
 	return CallNextHookEx(gameLocal.m_KeyboardHook, nCode, wParam, lParam);
 }
+#endif // #ifndef NEWKEYHANDLERCLASS
 
 /*
 ===========
@@ -538,9 +548,15 @@ idGameLocal::idGameLocal
 */
 idGameLocal::idGameLocal() 
 {
-	m_MouseHookHandler = CMouseHook::getInstance();
+	m_Mouse = CMouseHook::getInstance();
+	assert( NULL != m_Mouse );
+#ifndef NEWKEYHANDLERCLASS
 	m_KeyboardHook			= NULL;
 #pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
+#else
+	m_Keyboard = CKeyboardHook::getInstance();
+	assert( NULL != m_Keyboard );
+#endif // #ifndef NEWKEYHANDLERCLASS
 	Clear();
 }
 
@@ -551,14 +567,20 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
-	delete m_MouseHookHandler;
+#ifndef NEWKEYHANDLERCLASS
+#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
 	assert( NULL != m_KeyboardHook );
 	if( NULL != m_KeyboardHook )
 	{
 		UnhookWindowsHookEx( m_KeyboardHook );
 
 	}
-#pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
+#else
+	assert( NULL != m_Keyboard );
+	delete m_Keyboard;
+#endif // #ifndef NEWKEYHANDLERCLASS
+	assert( NULL != m_Mouse );
+	delete m_Mouse;
 }
 
 /*
@@ -581,10 +603,12 @@ void idGameLocal::Clear( void )
 		m_LightgemShotValue[i] = 0.0;
 	m_DoLightgem = true;
 
+#ifndef NEWKEYHANDLERCLASS
 	m_KeyPressCount = 0;
 	m_bKeyCapActive = false;
 	m_KeyCapImpulse = IR_COUNT;
 	m_KeyCapStartCount = 0;
+#endif // #ifndef NEWKEYHANDLERCLASS
 
 	serverInfo.Clear();
 	numClients = 0;
@@ -666,14 +690,6 @@ void idGameLocal::Clear( void )
 
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
-/*
-	if( NULL != m_KeyboardHook )
-	{
-		UnhookWindowsHookEx( m_KeyboardHook );
-		m_KeyboardHook = NULL;
-	}
-*/
-	#pragma Message( "Keyboard Hook. Linux and mac ports need to be added here." )
 	//	ResetSlowTimeVars();
 
 	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
@@ -684,12 +700,13 @@ void idGameLocal::Clear( void )
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
 	m_saPipeSecurity.bInheritHandle = FALSE;
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-
+#ifndef NEWKEYHANDLERCLASS
 	for(i = 0; i < IR_COUNT; i++)
 	{
 		m_KeyData[i].KeyState = KS_FREE;
 		m_KeyData[i].Impulse = -1;
 	}
+#endif // #ifndef NEWKEYHANDLERCLASS
 }
 
 /*
@@ -711,6 +728,7 @@ void idGameLocal::Init( void ) {
 
 	// Initialize the image library, so we can use it later on.
 	ilInit();
+#ifndef NEWKEYHANDLERCLASS
 	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, GetModuleHandle(NULL), 0);
 	m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, TDMKeyboardHook, GetModuleHandle(NULL), 0);
 	//m_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, TDMKeyboardHook, (HINSTANCE) NULL, GetCurrentThreadId());
@@ -718,6 +736,8 @@ void idGameLocal::Init( void ) {
 	assert( NULL != m_KeyboardHook );
 	DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Hook: %08lX\r", m_KeyboardHook);
 #pragma Message( "Keyboard hook. Linux and mac ports need to be added here." )
+#endif // #ifndef NEWKEYHANDLERCLASS
+	
 
 	// initialize idLib
 	idLib::Init();
@@ -5561,6 +5581,8 @@ void idGameLocal::SpawnLightgemEntity(void)
 	}
 }
 
+#ifndef NEWKEYHANDLERCLASS
+
 bool idGameLocal::ImpulseInit(ImpulseFunction_t Function, int Impulse)
 {
 	bool rc;
@@ -5597,6 +5619,8 @@ void idGameLocal::ImpulseFree(ImpulseFunction_t Function)
 	m_KeyData[Function].KeyState = KS_FREE;
 	m_KeyData[Function].Impulse = -1;
 }
+
+#endif // #ifndef NEWKEYHANDLERCLASS
 
 int idGameLocal::CheckStimResponse(idList<idEntity *> &l, idEntity *e)
 {
@@ -5887,6 +5911,7 @@ void idGameLocal::PauseGame( bool bPauseState )
 	}
 }
 
+#ifndef NEWKEYHANDLERCLASS
 bool idGameLocal::KeyCapture( void )
 {
 	bool bReturnVal( false );
@@ -5927,3 +5952,4 @@ void idGameLocal::KeyCaptureStart( ImpulseFunction_t action )
 Quit:
 	return;
 }
+#endif // #ifndef NEWKEYHANDLERCLASS
