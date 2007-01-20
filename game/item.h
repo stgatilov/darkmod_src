@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2007/01/20 05:19:57  sophisticatedzombie
+ * Spawns an idAbsenceMarkerEntity when moved or put in an inventory.
+ *
  * Revision 1.5  2006/08/14 01:07:02  ishtvan
  * fixed hide/show in idMoveableItem to disable the clipmodel
  *
@@ -56,6 +59,7 @@ public:
 	virtual void			Think( void );
 	virtual void			Present();
 
+
 	enum {
 		EVENT_PICKUP = idEntity::EVENT_MAXEVENTS,
 		EVENT_RESPAWN,
@@ -70,11 +74,34 @@ public:
 	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	// TDM: SZ: UpdateVisuals is overridden to check if the object moved in case
+	// we have to spawn an absence entity
+	virtual void			UpdateVisuals( void );
+
+	// TDM: SZ: Spawns an absence marker entity that advertises, at the objects orgOrigin, 
+	// that the object is missing.
+	virtual bool spawnAbsenceMarkerEntity();
+
+	// TDM: SZ: Destroys the absence marker entity tied to this object. If there is none,
+	// nothing is done
+	virtual void destroyAbsenceMarkerEntity();
+
+	// This indicates which team owns the item (or thinks it does :P )
+	int ownerTeam;
+
 private:
 	idVec3					orgOrigin;
 	bool					spin;
 	bool					pulse;
 	bool					canPickUp;
+
+	// This should scale from 0.0 (none) to 1.0 (hard to miss)
+	float					noticeabilityIfAbsent;
+
+
+	// Has the original origin been set?
+	bool					b_orgOriginSet;
+	idEntityPtr<idEntity>	absenceEntityPtr;
 
 	// for item pulse effect
 	int						itemShellHandle;

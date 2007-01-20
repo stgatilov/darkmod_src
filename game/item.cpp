@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2007/01/20 05:19:57  sophisticatedzombie
+ * Spawns an idAbsenceMarkerEntity when moved or put in an inventory.
+ *
  * Revision 1.15  2007/01/05 10:52:33  ishtvan
  * dropped items no longer disappear after 5 minutes
  *
@@ -67,6 +70,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/StimResponse.h"
+#include "../DarkMod/idAbsenceMarkerEntity.h"
 
 /*
 ===============================================================================
@@ -113,6 +117,11 @@ idItem::idItem()
 	fl.networkSync = true;
 
 	m_FrobActionScript = "frob_item";
+
+	noticeabilityIfAbsent = 0.0;
+	b_orgOriginSet = false;
+	
+
 }
 
 /*
@@ -145,6 +154,8 @@ void idItem::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( inViewTime );
 	savefile->WriteInt( lastCycle );
 	savefile->WriteInt( lastRenderViewTime );
+	savefile->WriteFloat (noticeabilityIfAbsent);
+	absenceEntityPtr.Save (savefile);
 }
 
 /*
@@ -165,6 +176,8 @@ void idItem::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( inViewTime );
 	savefile->ReadInt( lastCycle );
 	savefile->ReadInt( lastRenderViewTime );
+	savefile->ReadFloat (noticeabilityIfAbsent);
+	absenceEntityPtr.Restore (savefile);
 
 	itemShellHandle = -1;
 }
@@ -245,6 +258,7 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 	// update every single time this is in view
 	return bRc;
 }
+
 
 
 /*
@@ -387,6 +401,10 @@ void idItem::Spawn( void )
 	//temp hack for tim
 	pulse = false;
 	orgOrigin = GetPhysics()->GetOrigin();
+	b_orgOriginSet = true;
+
+	noticeabilityIfAbsent = spawnArgs.GetFloat("noticeabilityIfAbsent");
+
 
 	canPickUp = !( spawnArgs.GetBool( "triggerFirst" ) || spawnArgs.GetBool( "no_touch" ) );
 
@@ -394,6 +412,9 @@ void idItem::Spawn( void )
 	lastCycle = -1;
 	itemShellHandle = -1;
 	shellMaterial = declManager->FindMaterial( "itemHighlightShell" );
+
+	// What team owns it?
+	spawnArgs.GetInt ("ownerTeam", "0", ownerTeam);
 
 	LoadTDMSettings();
 }
@@ -436,6 +457,115 @@ bool idItem::GiveToPlayer( idPlayer *player )
 	return player->GiveItem( this );
 }
 
+
+/*
+================
+TDM: Darkmod spawns an absence marker entity
+================
+*/
+bool idItem::spawnAbsenceMarkerEntity()
+{
+	const char* pstr_markerDefName = "atdm:absence_marker";
+	const idDict *p_markerDef = gameLocal.FindEntityDefDict( pstr_markerDefName, false );
+	if( p_markerDef )
+	{
+		idEntity *ent2;
+		gameLocal.SpawnEntityDef( *p_markerDef, &ent2, false );
+
+		if ( !ent2 || !ent2->IsType( idAbsenceMarkerEntity::Type ) ) 
+		{
+			gameLocal.Error( "Failed to spawn absence marker entity" );
+			return false;
+		}
+
+		idAbsenceMarkerEntity* p_absenceMarker = static_cast<idAbsenceMarkerEntity*>( ent2 );
+
+		// The absence marker has been created
+		absenceEntityPtr = p_absenceMarker;
+
+		// Initialize it
+		idEntityPtr<idEntity> thisPtr;
+		thisPtr = ((idEntity*) this);
+		idMat3 orgOrientation;
+		orgOrientation.Identity();
+
+		p_absenceMarker->Init();
+		if (!p_absenceMarker->initAbsenceReference (thisPtr, orgOrigin, orgOrientation))
+		{
+			gameLocal.Error( "Failed to initialize absence reference in absence marker entity" );
+			return false;
+		}
+	}
+	else
+	{
+			gameLocal.Error( "Failed to find definition of absence marker entity " );
+			return false;
+	}
+
+	// Success
+	return true;
+
+}
+
+/*
+================
+TDM: Darkmod destroys an absence marker entity
+================
+*/
+void idItem::destroyAbsenceMarkerEntity()
+{
+	if (absenceEntityPtr.IsValid())
+	{
+		idAbsenceMarkerEntity* p_absenceMarker = static_cast<idAbsenceMarkerEntity*>( absenceEntityPtr.GetEntity() );
+		delete p_absenceMarker;
+		absenceEntityPtr = NULL;
+	}
+}
+
+/*
+================
+TDM: Darkmod checks if origin changed to create absence marker entity
+idItem::UpdateVisuals
+================
+*/
+void idItem::UpdateVisuals()
+{
+	// Call base class version
+	idEntity::UpdateVisuals();
+
+	// If we have not already spawned our absence entity and we are interested in spawning
+	// one if the item moves
+	if 
+	(
+		(noticeabilityIfAbsent > 0.0) && 
+		(!absenceEntityPtr.IsValid())
+	)
+		if 
+		(
+			( (b_orgOriginSet) && (GetPhysics()->GetOrigin() != orgOrigin) ) ||
+			( IsHidden() )
+		)
+	{
+		// Spawn an absence entity
+		spawnAbsenceMarkerEntity();
+
+	}
+	// End has been moved, should be noticed, no absence marker spawned yet
+	else if
+	(
+		(noticeabilityIfAbsent > 0.0) &&
+		(absenceEntityPtr.IsValid()) &&
+		(b_orgOriginSet) &&
+		((GetPhysics()->GetOrigin() -orgOrigin).LengthFast() < 256.0)
+	) // End should be noticed, absence marker spawned, it was put back
+	{
+		// Destroy the absence marker entity
+		destroyAbsenceMarkerEntity();
+	}
+
+
+}
+
 /*
 ================
 idItem::Pickup
@@ -471,6 +601,9 @@ bool idItem::Pickup( idPlayer *player )
 		gameRenderWorld->FreeEntityDef( itemShellHandle );
 		itemShellHandle = -1;
 	}
+
+	// Spawn an absence marker entity
+	spawnAbsenceMarkerEntity();
 
 	float respawn = spawnArgs.GetFloat( "respawn" );
 	bool dropped = spawnArgs.GetBool( "dropped" );
