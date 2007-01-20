@@ -40,9 +40,29 @@ CKeyboardHookWindows::KeyboardProc
 *	I have never recieved anything except HC_ACTION and HC_NOREMOVE(At least when logging)
 *	If you also accept the NOREMOVE one you will end up with duplicate results AFAIK
 *
-*	wParam Specifies the identifier of the BLANK! message.
-*	lParam contains BLANK! pointer
+*	wParam Specifies contains the key virtual code
+*	lParam contains the key mask
+wParam
+[in] Specifies the virtual-key code of the key that generated the keystroke message.
+lParam
+[in] Specifies the repeat count, scan code, extended-key flag, context code, previous key-state flag, and transition-state flag. For more information about the lParam parameter, see Keystroke Message Flags. This parameter can be one or more of the following values. 
+0-15
+Specifies the repeat count. The value is the number of times the keystroke is repeated as a result of the user's holding down the key.
+16-23
+Specifies the scan code. The value depends on the OEM.
+24
+Specifies whether the key is an extended key, such as a function key or a key on the numeric keypad. The value is 1 if the key is an extended key; otherwise, it is 0.
+25-28
+Reserved.
+29
+Specifies the context code. The value is 1 if the ALT key is down; otherwise, it is 0.
+30
+Specifies the previous key state. The value is 1 if the key is down before the message is sent; it is 0 if the key is up.
+31
+Specifies the transition state. The value is 0 if the key is being pressed and 1 if it is being released.
+
 */
+
 
 LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
@@ -50,26 +70,84 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 	
 	if( nCode == HC_ACTION )
 	{
-		//KeyCode_t kc;
-		//KeyCode_t tc;
+		m_parent->m_KeyPress.VirtualKeyCode = (int) wParam; // Self Explanatory
+		m_parent->m_KeyPress.RepeatCount    = (lParam & 0x0000FFFF); // Only useful if machine is seriously lagged
+		m_parent->m_KeyPress.ScanCode       = (lParam & 0x00FF0000) >> 16;// better to use the VK's
+		m_parent->m_KeyPress.KeyPressCount  = m_parent->m_KeyPressCount++;
+		if( BITCHK(lParam, 24 ) == 1 )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_EXTENDED );
+		}
+		else
+		{
+			BITCLR(	m_parent->m_KeyPress.KeyMask, KEYSTATE_EXTENDED );
+		}
+		if( BITCHK( lParam, 30 ) == 1 )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_PRESSED_LAST );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_PRESSED_LAST );
+		}
+		if( BITCHK( lParam, 31 ) !=1 )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_PRESSED );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_PRESSED );
+		}
+		if( HIWORD( GetKeyState(VK_LSHIFT) ) )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_SHIFT_LEFT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_SHIFT_LEFT );
+		}
+		if( HIWORD( GetKeyState(VK_RSHIFT) ) )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_SHIFT_RIGHT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_SHIFT_RIGHT );
+		}
+		if( HIWORD( GetKeyState(VK_LCONTROL) ) )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_CTRL_LFFT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_CTRL_LFFT );
+		}
+		if( HIWORD( GetKeyState(VK_RCONTROL) ) )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_CTRL_RIGHT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_CTRL_RIGHT );
+		}
+		if( HIWORD( GetKeyState(VK_LMENU) )  )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_ALT_LEFT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_ALT_LEFT );
+		}
+		if( HIWORD( GetKeyState(VK_RMENU) ) )
+		{
+			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_ALT_RIGHT );
+		}
+		else
+		{
+			BITCLR( m_parent->m_KeyPress.KeyMask, KEYSTATE_ALT_RIGHT );
+		}
 
-		m_parent->m_KeyPress.VirtualKeyCode = (int) wParam;
-		m_parent->m_KeyPress.RepeatCount =   (lParam & 0x0000FFFF);
-//		m_parent->m_KeyPress.RepeatCount =		( HIWORD(lParam) & KF_REPEAT ); // doesnt work right ?
-		m_parent->m_KeyPress.ScanCode =			(lParam & 0x00FF0000) >> 16;
-		//kc.Extended =			(lParam & 0x01000000) >> 24;// fix
-		m_parent->m_KeyPress.Extended =			(( HIWORD(lParam) & KF_EXTENDED ) == 1 );
-		m_parent->m_KeyPress.Reserved =			(lParam & 0x1E000000) >> 25;
-		//kc.Context =			(lParam & 0x20000000) >> 29; // fix
-		m_parent->m_KeyPress.Context =			(( HIWORD(lParam) & KF_ALTDOWN )==1);
-		m_parent->m_KeyPress.PreviousKeyState =	(((lParam & 0x40000000) >> 30)==1); // fix
-		//m_parent->m_KeyPress.PreviousKeyState =	(( HIWORD(lParam) & KF_REPEAT )==1);
-		m_parent->m_KeyPress.TransitionState = (((lParam & 0x80000000) >> 31)==1); // fix
-		//m_parent->m_KeyPress.TransitionState =	(( HIWORD(lParam) & KF_UP )==1);
-		//m_parent->m_KeyPressCount++;
-		m_parent->m_KeyPress.KeyPressCount =		m_parent->m_KeyPressCount++;
-		//memcpy(&m_parent->m_KeyPress, &kc, sizeof(KeyCode_t));
-
+#ifdef _DEBUG
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
 			"VirtualKeyCode: %d    ScanCode: %02X\r",
 			m_parent->m_KeyPress.VirtualKeyCode,
@@ -79,20 +157,31 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 			"RepeatCount: %u    KeyPressCount: %d\r",
 			m_parent->m_KeyPress.RepeatCount,			
 			m_parent->m_KeyPress.KeyPressCount
-			);
-		
+			);		
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
-			"Context(Alt): %s    Extended: %s\r",
-			m_parent->m_KeyPress.Context? "True" : "False",
-			m_parent->m_KeyPress.Extended ? "True":"False"
+			//"Context(Alt): %s    Extended: %s\r",
+			"Right Alt : %s    Left Alt : %s\r",
+			m_parent->m_KeyPress.GetAltRight() ? "True" : "False",
+			m_parent->m_KeyPress.GetAltLeft() ? "True" : "False"
 			);
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
-			"PreviousKeyState: %s    TransitionState: %s \r",
-			m_parent->m_KeyPress.PreviousKeyState ? "Down" : "Up",
-			m_parent->m_KeyPress.TransitionState ? "Up":"Down"
+			//"Context(Alt): %s    Extended: %s\r",
+			"Right Shift : %s    Left Shift : %s\r",
+			m_parent->m_KeyPress.GetShiftRight() ? "True" : "False",
+			m_parent->m_KeyPress.GetShiftLeft() ? "True" : "False"
 			);
-
-		TCHAR buffer[32];
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			//"Context(Alt): %s    Extended: %s\r",
+			"Right Ctrl : %s    Left Ctrl : %s\r",
+			m_parent->m_KeyPress.GetCtrlRight() ? "True" : "False",
+			m_parent->m_KeyPress.GetCtrlLeft() ? "True" : "False"
+			);
+		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING(
+			"Was Pressed before ? %s    Pressed now ? %s \r",
+			m_parent->m_KeyPress.GetWasPressed() ? "True" : "False",
+			m_parent->m_KeyPress.GetPressed() ? "True" : "False"
+			);
+		TCHAR buffer[128];
 		if( GetKeyNameText( lParam, buffer, 32 ) ) 
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Key Name Text: \"%s\"\r", buffer );
@@ -102,7 +191,7 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Key Name Text: Function Failed!\r" );
 		}
 
-
+#endif
 		// Only update impulses when the player has already spawned
 		if( gameLocal.GetLocalPlayer() )
 		{
@@ -157,3 +246,4 @@ CKeyboardHookWindows::~CKeyboardHookWindows(void)
 	m_single = NULL;
 	m_instanceFlag = false;
 }
+

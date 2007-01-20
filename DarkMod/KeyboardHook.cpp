@@ -6,6 +6,86 @@
 #endif
 // We will add additional ones for other OS here later
 
+KeyState_t CKeyCode::GetKeyState() const
+{
+	return KeyState;
+}
+
+bool CKeyCode::GetAlt( void ) const 
+{
+	bool rc = false;
+	if( GetAltRight() || GetAltLeft() )
+	{
+		rc = true;
+	}
+	return rc;
+}
+
+bool CKeyCode::GetAltRight( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_ALT_RIGHT ) == true );
+}
+
+bool CKeyCode::GetAltLeft( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_ALT_LEFT ) == true );
+}
+
+bool CKeyCode::GetCtrl( void ) const
+{
+	bool rc = false;
+	if( GetCtrlRight() || GetCtrlLeft() )
+	{
+		rc = true;
+	}
+	return rc;
+}
+
+bool CKeyCode::GetCtrlRight( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_CTRL_RIGHT ) == true );
+}
+
+bool CKeyCode::GetCtrlLeft( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_CTRL_LFFT ) == true );
+}
+
+bool CKeyCode::GetShift( void ) const
+{
+	bool rc = false;
+	if( GetShiftRight() || GetShiftLeft() )
+	{
+		rc = true;
+	}
+	return rc;
+}
+
+bool CKeyCode::GetShiftRight( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_SHIFT_RIGHT ) == true );
+}
+
+bool CKeyCode::GetShiftLeft( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_SHIFT_LEFT ) == true );
+}
+
+bool CKeyCode::GetExtended( void ) const
+{
+	return ( BITCHK( KeyMask, KEYSTATE_EXTENDED ) == true );
+}
+
+bool CKeyCode::GetPressed( void ) const//currently pressed - False if just released
+{
+	return ( BITCHK( KeyMask, KEYSTATE_PRESSED ) == true );
+}
+
+bool CKeyCode::GetWasPressed( void ) const// Was it pressed last message
+{
+	return ( BITCHK( KeyMask, KEYSTATE_PRESSED_LAST ) == true );
+}
+
 bool CKeyboardHook::m_instanceFlag = false;
 CKeyboardHook* CKeyboardHook::m_single = NULL;
 

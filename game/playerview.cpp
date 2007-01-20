@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2007/01/20 01:37:34  thelvyn
+ * Implemented Ctrl, Shift and Alt key detection.
+ * Right , Left supported for all. Also generic dont care if left or right functions.
+ * Testing is in place in playerview.cpp
+ * I reused #ifdef MOUSETEST as I still have the mouse code in there as well.
+ * You can what if any buttons are detected. Mouse L, R, M and for keyboard Left, Right or both of Ctrl, Shift and Alt
+ *
  * Revision 1.10  2007/01/19 10:08:41  thelvyn
  * Removed old mouse handling code.
  * Registered some fonts for gui screen display of text.
@@ -47,6 +54,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 #include "../darkmod/MouseHook.h"
+#include "../darkmod/KeyboardHook.h"
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
@@ -570,13 +578,99 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 		player->DrawHUD( hud );
 
 #ifdef MOUSETEST
-		idStr strText;
-		sprintf( strText, "Mouse Left: %s Pressed    Middle: %s Pressed    Right: %s Pressed",
-			gameLocal.m_Mouse->GetLeftStatus()? "Is":"Not" ,
-			gameLocal.m_Mouse->GetMiddleStatus()? "Is":"Not",
-			gameLocal.m_Mouse->GetRightStatus()? "Is":"Not"
-			);
-		PrintMessage( 100, 60, strText, idVec4( 1, 1, 1, 1 ), font_an );
+		{
+			char buffer[128];
+			memset( buffer, 0, 128 );
+			int count = 0;
+			CMouseHook* mh = CMouseHook::getInstance();
+			if( mh->GetLeftStatus() )
+			{
+				strcpy( buffer, "Mouse Left key pressed" );
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+			if( mh->GetMiddleStatus())
+			{
+				strcpy( buffer, "Mouse Middle key pressed" );
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+			if( mh->GetRightStatus())
+			{
+				strcpy( buffer, "Mouse Right key pressed" );
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+			CKeyboardHook* kh = CKeyboardHook::getInstance();
+			if( kh->m_KeyPress.GetAltLeft() || kh->m_KeyPress.GetAltRight() )
+			{
+				assert( kh->m_KeyPress.GetAlt() );
+				if( kh->m_KeyPress.GetAltLeft() && kh->m_KeyPress.GetAltRight() )
+				{
+					strcpy( buffer, "Both Alt Keys pressed." );
+				}
+				else if( kh->m_KeyPress.GetAltLeft() )
+				{
+					strcpy( buffer, "Left Alt Key pressed." );
+				}
+				else if( kh->m_KeyPress.GetAltRight() )// only leaves the right one
+				{
+					strcpy( buffer, "Right Alt Key pressed." );
+				}
+				else
+				{
+					strcpy( buffer, "Alt Key Error!" );
+				}
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+			if( kh->m_KeyPress.GetCtrlLeft() || kh->m_KeyPress.GetCtrlRight() )
+			{
+				assert( kh->m_KeyPress.GetCtrl() );
+				if( kh->m_KeyPress.GetCtrlLeft() && kh->m_KeyPress.GetCtrlRight() )
+				{
+					strcpy( buffer, "Both Ctrl Keys pressed." );
+				}
+				else if( kh->m_KeyPress.GetCtrlLeft() )
+				{
+					strcpy( buffer, "Left Ctrl Key pressed." );
+				}
+				else if( kh->m_KeyPress.GetCtrlRight() )// only leaves the right one
+				{
+					strcpy( buffer, "Right Ctrl Key pressed." );
+				}
+				else
+				{
+					strcpy( buffer, "Ctrl Key Error!" );
+				}
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+
+			if( kh->m_KeyPress.GetShiftLeft() || kh->m_KeyPress.GetShiftRight() )
+			{
+				assert( kh->m_KeyPress.GetShift() );
+				if( kh->m_KeyPress.GetShiftLeft() && kh->m_KeyPress.GetShiftRight() )
+				{
+					strcpy( buffer, "Both Shift Keys pressed." );
+				}
+				else if( kh->m_KeyPress.GetShiftLeft() )
+				{
+					strcpy( buffer, "Left Shift Key pressed." );
+				}
+				else if( kh->m_KeyPress.GetShiftRight() )// only leaves the right one
+				{
+					strcpy( buffer, "Right Shift Key pressed." );
+				}
+				else
+				{
+					strcpy( buffer, "Shift Key Error!" );
+				}
+				count++;
+				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
+			}
+		}
+		//PrintMessage( 100, 20, strText, idVec4( 1, 1, 1, 1 ), font_an );
 		//PrintMessage( 100, 120, strText, idVec4( 1, 1, 1, 1 ), font_bank );
 		//PrintMessage( 100, 140, strText, idVec4( 1, 1, 1, 1 ), font_micro );
 #endif

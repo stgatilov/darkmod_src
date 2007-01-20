@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.103  2007/01/20 01:37:34  thelvyn
+ * Implemented Ctrl, Shift and Alt key detection.
+ * Right , Left supported for all. Also generic dont care if left or right functions.
+ * Testing is in place in playerview.cpp
+ * I reused #ifdef MOUSETEST as I still have the mouse code in there as well.
+ * You can what if any buttons are detected. Mouse L, R, M and for keyboard Left, Right or both of Ctrl, Shift and Alt
+ *
  * Revision 1.102  2007/01/19 10:08:41  thelvyn
  * Removed old mouse handling code.
  * Registered some fonts for gui screen display of text.
@@ -10461,83 +10468,86 @@ void idPlayer::CheckHeldKeys( void )
 {
 	KeyCode_t *t(NULL);
 
+	CKeyboardHook* Keyboard = CKeyboardHook::getInstance();
+
 // NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
 
 // Forward lean
-	if(gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
+	if( Keyboard->ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_FORWARD);
+		t = Keyboard->ImpulseData(IR_LEAN_FORWARD);
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(90.0);
-			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_FORWARD);
+			Keyboard->ImpulseFree(IR_LEAN_FORWARD);
 		}
-		else if(t->TransitionState == true)
+		else if( t->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped\r");
 			physicsObj.ToggleLean(90.0);
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
+			Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
 		}
 		else
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning ignored\r");
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
+			Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
 		}
 	}
 
 // Left lean
-	if( gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_LEFT) == true )
+	if( Keyboard->ImpulseIsUpdated(IR_LEAN_LEFT) == true )
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_LEFT);
+		t = Keyboard->ImpulseData(IR_LEAN_LEFT);
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(180.0);
-			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_LEFT);
+			Keyboard->ImpulseFree(IR_LEAN_LEFT);
 		}
-		else if(t->TransitionState == false )
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning ignored\r");
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
-		}
-		else if(t->KeyState == KS_UPDATED && t->TransitionState == true)
+		else if( t->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped\r");
 			physicsObj.ToggleLean(180.0);
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
+			Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
 		}
+		else
+		{
+			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning ignored\r");
+			Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
+		}
+		
 	}
 
 // Right lean
-	if(gameLocal.m_Keyboard->ImpulseIsUpdated(IR_LEAN_RIGHT) == true)
+	if( Keyboard->ImpulseIsUpdated(IR_LEAN_RIGHT) == true)
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = gameLocal.m_Keyboard->ImpulseData(IR_LEAN_RIGHT);
+		t = Keyboard->ImpulseData(IR_LEAN_RIGHT);
 		if( !t )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(0.0);
-			gameLocal.m_Keyboard->ImpulseFree(IR_LEAN_RIGHT);
+			Keyboard->ImpulseFree(IR_LEAN_RIGHT);
 		}
-		else if(t->TransitionState == true)
+		else if( t->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped\r");
 			physicsObj.ToggleLean(0.0);
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
+			Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
 		}
 		else
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning ignored\r");
-			gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
+			Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
 		}
 	}
 }

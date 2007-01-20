@@ -5,7 +5,71 @@
 #include "../idlib/precompiled.h"
 
 class CKeyboardHook;
-class CKeyboardHookWindows;
+class CKeyboardHookWindows;// do NOT include headers for OS specific classes here!
+
+// Any key that is to be changed from an impulse to a button behaviour
+// has to be listed here. The id gives the index in the array which slot
+// is reserved for that function.
+typedef enum {
+	IR_FROB,
+	IR_INVENTORY_NEXT,
+	IR_INVENTORY_PREV,
+	IR_LEAN_FORWARD,
+	IR_LEAN_LEFT,
+	IR_LEAN_RIGHT,
+	IR_COUNT
+} ImpulseFunction_t;
+
+typedef enum {
+	KS_UPDATED,			// Keyinfo has been updated by the hook
+	KS_PROCESSED,		// Key has been processed by the gameengine
+	KS_FREE,			// Keyslot is currently free.
+	KS_COUNT
+} KeyState_t;
+
+/**
+ * KeyCode is a structure that contains the information for a key which is related
+ * to an IMPULSE.
+ */
+
+#define KEYSTATE_ALT_RIGHT    BIT(1)
+#define KEYSTATE_ALT_LEFT     BIT(2)
+#define KEYSTATE_SHIFT_RIGHT  BIT(3)
+#define KEYSTATE_SHIFT_LEFT   BIT(4)
+#define KEYSTATE_CTRL_RIGHT   BIT(5)
+#define KEYSTATE_CTRL_LFFT    BIT(6)
+#define KEYSTATE_PRESSED_LAST BIT(7)// pressed last message as well
+#define KEYSTATE_PRESSED      BIT(8)// pressed now
+#define KEYSTATE_EXTENDED     BIT(9)//is this an extended key
+
+class CKeyCode
+{
+	friend class CKeyboardHook;
+	friend class CKeyboardHookWindows;
+public:
+	bool GetAlt( void ) const;
+	bool GetAltRight( void ) const;
+	bool GetAltLeft( void ) const;
+	bool GetCtrl( void ) const;
+	bool GetCtrlRight( void ) const;
+	bool GetCtrlLeft( void ) const;
+	bool GetShift( void ) const;
+	bool GetShiftRight( void ) const;
+	bool GetShiftLeft( void ) const;
+	bool GetExtended( void ) const;
+	bool GetPressed( void ) const;//currently pressed - False if just released
+	bool GetWasPressed( void ) const;// Was it pressed last message
+	KeyState_t GetKeyState() const;
+protected:
+	KeyState_t	KeyState;		// protocoll state for the interface with the gameengine
+	int		Impulse;			// Impulsevalue this is associated with.
+	int		VirtualKeyCode;
+	int		RepeatCount;
+	int		ScanCode;			// The value depends on the OEM.
+	unsigned short KeyMask;       // See Above
+	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
+};
+typedef CKeyCode KeyCode_t;
 
 class CKeyboardHookBase // Base class for all Keyboard hook classes
 {
@@ -79,7 +143,6 @@ public:
 	**/
 	void					KeyCaptureStart( ImpulseFunction_t action );
 
-protected:
 
 	/********************************************************************************************************
 	*
