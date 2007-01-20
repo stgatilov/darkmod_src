@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2007/01/20 05:25:10  sophisticatedzombie
+ * isFriend, isEnemy and isNeurtal now have special handling for
+ * absence marker entities
+ *
  * Revision 1.33  2007/01/03 04:01:48  ishtvan
  * *) modified PushWithAF to apply impulse to objects instead of setting a velocity, should avoid pushing of huge objects.  They still apply a velocity to AI, but now only in the XY plane
  *
@@ -160,6 +164,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../../darkmod/darkModAASFindHidingSpots.h"
 #include "../../darkmod/stimResponse.h"
 #include "../../darkmod/AIComm_StimResponse.h"
+#include "../../darkmod/idAbsenceMarkerEntity.h"
 
 class CRelations;
 
@@ -3626,27 +3631,51 @@ void idAI::Event_GetRelationEnt( idEntity *ent )
 
 void idAI::Event_IsEnemy( idEntity *ent )
 {
-	idThread::ReturnInt( (int) IsEnemy( ent ) );
+	if (ent->IsType (idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker;
+		marker = static_cast<idAbsenceMarkerEntity*>( ent );
+		idThread::ReturnInt( gameLocal.m_RelationsManager->IsEnemy( team, marker->ownerTeam ) );
+	}
+	else
+	{
+		idThread::ReturnInt( (int) IsEnemy( ent ) );
+	}
 }
 
 void idAI::Event_IsFriend( idEntity *ent )
 {
-	idActor *actor;
 
-	if ( !ent->IsType( idActor::Type ) ) 
+	if (ent->IsType (idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker;
+		marker = static_cast<idAbsenceMarkerEntity*>( ent );
+		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, marker->ownerTeam ) );
+	}
+	else if ( ent->IsType( idActor::Type ) ) 
+	{
+		idActor *actor;
+		actor = static_cast<idActor *>( ent );
+		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
+	}
+	else
 	{
 		idThread::ReturnInt( 0 );
 	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
 }
 
 void idAI::Event_IsNeutral( idEntity *ent )
 {
 	idActor *actor;
 
-	if ( !ent->IsType( idActor::Type ) ) 
+
+	if (ent->IsType (idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker;
+		marker = static_cast<idAbsenceMarkerEntity*>( ent );
+		idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, marker->ownerTeam ) );
+	}
+	else if ( !ent->IsType( idActor::Type ) ) 
 	{
 		// inanimate objects are neutral to everyone
 		idThread::ReturnInt( 1 );
