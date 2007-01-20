@@ -15,23 +15,23 @@ public:
 	virtual ~CMouseHookBase() {}
 };
 
+class CMouseHookWindows;
+
 class CMouseHook
 {
+	friend class CMouseHookWindows;
 public:
 	virtual ~CMouseHook(void);
 	static CMouseHook* getInstance();
 	bool GetLeftStatus() const;
 	bool GetRightStatus() const;
 	bool GetMiddleStatus() const;
-	void SetMiddleStatus(bool Pressed);
-	void SetRightStatus(bool Pressed);
-	void SetLeftStatus(bool Pressed);
-private:
-
+protected:
 	bool m_Mouse_LBPressed; // true if currently pressed false otherwise
 	bool m_Mouse_RBPressed; // default value is false on init
 	bool m_Mouse_MBPressed;
 
+private:
 	// this is a base class* for the OS dependant hook class
 	CMouseHookBase* m_hook;
 	

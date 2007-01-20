@@ -201,7 +201,7 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 				if( m_parent->m_KeyData[i].KeyState != KS_FREE &&
 					m_parent->m_KeyData[i].VirtualKeyCode == m_parent->m_KeyPress.VirtualKeyCode )
 				{
-					memcpy(&m_parent->m_KeyData[i], &m_parent->m_KeyPress, sizeof(KeyCode_t));
+					m_parent->m_KeyData[i] = m_parent->m_KeyPress;
 					m_parent->m_KeyData[i].KeyState = KS_UPDATED;
 					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
 				}

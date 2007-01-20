@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2007/01/20 02:22:28  thelvyn
+ * Made the keyboard and mouse code more robust.
+ * See player.cpp for usage if needed
+ *
  * Revision 1.11  2007/01/20 01:37:34  thelvyn
  * Implemented Ctrl, Shift and Alt key detection.
  * Right , Left supported for all. Also generic dont care if left or right functions.
@@ -601,19 +605,21 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 				count++;
 				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
 			}
-			CKeyboardHook* kh = CKeyboardHook::getInstance();
-			if( kh->m_KeyPress.GetAltLeft() || kh->m_KeyPress.GetAltRight() )
+			CKeyCode ck = CKeyboardHook::getInstance()->GetCurrentKey();
+			//CKeyboardHook* kh = CKeyboardHook::getInstance()->GetCurrentKey();
+			//CKeyCode ck = kh->GetCurrentKey();
+			if( ck.GetAltLeft() || ck.GetAltRight() )
 			{
-				assert( kh->m_KeyPress.GetAlt() );
-				if( kh->m_KeyPress.GetAltLeft() && kh->m_KeyPress.GetAltRight() )
+				assert( ck.GetAlt() );
+				if( ck.GetAltLeft() && ck.GetAltRight() )
 				{
 					strcpy( buffer, "Both Alt Keys pressed." );
 				}
-				else if( kh->m_KeyPress.GetAltLeft() )
+				else if( ck.GetAltLeft() )
 				{
 					strcpy( buffer, "Left Alt Key pressed." );
 				}
-				else if( kh->m_KeyPress.GetAltRight() )// only leaves the right one
+				else if( ck.GetAltRight() )// only leaves the right one
 				{
 					strcpy( buffer, "Right Alt Key pressed." );
 				}
@@ -624,18 +630,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 				count++;
 				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
 			}
-			if( kh->m_KeyPress.GetCtrlLeft() || kh->m_KeyPress.GetCtrlRight() )
+			if( ck.GetCtrlLeft() || ck.GetCtrlRight() )
 			{
-				assert( kh->m_KeyPress.GetCtrl() );
-				if( kh->m_KeyPress.GetCtrlLeft() && kh->m_KeyPress.GetCtrlRight() )
+				assert( ck.GetCtrl() );
+				if( ck.GetCtrlLeft() && ck.GetCtrlRight() )
 				{
 					strcpy( buffer, "Both Ctrl Keys pressed." );
 				}
-				else if( kh->m_KeyPress.GetCtrlLeft() )
+				else if( ck.GetCtrlLeft() )
 				{
 					strcpy( buffer, "Left Ctrl Key pressed." );
 				}
-				else if( kh->m_KeyPress.GetCtrlRight() )// only leaves the right one
+				else if( ck.GetCtrlRight() )// only leaves the right one
 				{
 					strcpy( buffer, "Right Ctrl Key pressed." );
 				}
@@ -647,18 +653,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
 			}
 
-			if( kh->m_KeyPress.GetShiftLeft() || kh->m_KeyPress.GetShiftRight() )
+			if( ck.GetShiftLeft() || ck.GetShiftRight() )
 			{
-				assert( kh->m_KeyPress.GetShift() );
-				if( kh->m_KeyPress.GetShiftLeft() && kh->m_KeyPress.GetShiftRight() )
+				assert( ck.GetShift() );
+				if( ck.GetShiftLeft() && ck.GetShiftRight() )
 				{
 					strcpy( buffer, "Both Shift Keys pressed." );
 				}
-				else if( kh->m_KeyPress.GetShiftLeft() )
+				else if( ck.GetShiftLeft() )
 				{
 					strcpy( buffer, "Left Shift Key pressed." );
 				}
-				else if( kh->m_KeyPress.GetShiftRight() )// only leaves the right one
+				else if( ck.GetShiftRight() )// only leaves the right one
 				{
 					strcpy( buffer, "Right Shift Key pressed." );
 				}

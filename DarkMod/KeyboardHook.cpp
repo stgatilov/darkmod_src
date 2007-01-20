@@ -6,6 +6,68 @@
 #endif
 // We will add additional ones for other OS here later
 
+
+CKeyCode::CKeyCode():
+KeyState(KS_FREE),
+Impulse(0),
+VirtualKeyCode(0),
+RepeatCount(0),
+ScanCode(0),
+KeyMask(0),
+KeyPressCount(0)
+{
+}
+
+CKeyCode::~CKeyCode()
+{
+}
+
+CKeyCode::CKeyCode( const CKeyCode& Copy ):
+KeyState(KS_FREE),
+Impulse(0),
+VirtualKeyCode(0),
+RepeatCount(0),
+ScanCode(0),
+KeyMask(0),
+KeyPressCount(0)
+{
+	Clone( Copy );
+}
+
+CKeyCode::CKeyCode( const CKeyCode* Copy ):
+KeyState(KS_FREE),
+Impulse(0),
+VirtualKeyCode(0),
+RepeatCount(0),
+ScanCode(0),
+KeyMask(0),
+KeyPressCount(0)
+{
+	Clone( *Copy );
+}
+
+const CKeyCode& CKeyCode::Clone( const CKeyCode& Clone )
+{
+	KeyState = Clone.KeyState;
+	Impulse  = Clone.Impulse;
+	VirtualKeyCode = Clone.VirtualKeyCode;
+	RepeatCount = Clone.RepeatCount;
+	ScanCode = Clone.ScanCode;
+	KeyMask = Clone.KeyMask;
+	KeyPressCount = Clone.KeyPressCount;
+	return *this;
+}
+
+const CKeyCode& CKeyCode::operator=( const CKeyCode& Copy )
+{
+	return Clone( Copy );
+}
+
+const CKeyCode* CKeyCode::operator=( const CKeyCode* Copy )
+{
+	return & Clone( Copy );
+}
+
 KeyState_t CKeyCode::GetKeyState() const
 {
 	return KeyState;
@@ -105,7 +167,7 @@ CKeyboardHook::CKeyboardHook(void):
 	m_KeyCapImpulse(IR_COUNT),
 	m_KeyCapStartCount(0)
 {
-	memset( &m_KeyPress, 0, sizeof(KeyCode_t) );
+//	memset( &m_KeyPress, 0, sizeof(KeyCode_t) );
 	for( int i = 0; i < IR_COUNT; i++)
 	{
 		m_KeyData[i].KeyState = KS_FREE;
@@ -119,6 +181,11 @@ CKeyboardHook::CKeyboardHook(void):
 CKeyboardHook::~CKeyboardHook(void)
 {
 	delete m_hook;
+}
+
+const CKeyCode& CKeyboardHook::GetCurrentKey() const
+{
+	return m_KeyPress;
 }
 
 bool CKeyboardHook::KeyCapture( void )
@@ -169,7 +236,7 @@ bool CKeyboardHook::ImpulseInit(ImpulseFunction_t Function )
 
 	if(m_KeyData[Function].KeyState == KS_FREE)
 	{
-		memcpy(&m_KeyData[Function], &m_KeyPress, sizeof(KeyCode_t));
+		m_KeyData[Function] = m_KeyPress;
 		m_KeyData[Function].Impulse = -1;
 		m_KeyData[Function].KeyState = KS_UPDATED;
 		rc = false;

@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.104  2007/01/20 02:22:28  thelvyn
+ * Made the keyboard and mouse code more robust.
+ * See player.cpp for usage if needed
+ *
  * Revision 1.103  2007/01/20 01:37:34  thelvyn
  * Implemented Ctrl, Shift and Alt key detection.
  * Right , Left supported for all. Also generic dont care if left or right functions.
@@ -10466,9 +10470,9 @@ void idPlayer::SetImmobilization( const char *source, int type )
 
 void idPlayer::CheckHeldKeys( void )
 {
-	KeyCode_t *t(NULL);
-
 	CKeyboardHook* Keyboard = CKeyboardHook::getInstance();
+	CKeyCode ck = Keyboard->GetCurrentKey();
+	CKeyCode *t = NULL;
 
 // NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
 

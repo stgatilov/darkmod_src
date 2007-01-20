@@ -47,6 +47,13 @@ class CKeyCode
 	friend class CKeyboardHook;
 	friend class CKeyboardHookWindows;
 public:
+	CKeyCode();
+	~CKeyCode();
+	CKeyCode( const CKeyCode& );
+	CKeyCode( const CKeyCode* );
+	const CKeyCode& Clone( const CKeyCode& );
+	const CKeyCode& operator=( const CKeyCode& );
+	const CKeyCode* operator=( const CKeyCode* );
 	bool GetAlt( void ) const;
 	bool GetAltRight( void ) const;
 	bool GetAltLeft( void ) const;
@@ -69,7 +76,7 @@ protected:
 	unsigned short KeyMask;       // See Above
 	int		KeyPressCount;		// Count of this keypress (starts counting up from first key pressed)
 };
-typedef CKeyCode KeyCode_t;
+//typedef CKeyCode KeyCode_t;
 
 class CKeyboardHookBase // Base class for all Keyboard hook classes
 {
@@ -122,7 +129,7 @@ public:
 	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
 	 * via this pointer.
 	 */
-	KeyCode_t				*ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+	CKeyCode *ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
 
 	/********************************************************************************************************
 	*
@@ -144,6 +151,9 @@ public:
 	void					KeyCaptureStart( ImpulseFunction_t action );
 
 
+	const CKeyCode& GetCurrentKey() const;
+
+protected:
 	/********************************************************************************************************
 	*
 	*   Key and Impulse Variables
@@ -173,8 +183,8 @@ public:
 	* used to tell if keypress is current or from before.
 	**/
 	int						m_KeyCapStartCount;
-	KeyCode_t				m_KeyPress;				// Current keypress
-	KeyCode_t				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSEprivate:
+	CKeyCode				m_KeyPress;				// Current keypress
+	CKeyCode				m_KeyData[IR_COUNT];	// Keypress associated with an IMPULSEprivate:
 
 private:
 	// this is a base class* for the OS dependant hook class

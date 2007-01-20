@@ -56,22 +56,22 @@ LRESULT CMouseHookWindows::MouseProc( int nCode, WPARAM wParam, LPARAM lParam )
 		switch( wParam )
 		{
 		case WM_LBUTTONDOWN:
-			m_parent->SetLeftStatus( true );
+			m_parent->m_Mouse_LBPressed = true;
 			break;
 		case WM_LBUTTONUP:
-			m_parent->SetLeftStatus( false );
+			m_parent->m_Mouse_LBPressed = false;
 			break;
 		case WM_RBUTTONDOWN:
-			m_parent->SetRightStatus( true );
+			m_parent->m_Mouse_RBPressed = true;
 			break;
 		case WM_RBUTTONUP:
-			m_parent->SetRightStatus( false );
+			m_parent->m_Mouse_RBPressed = false;
 			break;			
 		case WM_MBUTTONDOWN:
-			m_parent->SetMiddleStatus( true );
+			m_parent->m_Mouse_MBPressed = true;
 			break;
 		case WM_MBUTTONUP:
-			m_parent->SetMiddleStatus( false );
+			m_parent->m_Mouse_MBPressed = false;
 			break;
 		default:
 			break;

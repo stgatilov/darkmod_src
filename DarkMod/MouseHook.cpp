@@ -49,18 +49,3 @@ bool CMouseHook::GetMiddleStatus() const
 {
 	return m_Mouse_MBPressed;
 }
-
-void CMouseHook::SetLeftStatus( bool Pressed )
-{
-	m_Mouse_LBPressed = Pressed;
-}
-
-void CMouseHook::SetRightStatus( bool Pressed )
-{
-	m_Mouse_RBPressed = Pressed;
-}
-
-void CMouseHook::SetMiddleStatus( bool Pressed )
-{
-	m_Mouse_MBPressed = Pressed;
-}
