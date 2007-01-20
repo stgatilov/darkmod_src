@@ -882,6 +882,12 @@
 					RelativePath=".\DarkMod\HidingSpotSearchCollection.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\idAbsenceMarkerEntity.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\idAbsenceMarkerEntity.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Intersection.cpp">
 				</File>
 				<File
