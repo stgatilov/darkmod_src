@@ -5,7 +5,7 @@
 #include "../idlib/precompiled.h"
 #include "../darkmod/MouseData.h"
 
-#define MOUSETEST  1 // undefine this to remove the status text
+// #define MOUSETEST  1 // undefine this to remove the status text
 
 class CMouseHook;
 class CMouseHookBase // Base class for all Mouse hook classes
