@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.27  2007/01/21 11:15:51  ishtvan
+ * listening thru doors when leaning against them implemented
+ *
  * Revision 1.26  2007/01/21 02:10:13  ishtvan
  * updates in collision detection and actions taken as a result
  *
@@ -124,6 +127,7 @@
 */
 
 class idAFEntity_Base;
+class CFrobDoor;
 
 // movementType
 typedef enum {
@@ -296,13 +300,13 @@ private:
 	/**
 	* The rope entity that the player last attached to
 	**/
-    idAFEntity_Base			*m_RopeEntity;
+    idEntityPtr<idAFEntity_Base>	m_RopeEntity;
 
 	/**
 	* The rope entity that the player last touched (not necessarily attached to)
 	* Used for the case where the player starts inside a rope and jumps up
 	**/
-	idAFEntity_Base			*m_RopeEntTouched;
+	idEntityPtr<idAFEntity_Base>	m_RopeEntTouched;
 
 	/**
 	* The gametime since the last detachment (used for detach-reattach timer)
@@ -328,6 +332,17 @@ private:
 	* In degrees.
 	**/
 	float					m_DeltaViewYaw;
+
+	/**
+	* Door that the player is leaning into
+	* Set to NULL if the player is not leaning into a door
+	**/
+	idEntityPtr<CFrobDoor>	m_LeanDoorEnt;
+
+	/**
+	* Position to place the player listener beyond the door when door leaning
+	**/
+	idVec3					m_LeanDoorListenPos;
 
 	// results of last evaluate
 #ifndef MOD_WATERPHYSICS
@@ -717,6 +732,13 @@ protected:
 	**/
 	idBounds m_LeanViewBounds;
 
+protected:
+	/**
+	* This uses the other internal mtehods to coordiante the lean
+	* lean movement.
+	**/
+	void LeanMove();
+
 	/**
 	* Test clipping for the current eye position, plus delta in the lean direction
 	**/
@@ -744,16 +766,29 @@ protected:
 	void UpdateLeanPhysics( void );
 
 	/**
-	* This uses the other internal mtehods to coordiante the lean
-	* lean movement.
-	**/
-	void LeanMove();
-
-	/**
 	* This method gets called when the leaned player view is found to be clipping something
 	* It un-leans them in increments until they are outside the solid object
 	**/
 	void UnleanToValidPosition( void );
+
+	/**
+	* Calculates the listener position when leaning against a given door
+	* Tests points in space along the lean yaw axis until they come out the other
+	* side of the door into empty space.
+	*
+	* Takes the point of contact (where the trace hit the door), 
+	*	starts testing at this point, extending along lean yaw axis.
+	*
+	* If a point is found, it sets m_DoorListenPos and returns true
+	* If door is too thick to listen through, returns false
+	**/
+	bool FindLeanDoorListenPos( idVec3 IncidencePoint, CFrobDoor *door );
+
+	/**
+	* Tests whether the player is still leaning against the door.
+	* If not, clears m_LeanDoorEnt
+	**/
+	void UpdateLeanDoor( void );
 
 public:
 
@@ -781,6 +816,11 @@ public:
 	* @retval false if the player is not changing lean
 	*/
 	__inline bool IsLeaning();
+
+	/**
+	* Returns true if the player is leaning against a door
+	**/
+	bool		IsDoorLeaning();
 
 	/*!
 	* This is called from idPlayer to adjust the camera before

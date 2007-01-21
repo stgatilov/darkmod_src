@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.43  2007/01/21 11:15:13  ishtvan
+ * listening thru doors when leaning against them implemented
+ *
  * Revision 1.42  2007/01/03 00:28:03  crispy
  * New script event rangedThreatTo. Added idWeapon::IsRanged.
  *
@@ -551,6 +554,19 @@ public:
 							// delta view angles to allow movers to rotate the view of the player
 	void					UpdateDeltaViewAngles( const idAngles &angles );
 
+	/**
+	* Get or set the listener location for the player, in world coordinates
+	**/
+	idVec3					GetListenerLoc( void );
+	void					SetListenerLoc( idVec3 loc );
+
+	/**
+	* Set/Get the door listening location
+	**/
+	void					SetDoorListenLoc( idVec3 loc );
+	idVec3					GetDoorListenLoc( void );
+
+
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
@@ -823,6 +839,17 @@ private:
 	const idDeclSkin *		influenceSkin;
 
 	idCamera *				privateCameraView;
+
+	/**
+	* Location of the player's ears for sound rendering
+	**/
+	idVec3					m_ListenerLoc;
+
+	/**
+	* Location of the player's ear point when the player is leaning against
+	* a door (i.e., a point on the other side of the door)
+	**/
+	idVec3					m_DoorListenLoc;
 
 	/**
 	* m_immobilization keeps track of sources of immobilization.

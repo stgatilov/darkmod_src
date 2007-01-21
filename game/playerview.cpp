@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2007/01/21 11:15:13  ishtvan
+ * listening thru doors when leaning against them implemented
+ *
  * Revision 1.12  2007/01/20 02:22:28  thelvyn
  * Made the keyboard and mouse code more robust.
  * See player.cpp for usage if needed
@@ -499,8 +502,8 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 	}
 
 	// place the sound origin for the player
-	gameSoundWorld->PlaceListener( view->vieworg, view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
-
+	// TODO: Support overriding the location area so that reverb settings can be applied for listening thru doors?
+	gameSoundWorld->PlaceListener( player->GetListenerLoc(), view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
 
 	// if the objective system is up, don't do normal drawing
 	if ( player->objectiveSystemOpen ) {

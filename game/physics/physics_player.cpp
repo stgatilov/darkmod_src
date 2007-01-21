@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2007/01/21 11:15:51  ishtvan
+ * listening thru doors when leaning against them implemented
+ *
  * Revision 1.45  2007/01/21 02:10:13  ishtvan
  * updates in collision detection and actions taken as a result
  *
@@ -178,6 +181,8 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
+#include "../DarkMod/BinaryFrobMover.h"
+#include "../DarkMod/FrobDoor.h"
 
 CLASS_DECLARATION( idPhysics_Actor, idPhysics_Player )
 END_CLASS
@@ -1070,7 +1075,7 @@ void idPhysics_Player::RopeMove( void )
 	idVec3 transVec, forward, playerVel(0,0,0), PlayerPoint(0,0,0);
 	int bodID(0);
 
-	if( !m_RopeEntity )
+	if( !m_RopeEntity.GetEntity() )
 	{
 		RopeDetach();
 		goto Quit;
@@ -1083,10 +1088,10 @@ void idPhysics_Player::RopeMove( void )
 
 	// stick the player to the rope at an AF origin point closest to their arms
 	PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
-	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->NearestBodyOrig( PlayerPoint, &bodID );
+	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->NearestBodyOrig( PlayerPoint, &bodID );
 	
 	// apply the player's weight to the AF body - COMMENTED OUT DUE TO AF CRAZINESS
-//	static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce(bodID, ropePoint, mass * gravityVector );
+//	static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->AddForce(bodID, ropePoint, mass * gravityVector );
 
 	// if the player has hit the rope this frame, apply an impulse based on their velocity
 	// pretend the deceleration takes place over a number of frames for realism (100 ms?)
@@ -1097,7 +1102,7 @@ void idPhysics_Player::RopeMove( void )
 		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
 		vImpulse *= mass;
 
-		static_cast<idPhysics_AF *>(m_RopeEntity->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1f );
+		static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1f );
 	}
 
 	offset = (current.origin - ropePoint);
@@ -1117,7 +1122,7 @@ void idPhysics_Player::RopeMove( void )
 
 	// Find the top and bottom of the rope
 	// This must be done every frame since the rope may be deforming
-	ropeBounds = m_RopeEntity->GetPhysics()->GetAbsBounds();
+	ropeBounds = m_RopeEntity.GetEntity()->GetPhysics()->GetAbsBounds();
 	ropeTop = ropeBounds[0].z;
 	ropeBot = ropeBounds[1].z;
 
@@ -1646,12 +1651,12 @@ void idPhysics_Player::CheckLadder( void )
 				&& ( (trace.endpos - current.origin).Length() <= 2.0f )
 				&& !groundPlane
 				&& angleOff >= idMath::Cos( ROPE_ATTACHANGLE )
-				&& (testEnt != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
+				&& (testEnt != m_RopeEntity.GetEntity() || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
 				)
 			{
 				// make sure rope segment is not touching the ground
-				int bodyID = m_RopeEntTouched->BodyForClipModelId( trace.c.id );
-				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->HasGroundContacts( bodyID ) )
+				int bodyID = m_RopeEntTouched.GetEntity()->BodyForClipModelId( trace.c.id );
+				if( !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContacts( bodyID ) )
 				{
 					m_bRopeContact = true;
 					m_bJustHitRope = true;
@@ -1690,15 +1695,15 @@ void idPhysics_Player::CheckLadder( void )
 	if 
 		( 
 			!m_bRopeAttached 
-			&& m_RopeEntTouched
-			&& m_RopeEntTouched->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
+			&& m_RopeEntTouched.GetEntity() != NULL
+			&& m_RopeEntTouched.GetEntity()->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
 			&& !groundPlane
 		)
 	{
 		// test distance against the nearest rope body
 		int touchedBody = -1;
 		idVec3 PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
-		idVec3 RopeSegPoint = static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->NearestBodyOrig( PlayerPoint, &touchedBody );
+		idVec3 RopeSegPoint = static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->NearestBodyOrig( PlayerPoint, &touchedBody );
 
 		delta = ( RopeSegPoint - PlayerPoint);
 		delta = delta - (gravityNormal * delta) * gravityNormal;
@@ -1716,13 +1721,13 @@ void idPhysics_Player::CheckLadder( void )
 			(	
 				dist <= ROPE_DISTANCE
 				&& ( angleOff >= idMath::Cos( ROPE_ATTACHANGLE ) || bLookingUp )
-				&& (m_RopeEntTouched != m_RopeEntity || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
-				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched->GetPhysics())->HasGroundContacts( touchedBody )
+				&& (m_RopeEntTouched.GetEntity() != m_RopeEntity.GetEntity() || gameLocal.time - m_RopeDetachTimer > ROPE_REATTACHTIME)
+				&& !static_cast<idPhysics_AF *>(m_RopeEntTouched.GetEntity()->GetPhysics())->HasGroundContacts( touchedBody )
 			)
 		{
 				m_bRopeContact = true;
 				m_bJustHitRope = true;
-				m_RopeEntity = m_RopeEntTouched;
+				m_RopeEntity = m_RopeEntTouched.GetEntity();
 				goto Quit;
 		}
 	}
@@ -2204,6 +2209,9 @@ idPhysics_Player::idPhysics_Player( void )
 	m_viewLeanAngles = ang_zero;
 	m_viewLeanTranslation = vec3_zero;
 
+	m_LeanDoorListenPos = vec3_zero;
+	m_LeanDoorEnt = NULL;
+
 	m_DeltaViewYaw = 0.0;
 
 	// Initialize lean view bounds used for collision
@@ -2280,7 +2288,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bJustHitRope );
 	savefile->WriteBool( m_bRopeAttached );
 	savefile->WriteInt( m_RopeDetachTimer );
-	savefile->WriteObject( m_RopeEntity );
+	m_RopeEntity.Save( savefile );
+	m_RopeEntTouched.Save( savefile );
 	savefile->WriteFloat( m_lastCommandViewYaw );
 
 	savefile->WriteBool( ladder );
@@ -2311,6 +2320,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteAngles (m_lastPlayerViewAngles);
 	savefile->WriteAngles (m_viewLeanAngles);
 	savefile->WriteVec3 (m_viewLeanTranslation);
+	savefile->WriteVec3 (m_LeanDoorListenPos);
+	m_LeanDoorEnt.Save( savefile );
 
 
 
@@ -2350,7 +2361,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bJustHitRope );
 	savefile->ReadBool( m_bRopeAttached );
 	savefile->ReadInt( m_RopeDetachTimer );
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_RopeEntity ) );
+	m_RopeEntity.Restore( savefile );
+	m_RopeEntTouched.Restore( savefile );
 	savefile->ReadFloat( m_lastCommandViewYaw );
 
 	savefile->ReadBool( ladder );
@@ -2391,6 +2403,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadAngles (m_lastPlayerViewAngles);
 	savefile->ReadAngles (m_viewLeanAngles);
 	savefile->ReadVec3 (m_viewLeanTranslation);
+	savefile->ReadVec3 (m_LeanDoorListenPos);
+	m_LeanDoorEnt.Restore( savefile );
 
 	
 	if (!m_mantledEntityName.IsEmpty())
@@ -2409,7 +2423,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	}
 
 
-	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("REstore finished\n");
+	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }
 
 /*
@@ -2517,7 +2531,8 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	clipModel->Unlink();
 
 	// if bound to a master
-	if ( masterEntity ) {
+	if ( masterEntity ) 
+	{
 		self->GetMasterPosition( masterOrigin, masterAxis );
 		current.origin = masterOrigin + current.localOrigin * masterAxis;
 		clipModel->Link( gameLocal.clip, self, 0, current.origin, clipModel->GetAxis() );
@@ -4117,17 +4132,27 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	bWouldClip = trTest.fraction < 1.0f;
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Collision trace between old view point ( %d, %d, %d ) and newPoint: ( %d, %d, %d )\r", origPoint.x, origPoint.y, origPoint.z, newPoint.x, newPoint.y, newPoint.z );
 
-	// TODO: Door test...
-
 	// Do not lean farther if the player would hit the wall
 	// TODO: This may lead to early stoppage at low FPS, so might want to interpolate
 	if( bWouldClip )
 	{
+		TrEnt = gameLocal.GetTraceEntity( trTest );
+
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Lean test point within solid, lean motion stopped.\r" );
 		
+		// Door leaning test
+		if( TrEnt 
+			&& TrEnt->IsType(CFrobDoor::Type)
+			&& !( static_cast<CFrobDoor *>(TrEnt)->isOpen() )
+			&& m_LeanDoorEnt.GetEntity() == NULL )
+		{
+			// If it is a door, can it be listened through?
+			if( FindLeanDoorListenPos( trTest.c.point, (CFrobDoor *) TrEnt ) )
+				m_LeanDoorEnt = (CFrobDoor *) TrEnt;
+		}
+
 		// Detect AI collision, if entity hit or its bindmaster is an AI:
-		if( ( TrEnt = gameLocal.GetTraceEntity( trTest ) ) != NULL 
-			&& TrEnt->IsType(idAI::Type) )
+		if( TrEnt && TrEnt->IsType(idAI::Type) )
 		{
 			static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
 		}
@@ -4217,8 +4242,11 @@ void idPhysics_Player::LeanMove()
 		UnleanToValidPosition();
 	}
 
-	// TODO: Update lean radius if player is crouching/uncrouching
+	// Lean door test
+	if( IsLeaning() )
+		UpdateLeanDoor();
 
+	// TODO: Update lean radius if player is crouching/uncrouching
 }
 
 bool idPhysics_Player::TestLeanClip( void )
@@ -4302,9 +4330,9 @@ idVec3 idPhysics_Player::LeanParmsToPoint( float AngTilt, float Stretch )
 
 void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
 {
-	if( RopeEnt && m_RopeEntity && m_RopeEntity == RopeEnt )
+	if( RopeEnt && m_RopeEntity.GetEntity() && m_RopeEntity.GetEntity() == RopeEnt )
 		m_RopeEntity = NULL;
-	if( RopeEnt && m_RopeEntTouched && m_RopeEntTouched == RopeEnt )
+	if( RopeEnt && m_RopeEntTouched.GetEntity() && m_RopeEntTouched.GetEntity() == RopeEnt )
 		m_RopeEntTouched = NULL;
 }
 
@@ -4428,8 +4456,8 @@ void idPhysics_Player::UnleanToValidPosition( void )
 
 	float TestLeanDegrees = m_CurrentLeanTiltDegrees;
 	float TestLeanStretch = m_CurrentLeanStretch;
-	float DeltaDeg = TestLeanDegrees / cv_pm_lean_to_valid_increments.GetFloat();
-	float DeltaStretch = TestLeanStretch / cv_pm_lean_to_valid_increments.GetFloat();
+	float DeltaDeg = TestLeanDegrees / (float) cv_pm_lean_to_valid_increments.GetInteger();
+	float DeltaStretch = TestLeanStretch / (float) cv_pm_lean_to_valid_increments.GetInteger();
 
 	// Must temporarily set these to get proper behavior from max angle
 	m_leanMoveMaxAngle = m_CurrentLeanTiltDegrees;
@@ -4437,7 +4465,7 @@ void idPhysics_Player::UnleanToValidPosition( void )
 	m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
 	m_leanMoveEndTilt = 0.0f;
 
-	for( int i=0; i < (int) cv_pm_lean_to_valid_increments.GetFloat(); i++ )
+	for( int i=0; i < cv_pm_lean_to_valid_increments.GetInteger(); i++ )
 	{
 		// Lean degrees are always positive
 		TestLeanDegrees -= DeltaDeg;
@@ -4457,4 +4485,113 @@ void idPhysics_Player::UnleanToValidPosition( void )
 	m_CurrentLeanStretch = TestLeanStretch;
 	
 	UpdateLeanPhysics();
+}
+
+bool idPhysics_Player::FindLeanDoorListenPos( idVec3 IncidencePoint, CFrobDoor *door )
+{
+	bool bFoundEmptySpace( false );
+	int contents = -1;
+	idVec3 vTest( IncidencePoint ), vDirTest( vec3_zero ), vLeanDir( 1.0f, 0.0f, 0.0f );
+	idAngles LeanYaw;
+	idAngles viewYawOnly = viewAngles;
+	
+	LeanYaw.Zero();
+	LeanYaw.yaw = m_leanYawAngleDegrees - 90.0f;
+
+	viewYawOnly.pitch = 0.0f;
+	viewYawOnly.roll = 0.0f;
+
+	vDirTest = viewYawOnly.ToMat3() * LeanYaw.ToMat3() * vLeanDir;
+	vDirTest.Normalize();
+
+	int MaxCount = cv_pm_lean_door_increments.GetInteger();
+
+
+	for( int count = 1; count < MaxCount; count++ )
+	{
+		vTest += vDirTest * ( (float) count / (float) MaxCount ) * cv_pm_lean_door_max.GetFloat();
+		
+		contents = gameLocal.clip.Contents( vTest, NULL, mat3_identity, CONTENTS_SOLID, self );
+		
+		// found empty space on other side of door
+		if( !( (contents & MASK_SOLID) > 0 ) )
+		{
+			gameLocal.Printf("Lean Into Door: Found empty space on other side of door.  Incidence point: %s Empty space point: %s \n", IncidencePoint.ToString(), vTest.ToString() );
+			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Lean Into Door: Found empty space on other side of door.  Incidence point: %s Empty space point: %s \r", IncidencePoint.ToString(), vTest.ToString() );
+			
+			bFoundEmptySpace = true;
+			m_LeanDoorListenPos = vTest;
+			break;
+		}
+	}
+
+	// uncomment to debug the lean direction line
+	// gameRenderWorld->DebugArrow( colorBlue, IncidencePoint, IncidencePoint + 15.0f * vDirTest, 5.0f, 10000 );
+	
+	return bFoundEmptySpace;
+}
+
+void idPhysics_Player::UpdateLeanDoor( void )
+{
+	CFrobDoor *door(NULL);
+	idPlayer *pPlayer = (idPlayer *) self;
+
+	door = m_LeanDoorEnt.GetEntity();
+
+	if( door && pPlayer )
+	{
+		if( !m_LeanDoorEnt.IsValid() 
+			|| door->isOpen()
+			|| !IsLeaning() )
+		{
+			m_LeanDoorEnt = NULL;
+			goto Quit;
+		}
+
+		idBounds TestBounds = m_LeanViewBounds;
+		TestBounds.ExpandSelf( cv_pm_lean_door_bounds_exp.GetFloat() );
+		TestBounds.TranslateSelf( pPlayer->GetEyePosition() );
+
+/** More precise test (Not currently used)
+	
+		int numEnts = 0;
+		idEntity *ents[MAX_GENTITIES];
+		idEntity *ent = NULL;
+		bool bMatchedDoor(false);
+
+		numEnts = gameLocal.clip.EntitiesTouchingBounds( TestBounds, CONTENTS_SOLID, ents, MAX_GENTITIES);
+		for( int i=0; i < numEnts; i++ )
+		{
+			if( ents[i] == (idEntity *) door )
+			{
+				bMatchedDoor = true;
+				break;
+			}
+		}
+
+		if( !bMatchedDoor )
+		{
+			m_LeanDoorEnt = NULL;
+			goto Quit;
+		}
+**/
+
+		if( !TestBounds.IntersectsBounds( door->GetPhysics()->GetAbsBounds() ) )
+		{
+			m_LeanDoorEnt = NULL;
+			goto Quit;
+		}
+		
+		// We are leaning into a door
+		// overwrite the current player listener loc with that calculated for the door
+		pPlayer->SetDoorListenLoc( m_LeanDoorListenPos );
+	}
+
+Quit:
+	return;
+}
+
+bool idPhysics_Player::IsDoorLeaning( void )
+{
+	return (m_LeanDoorEnt.GetEntity() != NULL) && m_LeanDoorEnt.IsValid();
 }
