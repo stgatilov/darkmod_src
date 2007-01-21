@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2007/01/21 10:50:57  crispy
+ * Added animation replacement functionality (i.e. replace_anim_* spawnargs)
+ *
  * Revision 1.17  2007/01/06 10:06:49  ishtvan
  * fov check fix
  *
@@ -295,6 +298,7 @@ public:
 	
 							// animation state control
 	int						GetAnim( int channel, const char *name );
+	const char*				LookupReplacementAnim( const char *name );
 	void					UpdateAnimState( void );
 	void					SetAnimState( int channel, const char *name, int blendFrames );
 	const char *			GetAnimState( int channel ) const;
@@ -368,6 +372,9 @@ protected:
 	int						painTime;
 
 	idList<idAttachInfo>	m_attachments;
+	
+	// Maps animation names to the names of their replacements
+	idDict					m_replacementAnims;
 
 	/**
 	* Movement volume modifiers.  Ones for the player are taken from 
