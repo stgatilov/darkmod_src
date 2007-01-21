@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2007/01/21 12:58:34  ishtvan
+ * rope arrow: rope segment vertical velocity now added to player's vertical velocity
+ *
  * Revision 1.47  2007/01/21 12:23:18  ishtvan
  * removed lean debug output to console accidentally left in
  *
@@ -1268,6 +1271,9 @@ void idPhysics_Player::RopeMove( void )
 		RopeDetach();
 		goto Quit;
 	}
+
+	// Add in the z velocity of the rope segment they're clinging to
+	current.velocity += gravityNormal * (gravityNormal * m_RopeEntity.GetEntity()->GetPhysics()->GetLinearVelocity( bodID )); 
 
 	// slide the player up and down with their calculated velocity
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
