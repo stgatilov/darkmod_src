@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.33  2007/01/21 02:10:52  ishtvan
+ * added lean_to_valid_increments cvar for controlling lean to valid point smoothness
+ *
  * Revision 1.32  2007/01/09 13:00:19  ishtvan
  * lean_forward cvars added
  *
@@ -147,6 +150,7 @@ extern idCVar cv_pm_lean_forward_angle;
 extern idCVar cv_pm_lean_forward_time;
 extern idCVar cv_pm_lean_forward_height;
 extern idCVar cv_pm_lean_forward_stretch;
+extern idCVar cv_pm_lean_to_valid_increments;
 
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
