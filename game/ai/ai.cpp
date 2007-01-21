@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.55  2007/01/21 06:44:10  crispy
+ * Revised cover search - now traces from AI's eyes as well as its feet
+ *
  * Revision 1.54  2007/01/19 05:05:10  thelvyn
  * More keyboard hook work. Mostly tweaking. Not sure what I did to ai.cpp
  *
@@ -366,9 +369,9 @@ void idMoveState::Restore( idRestoreGame *savefile ) {
 idAASFindCover::idAASFindCover
 ============
 */
-idAASFindCover::idAASFindCover( const idEntity* hidingEntity, const idEntity* hideFromEnt, const idVec3 &hideFromPos ) {
-	this->hidingEntity = hidingEntity; // May be NULL
-	this->hideFromEnt = hideFromEnt; // Maybe NULL
+idAASFindCover::idAASFindCover( const idActor* hidingActor, const idEntity* hideFromEnt, const idVec3 &hideFromPos ) {
+	this->hidingActor = hidingActor; // This should not be NULL
+	this->hideFromEnt = hideFromEnt; // May be NULL
 	this->hideFromPos = hideFromPos;
 }
 
@@ -385,33 +388,54 @@ idAASFindCover::~idAASFindCover() {
 idAASFindCover::TestArea
 ============
 */
-bool idAASFindCover::TestArea( const idAAS *aas, int areaNum ) {
+bool idAASFindCover::TestArea( const idAAS *aas, int areaNum )
+{
 	idVec3	areaCenter;
-	trace_t trace;
-
+	trace_t	trace, trace2;
+	
+	if (areaNum == aas->PointAreaNum(hidingActor->GetPhysics()->GetOrigin()))
+	{
+		// We're in this AAS area; assume that our current position can never be cover.
+		// (If it was, we probably wouldn't be trying to move into cover.)
+		return false;
+	}
+	
+	// Get location of feet
+	// Assumes they're at the centre of the bounding box in the X and Y axes,
+	// but at the bottom in the Z axis.
+	idBounds bounds = hidingActor->GetPhysics()->GetAbsBounds();
+	idVec3 feet = (bounds[0] + bounds[1]) * 0.5f;
+	feet.z = bounds[0].z;
+	
+	// Get location to trace to
 	areaCenter = aas->AreaCenter( areaNum );
-	areaCenter[ 2 ] += 6.0f;
-
-	const idVec3 &org = hidingEntity->GetPhysics()->GetOrigin();
-	if (areaNum == aas->PointAreaNum(org)) {
-		// We're in this AAS area; use our eye position instead of the AAS area's center.
-		// This prevents problems where the AI decides not to move because the center
-		// of its AAS area is obscured, but the AI itself is still in full view.
-		if (dynamic_cast <const idActor*>(hidingEntity)) {
-			areaCenter = static_cast <const idActor*> (hidingEntity)->GetEyePosition();
-		} else {
-			areaCenter = org;
-			areaCenter[2] += 6.0f;
-		}
-	}
-
+	
+	// Adjust areaCenter to factor in height of AI, so we trace from the estimated eye position
+	areaCenter += hidingActor->GetEyePosition() - feet;
+	
 	gameLocal.clip.TracePoint(trace, hideFromPos, areaCenter, MASK_OPAQUE, hideFromEnt);
-	if (trace.fraction < 1.0f) {
-		//gameRenderWorld->DebugLine( colorGreen, hideFromPos, areaCenter, 1000000, true);
-		return true;
+	if (trace.fraction < 1.0f)
+	{
+		// The trace was interrupted, so this location is probably cover.
+		//gameRenderWorld->DebugLine( colorGreen, hideFromPos, areaCenter, 5000, true);
+		
+		// But before we say for certain, let's look at the floor as well.
+		areaCenter = aas->AreaCenter( areaNum );
+		gameLocal.clip.TracePoint(trace2, hideFromPos, areaCenter, MASK_OPAQUE, hideFromEnt);
+		if (trace2.fraction < 1.0f)
+		{
+			// Yes, the feet are hidden too, so this is almost certainly cover
+			//gameRenderWorld->DebugLine( colorGreen, hideFromPos, areaCenter, 5000, true);
+			return true;
+		}
+		
+		// Oops; the head is hidden but the feet are not, so this isn't very good cover at all.
+		//gameRenderWorld->DebugLine( colorRed, hideFromPos, areaCenter, 5000, true);
+		return false;
 	}
-	//gameRenderWorld->DebugLine( colorRed, hideFromPos, areaCenter, 1000000, true);
-
+	
+	// The trace found a clear path, so this location is not cover.
+	//gameRenderWorld->DebugLine( colorRed, hideFromPos, areaCenter, 5000, true);
 	return false;
 }
 

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2007/01/21 06:44:10  crispy
+ * Revised cover search - now traces from AI's eyes as well as its feet
+ *
  * Revision 1.36  2007/01/17 03:45:12  thelvyn
  * *** empty log message ***
  *
@@ -380,13 +383,13 @@ public:
 
 class idAASFindCover : public idAASCallback {
 public:
-						idAASFindCover( const idEntity* hidingEntity, const idEntity* hideFromEnt, const idVec3 &hideFromPos );
+						idAASFindCover( const idActor* hidingActor, const idEntity* hideFromEnt, const idVec3 &hideFromPos );
 						~idAASFindCover();
 
 	virtual bool		TestArea( const idAAS *aas, int areaNum );
 
 private:
-	const idEntity*		hidingEntity;
+	const idActor*		hidingActor;
 	const idEntity*		hideFromEnt;
 	idVec3				hideFromPos;
 };
