@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.105  2007/01/21 02:11:49  ishtvan
+ * leaned view yaw change now checks for collision and stops the change if so
+ *
  * Revision 1.104  2007/01/20 02:22:28  thelvyn
  * Made the keyboard and mouse code more robust.
  * See player.cpp for usage if needed
@@ -5488,16 +5491,18 @@ void idPlayer::SetViewAngles( const idAngles &angles ) {
 idPlayer::UpdateViewAngles
 ================
 */
-void idPlayer::UpdateViewAngles( void ) {
+void idPlayer::UpdateViewAngles( void ) 
+{
 	int i;
 	idAngles delta;
+	idAngles TestAngles = viewAngles;
 
 	if ( !noclip && ( gameLocal.inCinematic || privateCameraView || gameLocal.GetCamera() || influenceActive == INFLUENCE_LEVEL2 || objectiveSystemOpen || GetImmobilization() & EIM_VIEW_ANGLE ) ) 
 	{
 		// no view changes at all, but we still want to update the deltas or else when
 		// we get out of this mode, our view will snap to a kind of random angle
 		UpdateDeltaViewAngles( viewAngles );
-		return;
+		goto Quit;
 	}
 
 	// if dead
@@ -5509,40 +5514,47 @@ void idPlayer::UpdateViewAngles( void ) {
 			viewAngles.roll = 40.0f;
 			viewAngles.pitch = -15.0f;
 		}
-		return;
+		goto Quit;
 	}
 
 	// circularly clamp the angles with deltas
-	for ( i = 0; i < 3; i++ ) {
+	for ( i = 0; i < 3; i++ ) 
+	{
 		cmdAngles[i] = SHORT2ANGLE( usercmd.angles[i] );
-		if ( influenceActive == INFLUENCE_LEVEL3 ) {
-			viewAngles[i] += idMath::ClampFloat( -1.0f, 1.0f, idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] ) );
-		} else {
-			viewAngles[i] = idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] );
+		if ( influenceActive == INFLUENCE_LEVEL3 ) 
+		{
+			TestAngles[i] += idMath::ClampFloat( -1.0f, 1.0f, idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] ) );
+		} else 
+		{
+			TestAngles[i] = idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] );
 		}
 	}
 	if ( !centerView.IsDone( gameLocal.time ) ) {
-		viewAngles.pitch = centerView.GetCurrentValue(gameLocal.time);
+		TestAngles.pitch = centerView.GetCurrentValue(gameLocal.time);
 	}
 
 	// clamp the pitch
 	if ( noclip ) {
-		if ( viewAngles.pitch > 89.0f ) {
+		if ( TestAngles.pitch > 89.0f ) {
 			// don't let the player look down more than 89 degrees while noclipping
-			viewAngles.pitch = 89.0f;
-		} else if ( viewAngles.pitch < -89.0f ) {
+			TestAngles.pitch = 89.0f;
+		} else if ( TestAngles.pitch < -89.0f ) {
 			// don't let the player look up more than 89 degrees while noclipping
-			viewAngles.pitch = -89.0f;
+			TestAngles.pitch = -89.0f;
 		}
 	} else {
-		if ( viewAngles.pitch > pm_maxviewpitch.GetFloat() ) {
+		if ( TestAngles.pitch > pm_maxviewpitch.GetFloat() ) {
 			// don't let the player look down enough to see the shadow of his (non-existant) feet
-			viewAngles.pitch = pm_maxviewpitch.GetFloat();
-		} else if ( viewAngles.pitch < pm_minviewpitch.GetFloat() ) {
+			TestAngles.pitch = pm_maxviewpitch.GetFloat();
+		} else if ( TestAngles.pitch < pm_minviewpitch.GetFloat() ) {
 			// don't let the player look up more than 89 degrees
-			viewAngles.pitch = pm_minviewpitch.GetFloat();
+			TestAngles.pitch = pm_minviewpitch.GetFloat();
 		}
 	}
+
+	// TDM: Check for collisions due to delta yaw when leaning, overwrite test angles to avoid
+	physicsObj.UpdateLeanedInputYaw( TestAngles );
+	viewAngles = TestAngles;
 
 	UpdateDeltaViewAngles( viewAngles );
 
@@ -5552,6 +5564,9 @@ void idPlayer::UpdateViewAngles( void ) {
 
 	// save in the log for analyzing weapon angle offsets
 	loggedViewAngles[ gameLocal.framenum & (NUM_LOGGED_VIEW_ANGLES-1) ] = viewAngles;
+
+Quit:
+	return;
 }
 
 /*
