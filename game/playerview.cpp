@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2007/01/21 12:31:07  thelvyn
+ * disabled mouse and key hook display.
+ *
  * Revision 1.13  2007/01/21 11:15:13  ishtvan
  * listening thru doors when leaning against them implemented
  *
@@ -584,7 +587,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 		}
 		player->DrawHUD( hud );
 
-#ifdef MOUSETEST
+#ifdef MOUSETEST_DISABLED
 		{
 			char buffer[128];
 			memset( buffer, 0, 128 );
