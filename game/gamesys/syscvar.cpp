@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2007/01/21 11:17:04  ishtvan
+ * leaning thru doors cvars added
+ *
  * Revision 1.47  2007/01/21 02:10:52  ishtvan
  * added lean_to_valid_increments cvar for controlling lean to valid point smoothness
  *
@@ -231,7 +234,10 @@ idCVar cv_pm_lean_forward_angle(	"pm_lean_forward_angle",	"2",			CVAR_GAME | CVA
 idCVar cv_pm_lean_forward_time(		"pm_lean_forward_time",		"400.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Time it takes to get to a full lean, in milliseconds." );
 idCVar cv_pm_lean_forward_height(	"pm_lean_forward_height",	"0.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: Height of the fulcrum about which the player leans, as a fraction of the player's eye height." );
 idCVar cv_pm_lean_forward_stretch(	"pm_lean_forward_stretch",	"15",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Forward lean: The amount the player stretches out at a full lean, written as a fraction of the player's un-stretched height." );
-idCVar cv_pm_lean_to_valid_increments( "pm_lean_to_valid_increments", "25",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Integer number of increments used for testing when leaning back to a valid position after a leaned clipping problem.  The higher the number, the smoother the un-lean will feel, but the higher the computation time." );
+idCVar cv_pm_lean_to_valid_increments( "pm_lean_to_valid_increments", "25",		CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Integer number of increments used for testing when leaning back to a valid position after a leaned clipping problem.  The higher the number, the smoother the un-lean will feel, but the higher the computation time." );
+idCVar cv_pm_lean_door_increments(	"pm_lean_door_increments", "10",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Integer number of increments used for testing when extending a lean through a door acoustically." );
+idCVar cv_pm_lean_door_max(			"pm_lean_door_max",		"40",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Max distance of door that may be listened through at normal incidence, in doom units." );
+idCVar cv_pm_lean_door_bounds_exp(	"pm_lean_door_bounds_exp", "8.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Amount to expand the camera view bounds by when testing if the player is still pressed against a door for listening purposes (default 8.0)."); 
 
 /**
 * Dark Mod Frobbing
