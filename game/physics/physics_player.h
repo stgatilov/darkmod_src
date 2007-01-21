@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2007/01/21 02:10:13  ishtvan
+ * updates in collision detection and actions taken as a result
+ *
+ * rewriting
+ *
  * Revision 1.25  2007/01/09 12:57:57  ishtvan
  * *) lean collision test bugfixes
  *
@@ -645,7 +650,7 @@ protected:
 	/*! 
 	* The current lean angle
 	*/
-	float m_currentLeanTiltDegrees;
+	float m_CurrentLeanTiltDegrees;
 
 	/**
 	* Current lean stretch fraction.  When this is 1.0, the player is at full stretch, at 0.0, not stretched
@@ -727,14 +732,28 @@ protected:
 	* that does not result in a clip model trace collision.
 	*
 	* This is an internal method called by LeanMove.
-	*/
+	* UpdateLeanPhysics must be called after this.
+	**/
 	void UpdateLeanAngle (float deltaLeanAngle, float deltaLeanStretch);
 
-	/*!
+	/**
+	* Takes the currently set m_CurrentLeanTiltDegrees and m_CurrentLeanStretch
+	* And updates m_LeanTranslation and m_ViewLeanAngles
+	* Should be called after changing these member vars.
+	**/
+	void UpdateLeanPhysics( void );
+
+	/**
 	* This uses the other internal mtehods to coordiante the lean
 	* lean movement.
-	*/
+	**/
 	void LeanMove();
+
+	/**
+	* This method gets called when the leaned player view is found to be clipping something
+	* It un-leans them in increments until they are outside the solid object
+	**/
+	void UnleanToValidPosition( void );
 
 public:
 
@@ -775,6 +794,15 @@ public:
 	* rendering
 	*/
 	idVec3 GetViewLeanTranslation();
+
+	/**
+	* Takes proposed new view angles InputAngles,
+	* tests whether the change in yaw will cause a collision
+	* of the leaned camera with a wall.  If so, clamps the yaw before the collision.
+	* Overwrites InputAngles with the new vetted angles.
+	* Does nothing if the player is not leaned
+	**/
+	void UpdateLeanedInputYaw( idAngles &InputAngles );
 
 
 

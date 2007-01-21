@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2007/01/21 02:10:13  ishtvan
+ * updates in collision detection and actions taken as a result
+ *
+ * rewriting
+ *
  * Revision 1.44  2007/01/09 12:57:58  ishtvan
  * *) lean collision test bugfixes
  *
@@ -1062,7 +1067,7 @@ void idPhysics_Player::RopeMove( void )
 	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
 	idBounds ropeBounds;
 	trace_t transTrace; // used for clipping tests when moving the player
-	idVec3 transVec, forward, zeros(0,0,0), playerVel(0,0,0), PlayerPoint(0,0,0);
+	idVec3 transVec, forward, playerVel(0,0,0), PlayerPoint(0,0,0);
 	int bodID(0);
 
 	if( !m_RopeEntity )
@@ -1140,7 +1145,7 @@ void idPhysics_Player::RopeMove( void )
 
 	// use a different tolerance for rotating toward the rope vs away
 	// rotate forward by deltaAng to see if we are rotating towards or away from the rope
-	idRotation rotateView( zeros, -gravityNormal, -deltaYaw );
+	idRotation rotateView( vec3_origin, -gravityNormal, -deltaYaw );
 	rotateView.RotatePoint( forward );
 
 	deltaAng2 = offset * forward;
@@ -2188,7 +2193,7 @@ idPhysics_Player::idPhysics_Player( void )
 	// Leaning Mod
 	m_bIsLeaning = false;
 	m_leanYawAngleDegrees = 0.0;
-	m_currentLeanTiltDegrees = 0.0;
+	m_CurrentLeanTiltDegrees = 0.0;
 	m_CurrentLeanStretch = 0.0;
 	m_b_leanFinished = true;
 	m_leanMoveStartTilt = 0.0;
@@ -2295,7 +2300,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 
 	// Lean mod
 	savefile->WriteFloat (m_leanYawAngleDegrees);
-	savefile->WriteFloat (m_currentLeanTiltDegrees);
+	savefile->WriteFloat (m_CurrentLeanTiltDegrees);
 	savefile->WriteFloat (m_CurrentLeanStretch);
 	savefile->WriteFloat (m_leanMoveStartTilt);
 	savefile->WriteFloat (m_leanMoveEndTilt);
@@ -2375,7 +2380,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 
 	// Lean mod
 	savefile->ReadFloat (m_leanYawAngleDegrees);
-	savefile->ReadFloat (m_currentLeanTiltDegrees);
+	savefile->ReadFloat (m_CurrentLeanTiltDegrees);
 	savefile->ReadFloat (m_CurrentLeanStretch);
 	savefile->ReadFloat (m_leanMoveStartTilt);
 	savefile->ReadFloat (m_leanMoveEndTilt);
@@ -2415,15 +2420,15 @@ idPhysics_Player::SetPlayerInput
 void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &newViewAngles ) 
 {
 	command = cmd;
-	viewAngles = newViewAngles;		// can't use cmd.angles cause of the delta_angles
 
-	// TDM: Set m_DeltaViewYaw
 	m_DeltaViewYaw = command.angles[1] - m_lastCommandViewYaw;
 	m_DeltaViewYaw = SHORT2ANGLE(m_DeltaViewYaw);
-	
+
 	// don't return a change if the player's view is locked in place
 	if( static_cast<idPlayer *>(self)->GetImmobilization() & EIM_VIEW_ANGLE )
 		m_DeltaViewYaw = 0;
+
+	viewAngles = newViewAngles;	// can't use cmd.angles cause of the delta_angles
 
 	m_lastCommandViewYaw = command.angles[1];
 }
@@ -3969,11 +3974,11 @@ void idPhysics_Player::ToggleLean
 	float leanYawAngleDegrees
 )
 {
-	//if (m_currentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
-	if (m_currentLeanTiltDegrees < 0.00001) // prevent floating point compare errors
+	//if (m_CurrentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
+	if (m_CurrentLeanTiltDegrees < 0.00001) // prevent floating point compare errors
 	{
 		// Start the lean
-		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
+		m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
 		m_leanYawAngleDegrees = leanYawAngleDegrees;
 
 		// Hack: Use different values for forward/backward lean than side/side
@@ -3999,7 +4004,7 @@ void idPhysics_Player::ToggleLean
 	else
 	{
 		// End the lean
-		m_leanMoveStartTilt = m_currentLeanTiltDegrees;
+		m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
 		m_leanMoveEndTilt = 0.0;
 		m_b_leanFinished = false;
 
@@ -4026,7 +4031,7 @@ void idPhysics_Player::ToggleLean
 
 __inline bool idPhysics_Player::IsLeaning()
 {
-	if (m_currentLeanTiltDegrees < 0.001)
+	if (m_CurrentLeanTiltDegrees < 0.001)
 	{
 		return false;
 	}
@@ -4057,22 +4062,21 @@ idVec3 idPhysics_Player::GetViewLeanTranslation()
 
 void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaLeanStretch)
 {
+	trace_t trTest;
 	float newLeanTiltDegrees(0.0), newLeanStretch(0.0), angle(0.0f);
-	int PointContents(0);
-	idVec3 newPoint; // test point
+	idVec3 origPoint, newPoint; // test point
 	bool bWouldClip(false);
 	idPlayer *p_player = (idPlayer *) self;
-	idMat4 rotWorldToPlayer, rotPlayerToWorld;
-	rotWorldToPlayer.Zero(); 
-	rotPlayerToWorld.Zero();
+	idEntity *TrEnt( NULL ); // entity hit by trace
 
 	// What would the new lean angle be?
-	newLeanTiltDegrees = m_currentLeanTiltDegrees + deltaLeanTiltDegrees;
+	newLeanTiltDegrees = m_CurrentLeanTiltDegrees + deltaLeanTiltDegrees;
+
 	DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("newLeanTiltDegrees = %f", newLeanTiltDegrees );
 	if (newLeanTiltDegrees < 0.0)
 	{
 		// Adjust delta
-		deltaLeanTiltDegrees = 0.0 - m_currentLeanTiltDegrees;
+		deltaLeanTiltDegrees = 0.0 - m_CurrentLeanTiltDegrees;
 		deltaLeanStretch = 0.0 - m_CurrentLeanStretch;
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
@@ -4080,7 +4084,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	else if (newLeanTiltDegrees > m_leanMoveMaxAngle)
 	{
 		// Adjust delta
-		deltaLeanTiltDegrees = m_leanMoveMaxAngle - m_currentLeanTiltDegrees;
+		deltaLeanTiltDegrees = m_leanMoveMaxAngle - m_CurrentLeanTiltDegrees;
 		deltaLeanStretch = m_leanMoveMaxStretch - m_CurrentLeanStretch;
 		m_leanTime = 0.0;
 		m_b_leanFinished = true;
@@ -4090,21 +4094,18 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Currently leaning %.2f degrees, can lean up to %.2f more degrees this frame\n",
-		m_currentLeanTiltDegrees,
+		m_CurrentLeanTiltDegrees,
 		deltaLeanTiltDegrees
 	);
 
+	newLeanTiltDegrees = m_CurrentLeanTiltDegrees + deltaLeanTiltDegrees;
+	newLeanStretch = m_CurrentLeanStretch + deltaLeanStretch;
+
     // Collision test: do not change lean angles any more if collision has occurred
-	// NOTE: Door test is also done implicitly in TestLeanClip
-	newLeanTiltDegrees = m_currentLeanTiltDegrees + deltaLeanTiltDegrees;
-	newLeanStretch = m_CurrentLeanStretch + deltaLeanStretch; 
-	
 	// convert proposed angle and stretch to a viewpoint in space:
 	newPoint = LeanParmsToPoint( newLeanTiltDegrees, newLeanStretch );
 
-	// Test trace:
-	trace_t trTest;
-	idVec3 origPoint = p_player->GetEyePosition();
+	origPoint = p_player->GetEyePosition();
 
 	// Add some delta so we can lean back afterwards without already being clipped
 	idVec3 vDelta = newPoint - origPoint;
@@ -4112,7 +4113,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	float fLeanTestDelta = 6.0f;
 	vDelta *= fLeanTestDelta;
 
-	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_SOLID, self );
+	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_SOLID | CONTENTS_BODY, self );
 	bWouldClip = trTest.fraction < 1.0f;
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Collision trace between old view point ( %d, %d, %d ) and newPoint: ( %d, %d, %d )\r", origPoint.x, origPoint.y, origPoint.z, newPoint.x, newPoint.y, newPoint.z );
 
@@ -4123,35 +4124,29 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	if( bWouldClip )
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Lean test point within solid, lean motion stopped.\r" );
+		
+		// Detect AI collision, if entity hit or its bindmaster is an AI:
+		if( ( TrEnt = gameLocal.GetTraceEntity( trTest ) ) != NULL 
+			&& TrEnt->IsType(idAI::Type) )
+		{
+			static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
+		}
+
 		goto Quit;
 	}
 
 	// Adjust lean angle by delta which was allowed
-	m_currentLeanTiltDegrees += deltaLeanTiltDegrees;
+	m_CurrentLeanTiltDegrees += deltaLeanTiltDegrees;
 	m_CurrentLeanStretch += deltaLeanStretch;
 
-	// Update relevant parms:
-	// viewLeanTranslation is relative to player origin
-	// Keep m_viewLeanTranslation in local coordinates (player axes!)
-	idAngles viewAngNoPitch = viewAngles;
-	viewAngNoPitch.pitch = 0;
-	rotPlayerToWorld = viewAngNoPitch.ToMat4();
-	rotWorldToPlayer = rotPlayerToWorld.Transpose();
-	
-	// This is cumbersome, but it lets us extract the smoothed view origin from idPlayer
-	m_viewLeanTranslation = newPoint - (origPoint - rotPlayerToWorld * m_viewLeanTranslation);
-	m_viewLeanTranslation *= rotWorldToPlayer;
-
-	angle = m_currentLeanTiltDegrees;
-
-	m_viewLeanAngles.pitch = angle * idMath::Sin(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
-	m_viewLeanAngles.roll = angle * idMath::Cos(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	// Update the physics:
+	UpdateLeanPhysics();
 		
 	// Log activity
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 	(
 		"Lean tilt is now %.2f degrees, lean stretch is now %.2f fractional\r",
-		m_currentLeanTiltDegrees,
+		m_CurrentLeanTiltDegrees,
 		m_CurrentLeanStretch
 	);
 
@@ -4170,7 +4165,7 @@ void idPhysics_Player::LeanMove()
 	float newLeanTiltDegrees = 0.0;
 	float newLeanStretch = 0.0;
 
-	if ( !m_b_leanFinished) 
+	if ( !m_b_leanFinished ) 
 	{
 
 		// Update lean time
@@ -4199,7 +4194,7 @@ void idPhysics_Player::LeanMove()
 			newLeanStretch = idMath::Sin( (idMath::PI/2.0f) * (1.0f - timeRatio) );
 		}
 
-		deltaLeanTiltDegrees = newLeanTiltDegrees - m_currentLeanTiltDegrees;
+		deltaLeanTiltDegrees = newLeanTiltDegrees - m_CurrentLeanTiltDegrees;
 		deltaLeanStretch = newLeanStretch - m_CurrentLeanStretch;
 
 	}
@@ -4214,20 +4209,12 @@ void idPhysics_Player::LeanMove()
 
 	// If player is leaned at all, do an additional clip test and unlean them
 	// In case they lean and walk into something, or a moveable moves into them, etc.
-	// TODO Optimization: Can probably avoid doing the lean transform twice
-	if( m_currentLeanTiltDegrees != 0.0
+	if( m_CurrentLeanTiltDegrees != 0.0
 		&& TestLeanClip() )
 	{
-		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Player lean clipped solid, unleaning");
-		m_b_leanFinished = true;
-		m_currentLeanTiltDegrees = 0.0;
-		m_CurrentLeanStretch = 0.0;
-		m_viewLeanAngles.Zero();
-		m_viewLeanTranslation.Zero();
-		m_leanMoveStartTilt = 0.0;
-		m_leanMoveEndTilt = 0.0;
-		m_leanMoveMaxStretch = 0.0;
-		m_leanTime = 0.0;
+		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned player clipped solid, unleaning to valid position \r");
+
+		UnleanToValidPosition();
 	}
 
 	// TODO: Update lean radius if player is crouching/uncrouching
@@ -4237,6 +4224,7 @@ void idPhysics_Player::LeanMove()
 bool idPhysics_Player::TestLeanClip( void )
 {
 	idVec3 vTest;
+	idEntity *TrEnt(NULL);
 
 	idPlayer *p_player = (idPlayer *) self;
 	// convert proposed angle and stretch to a viewpoint in space:
@@ -4245,7 +4233,16 @@ bool idPhysics_Player::TestLeanClip( void )
 	idVec3 vEyeOffset = -GetGravityNormal()*p_player->EyeHeight();
 	
 	trace_t trTest;
-	gameLocal.clip.TraceBounds( trTest, current.origin + vEyeOffset, vTest, m_LeanViewBounds, MASK_SOLID, self );
+	gameLocal.clip.TraceBounds( trTest, current.origin + vEyeOffset, vTest, m_LeanViewBounds, MASK_SOLID | CONTENTS_BODY, self );
+
+	// Detect AI collision, if entity hit or its bindmaster is an AI:
+	if( trTest.fraction != 1.0f 
+		&& ( TrEnt = gameLocal.GetTraceEntity( trTest ) ) != NULL
+		&& TrEnt->IsType(idAI::Type) )
+	{
+		static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
+	}
+
 
 	// Uncomment for debug bounds display
 	//gameRenderWorld->DebugBounds( colorGreen, m_LeanViewBounds, vTest ); 
@@ -4311,7 +4308,153 @@ void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
 		m_RopeEntTouched = NULL;
 }
 
+void idPhysics_Player::UpdateLeanPhysics( void )
+{
+	idMat4 rotWorldToPlayer, rotPlayerToWorld;
+	rotWorldToPlayer.Zero(); 
+	rotPlayerToWorld.Zero();
+	idAngles viewAngNoPitch(0.0f, 0.0f, 0.0f);
+	idVec3 viewOrig; // unleaned player view origin
+	idVec3 newPoint;
+	idPlayer *p_player = (idPlayer *) self;
+
+	viewAngNoPitch = viewAngles;
+	viewAngNoPitch.pitch = 0;
+	rotPlayerToWorld = viewAngNoPitch.ToMat4();
+	rotWorldToPlayer = rotPlayerToWorld.Transpose();
+
+	viewOrig = p_player->GetEyePosition();
+	// convert angle and stretch to a viewpoint in space:
+	newPoint = LeanParmsToPoint( m_CurrentLeanTiltDegrees, m_CurrentLeanStretch );
+	
+	// This is cumbersome, but it lets us extract the smoothed view origin from idPlayer
+	m_viewLeanTranslation = newPoint - (viewOrig - rotPlayerToWorld * m_viewLeanTranslation);
+	m_viewLeanTranslation *= rotWorldToPlayer;
+
+	float angle = m_CurrentLeanTiltDegrees;
+
+	m_viewLeanAngles.pitch = angle * idMath::Sin(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+	m_viewLeanAngles.roll = angle * idMath::Cos(m_leanYawAngleDegrees * ((2.0 * idMath::PI) / 360.0) );
+}
+
 float idPhysics_Player::GetDeltaViewYaw( void )
 {
 	return m_DeltaViewYaw;
+}
+
+void idPhysics_Player::UpdateLeanedInputYaw( idAngles &InputAngles )
+{
+	idPlayer *pPlayer = (idPlayer *) self;
+	float TestDeltaYaw(0.0f);
+
+	/**
+	* Leaned view yaw check for clipping
+	**/
+	if( IsLeaning() )
+	{
+		trace_t TrResults;
+		idEntity *TrEnt = NULL;
+		idVec3 startPoint, endPoint, vDelta;
+		// Have a delta so that we don't get stuck on the wall due to floating point errors
+		float AddedYawDelt = 4.0f; // amount to check ahead of the yaw change, in degrees
+		TestDeltaYaw = idMath::AngleNormalize180( InputAngles.yaw - viewAngles.yaw );
+
+		// Add delta
+		if( TestDeltaYaw < 0.0f )
+			TestDeltaYaw -= AddedYawDelt;
+		else
+			TestDeltaYaw += AddedYawDelt;
+
+
+		startPoint = pPlayer->GetEyePosition();
+		idVec3 vEyeOffset = -GetGravityNormal()*pPlayer->EyeHeight();
+
+		// make the test bounds go back to the unleaned eye point
+		idBounds ViewBoundsExp = m_LeanViewBounds;
+		ViewBoundsExp.AddPoint( -m_viewLeanTranslation );
+
+		idClipModel ViewClip( ViewBoundsExp );
+		idAngles viewAngYaw;
+		viewAngYaw.Zero();
+		viewAngYaw.yaw = viewAngles.yaw;
+
+		ViewClip.SetPosition( pPlayer->GetEyePosition(), viewAngYaw.ToMat3() );
+
+		//idRotation ViewYawRot( current.origin, -GetGravityNormal(), TestDeltaYaw );
+		idRotation ViewYawRot( current.origin, GetGravityNormal(), TestDeltaYaw );
+
+		startPoint = pPlayer->GetEyePosition();
+		endPoint = startPoint;
+		ViewYawRot.RotatePoint( endPoint );
+
+		gameLocal.clip.Rotation( TrResults, startPoint, ViewYawRot, &ViewClip, ViewClip.GetAxis(), MASK_SOLID | CONTENTS_BODY, self );
+
+		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Original viewpoint (%f, %f, %f) Tested viewpoint: (%f, %f, %f) \r", startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z );
+
+		// Cancel rotation if check-ahead rotation trace fails
+		if( TrResults.fraction != 1.0f )
+		{
+			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned View Yaw Test: Clipped with rotation trace fraction %f.  Delta yaw not allowed \r", TrResults.fraction );
+			InputAngles.yaw = viewAngles.yaw;
+
+			// Detect AI collision, if entity hit or its bindmaster is an AI:
+			if( ( TrEnt = gameLocal.GetTraceEntity( TrResults ) ) != NULL
+				&& TrEnt->IsType(idAI::Type) )
+			{
+				static_cast<idAI *>( TrEnt )->HadTactile( (idActor *) self );
+			}
+			
+			goto Quit;
+		}
+
+		// debug draw the test clip model
+		/*
+		collisionModelManager->DrawModel( ViewClip.Handle(), ViewClip.GetOrigin(),
+										ViewClip.GetAxis(), vec3_origin, 0.0f );
+		*/
+	}
+
+Quit:
+	return;
+}
+
+void idPhysics_Player::UnleanToValidPosition( void )
+{
+	trace_t trTest;
+	idVec3 vTest(vec3_zero);
+
+	idPlayer *p_player = (idPlayer *) self;
+	idVec3 vEyeOffset = -GetGravityNormal()*p_player->EyeHeight();
+
+	float TestLeanDegrees = m_CurrentLeanTiltDegrees;
+	float TestLeanStretch = m_CurrentLeanStretch;
+	float DeltaDeg = TestLeanDegrees / cv_pm_lean_to_valid_increments.GetFloat();
+	float DeltaStretch = TestLeanStretch / cv_pm_lean_to_valid_increments.GetFloat();
+
+	// Must temporarily set these to get proper behavior from max angle
+	m_leanMoveMaxAngle = m_CurrentLeanTiltDegrees;
+	m_leanMoveMaxStretch = m_CurrentLeanStretch;
+	m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
+	m_leanMoveEndTilt = 0.0f;
+
+	for( int i=0; i < (int) cv_pm_lean_to_valid_increments.GetFloat(); i++ )
+	{
+		// Lean degrees are always positive
+		TestLeanDegrees -= DeltaDeg;
+		TestLeanStretch -= DeltaStretch;
+
+		// convert proposed angle and stretch to a viewpoint in world space:
+		vTest = LeanParmsToPoint( TestLeanDegrees, TestLeanStretch );
+		gameLocal.clip.TraceBounds( trTest, current.origin + vEyeOffset, vTest, m_LeanViewBounds, MASK_SOLID | CONTENTS_BODY, self );
+
+		// break if valid point was found
+		if( trTest.fraction == 1.0f )
+			break;
+	}
+
+	// transform lean parameters with final answer
+	m_CurrentLeanTiltDegrees = TestLeanDegrees;
+	m_CurrentLeanStretch = TestLeanStretch;
+	
+	UpdateLeanPhysics();
 }
