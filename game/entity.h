@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.57  2007/01/22 03:11:25  crispy
+ * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
+ *
  * Revision 1.56  2007/01/20 05:19:20  sophisticatedzombie
  * Made UpdateVisuals virtual
  *
@@ -759,6 +762,18 @@ public:
 	* Will be overloaded in derived classes with joints to call BindToJoint.
 	**/
 	virtual void Attach( idEntity *ent );
+	
+	/**
+	* Called when the given entity is about to attach (bind) to this entity.
+	* Does not actually bind it.
+	**/
+	virtual void BindNotify( idEntity *ent );
+	
+	/**
+	* Called when the given entity is about to detach (unbind) from this entity.
+	* Does not actually unbind it.
+	**/
+	virtual void UnbindNotify( idEntity *ent );
 
 	/**
 	 * GetSignalId assignes a unique Id to be used in a signal function. To differentiate these

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2007/01/22 03:11:25  crispy
+ * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
+ *
  * Revision 1.18  2007/01/21 10:50:57  crispy
  * Added animation replacement functionality (i.e. replace_anim_* spawnargs)
  *
@@ -249,6 +252,16 @@ public:
 	virtual bool			OnLadder( void ) const;
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
+
+	/**
+	* Called when the given ent is about to be bound/attached to this actor.
+	**/
+	void					BindNotify( idEntity *ent );
+	
+	/**
+	* Called when the given ent is about to be unbound/detached from this actor.
+	**/
+	void					UnbindNotify( idEntity *ent );
 
 	/**
 	* Attach an entity.  Entity spawnArgs checked for attachments are:

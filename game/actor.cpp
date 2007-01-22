@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.34  2007/01/22 03:11:25  crispy
+ * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
+ *
  * Revision 1.33  2007/01/21 10:50:57  crispy
  * Added animation replacement functionality (i.e. replace_anim_* spawnargs)
  *
@@ -1876,15 +1879,48 @@ void idActor::Attach( idEntity *ent )
 		idStr modelName = ent->spawnArgs.GetString("model","");
 		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), joint );
 	}
+}
 
-	// Override our animations based on the attached entity's replace_anim_* spawnargs
+/*
+================
+idActor::UnbindNotify
+================
+*/
+void idActor::BindNotify( idEntity *ent )
+{
+	// Override our animations based on the bound entity's replace_anim_* spawnargs
 	const idKeyValue *KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", NULL );
 	while ( KeyVal )
 	{
 		idStr key = KeyVal->GetKey();
 		key.StripLeadingOnce("replace_anim_");
 
-		m_replacementAnims.Set( key, KeyVal->GetValue() );		
+		m_replacementAnims.Set( key, KeyVal->GetValue() );
+
+		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
+	}
+}
+
+/*
+================
+idActor::UnbindNotify
+================
+*/
+void idActor::UnbindNotify( idEntity *ent )
+{
+	// Remove animation overrides
+	const idKeyValue *KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", NULL );
+	while ( KeyVal )
+	{
+		idStr key = KeyVal->GetKey();
+		key.StripLeadingOnce("replace_anim_");
+
+		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue()) == 0 )
+		{
+			// This animation override is present, so remove it
+			m_replacementAnims.Delete( key );
+		}
+
 		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
 	}
 }

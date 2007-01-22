@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.89  2007/01/22 03:11:25  crispy
+ * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
+ *
  * Revision 1.88  2007/01/15 16:50:19  gildoran
  * Added removeKey() script event.
  *
@@ -2648,6 +2651,9 @@ void idEntity::FinishBind( void )
 
 	// make sure the team master is active so that physics get run
 	teamMaster->BecomeActive( TH_PHYSICS );
+	
+	// Notify bind master of this binding
+	bindMaster->BindNotify( this );
 }
 
 /*
@@ -2786,6 +2792,9 @@ void idEntity::Unbind( void ) {
 	if ( !bindMaster ) {
 		return;
 	}
+
+	// TDM: Notify bind master of unbinding
+	bindMaster->UnbindNotify( this );
 
 	if ( !teamMaster ) {
 		// Teammaster already has been freed
@@ -7628,6 +7637,14 @@ void idEntity::Attach( idEntity *ent )
 	ent->SetAxis( newAxis );
 	ent->Bind( this, true );
 	ent->cinematic = cinematic;
+}
+
+void idEntity::BindNotify( idEntity *ent )
+{
+}
+
+void idEntity::UnbindNotify( idEntity *ent )
+{
 }
 
 void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Millisecond)
