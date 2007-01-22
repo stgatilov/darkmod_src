@@ -99,7 +99,8 @@ CMouseHookWindows::CMouseHookWindows( CMouseHook* pParent )
 :CMouseHookBase(NULL),m_parent(pParent), m_MouseHook(NULL)
 {
 	g_WindowsHook = this;
-	m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, GetModuleHandle(NULL), 0 );
+	//m_MouseHook = SetWindowsHookEx( WH_MOUSE_LL, TDM_MouseProc, GetModuleHandle(NULL), 0 );
+	m_MouseHook = SetWindowsHookEx( WH_MOUSE, TDM_MouseProc, GetModuleHandle(NULL), 0 );
 	assert( NULL != m_MouseHook );
 }
 
