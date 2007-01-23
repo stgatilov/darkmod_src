@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2007/01/23 01:23:59  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.37  2007/01/21 06:44:10  crispy
  * Revised cover search - now traces from AI's eyes as well as its feet
  *
@@ -170,6 +173,10 @@
 #include "../../darkmod/HidingSpotSearchCollection.h"
 #include "../../darkmod/darkmodHidingSpotTree.h"
 
+#ifdef AIMOVE_TEST
+#include <stdio.h>
+extern FILE *movedata;
+#endif
 
 /*
 ===============================================================================

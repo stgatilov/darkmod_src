@@ -7,8 +7,11 @@
  * $Author$
  *
  * $Log$
- * Revision 1.1  2004/10/30 15:52:36  sparhawk
- * Initial revision
+ * Revision 1.2  2007/01/23 01:24:31  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
+ * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
+ * Initial release
  *
  ***************************************************************************/
 
@@ -76,12 +79,13 @@ private:
 	void							CheckTree( void ) const;
 };
 
-
+#pragma warning( disable : 4533 )
 template< class objType, class keyType, int maxChildrenPerNode >
 ID_INLINE idBTree<objType,keyType,maxChildrenPerNode>::idBTree( void ) {
 	assert( maxChildrenPerNode >= 4 );
 	root = NULL;
 }
+#pragma warning( default : 4533 )
 
 template< class objType, class keyType, int maxChildrenPerNode >
 ID_INLINE idBTree<objType,keyType,maxChildrenPerNode>::~idBTree( void ) {

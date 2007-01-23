@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.88  2007/01/23 01:23:54  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.87  2007/01/19 10:08:41  thelvyn
  * Removed old mouse handling code.
  * Registered some fonts for gui screen display of text.
@@ -473,8 +476,17 @@ void TestGameAPI( void ) {
 idGameLocal::idGameLocal
 ============
 */
+
+#ifdef AIMOVE_TEST
+#include <stdio.h>
+FILE *movedata = NULL;
+#endif
+
 idGameLocal::idGameLocal() 
 {
+#ifdef AIMOVE_TEST
+	movedata = fopen( "E:/DarkmodStuff/movedata.txt", "w+" );
+#endif
 	m_Mouse = CMouseHook::getInstance();
 	assert( NULL != m_Mouse );
 	m_Keyboard = CKeyboardHook::getInstance();
@@ -489,6 +501,9 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
+#ifdef AIMOVE_TEST
+	fclose( movedata );
+#endif
 	assert( NULL != m_Keyboard );
 	delete m_Keyboard;
 	assert( NULL != m_Mouse );

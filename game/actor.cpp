@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2007/01/23 01:23:54  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.34  2007/01/22 03:11:25  crispy
  * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
  *
@@ -2375,9 +2378,17 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  const char *damageDefName, const float damageScale, const int location,
 					  trace_t *collision ) 
 {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "idActor::Damage\n" , movedata );
+#endif
 	bool bKO, bKOPowerBlow;
 	
 	if ( !fl.takedamage ) {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "if ( !fl.takedamage ) return\n" , movedata );
+#endif
 		return;
 	}
 
@@ -2394,11 +2405,34 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "Unknown damageDef\n" , movedata );
+#endif
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
 	int	damage = damageDef->GetInt( "damage" ) * damageScale;
+#ifdef AIMOVE_TEST
+	if( movedata )
+	{
+		char buffer[64];
+		sprintf( buffer, "damageDef->GetInt( \"damage\" ) * damageScale = %f\n", damage );
+		fputs( buffer , movedata );
+	}
+#endif
+
 	damage = GetDamageForLocation( damage, location );
+#ifdef AIMOVE_TEST
+	if( movedata )
+	{
+		char buffer[64];
+		sprintf( buffer, "GetDamageForLocation( damage, location ) = %f\n", damage );
+		fputs( buffer , movedata );
+	}
+#endif
+
+
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 

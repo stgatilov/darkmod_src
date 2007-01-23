@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.3  2007/01/23 01:24:12  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.2  2006/06/21 13:06:22  sparhawk
  * Added version tracking per cpp module
  *
@@ -237,7 +240,7 @@ void idHeap::AllocDefragBlock( void ) {
 	if ( defragBlock ) {
 		return;
 	}
-	while( 1 ) {
+	while( true ) {
 		defragBlock = malloc( size );
 		if ( defragBlock ) {
 			break;
@@ -1360,7 +1363,7 @@ typedef enum {
 void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sortCallStack, int numFrames ) {
 	int numBlocks, totalSize, r, j;
 	debugMemory_t *b;
-	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted, *nextSorted;
+	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted = NULL, *nextSorted = NULL;
 	idStr module, funcName;
 	FILE *f;
 

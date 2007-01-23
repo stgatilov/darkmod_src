@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.56  2007/01/23 01:23:59  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.55  2007/01/21 06:44:10  crispy
  * Revised cover search - now traces from AI's eyes as well as its feet
  *
@@ -236,6 +239,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../../darkmod/BinaryFrobMover.h"
 #include "../../darkmod/FrobDoor.h"
 #include "../../darkmod/FrobDoorHandle.h"
+
 
 //TODO: Move these to AI def:
 
@@ -826,14 +830,12 @@ idAI::Collide
 bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 {
 	idAFEntity_Base::Collide( collision, oldVelocity );
-	{
-		idEntity *other;
-		other = gameLocal.entities[ collision.c.entityNum ];
-		// don't let player collide with grabber entity
-		other->Signal( SIG_TOUCH );
-		if ( other->RespondsTo( EV_Touch ) ) {
-			other->ProcessEvent( &EV_Touch, this, &collision );
-		}
+	idEntity *other;
+	other = gameLocal.entities[ collision.c.entityNum ];
+	// don't let player collide with grabber entity
+	other->Signal( SIG_TOUCH );
+	if ( other->RespondsTo( EV_Touch ) ) {
+		other->ProcessEvent( &EV_Touch, this, &collision );
 	}
 
 	idVec3		origin, velocity;
@@ -849,7 +851,7 @@ bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 
 	// if the player is not on the ground
 	if ( !physicsObj.HasGroundContacts() ) {
-		return false;
+		//return false;
 	}
 
 	gravityNormal = physicsObj.GetGravityNormal();
@@ -918,21 +920,21 @@ bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 		//landTime = gameLocal.time;
 		if ( !noDamage ) {
 			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 1.0f, 0 );
+			idAFEntity_Gibbable::Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_telefrag", 1.0f, 0 );
 		}
 	} else if ( delta > hardDelta ) {
 //		landChange	= -24;
 //		landTime	= gameLocal.time;
 		if ( !noDamage ) {
 			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_hardfall", 1.0f, 0 );
+			idAFEntity_Gibbable::Damage( other, other, idVec3( 0, 0, -1 ), "damage_hardfall", 1.0f, 0 );
 		}
 	} else if ( delta > 30 ) {
 //		landChange	= -16;
 //		landTime	= gameLocal.time;
 		if ( !noDamage ) {
 			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", 1.0f, 0 );
+			idAFEntity_Gibbable::Damage( other, other, idVec3( 0, 0, -1 ), "damage_softfall", 1.0f, 0 );
 		}
 	} else if ( delta > 7 ) {
 //		landChange	= -8;
@@ -2121,6 +2123,10 @@ idAI::PathToGoal
 =====================
 */
 bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "idAI::PathToGoal\n" , movedata );
+#endif	
 	idVec3 org;
 	idVec3 goal;
 
@@ -3385,6 +3391,10 @@ idAI::CheckObstacleAvoidance
 =====================
 */
 void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "idAI::CheckObstacleAvoidance\n" , movedata );
+#endif
 	idEntity		*obstacle;
 	obstaclePath_t	path;
 	idVec3			dir;
@@ -3640,6 +3650,11 @@ idAI::AnimMove
 =====================
 */
 void idAI::AnimMove( void ) {
+#ifdef AIMOVE_TEST
+	if( movedata )
+		fputs( "idAI::AnimMove\n" , movedata );
+#endif
+
 	idVec3				goalPos;
 	idVec3				delta;
 	idVec3				goalDelta;
@@ -6287,8 +6302,6 @@ void idAI::HearSound
 
 void idAI::AlertAI( const char *type, float amount )
 {
-//	gameLocal.Printf( "\nMouse info in AlertAI.\nLeft = %s Right = %s Middle = %s\n", gameLocal.m_Mouse_LBPressed ? "True" : "False", gameLocal.m_Mouse_RBPressed ? "True" : "False", gameLocal.m_Mouse_MBPressed ? "True" : "False" );
-//	gameLocal.Printf( "\nMouse info in AlertAI.\nLast Action was %s\n", MouseGetActionString(gameLocal.m_MouseDataCurrent.Action) );
 	float mod(0), alertInc(0);
 	idActor *act(NULL);
 
@@ -6767,19 +6780,12 @@ Quit:
 
 bool idAI::IsEnemy( idEntity *other )
 {
-	bool returnval;
-	idActor *actor;
-
-	if ( !other->IsType( idActor::Type ) ) 
+	bool returnval = false;
+	if ( other->IsType( idActor::Type ) ) 
 	{
-		returnval = false;
-		goto Quit;
+		idActor *actor = static_cast<idActor *>( other );
+		returnval = gameLocal.m_RelationsManager->IsEnemy( team, actor->team );
 	}
-
-	actor = static_cast<idActor *>( other );
-	returnval = gameLocal.m_RelationsManager->IsEnemy( team, actor->team );
-
-Quit:
 	return returnval;
 }
 
@@ -6866,18 +6872,16 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 // TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
 void idAI::CheckTactile( void )
 {
-	if( AI_KNOCKEDOUT || AI_DEAD )
-		goto Quit;
-
-	idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
-
-	if ( BlockEnt && BlockEnt->IsType( idActor::Type ) ) 
+	if( !AI_KNOCKEDOUT && !AI_DEAD )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
-		HadTactile( static_cast<idActor *>(BlockEnt) );
+		idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
+		if ( BlockEnt && BlockEnt->IsType( idActor::Type ) )
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
+			HadTactile( static_cast<idActor *>(BlockEnt) );
+		}
 	}
-Quit:
-		return;
+	return;
 }
 
 /**

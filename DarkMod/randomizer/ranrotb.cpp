@@ -25,6 +25,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.2  2007/01/23 01:22:55  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.1  2006/11/04 10:47:28  sparhawk
  * Advanced randomizer added.
  *
@@ -97,7 +100,7 @@ double TRanrotBGenerator::Random() {
 // returns integer random number in desired interval:
 int TRanrotBGenerator::IRandom(int min, int max) {
   int iinterval = max - min + 1;
-  if (iinterval <= 0) return -0x80000000; // error
+  if (iinterval <= 0) return 0x80000000; // error
   int i = iinterval * Random(); // truncate
   if (i >= iinterval) i = iinterval-1;
   return min + i;}

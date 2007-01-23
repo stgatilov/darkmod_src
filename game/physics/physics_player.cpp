@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2007/01/23 01:24:07  thelvyn
+ * Fixed a minor bug and cleaned up most of the warnings
+ *
  * Revision 1.48  2007/01/21 12:58:34  ishtvan
  * rope arrow: rope segment vertical velocity now added to player's vertical velocity
  *
@@ -1071,6 +1074,7 @@ void idPhysics_Player::SpectatorMove( void ) {
 idPhysics_Player::RopeMove
 ============
 */
+#pragma warning( disable : 4533 )
 void idPhysics_Player::RopeMove( void ) 
 {
 	idVec3	wishdir, wishvel, right, ropePoint, offset, newOrigin;
@@ -1281,6 +1285,7 @@ void idPhysics_Player::RopeMove( void )
 Quit:
 	return;
 }
+#pragma warning( default : 4533 )
 
 /*
 ============
