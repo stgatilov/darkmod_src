@@ -6,6 +6,8 @@
 
 #include <winuser.h>
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 // global but NOT. anonymous namespace is only available to this file by design
 // not meant to be used by anyone else
 namespace

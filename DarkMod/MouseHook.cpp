@@ -6,6 +6,8 @@
 #endif
 // We will add additional ones for other OS here later
 
+static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+
 bool CMouseHook::m_instanceFlag = false;
 CMouseHook* CMouseHook::m_single = NULL;
 
