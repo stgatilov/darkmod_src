@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.89  2007/01/23 14:06:06  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.88  2007/01/23 01:23:54  thelvyn
  * Fixed a minor bug and cleaned up most of the warnings
  *
@@ -317,8 +320,6 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "il/config.h"
 #include "il/il.h"
 #include "../darkmod/randomizer/randomc.h"
-
-#include "../darkmod/MouseHook.h" // Added By Rich for mouse support encapsulation
 #include "../darkmod/KeyboardHook.h" // Added By Rich for keyboard support encapsulation
 
 CGlobal g_Global;
@@ -477,18 +478,8 @@ idGameLocal::idGameLocal
 ============
 */
 
-#ifdef AIMOVE_TEST
-#include <stdio.h>
-FILE *movedata = NULL;
-#endif
-
 idGameLocal::idGameLocal() 
 {
-#ifdef AIMOVE_TEST
-	movedata = fopen( "E:/DarkmodStuff/movedata.txt", "w+" );
-#endif
-	m_Mouse = CMouseHook::getInstance();
-	assert( NULL != m_Mouse );
 	m_Keyboard = CKeyboardHook::getInstance();
 	assert( NULL != m_Keyboard );
 	Clear();
@@ -501,13 +492,8 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
-#ifdef AIMOVE_TEST
-	fclose( movedata );
-#endif
 	assert( NULL != m_Keyboard );
 	delete m_Keyboard;
-	assert( NULL != m_Mouse );
-	delete m_Mouse;
 }
 
 /*

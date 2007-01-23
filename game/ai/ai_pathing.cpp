@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.6  2007/01/23 14:06:52  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.5  2007/01/23 01:23:59  thelvyn
  * Fixed a minor bug and cleaned up most of the warnings
  *
@@ -315,10 +318,6 @@ GetObstacles
 */
 int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, idBounds &clipBounds ) 
 {
-#ifdef AIMOVE_TEST
-	if( movedata )
-		fputs( "in AI_pathing.cpp Line 317 GetObstacles\n" , movedata );
-#endif
 	int i, j, numListedClipModels, numObstacles, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
 	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
 	float stepHeight, headHeight, blockingScale, min, max;

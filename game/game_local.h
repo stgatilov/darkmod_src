@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2007/01/23 14:06:06  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.46  2007/01/19 20:57:51  thelvyn
  * Moved impulse enum, keystate enum and keycode struct to keyhook.h
  *
@@ -212,8 +215,6 @@ bool FileVersionList(const char *str, bool state);
 
 class CStim;
 
-//#define NEWKEYHANDLERCLASS
-
 // enables water physics
 #define MOD_WATERPHYSICS
 
@@ -297,7 +298,7 @@ class idThread;
 class idEditEntities;
 class idLocationEntity;
 
-class CMouseHook; // Added by Rich
+//class CMouseHook; // Added by Rich
 class CKeyboardHook;// Added by Rich
 
 #define	MAX_CLIENTS				32
@@ -700,8 +701,9 @@ public:
 	/**
 	* Darkmod: Os agnostic mouse handler. Loads OS specific class internally
 	* Added by Rich
+	No longer using this due to context thrashing.
 	**/
-	CMouseHook*             m_Mouse;
+//	CMouseHook*             m_Mouse;
 
 	void					SetPortalSkyEnt( idEntity *ent );
 	bool					IsPortalSkyAcive();

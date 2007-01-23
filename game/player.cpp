@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.107  2007/01/23 14:06:06  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.106  2007/01/21 11:15:13  ishtvan
  * listening thru doors when leaning against them implemented
  *
@@ -10506,24 +10509,23 @@ void idPlayer::CheckHeldKeys( void )
 {
 	CKeyboardHook* Keyboard = CKeyboardHook::getInstance();
 	CKeyCode ck = Keyboard->GetCurrentKey();
-	CKeyCode *t = NULL;
-
-// NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
-
-// Forward lean
+	
+	// NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
+	
+	// Forward lean
 	if( Keyboard->ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = Keyboard->ImpulseData(IR_LEAN_FORWARD);
-		if( !t )
+		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_FORWARD);
+		if( !key )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(90.0);
 			Keyboard->ImpulseFree(IR_LEAN_FORWARD);
 		}
-		else if( t->GetPressed() == false )
+		else if( key->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped\r");
 			physicsObj.ToggleLean(90.0);
@@ -10541,15 +10543,15 @@ void idPlayer::CheckHeldKeys( void )
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = Keyboard->ImpulseData(IR_LEAN_LEFT);
-		if( !t )
+		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_LEFT);
+		if( !key )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(180.0);
 			Keyboard->ImpulseFree(IR_LEAN_LEFT);
 		}
-		else if( t->GetPressed() == false )
+		else if( key->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped\r");
 			physicsObj.ToggleLean(180.0);
@@ -10568,15 +10570,15 @@ void idPlayer::CheckHeldKeys( void )
 	{
 		// Check if the key is just reported as repeating or released.
 		// If it is released we can unlean, as we don't care about repeats.
-		t = Keyboard->ImpulseData(IR_LEAN_RIGHT);
-		if( !t )
+		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_RIGHT);
+		if( !key )
 		{
 			// Something bad happened
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped (bad pointer to key handler)\r");
 			physicsObj.ToggleLean(0.0);
 			Keyboard->ImpulseFree(IR_LEAN_RIGHT);
 		}
-		else if( t->GetPressed() == false )
+		else if( key->GetPressed() == false )
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped\r");
 			physicsObj.ToggleLean(0.0);

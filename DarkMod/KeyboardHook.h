@@ -129,7 +129,7 @@ public:
 	 * ImpulseData returns the pointer to the keyinfo structure. The state should not be modified 
 	 * via this pointer.
 	 */
-	CKeyCode *ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
+	const CKeyCode *ImpulseData(ImpulseFunction_t Function) { return &m_KeyData[Function]; };
 
 	/********************************************************************************************************
 	*
@@ -163,7 +163,7 @@ protected:
 	/**
 	* Key press count.  Used by the keyboard callback to count up key presses
 	* starting from the first.  Used to test up-to-dateness.  
-	* Incremented on each recorded keypress with nCode > 0.
+	* Incremented on each recorded keypress with nCode == HC_ACTION.
 	**/
 	int						m_KeyPressCount;
 	

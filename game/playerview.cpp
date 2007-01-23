@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/23 14:06:06  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.14  2007/01/21 12:31:07  thelvyn
  * disabled mouse and key hook display.
  *
@@ -63,7 +66,6 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
-#include "../darkmod/MouseHook.h"
 #include "../darkmod/KeyboardHook.h"
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
@@ -587,105 +589,9 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 		}
 		player->DrawHUD( hud );
 
-#ifdef MOUSETEST_DISABLED
-		{
-			char buffer[128];
-			memset( buffer, 0, 128 );
-			int count = 0;
-			CMouseHook* mh = CMouseHook::getInstance();
-			if( mh->GetLeftStatus() )
-			{
-				strcpy( buffer, "Mouse Left key pressed" );
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-			if( mh->GetMiddleStatus())
-			{
-				strcpy( buffer, "Mouse Middle key pressed" );
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-			if( mh->GetRightStatus())
-			{
-				strcpy( buffer, "Mouse Right key pressed" );
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-			CKeyCode ck = CKeyboardHook::getInstance()->GetCurrentKey();
-			//CKeyboardHook* kh = CKeyboardHook::getInstance()->GetCurrentKey();
-			//CKeyCode ck = kh->GetCurrentKey();
-			if( ck.GetAltLeft() || ck.GetAltRight() )
-			{
-				assert( ck.GetAlt() );
-				if( ck.GetAltLeft() && ck.GetAltRight() )
-				{
-					strcpy( buffer, "Both Alt Keys pressed." );
-				}
-				else if( ck.GetAltLeft() )
-				{
-					strcpy( buffer, "Left Alt Key pressed." );
-				}
-				else if( ck.GetAltRight() )// only leaves the right one
-				{
-					strcpy( buffer, "Right Alt Key pressed." );
-				}
-				else
-				{
-					strcpy( buffer, "Alt Key Error!" );
-				}
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-			if( ck.GetCtrlLeft() || ck.GetCtrlRight() )
-			{
-				assert( ck.GetCtrl() );
-				if( ck.GetCtrlLeft() && ck.GetCtrlRight() )
-				{
-					strcpy( buffer, "Both Ctrl Keys pressed." );
-				}
-				else if( ck.GetCtrlLeft() )
-				{
-					strcpy( buffer, "Left Ctrl Key pressed." );
-				}
-				else if( ck.GetCtrlRight() )// only leaves the right one
-				{
-					strcpy( buffer, "Right Ctrl Key pressed." );
-				}
-				else
-				{
-					strcpy( buffer, "Ctrl Key Error!" );
-				}
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-
-			if( ck.GetShiftLeft() || ck.GetShiftRight() )
-			{
-				assert( ck.GetShift() );
-				if( ck.GetShiftLeft() && ck.GetShiftRight() )
-				{
-					strcpy( buffer, "Both Shift Keys pressed." );
-				}
-				else if( ck.GetShiftLeft() )
-				{
-					strcpy( buffer, "Left Shift Key pressed." );
-				}
-				else if( ck.GetShiftRight() )// only leaves the right one
-				{
-					strcpy( buffer, "Right Shift Key pressed." );
-				}
-				else
-				{
-					strcpy( buffer, "Shift Key Error!" );
-				}
-				count++;
-				PrintMessage( 100, (20 * count), buffer, idVec4( 1, 1, 1, 1 ), font_an );
-			}
-		}
 		//PrintMessage( 100, 20, strText, idVec4( 1, 1, 1, 1 ), font_an );
 		//PrintMessage( 100, 120, strText, idVec4( 1, 1, 1, 1 ), font_bank );
 		//PrintMessage( 100, 140, strText, idVec4( 1, 1, 1, 1 ), font_micro );
-#endif
 
 		// armor impulse feedback
 		float	armorPulse = ( gameLocal.time - player->lastArmorPulse ) / 250.0f;

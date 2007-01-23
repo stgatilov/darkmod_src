@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.36  2007/01/23 14:06:06  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.35  2007/01/23 01:23:54  thelvyn
  * Fixed a minor bug and cleaned up most of the warnings
  *
@@ -2378,17 +2381,9 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  const char *damageDefName, const float damageScale, const int location,
 					  trace_t *collision ) 
 {
-#ifdef AIMOVE_TEST
-	if( movedata )
-		fputs( "idActor::Damage\n" , movedata );
-#endif
 	bool bKO, bKOPowerBlow;
 	
 	if ( !fl.takedamage ) {
-#ifdef AIMOVE_TEST
-	if( movedata )
-		fputs( "if ( !fl.takedamage ) return\n" , movedata );
-#endif
 		return;
 	}
 
@@ -2405,32 +2400,12 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
-#ifdef AIMOVE_TEST
-	if( movedata )
-		fputs( "Unknown damageDef\n" , movedata );
-#endif
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
 	int	damage = damageDef->GetInt( "damage" ) * damageScale;
-#ifdef AIMOVE_TEST
-	if( movedata )
-	{
-		char buffer[64];
-		sprintf( buffer, "damageDef->GetInt( \"damage\" ) * damageScale = %f\n", damage );
-		fputs( buffer , movedata );
-	}
-#endif
 
 	damage = GetDamageForLocation( damage, location );
-#ifdef AIMOVE_TEST
-	if( movedata )
-	{
-		char buffer[64];
-		sprintf( buffer, "GetDamageForLocation( damage, location ) = %f\n", damage );
-		fputs( buffer , movedata );
-	}
-#endif
 
 
 

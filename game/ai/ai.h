@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2007/01/23 14:06:52  thelvyn
+ * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
+ *
  * Revision 1.38  2007/01/23 01:23:59  thelvyn
  * Fixed a minor bug and cleaned up most of the warnings
  *
@@ -172,11 +175,6 @@
 #include "../../darkmod/relations.h"
 #include "../../darkmod/HidingSpotSearchCollection.h"
 #include "../../darkmod/darkmodHidingSpotTree.h"
-
-#ifdef AIMOVE_TEST
-#include <stdio.h>
-extern FILE *movedata;
-#endif
 
 /*
 ===============================================================================
