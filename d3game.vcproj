@@ -924,12 +924,6 @@
 					RelativePath=".\DarkMod\MouseHook.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\MouseHookWindows.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\MouseHookWindows.h">
-				</File>
-				<File
 					RelativePath=".\DarkMod\overlaysys.cpp">
 				</File>
 				<File
