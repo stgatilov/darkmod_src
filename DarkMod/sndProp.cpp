@@ -839,7 +839,7 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 			
 			} // end portal flood loop
 
-			m_EventAreas[j].bVisited = true;
+			m_EventAreas[area].bVisited = true;
 		} // end area flood loop
 
 		// create the next expansion queue
@@ -1496,7 +1496,8 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 			
 			} // end portal flood loop
 
-			m_EventAreas[j].bVisited = true;
+			m_EventAreas[area].bVisited = true;
+
 		} // end area flood loop
 
 		// create the next expansion queue
