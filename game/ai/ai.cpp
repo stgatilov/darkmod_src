@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.58  2007/01/25 10:08:40  crispy
+ * Implemented lipsync functionality
+ *
  * Revision 1.57  2007/01/23 14:06:52  thelvyn
  * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
  *
@@ -799,6 +802,8 @@ idAI::idAI() {
 
 	m_bCanBeKnockedOut = true;
 	m_KoOffset = vec3_zero;
+
+	m_lipSyncActive		= false;
 }
 
 /*
@@ -1723,6 +1728,25 @@ void idAI::Think( void ) {
 		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
 		deltaViewAngles.Zero();
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+
+		// TDM: Fake lipsync
+		if ( m_lipSyncActive && GetSoundEmitter() )
+		{
+			if (gameLocal.time < m_lipSyncEndTimer )
+			{
+				//int totalFrames = animator.NumFrames(m_lipSyncAnim);
+				// FIXME: animator.NumFrames is returning strange values.
+				// So for now the frame count of the animation is hardcoded
+				// at 20.
+				int frame = 20*GetSoundEmitter()->CurrentAmplitude();
+				headAnim.SetFrame( m_lipSyncAnim, frame );
+			}
+			else
+			{
+				// We're done; stop the animation
+				StopLipSync();
+			}
+		}
 
 		// Check for tactile alert due to AI movement
 		CheckTactile();
@@ -7270,4 +7294,45 @@ void idAI::UpdateAir( void )
 
 	// set the timer
 	m_AirCheckTimer += m_AirCheckInterval;
+}
+
+
+/*
+===================== Lipsync =====================
+*/
+void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
+{
+	const idSoundShader *shader;
+	const char *sound;
+
+	// Play sound
+	int duration;
+	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration );
+
+	// Do we want to lipsync this sound?
+	StopLipSync(); // Assume not
+	if (spawnArgs.GetString( soundName, "", &sound ))
+	{
+		shader = declManager->FindSound( sound );
+		if (shader && !strstr(shader->GetDescription(), "nolipsync"))
+		{
+			// The sound exists and isn't marked "nolipsync", so start the lipsync
+			m_lipSyncActive = true;
+			m_lipSyncAnim = GetAnim( ANIMCHANNEL_HEAD, animName );
+			m_lipSyncEndTimer = gameLocal.time + duration;
+			headAnim.CycleAnim( m_lipSyncAnim );
+		}
+	}
+}
+
+void idAI::StopLipSync()
+{
+	if (m_lipSyncActive)
+	{
+		// Make sure mouth is closed
+		headAnim.SetFrame( m_lipSyncAnim, 0 );
+		// Halt animation
+		headAnim.StopAnim(1);
+	}
+	m_lipSyncActive = false;
 }

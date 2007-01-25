@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2007/01/25 10:08:40  crispy
+ * Implemented lipsync functionality
+ *
  * Revision 1.34  2007/01/20 05:25:10  sophisticatedzombie
  * isFriend, isEnemy and isNeurtal now have special handling for
  * absence marker entities
@@ -301,6 +304,9 @@ const idEventDef AI_CanReachPosition( "canReachPosition", "v", 'd' );
 const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
 const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
+
+// TDM
+const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss" );
 
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
@@ -649,7 +655,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEntity,					idAI::Event_CanReachEntity )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
-		
+	
+	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
 	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
 	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
 	EVENT( AI_IsFriend,							idAI::Event_IsFriend )

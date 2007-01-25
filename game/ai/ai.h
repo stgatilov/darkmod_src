@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2007/01/25 10:08:40  crispy
+ * Implemented lipsync functionality
+ *
  * Revision 1.39  2007/01/23 14:06:52  thelvyn
  * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
  *
@@ -1232,6 +1235,15 @@ protected:
 	**/
 	void UpdateAir( void );
 
+	/**
+	* Halts lipsync
+	**/
+	void					StopLipSync();
+	// Lip sync stuff
+	bool					m_lipSyncActive; /// True iff we're currently lip syncing
+	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
+	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
+
 	//
 	// ai/ai_events.cpp
 	//
@@ -1379,6 +1391,8 @@ protected:
 	void 					Event_CanReachEntity( idEntity *ent );
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
+
+	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
 
 	/**
 	* Frontend scripting functions for Dark Mod Relations Manager

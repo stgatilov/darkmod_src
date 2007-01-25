@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2007/01/25 10:08:33  crispy
+ * Implemented lipsync functionality
+ *
  * Revision 1.19  2007/01/22 03:11:25  crispy
  * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
  *
@@ -123,6 +126,7 @@ public:
 	void					Init( idActor *owner, idAnimator *_animator, int animchannel );
 	void					Shutdown( void );
 	void					SetState( const char *name, int blendFrames );
+	void					SetFrame( int anim, int frame );
 	void					StopAnim( int frames );
 	void					PlayAnim( int anim );
 	void					CycleAnim( int anim );

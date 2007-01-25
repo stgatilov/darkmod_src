@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.37  2007/01/25 10:08:33  crispy
+ * Implemented lipsync functionality
+ *
  * Revision 1.36  2007/01/23 14:06:06  thelvyn
  * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
  *
@@ -276,6 +279,17 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 	if ( ai_debugScript.GetInteger() == self->entityNumber ) {
 		gameLocal.Printf( "%d: %s: Animstate: %s\n", gameLocal.time, self->name.c_str(), state.c_str() );
 	}
+}
+
+/*
+=====================
+idAnimState::SetFrame
+=====================
+*/
+
+void idAnimState::SetFrame( int anim, int frame )
+{
+	animator->SetFrame( channel, anim, frame, gameLocal.time, 0 );
 }
 
 /*
