@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.58  2007/01/26 12:52:33  sparhawk
+ * New inventory concept.
+ *
  * Revision 1.57  2007/01/22 03:11:25  crispy
  * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
  *
@@ -743,12 +746,35 @@ public:
 
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 
-	/// Returns (and creates if necessary) this entity's inventory.
+	/**
+	 * Set the item this entity is currently pointing to. If the item is 
+	 * destroyed, the pointer must be set to NULL.
+	 */
+	void					SetInventoryItem(CtdmInventoryItem *item) { m_InventoryItem = item; }
+	// Returns (and creates if necessary) this entity's inventory item.
+	CtdmInventoryItem*		InventoryItem() { return m_InventoryItem; };
+
+	// Returns (and creates if necessary) this entity's inventory.
 	CtdmInventory*			Inventory();
-	/// Returns (and creates if necessary) this entity's inventory item.
-	CtdmInventoryItem*		InventoryItem();
-	/// Returns (and creates if necessary) this entity's inventory cursor.
+	// Returns (and creates if necessary) this entity's inventory cursor.
 	CtdmInventoryCursor*	InventoryCursor();
+
+	/**
+	 * InitInventory reads the spawndata and puts this entity into the inventory
+	 * of the target entity, defined by the def or map argument inv_owner.
+	 * If the target entity does not yet exist, it will put itself into a list
+	 * on game_local, and each entity will check wether there are inventory items for itself.
+	 * if this is the case InitInventory will be called again, because at this point
+	 * the target definitely exists.
+	 */
+	void InitInventory(void);
+
+	/**
+	 * CheckInventoryInit is the counterpart for InitInventory. It will check wether
+	 * some entities exists that have to put in it's own inventory. This is only needed
+	 * when entities are spawning out of order.
+	 */
+	void CheckInventoryInit(void);
 
 	/**
 	 * Generic function for calling a scriptfunction with arbitrary arguments.
@@ -966,9 +992,9 @@ private:
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
 
 	/// A pointer to our inventory.
-	CtdmInventory*			m_inventory;
+	CtdmInventory*			m_Inventory;
 	/// A pointer to our item, so that we can be added/removed to/from inventories.
-	CtdmInventoryItem*		m_inventoryItem;
+	CtdmInventoryItem*		m_InventoryItem;
 	/// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
 	CtdmInventoryCursor*	m_inventoryCursor;
 
@@ -1070,16 +1096,19 @@ private:
 
 	void					Event_LoadExternalData( const char *xdFile, const char* prefix );
 
-	void					Event_EnterInventory( idEntity* ent, const char* group, int after, idEntity* position );
 	void					Event_GetInventory();
-	void					Event_ReplaceItem( idEntity* ent );
-	void					Event_GetNextItem( idEntity* lastMatch );
-	void					Event_SetCursorInventory( idEntity* ent );
-	void					Event_GetCursorInventory();
-	void					Event_SetCursorItem( idEntity* ent, int noHistory );
-	void					Event_GetCursorItem();
-	void					Event_CopyCursor( idEntity* ent, int noHistory );
-	void					Event_IterateCursor( int type );
+	void					Event_ReplaceItem(idEntity *old_item, idEntity *new_item);
+	void					Event_GetNextItem(int WrapAround);
+	void					Event_GetPrevItem(int WrapAround);
+	void					Event_SetCursorGroup(const char *groupname);
+	void					Event_SetCursorGroupItem(const char *itemname, const char *groupname);
+	void					Event_SetCursorItem(const char *itemname);
+	void					Event_GetCursorGroup(void);
+	void					Event_GetCursorItem(void);
+	void					Event_AddGroupItem(idEntity *item, const char *name, const char *group);
+	void					Event_AddItem(idEntity *item, const char *name);
+	void					Event_GetGroupItem(const char *name, const char *group);
+	void					Event_GetItem(const char *name);
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);
