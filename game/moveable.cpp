@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2007/01/26 07:35:31  ishtvan
+ * air friction spawnargs now parsed to physics settings
+ *
  * Revision 1.10  2007/01/03 04:08:23  ishtvan
  * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
  *
@@ -112,7 +115,7 @@ idMoveable::Spawn
 */
 void idMoveable::Spawn( void ) {
 	idTraceModel trm;
-	float density, friction, bouncyness, mass;
+	float density, friction, bouncyness, mass, air_friction_linear, air_friction_angular;
 	int clipShrink;
 	idStr clipModelName;
 
@@ -136,12 +139,19 @@ void idMoveable::Spawn( void ) {
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
 	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
-	spawnArgs.GetFloat( "friction", "0.05", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
 	spawnArgs.GetFloat( "bouncyness", "0.6", bouncyness );
 	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
 	explode = spawnArgs.GetBool( "explode" );
 	unbindOnDeath = spawnArgs.GetBool( "unbindondeath" );
+
+	spawnArgs.GetFloat( "friction", "0.05", friction );
+	// reverse compatibility, new contact_friction key replaces friction only if present
+	if( spawnArgs.FindKey("contact_friction") )
+	{
+		spawnArgs.GetFloat( "contact_friction", "0.05", friction );
+	}
+	spawnArgs.GetFloat( "linear_friction", "0.6", air_friction_linear );
+	spawnArgs.GetFloat( "angular_friction", "0.6", air_friction_angular );
 
 	fxCollide = spawnArgs.GetString( "fx_collide" );
 	nextCollideFxTime = 0;
@@ -170,7 +180,7 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() );
 	physicsObj.SetAxis( GetPhysics()->GetAxis() );
 	physicsObj.SetBouncyness( bouncyness );
-	physicsObj.SetFriction( 0.6f, 0.6f, friction );
+	physicsObj.SetFriction( air_friction_linear, air_friction_angular, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
 	physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
