@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.109  2007/01/26 22:15:32  sparhawk
+ * Inventory additions. Not yet functional.
+ *
  * Revision 1.108  2007/01/26 12:52:33  sparhawk
  * New inventory concept.
  *
@@ -6533,33 +6536,38 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		/// Inventory previous item
-		case IMPULSE_47: {
+		case IMPULSE_47:	// Inventory previous item
+		{
 			inventoryPrevItem();
 			break;
 		}
- 		/// Inventory next item
-		case IMPULSE_48: {
+
+		case IMPULSE_48:	// Inventory next item
+		{
 			inventoryNextItem();
 			break;
 		}
-		/// Inventory previous group
-		case IMPULSE_49: {
+
+		case IMPULSE_49:	// Inventory previous group
+		{
 			inventoryPrevGroup();
 			break;
 		}
- 		/// Inventory next group
-		case IMPULSE_50: {
+
+		case IMPULSE_50:	// Inventory next group
+		{
 			inventoryNextGroup();
 			break;
 		}
- 		/// Inventory next group
-		case IMPULSE_51: {
+
+		case IMPULSE_51:	// Inventory use item
+		{
 			inventoryUseItem();
 			break;
 		}
- 		/// Inventory next group
-		case IMPULSE_52: {
+
+		case IMPULSE_52:	// Inventory drop item
+		{
 			inventoryDropItem();
 			break;
 		}
@@ -9909,20 +9917,24 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-/*	assert( hud && InventoryCursor() );
+	// If the entity doesn't have an inventory, we don't need to do anything.
+	if(Inventory() == NULL)
+		return;
 
-	InventoryCursor()->IterateItem( false );
-	inventoryChangeSelection( hud, 1 );
-*/
+	Inventory()->GetPrevItem();
+	if(hud)
+		inventoryChangeSelection(hud, 1);
 }
 
 void idPlayer::inventoryPrevItem()
 {
-/*	assert( hud && InventoryCursor() );
+	// If the entity doesn't have an inventory, we don't need to do anything.
+	if(Inventory() == NULL)
+		return;
 
-	InventoryCursor()->IterateItem( true );
-	inventoryChangeSelection( hud, -1 );
-*/
+	Inventory()->GetPrevItem();
+	if(hud)
+		inventoryChangeSelection(hud, -1);
 }
 
 void idPlayer::inventoryNextGroup()
