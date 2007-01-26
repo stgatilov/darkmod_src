@@ -7,6 +7,11 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.59  2007/01/26 22:46:45  sophisticatedzombie
+ * Fixed line in idAI::Collision which was
+ * "dist = (origin * -gravityNormal );" and needed to be
+ * "dist = (( origin - collision.endpos) * -gravityNormal );"
+ *
  * Revision 1.58  2007/01/25 10:08:40  crispy
  * Implemented lipsync functionality
  *
@@ -891,7 +896,7 @@ bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 	gravityVector = physicsObj.GetGravity();
 
 	// calculate the exact velocity on landing
-	dist = ( origin * -gravityNormal );
+	dist = (( origin - collision.endpos) * -gravityNormal );
 	vel = oldVelocity * -gravityNormal;
 	acc = -gravityVector.Length();
 
