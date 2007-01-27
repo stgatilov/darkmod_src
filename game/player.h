@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.44  2007/01/27 16:15:01  sparhawk
+ * Inventory updates
+ *
  * Revision 1.43  2007/01/21 11:15:13  ishtvan
  * listening thru doors when leaning against them implemented
  *
@@ -826,6 +829,7 @@ private:
 	bool					gibDeath;
 	bool					gibsLaunched;
 	idVec3					gibsDir;
+	int						mInventoryOverlay;
 
 	idInterpolate<float>	zoomFov;
 	idInterpolate<float>	centerView;
@@ -999,7 +1003,9 @@ private:
 	void					Event_GetNextHinderance( const char *prefix, const char *lastMatch );
 
 	void					Event_SetGui( int handle, const char *guiFile );
+	void					Event_GetInventoryOverlay(void);
 	void					Event_CreateOverlay( const char *guiFile, int layer );
+	int						CreateOverlay( const char *guiFile, int layer );
 	void					Event_DestroyOverlay( int handle );
 
 	void					Event_PlayStartSound( void );

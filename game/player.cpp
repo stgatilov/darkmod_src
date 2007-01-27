@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.111  2007/01/27 16:15:01  sparhawk
+ * Inventory updates
+ *
  * Revision 1.110  2007/01/27 11:09:04  sparhawk
  * Fixed a crash in the inventory GetNext/PrevItem
  *
@@ -441,6 +444,7 @@ const idEventDef EV_Player_GetHinderance( "getHinderance", "s", 'v' );
 const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
 
 const idEventDef EV_Player_SetGui( "setGui", "ds" );
+const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", NULL, 'd' );
 const idEventDef EV_Player_CreateOverlay( "createOverlay", "sd", 'd' );
 const idEventDef EV_Player_DestroyOverlay( "destroyOverlay", "d" );
 
@@ -492,6 +496,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetNextHinderance,		idPlayer::Event_GetNextHinderance )
 
 	EVENT( EV_Player_SetGui,				idPlayer::Event_SetGui )
+	EVENT( EV_Player_GetInventoryOverlay,	idPlayer::Event_GetInventoryOverlay )
 	EVENT( EV_Player_CreateOverlay,			idPlayer::Event_CreateOverlay )
 	EVENT( EV_Player_DestroyOverlay,		idPlayer::Event_DestroyOverlay )
 
@@ -1563,6 +1568,7 @@ idPlayer::idPlayer()
 	m_LeanButtonTimeStamp	= 0;
 
 	m_invDisplayed			= NULL;
+	mInventoryOverlay		 = -1;
 
 	// Add the default stims to the player. These are stims
 	// that can be performed by the actual player, while the
@@ -2068,19 +2074,26 @@ void idPlayer::Spawn( void )
 	// copy step volumes over from cvars
 	UpdateMoveVolumes();
 
-	if ( !gameLocal.isMultiplayer ) {
-		if ( g_skill.GetInteger() < 2 ) {
-			if ( health < 25 ) {
+	if ( !gameLocal.isMultiplayer )
+	{
+		if ( g_skill.GetInteger() < 2 )
+		{
+			if ( health < 25 )
+			{
 				health = 25;
 			}
-			if ( g_useDynamicProtection.GetBool() ) {
+			if ( g_useDynamicProtection.GetBool() )
+			{
 				g_damageScale.SetFloat( 1.0f );
 			}
-		} else {
+		}
+		else
+		{
 			g_damageScale.SetFloat( 1.0f );
 			g_armorProtection.SetFloat( ( g_skill.GetInteger() < 2 ) ? 0.4f : 0.2f );
 #ifndef ID_DEMO_BUILD
-			if ( g_skill.GetInteger() == 3 ) {
+			if ( g_skill.GetInteger() == 3 )
+			{
 				healthTake = true;
 				nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
 			}
@@ -2091,13 +2104,8 @@ void idPlayer::Spawn( void )
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
-	// Have the player's cursor point to their own inventory by default.
-	//InventoryCursor()->SetInventory( Inventory() );
-
 	m_invDisplayed = new CtdmInventoryCursor();
-	// Perhaps I should do full-blown code to write an error if this occurs,
-	// since I've just allocated it?
-	assert( m_invDisplayed );
+	mInventoryOverlay = CreateOverlay("guis/inv.gui", 0);
 }
 
 /*
@@ -9933,11 +9941,13 @@ void idPlayer::inventoryNextItem()
 
 void idPlayer::inventoryPrevItem()
 {
+	CtdmInventory *i = Inventory();
+
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(Inventory() == NULL)
+	if(i == NULL)
 		return;
 
-	Inventory()->GetPrevItem();
+	i->GetPrevItem();
 	if(hud)
 		inventoryChangeSelection(hud, -1);
 }
@@ -10056,13 +10066,12 @@ void idPlayer::inventoryChangeSelection( idUserInterface *_hud, float shift )
 		_hud->StateChanged( gameLocal.time );
 		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
 	}
-
+*/
 	// I eventually want to run this only if cv_tdm_inv_opacity.getModified()
 	// is true, but for now I'm running it every frame.
 	_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
 	_hud->StateChanged( gameLocal.time );
 	_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
-*/
 }
 
 /*
@@ -10271,39 +10280,59 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 	return;
 }
 
-/*
-=====================
-idPlayer::Event_CreateOverlay
-=====================
-*/
-void idPlayer::Event_CreateOverlay( const char *guiFile, int layer ) {
+void idPlayer::Event_GetInventoryOverlay(void)
+{
+	idThread::ReturnInt(mInventoryOverlay);
+}
+
+void idPlayer::Event_CreateOverlay( const char *guiFile, int layer )
+{
+	idThread::ReturnInt(CreateOverlay(guiFile, layer));
+}
+
+int idPlayer::CreateOverlay(const char *guiFile, int layer)
+{
+	int rc = OVERLAYS_MIN_HANDLE-1;
 	int handle = OVERLAYS_MIN_HANDLE - 1;
 
-	if ( uiManager->CheckGui(guiFile) ) {
-
-		handle = m_overlays.createOverlay( layer );
-		if ( handle >= OVERLAYS_MIN_HANDLE ) {
-
-			m_overlays.setGui( handle, guiFile );
-			idUserInterface *gui = m_overlays.getGui( handle );
-			if ( gui ) {
-				gui->SetStateInt( "handle", handle );
-				gui->Activate( true, gameLocal.time );
-				// Let's set a good default value for whether or not the overlay is interactive.
-				m_overlays.setInteractive( handle, gui->IsInteractive() );
-			} else {
-				gameLocal.Warning( "Unknown error: Unable to load GUI into overlay.\n" );
-			}
-
-		} else {
-			gameLocal.Warning( "Unable to create overlay.\n" );
-		}
-
-	} else {
-		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+	if(guiFile == NULL || guiFile[0] == 0)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
+		goto Quit;
 	}
 
-	idThread::ReturnInt( handle );
+	if(!uiManager->CheckGui(guiFile))
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
+		goto Quit;
+	}
+	handle = m_overlays.createOverlay( layer );
+	if(handle < OVERLAYS_MIN_HANDLE)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
+		goto Quit;
+	}
+
+	m_overlays.setGui( handle, guiFile );
+	idUserInterface *gui = m_overlays.getGui( handle );
+	if(gui == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
+		goto Quit;
+	}
+
+	gui->SetStateInt( "handle", handle );
+	gui->Activate( true, gameLocal.time );
+	// Let's set a good default value for whether or not the overlay is interactive.
+	m_overlays.setInteractive( handle, gui->IsInteractive() );
+
+	rc = handle;
+
+Quit:
+	if(rc == OVERLAYS_MIN_HANDLE - 1 && handle != (OVERLAYS_MIN_HANDLE - 1))
+		m_overlays.destroyOverlay(handle);
+
+	return rc;
 }
 
 /*
