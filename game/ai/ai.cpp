@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.60  2007/01/27 20:10:35  ishtvan
+ * AI collision damage temporarily commented out: Current code is special-case for falling downwards and hitting flat to the ground.  We need to cover AI colliding with everything in a general way.  Can't do this before the beta release though, so it's commented out.
+ *
  * Revision 1.59  2007/01/26 22:46:45  sophisticatedzombie
  * Fixed line in idAI::Collision which was
  * "dist = (origin * -gravityNormal );" and needed to be
@@ -843,6 +846,8 @@ idAI::Collide
 bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 {
 	idAFEntity_Base::Collide( collision, oldVelocity );
+
+/*
 	idEntity *other;
 	other = gameLocal.entities[ collision.c.entityNum ];
 	// don't let player collide with grabber entity
@@ -955,6 +960,7 @@ bool idAI::Collide( const trace_t &collision, const idVec3 &oldVelocity )
 	} else if ( delta > 3 ) {
 		// just walk on
 	}
+*/
 	return false;
 }
 
