@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2007/01/27 11:09:10  sparhawk
+ * Fixed a crash in the inventory GetNext/PrevItem
+ *
  * Revision 1.13  2007/01/26 12:52:50  sparhawk
  * New inventory concept.
  *
@@ -335,7 +338,7 @@ idEntity *CtdmInventory::GetNextItem(void)
 			m_CurrentItem = 0;
 		else 
 		{
-			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num();
+			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num()-1;
 			goto Quit;
 		}
 	}
@@ -361,7 +364,7 @@ idEntity *CtdmInventory::GetPrevItem(void)
 		}
 
 		if(m_WrapAround == true)
-			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num();
+			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num()-1;
 		else 
 		{
 			m_CurrentItem = 0;

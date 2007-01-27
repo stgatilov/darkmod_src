@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.110  2007/01/27 11:09:04  sparhawk
+ * Fixed a crash in the inventory GetNext/PrevItem
+ *
  * Revision 1.109  2007/01/26 22:15:32  sparhawk
  * Inventory additions. Not yet functional.
  *
@@ -9917,11 +9920,13 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
+	CtdmInventory *i = Inventory();
+
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(Inventory() == NULL)
+	if(i == NULL)
 		return;
 
-	Inventory()->GetPrevItem();
+	i->GetPrevItem();
 	if(hud)
 		inventoryChangeSelection(hud, 1);
 }
