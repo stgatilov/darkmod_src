@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.61  2007/01/28 04:36:33  ishtvan
+ * testknockoutblow fix, char * var was uninitialized
+ *
  * Revision 1.60  2007/01/27 20:10:35  ishtvan
  * AI collision damage temporarily commented out: Current code is special-case for falling downwards and hitting flat to the ground.  We need to cover AI colliding with everything in a general way.  Can't do this before the beta release though, so it's commented out.
  *
@@ -6926,7 +6929,7 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	float KOAng(0), MinDot(1);
 	idVec3 KOSpot(vec3_zero), delta(vec3_zero);
 	idMat3 HeadAxis(mat3_zero);
-	const char *LocationName;
+	idStr LocationName;
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), state->Name());
 	
@@ -6940,10 +6943,10 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 
 	LocationName = GetDamageGroup( CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s hit with KO object in location %s\r", name.c_str(), LocationName);
+	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
 	
 	// check if we're hitting the right zone (usually the head)
-	if( strcmp(LocationName, spawnArgs.GetString("ko_zone")) )
+	if( strcmp(LocationName.c_str(), spawnArgs.GetString("ko_zone")) )
 		goto Quit;
 
 	// Check if the AI is above the alert threshold for KOing
