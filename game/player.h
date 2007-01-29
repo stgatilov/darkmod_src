@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.45  2007/01/29 21:49:57  sparhawk
+ * Inventory updates
+ *
  * Revision 1.44  2007/01/27 16:15:01  sparhawk
  * Inventory updates
  *
@@ -776,7 +779,7 @@ public:
 	/// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem( idEntity* useEnt );
 	/// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	void inventoryChangeSelection( idUserInterface *_hud, float shift = 0 );
+	void inventoryChangeSelection( idUserInterface *_hud, int shift = 0 );
 	
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);

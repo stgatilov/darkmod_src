@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.59  2007/01/29 21:49:57  sparhawk
+ * Inventory updates
+ *
  * Revision 1.58  2007/01/26 12:52:33  sparhawk
  * New inventory concept.
  *
@@ -1017,6 +1020,7 @@ private:
 
 	void					UpdatePVSAreas( void );
 
+private:			// Events should be public, so they can be used from other places as well.
 	// events
 	void					Event_GetName( void );
 	void					Event_SetName( const char *name );
@@ -1091,6 +1095,8 @@ private:
 	void					Event_GetGuiString( int handle, const char *key );
 	void					Event_SetGuiFloat( int handle, const char *key, float f );
 	void					Event_GetGuiFloat( int handle, const char *key );
+	void					Event_SetGuiInt( int handle, const char *key, int n );
+	void					Event_GetGuiInt( int handle, const char *key );
 	void					Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg );
 	void					Event_CallGui( int handle, const char *namedEvent );
 
@@ -1147,6 +1153,15 @@ private:
 #endif		// MOD_WATERPHYSICS
 	
 	void					Event_RangedThreatTo(idEntity*);
+
+public:			// events that need to have an accessible counterpart
+	void					SetGuiString(int handle, const char *key, const char *val);
+	const char				*GetGuiString(int handle, const char *key);
+	void					SetGuiFloat(int handle, const char *key, float f);
+	float					GetGuiFloat(int handle, const char *key);
+	void					SetGuiInt(int handle, const char *key, int n);
+	int						GetGuiInt(int handle, const char *key);
+	void					CallGui(int handle, const char *namedEvent);
 };
 
 /*

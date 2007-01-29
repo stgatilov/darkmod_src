@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.112  2007/01/29 21:49:57  sparhawk
+ * Inventory updates
+ *
  * Revision 1.111  2007/01/27 16:15:01  sparhawk
  * Inventory updates
  *
@@ -2002,17 +2005,21 @@ void idPlayer::Spawn( void )
 		headEnt->GetRenderEntity()->noSelfShadow = true;
 	}
 
-	if ( gameLocal.isMultiplayer ) {
+	if ( gameLocal.isMultiplayer )
+	{
 		Init();
 		Hide();	// properly hidden if starting as a spectator
-		if ( !gameLocal.isClient ) {
+		if ( !gameLocal.isClient )
+		{
 			// set yourself ready to spawn. idMultiplayerGame will decide when/if appropriate and call SpawnFromSpawnSpot
 			SetupWeaponEntity();
 			SpawnFromSpawnSpot();
 			forceRespawn = true;
 			assert( spectating );
 		}
-	} else {
+	}
+	else
+	{
 		SetupWeaponEntity();
 		SpawnFromSpawnSpot();
 	}
@@ -2027,36 +2034,19 @@ void idPlayer::Spawn( void )
 			ent->ActivateTargets( this );
 		}
 	}
-	if ( hud ) {
-		// We can spawn with a full soul cube, so we need to make sure the hud knows this
-		if ( weapon_soulcube > 0 && ( inventory.weapons & ( 1 << weapon_soulcube ) ) ) {
-			int max_souls = inventory.MaxAmmoForAmmoClass( this, "ammo_souls" );
-			if ( inventory.ammo[ idWeapon::GetAmmoNumForName( "ammo_souls" ) ] >= max_souls ) {
-				hud->HandleNamedEvent( "soulCubeReady" );
-			}
-		}
-		hud->HandleNamedEvent( "itemPickup" );
-	}
 
-	if ( GetPDA() ) {
-		// Add any emails from the inventory
-		for ( int i = 0; i < inventory.emails.Num(); i++ ) {
-			GetPDA()->AddEmail( inventory.emails[i] );
-		}
-		GetPDA()->SetSecurity( common->GetLanguageDict()->GetString( "#str_00066" ) );
-	}
-
-	if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
+	if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
+	{
 		hiddenWeapon = true;
-		if ( weapon.GetEntity() ) {
+		if ( weapon.GetEntity() )
 			weapon.GetEntity()->LowerWeapon();
-		}
 		idealWeapon = 0;
-	} else {
-		hiddenWeapon = false;
 	}
+	else
+		hiddenWeapon = false;
 	
-	if ( hud ) {
+	if ( hud )
+	{
 		UpdateHudWeapon();
 		hud->StateChanged( gameLocal.time );
 	}
@@ -2064,7 +2054,8 @@ void idPlayer::Spawn( void )
 	tipUp = false;
 	objectiveUp = false;
 
-	if ( inventory.levelTriggers.Num() ) {
+	if ( inventory.levelTriggers.Num() )
+	{
 		PostEventMS( &EV_Player_LevelTrigger, 0 );
 	}
 
@@ -2105,7 +2096,7 @@ void idPlayer::Spawn( void )
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
 	m_invDisplayed = new CtdmInventoryCursor();
-	mInventoryOverlay = CreateOverlay("guis/inv.gui", 0);
+	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
 }
 
 /*
@@ -2115,12 +2106,13 @@ idPlayer::~idPlayer()
 Release any resources used by the player.
 ==============
 */
-idPlayer::~idPlayer() {
+idPlayer::~idPlayer()
+{
 	delete weapon.GetEntity();
 	weapon = NULL;
 
-	assert( m_invDisplayed );
-	delete m_invDisplayed;
+	if(m_invDisplayed)
+		delete m_invDisplayed;
 }
 
 /*
@@ -9934,7 +9926,6 @@ void idPlayer::inventoryNextItem()
 	if(i == NULL)
 		return;
 
-	i->GetPrevItem();
 	if(hud)
 		inventoryChangeSelection(hud, 1);
 }
@@ -9947,7 +9938,6 @@ void idPlayer::inventoryPrevItem()
 	if(i == NULL)
 		return;
 
-	i->GetPrevItem();
 	if(hud)
 		inventoryChangeSelection(hud, -1);
 }
@@ -10026,83 +10016,69 @@ void idPlayer::inventoryDropItem()
 */
 }
 
-void idPlayer::inventoryChangeSelection( idUserInterface *_hud, float shift )
+void idPlayer::inventoryChangeSelection( idUserInterface *_hud, int shift )
 {
-/*	assert( InventoryCursor() );
-	assert( m_invDisplayed );
+	float opacity;
+	int groupvis;
 
-	CtdmInventoryItem* newItem = InventoryCursor()->Item();
-	CtdmInventoryItem* oldItem = m_invDisplayed->Item();
-	idEntity* itemEnt;
-	idThread* thread;
+	if(shift != 0)
+	{
+		idEntity *e = NULL;
+		idStr s;
+		
+		if(shift > 0)
+			e = Inventory()->GetNextItem();
+		else
+			e = Inventory()->GetPrevItem();
 
-	if ( newItem != oldItem ) {
-
-		if ( oldItem ) {
-			itemEnt = oldItem->m_owner.GetEntity();
-			assert( itemEnt );
-			thread = itemEnt->CallScriptFunctionArgs( "inventoryUnselect", true, 0, "eef", itemEnt, this, shift );
-			if (thread)
-				thread->Start(); // Start the thread immediately.
-		}
-
-		if ( newItem ) {
-			itemEnt = newItem->m_owner.GetEntity();
-			assert( itemEnt );
-			thread = itemEnt->CallScriptFunctionArgs( "inventorySelect", true, 0, "eef", itemEnt, this, shift );
-			if (thread)
-				thread->Start(); // Start the thread immediately.
-		}
-
-		m_invDisplayed->CopyActiveCursor( *InventoryCursor(), true );
+		// We default the name to something obvious, because the mapper should 
+		// see, when playtesting, that he forgot to name the item and groups.
+		e->spawnArgs.GetString("inv_group", "UNKNOWN", s);
+		SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
+		e->spawnArgs.GetString("inv_name", "UNKNOWN", s);
+		SetGuiString(mInventoryOverlay, "Inventory_ItemName", s);
+		e->spawnArgs.GetString("inv_icon", "", s);
+		SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
+		// TODO: Itemcount has to be set as well.
 	}
 
-	const char* str = InventoryCursor()->Group();
-	// Only tell the GUI to update if something has changed:
-	// Unfortunately, I don't know how to do string comparisons
-	// in the GUI, so I have to do them here.
-	if ( idStr::Cmp( _hud->GetStateString( "inventoryGroup" ), str ) != 0 ) {
-		_hud->SetStateString( "inventoryGroup", str );
-		_hud->StateChanged( gameLocal.time );
-		_hud->HandleNamedEvent( "inventoryUpdateGroup" );
+	groupvis = cv_tdm_inv_groupvis.GetInteger();
+	if(groupvis == 2)
+	{
+		// TODO: implement a fade in/out if the opacity should be temporarily
 	}
-*/
-	// I eventually want to run this only if cv_tdm_inv_opacity.getModified()
-	// is true, but for now I'm running it every frame.
-	_hud->SetStateString( "inventoryOpacity", va( "%f", cv_tdm_inv_opacity.GetFloat() ) );
-	_hud->StateChanged( gameLocal.time );
-	_hud->HandleNamedEvent( "inventoryUpdateOpacity" );
+	else
+		opacity = cv_tdm_inv_opacity.GetFloat()*groupvis;
+
+	SetGuiFloat(mInventoryOverlay, "Inventory_Opacity", opacity);
+	_hud->StateChanged(gameLocal.time);
 }
 
-/*
-=====================
-idPlayer::Event_GetEyePos
-=====================
-*/
 void idPlayer::Event_GetEyePos( void )
 {
 	idThread::ReturnVector( firstPersonViewOrigin );
 }
 
-/*
-=====================
-idPlayer::Event_SetImmobilization
-=====================
-*/
 void idPlayer::Event_SetImmobilization( const char *source, int type )
 {
-	if (idStr::Length(source)) {
+	if (idStr::Length(source))
+	{
 		// The user cannot set the update bit directly.
 		type &= ~EIM_UPDATE;
 
-		if (type) {
+		if (type)
+		{
 			m_immobilization.SetInt( source, type );
-		} else {
+		}
+		else
+		{
 			m_immobilization.Delete( source );
 		}
 
 		m_immobilizationCache |= EIM_UPDATE;
-	} else {
+	}
+	else
+	{
 		gameLocal.Warning( "source was empty; no immobilization set\n" );
 	}
 }
@@ -10292,8 +10268,8 @@ void idPlayer::Event_CreateOverlay( const char *guiFile, int layer )
 
 int idPlayer::CreateOverlay(const char *guiFile, int layer)
 {
-	int rc = OVERLAYS_MIN_HANDLE-1;
-	int handle = OVERLAYS_MIN_HANDLE - 1;
+	int rc = OVERLAYS_INVALID_HANDLE;
+	int handle = OVERLAYS_INVALID_HANDLE;
 
 	if(guiFile == NULL || guiFile[0] == 0)
 	{
@@ -10307,30 +10283,33 @@ int idPlayer::CreateOverlay(const char *guiFile, int layer)
 		goto Quit;
 	}
 	handle = m_overlays.createOverlay( layer );
-	if(handle < OVERLAYS_MIN_HANDLE)
+	if(handle == OVERLAYS_INVALID_HANDLE)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
 		goto Quit;
 	}
 
-	m_overlays.setGui( handle, guiFile );
-	idUserInterface *gui = m_overlays.getGui( handle );
+	m_overlays.setGui(handle, guiFile);
+	idUserInterface *gui = m_overlays.getGui(handle);
 	if(gui == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
 		goto Quit;
 	}
 
-	gui->SetStateInt( "handle", handle );
-	gui->Activate( true, gameLocal.time );
+	gui->SetStateInt("handle", handle);
+	gui->Activate(true, gameLocal.time);
 	// Let's set a good default value for whether or not the overlay is interactive.
-	m_overlays.setInteractive( handle, gui->IsInteractive() );
+	m_overlays.setInteractive(handle, gui->IsInteractive());
 
 	rc = handle;
 
 Quit:
-	if(rc == OVERLAYS_MIN_HANDLE - 1 && handle != (OVERLAYS_MIN_HANDLE - 1))
-		m_overlays.destroyOverlay(handle);
+	if(rc == OVERLAYS_INVALID_HANDLE)
+	{
+		if(handle != OVERLAYS_INVALID_HANDLE)
+			m_overlays.destroyOverlay(handle);
+	}
 
 	return rc;
 }

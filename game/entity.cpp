@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.91  2007/01/29 21:49:56  sparhawk
+ * Inventory updates
+ *
  * Revision 1.90  2007/01/26 12:52:33  sparhawk
  * New inventory concept.
  *
@@ -7113,6 +7116,36 @@ void idEntity::Event_GetGui( int handle ) {
 		idThread::ReturnString( "" );
 }
 
+void idEntity::SetGuiString(int handle, const char *key, const char *val)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(!gui)
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+			goto Quit;
+		}
+		else if(!gui->IsUniqued())
+		{
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to non-unique GUI: %d\r", handle);
+			goto Quit;
+		}
+		else
+		{
+			gui->SetStateString(key, val);
+			gui->StateChanged(gameLocal.time);
+		}
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Non-existant GUI handle: %d\r", handle);
+	}
+
+Quit:
+	return;
+}
+
 /*
 ================
 idEntity::Event_SetGuiString
@@ -7120,85 +7153,129 @@ idEntity::Event_SetGuiString
 Sets a parameter for a GUI. (note that the GUI needs to be unique)
 ================
 */
-void idEntity::Event_SetGuiString( int handle, const char *key, const char *val ) {
-	if ( m_overlays.exists( handle ) ) {
-		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( !gui )
-			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
-		else if ( !gui->IsUniqued() )
-			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
-		else {
-			gui->SetStateString( key, val );
-			gui->StateChanged( gameLocal.time );
-		}
-	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
-	}
+void idEntity::Event_SetGuiString(int handle, const char *key, const char *val)
+{
+	SetGuiString(handle, key, val);
 }
 
-/*
-================
-idEntity::Event_GetGuiString
+const char *idEntity::GetGuiString(int handle, const char *key)
+{
+	const char *retStr = NULL;
 
-Returns a parameter from a GUI.
-================
-*/
-void idEntity::Event_GetGuiString( int handle, const char *key ) {
-	const char* retStr = "";
-	if ( m_overlays.exists( handle ) ) {
-		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( gui )
-			retStr = gui->GetStateString( key );
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if(gui)
+			retStr = gui->GetStateString(key);
 		else
-			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
-	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 	}
-	idThread::ReturnString( retStr );
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+
+	return retStr;
 }
 
-/*
-================
-idEntity::Event_SetGuiFloat
+void idEntity::Event_GetGuiString(int handle, const char *key)
+{
+	const char *retStr = GetGuiString(handle, key);
 
-Sets a parameter for a GUI. (note that the GUI needs to be unique)
-================
-*/
-void idEntity::Event_SetGuiFloat( int handle, const char *key, float f ) {
-	if ( m_overlays.exists( handle ) ) {
-		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( !gui )
-			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
-		else if ( !gui->IsUniqued() )
-			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
-		else {
-			gui->SetStateString( key, va( "%f", f ) );
-			gui->StateChanged( gameLocal.time );
+	if(retStr == NULL)
+		retStr = "";
+
+	idThread::ReturnString(retStr);
+}
+
+void idEntity::SetGuiFloat( int handle, const char *key, float f)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if (!gui)
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		else if(!gui->IsUniqued())
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
+		else
+		{
+			gui->SetStateFloat(key, f);
+			gui->StateChanged(gameLocal.time);
 		}
-	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
 }
 
-/*
-================
-idEntity::Event_GetGuiFloat
+void idEntity::Event_SetGuiFloat(int handle, const char *key, float f)
+{
+	SetGuiFloat(handle, key, f);
+}
 
-Returns a parameter from a GUI.
-================
-*/
-void idEntity::Event_GetGuiFloat( int handle, const char *key ) {
+float idEntity::GetGuiFloat(int handle, const char *key)
+{
 	float retVal = 0;
-	if ( m_overlays.exists( handle ) ) {
+	if(m_overlays.exists(handle))
+	{
 		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( gui )
-			retVal = atof( gui->GetStateString( key, "0" ) );
+		if (gui)
+			retVal = gui->GetStateFloat(key);
 		else
-			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
-	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 	}
-	idThread::ReturnFloat( retVal );
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+	return retVal;
+}
+
+void idEntity::Event_GetGuiFloat(int handle, const char *key)
+{
+	idThread::ReturnFloat(GetGuiFloat(handle, key));
+}
+
+void idEntity::SetGuiInt( int handle, const char *key, int n)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if (!gui)
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		else if(!gui->IsUniqued())
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
+		else
+		{
+			gui->SetStateInt(key, n);
+			gui->StateChanged(gameLocal.time);
+		}
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+}
+
+void idEntity::Event_SetGuiInt(int handle, const char *key, int n)
+{
+	SetGuiInt(handle, key, n);
+}
+
+int idEntity::GetGuiInt(int handle, const char *key)
+{
+	int retVal = 0;
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui(handle);
+		if (gui)
+			retVal = gui->GetStateInt(key);
+		else
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+	}
+	else
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+
+	return retVal;
+}
+
+void idEntity::Event_GetGuiInt(int handle, const char *key)
+{
+	idThread::ReturnInt(GetGuiInt(handle, key));
 }
 
 /*
@@ -7209,25 +7286,30 @@ This is a kludge. It's hopefully temporary, but probably not. Anyway, it's
 used by readables to bypass the 127 char limit on string variables in scripts.
 ================
 */
-void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg ) {
-	if ( !src ) {
+void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg )
+{
+	if ( !src )
+	{
 		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
 		goto Quit;
 	}
 
-	if ( !m_overlays.exists( handle ) ) {
+	if(!m_overlays.exists(handle))
+	{
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
 		goto Quit;
 	}
 
 	idUserInterface *gui = m_overlays.getGui( handle );
-	if ( !gui ) {
-		gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
+	if(!gui)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 		goto Quit;
 	}
 
-	if ( !gui->IsUniqued() ) {
-		gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
+	if(!gui->IsUniqued())
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Non-existant GUI handle: %d\r", handle);
 		goto Quit;
 	}
 
@@ -7238,6 +7320,24 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 	return;
 }
 
+void idEntity::CallGui(int handle, const char *namedEvent)
+{
+	if(m_overlays.exists(handle))
+	{
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if (!gui)
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, namedEvent);
+		else if(!gui->IsUniqued())
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to non-unique GUI: %d [%s]\r", handle, namedEvent);
+		else
+			gui->HandleNamedEvent( namedEvent );
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d [%s]\r", handle, namedEvent);
+	}
+}
+
 /*
 ================
 idEntity::Event_CallGui
@@ -7245,19 +7345,9 @@ idEntity::Event_CallGui
 Calls a named event in a GUI. (note that the GUI needs to be unique)
 ================
 */
-void idEntity::Event_CallGui( int handle, const char *namedEvent ) {
-	if ( m_overlays.exists( handle ) ) {
-		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( !gui )
-			gameLocal.Warning( "Handle points to NULL GUI: %d\n", handle );
-		else if ( !gui->IsUniqued() )
-			gameLocal.Warning( "Handle points to non-unique GUI: %d\n", handle );
-		else {
-			gui->HandleNamedEvent( namedEvent );
-		}
-	} else {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
-	}
+void idEntity::Event_CallGui(int handle, const char *namedEvent)
+{
+	CallGui(handle, namedEvent);
 }
 
 /*
@@ -7269,7 +7359,8 @@ object's spawn args. The prefix will be prepended to
 the names of all keys in the declaration.
 ================
 */
-void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix ) {
+void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix )
+{
 	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, xdFile, false ) );
 	if ( xd != NULL ) {
 		const idDict *data = &(xd->m_data);
@@ -7282,8 +7373,10 @@ void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix ) 
 		}
 
 		idThread::ReturnInt( 1 );
-	} else {
-		gameLocal.Warning( "Non-existant xdata declaration: %s\n", xdFile );
+	} 
+	else
+	{
+		gameLocal.Warning("Non-existant xdata declaration: %s\n", xdFile);
 		idThread::ReturnInt( 0 );
 	}
 }

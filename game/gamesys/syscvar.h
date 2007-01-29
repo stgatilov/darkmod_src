@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.35  2007/01/29 21:50:14  sparhawk
+ * Inventory updates
+ *
  * Revision 1.34  2007/01/21 11:17:04  ishtvan
  * leaning thru doors cvars added
  *
@@ -169,6 +172,9 @@ extern idCVar cv_throw_time;
 extern idCVar cv_tdm_inv_grouping;
 extern idCVar cv_tdm_inv_opacity;
 extern idCVar cv_tdm_inv_groupvis;
+extern idCVar cv_tdm_inv_hud_file;
+extern idCVar cv_tdm_inv_fadein;
+extern idCVar cv_tdm_inv_fadeout;
 
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;

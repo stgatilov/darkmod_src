@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/01/29 21:50:06  sparhawk
+ * Inventory updates
+ *
  * Revision 1.14  2007/01/27 11:09:10  sparhawk
  * Fixed a crash in the inventory GetNext/PrevItem
  *
@@ -326,7 +329,7 @@ idEntity *CtdmInventory::GetNextItem(void)
 	ni = m_Group[m_CurrentGroup]->m_Item.Num();
 
 	m_CurrentItem++;
-	if(m_CurrentItem > ni)
+	if(m_CurrentItem >= ni)
 	{
 		if(m_GroupLock == false)
 		{
