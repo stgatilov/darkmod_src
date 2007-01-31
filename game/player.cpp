@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.113  2007/01/31 23:39:34  sparhawk
+ * Inventory updated
+ *
  * Revision 1.112  2007/01/29 21:49:57  sparhawk
  * Inventory updates
  *
@@ -2097,6 +2100,22 @@ void idPlayer::Spawn( void )
 
 	m_invDisplayed = new CtdmInventoryCursor();
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
+	CtdmInventoryItem *it;
+	CtdmInventoryGroup *grp;
+
+	// The player always gets a dumyyentry (so the player can have an empty space if he 
+	// chooses to not see the inventory all the time.
+	grp = Inventory()->GetGroup("DEFAULT");
+	it = new CtdmInventoryItem();
+	it->SetType(CtdmInventoryItem::DUMMY);
+	grp->PutItem(it);
+
+	// And the player also always gets a loot entry, as he is supposed to find loot in
+	// 99.99% of the maps. That's the point of the game, remember? :)
+	grp = Inventory()->CreateGroup(cv_tdm_inv_loot_group.GetString());
+	it = new CtdmInventoryItem();
+	it->SetType(CtdmInventoryItem::LOOT);
+	grp->PutItem(it);
 }
 
 /*
@@ -10020,26 +10039,70 @@ void idPlayer::inventoryChangeSelection( idUserInterface *_hud, int shift )
 {
 	float opacity;
 	int groupvis;
+	CtdmInventoryItem::ItemType type = CtdmInventoryItem::ITEM;
 
 	if(shift != 0)
 	{
+		CtdmInventoryItem *it = NULL;
 		idEntity *e = NULL;
 		idStr s;
 		
 		if(shift > 0)
-			e = Inventory()->GetNextItem();
+		{
+			it = Inventory()->GetNextItem();
+			e = it->GetEntity();
+		}
 		else
-			e = Inventory()->GetPrevItem();
+		{
+			it = Inventory()->GetPrevItem();
+			e = it->GetEntity();
+		}
 
-		// We default the name to something obvious, because the mapper should 
-		// see, when playtesting, that he forgot to name the item and groups.
-		e->spawnArgs.GetString("inv_group", "UNKNOWN", s);
-		SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
-		e->spawnArgs.GetString("inv_name", "UNKNOWN", s);
-		SetGuiString(mInventoryOverlay, "Inventory_ItemName", s);
-		e->spawnArgs.GetString("inv_icon", "", s);
-		SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
-		// TODO: Itemcount has to be set as well.
+		type = it->GetType();
+		switch(type)
+		{
+			case CtdmInventoryItem::ITEM:
+			{
+				// We default the name to something obvious, because the mapper should 
+				// see, when playtesting, that he forgot to name the item and groups.
+				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 0.0);
+				e->spawnArgs.GetString("inv_group", "UNKNOWN", s);
+				SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
+				e->spawnArgs.GetString("inv_name", "UNKNOWN", s);
+				SetGuiString(mInventoryOverlay, "Inventory_ItemName", s);
+				e->spawnArgs.GetString("inv_icon", "", s);
+				SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
+				// TODO: Itemcount has to be set as well.
+			}
+			break;
+
+			case CtdmInventoryItem::LOOT:
+			{
+				s = cv_tdm_inv_loot_group.GetString();
+				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 0.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 1.0);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootJewels", 0);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootGoods", 0);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootGold", 0);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootTotal", 0);
+				// TODO: Itemcount has to be set as well.
+			}
+			break;
+
+			case CtdmInventoryItem::DUMMY:
+			{
+				// All objects are set to empty, so we have an empty entry in the
+				// inventory.
+				s = "";
+				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 0.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 0.0);
+				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
+			}
+			break;
+		}
 	}
 
 	groupvis = cv_tdm_inv_groupvis.GetInteger();

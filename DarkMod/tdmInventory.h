@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.9  2007/01/31 23:41:49  sparhawk
+ * Inventory updated
+ *
  * Revision 1.8  2007/01/26 12:52:50  sparhawk
  * New inventory concept.
  *
@@ -86,19 +89,19 @@ public:
 	 * if the pointer is not NULL.
 	 */
 	CtdmInventoryGroup	*GetGroup(const char *GroupName, int *Index = NULL);
-	CtdmInventoryGroup	*GetGroup(idStr const &GroupName, int *Index = NULL) { return GetGroup(GroupName.c_str(), Index); }
+	inline CtdmInventoryGroup	*GetGroup(idStr const &GroupName, int *Index = NULL) { return GetGroup(GroupName.c_str(), Index); }
 
 	/**
 	 * GetGroupIndex returns the index to the given group or -1 if not found.
 	 */
 	int					GetGroupIndex(const char *GroupName);
-	int					GetGroupIndex(idStr const &GroupName) { return GetGroupIndex(GroupName.c_str()); }
+	inline int			GetGroupIndex(idStr const &GroupName) { return GetGroupIndex(GroupName.c_str()); }
 
 	/**
 	 * CreateGroup creates the named group if it doesn't already exist.
 	 */
 	CtdmInventoryGroup	*CreateGroup(const char *GroupName, int *Index = NULL);
-	CtdmInventoryGroup	*CreateGroup(idStr const &GroupName, int *Index = NULL) { return CreateGroup(GroupName.c_str(), Index); }
+	inline CtdmInventoryGroup	*CreateGroup(idStr const &GroupName, int *Index = NULL) { return CreateGroup(GroupName.c_str(), Index); }
 
 	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
 	void				SetOwner(idEntity *Owner);
@@ -109,19 +112,20 @@ public:
 	 * entity.
 	 */
 	CtdmInventoryItem	*PutItem(idEntity *Item, const idStr &Name, char const *Group = NULL);
+	void				PutItem(CtdmInventoryItem *Item, char const *Group = NULL);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	idEntity			*GetItem(const idStr &Name, char const *Group = NULL);
+	CtdmInventoryItem	*GetItem(const idStr &Name, char const *Group = NULL);
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of GroupLock and WrapAround.
 	 */
-	idEntity			*GetNextItem(void);
-	idEntity			*GetPrevItem(void);
+	CtdmInventoryItem	*GetNextItem(void);
+	CtdmInventoryItem	*GetPrevItem(void);
 
 	CtdmInventoryGroup	*GetNextGroup(void);
 	CtdmInventoryGroup	*GetPrevGroup(void);
@@ -131,18 +135,16 @@ public:
 	 * Validation of the index is done when doing Nex/Prev Group
 	 * so we don't really care wether this is a valid index or not.
 	 */
-	void				SetCurrentGroup(int Index) { m_CurrentGroup = Index; }
+	inline void			SetCurrentGroup(int Index) { m_CurrentGroup = Index; }
 
 	/**
 	 * Set the current item index.
 	 * Validation of the index is done when doing Nex/Prev Group
 	 * so we don't really care wether this is a valid index or not.
 	 */
-	void				SetCurrentItem(int Index) { m_CurrentItem = Index; }
-
-	void				SetGroupLock(bool bLock) { m_GroupLock = bLock; }
-
-	void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
+	inline void			SetCurrentItem(int Index) { m_CurrentItem = Index; }
+	inline void			SetGroupLock(bool bLock) { m_GroupLock = bLock; }
+	inline void			SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
 protected:
 	void				ValidateGroup(void);
@@ -201,16 +203,18 @@ public:
 	CtdmInventoryGroup(const char* name = NULL);
 	~CtdmInventoryGroup();
 
-	void		Save(idSaveGame *savefile) const;
-	void		Restore(idRestoreGame *savefile);
+	void				Save(idSaveGame *savefile) const;
+	void				Restore(idRestoreGame *savefile);
 
-	idStr		&GetName() { return m_Name; }
-	void		SetInventory(CtdmInventory *Inventory) { m_Inventory = Inventory; }
+	inline idStr		&GetName() { return m_Name; }
+	inline void			SetInventory(CtdmInventory *Inventory) { m_Inventory = Inventory; }
 
 	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
 
 	CtdmInventoryItem	*PutItem(idEntity *Item, const idStr &Name);
-	idEntity			*GetItem(const idStr &Name);
+	void				PutItem(CtdmInventoryItem *Item);
+
+	CtdmInventoryItem	*GetItem(const idStr &Name);
 
 protected:
 	void				SetOwner(idEntity *Owner);
@@ -236,15 +240,26 @@ class CtdmInventoryItem : public idClass
 	friend CtdmInventoryGroup;
 
 public:
+	typedef enum {
+		ITEM,			// Normal item, which is associated to an entity
+		LOOT,			// this is the special loot item, which doesn't have an entity
+		DUMMY			// This also doesn't have an entity, but provides a dummy so 
+						// we can have an empty space in the inventory.
+	} ItemType;
+
+public:
 	CtdmInventoryItem();
 	~CtdmInventoryItem();
 
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
-	CtdmInventory		*Inventory() const { return m_Inventory; }
-	CtdmInventoryGroup	*Group() const { return m_Group; }
-	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
+	inline CtdmInventory		*Inventory() const { return m_Inventory; }
+	inline CtdmInventoryGroup	*Group() const { return m_Group; }
+	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
+	inline idEntity			*GetEntity() { return m_Item.GetEntity(); }
+	inline void				SetType(CtdmInventoryItem::ItemType type) { m_Type = type; };
+	inline CtdmInventoryItem::ItemType GetType(void) { return m_Type; };
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -252,6 +267,7 @@ protected:
 	idStr					m_Name;
 	CtdmInventory			*m_Inventory;
 	CtdmInventoryGroup		*m_Group;
+	ItemType				m_Type;
 };
 
 // A full-blown group-remembering cursor that can handle T1-style iteration and grouped iteration simultaneously.

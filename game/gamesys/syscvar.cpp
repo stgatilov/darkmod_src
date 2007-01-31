@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.50  2007/01/31 23:40:46  sparhawk
+ * Inventory updated
+ *
  * Revision 1.49  2007/01/29 21:50:14  sparhawk
  * Inventory updates
  *
@@ -262,6 +265,7 @@ idCVar cv_throw_time(				"tdm_throw_time",		"1700",			CVAR_GAME | CVAR_ARCHIVE |
 * DarkMod Inventory
 **/
 idCVar cv_tdm_inv_hud_file(	"tdm_inv_hud_file", "guis/inv.gui",	CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that represents the hud for the inventory.");
+idCVar cv_tdm_inv_loot_group("tdm_inv_loot_group", "Loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the group that contains the loot item.");
 
 idCVar cv_tdm_inv_grouping(	"tdm_inv_group_mode",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"The opacity of the inventory GUI.\n"
 																									   "0 = ungrouped inventory (T1/T2 style)\n"

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2007/01/31 23:41:49  sparhawk
+ * Inventory updated
+ *
  * Revision 1.15  2007/01/29 21:50:06  sparhawk
  * Inventory updates
  *
@@ -227,9 +230,33 @@ Quit:
 	return rc;
 }
 
-idEntity *CtdmInventory::GetItem(const idStr &Name, char const *Group)
+void CtdmInventory::PutItem(CtdmInventoryItem *Item, char const *Group)
 {
-	idEntity *rc = NULL;
+	int i;
+	CtdmInventoryGroup *gr;
+
+	if(Item == NULL)
+		goto Quit;
+
+	// Check if it is the default group or not.
+	if(Group != NULL)
+		gr = m_Group[0];
+	else
+	{
+		gr = GetGroup(Group, &i);
+		if(gr == NULL)
+			goto Quit;
+	}
+
+	gr->PutItem(Item);
+
+Quit:
+	return;
+}
+
+CtdmInventoryItem *CtdmInventory::GetItem(const idStr &Name, char const *Group)
+{
+	CtdmInventoryItem *rc = NULL;
 	int i, n, s;
 	CtdmInventoryGroup *gr;
 
@@ -320,9 +347,9 @@ void CtdmInventory::ValidateGroup(void)
 	}
 }
 
-idEntity *CtdmInventory::GetNextItem(void)
+CtdmInventoryItem *CtdmInventory::GetNextItem(void)
 {
-	idEntity *rc = NULL;
+	CtdmInventoryItem *rc = NULL;
 	int ni;
 
 	ValidateGroup();
@@ -346,15 +373,15 @@ idEntity *CtdmInventory::GetNextItem(void)
 		}
 	}
 
-	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem]->m_Item.GetEntity();
+	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
 }
 
-idEntity *CtdmInventory::GetPrevItem(void)
+CtdmInventoryItem *CtdmInventory::GetPrevItem(void)
 {
-	idEntity *rc = NULL;
+	CtdmInventoryItem *rc = NULL;
 
 	ValidateGroup();
 	m_CurrentItem--;
@@ -375,7 +402,7 @@ idEntity *CtdmInventory::GetPrevItem(void)
 		}
 	}
 
-	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem]->m_Item.GetEntity();
+	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
@@ -459,9 +486,22 @@ Quit:
 	return rc;
 }
 
-idEntity *CtdmInventoryGroup::GetItem(const idStr &Name)
+void CtdmInventoryGroup::PutItem(CtdmInventoryItem *Item)
 {
-	idEntity *rc = NULL;
+	if(Item == NULL)
+		goto Quit;
+
+	m_Item.AddUnique(Item);
+	Item->m_Owner = m_Owner.GetEntity();
+
+Quit:
+	return;
+}
+
+
+CtdmInventoryItem *CtdmInventoryGroup::GetItem(const idStr &Name)
+{
+	CtdmInventoryItem *rc = NULL;
 	CtdmInventoryItem *e;
 	int i, n;
 
@@ -471,7 +511,7 @@ idEntity *CtdmInventoryGroup::GetItem(const idStr &Name)
 		e = m_Item[i];
 		if(Name == e->m_Name)
 		{
-			rc = e->m_Item.GetEntity();
+			rc = e;
 			goto Quit;
 		}
 	}
@@ -493,6 +533,7 @@ CtdmInventoryItem::CtdmInventoryItem()
 	m_Item = NULL;
 	m_Inventory = NULL;
 	m_Group = NULL;
+	m_Type = ITEM;
 }
 
 CtdmInventoryItem::~CtdmInventoryItem()
