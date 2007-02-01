@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.17  2007/02/01 19:47:35  sparhawk
+ * Callback for inventory added.
+ *
  * Revision 1.16  2007/01/31 23:41:49  sparhawk
  * Inventory updated
  *
@@ -133,10 +136,12 @@ CtdmInventory::~CtdmInventory()
 
 void CtdmInventory::Save(idSaveGame *savefile) const
 {
+	// TODO: Has to call the groups and items as well.
 }
 
 void CtdmInventory::Restore(idRestoreGame *savefile)
 {
+	// TODO: Has to call the groups and items as well.
 }
 
 CtdmInventoryGroup *CtdmInventory::GetGroup(const char *pName, int *Index)
@@ -252,6 +257,16 @@ void CtdmInventory::PutItem(CtdmInventoryItem *Item, char const *Group)
 
 Quit:
 	return;
+}
+
+CtdmInventoryItem *CtdmInventory::GetCurrentItem()
+{
+	CtdmInventoryItem *rc = NULL;
+
+	if(m_Group.Num() > 0)
+		rc = m_Group[m_CurrentGroup]->GetItem(m_CurrentItem);
+
+	return rc;
 }
 
 CtdmInventoryItem *CtdmInventory::GetItem(const idStr &Name, char const *Group)
@@ -432,9 +447,6 @@ CtdmInventoryGroup *CtdmInventory::GetPrevGroup(void)
 // CtdmInventoryGroup //
 ////////////////////////
 
-CLASS_DECLARATION(idClass, CtdmInventoryGroup)
-END_CLASS
-
 CtdmInventoryGroup::CtdmInventoryGroup(const char* name)
 : idClass()
 {
@@ -499,6 +511,16 @@ Quit:
 }
 
 
+CtdmInventoryItem *CtdmInventoryGroup::GetItem(int i)
+{
+	CtdmInventoryItem *rc = NULL;
+
+	if(i >= 0 && i < m_Item.Num())
+		rc = m_Item[i];
+
+	return rc;
+}
+
 CtdmInventoryItem *CtdmInventoryGroup::GetItem(const idStr &Name)
 {
 	CtdmInventoryItem *rc = NULL;
@@ -523,9 +545,6 @@ Quit:
 ///////////////////////
 // CtdmInventoryItem //
 ///////////////////////
-
-CLASS_DECLARATION( idClass, CtdmInventoryItem )
-END_CLASS
 
 CtdmInventoryItem::CtdmInventoryItem()
 {

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.10  2007/02/01 19:47:35  sparhawk
+ * Callback for inventory added.
+ *
  * Revision 1.9  2007/01/31 23:41:49  sparhawk
  * Inventory updated
  *
@@ -121,6 +124,11 @@ public:
 	CtdmInventoryItem	*GetItem(const idStr &Name, char const *Group = NULL);
 
 	/**
+	 * Retrieve the currently selected item.
+	 */
+	CtdmInventoryItem	*GetCurrentItem();
+
+	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of GroupLock and WrapAround.
 	 */
@@ -196,7 +204,6 @@ protected:
  */
 class CtdmInventoryGroup : public idClass
 {
-	CLASS_PROTOTYPE(CtdmInventoryGroup);
 	friend CtdmInventory;
 
 public:
@@ -215,6 +222,7 @@ public:
 	void				PutItem(CtdmInventoryItem *Item);
 
 	CtdmInventoryItem	*GetItem(const idStr &Name);
+	CtdmInventoryItem	*GetItem(int Index);
 
 protected:
 	void				SetOwner(idEntity *Owner);
@@ -235,7 +243,6 @@ protected:
  */
 class CtdmInventoryItem : public idClass
 {
-	CLASS_PROTOTYPE( CtdmInventoryItem );
 	friend CtdmInventory;
 	friend CtdmInventoryGroup;
 
