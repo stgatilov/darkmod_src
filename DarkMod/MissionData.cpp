@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2007/02/01 08:29:37  ishtvan
+ * More psuedocode updates to CObjective::ParseLogicStr , should be logically complete now
+ *
  * Revision 1.20  2007/01/19 02:46:13  thelvyn
  * removed unused argument - spurious warning
  *
@@ -1368,8 +1371,18 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 {
 	idLexer		src;
 	idToken		token;
-//	idDict		*args;
+	idDict		*args( NULL );
 	int			col(0), row(0), level(0);
+	
+	bool		bReturnVal( false );	
+	bool		bFollowingOperator( false ); // whether we expect an identifier or open parenthesis
+	bool		bOperatorOK( false );
+	// initialize as advancing to 0,0 at start of parsing
+	bool		bRowAdvanced( true );
+	bool		bColAdvanced( true );
+	
+	SBoolParseNode *CurrentNode( NULL );
+
 
 	// Clear existing parse node structure
 	output.Clear();
@@ -1377,21 +1390,20 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	src.LoadMemory( input->c_str(), input->Length(), "" );
 
 
-	bool bReturnVal(false);
-
 /**
 * PSUEDOCODE:
 * Parenthesis define a level
 * 
 if ("OR")
 {
-	if( bExpectIntOrOpen )
+	if( bFollowingOperator || !bOperatorOK )
 	{
 		// report error
 		goto Quit;
 	}
 	// We expect next either an identifier or a "("
-	bExpectIntOrOpen = true;
+	bFollowingOperator = true;
+	bOperatorOK = false;
 
 	Row++
 	bRowAdvanced = true;
@@ -1400,12 +1412,13 @@ if ("OR")
 
 if ("AND")
 {
-	if( bExpectIntOrOpen )
+	if( bFollowingOperator || !bOperatorOK )
 	{
 		// report error
 		goto Quit;
 	}
-	bExpectIntOrOpen = true;
+	bFollowingOperator = true;
+	bOperatorOK = false;
 
 	Col++;
 	bColAdvanced = true;
@@ -1414,13 +1427,7 @@ if ("AND")
 
 if( "(" OR <INTEGER> )
 {
-	if( !bExpectIntOrOpen )
-	{
-		// report error
-		goto Quit;
-	}
-	// We expect next either an operator or a ")"
-	bExpectIntOrOpen = false;
+	bFollowingOperator = false;
 
 	create a new ParseNode
 
@@ -1428,40 +1435,65 @@ if( "(" OR <INTEGER> )
 	{
 		// node is a branch
 		level++;
-		enter previous levels' row and column, pointer, to new entry
+
+		bOperatorOK = false;
+		enter previous levels' row, column, and pointer, to the new entry
 	}
 	else if <INTEGER>
 	{
 		// node is a leaf
-		set CompNum to the identifier
-		leave this node's lists empty
+		
+		bOperatorOK = true;
+
+		// set CompNum to the identifier
+		// leave this node's lists empty, since it is a leaf
 	}
 
 	// Step 2. add node to the appropriate point in the matrix-tree - same for both "(" and <INTEGER>
 
 	if( bRowAdvanced )
 	{
-		append this node as a new row to the Cols[current col] vector
+		// append this node as a new row to the Cols[current col] vector
 	}
 	else if( bColAdvanced )
 	{
-		Create new entry for Cols list, and append this node as the first row entry in the new Cols list
+		// Create new entry for Cols list, and append this node as the first row entry in the new Cols list
+	}
+	// If neither row nor column advanced, we have a problem, such as two identifiers right beside eachother
+	else
+	{
+		// log error
 	}
 }
 
 if( ")" )
 {
-	if( bExpectIntOrOpen )
+	if( bFollowingOperator )
 	{
-		// report error
+		// report error : Identifier expected, found ")"
 		goto Quit;
 	}
-	bExpectIntOrOpen = false;
+
+	// TODO: Check if level has been filled out before we go up
+	// If it is empty, report error
+		// Error: Identifier expected, found ")"
 
 	level--;
 	
 	// retrieve the rows/columns for the higher level from the lower level parse node data
 }
+
+// During loop:
+if( level < 0 )
+	// error: Unbalanced parenthesis, found unexpected ")", 
+
+// ================== After parsing finishes: ====================
+
+if( level != 0 )
+	// error: Unbalanced parenthesis, expected ")" not found
+
+if( bFollowingOperator )
+	// error: Expected identifier, found EOF
 			 
 **/
 
