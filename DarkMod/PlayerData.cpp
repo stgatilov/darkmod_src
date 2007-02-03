@@ -15,6 +15,9 @@
  * $Name$
  *
  * $Log$
+ * Revision 1.13  2007/02/03 21:56:21  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.12  2006/08/07 06:52:55  ishtvan
  * added m_FrobTrace variable that gets set by idPlayer::FrobCheck
  *
@@ -69,28 +72,12 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../darkmod/darkmodglobals.h"
 #include "../darkmod/playerdata.h"
 
-// TODO: Items which can be put in the inventory should get a counter parameter.
-// If they have it the item is not removed from gameworld until the counter reached
-// zero.
-
-CInventoryItem::CInventoryItem(void)
-{
-	m_Entity = NULL;
-	m_Value = 0;
-	m_Count = 0;
-}
-
 CDarkModPlayer::CDarkModPlayer(void)
 {
 	m_FrobEntity = NULL;
 	m_FrobJoint = INVALID_JOINT;
 	m_FrobID = 0;
 	m_FrobEntityPrevious = NULL;
-	CInventoryItem inv_item;
-
-	// The first entry in the inventory is always empty and selected by default.
-	m_Selection = 0;
-	m_Inventory.Append(inv_item);
 	m_LightgemValue = 0;
 
 	// TODO: Spawn grabber from a .def file (maybe?)
@@ -101,101 +88,6 @@ CDarkModPlayer::~CDarkModPlayer(void)
 {
 	// remove grabber object	
 	this->grabber->PostEventSec( &EV_Remove, 0 );
-}
-
-void CDarkModPlayer::AddEntity(idEntity *ent)
-{
-	int i, n;
-	bool bFound = false;
-	CInventoryItem new_item;
-
-	// Ammo items get added to weapon ammo slots
-	// These are handled by D3's old inventory, so we need to call this:
-	if( ent->IsType(idItem::Type) && ent->spawnArgs.MatchPrefix("inv_ammo_", NULL) )
-	{
-		gameLocal.GetLocalPlayer()->GiveItem( static_cast<idItem *>(ent) );
-		
-		ent->Unbind();
-		ent->GetPhysics()->PutToRest();
-		ent->GetPhysics()->UnlinkClip();
-		ent->Hide();
-
-		// for now, keep it for 5 seconds giving the acquire sound some time to play
-		ent->PostEventMS( &EV_Remove, 5000 );
-
-		goto Quit;
-	}
-
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
-	n = m_Inventory.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(m_Inventory[i].m_Entity == ent)
-		{
-			bFound = true;
-			break;
-		}
-	}
-
-	// Only add the item if we don't have it already and make it the
-	// current selected one
-	if(bFound == false)
-	{
-		new_item.m_Entity = ent;
-		m_Inventory.Append(new_item);
-		m_Selection = m_Inventory.Num()-1;
-		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("[%s] added to inventory (%u)\r", ent->name.c_str(), m_Inventory.Num());
-		
-		ent->Unbind();
-		ent->GetPhysics()->PutToRest();
-// TODO: don't forget to re-link the clipmodel if we drop the item later
-		ent->GetPhysics()->UnlinkClip();
-		ent->Hide();
-	}
-
-Quit:
-	return;
-}
-
-void CDarkModPlayer::SelectNext(void)
-{
-	if(m_Selection < m_Inventory.Num()-1)
-		m_Selection++;
-	else
-		m_Selection = 0;
-}
-
-
-
-void CDarkModPlayer::SelectPrev(void)
-{
-	if(m_Selection > 0)
-		m_Selection--;
-	else
-		m_Selection = m_Inventory.Num()-1;
-}
-
-long CDarkModPlayer::GetEntity(idEntity *ent)
-{
-	int i, n;
-
-	n = m_Inventory.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(m_Inventory[i].m_Entity == ent)
-			return i;
-	}
-
-	return -1;
-}
-
-idEntity *CDarkModPlayer::GetEntity(long i)
-{
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("%u requested from %u Inventory items\r", i, m_Inventory.Num());
-	if(i <= m_Inventory.Num())
-		return m_Inventory[i].m_Entity;
-	else
-		return NULL;
 }
 
 unsigned long CDarkModPlayer::AddLight(idLight *light)
@@ -224,17 +116,3 @@ unsigned long CDarkModPlayer::RemoveLight(idLight *light)
 
 	return m_LightList.Num();
 }
-
-void CDarkModPlayer::ClearInventory(void)
-{
-	CInventoryItem inv_item;
-	m_FrobEntity = NULL;
-	
-	m_Inventory.Clear();
-
-	// The first entry in the inventory is always empty and selected by default.
-	m_Selection = 0;
-	m_Inventory.Append(inv_item);
-}
-
-

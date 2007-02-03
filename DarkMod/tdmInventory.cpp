@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.19  2007/02/03 21:56:21  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.18  2007/02/03 18:07:39  sparhawk
  * Loot items implemented and various improvements to the interface.
  *
@@ -101,23 +104,27 @@ const idEventDef EV_PostRestore( "postRestore", NULL );
 
 static idLinkList<idClass>	tdmInventoryObjList;
 
-void tdmInventorySaveObjectList( idSaveGame *savefile )
-{
-	idLinkList<idClass>* iNode = tdmInventoryObjList.NextNode();
-	while ( iNode != NULL ) {
-		savefile->AddObject( iNode->Owner() );
-		iNode = iNode->NextNode();
-	}
-}
+
+/*
+	Add an item from the map to the inventory.
+
+	idEntity *ent;
+
+		ent->Unbind();
+		ent->GetPhysics()->PutToRest();
+// TODO: don't forget to re-link the clipmodel if we drop the item later
+		ent->GetPhysics()->UnlinkClip();
+		ent->Hide();
+*/
 
 ///////////////////
-// CtdmInventory //
+// CInventory //
 ///////////////////
 
-CLASS_DECLARATION(idClass, CtdmInventory)
+CLASS_DECLARATION(idClass, CInventory)
 END_CLASS
 
-CtdmInventory::CtdmInventory()
+CInventory::CInventory()
 : idClass()
 {
 	m_Owner = NULL;
@@ -128,7 +135,7 @@ CtdmInventory::CtdmInventory()
 	m_CurrentItem = 0;
 }
 
-CtdmInventory::~CtdmInventory()
+CInventory::~CInventory()
 {
 	int i, n;
 
@@ -137,19 +144,19 @@ CtdmInventory::~CtdmInventory()
 		delete m_Group[i];
 }
 
-void CtdmInventory::Save(idSaveGame *savefile) const
+void CInventory::Save(idSaveGame *savefile) const
 {
 	// TODO: Has to call the groups and items as well.
 }
 
-void CtdmInventory::Restore(idRestoreGame *savefile)
+void CInventory::Restore(idRestoreGame *savefile)
 {
 	// TODO: Has to call the groups and items as well.
 }
 
-CtdmInventoryGroup *CtdmInventory::GetGroup(const char *pName, int *Index)
+CInventoryGroup *CInventory::GetGroup(const char *pName, int *Index)
 {
-	CtdmInventoryGroup *rc = NULL;
+	CInventoryGroup *rc = NULL;
 	int i, n;
 
 	// If the groupname is null we look for the default group
@@ -173,9 +180,9 @@ Quit:
 	return rc;
 }
 
-CtdmInventoryGroup *CtdmInventory::CreateGroup(const char *Name, int *Index)
+CInventoryGroup *CInventory::CreateGroup(const char *Name, int *Index)
 {
-	CtdmInventoryGroup	*rc = NULL;
+	CInventoryGroup	*rc = NULL;
 
 	if(Name == NULL)
 		goto Quit;
@@ -183,7 +190,7 @@ CtdmInventoryGroup *CtdmInventory::CreateGroup(const char *Name, int *Index)
 	if((rc = GetGroup(Name, Index)) != NULL)
 		goto Quit;
 
-	if((rc = new CtdmInventoryGroup) == NULL)
+	if((rc = new CInventoryGroup) == NULL)
 		goto Quit;
 
 	rc->SetInventory(this);
@@ -195,7 +202,7 @@ Quit:
 	return rc;
 }
 
-int CtdmInventory::GetGroupIndex(const char *GroupName)
+int CInventory::GetGroupIndex(const char *GroupName)
 {
 	int i = -1;
 
@@ -204,7 +211,7 @@ int CtdmInventory::GetGroupIndex(const char *GroupName)
 	return i;
 }
 
-void CtdmInventory::SetOwner(idEntity *Owner)
+void CInventory::SetOwner(idEntity *Owner)
 {
 	int i, n;
 
@@ -214,11 +221,11 @@ void CtdmInventory::SetOwner(idEntity *Owner)
 		m_Group[i]->SetOwner(Owner);
 }
 
-CtdmInventoryItem *CtdmInventory::PutItem(idEntity *Item, const idStr &Name, char const *Group)
+CInventoryItem *CInventory::PutItem(idEntity *Item, const idStr &Name, char const *Group)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 	int i;
-	CtdmInventoryGroup *gr;
+	CInventoryGroup *gr;
 
 	if(Item == NULL || Name.Length() == 0)
 		goto Quit;
@@ -239,10 +246,10 @@ Quit:
 	return rc;
 }
 
-void CtdmInventory::PutItem(CtdmInventoryItem *Item, char const *Group)
+void CInventory::PutItem(CInventoryItem *Item, char const *Group)
 {
 	int i;
-	CtdmInventoryGroup *gr;
+	CInventoryGroup *gr;
 
 	if(Item == NULL)
 		goto Quit;
@@ -263,7 +270,7 @@ Quit:
 	return;
 }
 
-int CtdmInventory::GetGroupItemIndex(const char *ItemName, int *ItemIndex)
+int CInventory::GetGroupItemIndex(const char *ItemName, int *ItemIndex)
 {
 	int rc = -1;
 	int i;
@@ -291,7 +298,7 @@ Quit:
 	return rc;
 }
 
-int CtdmInventory::GetGroupItemIndex(CtdmInventoryItem *Item, int *ItemIndex)
+int CInventory::GetGroupItemIndex(CInventoryItem *Item, int *ItemIndex)
 {
 	int rc = -1;
 	int i;
@@ -315,9 +322,9 @@ int CtdmInventory::GetGroupItemIndex(CtdmInventoryItem *Item, int *ItemIndex)
 	return rc;
 }
 
-CtdmInventoryItem *CtdmInventory::GetCurrentItem()
+CInventoryItem *CInventory::GetCurrentItem()
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 
 	if(m_Group.Num() > 0)
 		rc = m_Group[m_CurrentGroup]->GetItem(m_CurrentItem);
@@ -325,7 +332,7 @@ CtdmInventoryItem *CtdmInventory::GetCurrentItem()
 	return rc;
 }
 
-bool CtdmInventory::SetCurrentItem(CtdmInventoryItem *Item)
+bool CInventory::SetCurrentItem(CInventoryItem *Item)
 {
 	bool rc = false;
 	int group, item;
@@ -347,7 +354,7 @@ Quit:
 	return rc;
 }
 
-bool CtdmInventory::SetCurrentItem(const char *Item)
+bool CInventory::SetCurrentItem(const char *Item)
 {
 	bool rc = false;
 	int group, item;
@@ -369,11 +376,11 @@ Quit:
 	return rc;
 }
 
-CtdmInventoryItem *CtdmInventory::GetItem(const char *Name, char const *Group)
+CInventoryItem *CInventory::GetItem(const char *Name, char const *Group)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 	int i, n, s;
-	CtdmInventoryGroup *gr;
+	CInventoryGroup *gr;
 
 	if(Group == NULL)
 	{
@@ -401,7 +408,7 @@ Quit:
 	return rc;
 }
 
-void CtdmInventory::ValidateGroup(void)
+void CInventory::ValidateGroup(void)
 {
 	int n = m_Group.Num();
 
@@ -462,9 +469,9 @@ void CtdmInventory::ValidateGroup(void)
 	}
 }
 
-CtdmInventoryItem *CtdmInventory::GetNextItem(void)
+CInventoryItem *CInventory::GetNextItem(void)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 	int ni;
 
 	ValidateGroup();
@@ -494,9 +501,9 @@ Quit:
 	return rc;
 }
 
-CtdmInventoryItem *CtdmInventory::GetPrevItem(void)
+CInventoryItem *CInventory::GetPrevItem(void)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 
 	ValidateGroup();
 	m_CurrentItem--;
@@ -523,7 +530,7 @@ Quit:
 	return rc;
 }
 
-CtdmInventoryGroup *CtdmInventory::GetNextGroup(void)
+CInventoryGroup *CInventory::GetNextGroup(void)
 {
 	ValidateGroup();
 	m_CurrentGroup++;
@@ -532,7 +539,7 @@ CtdmInventoryGroup *CtdmInventory::GetNextGroup(void)
 	return m_Group[m_CurrentGroup];
 }
 
-CtdmInventoryGroup *CtdmInventory::GetPrevGroup(void)
+CInventoryGroup *CInventory::GetPrevGroup(void)
 {
 	ValidateGroup();
 	m_CurrentGroup--;
@@ -541,7 +548,7 @@ CtdmInventoryGroup *CtdmInventory::GetPrevGroup(void)
 	return m_Group[m_CurrentGroup];
 }
 
-int CtdmInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
+int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
 	int total = 0;
 	int i;
@@ -558,16 +565,15 @@ int CtdmInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 
 
 ////////////////////////
-// CtdmInventoryGroup //
+// CInventoryGroup //
 ////////////////////////
 
-CtdmInventoryGroup::CtdmInventoryGroup(const char* name)
-: idClass()
+CInventoryGroup::CInventoryGroup(const char* name)
 {
 	m_Name = name;
 }
 
-CtdmInventoryGroup::~CtdmInventoryGroup() 
+CInventoryGroup::~CInventoryGroup() 
 {
 	int i, n;
 
@@ -576,15 +582,15 @@ CtdmInventoryGroup::~CtdmInventoryGroup()
 		delete m_Item[i];
 }
 
-void CtdmInventoryGroup::Save(idSaveGame *savefile) const
+void CInventoryGroup::Save(idSaveGame *savefile) const
 {
 }
 
-void CtdmInventoryGroup::Restore(idRestoreGame *savefile)
+void CInventoryGroup::Restore(idRestoreGame *savefile)
 {
 }
 
-void CtdmInventoryGroup::SetOwner(idEntity *Owner)
+void CInventoryGroup::SetOwner(idEntity *Owner)
 {
 	int i, n;
 
@@ -594,14 +600,14 @@ void CtdmInventoryGroup::SetOwner(idEntity *Owner)
 		m_Item[i]->m_Owner = Owner;
 }
 
-CtdmInventoryItem *CtdmInventoryGroup::PutItem(idEntity *Item, const idStr &Name)
+CInventoryItem *CInventoryGroup::PutItem(idEntity *Item, const idStr &Name)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 
 	if(Item == NULL || Name.Length() == 0)
 		goto Quit;
 
-	rc = new CtdmInventoryItem();
+	rc = new CInventoryItem();
 	m_Item.AddUnique(rc);
 	rc->m_Owner = m_Owner.GetEntity();
 	rc->m_Name = Name;
@@ -612,7 +618,7 @@ Quit:
 	return rc;
 }
 
-void CtdmInventoryGroup::PutItem(CtdmInventoryItem *Item)
+void CInventoryGroup::PutItem(CInventoryItem *Item)
 {
 	if(Item == NULL)
 		goto Quit;
@@ -625,9 +631,9 @@ Quit:
 }
 
 
-CtdmInventoryItem *CtdmInventoryGroup::GetItem(int i)
+CInventoryItem *CInventoryGroup::GetItem(int i)
 {
-	CtdmInventoryItem *rc = NULL;
+	CInventoryItem *rc = NULL;
 
 	if(i >= 0 && i < m_Item.Num())
 		rc = m_Item[i];
@@ -635,10 +641,10 @@ CtdmInventoryItem *CtdmInventoryGroup::GetItem(int i)
 	return rc;
 }
 
-CtdmInventoryItem *CtdmInventoryGroup::GetItem(const idStr &Name)
+CInventoryItem *CInventoryGroup::GetItem(const idStr &Name)
 {
-	CtdmInventoryItem *rc = NULL;
-	CtdmInventoryItem *e;
+	CInventoryItem *rc = NULL;
+	CInventoryItem *e;
 	int i, n;
 
 	n = m_Item.Num();
@@ -656,10 +662,10 @@ Quit:
 	return rc;
 }
 
-int CtdmInventoryGroup::GetItemIndex(const idStr &Name)
+int CInventoryGroup::GetItemIndex(const idStr &Name)
 {
 	int rc = -1;
-	CtdmInventoryItem *e;
+	CInventoryItem *e;
 	int i, n;
 
 	n = m_Item.Num();
@@ -677,7 +683,7 @@ Quit:
 	return rc;
 }
 
-int CtdmInventoryGroup::GetItemIndex(CtdmInventoryItem *it)
+int CInventoryGroup::GetItemIndex(CInventoryItem *it)
 {
 	int rc = -1;
 	int i, n;
@@ -696,10 +702,10 @@ Quit:
 	return rc;
 }
 
-int CtdmInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
+int CInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
 	int i;
-	CtdmInventoryItem *it;
+	CInventoryItem *it;
 
 	for(i = 0; i < m_Item.Num(); i++)
 	{
@@ -707,15 +713,15 @@ int CtdmInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
 
 		switch(it->GetLootType())
 		{
-			case CtdmInventoryItem::JEWELS:
+			case CInventoryItem::JEWELS:
 				Jewelry += it->GetValue();
 			break;
 
-			case CtdmInventoryItem::GOLD:
+			case CInventoryItem::GOLD:
 				Gold += it->GetValue();
 			break;
 
-			case CtdmInventoryItem::GOODS:
+			case CInventoryItem::GOODS:
 				Goods += it->GetValue();
 			break;
 		}
@@ -725,10 +731,10 @@ int CtdmInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
 }
 
 ///////////////////////
-// CtdmInventoryItem //
+// CInventoryItem //
 ///////////////////////
 
-CtdmInventoryItem::CtdmInventoryItem()
+CInventoryItem::CInventoryItem()
 {
 	m_Owner = NULL;
 	m_Item = NULL;
@@ -741,7 +747,7 @@ CtdmInventoryItem::CtdmInventoryItem()
 	m_Count = 0;
 }
 
-CtdmInventoryItem::~CtdmInventoryItem()
+CInventoryItem::~CInventoryItem()
 {
 	idEntity *e = m_Item.GetEntity();
 
@@ -749,31 +755,31 @@ CtdmInventoryItem::~CtdmInventoryItem()
 		e->SetInventoryItem(NULL);
 }
 
-void CtdmInventoryItem::Save( idSaveGame *savefile ) const
+void CInventoryItem::Save( idSaveGame *savefile ) const
 {
 }
 
-void CtdmInventoryItem::Restore( idRestoreGame *savefile )
+void CInventoryItem::Restore( idRestoreGame *savefile )
 {
 }
 
-void CtdmInventoryItem::SetLootType(CtdmInventoryItem::LootType t)
+void CInventoryItem::SetLootType(CInventoryItem::LootType t)
 {
 	// Only positive values are allowed
-	if(t >= CtdmInventoryItem::NONE && t <= CtdmInventoryItem::COUNT)
+	if(t >= CInventoryItem::NONE && t <= CInventoryItem::COUNT)
 		m_LootType = t;
 	else
-		m_LootType = CtdmInventoryItem::NONE;
+		m_LootType = CInventoryItem::NONE;
 }
 
-void CtdmInventoryItem::SetValue(int n)
+void CInventoryItem::SetValue(int n)
 {
 	// Only positive values are allowed
 	if(n >= 0)
 		m_Value = n;
 }
 
-void CtdmInventoryItem::SetCount(int n)
+void CInventoryItem::SetCount(int n)
 {
 	// Only positive values are allowed if stackable is true
 	if(n >= 0 && m_Stackable == true)
@@ -782,266 +788,9 @@ void CtdmInventoryItem::SetCount(int n)
 		m_Count = 0;
 }
 
-void CtdmInventoryItem::SetStackable(bool stack)
+void CInventoryItem::SetStackable(bool stack)
 {
 	if(stack == true || stack == false)
 		m_Stackable = stack;
 }
 
-/////////////////////////
-// CtdmInventoryCursor //
-/////////////////////////
-
-CLASS_DECLARATION( idClass, CtdmInventoryCursor )
-	EVENT( EV_PostRestore,	CtdmInventoryCursor::Event_PostRestore )
-END_CLASS
-
-CtdmInventoryCursor::CtdmInventoryCursor()
-{
-	m_inventoryObjListNode.SetOwner( this );
-	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
-
-	m_node.SetOwner( this );
-	m_inventory		= NULL;
-	m_group			= NULL;
-	m_groupedSlot	= NULL;
-	m_ungroupedSlot	= NULL;
-}
-
-CtdmInventoryCursor::~CtdmInventoryCursor()
-{
-	setInventory( NULL );
-}
-
-CtdmInventoryCursor::CtdmInventoryCursor( const CtdmInventoryCursor& source )
-{
-	m_inventoryObjListNode.SetOwner( this );
-	m_inventoryObjListNode.AddToEnd( tdmInventoryObjList );
-
-	m_node.SetOwner( this );
-	m_inventory		= NULL;
-	m_group			= NULL;
-	m_groupedSlot	= NULL;
-	m_ungroupedSlot	= NULL;
-
-	*this = source;
-}
-
-CtdmInventoryCursor& CtdmInventoryCursor::operator = ( const CtdmInventoryCursor& source )
-{
-	if ( this == &source )
-		goto Quit;
-
-	// Copy everything except their histories.
-	copyActiveCursor( source );
-
-	// Copy over their histories.
-	CtdmInventoryGroupHistory* groupHistory;
-
-	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
-	while ( ghNode != NULL )
-	{
-		groupHistory = new CtdmInventoryGroupHistory();
-		if ( groupHistory == NULL )
-		{
-			gameLocal.Error("Unable to allocate memory for group history; group histories only partially copied.");
-			goto Quit;
-		}
-
-		// Copy over the group history information.
-		groupHistory->m_group = ghNode->Owner()->m_group;
-		groupHistory->m_slot = ghNode->Owner()->m_slot;
-		groupHistory->m_slotNode.InsertAfter( ghNode->Owner()->m_slotNode );
-		groupHistory->m_node.AddToEnd( m_groupHistory );
-
-		ghNode = ghNode->NextNode();
-	}
-
-Quit:
-	return *this;
-}
-
-void CtdmInventoryCursor::Save( idSaveGame *savefile ) const
-{
-}
-
-void CtdmInventoryCursor::Restore( idRestoreGame *savefile )
-{
-}
-
-void CtdmInventoryCursor::Event_PostRestore()
-{
-}
-
-/// Copies only the active cursor position, not any cursor histories.
-void CtdmInventoryCursor::copyActiveCursor(	const CtdmInventoryCursor& source,
-											bool noHistory )
-{
-	if ( this == &source )
-		goto Quit;
-
-	// Switch to the same inventory.
-	setInventory( source.m_inventory );
-	// Copy over their active cursor.
-	if ( m_inventory != NULL )
-		select( source.m_group, source.m_groupedSlot, source.m_ungroupedSlot, noHistory );
-
-	assert( m_inventory == source.m_inventory );
-	assert( m_group == source.m_group );
-	assert( m_groupedSlot == source.m_groupedSlot );
-	assert( m_ungroupedSlot == source.m_ungroupedSlot );
-
-	Quit:
-	return;
-}
-
-void CtdmInventoryCursor::setInventory( CtdmInventory* inventory )
-{
-}
-
-// Consider inlining?
-/// Returns the inventory this cursor points to.
-CtdmInventory* CtdmInventoryCursor::inventory() const
-{
-	return m_inventory;
-}
-
-// Consider inlining?
-/// Returns the name of the current inventory group. 'nullOk' causes it to return NULL instead of "" when outside any group.
-const char* CtdmInventoryCursor::group( bool nullOk ) const
-{
-/*
-	if ( m_group == NULL ) {
-		return nullOk ? NULL : "";
-	} else {
-		return m_group->m_name.c_str();
-	}
-*/
-	return NULL;
-}
-
-/// Selects a specific item. (note: cursor must be pointing to the correct inventory)
-void CtdmInventoryCursor::selectItem( CtdmInventoryItem* item, bool noHistory )
-{
-}
-
-// Consider inlining?
-/// Returns the item this cursor is pointing to.
-CtdmInventoryItem* CtdmInventoryCursor::item() const {
-	return ( m_groupedSlot != NULL ) ? m_groupedSlot->m_item : NULL;
-}
-
-void CtdmInventoryCursor::iterate(	EtdmInventoryIterationMethod type,
-									bool backwards,
-									bool noHistory,
-									bool (*filter)( CtdmInventoryItem* ) )
-{
-	if ( m_inventory == NULL )
-	{
-		gameLocal.Warning("iterate() called on an independant tdmInventoryCursor.");
-		goto Quit;
-	}
-
-	switch (type)
-	{
-		case TDMINV_UNGROUPED:
-			iterateUngrouped( backwards, noHistory, filter );
-		break;
-		case TDMINV_HYBRID:
-			iterateHybrid( backwards, noHistory, filter );
-		break;
-		case TDMINV_GROUP:
-			iterateGroup( backwards, noHistory, filter );
-		break;
-		case TDMINV_ITEM:
-			iterateItem( backwards, noHistory, filter );
-		break;
-		default:
-			gameLocal.Warning("Invalid inventory iteration type.");
-	}
-
-Quit:
-	return;
-}
-
-/// Selects the given group and slots, updating reference counts.
-void CtdmInventoryCursor::select(	CtdmInventoryGroup* group,
-									CtdmInventorySlot* groupedSlot,
-									CtdmInventorySlot* ungroupedSlot,
-									bool noHistory )
-{
-}
-
-/// Find a group history, if it exists. May return NULL.
-CtdmInventoryGroupHistory* CtdmInventoryCursor::getGroupHistory( CtdmInventoryGroup* group ) const
-{
-	// Find the requested node. Maybe return NULL.
-	idLinkList<CtdmInventoryGroupHistory>* ghNode = m_groupHistory.NextNode();
-	while ( ghNode != NULL && ghNode->Owner()->m_group != group )
-		ghNode = ghNode->NextNode();
-
-	return (ghNode != NULL) ? ghNode->Owner() : NULL;
-}
-
-/// Iterates without regard to groups.
-void CtdmInventoryCursor::iterateUngrouped( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) )
-{
-}
-
-/// Iterates with items grouped together.
-void CtdmInventoryCursor::iterateHybrid( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) )
-{
-}
-
-/// Iterates through the list of groups.
-void CtdmInventoryCursor::iterateGroup( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) )
-{
-}
-
-/// Iterates through the items in a group.
-void CtdmInventoryCursor::iterateItem( bool backwards, bool noHistory, bool (*filter)( CtdmInventoryItem* ) ) 
-{
-}
-
-
-///////////////////////
-// CtdmInventorySlot //
-///////////////////////
-
-#ifdef TDMINVENTORY_DEBUG
-int CtdmInventorySlot::numSlots = 0;
-#endif
-
-CtdmInventorySlot::CtdmInventorySlot( CtdmInventoryItem* item )
-{
-	m_node.SetOwner( this );
-	m_item = item;
-	m_numCursors = 0;
-
-#ifdef TDMINVENTORY_DEBUG
-	numSlots++;
-#endif
-}
-
-#ifdef TDMINVENTORY_DEBUG
-CtdmInventorySlot::~CtdmInventorySlot()
-{
-	numSlots--;
-}
-
-int CtdmInventorySlot::slots() {
-	return numSlots;
-}
-#endif
-
-///////////////////////////////
-// CtdmInventoryGroupHistory //
-///////////////////////////////
-
-CtdmInventoryGroupHistory::CtdmInventoryGroupHistory( CtdmInventoryGroup* group )
-{
-	m_node.SetOwner( this );
-	m_slotNode.SetOwner( this );
-	m_group = group;
-	m_slot = NULL;
-}

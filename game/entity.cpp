@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.94  2007/02/03 21:56:11  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.93  2007/02/03 18:07:25  sparhawk
  * Loot items implemented and various improvements to the interface.
  *
@@ -1166,15 +1169,8 @@ idEntity::~idEntity( void )
 	delete m_StimResponseColl;
 
 	// Delete our inventory/item/cursor, if necessary.
-	if ( m_Inventory != NULL ) {
+	if ( m_Inventory != NULL )
 		delete m_Inventory;
-	}
-	if ( m_InventoryItem != NULL ) {
-		delete m_InventoryItem;
-	}
-	if ( m_inventoryCursor != NULL ) {
-		delete m_inventoryCursor;
-	}
 
 	m_FrobPeers.Clear();
 }
@@ -1257,10 +1253,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	}
 
 	savefile->WriteInt( mpGUIState );
-
-	savefile->WriteObject( m_Inventory );
-	savefile->WriteObject( m_InventoryItem );
-	savefile->WriteObject( m_inventoryCursor );
+	savefile->WriteObject(m_Inventory);
 }
 
 /*
@@ -6960,10 +6953,10 @@ This returns the inventory object of this entity. If this entity doesn't
 have one, it creates the inventory.
 ================
 */
-CtdmInventory* idEntity::Inventory()
+CInventory* idEntity::Inventory()
 {
 	if(m_Inventory == NULL )
-		m_Inventory = new CtdmInventory();
+		m_Inventory = new CInventory();
 
 	return m_Inventory;
 }
@@ -6979,10 +6972,10 @@ The cursor is intended for arbitrary use, and need not point to this
 entity's inventory.
 ================
 */
-CtdmInventoryCursor* idEntity::InventoryCursor()
+CInventoryCursor* idEntity::InventoryCursor()
 {
 /*	if ( m_inventoryCursor == NULL ) {
-		m_inventoryCursor = new CtdmInventoryCursor();
+		m_inventoryCursor = new CInventoryCursor();
 		if ( m_inventoryCursor == NULL ) {
 			gameLocal.Error("Unable to allocate enough memory for an inventory cursor.");
 			return NULL;
@@ -7421,9 +7414,9 @@ Returns the entity containing us.
 */
 void idEntity::Event_GetInventory()
 {
-/*	CtdmInventoryItem* item = InventoryItem();
+/*	CInventoryItem* item = InventoryItem();
 	if ( item != NULL ) {
-		CtdmInventory* inv = item->Inventory();
+		CInventory* inv = item->Inventory();
 		if ( inv != NULL ) {
 			idThread::ReturnEntity( inv->m_owner.GetEntity() );
 		} else {
@@ -7822,7 +7815,7 @@ void idEntity::InitInventory(void)
 	idStr inv;
 	idStr target;
 	int val;
-	CtdmInventoryItem::LootType type;
+	CInventoryItem::LootType type;
 
 	spawnArgs.GetString("inv_map_start", "0", inv);
 	spawnArgs.GetString("inv_target", "", target);
@@ -7832,7 +7825,7 @@ void idEntity::InitInventory(void)
 		idPlayer *p = gameLocal.GetLocalPlayer();
 		if(p)
 		{
-			CtdmInventoryItem *item;
+			CInventoryItem *item;
 			spawnArgs.GetString("inv_name", "UNDEF", inv);
 			spawnArgs.GetString("inv_group", "DEFAULT", grp);
 			item = p->Inventory()->PutItem(this, inv, grp);

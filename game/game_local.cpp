@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.91  2007/02/03 21:56:11  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.90  2007/01/26 12:52:33  sparhawk
  * New inventory concept.
  *
@@ -837,8 +840,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Add relationship matrix object
 	savegame.AddObject( m_RelationsManager );
-	// Add the inventory-related objects.
-	tdmInventorySaveObjectList( &savegame );
 
 	// write out complete object list
 	savegame.WriteObjectList();
@@ -1927,9 +1928,6 @@ void idGameLocal::MapShutdown( void ) {
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();
 	m_MissionData->Clear();
-
-	// clear Dark Mod inventory
-	g_Global.m_DarkModPlayer->ClearInventory();
 
 	g_Global.m_DarkModPlayer->grabber->Clear();
 

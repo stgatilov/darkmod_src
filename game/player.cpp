@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.115  2007/02/03 21:56:11  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.114  2007/02/03 18:07:25  sparhawk
  * Loot items implemented and various improvements to the interface.
  *
@@ -443,7 +446,6 @@ const idEventDef EV_Player_HideTip( "hideTip" );
 const idEventDef EV_Player_LevelTrigger( "levelTrigger" );
 const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
 
-const idEventDef EV_Player_AddToInventory( "AddToInventory", "e" );
 const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
 const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
 const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
@@ -495,7 +497,6 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_LevelTrigger,			idPlayer::Event_LevelTrigger )
 	EVENT( EV_Gibbed,						idPlayer::Event_Gibbed )
 
-	EVENT( EV_Player_AddToInventory,		idPlayer::AddToInventory )
 	EVENT( EV_Player_GetEyePos,				idPlayer::Event_GetEyePos )
 	EVENT( EV_Player_SetImmobilization,		idPlayer::Event_SetImmobilization )
 	EVENT( EV_Player_GetImmobilization,		idPlayer::Event_GetImmobilization )
@@ -1553,8 +1554,6 @@ idPlayer::idPlayer()
 	m_bShoulderingBody		= false;
 
 	m_LeanButtonTimeStamp	= 0;
-
-	m_invDisplayed			= NULL;
 	mInventoryOverlay		 = -1;
 
 	// Add the default stims to the player. These are stims
@@ -2079,16 +2078,15 @@ void idPlayer::Spawn( void )
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
-	m_invDisplayed = new CtdmInventoryCursor();
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
-	CtdmInventoryItem *it;
-	CtdmInventoryGroup *grp;
+	CInventoryItem *it;
+	CInventoryGroup *grp;
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
 	grp = Inventory()->GetGroup("DEFAULT");
-	it = new CtdmInventoryItem();
-	it->SetType(CtdmInventoryItem::DUMMY);
+	it = new CInventoryItem();
+	it->SetType(CInventoryItem::DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
@@ -2096,8 +2094,8 @@ void idPlayer::Spawn( void )
 	// And the player also always gets a loot entry, as he is supposed to find loot in
 	// 99.99% of the maps. That's the point of the game, remember? :)
 	grp = Inventory()->CreateGroup(cv_tdm_inv_loot_group.GetString());
-	it = new CtdmInventoryItem();
-	it->SetType(CtdmInventoryItem::LOOT);
+	it = new CInventoryItem();
+	it->SetType(CInventoryItem::LOOT_INFO);
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
@@ -2114,9 +2112,6 @@ idPlayer::~idPlayer()
 {
 	delete weapon.GetEntity();
 	weapon = NULL;
-
-	if(m_invDisplayed)
-		delete m_invDisplayed;
 }
 
 /*
@@ -2336,9 +2331,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
-	savefile->WriteObject( m_invDisplayed );
-
-	if ( hud ) {
+	if(hud)
+	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
 		hud->HandleNamedEvent( "Message" );
 	}
@@ -2599,8 +2593,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
-
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_invDisplayed ) );
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
@@ -6393,7 +6385,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			bool bFrob = true;
 			idEntity *ent, *frob;
-			int i;
 			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
 			// Ignore frobs if player-frobbing is immobilized.
@@ -6411,13 +6402,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			frob = pDM->m_FrobEntity;
 
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Select: %lu\r", frob, pDM->m_Selection);
 			// If the player has an item that is selected we need to check if this
 			// is a usable item (like a key). In this case the use action takes
 			// precedence over the frobaction.
-			if((i = pDM->m_Selection) != 0)
+			CInventory *inv = Inventory();
+			CInventoryItem *it = inv->GetCurrentItem();
+			if(it->GetType() != CInventoryItem::DUMMY && it->GetType() != CInventoryItem::LOOT_INFO)
 			{
-				ent = pDM->GetEntity(i);
+				ent = Inventory()->GetCurrentItem()->GetEntity();
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
 				if(ent != NULL)
 				{
@@ -6436,28 +6428,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				frob->FrobAction(true); 
 			}
 
-		}
-		break;
-
-		case IMPULSE_42:		// Inventory prev
-		{
-			if ( GetImmobilization() & EIM_ITEM_SELECT ) 
-			{
-				return;
-			}
-
-			g_Global.m_DarkModPlayer->SelectPrev();
-		}
-		break;
-
-		case IMPULSE_43:		// Inventory next
-		{
-			if ( GetImmobilization() & EIM_ITEM_SELECT ) 
-			{
-				return;
-			}
-
-			g_Global.m_DarkModPlayer->SelectNext();
 		}
 		break;
 
@@ -6545,36 +6515,54 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_47:	// Inventory previous item
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryPrevItem();
 			break;
 		}
 
 		case IMPULSE_48:	// Inventory next item
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryNextItem();
 			break;
 		}
 
 		case IMPULSE_49:	// Inventory previous group
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryPrevGroup();
 			break;
 		}
 
 		case IMPULSE_50:	// Inventory next group
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryNextGroup();
 			break;
 		}
 
 		case IMPULSE_51:	// Inventory use item
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryUseItem();
 			break;
 		}
 
 		case IMPULSE_52:	// Inventory drop item
 		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
 			inventoryDropItem();
 			break;
 		}
@@ -9691,11 +9679,6 @@ bool idPlayer::NeedsIcon( void ) {
 
 }
 
-void idPlayer::AddToInventory(idEntity *ent)
-{
-	g_Global.m_DarkModPlayer->AddEntity(ent);
-}
-
 void idPlayer::AdjustLightgem(void)
 {
 	idVec3 vDifference;
@@ -9924,7 +9907,7 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-	CtdmInventory *i = Inventory();
+	CInventory *i = Inventory();
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
 	if(i == NULL)
@@ -9936,7 +9919,7 @@ void idPlayer::inventoryNextItem()
 
 void idPlayer::inventoryPrevItem()
 {
-	CtdmInventory *i = Inventory();
+	CInventory *i = Inventory();
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
 	if(i == NULL)
@@ -9972,7 +9955,7 @@ void idPlayer::inventoryUseItem()
 	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
 	// If not, do we have anything selected?
 	if ( !useEnt ) {
-		CtdmInventoryItem* item = InventoryCursor()->Item();
+		CInventoryItem* item = InventoryCursor()->Item();
 		useEnt = item ? item->m_owner.GetEntity() : NULL;
 	}
 
@@ -9990,7 +9973,7 @@ void idPlayer::inventoryUseItem( idEntity* useEnt )
 /*	assert( InventoryCursor() );
 
 	// If the item is outside our current inventory, it can't be used.
-	CtdmInventoryItem* item = useEnt->InventoryItem();
+	CInventoryItem* item = useEnt->InventoryItem();
 	if ( item && item->Inventory() == InventoryCursor()->Inventory() ) {
 		// call script: useEnt.inventoryUse( thisPlayer );
 		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
@@ -10007,7 +9990,7 @@ void idPlayer::inventoryDropItem()
 	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
 	// If not, do we have anything selected?
 	if ( !useEnt ) {
-		CtdmInventoryItem* item = InventoryCursor()->Item();
+		CInventoryItem* item = InventoryCursor()->Item();
 		useEnt = item ? item->m_owner.GetEntity() : NULL;
 	}
 
@@ -10024,13 +10007,13 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 {
 	float opacity;
 	int groupvis;
-	CtdmInventoryItem::ItemType type = CtdmInventoryItem::ITEM;
-	CtdmInventoryItem *cur = NULL;
-	CtdmInventory *inv = NULL;
+	CInventoryItem::ItemType type = CInventoryItem::ITEM;
+	CInventoryItem *cur = NULL;
+	CInventory *inv = NULL;
 
 	if(shift != 0)
 	{
-		CtdmInventoryItem *it = NULL;
+		CInventoryItem *it = NULL;
 		idEntity *e = NULL;
 		idStr s;
 		idThread *thread;
@@ -10053,20 +10036,26 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 		if(it != cur)
 		{
 			e = cur->GetEntity();
-			thread = e->CallScriptFunctionArgs("inventoryUnselect", true, 0, "eef", e, this, shift);
-			if(thread)
-				thread->Start();
+			if(e)
+			{
+				thread = e->CallScriptFunctionArgs("inventoryUnselect", true, 0, "eef", e, this, shift);
+				if(thread)
+					thread->Start();
+			}
 
 			e = it->GetEntity();
-			thread = e->CallScriptFunctionArgs("inventorySelect", true, 0, "eef", e, this, shift);
-			if(thread)
-				thread->Start();
+			if(e)
+			{
+				thread = e->CallScriptFunctionArgs("inventorySelect", true, 0, "eef", e, this, shift);
+				if(thread)
+					thread->Start();
+			}
 		}
 
 		type = it->GetType();
 		switch(type)
 		{
-			case CtdmInventoryItem::ITEM:
+			case CInventoryItem::ITEM:
 			{
 				// We default the name to something obvious, because the mapper should 
 				// see, when playtesting, that he forgot to name the item and groups.
@@ -10083,7 +10072,7 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 			}
 			break;
 
-			case CtdmInventoryItem::LOOT:
+			case CInventoryItem::LOOT_INFO:
 			{
 				s = cv_tdm_inv_loot_group.GetString();
 				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
@@ -10097,7 +10086,7 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 			}
 			break;
 
-			case CtdmInventoryItem::DUMMY:
+			case CInventoryItem::DUMMY:
 			{
 				// All objects are set to empty, so we have an empty entry in the
 				// inventory.

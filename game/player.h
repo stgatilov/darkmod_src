@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.47  2007/02/03 21:56:11  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.46  2007/02/03 18:07:25  sparhawk
  * Loot items implemented and various improvements to the interface.
  *
@@ -445,9 +448,6 @@ public:
 	idUserInterface *		objectiveSystem;
 	bool					objectiveSystemOpen;
 
-	/// The item currently displaying an inventory UI. (may not be the same as the currently selected item)
-	CtdmInventoryCursor*	m_invDisplayed;
-
 	int						weapon_soulcube;
 	int						weapon_pda;
 	int						weapon_fists;
@@ -739,11 +739,6 @@ public:
 	void					FrobCheck( void );
 
 	/**
-	 * AddToInventory maps to a scriptfunction which will store an entity into
-	 * the inventory.
-	 */
-	void AddToInventory(idEntity *ent);
-
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.
 	 * This function is obsolote now and replaced by a different version.

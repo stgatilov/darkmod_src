@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.60  2007/02/03 21:56:11  sparhawk
+ * Removed old inventories and fixed a bug in the new one.
+ *
  * Revision 1.59  2007/01/29 21:49:57  sparhawk
  * Inventory updates
  *
@@ -213,9 +216,9 @@ class CStimResponseCollection;
 class CStim;
 class CResponse;
 
-class CtdmInventory;
-class CtdmInventoryItem;
-class CtdmInventoryCursor;
+class CInventory;
+class CInventoryItem;
+class CInventoryCursor;
 
 /**
 * SDK_SIGNALS are used to signal either from a script to the SDK code or
@@ -753,14 +756,14 @@ public:
 	 * Set the item this entity is currently pointing to. If the item is 
 	 * destroyed, the pointer must be set to NULL.
 	 */
-	void					SetInventoryItem(CtdmInventoryItem *item) { m_InventoryItem = item; }
+	void					SetInventoryItem(CInventoryItem *item) { m_InventoryItem = item; }
 	// Returns (and creates if necessary) this entity's inventory item.
-	CtdmInventoryItem*		InventoryItem() { return m_InventoryItem; };
+	CInventoryItem*		InventoryItem() { return m_InventoryItem; };
 
 	// Returns (and creates if necessary) this entity's inventory.
-	CtdmInventory*			Inventory();
+	CInventory*			Inventory();
 	// Returns (and creates if necessary) this entity's inventory cursor.
-	CtdmInventoryCursor*	InventoryCursor();
+	CInventoryCursor*	InventoryCursor();
 
 	/**
 	 * InitInventory reads the spawndata and puts this entity into the inventory
@@ -995,11 +998,11 @@ private:
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
 
 	/// A pointer to our inventory.
-	CtdmInventory*			m_Inventory;
+	CInventory*			m_Inventory;
 	/// A pointer to our item, so that we can be added/removed to/from inventories.
-	CtdmInventoryItem*		m_InventoryItem;
+	CInventoryItem*		m_InventoryItem;
 	/// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
-	CtdmInventoryCursor*	m_inventoryCursor;
+	CInventoryCursor*	m_inventoryCursor;
 
 private:
 	void					FixupLocalizedStrings();
