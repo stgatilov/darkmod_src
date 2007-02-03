@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.18  2007/02/03 18:07:39  sparhawk
+ * Loot items implemented and various improvements to the interface.
+ *
  * Revision 1.17  2007/02/01 19:47:35  sparhawk
  * Callback for inventory added.
  *
@@ -118,7 +121,7 @@ CtdmInventory::CtdmInventory()
 : idClass()
 {
 	m_Owner = NULL;
-	CreateGroup("DEFAULT");		// We always have a defaultgroup if nothing else
+	CreateGroup(TDM_INVENTORY_DEFAULT_GROUP);		// We always have a defaultgroup if nothing else
 	m_GroupLock = false;		// Default behaviour ...
 	m_WrapAround = true;		// ... is like standard Thief inventory.
 	m_CurrentGroup = 0;
@@ -149,8 +152,9 @@ CtdmInventoryGroup *CtdmInventory::GetGroup(const char *pName, int *Index)
 	CtdmInventoryGroup *rc = NULL;
 	int i, n;
 
+	// If the groupname is null we look for the default group
 	if(pName == NULL)
-		goto Quit;
+		return GetGroup(TDM_INVENTORY_DEFAULT_GROUP);
 
 	n = m_Group.Num();
 	for(i = 0; i < n; i++)
@@ -259,6 +263,58 @@ Quit:
 	return;
 }
 
+int CtdmInventory::GetGroupItemIndex(const char *ItemName, int *ItemIndex)
+{
+	int rc = -1;
+	int i;
+	int n = -1;
+
+	if(ItemIndex != NULL)
+		*ItemIndex = -1;
+
+	if(ItemName == NULL)
+		goto Quit;
+
+	for(i = 0; i < m_Group.Num(); i++)
+	{
+		if((n = m_Group[i]->GetItemIndex(ItemName)) != -1)
+		{
+			if(ItemIndex != NULL)
+				*ItemIndex = n;
+
+			rc = i;
+			break;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+int CtdmInventory::GetGroupItemIndex(CtdmInventoryItem *Item, int *ItemIndex)
+{
+	int rc = -1;
+	int i;
+	int n = -1;
+
+	if(ItemIndex != NULL)
+		*ItemIndex = -1;
+
+	for(i = 0; i < m_Group.Num(); i++)
+	{
+		if((n = m_Group[i]->GetItemIndex(Item)) != -1)
+		{
+			if(ItemIndex != NULL)
+				*ItemIndex = n;
+
+			rc = i;
+			break;
+		}
+	}
+
+	return rc;
+}
+
 CtdmInventoryItem *CtdmInventory::GetCurrentItem()
 {
 	CtdmInventoryItem *rc = NULL;
@@ -269,7 +325,51 @@ CtdmInventoryItem *CtdmInventory::GetCurrentItem()
 	return rc;
 }
 
-CtdmInventoryItem *CtdmInventory::GetItem(const idStr &Name, char const *Group)
+bool CtdmInventory::SetCurrentItem(CtdmInventoryItem *Item)
+{
+	bool rc = false;
+	int group, item;
+
+	if(Item == NULL)
+		goto Quit;
+
+	if((group = GetGroupItemIndex(Item, &item)) == -1)
+		goto Quit;
+
+	// Only change the group and item indizies, if they are valid.
+	// Otherwise we might have an invalid index (-1).
+	m_CurrentGroup = group;
+	m_CurrentItem = item;
+
+	rc = true;
+
+Quit:
+	return rc;
+}
+
+bool CtdmInventory::SetCurrentItem(const char *Item)
+{
+	bool rc = false;
+	int group, item;
+
+	if(Item == NULL)
+		goto Quit;
+
+	if((group = GetGroupItemIndex(Item, &item)) == -1)
+		goto Quit;
+
+	// Only change the group and item indizies, if they are valid.
+	// Otherwise we might have an invalid index (-1).
+	m_CurrentGroup = group;
+	m_CurrentItem = item;
+
+	rc = true;
+
+Quit:
+	return rc;
+}
+
+CtdmInventoryItem *CtdmInventory::GetItem(const char *Name, char const *Group)
 {
 	CtdmInventoryItem *rc = NULL;
 	int i, n, s;
@@ -441,6 +541,20 @@ CtdmInventoryGroup *CtdmInventory::GetPrevGroup(void)
 	return m_Group[m_CurrentGroup];
 }
 
+int CtdmInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
+{
+	int total = 0;
+	int i;
+
+	Gold = 0;
+	Jewelry = 0;
+	Goods = 0;
+
+	for(i = 0; i < m_Group.Num(); i++)
+		total += m_Group[i]->GetLoot(Gold, Jewelry, Goods);
+
+	return total;
+}
 
 
 ////////////////////////
@@ -542,6 +656,74 @@ Quit:
 	return rc;
 }
 
+int CtdmInventoryGroup::GetItemIndex(const idStr &Name)
+{
+	int rc = -1;
+	CtdmInventoryItem *e;
+	int i, n;
+
+	n = m_Item.Num();
+	for(i = 0; i < n; i++)
+	{
+		e = m_Item[i];
+		if(Name == e->m_Name)
+		{
+			rc = i;
+			goto Quit;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+int CtdmInventoryGroup::GetItemIndex(CtdmInventoryItem *it)
+{
+	int rc = -1;
+	int i, n;
+
+	n = m_Item.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(m_Item[i] == it)
+		{
+			rc = i;
+			goto Quit;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+int CtdmInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
+{
+	int i;
+	CtdmInventoryItem *it;
+
+	for(i = 0; i < m_Item.Num(); i++)
+	{
+		it = m_Item[i];
+
+		switch(it->GetLootType())
+		{
+			case CtdmInventoryItem::JEWELS:
+				Jewelry += it->GetValue();
+			break;
+
+			case CtdmInventoryItem::GOLD:
+				Gold += it->GetValue();
+			break;
+
+			case CtdmInventoryItem::GOODS:
+				Goods += it->GetValue();
+			break;
+		}
+	}
+
+	return Gold + Jewelry + Goods;
+}
+
 ///////////////////////
 // CtdmInventoryItem //
 ///////////////////////
@@ -553,6 +735,10 @@ CtdmInventoryItem::CtdmInventoryItem()
 	m_Inventory = NULL;
 	m_Group = NULL;
 	m_Type = ITEM;
+	m_LootType = NONE;
+	m_Value = 0;
+	m_Stackable = false;
+	m_Count = 0;
 }
 
 CtdmInventoryItem::~CtdmInventoryItem()
@@ -571,7 +757,36 @@ void CtdmInventoryItem::Restore( idRestoreGame *savefile )
 {
 }
 
+void CtdmInventoryItem::SetLootType(CtdmInventoryItem::LootType t)
+{
+	// Only positive values are allowed
+	if(t >= CtdmInventoryItem::NONE && t <= CtdmInventoryItem::COUNT)
+		m_LootType = t;
+	else
+		m_LootType = CtdmInventoryItem::NONE;
+}
 
+void CtdmInventoryItem::SetValue(int n)
+{
+	// Only positive values are allowed
+	if(n >= 0)
+		m_Value = n;
+}
+
+void CtdmInventoryItem::SetCount(int n)
+{
+	// Only positive values are allowed if stackable is true
+	if(n >= 0 && m_Stackable == true)
+		m_Count = n;
+	else
+		m_Count = 0;
+}
+
+void CtdmInventoryItem::SetStackable(bool stack)
+{
+	if(stack == true || stack == false)
+		m_Stackable = stack;
+}
 
 /////////////////////////
 // CtdmInventoryCursor //

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.46  2007/02/03 18:07:25  sparhawk
+ * Loot items implemented and various improvements to the interface.
+ *
  * Revision 1.45  2007/01/29 21:49:57  sparhawk
  * Inventory updates
  *
@@ -764,22 +767,22 @@ public:
 	**/
 	float GetMovementVolMod( void );
 
-	/// Cycles to the next item in the inventory.
+	// Cycles to the next item in the inventory.
 	void inventoryNextItem( void );
-	/// Cycles to the previous item in the inventory.
+	// Cycles to the previous item in the inventory.
 	void inventoryPrevItem( void );
-	/// Cycles to the next group in the inventory.
+	// Cycles to the next group in the inventory.
 	void inventoryNextGroup( void );
-	/// Cycles to the previous group in the inventory.
+	// Cycles to the previous group in the inventory.
 	void inventoryPrevGroup( void );
-	/// Drops the currently held/selected item.
+	// Drops the currently held/selected item.
 	void inventoryDropItem( void );
-	/// Uses the currently held/selected item.
+	// Uses the currently held/selected item.
 	void inventoryUseItem( void );
-	/// Uses a specific item, if it's in the same inventory.
+	// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem( idEntity* useEnt );
-	/// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	void inventoryChangeSelection( idUserInterface *_hud, int shift = 0 );
+	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
+	void inventoryChangeSelection(idUserInterface *_hud, int shift = 0);
 	
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.11  2007/02/03 18:07:39  sparhawk
+ * Loot items implemented and various improvements to the interface.
+ *
  * Revision 1.10  2007/02/01 19:47:35  sparhawk
  * Callback for inventory added.
  *
@@ -44,7 +47,7 @@
 #ifndef __DARKMOD_TDMINVENTORY_H__
 #define __DARKMOD_TDMINVENTORY_H__
 
-#define TDMINVENTORY_DEBUG
+#define TDM_INVENTORY_DEFAULT_GROUP		"DEFAULT"
 
 // Classes that should be used by external files.
 class CtdmInventory;
@@ -91,7 +94,7 @@ public:
 	 * GetGroup returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */
-	CtdmInventoryGroup	*GetGroup(const char *GroupName, int *Index = NULL);
+	CtdmInventoryGroup	*GetGroup(const char *GroupName = NULL, int *Index = NULL);
 	inline CtdmInventoryGroup	*GetGroup(idStr const &GroupName, int *Index = NULL) { return GetGroup(GroupName.c_str(), Index); }
 
 	/**
@@ -99,6 +102,15 @@ public:
 	 */
 	int					GetGroupIndex(const char *GroupName);
 	inline int			GetGroupIndex(idStr const &GroupName) { return GetGroupIndex(GroupName.c_str()); }
+
+	/**
+	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
+	 * the itemindex within that group can also be obtained. Both are set to -1 
+	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
+	 */
+	int GetGroupItemIndex(CtdmInventoryItem *Item, int *ItemIndex = NULL);
+	int GetGroupItemIndex(const char *ItemName, int *ItemIndex = NULL);
+	inline int GetGroupItemIndex(const idStr &ItemName, int *ItemIndex = NULL) { return GetGroupItemIndex(ItemName.c_str(), ItemIndex); };
 
 	/**
 	 * CreateGroup creates the named group if it doesn't already exist.
@@ -121,12 +133,16 @@ public:
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CtdmInventoryItem	*GetItem(const idStr &Name, char const *Group = NULL);
+	CtdmInventoryItem	*GetItem(const char *Name, char const *Group = NULL);
+	inline CtdmInventoryItem *GetItem(const idStr &Name, char const *Group = NULL) { return GetItem(Name.c_str(), Group); } ;
 
 	/**
 	 * Retrieve the currently selected item.
 	 */
 	CtdmInventoryItem	*GetCurrentItem();
+	bool				SetCurrentItem(CtdmInventoryItem *Item);
+	bool				SetCurrentItem(const char *name);
+	inline bool			SetCurrentItem(const idStr &Name) { return SetCurrentItem(Name.c_str()); };
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
@@ -153,6 +169,8 @@ public:
 	inline void			SetCurrentItem(int Index) { m_CurrentItem = Index; }
 	inline void			SetGroupLock(bool bLock) { m_GroupLock = bLock; }
 	inline void			SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
+
+	int					GetLoot(int &Gold, int &Jewelry, int &Goods);
 
 protected:
 	void				ValidateGroup(void);
@@ -223,6 +241,10 @@ public:
 
 	CtdmInventoryItem	*GetItem(const idStr &Name);
 	CtdmInventoryItem	*GetItem(int Index);
+	int					GetItemIndex(const idStr &Name);
+	int					GetItemIndex(CtdmInventoryItem *);
+
+	int					GetLoot(int &Gold, int &Jewelry, int &Goods);
 
 protected:
 	void				SetOwner(idEntity *Owner);
@@ -254,6 +276,14 @@ public:
 						// we can have an empty space in the inventory.
 	} ItemType;
 
+	typedef enum {
+		NONE,			// No lootobject
+		JEWELS,
+		GOLD,
+		GOODS,
+		COUNT		// dummy
+	} LootType;
+
 public:
 	CtdmInventoryItem();
 	~CtdmInventoryItem();
@@ -266,7 +296,19 @@ public:
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
 	inline idEntity			*GetEntity() { return m_Item.GetEntity(); }
 	inline void				SetType(CtdmInventoryItem::ItemType type) { m_Type = type; };
-	inline CtdmInventoryItem::ItemType GetType(void) { return m_Type; };
+	inline					ItemType GetType(void) { return m_Type; };
+
+	inline int				GetCount(void) { return m_Count; };
+	void					SetCount(int Amount);
+
+	bool					IsStackable(void) { return m_Stackable; };
+	void					SetStackable(bool);
+
+	void					SetLootType(CtdmInventoryItem::LootType t);
+	LootType				GetLootType(void) { return m_LootType; };
+
+	void					SetValue(int n);
+	int						GetValue(void) { return m_Value; };
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -275,6 +317,10 @@ protected:
 	CtdmInventory			*m_Inventory;
 	CtdmInventoryGroup		*m_Group;
 	ItemType				m_Type;
+	LootType				m_LootType;
+	int						m_Value;
+	int						m_Count;		// How many of that item are currently represented (i.e. Arrows)
+	bool					m_Stackable;	// Counter can be used if true, otherwise it's a unique item
 };
 
 // A full-blown group-remembering cursor that can handle T1-style iteration and grouped iteration simultaneously.

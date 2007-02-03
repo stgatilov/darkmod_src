@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.93  2007/02/03 18:07:25  sparhawk
+ * Loot items implemented and various improvements to the interface.
+ *
  * Revision 1.92  2007/01/31 23:39:34  sparhawk
  * Inventory updated
  *
@@ -7818,6 +7821,9 @@ void idEntity::InitInventory(void)
 	// when the object spawns. Default is no.
 	idStr inv;
 	idStr target;
+	int val;
+	CtdmInventoryItem::LootType type;
+
 	spawnArgs.GetString("inv_map_start", "0", inv);
 	spawnArgs.GetString("inv_target", "", target);
 	if(inv[0] == '1')
@@ -7830,9 +7836,22 @@ void idEntity::InitInventory(void)
 			spawnArgs.GetString("inv_name", "UNDEF", inv);
 			spawnArgs.GetString("inv_group", "DEFAULT", grp);
 			item = p->Inventory()->PutItem(this, inv, grp);
+			if(spawnArgs.GetBool("inv_stackable", "0") == true)
+			{
+				item->SetStackable(true);
+				spawnArgs.GetInt("inv_item_count", "0", val);
+				item->SetCount(val);
+			}
+			else
+				item->SetStackable(false);
+
+			spawnArgs.GetInt("inv_loot_type", "0", (int &)type);
+			item->SetLootType(type);
+			spawnArgs.GetInt("inv_loot_value", "0", val);
+			item->SetValue(val);
 		}
 		else
-			gameLocal.AddInventoryEntity(target, name);	// Schedule us for later addition to the inventory
+			gameLocal.AddInventoryEntity(target, name);		// Schedule us for later addition to the inventory
 	}
 }
 
