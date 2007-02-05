@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2007/02/05 20:13:32  thelvyn
+ * Working ai falling damage with no problems this time I hope
+ *
  * Revision 1.40  2007/01/25 10:08:40  crispy
  * Implemented lipsync functionality
  *
@@ -666,11 +669,21 @@ public:
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_CREEP;
 
-	/*
-	Added By Rich to implement AI Falling damage
-	Calls Base Class function bool idAFEntity_Base::Collide( collision, velocity ) first.
-	*/
+	/****************************************************************************************
+	*
+	*	Added By Rich to implement AI Falling damage
+	*	Calls Base Class function bool idAFEntity_Base::Collide( collision, velocity ) first.
+	*
+	****************************************************************************************/
 	bool Collide( const trace_t &collision, const idVec3 &velocity );
+
+	/****************************************************************************************
+	*
+	*	Added By Rich to implement AI Falling damage
+	*	Called from Think with saved origin and velocity from before moving
+	*   
+	****************************************************************************************/
+	void CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity );
 protected:
 	// navigation
 	idAAS *					aas;
