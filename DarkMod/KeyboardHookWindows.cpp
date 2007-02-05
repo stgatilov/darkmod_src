@@ -9,7 +9,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 // not meant to be used by anyone else
 namespace
 {
-	CKeyboardHookWindows* g_WindowsHook = NULL;
+	CKeyboardWindows* g_WindowsHook = NULL;
 	
 	/*
 	===========
@@ -29,7 +29,7 @@ namespace
 
 /*
 ===========
-CKeyboardHookWindows::KeyboardProc
+CKeyboardWindows::KeyboardProc
 ============
 */
 /*
@@ -67,7 +67,7 @@ Specifies the transition state. The value is 0 if the key is being pressed and 1
 */
 
 
-LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
+LRESULT CKeyboardWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
 	assert( NULL != m_parent );
 	
@@ -77,6 +77,7 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 		m_parent->m_KeyPress.RepeatCount    = (lParam & 0x0000FFFF); // Only useful if machine is seriously lagged
 		m_parent->m_KeyPress.ScanCode       = (lParam & 0x00FF0000) >> 16;// better to use the VK's
 		m_parent->m_KeyPress.KeyPressCount  = m_parent->m_KeyPressCount++;
+
 		if( BITCHK(lParam, 24 ) == 1 )
 		{
 			BITSET(	m_parent->m_KeyPress.KeyMask, KEYSTATE_EXTENDED );
@@ -193,46 +194,27 @@ LRESULT CKeyboardHookWindows::KeyboardProc( int nCode, WPARAM wParam, LPARAM lPa
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING( "Key Name Text: Function Failed!\r" );
 		}
-
 #endif
-		// Only update impulses when the player has already spawned
-		if( gameLocal.GetLocalPlayer() )
-		{
-			for( int i = 0; i < IR_COUNT; i++)
-			{
-				// If the keypress is associated with an impulse then we update it.
-				if( m_parent->m_KeyData[i].KeyState != KS_FREE &&
-					m_parent->m_KeyData[i].VirtualKeyCode == m_parent->m_KeyPress.VirtualKeyCode )
-				{
-					m_parent->m_KeyData[i] = m_parent->m_KeyPress;
-					m_parent->m_KeyData[i].KeyState = KS_UPDATED;
-					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
-				}
-			}
-		}
-
-		// Run key capture for keybinding if it is active
-		if( m_parent->m_bKeyCapActive )
-			m_parent->KeyCapture();
+		m_parent->ImpuleUpdate();
 	}
 	// Be polite! Always call next hook proc in chain
 	return CallNextHookEx( m_KeyboardHook, nCode, wParam, lParam);
 }
 
-bool CKeyboardHookWindows::m_instanceFlag = false;
-CKeyboardHookWindows* CKeyboardHookWindows::m_single = NULL;
+bool CKeyboardWindows::m_instanceFlag = false;
+CKeyboardWindows* CKeyboardWindows::m_single = NULL;
 
-CKeyboardHookWindows* CKeyboardHookWindows::getInstance( CKeyboardHook* pParent )
+CKeyboardWindows* CKeyboardWindows::getInstance( CKeyboard* pParent )
 {
     if(! m_instanceFlag)
     {
-        m_single = new CKeyboardHookWindows( pParent );
+        m_single = new CKeyboardWindows( pParent );
         m_instanceFlag = true;
     }
 	return m_single;
 }
 
-CKeyboardHookWindows::CKeyboardHookWindows( CKeyboardHook* pParent ):
+CKeyboardWindows::CKeyboardWindows( CKeyboard* pParent ):
 m_parent( pParent ),
 m_KeyboardHook( NULL )
 {
@@ -241,7 +223,7 @@ m_KeyboardHook( NULL )
 	assert( NULL != m_KeyboardHook );
 }
 
-CKeyboardHookWindows::~CKeyboardHookWindows(void)
+CKeyboardWindows::~CKeyboardWindows(void)
 {
 	UnhookWindowsHookEx( m_KeyboardHook );
 	g_WindowsHook = NULL;

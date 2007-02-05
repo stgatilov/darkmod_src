@@ -149,19 +149,19 @@ bool CKeyCode::GetWasPressed( void ) const// Was it pressed last message
 	return ( BITCHK( KeyMask, KEYSTATE_PRESSED_LAST ) == true );
 }
 
-bool CKeyboardHook::m_instanceFlag = false;
-CKeyboardHook* CKeyboardHook::m_single = NULL;
+bool CKeyboard::m_instanceFlag = false;
+CKeyboard* CKeyboard::m_single = NULL;
 
-CKeyboardHook* CKeyboardHook::getInstance()
+CKeyboard* CKeyboard::getInstance()
 {
     if(! m_instanceFlag)
     {
-        m_single = new CKeyboardHook();
+        m_single = new CKeyboard();
         m_instanceFlag = true;
     }
 	return m_single;
 }
-CKeyboardHook::CKeyboardHook(void):
+CKeyboard::CKeyboard(void):
 	m_hook(NULL),
 	m_KeyPressCount(0),
 	m_bKeyCapActive(false),
@@ -174,21 +174,21 @@ CKeyboardHook::CKeyboardHook(void):
 		m_KeyData[i].Impulse = -1;
 	}
 #ifdef _WINDOWS_
-	m_hook = CKeyboardHookWindows::getInstance( this );
+	m_hook = CKeyboardWindows::getInstance( this );
 #endif // #ifdef _WINDOWS_
 }
 
-CKeyboardHook::~CKeyboardHook(void)
+CKeyboard::~CKeyboard(void)
 {
 	delete m_hook;
 }
 
-const CKeyCode& CKeyboardHook::GetCurrentKey() const
+const CKeyCode& CKeyboard::GetCurrentKey() const
 {
 	return m_KeyPress;
 }
 
-bool CKeyboardHook::KeyCapture( void )
+bool CKeyboard::KeyCapture( void )
 {
 	bool bReturnVal( false );
 
@@ -204,7 +204,7 @@ bool CKeyboardHook::KeyCapture( void )
 	return bReturnVal;
 }
 
-void CKeyboardHook::KeyCaptureStart( ImpulseFunction_t action )
+void CKeyboard::KeyCaptureStart( ImpulseFunction_t action )
 {
 	if( action < IR_COUNT && action >= 0 )
 	{
@@ -224,13 +224,13 @@ void CKeyboardHook::KeyCaptureStart( ImpulseFunction_t action )
 	return;
 }
 
-void CKeyboardHook::ImpulseFree(ImpulseFunction_t Function)
+void CKeyboard::ImpulseFree(ImpulseFunction_t Function)
 {
 	m_KeyData[Function].KeyState = KS_FREE;
 	m_KeyData[Function].Impulse = -1;
 }
 
-bool CKeyboardHook::ImpulseInit(ImpulseFunction_t Function )
+bool CKeyboard::ImpulseInit(ImpulseFunction_t Function )
 {
 	bool rc = true;
 
@@ -244,13 +244,35 @@ bool CKeyboardHook::ImpulseInit(ImpulseFunction_t Function )
 	return rc;
 }
 
-bool CKeyboardHook::ImpulseIsUpdated(ImpulseFunction_t Function)
+bool CKeyboard::ImpulseIsUpdated(ImpulseFunction_t Function)
 {
 	return ( KS_UPDATED == m_KeyData[Function].KeyState );
 }
 
 
-void CKeyboardHook::ImpulseProcessed(ImpulseFunction_t Function)
+void CKeyboard::ImpulseProcessed(ImpulseFunction_t Function)
 {
 	m_KeyData[Function].KeyState = KS_PROCESSED;
+}
+
+void CKeyboard::ImpuleUpdate()
+{
+	// Only update impulses when the player has already spawned
+	if( gameLocal.GetLocalPlayer() )
+	{
+		for( int i = 0; i < IR_COUNT; i++)
+		{
+			// If the keypress is associated with an impulse then we update it.
+			if( m_KeyData[i].KeyState != KS_FREE &&
+				m_KeyData[i].VirtualKeyCode == m_KeyPress.VirtualKeyCode )
+			{
+				m_KeyData[i] = m_KeyPress;
+				m_KeyData[i].KeyState = KS_UPDATED;
+				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("IR %d updated\r", i);
+			}
+		}
+	}
+	// Run key capture for keybinding if it is active
+	if( m_bKeyCapActive )
+		KeyCapture();
 }

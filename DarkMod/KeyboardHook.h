@@ -4,8 +4,8 @@
 #pragma once
 #include "../idlib/precompiled.h"
 
-class CKeyboardHook;
-class CKeyboardHookWindows;// do NOT include headers for OS specific classes here!
+class CKeyboard;
+class CKeyboardWindows;// do NOT include headers for OS specific classes here!
 
 // Any key that is to be changed from an impulse to a button behaviour
 // has to be listed here. The id gives the index in the array which slot
@@ -44,8 +44,8 @@ typedef enum {
 
 class CKeyCode
 {
-	friend class CKeyboardHook;
-	friend class CKeyboardHookWindows;
+	friend class CKeyboard;
+	friend class CKeyboardWindows;
 public:
 	CKeyCode();
 	~CKeyCode();
@@ -81,16 +81,16 @@ protected:
 class CKeyboardHookBase // Base class for all Keyboard hook classes
 {
 public:
-	CKeyboardHookBase( CKeyboardHook* pParent = NULL ){}
+	CKeyboardHookBase( CKeyboard* pParent = NULL ){}
 	virtual ~CKeyboardHookBase() = 0 {}
 };
 
-class CKeyboardHook
+class CKeyboard
 {
-	friend class CKeyboardHookWindows;// Handles the actual hooking under windows
+	friend class CKeyboardWindows;// Handles the actual hooking under windows
 public:
-	virtual ~CKeyboardHook(void);
-	static CKeyboardHook* getInstance();
+	virtual ~CKeyboard(void);
+	static CKeyboard* getInstance();
 
 	/********************************************************************************************************
 	*
@@ -191,9 +191,11 @@ private:
 	CKeyboardHookBase* m_hook;
 
 	// singleton stuff goes here
-	CKeyboardHook(void);
+	CKeyboard(void);
     static bool m_instanceFlag;
-    static CKeyboardHook* m_single;
+    static CKeyboard* m_single;
+public:
+	void ImpuleUpdate(void);
 };
 
 #endif // #ifndef CKEYBOARDHOOK_HPP

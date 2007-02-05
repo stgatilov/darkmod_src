@@ -5,21 +5,21 @@
 #include "../idlib/precompiled.h"
 #include "../darkmod/keyboardhook.h"
 
-class CKeyboardHookWindows :
+class CKeyboardWindows :
 	public CKeyboardHookBase
 {
 public:
-	virtual ~CKeyboardHookWindows(void);
+	virtual ~CKeyboardWindows(void);
 	LRESULT KeyboardProc( int nCode, WPARAM wParam, LPARAM lParam );
-	static CKeyboardHookWindows* getInstance( CKeyboardHook* pParent );
+	static CKeyboardWindows* getInstance( CKeyboard* pParent );
 protected:
-	CKeyboardHook* m_parent;
-	CKeyboardHookWindows(void);// not defined
+	CKeyboard* m_parent;
+	CKeyboardWindows(void);// not defined
 	HHOOK m_KeyboardHook;
 private:
-	CKeyboardHookWindows( CKeyboardHook* pParent );
+	CKeyboardWindows( CKeyboard* pParent );
 	static bool m_instanceFlag;
-    static CKeyboardHookWindows* m_single;
+    static CKeyboardWindows* m_single;
 };
 
 #endif // #ifndef CKEYBOARDHOOK_WINDOWS_HPP
