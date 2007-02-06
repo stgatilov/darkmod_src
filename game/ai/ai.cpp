@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.63  2007/02/06 13:57:44  thelvyn
+ * more falling damage tweaks
+ *
  * Revision 1.62  2007/02/05 20:13:32  thelvyn
  * Working ai falling damage with no problems this time I hope
  *
@@ -839,138 +842,6 @@ idAI::~idAI() {
 	*/
 	destroyCurrentHidingSpotSearch();
 	
-}
-
-/****************************************************************************************
-*
-*	=====================
-*	idAI::CrashLand
-*	=====================
-*
-*	Added By Rich to implement AI Falling damage
-*	Called from Think with saved origin and velocity from before moving
-*   
-****************************************************************************************/
-
-void idAI::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity )
-{
-	// Early exit's
-	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
-	if( move.moveType == MOVETYPE_DEAD // cant move if dead
-		|| waterLevel == WATERLEVEL_HEAD // never take falling damage if completely underwater
-		|| !physicsObj.HasGroundContacts() // not aptly named
-		)
-	{
-		return;
-	}
-	// no falling damage if touching a nodamage surface
-	// We do this here since the sound wont be played otherwise
-	// as we do no damage if this is true.
-	bool noDamage = false;
-	for( int i = 0; i < physicsObj.GetNumContacts(); i++ )
-	{
-		const contactInfo_t &contact = physicsObj.GetContact( i );
-		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
-		{
-			noDamage = true;
-			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
-			break;
-		}
-	}
-
-	idVec3 gravityNormal = physicsObj.GetGravityNormal();
-	idVec3 gravityVector = physicsObj.GetGravity();
-	idVec3 origin        = GetPhysics()->GetOrigin();
-
-	// calculate the exact velocity on landing
-	float dist = ( origin - oldOrigin ) * -gravityNormal;
-	float vel = oldVelocity * -gravityNormal;
-	float acc = -gravityVector.Length();
-
-	float a = acc / 2.0f;
-	float b = vel;
-	float c = -dist;
-
-	float den = b * b - 4.0f * a * c;
-	if( den > 0 )
-	{
-		float t = ( -b - idMath::Sqrt( den ) ) / ( 2.0f * a );
-		float delta = vel + t * acc;
-		delta = delta * delta * 0.0001;
-		// reduce falling damage if there is standing water
-		if( waterLevel == WATERLEVEL_WAIST )
-		{
-			delta *= 0.25f;
-		}
-		else if( waterLevel == WATERLEVEL_FEET )
-		{
-			delta *= 0.5f;
-		}
-		if( delta >= 1.0f )
-		{
-			float fatalDelta = 85.0f; // we should make this configurable for tweaking
-			float hardDelta  = 55.0f; // should this match player/higher/lower ? Higher right now
-			if( delta > fatalDelta )
-			{
-				if ( !noDamage ) {
-					pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 1.0f, 0 );
-				}
-			} else if( delta > hardDelta ) {
-				if ( !noDamage ) {
-					pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_hardfall", 1.0f, 0 );
-				}
-			} else if( delta > 30 ) {
-				if ( !noDamage ) {
-					pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", 1.0f, 0 );
-				}
-			}
-		}// if ( delta >= 1.0f )
-	}// if ( den > 0 )
-}
-
-/****************************************************************************************
-=====================
-idAI::Collide
-=====================
-*
-* Added by Rich Jan 16,2007
-* Add collision(Falling) damage to AI
-****************************************************************************************/
-
-// changing bounce sound velocitys to match player. AI were WAY TOO high.
-// Player is dead before it even hurts them ??
-static const float BOUNCE_SOUND_MIN_VELOCITY	= 45.0f;
-static const float BOUNCE_SOUND_MAX_VELOCITY	= 65.0f;
-
-bool idAI::Collide( const trace_t &collision, const idVec3 &velocity )
-{
-	if( collision.fraction == 1.0f ||
-		collision.c.type == CONTACT_NONE )// didnt hit anything
-	{
-		return false;
-	}
-	if ( af.IsActive() ) {
-		float v = ( velocity * collision.c.normal );
-		if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
-			float f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-			if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
-				// don't set the volume unless there is a bounce sound as it overrides the entire channel
-				// which causes footsteps on ai's to not honor their shader parms
-				SetSoundVolume( f );
-			}
-			nextSoundTime = gameLocal.time + 500;
-		}
-	}
-	idEntity *other = gameLocal.entities[ collision.c.entityNum ];
-	other->Signal( SIG_TOUCH );
-	if ( other->RespondsTo( EV_Touch ) )
-	{
-		other->ProcessEvent( &EV_Touch, this, &collision );
-	}
-	return false;
 }
 
 /*
@@ -1889,7 +1760,10 @@ void idAI::Think( void ) {
 	{
 		gameRenderWorld->DrawText( va("Alert: %f", (float) AI_AlertNum), (GetEyePosition() - physicsObj.GetGravityNormal()*32.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
-	CrashLand( oldOrigin, oldVelocity );
+	if ( health > 0 )
+	{
+		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
+	}
 }
 
 /***********************************************************************
