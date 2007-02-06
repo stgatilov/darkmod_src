@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2007/02/06 03:18:42  thelvyn
+ * idActor::CrashLand is now called for both AI and player for falling/collision damage.
+ *
  * Revision 1.37  2007/01/25 10:08:33  crispy
  * Implemented lipsync functionality
  *
@@ -141,7 +144,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
-
+#include "../DarkMod/PlayerData.h"
 /***********************************************************************
 
 	idAnimState
@@ -2421,8 +2424,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	damage = GetDamageForLocation( damage, location );
 
-
-
+	Debug4("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 
 	// inform the attacker that they hit someone
@@ -3850,4 +3852,83 @@ idActor::Event_GetAttachment
 void idActor::Event_GetNumAttachments( void )
 {
 	idThread::ReturnInt( m_attachments.Num() );
+}
+
+/****************************************************************************************
+	=====================
+	idActor::CrashLand
+	handle collision(Falling) damage to AI/Players
+	Added by Richard Day
+	=====================
+****************************************************************************************/
+void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity )
+{
+	// Early exit's
+	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
+	if( waterLevel == WATERLEVEL_HEAD // never take falling damage if completely underwater
+		|| !physicsObj.HasGroundContacts() // not aptly named
+		)
+	{
+		return;
+	}
+	// no falling damage if touching a nodamage surface
+	// We do this here since the sound wont be played otherwise
+	// as we do no damage if this is true.
+	bool noDamage = false;
+	for( int i = 0; i < physicsObj.GetNumContacts(); i++ )
+	{
+		const contactInfo_t &contact = physicsObj.GetContact( i );
+		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
+		{
+			noDamage = true;
+			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
+			break;
+		}
+	}
+	if( !noDamage )
+	{
+		idVec3 gravityNormal = physicsObj.GetGravityNormal();
+		idVec3 gravityVector = physicsObj.GetGravity();
+		idVec3 origin        = GetPhysics()->GetOrigin();
+		// calculate the exact velocity on landing
+		float dist = ( origin - oldOrigin ) * -gravityNormal;
+		float vel = oldVelocity * -gravityNormal;
+		float acc = -gravityVector.Length();
+		float a = acc / 2.0f;
+		float b = vel;
+		float c = -dist;
+		float den = b * b - 4.0f * a * c;
+		if( den > 0 )
+		{
+			float t = ( -b - idMath::Sqrt( den ) ) / ( 2.0f * a );
+			float delta = vel + t * acc;
+			delta = delta * delta * 0.0001;
+			// reduce falling damage if there is standing water
+			if( waterLevel == WATERLEVEL_WAIST )
+			{
+				delta *= 0.25f;
+			}
+			else if( waterLevel == WATERLEVEL_FEET )
+			{
+				delta *= 0.5f;
+			}
+			if( delta >= 30.0f )
+			{
+				pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
+				if( delta > 200.0f )
+				{
+					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 1.0f, 0 );
+				}
+				else
+				{
+					// this seems to scale fairly well
+					float perc = ( health > 100 ? ( health/75 ) : 1 );
+					float dScale = ( delta / 25 ) * ( perc < 1.0f ? 1 : perc );
+					Debug4( "Delta = %f perc = %f dScale = %f Health = %i", delta, perc, dScale, health );
+					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
+					Debug1( "After damage Health = %i", health );
+				} // if( delta > fatalDelta ) else
+			}// if ( delta >= 1.0f )
+		}// if ( den > 0 )
+	} // if( !noDamage )
 }

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.92  2007/02/06 03:18:45  thelvyn
+ * idActor::CrashLand is now called for both AI and player for falling/collision damage.
+ *
  * Revision 1.91  2007/02/03 21:56:11  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -486,7 +489,7 @@ idGameLocal::idGameLocal
 
 idGameLocal::idGameLocal() 
 {
-	m_Keyboard = CKeyboardHook::getInstance();
+	m_Keyboard = CKeyboard::getInstance();
 	assert( NULL != m_Keyboard );
 	Clear();
 }

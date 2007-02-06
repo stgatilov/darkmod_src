@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.116  2007/02/06 03:18:46  thelvyn
+ * idActor::CrashLand is now called for both AI and player for falling/collision damage.
+ *
  * Revision 1.115  2007/02/03 21:56:11  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -4911,14 +4914,15 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 idPlayer::Collide
 ==============
 */
-bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	idEntity *other;
 
-	if ( gameLocal.isClient ) {
+bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
+	if( collision.fraction == 1.0f || collision.c.type == CONTACT_NONE // didnt hit anything
+		|| gameLocal.isClient // server computes
+		)
+	{
 		return false;
 	}
-
-	other = gameLocal.entities[ collision.c.entityNum ];
+	idEntity *other = gameLocal.entities[ collision.c.entityNum ];
 	// don't let player collide with grabber entity
 	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
 		other->Signal( SIG_TOUCH );
@@ -4934,7 +4938,6 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 	return false;
 }
-
 
 /*
 ================
@@ -7083,7 +7086,10 @@ void idPlayer::Move( void ) {
 	}
 
 	BobCycle( pushVelocity );
-	CrashLand( oldOrigin, oldVelocity );
+	if ( health > 0 )
+	{
+		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
+	}
 }
 
 /*
@@ -10608,7 +10614,7 @@ void idPlayer::SetImmobilization( const char *source, int type )
 
 void idPlayer::CheckHeldKeys( void )
 {
-	CKeyboardHook* Keyboard = CKeyboardHook::getInstance();
+	CKeyboard* Keyboard = CKeyboard::getInstance();
 	CKeyCode ck = Keyboard->GetCurrentKey();
 	
 	// NOTE: For now, keep this compatible with both a toggle lean and hold lean setup

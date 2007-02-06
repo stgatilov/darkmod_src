@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2007/02/06 03:18:46  thelvyn
+ * idActor::CrashLand is now called for both AI and player for falling/collision damage.
+ *
  * Revision 1.48  2007/01/26 12:52:33  sparhawk
  * New inventory concept.
  *
@@ -302,7 +305,7 @@ class idEditEntities;
 class idLocationEntity;
 
 //class CMouseHook; // Added by Rich
-class CKeyboardHook;// Added by Rich
+class CKeyboard;// Added by Rich
 
 #define	MAX_CLIENTS				32
 #define	GENTITYNUM_BITS			12
@@ -704,7 +707,7 @@ public:
 	* Darkmod: Os agnostic Keyboard handler. Loads OS specific class internally
 	* Added by Rich
 	**/
-	CKeyboardHook*             m_Keyboard;
+	CKeyboard*             m_Keyboard;
 
 	/**
 	* Darkmod: Os agnostic mouse handler. Loads OS specific class internally

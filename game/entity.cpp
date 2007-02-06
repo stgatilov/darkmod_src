@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.95  2007/02/06 03:18:44  thelvyn
+ * idActor::CrashLand is now called for both AI and player for falling/collision damage.
+ *
  * Revision 1.94  2007/02/03 21:56:11  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -3672,11 +3675,74 @@ bool idEntity::GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) {
 idEntity::Collide
 ================
 */
+
 bool idEntity::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// this entity collides with collision.c.entityNum
+	/*
+	float v, f;
+	idVec3 dir;
+	idEntity *ent;
+	const idMaterial *material(NULL);
+	idStr SndNameLocal;
+	const char *SndName(NULL);
+	static const float BOUNCE_SOUND_MIN_VELOCITY	= 45.0f;
+	static const float BOUNCE_SOUND_MAX_VELOCITY	= 65.0f;
+
+	v = -( velocity * collision.c.normal );
+	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
+	{
+		material = collision.c.material;
+		if( material != NULL)
+		{
+			g_Global.GetSurfName( material, SndNameLocal );
+			SndNameLocal = "snd_bounce_" + SndNameLocal;
+			SndName = spawnArgs.GetString( SndNameLocal.c_str() );
+
+			if( *SndName == '\0' )
+				SndNameLocal = "snd_bounce";
+		}
+
+		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+		if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL ) ) {
+			// don't set the volume unless there is a bounce sound as it overrides the entire channel
+			// which causes footsteps on ai's to not honor their shader parms
+			SetSoundVolume( f );
+		}
+		nextSoundTime = gameLocal.time + 500;
+	}
+
+	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
+		ent = gameLocal.entities[ collision.c.entityNum ];
+		if ( ent && v > minDamageVelocity ) 
+		{
+			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			dir = velocity;
+			dir.NormalizeFast();
+			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
+			nextDamageTime = gameLocal.time + 1000;
+		}
+	}
+
+	//Darkmod: Cause a tactile alert if it collides with an AI
+	
+	ent = gameLocal.entities[ collision.c.entityNum ];
+	if ( ent )
+	{
+		if( ent->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(ent);
+			alertee->TactileAlert( this );
+		}
+	}
+
+	if ( fxCollide.Length() && gameLocal.time > nextCollideFxTime ) {
+		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
+		nextCollideFxTime = gameLocal.time + 3500;
+	}
+
+	*/
 	return false;
 }
-
 /*
 ================
 idEntity::GetImpactInfo
