@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2007/02/06 15:19:58  thelvyn
+ * Now using mass to compute damage in CrashLand
+ *
  * Revision 1.39  2007/02/06 13:46:49  thelvyn
  * more falling damage tweaks
  *
@@ -3892,7 +3895,7 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 	{
 		idVec3 gravityNormal = physicsObj.GetGravityNormal();
 		idVec3 gravityVector = physicsObj.GetGravity();
-		idVec3 origin        = GetPhysics()->GetOrigin();
+		idVec3 origin        = physicsObj.GetOrigin();
 		// calculate the exact velocity on landing
 		float dist = ( origin - oldOrigin ) * -gravityNormal;
 		float vel = oldVelocity * -gravityNormal;
@@ -3918,16 +3921,15 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 			if( delta >= 30.0f )
 			{
 				pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-				if( delta > 150.0f )
+				if( delta > 175.0f )
 				{
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 1.0f, 0 );
+					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
 				}
 				else
 				{
-					int startHealth = spawnArgs.GetInt( "health" );
-					Debug1( "Starting health = %i", startHealth );
-					// this seems to scale fairly well
-					float perc = ( startHealth / 100 );
+					float mass = physicsObj.GetMass();
+					Debug1( "Mass = %f", mass );
+					float perc = ( mass / 100 );
 					float dScale = ( delta / 25.0f ) * ( perc < 1.0f ? 1.0f : perc );
 					Debug4( "Delta = %f perc = %f dScale = %f Health = %i", delta, perc, dScale, health );
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.12  2007/02/06 15:19:58  thelvyn
+ * Now using mass to compute damage in CrashLand
+ *
  * Revision 1.11  2007/01/26 07:35:31  ishtvan
  * air friction spawnargs now parsed to physics settings
  *
@@ -302,6 +305,7 @@ void idMoveable::Show( void ) {
 idMoveable::Collide
 =================
 */
+
 bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	float v, f;
 	idVec3 dir;
@@ -345,9 +349,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 	}
 
-	/** 
-	* Darkmod: Cause a tactile alert if it collides with an AI
-	**/
+	// Darkmod: Cause a tactile alert if it collides with an AI
 	
 	ent = gameLocal.entities[ collision.c.entityNum ];
 	if ( ent )
