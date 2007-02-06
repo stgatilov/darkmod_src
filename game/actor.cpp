@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.41  2007/02/06 16:09:03  thelvyn
+ * Added cvars for min/fatal falling deltas and damage scale modifier
+ *
  * Revision 1.40  2007/02/06 15:19:58  thelvyn
  * Now using mass to compute damage in CrashLand
  *
@@ -3918,10 +3921,15 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 			{
 				delta *= 0.5f;
 			}
-			if( delta >= 30.0f )
+			
+			float delta_fatal = cv_delta_fall_fatal.GetFloat();
+			float delta_scale = cv_delta_scale_modifier.GetFloat(); 
+			float delta_min = cv_delta_fall_min.GetFloat();
+
+			if( delta >= delta_min )
 			{
 				pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-				if( delta > 175.0f )
+				if( delta > delta_fatal )
 				{
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
 				}
@@ -3930,7 +3938,7 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 					float mass = physicsObj.GetMass();
 					Debug1( "Mass = %f", mass );
 					float perc = ( mass / 100 );
-					float dScale = ( delta / 25.0f ) * ( perc < 1.0f ? 1.0f : perc );
+					float dScale = ( delta / delta_scale ) * ( perc < 1.0f ? 1.0f : perc );
 					Debug4( "Delta = %f perc = %f dScale = %f Health = %i", delta, perc, dScale, health );
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
 					Debug1( "After damage Health = %i", health );
