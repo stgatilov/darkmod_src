@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.53  2007/02/07 22:06:35  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.52  2007/02/07 02:17:59  thelvyn
  * removed cvars for crashland damage. Now spawnargs instead
  *
@@ -283,6 +286,7 @@ idCVar cv_tdm_inv_groupvis(	"tdm_inv_visibility", "1", CVAR_GAME | CVAR_ARCHIVE 
 idCVar cv_tdm_inv_opacity(	"tdm_inv_opacity", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the inventory GUI. [0..1]", 0, 1 );
 idCVar cv_tdm_inv_fadein(	"tdm_inv_fade_in", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade in the inventory. 0 = immediately");
 idCVar cv_tdm_inv_fadeout(	"tdm_inv_fade_out", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Time it takes to fade out the inventory. 0 = immediately");
+idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "sound/sfx/world/frob_loot.ogg",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been aquired.");
 
 /**
 * DarkMod movement volumes.  Walking volume is zero dB, other volumes are added to that

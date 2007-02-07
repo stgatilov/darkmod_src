@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2007/02/07 22:06:25  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.12  2007/02/03 21:56:21  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -54,7 +57,7 @@
 
 // Classes that should be used by external files.
 class CInventory;
-class CInventoryGroup;
+class CInventoryCategory;
 class CInventoryItem;
 
 /**
@@ -76,32 +79,32 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	/**
-	 * GetGroup returns the pointer to the given group and it's index, 
+	 * GetCategory returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */
-	CInventoryGroup	*GetGroup(const char *GroupName = NULL, int *Index = NULL);
-	inline CInventoryGroup	*GetGroup(idStr const &GroupName, int *Index = NULL) { return GetGroup(GroupName.c_str(), Index); }
+	CInventoryCategory	*GetCategory(const char *CategoryName = NULL, int *Index = NULL);
+	inline CInventoryCategory	*GetCategory(idStr const &CategoryName, int *Index = NULL) { return GetCategory(CategoryName.c_str(), Index); }
 
 	/**
-	 * GetGroupIndex returns the index to the given group or -1 if not found.
+	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
-	int					GetGroupIndex(const char *GroupName);
-	inline int			GetGroupIndex(idStr const &GroupName) { return GetGroupIndex(GroupName.c_str()); }
+	int					GetCategoryIndex(const char *CategoryName);
+	inline int			GetCategoryIndex(idStr const &CategoryName) { return GetCategoryIndex(CategoryName.c_str()); }
 
 	/**
 	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
 	 * the itemindex within that group can also be obtained. Both are set to -1 
 	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
 	 */
-	int GetGroupItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
-	int GetGroupItemIndex(const char *ItemName, int *ItemIndex = NULL);
-	inline int GetGroupItemIndex(const idStr &ItemName, int *ItemIndex = NULL) { return GetGroupItemIndex(ItemName.c_str(), ItemIndex); };
+	int GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
+	int GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
+	inline int GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) { return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
 
 	/**
-	 * CreateGroup creates the named group if it doesn't already exist.
+	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryGroup	*CreateGroup(const char *GroupName, int *Index = NULL);
-	inline CInventoryGroup	*CreateGroup(idStr const &GroupName, int *Index = NULL) { return CreateGroup(GroupName.c_str(), Index); }
+	CInventoryCategory	*CreateCategory(const char *CategoryName, int *Index = NULL);
+	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
 
 	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
 	void				SetOwner(idEntity *Owner);
@@ -111,15 +114,15 @@ public:
 	 * The name, that is to be displayed on a GUI, must be set on the respective
 	 * entity.
 	 */
-	CInventoryItem	*PutItem(idEntity *Item, const idStr &Name, char const *Group = NULL);
-	void				PutItem(CInventoryItem *Item, char const *Group = NULL);
+	CInventoryItem	*PutItem(idEntity *Item, const idStr &Name, char const *Category = NULL);
+	void				PutItem(CInventoryItem *Item, char const *Category = NULL);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem			*GetItem(const char *Name, char const *Group = NULL);
-	inline CInventoryItem	*GetItem(const idStr &Name, char const *Group = NULL) { return GetItem(Name.c_str(), Group); } ;
+	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL);
+	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL) { return GetItem(Name.c_str(), Category); } ;
 
 	/**
 	 * Retrieve the currently selected item.
@@ -131,34 +134,34 @@ public:
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
-	 * depends on the settings of GroupLock and WrapAround.
+	 * depends on the settings of CategoryLock and WrapAround.
 	 */
 	CInventoryItem			*GetNextItem(void);
 	CInventoryItem			*GetPrevItem(void);
 
-	CInventoryGroup			*GetNextGroup(void);
-	CInventoryGroup			*GetPrevGroup(void);
+	CInventoryCategory			*GetNextCategory(void);
+	CInventoryCategory			*GetPrevCategory(void);
 
 	/**
 	 * Set the current group index.
-	 * Validation of the index is done when doing Nex/Prev Group
+	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care wether this is a valid index or not.
 	 */
-	inline void				SetCurrentGroup(int Index) { m_CurrentGroup = Index; }
+	inline void				SetCurrentCategory(int Index) { m_CurrentCategory = Index; }
 
 	/**
 	 * Set the current item index.
-	 * Validation of the index is done when doing Nex/Prev Group
+	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care wether this is a valid index or not.
 	 */
 	inline void				SetCurrentItem(int Index) { m_CurrentItem = Index; }
-	inline void				SetGroupLock(bool bLock) { m_GroupLock = bLock; }
+	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
 	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
 
 protected:
-	void					ValidateGroup(void);
+	void					ValidateCategory(void);
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -166,7 +169,7 @@ protected:
 	/**
 	 * List of groups in that inventory
 	 */
-	idList<CInventoryGroup *>		m_Group;
+	idList<CInventoryCategory *>		m_Category;
 
 	/**
 	 * If true it means that the scrolling with next/prev is locked
@@ -174,16 +177,16 @@ protected:
 	 * the player has to use the next/prev group keys to switch to
 	 * a different group.
 	 */
-	bool							m_GroupLock;
+	bool							m_CategoryLock;
 
 	/**
 	 * If set to true the inventory will start from the first/last item
 	 * if it is scrolled beyond the last/first item. Depending on the
-	 * GroupLock setting, this may mean that, when the last item is reached
-	 * and GroupLock is false, NextItem will yield the first item of
+	 * CategoryLock setting, this may mean that, when the last item is reached
+	 * and CategoryLock is false, NextItem will yield the first item of
 	 * the first group, and vice versa in the other direction. This would be
 	 * the behaviour like the original Thief games inventory.
-	 * If GroupLock is true and WrapAround is true it will also go to the first
+	 * If CategoryLock is true and WrapAround is true it will also go to the first
 	 * item, but stays in the same group.
 	 * If WrapAround is false and the last/first item is reached, Next/PrevItem
 	 * will always return the same item on each call;
@@ -191,9 +194,9 @@ protected:
 	bool					m_WrapAround;
 
 	/**
-	 * CurrentGroup is the index of the current group for using Next/PrevItem
+	 * CurrentCategory is the index of the current group for using Next/PrevItem
 	 */
-	int						m_CurrentGroup;
+	int						m_CurrentCategory;
 
 	/**
 	 * CurrentItem is the index of the current item in the current group for
@@ -205,13 +208,13 @@ protected:
 /**
  * Inventorygroup is just a container for items that are currently held by an entity.
  */
-class CInventoryGroup
+class CInventoryCategory
 {
 	friend CInventory;
 
 public:
-	CInventoryGroup(const char* name = NULL);
-	~CInventoryGroup();
+	CInventoryCategory(const char* name = NULL);
+	~CInventoryCategory();
 
 	void				Save(idSaveGame *savefile) const;
 	void				Restore(idRestoreGame *savefile);
@@ -251,34 +254,35 @@ protected:
 class CInventoryItem
 {
 	friend CInventory;
-	friend CInventoryGroup;
+	friend CInventoryCategory;
 
 public:
 	typedef enum {
-		ITEM,			// Normal item, which is associated to an entity
-		LOOT,			// this is a loot item
-		LOOT_INFO,		// Special loot info item, which doesn't have an entity
-		DUMMY			// This also doesn't have an entity, but provides a dummy so 
-						// we can have an empty space in the inventory.
+		IT_ITEM,			// Normal item, which is associated to an entity
+		IT_LOOT,			// this is a loot item
+		IT_LOOT_INFO,		// Special loot info item, which doesn't have an entity
+		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
+							// we can have an empty space in the inventory.
+		IT_COUNT
 	} ItemType;
 
 	typedef enum {
-		NONE,			// No lootobject
-		JEWELS,
-		GOLD,
-		GOODS,
-		COUNT		// dummy
+		LT_NONE,			// No lootobject
+		LT_JEWELS,
+		LT_GOLD,
+		LT_GOODS,
+		LT_COUNT		// dummy
 	} LootType;
 
 public:
-	CInventoryItem();
+	CInventoryItem(idEntity *m_Owner);
 	~CInventoryItem();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
 	inline CInventory		*Inventory() const { return m_Inventory; }
-	inline CInventoryGroup	*Group() const { return m_Group; }
+	inline CInventoryCategory	*Category() const { return m_Category; }
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
 	inline idEntity			*GetEntity() { return m_Item.GetEntity(); }
 	inline void				SetType(CInventoryItem::ItemType type) { m_Type = type; };
@@ -287,26 +291,34 @@ public:
 	inline int				GetCount(void) { return m_Count; };
 	void					SetCount(int Amount);
 
-	bool					IsStackable(void) { return m_Stackable; };
+	inline bool				IsStackable(void) { return m_Stackable; };
 	void					SetStackable(bool);
 
 	void					SetLootType(CInventoryItem::LootType t);
-	LootType				GetLootType(void) { return m_LootType; };
+	inline LootType			GetLootType(void) { return m_LootType; };
 
 	void					SetValue(int n);
-	int						GetValue(void) { return m_Value; };
+	inline int				GetValue(void) { return m_Value; };
+
+	inline void				SetName(const idStr &n) { m_Name = n; };
+	inline idStr			GetName(void) { return m_Name; };
+
+	inline void				SetItem(idEntity *item) { m_Item = item; };
+	inline idEntity			*GetItem(void) { return m_Item.GetEntity(); };
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
 	idStr					m_Name;
 	CInventory				*m_Inventory;
-	CInventoryGroup			*m_Group;
+	CInventoryCategory		*m_Category;
 	ItemType				m_Type;
 	LootType				m_LootType;
 	int						m_Value;
 	int						m_Count;		// How many of that item are currently represented (i.e. Arrows)
 	bool					m_Stackable;	// Counter can be used if true, otherwise it's a unique item
+	bool					m_Droppable;	// If the item is not droppable it will be inaccessible after it 
+											// is put into the inventory
 };
 
 #endif /* __DARKMOD_TDMINVENTORY_H__ */

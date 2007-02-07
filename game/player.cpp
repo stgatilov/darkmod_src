@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.119  2007/02/07 22:06:13  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.118  2007/02/07 02:18:14  thelvyn
  * Removed crashland. Now located in idActor instead
  *
@@ -1565,26 +1568,12 @@ idPlayer::idPlayer()
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		 = -1;
 
-	// Add the default stims to the player. These are stims
-	// that can be performed by the actual player, while the
-	// other stims like water, damage, kill, etc. are rather
-	// properties of the respective weapon or equipment.
-	// None of these stims require a radius in this case
-	// as they are determined by the various parts of the code
-	// that is responsible for handling it. It might be needed
-	// if these stims are added to an AI though.
+	// TODO: Think about how to handle the frob stim and unifiy the
+	// way how frobbing actually works internally. Currently it's a
+	// kind of special case.
 /*	CStim *pStim;
 
 	pStim = AddStim(ST_FROB, 0.0f, false, true);
-	pStim->EnableSR();
-
-	pStim = AddStim(ST_TOUCH, 0.0f, false, true);
-	pStim->EnableSR();
-
-	pStim = AddStim(ST_SOUND, 0.0f, false, true);
-	pStim->EnableSR();
-
-	pStim = AddStim(ST_VISUAL, 0.0f, false, true);
 	pStim->EnableSR();
 */
 }
@@ -2089,22 +2078,22 @@ void idPlayer::Spawn( void )
 
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
 	CInventoryItem *it;
-	CInventoryGroup *grp;
+	CInventoryCategory *grp;
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
-	grp = Inventory()->GetGroup("DEFAULT");
-	it = new CInventoryItem();
-	it->SetType(CInventoryItem::DUMMY);
+	grp = Inventory()->GetCategory("DEFAULT");
+	it = new CInventoryItem(this);
+	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
 
 	// And the player also always gets a loot entry, as he is supposed to find loot in
 	// 99.99% of the maps. That's the point of the game, remember? :)
-	grp = Inventory()->CreateGroup(cv_tdm_inv_loot_group.GetString());
-	it = new CInventoryItem();
-	it->SetType(CInventoryItem::LOOT_INFO);
+	grp = Inventory()->CreateCategory(cv_tdm_inv_loot_group.GetString());
+	it = new CInventoryItem(this);
+	it->SetType(CInventoryItem::IT_LOOT_INFO);
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
@@ -4996,13 +4985,12 @@ void idPlayer::UpdateFocus( void ) {
 	idAI		*oldChar;
 	int			oldTalkCursor;
 	idAFEntity_Vehicle *oldVehicle;
-	int			i, j;
+	int			i;
 	idVec3		start, end;
 	bool		allowFocus;
 	const char *command;
 	trace_t		trace;
 	guiPoint_t	pt;
-	const idKeyValue *kv;
 	sysEvent_t	ev;
 	idUserInterface *ui;
 
@@ -5140,47 +5128,6 @@ void idPlayer::UpdateFocus( void ) {
 			ClearFocus();
 			focusGUIent = ent;
 			focusUI = ui;
-
-			if ( oldFocus != ent ) {
-				// new activation
-				// going to see if we have anything in inventory a gui might be interested in
-				// need to enumerate inventory items
-				focusUI->SetStateInt( "inv_count", inventory.items.Num() );
-				for ( j = 0; j < inventory.items.Num(); j++ ) {
-					idDict *item = inventory.items[ j ];
-					const char *iname = item->GetString( "inv_name" );
-					const char *iicon = item->GetString( "inv_icon" );
-					const char *itext = item->GetString( "inv_text" );
-
-					focusUI->SetStateString( va( "inv_name_%i", j), iname );
-					focusUI->SetStateString( va( "inv_icon_%i", j), iicon );
-					focusUI->SetStateString( va( "inv_text_%i", j), itext );
-					kv = item->MatchPrefix("inv_id", NULL);
-					if ( kv ) {
-						focusUI->SetStateString( va( "inv_id_%i", j ), kv->GetValue() );
-					}
-					focusUI->SetStateInt( iname, 1 );
-				}
-
-
-				for( j = 0; j < inventory.pdaSecurity.Num(); j++ ) {
-					const char *p = inventory.pdaSecurity[ j ];
-					if ( p && *p ) {
-						focusUI->SetStateInt( p, 1 );
-					}
-				}
-
-				int staminapercentage = ( int )( 100.0f * stamina / pm_stamina.GetFloat() );
-				focusUI->SetStateString( "player_health", va("%i", health ) );
-				focusUI->SetStateString( "player_stamina", va( "%i%%", staminapercentage ) );
-				focusUI->SetStateString( "player_armor", va( "%i%%", inventory.armor ) );
-
-				kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", NULL );
-				while ( kv ) {
-					focusUI->SetStateString( kv->GetKey(), kv->GetValue() );
-					kv = focusGUIent->spawnArgs.MatchPrefix( "gui_parm", kv );
-				}
-			}
 
 			// clamp the mouse to the corner
 			ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
@@ -6417,7 +6364,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// precedence over the frobaction.
 			CInventory *inv = Inventory();
 			CInventoryItem *it = inv->GetCurrentItem();
-			if(it->GetType() != CInventoryItem::DUMMY && it->GetType() != CInventoryItem::LOOT_INFO)
+			if(it->GetType() != CInventoryItem::IT_DUMMY && it->GetType() != CInventoryItem::IT_LOOT_INFO)
 			{
 				ent = Inventory()->GetCurrentItem()->GetEntity();
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
@@ -6433,11 +6380,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 					}
 				}
 			}
+
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
-			if(bFrob == true && frob != NULL) {
+			if(bFrob == true && frob != NULL)
+			{
+				// First we have to check wether that entity is an inventory 
+				// item. In that case, we have to add it to the inventory and
+				// hide the entity. Since we can not know wether the item can
+				// later on be revoked, either by script or by the player, we
+				// only hide the entity. Also if a frobactionscript is associated
+				// with it, it would be triggered, so the entity must stay around.
+				AddToInventory(frob);
+
 				frob->FrobAction(true); 
 			}
-
 		}
 		break;
 
@@ -10021,7 +9977,7 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 {
 	float opacity;
 	int groupvis;
-	CInventoryItem::ItemType type = CInventoryItem::ITEM;
+	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItem *cur = NULL;
 	CInventory *inv = NULL;
 
@@ -10069,38 +10025,38 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 		type = it->GetType();
 		switch(type)
 		{
-			case CInventoryItem::ITEM:
+			case CInventoryItem::IT_ITEM:
 			{
 				// We default the name to something obvious, because the mapper should 
 				// see, when playtesting, that he forgot to name the item and groups.
 				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
 				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
 				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 0.0);
-				e->spawnArgs.GetString("inv_group", "UNKNOWN", s);
+				e->spawnArgs.GetString("inv_category", "UNKNOWN", s);
 				SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
-				e->spawnArgs.GetString("inv_name", "UNKNOWN", s);
-				SetGuiString(mInventoryOverlay, "Inventory_ItemName", s);
+				SetGuiString(mInventoryOverlay, "Inventory_ItemName", it->GetName());
+				SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", it->GetCount());
 				e->spawnArgs.GetString("inv_icon", "", s);
 				SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
-				// TODO: Itemcount has to be set as well.
 			}
 			break;
 
-			case CInventoryItem::LOOT_INFO:
+			case CInventoryItem::IT_LOOT_INFO:
 			{
+				int Gold, Jewels, Goods, Total;
+				Total = Inventory()->GetLoot(Gold, Jewels, Goods);
 				s = cv_tdm_inv_loot_group.GetString();
 				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
 				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 0.0);
 				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 1.0);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootJewels", 0);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootGoods", 0);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootGold", 0);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootTotal", 0);
-				// TODO: Itemcount has to be set as well.
+				SetGuiInt(mInventoryOverlay, "Inventory_LootJewels", Jewels);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootGoods", Goods);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootGold", Gold);
+				SetGuiInt(mInventoryOverlay, "Inventory_LootTotal", Total);
 			}
 			break;
 
-			case CInventoryItem::DUMMY:
+			case CInventoryItem::IT_DUMMY:
 			{
 				// All objects are set to empty, so we have an empty entry in the
 				// inventory.

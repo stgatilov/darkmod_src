@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.20  2007/02/07 22:06:25  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.19  2007/02/03 21:56:21  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -79,7 +82,7 @@
  * know for sure, that the respective entity hasn't been destroyed yet (or
  * the item itself).
  *
- * Groups and inventories are not cleared even if they are empty. Only when 
+ * Categories and inventories are not cleared even if they are empty. Only when 
  * the owning entity is destroyed, it will destory it's inventory along with
  * all groups and items. Keep in mind that destroying an item does NOT mean 
  * that the entity is also destroyed. After all, an entity can be an item
@@ -105,20 +108,8 @@ const idEventDef EV_PostRestore( "postRestore", NULL );
 static idLinkList<idClass>	tdmInventoryObjList;
 
 
-/*
-	Add an item from the map to the inventory.
-
-	idEntity *ent;
-
-		ent->Unbind();
-		ent->GetPhysics()->PutToRest();
-// TODO: don't forget to re-link the clipmodel if we drop the item later
-		ent->GetPhysics()->UnlinkClip();
-		ent->Hide();
-*/
-
 ///////////////////
-// CInventory //
+// CInventory
 ///////////////////
 
 CLASS_DECLARATION(idClass, CInventory)
@@ -128,10 +119,10 @@ CInventory::CInventory()
 : idClass()
 {
 	m_Owner = NULL;
-	CreateGroup(TDM_INVENTORY_DEFAULT_GROUP);		// We always have a defaultgroup if nothing else
-	m_GroupLock = false;		// Default behaviour ...
-	m_WrapAround = true;		// ... is like standard Thief inventory.
-	m_CurrentGroup = 0;
+	CreateCategory(TDM_INVENTORY_DEFAULT_GROUP);	// We always have a defaultgroup if nothing else
+	m_CategoryLock = false;							// Default behaviour ...
+	m_WrapAround = true;							// ... is like standard Thief inventory.
+	m_CurrentCategory = 0;
 	m_CurrentItem = 0;
 }
 
@@ -139,9 +130,9 @@ CInventory::~CInventory()
 {
 	int i, n;
 
-	n = m_Group.Num();
+	n = m_Category.Num();
 	for(i = 0; i < n; i++)
-		delete m_Group[i];
+		delete m_Category[i];
 }
 
 void CInventory::Save(idSaveGame *savefile) const
@@ -154,21 +145,21 @@ void CInventory::Restore(idRestoreGame *savefile)
 	// TODO: Has to call the groups and items as well.
 }
 
-CInventoryGroup *CInventory::GetGroup(const char *pName, int *Index)
+CInventoryCategory *CInventory::GetCategory(const char *pName, int *Index)
 {
-	CInventoryGroup *rc = NULL;
+	CInventoryCategory *rc = NULL;
 	int i, n;
 
 	// If the groupname is null we look for the default group
 	if(pName == NULL)
-		return GetGroup(TDM_INVENTORY_DEFAULT_GROUP);
+		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
 
-	n = m_Group.Num();
+	n = m_Category.Num();
 	for(i = 0; i < n; i++)
 	{
-		if(m_Group[i]->m_Name.Cmp(pName) == 0)
+		if(m_Category[i]->m_Name.Cmp(pName) == 0)
 		{
-			rc = m_Group[i];
+			rc = m_Category[i];
 			if(Index != NULL)
 				*Index = i;
 
@@ -180,33 +171,33 @@ Quit:
 	return rc;
 }
 
-CInventoryGroup *CInventory::CreateGroup(const char *Name, int *Index)
+CInventoryCategory *CInventory::CreateCategory(const char *Name, int *Index)
 {
-	CInventoryGroup	*rc = NULL;
+	CInventoryCategory	*rc = NULL;
 
 	if(Name == NULL)
 		goto Quit;
 
-	if((rc = GetGroup(Name, Index)) != NULL)
+	if((rc = GetCategory(Name, Index)) != NULL)
 		goto Quit;
 
-	if((rc = new CInventoryGroup) == NULL)
+	if((rc = new CInventoryCategory) == NULL)
 		goto Quit;
 
 	rc->SetInventory(this);
 	rc->m_Owner = m_Owner.GetEntity();
 	rc->m_Name = Name;
-	m_Group.AddUnique(rc);
+	m_Category.AddUnique(rc);
 
 Quit:
 	return rc;
 }
 
-int CInventory::GetGroupIndex(const char *GroupName)
+int CInventory::GetCategoryIndex(const char *CategoryName)
 {
 	int i = -1;
 
-	GetGroup(GroupName, &i);
+	GetCategory(CategoryName, &i);
 
 	return i;
 }
@@ -216,26 +207,26 @@ void CInventory::SetOwner(idEntity *Owner)
 	int i, n;
 
 	m_Owner = Owner; 
-	n = m_Group.Num();
+	n = m_Category.Num();
 	for(i = 0; i < n; i++)
-		m_Group[i]->SetOwner(Owner);
+		m_Category[i]->SetOwner(Owner);
 }
 
-CInventoryItem *CInventory::PutItem(idEntity *Item, const idStr &Name, char const *Group)
+CInventoryItem *CInventory::PutItem(idEntity *Item, const idStr &Name, char const *Category)
 {
 	CInventoryItem *rc = NULL;
 	int i;
-	CInventoryGroup *gr;
+	CInventoryCategory *gr;
 
 	if(Item == NULL || Name.Length() == 0)
 		goto Quit;
 
 	// Check if it is the default group or not.
-	if(Group != NULL)
-		gr = m_Group[0];
+	if(Category != NULL)
+		gr = m_Category[0];
 	else
 	{
-		gr = GetGroup(Group, &i);
+		gr = GetCategory(Category, &i);
 		if(gr == NULL)
 			goto Quit;
 	}
@@ -246,20 +237,20 @@ Quit:
 	return rc;
 }
 
-void CInventory::PutItem(CInventoryItem *Item, char const *Group)
+void CInventory::PutItem(CInventoryItem *Item, char const *Category)
 {
 	int i;
-	CInventoryGroup *gr;
+	CInventoryCategory *gr;
 
 	if(Item == NULL)
 		goto Quit;
 
 	// Check if it is the default group or not.
-	if(Group != NULL)
-		gr = m_Group[0];
+	if(Category != NULL)
+		gr = m_Category[0];
 	else
 	{
-		gr = GetGroup(Group, &i);
+		gr = GetCategory(Category, &i);
 		if(gr == NULL)
 			goto Quit;
 	}
@@ -270,7 +261,7 @@ Quit:
 	return;
 }
 
-int CInventory::GetGroupItemIndex(const char *ItemName, int *ItemIndex)
+int CInventory::GetCategoryItemIndex(const char *ItemName, int *ItemIndex)
 {
 	int rc = -1;
 	int i;
@@ -282,9 +273,9 @@ int CInventory::GetGroupItemIndex(const char *ItemName, int *ItemIndex)
 	if(ItemName == NULL)
 		goto Quit;
 
-	for(i = 0; i < m_Group.Num(); i++)
+	for(i = 0; i < m_Category.Num(); i++)
 	{
-		if((n = m_Group[i]->GetItemIndex(ItemName)) != -1)
+		if((n = m_Category[i]->GetItemIndex(ItemName)) != -1)
 		{
 			if(ItemIndex != NULL)
 				*ItemIndex = n;
@@ -298,7 +289,7 @@ Quit:
 	return rc;
 }
 
-int CInventory::GetGroupItemIndex(CInventoryItem *Item, int *ItemIndex)
+int CInventory::GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex)
 {
 	int rc = -1;
 	int i;
@@ -307,9 +298,9 @@ int CInventory::GetGroupItemIndex(CInventoryItem *Item, int *ItemIndex)
 	if(ItemIndex != NULL)
 		*ItemIndex = -1;
 
-	for(i = 0; i < m_Group.Num(); i++)
+	for(i = 0; i < m_Category.Num(); i++)
 	{
-		if((n = m_Group[i]->GetItemIndex(Item)) != -1)
+		if((n = m_Category[i]->GetItemIndex(Item)) != -1)
 		{
 			if(ItemIndex != NULL)
 				*ItemIndex = n;
@@ -326,8 +317,8 @@ CInventoryItem *CInventory::GetCurrentItem()
 {
 	CInventoryItem *rc = NULL;
 
-	if(m_Group.Num() > 0)
-		rc = m_Group[m_CurrentGroup]->GetItem(m_CurrentItem);
+	if(m_Category.Num() > 0)
+		rc = m_Category[m_CurrentCategory]->GetItem(m_CurrentItem);
 
 	return rc;
 }
@@ -340,12 +331,12 @@ bool CInventory::SetCurrentItem(CInventoryItem *Item)
 	if(Item == NULL)
 		goto Quit;
 
-	if((group = GetGroupItemIndex(Item, &item)) == -1)
+	if((group = GetCategoryItemIndex(Item, &item)) == -1)
 		goto Quit;
 
 	// Only change the group and item indizies, if they are valid.
 	// Otherwise we might have an invalid index (-1).
-	m_CurrentGroup = group;
+	m_CurrentCategory = group;
 	m_CurrentItem = item;
 
 	rc = true;
@@ -362,12 +353,12 @@ bool CInventory::SetCurrentItem(const char *Item)
 	if(Item == NULL)
 		goto Quit;
 
-	if((group = GetGroupItemIndex(Item, &item)) == -1)
+	if((group = GetCategoryItemIndex(Item, &item)) == -1)
 		goto Quit;
 
 	// Only change the group and item indizies, if they are valid.
 	// Otherwise we might have an invalid index (-1).
-	m_CurrentGroup = group;
+	m_CurrentCategory = group;
 	m_CurrentItem = item;
 
 	rc = true;
@@ -376,20 +367,20 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetItem(const char *Name, char const *Group)
+CInventoryItem *CInventory::GetItem(const char *Name, char const *Category)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
-	CInventoryGroup *gr;
+	CInventoryCategory *gr;
 
-	if(Group == NULL)
+	if(Category == NULL)
 	{
-		n = m_Group.Num();
+		n = m_Category.Num();
 		s = 0;
 	}
 	else
 	{
-		gr = GetGroup(Group, &i);
+		gr = GetCategory(Category, &i);
 		if(gr == NULL)
 			goto Quit;
 
@@ -399,7 +390,7 @@ CInventoryItem *CInventory::GetItem(const char *Name, char const *Group)
 
 	for(i = s; i < n; i++)
 	{
-		gr = m_Group[i];
+		gr = m_Category[i];
 		if((rc = gr->GetItem(Name)) != NULL)
 			goto Quit;
 	}
@@ -408,45 +399,45 @@ Quit:
 	return rc;
 }
 
-void CInventory::ValidateGroup(void)
+void CInventory::ValidateCategory(void)
 {
-	int n = m_Group.Num();
+	int n = m_Category.Num();
 
-	if(m_CurrentGroup >= n)
+	if(m_CurrentCategory >= n)
 	{
 		if(m_WrapAround == true)
 		{
-			if(m_GroupLock == false)
+			if(m_CategoryLock == false)
 			{
 				m_CurrentItem = 0;
-				m_CurrentGroup = 0;
+				m_CurrentCategory = 0;
 			}
 			else
 			{
 				if(n > 0)
-					m_CurrentGroup = n-1;
+					m_CurrentCategory = n-1;
 				else
-					m_CurrentGroup = 0;
+					m_CurrentCategory = 0;
 			}
 		}
 		else
 		{
 			if(n > 0)
-				m_CurrentGroup = n-1;
+				m_CurrentCategory = n-1;
 		}
 	}
-	else if(m_CurrentGroup < 0)
+	else if(m_CurrentCategory < 0)
 	{
 		if(m_WrapAround == true)
 		{
-			if(m_GroupLock == false)
+			if(m_CategoryLock == false)
 			{
 				if(n > 0)
-					m_CurrentGroup = n-1;
+					m_CurrentCategory = n-1;
 				else
-					m_CurrentGroup = 0;
+					m_CurrentCategory = 0;
 
-				n = m_Group[m_CurrentGroup]->m_Item.Num();
+				n = m_Category[m_CurrentCategory]->m_Item.Num();
 				if(n > 0)
 					m_CurrentItem = n-1;
 				else
@@ -454,8 +445,8 @@ void CInventory::ValidateGroup(void)
 			}
 			else
 			{
-				m_CurrentGroup = 0;
-				n = m_Group[m_CurrentGroup]->m_Item.Num();
+				m_CurrentCategory = 0;
+				n = m_Category[m_CurrentCategory]->m_Item.Num();
 				if(n > 0)
 					m_CurrentItem = n-1;
 				else
@@ -464,7 +455,7 @@ void CInventory::ValidateGroup(void)
 		}
 		else
 		{
-			m_CurrentGroup = 0;
+			m_CurrentCategory = 0;
 		}
 	}
 }
@@ -474,28 +465,28 @@ CInventoryItem *CInventory::GetNextItem(void)
 	CInventoryItem *rc = NULL;
 	int ni;
 
-	ValidateGroup();
-	ni = m_Group[m_CurrentGroup]->m_Item.Num();
+	ValidateCategory();
+	ni = m_Category[m_CurrentCategory]->m_Item.Num();
 
 	m_CurrentItem++;
 	if(m_CurrentItem >= ni)
 	{
-		if(m_GroupLock == false)
+		if(m_CategoryLock == false)
 		{
-			m_CurrentGroup++;
-			ValidateGroup();
+			m_CurrentCategory++;
+			ValidateCategory();
 		}
 
 		if(m_WrapAround == true)
 			m_CurrentItem = 0;
 		else 
 		{
-			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num()-1;
+			m_CurrentItem = m_Category[m_CurrentCategory]->m_Item.Num()-1;
 			goto Quit;
 		}
 	}
 
-	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem];
+	rc = m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
@@ -505,18 +496,18 @@ CInventoryItem *CInventory::GetPrevItem(void)
 {
 	CInventoryItem *rc = NULL;
 
-	ValidateGroup();
+	ValidateCategory();
 	m_CurrentItem--;
 	if(m_CurrentItem < 0)
 	{
-		if(m_GroupLock == false)
+		if(m_CategoryLock == false)
 		{
-			m_CurrentGroup--;
-			ValidateGroup();
+			m_CurrentCategory--;
+			ValidateCategory();
 		}
 
 		if(m_WrapAround == true)
-			m_CurrentItem = m_Group[m_CurrentGroup]->m_Item.Num()-1;
+			m_CurrentItem = m_Category[m_CurrentCategory]->m_Item.Num()-1;
 		else 
 		{
 			m_CurrentItem = 0;
@@ -524,28 +515,28 @@ CInventoryItem *CInventory::GetPrevItem(void)
 		}
 	}
 
-	rc = m_Group[m_CurrentGroup]->m_Item[m_CurrentItem];
+	rc = m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
 }
 
-CInventoryGroup *CInventory::GetNextGroup(void)
+CInventoryCategory *CInventory::GetNextCategory(void)
 {
-	ValidateGroup();
-	m_CurrentGroup++;
-	ValidateGroup();
+	ValidateCategory();
+	m_CurrentCategory++;
+	ValidateCategory();
 
-	return m_Group[m_CurrentGroup];
+	return m_Category[m_CurrentCategory];
 }
 
-CInventoryGroup *CInventory::GetPrevGroup(void)
+CInventoryCategory *CInventory::GetPrevCategory(void)
 {
-	ValidateGroup();
-	m_CurrentGroup--;
-	ValidateGroup();
+	ValidateCategory();
+	m_CurrentCategory--;
+	ValidateCategory();
 
-	return m_Group[m_CurrentGroup];
+	return m_Category[m_CurrentCategory];
 }
 
 int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
@@ -557,23 +548,23 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	Jewelry = 0;
 	Goods = 0;
 
-	for(i = 0; i < m_Group.Num(); i++)
-		total += m_Group[i]->GetLoot(Gold, Jewelry, Goods);
+	for(i = 0; i < m_Category.Num(); i++)
+		total += m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 
 	return total;
 }
 
 
 ////////////////////////
-// CInventoryGroup //
+// CInventoryCategory //
 ////////////////////////
 
-CInventoryGroup::CInventoryGroup(const char* name)
+CInventoryCategory::CInventoryCategory(const char* name)
 {
 	m_Name = name;
 }
 
-CInventoryGroup::~CInventoryGroup() 
+CInventoryCategory::~CInventoryCategory() 
 {
 	int i, n;
 
@@ -582,15 +573,15 @@ CInventoryGroup::~CInventoryGroup()
 		delete m_Item[i];
 }
 
-void CInventoryGroup::Save(idSaveGame *savefile) const
+void CInventoryCategory::Save(idSaveGame *savefile) const
 {
 }
 
-void CInventoryGroup::Restore(idRestoreGame *savefile)
+void CInventoryCategory::Restore(idRestoreGame *savefile)
 {
 }
 
-void CInventoryGroup::SetOwner(idEntity *Owner)
+void CInventoryCategory::SetOwner(idEntity *Owner)
 {
 	int i, n;
 
@@ -600,16 +591,15 @@ void CInventoryGroup::SetOwner(idEntity *Owner)
 		m_Item[i]->m_Owner = Owner;
 }
 
-CInventoryItem *CInventoryGroup::PutItem(idEntity *Item, const idStr &Name)
+CInventoryItem *CInventoryCategory::PutItem(idEntity *Item, const idStr &Name)
 {
 	CInventoryItem *rc = NULL;
 
 	if(Item == NULL || Name.Length() == 0)
 		goto Quit;
 
-	rc = new CInventoryItem();
+	rc = new CInventoryItem(m_Owner.GetEntity());
 	m_Item.AddUnique(rc);
-	rc->m_Owner = m_Owner.GetEntity();
 	rc->m_Name = Name;
 	rc->m_Item = Item;
 	Item->SetInventoryItem(rc);
@@ -618,7 +608,7 @@ Quit:
 	return rc;
 }
 
-void CInventoryGroup::PutItem(CInventoryItem *Item)
+void CInventoryCategory::PutItem(CInventoryItem *Item)
 {
 	if(Item == NULL)
 		goto Quit;
@@ -631,7 +621,7 @@ Quit:
 }
 
 
-CInventoryItem *CInventoryGroup::GetItem(int i)
+CInventoryItem *CInventoryCategory::GetItem(int i)
 {
 	CInventoryItem *rc = NULL;
 
@@ -641,7 +631,7 @@ CInventoryItem *CInventoryGroup::GetItem(int i)
 	return rc;
 }
 
-CInventoryItem *CInventoryGroup::GetItem(const idStr &Name)
+CInventoryItem *CInventoryCategory::GetItem(const idStr &Name)
 {
 	CInventoryItem *rc = NULL;
 	CInventoryItem *e;
@@ -662,7 +652,7 @@ Quit:
 	return rc;
 }
 
-int CInventoryGroup::GetItemIndex(const idStr &Name)
+int CInventoryCategory::GetItemIndex(const idStr &Name)
 {
 	int rc = -1;
 	CInventoryItem *e;
@@ -683,7 +673,7 @@ Quit:
 	return rc;
 }
 
-int CInventoryGroup::GetItemIndex(CInventoryItem *it)
+int CInventoryCategory::GetItemIndex(CInventoryItem *it)
 {
 	int rc = -1;
 	int i, n;
@@ -702,7 +692,7 @@ Quit:
 	return rc;
 }
 
-int CInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
+int CInventoryCategory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
 	int i;
 	CInventoryItem *it;
@@ -713,15 +703,15 @@ int CInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
 
 		switch(it->GetLootType())
 		{
-			case CInventoryItem::JEWELS:
+			case CInventoryItem::LT_JEWELS:
 				Jewelry += it->GetValue();
 			break;
 
-			case CInventoryItem::GOLD:
+			case CInventoryItem::LT_GOLD:
 				Gold += it->GetValue();
 			break;
 
-			case CInventoryItem::GOODS:
+			case CInventoryItem::LT_GOODS:
 				Goods += it->GetValue();
 			break;
 		}
@@ -734,17 +724,18 @@ int CInventoryGroup::GetLoot(int &Gold, int &Jewelry, int &Goods)
 // CInventoryItem //
 ///////////////////////
 
-CInventoryItem::CInventoryItem()
+CInventoryItem::CInventoryItem(idEntity *owner)
 {
-	m_Owner = NULL;
+	m_Owner = owner;
 	m_Item = NULL;
 	m_Inventory = NULL;
-	m_Group = NULL;
-	m_Type = ITEM;
-	m_LootType = NONE;
+	m_Category = NULL;
+	m_Type = IT_ITEM;
+	m_LootType = LT_NONE;
 	m_Value = 0;
 	m_Stackable = false;
 	m_Count = 0;
+	m_Droppable = false;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -766,10 +757,10 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
 {
 	// Only positive values are allowed
-	if(t >= CInventoryItem::NONE && t <= CInventoryItem::COUNT)
+	if(t >= CInventoryItem::LT_NONE && t <= CInventoryItem::LT_COUNT)
 		m_LootType = t;
 	else
-		m_LootType = CInventoryItem::NONE;
+		m_LootType = CInventoryItem::LT_NONE;
 }
 
 void CInventoryItem::SetValue(int n)

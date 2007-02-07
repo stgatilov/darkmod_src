@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.96  2007/02/07 22:06:13  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.95  2007/02/06 03:18:44  thelvyn
  * idActor::CrashLand is now called for both AI and player for falling/collision damage.
  *
@@ -7925,4 +7928,73 @@ void idEntity::CheckInventoryInit(void)
 		if(e)
 			e->InitInventory();
 	}
+}
+
+CInventoryItem *idEntity::AddToInventory(idEntity *ent)
+{
+	CInventory *inv = Inventory();
+	CInventoryItem *rc = NULL;
+	idStr s;
+	const char *category = NULL;
+	int v;
+	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
+	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
+
+	if(ent == NULL)
+		goto Quit;
+
+	// Check if we have an inventory item.
+	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
+		goto Quit;
+
+	rc = new CInventoryItem(this);
+	rc->SetName(s);
+	rc->SetItem(ent);
+
+	if(ent->spawnArgs.GetInt("inv_loot_type", "", v) != false)
+	{
+		if(v >= CInventoryItem::LT_NONE && v < CInventoryItem::LT_COUNT)
+			lt = (CInventoryItem::LootType)v;
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid loot type: %d for InventoryItemType on %s\r", v, ent->name.c_str());
+	}
+	rc->SetLootType(lt);
+
+	if(lt != CInventoryItem::LT_NONE)
+	{
+		it = CInventoryItem::IT_LOOT;
+		v = 0;
+		if(ent->spawnArgs.GetInt("inv_loot_value", "", v) != false && v != 0)
+			rc->SetValue(v);
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
+	}
+	rc->SetType(it);
+
+	ent->spawnArgs.GetInt("inv_stackable", "0", v);
+	rc->SetStackable(v);
+
+	ent->spawnArgs.GetInt("inv_count", "1", v);
+	rc->SetCount(v);
+
+	if(ent->spawnArgs.GetString("inv_category", "", s) != false)
+		category = s.c_str();
+
+	// Add our item to the inventory
+	inv->PutItem(rc, category);
+
+	// Make the item invisible
+	ent->Unbind();
+	ent->GetPhysics()->PutToRest();
+	ent->GetPhysics()->UnlinkClip();
+	ent->Hide();
+
+	ent->spawnArgs.GetString("snd_acquire", "", s);
+	if(s.Length() == 0)
+		s = cv_tdm_inv_loot_sound.GetString();
+
+	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
+
+Quit:
+	return rc;
 }

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.39  2007/02/07 22:06:35  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.38  2007/02/07 02:17:59  thelvyn
  * removed cvars for crashland damage. Now spawnargs instead
  *
@@ -185,6 +188,7 @@ extern idCVar cv_tdm_inv_groupvis;
 extern idCVar cv_tdm_inv_hud_file;
 extern idCVar cv_tdm_inv_fadein;
 extern idCVar cv_tdm_inv_fadeout;
+extern idCVar cv_tdm_inv_loot_sound;
 
 extern idCVar cv_pm_stepvol_walk;
 extern idCVar cv_pm_stepvol_run;

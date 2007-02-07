@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2007/02/07 22:06:25  sparhawk
+ * Items can now be frobbed and added to the inventory
+ *
  * Revision 1.21  2007/02/01 08:29:37  ishtvan
  * More psuedocode updates to CObjective::ParseLogicStr , should be logically complete now
  *
@@ -84,6 +87,42 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../game/player.h"
 #include "StimResponse.h"
 
+/**
+* Add new component type names here.  Must be in exact same order as EComponentType
+*	enum, defined in MissionData.h
+**/
+static const char *gCompTypeName[COMP_COUNT] = 
+{
+	"kill",
+	"ko",
+	"ai_find_item",
+	"ai_find_body",
+	"alert",
+	"item",
+	"location",
+	"custom",
+	"custom_clocked",
+	"info_location",
+	"distance"
+};
+
+/**
+* Add in new specification types here.  Must be in exact same order as
+*	ESpecificationMethod enum, defined in MissionData.h
+**/
+static const char *gSpecTypeName[SPEC_COUNT] = 
+{
+	"none",
+	"name",
+	"overall",
+	"group",
+	"classname",
+	"spawnclass",
+	"ai_type",
+	"ai_team",
+	"ai_innocence"
+};
+
 // TODO: Move to config file or player spawnargs
 const int s_FAILURE_FADE_TIME = 3000;
 
@@ -150,40 +189,18 @@ bool CObjectiveComponent::SetState( bool bState )
 
 CMissionData::CMissionData( void )
 {
+	int i;
+
 	Clear();
 
 // Initialize Hash indexes used for parsing string names to enum index
 	idStrList CompTypeNames, SpecTypeNames;
 
-/**
-* Add new component type names here.  Must be in exact same order as EComponentType
-*	enum, defined in MissionData.h
-**/
-	CompTypeNames.Append("kill");
-	CompTypeNames.Append("ko");
-	CompTypeNames.Append("ai_find_item");
-	CompTypeNames.Append("ai_find_body");
-	CompTypeNames.Append("alert");
-	CompTypeNames.Append("item");
-	CompTypeNames.Append("location");
-	CompTypeNames.Append("custom");
-	CompTypeNames.Append("custom_clocked");
-	CompTypeNames.Append("info_location");
-	CompTypeNames.Append("distance");
+	for(i = 0; i < COMP_COUNT; i++)
+		CompTypeNames.Append(gCompTypeName[i]);
 
-/**
-* Add in new specification types here.  Must be in exact same order as
-*	ESpecificationMethod enum, defined in MissionData.h
-**/
-	SpecTypeNames.Append("none");
-	SpecTypeNames.Append("name");
-	SpecTypeNames.Append("overall");
-	SpecTypeNames.Append("group");
-	SpecTypeNames.Append("classname");
-	SpecTypeNames.Append("spawnclass");
-	SpecTypeNames.Append("ai_type");
-	SpecTypeNames.Append("ai_team");
-	SpecTypeNames.Append("ai_innocence");
+	for(i = 0; i < COMP_COUNT; i++)
+		SpecTypeNames.Append(gSpecTypeName[i]);
 
 	CompTypeNames.Condense();
 	SpecTypeNames.Condense();
