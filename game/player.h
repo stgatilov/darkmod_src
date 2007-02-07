@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.48  2007/02/07 02:18:14  thelvyn
+ * Removed crashland. Now located in idActor instead
+ *
  * Revision 1.47  2007/02/03 21:56:11  sparhawk
  * Removed old inventories and fixed a bug in the new one.
  *
@@ -941,7 +944,6 @@ private:
 	idVec3					GunAcceleratingOffset( void );
 
 	void					UseObjects( void );
-	void					CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity );
 	void					BobCycle( const idVec3 &pushVelocity );
 	void					UpdateViewAngles( void );
 	void					EvaluateControls( void );

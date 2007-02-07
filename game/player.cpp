@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.118  2007/02/07 02:18:14  thelvyn
+ * Removed crashland. Now located in idActor instead
+ *
  * Revision 1.117  2007/02/06 15:19:58  thelvyn
  * Now using mass to compute damage in CrashLand
  *
@@ -5231,6 +5234,7 @@ idPlayer::CrashLand
 Check for hard landings that generate sound events
 =================
 */
+/*
 void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 	idVec3		origin, velocity;
 	idVec3		gravityVector, gravityNormal;
@@ -5350,7 +5354,7 @@ void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
 		// just walk on
 	}
 }
-
+*/
 /*
 ===============
 idPlayer::BobCycle
