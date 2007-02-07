@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2007/02/07 02:16:30  thelvyn
+ * Added spawn arguments instead of cvars for crashland
+ *
  * Revision 1.21  2007/02/06 03:18:44  thelvyn
  * idActor::CrashLand is now called for both AI and player for falling/collision damage.
  *
@@ -348,6 +351,18 @@ public:
 	virtual bool			IsKnockedOut( void ) { return false; };
 
 protected:
+
+	/****************************************************************************************
+	=====================
+	CrashLand variables
+	Added by Richard Day
+	=====================
+	****************************************************************************************/
+
+	float m_delta_fatal; // any value above this is death
+	float m_delta_scale; // scale the damage based on this
+	float m_delta_min;   // min
+
 	friend class			idAnimState;
 
 	float					fovDot;				// cos( fovDegrees )

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.42  2007/02/07 02:16:29  thelvyn
+ * Added spawn arguments instead of cvars for crashland
+ *
  * Revision 1.41  2007/02/06 16:09:03  thelvyn
  * Added cvars for min/fatal falling deltas and damage scale modifier
  *
@@ -656,6 +659,9 @@ void idActor::Spawn( void )
 	state		= NULL;
 	idealState	= NULL;
 
+	spawnArgs.GetFloat( "delta_fatal", "175", m_delta_fatal );
+	spawnArgs.GetFloat( "delta_scale",  "25", m_delta_scale );
+	spawnArgs.GetFloat( "delta_min",    "30", m_delta_min );
 	spawnArgs.GetInt( "rank", "0", rank );
 	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetInt( "type", "0", m_AItype );
@@ -984,6 +990,9 @@ void idActor::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteBool( finalBoss );
+	savefile->WriteFloat( m_delta_fatal );
+	savefile->WriteFloat( m_delta_scale );
+	savefile->WriteFloat( m_delta_min );
 
 	idToken token;
 
@@ -1110,6 +1119,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadBool( finalBoss );
+	savefile->ReadFloat( m_delta_fatal );
+	savefile->ReadFloat( m_delta_scale );
+	savefile->ReadFloat( m_delta_min );
 
 	idStr statename;
 
@@ -3921,15 +3933,10 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 			{
 				delta *= 0.5f;
 			}
-			
-			float delta_fatal = cv_delta_fall_fatal.GetFloat();
-			float delta_scale = cv_delta_scale_modifier.GetFloat(); 
-			float delta_min = cv_delta_fall_min.GetFloat();
-
-			if( delta >= delta_min )
+			if( delta >= m_delta_min )
 			{
 				pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-				if( delta > delta_fatal )
+				if( delta > m_delta_fatal )
 				{
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
 				}
@@ -3938,7 +3945,7 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 					float mass = physicsObj.GetMass();
 					Debug1( "Mass = %f", mass );
 					float perc = ( mass / 100 );
-					float dScale = ( delta / delta_scale ) * ( perc < 1.0f ? 1.0f : perc );
+					float dScale = ( delta / m_delta_scale ) * ( perc < 1.0f ? 1.0f : perc );
 					Debug4( "Delta = %f perc = %f dScale = %f Health = %i", delta, perc, dScale, health );
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
 					Debug1( "After damage Health = %i", health );
