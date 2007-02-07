@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.38  2007/02/07 02:17:59  thelvyn
+ * removed cvars for crashland damage. Now spawnargs instead
+ *
  * Revision 1.37  2007/02/06 16:09:48  thelvyn
  * Added cvars for min/fatal falling deltas and damage scale modifier
  *
@@ -220,11 +223,6 @@ extern idCVar cv_dm_distance;
 */
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
-
-// falling damage
-extern idCVar cv_delta_fall_min;
-extern idCVar cv_delta_fall_fatal;
-extern idCVar cv_delta_scale_modifier; 
 
 /**
 * End DarkMod cvars

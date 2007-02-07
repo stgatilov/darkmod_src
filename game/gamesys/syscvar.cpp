@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.52  2007/02/07 02:17:59  thelvyn
+ * removed cvars for crashland damage. Now spawnargs instead
+ *
  * Revision 1.51  2007/02/06 16:09:48  thelvyn
  * Added cvars for min/fatal falling deltas and damage scale modifier
  *
@@ -207,9 +210,6 @@ idCVar g_version(					"g_version",				gameVersion.string,	CVAR_GAME | CVAR_ROM, 
 /**
 * DarkMod Cvars - see text description in declaration below for descriptions
 **/
-idCVar cv_delta_fall_min(			"tdm_delta_fall_min",		"30.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Any delta below this and NO damage is taken" );
-idCVar cv_delta_fall_fatal(			"tdm_delta_fall_fatal",		"175.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Any delta above this and they die" );
-idCVar cv_delta_scale_modifier(		"tdm_delta_scale_modifier",	"25.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "delta is divided by this before multiplying by mass" );
 idCVar cv_ai_sndvol(				"tdm_ai_sndvol",			"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifier to the volume of suspcious sounds that AI's hear.  Defaults to 0.0 dB" );
 idCVar cv_ai_sight_prob(			"tdm_ai_sight_prob",		"0.7",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the AI's chance of seeing you.  Small changes may have a large effect." );
 idCVar cv_ai_sight_mag(				"tdm_ai_sight_mag",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Modifies the amount of visual alert that gets added on when the sight probability check succeeds and the AI do see you (default 1.0)." );
