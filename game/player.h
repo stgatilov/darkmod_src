@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.49  2007/02/10 14:10:19  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.48  2007/02/07 02:18:14  thelvyn
  * Removed crashland. Now located in idActor instead
  *
@@ -1007,8 +1010,6 @@ private:
 
 	void					Event_SetGui( int handle, const char *guiFile );
 	void					Event_GetInventoryOverlay(void);
-	void					Event_CreateOverlay( const char *guiFile, int layer );
-	int						CreateOverlay( const char *guiFile, int layer );
 	void					Event_DestroyOverlay( int handle );
 
 	void					Event_PlayStartSound( void );

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.21  2007/02/10 14:10:39  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.20  2007/02/07 22:06:25  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -541,7 +544,6 @@ CInventoryCategory *CInventory::GetPrevCategory(void)
 
 int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
-	int total = 0;
 	int i;
 
 	Gold = 0;
@@ -549,9 +551,9 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	Goods = 0;
 
 	for(i = 0; i < m_Category.Num(); i++)
-		total += m_Category[i]->GetLoot(Gold, Jewelry, Goods);
+		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 
-	return total;
+	return Gold + Jewelry + Goods;
 }
 
 
@@ -736,6 +738,8 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Stackable = false;
 	m_Count = 0;
 	m_Droppable = false;
+	m_Overlay = OVERLAYS_INVALID_HANDLE;
+	m_Hud = false;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -783,5 +787,35 @@ void CInventoryItem::SetStackable(bool stack)
 {
 	if(stack == true || stack == false)
 		m_Stackable = stack;
+}
+
+void CInventoryItem::SetHUD(const idStr &HudName, int layer)
+{
+	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
+	{
+		idEntity *it;
+
+		m_Hud = true;
+		m_HudName = HudName;
+		m_Overlay = m_Owner.GetEntity()->CreateOverlay(HudName, layer);
+		if((it = m_Item.GetEntity()) != NULL)
+			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, m_Owner.GetEntity(), (float)m_Overlay, HudName.c_str());
+	}
+}
+
+void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
+{
+	if(Overlay != OVERLAYS_INVALID_HANDLE)
+	{
+		idEntity *it;
+
+		m_Hud = true;
+		m_HudName = HudName;
+		m_Overlay = Overlay;
+		if((it = m_Item.GetEntity()) != NULL)
+			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, m_Owner.GetEntity(), (float)m_Overlay, HudName.c_str());
+	}
+	else
+		m_Hud = false;
 }
 

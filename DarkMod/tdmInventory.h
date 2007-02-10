@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.14  2007/02/10 14:10:39  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.13  2007/02/07 22:06:25  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -260,7 +263,6 @@ public:
 	typedef enum {
 		IT_ITEM,			// Normal item, which is associated to an entity
 		IT_LOOT,			// this is a loot item
-		IT_LOOT_INFO,		// Special loot info item, which doesn't have an entity
 		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
 							// we can have an empty space in the inventory.
 		IT_COUNT
@@ -284,7 +286,8 @@ public:
 	inline CInventory		*Inventory() const { return m_Inventory; }
 	inline CInventoryCategory	*Category() const { return m_Category; }
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
-	inline idEntity			*GetEntity() { return m_Item.GetEntity(); }
+	inline void				SetItemEntity(idEntity *ent) { m_Item = ent; };
+	inline idEntity			*GetItemEntity() { return m_Item.GetEntity(); }
 	inline void				SetType(CInventoryItem::ItemType type) { m_Type = type; };
 	inline					ItemType GetType(void) { return m_Type; };
 
@@ -306,19 +309,28 @@ public:
 	inline void				SetItem(idEntity *item) { m_Item = item; };
 	inline idEntity			*GetItem(void) { return m_Item.GetEntity(); };
 
+	inline int				GetOverlay(void) { return m_Overlay; };
+	void					SetOverlay(const idStr &HudName, int Overlay);
+	bool					HasHUD(void) { return m_Hud; };
+	void					SetHUD(const idStr &HudName, int layer);
+	inline idStr			GetHUD(void) { return m_HudName; };
+
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
 	idStr					m_Name;
+	idStr					m_HudName;		// filename for the hud file if it has a custom hud
 	CInventory				*m_Inventory;
 	CInventoryCategory		*m_Category;
 	ItemType				m_Type;
 	LootType				m_LootType;
 	int						m_Value;
+	int						m_Overlay;
 	int						m_Count;		// How many of that item are currently represented (i.e. Arrows)
 	bool					m_Stackable;	// Counter can be used if true, otherwise it's a unique item
 	bool					m_Droppable;	// If the item is not droppable it will be inaccessible after it 
 											// is put into the inventory
+	bool					m_Hud;
 };
 
 #endif /* __DARKMOD_TDMINVENTORY_H__ */

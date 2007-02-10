@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.40  2007/02/10 14:10:33  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.39  2007/02/07 22:06:35  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -186,6 +189,7 @@ extern idCVar cv_tdm_inv_grouping;
 extern idCVar cv_tdm_inv_opacity;
 extern idCVar cv_tdm_inv_groupvis;
 extern idCVar cv_tdm_inv_hud_file;
+extern idCVar cv_tdm_inv_loot_hud;
 extern idCVar cv_tdm_inv_fadein;
 extern idCVar cv_tdm_inv_fadeout;
 extern idCVar cv_tdm_inv_loot_sound;

@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.54  2007/02/10 14:10:33  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.53  2007/02/07 22:06:35  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -274,6 +277,7 @@ idCVar cv_throw_time(				"tdm_throw_time",		"1700",			CVAR_GAME | CVAR_ARCHIVE |
 * DarkMod Inventory
 **/
 idCVar cv_tdm_inv_hud_file(	"tdm_inv_hud_file", "guis/inv.gui",	CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that represents the hud for the inventory.");
+idCVar cv_tdm_inv_loot_hud(	"tdm_inv_loot_hud", "guis/loot.gui",	CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that represents the hud for the loot display.");
 idCVar cv_tdm_inv_loot_group("tdm_inv_loot_group", "Loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the group that contains the loot item.");
 
 idCVar cv_tdm_inv_grouping(	"tdm_inv_group_mode",	"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,	"The opacity of the inventory GUI.\n"

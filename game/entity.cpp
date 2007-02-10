@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.97  2007/02/10 14:10:19  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.96  2007/02/07 22:06:13  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -420,32 +423,40 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
 const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
 
+//===============================================================
+//                   TDM GUI interface
+//===============================================================
 const idEventDef EV_SetGui( "setGui", "ds" );
 const idEventDef EV_GetGui( "getGui", "d", 's' );
 const idEventDef EV_SetGuiString( "setGuiString", "dss" );
 const idEventDef EV_GetGuiString( "getGuiString", "ds", 's' );
 const idEventDef EV_SetGuiFloat( "setGuiFloat", "dsf" );
 const idEventDef EV_GetGuiFloat( "getGuiFloat", "ds", 'f' );
+const idEventDef EV_SetGuiInt( "setGuiInt", "dsd" );
+const idEventDef EV_GetGuiInt( "getGuiInt", "ds", 'f' );
 const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", "dses" );
 const idEventDef EV_CallGui( "callGui", "ds" );
-
+const idEventDef EV_CreateOverlay( "createOverlay", "sd", 'd' );
+const idEventDef EV_DestroyOverlay( "destroyOverlay", "d" );
 const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
+
 
 //===============================================================
 //                   TDM Inventory
 //===============================================================
-const idEventDef EV_ReplaceItem( "InvReplaceItem", "ee", 'd' );					// olditem, newitem -> 1 if succeeded
-const idEventDef EV_GetNextItem( "InvGetNextItem", "d", 'e' );
-const idEventDef EV_GetPrevItem( "InvGetPrevItem", "d", 'e' );
-const idEventDef EV_SetCursorGroup( "InvSetCursorGroup", "s", 'd' );			// groupname -> 1 = success
-const idEventDef EV_SetCursorGroupItem( "InvSetCursorGroupItem", "ss", 'd' );	// itemname, groupname -> 1 = success
-const idEventDef EV_SetCursorItem( "InvSetCursorItem", "s", 'd' );				// itemname -> 1 = success
-const idEventDef EV_GetCursorGroup( "InvGetCursorGroup", NULL, 's' );
-const idEventDef EV_GetCursorItem( "InvGetCursorItem", NULL, 'e' );
-const idEventDef EV_AddGroupItem( "InvAddGroupItem", "ess");					// entityitem, itemname, groupname
-const idEventDef EV_AddItem( "InvAddItem", "es");								// entityitem, itemname
-const idEventDef EV_GetGroupItem( "InvGetGroupItem", "ss", 'e' );				// itemname, groupname -> NULL not in group
-const idEventDef EV_GetItem( "InvGetItem", "s", 'e' );							// itemname -> NULL not in any group
+const idEventDef EV_ReplaceItem("replaceItem", "ee", 'd');					// olditem, newitem -> 1 if succeeded
+const idEventDef EV_GetNextItem("getNextItem", "d", 'e');
+const idEventDef EV_GetPrevItem("getPrevItem", "d", 'e');
+const idEventDef EV_SetCursorGroup("setCursorGroup", "s", 'd');				// groupname -> 1 = success
+const idEventDef EV_SetCursorGroupItem("setCursorGroupItem", "ss", 'd');	// itemname, groupname -> 1 = success
+const idEventDef EV_SetCursorItem("setCursorItem", "s", 'd');				// itemname -> 1 = success
+const idEventDef EV_GetCursorGroup("getCursorGroup", NULL, 's');
+const idEventDef EV_GetCursorItem("getCursorItem", NULL, 'e');
+const idEventDef EV_AddGroupItem("addGroupItem", "ess");					// entityitem, itemname, groupname
+const idEventDef EV_AddItem("addItem", "es");								// entityitem, itemname
+const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
+const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
+const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current value for the given group
 
 
 // The Dark Mod Stim/Response interface functions for scripting
@@ -575,8 +586,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetGuiString,			idEntity::Event_GetGuiString )
 	EVENT( EV_SetGuiFloat,			idEntity::Event_SetGuiFloat )
 	EVENT( EV_GetGuiFloat,			idEntity::Event_GetGuiFloat )
+	EVENT( EV_SetGuiInt,			idEntity::Event_SetGuiInt )
+	EVENT( EV_GetGuiInt,			idEntity::Event_GetGuiInt )
 	EVENT( EV_SetGuiStringFromKey,	idEntity::Event_SetGuiStringFromKey )
 	EVENT( EV_CallGui,				idEntity::Event_CallGui )
+	EVENT( EV_CreateOverlay,		idEntity::Event_CreateOverlay )
+	EVENT( EV_DestroyOverlay,		idEntity::Event_DestroyOverlay )
 
 	EVENT( EV_LoadExternalData,		idEntity::Event_LoadExternalData )
 
@@ -592,6 +607,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_AddItem,				idEntity::Event_AddItem )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
+	EVENT( EV_GetLoot,				idEntity::Event_GetLoot )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7877,6 +7893,35 @@ void idEntity::Event_GetItem(const char *name)
 {
 }
 
+void idEntity::Event_GetLoot(int LootType)
+{
+	int Gold, Jewelry, Goods, Total;
+	int rc = 0;
+
+	Total = Inventory()->GetLoot(Gold, Jewelry, Goods);
+
+	switch(LootType)
+	{
+		case CInventoryItem::LT_GOLD:
+			rc = Gold;
+		break;
+
+		case CInventoryItem::LT_GOODS:
+			rc = Goods;
+		break;
+
+		case CInventoryItem::LT_JEWELS:
+			rc = Jewelry;
+		break;
+
+		default:
+			rc = Total;
+		break;
+	}
+
+	idThread::ReturnInt(rc);
+}
+
 void idEntity::InitInventory(void)
 {
 	// Check if this object should be put into the inventory of some entity
@@ -7995,6 +8040,75 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent)
 
 	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
 
+	if(ent->spawnArgs.GetString("inv_hud", "", s) != false)
+	{
+		ent->spawnArgs.GetInt("inv_hud_layer", "0", v);
+		rc->SetHUD(s, v);
+	}
+
 Quit:
 	return rc;
 }
+
+void idEntity::Event_DestroyOverlay(int layer)
+{
+	DestroyOverlay(layer);
+}
+
+void idEntity::DestroyOverlay(int layer)
+{
+}
+
+void idEntity::Event_CreateOverlay( const char *guiFile, int layer )
+{
+	idThread::ReturnInt(CreateOverlay(guiFile, layer));
+}
+
+int idEntity::CreateOverlay(const char *guiFile, int layer)
+{
+	int rc = OVERLAYS_INVALID_HANDLE;
+	int handle = OVERLAYS_INVALID_HANDLE;
+
+	if(guiFile == NULL || guiFile[0] == 0)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
+		goto Quit;
+	}
+
+	if(!uiManager->CheckGui(guiFile))
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
+		goto Quit;
+	}
+	handle = m_overlays.createOverlay( layer );
+	if(handle == OVERLAYS_INVALID_HANDLE)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
+		goto Quit;
+	}
+
+	m_overlays.setGui(handle, guiFile);
+	idUserInterface *gui = m_overlays.getGui(handle);
+	if(gui == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
+		goto Quit;
+	}
+
+	gui->SetStateInt("handle", handle);
+	gui->Activate(true, gameLocal.time);
+	// Let's set a good default value for whether or not the overlay is interactive.
+	m_overlays.setInteractive(handle, gui->IsInteractive());
+
+	rc = handle;
+
+Quit:
+	if(rc == OVERLAYS_INVALID_HANDLE)
+	{
+		if(handle != OVERLAYS_INVALID_HANDLE)
+			m_overlays.destroyOverlay(handle);
+	}
+
+	return rc;
+}
+

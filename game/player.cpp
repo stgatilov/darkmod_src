@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.120  2007/02/10 14:10:19  sparhawk
+ * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
+ *
  * Revision 1.119  2007/02/07 22:06:13  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -468,8 +471,6 @@ const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
 
 const idEventDef EV_Player_SetGui( "setGui", "ds" );
 const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", NULL, 'd' );
-const idEventDef EV_Player_CreateOverlay( "createOverlay", "sd", 'd' );
-const idEventDef EV_Player_DestroyOverlay( "destroyOverlay", "d" );
 
 const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
 const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
@@ -519,8 +520,6 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Player_SetGui,				idPlayer::Event_SetGui )
 	EVENT( EV_Player_GetInventoryOverlay,	idPlayer::Event_GetInventoryOverlay )
-	EVENT( EV_Player_CreateOverlay,			idPlayer::Event_CreateOverlay )
-	EVENT( EV_Player_DestroyOverlay,		idPlayer::Event_DestroyOverlay )
 
 	EVENT( EV_Player_PlayStartSound,		idPlayer::Event_PlayStartSound )
 	EVENT( EV_Player_MissionFailed,			idPlayer::Event_MissionFailed )
@@ -2084,6 +2083,7 @@ void idPlayer::Spawn( void )
 	// chooses to not see the inventory all the time.
 	grp = Inventory()->GetCategory("DEFAULT");
 	it = new CInventoryItem(this);
+	it->SetName("dummy");
 	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
@@ -2092,8 +2092,19 @@ void idPlayer::Spawn( void )
 	// And the player also always gets a loot entry, as he is supposed to find loot in
 	// 99.99% of the maps. That's the point of the game, remember? :)
 	grp = Inventory()->CreateCategory(cv_tdm_inv_loot_group.GetString());
+	idTypeInfo *cls = idClass::GetClass("idItem");
+	idEntity *ent = static_cast<idEntity *>(cls->CreateInstance());
+	ent->CallSpawn();
+	ent->SetName("loot_info");
+	ent->spawnArgs.Set("scriptobject", "loot_gui");
+	ent->scriptObject.SetType("loot_gui");
+	ent->ConstructScriptObject();
+
 	it = new CInventoryItem(this);
-	it->SetType(CInventoryItem::IT_LOOT_INFO);
+	it->SetName("loot_info");
+	it->SetItemEntity(ent);
+	it->SetType(CInventoryItem::IT_ITEM);
+	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), 0));
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
@@ -6364,9 +6375,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// precedence over the frobaction.
 			CInventory *inv = Inventory();
 			CInventoryItem *it = inv->GetCurrentItem();
-			if(it->GetType() != CInventoryItem::IT_DUMMY && it->GetType() != CInventoryItem::IT_LOOT_INFO)
+			if(it->GetType() != CInventoryItem::IT_DUMMY)
 			{
-				ent = Inventory()->GetCurrentItem()->GetEntity();
+				ent = it->GetItemEntity();
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
 				if(ent != NULL)
 				{
@@ -9980,10 +9991,10 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItem *cur = NULL;
 	CInventory *inv = NULL;
+	CInventoryItem *next = NULL;
 
 	if(shift != 0)
 	{
-		CInventoryItem *it = NULL;
 		idEntity *e = NULL;
 		idStr s;
 		idThread *thread;
@@ -9992,67 +10003,44 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 		inv = Inventory();
 		cur = inv->GetCurrentItem();
 		if(shift > 0)
-		{
-			it = Inventory()->GetNextItem();
-			e = it->GetEntity();
-		}
+			next = inv->GetNextItem();
 		else
-		{
-			it = Inventory()->GetPrevItem();
-			e = it->GetEntity();
-		}
+			next = inv->GetPrevItem();
+
+		e = next->GetItemEntity();
 
 		// Notify the previous entity and the new one that they are un-/selected.
-		if(it != cur)
+		if(next != cur)
 		{
-			e = cur->GetEntity();
-			if(e)
-			{
-				thread = e->CallScriptFunctionArgs("inventoryUnselect", true, 0, "eef", e, this, shift);
-				if(thread)
-					thread->Start();
-			}
+			idEntity *ce = cur->GetItemEntity();
+			if(ce)
+				thread = ce->CallScriptFunctionArgs("inventory_item_unselect", true, 0, "eeff", ce, cur->GetOwner(), (float)cur->GetOverlay(), (float)shift);
 
-			e = it->GetEntity();
 			if(e)
-			{
-				thread = e->CallScriptFunctionArgs("inventorySelect", true, 0, "eef", e, this, shift);
-				if(thread)
-					thread->Start();
-			}
+				thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eeff", e, next->GetOwner(), (float)next->GetOverlay(), (float)shift);
 		}
 
-		type = it->GetType();
+		type = next->GetType();
 		switch(type)
 		{
 			case CInventoryItem::IT_ITEM:
 			{
-				// We default the name to something obvious, because the mapper should 
-				// see, when playtesting, that he forgot to name the item and groups.
-				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 0.0);
-				e->spawnArgs.GetString("inv_category", "UNKNOWN", s);
-				SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
-				SetGuiString(mInventoryOverlay, "Inventory_ItemName", it->GetName());
-				SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", it->GetCount());
-				e->spawnArgs.GetString("inv_icon", "", s);
-				SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
-			}
-			break;
-
-			case CInventoryItem::IT_LOOT_INFO:
-			{
-				int Gold, Jewels, Goods, Total;
-				Total = Inventory()->GetLoot(Gold, Jewels, Goods);
-				s = cv_tdm_inv_loot_group.GetString();
-				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 0.0);
-				SetGuiFloat(mInventoryOverlay, "Inventory_LootVisible", 1.0);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootJewels", Jewels);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootGoods", Goods);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootGold", Gold);
-				SetGuiInt(mInventoryOverlay, "Inventory_LootTotal", Total);
+				// We display the default hud if the item doesn't have it's own. Each
+				// item, that has it's own gui, is responsible for switching it on and off
+				// appropriately with their respective events.
+				if(next->HasHUD() == false)
+				{
+					// We default the name to something obvious, because the mapper should 
+					// see, when playtesting, that he forgot to name the item and groups.
+					SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
+					SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
+					e->spawnArgs.GetString("inv_category", "UNKNOWN", s);
+					SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
+					SetGuiString(mInventoryOverlay, "Inventory_ItemName", next->GetName());
+					SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", next->GetCount());
+					e->spawnArgs.GetString("inv_icon", "", s);
+					SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
+				}
 			}
 			break;
 
@@ -10286,59 +10274,6 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 void idPlayer::Event_GetInventoryOverlay(void)
 {
 	idThread::ReturnInt(mInventoryOverlay);
-}
-
-void idPlayer::Event_CreateOverlay( const char *guiFile, int layer )
-{
-	idThread::ReturnInt(CreateOverlay(guiFile, layer));
-}
-
-int idPlayer::CreateOverlay(const char *guiFile, int layer)
-{
-	int rc = OVERLAYS_INVALID_HANDLE;
-	int handle = OVERLAYS_INVALID_HANDLE;
-
-	if(guiFile == NULL || guiFile[0] == 0)
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
-		goto Quit;
-	}
-
-	if(!uiManager->CheckGui(guiFile))
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
-		goto Quit;
-	}
-	handle = m_overlays.createOverlay( layer );
-	if(handle == OVERLAYS_INVALID_HANDLE)
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
-		goto Quit;
-	}
-
-	m_overlays.setGui(handle, guiFile);
-	idUserInterface *gui = m_overlays.getGui(handle);
-	if(gui == NULL)
-	{
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
-		goto Quit;
-	}
-
-	gui->SetStateInt("handle", handle);
-	gui->Activate(true, gameLocal.time);
-	// Let's set a good default value for whether or not the overlay is interactive.
-	m_overlays.setInteractive(handle, gui->IsInteractive());
-
-	rc = handle;
-
-Quit:
-	if(rc == OVERLAYS_INVALID_HANDLE)
-	{
-		if(handle != OVERLAYS_INVALID_HANDLE)
-			m_overlays.destroyOverlay(handle);
-	}
-
-	return rc;
 }
 
 /*
