@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.15  2007/02/10 22:57:37  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.14  2007/02/10 14:10:39  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -57,6 +63,9 @@
 #define __DARKMOD_TDMINVENTORY_H__
 
 #define TDM_INVENTORY_DEFAULT_GROUP		"DEFAULT"
+#define TDM_LOOT_INFO_ITEM				"loot_info"
+#define TDM_LOOT_SCRIPTOBJECT			"loot_gui"
+#define TDM_DUMMY_ITEM					"dummy"
 
 // Classes that should be used by external files.
 class CInventory;
@@ -99,26 +108,27 @@ public:
 	 * the itemindex within that group can also be obtained. Both are set to -1 
 	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
 	 */
-	int GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
-	int GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
-	inline int GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) { return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
+	int						GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
+	int						GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
+	inline int				GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) 
+									{ return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
 
 	/**
 	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryCategory	*CreateCategory(const char *CategoryName, int *Index = NULL);
+	CInventoryCategory		*CreateCategory(const char *CategoryName, int *Index = NULL);
 	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
 
-	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
-	void				SetOwner(idEntity *Owner);
+	idEntity				*GetOwner(void) { return m_Owner.GetEntity(); }
+	void					SetOwner(idEntity *Owner);
 
 	/**
 	 * Put an item in the inventory. Use the default group if none is specified.
 	 * The name, that is to be displayed on a GUI, must be set on the respective
 	 * entity.
 	 */
-	CInventoryItem	*PutItem(idEntity *Item, const idStr &Name, char const *Category = NULL);
-	void				PutItem(CInventoryItem *Item, char const *Category = NULL);
+	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
+	void					PutItem(CInventoryItem *Item, char const *Category = NULL);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
@@ -142,8 +152,8 @@ public:
 	CInventoryItem			*GetNextItem(void);
 	CInventoryItem			*GetPrevItem(void);
 
-	CInventoryCategory			*GetNextCategory(void);
-	CInventoryCategory			*GetPrevCategory(void);
+	CInventoryCategory		*GetNextCategory(void);
+	CInventoryCategory		*GetPrevCategory(void);
 
 	/**
 	 * Set the current group index.
@@ -206,6 +216,17 @@ protected:
 	 * using Next/PrevItem.
 	 */
 	int						m_CurrentItem;
+
+	/**
+	 * Here we keep the lootcount for the items, that don't need to actually 
+	 * be stored in the inventory, because they can't get displayed anyway.
+	 * LootItemCount will only count the items, that are stored here. Items
+	 * that are visible, will not be counted here. This is only for stats.
+	 */
+	int						m_LootItemCount;
+	int						m_Gold;
+	int						m_Jewelry;
+	int						m_Goods;
 };
 
 /**

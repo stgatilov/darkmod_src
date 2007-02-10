@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.50  2007/02/10 22:57:29  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.49  2007/02/10 14:10:19  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -688,6 +694,7 @@ public:
 	void					UpdateHudWeapon( bool flashWeapon = true );
 	void					UpdateHudStats( idUserInterface *hud );
 	void					UpdateHudAmmo( idUserInterface *hud );
+
 	void					Event_StopAudioLog( void );
 	void					StartAudioLog( void );
 	void					StopAudioLog( void );
@@ -783,7 +790,7 @@ public:
 	// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem( idEntity* useEnt );
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
-	void inventoryChangeSelection(idUserInterface *_hud, int shift = 0);
+	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 	
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);

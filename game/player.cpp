@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.121  2007/02/10 22:57:29  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.120  2007/02/10 14:10:19  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -2083,7 +2089,7 @@ void idPlayer::Spawn( void )
 	// chooses to not see the inventory all the time.
 	grp = Inventory()->GetCategory("DEFAULT");
 	it = new CInventoryItem(this);
-	it->SetName("dummy");
+	it->SetName(TDM_DUMMY_ITEM);
 	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
@@ -2095,19 +2101,20 @@ void idPlayer::Spawn( void )
 	idTypeInfo *cls = idClass::GetClass("idItem");
 	idEntity *ent = static_cast<idEntity *>(cls->CreateInstance());
 	ent->CallSpawn();
-	ent->SetName("loot_info");
-	ent->spawnArgs.Set("scriptobject", "loot_gui");
-	ent->scriptObject.SetType("loot_gui");
+	ent->SetName(TDM_LOOT_INFO_ITEM);
+	ent->spawnArgs.Set("scriptobject", TDM_LOOT_SCRIPTOBJECT);
+	ent->scriptObject.SetType(TDM_LOOT_SCRIPTOBJECT);
 	ent->ConstructScriptObject();
 
 	it = new CInventoryItem(this);
-	it->SetName("loot_info");
+	it->SetName(TDM_LOOT_INFO_ITEM);
 	it->SetItemEntity(ent);
 	it->SetType(CInventoryItem::IT_ITEM);
 	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), 0));
 	it->SetCount(0);
 	it->SetStackable(false);
 	grp->PutItem(it);
+	Inventory()->SetCurrentItem(TDM_DUMMY_ITEM);
 }
 
 /*
@@ -3113,7 +3120,9 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	}
 
 	UpdateHudAmmo( _hud );
-	inventoryChangeSelection( _hud );
+
+	// TODO: This is only needed in case fade in/out is still running.
+	//inventoryChangeSelection( _hud );
 }
 
 /*
@@ -6401,7 +6410,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 				// later on be revoked, either by script or by the player, we
 				// only hide the entity. Also if a frobactionscript is associated
 				// with it, it would be triggered, so the entity must stay around.
-				AddToInventory(frob);
+				if(AddToInventory(frob, hud) != NULL)
+					pDM->m_FrobEntity = NULL;
 
 				frob->FrobAction(true); 
 			}
@@ -6413,26 +6423,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 		*/
 		case IMPULSE_44:		// Lean forward
 		{
-			//common->Printf ("Impulse 44, lean forward\n");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
-			{
 				physicsObj.ToggleLean(90.0);
-				// FIXME: We should make sure that, when we enter or leave the
-				// leaning state, that the position is indeed the one that we assume.
-				// It can happen, when a key is being lost, that the state is 
-				// the other way around, which is not exactly nice. It will be corrected
-				// automatically, but it wouldn't hurt anyway.
-
-				/*
-				// Do we need to enter the leaning state?
-				if(gameLocal.ImpulseInit(IR_LEAN_FORWARD, IMPULSE_44) == false)
-				{
-					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning started\r");
-					physicsObj.ToggleLean(90.0);
-					gameLocal.ImpulseProcessed(IR_LEAN_FORWARD);
-				}
-				*/
-			}
 		}
 		break;
 
@@ -6444,18 +6436,10 @@ void idPlayer::PerformImpulse( int impulse ) {
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left lean impulse pressed\r");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
-				//physicsObj.ToggleLean(180.0);
-				// FIXME: We should make sure that, when we enter or leave the
-				// leaning state, that the position is indeed the one that we assume.
-				// It can happen, when a key is being lost, that the state is 
-				// the other way around, which is not exactly nice. It will be corrected
-				// automatically, but it wouldn't hurt anyway.
-
 				// Do we need to enter the leaning state?
 				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
 				physicsObj.ToggleLean(180.0);
 				gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
-				//m_LeanButtonTimeStamp = gameLocal.framenum;
 			}
 		}
 		break;
@@ -6466,27 +6450,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_46:		// Lean right
 		{
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right lean impulse pressed\r");
-			//common->Printf ("Impulse 46, lean right\n");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
-			{
 				physicsObj.ToggleLean(0.0);
-
-				/*
-				// FIXME: We should make sure that, when we enter or leave the
-				// leaning state, that the position is indeed the one that we assume.
-				// It can happen, when a key is being lost, that the state is 
-				// the other way around, which is not exactly nice. It will be corrected
-				// automatically, but it wouldn't hurt anyway.
-
-				// Do we need to enter the leaning state?
-				if(gameLocal.ImpulseInit(IR_LEAN_RIGHT, IMPULSE_46) == false)
-				{
-					DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning started\r");
-					physicsObj.ToggleLean(0.0);
-					gameLocal.ImpulseProcessed(IR_LEAN_RIGHT);
-				}
-				*/
-			}
 		}
 		break;
 
@@ -9888,26 +9853,32 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-	CInventory *i = Inventory();
+	CInventory *inv = Inventory();
+	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(i == NULL)
+	if(inv == NULL)
 		return;
 
+	prev = inv->GetCurrentItem();
+	inv->GetNextItem();
 	if(hud)
-		inventoryChangeSelection(hud, 1);
+		inventoryChangeSelection(hud, true, prev);
 }
 
 void idPlayer::inventoryPrevItem()
 {
-	CInventory *i = Inventory();
+	CInventory *inv = Inventory();
+	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(i == NULL)
+	if(inv == NULL)
 		return;
 
+	prev = inv->GetCurrentItem();
+	inv->GetPrevItem();
 	if(hud)
-		inventoryChangeSelection(hud, -1);
+		inventoryChangeSelection(hud, true, prev);
 }
 
 void idPlayer::inventoryNextGroup()
@@ -9984,43 +9955,42 @@ void idPlayer::inventoryDropItem()
 */
 }
 
-void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
+void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
 {
 	float opacity;
 	int groupvis;
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItem *cur = NULL;
 	CInventory *inv = NULL;
-	CInventoryItem *next = NULL;
+	idEntity *e = NULL;
+	idStr s;
+	idThread *thread;
 
-	if(shift != 0)
+	// Since the player always has at least a loot and a dummy item, this can never be NULL.
+	inv = Inventory();
+	cur = inv->GetCurrentItem();
+	if(cur)
+		e = cur->GetItemEntity();
+
+	// Notify the previous entity and the new one that they are un-/selected.
+	if(cur != prev && bUpdate == true)
 	{
-		idEntity *e = NULL;
-		idStr s;
-		idThread *thread;
-
-		// Since the player always has at least a loot and a dummy item, this can never be NULL.
-		inv = Inventory();
-		cur = inv->GetCurrentItem();
-		if(shift > 0)
-			next = inv->GetNextItem();
-		else
-			next = inv->GetPrevItem();
-
-		e = next->GetItemEntity();
-
-		// Notify the previous entity and the new one that they are un-/selected.
-		if(next != cur)
+		if(prev)
 		{
-			idEntity *ce = cur->GetItemEntity();
+			idEntity *ce = prev->GetItemEntity();
 			if(ce)
-				thread = ce->CallScriptFunctionArgs("inventory_item_unselect", true, 0, "eeff", ce, cur->GetOwner(), (float)cur->GetOverlay(), (float)shift);
-
-			if(e)
-				thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eeff", e, next->GetOwner(), (float)next->GetOverlay(), (float)shift);
+				thread = ce->CallScriptFunctionArgs("inventory_item_unselect", true, 0, "eef", ce, prev->GetOwner(), (float)prev->GetOverlay());
 		}
+		if(cur)
+		{
+			if(e)
+				thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
+		}
+	}
 
-		type = next->GetType();
+	if(cur)
+	{
+		type = cur->GetType();
 		switch(type)
 		{
 			case CInventoryItem::IT_ITEM:
@@ -10028,16 +9998,17 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, int shift)
 				// We display the default hud if the item doesn't have it's own. Each
 				// item, that has it's own gui, is responsible for switching it on and off
 				// appropriately with their respective events.
-				if(next->HasHUD() == false)
+				if(cur->HasHUD() == false)
 				{
 					// We default the name to something obvious, because the mapper should 
 					// see, when playtesting, that he forgot to name the item and groups.
 					SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 1.0);
 					SetGuiFloat(mInventoryOverlay, "Inventory_ItemVisible", 1.0);
+					SetGuiFloat(mInventoryOverlay, "Inventory_ItemStackable", (float)cur->IsStackable());
 					e->spawnArgs.GetString("inv_category", "UNKNOWN", s);
 					SetGuiString(mInventoryOverlay, "Inventory_ItemGroup", s);
-					SetGuiString(mInventoryOverlay, "Inventory_ItemName", next->GetName());
-					SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", next->GetCount());
+					SetGuiString(mInventoryOverlay, "Inventory_ItemName", cur->GetName());
+					SetGuiInt(mInventoryOverlay, "Inventory_ItemCount", cur->GetCount());
 					e->spawnArgs.GetString("inv_icon", "", s);
 					SetGuiString(mInventoryOverlay, "Inventory_ItemIcon", s);
 				}
@@ -10634,4 +10605,3 @@ idVec3 idPlayer::GetDoorListenLoc( void )
 {
 	return m_DoorListenLoc;
 }
-

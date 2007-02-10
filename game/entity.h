@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.63  2007/02/10 22:57:29  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.62  2007/02/10 14:10:19  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -856,8 +862,10 @@ public:
 	 * AddToInventory will add an entity to the inventory. The item is only
 	 * added if the appropriate spawnargs are set, otherwise it will be rejected
 	 * and NULL is returned.
+	 *
+	 * If the hud parameter is not null, then it will also call the updatefunction.
 	 */
-	virtual CInventoryItem *AddToInventory(idEntity *ent);
+	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
 protected:
 	/**
@@ -1139,11 +1147,11 @@ private:			// Events should be public, so they can be used from other places as 
 	void					Event_SetCursorItem(const char *itemname);
 	void					Event_GetCursorGroup(void);
 	void					Event_GetCursorItem(void);
-	void					Event_AddGroupItem(idEntity *item, const char *name, const char *group);
-	void					Event_AddItem(idEntity *item, const char *name);
+	void					Event_AddItem(idEntity *item);
 	void					Event_GetGroupItem(const char *name, const char *group);
 	void					Event_GetItem(const char *name);
 	void					Event_GetLoot(int LootType);
+	virtual void			inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 
 	void					StimAdd(int Type, float Radius);
 	void					StimRemove(int Type);

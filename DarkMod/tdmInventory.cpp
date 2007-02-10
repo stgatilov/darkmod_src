@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.22  2007/02/10 22:57:37  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.21  2007/02/10 14:10:39  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -100,6 +106,8 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4533 4800)
+
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "../game/Game_local.h"
@@ -127,6 +135,10 @@ CInventory::CInventory()
 	m_WrapAround = true;							// ... is like standard Thief inventory.
 	m_CurrentCategory = 0;
 	m_CurrentItem = 0;
+	m_LootItemCount = 0;
+	m_Gold = 0;
+	m_Jewelry = 0;
+	m_Goods = 0;
 }
 
 CInventory::~CInventory()
@@ -215,32 +227,102 @@ void CInventory::SetOwner(idEntity *Owner)
 		m_Category[i]->SetOwner(Owner);
 }
 
-CInventoryItem *CInventory::PutItem(idEntity *Item, const idStr &Name, char const *Category)
+CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *Owner)
 {
 	CInventoryItem *rc = NULL;
-	int i;
-	CInventoryCategory *gr;
+	CInventoryItem *item = NULL;
+	idStr s;
+	idStr icon;
+	const char *category = NULL;
+	int v;
+	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
+	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
 
-	if(Item == NULL || Name.Length() == 0)
+	if(ent == NULL || Owner == NULL)
 		goto Quit;
 
-	// Check if it is the default group or not.
-	if(Category != NULL)
-		gr = m_Category[0];
-	else
+	if(ent->spawnArgs.GetInt("inv_loot_type", "", v) != false)
 	{
-		gr = GetCategory(Category, &i);
-		if(gr == NULL)
-			goto Quit;
+		if(v >= CInventoryItem::LT_NONE && v < CInventoryItem::LT_COUNT)
+			lt = (CInventoryItem::LootType)v;
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid loot type: %d for InventoryItemType on %s\r", v, ent->name.c_str());
 	}
 
-	rc = gr->PutItem(Item, Name);
+	ent->spawnArgs.GetString("inv_icon", "", icon);
+	ent->spawnArgs.GetInt("inv_loot_value", "-1", v);
+
+	// If we have an item without an icon and it is loot, then we can 
+	// simply add the value to the global values. If the item
+	// is not loot and has no icon, it is an error, because it means
+	// that it is an individual item but can not be displayed.
+	if(icon.Length() == 0)
+	{
+		if(lt != CInventoryItem::LT_NONE && v > 0)
+		{
+			// If we have an anonymous loot item, we don't need to 
+			// store it in the inventory.
+			switch(lt)
+			{
+				case CInventoryItem::LT_GOLD:
+					m_Gold += v;
+				break;
+
+				case CInventoryItem::LT_GOODS:
+					m_Goods += v;
+				break;
+
+				case CInventoryItem::LT_JEWELS:
+					m_Jewelry += v;
+				break;
+			}
+
+			m_LootItemCount++;
+
+			rc = GetItem(TDM_LOOT_INFO_ITEM);
+		}
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Item %s doesn't have an inventory name and is not anonymous.\r", ent->name.c_str());
+
+		goto Quit;
+	}
+
+	item = new CInventoryItem(Owner);
+	item->SetItem(ent);
+	item->SetLootType(lt);
+
+	if(lt != CInventoryItem::LT_NONE)
+	{
+		it = CInventoryItem::IT_LOOT;
+		v = 0;
+		if(ent->spawnArgs.GetInt("inv_loot_value", "", v) != false && v != 0)
+			item->SetValue(v);
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
+	}
+	item->SetType(it);
+
+	ent->spawnArgs.GetInt("inv_stackable", "0", v);
+	item->SetStackable(v);
+
+	ent->spawnArgs.GetInt("inv_count", "1", v);
+	item->SetCount(v);
+
+	if(ent->spawnArgs.GetString("inv_category", "", s) != false)
+		category = s.c_str();
+
+	if(ent->spawnArgs.GetString("inv_name", "", s) != false)
+		item->SetName(s);
+
+	PutItem(item, category);
+
+	rc = item;
 
 Quit:
 	return rc;
 }
 
-void CInventory::PutItem(CInventoryItem *Item, char const *Category)
+void CInventory::PutItem(CInventoryItem *Item, char const *category)
 {
 	int i;
 	CInventoryCategory *gr;
@@ -249,11 +331,11 @@ void CInventory::PutItem(CInventoryItem *Item, char const *Category)
 		goto Quit;
 
 	// Check if it is the default group or not.
-	if(Category != NULL)
+	if(category != NULL || category[0] == 0)
 		gr = m_Category[0];
 	else
 	{
-		gr = GetCategory(Category, &i);
+		gr = GetCategory(category, &i);
 		if(gr == NULL)
 			goto Quit;
 	}
@@ -332,7 +414,10 @@ bool CInventory::SetCurrentItem(CInventoryItem *Item)
 	int group, item;
 
 	if(Item == NULL)
-		goto Quit;
+	{
+		if((Item = GetItem(TDM_DUMMY_ITEM)) == NULL)
+			goto Quit;
+	}
 
 	if((group = GetCategoryItemIndex(Item, &item)) == -1)
 		goto Quit;
@@ -553,7 +638,7 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	for(i = 0; i < m_Category.Num(); i++)
 		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 
-	return Gold + Jewelry + Goods;
+	return Gold + Jewelry + Goods + m_Gold + m_Jewelry + m_Goods;
 }
 
 

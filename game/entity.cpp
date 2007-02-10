@@ -7,6 +7,12 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.98  2007/02/10 22:57:29  sparhawk
+ * 1. Multiple frobs fixed.
+ * 2. Having invisible items in the inventory is fixed.
+ * 3. Select frobbed item after it went into the inventory
+ * 4. Overlap of old and new item fixed.
+ *
  * Revision 1.97  2007/02/10 14:10:19  sparhawk
  * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
  *
@@ -452,11 +458,11 @@ const idEventDef EV_SetCursorGroupItem("setCursorGroupItem", "ss", 'd');	// item
 const idEventDef EV_SetCursorItem("setCursorItem", "s", 'd');				// itemname -> 1 = success
 const idEventDef EV_GetCursorGroup("getCursorGroup", NULL, 's');
 const idEventDef EV_GetCursorItem("getCursorItem", NULL, 'e');
-const idEventDef EV_AddGroupItem("addGroupItem", "ess");					// entityitem, itemname, groupname
-const idEventDef EV_AddItem("addItem", "es");								// entityitem, itemname
+const idEventDef EV_AddItem("addItem", "e");								// entityitem
 const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, groupname -> NULL not in group
 const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
 const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current value for the given group
+const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
 
 
 // The Dark Mod Stim/Response interface functions for scripting
@@ -603,11 +609,11 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetCursorItem,		idEntity::Event_SetCursorItem )
 	EVENT( EV_GetCursorGroup,		idEntity::Event_GetCursorGroup )
 	EVENT( EV_GetCursorItem,		idEntity::Event_GetCursorItem )
-	EVENT( EV_AddGroupItem,			idEntity::Event_AddGroupItem )
 	EVENT( EV_AddItem,				idEntity::Event_AddItem )
 	EVENT( EV_GetGroupItem,			idEntity::Event_GetGroupItem )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
 	EVENT( EV_GetLoot,				idEntity::Event_GetLoot )
+	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7869,20 +7875,15 @@ void idEntity::Event_GetCursorItem(void)
 {
 }
 
-void idEntity::Event_AddGroupItem(idEntity *item, const char *name, const char *group)
+void idEntity::Event_AddItem(idEntity *item)
 {
 	if(item == NULL || name == NULL)
 		goto Quit;
 
-	m_Inventory->PutItem(item, name, group);
+	m_Inventory->PutItem(item, this);
 
 Quit:
 	return;
-}
-
-void idEntity::Event_AddItem(idEntity *item, const char *name)
-{
-	Event_AddGroupItem(item, name, NULL);
 }
 
 void idEntity::Event_GetGroupItem(const char *name, const char *group)
@@ -7928,8 +7929,6 @@ void idEntity::InitInventory(void)
 	// when the object spawns. Default is no.
 	idStr inv;
 	idStr target;
-	int val;
-	CInventoryItem::LootType type;
 
 	spawnArgs.GetString("inv_map_start", "0", inv);
 	spawnArgs.GetString("inv_target", "", target);
@@ -7940,22 +7939,7 @@ void idEntity::InitInventory(void)
 		if(p)
 		{
 			CInventoryItem *item;
-			spawnArgs.GetString("inv_name", "UNDEF", inv);
-			spawnArgs.GetString("inv_group", "DEFAULT", grp);
-			item = p->Inventory()->PutItem(this, inv, grp);
-			if(spawnArgs.GetBool("inv_stackable", "0") == true)
-			{
-				item->SetStackable(true);
-				spawnArgs.GetInt("inv_item_count", "0", val);
-				item->SetCount(val);
-			}
-			else
-				item->SetStackable(false);
-
-			spawnArgs.GetInt("inv_loot_type", "0", (int &)type);
-			item->SetLootType(type);
-			spawnArgs.GetInt("inv_loot_value", "0", val);
-			item->SetValue(val);
+			item = p->Inventory()->PutItem(this, p);
 		}
 		else
 			gameLocal.AddInventoryEntity(target, name);		// Schedule us for later addition to the inventory
@@ -7975,15 +7959,13 @@ void idEntity::CheckInventoryInit(void)
 	}
 }
 
-CInventoryItem *idEntity::AddToInventory(idEntity *ent)
+CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 {
 	CInventory *inv = Inventory();
 	CInventoryItem *rc = NULL;
+	CInventoryItem *prev = NULL;
 	idStr s;
-	const char *category = NULL;
-	int v;
-	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
-	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
+	int v = 0;
 
 	if(ent == NULL)
 		goto Quit;
@@ -7992,41 +7974,8 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent)
 	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
 		goto Quit;
 
-	rc = new CInventoryItem(this);
-	rc->SetName(s);
-	rc->SetItem(ent);
-
-	if(ent->spawnArgs.GetInt("inv_loot_type", "", v) != false)
-	{
-		if(v >= CInventoryItem::LT_NONE && v < CInventoryItem::LT_COUNT)
-			lt = (CInventoryItem::LootType)v;
-		else
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid loot type: %d for InventoryItemType on %s\r", v, ent->name.c_str());
-	}
-	rc->SetLootType(lt);
-
-	if(lt != CInventoryItem::LT_NONE)
-	{
-		it = CInventoryItem::IT_LOOT;
-		v = 0;
-		if(ent->spawnArgs.GetInt("inv_loot_value", "", v) != false && v != 0)
-			rc->SetValue(v);
-		else
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
-	}
-	rc->SetType(it);
-
-	ent->spawnArgs.GetInt("inv_stackable", "0", v);
-	rc->SetStackable(v);
-
-	ent->spawnArgs.GetInt("inv_count", "1", v);
-	rc->SetCount(v);
-
-	if(ent->spawnArgs.GetString("inv_category", "", s) != false)
-		category = s.c_str();
-
-	// Add our item to the inventory
-	inv->PutItem(rc, category);
+	prev = inv->GetCurrentItem();
+	rc = inv->PutItem(ent, this);
 
 	// Make the item invisible
 	ent->Unbind();
@@ -8040,11 +7989,18 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent)
 
 	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
 
-	if(ent->spawnArgs.GetString("inv_hud", "", s) != false)
+	if(rc)
 	{
-		ent->spawnArgs.GetInt("inv_hud_layer", "0", v);
-		rc->SetHUD(s, v);
+		if(ent->spawnArgs.GetString("inv_hud", "", s) != false)
+		{
+			ent->spawnArgs.GetInt("inv_hud_layer", "0", v);
+			rc->SetHUD(s, v);
+		}
 	}
+
+	inv->SetCurrentItem(rc);
+	if(_hud != NULL)
+		inventoryChangeSelection(_hud, true, prev);
 
 Quit:
 	return rc;
@@ -8112,3 +8068,6 @@ Quit:
 	return rc;
 }
 
+void idEntity::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *Prev)
+{
+}
