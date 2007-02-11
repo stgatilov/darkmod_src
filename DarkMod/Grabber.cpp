@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.13  2007/02/11 20:59:57  ishtvan
+ * comments updated for better documentation
+ *
  * Revision 1.12  2006/11/20 05:35:17  ishtvan
  * simplified rotation code
  *
@@ -570,7 +573,9 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		
 		//I can't seem to get setting the angular velocity to work here for some reason
 		// Might be due to disparity between actual frame integration time and 1/60 sec
-		//angularVelocity = m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+
+// TODO: This may work now that setting angular velocity has been fixed
+		//angularVelocity += m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
 	}
 
 	physics->SetAngularVelocity( angularVelocity, m_id );
