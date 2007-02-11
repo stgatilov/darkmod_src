@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.122  2007/02/11 21:34:49  sparhawk
+ * Fixed bugs in the inventory.
+ * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
+ * Fixed a bug that loot only counted to totals (at least on screen).
+ * Fixed some bugs and behaviour for GetItem() on the inventory.
+ * Category can now be created if it doesn't already exists.
+ *
  * Revision 1.121  2007/02/10 22:57:29  sparhawk
  * 1. Multiple frobs fixed.
  * 2. Having invisible items in the inventory is fixed.
@@ -6220,11 +6227,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 		return;
 	}
 
-	switch( impulse ) {
-		case IMPULSE_13: {
+	switch( impulse )
+	{
+		case IMPULSE_13:
+		{
 			Reload();
 			break;
 		}
+
 		case IMPULSE_14: 
 		{
 			// If the grabber is active, next weapon increments the distance
@@ -6255,17 +6265,22 @@ void idPlayer::PerformImpulse( int impulse ) {
 			PrevWeapon();
 			break;
 		}
-		case IMPULSE_17: {
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+		case IMPULSE_17:
+		{
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
+			{
 				gameLocal.mpGame.ToggleReady();
 			}
 			break;
 		}
-		case IMPULSE_18: {
+
+		case IMPULSE_18:
+		{
 			centerView.Init(gameLocal.time, 200, viewAngles.pitch, 0);
 			break;
 		}
-		case IMPULSE_19: {
+		case IMPULSE_19:
+		{
 			// when we're not in single player, IMPULSE_19 is used for showScores
 			// otherwise it opens the pda
 			if ( !gameLocal.isMultiplayer ) {
@@ -6277,20 +6292,25 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 		}
-		case IMPULSE_20: {
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+		case IMPULSE_20:
+		{
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
+			{
 				gameLocal.mpGame.ToggleTeam();
 			}
 			break;
 		}
-		case IMPULSE_22: {
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+		case IMPULSE_22:
+		{
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
+			{
 				gameLocal.mpGame.ToggleSpectate();
 			}
 			break;
 		}
 
-		case IMPULSE_24: {
+		case IMPULSE_24:
+		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
 					physicsObj.PerformMantle();
@@ -6300,7 +6320,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		// DarkMod: Sophisticated Zombie: For testing purposes only
 	    // This tests the hiding spot search function relative to the player
-		case IMPULSE_25:
+		case IMPULSE_25:		// Test hiding spots.
 		{
 			DM_LOG(LC_AI, LT_DEBUG).LogString("Attempting hiding spot test");
 			idVec3 searchOrigin = GetEyePosition();
@@ -6341,22 +6361,36 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_28: {
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+		case IMPULSE_28:
+		{
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
+			{
 				gameLocal.mpGame.CastVote( gameLocal.localClientNum, true );
 			}
-			break;
 		}
-		case IMPULSE_29: {
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+		break;
+
+		case IMPULSE_29:
+		{
+			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
+			{
 				gameLocal.mpGame.CastVote( gameLocal.localClientNum, false );
 			}
-			break;
 		}
-		case IMPULSE_40: {
-			UseVehicle();
-			break;
+		break;
+
+		case IMPULSE_40:		// TDM: grab item with grabber
+		{
+			CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+			idEntity *useEnt = grabber->GetSelected();
+			if(useEnt == NULL)
+			{
+				idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
+				if(frob != NULL)
+					grabber->PutInHands(frob, this);
+			}
 		}
+		break;
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
@@ -6417,6 +6451,24 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 		}
 		break;
+
+		case IMPULSE_42:	// Inventory use item
+		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
+			inventoryUseItem();
+			break;
+		}
+
+		case IMPULSE_43:	// Inventory drop item
+		{
+			if(GetImmobilization() & EIM_ITEM_SELECT)
+				return;
+
+			inventoryDropItem();
+			break;
+		}
 
 		/*!
 		* Lean forward is impulse 44
@@ -6488,24 +6540,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				return;
 
 			inventoryNextGroup();
-			break;
-		}
-
-		case IMPULSE_51:	// Inventory use item
-		{
-			if(GetImmobilization() & EIM_ITEM_SELECT)
-				return;
-
-			inventoryUseItem();
-			break;
-		}
-
-		case IMPULSE_52:	// Inventory drop item
-		{
-			if(GetImmobilization() & EIM_ITEM_SELECT)
-				return;
-
-			inventoryDropItem();
 			break;
 		}
 	} 
@@ -9937,22 +9971,16 @@ void idPlayer::inventoryUseItem( idEntity* useEnt )
 
 void idPlayer::inventoryDropItem()
 {
-/*
-	// Is there anything in our hands?
-	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
-	// If not, do we have anything selected?
-	if ( !useEnt ) {
-		CInventoryItem* item = InventoryCursor()->Item();
-		useEnt = item ? item->m_owner.GetEntity() : NULL;
-	}
+	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
+	idEntity *ent = grabber->GetSelected();
+	CInventoryItem *item = NULL;
 
-	if ( useEnt ) {
-		// call script: useEnt.inventoryDrop( thisPlayer );
-		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryDrop", true, 0, "ee", useEnt, this );
-		if (thread)
-			thread->Start(); // Start the thread immediately.
-	}
-*/
+	// TODO: If the player holds something in his grabber hands,
+	// the item must be dropped first.
+	if(ent != NULL)
+		return;
+	else
+		Inventory()->DropCurrentItem();
 }
 
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
@@ -10283,7 +10311,8 @@ void idPlayer::Event_LoadDeathMenu( void )
 idPlayer::Event_HoldEntity
 ================
 */
-void idPlayer::Event_HoldEntity( idEntity *ent ) {
+void idPlayer::Event_HoldEntity( idEntity *ent )
+{
 	if ( ent )
 	{
 		bool successful = g_Global.m_DarkModPlayer->grabber->PutInHands( ent, this, 0 );
@@ -10301,8 +10330,9 @@ void idPlayer::Event_HoldEntity( idEntity *ent ) {
 idPlayer::Event_HeldEntity
 ================
 */
-void idPlayer::Event_HeldEntity( void ) {
-	idThread::ReturnEntity( g_Global.m_DarkModPlayer->grabber->GetSelected() );
+void idPlayer::Event_HeldEntity( void )
+{
+	idThread::ReturnEntity(g_Global.m_DarkModPlayer->grabber->GetSelected());
 }
 
 void idPlayer::Event_RopeRemovalCleanup(idEntity *RopeEnt)

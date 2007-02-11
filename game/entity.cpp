@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.99  2007/02/11 21:34:49  sparhawk
+ * Fixed bugs in the inventory.
+ * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
+ * Fixed a bug that loot only counted to totals (at least on screen).
+ * Fixed some bugs and behaviour for GetItem() on the inventory.
+ * Category can now be created if it doesn't already exists.
+ *
  * Revision 1.98  2007/02/10 22:57:29  sparhawk
  * 1. Multiple frobs fixed.
  * 2. Having invisible items in the inventory is fixed.
@@ -7047,7 +7054,10 @@ have one, it creates the inventory.
 CInventory* idEntity::Inventory()
 {
 	if(m_Inventory == NULL )
+	{
 		m_Inventory = new CInventory();
+		m_Inventory->SetOwner(this);
+	}
 
 	return m_Inventory;
 }
@@ -7976,12 +7986,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 	prev = inv->GetCurrentItem();
 	rc = inv->PutItem(ent, this);
-
-	// Make the item invisible
-	ent->Unbind();
-	ent->GetPhysics()->PutToRest();
-	ent->GetPhysics()->UnlinkClip();
-	ent->Hide();
 
 	ent->spawnArgs.GetString("snd_acquire", "", s);
 	if(s.Length() == 0)

@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.16  2007/02/11 21:35:02  sparhawk
+ * Fixed bugs in the inventory.
+ * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
+ * Fixed a bug that loot only counted to totals (at least on screen).
+ * Fixed some bugs and behaviour for GetItem() on the inventory.
+ * Category can now be created if it doesn't already exists.
+ *
  * Revision 1.15  2007/02/10 22:57:37  sparhawk
  * 1. Multiple frobs fixed.
  * 2. Having invisible items in the inventory is fixed.
@@ -119,7 +126,7 @@ public:
 	CInventoryCategory		*CreateCategory(const char *CategoryName, int *Index = NULL);
 	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
 
-	idEntity				*GetOwner(void) { return m_Owner.GetEntity(); }
+	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
 	void					SetOwner(idEntity *Owner);
 
 	/**
@@ -134,8 +141,9 @@ public:
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL);
-	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL) { return GetItem(Name.c_str(), Category); } ;
+	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
+	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
+						{ return GetItem(Name.c_str(), Category, bCreateCategory); } ;
 
 	/**
 	 * Retrieve the currently selected item.
@@ -173,11 +181,30 @@ public:
 
 	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
 
+	void					DropCurrentItem(void);
+
+	/**
+	 * Remove entity from map will remove the entity from the map. If 
+	 * bDelete is set, the entity will be deleted as well. This can only
+	 * be done if droppable is set to 0 as well. Otherwise it may be
+	 * possible for the player to drop the item, in which case the entity 
+	 * must stay around.
+	 */
+	void					RemoveEntityFromMap(idEntity *ent, bool bDelete = false);
+
+	/**
+	 * Puts an item back into the map. This can only be done when the item is
+	 * droppable, otherwise it is ignored. If the item was an objective, the 
+	 * objective will to be toggled back again. Owner is needed to retrieve the
+	 * position where the item will be released.
+	 */
+	void					PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item);
+
 protected:
 	void					ValidateCategory(void);
 
 protected:
-	idEntityPtr<idEntity>	m_Owner;
+	idEntityPtr<idEntity>		m_Owner;
 
 	/**
 	 * List of groups in that inventory
@@ -237,7 +264,7 @@ class CInventoryCategory
 	friend CInventory;
 
 public:
-	CInventoryCategory(const char* name = NULL);
+	CInventoryCategory(idEntity *owner, const char* name = NULL);
 	~CInventoryCategory();
 
 	void				Save(idSaveGame *savefile) const;
@@ -246,7 +273,7 @@ public:
 	inline idStr		&GetName() { return m_Name; }
 	inline void			SetInventory(CInventory *Inventory) { m_Inventory = Inventory; }
 
-	idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
+	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
 
 	CInventoryItem		*PutItem(idEntity *Item, const idStr &Name);
 	void				PutItem(CInventoryItem *Item);
@@ -306,7 +333,9 @@ public:
 
 	inline CInventory		*Inventory() const { return m_Inventory; }
 	inline CInventoryCategory	*Category() const { return m_Category; }
-	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); }
+	
+	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
+
 	inline void				SetItemEntity(idEntity *ent) { m_Item = ent; };
 	inline idEntity			*GetItemEntity() { return m_Item.GetEntity(); }
 	inline void				SetType(CInventoryItem::ItemType type) { m_Type = type; };
@@ -317,6 +346,9 @@ public:
 
 	inline bool				IsStackable(void) { return m_Stackable; };
 	void					SetStackable(bool);
+
+	inline void				SetDroppable(bool bDroppable) { m_Droppable = bDroppable; };
+	inline bool				IsDroppable(void) { return m_Droppable; };
 
 	void					SetLootType(CInventoryItem::LootType t);
 	inline LootType			GetLootType(void) { return m_LootType; };
@@ -339,6 +371,7 @@ public:
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
+	idEntityPtr<idEntity>	m_BindMaster;
 	idStr					m_Name;
 	idStr					m_HudName;		// filename for the hud file if it has a custom hud
 	CInventory				*m_Inventory;
@@ -349,9 +382,10 @@ protected:
 	int						m_Overlay;
 	int						m_Count;		// How many of that item are currently represented (i.e. Arrows)
 	bool					m_Stackable;	// Counter can be used if true, otherwise it's a unique item
-	bool					m_Droppable;	// If the item is not droppable it will be inaccessible after it 
+	bool					m_Droppable;		// If the item is not dropable it will be inaccessible after it 
 											// is put into the inventory
 	bool					m_Hud;
+	bool					m_Orientated;	// Taken from the entity
 };
 
 #endif /* __DARKMOD_TDMINVENTORY_H__ */

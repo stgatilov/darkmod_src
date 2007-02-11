@@ -7,6 +7,13 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2007/02/11 21:35:02  sparhawk
+ * Fixed bugs in the inventory.
+ * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
+ * Fixed a bug that loot only counted to totals (at least on screen).
+ * Fixed some bugs and behaviour for GetItem() on the inventory.
+ * Category can now be created if it doesn't already exists.
+ *
  * Revision 1.22  2007/02/10 22:57:37  sparhawk
  * 1. Multiple frobs fixed.
  * 2. Having invisible items in the inventory is fixed.
@@ -166,7 +173,7 @@ CInventoryCategory *CInventory::GetCategory(const char *pName, int *Index)
 	int i, n;
 
 	// If the groupname is null we look for the default group
-	if(pName == NULL)
+	if(pName == NULL || pName[0] == 0)
 		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
 
 	n = m_Category.Num();
@@ -189,20 +196,22 @@ Quit:
 CInventoryCategory *CInventory::CreateCategory(const char *Name, int *Index)
 {
 	CInventoryCategory	*rc = NULL;
+	int i;
 
-	if(Name == NULL)
+	if(Name == NULL || Name[0] == 0)
 		goto Quit;
 
 	if((rc = GetCategory(Name, Index)) != NULL)
 		goto Quit;
 
-	if((rc = new CInventoryCategory) == NULL)
+	if((rc = new CInventoryCategory(m_Owner.GetEntity())) == NULL)
 		goto Quit;
 
 	rc->SetInventory(this);
-	rc->m_Owner = m_Owner.GetEntity();
 	rc->m_Name = Name;
-	m_Category.AddUnique(rc);
+	i = m_Category.AddUnique(rc);
+	if(Index != NULL)
+		*Index = i;
 
 Quit:
 	return rc;
@@ -217,30 +226,33 @@ int CInventory::GetCategoryIndex(const char *CategoryName)
 	return i;
 }
 
-void CInventory::SetOwner(idEntity *Owner)
+void CInventory::SetOwner(idEntity *owner)
 {
 	int i, n;
 
-	m_Owner = Owner; 
+	m_Owner = owner; 
 	n = m_Category.Num();
 	for(i = 0; i < n; i++)
-		m_Category[i]->SetOwner(Owner);
+		m_Category[i]->SetOwner(owner);
 }
 
-CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *Owner)
+CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 {
 	CInventoryItem *rc = NULL;
 	CInventoryItem *item = NULL;
 	idStr s;
+	idStr name;
 	idStr icon;
-	const char *category = NULL;
-	int v;
+	idStr category;
+	bool stackable = false;
+	int v, droppable = 0, del = -1, count = 0;
 	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
 	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
 
-	if(ent == NULL || Owner == NULL)
+	if(ent == NULL || owner == NULL)
 		goto Quit;
 
+	del = 0;
 	if(ent->spawnArgs.GetInt("inv_loot_type", "", v) != false)
 	{
 		if(v >= CInventoryItem::LT_NONE && v < CInventoryItem::LT_COUNT)
@@ -251,6 +263,13 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *Owner)
 
 	ent->spawnArgs.GetString("inv_icon", "", icon);
 	ent->spawnArgs.GetInt("inv_loot_value", "-1", v);
+	ent->spawnArgs.GetInt("inv_droppable", "0", droppable);
+	ent->spawnArgs.GetInt("inv_delete", "0", del);
+
+	// If the item can be dropped we can not allow the item
+	// to be deleted.
+	if(del == 1 && droppable == 1)
+		del = 0;
 
 	// If we have an item without an icon and it is loot, then we can 
 	// simply add the value to the global values. If the item
@@ -282,13 +301,45 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *Owner)
 			rc = GetItem(TDM_LOOT_INFO_ITEM);
 		}
 		else
+		{
+			del = -1;
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Item %s doesn't have an inventory name and is not anonymous.\r", ent->name.c_str());
+		}
 
+		// We can skip the rest of this, because either
+		// it was an anonymous loot item or it was an error.
 		goto Quit;
 	}
 
-	item = new CInventoryItem(Owner);
-	item->SetItem(ent);
+	ent->spawnArgs.GetInt("inv_count", "1", count);
+	if(count < 0)
+		count = 0;
+
+	ent->spawnArgs.GetString("inv_category", "", category);
+
+	ent->spawnArgs.GetString("inv_name", "", name);
+	ent->spawnArgs.GetInt("inv_stackable", "0", v);
+	if(v != 0)
+	{
+		CInventoryItem *exists = GetItem(name.c_str(), category.c_str(), true);
+		stackable = true;
+
+		if(exists != NULL)
+		{
+			exists->SetCount(exists->GetCount()+count);
+			rc = exists;
+			goto Quit;
+		}
+	}
+	else
+		count = 0;
+
+	item = new CInventoryItem(owner);
+
+	if(del == 1)
+		item->SetItem(NULL);
+	else
+		item->SetItem(ent);
 	item->SetLootType(lt);
 
 	if(lt != CInventoryItem::LT_NONE)
@@ -300,26 +351,51 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *Owner)
 		else
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
 	}
+
 	item->SetType(it);
+	item->SetDroppable(droppable);
+	item->SetName(name);
+	item->SetStackable(stackable);			// has to come before SetCount :)
+	item->SetCount(count);
 
-	ent->spawnArgs.GetInt("inv_stackable", "0", v);
-	item->SetStackable(v);
-
-	ent->spawnArgs.GetInt("inv_count", "1", v);
-	item->SetCount(v);
-
-	if(ent->spawnArgs.GetString("inv_category", "", s) != false)
-		category = s.c_str();
-
-	if(ent->spawnArgs.GetString("inv_name", "", s) != false)
-		item->SetName(s);
+	item->m_BindMaster = ent->GetBindMaster();
+	item->m_Orientated = ent->fl.bindOrientated;
 
 	PutItem(item, category);
 
 	rc = item;
 
 Quit:
+	if(del != -1)
+		RemoveEntityFromMap(ent, del);
+
 	return rc;
+}
+
+void CInventory::PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item)
+{
+	if(ent == NULL || owner == NULL || item == NULL)
+		return;
+
+	// Make the item invisible
+	ent->GetPhysics()->LinkClip();
+	ent->Bind(item->m_BindMaster.GetEntity(), item->m_Orientated);
+	ent->Show();
+}
+
+void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
+{
+	if(ent == NULL)
+		return;
+
+	// Make the item invisible
+	ent->Unbind();
+	ent->GetPhysics()->PutToRest();
+	ent->GetPhysics()->UnlinkClip();
+	ent->Hide();
+
+	// TODO: add a notification or something to delete entities that
+	// are no longer needed.
 }
 
 void CInventory::PutItem(CInventoryItem *Item, char const *category)
@@ -331,13 +407,13 @@ void CInventory::PutItem(CInventoryItem *Item, char const *category)
 		goto Quit;
 
 	// Check if it is the default group or not.
-	if(category != NULL || category[0] == 0)
+	if(category == NULL || category[0] == 0)
 		gr = m_Category[0];
 	else
 	{
 		gr = GetCategory(category, &i);
 		if(gr == NULL)
-			goto Quit;
+			gr = CreateCategory(category);
 	}
 
 	gr->PutItem(Item);
@@ -455,13 +531,13 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetItem(const char *Name, char const *Category)
+CInventoryItem *CInventory::GetItem(const char *Name, char const *Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
 	CInventoryCategory *gr;
 
-	if(Category == NULL)
+	if(Category == NULL || Category[0] == 0)
 	{
 		n = m_Category.Num();
 		s = 0;
@@ -470,9 +546,14 @@ CInventoryItem *CInventory::GetItem(const char *Name, char const *Category)
 	{
 		gr = GetCategory(Category, &i);
 		if(gr == NULL)
-			goto Quit;
+		{
+			if(bCreateCategory == true)
+				gr = CreateCategory(Category, &i);
+			else
+				goto Quit;
+		}
 
-		n = i;
+		n = i+1;
 		s = i;
 	}
 
@@ -638,16 +719,37 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	for(i = 0; i < m_Category.Num(); i++)
 		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 
-	return Gold + Jewelry + Goods + m_Gold + m_Jewelry + m_Goods;
+	Gold += m_Gold;
+	Jewelry += m_Jewelry;
+	Goods += m_Goods;
+
+	return Gold + Jewelry + Goods;
 }
 
+void CInventory::DropCurrentItem(void)
+{
+	CInventoryItem *item = GetCurrentItem();
+	idEntity *ent = NULL;
+	idEntity *owner = NULL;
+
+	if(item && item->IsDroppable() == true)
+	{
+		ent = item->GetItemEntity();
+		owner = item->GetOwner();
+		PutEntityInMap(ent, owner, item);
+	}
+
+//	if(ent)
+//		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryDrop", true, 0, "ee", useEnt, this );
+}
 
 ////////////////////////
 // CInventoryCategory //
 ////////////////////////
 
-CInventoryCategory::CInventoryCategory(const char* name)
+CInventoryCategory::CInventoryCategory(idEntity *owner, const char* name)
 {
+	m_Owner = owner;
 	m_Name = name;
 }
 
@@ -668,14 +770,14 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 {
 }
 
-void CInventoryCategory::SetOwner(idEntity *Owner)
+void CInventoryCategory::SetOwner(idEntity *owner)
 {
 	int i, n;
 
-	m_Owner = Owner; 
+	m_Owner = owner; 
 	n = m_Item.Num();
 	for(i = 0; i < n; i++)
-		m_Item[i]->m_Owner = Owner;
+		m_Item[i]->m_Owner = owner;
 }
 
 CInventoryItem *CInventoryCategory::PutItem(idEntity *Item, const idStr &Name)
@@ -701,7 +803,7 @@ void CInventoryCategory::PutItem(CInventoryItem *Item)
 		goto Quit;
 
 	m_Item.AddUnique(Item);
-	Item->m_Owner = m_Owner.GetEntity();
+	Item->m_Owner = m_Owner;
 
 Quit:
 	return;
@@ -825,6 +927,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Droppable = false;
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
+	m_Orientated = false;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -879,12 +982,13 @@ void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
 	{
 		idEntity *it;
+		idEntity *owner = GetOwner();
 
 		m_Hud = true;
 		m_HudName = HudName;
-		m_Overlay = m_Owner.GetEntity()->CreateOverlay(HudName, layer);
+		m_Overlay = owner->CreateOverlay(HudName, layer);
 		if((it = m_Item.GetEntity()) != NULL)
-			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, m_Owner.GetEntity(), (float)m_Overlay, HudName.c_str());
+			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, owner, (float)m_Overlay, HudName.c_str());
 	}
 }
 
@@ -893,12 +997,13 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 	if(Overlay != OVERLAYS_INVALID_HANDLE)
 	{
 		idEntity *it;
+		idEntity *owner = GetOwner();
 
 		m_Hud = true;
 		m_HudName = HudName;
 		m_Overlay = Overlay;
 		if((it = m_Item.GetEntity()) != NULL)
-			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, m_Owner.GetEntity(), (float)m_Overlay, HudName.c_str());
+			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, owner, (float)m_Overlay, HudName.c_str());
 	}
 	else
 		m_Hud = false;
