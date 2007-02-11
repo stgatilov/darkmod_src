@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.64  2007/02/11 01:38:15  ishtvan
+ * knockout fix
+ *
  * Revision 1.63  2007/02/06 13:57:44  thelvyn
  * more falling damage tweaks
  *
@@ -6833,7 +6836,7 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
 	
 	// check if we're hitting the right zone (usually the head)
-	if( strcmp(LocationName.c_str(), spawnArgs.GetString("ko_zone")) )
+	if( strcmp(LocationName.c_str(), spawnArgs.GetString("ko_zone")) != 0 )
 		goto Quit;
 
 	// Check if the AI is above the alert threshold for KOing
