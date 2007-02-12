@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.25  2007/02/12 22:19:36  sparhawk
+ * Added additional objective callback and refactored some of the inventory code.
+ * Also changed the scope of the category constructor, so that it can only be used from the inventory.
+ *
  * Revision 1.24  2007/02/12 07:51:02  ishtvan
  * added inventory callback to objectives
  *
@@ -240,6 +244,59 @@ void CInventory::SetOwner(idEntity *owner)
 		m_Category[i]->SetOwner(owner);
 }
 
+CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType lt, int v)
+{
+	CInventoryItem *rc = NULL;
+	idStr LTypeName;
+	int LGroupVal = 0;
+	int dummy = 0; // for calling GetLoot
+
+	if(lt != CInventoryItem::LT_NONE && v > 0)
+	{
+		// If we have an anonymous loot item, we don't need to 
+		// store it in the inventory.
+		switch(lt)
+		{
+			case CInventoryItem::LT_GOLD:
+				m_Gold += v;
+				LTypeName = "gold";
+				LGroupVal = m_Gold;
+			break;
+
+			case CInventoryItem::LT_GOODS:
+				m_Goods += v;
+				LTypeName = "goods";
+				LGroupVal = m_Goods;
+			break;
+
+			case CInventoryItem::LT_JEWELS:
+				m_Jewelry += v;
+				LTypeName = "jewels";
+				LGroupVal = m_Jewelry;
+			break;
+		}
+
+		m_LootItemCount++;
+
+		rc = GetItem(TDM_LOOT_INFO_ITEM);
+
+		// Objective Callback for loot:
+		// Pass the loot type name and the net loot value of that group
+		LTypeName = "loot_" + LTypeName;
+
+		gameLocal.m_MissionData->InventoryCallback
+									( ent, LTypeName, LGroupVal, 
+										GetLoot( dummy, dummy, dummy ), 
+										true );
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Item %s doesn't have an inventory name and is not anonymous.\r", ent->name.c_str());
+	}
+
+	return rc;
+}
+
 CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 {
 	CInventoryItem *rc = NULL;
@@ -248,6 +305,7 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	idStr name;
 	idStr icon;
 	idStr category;
+	idStr id;
 	bool stackable = false;
 	bool bValidItem = false;
 	int v, droppable = 0, del = -1, count = 0;
@@ -282,53 +340,8 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	// that it is an individual item but can not be displayed.
 	if(icon.Length() == 0)
 	{
-		if(lt != CInventoryItem::LT_NONE && v > 0)
-		{
-			// If we have an anonymous loot item, we don't need to 
-			// store it in the inventory.
-			idStr LTypeName;
-			int LGroupVal = 0;
-			int dummy = 0; // for calling GetLoot
-
-			switch(lt)
-			{
-				case CInventoryItem::LT_GOLD:
-					m_Gold += v;
-					LTypeName = "gold";
-					LGroupVal = m_Gold;
-				break;
-
-				case CInventoryItem::LT_GOODS:
-					m_Goods += v;
-					LTypeName = "goods";
-					LGroupVal = m_Goods;
-				break;
-
-				case CInventoryItem::LT_JEWELS:
-					m_Jewelry += v;
-					LTypeName = "jewels";
-					LGroupVal = m_Jewelry;
-				break;
-			}
-
-			m_LootItemCount++;
-
-			rc = GetItem(TDM_LOOT_INFO_ITEM);
-
-			// Objective Callback for loot:
-			// Pass the loot type name and the net loot value of that group
-			LTypeName = "loot_" + LTypeName;
-
-			gameLocal.m_MissionData->InventoryCallback
-										( ent, LTypeName, LGroupVal, 
-											GetLoot( dummy, dummy, dummy ), 
-											true );
-		}
-		else
-		{
+		if((rc = ValidateLoot(ent, lt, v)) == NULL)
 			del = -1;
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Item %s doesn't have an inventory name and is not anonymous.\r", ent->name.c_str());
-		}
 
 		// We can skip the rest of this, because either
 		// it was an anonymous loot item or it was an error.
@@ -340,9 +353,9 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 		count = 0;
 
 	ent->spawnArgs.GetString("inv_category", "", category);
-
 	ent->spawnArgs.GetString("inv_name", "", name);
 	ent->spawnArgs.GetInt("inv_stackable", "0", v);
+	ent->spawnArgs.GetString("inv_item_id", "", id);
 	if(v != 0)
 	{
 		CInventoryItem *exists = GetItem(name.c_str(), category.c_str(), true);
@@ -352,6 +365,11 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 		{
 			exists->SetCount(exists->GetCount()+count);
 			rc = exists;
+
+			// We added a stackable item that was already in the inventory
+			gameLocal.m_MissionData->InventoryCallback
+								( exists->GetItemEntity(), exists->GetName(), 
+									exists->GetCount(), 1, true );
 			goto Quit;
 		}
 	}
@@ -376,8 +394,10 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
 	}
 
+	item->SetItemId(id);
 	item->SetType(it);
 	item->SetDroppable(droppable);
+	item->SetDeleteable(del);
 	item->SetName(name);
 	item->SetStackable(stackable);			// has to come before SetCount :)
 	item->SetCount(count);
@@ -421,16 +441,16 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
-	// TODO: add a notification or something to delete entities that
-	// are no longer needed.
+	if(bDelete == true)
+		ent->PostEventMS(&EV_Remove, 0);
 }
 
-void CInventory::PutItem(CInventoryItem *Item, char const *category)
+void CInventory::PutItem(CInventoryItem *item, char const *category)
 {
 	int i;
 	CInventoryCategory *gr;
 
-	if(Item == NULL)
+	if(item == NULL)
 		goto Quit;
 
 	// Check if it is the default group or not.
@@ -443,13 +463,20 @@ void CInventory::PutItem(CInventoryItem *Item, char const *category)
 			gr = CreateCategory(category);
 	}
 
-	gr->PutItem(Item);
+	gr->PutItem(item);
+	if(item->IsDeletable() == true)
+	{
+		if(item->IsDroppable() == true)
+			item->SetDeleteable(false);
+	}
+
+	RemoveEntityFromMap(item->GetItemEntity(), item->IsDeletable());
 
 	// Objective callback for non-loot items:
 	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1
 	gameLocal.m_MissionData->InventoryCallback
-								( Item->GetItemEntity(), Item->GetName(), 
-									Item->GetCount(), 1, true );
+								( item->GetItemEntity(), item->GetName(), 
+									item->GetCount(), 1, true );
 
 Quit:
 	return;
@@ -559,6 +586,46 @@ bool CInventory::SetCurrentItem(const char *Item)
 	m_CurrentItem = item;
 
 	rc = true;
+
+Quit:
+	return rc;
+}
+
+CInventoryItem *CInventory::GetItemById(const char *id, char const *Category, bool bCreateCategory)
+{
+	CInventoryItem *rc = NULL;
+	int i, n, s;
+	CInventoryCategory *gr;
+
+	if(id == NULL || id[0] == 0)
+		goto Quit;
+
+	if(Category == NULL || Category[0] == 0)
+	{
+		n = m_Category.Num();
+		s = 0;
+	}
+	else
+	{
+		gr = GetCategory(Category, &i);
+		if(gr == NULL)
+		{
+			if(bCreateCategory == true)
+				gr = CreateCategory(Category, &i);
+			else
+				goto Quit;
+		}
+
+		n = i+1;
+		s = i;
+	}
+
+	for(i = s; i < n; i++)
+	{
+		gr = m_Category[i];
+		if((rc = gr->GetItemById(id)) != NULL)
+			goto Quit;
+	}
 
 Quit:
 	return rc;
@@ -813,30 +880,16 @@ void CInventoryCategory::SetOwner(idEntity *owner)
 		m_Item[i]->m_Owner = owner;
 }
 
-CInventoryItem *CInventoryCategory::PutItem(idEntity *Item, const idStr &Name)
+void CInventoryCategory::PutItem(CInventoryItem *item)
 {
-	CInventoryItem *rc = NULL;
-
-	if(Item == NULL || Name.Length() == 0)
+	if(item == NULL)
 		goto Quit;
 
-	rc = new CInventoryItem(m_Owner.GetEntity());
-	m_Item.AddUnique(rc);
-	rc->m_Name = Name;
-	rc->m_Item = Item;
-	Item->SetInventoryItem(rc);
+	item->m_Owner = m_Owner;
+	item->m_Category = this;
+	item->m_Inventory = m_Inventory;
 
-Quit:
-	return rc;
-}
-
-void CInventoryCategory::PutItem(CInventoryItem *Item)
-{
-	if(Item == NULL)
-		goto Quit;
-
-	m_Item.AddUnique(Item);
-	Item->m_Owner = m_Owner;
+	m_Item.AddUnique(item);
 
 Quit:
 	return;
@@ -853,17 +906,44 @@ CInventoryItem *CInventoryCategory::GetItem(int i)
 	return rc;
 }
 
-CInventoryItem *CInventoryCategory::GetItem(const idStr &Name)
+CInventoryItem *CInventoryCategory::GetItem(const char *Name)
 {
 	CInventoryItem *rc = NULL;
 	CInventoryItem *e;
 	int i, n;
+
+	if(Name == NULL || Name[0] == 0)
+		goto Quit;
 
 	n = m_Item.Num();
 	for(i = 0; i < n; i++)
 	{
 		e = m_Item[i];
 		if(Name == e->m_Name)
+		{
+			rc = e;
+			goto Quit;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+CInventoryItem *CInventoryCategory::GetItemById(const char *id)
+{
+	CInventoryItem *rc = NULL;
+	CInventoryItem *e;
+	int i, n;
+
+	if(id == NULL || id[0] == 0)
+		goto Quit;
+
+	n = m_Item.Num();
+	for(i = 0; i < n; i++)
+	{
+		e = m_Item[i];
+		if(id == e->m_ItemId)
 		{
 			rc = e;
 			goto Quit;
@@ -961,6 +1041,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
 	m_Orientated = false;
+	m_Deleteable = false;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -1042,3 +1123,10 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 		m_Hud = false;
 }
 
+void CInventoryItem::SetDeleteable(bool bDeleteable)
+{
+	if(m_Droppable == true)
+		m_Deleteable = false;
+	else
+		m_Deleteable = bDeleteable;
+}

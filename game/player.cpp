@@ -7,6 +7,10 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.123  2007/02/12 22:19:26  sparhawk
+ * Added additional objective callback and refactored some of the inventory code.
+ * Also changed the scope of the category constructor, so that it can only be used from the inventory.
+ *
  * Revision 1.122  2007/02/11 21:34:49  sparhawk
  * Fixed bugs in the inventory.
  * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
@@ -2089,22 +2093,20 @@ void idPlayer::Spawn( void )
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
+	CInventory *inv = Inventory();
 	CInventoryItem *it;
-	CInventoryCategory *grp;
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
-	grp = Inventory()->GetCategory("DEFAULT");
 	it = new CInventoryItem(this);
 	it->SetName(TDM_DUMMY_ITEM);
 	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
-	grp->PutItem(it);
+	inv->PutItem(it, TDM_INVENTORY_DEFAULT_GROUP);
 
 	// And the player also always gets a loot entry, as he is supposed to find loot in
 	// 99.99% of the maps. That's the point of the game, remember? :)
-	grp = Inventory()->CreateCategory(cv_tdm_inv_loot_group.GetString());
 	idTypeInfo *cls = idClass::GetClass("idItem");
 	idEntity *ent = static_cast<idEntity *>(cls->CreateInstance());
 	ent->CallSpawn();
@@ -2120,8 +2122,8 @@ void idPlayer::Spawn( void )
 	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), 0));
 	it->SetCount(0);
 	it->SetStackable(false);
-	grp->PutItem(it);
-	Inventory()->SetCurrentItem(TDM_DUMMY_ITEM);
+	inv->PutItem(it, cv_tdm_inv_loot_group.GetString());
+	inv->SetCurrentItem(TDM_DUMMY_ITEM);
 }
 
 /*
