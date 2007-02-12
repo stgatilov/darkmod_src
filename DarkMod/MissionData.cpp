@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.23  2007/02/12 07:51:02  ishtvan
+ * added inventory callback to objectives
+ *
  * Revision 1.22  2007/02/07 22:06:25  sparhawk
  * Items can now be frobbed and added to the inventory
  *
@@ -887,8 +890,7 @@ void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 		goto Quit;
 
 	parms->name = ent->name;
-	// TODO: Replace with whatever method Gildoran uses to assign ents to inventory groups
-	parms->group = ent->spawnArgs.GetString("inv_group"); // need this because AI might find an item
+	parms->group = ent->spawnArgs.GetString("inv_name");
 	parms->classname = ent->spawnArgs.GetString("classname");
 	parms->spawnclass = ent->spawnArgs.GetString("spawnclass");
 
@@ -1351,6 +1353,21 @@ void CObjective::Clear( void )
 	m_FailureScript.Clear();
 }
 
+void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, int OverallVal, bool bPickedUp)
+{
+	SObjEntParms Parms;
+
+	if( ent )
+		FillParmsData( ent, &Parms );
+
+	Parms.group = ItemName;
+	Parms.value = value;
+	Parms.valueSuperGroup = OverallVal;
+
+	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
+
+	return;
+}
 
 
 // =============== Boolean Logic Parsing for Objective Failure/Success ==============
@@ -1393,7 +1410,8 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	
 	bool		bReturnVal( false );	
 	bool		bFollowingOperator( false ); // whether we expect an identifier or open parenthesis
-	bool		bOperatorOK( false );
+	bool		bOperatorOK( false ); // can the next token be an operator
+	bool		bNOTed( false ); // next parse node will be NOTted
 	// initialize as advancing to 0,0 at start of parsing
 	bool		bRowAdvanced( true );
 	bool		bColAdvanced( true );
@@ -1406,115 +1424,130 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 
 	src.LoadMemory( input->c_str(), input->Length(), "" );
 
-
-/**
-* PSUEDOCODE:
-* Parenthesis define a level
-* 
-if ("OR")
-{
-	if( bFollowingOperator || !bOperatorOK )
+	while( src.ReadToken( &token ))
 	{
-		// report error
-		goto Quit;
+		if( level < 0 )
+		{
+			// error: Unbalanced parenthesis, found unexpected ")"
+			goto Quit;
+		}
+
+		// New parse node (identifier or parenthesis)
+		if( token.IsNumeric() || token.Cmp( "(" ) )
+		{
+			bFollowingOperator = false;
+
+			//create a new ParseNode
+
+			if( token.Cmp( "(" ) )
+			{
+				// node is a branch
+				level++;
+
+				bOperatorOK = false;
+				// enter previous levels' row, column, and pointer, to the new entry
+			}
+			else if( token.IsNumeric() )
+			{
+				// node is a leaf
+				
+				bOperatorOK = true;
+
+				// set CompNum to the identifier
+				// leave this node's lists empty, since it is a leaf
+			}
+
+			// Step 2. add node to the appropriate point in the matrix-tree - same for both "(" and <INTEGER>
+
+			if( bRowAdvanced )
+			{
+				// append this node as a new row to the Cols[current col] vector
+			}
+			else if( bColAdvanced )
+			{
+				// Create new entry for Cols list, and append this node as the first row entry in the new Cols list
+			}
+			// If neither row nor column advanced, we have a problem, such as two identifiers right beside eachother
+			else
+			{
+				// log error: Unexpected identifier found
+			}
+		}
+
+		else if( token.Icmp( "AND" ) )
+		{
+			if( bFollowingOperator || !bOperatorOK )
+			{
+				// report error
+				goto Quit;
+			}
+			bFollowingOperator = true;
+			bOperatorOK = false;
+
+			col++;
+			bColAdvanced = true;
+		}
+
+		else if( token.Icmp( "OR" ) )
+		{
+			if( bFollowingOperator || !bOperatorOK )
+			{
+				// report error
+				goto Quit;
+			}
+			// We expect next either an identifier or a "("
+			bFollowingOperator = true;
+			bOperatorOK = false;
+
+			row++;
+			bRowAdvanced = true;
+		}
+
+		else if( token.Icmp( "NOT" ) )
+		{
+			bNOTed = true;
+			bOperatorOK = false;
+		}
+
+		else if( token.Cmp( ")" ) )
+		{
+			if( bFollowingOperator )
+			{
+				// report error : Identifier expected, found ")"
+				goto Quit;
+			}
+
+			// TODO: Check if level has been filled out before we go up
+			// If it is empty, report error
+				// Error: Identifier expected, found ")"
+
+			level--;
+			
+			// retrieve the rows/columns for the higher level from the lower level parse node data
+		}
+
+		else
+		{
+			// log unrecognized token
+		}
 	}
-	// We expect next either an identifier or a "("
-	bFollowingOperator = true;
-	bOperatorOK = false;
 
-	Row++
-	bRowAdvanced = true;
-	continue;
-}
 
-if ("AND")
-{
-	if( bFollowingOperator || !bOperatorOK )
-	{
-		// report error
-		goto Quit;
-	}
-	bFollowingOperator = true;
-	bOperatorOK = false;
-
-	Col++;
-	bColAdvanced = true;
-	continue;
-}
-
-if( "(" OR <INTEGER> )
-{
-	bFollowingOperator = false;
-
-	create a new ParseNode
-
-	if "("
-	{
-		// node is a branch
-		level++;
-
-		bOperatorOK = false;
-		enter previous levels' row, column, and pointer, to the new entry
-	}
-	else if <INTEGER>
-	{
-		// node is a leaf
-		
-		bOperatorOK = true;
-
-		// set CompNum to the identifier
-		// leave this node's lists empty, since it is a leaf
-	}
-
-	// Step 2. add node to the appropriate point in the matrix-tree - same for both "(" and <INTEGER>
-
-	if( bRowAdvanced )
-	{
-		// append this node as a new row to the Cols[current col] vector
-	}
-	else if( bColAdvanced )
-	{
-		// Create new entry for Cols list, and append this node as the first row entry in the new Cols list
-	}
-	// If neither row nor column advanced, we have a problem, such as two identifiers right beside eachother
-	else
-	{
-		// log error
-	}
-}
-
-if( ")" )
-{
-	if( bFollowingOperator )
-	{
-		// report error : Identifier expected, found ")"
-		goto Quit;
-	}
-
-	// TODO: Check if level has been filled out before we go up
-	// If it is empty, report error
-		// Error: Identifier expected, found ")"
-
-	level--;
-	
-	// retrieve the rows/columns for the higher level from the lower level parse node data
-}
-
-// During loop:
-if( level < 0 )
-	// error: Unbalanced parenthesis, found unexpected ")", 
-
-// ================== After parsing finishes: ====================
+// Finished parsing
 
 if( level != 0 )
-	// error: Unbalanced parenthesis, expected ")" not found
+	{
+		// error: Unbalanced parenthesis, expected ")" not found
+		goto Quit;
+	}
 
 if( bFollowingOperator )
-	// error: Expected identifier, found EOF
-			 
-**/
+	{
+		// error: Expected identifier, found EOF
+		goto Quit;
+	}
 
-	goto Quit;
+	bReturnVal = true;
 
 Quit:
 
@@ -1704,7 +1737,7 @@ void CObjectiveLocation::Think()
 		}
 	}
 
-	// compare current list to previous cock tick list to generate added list
+	// compare current list to previous clock tick list to generate added list
 	for( int i = 0; i < current.Num(); i++ )
 	{
 		bFound = false;

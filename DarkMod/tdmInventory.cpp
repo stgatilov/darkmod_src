@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.24  2007/02/12 07:51:02  ishtvan
+ * added inventory callback to objectives
+ *
  * Revision 1.23  2007/02/11 21:35:02  sparhawk
  * Fixed bugs in the inventory.
  * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
@@ -120,6 +123,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "../game/Game_local.h"
 
 #include "tdmInventory.h"
+#include "MissionData.h"
 
 const idEventDef EV_PostRestore( "postRestore", NULL );
 
@@ -245,6 +249,7 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	idStr icon;
 	idStr category;
 	bool stackable = false;
+	bool bValidItem = false;
 	int v, droppable = 0, del = -1, count = 0;
 	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
 	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
@@ -281,24 +286,43 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 		{
 			// If we have an anonymous loot item, we don't need to 
 			// store it in the inventory.
+			idStr LTypeName;
+			int LGroupVal = 0;
+			int dummy = 0; // for calling GetLoot
+
 			switch(lt)
 			{
 				case CInventoryItem::LT_GOLD:
 					m_Gold += v;
+					LTypeName = "gold";
+					LGroupVal = m_Gold;
 				break;
 
 				case CInventoryItem::LT_GOODS:
 					m_Goods += v;
+					LTypeName = "goods";
+					LGroupVal = m_Goods;
 				break;
 
 				case CInventoryItem::LT_JEWELS:
 					m_Jewelry += v;
+					LTypeName = "jewels";
+					LGroupVal = m_Jewelry;
 				break;
 			}
 
 			m_LootItemCount++;
 
 			rc = GetItem(TDM_LOOT_INFO_ITEM);
+
+			// Objective Callback for loot:
+			// Pass the loot type name and the net loot value of that group
+			LTypeName = "loot_" + LTypeName;
+
+			gameLocal.m_MissionData->InventoryCallback
+										( ent, LTypeName, LGroupVal, 
+											GetLoot( dummy, dummy, dummy ), 
+											true );
 		}
 		else
 		{
@@ -381,6 +405,9 @@ void CInventory::PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *
 	ent->GetPhysics()->LinkClip();
 	ent->Bind(item->m_BindMaster.GetEntity(), item->m_Orientated);
 	ent->Show();
+
+	// Objectives callback.  Cannot drop loot, so assume it is not loot
+	gameLocal.m_MissionData->InventoryCallback( ent, item->GetName(), item->GetValue(), 1, false ); 
 }
 
 void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
@@ -417,6 +444,12 @@ void CInventory::PutItem(CInventoryItem *Item, char const *category)
 	}
 
 	gr->PutItem(Item);
+
+	// Objective callback for non-loot items:
+	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1
+	gameLocal.m_MissionData->InventoryCallback
+								( Item->GetItemEntity(), Item->GetName(), 
+									Item->GetCount(), 1, true );
 
 Quit:
 	return;
