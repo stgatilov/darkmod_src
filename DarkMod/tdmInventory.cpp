@@ -7,6 +7,9 @@
  * $Author$
  *
  * $Log$
+ * Revision 1.26  2007/02/13 22:56:26  sparhawk
+ * Fxied a bug with non-anonymous loot
+ *
  * Revision 1.25  2007/02/12 22:19:36  sparhawk
  * Added additional objective callback and refactored some of the inventory code.
  * Also changed the scope of the category constructor, so that it can only be used from the inventory.
@@ -133,6 +136,13 @@ const idEventDef EV_PostRestore( "postRestore", NULL );
 
 static idLinkList<idClass>	tdmInventoryObjList;
 
+static idStr sLootTypeName[LT_COUNT] = 
+{
+	"loot_none",
+	"loot_jewels",
+	"loot_gold",
+	"loot_goods"
+};
 
 ///////////////////
 // CInventory
@@ -247,7 +257,6 @@ void CInventory::SetOwner(idEntity *owner)
 CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType lt, int v)
 {
 	CInventoryItem *rc = NULL;
-	idStr LTypeName;
 	int LGroupVal = 0;
 	int dummy = 0; // for calling GetLoot
 
@@ -259,19 +268,16 @@ CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType
 		{
 			case CInventoryItem::LT_GOLD:
 				m_Gold += v;
-				LTypeName = "gold";
 				LGroupVal = m_Gold;
 			break;
 
 			case CInventoryItem::LT_GOODS:
 				m_Goods += v;
-				LTypeName = "goods";
 				LGroupVal = m_Goods;
 			break;
 
 			case CInventoryItem::LT_JEWELS:
 				m_Jewelry += v;
-				LTypeName = "jewels";
 				LGroupVal = m_Jewelry;
 			break;
 		}
@@ -282,10 +288,8 @@ CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType
 
 		// Objective Callback for loot:
 		// Pass the loot type name and the net loot value of that group
-		LTypeName = "loot_" + LTypeName;
-
 		gameLocal.m_MissionData->InventoryCallback
-									( ent, LTypeName, LGroupVal, 
+									( ent, sLootTypeName[lt], LGroupVal, 
 										GetLoot( dummy, dummy, dummy ), 
 										true );
 	}
@@ -386,12 +390,19 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 	if(lt != CInventoryItem::LT_NONE)
 	{
+		int dummy;
+
 		it = CInventoryItem::IT_LOOT;
 		v = 0;
 		if(ent->spawnArgs.GetInt("inv_loot_value", "", v) != false && v != 0)
 			item->SetValue(v);
 		else
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
+
+		gameLocal.m_MissionData->InventoryCallback
+									( ent, sLootTypeName[lt], v, 
+										GetLoot( dummy, dummy, dummy ), 
+										true );
 	}
 
 	item->SetItemId(id);
