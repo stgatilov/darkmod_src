@@ -951,7 +951,7 @@ idEntity::idEntity()
 	// absolutely necessary to create these.
 	m_Inventory			= NULL;
 	m_InventoryItem		= NULL;
-	m_inventoryCursor	= NULL;
+	m_InventoryCursor	= NULL;
 }
 
 /*
@@ -1389,7 +1389,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_Inventory ) );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_InventoryItem ) );
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_inventoryCursor ) );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( m_InventoryCursor ) );
 
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {
@@ -7075,15 +7075,10 @@ entity's inventory.
 */
 CInventoryCursor* idEntity::InventoryCursor()
 {
-/*	if ( m_inventoryCursor == NULL ) {
-		m_inventoryCursor = new CInventoryCursor();
-		if ( m_inventoryCursor == NULL ) {
-			gameLocal.Error("Unable to allocate enough memory for an inventory cursor.");
-			return NULL;
-		}
-		m_inventoryCursor->m_owner = this;
-	}
-*/	return m_inventoryCursor;
+	if(m_InventoryCursor == NULL)
+		m_InventoryCursor = Inventory()->CreateCursor();
+
+	return m_InventoryCursor;
 }
 
 void idEntity::Event_PropSound( const char *sndName )
@@ -7971,7 +7966,7 @@ void idEntity::CheckInventoryInit(void)
 
 CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 {
-	CInventory *inv = Inventory();
+	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *rc = NULL;
 	CInventoryItem *prev = NULL;
 	idStr s;
@@ -7984,8 +7979,8 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
 		goto Quit;
 
-	prev = inv->GetCurrentItem();
-	rc = inv->PutItem(ent, this);
+	prev = crsr->GetCurrentItem();
+	rc = crsr->Inventory()->PutItem(ent, this);
 
 	ent->spawnArgs.GetString("snd_acquire", "", s);
 	if(s.Length() == 0)
@@ -8002,7 +7997,7 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 		}
 	}
 
-	inv->SetCurrentItem(rc);
+	crsr->SetCurrentItem(rc);
 	if(_hud != NULL)
 		inventoryChangeSelection(_hud, true, prev);
 

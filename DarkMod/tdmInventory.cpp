@@ -1,12 +1,12 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
+ * $Source: /cvsroot/darkmod_src/DarkMod/tdmInventory.cpp,v $
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
+ * $Log: tdmInventory.cpp,v $
  * Revision 1.26  2007/02/13 22:56:26  sparhawk
  * Fxied a bug with non-anonymous loot
  *
@@ -125,7 +125,7 @@
 
 #pragma warning(disable : 4533 4800)
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Source: /cvsroot/darkmod_src/DarkMod/tdmInventory.cpp,v $  $Revision$   $Date$", init_version);
 
 #include "../game/Game_local.h"
 
@@ -144,10 +144,6 @@ static idStr sLootTypeName[LT_COUNT] =
 	"loot_goods"
 };
 
-///////////////////
-// CInventory
-///////////////////
-
 CLASS_DECLARATION(idClass, CInventory)
 END_CLASS
 
@@ -156,10 +152,6 @@ CInventory::CInventory()
 {
 	m_Owner = NULL;
 	CreateCategory(TDM_INVENTORY_DEFAULT_GROUP);	// We always have a defaultgroup if nothing else
-	m_CategoryLock = false;							// Default behaviour ...
-	m_WrapAround = true;							// ... is like standard Thief inventory.
-	m_CurrentCategory = 0;
-	m_CurrentItem = 0;
 	m_LootItemCount = 0;
 	m_Gold = 0;
 	m_Jewelry = 0;
@@ -175,83 +167,22 @@ CInventory::~CInventory()
 		delete m_Category[i];
 }
 
-void CInventory::Save(idSaveGame *savefile) const
+int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
-	// TODO: Has to call the groups and items as well.
-}
-
-void CInventory::Restore(idRestoreGame *savefile)
-{
-	// TODO: Has to call the groups and items as well.
-}
-
-CInventoryCategory *CInventory::GetCategory(const char *pName, int *Index)
-{
-	CInventoryCategory *rc = NULL;
-	int i, n;
-
-	// If the groupname is null we look for the default group
-	if(pName == NULL || pName[0] == 0)
-		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
-
-	n = m_Category.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(m_Category[i]->m_Name.Cmp(pName) == 0)
-		{
-			rc = m_Category[i];
-			if(Index != NULL)
-				*Index = i;
-
-			goto Quit;
-		}
-	}
-
-Quit:
-	return rc;
-}
-
-CInventoryCategory *CInventory::CreateCategory(const char *Name, int *Index)
-{
-	CInventoryCategory	*rc = NULL;
 	int i;
 
-	if(Name == NULL || Name[0] == 0)
-		goto Quit;
+	Gold = 0;
+	Jewelry = 0;
+	Goods = 0;
 
-	if((rc = GetCategory(Name, Index)) != NULL)
-		goto Quit;
+	for(i = 0; i < m_Category.Num(); i++)
+		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
 
-	if((rc = new CInventoryCategory(m_Owner.GetEntity())) == NULL)
-		goto Quit;
+	Gold += m_Gold;
+	Jewelry += m_Jewelry;
+	Goods += m_Goods;
 
-	rc->SetInventory(this);
-	rc->m_Name = Name;
-	i = m_Category.AddUnique(rc);
-	if(Index != NULL)
-		*Index = i;
-
-Quit:
-	return rc;
-}
-
-int CInventory::GetCategoryIndex(const char *CategoryName)
-{
-	int i = -1;
-
-	GetCategory(CategoryName, &i);
-
-	return i;
-}
-
-void CInventory::SetOwner(idEntity *owner)
-{
-	int i, n;
-
-	m_Owner = owner; 
-	n = m_Category.Num();
-	for(i = 0; i < n; i++)
-		m_Category[i]->SetOwner(owner);
+	return Gold + Jewelry + Goods;
 }
 
 CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType lt, int v)
@@ -296,6 +227,127 @@ CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType
 	else
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Item %s doesn't have an inventory name and is not anonymous.\r", ent->name.c_str());
+	}
+
+	return rc;
+}
+
+void CInventory::SetOwner(idEntity *owner)
+{
+	int i, n;
+
+	m_Owner = owner; 
+	n = m_Category.Num();
+	for(i = 0; i < n; i++)
+		m_Category[i]->SetOwner(owner);
+}
+
+CInventoryCategory *CInventory::CreateCategory(const char *Name, int *Index)
+{
+	CInventoryCategory	*rc = NULL;
+	int i;
+
+	if(Name == NULL || Name[0] == 0)
+		goto Quit;
+
+	if((rc = GetCategory(Name, Index)) != NULL)
+		goto Quit;
+
+	if((rc = new CInventoryCategory(m_Owner.GetEntity())) == NULL)
+		goto Quit;
+
+	rc->SetInventory(this);
+	rc->m_Name = Name;
+	i = m_Category.AddUnique(rc);
+	if(Index != NULL)
+		*Index = i;
+
+Quit:
+	return rc;
+}
+
+CInventoryCategory *CInventory::GetCategory(const char *pName, int *Index)
+{
+	CInventoryCategory *rc = NULL;
+	int i, n;
+
+	// If the groupname is null we look for the default group
+	if(pName == NULL || pName[0] == 0)
+		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
+
+	n = m_Category.Num();
+	for(i = 0; i < n; i++)
+	{
+		if(m_Category[i]->m_Name.Cmp(pName) == 0)
+		{
+			rc = m_Category[i];
+			if(Index != NULL)
+				*Index = i;
+
+			goto Quit;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+int CInventory::GetCategoryIndex(const char *CategoryName)
+{
+	int i = -1;
+
+	GetCategory(CategoryName, &i);
+
+	return i;
+}
+
+int CInventory::GetCategoryItemIndex(const char *ItemName, int *ItemIndex)
+{
+	int rc = -1;
+	int i;
+	int n = -1;
+
+	if(ItemIndex != NULL)
+		*ItemIndex = -1;
+
+	if(ItemName == NULL)
+		goto Quit;
+
+	for(i = 0; i < m_Category.Num(); i++)
+	{
+		if((n = m_Category[i]->GetItemIndex(ItemName)) != -1)
+		{
+			if(ItemIndex != NULL)
+				*ItemIndex = n;
+
+			rc = i;
+			break;
+		}
+	}
+
+Quit:
+	return rc;
+}
+
+int CInventory::GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex)
+{
+	int rc = -1;
+	int i;
+	int n = -1;
+
+	if(ItemIndex != NULL)
+		*ItemIndex = -1;
+
+	for(i = 0; i < m_Category.Num(); i++)
+	{
+		if((n = m_Category[i]->GetItemIndex(Item)) != -1)
+		{
+			if(ItemIndex != NULL)
+				*ItemIndex = n;
+
+			rc = i;
+			break;
+		}
 	}
 
 	return rc;
@@ -493,110 +545,38 @@ Quit:
 	return;
 }
 
-int CInventory::GetCategoryItemIndex(const char *ItemName, int *ItemIndex)
-{
-	int rc = -1;
-	int i;
-	int n = -1;
-
-	if(ItemIndex != NULL)
-		*ItemIndex = -1;
-
-	if(ItemName == NULL)
-		goto Quit;
-
-	for(i = 0; i < m_Category.Num(); i++)
-	{
-		if((n = m_Category[i]->GetItemIndex(ItemName)) != -1)
-		{
-			if(ItemIndex != NULL)
-				*ItemIndex = n;
-
-			rc = i;
-			break;
-		}
-	}
-
-Quit:
-	return rc;
-}
-
-int CInventory::GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex)
-{
-	int rc = -1;
-	int i;
-	int n = -1;
-
-	if(ItemIndex != NULL)
-		*ItemIndex = -1;
-
-	for(i = 0; i < m_Category.Num(); i++)
-	{
-		if((n = m_Category[i]->GetItemIndex(Item)) != -1)
-		{
-			if(ItemIndex != NULL)
-				*ItemIndex = n;
-
-			rc = i;
-			break;
-		}
-	}
-
-	return rc;
-}
-
-CInventoryItem *CInventory::GetCurrentItem()
+CInventoryItem *CInventory::GetItem(const char *Name, char const *Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
+	int i, n, s;
+	CInventoryCategory *gr;
 
-	if(m_Category.Num() > 0)
-		rc = m_Category[m_CurrentCategory]->GetItem(m_CurrentItem);
-
-	return rc;
-}
-
-bool CInventory::SetCurrentItem(CInventoryItem *Item)
-{
-	bool rc = false;
-	int group, item;
-
-	if(Item == NULL)
+	if(Category == NULL || Category[0] == 0)
 	{
-		if((Item = GetItem(TDM_DUMMY_ITEM)) == NULL)
-			goto Quit;
+		n = m_Category.Num();
+		s = 0;
+	}
+	else
+	{
+		gr = GetCategory(Category, &i);
+		if(gr == NULL)
+		{
+			if(bCreateCategory == true)
+				gr = CreateCategory(Category, &i);
+			else
+				goto Quit;
+		}
+
+		n = i+1;
+		s = i;
 	}
 
-	if((group = GetCategoryItemIndex(Item, &item)) == -1)
-		goto Quit;
-
-	// Only change the group and item indizies, if they are valid.
-	// Otherwise we might have an invalid index (-1).
-	m_CurrentCategory = group;
-	m_CurrentItem = item;
-
-	rc = true;
-
-Quit:
-	return rc;
-}
-
-bool CInventory::SetCurrentItem(const char *Item)
-{
-	bool rc = false;
-	int group, item;
-
-	if(Item == NULL)
-		goto Quit;
-
-	if((group = GetCategoryItemIndex(Item, &item)) == -1)
-		goto Quit;
-
-	// Only change the group and item indizies, if they are valid.
-	// Otherwise we might have an invalid index (-1).
-	m_CurrentCategory = group;
-	m_CurrentItem = item;
-
-	rc = true;
+	for(i = s; i < n; i++)
+	{
+		gr = m_Category[i];
+		if((rc = gr->GetItem(Name)) != NULL)
+			goto Quit;
+	}
 
 Quit:
 	return rc;
@@ -642,46 +622,113 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetItem(const char *Name, char const *Category, bool bCreateCategory)
+CInventoryCursor *CInventory::CreateCursor(void)
+{
+	CInventoryCursor *rc = NULL;
+
+	if((rc = new CInventoryCursor(this)) != NULL)
+		m_Cursor.AddUnique(rc);
+
+	return rc;
+}
+
+void CInventory::Save(idSaveGame *savefile) const
+{
+	// TODO: Has to call the groups and items as well.
+}
+
+void CInventory::Restore(idRestoreGame *savefile)
+{
+	// TODO: Has to call the groups and items as well.
+}
+
+///////////////////
+// CInventoryCursor
+///////////////////
+
+CInventoryCursor::CInventoryCursor(CInventory *inv)
+{
+	m_Inventory = inv;
+	m_CategoryLock = false;							// Default behaviour ...
+	m_WrapAround = true;							// ... is like standard Thief inventory.
+	m_CurrentCategory = 0;
+	m_CurrentItem = 0;
+}
+
+CInventoryCursor::~CInventoryCursor()
+{
+}
+
+void CInventoryCursor::Save(idSaveGame *savefile) const
+{
+	// TODO: Has to call the groups and items as well.
+}
+
+void CInventoryCursor::Restore(idRestoreGame *savefile)
+{
+	// TODO: Has to call the groups and items as well.
+}
+
+CInventoryItem *CInventoryCursor::GetCurrentItem()
 {
 	CInventoryItem *rc = NULL;
-	int i, n, s;
-	CInventoryCategory *gr;
 
-	if(Category == NULL || Category[0] == 0)
-	{
-		n = m_Category.Num();
-		s = 0;
-	}
-	else
-	{
-		gr = GetCategory(Category, &i);
-		if(gr == NULL)
-		{
-			if(bCreateCategory == true)
-				gr = CreateCategory(Category, &i);
-			else
-				goto Quit;
-		}
+	if(m_Inventory->m_Category.Num() > 0)
+		rc = m_Inventory->m_Category[m_CurrentCategory]->GetItem(m_CurrentItem);
 
-		n = i+1;
-		s = i;
-	}
+	return rc;
+}
 
-	for(i = s; i < n; i++)
+bool CInventoryCursor::SetCurrentItem(CInventoryItem *Item)
+{
+	bool rc = false;
+	int group, item;
+
+	if(Item == NULL)
 	{
-		gr = m_Category[i];
-		if((rc = gr->GetItem(Name)) != NULL)
+		if((Item = m_Inventory->GetItem(TDM_DUMMY_ITEM)) == NULL)
 			goto Quit;
 	}
+
+	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
+		goto Quit;
+
+	// Only change the group and item indizies, if they are valid.
+	// Otherwise we might have an invalid index (-1).
+	m_CurrentCategory = group;
+	m_CurrentItem = item;
+
+	rc = true;
 
 Quit:
 	return rc;
 }
 
-void CInventory::ValidateCategory(void)
+bool CInventoryCursor::SetCurrentItem(const char *Item)
 {
-	int n = m_Category.Num();
+	bool rc = false;
+	int group, item;
+
+	if(Item == NULL)
+		goto Quit;
+
+	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
+		goto Quit;
+
+	// Only change the group and item indizies, if they are valid.
+	// Otherwise we might have an invalid index (-1).
+	m_CurrentCategory = group;
+	m_CurrentItem = item;
+
+	rc = true;
+
+Quit:
+	return rc;
+}
+
+void CInventoryCursor::ValidateCategory(void)
+{
+	int n = m_Inventory->m_Category.Num();
 
 	if(m_CurrentCategory >= n)
 	{
@@ -717,7 +764,7 @@ void CInventory::ValidateCategory(void)
 				else
 					m_CurrentCategory = 0;
 
-				n = m_Category[m_CurrentCategory]->m_Item.Num();
+				n = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num();
 				if(n > 0)
 					m_CurrentItem = n-1;
 				else
@@ -726,7 +773,7 @@ void CInventory::ValidateCategory(void)
 			else
 			{
 				m_CurrentCategory = 0;
-				n = m_Category[m_CurrentCategory]->m_Item.Num();
+				n = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num();
 				if(n > 0)
 					m_CurrentItem = n-1;
 				else
@@ -740,13 +787,13 @@ void CInventory::ValidateCategory(void)
 	}
 }
 
-CInventoryItem *CInventory::GetNextItem(void)
+CInventoryItem *CInventoryCursor::GetNextItem(void)
 {
 	CInventoryItem *rc = NULL;
 	int ni;
 
 	ValidateCategory();
-	ni = m_Category[m_CurrentCategory]->m_Item.Num();
+	ni = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num();
 
 	m_CurrentItem++;
 	if(m_CurrentItem >= ni)
@@ -761,18 +808,18 @@ CInventoryItem *CInventory::GetNextItem(void)
 			m_CurrentItem = 0;
 		else 
 		{
-			m_CurrentItem = m_Category[m_CurrentCategory]->m_Item.Num()-1;
+			m_CurrentItem = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num()-1;
 			goto Quit;
 		}
 	}
 
-	rc = m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
+	rc = m_Inventory->m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetPrevItem(void)
+CInventoryItem *CInventoryCursor::GetPrevItem(void)
 {
 	CInventoryItem *rc = NULL;
 
@@ -787,7 +834,7 @@ CInventoryItem *CInventory::GetPrevItem(void)
 		}
 
 		if(m_WrapAround == true)
-			m_CurrentItem = m_Category[m_CurrentCategory]->m_Item.Num()-1;
+			m_CurrentItem = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num()-1;
 		else 
 		{
 			m_CurrentItem = 0;
@@ -795,49 +842,31 @@ CInventoryItem *CInventory::GetPrevItem(void)
 		}
 	}
 
-	rc = m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
+	rc = m_Inventory->m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
 
 Quit:
 	return rc;
 }
 
-CInventoryCategory *CInventory::GetNextCategory(void)
+CInventoryCategory *CInventoryCursor::GetNextCategory(void)
 {
 	ValidateCategory();
 	m_CurrentCategory++;
 	ValidateCategory();
 
-	return m_Category[m_CurrentCategory];
+	return m_Inventory->m_Category[m_CurrentCategory];
 }
 
-CInventoryCategory *CInventory::GetPrevCategory(void)
+CInventoryCategory *CInventoryCursor::GetPrevCategory(void)
 {
 	ValidateCategory();
 	m_CurrentCategory--;
 	ValidateCategory();
 
-	return m_Category[m_CurrentCategory];
+	return m_Inventory->m_Category[m_CurrentCategory];
 }
 
-int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
-{
-	int i;
-
-	Gold = 0;
-	Jewelry = 0;
-	Goods = 0;
-
-	for(i = 0; i < m_Category.Num(); i++)
-		m_Category[i]->GetLoot(Gold, Jewelry, Goods);
-
-	Gold += m_Gold;
-	Jewelry += m_Jewelry;
-	Goods += m_Goods;
-
-	return Gold + Jewelry + Goods;
-}
-
-void CInventory::DropCurrentItem(void)
+void CInventoryCursor::DropCurrentItem(void)
 {
 	CInventoryItem *item = GetCurrentItem();
 	idEntity *ent = NULL;
@@ -847,7 +876,7 @@ void CInventory::DropCurrentItem(void)
 	{
 		ent = item->GetItemEntity();
 		owner = item->GetOwner();
-		PutEntityInMap(ent, owner, item);
+		m_Inventory->PutEntityInMap(ent, owner, item);
 	}
 
 //	if(ent)
@@ -1141,3 +1170,4 @@ void CInventoryItem::SetDeleteable(bool bDeleteable)
 	else
 		m_Deleteable = bDeleteable;
 }
+

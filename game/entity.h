@@ -1030,12 +1030,14 @@ private:
 
 	int						mpGUIState;							// local cache to avoid systematic SetStateInt
 
-	/// A pointer to our inventory.
-	CInventory*			m_Inventory;
-	/// A pointer to our item, so that we can be added/removed to/from inventories.
-	CInventoryItem*		m_InventoryItem;
+	// A pointer to our inventory.
+	CInventory				*m_Inventory;
+
+	// A pointer to our item, so that we can be added/removed to/from inventories.
+	CInventoryItem			*m_InventoryItem;
+
 	/// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
-	CInventoryCursor*	m_inventoryCursor;
+	CInventoryCursor		*m_InventoryCursor;
 
 private:
 	void					FixupLocalizedStrings();

@@ -1,12 +1,12 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
+ * $Source: /cvsroot/darkmod_src/DarkMod/tdmInventory.h,v $
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
+ * $Log: tdmInventory.h,v $
  * Revision 1.17  2007/02/12 22:19:36  sparhawk
  * Added additional objective callback and refactored some of the inventory code.
  * Also changed the scope of the category constructor, so that it can only be used from the inventory.
@@ -91,6 +91,7 @@ class CInventoryItem;
 class CInventoryCategory
 {
 	friend CInventory;
+	friend CInventoryCursor;
 
 public:
 	inline idStr		&GetName() { return m_Name; }
@@ -135,6 +136,7 @@ protected:
 class CInventoryItem
 {
 	friend CInventory;
+	friend CInventoryCursor;
 	friend CInventoryCategory;
 
 public:
@@ -239,69 +241,19 @@ protected:
  * If an item is put into an inventory, without specifying the group, it will be put
  * in the default group which is always at index 0 and has the name DEFAULT.
  */
-class CInventory : public idClass
+class CInventoryCursor
 {
-	CLASS_PROTOTYPE(CInventory);
+	friend CInventory;
+
+protected:
+	CInventoryCursor(CInventory *);
+	~CInventoryCursor();
+
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
 
 public:
-	CInventory();
-	~CInventory();
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
-
-	/**
-	 * GetCategory returns the pointer to the given group and it's index, 
-	 * if the pointer is not NULL.
-	 */
-	CInventoryCategory	*GetCategory(const char *CategoryName = NULL, int *Index = NULL);
-	inline CInventoryCategory	*GetCategory(idStr const &CategoryName, int *Index = NULL) { return GetCategory(CategoryName.c_str(), Index); }
-
-	/**
-	 * GetCategoryIndex returns the index to the given group or -1 if not found.
-	 */
-	int					GetCategoryIndex(const char *CategoryName);
-	inline int			GetCategoryIndex(idStr const &CategoryName) { return GetCategoryIndex(CategoryName.c_str()); }
-
-	/**
-	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
-	 * the itemindex within that group can also be obtained. Both are set to -1 
-	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
-	 */
-	int						GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
-	int						GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
-	inline int				GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) 
-									{ return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
-
-	/**
-	 * CreateCategory creates the named group if it doesn't already exist.
-	 */
-	CInventoryCategory		*CreateCategory(const char *CategoryName, int *Index = NULL);
-	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
-
-	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
-	void					SetOwner(idEntity *Owner);
-
-	/**
-	 * Put an item in the inventory. Use the default group if none is specified.
-	 * The name, that is to be displayed on a GUI, must be set on the respective
-	 * entity.
-	 */
-	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
-	void					PutItem(CInventoryItem *Item, char const *Category = NULL);
-
-	/**
-	 * Retrieve an item from an inventory. If no group is specified, all of 
-	 * them are searched, otherwise only the given group.
-	 */
-	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
-	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
-						{ return GetItem(Name.c_str(), Category, bCreateCategory); } ;
-
-	CInventoryItem			*GetItemById(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
-	inline CInventoryItem	*GetItemById(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
-						{ return GetItemById(Name.c_str(), Category, bCreateCategory); } ;
-
+	inline CInventory		*Inventory() { return m_Inventory; };
 	/**
 	 * Retrieve the currently selected item.
 	 */
@@ -336,38 +288,13 @@ public:
 	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
-	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
-
 	void					DropCurrentItem(void);
-
-	/**
-	 * Remove entity from map will remove the entity from the map. If 
-	 * bDelete is set, the entity will be deleted as well. This can only
-	 * be done if droppable is set to 0 as well. Otherwise it may be
-	 * possible for the player to drop the item, in which case the entity 
-	 * must stay around.
-	 */
-	void					RemoveEntityFromMap(idEntity *ent, bool bDelete = false);
-
-	/**
-	 * Puts an item back into the map. This can only be done when the item is
-	 * droppable, otherwise it is ignored. If the item was an objective, the 
-	 * objective will to be toggled back again. Owner is needed to retrieve the
-	 * position where the item will be released.
-	 */
-	void					PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item);
 
 protected:
 	void					ValidateCategory(void);
-	CInventoryItem			*ValidateLoot(idEntity *ent, CInventoryItem::LootType, int value);
 
 protected:
-	idEntityPtr<idEntity>		m_Owner;
-
-	/**
-	 * List of groups in that inventory
-	 */
-	idList<CInventoryCategory *>		m_Category;
+	CInventory				*m_Inventory;
 
 	/**
 	 * If true it means that the scrolling with next/prev is locked
@@ -375,7 +302,7 @@ protected:
 	 * the player has to use the next/prev group keys to switch to
 	 * a different group.
 	 */
-	bool							m_CategoryLock;
+	bool					m_CategoryLock;
 
 	/**
 	 * If set to true the inventory will start from the first/last item
@@ -402,6 +329,107 @@ protected:
 	 */
 	int						m_CurrentItem;
 
+	int						m_CursorId;
+};
+
+class CInventory : public idClass
+{
+public:
+	CLASS_PROTOTYPE(CInventory);
+
+	friend CInventoryCursor;
+
+	CInventory();
+	~CInventory();
+
+	CInventoryCursor		*CreateCursor(void);
+
+	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
+
+	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
+	void					SetOwner(idEntity *Owner);
+
+	/**
+	 * CreateCategory creates the named group if it doesn't already exist.
+	 */
+	CInventoryCategory		*CreateCategory(const char *CategoryName, int *Index = NULL);
+	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
+
+	/**
+	 * GetCategory returns the pointer to the given group and it's index, 
+	 * if the pointer is not NULL.
+	 */
+	CInventoryCategory	*GetCategory(const char *CategoryName = NULL, int *Index = NULL);
+	inline CInventoryCategory	*GetCategory(idStr const &CategoryName, int *Index = NULL) { return GetCategory(CategoryName.c_str(), Index); }
+
+	/**
+	 * GetCategoryIndex returns the index to the given group or -1 if not found.
+	 */
+	int					GetCategoryIndex(const char *CategoryName);
+	inline int			GetCategoryIndex(idStr const &CategoryName) { return GetCategoryIndex(CategoryName.c_str()); }
+
+	/**
+	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
+	 * the itemindex within that group can also be obtained. Both are set to -1 
+	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
+	 */
+	int						GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
+	int						GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
+	inline int				GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) 
+									{ return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
+
+	/**
+	 * Remove entity from map will remove the entity from the map. If 
+	 * bDelete is set, the entity will be deleted as well. This can only
+	 * be done if droppable is set to 0 as well. Otherwise it may be
+	 * possible for the player to drop the item, in which case the entity 
+	 * must stay around.
+	 */
+	void					RemoveEntityFromMap(idEntity *ent, bool bDelete = false);
+
+	/**
+	 * Puts an item back into the map. This can only be done when the item is
+	 * droppable, otherwise it is ignored. If the item was an objective, the 
+	 * objective will to be toggled back again. Owner is needed to retrieve the
+	 * position where the item will be released.
+	 */
+	void					PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item);
+
+	/**
+	 * Put an item in the inventory. Use the default group if none is specified.
+	 * The name, that is to be displayed on a GUI, must be set on the respective
+	 * entity.
+	 */
+	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
+	void					PutItem(CInventoryItem *Item, char const *Category = NULL);
+
+	/**
+	 * Retrieve an item from an inventory. If no group is specified, all of 
+	 * them are searched, otherwise only the given group.
+	 */
+	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
+	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
+						{ return GetItem(Name.c_str(), Category, bCreateCategory); } ;
+
+	CInventoryItem			*GetItemById(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
+	inline CInventoryItem	*GetItemById(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
+						{ return GetItemById(Name.c_str(), Category, bCreateCategory); } ;
+
+protected:
+	void				Save(idSaveGame *savefile) const;
+	void				Restore(idRestoreGame *savefile);
+	CInventoryItem		*ValidateLoot(idEntity *ent, CInventoryItem::LootType, int value);
+
+protected:
+	idEntityPtr<idEntity>				m_Owner;
+
+	idList<CInventoryCursor *>			m_Cursor;
+
+	/**
+	 * List of groups in that inventory
+	 */
+	idList<CInventoryCategory *>		m_Category;
+
 	/**
 	 * Here we keep the lootcount for the items, that don't need to actually 
 	 * be stored in the inventory, because they can't get displayed anyway.
@@ -413,5 +441,6 @@ protected:
 	int						m_Jewelry;
 	int						m_Goods;
 };
+
 
 #endif /* __DARKMOD_TDMINVENTORY_H__ */

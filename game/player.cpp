@@ -2096,7 +2096,7 @@ void idPlayer::Spawn( void )
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
-	CInventory *inv = Inventory();
+	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it;
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
@@ -2106,7 +2106,7 @@ void idPlayer::Spawn( void )
 	it->SetType(CInventoryItem::IT_DUMMY);
 	it->SetCount(0);
 	it->SetStackable(false);
-	inv->PutItem(it, TDM_INVENTORY_DEFAULT_GROUP);
+	crsr->Inventory()->PutItem(it, TDM_INVENTORY_DEFAULT_GROUP);
 
 	// And the player also always gets a loot entry, as he is supposed to find loot in
 	// 99.99% of the maps. That's the point of the game, remember? :)
@@ -2125,8 +2125,8 @@ void idPlayer::Spawn( void )
 	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), 0));
 	it->SetCount(0);
 	it->SetStackable(false);
-	inv->PutItem(it, cv_tdm_inv_loot_group.GetString());
-	inv->SetCurrentItem(TDM_DUMMY_ITEM);
+	crsr->Inventory()->PutItem(it, cv_tdm_inv_loot_group.GetString());
+	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
 }
 
 /*
@@ -6421,8 +6421,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// If the player has an item that is selected we need to check if this
 			// is a usable item (like a key). In this case the use action takes
 			// precedence over the frobaction.
-			CInventory *inv = Inventory();
-			CInventoryItem *it = inv->GetCurrentItem();
+			CInventoryCursor *crsr = InventoryCursor();
+			CInventoryItem *it = crsr->GetCurrentItem();
 			if(it->GetType() != CInventoryItem::IT_DUMMY)
 			{
 				ent = it->GetItemEntity();
@@ -9892,30 +9892,30 @@ idPlayer::inventoryNextItem
 */
 void idPlayer::inventoryNextItem()
 {
-	CInventory *inv = Inventory();
+	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(inv == NULL)
+	if(crsr == NULL)
 		return;
 
-	prev = inv->GetCurrentItem();
-	inv->GetNextItem();
+	prev = crsr->GetCurrentItem();
+	crsr->GetNextItem();
 	if(hud)
 		inventoryChangeSelection(hud, true, prev);
 }
 
 void idPlayer::inventoryPrevItem()
 {
-	CInventory *inv = Inventory();
+	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *prev;
 
 	// If the entity doesn't have an inventory, we don't need to do anything.
-	if(inv == NULL)
+	if(crsr == NULL)
 		return;
 
-	prev = inv->GetCurrentItem();
-	inv->GetPrevItem();
+	prev = crsr->GetCurrentItem();
+	crsr->GetPrevItem();
 	if(hud)
 		inventoryChangeSelection(hud, true, prev);
 }
@@ -9985,7 +9985,7 @@ void idPlayer::inventoryDropItem()
 	if(ent != NULL)
 		return;
 	else
-		Inventory()->DropCurrentItem();
+		InventoryCursor()->DropCurrentItem();
 }
 
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
@@ -10000,8 +10000,8 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 	idThread *thread;
 
 	// Since the player always has at least a loot and a dummy item, this can never be NULL.
-	inv = Inventory();
-	cur = inv->GetCurrentItem();
+	CInventoryCursor *crsr = InventoryCursor();
+	cur = crsr->GetCurrentItem();
 	if(cur)
 		e = cur->GetItemEntity();
 
