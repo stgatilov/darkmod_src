@@ -293,7 +293,8 @@ void CsndPropLoader::ExpandBoundsMinAxis( idBounds *bounds, float percent )
 
 void CsndPropLoader::ParseMapEntities ( idMapFile *MapFile )
 {
-	int			i, count(0), missedCount(0);
+	int			i;
+	//int count(0), missedCount(0);
 	idDict		args;
 	
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Soundprop: Parsing Map entities\r");
@@ -343,7 +344,7 @@ void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 {
 	int area;
 	float lossMult, VolMod;
-	bool SpherSpread(false);
+//	bool SpherSpread(false);
 	SAreaProp propEntry;
 	idStr lossvalue, VolOffset;
 

@@ -112,6 +112,8 @@ extern char *cStimType[];
 
 #define TIMER_UNDEFINED		-1
 
+#pragma warning( push )
+#pragma warning( disable : 4201 ) // non standard extension nameless struct/union
 typedef union {
 public:
 	struct {
@@ -126,6 +128,7 @@ public:
 		signed short Millisecond;
 	};
 } TimerValue;
+#pragma warning( pop )
 
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.

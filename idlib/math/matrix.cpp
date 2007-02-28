@@ -33,7 +33,8 @@
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
-
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 //===============================================================
 //
 //	idMat2
@@ -8108,3 +8109,4 @@ void idMatX::Test( void ) {
 		idLib::common->Warning( "idMatX::Eigen_Solve failed" );
 	}
 }
+#pragma warning( pop )

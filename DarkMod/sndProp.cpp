@@ -297,9 +297,13 @@ void CsndProp::Propagate
 	 USprFlags *addFlags )
 
 {
-	bool bValidTeam(false), bSameArea(false), bExpandFinished(false);
+	bool bValidTeam(false),
+		// bSameArea(false),
+		bExpandFinished(false);
 	int			mteam;
-	float		range, vol0, propVol(0), noise(0);
+	float		range, vol0;
+	//float		propVol(0), noise(0)
+		
 	
 	idTimer		timer_Prop;
 	UTeamMask	tmask, compMask;
@@ -639,7 +643,8 @@ bool CsndProp::ExpandWave( float volInit, idVec3 origin,
 							SSprParms *propParms )
 {
 	bool				returnval;
-	int					popIndex(-1), floods(1), nodes(0), area, LocalPort;
+	int					//popIndex(-1),
+		floods(1), nodes(0), area, LocalPort;
 	float				tempDist(0), tempAtt(1), tempLoss(0), AddedDist(0);
 	idList<SExpQue>		NextAreas; // expansion queue
 	idList<SExpQue>		AddedAreas; // temp storage for next expansion queue
@@ -857,7 +862,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin,
 								SSprParms *propParms )
 {
 	float LeastLoss, TestLoss, tempDist, tempAtt, tempLoss;
-	int area, LoudPort, portNum, i(0), j(0), k(0);
+	int area, LoudPort(0), portNum, i(0), j(0), k(0);
 	idAI *AIPtr;
 	idVec3 testLoc;
 	SPortEvent *pPortEv;
@@ -1077,7 +1082,7 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 	idVec3 returnVec, tempVec, pointA;
 	idPlane WPlane;
 	float lenV1, lenV2, lineU1, lineU2, Scale, frac;
-	int edgeStart, edgeStop;
+	int edgeStart(0), edgeStop(0);
 
 	// Want to find a point on the portal rectangle closest to this line:
 	line = p2 - p1;
@@ -1305,7 +1310,8 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 								SSprParms *propParms, float MaxDist, int MaxFloods )
 {
 	bool				bDistLimit(false);
-	int					popIndex(-1), floods(1), nodes(0), area, LocalPort, FloodLimit;
+	int					//popIndex(-1),
+		floods(1), nodes(0), area, LocalPort, FloodLimit;
 	float				tempDist(0), tempAtt(1), AddedDist(0);
 	idList<SExpQue>		NextAreas; // expansion queue
 	idList<SExpQue>		AddedAreas; // temp storage for next expansion queue

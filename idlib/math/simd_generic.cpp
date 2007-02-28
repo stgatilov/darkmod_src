@@ -25,7 +25,8 @@
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
-
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 #include "Simd_Generic.h"
 
 
@@ -3055,3 +3056,5 @@ void VPCALL idSIMD_Generic::MixedSoundToSamples( short *samples, const float *mi
 		}
 	}
 }
+
+#pragma warning( pop )

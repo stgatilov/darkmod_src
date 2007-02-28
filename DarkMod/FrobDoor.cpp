@@ -450,7 +450,8 @@ void CFrobDoor::OpenDoor(bool bMaster)
 			if( m_TransSpeed )
 				Event_SetMoveSpeed( m_TransSpeed );
 
-			Event_MoveToPos(m_StartPos +  m_Translation);
+			idVec3 tv3 = ( m_StartPos +  m_Translation );
+			Event_MoveToPos( tv3 );
 
 			// Update soundprop
 			UpdateSoundLoss();

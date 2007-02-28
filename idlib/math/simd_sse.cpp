@@ -1468,16 +1468,14 @@ void SSE_TestTrigonometry( void ) {
 		s1 = sin( a );
 		s2 = SSE_SinZeroHalfPI( a );
 
-		if ( fabs( s1 - s2 ) > 1e-7f ) {
-			assert( 0 );
-		}
+//		if ( fabs( s1 - s2 ) > 1e-7f ) { assert( 0 ); }
+		assert( ( fabs( s1 - s2 ) <= ( 1e-7f ) ) );
 
 		c1 = cos( a );
 		c2 = SSE_CosZeroHalfPI( a );
 
-		if ( fabs( c1 - c2 ) > 1e-7f ) {
-			assert( 0 );
-		}
+//		if ( fabs( c1 - c2 ) > 1e-7f ) { assert( 0 ); }
+		assert( fabs( c1 - c2 ) <= ( 1e-7f ) );
 	}
 
 	for ( i = -200; i < 200; i++ ) {
@@ -1486,21 +1484,18 @@ void SSE_TestTrigonometry( void ) {
 		s1 = sin( a );
 		s2 = SSE_Sin( a );
 
-		if ( fabs( s1 - s2 ) > 1e-6f ) {
-			assert( 0 );
-		}
+		//if ( fabs( s1 - s2 ) > 1e-6f ) { assert( 0 ); }
+		assert( fabs( s1 - s2 ) <= ( 1e-6f ) );
 
 		c1 = cos( a );
 		c2 = SSE_Cos( a );
 
-		if ( fabs( c1 - c2 ) > 1e-6f ) {
-			assert( 0 );
-		}
+		//if ( fabs( c1 - c2 ) > 1e-6f ) { assert ( 0 ); }
+		assert( fabs( c1 - c2 ) <= ( 1e-6f ) );
 
 		SSE_SinCos( a, s2, c2 );
-		if ( fabs( s1 - s2 ) > 1e-6f || fabs( c1 - c2 ) > 1e-6f ) {
-			assert( 0 );
-		}
+//		if ( fabs( s1 - s2 ) > 1e-6f || fabs( c1 - c2 ) > 1e-6f ) {	assert( 0 );	}
+		assert( ( (fabs( s1 - s2 ) <= (1e-6f) ) || ( fabs( c1 - c2 ) <= (1e-6f) ) ) );
 	}
 }
 
@@ -2096,9 +2091,11 @@ idSIMD_SSE::Dot
 ============
 */
 void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idDrawVert *src, const int count ) {
-
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	// 0,  1,  2
 	// 3,  4,  5
@@ -2394,8 +2391,11 @@ idSIMD_SSE::Dot
 */
 void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVert *src, const int count ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	// 0,  1,  2
 	// 3,  4,  5
@@ -3188,8 +3188,11 @@ idSIMD_SSE::MinMax
 */
 void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 
@@ -3272,8 +3275,11 @@ idSIMD_SSE::MinMax
 */
 void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 
@@ -11107,9 +11113,12 @@ idSIMD_SSE::ConvertJointQuatsToJointMats
 */
 void VPCALL idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
 	assert( (int)(&((idJointQuat *)0)->t) == (int)(&((idJointQuat *)0)->q) + (int)sizeof( ((idJointQuat *)0)->q ) );
+#pragma warning( pop )
 
 	for ( int i = 0; i < numJoints; i++ ) {
 
@@ -11167,9 +11176,12 @@ idSIMD_SSE::ConvertJointMatsToJointQuats
 */
 void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
 	assert( (int)(&((idJointQuat *)0)->t) == (int)(&((idJointQuat *)0)->q) + (int)sizeof( ((idJointQuat *)0)->q ) );
+#pragma warning( pop )
 
 #if 1
 
@@ -11685,7 +11697,10 @@ idSIMD_SSE::TransformJoints
 void VPCALL idSIMD_SSE::TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
+#pragma warning( pop )
 
 	__asm {
 
@@ -11793,7 +11808,10 @@ idSIMD_SSE::UntransformJoints
 void VPCALL idSIMD_SSE::UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
+#pragma warning( pop )
 
 	__asm {
 
@@ -11895,10 +11913,13 @@ idSIMD_SSE::TransformVerts
 void VPCALL idSIMD_SSE::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
 	assert( sizeof( idVec4 ) == JOINTWEIGHT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
+#pragma warning( pop )
 
 	__asm
 	{
@@ -12005,8 +12026,11 @@ idSIMD_SSE::TracePointCull
 void VPCALL idSIMD_SSE::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 		push		ebx
@@ -12135,8 +12159,11 @@ void VPCALL idSIMD_SSE::DecalPointCull( byte *cullBits, const idPlane *planes, c
 	ALIGN16( float p6[4]; )
 	ALIGN16( float p7[4]; )
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 		mov			ecx, planes
@@ -12372,8 +12399,11 @@ idSIMD_SSE::OverlayPointCull
 void VPCALL idSIMD_SSE::OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 		mov			eax, numVerts
@@ -12540,8 +12570,11 @@ idSIMD_SSE::DeriveTriPlanes
 void VPCALL idSIMD_SSE::DeriveTriPlanes( idPlane *planes, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 #if 1
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+#pragma warning( pop )
 
 	__asm {
 		mov			eax, numIndexes
@@ -13056,8 +13089,11 @@ idSIMD_SSE::DeriveTangents
 void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 	int i;
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->normal == DRAWVERT_NORMAL_OFFSET );
+#pragma warning( pop )
 	assert( (int)&((idDrawVert *)0)->tangents[0] == DRAWVERT_TANGENT0_OFFSET );
 	assert( (int)&((idDrawVert *)0)->tangents[1] == DRAWVERT_TANGENT1_OFFSET );
 
@@ -14507,8 +14543,11 @@ idSIMD_SSE::NormalizeTangents
 void VPCALL idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
 	ALIGN16( float normal[12] );
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->normal == DRAWVERT_NORMAL_OFFSET );
+#pragma warning( pop )
 	assert( (int)&((idDrawVert *)0)->tangents[0] == DRAWVERT_TANGENT0_OFFSET );
 	assert( (int)&((idDrawVert *)0)->tangents[1] == DRAWVERT_TANGENT1_OFFSET );
 
@@ -14960,9 +14999,12 @@ idSIMD_SSE::CreateTextureSpaceLightVectors
 */
 void VPCALL idSIMD_SSE::CreateTextureSpaceLightVectors( idVec3 *lightVectors, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
 	assert( (int)&((idDrawVert *)0)->normal == DRAWVERT_NORMAL_OFFSET );
+#pragma warning( pop )
 	assert( (int)&((idDrawVert *)0)->tangents[0] == DRAWVERT_TANGENT0_OFFSET );
 	assert( (int)&((idDrawVert *)0)->tangents[1] == DRAWVERT_TANGENT1_OFFSET );
 
@@ -15388,9 +15430,12 @@ idSIMD_SSE::CreateSpecularTextureCoords
 */
 void VPCALL idSIMD_SSE::CreateSpecularTextureCoords( idVec4 *texCoords, const idVec3 &lightOrigin, const idVec3 &viewOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
 	assert( (int)&((idDrawVert *)0)->normal == DRAWVERT_NORMAL_OFFSET );
+#pragma warning( pop )
 	assert( (int)&((idDrawVert *)0)->tangents[0] == DRAWVERT_TANGENT0_OFFSET );
 	assert( (int)&((idDrawVert *)0)->tangents[1] == DRAWVERT_TANGENT1_OFFSET );
 
@@ -16576,7 +16621,10 @@ void idSIMD_SSE::UpSamplePCMTo44kHz( float *dest, const short *src, const int nu
 	} else if ( kHz == 44100 ) {
 		SSE_UpSample44kHzMonoPCMTo44kHz( dest, src, numSamples );
 	} else {
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 		assert( 0 );
+#pragma warning( pop )
 	}
 }
 
@@ -16887,7 +16935,10 @@ void idSIMD_SSE::UpSampleOGGTo44kHz( float *dest, const float * const *ogg, cons
 			SSE_UpSample44kHzStereoOGGTo44kHz( dest, ogg, numSamples );
 		}
 	} else {
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 		assert( 0 );
+#pragma warning( pop )
 	}
 }
 
@@ -17274,8 +17325,11 @@ void VPCALL idSIMD_SSE::MixSoundSixSpeakerStereo( float *mixBuffer, const float 
 	ALIGN16( float incs[6]; )
 
 	assert( numSamples == MIXBUFFER_SAMPLES );
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 	assert( SPEAKER_RIGHT == 1 );
 	assert( SPEAKER_BACKRIGHT == 5 );
+#pragma warning( pop )
 
 	incs[0] = ( currentV[0] - lastV[0] ) / MIXBUFFER_SAMPLES;
 	incs[1] = ( currentV[1] - lastV[1] ) / MIXBUFFER_SAMPLES;

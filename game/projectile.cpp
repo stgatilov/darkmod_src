@@ -952,7 +952,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 		if( e->IsType( idAFEntity_Base::Type ) ) {
 
-			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
+//			idAFEntity_Base *af = static_cast< idAFEntity_Base * >( e );
 
 			this->BindToJoint( e, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), true );
 
@@ -1392,7 +1392,7 @@ bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg 
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }
 
 /*

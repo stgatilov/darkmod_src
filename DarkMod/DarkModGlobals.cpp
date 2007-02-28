@@ -1080,7 +1080,7 @@ CImage::CImage(idStr const &Name)
 	m_Name = Name;
 	m_Image = NULL;
 	m_BufferLength = 0L;
-	m_ImageId = -1;
+	m_ImageId = (ILuint)-1;
 	m_Width = 0;
 	m_Height = 0;
 	m_Loaded = false;
@@ -1091,7 +1091,7 @@ CImage::CImage(void)
 {
 	m_Image = NULL;
 	m_BufferLength = 0L;
-	m_ImageId = -1;
+	m_ImageId = (ILuint)-1;
 	m_Width = 0;
 	m_Height = 0;
 	m_Loaded = false;
@@ -1117,7 +1117,7 @@ void CImage::Unload(bool FreeMemory)
 	if(m_ImageId != -1)
 		ilDeleteImages(1, &m_ImageId);
 
-	m_ImageId = -1;
+	m_ImageId = (ILuint)-1;
 }
 
 bool CImage::LoadImage(HANDLE &Handle)

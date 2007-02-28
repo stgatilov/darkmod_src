@@ -417,6 +417,8 @@ int idBitMsg::ReadString( char *buffer, int bufferSize ) const {
 	
 	ReadByteAlign();
 	l = 0;
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 	while( 1 ) {
 		c = ReadByte();
 		if ( c <= 0 || c >= 255 ) {
@@ -435,7 +437,7 @@ int idBitMsg::ReadString( char *buffer, int bufferSize ) const {
 			l++;
 		}
 	}
-	
+#pragma warning( pop )
 	buffer[l] = 0;
 	return l;
 }

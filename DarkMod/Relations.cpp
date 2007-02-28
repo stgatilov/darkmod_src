@@ -156,7 +156,7 @@ Quit:
 
 int CRelations::GetRelType(int i, int j)
 {
-	int returnval, relNum;
+	int returnval(0), relNum;
 
 	relNum = GetRelNum(i, j);
 

@@ -79,13 +79,14 @@ private:
 	void							CheckTree( void ) const;
 };
 
-#pragma warning( disable : 4533 )
+#pragma warning( push )
+#pragma warning( disable : 4533 4127 )
 template< class objType, class keyType, int maxChildrenPerNode >
 ID_INLINE idBTree<objType,keyType,maxChildrenPerNode>::idBTree( void ) {
 	assert( maxChildrenPerNode >= 4 );
 	root = NULL;
 }
-#pragma warning( default : 4533 )
+#pragma warning( pop )
 
 template< class objType, class keyType, int maxChildrenPerNode >
 ID_INLINE idBTree<objType,keyType,maxChildrenPerNode>::~idBTree( void ) {

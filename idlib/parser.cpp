@@ -26,6 +26,9 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+
 //#define DEBUG_EVAL
 #define MAX_DEFINEPARMS				128
 #define DEFINEHASHSIZE				2048
@@ -3247,3 +3250,4 @@ idParser::~idParser( void ) {
 	idParser::FreeSource( false );
 }
 
+#pragma warning( pop )

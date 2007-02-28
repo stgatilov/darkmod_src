@@ -282,7 +282,7 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	idStr category;
 	idStr id;
 	bool stackable = false;
-	bool bValidItem = false;
+//	bool bValidItem = false;
 	int v, droppable = 0, del = -1, count = 0;
 	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
 	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;

@@ -699,7 +699,7 @@ float darkModLAS::queryLightingAlongLine
 	float totalIllumination = 0.0f;
 
 	// Find the area that the test points are in
-	int testPointAreaIndex = gameRenderWorld->PointInArea (testPoint1);
+//	int testPointAreaIndex = gameRenderWorld->PointInArea (testPoint1);
 
 	// Compute test bounds
 	idVec3 mins, maxes;

@@ -83,7 +83,7 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const
 
 	switch( reach->travelType ) {
 		case TFL_WALK: {
-			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
+//			const idReachability_Walk *walk = static_cast<const idReachability_Walk *>(reach);
 			break;
 		}
 		default: {

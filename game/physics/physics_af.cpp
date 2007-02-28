@@ -4614,7 +4614,7 @@ idAFTree::Factor
 void idAFTree::Factor( void ) const {
 	int i, j;
 	idAFBody *body;
-	idAFConstraint *child;
+	idAFConstraint *child(NULL);
 	idMatX childI;
 
 	childI.SetData( 6, 6, MATX_ALLOCA( 6 * 6 ) );
@@ -5979,8 +5979,8 @@ void idPhysics_AF::AddGravity( void ) {
 	idAFBody *body;
 #ifdef MOD_WATERPHYSICS
 	idVec3 grav( this->liquidDensity * this->gravityVector );
-	float waterLevel,wDensity;
-	bool inWater,bodyBuoyancy;
+	float waterLevel,wDensity = 0;
+	bool inWater,bodyBuoyancy = 0;
 
 	if( this->SetWaterLevelf() == 1.0f ) {
 		wDensity = this->water->GetDensity();

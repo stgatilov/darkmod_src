@@ -240,6 +240,8 @@ void idHeap::AllocDefragBlock( void ) {
 	if ( defragBlock ) {
 		return;
 	}
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 	while( true ) {
 		defragBlock = malloc( size );
 		if ( defragBlock ) {
@@ -247,6 +249,7 @@ void idHeap::AllocDefragBlock( void ) {
 		}
 		size >>= 1;
 	}
+#pragma warning( pop )
 	idLib::common->Printf( "Allocated a %i mb defrag block\n", size / (1024*1024) );
 }
 

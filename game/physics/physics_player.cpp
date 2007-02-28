@@ -3273,7 +3273,7 @@ void idPhysics_Player::StartMantle
 
 	// Calculate mantle distance
 	idVec3 mantleDistanceVec = endPos - startPos;
-	float mantleDistance = mantleDistanceVec.Length();
+//	float mantleDistance = mantleDistanceVec.Length();
 
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
@@ -4092,7 +4092,8 @@ idVec3 idPhysics_Player::GetViewLeanTranslation()
 void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaLeanStretch)
 {
 	trace_t trTest;
-	float newLeanTiltDegrees(0.0), newLeanStretch(0.0), angle(0.0f);
+	float newLeanTiltDegrees(0.0), newLeanStretch(0.0);
+	//float angle(0.0f);
 	idVec3 origPoint, newPoint; // test point
 	bool bWouldClip(false);
 	idPlayer *p_player = (idPlayer *) self;

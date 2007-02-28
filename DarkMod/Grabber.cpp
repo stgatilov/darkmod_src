@@ -193,8 +193,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	idVec3 viewPoint, origin, COM, COMWorld;
 	idMat3 viewAxis, axis;
 	trace_t trace;
-	idEntity *newEnt(NULL);
-	jointHandle_t newJoint(INVALID_JOINT);
+//	idEntity *newEnt(NULL);
+//	jointHandle_t newJoint(INVALID_JOINT);
 
 	m_player = player;
 
@@ -300,7 +300,8 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// If an entity was not explictly passed in, use the frob entity
     if ( !newEnt ) 
 	{
-		if( !(FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity) )
+		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity;
+		if( !FrobEnt )
 			goto Quit;
 
 		newEnt = FrobEnt;
@@ -371,7 +372,8 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	idPhysics *phys = newEnt->GetPhysics();
 	idClipModel *clipModel;
 
-	if ( (clipModel = phys->GetClipModel( m_id )) && clipModel->IsTraceModel() ) 
+	clipModel = phys->GetClipModel( m_id );
+	if( clipModel && clipModel->IsTraceModel() )
 	{
 		float mass;
 		idMat3 inertiaTensor;
@@ -811,7 +813,8 @@ bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
 		HeldDist = MIN_HELD_DISTANCE;
 
 	// get the center of mass
-	if ( (ClipModel = ent->GetPhysics()->GetClipModel( bodyID )) && ClipModel->IsTraceModel() ) 
+	ClipModel = ent->GetPhysics()->GetClipModel( bodyID );
+	if( ClipModel && ClipModel->IsTraceModel() ) 
 	{
 		float mass;
 		idMat3 inertiaTensor;

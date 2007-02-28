@@ -133,7 +133,7 @@ bool PVSToAASMapping::buildMappings(idStr in_aasName)
 	}
 
 	// Iterate AAS areas and add each one to the appropriate PVS area
-	bool b_worked = true;
+//	bool b_worked = true;
 	int numAASAreas = p_aas->GetNumAreas();
 	for (int aasAreaIndex = 0; aasAreaIndex  < numAASAreas; aasAreaIndex ++)
 	{

@@ -47,7 +47,8 @@
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
-
+#pragma warning( push )
+#pragma warning( disable: 4245 )
 #include <malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -611,7 +612,7 @@ BOOL ParseFilebuffer(PROFILE_HANDLE *h)
 	UBYTE buffer[1024], *str;
 	long n, b0, b1, e;
 	PROFILE_SECTION *s = NULL;
-	PROFILE_MAP *m = NULL;
+//	PROFILE_MAP *m = NULL;
 
 	if(h == NULL || h->FileHandle == NULL)
 		goto Quit;
@@ -673,3 +674,4 @@ Quit:
 	return(rc);
 }
 
+#pragma warning( pop )

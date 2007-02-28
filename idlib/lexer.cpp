@@ -35,6 +35,8 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 #define PUNCTABLE
 
 //longer punctuations first
@@ -1867,3 +1869,4 @@ bool idLexer::HadError( void ) const {
 	return hadError;
 }
 
+#pragma warning( pop )

@@ -1760,6 +1760,7 @@ bool idAnimBlend::BlendAnim( int currentTime, int channel, int numJoints, idJoin
 	const idMD5Anim	*md5anim;
 	idJointQuat		*ptr;
 	frameBlend_t	frametime;
+	memset( &frametime, 0, sizeof(frameBlend_t) );
 	idJointQuat		*jointFrame;
 	idJointQuat		*mixFrame;
 	int				numAnims;

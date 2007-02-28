@@ -464,6 +464,7 @@ public:
 	int						weapon_pda;
 	int						weapon_fists;
 
+	bool					m_HeartBeatAllow; /// disable hearbeat except when dying or drowning - Need this to track state
 	int						heartRate;
 	idInterpolate<float>	heartInfo;
 	int						lastHeartAdjust;

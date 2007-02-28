@@ -173,7 +173,7 @@ void idDragEntity::Update( idPlayer *player ) {
 	trace_t trace;
 	idEntity *newEnt;
 	idAngles angles;
-	jointHandle_t newJoint;
+	jointHandle_t newJoint(INVALID_JOINT);
 	idStr newBodyName;
 
 	player->GetViewPos( viewPoint, viewAxis );

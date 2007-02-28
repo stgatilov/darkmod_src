@@ -912,7 +912,7 @@ idScriptObject::Restore
 */
 void idScriptObject::Restore( idRestoreGame *savefile ) {
 	idStr typeName;
-	size_t size;
+	int size;
 
 	savefile->ReadString( typeName );
 

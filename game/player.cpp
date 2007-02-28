@@ -5626,11 +5626,14 @@ idPlayer::GetBaseHeartRate
 ==============
 */
 int idPlayer::GetBaseHeartRate( void ) {
+	/*
 	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float)health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
 	int rate = idMath::FtoiFast( base + ( ZEROSTAMINA_HEARTRATE - base ) * ( 1.0f - stamina / pm_stamina.GetFloat() ) );
 	int diff = ( lastDmgTime ) ? gameLocal.time - lastDmgTime : 99999;
 	rate += ( diff < 5000 ) ? ( diff < 2500 ) ? ( diff < 1000 ) ? 15 : 10 : 5 : 0;
 	return rate;
+	*/
+	return BASE_HEARTRATE;
 }
 
 /*
@@ -5639,19 +5642,39 @@ idPlayer::SetCurrentHeartRate
 ==============
 */
 void idPlayer::SetCurrentHeartRate( void ) {
+	/// reasons why we should exit
+	if( false == airless && health > 0 )
+    {
+		if( true == m_HeartBeatAllow )
+		{
+			AdjustHeartRate( BASE_HEARTRATE, 5.5f, 0.0f, false );/// We were allowing so fade it
+		}
+		else /// We were NOT allowing it so set to default
+		{
+			heartRate = BASE_HEARTRATE;
+		}
+		m_HeartBeatAllow = false;
+        return;
+    }
+	/*
+	if( false == m_HeartBeatAllow )/// we did not want heartbeat heard so make sure
+    {
+		heartInfo.Init( gameLocal.time, 0, BASE_HEARTRATE, BASE_HEARTRATE );
+		heartRate = BASE_HEARTRATE;
+		StopSound( SND_CHANNEL_HEART, false );
+    }
+	*/
+	m_HeartBeatAllow = true;
+
 
 	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float) health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
 
-	if ( PowerUpActive( ADRENALINE )) {
-		heartRate = 135;
-	} else {
-		heartRate = idMath::FtoiFast( heartInfo.GetCurrentValue( gameLocal.time ) );
-		int currentRate = GetBaseHeartRate();
-		if ( health >= 0 && gameLocal.time > lastHeartAdjust + 2500 ) {
-			AdjustHeartRate( currentRate, 2.5f, 0.0f, false );
-		}
+	/// removed adrenaline affect - Rich
+	heartRate = idMath::FtoiFast( heartInfo.GetCurrentValue( gameLocal.time ) );
+	int currentRate = GetBaseHeartRate();
+	if ( health >= 0 && gameLocal.time > lastHeartAdjust + 2500 ) {
+		AdjustHeartRate( currentRate, 2.5f, 0.0f, false );
 	}
-
 	int bps = idMath::FtoiFast( 60.0f / heartRate * 1000.0f );
 	if ( gameLocal.time - lastHeartBeat > bps ) {
 		int dmgVol = DMG_VOLUME;
@@ -7904,7 +7927,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			damage = 1;
 		}
 
-		int oldHealth = health;
+//		int oldHealth = health;
 		health -= damage;
 
 		if ( health <= 0 ) {
@@ -9418,7 +9441,7 @@ bool idPlayer::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return idActor::ClientReceiveEvent( event, time, msg );
 		}
 	}
-	return false;
+//	return false;
 }
 
 /*
@@ -9978,7 +10001,7 @@ void idPlayer::inventoryDropItem()
 {
 	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
 	idEntity *ent = grabber->GetSelected();
-	CInventoryItem *item = NULL;
+//	CInventoryItem *item = NULL;
 
 	// TODO: If the player holds something in his grabber hands,
 	// the item must be dropped first.
@@ -9990,11 +10013,11 @@ void idPlayer::inventoryDropItem()
 
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
 {
-	float opacity;
+	float opacity( cv_tdm_inv_opacity.GetFloat() );
 	int groupvis;
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItem *cur = NULL;
-	CInventory *inv = NULL;
+//	CInventory *inv = NULL;
 	idEntity *e = NULL;
 	idStr s;
 	idThread *thread;

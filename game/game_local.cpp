@@ -574,8 +574,8 @@ void idGameLocal::Clear( void )
 	lastAIAlertTime = 0;
 	spawnArgs.Clear();
 	gravity.Set( 0, 0, -1 );
-	playerPVS.h = -1;
-	playerConnectedAreas.h = -1;
+	playerPVS.h = (unsigned int)-1;
+	playerConnectedAreas.h = (unsigned int)-1;
 	gamestate = GAMESTATE_UNINITIALIZED;
 	skipCinematic = false;
 	influenceActive = false;
@@ -2655,7 +2655,7 @@ idGameLocal::RunFrame
 */
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idEntity *	ent;
-	int			num;
+	int			num(-1);
 	float		ms;
 	idTimer		timer_think, timer_events, timer_singlethink;
 	gameReturn_t ret;
@@ -5714,7 +5714,8 @@ idEntity *idGameLocal::PlayerTraceEntity( void )
 	trace_t		trace;
 	int			cm = 0;
 
-	if( !( player = gameLocal.GetLocalPlayer() ) )
+	player = gameLocal.GetLocalPlayer();
+	if( ! player )
 		goto Quit;
 
 	start = player->GetEyePosition();

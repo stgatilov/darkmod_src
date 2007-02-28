@@ -1405,7 +1405,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 {
 	idLexer		src;
 	idToken		token;
-	idDict		*args( NULL );
+//	idDict		*args( NULL );
 	int			col(0), row(0), level(0);
 	
 	bool		bReturnVal( false );	
@@ -1416,7 +1416,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	bool		bRowAdvanced( true );
 	bool		bColAdvanced( true );
 	
-	SBoolParseNode *CurrentNode( NULL );
+//	SBoolParseNode *CurrentNode( NULL );
 
 
 	// Clear existing parse node structure

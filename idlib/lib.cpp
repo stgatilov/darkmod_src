@@ -53,7 +53,10 @@ idLib::Init
 */
 void idLib::Init( void ) {
 
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 	assert( sizeof( bool ) == 1 );
+#pragma warning( pop )
 
 	// initialize little/big endian conversion
 	Swap_Init();

@@ -4626,7 +4626,7 @@ void idAI::SetEnemyPosition( void ) {
 	idActor		*enemyEnt = enemy.GetEntity();
 	int			enemyAreaNum;
 	int			areaNum;
-	int			lastVisibleReachableEnemyAreaNum;
+	int			lastVisibleReachableEnemyAreaNum = -1;
 	aasPath_t	path;
 	idVec3		pos;
 	bool		onGround;
@@ -6551,8 +6551,8 @@ float idAI::getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
 	//Quick fix for blind AI:
 	if( GetAcuity("vis") > 0 )
 	{
-		float visFrac = GetVisibility( p_playerEntity );
-		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+//		float visFrac = GetVisibility( p_playerEntity );
+//		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 
 		// Convert to alert units ( 0.6931472 = ln(2) )
 		

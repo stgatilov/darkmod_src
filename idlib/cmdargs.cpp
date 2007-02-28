@@ -121,7 +121,8 @@ void idCmdArgs::TokenizeString( const char *text, bool keepAsStrings ) {
 				| LEXFL_ALLOWIPADDRESSES | ( keepAsStrings ? LEXFL_ONLYSTRINGS : 0 ) );
 
 	totalLen = 0;
-
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 	while ( 1 ) {
 		if ( argc == MAX_COMMAND_ARGS ) {
 			return;			// this is usually something malicious
@@ -164,6 +165,7 @@ void idCmdArgs::TokenizeString( const char *text, bool keepAsStrings ) {
 
 		totalLen += len + 1;
 	}
+#pragma warning( pop )
 }
 
 /*

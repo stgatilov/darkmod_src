@@ -69,20 +69,20 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 BYTE ToUpper(UBYTE b)
 {
 	if(b >= 'a' && b <= 'z')
-		b += 'A'-'a';
+		b += (UBYTE)('A'-'a');
 	else
 	switch(b)
 	{
 		case 0x94:		/* oe */
-			b = (BYTE)0x99;
+			b = (UBYTE)0x99;
 		break;
 
 		case 0x81:  	/* ue */
-			b = (BYTE)0x9A;
+			b = (UBYTE)0x9A;
 		break;
 
 		case 0x84:
-			b = (BYTE)0x8E;
+			b = (UBYTE)0x8E;
 		break;
 	}
 

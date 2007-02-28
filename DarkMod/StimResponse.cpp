@@ -465,7 +465,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	CResponse *resp = NULL;
 	CStimResponse *sr = NULL;
 	float Radius = 0.0f;
-	StimState state;
+	StimState state( SS_DISABLED );
 
 	// Check if the entity contains either a stim or a response.
 	if(sr_class != 'S' && sr_class != 'R')

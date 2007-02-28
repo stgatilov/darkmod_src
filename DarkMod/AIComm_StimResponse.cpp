@@ -89,7 +89,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt)
 	}
 
 	// Get the number of messages
-	unsigned long numMessages = p_CommStim->getNumMessages();
+//	unsigned long numMessages = p_CommStim->getNumMessages();
 
 	// Get the script function specified in this response
 	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
