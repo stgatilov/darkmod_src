@@ -6,68 +6,6 @@
  * $Date$
  * $Author$
  *
- * $Log: tdmInventory.h,v $
- * Revision 1.17  2007/02/12 22:19:36  sparhawk
- * Added additional objective callback and refactored some of the inventory code.
- * Also changed the scope of the category constructor, so that it can only be used from the inventory.
- *
- * Revision 1.16  2007/02/11 21:35:02  sparhawk
- * Fixed bugs in the inventory.
- * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
- * Fixed a bug that loot only counted to totals (at least on screen).
- * Fixed some bugs and behaviour for GetItem() on the inventory.
- * Category can now be created if it doesn't already exists.
- *
- * Revision 1.15  2007/02/10 22:57:37  sparhawk
- * 1. Multiple frobs fixed.
- * 2. Having invisible items in the inventory is fixed.
- * 3. Select frobbed item after it went into the inventory
- * 4. Overlap of old and new item fixed.
- *
- * Revision 1.14  2007/02/10 14:10:39  sparhawk
- * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
- *
- * Revision 1.13  2007/02/07 22:06:25  sparhawk
- * Items can now be frobbed and added to the inventory
- *
- * Revision 1.12  2007/02/03 21:56:21  sparhawk
- * Removed old inventories and fixed a bug in the new one.
- *
- * Revision 1.11  2007/02/03 18:07:39  sparhawk
- * Loot items implemented and various improvements to the interface.
- *
- * Revision 1.10  2007/02/01 19:47:35  sparhawk
- * Callback for inventory added.
- *
- * Revision 1.9  2007/01/31 23:41:49  sparhawk
- * Inventory updated
- *
- * Revision 1.8  2007/01/26 12:52:50  sparhawk
- * New inventory concept.
- *
- * Revision 1.5  2006/08/11 12:32:44  gildoran
- * Added some code so I can start work on the inventory GUI.
- *
- * Revision 1.4  2006/07/25 01:40:28  gildoran
- * Completely revamped inventory code.
- *
- * Revision 1.3  2006/03/31 23:52:31  gildoran
- * Renamed inventory objects, and added cursor script functions.
- *
- * Revision 1.2  2006/03/31 00:41:02  gildoran
- * Linked entities to inventories, and added some basic script functions to interact
- * with them.
- *
- * Revision 1.1  2006/03/30 19:45:50  gildoran
- * I made three main changes:
- * 1. I moved the new decl headers out of game_local.h and into the few files
- * that actually use them.
- * 2. I added two new functions to idLinkList: next/prevNodeCircular().
- * 3. I added the first version of the tdmInventory objects. I've been working on
- * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
- * just fine.
- *
- *
  ***************************************************************************/
 
 #ifndef __DARKMOD_TDMINVENTORY_H__
@@ -288,13 +226,29 @@ public:
 	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
+	void					RemoveCategoryIgnored(const CInventoryCategory *);
+	void					RemoveCategoryIgnored(const char *CategoryName);
+	inline void				RemoveCategoryIgnored(const idStr &Name) { RemoveCategoryIgnored(Name.c_str()); };
+
+	void					SetCategoryIgnored(const CInventoryCategory *);
+	void					SetCategoryIgnored(const char *CategoryName);
+	inline void				SetCategoryIgnored(const idStr &Name) { SetCategoryIgnored(Name.c_str()); };
+
 	void					DropCurrentItem(void);
 
 protected:
 	void					ValidateCategory(void);
+	bool					IsCategoryIgnored(const CInventoryCategory *) const;
 
 protected:
 	CInventory				*m_Inventory;
+
+	/**
+	 * List of categories that should be ignored for this cursor.
+	 * The resulting behaviour is that the cursor will cycle through
+	 * items and categories, as if categories, which listed here, don't exist.
+	 */
+	idList<const CInventoryCategory *> m_CategoryIgnore;
 
 	/**
 	 * If true it means that the scrolling with next/prev is locked

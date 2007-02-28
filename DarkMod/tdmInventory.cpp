@@ -6,92 +6,6 @@
  * $Date$
  * $Author$
  *
- * $Log: tdmInventory.cpp,v $
- * Revision 1.26  2007/02/13 22:56:26  sparhawk
- * Fxied a bug with non-anonymous loot
- *
- * Revision 1.25  2007/02/12 22:19:36  sparhawk
- * Added additional objective callback and refactored some of the inventory code.
- * Also changed the scope of the category constructor, so that it can only be used from the inventory.
- *
- * Revision 1.24  2007/02/12 07:51:02  ishtvan
- * added inventory callback to objectives
- *
- * Revision 1.23  2007/02/11 21:35:02  sparhawk
- * Fixed bugs in the inventory.
- * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
- * Fixed a bug that loot only counted to totals (at least on screen).
- * Fixed some bugs and behaviour for GetItem() on the inventory.
- * Category can now be created if it doesn't already exists.
- *
- * Revision 1.22  2007/02/10 22:57:37  sparhawk
- * 1. Multiple frobs fixed.
- * 2. Having invisible items in the inventory is fixed.
- * 3. Select frobbed item after it went into the inventory
- * 4. Overlap of old and new item fixed.
- *
- * Revision 1.21  2007/02/10 14:10:39  sparhawk
- * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
- *
- * Revision 1.20  2007/02/07 22:06:25  sparhawk
- * Items can now be frobbed and added to the inventory
- *
- * Revision 1.19  2007/02/03 21:56:21  sparhawk
- * Removed old inventories and fixed a bug in the new one.
- *
- * Revision 1.18  2007/02/03 18:07:39  sparhawk
- * Loot items implemented and various improvements to the interface.
- *
- * Revision 1.17  2007/02/01 19:47:35  sparhawk
- * Callback for inventory added.
- *
- * Revision 1.16  2007/01/31 23:41:49  sparhawk
- * Inventory updated
- *
- * Revision 1.15  2007/01/29 21:50:06  sparhawk
- * Inventory updates
- *
- * Revision 1.14  2007/01/27 11:09:10  sparhawk
- * Fixed a crash in the inventory GetNext/PrevItem
- *
- * Revision 1.13  2007/01/26 12:52:50  sparhawk
- * New inventory concept.
- *
- * Revision 1.9  2006/09/21 00:43:45  gildoran
- * Added inventory hotkey support.
- *
- * Revision 1.8  2006/08/12 14:44:23  gildoran
- * Fixed some minor bugs with inventory group iteration.
- *
- * Revision 1.7  2006/08/12 12:47:13  gildoran
- * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
- *
- * Revision 1.6  2006/08/11 20:03:48  gildoran
- * Another update for inventories.
- *
- * Revision 1.5  2006/07/25 01:40:28  gildoran
- * Completely revamped inventory code.
- *
- * Revision 1.4  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.3  2006/03/31 23:52:31  gildoran
- * Renamed inventory objects, and added cursor script functions.
- *
- * Revision 1.2  2006/03/31 00:41:02  gildoran
- * Linked entities to inventories, and added some basic script functions to interact
- * with them.
- *
- * Revision 1.1  2006/03/30 19:45:50  gildoran
- * I made three main changes:
- * 1. I moved the new decl headers out of game_local.h and into the few files
- * that actually use them.
- * 2. I added two new functions to idLinkList: next/prevNodeCircular().
- * 3. I added the first version of the tdmInventory objects. I've been working on
- * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
- * just fine.
- *
- *
  * DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent
  * from it. It contains the inventory itself, the groups, items and cursors for
@@ -109,7 +23,7 @@
  * the item itself).
  *
  * Categories and inventories are not cleared even if they are empty. Only when 
- * the owning entity is destroyed, it will destory it's inventory along with
+ * the owning entity is destroyed, it will destroy it's inventory along with
  * all groups and items. Keep in mind that destroying an item does NOT mean 
  * that the entity is also destroyed. After all, an entity can be an item
  * but it doesn't need to and it can exist without being one. Only the item
@@ -117,6 +31,11 @@
  * You should also not make any assumptions about item or group orderings as
  * they can be created and destroyed in arbitrary order. Only the default
  * group is always at index 0.
+ *
+ * Inventories are accessed via a cursor. This way you can have multiple
+ * cursors pointing to the same inventory with different tasks. You can
+ * also add a ignore filter, so that a given cursor can only cycle through
+ * a subset of the existing categories in a given inventory.
  *
  ***************************************************************************/
 
@@ -881,6 +800,65 @@ void CInventoryCursor::DropCurrentItem(void)
 
 //	if(ent)
 //		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryDrop", true, 0, "ee", useEnt, this );
+}
+
+void CInventoryCursor::SetCategoryIgnored(const CInventoryCategory *c)
+{
+	if(c != NULL)
+		m_CategoryIgnore.AddUnique(c);
+}
+
+void CInventoryCursor::SetCategoryIgnored(const char *cn)
+{
+	if(cn == NULL)
+		return;
+
+	CInventoryCategory *c = m_Inventory->GetCategory(cn);
+	SetCategoryIgnored(c);
+}
+
+void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategory *c)
+{
+	int i;
+
+	for(i = 0; i < m_CategoryIgnore.Num(); i++)
+	{
+		if(m_CategoryIgnore[i] == c)
+		{
+			m_CategoryIgnore.RemoveIndex(i);
+			goto Quit;
+		}
+	}
+
+Quit:
+	return;
+}
+
+void CInventoryCursor::RemoveCategoryIgnored(const char *cn)
+{
+	if(cn == NULL)
+		return;
+
+	CInventoryCategory *c = m_Inventory->GetCategory(cn);
+	RemoveCategoryIgnored(c);
+}
+
+bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory *c) const
+{
+	bool rc = false;
+	int i;
+
+	for(i = 0; i < m_CategoryIgnore.Num(); i++)
+	{
+		if(m_CategoryIgnore[i] == c)
+		{
+			rc = true;
+			goto Quit;
+		}
+	}
+
+Quit:
+	return rc;
 }
 
 ////////////////////////
