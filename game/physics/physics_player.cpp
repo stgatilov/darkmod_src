@@ -261,6 +261,42 @@ const float ROPE_ATTACHANGLE = 45.0f*idMath::PI/180.0f;
 **/
 const float ROPE_ROTANG_TOL = 1.0f*idMath::PI/180.0f;
 
+/**
+* When moving on a climbable surface, the player's predicted position is checked by this delta ahead
+* To make sure it's still on a ladder surface.
+**/
+const float CLIMB_SURFCHECK_DELTA = 5.0f;
+
+/**
+* How far to check from the player origin along the surface normal to hit the surface in the above test
+* Needs to allow for worst case overhang
+**/
+const float CLIMB_SURFCHECK_NORMDELTA = 20.0f;
+
+/**
+* How far the edge of the player clipbox is away from the ladder
+**/
+const float LADDER_DISTANCE = 10.0f;
+
+/**
+* how far away is the player allowed to push out from the climbable section?
+* Measured from the last good attachment point at the origin
+**/
+const float LADDER_DISTAWAY = 15.0f;
+
+/**
+* Velocity with which the player is shoved over the top of the ladder
+* This depends on LADDER_DISTAWAY.  If this velocity is too low, the player will
+* fall down before they can make it over the top of the ladder
+**/
+const float LADDER_TOPVELOCITY = 80.0f;
+
+/**
+* Angle at which the player detaches from a ladder when their feet are walking on a surface
+**/
+const float LADDER_WALKDETACH_ANGLE = 45.0f;
+const float LADDER_WALKDETACH_DOT = idMath::Cos( DEG2RAD( LADDER_WALKDETACH_ANGLE ) );
+
 // movementFlags
 const int PMF_DUCKED			= 1;		// set when ducking
 const int PMF_JUMPED			= 2;		// set when the player jumped this frame
@@ -433,11 +469,13 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		stepped = pushed = false;
 
 		// if we are allowed to step up
-		if ( stepUp ) {
+		if ( stepUp ) 
+		{
 
-			nearGround = groundPlane | ladder;
+			nearGround = groundPlane || m_bOnLadder || m_bClimbDetachThisFrame;
 
-			if ( !nearGround ) {
+			if ( !nearGround ) 
+			{
 				// trace down to see if the player is near the ground
 				// step checking when near the ground allows the player to move up stairs smoothly while jumping
 				stepEnd = current.origin + maxStepHeight * gravityNormal;
@@ -445,25 +483,30 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				nearGround = ( downTrace.fraction < 1.0f && (downTrace.c.normal * -gravityNormal) > MIN_WALK_NORMAL );
 			}
 
-			// may only step up if near the ground or on a ladder
-			if ( nearGround ) {
+			// may only step up if near the ground or climbing
+			if ( nearGround ) 
+			{
 
 				// step up
 				stepEnd = current.origin - maxStepHeight * gravityNormal;
+
 				gameLocal.clip.Translation( downTrace, current.origin, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 
 				// trace along velocity
 				stepEnd = downTrace.endpos + time_left * current.velocity;
+
 				gameLocal.clip.Translation( stepTrace, downTrace.endpos, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 
 				// step down
 				stepEnd = stepTrace.endpos + maxStepHeight * gravityNormal;
 				gameLocal.clip.Translation( downTrace, stepTrace.endpos, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
 
-				if ( downTrace.fraction >= 1.0f || (downTrace.c.normal * -gravityNormal) > MIN_WALK_NORMAL ) {
+				if ( downTrace.fraction >= 1.0f || (downTrace.c.normal * -gravityNormal) > MIN_WALK_NORMAL ) 
+				{
 
 					// if moved the entire distance
-					if ( stepTrace.fraction >= 1.0f ) {
+					if ( stepTrace.fraction >= 1.0f ) 
+					{
 						time_left = 0;
 						current.stepUp -= ( downTrace.endpos - current.origin ) * gravityNormal;
 						current.origin = downTrace.endpos;
@@ -473,7 +516,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 					}
 
 					// if the move is further when stepping up
-					if ( stepTrace.fraction > trace.fraction ) {
+					if ( stepTrace.fraction > trace.fraction ) 
+					{
 						time_left -= time_left * stepTrace.fraction;
 						current.stepUp -= ( downTrace.endpos - current.origin ) * gravityNormal;
 						current.origin = downTrace.endpos;
@@ -483,6 +527,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 						stepped = true;
 					}
 				}
+
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step up, velocity now %.4f %.4f %.4f\n",  current.velocity.x, current.velocity.y, current.velocity.z);
 			}
 		}
 
@@ -617,7 +663,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	{
 		stepEnd = current.origin + gravityNormal * maxStepHeight;
 		gameLocal.clip.Translation( downTrace, current.origin, stepEnd, clipModel, clipModel->GetAxis(), clipMask, self );
-		if ( downTrace.fraction > 1e-4f && downTrace.fraction < 1.0f ) {
+		if ( downTrace.fraction > 1e-4f && downTrace.fraction < 1.0f ) 
+		{
 			current.stepUp -= ( downTrace.endpos - current.origin ) * gravityNormal;
 			current.origin = downTrace.endpos;
 			current.movementFlags |= PMF_STEPPED_DOWN;
@@ -856,7 +903,8 @@ void idPhysics_Player::AirMove( void ) {
 idPhysics_Player::WalkMove
 ===================
 */
-void idPhysics_Player::WalkMove( void ) {
+void idPhysics_Player::WalkMove( void ) 
+{
 	idVec3		wishvel;
 	idVec3		wishdir;
 	float		wishspeed;
@@ -1315,23 +1363,101 @@ void idPhysics_Player::RopeDetach( void )
 
 /*
 ============
+idPhysics_Player::ClimbDetach
+============
+*/
+void idPhysics_Player::ClimbDetach( bool bStepUp ) 
+{
+		m_bOnLadder = false;
+		m_ClimbingOnEnt = NULL;
+		m_bClimbDetachThisFrame = true;
+
+		static_cast<idPlayer *>(self)->RaiseWeapon();
+		static_cast<idPlayer *>(self)->hiddenWeapon = false;
+
+		// switch movement modes to the appropriate one
+		if( bStepUp )
+		{
+			idVec3 LadderNormXY = m_vLadderNormal - (gravityNormal * m_vLadderNormal) * gravityNormal;
+			LadderNormXY.Normalize();
+			current.velocity += -LadderNormXY * LADDER_TOPVELOCITY;
+			idPhysics_Player::SlideMove( false, true, false, true );
+		}
+		else if ( waterLevel > WATERLEVEL_FEET ) 
+		{
+			idPhysics_Player::WaterMove();
+		}
+		else 
+		{
+			// TODO: This doesn't work to step up at the end of a ladder
+			idPhysics_Player::AirMove();
+		}
+}
+
+/*
+============
 idPhysics_Player::LadderMove
 ============
 */
-void idPhysics_Player::LadderMove( void ) {
-	idVec3	wishdir, wishvel, right;
-	float	wishspeed, scale;
-	float	upscale;
+void idPhysics_Player::LadderMove( void ) 
+{
+	idVec3	wishdir( vec3_zero ), wishvel( vec3_zero ), right( vec3_zero );
+	idVec3  dir( vec3_zero ), start( vec3_zero ), end( vec3_zero ), delta( vec3_zero );
+	idVec3	AttachVel( vec3_zero ), RefFrameVel( vec3_zero );
+	float	wishspeed(0.0f), scale(0.0f), accel(0.0f);
+	float	upscale(0.0f), NormalDot(0.0f);
+	trace_t SurfTrace;
+	bool	bMoveAllowed( true ), bSurfInFront( false );
 
-	// stick to the ladder
-	wishvel = -100.0f * ladderNormal;
-	current.velocity = (gravityNormal * current.velocity) * gravityNormal + wishvel;
+	accel = PM_ACCELERATE;
+
+	idVec3 LadderNormXY = m_vLadderNormal - (m_vLadderNormal * gravityNormal) * gravityNormal;
+	LadderNormXY.Normalize();
+
+	// jump off the climbable surface if they jump, or fall off if they hit crouch
+	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
+	{
+		ClimbDetach();
+		goto Quit;
+	}
+
+	NormalDot = LadderNormXY * viewForward;
+	// detach if their feet are on the ground walking away from the surface
+	if ( walking && -NormalDot * command.forwardmove < LADDER_WALKDETACH_DOT )
+	{
+		ClimbDetach();
+		goto Quit;
+	}
+
+	// Add the velocity of whatever entity they're climbing on:
+	if( m_ClimbingOnEnt.IsValid() && m_ClimbingOnEnt.GetEntity()->GetPhysics() )
+	{
+		RefFrameVel = m_ClimbingOnEnt.GetEntity()->GetPhysics()->GetLinearVelocity();
+	}
+
+	// ====================== stick to the ladder ========================
+	// Do a trace to figure out where to attach the player:
+	start = current.origin;
+	end = start - 48.0f * LadderNormXY;
+	gameLocal.clip.Translation( SurfTrace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
+	
+	// if there is a climbable surface in front of the player, stick to it
+	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
+		&& (SurfTrace.c.material->GetSurfaceFlags() & SURF_LADDER ) )
+	{
+		m_vLadderPoint = SurfTrace.endpos + LADDER_DISTANCE * LadderNormXY;
+		AttachVel = 10 * (m_vLadderPoint - current.origin);
+	}
+
+	current.velocity = (gravityNormal * current.velocity) * gravityNormal + AttachVel;
 
 	upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
-	if ( upscale > 1.0f ) {
+	if ( upscale > 1.0f ) 
+	{
 		upscale = 1.0f;
 	}
-	else if ( upscale < -1.0f ) {
+	else if ( upscale < -1.0f ) 
+	{
 		upscale = -1.0f;
 	}
 
@@ -1339,31 +1465,58 @@ void idPhysics_Player::LadderMove( void ) {
 	wishvel = -0.9f * gravityNormal * upscale * scale * (float)command.forwardmove;
 
 	// strafe
-	if ( command.rightmove ) {
+	if ( command.rightmove ) 
+	{
 		// right vector orthogonal to gravity
 		right = viewRight - (gravityNormal * viewRight) * gravityNormal;
 		// project right vector into ladder plane
-		right = right - (ladderNormal * right) * ladderNormal;
+		right = right - (m_vLadderNormal * right) * m_vLadderNormal;
 		right.Normalize();
 
-		// if we are looking away from the ladder, reverse the right vector
-		if ( ladderNormal * viewForward > 0.0f ) {
-			right = -right;
-		}
 		wishvel += 2.0f * right * scale * (float) command.rightmove;
 	}
 
 	// up down movement
-	if ( command.upmove ) {
+	if ( command.upmove ) 
+	{
 		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
 	}
+
+	// ========================== Surface Extent Test ======================
+	// Check if the surface extends out some delta in the requested movement direction
+	dir = wishvel;
+	dir.Normalize();
+
+	end = start + wishvel * frametime + dir * CLIMB_SURFCHECK_DELTA;
+	delta = m_vLadderPoint - end;
+	if( delta.LengthSqr() > LADDER_DISTAWAY * LADDER_DISTAWAY )
+		bMoveAllowed = false;
+
+	if( !bMoveAllowed )
+	{
+		// If we were trying to go up and reached the extent, attempt to step off the ladder
+		// NOTE: Make sure we are really trying to go up, not first going off to the side and then up
+		delta = current.origin - m_vLadderPoint;
+		delta -= (delta * gravityNormal) * gravityNormal;
+
+		if( NormalDot < 0.0f && -wishvel * gravityNormal > 0 && delta.LengthSqr() < 25.0f )
+		{
+			ClimbDetach( true );
+			goto Quit;
+		}
+
+		accel = idMath::INFINITY;
+		wishvel = RefFrameVel;
+	}
+
+	// ========================== End Surface Extent Test ==================
 
 	// do strafe friction
 	idPhysics_Player::Friction();
 
 	// accelerate
 	wishspeed = wishvel.Normalize();
-	idPhysics_Player::Accelerate( wishvel, wishspeed, PM_ACCELERATE );
+	idPhysics_Player::Accelerate( wishvel, wishspeed, accel );
 
 	// cap the vertical velocity
 	upscale = current.velocity * -gravityNormal;
@@ -1389,7 +1542,12 @@ void idPhysics_Player::LadderMove( void ) {
 		}
 	}
 
+	current.velocity += RefFrameVel;
+	
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
+
+Quit:
+	return;
 }
 
 /*
@@ -1561,33 +1719,35 @@ void idPhysics_Player::CheckDuck( void ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when up against a ladder or rope
-		if ( command.upmove < 0 && !ladder && !m_bRopeAttached ) {
+		if ( command.upmove < 0 && !m_bOnLadder && !m_bLadderAhead && !m_bRopeAttached ) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		}
 		else if (!IsMantling()) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
 			// stand up if possible
-			if ( current.movementFlags & PMF_DUCKED ) {
+			if ( current.movementFlags & PMF_DUCKED ) 
+			{
 				// try to stand up
 				end = current.origin - ( pm_normalheight.GetFloat() - pm_crouchheight.GetFloat() ) * gravityNormal;
 				gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
-				if ( trace.fraction >= 1.0f ) {
+				if ( trace.fraction >= 1.0f )
 					current.movementFlags &= ~PMF_DUCKED;
-				}
 			}
 		}
 
-		if ( current.movementFlags & PMF_DUCKED ) {
+		if ( current.movementFlags & PMF_DUCKED ) 
+		{
 			playerSpeed = crouchSpeed;
 			maxZ = pm_crouchheight.GetFloat();
-		} else {
+		} else 
+		{
 			maxZ = pm_normalheight.GetFloat();
 		}
 	}
 	// if the clipModel height should change
-	if ( clipModel->GetBounds()[1][2] != maxZ ) {
-
+	if ( clipModel->GetBounds()[1][2] != maxZ ) 
+	{
 		bounds = clipModel->GetBounds();
 		bounds[1][2] = maxZ;
 		if ( pm_usecylinder.GetBool() ) {
@@ -1629,9 +1789,10 @@ void idPhysics_Player::CheckLadder( void )
 
 	if ( walking ) 
 	{
-		// don't want to get sucked towards the ladder when still walking
+		// don't want to get sucked towards the ladder when still walking or when climbing
 		tracedist = 1.0f;
-	} else 
+	} 
+	else 
 	{
 		tracedist = 48.0f;
 	}
@@ -1681,8 +1842,11 @@ void idPhysics_Player::CheckLadder( void )
 			}
 		}
 
-		// if a ladder surface
-		if ( trace.c.material && ( trace.c.material->GetSurfaceFlags() & SURF_LADDER ) ) 
+		// if a climbable surface
+		if ( 
+			trace.c.material 
+			&& ( trace.c.material->GetSurfaceFlags() & SURF_LADDER )
+			) 
 		{
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
@@ -1697,8 +1861,15 @@ void idPhysics_Player::CheckLadder( void )
 				// if it also is a ladder surface
 				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
 				{
-					ladder = true;
-					ladderNormal = trace.c.normal;
+					// Uncomment for debugging to console:
+//					if( m_vLadderNormal != trace.c.normal )
+//						gameLocal.Printf("Switched ladder normal vector, old vector %s, new vector %s \n", m_vLadderNormal.ToString(), trace.c.normal.ToString() );
+
+					m_bLadderAhead = true;
+					m_bOnLadder = true;					
+					m_vLadderNormal = trace.c.normal;
+					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
+
 					goto Quit;
 				}
 			}
@@ -1789,7 +1960,8 @@ bool idPhysics_Player::CheckJump( void ) {
 idPhysics_Player::CheckRopeJump
 =============
 */
-bool idPhysics_Player::CheckRopeJump( void ) {
+bool idPhysics_Player::CheckRopeJump( void ) 
+{
 	idVec3 addVelocity;
 	idVec3 jumpDir;
 
@@ -1816,6 +1988,7 @@ bool idPhysics_Player::CheckRopeJump( void ) {
 	jumpDir = viewForward - gravityNormal;
 	jumpDir *= 1.0f/idMath::Sqrt(2.0f);
 
+// TODO: Make this an adjustable cvar, currently too high?
 	addVelocity = 2.0f * maxJumpHeight * gravityVector.Length() * jumpDir;
 	addVelocity *= idMath::Sqrt( addVelocity.Normalize() );
 
@@ -1918,7 +2091,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	groundPlane = false;
 	
 	m_bRopeContact = false;
-	ladder = false;
+	m_bLadderAhead = false;
+	m_bClimbDetachThisFrame = false;
 
 	// determine the time
 	framemsec = msec;
@@ -2019,7 +2193,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 		idPhysics_Player::RopeMove();
 	}
-	else if ( ladder ) 
+	else if ( m_bOnLadder ) 
 	{
 		// going up or down a ladder
 		idPhysics_Player::LadderMove();
@@ -2157,7 +2331,7 @@ idPhysics_Player::OnLadder
 ================
 */
 bool idPhysics_Player::OnLadder( void ) const {
-	return ladder;
+	return m_bOnLadder;
 }
 
 /*
@@ -2197,8 +2371,15 @@ idPhysics_Player::idPhysics_Player( void )
 	m_RopeDetachTimer = 0;
 	m_lastCommandViewYaw = 0;
 
-	ladder = false;
-	ladderNormal.Zero();
+	// wall/ladder climbing
+	m_bLadderAhead = false;
+	m_bOnLadder = false;
+	m_bClimbDetachThisFrame = false;
+	m_vLadderNormal.Zero();
+	m_vLadderPoint.Zero();
+	m_ClimbingOnEnt = NULL;
+
+	// swimming
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
 
@@ -2306,8 +2487,11 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	m_RopeEntTouched.Save( savefile );
 	savefile->WriteFloat( m_lastCommandViewYaw );
 
-	savefile->WriteBool( ladder );
-	savefile->WriteVec3( ladderNormal );
+	savefile->WriteBool( m_bLadderAhead );
+	savefile->WriteBool( m_bOnLadder );
+	savefile->WriteBool( m_bClimbDetachThisFrame );
+	savefile->WriteVec3( m_vLadderNormal );
+	savefile->WriteVec3( m_vLadderPoint );
 
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
@@ -2379,8 +2563,11 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	m_RopeEntTouched.Restore( savefile );
 	savefile->ReadFloat( m_lastCommandViewYaw );
 
-	savefile->ReadBool( ladder );
-	savefile->ReadVec3( ladderNormal );
+	savefile->ReadBool( m_bLadderAhead );
+	savefile->ReadBool( m_bOnLadder );
+	savefile->ReadBool( m_bClimbDetachThisFrame );
+	savefile->ReadVec3( m_vLadderNormal );
+	savefile->ReadVec3( m_vLadderPoint );
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );
@@ -4093,7 +4280,6 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 {
 	trace_t trTest;
 	float newLeanTiltDegrees(0.0), newLeanStretch(0.0);
-	//float angle(0.0f);
 	idVec3 origPoint, newPoint; // test point
 	bool bWouldClip(false);
 	idPlayer *p_player = (idPlayer *) self;
