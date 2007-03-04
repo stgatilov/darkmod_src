@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
-#include "logmgr.h"
+// #include "logmgr.h"
 /***********************************************************************
 
 	idAnimState
@@ -518,9 +518,9 @@ void idActor::Spawn( void )
 	state		= NULL;
 	idealState	= NULL;
 
-	spawnArgs.GetFloat( "delta_fatal", "175", m_delta_fatal );
-	spawnArgs.GetFloat( "delta_scale",  "25", m_delta_scale );
-	spawnArgs.GetFloat( "delta_min",    "30", m_delta_min );
+	spawnArgs.GetFloat( "collision_delta_fatal", "86", m_delta_fatal ); // falling 3.5 stories 
+	spawnArgs.GetFloat( "collision_delta_scale",  "1.0", m_delta_scale );
+	spawnArgs.GetFloat( "collision_delta_min",    "31", m_delta_min ); // falling ~12 ft, g = 1066
 	spawnArgs.GetInt( "rank", "0", rank );
 	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetInt( "type", "0", m_AItype );
@@ -3742,74 +3742,68 @@ void idActor::Event_GetNumAttachments( void )
 ****************************************************************************************/
 float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
 {
-	// Early exit's
-	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
-	if( waterLevel == WATERLEVEL_HEAD // never take falling damage if completely underwater
-		|| !physicsObj.HasGroundContacts() // not aptly named
-		)
-	{
-		return 0;
-	}
-	float delta = 0;
+	bool bNoDamage = false;
+	float delta = 0.0f;
+
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound wont be played otherwise
 	// as we do no damage if this is true.
-	bool noDamage = false;
 	for( int i = 0; i < physicsObj.GetNumContacts(); i++ )
 	{
 		const contactInfo_t &contact = physicsObj.GetContact( i );
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
 		{
-			noDamage = true;
+			bNoDamage = true;
 			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
 			break;
 		}
 	}
-	if( !noDamage )
+	if( !bNoDamage )
 	{
-		idVec3 gravityNormal = physicsObj.GetGravityNormal();
-		idVec3 gravityVector = physicsObj.GetGravity();
-		idVec3 origin        = physicsObj.GetOrigin();
+		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
+		idVec3 deltaVec = (savedVelocity - GetPhysics()->GetLinearVelocity());
+		idVec3 deltaVecHoriz = deltaVec - (deltaVec * vGravNorm) * vGravNorm;
+		float deltaHoriz = deltaVecHoriz.LengthSqr();
+		float deltaVert = deltaVec.LengthSqr() - deltaHoriz;
+		
+		// conversion factor to 10s of MJ/kg, horizontal and vertical weighted differently
+		delta = cv_collision_damage_scale_vert.GetFloat() * deltaVert;
+		delta += cv_collision_damage_scale_horiz.GetFloat() * deltaHoriz;
 
-		// calculate the exact velocity on landing
-		float dist = ( origin - savedOrigin ) * -gravityNormal;
-		float vel = savedVelocity * -gravityNormal;
+		// damage scale per AI:
+		delta *= m_delta_scale;
 
-		float acc = -gravityVector.Length();
-		float a = acc / 2.0f;
-		float b = vel;
-		float c = -dist;
-		float den = b * b - 4.0f * a * c;
-		if( den > 0 )
+		waterLevel_t waterLevel = physicsObj.GetWaterLevel();
+
+		// reduce falling damage if there is standing water
+		if( waterLevel == WATERLEVEL_HEAD )
 		{
-			float t = ( -b - idMath::Sqrt( den ) ) / ( 2.0f * a );
-			delta = vel + t * acc;
-			delta = delta * delta * 0.0001;
-			// reduce falling damage if there is standing water
-			if( waterLevel == WATERLEVEL_WAIST )
+			delta *= 0.25f;
+		}
+		else if( waterLevel == WATERLEVEL_WAIST )
+		{
+			delta *= 0.5f;
+		}
+		else if( waterLevel == WATERLEVEL_FEET )
+		{
+			delta *= 0.8f;
+		}
+		if( delta >= m_delta_min )
+		{
+			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
+			if( delta > m_delta_fatal )
 			{
-				delta *= 0.25f;
+				Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
 			}
-			else if( waterLevel == WATERLEVEL_FEET )
+			else
 			{
-				delta *= 0.5f;
-			}
-			if( delta >= m_delta_min )
-			{
-				pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-				if( delta > m_delta_fatal )
-				{
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
-				}
-				else
-				{
-					float mass = physicsObj.GetMass();
-					float perc = ( mass / 100 );
-					float dScale = ( delta / m_delta_scale ) * ( perc < 1.0f ? 1.0f : perc );
-					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
-				} // if( delta > fatalDelta ) else
-			}// if ( delta >= 1.0f )
-		}// if ( den > 0 )
+				// damage scales linearly with delta up to fatal
+				// assume a max health of 100, player-relative, damage_softfall of 10
+				float dScale = cv_collision_damage_min.GetFloat() / 10.0f;
+				dScale += 10.0f * (delta - m_delta_min) / m_delta_fatal;
+				Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
+			} // if( delta > fatalDelta ) else
+		}// if ( delta >= 1.0f )
 	} // if( !noDamage )
 	return delta;
 }
