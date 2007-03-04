@@ -3345,60 +3345,12 @@ int idPhysics_Player::CalculateMantleCollisionDamage
 	idVec3 mantlePos
 )
 {
-	int damageAmount = 0;
-	idVec3 relativeVelocity = current.velocity;
-
-	
-	if (p_mantledEntityRef)
-	{
-		idPhysics* p_targetPhysics = p_mantledEntityRef->GetPhysics();
-		if (p_targetPhysics != NULL)
-		{
-			relativeVelocity -= p_targetPhysics->GetLinearVelocity();
-			idVec3 relativeAngularVelocity = p_targetPhysics->GetAngularVelocity();
-
-			// Multiply angular velocity by distance from center to get
-			// linear velocity due to angular velocity and add it
-			// to the other linear velocity.
-			idVec3 linearVelocityDueToAngularVelocity;
-			idVec3 targetOrigin = p_targetPhysics->GetOrigin();
-			idVec3 forceArm = mantlePos - targetOrigin;
-			
-			linearVelocityDueToAngularVelocity.x =  relativeAngularVelocity.x * forceArm.x;
-			linearVelocityDueToAngularVelocity.y =  relativeAngularVelocity.y * forceArm.y;
-			linearVelocityDueToAngularVelocity.z =  relativeAngularVelocity.z * forceArm.z;
-
-			relativeVelocity += linearVelocityDueToAngularVelocity;
-		}
-
-	}
-
-	// Analyze velocity: TODO make constant somewhere global
-	float velocityMagnitude_MetersPerSecond = relativeVelocity.Length() * 0.0254f;
-	
-
-	if (velocityMagnitude_MetersPerSecond > g_Global.m_minimumVelocityForMantleDamage)
-	{
-		// 15.0 m/s over 1 second is bad for you according to restraining harness laws, so
-		// we will use that as a guideline
-		// How we scale this is fairly arbitrary
-		// I should move the scale and velocity to the darkmod globals
-
-		damageAmount = (velocityMagnitude_MetersPerSecond - g_Global.m_minimumVelocityForMantleDamage) * g_Global.m_damagePointsPerMetersPerSecondOverMinimum;
-
-	}
-
-	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING 
-	(
-		"Velocity = %.5f, damage = %d", 
-		velocityMagnitude_MetersPerSecond, 
-		damageAmount
-	);
-
+/**
+* Ishtvan: Commented this out because we now have global decelaration damage
+* Please see previous revision for the code that was here
+**/
 	// Return amount
-	return damageAmount;
-
-			
+	return 0.0f;	
 
 }
 
@@ -3448,6 +3400,12 @@ void idPhysics_Player::StartMantle
 	if ( m_bRopeAttached )
 	{
 		RopeDetach();
+	}
+
+	// If mantling starts while climbing, detach from climbing surface
+	if ( m_bOnLadder )
+	{
+		ClimbDetach();
 	}
 
 	// Ishtvan 11/20/05 - Lower weapons when mantling
