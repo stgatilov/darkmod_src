@@ -1203,7 +1203,7 @@ void idAI::Spawn( void ) {
 
 	// Dark Mod: set up drowning
 	m_MouthOffset = spawnArgs.GetVector("mouth_offset");
-	if( !head.GetEntity() )
+	if( !head.GetEntity() && af.IsLoaded() )
 	{
 		const char *headName = spawnArgs.GetString("head_bodyname", "head");
 		// this will call gameLocal.Error if the joint name is wrong
