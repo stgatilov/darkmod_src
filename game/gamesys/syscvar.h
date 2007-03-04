@@ -180,6 +180,11 @@ extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
 
+// physics
+extern idCVar cv_collision_damage_scale_vert;
+extern idCVar cv_collision_damage_scale_horiz;
+extern idCVar cv_collision_damage_min;
+
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
 extern idCVar cv_throw_time;
