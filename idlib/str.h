@@ -30,7 +30,8 @@
 */
 
 // these library functions should not be used for cross platform compatibility
-#define strcmp			idStr::Cmp		// use_idStr_Cmp
+// TDM: Removed by Crispy. We *want* to use standard library functions, thanks very much.
+/*#define strcmp			idStr::Cmp		// use_idStr_Cmp
 #define strncmp			use_idStr_Cmpn
 #define StrCmpN			use_idStr_Cmpn
 #define strcmpi			use_idStr_Icmp
@@ -45,7 +46,7 @@
 #define snprintf		use_idStr_snPrintf
 #define _snprintf		use_idStr_snPrintf
 #define vsnprintf		use_idStr_vsnPrintf
-#define _vsnprintf		use_idStr_vsnPrintf
+#define _vsnprintf		use_idStr_vsnPrintf*/
 
 class idVec4;
 

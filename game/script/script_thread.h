@@ -222,7 +222,15 @@ private:
 	**/
 	void						Event_SetPortSoundLoss( int handle, float value );
 	void						Event_GetPortSoundLoss( int handle );
-
+	
+	/**
+	* TDM priority queue events
+	**/
+	void						idThread::Event_pqNew();
+	void						idThread::Event_pqDelete(int pqueueID);
+	void						idThread::Event_pqPush( int queueID, const char* task, int priority );
+	void						idThread::Event_pqPeek( int queueID );
+	void						idThread::Event_pqPop( int queueID );
 
 
 public:							

@@ -2430,7 +2430,7 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 	alias = realname;
 
 	for( i = 0; i < anims.Num(); i++ ) {
-		if ( !strcmp( anims[ i ]->FullName(), realname ) ) {
+		if ( !strcmp( anims[ i ]->FullName(), realname.c_str() ) ) {
 			break;
 		}
 	}
@@ -2753,7 +2753,7 @@ bool idDeclModelDef::Parse( const char *text, const int textLength ) {
 			}
 
 			for( i = ANIMCHANNEL_ALL + 1; i < ANIM_NumAnimChannels; i++ ) {
-				if ( !stricmp( channelNames[ i ], token2 ) ) {
+				if ( !stricmp( channelNames[ i ], token2.c_str() ) ) {
 					break;
 				}
 			}

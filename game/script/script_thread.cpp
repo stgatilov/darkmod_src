@@ -1,47 +1,6 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.10  2007/01/12 05:57:17  gildoran
- * Added sys.waitForRender($entity)
- *
- * Revision 1.9  2006/10/31 22:44:10  sparhawk
- * Handle rotation added
- *
- * Revision 1.8  2006/06/21 13:08:06  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.7  2006/05/03 21:35:03  sparhawk
- * Added support for booleans for scriptfunctions.
- *
- * Revision 1.6  2006/03/30 19:45:41  gildoran
- * I made three main changes:
- * 1. I moved the new decl headers out of game_local.h and into the few files
- * that actually use them.
- * 2. I added two new functions to idLinkList: next/prevNodeCircular().
- * 3. I added the first version of the tdmInventory objects. I've been working on
- * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
- * just fine.
- *
- * Revision 1.5  2006/03/25 08:14:03  gildoran
- * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
- *
- * Revision 1.4  2006/02/04 23:52:32  sparhawk
- * Added support for arbitrary arguments being passed to a scriptfunction.
- *
- * Revision 1.3  2006/01/29 04:18:10  ishtvan
- * added scriptfunction to get and dynamically set soundprop losses at portals
- *
- * Revision 1.2  2005/03/29 07:53:32  ishtvan
- * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -154,6 +113,13 @@ const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
 
 const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 
+// Priority queue events
+const idEventDef EV_TDM_pqNew( "pqNew", NULL, 'd' );
+const idEventDef EV_TDM_pqDelete( "pqDelete", "d" );
+const idEventDef EV_TDM_pqPush( "pqPush", "dsd" );
+const idEventDef EV_TDM_pqPeek( "pqPeek", "d", 's' );
+const idEventDef EV_TDM_pqPop( "pqPop", "d", 's' );
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -242,6 +208,12 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
 
 	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
+	
+	EVENT( EV_TDM_pqNew,					idThread::Event_pqNew )
+	EVENT( EV_TDM_pqDelete,					idThread::Event_pqDelete )
+	EVENT( EV_TDM_pqPush,					idThread::Event_pqPush )
+	EVENT( EV_TDM_pqPeek,					idThread::Event_pqPeek )
+	EVENT( EV_TDM_pqPop,					idThread::Event_pqPop )
 
 END_CLASS
 
@@ -1983,4 +1955,65 @@ void idThread::Event_DebugTDM_MatInfo( const char *mat )
 	} else {
 		gameLocal.Warning( "Non-existant tdm material declaration: %s", mat );
 	}
+}
+
+/***********************************************************************
+
+	TDM: task queue events
+
+***********************************************************************/
+
+void idThread::Event_pqNew()
+{
+	CPriorityQueue* pqueue = new CPriorityQueue();
+	gameLocal.m_PriorityQueues.Append(pqueue);
+	
+	// Return the ID (actually the index) of the queue we just added
+	int id = gameLocal.m_PriorityQueues.Num()-1;
+	ReturnInt(id);
+}
+
+void idThread::Event_pqDelete( int queueID )
+{
+	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
+	{
+		Error("pqPop: Priority queue #%d does not exist");
+		return;
+	}
+	
+	delete gameLocal.m_PriorityQueues[queueID];
+	gameLocal.m_PriorityQueues[queueID] = NULL;
+}
+
+void idThread::Event_pqPush( int queueID, const char* task, int priority )
+{
+	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
+	{
+		Error("pqPush: Priority queue #%d does not exist");
+		return;
+	}
+	
+	gameLocal.m_PriorityQueues[queueID]->Push(priority, task);
+}
+
+void idThread::Event_pqPeek( int queueID )
+{
+	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
+	{
+		Error("pqPeek: Priority queue #%d does not exist");
+		return;
+	}
+	
+	ReturnString(gameLocal.m_PriorityQueues[queueID]->Peek());
+}
+
+void idThread::Event_pqPop( int queueID )
+{
+	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
+	{
+		Error("pqPop: Priority queue #%d does not exist");
+		return;
+	}
+	
+	ReturnString(gameLocal.m_PriorityQueues[queueID]->Pop());
 }

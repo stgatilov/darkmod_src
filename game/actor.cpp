@@ -365,6 +365,10 @@ const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
 const idEventDef AI_GetAttachment( "getAttachment", "d", 'e' );
 const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 
+// Task queue events
+const idEventDef AI_AttachTaskQueue( "attachTaskQueue", "d" );
+const idEventDef AI_DetachTaskQueue( "detachTaskQueue" );
+
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
 	EVENT( AI_DisableEyeFocus,			idActor::Event_DisableEyeFocus )
@@ -415,6 +419,9 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
 	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
 	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
+
+	EVENT ( AI_AttachTaskQueue,			idActor::Event_AttachTaskQueue )
+	EVENT ( AI_DetachTaskQueue,			idActor::Event_DetachTaskQueue )
 END_CLASS
 
 /*
@@ -442,6 +449,10 @@ idActor::idActor( void ) {
 
 	state				= NULL;
 	idealState			= NULL;
+
+	task				= "";
+	taskPriority        = 0;
+	m_TaskQueue			= NULL;
 
 	leftEyeJoint		= INVALID_JOINT;
 	rightEyeJoint		= INVALID_JOINT;
@@ -480,6 +491,8 @@ idActor::~idActor( void ) {
 
 	DeconstructScriptObject();
 	scriptObject.Free();
+
+	m_TaskQueue = NULL;
 
 	StopSound( SND_CHANNEL_ANY, false );
 
@@ -879,7 +892,18 @@ void idActor::Save( idSaveGame *savefile ) const {
 	} else {
 		savefile->WriteString( "" );
 	}
-
+	
+	// Save task info
+	savefile->WriteString(task.c_str());
+	if (m_TaskQueue)
+	{
+		savefile->WriteBool(true);
+		m_TaskQueue->Save(savefile);
+	}
+	else
+	{
+		savefile->WriteBool(false);
+	}
 }
 
 /*
@@ -992,6 +1016,16 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString( statename );
 	if ( statename.Length() > 0 ) {
 		idealState = GetScriptFunction( statename );
+	}
+	
+	// Restore task info
+	savefile->ReadString(task);
+	bool taskqueueexists=false;
+	savefile->ReadBool(taskqueueexists);
+	if (taskqueueexists)
+	{
+		if (!m_TaskQueue) m_TaskQueue = new CPriorityQueue();
+		m_TaskQueue->Restore(savefile);
 	}
 }
 
@@ -1339,6 +1373,19 @@ void idActor::SetState( const char *statename ) {
 	newState = GetScriptFunction( statename );
 	SetState( newState );
 }
+/*
+=====================
+idActor::SetTask
+=====================
+*/
+void idActor::SetTask(const idStr& newTask, int newTaskPriority) {
+	task = newTask.c_str();
+	taskPriority = newTaskPriority;
+	if (newTask.Length())
+	{
+		scriptThread->CallFunction(this, GetScriptFunction( newTask.c_str() ), true);
+	}
+}
 
 /*
 =====================
@@ -1374,6 +1421,66 @@ void idActor::UpdateScript( void ) {
 
 	if ( i == 20 ) {
 		scriptThread->Warning( "idActor::UpdateScript: exited loop to prevent lockup" );
+	}
+	
+	// TDM: Task management
+	// Currently only uses the first priority queue. If there are more pqueues than 1,
+	// then only scripts will ever use the extra ones.
+	if (m_TaskQueue != NULL)
+	{
+		for( i = 0; i < 20; i++ ) // Permit multiple task changes per frame, but avoid infinite loops
+		{
+			idStr topTask = idStr(m_TaskQueue->Peek());
+			int topTaskPriority = m_TaskQueue->PeekPriority();
+			if (topTask.Length() && (topTaskPriority > taskPriority || !task.Length()))
+			{
+				//// There's a more important task to do, so do it
+				
+				// Do a cleanup task first if we need to
+				// Note that a cleanup task should not have its own cleanup task. The resulting behaviour
+				// would be undefined, since it'd be dependent on the implementation of the priority queue.
+				idStr cleanupTask = task+"_cleanup";
+				const function_t *func = scriptObject.GetFunction(cleanupTask.c_str());
+				if (func)
+				{
+					// There's a cleanup task available, so add it as the highest priority task and do it
+					topTask = cleanupTask;
+					topTaskPriority = PQUEUE_HIGHEST_PRIORITY;
+				}
+				else
+				{
+					// There's no cleanup task to take care of first, so go ahead
+					// and pop the new task off the queue.
+					// (Once we start a task, it should be removed from the queue so that
+					// it doesn't get re-entered later.)
+					m_TaskQueue->Pop();
+				}
+				SetTask(topTask, topTaskPriority);
+			}
+			
+			// don't call script until it's done waiting
+			if ( scriptThread->IsWaiting() ) break;
+	        
+			scriptThread->Execute();
+			
+			// If the function returned, the task is done, so look for another task
+			if (scriptThread->IsDying() && task.Length())
+			{
+				task = ""; // Erase current task so that we get a new one
+			}
+			else
+			{
+				// If we're still doing the highest priority task,
+				// or there are no more tasks,
+				// then we don't need to change tasks any further
+				if ( m_TaskQueue->PeekPriority() <= taskPriority || !task.Length() ) break;
+			}
+		}
+
+		if ( i == 20 )
+		{
+			scriptThread->Warning( "idActor::UpdateScript: exited task loop to prevent lockup" );
+		}
 	}
 }
 
@@ -1818,7 +1925,7 @@ void idActor::UnbindNotify( idEntity *ent )
 		idStr key = KeyVal->GetKey();
 		key.StripLeadingOnce("replace_anim_");
 
-		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue()) == 0 )
+		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue().c_str()) == 0 )
 		{
 			// This animation override is present, so remove it
 			m_replacementAnims.Delete( key );
@@ -3806,4 +3913,21 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 		}// if ( delta >= 1.0f )
 	} // if( !noDamage )
 	return delta;
+}
+
+/* Task queue attachment and detachment */
+
+void idActor::Event_AttachTaskQueue(int queueID)
+{
+	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
+	{
+		scriptThread->Error("attachTaskQueue: Priority queue #%d does not exist");
+		return;
+	}
+	m_TaskQueue = gameLocal.m_PriorityQueues[queueID];
+}
+
+void idActor::Event_DetachTaskQueue()
+{
+	m_TaskQueue = NULL;
 }

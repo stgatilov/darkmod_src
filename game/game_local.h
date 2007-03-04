@@ -1,177 +1,6 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.49  2007/02/06 03:18:46  thelvyn
- * idActor::CrashLand is now called for both AI and player for falling/collision damage.
- *
- * Revision 1.48  2007/01/26 12:52:33  sparhawk
- * New inventory concept.
- *
- * Revision 1.47  2007/01/23 14:06:06  thelvyn
- * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
- *
- * Revision 1.46  2007/01/19 20:57:51  thelvyn
- * Moved impulse enum, keystate enum and keycode struct to keyhook.h
- *
- * Revision 1.45  2007/01/19 10:08:41  thelvyn
- * Removed old mouse handling code.
- * Registered some fonts for gui screen display of text.
- * Added function for same
- *
- * Revision 1.44  2007/01/19 05:04:27  thelvyn
- * More keyboard hook work. Mostly tweaking. Not sure what I did to ai.cpp
- *
- * Revision 1.43  2007/01/19 02:30:41  thelvyn
- * Separated keyboard hook, same as mouse hook
- * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
- * if it is considered an OK modification I will remove the old version.
- *
- * Revision 1.42  2007/01/18 22:28:20  thelvyn
- * Keyboard hook now working.
- *
- * Revision 1.41  2007/01/18 07:45:53  thelvyn
- * Modifications as requested to MouseHook code handler and enums
- * Decoupling from gamelocal.h
- * Separated OS specifics to separate files.
- *
- * Revision 1.40  2007/01/11 11:44:03  thelvyn
- * Modifications as requested to MouseHook code handler and enums
- *
- * Revision 1.39  2007/01/11 09:48:19  thelvyn
- * Initial Mouse hook implementation
- *
- * Revision 1.38  2006/12/07 09:55:35  ishtvan
- * *) key handler updates
- *
- * *) Added working method for binding new buttons
- *
- * Revision 1.37  2006/12/04 00:27:03  ishtvan
- * added logging of frame number in keyboard handler logs
- *
- * Revision 1.36  2006/11/20 05:34:19  ishtvan
- * added PauseGame function
- *
- * Revision 1.35  2006/11/01 11:57:38  sparhawk
- * Signals method added to entity.
- *
- * Revision 1.34  2006/08/21 05:06:49  ishtvan
- * added PlayerTraceEntity which returns the ent the player is looking at out to 512 units
- *
- * Revision 1.33  2006/08/01 21:13:20  sparhawk
- * Lightgem splitcode
- *
- * Revision 1.32  2006/06/21 10:12:45  sparhawk
- * Added version tracking per file
- *
- * Revision 1.31  2006/06/05 21:33:25  sparhawk
- * Stimtimer code updated/added
- *
- * Revision 1.30  2006/05/26 10:26:24  ishtvan
- * added mission data object, which gets updated in runframe
- *
- * Revision 1.29  2006/05/17 05:44:15  sophisticatedzombie
- * DoResponseAction now returns the number of CResponse objects triggered.
- * Added call to PostFired method of CStim after firing off a Stim.
- *
- * Revision 1.28  2006/04/26 21:29:16  sparhawk
- * Timed stim/response core added.
- *
- * Revision 1.27  2006/03/30 19:45:34  gildoran
- * I made three main changes:
- * 1. I moved the new decl headers out of game_local.h and into the few files
- * that actually use them.
- * 2. I added two new functions to idLinkList: next/prevNodeCircular().
- * 3. I added the first version of the tdmInventory objects. I've been working on
- * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
- * just fine.
- *
- * Revision 1.26  2006/03/25 08:13:58  gildoran
- * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
- *
- * Revision 1.25  2006/03/23 06:24:53  gildoran
- * Added external data declarations for scripts to use. Readables can now have
- * their contents stored in a file.
- *
- * Revision 1.24  2006/02/06 22:14:28  sparhawk
- * Added ignore list for responses.
- *
- * Revision 1.23  2006/01/31 22:35:07  sparhawk
- * StimReponse first working version
- *
- * Revision 1.22  2006/01/29 04:28:00  ishtvan
- * *) Added GetLocationForArea, used by soundprop
- *
- * Revision 1.21  2006/01/24 22:03:46  sparhawk
- * Stim/Response implementation preliminary
- *
- * Revision 1.20  2005/12/04 02:45:02  ishtvan
- * fixed errors in surface variable names
- *
- * Revision 1.19  2005/12/02 19:45:07  sparhawk
- * Lightgem update. Particle and waterreflection fixed.
- *
- * Revision 1.18  2005/11/26 22:50:07  sparhawk
- * Keyboardhandler added.
- *
- * Revision 1.17  2005/11/26 17:44:44  sparhawk
- * Lightgem cleaned up
- *
- * Revision 1.16  2005/11/18 21:04:23  sparhawk
- * Particle effect fix
- *
- * Revision 1.15  2005/11/17 22:40:37  sparhawk
- * Lightgem renderpipe fixed
- *
- * Revision 1.14  2005/11/12 14:59:20  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.13  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.12  2005/10/23 18:42:30  sparhawk
- * Lightgem cleanup
- *
- * Revision 1.11  2005/10/23 18:11:21  sparhawk
- * Lightgem entity spawn implemented
- *
- * Revision 1.10  2005/10/23 13:51:06  sparhawk
- * Top lightgem shot implemented. Image analyzing now assumes a
- * foursided triangulated rendershot instead of a single surface.
- *
- * Revision 1.9  2005/10/18 13:56:40  sparhawk
- * Lightgem updates
- *
- * Revision 1.8  2005/09/21 05:42:04  ishtvan
- * Modified sound prop propParms
- *
- * Revision 1.7  2005/08/22 04:55:24  ishtvan
- * minor changes in soundprop parms and function names
- *
- * Revision 1.6  2005/08/19 00:27:48  lloyd
- * *** empty log message ***
- *
- * Revision 1.5  2005/04/23 10:07:26  ishtvan
- * added fix for pm_walkspeed being reset to 140 by the engine on map load
- *
- * Revision 1.4  2005/04/07 09:38:10  ishtvan
- * *) Added members for global sound prop and sound prop loader objects
- *
- * *) Added global typedef for sound propagation flags which are needed by several different classes
- *
- * Revision 1.3  2005/03/29 07:43:42  ishtvan
- * Added forward declared pointer to global AI relations object: m_RelationsManager
- *
- * Revision 1.2  2005/01/07 02:10:35  sparhawk
- * Lightgem updates
- *
- * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -220,6 +49,7 @@
 bool FileVersionList(const char *str, bool state);
 
 class CStim;
+class CPriorityQueue;
 
 // enables water physics
 #define MOD_WATERPHYSICS
@@ -652,6 +482,11 @@ public:
 * Pointer to global sound prop gameplay object
 **/
 	CsndProp *				m_sndProp;
+	
+	/**
+	* All priority queues that have been instantiated during the run of this map.
+	**/
+	idList<CPriorityQueue*> m_PriorityQueues;
 
 /**
 * Temporary storage of the walkspeed.  This is a workaround

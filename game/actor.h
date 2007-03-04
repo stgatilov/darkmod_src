@@ -4,6 +4,8 @@
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 
+#include "../../darkmod/pqueue.h"
+
 /*
 ===============================================================================
 
@@ -130,6 +132,9 @@ public:
 	const function_t		*GetScriptFunction( const char *funcname );
 	void					SetState( const function_t *newState );
 	void					SetState( const char *statename );
+	
+							// TDM: Task management
+	void					SetTask(const idStr& newTask, int newTaskPriority);
 
 							// vision testing
 	void					SetEyeHeight( float height );
@@ -297,6 +302,17 @@ protected:
 	// state variables
 	const function_t		*state;
 	const function_t		*idealState;
+	
+	/** Name of current task */
+	idStr				task;
+	/** Priority of current task */
+	int					taskPriority;
+
+	/**
+	* The priority queue that this actor uses as a task queue.
+	* Used for, and initialised by, AI scripts. Can be NULL.
+	**/
+	CPriorityQueue*			m_TaskQueue;
 
 	// joint handles
 	jointHandle_t			leftEyeJoint;
@@ -416,6 +432,8 @@ private:
 	void					Event_GetEyePos( void );
 	void					Event_GetAttachment( int ind );
 	void					Event_GetNumAttachments( void );
+	void					Event_AttachTaskQueue(int queueID);
+	void					Event_DetachTaskQueue();
 };
 
 #endif /* !__GAME_ACTOR_H__ */
