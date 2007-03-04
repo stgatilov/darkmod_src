@@ -188,6 +188,29 @@ public:
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );
 
+public:
+	/**
+	* This AF should not be able to be picked up off the ground completely when dragged
+	**/
+	bool					m_bGroundWhenDragged;
+
+	/**
+	* List of integer Id's of "critical" bodies to check for touching the ground
+	* when seeing if the AF is being lifted off the ground
+	**/
+	idList<int>				m_GroundBodyList;
+
+	/**
+	* Number of "critical" bodies that must be kept on the ground at all times
+	* If the number is below this, dragging the AF up will not be allowed
+	**/
+	int						m_GroundBodyMinNum;
+
+	/**
+	* If set to true, this will use the "af" damping when being grabbed instead of the default damping
+	**/
+	bool					m_bDragAFDamping;
+
 protected:
 	idAF					af;				// articulated figure
 	idClipModel *			combatModel;	// render model for hit detection
@@ -195,6 +218,13 @@ protected:
 	idVec3					spawnOrigin;	// spawn origin
 	idMat3					spawnAxis;		// rotation axis used when spawned
 	int						nextSoundTime;	// next time this can make a sound
+
+protected:
+	/**
+	* Set up grounding vars, which apply when the AF might not be able to be 
+	* lifted completely off the ground by the player
+	**/
+	void					SetUpGroundingVars( void );
 
 	void					Event_SetConstraintPosition( const char *name, const idVec3 &pos );
 

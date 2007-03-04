@@ -580,12 +580,16 @@ static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
 idAFEntity_Base::idAFEntity_Base
 ================
 */
-idAFEntity_Base::idAFEntity_Base( void ) {
+idAFEntity_Base::idAFEntity_Base( void ) 
+{
 	combatModel = NULL;
 	combatModelContents = 0;
 	nextSoundTime = 0;
 	spawnOrigin.Zero();
 	spawnAxis.Identity();
+	m_bGroundWhenDragged = false;
+	m_GroundBodyMinNum = 0;
+	m_bDragAFDamping = false;
 }
 
 /*
@@ -593,9 +597,11 @@ idAFEntity_Base::idAFEntity_Base( void ) {
 idAFEntity_Base::~idAFEntity_Base
 ================
 */
-idAFEntity_Base::~idAFEntity_Base( void ) {
+idAFEntity_Base::~idAFEntity_Base( void ) 
+{
 	delete combatModel;
 	combatModel = NULL;
+	m_GroundBodyList.Clear();
 }
 
 /*
@@ -603,12 +609,21 @@ idAFEntity_Base::~idAFEntity_Base( void ) {
 idAFEntity_Base::Save
 ================
 */
-void idAFEntity_Base::Save( idSaveGame *savefile ) const {
+void idAFEntity_Base::Save( idSaveGame *savefile ) const 
+{
 	savefile->WriteInt( combatModelContents );
 	savefile->WriteClipModel( combatModel );
 	savefile->WriteVec3( spawnOrigin );
 	savefile->WriteMat3( spawnAxis );
 	savefile->WriteInt( nextSoundTime );
+
+	savefile->WriteBool( m_bGroundWhenDragged );
+	savefile->WriteInt( m_GroundBodyList.Num() );
+	for( int i = 0; i < m_GroundBodyList.Num(); i++ )
+		savefile->WriteInt( m_GroundBodyList[i] );
+	savefile->WriteInt( m_GroundBodyMinNum );
+	savefile->WriteBool( m_bDragAFDamping );
+
 	af.Save( savefile );
 }
 
@@ -617,13 +632,27 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const {
 idAFEntity_Base::Restore
 ================
 */
-void idAFEntity_Base::Restore( idRestoreGame *savefile ) {
+void idAFEntity_Base::Restore( idRestoreGame *savefile ) 
+{
 	savefile->ReadInt( combatModelContents );
 	savefile->ReadClipModel( combatModel );
 	savefile->ReadVec3( spawnOrigin );
 	savefile->ReadMat3( spawnAxis );
 	savefile->ReadInt( nextSoundTime );
 	LinkCombat();
+
+	savefile->ReadBool( m_bGroundWhenDragged );
+	int GroundBodyListNum;
+	savefile->ReadInt( GroundBodyListNum );
+	for( int i = 0; i < GroundBodyListNum; i++ )
+	{
+		int tmp;
+		savefile->ReadInt( tmp );
+		m_GroundBodyList.Append( tmp );
+	}
+
+	savefile->ReadInt( m_GroundBodyMinNum );
+	savefile->ReadBool( m_bDragAFDamping );
 
 	af.Restore( savefile );
 }
@@ -633,10 +662,14 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile ) {
 idAFEntity_Base::Spawn
 ================
 */
-void idAFEntity_Base::Spawn( void ) {
+void idAFEntity_Base::Spawn( void ) 
+{
 	spawnOrigin = GetPhysics()->GetOrigin();
 	spawnAxis = GetPhysics()->GetAxis();
 	nextSoundTime = 0;
+	m_bGroundWhenDragged = spawnArgs.GetBool( "ground_when_dragged", "0" );
+	m_GroundBodyMinNum = spawnArgs.GetInt( "ground_min_number", "0" );
+	m_bDragAFDamping = spawnArgs.GetBool( "drag_af_damping", "0" );
 }
 
 /*
@@ -644,7 +677,9 @@ void idAFEntity_Base::Spawn( void ) {
 idAFEntity_Base::LoadAF
 ================
 */
-bool idAFEntity_Base::LoadAF( void ) {
+bool idAFEntity_Base::LoadAF( void ) 
+{
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("LoadAF was called\r");
 	idStr fileName;
 
 	if ( !spawnArgs.GetString( "articulatedFigure", "*unknown*", fileName ) ) {
@@ -666,6 +701,8 @@ bool idAFEntity_Base::LoadAF( void ) {
 	af.UpdateAnimation();
 	animator.CreateFrame( gameLocal.time, true );
 	UpdateVisuals();
+
+	SetUpGroundingVars();
 
 	return true;
 }
@@ -1010,6 +1047,29 @@ void idAFEntity_Base::Event_GetAngularVelocityB( int id )
 void idAFEntity_Base::Event_GetNumBodies( void )
 {
 	idThread::ReturnInt( static_cast<idPhysics_AF *>( GetPhysics() )->GetNumBodies() );
+}
+
+void idAFEntity_Base::SetUpGroundingVars( void )
+{
+	if( m_bGroundWhenDragged && af.IsLoaded() )
+	{
+		idLexer	src;
+		idToken	token;
+		idStr tempStr = spawnArgs.GetString( "ground_critical_bodies", "" );
+		
+		m_GroundBodyList.Clear();
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing critical ground bodies list %s\r", tempStr.c_str());
+		if( tempStr.Length() )
+		{
+			src.LoadMemory( tempStr.c_str(), tempStr.Length(), "" );
+			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+			
+			while( src.ReadToken( &token ) )
+				m_GroundBodyList.Append( GetAFPhysics()->GetBodyId(token.c_str()) );
+			
+			src.FreeSource();
+		}
+	}
 }
 
 

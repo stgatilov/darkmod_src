@@ -1067,14 +1067,21 @@ void idAnimated::Spawn( void ) {
 idAnimated::LoadAF
 ===============
 */
-bool idAnimated::LoadAF( void ) {
+bool idAnimated::LoadAF( void ) 
+{
+	bool bReturnVal = false;
 	idStr fileName;
 
-	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) ) {
-		return false;
+	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) ) 
+	{
+		goto Quit;
 	}
 	af.SetAnimator( GetAnimator() );
-	return af.Load( this, fileName );
+	bReturnVal = af.Load( this, fileName );
+	SetUpGroundingVars();
+
+Quit:
+	return bReturnVal;
 }
 
 /*

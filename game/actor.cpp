@@ -1115,14 +1115,21 @@ void idActor::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float siz
 idActor::LoadAF
 ================
 */
-bool idActor::LoadAF( void ) {
+bool idActor::LoadAF( void ) 
+{
+	bool bReturnVal = false;
 	idStr fileName;
 
-	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) || !fileName.Length() ) {
-		return false;
+	if ( !spawnArgs.GetString( "ragdoll", "*unknown*", fileName ) || !fileName.Length() ) 
+	{
+		goto Quit;
 	}
 	af.SetAnimator( GetAnimator() );
-	return af.Load( this, fileName );
+	bReturnVal =  af.Load( this, fileName );
+	SetUpGroundingVars();
+
+Quit:
+	return bReturnVal;
 }
 
 /*
