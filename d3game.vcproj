@@ -931,6 +931,9 @@
 					RelativePath=".\DarkMod\PlayerData.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\pqueue.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Profile.cpp">
 				</File>
 				<File
