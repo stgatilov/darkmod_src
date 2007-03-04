@@ -51,7 +51,7 @@ CForce_Grab::CForce_Grab
 */
 CForce_Grab::CForce_Grab( void ) 
 {
-	m_damping			= 0.5f;
+	m_damping			= 0.0f;
 	m_physics			= NULL;
 	m_id				= 0;
 	m_p					= vec3_zero;
@@ -77,7 +77,9 @@ void CForce_Grab::Init( float damping ) {
 	if ( damping >= 0.0f && damping < 1.0f ) 
 	{
 		m_damping = damping;
-// Ish: why do we set it to zero?
+	}
+	else
+	{
 		m_damping = 0;
 	}
 }
