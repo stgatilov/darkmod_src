@@ -190,8 +190,10 @@ CGrabber::Update
 */
 void CGrabber::Update( idPlayer *player, bool hold ) 
 {
-	idVec3 viewPoint, origin, COM, COMWorld;
-	idMat3 viewAxis, axis;
+	idVec3 viewPoint(vec3_zero), origin(vec3_zero);
+	idVec3 COM(vec3_zero), COMWorld(vec3_zero);
+	idVec3 draggedPosition(vec3_zero), vPlayerPoint(vec3_zero);
+	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
 	trace_t trace;
 //	idEntity *newEnt(NULL);
 //	jointHandle_t newJoint(INVALID_JOINT);
@@ -214,66 +216,96 @@ void CGrabber::Update( idPlayer *player, bool hold )
     if ( !m_dragEnt.GetEntity() ) 
 		StartDrag( player );
 
+	// if there's still not a valid ent, don't do anything
 	idEntity *drag = m_dragEnt.GetEntity();
-	if ( drag ) 
+	if ( !drag || !m_dragEnt.IsValid() )
+		goto Quit;
+
+	// Check for throwing:
+	bool bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+
+	if( m_bAttackPressed && !bAttackHeld )
 	{
-		idVec3 draggedPosition;
+		int HeldTime = gameLocal.time - m_ThrowTimer;
 
-		// Check for throwing:
-		bool bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+		Throw( HeldTime );
+		m_bAttackPressed = false;
 
-		if( m_bAttackPressed && !bAttackHeld )
+		goto Quit;
+	}
+
+	if( !m_bAttackPressed && bAttackHeld )
+	{
+		m_bAttackPressed = true;
+
+		// start the throw timer
+		m_ThrowTimer = gameLocal.time;
+	}
+
+	// Update the held distance
+
+	// Lock the held distance to +/- a few increments around the current held dist
+	// when collision occurs.
+	// Otherwise the player would have to increment all the way back
+
+	if(m_bIsColliding)
+	{
+		if(!m_bPrevFrameCollided)
+			m_LockedHeldDist = m_DistanceCount;
+
+		m_DistanceCount = idMath::ClampInt( (m_LockedHeldDist-2), (m_LockedHeldDist+1), m_DistanceCount );
+	}
+
+	vPlayerPoint.x = 1.0f; // (1, 0, 0)
+	float distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
+	vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+
+	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
+
+	// If dragging a body with a certain spawnarg set, you should only be able to pick
+	// it up so far off the ground
+	if( drag->IsType(idAFEntity_Base::Type) )
+	{
+		// TODO: Check spawnarg for this behavior
+		idAFEntity_Base *AFPtr = (idAFEntity_Base *) drag;
+		
+		if( AFPtr->IsActiveAF() && AFPtr->m_bGroundWhenDragged )
 		{
-			int HeldTime = gameLocal.time - m_ThrowTimer;
+			// Poll the critical AF bodies and see how many are off the ground
+			int OnGroundCount = 0;
+			for( int i=0; i<AFPtr->m_GroundBodyList.Num(); i++ )
+			{
+				if( AFPtr->GetAFPhysics()->HasGroundContacts( AFPtr->m_GroundBodyList[i] ) )
+					OnGroundCount++;
+			}
 
-			Throw( HeldTime );
-			m_bAttackPressed = false;
-
-			goto Quit;
+			// check if the minimum number of these critical bodies remain on the ground
+			if( OnGroundCount < AFPtr->m_GroundBodyMinNum )
+			{
+				// do not allow translation higher than current vertical position
+				idVec3 bodyOrigin = AFPtr->GetAFPhysics()->GetOrigin( m_id );
+				idVec3 UpDir = -AFPtr->GetPhysics()->GetGravityNormal();
+				float deltaVert = (draggedPosition - bodyOrigin) * UpDir;
+				if( deltaVert > 0 )
+					draggedPosition -= deltaVert * UpDir;
+			}
 		}
+	}
 
-		if( !m_bAttackPressed && bAttackHeld )
-		{
-			m_bAttackPressed = true;
+	m_drag.SetDragPosition( draggedPosition );
 
-			// start the throw timer
-			m_ThrowTimer = gameLocal.time;
-		}
+	// evaluate physics
+	// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
+	// calculations which is what we want so that the manipulation works properly
+	m_drag.Evaluate( gameLocal.time );
+	this->ManipulateObject( player );
 
-		// Update the held distance
+	renderEntity_t *renderEntity = drag->GetRenderEntity();
+	idAnimator *dragAnimator = drag->GetAnimator();
 
-		// Lock the held distance to +/- a few increments around the current held dist
-		// when collision occurs.
-		// Otherwise the player would have to increment all the way back
-		if(m_bIsColliding)
-		{
-			if(!m_bPrevFrameCollided)
-				m_LockedHeldDist = m_DistanceCount;
-
-			m_DistanceCount = idMath::ClampInt( (m_LockedHeldDist-2), (m_LockedHeldDist+1), m_DistanceCount );
-		}
-
-		idVec3 vPlayerPoint(1.0f,0.0f,0.0f);
-		float distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
-		vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
-
-		draggedPosition = viewPoint + vPlayerPoint * viewAxis;
-
-
-		m_drag.SetDragPosition( draggedPosition );
-
-		// evaluate physics
-		// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
-		// calculations which is what we want so that the manipulation works properly
-		m_drag.Evaluate( gameLocal.time );
-		this->ManipulateObject( player );
-
-		renderEntity_t *renderEntity = drag->GetRenderEntity();
-		idAnimator *dragAnimator = drag->GetAnimator();
-
-		if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) {
-			dragAnimator->GetJointTransform( m_joint, gameLocal.time, draggedPosition, axis );
-		}
+	if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) 
+	{
+		dragAnimator->GetJointTransform( m_joint, gameLocal.time, draggedPosition, axis );
 	}
 
 Quit:
@@ -404,14 +436,21 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// prevent collision with player
 	// set the clipMask so that the objet only collides with the world
-	this->AddToClipList( m_dragEnt.GetEntity() );
+	AddToClipList( m_dragEnt.GetEntity() );
 
 	// signal object manipulator to update drag position so it's relative to the objects
 	// center of mass instead of its origin
 	m_rotationAxis = -1;
 
-	this->m_drag.Init( g_dragDamping.GetFloat() );
-	this->m_drag.SetPhysics( phys, m_id, m_localEntityPoint );
+	if( newEnt->IsType(idAFEntity_Base::Type)
+		&& static_cast<idAFEntity_Base *>(newEnt)->m_bDragAFDamping == true )
+	{
+		m_drag.Init( cv_drag_damping_AF.GetFloat() );
+	}
+	else
+		m_drag.Init( cv_drag_damping.GetFloat() );
+
+	m_drag.SetPhysics( phys, m_id, m_localEntityPoint );
 
 	player->m_bGrabberActive = true;
 	// don't let the player switch weapons or items
