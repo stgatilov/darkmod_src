@@ -271,7 +271,8 @@ idCVar cv_frob_debug_bounds(		"tdm_frob_debug_bounds", "0",		CVAR_GAME | CVAR_BO
 idCVar cv_collision_damage_scale_vert(	"tdm_collision_dmg_scale_vert", "0.0001",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from vertical collisions/decelerations.  This multiplies delta-velocity squared." );
 idCVar cv_collision_damage_scale_horiz(	"tdm_collision_dmg_scale_horiz", "0.00005",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations.  This multiplies delta-velocity squared." );
 idCVar cv_collision_damage_min(			"tdm_collision_dmg_min", "5.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum damage the player takes from collisions above the minimum delta" );
-
+idCVar cv_drag_damping(					"tdm_drag_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
+idCVar cv_drag_damping_AF(				"tdm_drag_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
 /**
 * DarkMod Item Manipulation
 * Throw_min and throw_max are the min and max impulses applied to items thrown
