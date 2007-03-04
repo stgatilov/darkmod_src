@@ -4804,22 +4804,28 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	AI_SOFTLANDING = false;
 	AI_HARDLANDING = false;
 	float delta = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
-	if ( delta <= m_delta_min )
+	
+
+	if ( delta > m_delta_fatal )
+	{
+		AI_HARDLANDING = true;
+		landChange = -32;
+		landTime = gameLocal.time;
+	}
+	else if ( delta > m_delta_min )
+	{
+		AI_HARDLANDING = true;
+		landChange = -24;
+		landTime = gameLocal.time;
+	}
+	else if ( delta > (m_delta_min / 4.0f) )
 	{
 		AI_SOFTLANDING = true;
 		landChange	= -8;
+		landTime = gameLocal.time;
 	}
-	else if ( delta > m_delta_fatal )
-	{
-		AI_HARDLANDING = true;
-		landChange = -32;		
-	}
-	else
-	{
-		AI_HARDLANDING = true;
-		landChange	= -24;
-	}
-	landTime = gameLocal.time;
+	// otherwise, just walk on
+	
 }
 
 /*
