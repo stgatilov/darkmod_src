@@ -1,418 +1,3 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.124  2007/02/13 22:21:37  sparhawk
- * Fixed a bug that loot was visually only updated when it was not selected in the inventory.
- *
- * Revision 1.123  2007/02/12 22:19:26  sparhawk
- * Added additional objective callback and refactored some of the inventory code.
- * Also changed the scope of the category constructor, so that it can only be used from the inventory.
- *
- * Revision 1.122  2007/02/11 21:34:49  sparhawk
- * Fixed bugs in the inventory.
- * Stackable items are now collected only once and afterwards the counter is increased (as it should be).
- * Fixed a bug that loot only counted to totals (at least on screen).
- * Fixed some bugs and behaviour for GetItem() on the inventory.
- * Category can now be created if it doesn't already exists.
- *
- * Revision 1.121  2007/02/10 22:57:29  sparhawk
- * 1. Multiple frobs fixed.
- * 2. Having invisible items in the inventory is fixed.
- * 3. Select frobbed item after it went into the inventory
- * 4. Overlap of old and new item fixed.
- *
- * Revision 1.120  2007/02/10 14:10:19  sparhawk
- * Custom HUDs implemented. Also fixed the bug that the total for loot was alwyas doubled.
- *
- * Revision 1.119  2007/02/07 22:06:13  sparhawk
- * Items can now be frobbed and added to the inventory
- *
- * Revision 1.118  2007/02/07 02:18:14  thelvyn
- * Removed crashland. Now located in idActor instead
- *
- * Revision 1.117  2007/02/06 15:19:58  thelvyn
- * Now using mass to compute damage in CrashLand
- *
- * Revision 1.116  2007/02/06 03:18:46  thelvyn
- * idActor::CrashLand is now called for both AI and player for falling/collision damage.
- *
- * Revision 1.115  2007/02/03 21:56:11  sparhawk
- * Removed old inventories and fixed a bug in the new one.
- *
- * Revision 1.114  2007/02/03 18:07:25  sparhawk
- * Loot items implemented and various improvements to the interface.
- *
- * Revision 1.113  2007/01/31 23:39:34  sparhawk
- * Inventory updated
- *
- * Revision 1.112  2007/01/29 21:49:57  sparhawk
- * Inventory updates
- *
- * Revision 1.111  2007/01/27 16:15:01  sparhawk
- * Inventory updates
- *
- * Revision 1.110  2007/01/27 11:09:04  sparhawk
- * Fixed a crash in the inventory GetNext/PrevItem
- *
- * Revision 1.109  2007/01/26 22:15:32  sparhawk
- * Inventory additions. Not yet functional.
- *
- * Revision 1.108  2007/01/26 12:52:33  sparhawk
- * New inventory concept.
- *
- * Revision 1.107  2007/01/23 14:06:06  thelvyn
- * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
- *
- * Revision 1.106  2007/01/21 11:15:13  ishtvan
- * listening thru doors when leaning against them implemented
- *
- * Revision 1.105  2007/01/21 02:11:49  ishtvan
- * leaned view yaw change now checks for collision and stops the change if so
- *
- * Revision 1.104  2007/01/20 02:22:28  thelvyn
- * Made the keyboard and mouse code more robust.
- * See player.cpp for usage if needed
- *
- * Revision 1.103  2007/01/20 01:37:34  thelvyn
- * Implemented Ctrl, Shift and Alt key detection.
- * Right , Left supported for all. Also generic dont care if left or right functions.
- * Testing is in place in playerview.cpp
- * I reused #ifdef MOUSETEST as I still have the mouse code in there as well.
- * You can what if any buttons are detected. Mouse L, R, M and for keyboard Left, Right or both of Ctrl, Shift and Alt
- *
- * Revision 1.102  2007/01/19 10:08:41  thelvyn
- * Removed old mouse handling code.
- * Registered some fonts for gui screen display of text.
- * Added function for same
- *
- * Revision 1.101  2007/01/19 02:30:41  thelvyn
- * Separated keyboard hook, same as mouse hook
- * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
- * if it is considered an OK modification I will remove the old version.
- *
- * Revision 1.100  2007/01/03 04:24:29  ishtvan
- * Stim/Response: Fixed the resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.99  2007/01/03 00:28:03  crispy
- * New script event rangedThreatTo. Added idWeapon::IsRanged.
- *
- * Revision 1.98  2006/12/13 19:29:58  gildoran
- * Updated and simplified the inventory UI.
- *
- * Revision 1.97  2006/12/11 06:55:56  gildoran
- * Added the ability to use items directly via hotkey.
- *
- * Revision 1.96  2006/12/10 04:53:23  gildoran
- * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
- *
- * Revision 1.95  2006/12/09 17:49:12  sophisticatedzombie
- * Commented out assert that fails due to m_invGuiFading being
- * NULL during map start.
- *
- * Revision 1.94  2006/12/07 09:56:26  ishtvan
- * leaning controls work as either buttons or toggles
- *
- * Revision 1.93  2006/12/04 00:28:33  ishtvan
- * *) temporarily made lean controls toggles to debug lean code
- *
- * *) Added method CheckLeanKeys to check for release of lean button (before the method was inside the impulse which might not get called if the key was released)
- *
- * Revision 1.92  2006/11/30 09:16:03  ishtvan
- * leaning updates
- *
- * Revision 1.91  2006/11/08 10:11:26  ishtvan
- * fixed bug in frob bounds generation
- *
- * Revision 1.90  2006/11/08 09:27:16  ishtvan
- * added frob bounds debug draw
- *
- * Revision 1.89  2006/09/22 20:16:59  sparhawk
- * Fixed warning
- *
- * Revision 1.88  2006/09/22 00:34:29  gildoran
- * Made setGui() scriptevent clear a GUI's state before loading a new file into it.
- *
- * Revision 1.87  2006/09/18 18:56:58  gildoran
- * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
- *
- * Revision 1.86  2006/09/18 13:37:51  gildoran
- * Added the first version of a unified interface for GUIs.
- *
- * Revision 1.85  2006/09/12 14:25:55  gildoran
- * Finished up the SDK inventory code.
- *
- * Revision 1.84  2006/08/15 16:35:52  gildoran
- * A couple more inventory fixes. (setInventory() now reads "inv_group" rather than "inventory_group")
- *
- * Revision 1.83  2006/08/15 15:48:35  gildoran
- * Another inventory related change.
- *
- * Revision 1.82  2006/08/14 01:12:43  ishtvan
- * added preliminary drop item in impulse51
- *
- * Revision 1.81  2006/08/13 22:48:01  gildoran
- * Added a replaceItem() script event, and allowed groups to be changed when the player is using hybrid inventory grouping.
- *
- * Revision 1.80  2006/08/12 18:47:48  gildoran
- * Changed the code so it updates the inventory opacity every frame. This isn't optimal, but it will fix the opacity bug until I figure out why setting the cvar as modified when the player was loaded didn't seem to work.
- *
- * Revision 1.79  2006/08/12 14:44:29  gildoran
- * Fixed some minor bugs with inventory group iteration.
- *
- * Revision 1.78  2006/08/12 12:47:24  gildoran
- * Added a couple of inventory related cvars: tdm_inv_grouping and tdm_inv_opacity. Also fixed a bug with item iteration.
- *
- * Revision 1.77  2006/08/11 20:03:57  gildoran
- * Another update for inventories.
- *
- * Revision 1.76  2006/08/11 15:49:19  gildoran
- * Another inventory related update.
- *
- * Revision 1.75  2006/08/11 12:32:50  gildoran
- * Added some code so I can start work on the inventory GUI.
- *
- * Revision 1.74  2006/08/07 06:43:47  ishtvan
- * grabber updates
- *
- * Revision 1.73  2006/07/30 23:38:44  ishtvan
- * *) Added frob bias
- *
- * *) new objective script event setObjectiveEnabling
- *
- * Revision 1.72  2006/07/28 01:37:17  ishtvan
- * objective system updates
- *
- * Revision 1.71  2006/07/27 22:39:14  ishtvan
- * frob fixes
- *
- * Revision 1.70  2006/07/27 09:02:22  ishtvan
- * frobbing updates
- *
- * Revision 1.69  2006/07/26 05:07:04  gildoran
- * I forgot to commit one file... (this is for the update to the inventory code)
- *
- * Revision 1.68  2006/07/19 21:50:10  ishtvan
- * new objective related scriptfunctions
- *
- * Revision 1.67  2006/07/19 09:09:35  ishtvan
- * addd objectives scriptfunctions
- *
- * Revision 1.66  2006/07/17 01:48:00  ishtvan
- * added scriptfunction for changing objective states: setObjectiveState
- *
- * Revision 1.65  2006/07/09 02:40:47  ishtvan
- * rope arrow removal bugfix
- *
- * Revision 1.64  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.63  2006/05/28 08:40:15  ishtvan
- * modified death, mission failure
- *
- * Revision 1.62  2006/05/25 08:32:58  ishtvan
- * added event_playstartsound to play the mission start sound (not yet implemented)
- *
- * Revision 1.61  2006/04/27 22:53:57  sophisticatedzombie
- * Changed the constant 70 to 0.35, which is what I have been testing with
- *
- * Revision 1.60  2006/04/27 17:37:53  sparhawk
- * darkModAASFindHidingSpots::testFindHidingSpots currently
- * hardcoded with a value of 70.0. Has to be fixed by sohpistcatedZombie.
- *
- * Revision 1.59  2006/04/03 02:04:32  gildoran
- * Added some code for an inventory prototype.
- *
- * Revision 1.58  2006/03/31 23:52:40  gildoran
- * Renamed inventory objects, and added cursor script functions.
- *
- * Revision 1.57  2006/03/21 20:53:56  sparhawk
- * dm_distance added
- *
- * Revision 1.56  2006/02/15 19:48:22  gildoran
- * Added a kludge, copyKeyToGuiParm() to get around string length limits in scripts.
- *
- * Revision 1.55  2006/02/12 15:34:28  gildoran
- * Added first version of setHinderance(), etc. Not yet tied to player speeds.
- * Also added getNextImmobilization(), since I figured it could be useful for debugging purposes.
- *
- * Revision 1.54  2006/02/12 07:26:51  ishtvan
- * fixed drowning SFX, added underwater death sound option
- *
- * Revision 1.53  2006/02/07 18:55:25  sparhawk
- * 1. State is now moved to CStimResponse so responses can now also be disabled.
- * 2. Removed state SS_ACTIVE (what was that again for???)
- *
- * Revision 1.52  2006/02/06 12:34:26  gildoran
- * Just a few tweaks to give slightly better error messages in the gui overlay interaction script functions.
- *
- * Revision 1.51  2006/02/06 01:31:39  gildoran
- * Added some functions to make it easier for scripts to communicate with the gui overlay.
- *
- * Revision 1.50  2006/02/05 09:29:35  gildoran
- * I added some of the effects for some immobilization types. The code for certain immobilization types (such as movement) will probably need to be rewritten, but for now it at least does something
- *
- * Revision 1.49  2006/02/05 05:34:42  gildoran
- * Added basic functions to keep track of immobilization. They don't affect the player yet.
- *
- * Revision 1.48  2006/02/04 10:26:43  gildoran
- * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
- *
- * Revision 1.47  2006/02/04 09:44:07  ishtvan
- * modified damage to take collision data argument
- *
- * knockout updates
- *
- * Revision 1.46  2006/01/27 14:07:16  sparhawk
- * numFrobEntities should be int and not float.
- *
- * Revision 1.45  2006/01/24 22:03:46  sparhawk
- * Stim/Response implementation preliminary
- *
- * Revision 1.44  2006/01/09 04:30:33  ishtvan
- * added getEyePos script event more exact than one on idActor
- *
- * Revision 1.43  2005/12/15 04:15:47  ishtvan
- * fixed being able to frob things while holding something in your hands
- *
- * Revision 1.42  2005/12/13 18:44:17  ishtvan
- * fixed frob distance check to center around player's eyes, not feet
- *
- * Revision 1.41  2005/12/13 18:18:05  ishtvan
- * frob distance check updates
- *
- * Revision 1.40  2005/12/12 03:01:52  ishtvan
- * moved grabber calls to the frob code on idEntity
- *
- * Revision 1.39  2005/12/11 18:11:52  ishtvan
- * Added m_NoViewChange, disables player view change due to mouse movement
- *
- * Revision 1.38  2005/12/10 17:25:45  sophisticatedzombie
- * Set impulse 25 to simple test of hiding spot detection with visual feedback
- *
- * Revision 1.37  2005/11/26 22:50:07  sparhawk
- * Keyboardhandler added.
- *
- * Revision 1.36  2005/11/26 17:44:44  sparhawk
- * Lightgem cleaned up
- *
- * Revision 1.35  2005/11/19 17:27:56  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.34  2005/11/17 22:59:47  lloyd
- * Fixed player zoom bug when holding an object
- *
- * Revision 1.33  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.32  2005/11/02 20:41:19  sparhawk
- * Fixed NOCLIP crash.
- *
- * Revision 1.31  2005/10/23 18:42:30  sparhawk
- * Lightgem cleanup
- *
- * Revision 1.30  2005/10/23 18:11:21  sparhawk
- * Lightgem entity spawn implemented
- *
- * Revision 1.29  2005/10/22 14:15:46  sparhawk
- * Fixed flickering in lightgem when player is moving.
- *
- * Revision 1.28  2005/10/21 21:57:17  sparhawk
- * Ramdisk support added.
- *
- * Revision 1.27  2005/10/18 13:56:40  sparhawk
- * Lightgem updates
- *
- * Revision 1.26  2005/09/26 03:09:02  ishtvan
- * Event_Touch no longer necessary, removed
- *
- * Revision 1.25  2005/09/24 03:15:39  lloyd
- * Prevent player from zooming when holding object, disabled weapon when player holding an object
- *
- * Revision 1.24  2005/09/17 00:32:29  lloyd
- * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
- *
- * Revision 1.23  2005/08/19 00:27:48  lloyd
- * *** empty log message ***
- *
- * Revision 1.22  2005/08/14 23:27:31  sophisticatedzombie
- * Updated handling of leaning to use doxygen style comments
- *
- * Revision 1.21  2005/07/30 01:29:09  sophisticatedzombie
- * Fixed 3rd person viewpoint with leaning enabled.
- *
- * Revision 1.20  2005/07/27 20:44:34  sophisticatedzombie
- * Added variables to handle view roll and translate during lean.
- *
- * Revision 1.19  2005/07/01 21:22:31  sophisticatedzombie
- * I added a case statement for Impule 24 to the impulse handler which triggers a mantling attempt.
- *
- * Revision 1.18  2005/04/23 10:08:02  ishtvan
- * added fix for pm_walkspeed being reset to 140 by the engine on map load
- *
- * Revision 1.17  2005/04/23 01:48:58  ishtvan
- * *) Removed the effect of stamina on everything but the heartbeat sound
- *
- * *) Added additional movement speeds (creep, crouch-creep and crouch-run) for 6 total movement speeds
- *
- * Revision 1.16  2005/04/07 09:43:31  ishtvan
- * *) Added an Event_Touch so that players will alert any enemy AI that they bump while moving
- *
- * Revision 1.15  2005/03/26 16:01:59  sparhawk
- * Linefeeds
- *
- * Revision 1.14  2005/03/26 16:01:00  sparhawk
- * Lightgem implemented
- *
- * Revision 1.13  2005/01/24 00:17:16  sparhawk
- * Lightgem shadow problem fixed.
- *
- * Revision 1.12  2005/01/20 19:37:49  sparhawk
- * Lightgem now calculates projected lights as well as parallel lights.
- *
- * Revision 1.11  2005/01/19 23:22:04  sparhawk
- * Bug fixed for ambient lights
- *
- * Revision 1.10  2005/01/19 23:01:48  sparhawk
- * Lightgem updated to do proper projected lights with occlusion.
- *
- * Revision 1.9  2005/01/07 02:10:35  sparhawk
- * Lightgem updates
- *
- * Revision 1.8  2004/11/28 09:16:32  sparhawk
- * SDK V2 merge
- *
- * Revision 1.7  2004/11/24 22:00:05  sparhawk
- * *) Multifrob implemented
- * *) Usage of items against other items implemented.
- * *) Basic Inventory system added.
- * *) Inventory keys added
- *
- * Revision 1.6  2004/11/21 01:03:27  sparhawk
- * Doors can now be properly opened and have sound.
- *
- * Revision 1.5  2004/11/14 20:25:24  sparhawk
- * Unneccessary logstatement removed.
- *
- * Revision 1.4  2004/11/14 00:42:37  sparhawk
- * Added USE/Frob Key.
- *
- * Revision 1.3  2004/11/06 17:17:43  sparhawk
- * Removed Frobangles as we don't need them anymore.
- *
- * Revision 1.2  2004/10/31 19:09:53  sparhawk
- * Added CDarkModPlayer to player
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
- *
- ***************************************************************************/
-
 // Copyright (C) 2004 Id Software, Inc.
 //
 
@@ -5213,127 +4798,30 @@ idPlayer::CrashLand
 Check for hard landings that generate sound events
 =================
 */
-/*
-void idPlayer::CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ) {
-	idVec3		origin, velocity;
-	idVec3		gravityVector, gravityNormal;
-	float		delta;
-	float		hardDelta, fatalDelta;
-	float		dist;
-	float		vel, acc;
-	float		t;
-	float		a, b, c, den;
-	waterLevel_t waterLevel;
-	bool		noDamage;
 
+void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity ) {
+	
 	AI_SOFTLANDING = false;
 	AI_HARDLANDING = false;
-
-	// if the player is not on the ground
-	if ( !physicsObj.HasGroundContacts() ) {
-		return;
-	}
-
-	gravityNormal = physicsObj.GetGravityNormal();
-
-	// if the player wasn't going down
-	if ( ( oldVelocity * -gravityNormal ) >= 0.0f ) {
-		return;
-	}
-
-	waterLevel = physicsObj.GetWaterLevel();
-
-	// never take falling damage if completely underwater
-	if ( waterLevel == WATERLEVEL_HEAD ) {
-		return;
-	}
-
-	// no falling damage if touching a nodamage surface
-	noDamage = false;
-	for ( int i = 0; i < physicsObj.GetNumContacts(); i++ ) {
-		const contactInfo_t &contact = physicsObj.GetContact( i );
-		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE ) {
-			noDamage = true;
-			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
-			break;
-		}
-	}
-
-	origin = GetPhysics()->GetOrigin();
-	gravityVector = physicsObj.GetGravity();
-
-	// calculate the exact velocity on landing
-	dist = ( origin - oldOrigin ) * -gravityNormal;
-	vel = oldVelocity * -gravityNormal;
-	acc = -gravityVector.Length();
-
-	a = acc / 2.0f;
-	b = vel;
-	c = -dist;
-
-	den = b * b - 4.0f * a * c;
-	if ( den < 0 ) {
-		return;
-	}
-	t = ( -b - idMath::Sqrt( den ) ) / ( 2.0f * a );
-
-	delta = vel + t * acc;
-	delta = delta * delta * 0.0001;
-
-	// reduce falling damage if there is standing water
-	if ( waterLevel == WATERLEVEL_WAIST ) {
-		delta *= 0.25f;
-	}
-	if ( waterLevel == WATERLEVEL_FEET ) {
-		delta *= 0.5f;
-	}
-
-	if ( delta < 1.0f ) {
-		return;
-	}
-
-	// allow falling a bit further for multiplayer
-	if ( gameLocal.isMultiplayer ) {
-		fatalDelta	= 75.0f;
-		hardDelta	= 50.0f;
-	} else {
-		fatalDelta	= 65.0f;
-		hardDelta	= 45.0f;
-	}
-
-	if ( delta > fatalDelta ) {
-		AI_HARDLANDING = true;
-		landChange = -32;
-		landTime = gameLocal.time;
-		if ( !noDamage ) {
-			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 1.0f, 0 );
-		}
-	} else if ( delta > hardDelta ) {
-		AI_HARDLANDING = true;
-		landChange	= -24;
-		landTime	= gameLocal.time;
-		if ( !noDamage ) {
-			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_hardfall", 1.0f, 0 );
-		}
-	} else if ( delta > 30 ) {
-		AI_HARDLANDING = true;
-		landChange	= -16;
-		landTime	= gameLocal.time;
-		if ( !noDamage ) {
-			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", 1.0f, 0 );
-		}
-	} else if ( delta > 7 ) {
+	float delta = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
+	if ( delta <= m_delta_min )
+	{
 		AI_SOFTLANDING = true;
 		landChange	= -8;
-		landTime	= gameLocal.time;
-	} else if ( delta > 3 ) {
-		// just walk on
 	}
+	else if ( delta > m_delta_fatal )
+	{
+		AI_HARDLANDING = true;
+		landChange = -32;		
+	}
+	else
+	{
+		AI_HARDLANDING = true;
+		landChange	= -24;
+	}
+	landTime = gameLocal.time;
 }
-*/
+
 /*
 ===============
 idPlayer::BobCycle
@@ -6969,13 +6457,14 @@ idPlayer::Move
 */
 void idPlayer::Move( void ) {
 	float newEyeOffset;
-	idVec3 oldOrigin;
-	idVec3 oldVelocity;
+	idVec3 savedOrigin;
+	idVec3 savedVelocity;
 	idVec3 pushVelocity;
 
 	// save old origin and velocity for crashlanding
-	oldOrigin = physicsObj.GetOrigin();
-	oldVelocity = physicsObj.GetLinearVelocity();
+	savedOrigin = physicsObj.GetOrigin();
+	savedVelocity = physicsObj.GetLinearVelocity();
+
 	pushVelocity = physicsObj.GetPushedLinearVelocity();
 
 	// set physics variables
@@ -7078,7 +6567,7 @@ void idPlayer::Move( void ) {
 	}
 
 	if ( AI_ONLADDER ) {
-		int old_rung = oldOrigin.z / LADDER_RUNG_DISTANCE;
+		int old_rung = savedOrigin.z / LADDER_RUNG_DISTANCE;
 		int new_rung = physicsObj.GetOrigin().z / LADDER_RUNG_DISTANCE;
 
 		if ( old_rung != new_rung ) {
@@ -7089,7 +6578,7 @@ void idPlayer::Move( void ) {
 	BobCycle( pushVelocity );
 	if ( health > 0 )
 	{
-		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
+		CrashLand( savedOrigin, savedVelocity );
 	}
 }
 
@@ -7891,7 +7380,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		gameLocal.Printf( "client:%i health:%i damage:%i armor:%i\n", 
 			entityNumber, health, damage, armorSave );
 	}
-	Debug4( "client:%i health:%i damage:%i armor:%i\n", entityNumber, health, damage, armorSave );
 
 	// move the world direction vector to local coordinates
 	damage_from = dir;

@@ -1,88 +1,3 @@
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.22  2007/02/07 02:16:30  thelvyn
- * Added spawn arguments instead of cvars for crashland
- *
- * Revision 1.21  2007/02/06 03:18:44  thelvyn
- * idActor::CrashLand is now called for both AI and player for falling/collision damage.
- *
- * Revision 1.20  2007/01/25 10:08:33  crispy
- * Implemented lipsync functionality
- *
- * Revision 1.19  2007/01/22 03:11:25  crispy
- * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
- *
- * Revision 1.18  2007/01/21 10:50:57  crispy
- * Added animation replacement functionality (i.e. replace_anim_* spawnargs)
- *
- * Revision 1.17  2007/01/06 10:06:49  ishtvan
- * fov check fix
- *
- * Revision 1.16  2006/12/23 20:17:02  sophisticatedzombie
- * CanSee is now virutal. I forgot to check this in a few days ago and I apologize.
- *
- * Revision 1.15  2006/10/22 07:49:12  ishtvan
- * added scriptfunction GetNumAttached
- *
- * added some logging to track damage locations
- *
- * Revision 1.14  2006/10/09 19:35:46  sparhawk
- * Added a offsetHeadModel vector
- *
- * Revision 1.13  2006/08/21 06:24:14  ishtvan
- * *) added event_getattachment
- *
- * *) moved other attachment scriptevents from idAI to idActor
- *
- * Revision 1.12  2006/08/21 05:53:52  ishtvan
- * added GetAttachedEnt to get an entity attached at the given index
- *
- * Revision 1.11  2006/08/21 05:04:00  ishtvan
- * attachment updates/fixes
- *
- * Revision 1.10  2006/08/20 20:24:21  ishtvan
- * added new attachment functions
- *
- * Revision 1.9  2006/05/24 08:49:06  ishtvan
- * added AI group and innocence to idActor
- *
- * Revision 1.8  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.7  2006/02/04 09:44:07  ishtvan
- * modified damage to take collision data argument
- *
- * knockout updates
- *
- * Revision 1.6  2006/02/03 10:57:11  ishtvan
- * added framework for knockouts
- *
- * Revision 1.5  2005/11/07 01:58:25  ishtvan
- * added getEyePos scriptfunction to get eye position
- *
- * Revision 1.4  2005/04/23 01:46:51  ishtvan
- * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
- *
- * Revision 1.3  2005/04/07 09:28:54  ishtvan
- * *) Moved Relations methods to idAI.  They did not belong on idActor.
- *
- * *) Added calling of Soundprop in method PlayFootstepSound
- *
- * Revision 1.2  2005/03/29 07:40:30  ishtvan
- * Added AI Relations functions to be used by scripting
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
- *
- ***************************************************************************/
-
 // Copyright (C) 2004 Id Software, Inc.
 //
 
@@ -245,7 +160,7 @@ public:
 	Added by Richard Day
 	=====================
 	****************************************************************************************/
-	virtual void            CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+	virtual float		    CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
 	
 	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
@@ -352,16 +267,12 @@ public:
 
 protected:
 
-	/****************************************************************************************
-	=====================
-	CrashLand variables
-	Added by Richard Day
-	=====================
-	****************************************************************************************/
+	/*	CrashLand variables	Added by Richard Day	*/
 
-	float m_delta_fatal; // any value above this is death
-	float m_delta_scale; // scale the damage based on this
-	float m_delta_min;   // min
+	float m_delta_fatal; ///< any value above this is death
+	float m_delta_scale; ///< scale the damage based on this. delta is divide by this
+	float m_delta_min;   ///< min delta anything at or below this does 0 damage
+	
 
 	friend class			idAnimState;
 

@@ -1407,7 +1407,7 @@ void idPhysics_Player::LadderMove( void )
 	float	wishspeed(0.0f), scale(0.0f), accel(0.0f);
 	float	upscale(0.0f), NormalDot(0.0f);
 	trace_t SurfTrace;
-	bool	bMoveAllowed( true ), bSurfInFront( false );
+	bool	bMoveAllowed( true );//, bSurfInFront( false );
 
 	accel = PM_ACCELERATE;
 

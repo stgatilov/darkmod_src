@@ -1,148 +1,6 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.42  2007/02/07 02:16:29  thelvyn
- * Added spawn arguments instead of cvars for crashland
- *
- * Revision 1.41  2007/02/06 16:09:03  thelvyn
- * Added cvars for min/fatal falling deltas and damage scale modifier
- *
- * Revision 1.40  2007/02/06 15:19:58  thelvyn
- * Now using mass to compute damage in CrashLand
- *
- * Revision 1.39  2007/02/06 13:46:49  thelvyn
- * more falling damage tweaks
- *
- * Revision 1.38  2007/02/06 03:18:42  thelvyn
- * idActor::CrashLand is now called for both AI and player for falling/collision damage.
- *
- * Revision 1.37  2007/01/25 10:08:33  crispy
- * Implemented lipsync functionality
- *
- * Revision 1.36  2007/01/23 14:06:06  thelvyn
- * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
- *
- * Revision 1.35  2007/01/23 01:23:54  thelvyn
- * Fixed a minor bug and cleaned up most of the warnings
- *
- * Revision 1.34  2007/01/22 03:11:25  crispy
- * Animation replacement now happens upon all binds (not just via the attachment system), and is removed upon unbinding
- *
- * Revision 1.33  2007/01/21 10:50:57  crispy
- * Added animation replacement functionality (i.e. replace_anim_* spawnargs)
- *
- * Revision 1.32  2007/01/11 17:57:26  gildoran
- * Changed movement volume modifiers to add to a sound shader's volume instead of overwriting it.
- *
- * Revision 1.31  2007/01/06 10:06:49  ishtvan
- * fov check fix
- *
- * Revision 1.30  2006/12/30 08:15:19  sophisticatedzombie
- * idActor::CanSee now ignores the hidden flag on entities.  This is because the hidden
- * flag is used sometimes to turn on and off the rendering of particle effects, such
- * as on torches.  So a torch that was out would be hidden, preventing it from ever
- * being seen.
- *
- * Revision 1.29  2006/11/30 08:04:54  ishtvan
- * bugfix for footstep volume
- *
- * Revision 1.28  2006/10/22 19:12:13  ishtvan
- * damage bugfixes
- *
- * Revision 1.27  2006/10/22 07:49:12  ishtvan
- * added scriptfunction GetNumAttached
- *
- * added some logging to track damage locations
- *
- * Revision 1.26  2006/10/16 20:52:21  sparhawk
- * Individual offset added for joints.
- *
- * Revision 1.25  2006/10/12 21:19:35  sparhawk
- * Generic headoffset implemented
- *
- * Revision 1.24  2006/10/09 19:35:46  sparhawk
- * Added a offsetHeadModel vector
- *
- * Revision 1.23  2006/08/21 06:24:14  ishtvan
- * *) added event_getattachment
- *
- * *) moved other attachment scriptevents from idAI to idActor
- *
- * Revision 1.22  2006/08/21 05:53:53  ishtvan
- * added GetAttachedEnt to get an entity attached at the given index
- *
- * Revision 1.21  2006/08/21 05:08:05  ishtvan
- * attachment fixes
- *
- * Revision 1.20  2006/08/21 05:04:00  ishtvan
- * attachment updates/fixes
- *
- * Revision 1.19  2006/08/20 20:24:21  ishtvan
- * added new attachment functions
- *
- * Revision 1.18  2006/07/30 23:37:43  ishtvan
- * removed attachment code from spawn, now done on idEntity
- *
- * Revision 1.17  2006/07/15 02:15:46  ishtvan
- * surface type name fix
- *
- * Revision 1.16  2006/07/13 06:27:20  ishtvan
- * attempted surface type fix
- *
- * Revision 1.15  2006/07/03 01:27:59  ishtvan
- * attempted fix for surface type sounds
- *
- * Revision 1.14  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.13  2006/05/24 08:49:06  ishtvan
- * added AI group and innocence to idActor
- *
- * Revision 1.12  2006/02/12 07:28:45  ishtvan
- * fixed drowning SFX
- *
- * Revision 1.11  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.10  2006/02/04 09:44:07  ishtvan
- * modified damage to take collision data argument
- *
- * knockout updates
- *
- * Revision 1.9  2006/02/03 10:57:11  ishtvan
- * added framework for knockouts
- *
- * Revision 1.8  2005/12/04 02:43:50  ishtvan
- * updated surface checks to check new surface types
- *
- * Revision 1.7  2005/11/19 11:57:29  ishtvan
- * added unique footstep sounds in water
- *
- * Revision 1.6  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.5  2005/11/07 01:58:25  ishtvan
- * added getEyePos scriptfunction to get eye position
- *
- * Revision 1.4  2005/04/23 01:46:51  ishtvan
- * PlayFootStepSound now checks which of the 6 movement types the player or AI is in, and modifies volume appropriately
- *
- * Revision 1.3  2005/04/07 09:28:53  ishtvan
- * *) Moved Relations methods to idAI.  They did not belong on idActor.
- *
- * *) Added calling of Soundprop in method PlayFootstepSound
- *
- * Revision 1.2  2005/03/29 07:40:30  ishtvan
- * Added AI Relations functions to be used by scripting
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -157,6 +15,7 @@ static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
+#include "logmgr.h"
 /***********************************************************************
 
 	idAnimState
@@ -2445,7 +2304,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	damage = GetDamageForLocation( damage, location );
 
-	Debug4("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 
 	// inform the attacker that they hit someone
@@ -3882,7 +3740,7 @@ void idActor::Event_GetNumAttachments( void )
 	Added by Richard Day
 	=====================
 ****************************************************************************************/
-void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity )
+float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
 {
 	// Early exit's
 	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
@@ -3890,8 +3748,9 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 		|| !physicsObj.HasGroundContacts() // not aptly named
 		)
 	{
-		return;
+		return 0;
 	}
+	float delta = 0;
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound wont be played otherwise
 	// as we do no damage if this is true.
@@ -3911,9 +3770,11 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 		idVec3 gravityNormal = physicsObj.GetGravityNormal();
 		idVec3 gravityVector = physicsObj.GetGravity();
 		idVec3 origin        = physicsObj.GetOrigin();
+
 		// calculate the exact velocity on landing
-		float dist = ( origin - oldOrigin ) * -gravityNormal;
-		float vel = oldVelocity * -gravityNormal;
+		float dist = ( origin - savedOrigin ) * -gravityNormal;
+		float vel = savedVelocity * -gravityNormal;
+
 		float acc = -gravityVector.Length();
 		float a = acc / 2.0f;
 		float b = vel;
@@ -3922,7 +3783,7 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 		if( den > 0 )
 		{
 			float t = ( -b - idMath::Sqrt( den ) ) / ( 2.0f * a );
-			float delta = vel + t * acc;
+			delta = vel + t * acc;
 			delta = delta * delta * 0.0001;
 			// reduce falling damage if there is standing water
 			if( waterLevel == WATERLEVEL_WAIST )
@@ -3943,14 +3804,12 @@ void idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOri
 				else
 				{
 					float mass = physicsObj.GetMass();
-					Debug1( "Mass = %f", mass );
 					float perc = ( mass / 100 );
 					float dScale = ( delta / m_delta_scale ) * ( perc < 1.0f ? 1.0f : perc );
-					Debug4( "Delta = %f perc = %f dScale = %f Health = %i", delta, perc, dScale, health );
 					Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
-					Debug1( "After damage Health = %i", health );
 				} // if( delta > fatalDelta ) else
 			}// if ( delta >= 1.0f )
 		}// if ( den > 0 )
 	} // if( !noDamage )
+	return delta;
 }
