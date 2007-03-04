@@ -27,7 +27,7 @@
  * all groups and items. Keep in mind that destroying an item does NOT mean 
  * that the entity is also destroyed. After all, an entity can be an item
  * but it doesn't need to and it can exist without being one. Only the item
- * pointer is cleared, when the item si destroyed.
+ * pointer is cleared, when the item is destroyed.
  * You should also not make any assumptions about item or group orderings as
  * they can be created and destroyed in arbitrary order. Only the default
  * group is always at index 0.
