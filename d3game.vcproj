@@ -19,7 +19,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/I &quot;E:\Programme\Microsoft Visual Studio\VC98\Include&quot;"
+				AdditionalOptions=""
 				Optimization="0"
 				AdditionalIncludeDirectories="mssdk/include; DarkMod;include"
 				PreprocessorDefinitions="__DOOM__,GAME_DLL,WIN32,_DEBUG,_WINDOWS"
