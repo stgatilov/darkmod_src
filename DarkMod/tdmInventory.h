@@ -1,21 +1,11 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $HeadURL: $
  * $LastChangedRevision$
  * $Date$
  * $Author$
+ * $Id$
  *
-$LastChangedRevision$
-$Rev$
-$Revision$
-$LastChangedDate$
-$Date$
-$LastChangedBy$
-$Author$
-$HeadURL: $
-$URL: $
-$Id$
  ***************************************************************************/
 
 #ifndef __DARKMOD_TDMINVENTORY_H__

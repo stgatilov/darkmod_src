@@ -13,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
@@ -1179,16 +1179,8 @@ idPlayer::idPlayer()
 	m_bShoulderingBody		= false;
 
 	m_LeanButtonTimeStamp	= 0;
-	mInventoryOverlay		 = -1;
-
-	// TODO: Think about how to handle the frob stim and unifiy the
-	// way how frobbing actually works internally. Currently it's a
-	// kind of special case.
-/*	CStim *pStim;
-
-	pStim = AddStim(ST_FROB, 0.0f, false, true);
-	pStim->EnableSR();
-*/
+	mInventoryOverlay		= -1;
+	m_WeaponCursor			= NULL;
 }
 
 /*
@@ -1688,8 +1680,19 @@ void idPlayer::Spawn( void )
 
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
+	SetupInventory();
+}
 
+void idPlayer::SetupInventory()
+{
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
+	CInventory *inv = Inventory();
+	int idx = 0;
+	m_WeaponCursor = inv->CreateCursor();
+	inv->CreateCategory(TDM_PLAYER_WEAPON_CATEGORY, &idx);
+	m_WeaponCursor->SetCurrentCategory(idx);
+	m_WeaponCursor->SetCategoryLock(true);
+
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it;
 
@@ -1722,6 +1725,7 @@ void idPlayer::Spawn( void )
 	crsr->Inventory()->PutItem(it, cv_tdm_inv_loot_group.GetString());
 	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
 }
+
 
 /*
 ==============
@@ -9448,20 +9452,12 @@ void idPlayer::inventoryPrevItem()
 
 void idPlayer::inventoryNextGroup()
 {
-/*	assert( hud && InventoryCursor() );
-
-	InventoryCursor()->IterateGroup( false );
-	inventoryChangeSelection( hud );
-*/
+	InventoryCursor()->GetNextCategory();
 }
 
 void idPlayer::inventoryPrevGroup()
 {
-/*	assert( hud && InventoryCursor() );
-
-	InventoryCursor()->IterateGroup( true );
-	inventoryChangeSelection( hud );
-*/
+	InventoryCursor()->GetPrevCategory();
 }
 
 void idPlayer::inventoryUseItem()
