@@ -1688,6 +1688,9 @@ void idPlayer::SetupInventory()
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
 	CInventory *inv = Inventory();
 	int idx = 0;
+
+	// We create a cursor and a category for the weapons, which is then locked
+	// to this category, so we can only cycle within that one group.
 	m_WeaponCursor = inv->CreateCursor();
 	inv->CreateCategory(TDM_PLAYER_WEAPON_CATEGORY, &idx);
 	m_WeaponCursor->SetCurrentCategory(idx);
@@ -1695,6 +1698,11 @@ void idPlayer::SetupInventory()
 
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it;
+
+	// We set the filter to ignore the weapon category, since this will be
+	// handled by the weapon cursor. We don't want the weapons to show up
+	// in the weapon slot AND in the inventory at the same time.
+	crsr->SetCategoryIgnored(TDM_PLAYER_WEAPON_CATEGORY);
 
 	// The player always gets a dumyyentry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
