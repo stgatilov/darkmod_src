@@ -235,7 +235,6 @@ public:
 	void					DropCurrentItem(void);
 
 protected:
-	void					ValidateCategory(void);
 	bool					IsCategoryIgnored(const CInventoryCategory *) const;
 
 protected:
