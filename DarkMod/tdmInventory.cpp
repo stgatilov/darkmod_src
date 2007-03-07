@@ -769,20 +769,100 @@ Quit:
 
 CInventoryCategory *CInventoryCursor::GetNextCategory(void)
 {
-	ValidateCategory();
-	m_CurrentCategory++;
-	ValidateCategory();
+	CInventoryCategory *rc = NULL;
 
-	return m_Inventory->m_Category[m_CurrentCategory];
+	// If category lock is switched on, we don't allow to switch 
+	// to another category.
+	if(m_CategoryLock == true)
+		return NULL;
+
+	int n = m_Inventory->m_Category.Num();
+	int cnt = 0;
+
+	while(1)
+	{
+		m_CurrentCategory++;
+
+		// Check if we already passed through all the available categories.
+		// This means that either the inventory is quite empty, or there are
+		// no categories that are allowed for this cursor.
+		cnt++;
+		if(cnt > n)
+		{
+			rc = NULL;
+			break;
+		}
+
+		if(m_CurrentCategory > n)
+		{
+			if(m_WrapAround == true)
+				m_CurrentCategory = 0;
+			else
+				m_CurrentCategory = n;
+		}
+
+		rc = m_Inventory->m_Category[m_CurrentCategory];
+		if(IsCategoryIgnored(rc) == false)
+			break;
+	}
+
+	return rc;
 }
 
 CInventoryCategory *CInventoryCursor::GetPrevCategory(void)
 {
-	ValidateCategory();
-	m_CurrentCategory--;
-	ValidateCategory();
+	CInventoryCategory *rc = NULL;
 
-	return m_Inventory->m_Category[m_CurrentCategory];
+	// If category lock is switched on, we don't allow to switch 
+	// to another category.
+	if(m_CategoryLock == true)
+		return NULL;
+
+	int n = m_Inventory->m_Category.Num();
+	int cnt = 0;
+
+	while(1)
+	{
+		m_CurrentCategory--;
+
+		// Check if we already passed through all the available categories.
+		// This means that either the inventory is quite empty, or there are
+		// no categories that are allowed for this cursor.
+		cnt++;
+		if(cnt > n)
+		{
+			rc = NULL;
+			break;
+		}
+
+		if(m_CurrentCategory < 0)
+		{
+			if(m_WrapAround == true)
+				m_CurrentCategory = n;
+			else
+				m_CurrentCategory = 0;
+		}
+
+		rc = m_Inventory->m_Category[m_CurrentCategory];
+		if(IsCategoryIgnored(rc) == false)
+			break;
+	}
+
+	return rc;
+}
+
+void CInventoryCursor::SetCurrentCategory(int Index)
+{
+	if(Index < 0)
+		Index = 0;
+	
+	if(Index >= m_Inventory->m_Category.Num())
+	{
+		Index = m_Inventory->m_Category.Num();
+		if(Index != 0)
+			Index--;
+	}
+	m_CurrentCategory = Index;
 }
 
 void CInventoryCursor::DropCurrentItem(void)

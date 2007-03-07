@@ -1,8 +1,8 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source: /cvsroot/darkmod_src/DarkMod/tdmInventory.h,v $
- * $Revision$
+ * $HeadURL: $
+ * $LastChangedRevision$
  * $Date$
  * $Author$
  *
@@ -212,10 +212,8 @@ public:
 
 	/**
 	 * Set the current group index.
-	 * Validation of the index is done when doing Nex/Prev Category
-	 * so we don't really care wether this is a valid index or not.
 	 */
-	inline void				SetCurrentCategory(int Index) { m_CurrentCategory = Index; }
+	void				SetCurrentCategory(int Index);
 
 	/**
 	 * Set the current item index.
