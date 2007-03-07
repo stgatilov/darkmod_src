@@ -1,7 +1,6 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
@@ -17,7 +16,7 @@
 #pragma warning(disable : 4127 4996 4805 4800)
 
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"
