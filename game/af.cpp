@@ -27,7 +27,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 
