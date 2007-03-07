@@ -6,6 +6,16 @@
  * $Date$
  * $Author$
  *
+$LastChangedRevision$
+$Rev$
+$Revision$
+$LastChangedDate$
+$Date$
+$LastChangedBy$
+$Author$
+$HeadURL: $
+$URL: $
+$Id$
  ***************************************************************************/
 
 #ifndef __DARKMOD_TDMINVENTORY_H__
