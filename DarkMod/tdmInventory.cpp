@@ -717,11 +717,7 @@ CInventoryItem *CInventoryCursor::GetNextItem(void)
 	m_CurrentItem++;
 	if(m_CurrentItem >= ni)
 	{
-		if(m_CategoryLock == false)
-		{
-			m_CurrentCategory++;
-			ValidateCategory();
-		}
+		GetNextCategory();
 
 		if(m_WrapAround == true)
 			m_CurrentItem = 0;
@@ -746,11 +742,7 @@ CInventoryItem *CInventoryCursor::GetPrevItem(void)
 	m_CurrentItem--;
 	if(m_CurrentItem < 0)
 	{
-		if(m_CategoryLock == false)
-		{
-			m_CurrentCategory--;
-			ValidateCategory();
-		}
+		GetPrevCategory();
 
 		if(m_WrapAround == true)
 			m_CurrentItem = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num()-1;
@@ -790,6 +782,7 @@ CInventoryCategory *CInventoryCursor::GetNextCategory(void)
 		if(cnt > n)
 		{
 			rc = NULL;
+			m_CurrentCategory = 0;
 			break;
 		}
 
@@ -832,6 +825,7 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory(void)
 		if(cnt > n)
 		{
 			rc = NULL;
+			m_CurrentCategory = 0;
 			break;
 		}
 
