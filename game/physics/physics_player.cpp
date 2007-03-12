@@ -1430,9 +1430,11 @@ void idPhysics_Player::LadderMove( void )
 	}
 
 	// Add the velocity of whatever entity they're climbing on:
+	// TODO: ADD REF FRAME ANGULAR VELOCITY!!
 	if( m_ClimbingOnEnt.IsValid() && m_ClimbingOnEnt.GetEntity()->GetPhysics() )
 	{
 		RefFrameVel = m_ClimbingOnEnt.GetEntity()->GetPhysics()->GetLinearVelocity();
+		RefFrameVel += m_ClimbingOnEnt.GetEntity()->GetPhysics()->GetPushedLinearVelocity(); 
 	}
 
 	// ====================== stick to the ladder ========================
@@ -1441,11 +1443,22 @@ void idPhysics_Player::LadderMove( void )
 	end = start - 48.0f * LadderNormXY;
 	gameLocal.clip.Translation( SurfTrace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
 	
+	// TODO: When first attaching to the ladder, set m_vLadderPoint to avoid that bug
+	// of hovering in the air when we approach the ladder at an angle in midair
+
 	// if there is a climbable surface in front of the player, stick to it
 	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
 		&& (SurfTrace.c.material->GetSurfaceFlags() & SURF_LADDER ) )
 	{
 		m_vLadderPoint = SurfTrace.endpos + LADDER_DISTANCE * LadderNormXY;
+		AttachVel = 10 * (m_vLadderPoint - current.origin);
+
+		// Now that we have a valid point, don't need to use the initial one
+		m_bClimbInitialPhase = false;
+	}
+	else if( m_bClimbInitialPhase )
+	{
+		// We should already have m_vLadderPoint stored from the initial trace
 		AttachVel = 10 * (m_vLadderPoint - current.origin);
 	}
 
@@ -1470,7 +1483,7 @@ void idPhysics_Player::LadderMove( void )
 		// right vector orthogonal to gravity
 		right = viewRight - (gravityNormal * viewRight) * gravityNormal;
 		// project right vector into ladder plane
-		right = right - (m_vLadderNormal * right) * m_vLadderNormal;
+		right = right - (LadderNormXY * right) * LadderNormXY;
 		right.Normalize();
 
 		wishvel += 2.0f * right * scale * (float) command.rightmove;
@@ -1848,6 +1861,7 @@ void idPhysics_Player::CheckLadder( void )
 			&& ( trace.c.material->GetSurfaceFlags() & SURF_LADDER )
 			) 
 		{
+			idVec3 vStickPoint = trace.endpos;
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
 			gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
@@ -1861,14 +1875,18 @@ void idPhysics_Player::CheckLadder( void )
 				// if it also is a ladder surface
 				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
 				{
-					// Uncomment for debugging to console:
-//					if( m_vLadderNormal != trace.c.normal )
-//						gameLocal.Printf("Switched ladder normal vector, old vector %s, new vector %s \n", m_vLadderNormal.ToString(), trace.c.normal.ToString() );
+					m_vLadderNormal = trace.c.normal;
+					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
+					
+					// FIX: Used to get stuck hovering in some cases, now there's an initial phase
+					if( !m_bOnLadder )
+					{
+						m_bClimbInitialPhase = true;
+						m_vLadderPoint = vStickPoint;
+					}
 
 					m_bLadderAhead = true;
 					m_bOnLadder = true;					
-					m_vLadderNormal = trace.c.normal;
-					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
 
 					goto Quit;
 				}
@@ -2375,6 +2393,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_bLadderAhead = false;
 	m_bOnLadder = false;
 	m_bClimbDetachThisFrame = false;
+	m_bClimbInitialPhase = false;
 	m_vLadderNormal.Zero();
 	m_vLadderPoint.Zero();
 	m_ClimbingOnEnt = NULL;
@@ -2490,6 +2509,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bLadderAhead );
 	savefile->WriteBool( m_bOnLadder );
 	savefile->WriteBool( m_bClimbDetachThisFrame );
+	savefile->WriteBool( m_bClimbInitialPhase );
 	savefile->WriteVec3( m_vLadderNormal );
 	savefile->WriteVec3( m_vLadderPoint );
 
@@ -2566,6 +2586,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bLadderAhead );
 	savefile->ReadBool( m_bOnLadder );
 	savefile->ReadBool( m_bClimbDetachThisFrame );
+	savefile->ReadBool( m_bClimbInitialPhase );
 	savefile->ReadVec3( m_vLadderNormal );
 	savefile->ReadVec3( m_vLadderPoint );
 

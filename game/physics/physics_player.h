@@ -355,6 +355,13 @@ private:
 	bool					m_bClimbDetachThisFrame;
 
 	/**
+	* Set to true during the initial climb phase when the player
+	* has gone from not climbing on anything to attaching to something ahead.
+	* This is intended to fix a hovering-in-midair bug.
+	**/
+	bool					m_bClimbInitialPhase;
+
+	/**
 	* View yaw change between this frame and last frame
 	* In degrees.
 	**/
