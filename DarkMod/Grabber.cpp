@@ -278,9 +278,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 // ====================== AF Grounding Testing ===============================
 	// If dragging a body with a certain spawnarg set, you should only be able to pick
 	// it up so far off the ground
-	if( drag->IsType(idAFEntity_Base::Type) )
+	if( drag->IsType(idAFEntity_Base::Type) && (cv_drag_AF_free.GetBool() == false) )
 	{
-		// TODO: Check spawnarg for this behavior
 		idAFEntity_Base *AFPtr = (idAFEntity_Base *) drag;
 		
 		if( AFPtr->IsActiveAF() && AFPtr->m_bGroundWhenDragged )
