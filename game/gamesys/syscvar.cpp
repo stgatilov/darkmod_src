@@ -273,6 +273,9 @@ idCVar cv_collision_damage_scale_horiz(	"tdm_collision_dmg_scale_horiz", "0.0000
 idCVar cv_collision_damage_min(			"tdm_collision_dmg_min", "5.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum damage the player takes from collisions above the minimum delta" );
 idCVar cv_drag_damping(					"tdm_drag_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
 idCVar cv_drag_damping_AF(				"tdm_drag_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
+idCVar cv_drag_AF_ground_timer(			"tdm_drag_af_ground_timer", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time in milliseconds that it takes to ramp up to full vertical velocity after a ground-restricted body has come back to ground contact." );
+idCVar cv_drag_AF_free(					"tdm_drag_af_free", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "This is a cheat that allows lifting all AI bodies completely off the ground when dragging them.  Useful for mappers who want to set up ragdolls ingame." );
+
 /**
 * DarkMod Item Manipulation
 * Throw_min and throw_max are the min and max impulses applied to items thrown

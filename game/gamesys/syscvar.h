@@ -186,6 +186,8 @@ extern idCVar cv_collision_damage_scale_horiz;
 extern idCVar cv_collision_damage_min;
 extern idCVar cv_drag_damping;
 extern idCVar cv_drag_damping_AF;
+extern idCVar cv_drag_AF_ground_timer;
+extern idCVar cv_drag_AF_free;
 
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
