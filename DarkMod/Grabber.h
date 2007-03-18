@@ -179,6 +179,24 @@ protected:
 		int						m_ThrowTimer;
 
 		/**
+		* Time stamp in milliseconds for body drag vertical velocity clamp timer
+		* (Actual time is read from cvar)
+		* Velocity ramps up to normal the longer the body maintains ground contact
+		* Resets when they lose ground contact.
+		**/
+		int						m_DragUpTimer;
+
+		/**
+		* Used to limit lifting dragged bodies off ground
+		**/
+		float					m_AFBodyLastZ;
+
+		/**
+		* Set to true when the body with ground checking is considered off the ground
+		**/
+		bool					m_bAFOffGround;
+
+		/**
 		* Int storing the distance increments for held item distance.
 		* When this is equal to m_MaxDistCount, it is held at the maximum
 		* distance (the frob distance).

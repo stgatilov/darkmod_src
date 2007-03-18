@@ -51,6 +51,12 @@
  *
  ***************************************************************************/
 
+// TODO: Make sure drag to point is not within a solid
+// TODO: Always set the held item CONTENTS_CORPSE while it is held
+// TODO: Encumbrance
+// TODO: Detecting stuck items (distance + angular offset)
+// TODO: Handling stuck items (initially stop the player's motion, then if they continue that motion, drop the item)
+
 #include "....//idlib/precompiled.h"
 #pragma hdrstop
 
@@ -108,7 +114,8 @@ END_CLASS
 CGrabber::CGrabber
 ==============
 */
-CGrabber::CGrabber( void ) {
+CGrabber::CGrabber( void ) 
+{
 	Clear();
 }
 
@@ -117,7 +124,8 @@ CGrabber::CGrabber( void ) {
 CGrabber::~CGrabber
 ==============
 */
-CGrabber::~CGrabber( void ) {
+CGrabber::~CGrabber( void ) 
+{
 	StopDrag();
 	Clear();
 }
@@ -139,6 +147,10 @@ void CGrabber::Clear( void )
 	m_ThrowTimer = 0;
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
+	
+	m_bAFOffGround = false;
+	m_DragUpTimer = 0;
+	m_AFBodyLastZ = 0.0f;
 
 	m_DistanceCount = 0;
 	m_MinHeldDist	= 0;
@@ -158,8 +170,6 @@ void CGrabber::Spawn( void )
 {
 	//TODO: Change constants at the start of the file and assign them here
 	//	using spawnArgs.
-	//
-	// This will also require moving the values into the class def .h file
 }
 
 /*
@@ -171,6 +181,11 @@ void CGrabber::StopDrag( void )
 {
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
+	
+	m_bAFOffGround = false;
+	m_DragUpTimer = 0;
+	m_AFBodyLastZ = 0.0f;
+
 	m_DistanceCount = 0;
 	m_dragEnt = NULL;
 
@@ -195,8 +210,6 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	idVec3 draggedPosition(vec3_zero), vPlayerPoint(vec3_zero);
 	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
 	trace_t trace;
-//	idEntity *newEnt(NULL);
-//	jointHandle_t newJoint(INVALID_JOINT);
 
 	m_player = player;
 
@@ -262,6 +275,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
 
+// ====================== AF Grounding Testing ===============================
 	// If dragging a body with a certain spawnarg set, you should only be able to pick
 	// it up so far off the ground
 	if( drag->IsType(idAFEntity_Base::Type) )
@@ -282,13 +296,44 @@ void CGrabber::Update( idPlayer *player, bool hold )
 			// check if the minimum number of these critical bodies remain on the ground
 			if( OnGroundCount < AFPtr->m_GroundBodyMinNum )
 			{
+				m_DragUpTimer = gameLocal.time;
+
 				// do not allow translation higher than current vertical position
 				idVec3 bodyOrigin = AFPtr->GetAFPhysics()->GetOrigin( m_id );
 				idVec3 UpDir = -AFPtr->GetPhysics()->GetGravityNormal();
-				float deltaVert = (draggedPosition - bodyOrigin) * UpDir;
+
+				// If the AF just went off the ground, copy the last valid Z
+				if( !m_bAFOffGround )
+				{
+					m_AFBodyLastZ = bodyOrigin * UpDir;
+					m_bAFOffGround = true;
+				}
+
+				float deltaVert = draggedPosition * UpDir - m_AFBodyLastZ;
 				if( deltaVert > 0 )
 					draggedPosition -= deltaVert * UpDir;
 			}
+			else if( (gameLocal.time - m_DragUpTimer) < cv_drag_AF_ground_timer.GetInteger() )
+			{
+				idVec3 bodyOrigin = AFPtr->GetAFPhysics()->GetOrigin( m_id );
+				idVec3 UpDir = -AFPtr->GetPhysics()->GetGravityNormal();
+				float deltaVert = draggedPosition * UpDir - m_AFBodyLastZ;
+				if( deltaVert > 0 )
+				{
+					float liftTimeFrac = (float)(gameLocal.time - m_DragUpTimer)/(float)cv_drag_AF_ground_timer.GetInteger();
+					// try a quadratic buildup, sublinear for frac < 1
+					liftTimeFrac *= liftTimeFrac;
+					draggedPosition -= deltaVert * UpDir * (1.0 - liftTimeFrac);
+				}
+
+				m_bAFOffGround = false;
+			}
+			else
+			{
+				// If somehow this is not set
+				m_bAFOffGround = false;
+			}
+			
 		}
 	}
 
@@ -455,6 +500,8 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	player->m_bGrabberActive = true;
 	// don't let the player switch weapons or items
 	player->SetImmobilization( "Grabber", EIM_ITEM_SELECT | EIM_WEAPON_SELECT );
+
+	// TODO: Set encumbrance based on item spawnarg
 
 Quit:
 	return;
