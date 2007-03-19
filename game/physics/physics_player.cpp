@@ -472,7 +472,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		if ( stepUp ) 
 		{
 
-			nearGround = groundPlane || m_bOnLadder || m_bClimbDetachThisFrame;
+			nearGround = groundPlane || m_bOnClimb || m_bClimbDetachThisFrame;
 
 			if ( !nearGround ) 
 			{
@@ -1342,7 +1342,7 @@ idPhysics_Player::RopeDetach
 */
 void idPhysics_Player::RopeDetach( void ) 
 {
-		m_bRopeAttached = false;
+		m_bOnRope = false;
 
 		// start the reattach timer
 		m_RopeDetachTimer = gameLocal.time;
@@ -1368,7 +1368,7 @@ idPhysics_Player::ClimbDetach
 */
 void idPhysics_Player::ClimbDetach( bool bStepUp ) 
 {
-		m_bOnLadder = false;
+		m_bOnClimb = false;
 		m_ClimbingOnEnt = NULL;
 		m_bClimbDetachThisFrame = true;
 
@@ -1378,9 +1378,9 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 		// switch movement modes to the appropriate one
 		if( bStepUp )
 		{
-			idVec3 LadderNormXY = m_vLadderNormal - (gravityNormal * m_vLadderNormal) * gravityNormal;
-			LadderNormXY.Normalize();
-			current.velocity += -LadderNormXY * LADDER_TOPVELOCITY;
+			idVec3 ClimbNormXY = m_vClimbNormal - (gravityNormal * m_vClimbNormal) * gravityNormal;
+			ClimbNormXY.Normalize();
+			current.velocity += -ClimbNormXY * LADDER_TOPVELOCITY;
 			idPhysics_Player::SlideMove( false, true, false, true );
 		}
 		else if ( waterLevel > WATERLEVEL_FEET ) 
@@ -1412,8 +1412,8 @@ void idPhysics_Player::LadderMove( void )
 
 	accel = PM_ACCELERATE;
 
-	idVec3 LadderNormXY = m_vLadderNormal - (m_vLadderNormal * gravityNormal) * gravityNormal;
-	LadderNormXY.Normalize();
+	idVec3 ClimbNormXY = m_vClimbNormal - (m_vClimbNormal * gravityNormal) * gravityNormal;
+	ClimbNormXY.Normalize();
 
 	// jump off the climbable surface if they jump, or fall off if they hit crouch
 	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
@@ -1422,7 +1422,7 @@ void idPhysics_Player::LadderMove( void )
 		goto Quit;
 	}
 
-	NormalDot = LadderNormXY * viewForward;
+	NormalDot = ClimbNormXY * viewForward;
 	// detach if their feet are on the ground walking away from the surface
 	if ( walking && -NormalDot * command.forwardmove < LADDER_WALKDETACH_DOT )
 	{
@@ -1441,33 +1441,33 @@ void idPhysics_Player::LadderMove( void )
 	// ====================== stick to the ladder ========================
 	// Do a trace to figure out where to attach the player:
 	start = current.origin;
-	end = start - 48.0f * LadderNormXY;
+	end = start - 48.0f * ClimbNormXY;
 	gameLocal.clip.Translation( SurfTrace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
 	
-	// TODO: When first attaching to the ladder, set m_vLadderPoint to avoid that bug
+	// TODO: When first attaching to the ladder, set m_vClimbPoint to avoid that bug
 	// of hovering in the air when we approach the ladder at an angle in midair
 
 	// if there is a climbable surface in front of the player, stick to it
 	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
 		&& (SurfTrace.c.material->GetSurfaceFlags() & SURF_LADDER ) )
 	{
-		m_vLadderPoint = SurfTrace.endpos + LADDER_DISTANCE * LadderNormXY;
-		AttachVel = 10 * (m_vLadderPoint - current.origin);
+		m_vClimbPoint = SurfTrace.endpos + LADDER_DISTANCE * ClimbNormXY;
+		AttachVel = 10 * (m_vClimbPoint - current.origin);
 
 		// Now that we have a valid point, don't need to use the initial one
 		m_bClimbInitialPhase = false;
 	}
 	else if( m_bClimbInitialPhase )
 	{
-		// We should already have m_vLadderPoint stored from the initial trace
-		AttachVel = 10 * (m_vLadderPoint - current.origin);
+		// We should already have m_vClimbPoint stored from the initial trace
+		AttachVel = 10 * (m_vClimbPoint - current.origin);
 	}
 
 	current.velocity = (gravityNormal * current.velocity) * gravityNormal + AttachVel;
 
 	float fracVert = viewForward * -gravityNormal;
 	float fracHoriz = 1.0f - idMath::Fabs(fracVert);
-	float fracHorizOutPlane = fracHoriz - idMath::Fabs(viewForward * LadderNormXY);
+	float fracHorizOutPlane = fracHoriz - idMath::Fabs(viewForward * ClimbNormXY);
 
 	scale = idPhysics_Player::CmdScale( command );
 
@@ -1477,7 +1477,7 @@ void idPhysics_Player::LadderMove( void )
 	upscale = idMath::ClampFloat(-1.0f, 1.0f, upscale );
 
 	vReqVert = upscale * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
-	vReqHoriz = viewForward - (LadderNormXY * viewForward) * LadderNormXY;
+	vReqHoriz = viewForward - (ClimbNormXY * viewForward) * ClimbNormXY;
 	vReqHoriz -= (vReqHoriz * gravityNormal) * gravityNormal;
 	vReqHoriz.Normalize();
 	vReqHoriz *= fracHoriz * 2.0f * scale * (float)command.forwardmove;
@@ -1496,7 +1496,7 @@ void idPhysics_Player::LadderMove( void )
 		// right vector orthogonal to gravity
 		right = viewRight - (gravityNormal * viewRight) * gravityNormal;
 		// project right vector into ladder plane
-		right = right - (LadderNormXY * right) * LadderNormXY;
+		right = right - (ClimbNormXY * right) * ClimbNormXY;
 		right.Normalize();
 
 		wishvel += 2.0f * right * scale * (float) command.rightmove;
@@ -1508,7 +1508,7 @@ void idPhysics_Player::LadderMove( void )
 	dir.Normalize();
 
 	end = start + wishvel * frametime + dir * CLIMB_SURFCHECK_DELTA;
-	delta = m_vLadderPoint - end;
+	delta = m_vClimbPoint - end;
 	if( delta.LengthSqr() > LADDER_DISTAWAY * LADDER_DISTAWAY )
 		bMoveAllowed = false;
 
@@ -1516,7 +1516,7 @@ void idPhysics_Player::LadderMove( void )
 	{
 		// If we were trying to go up and reached the extent, attempt to step off the ladder
 		// NOTE: Make sure we are really trying to go up, not first going off to the side and then up
-		delta = current.origin - m_vLadderPoint;
+		delta = current.origin - m_vClimbPoint;
 		delta -= (delta * gravityNormal) * gravityNormal;
 
 		if( NormalDot < 0.0f && -wishvel * gravityNormal > 0 && delta.LengthSqr() < 25.0f )
@@ -1739,7 +1739,7 @@ void idPhysics_Player::CheckDuck( void ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when up against a ladder or rope
-		if ( command.upmove < 0 && !m_bOnLadder && !m_bLadderAhead && !m_bRopeAttached ) {
+		if ( command.upmove < 0 && !m_bOnClimb && !m_bClimbableAhead && !m_bOnRope ) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		}
@@ -1780,11 +1780,11 @@ void idPhysics_Player::CheckDuck( void ) {
 
 /*
 ================
-idPhysics_Player::CheckLadder
-DarkMod: Also checks ropes
+idPhysics_Player::CheckClimbable
+DarkMod: Checks ropes, ladders and other climbables
 ================
 */
-void idPhysics_Player::CheckLadder( void ) 
+void idPhysics_Player::CheckClimbable( void ) 
 {
 	idVec3		forward, start, end, delta;
 	trace_t		trace;
@@ -1792,15 +1792,19 @@ void idPhysics_Player::CheckLadder( void )
 	bool		bLookingUp;
 	idEntity    *testEnt;
 	
-	if ( current.movementTime ) 
+	if( current.movementTime ) 
 		goto Quit;
 
 	// if on the ground moving backwards
-	if ( walking && command.forwardmove <= 0 ) 
+	if( walking && command.forwardmove <= 0 ) 
 		goto Quit;
 
 	// Don't attach to ropes or ladders in the middle of a mantle
 	if ( IsMantling() )
+		goto Quit;
+
+	// Don't attach if we are holding an object in our hands
+	if( g_Global.m_DarkModPlayer->grabber->GetSelected() != NULL )
 		goto Quit;
 
 	// forward vector orthogonal to gravity
@@ -1842,7 +1846,7 @@ void idPhysics_Player::CheckLadder( void )
 			// must be in the air to attach to the rope
 			// this is kind've a hack, but the rope has a different attach distance than the ladder
 			if( 
-				!m_bRopeAttached
+				!m_bOnRope
 				&& ( (trace.endpos - current.origin).Length() <= 2.0f )
 				&& !groundPlane
 				&& angleOff >= idMath::Cos( ROPE_ATTACHANGLE )
@@ -1882,18 +1886,18 @@ void idPhysics_Player::CheckLadder( void )
 				// if it also is a ladder surface
 				if ( trace.c.material && trace.c.material->GetSurfaceFlags() & SURF_LADDER ) 
 				{
-					m_vLadderNormal = trace.c.normal;
+					m_vClimbNormal = trace.c.normal;
 					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
 					
 					// FIX: Used to get stuck hovering in some cases, now there's an initial phase
-					if( !m_bOnLadder )
+					if( !m_bOnClimb )
 					{
 						m_bClimbInitialPhase = true;
-						m_vLadderPoint = vStickPoint;
+						m_vClimbPoint = vStickPoint;
 					}
 
-					m_bLadderAhead = true;
-					m_bOnLadder = true;					
+					m_bClimbableAhead = true;
+					m_bOnClimb = true;					
 
 					goto Quit;
 				}
@@ -1904,7 +1908,7 @@ void idPhysics_Player::CheckLadder( void )
 	// Rope attachment failsafe: Check intersection with the rope as well
 	if 
 		( 
-			!m_bRopeAttached 
+			!m_bOnRope 
 			&& m_RopeEntTouched.GetEntity() != NULL
 			&& m_RopeEntTouched.GetEntity()->GetPhysics()->GetAbsBounds().IntersectsBounds( self->GetPhysics()->GetAbsBounds() )
 			&& !groundPlane
@@ -2116,7 +2120,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	groundPlane = false;
 	
 	m_bRopeContact = false;
-	m_bLadderAhead = false;
+	m_bClimbableAhead = false;
 	m_bClimbDetachThisFrame = false;
 
 	// determine the time
@@ -2176,8 +2180,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// check for ground
 	idPhysics_Player::CheckGround();
 
-	// check if up against a ladder or a rope
-	idPhysics_Player::CheckLadder();
+	// check if a ladder or a rope is straight ahead
+	idPhysics_Player::CheckClimbable();
 
 	// set clip model size
 	idPhysics_Player::CheckDuck();
@@ -2203,14 +2207,14 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		idPhysics_Player::DeadMove();
 	}
 	// continue moving on the rope if still attached
-	else if ( m_bRopeAttached )
+	else if ( m_bOnRope )
 	{
 		idPhysics_Player::RopeMove();
 	}
 	else if ( m_bRopeContact ) 
 	{
-		// toggle m_bRopeAttached
-		m_bRopeAttached = true;
+		// toggle m_bOnRope
+		m_bOnRope = true;
 
 		// lower weapon
 		static_cast<idPlayer *>(self)->LowerWeapon();
@@ -2218,7 +2222,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 
 		idPhysics_Player::RopeMove();
 	}
-	else if ( m_bOnLadder ) 
+	else if ( m_bOnClimb ) 
 	{
 		// going up or down a ladder
 		idPhysics_Player::LadderMove();
@@ -2243,7 +2247,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 
 	// raise weapon if not swimming, mantling or on a rope
-	if( m_mantlePhase == notMantling_DarkModMantlePhase && waterLevel <= 1 && !m_bRopeAttached )
+	if( m_mantlePhase == notMantling_DarkModMantlePhase && waterLevel <= 1 && !m_bOnRope )
 	{
 		if( static_cast<idPlayer *>(self)->hiddenWeapon )
 		{
@@ -2346,7 +2350,7 @@ idPhysics_Player::OnRope
 */
 bool idPhysics_Player::OnRope( void ) const 
 {
-	return m_bRopeAttached;
+	return m_bOnRope;
 }
 
 
@@ -2356,7 +2360,7 @@ idPhysics_Player::OnLadder
 ================
 */
 bool idPhysics_Player::OnLadder( void ) const {
-	return m_bOnLadder;
+	return m_bOnClimb;
 }
 
 /*
@@ -2389,7 +2393,7 @@ idPhysics_Player::idPhysics_Player( void )
 	
 	// rope climbing
 	m_bRopeContact = false;
-	m_bRopeAttached = false;
+	m_bOnRope = false;
 	m_bJustHitRope = false;
 	m_RopeEntity = NULL;
 	m_RopeEntTouched = NULL;
@@ -2397,12 +2401,12 @@ idPhysics_Player::idPhysics_Player( void )
 	m_lastCommandViewYaw = 0;
 
 	// wall/ladder climbing
-	m_bLadderAhead = false;
-	m_bOnLadder = false;
+	m_bClimbableAhead = false;
+	m_bOnClimb = false;
 	m_bClimbDetachThisFrame = false;
 	m_bClimbInitialPhase = false;
-	m_vLadderNormal.Zero();
-	m_vLadderPoint.Zero();
+	m_vClimbNormal.Zero();
+	m_vClimbPoint.Zero();
 	m_ClimbingOnEnt = NULL;
 
 	// swimming
@@ -2507,18 +2511,18 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( m_bRopeContact );
 	savefile->WriteBool( m_bJustHitRope );
-	savefile->WriteBool( m_bRopeAttached );
+	savefile->WriteBool( m_bOnRope );
 	savefile->WriteInt( m_RopeDetachTimer );
 	m_RopeEntity.Save( savefile );
 	m_RopeEntTouched.Save( savefile );
 	savefile->WriteFloat( m_lastCommandViewYaw );
 
-	savefile->WriteBool( m_bLadderAhead );
-	savefile->WriteBool( m_bOnLadder );
+	savefile->WriteBool( m_bClimbableAhead );
+	savefile->WriteBool( m_bOnClimb );
 	savefile->WriteBool( m_bClimbDetachThisFrame );
 	savefile->WriteBool( m_bClimbInitialPhase );
-	savefile->WriteVec3( m_vLadderNormal );
-	savefile->WriteVec3( m_vLadderPoint );
+	savefile->WriteVec3( m_vClimbNormal );
+	savefile->WriteVec3( m_vClimbPoint );
 
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
@@ -2584,18 +2588,18 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( m_bRopeContact );
 	savefile->ReadBool( m_bJustHitRope );
-	savefile->ReadBool( m_bRopeAttached );
+	savefile->ReadBool( m_bOnRope );
 	savefile->ReadInt( m_RopeDetachTimer );
 	m_RopeEntity.Restore( savefile );
 	m_RopeEntTouched.Restore( savefile );
 	savefile->ReadFloat( m_lastCommandViewYaw );
 
-	savefile->ReadBool( m_bLadderAhead );
-	savefile->ReadBool( m_bOnLadder );
+	savefile->ReadBool( m_bClimbableAhead );
+	savefile->ReadBool( m_bOnClimb );
 	savefile->ReadBool( m_bClimbDetachThisFrame );
 	savefile->ReadBool( m_bClimbInitialPhase );
-	savefile->ReadVec3( m_vLadderNormal );
-	savefile->ReadVec3( m_vLadderPoint );
+	savefile->ReadVec3( m_vClimbNormal );
+	savefile->ReadVec3( m_vClimbPoint );
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );
@@ -2681,7 +2685,8 @@ void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &new
 idPhysics_Player::SetSpeed
 ================
 */
-void idPhysics_Player::SetSpeed( const float newWalkSpeed, const float newCrouchSpeed ) {
+void idPhysics_Player::SetSpeed( const float newWalkSpeed, const float newCrouchSpeed ) 
+{
 	walkSpeed = newWalkSpeed;
 	crouchSpeed = newCrouchSpeed;
 }
@@ -3425,13 +3430,13 @@ void idPhysics_Player::StartMantle
 
 	// Ishtvan 10/16/05
 	// If mantling starts while on a rope, detach from that rope
-	if ( m_bRopeAttached )
+	if ( m_bOnRope )
 	{
 		RopeDetach();
 	}
 
 	// If mantling starts while climbing, detach from climbing surface
-	if ( m_bOnLadder )
+	if ( m_bOnClimb )
 	{
 		ClimbDetach();
 	}

@@ -316,7 +316,7 @@ private:
 	/**
 	* toggled based on whether the player should stay attached to rope
 	**/
-	bool					m_bRopeAttached;
+	bool					m_bOnRope;
 
 	/**
 	* toggled on in the frame that the player first attaches to the rope
@@ -327,22 +327,22 @@ private:
 	/**
 	* Ladder is found ahead of us along view direction
 	**/
-	bool					m_bLadderAhead;
+	bool					m_bClimbableAhead;
 	/**
 	* We are currently attached to a ladder
 	**/
-	bool					m_bOnLadder;
+	bool					m_bOnClimb;
 	/**
 	* Normal vector of the surface we're climbing on
 	**/
-	idVec3					m_vLadderNormal;
+	idVec3					m_vClimbNormal;
 	/**
 	* Attachment point of where the player's origin attaches to the ladder
 	* In World coordinates
 	* NOTE: This is the last known attachment point
 	* The player is allowed to deviate from this a little to climb around corners
 	**/
-	idVec3					m_vLadderPoint;
+	idVec3					m_vClimbPoint;
 	
 	/**
 	* Entity they're currently climbing on (used to add relative velocity)
@@ -412,7 +412,7 @@ private:
 /**
 * The following are used in wall/ladder climbing
 **/
-	void					CheckLadder( void );
+	void					CheckClimbable( void );
 	void					ClimbDetach( bool bStepUp = false );
 
 #ifndef MOD_WATERPHYSICS
