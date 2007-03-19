@@ -49,13 +49,16 @@ class idPlayer;
 
 extern const idEventDef EV_Grabber_CheckClipList;
 
-class CGrabbedEnt {
+class CGrabbedEnt 
+{
 	public: 
-		idEntity	*ent;
-		int			clipMask;
+		idEntity	*m_ent;
+		int			m_clipMask;
+		int			m_contents;
 
-		bool operator==( const CGrabbedEnt &right ) const {
-			if( right.ent == this->ent )
+		bool operator==( const CGrabbedEnt &right ) const 
+		{
+			if( right.m_ent == this->m_ent )
 				return true;
 			return false;
 		}

@@ -223,6 +223,11 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		goto Quit;
 	}
 
+	idPhysics_Player *playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
+	// if the player is climbing a rope or ladder, don't let them grab things
+	if( playerPhys->OnRope() || playerPhys->OnLadder() )
+		goto Quit;
+
 	player->GetViewPos( viewPoint, viewAxis );
 
 	// if no entity is currently selected for dragging, start grabbing the frobbed entity
@@ -500,7 +505,8 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// don't let the player switch weapons or items
 	player->SetImmobilization( "Grabber", EIM_ITEM_SELECT | EIM_WEAPON_SELECT );
 
-	// TODO: Set encumbrance based on item spawnarg
+	// Set movement encumbrance
+	player->SetHinderance( "Grabber", 1.0f, m_dragEnt.GetEntity()->spawnArgs.GetFloat("grab_encumbrance", "1.0") );
 
 Quit:
 	return;
@@ -693,9 +699,11 @@ void CGrabber::AddToClipList( idEntity *ent )
 	CGrabbedEnt obj;
 	idPhysics *phys = ent->GetPhysics();
 	int clipMask = phys->GetClipMask();
+	int contents = phys->GetContents();
 
-	obj.ent = ent;
-	obj.clipMask = clipMask;
+	obj.m_ent = ent;
+	obj.m_clipMask = clipMask;
+	obj.m_contents = contents;
 
 	m_clipList.AddUnique( obj );
 
@@ -704,8 +712,11 @@ void CGrabber::AddToClipList( idEntity *ent )
 	phys->SetClipMask( clipMask & (~MASK_PLAYERSOLID) );
 	phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
 
-	if( this->HasClippedEntity() ) {
-		this->PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	phys->SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
+
+	if( HasClippedEntity() ) 
+	{
+		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
 	}
 }
 
@@ -718,7 +729,8 @@ void CGrabber::RemoveFromClipList( int index )
 {
 	// remove the entity and reset the clipMask
 	if( index != -1 ) {
-		m_clipList[index].ent->GetPhysics()->SetClipMask( m_clipList[index].clipMask );
+		m_clipList[index].m_ent->GetPhysics()->SetClipMask( m_clipList[index].m_clipMask );
+		m_clipList[index].m_ent->GetPhysics()->SetContents( m_clipList[index].m_contents );
 		m_clipList.RemoveIndex( index );
 	}
 
@@ -742,32 +754,37 @@ void CGrabber::Event_CheckClipList( void )
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
 	num = gameLocal.clip.EntitiesTouchingBounds( m_player->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
-	for( i = 0; i < m_clipList.Num(); i++ ) {
+	for( i = 0; i < m_clipList.Num(); i++ ) 
+	{
 		// Check clipEntites against entites touching player
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == m_clipList[i].ent ) {
+		if( this->GetSelected() == m_clipList[i].m_ent ) 
+		{
 			keep = true;
 		}
-		else {
+		else 
+		{
 			keep = false;
 
 			// OR if it's touching the player and still in the clipList
-			for( j = 0; !keep && j < num; j++ ) {
-				if( m_clipList[i].ent == ent[j] ) {
+			for( j = 0; !keep && j < num; j++ ) 
+			{
+				if( m_clipList[i].m_ent == ent[j] ) 
 					keep = true;
-				}
 			}
 		}
 
 		// Note we have to decrement i otherwise we skip entities
-		if( !keep ) {
+		if( !keep ) 
+		{
 			this->RemoveFromClipList( i );
 			i -= 1;
 		}
 	}
 
-	if( this->HasClippedEntity() ) {
+	if( this->HasClippedEntity() ) 
+	{
 		this->PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
 	}
 }
@@ -777,13 +794,16 @@ void CGrabber::Event_CheckClipList( void )
 CGrabber::IsInClipList
 ==============
 */
-bool CGrabber::IsInClipList( idEntity *ent ) const {
+// TODO / FIXME: Will this work if we don't set the matching contents and clipmask also?
+bool CGrabber::IsInClipList( idEntity *ent ) const 
+{
 	CGrabbedEnt obj;
 	
-	obj.ent = ent;
-	
+	obj.m_ent = ent;
+
 	// check if the entity is in the clipList
-	if( m_clipList.FindIndex( obj ) == -1 ) {
+	if( m_clipList.FindIndex( obj ) == -1 ) 
+	{
 		return false;
 	}
 	return true;
