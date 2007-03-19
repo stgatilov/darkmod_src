@@ -407,6 +407,11 @@ public:
 	void					SetImmobilization( const char *source, int type );
 
 	float					GetHinderance();
+	/**
+	* Sets the movement hinderance.  This should be a fraction relative to max movement speed
+	* @Gildoran: What are mCap and aCap? Modifier and absolute?
+	**/
+	void					SetHinderance( const char *source, float mCap, float aCap );
 
 	void					UpdateConditions( void );
 	void					SetViewAngles( const idAngles &angles );
