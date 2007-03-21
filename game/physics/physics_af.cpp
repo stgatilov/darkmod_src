@@ -6527,7 +6527,8 @@ const idBounds &idPhysics_AF::GetAbsBounds( int id ) const {
 idPhysics_AF::Evaluate
 ================
 */
-bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
+bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) 
+{
 	float timeStep;
 
 	if ( timeScaleRampStart < MS2SEC( endTimeMSec ) && timeScaleRampEnd > MS2SEC( endTimeMSec ) ) {
@@ -6567,6 +6568,26 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	// move the af velocity into the frame of a pusher
 	AddPushVelocity( -current.pushVelocity );
+
+	// TDM: Enable the clipmodels of all team members for collisions
+	idEntity *part = NULL;
+	
+	idList<bool> InitClipStates;
+	bool PartClipState = false;
+
+	if( ((idAFEntity_Base *) self )->CollidesWithTeam() )
+	{
+		for ( part = self->GetTeamMaster(); part != NULL; part = part->GetNextTeamEntity() ) 
+		{
+			if ( part != self && part->GetPhysics() ) 
+			{
+				PartClipState = part->GetPhysics()->GetClipModel()->IsEnabled();
+				InitClipStates.Append( PartClipState );
+
+				part->GetPhysics()->EnableClip();
+			}
+		}
+	}
 
 #ifdef AF_TIMINGS
 	timer_total.Start();
@@ -6717,6 +6738,24 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		timer_lcp.Clear();
 	}
 #endif
+
+
+	// TDM: Disable the clipmodels that we enabled above
+	int count = 0;
+
+	if( ((idAFEntity_Base *) self )->CollidesWithTeam() )
+	{
+		for ( part = self->GetTeamMaster(); part != NULL; part = part->GetNextTeamEntity() )  
+		{
+			if ( part != self && part->GetPhysics() ) 
+			{
+				if( !InitClipStates[count] )
+					part->GetPhysics()->DisableClip();
+
+				count++;
+			}
+		}
+	}
 
 	return true;
 }
