@@ -9298,7 +9298,7 @@ void idPlayer::AdjustLightgem(void)
 		{
 			gameLocal.clip.TracePoint(trace, vStart, vLight, CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-				|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, this);
+				|CONTENTS_FLASHLIGHT_TRIGGER, this);
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 			if(trace.fraction < 1.0f)
 			{
@@ -9945,7 +9945,7 @@ void idPlayer::FrobCheck( void )
 	// Frob collision mask:
 	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
 		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-		|CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER;
+		|CONTENTS_FLASHLIGHT_TRIGGER;
 
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
 	TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
