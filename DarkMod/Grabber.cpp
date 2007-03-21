@@ -52,8 +52,6 @@
  ***************************************************************************/
 
 // TODO: Make sure drag to point is not within a solid
-// TODO: Always set the held item CONTENTS_CORPSE while it is held
-// TODO: Encumbrance
 // TODO: Detecting stuck items (distance + angular offset)
 // TODO: Handling stuck items (initially stop the player's motion, then if they continue that motion, drop the item)
 
@@ -194,6 +192,7 @@ void CGrabber::StopDrag( void )
 		m_player->m_bDraggingBody = false;
 		m_player->m_bGrabberActive = false;
 		m_player->SetImmobilization( "Grabber", 0 );
+		m_player->SetHinderance( "Grabber", 1.0f, 1.0f );
 		m_player->RaiseWeapon();
 	}
 }
