@@ -1465,31 +1465,34 @@ void idPhysics_Player::LadderMove( void )
 
 	current.velocity = (gravityNormal * current.velocity) * gravityNormal + AttachVel;
 
-	float fracVert = viewForward * -gravityNormal;
-	float fracHoriz = 1.0f - idMath::Fabs(fracVert);
-	float fracHorizOutPlane = fracHoriz - idMath::Fabs(viewForward * ClimbNormXY);
-
 	scale = idPhysics_Player::CmdScale( command );
 
-	// Some tolerance on the player's upward view component
-	// shouldn't have to look straight up to climb up fast (this was in vanilla)
-	upscale = (fracVert + 0.3f) * 3.0;
-	upscale = idMath::ClampFloat(-1.0f, 1.0f, upscale );
+	float lenVert = viewForward * -gravityNormal;
+	//float lenIn = viewForward * -ClimbNormXY;
+	float lenTransv = idMath::Sqrt( 1.0f - NormalDot * NormalDot - lenVert * lenVert );
+	// Dump everything that's not in the transverse direction into the vertical direction
+	float lenVert2 = idMath::Sqrt( 1.0f - lenTransv * lenTransv );
+	float tan = lenVert2 / lenTransv;
 
-	vReqVert = upscale * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
+	// resolve up/down, with some tolerance so player can still go up looking slightly down
+	if( lenVert < -0.3 )
+		lenVert2 = -lenVert2;
+
+	vReqVert = lenVert2 * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
+	// obtain the horizontal direction
 	vReqHoriz = viewForward - (ClimbNormXY * viewForward) * ClimbNormXY;
 	vReqHoriz -= (vReqHoriz * gravityNormal) * gravityNormal;
 	vReqHoriz.Normalize();
-	vReqHoriz *= fracHoriz * 2.0f * scale * (float)command.forwardmove;
-	
-	// Pure horizontal motion if fraction of motion that's horizontal and out of plane is great enough:
-	if( idMath::Fabs(fracVert) > 0.75f )
-		wishvel = vReqVert;
-	else if( ( fracHorizOutPlane > 0.5f) && idMath::Fabs(fracVert) < 0.4 )
+	// scale it
+	vReqHoriz *= 2.0 * lenTransv * scale * (float)command.forwardmove;
+
+
+	// Pure horizontal motion if looking close enough to horizontal:
+	if( lenTransv > 0.906 )
 		wishvel = vReqHoriz;
 	else
 		wishvel = vReqVert + vReqHoriz;
-
+	
 	// strafe
 	if ( command.rightmove ) 
 	{
@@ -1832,7 +1835,7 @@ void idPhysics_Player::CheckClimbable( void )
 		
 // DarkMod: Check if we're looking at a rope and airborne
 // TODO: Check the class type instead of the stringname, make new rope class
-		if( testEnt && idStr::Cmp( testEnt->GetEntityDefName(), "env_rope" ) == 0 )
+		if( testEnt && testEnt->m_bIsClimbableRope )
 		{
 			m_RopeEntTouched = static_cast<idAFEntity_Base *>(testEnt);
 
