@@ -1,41 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.10  2006/11/20 08:43:41  ishtvan
- * added Spar's head offset code to idAFEntity_WithAttachedHead
- *
- * Revision 1.9  2006/10/22 19:12:13  ishtvan
- * damage bugfixes
- *
- * Revision 1.8  2006/10/22 07:48:06  ishtvan
- * fixes to attached head propagating damage
- *
- * Revision 1.7  2006/07/28 01:36:19  ishtvan
- * frobbing bugfixes
- *
- * Revision 1.6  2006/07/27 09:02:22  ishtvan
- * frobbing updates
- *
- * Revision 1.5  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.3  2005/11/17 09:11:06  ishtvan
- * added scriptfunctions for applying velocity to individual AF bodies
- *
- * Revision 1.2  2004/11/28 09:16:31  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -45,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"

@@ -1,23 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.3  2005/11/17 09:11:06  ishtvan
- * added scriptfunctions for applying velocity to individual AF bodies
- *
- * Revision 1.2  2004/11/28 09:16:31  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
