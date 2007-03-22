@@ -1,35 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.8  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.7  2006/07/28 01:36:19  ishtvan
- * frobbing bugfixes
- *
- * Revision 1.6  2006/07/27 09:02:22  ishtvan
- * frobbing updates
- *
- * Revision 1.5  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2006/01/29 04:06:53  ishtvan
- * changes to soundprop systems
- *
- * Revision 1.3  2006/01/23 00:22:01  ishtvan
- * added sound prop updating and sound loss for breakable windows
- *
- * Revision 1.2  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -39,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/sndProp.h"
