@@ -5,84 +5,14 @@
 /*                                                                            */
 /******************************************************************************/
 
-/******************************************************************************
+/***************************************************************************
  *
- * PROJECT: DarkMod
- * $Source$
+ * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
  * $Author$
- * $Name$
  *
- * $Log$
- * Revision 1.16  2007/01/03 03:59:39  ishtvan
- * *) added CONTENTS_RESPONSE optimization
- *
- * *) Added HasStim and HasResponse functions
- *
- * *) Added stim duration setting
- *
- * *) Preliminary framework for stim magnitude
- *
- * Revision 1.15  2006/06/29 08:22:06  ishtvan
- * *) Added option to use entity bounds + radius instead of a cube area
- *
- * *) Added time interleaving
- *
- * *) Attempted to fix parsing of StimTimer from spawnArgs
- *
- * Revision 1.14  2006/06/13 22:31:50  sparhawk
- * Finished first working version of StimTimer
- *
- * Revision 1.13  2006/06/07 20:36:12  sparhawk
- * Timer implemented and interface streamlined. Timers now are only
- * timer and nothing more. If duration or other stuff should be added,
- * the interface is now virtual and such add-ons would have to be
- * implemented in a derived class.
- *
- * Revision 1.12  2006/06/05 21:32:18  sparhawk
- * Timercode updated
- *
- * Revision 1.11  2006/05/31 20:24:55  sparhawk
- * Added timerstim skeleton
- *
- * Revision 1.10  2006/05/17 05:40:43  sophisticatedzombie
- * Made TriggerResponse virtual.
- * Added virtual PostFired event to CStim to handle state cleanup in descended classes after stim fired.
- *
- * Revision 1.9  2006/04/26 21:29:46  sparhawk
- * Timed stim/response core added.
- *
- * Revision 1.8  2006/03/13 21:05:20  sparhawk
- * SIT stimtype replaced with INVITE to name it more generic
- *
- * Revision 1.7  2006/02/07 18:55:01  sparhawk
- * 1. State is now moved to CStimResponse so responses can now also be disabled.
- * 2. Removed state SS_ACTIVE (what was that again for???)
- *
- * Revision 1.6  2006/02/06 22:13:51  sparhawk
- * Added ignore list for responses.
- *
- * Revision 1.5  2006/02/04 23:51:39  sparhawk
- * Finished the Stim/Response for radius types.
- *
- * Revision 1.4  2006/01/31 22:34:44  sparhawk
- * StimReponse first working version
- *
- * Revision 1.3  2006/01/25 22:05:51  sparhawk
- * Added additional entries to support stims on projectiles.
- *
- * Revision 1.2  2006/01/24 22:03:24  sparhawk
- * Stim/Response implementation preliminary
- *
- * Revision 1.1  2005/12/08 21:34:28  sparhawk
- * Intitial release
- *
- *
- *
- * DESCRIPTION: Headerfile for the Stim/Response system.
- *
- *****************************************************************************/
+ ***************************************************************************/
 
 #ifndef STIMRESPONSE_H
 #define STIMRESPONSE_H
