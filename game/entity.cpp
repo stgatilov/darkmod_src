@@ -609,6 +609,7 @@ idEntity::idEntity()
 	m_FrobPeerFloodFrame = 0;
 	m_bIsObjective = false;
 	m_bIsClimbableRope = false;
+	m_bIsMantleable = false;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
@@ -6286,6 +6287,8 @@ void idEntity::LoadTDMSettings(void)
 	m_bIsObjective = spawnArgs.GetBool( "objective_ent", "0" );
 
 	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
+
+	m_bIsMantleable = spawnArgs.GetBool( "is_mantleable", "1" );
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }

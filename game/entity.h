@@ -665,6 +665,11 @@ public:
 	 */
 	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
+	/**
+	 * Return true if this entity can be mantled, false otherwise.
+	 */
+	virtual bool			IsMantleable() { return m_bIsMantleable; }
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.
@@ -785,6 +790,8 @@ protected:
 
 	SDK_SIGNAL				m_Signal;
 	idList<SDKSignalInfo *>	m_SignalList;
+
+	bool					m_bIsMantleable;
 
 	/** Used to implement waitForRender()...
 	 *	This merely contains a bounding box and a callback.

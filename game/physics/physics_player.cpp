@@ -3696,6 +3696,16 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	idVec3& out_mantleEndPoint
 )
 {
+	// Never mantle onto non-mantleable entities (early exit)
+	if (in_targetTraceResult.fraction<1.0f)
+	{
+		idEntity* ent = gameLocal.entities[in_targetTraceResult.c.entityNum];
+		if (ent!=NULL && !ent->IsMantleable())
+		{
+			// The mantle target is an unmantleable entity
+			return false;
+		}
+	}
 
 	// Try moving player's bounding box up from the trace hit point
 	// in steps up to the maximum distance and see if at any point
