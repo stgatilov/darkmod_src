@@ -1,35 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.8  2007/01/12 05:57:17  gildoran
- * Added sys.waitForRender($entity)
- *
- * Revision 1.7  2006/05/03 21:35:03  sparhawk
- * Added support for booleans for scriptfunctions.
- *
- * Revision 1.6  2006/03/25 08:14:03  gildoran
- * New update for declarations... Improved the documentation/etc for xdata decls, and added some basic code for tdm_matinfo decls.
- *
- * Revision 1.5  2006/02/04 23:52:32  sparhawk
- * Added support for arbitrary arguments being passed to a scriptfunction.
- *
- * Revision 1.4  2006/01/29 04:18:10  ishtvan
- * added scriptfunction to get and dynamically set soundprop losses at portals
- *
- * Revision 1.3  2005/11/11 22:01:38  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2005/03/29 07:53:32  ishtvan
- * AI Relations: Added AI relations scripting functions to get and change the relationship between two teams.  The script functions are called from the global $sys object.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

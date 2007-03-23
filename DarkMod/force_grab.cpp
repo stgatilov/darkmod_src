@@ -1,38 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2006/08/14 01:06:27  ishtvan
- * PutInHands added
- *
- * fixed member vars to conform to naming conventions
- *
- * Revision 1.4  2006/08/07 06:51:10  ishtvan
- * force grab no longer clears m_bIsColliding on the grabber, the grabber clears it itself
- *
- * Revision 1.3  2006/08/04 10:53:26  ishtvan
- * preliminary grabber fixes
- *
- * Revision 1.2  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1  2005/12/02 18:21:29  lloyd
- * Initial release
- *
- * Revision 1.1.1.1  2005/09/22 15:52:33  Lloyd
- * Initial release
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game/Game_local.h"
 #include "Force_Grab.h"

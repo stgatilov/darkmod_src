@@ -1,64 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.17  2007/02/12 07:51:02  ishtvan
- * added inventory callback to objectives
- *
- * Revision 1.16  2007/02/07 22:06:25  sparhawk
- * Items can now be frobbed and added to the inventory
- *
- * Revision 1.15  2006/11/20 05:35:44  ishtvan
- * more preliminary objectives parsing
- *
- * Revision 1.14  2006/11/06 09:44:18  ishtvan
- * comp_info_location bugfix
- *
- * Revision 1.13  2006/11/06 08:13:41  ishtvan
- * preliminary boolean logic matrix evaluation code (not yet functional)
- *
- * Revision 1.12  2006/08/11 05:52:42  ishtvan
- * preliminary boolean parsing check-in (placeholders)
- *
- * Revision 1.11  2006/07/30 23:39:42  ishtvan
- * new objective script event setObjectiveEnabling
- *
- * Revision 1.10  2006/07/28 01:38:36  ishtvan
- * info_location objective
- *
- * Revision 1.9  2006/07/22 21:09:14  ishtvan
- * comp_info_location preliminary checkin
- *
- * Revision 1.8  2006/07/19 21:51:03  ishtvan
- * added irreversible behavior, modified some internal functions
- *
- * Revision 1.7  2006/07/19 09:10:09  ishtvan
- * bugfixes
- *
- * Revision 1.6  2006/07/19 05:19:49  ishtvan
- * added enabling objectives and scripts to call when objective completes
- *
- * Revision 1.5  2006/07/17 02:42:25  ishtvan
- * fixes to comp_custom_clocked and comp_distance
- *
- * Revision 1.4  2006/07/17 01:45:59  ishtvan
- * updates: custom objectives, distance objectives, custom clocked objectives
- *
- * Revision 1.3  2006/06/07 09:03:28  ishtvan
- * location component updates
- *
- * Revision 1.2  2006/05/30 06:22:04  ishtvan
- * added parsing of objectives from entity
- *
- * Revision 1.1  2006/05/26 10:24:39  ishtvan
- * Initial release
- *
- *
  *
  ***************************************************************************/
 

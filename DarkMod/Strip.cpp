@@ -1,40 +1,17 @@
-
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /*************************************************************************/
 /*                                                                       */
 /*           StringLib (C) by Gerhard W. Gruber in Vienna 1992           */
 /*                       All rights reserved                             */
 /*                                                                       */
 /*************************************************************************/
-
-/******************************************************************************
- *
- * PROJECT: LaunchMenu
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- * $Name$
- *
- * $Log$
- * Revision 1.3  2007/01/19 02:22:56  thelvyn
- * performance fixes - Forcing int to bool
- *
- * Revision 1.2  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1  2004/10/30 17:06:36  sparhawk
- * DarkMod added to project.
- *
- * Revision 1.2  2003/10/04 22:01:14  lightweave
- * Modifications for compiling the sources under Linux.
- *
- * Revision 1.1.1.1  2003/10/04 17:13:16  lightweave
- * Initial Release to CVS.
- *
- *
- * DESCRIPTION: Strips a string from whitespaces.
- *
- *****************************************************************************/
 
 /***************************************************************************
  *                                                                         *
@@ -48,7 +25,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include <string.h>
 

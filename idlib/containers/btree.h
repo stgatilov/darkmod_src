@@ -1,17 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.2  2007/01/23 01:24:31  thelvyn
- * Fixed a minor bug and cleaned up most of the warnings
- *
- * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

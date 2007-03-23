@@ -1,155 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.35  2007/01/25 10:08:40  crispy
- * Implemented lipsync functionality
- *
- * Revision 1.34  2007/01/20 05:25:10  sophisticatedzombie
- * isFriend, isEnemy and isNeurtal now have special handling for
- * absence marker entities
- *
- * Revision 1.33  2007/01/03 04:01:48  ishtvan
- * *) modified PushWithAF to apply impulse to objects instead of setting a velocity, should avoid pushing of huge objects.  They still apply a velocity to AI, but now only in the XY plane
- *
- * *) Stim/response updates
- *
- * Revision 1.32  2006/12/31 12:08:51  sophisticatedzombie
- * Added canSeePositionExt script method.
- *
- * Revision 1.31  2006/12/31 02:30:49  crispy
- * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
- * - Cover search is fixed, and uses traces instead of PVS (at least for now)
- * - The FindNearestGoal AAS search can now have a travel distance limit.
- *
- * Revision 1.30  2006/12/30 09:37:55  sophisticatedzombie
- * Added search exclusion bounds that can be used during a search to ignore
- * spots within a certain area. This is useful for expanding ring searches.
- *
- * Revision 1.29  2006/12/30 08:18:25  sophisticatedzombie
- * Added a new event for accessing some AI script linked variables from sibling
- * AIs.  That way, an AI can check the mental state of a sibling AI from its own
- * script.
- *
- * Also added some new script variables:
- * stateOfMind_b_enemiesHaveBeenSeen
- * stateOfMind_b_itemsHaveBeenStolen
- * stateOfMind_count_evidenceOfIntruders
- *
- * The new variables are used to affect behavior and can also be communicated
- * from one AI to another to transfer context of what has been detected by an
- * AI or AIs it has spoken to.
- *
- * Revision 1.28  2006/12/23 20:18:44  sophisticatedzombie
- * Added canSeeExt script event that lets the user specify if Field of Vision and
- * /or Lighting should be taken into account.
- *
- * Revision 1.27  2006/12/21 06:00:58  sophisticatedzombie
- * Changed the way Event_CanSeeEntity works so that it just calls idAI::canSee directly.
- * idAI::canSee is now a virtual override of idActor::canSee and takes lighting/visual acuity into
- * account.
- *
- * Revision 1.26  2006/12/21 04:19:18  sophisticatedzombie
- * Made Event_CanSee take FOV into account.
- *
- * Revision 1.25  2006/12/21 02:00:24  sophisticatedzombie
- * Event_CanSeeEntity (script call canSee) now takes lighting into consideration
- * using the Lighting Awareness System.
- *
- * Revision 1.24  2006/12/14 09:53:25  sophisticatedzombie
- * Now using hiding spot collection
- *
- * Revision 1.23  2006/12/10 12:07:36  ishtvan
- * grace period bugfixes
- *
- * large lightgem value now overrides grace period faster
- *
- * Revision 1.22  2006/12/10 10:23:09  ishtvan
- * *) grace period implemented
- * *) head turning fixed
- *
- * Revision 1.21  2006/12/09 22:45:52  sophisticatedzombie
- * 1) The AI now correctly stores the last known enemy location on tactile alerts.
- * That way, the scripts can correctly use that instead of the last visual stimulus
- * location if they lose track of their combat target.
- * 2) The maxObservationDistance is now a function in the idAI class so that different
- * methods (including isEntityHiddenByDarkness0 can use it.
- * 3) The ai now uses the lightgem value to see if a player has slipped into shadow
- * and is not visible. it takes into account the ai visual accuity, and it has been
- * tweaked to be more realisticly difficult.
- * 4) The player's visual stimulus amount due to their lightgem value is now
- * a callable function of idAI so it can be used in multiple places
- *
- * Revision 1.20  2006/12/09 17:36:24  sophisticatedzombie
- * Hiding spot search/iteration now uses new darkmodhidingSpotTree class.
- * Fixed a problem with hiding spot debug drawing that was not showing all
- * the points.
- *
- * Revision 1.19  2006/08/21 06:21:08  ishtvan
- * moved attachment scriptevents to idActor
- *
- * Revision 1.18  2006/08/20 20:28:15  ishtvan
- * new attachment scriptevents for AI
- *
- * Revision 1.17  2006/08/11 01:48:18  ishtvan
- * dealt with simultaneous alerts in one frame
- *
- * added alertedbyactor and scriptevent to get it
- *
- * Revision 1.16  2006/06/21 13:04:47  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.15  2006/06/16 20:19:05  sophisticatedzombie
- * no message
- *
- * Revision 1.14  2006/06/03 19:47:32  sparhawk
- * Removed unused variables.
- *
- * Revision 1.13  2006/06/02 02:48:50  sophisticatedzombie
- * idAASFindObservationPoint added to ai routines. Event_GetObservationPoint added to help with searching routines.
- *
- * Revision 1.12  2006/05/26 04:46:19  sophisticatedzombie
- * The searchForHidingSpots script event is now split into startSearchForHidingSpots and continueSearchForHidingSpots.  The number of spots tested each call is determined by a variable in the g_Globals object.
- *
- * Revision 1.11  2006/05/25 02:39:23  sophisticatedzombie
- * no message
- *
- * Revision 1.10  2006/05/17 05:46:35  sophisticatedzombie
- * Added Event_IssueCommunication and variants (Each variant is named by which parameters it takes)
- *
- * Revision 1.9  2006/05/06 19:39:02  sophisticatedzombie
- * Added method Event_spawnThrowableProjectile which creates a projectile and binds it to a joint of the AI's model, to be used as the next fired projectile.
- *
- * Revision 1.8  2006/05/02 00:10:32  sophisticatedzombie
- * AI debug graphics now drawn only in response to the value of g_global.m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
- *
- * Revision 1.7  2006/04/27 22:49:15  sophisticatedzombie
- * The hiding spot search functions have been added as script exposted event functions.
- *
- * Revision 1.6  2006/02/05 06:51:10  ishtvan
- * knockout updates
- *
- * Revision 1.5  2005/11/12 14:59:34  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.4  2005/11/11 21:00:34  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/09/26 03:11:01  ishtvan
- * *) tactile alert fixed, added idAI::CheckTactile
- *
- * *) removed old tactile alert methods
- *
- * Revision 1.2  2005/04/07 09:23:09  ishtvan
- * Added scripting events to interface with DarkMod AI
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -159,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/relations.h"

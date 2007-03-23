@@ -1,32 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.7  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.6  2004/11/21 01:03:27  sparhawk
- * Doors can now be properly opened and have sound.
- *
- * Revision 1.5  2004/11/17 00:00:38  sparhawk
- * Frobcode has been generalized now and resides for all entities in the base classe.
- *
- * Revision 1.4  2004/11/14 19:24:56  sparhawk
- * Added frobcode to idMover
- *
- * Revision 1.3  2004/11/12 18:38:38  sparhawk
- * Moved frobcode from idDoor to baseclass.
- *
- * Revision 1.2  2004/11/11 22:15:40  sparhawk
- * Frobcode is now more generalized. Doors are now frobable.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

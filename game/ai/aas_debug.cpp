@@ -1,27 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2006/12/31 02:30:48  crispy
- * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
- * - Cover search is fixed, and uses traces instead of PVS (at least for now)
- * - The FindNearestGoal AAS search can now have a travel distance limit.
- *
- * Revision 1.3  2006/12/09 17:42:49  sophisticatedzombie
- * Added some door detection features to the function which does debug drawing
- * of reachabilities. (They draw differently if doors were marked int he reachability
- * by some other process)
- *
- * Revision 1.2  2006/06/21 13:04:47  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -31,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "AAS_local.h"
 #include "../Game_local.h"		// for cvars and debug drawing

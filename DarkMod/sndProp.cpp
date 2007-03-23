@@ -1,4 +1,11 @@
-
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /******************************************************************************/
 /*                                                                            */
 /*         Dark Mod Sound Propagation (C) by Chris Sarantos in USA 2005		  */
@@ -13,19 +20,9 @@
 *
 *****************************************************************************/
 
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- ******************************************************************************/
-
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 

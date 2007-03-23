@@ -1,3 +1,11 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /************************** MERSENNE.CPP ******************** AgF 2001-10-18 *
 *  Random Number generator 'Mersenne Twister'                                *
 *                                                                            *
@@ -14,23 +22,10 @@
 *  GNU General Public License www.gnu.org/copyleft/gpl.html                  *
 *****************************************************************************/
 
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.1  2006/11/04 10:47:28  sparhawk
- * Advanced randomizer added.
- *
- *
- ***************************************************************************/
-
 #include "../precompiled.h"
 #pragma hdrstop
+
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "randomc.h"
 

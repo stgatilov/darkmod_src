@@ -1,27 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
- * Revision 1.5  2006/10/08 16:36:48  sophisticatedzombie
- * Changed this data class to use an AAS given by name, rather than index.
- *
- * Revision 1.4  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.3  2006/05/19 19:56:50  sparhawk
- * CVSHeader added
- *
- *
  ***************************************************************************/
+
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "./pvstoaasmapping.h"
 #include "../darkMod/darkmodGlobals.h"

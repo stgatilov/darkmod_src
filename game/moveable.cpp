@@ -1,47 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.12  2007/02/06 15:19:58  thelvyn
- * Now using mass to compute damage in CrashLand
- *
- * Revision 1.11  2007/01/26 07:35:31  ishtvan
- * air friction spawnargs now parsed to physics settings
- *
- * Revision 1.10  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.9  2006/10/22 20:17:47  ishtvan
- * updated moveable damage to pass along the joint at which it struck
- *
- * Revision 1.8  2006/07/15 02:15:46  ishtvan
- * surface type name fix
- *
- * Revision 1.7  2006/07/09 01:41:02  ishtvan
- * added material-dependent bounce sound to moveables
- *
- * Revision 1.6  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.5  2006/05/30 06:23:39  ishtvan
- * worldspawn now triggers its targets when the map starts
- *
- * Revision 1.4  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.3  2005/11/21 07:53:59  ishtvan
- * AI can no longer see through movable objects
- *
- * Revision 1.2  2005/04/07 09:40:23  ishtvan
- * A movable will now call the idAI::TactileAlert method if it collides with an AI
- *
- * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -51,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../DarkMod/MissionData.h"

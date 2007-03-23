@@ -1,29 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.6  2007/01/20 05:19:57  sophisticatedzombie
- * Spawns an idAbsenceMarkerEntity when moved or put in an inventory.
- *
- * Revision 1.5  2006/08/14 01:07:02  ishtvan
- * fixed hide/show in idMoveableItem to disable the clipmodel
- *
- * Revision 1.4  2004/11/05 18:58:09  sparhawk
- * Moved frobcode to idEntity to make it available for all entities.
- *
- * Revision 1.3  2004/11/03 00:06:08  sparhawk
- * Frob highlight finished and working.
- *
- * Revision 1.2  2004/10/30 17:19:40  sparhawk
- * Frob highlight added.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

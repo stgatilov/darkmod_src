@@ -1,3 +1,11 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /************************ RANCOMBI.CPP ****************** AgF 2001-10-18 *
 *                                                                        *
 *  This file defines a template class for combining two different        *
@@ -10,21 +18,6 @@
 *  of any two random number generators, as shown in the example below.   *
 *                                                                        *
 *************************************************************************/
-
-/***************************************************************************
- *
- * PROJECT: The Dark Mod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- *
- * $Log$
- * Revision 1.1  2006/11/04 10:47:28  sparhawk
- * Advanced randomizer added.
- *
- *
- ***************************************************************************/
 
 // This template class combines two different random number generators
 // for improved randomness. R1 and R2 are any two different random number

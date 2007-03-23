@@ -1,63 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.16  2007/01/26 12:52:41  sparhawk
- * New inventory concept.
- *
- * Revision 1.15  2007/01/19 10:09:24  thelvyn
- * Removed old mouse handling code.
- * Registered some fonts for gui screen display of text.
- * Added function for same
- *
- * Revision 1.14  2007/01/19 02:30:55  thelvyn
- * Separated keyboard hook, same as mouse hook
- * #define NEWKEYHANDLERCLASS for this to take effect - NOT defined right now
- * if it is considered an OK modification I will remove the old version.
- *
- * Revision 1.13  2006/12/11 06:55:51  gildoran
- * Added the ability to use items directly via hotkey.
- *
- * Revision 1.12  2006/12/10 05:31:20  gildoran
- * Completely revamped the inventory code again. I took out the other iteration methods leaving only hybrid (and grouped) iteration. This allowed me to slim down and simplify much of the code, hopefully making it easier to read. It still needs to be improved some, but it's much better than before.
- *
- * Revision 1.11  2006/12/07 09:53:52  ishtvan
- * added tdm_keycapture command for binding new buttons
- *
- * Revision 1.10  2006/09/21 00:43:52  gildoran
- * Added inventory hotkey support.
- *
- * Revision 1.9  2006/08/21 05:54:39  ishtvan
- * updated print attachment info to list name of attached ent
- *
- * Revision 1.8  2006/08/21 05:09:09  ishtvan
- * added attachment-related console commands
- *
- * Revision 1.7  2006/06/21 13:06:52  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.6  2005/11/11 21:21:04  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.5  2005/08/22 05:09:00  ishtvan
- * removed call to old soundprop file IO function, replaced with placeholder
- *
- * Revision 1.4  2005/04/07 09:49:16  ishtvan
- * Added soundprop file I/O debugging command "testsndIO"
- *
- * Revision 1.3  2005/03/29 07:50:45  ishtvan
- * AI Relations: Added command "PrintAIRelations," which prints the AI relationship matrix to the console for debugging purposes
- *
- * Revision 1.2  2004/11/28 09:17:51  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -67,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 #include "../../darkmod/sndproploader.h"

@@ -1,8 +1,17 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma hdrstop
 #include "../darkmod/KeyboardHook.h"
 #include "../darkmod/KeyboardHookWindows.h"
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 
 // global but NOT. anonymous namespace is only available to this file by design

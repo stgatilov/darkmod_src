@@ -1,29 +1,10 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
- * Revision 1.6  2006/06/21 13:05:51  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.5  2004/11/28 09:56:51  sparhawk
- * SDK V2 merge
- *
- * Revision 1.3  2004/11/14 09:58:17  sparhawk
- * Fixed a typo
- *
- * Revision 1.2  2004/11/14 08:06:51  nexenizer
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
- * Initial release
- * Revision 1.1.1.2  2004/11/14 10:11:02  nexenizer
- * Updated #pragma at bool idMatX::Cholesky_UpdateRowColumn to create compatible code
- * 
  ***************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -32,7 +13,7 @@
 #include "../precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning( push )
 #pragma warning( disable: 4127 )
 //===============================================================

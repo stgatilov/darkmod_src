@@ -1,4 +1,3 @@
-
 /*************************************************************************/
 /*                                                                       */
 /*           StringLib (C) by Gerhard W. Gruber in Vienna 1992           */
@@ -6,35 +5,14 @@
 /*                                                                       */
 /*************************************************************************/
 
-/******************************************************************************
+/***************************************************************************
  *
- * PROJECT: LaunchMenu
- * $Source$
+ * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
  * $Author$
- * $Name$
  *
- * $Log$
- * Revision 1.2  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1  2004/10/30 17:06:36  sparhawk
- * DarkMod added to project.
- *
- * Revision 1.3  2003/10/15 19:59:27  lightweave
- * Fixed a warning about values out of range.
- *
- * Revision 1.2  2003/10/04 22:01:14  lightweave
- * Modifications for compiling the sources under Linux.
- *
- * Revision 1.1.1.1  2003/10/04 17:13:12  lightweave
- * Initial Release to CVS.
- *
- *
- * DESCRIPTION: 
- *
- *****************************************************************************/
+ ***************************************************************************/
 
 /***************************************************************************
  *                                                                         *

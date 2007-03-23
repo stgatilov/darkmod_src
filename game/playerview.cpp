@@ -1,63 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.15  2007/01/23 14:06:06  thelvyn
- * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
- *
- * Revision 1.14  2007/01/21 12:31:07  thelvyn
- * disabled mouse and key hook display.
- *
- * Revision 1.13  2007/01/21 11:15:13  ishtvan
- * listening thru doors when leaning against them implemented
- *
- * Revision 1.12  2007/01/20 02:22:28  thelvyn
- * Made the keyboard and mouse code more robust.
- * See player.cpp for usage if needed
- *
- * Revision 1.11  2007/01/20 01:37:34  thelvyn
- * Implemented Ctrl, Shift and Alt key detection.
- * Right , Left supported for all. Also generic dont care if left or right functions.
- * Testing is in place in playerview.cpp
- * I reused #ifdef MOUSETEST as I still have the mouse code in there as well.
- * You can what if any buttons are detected. Mouse L, R, M and for keyboard Left, Right or both of Ctrl, Shift and Alt
- *
- * Revision 1.10  2007/01/19 10:08:41  thelvyn
- * Removed old mouse handling code.
- * Registered some fonts for gui screen display of text.
- * Added function for same
- *
- * Revision 1.9  2006/09/21 22:48:19  gildoran
- * Allow portalskies to rotate. (should be helpful if any mappers want to create an airship)
- *
- * Revision 1.8  2006/09/21 22:10:50  gildoran
- * Possible fix for particle flickering problem?
- *
- * Revision 1.7  2006/09/18 13:37:51  gildoran
- * Added the first version of a unified interface for GUIs.
- *
- * Revision 1.6  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.5  2006/02/04 10:26:43  gildoran
- * Added a basic version of setGuiOverlay("file") and getGuiOverlay() to the player.
- *
- * Revision 1.4  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/10/18 13:56:41  sparhawk
- * Lightgem updates
- *
- * Revision 1.2  2004/10/30 16:55:57  sparhawk
- * Compile errors fixed. float cast added.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -68,7 +14,7 @@
 #pragma hdrstop
 #include "../darkmod/KeyboardHook.h"
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 

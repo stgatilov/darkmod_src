@@ -1,20 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.3  2005/10/18 14:08:37  sparhawk
- * Lightgem updates
- *
- * Revision 1.2  2005/03/21 23:15:16  sparhawk
- * Added function for logging purposes.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:36  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

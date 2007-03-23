@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #ifndef CKEYBOARDHOOK_WINDOWS_HPP
 #define CKEYBOARDHOOK_WINDOWS_HPP
 

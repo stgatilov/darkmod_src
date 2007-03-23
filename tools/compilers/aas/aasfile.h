@@ -1,18 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.2  2006/12/09 17:53:26  sophisticatedzombie
- * Added flags for doors to TravelFlags (TFL_DOOR) and Area (AREA_DOOR) bit flags.
- * Added two methods for setting and removing area flags.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:37  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

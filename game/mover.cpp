@@ -1,47 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.12  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.11  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.10  2006/05/30 06:25:00  ishtvan
- * objective system updates
- *
- * Revision 1.9  2005/11/19 17:27:56  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.8  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.7  2004/11/17 00:00:38  sparhawk
- * Frobcode has been generalized now and resides for all entities in the base classe.
- *
- * Revision 1.6  2004/11/14 20:21:20  sparhawk
- * Moved code for doors into a seperate class.
- *
- * Revision 1.5  2004/11/14 19:24:56  sparhawk
- * Added frobcode to idMover
- *
- * Revision 1.4  2004/11/12 18:38:37  sparhawk
- * Moved frobcode from idDoor to baseclass.
- *
- * Revision 1.3  2004/11/11 23:52:28  sparhawk
- * Fixed frob highlight for items and doors.
- *
- * Revision 1.2  2004/11/11 22:15:40  sparhawk
- * Frobcode is now more generalized. Doors are now frobable.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -51,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../DarkMod/DarkModGlobals.h"

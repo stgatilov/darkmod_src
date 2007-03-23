@@ -1,37 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.9  2006/08/07 06:53:46  ishtvan
- * grabber updates
- *
- * Revision 1.8  2006/08/04 10:54:20  ishtvan
- * grabber fixes
- *
- * Revision 1.7  2006/06/21 13:07:07  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.6  2005/11/17 09:15:43  ishtvan
- * *) added function to find nearest AF body to a point
- *
- * *) added function to check ground contact on specific body
- *
- * Revision 1.5  2005/11/15 22:24:04  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/08/19 00:28:02  lloyd
- * water physics
- *
- * Revision 1.2  2004/11/28 09:20:33  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -41,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/playerdata.h"

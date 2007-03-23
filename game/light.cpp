@@ -1,62 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.17  2007/01/14 17:15:31  gildoran
- * Fixed sys.waitForRender($light)
- *
- * Revision 1.16  2007/01/13 02:01:27  gildoran
- * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
- *
- * Revision 1.15  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.14  2006/12/31 12:01:59  sophisticatedzombie
- * Added script method for getting light level (> 0.0 is on, 0.0 is off )
- *
- * Revision 1.13  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.12  2006/06/06 04:38:07  ishtvan
- * added setLightOrigin and getLightOrigin scriptfunctions for use with moving lights
- *
- * Revision 1.11  2006/04/26 22:29:10  sophisticatedzombie
- * I fixed a crash bug in the LAS classes, so I'm having the lights add to the LAS table again.
- *
- * Revision 1.10  2005/12/10 17:24:52  sophisticatedzombie
- * Lights add themselves to and remove themselves from the LAS on initialization and destruction
- *
- * Revision 1.9  2005/11/26 17:44:44  sparhawk
- * Lightgem cleaned up
- *
- * Revision 1.8  2005/11/19 17:27:56  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.7  2005/04/01 21:03:22  sparhawk
- * Fixed the maximum distance calculation for the lightgem.
- *
- * Revision 1.6  2005/03/26 16:00:33  sparhawk
- * double changed to float
- *
- * Revision 1.5  2005/03/21 23:09:13  sparhawk
- * Implemented projected and ellipsoid lights
- *
- * Revision 1.4  2005/01/24 00:17:16  sparhawk
- * Lightgem shadow problem fixed.
- *
- * Revision 1.3  2005/01/20 19:37:48  sparhawk
- * Lightgem now calculates projected lights as well as parallel lights.
- *
- * Revision 1.2  2005/01/07 02:10:35  sparhawk
- * Lightgem updates
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -66,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"

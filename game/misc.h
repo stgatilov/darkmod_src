@@ -1,29 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.6  2006/07/28 01:37:17  ishtvan
- * objective system updates
- *
- * Revision 1.5  2006/07/24 01:29:03  ishtvan
- * optional distance test added to func_portal
- *
- * Revision 1.4  2006/01/29 04:09:29  ishtvan
- * added soundprop interface for idLocation objects
- *
- * Revision 1.3  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2005/08/19 00:27:48  lloyd
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

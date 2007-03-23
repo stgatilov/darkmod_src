@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #ifndef ABSENCEMARKERENTITY_H
 #define ABSENCEMARKERENTITY_H
 

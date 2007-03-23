@@ -1,56 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.15  2006/07/15 02:15:46  ishtvan
- * surface type name fix
- *
- * Revision 1.14  2006/06/27 01:30:32  ishtvan
- * fixed to stop sounds on detonation
- *
- * Revision 1.13  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.12  2006/06/07 04:16:25  ishtvan
- * changed name of result spawnarg to def_result for precaching purposes
- *
- * Revision 1.11  2006/02/05 07:12:14  ishtvan
- * redefined function Damage to take additional trace pointer argument
- *
- * Revision 1.10  2006/02/01 04:51:39  ishtvan
- * fixed bug with assume_active projectile setting
- *
- * Revision 1.9  2006/01/13 08:53:18  ishtvan
- * added texture dependent damage multipliers
- *
- * Revision 1.8  2006/01/13 04:08:56  ishtvan
- * added spawning of projectile result objects when appropriate
- *
- * Revision 1.7  2005/12/09 05:33:27  lloyd
- * fixed bug when binding projectile to animated entity (see bindOnImpact)
- *
- * Revision 1.6  2005/12/04 02:43:50  ishtvan
- * updated surface checks to check new surface types
- *
- * Revision 1.5  2005/11/18 17:14:29  lloyd
- * Fixed bug when doing bindOnImpact
- *
- * Revision 1.4  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/09/17 00:32:29  lloyd
- * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
- *
- * Revision 1.2  2004/11/28 09:16:33  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -60,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../darkmod/darkmodglobals.h"

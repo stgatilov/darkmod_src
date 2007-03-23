@@ -1,50 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.13  2007/01/14 17:15:31  gildoran
- * Fixed sys.waitForRender($light)
- *
- * Revision 1.12  2007/01/13 02:01:27  gildoran
- * Added basic support for waitForRender() and inPVS() for lights. However, it's currently very inefficient and is broken for projected lights.
- *
- * Revision 1.11  2006/12/31 12:01:59  sophisticatedzombie
- * Added script method for getting light level (> 0.0 is on, 0.0 is off )
- *
- * Revision 1.10  2006/06/06 04:38:07  ishtvan
- * added setLightOrigin and getLightOrigin scriptfunctions for use with moving lights
- *
- * Revision 1.9  2005/12/10 17:24:52  sophisticatedzombie
- * Lights add themselves to and remove themselves from the LAS on initialization and destruction
- *
- * Revision 1.8  2005/03/26 16:00:33  sparhawk
- * double changed to float
- *
- * Revision 1.7  2005/03/21 23:09:13  sparhawk
- * Implemented projected and ellipsoid lights
- *
- * Revision 1.6  2005/01/24 00:17:16  sparhawk
- * Lightgem shadow problem fixed.
- *
- * Revision 1.5  2005/01/20 19:37:49  sparhawk
- * Lightgem now calculates projected lights as well as parallel lights.
- *
- * Revision 1.4  2005/01/19 23:22:04  sparhawk
- * Bug fixed for ambient lights
- *
- * Revision 1.3  2005/01/19 23:01:48  sparhawk
- * Lightgem updated to do proper projected lights with occlusion.
- *
- * Revision 1.2  2005/01/07 02:10:35  sparhawk
- * Lightgem updates
- *
- * Revision 1.1.1.1  2004/10/30 15:52:30  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

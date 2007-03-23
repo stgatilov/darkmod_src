@@ -1,10 +1,11 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source: /cvsroot/darkmod_src/DarkMod/tdmInventory.cpp,v $
  * $Revision$
  * $Date$
  * $Author$
+ *
+ ***************************************************************************
  *
  * DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent

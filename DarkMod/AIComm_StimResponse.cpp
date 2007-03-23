@@ -1,27 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
- * Revision 1.4  2006/06/21 13:05:31  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.3  2006/05/26 04:28:41  sophisticatedzombie
- * Knocked out AIs no longer respond to communications. (No hypnosis allowed)
- *
- * Revision 1.2  2006/05/19 19:56:50  sparhawk
- * CVSHeader added
- *
- *
  ***************************************************************************/
+
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "DarkModGlobals.h"
 #include "AIComm_StimResponse.h"

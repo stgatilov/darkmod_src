@@ -1,26 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2006/06/21 13:06:07  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2005/11/19 17:29:09  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.3  2005/11/11 21:11:28  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2005/04/23 01:43:53  ishtvan
- * Added SetFrameRate frame command, for re-using animations but slowing them down or speeding them up on the fly
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -30,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/darkmodglobals.h"

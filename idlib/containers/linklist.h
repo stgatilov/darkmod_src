@@ -1,24 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.3  2006/04/27 07:30:35  sophisticatedzombie
- * Added RemoveHeadsafe, which updates the node head pointers if removing the list head. (bad ID, bad ID!)
- *
- * Revision 1.2  2006/03/30 19:45:45  gildoran
- * I made three main changes:
- * 1. I moved the new decl headers out of game_local.h and into the few files
- * that actually use them.
- * 2. I added two new functions to idLinkList: next/prevNodeCircular().
- * 3. I added the first version of the tdmInventory objects. I've been working on
- * these on a vanilla 1.3 SDK, so I could test saving/loading. They appear to work
- * just fine.
- *
  *
  ***************************************************************************/
 

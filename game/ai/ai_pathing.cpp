@@ -1,30 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.6  2007/01/23 14:06:52  thelvyn
- * Removed mouse hook, removed some tracing for debugging ai falling damage, have to implement something better.
- *
- * Revision 1.5  2007/01/23 01:23:59  thelvyn
- * Fixed a minor bug and cleaned up most of the warnings
- *
- * Revision 1.4  2006/10/13 01:45:09  sophisticatedzombie
- * GetObstacles now includes BinaryFrobMover objects as dynamic pathing obstacles.
- * This allows AIs to avoid opening swinging doors etc...
- *
- * Revision 1.3  2006/07/25 06:00:05  ishtvan
- * enemies no longer considered an obstacle
- *
- * Revision 1.2  2006/06/21 13:04:47  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -34,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 

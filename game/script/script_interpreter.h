@@ -1,23 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2006/05/03 21:35:03  sparhawk
- * Added support for booleans for scriptfunctions.
- *
- * Revision 1.3  2006/02/04 23:52:32  sparhawk
- * Added support for arbitrary arguments being passed to a scriptfunction.
- *
- * Revision 1.2  2005/11/11 22:01:38  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

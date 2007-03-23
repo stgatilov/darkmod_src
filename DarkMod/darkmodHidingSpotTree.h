@@ -1,3 +1,11 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /*!
 * This is the interface for an n-tree structure which sorts and holds
 * darkmod hiding spots.

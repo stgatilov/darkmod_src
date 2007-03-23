@@ -1,29 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.6  2006/06/21 13:06:22  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.5  2006/03/22 14:26:34  gildoran
- * Fixed a bug where the first character after a set of block comments is ignored.
- *
- * Revision 1.4  2005/11/11 22:17:26  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/03/29 07:32:32  ishtvan
- * Modified Parse1DMatrix to allow reading to an integer matrix
- *
- * Revision 1.2  2004/11/28 09:34:47  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -33,7 +13,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning( push )
 #pragma warning( disable : 4127 )

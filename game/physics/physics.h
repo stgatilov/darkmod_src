@@ -1,23 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2007/02/06 15:17:08  thelvyn
- * mac line endings
- *
- * Revision 1.3  2006/07/25 05:59:02  ishtvan
- * removed some annoying const correctness on GetSelf
- *
- * Revision 1.2  2005/08/19 00:28:02  lloyd
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

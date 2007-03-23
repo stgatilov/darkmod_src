@@ -1,20 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.3  2005/04/23 01:43:53  ishtvan
- * Added SetFrameRate frame command, for re-using animations but slowing them down or speeding them up on the fly
- *
- * Revision 1.2  2004/11/28 09:17:19  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

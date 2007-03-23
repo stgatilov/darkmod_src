@@ -1,44 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.11  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.10  2006/07/28 01:37:17  ishtvan
- * objective system updates
- *
- * Revision 1.9  2006/07/24 01:29:03  ishtvan
- * optional distance test added to func_portal
- *
- * Revision 1.8  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.7  2006/05/30 06:25:00  ishtvan
- * objective system updates
- *
- * Revision 1.6  2006/01/29 04:09:29  ishtvan
- * added soundprop interface for idLocation objects
- *
- * Revision 1.5  2005/11/21 07:54:33  ishtvan
- * AI can no longer see thru static models
- *
- * Revision 1.4  2005/11/12 14:59:20  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.3  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2005/08/19 00:27:48  lloyd
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -53,7 +18,7 @@ Various utility objects and functions.
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 #include "../DarkMod/sndprop.h"

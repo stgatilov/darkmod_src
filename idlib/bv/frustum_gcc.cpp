@@ -1,24 +1,15 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.2  2006/06/21 13:06:37  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.1  2005/11/11 22:20:51  sparhawk
- * SDK 1.3 Merge
- *
  *
  ***************************************************************************/
 
 #include "../precompiled.h"
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 void BoxToPoints( const idVec3 &center, const idVec3 &extents, const idMat3 &axis, idVec3 points[8] );
 

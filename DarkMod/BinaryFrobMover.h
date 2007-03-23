@@ -1,81 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.7  2006/12/29 07:44:22  sophisticatedzombie
- * Added wasInterrupted and isChangingState methods.
- *
- * Revision 1.6  2006/12/23 07:19:13  sophisticatedzombie
- * Added a function that we may be able to use to help AI better avoid
- * binary frob movers.
- *
- * Revision 1.5  2006/10/08 17:16:45  sophisticatedzombie
- * Added some functions for getting property states from within C++ code, rather than
- * from script objects.
- *
- * Revision 1.4  2006/08/01 06:44:23  ishtvan
- * added response to physics impulses
- *
- * Revision 1.3  2006/07/09 02:09:07  ishtvan
- * FrobMovers now toggle their state when triggered
- *
- * Revision 1.2  2006/06/27 08:48:45  ishtvan
- * fixed closing of portals more cleanly
- *
- * Revision 1.1  2006/06/21 15:02:27  sparhawk
- * FrobDoor derived now from BinaryFrobMover
- *
- * Revision 1.13  2006/05/07 21:52:12  ishtvan
- * *) fixed interruption on opening problem
- * *) Added 'interruptable' spawnarg
- * *) Added offset position for translation in case the item starts inbetween states
- * *) Added translation speed variable
- *
- * Revision 1.12  2006/05/06 20:23:35  sparhawk
- * Fixed problem with determining when the animation is finished.
- *
- * Revision 1.11  2006/05/03 21:31:21  sparhawk
- * Statechange callback script added.
- *
- * Revision 1.10  2006/05/02 20:39:33  sparhawk
- * Translation added
- *
- * Revision 1.9  2006/04/29 22:10:56  sparhawk
- * Added some script functions to query the state of a door.
- *
- * Revision 1.8  2006/01/22 09:20:24  ishtvan
- * rewrote to match new soundprop interface
- *
- * Revision 1.7  2005/09/29 04:03:08  ishtvan
- * added support for double doors
- *
- * Revision 1.6  2005/09/27 08:07:15  ishtvan
- * *) Added new member vars to support multiple frob functionality
- *
- * *) Overloaded idMover::RotationDone()
- *
- * Revision 1.5  2005/04/07 08:42:38  ishtvan
- * Added placeholder method GetSoundLoss, which is called by CsndProp
- *
- * Revision 1.4  2004/11/24 21:59:06  sparhawk
- * *) Multifrob implemented
- * *) Usage of items against other items implemented.
- * *) Basic Inventory system added.
- *
- * Revision 1.3  2004/11/21 01:02:03  sparhawk
- * Doors can now be properly opened and have sound.
- *
- * Revision 1.2  2004/11/16 23:56:03  sparhawk
- * Frobcode has been generalized now and resides for all entities in the base classe.
- *
- * Revision 1.1  2004/11/14 20:19:12  sparhawk
- * Initial Release
- *
  *
  ***************************************************************************/
 

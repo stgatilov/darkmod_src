@@ -1,32 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.7  2006/11/20 05:02:34  ishtvan
- * setAngularVelocity bugfix
- *
- * Revision 1.6  2006/08/04 10:54:20  ishtvan
- * grabber fixes
- *
- * Revision 1.5  2006/06/21 13:07:08  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2005/12/05 08:47:54  ishtvan
- * removed limit of 1.0 on linear friction
- *
- * Revision 1.3  2005/11/12 14:59:51  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2005/08/19 00:28:02  lloyd
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -36,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 #include "../darkmod/playerdata.h"

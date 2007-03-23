@@ -1,24 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.3  2007/01/20 01:37:41  thelvyn
- * Implemented Ctrl, Shift and Alt key detection.
- * Right , Left supported for all. Also generic dont care if left or right functions.
- * Testing is in place in playerview.cpp
- * I reused #ifdef MOUSETEST as I still have the mouse code in there as well.
- * You can what if any buttons are detected. Mouse L, R, M and for keyboard Left, Right or both of Ctrl, Shift and Alt
- *
- * Revision 1.2  2005/11/11 22:17:26  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -27,8 +12,6 @@
 
 #ifndef __LIB_H__
 #define __LIB_H__
-
-
 /*
 ===============================================================================
 

@@ -1,40 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.8  2007/01/03 04:00:05  ishtvan
- * stim / response updates
- *
- * Revision 1.7  2006/12/21 01:57:58  sophisticatedzombie
- * The results now call Show() instead of Hide() so that the AI can test them for visibility.
- *
- * Revision 1.6  2006/07/12 01:10:58  ishtvan
- * surface type name now stored as idStr
- *
- * Revision 1.5  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2006/02/04 23:51:08  sparhawk
- * Added a destructor and fixed some stuff for Stim/Response.
- *
- * Revision 1.3  2006/01/31 22:34:44  sparhawk
- * StimReponse first working version
- *
- * Revision 1.2  2006/01/25 22:05:51  sparhawk
- * Added additional entries to support stims on projectiles.
- *
- * Revision 1.1  2006/01/20 08:47:45  ishtvan
- * initial version
- *
- *
- * Revision 1.1  2006/01/06 20:19:12  ishtvan
- * Initial Release
- *
  *
  ***************************************************************************/
 
@@ -43,7 +12,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "ProjectileResult.h"
 #include "../game/Game_local.h"

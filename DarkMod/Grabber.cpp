@@ -1,53 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.13  2007/02/11 20:59:57  ishtvan
- * comments updated for better documentation
- *
- * Revision 1.12  2006/11/20 05:35:17  ishtvan
- * simplified rotation code
- *
- * Revision 1.11  2006/08/14 01:06:28  ishtvan
- * PutInHands added
- *
- * fixed member vars to conform to naming conventions
- *
- * Revision 1.10  2006/08/07 06:52:08  ishtvan
- * *) added distance control
- *
- * *) Grabber now always grabs the center of mass
- *
- * *) StartGrab function added that may be called by the inventory to drop stuff to hands
- *
- * Revision 1.9  2006/08/04 10:53:26  ishtvan
- * preliminary grabber fixes
- *
- * Revision 1.8  2006/08/02 07:49:30  ishtvan
- * manipulation - rotation updates/fixes
- *
- * Revision 1.7  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.6  2006/02/23 10:20:19  ishtvan
- * throw implemented
- *
- * Revision 1.5  2005/12/11 18:08:05  ishtvan
- * disabled player view changes when using mouse axes to rotate
- *
- * Revision 1.4  2005/12/09 05:12:48  lloyd
- * Various bug fixes (AF grabbing, mouse deadzone, mouse sensitivty, ...)
- *
- * Revision 1.3  2005/12/02 18:21:04  lloyd
- * Objects start oriented with player
- *
- * Revision 1.1.1.1  2005/09/22 15:52:33  Lloyd
- * Initial release
  *
  ***************************************************************************/
 
@@ -58,7 +14,7 @@
 #include "....//idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"

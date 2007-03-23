@@ -1,38 +1,16 @@
-/******************************************************************************/
-/*                                                                            */
-/*         DarkModGlobals (C) by Gerhard W. Gruber in Germany 2005            */
-/*                          All rights reserved                               */
-/*                                                                            */
-/******************************************************************************/
-
-/******************************************************************************
+/***************************************************************************
  *
- * PROJECT: DarkMod
- * $Source$
+ * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
  * $Author$
- * $Name$
  *
- * $Log$
- * Revision 1.4  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.3  2005/11/19 17:26:48  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.2  2005/10/18 13:56:09  sparhawk
- * Lightgem updates
- *
- * Revision 1.1  2005/03/21 23:10:19  sparhawk
- * Intersection code for ellipsoids, triangles and planes.
- *
- *******************************************************************************/
+ ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 // #include "math.h"
 #include "../darkmod/darkmodglobals.h"

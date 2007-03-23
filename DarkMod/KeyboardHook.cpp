@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
+
 #pragma hdrstop
 #include "../darkmod/KeyboardHook.h"
 
@@ -6,7 +15,7 @@
 #endif
 // We will add additional ones for other OS here later
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 CKeyCode::CKeyCode():
 KeyState(KS_FREE),

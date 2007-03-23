@@ -1,35 +1,11 @@
 /***************************************************************************
-
  *
-
  * PROJECT: The Dark Mod
-
- * $Source$
-
  * $Revision$
-
  * $Date$
-
  * $Author$
-
  *
-
- * $Log$
- * Revision 1.3  2007/01/17 03:44:24  thelvyn
- * *** empty log message ***
- *
- * Revision 1.2  2005/11/10 19:21:04  sparhawk
- * SDK 1.3 Merge
- *
-
- * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
-
- * Initial release
-
- *
-
  ***************************************************************************/
-
 
 // Copyright (C) 2004 Id Software, Inc.
 //

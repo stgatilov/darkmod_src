@@ -1,41 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.9  2007/02/11 20:59:57  ishtvan
- * comments updated for better documentation
- *
- * Revision 1.8  2006/08/14 01:06:27  ishtvan
- * PutInHands added
- *
- * fixed member vars to conform to naming conventions
- *
- * Revision 1.7  2006/08/07 06:52:08  ishtvan
- * *) added distance control
- *
- * *) Grabber now always grabs the center of mass
- *
- * *) StartGrab function added that may be called by the inventory to drop stuff to hands
- *
- * Revision 1.6  2006/08/04 10:53:26  ishtvan
- * preliminary grabber fixes
- *
- * Revision 1.5  2006/02/23 10:20:19  ishtvan
- * throw implemented
- *
- * Revision 1.4  2005/12/09 05:12:48  lloyd
- * Various bug fixes (AF grabbing, mouse deadzone, mouse sensitivty, ...)
- *
- * Revision 1.3  2005/12/02 18:21:04  lloyd
- * Objects start oriented with player
- *
- * Revision 1.1.1.1  2005/09/22 15:52:33  Lloyd
- * Initial release
  *
  ***************************************************************************/
 

@@ -1,26 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2006/06/21 13:08:06  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2006/05/17 05:48:44  sophisticatedzombie
- * In function to call a script function with a var_args list of parameters, changed the way floating points are put on the stack to allow proper value to be returned when popped.  Also, for type "e" (idEntity*) NULL entity pointers can now be passed (inserts entity number 0)
- *
- * Revision 1.3  2006/05/03 21:35:03  sparhawk
- * Added support for booleans for scriptfunctions.
- *
- * Revision 1.2  2006/02/04 23:52:32  sparhawk
- * Added support for arbitrary arguments being passed to a scriptfunction.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:33  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -30,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
 

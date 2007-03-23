@@ -1,36 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.11  2006/12/30 09:37:25  sophisticatedzombie
- * Added search exclusion bounds that can be used during a search to ignore
- * spots within a certain area. This is useful for expanding ring searches.
- *
- * Revision 1.10  2006/12/14 09:54:14  sophisticatedzombie
- * Now using hiding spot search collection. Added some uitility methods.
- *
- * Revision 1.9  2006/12/09 17:31:20  sophisticatedzombie
- * This now uses the new darkmodeHidingspotTree class to store and
- * iterate a set of hiding spots.
- *
- * Revision 1.8  2006/06/16 20:26:15  sophisticatedzombie
- * no message
- *
- * Revision 1.7  2006/05/26 04:43:17  sophisticatedzombie
- * The search for hiding spots has been broken into two functions:
- * startSearchForHidingSpots and continueSearchForHidingSpots.  The hiding spot search object remembers its state so it can pick up where it left off on the next continueSearchForHidingSpots call.
- *
- * Revision 1.6  2006/05/25 02:30:12  sophisticatedzombie
- * Hiding spot search is setup to be accessible from a static member function for thread function compatibility. But, we don't have an os independent threading library so we won't be doing that for now.
- *
- * Revision 1.5  2006/05/19 19:56:50  sparhawk
- * CVSHeader added
- *
  *
  ***************************************************************************/
 

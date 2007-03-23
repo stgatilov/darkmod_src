@@ -1,3 +1,11 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /********************************************************
 * 
 * CLASS DESCRIPTION: 
@@ -5,30 +13,6 @@
 * The 2d matrices are unwrapped into a 1d private array
 *
 **********************************************************/
-
-/******************************************************************************
- *
- * PROJECT: DarkMod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- * $Name$
- *
- * $Log$
- * Revision 1.5  2006/04/23 18:39:30  ishtvan
- * saveing/loading fix for empty matrices
- *
- * Revision 1.4  2005/11/19 17:26:48  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.3  2005/08/22 04:43:22  ishtvan
- * fixed math error in CMatRUT::Ind2dTo1d
- *
- * Revision 1.2  2005/03/30 18:16:20  sparhawk
- * CVS Header added
- *
- ******************************************************************************/
 
 #ifndef MATRIXSQ_H
 #define MATRIXSQ_H

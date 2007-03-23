@@ -1,29 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2006/12/31 02:30:49  crispy
- * - Added new script event, moveToCoverFrom, which is like moveToCover except that it takes the enemy entity as an argument
- * - Cover search is fixed, and uses traces instead of PVS (at least for now)
- * - The FindNearestGoal AAS search can now have a travel distance limit.
- *
- * Revision 1.4  2006/12/09 17:43:50  sophisticatedzombie
- * Added some utility functions for seeing how doors interact with the AAS.
- * These may be useful for long-distance routing involving doors.
- *
- * Revision 1.3  2006/06/02 02:43:16  sophisticatedzombie
- * Added FindGoalClosestToTarget which searches for and prioritizes goals differently than FindNearestGoal
- *
- * Revision 1.2  2005/12/10 17:26:51  sophisticatedzombie
- * Added 2 new functions to aas which provide information about AAS areas
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

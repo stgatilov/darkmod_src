@@ -1,3 +1,11 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+ ***************************************************************************/
 /******************************************************************************/
 /*                                                                            */
 /*         Dark Mod AI Relationships (C) by Chris Sarantos in USA 2005		  */
@@ -26,24 +34,6 @@
 * that is different from the "team ID" in the mapfile though.
 *
 *****************************************************************************/
-
-/******************************************************************************
- *
- * PROJECT: DarkMod
- * $Source$
- * $Revision$
- * $Date$
- * $Author$
- * $Name$
- *
- * $Log$
- * Revision 1.3  2005/09/26 01:12:21  ishtvan
- * no longer tries to access relationship matrix when loading it has failed
- *
- * Revision 1.2  2005/03/30 18:16:20  sparhawk
- * CVS Header added
- *
- ******************************************************************************/
 
 #ifndef RELATIONS_H
 #define RELATIONS_H

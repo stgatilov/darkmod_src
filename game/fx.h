@@ -1,17 +1,11 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
  *
- * $Log$
- * Revision 1.1  2004/10/30 15:52:30  sparhawk
- * Initial revision
- *
  ***************************************************************************/
-
 // Copyright (C) 2004 Id Software, Inc.
 //
 

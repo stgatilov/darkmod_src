@@ -1,23 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2006/07/12 01:11:42  ishtvan
- * arrow penetration fix: surface type now stored on result as idStr
- *
- * Revision 1.3  2006/01/13 04:08:56  ishtvan
- * added spawning of projectile result objects when appropriate
- *
- * Revision 1.2  2005/11/11 20:38:16  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

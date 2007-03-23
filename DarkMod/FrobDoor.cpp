@@ -1,116 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.31  2006/12/29 07:46:31  sophisticatedzombie
- * Handle tap only occurs if door wasn't interrupted.
- * m_DoorHandle->Open(false) is called from within OpenDoor so that the handle
- * stays on the door when AI opens it.
- *
- * Revision 1.30  2006/11/04 11:00:20  sparhawk
- * Randomizer for lockpicking added.
- *
- * Revision 1.29  2006/11/01 16:12:48  sparhawk
- * Fixed some minor issue with the handle.
- *
- * Revision 1.28  2006/11/01 11:57:51  sparhawk
- * Signals method added to entity.
- *
- * Revision 1.27  2006/10/31 12:33:37  sparhawk
- * Doorhandle rotation added
- *
- * Revision 1.26  2006/10/30 17:29:05  sparhawk
- * Doorhandles should inherit the frobable flag, according to their doorsetting.
- *
- * Revision 1.25  2006/10/30 17:10:25  sparhawk
- * Doorhandles are now working in the first stage.
- *
- * Revision 1.24  2006/10/03 13:13:39  sparhawk
- * Changes for door handles
- *
- * Revision 1.23  2006/06/27 08:48:45  ishtvan
- * fixed closing of portals more cleanly
- *
- * Revision 1.22  2006/06/27 08:33:57  ishtvan
- * fixed closing of portals
- *
- * Revision 1.21  2006/06/21 15:02:27  sparhawk
- * FrobDoor derived now from BinaryFrobMover
- *
- * Revision 1.20  2006/06/21 13:05:32  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.19  2006/06/05 21:32:18  sparhawk
- * Timercode updated
- *
- * Revision 1.18  2006/05/07 22:51:49  ishtvan
- * fixed door closing sound
- *
- * Revision 1.17  2006/05/07 21:52:12  ishtvan
- * *) fixed interruption on opening problem
- * *) Added 'interruptable' spawnarg
- * *) Added offset position for translation in case the item starts inbetween states
- * *) Added translation speed variable
- *
- * Revision 1.16  2006/05/06 21:02:45  sparhawk
- * Fixed crash when door callback called itself.
- *
- * Revision 1.15  2006/05/06 20:23:35  sparhawk
- * Fixed problem with determining when the animation is finished.
- *
- * Revision 1.14  2006/05/03 21:31:21  sparhawk
- * Statechange callback script added.
- *
- * Revision 1.13  2006/05/02 20:39:32  sparhawk
- * Translation added
- *
- * Revision 1.12  2006/04/29 22:10:56  sparhawk
- * Added some script functions to query the state of a door.
- *
- * Revision 1.11  2006/01/23 00:18:56  ishtvan
- * fix - soundprop data now updated at spawn
- *
- * Revision 1.10  2006/01/22 09:20:24  ishtvan
- * rewrote to match new soundprop interface
- *
- * Revision 1.9  2005/12/14 23:20:18  ishtvan
- * rotation relative to orientation bugfix
- *
- * Revision 1.8  2005/11/19 17:26:48  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.7  2005/09/29 04:03:08  ishtvan
- * added support for double doors
- *
- * Revision 1.6  2005/09/27 08:05:43  ishtvan
- * *) Doors now activate/deactivate visportals that are touching them
- *
- * *) Fixed multifrob problem, implemented stopping of doors partway by frobbing
- *
- * *) Only returns the closed acoustical loss when completely closed
- *
- * Revision 1.5  2005/04/07 08:42:38  ishtvan
- * Added placeholder method GetSoundLoss, which is called by CsndProp
- *
- * Revision 1.4  2004/11/24 21:59:06  sparhawk
- * *) Multifrob implemented
- * *) Usage of items against other items implemented.
- * *) Basic Inventory system added.
- *
- * Revision 1.3  2004/11/21 01:02:03  sparhawk
- * Doors can now be properly opened and have sound.
- *
- * Revision 1.2  2004/11/16 23:56:03  sparhawk
- * Frobcode has been generalized now and resides for all entities in the base classe.
- *
- * Revision 1.1  2004/11/14 20:19:11  sparhawk
- * Initial Release
- *
  *
  ***************************************************************************/
 
@@ -120,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"

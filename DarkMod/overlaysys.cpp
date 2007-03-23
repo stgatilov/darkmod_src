@@ -1,36 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2007/01/29 21:50:05  sparhawk
- * Inventory updates
- *
- * Revision 1.4  2006/12/13 18:54:05  gildoran
- * Added SDK function names to error messages to help with debugging.
- * Fixed a bug that allowed creation of duplicate handles.
- * Added OVERLAYS_INVALID_HANDLE to be used instead of OVERLAYS_MIN_HANDLE - 1
- *
- * Revision 1.3  2006/12/12 19:37:59  gildoran
- * Fixed dangling else bugs.
- *
- * Revision 1.2  2006/09/18 18:56:50  gildoran
- * Added getNextOverlay, and code to automatically set an overlay as interactive if the GUI is.
- *
- * Revision 1.1  2006/09/18 13:38:13  gildoran
- * Added the first version of a unified interface for GUIs.
- *
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/Game_local.h"
 

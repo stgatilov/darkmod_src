@@ -1,25 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2006/12/09 17:41:16  sophisticatedzombie
- * Added some methods for testing if blocking a section of the map (by a door etc)
- * would impact reachabilities.  They are not used anywhere yet but could
- * be useful for adding more planning about doors to AI long-distance routing.
- *
- * Revision 1.3  2006/06/21 13:04:47  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.2  2005/12/10 17:26:51  sophisticatedzombie
- * Added 2 new functions to aas which provide information about AAS areas
- *
- * Revision 1.1.1.1  2004/10/30 15:52:32  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -29,7 +13,7 @@
 #include "../../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "AAS_local.h"
 #include "../../darkmod/BinaryFrobMover.h"

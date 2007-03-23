@@ -1,36 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.8  2006/11/07 07:13:06  sparhawk
- * Doorhandles made uninterruptable.
- *
- * Revision 1.7  2006/11/01 16:12:48  sparhawk
- * Fixed some minor issue with the handle.
- *
- * Revision 1.6  2006/11/01 11:57:51  sparhawk
- * Signals method added to entity.
- *
- * Revision 1.5  2006/10/31 22:44:00  sparhawk
- * Handle rotation added
- *
- * Revision 1.4  2006/10/31 12:33:37  sparhawk
- * Doorhandle rotation added
- *
- * Revision 1.3  2006/10/30 17:10:25  sparhawk
- * Doorhandles are now working in the first stage.
- *
- * Revision 1.2  2006/10/03 13:13:39  sparhawk
- * Changes for door handles
- *
- * Revision 1.1  2006/07/27 20:30:40  sparhawk
- * Initial release. Just the skeleton of the spawnable CFrobDoorHandle class.
- *
  *
  ***************************************************************************/
 
@@ -40,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/Game_local.h"
 #include "DarkModGlobals.h"

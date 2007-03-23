@@ -1,62 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.17  2007/01/26 07:35:31  ishtvan
- * air friction spawnargs now parsed to physics settings
- *
- * Revision 1.16  2007/01/20 05:19:57  sophisticatedzombie
- * Spawns an idAbsenceMarkerEntity when moved or put in an inventory.
- *
- * Revision 1.15  2007/01/05 10:52:33  ishtvan
- * dropped items no longer disappear after 5 minutes
- *
- * Revision 1.14  2007/01/03 04:08:23  ishtvan
- * stim/response : Fixed resetting of CONTENTS_RESPONSE contents flag
- *
- * Revision 1.13  2006/08/14 01:07:02  ishtvan
- * fixed hide/show in idMoveableItem to disable the clipmodel
- *
- * Revision 1.12  2006/07/28 01:36:19  ishtvan
- * frobbing bugfixes
- *
- * Revision 1.11  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.10  2005/11/19 17:27:56  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.9  2004/11/17 00:00:38  sparhawk
- * Frobcode has been generalized now and resides for all entities in the base classe.
- *
- * Revision 1.8  2004/11/11 23:52:27  sparhawk
- * Fixed frob highlight for items and doors.
- *
- * Revision 1.7  2004/11/11 22:15:40  sparhawk
- * Frobcode is now more generalized. Doors are now frobable.
- *
- * Revision 1.6  2004/11/05 18:58:09  sparhawk
- * Moved frobcode to idEntity to make it available for all entities.
- *
- * Revision 1.5  2004/11/03 21:47:38  sparhawk
- * Changed debug LogString for better performance and group settings
- *
- * Revision 1.4  2004/11/03 00:06:08  sparhawk
- * Frob highlight finished and working.
- *
- * Revision 1.3  2004/10/31 20:01:56  sparhawk
- * Frob highlights now only for one item at a time.
- *
- * Revision 1.2  2004/10/30 17:19:40  sparhawk
- * Frob highlight added.
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -66,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 

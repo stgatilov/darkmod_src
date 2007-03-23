@@ -5,195 +5,21 @@
 /*                                                                            */
 /******************************************************************************/
 
-/******************************************************************************
+/***************************************************************************
  *
- * PROJECT: DarkMod
- * $Source$
+ * PROJECT: The Dark Mod
  * $Revision$
  * $Date$
  * $Author$
- * $Name$
  *
- * $Log$
- * Revision 1.54  2007/01/20 05:18:42  sophisticatedzombie
- * Tweaked default lighting visibility scale
- *
- * Revision 1.53  2006/12/23 20:19:22  sophisticatedzombie
- * Tweaked upward a visibility distance constant just a bit for demonstration purposes.
- *
- * Revision 1.52  2006/12/14 10:27:56  sophisticatedzombie
- * Ugh tweak
- *
- * Revision 1.51  2006/12/14 09:55:46  sophisticatedzombie
- * Some changes to light calculations for observation distance required changes
- * to default constant values.
- *
- * Revision 1.50  2006/12/09 17:30:20  sophisticatedzombie
- * Added  a configurable scale for computing maximum observation distance from
- * a lighting quotient given for a point by the LAS.  Visual acuity of the AI still needs
- * to be factored in afterword.
- *
- * Revision 1.49  2006/11/03 23:20:17  sparhawk
- * Lockpick Logclass added.
- *
- * Revision 1.48  2006/08/08 21:27:45  sparhawk
- * Added an accessor for the bufferlength in th CImage class.
- *
- * Revision 1.47  2006/07/20 21:07:25  sparhawk
- * Frame logging fixed.
- *
- * Revision 1.46  2006/07/20 18:51:24  sparhawk
- * Frame setting loaded from INI.
- *
- * Revision 1.45  2006/07/17 01:45:27  ishtvan
- * eliminated unnecessary logging in GetSurfName
- *
- * Revision 1.44  2006/07/15 02:14:52  ishtvan
- * surface name fix (for real this time)
- *
- * Revision 1.43  2006/07/14 06:29:13  ishtvan
- * attempted surface type fix #2
- *
- * Revision 1.42  2006/07/13 06:24:31  ishtvan
- * attempted surface type fix
- *
- * Revision 1.41  2006/06/21 10:12:25  sparhawk
- * Added version tracking per file
- *
- * Revision 1.40  2006/05/26 10:25:15  ishtvan
- * added mission data global object
- *
- * Revision 1.39  2006/05/26 04:42:01  sophisticatedzombie
- * Added variable which gives maximum number of hiding spot point tests per AI frame
- *
- * Revision 1.38  2006/05/17 05:39:16  sophisticatedzombie
- * Added new variables related to AIComm_Messsage and AIComm_StimResponse modules.
- *
- * Revision 1.37  2006/05/09 03:17:46  sophisticatedzombie
- * Moved AIDebugGraphics key to [Debug] section.
- *
- * Revision 1.36  2006/05/02 00:09:23  sophisticatedzombie
- * Added m_drawAIDebugGraphics. It defaults to 0.0 which is off. Values >= 1.0 draw the AI debug graphics for that number of milliseconds
- *
- * Revision 1.35  2006/01/31 22:34:44  sparhawk
- * StimReponse first working version
- *
- * Revision 1.34  2006/01/29 04:30:07  ishtvan
- * fix for GetSurfName returning invalid pointer
- *
- * Revision 1.33  2006/01/13 04:24:53  ishtvan
- * commented out some unnecessary logging in GetSurfTypeName
- *
- * Revision 1.32  2005/12/13 18:19:40  ishtvan
- * added m_MaxFrobDistance for frob distance cube around player
- *
- * Revision 1.31  2005/12/04 02:41:53  ishtvan
- * fixed surface type variable names
- *
- * Revision 1.30  2005/11/26 17:42:45  sparhawk
- * Lightgem cleaned up
- *
- * Revision 1.29  2005/11/20 21:49:30  sparhawk
- * *) Proper returncode for renderhook
- * *) Errorvalue while rendering to pipe.
- *
- * Revision 1.28  2005/11/19 17:26:48  sparhawk
- * LogString with macro replaced
- *
- * Revision 1.27  2005/11/19 17:06:05  sparhawk
- * Frame marker added
- *
- * Revision 1.26  2005/11/18 21:03:59  sparhawk
- * Particle effect fix
- *
- * Revision 1.25  2005/11/17 22:40:13  sparhawk
- * Lightgem renderpipe fixed
- *
- * Revision 1.24  2005/10/30 22:15:26  sparhawk
- * Renderpipe creation removed because D3 can handle the pipename on it's own.
- *
- * Revision 1.23  2005/10/26 21:12:42  sparhawk
- * Lightgem renderpipe implemented
- *
- * Revision 1.22  2005/10/21 21:56:13  sparhawk
- * Ramdisk support added.
- *
- * Revision 1.21  2005/10/18 13:56:09  sparhawk
- * Lightgem updates
- *
- * Revision 1.20  2005/09/17 07:13:34  sophisticatedzombie
- * Added constants that control the scale by which damage can occur when mantling at a high relative velocity.
- *
- * Revision 1.19  2005/08/22 07:44:20  ishtvan
- * added the #include C:\compiled.h back in
- *
- * Revision 1.18  2005/08/14 23:26:41  sophisticatedzombie
- * Added mantling and leaning constants to g_Global
- *
- * Revision 1.17  2005/04/07 08:35:42  ishtvan
- * Added AI acuities hash, moved soundprop flags to game_local.h
- *
- * Revision 1.16  2005/03/29 07:38:42  ishtvan
- * Added declaration of global AI Relations object
- *
- * Revision 1.15  2005/03/26 20:59:52  sparhawk
- * Logging initialization added for automatic mod name detection.
- *
- * Revision 1.14  2005/03/21 22:57:36  sparhawk
- * Special plane and vectorlogs added.
- *
- * Revision 1.13  2005/02/07 21:28:11  sparhawk
- * Added MATH class and LogVector3 function.
- *
- * Revision 1.12  2005/01/28 22:56:52  sparhawk
- * WEAPON class added.
- *
- * Revision 1.11  2005/01/24 00:15:22  sparhawk
- * AmbientLight parameter added to material
- *
- * Revision 1.10  2005/01/20 19:36:00  sparhawk
- * CImage class implemented to load and store texture images.
- *
- * Revision 1.9  2005/01/07 02:01:10  sparhawk
- * Lightgem updates
- *
- * Revision 1.8  2004/12/04 22:50:45  sparhawk
- * Added LogClass LIGHT
- *
- * Revision 1.7  2004/11/22 23:51:34  sparhawk
- * Added MISC log class.
- *
- * Revision 1.6  2004/11/19 20:44:00  sparhawk
- * Added a trick to update compiletime automatically
- *
- * Revision 1.5  2004/11/18 22:48:34  sparhawk
- * Changed the default frob highlight to 100
- *
- * Revision 1.4  2004/11/06 17:16:53  sparhawk
- * Optimized the debug log function for ease of use and speed.
- *
- * Revision 1.3  2004/11/05 21:23:01  sparhawk
- * Added ENTITY class
- * Added compile time info to logfile header to check DLL version on client installation.
- *
- * Revision 1.2  2004/11/03 21:47:17  sparhawk
- * Changed debug LogString for better performance and group settings
- *
- * Revision 1.1  2004/10/30 17:06:36  sparhawk
- * DarkMod added to project.
- *
- * DESCRIPTION: This file contains all global identifiers, variables and
- * structures. Please note that global variables should be kept to a minimum
- * and only what is really neccessary should go in here.
- *
- *****************************************************************************/
+ ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4996 4800)
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #ifdef _WINDOWS_
 #include "c:\compiled.h"

@@ -1,26 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2007/01/05 04:18:31  ishtvan
- * added CONTENTS_RESPONSE flag
- *
- * Revision 1.4  2005/12/04 01:18:20  ishtvan
- * removed new surface types
- *
- * Revision 1.3  2005/11/17 09:16:38  ishtvan
- * updated surface types
- *
- * Revision 1.2  2005/11/11 22:42:32  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:34  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

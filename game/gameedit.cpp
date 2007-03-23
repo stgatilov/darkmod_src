@@ -1,26 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.5  2006/06/21 13:05:10  sparhawk
- * Added version tracking per cpp module
- *
- * Revision 1.4  2005/10/23 18:11:21  sparhawk
- * Lightgem entity spawn implemented
- *
- * Revision 1.3  2005/09/24 03:17:53  lloyd
- * Restored file to it's original state
- *
- * Revision 1.2  2005/09/17 00:32:29  lloyd
- * added copyBind event and arrow sticking functionality (additions to Projectile and modifications to idEntity::RemoveBind
- *
- * Revision 1.1.1.1  2004/10/30 15:52:31  sparhawk
- * Initial release
  *
  ***************************************************************************/
 
@@ -30,7 +13,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
 

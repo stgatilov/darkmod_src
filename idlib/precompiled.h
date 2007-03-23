@@ -1,25 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.4  2007/01/19 10:08:48  thelvyn
- * Removed old mouse handling code.
- * Registered some fonts for gui screen display of text.
- * Added function for same
- *
- * Revision 1.3  2005/11/11 22:17:26  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2004/11/28 09:34:48  sparhawk
- * SDK V2 merge
- *
- * Revision 1.1.1.1  2004/10/30 15:52:35  sparhawk
- * Initial release
  *
  ***************************************************************************/
 

@@ -1,18 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Source$
  * $Revision$
  * $Date$
  * $Author$
- *
- * $Log$
- * Revision 1.3  2005/11/11 22:50:03  sparhawk
- * SDK 1.3 Merge
- *
- * Revision 1.2  2004/11/28 19:17:30  sparhawk
- * Added header and Id Copyright.
- *
  *
  ***************************************************************************/
 
