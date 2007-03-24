@@ -310,6 +310,14 @@ idEntity *idAFAttachment::GetBody( void ) const {
 	return body;
 }
 
+/**
+* Return true if we can mantle this attachment, false otherwise.
+**/
+bool idAFAttachment::IsMantleable()
+{
+	return (!body || body->IsMantleable()) && idEntity::IsMantleable();
+}
+
 /*
 ================
 idAFAttachment::Save

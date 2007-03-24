@@ -668,7 +668,7 @@ public:
 	/**
 	 * Return true if this entity can be mantled, false otherwise.
 	 */
-	virtual bool			IsMantleable() { return m_bIsMantleable; }
+	virtual bool			IsMantleable();
 
 protected:
 	/**

@@ -92,6 +92,8 @@ public:
 	void					ClearBody( void );
 	idEntity *				GetBody( void ) const;
 
+	bool					IsMantleable( void );
+
 	virtual void			Think( void );
 
 	virtual void			Hide( void );

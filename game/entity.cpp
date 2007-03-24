@@ -7739,3 +7739,23 @@ Quit:
 void idEntity::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *Prev)
 {
 }
+
+/**
+* If this entity (or any entity that it is attached to) has mantling disabled,
+* then this returns false. Otherwise, returns true.
+**/
+bool idEntity::IsMantleable()
+{
+	bool returnVal = true;
+	idEntity* ent=this;
+	while (ent!=NULL)
+	{
+		if (!ent->m_bIsMantleable)
+		{
+			returnVal = false;
+			break;
+		}
+		ent = ent->GetBindMaster();
+	}
+	return returnVal;
+}
