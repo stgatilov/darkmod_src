@@ -211,6 +211,7 @@ typedef enum {
 	ST_RANDOM,			// Random response is selected
 	ST_TIMER,			// Timer trigger
 	ST_COMMUNICATION,	// A communication stimulus (see CommunicationStim.h)
+	ST_GAS,				// triggered by gas arrows
 	ST_USER				= 1000,	// User defined types should use this as it's base
 	ST_DEFAULT			= -1
 } StimType;

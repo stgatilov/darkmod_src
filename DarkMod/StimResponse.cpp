@@ -48,6 +48,7 @@ char *cStimType[] = {
 	"STIM_RANDOM",
 	"STIM_TIMER",
 	"STIM_COMMUNICATION",
+	"STIM_GAS",
 	NULL
 };
 
