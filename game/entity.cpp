@@ -104,6 +104,8 @@ const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
 const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
+// greebo: Script event definition for dealing damage
+const idEventDef EV_Damage("damage", "EEvsf");
 
 //===============================================================
 //                   TDM GUI interface
@@ -261,6 +263,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
 
 	EVENT( EV_InPVS,				idEntity::Event_InPVS )
+	EVENT( EV_Damage,				idEntity::Event_Damage )
 
 	EVENT( EV_SetGui,				idEntity::Event_SetGui )
 	EVENT( EV_GetGui,				idEntity::Event_GetGui )
@@ -7758,4 +7761,13 @@ bool idEntity::IsMantleable()
 		ent = ent->GetBindMaster();
 	}
 	return returnVal;
+}
+
+// Deals damage to this entity, documentation: see header
+void idEntity::Event_Damage( idEntity *inflictor, idEntity *attacker, 
+								 const idVec3 &dir, const char *damageDefName, 
+								 const float damageScale )
+{
+	// Pass the call to the regular member method of this class
+	Damage(inflictor, attacker, dir, damageDefName, damageScale, 0, NULL);
 }

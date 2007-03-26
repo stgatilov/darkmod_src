@@ -2469,6 +2469,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// Update the Light Awareness System
 		LAS.updateLASState();
 
+		// TDM: Work through the active stims/responses
 		ProcessStimResponse();
 
 		// TDM: Update objective system

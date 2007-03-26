@@ -89,6 +89,9 @@ extern const idEventDef EV_IsFrobable;
 extern const idEventDef EV_SetFrobable;
 extern const idEventDef EV_InPVS;
 
+// greebo: Script event definition for dealing damage
+extern const idEventDef EV_Damage;
+
 // Think flags
 enum {
 	TH_ALL					= -1,
@@ -932,6 +935,21 @@ private:			// Events should be public, so they can be used from other places as 
 	void					Event_InPVS( void );
 	void					Event_WaitForRender( void );
 
+	/**
+	* greebo: This is the method that can be invoked from scripts. It basically
+	* passes the call to the member method Damage().
+	*
+	* This Deals damage to this entity (gets translated into the idEntity::Damage() method within the SDK).
+	*
+	* @inflictor: This is the entity causing the damage (maybe a projectile)
+	* @attacker: This is the "parent" entity of the inflictor, the one that is responsible for the inflictor (can be the same)
+	* @dir: The direction the attack is coming from.
+	* @damageDefName: The name of the damage entityDef to know what damage is being dealt to <self> (e.g. "damage_lava")
+	* @damageScale: The scale of the damage (pass 1.0 as default, this should be ok).
+	*/
+	void					Event_Damage( idEntity *inflictor, idEntity *attacker, 
+										  const idVec3 &dir, const char *damageDefName, 
+										  const float damageScale );
 	void					Event_SetGui( int handle, const char *guiFile );
 	void					Event_GetGui( int handle );
 	void					Event_SetGuiString( int handle, const char *key, const char *val );
