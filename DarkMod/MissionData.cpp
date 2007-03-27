@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MissionData.h"
 #include "../game/player.h"
-#include "StimResponse.h"
+#include "StimResponse/StimResponseCollection.h"
 
 /**
 * Add new component type names here.  Must be in exact same order as EComponentType

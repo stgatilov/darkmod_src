@@ -15,15 +15,15 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
-#include "../darkmod/darkmodglobals.h"
-#include "../darkmod/playerdata.h"
-#include "../darkmod/intersection.h"
-#include "../darkmod/relations.h"
-#include "../darkmod/darkModAASFindHidingSpots.h"
-#include "../darkmod/StimResponse.h"
-#include "../darkmod/MissionData.h"
-#include "../darkmod/tdmInventory.h"
-#include "../darkmod/KeyboardHook.h"
+#include "../DarkMod/darkmodglobals.h"
+#include "../DarkMod/playerdata.h"
+#include "../DarkMod/intersection.h"
+#include "../DarkMod/relations.h"
+#include "../DarkMod/darkModAASFindHidingSpots.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/MissionData.h"
+#include "../DarkMod/tdmInventory.h"
+#include "../DarkMod/KeyboardHook.h"
 //#include "../darkmod/MouseHook.h"
 /*
 ===============================================================================

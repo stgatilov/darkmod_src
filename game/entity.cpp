@@ -18,12 +18,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4533 4800)
 
 #include "Game_local.h"
-#include "../darkmod/darkmodglobals.h"
-#include "../darkmod/declxdata.h"
-#include "../darkmod/playerdata.h"
-#include "../darkmod/sndprop.h"
-#include "../darkmod/StimResponse.h"
-#include "../darkmod/tdmInventory.h"
+#include "../DarkMod/DarkmodGlobals.h"
+#include "../DarkMod/declxdata.h"
+#include "../DarkMod/PlayerData.h"
+#include "../DarkMod/sndProp.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../DarkMod/tdmInventory.h"
 
 /*
 ===============================================================================

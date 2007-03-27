@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include "stimresponse.h"
+#include "StimResponse/Stim.h"
+#include "StimResponse/Response.h"
 #include "AIComm_Message.h"
 
 /**

@@ -16,8 +16,8 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
-#include "../darkmod/sndProp.h"
-#include "../DarkMod/StimResponse.h"
+#include "../DarkMod/sndProp.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 const idEventDef EV_TDM_UpdateSoundLoss( "updateSoundLoss", NULL );
 

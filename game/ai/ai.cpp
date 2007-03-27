@@ -16,17 +16,17 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
-#include "../../darkmod/relations.h"
-#include "../../darkmod/MissionData.h"
-#include "../../darkmod/StimResponse.h"
-#include "../../darkmod/darkmodglobals.h"
-#include "../../darkmod/playerdata.h"
-#include "../../darkmod/sndprop.h"
+#include "../../DarkMod/relations.h"
+#include "../../DarkMod/MissionData.h"
+#include "../../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../../DarkMod/darkmodglobals.h"
+#include "../../DarkMod/playerdata.h"
+#include "../../DarkMod/sndprop.h"
 
 // For handling the opening of doors and other binary Frob movers
-#include "../../darkmod/BinaryFrobMover.h"
-#include "../../darkmod/FrobDoor.h"
-#include "../../darkmod/FrobDoorHandle.h"
+#include "../../DarkMod/BinaryFrobMover.h"
+#include "../../DarkMod/FrobDoor.h"
+#include "../../DarkMod/FrobDoorHandle.h"
 
 
 //TODO: Move these to AI def:

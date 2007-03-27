@@ -16,12 +16,12 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Game_local.h"
-#include "../darkmod/relations.h"
-#include "../../darkmod/darkmodglobals.h"
-#include "../../darkmod/darkModAASFindHidingSpots.h"
-#include "../../darkmod/stimResponse.h"
-#include "../../darkmod/AIComm_StimResponse.h"
-#include "../../darkmod/idAbsenceMarkerEntity.h"
+#include "../DarkMod/relations.h"
+#include "../../DarkMod/darkmodglobals.h"
+#include "../../DarkMod/darkModAASFindHidingSpots.h"
+#include "../../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../../DarkMod/AIComm_StimResponse.h"
+#include "../../DarkMod/idAbsenceMarkerEntity.h"
 
 class CRelations;
 

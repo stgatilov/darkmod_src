@@ -16,9 +16,9 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "Game_local.h"
-#include "../darkmod/darkmodglobals.h"
-#include "../darkmod/playerdata.h"
-#include "../DarkMod/StimResponse.h"
+#include "../DarkMod/darkmodglobals.h"
+#include "../DarkMod/playerdata.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================

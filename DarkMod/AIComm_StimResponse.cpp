@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "DarkModGlobals.h"
 #include "AIComm_StimResponse.h"
+#include "StimResponse/StimResponseCollection.h"
 
 #define MAX_COMMUNICATION_RADIUS 5000.0
 

@@ -14,7 +14,7 @@
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
 
-#include "../darkmod/overlaySys.h"
+#include "../DarkMod/overlaySys.h"
 
 class CStimResponseCollection;
 class CStim;
