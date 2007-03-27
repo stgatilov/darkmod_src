@@ -508,12 +508,37 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		if(str == "")
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("No scriptfunction specified for stim/response id [%s]\r", sr->m_StimTypeName.c_str());
-			delete sr;
-			sr = NULL;
-			goto Quit;
+			// greebo: Disabled this to allow responses without script being added (they can have effects to handle the response)
+			//delete sr;
+			//sr = NULL;
+			//goto Quit;
 		}
 
 		resp->m_ScriptFunction = str;
+
+		// Try to identify the ResponseEffect spawnargs
+		int effectIdx = 1;
+		while (effectIdx > 0) {
+			// Try to find a string like "sr_effect_2_1"
+			sprintf(name, "sr_effect_%u_%u", Counter, effectIdx);
+			args->GetString(name, "", str);
+
+			if (str == "")
+			{
+				// Set the index to negative values to end the loop
+				effectIdx = -1;
+			}
+			else {
+				// Assemble the postfix of this effect for later key/value lookup
+				// This is passed to the effect script eventually
+				idStr effectPostfix;
+				sprintf(effectPostfix, "%u_%u", Counter, effectIdx);
+
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Adding response effect\r");
+				resp->addResponseEffect(str, effectPostfix);
+				effectIdx++;
+			}
+		}
 	}
 
 	rc = true;
@@ -735,6 +760,9 @@ CResponse::CResponse(idEntity *e, int Type)
 
 CResponse::~CResponse(void)
 {
+	// Remove all the allocated response effects from the heap
+	for (int i = 0; i < m_ResponseEffects.Num(); i++)
+		delete m_ResponseEffects[i];
 }
 
 void CResponse::TriggerResponse(idEntity *StimEnt)
@@ -763,6 +791,12 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
 	}
 
+	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Cycling through Response Effects\r");
+	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
+	for (int i = 0; i < m_ResponseEffects.Num(); i++) {
+		m_ResponseEffects[i]->runScript(m_Owner, StimEnt);
+	}
+
 	// Continue the chain if we have a followup response to be triggered.
 	if(m_FollowUp != NULL)
 	{
@@ -774,6 +808,59 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 void CResponse::SetResponseAction(idStr const &action)
 {
 	m_ScriptFunction = action;
+}
+
+CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef, const idStr& effectPostfix)
+{
+	CResponseEffect* returnValue = NULL;
+	
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("\nSeeking EffectEntity [%s]\n", effectEntityDef.c_str());
+	// Try to locate the specified entity definition
+	const idDict* dict = gameLocal.FindEntityDefDict(effectEntityDef.c_str());
+	if (dict != NULL) 
+	{
+		gameLocal.Printf("EffectEntityDef found, looking for script!\r");
+		
+		idStr scriptStr = dict->GetString("script");
+		gameLocal.Printf("Script value is %s.\n", scriptStr.c_str());
+
+		const function_t* scriptFunc = gameLocal.program.FindFunction(scriptStr.c_str());
+		if (scriptFunc != NULL)
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Script Function found: [%s]\r", scriptStr.c_str());
+		}
+		// Allocate a new effect object
+		CResponseEffect* newEffect = new CResponseEffect(dict, scriptFunc, effectPostfix);
+		
+		// Add the item to the list
+		m_ResponseEffects.Append(newEffect);
+
+		returnValue = newEffect;
+	}
+	else
+	{
+		// Entity not found, emit a warning
+		gameLocal.Printf("Warning: EffectEntityDef not found: %s.\r", effectEntityDef.c_str());
+	}
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Items in the list: %u\r", m_ResponseEffects.Num());
+	
+	return returnValue;
+}
+
+
+/********************************************************************/
+/*                 CResponseEffect                                  */
+/********************************************************************/
+
+void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity) {
+	if (_scriptFunction == NULL) return;
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script...\r");
+	idThread *pThread = new idThread(_scriptFunction);
+	int n = pThread->GetThreadNum();
+	pThread->CallFunctionArgs(_scriptFunction, true, "eesf", owner, stimEntity, _effectPostfix.c_str(), n);
+	pThread->DelayedStart(0);
 }
 
 /********************************************************************/

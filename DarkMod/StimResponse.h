@@ -222,6 +222,37 @@ typedef enum {
 	SS_DEFAULT
 } StimState;
 
+class CResponseEffect
+{
+	const idDict* _effectEntityDef;
+
+	const function_t* _scriptFunction;
+
+	// The effect postfix, "1_1" for example
+	// This is passed to the script along with the "owner" entity,
+	// so that the script can lookup any arguments it might need.
+	idStr _effectPostfix;
+
+public:
+	// Pass the effect entity to this structure
+	CResponseEffect(const idDict* effectEntityDef, 
+					const function_t* scriptFunction,
+					const idStr& effectPostfix) :
+		_effectEntityDef(effectEntityDef),
+		_scriptFunction(scriptFunction),
+		_effectPostfix(effectPostfix)
+	{}
+
+	/**
+	* Runs the attached response effect script 
+	* (does nothing if the scriptfunc pointer is NULL)
+	*
+	* @owner: The entity this script is affecting
+	* @stimEntity: The entity that triggered this response
+	*/
+	void runScript(idEntity* owner, idEntity* stimEntity);
+};
+
 /**
  * CStimResponse is the baseclass for stims and responses
  */
@@ -409,6 +440,13 @@ public:
 	 */
 	void SetResponseAction(idStr const &ActionScriptName);
 
+	/**
+	* Adds a response effect and returns the pointer to the local list
+	* and returns the pointer to the new Effect object, so that the
+	* data can be pumped into it.
+	*/
+	CResponseEffect* addResponseEffect(const idStr& effectEntityDef, const idStr& effectPostfix);
+
 protected:
 	CResponse(idEntity *Owner, int Type);
 	virtual ~CResponse(void);
@@ -444,6 +482,11 @@ protected:
 	 */
 
 	float				m_Chance;
+
+	/**
+	* The list of ResponseEffects
+	*/
+	idList<CResponseEffect*> m_ResponseEffects;
 };
 
 /**
