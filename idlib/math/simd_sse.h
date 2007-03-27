@@ -22,8 +22,14 @@
 */
 
 class idSIMD_SSE : public idSIMD_MMX {
-#ifdef _WIN32
 public:
+#if defined(MACOS_X) && defined(__i386__)
+	virtual const char * VPCALL GetName( void ) const;
+	virtual void VPCALL Dot( float *dst,			const idPlane &constant,const idDrawVert *src,	const int count );	
+	virtual	void VPCALL MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int *indexes,		const int count );	
+	virtual void VPCALL Dot( float *dst,			const idVec3 &constant,	const idPlane *src,		const int count );	
+
+#elif defined(_WIN32)
 	virtual const char * VPCALL GetName( void ) const;
 
 	virtual void VPCALL Add( float *dst,			const float constant,	const float *src,		const int count );

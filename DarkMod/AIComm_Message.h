@@ -28,7 +28,7 @@
 *--------------------------------------------------------------------------
 */
 
-#include "StimResponse.h"
+#include "stimresponse/StimResponse.h"
 
 
 /*

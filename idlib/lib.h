@@ -39,6 +39,10 @@ public:
 
 	static void					Init( void );
 	static void					ShutDown( void );
+
+	// wrapper to idCommon functions 
+	static void					Error( const char *fmt, ... );
+	static void					Warning( const char *fmt, ... );
 };
 
 

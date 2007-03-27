@@ -167,7 +167,7 @@ ID_INLINE idVec3 idQuat::operator*( const idVec3 &a ) const {
 
 	return idVec3(
 		(xxzz + wwyy)*a.x		+ (xy2 + zw2)*a.y		+ (xz2 - yw2)*a.z,
-		(xy2 - zw2)*a.x			+ (xxzz - wwyy)*a.y		+ (yz2 + xw2)*a.z,
+		(xy2 - zw2)*a.x			+ (y*y+w*w-x*x-z*z)*a.y	+ (yz2 + xw2)*a.z,
 		(xz2 + yw2)*a.x			+ (yz2 - xw2)*a.y		+ (wwyy - xxzz)*a.z
 	);
 #endif

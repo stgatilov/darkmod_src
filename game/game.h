@@ -120,11 +120,14 @@ public:
 	// return NULL once the fullscreen UI mode should stop, or "main" to go to main menu
 	virtual const char *		HandleGuiCommands( const char *menuCommand ) = 0;
 
+	// main menu commands not caught in the engine are passed here
+	virtual void				HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) = 0;
+
 	// Early check to deny connect.
 	virtual allowReply_t		ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] ) = 0;
 
 	// Connects a client.
-	virtual void				ServerClientConnect( int clientNum ) = 0;
+	virtual void				ServerClientConnect( int clientNum, const char *guid ) = 0;
 
 	// Spawns the player entity to be used by the client.
 	virtual void				ServerClientBegin( int clientNum ) = 0;
@@ -154,13 +157,13 @@ public:
 	virtual void				ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
 
 	// Runs prediction on entities at the client.
-	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds ) = 0;
+	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) = 0;
 
 	// Used to manage divergent time-lines
 	virtual void				SelectTimeGroup( int timeGroup ) = 0;
 	virtual int					GetTimeGroupTime( int timeGroup ) = 0;
 
-	virtual idStr				GetBestGameType( const char* map, const char* gametype ) = 0;
+	virtual void				GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] ) = 0;
 
 	// Returns a summary of stats for a given client
 	virtual void				GetClientStats( int clientNum, char *data, const int len ) = 0;
@@ -169,6 +172,8 @@ public:
 	virtual void				SwitchTeam( int clientNum, int team ) = 0;
 
 	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
+
+	virtual void				GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] ) = 0;
 };
 
 extern idGame *					game;
@@ -297,7 +302,7 @@ extern idGameEdit *				gameEdit;
 ===============================================================================
 */
 
-const int GAME_API_VERSION		= 6;
+const int GAME_API_VERSION		= 8;
 
 typedef struct {
 

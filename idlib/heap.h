@@ -276,7 +276,6 @@ idDynamicAlloc<type, baseBlockSize, minBlockSize>::~idDynamicAlloc( void ) {
 
 template<class type, int baseBlockSize, int minBlockSize>
 void idDynamicAlloc<type, baseBlockSize, minBlockSize>::Init( void ) {
-	freeTree.Init();
 }
 
 template<class type, int baseBlockSize, int minBlockSize>

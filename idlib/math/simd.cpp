@@ -414,10 +414,10 @@ TestSub
 void TestSub( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -488,10 +488,10 @@ TestMul
 void TestMul( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -563,10 +563,10 @@ TestDiv
 void TestDiv( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -641,9 +641,9 @@ TestMulAdd
 void TestMulAdd( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -697,9 +697,9 @@ TestMulSub
 void TestMulSub( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -753,16 +753,16 @@ TestDot
 void TestDot( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
-	ALIGN16( idVec3 v3src0[COUNT]; )
-	ALIGN16( idVec3 v3src1[COUNT]; )
-	ALIGN16( idVec3 v3constant( 1.0f, 2.0f, 3.0f ); )
-	ALIGN16( idPlane v4src0[COUNT]; )
-	ALIGN16( idPlane v4constant(1.0f, 2.0f, 3.0f, 4.0f); )
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
+	ALIGN16( idVec3 v3src0[COUNT] );
+	ALIGN16( idVec3 v3src1[COUNT] );
+	ALIGN16( idVec3 v3constant ) ( 1.0f, 2.0f, 3.0f );
+	ALIGN16( idPlane v4src0[COUNT] );
+	ALIGN16( idPlane v4constant ) (1.0f, 2.0f, 3.0f, 4.0f);
+	ALIGN16( idDrawVert drawVerts[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -1000,9 +1000,9 @@ TestCompare
 void TestCompare( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( byte bytedst[COUNT]; )
-	ALIGN16( byte bytedst2[COUNT]; )
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( byte bytedst[COUNT] );
+	ALIGN16( byte bytedst2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -1236,11 +1236,11 @@ TestMinMax
 void TestMinMax( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( idVec2 v2src0[COUNT]; )
-	ALIGN16( idVec3 v3src0[COUNT]; )
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( int indexes[COUNT]; )
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( idVec2 v2src0[COUNT] );
+	ALIGN16( idVec3 v3src0[COUNT] );
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( int indexes[COUNT] );
 	float min = 0.0f, max = 0.0f, min2 = 0.0f, max2 = 0.0f;
 	idVec2 v2min, v2max, v2min2, v2max2;
 	idVec3 vmin, vmax, vmin2, vmax2;
@@ -1372,9 +1372,9 @@ TestClamp
 void TestClamp( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fdst0[COUNT]; )
-	ALIGN16( float fdst1[COUNT]; )
-	ALIGN16( float fsrc0[COUNT]; )
+	ALIGN16( float fdst0[COUNT] );
+	ALIGN16( float fdst1[COUNT] );
+	ALIGN16( float fsrc0[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2276,11 +2276,11 @@ TestBlendJoints
 void TestBlendJoints( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointQuat baseJoints[COUNT]; )
-	ALIGN16( idJointQuat joints1[COUNT]; )
-	ALIGN16( idJointQuat joints2[COUNT]; )
-	ALIGN16( idJointQuat blendJoints[COUNT]; )
-	ALIGN16( int index[COUNT]; )
+	ALIGN16( idJointQuat baseJoints[COUNT] );
+	ALIGN16( idJointQuat joints1[COUNT] );
+	ALIGN16( idJointQuat joints2[COUNT] );
+	ALIGN16( idJointQuat blendJoints[COUNT] );
+	ALIGN16( int index[COUNT] );
 	float lerp = 0.3f;
 	const char *result;
 
@@ -2348,9 +2348,9 @@ TestConvertJointQuatsToJointMats
 void TestConvertJointQuatsToJointMats( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointQuat baseJoints[COUNT]; )
-	ALIGN16( idJointMat joints1[COUNT]; )
-	ALIGN16( idJointMat joints2[COUNT]; )
+	ALIGN16( idJointQuat baseJoints[COUNT] );
+	ALIGN16( idJointMat joints1[COUNT] );
+	ALIGN16( idJointMat joints2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2400,9 +2400,9 @@ TestConvertJointMatsToJointQuats
 void TestConvertJointMatsToJointQuats( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointMat baseJoints[COUNT]; )
-	ALIGN16( idJointQuat joints1[COUNT]; )
-	ALIGN16( idJointQuat joints2[COUNT]; )
+	ALIGN16( idJointMat baseJoints[COUNT] );
+	ALIGN16( idJointQuat joints1[COUNT] );
+	ALIGN16( idJointQuat joints2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2459,10 +2459,10 @@ TestTransformJoints
 void TestTransformJoints( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointMat joints[COUNT+1]; )
-	ALIGN16( idJointMat joints1[COUNT+1]; )
-	ALIGN16( idJointMat joints2[COUNT+1]; )
-	ALIGN16( int parents[COUNT+1]; )
+	ALIGN16( idJointMat joints[COUNT+1] );
+	ALIGN16( idJointMat joints1[COUNT+1] );
+	ALIGN16( idJointMat joints2[COUNT+1] );
+	ALIGN16( int parents[COUNT+1] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2521,10 +2521,10 @@ TestUntransformJoints
 void TestUntransformJoints( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointMat joints[COUNT+1]; )
-	ALIGN16( idJointMat joints1[COUNT+1]; )
-	ALIGN16( idJointMat joints2[COUNT+1]; )
-	ALIGN16( int parents[COUNT+1]; )
+	ALIGN16( idJointMat joints[COUNT+1] );
+	ALIGN16( idJointMat joints1[COUNT+1] );
+	ALIGN16( idJointMat joints2[COUNT+1] );
+	ALIGN16( int parents[COUNT+1] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2585,11 +2585,11 @@ TestTransformVerts
 void TestTransformVerts( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts1[NUMVERTS]; )
-	ALIGN16( idDrawVert drawVerts2[NUMVERTS]; )
-	ALIGN16( idJointMat joints[NUMJOINTS]; )
-	ALIGN16( idVec4 weights[COUNT]; )
-	ALIGN16( int weightIndex[COUNT*2]; )
+	ALIGN16( idDrawVert drawVerts1[NUMVERTS] );
+	ALIGN16( idDrawVert drawVerts2[NUMVERTS] );
+	ALIGN16( idJointMat joints[NUMJOINTS] );
+	ALIGN16( idVec4 weights[COUNT] );
+	ALIGN16( int weightIndex[COUNT*2] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2650,10 +2650,10 @@ TestTracePointCull
 void TestTracePointCull( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idPlane planes[4]; )
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( byte cullBits1[COUNT]; )
-	ALIGN16( byte cullBits2[COUNT]; )
+	ALIGN16( idPlane planes[4] );
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( byte cullBits1[COUNT] );
+	ALIGN16( byte cullBits2[COUNT] );
 	byte totalOr1 = 0, totalOr2 = 0;
 	const char *result;
 
@@ -2708,10 +2708,10 @@ TestDecalPointCull
 void TestDecalPointCull( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idPlane planes[6]; )
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( byte cullBits1[COUNT]; )
-	ALIGN16( byte cullBits2[COUNT]; )
+	ALIGN16( idPlane planes[6] );
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( byte cullBits1[COUNT] );
+	ALIGN16( byte cullBits2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2769,12 +2769,12 @@ TestOverlayPointCull
 void TestOverlayPointCull( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idPlane planes[2]; )
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( byte cullBits1[COUNT]; )
-	ALIGN16( byte cullBits2[COUNT]; )
-	ALIGN16( idVec2 texCoords1[COUNT]; )
-	ALIGN16( idVec2 texCoords2[COUNT]; )
+	ALIGN16( idPlane planes[2] );
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( byte cullBits1[COUNT] );
+	ALIGN16( byte cullBits2[COUNT] );
+	ALIGN16( idVec2 texCoords1[COUNT] );
+	ALIGN16( idVec2 texCoords2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2827,11 +2827,11 @@ TestDeriveTriPlanes
 void TestDeriveTriPlanes( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts1[COUNT]; )
-	ALIGN16( idDrawVert drawVerts2[COUNT]; )
-	ALIGN16( idPlane planes1[COUNT]; )
-	ALIGN16( idPlane planes2[COUNT]; )
-	ALIGN16( int indexes[COUNT*3]; )
+	ALIGN16( idDrawVert drawVerts1[COUNT] );
+	ALIGN16( idDrawVert drawVerts2[COUNT] );
+	ALIGN16( idPlane planes1[COUNT] );
+	ALIGN16( idPlane planes2[COUNT] );
+	ALIGN16( int indexes[COUNT*3] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2886,11 +2886,11 @@ TestDeriveTangents
 void TestDeriveTangents( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts1[COUNT]; )
-	ALIGN16( idDrawVert drawVerts2[COUNT]; )
-	ALIGN16( idPlane planes1[COUNT]; )
-	ALIGN16( idPlane planes2[COUNT]; )
-	ALIGN16( int indexes[COUNT*3]; )
+	ALIGN16( idDrawVert drawVerts1[COUNT] );
+	ALIGN16( idDrawVert drawVerts2[COUNT] );
+	ALIGN16( idPlane planes1[COUNT] );
+	ALIGN16( idPlane planes2[COUNT] );
+	ALIGN16( int indexes[COUNT*3] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2971,8 +2971,8 @@ TestDeriveUnsmoothedTangents
 void TestDeriveUnsmoothedTangents( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts1[COUNT]; )
-	ALIGN16( idDrawVert drawVerts2[COUNT]; )
+	ALIGN16( idDrawVert drawVerts1[COUNT] );
+	ALIGN16( idDrawVert drawVerts2[COUNT] );
 	ALIGN16( dominantTri_s dominantTris[COUNT] );
 	const char *result;
 
@@ -3048,8 +3048,8 @@ TestNormalizeTangents
 void TestNormalizeTangents( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts1[COUNT]; )
-	ALIGN16( idDrawVert drawVerts2[COUNT]; )
+	ALIGN16( idDrawVert drawVerts1[COUNT] );
+	ALIGN16( idDrawVert drawVerts2[COUNT] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -3109,12 +3109,12 @@ TestGetTextureSpaceLightVectors
 void TestGetTextureSpaceLightVectors( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( idVec4 texCoords1[COUNT]; )
-	ALIGN16( idVec4 texCoords2[COUNT]; )
-	ALIGN16( int indexes[COUNT*3]; )
-	ALIGN16( idVec3 lightVectors1[COUNT]; )
-	ALIGN16( idVec3 lightVectors2[COUNT]; )
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( idVec4 texCoords1[COUNT] );
+	ALIGN16( idVec4 texCoords2[COUNT] );
+	ALIGN16( int indexes[COUNT*3] );
+	ALIGN16( idVec3 lightVectors1[COUNT] );
+	ALIGN16( idVec3 lightVectors2[COUNT] );
 	idVec3 lightOrigin;
 	const char *result;
 
@@ -3173,12 +3173,12 @@ TestGetSpecularTextureCoords
 void TestGetSpecularTextureCoords( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( idVec4 texCoords1[COUNT]; )
-	ALIGN16( idVec4 texCoords2[COUNT]; )
-	ALIGN16( int indexes[COUNT*3]; )
-	ALIGN16( idVec3 lightVectors1[COUNT]; )
-	ALIGN16( idVec3 lightVectors2[COUNT]; )
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( idVec4 texCoords1[COUNT] );
+	ALIGN16( idVec4 texCoords2[COUNT] );
+	ALIGN16( int indexes[COUNT*3] );
+	ALIGN16( idVec3 lightVectors1[COUNT] );
+	ALIGN16( idVec3 lightVectors2[COUNT] );
 	idVec3 lightOrigin, viewOrigin;
 	const char *result;
 
@@ -3240,13 +3240,13 @@ TestCreateShadowCache
 void TestCreateShadowCache( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idDrawVert drawVerts[COUNT]; )
-	ALIGN16( idVec4 vertexCache1[COUNT*2]; )
-	ALIGN16( idVec4 vertexCache2[COUNT*2]; )
-	ALIGN16( int originalVertRemap[COUNT]; )
-	ALIGN16( int vertRemap1[COUNT]; )
-	ALIGN16( int vertRemap2[COUNT]; )
-	ALIGN16( idVec3 lightOrigin; )
+	ALIGN16( idDrawVert drawVerts[COUNT] );
+	ALIGN16( idVec4 vertexCache1[COUNT*2] );
+	ALIGN16( idVec4 vertexCache2[COUNT*2] );
+	ALIGN16( int originalVertRemap[COUNT] );
+	ALIGN16( int vertRemap1[COUNT] );
+	ALIGN16( int vertRemap2[COUNT] );
+	ALIGN16( idVec3 lightOrigin );
 	int numVerts1 = 0, numVerts2 = 0;
 	const char *result;
 
@@ -3341,11 +3341,11 @@ TestSoundUpSampling
 void TestSoundUpSampling( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( short pcm[MIXBUFFER_SAMPLES*2]; )
-	ALIGN16( float ogg0[MIXBUFFER_SAMPLES*2]; )
-	ALIGN16( float ogg1[MIXBUFFER_SAMPLES*2]; )
-	ALIGN16( float samples1[MIXBUFFER_SAMPLES*2]; )
-	ALIGN16( float samples2[MIXBUFFER_SAMPLES*2]; )
+	ALIGN16( short pcm[MIXBUFFER_SAMPLES*2] );
+	ALIGN16( float ogg0[MIXBUFFER_SAMPLES*2] );
+	ALIGN16( float ogg1[MIXBUFFER_SAMPLES*2] );
+	ALIGN16( float samples1[MIXBUFFER_SAMPLES*2] );
+	ALIGN16( float samples2[MIXBUFFER_SAMPLES*2] );
 	float *ogg[2];
 	int kHz, numSpeakers;
 	const char *result;
@@ -3432,12 +3432,12 @@ TestSoundMixing
 void TestSoundMixing( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float origMixBuffer[MIXBUFFER_SAMPLES*6]; )
-	ALIGN16( float mixBuffer1[MIXBUFFER_SAMPLES*6]; )
-	ALIGN16( float mixBuffer2[MIXBUFFER_SAMPLES*6]; )
-	ALIGN16( float samples[MIXBUFFER_SAMPLES*6]; )
-	ALIGN16( short outSamples1[MIXBUFFER_SAMPLES*6]; )
-	ALIGN16( short outSamples2[MIXBUFFER_SAMPLES*6]; )
+	ALIGN16( float origMixBuffer[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( float mixBuffer1[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( float mixBuffer2[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( float samples[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( short outSamples1[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( short outSamples2[MIXBUFFER_SAMPLES*6] );
 	float lastV[6];
 	float currentV[6];
 	const char *result;
@@ -4032,9 +4032,9 @@ TestNegate
 void TestNegate( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float fsrc0[COUNT]; )
-	ALIGN16( float fsrc1[COUNT]; )
-	ALIGN16( float fsrc2[COUNT]; )
+	ALIGN16( float fsrc0[COUNT] );
+	ALIGN16( float fsrc1[COUNT] );
+	ALIGN16( float fsrc2[COUNT] );
 	
 	const char *result;
 

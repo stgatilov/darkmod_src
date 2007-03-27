@@ -28,7 +28,18 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //
 //===============================================================
 
-#ifdef _WIN32
+#if defined(MACOS_X) && defined(__i386__)
+
+/*
+============
+idSIMD_SSE3::GetName
+============
+*/
+const char * idSIMD_SSE3::GetName( void ) const {
+	return "MMX & SSE & SSE2 & SSE3";
+}
+
+#elif defined(_WIN32)
 
 #include <xmmintrin.h>
 
@@ -246,13 +257,10 @@ idSIMD_SSE3::TransformVerts
 void VPCALL idSIMD_SSE3::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
 #if 1
 
-#pragma warning( push )
-#pragma warning( disable: 4127 )
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
 	assert( sizeof( idVec4 ) == JOINTWEIGHT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
-#pragma warning( pop )
 
 	__asm
 	{

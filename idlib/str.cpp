@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#ifndef ID_REDIRECT_NEWDELETE
+#if !defined( ID_REDIRECT_NEWDELETE ) && !defined( MACOS_X )
 	#define USE_STRING_DATA_ALLOCATOR
 #endif
 

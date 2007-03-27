@@ -151,6 +151,12 @@ public:
 	// Continuously modified, never reset. For full screen guis.
 	virtual void		MouseState( int *x, int *y, int *button, bool *down ) = 0;
 
+	// Directly sample a button.
+	virtual int			ButtonState( int key ) = 0;
+
+	// Directly sample a keystate.
+	virtual int			KeyState( int key ) = 0;
+
 	// Directly sample a usercmd.
 	virtual usercmd_t	GetDirectUsercmd( void ) = 0;
 };

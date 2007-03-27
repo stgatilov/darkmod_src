@@ -22,8 +22,11 @@
 */
 
 class idSIMD_SSE3 : public idSIMD_SSE2 {
-#ifdef _WIN32
 public:
+#if defined(MACOS_X) && defined(__i386__)
+	virtual const char * VPCALL GetName( void ) const;
+
+#elif defined(_WIN32)
 	virtual const char * VPCALL GetName( void ) const;
 
 	virtual void VPCALL TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );

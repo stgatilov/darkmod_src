@@ -346,6 +346,7 @@ ID_INLINE int idHashTable<Type>::Num( void ) const {
 	return numentries;
 }
 
+#if !defined(__GNUC__) || __GNUC__ < 4
 /*
 ================
 idHashTable<Type>::GetSpread
@@ -374,5 +375,6 @@ int idHashTable<Type>::GetSpread( void ) const {
 	}
 	return 100 - (error * 100 / numentries);
 }
+#endif 
 
 #endif /* !__HASHTABLE_H__ */

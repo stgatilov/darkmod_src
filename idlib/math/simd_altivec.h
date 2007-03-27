@@ -90,7 +90,7 @@
 //#define DRAWVERT_PADDED
 
 class idSIMD_AltiVec : public idSIMD_Generic {
-#ifdef MACOS_X
+#if defined(MACOS_X) && defined(__ppc__)
 public:
 
 	virtual const char * VPCALL GetName( void ) const;
@@ -183,7 +183,7 @@ public:
 #ifdef ENABLE_LOWER_TRIANGULAR
 	virtual void VPCALL MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
 	virtual void VPCALL MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
-	virtual unsigned char VPCALL MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n );
+	virtual bool VPCALL MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n );
 #endif
 #ifdef LIVE_VICARIOUSLY
 	virtual void VPCALL BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints );

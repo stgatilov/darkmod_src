@@ -660,8 +660,8 @@ pathNode_t *BuildPathTree( const obstacle_t *obstacles, int numObstacles, const 
 	int blockingEdgeNum, blockingObstacle, obstaclePoints, bestNumNodes = MAX_OBSTACLE_PATH;
 	float blockingScale;
 	pathNode_t *root, *node, *child;
-	idQueue(pathNode_t, next) pathNodeQueue, treeQueue;
-
+	// gcc 4.0
+	idQueueTemplate<pathNode_t, offsetof( pathNode_t, next ) > pathNodeQueue, treeQueue;
 	root = pathNodeAllocator.Alloc();
 	root->Init();
 	root->pos = startPos;

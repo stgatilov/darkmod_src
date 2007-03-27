@@ -285,6 +285,15 @@ BASECPPFLAGS.append( '-Wall' )
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
+# gcc 4.0
+BASECPPFLAGS.append( '-fpermissive' )
+
+if ( g_os == 'Linux' ):
+	# gcc 4.x option only - only export what we mean to from the game SO
+	BASECPPFLAGS.append( '-fvisibility=hidden' )
+	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
+	BASECPPFLAGS.append( '-m32' )
+	BASELINKFLAGS.append( '-m32' )
 
 if ( PUNKBUSTER == '1' ):
 	BASECPPFLAGS.append( '-D__WITH_PB__' )
@@ -301,14 +310,12 @@ elif ( BUILD == 'debug' ):
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
-	# -fomit-frame-pointer: gcc manual indicates -O sets this implicitely,
-	# only if that doesn't affect debugging
-	# on Linux, this affects backtrace capability, so I'm assuming this is needed
+	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
+	#   on x86 have to set it explicitely
 	# -finline-functions: implicit at -O3
-	# -fschedule-insns2: implicit at -O3
-	# -funroll-loops ?
-	# -mfpmath=sse -msse ?
-	OPTCPPFLAGS = [ '-O3', '-march=i686', '-Winline', '-ffast-math', '-fomit-frame-pointer', '-finline-functions', '-fschedule-insns2' ]
+	# -fschedule-insns2: implicit at -O2
+	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
+	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-Winline', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
 else:

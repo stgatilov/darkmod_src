@@ -846,6 +846,7 @@ private:
 	void					Event_HideTip( void );
 	void					Event_LevelTrigger( void );
 	void					Event_Gibbed( void );
+	void					Event_GetIdealWeapon( void );
 	void					Event_RopeRemovalCleanup( idEntity *RopeEnt );
 
 

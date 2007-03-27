@@ -149,6 +149,8 @@ class CKeyboard;// Added by Rich
 
 //============================================================================
 
+void gameError( const char *fmt, ... );
+
 #include "gamesys/Event.h"
 #include "gamesys/Class.h"
 #include "gamesys/SysCvar.h"
@@ -167,8 +169,6 @@ class CKeyboard;// Added by Rich
 
 #include "Pvs.h"
 #include "MultiplayerGame.h"
-
-// #include "../darkmod/MouseData.h" no longer required
 
 //============================================================================
 
@@ -362,61 +362,7 @@ private:
 	int						spawnId;
 };
 
-template< class type >
-ID_INLINE idEntityPtr<type>::idEntityPtr() {
-	spawnId = 0;
-}
-
-template< class type >
-ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
-	savefile->WriteInt( spawnId );
-}
-
-template< class type >
-ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
-	savefile->ReadInt( spawnId );
-}
-
-template< class type >
-ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
-	if ( ent == NULL ) {
-		spawnId = 0;
-	} else {
-		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
-	}
-	return *this;
-}
-
-template< class type >
-ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
-	if ( id == spawnId ) {
-		return false;
-	}
-	if ( ( id >> GENTITYNUM_BITS ) == gameLocal.spawnIds[ id & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] ) {
-		spawnId = id;
-		return true;
-	}
-	return false;
-}
-
-template< class type >
-ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
-	return ( gameLocal.spawnIds[ spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] == ( spawnId >> GENTITYNUM_BITS ) );
-}
-
-template< class type >
-ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
-	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-	if ( ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) ) {
-		return static_cast<type *>( gameLocal.entities[ entityNum ] );
-	}
-	return NULL;
-}
-
-template< class type >
-ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
-	return ( spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) );
-}
+//============================================================================
 
 typedef struct {
 	idStr		mTarget;
@@ -588,8 +534,9 @@ public:
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
+	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 	virtual allowReply_t	ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] );
-	virtual void			ServerClientConnect( int clientNum );
+	virtual void			ServerClientConnect( int clientNum, const char *guid );
 	virtual void			ServerClientBegin( int clientNum );
 	virtual void			ServerClientDisconnect( int clientNum );
 	virtual void			ServerWriteInitialReliableMessages( int clientNum );
@@ -599,7 +546,7 @@ public:
 	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
 	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
 	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds );
+	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
 
 	virtual void			GetClientStats( int clientNum, char *data, const int len );
 	virtual void			SwitchTeam( int clientNum, int team );
@@ -927,17 +874,79 @@ private:
 	void					GetShakeSounds( const idDict *dict );
 	void					SelectTimeGroup( int timeGroup );
 	int						GetTimeGroupTime( int timeGroup );
-	idStr					GetBestGameType( const char* map, const char* gametype );
+	void					GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] );
 
 	void					Tokenize( idStrList &out, const char *in );
 
 	void					UpdateLagometer( int aheadOfServer, int dupeUsercmds );
+
+	void					GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] );
 };
 
 //============================================================================
 
 extern idGameLocal			gameLocal;
 extern idAnimManager		animationLib;
+
+//============================================================================
+
+template< class type >
+ID_INLINE idEntityPtr<type>::idEntityPtr() {
+	spawnId = 0;
+}
+
+template< class type >
+ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
+	savefile->WriteInt( spawnId );
+}
+
+template< class type >
+ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
+	savefile->ReadInt( spawnId );
+}
+
+template< class type >
+ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
+	if ( ent == NULL ) {
+		spawnId = 0;
+	} else {
+		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
+	}
+	return *this;
+}
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
+	// the reason for this first check is unclear:
+	// the function returning false may mean the spawnId is already set right, or the entity is missing
+	if ( id == spawnId ) {
+		return false;
+	}
+	if ( ( id >> GENTITYNUM_BITS ) == gameLocal.spawnIds[ id & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] ) {
+		spawnId = id;
+		return true;
+	}
+	return false;
+}
+
+template< class type >
+ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
+	return ( gameLocal.spawnIds[ spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] == ( spawnId >> GENTITYNUM_BITS ) );
+}
+
+template< class type >
+ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
+	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
+	if ( ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) ) {
+		return static_cast<type *>( gameLocal.entities[ entityNum ] );
+	}
+	return NULL;
+}
+
+template< class type >
+ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
+	return ( spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) );
+}
 
 //============================================================================
 
@@ -1034,7 +1043,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "Fx.h"
 #include "SecurityCamera.h"
 #include "BrittleFracture.h"
-#include "Liquid.h"
+#include "..\darkmod\Liquid.h"
 
 #include "ai/AI.h"
 #include "anim/Anim_Testmodel.h"

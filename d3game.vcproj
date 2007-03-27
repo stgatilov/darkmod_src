@@ -415,12 +415,6 @@
 				RelativePath="game\Light.h">
 			</File>
 			<File
-				RelativePath=".\game\liquid.cpp">
-			</File>
-			<File
-				RelativePath=".\game\liquid.h">
-			</File>
-			<File
 				RelativePath="game\Misc.cpp">
 			</File>
 			<File
@@ -907,6 +901,12 @@
 					RelativePath=".\DarkMod\KeyboardHookWindows.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\liquid.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\liquid.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\MatrixSq.h">
 				</File>
 				<File
@@ -976,12 +976,6 @@
 					RelativePath=".\DarkMod\sndPropLoader.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\StimResponse.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\StimResponse.h">
-				</File>
-				<File
 					RelativePath=".\DarkMod\Strip.cpp">
 				</File>
 				<File
@@ -1028,6 +1022,46 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\sourcehook\sourcehook_impl.h">
+					</File>
+				</Filter>
+				<Filter
+					Name="StimResponse"
+					Filter="">
+					<File
+						RelativePath=".\DarkMod\StimResponse\Response.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\Response.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\ResponseEffect.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\ResponseEffect.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\Stim.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\Stim.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponse.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponse.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponseCollection.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponseCollection.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponseTimer.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\StimResponse\StimResponseTimer.h">
 					</File>
 				</Filter>
 			</Filter>

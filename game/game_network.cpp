@@ -273,7 +273,7 @@ allowReply_t idGameLocal::ServerAllowClient( int numClients, const char *IP, con
 idGameLocal::ServerClientConnect
 ================
 */
-void idGameLocal::ServerClientConnect( int clientNum ) {
+void idGameLocal::ServerClientConnect( int clientNum, const char *guid ) {
 	// make sure no parasite entity is left
 	if ( entities[ clientNum ] ) {
 		common->DPrintf( "ServerClientConnect: remove old player entity\n" );
@@ -1460,7 +1460,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 idGameLocal::ClientPrediction
 ================
 */
-gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clientCmds ) {
+gameReturn_t idGameLocal::ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) {
 	idEntity *ent;
 	idPlayer *player;
 	gameReturn_t ret;

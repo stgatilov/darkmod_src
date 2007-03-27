@@ -25,7 +25,17 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //
 //===============================================================
 
-#ifdef _WIN32
+#if defined(MACOS_X) && defined(__i386__)
+/*
+============
+idSIMD_MMX::GetName
+============
+*/
+const char * idSIMD_MMX::GetName( void ) const {
+	return "MMX";
+}
+
+#elif defined(_WIN32)
 
 #define EMMS_INSTRUCTION		__asm emms
 

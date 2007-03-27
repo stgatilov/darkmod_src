@@ -10,7 +10,6 @@
 // Copyright (C) 2004 Id Software, Inc.
 //
 
-
 #include "../precompiled.h"
 #pragma hdrstop
 
@@ -25,10 +24,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 	#include <ppc_intrinsics.h>
 #endif
 
-#ifdef bool
-	#undef bool
-#endif
-
 // Doom3 SIMD Library version 0.5
 // Patrick Flanagan (pflanagan@apple.com)
 // Sanjay Patel (spatel@apple.com)
@@ -41,7 +36,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 //
 //===============================================================
 
-#ifdef MACOS_X
+#if defined(MACOS_X) && defined(__ppc__)
 
 // Data struct sizes
 
@@ -4519,7 +4514,7 @@ void VPCALL idSIMD_AltiVec::MatX_LowerTriangularSolveTranspose( const idMatX &L,
 idSIMD_AltiVec::MatX_LDLTFactor
 ============
 */
-unsigned char VPCALL idSIMD_AltiVec::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) {
+bool VPCALL idSIMD_AltiVec::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) {
 	int i, j, k, nc;
 	float *v, *diag, *mptr;
 	float s0, s1, s2, s3, sum, d;

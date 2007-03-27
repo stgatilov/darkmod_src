@@ -5376,29 +5376,28 @@ void idEntity::ReadBindFromSnapshot( const idBitMsgDelta &msg ) {
 
 	bindInfo = msg.ReadBits( GENTITYNUM_BITS + 3 + 9 );
 	bindEntityNum = bindInfo & ( ( 1 << GENTITYNUM_BITS ) - 1 );
+
 	if ( bindEntityNum != ENTITYNUM_NONE ) {
 		master = gameLocal.entities[ bindEntityNum ];
-		if ( master != bindMaster ) {
-			if ( bindMaster ) {
-				Unbind();
+
+		bindOrientated = ( bindInfo >> GENTITYNUM_BITS ) & 1;
+		bindPos = ( bindInfo >> ( GENTITYNUM_BITS + 3 ) );
+		switch( ( bindInfo >> ( GENTITYNUM_BITS + 1 ) ) & 3 ) {
+			case 1: {
+				BindToJoint( master, (jointHandle_t) bindPos, bindOrientated );
+				break;
 			}
-			bindOrientated = ( bindInfo >> GENTITYNUM_BITS ) & 1;
-			bindPos = ( bindInfo >> ( GENTITYNUM_BITS + 3 ) ) & 3;
-			switch( ( bindInfo >> ( GENTITYNUM_BITS + 1 ) ) & 3 ) {
-				case 1: {
-					BindToJoint( master, (jointHandle_t) bindPos, bindOrientated );
-					break;
-				}
-				case 2: {
-					BindToBody( master, bindPos, bindOrientated );
-					break;
-				}
-				default: {
-					Bind( master, bindOrientated );
-					break;
-				}
+			case 2: {
+				BindToBody( master, bindPos, bindOrientated );
+				break;
+			}
+			default: {
+				Bind( master, bindOrientated );
+				break;
 			}
 		}
+	} else if ( bindMaster ) {
+		Unbind();
 	}
 }
 

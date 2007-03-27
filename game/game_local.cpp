@@ -120,6 +120,9 @@ GetGameAPI
 #if __MWERKS__
 #pragma export on
 #endif
+#if __GNUC__ >= 4
+#pragma GCC visibility push(default)
+#endif
 extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 #if __MWERKS__
 #pragma export off
@@ -159,6 +162,9 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 
 	return &gameExport;
 }
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
+#endif
 
 /*
 ===========
@@ -822,6 +828,22 @@ void idGameLocal::Error( const char *fmt, ... ) const {
 }
 
 /*
+===============
+gameError
+===============
+*/
+void gameError( const char *fmt, ... ) {
+	va_list		argptr;
+	char		text[MAX_STRING_CHARS];
+
+	va_start( argptr, fmt );
+	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+	va_end( argptr );
+
+	gameLocal.Error( "%s", text );
+}
+
+/*
 ===========
 idGameLocal::SetLocalClient
 ============
@@ -1264,7 +1286,9 @@ void idGameLocal::MapPopulate( void ) {
 	// prepare the list of randomized initial spawn spots
 	RandomizeInitialSpawns( );
 
-	mapSpawnCount = spawnCount;
+	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
+	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
+	mapSpawnCount = MAX_CLIENTS + spawnCount - 1;
 
 	// read in the soundprop data for various locations
 	m_sndPropLoader->FillLocationData();
@@ -2804,6 +2828,15 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 		return NULL;
 	}
 	return mpGame.HandleGuiCommands( menuCommand );
+}
+
+/*
+================
+idGameLocal::HandleMainMenuCommands
+================
+*/
+void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
+{
 }
 
 /*
@@ -4640,8 +4673,9 @@ int idGameLocal::GetTimeGroupTime( int timeGroup ) {
 idGameLocal::GetBestGameType
 ============
 */
-idStr idGameLocal::GetBestGameType( const char* map, const char* gametype ) {
-	return gametype;
+void idGameLocal::GetBestGameType( const char* map, const char* gametype, char buf[ MAX_STRING_CHARS ] ) {
+	strncpy( buf, gametype, MAX_STRING_CHARS );
+	buf[ MAX_STRING_CHARS - 1 ] = '\0';
 }
 
 /*
@@ -4673,13 +4707,9 @@ bool idGameLocal::NeedRestart() {
 
 
 /*
-
 ================
-
 idGameLocal::GetClientStats
-
 ================
-
 */
 
 void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
@@ -4687,27 +4717,13 @@ void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
 	mpGame.PlayerStats( clientNum, data, len );
 }
 
-
-
-/*
-
-================
-
-idGameLocal::SwitchTeam
-
-================
-
-*/
-
 void idGameLocal::SwitchTeam( int clientNum, int team )
 {
 	idPlayer *   player;
 
 	player = clientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ clientNum ] ) : NULL;
-
 	if ( !player )
 		return;
-
 	int oldTeam = player->team;
 
 	// Put in spectator mode
@@ -4721,7 +4737,9 @@ void idGameLocal::SwitchTeam( int clientNum, int team )
 	}
 }
 
-
+void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
+{
+}
 
 void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
 {

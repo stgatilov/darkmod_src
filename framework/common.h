@@ -180,6 +180,18 @@ public:
 
 								// Returns a pointer to the dictionary with language specific strings.
 	virtual const idLangDict *	GetLanguageDict( void ) = 0;
+
+								// Returns key bound to the command
+	virtual const char *		KeysFromBinding( const char *bind ) = 0;
+
+								// Returns the binding bound to the key
+	virtual const char *		BindingFromKey( const char *key ) = 0; 
+
+								// Directly sample a button.
+	virtual int					ButtonState( int key ) = 0;
+
+								// Directly sample a keystate.
+	virtual int					KeyState( int key ) = 0;
 };
 
 extern idCommon *		common;
