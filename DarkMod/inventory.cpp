@@ -404,10 +404,12 @@ void CInventory::PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *
 	if(ent == NULL || owner == NULL || item == NULL)
 		return;
 
-	// Make the item invisible
+	// Make the item visible
 	ent->GetPhysics()->LinkClip();
 	ent->Bind(item->m_BindMaster.GetEntity(), item->m_Orientated);
 	ent->Show();
+	ent->UpdateVisuals();
+	ent->PostEventMS(&EV_Activate, 0, ent);
 
 	// Objectives callback.  Cannot drop loot, so assume it is not loot
 	gameLocal.m_MissionData->InventoryCallback( ent, item->GetName(), item->GetValue(), 1, false ); 
@@ -709,6 +711,10 @@ CInventoryCategory *CInventoryCursor::GetNextCategory(void)
 	int n = m_Inventory->m_Category.Num();
 	int cnt = 0;
 
+	n--;
+	if(n < 0)
+		n = 0;
+
 	while(1)
 	{
 		m_CurrentCategory++;
@@ -751,6 +757,10 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory(void)
 
 	int n = m_Inventory->m_Category.Num();
 	int cnt = 0;
+
+	n--;
+	if(n < 0)
+		n = 0;
 
 	while(1)
 	{
