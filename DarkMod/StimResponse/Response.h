@@ -12,6 +12,7 @@
 #include "StimResponse.h"
 
 #include "ResponseEffect.h"
+class CStim;
 
 class CResponse : public CStimResponse {
 friend CStimResponseCollection;
@@ -22,8 +23,11 @@ public:
 	* make its script callback. It is virtual
 	* so that the container can reach overriden
 	* versions from a CStimResponse base pointer.
+	*
+	* @sourceEntity: This is the entity carrying the stim
+	* @stim: This is the stim to retrieve stim properties like magnitude, etc.
 	*/
-	virtual void TriggerResponse(idEntity *Stim);
+	virtual void TriggerResponse(idEntity *sourceEntity, CStim* stim);
 
 	/**
 	 * Set the response script action.

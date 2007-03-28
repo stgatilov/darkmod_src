@@ -12,6 +12,7 @@
 static bool init_version = FileVersionList("$Id: Response.cpp 870 2007-03-27 14:21:59Z greebo $", init_version);
 
 #include "Response.h"
+#include "Stim.h"
 
 /********************************************************************/
 /*                   CResponse                                      */
@@ -33,7 +34,7 @@ CResponse::~CResponse(void)
 		delete m_ResponseEffects[i];
 }
 
-void CResponse::TriggerResponse(idEntity *StimEnt)
+void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse::TriggerResponse \r");
 
@@ -51,7 +52,7 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
 		idThread *pThread = new idThread(pScriptFkt);
 		int n = pThread->GetThreadNum();
-		pThread->CallFunctionArgs(pScriptFkt, true, "eef", m_Owner, StimEnt, n);
+		pThread->CallFunctionArgs(pScriptFkt, true, "eef", m_Owner, sourceEntity, n);
 		pThread->DelayedStart(0);
 	}
 	else
@@ -59,17 +60,25 @@ void CResponse::TriggerResponse(idEntity *StimEnt)
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
 	}
 
-	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Cycling through Response Effects\r");
+	// Calculate the magnitude of the stim based on the distance and the falloff model
+	float magnitude = stim->m_Magnitude;
+	float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
+	
+	float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
+	
+	// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
+	magnitude *= pow(base, stim->m_FallOffExponent);
+
 	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
 	for (int i = 0; i < m_ResponseEffects.Num(); i++) {
-		m_ResponseEffects[i]->runScript(m_Owner, StimEnt);
+		m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, stim, magnitude);
 	}
 
 	// Continue the chain if we have a followup response to be triggered.
 	if(m_FollowUp != NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Followup: %08lX\r", m_FollowUp);
-		m_FollowUp->TriggerResponse(StimEnt);
+		m_FollowUp->TriggerResponse(sourceEntity, stim);
 	}
 }
 

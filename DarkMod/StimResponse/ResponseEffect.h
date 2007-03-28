@@ -9,6 +9,8 @@
 #ifndef SR_RESPONSEEFFECT__H
 #define SR_RESPONSEEFFECT__H
 
+class CStim;
+
 class CResponseEffect
 {
 	const idDict* _effectEntityDef;
@@ -36,8 +38,10 @@ public:
 	*
 	* @owner: The entity this script is affecting
 	* @stimEntity: The entity that triggered this response
+	* @stim: The stim itself, used to retrieve magnitude and such
+	* @magnitude: the magnitude of the stim (min = 0, max = stim->magnitude)
 	*/
-	void runScript(idEntity* owner, idEntity* stimEntity);
+	void runScript(idEntity* owner, idEntity* stimEntity, CStim* stim, float magnitude);
 };
 
 #endif /* SR_RESPONSEEFFECT__H */

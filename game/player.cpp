@@ -7466,8 +7466,10 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			// force a blink
 			blink_time = 0;
 
-			// let the anim script know we took damage
-			AI_PAIN = Pain( inflictor, attacker, damage, dir, location );
+			if (!damageDef->dict.GetBool( "no_pain" )) {
+				// let the anim script know we took damage
+				AI_PAIN = Pain( inflictor, attacker, damage, dir, location );
+			}
 			
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
 			if ( damageDef->dict.GetBool( "no_air" ) ) 

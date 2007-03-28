@@ -89,6 +89,7 @@ void CProjectileResult::Init
 	idVec3 dotprod, LinVelocity;
 	float fTemp;
 	int StimType = ST_DEFAULT;
+	float StimFalloffExponent = 1;
 	float StimRadius = 10.0; // we use a (hopefully) reasonable default radius if none is set.
 	int StimDuration(0), StimEvalInterval(0);
 	float StimMagnitude(1.0f);
@@ -134,6 +135,7 @@ void CProjectileResult::Init
 	{
 		CStim *s;
 		pProj->spawnArgs.GetFloat("stim_radius", "10", StimRadius);
+		pProj->spawnArgs.GetFloat("stim_falloffexponent", "1", StimFalloffExponent);
 		pProj->spawnArgs.GetInt("stim_duration", "0", StimDuration );
 		pProj->spawnArgs.GetInt("stim_eval_interval", "0", StimEvalInterval );
 		pProj->spawnArgs.GetBool("stim_use_bounds", "0", bStimUseBounds );
@@ -146,6 +148,7 @@ void CProjectileResult::Init
 		s->m_TimeInterleave = StimEvalInterval;
 		s->m_bUseEntBounds = bStimUseBounds;
 		s->m_Magnitude = StimMagnitude;
+		s->m_FallOffExponent = StimFalloffExponent;
 
 		if( pProj->spawnArgs.GetBool("stim_state", "1") )
 			s->EnableSR(true);

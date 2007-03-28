@@ -445,6 +445,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		args->GetFloat(name, "0.0", Radius);
 		stim->m_Radius = Radius;
 
+		sprintf(name, "sr_falloffexponent_%u", Counter);
+		stim->m_FallOffExponent = args->GetFloat(name, "0");
+
 		sprintf(name, "sr_use_bounds_%u", Counter);
 		stim->m_bUseEntBounds = args->GetBool(name, "0");
 

@@ -25,6 +25,7 @@ CStim::CStim(idEntity *e, int Type)
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0;
+	m_FallOffExponent = 0;
 	m_Magnitude = 0.0;
 	m_Chance = 1.0;
 	m_ChanceTimer = false;

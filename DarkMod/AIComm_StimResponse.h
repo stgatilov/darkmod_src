@@ -32,7 +32,7 @@ public:
 	* than the default stim response, and passes
 	* in the communication stim parameters.
 	*/
-	virtual void TriggerResponse(idEntity *Stim);
+	virtual void TriggerResponse(idEntity *Stim, CStim* stim);
 
 
 

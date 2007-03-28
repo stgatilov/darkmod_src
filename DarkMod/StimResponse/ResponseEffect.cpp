@@ -17,12 +17,12 @@ static bool init_version = FileVersionList("$Id: ResponseEffect.cpp 870 2007-03-
 /*                 CResponseEffect                                  */
 /********************************************************************/
 
-void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity) {
+void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, CStim* stim, float magnitude) {
 	if (_scriptFunction == NULL) return;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script...\r");
 	idThread *pThread = new idThread(_scriptFunction);
 	int n = pThread->GetThreadNum();
-	pThread->CallFunctionArgs(_scriptFunction, true, "eesf", owner, stimEntity, _effectPostfix.c_str(), n);
+	pThread->CallFunctionArgs(_scriptFunction, true, "eesff", owner, stimEntity, _effectPostfix.c_str(), magnitude, n);
 	pThread->DelayedStart(0);
 }

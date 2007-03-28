@@ -85,6 +85,15 @@ public:
 	float				m_Magnitude;
 
 	/**
+	* The Falloff shape of the magnitude in dependence of the distance.
+	* 0 = constant (homogeneous) - magnitude is the same for all
+	* 1 = linear
+	* 2 = quadratic
+	* 3 = etc..
+	*/
+	int					m_FallOffExponent;
+
+	/**
 	 * Defines the chance that this stimulus works. Whenever the stim is activated
 	 * the chance determines wether it will ignore the activation and stay enabled.
 	 */

@@ -38,7 +38,7 @@ CAIComm_Response::~CAIComm_Response(void)
 
 /*----------------------------------------------------------------*/
 
-void CAIComm_Response::TriggerResponse(idEntity *StimEnt)
+void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 {
 	// Can't respond if we are unconscious or dead
 	if (m_Owner != NULL)
@@ -170,7 +170,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt)
 	if(m_FollowUp != NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Followup: %08lX\r", m_FollowUp);
-		m_FollowUp->TriggerResponse(StimEnt);
+		m_FollowUp->TriggerResponse(StimEnt, stim);
 	}
 }
 

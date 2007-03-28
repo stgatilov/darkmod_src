@@ -5288,7 +5288,9 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 					continue;
 				}
 
-				r->TriggerResponse(e);
+				// Fire the response and pass the originating entity plus the stim object itself
+				// The stim object can be queried for values like magnitude, falloff and such.
+				r->TriggerResponse(e, stim);
 				numRespones++;
 			}
 		}
