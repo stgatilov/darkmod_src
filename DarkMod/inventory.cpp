@@ -49,7 +49,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game/Game_local.h"
 
-#include "tdmInventory.h"
+#include "inventory.h"
 #include "MissionData.h"
 
 const idEventDef EV_PostRestore( "postRestore", NULL );

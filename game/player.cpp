@@ -22,9 +22,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/darkModAASFindHidingSpots.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
-#include "../DarkMod/tdmInventory.h"
+#include "../DarkMod/inventory.h"
 #include "../DarkMod/KeyboardHook.h"
-//#include "../darkmod/MouseHook.h"
 /*
 ===============================================================================
 

@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../Game_local.h"
 #include "../../darkmod/sndproploader.h"
 #include "../../darkmod/relations.h"
-#include "../darkmod/tdmInventory.h"
+#include "../darkmod/inventory.h"
 #include "../darkmod/KeyboardHook.h"
 
 #include "TypeInfo.h"

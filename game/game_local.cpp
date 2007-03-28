@@ -28,7 +28,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Relations.h"
 #include "../DarkMod/sndProp.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../DarkMod/tdmInventory.h"
+#include "../DarkMod/inventory.h"
 #include "../DarkMod/MissionData.h"
 
 #include "il/config.h"
