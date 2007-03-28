@@ -106,8 +106,9 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
 // greebo: Script event definition for dealing damage
 const idEventDef EV_Damage("damage", "EEvsf");
-// greebo: Script event definition for healing (just takes the name string of the healing entity)
-const idEventDef EV_Heal("heal", "s");
+// greebo: Script event definition for healing 
+// Takes the name of the healing entity and the healing scale, returns an integer
+const idEventDef EV_Heal("heal", "sf", 'd');
 
 //===============================================================
 //                   TDM GUI interface
@@ -7765,19 +7766,20 @@ bool idEntity::IsMantleable()
 	return returnVal;
 }
 
-void idEntity::heal(const char* healDefName) {
+int idEntity::heal(const char* healDefName, float healScale) {
 	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName );
 	if ( !healDef ) {
 		gameLocal.Error( "Unknown healDef '%s'\n", healDefName );
 	}
 
-	int	healAmount = healDef->GetInt( "heal_amount" );
+	int	healAmount = static_cast<int>(healDef->GetInt( "heal_amount" ) * healScale);
 
-	if ( healAmount != 0 ) {
-		// do the damage
+	// Check if the entity can be healed in the first place
+	if ( healAmount != 0 && health < spawnArgs.GetInt("health")) {
+		// Yes, heal the entity
 		health += healAmount;
 
-		// It's still possible that negative healAmounts are applied and the entity dies
+		// It may be possible that negative healAmounts are applied and the entity dies
 		if ( health <= 0 ) {
 			if ( health < -999 ) {
 				health = -999;
@@ -7788,6 +7790,11 @@ void idEntity::heal(const char* healDefName) {
 			// greebo: Do nothing, if health > 0, a "Healed" function could be invoked here
 			//Pain( inflictor, attacker, damage, dir, location );
 		}
+
+		return 1;
+	}
+	else {
+		return 0;
 	}
 }
 
@@ -7800,8 +7807,8 @@ void idEntity::Event_Damage( idEntity *inflictor, idEntity *attacker,
 	Damage(inflictor, attacker, dir, damageDefName, damageScale, 0, NULL);
 }
 
-void idEntity::Event_Heal( const char *healDefName )
+void idEntity::Event_Heal( const char *healDefName, const float healScale )
 {
 	// Pass the call to the idEntity::heal method
-	heal(healDefName);
+	idThread::ReturnInt(heal(healDefName, healScale));
 }
