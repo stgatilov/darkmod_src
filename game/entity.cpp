@@ -106,6 +106,8 @@ const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
 // greebo: Script event definition for dealing damage
 const idEventDef EV_Damage("damage", "EEvsf");
+// greebo: Script event definition for healing (just takes the name string of the healing entity)
+const idEventDef EV_Heal("heal", "s");
 
 //===============================================================
 //                   TDM GUI interface
@@ -264,6 +266,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_InPVS,				idEntity::Event_InPVS )
 	EVENT( EV_Damage,				idEntity::Event_Damage )
+	EVENT( EV_Heal,					idEntity::Event_Heal )
 
 	EVENT( EV_SetGui,				idEntity::Event_SetGui )
 	EVENT( EV_GetGui,				idEntity::Event_GetGui )
@@ -7762,6 +7765,32 @@ bool idEntity::IsMantleable()
 	return returnVal;
 }
 
+void idEntity::heal(const char* healDefName) {
+	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName );
+	if ( !healDef ) {
+		gameLocal.Error( "Unknown healDef '%s'\n", healDefName );
+	}
+
+	int	healAmount = healDef->GetInt( "heal_amount" );
+
+	if ( healAmount != 0 ) {
+		// do the damage
+		health += healAmount;
+
+		// It's still possible that negative healAmounts are applied and the entity dies
+		if ( health <= 0 ) {
+			if ( health < -999 ) {
+				health = -999;
+			}
+
+			Killed( gameLocal.world, gameLocal.world, abs(healAmount), GetLocalCoordinates(GetPhysics()->GetOrigin()), 0);
+		} else {
+			// greebo: Do nothing, if health > 0, a "Healed" function could be invoked here
+			//Pain( inflictor, attacker, damage, dir, location );
+		}
+	}
+}
+
 // Deals damage to this entity, documentation: see header
 void idEntity::Event_Damage( idEntity *inflictor, idEntity *attacker, 
 								 const idVec3 &dir, const char *damageDefName, 
@@ -7769,4 +7798,10 @@ void idEntity::Event_Damage( idEntity *inflictor, idEntity *attacker,
 {
 	// Pass the call to the regular member method of this class
 	Damage(inflictor, attacker, dir, damageDefName, damageScale, 0, NULL);
+}
+
+void idEntity::Event_Heal( const char *healDefName )
+{
+	// Pass the call to the idEntity::heal method
+	heal(healDefName);
 }

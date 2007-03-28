@@ -14,7 +14,7 @@
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 
-#include "../../darkmod/pqueue.h"
+#include "../../DarkMod/pqueue.h"
 
 /*
 ===============================================================================
