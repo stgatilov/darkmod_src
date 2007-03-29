@@ -597,6 +597,11 @@ public:
 	void					FrobCheck( void );
 
 	/**
+	 *
+	 */
+	void					PerformFrob(void);
+
+	/**
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.
 	 * This function is obsolote now and replaced by a different version.

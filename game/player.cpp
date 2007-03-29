@@ -5936,61 +5936,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
-			bool bFrob = true;
-			idEntity *ent, *frob;
-			CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
-
-			// Ignore frobs if player-frobbing is immobilized.
-			if ( GetImmobilization() & EIM_FROB ) {
-				break;
-			}
-
-			// if the grabber is currently holding something and frob is pressed,
-			// release it.  Do not frob anything new since you're holding an item.
-			if( g_Global.m_DarkModPlayer->grabber->GetSelected() )
-			{
-				g_Global.m_DarkModPlayer->grabber->Update( this );
-				break;
-			}
-
-			frob = pDM->m_FrobEntity;
-
-			// If the player has an item that is selected we need to check if this
-			// is a usable item (like a key). In this case the use action takes
-			// precedence over the frobaction.
-			CInventoryCursor *crsr = InventoryCursor();
-			CInventoryItem *it = crsr->GetCurrentItem();
-			if(it->GetType() != CInventoryItem::IT_DUMMY)
-			{
-				ent = it->GetItemEntity();
-				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
-				if(ent != NULL)
-				{
-					if(ent->spawnArgs.GetBool("usable"))
-					{
-						DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-						if(frob)
-							bFrob = !frob->UsedBy(ent);
-						else
-							bFrob = !ent->UsedBy(NULL);
-					}
-				}
-			}
-
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
-			if(bFrob == true && frob != NULL)
-			{
-				// First we have to check wether that entity is an inventory 
-				// item. In that case, we have to add it to the inventory and
-				// hide the entity. Since we can not know wether the item can
-				// later on be revoked, either by script or by the player, we
-				// only hide the entity. Also if a frobactionscript is associated
-				// with it, it would be triggered, so the entity must stay around.
-				if(AddToInventory(frob, hud) != NULL)
-					pDM->m_FrobEntity = NULL;
-
-				frob->FrobAction(true); 
-			}
+			PerformFrob();
 		}
 		break;
 
@@ -10194,4 +10140,64 @@ void idPlayer::SetDoorListenLoc( idVec3 loc )
 idVec3 idPlayer::GetDoorListenLoc( void )
 {
 	return m_DoorListenLoc;
+}
+
+void idPlayer::PerformFrob(void)
+{
+	bool bFrob = true;
+	idEntity *ent, *frob;
+	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+
+	// Ignore frobs if player-frobbing is immobilized.
+	if ( GetImmobilization() & EIM_FROB )
+		goto Quit;
+
+	// if the grabber is currently holding something and frob is pressed,
+	// release it.  Do not frob anything new since you're holding an item.
+	if( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	{
+		g_Global.m_DarkModPlayer->grabber->Update( this );
+		goto Quit;
+	}
+
+	frob = pDM->m_FrobEntity;
+
+	// If the player has an item that is selected we need to check if this
+	// is a usable item (like a key). In this case the use action takes
+	// precedence over the frobaction.
+	CInventoryCursor *crsr = InventoryCursor();
+	CInventoryItem *it = crsr->GetCurrentItem();
+	if(it->GetType() != CInventoryItem::IT_DUMMY)
+	{
+		ent = it->GetItemEntity();
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
+		if(ent != NULL)
+		{
+			if(ent->spawnArgs.GetBool("usable"))
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
+				if(frob)
+					bFrob = !frob->UsedBy(ent);
+				else
+					bFrob = !ent->UsedBy(NULL);
+			}
+		}
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
+	if(bFrob == true && frob != NULL)
+	{
+		// First we have to check wether that entity is an inventory 
+		// item. In that case, we have to add it to the inventory and
+		// hide the entity. Since we can not know wether the item can
+		// later on be revoked, either by script or by the player, we
+		// only hide the entity. Also if a frobactionscript is associated
+		// with it, it would be triggered, so the entity must stay around.
+		if(AddToInventory(frob, hud) != NULL)
+			pDM->m_FrobEntity = NULL;
+
+		frob->FrobAction(true); 
+	}
+Quit:
+	return;
 }
