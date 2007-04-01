@@ -38,10 +38,9 @@ public:
 	*
 	* @owner: The entity this script is affecting
 	* @stimEntity: The entity that triggered this response
-	* @stim: The stim itself, used to retrieve magnitude and such
 	* @magnitude: the magnitude of the stim (min = 0, max = stim->magnitude)
 	*/
-	void runScript(idEntity* owner, idEntity* stimEntity, CStim* stim, float magnitude);
+	void runScript(idEntity* owner, idEntity* stimEntity, float magnitude);
 };
 
 #endif /* SR_RESPONSEEFFECT__H */

@@ -60,18 +60,25 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
 	}
 
-	// Calculate the magnitude of the stim based on the distance and the falloff model
-	float magnitude = stim->m_Magnitude;
-	float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
-	
-	float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
-	
-	// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
-	magnitude *= pow(base, stim->m_FallOffExponent);
+	// Default magnitude (in case we have a NULL stim)
+	float magnitude = 10;
 
+	if (stim != NULL) {
+		// We have a "real" stim causing this response, retrieve the properties
+
+		// Calculate the magnitude of the stim based on the distance and the falloff model
+		magnitude = stim->m_Magnitude;
+		float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
+		
+		float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
+		
+		// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
+		magnitude *= pow(base, stim->m_FallOffExponent);
+	}
+	
 	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
 	for (int i = 0; i < m_ResponseEffects.Num(); i++) {
-		m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, stim, magnitude);
+		m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, magnitude);
 	}
 
 	// Continue the chain if we have a followup response to be triggered.

@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id: ResponseEffect.cpp 870 2007-03-
 /*                 CResponseEffect                                  */
 /********************************************************************/
 
-void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, CStim* stim, float magnitude) {
+void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float magnitude) {
 	if (_scriptFunction == NULL) return;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script...\r");

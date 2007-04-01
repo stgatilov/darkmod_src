@@ -26,8 +26,10 @@ public:
 	*
 	* @sourceEntity: This is the entity carrying the stim
 	* @stim: This is the stim to retrieve stim properties like magnitude, etc.
+	*		 This is an optional argument, pass NULL to fire responses without
+	*		 a "real" stim (e.g. frobbing)
 	*/
-	virtual void TriggerResponse(idEntity *sourceEntity, CStim* stim);
+	virtual void TriggerResponse(idEntity *sourceEntity, CStim* stim = NULL);
 
 	/**
 	 * Set the response script action.
