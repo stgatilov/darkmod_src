@@ -10187,20 +10187,9 @@ void idPlayer::PerformFrob(void)
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
 	if(bFrob == true && frob != NULL)
 	{
-		// Try to lookup the STIM_FROB response for this item
-		CResponse* r = frob->GetStimResponseCollection()->GetResponse(ST_FROB);
-
-		if(r != NULL)
-		{
-			// There is a STIM_FROB response defined
-			if(r->m_State == SS_ENABLED)
-			{
-				// Fire the response and pass the originating entity plus a NULL as stim object
-				// NULL means that this is no "real" stim just a temporary or virtual one
-				r->TriggerResponse(this, NULL);
-			}
-		}
-
+		// Fire the STIM_FROB response (if defined) on this entity
+		frob->ResponseTrigger(this, ST_FROB);
+		
 		// First we have to check wether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity. Since we can not know wether the item can

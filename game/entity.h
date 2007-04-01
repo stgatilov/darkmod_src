@@ -870,7 +870,7 @@ private:
 
 	void					UpdatePVSAreas( void );
 
-private:			// Events should be public, so they can be used from other places as well.
+public:			// Events should be public, so they can be used from other places as well.
 	// events
 	void					Event_GetName( void );
 	void					Event_SetName( const char *name );
@@ -994,6 +994,14 @@ private:			// Events should be public, so they can be used from other places as 
 	void					ResponseAdd(int Type);
 	void					ResponseRemove(int Type);
 	void					ResponseEnable(int Type, int State);
+
+	/**
+	* This triggers a stand-alone response (without an actual Stim) on this entity.
+	*
+	* @source: The entity that caused the response.
+	* @stimType: the according stim index (e.g. ST_FROB)
+	*/
+	void					ResponseTrigger(idEntity* source, int stimType);
 
 	// Add/Remove the response to/from the stim with the given type
 	void					ResponseIgnore(int StimType, idEntity *);
