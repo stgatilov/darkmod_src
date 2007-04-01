@@ -127,41 +127,76 @@ void CProjectileResult::Init
 	// Show self so AI can see it
 	Show();
 
-	// The stim type of the projectile result is defined on the projectile itself
-	// even though it is not used there. Logically, the stim type is a part of the
-	// projectile definition though, since this class is only a helper class.
-	pProj->spawnArgs.GetInt("stim_type", "-1", StimType);
-	if(StimType != ST_DEFAULT)
+	// greebo: Loop over the stim indices and add the stims one by one. 
+	// The loop is cancelled on the first empty index.
+	int stimIdx = 1;
+	while (stimIdx > 0)
 	{
-		CStim *s;
-		pProj->spawnArgs.GetFloat("stim_radius", "10", StimRadius);
-		pProj->spawnArgs.GetFloat("stim_falloffexponent", "1", StimFalloffExponent);
-		pProj->spawnArgs.GetInt("stim_duration", "0", StimDuration );
-		pProj->spawnArgs.GetInt("stim_eval_interval", "0", StimEvalInterval );
-		pProj->spawnArgs.GetBool("stim_use_bounds", "0", bStimUseBounds );
-		pProj->spawnArgs.GetFloat("stim_magnitude", "1.0", StimMagnitude );
+		idStr key;
+		idStr value;
+		// Try to find a string like "stim_type_1"
+		sprintf(key, "stim_type_%u", stimIdx);
+		pProj->spawnArgs.GetString(key, "", value);
 
-		s = AddStim(StimType, StimRadius);
-		
-		// TODO: Move these sets to the AddStim arguments once Addstim is rewritten
-		s->m_Duration = StimDuration;
-		s->m_TimeInterleave = StimEvalInterval;
-		s->m_bUseEntBounds = bStimUseBounds;
-		s->m_Magnitude = StimMagnitude;
-		s->m_FallOffExponent = StimFalloffExponent;
+		if (value == "")
+		{
+			// Set the index to negative values to end the loop
+			stimIdx = -1;
+		}
+		else {
+			// The stim type of the projectile result is defined on the projectile itself
+			// even though it is not used there. Logically, the stim type is a part of the
+			// projectile definition though, since this class is only a helper class.
+			pProj->spawnArgs.GetInt(key, "-1", StimType);
+			if(StimType != ST_DEFAULT)
+			{
+				CStim *s;
 
-		if( pProj->spawnArgs.GetBool("stim_state", "1") )
-			s->EnableSR(true);
-		else
-			s->EnableSR(false);
+				sprintf(key, "stim_radius_%u", stimIdx);
+				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
 
-		idStr Name;
-		sprintf(Name, "%08lX_", this);
-		if(StimType < ST_USER)
-			Name += cStimType[StimType];
+				sprintf(key, "stim_falloffexponent_%u", stimIdx);
+				pProj->spawnArgs.GetFloat(key, "1", StimFalloffExponent);
 
-		SetName(name.c_str());
-        DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim type %u with radius %f added to entity %08lX\r", StimType, StimRadius, this);
+				sprintf(key, "stim_duration_%u", stimIdx);
+				pProj->spawnArgs.GetInt(key, "0", StimDuration );
+
+				sprintf(key, "stim_eval_interval_%u", stimIdx);
+				pProj->spawnArgs.GetInt(key, "0", StimEvalInterval );
+
+				sprintf(key, "stim_use_bounds_%u", stimIdx);
+				pProj->spawnArgs.GetBool(key, "0", bStimUseBounds );
+
+				sprintf(key, "stim_magnitude_%u", stimIdx);
+				pProj->spawnArgs.GetFloat(key, "1.0", StimMagnitude );
+
+				s = AddStim(StimType, StimRadius);
+				
+				// TODO: Move these sets to the AddStim arguments once Addstim is rewritten
+				s->m_Duration = StimDuration;
+				s->m_TimeInterleave = StimEvalInterval;
+				s->m_bUseEntBounds = bStimUseBounds;
+				s->m_Magnitude = StimMagnitude;
+				s->m_FallOffExponent = StimFalloffExponent;
+
+				sprintf(key, "stim_state_%u", stimIdx);
+				if( pProj->spawnArgs.GetBool(key, "1") )
+					s->EnableSR(true);
+				else
+					s->EnableSR(false);
+
+				idStr Name;
+				sprintf(Name, "%08lX_", this);
+				if(StimType < ST_USER)
+					Name += cStimType[StimType];
+
+				SetName(name.c_str());
+				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim index %u type %u with radius %f added to entity %08lX\r", stimIdx, StimType, StimRadius, this);
+			}
+
+			// Set the index to the next number, to keep the loop alive
+			stimIdx++;
+		}
 	}
 
 	// Handle binding
