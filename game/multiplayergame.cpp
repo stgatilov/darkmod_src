@@ -3053,7 +3053,7 @@ void idMultiplayerGame::Precache( void ) {
 	if ( !gameLocal.isMultiplayer ) {
 		return;
 	}
-	gameLocal.FindEntityDefDict( "player_doommarine", false );;
+	gameLocal.FindEntityDefDict( "player_tdm_thief", false );;
 	
 	// skins
 	idStr str = cvarSystem->GetCVarString( "mod_validSkins" );
