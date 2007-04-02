@@ -1404,11 +1404,11 @@ void idPhysics_Player::LadderMove( void )
 	idVec3	wishdir( vec3_zero ), wishvel( vec3_zero ), right( vec3_zero );
 	idVec3  dir( vec3_zero ), start( vec3_zero ), end( vec3_zero ), delta( vec3_zero );
 	idVec3	AttachVel( vec3_zero ), RefFrameVel( vec3_zero );
-	idVec3	vReqVert( vec3_zero ), vReqHoriz( vec3_zero );
+	idVec3	vReqVert( vec3_zero ), vReqHoriz( vec3_zero ), vHorizVect( vec3_zero );
 	float	wishspeed(0.0f), scale(0.0f), accel(0.0f);
-	float	upscale(0.0f), NormalDot(0.0f);
+	float	upscale(0.0f), horizscale(0.0f), NormalDot(0.0f);
 	trace_t SurfTrace;
-	bool	bMoveAllowed( true );//, bSurfInFront( false );
+	bool	bMoveAllowed( true );
 
 	accel = PM_ACCELERATE;
 
@@ -1443,9 +1443,6 @@ void idPhysics_Player::LadderMove( void )
 	start = current.origin;
 	end = start - 48.0f * ClimbNormXY;
 	gameLocal.clip.Translation( SurfTrace, start, end, clipModel, clipModel->GetAxis(), clipMask, self );
-	
-	// TODO: When first attaching to the ladder, set m_vClimbPoint to avoid that bug
-	// of hovering in the air when we approach the ladder at an angle in midair
 
 	// if there is a climbable surface in front of the player, stick to it
 	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
@@ -1456,11 +1453,42 @@ void idPhysics_Player::LadderMove( void )
 
 		// Now that we have a valid point, don't need to use the initial one
 		m_bClimbInitialPhase = false;
+
+		// Update sounds and movement speed caps for the surface if we change surfaces
+		idStr SurfName;
+		g_Global.GetSurfName( SurfTrace.c.material, SurfName );
+		if( SurfName != m_ClimbSurfName )
+		{
+			idStr LookUpName, TempStr;
+			idKeyValue *kv = NULL;
+			
+			m_ClimbSurfName = SurfName;
+
+			LookUpName = "climb_max_speed_vert_";
+			TempStr = LookUpName + SurfName;
+			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
+				m_ClimbMaxVelVert = atof( kv->GetValue().c_str() );
+			else
+			{
+				TempStr = LookUpName + "default";
+				m_ClimbMaxVelVert = self->spawnArgs.GetFloat( LookUpName.c_str(), "1.0" );
+			}
+
+			LookUpName = "climb_max_speed_horiz_";
+			TempStr = LookUpName + SurfName;
+			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
+				m_ClimbMaxVelHoriz = atof( kv->GetValue().c_str() );
+			else
+			{
+				TempStr = LookUpName + "default";
+				m_ClimbMaxVelHoriz = self->spawnArgs.GetFloat( LookUpName.c_str(), "2.3" );
+			}
+		}
 	}
 	else if( m_bClimbInitialPhase )
 	{
 		// We should already have m_vClimbPoint stored from the initial trace
-		AttachVel = 10 * (m_vClimbPoint - current.origin);
+		AttachVel = 12.0f * (m_vClimbPoint - current.origin);
 	}
 
 	current.velocity = (gravityNormal * current.velocity) * gravityNormal + AttachVel;
@@ -1468,23 +1496,24 @@ void idPhysics_Player::LadderMove( void )
 	scale = idPhysics_Player::CmdScale( command );
 
 	float lenVert = viewForward * -gravityNormal;
-	//float lenIn = viewForward * -ClimbNormXY;
 	float lenTransv = idMath::Sqrt( 1.0f - NormalDot * NormalDot - lenVert * lenVert );
 	// Dump everything that's not in the transverse direction into the vertical direction
 	float lenVert2 = idMath::Sqrt( 1.0f - lenTransv * lenTransv );
-	float tan = lenVert2 / lenTransv;
 
 	// resolve up/down, with some tolerance so player can still go up looking slightly down
 	if( lenVert < -0.3 )
 		lenVert2 = -lenVert2;
 
-	vReqVert = lenVert2 * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
+	// vReqVert = lenVert2 * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
+	vReqVert = lenVert2 * -gravityNormal * scale * (float)command.forwardmove;
+	vReqVert *= m_ClimbMaxVelVert;
 	// obtain the horizontal direction
 	vReqHoriz = viewForward - (ClimbNormXY * viewForward) * ClimbNormXY;
 	vReqHoriz -= (vReqHoriz * gravityNormal) * gravityNormal;
 	vReqHoriz.Normalize();
-	// scale it
-	vReqHoriz *= 2.0 * lenTransv * scale * (float)command.forwardmove;
+	// vReqHoriz *= 2.0f * lenTransv * scale * (float)command.forwardmove;
+	vReqHoriz *= lenTransv * scale * (float)command.forwardmove;
+	vReqHoriz *= m_ClimbMaxVelHoriz;
 
 
 	// Pure horizontal motion if looking close enough to horizontal:
@@ -1502,11 +1531,12 @@ void idPhysics_Player::LadderMove( void )
 		right = right - (ClimbNormXY * right) * ClimbNormXY;
 		right.Normalize();
 
-		wishvel += 2.0f * right * scale * (float) command.rightmove;
+		// scale it by something pretty high so that it's clamped by the material limit
+		wishvel += m_ClimbMaxVelHoriz * right * scale * (float) command.rightmove;
 	}
 
 	// ========================== Surface Extent Test ======================
-	// Check if the surface extends out some delta in the requested movement direction
+	// This now just checks distance from the last valid climbing point
 	dir = wishvel;
 	dir.Normalize();
 
@@ -1518,7 +1548,8 @@ void idPhysics_Player::LadderMove( void )
 	if( !bMoveAllowed )
 	{
 		// If we were trying to go up and reached the extent, attempt to step off the ladder
-		// NOTE: Make sure we are really trying to go up, not first going off to the side and then up
+		// Make sure we are really trying to go up, not first going off to the side and then up
+		// TODO: Tweak this delta.lengthsqr parameter of 25.0, only measure in the horizontal axis?
 		delta = current.origin - m_vClimbPoint;
 		delta -= (delta * gravityNormal) * gravityNormal;
 
@@ -1541,25 +1572,35 @@ void idPhysics_Player::LadderMove( void )
 	wishspeed = wishvel.Normalize();
 	idPhysics_Player::Accelerate( wishvel, wishspeed, accel );
 
-	// cap the vertical velocity
+	// cap the vertical travel velocity
 	upscale = current.velocity * -gravityNormal;
-	if ( upscale < -PM_LADDERSPEED ) {
-		current.velocity += gravityNormal * (upscale + PM_LADDERSPEED);
-	}
-	else if ( upscale > PM_LADDERSPEED ) {
-		current.velocity += gravityNormal * (upscale - PM_LADDERSPEED);
-	}
+	if ( upscale < -m_ClimbMaxVelVert * playerSpeed )
+		current.velocity += gravityNormal * (upscale + m_ClimbMaxVelVert * playerSpeed );
+	else if ( upscale > m_ClimbMaxVelVert * playerSpeed  )
+		current.velocity += gravityNormal * (upscale - m_ClimbMaxVelVert * playerSpeed );
 
-	if ( (wishvel * gravityNormal) == 0.0f ) {
-		if ( current.velocity * gravityNormal < 0.0f ) {
+	// cap the horizontal travel velocity
+	vHorizVect = current.velocity - (current.velocity * gravityNormal) * gravityNormal;
+	horizscale = vHorizVect.Normalize();
+	float horizDelta = horizscale;
+	horizscale = idMath::ClampFloat( -m_ClimbMaxVelHoriz * playerSpeed, m_ClimbMaxVelHoriz * playerSpeed, horizscale );
+	horizDelta -= horizscale;
+	current.velocity -= vHorizVect * horizDelta;
+	
+	if ( (wishvel * gravityNormal) == 0.0f ) 
+	{
+		if ( current.velocity * gravityNormal < 0.0f ) 
+		{
 			current.velocity += gravityVector * frametime;
-			if ( current.velocity * gravityNormal > 0.0f ) {
+			if ( current.velocity * gravityNormal > 0.0f ) 
+			{
 				current.velocity -= (gravityNormal * current.velocity) * gravityNormal;
 			}
 		}
 		else {
 			current.velocity -= gravityVector * frametime;
-			if ( current.velocity * gravityNormal < 0.0f ) {
+			if ( current.velocity * gravityNormal < 0.0f ) 
+			{
 				current.velocity -= (gravityNormal * current.velocity) * gravityNormal;
 			}
 		}
@@ -4829,4 +4870,31 @@ Quit:
 bool idPhysics_Player::IsDoorLeaning( void )
 {
 	return (m_LeanDoorEnt.GetEntity() != NULL) && m_LeanDoorEnt.IsValid();
+}
+
+idStr idPhysics_Player::GetClimbSurfaceType( void ) const
+{
+	idStr ReturnVal;
+	ReturnVal.Clear();
+	if( m_bOnClimb )
+		ReturnVal = m_ClimbSurfName;
+
+	return ReturnVal;
+}
+
+float idPhysics_Player::GetClimbLateralCoord( idVec3 OrigVec ) const
+{
+	float ReturnVal = 0.0f;
+
+	if( m_bOnClimb )
+	{
+		OrigVec -= (OrigVec * gravityNormal) * gravityNormal;
+		idVec3 ClimbNormXY = m_vClimbNormal - (m_vClimbNormal * gravityNormal) * gravityNormal;
+		idVec3 LatNormal = ClimbNormXY.Cross( gravityNormal );
+		LatNormal.NormalizeFast();
+
+		ReturnVal = OrigVec * LatNormal;
+	}
+	
+	return ReturnVal;
 }
