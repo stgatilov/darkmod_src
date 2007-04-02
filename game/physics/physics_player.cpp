@@ -1432,11 +1432,20 @@ void idPhysics_Player::LadderMove( void )
 
 	// Add the velocity of whatever entity they're climbing on:
 	// TODO: ADD REF FRAME ANGULAR VELOCITY!!
-	if( m_ClimbingOnEnt.IsValid() && m_ClimbingOnEnt.GetEntity()->GetPhysics() )
+	if( m_ClimbingOnEnt.GetEntity() )
 	{
-		RefFrameVel = m_ClimbingOnEnt.GetEntity()->GetPhysics()->GetLinearVelocity();
-		RefFrameVel += m_ClimbingOnEnt.GetEntity()->GetPhysics()->GetPushedLinearVelocity(); 
+		idEntity *ent = m_ClimbingOnEnt.GetEntity();
+		if( ent->GetBindMaster() )
+			ent = ent->GetBindMaster();
+
+		if( ent->GetPhysics() )
+		{
+			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Adding ref frame velocity %s for entity %s \r", RefFrameVel.ToString(), ent->name.c_str() );
+			RefFrameVel = ent->GetPhysics()->GetLinearVelocity();
+			//RefFrameVel += ent->GetPhysics()->GetPushedLinearVelocity();
+		}
 	}
+	DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Climb ref frame velocity = %s \r", RefFrameVel.ToString() );
 
 	// ====================== stick to the ladder ========================
 	// Do a trace to figure out where to attach the player:
@@ -1560,7 +1569,8 @@ void idPhysics_Player::LadderMove( void )
 		}
 
 		accel = idMath::INFINITY;
-		wishvel = RefFrameVel;
+		//wishvel = RefFrameVel;
+		wishvel = vec3_zero;
 	}
 
 	// ========================== End Surface Extent Test ==================
@@ -2452,6 +2462,9 @@ idPhysics_Player::idPhysics_Player( void )
 	m_vClimbNormal.Zero();
 	m_vClimbPoint.Zero();
 	m_ClimbingOnEnt = NULL;
+	m_ClimbSurfName.Clear();
+	m_ClimbMaxVelHoriz = 0.0f;
+	m_ClimbMaxVelVert = 0.0f;
 
 	// swimming
 	waterLevel = WATERLEVEL_NONE;
@@ -2567,6 +2580,10 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bClimbInitialPhase );
 	savefile->WriteVec3( m_vClimbNormal );
 	savefile->WriteVec3( m_vClimbPoint );
+	savefile->WriteString( m_ClimbSurfName.c_str() );
+	savefile->WriteFloat( m_ClimbMaxVelHoriz );
+	savefile->WriteFloat( m_ClimbMaxVelVert );
+	m_ClimbingOnEnt.Save( savefile );
 
 	savefile->WriteInt( (int)waterLevel );
 	savefile->WriteInt( waterType );
@@ -2644,6 +2661,10 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bClimbInitialPhase );
 	savefile->ReadVec3( m_vClimbNormal );
 	savefile->ReadVec3( m_vClimbPoint );
+	savefile->ReadString( m_ClimbSurfName );
+	savefile->ReadFloat( m_ClimbMaxVelHoriz );
+	savefile->ReadFloat( m_ClimbMaxVelVert );
+	m_ClimbingOnEnt.Restore( savefile );
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );
