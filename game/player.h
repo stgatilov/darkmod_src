@@ -735,6 +735,15 @@ private:
 	idDict					m_hinderance;
 	float					m_hinderanceCache;
 
+	/**
+	 * ContinousFrob determines wether the frob should be processed in a continous
+	 * way (aka button) or as an impulse. The default is to set it to impulse. However
+	 * for some actions it needs to be continous until the frob key is released, and it
+	 * is switched back to impulse. The continous mode is, for example, needed when the
+	 * player uses the lockpicks on a lock.
+	 */
+	bool					m_ContinuousFrob;
+
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]
 	static const int		NUM_LOGGED_ACCELS = 16;			// for weapon turning angle offsets

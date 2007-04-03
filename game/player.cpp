@@ -1180,6 +1180,7 @@ idPlayer::idPlayer()
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
+	m_ContinuousFrob		= false;
 }
 
 /*
@@ -2966,7 +2967,8 @@ void idPlayer::ExitCinematic( void ) {
 idPlayer::UpdateConditions
 =====================
 */
-void idPlayer::UpdateConditions( void ) {
+void idPlayer::UpdateConditions( void )
+{
 	idVec3	velocity;
 	float	fallspeed;
 	float	forwardspeed;
@@ -3007,6 +3009,15 @@ void idPlayer::UpdateConditions( void ) {
 	
 	// DarkMod: Catch the creep modifier
 	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
+
+	// Check if the frob is to be a continous action.
+	if(m_ContinuousFrob == true)
+	{
+		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_41)) == true)
+			PerformFrob();
+		else
+			m_ContinuousFrob = false;
+	}
 }
 
 /*
@@ -10207,6 +10218,8 @@ void idPlayer::PerformFrob(void)
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
 		if(ent != NULL)
 		{
+			// Check if the frobbing should become continuous when this item is active
+			m_ContinuousFrob = ent->spawnArgs.GetBool("inv_use_cont_frob");
 			if(ent->spawnArgs.GetBool("usable"))
 			{
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
