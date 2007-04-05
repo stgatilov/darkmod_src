@@ -468,18 +468,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	else	// this is only for responses
 	{
 		// Get the name of the script function for processing the response
-		/*name = "sr_script_" + str;
+		name = "sr_script_" + str;
 		args->GetString(name, "", str);
-		if(str == "")
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("No scriptfunction specified for stim/response id [%s]\r", sr->m_StimTypeName.c_str());
-			// greebo: Disabled this to allow responses without script being added (they can have effects to handle the response)
-			//delete sr;
-			//sr = NULL;
-			//goto Quit;
-		}
-
-		resp->m_ScriptFunction = str;*/
+		resp->m_ScriptFunction = str;
 
 		// Try to identify the ResponseEffect spawnargs
 		int effectIdx = 1;

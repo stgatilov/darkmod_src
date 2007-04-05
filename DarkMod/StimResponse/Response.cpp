@@ -76,7 +76,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		magnitude *= pow(base, stim->m_FallOffExponent);
 	}
 	
-	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
+	//DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
 	for (int i = 0; i < m_ResponseEffects.Num(); i++) {
 		m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, magnitude);
 	}
@@ -107,18 +107,14 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 	if (effectEntityDef == "effect_script")
 	{
 		// We have a script effect, this is a special case
-		gameLocal.Printf("Response Effect effect_script found looking for script!\r");
 		idStr key;
 		sprintf(key, "sr_effect_%s_arg1", effectPostfix.c_str());
 		
-		gameLocal.Printf("Querying key: %s\r", key.c_str());
-
 		// Get the script argument from the entity's spawnargs
 		idStr scriptStr = args->GetString(key);
 
 		if (scriptStr != "")
 		{
-			gameLocal.Printf("Script value is %s.\n", scriptStr.c_str());
 			const function_t* scriptFunc = m_Owner->scriptObject.GetFunction(scriptStr.c_str());
 			if (scriptFunc == NULL)
 			{
@@ -146,10 +142,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 	}
 	else if (dict != NULL)
 	{
-		gameLocal.Printf("EffectEntityDef found, looking for script!\r");
-		
 		idStr scriptStr = dict->GetString("script");
-		gameLocal.Printf("Script value is %s.\n", scriptStr.c_str());
 
 		const function_t* scriptFunc = gameLocal.program.FindFunction(scriptStr.c_str());
 		if (scriptFunc != NULL)
