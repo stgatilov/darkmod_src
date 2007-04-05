@@ -37,11 +37,19 @@ public:
 	void SetResponseAction(idStr const &ActionScriptName);
 
 	/**
-	* Adds a response effect and returns the pointer to the local list
-	* and returns the pointer to the new Effect object, so that the
-	* data can be pumped into it.
+	* Adds a response effect and returns the pointer to the new Effect object.
+	*
+	* @effectEntityDef: The entity definition where the target script is stored.
+	*					The effect entity "effect_script" is treated specially.
+	*
+	* @effectPostfix:	The string that gets passed to the effect script (e.g. "1_2")
+	*
+	* @args:	The entity's spawnargs needed to query the script argument for the
+	*			aforementioned special case of "effect_script".
 	*/
-	CResponseEffect* addResponseEffect(const idStr& effectEntityDef, const idStr& effectPostfix);
+	CResponseEffect* addResponseEffect(const idStr& effectEntityDef, 
+									   const idStr& effectPostfix,
+									   const idDict *args);
 
 protected:
 	CResponse(idEntity *Owner, int Type);

@@ -94,14 +94,57 @@ void CResponse::SetResponseAction(idStr const &action)
 	m_ScriptFunction = action;
 }
 
-CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef, const idStr& effectPostfix)
+CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef, 
+											  const idStr& effectPostfix, 
+											  const idDict *args)
 {
 	CResponseEffect* returnValue = NULL;
 	
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("\nSeeking EffectEntity [%s]\n", effectEntityDef.c_str());
 	// Try to locate the specified entity definition
 	const idDict* dict = gameLocal.FindEntityDefDict(effectEntityDef.c_str());
-	if (dict != NULL) 
+
+	if (effectEntityDef == "effect_script")
+	{
+		// We have a script effect, this is a special case
+		gameLocal.Printf("Response Effect effect_script found looking for script!\r");
+		idStr key;
+		sprintf(key, "sr_effect_%s_arg1", effectPostfix.c_str());
+		
+		gameLocal.Printf("Querying key: %s\r", key.c_str());
+
+		// Get the script argument from the entity's spawnargs
+		idStr scriptStr = args->GetString(key);
+
+		if (scriptStr != "")
+		{
+			gameLocal.Printf("Script value is %s.\n", scriptStr.c_str());
+			const function_t* scriptFunc = m_Owner->scriptObject.GetFunction(scriptStr.c_str());
+			if (scriptFunc == NULL)
+			{
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse: %s not found in local space, checking for global.\r", scriptStr.c_str());
+				scriptFunc = gameLocal.program.FindFunction(scriptStr.c_str());
+			}
+
+			if (scriptFunc != NULL)
+			{
+				// Allocate a new effect object
+				CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
+				// Add the item to the list
+				m_ResponseEffects.Append(newEffect);
+
+				returnValue = newEffect;
+			}
+			else
+			{
+				gameLocal.Printf("Warning: Script not found: %s!\n", scriptStr.c_str());
+			}
+		}
+		else {
+			gameLocal.Printf("Warning: Script argument not found!\n");
+		}
+	}
+	else if (dict != NULL)
 	{
 		gameLocal.Printf("EffectEntityDef found, looking for script!\r");
 		
@@ -114,7 +157,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef, cons
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Script Function found: [%s]\r", scriptStr.c_str());
 		}
 		// Allocate a new effect object
-		CResponseEffect* newEffect = new CResponseEffect(dict, scriptFunc, effectPostfix);
+		CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
 		
 		// Add the item to the list
 		m_ResponseEffects.Append(newEffect);

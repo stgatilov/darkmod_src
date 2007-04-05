@@ -13,8 +13,7 @@ class CStim;
 
 class CResponseEffect
 {
-	const idDict* _effectEntityDef;
-
+protected:
 	const function_t* _scriptFunction;
 
 	// The effect postfix, "1_1" for example
@@ -24,10 +23,8 @@ class CResponseEffect
 
 public:
 	// Pass the effect entity to this structure
-	CResponseEffect(const idDict* effectEntityDef, 
-					const function_t* scriptFunction,
+	CResponseEffect(const function_t* scriptFunction,
 					const idStr& effectPostfix) :
-		_effectEntityDef(effectEntityDef),
 		_scriptFunction(scriptFunction),
 		_effectPostfix(effectPostfix)
 	{}
@@ -40,7 +37,7 @@ public:
 	* @stimEntity: The entity that triggered this response
 	* @magnitude: the magnitude of the stim (min = 0, max = stim->magnitude)
 	*/
-	void runScript(idEntity* owner, idEntity* stimEntity, float magnitude);
+	virtual void runScript(idEntity* owner, idEntity* stimEntity, float magnitude);
 };
 
 #endif /* SR_RESPONSEEFFECT__H */

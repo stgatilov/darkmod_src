@@ -468,7 +468,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	else	// this is only for responses
 	{
 		// Get the name of the script function for processing the response
-		name = "sr_script_" + str;
+		/*name = "sr_script_" + str;
 		args->GetString(name, "", str);
 		if(str == "")
 		{
@@ -479,7 +479,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 			//goto Quit;
 		}
 
-		resp->m_ScriptFunction = str;
+		resp->m_ScriptFunction = str;*/
 
 		// Try to identify the ResponseEffect spawnargs
 		int effectIdx = 1;
@@ -500,7 +500,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 				sprintf(effectPostfix, "%u_%u", Counter, effectIdx);
 
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Adding response effect\r");
-				resp->addResponseEffect(str, effectPostfix);
+				resp->addResponseEffect(str, effectPostfix, args);
 				effectIdx++;
 			}
 		}
