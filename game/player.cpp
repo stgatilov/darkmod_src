@@ -1180,7 +1180,7 @@ idPlayer::idPlayer()
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
-	m_ContinuousFrob		= false;
+	m_ContinuousUse			= false;
 }
 
 /*
@@ -3011,12 +3011,12 @@ void idPlayer::UpdateConditions( void )
 	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
 
 	// Check if the frob is to be a continous action.
-	if(m_ContinuousFrob == true)
+	if(m_ContinuousUse == true)
 	{
-		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_41)) == true)
-			PerformFrob();
+		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_42)) == true)
+			inventoryUseItem();
 		else
-			m_ContinuousFrob = false;
+			m_ContinuousUse = false;
 	}
 }
 
@@ -9484,32 +9484,33 @@ void idPlayer::inventoryPrevGroup()
 
 void idPlayer::inventoryUseItem()
 {
-/*	assert( InventoryCursor() );
-
-	// Is there anything in our hands?
-	idEntity* useEnt = g_Global.m_DarkModPlayer->grabber->GetSelected();
-	// If not, do we have anything selected?
-	if ( !useEnt ) {
-		CInventoryItem* item = InventoryCursor()->Item();
-		useEnt = item ? item->m_owner.GetEntity() : NULL;
-	}
-
-	if ( useEnt ) {
-		// call script: useEnt.inventoryUse( thisPlayer );
-		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
-		if (thread)
-			thread->Start(); // Start the thread immediately.
-	}
-*/
+	// If the player has an item that is selected we need to check if this
+	// is a usable item (like a key). In this case the use action takes
+	// precedence over the frobaction.
+	CInventoryCursor *crsr = InventoryCursor();
+	CInventoryItem *it = crsr->GetCurrentItem();
+	if(it->GetType() != CInventoryItem::IT_DUMMY)
+		inventoryUseItem(it->GetItemEntity());
 }
 
-void idPlayer::inventoryUseItem( idEntity* useEnt )
+void idPlayer::inventoryUseItem(idEntity *ent)
 {
-/*	assert( InventoryCursor() );
+	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
 
-	// If the item is outside our current inventory, it can't be used.
-	CInventoryItem* item = useEnt->InventoryItem();
-	if ( item && item->Inventory() == InventoryCursor()->Inventory() ) {
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
+	if(ent != NULL)
+	{
+		// Check if the usage should become continuous when this item is active
+		m_ContinuousUse = ent->spawnArgs.GetBool("inv_cont_use");
+		if(ent->spawnArgs.GetBool("usable"))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
+			ent->UsedBy(frob);
+		}
+	}
+/*
+	if ( item && item->Inventory() == InventoryCursor()->Inventory() )
+	{
 		// call script: useEnt.inventoryUse( thisPlayer );
 		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
 		if (thread)
@@ -10189,8 +10190,7 @@ idVec3 idPlayer::GetDoorListenLoc( void )
 
 void idPlayer::PerformFrob(void)
 {
-	bool bFrob = true;
-	idEntity *ent, *frob;
+	idEntity *frob;
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
 	// Ignore frobs if player-frobbing is immobilized.
@@ -10206,33 +10206,9 @@ void idPlayer::PerformFrob(void)
 	}
 
 	frob = pDM->m_FrobEntity;
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX\r", frob);
 
-	// If the player has an item that is selected we need to check if this
-	// is a usable item (like a key). In this case the use action takes
-	// precedence over the frobaction.
-	CInventoryCursor *crsr = InventoryCursor();
-	CInventoryItem *it = crsr->GetCurrentItem();
-	if(it->GetType() != CInventoryItem::IT_DUMMY)
-	{
-		ent = it->GetItemEntity();
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
-		if(ent != NULL)
-		{
-			// Check if the frobbing should become continuous when this item is active
-			m_ContinuousFrob = ent->spawnArgs.GetBool("inv_use_cont_frob");
-			if(ent->spawnArgs.GetBool("usable"))
-			{
-				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-				if(frob)
-					bFrob = !frob->UsedBy(ent);
-				else
-					bFrob = !ent->UsedBy(NULL);
-			}
-		}
-	}
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX    Frob: %u\r", frob, bFrob);
-	if(bFrob == true && frob != NULL)
+	if(frob != NULL)
 	{
 		// Fire the STIM_FROB response (if defined) on this entity
 		frob->ResponseTrigger(this, ST_FROB);
