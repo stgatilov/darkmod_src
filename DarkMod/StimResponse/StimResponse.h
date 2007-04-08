@@ -36,6 +36,8 @@ typedef enum {
 	ST_TIMER,			// Timer trigger
 	ST_COMMUNICATION,	// A communication stimulus (see CommunicationStim.h)
 	ST_GAS,				// triggered by gas arrows
+	ST_TRIGGER,			// Triggered by triggering :)
+	ST_TARGET_REACHED,	// Emitted, if the AI has reached its target (induced by effect_moveToPosition)
 	ST_USER				= 1000,	// User defined types should use this as it's base
 	ST_DEFAULT			= -1
 } StimType;

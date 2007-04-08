@@ -40,6 +40,8 @@ char *cStimType[] = {
 	"STIM_TIMER",
 	"STIM_COMMUNICATION",
 	"STIM_GAS",
+	"STIM_TRIGGER",
+	"STIM_TARGET_REACHED",
 	NULL
 };
 

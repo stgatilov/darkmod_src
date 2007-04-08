@@ -6176,9 +6176,16 @@ void idPlayer::AdjustSpeed( void )
 		speed = pm_spectatespeed.GetFloat();
 		bobFrac = 0.0f;
 	}
-	else if ( noclip )
+	else if ( noclip && !( usercmd.buttons & BUTTON_RUN ))
 	{
+		// "Walk" noclip
 		speed = pm_noclipspeed.GetFloat();
+		bobFrac = 0.0f;
+	}
+	else if ( noclip && ( usercmd.buttons & BUTTON_RUN ))
+	{
+		// "run" noclip
+		speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
 		bobFrac = 0.0f;
 	} 
 	// running case
