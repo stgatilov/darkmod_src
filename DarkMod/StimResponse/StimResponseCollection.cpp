@@ -433,13 +433,13 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	sprintf(name, "sr_state_%u", Counter);
 	args->GetInt(name, "1", (int &)state);
 	
-	sprintf(name, "sr_chance_%u", Counter);
-	sr->m_Chance = args->GetFloat(name, "1.0");
-
 	if( args->GetBool(name, "1") )
 		sr->EnableSR(true);
 	else
 		sr->EnableSR(false);
+
+	sprintf(name, "sr_chance_%u", Counter);
+	sr->m_Chance = args->GetFloat(name, "1.0");
 
 	// A stim also may have a radius
 	if(sr_class == 'S')
@@ -470,6 +470,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	}
 	else	// this is only for responses
 	{
+		sprintf(name, "sr_chance_timeout_%u", Counter);
+		sr->m_ChanceTimer = args->GetFloat(name, "-1");
+
 		// Get the name of the script function for processing the response
 		name = "sr_script_" + str;
 		args->GetString(name, "", str);

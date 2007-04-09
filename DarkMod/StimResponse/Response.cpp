@@ -24,7 +24,6 @@ CResponse::CResponse(idEntity *e, int Type)
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
 	m_MaxDamage = 0;
-	m_Chance = 1.0f;
 }
 
 CResponse::~CResponse(void)
@@ -39,6 +38,10 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse::TriggerResponse \r");
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
+
+	if (!checkChance()) {
+		return;
+	}
 
 	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
 	if(pScriptFkt == NULL)

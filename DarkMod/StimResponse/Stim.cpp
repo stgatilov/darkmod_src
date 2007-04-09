@@ -27,8 +27,6 @@ CStim::CStim(idEntity *e, int Type)
 	m_Radius = 0.0;
 	m_FallOffExponent = 0;
 	m_Magnitude = 0.0;
-	m_Chance = 1.0;
-	m_ChanceTimer = false;
 	m_MaxResponses = 0;
 	m_CurResponses = 0;
 	m_ApplyTimer = 0;

@@ -94,16 +94,6 @@ public:
 	int					m_FallOffExponent;
 
 	/**
-	 * Whenever the chance test failed, and the stim has a timer before it can be 
-	 * reused again, the ChanceTimer determines wether the timer should be used (true)
-	 * or not (false = default).
-	 * This can be used to create a stim that has a chance of failure but needs time 
-	 * to recharge, bevore it can be used again, but the reuse timer may not always 
-	 * be desirable to be applied.
-	 */
-	bool				m_ChanceTimer;
-
-	/**
 	 * Defines the maximum number responses that can be applied to this particular
 	 * stimulus at any given time. 0 means unlimited and is the default.
 	 */

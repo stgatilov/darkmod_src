@@ -9987,7 +9987,7 @@ void idPlayer::FrobCheck( void )
 		}
 	}
 
-	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
+	//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("No entity frobbed by direct LOS frob, trying frob radius.\r");
 	// IF the trace didn't hit anything frobable, do the radius test:
 
 	FrobBounds.Zero();

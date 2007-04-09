@@ -97,6 +97,23 @@ public:
 	float				m_Chance;
 
 	/**
+	 * Whenever the chance test failed, and the stim has a timer before it can be 
+	 * reused again, the ChanceTimer determines wether the timer should be used (true)
+	 * or not (default = -1).
+	 * This can be used to create a stim that has a chance of failure but needs time 
+	 * to recharge, bevore it can be used again, but the reuse timer may not always 
+	 * be desirable to be applied.
+	 */
+	int					m_ChanceTimer;
+
+	/**
+	* greebo: This is the earliest time a next chance can be evaluated.
+	*		  If a previous chance test failed, the next chance time is calculated.
+	*		  If a previous chance test was passed, the time is set to -1;
+	*/
+	int					m_NextChanceTime;
+
+	/**
 	 * Default means that this is a stim which has been added as default to this entity.
 	 * Thiw would also mainly be used for an editor.
 	 */

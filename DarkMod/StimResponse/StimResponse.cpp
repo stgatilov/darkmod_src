@@ -57,6 +57,9 @@ CStimResponse::CStimResponse(idEntity *Owner, int Type)
 	m_Default = false;
 	m_Duration = 0;
 	m_EnabledTimeStamp = 0;
+	m_Chance = 1.0f;
+	m_ChanceTimer = -1;
+	m_NextChanceTime = -1;
 }
 
 CStimResponse::~CStimResponse(void)
@@ -78,9 +81,30 @@ bool CStimResponse::checkChance()
 {
 	if (m_Chance < 1.0f)
 	{
+		// Chance timer still active?
+		if (m_NextChanceTime > gameLocal.GetTime()) {
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CStimResponse::checkChance: Timeout still active.\r");
+
+			// Next chance time is still in the future, return false
+			return false;
+		}
+
 		// The stim only fires if the (hopefully uniformly distributed)
 		// random variable is within the interval (0, m_Chance]
-		return (gameLocal.random.RandomFloat() <= m_Chance);
+		if (gameLocal.random.RandomFloat() <= m_Chance) {
+			// Reset the next chance time
+			m_NextChanceTime = -1;
+			return true;
+		}
+		else {
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CStimResponse::checkChance: Chance test failed.\r");
+			// Test failed, should we use a timeout?
+			if (m_ChanceTimer > 0) {
+				// Save the earliest time of the next response chance
+				m_NextChanceTime = gameLocal.GetTime() + m_ChanceTimer;
+			}
+			return false;
+		}
 	}
 	else {
 		// 100% chance => return true
