@@ -5266,7 +5266,7 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 {
 	int i;
 	CResponse *r;
-	int numRespones = 0;
+	int numResponses = 0;
 
 	for(i = 0; i < n; i++)
 	{
@@ -5291,20 +5291,19 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 				// Fire the response and pass the originating entity plus the stim object itself
 				// The stim object can be queried for values like magnitude, falloff and such.
 				r->TriggerResponse(e, stim);
-				numRespones++;
+				numResponses++;
 			}
 		}
 	}
 
 	// Return number of responses triggered
-	return numRespones;
+	return numResponses;
 }
 
 void idGameLocal::ProcessStimResponse(void)
 {
 	idEntity *e;
 	int ei, en;
-	int si, sn;
 	int n;
 	float radius;
 	idVec3 origin;
@@ -5346,19 +5345,21 @@ void idGameLocal::ProcessStimResponse(void)
 	for(ei = 0; ei < en; ei++)
 	{
 		e = m_StimEntity[ei];
-		if((src = e->GetStimResponseCollection()) != NULL)
+		// Check if there are any Stims/Responses defined
+		if ((src = e->GetStimResponseCollection()) != NULL)
 		{
 			origin = e->GetPhysics()->GetOrigin();
 
 			idList<CStim *> &stim = src->GetStimList();
 
-			sn = stim.Num();
-			for(si = 0; si < sn; si++)
+			// Traverse through all the stims on this entity
+			for (int si = 0; si < stim.Num(); si++)
 			{
 				CStim *pStim = stim[si];
 
-				if( pStim->m_State != SS_ENABLED )
-					continue;
+				if( pStim->m_State != SS_ENABLED ) {
+					continue; // Stim is not enabled
+				}
 
 				// Check the interleaving timer and don't eval stim if it's not up yet
 				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
@@ -5372,6 +5373,7 @@ void idGameLocal::ProcessStimResponse(void)
 					continue;
 				}
 
+				// Save the current timestamp into the stim, so that we know when it was last fired
 				pStim->m_TimeInterleaveStamp = gameLocal.time;
 
 				// If stim is not disabled and has a radius or uses the ent bounds
@@ -5380,10 +5382,12 @@ void idGameLocal::ProcessStimResponse(void)
 					int numResponses = 0;
 
 					// Find entities in the radius of the stim
-					if( pStim->m_bUseEntBounds )
+					if( pStim->m_bUseEntBounds ) {
 						bounds = e->GetPhysics()->GetAbsBounds();
-					else
+					}
+					else {
 						bounds = idBounds(origin);
+					}
 					
 					bounds.ExpandSelf(radius);
 

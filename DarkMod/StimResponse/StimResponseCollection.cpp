@@ -433,6 +433,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	sprintf(name, "sr_state_%u", Counter);
 	args->GetInt(name, "1", (int &)state);
 	
+	sprintf(name, "sr_chance_%u", Counter);
+	sr->m_Chance = args->GetFloat(name, "1.0");
+
 	if( args->GetBool(name, "1") )
 		sr->EnableSR(true);
 	else

@@ -80,14 +80,6 @@ protected:
 	float				m_MaxDamage;
 
 	/**
-	 * Defines the chance that this response is applied to the stimulus. Default should 
-	 * be 1. A value of 0 would mean that this is never applied, but then it doesn't make
-	 * sense to use this in most cases. 
-	 */
-
-	float				m_Chance;
-
-	/**
 	* The list of ResponseEffects
 	*/
 	idList<CResponseEffect*> m_ResponseEffects;

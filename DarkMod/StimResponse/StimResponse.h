@@ -84,6 +84,12 @@ public:
 	StimState			m_State;
 
 	/**
+	 * Defines the chance that this stim/response works. Whenever the S/R is activated
+	 * the chance determines wether it will do its job.
+	 */
+	float				m_Chance;
+
+	/**
 	 * Default means that this is a stim which has been added as default to this entity.
 	 * Thiw would also mainly be used for an editor.
 	 */

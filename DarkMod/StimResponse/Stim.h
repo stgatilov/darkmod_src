@@ -94,12 +94,6 @@ public:
 	int					m_FallOffExponent;
 
 	/**
-	 * Defines the chance that this stimulus works. Whenever the stim is activated
-	 * the chance determines wether it will ignore the activation and stay enabled.
-	 */
-	float				m_Chance;
-
-	/**
 	 * Whenever the chance test failed, and the stim has a timer before it can be 
 	 * reused again, the ChanceTimer determines wether the timer should be used (true)
 	 * or not (false = default).
