@@ -24,6 +24,7 @@ CResponse::CResponse(idEntity *e, int Type)
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
 	m_MaxDamage = 0;
+	m_NumRandomEffects = 0;
 }
 
 CResponse::~CResponse(void)
@@ -80,8 +81,19 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 	}
 	
 	//DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Available Response Effects: %u\r", m_ResponseEffects.Num());
-	for (int i = 0; i < m_ResponseEffects.Num(); i++) {
-		m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, magnitude);
+	if (m_NumRandomEffects > 0) {
+		// Random effect mode, choose exactly m_NumRandomEffects to fire
+		for (int i = 1; i <= m_NumRandomEffects; i++) {
+			// Get a random effectIndex in the range of [0, m_ResponseEffects.Num()[
+			int effectIndex = gameLocal.random.RandomInt(m_ResponseEffects.Num());
+			m_ResponseEffects[effectIndex]->runScript(m_Owner, sourceEntity, magnitude);
+		}
+	}
+	else {
+		// "Normal" mode, all the effects get fired in order
+		for (int i = 0; i < m_ResponseEffects.Num(); i++) {
+			m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, magnitude);
+		}
 	}
 
 	// Continue the chain if we have a followup response to be triggered.

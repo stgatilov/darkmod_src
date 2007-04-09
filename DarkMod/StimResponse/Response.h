@@ -80,6 +80,15 @@ protected:
 	float				m_MaxDamage;
 
 	/**
+	* If non-zero, this specifies the number of effects
+	* that get fired on response. If this is set to 2 and 
+	* 5 response effects are available, exactly 2 random
+	* effects are fired. If only one effect is available,
+	* this effect would get fired twice.
+	*/
+	int					m_NumRandomEffects;
+
+	/**
 	* The list of ResponseEffects
 	*/
 	idList<CResponseEffect*> m_ResponseEffects;

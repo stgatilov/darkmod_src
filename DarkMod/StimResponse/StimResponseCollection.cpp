@@ -473,6 +473,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		sprintf(name, "sr_chance_timeout_%u", Counter);
 		sr->m_ChanceTimer = args->GetFloat(name, "-1");
 
+		sprintf(name, "sr_random_effects_%u", Counter);
+		resp->m_NumRandomEffects = args->GetFloat(name, "0");
+
 		// Get the name of the script function for processing the response
 		name = "sr_script_" + str;
 		args->GetString(name, "", str);
