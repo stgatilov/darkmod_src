@@ -60,6 +60,13 @@ protected:
 public:
 	void EnableSR(bool Enable = true);
 
+	/** 
+	* greebo: This evaluates the m_Chance member variable against a random float.
+	*
+	* @returns: TRUE, if the S/R passed the check and can be fired
+	*/
+	bool checkChance();
+
 public:
 	/**
 	 * Id for the stimulus that uniquely identifies a stim, so they can

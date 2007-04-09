@@ -73,3 +73,17 @@ void CStimResponse::EnableSR(bool bEnable)
 	else
 		m_State = SS_DISABLED;
 }
+
+bool CStimResponse::checkChance()
+{
+	if (m_Chance < 1.0f)
+	{
+		// The stim only fires if the (hopefully uniformly distributed)
+		// random variable is within the interval (0, m_Chance]
+		return (gameLocal.random.RandomFloat() <= m_Chance);
+	}
+	else {
+		// 100% chance => return true
+		return true;
+	}
+}

@@ -5365,7 +5365,7 @@ void idGameLocal::ProcessStimResponse(void)
 				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
 					continue;
 
-				// If stim has a finite duration, check if it expired.  If so, disable the stim.
+				// If stim has a finite duration, check if it expired. If so, disable the stim.
 				if( pStim->m_Duration 
 					&& (gameLocal.time - pStim->m_EnabledTimeStamp) > pStim->m_Duration )
 				{
@@ -5375,6 +5375,13 @@ void idGameLocal::ProcessStimResponse(void)
 
 				// Save the current timestamp into the stim, so that we know when it was last fired
 				pStim->m_TimeInterleaveStamp = gameLocal.time;
+
+				// greebo: Check if the stim passes the "chance" test
+				// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
+				// from being re-evaluated in the very next frame in case it failed the test.
+				if (!pStim->checkChance()) {
+					continue;
+				}
 
 				// If stim is not disabled and has a radius or uses the ent bounds
 				if(pStim->m_State != SS_DISABLED && ( (radius = pStim->m_Radius) != 0.0 || pStim->m_bUseEntBounds))
