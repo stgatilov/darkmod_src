@@ -1486,11 +1486,22 @@ bool idEntity::IsHidden( void ) const {
 idEntity::Hide
 ================
 */
-void idEntity::Hide( void ) {
-	if ( !IsHidden() ) {
+void idEntity::Hide( void ) 
+{
+	if ( !IsHidden() ) 
+	{
 		fl.hidden = true;
 		FreeModelDef();
 		UpdateVisuals();
+
+		// If we are hiding a currently frobbed entity,
+		// set the frob pointers to NULL to avoid stale pointers
+		CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
+	
+		if( pDM && pDM->m_FrobEntity == this )
+			pDM->m_FrobEntity = NULL;
+		if( pDM && pDM->m_FrobEntityPrevious == this )
+			pDM->m_FrobEntityPrevious = NULL;
 	}
 }
 
@@ -6309,14 +6320,12 @@ void idEntity::LoadTDMSettings(void)
 
 void idEntity::UpdateFrob(void)
 {
-	idPlayer *player;
 	CDarkModPlayer *pDM;
 
-	player = gameLocal.GetLocalPlayer();
 	pDM = g_Global.m_DarkModPlayer;
 
-	// If we have no player there is no point in doing this. :)
-	if(player == NULL || pDM == NULL || IsHidden() )
+	// hidden objects are skipped
+	if(pDM == NULL || IsHidden() )
 		goto Quit;
 
 	if( !m_bFrobbed )	
