@@ -736,7 +736,7 @@ public:
 	* @return The number of responses triggered
 	*
 	*/
-	int						DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator, bool Timer);
+	int						DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
 
 	/**
 	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.

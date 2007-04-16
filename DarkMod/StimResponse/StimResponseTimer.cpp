@@ -53,16 +53,10 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 
 	// Get the first few characters that define the hours
 	h = atoi( source.Left(source.Find(":")).c_str() );
-	if (!(h >= 0 && h <= 23))
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid hour string [%s]\r", str.c_str());
-		goto Quit;
-	}
-
+	
 	// Strip the first few numbers plus the colon from the source string
 	source = source.Right(source.Length() - source.Find(":") - 1);
 	
-
 	// Parse the minutes
 	m = atoi( source.Left(source.Find(":")).c_str() );
 	if (!(m >= 0 && m <= 59))
@@ -96,8 +90,6 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 	v.Second = s;
 	v.Millisecond = ms;
 
-//	v = SetHours(h) + SetMinutes(m) + SetSeconds(s);
-
 Quit:
 	return v;
 }
@@ -120,13 +112,11 @@ void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisec
 
 void CStimResponseTimer::Stop(void)
 {
-	gameLocal.Printf("Stopping timer!\n");
 	SetState(SRTS_DISABLED);
 }
 
 void CStimResponseTimer::Start(unsigned long sysTicks)
 {
-	gameLocal.Printf("Starting timer!\n");
 	m_LastTick = sysTicks;
 	SetState(SRTS_RUNNING);
 }
@@ -141,7 +131,6 @@ void CStimResponseTimer::Restart(unsigned long sysTicks)
 	{
 		memset(&m_Timer, 0, sizeof(TimerValue));
 		m_Reload--;
-		gameLocal.Printf("Starting Timer, restarts left: %d\n", m_Reload);
 		Start(sysTicks);
 	}
 	else
@@ -159,21 +148,12 @@ void CStimResponseTimer::SetState(TimerState State)
 	m_State = State;
 }
 
-void CStimResponseTimer::GetTimerValueDiff(TimerValue const &A, TimerValue const &B, TimerValue &rc) const
+bool CStimResponseTimer::Tick(unsigned long sysTicks)
 {
-}
-
-
-int CStimResponseTimer::Tick(unsigned long sysTicks)
-{
-	int rc = -1;
-
-	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
+	bool returnValue = false;
 
 	if(m_State != SRTS_RUNNING)
 		goto Quit;
-
-	rc = 0;
 
 	// We don't really care for an overrun of the ticckcounter. If 
 	// it really happens, the worst thing would be that a particular
@@ -183,16 +163,13 @@ int CStimResponseTimer::Tick(unsigned long sysTicks)
 	// should work again though, since we always store the current
 	// value to remember it for the next cycle.
 	unsigned long ticksPassed = sysTicks - m_LastTick;
-	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Ticks passed: %f\r", ticksPassed);
-
+	
 	// If the overrun happened, we just ignore this tick. It's the easiest
 	// thing to do and the safest.
 	if (ticksPassed < 0.0)
 		goto Quit;
 
 	m_Ticker += ticksPassed;
-
-	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Ticks per ms: %f\r", m_TicksPerMilliSecond);
 
 	// Calculate the number of milliseconds that have passed since the last visit
 	double msPassed = floor(static_cast<double>(m_Ticker) / m_TicksPerMilliSecond);
@@ -218,13 +195,11 @@ int CStimResponseTimer::Tick(unsigned long sysTicks)
 	if (m_Timer.Hour >= m_TimerVal.Hour && m_Timer.Minute >= m_TimerVal.Minute && 
 		m_Timer.Second >= m_TimerVal.Second && m_Timer.Millisecond >= m_TimerVal.Millisecond) 
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Timer elapsed at: %d %d %d %d \r", m_Timer.Hour, m_Timer.Minute, m_Timer.Second, m_Timer.Millisecond);
-		rc++;
+		returnValue = true;
 		if(m_Type == SRTT_SINGLESHOT) {
 			Stop();
 		}
 		else {
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Restarting timer: %d %d %d %d \r", m_TimerVal.Hour, m_TimerVal.Minute, m_TimerVal.Second, m_TimerVal.Millisecond);
 			Restart(sysTicks);
 		}
 	}
@@ -232,5 +207,5 @@ int CStimResponseTimer::Tick(unsigned long sysTicks)
 Quit:
 	m_LastTick = sysTicks;
 
-	return rc;
+	return returnValue;
 }

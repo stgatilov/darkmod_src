@@ -122,25 +122,10 @@ public:
 	inline TimerState GetState(void) { return m_State; };
 
 	/**
-	 * The timer returns -1 if it is not working. Otherwise it will
-	 * return the number of times it was triggered since the last
-	 * time it was advanced. Usually this should be 1. If the number is
-	 * consequently higher, it could mean that the machine is to slow
-	 * to handle this timer frequency.
+	 * The timer returns FALSE if the timer is inactive or
+	 * the time to fire has not yet come.
 	 */
-	virtual int Tick(unsigned long sysTicks);
-
-	/**
-	 * Calculate the difference between two timervalues. This is usefull
-	 * if you want a countdown instead of a normal clock. In this case, you
-	 * can use the timer just like normal, but if you want to know the 
-	 * state of the countdown just calculate the difference to your
-	 * original value.
-	 *
-	 * The parameters are:
-	 * A - B = Result
-	 */
-	void GetTimerValueDiff(TimerValue const &A, TimerValue const &B, TimerValue &Result) const;
+	virtual bool Tick(unsigned long sysTicks);
 
 protected:
 	CStimResponseTimer();

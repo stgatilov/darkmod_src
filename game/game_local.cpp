@@ -5262,7 +5262,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 		m_RespEntity.RemoveIndex(i);
 }
 
-int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e, bool Timer)
+int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
 {
 	int i;
 	CResponse *r;
@@ -5271,15 +5271,13 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 	for(i = 0; i < n; i++)
 	{
 		// ignore the original entity because an entity shouldn't respond 
-		// to it's own stims. In case of a normal event the trigger and the
-		// entity must be different. When the response is triggered by a timer
-		// the entity and the trigger are always the same.
-		if(Timer == false && Ent[i] == e)
+		// to it's own stims.
+		if (Ent[i] == e)
 			continue;
 
 		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
 		{
-			if(r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
+			if (r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
 			{
 				// Check duration, disable if past duration
 				if(r->m_Duration && (gameLocal.time - r->m_EnabledTimeStamp) > r->m_Duration )
@@ -5316,7 +5314,6 @@ void idGameLocal::ProcessStimResponse(void)
 
 	// Check the timed stims first.
 	en = m_StimTimer.Num();
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Game_Local: Stim Timers available: %d\r", en);
 	for(ei = 0; ei < en; ei++)
 	{
 		CStim *stim = m_StimTimer[ei];
@@ -5324,28 +5321,17 @@ void idGameLocal::ProcessStimResponse(void)
 		// Only advance the timer if the stim can be fired in the first place
 		if (stim->m_MaxFireCount > 0 || stim->m_MaxFireCount == -1)
 		{
-			int tst = -1;
-
 			// Advance the timer
 			timer = stim->GetTimer();
 
 			if(timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
 			{
-				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("StimTimer: Active timer found.\r");
-				tst = timer->Tick(ticks);
-				//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("StimTimer: Updating active timer at clock val %d, num stims = %d.\r", ts, tst);
-			}
-
-			if (tst > 0) {
-				gameLocal.Printf("Timer elapsed!\n");
-				// Enable the stim when the timer has expired
-				stim->EnableSR(true);
-				tst = 0;
-				/*Ent[0] = stim->m_Owner;
-				e = Ent[0];
-				n = 1;
-				DoResponseAction(stim, Ent, n, e, true);*/
-				//tst--;
+				if (timer->Tick(ticks))
+				{
+					gameLocal.Printf("Timer elapsed!\n");
+					// Enable the stim when the timer has expired
+					stim->EnableSR(true);
+				}
 			}
 		}
 	}
@@ -5425,7 +5411,7 @@ void idGameLocal::ProcessStimResponse(void)
 					if(n != 0)
 					{
 						// Do responses for entities within the radius of the stim
-						numResponses = DoResponseAction(pStim, Ent, n, e, false);
+						numResponses = DoResponseAction(pStim, Ent, n, e);
 					}
 
 					// The stim has fired, let it do any post-firing activity it may have
