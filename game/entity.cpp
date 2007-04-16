@@ -7334,7 +7334,7 @@ void idEntity::Event_TimerStart(int StimType)
 	if(timer == NULL)
 		goto Quit;
 
-	timer->Start(sys->GetClockTicks());
+	timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
 
 Quit:
 	return;
@@ -7349,7 +7349,7 @@ void idEntity::Event_TimerRestart(int StimType)
 	if(timer == NULL)
 		goto Quit;
 
-	timer->Restart(sys->GetClockTicks());
+	timer->Restart(static_cast<unsigned long>(sys->GetClockTicks()));
 
 Quit:
 	return;

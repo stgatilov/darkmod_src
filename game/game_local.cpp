@@ -5312,7 +5312,7 @@ void idGameLocal::ProcessStimResponse(void)
 	CStimResponseTimer *timer;
 	idBounds bounds;
 	idEntity *Ent[MAX_GENTITIES];
-	double ticks = sys->GetClockTicks();
+	unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
 
 	// Check the timed stims first.
 	en = m_StimTimer.Num();

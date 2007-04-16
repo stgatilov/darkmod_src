@@ -72,7 +72,7 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 CStimResponseTimer* CStim::AddTimerToGame(void)
 {
 	gameLocal.m_StimTimer.AddUnique(this);
-	m_Timer.SetTicks(sys->ClockTicksPerSecond());
+	m_Timer.SetTicks(sys->ClockTicksPerSecond()/1000);
 
 	return(&m_Timer);
 }

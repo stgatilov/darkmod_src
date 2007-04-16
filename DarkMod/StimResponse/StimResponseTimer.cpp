@@ -24,10 +24,9 @@ CStimResponseTimer::CStimResponseTimer()
 	m_ReloadVal = 0;
 	m_Timer.Flags = TIMER_UNDEFINED;
 	m_TimerVal.Flags = TIMER_UNDEFINED;
-	m_LastTick = 0.0;
-	m_Ticker = 0.0;
-	m_TicksPerSecond = 0.0;
-	m_TicksPerMilliSecond = 0.0;
+	m_LastTick = 0;
+	m_Ticker = 0;
+	m_TicksPerMilliSecond = 0;
 }
 
 CStimResponseTimer::~CStimResponseTimer(void)
@@ -36,8 +35,7 @@ CStimResponseTimer::~CStimResponseTimer(void)
 
 void CStimResponseTimer::SetTicks(double const &TicksPerSecond)
 {
-	m_TicksPerSecond = TicksPerSecond;
-	m_TicksPerMilliSecond = TicksPerSecond/1000.0;
+	m_TicksPerMilliSecond = static_cast<unsigned long>(TicksPerSecond);
 }
 
 TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
@@ -126,25 +124,25 @@ void CStimResponseTimer::Stop(void)
 	SetState(SRTS_DISABLED);
 }
 
-void CStimResponseTimer::Start(double const &t)
+void CStimResponseTimer::Start(unsigned long sysTicks)
 {
 	gameLocal.Printf("Starting timer!\n");
-	m_LastTick = t;
+	m_LastTick = sysTicks;
 	SetState(SRTS_RUNNING);
 }
 
-void CStimResponseTimer::Restart(double const &t)
+void CStimResponseTimer::Restart(unsigned long sysTicks)
 {
 	// Switch to the next timer cycle if reloading is still possible or 
 	// reloading is ignored.
-	m_Ticker = t;
+	m_Ticker = sysTicks;
 
 	if(m_Reload > 0 || m_Reload == -1)
 	{
 		memset(&m_Timer, 0, sizeof(TimerValue));
 		m_Reload--;
 		gameLocal.Printf("Starting Timer, restarts left: %d\n", m_Reload);
-		Start(t);
+		Start(sysTicks);
 	}
 	else
 		Stop();
@@ -166,7 +164,7 @@ void CStimResponseTimer::GetTimerValueDiff(TimerValue const &A, TimerValue const
 }
 
 
-int CStimResponseTimer::Tick(double const &t)
+int CStimResponseTimer::Tick(unsigned long sysTicks)
 {
 	int rc = -1;
 
@@ -184,64 +182,55 @@ int CStimResponseTimer::Tick(double const &t)
 	// the value instead of adding it. In the next cylce, everything 
 	// should work again though, since we always store the current
 	// value to remember it for the next cycle.
-	double tick = t - m_LastTick;
+	unsigned long ticksPassed = sysTicks - m_LastTick;
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Ticks passed: %f\r", ticksPassed);
 
 	// If the overrun happened, we just ignore this tick. It's the easiest
 	// thing to do and the safest.
-	if(tick < 0.0)
+	if (ticksPassed < 0.0)
 		goto Quit;
 
-	m_Ticker =+ tick;
+	m_Ticker += ticksPassed;
 
-	// It could be possible that one haertbeat took longer than one millisecond.
-	// In this case we loop and advance the timer for each millisecond that 
-	// expired. The expectation is, that this will not happen most of the time
-	// of if it does, then mostly on slow machines.
-	while(m_Ticker > m_TicksPerMilliSecond)
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Ticks per ms: %f\r", m_TicksPerMilliSecond);
+
+	// Calculate the number of milliseconds that have passed since the last visit
+	double msPassed = floor(static_cast<double>(m_Ticker) / m_TicksPerMilliSecond);
+	// The remaining ticks are what's left after the division (modulo)
+	m_Ticker %= m_TicksPerMilliSecond;
+
+	// Increase the hours/minutes/seconds/milliseconds
+	m_Timer.Millisecond += msPassed;
+
+	if (m_Timer.Millisecond > 999) {
+		// Increase the seconds
+		m_Timer.Second += floor(static_cast<double>(m_Timer.Millisecond) / 1000);
+		m_Timer.Millisecond %= 1000;
+
+		m_Timer.Minute += floor(static_cast<double>(m_Timer.Second) / 60);
+		m_Timer.Second %= 60;
+
+		m_Timer.Hour += floor(static_cast<double>(m_Timer.Minute) / 60);
+		m_Timer.Minute %= 60;
+	}
+
+	// Now check if the timer already expired.
+	if (m_Timer.Hour >= m_TimerVal.Hour && m_Timer.Minute >= m_TimerVal.Minute && 
+		m_Timer.Second >= m_TimerVal.Second && m_Timer.Millisecond >= m_TimerVal.Millisecond) 
 	{
-		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f/%f\r", m_TicksPerMilliSecond, m_Ticker);
-
-		m_Ticker -= m_TicksPerMilliSecond;
-		m_Timer.Millisecond++;
-		if(m_Timer.Millisecond > 999)
-		{
-			m_Timer.Millisecond = 0;
-			m_Timer.Second++;
-			gameLocal.Printf("Second tick\n");
-
-			if(m_Timer.Second > 59)
-			{
-				m_Timer.Second = 0;
-				m_Timer.Minute++;
-
-				if(m_Timer.Minute > 59)
-				{
-					m_Timer.Minute = 0;
-					m_Timer.Hour++;
-				}
-			}
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Timer elapsed at: %d %d %d %d \r", m_Timer.Hour, m_Timer.Minute, m_Timer.Second, m_Timer.Millisecond);
+		rc++;
+		if(m_Type == SRTT_SINGLESHOT) {
+			Stop();
 		}
-
-		// Now check if the timer already expired.
-		if (m_Timer.Hour >= m_TimerVal.Hour && m_Timer.Minute >= m_TimerVal.Minute && 
-			m_Timer.Second >= m_TimerVal.Second && m_Timer.Millisecond >= m_TimerVal.Millisecond) 
-		{
-			rc++;
-			if(m_Type == SRTT_SINGLESHOT) {
-				Stop();
-			}
-			else {
-				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Restarting timer: %d %d %d %d \r", m_TimerVal.Hour, m_TimerVal.Minute, m_TimerVal.Second, m_TimerVal.Millisecond);
-				Restart(t);
-			}
-
-			break;
+		else {
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Restarting timer: %d %d %d %d \r", m_TimerVal.Hour, m_TimerVal.Minute, m_TimerVal.Second, m_TimerVal.Millisecond);
+			Restart(sysTicks);
 		}
 	}
 
-
 Quit:
-	m_LastTick = t;
+	m_LastTick = sysTicks;
 
 	return rc;
 }

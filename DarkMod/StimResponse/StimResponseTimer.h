@@ -98,7 +98,7 @@ public:
 	 * has been stopped before, but has not yet expired, it will
 	 * just continue where it stopped which is different to Restart().
 	 */
-	virtual void Start(double const &t);
+	virtual void Start(unsigned long sysTicks);
 
 	/**
 	 * Stop will simply stop the timer without any changes
@@ -110,7 +110,7 @@ public:
 	 * is specified it will be decreased, which means that if no more
 	 * reloads are possible, restart will have no effect.
 	 */
-	virtual void Restart(double const &t);
+	virtual void Restart(unsigned long sysTicks);
 	
 	/**
 	 * Reset will reset the timer. This means that also the reload
@@ -128,7 +128,7 @@ public:
 	 * consequently higher, it could mean that the machine is to slow
 	 * to handle this timer frequency.
 	 */
-	virtual int Tick(double const &Ticks);
+	virtual int Tick(unsigned long sysTicks);
 
 	/**
 	 * Calculate the difference between two timervalues. This is usefull
@@ -147,10 +147,9 @@ protected:
 	virtual ~CStimResponseTimer(void);
 
 protected:
-	double			m_LastTick;
-	double			m_Ticker;
-	double			m_TicksPerSecond;
-	double			m_TicksPerMilliSecond;
+	unsigned long	m_LastTick;
+	unsigned long	m_Ticker;
+	unsigned long	m_TicksPerMilliSecond;
 
 	/**
 	* The Timer type specifies if this is a single-use timer or a
