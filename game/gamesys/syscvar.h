@@ -34,6 +34,7 @@ extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;
+extern idCVar cv_pm_mantle_height;
 
 /**
 * TDM Leaning vars:

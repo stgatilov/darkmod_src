@@ -3633,7 +3633,9 @@ void idPhysics_Player::GetCurrentMantlingReachDistances
 )
 {
 	// Determine arm length
-	float armLength = pm_normalheight.GetFloat() * g_Global.m_armLengthAsFractionOfPlayerHeight;
+	// Nyarlathotep 4/12/07 - use cv_pm_mantle_height instead of 
+	// g_Global.m_armLengthAsFractionOfPlayerHeight
+	float armLength = pm_normalheight.GetFloat() * cv_pm_mantle_height.GetFloat();
 
 	// Trace out as far as arm length from player
 	out_maxMantleTraceDistance = armLength;

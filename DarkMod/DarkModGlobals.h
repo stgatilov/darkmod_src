@@ -241,13 +241,6 @@ public:
 	*/
 	float m_hidingSpotMaxLightQuotient;
 
-
-	/*!
-	* Arm length for mantling
-	* @author: sophisticatedZombie (DH)
-	*/
-	float m_armLengthAsFractionOfPlayerHeight;
-
 	// Mantle trigger timer for holding jump key
 	float m_jumpHoldMantleTrigger_Milliseconds;
 	

@@ -43,9 +43,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // mantling.
 #define DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS 100.0f
 
-// Player arm length, as fraction of player height: About 3/5 plus some padding
-#define DARKMOD_MANTLE_ARM_LENGTH_AS_FRACTION_OF_PLAYER_HEIGHT 0.8f
-
 // Default time values for phases of mantling
 #define DARKMOD_MANTLE_MILLISECONDS_HANG		750.0f
 #define DARKMOD_MANTLE_MILLISECONDS_PULL		750.0f
@@ -223,9 +220,6 @@ CGlobal::CGlobal(void)
 	// Initialize the Mantling and Leaning variables
 	//*******
 	m_jumpHoldMantleTrigger_Milliseconds = DARKMOD_JUMP_HOLD_MANTLE_TRIGGER_MILLISECONDS;
-
-	// Default arm length for determining reach distances when mantling
-	m_armLengthAsFractionOfPlayerHeight = DARKMOD_MANTLE_ARM_LENGTH_AS_FRACTION_OF_PLAYER_HEIGHT;
 
 	// Default time values for phases of mantling
 	m_mantleHang_Milliseconds = DARKMOD_MANTLE_MILLISECONDS_HANG;

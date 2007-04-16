@@ -71,6 +71,8 @@ idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_ARCHIVE | CVAR
 idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
 idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
 idCVar cv_pm_pushmod(				"pm_pushmod",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Alters the impulse applied when the player runs into an object.  Fractional modifier that multiplies the default D3 impulse.  Default is 1.0" );
+idCVar cv_pm_mantle_height(			"pm_mantle_height",		"0.8",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Player arm length, as fraction of player height: about 3/5 plus some padding.  Default is 0.8" );
+
 /**
 * Dark Mod Leaning
 **/
