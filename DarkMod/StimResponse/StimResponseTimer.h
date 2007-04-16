@@ -48,13 +48,13 @@ public:
  * as only the Val counterparts will be used to track the current state.
  *
  * m_Timer is the actual timer that determines how long it takes before the stim
- * is firing. After this timer is expired, the stim will start to fire. If a duration
- * timer is also set, it will fire as long as the duration lasts. If no duration is
- * specified, the timer will fire exactly once, and then reset itself if it is a
- * restartable timer (SRTT_RELOAD) and the cycle will begin again. If a reload value
- * is set, it will only be restarted until the reloadcounter has been depleted (0).
- * If the reloadvalue is -1, it means that it will reset itself infinitely (or until
- * manually stopped).
+ * is getting enabled. After this timer is expired, the stim will be activated. 
+ * If a duration timer is also set, it will fire as long as the duration lasts and will
+ * be disabled this duration time. If no duration is specified, the timer will fire 
+ * exactly once, and then reset itself if it is a restartable timer (SRTT_RELOAD) and 
+ * the cycle will begin again. If a reload value is set, it will only be restarted 
+ * until the reloadcounter has been depleted (0). If the reloadvalue is -1, it means 
+ * that it will reset itself infinitely (or until manually stopped).
  */
 class CStimResponseTimer {
 friend CStim;
@@ -95,7 +95,7 @@ public:
 
 	/**
 	 * Start the timer again, after it has been stopped. If the timer 
-	 * has been stopped before, but has not yet bee expired, it will
+	 * has been stopped before, but has not yet expired, it will
 	 * just continue where it stopped which is different to Restart().
 	 */
 	virtual void Start(double const &t);
@@ -124,7 +124,7 @@ public:
 	/**
 	 * The timer returns -1 if it is not working. Otherwise it will
 	 * return the number of times it was triggered since the last
-	 * time it was avanced. Usually this should be 1. If the number is
+	 * time it was advanced. Usually this should be 1. If the number is
 	 * consequently higher, it could mean that the machine is to slow
 	 * to handle this timer frequency.
 	 */
@@ -152,7 +152,12 @@ protected:
 	double			m_TicksPerSecond;
 	double			m_TicksPerMilliSecond;
 
+	/**
+	* The Timer type specifies if this is a single-use timer or a
+	* "reloadable" timer.
+	*/
 	TimerType		m_Type;
+
 	TimerState		m_State;
 
 	/**

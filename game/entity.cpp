@@ -7306,7 +7306,7 @@ void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Create Timer: Stimtype-%d Hour: %d  Minute: %d   Seconds: %d   Milliseconds: %d\r",
 		StimType, Hour, Minute, Seconds, Millisecond);
-	timer = stim->CreateTimer();
+	timer = stim->AddTimerToGame();
 	timer->SetTimer(Hour, Minute, Seconds, Millisecond);
 }
 

@@ -71,7 +71,6 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 	{
 		if(m_Stim[i]->m_StimTypeId == Type)
 		{
-
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Stim of that type is already in collection, returning it");
 			pRet = m_Stim[i];
 			break;
@@ -465,6 +464,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		sprintf(name, "sr_magnitude_%u", Counter);
 		stim->m_Magnitude = args->GetFloat(name, "1.0");
 
+		sprintf(name, "sr_max_fire_count_%u", Counter);
+		stim->m_MaxFireCount = args->GetFloat(name, "-1");
+
 		// Check if we have a timer on this stim.
 		CreateTimer(args, stim, Counter);
 	}
@@ -564,20 +566,20 @@ Quit:
 void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int Counter)
 {
 	idStr str;
-	int n, Milliseconds(0);
-	CStimResponseTimer *t = NULL;
-
-
-	t = stim->GetTimer();
+	int n;
+	
+	CStimResponseTimer* timer = stim->GetTimer();
 
 	args->GetInt( va("sr_timer_reload_%u",Counter) , "-1", n);
-	t->m_Reload = n;
+	timer->m_Reload = n;
 
-	args->GetString( va("sr_timer_type_%u",Counter), "RELOAD", str);
-	if(str.Cmp("RELOAD") == 0)
-		t->m_Type = CStimResponseTimer::SRTT_RELOAD;
-	else
-		t->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
+	args->GetString( va("sr_timer_type_%u",Counter), "", str);
+	if(str.Cmp("RELOAD") == 0) {
+		timer->m_Type = CStimResponseTimer::SRTT_RELOAD;
+	}
+	else {
+		timer->m_Type = CStimResponseTimer::SRTT_SINGLESHOT;
+	}
 
 	args->GetString( va("sr_timer_time_%u",Counter), "0:0:0:0", str );
     TimerValue val;
@@ -588,12 +590,13 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int C
 	{
 		// TODO: Return a bool here so that the outer function knows not to add this to m_Stim in the collection?
 
-		stim->CreateTimer();
-		t->SetTimer(0,0,0, Milliseconds);
+		stim->AddTimerToGame();
+		timer->SetTimer(val.Hour, val.Minute, val.Second, val.Millisecond);
 		
 		// timer starts on map startup by default, otherwise wait for start
-		if( !(args->GetBool( va("sr_timer_waitforstart_%u",Counter), "0" )) )
-			t->Start(sys->GetClockTicks());
+		if( !(args->GetBool( va("sr_timer_waitforstart_%u",Counter), "0" )) ) {
+			timer->Start(sys->GetClockTicks());
+		}
 	}
 }
 

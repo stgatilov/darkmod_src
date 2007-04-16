@@ -76,16 +76,10 @@ public:
 	 * If the stim contains information for a timed event, this function parses the string
 	 * and creates the appropriate timer structure.
 	 *
-	 * The timer is comfigured by several strings on the entity:
-	 * Key: sr_timer_duration
-	 * Value: TimeString
-	 * 
-	 * HH:MM:SS
+	 * The timer is configured by several strings on the entity:
 	 *
-	 * HH are the hours in 24 hour format 0-23.
-	 * MM are the minutes 0-59.
-	 * SS are the seconds 0-59.
-	 *
+ 	 * Key: sr_timer_time
+	 * Value: Time in the format: HOURS:MINUTES:SECONDS:MILLISECONDS
 	 *
 	 * Key: sr_timer_reload
 	 * Value: N
@@ -95,15 +89,6 @@ public:
 	 *
 	 * Key: sr_timer_type
 	 * Value: { RELOAD | SINGLESHOT }
-	 *
-	 * Key: sr_timer_reload_duration
-	 * Value: TimeString
-	 *
-	 * Key: sr_timer_apply_duration
-	 * Value: TimeString
-	 *
-	 * Key: sr_timer_time
-	 * Value: Time in the format: HOURS:MINUTES:SECONDS:MILLISECONDS
 	 *
 	 * Key: sr_timer_waitforstart
 	 * Value: { 0 | 1 } - Set true if timer should wait for StartTimer to start

@@ -43,69 +43,55 @@ void CStimResponseTimer::SetTicks(double const &TicksPerSecond)
 TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 {
 	TimerValue v;
-	int i, h, m, s, ms;
+	int h, m, s, ms;
+	idStr source = str;
 
 	v.Flags = TIMER_UNDEFINED;
 
 	if(str.Length() == 0)
 		goto Quit;
 
-	if(str[2] != ':' && str[5]  != ':')
+	h = m = s = ms = 0;
+
+	// Get the first few characters that define the hours
+	h = atoi( source.Left(source.Find(":")).c_str() );
+	if (!(h >= 0 && h <= 23))
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid timer string [%s]\r", str.c_str());
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid hour string [%s]\r", str.c_str());
 		goto Quit;
 	}
 
-	h = m = s = ms = 0;
-	for(i = 0; i < 4; i++)
+	// Strip the first few numbers plus the colon from the source string
+	source = source.Right(source.Length() - source.Find(":") - 1);
+	
+
+	// Parse the minutes
+	m = atoi( source.Left(source.Find(":")).c_str() );
+	if (!(m >= 0 && m <= 59))
 	{
-		switch(i)
-		{
-			case 0:
-			{
-				h = atoi(str.c_str());
-				if(!(h >= 0 && h <= 23))
-				{
-					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid hour string [%s]\r", str.c_str());
-					goto Quit;
-				}
-			}
-			break;
-
-			case 1:
-			{
-				m = atoi(str.c_str());
-				if(!(m >= 0 && m <= 59))
-				{
-					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid minute string [%s]\r", str.c_str());
-					goto Quit;
-				}
-			}
-			break;
-
-			case 2:
-			{
-				s = atoi(str.c_str());
-				if(!(s >= 0 && s <= 59))
-				{
-					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid second string [%s]\r", str.c_str());
-					goto Quit;
-				}
-			}
-			break;
-
-			case 3:
-			{
-				ms = atoi(str.c_str());
-				if(!(ms >= 0 && ms <= 999))
-				{
-					DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid millisecond string [%s]\r", str.c_str());
-					goto Quit;
-				}
-			}
-			break;
-		}
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid minute string [%s]\r", str.c_str());
+		goto Quit;
 	}
+	// Strip the first few numbers plus the colon from the source string
+	source = source.Right(source.Length() - source.Find(":") - 1);
+	
+	// Parse the seconds
+	s = atoi( source.Left(source.Find(":")).c_str() );
+	if (!(s >= 0 && s <= 59))
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid second string [%s]\r", str.c_str());
+		goto Quit;
+	}
+
+	// Parse the milliseconds, this is the remaining part of the string
+	ms = atoi( source.Right(source.Length() - source.Find(":") - 1).c_str() );
+	if (!(ms >= 0 && ms <= 999))
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid millisecond string [%s]\r", str.c_str());
+		goto Quit;
+	}
+
+	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Parsed timer string: [%s] to %d:%d:%d:%d\r", str.c_str(), h, m, s, ms);
 
 	v.Hour = h;
 	v.Minute = m;
@@ -136,11 +122,13 @@ void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisec
 
 void CStimResponseTimer::Stop(void)
 {
+	gameLocal.Printf("Stopping timer!\n");
 	SetState(SRTS_DISABLED);
 }
 
 void CStimResponseTimer::Start(double const &t)
 {
+	gameLocal.Printf("Starting timer!\n");
 	m_LastTick = t;
 	SetState(SRTS_RUNNING);
 }
@@ -155,6 +143,7 @@ void CStimResponseTimer::Restart(double const &t)
 	{
 		memset(&m_Timer, 0, sizeof(TimerValue));
 		m_Reload--;
+		gameLocal.Printf("Starting Timer, restarts left: %d\n", m_Reload);
 		Start(t);
 	}
 	else
@@ -181,7 +170,7 @@ int CStimResponseTimer::Tick(double const &t)
 {
 	int rc = -1;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("this: %08lX %s\r", this, __FUNCTION__);
 
 	if(m_State != SRTS_RUNNING)
 		goto Quit;
@@ -210,7 +199,7 @@ int CStimResponseTimer::Tick(double const &t)
 	// of if it does, then mostly on slow machines.
 	while(m_Ticker > m_TicksPerMilliSecond)
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f/%f\r", m_TicksPerMilliSecond, m_Ticker);
+		//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Millisecs triggered: %f/%f\r", m_TicksPerMilliSecond, m_Ticker);
 
 		m_Ticker -= m_TicksPerMilliSecond;
 		m_Timer.Millisecond++;
@@ -218,6 +207,7 @@ int CStimResponseTimer::Tick(double const &t)
 		{
 			m_Timer.Millisecond = 0;
 			m_Timer.Second++;
+			gameLocal.Printf("Second tick\n");
 
 			if(m_Timer.Second > 59)
 			{
@@ -233,24 +223,19 @@ int CStimResponseTimer::Tick(double const &t)
 		}
 
 		// Now check if the timer already expired.
-		if(m_Timer.Millisecond >= m_TimerVal.Millisecond)
+		if (m_Timer.Hour >= m_TimerVal.Hour && m_Timer.Minute >= m_TimerVal.Minute && 
+			m_Timer.Second >= m_TimerVal.Second && m_Timer.Millisecond >= m_TimerVal.Millisecond) 
 		{
-			if(m_Timer.Second >= m_TimerVal.Second)
-			{
-				if(m_Timer.Minute >= m_TimerVal.Minute)
-				{
-					if(m_Timer.Hour >= m_TimerVal.Hour)
-					{
-						rc++;
-						if(m_Type == SRTT_SINGLESHOT)
-							Stop();
-						else
-							Restart(t);
-
-						break;
-					}
-				}
+			rc++;
+			if(m_Type == SRTT_SINGLESHOT) {
+				Stop();
 			}
+			else {
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Restarting timer: %d %d %d %d \r", m_TimerVal.Hour, m_TimerVal.Minute, m_TimerVal.Second, m_TimerVal.Millisecond);
+				Restart(t);
+			}
+
+			break;
 		}
 	}
 

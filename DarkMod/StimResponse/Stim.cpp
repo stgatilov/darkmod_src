@@ -31,6 +31,7 @@ CStim::CStim(idEntity *e, int Type)
 	m_CurResponses = 0;
 	m_ApplyTimer = 0;
 	m_ApplyTimerVal = 0;
+	m_MaxFireCount = -1;
 }
 
 CStim::~CStim(void)
@@ -68,7 +69,7 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 }
 
 
-CStimResponseTimer *CStim::CreateTimer(void)
+CStimResponseTimer* CStim::AddTimerToGame(void)
 {
 	gameLocal.m_StimTimer.AddUnique(this);
 	m_Timer.SetTicks(sys->ClockTicksPerSecond());
@@ -76,7 +77,7 @@ CStimResponseTimer *CStim::CreateTimer(void)
 	return(&m_Timer);
 }
 
-void CStim::RemoveTimer(void)
+void CStim::RemoveTimerFromGame(void)
 {
 	gameLocal.m_StimTimer.Remove(this);
 }

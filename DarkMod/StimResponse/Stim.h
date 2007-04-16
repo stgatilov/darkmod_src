@@ -33,8 +33,13 @@ public:
 	void RemoveResponseIgnore(idEntity *);
 	bool CheckResponseIgnore(idEntity *);
 
-	CStimResponseTimer *CreateTimer(void);
-	void RemoveTimer(void);
+	/**
+	* greebo: This adds/removes the stim timer to/from the list 
+	*		  maintained by class gameLocal
+	*/
+	CStimResponseTimer* AddTimerToGame(void);
+	void RemoveTimerFromGame(void);
+
 	CStimResponseTimer *GetTimer(void) { return &m_Timer; };
 
 protected:
@@ -71,6 +76,13 @@ public:
 	* Timestamp used with time interleaving code.
 	**/
 	int						m_TimeInterleaveStamp;
+
+	/**
+	* greebo: The counter specifying how often the stim can be
+	*		  be fired before it gets disabled.
+	*		  Set this to -1 to allow infinite firing (default).
+	*/
+	int						m_MaxFireCount;
 
 	/**
 	 * Radius defines the radius the action can reach out
