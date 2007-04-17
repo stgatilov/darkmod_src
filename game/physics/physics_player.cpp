@@ -1492,6 +1492,28 @@ void idPhysics_Player::LadderMove( void )
 				TempStr = LookUpName + "default";
 				m_ClimbMaxVelHoriz = self->spawnArgs.GetFloat( LookUpName.c_str(), "2.3" );
 			}
+
+			// sound repitition distances
+			LookUpName = "climb_snd_repdist_vert_";
+			TempStr = LookUpName + SurfName;
+			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
+				m_ClimbSndRepDistVert = atoi( kv->GetValue().c_str() );
+			else
+			{
+				TempStr = LookUpName + "default";
+				m_ClimbSndRepDistVert = self->spawnArgs.GetInt( LookUpName.c_str(), "32" );
+			}
+
+			// sound repitition distances
+			LookUpName = "climb_snd_repdist_horiz_";
+			TempStr = LookUpName + SurfName;
+			if( ( kv = const_cast<idKeyValue *>( self->spawnArgs.FindKey(LookUpName.c_str())) ) != NULL )
+				m_ClimbSndRepDistHoriz = atoi( kv->GetValue().c_str() );
+			else
+			{
+				TempStr = LookUpName + "default";
+				m_ClimbSndRepDistHoriz = self->spawnArgs.GetInt( LookUpName.c_str(), "32" );
+			}
 		}
 	}
 	else if( m_bClimbInitialPhase )
@@ -1513,14 +1535,13 @@ void idPhysics_Player::LadderMove( void )
 	if( lenVert < -0.3 )
 		lenVert2 = -lenVert2;
 
-	// vReqVert = lenVert2 * 0.9f * -gravityNormal * scale * (float)command.forwardmove;
 	vReqVert = lenVert2 * -gravityNormal * scale * (float)command.forwardmove;
 	vReqVert *= m_ClimbMaxVelVert;
+
 	// obtain the horizontal direction
 	vReqHoriz = viewForward - (ClimbNormXY * viewForward) * ClimbNormXY;
 	vReqHoriz -= (vReqHoriz * gravityNormal) * gravityNormal;
 	vReqHoriz.Normalize();
-	// vReqHoriz *= 2.0f * lenTransv * scale * (float)command.forwardmove;
 	vReqHoriz *= lenTransv * scale * (float)command.forwardmove;
 	vReqHoriz *= m_ClimbMaxVelHoriz;
 
@@ -1540,7 +1561,6 @@ void idPhysics_Player::LadderMove( void )
 		right = right - (ClimbNormXY * right) * ClimbNormXY;
 		right.Normalize();
 
-		// scale it by something pretty high so that it's clamped by the material limit
 		wishvel += m_ClimbMaxVelHoriz * right * scale * (float) command.rightmove;
 	}
 
@@ -2465,6 +2485,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbSurfName.Clear();
 	m_ClimbMaxVelHoriz = 0.0f;
 	m_ClimbMaxVelVert = 0.0f;
+	m_ClimbSndRepDistVert = 0;
+	m_ClimbSndRepDistHoriz = 0;
 
 	// swimming
 	waterLevel = WATERLEVEL_NONE;
@@ -2583,6 +2605,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( m_ClimbSurfName.c_str() );
 	savefile->WriteFloat( m_ClimbMaxVelHoriz );
 	savefile->WriteFloat( m_ClimbMaxVelVert );
+	savefile->WriteInt( m_ClimbSndRepDistVert );
+	savefile->WriteInt( m_ClimbSndRepDistHoriz );
 	m_ClimbingOnEnt.Save( savefile );
 
 	savefile->WriteInt( (int)waterLevel );
@@ -2664,6 +2688,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString( m_ClimbSurfName );
 	savefile->ReadFloat( m_ClimbMaxVelHoriz );
 	savefile->ReadFloat( m_ClimbMaxVelVert );
+	savefile->ReadInt( m_ClimbSndRepDistVert );
+	savefile->ReadInt( m_ClimbSndRepDistHoriz );
 	m_ClimbingOnEnt.Restore( savefile );
 
 	savefile->ReadInt( (int &)waterLevel );

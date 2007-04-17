@@ -125,6 +125,11 @@ public:
 	* of the climbing surface.  Used to keep track of lateral position for climb movement sounds
 	**/
 	float					GetClimbLateralCoord( idVec3 OrigVec ) const;
+	/**
+	* Returns the distance between climbing sounds, in horizontal and vertical coords
+	**/
+	int						GetClimbSndRepDistVert( void ) { return m_ClimbSndRepDistVert; }
+	int						GetClimbSndRepDistHoriz( void ) { return m_ClimbSndRepDistHoriz; }
 
 
 	const idVec3 &			PlayerGetOrigin( void ) const;	// != GetOrigin
@@ -286,6 +291,12 @@ private:
 	* Max vertical climbing veocity (parsed from player.def for given surface name)
 	**/
 	float					m_ClimbMaxVelVert;
+	/**
+	* Distance between repitions of the climbing sound, in vertical and horizontal direction
+	* An integer number of doomunits
+	**/
+	int						m_ClimbSndRepDistVert;
+	int						m_ClimbSndRepDistHoriz;
 
 	/**
 	* View yaw change between this frame and last frame
