@@ -2783,6 +2783,7 @@ void idActor::PlayFootStepSound( void )
 		sndShader = declManager->FindSound( sound.c_str() );
 		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() );
 		StartSoundShader( sndShader, SND_CHANNEL_BODY, 0, false, NULL );
+		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
 		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
