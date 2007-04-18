@@ -27,36 +27,37 @@ import scons_utils
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
+# Master list of source files to compile
 game_string = ' \
-	AF.cpp \
-	AFEntity.cpp \
-	Actor.cpp \
-	Camera.cpp \
-	Entity.cpp \
-	BrittleFracture.cpp \
-	Fx.cpp \
-	GameEdit.cpp \
-	Game_local.cpp \
-	Game_network.cpp \
-	Item.cpp \
-	IK.cpp \
-	Light.cpp \
-	Misc.cpp \
-	Mover.cpp \
-	Moveable.cpp \
-	MultiplayerGame.cpp \
-	Player.cpp \
-	PlayerIcon.cpp \
-	PlayerView.cpp \
-	Projectile.cpp \
-	Pvs.cpp \
-	SecurityCamera.cpp \
-	SmokeParticles.cpp \
-	Sound.cpp \
-	Target.cpp \
-	Trigger.cpp \
-	Weapon.cpp \
-	WorldSpawn.cpp \
+	af.cpp \
+	afentity.cpp \
+	actor.cpp \
+	camera.cpp \
+	entity.cpp \
+	brittlefracture.cpp \
+	fx.cpp \
+	gameedit.cpp \
+	game_local.cpp \
+	game_network.cpp \
+	item.cpp \
+	iK.cpp \
+	light.cpp \
+	misc.cpp \
+	mover.cpp \
+	moveable.cpp \
+	multiplayergame.cpp \
+	player.cpp \
+	playericon.cpp \
+	playerview.cpp \
+	projectile.cpp \
+	pvs.cpp \
+	securitycamera.cpp \
+	smokeparticles.cpp \
+	sound.cpp \
+	target.cpp \
+	trigger.cpp \
+	weapon.cpp \
+	worldspawn.cpp \
 	ai/AAS.cpp \
 	ai/AAS_debug.cpp \
 	ai/AAS_pathing.cpp \
@@ -98,20 +99,12 @@ game_string = ' \
 	physics/Physics_StaticMulti.cpp \
 	physics/Push.cpp'
 
-if ( local_d3xp ):
-	game_string += ' \
-	Grabber.cpp \
-	physics/Force_Grab.cpp'
-	game_list = scons_utils.BuildList( 'd3xp', game_string )
-else:
-	game_list = scons_utils.BuildList( 'game', game_string )
+game_list = scons_utils.BuildList( 'game', game_string )
 
 for i in range( len( game_list ) ):
 	game_list[ i ] = '../../' + game_list[ i ]
 
 local_env = g_game_env.Copy()
-if ( local_d3xp ):
-	local_env.Append( CPPDEFINES = [ '_D3XP', 'CTF' ] )
 
 if ( local_demo == 1 ):
 	local_env.Append( CPPDEFINES = [ 'ID_DEMO_BUILD' ] )

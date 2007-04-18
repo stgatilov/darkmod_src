@@ -14,7 +14,7 @@ conf_filename='site.conf'
 # ( we handle all those as strings )
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
-	'TARGET_CORE', 'TARGET_GAME', 'TARGET_D3XP', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
+	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
 	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'PUNKBUSTER' ]
 
 # global build mode ------------------------------
@@ -56,9 +56,6 @@ BUILD_ROOT (default 'build')
 
 TARGET_GAME (default 1)
 	Build the base game code
-
-TARGET_D3XP (default 1)
-	Build the d3xp game code
 
 BUILD_GAMEPAK (default 0)
 	Build a game pak
@@ -165,7 +162,6 @@ BUILD = 'debug'
 DEDICATED = '0'
 TARGET_CORE = '1'
 TARGET_GAME = '1'
-TARGET_D3XP = '1'
 TARGET_MONO = '0'
 TARGET_DEMO = '0'
 IDNET_HOST = ''
@@ -236,7 +232,6 @@ if ( SETUP != '0' ):
 if ( g_sdk or SDK != '0' ):
 	TARGET_CORE = '0'
 	TARGET_GAME = '1'
-	TARGET_D3XP = '1'
 	TARGET_MONO = '0'
 	TARGET_DEMO = '0'
 
@@ -281,6 +276,10 @@ BASECPPFLAGS.append( BASEFLAGS )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
+
+# Abort on first error, rather than give a stupid slew of never-ending errors
+BASECPPFLAGS.append('-Wfatal-errors')
+
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
@@ -381,10 +380,8 @@ local_curl = 0
 curl_lib = []
 # if idlib should produce PIC objects ( depending on core or game inclusion )
 local_idlibpic = 0
-# switch between base game build and d3xp game build
-local_d3xp = 0
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl local_d3xp PUNKBUSTER OPTCPPFLAGS'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl PUNKBUSTER OPTCPPFLAGS'
 
 # end general configuration ----------------------
 
@@ -439,7 +436,7 @@ if ( TARGET_CORE == '1' ):
 
 		InstallAs( '#doomded.' + cpu, doomded )
 
-if ( TARGET_GAME == '1' or TARGET_D3XP == '1' ):
+if ( TARGET_GAME == '1'):
 	local_gamedll = 1
 	local_demo = 0
 	local_dedicated = 0
@@ -449,34 +446,22 @@ if ( TARGET_GAME == '1' or TARGET_D3XP == '1' ):
 	if ( SDK == '1' ):
 		# building an SDK, use scons for dependencies walking
 		# clear the build directory to be safe
-		g_env.PreBuildSDK( [ g_build + '/game', g_build + '/d3xp' ] )
+		g_env.PreBuildSDK( [ g_build + '/game' ] )
 		dupe = 1
 	BuildDir( g_build + '/game', '.', duplicate = dupe )
 	idlib_objects = SConscript( g_build + '/game/sys/scons/SConscript.idlib' )
 	if ( TARGET_GAME == '1' ):
-		local_d3xp = 0
 		Export( 'GLOBALS ' + GLOBALS )
 		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
 		game_base = InstallAs( '#game%s-base.so' % cpu, game )
 		if ( BUILD_GAMEPAK == '1' ):
 			Command( '#game01-base.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
-	if ( TARGET_D3XP == '1' ):
-		# uses idlib as compiled for game/
-		local_d3xp = 1
-		BuildDir( g_build + '/d3xp', '.', duplicate = dupe )
-		Export( 'GLOBALS ' + GLOBALS )
-		d3xp = SConscript( g_build + '/d3xp/sys/scons/SConscript.game' )
-		game_d3xp = InstallAs( '#game%s-d3xp.so' % cpu, d3xp )
-		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#game01-d3xp.pk4', [ game_d3xp, d3xp ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
-	# NOTE: no D3XP atm. add a TARGET_MONO_D3XP
 	local_gamedll = 0
 	local_dedicated = 0
 	local_demo = 0
 	local_idlibpic = 0
-	local_d3xp = 0
 	Export( 'GLOBALS ' + GLOBALS )
 	BuildDir( g_build + '/mono/glimp', '.', duplicate = 1 )
 	SConscript( g_build + '/mono/glimp/sys/scons/SConscript.gl' )
@@ -488,13 +473,11 @@ if ( TARGET_MONO == '1' ):
 	InstallAs( '#doom-mon.' + cpu, doom_mono )
 
 if ( TARGET_DEMO == '1' ):
-	# NOTE: no D3XP atm. add a TARGET_DEMO_D3XP
 	local_demo = 1
 	local_dedicated = 0
 	local_gamedll = 1
 	local_idlibpic = 0
 	local_curl = 0
-	local_d3xp = 0
 	curl_lib = []
 	Export( 'GLOBALS ' + GLOBALS )
 	BuildDir( g_build + '/demo/glimp', '.', duplicate = 1 )
@@ -517,10 +500,6 @@ if ( TARGET_DEMO == '1' ):
 
 if ( SETUP != '0' ):
 	brandelf = Program( 'brandelf', 'sys/linux/setup/brandelf.c' )
-	if ( TARGET_CORE == '1' and TARGET_GAME == '1' and TARGET_D3XP == '1' ):
-		setup = Command( 'setup', [ brandelf, doom, doomded, game, d3xp ], Action( g_env.BuildSetup ) )
-	else:
-		print 'Skipping main setup: TARGET_CORE == 0 or TARGET_GAME == 0'
 	if ( TARGET_DEMO == '1' ):
 		setup_demo = Command( 'setup-demo', [ brandelf, doom_demo, game_demo ], Action( g_env.BuildSetup ) )
 		# if building two setups, make sure JOBS doesn't parallelize them
@@ -533,6 +512,6 @@ if ( SETUP != '0' ):
 
 if ( SDK != '0' ):
 	setup_sdk = Command( 'sdk', [ ], Action( g_env.BuildSDK ) )
-	g_env.Depends( setup_sdk, [ game, d3xp ] )
+	g_env.Depends( setup_sdk, [ game ] )
 
 # end targets ------------------------------------
