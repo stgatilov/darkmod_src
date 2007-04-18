@@ -83,32 +83,32 @@
 #include "../sys/sys_public.h"
 
 // id lib
-#include "../idlib/Lib.h"
+#include "../idlib/lib.h"
 
 #if !defined( _D3SDK ) && defined( __WITH_PB__ )
 	#include "../punkbuster/pbcommon.h"
 #endif
 
 // framework
-#include "../framework/BuildVersion.h"
-#include "../framework/BuildDefines.h"
-#include "../framework/Licensee.h"
-#include "../framework/CmdSystem.h"
-#include "../framework/CVarSystem.h"
-#include "../framework/Common.h"
-#include "../framework/File.h"
-#include "../framework/FileSystem.h"
-#include "../framework/UsercmdGen.h"
+#include "../framework/buildversion.h"
+#include "../framework/builddefines.h"
+#include "../framework/licensee.h"
+#include "../framework/cmdsystem.h"
+#include "../framework/cvarsystem.h"
+#include "../framework/common.h"
+#include "../framework/file.h"
+#include "../framework/filesystem.h"
+#include "../framework/usercmdgen.h"
 
 // decls
-#include "../framework/DeclManager.h"
-#include "../framework/DeclTable.h"
-#include "../framework/DeclSkin.h"
-#include "../framework/DeclEntityDef.h"
-#include "../framework/DeclFX.h"
-#include "../framework/DeclParticle.h"
-#include "../framework/DeclAF.h"
-#include "../framework/DeclPDA.h"
+#include "../framework/declmanager.h"
+#include "../framework/decltable.h"
+#include "../framework/declskin.h"
+#include "../framework/declentitydef.h"
+#include "../framework/declfx.h"
+#include "../framework/declparticle.h"
+#include "../framework/declaf.h"
+#include "../framework/declpda.h"
 
 // We have expression parsing and evaluation code in multiple places:
 // materials, sound shaders, and guis. We should unify them.
@@ -117,36 +117,32 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 // renderer
 #include "../renderer/qgl.h"
-#include "../renderer/Cinematic.h"
-#include "../renderer/Material.h"
-#include "../renderer/Model.h"
-#include "../renderer/ModelManager.h"
-#include "../renderer/RenderSystem.h"
-#include "../renderer/RenderWorld.h"
+#include "../renderer/cinematic.h"
+#include "../renderer/material.h"
+#include "../renderer/model.h"
+#include "../renderer/modelmanager.h"
+#include "../renderer/rendersystem.h"
+#include "../renderer/renderworld.h"
 
 // sound engine
 #include "../sound/sound.h"
 
 // asynchronous networking
-#include "../framework/async/NetworkSystem.h"
+#include "../framework/async/networksystem.h"
 
 // user interfaces
-#include "../ui/ListGUI.h"
-#include "../ui/UserInterface.h"
+#include "../ui/listgui.h"
+#include "../ui/userinterface.h"
 
 // collision detection system
-#include "../cm/CollisionModel.h"
+#include "../cm/collisionmodel.h"
 
 // AAS files and manager
-#include "../tools/compilers/aas/AASFile.h"
-#include "../tools/compilers/aas/AASFileManager.h"
+#include "../tools/compilers/aas/aasfile.h"
+#include "../tools/compilers/aas/aasfilemanager.h"
 
 // game
-#if defined(_D3XP) && defined(GAME_DLL)
-#include "../d3xp/Game.h"
-#else
-#include "../game/Game.h"
-#endif
+#include "../game/game.h"
 
 //-----------------------------------------------------
 

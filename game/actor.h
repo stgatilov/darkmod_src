@@ -14,7 +14,9 @@
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 
-#include "../../DarkMod/pqueue.h"
+#include "../DarkMod/pqueue.h"
+// [OrbWeaver] previously "../../DarkMod/pqueue.h", not sure why the path was
+// wrong. Hopefully this hasn't broken anything.
 
 /*
 ===============================================================================

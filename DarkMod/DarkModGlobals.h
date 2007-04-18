@@ -25,12 +25,12 @@
 #define DARKMODGLOBALS_H
 
 #include <stdio.h>
-#include "..\game\game_local.h"
+#include "../game/game_local.h"
 
 /*!
 Darkmod LAS
 */
-#include "..\darkmod\DarkModLAS.h"
+#include "../DarkMod/darkModLAS.h"
 
 #ifndef ILuint
 typedef unsigned int ILuint;

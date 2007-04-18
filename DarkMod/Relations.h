@@ -39,7 +39,7 @@
 #define RELATIONS_H
 
 #include "../idlib/precompiled.h"
-#include "darkmodglobals.h"
+#include "DarkModGlobals.h"
 
 template <class type> 
 class CMatrixSq;

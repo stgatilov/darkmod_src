@@ -347,7 +347,7 @@ void idDynamicAlloc<type, baseBlockSize, minBlockSize>::Clear( void ) {
 ==============================================================================
 */
 
-#include "containers/BTree.h"
+#include "containers/btree.h"
 
 //#define DYNAMIC_BLOCK_ALLOC_CHECK
 

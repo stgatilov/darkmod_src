@@ -10,12 +10,12 @@
 #pragma once
 
 // Required includes
-#include "..\game\ai\aas.h"
-#include "..\game\pvs.h"
-#include "..\game\Game_local.h"
-#include "..\game\Entity.h"
-#include "..\darkMod\PVSToAASMapping.h"
-#include "..\darkMod\darkmodHidingSpotTree.h"
+#include "../game/ai/aas.h"
+#include "../game/pvs.h"
+#include "../game/game_local.h"
+#include "../game/entity.h"
+#include "../DarkMod/PVSToAASMapping.h"
+#include "../DarkMod/darkmodHidingSpotTree.h"
 
 /*!
 * This defines hiding spot characteristics as bit flags

@@ -13,9 +13,9 @@
 #ifndef __AI_H__
 #define __AI_H__
 
-#include "../../darkmod/relations.h"
-#include "../../darkmod/HidingSpotSearchCollection.h"
-#include "../../darkmod/darkmodHidingSpotTree.h"
+#include "../../DarkMod/Relations.h"
+#include "../../DarkMod/HidingSpotSearchCollection.h"
+#include "../../DarkMod/darkmodHidingSpotTree.h"
 
 /*
 ===============================================================================
