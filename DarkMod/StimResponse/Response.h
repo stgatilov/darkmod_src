@@ -2,7 +2,7 @@
  *
  * PROJECT: The Dark Mod
  * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mär 2007) $
+ * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mï¿½r 2007) $
  * $Author: greebo $
  *
  ***************************************************************************/
@@ -15,7 +15,8 @@
 class CStim;
 
 class CResponse : public CStimResponse {
-friend CStimResponseCollection;
+	
+	friend class CStimResponseCollection;
 
 public:
 	/**

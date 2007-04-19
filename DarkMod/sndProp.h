@@ -23,7 +23,7 @@
 #ifndef SNDPROP_H
 #define SNDPROP_H
 
-#include "sndproploader.h"
+#include "sndPropLoader.h"
 
 /******************************************************************************
 *

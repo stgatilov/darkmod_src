@@ -2,7 +2,7 @@
  *
  * PROJECT: The Dark Mod
  * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mär 2007) $
+ * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mï¿½r 2007) $
  * $Author: greebo $
  *
  ***************************************************************************/
@@ -23,6 +23,8 @@
 
 #define TIMER_UNDEFINED		-1
 
+#ifndef __linux__
+
 #pragma warning( push )
 #pragma warning( disable : 4201 ) // non standard extension nameless struct/union
 typedef union {
@@ -41,6 +43,25 @@ public:
 } TimerValue;
 #pragma warning( pop )
 
+#else
+
+typedef union {
+public:
+	struct A {
+		signed char Flags;
+		signed char Hour;
+		signed char Minute;
+		signed char Second;
+		signed short Millisecond;
+	};
+	struct B {
+        signed long TimerVal;
+		signed short Millisecond;
+	};
+} TimerValue;
+
+#endif // __linux__
+
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.
  * Each of the values as a copy, which is used to store the actual value at runtime (<X>Val).
@@ -57,8 +78,9 @@ public:
  * that it will reset itself infinitely (or until manually stopped).
  */
 class CStimResponseTimer {
-friend CStim;
-friend CStimResponseCollection;
+
+	friend class CStim;
+	friend class CStimResponseCollection;
 
 public:
 	typedef enum {

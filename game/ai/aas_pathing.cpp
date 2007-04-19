@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
-#include "AAS_local.h"
+#include "aas_local.h"
 
 #define SUBSAMPLE_WALK_PATH		1
 #define SUBSAMPLE_FLY_PATH		0

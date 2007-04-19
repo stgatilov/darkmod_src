@@ -15,13 +15,13 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
-#include "../../DarkMod/relations.h"
+#include "../game_local.h"
+#include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
-#include "../../DarkMod/darkmodglobals.h"
-#include "../../DarkMod/playerdata.h"
-#include "../../DarkMod/sndprop.h"
+#include "../../DarkMod/DarkModGlobals.h"
+#include "../../DarkMod/PlayerData.h"
+#include "../../DarkMod/sndProp.h"
 
 // For handling the opening of doors and other binary Frob movers
 #include "../../DarkMod/BinaryFrobMover.h"
@@ -6716,14 +6716,25 @@ void idAI::Knockout( void )
 	const char *modelKOd;
 
 	if( !m_bCanBeKnockedOut )
+#ifdef __linux__
+		return; // [OrbWeaver] Jumping past an initialisation is UB, GCC will 
+			    // not compile
+#else
 		goto Quit;
+#endif
 
 	if( AI_KNOCKEDOUT || AI_DEAD )
 	{
 		AI_PAIN = true;
 		AI_DAMAGE = true;
 
+#ifdef __linux__
+		return; // [OrbWeaver] Jumping past an initialisation is UB, GCC will 
+			    // not compile
+#else
 		goto Quit;
+#endif
+
 	}
 	EndAttack();
 

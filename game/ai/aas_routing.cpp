@@ -15,10 +15,10 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "AAS_local.h"
-#include "../Game_local.h"		// for print and error
+#include "aas_local.h"
+#include "../game_local.h"		// for print and error
 
-#include "../../darkmod/darkmodglobals.h"
+#include "../../DarkMod/DarkModGlobals.h"
 
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2

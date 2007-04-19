@@ -25,7 +25,7 @@ class CFrobDoor;
  */
 class CFrobDoorHandle : public CBinaryFrobMover {
 public:
-	friend CFrobDoor;
+	friend class CFrobDoor;
 
 	CLASS_PROTOTYPE( CFrobDoorHandle );
 

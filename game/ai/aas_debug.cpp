@@ -15,8 +15,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "AAS_local.h"
-#include "../Game_local.h"		// for cvars and debug drawing
+#include "aas_local.h"
+#include "../game_local.h"		// for cvars and debug drawing
 
 
 /*

@@ -22,7 +22,7 @@ Vagary specific AI code
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
+#include "../game_local.h"
 
 class idAI_Vagary : public idAI {
 public:

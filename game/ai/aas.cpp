@@ -15,9 +15,9 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "AAS_local.h"
-#include "../../darkmod/BinaryFrobMover.h"
-#include "../../darkmod/FrobDoor.h"
+#include "aas_local.h"
+#include "../../DarkMod/BinaryFrobMover.h"
+#include "../../DarkMod/FrobDoor.h"
 
 
 /*

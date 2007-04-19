@@ -88,11 +88,15 @@ public:
 	 */
 	bool LoadImage(const char *Filename = NULL);
 
+#ifndef __linux__
+
 	/**
 	 * Load the image into memory and allow access to it. This method requires
 	 * an already open filehandle.
 	 */
 	bool LoadImage(HANDLE &FileHandle);
+
+#endif // __linux__
 
 	/**
 	 * Initialize Imageinfo like bitmap width, height and other stuff.

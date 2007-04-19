@@ -13,8 +13,8 @@
 #ifndef __AAS_LOCAL_H__
 #define __AAS_LOCAL_H__
 
-#include "AAS.h"
-#include "../Pvs.h"
+#include "aas.h"
+#include "../pvs.h"
 
 
 class idRoutingCache {

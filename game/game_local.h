@@ -687,6 +687,8 @@ public:
 	 */
 	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
+#ifndef __linux__
+
 	/**
 	 * Createrenderpipe will create a pipe that is used to read the snapshot images from.
 	 * Currently this works under Windows only. This is neccessary, because we have to store
@@ -699,6 +701,8 @@ public:
 	 * CloseRenderPipe will close the renderpipe. Who would have thought that. :)
 	 */
 	void					CloseRenderPipe(HANDLE &hPipe);
+
+#endif // __linux__
 
 	/**
 	 * SpawnlightgemEntity will create exactly one lightgem entity for the map and ensures
@@ -717,11 +721,15 @@ public:
 	 */
 	float					CalcLightgem(idPlayer *);
 
+#ifndef __linux__
+
 	/**
 	 * AnalyzeRenderImage will analyze the given image and yields an averaged single value
 	 * determining the lightvalue for the given image.
 	 */
 	void					AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+
+#endif
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
@@ -826,8 +834,14 @@ private:
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
+
+#ifndef __linux__
+
 	SECURITY_ATTRIBUTES		m_saPipeSecurity;
 	PSECURITY_DESCRIPTOR	m_pPipeSD;
+	
+#endif // __linux__
+
 	idList<idEntity *>		m_SignalList;
 
 	void					Clear( void );

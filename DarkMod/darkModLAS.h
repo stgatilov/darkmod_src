@@ -61,7 +61,7 @@ protected:
 	
 	// The area index is the index into the array
 	// Dereferencing it gives a list of darkModLightRecord_t pointers
-	(idLinkList<darkModLightRecord_t>)** m_pp_areaLightLists;
+	idLinkList<darkModLightRecord_t>** m_pp_areaLightLists;
 
    /*!
    * Called to update the lights in a given bounding area.  

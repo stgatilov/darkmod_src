@@ -15,10 +15,10 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
+#include "../game_local.h"
 
-#include "../darkmod/BinaryFrobMover.h"
-#include "../darkmod/FrobDoor.h"
+#include "../../DarkMod/BinaryFrobMover.h"
+#include "../../DarkMod/FrobDoor.h"
 
 /*
 ===============================================================================

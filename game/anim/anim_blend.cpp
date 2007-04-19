@@ -15,8 +15,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
-#include "../darkmod/darkmodglobals.h"
+#include "../game_local.h"
+#include "../../DarkMod/DarkModGlobals.h"
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"

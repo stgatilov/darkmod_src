@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <string>
 
 #include "DarkModGlobals.h"
 

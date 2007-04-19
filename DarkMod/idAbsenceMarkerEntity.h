@@ -13,7 +13,7 @@
 #pragma hdrstop
 
 // Includes
-#include "..\game\entity.h"
+#include "../game/entity.h"
 
 
 /**

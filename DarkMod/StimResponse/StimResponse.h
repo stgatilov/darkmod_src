@@ -2,7 +2,7 @@
  *
  * PROJECT: The Dark Mod
  * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mär 2007) $
+ * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mï¿½r 2007) $
  * $Author: greebo $
  *
  ***************************************************************************/
@@ -53,7 +53,9 @@ typedef enum {
  * CStimResponse is the baseclass for stims and responses
  */
 class CStimResponse {
-friend CStimResponseCollection;
+
+	friend class CStimResponseCollection;
+
 protected:
 	CStimResponse(idEntity *Owner, int Type);
 	virtual ~CStimResponse(void);
