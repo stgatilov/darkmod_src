@@ -27,50 +27,50 @@ Import( 'GLOBALS' )
 Import( GLOBALS )
 
 idlib_string = ' \
-	bv/Bounds.cpp \
-	bv/Frustum.cpp \
-	bv/Sphere.cpp \
-	bv/Box.cpp \
-	geometry/DrawVert.cpp \
-	geometry/Winding2D.cpp \
-	geometry/Surface_SweptSpline.cpp \
-	geometry/Winding.cpp \
-	geometry/Surface.cpp \
-	geometry/Surface_Patch.cpp \
-	geometry/TraceModel.cpp \
-	geometry/JointTransform.cpp \
-	hashing/CRC32.cpp \
-	hashing/CRC16.cpp \
-	hashing/Honeyman.cpp \
-	hashing/MD4.cpp \
-	hashing/MD5.cpp \
-	math/Angles.cpp \
-	math/Lcp.cpp \
-	math/Math.cpp \
-	math/Matrix.cpp \
-	math/Ode.cpp \
-	math/Plane.cpp \
-	math/Pluecker.cpp \
-	math/Polynomial.cpp \
-	math/Quat.cpp \
-	math/Rotation.cpp \
-	math/Simd.cpp \
-	math/Simd_Generic.cpp \
-	math/Vector.cpp \
-	BitMsg.cpp \
-	LangDict.cpp \
-	Lexer.cpp \
-	Lib.cpp \
-	containers/HashIndex.cpp \
-	Dict.cpp \
-	Str.cpp \
-	Parser.cpp \
-	MapFile.cpp \
-	CmdArgs.cpp \
-	Token.cpp \
-	Base64.cpp \
-	Timer.cpp \
-	Heap.cpp'
+	bv/bounds.cpp \
+	bv/frustum.cpp \
+	bv/sphere.cpp \
+	bv/box.cpp \
+	geometry/drawvert.cpp \
+	geometry/winding2d.cpp \
+	geometry/surface_sweptspline.cpp \
+	geometry/winding.cpp \
+	geometry/surface.cpp \
+	geometry/surface_patch.cpp \
+	geometry/tracemodel.cpp \
+	geometry/jointtransform.cpp \
+	hashing/crc32.cpp \
+	hashing/crc16.cpp \
+	hashing/honeyman.cpp \
+	hashing/md4.cpp \
+	hashing/md5.cpp \
+	math/angles.cpp \
+	math/lcp.cpp \
+	math/math.cpp \
+	math/matrix.cpp \
+	math/ode.cpp \
+	math/plane.cpp \
+	math/pluecker.cpp \
+	math/polynomial.cpp \
+	math/quat.cpp \
+	math/rotation.cpp \
+	math/simd.cpp \
+	math/simd_generic.cpp \
+	math/vector.cpp \
+	bitmsg.cpp \
+	langdict.cpp \
+	lexer.cpp \
+	lib.cpp \
+	containers/hashindex.cpp \
+	dict.cpp \
+	str.cpp \
+	parser.cpp \
+	mapfile.cpp \
+	cmdargs.cpp \
+	token.cpp \
+	base64.cpp \
+	timer.cpp \
+	heap.cpp'
 
 idlib_list = scons_utils.BuildList( 'idlib', idlib_string )
 
@@ -93,9 +93,9 @@ ret_list = []
 if ( local_idlibpic == 0 ):
 	for f in idlib_list:
 		ret_list += local_env.StaticObject( source = f )
-	ret_list += local_env_noopt.StaticObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
+	ret_list += local_env_noopt.StaticObject( source = [ '../../idlib/bv/frustum_gcc.cpp' ] )
 else:
 	for f in idlib_list:
 		ret_list += local_env.SharedObject( source = f )
-	ret_list += local_env_noopt.SharedObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
+	ret_list += local_env_noopt.SharedObject( source = [ '../../idlib/bv/frustum_gcc.cpp' ] )
 Return( 'ret_list' )

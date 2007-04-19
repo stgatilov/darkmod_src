@@ -431,7 +431,7 @@ protected:
 	* This method determines the mantle time required for each phase of the mantle.
 	* I made this a function so you could implement things such as carry-weight,
 	* tiredness, length of lift....
-	/* @param[in] mantlePhase The mantle phase for which the duration is to be retrieved
+	* @param[in] mantlePhase The mantle phase for which the duration is to be retrieved
 	*/
 	float getMantleTimeForPhase 
 	(

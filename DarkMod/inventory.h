@@ -27,8 +27,8 @@ class CInventoryItem;
  */
 class CInventoryCategory
 {
-	friend CInventory;
-	friend CInventoryCursor;
+	friend class CInventory;
+	friend class CInventoryCursor;
 
 public:
 	inline idStr		&GetName() { return m_Name; }
@@ -72,9 +72,9 @@ protected:
  */
 class CInventoryItem
 {
-	friend CInventory;
-	friend CInventoryCursor;
-	friend CInventoryCategory;
+	friend class CInventory;
+	friend class CInventoryCursor;
+	friend class CInventoryCategory;
 
 public:
 	typedef enum {
@@ -180,7 +180,7 @@ protected:
  */
 class CInventoryCursor
 {
-	friend CInventory;
+	friend class CInventory;
 
 protected:
 	CInventoryCursor(CInventory *);
@@ -287,7 +287,7 @@ class CInventory : public idClass
 public:
 	CLASS_PROTOTYPE(CInventory);
 
-	friend CInventoryCursor;
+	friend class CInventoryCursor;
 
 	CInventory();
 	~CInventory();

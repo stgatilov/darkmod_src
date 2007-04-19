@@ -122,8 +122,6 @@ SDK (default 0, not saved)
 NOCURL (default 0)
 	set to 1 to disable usage of libcurl and http/ftp downloads feature
 
-PUNKBUSTER (default 1)
-	enable/disable punkbuster support
 """
 
 Help( help_string )
@@ -178,7 +176,6 @@ NOCONF = '0'
 NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
-PUNKBUSTER = '0'
 
 # end default settings ---------------------------
 
@@ -280,6 +277,11 @@ BASECPPFLAGS.append( '-Wall' )
 # Abort on first error, rather than give a stupid slew of never-ending errors
 BASECPPFLAGS.append('-Wfatal-errors')
 
+# Don't throw warnings for unknown pragmas (used by VC++)
+BASECPPFLAGS.append('-Wno-unknown-pragmas')
+
+BASECPPFLAGS.append('-Wno-non-virtual-dtor')
+
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
@@ -350,6 +352,7 @@ g_env_noopt = g_base_env.Copy()
 g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
 
 g_game_env = g_base_env.Copy()
+g_game_env.Append(CPPPATH = '#/include')
 g_game_env['CPPFLAGS'] += OPTCPPFLAGS
 g_game_env['CPPFLAGS'] += GAMECPPFLAGS
 

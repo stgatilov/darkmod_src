@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Winding2D.h"
+#include "winding2d.h"
 
 /*
 ============

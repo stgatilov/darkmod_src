@@ -15,8 +15,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Game_local.h"
-#include "PlayerIcon.h"
+#include "game_local.h"
+#include "playericon.h"
 
 static const char * iconKeys[ ICON_NONE ] = {
 	"mtr_icon_lag",

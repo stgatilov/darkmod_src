@@ -16,7 +16,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../game/Game_local.h"
+#include "../game/game_local.h"
 #include "DarkModGlobals.h"
 #include "PlayerData.h"
 

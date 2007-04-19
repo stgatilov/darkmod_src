@@ -17,8 +17,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4533 4800)
 
-#include "Game_local.h"
-#include "../DarkMod/DarkmodGlobals.h"
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/declxdata.h"
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/sndProp.h"
@@ -7122,13 +7122,21 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 	if ( !src )
 	{
 		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
+#ifdef __linux__
+		return;
+#else
 		goto Quit;
+#endif
 	}
 
 	if(!m_overlays.exists(handle))
 	{
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+#ifdef __linux__
+		return;
+#else
 		goto Quit;
+#endif
 	}
 
 	idUserInterface *gui = m_overlays.getGui( handle );
@@ -7748,19 +7756,31 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	if(guiFile == NULL || guiFile[0] == 0)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
+#ifdef __linux__
+		return rc;
+#else
 		goto Quit;
+#endif
 	}
 
 	if(!uiManager->CheckGui(guiFile))
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
+#ifdef __linux__
+		return rc;
+#else
 		goto Quit;
+#endif
 	}
 	handle = m_overlays.createOverlay( layer );
 	if(handle == OVERLAYS_INVALID_HANDLE)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
+#ifdef __linux__
+		return rc;
+#else
 		goto Quit;
+#endif
 	}
 
 	m_overlays.setGui(handle, guiFile);

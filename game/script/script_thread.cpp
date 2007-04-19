@@ -15,10 +15,10 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
-#include "../darkmod/decltdm_matinfo.h"
-#include "../../darkmod/relations.h"
-#include "../../darkmod/sndprop.h"
+#include "../game_local.h"
+#include "../../DarkMod/decltdm_matinfo.h"
+#include "../../DarkMod/Relations.h"
+#include "../../DarkMod/sndProp.h"
 
 class CRelations;
 class CsndProp;

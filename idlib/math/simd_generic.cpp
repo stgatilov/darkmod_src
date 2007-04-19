@@ -16,7 +16,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning( push )
 #pragma warning( disable: 4127 )
-#include "Simd_Generic.h"
+#include "simd_generic.h"
 
 
 //===============================================================

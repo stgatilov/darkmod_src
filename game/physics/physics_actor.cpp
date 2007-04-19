@@ -15,7 +15,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
+#include "../game_local.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_Actor )
 END_CLASS

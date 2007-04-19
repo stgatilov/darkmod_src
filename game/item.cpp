@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 
-#include "Game_local.h"
+#include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/idAbsenceMarkerEntity.h"

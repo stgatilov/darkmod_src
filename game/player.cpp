@@ -14,11 +14,11 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Game_local.h"
-#include "../DarkMod/darkmodglobals.h"
-#include "../DarkMod/playerdata.h"
-#include "../DarkMod/intersection.h"
-#include "../DarkMod/relations.h"
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
+#include "../DarkMod/Intersection.h"
+#include "../DarkMod/Relations.h"
 #include "../DarkMod/darkModAASFindHidingSpots.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
@@ -9995,7 +9995,11 @@ void idPlayer::FrobCheck( void )
 			g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 
 			// we have found our frobbed entity, so exit
+#ifdef __linux__
+			return;
+#else
 			goto Quit;
+#endif
 		}
 	}
 

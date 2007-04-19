@@ -15,9 +15,9 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../Game_local.h"
-#include "../darkmod/playerdata.h"
-#include "../darkmod/grabber.h"
+#include "../game_local.h"
+#include "../DarkMod/PlayerData.h"
+#include "../DarkMod/Grabber.h"
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS

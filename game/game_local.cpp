@@ -18,7 +18,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Game_local.h"
+#include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/darkModLAS.h"
 #include "../DarkMod/decltdm_matinfo.h"
@@ -318,14 +318,16 @@ void idGameLocal::Clear( void )
 	portalSkyActive			= false;
 	//	ResetSlowTimeVars();
 
+#ifndef __linux__
 	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
-
 	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
 	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
 	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
 	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
 	m_saPipeSecurity.bInheritHandle = FALSE;
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+#endif
+
 }
 
 /*
@@ -4869,6 +4871,7 @@ Quit:
 	return;
 }
 
+#ifndef __linux__
 
 HANDLE idGameLocal::CreateRenderPipe(int timeout)
 {
@@ -5183,6 +5186,8 @@ void idGameLocal::AnalyzeRenderImage(HANDLE hPipe, float fColVal[DARKMOD_LG_MAX_
 Quit:
 	return;
 }
+
+#endif // __linux__
 
 void idGameLocal::SpawnLightgemEntity(void)
 {

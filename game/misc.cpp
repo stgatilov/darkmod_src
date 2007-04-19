@@ -20,8 +20,8 @@ Various utility objects and functions.
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Game_local.h"
-#include "../DarkMod/sndprop.h"
+#include "game_local.h"
+#include "../DarkMod/sndProp.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 
@@ -2749,6 +2749,7 @@ void idFuncPortal::Event_Activate( idEntity *activator )
 void idFuncPortal::Think( void )
 {
 	idVec3 delta;
+	bool bWithinDist;
 
 	if( !m_bDistDependent )
 		goto Quit;
@@ -2757,7 +2758,7 @@ void idFuncPortal::Think( void )
 		goto Quit;
 
 	m_TimeStamp = gameLocal.time;
-	bool bWithinDist(false);
+	bWithinDist = false;
 
 	delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
 	delta -= GetPhysics()->GetOrigin();

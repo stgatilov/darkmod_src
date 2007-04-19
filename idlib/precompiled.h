@@ -148,34 +148,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 #ifndef _D3SDK
 
-#ifdef GAME_DLL
-
 #include "../game/game_local.h"
-
-#else
-
-#include "../framework/DemoChecksum.h"
-
-// framework
-#include "../framework/Compressor.h"
-#include "../framework/EventLoop.h"
-#include "../framework/KeyInput.h"
-#include "../framework/EditField.h"
-#include "../framework/Console.h"
-#include "../framework/DemoFile.h"
-#include "../framework/Session.h"
-
-// asynchronous networking
-#include "../framework/async/AsyncNetwork.h"
-
-// The editor entry points are always declared, but may just be
-// stubbed out on non-windows platforms.
-#include "../tools/edit_public.h"
-
-// Compilers for map, model, video etc. processing.
-#include "../tools/compilers/compiler_public.h"
-
-#endif /* !GAME_DLL */
 
 #endif /* !_D3SDK */
 

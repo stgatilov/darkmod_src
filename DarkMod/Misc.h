@@ -81,7 +81,7 @@
 
 #define PTR_SIZE	sizeof(void *)
 
-#ifdef _LINUX_
+#ifdef __linux__
 #define stricmp     strcasecmp
 #define chsize      ftruncate
 #endif

@@ -15,8 +15,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "Game_local.h"
-#include "../darkmod/darkmodglobals.h"
+#include "game_local.h"
+#include "../DarkMod/DarkModGlobals.h"
 
 /***********************************************************************
 
@@ -2776,10 +2776,12 @@ void idWeapon::Event_ShowAttachment(int id, bool bShow)
 {
 	id--;
 
+	idEntity* ent;
+
 	if( id < 0 || id >= m_Attachments.Num() )
 		goto Quit;
 
-	idEntity *ent = m_Attachments[id].entPtr.GetEntity();
+	ent = m_Attachments[id].entPtr.GetEntity();
 	if( ent )
 	{
 		if( bShow )
