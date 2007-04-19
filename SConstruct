@@ -178,7 +178,7 @@ NOCONF = '0'
 NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
-PUNKBUSTER = '1'
+PUNKBUSTER = '0'
 
 # end default settings ---------------------------
 
@@ -294,11 +294,8 @@ if ( g_os == 'Linux' ):
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
 
-if ( PUNKBUSTER == '1' ):
-	BASECPPFLAGS.append( '-D__WITH_PB__' )
-
-if ( g_sdk or SDK != '0' ):
-	BASECPPFLAGS.append( '-D_D3SDK' )
+	# Add the __linux__ define
+	BASECPPFLAGS.append('-D__linux__')
 
 if ( BUILD == 'debug-all' ):
 	OPTCPPFLAGS = [ '-g', '-D_DEBUG' ]

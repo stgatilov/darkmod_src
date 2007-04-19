@@ -58,46 +58,46 @@ game_string = ' \
 	trigger.cpp \
 	weapon.cpp \
 	worldspawn.cpp \
-	ai/AAS.cpp \
-	ai/AAS_debug.cpp \
-	ai/AAS_pathing.cpp \
-	ai/AAS_routing.cpp \
-	ai/AI.cpp \
-	ai/AI_events.cpp \
-	ai/AI_pathing.cpp \
-	ai/AI_Vagary.cpp \
-	gamesys/DebugGraph.cpp \
-	gamesys/Class.cpp \
-	gamesys/Event.cpp \
-	gamesys/SaveGame.cpp \
-	gamesys/SysCmds.cpp \
-	gamesys/SysCvar.cpp \
-	gamesys/TypeInfo.cpp \
-	anim/Anim.cpp \
-	anim/Anim_Blend.cpp \
-	anim/Anim_Import.cpp \
-	anim/Anim_Testmodel.cpp \
-	script/Script_Compiler.cpp \
-	script/Script_Interpreter.cpp \
-	script/Script_Program.cpp \
-	script/Script_Thread.cpp \
-	physics/Clip.cpp \
-	physics/Force.cpp \
-	physics/Force_Constant.cpp \
-	physics/Force_Drag.cpp \
-	physics/Force_Field.cpp \
-	physics/Force_Spring.cpp \
-	physics/Physics.cpp \
-	physics/Physics_AF.cpp \
-	physics/Physics_Actor.cpp \
-	physics/Physics_Base.cpp \
-	physics/Physics_Monster.cpp \
-	physics/Physics_Parametric.cpp \
-	physics/Physics_Player.cpp \
-	physics/Physics_RigidBody.cpp \
-	physics/Physics_Static.cpp \
-	physics/Physics_StaticMulti.cpp \
-	physics/Push.cpp'
+	ai/aas.cpp \
+	ai/aas_debug.cpp \
+	ai/aas_pathing.cpp \
+	ai/aas_routing.cpp \
+	ai/ai.cpp \
+	ai/ai_events.cpp \
+	ai/ai_pathing.cpp \
+	ai/ai_vagary.cpp \
+	gamesys/debuggraph.cpp \
+	gamesys/class.cpp \
+	gamesys/event.cpp \
+	gamesys/savegame.cpp \
+	gamesys/syscmds.cpp \
+	gamesys/syscvar.cpp \
+	gamesys/typeinfo.cpp \
+	anim/anim.cpp \
+	anim/anim_blend.cpp \
+	anim/anim_import.cpp \
+	anim/anim_testmodel.cpp \
+	script/script_compiler.cpp \
+	script/script_interpreter.cpp \
+	script/script_program.cpp \
+	script/script_thread.cpp \
+	physics/clip.cpp \
+	physics/force.cpp \
+	physics/force_constant.cpp \
+	physics/force_drag.cpp \
+	physics/force_field.cpp \
+	physics/force_spring.cpp \
+	physics/physics.cpp \
+	physics/physics_af.cpp \
+	physics/physics_actor.cpp \
+	physics/physics_base.cpp \
+	physics/physics_monster.cpp \
+	physics/physics_parametric.cpp \
+	physics/physics_player.cpp \
+	physics/physics_rigidbody.cpp \
+	physics/physics_static.cpp \
+	physics/physics_staticmulti.cpp \
+	physics/push.cpp'
 
 game_list = scons_utils.BuildList( 'game', game_string )
 
