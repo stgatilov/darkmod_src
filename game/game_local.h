@@ -110,7 +110,10 @@ class CPriorityQueue;
 #define protected	public
 #endif
 
+class idRenderWorld;
 extern idRenderWorld *				gameRenderWorld;
+
+class idSoundWorld;
 extern idSoundWorld *				gameSoundWorld;
 /**
 * place to store the sound world pointer when we temporarily set it to NULL

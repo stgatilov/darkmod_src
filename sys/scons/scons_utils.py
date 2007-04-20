@@ -139,7 +139,6 @@ def checkLDD( target, source, env ):
 	if ( have_undef ):
 		print output
 		print "ERROR: undefined symbols"
-		os.system('rm %s' % target[0])
 		sys.exit(1)
 
 def SharedLibrarySafe( env, target, source ):

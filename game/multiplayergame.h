@@ -13,6 +13,10 @@
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
 
+#ifdef __linux__
+#include "ui/listgui.h"
+#endif
+
 /*
 ===============================================================================
 

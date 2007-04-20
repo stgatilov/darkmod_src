@@ -9,6 +9,8 @@
 
 #pragma hdrstop
 
+#include "../game/game_local.h"
+
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)

@@ -12,7 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include ".\hidingspotsearchcollection.h"
+#include "./HidingSpotSearchCollection.h"
 
 //---------------------------------------------------------------------------
 

@@ -63,6 +63,11 @@
 ===============================================================================
 */
 
+#ifdef __linux__
+#include "cmdsystem.h"
+#include <typeinfo>
+#endif
+
 typedef enum {
 	CVAR_ALL				= -1,		// all flags
 	CVAR_BOOL				= BIT(0),	// variable is a boolean

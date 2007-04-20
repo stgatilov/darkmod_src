@@ -352,7 +352,10 @@ g_env_noopt = g_base_env.Copy()
 g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
 
 g_game_env = g_base_env.Copy()
+
 g_game_env.Append(CPPPATH = '#/include')
+g_game_env.Append(CPPPATH = '#/')
+
 g_game_env['CPPFLAGS'] += OPTCPPFLAGS
 g_game_env['CPPFLAGS'] += GAMECPPFLAGS
 

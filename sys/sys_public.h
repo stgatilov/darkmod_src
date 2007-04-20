@@ -87,6 +87,10 @@
 // Linux
 #ifdef __linux__
 
+#include <cstdarg>
+#include <cstdio>
+#include <alloca.h>
+
 #ifdef __i386__
 	#define	BUILD_STRING				"linux-x86"
 	#define BUILD_OS_ID					2

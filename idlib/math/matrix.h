@@ -13,6 +13,10 @@
 #ifndef __MATH_MATRIX_H__
 #define __MATH_MATRIX_H__
 
+#ifdef __linux__
+#include "sys/sys_public.h"
+#endif
+
 /*
 ===============================================================================
 

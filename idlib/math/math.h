@@ -13,6 +13,8 @@
 #ifndef __MATH_MATH_H__
 #define __MATH_MATH_H__
 
+#include <cmath>
+
 #ifdef MACOS_X
 // for square root estimate instruction
 #include <ppc_intrinsics.h>

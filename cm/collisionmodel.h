@@ -46,7 +46,7 @@ typedef enum {
 } contactType_t;
 
 // contact info
-typedef struct {
+struct contactInfo_t {
 	contactType_t			type;			// contact type
 	idVec3					point;			// point of contact
 	idVec3					normal;			// contact plane normal
@@ -57,7 +57,7 @@ typedef struct {
 	int						trmFeature;		// contact feature on trace model
 	int						entityNum;		// entity the contact surface is a part of
 	int						id;				// id of clip model the contact surface is part of
-} contactInfo_t;
+};
 
 // trace result
 typedef struct trace_s {

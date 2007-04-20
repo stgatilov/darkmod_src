@@ -30,11 +30,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "MissionData.h"
 #include "Misc.h"
 #include "Profile.h"
-#include "direct.h"
+//#include "direct.h" [OrbWeaver] does not exist?
 #include "il/il.h"
-#include "sndproploader.h"
-#include "sndprop.h"
-#include "relations.h"
+#include "sndPropLoader.h"
+#include "sndProp.h"
+#include "Relations.h"
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
@@ -940,6 +940,8 @@ void CImage::Unload(bool FreeMemory)
 	m_ImageId = (ILuint)-1;
 }
 
+#ifndef __linux__
+
 bool CImage::LoadImage(HANDLE &Handle)
 {
 	bool rc = false;
@@ -1019,6 +1021,8 @@ Quit:
 
 	return rc;
 }
+
+#endif // __linux__
 
 bool CImage::LoadImage(const char *Filename)
 {

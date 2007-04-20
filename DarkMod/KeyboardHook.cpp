@@ -8,10 +8,10 @@
  ***************************************************************************/
 
 #pragma hdrstop
-#include "../darkmod/KeyboardHook.h"
+#include "../DarkMod/KeyboardHook.h"
 
 #ifdef _WINDOWS_
-#include "../darkmod/KeyboardHookWindows.h"
+#include "../DarkMod/KeyboardHookWindows.h"
 #endif
 // We will add additional ones for other OS here later
 

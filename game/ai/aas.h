@@ -16,6 +16,10 @@
 // Need linked list
 #include "../../idlib/containers/list.h"
 
+#ifdef __linux__
+#include "tools/compilers/aas/aasfile.h"
+#endif
+
 /*
 ===============================================================================
 

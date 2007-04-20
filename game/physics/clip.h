@@ -13,6 +13,10 @@
 #ifndef __CLIP_H__
 #define __CLIP_H__
 
+#ifdef __linux__
+#include "cm/collisionmodel.h"
+#endif
+
 /*
 ===============================================================================
 

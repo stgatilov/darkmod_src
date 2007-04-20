@@ -29,6 +29,8 @@
 ===============================================================================
 */
 
+#include <cstring>
+
 class idLib {
 public:
 	static class idSys *		sys;

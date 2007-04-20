@@ -104,16 +104,49 @@ game_list = scons_utils.BuildList( 'game', game_string )
 for i in range( len( game_list ) ):
 	game_list[ i ] = '../../' + game_list[ i ]
 
+# DarkMod source files
+
+darkModSrc = '\
+AIComm_Message.cpp \
+BinaryFrobMover.cpp \
+darkModAASFindHidingSpots.cpp \
+DarkModGlobals.cpp \
+darkModHidingSpotTree.cpp \
+darkModLAS.cpp \
+decltdm_matinfo.cpp \
+declxdata.cpp \
+fdchar.cpp \
+force_grab.cpp \
+FrobDoor.cpp \
+FrobDoorHandle.cpp \
+Grabber.cpp \
+HidingSpotSearchCollection.cpp \
+idAbsenceMarkerEntity.cpp \
+Intersection.cpp \
+inventory.cpp \
+KeyboardHook.cpp \
+liquid.cpp \
+MissionData.cpp \
+overlaysys.cpp \
+PlayerData.cpp \
+Profile.cpp \
+ProjectileResult.cpp \
+PVSToAASMapping.cpp \
+rdline.cpp \
+Relations.cpp \
+sndProp.cpp \
+sndPropLoader.cpp \
+Strip.cpp \
+ToUpper.cpp'
+
+darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
+
 local_env = g_game_env.Copy()
 
-if ( local_gamedll == 1 ):
-	local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-	ret = local_env.SharedLibrarySafe( local_env, 'game', game_list + idlib_objects )
-	Return( 'ret' )
-else:
-	ret_list = []
-	for i in game_list:
-		ret_list += local_env.StaticObject( source = i )
-	Return( 'ret_list' )
+local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
+
+ret = local_env.SharedLibrarySafe( 
+		local_env, 'game', game_list + darkModList + idlib_objects )
+Return( 'ret' )
 
 

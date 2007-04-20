@@ -13,8 +13,8 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 // #include "math.h"
-#include "../darkmod/darkmodglobals.h"
-#include "intersection.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "Intersection.h"
 
 EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT], 
 								 const idVec3 Ellipsoid[ELL_COUNT],

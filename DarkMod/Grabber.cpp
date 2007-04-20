@@ -11,7 +11,7 @@
 // TODO: Detecting stuck items (distance + angular offset)
 // TODO: Handling stuck items (initially stop the player's motion, then if they continue that motion, drop the item)
 
-#include "....//idlib/precompiled.h"
+#include "../idlib/precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);
@@ -165,7 +165,13 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	idVec3 draggedPosition(vec3_zero), vPlayerPoint(vec3_zero);
 	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
 	trace_t trace;
-
+	idAnimator *dragAnimator;
+	renderEntity_t *renderEntity;
+	float distFactor;
+	bool bAttackHeld;
+	idEntity *drag;
+	idPhysics_Player *playerPhys;
+	
 	m_player = player;
 
 	// if there is an entity selected, we let it go and exit
@@ -178,7 +184,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		goto Quit;
 	}
 
-	idPhysics_Player *playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
+	/* idPhysics_Player* */ playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
 	// if the player is climbing a rope or ladder, don't let them grab things
 	if( playerPhys->OnRope() || playerPhys->OnLadder() )
 		goto Quit;
@@ -190,12 +196,12 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		StartDrag( player );
 
 	// if there's still not a valid ent, don't do anything
-	idEntity *drag = m_dragEnt.GetEntity();
+	/* idEntity* */ drag = m_dragEnt.GetEntity();
 	if ( !drag || !m_dragEnt.IsValid() )
 		goto Quit;
 
 	// Check for throwing:
-	bool bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+	/* bool */ bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
 
 	if( m_bAttackPressed && !bAttackHeld )
 	{
@@ -230,7 +236,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	}
 
 	vPlayerPoint.x = 1.0f; // (1, 0, 0)
-	float distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
+	/* float */ distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
 	vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
 
 	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
@@ -304,8 +310,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	m_drag.Evaluate( gameLocal.time );
 	this->ManipulateObject( player );
 
-	renderEntity_t *renderEntity = drag->GetRenderEntity();
-	idAnimator *dragAnimator = drag->GetAnimator();
+	/* renderEntity_t* */ renderEntity = drag->GetRenderEntity();
+	/* idAnimator* */ dragAnimator = drag->GetAnimator();
 
 	if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) 
 	{
@@ -338,7 +344,11 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	{
 		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity;
 		if( !FrobEnt )
+#ifdef __linux__
+			return;
+#else
 			goto Quit;
+#endif
 
 		newEnt = FrobEnt;
 
@@ -396,13 +406,21 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// ent but was found to be invalid.
 
 	if ( !newEnt ) 
+#ifdef __linux__
+		return;
+#else
 		goto Quit;
+#endif
 	
 // Set up the distance and orientation and stuff
 
 	// TODO: The !idStaticEntity here is temporary to fix a bug that should go away once frobbing moveables works again
 	if( newEnt->IsType(idStaticEntity::Type) )
+#ifdef __linux__
+		return;
+#else
 		goto Quit;
+#endif
 
 	// get the center of mass
 	idPhysics *phys = newEnt->GetPhysics();
@@ -919,4 +937,3 @@ bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
 Quit:
 	return bReturnVal;
 }
-		
