@@ -111,7 +111,7 @@ PROFILE_HANDLE *CreateHandle(void);
 /**
  *  Allocates and copies a string.
  */
-char *StrAlloc(char *str);
+char *StrAlloc(const char *str);
 
 
 
@@ -126,7 +126,7 @@ char *StrAlloc(char *str);
  * @return					- Returns a PROFILE_HANDLE pointer or NULL if not possible.
  *
  */
-PROFILE_HANDLE *OpenProfile(char *Path, BOOL CaseSensitive, BOOL bCreate);
+PROFILE_HANDLE *OpenProfile(const char *Path, BOOL CaseSensitive, BOOL bCreate);
 /**
  * This function will try to open the file for the profile.
  */

@@ -43,7 +43,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Profile.h"
 #include "Misc.h"
 
-char *StrAlloc(char *s)
+char *StrAlloc(const char *s)
 {
 	char *rc = NULL;
 
@@ -143,7 +143,7 @@ Quit:
 }
 
 
-PROFILE_HANDLE *OpenProfile(char *Path, BOOL CaseSensitive, BOOL bCreate)
+PROFILE_HANDLE *OpenProfile(const char *Path, BOOL CaseSensitive, BOOL bCreate)
 {
 	PROFILE_HANDLE *rc = NULL, *h = NULL;
 
