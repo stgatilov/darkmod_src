@@ -45,20 +45,19 @@ public:
 
 #else
 
-typedef union {
-public:
-	struct A {
+union TimerValue {
+	struct {
 		signed char Flags;
 		signed char Hour;
 		signed char Minute;
 		signed char Second;
 		signed short Millisecond;
-	};
-	struct B {
+	} A;
+	struct {
         signed long TimerVal;
 		signed short Millisecond;
-	};
-} TimerValue;
+	} B;
+};
 
 #endif // __linux__
 

@@ -137,7 +137,13 @@ Relations.cpp \
 sndProp.cpp \
 sndPropLoader.cpp \
 Strip.cpp \
-ToUpper.cpp'
+ToUpper.cpp \
+StimResponse/Response.cpp \
+StimResponse/ResponseEffect.cpp \
+StimResponse/Stim.cpp \
+StimResponse/StimResponse.cpp \
+StimResponse/StimResponseCollection.cpp \
+StimResponse/StimResponseTimer.cpp'
 
 darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
 

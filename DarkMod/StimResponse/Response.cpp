@@ -2,7 +2,7 @@
  *
  * PROJECT: The Dark Mod
  * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mär 2007) $
+ * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mï¿½r 2007) $
  * $Author: greebo $
  *
  ***************************************************************************/
@@ -13,6 +13,8 @@ static bool init_version = FileVersionList("$Id: Response.cpp 870 2007-03-27 14:
 
 #include "Response.h"
 #include "Stim.h"
+
+#include <algorithm>
 
 /********************************************************************/
 /*                   CResponse                                      */
@@ -74,7 +76,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		magnitude = stim->m_Magnitude;
 		float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
 		
-		float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
+		float base = 1 - std::min(stim->m_Radius, distance) / stim->m_Radius;
 		
 		// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
 		magnitude *= pow(base, stim->m_FallOffExponent);

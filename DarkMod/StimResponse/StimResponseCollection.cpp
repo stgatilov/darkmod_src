@@ -2,7 +2,7 @@
  *
  * PROJECT: The Dark Mod
  * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mär 2007) $
+ * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mï¿½r 2007) $
  * $Author: greebo $
  *
  ***************************************************************************/
@@ -351,7 +351,8 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	CStimResponse *sr = NULL;
 	float Radius = 0.0f;
 	StimState state( SS_DISABLED );
-
+	StimType typeOfStim;
+	
 	// Check if the entity contains either a stim or a response.
 	if(sr_class != 'S' && sr_class != 'R')
 	{
@@ -372,7 +373,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 
 	// If the first character is alphanumeric, we check if it 
 	// is a known id and convert it.
-	StimType typeOfStim = ST_DEFAULT;
+	/* StimType */ typeOfStim = ST_DEFAULT;
 
 	if((str[0] >= 'a' && str[0] <= 'z')
 		|| (str[0] >= 'A' && str[0] <= 'Z'))
@@ -586,12 +587,12 @@ void CStimResponseCollection::CreateTimer(const idDict *args, CStim *stim, int C
 	val = CStimResponseTimer::ParseTimeString( str );
 	
 	// if timer is actually set
-	if( val.Hour || val.Minute || val.Second || val.Millisecond )
+	if( val.A.Hour || val.A.Minute || val.A.Second || val.A.Millisecond )
 	{
 		// TODO: Return a bool here so that the outer function knows not to add this to m_Stim in the collection?
 
 		stim->AddTimerToGame();
-		timer->SetTimer(val.Hour, val.Minute, val.Second, val.Millisecond);
+		timer->SetTimer(val.A.Hour, val.A.Minute, val.A.Second, val.A.Millisecond);
 		
 		// timer starts on map startup by default, otherwise wait for start
 		if( !(args->GetBool( va("sr_timer_waitforstart_%u",Counter), "0" )) ) {
