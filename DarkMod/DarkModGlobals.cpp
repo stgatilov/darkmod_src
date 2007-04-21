@@ -77,6 +77,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 class idAI;
 
+// Name of the logfile to use for Dark Mod logging
+#ifdef __linux__
+const char* DARKMOD_LOGFILE = "/tmp/DarkMod.log";
+#else
+const char* DARKMOD_LOGFILE = "c:\\d3modlogger.log";
+#endif
+
 static char *LTString[LT_COUNT+1] = {
 	"INI",
 	"FRC",
@@ -192,7 +199,7 @@ CGlobal::CGlobal(void)
 
 	m_LogFile = NULL;
 
-	if((m_LogFile = fopen("c:\\d3modlogger.log", "w+b")) != NULL)
+	if((m_LogFile = fopen(DARKMOD_LOGFILE, "w+b")) != NULL)
 		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Initialzing mod logging\r");
 
 	// initialize the AI Acuities hash
@@ -409,7 +416,7 @@ void CGlobal::LogString(char *fmt, ...)
 	va_list arg;
 	va_start(arg, fmt);
 
-	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
+	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4lu] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);
