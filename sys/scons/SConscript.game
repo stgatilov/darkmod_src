@@ -109,6 +109,7 @@ for i in range( len( game_list ) ):
 
 darkModSrc = '\
 AIComm_Message.cpp \
+AIComm_StimResponse.cpp \
 BinaryFrobMover.cpp \
 darkModAASFindHidingSpots.cpp \
 DarkModGlobals.cpp \
@@ -157,9 +158,9 @@ darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
 local_env = g_game_env.Copy()
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
+local_env.Append(LIBS = ['IL'])
 
-ret = local_env.SharedLibrarySafe( 
-		local_env, 'game', game_list + darkModList + idlib_objects )
+ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects )
 Return( 'ret' )
 
 

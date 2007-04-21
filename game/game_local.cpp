@@ -5187,7 +5187,14 @@ Quit:
 	return;
 }
 
+#else
+
+// Placeholder linux lightgem
+float idGameLocal::CalcLightgem(idPlayer *player) { return 0.0f; }
+
 #endif // __linux__
+
+
 
 void idGameLocal::SpawnLightgemEntity(void)
 {
