@@ -12,11 +12,11 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "./pvstoaasmapping.h"
-#include "../darkMod/darkmodGlobals.h"
-#include "../game/PVS.h"
+#include "PVSToAASMapping.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../game/pvs.h"
 #include "../renderer/renderworld.h"
-#include "../darkmod/intersection.h"
+#include "../DarkMod/Intersection.h"
 
 //----------------------------------------------------------------------------
 

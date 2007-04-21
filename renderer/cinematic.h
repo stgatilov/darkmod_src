@@ -36,11 +36,11 @@ typedef enum {
 } cinStatus_t;
 
 // a cinematic stream generates an image buffer, which the caller will upload to a texture
-typedef struct {
+struct cinData_t {
 	int					imageWidth, imageHeight;	// will be a power of 2
 	const byte *		image;						// RGBA format, alpha will be 255
 	int					status;
-} cinData_t;
+};
 
 class idCinematic {
 public:

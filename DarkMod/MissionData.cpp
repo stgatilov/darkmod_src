@@ -326,11 +326,12 @@ bool	CMissionData::MatchSpec
 			)
 {
 	bool bReturnVal(false);
+	ESpecificationMethod SpecMethod;
 
 	// objectives only have two specified ents at max
 	if( !pComp || !EntDat || ind > 1 )
 		goto Quit;
-	ESpecificationMethod SpecMethod = pComp->m_SpecMethod[ ind ];
+	SpecMethod = pComp->m_SpecMethod[ ind ];
 
 	switch( SpecMethod )
 	{
@@ -1215,7 +1216,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CompTemp.m_IntArgs.Append(0);
 			CompTemp.m_IntArgs.Append(0);
 
-			CompTemp.m_ClockInterval = (int) 1000 * args->GetFloat( StrTemp2 + "clock_interval", "1.0" );
+			CompTemp.m_ClockInterval = 1000 * int(args->GetFloat( StrTemp2 + "clock_interval", "1.0" ));
 
 			CompTemp.m_Index[0] = Counter;
 			CompTemp.m_Index[1] = Counter2;

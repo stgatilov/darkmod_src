@@ -186,7 +186,7 @@ CGlobal::CGlobal(void)
 	m_Linenumber = 0;
 	m_WeakLightgem = false;
 	m_AICommStimRadius = DEFAULT_DARKMOD_AI_COMMUNICATIONS_STIM_RADIUS;
-	m_maxNumHidingSpotPointTestsPerAIFrame = DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME;
+	m_maxNumHidingSpotPointTestsPerAIFrame = int(DEFAULT_MAX_NUM_HIDING_SPOT_TESTS_PER_AI_FRAME);
 	m_hidingSpotMaxLightQuotient = MAX_HIDING_SPOT_MAX_LIGHT_QUOTIENT;
 	m_lightingQuotientObservationDistanceScale = DEFAULT_LIGHTING_QUOTIENT_OBSERVATION_DISTANCE_SCALE;
 
@@ -426,9 +426,9 @@ void CGlobal::LoadINISettings(void *p)
 	// All logclasses are loaded from the INI file. Frame can be switched 
 	// on explicitly. If any of the other classes are enabled, then Frame 
 	// will also be enabled as a marker in the logfile.
-	if(FindSection(pfh, "Debug", &ps) != -1)
+	if(FindSection(pfh, "Debug", &ps) != static_cast<ULONG>(-1))
 	{
-		if(FindMap(ps, "LogFile", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogFile", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			struct tm *t;
 			time_t timer;
@@ -454,7 +454,7 @@ void CGlobal::LoadINISettings(void *p)
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found Debug section \r");
 
-		if(FindMap(ps, "LogError", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogError", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_ERROR] = true;
@@ -462,35 +462,35 @@ void CGlobal::LoadINISettings(void *p)
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogError: %c\r", pm->Value[0]);
 		}
 
-		if(FindMap(ps, "LogBegin", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogBegin", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_BEGIN] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogBegin: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogEnd", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogEnd", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_END] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogEnd: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogDebug", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogDebug", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_DEBUG] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogDebug: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogWarning", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogWarning", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_WARNING] = true;
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogWarning: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogInfo", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogInfo", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 				m_LogArray[LT_INFO] = true;
@@ -498,7 +498,7 @@ void CGlobal::LoadINISettings(void *p)
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogInfo: %c\r", pm->Value[0]);
 		}
 
-		if(FindMap(ps, "LogClass_FRAME", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_FRAME", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -508,7 +508,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FRAME: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_SYSTEM", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_SYSTEM", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -518,7 +518,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SYSTEM: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_MISC", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -528,7 +528,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MISC: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_FROBBING", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -538,7 +538,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FROBBING: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_AI", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_AI", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -548,7 +548,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_AI: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_SOUND", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_SOUND", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -558,7 +558,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_SOUND: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_FUNCTION", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_FUNCTION", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -568,7 +568,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FUNCTION: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -578,7 +578,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_INVENTORY: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_LIGHT", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -588,7 +588,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LIGHT: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_WEAPON", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_WEAPON", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -598,7 +598,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_WEAPON: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_MATH", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -608,7 +608,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MATH: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_MOVEMENT", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -618,7 +618,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_MOVEMENT: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_STIM_RESPONSE", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_STIM_RESPONSE", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -628,7 +628,7 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_STIM_RESPONSE: %c\r", pm->Value[0]);
 		}
-		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != -1)
+		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
 			{
@@ -639,7 +639,7 @@ void CGlobal::LoadINISettings(void *p)
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_LOCKPICK: %c\r", pm->Value[0]);
 		}
 
-		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != -1)
+		if (FindMap(ps, "AIDebugGraphics", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_drawAIDebugGraphics = atof(pm->Value);
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AI Debug Grpahics display milliseconds: %f\r", m_drawAIDebugGraphics);
@@ -648,80 +648,80 @@ void CGlobal::LoadINISettings(void *p)
 //	m_ClassArray[LC_FRAME] = Frame;
 
 
-	if(FindSection(pfh, "GlobalParams", &ps) != -1)
+	if(FindSection(pfh, "GlobalParams", &ps) != static_cast<ULONG>(-1))
 	{
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("Found GlobalParams section \r");
 
 
-		if(FindMap(ps, "DefaultFrobDistance", TRUE, &pm) != -1)
-			m_DefaultFrobDistance = abs(atof(pm->Value));
+		if(FindMap(ps, "DefaultFrobDistance", TRUE, &pm) != static_cast<ULONG>(-1))
+			m_DefaultFrobDistance = fabs(atof(pm->Value));
 
-		if(FindMap(ps, "Mantle_JumpHoldMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_JumpHoldMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_jumpHoldMantleTrigger_Milliseconds = atof(pm->Value);
 		}
 
-		if(FindMap(ps, "Mantle_HangMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_HangMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_mantleHang_Milliseconds = atof(pm->Value);
 		}
 
-		if(FindMap(ps, "Mantle_PullMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_PullMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_mantlePull_Milliseconds = atof(pm->Value);
 		}
 
-		if(FindMap(ps, "Mantle_ShiftHandsMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_ShiftHandsMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_mantleShiftHands_Milliseconds = atof(pm->Value);
 		}
 
-		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_mantlePush_Milliseconds = atof(pm->Value);
 		}
 				
-		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_PushMilliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_mantlePush_Milliseconds = atof(pm->Value);
 		}
 
-		if(FindMap(ps, "Mantle_MinimumMetersPerSecondForDamage", TRUE, &pm) != -1)
+		if(FindMap(ps, "Mantle_MinimumMetersPerSecondForDamage", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_minimumVelocityForMantleDamage = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "Mantle_DamagerPerMetersPerSecondOverMinimum", TRUE, &pm) != -1)
+		if (FindMap(ps, "Mantle_DamagerPerMetersPerSecondOverMinimum", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_damagePointsPerMetersPerSecondOverMinimum = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "Lean_Milliseconds", TRUE, &pm) != -1)
+		if (FindMap(ps, "Lean_Milliseconds", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_leanMove_Milliseconds = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "Lean_Degrees", TRUE, &pm) != -1)
+		if (FindMap(ps, "Lean_Degrees", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_leanMove_DegreesTilt = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != -1)
+		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_WeakLightgem = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != -1)
+		if (FindMap(ps, "WeakLightgem", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_WeakLightgem = atof(pm->Value);
 		}
 
-		if (FindMap(ps, "AICommStimRadius", TRUE, &pm) != -1)
+		if (FindMap(ps, "AICommStimRadius", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_AICommStimRadius = atof(pm->Value);
 		}
 
-		if (FindMap (ps, "maxHidingSpotTestsPerAIFrame", TRUE, &pm) != -1)
+		if (FindMap (ps, "maxHidingSpotTestsPerAIFrame", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_maxNumHidingSpotPointTestsPerAIFrame = atoi(pm->Value);
 			if (m_maxNumHidingSpotPointTestsPerAIFrame < 10)
@@ -731,13 +731,13 @@ void CGlobal::LoadINISettings(void *p)
 			}
 		}
 
-		if (FindMap (ps, "hidingSpotMaxLightQuotient", TRUE, &pm) != -1)
+		if (FindMap (ps, "hidingSpotMaxLightQuotient", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_hidingSpotMaxLightQuotient = atof(pm->Value);
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_hidingSpotMaxLightQuotient set to %f", m_hidingSpotMaxLightQuotient);
 		}
 
-		if (FindMap (ps, "observationDistanceLightQuotientScale", TRUE, &pm) != -1)
+		if (FindMap (ps, "observationDistanceLightQuotientScale", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			m_lightingQuotientObservationDistanceScale = atof(pm->Value);
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("m_lightingQuotientObservationDistanceScale set to %f", m_lightingQuotientObservationDistanceScale);
@@ -934,7 +934,7 @@ void CImage::Unload(bool FreeMemory)
 		m_Image = NULL;
 	}
 
-	if(m_ImageId != -1)
+	if(m_ImageId != static_cast<unsigned char>(-1))
 		ilDeleteImages(1, &m_ImageId);
 
 	m_ImageId = (ILuint)-1;

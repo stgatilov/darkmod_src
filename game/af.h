@@ -22,6 +22,10 @@
 ===============================================================================
 */
 
+/* FORWRD DECLS */
+class idDeclAF_Body;
+class idDeclAF_Constraint;
+
 typedef struct jointConversion_s {
 	int						bodyId;				// id of the body
 	jointHandle_t			jointHandle;		// handle of joint this body modifies

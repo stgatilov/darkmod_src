@@ -111,7 +111,7 @@ AIComm_Message.cpp \
 BinaryFrobMover.cpp \
 darkModAASFindHidingSpots.cpp \
 DarkModGlobals.cpp \
-darkModHidingSpotTree.cpp \
+darkmodHidingSpotTree.cpp \
 darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \

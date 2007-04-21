@@ -9,7 +9,7 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
-#include ".\idabsencemarkerentity.h"
+#include "idAbsenceMarkerEntity.h"
 
 //##################################################################
 // Script events

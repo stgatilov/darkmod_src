@@ -171,11 +171,11 @@ CKeyboard* CKeyboard::getInstance()
 	return m_single;
 }
 CKeyboard::CKeyboard(void):
-	m_hook(NULL),
 	m_KeyPressCount(0),
 	m_bKeyCapActive(false),
 	m_KeyCapImpulse(IR_COUNT),
-	m_KeyCapStartCount(0)
+	m_KeyCapStartCount(0),
+	m_hook(NULL)
 {
 	for( int i = 0; i < IR_COUNT; i++)
 	{

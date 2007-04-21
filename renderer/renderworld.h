@@ -13,6 +13,8 @@
 #ifndef __RENDERWORLD_H__
 #define __RENDERWORLD_H__
 
+#include "material.h"
+
 /*
 ===============================================================================
 

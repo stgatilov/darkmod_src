@@ -18,10 +18,10 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "./darkModLAS.h"
-#include "../game/PVS.h"
+#include "../game/pvs.h"
 #include "../renderer/renderworld.h"
-#include "../darkmod/darkmodglobals.h"
-#include "../darkmod/intersection.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/Intersection.h"
 
 //----------------------------------------------------------------------------
 

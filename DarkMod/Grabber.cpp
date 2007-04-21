@@ -448,12 +448,12 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_localEntityPoint = COM;
 
 	// find the nearest distance and set it to that
-	m_MinHeldDist = newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" );
+	m_MinHeldDist = int(newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" ));
 	if( m_MinHeldDist < 0 )
-		m_MinHeldDist = MIN_HELD_DISTANCE;
+		m_MinHeldDist = int(MIN_HELD_DISTANCE);
 
 	delta2 = COMWorld - viewPoint;
-	m_DistanceCount = idMath::Floor( m_MaxDistCount * (delta2.Length() - m_MinHeldDist) / (newEnt->m_FrobDistance - m_MinHeldDist ) );
+	m_DistanceCount = int(idMath::Floor( m_MaxDistCount * (delta2.Length() - m_MinHeldDist) / (newEnt->m_FrobDistance - m_MinHeldDist ) ));
 	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
 
 	// prevent collision with player
@@ -499,7 +499,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	idEntity *ent;
 	idVec3 angularVelocity;
 	idPhysics *physics;
-	idVec3 rotationVec;
+	idVec3 rotationVec(0.0, 0.0, 0.0);
 	bool rotating;
 
 	ent = m_dragEnt.GetEntity();

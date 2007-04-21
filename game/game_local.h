@@ -27,6 +27,12 @@
 #ifndef __GAME_LOCAL_H__
 #define	__GAME_LOCAL_H__
 
+#include "game.h"
+
+#ifdef __linux__
+#include "framework/usercmdgen.h"
+#endif
+
 #pragma warning(disable : 4996)
 /**
 *	Message pragma so we can show file and line info in comments easily
@@ -172,6 +178,10 @@ void gameError( const char *fmt, ... );
 
 #include "pvs.h"
 #include "multiplayergame.h"
+
+#ifdef __linux__
+#include "renderer/renderworld.h"
+#endif
 
 //============================================================================
 
@@ -373,6 +383,8 @@ typedef struct {
 } SInventoryTarget;
 
 //============================================================================
+
+class idDeclEntityDef;
 
 class idGameLocal : public idGame {
 public:

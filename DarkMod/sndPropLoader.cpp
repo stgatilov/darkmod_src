@@ -22,12 +22,14 @@
 
 #pragma hdrstop
 
+#include "../game/game_local.h"
+
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 
-#include "sndproploader.h"
-#include "matrixsq.h"
+#include "sndPropLoader.h"
+#include "MatrixSq.h"
 #include "../game/misc.h"
 
 class idLocationEntity;

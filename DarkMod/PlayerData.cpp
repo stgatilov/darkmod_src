@@ -12,8 +12,8 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "../darkmod/darkmodglobals.h"
-#include "../darkmod/playerdata.h"
+#include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
 
 CDarkModPlayer::CDarkModPlayer(void)
 {

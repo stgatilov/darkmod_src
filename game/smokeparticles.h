@@ -44,6 +44,8 @@ typedef struct singleSmoke_s {
 	idMat3						axis;
 } singleSmoke_t;
 
+class idParticleStage;
+
 typedef struct {
 	const idParticleStage *		stage;
 	singleSmoke_t *				smokes;

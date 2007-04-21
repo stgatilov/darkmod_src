@@ -37,7 +37,7 @@ enum {
 //
 // single fx structure
 //
-typedef struct {
+struct idFXSingleAction {
 	int						type;
 	int						sibling;
 
@@ -73,7 +73,7 @@ typedef struct {
 	bool					noshadows;
 	bool					particleTrackVelocity;
 	bool					trackOrigin;
-} idFXSingleAction;
+};
 
 //
 // grouped fx structures

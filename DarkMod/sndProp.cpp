@@ -22,15 +22,17 @@
 
 #pragma hdrstop
 
+#include "../game/game_local.h"
+
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #pragma warning(disable : 4996)
 
-#include "sndproploader.h"
-#include "sndprop.h"
-#include "matrixsq.h"
-#include "darkmodglobals.h"
-#include "relations.h"
+#include "sndPropLoader.h"
+#include "sndProp.h"
+#include "MatrixSq.h"
+#include "DarkModGlobals.h"
+#include "Relations.h"
 #include "../game/ai/ai.h"
 
 // NOTES:

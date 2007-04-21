@@ -15,6 +15,10 @@
 
 #include <cmath>
 
+#ifdef __linux__
+#include "sys/sys_public.h"
+#endif
+
 #ifdef MACOS_X
 // for square root estimate instruction
 #include <ppc_intrinsics.h>

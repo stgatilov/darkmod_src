@@ -13,6 +13,11 @@
 #ifndef __SOUND__
 #define __SOUND__
 
+#ifdef __linux__
+#include "framework/declmanager.h"
+#include "renderer/cinematic.h"
+#endif
+
 /*
 ===============================================================================
 
@@ -41,14 +46,14 @@ static const int	SSF_NO_FLICKER =		BIT(8);	// always return 1.0 for volume queri
 static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice in a row
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
-typedef struct {
+struct soundShaderParms_t {
 	float					minDistance;
 	float					maxDistance;
 	float					volume;					// in dB, unfortunately.  Negative values get quieter
 	float					shakes;
 	int						soundShaderFlags;		// SSF_* bit flags
 	int						soundClass;				// for global fading of sounds
-} soundShaderParms_t;
+};
 
 
 const int		SOUND_MAX_LIST_WAVS		= 32;
@@ -178,6 +183,8 @@ option existing simultaniously with a live game.
 ===============================================================================
 */
 
+class idDemoFile;
+
 class idSoundWorld {
 public:
 	virtual					~idSoundWorld( void ) {}
@@ -263,6 +270,8 @@ typedef struct {
 	int						current44kHzTime;
 } soundDecoderInfo_t;
 
+class idRenderWorld;
+struct MemInfo_t;
 
 class idSoundSystem {
 public:

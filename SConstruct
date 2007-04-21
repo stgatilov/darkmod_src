@@ -342,6 +342,9 @@ if ( ID_MCHECK == '1' ):
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 scons_utils.SetupUtils( g_base_env )
 
+g_base_env.Append(CPPPATH = '#/include')
+g_base_env.Append(CPPPATH = '#/')
+
 g_env = g_base_env.Copy()
 
 g_env['CPPFLAGS'] += OPTCPPFLAGS
@@ -352,9 +355,6 @@ g_env_noopt = g_base_env.Copy()
 g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
 
 g_game_env = g_base_env.Copy()
-
-g_game_env.Append(CPPPATH = '#/include')
-g_game_env.Append(CPPPATH = '#/')
 
 g_game_env['CPPFLAGS'] += OPTCPPFLAGS
 g_game_env['CPPFLAGS'] += GAMECPPFLAGS

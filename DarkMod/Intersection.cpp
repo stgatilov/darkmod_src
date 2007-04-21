@@ -23,7 +23,7 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 Segment[LSG_COUNT],
 	EIntersection rc = INTERSECT_COUNT;
 	float fRoot;
 	float fInvA;
-    float afT[2];
+    float afT[2] = { 0.0, 0.0 }; // OrbWeaver: "may be used uninitialised" warning
 	float riQuantity;
 
     // set up quadratic Q(t) = a*t^2 + 2*b*t + c
@@ -133,7 +133,7 @@ EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT],
 	EIntersection rc = INTERSECT_COUNT;
 	float fRoot;
 	float fInvA;
-    float afT[2];
+    float afT[2] = { 0.0, 0.0 };
 	float riQuantity;
 
 	idMat3 A(1/(Ellipsoid[ELA_AXIS].x*Ellipsoid[ELA_AXIS].x), 0, 0,
@@ -229,7 +229,7 @@ EIntersection IntersectLineEllipsoid(const idVec3 Line[LSG_COUNT],
 	EIntersection rc = INTERSECT_COUNT;
 	float fRoot;
 	float fInvA;
-    float afT[2];
+    float afT[2] = { 0.0, 0.0 };
 	float riQuantity;
 
 	idMat3 A(1/(Ellipsoid[ELA_AXIS].x*Ellipsoid[ELA_AXIS].x), 0, 0,

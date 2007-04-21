@@ -20,6 +20,8 @@
 ===============================================================================
 */
 
+class idFXSingleAction;
+
 typedef struct {
 	renderLight_t			renderLight;			// light presented to the renderer
 	qhandle_t				lightDefHandle;			// handle to renderer light def

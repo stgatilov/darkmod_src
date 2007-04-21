@@ -566,7 +566,7 @@ inline type *CMatRUT<type>::GetRev(int row, int col)
 		goto Quit;
 	}
 
-	p = &m_mat[ind];
+	p = &(CMatrixSq<type>::m_mat[ind]);
 Quit:
 	return p;
 }
@@ -591,7 +591,7 @@ inline bool CMatRUT<type>::SetRev(int row, int col, type &src )
 	}
 	else
 	{
-		m_mat[ind] = src;
+		CMatrixSq<type>::m_mat[ind] = src;
 		returnval = true;
 	}
 	return returnval;
@@ -628,13 +628,13 @@ inline int CMatRUT<type>::Ind2dTo1d ( int row, int col )
 {
 	int rowIndex, colOffset, returnval;
 
-	rowIndex = row*m_dim - ( (row*(row+1)) >> 1);
+	rowIndex = row * CMatrixSq<type>::m_dim - ( (row*(row+1)) >> 1);
 
 	colOffset = (col - row - 1);
 	returnval = rowIndex + colOffset;
 
 	//check if the index is out of bounds
-	if ( row > col || returnval < 0 || returnval >= m_filled )
+	if ( row > col || returnval < 0 || returnval >= CMatrixSq<type>::m_filled )
 	{
 		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Tried to access RUT matrix with bad index (out of bounds or empty): row: %d, col: %d.\r", row, col);
 		returnval = -1;
@@ -644,4 +644,3 @@ inline int CMatRUT<type>::Ind2dTo1d ( int row, int col )
 }
 
 #endif
-

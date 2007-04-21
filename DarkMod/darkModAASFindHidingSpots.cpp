@@ -12,10 +12,10 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include ".\darkmodaasfindhidingspots.h"
-#include "..\darkmod\darkmodglobals.h"
-#include "..\darkmod\darkModLAS.h"
-#include "..\sys\sys_public.h"
+#include "darkModAASFindHidingSpots.h"
+#include "DarkModGlobals.h"
+#include "darkModLAS.h"
+#include "../sys/sys_public.h"
 
 #define HIDE_GRID_SPACING 40.0
 
