@@ -58,6 +58,7 @@
 bool FileVersionList(const char *str, bool state);
 
 class CStim;
+class CStimResponseTimer;
 class CPriorityQueue;
 
 // enables water physics
@@ -458,6 +459,7 @@ public:
 **/
 	float					m_walkSpeed;
 
+	idList<CStimResponseTimer *> m_Timer;			// generic timer used for other purposes than stims.
 	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
 	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
 	idList<idEntity *>		m_RespEntity;			// all entities that currently have a response regardless of it's state
@@ -762,9 +764,14 @@ public:
 	int						DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
 
 	/**
+	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.
+	 */
+	void					ProcessTimer(unsigned long ticks);
+
+	/**
 	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.
 	 */
-	void					ProcessStimResponse(void);
+	void					ProcessStimResponse(unsigned long ticks);
 
 	/**
 	 * CheckSignal will call all entites registered for a signal actacvtion.

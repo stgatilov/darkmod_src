@@ -13,6 +13,7 @@
 #ifndef FROBDOOR_H
 #define FROBDOOR_H
 
+class CStimResponseTimer;
 class CFrobDoorHandle;
 
 // Number of clicksounds available
@@ -35,6 +36,7 @@ public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
 							CFrobDoor( void );
+							~CFrobDoor( void );
 
 	void					Spawn( void );
 
@@ -141,6 +143,14 @@ protected:
 	 * Handle that is associated with this door, if the door has one.
 	 */
 	CFrobDoorHandle				*m_Doorhandle;
+
+	/**
+	 * The picktimer is used to time the lockpicking. Since the usekey
+	 * is a button, it will fire every frame, so we have to use a delay
+	 * that allows us to execute the next try on the lockpick after a 
+	 * certain time.
+	 */
+	CStimResponseTimer			*m_PickTimer;
 
 private:
 };

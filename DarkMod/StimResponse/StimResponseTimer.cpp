@@ -27,6 +27,7 @@ CStimResponseTimer::CStimResponseTimer()
 	m_LastTick = 0;
 	m_Ticker = 0;
 	m_TicksPerMilliSecond = 0;
+	m_Fired = false;
 }
 
 CStimResponseTimer::~CStimResponseTimer(void)
@@ -198,17 +199,23 @@ bool CStimResponseTimer::Tick(unsigned long sysTicks)
 	if (m_Timer.Time.Hour >= m_TimerVal.Time.Hour && m_Timer.Time.Minute >= m_TimerVal.Time.Minute && 
 		m_Timer.Time.Second >= m_TimerVal.Time.Second && m_Timer.Time.Millisecond >= m_TimerVal.Time.Millisecond) 
 	{
+		m_Fired = true;
 		returnValue = true;
-		if(m_Type == SRTT_SINGLESHOT) {
+		if(m_Type == SRTT_SINGLESHOT)
 			Stop();
-		}
-		else {
+		else
 			Restart(sysTicks);
-		}
 	}
 
 Quit:
 	m_LastTick = sysTicks;
 
 	return returnValue;
+}
+
+bool CStimResponseTimer::WasExpired(void)
+{
+	bool rc = m_Fired;
+	m_Fired = false;
+	return rc;
 }

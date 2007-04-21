@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "FrobDoorHandle.h"
 #include "sndProp.h"
 #include "randomizer/randomc.h"
+#include "StimResponse/StimResponseTimer.h"
 
 extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
 
@@ -72,6 +73,13 @@ CFrobDoor::CFrobDoor(void)
 	m_Pickable = true;
 	m_DoubleDoor = NULL;
 	m_Doorhandle = NULL;
+	m_PickTimer = new CStimResponseTimer();
+}
+
+CFrobDoor::~CFrobDoor(void)
+{
+	if(m_PickTimer)
+		delete m_PickTimer;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const

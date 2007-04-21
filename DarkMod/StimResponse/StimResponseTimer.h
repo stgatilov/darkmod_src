@@ -142,7 +142,15 @@ public:
 	 */
 	virtual bool Tick(unsigned long sysTicks);
 
-protected:
+	/**
+	 * Returns true if the timer had expired at least once since the 
+	 * last tick. It might have been restarted in the meantime, so checking
+	 * the current state might not help, but this function will always return
+	 * true in such a case.
+	 */
+	virtual bool WasExpired(void);
+
+public:
 	CStimResponseTimer();
 	virtual ~CStimResponseTimer(void);
 
@@ -151,12 +159,13 @@ protected:
 	unsigned long	m_Ticker;
 	unsigned long	m_TicksPerMilliSecond;
 
+	bool			m_Fired;
+
 	/**
 	* The Timer type specifies if this is a single-use timer or a
 	* "reloadable" timer.
 	*/
 	TimerType		m_Type;
-
 	TimerState		m_State;
 
 	/**
