@@ -92,6 +92,7 @@ game_string = ' \
 	physics/physics_actor.cpp \
 	physics/physics_base.cpp \
 	physics/physics_monster.cpp \
+	physics/physics_liquid.cpp \
 	physics/physics_parametric.cpp \
 	physics/physics_player.cpp \
 	physics/physics_rigidbody.cpp \
@@ -138,6 +139,11 @@ sndProp.cpp \
 sndPropLoader.cpp \
 Strip.cpp \
 ToUpper.cpp \
+randomizer/mersenne.cpp \
+randomizer/mother.cpp \
+randomizer/ranrotb.cpp \
+randomizer/ranrotw.cpp \
+randomizer/userintf.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
 StimResponse/Stim.cpp \

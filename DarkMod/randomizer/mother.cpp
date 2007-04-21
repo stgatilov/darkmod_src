@@ -22,10 +22,10 @@
 *  a PC. The Microsoft compiler doesn't support the long double format.  *
 *  You will get an error message if your system doesn't support this.    *
 *                                                                        *
-* © 2002 A. Fog. GNU General Public License www.gnu.org/copyleft/gpl.html*
+* ï¿½ 2002 A. Fog. GNU General Public License www.gnu.org/copyleft/gpl.html*
 *************************************************************************/
 
-#include "../precompiled.h"
+#include "../../idlib/precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

@@ -18,11 +18,11 @@
 *                                                                            *
 *  Experts consider this an excellent random number generator.               *
 *                                                                            *
-*  © 2001 - 2004 A. Fog.                                                     *
+*  ï¿½ 2001 - 2004 A. Fog.                                                     *
 *  GNU General Public License www.gnu.org/copyleft/gpl.html                  *
 *****************************************************************************/
 
-#include "../precompiled.h"
+#include "../../idlib/precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);

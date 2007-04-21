@@ -27,10 +27,10 @@
 *  The theory of the RANROT type of generators and the reason for the    *
 *  self-test are described at www.agner.org/random/theory                *
 *                                                                        *
-* ©2002 A. Fog. GNU General Public License www.gnu.org/copyleft/gpl.html *
+* ï¿½2002 A. Fog. GNU General Public License www.gnu.org/copyleft/gpl.html *
 *************************************************************************/
 
-#include "../precompiled.h"
+#include "../../idlib/precompiled.h"
 #pragma hdrstop
 
 static bool init_version = FileVersionList("$Id$", init_version);
@@ -45,7 +45,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // then remove this.
 // uint32 _lrotl (uint32 x, int r) {
 //   return (x << r) | (x >> (sizeof(x)*8-r));}
-
+#include "_lrotl.h"
 
 // constructor:
 TRanrotWGenerator::TRanrotWGenerator(uint32 seed) {
