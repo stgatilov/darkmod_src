@@ -69,7 +69,7 @@ public:
 		SRTS_DISABLED,				// Timer is not active
 		SRTS_TRIGGERED,				// Stimuls just became active
 		SRTS_RUNNING,				// Stimulus is progressing (only relevant for durations)
-		SRTS_EXPIRED,				// Stimulus has been expired (can be reloaded of reload is set)
+		SRTS_EXPIRED,				// Stimulus has been expired (can be reloaded if reload is set)
 		SRTS_DEFAULT
 	} TimerState;
 
@@ -87,8 +87,25 @@ public:
 	 */
 	static TimerValue ParseTimeString(idStr &s);
 
+	/**
+	 * Set ticks defines the number of ticks, that this timer should 
+	 * use to define a second. This value will differ on different machine
+	 * depending on their speed. It would also be possible to use this
+	 * value to speed up or delay a timer by adjusting the value accordingly.
+	 */
 	virtual void SetTicks(double const &TicksPerSecond);
+
+	/**
+	 * SetTimer loads the timer with the intended time, that the timer should
+	 * run. This time is NOT the actual daytime, it is actually the intervall
+	 * that the timer should last.
+	 */
 	virtual void SetTimer(int Hour, int Minute, int Seconds, int Milisecond);
+
+	/**
+	 * Define how often the timer should reload before it expires. After the
+	 * last reload is done (reload has reached zero), the timer will stop itself.
+	 */
 	virtual void SetReload(int Reload);
 
 	/**
