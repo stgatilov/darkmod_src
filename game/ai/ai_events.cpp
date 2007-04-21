@@ -2377,7 +2377,11 @@ void idAI::Event_TestAnimMoveTowardEnemy( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+		
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -2408,7 +2412,11 @@ void idAI::Event_TestAnimMove( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -2466,7 +2474,11 @@ void idAI::Event_TestAnimAttack( const char *animname ) {
 
 	anim = GetAnim( ANIMCHANNEL_LEGS, animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.DWarning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		idThread::ReturnInt( false );
 		return;
 	}

@@ -2652,7 +2652,11 @@ void idWeapon::Event_PlayAnim( int channel, const char *animname ) {
 	
 	anim = animator.GetAnim( animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.Warning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
 		animDoneTime = 0;
 	} else {
@@ -2682,7 +2686,11 @@ void idWeapon::Event_PlayCycle( int channel, const char *animname ) {
 
 	anim = animator.GetAnim( animname );
 	if ( !anim ) {
+
+#ifndef SUPPRESS_CONSOLE_WARNINGS
 		gameLocal.Warning( "missing '%s' animation on '%s' (%s)", animname, name.c_str(), GetEntityDefName() );
+#endif
+
 		animator.Clear( channel, gameLocal.time, FRAME2MS( animBlendFrames ) );
 		animDoneTime = 0;
 	} else {

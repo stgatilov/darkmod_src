@@ -239,6 +239,7 @@ if ( g_sdk or SDK != '0' ):
 g_build = BUILD_ROOT + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
+SourceSignatures('timestamp')
 
 if ( GL_HARDLINK != '0' ):
 	g_build += '-hardlink'
@@ -344,6 +345,8 @@ scons_utils.SetupUtils( g_base_env )
 
 g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/')
+
+g_base_env.Append(CPPDEFINES = 'SUPPRESS_CONSOLE_WARNINGS')
 
 g_env = g_base_env.Copy()
 
