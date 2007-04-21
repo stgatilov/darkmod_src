@@ -76,6 +76,11 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		magnitude = stim->m_Magnitude;
 		float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
 		
+#ifdef __linux__
+		// Import std::min for GCC, since global min() function is non-standard
+		using std::min;
+#endif
+		
 		float base = 1 - min(stim->m_Radius, distance) / stim->m_Radius;
 		
 		// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
