@@ -36,6 +36,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/randomizer/randomc.h"
 #include "../DarkMod/KeyboardHook.h" // Added By Rich for keyboard support encapsulation
 
+#include <iostream>
+
 CGlobal g_Global;
 TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
@@ -101,7 +103,7 @@ void PrintMessage( int x, int y, const char *szMessage, idVec4 colour, fontInfoE
 
       for( const char *p = szMessage; *p; p++ )
       {
-            glyphInfo_t &glyph = font.fontInfoSmall.glyphs[*p];
+            glyphInfo_t &glyph = font.fontInfoSmall.glyphs[int(*p)];
 
             renderSystem->DrawStretchPic( x, y - glyph.top,
                   glyph.imageWidth, glyph.imageHeight,
@@ -144,6 +146,14 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 		declManager					= import->declManager;
 		AASFileManager				= import->AASFileManager;
 		collisionModelManager		= import->collisionModelManager;
+	}
+	else {
+		// Wrong game version, throw a meaningful error rather than leaving
+		// stuff initialised and getting segfaults.
+		std::cerr << "FATAL: Incorrect game version: required " 
+			<< GAME_API_VERSION << ", got " << import->version << "\n"
+			<< "Ensure the correct Doom 3 patches are installed." << std::endl;
+		abort();
 	}
 
 	// set interface pointers used by idLib
@@ -2416,7 +2426,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	// key that is triggered, which could cause inconsistencies.
 	for(int i = 0; i < IR_COUNT; i++)
 	{
-		/*
 		k = &m_KeyData[i];
 		if(k->KeyState == KS_UPDATED)
 		{
@@ -2596,10 +2605,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			// each make up 50% of the time spread over 10 seconds
 			ret.combat = 0;
 			if ( player->lastDmgTime > 0 && time < player->lastDmgTime + 10000 ) {
-				ret.combat += 50.0f * (float) ( time - player->lastDmgTime ) / 10000;
+				ret.combat += int(50.0f * (float) ( time - player->lastDmgTime ) / 10000);
 			}
 			if ( player->lastHitTime > 0 && time < player->lastHitTime + 10000 ) {
-				ret.combat += 50.0f * (float) ( time - player->lastHitTime ) / 10000;
+				ret.combat += int(50.0f * (float) ( time - player->lastHitTime ) / 10000);
 			}
 		}
 
@@ -2778,7 +2787,7 @@ void idGameLocal::ProcessLightgem(idPlayer *player, bool bProcessing)
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
 
 	pDM->m_fColVal = fColVal;
-	pDM->m_LightgemValue = DARKMOD_LG_MAX * fColVal;
+	pDM->m_LightgemValue = int(DARKMOD_LG_MAX * fColVal);
 	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
 		pDM->m_LightgemValue = DARKMOD_LG_MIN;
 	else
@@ -4542,7 +4551,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 				
 				dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
 				if ( dist < spawnSpots[ i ].dist ) {
-					spawnSpots[ i ].dist = dist;
+					spawnSpots[ i ].dist = int(dist);
 				}
 			}
 		}

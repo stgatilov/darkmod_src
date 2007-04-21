@@ -254,6 +254,9 @@ void CGlobal::GetModName()
 {
 	int i, n;
 	char PathSep, *p;
+
+	// Get the mod path from the filesystem
+	assert(fileSystem != NULL);
 	const char *modpath = fileSystem->RelativePathToOSPath(".");
 	char name[256];
 
@@ -311,6 +314,7 @@ void CGlobal::GetModName()
 	}
 
 Quit:
+
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modpath: [%s]\r", m_ModPath);
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Modname: [%s]\r", m_ModName);
 	return;
@@ -340,7 +344,7 @@ void CGlobal::Init()
 //	strcat(ProfilePath, "\\Darkmod\\darkmod.ini");
 #else   // LINUX
 	char *home = getenv("HOME");
-
+	
 	ProfilePath[0] = 0;
 	if(home)
 		 strcpy(ProfilePath, home);
