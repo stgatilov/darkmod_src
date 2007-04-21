@@ -20,7 +20,7 @@
 ===============================================================================
 */
 
-class idFXSingleAction;
+struct idFXSingleAction;
 
 typedef struct {
 	renderLight_t			renderLight;			// light presented to the renderer

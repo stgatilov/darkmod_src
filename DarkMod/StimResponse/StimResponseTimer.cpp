@@ -22,8 +22,8 @@ CStimResponseTimer::CStimResponseTimer()
 	m_State = SRTS_DISABLED;
 	m_Reload = 0;
 	m_ReloadVal = 0;
-	m_Timer.A.Flags = TIMER_UNDEFINED;
-	m_TimerVal.A.Flags = TIMER_UNDEFINED;
+	m_Timer.Time.Flags = TIMER_UNDEFINED;
+	m_TimerVal.Time.Flags = TIMER_UNDEFINED;
 	m_LastTick = 0;
 	m_Ticker = 0;
 	m_TicksPerMilliSecond = 0;
@@ -44,7 +44,7 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 	int h, m, s, ms;
 	idStr source = str;
 
-	v.A.Flags = TIMER_UNDEFINED;
+	v.Time.Flags = TIMER_UNDEFINED;
 
 	if(str.Length() == 0)
 		goto Quit;
@@ -85,10 +85,10 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 
 	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Parsed timer string: [%s] to %d:%d:%d:%d\r", str.c_str(), h, m, s, ms);
 
-	v.A.Hour = h;
-	v.A.Minute = m;
-	v.A.Second = s;
-	v.A.Millisecond = ms;
+	v.Time.Hour = h;
+	v.Time.Minute = m;
+	v.Time.Second = s;
+	v.Time.Millisecond = ms;
 
 Quit:
 	return v;
@@ -103,10 +103,10 @@ void CStimResponseTimer::SetReload(int Reload)
 void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisecond)
 {
 //	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
-	m_TimerVal.A.Hour = Hour;
-	m_TimerVal.A.Minute = Minute;
-	m_TimerVal.A.Second = Second;
-	m_TimerVal.A.Millisecond = Millisecond;
+	m_TimerVal.Time.Hour = Hour;
+	m_TimerVal.Time.Minute = Minute;
+	m_TimerVal.Time.Second = Second;
+	m_TimerVal.Time.Millisecond = Millisecond;
 	memset(&m_Timer, 0, sizeof(TimerValue));
 }
 
@@ -180,23 +180,23 @@ bool CStimResponseTimer::Tick(unsigned long sysTicks)
 	m_Ticker %= m_TicksPerMilliSecond;
 
 	// Increase the hours/minutes/seconds/milliseconds
-	m_Timer.A.Millisecond += msPassed;
+	m_Timer.Time.Millisecond += msPassed;
 
-	if (m_Timer.A.Millisecond > 999) {
+	if (m_Timer.Time.Millisecond > 999) {
 		// Increase the seconds
-		m_Timer.A.Second += floor(static_cast<double>(m_Timer.A.Millisecond) / 1000);
-		m_Timer.A.Millisecond %= 1000;
+		m_Timer.Time.Second += floor(static_cast<double>(m_Timer.Time.Millisecond) / 1000);
+		m_Timer.Time.Millisecond %= 1000;
 
-		m_Timer.A.Minute += floor(static_cast<double>(m_Timer.A.Second) / 60);
-		m_Timer.A.Second %= 60;
+		m_Timer.Time.Minute += floor(static_cast<double>(m_Timer.Time.Second) / 60);
+		m_Timer.Time.Second %= 60;
 
-		m_Timer.A.Hour += floor(static_cast<double>(m_Timer.A.Minute) / 60);
-		m_Timer.A.Minute %= 60;
+		m_Timer.Time.Hour += floor(static_cast<double>(m_Timer.Time.Minute) / 60);
+		m_Timer.Time.Minute %= 60;
 	}
 
 	// Now check if the timer already expired.
-	if (m_Timer.A.Hour >= m_TimerVal.A.Hour && m_Timer.A.Minute >= m_TimerVal.A.Minute && 
-		m_Timer.A.Second >= m_TimerVal.A.Second && m_Timer.A.Millisecond >= m_TimerVal.A.Millisecond) 
+	if (m_Timer.Time.Hour >= m_TimerVal.Time.Hour && m_Timer.Time.Minute >= m_TimerVal.Time.Minute && 
+		m_Timer.Time.Second >= m_TimerVal.Time.Second && m_Timer.Time.Millisecond >= m_TimerVal.Time.Millisecond) 
 	{
 		returnValue = true;
 		if(m_Type == SRTT_SINGLESHOT) {

@@ -23,10 +23,6 @@
 
 #define TIMER_UNDEFINED		-1
 
-#ifndef __linux__
-
-#pragma warning( push )
-#pragma warning( disable : 4201 ) // non standard extension nameless struct/union
 typedef union {
 public:
 	struct {
@@ -35,31 +31,12 @@ public:
 		signed char Minute;
 		signed char Second;
 		signed short Millisecond;
-	};
+	} Time;
 	struct {
         signed long TimerVal;
 		signed short Millisecond;
-	};
+	} Val;
 } TimerValue;
-#pragma warning( pop )
-
-#else
-
-union TimerValue {
-	struct {
-		signed char Flags;
-		signed char Hour;
-		signed char Minute;
-		signed char Second;
-		signed short Millisecond;
-	} A;
-	struct {
-        signed long TimerVal;
-		signed short Millisecond;
-	} B;
-};
-
-#endif // __linux__
 
 /**
  * CStimResponseTimer handles all timing aspects of stimuli.

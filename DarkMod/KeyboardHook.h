@@ -91,7 +91,7 @@ class CKeyboardHookBase // Base class for all Keyboard hook classes
 {
 public:
 	CKeyboardHookBase( CKeyboard* pParent = NULL ){}
-	virtual ~CKeyboardHookBase() = 0; // {} [OrbWeaver] WTF? Is it pure or isn't it?
+	virtual ~CKeyboardHookBase() {};
 };
 
 class CKeyboard
