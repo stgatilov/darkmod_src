@@ -136,8 +136,8 @@ void CProjectileResult::Init
 	{
 		idStr key;
 		idStr value;
-		// Try to find a string like "stim_type_1"
-		sprintf(key, "stim_type_%u", stimIdx);
+		// Try to find a string like "sr_type_1"
+		sprintf(key, "sr_type_%u", stimIdx);
 		pProj->spawnArgs.GetString(key, "", value);
 
 		if (value == "")
@@ -154,34 +154,31 @@ void CProjectileResult::Init
 			{
 				CStim *s;
 
-				sprintf(key, "stim_radius_%u", stimIdx);
+				sprintf(key, "sr_radius_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
 
-				sprintf(key, "stim_bounds_mins_%u", stimIdx);
+				sprintf(key, "sr_bounds_mins_%u", stimIdx);
 				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[0]);
 
-				sprintf(key, "stim_bounds_maxs_%u", stimIdx);
+				sprintf(key, "sr_bounds_maxs_%u", stimIdx);
 				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[1]);
 
-				sprintf(key, "stim_radius_%u", stimIdx);
-				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
-
-				sprintf(key, "stim_falloffexponent_%u", stimIdx);
+				sprintf(key, "sr_falloffexponent_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "1", StimFalloffExponent);
 
-				sprintf(key, "stim_duration_%u", stimIdx);
+				sprintf(key, "sr_duration_%u", stimIdx);
 				pProj->spawnArgs.GetInt(key, "0", StimDuration );
 
-				sprintf(key, "stim_velocity_%u", stimIdx);
+				sprintf(key, "sr_velocity_%u", stimIdx);
 				pProj->spawnArgs.GetVector(key, "0 0 0", stimVelocity );
 
-				sprintf(key, "stim_eval_interval_%u", stimIdx);
+				sprintf(key, "sr_time_interval_%u", stimIdx);
 				pProj->spawnArgs.GetInt(key, "0", StimEvalInterval );
 
-				sprintf(key, "stim_use_bounds_%u", stimIdx);
+				sprintf(key, "sr_use_bounds_%u", stimIdx);
 				pProj->spawnArgs.GetBool(key, "0", bStimUseBounds );
 
-				sprintf(key, "stim_magnitude_%u", stimIdx);
+				sprintf(key, "sr_magnitude_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "1.0", StimMagnitude );
 
 				s = AddStim(StimType, StimRadius);
@@ -201,7 +198,7 @@ void CProjectileResult::Init
 					DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim with bounds setup\r");
 				}
 
-				sprintf(key, "stim_state_%u", stimIdx);
+				sprintf(key, "sr_state_%u", stimIdx);
 				if( pProj->spawnArgs.GetBool(key, "1") )
 					s->EnableSR(true);
 				else

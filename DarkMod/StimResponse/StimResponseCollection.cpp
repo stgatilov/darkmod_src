@@ -454,6 +454,15 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		sprintf(name, "sr_use_bounds_%u", Counter);
 		stim->m_bUseEntBounds = args->GetBool(name, "0");
 
+		sprintf(name, "sr_velocity_%u", Counter);
+		stim->m_Velocity = args->GetVector(name, "0 0 0");
+
+		sprintf(name, "sr_bounds_mins_%u", Counter);
+		stim->m_Bounds[0] = args->GetVector(name, "0 0 0");
+
+		sprintf(name, "sr_bounds_maxs_%u", Counter);
+		stim->m_Bounds[1] = args->GetVector(name, "0 0 0");
+
 		// set up time interleaving so the stim isn't fired every frame
 		sprintf(name, "sr_time_interval_%u", Counter);
 		stim->m_TimeInterleave = args->GetInt(name, "0");
