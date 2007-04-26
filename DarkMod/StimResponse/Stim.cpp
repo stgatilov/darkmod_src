@@ -32,6 +32,8 @@ CStim::CStim(idEntity *e, int Type)
 	m_ApplyTimer = 0;
 	m_ApplyTimerVal = 0;
 	m_MaxFireCount = -1;
+	m_Bounds.Zero();
+	m_Velocity = idVec3(0,0,0);
 }
 
 CStim::~CStim(void)

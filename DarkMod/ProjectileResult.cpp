@@ -94,6 +94,8 @@ void CProjectileResult::Init
 	int StimDuration(0), StimEvalInterval(0);
 	float StimMagnitude(1.0f);
 	bool bStimUseBounds(false);
+	idVec3 stimBounds[2];
+	idVec3 stimVelocity;
 
 	// copy in the data
 	m_Collision = collision;
@@ -155,11 +157,23 @@ void CProjectileResult::Init
 				sprintf(key, "stim_radius_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
 
+				sprintf(key, "stim_bounds_mins_%u", stimIdx);
+				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[0]);
+
+				sprintf(key, "stim_bounds_maxs_%u", stimIdx);
+				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[1]);
+
+				sprintf(key, "stim_radius_%u", stimIdx);
+				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
+
 				sprintf(key, "stim_falloffexponent_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "1", StimFalloffExponent);
 
 				sprintf(key, "stim_duration_%u", stimIdx);
 				pProj->spawnArgs.GetInt(key, "0", StimDuration );
+
+				sprintf(key, "stim_velocity_%u", stimIdx);
+				pProj->spawnArgs.GetVector(key, "0 0 0", stimVelocity );
 
 				sprintf(key, "stim_eval_interval_%u", stimIdx);
 				pProj->spawnArgs.GetInt(key, "0", StimEvalInterval );
@@ -178,6 +192,14 @@ void CProjectileResult::Init
 				s->m_bUseEntBounds = bStimUseBounds;
 				s->m_Magnitude = StimMagnitude;
 				s->m_FallOffExponent = StimFalloffExponent;
+				s->m_Velocity = stimVelocity;
+
+				// Check for valid bounds vectors
+				if (stimBounds[0] != idVec3(0,0,0)) {
+					s->m_Bounds = idBounds(stimBounds[0], stimBounds[1]);
+					s->m_Radius = 0;
+					DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim with bounds setup\r");
+				}
 
 				sprintf(key, "stim_state_%u", stimIdx);
 				if( pProj->spawnArgs.GetBool(key, "1") )

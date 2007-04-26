@@ -48,6 +48,10 @@ public:
 
 	idVec3			GetCenter( void ) const;						// returns center of bounds
 	float			GetRadius( void ) const;						// returns the radius relative to the bounds origin
+																	// greebo: Note that this does NOT return 0.0 for a
+																	// idBounds object with b[0] == b[1] as one might suspect.
+																	// I don't know what the intention for this code is, so I'll leave it.
+																	// Use GetVolume() instead.
 	float			GetRadius( const idVec3 &center ) const;		// returns the radius relative to the given center
 	float			GetVolume( void ) const;						// returns the volume of the bounds
 	bool			IsCleared( void ) const;						// returns true if bounds are inside out

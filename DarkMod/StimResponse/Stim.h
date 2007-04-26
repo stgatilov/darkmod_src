@@ -91,6 +91,21 @@ public:
 	float				m_Radius;
 
 	/**
+	* greebo: The stim bounds of this stim (can be used as alternative to
+	*		  the stim radius). This has to be defined by passing two 
+	*		  vectors via the spawnargs.
+	*/
+	idBounds			m_Bounds;
+
+	/**
+	* greebo: This is the velocity of this stim in units per second.
+	*		  This affects the center of the stim only, not the entity that is
+	*		  carrying this stim. This can be used to simulate more realistic
+	*		  water arrows (where the water affects items below the impact after time).
+	*/
+	idVec3				m_Velocity;
+
+	/**
 	* Magnitude of stim, per stim firing.  This can be damage if the stim does damage,
 	*	or healing if it's a healing stim, or more abstract things like amount of water,
 	*	amount of energy transferred by heat, etc.

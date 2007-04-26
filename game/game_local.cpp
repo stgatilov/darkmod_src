@@ -5351,7 +5351,6 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 	idEntity *e;
 	int ei, en;
 	int n;
-	float radius;
 	idVec3 origin;
 
 	CStimResponseCollection *src;
@@ -5426,6 +5425,13 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 					pStim->m_MaxFireCount--;
 				}
 
+				// Check if a stim velocity has been specified
+				if (pStim->m_Velocity != idVec3(0,0,0)) {
+					// The velocity mutliplied by the time gives the translation
+					// Updates the location of this stim relative to the time it last fired.
+					origin += pStim->m_Velocity * (gameLocal.time - pStim->m_EnabledTimeStamp)/1000;
+				}
+
 				// Save the current timestamp into the stim, so that we know when it was last fired
 				pStim->m_TimeInterleaveStamp = gameLocal.time;
 
@@ -5437,25 +5443,37 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				}
 
 				// If stim is not disabled and has a radius or uses the ent bounds
-				if(pStim->m_State != SS_DISABLED && ( (radius = pStim->m_Radius) != 0.0 || pStim->m_bUseEntBounds))
+				if (pStim->m_State == SS_DISABLED)
+					continue;
+
+				float radius = pStim->m_Radius;
+				if (radius != 0.0 || pStim->m_bUseEntBounds || pStim->m_Bounds.GetVolume() > 0)
 				{
 					int numResponses = 0;
 
-					// Find entities in the radius of the stim
-					if( pStim->m_bUseEntBounds ) {
-						bounds = e->GetPhysics()->GetAbsBounds();
+					// Check if we have fixed bounds to work with (sr_bounds_mins & maxs set)
+					if (pStim->m_Bounds.GetVolume() > 0) {
+						bounds = idBounds(pStim->m_Bounds[0] + origin, pStim->m_Bounds[1] + origin);
 					}
 					else {
-						bounds = idBounds(origin);
+						// No bounds set, check for radius and useBounds
+
+						// Find entities in the radius of the stim
+						if( pStim->m_bUseEntBounds ) {
+							bounds = e->GetPhysics()->GetAbsBounds();
+						}
+						else {
+							bounds = idBounds(origin);
+						}
+
+						bounds.ExpandSelf(radius);
 					}
-					
-					bounds.ExpandSelf(radius);
 
 // NOTE: CONTENTS_RESPONSE is temporarily disabled until we fix problems with order of calls
 // For some entities, SetContents ends up being called again after the SR setup and overwriting the CONTENTS_RESPONSE setting
 // UPDATE: I think we fixed most of these cases, on an individual basis
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, Ent, MAX_GENTITIES);
-					if(n != 0)
+					if(n > 0)
 					{
 						// Do responses for entities within the radius of the stim
 						numResponses = DoResponseAction(pStim, Ent, n, e);
