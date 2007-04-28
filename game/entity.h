@@ -53,6 +53,13 @@ typedef struct {
 */
 
 static const int DELAY_DORMANT_TIME = 3000;
+/**
+* greebo: This is the value that has to be exceeded by the lightingQuotient
+*		  returned by the LAS routines (range 0.0 ... 1.0).
+*		  0.0 means no threshold - target entities are always visible
+*		  This is used by the idEntity::canSeeEntity() member method.
+*/
+static const float VISIBILTIY_LIGHTING_THRESHOLD = 0.2f; 
 
 extern const idEventDef EV_PostSpawn;
 extern const idEventDef EV_FindTargets;

@@ -7901,6 +7901,21 @@ bool idEntity::canSeeEntity(idEntity* target, int useLighting) {
 
 	if (tr.fraction >= 1.0f || gameLocal.GetTraceEntity(tr) == target) {
 		// Trace test passed, entity is visible
+
+		if (useLighting) {
+			idBounds entityBounds = target->GetPhysics()->GetAbsBounds();
+			entityBounds.ExpandSelf (0.1f); // A single point doesn't work with ellipse intersection
+
+			idVec3 bottomPoint = entityBounds[0];
+			idVec3 topPoint = entityBounds[1];
+
+			float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, this, true);
+
+			// Return TRUE if the lighting exceeds the threshold.
+			return (lightQuotient >= VISIBILTIY_LIGHTING_THRESHOLD);
+		}
+
+		// No lighting to consider, return true
 		return true;
 	}
 	else {
