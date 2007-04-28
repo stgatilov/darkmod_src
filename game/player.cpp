@@ -5948,7 +5948,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_42:	// Inventory use item
+		case IMPULSE_51:	// Inventory use item
 		{
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
@@ -5957,7 +5957,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 
-		case IMPULSE_43:	// Inventory drop item
+		case IMPULSE_52:	// Inventory drop item
 		{
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
@@ -9514,11 +9514,16 @@ void idPlayer::inventoryUseItem()
 
 void idPlayer::inventoryUseItem(idEntity *ent)
 {
+	// Sanity check
+	if (ent == NULL) return;
+
 	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
-	if(ent != NULL)
+	if(frob != NULL)
 	{
+		// We have a frob entity in front of the player
+
 		// Check if the usage should become continuous when this item is active
 		m_ContinuousUse = ent->spawnArgs.GetBool("inv_cont_use");
 		if(ent->spawnArgs.GetBool("usable"))
@@ -9527,15 +9532,14 @@ void idPlayer::inventoryUseItem(idEntity *ent)
 			ent->UsedBy(frob);
 		}
 	}
-/*
-	if ( item && item->Inventory() == InventoryCursor()->Inventory() )
+	else
 	{
-		// call script: useEnt.inventoryUse( thisPlayer );
-		idThread* thread = useEnt->CallScriptFunctionArgs( "inventoryUse", true, 0, "ee", useEnt, this );
-		if (thread)
+		// greebo: No frob entity highlighted, try to call the "use" method in the entity's scriptobject
+		idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eef", ent, this, 0);
+		if (thread) {
 			thread->Start(); // Start the thread immediately.
+		}
 	}
-*/
 }
 
 void idPlayer::inventoryDropItem()
