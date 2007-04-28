@@ -9535,7 +9535,7 @@ void idPlayer::inventoryUseItem(idEntity *ent)
 	else
 	{
 		// greebo: No frob entity highlighted, try to call the "use" method in the entity's scriptobject
-		idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eef", ent, this, 0);
+		idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "ee", ent, this);
 		if (thread) {
 			thread->Start(); // Start the thread immediately.
 		}
