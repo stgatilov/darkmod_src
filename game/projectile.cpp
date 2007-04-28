@@ -36,6 +36,8 @@ const idEventDef EV_Explode( "<explode>", NULL );
 const idEventDef EV_Fizzle( "<fizzle>", NULL );
 const idEventDef EV_RadiusDamage( "<radiusdmg>", "e" );
 const idEventDef EV_GetProjectileState( "getProjectileState", NULL, 'd' );
+// greebo: The launch method (takes 3 vectors as arguments)
+const idEventDef EV_Launch("launch", "vvv");
 
 CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Explode,				idProjectile::Event_Explode )
@@ -43,6 +45,7 @@ CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Touch,				idProjectile::Event_Touch )
 	EVENT( EV_RadiusDamage,			idProjectile::Event_RadiusDamage )
 	EVENT( EV_GetProjectileState,	idProjectile::Event_GetProjectileState )
+	EVENT( EV_Launch,				idProjectile::Event_Launch )
 END_CLASS
 
 /*
@@ -432,7 +435,6 @@ idProjectile::Think
 ================
 */
 void idProjectile::Think( void ) {
-
 	if ( thinkFlags & TH_THINK ) {
 		if ( thrust && ( gameLocal.time < thrust_end ) ) {
 			// evaluate force
@@ -1047,6 +1049,15 @@ idVec3 idProjectile::GetGravity( const idDict *projectile ) {
 
 	gravity = projectile->GetFloat( "gravity" );
 	return idVec3( 0, 0, -gravity );
+}
+
+/*
+================
+idProjectile::Event_Launch
+================
+*/
+void idProjectile::Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity ) {
+	Launch(origin, direction, velocity);
 }
 
 /*

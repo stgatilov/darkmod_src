@@ -71,6 +71,8 @@ typedef struct SFinalProjData_s
 */
 
 extern const idEventDef EV_Explode;
+// greebo: Exposed projectile launch method to scripts
+extern const idEventDef EV_Launch;
 
 class idProjectile : public idEntity {
 public :
@@ -168,6 +170,7 @@ private:
 	void					Event_RadiusDamage( idEntity *ignore );
 	void					Event_Touch( idEntity *other, trace_t *trace );
 	void					Event_GetProjectileState( void );
+	void					Event_Launch( idVec3 const &origin, idVec3 const &direction, idVec3 const &velocity );
 };
 
 class idGuidedProjectile : public idProjectile {
