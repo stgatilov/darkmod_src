@@ -608,8 +608,12 @@ public:
 	void					Event_CreateOverlay( const char *guiFile, int layer );
 	int						CreateOverlay( const char *guiFile, int layer );
 
-	void					Event_DestroyOverlay(int layer);
-	void					DestroyOverlay(int layer);
+	/**
+	* greebo: DestroyOverlay removes the overlay from this entity. Pass the handle
+	*		  as argument, it's the <int> returned by CreateOverlay.
+	*/
+	void					Event_DestroyOverlay(int handle);
+	void					DestroyOverlay(int handle);
 
 	/**
 	 * Generic function for calling a scriptfunction with arbitrary arguments.

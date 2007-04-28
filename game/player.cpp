@@ -9839,22 +9839,6 @@ void idPlayer::Event_GetInventoryOverlay(void)
 	idThread::ReturnInt(mInventoryOverlay);
 }
 
-/*
-=====================
-idPlayer::Event_DestroyOverlay
-=====================
-*/
-void idPlayer::Event_DestroyOverlay( int handle ) {
-	if ( handle != OVERLAYS_MIN_HANDLE ) {
-		idUserInterface *gui = m_overlays.getGui( handle );
-		if ( gui )
-			gui->Activate( false, gameLocal.time );
-		m_overlays.destroyOverlay( handle );
-	} else {
-		gameLocal.Warning( "Cannot destroy HUD.\n" );
-	}
-}
-
 void idPlayer::Event_PlayStartSound( void )
 {
 	StartSound("snd_mission_start", SND_CHANNEL_ANY, 0, false, NULL);

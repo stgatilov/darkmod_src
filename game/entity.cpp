@@ -7734,13 +7734,22 @@ Quit:
 	return rc;
 }
 
-void idEntity::Event_DestroyOverlay(int layer)
+void idEntity::Event_DestroyOverlay(int handle)
 {
-	DestroyOverlay(layer);
+	DestroyOverlay(handle);
 }
 
-void idEntity::DestroyOverlay(int layer)
+void idEntity::DestroyOverlay(int handle)
 {
+	if ( handle != OVERLAYS_MIN_HANDLE ) {
+		idUserInterface *gui = m_overlays.getGui( handle );
+		if ( gui )
+			gui->Activate( false, gameLocal.time );
+		m_overlays.destroyOverlay( handle );
+		gameLocal.Printf("Overlay with ID %d destroyed.\n", handle);
+	} else {
+		gameLocal.Warning( "Cannot destroy HUD.\n" );
+	}
 }
 
 void idEntity::Event_CreateOverlay( const char *guiFile, int layer )

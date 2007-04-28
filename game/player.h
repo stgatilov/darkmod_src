@@ -880,7 +880,6 @@ private:
 
 	void					Event_SetGui( int handle, const char *guiFile );
 	void					Event_GetInventoryOverlay(void);
-	void					Event_DestroyOverlay( int handle );
 
 	void					Event_PlayStartSound( void );
 	void					Event_MissionFailed( void );
