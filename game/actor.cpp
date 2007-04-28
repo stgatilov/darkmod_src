@@ -1605,18 +1605,22 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const {
 	}
 	*/
 
+	// greebo: If the target entity is an idActor, use its eyeposition,
+	// otherwise just use the origin (for general entities).
 	if ( ent->IsType( idActor::Type ) ) {
 		toPos = ( ( idActor * )ent )->GetEyePosition();
 	} else {
 		toPos = ent->GetPhysics()->GetOrigin();
 	}
 
+	// Check the field of view if specified
 	if ( useFov && !CheckFOV( toPos ) ) {
 		return false;
 	}
 
 	eye = GetEyePosition();
 
+	// Perform a trace from the eye position to the target entity
 	gameLocal.clip.TracePoint( tr, eye, toPos, MASK_OPAQUE, this );
 	if ( tr.fraction >= 1.0f || ( gameLocal.GetTraceEntity( tr ) == ent ) ) {
 		return true;

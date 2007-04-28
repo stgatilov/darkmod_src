@@ -88,6 +88,7 @@ extern const idEventDef EV_CopyBind;
 extern const idEventDef EV_IsFrobable;
 extern const idEventDef EV_SetFrobable;
 extern const idEventDef EV_InPVS;
+extern const idEventDef EV_CanSeeEntity;
 
 // greebo: Script event definition for dealing damage
 extern const idEventDef EV_Damage;
@@ -1036,6 +1037,18 @@ public:			// Events should be public, so they can be used from other places as w
 #endif		// MOD_WATERPHYSICS
 	
 	void					Event_RangedThreatTo(idEntity*);
+
+	/**
+	* greebo: Returns true if the target entity can be seen 
+	*
+	* @useLighting: If set to TRUE, takes lighting into account.
+	*/
+	bool					canSeeEntity(idEntity* target, int useLighting);
+
+	/**
+	* greebo: script event wrapper for the above canSeeEntity() method.
+	*/
+	void					Event_CanSeeEntity(idEntity* target, int useLighting);
 
 public:			// events that need to have an accessible counterpart
 	void					SetGuiString(int handle, const char *key, const char *val);
