@@ -7749,7 +7749,6 @@ void idEntity::DestroyOverlay(int handle)
 		if ( gui )
 			gui->Activate( false, gameLocal.time );
 		m_overlays.destroyOverlay( handle );
-		gameLocal.Printf("Overlay with ID %d destroyed.\n", handle);
 	} else {
 		gameLocal.Warning( "Cannot destroy HUD.\n" );
 	}

@@ -38,6 +38,7 @@ const idEventDef EV_RadiusDamage( "<radiusdmg>", "e" );
 const idEventDef EV_GetProjectileState( "getProjectileState", NULL, 'd' );
 // greebo: The launch method (takes 3 vectors as arguments)
 const idEventDef EV_Launch("launch", "vvv");
+const idEventDef EV_ActivateProjectile("<activateProjectile>", NULL);
 
 CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_Explode,				idProjectile::Event_Explode )
@@ -46,6 +47,7 @@ CLASS_DECLARATION( idEntity, idProjectile )
 	EVENT( EV_RadiusDamage,			idProjectile::Event_RadiusDamage )
 	EVENT( EV_GetProjectileState,	idProjectile::Event_GetProjectileState )
 	EVENT( EV_Launch,				idProjectile::Event_Launch )
+	EVENT( EV_ActivateProjectile,	idProjectile::Event_ActivateProjectile )
 END_CLASS
 
 /*
@@ -65,7 +67,6 @@ idProjectile::idProjectile( void ) {
 	lightStartTime		= 0;
 	lightEndTime		= 0;
 	lightColor			= vec3_zero;
-	state				= SPAWNED;
 	damagePower			= 1.0f;
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	memset( &renderLight, 0, sizeof( renderLight ) );
@@ -287,6 +288,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	float			bounce;
 	float			mass;
 	float			speed;
+	float			delay;
 	float			gravity;
 	idVec3			gravVec;
 	idVec3			tmp;
@@ -321,6 +323,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	mass				= spawnArgs.GetFloat( "mass" );
 	gravity				= spawnArgs.GetFloat( "gravity" );
 	fuse				= spawnArgs.GetFloat( "fuse" );
+	delay				= spawnArgs.GetFloat( "delay" );
 
 	projectileFlags.detonate_on_world	= spawnArgs.GetBool( "detonate_on_world" );
 	projectileFlags.detonate_on_actor	= spawnArgs.GetBool( "detonate_on_actor" );
@@ -411,6 +414,11 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 		}
 	}
 
+	if (delay > 0.0f) {
+		// Activate this projectile in <delay> seconds
+		PostEventSec( &EV_ActivateProjectile, delay);
+	}
+
 	if ( projectileFlags.isTracer ) {
 		StartSound( "snd_tracer", SND_CHANNEL_BODY, 0, false, NULL );
 	} else {
@@ -433,7 +441,8 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	UpdateVisuals();
 
-	state = LAUNCHED;
+	// Set this to inactive if there is a delay set
+	state = (delay > 0) ? INACTIVE : LAUNCHED;
 }
 
 /*
@@ -499,6 +508,11 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	float		push;
 	float		damageScale;
 	idStr		SurfTypeName;
+
+	if ( state == INACTIVE ) {
+		// projectile not active yet, return FALSE
+		return false;
+	}
 
 	if ( state == EXPLODED || state == FIZZLED ) {
 		return true;
@@ -725,7 +739,7 @@ idProjectile::Fizzle
 */
 void idProjectile::Fizzle( void ) {
 
-	if ( state == EXPLODED || state == FIZZLED ) {
+	if ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) {
 		return;
 	}
 
@@ -762,6 +776,13 @@ void idProjectile::Fizzle( void ) {
 	PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
 }
 
+/**
+* greebo: This event is being scheduled by the Launch() method, if a "delay" is set on the projectileDef
+*/
+void idProjectile::Event_ActivateProjectile() {
+	state = LAUNCHED;
+}
+
 /*
 ================
 idProjectile::Event_RadiusDamage
@@ -776,7 +797,7 @@ void idProjectile::Event_RadiusDamage( idEntity *ignore ) {
 
 /*
 ================
-idProjectile::Event_RadiusDamage
+idProjectile::Event_GetProjectileState
 ================
 */
 void idProjectile::Event_GetProjectileState( void ) {
@@ -796,7 +817,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	int			removeTime;
 	bool		bActivated;
 
-	if ( state == EXPLODED || state == FIZZLED ) {
+	if ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) {
 		return;
 	}
 
@@ -1136,16 +1157,21 @@ bool idProjectile::ClientPredictionCollide( idEntity *soundEnt, const idDict &pr
 		return false;
 	}
 
+	// At this point it's for sure that the projectile is colliding with an entity, check the type
+
 	// don't do anything if hitting a noclip player
 	if ( ent->IsType( idPlayer::Type ) && static_cast<idPlayer *>( ent )->noclip ) {
 		return false;
 	}
 
+	// Are we hitting an actor?
 	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
+		// Yes, check if we should detonate on actors
 		if ( !projectileDef.GetBool( "detonate_on_actor" ) ) {
 			return false;
 		}
 	} else {
+		// Not an actor, check if we should detonate on something else
 		if ( !projectileDef.GetBool( "detonate_on_world" ) ) {
 			return false;
 		}
@@ -1266,6 +1292,10 @@ void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 				StopSound( SND_CHANNEL_BODY2, false );
 				gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
 				state = SPAWNED;
+				break;
+			}
+			case INACTIVE: {
+				state = INACTIVE;
 				break;
 			}
 		}
