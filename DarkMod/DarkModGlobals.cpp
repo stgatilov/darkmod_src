@@ -1147,6 +1147,9 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 
 void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )
 {
+	if (material == NULL) {
+		goto Quit;
+	}
 	int end = -1;
 	int surftype = material->GetSurfaceType();
 
