@@ -395,7 +395,14 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 				fuse = 0.0f;
 			}
 			PostEventSec( &EV_Explode, fuse );
-		} else {
+		} 
+		// greebo: Added this to allow for mines
+		else if ( spawnArgs.GetBool( "no_fizzle" ) ) {
+			if ( fuse < 0.0f ) {
+				fuse = 0.0f;
+			}
+		}
+		else {
 			fuse -= timeSinceFire;
 			if ( fuse < 0.0f ) {
 				fuse = 0.0f;
