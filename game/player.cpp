@@ -3010,8 +3010,8 @@ void idPlayer::UpdateConditions( void )
 	// Check if the frob is to be a continous action.
 	if(m_ContinuousUse == true)
 	{
-		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_42)) == true)
-			inventoryUseItem();
+		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == true)
+			inventoryUseItem(false);
 		else
 			m_ContinuousUse = false;
 	}
@@ -5953,7 +5953,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			inventoryUseItem();
+			inventoryUseItem(true);
 			break;
 		}
 
@@ -9501,7 +9501,7 @@ void idPlayer::inventoryPrevGroup()
 	InventoryCursor()->GetPrevCategory();
 }
 
-void idPlayer::inventoryUseItem()
+void idPlayer::inventoryUseItem(bool bImpulse)
 {
 	// If the player has an item that is selected we need to check if this
 	// is a usable item (like a key). In this case the use action takes
@@ -9509,17 +9509,17 @@ void idPlayer::inventoryUseItem()
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 	if(it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(it->GetItemEntity());
+		inventoryUseItem(bImpulse, it->GetItemEntity());
 }
 
-void idPlayer::inventoryUseItem(idEntity *ent)
+void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 {
 	// Sanity check
 	if (ent == NULL) return;
 
 	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX\r", ent);
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX  Impulse: %u\r", ent, (int)bImpulse);
 	if(frob != NULL)
 	{
 		// We have a frob entity in front of the player

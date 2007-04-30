@@ -436,7 +436,7 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 	CFrobDoor *master;
 	idEntity *e;
 	idStr s;
-	char type;
+	char type = 0;
 
 	if(ent == NULL)
 		return false;
@@ -452,6 +452,14 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 		ent->spawnArgs.GetString("type", "", s);
 		if(s.Length() == 1)
 			type = s[0];
+	}
+
+	// Process the lockpick
+	if(type != 0)
+	{
+		if(m_PickTimer->GetState() != CStimResponseTimer::SRTS_RUNNING)
+		{
+		}
 	}
 
 	// When we are here we know that the item is usable

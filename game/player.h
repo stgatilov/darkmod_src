@@ -639,9 +639,9 @@ public:
 	// Drops the currently held/selected item.
 	void inventoryDropItem( void );
 	// Uses the currently held/selected item.
-	void inventoryUseItem( void );
+	void inventoryUseItem(bool bImpulse);
 	// Uses a specific item, if it's in the same inventory.
-	void inventoryUseItem( idEntity* useEnt );
+	void inventoryUseItem(bool bImpulse, idEntity* useEnt);
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 	
