@@ -44,6 +44,7 @@ char *cStimType[] = {
 	"STIM_TARGET_REACHED",
 	"STIM_THIEF",
 	"STIM_FLASH",
+	"STIM_BLIND",
 	NULL
 };
 
