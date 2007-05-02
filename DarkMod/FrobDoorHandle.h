@@ -56,7 +56,7 @@ public:
 	 */
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
-	bool					UsedBy(idEntity *);
+	bool					UsedBy(bool bInit, idEntity *);
 	void					FrobAction(bool bMaster);
 
 	// These functions need to be disabled on the handle. Therefore

@@ -55,7 +55,7 @@ public:
 	void					GetPickable(void);
 	void					GetDoorhandle(void);
 
-	bool					UsedBy(idEntity *);
+	bool					UsedBy(bool bInit, idEntity *);
 
 	/**
 	* Write the proper sound loss value to the soundprop portal data

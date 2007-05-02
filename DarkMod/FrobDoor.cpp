@@ -429,7 +429,7 @@ void CFrobDoor::Close(bool bMaster)
 	}
 }
 
-bool CFrobDoor::UsedBy(idEntity *ent)
+bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 {
 	bool bRc = false;
 	int i, n;
@@ -481,7 +481,7 @@ bool CFrobDoor::UsedBy(idEntity *ent)
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
 		{
 			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				bRc = master->UsedBy(ent);
+				bRc = master->UsedBy(bInit, ent);
 			else
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
