@@ -131,7 +131,8 @@ void CStimResponseTimer::Restart(unsigned long sysTicks)
 	if(m_Reload > 0 || m_Reload == -1)
 	{
 		memset(&m_Timer, 0, sizeof(TimerValue));
-		m_Reload--;
+		if(m_Reload != -1)
+			m_Reload--;
 		Start(sysTicks);
 	}
 	else
@@ -183,7 +184,8 @@ bool CStimResponseTimer::Tick(unsigned long sysTicks)
 	// Increase the hours/minutes/seconds/milliseconds
 	m_Timer.Time.Millisecond += msPassed;
 
-	if (m_Timer.Time.Millisecond > 999) {
+	if (m_Timer.Time.Millisecond > 999)
+	{
 		// Increase the seconds
 		m_Timer.Time.Second += floor(static_cast<double>(m_Timer.Time.Millisecond) / 1000);
 		m_Timer.Time.Millisecond %= 1000;
@@ -211,6 +213,23 @@ Quit:
 	m_LastTick = sysTicks;
 
 	return returnValue;
+}
+
+void CStimResponseTimer::MakeTime(TimerValue &t, unsigned long Ticks)
+{
+	double msPassed = floor(static_cast<double>(Ticks) / m_TicksPerMilliSecond);
+
+	memset(&t, 0, sizeof(TimerValue));
+	t.Time.Millisecond = msPassed;
+
+	t.Time.Second += floor(static_cast<double>(t.Time.Millisecond) / 1000);
+	t.Time.Millisecond %= 1000;
+
+	t.Time.Minute += floor(static_cast<double>(t.Time.Second) / 60);
+	t.Time.Second %= 60;
+
+	t.Time.Hour += floor(static_cast<double>(t.Time.Minute) / 60);
+	t.Time.Minute %= 60;
 }
 
 bool CStimResponseTimer::WasExpired(void)

@@ -150,6 +150,11 @@ public:
 	 */
 	virtual bool WasExpired(void);
 
+	/**
+	 * Fills the timevalue calculated from the tick counter.
+	 */
+	void MakeTime(TimerValue &Time, unsigned long sysTicks);
+
 public:
 	CStimResponseTimer();
 	virtual ~CStimResponseTimer(void);

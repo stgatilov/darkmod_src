@@ -9563,7 +9563,7 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 		if(ent->spawnArgs.GetBool("usable"))
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			ent->UsedBy(bImpulse, frob);
+			frob->UsedBy(bImpulse, ent);
 		}
 	}
 	else
