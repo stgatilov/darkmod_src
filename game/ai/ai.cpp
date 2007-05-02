@@ -6973,6 +6973,17 @@ void idAI::UpdateAir( void )
 	m_AirCheckTimer += m_AirCheckInterval;
 }
 
+int	idAI::getAirTicks() const {
+	return m_AirTics;
+}
+
+void idAI::setAirTicks(int airTicks) {
+	m_AirTics = airTicks;
+	// Clamp to maximum value
+	if( m_AirTics > m_AirTicksMax ) {
+		m_AirTics = m_AirTicksMax;
+	}
+}
 
 /*
 ===================== Lipsync =====================

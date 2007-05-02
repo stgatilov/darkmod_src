@@ -518,6 +518,13 @@ public:
 	*   
 	****************************************************************************************/
 	void CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+
+	/**
+	* greebo: Accessor methods for the airTicks member variable. 
+	*/
+	int		getAirTicks() const;
+	void	setAirTicks(int airTicks);
+
 protected:
 	// navigation
 	idAAS *					aas;

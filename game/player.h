@@ -526,6 +526,11 @@ public:
 	void					SetCurrentHeartRate( void );
 	int						GetBaseHeartRate( void );
 	void					UpdateAir( void );
+	/**
+	* greebo: Accessor methods for the airTicks member variable. 
+	*/
+	int						getAirTicks() const;
+	void					setAirTicks(int airTicks);
 
 	virtual bool			HandleSingleGuiCommand( idEntity *entityGui, idLexer *src );
 	bool					GuiActive( void ) { return focusGUIent != NULL; }

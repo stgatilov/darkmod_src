@@ -5340,6 +5340,18 @@ void idPlayer::UpdateAir( void ) {
 	}
 }
 
+int	idPlayer::getAirTicks() const {
+	return airTics;
+}
+
+void idPlayer::setAirTicks(int airTicks) {
+	airTics = airTicks;
+	// Clamp to maximum value
+	if( airTics > pm_airTics.GetInteger() ) {
+		airTics = pm_airTics.GetInteger();
+	}
+}
+
 /*
 ==============
 idPlayer::AddGuiPDAData
