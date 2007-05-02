@@ -100,6 +100,8 @@ const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", "dd" );
 const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", "dd" );
 const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
 const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
+// greebo: This allows scripts to set the "healthpool" for gradual healing
+const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -147,6 +149,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
+
+	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool)
 
 END_CLASS
 
@@ -1018,6 +1022,9 @@ idPlayer::idPlayer()
 	healthPulse				= false;
 	nextHealthTake			= 0;
 	healthTake				= false;
+	healthPoolTimeInterval	= HEALTHPULSE_TIME;
+	healthPoolTimeIntervalFactor = 1.0f;
+	healthPoolStepAmount	= 5;
 
 	scoreBoardOpen			= false;
 	forceScoreBoard			= false;
@@ -3198,6 +3205,11 @@ void idPlayer::GiveHealthPool( float amt ) {
 			healthPool = inventory.maxHealth - health;
 		}
 		nextHealthPulse = gameLocal.time;
+
+		// Reset the values to default
+		healthPoolTimeInterval = HEALTHPULSE_TIME;
+		healthPoolTimeIntervalFactor = 1.0f;
+		healthPoolStepAmount = 5;
 	}
 }
 
@@ -3440,7 +3452,11 @@ void idPlayer::UpdatePowerUps( void ) {
 
 	if ( healthPool && gameLocal.time > nextHealthPulse && !AI_DEAD && health > 0 ) {
 		assert( !gameLocal.isClient );	// healthPool never be set on client
-		int amt = ( healthPool > 5 ) ? 5 : healthPool;
+
+		//int amt = ( healthPool > 5 ) ? 5 : healthPool; // old code
+		// greebo: Changed step amount to be a variable that can be set from the "outside"
+		int amt = ( healthPool > healthPoolStepAmount ) ? healthPoolStepAmount : healthPool;
+
 		health += amt;
 		if ( health > inventory.maxHealth ) {
 			health = inventory.maxHealth;
@@ -3448,7 +3464,13 @@ void idPlayer::UpdatePowerUps( void ) {
 		} else {
 			healthPool -= amt;
 		}
-		nextHealthPulse = gameLocal.time + HEALTHPULSE_TIME;
+		nextHealthPulse = gameLocal.time + healthPoolTimeInterval;
+
+		// Check whether we have a valid interval factor and if yes: apply it
+		if (healthPoolTimeIntervalFactor > 0) {
+			healthPoolTimeInterval *= healthPoolTimeIntervalFactor;
+		}
+
 		healthPulse = true;
 	}
 #ifndef ID_DEMO_BUILD
@@ -9948,6 +9970,11 @@ void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 	gameLocal.m_MissionData->Event_SetObjEnabling( ObjIndex, StrArg );
 }
 
+void idPlayer::Event_GiveHealthPool( float amount ) {
+	// Pass the call to the proper member method
+	GiveHealthPool(amount);
+}
+
 void idPlayer::FrobCheck( void )
 {
 	trace_t trace;
@@ -10237,4 +10264,10 @@ void idPlayer::PerformFrob(void)
 	}
 Quit:
 	return;
+}
+
+void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount) {
+	healthPoolTimeInterval = newTimeInterval;
+	healthPoolTimeIntervalFactor = factor;
+	healthPoolStepAmount = stepAmount;
 }

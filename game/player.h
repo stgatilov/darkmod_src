@@ -36,6 +36,7 @@ extern const idEventDef EV_SpectatorTouch;
 extern const idEventDef EV_Player_PlayStartSound;
 extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
+extern const idEventDef EV_Player_GiveHealthPool;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -317,6 +318,10 @@ public:
 	bool					healthPulse;
 	bool					healthTake;
 	int						nextHealthTake;
+	// greebo: added these to make the interval customisable
+	int						healthPoolStepAmount;			// The amount of healing in each pulse
+	int						healthPoolTimeInterval;			// The time between health pulses
+	int						healthPoolTimeIntervalFactor;	// The factor to increase the time interval after each pulse
 
 
 	bool					hiddenWeapon;		// if the weapon is hidden ( in noWeapons maps )
@@ -650,6 +655,16 @@ public:
 	
 	void PrintDebugHUD(void);
 
+	/**
+	* greebo: Sets the time between health "pulses" if the healthPool > 0
+	*
+	* @newTimeInterval: the new value for the time interval
+	* @factor: The factor that the time interval is being multiplied with after each pulse.
+	*          This can be used to increase the time between pulses gradually.
+	* @stepAmount: The amount of health to be taken from the healthpool at each step
+	*/
+	void			setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount);
+
 private:
 	jointHandle_t			hipJoint;
 	jointHandle_t			chestJoint;
@@ -905,6 +920,11 @@ private:
 	void					Event_SetObjectiveOptional( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveOngoing( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveEnabling( int ObjIndex, const char *strIn );
+
+	/**
+	* greebo: This scriptevent routes the call to the member method "GiveHealthPool".
+	*/
+	void					Event_GiveHealthPool( float amount );
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
