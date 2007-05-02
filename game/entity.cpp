@@ -7852,7 +7852,7 @@ int idEntity::heal(const char* healDefName, float healScale) {
 	int	healAmount = static_cast<int>(healDef->GetInt( "heal_amount" ) * healScale);
 	int healInterval = healDef->GetInt("heal_interval", "0");
 	int healStepAmount = healDef->GetInt("heal_step_amount", "5");
-	float healIntervalFactor = healDef->GetInt("heal_interval_factor", "0");
+	float healIntervalFactor = healDef->GetInt("heal_interval_factor", "1");
 
 	// Check if the entity can be healed in the first place
 	if ( healAmount == 0 || health >= spawnArgs.GetInt("health")) {
