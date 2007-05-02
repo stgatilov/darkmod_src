@@ -122,7 +122,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 {
 	CResponseEffect* returnValue = NULL;
 	
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Seeking EffectEntity [%s]\n", effectEntityDef.c_str());
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Seeking EffectEntity [%s]\r", effectEntityDef.c_str());
 	// Try to locate the specified entity definition
 	const idDict* dict = gameLocal.FindEntityDefDict(effectEntityDef.c_str());
 
