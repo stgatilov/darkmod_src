@@ -38,6 +38,9 @@ tdmFuncShooter::tdmFuncShooter( void ) {
 	_nextFireTime = 0;
 	_fireInterval = -1;
 	_fireIntervalFuzzyness = 0;
+	_lastStimVisit = 0;
+	_requiredStimTimeOut = 0;
+	_requiredStim = ST_DEFAULT;
 }
 
 /*
@@ -54,12 +57,21 @@ void tdmFuncShooter::Spawn( void ) {
 	_fireInterval = spawnArgs.GetInt("fire_interval", "-1");
 	_fireIntervalFuzzyness = spawnArgs.GetInt("fire_interval_fuzzyness", "0");
 	
+	idStr reqStimStr = spawnArgs.GetString("required_stim");
+
+	if (!reqStimStr.IsEmpty()) {
+		_requiredStim = CStimResponse::getStimType(reqStimStr);
+		_requiredStimTimeOut = spawnArgs.GetInt("required_stim_timeout", "5000");
+	}
+
 	if (_active && _fireInterval > 0) {
 		BecomeActive( TH_THINK );
 		setupNextFireTime();
 	}
 
-	if ( m_StimResponseColl->HasResponse() ) {
+	// Always react to stims, it may required
+	if (_requiredStim != ST_DEFAULT) {
+		//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("tdmFuncShooter is requiring stim %d\r", _requiredStim);
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 	}
 }
@@ -74,7 +86,10 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( _lastFireTime );
 	savefile->WriteInt( _nextFireTime );
 	savefile->WriteInt( _fireInterval );
-	savefile->WriteInt( _fireIntervalFuzzyness );	
+	savefile->WriteInt( _fireIntervalFuzzyness );
+	savefile->WriteInt( _requiredStim );
+	savefile->WriteInt( _requiredStimTimeOut );
+	savefile->WriteInt( _lastStimVisit );
 }
 
 /*
@@ -88,6 +103,13 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( _nextFireTime );
 	savefile->ReadInt( _fireInterval );
 	savefile->ReadInt( _fireIntervalFuzzyness );
+
+	int stimType;
+	savefile->ReadInt( stimType );
+	_requiredStim = static_cast<StimType>(stimType);
+
+	savefile->ReadInt( _requiredStimTimeOut );
+	savefile->ReadInt( _lastStimVisit );
 }
 
 /*
@@ -152,6 +174,14 @@ void tdmFuncShooter::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	_active = msg.ReadBits( 1 ) != 0;
 }
 
+void tdmFuncShooter::stimulate(StimType stimId) {
+	if (stimId == _requiredStim && _requiredStim != ST_DEFAULT) {
+		//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Stim is visiting at %d\r", gameLocal.time);
+		// Save the time the stim is visiting
+		_lastStimVisit = gameLocal.time;
+	}
+}
+
 void tdmFuncShooter::Fire() {
 	_lastFireTime = gameLocal.time;
 
@@ -176,6 +206,16 @@ void tdmFuncShooter::Fire() {
 
 void tdmFuncShooter::Think() {
 	if (_active && _fireInterval > 0 && gameLocal.time > _nextFireTime) {
-		Fire();
+		// greebo: Check before firing whether we have a required stim
+		if (_requiredStim != ST_DEFAULT && _lastStimVisit > 0 && 
+			_lastStimVisit + _requiredStimTimeOut >= gameLocal.time)
+		{
+			// We have a required stim, but it was not too far in the past => fire
+			Fire();
+		}
+		else if (_requiredStim == ST_DEFAULT) {
+			// No required stim, fire away
+			Fire();
+		}
 	}
 }

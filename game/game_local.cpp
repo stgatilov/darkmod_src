@@ -30,6 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/inventory.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/func_shooter.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -5300,6 +5301,12 @@ int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int
 		// to it's own stims.
 		if (Ent[i] == e)
 			continue;
+
+		// Check for a shooter entity, these don't need to have a response
+		tdmFuncShooter* shooter = dynamic_cast<tdmFuncShooter*>(Ent[i]);
+		if (shooter != NULL) {
+			shooter->stimulate(static_cast<StimType>(stim->m_StimTypeId));
+		}
 
 		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
 		{

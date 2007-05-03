@@ -24,41 +24,41 @@ CStimResponseCollection::~CStimResponseCollection(void)
 
 CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
 {
-		CStim* pRet;
+	CStim* pRet;
 
-		if (type == ST_COMMUNICATION)
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Stim");
-			pRet = new CAIComm_Stim (p_owner, type);
-		}
-		else
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CStim");
-			pRet = new CStim(p_owner, type);
-		}
+	if (type == ST_COMMUNICATION)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Stim");
+		pRet = new CAIComm_Stim (p_owner, type);
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CStim");
+		pRet = new CStim(p_owner, type);
+	}
 
-		return pRet;
+	return pRet;
 }
 
 CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType type)
 {
-		CResponse* pRet;
+	CResponse* pRet;
 
-		if (type == ST_COMMUNICATION)
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Response");
-			pRet = new CAIComm_Response (p_owner, type);
-		}
-		else
-		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CResponse");
-			pRet = new CResponse(p_owner, type);
-		}
+	if (type == ST_COMMUNICATION)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Response");
+		pRet = new CAIComm_Response (p_owner, type);
+	}
+	else
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CResponse");
+		pRet = new CResponse(p_owner, type);
+	}
 
-		// Optimization: Set contents to include CONTENTS_RESPONSE
-		p_owner->GetPhysics()->SetContents( p_owner->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+	// Optimization: Set contents to include CONTENTS_RESPONSE
+	p_owner->GetPhysics()->SetContents( p_owner->GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
-		return pRet;
+	return pRet;
 }
 
 CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius, bool bRemovable, bool bDefault)
