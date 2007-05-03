@@ -76,6 +76,9 @@ CFrobDoor::CFrobDoor(void)
 	m_PickTimer = new CStimResponseTimer();
 	m_PickTimer->SetTicks(sys->ClockTicksPerSecond()/1000);
 	m_PickTimer->SetReload(-1);			// We want to reload the timer infinitely, but not automatically.
+	m_FirstLockedPinIndex = 0;
+	m_SoundPinIndex = 0;
+	m_SoundPinSampleIndex = 0;
 }
 
 CFrobDoor::~CFrobDoor(void)
