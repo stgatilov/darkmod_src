@@ -378,22 +378,11 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	if((str[0] >= 'a' && str[0] <= 'z')
 		|| (str[0] >= 'A' && str[0] <= 'Z'))
 	{
-		int i = 0;
-		bool found = false;
-
-		while(cStimType[i] != NULL)
-		{
-			if(str == cStimType[i])
-			{
-				typeOfStim = (StimType) i;
-				found = true;
-				break;
-			}
-			i++;
-		}
-
-		// If the string hasn't been found, we have an invalid id.
-		if(found == false)
+		// Try to recognise the string as known Stim type
+		typeOfStim = CStimResponse::getStimType(str);
+		
+		// If the string hasn't been found, we have id == ST_DEFAULT.
+		if (typeOfStim == ST_DEFAULT)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid sr_type id [%s]\r", str.c_str());
 			sr = NULL;

@@ -69,6 +69,20 @@ CStimResponse::~CStimResponse(void)
 {
 }
 
+StimType CStimResponse::getStimType(const idStr& stimName) {
+	int i = 0;
+	
+	while (cStimType[i] != NULL)	{
+		if (stimName == cStimType[i]) {
+			return static_cast<StimType>(i);
+		}
+		i++;
+	}
+
+	// Not found
+	return ST_DEFAULT;
+}
+
 void CStimResponse::EnableSR(bool bEnable)
 {
 	if(bEnable == true)

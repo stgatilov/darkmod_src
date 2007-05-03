@@ -72,6 +72,14 @@ public:
 	*/
 	bool checkChance();
 
+	/**
+	* greebo: This retrieves the stim type id for the given stimName.
+	*
+	* @stimName: The name of the stim (e.g. "STIM_THIEF")
+	* @returns: the according StimType (if the name is known), or ST_DEFAULT (== -1) if unknown
+	*/
+	static StimType getStimType(const idStr& stimName);
+
 public:
 	/**
 	 * Id for the stimulus that uniquely identifies a stim, so they can
