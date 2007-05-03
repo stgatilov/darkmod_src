@@ -89,6 +89,9 @@ public:
 	void					ToggleOpen(void);
 	void					ToggleLock(void);
 
+	void					ProcessLockpick(bool bInit, bool bCallback, int cType);
+	void					LockpickTimerEvent(bool bInit, int cType);
+
 protected:
 	// Create a random pin pattern for a given pin. Clicks defines the required 
 	// number of clicks for this pin, and BaseCount, defines the minimum number
@@ -125,9 +128,25 @@ protected:
 	idList<idStr>				m_LockList;
 
 	idList<idStringList *>		m_Pins;
-	// Once a pin is successfully picked it should stay so, so we have to remember that state.
-	idList<bool>				m_PinsPicked;
 	bool						m_Pickable;
+
+	/**
+	 * FirstLockedPinIndex stores the index that is currently to be picked.
+	 * If the value gets == m_Pins.Num() it means all pins are picked
+	 * and the lock is sucessfully picked.
+	 */
+	int							m_FirstLockedPinIndex;
+
+	/**
+	 * This stores the index of the current pins soundsample to be played.
+	 * The second index of the twodimensional array from m_SoundPinIndex.
+	 */
+	int							m_SoundPinSampleIndex;
+
+	/**
+	 * SoundTimerStarted is set to true, when a pin sound has been started.
+	 */
+	bool						m_SoundTimerStarted;
 
 	/**
 	* Pointer to the door's partner in a double door.
@@ -143,35 +162,6 @@ protected:
 	 * Handle that is associated with this door, if the door has one.
 	 */
 	CFrobDoorHandle				*m_Doorhandle;
-
-	/**
-	 * The picktimer is used to time the lockpicking. Since the usekey
-	 * is a button, it will fire every frame, so we have to use a delay
-	 * that allows us to execute the next try on the lockpick after a 
-	 * certain time.
-	 */
-	CStimResponseTimer			*m_PickTimer;
-
-	/**
-	 * FirstLockedPinIndex stores the index that is currently to be picked.
-	 * If the value gets == m_Pins.Num() it means all pins are picked
-	 * and the lock is sucessfully picked.
-	 */
-	int							m_FirstLockedPinIndex;
-
-	/**
-	 * When lockpicking is started, it will loop over all the pinpatterns.
-	 * This means that the pins are a twodimensional array where each pin has
-	 * N samples associated with it.
-	 * Here we store which pin is currently processed.
-	 */
-	int							m_SoundPinIndex;
-
-	/**
-	 * This stores the index of the current pins soundsample to be played.
-	 * The second index of the twodimensional array from m_SoundPinIndex.
-	 */
-	int							m_SoundPinSampleIndex;
 
 private:
 };

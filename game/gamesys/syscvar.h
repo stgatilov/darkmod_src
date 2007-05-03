@@ -115,6 +115,8 @@ extern idCVar cv_lg_path;
 extern idCVar cv_lp_pin_base_count;
 extern idCVar cv_lp_sample_delay;
 extern idCVar cv_lp_pick_timeout;
+extern idCVar cv_lp_pick_attempts;
+extern idCVar cv_lp_auto_pick;
 
 extern idCVar cv_dm_distance;
 

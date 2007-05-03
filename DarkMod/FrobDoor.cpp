@@ -38,6 +38,7 @@ const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
 const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
+const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
@@ -47,6 +48,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
+	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 END_CLASS
 
 
@@ -73,18 +75,13 @@ CFrobDoor::CFrobDoor(void)
 	m_Pickable = true;
 	m_DoubleDoor = NULL;
 	m_Doorhandle = NULL;
-	m_PickTimer = new CStimResponseTimer();
-	m_PickTimer->SetTicks(sys->ClockTicksPerSecond()/1000);
-	m_PickTimer->SetReload(-1);			// We want to reload the timer infinitely, but not automatically.
 	m_FirstLockedPinIndex = 0;
-	m_SoundPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
+	m_SoundTimerStarted = false;
 }
 
 CFrobDoor::~CFrobDoor(void)
 {
-	if(m_PickTimer)
-		delete m_PickTimer;
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -129,10 +126,7 @@ void CFrobDoor::Spawn( void )
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, str[i]);
 			idStringList *p = CreatePinPattern(str[i] - 0x030, b);
 			if(p)
-			{
 				m_Pins.Append(p);
-				m_PinsPicked.Append(false);
-			}
 			else
 				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, str[i]);
 		}
@@ -442,7 +436,6 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 	idEntity *e;
 	idStr s;
 	char type = 0;
-	int sample_delay, pick_timeout;
 
 	if(ent == NULL)
 		return false;
@@ -455,9 +448,6 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 	ent->spawnArgs.GetString("toolclass", "", s);
 	if(s == "lockpick")
 	{
-		sample_delay = cv_lp_sample_delay.GetInteger();
-		pick_timeout = cv_lp_pick_timeout.GetInteger();
-
 		ent->spawnArgs.GetString("type", "", s);
 		if(s.Length() == 1)
 			type = s[0];
@@ -465,48 +455,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 
 	// Process the lockpick
 	if(type != 0)
-	{
-		idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
-		idStr oPickSound = l[0];
-		int length = 0;
-
-		if(bInit == true)
-		{
-			gameLocal.m_Timer.AddUnique(m_PickTimer);
-
-			// Stop the timer and restart it.
-			m_PickTimer->Stop();
-			m_PickTimer->Reset();
-			// The length of a soundfile is one second.
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpicktimer started\r");
-			PropSoundDirect(oPickSound, true, false );
-			idSoundShader const *shader = declManager->FindSound(oPickSound);
-			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-			m_PickTimer->SetTimer(0, 0, 0, length+sample_delay);
-			m_PickTimer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
-		}
-		else
-		{
-			//if(m_PickTimer->GetState() != CStimResponseTimer::SRTS_RUNNING)
-			if(m_PickTimer->WasExpired())
-			{
-				TimerValue v;
-				m_PickTimer->MakeTime(v, sys->GetClockTicks());
-				PropSoundDirect(oPickSound, true, false );
-				idSoundShader const *shader = declManager->FindSound(oPickSound);
-				StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpicktimer expired %02u:%02u:%02u.%u  (%u)\r", v.Time.Hour, v.Time.Minute, v.Time.Second, v.Time.Millisecond, length);
-				m_PickTimer->Stop();
-				m_PickTimer->Reset();
-				m_PickTimer->SetTimer(0, 0, 0, length+sample_delay);
-				m_PickTimer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
-			}
-
-			// If the door has been successfully picked, we can remove the timer
-			// from gamelocal because it is no longer needed there.
-			//gameLocal.m_Timer.Remove(m_PickTimer);
-		}
-	}
+		ProcessLockpick(bInit, false, (int)type);
 
 	// When we are here we know that the item is usable
 	// so we have to check if it is associated with this entity.
@@ -706,11 +655,104 @@ idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)
 		else
 			r = rnd.IRandom(0, MAX_PIN_CLICKS);
 
-		sprintf(click, "snd_lockpick_pin_%02u", r);
+		sprintf(click, "lockpick_pin_%02u", r);
 		rc->Append(click);
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("PinPattern %u : %s\r", i, click.c_str());
 	}
 
 	return rc;
+}
+
+void CFrobDoor::ProcessLockpick(bool bInit, bool bCallback, int cType)
+{
+	int sample_delay, pick_timeout;
+	idStr oPickSound;
+	char type = cType;
+
+	sample_delay = cv_lp_sample_delay.GetInteger();
+
+	int length = 0;
+
+	if(m_FirstLockedPinIndex >= m_Pins.Num())
+	{
+		// TODO: We need to play a short soundsample here to indicate that the lock already has been picked.
+		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
+		goto Quit;
+	}
+
+	if(bInit == true)
+	{
+		m_SoundTimerStarted = false;
+		m_SoundPinSampleIndex = -1;
+	}
+
+	if(m_SoundTimerStarted == true)
+	{
+		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+		{
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
+
+			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+			if(m_SoundPinSampleIndex == l.Num()-1)
+			{
+				m_FirstLockedPinIndex++;
+				if(m_FirstLockedPinIndex >= m_Pins.Num())
+				{
+					m_FirstLockedPinIndex = m_Pins.Num();
+					oPickSound = "lockpick_pin_success";
+					PropSoundDirect(oPickSound, true, false );
+					idSoundShader const *shader = declManager->FindSound(oPickSound);
+					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
+					Unlock(true);
+					goto Quit;
+				}
+			}
+			else
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed.\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex);
+		}
+		else
+		{
+			if(bCallback == true)
+				m_SoundTimerStarted = false;
+		}
+	}
+
+	if(m_SoundTimerStarted == false)
+	{
+		idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+
+		m_SoundPinSampleIndex++;
+		if(m_SoundPinSampleIndex >= l.Num())
+		{
+			pick_timeout = cv_lp_pick_timeout.GetInteger();
+			m_SoundPinSampleIndex = 0;
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin restarted\r");
+		}
+		else
+			pick_timeout = 0;
+
+		oPickSound = l[m_SoundPinSampleIndex];
+
+		m_SoundTimerStarted = true;
+		PropSoundDirect(oPickSound, true, false );
+		idSoundShader const *shader = declManager->FindSound(oPickSound);
+		StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+		PostEventMS(&EV_TDM_LockpickTimer, length+sample_delay+pick_timeout, bInit, cType);
+		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %c\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
+	}
+
+	// If the door has been successfully picked, we can remove the timer
+	// from gamelocal because it is no longer needed there.
+	//gameLocal.m_Timer.Remove(m_PickTimer);
+
+Quit:
+	return;
+}
+
+void CFrobDoor::LockpickTimerEvent(bool bInit, int cType)
+{
+	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
+	ProcessLockpick(false, true, cType);
 }
 
