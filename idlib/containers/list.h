@@ -931,6 +931,6 @@ ID_INLINE void idList<type>::Swap( idList<type> &other ) {
 	idSwap( list, other.list );
 }
 
-typedef idList<idStr> CStringList;
+typedef idList<idStr> idStringList;
 
 #endif /* !__LIST_H__ */
