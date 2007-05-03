@@ -169,23 +169,26 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 		const function_t* scriptFunc = gameLocal.program.FindFunction(scriptStr.c_str());
 		if (scriptFunc != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Script Function found: [%s]\r", scriptStr.c_str());
-		}
-		// Allocate a new effect object
-		CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
-		
-		// Add the item to the list
-		m_ResponseEffects.Append(newEffect);
+			// Allocate a new effect object
+			CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
+			
+			// Add the item to the list
+			m_ResponseEffects.Append(newEffect);
 
-		returnValue = newEffect;
+			returnValue = newEffect;
+		}
+		else {
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Warning: Script Function not found: [%s]\r", scriptStr.c_str());
+		}
 	}
 	else
 	{
 		// Entity not found, emit a warning
 		gameLocal.Printf("Warning: EffectEntityDef not found: %s.\r", effectEntityDef.c_str());
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Warning: EffectEntityDef not found: %s\r", effectEntityDef.c_str());
 	}
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Items in the list: %u\r", m_ResponseEffects.Num());
+	//DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Items in the list: %u\r", m_ResponseEffects.Num());
 	
 	return returnValue;
 }
