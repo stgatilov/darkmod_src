@@ -93,7 +93,7 @@ protected:
 	// Create a random pin pattern for a given pin. Clicks defines the required 
 	// number of clicks for this pin, and BaseCount, defines the minimum number
 	// of clicks, which is always added.
-	CStringList				*CreatePinPattern(int Clicks, int BaseCount);
+	idStringList				*CreatePinPattern(int Clicks, int BaseCount);
 
 protected:
 	/**
@@ -124,7 +124,7 @@ protected:
 	idStr						m_MasterLock;
 	idList<idStr>				m_LockList;
 
-	idList<CStringList *>		m_Pins;
+	idList<idStringList *>		m_Pins;
 	// Once a pin is successfully picked it should stay so, so we have to remember that state.
 	idList<bool>				m_PinsPicked;
 	bool						m_Pickable;

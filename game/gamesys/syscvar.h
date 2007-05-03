@@ -112,7 +112,9 @@ extern idCVar cv_lg_split;
 extern idCVar cv_lg_path;
 
 // Lockpicking
-extern idCVar cv_lpick_pin_base_count;
+extern idCVar cv_lp_pin_base_count;
+extern idCVar cv_lp_sample_delay;
+extern idCVar cv_lp_pick_timeout;
 
 extern idCVar cv_dm_distance;
 

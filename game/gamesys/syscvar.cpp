@@ -172,7 +172,9 @@ idCVar cv_lg_path("tdm_lg_path",		"",	CVAR_GAME,	"Dump the rendersnapshot to the
 /**
  * Variables needed for lockpicking.
  */
-idCVar cv_lpick_pin_base_count("tdm_lp_base_count",	"5",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Base number of clicks per pin. This number will be added to the pinpattern." );
+idCVar cv_lp_pin_base_count("tdm_lp_base_count",	"5",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Base number of clicks per pin. This number will be added to the pinpattern." );
+idCVar cv_lp_sample_delay("tdm_lp_sample_delay",	"10",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Time in ms added to each pin sample to create a small pause between each pinsample." );
+idCVar cv_lp_pick_timeout("tdm_lp_pick_timeout",	"100",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Timeout that defines the maximum reaction time before the pin is to be considered unpicked and started over." );
 
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );

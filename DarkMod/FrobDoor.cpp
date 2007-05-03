@@ -120,14 +120,14 @@ void CFrobDoor::Spawn( void )
 	if(spawnArgs.GetString("lock_pins", "", str))
 	{
 		int n = str.Length();
-		int b = cv_lpick_pin_base_count.GetInteger();
+		int b = cv_lp_pin_base_count.GetInteger();
 		if(b < MIN_CLICK_NUM)
 			b = MIN_CLICK_NUM;
 
 		for(int i = 0; i < n; i++)
 		{
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, str[i]);
-			CStringList *p = CreatePinPattern(str[i] - 0x030, b);
+			idStringList *p = CreatePinPattern(str[i] - 0x030, b);
 			if(p)
 			{
 				m_Pins.Append(p);
@@ -442,6 +442,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 	idEntity *e;
 	idStr s;
 	char type = 0;
+	int sample_delay, pick_timeout;
 
 	if(ent == NULL)
 		return false;
@@ -454,6 +455,9 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 	ent->spawnArgs.GetString("toolclass", "", s);
 	if(s == "lockpick")
 	{
+		sample_delay = cv_lp_sample_delay.GetInteger();
+		pick_timeout = cv_lp_pick_timeout.GetInteger();
+
 		ent->spawnArgs.GetString("type", "", s);
 		if(s.Length() == 1)
 			type = s[0];
@@ -462,7 +466,8 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 	// Process the lockpick
 	if(type != 0)
 	{
-		idStr oPickSound = "lockpick_pin_01";
+		idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+		idStr oPickSound = l[0];
 		int length = 0;
 
 		if(bInit == true)
@@ -477,7 +482,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 			PropSoundDirect(oPickSound, true, false );
 			idSoundShader const *shader = declManager->FindSound(oPickSound);
 			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-			m_PickTimer->SetTimer(0, 0, 0, length+50);
+			m_PickTimer->SetTimer(0, 0, 0, length+sample_delay);
 			m_PickTimer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
 		}
 		else
@@ -493,7 +498,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpicktimer expired %02u:%02u:%02u.%u  (%u)\r", v.Time.Hour, v.Time.Minute, v.Time.Second, v.Time.Millisecond, length);
 				m_PickTimer->Stop();
 				m_PickTimer->Reset();
-				m_PickTimer->SetTimer(0, 0, 0, length+50);
+				m_PickTimer->SetTimer(0, 0, 0, length+sample_delay);
 				m_PickTimer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
 			}
 
@@ -679,9 +684,9 @@ void CFrobDoor::ToggleLock(void)
 		m_Doorhandle->ToggleLock();
 }
 
-CStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)
+idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)
 {
-	CStringList *rc = NULL;
+	idStringList *rc = NULL;
 	int i, r;
 	idStr click;
 
@@ -692,7 +697,7 @@ CStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)
 		Clicks = 10;
 
 	Clicks += BaseCount;
-	rc = new CStringList();
+	rc = new idStringList();
 
 	for(i = 0; i < Clicks; i++)
 	{
