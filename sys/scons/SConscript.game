@@ -119,6 +119,7 @@ decltdm_matinfo.cpp \
 declxdata.cpp \
 fdchar.cpp \
 force_grab.cpp \
+func_shooter.cpp \
 FrobDoor.cpp \
 FrobDoorHandle.cpp \
 Grabber.cpp \
