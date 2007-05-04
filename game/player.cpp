@@ -1557,7 +1557,7 @@ void idPlayer::Spawn( void )
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
 		m_overlays.destroyOverlay( OVERLAYS_MIN_HANDLE + i );
 	// Add the HUD.
-	if ( m_overlays.createOverlay( 0, OVERLAYS_MIN_HANDLE ) >= OVERLAYS_MIN_HANDLE )
+	if ( m_overlays.createOverlay( 0, LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE )
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE , hud );
 	else
 		gameLocal.Warning( "Unable to create overlay for HUD.\n" );
@@ -1691,7 +1691,7 @@ void idPlayer::Spawn( void )
 
 void idPlayer::SetupInventory()
 {
-	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), 0);
+	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
 	CInventory *inv = Inventory();
 	int idx = 0;
 
@@ -1733,7 +1733,7 @@ void idPlayer::SetupInventory()
 	it->SetName(TDM_LOOT_INFO_ITEM);
 	it->SetItemEntity(ent);
 	it->SetType(CInventoryItem::IT_ITEM);
-	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), 0));
+	it->SetOverlay(cv_tdm_inv_loot_hud.GetString(), CreateOverlay(cv_tdm_inv_loot_hud.GetString(), LAYER_INVENTORY));
 	it->SetCount(0);
 	it->SetStackable(false);
 	crsr->Inventory()->PutItem(it, cv_tdm_inv_loot_group.GetString());
@@ -6802,7 +6802,7 @@ void idPlayer::UpdateUnderWaterEffects() {
 			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
 			idStr overlay = spawnArgs.GetString("gui_airless");
 			if (!overlay.IsEmpty()) {
-				underWaterGUIHandle = CreateOverlay(overlay.c_str(), 4);
+				underWaterGUIHandle = CreateOverlay(overlay.c_str(), LAYER_UNDERWATER);
 			}
 			underWaterEffectsActive = true;
 		}
