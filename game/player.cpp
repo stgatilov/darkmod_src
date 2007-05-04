@@ -1084,6 +1084,7 @@ idPlayer::idPlayer()
 	airless					= false;
 	airTics					= 0;
 	lastAirDamage			= 0;
+	underWaterSoundPlaying	= false;
 
 	gibDeath				= false;
 	gibsLaunched			= false;
@@ -6794,6 +6795,21 @@ void idPlayer::StartFxOnBone( const char *fx, const char *bone ) {
 	idEntityFx::StartFx( fx, &offset, &axis, this, true );
 }
 
+void idPlayer::UpdateUnderWaterEffects() {
+	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD ) {
+		if (!underWaterSoundPlaying) {
+			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
+			underWaterSoundPlaying = true;
+		}
+	}
+	else {
+		if (underWaterSoundPlaying) {
+			StopSound( SND_CHANNEL_DEMONIC, false );
+			underWaterSoundPlaying = false;
+		}
+	}
+}
+
 /*
 ==============
 idPlayer::Think
@@ -6978,6 +6994,9 @@ void idPlayer::Think( void )
 	}
 
 	UpdateAir();
+
+	// greebo: update underwater overlay and sounds
+	UpdateUnderWaterEffects();
 	
 	UpdateHud();
 

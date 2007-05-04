@@ -526,6 +526,12 @@ public:
 	void					SetCurrentHeartRate( void );
 	int						GetBaseHeartRate( void );
 	void					UpdateAir( void );
+	
+	/**
+	* This updates the audiovisual effects when the player is underwater
+	*/
+	void					UpdateUnderWaterEffects();
+
 	/**
 	* greebo: Accessor methods for the airTicks member variable. 
 	*/
@@ -712,6 +718,7 @@ private:
 	bool					airless;
 	int						airTics;				// set to pm_airTics at start, drops in vacuum
 	int						lastAirDamage;
+	bool					underWaterSoundPlaying;
 
 	bool					gibDeath;
 	bool					gibsLaunched;

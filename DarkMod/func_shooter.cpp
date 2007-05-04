@@ -220,6 +220,11 @@ void tdmFuncShooter::Fire() {
 				angle = gameLocal.random.RandomFloat() * 360;
 			}
 
+			// Check for random pitch angle
+			if (spawnArgs.GetBool("random_pitch")) {
+				pitch = gameLocal.random.RandomFloat() * 180 - 90;
+			}
+
 			// Calculate the direction from "angle" and "pitch"
 			idVec3 direction( cos(angle), sin(angle), sin(pitch) );
 
