@@ -41,6 +41,9 @@ tdmFuncShooter::tdmFuncShooter( void ) {
 	_lastStimVisit = 0;
 	_requiredStimTimeOut = 0;
 	_requiredStim = ST_DEFAULT;
+	_triggerRequired = false;
+	_triggerTimeOut = 0;
+	_lastTriggerVisit = 0;
 }
 
 /*
@@ -64,12 +67,15 @@ void tdmFuncShooter::Spawn( void ) {
 		_requiredStimTimeOut = spawnArgs.GetInt("required_stim_timeout", "5000");
 	}
 
+	_triggerRequired = spawnArgs.GetBool("required_trigger");
+	_triggerTimeOut = spawnArgs.GetInt("required_trigger_timeout", "4000");
+
 	if (_active && _fireInterval > 0) {
 		BecomeActive( TH_THINK );
 		setupNextFireTime();
 	}
 
-	// Always react to stims, it may required
+	// Always react to stims if a required stim is setup.
 	if (_requiredStim != ST_DEFAULT) {
 		//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("tdmFuncShooter is requiring stim %d\r", _requiredStim);
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
@@ -90,6 +96,9 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( _requiredStim );
 	savefile->WriteInt( _requiredStimTimeOut );
 	savefile->WriteInt( _lastStimVisit );
+	savefile->WriteInt( _lastTriggerVisit );
+	savefile->WriteBool( _triggerRequired );
+	savefile->WriteInt( _triggerTimeOut );
 }
 
 /*
@@ -110,6 +119,9 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( _requiredStimTimeOut );
 	savefile->ReadInt( _lastStimVisit );
+	savefile->ReadInt( _lastTriggerVisit );
+	savefile->ReadBool( _triggerRequired );
+	savefile->ReadInt( _triggerTimeOut );
 }
 
 /*
@@ -118,7 +130,11 @@ tdmFuncShooter::Event_Activate
 ================
 */
 void tdmFuncShooter::Event_Activate( idEntity *activator ) {
-	if ( thinkFlags & TH_THINK ) {
+	if (_triggerRequired) {
+		// This shooter requires constant triggering, save the time
+		_lastTriggerVisit = gameLocal.time;
+	}
+	else if ( thinkFlags & TH_THINK ) {
 		BecomeInactive( TH_THINK );
 		_active = false;
 	} else {
@@ -213,8 +229,14 @@ void tdmFuncShooter::Think() {
 			// We have a required stim, but it was not too far in the past => fire
 			Fire();
 		}
-		else if (_requiredStim == ST_DEFAULT) {
-			// No required stim, fire away
+		else if (_triggerRequired && _lastTriggerVisit > 0 &&
+				 _lastTriggerVisit + _triggerTimeOut >= gameLocal.time)
+		{
+			// Required constant triggering, last trigger was not too long ago => fire
+			Fire();
+		}
+		else if (_requiredStim == ST_DEFAULT && !_triggerRequired) {
+			// No required stim and no required trigger, fire away
 			Fire();
 		}
 	}

@@ -85,6 +85,15 @@ private:
 	// This specifies the time that can pass before the shooter becomes inactive
 	// if the requiredStim is not present.
 	int					_requiredStimTimeOut;
+
+	// TRUE if periodic triggering is needed for this shooter to stay active.
+	bool				_triggerRequired;
+
+	// This is set to the last known time the requiredStim has visited this entity
+	int					_lastTriggerVisit;
+
+	// If this time has passed without a trigger event, the shooter ceases to fire.
+	int					_triggerTimeOut;
 };
 
 #endif /* !__GAME_FUNC_SHOOTER_H__ */
