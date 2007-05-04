@@ -237,7 +237,7 @@ void tdmFuncShooter::Fire() {
 			}
 
 			// Calculate the direction from "angle" and "pitch"
-			idVec3 direction( cos(angle), sin(angle), sin(pitch) );
+			idVec3 direction( cos(DEG2RAD(angle)), sin(DEG2RAD(angle)), sin(DEG2RAD(pitch)) );
 
 			// Check for a specified velocity on the shooter
 			float velocity = spawnArgs.GetFloat("velocity", "0");
