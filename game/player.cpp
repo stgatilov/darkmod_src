@@ -1084,7 +1084,8 @@ idPlayer::idPlayer()
 	airless					= false;
 	airTics					= 0;
 	lastAirDamage			= 0;
-	underWaterSoundPlaying	= false;
+	underWaterEffectsActive	= false;
+	underWaterGUIHandle		= -1;
 
 	gibDeath				= false;
 	gibsLaunched			= false;
@@ -6797,15 +6798,23 @@ void idPlayer::StartFxOnBone( const char *fx, const char *bone ) {
 
 void idPlayer::UpdateUnderWaterEffects() {
 	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD ) {
-		if (!underWaterSoundPlaying) {
+		if (!underWaterEffectsActive) {
 			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
-			underWaterSoundPlaying = true;
+			idStr overlay = spawnArgs.GetString("gui_airless");
+			if (!overlay.IsEmpty()) {
+				underWaterGUIHandle = CreateOverlay(overlay.c_str(), 4);
+			}
+			underWaterEffectsActive = true;
 		}
 	}
 	else {
-		if (underWaterSoundPlaying) {
+		if (underWaterEffectsActive) {
 			StopSound( SND_CHANNEL_DEMONIC, false );
-			underWaterSoundPlaying = false;
+			if (underWaterGUIHandle != -1) {
+				DestroyOverlay(underWaterGUIHandle);
+				underWaterGUIHandle = -1;
+			}
+			underWaterEffectsActive = false;
 		}
 	}
 }

@@ -718,7 +718,9 @@ private:
 	bool					airless;
 	int						airTics;				// set to pm_airTics at start, drops in vacuum
 	int						lastAirDamage;
-	bool					underWaterSoundPlaying;
+	
+	bool					underWaterEffectsActive; // True, if the under water effects are in charge
+	int						underWaterGUIHandle;	 // The handle of the GUI underwater overlay
 
 	bool					gibDeath;
 	bool					gibsLaunched;
