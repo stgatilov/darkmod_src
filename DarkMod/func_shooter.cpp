@@ -211,9 +211,27 @@ void tdmFuncShooter::Fire() {
 
 		idProjectile* projectile = dynamic_cast<idProjectile*>(ent);
 		if (projectile != NULL) {
+			// Get the default angle from the entity
 			float angle = spawnArgs.GetFloat("angle");
-			idVec3 direction( cos(angle), sin(angle), 0 );
-			projectile->Launch(GetPhysics()->GetOrigin(), direction, idVec3(0,0,0));
+			float pitch = spawnArgs.GetFloat("pitch", "0");
+
+			// Check if the angle should be randomly chosen
+			if (spawnArgs.GetBool("random_angle")) {
+				angle = gameLocal.random.RandomFloat() * 360;
+			}
+
+			// Calculate the direction from "angle" and "pitch"
+			idVec3 direction( cos(angle), sin(angle), sin(pitch) );
+
+			// Check for a specified velocity on the shooter
+			float velocity = spawnArgs.GetFloat("velocity", "0");
+
+			if (velocity <= 0) {
+				// Try to get a velocity from the projectile itself
+				velocity = projectileDict->GetVector("velocity", "0 0 0").Length();
+			}
+
+			projectile->Launch(GetPhysics()->GetOrigin(), direction, direction*velocity);
 		}
 	}
 
