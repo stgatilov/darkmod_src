@@ -32,21 +32,21 @@ END_CLASS
 tdmFuncShooter::tdmFuncShooter
 ===============
 */
-tdmFuncShooter::tdmFuncShooter( void ) {
-	_active = false;
-	_lastFireTime = 0;
-	_nextFireTime = 0;
-	_fireInterval = -1;
-	_fireIntervalFuzzyness = 0;
-	_lastStimVisit = 0;
-	_requiredStimTimeOut = 0;
-	_requiredStim = ST_DEFAULT;
-	_triggerRequired = false;
-	_triggerTimeOut = 0;
-	_lastTriggerVisit = 0;
-	_firedProjectiles = 0;
-	_maxProjectiles = -1;
-}
+tdmFuncShooter::tdmFuncShooter( void ) :
+	_active(false),
+	_lastFireTime(0),
+	_nextFireTime(0),
+	_fireInterval(-1),
+	_fireIntervalFuzzyness(0),
+	_lastStimVisit(0),
+	_requiredStimTimeOut(0),
+	_requiredStim(ST_DEFAULT),
+	_triggerRequired(false),
+	_triggerTimeOut(0),
+	_lastTriggerVisit(0),
+	_firedProjectiles(0),
+	_maxProjectiles(-1)
+{}
 
 /*
 ===============
