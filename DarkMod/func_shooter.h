@@ -94,6 +94,13 @@ private:
 
 	// If this time has passed without a trigger event, the shooter ceases to fire.
 	int					_triggerTimeOut;
+
+	// The maximum number of projectiles (ammo) for this shooter. 
+	int					_maxProjectiles;
+
+	// The number of fired projectiles. If this exceeds _maxProjectiles, the shooter
+	// becomes inactive.
+	int					_firedProjectiles;
 };
 
 #endif /* !__GAME_FUNC_SHOOTER_H__ */

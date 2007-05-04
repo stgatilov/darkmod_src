@@ -44,6 +44,8 @@ tdmFuncShooter::tdmFuncShooter( void ) {
 	_triggerRequired = false;
 	_triggerTimeOut = 0;
 	_lastTriggerVisit = 0;
+	_firedProjectiles = 0;
+	_maxProjectiles = -1;
 }
 
 /*
@@ -69,6 +71,8 @@ void tdmFuncShooter::Spawn( void ) {
 
 	_triggerRequired = spawnArgs.GetBool("required_trigger");
 	_triggerTimeOut = spawnArgs.GetInt("required_trigger_timeout", "4000");
+
+	_maxProjectiles = spawnArgs.GetInt("ammo", "-1");
 
 	if (_active && _fireInterval > 0) {
 		BecomeActive( TH_THINK );
@@ -99,6 +103,8 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( _lastTriggerVisit );
 	savefile->WriteBool( _triggerRequired );
 	savefile->WriteInt( _triggerTimeOut );
+	savefile->WriteInt( _maxProjectiles );
+	savefile->WriteInt( _firedProjectiles );
 }
 
 /*
@@ -122,6 +128,8 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( _lastTriggerVisit );
 	savefile->ReadBool( _triggerRequired );
 	savefile->ReadInt( _triggerTimeOut );
+	savefile->ReadInt( _maxProjectiles );
+	savefile->ReadInt( _firedProjectiles );
 }
 
 /*
@@ -140,6 +148,7 @@ void tdmFuncShooter::Event_Activate( idEntity *activator ) {
 	} else {
 		BecomeActive( TH_THINK );
 		_active = true;
+		_firedProjectiles = 0;
 		_lastFireTime = gameLocal.time;
 		setupNextFireTime();
 	}
@@ -158,6 +167,8 @@ void tdmFuncShooter::Event_ShooterSetState( bool state ) {
 	_active = state;
 
 	if (_active) {
+		// Reset the fired counter on script activation
+		_firedProjectiles = 0;
 		setupNextFireTime();
 	}
 }
@@ -237,6 +248,14 @@ void tdmFuncShooter::Fire() {
 			}
 
 			projectile->Launch(GetPhysics()->GetOrigin(), direction, direction*velocity);
+
+			// Keep track of the fired projectiles
+			_firedProjectiles++;
+
+			if (_firedProjectiles >= _maxProjectiles) {
+				// Inactivate the shooter as the ammo has run out
+				Event_ShooterSetState(false);
+			}
 		}
 	}
 
