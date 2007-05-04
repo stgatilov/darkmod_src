@@ -252,8 +252,8 @@ void tdmFuncShooter::Fire() {
 			// Keep track of the fired projectiles
 			_firedProjectiles++;
 
-			if (_firedProjectiles >= _maxProjectiles) {
-				// Inactivate the shooter as the ammo has run out
+			if (_maxProjectiles > 0 && _firedProjectiles >= _maxProjectiles) {
+				// Inactivate the shooter as the max ammo was specified and has run out
 				Event_ShooterSetState(false);
 			}
 		}
