@@ -28,12 +28,12 @@ CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
 
 	if (type == ST_COMMUNICATION)
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Stim");
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Stim\r");
 		pRet = new CAIComm_Stim (p_owner, type);
 	}
 	else
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CStim");
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CStim\r");
 		pRet = new CStim(p_owner, type);
 	}
 
@@ -46,12 +46,12 @@ CResponse* CStimResponseCollection::createResponse(idEntity* p_owner, StimType t
 
 	if (type == ST_COMMUNICATION)
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Response");
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CAIComm_Response\r");
 		pRet = new CAIComm_Response (p_owner, type);
 	}
 	else
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CResponse");
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG).LogString ("Creating CResponse\r");
 		pRet = new CResponse(p_owner, type);
 	}
 
