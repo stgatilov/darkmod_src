@@ -1097,6 +1097,12 @@ protected:
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
+	
+	// Tasks to push onto the queue when the AI dies or is KOed
+	idStr					m_killedTask;
+	int						m_killedTaskPriority;
+	idStr					m_knockedOutTask;
+	int						m_knockedOutTaskPriority;
 
 	//
 	// ai/ai_events.cpp
@@ -1247,7 +1253,9 @@ protected:
 	void					Event_GetReachableEntityPosition( idEntity *ent );
 
 	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
-
+	void					Event_RegisterKilledTask( const char* taskName, int priority );
+	void					Event_RegisterKnockedOutTask(const char* taskName, int priority);
+	
 	/**
 	* Frontend scripting functions for Dark Mod Relations Manager
 	* See CRelations class definition for descriptions

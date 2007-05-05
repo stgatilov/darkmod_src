@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "DarkModGlobals.h"
 
@@ -85,6 +86,21 @@ public:
 	{
 		if (!data->size()) return 0;
 		else return data->begin()->first;
+	}
+
+	/**
+	* Returns the entire contents of the priority queue as a string, for debugging purposes.
+	*/
+	const std::string DebuggingInfo() const
+	{
+		std::stringstream debugInfo;
+		for (std::vector<std::pair<int, std::string*> >::const_iterator i = data->begin(); i != data->end(); i++) {
+			debugInfo << (*i).first;
+			debugInfo << "   ";
+			debugInfo << (*i).second->c_str();
+			debugInfo << "\n";
+		}
+		return debugInfo.str();
 	}
 	
 	/**

@@ -1436,12 +1436,12 @@ void idActor::UpdateScript( void ) {
 	}
 	
 	// TDM: Task management
-	// Currently only uses the first priority queue. If there are more pqueues than 1,
-	// then only scripts will ever use the extra ones.
 	if (m_TaskQueue != NULL)
 	{
 		for( i = 0; i < 20; i++ ) // Permit multiple task changes per frame, but avoid infinite loops
 		{
+			//gameLocal.Printf("Task management for queue %d, iteration %d\n", gameLocal.m_PriorityQueues.FindIndex(m_TaskQueue), i);
+			//gameLocal.Printf("Queue contents: %s\n", m_TaskQueue->DebuggingInfo().c_str());
 			idStr topTask = idStr(m_TaskQueue->Peek());
 			int topTaskPriority = m_TaskQueue->PeekPriority();
 			if (topTask.Length() && (topTaskPriority > taskPriority || !task.Length()))

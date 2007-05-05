@@ -3019,7 +3019,7 @@ void idPlayer::UpdateConditions( void )
 	// Check if the frob is to be a continous action.
 	if(m_ContinuousUse == true)
 	{
-		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == true)
+		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)))
 			inventoryUseItem(false);
 		else
 			m_ContinuousUse = false;

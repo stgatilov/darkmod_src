@@ -57,6 +57,7 @@ idCVar cv_ai_debug(					"tdm_ai_debug",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVA
 idCVar cv_ai_fov_show (				"tdm_ai_showfov",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the field of vision of the AI will be drawn.");
 idCVar cv_ai_ko_show (				"tdm_ai_showko",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, a debug graphic showing the knockout region of the AI will be drawn.");
 idCVar cv_ai_state_show (			"tdm_ai_showstate",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current state will be shown.");
+idCVar cv_ai_task_show (			"tdm_ai_showtasks",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current tasks will be shown.");
 idCVar cv_ai_alertnum_show (		"tdm_ai_showalert",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the AI's current total alert units is shown (Note: This is not the alert state, use tdm_ai_showstate for that).");
 
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );

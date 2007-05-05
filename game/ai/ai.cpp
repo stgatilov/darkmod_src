@@ -1516,9 +1516,20 @@ void idAI::Think( void ) {
 		FOVDebugDraw();
 	}
 
-	if( cv_ai_state_show.GetBool() )
+	if( cv_ai_state_show.GetBool() && state != NULL )
 	{
 		gameRenderWorld->DrawText( state->Name(), (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+	
+	if ( cv_ai_task_show.GetBool())
+	{
+		idStr str = idStr::FormatNumber(taskPriority) + "   ";
+		str += idStr(task);
+		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		if (m_TaskQueue != NULL)
+		{
+			gameRenderWorld->DrawText( m_TaskQueue->DebuggingInfo().c_str(), (GetEyePosition() - physicsObj.GetGravityNormal()*10.0f), 0.20f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		}
 	}
 
 	if( cv_ai_alertnum_show.GetBool() )
@@ -4100,9 +4111,16 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	restartParticles = false;
 
-	state = GetScriptFunction( "state_Killed" );
-	SetState( state );
-	SetWaitState( "" );
+	if (m_TaskQueue && m_killedTask.Length())
+	{
+		m_TaskQueue->Push(m_killedTaskPriority, m_killedTask.c_str());
+	}
+	else
+	{
+		state = GetScriptFunction( "state_Killed" );
+		SetState( state );
+		SetWaitState( "" );
+	}
 
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
 	while( kv ) {
@@ -6790,10 +6808,17 @@ void idAI::Knockout( void )
 	Event_SetFrobable( true );
 
 	restartParticles = false;
-
-	state = GetScriptFunction( "state_KnockedOut" );
-	SetState( state );
-	SetWaitState( "" );
+	
+	if (m_TaskQueue && m_knockedOutTask.Length())
+	{
+		m_TaskQueue->Push(m_knockedOutTaskPriority, m_knockedOutTask.c_str());
+	}
+	else
+	{
+		state = GetScriptFunction( "state_KnockedOut" );
+		SetState( state );
+		SetWaitState( "" );
+	}
 
 	// drop items
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
