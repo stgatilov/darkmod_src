@@ -226,6 +226,7 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 		renderLight.shaderParms[1] = light_color[1];
 		renderLight.shaderParms[2] = light_color[2];
 		renderLight.shaderParms[3] = 1.0f;
+		renderLight.noShadows = spawnArgs.GetBool("light_noshadows", "0");
 	}
 
 	spawnArgs.GetVector( "light_offset", "0 0 0", lightOffset );
@@ -903,6 +904,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		renderLight.shaderParms[SHADERPARM_BLUE] = lightColor.z;
 		renderLight.shaderParms[SHADERPARM_ALPHA] = 1.0f;
 		renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = -MS2SEC( gameLocal.time );
+		renderLight.noShadows = spawnArgs.GetBool("explode_light_noshadows", "0");
 		light_fadetime = spawnArgs.GetFloat( "explode_light_fadetime", "0.5" );
 		lightStartTime = gameLocal.time;
 		lightEndTime = gameLocal.time + SEC2MS( light_fadetime );
