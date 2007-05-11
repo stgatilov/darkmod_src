@@ -63,6 +63,8 @@ extern const idEventDef EV_AI_GetRelationSys;
 extern const idEventDef EV_AI_SetRelation;
 extern const idEventDef EV_AI_OffsetRelation;
 
+extern const idEventDef EV_PointInLiquid;
+
 extern const idEventDef EV_TDM_SetPortSoundLoss;
 extern const idEventDef EV_TDM_GetPortSoundLoss;
 
@@ -176,6 +178,14 @@ private:
 	void						Event_DebugBounds( const idVec3 &color, const idVec3 &mins, const idVec3 &maxs, const float lifetime );
 	void						Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime );
 	void						Event_InfluenceActive( void );
+
+	/**
+	* greebo: Tests if a point is in a liquid.
+	*
+	* @ignoreEntity: This excludes an entity from the clip test.
+	* @returns: returns TRUE to the calling thread if the point is in a liquid
+	*/
+	void						Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity );
 
 	// For test purposes only.
 	void						Event_DebugTDM_MatInfo( const char *mat );
