@@ -225,6 +225,12 @@ void CProjectileResult::Init
 		Event_CopyBind( pProj );
 	}
 
+	// Is this projectile originating from a named shooter?
+	idStr shooter = pProj->spawnArgs.GetString("shooter", "");
+	if (!shooter.IsEmpty()) {
+		// Copy the shooter information to this projectile result
+		spawnArgs.Set("shooter", shooter.c_str());
+	}
 
 	// Run scripts:
 	RunResultScript();

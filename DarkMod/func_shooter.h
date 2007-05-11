@@ -36,6 +36,8 @@ public:
 	void				Event_Activate( idEntity *activator );
 	void				Event_ShooterSetState( bool state );
 	void				Event_ShooterGetState();
+	void				Event_ShooterSetAmmo( int newAmmo );
+	void				Event_ShooterGetAmmo();
 	void				Event_ShooterFireProjectile();
 
 	// Snapshot interface
@@ -96,11 +98,11 @@ private:
 	int					_triggerTimeOut;
 
 	// The maximum number of projectiles (ammo) for this shooter. 
-	int					_maxProjectiles;
+	// A value of -1 means infinite ammonition
+	int					_ammo;
 
-	// The number of fired projectiles. If this exceeds _maxProjectiles, the shooter
-	// becomes inactive.
-	int					_firedProjectiles;
+	// This is true if the _ammo value should be considered or not
+	bool				_useAmmo;
 };
 
 #endif /* !__GAME_FUNC_SHOOTER_H__ */

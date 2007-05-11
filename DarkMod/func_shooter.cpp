@@ -18,6 +18,8 @@ static bool init_version = FileVersionList("$Id: func_shooter.cpp 870 2007-03-27
 const idEventDef EV_ShooterSetState( "shooterSetState", "d" );
 const idEventDef EV_ShooterFireProjectile( "shooterFireProjectile", NULL );
 const idEventDef EV_ShooterGetState( "shooterGetState", NULL, 'd' );
+const idEventDef EV_ShooterSetAmmo( "shooterSetAmmo", "d" );
+const idEventDef EV_ShooterGetAmmo( "shooterGetAmmo", NULL, 'd' );
 
 // Event definitions
 CLASS_DECLARATION( idStaticEntity, tdmFuncShooter )
@@ -25,6 +27,8 @@ EVENT( EV_Activate,					tdmFuncShooter::Event_Activate )
 EVENT( EV_ShooterSetState,			tdmFuncShooter::Event_ShooterSetState )
 EVENT( EV_ShooterGetState,			tdmFuncShooter::Event_ShooterGetState )
 EVENT( EV_ShooterFireProjectile,	tdmFuncShooter::Event_ShooterFireProjectile )
+EVENT( EV_ShooterSetAmmo,			tdmFuncShooter::Event_ShooterSetAmmo )
+EVENT( EV_ShooterGetAmmo,			tdmFuncShooter::Event_ShooterGetAmmo )
 END_CLASS
 
 /*
@@ -44,8 +48,8 @@ tdmFuncShooter::tdmFuncShooter( void ) :
 	_triggerRequired(false),
 	_triggerTimeOut(0),
 	_lastTriggerVisit(0),
-	_firedProjectiles(0),
-	_maxProjectiles(-1)
+	_ammo(-1),
+	_useAmmo(false)
 {}
 
 /*
@@ -72,7 +76,8 @@ void tdmFuncShooter::Spawn( void ) {
 	_triggerRequired = spawnArgs.GetBool("required_trigger");
 	_triggerTimeOut = spawnArgs.GetInt("required_trigger_timeout", "4000");
 
-	_maxProjectiles = spawnArgs.GetInt("ammo", "-1");
+	_ammo = spawnArgs.GetInt("ammo", "-1");
+	_useAmmo = (_ammo != -1);
 
 	if (_active && _fireInterval > 0) {
 		BecomeActive( TH_THINK );
@@ -103,8 +108,8 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( _lastTriggerVisit );
 	savefile->WriteBool( _triggerRequired );
 	savefile->WriteInt( _triggerTimeOut );
-	savefile->WriteInt( _maxProjectiles );
-	savefile->WriteInt( _firedProjectiles );
+	savefile->WriteInt( _ammo );
+	savefile->WriteBool( _useAmmo );
 }
 
 /*
@@ -128,8 +133,8 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( _lastTriggerVisit );
 	savefile->ReadBool( _triggerRequired );
 	savefile->ReadInt( _triggerTimeOut );
-	savefile->ReadInt( _maxProjectiles );
-	savefile->ReadInt( _firedProjectiles );
+	savefile->ReadInt( _ammo );
+	savefile->ReadBool( _useAmmo );
 }
 
 /*
@@ -148,7 +153,7 @@ void tdmFuncShooter::Event_Activate( idEntity *activator ) {
 	} else {
 		BecomeActive( TH_THINK );
 		_active = true;
-		_firedProjectiles = 0;
+		_ammo = spawnArgs.GetInt("ammo", "-1");
 		_lastFireTime = gameLocal.time;
 		setupNextFireTime();
 	}
@@ -167,14 +172,22 @@ void tdmFuncShooter::Event_ShooterSetState( bool state ) {
 	_active = state;
 
 	if (_active) {
-		// Reset the fired counter on script activation
-		_firedProjectiles = 0;
+		// Reset the ammo on script activation (useAmmo can still override this)
+		_ammo = spawnArgs.GetInt("ammo", "-1");
 		setupNextFireTime();
 	}
 }
 
 void tdmFuncShooter::Event_ShooterFireProjectile() {
 	Fire();
+}
+
+void tdmFuncShooter::Event_ShooterSetAmmo( int newAmmo ) {
+	_ammo = newAmmo;
+}
+
+void tdmFuncShooter::Event_ShooterGetAmmo() {
+	idThread::ReturnInt(_ammo);
 }
 
 void tdmFuncShooter::setupNextFireTime() {
@@ -248,12 +261,16 @@ void tdmFuncShooter::Fire() {
 				velocity = projectileDict->GetVector("velocity", "0 0 0").Length();
 			}
 
+			// Set the brand of the projectile, it should know its roots
+			projectile->spawnArgs.Set("shooter", name.c_str());
+
+			// Fire!
 			projectile->Launch(GetPhysics()->GetOrigin(), direction, direction*velocity);
 
-			// Keep track of the fired projectiles
-			_firedProjectiles++;
-
-			if (_maxProjectiles > 0 && _firedProjectiles >= _maxProjectiles) {
+			// Check the ammonition
+			if (_useAmmo && --_ammo <= 0) {
+				// Clamp the ammo value to zero
+				_ammo = 0;
 				// Inactivate the shooter as the max ammo was specified and has run out
 				Event_ShooterSetState(false);
 			}
