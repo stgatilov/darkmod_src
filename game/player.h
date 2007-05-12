@@ -673,8 +673,12 @@ public:
 	void inventoryPrevGroup( void );
 	// Drops the currently held/selected item.
 	void inventoryDropItem( void );
+
 	// Uses the currently held/selected item.
 	void inventoryUseItem(bool bImpulse);
+	// Performs the inventory action for onButtonRelease
+	void inventoryUseKeyRelease(int holdTime);
+
 	// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem(bool bImpulse, idEntity* useEnt);
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
@@ -794,13 +798,6 @@ private:
 	 * player uses the lockpicks on a lock.
 	 */
 	bool					m_ContinuousUse;
-
-	/**
-	* greebo: This variable holds the total time the use key has been held down.
-	*/
-	int						m_TotalUseTime;
-	// This is needed to calculate the above TotalUseTime - stores the last time it was checked
-	int						m_LastUseTime;
 
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]

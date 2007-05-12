@@ -1188,8 +1188,6 @@ idPlayer::idPlayer() :
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
 	m_ContinuousUse			= false;
-	m_TotalUseTime			= 0;
-	m_LastUseTime			= 0;
 }
 
 /*
@@ -3023,20 +3021,10 @@ void idPlayer::UpdateConditions( void )
 	if(m_ContinuousUse == true)
 	{
 		if (common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51))) {
-			if (m_LastUseTime > 0) {
-				// Add the time that has passed since the last check
-				m_TotalUseTime += gameLocal.time - m_LastUseTime;
-			}
-			else {
-				m_TotalUseTime = 0;
-			}
-			m_LastUseTime = gameLocal.time;
 			inventoryUseItem(false);
 		}
 		else {
 			m_ContinuousUse = false;
-			m_TotalUseTime = 0;
-			m_LastUseTime = 0;
 		}
 	}
 }
@@ -6098,7 +6086,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 void idPlayer::PerformKeyRelease(int impulse, int holdTime) {
 	// The key associated to <impulse> has been released
 	
-	
+	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Button %d has been released, has been held down %d ms.\r", impulse, holdTime);
+
+	switch (impulse) {
+		case IMPULSE_51:
+			inventoryUseKeyRelease(holdTime);
+			break;
+	}
 }
 
 bool idPlayer::HandleESC( void ) {
@@ -6987,11 +6981,10 @@ void idPlayer::Think( void )
 
 		// service animations
 		if ( !spectating && !af.IsActive() && !gameLocal.inCinematic ) {
-
-    		UpdateConditions();
-
 			// Update the button state, this calls PerformKeyRelease() if a button has been released
 			m_ButtonStateTracker.update();
+
+			UpdateConditions();
 
 			UpdateAnimState();
 			CheckBlink();
@@ -8628,6 +8621,7 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	// service animations
 	if ( !spectating && !af.IsActive() ) {
+		m_ButtonStateTracker.update();
     	UpdateConditions();
 		UpdateAnimState();
 		CheckBlink();
@@ -9592,6 +9586,26 @@ void idPlayer::inventoryPrevGroup()
 	InventoryCursor()->GetPrevCategory();
 }
 
+void idPlayer::inventoryUseKeyRelease(int holdTime) {
+	CInventoryCursor *crsr = InventoryCursor();
+	CInventoryItem *it = crsr->GetCurrentItem();
+
+	// Check if there is a valid item selected
+	if (it->GetType() != CInventoryItem::IT_DUMMY) {
+		// greebo: Notify the inventory item about the key release event
+		idEntity* item = it->GetItemEntity();
+
+		idThread* thread = item->CallScriptFunctionArgs(
+			"inventoryUseKeyRelease", true, 0, 
+			"eef", item, this, static_cast<float>(holdTime)
+		);
+
+		if (thread) {
+			thread->Start(); // Start the thread immediately.
+		}
+	}
+}
+
 void idPlayer::inventoryUseItem(bool bImpulse)
 {
 	// If the player has an item that is selected we need to check if this
@@ -9627,7 +9641,7 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 	{
 		if (bImpulse) {
 			// greebo: No frob entity highlighted, try to call the "use" method in the entity's scriptobject
-			idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eef", ent, this, m_TotalUseTime);
+			idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "ee", ent, this);
 			if (thread) {
 				thread->Start(); // Start the thread immediately.
 			}

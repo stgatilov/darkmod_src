@@ -35,8 +35,7 @@ void ButtonStateTracker::update() {
 		}
 		else {
 			int holdTime = i->second + timeSinceLastCheck;
-			DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Button %d has been released, has been held down %d ms.\r", impulse, holdTime);
-
+			
 			// Delete the impulse from the map, and increase the iterator immediately afterwards
 			_buttons.erase(i++);
 
