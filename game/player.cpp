@@ -6754,6 +6754,9 @@ void idPlayer::UpdateHud( void ) {
 	} else {
 		hud->SetStateString( "hudLag", "0" );
 	}
+
+	// Trigger an update of the HUD
+	inventoryChangeSelection(hud, true);
 }
 
 /*

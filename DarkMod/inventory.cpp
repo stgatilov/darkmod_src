@@ -814,7 +814,7 @@ void CInventoryCursor::DropCurrentItem(void)
 	idEntity *owner = NULL;
 	const function_t* dropScript = NULL;
 
-	if(item && item->IsDroppable() == true)
+	if (item && item->IsDroppable() == true && item->GetCount() > 0)
 	{
 		ent = item->GetItemEntity();
 
@@ -828,11 +828,16 @@ void CInventoryCursor::DropCurrentItem(void)
 		if (dropScript == NULL) {
 			m_Inventory->PutEntityInMap(ent, owner, item);
 		}
-	}
 
-	// greebo: Decrease the stack counter, if applicable
-	if (item->IsStackable() && item->GetCount() > 0) {
-		item->SetCount(item->GetCount() - 1);
+		// greebo: Decrease the stack counter, if applicable
+		if (item->IsStackable()) {
+			item->SetCount(item->GetCount() - 1);
+
+			idPlayer* player = dynamic_cast<idPlayer*>(owner);
+			if (player != NULL) {
+				player->UpdateHud();
+			}
+		}
 	}
 
 	// greebo: Is there a drop script on the entity?
