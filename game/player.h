@@ -13,6 +13,8 @@
 #ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
 
+#include "../DarkMod/ButtonStateTracker.h"
+
 /*
 ===============================================================================
 
@@ -270,6 +272,13 @@ public:
 	* container for the player's inventory
 	*/
 	idInventory				inventory;
+
+	/**
+	* greebo: Helper class keeping track of which buttons are currently
+	*		  held down and which got released.
+	*		  calls PerformButtonRelease() on this entity on this occasion.
+	*/
+	ButtonStateTracker		m_ButtonStateTracker;
 
 	/**
 	* Set to true if the player is holding an item with the Grabber
@@ -542,6 +551,16 @@ public:
 	bool					GuiActive( void ) { return focusGUIent != NULL; }
 
 	void					PerformImpulse( int impulse );
+
+	/**
+	* greebo: This gets called by the ButtonStateTracker helper class
+	*		  whenever a key is released.
+	*
+	* @impulse: The impulse number
+	* @holdTime: The time the button has been held down
+	*/
+	void					PerformKeyRelease(int impulse, int holdTime);
+
 	void					Spectate( bool spectate );
 	void					TogglePDA( void );
 	void					ToggleScoreboard( void );
@@ -775,6 +794,13 @@ private:
 	 * player uses the lockpicks on a lock.
 	 */
 	bool					m_ContinuousUse;
+
+	/**
+	* greebo: This variable holds the total time the use key has been held down.
+	*/
+	int						m_TotalUseTime;
+	// This is needed to calculate the above TotalUseTime - stores the last time it was checked
+	int						m_LastUseTime;
 
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]
