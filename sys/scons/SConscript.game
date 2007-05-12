@@ -111,6 +111,7 @@ darkModSrc = '\
 AIComm_Message.cpp \
 AIComm_StimResponse.cpp \
 BinaryFrobMover.cpp \
+ButtonStateTracker.cpp \
 darkModAASFindHidingSpots.cpp \
 DarkModGlobals.cpp \
 darkmodHidingSpotTree.cpp \
