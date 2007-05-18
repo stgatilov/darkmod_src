@@ -8,6 +8,7 @@
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
+#include "../Game_local.h"
 #pragma hdrstop
 #include "idAbsenceMarkerEntity.h"
 
@@ -39,6 +40,8 @@ END_CLASS
 idAbsenceMarkerEntity::idAbsenceMarkerEntity(void)
 {
 	referenced_entityDefNumber = -1;
+	referenced_entityDefName.Empty();
+	referenced_entityName.Empty();
 }
 
 //-----------------------------------------------------------------------------------
@@ -66,12 +69,10 @@ bool idAbsenceMarkerEntity::initAbsenceReference
     
 	referenced_entityDefNumber = p_entity->entityDefNumber;
 	referenced_entityName = p_entity->name;
+	referenced_entityDefName = p_entity->GetEntityDefName();
 
 	// Fill with spawnargs of referenced entity
 	referenced_spawnArgs = p_entity->spawnArgs;
-
-	// We are on the same team as the referenced entity
-	JoinTeam (p_entity);
 
 	// Move to position where missing entity should have been
 	// Importantly, we float up just a bit off of the surface that the item was sitting on, 
@@ -179,3 +180,80 @@ void idAbsenceMarkerEntity::Event_GetReferencedEntityKey( const char *key )
 }
 
 //-----------------------------------------------------------------------------------
+
+void idAbsenceMarkerEntity::Save( idSaveGame *savefile ) const
+{
+	idVec3 refPosition;
+	idMat3 refOrientation;
+
+	// Get current position and orientation of the marker
+	refPosition = GetPhysics()->GetOrigin();
+	refOrientation = GetPhysics()->GetAxis();
+
+	// Call base class
+	idEntity::Save(savefile);
+
+	// Additional fields
+	savefile->WriteInt (ownerTeam);
+	savefile->WriteInt (referenced_entityDefNumber);
+	savefile->WriteString (referenced_entityName);
+	savefile->WriteString (referenced_entityDefName);
+	savefile->WriteVec3 (refPosition);
+	savefile->WriteMat3 (refOrientation);
+
+
+
+}
+
+//-----------------------------------------------------------------------------------
+
+void idAbsenceMarkerEntity::Restore( idRestoreGame *savefile )
+{
+	int refEntityNum = -1;
+
+	idVec3 refPosition;
+	idMat3 refOrientation;
+
+	// Call base class
+	idEntity::Restore(savefile);
+
+	// Get the referenced entity def number
+	savefile->ReadInt (ownerTeam);
+	savefile->ReadInt (referenced_entityDefNumber);
+	savefile->ReadString (referenced_entityName);
+	savefile->ReadString (referenced_entityDefName);
+	savefile->ReadVec3 (refPosition);
+	savefile->ReadMat3 (refOrientation);
+
+	// Get the referenced spawn args
+	idEntity* p_entity = gameLocal.FindEntity(referenced_entityName);
+	if (p_entity != NULL)
+	{
+		// Get spawn args
+		referenced_spawnArgs = p_entity->spawnArgs;
+
+		// Got entity, get values anew in case they change on load
+		referenced_spawnArgs = p_entity->spawnArgs;
+		referenced_entityDefNumber = p_entity->entityDefNumber;
+		referenced_entityDefName = p_entity->GetEntityDefName();
+
+	}
+	else
+	{
+		// Get spawn args form entity def name saved into file
+		const idDict* p_dict = gameLocal.FindEntityDefDict (referenced_entityDefName);
+		if (p_dict != NULL)
+		{
+			referenced_spawnArgs = *p_dict;
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_ERROR).LogString ("Failed to get spawn args from entity def name on restore, name = '%s'\r", referenced_entityDefName);
+		}
+	}
+
+	// Set position and orientation of marker
+	SetOrigin(refPosition);
+	SetAxis(refOrientation);
+
+}

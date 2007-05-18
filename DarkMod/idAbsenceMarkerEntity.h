@@ -39,6 +39,7 @@ public:
 protected:
 
 	// Defines the spawnargs etc.. for this entity's script type
+	idStr referenced_entityDefName;
 	int referenced_entityDefNumber;
 
 	// The name of the entity being referenced
@@ -52,6 +53,10 @@ public:
 
 	idAbsenceMarkerEntity(void);
 	virtual ~idAbsenceMarkerEntity(void);
+
+	// Save and restore
+	void					Save( idSaveGame *savefile ) const;
+	void					Restore( idRestoreGame *savefile );
 
 	/**
 	* Call this method to set the information about the entity
