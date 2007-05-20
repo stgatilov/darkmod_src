@@ -178,6 +178,8 @@ const idEventDef AI_GetVisDir( "getVisDir", NULL, 'v' );
 const idEventDef AI_GetTactEnt( "getTactEnt", NULL, 'e');
 const idEventDef AI_SetAcuity( "setAcuity", "sf" );
 const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
+const idEventDef AI_GetAudThresh( "getAudThresh", NULL, 'f' );
+const idEventDef AI_SetAudThresh( "setAudThresh", "f" );
 const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
 const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "fff" );
 
@@ -525,6 +527,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetTactEnt,						idAI::Event_GetTactEnt )
 	EVENT( AI_SetAcuity,						idAI::Event_SetAcuity )
 	EVENT( AI_GetAcuity,						idAI::Event_GetAcuity )
+	EVENT( AI_GetAudThresh,						idAI::Event_GetAudThresh )
+	EVENT( AI_SetAudThresh,						idAI::Event_SetAudThresh )
 	EVENT( AI_VisScan,							idAI::Event_VisScan )
 	EVENT( AI_GetAlertActor,					idAI::Event_GetAlertActor )
 	EVENT( AI_SetAlertGracePeriod,				idAI::Event_SetAlertGracePeriod )
@@ -3582,6 +3586,16 @@ void idAI::Event_GetAcuity( const char *type )
 void idAI::Event_SetAcuity( const char *type, float val )
 {
 	SetAcuity( type, val );
+}
+
+void idAI::Event_GetAudThresh( void )
+{
+	idThread::ReturnFloat( m_AudThreshold );
+}
+
+void idAI::Event_SetAudThresh( float val )
+{
+	m_AudThreshold = val;
 }
 
 void idAI::Event_Alert( const char *type, float amount )
