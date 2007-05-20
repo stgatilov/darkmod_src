@@ -568,6 +568,7 @@ idAI::idAI() {
 	m_AlertGraceThresh = 0;
 	m_AlertGraceCount = 0;
 	m_AlertGraceCountLimit = 0;
+	m_AudThreshold = 0.0f;
 
 	/**
 	* Darkmod: No hiding spot search by default
@@ -739,6 +740,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteJoint( flyTiltJoint );
 	
 	// TDM Alerts:
+	savefile->WriteInt( m_Acuities.Num() );
+	for( i = 0; i < m_Acuities.Num(); i++ ) 
+	{
+		savefile->WriteFloat( m_Acuities[ i ] );
+	}
+	savefile->WriteFloat( m_AudThreshold );
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
 	savefile->WriteFloat( m_AlertNumThisFrame );
@@ -901,6 +908,13 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadJoint( flyTiltJoint );
 
 	// TDM Alerts:
+	savefile->ReadInt( num );
+	m_Acuities.SetNum( num );
+	for( i = 0; i < num; i++ ) 
+	{
+		savefile->ReadFloat( m_Acuities[ i ] );
+	}
+	savefile->ReadFloat( m_AudThreshold );
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
 	savefile->ReadFloat( m_AlertNumThisFrame );
@@ -941,7 +955,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 idAI::Spawn
 =====================
 */
-void idAI::Spawn( void ) {
+void idAI::Spawn( void ) 
+{
 	const char			*jointname;
 	const idKeyValue	*kv;
 	idStr				jointName;
@@ -1004,11 +1019,13 @@ void idAI::Spawn( void ) {
 
 	// DarkMod: Set the AI acuities from the spawnargs.
 
+	m_Acuities.SetNum(g_Global.m_AcuityNames.Num());
 	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
 	{
 		spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100", m_Acuities[ind] );
 		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
+	spawnArgs.GetFloat("alert_aud_thresh", va("%f",gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold), m_AudThreshold );
 
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
 	current_cinematic = 0;
@@ -1028,6 +1045,7 @@ void idAI::Spawn( void ) {
 	AI_TACTALERT = false;
 	AI_ALERTED_BY_PLAYER = false;
 
+	m_Acuities.Clear();
 
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
 	enemy				= NULL;
@@ -5926,20 +5944,8 @@ void idAI::SPLtoLoudness( SSprParms *propParms )
 bool idAI::CheckHearing( SSprParms *propParms )
 {
 	bool returnval(false);
-	float threshold;
-	
-	// TODO: threshold should be calculated from "aural acuity" number
-	// to make life easier for the FM author who has to define this
 
-	// TODO: Store this on a member instead of getting it every time...
-	if ( !spawnArgs.GetFloat("alert_aud_thresh", "", threshold) )
-	{
-		// set the threshold to the global default if it's not found
-		// in the specific AI's spawnargs.
-		threshold = gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold;
-	}
-
-	if( propParms->loudness > threshold)
+	if( propParms->loudness > m_AudThreshold)
 		returnval = true;
 
 	return returnval;
@@ -5949,11 +5955,6 @@ void idAI::HearSound
 	( SSprParms *propParms, float noise, 
 	  idVec3 origin )
 {
-	// TODO: calculate threshold from def and acuity
-	float threshold;
-
-	threshold = gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold;
-
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
@@ -5978,7 +5979,7 @@ void idAI::HearSound
 	* as much, 20 is four times as much, etc.
 	**/
 
-	psychLoud = 1 + (propParms->loudness - threshold);
+	psychLoud = 1 + (propParms->loudness - m_AudThreshold);
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	// alert to overwrite another alert this frame

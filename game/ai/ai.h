@@ -159,6 +159,7 @@ extern const idEventDef AI_VisScan;
 extern const idEventDef AI_Alert;
 extern const idEventDef AI_GetAcuity;
 extern const idEventDef AI_SetAcuity;
+extern const idEventDef AI_SetAudThresh;
 extern const idEventDef AI_ClosestReachableEnemy;
 
 // Darkmod: Glass Houses events
@@ -741,7 +742,15 @@ protected:
 	/**
 	* Array containing the various AI acuities (visual, aural, tactile, etc)
 	**/
-	float					m_Acuities[s_MAXACUITIES];
+	idList<float>			m_Acuities;
+
+	/**
+	* Audio detection threshold (in dB of Sound Pressure Level)
+	* Sounds heard below this volume will be ignored (default is 20 dB)
+	* Soundprop only goes down to 15 dB, although setting it lower than
+	* this will still have some effect, since alert = volume - threshold
+	**/
+	float					m_AudThreshold;
 
 	/**
 	* Static visual distance cutoff that is calculated dynamically
@@ -1272,6 +1281,8 @@ protected:
 	void Event_Alert( const char *type, float amount );
 	void Event_GetAcuity( const char *type );
 	void Event_SetAcuity( const char *type, float val );
+	void Event_GetAudThresh( void );
+	void Event_SetAudThresh( float val );
 
 	/**
 	* Get the actor that alerted the AI this frame
