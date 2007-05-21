@@ -9656,12 +9656,12 @@ void idPlayer::inventoryDropItem()
 {
 	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
 	idEntity *ent = grabber->GetSelected();
-//	CInventoryItem *item = NULL;
 
-	// TODO: If the player holds something in his grabber hands,
-	// the item must be dropped first.
+	// Drop the item in the grabber hands first
 	if(ent != NULL)
-		return;
+	{
+		grabber->Update( this, false );
+	}
 	else
 		InventoryCursor()->DropCurrentItem();
 }
