@@ -802,6 +802,12 @@
 					RelativePath=".\DarkMod\BinaryFrobMover.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\ButtonStateTracker.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\ButtonStateTracker.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\darkModAASFindHidingSpots.cpp">
 				</File>
 				<File
