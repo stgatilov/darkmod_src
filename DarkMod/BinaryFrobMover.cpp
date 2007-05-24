@@ -94,7 +94,6 @@ void CBinaryFrobMover::Spawn( void )
 
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
-
 	partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
 
 	m_Locked = spawnArgs.GetBool("locked");
@@ -145,6 +144,10 @@ void CBinaryFrobMover::Spawn( void )
 
 	// set the first intent according to the initial doorstate
 	m_bIntentOpen = !m_Open;
+
+	// Let the mapper override the initial frob intent on a partially opened door
+	if( spawnArgs.GetBool("first_frob_open") )
+		m_bIntentOpen = true;
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
