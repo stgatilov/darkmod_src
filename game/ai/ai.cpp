@@ -1019,12 +1019,15 @@ void idAI::Spawn( void )
 
 	// DarkMod: Set the AI acuities from the spawnargs.
 
-	m_Acuities.SetNum(g_Global.m_AcuityNames.Num());
+	m_Acuities.Clear();
 	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
 	{
-		spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100", m_Acuities[ind] );
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
+		float tempFloat;
+		tempFloat = spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100" );
+		m_Acuities.Append( tempFloat );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
+
 	spawnArgs.GetFloat("alert_aud_thresh", va("%f",gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold), m_AudThreshold );
 
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
@@ -1044,8 +1047,6 @@ void idAI::Spawn( void )
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
 	AI_ALERTED_BY_PLAYER = false;
-
-	m_Acuities.Clear();
 
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
 	enemy				= NULL;
@@ -5955,6 +5956,7 @@ void idAI::HearSound
 	( SSprParms *propParms, float noise, 
 	  idVec3 origin )
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI Hear Sound called\r");
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
@@ -5982,7 +5984,7 @@ void idAI::HearSound
 	psychLoud = 1 + (propParms->loudness - m_AudThreshold);
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
-	// alert to overwrite another alert this frame
+	//	alert to overwrite another alert this frame
 	if (GetAcuity("aud") > 0 && psychLoud > m_AlertNumThisFrame)
 	{
 		AI_HEARDSOUND = true;
@@ -6002,6 +6004,7 @@ void idAI::HearSound
 
 void idAI::AlertAI( const char *type, float amount )
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AlertAI called\r");
 	float mod(0), alertInc(0);
 	idActor *act(NULL);
 
@@ -6064,18 +6067,20 @@ float idAI::GetAcuity( const char *type ) const
 	int ind;
 	
 	ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey( type, false ) );
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Retrived Acuity index %d for type %s\r", ind, type);
+//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Retrived Acuity index %d for type %s\r", ind, type);
 
-	if (ind == -1)
+	if (ind == -1 )
 	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
-		gameLocal.Warning("[AI] AI script on %s attempted to set nonexistant acuity type: %s", name.c_str(), type);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
+		gameLocal.Warning("[AI] AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
 		returnval = -1;
 		goto Quit;
 	}
+	else if( ind > m_Acuities.Num() )
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Acuity index %d exceed acuity array size %d!\r", ind, m_Acuities.Num());
 
 	returnval = m_Acuities[ind];
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
 
 Quit:
 	return returnval;
@@ -6091,6 +6096,11 @@ void idAI::SetAcuity( const char *type, float acuity )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Script on %s attempted to set nonexistant acuity type: %s\r",name.c_str(), type);
 		gameLocal.Warning("[AI] Script on %s attempted to set nonexistant acuity type: %s",name.c_str(), type);
+		goto Quit;
+	}
+	else if( ind > m_Acuities.Num() )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Script on %s attempted to set acuity with an index %d greater than acuities array size %d!\r", ind, m_Acuities.Num() );
 		goto Quit;
 	}
 
