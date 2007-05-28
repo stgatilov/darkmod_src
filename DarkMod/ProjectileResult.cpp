@@ -94,6 +94,7 @@ void CProjectileResult::Init
 	int StimDuration(0), StimEvalInterval(0);
 	float StimMagnitude(1.0f);
 	bool bStimUseBounds(false);
+	bool bCollisionBased(false);
 	idVec3 stimBounds[2];
 	idVec3 stimVelocity;
 
@@ -178,6 +179,9 @@ void CProjectileResult::Init
 				sprintf(key, "sr_use_bounds_%u", stimIdx);
 				pProj->spawnArgs.GetBool(key, "0", bStimUseBounds );
 
+				sprintf(key, "sr_collision_%u", stimIdx);
+				pProj->spawnArgs.GetBool(key, "0", bCollisionBased );
+
 				sprintf(key, "sr_magnitude_%u", stimIdx);
 				pProj->spawnArgs.GetFloat(key, "1.0", StimMagnitude );
 
@@ -187,6 +191,7 @@ void CProjectileResult::Init
 				s->m_Duration = StimDuration;
 				s->m_TimeInterleave = StimEvalInterval;
 				s->m_bUseEntBounds = bStimUseBounds;
+				s->m_bCollisionBased = bCollisionBased;
 				s->m_Magnitude = StimMagnitude;
 				s->m_FallOffExponent = StimFalloffExponent;
 				s->m_Velocity = stimVelocity;

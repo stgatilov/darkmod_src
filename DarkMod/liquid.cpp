@@ -208,6 +208,8 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	idVec3 splashSpot;
 	float velSquare = velocity.LengthSqr();
 
+	ProcCollisionStims( e );
+
 	eMass = e->GetPhysics()->GetMass();
 	splashSpot = collision.c.point;
 		
