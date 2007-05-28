@@ -69,6 +69,26 @@ public:
 	bool					m_bUseEntBounds;
 
 	/**
+	* If set to true, this stim is a collision-based stim and only checked when the physics 
+	* clipmodel of the entity it's on collide with another entity.  
+	* It is not checked unless it collides, so the entity has to be one that collides.
+	**/
+	bool					m_bCollisionBased;
+
+	/**
+	* Collision stim info:
+	* bFired is set to true if the collision stim fired this frame 
+	* Reset in gameLocal::ProcessStimResponse
+	**/
+	bool					m_bCollisionFired;
+
+	/**
+	* List of entities with responses that the stimming entity collided with this frame
+	* Reset in gameLocal::ProcessStimResponse
+	**/
+	idList<idEntity *>		m_CollisionEnts;
+
+	/**
 	* Milliseconds between interleaving for use with frame-based timer check (not StimTimer)
 	**/
 	int						m_TimeInterleave;

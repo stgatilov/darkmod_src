@@ -22,6 +22,9 @@ CStim::CStim(idEntity *e, int Type)
 : CStimResponse(e, Type)
 {
 	m_bUseEntBounds = false;
+	m_bCollisionBased = false;
+	m_bCollisionFired = false;
+	m_CollisionEnts.Clear();
 	m_TimeInterleave = 0;
 	m_TimeInterleaveStamp = 0;
 	m_Radius = 0.0;

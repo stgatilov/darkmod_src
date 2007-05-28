@@ -443,6 +443,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		sprintf(name, "sr_use_bounds_%u", Counter);
 		stim->m_bUseEntBounds = args->GetBool(name, "0");
 
+		sprintf(name, "sr_collision_%u", Counter);
+		stim->m_bCollisionBased = args->GetBool(name, "0");
+
 		sprintf(name, "sr_velocity_%u", Counter);
 		stim->m_Velocity = args->GetVector(name, "0 0 0");
 
