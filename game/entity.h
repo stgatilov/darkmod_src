@@ -379,6 +379,10 @@ public:
 	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
 							// called from the physics object when colliding, should return true if the physics simulation should stop
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
+	/**
+	* TDM: Process collision stims when collisions occur
+	**/
+	virtual void			ProcCollisionStims( idEntity *other );
 							// retrieves impact information, 'ent' is the entity retrieving the info
 	virtual void			GetImpactInfo( idEntity *ent, int id, const idVec3 &point, impactInfo_t *info );
 							// apply an impulse to the physics object, 'ent' is the entity applying the impulse

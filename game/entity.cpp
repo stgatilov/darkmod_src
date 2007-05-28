@@ -3405,70 +3405,6 @@ idEntity::Collide
 */
 
 bool idEntity::Collide( const trace_t &collision, const idVec3 &velocity ) {
-	// this entity collides with collision.c.entityNum
-	/*
-	float v, f;
-	idVec3 dir;
-	idEntity *ent;
-	const idMaterial *material(NULL);
-	idStr SndNameLocal;
-	const char *SndName(NULL);
-	static const float BOUNCE_SOUND_MIN_VELOCITY	= 45.0f;
-	static const float BOUNCE_SOUND_MAX_VELOCITY	= 65.0f;
-
-	v = -( velocity * collision.c.normal );
-	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
-	{
-		material = collision.c.material;
-		if( material != NULL)
-		{
-			g_Global.GetSurfName( material, SndNameLocal );
-			SndNameLocal = "snd_bounce_" + SndNameLocal;
-			SndName = spawnArgs.GetString( SndNameLocal.c_str() );
-
-			if( *SndName == '\0' )
-				SndNameLocal = "snd_bounce";
-		}
-
-		f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
-		if ( StartSound( SndNameLocal.c_str(), SND_CHANNEL_ANY, 0, false, NULL ) ) {
-			// don't set the volume unless there is a bounce sound as it overrides the entire channel
-			// which causes footsteps on ai's to not honor their shader parms
-			SetSoundVolume( f );
-		}
-		nextSoundTime = gameLocal.time + 500;
-	}
-
-	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
-		ent = gameLocal.entities[ collision.c.entityNum ];
-		if ( ent && v > minDamageVelocity ) 
-		{
-			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
-			dir = velocity;
-			dir.NormalizeFast();
-			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
-			nextDamageTime = gameLocal.time + 1000;
-		}
-	}
-
-	//Darkmod: Cause a tactile alert if it collides with an AI
-	
-	ent = gameLocal.entities[ collision.c.entityNum ];
-	if ( ent )
-	{
-		if( ent->IsType( idAI::Type ) )
-		{
-			idAI *alertee = static_cast<idAI *>(ent);
-			alertee->TactileAlert( this );
-		}
-	}
-
-	if ( fxCollide.Length() && gameLocal.time > nextCollideFxTime ) {
-		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
-		nextCollideFxTime = gameLocal.time + 3500;
-	}
-
-	*/
 	return false;
 }
 /*
@@ -3971,11 +3907,20 @@ void idEntity::Signal( signalNum_t signalnum ) {
 	}
 
 	// clear out the signal list so that we don't get into an infinite loop
-	signals->signal[ signalnum ].Clear();
+	// TDM: Removed this, signal should stay after triggering by default
+	// signals->signal[ signalnum ].Clear();
 
 	for( i = 0; i < num; i++ ) {
 		thread = idThread::GetThread( sigs[ i ].threadnum );
-		if ( thread ) {
+		if ( thread ) 
+		{
+			thread->CallFunction( this, sigs[ i ].function, true );
+			thread->Execute();
+		}
+		// TDM: Create a new thread if the thread that added the signal is not still around
+		else
+		{
+			thread = new idThread(sigs[i].function);
 			thread->CallFunction( this, sigs[ i ].function, true );
 			thread->Execute();
 		}
@@ -6510,6 +6455,7 @@ void idEntity::FrobAction(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_FrobList[i].c_str());
 		}
 
+		// Call the frob action script
 		if(m_FrobActionScript.Length() > 0)
             CallScriptFunctionArgs(m_FrobActionScript.c_str(), true, 0, "e", this);
 
@@ -7968,3 +7914,26 @@ void idEntity::Event_CanSeeEntity(idEntity* target, int useLighting)
 {
 	idThread::ReturnInt(canSeeEntity(target, useLighting) ? 1 : 0);
 }
+
+void idEntity::ProcCollisionStims( idEntity *other )
+{
+	CStimResponseCollection *coll, *coll2;
+
+	if( (coll = GetStimResponseCollection()) != NULL
+		&& (coll2 = other->GetStimResponseCollection()) != NULL
+		&& coll2->HasResponse() )
+	{
+		// check each stim to see if it's a collision stim
+		idList<CStim*>& StimList = coll->GetStimList();
+		for( int i=0; i<StimList.Num(); i++ )
+		{
+			CStim *pStim = StimList[i];
+			if( pStim->m_bCollisionBased )
+			{
+				pStim->m_bCollisionFired = true;
+				pStim->m_CollisionEnts.Append( this );
+			}
+		}
+	}
+}
+
