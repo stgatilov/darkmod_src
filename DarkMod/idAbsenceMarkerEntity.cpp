@@ -8,7 +8,7 @@
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
-#include "../Game_local.h"
+#include "../game/game_local.h"
 #pragma hdrstop
 #include "idAbsenceMarkerEntity.h"
 
