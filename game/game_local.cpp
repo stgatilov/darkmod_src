@@ -5415,6 +5415,10 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 					continue; // Stim is not enabled
 				}
 
+				if( pStim->m_bCollisionBased && !pStim->m_bCollisionFired ) {
+					continue; // Collision-based stim that did not fire with ::Collide this frame
+				}
+
 				// Check the interleaving timer and don't eval stim if it's not up yet
 				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
 					continue;
@@ -5476,10 +5480,23 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 						bounds.ExpandSelf(radius);
 					}
 
-// NOTE: CONTENTS_RESPONSE is temporarily disabled until we fix problems with order of calls
-// For some entities, SetContents ends up being called again after the SR setup and overwriting the CONTENTS_RESPONSE setting
-// UPDATE: I think we fixed most of these cases, on an individual basis
-					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, Ent, MAX_GENTITIES);
+					// Collision-based stims
+					if( pStim->m_bCollisionBased )
+					{
+						n = pStim->m_CollisionEnts.Num();
+
+						for( int n2=0; n2<n; n2++ )
+						{
+							Ent[n2] = pStim->m_CollisionEnts[n2];
+						}
+
+						// clear the collision vars for the next frame
+						pStim->m_bCollisionFired = false;
+						pStim->m_CollisionEnts.Clear();
+					}
+					else // Radius based stims
+						n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, Ent, MAX_GENTITIES);
+					
 					if(n > 0)
 					{
 						// Do responses for entities within the radius of the stim
