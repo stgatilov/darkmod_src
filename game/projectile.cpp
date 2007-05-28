@@ -538,6 +538,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// get the entity the projectile collided with
 	ent = gameLocal.entities[ collision.c.entityNum ];
 
+	ProcCollisionStims( ent );
+
 	if ( ent == owner.GetEntity() ) {
 		assert( 0 );
 		return true;

@@ -299,8 +299,10 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		nextSoundTime = gameLocal.time + 500;
 	}
 
-	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) {
-		ent = gameLocal.entities[ collision.c.entityNum ];
+	ent = gameLocal.entities[ collision.c.entityNum ];
+
+	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) 
+	{
 		if ( ent && v > minDamageVelocity ) 
 		{
 			f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
@@ -311,11 +313,11 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 	}
 
-	// Darkmod: Cause a tactile alert if it collides with an AI
-	
-	ent = gameLocal.entities[ collision.c.entityNum ];
+	// Darkmod: Collision stims and a tactile alert if it collides with an AI
 	if ( ent )
 	{
+		ProcCollisionStims( ent );
+
 		if( ent->IsType( idAI::Type ) )
 		{
 			idAI *alertee = static_cast<idAI *>(ent);

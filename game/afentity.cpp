@@ -819,7 +819,11 @@ idAFEntity_Base::Collide
 bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	float v, f;
 
-	if ( af.IsActive() ) {
+	idEntity *e = gameLocal.entities[collision.c.entityNum];
+	ProcCollisionStims( e );
+
+	if ( af.IsActive() ) 
+	{
 		v = -( velocity * collision.c.normal );
 		if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) {
 			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );

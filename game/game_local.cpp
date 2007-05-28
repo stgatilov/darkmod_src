@@ -5453,12 +5453,15 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 					continue;
 				}
 
-				// If stim is not disabled and has a radius or uses the ent bounds
+				// If stim is not disabled
 				if (pStim->m_State == SS_DISABLED)
 					continue;
 
 				float radius = pStim->m_Radius;
-				if (radius != 0.0 || pStim->m_bUseEntBounds || pStim->m_Bounds.GetVolume() > 0)
+
+				if ( radius != 0.0 || pStim->m_bCollisionBased
+					|| pStim->m_bUseEntBounds 
+					|| pStim->m_Bounds.GetVolume() > 0 )
 				{
 					int numResponses = 0;
 

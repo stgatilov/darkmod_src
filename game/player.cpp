@@ -4591,7 +4591,10 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 	idEntity *other = gameLocal.entities[ collision.c.entityNum ];
 	// don't let player collide with grabber entity
-	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
+	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) 
+	{
+		ProcCollisionStims( other );
+
 		other->Signal( SIG_TOUCH );
 		if ( !spectating ) {
 			if ( other->RespondsTo( EV_Touch ) ) {

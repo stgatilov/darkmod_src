@@ -7919,7 +7919,8 @@ void idEntity::ProcCollisionStims( idEntity *other )
 {
 	CStimResponseCollection *coll, *coll2;
 
-	if( (coll = GetStimResponseCollection()) != NULL
+	if(	other != NULL
+		&& (coll = GetStimResponseCollection()) != NULL
 		&& (coll2 = other->GetStimResponseCollection()) != NULL
 		&& coll2->HasResponse() )
 	{
@@ -7931,7 +7932,7 @@ void idEntity::ProcCollisionStims( idEntity *other )
 			if( pStim->m_bCollisionBased )
 			{
 				pStim->m_bCollisionFired = true;
-				pStim->m_CollisionEnts.Append( this );
+				pStim->m_CollisionEnts.Append( other );
 			}
 		}
 	}
