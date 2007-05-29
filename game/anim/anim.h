@@ -301,7 +301,7 @@ public:
 	bool						GetOriginRotation( idQuat &rotation, int animNum, int currentTime, int cyclecount ) const;
 	bool						GetBounds( idBounds &bounds, int animNum, int time, int cyclecount ) const;
 	const char					*AddFrameCommand( const class idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def );
-	void						CallFrameCommands( idEntity *ent, int from, int to ) const;
+	void						CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *caller );
 	bool						HasFrameCommands( void ) const;
 
 								// returns first frame (zero based) that command occurs.  returns -1 if not found.
