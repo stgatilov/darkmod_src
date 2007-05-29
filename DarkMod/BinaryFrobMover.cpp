@@ -146,8 +146,12 @@ void CBinaryFrobMover::Spawn( void )
 	m_bIntentOpen = !m_Open;
 
 	// Let the mapper override the initial frob intent on a partially opened door
-	if( spawnArgs.GetBool("first_frob_open") )
+	if( m_Open && spawnArgs.GetBool("first_frob_open") )
+	{
 		m_bIntentOpen = true;
+		m_bInterrupted = true;
+		m_StateChange = true;
+	}
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
