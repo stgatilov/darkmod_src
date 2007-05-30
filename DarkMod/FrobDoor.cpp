@@ -77,7 +77,7 @@ CFrobDoor::CFrobDoor(void)
 	m_Doorhandle = NULL;
 	m_FirstLockedPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
-	m_SoundTimerStarted = false;
+	m_SoundTimerStarted = 0;
 }
 
 CFrobDoor::~CFrobDoor(void)
@@ -455,7 +455,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 
 	// Process the lockpick
 	if(type != 0)
-		ProcessLockpick(bInit, false, (int)type);
+		ProcessLockpick((int)type, (bInit == true) ? LPSOUND_INIT : LPSOUND_REPEAT);
 
 	// When we are here we know that the item is usable
 	// so we have to check if it is associated with this entity.
@@ -666,118 +666,179 @@ idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)
 	return rc;
 }
 
-void CFrobDoor::ProcessLockpick(bool bInit, bool bCallback, int cType)
+void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
+{
+	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
+	ProcessLockpick(cType, nSampleType);
+}
+
+
+void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
 	int sample_delay, pick_timeout;
 	idStr oPickSound;
 	char type = cType;
-
-	sample_delay = cv_lp_sample_delay.GetInteger();
-
 	int length = 0;
+	idStr pick;
 
+	// If a key has been pressed and the lock is already picked, we play a sample
+	// to indicate that the lock doesn't need picking anymore. This we do only
+	// if there is not currently a sound sample still playing, in which case we 
+	// can ignore that event and wait for all sample events to arrive.
 	if(m_FirstLockedPinIndex >= m_Pins.Num())
 	{
-		if(m_SoundTimerStarted == false)
+		if(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT)
 		{
-			// We need to play a short soundsample here to indicate that the lock already has been picked.
-			oPickSound = "lockpick_pin_wrong";
-			PropSoundDirect(oPickSound, true, false );
-			idSoundShader const *shader = declManager->FindSound(oPickSound);
-			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
-			PostEventMS(&EV_TDM_LockpickTimer, length, bInit, cType);
-			m_SoundTimerStarted = true;
-		}
-		else
-		{
-			if(bCallback == true || common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
-				m_SoundTimerStarted = false;
-		}
-		goto Quit;
-	}
-
-	if(bInit == true)
-	{
-		m_SoundTimerStarted = false;
-		m_SoundPinSampleIndex = -1;
-	}
-
-	if(m_SoundTimerStarted == true)
-	{
-		if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
-		{
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
-
-			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
-			if(m_SoundPinSampleIndex == l.Num()-1)
+			if(m_SoundTimerStarted == 0)
 			{
-				m_FirstLockedPinIndex++;
-				if(m_FirstLockedPinIndex >= m_Pins.Num())
-				{
-					m_FirstLockedPinIndex = m_Pins.Num();
-					oPickSound = "lockpick_pin_success";
-					PropSoundDirect(oPickSound, true, false );
-					idSoundShader const *shader = declManager->FindSound(oPickSound);
-					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
-					Unlock(true);
-					PostEventMS(&EV_TDM_LockpickTimer, length, bInit, cType);
-					goto Quit;
-				}
-			}
-			else
-			{
-				oPickSound = "lockpick_pin_fail";
+				oPickSound = "lockpick_lock_picked";
 				PropSoundDirect(oPickSound, true, false );
 				idSoundShader const *shader = declManager->FindSound(oPickSound);
 				StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
-				PostEventMS(&EV_TDM_LockpickTimer, length, bInit, cType);
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
+				m_SoundTimerStarted++;
+				PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_LOCK_PICKED);
 			}
 		}
-		else
-		{
-			if(bCallback == true)
-				m_SoundTimerStarted = false;
-		}
+		else		// Some sample has finished playing. Doesn't matter which one at this point.
+			m_SoundTimerStarted--;
+
+		goto Quit;
 	}
 
-	if(m_SoundTimerStarted == false)
+	// Now check if the pick is of the correct type. If no picktype is given, or
+	// the mapper doesn't care, we ignore it.
+	spawnArgs.GetString("lock_picktype", "", pick);
+	if(m_FirstLockedPinIndex < pick.Length())
 	{
-		idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
-
-		m_SoundPinSampleIndex++;
-		if(m_SoundPinSampleIndex >= l.Num())
+		if(!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
 		{
-			pick_timeout = cv_lp_pick_timeout.GetInteger();
-			m_SoundPinSampleIndex = 0;
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin restarted\r");
+			if(m_SoundTimerStarted == 0)
+			{
+				oPickSound = "lockpick_pick_wrong";
+				m_SoundTimerStarted++;
+				PropSoundDirect(oPickSound, true, false );
+				idSoundShader const *shader = declManager->FindSound(oPickSound);
+				StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+				PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_WRONG_LOCKPICK);
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
+			}
+			else
+			{
+				if(!(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT))
+					m_SoundTimerStarted--;
+			}
+
+			goto Quit;
 		}
-		else
-			pick_timeout = 0;
-
-		oPickSound = l[m_SoundPinSampleIndex];
-
-		m_SoundTimerStarted = true;
-		PropSoundDirect(oPickSound, true, false );
-		idSoundShader const *shader = declManager->FindSound(oPickSound);
-		StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-		PostEventMS(&EV_TDM_LockpickTimer, length+sample_delay+pick_timeout, bInit, cType);
-		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %c\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
 	}
 
-	// If the door has been successfully picked, we can remove the timer
-	// from gamelocal because it is no longer needed there.
-	//gameLocal.m_Timer.Remove(m_PickTimer);
+	switch(nSampleType)
+	{
+		case LPSOUND_INIT:
+		{
+			// If we receive an INIT call, and the soundtimer has already been started, it means that
+			// the user released the lockpick key and pressed it again, before the sample has been finished.
+			// We can safely ignore this case, because this should be treated the same as if the user
+			// didn't release the key at all while playing the lockpick samples.
+			if(m_SoundTimerStarted > 0)
+				goto Quit;
+
+			// Otherwise we reset the lock to the initial soundsample for the current pin. Pins are not
+			// reset, so the player doesn't have to start all over if he gets interrupted while picking.
+			m_SoundPinSampleIndex = -1;
+		}
+		break;
+
+		// If the pin sample has been finished and we get the callback we check if
+		// the key is still pressed. If the user released the key in this intervall
+		// and we have to check wether it was the correct pin, and if yes, it will
+		// be unlocked.
+		case LPSOUND_PIN_SAMPLE:
+		{
+			m_SoundTimerStarted--;
+
+			if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+			{
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
+
+				idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+
+				if(m_SoundPinSampleIndex == l.Num()-1)
+				{
+					// It was correct so we advance to the next pin.
+					m_FirstLockedPinIndex++;
+
+					// If it was the last pin, the user successfully picked the lock.
+					if(m_FirstLockedPinIndex >= m_Pins.Num())
+					{
+						m_FirstLockedPinIndex = m_Pins.Num();
+						oPickSound = "lockpick_pin_success";
+						m_SoundTimerStarted++;
+						PropSoundDirect(oPickSound, true, false );
+						idSoundShader const *shader = declManager->FindSound(oPickSound);
+						StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+						DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
+						Unlock(true);
+						PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_SUCCESS);
+						goto Quit;
+					}
+				}
+				else
+				{
+					oPickSound = "lockpick_pin_fail";
+					m_SoundTimerStarted++;
+					PropSoundDirect(oPickSound, true, false );
+					idSoundShader const *shader = declManager->FindSound(oPickSound);
+					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+					PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_FAILED);
+					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
+
+					// Reset the pin to the first sample for the next try.
+					m_SoundPinSampleIndex = -1;
+				}
+			}
+		}
+		break;
+
+		case LPSOUND_PIN_FAILED:
+		case LPSOUND_PIN_SUCCESS:
+		case LPSOUND_WRONG_LOCKPICK:
+		case LPSOUND_LOCK_PICKED:			// Should never happen but it doesn't hurt either. :)
+			m_SoundTimerStarted--;
+		break;
+
+		case LPSOUND_REPEAT:				// Here is the interesting part.
+		{
+			// If we are still playing a sample, we can ignore that keypress.
+			if(m_SoundTimerStarted > 0)
+				goto Quit;
+
+			sample_delay = cv_lp_sample_delay.GetInteger();
+			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+
+			m_SoundPinSampleIndex++;
+			if(m_SoundPinSampleIndex >= l.Num())
+			{
+				pick_timeout = cv_lp_pick_timeout.GetInteger();
+				m_SoundPinSampleIndex = 0;
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin restarted\r");
+			}
+			else
+				pick_timeout = 0;
+
+			oPickSound = l[m_SoundPinSampleIndex];
+
+			m_SoundTimerStarted++;
+			PropSoundDirect(oPickSound, true, false );
+			idSoundShader const *shader = declManager->FindSound(oPickSound);
+			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+			PostEventMS(&EV_TDM_LockpickTimer, length+sample_delay+pick_timeout, cType, LPSOUND_PIN_SAMPLE);
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %c\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
+		}
+		break;
+	}
 
 Quit:
 	return;
 }
-
-void CFrobDoor::LockpickTimerEvent(bool bInit, int cType)
-{
-	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
-	ProcessLockpick(false, true, cType);
-}
-

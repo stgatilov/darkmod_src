@@ -24,6 +24,17 @@ class CFrobDoorHandle;
 #define MIN_CLICK_NUM			5
 #define MAX_CLICK_NUM			10
 
+typedef enum
+{
+	LPSOUND_INIT,				// Initial call (impulse has been triggered)
+	LPSOUND_REPEAT,				// Call from the keyboardhandler for repeated presses
+	LPSOUND_PIN_SAMPLE,			// Callback for pin sample
+	LPSOUND_PIN_FAILED,			// Callback when the pin failed sound is finished
+	LPSOUND_PIN_SUCCESS,		// Callback for the success sound sample
+	LPSOUND_WRONG_LOCKPICK,		// Callback for the wrong lockpick sample
+	LPSOUND_LOCK_PICKED			// Callback for the pin picked
+} ELockpickSoundsample;
+
 /**
  * CFrobDoor is a replacement for idDoor. The reason for this replacement is
  * because idDoor is derived from idMover_binary and can only slide from one
@@ -89,8 +100,8 @@ public:
 	void					ToggleOpen(void);
 	void					ToggleLock(void);
 
-	void					ProcessLockpick(bool bInit, bool bCallback, int cType);
-	void					LockpickTimerEvent(bool bInit, int cType);
+	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
+	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
 protected:
 	// Create a random pin pattern for a given pin. Clicks defines the required 
@@ -144,9 +155,9 @@ protected:
 	int							m_SoundPinSampleIndex;
 
 	/**
-	 * SoundTimerStarted is set to true, when a pin sound has been started.
+	 * SoundTimerStarted increasedfor each soundsample that is started
 	 */
-	bool						m_SoundTimerStarted;
+	int						m_SoundTimerStarted;
 
 	/**
 	* Pointer to the door's partner in a double door.
