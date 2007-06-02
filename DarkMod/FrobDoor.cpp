@@ -103,7 +103,6 @@ void CFrobDoor::ReadFromSnapshot( const idBitMsgDelta &msg )
 void CFrobDoor::Spawn( void )
 {
 	idStr str;
-	idMover::Spawn();
 	idEntity *e;
 	CFrobDoor *master;
 	idAngles tempAngle, partialAngle;

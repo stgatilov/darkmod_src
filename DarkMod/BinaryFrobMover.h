@@ -47,7 +47,7 @@ public:
 	/**
 	* This is the non-script version of GetOpen 
 	*/
-	bool					isOpen()
+	bool					isOpen(void)
 	{
 		return m_Open;
 	}
@@ -55,7 +55,7 @@ public:
 	/**
 	* This indicates if the door was interrupted in its last action
 	*/
-	bool wasInterrupted()
+	bool wasInterrupted(void)
 	{
 		return m_bInterrupted;
 	}
@@ -63,7 +63,7 @@ public:
 	/**
 	* This is the non-script version of GetLock
 	*/
-	bool					isLocked()
+	virtual bool isLocked(void)
 	{
 		return m_Locked;
 	}

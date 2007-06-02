@@ -193,3 +193,14 @@ void CFrobDoorHandle::Tap(void)
 	signal = m_Door->AddSDKSignal(SigOpen, NULL);
 	CallScriptFunctionArgs(m_DoorHandleScript.c_str(), true, 0, "eef", this, m_Door, signal);
 }
+
+bool CFrobDoorHandle::isLocked(void)
+{
+	bool bLocked = m_Locked;
+
+	if(m_Door)
+		bLocked = m_Door->isLocked();
+
+	return bLocked;
+}
+

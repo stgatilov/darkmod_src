@@ -67,6 +67,8 @@ public:
 	void					DoneRotating(void);
 	void					DoneMoving(void);
 
+	bool					isLocked(void);
+
 	void					Tap(void);
 
 protected:
