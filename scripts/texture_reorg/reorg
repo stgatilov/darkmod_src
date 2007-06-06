@@ -1,0 +1,128 @@
+#!/usr/bin/python
+
+import os
+import string
+import sys
+#from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
+
+LOGFILE="reorg_logfile.txt"
+SrcPath="/cygdrive/d/Programme/ModLib/darkmod"
+DstPath="."
+
+class Texture:
+	def __init__(self):
+		self.TextureName = ""
+		self.TextureExt = ""
+		self.TextureMaterial = ""
+		self.TexturePath = ""
+
+	def __repr__(self):
+		return "['"+self.TextureName + "', '" + self.TextureExt + "', " + self.TextureMaterial + "', '" + self.TexturePath+"']"
+
+class TextureRecord:
+	def __init__(self):
+		self.mNew = Texture()
+		self.mOld = Texture()
+		self.MaterialFilename = ""
+
+	def __repr__(self):
+		return "['"+self.MaterialFilename + "', " + self.mOld.__repr__() + ", " + self.mNew.__repr__()+"]"
+
+
+class TextureReorg:
+	def __init__(self, Logfile, SrcPath, DstPath, InputFile):
+		self.mLogFile = self.OpenFile(Logfile, "w+b")
+		self.mInput = self.OpenFile(InputFile, "r+b")
+		self.mSrcPath = SrcPath
+		self.mDstPath = DstPath
+
+		self.mDir = []
+
+	def OpenFile(self, name, mode):
+		try:
+			fl = file(name, mode)
+		except IOError:
+			print "Couldn't open "+name
+			sys.exit(1)
+		return fl
+
+	def ParseInput(self):
+		bSVN = 0
+		bDir = 0
+		dir = []
+		path = ""
+		while 1:
+			ln = self.mInput.readline()
+
+			if not ln:
+				break
+
+			ln = ln.strip()
+			if(len(ln) == 0):
+				continue
+
+			if(len(ln.split("Volume")) > 1):
+				continue
+
+			if(len(ln.split("File(s)")) > 1):
+				continue
+
+			if(len(ln.split("Total Files Listed:")) > 1):
+				continue
+
+			if(len(ln.split("Dir(s)")) > 1):
+				continue
+
+			if(len(ln.split("<DIR>")) > 1):
+				continue
+
+			# We need to get all directory names ...
+			t = ln.split("Directory of")
+			if(len(t) > 1):
+				bSVN = 0
+				bDir = 1
+
+			# ... but only if it's not part of SVN
+			if(len(ln.split(".svn")) > 1):
+				bSVN = 1
+
+			if(bSVN == 1):
+				continue
+
+			if(bDir == 1):
+				bDir = 0
+				if(len(dir) != 0):
+					print dir
+					self.mDir.append(dir)
+
+				path = t[1]
+				continue
+
+			t = ln[39:]
+			v = t.split(".")
+			record = TextureRecord()
+			record.mNew.TexturePath = path.strip()
+			if(len(v) == 2):
+				record.mNew.TextureName = (v[0]+"."+v[1]).strip()
+				record.mNew.TextureExt = v[1].strip()
+			elif(len(v) == 4):
+				record.mOld.TextureName = (v[0]+"."+v[1]).strip()
+				record.mOld.TextureExt = v[1].strip()
+				record.mNew.TextureName = (v[2]+"."+v[3]).strip()
+				record.mNew.TextureExt = v[3].strip()
+			else:
+				print "Wrong number of arguments: "+ln
+
+			dir.append(record)
+			#print t
+
+if __name__ == '__main__':
+	#setDebugging(1)
+	if len(sys.argv) <= 1:
+		print "USAGE: reorg Inputfile"
+		sys.exit(1)
+
+	reorg = TextureReorg(LOGFILE, SrcPath, DstPath, sys.argv[1])
+	reorg.ParseInput()
+
+	sys.exit(0)

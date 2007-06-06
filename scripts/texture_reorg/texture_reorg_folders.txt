@@ -1,0 +1,1859 @@
+ Volume in drive D is Main Drive
+ Volume Serial Number is 58DB-10F0
+
+ Directory of D:\temp2\textures
+
+04/21/2007  03:42 PM    <DIR>          .
+04/21/2007  03:42 PM    <DIR>          ..
+05/31/2007  08:20 PM    <DIR>          darkmod
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod
+
+05/31/2007  08:20 PM    <DIR>          .
+05/31/2007  08:20 PM    <DIR>          ..
+05/31/2007  08:15 PM    <DIR>          carpet
+04/23/2007  07:41 PM    <DIR>          decals
+04/23/2007  07:43 PM    <DIR>          door
+05/09/2007  08:00 PM    <DIR>          map_specific
+05/12/2007  11:15 AM    <DIR>          metal
+04/23/2007  08:03 PM    <DIR>          nature
+05/26/2007  11:48 AM    <DIR>          paint_paper
+05/01/2007  07:32 PM    <DIR>          roof
+05/05/2007  07:25 PM    <DIR>          sfx
+05/31/2007  08:20 PM    <DIR>          stone
+05/05/2007  03:40 PM    <DIR>          window
+05/31/2007  08:26 PM    <DIR>          wood
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\carpet
+
+05/31/2007  08:15 PM    <DIR>          .
+05/31/2007  08:15 PM    <DIR>          ..
+05/09/2007  07:55 PM    <DIR>          rugs
+05/09/2007  07:57 PM    <DIR>          runners
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\carpet\rugs
+
+05/09/2007  07:55 PM    <DIR>          .
+05/09/2007  07:55 PM    <DIR>          ..
+02/24/2007  09:22 PM           393,260 ornate_black_gold01.tga.setrug01.tga
+02/24/2007  09:22 PM           393,260 ornate_black_gold01_local.tga.setrug01_local.tga
+02/24/2007  09:22 PM           393,260 ornate_floral_checker01.tga.setrug02.tga
+02/24/2007  09:22 PM           393,260 ornate_floral_checker01_local.tga.setrug02_local.tga
+05/09/2007  07:54 PM           393,260 ornate_green_black01.tga.setrug03sh.tga
+02/24/2007  09:22 PM           394,185 ornate_green_black01_local.tga.setrug03sh_local.tga
+02/24/2007  09:22 PM           394,138 ornate_rectangles_brown01.tga.setrug03.tga
+02/24/2007  09:22 PM           394,087 ornate_rectangles_brown01_local.tga.setrug03_local.tga
+02/24/2007  09:22 PM           394,251 ornate_red_tan01.tga.setrug01sh.tga
+02/24/2007  09:22 PM           394,186 ornate_red_tan01_local.tga.setrug01sh_local.tga
+05/09/2007  07:49 PM           393,260 ornate_red_tan02.tga.setrug02sh.tga
+02/24/2007  09:22 PM           393,980 ornate_red_tan02_local.tga.setrug02sh_local.tga
+              12 File(s)      4,724,387 bytes
+
+ Directory of D:\temp2\textures\darkmod\carpet\runners
+
+05/09/2007  07:57 PM    <DIR>          .
+05/09/2007  07:57 PM    <DIR>          ..
+02/24/2007  09:22 PM           197,103 geometric01_end_local.tga.setrug04end_local.tga
+02/24/2007  09:22 PM           393,722 geometric01_local.tga.setrug04cen_local.tga
+02/24/2007  09:22 PM           394,172 geometric01_red.tga.setrug04cen.tga
+02/24/2007  09:22 PM           196,922 geometric01_red_end.tga.setrug04end.tga
+               4 File(s)      1,181,919 bytes
+
+ Directory of D:\temp2\textures\darkmod\decals
+
+04/23/2007  07:41 PM    <DIR>          .
+04/23/2007  07:41 PM    <DIR>          ..
+04/23/2007  07:40 PM    <DIR>          blood
+05/04/2007  08:14 PM    <DIR>          dirt
+05/03/2007  08:20 PM    <DIR>          symbols
+05/05/2007  12:23 PM    <DIR>          vegetation
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\decals\blood
+
+04/23/2007  07:40 PM    <DIR>          .
+04/23/2007  07:40 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\decals\dirt
+
+05/04/2007  08:14 PM    <DIR>          .
+05/04/2007  08:14 PM    <DIR>          ..
+12/10/2005  07:54 PM            91,680 dripping_slime01.tga
+12/11/2005  04:10 PM            91,487 dripping_slime01_light.tga
+12/11/2005  04:13 PM           490,632 dripping_slime02.tga
+12/11/2005  05:45 PM           268,595 dripping_slime03.tga
+12/11/2005  05:46 PM           317,951 dripping_slime04.tga
+03/11/2007  02:56 PM           476,814 dripping_slime05.tga.dirt_002.tga
+03/11/2007  02:56 PM           410,960 dripping_slime05_left.tga.dirt_002_edge_left.tga
+03/11/2007  02:56 PM           445,051 dripping_slime05_right.tga.dirt_002_edge_right.tga
+12/10/2005  06:23 PM           327,519 long_drip_pattern01.tga
+03/20/2007  08:50 PM         1,046,985 moss_patch_thick01.tga.moss_d.tga
+03/20/2007  08:50 PM           788,363 moss_patch_thick01.tga.moss_local.tga
+12/10/2005  06:27 PM            67,836 scattered_dirt01.tga
+03/11/2007  02:56 PM           678,910 scattered_dirt02.tga.dirt_001.tga
+12/10/2005  04:59 PM            53,634 splat01.tga
+12/10/2005  06:25 PM           139,282 splat02.tga
+12/10/2005  06:27 PM           165,966 splat_small03.tga
+03/11/2007  07:12 PM           496,244 torch_smut_ceiling.tga
+03/11/2007  07:12 PM           467,708 torch_smut_wall.tga
+12/10/2005  07:36 PM         1,048,620 wall_grime01.tga
+12/10/2005  06:51 PM           675,636 wall_grime02.tga
+12/10/2005  07:50 PM           105,894 wall_grime03.tga
+12/10/2005  07:49 PM           786,476 wall_grime04.tga
+12/10/2005  06:45 PM           406,879 wall_grime05.tga
+              23 File(s)      9,849,122 bytes
+
+ Directory of D:\temp2\textures\darkmod\decals\symbols
+
+05/03/2007  08:20 PM    <DIR>          .
+05/03/2007  08:20 PM    <DIR>          ..
+02/24/2007  07:50 PM           131,116 magical_letters_row01.tga.pagdecvoyn.tga
+02/24/2007  07:50 PM           262,188 magic_symbol_circle01.tga.pagdecfleur.tga
+               2 File(s)        393,304 bytes
+
+ Directory of D:\temp2\textures\darkmod\decals\vegetation
+
+05/05/2007  12:23 PM    <DIR>          .
+05/05/2007  12:23 PM    <DIR>          ..
+12/14/2005  12:03 AM         1,048,620 autumn_leaves_thick01.tga
+12/14/2005  12:00 AM           262,188 dead_leaves_few01.tga
+05/05/2007  12:20 PM           393,260 hanging_horizontal_leaves.tga.natural01.tga
+02/24/2007  09:29 PM            48,057 hanging_horizontal_leaves_local.tga.natural01_local.tga
+02/24/2007  09:29 PM            10,727 hanging_horizontal_leaves_s.tga.natural01_s.tga
+02/25/2007  01:14 AM            87,528 ivypatch_average01.dds.ivy_001_patch1.dds
+02/25/2007  01:14 AM           174,904 ivypatch_large01.dds.ivy_001_patch2.dds
+02/25/2007  01:14 AM             5,608 ivypatch_small01.dds.ivy_001_small1.dds
+02/25/2007  01:14 AM            11,064 ivypatch_tiny01.dds.ivy_001_small2.dds
+03/18/2007  03:28 PM         4,194,348 ivy_mixed_pieces.tga.ivy_002.tga
+03/18/2007  03:28 PM            22,364 ivy_mixed_pieces_ed.jpg.ivy_002_ed.jpg
+03/18/2007  03:28 PM         3,146,267 ivy_mixed_pieces_local.tga.ivy_002_local.tga
+03/18/2007  03:28 PM           786,971 ivy_mixed_pieces_s.tga.ivy_002_s.tga
+03/18/2007  03:28 PM           524,332 ivy_scattered_branches.tga.ivy_004.tga
+03/18/2007  03:28 PM            20,168 ivy_scattered_branches_ed.jpg.ivy_004_ed.jpg
+03/18/2007  03:28 PM           393,260 ivy_scattered_branches_local.tga.ivy_004_local.tga
+03/18/2007  03:28 PM           393,260 ivy_scattered_branches_s.tga.ivy_004_s.tga
+03/18/2007  03:28 PM           524,332 ivy_vertical_branches.tga.ivy_003.tga
+03/18/2007  03:28 PM            17,514 ivy_vertical_branches_ed.jpg.ivy_003_ed.jpg
+03/18/2007  03:28 PM           393,260 ivy_vertical_branches_local.tga.ivy_003_local.tga
+03/18/2007  03:28 PM           393,260 ivy_vertical_branches_s.tga.ivy_003_s.tga
+02/24/2007  09:29 PM           262,188 tropical_broadleaf.tga.plant01.tga
+02/24/2007  09:29 PM           262,188 tropical_fern01.tga.plant02.tga
+              23 File(s)     13,375,668 bytes
+
+ Directory of D:\temp2\textures\darkmod\door
+
+04/23/2007  07:43 PM    <DIR>          .
+04/23/2007  07:43 PM    <DIR>          ..
+05/26/2007  07:05 PM    <DIR>          metal
+05/03/2007  07:31 PM    <DIR>          wood
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\door\metal
+
+05/26/2007  07:05 PM    <DIR>          .
+05/26/2007  07:05 PM    <DIR>          ..
+04/23/2007  07:41 PM    <DIR>          bars
+03/07/2006  02:09 PM         1,572,908 large_warehouse_old_green01.tga
+03/07/2006  02:32 PM         1,560,648 large_warehouse_old_local.tga
+03/15/2006  07:39 PM         1,496,963 large_warehouse_old_s.tga
+05/26/2007  07:05 PM           393,260 simple_rough01.tga
+05/26/2007  07:02 PM           393,260 simple_rough01_local.tga
+               5 File(s)      5,417,039 bytes
+
+ Directory of D:\temp2\textures\darkmod\door\metal\bars
+
+04/23/2007  07:41 PM    <DIR>          .
+04/23/2007  07:41 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\door\wood
+
+05/03/2007  07:31 PM    <DIR>          .
+05/03/2007  07:31 PM    <DIR>          ..
+04/30/2007  06:34 PM           393,260 board_plainblue_hinge01.tga
+04/30/2007  06:34 PM           393,260 board_plainblue_hinge02.tga
+04/30/2007  06:22 PM           393,260 board_plain_hinge01.tga
+04/30/2007  06:22 PM           393,260 board_plain_hinge01_local.tga
+04/30/2007  06:32 PM           393,260 board_plain_hinge02.tga
+04/30/2007  06:31 PM           393,260 board_plain_hinge02_local.tga
+12/12/2005  11:18 PM         1,570,089 board_withwindow_green01.tga
+02/24/2007  10:53 PM           393,615 diamond_pattern01.tga.ctydoor01.tga
+04/26/2007  07:41 PM           393,260 diamond_pattern01_local.tag.ctydoor01_local.tga
+04/26/2007  06:46 PM           393,260 metalbands_crisscross01.tga.casdoor01.tga
+02/24/2007  11:16 PM           281,463 metalbands_crisscross01_local.tga.casdoor01_local.tga
+02/24/2007  11:16 PM            67,557 metalbands_crisscross01_s.tga.casdoor01_s.tga
+02/25/2007  02:03 AM            87,528 oldboards_metalspirals01.dds.antique_001.dds
+02/24/2007  11:06 PM            98,843 oldboards_metalspirals01_ed.tga.antique_001_editor.tga
+02/24/2007  11:06 PM           393,260 oldboards_metalspirals01_local.tga.antique_001_local.tga
+02/24/2007  02:12 PM           774,211 old_4panels_peelingpaint01.tga.warehouse_frontdoor_d.tga
+04/26/2007  07:43 PM           393,260 old_flat_oak01.tga.mandoor01.tga
+04/26/2007  07:44 PM           393,260 old_flat_oak01_local.tga.mandoor01_local.tga
+04/26/2007  07:47 PM            98,348 old_flat_oak01_s.tga.mandoor01_s.tga
+04/27/2007  08:07 PM         1,572,908 old_weathered_boards01.tga.weathered_001_d.tga
+02/24/2007  11:06 PM         1,575,457 old_weathered_boards01_local.tga.weathered_001_local.tga
+05/01/2007  07:48 PM    <DIR>          ornate
+02/24/2007  02:12 PM           774,211 rough_4panels_peelingpaint.tga.warehouse_frontdoor_d.tga
+02/24/2007  10:03 PM           393,088 smooth_2panels_rich.tga.mandoor06.tga
+02/24/2007  10:03 PM           387,511 smooth_2panels_rich_local.tga.mandoor06_local.tga
+02/24/2007  10:03 PM            95,566 smooth_2panels_rich_s.tga.mandoor06_s.tga
+02/24/2007  10:03 PM           393,260 smooth_3panels01_dull01.tga.mandoor01sh.tga
+04/27/2007  08:19 PM            24,620 smooth_3panels01_dull_s.tga.mandoor01sh_s.tga
+02/24/2007  10:03 PM           393,260 smooth_3panels01_remove_local.tga.mandoor01sh_local.tga
+02/24/2007  10:03 PM           393,260 smooth_3panels_local.tga.mandoor03_local.tga
+02/24/2007  10:03 PM           393,260 smooth_3panels_red01.tga.mandoor03.tga
+02/24/2007  10:03 PM           389,788 smooth_4panels_local.tga.mandoor02ab_local.tga
+02/24/2007  10:03 PM           364,211 smooth_4panels_red01.tga.mandoor02b.tga
+02/24/2007  10:03 PM           387,862 smooth_4panels_tan01.tga.mandoor02a.tga
+              33 File(s)     15,235,776 bytes
+
+ Directory of D:\temp2\textures\darkmod\door\wood\ornate
+
+05/01/2007  07:48 PM    <DIR>          .
+05/01/2007  07:48 PM    <DIR>          ..
+02/24/2007  10:03 PM           393,844 smooth_rich_ovalwindow01.tga.mandoor04.tga
+02/24/2007  10:03 PM           394,427 smooth_rich_ovalwindow01_local.tga.mandoor04_local.tga
+02/24/2007  10:03 PM            94,637 smooth_rich_ovalwindow01_s.tga.mandoor04_s.tga
+02/24/2007  10:03 PM           392,193 smooth_rich_squarewindow01.tga.mandoor05.tga
+02/24/2007  09:29 PM            80,446 smooth_rich_squarewindow01_alpha.tga.mandoor05_withalpha.tga
+02/24/2007  10:03 PM           376,983 smooth_rich_squarewindow01_local.tga.mandoor05_local.tga
+02/24/2007  10:03 PM            92,516 smooth_rich_squarewindow01_s.tga.mandoor05_s.tga
+               7 File(s)      1,825,046 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+05/09/2007  08:00 PM    <DIR>          bonehoard
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+05/09/2007  08:00 PM    <DIR>          env
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn
+
+05/06/2007  09:04 PM               932 all-wcprops
+05/08/2007  07:32 PM             1,117 entries
+03/11/2007  02:56 PM                 2 format
+05/09/2007  08:00 PM    <DIR>          prop-base
+05/09/2007  08:00 PM    <DIR>          props
+05/09/2007  08:00 PM    <DIR>          text-base
+05/09/2007  08:00 PM    <DIR>          tmp
+               3 File(s)          2,051 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\prop-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+03/11/2007  02:56 PM                53 dirt_001.tga.svn-base
+03/11/2007  02:56 PM                53 dirt_002.tga.svn-base
+03/11/2007  02:56 PM                53 dirt_002_edge_left.tga.svn-base
+03/11/2007  02:56 PM                53 dirt_002_edge_right.tga.svn-base
+03/11/2007  07:12 PM                53 torch_smut_ceiling.tga.svn-base
+03/11/2007  07:11 PM                53 torch_smut_wall.tga.svn-base
+               6 File(s)            318 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\props
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\text-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+03/11/2007  02:56 PM           678,910 dirt_001.tga.svn-base
+03/11/2007  02:56 PM           476,814 dirt_002.tga.svn-base
+03/11/2007  02:56 PM           410,960 dirt_002_edge_left.tga.svn-base
+03/11/2007  02:56 PM           445,051 dirt_002_edge_right.tga.svn-base
+03/11/2007  07:12 PM           496,244 torch_smut_ceiling.tga.svn-base
+03/11/2007  07:11 PM           467,708 torch_smut_wall.tga.svn-base
+               6 File(s)      2,975,687 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\tmp
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+05/09/2007  08:00 PM    <DIR>          prop-base
+05/09/2007  08:00 PM    <DIR>          props
+05/09/2007  08:00 PM    <DIR>          text-base
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\tmp\prop-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\tmp\props
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\.svn\tmp\text-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+04/28/2007  06:25 PM           786,476 water_entrance_back.tga
+04/28/2007  06:25 PM             8,236 water_entrance_down.tga
+04/28/2007  06:25 PM           786,476 water_entrance_forward.tga
+04/28/2007  06:25 PM           786,476 water_entrance_left.tga
+04/28/2007  06:25 PM           786,476 water_entrance_right.tga
+04/28/2007  06:25 PM           786,476 water_entrance_up.tga
+               6 File(s)      3,940,616 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn
+
+04/28/2007  06:25 PM             1,020 all-wcprops
+05/08/2007  07:32 PM             1,140 entries
+04/28/2007  06:25 PM                 2 format
+05/09/2007  08:00 PM    <DIR>          prop-base
+05/09/2007  08:00 PM    <DIR>          props
+05/09/2007  08:00 PM    <DIR>          text-base
+05/09/2007  08:00 PM    <DIR>          tmp
+               3 File(s)          2,162 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\prop-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+04/28/2007  06:25 PM                53 water_entrance_back.tga.svn-base
+04/28/2007  06:25 PM                53 water_entrance_down.tga.svn-base
+04/28/2007  06:25 PM                53 water_entrance_forward.tga.svn-base
+04/28/2007  06:25 PM                53 water_entrance_left.tga.svn-base
+04/28/2007  06:25 PM                53 water_entrance_right.tga.svn-base
+04/28/2007  06:25 PM                53 water_entrance_up.tga.svn-base
+               6 File(s)            318 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\props
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\text-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+04/28/2007  06:25 PM           786,476 water_entrance_back.tga.svn-base
+04/28/2007  06:25 PM             8,236 water_entrance_down.tga.svn-base
+04/28/2007  06:25 PM           786,476 water_entrance_forward.tga.svn-base
+04/28/2007  06:25 PM           786,476 water_entrance_left.tga.svn-base
+04/28/2007  06:25 PM           786,476 water_entrance_right.tga.svn-base
+04/28/2007  06:25 PM           786,476 water_entrance_up.tga.svn-base
+               6 File(s)      3,940,616 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\tmp
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+05/09/2007  08:00 PM    <DIR>          prop-base
+05/09/2007  08:00 PM    <DIR>          props
+05/09/2007  08:00 PM    <DIR>          text-base
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\tmp\prop-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\tmp\props
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\map_specific\bonehoard\env\.svn\tmp\text-base
+
+05/09/2007  08:00 PM    <DIR>          .
+05/09/2007  08:00 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal
+
+05/12/2007  11:15 AM    <DIR>          .
+05/12/2007  11:15 AM    <DIR>          ..
+05/10/2007  09:23 PM    <DIR>          detailed
+06/01/2007  07:56 PM    <DIR>          flat
+06/01/2007  07:57 PM    <DIR>          grate
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\detailed
+
+05/10/2007  09:23 PM    <DIR>          .
+05/10/2007  09:23 PM    <DIR>          ..
+04/23/2007  07:49 PM    <DIR>          nontiling
+02/24/2007  11:12 PM           197,448 panel_circledesign01_brown.tga.caswpanel01b.tga
+02/24/2007  11:12 PM           195,114 panel_circledesign01_green.tga.caswpanel01.tga
+02/24/2007  11:12 PM           188,810 panel_circledesign01_local.tga.caswpanel01_local.tga
+02/24/2007  11:12 PM           196,652 panel_circledesign_ornate01_green.tga.caswpanel02.tga
+02/24/2007  11:12 PM           186,464 panel_circledesign_ornate01_local.tga.caswpanel02_local.tga
+04/23/2007  07:50 PM    <DIR>          tiling_1d
+               5 File(s)        964,488 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\detailed\nontiling
+
+04/23/2007  07:49 PM    <DIR>          .
+04/23/2007  07:49 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\detailed\tiling_1d
+
+04/23/2007  07:50 PM    <DIR>          .
+04/23/2007  07:50 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\flat
+
+06/01/2007  07:56 PM    <DIR>          .
+06/01/2007  07:56 PM    <DIR>          ..
+02/24/2007  09:38 PM           780,275 gen_detail.tga
+02/25/2007  01:13 AM           699,192 heavy_rust_pocked01.dds.rust_002_d.DDS
+02/24/2007  09:33 PM           196,652 heavy_rust_pocked01_ed.tga.rust_002_ed.tga
+02/24/2007  09:33 PM         3,145,772 heavy_rust_pocked_local.tga.rust_002_local.tga
+02/25/2007  01:13 AM           699,192 heavy_rust_pocked_s.dds.rust_002_s.DDS
+05/10/2007  09:23 PM    <DIR>          nontiling
+02/24/2007  10:47 PM           786,476 simple_grey01.tga.metal01_d.tga
+02/24/2007  10:47 PM           786,476 simple_grey01_local.tga.metal01_local.tga
+02/24/2007  10:47 PM           786,476 simple_grey01_s.tga.metal01_s.tga
+03/04/2007  05:11 PM           699,192 simple_rough_grey01.dds.rust_004_d.DDS
+03/04/2007  05:10 PM           196,713 simple_rough_grey01_ed.tga.rust_004_ed.tga
+03/04/2007  05:10 PM         3,153,901 simple_rough_grey01_local.tga.rust_004_local.tga
+02/25/2007  01:13 AM           699,192 solid_rust01.dds.rust_003_d.DDS
+02/24/2007  09:33 PM           197,149 solid_rust01_ed.tga.rust_003_ed.tga
+02/24/2007  09:33 PM         3,153,219 solid_rust01_local.tga.rust_003_local.tga
+04/15/2007  04:11 PM           699,192 solid_rust02.dds.rust_005.dds
+04/15/2007  04:09 PM            18,755 solid_rust02_ed.jpg.rust_005_editor.jpg
+04/15/2007  04:09 PM         3,145,772 solid_rust02_local.tga.rust_005_local.tga
+04/15/2007  04:11 PM           174,904 solid_rust02_s.dds.rust_005_s.dds
+05/23/2007  07:26 PM    <DIR>          tiling_1d
+              18 File(s)     20,018,500 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\flat\nontiling
+
+05/10/2007  09:23 PM    <DIR>          .
+05/10/2007  09:23 PM    <DIR>          ..
+03/07/2006  03:08 PM           391,562 roughedup_steel.tga.metalpole_d.tga
+03/07/2006  03:12 PM           354,981 roughedup_steel_s.tga.metalpole_s.tga
+               2 File(s)        746,543 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\flat\tiling_1d
+
+05/23/2007  07:26 PM    <DIR>          .
+05/23/2007  07:26 PM    <DIR>          ..
+02/24/2007  09:38 PM           716,116 gen_dark_rusted01.tga.rust_001_d.tga
+02/24/2007  09:38 PM           717,252 gen_dark_rusted01_local.tga.rust_001_local.tga
+02/24/2007  09:38 PM           500,493 gen_dark_rusted01_s.tga.rust_001_s.tga
+02/24/2007  09:38 PM           564,102 gen_default_framed_d.tga
+02/24/2007  09:38 PM             8,236 gen_default_framed_local.tga
+02/24/2007  09:38 PM           242,089 gen_default_framed_s.tga
+02/24/2007  09:38 PM           646,312 gen_ornate_iron01.tga.iron_002_d.tga
+02/24/2007  09:38 PM           692,620 gen_peeling_paint01.tga.paintedmetal_001_d.tga
+02/24/2007  09:38 PM           684,534 gen_peeling_paint01_local.tga.paintedmetal_001_local.tga
+02/24/2007  09:38 PM           470,097 gen_peeling_paint01_s.tga.paintedmetal_001_s.tga
+02/24/2007  09:38 PM           524,939 gen_shiny_brushedmetal01.tga.brushedmetal_001_d.tga
+02/24/2007  09:38 PM           695,750 gen_shiny_brushedmetal01_local.tga.brushedmetal_001_local.tga
+02/24/2007  09:38 PM           368,931 gen_shiny_brushedmetal01_s.tga.brushedmetal_001_s.tga
+05/10/2007  09:33 PM           786,476 gen_smooth_bronze01.tga.bronze_001_d.tga
+02/24/2007  09:38 PM           361,498 gen_smooth_bronze01_local.tga.bronze_001_local.tga
+02/24/2007  09:38 PM           114,580 gen_smooth_bronze01_s.tga.bronze_001_s.tga
+02/24/2007  09:38 PM           220,395 gen_smooth_copper01.tga.copper_001_d.tga
+02/24/2007  09:38 PM           606,726 gen_smooth_copper01_local.tga.copper_001_local.tga
+02/24/2007  09:38 PM           392,118 gen_smooth_copper01_s.tga.copper_001_s.tga
+02/24/2007  09:38 PM           716,365 gen_smooth_gold01.tga.gold_001_d.tga
+02/24/2007  09:38 PM             8,236 gen_smooth_gold01_local.tga.gold_001_local.tga
+02/24/2007  09:38 PM           565,217 gen_smooth_gold01_s.tga.gold_001_s.tga
+02/24/2007  09:38 PM           512,858 gen_smooth_iron01.tga.iron_001_d.tga
+02/24/2007  09:38 PM           756,144 gen_smooth_iron01_local.tga.iron_001_local.tga
+02/24/2007  09:38 PM           513,754 gen_smooth_iron01_s.tga.iron_001_s.tga
+02/24/2007  09:38 PM           570,766 gen_smooth_silver01.tga.silver_001_d.tga
+02/24/2007  09:38 PM             8,236 gen_smooth_silver01_local.tga.silver_001_local.tga
+02/24/2007  09:38 PM           491,194 gen_smooth_silver01_s.tga.silver_001_s.tga
+02/25/2007  01:30 AM           349,672 rough_dirty01.dds.cement_012.dds
+02/24/2007  08:20 PM           394,128 rough_dirty01_ed.tga.cement_012_editor.tga
+02/24/2007  08:20 PM         1,576,194 rough_dirty01_local.tga.cement_012_local.tga
+02/25/2007  01:30 AM           349,672 rough_iron01.dds.cement_014.dds
+02/24/2007  08:20 PM         1,537,807 rough_iron01_ed.tga.cement_014_editor.tga
+02/24/2007  08:20 PM         1,576,335 rough_iron01_local.tga.cement_014_local.tga
+02/25/2007  01:30 AM           349,672 rough_rusted01.dds.cement_011.dds
+02/24/2007  08:20 PM           394,199 rough_rusted01_ed.tga.cement_011_editor.tga
+02/24/2007  08:20 PM         1,574,147 rough_rusted01_local.tga.cement_011_local.tga
+02/25/2007  01:30 AM           349,672 rough_rusted01_s.dds.cement_011_s.dds
+              38 File(s)     21,907,532 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\grate
+
+06/01/2007  07:57 PM    <DIR>          .
+06/01/2007  07:57 PM    <DIR>          ..
+04/15/2007  04:11 PM           699,192 dimpled_grating01.dds.grating_001.dds
+04/15/2007  04:09 PM            23,060 dimpled_grating01_ed.jpg.grating_001_editor.jpg
+04/15/2007  04:09 PM         3,145,772 dimpled_grating01_local.tga.grating_001_local.tga
+04/15/2007  04:11 PM            43,832 dimpled_grating01_s.dds.grating_001_s.dds
+04/23/2007  07:52 PM    <DIR>          nontiling
+04/23/2007  07:50 PM    <DIR>          tiling_1d
+               4 File(s)      3,911,856 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\grate\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\metal\grate\tiling_1d
+
+04/23/2007  07:50 PM    <DIR>          .
+04/23/2007  07:50 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature
+
+04/23/2007  08:03 PM    <DIR>          .
+04/23/2007  08:03 PM    <DIR>          ..
+05/12/2007  11:33 AM    <DIR>          dirt
+05/12/2007  11:33 AM    <DIR>          foliage
+05/12/2007  11:41 AM    <DIR>          grass
+05/05/2007  07:26 PM    <DIR>          skybox
+06/01/2007  07:58 PM    <DIR>          snow
+04/23/2007  07:44 PM    <DIR>          water
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\dirt
+
+05/12/2007  11:33 AM    <DIR>          .
+05/12/2007  11:33 AM    <DIR>          ..
+04/23/2007  07:52 PM    <DIR>          nontiling
+04/23/2007  07:51 PM    <DIR>          tiling_1d
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\dirt\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\dirt\tiling_1d
+
+04/23/2007  07:51 PM    <DIR>          .
+04/23/2007  07:51 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\foliage
+
+05/12/2007  11:33 AM    <DIR>          .
+05/12/2007  11:33 AM    <DIR>          ..
+05/12/2007  11:25 AM         1,572,908 flowers_pink_01.tga
+05/12/2007  11:26 AM         1,572,908 flowers_pink_01_local.tga
+05/12/2007  11:28 AM         1,572,908 flowers_violet_01.tga
+05/12/2007  11:28 AM         1,572,908 flowers_violet_01_local.tga
+05/12/2007  11:30 AM           786,476 flowers_violet_02.tga
+05/12/2007  11:30 AM           786,476 flowers_violet_02_local.tga
+02/25/2007  01:14 AM           174,904 hedge_001.dds
+02/24/2007  10:12 PM           262,640 hedge_001_editor.tga
+02/25/2007  01:14 AM           349,680 hedge_001_local.dds
+02/24/2007  10:12 PM           788,471 hedge_001_local.tga
+05/12/2007  11:32 AM    <DIR>          nontiling
+04/23/2007  07:51 PM    <DIR>          tiling_1d
+              10 File(s)      9,440,279 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\foliage\nontiling
+
+05/12/2007  11:32 AM    <DIR>          .
+05/12/2007  11:32 AM    <DIR>          ..
+05/12/2007  11:21 AM         1,572,908 flowers_blueviolet_01.tga
+05/12/2007  11:21 AM         1,572,908 flowers_blueviolet_01_local.tga
+05/12/2007  11:22 AM         1,572,908 flowers_mixed_01.tga
+05/12/2007  11:22 AM         1,572,908 flowers_mixed_01_local.tga
+05/12/2007  11:27 AM           196,652 flowers_redyellow_01.tga
+05/12/2007  11:27 AM           196,652 flowers_redyellow_01_local.tga
+02/24/2007  10:24 PM           197,659 flowers_red_01.tga
+02/24/2007  10:24 PM           197,093 flowers_red_01_local.tga
+05/12/2007  11:31 AM           786,476 flowers_white_01.tga
+05/12/2007  11:32 AM           786,476 flowers_white_01_local.tga
+              10 File(s)      8,652,640 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\foliage\tiling_1d
+
+04/23/2007  07:51 PM    <DIR>          .
+04/23/2007  07:51 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\grass
+
+05/12/2007  11:41 AM    <DIR>          .
+05/12/2007  11:41 AM    <DIR>          ..
+05/12/2007  11:41 AM    <DIR>          nontiling
+02/24/2007  09:29 PM         1,049,115 short_patchy_grass01.tga.grass01.tga
+02/24/2007  09:29 PM         1,049,115 short_patchy_grass01_local.tga.grass01_local.tga
+02/24/2007  09:29 PM           788,991 thick_grass01.tga.grass02.tga
+02/24/2007  09:29 PM           789,019 thick_grass01_local.tga.grass02_local.tga
+04/23/2007  07:51 PM    <DIR>          tiling_1d
+               4 File(s)      3,676,240 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\grass\nontiling
+
+05/12/2007  11:41 AM    <DIR>          .
+05/12/2007  11:41 AM    <DIR>          ..
+05/12/2007  11:40 AM         1,572,908 thick_straw01.tga.straw01.tga
+05/12/2007  11:40 AM         1,572,908 thick_straw01_local.tga.straw01_local.tga
+               2 File(s)      3,145,816 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\grass\tiling_1d
+
+04/23/2007  07:51 PM    <DIR>          .
+04/23/2007  07:51 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+05/05/2007  07:26 PM    <DIR>          dm_sqsky
+05/05/2007  07:26 PM    <DIR>          starry1
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:11 PM           196,652 dm_sqsky.tga
+               1 File(s)        196,652 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn
+
+02/24/2007  10:11 PM               232 all-wcprops
+05/04/2007  06:48 PM               403 entries
+02/24/2007  10:11 PM                 2 format
+05/05/2007  07:26 PM    <DIR>          prop-base
+05/05/2007  07:26 PM    <DIR>          props
+05/05/2007  07:26 PM    <DIR>          text-base
+05/05/2007  07:26 PM    <DIR>          tmp
+               3 File(s)            637 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\prop-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:11 PM                53 dm_sqsky.tga.svn-base
+               1 File(s)             53 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\props
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\text-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:11 PM           196,652 dm_sqsky.tga.svn-base
+               1 File(s)        196,652 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\tmp
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+05/05/2007  07:26 PM    <DIR>          prop-base
+05/05/2007  07:26 PM    <DIR>          props
+05/05/2007  07:26 PM    <DIR>          text-base
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\tmp\prop-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\tmp\props
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\dm_sqsky\.svn\tmp\text-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:11 PM         2,896,280 clouds.tga
+02/24/2007  10:11 PM         1,048,620 clouds2.tga
+02/24/2007  10:11 PM           121,556 moon.tga
+02/24/2007  10:11 PM           262,188 moon_crescent.tga
+02/24/2007  10:11 PM            16,428 moon_crescent_editor.tga
+02/24/2007  10:11 PM            49,691 moon_editor.tga
+02/24/2007  10:11 PM           262,683 moon_full.tga
+02/24/2007  10:11 PM            16,428 moon_full_editor.tga
+02/24/2007  10:11 PM           176,388 moon_full_glared.tga
+02/24/2007  10:11 PM           262,683 moon_gibbous.tga
+02/24/2007  10:11 PM            49,196 moon_gibbous_editor.tga
+02/24/2007  10:11 PM           262,683 moon_quarter.tga
+02/24/2007  10:11 PM            16,428 moon_quarter_editor.tga
+02/24/2007  10:11 PM         4,109,358 stars.tga
+02/24/2007  10:11 PM                48 white.tga
+              15 File(s)      9,550,658 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn
+
+02/24/2007  10:11 PM             2,126 all-wcprops
+05/04/2007  06:48 PM             2,418 entries
+02/24/2007  10:09 PM                 2 format
+05/05/2007  07:26 PM    <DIR>          prop-base
+05/05/2007  07:26 PM    <DIR>          props
+05/05/2007  07:26 PM    <DIR>          text-base
+05/05/2007  07:26 PM    <DIR>          tmp
+               3 File(s)          4,546 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\prop-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:09 PM                53 clouds.tga.svn-base
+02/24/2007  10:10 PM                53 clouds2.tga.svn-base
+02/24/2007  10:09 PM                53 moon.tga.svn-base
+02/24/2007  10:11 PM                53 moon_crescent.tga.svn-base
+02/24/2007  10:11 PM                53 moon_crescent_editor.tga.svn-base
+02/24/2007  10:11 PM                53 moon_editor.tga.svn-base
+02/24/2007  10:10 PM                53 moon_full.tga.svn-base
+02/24/2007  10:11 PM                53 moon_full_editor.tga.svn-base
+02/24/2007  10:09 PM                53 moon_full_glared.tga.svn-base
+02/24/2007  10:11 PM                53 moon_gibbous.tga.svn-base
+02/24/2007  10:09 PM                53 moon_gibbous_editor.tga.svn-base
+02/24/2007  10:10 PM                53 moon_quarter.tga.svn-base
+02/24/2007  10:11 PM                53 moon_quarter_editor.tga.svn-base
+02/24/2007  10:11 PM                53 stars.tga.svn-base
+02/24/2007  10:11 PM                53 white.tga.svn-base
+              15 File(s)            795 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\props
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\text-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+02/24/2007  10:09 PM         2,896,280 clouds.tga.svn-base
+02/24/2007  10:10 PM         1,048,620 clouds2.tga.svn-base
+02/24/2007  10:09 PM           121,556 moon.tga.svn-base
+02/24/2007  10:11 PM           262,188 moon_crescent.tga.svn-base
+02/24/2007  10:11 PM            16,428 moon_crescent_editor.tga.svn-base
+02/24/2007  10:11 PM            49,691 moon_editor.tga.svn-base
+02/24/2007  10:10 PM           262,683 moon_full.tga.svn-base
+02/24/2007  10:11 PM            16,428 moon_full_editor.tga.svn-base
+02/24/2007  10:09 PM           176,388 moon_full_glared.tga.svn-base
+02/24/2007  10:11 PM           262,683 moon_gibbous.tga.svn-base
+02/24/2007  10:09 PM            49,196 moon_gibbous_editor.tga.svn-base
+02/24/2007  10:10 PM           262,683 moon_quarter.tga.svn-base
+02/24/2007  10:11 PM            16,428 moon_quarter_editor.tga.svn-base
+02/24/2007  10:11 PM         4,109,358 stars.tga.svn-base
+02/24/2007  10:11 PM                48 white.tga.svn-base
+              15 File(s)      9,550,658 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\tmp
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+05/05/2007  07:26 PM    <DIR>          prop-base
+05/05/2007  07:26 PM    <DIR>          props
+05/05/2007  07:26 PM    <DIR>          text-base
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\tmp\prop-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\tmp\props
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\skybox\starry1\.svn\tmp\text-base
+
+05/05/2007  07:26 PM    <DIR>          .
+05/05/2007  07:26 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\snow
+
+06/01/2007  07:58 PM    <DIR>          .
+06/01/2007  07:58 PM    <DIR>          ..
+04/23/2007  07:52 PM    <DIR>          nontiling
+02/25/2007  01:15 AM           174,904 plain_ice01.dds.icy_001.dds
+02/24/2007  07:47 PM           196,652 plain_ice01_ed.tga.icy_001_editor.tga
+02/24/2007  07:47 PM           786,476 plain_ice01_local.tga.icy_001_local.tga
+02/25/2007  01:15 AM           174,904 plain_ice01_s.dds.icy_001_s.dds
+02/25/2007  01:15 AM           699,192 plain_snow01.dds.rippled_001.dds
+02/24/2007  07:47 PM         3,145,772 plain_snow01_local.tga.rippled_001_local.tga
+04/23/2007  07:51 PM    <DIR>          tiling_1d
+               6 File(s)      5,177,900 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\snow\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\snow\tiling_1d
+
+04/23/2007  07:51 PM    <DIR>          .
+04/23/2007  07:51 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\nature\water
+
+04/23/2007  07:44 PM    <DIR>          .
+04/23/2007  07:44 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\paint_paper
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+05/26/2007  11:48 AM    <DIR>          nontiling
+05/26/2007  11:48 AM    <DIR>          tiling_1d
+02/24/2007  09:54 PM           786,450 wallpaper_flowers_01.tga.manwall03.tga
+02/24/2007  09:54 PM           786,476 wallpaper_flowers_01_local.tga.manwall03_local.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_01_blue.tga.manwall04b.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_01_green.tga.manwall04c.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_01_local.tga.manwall04_local.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_01_pink.tga.manwall04a.tga
+05/18/2007  10:26 PM           786,476 wallpaper_ornamental_01_red.tga.manwall04d.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_02_white.tga.manwall05.tga
+02/24/2007  09:54 PM           786,476 wallpaper_ornamental_02_white_local.tga.manwall05_local.tga
+               9 File(s)      7,078,258 bytes
+
+ Directory of D:\temp2\textures\darkmod\paint_paper\nontiling
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\paint_paper\tiling_1d
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\roof
+
+05/01/2007  07:32 PM    <DIR>          .
+05/01/2007  07:32 PM    <DIR>          ..
+04/23/2007  07:52 PM    <DIR>          nontiling
+02/24/2007  10:57 PM         1,011,879 shingle_dullbrown01.tga.ctyroof02.tga
+02/24/2007  10:57 PM         1,046,020 shingle_dullbrown01_local.tga.ctyroof02_local.tga
+02/24/2007  10:57 PM           393,260 shingle_shiny_greenish01.tga.rooftile_01_d.tga
+02/24/2007  10:57 PM           393,260 shingle_shiny_greenish01_local.tga.rooftile_01_local.tga
+02/24/2007  10:57 PM           393,260 shingle_shiny_greenish01_s.tga.rooftile_01_s.tga
+02/24/2007  10:57 PM           786,476 slate_uneven_withmoss01.tga.ctyroof01.tga
+02/24/2007  10:57 PM           786,476 slate_uneven_withmoss01_local.tga.ctyroof01_local.tga
+02/24/2007  10:57 PM           392,764 slats_uneven_wood01.tga.rt_woodenrooftiles01_d.tga
+02/24/2007  10:57 PM           392,099 slats_uneven_wood01_local.tga.rt_woodenrooftiles01_local.tga
+04/23/2007  07:51 PM    <DIR>          tiling_1d
+               9 File(s)      5,595,494 bytes
+
+ Directory of D:\temp2\textures\darkmod\roof\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\roof\tiling_1d
+
+04/23/2007  07:51 PM    <DIR>          .
+04/23/2007  07:51 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+02/24/2007  09:29 PM            64,021 blueglass.tga
+02/24/2007  09:29 PM            63,499 greenglass.tga
+02/24/2007  09:29 PM            25,115 light_rays.tga
+02/24/2007  09:29 PM           376,983 mandoor05_local.tga
+02/24/2007  09:29 PM            80,446 mandoor05_withalpha.tga
+02/24/2007  09:29 PM           524,753 manwindow02b_withalpha.tga
+02/24/2007  09:29 PM            66,025 redglass.tga
+02/24/2007  09:29 PM            65,190 whiteglass.tga
+               8 File(s)      1,266,032 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn
+
+02/24/2007  09:29 PM             1,128 all-wcprops
+05/04/2007  06:48 PM             1,356 entries
+02/24/2007  09:29 PM                 2 format
+05/05/2007  07:25 PM    <DIR>          prop-base
+05/05/2007  07:25 PM    <DIR>          props
+05/05/2007  07:25 PM    <DIR>          text-base
+05/05/2007  07:25 PM    <DIR>          tmp
+               3 File(s)          2,486 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\prop-base
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+02/24/2007  09:29 PM                53 blueglass.tga.svn-base
+02/24/2007  09:29 PM                53 greenglass.tga.svn-base
+02/24/2007  09:29 PM                53 light_rays.tga.svn-base
+02/24/2007  09:29 PM                53 mandoor05_local.tga.svn-base
+02/24/2007  09:29 PM                53 mandoor05_withalpha.tga.svn-base
+02/24/2007  09:29 PM                53 manwindow02b_withalpha.tga.svn-base
+02/24/2007  09:29 PM                53 redglass.tga.svn-base
+02/24/2007  09:29 PM                53 whiteglass.tga.svn-base
+               8 File(s)            424 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\props
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\text-base
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+02/24/2007  09:29 PM            64,021 blueglass.tga.svn-base
+02/24/2007  09:29 PM            63,499 greenglass.tga.svn-base
+02/24/2007  09:29 PM            25,115 light_rays.tga.svn-base
+02/24/2007  09:29 PM           376,983 mandoor05_local.tga.svn-base
+02/24/2007  09:29 PM            80,446 mandoor05_withalpha.tga.svn-base
+02/24/2007  09:29 PM           524,753 manwindow02b_withalpha.tga.svn-base
+02/24/2007  09:29 PM            66,025 redglass.tga.svn-base
+02/24/2007  09:29 PM            65,190 whiteglass.tga.svn-base
+               8 File(s)      1,266,032 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\tmp
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+05/05/2007  07:25 PM    <DIR>          prop-base
+05/05/2007  07:25 PM    <DIR>          props
+05/05/2007  07:25 PM    <DIR>          text-base
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\tmp\prop-base
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\tmp\props
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\sfx\.svn\tmp\text-base
+
+05/05/2007  07:25 PM    <DIR>          .
+05/05/2007  07:25 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone
+
+05/31/2007  08:20 PM    <DIR>          .
+05/31/2007  08:20 PM    <DIR>          ..
+05/24/2007  07:46 PM    <DIR>          brick
+06/01/2007  08:01 PM    <DIR>          cobblestones
+05/29/2007  07:52 PM    <DIR>          flat
+05/31/2007  08:21 PM    <DIR>          natural
+05/25/2007  08:21 PM    <DIR>          sculpted
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\brick
+
+05/24/2007  07:46 PM    <DIR>          .
+05/24/2007  07:46 PM    <DIR>          ..
+02/25/2007  01:56 AM           699,192 even_greyish01.dds.brick_006.dds
+02/24/2007  09:05 PM           262,513 even_greyish01_ed.tga.brick_006_editor.tga
+02/24/2007  09:05 PM         3,029,510 even_greyish01_local.tga.brick_006_local.tga
+02/25/2007  01:56 AM           174,920 even_greyish01_trim.dds.brick_006_trim.dds
+02/24/2007  09:05 PM             5,531 even_greyish01_trim_ed.jpg.brick_006_trim_editor.jpg
+02/24/2007  09:05 PM           786,476 even_greyish01_trim_local.tga.brick_006_trim_local.tga
+04/15/2007  04:06 PM            24,838 even_small_blocks001_ed.jpg.blocks_019_editor.jpg
+04/15/2007  04:06 PM         3,145,772 even_small_blocks001_local.tga.blocks_019_local.tga
+04/15/2007  04:11 PM           699,192 even_small_blocks01.dds.blocks_019.dds
+02/24/2007  10:47 PM           788,308 grainy_blocks01.tga.rt_largebrick01_d.tga
+02/24/2007  10:47 PM           787,850 grainy_blocks01_local.tga.rt_largebrick01_local.tga
+02/25/2007  01:56 AM           174,904 grainy_large_blocks01.dds.blocks_017_d.DDS
+02/24/2007  09:05 PM           197,007 grainy_large_blocks01_ed.tga.blocks_017_ed.tga
+02/24/2007  09:05 PM           788,015 grainy_large_blocks01_local.tga.blocks_017_local.tga
+02/24/2007  09:54 PM           392,320 grey_protruding_bricks.tga.manwbrick02.tga
+02/24/2007  09:54 PM           391,889 grey_protruding_bricks_local.tga.manwbrick02_local.tga
+02/25/2007  01:56 AM           174,904 interlocking_angled_darkgrey.dds.brick_007_dark.dds
+02/25/2007  01:56 AM           174,904 interlocking_angled_grey.dds.brick_007.dds
+02/25/2007  01:56 AM           174,904 interlocking_angled_grey01_s.dds.brick_007_s.dds
+02/24/2007  09:05 PM           196,579 interlocking_angled_grey_ed.tga.brick_007_editor.tga
+02/24/2007  09:05 PM           788,417 interlocking_angled_grey_local.tga.brick_007_local.tga
+02/25/2007  01:56 AM           174,904 interlocking_angled_yellow.dds.brick_007_yellow.dds
+02/25/2007  01:56 AM           174,904 interlocking_mixedsize_dark.dds.cobble_005.dds
+02/24/2007  09:05 PM           786,476 interlocking_mixedsize_dark.tga.cobble_005_local.tga
+02/24/2007  09:05 PM           197,147 interlocking_mixedsize_dark_ed.tga.cobble_005_editor.tga
+05/18/2007  07:51 PM    <DIR>          nontiling
+02/25/2007  01:56 AM           174,904 old_blocks_wornsmooth_dark.dds.brick_010_d.DDS
+02/24/2007  09:05 PM           196,640 old_blocks_wornsmooth_dark_ed.tga.brick_010_ed.tga
+02/24/2007  09:05 PM           786,476 old_blocks_wornsmooth_dark_local.tga.brick_010_local.tga
+04/16/2007  07:47 PM           349,672 old_dirty_bricks01.dds.brick_old_003.dds
+04/28/2007  06:10 PM           393,555 old_dirty_bricks01_ed.tga.brick_old_003_editor.tga
+04/16/2007  07:47 PM           699,216 old_dirty_bricks01_local.dds.brick_old_003_local.dds
+04/16/2007  07:47 PM         1,576,359 old_dirty_bricks01_local.tga.brick_old_003_local.tga
+02/25/2007  01:30 AM           174,904 old_small_bricks_grey.dds.brick_old_001.dds
+02/24/2007  08:20 PM           787,459 old_small_bricks_grey.tga.brick_old_001_local.tga
+02/24/2007  08:20 PM           196,647 old_small_bricks_grey_ed.tga.brick_old_001_editor.tga
+02/25/2007  01:56 AM           174,920 pillar_bricks01.dds.masonry_001_pillar.dds
+02/24/2007  09:05 PM             5,506 pillar_bricks01_ed.jpg.masonry_001_pillar_editor.jpg
+02/24/2007  09:05 PM         1,048,620 pillar_bricks01_local.tga.masonry_001_pillar_local.tga
+02/25/2007  01:56 AM            43,848 pillar_bricks01_s.dds.masonry_001_pillar_s.dds
+02/24/2007  10:47 PM         1,167,855 redbrick_dull_small.tga.rt_redbrickvert01_d.tga
+02/24/2007  10:47 PM         1,182,405 redbrick_dull_small_local.tga.rt_redbrickvert01_local.tga
+02/25/2007  01:56 AM           524,440 redbrick_mostly_mortar.dds.brick_008.dds
+02/24/2007  09:05 PM           197,147 redbrick_mostly_mortar_ed.tga.brick_008_editor.tga
+05/13/2007  03:45 PM         1,572,908 redbrick_mostly_mortar_local.tga.brick_008_local.tga
+02/25/2007  01:56 AM           174,904 red_angled_ground.dds.brick_004.dds
+02/24/2007  09:05 PM            49,291 red_angled_ground_ed.tga.brick_004_editor.tga
+02/24/2007  09:05 PM           786,476 red_angled_ground_local.tga.brick_004_local.tga
+02/24/2007  10:47 PM           786,476 red_brick_dull01.tga.ctywbrick02.tga
+02/24/2007  10:47 PM           786,476 red_brick_dull01_local.tga.ctywbrick02_local.tga
+02/25/2007  01:56 AM           174,904 red_sloppymortar.dds.brick_005.dds
+02/25/2007  01:56 AM            43,832 red_sloppymortar_alpha.dds.brick_005_alpha.dds
+02/24/2007  09:05 PM           197,029 red_sloppymortar_ed.tga.brick_005_editor.tga
+02/24/2007  09:05 PM           788,317 red_sloppymortar_inverted_local.tga.brick_005_inverted_local.tga
+02/24/2007  09:05 PM           786,476 red_sloppymortar_local.tga.brick_005_local.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks01.dds.blocks_008.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks01_ed.tga.blocks_008_editor.tga
+02/24/2007  09:05 PM         3,145,772 rough_big_blocks01_local.tga.blocks_008_local.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks02.dds.blocks_009.dds
+02/25/2007  01:56 AM           699,192 rough_big_blocks02_cornerstone_dark.dds.blocks_009_cornerstone_dark.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks02_cornerstone_dark_ed.tga.blocks_009_cornerstone_dark_editor.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks02_cornerstone_light.dds.blocks_009_cornerstone_light.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks02_cornerstone_light_ed.tga.blocks_009_cornerstone_light_editor.tga
+02/24/2007  09:05 PM         3,145,772 rough_big_blocks02_cornerstone_local.tga.blocks_009_cornerstone_local.tga
+02/24/2007  09:05 PM           197,147 rough_big_blocks02_ed.tga.blocks_009_editor.tga
+02/24/2007  09:05 PM         3,145,772 rough_big_blocks02_local.tga.blocks_009_local.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks03.dds.blocks_010.dds
+02/25/2007  01:56 AM           699,192 rough_big_blocks03_cornerstone_dark.dds.blocks_010_cornerstone_dark.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks03_cornerstone_dark_ed.tga.blocks_010_cornerstone_dark_editor.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks03_cornerstone_light.dds.blocks_010_cornerstone_light.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks03_cornerstone_light_ed.tga.blocks_010_cornerstone_light_editor.tga
+02/24/2007  09:05 PM           197,147 rough_big_blocks03_ed.tga.blocks_010_editor.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks04_brown.dds.blocks_013.dds
+02/25/2007  01:56 AM           699,192 rough_big_blocks04_brown_cornerstone_light.dds.blocks_013_cornerstone_light.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks04_brown_cornerstone_light_ed.tga.blocks_013_cornerstone_light_editor.tga
+02/24/2007  09:05 PM           197,147 rough_big_blocks04_brown_ed.tga.blocks_013_editor.tga
+02/25/2007  01:56 AM           699,192 rough_big_blocks05.dds.blocks_014.dds
+02/24/2007  09:05 PM           197,147 rough_big_blocks05_ed.tga.blocks_014_editor.tga
+02/25/2007  01:56 AM         1,398,248 rough_blocks01.dds.brick_009_d.DDS
+02/24/2007  09:05 PM            98,348 rough_blocks01_ed.tga.brick_009_ed.tga
+02/24/2007  09:05 PM         1,572,908 rough_blocks01_local.tga.brick_009_local.tga
+02/24/2007  10:47 PM           786,476 rough_blocks02.tga.ctywbrick01.tga
+02/24/2007  10:47 PM           786,476 rough_blocks02_local.tga.ctywbrick01_local.tga
+02/24/2007  10:47 PM           786,476 rough_blocks_tight02.tga.ctywbrick04.tga
+02/24/2007  10:47 PM           786,476 rough_blocks_tight02_local.tga.ctywbrick04_local.tga
+02/24/2007  10:47 PM           786,476 rough_blocks_tight02_moss.tga.ctywbrick04b.tga
+02/24/2007  10:47 PM           786,476 rough_blocks_tight02_moss_local.tga.ctywbrick04b_local.tga
+02/24/2007  10:47 PM           786,909 rough_blocks_tight_dark.tga.ctywbrick03b.tga
+02/24/2007  10:47 PM           788,217 rough_blocks_tight_light.tga.ctywbrick03.tga
+02/24/2007  10:47 PM           786,476 rough_blocks_tight_local.tga.ctywbrick03_local.tga
+02/24/2007  10:47 PM           786,476 rough_brick_grey.tga.brick_dark_d.tga
+02/24/2007  10:47 PM           786,476 rough_brick_grey_local.tga.brick_dark_local.tga
+05/14/2007  07:32 PM           196,652 rough_brick_grey_s.tga.brick_dark_s.tga
+02/25/2007  01:59 AM           174,920 single_grey_block01.dds.trim_003_d.DDS
+02/24/2007  09:19 PM           190,232 single_grey_block01_ed.tga.trim_003_ed.tga
+02/24/2007  09:19 PM           787,053 single_grey_block01_local.tga.trim_003_local.tga
+02/25/2007  01:56 AM           699,192 small_brown_bricks01.dds.masonry_001_brick.dds
+02/25/2007  01:56 AM           174,904 small_brown_bricks01.dds.masonry_001_brick_s.dds
+02/24/2007  09:05 PM            22,761 small_brown_bricks01_ed.jpg.masonry_001_brick_editor.jpg
+02/24/2007  09:05 PM         3,145,772 small_brown_bricks01_local.tga.masonry_001_brick_local.tga
+02/24/2007  09:54 PM           786,476 tight_large_blocks.tga.manwbrick01.tga
+02/25/2007  01:56 AM           699,192 tight_large_blocks01.dds.blocks_015_d.DDS
+02/24/2007  09:05 PM           196,652 tight_large_blocks01_ed.tga.blocks_015_ed.tga
+02/24/2007  09:05 PM         3,145,772 tight_large_blocks01_local.tga.blocks_015_local.tga
+02/25/2007  01:56 AM           174,904 tight_large_blocks01_s.dds.blocks_015_s.DDS
+02/24/2007  09:54 PM           786,476 tight_large_blocks_local.tga.manwbrick01_local.tga
+02/25/2007  01:56 AM           699,192 tight_large_singleblock01.dds.blocks_016_d.DDS
+02/24/2007  09:05 PM           194,303 tight_large_singleblock01_ed.tga.blocks_016_ed.tga
+02/24/2007  09:05 PM         3,145,772 tight_large_singleblock01_local.tga.blocks_016_local.tga
+02/24/2007  10:47 PM           393,190 tight_randomsize_blocks.tga.rt_sizes01_d.tga
+02/24/2007  10:47 PM           393,857 tight_randomsize_blocks_local.tga.rt_sizes01_local.tga
+05/21/2007  12:50 PM    <DIR>          tiling_1d
+             110 File(s)     77,149,930 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\brick\nontiling
+
+05/18/2007  07:51 PM    <DIR>          .
+05/18/2007  07:51 PM    <DIR>          ..
+02/24/2007  10:47 PM         3,108,726 chiseled_brick_frame.tga.rt_framedwall01_d.tga
+02/24/2007  10:47 PM         3,134,629 chiseled_brick_frame_local.tga.rt_framedwall01_local.tga
+               2 File(s)      6,243,355 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\brick\tiling_1d
+
+05/21/2007  12:50 PM    <DIR>          .
+05/21/2007  12:50 PM    <DIR>          ..
+02/24/2007  09:07 PM           783,058 gen_plainbrick_grey.tga.brick_001_d.tga
+02/24/2007  09:07 PM           767,607 gen_plainbrick_local.tga.brick_001_local.tga
+02/24/2007  09:07 PM           650,394 gen_plainbrick_s.tga.brick_001_s.tga
+02/25/2007  01:30 AM           349,672 old_worn_greybrick.dds.brick_old_002.dds
+02/24/2007  08:20 PM           393,603 old_worn_greybrick_ed.tga.brick_old_002_editor.tga
+02/24/2007  08:20 PM         1,574,232 old_worn_greybrick_local.tga.brick_old_002_local.tga
+               6 File(s)      4,518,566 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\cobblestones
+
+06/01/2007  08:01 PM    <DIR>          .
+06/01/2007  08:01 PM    <DIR>          ..
+02/25/2007  01:30 AM           524,440 blocks_mixedsize01.dds.masonry_005.dds
+02/24/2007  08:20 PM           147,995 blocks_mixedsize01_ed.tga.masonry_005_editor.tga
+02/24/2007  08:20 PM         2,359,340 blocks_mixedsize01_local.tga.masonry_005_local.tga
+02/24/2007  11:12 PM           787,453 blocks_mixed_multicolour.tga.rt_casstone02_d.tga
+02/24/2007  11:12 PM           393,805 blocks_mixed_multicolour_framed.tga.rt_casstone01_d.tga
+02/24/2007  11:12 PM           391,826 blocks_mixed_multicolour_framed_local.tga.rt_casstone01_local.tga
+02/24/2007  11:12 PM           786,028 blocks_mixed_multicolour_local.tga.rt_casstone02_local.tga
+02/25/2007  01:56 AM           174,904 cobblestones01_light.dds.cobble_004.dds
+02/24/2007  09:05 PM            49,298 cobblestones01_square_light_ed.tga.cobble_004_editor.tga
+02/24/2007  09:05 PM           786,476 cobblestones01_square_light_local.tga.cobble_004_local.tga
+02/25/2007  01:56 AM           174,904 cobblestones01_square_light_s.dds.cobble_004_s.dds
+02/25/2007  01:56 AM           174,904 cobblestones02_square_dark.dds.cobble_008.dds
+02/24/2007  09:05 PM            25,232 cobblestones02_square_dark.jpg.cobble_008_editor.jpg
+02/24/2007  09:05 PM           786,476 cobblestones02_square_dark_local.tga.cobble_008_local.tga
+02/25/2007  01:56 AM            43,832 cobblestones02_square_dark_s.dds.cobble_008_s.dds
+02/24/2007  10:53 PM           786,476 cobblestones03_dark.tga.ctyground01.tga
+02/24/2007  10:53 PM           786,476 cobblestones03_dark_local.tga.ctyground01_local.tga
+02/24/2007  10:53 PM           786,476 cobblestones04_multicolour.tga.ctyground02.tga
+02/24/2007  10:53 PM           786,085 cobblestones04_multicolour_local.tga.ctyground02_local.tga
+02/24/2007  07:50 PM           787,433 cobblestones_loose_ongrass.tga.pagfloor03.tga
+02/24/2007  07:50 PM           787,276 cobblestones_loose_ongrass_local.tga.pagfloor03_local.tga
+02/25/2007  01:56 AM            87,528 cobblestone_fan_pattern.dds.fan_001_dirt.dds
+02/24/2007  09:05 PM            98,535 cobblestone_fan_pattern_ed.tga.fan_001_dirt_editor.tga
+02/25/2007  01:56 AM            87,528 cobblestone_fan_pattern_grass.dds.fan_001_grass.dds
+02/24/2007  09:05 PM            98,524 cobblestone_fan_pattern_grass_ed.tga.fan_001_grass_editor.tga
+02/24/2007  09:05 PM           394,241 cobblestone_fan_pattern_local.tga.fan_001_local.tga
+02/25/2007  01:56 AM            87,528 cobblestone_fan_pattern_s.dds.fan_001_s.dds
+02/25/2007  01:56 AM           699,192 flagstones01_light.dds.(duplicate_name)masonry_001.dds
+02/24/2007  09:05 PM         3,145,772 flagstones01_light_local.tga.(duplicate_name)masonry_001_local.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain.tga.blocks_018.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_cornerstone_left.tga.blocks_018_cornerstone_l.tga
+03/18/2007  03:20 PM            10,523 flagstones02_plain_cornerstone_left_ed.jpg.blocks_018_cornerstone_l_ed.jpg
+03/18/2007  03:20 PM            10,496 flagstones02_plain_cornerstone_left_ed.jpg.blocks_018_cornerstone_r_ed.jpg
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_cornerstone_left_local.tga.blocks_018_cornerstone_l_local.tga
+03/18/2007  03:20 PM           393,755 flagstones02_plain_cornerstone_left_s.tga.blocks_018_cornerstone_l_s.tga
+03/18/2007  03:20 PM           393,755 flagstones02_plain_cornerstone_left_s.tga.blocks_018_cornerstone_r_s.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_cornerstone_right.tga.blocks_018_cornerstone_r.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_cornerstone_right_local.tga.blocks_018_cornerstone_r_local.tga
+03/18/2007  03:20 PM            10,406 flagstones02_plain_ed.jpg.blocks_018_ed.jpg
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_local.tga.blocks_018_local.tga
+03/18/2007  03:20 PM           393,755 flagstones02_plain_s.tga.blocks_018_s.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_window01.tga.blocks_018_window01.tga
+03/18/2007  03:20 PM            10,156 flagstones02_plain_window01_ed.jpg.blocks_018_window01_ed.jpg
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_window01_local.tga.blocks_018_window01_local.tga
+03/18/2007  03:20 PM           393,755 flagstones02_plain_window01_s.tga.blocks_018_window01_s.tga
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_window02.tga.blocks_018_window02.tga
+03/18/2007  03:20 PM            10,493 flagstones02_plain_window02_ed.jpg.blocks_018_window02_ed.jpg
+03/18/2007  03:20 PM         1,572,908 flagstones02_plain_window02_local.tga.blocks_018_window02_local.tga
+03/18/2007  03:20 PM           393,755 flagstones02_plain_window02_s.tga.blocks_018_window02_s.tga
+02/25/2007  01:56 AM           699,192 flagstones03_shiny.dds.cobble_006.dds
+02/24/2007  09:05 PM           197,151 flagstones03_shiny_ed.tga.cobble_006_editor.tga
+02/24/2007  09:05 PM         3,153,369 flagstones03_shiny_local.tga.cobble_006_local.tga
+02/25/2007  01:56 AM           699,192 flagstones03_shiny_s.dds.cobble_006_s.dds
+02/25/2007  01:56 AM           174,904 flagstones04_uneven.dds.cobble_007.dds
+02/24/2007  09:05 PM           197,156 flagstones04_uneven_ed.tga.cobble_007_editor.tga
+02/24/2007  09:05 PM           788,490 flagstones04_uneven_local.tga.cobble_007_local.tga
+02/24/2007  10:53 PM           779,507 flagstones05_pinkish.tga.cobblestone01sh.tga
+02/24/2007  10:53 PM           780,887 flagstones05_pinkish_local.tga.cobblestone01sh_local.tga
+02/24/2007  10:53 PM            86,306 flagstones05_pinkish_s.tga.cobblestone01sh_s.tga
+02/25/2007  01:56 AM           699,192 flagstones06_granite.dds.granite_001.dds
+02/24/2007  09:05 PM           197,044 flagstones06_granite_ed.tga.granite_001_editor.tga
+02/24/2007  09:05 PM         3,145,772 flagstones06_granite_local.tga.granite_001_local.tga
+02/25/2007  01:56 AM           699,192 flagstones06_granite_s.dds.granite_001_s.dds
+05/30/2007  07:48 PM    <DIR>          nontiling
+02/25/2007  01:30 AM           174,904 rough_masonry01.dds.masonry_old_004.dds
+02/24/2007  08:20 PM           197,078 rough_masonry01_ed.tga.masonry_old_004_editor.tga
+02/24/2007  08:20 PM           788,401 rough_masonry01_local.tga.masonry_old_004_local.tga
+05/30/2007  07:59 PM    <DIR>          tiling_1d
+02/25/2007  01:56 AM           174,904 uneven_blocks01_brown.dds.blocks_012.dds
+02/24/2007  09:05 PM           197,100 uneven_blocks01_brown_ed.tga.blocks_012_editor.tga
+02/24/2007  09:05 PM           786,476 uneven_blocks01_brown_local.tga.blocks_012_local.tga
+02/25/2007  01:56 AM           174,904 uneven_blocks01_dark.dds.blocks_011.dds
+02/24/2007  09:05 PM           196,248 uneven_blocks01_dark_ed.tga.blocks_011_editor.tga
+02/24/2007  09:05 PM           786,476 uneven_blocks01_dark_local.tga.blocks_011_local.tga
+              72 File(s)     50,549,757 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\cobblestones\nontiling
+
+05/30/2007  07:48 PM    <DIR>          .
+05/30/2007  07:48 PM    <DIR>          ..
+02/24/2007  11:15 PM           788,820 flagstones_jagged_grey.tga.casfloor04.tga
+02/24/2007  11:15 PM           788,369 flagstones_jagged_grey_local.tga.casfloor04_local.tga
+               2 File(s)      1,577,189 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\cobblestones\tiling_1d
+
+05/30/2007  07:59 PM    <DIR>          .
+05/30/2007  07:59 PM    <DIR>          ..
+02/25/2007  01:30 AM           349,672 blocks_uneven02_grey.dds.masonry_001.dds
+02/24/2007  08:20 PM           393,858 blocks_uneven02_grey_local.tga.masonry_001_editor.tga
+02/24/2007  08:20 PM         1,576,750 blocks_uneven02_grey_local.tga.masonry_001_local.tga
+02/25/2007  01:30 AM           349,672 blocks_uneven03_grey.dds.masonry_002.dds
+02/24/2007  08:20 PM           393,452 blocks_uneven03_grey_ed.tga.masonry_002_editor.tga
+02/24/2007  08:20 PM         1,576,449 blocks_uneven03_grey_local.tga.masonry_002_local.tga
+02/25/2007  01:30 AM           349,672 blocks_uneven04_brown.dds.masonry_003.dds
+02/24/2007  08:20 PM           394,052 blocks_uneven04_brown_ed.tga.masonry_003_editor.tga
+02/24/2007  08:20 PM         1,576,867 blocks_uneven04_brown_local.tga.masonry_003_local.tga
+02/25/2007  01:30 AM           349,672 blocks_uneven05_grey.dds.masonry_004.dds
+02/24/2007  08:20 PM           393,817 blocks_uneven05_grey_ed.tga.masonry_004_editor.tga
+02/24/2007  08:20 PM         1,575,507 blocks_uneven05_grey_local.tga.masonry_004_local.tga
+02/25/2007  01:30 AM           349,672 bricks_blocks_mix.dds.masonry_old_001.dds
+02/24/2007  08:20 PM           393,521 bricks_blocks_mix_ed.tga.masonry_old_001_editor.tga
+02/24/2007  08:20 PM         1,576,321 bricks_blocks_mix_local.tga.masonry_old_001_local.tga
+02/25/2007  01:30 AM           349,672 bricks_blocks_roughmix.dds.masonry_old_002.dds
+02/24/2007  08:20 PM           394,160 bricks_blocks_roughmix_ed.tga.masonry_old_002_editor.tga
+02/24/2007  08:20 PM         1,576,743 bricks_blocks_roughmix_local.tga.masonry_old_002_local.tga
+02/25/2007  01:30 AM           349,672 cobblestones_rounded.dds.rounded_001.dds
+02/24/2007  08:20 PM           393,525 cobblestones_rounded_ed.tga.rounded_001_editor.tga
+02/24/2007  08:20 PM         1,572,908 cobblestones_rounded_local.tga.rounded_001_local.tga
+02/25/2007  01:30 AM           349,672 flagstones_sparse.dds.masonry_old_003.dds
+02/24/2007  08:20 PM           394,194 flagstones_sparse_ed.tga.masonry_old_003_editor.tga
+02/24/2007  08:20 PM         1,572,908 flagstones_sparse_local.tga.masonry_old_003_local.tga
+02/25/2007  01:30 AM           349,672 flagstones_uneven.dds.masonry_old_005.dds
+02/24/2007  08:20 PM           393,845 flagstones_uneven_ed.tga.masonry_old_005_editor.tga
+02/24/2007  08:20 PM         1,557,680 flagstones_uneven_local.tga.masonry_old_005_local.tga
+              27 File(s)     20,853,605 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat
+
+05/29/2007  07:52 PM    <DIR>          .
+05/29/2007  07:52 PM    <DIR>          ..
+02/25/2007  01:56 AM           349,672 ceramic_mosaic_decorative01.dds.decorative_001.dds
+02/24/2007  09:05 PM           394,197 ceramic_mosaic_decorative01_ed.tga.decorative_001_editor.tga
+02/24/2007  09:05 PM         1,572,908 ceramic_mosaic_decorative01_local.tga.decorative_001_local.tga
+02/25/2007  01:56 AM           349,672 ceramic_mosaic_decorative01_s.dds.decorative_001_s.dds
+04/23/2007  07:52 PM    <DIR>          nontiling
+02/25/2007  01:56 AM           349,672 rough_marble_dark01.dds.marble_004_d.DDS
+02/24/2007  09:05 PM           393,260 rough_marble_dark01_ed.tga.marble_004_ed.tga
+02/24/2007  09:05 PM         1,572,908 rough_marble_dark01_local.tga.marble_004_local.tga
+02/25/2007  01:56 AM           699,192 rough_marble_dark02.dds.rough_006_d.DDS
+02/24/2007  09:05 PM           197,075 rough_marble_dark02_ed.tga.rough_006_ed.tga
+02/24/2007  09:05 PM         3,145,772 rough_marble_dark02_local.tga.rough_006_local.tga
+02/25/2007  01:56 AM           349,672 rough_marble_light01.dds.rough_007_d.DDS
+02/24/2007  09:05 PM            98,348 rough_marble_light01_ed.tga.rough_007_ed.tga
+02/24/2007  09:05 PM         1,572,908 rough_marble_light01_local.tga.rough_007_local.tga
+02/25/2007  01:56 AM           174,904 rough_plain_tiles01.dds.tiled_009.dds
+02/24/2007  09:05 PM            49,691 rough_plain_tiles01_ed.tga.tiled_009_editor.tga
+02/24/2007  09:05 PM           786,476 rough_plain_tiles01_local.tga.tiled_009_local.tga
+02/24/2007  09:59 PM           786,476 rough_slate_dark01.tga.manfslate1.tga
+02/24/2007  09:59 PM           786,476 rough_slate_dark01_local.tga.manfslate1_local.tga
+02/25/2007  01:56 AM           699,192 rough_slate_tiles01_dark.dds.tiled_010_d.DDS
+02/24/2007  09:05 PM           196,096 rough_slate_tiles01_dark_ed.tga.tiled_010_ed.tga
+02/24/2007  09:05 PM           786,476 rough_slate_tiles01_local.tga.tiled_010_local.tga
+02/24/2007  10:47 PM           786,476 slate01_light.tga.concrete01_d.tga
+02/24/2007  10:47 PM           786,476 slate01_local.tga.concrete01_local.tga
+02/24/2007  10:47 PM           786,476 slate01_s.tga.concrete01_s.tga
+03/07/2006  03:35 PM           788,172 slate02_dark.tga.concrete2_d.tga
+12/10/2005  03:43 PM           788,492 slate02_light.tga.concrete_d.tga
+12/10/2005  03:43 PM           786,476 slate02_local.tga.concrete_local.tga
+05/21/2007  12:44 PM    <DIR>          smooth
+02/24/2007  11:15 PM           786,476 tiles_rough_grey.tga.casfloor03.tga
+02/24/2007  11:15 PM           786,476 tiles_rough_grey_local.tga.casfloor03_local.tga
+02/24/2007  09:59 PM           786,476 tile_plain_diamond01_brown.tga.manfloor01.tga
+02/24/2007  09:59 PM           786,450 tile_plain_diamond01_brown_s.tga.manfloor01_s.tga
+02/24/2007  09:59 PM           786,476 tile_plain_diamond01_local.tga.manfloor01_local.tga
+05/23/2007  07:33 PM    <DIR>          tiling_1d
+              32 File(s)     23,965,965 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat\smooth
+
+05/21/2007  12:44 PM    <DIR>          .
+05/21/2007  12:44 PM    <DIR>          ..
+02/24/2007  09:59 PM           196,652 ceramic_tile_generic01_s.tga.manfloor01sh_s.tga
+02/24/2007  09:59 PM           164,312 ceramic_tile_gold01.tga.manfloor03sh.tga
+02/24/2007  09:59 PM           196,652 ceramic_tile_reddish01.tga.manfloor01sh.tga
+02/24/2007  09:59 PM           196,652 ceramic_tile_tan01.tga.manfloor02sh.tga
+02/24/2007  09:59 PM           167,132 ceramic_tile_tan02.tga.manfloor05sh.tga
+02/24/2007  09:59 PM           196,652 ceramic_tile_tan03.tga.manfloor06sh.tga
+02/24/2007  09:59 PM           393,943 marble_pattern01.tga.manfloor02.tga
+02/24/2007  09:59 PM           785,660 marble_pattern01_centerrose.tga.manfloor02cen2.tga
+02/24/2007  09:59 PM           262,188 marble_pattern01_centerrose_s.tga.manfloor02cen2_s.tga
+02/24/2007  09:59 PM           780,813 marble_pattern01_centersun.tga.manfloor02cen1.tga
+02/24/2007  09:59 PM           262,188 marble_pattern01_centersun_s.tga.manfloor02cen1_s.tga
+02/24/2007  09:59 PM           390,758 marble_pattern01_local.tga.manfloor02_local.tga
+02/24/2007  09:59 PM           524,332 marble_pattern01_s.tga.manfloor02_s.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_checker.dds.marble_002_center1.dds
+02/24/2007  09:23 PM           259,703 marble_pattern02_checker_ed.tga.marble_002_center1_editor.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_checker_s.dds.marble_002_center1_s.dds
+02/25/2007  02:07 AM           174,904 marble_pattern02_crosshair.dds.marble_002_center2.dds
+02/24/2007  09:23 PM           260,256 marble_pattern02_crosshair_ed.tga.marble_002_center2_editor.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_crosshair_s.dds.marble_002_center2_s.dds
+02/25/2007  02:07 AM           174,904 marble_pattern02_rings.dds.marble_002_center5.dds
+02/24/2007  09:23 PM           250,053 marble_pattern02_rings_ed.tga.marble_002_center5_editor.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_rings_s.dds.marble_002_center5_s.dds
+02/25/2007  02:07 AM           174,904 marble_pattern02_star.dds.marble_002_center3.dds
+02/25/2007  02:07 AM           174,904 marble_pattern02_star02.dds.marble_002_center4.dds
+02/24/2007  09:23 PM           240,649 marble_pattern02_star02_ed.tga.marble_002_center4_editor.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_star02_s.dds.marble_002_center4_s.dds
+02/24/2007  09:23 PM           199,099 marble_pattern02_star_ed.tga.marble_002_center3_editor.tga
+02/25/2007  02:07 AM           174,904 marble_pattern02_star_s.dds.marble_002_center3_s.dds
+02/25/2007  02:07 AM           699,192 marble_pattern03_brownish.dds.marble_003_d.DDS
+02/24/2007  09:23 PM           196,956 marble_pattern03_brownish_ed.tga.marble_003_ed.tga
+02/24/2007  09:23 PM           786,476 marble_pattern03_brownish_local.tga.marble_003_local.tga
+02/25/2007  02:07 AM           699,192 marble_pattern03_brownish_s.dds.marble_003_s.DDS
+05/21/2007  12:31 PM    <DIR>          nontiling
+05/21/2007  12:46 PM    <DIR>          tiling_1d
+              32 File(s)      9,858,550 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat\smooth\nontiling
+
+05/21/2007  12:31 PM    <DIR>          .
+05/21/2007  12:31 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat\smooth\tiling_1d
+
+05/21/2007  12:46 PM    <DIR>          .
+05/21/2007  12:46 PM    <DIR>          ..
+02/24/2007  09:54 PM           393,260 marble_trim01_brown.tga.manwtrim03.tga
+02/24/2007  09:54 PM           393,260 marble_trim01_local.tga.manwtrim03_local.tga
+02/24/2007  09:54 PM           141,760 marble_trim01_s.tga.manwtrim03_s.tga
+               3 File(s)        928,280 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\flat\tiling_1d
+
+05/23/2007  07:33 PM    <DIR>          .
+05/23/2007  07:33 PM    <DIR>          ..
+02/25/2007  01:30 AM           349,672 cement_002.dds
+02/24/2007  08:20 PM           392,736 cement_002_editor.tga
+02/24/2007  08:20 PM         1,576,293 cement_002_local.tga
+02/25/2007  01:30 AM           349,672 cement_004.dds
+02/24/2007  08:20 PM           393,899 cement_004_editor.tga
+02/24/2007  08:20 PM         1,576,762 cement_004_local.tga
+02/25/2007  01:30 AM           349,672 cement_005.dds
+02/24/2007  08:20 PM           392,507 cement_005_editor.tga
+02/24/2007  08:20 PM         1,576,426 cement_005_local.tga
+02/25/2007  01:30 AM           349,672 cement_007.dds
+02/24/2007  08:20 PM           394,018 cement_007_editor.tga
+02/24/2007  08:20 PM         1,576,822 cement_007_local.tga
+02/25/2007  01:30 AM           349,672 cement_008.dds
+02/24/2007  08:20 PM           393,950 cement_008_editor.tga
+02/24/2007  08:20 PM         1,576,767 cement_008_local.tga
+02/25/2007  01:30 AM           349,672 cement_010.dds
+02/24/2007  08:20 PM           394,228 cement_010_editor.tga
+02/24/2007  08:20 PM         1,576,440 cement_010_local.tga
+02/25/2007  01:30 AM           349,672 cement_010_s.dds
+02/25/2007  01:30 AM           349,672 cement_013_s.dds
+02/24/2007  10:47 PM           786,476 concrete_dirt01_d.tga
+02/24/2007  10:47 PM           786,476 concrete_dirt01_local.tga
+02/24/2007  10:47 PM           786,476 concrete_dirt01_s.tga
+02/25/2007  01:30 AM           349,672 concrete_light_cracked.dds.cement_001.dds
+02/24/2007  08:20 PM           393,773 concrete_light_cracked_ed.tga.cement_001_editor.tga
+02/24/2007  08:20 PM         1,572,908 concrete_light_cracked_local.tga.cement_001_local.tga
+02/25/2007  01:30 AM           349,672 concrete_light_streaked.dds.cement_013.dds
+02/24/2007  08:20 PM           394,090 concrete_light_streaked_ed.tga.cement_013_editor.tga
+02/24/2007  08:20 PM         1,576,928 concrete_light_streaked_local.tga.cement_013_local.tga
+02/25/2007  01:30 AM           349,672 concrete_rough_dark01.dds.cement_003.dds
+02/24/2007  08:20 PM           393,863 concrete_rough_dark01_ed.tga.cement_003_editor.tga
+02/24/2007  08:20 PM         1,576,821 concrete_rough_dark01_local.tga.cement_003_local.tga
+02/24/2007  08:20 PM         1,575,417 concrete_rough_dark01_local.tga.cement_009_local.tga
+02/25/2007  01:30 AM           349,672 concrete_rough_dark02.dds.cement_009.dds
+02/24/2007  08:20 PM           393,032 concrete_rough_dark02_ed.tga.cement_009_editor.tga
+02/25/2007  01:30 AM           349,672 concrete_rough_pebbly.dds.cement_006.dds
+02/24/2007  08:20 PM           394,148 concrete_rough_pebbly_ed.tga.cement_006_editor.tga
+02/24/2007  08:20 PM         1,572,908 concrete_rough_pebbly_local.tga.cement_006_local.tga
+02/24/2007  09:07 PM           780,128 gen_slate_dirt_local.tga.concrete_dirt_001_local.tga
+02/24/2007  09:07 PM           786,476 gen_slate_dirt_s.tga.concrete_dirt_001_s.tga
+02/24/2007  09:07 PM           778,122 gen_slate_light_dirt.tga.concrete_dirt_001_d.tga
+              41 File(s)     30,914,626 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\natural
+
+05/31/2007  08:21 PM    <DIR>          .
+05/31/2007  08:21 PM    <DIR>          ..
+02/25/2007  01:56 AM           699,192 dark_dirty.dds.rough_010_d.DDS
+02/24/2007  09:05 PM           196,619 dark_dirty_ed.tga.rough_010_ed.tga
+02/24/2007  09:05 PM         3,145,772 dark_dirty_local.tga.rough_010_local.tga
+02/25/2007  01:56 AM           174,904 dark_dirt_smeary.dds.rough_001.dds
+02/24/2007  09:05 PM           196,530 dark_dirt_smeary_ed.tga.rough_001_editor.tga
+02/24/2007  09:05 PM           786,256 dark_dirt_smeary_local.tga.rough_001_local.tga
+02/25/2007  01:56 AM           174,904 dark_rough.dds.rough_009_d.DDS
+02/24/2007  09:05 PM           196,058 dark_rough_ed.tga.rough_009_ed.tga
+02/24/2007  09:05 PM           786,476 dark_rough_local.tga.rough_009_local.tga
+02/25/2007  01:56 AM           699,192 light_grey_rough.dds.rough_005_d.DDS
+02/24/2007  09:05 PM           196,652 light_grey_rough_ed.tga.rough_005_ed.tga
+02/24/2007  09:05 PM         3,145,772 light_grey_rough_local.tga.rough_005_local.tga
+03/18/2007  03:27 PM         3,145,772 mossy_rock_brown.tga.mossyrock_002.tga
+03/18/2007  03:27 PM            19,920 mossy_rock_brown_ed.jpg.mossyrock_002_ed.jpg
+03/18/2007  03:27 PM         3,145,772 mossy_rock_brown_local.tga.mossyrock_002_local.tga
+03/18/2007  03:27 PM           786,971 mossy_rock_brown_s.tga.mossyrock_002_s.tga
+03/18/2007  03:27 PM         3,145,772 mossy_rock_bumpy.tga.mossyrock_003.tga
+03/18/2007  03:27 PM            19,376 mossy_rock_bumpy_ed.jpg.mossyrock_003_ed.jpg
+03/18/2007  03:27 PM         3,145,772 mossy_rock_bumpy_local.tga.mossyrock_003_local.tga
+03/18/2007  03:27 PM           786,971 mossy_rock_bumpy_s.tga.mossyrock_003_s.tga
+03/18/2007  03:27 PM         3,145,772 mossy_rock_green.tga.mossyrock_001.tga
+03/18/2007  03:27 PM            19,555 mossy_rock_green_ed.jpg.mossyrock_001_ed.jpg
+03/18/2007  03:27 PM         3,145,772 mossy_rock_green_local.tga.mossyrock_001_local.tga
+03/18/2007  03:27 PM           786,971 mossy_rock_green_s.tga.mossyrock_001_s.tga
+04/23/2007  07:52 PM    <DIR>          nontiling
+02/25/2007  01:56 AM           699,192 rock_brown_mottled.dds.rough_004_d.DDS
+02/24/2007  09:05 PM           196,652 rock_brown_mottled_ed.tga.rough_004_ed.tga
+02/24/2007  09:05 PM         3,121,571 rock_brown_mottled_local.tga.rough_004_local.tga
+02/25/2007  01:56 AM           699,192 rock_grey.dds.rough_003_d.DDS
+04/28/2007  06:11 PM           196,652 rock_grey_dark_ed.tga.rough_003_dark_ed.tga
+02/24/2007  09:05 PM           197,139 rock_grey_ed.tga.rough_003_ed.tga
+02/24/2007  09:05 PM         3,110,875 rock_grey_local.tga.rough_003_local.tga
+02/25/2007  07:26 PM           699,192 rock_grey_mossy.dds.rough_012_mossy_d.DDS
+02/24/2007  09:05 PM           197,145 rock_grey_mossy_ed.tga.rough_012_mossy_ed.tga
+02/24/2007  09:05 PM         3,145,772 rock_grey_mossy_local.tga.rough_012_mossy_local.tga
+02/25/2007  01:56 AM           174,904 rough_grey_dirty.dds.rough_011_d.DDS
+02/24/2007  09:05 PM           196,652 rough_grey_dirty_ed.tga.rough_011_ed.tga
+02/24/2007  09:05 PM           787,751 rough_grey_dirty_local.tga.rough_011_local.tga
+02/25/2007  01:56 AM           174,904 rough_old.dds.rough_008_d.DDS
+02/24/2007  09:05 PM           197,020 rough_old_ed.tga.rough_008_ed.tga
+02/24/2007  09:05 PM           786,476 rough_old_local.tga.rough_008_local.tga
+02/25/2007  01:56 AM           699,192 sandstone.dds.rough_002_d.DDS
+02/24/2007  09:05 PM           197,140 sandstone_ed.tga.rough_002_ed.tga
+02/24/2007  09:05 PM         3,145,772 sandstone_local.tga.rough_002_local.tga
+05/31/2007  08:21 PM    <DIR>          tiling_1d
+              43 File(s)     50,315,916 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\natural\nontiling
+
+04/23/2007  07:52 PM    <DIR>          .
+04/23/2007  07:52 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\natural\tiling_1d
+
+05/31/2007  08:21 PM    <DIR>          .
+05/31/2007  08:21 PM    <DIR>          ..
+02/24/2007  10:53 PM           788,812 gravel_grey_01.tga.ctygravel01.tga
+02/24/2007  10:53 PM           789,019 gravel_grey_01_local.tga.ctygravel01_local.tga
+               2 File(s)      1,577,831 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\sculpted
+
+05/25/2007  08:21 PM    <DIR>          .
+05/25/2007  08:21 PM    <DIR>          ..
+04/28/2007  06:25 PM           391,585 carved_design_bones01_ed.tga.ornament_011_bones_ed.tga
+04/28/2007  06:25 PM         1,572,908 carved_design_bones01_local.tga.ornament_011_bones_local.tga
+04/28/2007  06:25 PM            98,308 carved_design_bones02_ed.tga.ornament_013_bones_tile_ed.tga
+04/28/2007  06:25 PM            49,196 carved_design_bones02_left_ed.tga.ornament_013_bones_tile_left_ed.tga
+04/28/2007  06:25 PM           786,476 carved_design_bones02_left_local.tga.ornament_013_bones_tile_left_local.tga
+04/28/2007  06:25 PM         1,572,908 carved_design_bones02_local.tga.ornament_013_bones_tile_local.tga
+04/28/2007  06:25 PM            49,196 carved_design_bones02_right_ed.tga.ornament_013_bones_tile_right_ed.tga
+04/28/2007  06:25 PM           786,476 carved_design_bones02_right_local.tga.ornament_013_bones_tile_right_local.tga
+03/03/2007  10:26 AM           391,578 carved_design_diamonds01_ed.tga.ornament_010_ed.tga
+03/03/2007  10:26 AM           794,089 carved_design_diamonds01_local.tga.ornament_010_local.tga
+04/28/2007  06:25 PM            49,196 carved_design_skull01_ed.tga.ornament_014_skull_ed.tga
+04/28/2007  06:25 PM           786,476 carved_design_skull01_local.tga.ornament_014_skull_local.tga
+04/28/2007  06:25 PM           196,652 carved_design_snakes_ed.tga.ornament_012_snakes_ed.tga
+04/28/2007  06:25 PM         3,145,772 carved_design_snakes_local.tga.ornament_012_snakes_local.tga
+02/25/2007  01:59 AM            87,560 carved_diamond_trim.dds.trim_002_d.DDS
+02/25/2007  01:59 AM           174,984 carved_diamond_trim02.dds.trim_001_d.DDS
+02/24/2007  09:19 PM            12,332 carved_diamond_trim02_ed.tga.trim_001_ed.tga
+02/24/2007  09:19 PM           786,476 carved_diamond_trim02_local.tga.trim_001_local.tga
+02/24/2007  09:19 PM            24,620 carved_diamond_trim_ed.tga.trim_002_ed.tga
+02/24/2007  09:19 PM           393,260 carved_diamond_trim_local.tga.trim_002_local.tga
+02/25/2007  01:59 AM           699,208 carved_tiles01_x4_dark.dds.ornament_002_d.DDS
+02/24/2007  09:19 PM           194,391 carved_tiles01_x4_dark_ed.tga.ornament_002_ed.tga
+02/25/2007  01:59 AM           699,208 carved_tiles01_x4_light.dds.ornament_001_d.DDS
+02/24/2007  09:19 PM           196,132 carved_tiles01_x4_light_ed.tga.ornament_001_ed.tga
+02/24/2007  09:19 PM         1,005,004 carved_tiles01_x4_local.tga.ornament_001_local.tga
+02/24/2007  09:19 PM           194,405 engraved_tile_cup01_ed.tga.grave_005_ed.tga
+02/24/2007  09:19 PM           125,951 engraved_tile_cup01_local.tga.grave_005_local.tga
+02/24/2007  09:19 PM           786,476 engraved_tile_cup01_roughness_local.tga.grave_005_roughness_local.tga
+02/25/2007  01:59 AM           699,192 engraved_tile_face01.dds.ornament_009_d.DDS
+02/24/2007  09:19 PM           195,689 engraved_tile_face01_ed.tga.ornament_009_ed.tga
+02/24/2007  09:19 PM         3,145,772 engraved_tile_face01_local.tga.ornament_009_local.tga
+02/25/2007  01:59 AM           699,192 engraved_tile_impface.dds.grave_007_d.DDS
+02/24/2007  09:19 PM           194,770 engraved_tile_impface_ed.tga.grave_007_ed.tga
+02/24/2007  09:19 PM           562,959 engraved_tile_impface_local.tga.grave_007_local.tga
+02/24/2007  09:19 PM           196,474 engraved_tile_ovals_ed.tga.deco_002_ed.tga
+02/24/2007  09:19 PM         2,639,524 engraved_tile_ovals_local.tga.deco_002_local.tga
+02/25/2007  01:59 AM           174,904 engraved_tile_ring.dds.grave_008_d.DDS
+02/24/2007  09:19 PM           194,851 engraved_tile_ring_ed.tga.grave_008_ed.tga
+02/24/2007  09:19 PM            98,130 engraved_tile_ring_local.tga.grave_008_local.tga
+02/24/2007  09:19 PM           196,202 engraved_tile_star_ed.tga.deco_001_ed.tga
+02/24/2007  09:19 PM           593,118 engraved_tile_star_local.tga.deco_001_local.tga
+02/24/2007  09:19 PM           187,679 engraved_tile_x_ed.tga.grave_006_ed.tga
+02/24/2007  09:19 PM           126,777 engraved_tile_x_local.tga.grave_006_local.tga
+05/25/2007  08:20 PM    <DIR>          nontiling
+02/24/2007  09:19 PM           195,436 royal_emblem01_ed.tga.ornament_003_ed.tga
+02/24/2007  09:19 PM           787,670 royal_emblem01_local.tga.ornament_003_local.tga
+02/25/2007  01:59 AM           174,904 royal_symbol01.dds.ornament_003_d.DDS
+02/24/2007  09:19 PM           393,260 sarcophagus_cup&hammer01_ed.tga.grave_002_ed.tga
+02/24/2007  09:19 PM         1,572,908 sarcophagus_cup&hammer01_local.tga.grave_002_local.tga
+02/24/2007  09:19 PM         1,572,908 sarcophagus_cup&hammer01_local.tga.grave_003_local.tga
+02/25/2007  01:59 AM           349,672 sarcophagus_stone01.dds.grave_001_d.DDS
+02/25/2007  01:59 AM           174,904 sarcophagus_stone02.dds.grave_005_d.DDS
+02/24/2007  09:19 PM           390,659 sarcophagus_swords&shield01_ed.tga.grave_004_ed.tga
+02/24/2007  09:19 PM         1,572,908 sarcophagus_swords&shield01_local.tga.grave_004_local.tga
+02/24/2007  09:19 PM           393,260 sarcophagus_warrior01_ed.tga.grave_001_ed.tga
+02/24/2007  09:19 PM         1,572,908 sarcophagus_warrior01_local.tga.grave_001_local.tga
+02/24/2007  09:19 PM         1,572,908 sarcophagus_warrior01_roughness_local.tga.grave_001_roughness_local.tga
+02/24/2007  09:19 PM           390,460 sarcophagus_wings01_ed.tga.grave_003_ed.tga
+02/25/2007  01:59 AM           699,192 tiles_bars_diamondshape.dds.ornament_005_d.DDS
+02/24/2007  09:19 PM           196,766 tiles_bars_diamondshape_ed.tga.ornament_005_ed.tga
+02/24/2007  09:19 PM         2,824,193 tiles_bars_diamondshape_local.tga.ornament_005_local.tga
+02/24/2007  09:19 PM           196,704 tile_diamond_trapezoid_ed.tga.ornament_008_ed.tga
+02/24/2007  09:19 PM           196,769 tile_empty_square_ed.tga.ornament_006_ed.tga
+02/24/2007  09:19 PM            85,804 tile_empty_square_local.tga.ornament_006_local.tga
+02/24/2007  09:19 PM           196,801 tile_empty_trapezoid_ed.tga.ornament_007_ed.tga
+02/24/2007  09:19 PM            85,499 tile_empty_trapezoid_local.tga.ornament_007_local.tga
+02/24/2007  09:19 PM           259,940 tile_empty_trapezoid_local.tga.ornament_008_local.tga
+05/25/2007  08:21 PM    <DIR>          tiling_1d
+04/28/2007  06:25 PM            49,196 trapezoid_tile_1x1_ed.tga.border_1x1_ed.tga
+04/28/2007  06:25 PM           786,476 trapezoid_tile_1x1_local.tga.border_1x1_local.tga
+04/28/2007  06:25 PM            98,348 trapezoid_tile_2x1_ed.tga.border_2x1_ed.tga
+04/28/2007  06:25 PM         1,572,908 trapezoid_tile_2x1_local.tga.border_2x1_local.tga
+04/28/2007  06:25 PM           196,652 trapezoid_tile_4x1_ed.tga.border_4x1_ed.tga
+04/28/2007  06:25 PM         3,145,772 trapezoid_tile_4x1_local.tga.border_4x1_local.tga
+04/28/2007  06:25 PM            24,620 trapezoid_tile_8x1_ed.tga.border_8x1_ed.tga
+04/28/2007  06:25 PM         6,291,500 trapezoid_tile_8x1_local.tga.border_8x1_local.tga
+              74 File(s)     53,977,961 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\sculpted\nontiling
+
+05/25/2007  08:20 PM    <DIR>          .
+05/25/2007  08:20 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\stone\sculpted\tiling_1d
+
+05/25/2007  08:21 PM    <DIR>          .
+05/25/2007  08:21 PM    <DIR>          ..
+02/25/2007  01:59 AM           174,904 marble_ancient_writing.dds.ornament_004_d.DDS
+02/24/2007  09:19 PM           749,986 marble_ancient_writing.tga.ornament_004_local.tga
+02/24/2007  09:19 PM           196,997 marble_ancient_writing_ed.tga.ornament_004_ed.tga
+               3 File(s)      1,121,887 bytes
+
+ Directory of D:\temp2\textures\darkmod\window
+
+05/05/2007  03:40 PM    <DIR>          .
+05/05/2007  03:40 PM    <DIR>          ..
+02/24/2007  10:59 PM           389,540 diamond_pattern01_dark.tga.ctywindow01b.tga
+02/24/2007  10:59 PM           393,234 diamond_pattern01_lit.tga.ctywindow01.tga
+02/24/2007  10:59 PM           393,260 diamond_pattern01_local.tga.ctywindow01_local.tga
+02/24/2007  10:59 PM            32,812 diamond_pattern01_s.tga.ctywindow01_s.tga
+02/24/2007  09:41 PM           393,260 diamond_pattern_andbars01_lit.tga.cwindow02_d.tga
+02/24/2007  10:47 PM           317,537 frame_ornate_wallsection_lit.tga.ctywfacade01_local.tga
+02/24/2007  10:47 PM           389,409 frame_ornate_wallsection_local.tga.ctywfacade01.tga
+12/01/2005  02:32 PM           388,301 horizontal_old_smallpanels01_dark.tga
+12/01/2005  05:37 PM           122,538 horizontal_old_smallpanels01_dark_s.tga
+12/01/2005  05:39 PM           393,260 horizontal_old_smallpanels01_local.tga
+02/24/2007  09:41 PM           782,749 largesquare01_brightlit.tga.largesquare100.tga
+02/24/2007  09:41 PM           783,209 largesquare01_lit.tga.largesquare90.tga
+02/24/2007  09:41 PM           693,385 largesquare01_softerlit.tga.largesquare70.tga
+02/24/2007  09:41 PM           764,380 largesquare01_softlit.tga.largesquare80.tga
+02/24/2007  10:05 PM           686,650 largesquare02_dark.tga.manwindow01.tga
+02/24/2007  10:05 PM           759,631 largesquare02_lit.tga.manwindow01b.tga
+02/24/2007  10:05 PM           689,815 largesquare02_local.tga.manwindow01_local.tga
+02/24/2007  10:05 PM            65,580 largesquare02_s.tga.manwindow01_s.tga
+02/24/2007  09:29 PM           524,753 manwindow02b_withalpha.tga
+05/04/2007  08:04 PM    <DIR>          ornate
+02/24/2007  09:41 PM           393,260 pebbly_glass_noframe01_lit.tga.hlamp_window01_d.tga
+02/24/2007  10:05 PM           196,652 pointedtop_thin01_dark.tga.manwindow03.tga
+02/24/2007  10:05 PM           196,652 pointedtop_thin01_local.tga.manwindow03_local.tga
+02/24/2007  10:05 PM            65,580 pointedtop_thin01_s.tga.manwindow03_s.tga
+03/06/2007  07:35 PM           393,260 roundtop_diamond_pattern01_brightlit.tga.manwindow04.tga
+02/24/2007  10:05 PM           391,622 roundtop_diamond_pattern01_dark.tga.manwindow02b.tga
+02/24/2007  10:05 PM           392,208 roundtop_diamond_pattern01_grey.tga.manwindow02d.tga
+02/24/2007  10:05 PM           394,074 roundtop_diamond_pattern01_lit.tga.manwindow02.tga
+02/24/2007  10:05 PM           393,612 roundtop_diamond_pattern01_local.tga.manwindow02_local.tga
+02/24/2007  10:05 PM           524,332 roundtop_diamond_pattern01_s.tga.manwindow02_s.tga
+02/24/2007  10:05 PM           339,869 roundtop_diamond_pattern01_verydark.tga.manwindow02c.tga
+02/24/2007  10:59 PM           393,260 shutters_closed_local.tga.ctywindow02_local.tga
+02/24/2007  10:59 PM           393,260 shutters_grey_closed.tga.ctywindow02.tga
+02/24/2007  09:41 PM           384,101 simple_square01_brightlit.tga.smallsquare100.tga
+02/24/2007  09:41 PM           386,377 simple_square01_lit.tga.smallsquare90.tga
+02/24/2007  09:41 PM           353,804 simple_square01_softerlit.tga.smallsquare80.tga
+02/24/2007  09:41 PM           307,509 simple_square01_softlit.tga.smallsquare70.tga
+03/21/2006  08:01 PM           786,476 square_old_smallpanels01_dark.tga
+12/11/2005  12:49 AM           727,961 square_old_smallpanels01_local.tga
+12/11/2005  12:37 AM           536,829 square_old_smallpanels01_s.tga
+02/24/2007  09:41 PM           393,260 square_pattern01_lit.tga.cwindow01_d.tga
+02/24/2007  09:41 PM           393,260 square_pattern01_softlit.tga.cwindow01_dark_d.tga
+04/23/2007  07:47 PM    <DIR>          transparent_glass
+              41 File(s)     17,700,521 bytes
+
+ Directory of D:\temp2\textures\darkmod\window\ornate
+
+05/04/2007  08:04 PM    <DIR>          .
+05/04/2007  08:04 PM    <DIR>          ..
+02/20/2006  09:36 AM           786,450 pointedtop_stainglass01_blend.tga.winboth1_blend.tga
+02/20/2006  10:49 AM           786,450 pointedtop_stainglass01_blend2.tga.winboth2_blend.tga
+02/20/2006  09:36 AM           786,450 pointedtop_stainglass01_blue.tga.winboth1.tga
+01/20/2006  04:36 PM           786,450 pointedtop_stainglass01_local.tga.winboth1_local.tga
+02/20/2006  09:48 AM           196,626 pointedtop_stainglass01_s.tga.winboth1_s.tga
+02/24/2007  09:41 PM           195,274 round_spokes01_brightlit.tga.largeround100.tga
+02/24/2007  09:41 PM           195,318 round_spokes01_lit.tga.largeround90.tga
+02/24/2007  09:41 PM           112,802 round_spokes01_softerlit.tga.largeround70.tga
+02/24/2007  09:41 PM           171,936 round_spokes01_softlit.tga.largeround80.tga
+               9 File(s)      4,017,756 bytes
+
+ Directory of D:\temp2\textures\darkmod\window\transparent_glass
+
+04/23/2007  07:47 PM    <DIR>          .
+04/23/2007  07:47 PM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood
+
+05/31/2007  08:26 PM    <DIR>          .
+05/31/2007  08:26 PM    <DIR>          ..
+05/31/2007  08:17 PM    <DIR>          boards
+05/31/2007  08:18 PM    <DIR>          panels
+05/26/2007  11:48 AM    <DIR>          plaster
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\boards
+
+05/31/2007  08:17 PM    <DIR>          .
+05/31/2007  08:17 PM    <DIR>          ..
+02/25/2007  02:03 AM           699,192 dark_rough.dds.boards_old_004.dds
+02/24/2007  11:04 PM           197,147 dark_rough_ed.tga.boards_old_004_editor.tga
+02/24/2007  11:04 PM         3,145,772 dark_rough_local.tga.boards_old_004_local.tga
+04/15/2007  04:12 PM           174,904 dark_varnished.dds.boards_old_007.dds
+04/15/2007  04:10 PM            11,182 dark_varnished_ed.jpg.boards_old_007_editor.jpg
+04/15/2007  04:10 PM         3,145,772 dark_varnished_local.tga.boards_old_007_local.tga
+02/24/2007  11:04 PM             2,133 dim_01_ed.jpg.boards_polished_002_dim_editor.jpg
+02/24/2007  10:09 PM           783,783 metal_decorated.tga.manceiling04.tga
+02/24/2007  10:09 PM           673,122 metal_decorated_local.tga.manceiling04_local.tga
+02/24/2007  10:09 PM            65,580 metal_decorated_s.tga.manceiling04_s.tga
+05/26/2007  11:48 AM    <DIR>          nontiling
+05/06/2005  08:42 PM           786,476 old_01.tga.medieval010.tga
+05/06/2005  08:42 PM           786,476 old_01_h.tga.medieval010_h.tga
+05/06/2005  08:42 PM           786,476 old_01_s.tga.medieval010_s.tga
+02/24/2007  07:50 PM           783,748 old_small_grainy.tga.pagfloor01.tga
+02/24/2007  07:50 PM           786,114 old_small_grainy_local.tga.pagfloor01_local.tga
+02/24/2007  07:51 PM           788,425 plastered_grey.tga.pagceiling01.tga
+03/20/2007  08:49 PM            31,014 plastered_grey_ed.jpg.pagceiling01_ed.jpg
+03/20/2007  08:49 PM           786,476 plastered_grey_local.tga.pagceiling01_local.tga
+02/25/2007  02:03 AM           174,904 polished_01.dds.boards_polished_002.dds
+02/24/2007  11:04 PM             2,511 polished_01_ed.jpg.boards_polished_002_editor.jpg
+02/24/2007  11:04 PM           786,476 polished_01_local.tga.boards_polished_002_local.tga
+02/25/2007  02:03 AM           174,904 polished_01_s.dds.boards_polished_002_s.dds
+02/25/2007  02:03 AM           174,904 polished_shiny.dds.boards_polished_001.dds
+02/24/2007  11:04 PM             2,900 polished_shiny_ed.jpg.boards_polished_001_editor.jpg
+02/25/2007  02:03 AM           174,904 polished_shiny_s.dds.boards_polished_001_s.dds
+02/24/2007  11:15 PM           786,476 scratched.tga.casfloor02.tga
+02/24/2007  11:15 PM           786,476 scratched_local.tga.casfloor02_local.tga
+02/24/2007  11:15 PM           196,386 scratched_s.tga.casfloor02_s.tga
+05/31/2007  08:25 PM    <DIR>          tiling_1d
+02/24/2007  11:15 PM           784,085 weathered.tga.casfloor01.tga
+02/24/2007  11:15 PM           786,476 weathered_local.tga.casfloor01_local.tga
+02/24/2007  11:15 PM           195,314 weathered_s.tga.casfloor01_s.tga
+02/25/2007  02:03 AM           174,904 worn_01.dds.boards_old_005.dds
+02/24/2007  11:04 PM           196,924 worn_01_ed.tga.boards_old_005_editor.tga
+02/24/2007  11:04 PM           786,476 worn_01_local.tga.boards_old_005_local.tga
+02/25/2007  02:03 AM           174,904 worn_01_s.dds.boards_old_005_s.dds
+04/15/2007  04:12 PM           174,904 worn_02.dds.boards_old_006.dds
+04/15/2007  04:10 PM            16,811 worn_02_ed.jpg.boards_old_006_editor.jpg
+04/15/2007  04:10 PM           786,476 worn_02_local.tga.boards_old_006_local.tga
+02/24/2007  07:50 PM           786,476 worn_large.tga.pagfloor02.tga
+02/24/2007  07:50 PM           786,476 worn_large_local.tga.pagfloor02_local.tga
+              40 File(s)     23,344,859 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\boards\nontiling
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\boards\tiling_1d
+
+05/31/2007  08:25 PM    <DIR>          .
+05/31/2007  08:25 PM    <DIR>          ..
+02/24/2007  11:08 PM           786,850 gen_old_boards.tga.wood_001_d.tga
+02/24/2007  11:08 PM           777,825 gen_old_boards_local.tga.wood_001_local.tga
+02/25/2007  02:00 AM           349,672 new_grainy.dds.boards_new_001.dds
+02/24/2007  11:00 PM           294,956 new_grainy_ed.tga.boards_new_001_editor.tga
+02/24/2007  11:00 PM         1,572,908 new_grainy_local.tga.boards_new_001_local.tga
+02/25/2007  02:00 AM           349,672 new_grainy_s.dds.boards_new_001_s.dds
+               6 File(s)      4,131,883 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\panels
+
+05/31/2007  08:18 PM    <DIR>          .
+05/31/2007  08:18 PM    <DIR>          ..
+02/25/2007  02:05 AM           349,672 beam_brown_old.DDS.beam_003_d.DDS
+02/24/2007  11:10 PM            98,348 beam_brown_old_ed.tga.beam_003_ed.tga
+02/24/2007  11:10 PM         1,504,488 beam_brown_old_local.tga.beam_003_local.tga
+02/24/2007  07:51 PM           393,260 beam_old_mossy.tga.pagtrim01.tga
+02/24/2007  07:51 PM           196,652 beam_old_mossy_local.tga.pagtrim01_local.tga
+02/24/2007  07:51 PM           196,652 beam_old_mossy_s.tga.pagtrim01_s.tga
+02/25/2007  02:05 AM           699,272 beam_rough_brown.dds.beam_002.dds
+02/24/2007  11:10 PM             2,265 beam_rough_brown_ed.jpg.beam_002_editor.jpg
+02/25/2007  02:05 AM         1,398,416 beam_rough_local.dds.beam_002_local.dds
+02/24/2007  11:10 PM         4,194,348 beam_rough_local.tga.beam_002_local.tga
+02/25/2007  02:05 AM           699,272 beam_rough_s.dds.beam_002_s.dds
+02/25/2007  02:05 AM           699,272 beam_rough_weathered.dds.beam_002_weathered.dds
+02/24/2007  11:10 PM             2,604 beam_rough_weathered_ed.jpg.beam_002_weathered_editor.jpg
+02/24/2007  09:54 PM           393,260 molding_decorative_dark.tga.manwtrim04.tga
+02/24/2007  09:54 PM           393,260 molding_decorative_dark_local.tga.manwtrim04_local.tga
+02/24/2007  09:54 PM           388,757 molding_grey.tga.manwtrim01.tga
+02/24/2007  09:54 PM           389,308 molding_grey_local.tga.manwtrim01_local.tga
+02/24/2007  09:54 PM           383,066 molding_leaves.tga.manwtrim02.tga
+02/24/2007  09:54 PM           385,671 molding_leaves_local.tga.manwtrim02_local.tga
+05/31/2007  08:18 PM    <DIR>          nontiling
+02/24/2007  09:54 PM           788,195 panels_decorative_arched.tga.manwall01.tga
+02/24/2007  09:54 PM           740,376 panels_decorative_arched_local.tga.manwall01_local.tga
+02/24/2007  09:54 PM           786,476 panels_grey_long.tga.manwpanel01.tga
+02/24/2007  09:54 PM           786,450 panels_grey_long_local.tga.manwpanel01_local.tga
+02/24/2007  10:09 PM           196,652 panel_carved_rectangles_01.tga.manceiling06.tga
+02/24/2007  10:09 PM           196,652 panel_carved_rectangles_01_local.tga.manceiling06_local.tga
+02/24/2007  10:09 PM           786,476 panel_carved_rectangles_02_dark.tga.manceiling03.tga
+02/24/2007  10:09 PM           786,476 panel_carved_rectangles_02_light.tga.manceiling03b.tga
+02/24/2007  10:09 PM           786,476 panel_carved_rectangles_02_local.tga.manceiling03_local.tga
+02/24/2007  09:54 PM           786,450 panel_carved_round_dark.tga.manwpanel03.tga
+02/24/2007  09:54 PM           786,450 panel_carved_round_dark_local.tga.manwpanel03_local.tga
+02/24/2007  10:09 PM           786,476 panel_carved_star.tga.manceiling05.tga
+02/24/2007  10:09 PM           786,476 panel_carved_star_dusty.tga.manceiling02.tga
+02/24/2007  10:09 PM           786,476 panel_carved_star_dusty_local.tga.manceiling02_local.tga
+02/24/2007  10:09 PM           786,476 panel_carved_star_local.tga.manceiling05_local.tga
+02/24/2007  09:54 PM           786,476 panel_circle_face.tga.manwpanel05.tga
+02/24/2007  09:54 PM           786,476 panel_circle_face_local.tga.manwpanel05_local.tga
+02/24/2007  09:54 PM           196,652 panel_decorative_frame.tga.manwpanel07.tga
+02/24/2007  09:54 PM           196,652 panel_decorative_frame_local.tga.manwpanel07_local.tga
+02/24/2007  09:54 PM           393,260 panel_decorative_frame_long.tga.manwpanel08.tga
+02/24/2007  09:54 PM           393,260 panel_decorative_frame_long_local.tga.manwpanel08_local.tga
+02/24/2007  09:54 PM           786,476 panel_decorative_rectangles.tga.manwpanel04.tga
+02/24/2007  09:54 PM           786,476 panel_decorative_rectangles_local.tga.manwpanel04_local.tga
+02/24/2007  09:54 PM           786,476 panel_floral_ornaments.tga.manwall01sh.tga
+02/24/2007  09:54 PM           786,476 panel_floral_ornaments_local.tga.manwall01sh_local.tga
+02/24/2007  09:54 PM           786,476 panel_floral_ornaments_s.tga.manwall01sh_s.tga
+02/24/2007  10:09 PM           786,476 panel_grey.tga.manceiling01.tga
+02/24/2007  10:09 PM           786,476 panel_grey_local.tga.manceiling01_local.tga
+02/24/2007  09:54 PM           786,476 panel_hammer.tga.manwpanel02.tga
+02/24/2007  09:54 PM           786,476 panel_hammer_local.tga.manwpanel02_local.tga
+02/24/2007  09:54 PM           262,188 panel_hammer_s.tga.manwpanel02_s.tga
+02/24/2007  09:54 PM           196,652 panel_pillar_capital_local.tga.manwcapital01_local.tga
+02/24/2007  09:54 PM           393,958 panel_warrior.tga.manwpanel06.tga
+02/24/2007  09:54 PM           385,768 panel_warrior_local.tga.manwpanel06_local.tga
+02/24/2007  09:54 PM           786,476 thin_panels_with_trim_dark.tga.manwtrim07.tga
+02/24/2007  09:54 PM           786,476 thin_panels_with_trim_dark_local.tga.manwtrim07_local.tga
+02/24/2007  09:54 PM           786,476 thin_panels_with_trim_light.tga.manwtrim05.tga
+02/24/2007  09:54 PM           786,476 thin_panels_with_trim_light_local.tga.manwtrim05_local.tga
+04/15/2007  04:12 PM           174,904 tile_pattern_star.dds.tile_decorative_001.dds
+04/15/2007  04:10 PM            29,173 tile_pattern_star_ed.jpg.tile_decorative_001_editor.jpg
+04/15/2007  04:10 PM           786,476 tile_pattern_star_local.tga.tile_decorative_001_local.tga
+04/15/2007  04:12 PM            43,832 tile_pattern_star_s.dds.tile_decorative_001_s.dds
+02/25/2007  02:03 AM           174,904 tile_weave.dds.tile_weave_001.dds
+02/24/2007  11:04 PM             5,306 tile_weave_ed.jpg.tile_weave_001_editor.jpg
+02/24/2007  11:04 PM           786,476 tile_weave_local.tga.tile_weave_001_local.tga
+02/25/2007  02:03 AM           174,904 tile_weave_s.dds.tile_weave_001_s.dds
+05/31/2007  08:25 PM    <DIR>          tiling_1d
+02/24/2007  09:54 PM           196,652 trim_carved_long.tga.manwpillar01.tga
+02/24/2007  09:54 PM           196,652 trim_carved_long_local.tga.manwpillar01_local.tga
+02/24/2007  09:54 PM           393,260 trim_carved_rounded.tga.manwtrim06.tga
+02/24/2007  09:54 PM           393,260 trim_carved_rounded_local.tga.manwtrim06_local.tga
+              69 File(s)     40,912,205 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\panels\nontiling
+
+05/31/2007  08:18 PM    <DIR>          .
+05/31/2007  08:18 PM    <DIR>          ..
+04/01/2007  10:54 AM         1,572,908 beam_brown_old_burnt.tga.beam_003_burnt_d.tga
+02/25/2007  02:05 AM           349,672 beam_brown_old_endcap.dds.beam_003_endcap_d.DDS
+02/24/2007  11:10 PM            98,348 beam_brown_old_endcap_ed.tga.beam_003_endcap_ed.tga
+02/24/2007  11:10 PM         1,554,385 beam_brown_old_endcap_local.tga.beam_003_endcap_local.tga
+02/25/2007  02:05 AM            43,832 beam_rough_brown_endcap.dds.beam_002_endcap.dds
+02/24/2007  11:10 PM               526 beam_rough_brown_endcap_ed.jpg.beam_002_endcap_editor.jpg
+02/24/2007  11:10 PM           262,188 beam_rough_endcap_local.tga.beam_002_endcap_local.tga
+02/25/2007  02:05 AM            43,832 beam_rough_weathered_endcap.dds.beam_002_weathered_endcap.dds
+02/24/2007  11:11 PM               509 beam_rough_weathered_endcap_ed.jpg.beam_002_weathered_endcap_editor.jpg
+               9 File(s)      3,926,200 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\panels\tiling_1d
+
+05/31/2007  08:25 PM    <DIR>          .
+05/31/2007  08:25 PM    <DIR>          ..
+02/24/2007  11:08 PM           729,010 gen_panel_x_pattern.tga.wood_002_d.tga
+02/24/2007  11:08 PM           523,332 gen_panel_x_pattern_local.tga.wood_002_local.tga
+               2 File(s)      1,252,342 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\plaster
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+02/24/2007  10:47 PM           393,260 framed_01.tga.cwall_frame02_d.tga
+02/24/2007  10:47 PM           393,260 framed_01_local.tga.cwall_frame02_local.tga
+02/24/2007  10:47 PM           393,260 framed_01_s.tga.cwall_frame02_s.tga
+02/24/2007  10:47 PM           393,260 framed_02.tga.cwall_frame01_d.tga
+02/24/2007  10:47 PM           393,260 framed_02_local.tga.cwall_frame01_local.tga
+02/24/2007  10:47 PM           393,260 framed_02_s.tga.cwall_frame01_s.tga
+02/24/2007  10:47 PM           524,332 framed_old_01.tga.ctywall03.tga
+02/24/2007  10:47 PM           393,260 framed_old_01_local.tga.ctywall03_local.tga
+02/24/2007  10:47 PM           524,306 framed_old_decorative_01.tga.ctywall02.tga
+02/24/2007  10:47 PM           393,260 framed_old_decorative_01_local.tga.ctywall02_local.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks.tga.cwall_framebrick02_d.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks_02.tga.cwall_framebrick02_d.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks_02_local.tga.cwall_framebrick02_local.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks_02_s.tga.cwall_framebrick02_s.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks_local.tga.cwall_framebrick_local.tga
+02/24/2007  10:47 PM           393,260 framed_with_bricks_s.tga.cwall_framebrick_s.tga
+05/26/2007  11:48 AM    <DIR>          nontiling
+02/25/2007  01:13 AM           174,904 panel_decorative_white.dds.plaster_002.dds
+02/24/2007  09:42 PM           197,147 panel_decorative_white_ed.tga.plaster_002_editor.tga
+02/24/2007  09:42 PM           786,476 panel_decorative_white_local.tga.plaster_002_local.tga
+03/14/2007  08:16 PM           524,332 plaster_01.tga.cwall_01.tga
+03/14/2007  08:16 PM           524,332 plaster_01_local.tga.cwall_01_local.tga
+03/14/2007  08:16 PM           524,332 plaster_01_s.tga.cwall_01_s.tga
+02/24/2007  09:54 PM           786,476 stucco_01.tga.manwall02.tga
+02/24/2007  09:54 PM           196,626 stucco_01_local.tga.manwall02_local.tga
+02/24/2007  09:54 PM           786,476 stucco_01_s.tga.manwall02_s.tga
+05/26/2007  11:48 AM    <DIR>          tiling_1d
+              25 File(s)     11,055,379 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\plaster\nontiling
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+               0 File(s)              0 bytes
+
+ Directory of D:\temp2\textures\darkmod\wood\plaster\tiling_1d
+
+05/26/2007  11:48 AM    <DIR>          .
+05/26/2007  11:48 AM    <DIR>          ..
+02/24/2007  10:47 PM           775,127 framed_trim_lions.tga.ctywall04.tga
+02/24/2007  10:47 PM           755,322 framed_trim_lions_local.tga.ctywall04_local.tga
+02/25/2007  01:13 AM           174,904 plaster_02.dds.plaster_001.dds
+02/24/2007  09:42 PM           196,725 plaster_02_ed.tga.plaster_001_editor.tga
+02/24/2007  09:42 PM           786,476 plaster_02_local.tga.plaster_001_local.tga
+02/24/2007  07:48 PM           788,137 plaster_dirty_01_brown.tga.pagwall01.tga
+02/24/2007  07:48 PM           787,921 plaster_dirty_01_grey.tga.pagwall01a.tga
+02/24/2007  07:48 PM           787,115 plaster_dirty_01_local.tga.pagwall01_local.tga
+               8 File(s)      5,051,727 bytes
+
+     Total Files Listed:
+            1001 File(s)    620,161,490 bytes
+             356 Dir(s)  97,214,095,360 bytes free
