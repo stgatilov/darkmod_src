@@ -155,6 +155,13 @@ bool PVSToAASMapping::buildMappings(idStr in_aasName)
 
 //---------------------------------------------------------------------------
 
+idStr PVSToAASMapping::getAASName()
+{
+	return aasName;
+}
+
+//---------------------------------------------------------------------------
+
 bool PVSToAASMapping::insertAASAreaIntoPVSAreaMapping (int aasAreaIndex, int pvsAreaIndex)
 {
 

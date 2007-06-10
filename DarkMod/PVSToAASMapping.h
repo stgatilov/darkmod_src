@@ -73,6 +73,11 @@ public:
 	*/
 	bool buildMappings(idStr in_aasName);
 
+	/**
+	* This method retrievs the name of the AAS which was used in the mapping
+	*/
+	idStr getAASName();
+
 	/*!
 	* This method gets the aas area index list for a particular pvs area
 	*
