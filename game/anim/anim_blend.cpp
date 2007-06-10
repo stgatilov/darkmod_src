@@ -937,7 +937,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 				case FC_SETRATE:
 				{
-					int newRate = atof( command.string->c_str() );
+					float newRate = atof( command.string->c_str() );
 					
 					for( int ind = 0; ind < numAnims; ind++ )
 					{
