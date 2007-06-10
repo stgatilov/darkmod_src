@@ -784,3 +784,10 @@ float darkModLAS::queryLightingAlongLine
 	return totalIllumination;
 }
 
+//----------------------------------------------------------------------------
+
+idStr darkModLAS::getAASName()
+{
+	return pvsToAASMappingTable.getAASName();
+}
+

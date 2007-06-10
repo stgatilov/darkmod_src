@@ -191,6 +191,10 @@ public:
    */
    idList<qhandle_t> getListOfLightsAffectingPoint (const idVec3& testPoint, bool b_currentlyLighting = true );
   
+   /**
+   * This method gets the name of the AAS for which the LAS was initialized
+   */
+   idStr getAASName();
 
 
 
