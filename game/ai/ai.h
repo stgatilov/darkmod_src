@@ -1304,6 +1304,7 @@ protected:
 	void Event_StartSearchForHidingSpotsWithExclusionArea (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, const idVec3 &exclusionMinBounds, const idVec3 &exclusionMaxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
 	void Event_ContinueSearchForHidingSpots(); 
 	void Event_CloseHidingSpotSearch ();
+	void Event_ResortHidingSpots ( const idVec3& searchCenter, const idVec3& searchRadius);
 	void Event_GetNumHidingSpots ();
 	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
 	void Event_GetNthHidingSpotType (int hidingSpotIndex);
