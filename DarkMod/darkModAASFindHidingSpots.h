@@ -164,6 +164,8 @@ protected:
 	* @param hidingHeight The height in the z plane above the test point taken up by the hider's height
 	* @param hidingSpotTypesAllowed The types of hiding spot characteristics for which we should test
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
+	* @param out_lightQuotient The quotient 
+	* @param out_qualityWithoutDistance The quality without distance factored in
 	* @param out_quality Returns the quality of any hiding spot found as a ratio from 0.0 to 1.0 where 1.0 is perfect.
 	*
 	* @return An integer with the bit flags for the allowed hiding spot characteristics
@@ -177,6 +179,8 @@ protected:
 		float hidingHeight,
 		int hidingSpotTypesAllowed, 
 		idEntity* p_ignoreEntity,
+		float& out_lightQuotient,
+		float& out_qualityWithoutDistance,
 		float& out_quality
 	);
 
@@ -326,7 +330,7 @@ public:
 	darkModAASFindHidingSpots
 	(
 		const idVec3 &hideFromPos , 
-		idAAS* in_p_aas, 
+		//idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
 		idBounds in_searchIgnoreLimits, 
@@ -347,7 +351,7 @@ public:
 	bool initialize
 	(
 		const idVec3 &hideFromPos , 
-		idAAS* in_p_aas, 
+		//idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
 		idBounds in_searchIgnoreLimits, 

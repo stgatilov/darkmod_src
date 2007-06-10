@@ -254,7 +254,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	p_search->initialize
 	(
 		hideFromPos, 
-		in_p_aas, 
+		//in_p_aas, 
 		in_hidingHeight,
 		in_searchLimits, 
 		in_searchExclusionLimits,
