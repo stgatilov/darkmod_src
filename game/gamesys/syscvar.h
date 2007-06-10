@@ -31,9 +31,19 @@ extern idCVar cv_ai_state_show;
 extern idCVar cv_ai_task_show;
 extern idCVar cv_ai_alertnum_show;
 extern idCVar cv_ai_debug;
+extern idCVar cv_ai_sight_thresh;
+extern idCVar cv_ai_sight_scale;
+extern idCVar cv_ai_acuity_L1;
+extern idCVar cv_ai_acuity_L2;
+extern idCVar cv_ai_acuity_L3;
+extern idCVar cv_ai_acuity_susp;
+extern idCVar cv_ai_visdist_show;
+
+
 extern idCVar cv_spr_debug;
 extern idCVar cv_spr_show;
 extern idCVar cv_ko_show;
+
 
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;
@@ -41,6 +51,14 @@ extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_rope_snd_rep_dist;
+
+/**
+* This cvar controls if ai hiding spot search debug graphics are drawn
+* If it is 0, then the graphics are not drawn.  If it is >= 1.0 then it
+* is the number of milliseconds for which each graphic should persist.
+* For example 3000.0 would mean 3 seconds
+*/
+extern idCVar cv_ai_search_show;
 
 /**
 * TDM Leaning vars:
@@ -126,6 +144,9 @@ extern idCVar cv_dm_distance;
 */
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
+
+
+/**
 
 /**
 * End DarkMod cvars
