@@ -310,6 +310,17 @@ const idEventDef AI_ContinueSearchForHidingSpots ("continueSearchForHidingSpots"
 const idEventDef AI_CloseHidingSpotSearch ("closeHidingSpotSearch", "");
 
 /*!
+* This re-sorts an existing search based on a new search center and radius.
+*
+* @param newCenter The new center of the search
+* 
+* @param newRadius The new radius of the search. Points outside the original
+*	search will not be added.
+*
+*/
+const idEventDef AI_ResortHidingSpotSearch ("resortHidingSpotSearch", "vv");
+
+/*!
 * This event returns the number of hiding spots by the current
 * hiding spot query. If there is no current query, this returns -1
 */
@@ -537,6 +548,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_StartSearchForHidingSpotsWithExclusionArea,		idAI::Event_StartSearchForHidingSpotsWithExclusionArea )
 	EVENT ( AI_ContinueSearchForHidingSpots,	idAI::Event_ContinueSearchForHidingSpots )
 	EVENT ( AI_CloseHidingSpotSearch,			idAI::Event_CloseHidingSpotSearch )
+	EVENT ( AI_ResortHidingSpotSearch,			idAI::Event_ResortHidingSpots )
 	EVENT ( AI_GetNumHidingSpots,				idAI::Event_GetNumHidingSpots )
 	EVENT ( AI_GetNthHidingSpotLocation,		idAI::Event_GetNthHidingSpotLocation )
 	EVENT ( AI_GetNthHidingSpotType,			idAI::Event_GetNthHidingSpotType )
@@ -1506,17 +1518,12 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 
 	// What is the lighting along the line where the thing to be observed
 	// might be.
-	float LightQuotient = LAS.queryLightingAlongLine 
+	float maxDistanceToObserve = getMaximumObservationDistance
 	(
 		pointToObserve,
 		pointToObserve2,
-		NULL,
-		true
+		NULL
 	);
-
-	float maxDistanceToObserve = (LightQuotient * visualAcuityZeroToOne);
-	maxDistanceToObserve *= maxDistanceToObserve; // Use square of diminishing factors
-	maxDistanceToObserve *=  g_Global.m_lightingQuotientObservationDistanceScale;
 		
 	idAASFindObservationPosition findGoal
 	(
@@ -1550,7 +1557,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = pointToObserve; 
 
 			// Draw the AI Debug Graphics
-			if (g_Global.m_drawAIDebugGraphics > 0)
+			if (cv_ai_search_show.GetFloat() >= 1.0)
 			{
 				idVec4 markerColor (0.0, 1.0, 1.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1561,7 +1568,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					observeFromPos + arrowLength,
 					observeFromPos,
 					2.0f,
-					g_Global.m_drawAIDebugGraphics
+					cv_ai_search_show.GetFloat()
 				);
 			}
 
@@ -1577,7 +1584,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = goal.origin;
 
 			// Draw the AI Debug Graphics
-			if (g_Global.m_drawAIDebugGraphics > 0)
+			if (cv_ai_search_show.GetFloat() >= 1.0)
 			{
 				idVec4 markerColor (1.0, 1.0, 0.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1588,7 +1595,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					observeFromPos,
 					pointToObserve,
 					2.0f,
-					g_Global.m_drawAIDebugGraphics
+					cv_ai_search_show.GetFloat()
 				);
 			}
 
@@ -1599,7 +1606,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = pointToObserve; 
 
 			// Draw the AI Debug Graphics
-			if (g_Global.m_drawAIDebugGraphics > 0)
+			if (cv_ai_search_show.GetFloat() >= 1.0)
 			{
 				idVec4 markerColor (1.0, 0.0, 0.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1610,7 +1617,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					observeFromPos + arrowLength,
 					observeFromPos,
 					2.0f,
-					g_Global.m_drawAIDebugGraphics
+					cv_ai_search_show.GetFloat()
 				);
 			}
 
@@ -1628,7 +1635,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 		AI_DEST_UNREACHABLE = false;
 
 		// Draw the AI Debug Graphics
-		if (g_Global.m_drawAIDebugGraphics > 0)
+		if (cv_ai_search_show.GetFloat() >= 1.0)
 		{
 			idVec4 markerColor (0.0, 1.0, 0.0, 1.0);
 			idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1639,7 +1646,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 				observeFromPos,
 				pointToObserve,
 				2.0f,
-				g_Global.m_drawAIDebugGraphics
+				cv_ai_search_show.GetFloat()
 			);
 		}
 
@@ -3691,6 +3698,8 @@ void idAI::Event_StartSearchForHidingSpots
 	idBounds searchExclusionBounds;
 	searchExclusionBounds.Clear(); // no exclusion bounds
 
+	// SZ: Must use same AAS that LAS used during setup
+
 	// Get aas
 	if (aas != NULL)
 	{
@@ -3849,12 +3858,12 @@ void idAI::Event_ContinueSearchForHidingSpots()
 
 
 			// DEBUGGING
-			if (g_Global.m_drawAIDebugGraphics >= 1.0)
+			if (cv_ai_search_show.GetFloat() >= 1.0)
 			{
 				// Clear the debug draw list and then fill with our results
 				p_hidingSpotFinder->debugClearHidingSpotDrawList();
 				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-				p_hidingSpotFinder->debugDrawHidingSpots (g_Global.m_drawAIDebugGraphics);
+				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetFloat());
 			}
 
 			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
@@ -3873,6 +3882,24 @@ void idAI::Event_CloseHidingSpotSearch ()
 	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\n");
 	destroyCurrentHidingSpotSearch();
 }
+
+//-----------------------------------------------------------------------------------------------------
+
+void idAI::Event_ResortHidingSpots
+(
+	const idVec3& searchCenter,
+	const idVec3& searchRadius
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Resorting hiding spots for new search center\n");
+	m_hidingSpots.sortForNewCenter
+	(
+		searchCenter,
+		searchRadius.Length()
+	);
+
+}
+
 
 //-----------------------------------------------------------------------------------------------------
 
@@ -3898,7 +3925,8 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 	// In bounds?
 	if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
 	{
-		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpot(hidingSpotIndex);
+		idBounds areaNodeBounds;
+		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
 		if (p_spot == NULL)
 		{
 			outLocation.x = 0;
@@ -3910,19 +3938,32 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 			outLocation = p_spot->goal.origin;
 		}
 
-		if (g_Global.m_drawAIDebugGraphics >= 1.0)
+		if (cv_ai_search_show.GetFloat() >= 1.0)
 		{
 			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
 			idVec3 arrowLength (0.0, 0.0, 50.0);
 
+			// Debug draw the point to be searched
 			gameRenderWorld->DebugArrow
 			(
 				markerColor,
 				outLocation + arrowLength,
 				outLocation,
 				2.0f,
-				g_Global.m_drawAIDebugGraphics
+				cv_ai_search_show.GetFloat()
 			);
+
+			// Debug draw the bounds of the area node containing the hiding spot point
+			// This may be smaller than the containing AAS area due to octant subdivision.
+			gameRenderWorld->DebugBounds
+			(
+				markerColor,
+				areaNodeBounds,
+				vec3_origin,
+				cv_ai_search_show.GetFloat()
+			);
+
+
 		}
 
     }
