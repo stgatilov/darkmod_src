@@ -3,11 +3,15 @@
 import os
 import string
 import sys
+import re
+import glob
+
 #from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
 
+unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
-SrcPath="/cygdrive/d/Programme/ModLib/darkmod"
-DstPath="."
+SrcPath="/home/sparhawk/darkmod"
+DstPath="/home/sparhawk/darkmod_reorg"
 
 class Texture:
 	def __init__(self):
@@ -23,7 +27,7 @@ class TextureRecord:
 	def __init__(self):
 		self.mNew = Texture()
 		self.mOld = Texture()
-		self.MaterialFilename = ""
+		self.MaterialFilename = []
 
 	def __repr__(self):
 		return "['"+self.MaterialFilename + "', " + self.mOld.__repr__() + ", " + self.mNew.__repr__()+"]"
@@ -35,6 +39,7 @@ class TextureReorg:
 		self.mInput = self.OpenFile(InputFile, "r+b")
 		self.mSrcPath = SrcPath
 		self.mDstPath = DstPath
+		self.mMaterial = glob.glob(SrcPath+"/materials/*")
 
 		self.mDir = []
 
@@ -92,10 +97,15 @@ class TextureReorg:
 			if(bDir == 1):
 				bDir = 0
 				if(len(dir) != 0):
-					print dir
+					#print dir
 					self.mDir.append(dir)
 
-				path = t[1]
+				path = t[1].strip().replace("\\", "/").split("D:/temp2/")[1]
+				try:
+					os.mkdir(DstPath + "/" + path)
+				except OSError:
+					pass
+				#print path
 				continue
 
 			t = ln[39:]
@@ -103,18 +113,56 @@ class TextureReorg:
 			record = TextureRecord()
 			record.mNew.TexturePath = path.strip()
 			if(len(v) == 2):
-				record.mNew.TextureName = (v[0]+"."+v[1]).strip()
+				#print "Texture has only one name:"+t
+				record.mNew.TextureName = v[0].strip()
 				record.mNew.TextureExt = v[1].strip()
-			elif(len(v) == 4):
-				record.mOld.TextureName = (v[0]+"."+v[1]).strip()
+				record.mOld.TextureName = v[0].strip()
 				record.mOld.TextureExt = v[1].strip()
-				record.mNew.TextureName = (v[2]+"."+v[3]).strip()
-				record.mNew.TextureExt = v[3].strip()
+			elif(len(v) == 4):
+				record.mOld.TextureName = v[2].strip()
+				record.mOld.TextureExt = v[3].strip()
+				record.mNew.TextureName = v[0].strip()
+				record.mNew.TextureExt = v[1].strip()
 			else:
 				print "Wrong number of arguments: "+ln
 
 			dir.append(record)
+			if(self.SearchTexture(record.mOld.TextureName, record.MaterialFilename) == None):
+				#record.MaterialFilename = []
+				#record.MaterialFilename.append("materials/unknown.mtr")
+				record.MaterialFilename = None
+				print "No material: ["+ path +"] "+record.mOld.TextureName, t
+			#print record.mOld.TextureName, record.MaterialFilename
 			#print t
+
+		self.mInput.close()
+
+	def Exists(self, matarray, matname):
+		b = 0;
+
+		for i in matarray:
+			if(matname == i):
+				#print matname + " Exists", matarray
+				b = 1
+				break
+
+		return b
+
+	def SearchTexture(self, tname, matarray):
+		rc = None
+		ss = re.compile(tname).search
+		for fn in self.mMaterial:
+			f = open(fn)
+			b = f.read()
+			f.close()
+			if(ss(b)):
+				if(self.Exists(matarray, fn) == 0):
+					fn = fn.split(SrcPath+"/")[1]
+					matarray.append(fn)
+					rc = 1
+					#print fn
+
+		return rc
 
 if __name__ == '__main__':
 	#setDebugging(1)

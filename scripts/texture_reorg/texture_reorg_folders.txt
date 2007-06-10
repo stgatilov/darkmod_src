@@ -1155,8 +1155,8 @@
 02/24/2007  09:05 PM            98,524 cobblestone_fan_pattern_grass_ed.tga.fan_001_grass_editor.tga
 02/24/2007  09:05 PM           394,241 cobblestone_fan_pattern_local.tga.fan_001_local.tga
 02/25/2007  01:56 AM            87,528 cobblestone_fan_pattern_s.dds.fan_001_s.dds
-02/25/2007  01:56 AM           699,192 flagstones01_light.dds.(duplicate_name)masonry_001.dds
-02/24/2007  09:05 PM         3,145,772 flagstones01_light_local.tga.(duplicate_name)masonry_001_local.tga
+02/25/2007  01:56 AM           699,192 flagstones01_light.dds.masonry_001.dds
+02/24/2007  09:05 PM         3,145,772 flagstones01_light_local.tga.masonry_001_local.tga
 03/18/2007  03:20 PM         1,572,908 flagstones02_plain.tga.blocks_018.tga
 03/18/2007  03:20 PM         1,572,908 flagstones02_plain_cornerstone_left.tga.blocks_018_cornerstone_l.tga
 03/18/2007  03:20 PM            10,523 flagstones02_plain_cornerstone_left_ed.jpg.blocks_018_cornerstone_l_ed.jpg
