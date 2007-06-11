@@ -1075,13 +1075,18 @@ Quit:
 **/
 idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVec3 WCenter )
 {
-	//TODO: If the winding is not a rectangle, just return the center coordinate
-
 	idVec3 line, u1, u2, v1, v2, edge, isect, lineSect;
 	idVec3 returnVec, tempVec, pointA;
 	idPlane WPlane;
 	float lenV1, lenV2, lineU1, lineU2, Scale, frac;
 	int edgeStart(0), edgeStop(0);
+
+	// If the winding is not a rectangle, just return the center coordinate
+	if( wind->GetNumPoints() != 4 )
+	{
+		returnVec = WCenter;
+		goto Quit;
+	}
 
 	// Want to find a point on the portal rectangle closest to this line:
 	line = p2 - p1;
