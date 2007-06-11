@@ -5279,6 +5279,12 @@ void idAI::PushWithAF( void ) {
 			ent = touchList[ i ].touchedEnt;
 			pushed_ents[num_pushed++] = ent;
 			vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
+			
+			if ( ent->IsType(idPlayer::Type) && static_cast<idPlayer *>(ent)->noclip )
+			{
+				// skip player when noclip is on
+				continue;
+			}
 
 			if( ent->IsType(idActor::Type) )
 			{
@@ -6524,8 +6530,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 
 			idVec3 bottomPoint = entityBounds[0];
 			idVec3 topPoint = entityBounds[1];
-			bottomPoint += p_physics->GetGravityNormal() * 0.1; // Tweak to stay out of floors
-			topPoint += p_physics->GetGravityNormal() * 0.1; // Tweak to stay out of floors
+			bottomPoint += p_physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
+			topPoint += p_physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
 			
 
 			float maxDistanceToObserve = getMaximumObservationDistance 
