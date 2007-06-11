@@ -2401,7 +2401,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  const char *damageDefName, const float damageScale, const int location,
 					  trace_t *collision ) 
 {
-	bool bKO, bKOPowerBlow;
+	bool bKO(false), bKOPowerBlow(false);
 	
 	if ( !fl.takedamage ) {
 		return;
