@@ -218,6 +218,19 @@ protected:
 	**/
 	bool					m_bCollideWithTeam;
 
+	/**
+	* Set to true if this animated AF should activate the AF body collision models
+	*	and move them around to collide with the world when animating.
+	* NOTE: This should NOT be set on AI, since they do this anyway
+	**/
+	bool					m_bAFPosedByAnim;
+
+	/**
+	* Set to true if the AF should push aside moveables while animating
+	* NOTE: This does not apply to AI, they have their own var for this
+	**/
+	bool					m_bAFPushMoveables;
+
 protected:
 	/**
 	* Set up grounding vars, which apply when the AF might not be able to be 

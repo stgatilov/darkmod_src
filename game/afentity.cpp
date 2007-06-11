@@ -567,6 +567,8 @@ idAFEntity_Base::idAFEntity_Base( void )
 	m_GroundBodyMinNum = 0;
 	m_bDragAFDamping = false;
 	m_bCollideWithTeam = true;
+	m_bAFPosedByAnim = false;
+	m_bAFPushMoveables = false;
 }
 
 /*
@@ -650,6 +652,8 @@ void idAFEntity_Base::Spawn( void )
 	m_GroundBodyMinNum = spawnArgs.GetInt( "ground_min_number", "0" );
 	m_bDragAFDamping = spawnArgs.GetBool( "drag_af_damping", "0" );
 	m_bCollideWithTeam = spawnArgs.GetBool( "af_collide_with_team", "1" ); // true by default
+	m_bAFPosedByAnim = spawnArgs.GetBool( "af_posed_by_anim", "0" );
+	m_bAFPushMoveables = spawnArgs.GetBool( "af_push_moveables", "0" );
 }
 
 /*
@@ -659,7 +663,6 @@ idAFEntity_Base::LoadAF
 */
 bool idAFEntity_Base::LoadAF( void ) 
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("LoadAF was called\r");
 	idStr fileName;
 
 	if ( !spawnArgs.GetString( "articulatedFigure", "*unknown*", fileName ) ) {
@@ -684,6 +687,12 @@ bool idAFEntity_Base::LoadAF( void )
 
 	SetUpGroundingVars();
 
+	if( m_bAFPosedByAnim )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
+
 	return true;
 }
 
@@ -698,6 +707,50 @@ void idAFEntity_Base::Think( void ) {
 	if ( thinkFlags & TH_UPDATEVISUALS ) {
 		Present();
 		LinkCombat();
+	}
+
+// TDM: Anim/AF physics mods, generalized behavior that originally was just on AI
+
+	// Update the AF bodies for the anim if we are set to do that
+	if ( m_bAFPosedByAnim && af.IsLoaded() && animator.FrameHasChanged( gameLocal.time ) ) 
+	{
+		af.ChangePose( this, gameLocal.time );
+
+		// push moveables aside while animating the AF, if set
+		// Do not do this for AI, since they have their own way
+		if( m_bAFPushMoveables && !IsType(idAI::Type) )
+		{
+
+// copied from idAI::PushWithAF
+			afTouch_t touchList[ MAX_GENTITIES ];
+			idEntity *pushed_ents[ MAX_GENTITIES ];
+			idEntity *ent;
+			idVec3 vel( vec3_origin );
+			int num_pushed(0), i, j;
+
+			int num = af.EntitiesTouchingAF( touchList );
+			for( i = 0; i < num; i++ ) 
+			{
+				// skip projectiles
+				if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) )
+					continue;
+
+				// make sure we havent pushed this entity already.  this avoids causing double damage
+				for( j = 0; j < num_pushed; j++ ) 
+				{
+					if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
+						break;
+				}
+				if ( j >= num_pushed ) 
+				{
+					ent = touchList[ i ].touchedEnt;
+					pushed_ents[num_pushed++] = ent;
+					vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
+					vel.Normalize();
+					ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
+				}
+			}
+		}
 	}
 }
 

@@ -1045,6 +1045,12 @@ bool idAnimated::LoadAF( void )
 	bReturnVal = af.Load( this, fileName );
 	SetUpGroundingVars();
 
+	if( m_bAFPosedByAnim )
+	{
+		af.SetupPose( this, gameLocal.time );
+		af.GetPhysics()->EnableClip();
+	}
+
 Quit:
 	return bReturnVal;
 }
