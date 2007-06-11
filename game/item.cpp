@@ -141,13 +141,7 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 {
 	bool bRc = true;
 
-	if(pulse == false)
-	{
-//		bRc = Frob(CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP
-// |CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-// |CONTENTS_TRIGGER|CONTENTS_FLASHLIGHT_TRIGGER, &renderEntity->shaderParms[11]);
-	}
-	else
+	if(pulse)
 	{
 		if(lastRenderViewTime == renderView->time)
 			return false;
