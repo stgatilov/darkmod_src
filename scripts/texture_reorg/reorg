@@ -5,8 +5,10 @@ import string
 import sys
 import re
 import glob
+import scriptutil
 
 #from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
+
 
 unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
@@ -146,7 +148,27 @@ class TextureReorg:
 			#print record.mOld.TextureName, record.MaterialFilename
 			#print t
 
+			record.mOld.TexturePath = self.SearchTexture(SrcPath+"/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
+			if record.mOld.TexturePath == None:
+				record.mOld.TexturePath = self.SearchTexture(SrcPath+"/dds/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
+
+			if record.mOld.TexturePath == None:
+				print "File ["+record.mOld.TextureName+"."+record.mOld.TextureExt+"] not found!"
+
 		self.mInput.close()
+
+	def SearchTexture(self, path, texname):
+		rc = None
+
+		flist = scriptutil.ffind(path, namefs=(lambda s: '.svn' not in s, lambda s: texname in s,))
+		#print len(flist), flist, path, texname
+
+		if len(flist) == 1:
+			rc = flist[0]
+		elif len(flist) > 1:
+			print "File ["+texname+"] in more then one directory!", flist
+
+		return rc
 
 	def Exists(self, matarray, matname):
 		b = 0;
