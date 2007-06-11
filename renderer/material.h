@@ -270,8 +270,9 @@ typedef enum {
 	CONTENTS_AAS_SOLID			= BIT(13),	// solid for AAS
 	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
 	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
-	CONTENTS_RESPONSE			= BIT(16),  // TDM: Used for stim/response optimization.
-	CONTENTS_MELEEWEAP			= BIT(17),  // TDM: Used for melee weapons and shields
+	CONTENTS_FROBABLE			= BIT(16),	// TDM: Used for CMs that are only for frobbing
+	CONTENTS_RESPONSE			= BIT(17),  // TDM: Used for stim/response optimization.
+	CONTENTS_MELEEWEAP			= BIT(18),  // TDM: Used for melee weapons and shields
 
 	// contents used by utils
 	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
