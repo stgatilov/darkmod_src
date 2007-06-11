@@ -10080,7 +10080,7 @@ void idPlayer::FrobCheck( void )
 	// Frob collision mask:
 	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
 		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
-		|CONTENTS_FLASHLIGHT_TRIGGER;
+		|CONTENTS_FROBABLE;
 
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
 	TraceDist = g_Global.m_MaxFrobDistance * trace.fraction;
