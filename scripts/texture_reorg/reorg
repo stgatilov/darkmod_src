@@ -10,8 +10,10 @@ import glob
 
 unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
-SrcPath="/home/sparhawk/darkmod"
-DstPath="/home/sparhawk/darkmod_reorg"
+SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+#SrcPath="/home/sparhawk/darkmod"
+#DstPath="/home/sparhawk/darkmod_reorg"
 
 class Texture:
 	def __init__(self):
@@ -21,7 +23,7 @@ class Texture:
 		self.TexturePath = ""
 
 	def __repr__(self):
-		return "['"+self.TextureName + "', '" + self.TextureExt + "', " + self.TextureMaterial + "', '" + self.TexturePath+"']"
+		return "['"+self.TexturePath+"', '" +self.TextureName + "', '" + self.TextureExt + "', " + self.TextureMaterial +"']"
 
 class TextureRecord:
 	def __init__(self):
@@ -30,8 +32,16 @@ class TextureRecord:
 		self.MaterialFilename = []
 
 	def __repr__(self):
-		return "['"+self.MaterialFilename + "', " + self.mOld.__repr__() + ", " + self.mNew.__repr__()+"]"
+		mat = ""
+		if self.MaterialFilename == None:
+			mat = "None"
+		else:
+			for i in self.MaterialFilename:
+				mat += "'"+i+"', "
 
+			mat = mat[0:len(mat)-2]
+
+		return "["+mat + "\n" + self.mOld.__repr__() + "\n" + self.mNew.__repr__()+"]"
 
 class TextureReorg:
 	def __init__(self, Logfile, SrcPath, DstPath, InputFile):
@@ -97,12 +107,13 @@ class TextureReorg:
 			if(bDir == 1):
 				bDir = 0
 				if(len(dir) != 0):
-					#print dir
+					#print path
 					self.mDir.append(dir)
 
-				path = t[1].strip().replace("\\", "/").split("D:/temp2/")[1]
+				path = (t[1].strip().replace("\\", "/").split("D:/temp2/")[1]).strip()
 				try:
 					os.mkdir(DstPath + "/" + path)
+					os.mkdir(DstPath + "/dds/" + path)
 				except OSError:
 					pass
 				#print path
@@ -111,7 +122,7 @@ class TextureReorg:
 			t = ln[39:]
 			v = t.split(".")
 			record = TextureRecord()
-			record.mNew.TexturePath = path.strip()
+			record.mNew.TexturePath = path
 			if(len(v) == 2):
 				#print "Texture has only one name:"+t
 				record.mNew.TextureName = v[0].strip()
@@ -127,7 +138,7 @@ class TextureReorg:
 				print "Wrong number of arguments: "+ln
 
 			dir.append(record)
-			if(self.SearchTexture(record.mOld.TextureName, record.MaterialFilename) == None):
+			if(self.TextureMaterial(record.mOld.TextureName, record.MaterialFilename) == None):
 				#record.MaterialFilename = []
 				#record.MaterialFilename.append("materials/unknown.mtr")
 				record.MaterialFilename = None
@@ -148,7 +159,7 @@ class TextureReorg:
 
 		return b
 
-	def SearchTexture(self, tname, matarray):
+	def TextureMaterial(self, tname, matarray):
 		rc = None
 		ss = re.compile(tname).search
 		for fn in self.mMaterial:
@@ -164,6 +175,13 @@ class TextureReorg:
 
 		return rc
 
+	def ConvertMaterials(self):
+		for dir in self.mDir:
+			#print dir[0], dir[1:]
+			pass
+
+		return
+
 if __name__ == '__main__':
 	#setDebugging(1)
 	if len(sys.argv) <= 1:
@@ -172,5 +190,6 @@ if __name__ == '__main__':
 
 	reorg = TextureReorg(LOGFILE, SrcPath, DstPath, sys.argv[1])
 	reorg.ParseInput()
+	reorg.ConvertMaterials()
 
 	sys.exit(0)
