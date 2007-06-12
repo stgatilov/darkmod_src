@@ -52,6 +52,7 @@ class TextureReorg:
 		self.mSrcPath = SrcPath
 		self.mDstPath = DstPath
 		self.mMaterial = glob.glob(SrcPath+"/materials/*")
+		self.mMaterialFile = {}
 
 		self.mDir = []
 
@@ -148,12 +149,12 @@ class TextureReorg:
 			#print record.mOld.TextureName, record.MaterialFilename
 			#print t
 
-			record.mOld.TexturePath = self.SearchTexture(SrcPath+"/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
-			if record.mOld.TexturePath == None:
-				record.mOld.TexturePath = self.SearchTexture(SrcPath+"/dds/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
+			#record.mOld.TexturePath = self.SearchTexture(SrcPath+"/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
+			#if record.mOld.TexturePath == None:
+			#	record.mOld.TexturePath = self.SearchTexture(SrcPath+"/dds/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
 
-			if record.mOld.TexturePath == None:
-				print "File ["+record.mOld.TextureName+"."+record.mOld.TextureExt+"] not found!"
+			#if record.mOld.TexturePath == None:
+			#	print "File ["+record.mOld.TextureName+"."+record.mOld.TextureExt+"] not found!"
 
 		self.mInput.close()
 
@@ -183,12 +184,52 @@ class TextureReorg:
 
 	def TextureMaterial(self, tname, matarray):
 		rc = None
-		ss = re.compile(tname).search
 		for fn in self.mMaterial:
-			f = open(fn)
-			b = f.read()
-			f.close()
-			if(ss(b)):
+			t = fn.split("replacements.txt")
+			if(len(t) > 1):
+				continue
+
+			b = ""
+			try:
+				t = self.mMaterialFile[fn]
+				b = t[0]
+			except KeyError:
+				f = open(fn)
+				b = f.read()
+				f.close()
+				t = []
+				t.append(b)
+				l = b.split("\r\n")
+				ind = 0
+				prevind = 0
+				n = len(l)
+				i = 0
+				title = 'l'
+
+				# Now we construct the indentation level
+				# so we can easily identify the material
+				# names afterwards.
+				while i < n:
+					m = l[i]
+					s = m.strip()
+					if s[0:1] == "{":
+						ind = ind + 1
+					elif s[0:1] == "}":
+						ind = ind - 1
+
+					# Check if we have found a material name
+					if ind == 1 and prevind == 0:
+						l[i-1][2] = 'n'
+
+					prevind = ind
+					l[i] =  [m, ind, 'l']
+					i = i+1
+
+				t.append(l)
+				self.mMaterialFile[fn] = t
+
+			t = b.split(tname)
+			if(len(t) > 1):
 				if(self.Exists(matarray, fn) == 0):
 					fn = fn.split(SrcPath+"/")[1]
 					matarray.append(fn)
