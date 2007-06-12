@@ -43,7 +43,7 @@ class TextureRecord:
 
 			mat = mat[0:len(mat)-2]
 
-		return "["+mat + "\n" + self.mOld.__repr__() + "\n" + self.mNew.__repr__()+"]"
+		return "[* "+mat + "\n **" + self.mOld.__repr__() + "\n **" + self.mNew.__repr__()+" *]\n"
 
 class TextureReorg:
 	def __init__(self, Logfile, SrcPath, DstPath, InputFile):
@@ -54,7 +54,7 @@ class TextureReorg:
 		self.mMaterial = glob.glob(SrcPath+"/materials/*")
 		self.mMaterialFile = {}
 
-		self.mDir = []
+		self.mTextureRecord = []
 
 	def OpenFile(self, name, mode):
 		try:
@@ -110,8 +110,7 @@ class TextureReorg:
 			if(bDir == 1):
 				bDir = 0
 				if(len(dir) != 0):
-					#print path
-					self.mDir.append(dir)
+					self.mTextureRecord.append(dir)
 
 				path = (t[1].strip().replace("\\", "/").split("D:/temp2/")[1]).strip()
 				try:
@@ -120,6 +119,7 @@ class TextureReorg:
 				except OSError:
 					pass
 				#print path
+				dir = []
 				continue
 
 			t = ln[39:]
@@ -238,10 +238,31 @@ class TextureReorg:
 
 		return rc
 
-	def ConvertMaterials(self):
-		for dir in self.mDir:
-			#print dir[0], dir[1:]
-			pass
+	def ReplaceTexture(self, mat, oname, nname):
+		if oname == nname:
+			return
+
+		tname = None
+		print oname + " -> " + nname
+		for l in mat[1]:
+			if l[1] == 0:
+				tname = None
+
+			if l[2] == 'n':
+				tname = l[0]
+				print "*********" + tname
+
+			print l[0]
+		return
+
+	def ProcessReorg(self):
+		cnt = 0
+		for dir in self.mTextureRecord:
+			for record in dir:
+				for matname in record.MaterialFilename:
+					cnt = cnt + 1
+					self.ReplaceTexture(self.mMaterialFile[SrcPath+"/"+matname], record.mOld.TextureName, record.mNew.TextureName)
+					sys.exit(0)
 
 		return
 
@@ -253,6 +274,6 @@ if __name__ == '__main__':
 
 	reorg = TextureReorg(LOGFILE, SrcPath, DstPath, sys.argv[1])
 	reorg.ParseInput()
-	reorg.ConvertMaterials()
+	reorg.ProcessReorg()
 
 	sys.exit(0)
