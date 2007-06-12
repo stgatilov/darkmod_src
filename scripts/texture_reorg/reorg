@@ -12,10 +12,10 @@ import scriptutil
 
 unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
-SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-#SrcPath="/home/sparhawk/darkmod"
-#DstPath="/home/sparhawk/darkmod_reorg"
+#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+SrcPath="/home/sparhawk/darkmod"
+DstPath="/home/sparhawk/darkmod_reorg"
 
 class Texture:
 	def __init__(self):
@@ -142,19 +142,8 @@ class TextureReorg:
 
 			dir.append(record)
 			if(self.TextureMaterial(record.mOld.TextureName, record.MaterialFilename) == None):
-				#record.MaterialFilename = []
-				#record.MaterialFilename.append("materials/unknown.mtr")
-				record.MaterialFilename = None
+				record.MaterialFilename = []
 				print "No material: ["+ path +"] "+record.mOld.TextureName, t
-			#print record.mOld.TextureName, record.MaterialFilename
-			#print t
-
-			#record.mOld.TexturePath = self.SearchTexture(SrcPath+"/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
-			#if record.mOld.TexturePath == None:
-			#	record.mOld.TexturePath = self.SearchTexture(SrcPath+"/dds/textures/", record.mOld.TextureName+"."+record.mOld.TextureExt)
-
-			#if record.mOld.TexturePath == None:
-			#	print "File ["+record.mOld.TextureName+"."+record.mOld.TextureExt+"] not found!"
 
 		self.mInput.close()
 
@@ -199,7 +188,7 @@ class TextureReorg:
 				f.close()
 				t = []
 				t.append(b)
-				l = b.split("\r\n")
+				l = b.split("\n")
 				ind = 0
 				prevind = 0
 				n = len(l)
@@ -211,6 +200,10 @@ class TextureReorg:
 				# names afterwards.
 				while i < n:
 					m = l[i]
+					m0 = m.split("\r")
+					if(len(m0) > 1):
+						m = m0[0]
+
 					s = m.strip()
 					if s[0:1] == "{":
 						ind = ind + 1
@@ -244,25 +237,48 @@ class TextureReorg:
 
 		tname = None
 		print oname + " -> " + nname
-		for l in mat[1]:
+		mn = len(mat[1])
+		mi = 0
+		mat_title = 0
+		while mi < mn:
+			l = mat[1][mi]
 			if l[1] == 0:
 				tname = None
 
 			if l[2] == 'n':
 				tname = l[0]
-				print "*********" + tname
+				mat_title = mi
+				mi = mi + 1
+				continue
 
-			print l[0]
+			# Check if the texture is contained in that
+			# material line and if it is the real name.
+			# We have to check for the real name because
+			# otherwise partial names would also match
+			# which causes wrong entries.
+			t = l[0].split(oname)
+			if(len(t) > 1):
+				if(len(t[1]) == 0 or t[1][0] == '.'):
+					#print len(t), t
+					mat[1][mi][0] = t[0] + nname + t[1]
+					#print mat[1][mi]
+			mi = mi + 1
+
 		return
 
 	def ProcessReorg(self):
 		cnt = 0
 		for dir in self.mTextureRecord:
 			for record in dir:
+				print record.MaterialFilename
 				for matname in record.MaterialFilename:
 					cnt = cnt + 1
 					self.ReplaceTexture(self.mMaterialFile[SrcPath+"/"+matname], record.mOld.TextureName, record.mNew.TextureName)
-					sys.exit(0)
+					#for l in self.mMaterialFile[SrcPath+"/"+matname][1]:
+					#	print l[0]
+
+					#sys.exit(0)
+
 
 		return
 
