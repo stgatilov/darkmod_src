@@ -12,10 +12,12 @@ import scriptutil
 
 unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
-#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-SrcPath="/home/sparhawk/darkmod"
-DstPath="/home/sparhawk/darkmod_reorg"
+SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+#SrcPath="/home/sparhawk/darkmod"
+#DstPath="/home/sparhawk/darkmod_reorg"
+
+total_material_names = {}
 
 class Texture:
 	def __init__(self):
@@ -53,8 +55,24 @@ class TextureReorg:
 		self.mDstPath = DstPath
 		self.mMaterial = glob.glob(SrcPath+"/materials/*")
 		self.mMaterialFile = {}
-
+		self.mMaterialFileFlag = {}
 		self.mTextureRecord = []
+		try:
+			os.mkdir(DstPath + "/textures")
+		except OSError:
+			pass
+		try:
+			os.mkdir(DstPath + "/dds")
+		except OSError:
+			pass
+		try:
+			os.mkdir(DstPath + "/dds/textures")
+		except OSError:
+			pass
+		try:
+			os.mkdir(DstPath + "/materials")
+		except OSError:
+			pass
 
 	def OpenFile(self, name, mode):
 		try:
@@ -178,6 +196,10 @@ class TextureReorg:
 			if(len(t) > 1):
 				continue
 
+			t = fn.split("gildoran_notes.txt")
+			if(len(t) > 1):
+				continue
+
 			b = ""
 			try:
 				t = self.mMaterialFile[fn]
@@ -212,6 +234,7 @@ class TextureReorg:
 
 					# Check if we have found a material name
 					if ind == 1 and prevind == 0:
+						total_material_names[l[i-1][0]] = 0
 						l[i-1][2] = 'n'
 
 					prevind = ind
@@ -220,6 +243,7 @@ class TextureReorg:
 
 				t.append(l)
 				self.mMaterialFile[fn] = t
+				self.mMaterialFileFlag[fn] = 0
 
 			t = b.split(tname)
 			if(len(t) > 1):
@@ -231,12 +255,13 @@ class TextureReorg:
 
 		return rc
 
-	def ReplaceTexture(self, mat, oname, nname):
+	def ReplaceTexture(self, mat, oname, nname, record):
+		rc = 0
+
 		if oname == nname:
-			return
+			return rc
 
 		tname = None
-		print oname + " -> " + nname
 		mn = len(mat[1])
 		mi = 0
 		mat_title = 0
@@ -247,6 +272,8 @@ class TextureReorg:
 
 			if l[2] == 'n':
 				tname = l[0]
+				if(len(tname.strip()) == 0):
+					sys.exit(0)
 				mat_title = mi
 				mi = mi + 1
 				continue
@@ -259,27 +286,122 @@ class TextureReorg:
 			t = l[0].split(oname)
 			if(len(t) > 1):
 				if(len(t[1]) == 0 or t[1][0] == '.'):
-					#print len(t), t
+					sl = "textures/"
+					p = t[0].split(sl)
+					if(len(p) == 1):
+						p = t[0].split("textures\\")
+
+					if(len(p) == 1):
+						sl = "models/"
+						p = t[0].split(sl)
+
+					if(len(p) == 1):
+						p = t[0].split("models\\")
+
+					p = p[1]
+					p = p[0:len(p)-1].replace("\\", "/")
+					record.mOld.TexturePath = sl+p
+					# Update the line in the material with the new texturepath
 					mat[1][mi][0] = t[0] + nname + t[1]
-					#print mat[1][mi]
+					#print "[*"+mat[1][mat_title][0]+"*]"
+					total_material_names[mat[1][mat_title][0]] = total_material_names[mat[1][mat_title][0]] + 1
+					rc = 1
 			mi = mi + 1
 
+		return rc
+
+	def DumpMaterial(self, name):
+		#print "Material: "+name
+		matfile = self.mMaterialFile[SrcPath+"/"+name]
+
+		if(self.mMaterialFileFlag[SrcPath+"/"+name] == 0):
+			return
+
+		fl = self.OpenFile(DstPath+"/"+name, "w+b")
+		for i in matfile[1]:
+			fl.write(i[0]+"\n")
+		fl.close()
+		#sys.exit(0)
 		return
 
 	def ProcessReorg(self):
-		cnt = 0
 		for dir in self.mTextureRecord:
 			for record in dir:
-				print record.MaterialFilename
 				for matname in record.MaterialFilename:
-					cnt = cnt + 1
-					self.ReplaceTexture(self.mMaterialFile[SrcPath+"/"+matname], record.mOld.TextureName, record.mNew.TextureName)
-					#for l in self.mMaterialFile[SrcPath+"/"+matname][1]:
-					#	print l[0]
+					#print matname
+					self.mMaterialFileFlag[SrcPath+"/"+matname] = self.ReplaceTexture(self.mMaterialFile[SrcPath+"/"+matname], record.mOld.TextureName, record.mNew.TextureName, record)
+					if self.mMaterialFileFlag[SrcPath+"/"+matname] == 1:
+						print matname + ":"+ record.mOld.TexturePath+"/"+record.mOld.TextureName + ":" + record.mNew.TexturePath+"/"+record.mNew.TextureName
 
-					#sys.exit(0)
+		for dir in self.mTextureRecord:
+			for record in dir:
+				for matname in record.MaterialFilename:
+					self.DumpMaterial(matname)
+		return
 
+	def CreateUnusedTextureMaterials(self):
+		fl = self.OpenFile(DstPath+"/materials/"+"unknown.mtr", "w+b")
+		fl.write("# This file was automatically created by sparhawk for the texture reorganization\n")
+		fl.write("# materials here should be reviewed and then copied to the appropriate file.\n\n\n")
+		for dir in self.mTextureRecord:
+			for record in dir:
+				if(len(record.MaterialFilename) == 0):
+					fl.write(record.mNew.TexturePath+"/"+record.mNew.TextureName+"\n")
+					fl.write("{\n")
+					fl.write("    diffusemap  "+record.mNew.TexturePath+"/"+record.mNew.TextureName+"\n")
+					fl.write("    {\n")
+					fl.write("        if ( parm11 > 0 )\n")
+					fl.write("        blend       gl_dst_color, gl_one\n")
+					fl.write("        map         _white.tga\n")
+					fl.write("        rgb         0.40 * parm11\n")
+					fl.write("    }\n")
+					fl.write("    {\n")
+					fl.write("        if ( parm11 > 0 )\n")
+					fl.write("        blend       add\n")
+					fl.write("        map         "+record.mNew.TexturePath+"/"+record.mNew.TextureName+"\n")
+					fl.write("        rgb         0.15 * parm11\n")
+					fl.write("    }\n")
+					fl.write("}\n\n\n")
 
+		fl.close()
+		return
+
+	def CopyTextures(self):
+		for dir in self.mTextureRecord:
+			for record in dir:
+				sname = SrcPath+"/"+record.mOld.TexturePath+"/"+record.mOld.TextureName+"."+record.mOld.TextureExt
+				if(len(record.mOld.TexturePath) == 0):
+					print "No valid path for: "+sname
+					continue
+				tname = DstPath+"/"+record.mNew.TexturePath+"/"+record.mNew.TextureName+"."+record.mNew.TextureExt
+
+				b = None
+				try:
+					sfl = file(sname, "r+b")
+					b = sfl.read()
+				except IOError:
+					#print "Couldn't open source, trying DDS: "+sname
+					try:
+						sname = SrcPath+"/dds/"+record.mOld.TexturePath+"/"+record.mOld.TextureName+"."+record.mOld.TextureExt
+						tname = DstPath+"/dds/"+record.mNew.TexturePath+"/"+record.mNew.TextureName+"."+record.mNew.TextureExt
+						sfl = file(sname, "r+b")
+						b = sfl.read()
+					except IOError:
+						print "DDS lookup also failed, giving up: "+sname
+						continue
+
+				try:
+					tfl = file(tname, "w+b")
+					tfl.write(b)
+				except IOError:
+					print "Couldn't open target: "+tname
+					sfl.close()
+					continue
+
+				sfl.close()
+				tfl.close()
+
+				print "Copy: " + sname + " -> " + tname
 		return
 
 if __name__ == '__main__':
@@ -291,5 +413,13 @@ if __name__ == '__main__':
 	reorg = TextureReorg(LOGFILE, SrcPath, DstPath, sys.argv[1])
 	reorg.ParseInput()
 	reorg.ProcessReorg()
-
+	reorg.CreateUnusedTextureMaterials()
+	reorg.CopyTextures()
+	n = 0
+	for i in total_material_names:
+		if(total_material_names[i] != 0):
+			print i, total_material_names[i]
+			n = n + 1
+	print n
+	#print total_material_names, len(total_material_names)
 	sys.exit(0)
