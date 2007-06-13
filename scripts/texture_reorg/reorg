@@ -10,12 +10,11 @@ import scriptutil
 #from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
 
 
-unknown_material = 0 
 LOGFILE="reorg_logfile.txt"
-SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-#SrcPath="/home/sparhawk/darkmod"
-#DstPath="/home/sparhawk/darkmod_reorg"
+#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+SrcPath="/home/sparhawk/darkmod"
+DstPath="/home/sparhawk/darkmod_reorg"
 
 total_material_names = {}
 
@@ -366,13 +365,31 @@ class TextureReorg:
 		fl.close()
 		return
 
+	def SearchTexturePath(self, tname):
+		rc = None
+
+		path = scriptutil.ffind(SrcPath+"/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
+		if(len(path) == 0):
+			path = scriptutil.ffind(SrcPath+"/dds/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
+
+		if(len(path) == 0):
+			print "No texturefile found: "+tname
+		elif(len(path) > 1):
+			print "Multiple textures found: ", path
+		else:
+			rc = path
+
+		return rc
+
 	def CopyTextures(self):
 		for dir in self.mTextureRecord:
 			for record in dir:
 				sname = SrcPath+"/"+record.mOld.TexturePath+"/"+record.mOld.TextureName+"."+record.mOld.TextureExt
 				if(len(record.mOld.TexturePath) == 0):
-					print "No valid path for: "+sname
-					continue
+					if(self.SearchTexturePath(record.mOld.TextureName) == None):
+						print "No valid path for: "+record.mOld.TextureName
+						continue
+
 				tname = DstPath+"/"+record.mNew.TexturePath+"/"+record.mNew.TextureName+"."+record.mNew.TextureExt
 
 				b = None
@@ -380,15 +397,24 @@ class TextureReorg:
 					sfl = file(sname, "r+b")
 					b = sfl.read()
 				except IOError:
-					#print "Couldn't open source, trying DDS: "+sname
 					try:
 						sname = SrcPath+"/dds/"+record.mOld.TexturePath+"/"+record.mOld.TextureName+"."+record.mOld.TextureExt
 						tname = DstPath+"/dds/"+record.mNew.TexturePath+"/"+record.mNew.TextureName+"."+record.mNew.TextureExt
 						sfl = file(sname, "r+b")
 						b = sfl.read()
 					except IOError:
-						print "DDS lookup also failed, giving up: "+sname
-						continue
+						path = self.SearchTexturePath(record.mOld.TextureName)
+						if(path == None):
+							print "path lookup failed, giving up: ", record.mOld.TextureName
+							continue
+
+						try:
+							sname = path[0]
+							sfl = file(sname, "r+b")
+							b = sfl.read()
+						except IOError:
+							print "Couldn't open target: "+sname
+							continue
 
 				try:
 					tfl = file(tname, "w+b")
@@ -406,6 +432,8 @@ class TextureReorg:
 
 if __name__ == '__main__':
 	#setDebugging(1)
+	#print scriptutil.ffind(SrcPath+"/textures", namefs=(lambda s: '.svn' not in s, lambda s: 'test_volumetric' in s,))
+
 	if len(sys.argv) <= 1:
 		print "USAGE: reorg Inputfile"
 		sys.exit(1)
