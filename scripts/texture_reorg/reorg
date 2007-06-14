@@ -16,7 +16,7 @@ DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
 #SrcPath="/home/sparhawk/darkmod"
 #DstPath="/home/sparhawk/darkmod_reorg"
 
-total_material_names = {}
+material_list = {}
 
 class MaterialLine:
 	def __init__(self):
@@ -146,7 +146,7 @@ class TextureReorg:
 			if(len(t) > 1):
 				continue
 
-			print i
+			#print i
 			self.MaterialFile[i] = Material(i)
 		return
 
@@ -321,8 +321,22 @@ class TextureReorg:
 						m.Modified = m.Modified+1
 						rc = 1
 
-						print "Updating material: "+mat,m.Line[ind].Text, oname, nname, rc
+						#print "Updating material: "+mat,m.Line[ind].Text, oname, nname, rc
+						list = {}
+						try:
+							list = material_list[mat]
+						except KeyError:
+							list = {}
+							material_list[mat] = list
 
+						namelist = []
+						try:
+							namelist = list[m.Line[ind].Text]
+						except KeyError:
+							namelist = {}
+							list[m.Line[ind].Text] = namelist
+						
+						namelist[oname] = nname
 		return rc
 
 	def DumpMaterial(self, name):
@@ -332,7 +346,7 @@ class TextureReorg:
 		if(m.Modified == 0):
 			return
 
-		print "Updating: "+DstPath+"/"+name
+		#print "Updating: "+DstPath+"/"+name
 		fl = self.OpenFile(DstPath+"/"+name, "w+b")
 		for i in m.Line:
 			fl.write(i.Text+"\n")
@@ -454,5 +468,15 @@ if __name__ == '__main__':
 	reorg.ProcessReorg()
 	reorg.CreateUnusedTextureMaterials()
 	reorg.CopyTextures()
-	#print total_material_names, len(total_material_names)
+
+	for n in material_list:
+		print "\n"+n
+		ml = material_list[n]
+		for n in ml:
+			print "   "+n
+			names = ml[n]
+			for old in names:
+				print "      ", old, names[old]
+	print
+
 	sys.exit(0)
