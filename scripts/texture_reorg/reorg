@@ -11,12 +11,72 @@ import scriptutil
 
 
 LOGFILE="reorg_logfile.txt"
-#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-SrcPath="/home/sparhawk/darkmod"
-DstPath="/home/sparhawk/darkmod_reorg"
+SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+#SrcPath="/home/sparhawk/darkmod"
+#DstPath="/home/sparhawk/darkmod_reorg"
 
 total_material_names = {}
+
+class MaterialLine:
+	def __init__(self):
+		self.LineNumber = -1
+		self.Type = 'l'
+		self.Indentation = 0
+		self.Text = ""
+
+	def __repr__(self):
+		return "[ " + self.LineNumber.__repr__() + ", '" + self.Type + "', " + self.Indentation.__repr__() + ", '" + self.Text + "' ]"
+
+class Material:
+	def __init__(self, name):
+		self.Filename = name
+		self.Modified = 0
+		self.Buffer = None
+		self.Line = []
+		self.CacheFile()
+
+	def __repr__(self):
+		return "[ '"+self.Filename+"', "+self.Modified.__repr__()+", "+len(self.Line).__repr__()+" ]"
+
+	def CacheFile(self):
+		f = open(SrcPath+"/"+self.Filename)
+		self.Buffer = f.read()
+		f.close()
+
+		b = self.Buffer.split("\n")
+		last = None
+		r = MaterialLine()
+		ind = 0
+		prevind = 0
+		nr = 0
+
+		for l in b:
+			t = l.split("\r")
+			if(len(t) > 1):
+				l = t[0]
+
+			s = l.strip()
+			if s[0:1] == '{':
+				ind = ind + 1
+			elif s[0:1] == '}':
+				ind = ind - 1
+
+			nr = nr + 1
+			r.Indentation = ind
+			r.Text = l
+			r.LineNumber = nr
+
+			# Check if we have found a material name
+			if ind == 1 and prevind == 0:
+				last.Type = 'n'
+
+			self.Line.append(r)
+			last = r
+			r = MaterialLine()
+			prevind = ind
+
+		return
 
 class Texture:
 	def __init__(self):
@@ -32,7 +92,7 @@ class TextureRecord:
 	def __init__(self):
 		self.mNew = Texture()
 		self.mOld = Texture()
-		self.MaterialFilename = []
+		self.MaterialFilename = {}
 
 	def __repr__(self):
 		mat = ""
@@ -52,10 +112,10 @@ class TextureReorg:
 		self.mInput = self.OpenFile(InputFile, "r+b")
 		self.mSrcPath = SrcPath
 		self.mDstPath = DstPath
-		self.mMaterial = glob.glob(SrcPath+"/materials/*")
-		self.mMaterialFile = {}
-		self.mMaterialFileFlag = {}
-		self.mTextureRecord = []
+		self.TextureRecord = []
+		self.MaterialFile = {}
+		self.CacheMaterials()
+
 		try:
 			os.mkdir(DstPath + "/textures")
 		except OSError:
@@ -72,6 +132,23 @@ class TextureReorg:
 			os.mkdir(DstPath + "/materials")
 		except OSError:
 			pass
+
+	def CacheMaterials(self):
+		print "Caching material files..."
+		name = glob.glob(SrcPath+"/materials/*")
+		for i in name:
+			i = i.split(SrcPath+"/")[1]
+			t = i.split("replacements.txt")
+			if(len(t) > 1):
+				continue
+
+			t = i.split("gildoran_notes.txt")
+			if(len(t) > 1):
+				continue
+
+			print i
+			self.MaterialFile[i] = Material(i)
+		return
 
 	def OpenFile(self, name, mode):
 		try:
@@ -127,7 +204,7 @@ class TextureReorg:
 			if(bDir == 1):
 				bDir = 0
 				if(len(dir) != 0):
-					self.mTextureRecord.append(dir)
+					self.TextureRecord.append(dir)
 
 				path = (t[1].strip().replace("\\", "/").split("D:/temp2/")[1]).strip()
 				try:
@@ -158,8 +235,9 @@ class TextureReorg:
 				print "Wrong number of arguments: "+ln
 
 			dir.append(record)
-			if(self.TextureMaterial(record.mOld.TextureName, record.MaterialFilename) == None):
-				record.MaterialFilename = []
+			m = self.TextureMaterial(record.mOld.TextureName, record.MaterialFilename)
+			if(m == None):
+				record.MaterialFilename = {}
 				print "No material: ["+ path +"] "+record.mOld.TextureName, t
 
 		self.mInput.close()
@@ -190,67 +268,12 @@ class TextureReorg:
 
 	def TextureMaterial(self, tname, matarray):
 		rc = None
-		for fn in self.mMaterial:
-			t = fn.split("replacements.txt")
+		for n in self.MaterialFile:
+			m = self.MaterialFile[n]
+			t = m.Buffer.split(tname)
 			if(len(t) > 1):
-				continue
-
-			t = fn.split("gildoran_notes.txt")
-			if(len(t) > 1):
-				continue
-
-			b = ""
-			try:
-				t = self.mMaterialFile[fn]
-				b = t[0]
-			except KeyError:
-				f = open(fn)
-				b = f.read()
-				f.close()
-				t = []
-				t.append(b)
-				l = b.split("\n")
-				ind = 0
-				prevind = 0
-				n = len(l)
-				i = 0
-				title = 'l'
-
-				# Now we construct the indentation level
-				# so we can easily identify the material
-				# names afterwards.
-				while i < n:
-					m = l[i]
-					m0 = m.split("\r")
-					if(len(m0) > 1):
-						m = m0[0]
-
-					s = m.strip()
-					if s[0:1] == "{":
-						ind = ind + 1
-					elif s[0:1] == "}":
-						ind = ind - 1
-
-					# Check if we have found a material name
-					if ind == 1 and prevind == 0:
-						total_material_names[l[i-1][0]] = 0
-						l[i-1][2] = 'n'
-
-					prevind = ind
-					l[i] =  [m, ind, 'l']
-					i = i+1
-
-				t.append(l)
-				self.mMaterialFile[fn] = t
-				self.mMaterialFileFlag[fn] = 0
-
-			t = b.split(tname)
-			if(len(t) > 1):
-				if(self.Exists(matarray, fn) == 0):
-					fn = fn.split(SrcPath+"/")[1]
-					matarray.append(fn)
-					rc = 1
-					#print fn
+				matarray[n] = m
+				rc = m
 
 		return rc
 
@@ -260,89 +283,77 @@ class TextureReorg:
 		if oname == nname:
 			return rc
 
-		tname = None
-		mn = len(mat[1])
-		mi = 0
-		mat_title = 0
-		while mi < mn:
-			l = mat[1][mi]
-			if l[1] == 0:
-				tname = None
-
-			if l[2] == 'n':
-				tname = l[0]
-				if(len(tname.strip()) == 0):
-					sys.exit(0)
-				mat_title = mi
-				mi = mi + 1
+		m = self.MaterialFile[mat]
+		ind = 0
+		for l in m.Line:
+			if(l.Type == 'n'):
+				ind = l.LineNumber-1
 				continue
 
-			# Check if the texture is contained in that
-			# material line and if it is the real name.
-			# We have to check for the real name because
-			# otherwise partial names would also match
-			# which causes wrong entries.
-			t = l[0].split(oname)
-			if(len(t) > 1):
-				if(len(t[1]) == 0 or t[1][0] == '.'):
-					sl = "textures/"
-					p = t[0].split(sl)
-					if(len(p) == 1):
-						p = t[0].split("textures\\")
-
-					if(len(p) == 1):
-						sl = "models/"
+			# Only check lins where the indentation is not 0
+			# as this definitely can not be a valid textureline
+			if(l.Indentation > 0):
+				# Check if the texture is contained in that
+				# material line and if it is the real name.
+				# We have to check for the real name because
+				# otherwise partial names would also match
+				# which causes wrong entries.
+				t = l.Text.split(oname)
+				if(len(t) > 1):
+					if(len(t[1]) == 0 or t[1][0] == '.'):
+						sl = "textures/"
 						p = t[0].split(sl)
+						if(len(p) == 1):
+							p = t[0].split("textures\\")
 
-					if(len(p) == 1):
-						p = t[0].split("models\\")
+						if(len(p) == 1):
+							sl = "models/"
+							p = t[0].split(sl)
 
-					p = p[1]
-					p = p[0:len(p)-1].replace("\\", "/")
-					record.mOld.TexturePath = sl+p
-					# Update the line in the material with the new texturepath
-					mat[1][mi][0] = t[0] + nname + t[1]
-					#print "[*"+mat[1][mat_title][0]+"*]"
-					total_material_names[mat[1][mat_title][0]] = total_material_names[mat[1][mat_title][0]] + 1
-					rc = 1
-			mi = mi + 1
+						if(len(p) == 1):
+							p = t[0].split("models\\")
+
+						t = p[1]
+						t = t[0:len(t)-1].replace("\\", "/")
+						record.mOld.TexturePath = sl+t
+						# Update the line in the material with the new texturepath
+						l.Text = p[0]+record.mNew.TexturePath+"/"+nname
+						m.Modified = m.Modified+1
+						rc = 1
+
+						print "Updating material: "+mat,m.Line[ind].Text, oname, nname, rc
 
 		return rc
 
 	def DumpMaterial(self, name):
 		#print "Material: "+name
-		matfile = self.mMaterialFile[SrcPath+"/"+name]
+		m = self.MaterialFile[name]
 
-		if(self.mMaterialFileFlag[SrcPath+"/"+name] == 0):
+		if(m.Modified == 0):
 			return
 
+		print "Updating: "+DstPath+"/"+name
 		fl = self.OpenFile(DstPath+"/"+name, "w+b")
-		for i in matfile[1]:
-			fl.write(i[0]+"\n")
+		for i in m.Line:
+			fl.write(i.Text+"\n")
 		fl.close()
-		#sys.exit(0)
 		return
 
 	def ProcessReorg(self):
-		for dir in self.mTextureRecord:
+		for dir in self.TextureRecord:
 			for record in dir:
 				for matname in record.MaterialFilename:
-					#print matname
-					self.mMaterialFileFlag[SrcPath+"/"+matname] = self.ReplaceTexture(self.mMaterialFile[SrcPath+"/"+matname], record.mOld.TextureName, record.mNew.TextureName, record)
-					if self.mMaterialFileFlag[SrcPath+"/"+matname] == 1:
-						print matname + ":"+ record.mOld.TexturePath+"/"+record.mOld.TextureName + ":" + record.mNew.TexturePath+"/"+record.mNew.TextureName
+					self.ReplaceTexture(matname, record.mOld.TextureName, record.mNew.TextureName, record)
 
-		for dir in self.mTextureRecord:
-			for record in dir:
-				for matname in record.MaterialFilename:
-					self.DumpMaterial(matname)
+		for n in self.MaterialFile:
+			self.DumpMaterial(n)
 		return
 
 	def CreateUnusedTextureMaterials(self):
 		fl = self.OpenFile(DstPath+"/materials/"+"unknown.mtr", "w+b")
 		fl.write("# This file was automatically created by sparhawk for the texture reorganization\n")
 		fl.write("# materials here should be reviewed and then copied to the appropriate file.\n\n\n")
-		for dir in self.mTextureRecord:
+		for dir in self.TextureRecord:
 			for record in dir:
 				if(len(record.MaterialFilename) == 0):
 					fl.write(record.mNew.TexturePath+"/"+record.mNew.TextureName+"\n")
@@ -382,7 +393,7 @@ class TextureReorg:
 		return rc
 
 	def CopyTextures(self):
-		for dir in self.mTextureRecord:
+		for dir in self.TextureRecord:
 			for record in dir:
 				sname = SrcPath+"/"+record.mOld.TexturePath+"/"+record.mOld.TextureName+"."+record.mOld.TextureExt
 				if(len(record.mOld.TexturePath) == 0):
@@ -427,7 +438,7 @@ class TextureReorg:
 				sfl.close()
 				tfl.close()
 
-				print "Copy: " + sname + " -> " + tname
+				print "svn move " + sname.split(SrcPath+"/")[1] + " " + tname.split(DstPath+"/")[1]
 		return
 
 if __name__ == '__main__':
@@ -443,11 +454,5 @@ if __name__ == '__main__':
 	reorg.ProcessReorg()
 	reorg.CreateUnusedTextureMaterials()
 	reorg.CopyTextures()
-	n = 0
-	for i in total_material_names:
-		if(total_material_names[i] != 0):
-			print i, total_material_names[i]
-			n = n + 1
-	print n
 	#print total_material_names, len(total_material_names)
 	sys.exit(0)
