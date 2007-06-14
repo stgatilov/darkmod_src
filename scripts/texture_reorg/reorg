@@ -11,10 +11,10 @@ import scriptutil
 
 
 LOGFILE="reorg_logfile.txt"
-SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-#SrcPath="/home/sparhawk/darkmod"
-#DstPath="/home/sparhawk/darkmod_reorg"
+#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+SrcPath="/home/sparhawk/darkmod"
+DstPath="/home/sparhawk/darkmod_reorg"
 
 material_list = {}
 
@@ -393,14 +393,21 @@ class TextureReorg:
 	def SearchTexturePath(self, tname):
 		rc = None
 
-		path = scriptutil.ffind(SrcPath+"/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
-		if(len(path) == 0):
-			path = scriptutil.ffind(SrcPath+"/dds/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
+		p1 = scriptutil.ffind(SrcPath+"/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
+		p2 = scriptutil.ffind(SrcPath+"/dds/textures", namefs=(lambda s: '.svn' not in s, lambda s: tname in s,))
+		path = p1 + p2
 
 		if(len(path) == 0):
 			print "No texturefile found: "+tname
 		elif(len(path) > 1):
-			print "Multiple textures found: ", path
+			for i in path:
+				t = i.split(tname)
+				if(len(t[1]) == 0 or t[1][0] == '.'):
+					rc = [i]
+					break
+
+			if(rc == None):
+				print "Multiple textures found: ", path
 		else:
 			rc = path
 
@@ -456,9 +463,6 @@ class TextureReorg:
 		return
 
 if __name__ == '__main__':
-	#setDebugging(1)
-	#print scriptutil.ffind(SrcPath+"/textures", namefs=(lambda s: '.svn' not in s, lambda s: 'test_volumetric' in s,))
-
 	if len(sys.argv) <= 1:
 		print "USAGE: reorg Inputfile"
 		sys.exit(1)
