@@ -9,10 +9,10 @@ import scriptutil
 
 #from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
 
-SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
-DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
-#gSrcPath="/home/sparhawk/darkmod"
-#gDstPath="/home/sparhawk/darkmod_reorg"
+#SrcPath="/cygdrive/d/Home/cygwin/gruberg/darkmod"
+#DstPath="/cygdrive/d/Home/cygwin/gruberg/darkmod_reorg"
+SrcPath="/home/sparhawk/darkmod"
+DstPath="/home/sparhawk/darkmod_reorg"
 
 material_list = {}
 
@@ -110,6 +110,30 @@ class MaterialCheck:
 					continue
 
 				if(l.Indentation > 0):
+					t = l.Text.split("/common/")
+					if(len(t) > 1):
+						continue
+					
+					t = l.Text.split("/lights/")
+					if(len(t) > 1):
+						continue
+
+					t = l.Text.split("/hell/")
+					if(len(t) > 1):
+						continue
+
+					t = l.Text.split("/glass/")
+					if(len(t) > 1):
+						continue
+
+					t = l.Text.split("/monsters/")
+					if(len(t) > 1):
+						continue
+
+					t = l.Text.split("/sfx/")
+					if(len(t) > 1):
+						continue
+
 					s = "models/"
 					t = l.Text.strip().split(s)
 					if(len(t) == 1):
@@ -118,6 +142,30 @@ class MaterialCheck:
 
 					if(len(t) > 1):
 						tex = s+t[1]
+						t = tex.split(",")
+						if(len(t) > 1):
+							tex = t[0]
+
+						t = tex.split("(")
+						if(len(t) > 1):
+							tex = t[0]
+
+						t = tex.split(")")
+						if(len(t) > 1):
+							tex = t[0]
+
+						t = tex.split("//")
+						if(len(t) > 1):
+							tex = t[0].strip()
+
+						t = tex.split(" ")
+						if(len(t) > 1):
+							tex = t[0].strip()
+
+						t = tex.split("\t")
+						if(len(t) > 1):
+							tex = t[0].strip()
+
 						t = tex.split(".")
 						ext = "*"
 						wildcard = 1
@@ -150,10 +198,10 @@ class MaterialCheck:
 									print "\n"+n
 									mprint = 1
 
-							if(wildcard == 1):
-								print "DDS only:"+l.LineNumber.__repr__()+": "+tex
-							else:
-								print "DDS only:"+l.LineNumber.__repr__()+":"+tex+"."+ext
+							#if(wildcard == 1):
+								#print "DDS only:"+l.LineNumber.__repr__()+": "+tex
+							#else:
+								#print "DDS only:"+l.LineNumber.__repr__()+":"+tex+"."+ext
 							
 
 		return
