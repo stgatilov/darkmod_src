@@ -280,8 +280,7 @@ svn move textures/darkmod/foliage/floor/flowers_violet_02.tga dds/textures/darkm
 svn move textures/darkmod/foliage/floor/flowers_violet_02_local.tga dds/textures/darkmod/nature/foliage/flowers_violet_02_local.tga
 svn move dds/textures/darkmod/foliage/wall/hedge_001.dds dds/textures/darkmod/nature/foliage/hedge_001.dds
 svn move textures/darkmod/foliage/wall/hedge_001_editor.tga dds/textures/darkmod/nature/foliage/hedge_001_editor.tga
-svn move textures/darkmod/foliage/wall/hedge_001_local.tga dds/textures/darkmod/nature/foliage/hedge_001_local.dds
-svn move textures/darkmod/foliage/wall/hedge_001_local.tga dds/textures/darkmod/nature/foliage/hedge_001_local.tga
+svn move textures/darkmod/foliage/wall/hedge_001_local.tga textures/darkmod/nature/foliage/hedge_001_local.tga
 svn move textures/darkmod/foliage/floor/flowers_blueviolet_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_blueviolet_01.tga
 svn move textures/darkmod/foliage/floor/flowers_blueviolet_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_blueviolet_01_local.tga
 svn move textures/darkmod/foliage/floor/flowers_mixed_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_mixed_01.tga

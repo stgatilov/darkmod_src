@@ -341,3 +341,5 @@ textures/darkmod/sky/dm_sqsky	textures/darkmod/nature/skybox/sqsky
 textures/darkmod/ceramic/wall/plaster_001	textures/darkmod/plaster/plaster02
 textures/darkmod/ceramic/wall/stucco_001	textures/darkmod/plaster/tiling_1d/plaster_dirty01_brown
 textures/darkmod/ceramic/wall/stucco_001_grey	textures/darkmod/plaster/tiling_1d/plaster_dirty01_grey
+
+textures/darkmod/foliage/wall/hedge_001	textures/darkmod/nature/foliage/hedge_001
