@@ -442,7 +442,7 @@ svn move dds/textures/darkmod/stone/trim/trim_003_d.DDS dds/textures/darkmod/sto
 svn move textures/darkmod/stone/trim/trim_003_ed.tga textures/darkmod/stone/brick/single_grey_block01_ed.tga
 svn move textures/darkmod/stone/trim/trim_003_local.tga textures/darkmod/stone/brick/single_grey_block01_local.tga
 svn move dds/textures/darkmod/stone/floor/masonry_001_brick.dds dds/textures/darkmod/stone/brick/small_brown_bricks01.dds
-svn move dds/textures/darkmod/stone/floor/masonry_001_brick_s.dds dds/textures/darkmod/stone/brick/small_brown_bricks01.dds
+svn move dds/textures/darkmod/stone/floor/masonry_001_brick_s.dds dds/textures/darkmod/stone/brick/small_brown_bricks01_s.dds
 svn move textures/darkmod/stone/floor/masonry_001_brick_editor.jpg textures/darkmod/stone/brick/small_brown_bricks01_ed.jpg
 svn move textures/darkmod/stone/floor/masonry_001_brick_local.tga textures/darkmod/stone/brick/small_brown_bricks01_local.tga
 svn move textures/darkmod/mansion/wall/manwbrick01.tga textures/darkmod/stone/brick/tight_large_blocks.tga

@@ -358,3 +358,17 @@ textures/darkmod/mansion/window/manwindow02b	textures/darkmod/window/roundtop_di
 textures/darkmod/mansion/window/manwindow02d	textures/darkmod/window/roundtop_diamond_pattern01_grey
 textures/darkmod/mansion/window/manwindow03	textures/darkmod/window/pointedtop_thin01_dark
 textures/darkmod/mansion/window/manwindow04	textures/darkmod/window/roundtop_diamond_pattern01_brightlit
+
+textures/darkmod/nature/grass03	textures/darkmod/nature/grass/short_dry_grass
+textures/darkmod/nature/grass04	textures/darkmod/nature/grass/short_dry_grass_dark
+textures/darkmod/nature/natural02	textures/darkmod/nature/bark/old_rough01
+
+textures/darkmod/city/wall/concrete_dirt01	textures/darkmod/stone/flat/tiling_1d/concrete_dirt01
+textures/darkmod/city/wall/cwall_01	textures/darkmod/plaster/plaster_01
+
+textures/darkmod/stone/wall/cement_002	textures/darkmod/stone/flat/tiling_1d/cement_002
+textures/darkmod/stone/wall/cement_004	textures/darkmod/stone/flat/tiling_1d/cement_004
+textures/darkmod/stone/wall/cement_005	textures/darkmod/stone/flat/tiling_1d/cement_005
+textures/darkmod/stone/wall/cement_007	textures/darkmod/stone/flat/tiling_1d/cement_007
+textures/darkmod/stone/wall/cement_008	textures/darkmod/stone/flat/tiling_1d/cement_008
+textures/darkmod/stone/wall/cement_010	textures/darkmod/stone/flat/tiling_1d/cement_010
