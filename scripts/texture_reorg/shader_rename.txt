@@ -93,9 +93,9 @@ textures/darkmod/stone/trim/border_1x1	textures/darkmod/stone/sculpted/trapezoid
 textures/darkmod/stone/trim/deco_001	textures/darkmod/stone/sculpted/engraved_tile_star
 textures/darkmod/stone/trim/deco_002	textures/darkmod/stone/sculpted/engraved_tile_ovals
 textures/darkmod/stone/trim/grave_001	textures/darkmod/stone/sculpted/sarcophagus_warrior01
-textures/darkmod/stone/trim/grave_002	textures/darkmod/stone/sculpted/sarcophagus_cup&hammer01
+textures/darkmod/stone/trim/grave_002	textures/darkmod/stone/sculpted/sarcophagus_cup_hammer01
 textures/darkmod/stone/trim/grave_003	textures/darkmod/stone/sculpted/sarcophagus_wings01
-textures/darkmod/stone/trim/grave_004	textures/darkmod/stone/sculpted/sarcophagus_swords&shield01
+textures/darkmod/stone/trim/grave_004	textures/darkmod/stone/sculpted/sarcophagus_swords_shield01
 textures/darkmod/stone/trim/grave_005	textures/darkmod/stone/sculpted/engraved_tile_cup01
 textures/darkmod/stone/trim/grave_006	textures/darkmod/stone/sculpted/engraved_tile_x
 textures/darkmod/stone/trim/grave_007	textures/darkmod/stone/sculpted/engraved_tile_impface
@@ -374,3 +374,21 @@ textures/darkmod/stone/wall/cement_008	textures/darkmod/stone/flat/tiling_1d/cem
 textures/darkmod/stone/wall/cement_010	textures/darkmod/stone/flat/tiling_1d/cement_010
 
 gold_tile	textures/darkmod/metal/flat/gold01
+textures/darkmod/decals/smut_black_round	textures/darkmod/decals/dirt/smut_black_round
+textures/bonehoard/decals/dirt_001	textures/darkmod/decals/dirt/scattered_dirt02
+textures/bonehoard/decals/dirt_002	textures/darkmod/decals/dirt/dripping_slime05
+textures/bonehoard/decals/dirt_002_edge_left	textures/darkmod/decals/dirt/dripping_slime05_left
+textures/bonehoard/decals/dirt_002_edge_right	textures/darkmod/decals/dirt/dripping_slime05_right
+textures/bonehoard/decals/torch_smut_ceiling	textures/darkmod/decals/dirt/smut_black_round
+textures/bonehoard/decals/torch_smut_wall	textures/darkmod/decals/dirt/torch_smut_wall
+
+textures/darkmod/foliage/floor/flowers_blueviolet_001	textures/darkmod/nature/foliage/nontiling/flowers_blueviolet_01
+textures/darkmod/foliage/floor/flowers_mixed_001	textures/darkmod/nature/foliage/nontiling/flowers_mixed_01
+textures/darkmod/foliage/floor/flowers_pink_001	textures/darkmod/nature/foliage/flowers_pink_01
+textures/darkmod/foliage/floor/flowers_red_001	textures/darkmod/nature/foliage/nontiling/flowers_red_01
+textures/darkmod/foliage/floor/flowers_redyellow_001	textures/darkmod/nature/foliage/nontiling/flowers_redyellow_01
+textures/darkmod/foliage/floor/flowers_violet_001	textures/darkmod/nature/foliage/flowers_violet_01
+textures/darkmod/foliage/floor/flowers_violet_002	textures/darkmod/nature/foliage/flowers_violet_02
+textures/darkmod/foliage/floor/flowers_white_001	textures/darkmod/nature/foliage/nontiling/flowers_white_01
+
+textures/darkmod/metal/gen/default_framed	textures/darkmod/metal/flat/tiling_1d/gen_default_framed
