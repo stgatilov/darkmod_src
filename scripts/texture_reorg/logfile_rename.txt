@@ -497,10 +497,10 @@ svn move textures/darkmod/stone/floor/masonry_001_local.tga textures/darkmod/sto
 svn move textures/darkmod/stone/floor/blocks_018.tga textures/darkmod/stone/cobblestones/flagstones02_plain.tga
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left.tga
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_ed.jpg
-svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right_ed.jpg
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_local.tga
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_s.tga
-svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_s.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right_s.tga
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right.tga
 svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right_local.tga
 svn move textures/darkmod/stone/floor/blocks_018_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_ed.jpg

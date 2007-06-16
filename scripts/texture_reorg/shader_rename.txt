@@ -336,4 +336,4 @@ textures/darkmod/sky/starry1/moon_quarter	textures/darkmod/nature/skybox/starry1
 textures/darkmod/sky/starry1/moon_gibbous	textures/darkmod/nature/skybox/starry1/moon_gibbous
 textures/darkmod/sky/starry1/moon_crescent	textures/darkmod/nature/skybox/starry1/moon_crescent
 textures/darkmod/sky/starry1/moon_full_glared	textures/darkmod/nature/skybox/starry1/moon_full_glared
-textures/darkmod/sky/dm_sqsky	textures/darkmod/nature/skybox/dm_sqsky
+textures/darkmod/sky/dm_sqsky	textures/darkmod/nature/skybox/sqsky
