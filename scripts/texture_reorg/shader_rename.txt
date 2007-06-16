@@ -213,8 +213,8 @@ textures/darkmod/wood/trim/molding_004	textures/darkmod/wood/panels/molding_grey
 textures/darkmod/wood/trim/panel_001	textures/darkmod/wood/panels/trim_carved_long
 textures/darkmod/wood/trim/panel_002	textures/darkmod/wood/panels/thin_panels_with_trim_dark
 textures/darkmod/wood/trim/panel_003	textures/darkmod/wood/panels/thin_panels_with_trim_light
-textures/darkmod/wood/trim/plastered_001	textures/darkmod/wood/plaster/framed_old_01
-textures/darkmod/wood/trim/plastered_001_decorative	textures/darkmod/wood/plaster/framed_old_decorative_01
+textures/darkmod/wood/trim/plastered_001	textures/darkmod/plaster/framed_old_01
+textures/darkmod/wood/trim/plastered_001_decorative	textures/darkmod/plaster/framed_old_decorative_01
 textures/darkmod/wood/wall/boards_new_001	textures/darkmod/wood/boards/tiling_1d/new_grainy
 textures/darkmod/wood/wall/building_001	textures/darkmod/city/wall/ctywall04
 textures/darkmod/wood/wall/panel_001	textures/darkmod/wood/panels/panels_decorative_arched
@@ -289,9 +289,9 @@ textures/darkmod/carpet/trim/rug_red_003_end	textures/darkmod/carpet/runners/geo
 textures/darkmod/city/wall/metal02	textures/darkmod/metal/flat/simple_grey01
 textures/darkmod/city/wall/brick_dark	textures/darkmod/stone/brick/rough_brick_grey
 textures/darkmod/city/wall/concrete01	textures/darkmod/stone/flat/slate01_light
-textures/darkmod/city/wall/cwall_frame01	textures/darkmod/wood/plaster/framed_02
-textures/darkmod/city/wall/cwall_frame02	textures/darkmod/wood/plaster/framed_01
-textures/darkmod/city/wall/cwall_framebrick02	textures/darkmod/wood/plaster/framed_with_bricks
+textures/darkmod/city/wall/cwall_frame01	textures/darkmod/plaster/framed_02
+textures/darkmod/city/wall/cwall_frame02	textures/darkmod/plaster/framed_01
+textures/darkmod/city/wall/cwall_framebrick02	textures/darkmod/plaster/framed_with_bricks
 textures/darkmod/city/wall/metal01	textures/darkmod/metal/flat/simple_grey01
 textures/darkmod/city/roof/rooftile_01	textures/darkmod/roof/shingle_shiny_greenish01
 textures/darkmod/litwindows/cwindow01	textures/darkmod/window/square_pattern01_lit
@@ -321,4 +321,19 @@ textures/darkmod/grass/floor/dirt_001	textures/darkmod/nature/dirt/dirt_001
 textures/darkmod/wood/gen/wood_001	textures/darkmod/wood/boards/tiling_1d/gen_old_boards
 textures/darkmod/wood/gen/wood_002	textures/darkmod/wood/panels/tiling_1d/gen_panel_x_pattern
 
-textures/darkmod/ceramic/floor/plaster_002	textures/darkmod/wood/plaster/panel_decorative_white
+textures/darkmod/ceramic/floor/plaster_002	textures/darkmod/plaster/panel_decorative_white
+textures/darkmod/ceramic/floor/stucco_001	textures/darkmod/plaster/stucco_01
+
+textures/darkmod/mansion/wall/manwcapital01.tga	textures/darkmod/wood/panels/panel_pillar_capital
+
+textures/darkmod/sky/starry1/skyfade	textures/darkmod/nature/skybox/starry1/skyfade
+textures/darkmod/sky/starry1/twinkle_stars	textures/darkmod/nature/skybox/starry1/twinkle_stars
+textures/darkmod/sky/starry1/clouds	textures/darkmod/nature/skybox/starry1/clouds
+textures/darkmod/sky/starry1/clouds2	textures/darkmod/nature/skybox/starry1/clouds2
+textures/darkmod/sky/starry1/moon	textures/darkmod/nature/skybox/starry1/moon
+textures/darkmod/sky/starry1/moon_full	textures/darkmod/nature/skybox/starry1/moon_full
+textures/darkmod/sky/starry1/moon_quarter	textures/darkmod/nature/skybox/starry1/moon_quarter
+textures/darkmod/sky/starry1/moon_gibbous	textures/darkmod/nature/skybox/starry1/moon_gibbous
+textures/darkmod/sky/starry1/moon_crescent	textures/darkmod/nature/skybox/starry1/moon_crescent
+textures/darkmod/sky/starry1/moon_full_glared	textures/darkmod/nature/skybox/starry1/moon_full_glared
+textures/darkmod/sky/dm_sqsky	textures/darkmod/nature/skybox/dm_sqsky
