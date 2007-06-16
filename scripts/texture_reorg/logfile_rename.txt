@@ -668,7 +668,7 @@ svn move textures/darkmod/stone/wall/cement_013_local.tga textures/darkmod/stone
 svn move dds/textures/darkmod/stone/wall/cement_003.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01.dds
 svn move textures/darkmod/stone/wall/cement_003_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_ed.tga
 svn move textures/darkmod/stone/wall/cement_003_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_local.tga
-svn move textures/darkmod/stone/wall/cement_009_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_local.tga
+svn move textures/darkmod/stone/wall/cement_009_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark02_local.tga
 svn move dds/textures/darkmod/stone/wall/cement_009.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark02.dds
 svn move textures/darkmod/stone/wall/cement_009_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark02_ed.tga
 svn move dds/textures/darkmod/stone/wall/cement_006.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_pebbly.dds
