@@ -291,7 +291,8 @@ textures/darkmod/city/wall/brick_dark	textures/darkmod/stone/brick/rough_brick_g
 textures/darkmod/city/wall/concrete01	textures/darkmod/stone/flat/slate01_light
 textures/darkmod/city/wall/cwall_frame01	textures/darkmod/plaster/framed_02
 textures/darkmod/city/wall/cwall_frame02	textures/darkmod/plaster/framed_01
-textures/darkmod/city/wall/cwall_framebrick02	textures/darkmod/plaster/framed_with_bricks
+textures/darkmod/city/wall/cwall_framebrick	textures/darkmod/plaster/framed_with_bricks01
+textures/darkmod/city/wall/cwall_framebrick02	textures/darkmod/plaster/framed_with_bricks02
 textures/darkmod/city/wall/metal01	textures/darkmod/metal/flat/simple_grey01
 textures/darkmod/city/roof/rooftile_01	textures/darkmod/roof/shingle_shiny_greenish01
 textures/darkmod/litwindows/cwindow01	textures/darkmod/window/square_pattern01_lit
@@ -343,3 +344,17 @@ textures/darkmod/ceramic/wall/stucco_001	textures/darkmod/plaster/tiling_1d/plas
 textures/darkmod/ceramic/wall/stucco_001_grey	textures/darkmod/plaster/tiling_1d/plaster_dirty01_grey
 
 textures/darkmod/foliage/wall/hedge_001	textures/darkmod/nature/foliage/hedge_001
+textures/darkmod/city/wall/ctywall04	textures/darkmod/plaster/framed_trim_lions
+
+textures/darkmod/snow/floor/rippled_001	textures/darkmod/nature/snow/plain_snow01
+textures/darkmod/snow/floor/icy_001	textures/darkmod/nature/snow/plain_ice01
+
+textures/darkmod/stone/floor/brick_003	textures/darkmod/stone/brick/diagonal_cross
+
+textures/darkmod/mansion/window/manwindow01	textures/darkmod/window/largesquare02_dark
+textures/darkmod/mansion/window/manwindow01b	textures/darkmod/window/largesquare02_lit
+textures/darkmod/mansion/window/manwindow02	textures/darkmod/window/roundtop_diamond_pattern01_lit
+textures/darkmod/mansion/window/manwindow02b	textures/darkmod/window/roundtop_diamond_pattern01_dark
+textures/darkmod/mansion/window/manwindow02d	textures/darkmod/window/roundtop_diamond_pattern01_grey
+textures/darkmod/mansion/window/manwindow03	textures/darkmod/window/pointedtop_thin01_dark
+textures/darkmod/mansion/window/manwindow04	textures/darkmod/window/roundtop_diamond_pattern01_brightlit
