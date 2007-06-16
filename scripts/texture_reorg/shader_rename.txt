@@ -195,7 +195,7 @@ textures/darkmod/wood/floor/boards_old_007	textures/darkmod/wood/boards/dark_var
 textures/darkmod/wood/floor/boards_polished_001	textures/darkmod/wood/boards/polished_shiny
 textures/darkmod/wood/floor/boards_polished_002	textures/darkmod/wood/boards/polished_01
 textures/darkmod/wood/floor/boards_polished_002_dim	textures/darkmod/wood/boards/polished_01_dim
-textures/darkmod/wood/floor/tile_decorative_001	textures/darkmod/stone/flat/ceramic_mosaic_decorative01
+textures/darkmod/wood/floor/tile_decorative_001	textures/darkmod/wood/panels/tile_pattern_star
 textures/darkmod/wood/floor/tile_weave_001	textures/darkmod/wood/panels/tile_weave
 textures/darkmod/wood/trim/beam_001	textures/darkmod/wood/boards/worn_large
 textures/darkmod/wood/trim/beam_002	textures/darkmod/wood/panels/beam_rough_brown
@@ -372,3 +372,5 @@ textures/darkmod/stone/wall/cement_005	textures/darkmod/stone/flat/tiling_1d/cem
 textures/darkmod/stone/wall/cement_007	textures/darkmod/stone/flat/tiling_1d/cement_007
 textures/darkmod/stone/wall/cement_008	textures/darkmod/stone/flat/tiling_1d/cement_008
 textures/darkmod/stone/wall/cement_010	textures/darkmod/stone/flat/tiling_1d/cement_010
+
+gold_tile	textures/darkmod/metal/flat/gold01
