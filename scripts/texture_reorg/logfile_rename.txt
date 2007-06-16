@@ -1,0 +1,2478 @@
+Caching material files...
+No material: [textures/darkmod/decals/dirt] dripping_slime01 dripping_slime01.tga
+No material: [textures/darkmod/decals/dirt] dripping_slime01_light dripping_slime01_light.tga
+No material: [textures/darkmod/decals/dirt] dripping_slime02 dripping_slime02.tga
+No material: [textures/darkmod/decals/dirt] dripping_slime03 dripping_slime03.tga
+No material: [textures/darkmod/decals/dirt] dripping_slime04 dripping_slime04.tga
+No material: [textures/darkmod/decals/dirt] long_drip_pattern01 long_drip_pattern01.tga
+No material: [textures/darkmod/decals/dirt] scattered_dirt01 scattered_dirt01.tga
+No material: [textures/darkmod/decals/dirt] splat01 splat01.tga
+No material: [textures/darkmod/decals/dirt] splat02 splat02.tga
+No material: [textures/darkmod/decals/dirt] splat_small03 splat_small03.tga
+No material: [textures/darkmod/decals/dirt] wall_grime01 wall_grime01.tga
+No material: [textures/darkmod/decals/dirt] wall_grime02 wall_grime02.tga
+No material: [textures/darkmod/decals/dirt] wall_grime03 wall_grime03.tga
+No material: [textures/darkmod/decals/dirt] wall_grime04 wall_grime04.tga
+No material: [textures/darkmod/decals/dirt] wall_grime05 wall_grime05.tga
+No material: [textures/darkmod/decals/vegetation] autumn_leaves_thick01 autumn_leaves_thick01.tga
+No material: [textures/darkmod/decals/vegetation] dead_leaves_few01 dead_leaves_few01.tga
+No material: [textures/darkmod/decals/vegetation] ivy_004_ed ivy_scattered_branches_ed.jpg.ivy_004_ed.jpg
+No material: [textures/darkmod/decals/vegetation] plant02 tropical_fern01.tga.plant02.tga
+No material: [textures/darkmod/door/metal] large_warehouse_old_green01 large_warehouse_old_green01.tga
+No material: [textures/darkmod/door/metal] large_warehouse_old_local large_warehouse_old_local.tga
+No material: [textures/darkmod/door/metal] large_warehouse_old_s large_warehouse_old_s.tga
+No material: [textures/darkmod/door/metal] simple_rough01 simple_rough01.tga
+No material: [textures/darkmod/door/metal] simple_rough01_local simple_rough01_local.tga
+No material: [textures/darkmod/door/wood] board_plainblue_hinge01 board_plainblue_hinge01.tga
+No material: [textures/darkmod/door/wood] board_plainblue_hinge02 board_plainblue_hinge02.tga
+No material: [textures/darkmod/door/wood] board_plain_hinge01 board_plain_hinge01.tga
+No material: [textures/darkmod/door/wood] board_plain_hinge01_local board_plain_hinge01_local.tga
+No material: [textures/darkmod/door/wood] board_plain_hinge02 board_plain_hinge02.tga
+No material: [textures/darkmod/door/wood] board_plain_hinge02_local board_plain_hinge02_local.tga
+No material: [textures/darkmod/door/wood] board_withwindow_green01 board_withwindow_green01.tga
+No material: [textures/darkmod/map_specific/bonehoard/env] water_entrance_back water_entrance_back.tga
+No material: [textures/darkmod/map_specific/bonehoard/env] water_entrance_down water_entrance_down.tga
+No material: [textures/darkmod/map_specific/bonehoard/env] water_entrance_forward water_entrance_forward.tga
+No material: [textures/darkmod/map_specific/bonehoard/env] water_entrance_left water_entrance_left.tga
+No material: [textures/darkmod/map_specific/bonehoard/env] water_entrance_right water_entrance_right.tga
+No material: [textures/darkmod/metal/flat] gen_detail gen_detail.tga
+No material: [textures/darkmod/metal/flat/nontiling] metalpole_d roughedup_steel.tga.metalpole_d.tga
+No material: [textures/darkmod/metal/flat/nontiling] metalpole_s roughedup_steel_s.tga.metalpole_s.tga
+No material: [textures/darkmod/roof] rt_woodenrooftiles01_d slats_uneven_wood01.tga.rt_woodenrooftiles01_d.tga
+No material: [textures/darkmod/roof] rt_woodenrooftiles01_local slats_uneven_wood01_local.tga.rt_woodenrooftiles01_local.tga
+No material: [textures/darkmod/stone/flat] concrete2_d slate02_dark.tga.concrete2_d.tga
+No material: [textures/darkmod/stone/flat] concrete_local slate02_local.tga.concrete_local.tga
+No material: [textures/darkmod/stone/flat/smooth] manfloor02_local marble_pattern01_local.tga.manfloor02_local.tga
+No material: [textures/darkmod/window] horizontal_old_smallpanels01_dark horizontal_old_smallpanels01_dark.tga
+No material: [textures/darkmod/window] horizontal_old_smallpanels01_dark_s horizontal_old_smallpanels01_dark_s.tga
+No material: [textures/darkmod/window] horizontal_old_smallpanels01_local horizontal_old_smallpanels01_local.tga
+No material: [textures/darkmod/window] square_old_smallpanels01_dark square_old_smallpanels01_dark.tga
+No material: [textures/darkmod/window] square_old_smallpanels01_local square_old_smallpanels01_local.tga
+No material: [textures/darkmod/window] square_old_smallpanels01_s square_old_smallpanels01_s.tga
+No material: [textures/darkmod/window/ornate] winboth1_blend pointedtop_stainglass01_blend.tga.winboth1_blend.tga
+No material: [textures/darkmod/window/ornate] winboth2_blend pointedtop_stainglass01_blend2.tga.winboth2_blend.tga
+No material: [textures/darkmod/window/ornate] winboth1 pointedtop_stainglass01_blue.tga.winboth1.tga
+No material: [textures/darkmod/window/ornate] winboth1_local pointedtop_stainglass01_local.tga.winboth1_local.tga
+No material: [textures/darkmod/window/ornate] winboth1_s pointedtop_stainglass01_s.tga.winboth1_s.tga
+No material: [textures/darkmod/wood/boards] medieval010 old_01.tga.medieval010.tga
+No material: [textures/darkmod/wood/boards] medieval010_h old_01_h.tga.medieval010_h.tga
+No material: [textures/darkmod/wood/boards] medieval010_s old_01_s.tga.medieval010_s.tga
+No material: [textures/darkmod/wood/panels] manwtrim05_local thin_panels_with_trim_light_local.tga.manwtrim05_local.tga
+svn move textures/darkmod/set/rugs/setrug01.tga textures/darkmod/carpet/rugs/ornate_black_gold01.tga
+svn move textures/darkmod/set/rugs/setrug01_local.tga textures/darkmod/carpet/rugs/ornate_black_gold01_local.tga
+svn move textures/darkmod/set/rugs/setrug02.tga textures/darkmod/carpet/rugs/ornate_floral_checker01.tga
+svn move textures/darkmod/set/rugs/setrug02_local.tga textures/darkmod/carpet/rugs/ornate_floral_checker01_local.tga
+svn move textures/darkmod/set/rugs/setrug03sh.tga textures/darkmod/carpet/rugs/ornate_green_black01.tga
+svn move textures/darkmod/set/rugs/setrug03sh_local.tga textures/darkmod/carpet/rugs/ornate_green_black01_local.tga
+svn move textures/darkmod/set/rugs/setrug03.tga textures/darkmod/carpet/rugs/ornate_rectangles_brown01.tga
+svn move textures/darkmod/set/rugs/setrug03_local.tga textures/darkmod/carpet/rugs/ornate_rectangles_brown01_local.tga
+svn move textures/darkmod/set/rugs/setrug01sh.tga textures/darkmod/carpet/rugs/ornate_red_tan01.tga
+svn move textures/darkmod/set/rugs/setrug01sh_local.tga textures/darkmod/carpet/rugs/ornate_red_tan01_local.tga
+svn move textures/darkmod/set/rugs/setrug02sh.tga textures/darkmod/carpet/rugs/ornate_red_tan02.tga
+svn move textures/darkmod/set/rugs/setrug02sh_local.tga textures/darkmod/carpet/rugs/ornate_red_tan02_local.tga
+svn move textures/darkmod/set/rugs/setrug04end_local.tga textures/darkmod/carpet/runners/geometric01_end_local.tga
+svn move textures/darkmod/set/rugs/setrug04cen_local.tga textures/darkmod/carpet/runners/geometric01_local.tga
+svn move textures/darkmod/set/rugs/setrug04cen.tga textures/darkmod/carpet/runners/geometric01_red.tga
+svn move textures/darkmod/set/rugs/setrug04end.tga textures/darkmod/carpet/runners/geometric01_red_end.tga
+No texturefile found: dripping_slime01
+No valid path for: dripping_slime01
+No texturefile found: dripping_slime01_light
+No valid path for: dripping_slime01_light
+No texturefile found: dripping_slime02
+No valid path for: dripping_slime02
+No texturefile found: dripping_slime03
+No valid path for: dripping_slime03
+No texturefile found: dripping_slime04
+No valid path for: dripping_slime04
+svn move textures/darkmod/bonehoard/dirt_002.tga textures/darkmod/decals/dirt/dripping_slime05.tga
+svn move textures/darkmod/bonehoard/dirt_002_edge_left.tga textures/darkmod/decals/dirt/dripping_slime05_left.tga
+svn move textures/darkmod/bonehoard/dirt_002_edge_right.tga textures/darkmod/decals/dirt/dripping_slime05_right.tga
+No texturefile found: long_drip_pattern01
+No valid path for: long_drip_pattern01
+svn move textures/darkmod/foliage/trim/moss_d.tga textures/darkmod/decals/dirt/moss_patch_thick01.tga
+svn move textures/darkmod/foliage/trim/moss_local.tga textures/darkmod/decals/dirt/moss_patch_thick01.tga
+No texturefile found: scattered_dirt01
+No valid path for: scattered_dirt01
+svn move textures/darkmod/bonehoard/dirt_001.tga textures/darkmod/decals/dirt/scattered_dirt02.tga
+No texturefile found: splat01
+No valid path for: splat01
+No texturefile found: splat02
+No valid path for: splat02
+No texturefile found: splat_small03
+No valid path for: splat_small03
+svn move textures/darkmod/bonehoard/torch_smut_ceiling.tga dds/textures/darkmod/decals/dirt/torch_smut_ceiling.tga
+svn move textures/darkmod/bonehoard/torch_smut_wall.tga dds/textures/darkmod/decals/dirt/torch_smut_wall.tga
+No texturefile found: wall_grime01
+No valid path for: wall_grime01
+No texturefile found: wall_grime02
+No valid path for: wall_grime02
+No texturefile found: wall_grime03
+No valid path for: wall_grime03
+No texturefile found: wall_grime04
+No valid path for: wall_grime04
+No texturefile found: wall_grime05
+No valid path for: wall_grime05
+svn move textures/darkmod/pagan/decal/pagdecvoyn.tga textures/darkmod/decals/symbols/magical_letters_row01.tga
+svn move textures/darkmod/pagan/decal/pagdecfleur.tga textures/darkmod/decals/symbols/magic_symbol_circle01.tga
+No texturefile found: autumn_leaves_thick01
+No valid path for: autumn_leaves_thick01
+No texturefile found: dead_leaves_few01
+No valid path for: dead_leaves_few01
+svn move textures/darkmod/nature/natural01.tga textures/darkmod/decals/vegetation/hanging_horizontal_leaves.tga
+svn move textures/darkmod/nature/natural01_local.tga textures/darkmod/decals/vegetation/hanging_horizontal_leaves_local.tga
+svn move textures/darkmod/nature/natural01_s.tga textures/darkmod/decals/vegetation/hanging_horizontal_leaves_s.tga
+svn move dds/textures/darkmod/foliage/trim/ivy_001_patch1.dds dds/textures/darkmod/decals/vegetation/ivypatch_average01.dds
+svn move dds/textures/darkmod/foliage/trim/ivy_001_patch2.dds dds/textures/darkmod/decals/vegetation/ivypatch_large01.dds
+svn move dds/textures/darkmod/foliage/trim/ivy_001_small1.dds dds/textures/darkmod/decals/vegetation/ivypatch_small01.dds
+svn move dds/textures/darkmod/foliage/trim/ivy_001_small2.dds dds/textures/darkmod/decals/vegetation/ivypatch_tiny01.dds
+svn move textures/darkmod/foliage/trim/ivy_002.tga textures/darkmod/decals/vegetation/ivy_mixed_pieces.tga
+svn move textures/darkmod/foliage/trim/ivy_002_ed.jpg textures/darkmod/decals/vegetation/ivy_mixed_pieces_ed.jpg
+svn move textures/darkmod/foliage/trim/ivy_002_local.tga textures/darkmod/decals/vegetation/ivy_mixed_pieces_local.tga
+svn move textures/darkmod/foliage/trim/ivy_002_s.tga textures/darkmod/decals/vegetation/ivy_mixed_pieces_s.tga
+svn move textures/darkmod/foliage/trim/ivy_004.tga textures/darkmod/decals/vegetation/ivy_scattered_branches.tga
+svn move textures/darkmod/foliage/trim/ivy_004_ed.jpg dds/textures/darkmod/decals/vegetation/ivy_scattered_branches_ed.jpg
+svn move textures/darkmod/foliage/trim/ivy_004_local.tga textures/darkmod/decals/vegetation/ivy_scattered_branches_local.tga
+svn move textures/darkmod/foliage/trim/ivy_004_s.tga textures/darkmod/decals/vegetation/ivy_scattered_branches_s.tga
+svn move textures/darkmod/foliage/trim/ivy_003.tga textures/darkmod/decals/vegetation/ivy_vertical_branches.tga
+svn move textures/darkmod/foliage/trim/ivy_003_ed.jpg textures/darkmod/decals/vegetation/ivy_vertical_branches_ed.jpg
+svn move textures/darkmod/foliage/trim/ivy_003_local.tga textures/darkmod/decals/vegetation/ivy_vertical_branches_local.tga
+svn move textures/darkmod/foliage/trim/ivy_003_s.tga textures/darkmod/decals/vegetation/ivy_vertical_branches_s.tga
+svn move textures/darkmod/nature/plant01.tga textures/darkmod/decals/vegetation/tropical_broadleaf.tga
+svn move textures/darkmod/nature/plant02.tga dds/textures/darkmod/decals/vegetation/tropical_fern01.tga
+No texturefile found: large_warehouse_old_green01
+No valid path for: large_warehouse_old_green01
+No texturefile found: large_warehouse_old_local
+No valid path for: large_warehouse_old_local
+No texturefile found: large_warehouse_old_s
+No valid path for: large_warehouse_old_s
+No texturefile found: simple_rough01
+No valid path for: simple_rough01
+No texturefile found: simple_rough01_local
+No valid path for: simple_rough01_local
+No texturefile found: board_plainblue_hinge01
+No valid path for: board_plainblue_hinge01
+No texturefile found: board_plainblue_hinge02
+No valid path for: board_plainblue_hinge02
+No texturefile found: board_plain_hinge01
+No valid path for: board_plain_hinge01
+No texturefile found: board_plain_hinge01_local
+No valid path for: board_plain_hinge01_local
+No texturefile found: board_plain_hinge02
+No valid path for: board_plain_hinge02
+No texturefile found: board_plain_hinge02_local
+No valid path for: board_plain_hinge02_local
+No texturefile found: board_withwindow_green01
+No valid path for: board_withwindow_green01
+svn move textures/darkmod/city/door/ctydoor01.tga textures/darkmod/door/wood/diamond_pattern01.tga
+svn move textures/darkmod/city/door/ctydoor01_local.tga textures/darkmod/door/wood/diamond_pattern01_local.tag
+svn move textures/darkmod/castle/door/casdoor01.tga textures/darkmod/door/wood/metalbands_crisscross01.tga
+svn move textures/darkmod/castle/door/casdoor01_local.tga textures/darkmod/door/wood/metalbands_crisscross01_local.tga
+svn move textures/darkmod/castle/door/casdoor01_s.tga textures/darkmod/door/wood/metalbands_crisscross01_s.tga
+svn move dds/textures/darkmod/wood/door/antique_001.dds dds/textures/darkmod/door/wood/oldboards_metalspirals01.dds
+svn move textures/darkmod/wood/door/antique_001_editor.tga textures/darkmod/door/wood/oldboards_metalspirals01_ed.tga
+svn move textures/darkmod/wood/door/antique_001_local.tga textures/darkmod/door/wood/oldboards_metalspirals01_local.tga
+svn move models/darkmod/door_related/warehouse_frontdoor_d.tga textures/darkmod/door/wood/old_4panels_peelingpaint01.tga
+svn move textures/darkmod/mansion/door/mandoor01.tga textures/darkmod/door/wood/old_flat_oak01.tga
+svn move textures/darkmod/mansion/door/mandoor01_local.tga textures/darkmod/door/wood/old_flat_oak01_local.tga
+svn move textures/darkmod/mansion/door/mandoor01_s.tga textures/darkmod/door/wood/old_flat_oak01_s.tga
+svn move textures/darkmod/wood/door/weathered_001_d.tga textures/darkmod/door/wood/old_weathered_boards01.tga
+svn move textures/darkmod/wood/door/weathered_001_local.tga textures/darkmod/door/wood/old_weathered_boards01_local.tga
+No texturefile found: warehouse_frontdoor_d
+No valid path for: warehouse_frontdoor_d
+svn move textures/darkmod/mansion/door/mandoor06.tga textures/darkmod/door/wood/smooth_2panels_rich.tga
+svn move textures/darkmod/mansion/door/mandoor06_local.tga textures/darkmod/door/wood/smooth_2panels_rich_local.tga
+svn move textures/darkmod/mansion/door/mandoor06_s.tga textures/darkmod/door/wood/smooth_2panels_rich_s.tga
+svn move textures/darkmod/mansion/door/mandoor01sh.tga textures/darkmod/door/wood/smooth_3panels01_dull01.tga
+svn move textures/darkmod/mansion/door/mandoor01sh_s.tga textures/darkmod/door/wood/smooth_3panels01_dull_s.tga
+svn move textures/darkmod/mansion/door/mandoor01sh_local.tga textures/darkmod/door/wood/smooth_3panels01_remove_local.tga
+svn move textures/darkmod/mansion/door/mandoor03_local.tga textures/darkmod/door/wood/smooth_3panels_local.tga
+svn move textures/darkmod/mansion/door/mandoor03.tga textures/darkmod/door/wood/smooth_3panels_red01.tga
+svn move textures/darkmod/mansion/door/mandoor02ab_local.tga textures/darkmod/door/wood/smooth_4panels_local.tga
+svn move textures/darkmod/mansion/door/mandoor02b.tga textures/darkmod/door/wood/smooth_4panels_red01.tga
+svn move textures/darkmod/mansion/door/mandoor02a.tga textures/darkmod/door/wood/smooth_4panels_tan01.tga
+svn move textures/darkmod/mansion/door/mandoor04.tga textures/darkmod/door/wood/ornate/smooth_rich_ovalwindow01.tga
+svn move textures/darkmod/mansion/door/mandoor04_local.tga textures/darkmod/door/wood/ornate/smooth_rich_ovalwindow01_local.tga
+svn move textures/darkmod/mansion/door/mandoor04_s.tga textures/darkmod/door/wood/ornate/smooth_rich_ovalwindow01_s.tga
+svn move textures/darkmod/mansion/door/mandoor05.tga textures/darkmod/door/wood/ornate/smooth_rich_squarewindow01.tga
+svn move textures/darkmod/sfx/mandoor05_withalpha.tga textures/darkmod/door/wood/ornate/smooth_rich_squarewindow01_alpha.tga
+svn move textures/darkmod/mansion/door/mandoor05_local.tga textures/darkmod/door/wood/ornate/smooth_rich_squarewindow01_local.tga
+svn move textures/darkmod/mansion/door/mandoor05_s.tga textures/darkmod/door/wood/ornate/smooth_rich_squarewindow01_s.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_back.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_back.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_down.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_down.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_forward.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_forward.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_left.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_left.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_right.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_right.tga
+svn move textures/darkmod/bonehoard/env/water_entrance_up.tga dds/textures/darkmod/map_specific/bonehoard/env/water_entrance_up.tga
+svn move textures/darkmod/castle/wall/caswpanel01b.tga textures/darkmod/metal/detailed/panel_circledesign01_brown.tga
+svn move textures/darkmod/castle/wall/caswpanel01.tga textures/darkmod/metal/detailed/panel_circledesign01_green.tga
+svn move textures/darkmod/castle/wall/caswpanel01_local.tga textures/darkmod/metal/detailed/panel_circledesign01_local.tga
+svn move textures/darkmod/castle/wall/caswpanel02.tga dds/textures/darkmod/metal/detailed/panel_circledesign_ornate01_green.tga
+svn move textures/darkmod/castle/wall/caswpanel02_local.tga textures/darkmod/metal/detailed/panel_circledesign_ornate01_local.tga
+svn move textures/darkmod/metal/gen/gen_detail.tga dds/textures/darkmod/metal/flat/gen_detail.tga
+svn move dds/textures/darkmod/metal/floor/rust_002_d.DDS dds/textures/darkmod/metal/flat/heavy_rust_pocked01.dds
+svn move textures/darkmod/metal/floor/rust_002_ed.tga textures/darkmod/metal/flat/heavy_rust_pocked01_ed.tga
+svn move textures/darkmod/metal/floor/rust_002_local.tga textures/darkmod/metal/flat/heavy_rust_pocked_local.tga
+svn move dds/textures/darkmod/metal/floor/rust_002_s.DDS dds/textures/darkmod/metal/flat/heavy_rust_pocked_s.dds
+svn move textures/darkmod/city/wall/metal01_d.tga textures/darkmod/metal/flat/simple_grey01.tga
+svn move textures/darkmod/city/wall/metal01_local.tga textures/darkmod/metal/flat/simple_grey01_local.tga
+svn move textures/darkmod/city/wall/metal01_s.tga textures/darkmod/metal/flat/simple_grey01_s.tga
+svn move dds/textures/darkmod/metal/floor/rust_004_d.DDS dds/textures/darkmod/metal/flat/simple_rough_grey01.dds
+svn move textures/darkmod/metal/floor/rust_004_ed.tga textures/darkmod/metal/flat/simple_rough_grey01_ed.tga
+svn move textures/darkmod/metal/floor/rust_004_local.tga textures/darkmod/metal/flat/simple_rough_grey01_local.tga
+svn move dds/textures/darkmod/metal/floor/rust_003_d.DDS dds/textures/darkmod/metal/flat/solid_rust01.dds
+svn move textures/darkmod/metal/floor/rust_003_ed.tga textures/darkmod/metal/flat/solid_rust01_ed.tga
+svn move textures/darkmod/metal/floor/rust_003_local.tga textures/darkmod/metal/flat/solid_rust01_local.tga
+svn move dds/textures/darkmod/metal/floor/rust_005.dds dds/textures/darkmod/metal/flat/solid_rust02.dds
+svn move textures/darkmod/metal/floor/rust_005_editor.jpg textures/darkmod/metal/flat/solid_rust02_ed.jpg
+svn move textures/darkmod/metal/floor/rust_005_local.tga textures/darkmod/metal/flat/solid_rust02_local.tga
+svn move dds/textures/darkmod/metal/floor/rust_005_s.dds dds/textures/darkmod/metal/flat/solid_rust02_s.dds
+No texturefile found: metalpole_d
+No valid path for: metalpole_d
+No texturefile found: metalpole_s
+No valid path for: metalpole_s
+svn move textures/darkmod/metal/gen/rust_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_dark_rusted01.tga
+svn move textures/darkmod/metal/gen/rust_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_dark_rusted01_local.tga
+svn move textures/darkmod/metal/gen/rust_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_dark_rusted01_s.tga
+svn move textures/darkmod/metal/gen/gen_default_framed_d.tga dds/textures/darkmod/metal/flat/tiling_1d/gen_default_framed_d.tga
+svn move textures/darkmod/metal/gen/gen_default_framed_local.tga dds/textures/darkmod/metal/flat/tiling_1d/gen_default_framed_local.tga
+svn move textures/darkmod/metal/gen/gen_default_framed_s.tga dds/textures/darkmod/metal/flat/tiling_1d/gen_default_framed_s.tga
+svn move textures/darkmod/metal/gen/iron_002_d.tga textures/darkmod/metal/flat/tiling_1d/gen_ornate_iron01.tga
+svn move textures/darkmod/metal/gen/paintedmetal_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_peeling_paint01.tga
+svn move textures/darkmod/metal/gen/paintedmetal_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_peeling_paint01_local.tga
+svn move textures/darkmod/metal/gen/paintedmetal_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_peeling_paint01_s.tga
+svn move textures/darkmod/metal/gen/brushedmetal_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01.tga
+svn move textures/darkmod/metal/gen/brushedmetal_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01_local.tga
+svn move textures/darkmod/metal/gen/brushedmetal_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01_s.tga
+svn move textures/darkmod/metal/gen/bronze_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_bronze01.tga
+svn move textures/darkmod/metal/gen/bronze_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_bronze01_local.tga
+svn move textures/darkmod/metal/gen/bronze_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_bronze01_s.tga
+svn move textures/darkmod/metal/gen/copper_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_copper01.tga
+svn move textures/darkmod/metal/gen/copper_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_copper01_local.tga
+svn move textures/darkmod/metal/gen/copper_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_copper01_s.tga
+svn move textures/darkmod/metal/gen/gold_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_gold01.tga
+svn move textures/darkmod/metal/gen/gold_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_gold01_local.tga
+svn move textures/darkmod/metal/gen/gold_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_gold01_s.tga
+svn move textures/darkmod/metal/gen/iron_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_iron01.tga
+svn move textures/darkmod/metal/gen/iron_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_iron01_local.tga
+svn move textures/darkmod/metal/gen/iron_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_iron01_s.tga
+svn move textures/darkmod/metal/gen/silver_001_d.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_silver01.tga
+svn move textures/darkmod/metal/gen/silver_001_local.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_silver01_local.tga
+svn move textures/darkmod/metal/gen/silver_001_s.tga textures/darkmod/metal/flat/tiling_1d/gen_smooth_silver01_s.tga
+svn move dds/textures/darkmod/stone/wall/cement_012.dds dds/textures/darkmod/metal/flat/tiling_1d/rough_dirty01.dds
+svn move textures/darkmod/stone/wall/cement_012_editor.tga textures/darkmod/metal/flat/tiling_1d/rough_dirty01_ed.tga
+svn move textures/darkmod/stone/wall/cement_012_local.tga textures/darkmod/metal/flat/tiling_1d/rough_dirty01_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_014.dds dds/textures/darkmod/metal/flat/tiling_1d/rough_iron01.dds
+svn move textures/darkmod/stone/wall/cement_014_editor.tga textures/darkmod/metal/flat/tiling_1d/rough_iron01_ed.tga
+svn move textures/darkmod/stone/wall/cement_014_local.tga textures/darkmod/metal/flat/tiling_1d/rough_iron01_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_011.dds dds/textures/darkmod/metal/flat/tiling_1d/rough_rusted01.dds
+svn move textures/darkmod/stone/wall/cement_011_editor.tga textures/darkmod/metal/flat/tiling_1d/rough_rusted01_ed.tga
+svn move textures/darkmod/stone/wall/cement_011_local.tga textures/darkmod/metal/flat/tiling_1d/rough_rusted01_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_011_s.dds dds/textures/darkmod/metal/flat/tiling_1d/rough_rusted01_s.dds
+svn move dds/textures/darkmod/metal/floor/grating_001.dds dds/textures/darkmod/metal/grate/dimpled_grating01.dds
+svn move textures/darkmod/metal/floor/grating_001_editor.jpg textures/darkmod/metal/grate/dimpled_grating01_ed.jpg
+svn move textures/darkmod/metal/floor/grating_001_local.tga textures/darkmod/metal/grate/dimpled_grating01_local.tga
+svn move dds/textures/darkmod/metal/floor/grating_001_s.dds dds/textures/darkmod/metal/grate/dimpled_grating01_s.dds
+svn move textures/darkmod/foliage/floor/flowers_pink_01.tga dds/textures/darkmod/nature/foliage/flowers_pink_01.tga
+svn move textures/darkmod/foliage/floor/flowers_pink_01_local.tga dds/textures/darkmod/nature/foliage/flowers_pink_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_violet_01.tga dds/textures/darkmod/nature/foliage/flowers_violet_01.tga
+svn move textures/darkmod/foliage/floor/flowers_violet_01_local.tga dds/textures/darkmod/nature/foliage/flowers_violet_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_violet_02.tga dds/textures/darkmod/nature/foliage/flowers_violet_02.tga
+svn move textures/darkmod/foliage/floor/flowers_violet_02_local.tga dds/textures/darkmod/nature/foliage/flowers_violet_02_local.tga
+svn move dds/textures/darkmod/foliage/wall/hedge_001.dds dds/textures/darkmod/nature/foliage/hedge_001.dds
+svn move textures/darkmod/foliage/wall/hedge_001_editor.tga dds/textures/darkmod/nature/foliage/hedge_001_editor.tga
+svn move textures/darkmod/foliage/wall/hedge_001_local.tga dds/textures/darkmod/nature/foliage/hedge_001_local.dds
+svn move textures/darkmod/foliage/wall/hedge_001_local.tga dds/textures/darkmod/nature/foliage/hedge_001_local.tga
+svn move textures/darkmod/foliage/floor/flowers_blueviolet_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_blueviolet_01.tga
+svn move textures/darkmod/foliage/floor/flowers_blueviolet_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_blueviolet_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_mixed_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_mixed_01.tga
+svn move textures/darkmod/foliage/floor/flowers_mixed_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_mixed_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_redyellow_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_redyellow_01.tga
+svn move textures/darkmod/foliage/floor/flowers_redyellow_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_redyellow_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_red_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_red_01.tga
+svn move textures/darkmod/foliage/floor/flowers_red_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_red_01_local.tga
+svn move textures/darkmod/foliage/floor/flowers_white_01.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_white_01.tga
+svn move textures/darkmod/foliage/floor/flowers_white_01_local.tga dds/textures/darkmod/nature/foliage/nontiling/flowers_white_01_local.tga
+svn move textures/darkmod/nature/grass01.tga dds/textures/darkmod/nature/grass/short_patchy_grass01.tga
+svn move textures/darkmod/nature/grass01_local.tga textures/darkmod/nature/grass/short_patchy_grass01_local.tga
+svn move textures/darkmod/nature/grass02.tga textures/darkmod/nature/grass/thick_grass01.tga
+svn move textures/darkmod/nature/grass02_local.tga textures/darkmod/nature/grass/thick_grass01_local.tga
+svn move textures/darkmod/nature/straw01.tga textures/darkmod/nature/grass/nontiling/thick_straw01.tga
+svn move textures/darkmod/nature/straw01_local.tga textures/darkmod/nature/grass/nontiling/thick_straw01_local.tga
+Multiple textures found:  ['/home/sparhawk/darkmod/textures/darkmod/sky/dm_sqsky/dm_sqsky.tga', '/home/sparhawk/darkmod/dds/textures/darkmod/nature/skybox/dm_sqsky/dm_sqsky.tga']
+No valid path for: dm_sqsky
+svn move textures/darkmod/sky/starry1/clouds.tga dds/textures/darkmod/nature/skybox/starry1/clouds.tga
+svn move textures/darkmod/sky/starry1/clouds2.tga dds/textures/darkmod/nature/skybox/starry1/clouds2.tga
+svn move textures/darkmod/sky/starry1/moon.tga dds/textures/darkmod/nature/skybox/starry1/moon.tga
+svn move textures/darkmod/sky/starry1/moon_crescent.tga dds/textures/darkmod/nature/skybox/starry1/moon_crescent.tga
+svn move textures/darkmod/sky/starry1/moon_crescent_editor.tga dds/textures/darkmod/nature/skybox/starry1/moon_crescent_editor.tga
+svn move textures/darkmod/sky/starry1/moon_editor.tga dds/textures/darkmod/nature/skybox/starry1/moon_editor.tga
+svn move textures/darkmod/sky/starry1/moon_full.tga dds/textures/darkmod/nature/skybox/starry1/moon_full.tga
+svn move textures/darkmod/sky/starry1/moon_full_editor.tga dds/textures/darkmod/nature/skybox/starry1/moon_full_editor.tga
+svn move textures/darkmod/sky/starry1/moon_full_glared.tga dds/textures/darkmod/nature/skybox/starry1/moon_full_glared.tga
+svn move textures/darkmod/sky/starry1/moon_gibbous.tga dds/textures/darkmod/nature/skybox/starry1/moon_gibbous.tga
+svn move textures/darkmod/sky/starry1/moon_gibbous_editor.tga dds/textures/darkmod/nature/skybox/starry1/moon_gibbous_editor.tga
+svn move textures/darkmod/sky/starry1/moon_quarter.tga dds/textures/darkmod/nature/skybox/starry1/moon_quarter.tga
+svn move textures/darkmod/sky/starry1/moon_quarter_editor.tga dds/textures/darkmod/nature/skybox/starry1/moon_quarter_editor.tga
+svn move textures/darkmod/sky/starry1/stars.tga dds/textures/darkmod/nature/skybox/starry1/stars.tga
+svn move textures/darkmod/sky/starry1/white.tga dds/textures/darkmod/nature/skybox/starry1/white.tga
+svn move dds/textures/darkmod/snow/floor/icy_001.dds dds/textures/darkmod/nature/snow/plain_ice01.dds
+svn move textures/darkmod/snow/floor/icy_001_editor.tga textures/darkmod/nature/snow/plain_ice01_ed.tga
+svn move textures/darkmod/snow/floor/icy_001_local.tga textures/darkmod/nature/snow/plain_ice01_local.tga
+svn move dds/textures/darkmod/snow/floor/icy_001_s.dds dds/textures/darkmod/nature/snow/plain_ice01_s.dds
+svn move dds/textures/darkmod/snow/floor/rippled_001.dds dds/textures/darkmod/nature/snow/plain_snow01.dds
+svn move textures/darkmod/snow/floor/rippled_001_local.tga textures/darkmod/nature/snow/plain_snow01_local.tga
+svn move textures/darkmod/mansion/wall/manwall03.tga textures/darkmod/paint_paper/wallpaper_flowers_01.tga
+svn move textures/darkmod/mansion/wall/manwall03_local.tga textures/darkmod/paint_paper/wallpaper_flowers_01_local.tga
+svn move textures/darkmod/mansion/wall/manwall04b.tga textures/darkmod/paint_paper/wallpaper_ornamental_01_blue.tga
+svn move textures/darkmod/mansion/wall/manwall04c.tga textures/darkmod/paint_paper/wallpaper_ornamental_01_green.tga
+svn move textures/darkmod/mansion/wall/manwall04_local.tga textures/darkmod/paint_paper/wallpaper_ornamental_01_local.tga
+svn move textures/darkmod/mansion/wall/manwall04a.tga textures/darkmod/paint_paper/wallpaper_ornamental_01_pink.tga
+svn move textures/darkmod/mansion/wall/manwall04d.tga textures/darkmod/paint_paper/wallpaper_ornamental_01_red.tga
+svn move textures/darkmod/mansion/wall/manwall05.tga textures/darkmod/paint_paper/wallpaper_ornamental_02_white.tga
+svn move textures/darkmod/mansion/wall/manwall05_local.tga textures/darkmod/paint_paper/wallpaper_ornamental_02_white_local.tga
+svn move textures/darkmod/city/roof/ctyroof02.tga textures/darkmod/roof/shingle_dullbrown01.tga
+svn move textures/darkmod/city/roof/ctyroof02_local.tga textures/darkmod/roof/shingle_dullbrown01_local.tga
+svn move textures/darkmod/city/roof/rooftile_01_d.tga textures/darkmod/roof/shingle_shiny_greenish01.tga
+svn move textures/darkmod/city/roof/rooftile_01_local.tga textures/darkmod/roof/shingle_shiny_greenish01_local.tga
+svn move textures/darkmod/city/roof/rooftile_01_s.tga textures/darkmod/roof/shingle_shiny_greenish01_s.tga
+svn move textures/darkmod/city/roof/ctyroof01.tga textures/darkmod/roof/slate_uneven_withmoss01.tga
+svn move textures/darkmod/city/roof/ctyroof01_local.tga textures/darkmod/roof/slate_uneven_withmoss01_local.tga
+svn move textures/darkmod/city/roof/rt_woodenrooftiles01_d.tga dds/textures/darkmod/roof/slats_uneven_wood01.tga
+svn move textures/darkmod/city/roof/rt_woodenrooftiles01_local.tga dds/textures/darkmod/roof/slats_uneven_wood01_local.tga
+svn move textures/darkmod/sfx/blueglass.tga dds/textures/darkmod/sfx/blueglass.tga
+svn move textures/darkmod/sfx/greenglass.tga dds/textures/darkmod/sfx/greenglass.tga
+svn move textures/darkmod/sfx/light_rays.tga dds/textures/darkmod/sfx/light_rays.tga
+svn move textures/darkmod/mansion/door/mandoor05_local.tga dds/textures/darkmod/sfx/mandoor05_local.tga
+svn move textures/darkmod/sfx/mandoor05_withalpha.tga dds/textures/darkmod/sfx/mandoor05_withalpha.tga
+svn move textures/darkmod/sfx/manwindow02b_withalpha.tga dds/textures/darkmod/sfx/manwindow02b_withalpha.tga
+svn move textures/darkmod/sfx/redglass.tga dds/textures/darkmod/sfx/redglass.tga
+svn move textures/darkmod/sfx/whiteglass.tga dds/textures/darkmod/sfx/whiteglass.tga
+svn move dds/textures/darkmod/stone/floor/brick_006.dds dds/textures/darkmod/stone/brick/even_greyish01.dds
+svn move textures/darkmod/stone/floor/brick_006_editor.tga textures/darkmod/stone/brick/even_greyish01_ed.tga
+svn move textures/darkmod/stone/floor/brick_006_local.tga textures/darkmod/stone/brick/even_greyish01_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_006_trim.dds dds/textures/darkmod/stone/brick/even_greyish01_trim.dds
+svn move textures/darkmod/stone/floor/brick_006_trim_editor.jpg textures/darkmod/stone/brick/even_greyish01_trim_ed.jpg
+svn move textures/darkmod/stone/floor/brick_006_trim_local.tga textures/darkmod/stone/brick/even_greyish01_trim_local.tga
+svn move textures/darkmod/stone/floor/blocks_019_editor.jpg textures/darkmod/stone/brick/even_small_blocks001_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_019_local.tga textures/darkmod/stone/brick/even_small_blocks001_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_019.dds dds/textures/darkmod/stone/brick/even_small_blocks01.dds
+svn move textures/darkmod/city/wall/rt_largebrick01_d.tga textures/darkmod/stone/brick/grainy_blocks01.tga
+svn move textures/darkmod/city/wall/rt_largebrick01_local.tga textures/darkmod/stone/brick/grainy_blocks01_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_017_d.DDS dds/textures/darkmod/stone/brick/grainy_large_blocks01.dds
+svn move textures/darkmod/stone/floor/blocks_017_ed.tga textures/darkmod/stone/brick/grainy_large_blocks01_ed.tga
+svn move textures/darkmod/stone/floor/blocks_017_local.tga textures/darkmod/stone/brick/grainy_large_blocks01_local.tga
+svn move textures/darkmod/mansion/wall/manwbrick02.tga textures/darkmod/stone/brick/grey_protruding_bricks.tga
+svn move textures/darkmod/mansion/wall/manwbrick02_local.tga textures/darkmod/stone/brick/grey_protruding_bricks_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_007_dark.dds dds/textures/darkmod/stone/brick/interlocking_angled_darkgrey.dds
+svn move dds/textures/darkmod/stone/floor/brick_007.dds dds/textures/darkmod/stone/brick/interlocking_angled_grey.dds
+svn move dds/textures/darkmod/stone/floor/brick_007_s.dds dds/textures/darkmod/stone/brick/interlocking_angled_grey01_s.dds
+svn move textures/darkmod/stone/floor/brick_007_editor.tga textures/darkmod/stone/brick/interlocking_angled_grey_ed.tga
+svn move textures/darkmod/stone/floor/brick_007_local.tga textures/darkmod/stone/brick/interlocking_angled_grey_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_007_yellow.dds dds/textures/darkmod/stone/brick/interlocking_angled_yellow.dds
+svn move dds/textures/darkmod/stone/floor/cobble_005.dds dds/textures/darkmod/stone/brick/interlocking_mixedsize_dark.dds
+svn move textures/darkmod/stone/floor/cobble_005_local.tga textures/darkmod/stone/brick/interlocking_mixedsize_dark.tga
+svn move textures/darkmod/stone/floor/cobble_005_editor.tga textures/darkmod/stone/brick/interlocking_mixedsize_dark_ed.tga
+svn move dds/textures/darkmod/stone/floor/brick_010_d.DDS dds/textures/darkmod/stone/brick/old_blocks_wornsmooth_dark.dds
+svn move textures/darkmod/stone/floor/brick_010_ed.tga textures/darkmod/stone/brick/old_blocks_wornsmooth_dark_ed.tga
+svn move textures/darkmod/stone/floor/brick_010_local.tga textures/darkmod/stone/brick/old_blocks_wornsmooth_dark_local.tga
+svn move dds/textures/darkmod/stone/wall/brick_old_003.dds dds/textures/darkmod/stone/brick/old_dirty_bricks01.dds
+svn move textures/darkmod/stone/wall/brick_old_003_editor.tga textures/darkmod/stone/brick/old_dirty_bricks01_ed.tga
+svn move dds/textures/darkmod/stone/wall/brick_old_003_local.dds dds/textures/darkmod/stone/brick/old_dirty_bricks01_local.dds
+svn move textures/darkmod/stone/wall/brick_old_003_local.tga dds/textures/darkmod/stone/brick/old_dirty_bricks01_local.tga
+svn move dds/textures/darkmod/stone/wall/brick_old_001.dds dds/textures/darkmod/stone/brick/old_small_bricks_grey.dds
+svn move textures/darkmod/stone/wall/brick_old_001_local.tga textures/darkmod/stone/brick/old_small_bricks_grey.tga
+svn move textures/darkmod/stone/wall/brick_old_001_editor.tga textures/darkmod/stone/brick/old_small_bricks_grey_ed.tga
+svn move dds/textures/darkmod/stone/floor/masonry_001_pillar.dds dds/textures/darkmod/stone/brick/pillar_bricks01.dds
+svn move textures/darkmod/stone/floor/masonry_001_pillar_editor.jpg textures/darkmod/stone/brick/pillar_bricks01_ed.jpg
+svn move textures/darkmod/stone/floor/masonry_001_pillar_local.tga textures/darkmod/stone/brick/pillar_bricks01_local.tga
+svn move dds/textures/darkmod/stone/floor/masonry_001_pillar_s.dds dds/textures/darkmod/stone/brick/pillar_bricks01_s.dds
+svn move textures/darkmod/city/wall/rt_redbrickvert01_d.tga textures/darkmod/stone/brick/redbrick_dull_small.tga
+svn move textures/darkmod/city/wall/rt_redbrickvert01_local.tga textures/darkmod/stone/brick/redbrick_dull_small_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_008.dds dds/textures/darkmod/stone/brick/redbrick_mostly_mortar.dds
+svn move textures/darkmod/stone/floor/brick_008_editor.tga textures/darkmod/stone/brick/redbrick_mostly_mortar_ed.tga
+svn move textures/darkmod/stone/floor/brick_008_local.tga textures/darkmod/stone/brick/redbrick_mostly_mortar_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_004.dds dds/textures/darkmod/stone/brick/red_angled_ground.dds
+svn move textures/darkmod/stone/floor/brick_004_editor.tga textures/darkmod/stone/brick/red_angled_ground_ed.tga
+svn move textures/darkmod/stone/floor/brick_004_local.tga textures/darkmod/stone/brick/red_angled_ground_local.tga
+svn move textures/darkmod/city/wall/ctywbrick02.tga textures/darkmod/stone/brick/red_brick_dull01.tga
+svn move textures/darkmod/city/wall/ctywbrick02_local.tga textures/darkmod/stone/brick/red_brick_dull01_local.tga
+svn move dds/textures/darkmod/stone/floor/brick_005.dds dds/textures/darkmod/stone/brick/red_sloppymortar.dds
+svn move dds/textures/darkmod/stone/floor/brick_005_alpha.dds dds/textures/darkmod/stone/brick/red_sloppymortar_alpha.dds
+svn move textures/darkmod/stone/floor/brick_005_editor.tga textures/darkmod/stone/brick/red_sloppymortar_ed.tga
+svn move textures/darkmod/stone/floor/brick_005_inverted_local.tga textures/darkmod/stone/brick/red_sloppymortar_inverted_local.tga
+svn move textures/darkmod/stone/floor/brick_005_local.tga textures/darkmod/stone/brick/red_sloppymortar_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_008.dds dds/textures/darkmod/stone/brick/rough_big_blocks01.dds
+svn move textures/darkmod/stone/floor/blocks_008_editor.tga textures/darkmod/stone/brick/rough_big_blocks01_ed.tga
+svn move textures/darkmod/stone/floor/blocks_008_local.tga textures/darkmod/stone/brick/rough_big_blocks01_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_009.dds dds/textures/darkmod/stone/brick/rough_big_blocks02.dds
+svn move dds/textures/darkmod/stone/floor/blocks_009_cornerstone_dark.dds dds/textures/darkmod/stone/brick/rough_big_blocks02_cornerstone_dark.dds
+svn move textures/darkmod/stone/floor/blocks_009_cornerstone_dark_editor.tga textures/darkmod/stone/brick/rough_big_blocks02_cornerstone_dark_ed.tga
+svn move dds/textures/darkmod/stone/floor/blocks_009_cornerstone_light.dds dds/textures/darkmod/stone/brick/rough_big_blocks02_cornerstone_light.dds
+svn move textures/darkmod/stone/floor/blocks_009_cornerstone_light_editor.tga textures/darkmod/stone/brick/rough_big_blocks02_cornerstone_light_ed.tga
+svn move textures/darkmod/stone/floor/blocks_009_cornerstone_local.tga textures/darkmod/stone/brick/rough_big_blocks02_cornerstone_local.tga
+svn move textures/darkmod/stone/floor/blocks_009_editor.tga textures/darkmod/stone/brick/rough_big_blocks02_ed.tga
+svn move textures/darkmod/stone/floor/blocks_009_local.tga textures/darkmod/stone/brick/rough_big_blocks02_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_010.dds dds/textures/darkmod/stone/brick/rough_big_blocks03.dds
+svn move dds/textures/darkmod/stone/floor/blocks_010_cornerstone_dark.dds dds/textures/darkmod/stone/brick/rough_big_blocks03_cornerstone_dark.dds
+svn move textures/darkmod/stone/floor/blocks_010_cornerstone_dark_editor.tga textures/darkmod/stone/brick/rough_big_blocks03_cornerstone_dark_ed.tga
+svn move dds/textures/darkmod/stone/floor/blocks_010_cornerstone_light.dds dds/textures/darkmod/stone/brick/rough_big_blocks03_cornerstone_light.dds
+svn move textures/darkmod/stone/floor/blocks_010_cornerstone_light_editor.tga textures/darkmod/stone/brick/rough_big_blocks03_cornerstone_light_ed.tga
+svn move textures/darkmod/stone/floor/blocks_010_editor.tga textures/darkmod/stone/brick/rough_big_blocks03_ed.tga
+svn move dds/textures/darkmod/stone/floor/blocks_013.dds dds/textures/darkmod/stone/brick/rough_big_blocks04_brown.dds
+svn move dds/textures/darkmod/stone/floor/blocks_013_cornerstone_light.dds dds/textures/darkmod/stone/brick/rough_big_blocks04_brown_cornerstone_light.dds
+svn move textures/darkmod/stone/floor/blocks_013_cornerstone_light_editor.tga textures/darkmod/stone/brick/rough_big_blocks04_brown_cornerstone_light_ed.tga
+svn move textures/darkmod/stone/floor/blocks_013_editor.tga textures/darkmod/stone/brick/rough_big_blocks04_brown_ed.tga
+svn move dds/textures/darkmod/stone/floor/blocks_014.dds dds/textures/darkmod/stone/brick/rough_big_blocks05.dds
+svn move textures/darkmod/stone/floor/blocks_014_editor.tga textures/darkmod/stone/brick/rough_big_blocks05_ed.tga
+svn move dds/textures/darkmod/stone/floor/brick_009_d.DDS dds/textures/darkmod/stone/brick/rough_blocks01.dds
+svn move textures/darkmod/stone/floor/brick_009_ed.tga textures/darkmod/stone/brick/rough_blocks01_ed.tga
+svn move textures/darkmod/stone/floor/brick_009_local.tga textures/darkmod/stone/brick/rough_blocks01_local.tga
+svn move textures/darkmod/city/wall/ctywbrick01.tga textures/darkmod/stone/brick/rough_blocks02.tga
+svn move textures/darkmod/city/wall/ctywbrick01_local.tga textures/darkmod/stone/brick/rough_blocks02_local.tga
+svn move textures/darkmod/city/wall/ctywbrick04.tga textures/darkmod/stone/brick/rough_blocks_tight02.tga
+svn move textures/darkmod/city/wall/ctywbrick04_local.tga textures/darkmod/stone/brick/rough_blocks_tight02_local.tga
+svn move textures/darkmod/city/wall/ctywbrick04b.tga textures/darkmod/stone/brick/rough_blocks_tight02_moss.tga
+svn move textures/darkmod/city/wall/ctywbrick04b_local.tga textures/darkmod/stone/brick/rough_blocks_tight02_moss_local.tga
+svn move textures/darkmod/city/wall/ctywbrick03b.tga textures/darkmod/stone/brick/rough_blocks_tight_dark.tga
+svn move textures/darkmod/city/wall/ctywbrick03.tga textures/darkmod/stone/brick/rough_blocks_tight_light.tga
+svn move textures/darkmod/city/wall/ctywbrick03_local.tga textures/darkmod/stone/brick/rough_blocks_tight_local.tga
+svn move textures/darkmod/city/wall/brick_dark_d.tga textures/darkmod/stone/brick/rough_brick_grey.tga
+svn move textures/darkmod/city/wall/brick_dark_local.tga textures/darkmod/stone/brick/rough_brick_grey_local.tga
+svn move textures/darkmod/city/wall/brick_dark_s.tga textures/darkmod/stone/brick/rough_brick_grey_s.tga
+svn move dds/textures/darkmod/stone/trim/trim_003_d.DDS dds/textures/darkmod/stone/brick/single_grey_block01.dds
+svn move textures/darkmod/stone/trim/trim_003_ed.tga textures/darkmod/stone/brick/single_grey_block01_ed.tga
+svn move textures/darkmod/stone/trim/trim_003_local.tga textures/darkmod/stone/brick/single_grey_block01_local.tga
+svn move dds/textures/darkmod/stone/floor/masonry_001_brick.dds dds/textures/darkmod/stone/brick/small_brown_bricks01.dds
+svn move dds/textures/darkmod/stone/floor/masonry_001_brick_s.dds dds/textures/darkmod/stone/brick/small_brown_bricks01.dds
+svn move textures/darkmod/stone/floor/masonry_001_brick_editor.jpg textures/darkmod/stone/brick/small_brown_bricks01_ed.jpg
+svn move textures/darkmod/stone/floor/masonry_001_brick_local.tga textures/darkmod/stone/brick/small_brown_bricks01_local.tga
+svn move textures/darkmod/mansion/wall/manwbrick01.tga textures/darkmod/stone/brick/tight_large_blocks.tga
+svn move dds/textures/darkmod/stone/floor/blocks_015_d.DDS dds/textures/darkmod/stone/brick/tight_large_blocks01.dds
+svn move textures/darkmod/stone/floor/blocks_015_ed.tga textures/darkmod/stone/brick/tight_large_blocks01_ed.tga
+svn move textures/darkmod/stone/floor/blocks_015_local.tga textures/darkmod/stone/brick/tight_large_blocks01_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_015_s.DDS dds/textures/darkmod/stone/brick/tight_large_blocks01_s.dds
+svn move textures/darkmod/mansion/wall/manwbrick01_local.tga textures/darkmod/stone/brick/tight_large_blocks_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_016_d.DDS dds/textures/darkmod/stone/brick/tight_large_singleblock01.dds
+svn move textures/darkmod/stone/floor/blocks_016_ed.tga textures/darkmod/stone/brick/tight_large_singleblock01_ed.tga
+svn move textures/darkmod/stone/floor/blocks_016_local.tga textures/darkmod/stone/brick/tight_large_singleblock01_local.tga
+svn move textures/darkmod/city/wall/rt_sizes01_d.tga textures/darkmod/stone/brick/tight_randomsize_blocks.tga
+svn move textures/darkmod/city/wall/rt_sizes01_local.tga textures/darkmod/stone/brick/tight_randomsize_blocks_local.tga
+svn move textures/darkmod/city/wall/rt_framedwall01_d.tga textures/darkmod/stone/brick/nontiling/chiseled_brick_frame.tga
+svn move textures/darkmod/city/wall/rt_framedwall01_local.tga textures/darkmod/stone/brick/nontiling/chiseled_brick_frame_local.tga
+svn move textures/darkmod/stone/gen/brick_001_d.tga textures/darkmod/stone/brick/tiling_1d/gen_plainbrick_grey.tga
+svn move textures/darkmod/stone/gen/brick_001_local.tga textures/darkmod/stone/brick/tiling_1d/gen_plainbrick_local.tga
+svn move textures/darkmod/stone/gen/brick_001_s.tga textures/darkmod/stone/brick/tiling_1d/gen_plainbrick_s.tga
+svn move dds/textures/darkmod/stone/wall/brick_old_002.dds dds/textures/darkmod/stone/brick/tiling_1d/old_worn_greybrick.dds
+svn move textures/darkmod/stone/wall/brick_old_002_editor.tga textures/darkmod/stone/brick/tiling_1d/old_worn_greybrick_ed.tga
+svn move textures/darkmod/stone/wall/brick_old_002_local.tga textures/darkmod/stone/brick/tiling_1d/old_worn_greybrick_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_005.dds dds/textures/darkmod/stone/cobblestones/blocks_mixedsize01.dds
+svn move textures/darkmod/stone/wall/masonry_005_editor.tga textures/darkmod/stone/cobblestones/blocks_mixedsize01_ed.tga
+svn move textures/darkmod/stone/wall/masonry_005_local.tga textures/darkmod/stone/cobblestones/blocks_mixedsize01_local.tga
+svn move textures/darkmod/castle/wall/rt_casstone02_d.tga textures/darkmod/stone/cobblestones/blocks_mixed_multicolour.tga
+svn move textures/darkmod/castle/wall/rt_casstone01_d.tga textures/darkmod/stone/cobblestones/blocks_mixed_multicolour_framed.tga
+svn move textures/darkmod/castle/wall/rt_casstone01_local.tga textures/darkmod/stone/cobblestones/blocks_mixed_multicolour_framed_local.tga
+svn move textures/darkmod/castle/wall/rt_casstone02_local.tga textures/darkmod/stone/cobblestones/blocks_mixed_multicolour_local.tga
+svn move dds/textures/darkmod/stone/floor/cobble_004.dds dds/textures/darkmod/stone/cobblestones/cobblestones01_light.dds
+svn move textures/darkmod/stone/floor/cobble_004_editor.tga textures/darkmod/stone/cobblestones/cobblestones01_square_light_ed.tga
+svn move textures/darkmod/stone/floor/cobble_004_local.tga textures/darkmod/stone/cobblestones/cobblestones01_square_light_local.tga
+svn move dds/textures/darkmod/stone/floor/cobble_004_s.dds dds/textures/darkmod/stone/cobblestones/cobblestones01_square_light_s.dds
+svn move dds/textures/darkmod/stone/floor/cobble_008.dds dds/textures/darkmod/stone/cobblestones/cobblestones02_square_dark.dds
+svn move textures/darkmod/stone/floor/cobble_008_editor.jpg textures/darkmod/stone/cobblestones/cobblestones02_square_dark.jpg
+svn move textures/darkmod/stone/floor/cobble_008_local.tga textures/darkmod/stone/cobblestones/cobblestones02_square_dark_local.tga
+svn move dds/textures/darkmod/stone/floor/cobble_008_s.dds dds/textures/darkmod/stone/cobblestones/cobblestones02_square_dark_s.dds
+svn move textures/darkmod/city/floor/ctyground01.tga textures/darkmod/stone/cobblestones/cobblestones03_dark.tga
+svn move textures/darkmod/city/floor/ctyground01_local.tga textures/darkmod/stone/cobblestones/cobblestones03_dark_local.tga
+svn move textures/darkmod/city/floor/ctyground02.tga textures/darkmod/stone/cobblestones/cobblestones04_multicolour.tga
+svn move textures/darkmod/city/floor/ctyground02_local.tga textures/darkmod/stone/cobblestones/cobblestones04_multicolour_local.tga
+svn move textures/darkmod/pagan/floor/pagfloor03.tga textures/darkmod/stone/cobblestones/cobblestones_loose_ongrass.tga
+svn move textures/darkmod/pagan/floor/pagfloor03_local.tga textures/darkmod/stone/cobblestones/cobblestones_loose_ongrass_local.tga
+svn move dds/textures/darkmod/stone/floor/fan_001_dirt.dds dds/textures/darkmod/stone/cobblestones/cobblestone_fan_pattern.dds
+svn move textures/darkmod/stone/floor/fan_001_dirt_editor.tga textures/darkmod/stone/cobblestones/cobblestone_fan_pattern_ed.tga
+svn move dds/textures/darkmod/stone/floor/fan_001_grass.dds dds/textures/darkmod/stone/cobblestones/cobblestone_fan_pattern_grass.dds
+svn move textures/darkmod/stone/floor/fan_001_grass_editor.tga textures/darkmod/stone/cobblestones/cobblestone_fan_pattern_grass_ed.tga
+svn move textures/darkmod/stone/floor/fan_001_local.tga textures/darkmod/stone/cobblestones/cobblestone_fan_pattern_local.tga
+svn move dds/textures/darkmod/stone/floor/fan_001_s.dds dds/textures/darkmod/stone/cobblestones/cobblestone_fan_pattern_s.dds
+svn move dds/textures/darkmod/stone/floor/masonry_001.dds dds/textures/darkmod/stone/cobblestones/flagstones01_light.dds
+svn move textures/darkmod/stone/floor/masonry_001_local.tga textures/darkmod/stone/cobblestones/flagstones01_light_local.tga
+svn move textures/darkmod/stone/floor/blocks_018.tga textures/darkmod/stone/cobblestones/flagstones02_plain.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_local.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_l_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_s.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_left_s.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right.tga
+svn move textures/darkmod/stone/floor/blocks_018_cornerstone_r_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_cornerstone_right_local.tga
+svn move textures/darkmod/stone/floor/blocks_018_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_local.tga
+svn move textures/darkmod/stone/floor/blocks_018_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_s.tga
+svn move textures/darkmod/stone/floor/blocks_018_window01.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window01.tga
+svn move textures/darkmod/stone/floor/blocks_018_window01_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_window01_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_window01_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window01_local.tga
+svn move textures/darkmod/stone/floor/blocks_018_window01_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window01_s.tga
+svn move textures/darkmod/stone/floor/blocks_018_window02.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window02.tga
+svn move textures/darkmod/stone/floor/blocks_018_window02_ed.jpg textures/darkmod/stone/cobblestones/flagstones02_plain_window02_ed.jpg
+svn move textures/darkmod/stone/floor/blocks_018_window02_local.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window02_local.tga
+svn move textures/darkmod/stone/floor/blocks_018_window02_s.tga textures/darkmod/stone/cobblestones/flagstones02_plain_window02_s.tga
+svn move dds/textures/darkmod/stone/floor/cobble_006.dds dds/textures/darkmod/stone/cobblestones/flagstones03_shiny.dds
+svn move textures/darkmod/stone/floor/cobble_006_editor.tga textures/darkmod/stone/cobblestones/flagstones03_shiny_ed.tga
+svn move textures/darkmod/stone/floor/cobble_006_local.tga textures/darkmod/stone/cobblestones/flagstones03_shiny_local.tga
+svn move dds/textures/darkmod/stone/floor/cobble_006_s.dds dds/textures/darkmod/stone/cobblestones/flagstones03_shiny_s.dds
+svn move dds/textures/darkmod/stone/floor/cobble_007.dds dds/textures/darkmod/stone/cobblestones/flagstones04_uneven.dds
+svn move textures/darkmod/stone/floor/cobble_007_editor.tga textures/darkmod/stone/cobblestones/flagstones04_uneven_ed.tga
+svn move textures/darkmod/stone/floor/cobble_007_local.tga textures/darkmod/stone/cobblestones/flagstones04_uneven_local.tga
+svn move textures/darkmod/city/floor/cobblestone01sh.tga textures/darkmod/stone/cobblestones/flagstones05_pinkish.tga
+svn move textures/darkmod/city/floor/cobblestone01sh_local.tga textures/darkmod/stone/cobblestones/flagstones05_pinkish_local.tga
+svn move textures/darkmod/city/floor/cobblestone01sh_s.tga textures/darkmod/stone/cobblestones/flagstones05_pinkish_s.tga
+svn move dds/textures/darkmod/stone/floor/granite_001.dds dds/textures/darkmod/stone/cobblestones/flagstones06_granite.dds
+svn move textures/darkmod/stone/floor/granite_001_editor.tga textures/darkmod/stone/cobblestones/flagstones06_granite_ed.tga
+svn move textures/darkmod/stone/floor/granite_001_local.tga textures/darkmod/stone/cobblestones/flagstones06_granite_local.tga
+svn move dds/textures/darkmod/stone/floor/granite_001_s.dds dds/textures/darkmod/stone/cobblestones/flagstones06_granite_s.dds
+svn move dds/textures/darkmod/stone/wall/masonry_old_004.dds dds/textures/darkmod/stone/cobblestones/rough_masonry01.dds
+svn move textures/darkmod/stone/wall/masonry_old_004_editor.tga textures/darkmod/stone/cobblestones/rough_masonry01_ed.tga
+svn move textures/darkmod/stone/wall/masonry_old_004_local.tga textures/darkmod/stone/cobblestones/rough_masonry01_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_012.dds dds/textures/darkmod/stone/cobblestones/uneven_blocks01_brown.dds
+svn move textures/darkmod/stone/floor/blocks_012_editor.tga textures/darkmod/stone/cobblestones/uneven_blocks01_brown_ed.tga
+svn move textures/darkmod/stone/floor/blocks_012_local.tga textures/darkmod/stone/cobblestones/uneven_blocks01_brown_local.tga
+svn move dds/textures/darkmod/stone/floor/blocks_011.dds dds/textures/darkmod/stone/cobblestones/uneven_blocks01_dark.dds
+svn move textures/darkmod/stone/floor/blocks_011_editor.tga textures/darkmod/stone/cobblestones/uneven_blocks01_dark_ed.tga
+svn move textures/darkmod/stone/floor/blocks_011_local.tga textures/darkmod/stone/cobblestones/uneven_blocks01_dark_local.tga
+svn move textures/darkmod/castle/floor/casfloor04.tga textures/darkmod/stone/cobblestones/nontiling/flagstones_jagged_grey.tga
+svn move textures/darkmod/castle/floor/casfloor04_local.tga textures/darkmod/stone/cobblestones/nontiling/flagstones_jagged_grey_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_001.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven02_grey.dds
+svn move textures/darkmod/stone/wall/masonry_001_editor.tga dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven02_grey_local.tga
+svn move textures/darkmod/stone/wall/masonry_001_local.tga dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven02_grey_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_002.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven03_grey.dds
+svn move textures/darkmod/stone/wall/masonry_002_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven03_grey_ed.tga
+svn move textures/darkmod/stone/wall/masonry_002_local.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven03_grey_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_003.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven04_brown.dds
+svn move textures/darkmod/stone/wall/masonry_003_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven04_brown_ed.tga
+svn move textures/darkmod/stone/wall/masonry_003_local.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven04_brown_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_004.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven05_grey.dds
+svn move textures/darkmod/stone/wall/masonry_004_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven05_grey_ed.tga
+svn move textures/darkmod/stone/wall/masonry_004_local.tga textures/darkmod/stone/cobblestones/tiling_1d/blocks_uneven05_grey_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_old_001.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_mix.dds
+svn move textures/darkmod/stone/wall/masonry_old_001_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_mix_ed.tga
+svn move textures/darkmod/stone/wall/masonry_old_001_local.tga textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_mix_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_old_002.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_roughmix.dds
+svn move textures/darkmod/stone/wall/masonry_old_002_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_roughmix_ed.tga
+svn move textures/darkmod/stone/wall/masonry_old_002_local.tga textures/darkmod/stone/cobblestones/tiling_1d/bricks_blocks_roughmix_local.tga
+svn move dds/textures/darkmod/stone/wall/rounded_001.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/cobblestones_rounded.dds
+svn move textures/darkmod/stone/wall/rounded_001_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/cobblestones_rounded_ed.tga
+svn move textures/darkmod/stone/wall/rounded_001_local.tga textures/darkmod/stone/cobblestones/tiling_1d/cobblestones_rounded_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_old_003.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/flagstones_sparse.dds
+svn move textures/darkmod/stone/wall/masonry_old_003_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/flagstones_sparse_ed.tga
+svn move textures/darkmod/stone/wall/masonry_old_003_local.tga textures/darkmod/stone/cobblestones/tiling_1d/flagstones_sparse_local.tga
+svn move dds/textures/darkmod/stone/wall/masonry_old_005.dds dds/textures/darkmod/stone/cobblestones/tiling_1d/flagstones_uneven.dds
+svn move textures/darkmod/stone/wall/masonry_old_005_editor.tga textures/darkmod/stone/cobblestones/tiling_1d/flagstones_uneven_ed.tga
+svn move textures/darkmod/stone/wall/masonry_old_005_local.tga textures/darkmod/stone/cobblestones/tiling_1d/flagstones_uneven_local.tga
+svn move dds/textures/darkmod/stone/floor/decorative_001.dds dds/textures/darkmod/stone/flat/ceramic_mosaic_decorative01.dds
+svn move textures/darkmod/stone/floor/decorative_001_editor.tga dds/textures/darkmod/stone/flat/ceramic_mosaic_decorative01_ed.tga
+svn move textures/darkmod/stone/floor/decorative_001_local.tga dds/textures/darkmod/stone/flat/ceramic_mosaic_decorative01_local.tga
+svn move dds/textures/darkmod/stone/floor/decorative_001_s.dds dds/textures/darkmod/stone/flat/ceramic_mosaic_decorative01_s.dds
+svn move dds/textures/darkmod/stone/floor/marble_004_d.DDS dds/textures/darkmod/stone/flat/rough_marble_dark01.dds
+svn move textures/darkmod/stone/floor/marble_004_ed.tga textures/darkmod/stone/flat/rough_marble_dark01_ed.tga
+svn move textures/darkmod/stone/floor/marble_004_local.tga textures/darkmod/stone/flat/rough_marble_dark01_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_006_d.DDS dds/textures/darkmod/stone/flat/rough_marble_dark02.dds
+svn move textures/darkmod/stone/floor/rough_006_ed.tga textures/darkmod/stone/flat/rough_marble_dark02_ed.tga
+svn move textures/darkmod/stone/floor/rough_006_local.tga textures/darkmod/stone/flat/rough_marble_dark02_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_007_d.DDS dds/textures/darkmod/stone/flat/rough_marble_light01.dds
+svn move textures/darkmod/stone/floor/rough_007_ed.tga textures/darkmod/stone/flat/rough_marble_light01_ed.tga
+svn move textures/darkmod/stone/floor/rough_007_local.tga textures/darkmod/stone/flat/rough_marble_light01_local.tga
+svn move dds/textures/darkmod/stone/floor/tiled_009.dds dds/textures/darkmod/stone/flat/rough_plain_tiles01.dds
+svn move textures/darkmod/stone/floor/tiled_009_editor.tga textures/darkmod/stone/flat/rough_plain_tiles01_ed.tga
+svn move textures/darkmod/stone/floor/tiled_009_local.tga textures/darkmod/stone/flat/rough_plain_tiles01_local.tga
+svn move textures/darkmod/mansion/floor/manfslate1.tga textures/darkmod/stone/flat/rough_slate_dark01.tga
+svn move textures/darkmod/mansion/floor/manfslate1_local.tga textures/darkmod/stone/flat/rough_slate_dark01_local.tga
+svn move dds/textures/darkmod/stone/floor/tiled_010_d.DDS dds/textures/darkmod/stone/flat/rough_slate_tiles01_dark.dds
+svn move textures/darkmod/stone/floor/tiled_010_ed.tga textures/darkmod/stone/flat/rough_slate_tiles01_dark_ed.tga
+svn move textures/darkmod/stone/floor/tiled_010_local.tga textures/darkmod/stone/flat/rough_slate_tiles01_local.tga
+svn move textures/darkmod/city/wall/concrete01_d.tga textures/darkmod/stone/flat/slate01_light.tga
+svn move textures/darkmod/city/wall/concrete01_local.tga textures/darkmod/stone/flat/slate01_local.tga
+svn move textures/darkmod/city/wall/concrete01_s.tga textures/darkmod/stone/flat/slate01_s.tga
+No texturefile found: concrete2_d
+No valid path for: concrete2_d
+Multiple textures found:  ['/home/sparhawk/darkmod/textures/darkmod/city/wall/concrete_dirt01_s.tga', '/home/sparhawk/darkmod/textures/darkmod/city/wall/concrete_dirt01_d.tga', '/home/sparhawk/darkmod/textures/darkmod/city/wall/concrete_dirt01_local.tga', '/home/sparhawk/darkmod/textures/darkmod/stone/gen/concrete_dirt_001_d.tga', '/home/sparhawk/darkmod/textures/darkmod/stone/gen/concrete_dirt_001_s.tga', '/home/sparhawk/darkmod/textures/darkmod/stone/gen/concrete_dirt_001_local.tga', '/home/sparhawk/darkmod/dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_s.tga', '/home/sparhawk/darkmod/dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_d.tga', '/home/sparhawk/darkmod/dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_local.tga']
+No valid path for: concrete_d
+No texturefile found: concrete_local
+No valid path for: concrete_local
+svn move textures/darkmod/castle/floor/casfloor03.tga textures/darkmod/stone/flat/tiles_rough_grey.tga
+svn move textures/darkmod/castle/floor/casfloor03_local.tga textures/darkmod/stone/flat/tiles_rough_grey_local.tga
+svn move textures/darkmod/mansion/floor/manfloor01.tga textures/darkmod/stone/flat/tile_plain_diamond01_brown.tga
+svn move textures/darkmod/mansion/floor/manfloor01_s.tga textures/darkmod/stone/flat/tile_plain_diamond01_brown_s.tga
+svn move textures/darkmod/mansion/floor/manfloor01_local.tga textures/darkmod/stone/flat/tile_plain_diamond01_local.tga
+svn move textures/darkmod/mansion/floor/manfloor01sh_s.tga textures/darkmod/stone/flat/smooth/ceramic_tile_generic01_s.tga
+svn move textures/darkmod/mansion/floor/manfloor03sh.tga textures/darkmod/stone/flat/smooth/ceramic_tile_gold01.tga
+svn move textures/darkmod/mansion/floor/manfloor01sh.tga textures/darkmod/stone/flat/smooth/ceramic_tile_reddish01.tga
+svn move textures/darkmod/mansion/floor/manfloor02sh.tga textures/darkmod/stone/flat/smooth/ceramic_tile_tan01.tga
+svn move textures/darkmod/mansion/floor/manfloor05sh.tga textures/darkmod/stone/flat/smooth/ceramic_tile_tan02.tga
+svn move textures/darkmod/mansion/floor/manfloor06sh.tga textures/darkmod/stone/flat/smooth/ceramic_tile_tan03.tga
+svn move textures/darkmod/mansion/floor/manfloor02.tga textures/darkmod/stone/flat/smooth/marble_pattern01.tga
+svn move textures/darkmod/mansion/floor/manfloor02cen2.tga textures/darkmod/stone/flat/smooth/marble_pattern01_centerrose.tga
+svn move textures/darkmod/mansion/floor/manfloor02cen2_s.tga textures/darkmod/stone/flat/smooth/marble_pattern01_centerrose_s.tga
+svn move textures/darkmod/mansion/floor/manfloor02cen1.tga textures/darkmod/stone/flat/smooth/marble_pattern01_centersun.tga
+svn move textures/darkmod/mansion/floor/manfloor02cen1_s.tga textures/darkmod/stone/flat/smooth/marble_pattern01_centersun_s.tga
+svn move textures/darkmod/mansion/floor/manfloor02_local.tga dds/textures/darkmod/stone/flat/smooth/marble_pattern01_local.tga
+svn move textures/darkmod/mansion/floor/manfloor02_s.tga textures/darkmod/stone/flat/smooth/marble_pattern01_s.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center1.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_checker.dds
+svn move textures/darkmod/tile/floor/marble_002_center1_editor.tga textures/darkmod/stone/flat/smooth/marble_pattern02_checker_ed.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center1_s.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_checker_s.dds
+svn move dds/textures/darkmod/tile/floor/marble_002_center2.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_crosshair.dds
+svn move textures/darkmod/tile/floor/marble_002_center2_editor.tga textures/darkmod/stone/flat/smooth/marble_pattern02_crosshair_ed.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center2_s.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_crosshair_s.dds
+svn move dds/textures/darkmod/tile/floor/marble_002_center5.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_rings.dds
+svn move textures/darkmod/tile/floor/marble_002_center5_editor.tga textures/darkmod/stone/flat/smooth/marble_pattern02_rings_ed.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center5_s.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_rings_s.dds
+svn move dds/textures/darkmod/tile/floor/marble_002_center3.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_star.dds
+svn move dds/textures/darkmod/tile/floor/marble_002_center4.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_star02.dds
+svn move textures/darkmod/tile/floor/marble_002_center4_editor.tga textures/darkmod/stone/flat/smooth/marble_pattern02_star02_ed.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center4_s.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_star02_s.dds
+svn move textures/darkmod/tile/floor/marble_002_center3_editor.tga textures/darkmod/stone/flat/smooth/marble_pattern02_star_ed.tga
+svn move dds/textures/darkmod/tile/floor/marble_002_center3_s.dds dds/textures/darkmod/stone/flat/smooth/marble_pattern02_star_s.dds
+svn move dds/textures/darkmod/tile/floor/marble_003_d.DDS dds/textures/darkmod/stone/flat/smooth/marble_pattern03_brownish.dds
+svn move textures/darkmod/tile/floor/marble_003_ed.tga textures/darkmod/stone/flat/smooth/marble_pattern03_brownish_ed.tga
+svn move textures/darkmod/tile/floor/marble_003_local.tga textures/darkmod/stone/flat/smooth/marble_pattern03_brownish_local.tga
+svn move dds/textures/darkmod/tile/floor/marble_003_s.DDS dds/textures/darkmod/stone/flat/smooth/marble_pattern03_brownish_s.dds
+svn move textures/darkmod/mansion/wall/manwtrim03.tga textures/darkmod/stone/flat/smooth/tiling_1d/marble_trim01_brown.tga
+svn move textures/darkmod/mansion/wall/manwtrim03_local.tga textures/darkmod/stone/flat/smooth/tiling_1d/marble_trim01_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim03_s.tga textures/darkmod/stone/flat/smooth/tiling_1d/marble_trim01_s.tga
+svn move dds/textures/darkmod/stone/wall/cement_002.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_002.dds
+svn move textures/darkmod/stone/wall/cement_002_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_002_editor.tga
+svn move textures/darkmod/stone/wall/cement_002_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_002_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_004.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_004.dds
+svn move textures/darkmod/stone/wall/cement_004_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_004_editor.tga
+svn move textures/darkmod/stone/wall/cement_004_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_004_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_005.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_005.dds
+svn move textures/darkmod/stone/wall/cement_005_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_005_editor.tga
+svn move textures/darkmod/stone/wall/cement_005_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_005_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_007.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_007.dds
+svn move textures/darkmod/stone/wall/cement_007_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_007_editor.tga
+svn move textures/darkmod/stone/wall/cement_007_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_007_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_008.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_008.dds
+svn move textures/darkmod/stone/wall/cement_008_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_008_editor.tga
+svn move textures/darkmod/stone/wall/cement_008_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_008_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_010.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_010.dds
+svn move textures/darkmod/stone/wall/cement_010_editor.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_010_editor.tga
+svn move textures/darkmod/stone/wall/cement_010_local.tga dds/textures/darkmod/stone/flat/tiling_1d/cement_010_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_010_s.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_010_s.dds
+svn move dds/textures/darkmod/stone/wall/cement_013_s.dds dds/textures/darkmod/stone/flat/tiling_1d/cement_013_s.dds
+svn move textures/darkmod/city/wall/concrete_dirt01_d.tga dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_d.tga
+svn move textures/darkmod/city/wall/concrete_dirt01_local.tga dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_local.tga
+svn move textures/darkmod/city/wall/concrete_dirt01_s.tga dds/textures/darkmod/stone/flat/tiling_1d/concrete_dirt01_s.tga
+svn move dds/textures/darkmod/stone/wall/cement_001.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_light_cracked.dds
+svn move textures/darkmod/stone/wall/cement_001_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_light_cracked_ed.tga
+svn move textures/darkmod/stone/wall/cement_001_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_light_cracked_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_013.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_light_streaked.dds
+svn move textures/darkmod/stone/wall/cement_013_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_light_streaked_ed.tga
+svn move textures/darkmod/stone/wall/cement_013_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_light_streaked_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_003.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01.dds
+svn move textures/darkmod/stone/wall/cement_003_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_ed.tga
+svn move textures/darkmod/stone/wall/cement_003_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_local.tga
+svn move textures/darkmod/stone/wall/cement_009_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark01_local.tga
+svn move dds/textures/darkmod/stone/wall/cement_009.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark02.dds
+svn move textures/darkmod/stone/wall/cement_009_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_dark02_ed.tga
+svn move dds/textures/darkmod/stone/wall/cement_006.dds dds/textures/darkmod/stone/flat/tiling_1d/concrete_rough_pebbly.dds
+svn move textures/darkmod/stone/wall/cement_006_editor.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_pebbly_ed.tga
+svn move textures/darkmod/stone/wall/cement_006_local.tga textures/darkmod/stone/flat/tiling_1d/concrete_rough_pebbly_local.tga
+svn move textures/darkmod/stone/gen/concrete_dirt_001_local.tga textures/darkmod/stone/flat/tiling_1d/gen_slate_dirt_local.tga
+svn move textures/darkmod/stone/gen/concrete_dirt_001_s.tga textures/darkmod/stone/flat/tiling_1d/gen_slate_dirt_s.tga
+svn move textures/darkmod/stone/gen/concrete_dirt_001_d.tga textures/darkmod/stone/flat/tiling_1d/gen_slate_light_dirt.tga
+svn move dds/textures/darkmod/stone/floor/rough_010_d.DDS dds/textures/darkmod/stone/natural/dark_dirty.dds
+svn move textures/darkmod/stone/floor/rough_010_ed.tga textures/darkmod/stone/natural/dark_dirty_ed.tga
+svn move textures/darkmod/stone/floor/rough_010_local.tga textures/darkmod/stone/natural/dark_dirty_local.tga
+svn move dds/textures/darkmod/detail/rough_001.dds dds/textures/darkmod/stone/natural/dark_dirt_smeary.dds
+svn move textures/darkmod/stone/floor/rough_001_editor.tga textures/darkmod/stone/natural/dark_dirt_smeary_ed.tga
+svn move textures/darkmod/stone/floor/rough_001_local.tga textures/darkmod/stone/natural/dark_dirt_smeary_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_009_d.DDS dds/textures/darkmod/stone/natural/dark_rough.dds
+svn move textures/darkmod/stone/floor/rough_009_ed.tga textures/darkmod/stone/natural/dark_rough_ed.tga
+svn move textures/darkmod/stone/floor/rough_009_local.tga textures/darkmod/stone/natural/dark_rough_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_005_d.DDS dds/textures/darkmod/stone/natural/light_grey_rough.dds
+svn move textures/darkmod/stone/floor/rough_005_ed.tga textures/darkmod/stone/natural/light_grey_rough_ed.tga
+svn move textures/darkmod/stone/floor/rough_005_local.tga textures/darkmod/stone/natural/light_grey_rough_local.tga
+svn move textures/darkmod/nature/mossyrock_002.tga textures/darkmod/stone/natural/mossy_rock_brown.tga
+svn move textures/darkmod/nature/mossyrock_002_ed.jpg textures/darkmod/stone/natural/mossy_rock_brown_ed.jpg
+svn move textures/darkmod/nature/mossyrock_002_local.tga textures/darkmod/stone/natural/mossy_rock_brown_local.tga
+svn move textures/darkmod/nature/mossyrock_002_s.tga textures/darkmod/stone/natural/mossy_rock_brown_s.tga
+svn move textures/darkmod/nature/mossyrock_003.tga textures/darkmod/stone/natural/mossy_rock_bumpy.tga
+svn move textures/darkmod/nature/mossyrock_003_ed.jpg textures/darkmod/stone/natural/mossy_rock_bumpy_ed.jpg
+svn move textures/darkmod/nature/mossyrock_003_local.tga textures/darkmod/stone/natural/mossy_rock_bumpy_local.tga
+svn move textures/darkmod/nature/mossyrock_003_s.tga textures/darkmod/stone/natural/mossy_rock_bumpy_s.tga
+svn move textures/darkmod/nature/mossyrock_001.tga textures/darkmod/stone/natural/mossy_rock_green.tga
+svn move textures/darkmod/nature/mossyrock_001_ed.jpg textures/darkmod/stone/natural/mossy_rock_green_ed.jpg
+svn move textures/darkmod/nature/mossyrock_001_local.tga textures/darkmod/stone/natural/mossy_rock_green_local.tga
+svn move textures/darkmod/nature/mossyrock_001_s.tga textures/darkmod/stone/natural/mossy_rock_green_s.tga
+svn move dds/textures/darkmod/stone/floor/rough_004_d.DDS dds/textures/darkmod/stone/natural/rock_brown_mottled.dds
+svn move textures/darkmod/stone/floor/rough_004_ed.tga textures/darkmod/stone/natural/rock_brown_mottled_ed.tga
+svn move textures/darkmod/stone/floor/rough_004_local.tga textures/darkmod/stone/natural/rock_brown_mottled_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_003_d.DDS dds/textures/darkmod/stone/natural/rock_grey.dds
+svn move textures/darkmod/stone/floor/rough_003_dark_ed.tga textures/darkmod/stone/natural/rock_grey_dark_ed.tga
+svn move textures/darkmod/stone/floor/rough_003_ed.tga textures/darkmod/stone/natural/rock_grey_ed.tga
+svn move textures/darkmod/stone/floor/rough_003_local.tga textures/darkmod/stone/natural/rock_grey_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_012_mossy_d.DDS dds/textures/darkmod/stone/natural/rock_grey_mossy.dds
+svn move textures/darkmod/stone/floor/rough_012_mossy_ed.tga textures/darkmod/stone/natural/rock_grey_mossy_ed.tga
+svn move textures/darkmod/stone/floor/rough_012_mossy_local.tga textures/darkmod/stone/natural/rock_grey_mossy_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_011_d.DDS dds/textures/darkmod/stone/natural/rough_grey_dirty.dds
+svn move textures/darkmod/stone/floor/rough_011_ed.tga textures/darkmod/stone/natural/rough_grey_dirty_ed.tga
+svn move textures/darkmod/stone/floor/rough_011_local.tga textures/darkmod/stone/natural/rough_grey_dirty_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_008_d.DDS dds/textures/darkmod/stone/natural/rough_old.dds
+svn move textures/darkmod/stone/floor/rough_008_ed.tga textures/darkmod/stone/natural/rough_old_ed.tga
+svn move textures/darkmod/stone/floor/rough_008_local.tga textures/darkmod/stone/natural/rough_old_local.tga
+svn move dds/textures/darkmod/stone/floor/rough_002_d.DDS dds/textures/darkmod/stone/natural/sandstone.dds
+svn move textures/darkmod/stone/floor/rough_002_ed.tga textures/darkmod/stone/natural/sandstone_ed.tga
+svn move textures/darkmod/stone/floor/rough_002_local.tga textures/darkmod/stone/natural/sandstone_local.tga
+svn move textures/darkmod/city/floor/ctygravel01.tga textures/darkmod/stone/natural/tiling_1d/gravel_grey_01.tga
+svn move textures/darkmod/city/floor/ctygravel01_local.tga textures/darkmod/stone/natural/tiling_1d/gravel_grey_01_local.tga
+svn move textures/darkmod/stone/trim/ornament_011_bones_ed.tga textures/darkmod/stone/sculpted/carved_design_bones01_ed.tga
+svn move textures/darkmod/stone/trim/ornament_011_bones_local.tga textures/darkmod/stone/sculpted/carved_design_bones01_local.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_ed.tga textures/darkmod/stone/sculpted/carved_design_bones02_ed.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_left_ed.tga textures/darkmod/stone/sculpted/carved_design_bones02_left_ed.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_left_local.tga textures/darkmod/stone/sculpted/carved_design_bones02_left_local.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_local.tga textures/darkmod/stone/sculpted/carved_design_bones02_local.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_right_ed.tga textures/darkmod/stone/sculpted/carved_design_bones02_right_ed.tga
+svn move textures/darkmod/stone/trim/ornament_013_bones_tile_right_local.tga textures/darkmod/stone/sculpted/carved_design_bones02_right_local.tga
+svn move textures/darkmod/stone/trim/ornament_010_ed.tga textures/darkmod/stone/sculpted/carved_design_diamonds01_ed.tga
+svn move textures/darkmod/stone/trim/ornament_010_local.tga dds/textures/darkmod/stone/sculpted/carved_design_diamonds01_local.tga
+svn move textures/darkmod/stone/trim/ornament_014_skull_ed.tga textures/darkmod/stone/sculpted/carved_design_skull01_ed.tga
+svn move textures/darkmod/stone/trim/ornament_014_skull_local.tga textures/darkmod/stone/sculpted/carved_design_skull01_local.tga
+svn move textures/darkmod/stone/trim/ornament_012_snakes_ed.tga textures/darkmod/stone/sculpted/carved_design_snakes_ed.tga
+svn move textures/darkmod/stone/trim/ornament_012_snakes_local.tga textures/darkmod/stone/sculpted/carved_design_snakes_local.tga
+svn move dds/textures/darkmod/stone/trim/trim_002_d.DDS dds/textures/darkmod/stone/sculpted/carved_diamond_trim.dds
+svn move dds/textures/darkmod/stone/trim/trim_001_d.DDS dds/textures/darkmod/stone/sculpted/carved_diamond_trim02.dds
+svn move textures/darkmod/stone/trim/trim_001_ed.tga textures/darkmod/stone/sculpted/carved_diamond_trim02_ed.tga
+svn move textures/darkmod/stone/trim/trim_001_local.tga textures/darkmod/stone/sculpted/carved_diamond_trim02_local.tga
+svn move textures/darkmod/stone/trim/trim_002_ed.tga textures/darkmod/stone/sculpted/carved_diamond_trim_ed.tga
+svn move textures/darkmod/stone/trim/trim_002_local.tga textures/darkmod/stone/sculpted/carved_diamond_trim_local.tga
+svn move dds/textures/darkmod/stone/trim/ornament_002_d.DDS dds/textures/darkmod/stone/sculpted/carved_tiles01_x4_dark.dds
+svn move textures/darkmod/stone/trim/ornament_002_ed.tga textures/darkmod/stone/sculpted/carved_tiles01_x4_dark_ed.tga
+svn move dds/textures/darkmod/stone/trim/ornament_001_d.DDS dds/textures/darkmod/stone/sculpted/carved_tiles01_x4_light.dds
+svn move textures/darkmod/stone/trim/ornament_001_ed.tga textures/darkmod/stone/sculpted/carved_tiles01_x4_light_ed.tga
+svn move textures/darkmod/stone/trim/ornament_001_local.tga dds/textures/darkmod/stone/sculpted/carved_tiles01_x4_local.tga
+svn move textures/darkmod/stone/trim/grave_005_ed.tga textures/darkmod/stone/sculpted/engraved_tile_cup01_ed.tga
+svn move textures/darkmod/stone/trim/grave_005_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_cup01_local.tga
+svn move textures/darkmod/stone/trim/grave_005_roughness_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_cup01_roughness_local.tga
+svn move dds/textures/darkmod/stone/trim/ornament_009_d.DDS dds/textures/darkmod/stone/sculpted/engraved_tile_face01.dds
+svn move textures/darkmod/stone/trim/ornament_009_ed.tga textures/darkmod/stone/sculpted/engraved_tile_face01_ed.tga
+svn move textures/darkmod/stone/trim/ornament_009_local.tga textures/darkmod/stone/sculpted/engraved_tile_face01_local.tga
+svn move dds/textures/darkmod/stone/trim/grave_007_d.DDS dds/textures/darkmod/stone/sculpted/engraved_tile_impface.dds
+svn move textures/darkmod/stone/trim/grave_007_ed.tga textures/darkmod/stone/sculpted/engraved_tile_impface_ed.tga
+svn move textures/darkmod/stone/trim/grave_007_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_impface_local.tga
+svn move textures/darkmod/stone/trim/deco_002_ed.tga textures/darkmod/stone/sculpted/engraved_tile_ovals_ed.tga
+svn move textures/darkmod/stone/trim/deco_002_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_ovals_local.tga
+svn move dds/textures/darkmod/stone/trim/grave_008_d.DDS dds/textures/darkmod/stone/sculpted/engraved_tile_ring.dds
+svn move textures/darkmod/stone/trim/grave_008_ed.tga textures/darkmod/stone/sculpted/engraved_tile_ring_ed.tga
+svn move textures/darkmod/stone/trim/grave_008_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_ring_local.tga
+svn move textures/darkmod/stone/trim/deco_001_ed.tga textures/darkmod/stone/sculpted/engraved_tile_star_ed.tga
+svn move textures/darkmod/stone/trim/deco_001_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_star_local.tga
+svn move textures/darkmod/stone/trim/grave_006_ed.tga textures/darkmod/stone/sculpted/engraved_tile_x_ed.tga
+svn move textures/darkmod/stone/trim/grave_006_local.tga dds/textures/darkmod/stone/sculpted/engraved_tile_x_local.tga
+svn move textures/darkmod/stone/trim/ornament_003_ed.tga textures/darkmod/stone/sculpted/royal_emblem01_ed.tga
+svn move textures/darkmod/stone/trim/ornament_003_local.tga textures/darkmod/stone/sculpted/royal_emblem01_local.tga
+svn move dds/textures/darkmod/stone/trim/ornament_003_d.DDS dds/textures/darkmod/stone/sculpted/royal_symbol01.dds
+svn move textures/darkmod/stone/trim/grave_002_ed.tga textures/darkmod/stone/sculpted/sarcophagus_cup&hammer01_ed.tga
+svn move textures/darkmod/stone/trim/grave_002_local.tga dds/textures/darkmod/stone/sculpted/sarcophagus_cup&hammer01_local.tga
+svn move textures/darkmod/stone/trim/grave_003_local.tga dds/textures/darkmod/stone/sculpted/sarcophagus_cup&hammer01_local.tga
+svn move dds/textures/darkmod/stone/trim/grave_001_d.DDS dds/textures/darkmod/stone/sculpted/sarcophagus_stone01.dds
+svn move dds/textures/darkmod/stone/trim/grave_005_d.DDS dds/textures/darkmod/stone/sculpted/sarcophagus_stone02.dds
+svn move textures/darkmod/stone/trim/grave_004_ed.tga textures/darkmod/stone/sculpted/sarcophagus_swords&shield01_ed.tga
+svn move textures/darkmod/stone/trim/grave_004_local.tga dds/textures/darkmod/stone/sculpted/sarcophagus_swords&shield01_local.tga
+svn move textures/darkmod/stone/trim/grave_001_ed.tga textures/darkmod/stone/sculpted/sarcophagus_warrior01_ed.tga
+svn move textures/darkmod/stone/trim/grave_001_local.tga dds/textures/darkmod/stone/sculpted/sarcophagus_warrior01_local.tga
+svn move textures/darkmod/stone/trim/grave_001_roughness_local.tga dds/textures/darkmod/stone/sculpted/sarcophagus_warrior01_roughness_local.tga
+svn move textures/darkmod/stone/trim/grave_003_ed.tga textures/darkmod/stone/sculpted/sarcophagus_wings01_ed.tga
+svn move dds/textures/darkmod/stone/trim/ornament_005_d.DDS dds/textures/darkmod/stone/sculpted/tiles_bars_diamondshape.dds
+svn move textures/darkmod/stone/trim/ornament_005_ed.tga textures/darkmod/stone/sculpted/tiles_bars_diamondshape_ed.tga
+svn move textures/darkmod/stone/trim/ornament_005_local.tga textures/darkmod/stone/sculpted/tiles_bars_diamondshape_local.tga
+svn move textures/darkmod/stone/trim/ornament_008_ed.tga textures/darkmod/stone/sculpted/tile_diamond_trapezoid_ed.tga
+svn move textures/darkmod/stone/trim/ornament_006_ed.tga textures/darkmod/stone/sculpted/tile_empty_square_ed.tga
+svn move textures/darkmod/stone/trim/ornament_006_local.tga dds/textures/darkmod/stone/sculpted/tile_empty_square_local.tga
+svn move textures/darkmod/stone/trim/ornament_007_ed.tga textures/darkmod/stone/sculpted/tile_empty_trapezoid_ed.tga
+svn move textures/darkmod/stone/trim/ornament_007_local.tga dds/textures/darkmod/stone/sculpted/tile_empty_trapezoid_local.tga
+svn move textures/darkmod/stone/trim/ornament_008_local.tga dds/textures/darkmod/stone/sculpted/tile_empty_trapezoid_local.tga
+svn move textures/darkmod/stone/trim/border_1x1_ed.tga textures/darkmod/stone/sculpted/trapezoid_tile_1x1_ed.tga
+svn move textures/darkmod/stone/trim/border_1x1_local.tga textures/darkmod/stone/sculpted/trapezoid_tile_1x1_local.tga
+svn move textures/darkmod/stone/trim/border_2x1_ed.tga textures/darkmod/stone/sculpted/trapezoid_tile_2x1_ed.tga
+svn move textures/darkmod/stone/trim/border_2x1_local.tga textures/darkmod/stone/sculpted/trapezoid_tile_2x1_local.tga
+svn move textures/darkmod/stone/trim/border_4x1_ed.tga textures/darkmod/stone/sculpted/trapezoid_tile_4x1_ed.tga
+svn move textures/darkmod/stone/trim/border_4x1_local.tga textures/darkmod/stone/sculpted/trapezoid_tile_4x1_local.tga
+svn move textures/darkmod/stone/trim/border_8x1_ed.tga textures/darkmod/stone/sculpted/trapezoid_tile_8x1_ed.tga
+svn move textures/darkmod/stone/trim/border_8x1_local.tga textures/darkmod/stone/sculpted/trapezoid_tile_8x1_local.tga
+svn move dds/textures/darkmod/stone/trim/ornament_004_d.DDS dds/textures/darkmod/stone/sculpted/tiling_1d/marble_ancient_writing.dds
+svn move textures/darkmod/stone/trim/ornament_004_local.tga textures/darkmod/stone/sculpted/tiling_1d/marble_ancient_writing.tga
+svn move textures/darkmod/stone/trim/ornament_004_ed.tga textures/darkmod/stone/sculpted/tiling_1d/marble_ancient_writing_ed.tga
+svn move textures/darkmod/city/window/ctywindow01b.tga textures/darkmod/window/diamond_pattern01_dark.tga
+svn move textures/darkmod/city/window/ctywindow01.tga textures/darkmod/window/diamond_pattern01_lit.tga
+svn move textures/darkmod/city/window/ctywindow01_local.tga textures/darkmod/window/diamond_pattern01_local.tga
+svn move textures/darkmod/city/window/ctywindow01_s.tga textures/darkmod/window/diamond_pattern01_s.tga
+svn move textures/darkmod/litwindows/cwindow02_d.tga textures/darkmod/window/diamond_pattern_andbars01_lit.tga
+svn move textures/darkmod/city/wall/ctywfacade01_local.tga textures/darkmod/window/frame_ornate_wallsection_lit.tga
+svn move textures/darkmod/city/wall/ctywfacade01.tga textures/darkmod/window/frame_ornate_wallsection_local.tga
+No texturefile found: horizontal_old_smallpanels01_dark
+No valid path for: horizontal_old_smallpanels01_dark
+No texturefile found: horizontal_old_smallpanels01_dark_s
+No valid path for: horizontal_old_smallpanels01_dark_s
+No texturefile found: horizontal_old_smallpanels01_local
+No valid path for: horizontal_old_smallpanels01_local
+svn move textures/darkmod/litwindows/largesquare100.tga textures/darkmod/window/largesquare01_brightlit.tga
+svn move textures/darkmod/litwindows/largesquare90.tga textures/darkmod/window/largesquare01_lit.tga
+svn move textures/darkmod/litwindows/largesquare70.tga textures/darkmod/window/largesquare01_softerlit.tga
+svn move textures/darkmod/litwindows/largesquare80.tga textures/darkmod/window/largesquare01_softlit.tga
+svn move textures/darkmod/mansion/window/manwindow01.tga textures/darkmod/window/largesquare02_dark.tga
+svn move textures/darkmod/mansion/window/manwindow01b.tga textures/darkmod/window/largesquare02_lit.tga
+svn move textures/darkmod/mansion/window/manwindow01_local.tga textures/darkmod/window/largesquare02_local.tga
+svn move textures/darkmod/mansion/window/manwindow01_s.tga textures/darkmod/window/largesquare02_s.tga
+svn move textures/darkmod/sfx/manwindow02b_withalpha.tga dds/textures/darkmod/window/manwindow02b_withalpha.tga
+svn move textures/darkmod/litwindows/hlamp_window01_d.tga textures/darkmod/window/pebbly_glass_noframe01_lit.tga
+svn move textures/darkmod/mansion/window/manwindow03.tga textures/darkmod/window/pointedtop_thin01_dark.tga
+svn move textures/darkmod/mansion/window/manwindow03_local.tga textures/darkmod/window/pointedtop_thin01_local.tga
+svn move textures/darkmod/mansion/window/manwindow03_s.tga textures/darkmod/window/pointedtop_thin01_s.tga
+svn move textures/darkmod/mansion/window/manwindow04.tga textures/darkmod/window/roundtop_diamond_pattern01_brightlit.tga
+svn move textures/darkmod/mansion/window/manwindow02b.tga textures/darkmod/window/roundtop_diamond_pattern01_dark.tga
+svn move textures/darkmod/mansion/window/manwindow02d.tga textures/darkmod/window/roundtop_diamond_pattern01_grey.tga
+svn move textures/darkmod/mansion/window/manwindow02.tga textures/darkmod/window/roundtop_diamond_pattern01_lit.tga
+svn move textures/darkmod/mansion/window/manwindow02_local.tga textures/darkmod/window/roundtop_diamond_pattern01_local.tga
+svn move textures/darkmod/mansion/window/manwindow02_s.tga textures/darkmod/window/roundtop_diamond_pattern01_s.tga
+svn move textures/darkmod/mansion/window/manwindow02c.tga textures/darkmod/window/roundtop_diamond_pattern01_verydark.tga
+svn move textures/darkmod/city/window/ctywindow02_local.tga textures/darkmod/window/shutters_closed_local.tga
+svn move textures/darkmod/city/window/ctywindow02.tga textures/darkmod/window/shutters_grey_closed.tga
+svn move textures/darkmod/litwindows/smallsquare100.tga textures/darkmod/window/simple_square01_brightlit.tga
+svn move textures/darkmod/litwindows/smallsquare90.tga textures/darkmod/window/simple_square01_lit.tga
+svn move textures/darkmod/litwindows/smallsquare80.tga textures/darkmod/window/simple_square01_softerlit.tga
+svn move textures/darkmod/litwindows/smallsquare70.tga textures/darkmod/window/simple_square01_softlit.tga
+No texturefile found: square_old_smallpanels01_dark
+No valid path for: square_old_smallpanels01_dark
+No texturefile found: square_old_smallpanels01_local
+No valid path for: square_old_smallpanels01_local
+No texturefile found: square_old_smallpanels01_s
+No valid path for: square_old_smallpanels01_s
+svn move textures/darkmod/litwindows/cwindow01_d.tga textures/darkmod/window/square_pattern01_lit.tga
+svn move textures/darkmod/litwindows/cwindow01_dark_d.tga textures/darkmod/window/square_pattern01_softlit.tga
+No texturefile found: winboth1_blend
+No valid path for: winboth1_blend
+No texturefile found: winboth2_blend
+No valid path for: winboth2_blend
+No texturefile found: winboth1
+No valid path for: winboth1
+No texturefile found: winboth1_local
+No valid path for: winboth1_local
+No texturefile found: winboth1_s
+No valid path for: winboth1_s
+svn move textures/darkmod/litwindows/largeround100.tga textures/darkmod/window/ornate/round_spokes01_brightlit.tga
+svn move textures/darkmod/litwindows/largeround90.tga textures/darkmod/window/ornate/round_spokes01_lit.tga
+svn move textures/darkmod/litwindows/largeround70.tga textures/darkmod/window/ornate/round_spokes01_softerlit.tga
+svn move textures/darkmod/litwindows/largeround80.tga textures/darkmod/window/ornate/round_spokes01_softlit.tga
+svn move dds/textures/darkmod/wood/floor/boards_old_004.dds dds/textures/darkmod/wood/boards/dark_rough.dds
+svn move textures/darkmod/wood/floor/boards_old_004_editor.tga textures/darkmod/wood/boards/dark_rough_ed.tga
+svn move textures/darkmod/wood/floor/boards_old_004_local.tga textures/darkmod/wood/boards/dark_rough_local.tga
+svn move dds/textures/darkmod/wood/floor/boards_old_007.dds dds/textures/darkmod/wood/boards/dark_varnished.dds
+svn move textures/darkmod/wood/floor/boards_old_007_editor.jpg textures/darkmod/wood/boards/dark_varnished_ed.jpg
+svn move textures/darkmod/wood/floor/boards_old_007_local.tga textures/darkmod/wood/boards/dark_varnished_local.tga
+svn move textures/darkmod/wood/floor/boards_polished_002_dim_editor.jpg textures/darkmod/wood/boards/dim_01_ed.jpg
+svn move textures/darkmod/mansion/ceiling/manceiling04.tga textures/darkmod/wood/boards/metal_decorated.tga
+svn move textures/darkmod/mansion/ceiling/manceiling04_local.tga textures/darkmod/wood/boards/metal_decorated_local.tga
+svn move textures/darkmod/mansion/ceiling/manceiling04_s.tga textures/darkmod/wood/boards/metal_decorated_s.tga
+No texturefile found: medieval010
+No valid path for: medieval010
+No texturefile found: medieval010_h
+No valid path for: medieval010_h
+No texturefile found: medieval010_s
+No valid path for: medieval010_s
+svn move textures/darkmod/pagan/floor/pagfloor01.tga textures/darkmod/wood/boards/old_small_grainy.tga
+svn move textures/darkmod/pagan/floor/pagfloor01_local.tga textures/darkmod/wood/boards/old_small_grainy_local.tga
+svn move textures/darkmod/pagan/ceiling/pagceiling01.tga textures/darkmod/wood/boards/plastered_grey.tga
+svn move textures/darkmod/pagan/ceiling/pagceiling01_ed.jpg textures/darkmod/wood/boards/plastered_grey_ed.jpg
+svn move textures/darkmod/pagan/ceiling/pagceiling01_local.tga textures/darkmod/wood/boards/plastered_grey_local.tga
+svn move dds/textures/darkmod/wood/floor/boards_polished_002.dds dds/textures/darkmod/wood/boards/polished_01.dds
+svn move textures/darkmod/wood/floor/boards_polished_002_editor.jpg textures/darkmod/wood/boards/polished_01_ed.jpg
+svn move textures/darkmod/wood/floor/boards_polished_002_local.tga textures/darkmod/wood/boards/polished_01_local.tga
+svn move dds/textures/darkmod/wood/floor/boards_polished_002_s.dds dds/textures/darkmod/wood/boards/polished_01_s.dds
+svn move dds/textures/darkmod/wood/floor/boards_polished_001.dds dds/textures/darkmod/wood/boards/polished_shiny.dds
+svn move textures/darkmod/wood/floor/boards_polished_001_editor.jpg textures/darkmod/wood/boards/polished_shiny_ed.jpg
+svn move dds/textures/darkmod/wood/floor/boards_polished_001_s.dds dds/textures/darkmod/wood/boards/polished_shiny_s.dds
+svn move textures/darkmod/castle/floor/casfloor02.tga textures/darkmod/wood/boards/scratched.tga
+svn move textures/darkmod/castle/floor/casfloor02_local.tga textures/darkmod/wood/boards/scratched_local.tga
+svn move textures/darkmod/castle/floor/casfloor02_s.tga textures/darkmod/wood/boards/scratched_s.tga
+svn move textures/darkmod/castle/floor/casfloor01.tga textures/darkmod/wood/boards/weathered.tga
+svn move textures/darkmod/castle/floor/casfloor01_local.tga textures/darkmod/wood/boards/weathered_local.tga
+svn move textures/darkmod/castle/floor/casfloor01_s.tga textures/darkmod/wood/boards/weathered_s.tga
+svn move dds/textures/darkmod/wood/floor/boards_old_005.dds dds/textures/darkmod/wood/boards/worn_01.dds
+svn move textures/darkmod/wood/floor/boards_old_005_editor.tga textures/darkmod/wood/boards/worn_01_ed.tga
+svn move textures/darkmod/wood/floor/boards_old_005_local.tga textures/darkmod/wood/boards/worn_01_local.tga
+svn move dds/textures/darkmod/wood/floor/boards_old_005_s.dds dds/textures/darkmod/wood/boards/worn_01_s.dds
+svn move dds/textures/darkmod/wood/floor/boards_old_006.dds dds/textures/darkmod/wood/boards/worn_02.dds
+svn move textures/darkmod/wood/floor/boards_old_006_editor.jpg textures/darkmod/wood/boards/worn_02_ed.jpg
+svn move textures/darkmod/wood/floor/boards_old_006_local.tga textures/darkmod/wood/boards/worn_02_local.tga
+svn move textures/darkmod/pagan/floor/pagfloor02.tga textures/darkmod/wood/boards/worn_large.tga
+svn move textures/darkmod/pagan/floor/pagfloor02_local.tga textures/darkmod/wood/boards/worn_large_local.tga
+svn move textures/darkmod/wood/gen/wood_001_d.tga textures/darkmod/wood/boards/tiling_1d/gen_old_boards.tga
+svn move textures/darkmod/wood/gen/wood_001_local.tga textures/darkmod/wood/boards/tiling_1d/gen_old_boards_local.tga
+svn move dds/textures/darkmod/wood/wall/boards_new_001.dds dds/textures/darkmod/wood/boards/tiling_1d/new_grainy.dds
+svn move textures/darkmod/wood/wall/boards_new_001_editor.tga textures/darkmod/wood/boards/tiling_1d/new_grainy_ed.tga
+svn move textures/darkmod/wood/wall/boards_new_001_local.tga textures/darkmod/wood/boards/tiling_1d/new_grainy_local.tga
+svn move dds/textures/darkmod/wood/wall/boards_new_001_s.dds dds/textures/darkmod/wood/boards/tiling_1d/new_grainy_s.dds
+svn move dds/textures/darkmod/wood/trim/beam_003_d.DDS dds/textures/darkmod/wood/panels/beam_brown_old.DDS
+svn move textures/darkmod/wood/trim/beam_003_ed.tga textures/darkmod/wood/panels/beam_brown_old_ed.tga
+svn move textures/darkmod/wood/trim/beam_003_local.tga textures/darkmod/wood/panels/beam_brown_old_local.tga
+svn move textures/darkmod/pagan/trim/pagtrim01.tga textures/darkmod/wood/panels/beam_old_mossy.tga
+svn move textures/darkmod/pagan/trim/pagtrim01_local.tga textures/darkmod/wood/panels/beam_old_mossy_local.tga
+svn move textures/darkmod/pagan/trim/pagtrim01_s.tga textures/darkmod/wood/panels/beam_old_mossy_s.tga
+svn move dds/textures/darkmod/wood/trim/beam_002.dds dds/textures/darkmod/wood/panels/beam_rough_brown.dds
+svn move textures/darkmod/wood/trim/beam_002_editor.jpg textures/darkmod/wood/panels/beam_rough_brown_ed.jpg
+svn move dds/textures/darkmod/wood/trim/beam_002_local.dds dds/textures/darkmod/wood/panels/beam_rough_local.dds
+svn move textures/darkmod/wood/trim/beam_002_local.tga dds/textures/darkmod/wood/panels/beam_rough_local.tga
+svn move dds/textures/darkmod/wood/trim/beam_002_s.dds dds/textures/darkmod/wood/panels/beam_rough_s.dds
+svn move dds/textures/darkmod/wood/trim/beam_002_weathered.dds dds/textures/darkmod/wood/panels/beam_rough_weathered.dds
+svn move textures/darkmod/wood/trim/beam_002_weathered_editor.jpg textures/darkmod/wood/panels/beam_rough_weathered_ed.jpg
+svn move textures/darkmod/mansion/wall/manwtrim04.tga textures/darkmod/wood/panels/molding_decorative_dark.tga
+svn move textures/darkmod/mansion/wall/manwtrim04_local.tga textures/darkmod/wood/panels/molding_decorative_dark_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim01.tga textures/darkmod/wood/panels/molding_grey.tga
+svn move textures/darkmod/mansion/wall/manwtrim01_local.tga textures/darkmod/wood/panels/molding_grey_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim02.tga textures/darkmod/wood/panels/molding_leaves.tga
+svn move textures/darkmod/mansion/wall/manwtrim02_local.tga textures/darkmod/wood/panels/molding_leaves_local.tga
+svn move textures/darkmod/mansion/wall/manwall01.tga textures/darkmod/wood/panels/panels_decorative_arched.tga
+svn move textures/darkmod/mansion/wall/manwall01_local.tga textures/darkmod/wood/panels/panels_decorative_arched_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel01.tga textures/darkmod/wood/panels/panels_grey_long.tga
+svn move textures/darkmod/mansion/wall/manwpanel01_local.tga textures/darkmod/wood/panels/panels_grey_long_local.tga
+svn move textures/darkmod/mansion/ceiling/manceiling06.tga textures/darkmod/wood/panels/panel_carved_rectangles_01.tga
+svn move textures/darkmod/mansion/ceiling/manceiling06_local.tga textures/darkmod/wood/panels/panel_carved_rectangles_01_local.tga
+svn move textures/darkmod/mansion/ceiling/manceiling03.tga textures/darkmod/wood/panels/panel_carved_rectangles_02_dark.tga
+svn move textures/darkmod/mansion/ceiling/manceiling03b.tga textures/darkmod/wood/panels/panel_carved_rectangles_02_light.tga
+svn move textures/darkmod/mansion/ceiling/manceiling03_local.tga textures/darkmod/wood/panels/panel_carved_rectangles_02_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel03.tga textures/darkmod/wood/panels/panel_carved_round_dark.tga
+svn move textures/darkmod/mansion/wall/manwpanel03_local.tga textures/darkmod/wood/panels/panel_carved_round_dark_local.tga
+svn move textures/darkmod/mansion/ceiling/manceiling05.tga textures/darkmod/wood/panels/panel_carved_star.tga
+svn move textures/darkmod/mansion/ceiling/manceiling02.tga textures/darkmod/wood/panels/panel_carved_star_dusty.tga
+svn move textures/darkmod/mansion/ceiling/manceiling02_local.tga textures/darkmod/wood/panels/panel_carved_star_dusty_local.tga
+svn move textures/darkmod/mansion/ceiling/manceiling05_local.tga textures/darkmod/wood/panels/panel_carved_star_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel05.tga textures/darkmod/wood/panels/panel_circle_face.tga
+svn move textures/darkmod/mansion/wall/manwpanel05_local.tga textures/darkmod/wood/panels/panel_circle_face_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel07.tga textures/darkmod/wood/panels/panel_decorative_frame.tga
+svn move textures/darkmod/mansion/wall/manwpanel07_local.tga textures/darkmod/wood/panels/panel_decorative_frame_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel08.tga textures/darkmod/wood/panels/panel_decorative_frame_long.tga
+svn move textures/darkmod/mansion/wall/manwpanel08_local.tga textures/darkmod/wood/panels/panel_decorative_frame_long_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel04.tga textures/darkmod/wood/panels/panel_decorative_rectangles.tga
+svn move textures/darkmod/mansion/wall/manwpanel04_local.tga textures/darkmod/wood/panels/panel_decorative_rectangles_local.tga
+svn move textures/darkmod/mansion/wall/manwall01sh.tga textures/darkmod/wood/panels/panel_floral_ornaments.tga
+svn move textures/darkmod/mansion/wall/manwall01sh_local.tga textures/darkmod/wood/panels/panel_floral_ornaments_local.tga
+svn move textures/darkmod/mansion/wall/manwall01sh_s.tga textures/darkmod/wood/panels/panel_floral_ornaments_s.tga
+svn move textures/darkmod/mansion/ceiling/manceiling01.tga textures/darkmod/wood/panels/panel_grey.tga
+svn move textures/darkmod/mansion/ceiling/manceiling01_local.tga textures/darkmod/wood/panels/panel_grey_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel02.tga textures/darkmod/wood/panels/panel_hammer.tga
+svn move textures/darkmod/mansion/wall/manwpanel02_local.tga textures/darkmod/wood/panels/panel_hammer_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel02_s.tga textures/darkmod/wood/panels/panel_hammer_s.tga
+svn move textures/darkmod/mansion/wall/manwcapital01_local.tga textures/darkmod/wood/panels/panel_pillar_capital_local.tga
+svn move textures/darkmod/mansion/wall/manwpanel06.tga textures/darkmod/wood/panels/panel_warrior.tga
+svn move textures/darkmod/mansion/wall/manwpanel06_local.tga textures/darkmod/wood/panels/panel_warrior_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim07.tga textures/darkmod/wood/panels/thin_panels_with_trim_dark.tga
+svn move textures/darkmod/mansion/wall/manwtrim07_local.tga textures/darkmod/wood/panels/thin_panels_with_trim_dark_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim05.tga textures/darkmod/wood/panels/thin_panels_with_trim_light.tga
+svn move textures/darkmod/mansion/wall/manwtrim05_local.tga dds/textures/darkmod/wood/panels/thin_panels_with_trim_light_local.tga
+svn move dds/textures/darkmod/wood/floor/tile_decorative_001.dds dds/textures/darkmod/wood/panels/tile_pattern_star.dds
+svn move textures/darkmod/wood/floor/tile_decorative_001_editor.jpg dds/textures/darkmod/wood/panels/tile_pattern_star_ed.jpg
+svn move textures/darkmod/wood/floor/tile_decorative_001_local.tga dds/textures/darkmod/wood/panels/tile_pattern_star_local.tga
+svn move dds/textures/darkmod/wood/floor/tile_decorative_001_s.dds dds/textures/darkmod/wood/panels/tile_pattern_star_s.dds
+svn move dds/textures/darkmod/wood/floor/tile_weave_001.dds dds/textures/darkmod/wood/panels/tile_weave.dds
+svn move textures/darkmod/wood/floor/tile_weave_001_editor.jpg textures/darkmod/wood/panels/tile_weave_ed.jpg
+svn move textures/darkmod/wood/floor/tile_weave_001_local.tga textures/darkmod/wood/panels/tile_weave_local.tga
+svn move dds/textures/darkmod/wood/floor/tile_weave_001_s.dds dds/textures/darkmod/wood/panels/tile_weave_s.dds
+svn move textures/darkmod/mansion/wall/manwpillar01.tga textures/darkmod/wood/panels/trim_carved_long.tga
+svn move textures/darkmod/mansion/wall/manwpillar01_local.tga textures/darkmod/wood/panels/trim_carved_long_local.tga
+svn move textures/darkmod/mansion/wall/manwtrim06.tga textures/darkmod/wood/panels/trim_carved_rounded.tga
+svn move textures/darkmod/mansion/wall/manwtrim06_local.tga textures/darkmod/wood/panels/trim_carved_rounded_local.tga
+svn move textures/darkmod/wood/trim/beam_003_burnt_d.tga textures/darkmod/wood/panels/nontiling/beam_brown_old_burnt.tga
+svn move dds/textures/darkmod/wood/trim/beam_003_endcap_d.DDS dds/textures/darkmod/wood/panels/nontiling/beam_brown_old_endcap.dds
+svn move textures/darkmod/wood/trim/beam_003_endcap_ed.tga textures/darkmod/wood/panels/nontiling/beam_brown_old_endcap_ed.tga
+svn move textures/darkmod/wood/trim/beam_003_endcap_local.tga textures/darkmod/wood/panels/nontiling/beam_brown_old_endcap_local.tga
+svn move dds/textures/darkmod/wood/trim/beam_002_endcap.dds dds/textures/darkmod/wood/panels/nontiling/beam_rough_brown_endcap.dds
+svn move textures/darkmod/wood/trim/beam_002_endcap_editor.jpg textures/darkmod/wood/panels/nontiling/beam_rough_brown_endcap_ed.jpg
+svn move textures/darkmod/wood/trim/beam_002_endcap_local.tga textures/darkmod/wood/panels/nontiling/beam_rough_endcap_local.tga
+svn move dds/textures/darkmod/wood/trim/beam_002_weathered_endcap.dds dds/textures/darkmod/wood/panels/nontiling/beam_rough_weathered_endcap.dds
+svn move textures/darkmod/wood/trim/beam_002_weathered_endcap_editor.jpg textures/darkmod/wood/panels/nontiling/beam_rough_weathered_endcap_ed.jpg
+svn move textures/darkmod/wood/gen/wood_002_d.tga textures/darkmod/wood/panels/tiling_1d/gen_panel_x_pattern.tga
+svn move textures/darkmod/wood/gen/wood_002_local.tga textures/darkmod/wood/panels/tiling_1d/gen_panel_x_pattern_local.tga
+svn move textures/darkmod/city/wall/cwall_frame02_d.tga textures/darkmod/wood/plaster/framed_01.tga
+svn move textures/darkmod/city/wall/cwall_frame02_local.tga textures/darkmod/wood/plaster/framed_01_local.tga
+svn move textures/darkmod/city/wall/cwall_frame02_s.tga textures/darkmod/wood/plaster/framed_01_s.tga
+svn move textures/darkmod/city/wall/cwall_frame01_d.tga textures/darkmod/wood/plaster/framed_02.tga
+svn move textures/darkmod/city/wall/cwall_frame01_local.tga textures/darkmod/wood/plaster/framed_02_local.tga
+svn move textures/darkmod/city/wall/cwall_frame01_s.tga textures/darkmod/wood/plaster/framed_02_s.tga
+svn move textures/darkmod/city/wall/ctywall03.tga textures/darkmod/wood/plaster/framed_old_01.tga
+svn move textures/darkmod/city/wall/ctywall03_local.tga textures/darkmod/wood/plaster/framed_old_01_local.tga
+svn move textures/darkmod/city/wall/ctywall02.tga textures/darkmod/wood/plaster/framed_old_decorative_01.tga
+svn move textures/darkmod/city/wall/ctywall02_local.tga textures/darkmod/wood/plaster/framed_old_decorative_01_local.tga
+svn move textures/darkmod/city/wall/cwall_framebrick02_d.tga textures/darkmod/wood/plaster/framed_with_bricks.tga
+svn move textures/darkmod/city/wall/cwall_framebrick02_d.tga dds/textures/darkmod/wood/plaster/framed_with_bricks_02.tga
+svn move textures/darkmod/city/wall/cwall_framebrick02_local.tga textures/darkmod/wood/plaster/framed_with_bricks_02_local.tga
+svn move textures/darkmod/city/wall/cwall_framebrick02_s.tga textures/darkmod/wood/plaster/framed_with_bricks_02_s.tga
+svn move textures/darkmod/city/wall/cwall_framebrick_local.tga textures/darkmod/wood/plaster/framed_with_bricks_local.tga
+svn move textures/darkmod/city/wall/cwall_framebrick_s.tga textures/darkmod/wood/plaster/framed_with_bricks_s.tga
+svn move dds/textures/darkmod/ceramic/floor/plaster_002.dds dds/textures/darkmod/wood/plaster/panel_decorative_white.dds
+svn move textures/darkmod/ceramic/floor/plaster_002_editor.tga textures/darkmod/wood/plaster/panel_decorative_white_ed.tga
+svn move textures/darkmod/ceramic/floor/plaster_002_local.tga textures/darkmod/wood/plaster/panel_decorative_white_local.tga
+svn move textures/darkmod/city/wall/cwall_01.tga textures/darkmod/wood/plaster/plaster_01.tga
+svn move textures/darkmod/city/wall/cwall_01_local.tga dds/textures/darkmod/wood/plaster/plaster_01_local.tga
+svn move textures/darkmod/city/wall/cwall_01_s.tga dds/textures/darkmod/wood/plaster/plaster_01_s.tga
+svn move textures/darkmod/mansion/wall/manwall02.tga textures/darkmod/wood/plaster/stucco_01.tga
+svn move textures/darkmod/mansion/wall/manwall02_local.tga textures/darkmod/wood/plaster/stucco_01_local.tga
+svn move textures/darkmod/mansion/wall/manwall02_s.tga textures/darkmod/wood/plaster/stucco_01_s.tga
+
+materials/misc.mtr
+   tdm_straw_bale
+       straw01_local thick_straw01_local
+       straw01 thick_straw01
+   models/misc/vine
+       grass01 short_patchy_grass01
+       grass01_local short_patchy_grass01_local
+
+materials/tdm_wood_wall.mtr
+   textures/darkmod/wood/wall/wallpaper_002_blue
+       manwall04_local wallpaper_ornamental_01_local
+       manwall04b wallpaper_ornamental_01_blue
+   textures/darkmod/wood/wall/wallpaper_001
+       manwall03 wallpaper_flowers_01
+       manwall03_local wallpaper_flowers_01_local
+   textures/darkmod/wood/wall/wallpaper_003
+       manwall05 wallpaper_ornamental_02_white
+       manwall05_local wallpaper_ornamental_02_white_local
+   textures/darkmod/wood/wall/panel_008
+       manwpanel08 panel_decorative_frame_long
+       manwpanel08_local panel_decorative_frame_long_local
+   textures/darkmod/wood/wall/panel_009
+       manwcapital01_local panel_pillar_capital_local
+   textures/darkmod/wood/wall/wallpaper_002_green
+       manwall04_local wallpaper_ornamental_01_local
+       manwall04c wallpaper_ornamental_01_green
+   textures/darkmod/wood/wall/panel_005
+       manwpanel05_local panel_circle_face_local
+       manwpanel05 panel_circle_face
+   textures/darkmod/wood/wall/wallpaper_002_red
+       manwall04d wallpaper_ornamental_01_red
+       manwall04_local wallpaper_ornamental_01_local
+   textures/darkmod/wood/wall/panel_007
+       manwpanel07_local panel_decorative_frame_local
+       manwpanel07 panel_decorative_frame
+   textures/darkmod/wood/wall/panel_001
+       manwall01 panels_decorative_arched
+       manwall01_local panels_decorative_arched_local
+   textures/darkmod/wood/wall/panel_002
+       manwpanel01 panels_grey_long
+       manwpanel01_local panels_grey_long_local
+   textures/darkmod/wood/wall/panel_003
+       manwpanel02 panel_hammer
+       manwpanel02_local panel_hammer_local
+       manwpanel02_s panel_hammer_s
+   textures/darkmod/wood/wall/panel_004
+       manwpanel04 panel_decorative_rectangles
+       manwpanel04_local panel_decorative_rectangles_local
+   textures/darkmod/wood/wall/boards_new_001
+       boards_new_001_s new_grainy_s
+       boards_new_001_local new_grainy_local
+       boards_new_001_editor new_grainy_ed
+       boards_new_001 new_grainy
+   textures/darkmod/wood/wall/wallpaper_002_pink
+       manwall04_local wallpaper_ornamental_01_local
+       manwall04a wallpaper_ornamental_01_pink
+   textures/darkmod/wood/wall/panel_006
+       manwpanel06_local panel_warrior_local
+       manwpanel06 panel_warrior
+
+materials/decorative_wall.mtr
+   tdm_boar_mount
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+
+materials/glass_test.mtr
+   textures/glass_test/window
+       manwindow01 largesquare02_dark
+       manwindow01_local largesquare02_local
+       manwindow01_s largesquare02_s
+   textures/glass_test/window_glaze
+       manwindow01 largesquare02_dark
+
+materials/tdm_metal_trim.mtr
+   textures/darkmod/metal/trim/panel_001
+       caswpanel01 panel_circledesign01_green
+       caswpanel01_local panel_circledesign01_local
+   textures/darkmod/metal/trim/panel_001_etched
+       caswpanel01 panel_circledesign01_green
+       caswpanel02_local panel_circledesign_ornate01_local
+
+materials/tdm_gen_stone.mtr
+   textures/darkmod/stone/gen/brick_001
+       brick_001_local gen_plainbrick_local
+       brick_001_d gen_plainbrick_grey
+       brick_001_s gen_plainbrick_s
+   textures/darkmod/stone/gen/concrete_dirt_001
+       concrete_dirt_001_local gen_slate_dirt_local
+       concrete_dirt_001_d gen_slate_light_dirt
+       concrete_dirt_001_s gen_slate_dirt_s
+
+materials/tdm_metal_floor.mtr
+   textures/darkmod/metal/floor/rust_003
+       rust_003_d solid_rust01
+       rust_003_local solid_rust01_local
+       rust_003_ed solid_rust01_ed
+   textures/darkmod/metal/floor/rust_002
+       rust_002_d heavy_rust_pocked01
+       rust_002_local heavy_rust_pocked_local
+       rust_002_ed heavy_rust_pocked01_ed
+       rust_002_s heavy_rust_pocked_s
+   textures/darkmod/metal/floor/grating_001
+       grating_001_s dimpled_grating01_s
+       grating_001_local dimpled_grating01_local
+       grating_001_editor dimpled_grating01_ed
+       grating_001 dimpled_grating01
+   textures/darkmod/metal/floor/rust_005
+       rust_005_editor solid_rust02_ed
+       rust_005_local solid_rust02_local
+       rust_005_s solid_rust02_s
+       rust_005 solid_rust02
+   textures/darkmod/metal/floor/rust_004
+       rust_004_d simple_rough_grey01
+       rust_004_local simple_rough_grey01_local
+       rust_004_ed simple_rough_grey01_ed
+
+materials/tdm_stone_floor.mtr
+   textures/darkmod/stone/floor/cobble_002
+       ctyground02_local cobblestones04_multicolour_local
+       ctyground02 cobblestones04_multicolour
+   textures/darkmod/stone/floor/cobble_003
+       cobblestone01sh flagstones05_pinkish
+       cobblestone01sh_s flagstones05_pinkish_s
+       cobblestone01sh_local flagstones05_pinkish_local
+   textures/darkmod/stone/floor/cobble_001
+       ctyground01_local cobblestones03_dark_local
+       ctyground01 cobblestones03_dark
+   textures/darkmod/stone/floor/cobble_006
+       cobble_006_s flagstones03_shiny_s
+       cobble_006_local flagstones03_shiny_local
+       cobble_006_editor flagstones03_shiny_ed
+       cobble_006 flagstones03_shiny
+   textures/darkmod/stone/floor/cobble_007
+       cobble_007_local flagstones04_uneven_local
+       cobble_007_editor flagstones04_uneven_ed
+       cobble_007 flagstones04_uneven
+   textures/darkmod/stone/floor/cobble_004
+       cobble_004_s cobblestones01_square_light_s
+       cobble_004_local cobblestones01_square_light_local
+       cobble_004 cobblestones01_light
+       cobble_004_editor cobblestones01_square_light_ed
+   textures/darkmod/stone/floor/cobble_005
+       cobble_005_editor interlocking_mixedsize_dark_ed
+       cobble_005 interlocking_mixedsize_dark
+       cobble_005_local interlocking_mixedsize_dark
+   textures/darkmod/stone/floor/cobble_008
+       cobble_008 cobblestones02_square_dark
+       cobble_008_editor cobblestones02_square_dark
+       cobble_008_s cobblestones02_square_dark_s
+       cobble_008_local cobblestones02_square_dark_local
+   textures/darkmod/stone/floor/masonry_001
+       masonry_001 flagstones01_light
+       masonry_001_local flagstones01_light_local
+       masonry_001_editor blocks_uneven02_grey_local
+   textures/darkmod/stone/floor/cobble_mossy_001
+       pagfloor03_local cobblestones_loose_ongrass_local
+       pagfloor03 cobblestones_loose_ongrass
+   textures/darkmod/stone/floor/tiled_008
+       manfloor02sh ceramic_tile_tan01
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/tiled_009
+       tiled_009_local rough_plain_tiles01_local
+       tiled_009_editor rough_plain_tiles01_ed
+       tiled_009 rough_plain_tiles01
+   textures/darkmod/stone/floor/tiled_002
+       casfloor04 flagstones_jagged_grey
+       casfloor04_local flagstones_jagged_grey_local
+   textures/darkmod/stone/floor/tiled_003
+       manfloor01_s tile_plain_diamond01_brown_s
+       manfloor01 tile_plain_diamond01_brown
+       manfloor01_local tile_plain_diamond01_local
+   textures/darkmod/stone/floor/decorative_001
+       decorative_001_s ceramic_mosaic_decorative01_s
+       decorative_001_local ceramic_mosaic_decorative01_local
+       decorative_001 ceramic_mosaic_decorative01
+       decorative_001_editor ceramic_mosaic_decorative01_ed
+   textures/darkmod/stone/floor/tiled_001
+       casfloor03_local tiles_rough_grey_local
+       casfloor03 tiles_rough_grey
+   textures/darkmod/stone/floor/tiled_006
+       manfloor05sh ceramic_tile_tan02
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/tiled_007
+       manfloor06sh ceramic_tile_tan03
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/tiled_004
+       manfloor01sh ceramic_tile_reddish01
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/tiled_005
+       manfloor03sh ceramic_tile_gold01
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/blocks_003_mossy
+       ctywbrick04b_local rough_blocks_tight02_moss_local
+       ctywbrick04b rough_blocks_tight02_moss
+   textures/darkmod/stone/floor/masonry_001_brick
+       masonry_001_brick_editor small_brown_bricks01_ed
+       masonry_001_brick small_brown_bricks01
+       masonry_001_brick_local small_brown_bricks01_local
+       masonry_001_brick_s small_brown_bricks01
+   textures/darkmod/stone/floor/brick_007_dark
+       brick_007_local interlocking_angled_grey_local
+       brick_007_s interlocking_angled_grey01_s
+       brick_007_dark interlocking_angled_darkgrey
+       brick_007_editor interlocking_angled_grey_ed
+   textures/darkmod/stone/floor/tiled_008_small
+       manfloor01sh_s ceramic_tile_generic01_s
+   textures/darkmod/stone/floor/blocks_018_window02
+       blocks_018_window02_local flagstones02_plain_window02_local
+       blocks_018_window02_s flagstones02_plain_window02_s
+       blocks_018_window02_ed flagstones02_plain_window02_ed
+       blocks_018_window02 flagstones02_plain_window02
+   textures/darkmod/stone/floor/rough_003_dark
+       rough_003_dark_ed rock_grey_dark_ed
+       rough_003_local rock_grey_local
+       rough_003_d rock_grey
+   textures/darkmod/stone/floor/blocks_018_window01
+       blocks_018_window01_s flagstones02_plain_window01_s
+       blocks_018_window01_local flagstones02_plain_window01_local
+       blocks_018_window01_ed flagstones02_plain_window01_ed
+       blocks_018_window01 flagstones02_plain_window01
+   textures/darkmod/stone/floor/tiled_010
+       tiled_010_local rough_slate_tiles01_local
+       tiled_010_ed rough_slate_tiles01_dark_ed
+       tiled_010_d rough_slate_tiles01_dark
+   textures/darkmod/stone/floor/masonry_001_pillar
+       masonry_001_pillar_local pillar_bricks01_local
+       masonry_001_pillar_editor pillar_bricks01_ed
+       masonry_001_pillar pillar_bricks01
+       masonry_001_pillar_s pillar_bricks01_s
+   textures/darkmod/stone/floor/fan_001_grass
+       fan_001_grass_editor cobblestone_fan_pattern_grass_ed
+       fan_001_grass cobblestone_fan_pattern_grass
+       fan_001_local cobblestone_fan_pattern_local
+       fan_001_s cobblestone_fan_pattern_s
+   textures/darkmod/stone/floor/blocks_016
+       blocks_016_local tight_large_singleblock01_local
+       blocks_016_ed tight_large_singleblock01_ed
+       blocks_016_d tight_large_singleblock01
+   textures/darkmod/stone/floor/blocks_002_blue
+       ctywbrick03_local rough_blocks_tight_local
+       ctywbrick03b rough_blocks_tight_dark
+   textures/darkmod/stone/floor/blocks_013
+       blocks_013_editor rough_big_blocks04_brown_ed
+       blocks_013 rough_big_blocks04_brown
+       blocks_009_local rough_big_blocks02_local
+   textures/darkmod/stone/floor/rough_012_mossy
+       rough_012_mossy_ed rock_grey_mossy_ed
+       rough_012_mossy_local rock_grey_mossy_local
+       rough_012_mossy_d rock_grey_mossy
+   textures/darkmod/stone/floor/blocks_009_cornerstone_light
+       blocks_009_cornerstone_light rough_big_blocks02_cornerstone_light
+       blocks_009_cornerstone_local rough_big_blocks02_cornerstone_local
+       blocks_009_cornerstone_light_editor rough_big_blocks02_cornerstone_light_ed
+   textures/darkmod/stone/floor/cobble_004_nospecular
+       cobble_004_local cobblestones01_square_light_local
+       cobble_004 cobblestones01_light
+       cobble_004_editor cobblestones01_square_light_ed
+   textures/darkmod/stone/floor/rough_010
+       rough_010_ed dark_dirty_ed
+       rough_010_local dark_dirty_local
+       rough_010_d dark_dirty
+   textures/darkmod/stone/floor/rough_011
+       rough_011_ed rough_grey_dirty_ed
+       rough_011_d rough_grey_dirty
+       rough_011_local rough_grey_dirty_local
+   textures/darkmod/stone/floor/brick_010
+       brick_010_ed old_blocks_wornsmooth_dark_ed
+       brick_010_local old_blocks_wornsmooth_dark_local
+       brick_010_d old_blocks_wornsmooth_dark
+   textures/darkmod/stone/floor/blocks_010_cornerstone_light
+       blocks_010_cornerstone_light rough_big_blocks03_cornerstone_light
+       blocks_009_cornerstone_local rough_big_blocks02_cornerstone_local
+       blocks_010_cornerstone_light_editor rough_big_blocks03_cornerstone_light_ed
+   textures/darkmod/stone/floor/brick_005_dark
+       brick_005_alpha red_sloppymortar_alpha
+       brick_005 red_sloppymortar
+       brick_005_local red_sloppymortar_local
+       brick_005_editor red_sloppymortar_ed
+   textures/darkmod/stone/floor/blocks_007
+       rt_sizes01_local tight_randomsize_blocks_local
+       rt_sizes01_d tight_randomsize_blocks
+   textures/darkmod/stone/floor/blocks_006
+       rt_largebrick01_local grainy_blocks01_local
+       rt_largebrick01_d grainy_blocks01
+   textures/darkmod/stone/floor/blocks_005
+       manwbrick02_local grey_protruding_bricks_local
+       manwbrick02 grey_protruding_bricks
+   textures/darkmod/stone/floor/blocks_004
+       manwbrick01 tight_large_blocks
+       manwbrick01_local tight_large_blocks_local
+   textures/darkmod/stone/floor/blocks_003
+       ctywbrick04_local rough_blocks_tight02_local
+       ctywbrick04 rough_blocks_tight02
+   textures/darkmod/stone/floor/blocks_001
+       ctywbrick01 rough_blocks02
+       ctywbrick01_local rough_blocks02_local
+   textures/darkmod/stone/floor/blocks_009
+       blocks_009 rough_big_blocks02
+       blocks_009_editor rough_big_blocks02_ed
+       blocks_009_local rough_big_blocks02_local
+   textures/darkmod/stone/floor/blocks_008
+       blocks_008_editor rough_big_blocks01_ed
+       blocks_008 rough_big_blocks01
+       blocks_008_local rough_big_blocks01_local
+   textures/darkmod/stone/floor/rough_001
+       rough_001_local dark_dirt_smeary_local
+       rough_001_editor dark_dirt_smeary_ed
+       rough_001 dark_dirt_smeary
+   textures/darkmod/stone/floor/rough_003
+       rough_003_ed rock_grey_ed
+       rough_003_local rock_grey_local
+       rough_003_d rock_grey
+   textures/darkmod/stone/floor/blocks_002_yellow
+       ctywbrick03 rough_blocks_tight_light
+       ctywbrick03_local rough_blocks_tight_local
+   textures/darkmod/stone/floor/brick_009
+       brick_009_local rough_blocks01_local
+       brick_009_d rough_blocks01
+       brick_009_ed rough_blocks01_ed
+   textures/darkmod/stone/floor/rough_004
+       rough_004_local rock_brown_mottled_local
+       rough_004_ed rock_brown_mottled_ed
+       rough_004_d rock_brown_mottled
+   textures/darkmod/stone/floor/rough_007
+       rough_007_ed rough_marble_light01_ed
+       rough_007_d rough_marble_light01
+       rough_007_local rough_marble_light01_local
+   textures/darkmod/stone/floor/rough_006
+       rough_006_ed rough_marble_dark02_ed
+       rough_006_d rough_marble_dark02
+       rough_006_local rough_marble_dark02_local
+   textures/darkmod/stone/floor/rough_009
+       rough_009_local dark_rough_local
+       rough_009_d dark_rough
+       rough_009_ed dark_rough_ed
+   textures/darkmod/stone/floor/brick_004
+       brick_004_local red_angled_ground_local
+       brick_004_editor red_angled_ground_ed
+       brick_004 red_angled_ground
+   textures/darkmod/stone/floor/brick_007
+       brick_007 interlocking_angled_grey
+       brick_007_local interlocking_angled_grey_local
+       brick_007_s interlocking_angled_grey01_s
+       brick_007_editor interlocking_angled_grey_ed
+   textures/darkmod/stone/floor/brick_006
+       brick_006_editor even_greyish01_ed
+       brick_006 even_greyish01
+       brick_006_local even_greyish01_local
+   textures/darkmod/stone/floor/brick_001
+       ctywbrick02 red_brick_dull01
+       ctywbrick02_local red_brick_dull01_local
+   textures/darkmod/stone/floor/brick_002
+       rt_redbrickvert01_local redbrick_dull_small_local
+       rt_redbrickvert01_d redbrick_dull_small
+   textures/darkmod/stone/floor/marble_004
+       marble_004_local rough_marble_dark01_local
+       marble_004_ed rough_marble_dark01_ed
+       marble_004_d rough_marble_dark01
+   textures/darkmod/stone/floor/blocks_018_cornerstone_l
+       blocks_018_cornerstone_l_local flagstones02_plain_cornerstone_left_local
+       blocks_018_cornerstone_l_s flagstones02_plain_cornerstone_left_s
+       blocks_018_cornerstone_l flagstones02_plain_cornerstone_left
+       blocks_018_cornerstone_l_ed flagstones02_plain_cornerstone_left_ed
+   textures/darkmod/stone/floor/granite_001
+       granite_001_s flagstones06_granite_s
+       granite_001_local flagstones06_granite_local
+       granite_001_editor flagstones06_granite_ed
+       granite_001 flagstones06_granite
+   textures/darkmod/stone/floor/blocks_014
+       blocks_014 rough_big_blocks05
+       blocks_009_local rough_big_blocks02_local
+       blocks_014_editor rough_big_blocks05_ed
+   textures/darkmod/stone/floor/blocks_015
+       blocks_015_d tight_large_blocks01
+       blocks_015_local tight_large_blocks01_local
+       blocks_015_ed tight_large_blocks01_ed
+       blocks_015_s tight_large_blocks01_s
+   textures/darkmod/stone/floor/blocks_018_cornerstone_r
+       blocks_018_cornerstone_r_s flagstones02_plain_cornerstone_left_s
+       blocks_018_cornerstone_r_local flagstones02_plain_cornerstone_right_local
+       blocks_018_cornerstone_r_ed flagstones02_plain_cornerstone_left_ed
+       blocks_018_cornerstone_r flagstones02_plain_cornerstone_right
+   textures/darkmod/stone/floor/blocks_017
+       blocks_017_ed grainy_large_blocks01_ed
+       blocks_017_d grainy_large_blocks01
+       blocks_017_local grainy_large_blocks01_local
+   textures/darkmod/stone/floor/blocks_010
+       blocks_010_editor rough_big_blocks03_ed
+       blocks_010 rough_big_blocks03
+       blocks_009_local rough_big_blocks02_local
+   textures/darkmod/stone/floor/blocks_011
+       blocks_011 uneven_blocks01_dark
+       blocks_011_local uneven_blocks01_dark_local
+       blocks_011_editor uneven_blocks01_dark_ed
+   textures/darkmod/stone/floor/blocks_012
+       blocks_012 uneven_blocks01_brown
+       blocks_012_editor uneven_blocks01_brown_ed
+       blocks_012_local uneven_blocks01_brown_local
+   textures/darkmod/stone/floor/blocks_013_cornerstone_light
+       blocks_013_cornerstone_light_editor rough_big_blocks04_brown_cornerstone_light_ed
+       blocks_013_cornerstone_light rough_big_blocks04_brown_cornerstone_light
+       blocks_009_cornerstone_local rough_big_blocks02_cornerstone_local
+   textures/darkmod/stone/floor/blocks_018
+       blocks_018_local flagstones02_plain_local
+       blocks_018_ed flagstones02_plain_ed
+       blocks_018 flagstones02_plain
+       blocks_018_s flagstones02_plain_s
+   textures/darkmod/stone/floor/blocks_019
+       blocks_019 even_small_blocks01
+       blocks_019_local even_small_blocks001_local
+       blocks_019_editor even_small_blocks001_ed
+   textures/darkmod/stone/floor/brick_005_colored
+       brick_005_alpha red_sloppymortar_alpha
+       brick_005 red_sloppymortar
+       brick_005_local red_sloppymortar_local
+       brick_005_editor red_sloppymortar_ed
+   textures/darkmod/stone/floor/rough_002
+       rough_002_local sandstone_local
+       rough_002_ed sandstone_ed
+       rough_002_d sandstone
+   textures/darkmod/stone/floor/rough_005
+       rough_005_local light_grey_rough_local
+       rough_005_d light_grey_rough
+       rough_005_ed light_grey_rough_ed
+   textures/darkmod/stone/floor/brick_008
+       brick_008_local redbrick_mostly_mortar_local
+       brick_008_editor redbrick_mostly_mortar_ed
+       brick_008 redbrick_mostly_mortar
+   textures/darkmod/stone/floor/fan_001_dirt
+       fan_001_s cobblestone_fan_pattern_s
+       fan_001_local cobblestone_fan_pattern_local
+       fan_001_dirt_editor cobblestone_fan_pattern_ed
+       fan_001_dirt cobblestone_fan_pattern
+   textures/darkmod/stone/floor/brick_005
+       brick_005_editor red_sloppymortar_ed
+       brick_005 red_sloppymortar
+       brick_005_local red_sloppymortar_local
+   textures/darkmod/stone/floor/brick_007_yellow
+       brick_007_yellow interlocking_angled_yellow
+       brick_007_local interlocking_angled_grey_local
+       brick_007_s interlocking_angled_grey01_s
+       brick_007_editor interlocking_angled_grey_ed
+   textures/darkmod/stone/floor/rough_008
+       rough_008_d rough_old
+       rough_008_local rough_old_local
+       rough_008_ed rough_old_ed
+   textures/darkmod/stone/floor/blocks_009_cornerstone_dark
+       blocks_009_cornerstone_local rough_big_blocks02_cornerstone_local
+       blocks_009_cornerstone_dark_editor rough_big_blocks02_cornerstone_dark_ed
+       blocks_009_cornerstone_dark rough_big_blocks02_cornerstone_dark
+   textures/darkmod/stone/floor/blocks_010_cornerstone_dark
+       blocks_010_cornerstone_dark_editor rough_big_blocks03_cornerstone_dark_ed
+       blocks_009_cornerstone_local rough_big_blocks02_cornerstone_local
+       blocks_010_cornerstone_dark rough_big_blocks03_cornerstone_dark
+   textures/darkmod/stone/floor/brick_005_inverted
+       brick_005_editor red_sloppymortar_ed
+       brick_005 red_sloppymortar
+       brick_005_inverted_local red_sloppymortar_inverted_local
+   textures/darkmod/stone/floor/mortared_001
+       rt_casstone02_local blocks_mixed_multicolour_local
+       rt_casstone02_d blocks_mixed_multicolour
+   textures/darkmod/stone/floor/brick_006_trim
+       brick_006_trim_editor even_greyish01_trim_ed
+       brick_006_trim even_greyish01_trim
+       brick_006_trim_local even_greyish01_trim_local
+
+materials/tdm_stone_trim.mtr
+   textures/darkmod/stone/trim/grave_004
+       grave_001_d sarcophagus_stone01
+       grave_004_ed sarcophagus_swords&shield01_ed
+   textures/darkmod/stone/trim/grave_005
+       grave_005_ed engraved_tile_cup01_ed
+       grave_005_d sarcophagus_stone02
+   textures/darkmod/stone/trim/grave_006
+       grave_005_d sarcophagus_stone02
+       grave_006_ed engraved_tile_x_ed
+   textures/darkmod/stone/trim/grave_007
+       grave_007_ed engraved_tile_impface_ed
+       grave_007_d engraved_tile_impface
+   textures/darkmod/stone/trim/grave_001
+       grave_001_d sarcophagus_stone01
+       grave_001_ed sarcophagus_warrior01_ed
+   textures/darkmod/stone/trim/grave_002
+       grave_002_ed sarcophagus_cup&hammer01_ed
+       grave_001_d sarcophagus_stone01
+   textures/darkmod/stone/trim/grave_003
+       grave_003_ed sarcophagus_wings01_ed
+       grave_001_d sarcophagus_stone01
+   textures/darkmod/stone/trim/grave_008
+       grave_008_ed engraved_tile_ring_ed
+       grave_008_d engraved_tile_ring
+   textures/darkmod/stone/trim/trim_001
+       trim_001_d carved_diamond_trim02
+       trim_001_local carved_diamond_trim02_local
+       trim_001_ed carved_diamond_trim02_ed
+   textures/darkmod/stone/trim/trim_002
+       trim_002_ed carved_diamond_trim_ed
+       trim_002_d carved_diamond_trim
+       trim_002_local carved_diamond_trim_local
+   textures/darkmod/stone/trim/border_2x1
+       border_2x1_local trapezoid_tile_2x1_local
+       rough_009_d dark_rough
+       border_2x1_ed trapezoid_tile_2x1_ed
+   textures/darkmod/stone/trim/border_1x1
+       rough_009_d dark_rough
+       border_1x1_local trapezoid_tile_1x1_local
+       border_1x1_ed trapezoid_tile_1x1_ed
+   textures/darkmod/stone/trim/ornament_013_tile_left
+       rough_009_d dark_rough
+       ornament_013_bones_tile_left_local carved_design_bones02_left_local
+       ornament_013_bones_tile_left_ed carved_design_bones02_left_ed
+   textures/darkmod/stone/trim/ornament_013_tile_mid
+       rough_009_d dark_rough
+       ornament_013_bones_tile_ed carved_design_bones02_ed
+       ornament_013_bones_tile_local carved_design_bones02_local
+   textures/darkmod/stone/trim/deco_002
+       deco_002_ed engraved_tile_ovals_ed
+       rough_005_d light_grey_rough
+   textures/darkmod/stone/trim/deco_001
+       rough_005_d light_grey_rough
+       deco_001_ed engraved_tile_star_ed
+   textures/darkmod/stone/trim/ornament_008
+       rough_008_d rough_old
+       ornament_008_ed tile_diamond_trapezoid_ed
+   textures/darkmod/stone/trim/ornament_009
+       ornament_009_local engraved_tile_face01_local
+       ornament_009_ed engraved_tile_face01_ed
+       ornament_009_d engraved_tile_face01
+   textures/darkmod/stone/trim/ornament_001
+       ornament_001_ed carved_tiles01_x4_light_ed
+       ornament_001_d carved_tiles01_x4_light
+   textures/darkmod/stone/trim/ornament_002
+       ornament_002_d carved_tiles01_x4_dark
+       ornament_002_ed carved_tiles01_x4_dark_ed
+   textures/darkmod/stone/trim/ornament_003
+       ornament_003_ed royal_emblem01_ed
+       ornament_003_local royal_emblem01_local
+       ornament_003_d royal_symbol01
+   textures/darkmod/stone/trim/ornament_004
+       ornament_004_d marble_ancient_writing
+       ornament_004_local marble_ancient_writing
+       ornament_004_ed marble_ancient_writing_ed
+   textures/darkmod/stone/trim/ornament_005
+       ornament_005_d tiles_bars_diamondshape
+       ornament_005_local tiles_bars_diamondshape_local
+       ornament_005_ed tiles_bars_diamondshape_ed
+   textures/darkmod/stone/trim/ornament_006
+       rough_008_d rough_old
+       ornament_006_ed tile_empty_square_ed
+   textures/darkmod/stone/trim/ornament_007
+       rough_008_d rough_old
+       ornament_007_ed tile_empty_trapezoid_ed
+   textures/darkmod/stone/trim/border_4x1
+       rough_009_d dark_rough
+       border_4x1_local trapezoid_tile_4x1_local
+       border_4x1_ed trapezoid_tile_4x1_ed
+   textures/darkmod/stone/trim/trim_003
+       trim_003_local single_grey_block01_local
+       trim_003_d single_grey_block01
+       trim_003_ed single_grey_block01_ed
+   textures/darkmod/stone/trim/ornament_013_tile_right
+       ornament_013_bones_tile_right_local carved_design_bones02_right_local
+       rough_009_d dark_rough
+       ornament_013_bones_tile_right_ed carved_design_bones02_right_ed
+   textures/darkmod/stone/trim/ornament_014_skull
+       rough_009_d dark_rough
+       ornament_014_skull_local carved_design_skull01_local
+       ornament_014_skull_ed carved_design_skull01_ed
+   textures/darkmod/stone/trim/border_8x1
+       rough_009_d dark_rough
+       border_8x1_ed trapezoid_tile_8x1_ed
+       border_8x1_local trapezoid_tile_8x1_local
+   textures/darkmod/stone/trim/ornament_012
+       rough_005_d light_grey_rough
+       ornament_012_snakes_ed carved_design_snakes_ed
+       ornament_012_snakes_local carved_design_snakes_local
+   textures/darkmod/stone/trim/ornament_011
+       ornament_011_bones_local carved_design_bones01_local
+       rough_007_d rough_marble_light01
+       ornament_011_bones_ed carved_design_bones01_ed
+   textures/darkmod/stone/trim/ornament_010
+       rough_005_d light_grey_rough
+       ornament_010_ed carved_design_diamonds01_ed
+
+materials/test_movers.mtr
+   numberwheel_lever
+       caswpanel01_local panel_circledesign01_local
+
+materials/tdm_ai_builders.mtr
+   models/md5/chars/builders/priest/priestmetal
+       bronze_001_d gen_smooth_bronze01
+       bronze_001_s gen_smooth_bronze01_s
+
+materials/askave.mtr
+   textures/darkmod/stone/floor/rough_001
+       rough_001_local dark_dirt_smeary_local
+       rough_001_editor dark_dirt_smeary_ed
+
+materials/tdm_snow_floor.mtr
+   textures/darkmod/snow/floor/icy_001
+       icy_001_s plain_ice01_s
+       icy_001 plain_ice01
+       icy_001_local plain_ice01_local
+       icy_001_editor plain_ice01_ed
+   textures/darkmod/snow/floor/rippled_001
+       rippled_001_local plain_snow01_local
+       rippled_001 plain_snow01
+
+materials/tdm_tile_trim.mtr
+   textures/darkmod/tile/trim/molding_001
+       manwtrim03_local marble_trim01_local
+       manwtrim03_s marble_trim01_s
+       manwtrim03 marble_trim01_brown
+
+materials/tdm_wood_floor.mtr
+   textures/darkmod/wood/floor/boards_polished_002_dim
+       boards_polished_002_dim_editor dim_01_ed
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+   textures/darkmod/wood/floor/tile_decorative_001
+       decorative_001_s ceramic_mosaic_decorative01_s
+       decorative_001_local ceramic_mosaic_decorative01_local
+       decorative_001 ceramic_mosaic_decorative01
+       decorative_001_editor ceramic_mosaic_decorative01_ed
+   textures/darkmod/wood/floor/boards_old_005
+       boards_old_005 worn_01
+       boards_old_005_local worn_01_local
+       boards_old_005_editor worn_01_ed
+       boards_old_005_s worn_01_s
+   textures/darkmod/wood/floor/boards_old_004
+       boards_old_004_local dark_rough_local
+       boards_old_004_editor dark_rough_ed
+       boards_old_004 dark_rough
+   textures/darkmod/wood/floor/boards_old_007
+       boards_old_007_editor dark_varnished_ed
+       boards_old_007 dark_varnished
+       boards_old_007_local dark_varnished_local
+   textures/darkmod/wood/floor/boards_old_006
+       boards_old_006 worn_02
+       boards_old_006_editor worn_02_ed
+       boards_old_006_local worn_02_local
+   textures/darkmod/wood/floor/boards_old_001
+       pagfloor01 old_small_grainy
+       pagfloor01_local old_small_grainy_local
+   textures/darkmod/wood/floor/boards_old_003
+       casfloor02 scratched
+       casfloor02_s scratched_s
+       casfloor02_local scratched_local
+   textures/darkmod/wood/floor/boards_old_002
+       casfloor01 weathered
+       casfloor01_s weathered_s
+       casfloor01_local weathered_local
+   textures/darkmod/wood/floor/boards_polished_001
+       boards_polished_001_editor polished_shiny_ed
+       boards_polished_001 polished_shiny
+       boards_polished_001_s polished_shiny_s
+   textures/darkmod/wood/floor/tile_weave_001
+       tile_weave_001_s tile_weave_s
+       tile_weave_001_editor tile_weave_ed
+       tile_weave_001 tile_weave
+       tile_weave_001_local tile_weave_local
+   textures/darkmod/wood/floor/boards_polished_002
+       boards_polished_002_s polished_01_s
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_editor polished_01_ed
+
+materials/tdm_door.mtr
+   tdm_windowed_door_02
+       mandoor05 smooth_rich_squarewindow01
+       mandoor05_local smooth_rich_squarewindow01_local
+       mandoor05_s smooth_rich_squarewindow01_s
+   textures/darkmod/door/attic_001
+       mandoor01_s old_flat_oak01_s
+       mandoor01 old_flat_oak01
+       mandoor01_local old_flat_oak01_local
+   mansion_door_01_dark
+       mandoor02ab_local smooth_4panels_local
+       mandoor02b smooth_4panels_red01
+   textures/darkmod/door/sturdy_001
+       ctydoor01 diamond_pattern01
+       ctydoor01_local diamond_pattern01_local
+   textures/darkmod/door/mansion_002
+       mandoor03_local smooth_3panels_local
+       mandoor03 smooth_3panels_red01
+   textures/darkmod/door/weathered_001
+       weathered_001_local old_weathered_boards01_local
+       weathered_001_d old_weathered_boards01
+   tdm_old_door_01
+       boards_old_004_local dark_rough_local
+       boards_old_004_editor dark_rough_ed
+       boards_old_004 dark_rough
+   textures/darkmod/door/mansion_001
+       mandoor02ab_local smooth_4panels_local
+       mandoor02b smooth_4panels_red01
+   mansion_door_01_light
+       mandoor02a smooth_4panels_tan01
+       mandoor02ab_local smooth_4panels_local
+   textures/darkmod/door/reinforced_001
+       casdoor01_s metalbands_crisscross01_s
+       casdoor01_local metalbands_crisscross01_local
+       casdoor01 metalbands_crisscross01
+   tdm_windowed_door_02_alpha
+       mandoor05 smooth_rich_squarewindow01
+       mandoor05_local smooth_rich_squarewindow01_local
+       mandoor05_withalpha smooth_rich_squarewindow01_alpha
+       mandoor05_s smooth_rich_squarewindow01_s
+   textures/darkmod/door/mansion_001_light
+       mandoor02a smooth_4panels_tan01
+       mandoor02ab_local smooth_4panels_local
+   tdm_windowed_door_01
+       mandoor04 smooth_rich_ovalwindow01
+       mandoor04_s smooth_rich_ovalwindow01_s
+       mandoor04_local smooth_rich_ovalwindow01_local
+   textures/darkmod/door/mansion_004
+       mandoor06_local smooth_2panels_rich_local
+       mandoor06 smooth_2panels_rich
+   textures/darkmod/door/windowed_001
+       mandoor04 smooth_rich_ovalwindow01
+       mandoor04_local smooth_rich_ovalwindow01_local
+   textures/darkmod/door/mansion_003
+       mandoor01sh_s smooth_3panels01_dull_s
+       mandoor01sh_local smooth_3panels01_remove_local
+       mandoor01sh smooth_3panels01_dull01
+   textures/darkmod/door/antique_001
+       antique_001 oldboards_metalspirals01
+       antique_001_local oldboards_metalspirals01_local
+       antique_001_editor oldboards_metalspirals01_ed
+   tdm_warehouse_front_door
+       ctydoor01 diamond_pattern01
+       warehouse_frontdoor_d old_4panels_peelingpaint01
+   tdm_old_door_01_metal
+       iron_001_local gen_smooth_iron01_local
+       iron_001_s gen_smooth_iron01_s
+       iron_001_d gen_smooth_iron01
+   tdm_mansion_door_mahogany
+       mandoor06_local smooth_2panels_rich_local
+       mandoor06 smooth_2panels_rich
+       mandoor06_s smooth_2panels_rich_s
+   textures/darkmod/door/windowed_002
+       mandoor05 smooth_rich_squarewindow01
+       mandoor05_local smooth_rich_squarewindow01_local
+       mandoor05_s smooth_rich_squarewindow01_s
+
+materials/tdm_tile_floor.mtr
+   textures/darkmod/tile/floor/marble_001_center2_polished
+       manfloor02cen2_s marble_pattern01_centerrose_s
+       manfloor02cen2 marble_pattern01_centerrose
+   textures/darkmod/tile/floor/marble_002_center5_gear_polished
+       marble_002_center5_s marble_pattern02_rings_s
+       marble_002_center5 marble_pattern02_rings
+       marble_002_center5_editor marble_pattern02_rings_ed
+   textures/darkmod/tile/floor/marble_002_center3_polished
+       marble_002_center3_s marble_pattern02_star_s
+       marble_002_center3_editor marble_pattern02_star_ed
+       marble_002_center3 marble_pattern02_star
+   textures/darkmod/tile/floor/marble_003
+       marble_003_ed marble_pattern03_brownish_ed
+       marble_003_s marble_pattern03_brownish_s
+       marble_003_d marble_pattern03_brownish
+       marble_003_local marble_pattern03_brownish_local
+   textures/darkmod/tile/floor/marble_002_center1_squares
+       marble_002_center1_editor marble_pattern02_checker_ed
+       marble_002_center1_s marble_pattern02_checker_s
+       marble_002_center1 marble_pattern02_checker
+   textures/darkmod/tile/floor/marble_002_center2
+       marble_002_center2_s marble_pattern02_crosshair_s
+       marble_002_center2 marble_pattern02_crosshair
+       marble_002_center2_editor marble_pattern02_crosshair_ed
+   textures/darkmod/tile/floor/marble_001_center1_polished
+       manfloor02cen1_s marble_pattern01_centersun_s
+       manfloor02cen1 marble_pattern01_centersun
+   textures/darkmod/tile/floor/marble_002_center5_gear
+       marble_002_center5_s marble_pattern02_rings_s
+       marble_002_center5 marble_pattern02_rings
+       marble_002_center5_editor marble_pattern02_rings_ed
+   textures/darkmod/tile/floor/marble_001_polished
+       manfloor02_s marble_pattern01_s
+       manfloor02 marble_pattern01
+   textures/darkmod/tile/floor/marble_002_center2_polished
+       marble_002_center2_s marble_pattern02_crosshair_s
+       marble_002_center2 marble_pattern02_crosshair
+       marble_002_center2_editor marble_pattern02_crosshair_ed
+   textures/darkmod/tile/floor/marble_001_center2
+       manfloor02cen2_s marble_pattern01_centerrose_s
+       manfloor02cen2 marble_pattern01_centerrose
+   textures/darkmod/tile/floor/marble_001_center1
+       manfloor02cen1_s marble_pattern01_centersun_s
+       manfloor02cen1 marble_pattern01_centersun
+   textures/darkmod/tile/floor/marble_002_center3
+       marble_002_center3_s marble_pattern02_star_s
+       marble_002_center3_editor marble_pattern02_star_ed
+       marble_002_center3 marble_pattern02_star
+   textures/darkmod/tile/floor/marble_002_center4
+       marble_002_center4_editor marble_pattern02_star02_ed
+       marble_002_center4 marble_pattern02_star02
+       marble_002_center4_s marble_pattern02_star02_s
+   textures/darkmod/tile/floor/marble_002_center1_squares_polished
+       marble_002_center1_editor marble_pattern02_checker_ed
+       marble_002_center1_s marble_pattern02_checker_s
+       marble_002_center1 marble_pattern02_checker
+   textures/darkmod/tile/floor/marble_002_center4_polished
+       marble_002_center4_editor marble_pattern02_star02_ed
+       marble_002_center4 marble_pattern02_star02
+       marble_002_center4_s marble_pattern02_star02_s
+   textures/darkmod/tile/floor/marble_001
+       manfloor02_s marble_pattern01_s
+       manfloor02 marble_pattern01
+
+materials/mechanical.mtr
+   tdm_gear
+       caswpanel01_local panel_circledesign01_local
+       caswpanel01b panel_circledesign01_brown
+   watermill_wheel_metal
+       rust_004_d simple_rough_grey01
+       rust_004_local simple_rough_grey01_local
+       rust_004_ed simple_rough_grey01_ed
+   watermill_wheel_wood
+       casfloor02 scratched
+       casfloor02_s scratched_s
+       casfloor02_local scratched_local
+
+materials/tdm_foliage_trim.mtr
+   textures/darkmod/foliage/trim/ivy_002_collection
+       ivy_002_ed ivy_mixed_pieces_ed
+       ivy_002 ivy_mixed_pieces
+       ivy_002_local ivy_mixed_pieces_local
+       ivy_002_s ivy_mixed_pieces_s
+   textures/darkmod/foliage/trim/hanging_001
+       natural01_local hanging_horizontal_leaves_local
+       natural01 hanging_horizontal_leaves
+       natural01_s hanging_horizontal_leaves_s
+   textures/darkmod/foliage/trim/ivy_001_small1
+       ivy_001_small1 ivypatch_small01
+   textures/darkmod/foliage/trim/ivy_001_small2
+       ivy_001_small2 ivypatch_tiny01
+   textures/darkmod/foliage/trim/ivy_004
+       ivy_004_s ivy_scattered_branches_s
+       ivy_004 ivy_scattered_branches
+       ivy_004_local ivy_scattered_branches_local
+   textures/darkmod/foliage/trim/ivy_001_patch1
+       ivy_001_patch1 ivypatch_average01
+   textures/darkmod/foliage/trim/ivy_001_patch2
+       ivy_001_patch2 ivypatch_large01
+   textures/darkmod/foliage/trim/moss
+       moss_d moss_patch_thick01
+       moss_local moss_patch_thick01
+   textures/darkmod/foliage/trim/ivy_003
+       ivy_003_local ivy_vertical_branches_local
+       ivy_003_ed ivy_vertical_branches_ed
+       ivy_003 ivy_vertical_branches
+       ivy_003_s ivy_vertical_branches_s
+   textures/darkmod/foliage/trim/ivy_002_collection_dark
+       ivy_002_ed ivy_mixed_pieces_ed
+       ivy_002 ivy_mixed_pieces
+       ivy_002_local ivy_mixed_pieces_local
+       ivy_002_s ivy_mixed_pieces_s
+
+materials/loot.mtr
+   purse01_rope
+       grass02_local thick_grass01_local
+   purse01
+       grass02_local thick_grass01_local
+
+materials/tdm_grass_floor.mtr
+   textures/darkmod/grass/floor/grassy_001
+       grass02_local thick_grass01_local
+       grass02 thick_grass01
+   textures/darkmod/grass/floor/mossyrock_003
+       mossyrock_003_s mossy_rock_bumpy_s
+       mossyrock_003_local mossy_rock_bumpy_local
+       mossyrock_003_ed mossy_rock_bumpy_ed
+       mossyrock_003 mossy_rock_bumpy
+   textures/darkmod/grass/floor/mossyrock_002
+       mossyrock_002_local mossy_rock_brown_local
+       mossyrock_002_ed mossy_rock_brown_ed
+       mossyrock_002_s mossy_rock_brown_s
+       mossyrock_002 mossy_rock_brown
+   textures/darkmod/grass/floor/mossyrock_001
+       mossyrock_001_s mossy_rock_green_s
+       mossyrock_001_local mossy_rock_green_local
+       mossyrock_001_ed mossy_rock_green_ed
+       mossyrock_001 mossy_rock_green
+   textures/darkmod/grass/floor/underbrush_001
+       grass01 short_patchy_grass01
+       grass01_local short_patchy_grass01_local
+   textures/darkmod/grass/floor/straw_001
+       straw01_local thick_straw01_local
+       straw01 thick_straw01
+
+materials/tdm_wood_trim.mtr
+   textures/darkmod/wood/trim/beam_002_weathered
+       beam_002_local beam_rough_local
+       beam_002_s beam_rough_s
+       beam_002_weathered_editor beam_rough_weathered_ed
+       beam_002_weathered beam_rough_weathered
+   textures/darkmod/wood/trim/molding_001
+       manwtrim06 trim_carved_rounded
+       manwtrim06_local trim_carved_rounded_local
+   textures/darkmod/wood/trim/molding_002
+       manwtrim02_local molding_leaves_local
+       manwtrim02 molding_leaves
+   textures/darkmod/wood/trim/molding_003
+       manwtrim04 molding_decorative_dark
+       manwtrim04_local molding_decorative_dark_local
+   textures/darkmod/wood/trim/beam_002
+       beam_002_local beam_rough_local
+       beam_002 beam_rough_brown
+       beam_002_s beam_rough_s
+       beam_002_editor beam_rough_brown_ed
+   textures/darkmod/wood/trim/beam_003
+       beam_003_ed beam_brown_old_ed
+       beam_003_d beam_brown_old
+       beam_003_local beam_brown_old_local
+   textures/darkmod/wood/trim/panel_002
+       manwtrim07_local thin_panels_with_trim_dark_local
+       manwtrim07 thin_panels_with_trim_dark
+   textures/darkmod/wood/trim/beam_001
+       pagfloor02_local worn_large_local
+       pagfloor02 worn_large
+   textures/darkmod/wood/trim/panel_003
+       manwtrim07_local thin_panels_with_trim_dark_local
+       manwtrim05 thin_panels_with_trim_light
+   textures/darkmod/wood/trim/beam_002_endcap
+       beam_002_endcap_local beam_rough_endcap_local
+       beam_002_endcap_editor beam_rough_brown_endcap_ed
+       beam_002_endcap beam_rough_brown_endcap
+   textures/darkmod/wood/trim/beam_003_burnt
+       beam_003_burnt_d beam_brown_old_burnt
+       beam_003_local beam_brown_old_local
+   textures/darkmod/wood/trim/beam_002_weathered_endcap
+       beam_002_weathered_endcap_editor beam_rough_weathered_endcap_ed
+       beam_002_weathered_endcap beam_rough_weathered_endcap
+       beam_002_endcap_local beam_rough_endcap_local
+   textures/darkmod/wood/trim/beam_003_endcap
+       beam_003_endcap_local beam_brown_old_endcap_local
+       beam_003_endcap_d beam_brown_old_endcap
+       beam_003_endcap_ed beam_brown_old_endcap_ed
+   textures/darkmod/wood/trim/plastered_001_decorative
+       ctywall02_local framed_old_decorative_01_local
+       ctywall02 framed_old_decorative_01
+   textures/darkmod/wood/trim/molding_004
+       manwtrim01_local molding_grey_local
+       manwtrim01 molding_grey
+   textures/darkmod/wood/trim/beam_mossy_001
+       pagtrim01 beam_old_mossy
+       pagtrim01_local beam_old_mossy_local
+       pagtrim01_s beam_old_mossy_s
+   textures/darkmod/wood/trim/plastered_001
+       ctywall03 framed_old_01
+       ctywall03_local framed_old_01_local
+   textures/darkmod/wood/trim/panel_001
+       manwpillar01_local trim_carved_long_local
+       manwpillar01 trim_carved_long
+
+materials/tdm_gen_metal.mtr
+   textures/darkmod/metal/gen/rust_001
+       rust_001_local gen_dark_rusted01_local
+       rust_001_s gen_dark_rusted01_s
+       rust_001_d gen_dark_rusted01
+   textures/darkmod/metal/gen/paintedmetal_001
+       paintedmetal_001_d gen_peeling_paint01
+       paintedmetal_001_s gen_peeling_paint01_s
+       paintedmetal_001_local gen_peeling_paint01_local
+   textures/darkmod/metal/gen/gold_001
+       gold_001_local gen_smooth_gold01_local
+       gold_001_s gen_smooth_gold01_s
+       gold_001_d gen_smooth_gold01
+   textures/darkmod/metal/gen/copper_001
+       copper_001_s gen_smooth_copper01_s
+       copper_001_d gen_smooth_copper01
+       copper_001_local gen_smooth_copper01_local
+   textures/darkmod/metal/gen/iron_001
+       iron_001_local gen_smooth_iron01_local
+       iron_001_s gen_smooth_iron01_s
+       iron_001_d gen_smooth_iron01
+   textures/darkmod/metal/gen/iron_002
+       iron_002_d gen_ornate_iron01
+   textures/darkmod/metal/gen/bronze_001
+       bronze_001_d gen_smooth_bronze01
+       bronze_001_local gen_smooth_bronze01_local
+       bronze_001_s gen_smooth_bronze01_s
+   textures/darkmod/metal/gen/brushedmetal_001
+       brushedmetal_001_s gen_shiny_brushedmetal01_s
+       brushedmetal_001_local gen_shiny_brushedmetal01_local
+       brushedmetal_001_d gen_shiny_brushedmetal01
+   textures/darkmod/metal/gen/silver_001
+       silver_001_d gen_smooth_silver01
+       silver_001_local gen_smooth_silver01_local
+       silver_001_s gen_smooth_silver01_s
+
+materials/containers.mtr
+   bc_insidecloth
+       setrug03 ornate_rectangles_brown01
+
+materials/tdm_ceramic_floor.mtr
+   textures/darkmod/ceramic/floor/stucco_001
+       manwall02_local stucco_01_local
+       manwall02_s stucco_01_s
+       manwall02 stucco_01
+   textures/darkmod/ceramic/floor/plaster_002
+       plaster_002_editor panel_decorative_white_ed
+       plaster_002 panel_decorative_white
+       plaster_002_local panel_decorative_white_local
+
+materials/tdm_windows.mtr
+   textures/darkmod/litwindows/largesquare100
+       largesquare100 largesquare01_brightlit
+   textures/darkmod/litwindows/smallsquare100
+       smallsquare100 simple_square01_brightlit
+   textures/darkmod/litwindows/smallsquare70
+       smallsquare70 simple_square01_softlit
+   textures/darkmod/litwindows/largeround100
+       largeround100 round_spokes01_brightlit
+   textures/darkmod/litwindows/largeround90
+       largeround90 round_spokes01_lit
+   textures/darkmod/litwindows/largesquare70
+       largesquare70 largesquare01_softerlit
+   textures/darkmod/litwindows/smallsquare90
+       smallsquare90 simple_square01_lit
+   textures/darkmod/litwindows/smallsquare80
+       smallsquare80 simple_square01_softerlit
+   textures/darkmod/litwindows/largesquare90
+       largesquare90 largesquare01_lit
+   textures/darkmod/litwindows/largesquare80
+       largesquare80 largesquare01_softlit
+   textures/darkmod/litwindows/largeround80
+       largeround80 round_spokes01_softlit
+   textures/darkmod/litwindows/largeround70
+       largeround70 round_spokes01_softerlit
+
+materials/city_window.mtr
+   textures/darkmod/city/window/ctywindow02
+       ctywindow02_local shutters_closed_local
+       ctywindow02 shutters_grey_closed
+   textures/darkmod/city/window/ctywindow01
+       ctywindow01 diamond_pattern01_lit
+       ctywindow01_local diamond_pattern01_local
+       ctywindow01_s diamond_pattern01_s
+   textures/darkmod/city/window/ctywindow01b
+       ctywindow01_local diamond_pattern01_local
+       ctywindow01_s diamond_pattern01_s
+       ctywindow01b diamond_pattern01_dark
+
+materials/pagan_decals.mtr
+   textures/darkmod/pagan/decal/pagdecfleur.tga
+       pagdecfleur magic_symbol_circle01
+   textures/darkmod/pagan/decal/pagdecvoyn.tga
+       pagdecvoyn magical_letters_row01
+
+materials/tdm_carpet_trim.mtr
+   textures/darkmod/carpet/trim/rug_red_003_center
+       setrug04cen_local geometric01_local
+       setrug04cen geometric01_red
+   textures/darkmod/carpet/trim/rug_red_002
+       setrug02sh_local ornate_red_tan02_local
+       setrug02sh ornate_red_tan02
+   textures/darkmod/carpet/trim/rug_red_001
+       setrug01sh ornate_red_tan01
+       setrug01sh_local ornate_red_tan01_local
+   textures/darkmod/carpet/trim/rug_002
+       setrug02_local ornate_floral_checker01_local
+       setrug02 ornate_floral_checker01
+   textures/darkmod/carpet/trim/rug_001
+       setrug03 ornate_rectangles_brown01
+       setrug03_local ornate_rectangles_brown01_local
+   textures/darkmod/carpet/trim/rug_gold_001
+       setrug01_local ornate_black_gold01_local
+       setrug01 ornate_black_gold01
+   textures/darkmod/carpet/trim/rug_red_003_end
+       setrug04end geometric01_red_end
+       setrug04end_local geometric01_end_local
+   textures/darkmod/carpet/trim/rug_blue_001
+       setrug03sh_local ornate_green_black01_local
+       setrug03sh ornate_green_black01
+
+materials/tdm_stone_wall.mtr
+   textures/darkmod/stone/wall/facade_001
+       ctywfacade01_local frame_ornate_wallsection_lit
+       ctywfacade01 frame_ornate_wallsection_local
+   textures/darkmod/stone/wall/brick_old_002
+       brick_old_002_local old_worn_greybrick_local
+       brick_old_002_editor old_worn_greybrick_ed
+       brick_old_002 old_worn_greybrick
+   textures/darkmod/stone/wall/cement_014
+       cement_014_local rough_iron01_local
+       cement_014 rough_iron01
+       cement_014_editor rough_iron01_ed
+   textures/darkmod/stone/wall/blocks_001_framed
+       rt_framedwall01_local chiseled_brick_frame_local
+       rt_framedwall01_d chiseled_brick_frame
+   textures/darkmod/stone/wall/brick_old_001
+       brick_old_001 old_small_bricks_grey
+       brick_old_001_local old_small_bricks_grey
+       brick_old_001_editor old_small_bricks_grey_ed
+   textures/darkmod/stone/wall/cement_011
+       cement_011_editor rough_rusted01_ed
+       cement_011 rough_rusted01
+       cement_011_local rough_rusted01_local
+       cement_011_s rough_rusted01_s
+   textures/darkmod/stone/wall/mortared_001
+       rt_casstone01_local blocks_mixed_multicolour_framed_local
+       rt_casstone01_d blocks_mixed_multicolour_framed
+   textures/darkmod/stone/wall/cement_013
+       cement_013 concrete_light_streaked
+       cement_013_local concrete_light_streaked_local
+       cement_013_editor concrete_light_streaked_ed
+   textures/darkmod/stone/wall/cement_012
+       cement_012_local rough_dirty01_local
+       cement_012_editor rough_dirty01_ed
+       cement_012 rough_dirty01
+   textures/darkmod/stone/wall/masonry_old_002
+       masonry_old_002_local bricks_blocks_roughmix_local
+       masonry_old_002_editor bricks_blocks_roughmix_ed
+       masonry_old_002 bricks_blocks_roughmix
+   textures/darkmod/stone/wall/masonry_old_003
+       masonry_old_003 flagstones_sparse
+       masonry_old_003_local flagstones_sparse_local
+       masonry_old_003_editor flagstones_sparse_ed
+   textures/darkmod/stone/wall/masonry_old_001
+       masonry_old_001 bricks_blocks_mix
+       masonry_old_001_local bricks_blocks_mix_local
+       masonry_old_001_editor bricks_blocks_mix_ed
+   textures/darkmod/stone/wall/masonry_old_004
+       masonry_old_004_local rough_masonry01_local
+       masonry_old_004_editor rough_masonry01_ed
+       masonry_old_004 rough_masonry01
+   textures/darkmod/stone/wall/masonry_old_005
+       masonry_old_005 flagstones_uneven
+       masonry_old_005_local flagstones_uneven_local
+       masonry_old_005_editor flagstones_uneven_ed
+   textures/darkmod/stone/wall/cement_006
+       cement_006_editor concrete_rough_pebbly_ed
+       cement_006 concrete_rough_pebbly
+       cement_006_local concrete_rough_pebbly_local
+   textures/darkmod/stone/wall/cement_003
+       cement_003_local concrete_rough_dark01_local
+       cement_003 concrete_rough_dark01
+       cement_003_editor concrete_rough_dark01_ed
+   textures/darkmod/stone/wall/cement_001
+       cement_001_local concrete_light_cracked_local
+       cement_001_editor concrete_light_cracked_ed
+       cement_001 concrete_light_cracked
+   textures/darkmod/stone/wall/cement_009
+       cement_009_local concrete_rough_dark01_local
+       cement_009_editor concrete_rough_dark02_ed
+       cement_009 concrete_rough_dark02
+   textures/darkmod/stone/wall/brick_old_003
+       brick_old_003_editor old_dirty_bricks01_ed
+       brick_old_003 old_dirty_bricks01
+       brick_old_003_local old_dirty_bricks01_local
+   textures/darkmod/stone/wall/rounded_001
+       rounded_001 cobblestones_rounded
+       rounded_001_local cobblestones_rounded_local
+       rounded_001_editor cobblestones_rounded_ed
+   textures/darkmod/stone/wall/masonry_004
+       masonry_004_local blocks_uneven05_grey_local
+       masonry_004_editor blocks_uneven05_grey_ed
+       masonry_004 blocks_uneven05_grey
+   textures/darkmod/stone/wall/masonry_005
+       masonry_005_local blocks_mixedsize01_local
+       masonry_005_editor blocks_mixedsize01_ed
+       masonry_005 blocks_mixedsize01
+   textures/darkmod/stone/wall/masonry_001
+       masonry_001 flagstones01_light
+       masonry_001_local flagstones01_light_local
+       masonry_001_editor blocks_uneven02_grey_local
+   textures/darkmod/stone/wall/masonry_002
+       masonry_002_editor blocks_uneven03_grey_ed
+       masonry_002 blocks_uneven03_grey
+       masonry_002_local blocks_uneven03_grey_local
+   textures/darkmod/stone/wall/masonry_003
+       masonry_003 blocks_uneven04_brown
+       masonry_003_local blocks_uneven04_brown_local
+       masonry_003_editor blocks_uneven04_brown_ed
+
+materials/bc_misc.mtr
+   doorface01
+       weathered_001_local old_weathered_boards01_local
+       weathered_001_d old_weathered_boards01
+   doorside02
+       antique_001 oldboards_metalspirals01
+       antique_001_local oldboards_metalspirals01_local
+   doorside01
+       weathered_001_local old_weathered_boards01_local
+       weathered_001_d old_weathered_boards01
+   bc_doorface02
+       antique_001 oldboards_metalspirals01
+       antique_001_local oldboards_metalspirals01_local
+
+materials/tdm_city_props.mtr
+   textures/darkmod/city/wall/metal02
+       metal01_d simple_grey01
+       metal01_local simple_grey01_local
+       metal01_s simple_grey01_s
+
+materials/mansion_window.mtr
+   textures/darkmod/mansion/window/manwindow04
+       manwindow04 roundtop_diamond_pattern01_brightlit
+   textures/darkmod/mansion/window/manwindow01b
+       manwindow01_s largesquare02_s
+       manwindow01_local largesquare02_local
+       manwindow01b largesquare02_lit
+   textures/darkmod/mansion/window/manwindow01
+       manwindow01 largesquare02_dark
+       manwindow01_local largesquare02_local
+       manwindow01_s largesquare02_s
+   textures/darkmod/mansion/window/manwindow02
+       manwindow02 roundtop_diamond_pattern01_lit
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   textures/darkmod/mansion/window/manwindow03
+       manwindow03 pointedtop_thin01_dark
+       manwindow03_local pointedtop_thin01_local
+       manwindow03_s pointedtop_thin01_s
+   textures/darkmod/mansion/window/manwindow02b
+       manwindow02b roundtop_diamond_pattern01_dark
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   textures/darkmod/mansion/window/manwindow02d
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02d roundtop_diamond_pattern01_grey
+       manwindow02_local roundtop_diamond_pattern01_local
+
+materials/tdm_gen_wood.mtr
+   textures/darkmod/wood/gen/wood_002
+       wood_002_local gen_panel_x_pattern_local
+       wood_002_d gen_panel_x_pattern
+   textures/darkmod/wood/gen/wood_001
+       wood_001_d gen_old_boards
+       wood_001_local gen_old_boards_local
+
+materials/bonehoard.mtr
+   textures/bonehoard/decals/dirt_002_edge_right
+       dirt_002_edge_right dripping_slime05_right
+   textures/bonehoard/decals/dirt_001
+       dirt_001 scattered_dirt02
+   textures/bonehoard/decals/dirt_002_edge_left
+       dirt_002_edge_left dripping_slime05_left
+   textures/bonehoard/decals/dirt_002
+       dirt_002 dripping_slime05
+
+materials/architecture.mtr
+   tdm_greenhouse_wood_polished
+       boards_polished_002_s polished_01_s
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_editor polished_01_ed
+   tdm_manwindow02
+       manwindow02b roundtop_diamond_pattern01_dark
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   manstairs_01_rug_center
+       setrug04cen_local geometric01_local
+       setrug04cen geometric01_red
+   tdm_balcony_sp_marble01
+       manwtrim03_local marble_trim01_local
+       manwtrim03_s marble_trim01_s
+       manwtrim03 marble_trim01_brown
+   manstairs_01_dim
+       boards_polished_002_dim_editor dim_01_ed
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+   manstairs_01
+       boards_polished_002_s polished_01_s
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_editor polished_01_ed
+   tdm_manwindow02_dark
+       manwindow02c roundtop_diamond_pattern01_verydark
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   tdm_balcony_sp_ceramic01
+       plaster_002_editor panel_decorative_white_ed
+       plaster_002 panel_decorative_white
+       plaster_002_local panel_decorative_white_local
+   tdm_manwindowtrim
+       manwtrim07_local thin_panels_with_trim_dark_local
+       manwtrim07 thin_panels_with_trim_dark
+   tdm_skywindow_glass_frame
+       manwindow02b roundtop_diamond_pattern01_dark
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   tdm_skywindow_frame
+       boards_polished_002_dim_editor dim_01_ed
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+   tdm_balcony_sp_floor01
+       manfloor02_s marble_pattern01_s
+       manfloor02 marble_pattern01
+   tdm_greenhouse_cement
+       cement_001_local concrete_light_cracked_local
+       cement_001_editor concrete_light_cracked_ed
+       cement_001 concrete_light_cracked
+   tdm_manwindow02_lit
+       manwindow02 roundtop_diamond_pattern01_lit
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   tdm_greenhouse_wood_polished_2
+       boards_polished_002_dim_editor dim_01_ed
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+   arch_brick01
+       manwbrick01 tight_large_blocks
+       manwbrick01_local tight_large_blocks_local
+   tdm_greenhouse_panel
+       manceiling03_local panel_carved_rectangles_02_local
+       manceiling03 panel_carved_rectangles_02_dark
+   manstairs_01_rug_end
+       setrug04end geometric01_red_end
+       setrug04end_local geometric01_end_local
+   arch_marble01
+       manwtrim03_local marble_trim01_local
+       manwtrim03_s marble_trim01_s
+       manwtrim03 marble_trim01_brown
+   tdm_cover_glass_frame
+       manwindow02b roundtop_diamond_pattern01_dark
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02_local roundtop_diamond_pattern01_local
+   tdm_manwindow02_white
+       manwindow02_s roundtop_diamond_pattern01_s
+       manwindow02d roundtop_diamond_pattern01_grey
+       manwindow02_local roundtop_diamond_pattern01_local
+   tdm_skywindow_frame_dim
+       boards_polished_002_dim_editor dim_01_ed
+       boards_polished_002 polished_01
+       boards_polished_002_local polished_01_local
+       boards_polished_002_s polished_01_s
+   tdm_greenhouse_underbrush
+       grass01 short_patchy_grass01
+       grass01_local short_patchy_grass01_local
+   tdm_balcony_sp_steps01
+       manfloor02cen1_s marble_pattern01_centersun_s
+       manfloor02cen1 marble_pattern01_centersun
+
+materials/tdm_cityhouses.mtr
+   textures/darkmod/city/wall/cwall_framebrick02
+       cwall_framebrick02_s framed_with_bricks_02_s
+       cwall_framebrick02_local framed_with_bricks_02_local
+       cwall_framebrick02_d framed_with_bricks
+   textures/darkmod/city/wall/metal01
+       metal01_d simple_grey01
+       metal01_local simple_grey01_local
+       metal01_s simple_grey01_s
+   textures/darkmod/city/wall/cwall_frame01
+       cwall_frame01_s framed_02_s
+       cwall_frame01_local framed_02_local
+       cwall_frame01_d framed_02
+   textures/darkmod/litwindows/hlamp_window01
+       hlamp_window01_d pebbly_glass_noframe01_lit
+   textures/darkmod/city/wall/concrete01
+       concrete01_local slate01_local
+       concrete01_s slate01_s
+       concrete01_d slate01_light
+   textures/darkmod/city/wall/cwall_framebrick
+       cwall_framebrick_s framed_with_bricks_s
+       cwall_framebrick_local framed_with_bricks_local
+   textures/darkmod/city/roof/rooftile_01
+       rooftile_01_d shingle_shiny_greenish01
+       rooftile_01_local shingle_shiny_greenish01_local
+       rooftile_01_s shingle_shiny_greenish01_s
+   textures/darkmod/city/wall/cwall_frame02
+       cwall_frame02_local framed_01_local
+       cwall_frame02_d framed_01
+       cwall_frame02_s framed_01_s
+   textures/darkmod/city/wall/brick_dark
+       brick_dark_s rough_brick_grey_s
+       brick_dark_local rough_brick_grey_local
+       brick_dark_d rough_brick_grey
+   textures/darkmod/litwindows/cwindow01_dark
+       cwindow01_dark_d square_pattern01_softlit
+   textures/darkmod/city/wall/cwall_01
+       cwall_01 plaster_01
+   textures/darkmod/litwindows/cwindow01
+       cwindow01_d square_pattern01_lit
+   textures/darkmod/litwindows/cwindow02
+       cwindow02_d diamond_pattern_andbars01_lit
+
+materials/decorative_oversize.mtr
+   statue_folded_hands
+       rough_005_d light_grey_rough
+
+materials/dopefish.mtr
+   tdm_dopefish_body
+       grass02_local thick_grass01_local
+       grass02 thick_grass01
+   tdm_dopefish_teeth
+       manwbrick01 tight_large_blocks
+       manwbrick01_local tight_large_blocks_local
+
+materials/weapons.mtr
+   models/weapons/vinearrow_leaf
+       plant01 tropical_broadleaf
+   models/weapons/vinearrow_gen
+       grass02_local thick_grass01_local
+       grass02 thick_grass01
+   models/weapons/mossarrow_leaf
+       plant01 tropical_broadleaf
+
+materials/nature.mtr
+   tdm_grass_model01
+       grass01 short_patchy_grass01
+
+materials/tdm_slate_floor.mtr
+   textures/darkmod/slate/floor/roof_001
+       ctyroof01 slate_uneven_withmoss01
+       ctyroof01_local slate_uneven_withmoss01_local
+   textures/darkmod/slate/floor/slate_001
+       manfslate1 rough_slate_dark01
+       manfslate1_local rough_slate_dark01_local
+   textures/darkmod/slate/floor/roof_002
+       ctyroof02_local shingle_dullbrown01_local
+       ctyroof02 shingle_dullbrown01
+
+materials/tdm_gravel_floor.mtr
+   textures/darkmod/gravel/floor/gravel_001
+       ctygravel01_local gravel_grey_01_local
+       ctygravel01 gravel_grey_01
+   textures/darkmod/gravel/floor/gravel_002
+       ctygravel01_local gravel_grey_01_local
+
+materials/tdm_wood_ceiling.mtr
+   textures/darkmod/wood/ceiling/panel_002
+       manceiling05 panel_carved_star
+       manceiling05_local panel_carved_star_local
+   textures/darkmod/wood/ceiling/panel_003
+       manceiling06 panel_carved_rectangles_01
+       manceiling06_local panel_carved_rectangles_01_local
+   textures/darkmod/wood/ceiling/panel_001
+       manceiling01_local panel_grey_local
+       manceiling01 panel_grey
+   textures/darkmod/wood/ceiling/panel_004_dark
+       manceiling03_local panel_carved_rectangles_02_local
+       manceiling03 panel_carved_rectangles_02_dark
+   textures/darkmod/wood/ceiling/panel_004_light
+       manceiling03b panel_carved_rectangles_02_light
+       manceiling03_local panel_carved_rectangles_02_local
+   textures/darkmod/wood/ceiling/panel_005
+       manwall01sh_local panel_floral_ornaments_local
+       manwall01sh_s panel_floral_ornaments_s
+       manwall01sh panel_floral_ornaments
+   textures/darkmod/wood/ceiling/pole_supports
+       manceiling04 metal_decorated
+       manceiling04_local metal_decorated_local
+       manceiling04_s metal_decorated_s
+   textures/darkmod/wood/ceiling/panel_006
+       manwpanel03_local panel_carved_round_dark_local
+       manwpanel03 panel_carved_round_dark
+   textures/darkmod/wood/ceiling/panel_002_dusty
+       manceiling02_local panel_carved_star_dusty_local
+       manceiling02 panel_carved_star_dusty
+   textures/darkmod/wood/ceiling/plastered_001
+       pagceiling01_local plastered_grey_local
+       pagceiling01_ed plastered_grey_ed
+       pagceiling01 plastered_grey
+

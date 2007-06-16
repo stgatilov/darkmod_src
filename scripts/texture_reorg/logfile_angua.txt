@@ -1,0 +1,273 @@
+Caching material files...
+
+materials/misc.mtr
+
+materials/tdm_metal_floor.mtr
+
+materials/kitchen.mtr
+Missing:359: models/renderbump/smspoon_ornamental_local
+
+materials/tdm_gen_ceramic.mtr
+Missing:8: textures/darkmod/ceramic/gen/ceramic_001_d
+Missing:9: textures/darkmod/ceramic/gen/ceramic_001_d
+Missing:10: textures/darkmod/ceramic/gen/ceramic_001_local
+Missing:11: textures/darkmod/ceramic/gen/ceramic_001_s
+Missing:21: textures/darkmod/ceramic/gen/ceramic_001_d
+Missing:30: textures/darkmod/ceramic/gen/ceramic_002_d
+Missing:31: textures/darkmod/ceramic/gen/ceramic_002_d
+Missing:32: textures/darkmod/ceramic/gen/ceramic_002_local
+Missing:33: textures/darkmod/ceramic/gen/ceramic_002_s
+Missing:43: textures/darkmod/ceramic/gen/ceramic_002_d
+
+//folder gen nonexistent before reorg
+
+materials/tdm_stone_trim.mtr
+
+materials/tdm_ai_pagans.mtr
+Missing:68: models/md5/chars/pagans/pagan_female/pagan_female_head_local
+
+materials/tdm_gen_metal.mtr
+Missing:129: textures/darkmod/metal/gen/goldloot_001_d
+Missing:130: textures/darkmod/metal/gen/goldloot_001_d
+Missing:131: textures/darkmod/metal/gen/goldloot_001_local
+Missing:132: textures/darkmod/metal/gen/goldloot_001_s
+Missing:142: textures/darkmod/metal/gen/goldloot_001_d
+//goldloot nonexistant before reorg
+
+Missing:184: textures/darkmod/metal/gen/iron_002_local
+Missing:185: textures/darkmod/metal/gen/iron_002_s
+//s and local nonexistant before reorg, diffusemap should be there
+
+materials/pipekit.mtr
+Missing:9: models/darkmod/props/textures/wip
+Missing:10: models/darkmod/props/textures/bathroom_bath1_local
+Missing:11: models/darkmod/props/textures/wip_s
+Missing:21: models/darkmod/props/textures/wip
+Missing:33: models/darkmod/props/textures/metalpipe1
+Missing:34: models/darkmod/props/textures/metalpipe1_local2
+Missing:35: models/darkmod/props/textures/metalpipe1_s
+Missing:45: models/darkmod/props/textures/metalpipe1
+
+materials/tools.mtr
+Missing:10: models/darmkmod/props/textures/broomst_local
+Missing:160: models/darkmod/props/textures/mop_d
+Missing:161: models/darkmod/props/textures/mop_local
+Missing:172: models/darkmod/props/textures/mop_d
+
+materials/tdm_stone_wall.mtr
+
+materials/lights_tdm.mtr
+Missing:136: models/darkmod/props/textures/candelabra_ed
+Missing:691: models/darkmod/props/textures/rustylamp_d
+
+materials/weapons.mtr
+Missing:524: models/darkmod/props/textures/blackjack_d
+Missing:547: models/my
+Missing:566: models/my
+Missing:585: models/my
+Missing:599: models/weapons/shortbow/playerhand_s
+Missing:605: models/my
+Missing:619: models/darkmod/props/textures/longsword_h
+
+materials/tdm_ai_thief.mtr
+Missing:51: models/md5/chars/thief/thief_leather_s
+Missing:74: models/md5/chars/thief/thief_leather_s
+Missing:135: models/md5/chars/thief/bow_d
+
+materials/askave.mtr
+Missing:24: textures/darkmod/stone/floor/rough_detail
+//old material def, is now darkmod/detail/rough_001
+
+materials/potions.mtr
+Missing:70: models/darkmod/props/textures/airpotion
+
+materials/tdm_tile_floor.mtr
+
+materials/mechanical.mtr
+Missing:25: models/my
+
+materials/tdm_ai_heads_dev.mtr
+Missing:54: models/md5/chars/heads/npcs/beard_black
+Missing:55: models/md5/chars/heads/npcs/beard_black_local
+Missing:56: models/md5/chars/heads/npcs/beard_black_s
+
+materials/tdm_foliage_wall.mtr
+
+materials/loot.mtr
+Missing:145: models/darkmod/props/textures/gold_tiling
+
+materials/tdm_snow_floor.mtr
+
+materials/tdm_ai_guards.mtr
+Missing:3: models/chars/chaindisp_local
+Missing:28: models/chars/chaindisp_local
+Missing:57: models/chars/chaindisp_local
+Missing:82: models/chars/chaindisp_local
+Missing:135: models/chars/chaindisp_local
+Missing:141: models/md5/chars/guards/proguard/proguard2_d
+Missing:153: models/chars/guards/proguard/proguard_d
+Missing:185: models/chars/elite_citywatch4_local
+Missing:235: models/chars/elite_citywatch4_local
+Missing:434: models/md5/chars/guards/houseguard/houseguard_head_s
+
+materials/bonehoard.mtr
+Missing:16: textures/darkmod/bonehoard/env/water_entrance
+//this is an envshot, there are 6 textures with _up, _left, etc.
+
+materials/test_volumetric.mtr
+
+materials/Perftestmulti.mtr
+Missing:5: models/darkmod/props/textures/perftest_d
+Missing:6: models/darkmod/props/textures/perftest_s
+Missing:7: models/darkmod/props/textures/perftest_local
+Missing:14: models/darkmod/props/textures/perftest_d
+Missing:15: models/darkmod/props/textures/perftest_s
+Missing:16: models/darkmod/props/textures/perftest_local
+Missing:23: models/darkmod/props/textures/perftest_d
+Missing:24: models/darkmod/props/textures/perftest_s
+Missing:25: models/darkmod/props/textures/perftest_local
+Missing:32: models/darkmod/props/textures/perftest_d
+Missing:33: models/darkmod/props/textures/perftest_s
+Missing:34: models/darkmod/props/textures/perftest_local
+
+materials/nature.mtr
+Missing:152: textures/darkmod/nature/rock01_d
+//should be models/darkmod/nature/rock01_d.tga I think this is a typo
+
+Missing:238: models/darkmod/props/textures/mushroom_white_local
+
+materials/decorative_wall.mtr
+
+materials/furniture_seating.mtr
+Missing:32: models/darkmod/props/textures/tab1_chair2_d
+Missing:33: models/darkmod/props/textures/tab1_chair1_local
+Missing:43: models/darkmod/props/textures/tab1_chair2_d
+
+materials/tdm_ai_builders.mtr
+Missing:89: models/chars/prelatebottom_local
+Missing:115: models/chars/prelatenottom_local
+Missing:122: models/chars/builders/inquisitor/inquisitornottom_s
+Missing:169: models/chars/prelatebottom_local
+Missing:195: models/chars/prelatenottom_local
+Missing:202: models/chars/builders/prelate/prelatenottom_s
+Missing:251: models/chars/builderbottom2_local
+Missing:282: models/chars/buildertop2_local
+Missing:312: models/chars/buildertop2_local
+
+materials/wearable.mtr
+Missing:50: models/darkmod/props/textures/ponytail_black
+Missing:62: models/darkmod/props/textures/generic_s
+
+materials/tdm_wood_floor.mtr
+
+materials/tdm_door.mtr
+
+materials/tdm_sky.mtr
+Missing:16: textures/gilsky/white
+//nonexistant before reorg
+
+materials/furniture_beds.mtr
+Missing:55: models/mapobjects/tables/bunkbed/mattress_d
+Missing:56: models/mapobjects/tables/bunkbed/mattress_local
+Missing:57: models/mapobjects/tables/bunkbed/mattress_s
+Missing:67: models/mapobjects/tables/bunkbed/mattress_d
+
+materials/readable.mtr
+Missing:32: models/darkmod/props/textures/burntbook_t1
+Missing:42: models/darkmod/props/textures/burntbook_t1
+
+materials/tdm_gen_stone.mtr
+Missing:29: textures/darkmod/stone/gen/brick_002_d
+Missing:30: textures/darkmod/stone/gen/brick_002_d
+Missing:31: textures/darkmod/stone/gen/brick_002_local
+Missing:42: textures/darkmod/stone/gen/brick_002_d
+//nonexistent before reorg
+
+materials/tdm_wood_wall.mtr
+
+materials/decorative_oversize.mtr
+
+materials/tdm_ai_townsfolk.mtr
+Missing:109: models/md5/chars/townsfolk/town_belt
+Missing:138: models/md5/chars/townsfolk/town_ties
+Missing:154: models/md5/chars/townsfolk/townsfolk_male1/town_head_local
+Missing:181: models/md5/chars/townsfolk/townsfolk_male1/town_hair_local
+
+materials/player_equipment.mtr
+Missing:188: models/darkmod/props/textures/blackjack_d
+
+materials/graveyard.mtr
+Missing:159: models/darkmod/props/textures/TheHammer_medium_stone_dark_d
+Missing:160: models/darkmod/props/textures/TheHammer_medium_stone_local
+Missing:209: models/darkmod/props/textures/chain1_d
+Missing:213: models/darkmod/props/textures/chain1_local
+Missing:214: models/darkmod/props/textures/chain1_s
+Missing:226: models/darkmod/props/textures/fence1_d
+Missing:230: models/darkmod/props/textures/fence1_local
+
+materials/tdm_gen_tile.mtr
+Missing:8: textures/darkmod/tile/gen/tile_001_d
+Missing:9: textures/darkmod/tile/gen/tile_001_d
+Missing:10: textures/darkmod/tile/gen/tile_001_local
+Missing:21: textures/darkmod/tile/gen/tile_001_d
+Missing:30: textures/darkmod/tile/gen/tile_002_s
+Missing:31: textures/darkmod/tile/gen/tile_002_s
+Missing:32: textures/darkmod/tile/gen/tile_local
+Missing:43: textures/darkmod/tile/gen/tile_002_s
+//folder nonexistant before reorg
+
+materials/tdm_foliage_trim.mtr
+
+materials/chars.mtr
+Missing:90: models/chars/longsword_local
+Missing:113: models/chars/chainmail_local
+
+materials/test_window.mtr
+
+materials/tdm_wood_trim.mtr
+
+materials/tdm_stone_floor.mtr
+Missing:1311: textures/darkmod/stone/floor/cobble_007_s
+//nonexistant before reorg (possibly not needed?)
+
+materials/tdm_ceramic_floor.mtr
+
+materials/tdm_ceramic_wall.mtr
+Missing:36: textures/darkmod/pagan/wall/pagwall01_s
+//nonexistant before reorg
+
+materials/keys.mtr
+Missing:75: models/darkmod/player_equipment/lockpick_bent_inv_icon
+Missing:76: models/darkmod/player_equipment/lockpick_bent_inv_icon
+Missing:81: models/darkmod/player_equipment/lockpick_circle_inv_icon
+Missing:82: models/darkmod/player_equipment/lockpick_circle_inv_icon
+Missing:87: models/darkmod/player_equipment/lockpick_snake_inv_icon
+Missing:88: models/darkmod/player_equipment/lockpick_snake_inv_icon
+Missing:93: models/darkmod/player_equipment/lockpick_triangle_inv_icon
+Missing:94: models/darkmod/player_equipment/lockpick_triangle_inv_icon
+
+materials/guard.mtr
+Missing:5: models/guard/guard
+Missing:15: models/guard/guard
+Missing:25: models/guard/guardarmour
+Missing:35: models/guard/guardarmour
+Missing:47: models/chars/undead/revenant/skirtacol
+Missing:51: models/chars/builders/guard/builder_local
+Missing:52: models/chars/undead/revenant/skirt_s
+Missing:62: models/chars/undead/revenant/skirtacol
+Missing:74: models/chars/undead/revenant/hauntarmor_d
+Missing:78: models/chars/builders/guard/builderarmor_local
+Missing:79: models/chars/undead/revenant/hauntarmor_s
+Missing:89: models/chars/undead/revenant/hauntarmor_d
+
+materials/architecture.mtr
+Missing:307: textures/darkmod/nature/plant_02
+Missing:314: textures/darkmod/nature/plant_02
+Missing:326: textures/darkmod/nature/plant_02
+//this should be here
+
+Missing:334: textures/gw_dm1/tree/bark_02
+Missing:338: textures/gw_dm1/tree/bark_02
+Missing:339: textures/gw_dm1/tree/bark_02_local
+Missing:349: textures/gw_dm1/tree/bark_02
+//there is no gw_dm1 folder, texture might be in darkmod/nature)
