@@ -19,7 +19,7 @@ Missing:32: textures/darkmod/ceramic/gen/ceramic_002_local
 Missing:33: textures/darkmod/ceramic/gen/ceramic_002_s
 Missing:43: textures/darkmod/ceramic/gen/ceramic_002_d
 
-//folder gen nonexistent before reorg
+//folder gen nonexistent before reorg >> file removed
 
 materials/tdm_stone_trim.mtr
 
@@ -32,11 +32,11 @@ Missing:130: textures/darkmod/metal/gen/goldloot_001_d
 Missing:131: textures/darkmod/metal/gen/goldloot_001_local
 Missing:132: textures/darkmod/metal/gen/goldloot_001_s
 Missing:142: textures/darkmod/metal/gen/goldloot_001_d
-//goldloot nonexistant before reorg
+//goldloot nonexistant before reorg >> deleted
 
 Missing:184: textures/darkmod/metal/gen/iron_002_local
 Missing:185: textures/darkmod/metal/gen/iron_002_s
-//s and local nonexistant before reorg, diffusemap should be there
+//s and local nonexistant before reorg, diffusemap should be there >> references deleted
 
 materials/pipekit.mtr
 Missing:9: models/darkmod/props/textures/wip
@@ -76,7 +76,7 @@ Missing:135: models/md5/chars/thief/bow_d
 
 materials/askave.mtr
 Missing:24: textures/darkmod/stone/floor/rough_detail
-//old material def, is now darkmod/detail/rough_001
+//old material def, is now darkmod/detail/rough_001 >> corrected
 
 materials/potions.mtr
 Missing:70: models/darkmod/props/textures/airpotion
@@ -112,7 +112,7 @@ Missing:434: models/md5/chars/guards/houseguard/houseguard_head_s
 
 materials/bonehoard.mtr
 Missing:16: textures/darkmod/bonehoard/env/water_entrance
-//this is an envshot, there are 6 textures with _up, _left, etc.
+//this is an envshot, there are 6 textures with _up, _left, etc. >> reference correct to map_specific/bonehoard
 
 materials/test_volumetric.mtr
 
@@ -132,7 +132,7 @@ Missing:34: models/darkmod/props/textures/perftest_local
 
 materials/nature.mtr
 Missing:152: textures/darkmod/nature/rock01_d
-//should be models/darkmod/nature/rock01_d.tga I think this is a typo
+//should be models/darkmod/nature/rock01_d.tga I think this is a typo >> corrected
 
 Missing:238: models/darkmod/props/textures/mushroom_white_local
 
@@ -164,7 +164,7 @@ materials/tdm_door.mtr
 
 materials/tdm_sky.mtr
 Missing:16: textures/gilsky/white
-//nonexistant before reorg
+//nonexistant before reorg >> corrected to diffusemap _white
 
 materials/furniture_beds.mtr
 Missing:55: models/mapobjects/tables/bunkbed/mattress_d
@@ -181,7 +181,7 @@ Missing:29: textures/darkmod/stone/gen/brick_002_d
 Missing:30: textures/darkmod/stone/gen/brick_002_d
 Missing:31: textures/darkmod/stone/gen/brick_002_local
 Missing:42: textures/darkmod/stone/gen/brick_002_d
-//nonexistent before reorg
+//nonexistent before reorg >> shader removed
 
 materials/tdm_wood_wall.mtr
 
@@ -214,7 +214,7 @@ Missing:30: textures/darkmod/tile/gen/tile_002_s
 Missing:31: textures/darkmod/tile/gen/tile_002_s
 Missing:32: textures/darkmod/tile/gen/tile_local
 Missing:43: textures/darkmod/tile/gen/tile_002_s
-//folder nonexistant before reorg
+//folder nonexistant before reorg >> file removed
 
 materials/tdm_foliage_trim.mtr
 
@@ -228,13 +228,13 @@ materials/tdm_wood_trim.mtr
 
 materials/tdm_stone_floor.mtr
 Missing:1311: textures/darkmod/stone/floor/cobble_007_s
-//nonexistant before reorg (possibly not needed?)
+//nonexistant before reorg (possibly not needed?) >> reference removed
 
 materials/tdm_ceramic_floor.mtr
 
 materials/tdm_ceramic_wall.mtr
 Missing:36: textures/darkmod/pagan/wall/pagwall01_s
-//nonexistant before reorg
+//nonexistant before reorg >> reference to specular removed
 
 materials/keys.mtr
 Missing:75: models/darkmod/player_equipment/lockpick_bent_inv_icon
@@ -264,10 +264,10 @@ materials/architecture.mtr
 Missing:307: textures/darkmod/nature/plant_02
 Missing:314: textures/darkmod/nature/plant_02
 Missing:326: textures/darkmod/nature/plant_02
-//this should be here
+//this is called plant02 without underscore >> corrected
 
 Missing:334: textures/gw_dm1/tree/bark_02
 Missing:338: textures/gw_dm1/tree/bark_02
 Missing:339: textures/gw_dm1/tree/bark_02_local
 Missing:349: textures/gw_dm1/tree/bark_02
-//there is no gw_dm1 folder, texture might be in darkmod/nature)
+//there is no gw_dm1 folder, texture might be in darkmod/nature) >> corrected, found it in models/darkmod/props/textures/
