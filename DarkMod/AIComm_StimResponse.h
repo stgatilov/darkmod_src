@@ -14,7 +14,7 @@
 #include "AIComm_Message.h"
 
 /**
-* This class manifests an AI's reponse link to 
+* This class manifests an AI's response link to 
 * a response to a AI Communications Stim
 */
 class CAIComm_Response:

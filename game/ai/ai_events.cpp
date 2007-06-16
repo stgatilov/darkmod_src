@@ -3531,7 +3531,12 @@ void idAI::Event_GetRelationEnt( idEntity *ent )
 
 void idAI::Event_IsEnemy( idEntity *ent )
 {
-	if (ent->IsType (idAbsenceMarkerEntity::Type))
+	if (!ent)
+	{
+		/* The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes. */
+		idThread::ReturnInt(0);
+	}
+	else if (ent->IsType (idAbsenceMarkerEntity::Type))
 	{
 		idAbsenceMarkerEntity* marker;
 		marker = static_cast<idAbsenceMarkerEntity*>( ent );

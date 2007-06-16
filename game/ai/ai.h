@@ -411,7 +411,7 @@ public:
 	* For now the check is only done on the player, and only the player
 	* may be returned.
 	**/
-	idActor *VisualScan( float time = 1/60 );
+	idActor *VisualScan( float time = 1.0f/60.0f );
 
 	/**
 	* Checks to see if the AI is being blocked by an actor when it tries to move,

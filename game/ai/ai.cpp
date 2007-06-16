@@ -1428,7 +1428,11 @@ void idAI::Think( void ) {
 				StopLipSync();
 			}
 		}
-
+		
+		// Look for enemies
+		idActor* actor = this->VisualScan();
+		if (actor) SetEnemy(actor);
+		
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
