@@ -155,8 +155,8 @@ textures/darkmod/foliage/trim/ivy_002_collection	textures/darkmod/decals/vegetat
 textures/darkmod/foliage/trim/ivy_002_collection_dark	textures/darkmod/decals/vegetation/ivy_mixed_pieces_dark
 textures/darkmod/foliage/trim/ivy_003	textures/darkmod/decals/vegetation/ivy_vertical_branches
 textures/darkmod/foliage/trim/ivy_004	textures/darkmod/decals/vegetation/ivy_scattered_branches
-textures/darkmod/foliage/trim/moss	textures/darkmod/decals/dirt/moss_patch_thick01
-textures/darkmod/foliage/trim/moss_burn	textures/darkmod/decals/dirt/moss_patch_thick01_burning
+textures/darkmod/foliage/trim/moss	textures/darkmod/decals/vegetation/moss_patch_thick01
+textures/darkmod/foliage/trim/moss_burn	textures/darkmod/decals/vegetation/moss_patch_thick01_burning
 
 textures/darkmod/pagan/decal/pagdecfleur.tga	textures/darkmod/decals/symbols/magic_symbol_circle01
 textures/darkmod/pagan/decal/pagdecvoyn.tga	textures/darkmod/decals/symbols/magical_letters_row01
@@ -302,6 +302,23 @@ textures/darkmod/city/window/ctywindow01	textures/darkmod/window/diamond_pattern
 textures/darkmod/city/window/ctywindow01b	textures/darkmod/window/diamond_pattern01_dark
 textures/darkmod/city/window/ctywindow02	textures/darkmod/window/shutters_grey_closed
 
+textures/darkmod/slate/floor/roof_001	textures/darkmod/roof/slate_uneven_withmoss01
+textures/darkmod/slate/floor/roof_002	textures/darkmod/roof/shingle_dullbrown01
+textures/darkmod/slate/floor/slate_001	textures/darkmod/stone/flat/rough_slate_dark01
 
+textures/darkmod/metal/gen/bronze_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_bronze01
+textures/darkmod/metal/gen/brushedmetal_001	diffusemap	    textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01
+textures/darkmod/metal/gen/copper_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_copper01
+textures/darkmod/metal/gen/gold_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_gold01
+textures/darkmod/metal/gen/iron_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_iron01
+textures/darkmod/metal/gen/iron_002	textures/darkmod/metal/flat/tiling_1d/gen_ornate_iron01
+textures/darkmod/metal/gen/paintedmetal_001	textures/darkmod/metal/flat/tiling_1d/gen_peeling_paint01
+textures/darkmod/metal/gen/rust_001	textures/darkmod/metal/flat/tiling_1d/gen_dark_rusted01
+textures/darkmod/metal/gen/silver_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_silver01
 
+textures/darkmod/grass/floor/dirt_001	textures/darkmod/nature/dirt/dirt_001
 
+textures/darkmod/wood/gen/wood_001	textures/darkmod/wood/boards/tiling_1d/gen_old_boards
+textures/darkmod/wood/gen/wood_002	textures/darkmod/wood/panels/tiling_1d/gen_panel_x_pattern
+
+textures/darkmod/ceramic/floor/plaster_002	textures/darkmod/wood/plaster/panel_decorative_white
