@@ -216,9 +216,9 @@ svn move dds/textures/darkmod/metal/floor/rust_002_s.DDS dds/textures/darkmod/me
 svn move textures/darkmod/city/wall/metal01_d.tga textures/darkmod/metal/flat/simple_grey01.tga
 svn move textures/darkmod/city/wall/metal01_local.tga textures/darkmod/metal/flat/simple_grey01_local.tga
 svn move textures/darkmod/city/wall/metal01_s.tga textures/darkmod/metal/flat/simple_grey01_s.tga
-svn move dds/textures/darkmod/metal/floor/rust_004_d.DDS dds/textures/darkmod/metal/flat/simple_rough_grey01.dds
-svn move textures/darkmod/metal/floor/rust_004_ed.tga textures/darkmod/metal/flat/simple_rough_grey01_ed.tga
-svn move textures/darkmod/metal/floor/rust_004_local.tga textures/darkmod/metal/flat/simple_rough_grey01_local.tga
+svn move dds/textures/darkmod/metal/flat/simple_rough_grey01_d.DDS dds/textures/darkmod/metal/flat/simple_rough_grey01.dds
+svn move textures/darkmod/metal/flat/simple_rough_grey01_ed.tga textures/darkmod/metal/flat/simple_rough_grey01_ed.tga
+svn move textures/darkmod/metal/flat/simple_rough_grey01_local.tga textures/darkmod/metal/flat/simple_rough_grey01_local.tga
 svn move dds/textures/darkmod/metal/floor/rust_003_d.DDS dds/textures/darkmod/metal/flat/solid_rust01.dds
 svn move textures/darkmod/metal/floor/rust_003_ed.tga textures/darkmod/metal/flat/solid_rust01_ed.tga
 svn move textures/darkmod/metal/floor/rust_003_local.tga textures/darkmod/metal/flat/solid_rust01_local.tga
@@ -1126,7 +1126,7 @@ materials/tdm_metal_floor.mtr
        rust_005_local solid_rust02_local
        rust_005_s solid_rust02_s
        rust_005 solid_rust02
-   textures/darkmod/metal/floor/rust_004
+   textures/darkmod/metal/flat/simple_rough_grey01
        rust_004_d simple_rough_grey01
        rust_004_local simple_rough_grey01_local
        rust_004_ed simple_rough_grey01_ed

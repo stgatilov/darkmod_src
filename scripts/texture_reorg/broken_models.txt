@@ -1,44 +1,13 @@
 darkmod/
-architecture/
-hallway01
-handrail*
-ladder*
-
-architecture/castle/castle*wall_trim
-
-architecture/cityhouses/*
-
-architecture/cityhouses2/*
-
-architecture/guardhouse/*
-
-architecture/smallhouse/*
-
-architecture/small inn/stairway
-
-architecture/windows/
-manwindow01b
-man_sky_window_01b.lwo
-man_sky_window_02.lwo
-man_sky_window_02b.lwo
-man_view_window_01.lwo
-steampunkwindow01.lwo
-
-darkmod/door_related/door1.lwo
 
 nature/
-ivy_*.lwo
 large_bush_01.lwo (+ skins)
-moss_patch.ase
 mushrooms_01
 mushroom_selflit_red (skin)
 mushrooms_02
 mushroom_01
 mushroom_02
 mushroom_03
-rock_slab_01
-rock_slab_02
-rubbles_*.ase (+skins)
 small_bush_01
 bc_largepot_tree
 bc_medpot_tree
@@ -51,47 +20,22 @@ bc_chest3_lid
 sack1_low
 
 props/decorative/
-cup_marble
-cup_stone_*
 emptypot (decorative/vase/gen_paintedmetal, gen_copper_001, gen_gold_001, gen_rust_001 skins)
-hammer_stone_*
-statue_open_hands_*
-statue_torch_*
 vase1 (some skins)
-vase2*
 vase_squat
 
 props/decorative/oversized/
-statue_open_hands_*
 the_hammer_medium1 (darkstone skin)
-the_hammer_medium2
-vase2_*
 
 props/decorative/wall/
 banner2
 painting01 landscape_ruin02, farmland, execution, master_builder, sorceress, harbour, woman bathing builder_forge, warriors, knight_and_maiden skins)
 painting01_L (standard skin, farmland, execution, master_builder, sorceress, harbour, woman bathing builder_forge, warriors, knight_and_maiden skins)
 painting01_m (same as above)
-shield.lwo
-
-props/dungeon/metal_ring
-
-props/furniture/winerack.ase
-
-props/furniture/seating/church_pew.lwo
-
-props/gen/*
 
 props/graveyard/
 grave_chain*
 grave_fence
-urn
-
-props/lights/extinguishable/
-flame_stand
-sq_torch
-torch_metal
-torch_metal_wall
 
 props/lights/non_extinguishable/
 bc_desklamp01
@@ -101,7 +45,6 @@ bc_streetlamp*
 bc_wall_lamp
 grill_light
 hanging_lantern
-hlamp
 hooded_lantern
 lamp_shaded
 round_streetlamp
@@ -111,22 +54,12 @@ sq_torch
 streetlamp1
 wall_light*
 
-props/loot/
-statue_loot
-
 props/misc/
 staff.lwo (staff_weapon skin)
-wheelbarrow02.lwo
 
 props/readables
 book_t1 (burnt_book1 skin)
 
 props/tools/mop.lwo
 
-props/wearables/head_gear.lwo
-
-
-
 props/pipekit/tap/tap1.lwo
-
-weapons/mossarrow
