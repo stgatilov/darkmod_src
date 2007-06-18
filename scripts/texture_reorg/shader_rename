@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+# This script replaces a string in a file with another. The old and new
+# string can either be specified on the commandline:
+# shader_renamd -o oldname -n newname <list of files>
+# or it can be specified with a tab delimited inputfile where each
+# line must contain two names, the old and the new one seperated by a TAB
+# character.
+
 import os
 import string
 import sys
@@ -13,7 +20,6 @@ class Line:
 	def __init__(self):
 		self.LineNumber = -1
 		self.Text = ""
-		self.Material = []
 
 	def __repr__(self):
 		return "[ " + self.LineNumber.__repr__() + ", '" + self.Text + "' ]"
@@ -33,8 +39,9 @@ class File:
 		b = f.read()
 		f.close()
 
-		b = b.replace("\r\n", "\r")
-		b = b.split("\r")
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		b = b.split("\n")
 
 		r = Line()
 		nr = 0
@@ -43,10 +50,6 @@ class File:
 			s = l.strip()
 
 			nr = nr + 1
-			t = l.split("\"")
-			if(len(t) > 2):
-				r.Material = t
-
 			r.Text = l
 			r.LineNumber = nr
 
@@ -56,17 +59,31 @@ class File:
 		return
 
 	def ReplaceString(self, old, new):
+		rc = 0
 		#print "   "+old, new
 		for i in self.Line:
-			if(len(i.Material) <= 2):
+			t = i.Text.split(old)
+			if(len(t) <= 1):
 				continue
 
-			if(i.Material[1] == old):
-				#print old, new
-				#print i.Text
-				i.Text = i.Material[0] + "\"" + new  + "\"" + i.Material[2]
-				#print i.Text
-		return
+			#print old, new
+			if(len(t[1]) > 0):
+				b = 0
+				if(t[1][0:1] == "\""
+				   or t[1][0:1] == "\t"
+				   or t[1][0:1] == ","
+				   or t[1][0:1] == "("
+				   or t[1][0:1] == ")"
+				   or t[1][0:1] == " "):
+					b = 1
+
+				if(b != 1):
+					continue
+
+				i.Text = t[0]+new+t[1]
+				rc = 1
+
+		return rc
 
 class ShaderRename:
 	def __init__(self):
@@ -102,13 +119,15 @@ class ShaderRename:
 
 	def Replace(self, fn):
 		mat = File(fn)
+		rc = 0
 		for i in self.Map:
-			mat.ReplaceString(i, self.Map[i])
+			rc = rc + mat.ReplaceString(i, self.Map[i])
 
-		fl = open(fn, "w+b")
-		for i in mat.Line:
-			fl.write(i.Text+"\n")
-		fl.close()
+		if(rc != 0):
+			fl = open(fn+".new", "w+b")
+			for i in mat.Line:
+				fl.write(i.Text+"\n")
+			fl.close()
 		return
 
 def Usage():
