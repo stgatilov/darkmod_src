@@ -66,7 +66,7 @@ class File:
 			if(len(t) <= 1):
 				continue
 
-			print len(t), t
+			#print len(t), t
 
 			#print old, new
 			if(len(t[1]) > 0):
@@ -128,7 +128,7 @@ class ShaderRename:
 
 		if(rc != 0):
 			#print  "... updating"
-			fl = open(fn+".new", "w+b")
+			fl = open(fn, "w+b")
 			for i in mat.Line:
 				fl.write(i.Text+"\n")
 			fl.close()
