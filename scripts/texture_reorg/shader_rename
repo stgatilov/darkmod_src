@@ -60,14 +60,17 @@ class File:
 
 	def ReplaceString(self, old, new):
 		rc = 0
-		#print "   "+old, new
+		#print old, new
 		for i in self.Line:
 			t = i.Text.split(old)
 			if(len(t) <= 1):
 				continue
 
+			print len(t), t
+
 			#print old, new
 			if(len(t[1]) > 0):
+				print len(t), t
 				b = 0
 				if(t[1][0:1] == "\""
 				   or t[1][0:1] == "\t"
@@ -80,8 +83,8 @@ class File:
 				if(b != 1):
 					continue
 
-				i.Text = t[0]+new+t[1]
-				rc = 1
+			i.Text = t[0]+new+t[1]
+			rc = 1
 
 		return rc
 
@@ -124,6 +127,7 @@ class ShaderRename:
 			rc = rc + mat.ReplaceString(i, self.Map[i])
 
 		if(rc != 0):
+			print  "... updating"
 			fl = open(fn+".new", "w+b")
 			for i in mat.Line:
 				fl.write(i.Text+"\n")
