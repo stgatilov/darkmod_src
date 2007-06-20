@@ -989,7 +989,29 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
 
 	spawnArgs.GetBool( "talks",					"0",		talks );
-
+	
+	//// DarkMod: Alert level parameters
+	// The default values of these spawnargs are normally set in tdm_ai_base.def, so the default values
+	// here are somewhat superfluous. It's better than having defaults of 0 here though.
+	spawnArgs.GetFloat( "alert_thresh1",		"1.5",		thresh_1 );
+	spawnArgs.GetFloat( "alert_thresh2",		"8",		thresh_2 );
+	spawnArgs.GetFloat( "alert_thresh3",		"18",		thresh_3 );
+	spawnArgs.GetFloat( "alert_thresh_combat",	"23",		thresh_combat );
+	// Grace period info for each alert level
+	spawnArgs.GetFloat( "alert_gracetime1",		"2",		m_gracetime_1 );
+	spawnArgs.GetFloat( "alert_gracetime2",		"3.5",		m_gracetime_2 );
+	spawnArgs.GetFloat( "alert_gracetime3",		"2",		m_gracetime_3 );
+	spawnArgs.GetFloat( "alert_gracefrac1",		"1.2",		m_gracefrac_1 );
+	spawnArgs.GetFloat( "alert_gracefrac2",		"1.2",		m_gracefrac_2 );
+	spawnArgs.GetFloat( "alert_gracefrac3",		"1.0",		m_gracefrac_3 );
+	spawnArgs.GetFloat( "alert_gracecount1",	"5",		m_gracecount_1 );
+	spawnArgs.GetFloat( "alert_gracecount2",	"5",		m_gracecount_2 );
+	spawnArgs.GetFloat( "alert_gracecount3",	"4",		m_gracecount_3 );
+	// De-alert times for each alert level
+	spawnArgs.GetFloat( "alert_time1",			"4",		atime1 );
+	spawnArgs.GetFloat( "alert_time2",			"30",		atime2 );
+	spawnArgs.GetFloat( "alert_time3",			"120",		atime3 );
+	
 	// DarkMod: Get the movement type audible volumes from the spawnargs
 	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
 	spawnArgs.GetFloat( "stepvol_run",			"0",		m_stepvol_run );
@@ -1608,6 +1630,13 @@ void idAI::LinkScriptVariables( void )
 	AI_ALERTED.LinkTo(			scriptObject, "AI_ALERTED" );
 
 	AI_AlertNum.LinkTo(			scriptObject, "AI_AlertNum" );
+
+	AI_lastAlertPosSearched.LinkTo(			scriptObject, "AI_lastAlertPosSearched");
+	AI_chancePerSecond_RandomLookAroundWhileIdle.LinkTo(scriptObject, "AI_chancePerSecond_RandomLookAroundWhileIdle");
+	AI_timeOfLastStimulusBark.LinkTo(		scriptObject, "AI_timeOfLastStimulusBark");
+	AI_currentAlertLevelDuration.LinkTo(	scriptObject, "AI_currentAlertLevelDuration");
+	AI_currentAlertLevelStartTime.LinkTo(	scriptObject, "AI_currentAlertLevelStartTime");
+
 	stateOfMind_b_enemiesHaveBeenSeen.LinkTo ( scriptObject, "stateOfMind_b_enemiesHaveBeenSeen" );
 	stateOfMind_b_itemsHaveBeenStolen.LinkTo ( scriptObject, "stateOfMind_b_itemsHaveBeenStolen" );
 	stateOfMind_count_evidenceOfIntruders.LinkTo ( scriptObject, "stateOfMind_count_evidenceOfIntruders" );

@@ -171,6 +171,7 @@ const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
 const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
 
 // Alert events
+const idEventDef AI_SetAlertLevel( "setAlertLevel", "f" );
 const idEventDef AI_Alert( "alert", "sf" );
 const idEventDef AI_VisScan( "visScan", NULL, 'e' );
 const idEventDef AI_GetSndDir( "getSndDir", NULL, 'v' );
@@ -532,6 +533,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
 	EVENT( AI_IsFriend,							idAI::Event_IsFriend )
 	EVENT( AI_IsNeutral,						idAI::Event_IsNeutral )
+	EVENT( AI_SetAlertLevel,					idAI::Event_SetAlertLevel )
 	EVENT( AI_Alert,							idAI::Event_Alert )
 	EVENT( AI_GetSndDir,						idAI::Event_GetSndDir )
 	EVENT( AI_GetVisDir,						idAI::Event_GetVisDir )
@@ -3608,6 +3610,120 @@ void idAI::Event_GetAudThresh( void )
 void idAI::Event_SetAudThresh( float val )
 {
 	m_AudThreshold = val;
+}
+
+void idAI::Event_SetAlertLevel( float newAlertLevel)
+{
+	bool bool_alertRising = false;
+	if (newAlertLevel > AI_AlertNum) bool_alertRising = true;
+	AI_AlertNum = newAlertLevel;
+	
+	// grace period vars
+	float grace_time;
+	float grace_frac;
+	float grace_count;
+
+	// If alert level is less than 3, sheathe weapon
+	if (newAlertLevel < thresh_3)
+	{
+		/*TODO
+		// Sheathe weapon if appropriate
+		if( m_DrawsWeapon && m_WeaponDrawn )
+		{
+			SheathWeapon();
+		}*/
+	}
+	else
+	{
+		/*TODO
+		// Draw weapon if appropriate
+		if( m_DrawsWeapon && !m_WeaponDrawn )
+		{
+			DrawWeapon();
+		}*/
+	}
+
+	// How long should this alert level last?
+	if (newAlertLevel >= thresh_3)
+	{
+		AI_currentAlertLevelDuration = atime3;
+		grace_time = m_gracetime_3;
+		grace_frac = m_gracefrac_3;
+		grace_count = m_gracecount_3;
+	}
+	else if (newAlertLevel >= thresh_2)
+	{
+		AI_currentAlertLevelDuration = atime2;
+		grace_time = m_gracetime_2;
+		grace_frac = m_gracefrac_2;
+		grace_count = m_gracecount_2;
+	}
+	else if (newAlertLevel >= thresh_1)
+	{
+		AI_currentAlertLevelDuration = atime1;
+		grace_time = m_gracetime_1;
+		grace_frac = m_gracefrac_1;
+		grace_count = m_gracecount_1;
+	}
+	else
+	{
+		AI_currentAlertLevelDuration = 0.0;
+		grace_time = 0.0;
+		grace_frac = 0.0;
+		grace_count = 0;
+	}
+	
+	// Add random variance to alert level duration
+	AI_currentAlertLevelDuration = AI_currentAlertLevelDuration*(1.0 + gameLocal.random.RandomFloat()*0.50);
+	
+	//DEBUG_PRINT ("Alert level duration set to " + AI_currentAlertLevelDuration + " due to alert factor " + AI_AlertNum);
+	
+	// Set time of start of new alert level
+	AI_currentAlertLevelStartTime = gameLocal.realClientTime;
+
+	// Begin the grace period
+	Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
+
+	// Only bark if we haven't barked too recently
+	if (( gameLocal.realClientTime - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		// Note: Alert rising sounds are played based on the type of stimulus before we ever reach this function/
+		// We only have to do alert-down sounds here
+		if (!bool_alertRising)
+		{
+			if (newAlertLevel > thresh_3)
+			{
+				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				// TODO: Shouldn't hard-code the animation name, talk1, here (and below)
+				Event_PlayAndLipSync( "snd_alert3s", "talk1" );
+			}
+			else if (newAlertLevel > thresh_2)
+			{
+			
+				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				Event_PlayAndLipSync( "snd_alertdown2", "talk1" );
+			}	
+			else if (newAlertLevel > thresh_1) 
+			{
+				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				Event_PlayAndLipSync( "snd_alertdown1", "talk1" );
+			}
+		}
+	}
+	
+	// If less than alert 1, all new stimuli should be considered new
+	if (newAlertLevel < thresh_1)
+	{
+		//DEBUG_PRINT ("Clearing last searched alert position");
+		AI_lastAlertPosSearched = idVec3(0,0,0);
+	}
+	
+	// If somewhat alerted, have double chance of looking around while idle
+	if (newAlertLevel > 0)
+	{
+		//DEBUG_PRINT ("Chance of looking around while idle is higher due to agitation");
+		AI_chancePerSecond_RandomLookAroundWhileIdle = IDLE_RANDOM_HEAD_TURN_CHANCE_PER_SECOND * SLIGHTLY_AGITATED_HEAD_TURN_CHANCE_MULTIPLIER;
+	}
 }
 
 void idAI::Event_Alert( const char *type, float amount )

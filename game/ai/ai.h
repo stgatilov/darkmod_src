@@ -707,10 +707,17 @@ protected:
 
 	/**
 	* The current alert number of the AI.
-	* This is checked by scripting to see if the AI should
+	* This is checked to see if the AI should
 	* change alertstates.  This var is very important!
 	**/
 	idScriptFloat			AI_AlertNum;
+	
+	/* Additional scriptvars, imported from scripting. TODO: Document properly (for now, see script for docs) */
+	idScriptVector			AI_lastAlertPosSearched;
+	idScriptFloat			AI_chancePerSecond_RandomLookAroundWhileIdle;
+	idScriptFloat			AI_timeOfLastStimulusBark;
+	idScriptFloat			AI_currentAlertLevelDuration;
+	idScriptFloat			AI_currentAlertLevelStartTime;
 
 	/**
 	* This tracks if the AI has information about any enemies having been spotted.
@@ -868,8 +875,17 @@ protected:
 	* Should be approximately the center of the head
 	**/
 	idVec3					m_KoOffset;
-
-
+	
+	// AI_AlertNum thresholds for each alert level
+	// Alert levels are: 1=aroused, 2=investigating, 3=agitated investigating, combat=hunting
+	float thresh_1, thresh_2, thresh_3, thresh_combat;
+	// Grace period info for each alert level
+	float m_gracetime_1, m_gracetime_2, m_gracetime_3;
+	float m_gracefrac_1, m_gracefrac_2, m_gracefrac_3;
+	float m_gracecount_1, m_gracecount_2, m_gracecount_3;
+	// De-alert times for each alert level
+	float atime1, atime2, atime3;
+	
 	//
 	// ai/ai.cpp
 	//
@@ -1274,8 +1290,10 @@ protected:
 	void					Event_IsFriend( idEntity *ent );
 	void					Event_IsNeutral( idEntity *ent );
 	
+	void					Event_SetAlertLevel( float newAlertLevel );
+
 	/**
-	* Script frontend for, idAI::GetAcuity and idAI::SetAcuity
+	* Script frontend for idAI::GetAcuity and idAI::SetAcuity
 	* and idAI::AlertAI
 	**/
 	void Event_Alert( const char *type, float amount );
