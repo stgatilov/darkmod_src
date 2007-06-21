@@ -3623,25 +3623,9 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	float grace_frac;
 	float grace_count;
 
-	// If alert level is less than 3, sheathe weapon
-	if (newAlertLevel < thresh_3)
-	{
-		/*TODO
-		// Sheathe weapon if appropriate
-		if( m_DrawsWeapon && m_WeaponDrawn )
-		{
-			SheathWeapon();
-		}*/
-	}
-	else
-	{
-		/*TODO
-		// Draw weapon if appropriate
-		if( m_DrawsWeapon && !m_WeaponDrawn )
-		{
-			DrawWeapon();
-		}*/
-	}
+	// If alert level is less than 3, sheathe weapon (if appropriate), otherwise draw it
+	if (newAlertLevel < thresh_3) SheathWeapon();
+	else DrawWeapon();
 
 	// How long should this alert level last?
 	if (newAlertLevel >= thresh_3)

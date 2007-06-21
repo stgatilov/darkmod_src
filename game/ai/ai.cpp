@@ -7286,3 +7286,25 @@ void idAI::StopLipSync()
 	}
 	m_lipSyncActive = false;
 }
+
+/*
+===================== Sheathing/drawing weapons =====================
+*/
+
+void idAI::DrawWeapon() {
+	const function_t* func = scriptObject.GetFunction("DrawWeapon");
+	if (func) {
+		idThread* thread = new idThread(func);
+		thread->CallFunction(this, func, true);
+		thread->DelayedStart(0);
+	}
+}
+
+void idAI::SheathWeapon() {
+	const function_t* func = scriptObject.GetFunction("SheathWeapon");
+	if (func) {
+		idThread* thread = new idThread(func);
+		thread->CallFunction(this, func, true);
+		thread->DelayedStart(0);
+	}
+}

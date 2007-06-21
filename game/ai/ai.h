@@ -1123,6 +1123,11 @@ protected:
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
 	
+	/** Call the script function DrawWeapon (in a new thread) if it exists */
+	void					DrawWeapon();
+	/** Call the script function SheathWeapon (in a new thread) if it exists */
+	void					SheathWeapon();
+	
 	// Tasks to push onto the queue when the AI dies or is KOed
 	idStr					m_killedTask;
 	int						m_killedTaskPriority;
