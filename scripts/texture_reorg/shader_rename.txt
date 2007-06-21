@@ -308,7 +308,7 @@ textures/darkmod/slate/floor/roof_002	textures/darkmod/roof/shingle_dullbrown01
 textures/darkmod/slate/floor/slate_001	textures/darkmod/stone/flat/rough_slate_dark01
 
 textures/darkmod/metal/gen/bronze_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_bronze01
-textures/darkmod/metal/gen/brushedmetal_001	diffusemap	    textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01
+textures/darkmod/metal/gen/brushedmetal_001	textures/darkmod/metal/flat/tiling_1d/gen_shiny_brushedmetal01
 textures/darkmod/metal/gen/copper_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_copper01
 textures/darkmod/metal/gen/gold_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_gold01
 textures/darkmod/metal/gen/iron_001	textures/darkmod/metal/flat/tiling_1d/gen_smooth_iron01
