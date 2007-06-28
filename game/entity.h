@@ -497,7 +497,7 @@ public:
 	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
 	 * bMaster indicates wheter the entity should call it's master or not.
 	 */
-	virtual void FrobAction(bool bMaster);
+	virtual void FrobAction(bool bMaster, bool bPeer = false);
 
 	/**
 	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
