@@ -1,0 +1,190 @@
+#!/usr/bin/python
+
+# This script replaces a string in a file with another. The old and new
+# string can either be specified on the commandline:
+# shader_renamd -o oldname -n newname <list of files>
+# or it can be specified with a tab delimited inputfile where each
+# line must contain two names, the old and the new one seperated by a TAB
+# character.
+
+import os
+import string
+import sys
+import re
+import glob
+import scriptutil
+
+#from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
+
+class Line:
+	def __init__(self):
+		self.LineNumber = -1
+		self.Text = ""
+
+	def __repr__(self):
+		return "[ " + self.LineNumber.__repr__() + ", '" + self.Text + "' ]"
+
+class File:
+	def __init__(self, name):
+		self.Filename = name
+		self.Modified = 0
+		self.Line = []
+		self.PreLoadFile(name)
+
+	def __repr__(self):
+		return "[ '"+self.Filename+"', "+self.Modified.__repr__()+", "+len(self.Line).__repr__()+" ]"
+
+	def PreLoadFile(self, filename):
+		f = open(filename)
+		b = f.read()
+		f.close()
+
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		b = b.split("\n")
+
+		r = Line()
+		nr = 0
+
+		for l in b:
+			s = l.strip()
+
+			nr = nr + 1
+			r.Text = l
+			r.LineNumber = nr
+
+			self.Line.append(r)
+			r = Line()
+
+		return
+
+	def ReplaceString(self, old, new):
+		rc = 0
+		#print old, new
+		for i in self.Line:
+			t = i.Text.split(old)
+			if(len(t) <= 1):
+				continue
+
+			#print len(t), t
+
+			#print old, new
+			if(len(t[1]) > 0):
+				#print len(t), t
+				b = 0
+				if(t[1][0:1] == "\""
+				   or t[1][0:1] == "\t"
+				   or t[1][0:1] == ","
+				   or t[1][0:1] == "("
+				   or t[1][0:1] == ")"
+				   or t[1][0:1] == " "):
+					b = 1
+
+				if(b != 1):
+					continue
+
+			i.Text = t[0]+new+t[1]
+			rc = 1
+
+		return rc
+
+class TextureRename:
+	def __init__(self):
+		self.Map = {}
+
+	def Rename(self, root):
+		flist = scriptutil.ffind(root, namefs=(lambda s: '.svn' not in s, lambda s: 'tiling' in s,))
+
+		for n in flist:
+			s = n.split(root)[1][1:]
+			mode = "nontiling"
+			t = s.split(mode)
+			if len(t) <= 1:
+				mode = "tiling_1d"
+				t = s.split(mode)
+
+			if(len(t) <= 1):
+				print s
+				continue
+
+			p = t[0]
+			tn = t[1][1:]
+			t = tn.split(".")
+			tn = t[0]
+			ext = t[1]
+			print s+" "+p+tn+"_"+mode+"."+ext
+			self.Map[s] = tn+"_"+mode+"."+ext
+
+		return
+
+	def LoadInput(self, fn):
+		fl = open(fn, "r+b")
+		b = fl.read()
+		fl.close()
+
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		b = b.split("\n")
+
+		for l in b:
+			t = l.split(" ")
+			if(len(t) <= 1):
+				continue
+			
+			o = t[0]
+			n = t[1]
+			self.Map[o] = n
+			#print o, n
+		return
+
+	def Replace(self, fn):
+		mat = File(fn)
+		rc = 0
+		for i in self.Map:
+			rc = rc + mat.ReplaceString(i, self.Map[i])
+
+		if(rc != 0):
+			#fl = open(fn+".new", "w+b")
+			fl = open(fn, "w+b")
+			#print  "... updating"
+			for i in mat.Line:
+				fl.write(i.Text+"\n")
+			fl.close()
+		return
+
+def Usage():
+	print "USAGE: texture_rename -r texturerootpath <replacefilename>"
+	print "USAGE: texture_rename -i inputfile <replacefilename>"
+	sys.exit(1)
+
+if __name__ == '__main__':
+	if len(sys.argv) <= 1:
+		Usage()
+
+ 	sr = TextureRename()
+
+	i = 0
+	n = len(sys.argv)
+
+	if(n <= 2):
+		Usage()
+
+	if sys.argv[1] == '-r':
+		if(n <= 3):
+			Usage()
+		i = 3
+		sr.Rename(sys.argv[2])
+
+	if sys.argv[1] == '-i':
+		if(n <= 3):
+			Usage()
+		i = 3
+		sr.LoadInput(sys.argv[2])
+
+	while( i < n):
+		fn = sys.argv[i]
+		print "Processing "+fn
+		#sr.Replace(fn)
+		i = i + 1
+
+	sys.exit(0)

@@ -134,6 +134,10 @@ class MaterialCheck:
 					if(len(t) > 1):
 						continue
 
+					t = l.Text.split("/editor/")
+					if(len(t) > 1):
+						continue
+
 					s = "models/"
 					t = l.Text.strip().split(s)
 					if(len(t) == 1):
