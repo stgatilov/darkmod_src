@@ -141,12 +141,14 @@ class TextureRename:
 		mat = File(fn)
 		rc = 0
 		for i in self.Map:
-			rc = rc + mat.ReplaceString(i, self.Map[i])
+			o = i.split(".")[0]
+			n = self.Map[i].split(".")[0]
+			rc = rc + mat.ReplaceString(o, n)
 
 		if(rc != 0):
 			#fl = open(fn+".new", "w+b")
 			fl = open(fn, "w+b")
-			#print  "... updating"
+			print  fn+" ... updating"
 			for i in mat.Line:
 				fl.write(i.Text+"\n")
 			fl.close()
@@ -158,6 +160,7 @@ def Usage():
 	sys.exit(1)
 
 if __name__ == '__main__':
+	fl = 0
 	if len(sys.argv) <= 1:
 		Usage()
 
@@ -173,18 +176,23 @@ if __name__ == '__main__':
 		if(n <= 3):
 			Usage()
 		i = 3
+		fl = 1
 		sr.Rename(sys.argv[2])
 
 	if sys.argv[1] == '-i':
 		if(n <= 3):
 			Usage()
 		i = 3
+		fl = 1
 		sr.LoadInput(sys.argv[2])
+
+	if fl == 0:
+		Usage()
 
 	while( i < n):
 		fn = sys.argv[i]
-		print "Processing "+fn
-		#sr.Replace(fn)
+		#print "Processing "+fn
+		sr.Replace(fn)
 		i = i + 1
 
 	sys.exit(0)
