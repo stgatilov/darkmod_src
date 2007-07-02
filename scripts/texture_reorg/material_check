@@ -210,7 +210,15 @@ class MaterialCheck:
 
 		return
 
+def Usage():
+	print "USAGE: materialcheck mod_root"
+	sys.exit(1)
+
 if __name__ == '__main__':
+	if len(sys.argv) <= 1:
+		Usage()
+
+	SrcPath = sys.argv[1]
 	mat = MaterialCheck()
 	mat.CheckMaterials()
 

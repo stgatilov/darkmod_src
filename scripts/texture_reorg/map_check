@@ -1,0 +1,171 @@
+#!/usr/bin/python
+
+import os
+import string
+import sys
+import re
+import glob
+import scriptutil
+
+#from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
+
+material_list = {}
+
+class MaterialLine:
+	def __init__(self):
+		self.LineNumber = -1
+		self.Type = 'l'
+		self.Indentation = 0
+		self.Text = ""
+
+	def __repr__(self):
+		return "[ " + self.LineNumber.__repr__() + ", '" + self.Type + "', " + self.Indentation.__repr__() + ", '" + self.Text + "' ]"
+
+class Material:
+	def __init__(self, path, name):
+		self.Path = path
+		self.Filename = name
+		self.Modified = 0
+		self.Buffer = None
+		self.Line = []
+		self.CacheMaterial()
+
+	def __repr__(self):
+		return "[ '"+self.Filename+"', "+self.Modified.__repr__()+", "+len(self.Line).__repr__()+" ]"
+
+	def CacheMaterial(self):
+		f = open(self.Path + "/" + self.Filename)
+		self.Buffer = f.read()
+		self.Buffer = self.Buffer.replace("\r\n", "\n")
+		self.Buffer = self.Buffer.replace("\r", "\n")
+		f.close()
+
+		b = self.Buffer.split("\n")
+		last = None
+		r = MaterialLine()
+		ind = 0
+		prevind = 0
+		nr = 0
+
+		for l in b:
+			t = l.split("\r")
+			if(len(t) > 1):
+				l = t[0]
+
+			s = l.strip()
+			if s[0:1] == '{':
+				ind = ind + 1
+			elif s[0:1] == '}':
+				ind = ind - 1
+			elif s[0:2] == '//':
+				r.Type = 'c'
+
+			nr = nr + 1
+			if(len(l) == 0):
+				continue
+			r.Indentation = ind
+			r.Text = l
+			r.LineNumber = nr
+
+			# Check if we have found a material name
+			if ind == 1 and prevind == 0:
+				last.Type = 'n'
+				try:
+					n = material_list[last.Text]
+					#if(n[0].Filename != self.Filename):
+					#	print "DUPLICATE MATERIAL! ["+n[0].Filename + "] [" + self.Filename + "] [" + last.Text + "]"
+				except KeyError:
+					material_list[last.Text] = [ self, last.LineNumber ]
+
+			self.Line.append(r)
+			last = r
+			r = MaterialLine()
+			prevind = ind
+
+		return
+
+class MapCheck:
+	def __init__(self, d3materialdir, moddir):
+		self.MaterialFile = {}
+		self.CacheMaterials(d3materialdir, "*.mtr")
+		self.CacheMaterials(moddir, "materials/*.mtr")
+
+	def CacheMaterials(self, path, pattern):
+		print "Caching material files ... "+path
+		name = glob.glob(path+"/"+pattern)
+		for i in name:
+			i = i.split(path+"/")[1]
+			t = i.split("replacements.txt")
+			if(len(t) > 1):
+				continue
+
+			t = i.split("gildoran_notes.txt")
+			if(len(t) > 1):
+				continue
+
+			#self.MaterialFile[i] = Material(path, i)
+			Material(path, i)
+
+		return
+
+	def CheckMap(self, fn):
+		tex = {}
+
+		f = open(fn)
+		b = f.read()
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		f.close()
+		linenr = 0
+
+		b = b.split("\n")
+		ind = 0
+		for l in b:
+			linenr = linenr + 1
+			l = l.strip()
+			n = len(l)
+			if n == 0:
+				continue
+
+			if n > 2 and l[0] == '/' and l[1] == '/':
+				continue
+			if l[0] == '{':
+				ind = ind + 1
+				continue
+			if l[0] == '}':
+				ind = ind - 1
+				continue
+
+			if ind == 3:
+				t = l.split('"')
+				lines = []
+				tn = t[1]
+				try:
+					lines = tex[tn]
+				except KeyError:
+					tex[tn] = lines
+
+				lines.append(linenr)
+				#print ind, l
+
+		for i in tex:
+			print i, len(tex[i])
+		return
+
+def Usage():
+	print "USAGE: map_check doom_material_dir mod_root { mapfile } ..."
+	sys.exit(1)
+
+if __name__ == '__main__':
+	if len(sys.argv) <= 2:
+		Usage()
+
+	mp = MapCheck(sys.argv[1], sys.argv[2])
+	i = 3
+	n = len(sys.argv)
+
+	while i < n:
+		mp.CheckMap(sys.argv[i])
+		i = i + 1
+
+	sys.exit(0)
