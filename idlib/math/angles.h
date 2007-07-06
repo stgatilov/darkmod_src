@@ -86,7 +86,10 @@ public:
 
 extern idAngles ang_zero;
 
-ID_INLINE idAngles::idAngles( void ) {
+// Default constructor
+ID_INLINE idAngles::idAngles( void )
+: pitch(0), yaw(0), roll(0)
+{
 }
 
 ID_INLINE idAngles::idAngles( float pitch, float yaw, float roll ) {

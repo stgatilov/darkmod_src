@@ -373,7 +373,12 @@ public:
 extern idVec3 vec3_origin;
 #define vec3_zero vec3_origin
 
-ID_INLINE idVec3::idVec3( void ) {
+// Default constructor
+ID_INLINE idVec3::idVec3( void ):
+	x(0.0f), // OrbWeaver: let's not leave stuff uninitialised
+	y(0.0f),
+	z(0.0f)
+{
 }
 
 ID_INLINE idVec3::idVec3( const float x, const float y, const float z ) {
