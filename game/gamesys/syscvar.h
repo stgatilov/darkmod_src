@@ -147,8 +147,6 @@ extern idCVar cv_ai_ko_show;
 
 
 /**
-
-/**
 * End DarkMod cvars
 **/
 
