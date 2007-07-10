@@ -75,14 +75,12 @@ public:
 	 * GetCategory returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */
-	CInventoryCategory	*GetCategory(const char *CategoryName = NULL, int *Index = NULL);
-	inline CInventoryCategory	*GetCategory(idStr const &CategoryName, int *Index = NULL) { return GetCategory(CategoryName.c_str(), Index); }
+	CInventoryCategory	*GetCategory(const idStr& CategoryName, int *Index = NULL);
 
 	/**
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
-	int					GetCategoryIndex(const char *CategoryName);
-	inline int			GetCategoryIndex(idStr const &CategoryName) { return GetCategoryIndex(CategoryName.c_str()); }
+	int					GetCategoryIndex(const idStr& CategoryName);
 
 	/**
 	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally
@@ -90,9 +88,7 @@ public:
 	 * if the item can not be found. The ItemIndex pointer only when it is not NULL of course.
 	 */
 	int						GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex = NULL);
-	int						GetCategoryItemIndex(const char *ItemName, int *ItemIndex = NULL);
-	inline int				GetCategoryItemIndex(const idStr &ItemName, int *ItemIndex = NULL) 
-									{ return GetCategoryItemIndex(ItemName.c_str(), ItemIndex); };
+	int						GetCategoryItemIndex(const idStr& ItemName, int *ItemIndex = NULL);
 
 	/**
 	 * Remove entity from map will remove the entity from the map. If 
@@ -117,19 +113,15 @@ public:
 	 * entity.
 	 */
 	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
-	void					PutItem(CInventoryItem *Item, char const *Category = NULL);
+	void					PutItem(CInventoryItem *Item, idStr category);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem			*GetItem(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
-	inline CInventoryItem	*GetItem(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
-						{ return GetItem(Name.c_str(), Category, bCreateCategory); } ;
+	CInventoryItem			*GetItem(const idStr& Name, char const *Category = NULL, bool bCreateCategory = false);
 
-	CInventoryItem			*GetItemById(const char *Name, char const *Category = NULL, bool bCreateCategory = false);
-	inline CInventoryItem	*GetItemById(const idStr &Name, char const *Category = NULL, bool bCreateCategory = false)
-						{ return GetItemById(Name.c_str(), Category, bCreateCategory); } ;
+	CInventoryItem			*GetItemById(const idStr& Name, char const *Category = NULL, bool bCreateCategory = false);
 
 protected:
 	void				Save(idSaveGame *savefile) const;

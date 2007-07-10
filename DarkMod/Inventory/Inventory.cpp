@@ -154,19 +154,19 @@ Quit:
 	return rc;
 }
 
-CInventoryCategory *CInventory::GetCategory(const char *pName, int *Index)
+CInventoryCategory *CInventory::GetCategory(const idStr& CategoryName, int *Index)
 {
 	CInventoryCategory *rc = NULL;
 	int i, n;
 
-	// If the groupname is null we look for the default group
-	if(pName == NULL || pName[0] == 0)
+	// If the groupname is empty we look for the default group
+	if (CategoryName.IsEmpty())
 		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
 
 	n = m_Category.Num();
 	for(i = 0; i < n; i++)
 	{
-		if(m_Category[i]->m_Name.Cmp(pName) == 0)
+		if (m_Category[i]->m_Name == CategoryName)
 		{
 			rc = m_Category[i];
 			if(Index != NULL)
@@ -180,7 +180,7 @@ Quit:
 	return rc;
 }
 
-int CInventory::GetCategoryIndex(const char *CategoryName)
+int CInventory::GetCategoryIndex(const idStr& CategoryName)
 {
 	int i = -1;
 
@@ -189,7 +189,7 @@ int CInventory::GetCategoryIndex(const char *CategoryName)
 	return i;
 }
 
-int CInventory::GetCategoryItemIndex(const char *ItemName, int *ItemIndex)
+int CInventory::GetCategoryItemIndex(const idStr& ItemName, int *ItemIndex)
 {
 	int rc = -1;
 	int i;
@@ -198,7 +198,7 @@ int CInventory::GetCategoryItemIndex(const char *ItemName, int *ItemIndex)
 	if(ItemIndex != NULL)
 		*ItemIndex = -1;
 
-	if(ItemName == NULL)
+	if (ItemName.IsEmpty())
 		goto Quit;
 
 	for(i = 0; i < m_Category.Num(); i++)
@@ -403,7 +403,7 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 		ent->PostEventMS(&EV_Remove, 0);
 }
 
-void CInventory::PutItem(CInventoryItem *item, char const *category)
+void CInventory::PutItem(CInventoryItem *item, idStr category)
 {
 	int i;
 	CInventoryCategory *gr;
@@ -412,8 +412,11 @@ void CInventory::PutItem(CInventoryItem *item, char const *category)
 		goto Quit;
 
 	// Check if it is the default group or not.
-	if(category == NULL || category[0] == 0)
+	if (category.IsEmpty())
+	{
+		// category is empty, assign the item to the default group
 		gr = m_Category[0];
+	}
 	else
 	{
 		gr = GetCategory(category, &i);
@@ -439,7 +442,7 @@ Quit:
 	return;
 }
 
-CInventoryItem *CInventory::GetItem(const char *Name, char const *Category, bool bCreateCategory)
+CInventoryItem *CInventory::GetItem(const idStr& Name, char const *Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
@@ -476,13 +479,13 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetItemById(const char *id, char const *Category, bool bCreateCategory)
+CInventoryItem *CInventory::GetItemById(const idStr& id, char const *Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
 	CInventoryCategory *gr;
 
-	if(id == NULL || id[0] == 0)
+	if (id.IsEmpty())
 		goto Quit;
 
 	if(Category == NULL || Category[0] == 0)
