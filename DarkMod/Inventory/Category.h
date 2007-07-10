@@ -39,7 +39,7 @@ public:
 	int					GetLoot(int &Gold, int &Jewelry, int &Goods);
 
 protected:
-	CInventoryCategory(idEntity *owner, const char* name = NULL);
+	CInventoryCategory(CInventory* inventory, const idStr& name = "");
 	~CInventoryCategory();
 
 	void				PutItem(CInventoryItem *Item);

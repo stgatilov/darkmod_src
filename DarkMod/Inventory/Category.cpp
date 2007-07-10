@@ -15,11 +15,12 @@
 static bool init_version = FileVersionList("$Id: Category.cpp 987 2007-05-12 13:36:09Z greebo $", init_version);
 
 #include "Category.h"
+#include "Inventory.h"
 
 // Constructor
-CInventoryCategory::CInventoryCategory(idEntity *owner, const char* name)
+CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name)
 {
-	m_Owner = owner;
+	m_Owner = (inventory != NULL) ? inventory->GetOwner() : NULL;
 	m_Name = name;
 }
 

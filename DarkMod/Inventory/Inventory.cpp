@@ -136,15 +136,15 @@ CInventoryCategory *CInventory::CreateCategory(const idStr& CategoryName, int *I
 	int i;
 
 	if (CategoryName.IsEmpty())
-		goto Quit;
+		goto Quit; // empty category name
 
 	if((rc = GetCategory(CategoryName, Index)) != NULL)
-		goto Quit;
+		goto Quit; // Category already exists
 
-	if((rc = new CInventoryCategory(m_Owner.GetEntity())) == NULL)
-		goto Quit;
+	// Try to allocate a new category with a link back to <this> Inventory
+	if((rc = new CInventoryCategory(this)) == NULL)
+		goto Quit; // Creation failed
 
-	rc->SetInventory(this);
 	rc->m_Name = CategoryName;
 	i = m_Category.AddUnique(rc);
 	if(Index != NULL)
