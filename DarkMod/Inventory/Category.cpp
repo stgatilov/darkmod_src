@@ -79,13 +79,13 @@ CInventoryItem *CInventoryCategory::GetItem(int i)
 	return rc;
 }
 
-CInventoryItem *CInventoryCategory::GetItem(const char *Name)
+CInventoryItem *CInventoryCategory::GetItem(const idStr& Name)
 {
 	CInventoryItem *rc = NULL;
 	CInventoryItem *e;
 	int i, n;
 
-	if(Name == NULL || Name[0] == 0)
+	if (Name.IsEmpty())
 		goto Quit;
 
 	n = m_Item.Num();
@@ -103,13 +103,13 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventoryCategory::GetItemById(const char *id)
+CInventoryItem *CInventoryCategory::GetItemById(const idStr& id)
 {
 	CInventoryItem *rc = NULL;
 	CInventoryItem *e;
 	int i, n;
 
-	if(id == NULL || id[0] == 0)
+	if(id.IsEmpty())
 		goto Quit;
 
 	n = m_Item.Num();

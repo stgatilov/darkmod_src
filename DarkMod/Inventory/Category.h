@@ -27,12 +27,13 @@ public:
 
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
 
-	CInventoryItem		*GetItemById(const char *Name);
-	inline CInventoryItem *GetItemById(const idStr &Name) { return GetItemById(Name.c_str()); };
+	// Look up an InventoryItem by its ItemId (NOT equivalent to GetItem(const idStr& Name) btw).
+	CInventoryItem		*GetItemById(const idStr& id);
 
-	CInventoryItem		*GetItem(const char *Name);
-	inline CInventoryItem	*GetItem(const idStr &Name) { return GetItem(Name.c_str()); };
+	// Look up an InventoryItem by <name> or <index>
+	CInventoryItem		*GetItem(const idStr& Name);
 	CInventoryItem		*GetItem(int Index);
+
 	int					GetItemIndex(const idStr &Name);
 	int					GetItemIndex(CInventoryItem *);
 
