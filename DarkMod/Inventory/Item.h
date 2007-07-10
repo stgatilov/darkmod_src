@@ -10,7 +10,7 @@
 #define __DARKMOD_INVENTORYITEM_H__
 
 /**
- * InventoryItem is a item that belongs to a group.
+ * InventoryItem is an item that belongs to a group.
  */
 class CInventoryItem
 {
@@ -79,8 +79,8 @@ public:
 	void					SetHUD(const idStr &HudName, int layer);
 	inline idStr			GetHUD(void) { return m_HudName; };
 
-	void					SetDeleteable(bool bDeleteable = true);
-	inline bool				IsDeletable(void) { return m_Deleteable; };
+	void					SetDeletable(bool bDeletable = true);
+	inline bool				IsDeletable(void) { return m_Deletable; };
 
 	inline void				SetItemId(const idStr &id) { m_ItemId = id; };
 	inline idStr			GetItemId(void) { return m_ItemId; };
@@ -109,7 +109,7 @@ protected:
 											// is put into the inventory
 	bool					m_Hud;
 	bool					m_Orientated;	// Taken from the entity
-	bool					m_Deleteable;	// Can the entity be deleted when it has been put into the inventory?
+	bool					m_Deletable;	// Can the entity be deleted when it has been put into the inventory?
 
 };
 

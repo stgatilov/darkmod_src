@@ -31,7 +31,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
 	m_Orientated = false;
-	m_Deleteable = false;
+	m_Deletable = false;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -113,10 +113,10 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 		m_Hud = false;
 }
 
-void CInventoryItem::SetDeleteable(bool bDeleteable)
+void CInventoryItem::SetDeletable(bool bDeletable)
 {
 	if(m_Droppable == true)
-		m_Deleteable = false;
+		m_Deletable = false;
 	else
-		m_Deleteable = bDeleteable;
+		m_Deletable = bDeletable;
 }

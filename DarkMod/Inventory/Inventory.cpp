@@ -320,8 +320,10 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	else
 		count = 0;
 
+	// We're ready to actually create an inventory item
 	item = new CInventoryItem(owner);
 
+	// "Item" Entity is NULL for deletable inventory items
 	if(del == 1)
 		item->SetItem(NULL);
 	else
@@ -345,10 +347,11 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 										true );
 	}
 
+	// Store the temporary variables into the Item's settings
 	item->SetItemId(id);
 	item->SetType(it);
 	item->SetDroppable(droppable);
-	item->SetDeleteable(del);
+	item->SetDeletable(del);
 	item->SetName(name);
 	item->SetStackable(stackable);			// has to come before SetCount :)
 	item->SetCount(count);
@@ -356,11 +359,13 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	item->m_BindMaster = ent->GetBindMaster();
 	item->m_Orientated = ent->fl.bindOrientated;
 
+	// Put the item into its category
 	PutItem(item, category);
 
 	rc = item;
 
 Quit:
+	// Remove the entity from the map, if this has been requested
 	if(del != -1)
 		RemoveEntityFromMap(ent, del);
 
@@ -417,10 +422,9 @@ void CInventory::PutItem(CInventoryItem *item, char const *category)
 	}
 
 	gr->PutItem(item);
-	if(item->IsDeletable() == true)
-	{
-		if(item->IsDroppable() == true)
-			item->SetDeleteable(false);
+	if (item->IsDeletable() && item->IsDroppable())	{
+		// Prevent droppable objects from being deletable
+		item->SetDeletable(false);
 	}
 
 	RemoveEntityFromMap(item->GetItemEntity(), item->IsDeletable());
