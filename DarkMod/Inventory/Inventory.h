@@ -68,8 +68,7 @@ public:
 	/**
 	 * CreateCategory creates the named group if it doesn't already exist.
 	 */
-	CInventoryCategory		*CreateCategory(const char *CategoryName, int *Index = NULL);
-	inline CInventoryCategory	*CreateCategory(idStr const &CategoryName, int *Index = NULL) { return CreateCategory(CategoryName.c_str(), Index); }
+	CInventoryCategory		*CreateCategory(const idStr& CategoryName, int *Index = NULL);
 
 	/**
 	 * GetCategory returns the pointer to the given group and it's index, 
@@ -113,15 +112,15 @@ public:
 	 * entity.
 	 */
 	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
-	void					PutItem(CInventoryItem *Item, idStr category);
+	void					PutItem(CInventoryItem *Item, const idStr& category);
 
 	/**
 	 * Retrieve an item from an inventory. If no group is specified, all of 
 	 * them are searched, otherwise only the given group.
 	 */
-	CInventoryItem			*GetItem(const idStr& Name, char const *Category = NULL, bool bCreateCategory = false);
+	CInventoryItem			*GetItem(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
-	CInventoryItem			*GetItemById(const idStr& Name, char const *Category = NULL, bool bCreateCategory = false);
+	CInventoryItem			*GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
 protected:
 	void				Save(idSaveGame *savefile) const;

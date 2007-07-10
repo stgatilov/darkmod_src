@@ -130,22 +130,22 @@ void CInventory::SetOwner(idEntity *owner)
 		m_Category[i]->SetOwner(owner);
 }
 
-CInventoryCategory *CInventory::CreateCategory(const char *Name, int *Index)
+CInventoryCategory *CInventory::CreateCategory(const idStr& CategoryName, int *Index)
 {
 	CInventoryCategory	*rc = NULL;
 	int i;
 
-	if(Name == NULL || Name[0] == 0)
+	if (CategoryName.IsEmpty())
 		goto Quit;
 
-	if((rc = GetCategory(Name, Index)) != NULL)
+	if((rc = GetCategory(CategoryName, Index)) != NULL)
 		goto Quit;
 
 	if((rc = new CInventoryCategory(m_Owner.GetEntity())) == NULL)
 		goto Quit;
 
 	rc->SetInventory(this);
-	rc->m_Name = Name;
+	rc->m_Name = CategoryName;
 	i = m_Category.AddUnique(rc);
 	if(Index != NULL)
 		*Index = i;
@@ -403,7 +403,7 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 		ent->PostEventMS(&EV_Remove, 0);
 }
 
-void CInventory::PutItem(CInventoryItem *item, idStr category)
+void CInventory::PutItem(CInventoryItem *item, const idStr& category)
 {
 	int i;
 	CInventoryCategory *gr;
@@ -424,7 +424,9 @@ void CInventory::PutItem(CInventoryItem *item, idStr category)
 			gr = CreateCategory(category);
 	}
 
+	// Pack the item into the category
 	gr->PutItem(item);
+
 	if (item->IsDeletable() && item->IsDroppable())	{
 		// Prevent droppable objects from being deletable
 		item->SetDeletable(false);
@@ -442,13 +444,13 @@ Quit:
 	return;
 }
 
-CInventoryItem *CInventory::GetItem(const idStr& Name, char const *Category, bool bCreateCategory)
+CInventoryItem *CInventory::GetItem(const idStr& Name, const idStr& Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
 	CInventoryCategory *gr;
 
-	if(Category == NULL || Category[0] == 0)
+	if (Category.IsEmpty())
 	{
 		n = m_Category.Num();
 		s = 0;
@@ -479,7 +481,7 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventory::GetItemById(const idStr& id, char const *Category, bool bCreateCategory)
+CInventoryItem *CInventory::GetItemById(const idStr& id, const idStr& Category, bool bCreateCategory)
 {
 	CInventoryItem *rc = NULL;
 	int i, n, s;
@@ -488,7 +490,7 @@ CInventoryItem *CInventory::GetItemById(const idStr& id, char const *Category, b
 	if (id.IsEmpty())
 		goto Quit;
 
-	if(Category == NULL || Category[0] == 0)
+	if (Category.IsEmpty())
 	{
 		n = m_Category.Num();
 		s = 0;
