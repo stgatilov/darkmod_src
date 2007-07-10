@@ -901,12 +901,6 @@
 					RelativePath=".\DarkMod\Intersection.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\inventory.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\inventory.h">
-				</File>
-				<File
 					RelativePath=".\DarkMod\KeyboardHook.cpp">
 				</File>
 				<File
@@ -1074,6 +1068,58 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\StimResponse\StimResponseTimer.h">
+					</File>
+				</Filter>
+				<Filter
+					Name="Inventory"
+					Filter="">
+					<File
+						RelativePath=".\DarkMod\Inventory\Category.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Category.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Cursor.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Cursor.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Inventory.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Inventory.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Item.cpp">
+						<FileConfiguration
+							Name="Debug|Win32">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug with inlines|Win32">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug with inlines and memory log|Win32">
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\Item.h">
 					</File>
 				</Filter>
 			</Filter>
