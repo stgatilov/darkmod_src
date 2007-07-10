@@ -7662,22 +7662,28 @@ void idEntity::CheckInventoryInit(void)
 
 CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 {
+	// Get (create) the InventoryCursor of this Entity.
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *rc = NULL;
 	CInventoryItem *prev = NULL;
 	idStr s;
 	int v = 0;
 
+	// Sanity check
 	if(ent == NULL)
 		goto Quit;
 
 	// Check if we have an inventory item.
 	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
-		goto Quit;
+		goto Quit; // not an inventory item
 
+	// Get the pointer to the current item before adding the new one (needed for script events)
 	prev = crsr->GetCurrentItem();
+
+	// Add the new item to the Inventory (with <this> as owner)
 	rc = crsr->Inventory()->PutItem(ent, this);
 
+	// Play the (optional) acquire sound
 	ent->spawnArgs.GetString("snd_acquire", "", s);
 	if(s.Length() == 0)
 		s = cv_tdm_inv_loot_sound.GetString();
@@ -7686,6 +7692,7 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 	if(rc)
 	{
+		// Item could be added to the inventory, check for custom HUD
 		if(ent->spawnArgs.GetString("inv_hud", "", s) != false)
 		{
 			ent->spawnArgs.GetInt("inv_hud_layer", "0", v);
@@ -7693,7 +7700,10 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 		}
 	}
 
+	// Focus the cursor on the newly added item
 	crsr->SetCurrentItem(rc);
+
+	// Fire the script event on the previously selected inventory item
 	if(_hud != NULL)
 		inventoryChangeSelection(_hud, true, prev);
 

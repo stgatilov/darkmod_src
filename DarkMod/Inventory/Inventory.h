@@ -117,6 +117,11 @@ public:
 	 * Put an item in the inventory. Use the default group if none is specified.
 	 * The name, that is to be displayed on a GUI, must be set on the respective
 	 * entity.
+	 *
+	 * greebo: This routine basically checks all the spawnargs, determines the 
+	 *         inventory category, the properties like "droppable" and such.
+	 *         If the according spawnarg is set, the entity is removed from the map.
+	 *         This can either mean "hide" or "delete", depending on the stackable property.
 	 */
 	CInventoryItem			*PutItem(idEntity *Item, idEntity *Owner);
 	void					PutItem(CInventoryItem *Item, const idStr& category);
