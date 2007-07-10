@@ -48,6 +48,13 @@
  * a subset of the existing categories in a given inventory.
  */
 
+/**
+ * An inventory is a container for groups of items. An inventory has one default group
+ * which is always created. All other groups are up to the mapper to decide.
+ *
+ * If an item is put into an inventory, without specifying the group, it will be put
+ * in the default group which is always at index 0 and has the name DEFAULT.
+ */
 class CInventory : public idClass
 {
 public:

@@ -76,12 +76,12 @@ Quit:
 	return rc;
 }
 
-bool CInventoryCursor::SetCurrentItem(const char *Item)
+bool CInventoryCursor::SetCurrentItem(const idStr& Item)
 {
 	bool rc = false;
 	int group, item;
 
-	if(Item == NULL)
+	if (Item.IsEmpty())
 		goto Quit;
 
 	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
@@ -306,12 +306,12 @@ void CInventoryCursor::SetCategoryIgnored(const CInventoryCategory *c)
 		m_CategoryIgnore.AddUnique(c);
 }
 
-void CInventoryCursor::SetCategoryIgnored(const char *cn)
+void CInventoryCursor::SetCategoryIgnored(const idStr& categoryName)
 {
-	if(cn == NULL)
+	if (categoryName.IsEmpty())
 		return;
 
-	CInventoryCategory *c = m_Inventory->GetCategory(cn);
+	CInventoryCategory *c = m_Inventory->GetCategory(categoryName);
 	SetCategoryIgnored(c);
 }
 
@@ -332,12 +332,12 @@ Quit:
 	return;
 }
 
-void CInventoryCursor::RemoveCategoryIgnored(const char *cn)
+void CInventoryCursor::RemoveCategoryIgnored(const idStr& categoryName)
 {
-	if(cn == NULL)
+	if (categoryName.IsEmpty())
 		return;
 
-	CInventoryCategory *c = m_Inventory->GetCategory(cn);
+	CInventoryCategory *c = m_Inventory->GetCategory(categoryName);
 	RemoveCategoryIgnored(c);
 }
 

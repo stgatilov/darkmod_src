@@ -44,10 +44,12 @@ CInventoryItem::~CInventoryItem()
 
 void CInventoryItem::Save( idSaveGame *savefile ) const
 {
+	// TODO
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
 {
+	// TODO
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
@@ -77,8 +79,7 @@ void CInventoryItem::SetCount(int n)
 
 void CInventoryItem::SetStackable(bool stack)
 {
-	if(stack == true || stack == false)
-		m_Stackable = stack;
+	m_Stackable = stack;
 }
 
 void CInventoryItem::SetHUD(const idStr &HudName, int layer)

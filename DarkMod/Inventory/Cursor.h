@@ -11,13 +11,6 @@
 
 #include "Category.h"
 
-/**
- * An inventory is a container for groups of items. An inventory has one default group
- * which is always created. All other groups are up to the mapper to decide.
- *
- * If an item is put into an inventory, without specifying the group, it will be put
- * in the default group which is always at index 0 and has the name DEFAULT.
- */
 class CInventoryCursor
 {
 	friend class CInventory;
@@ -36,8 +29,7 @@ public:
 	 */
 	CInventoryItem			*GetCurrentItem();
 	bool					SetCurrentItem(CInventoryItem *Item);
-	bool					SetCurrentItem(const char *name);
-	inline bool				SetCurrentItem(const idStr &Name) { return SetCurrentItem(Name.c_str()); };
+	bool					SetCurrentItem(const idStr& name);
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
@@ -64,12 +56,10 @@ public:
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
 	void					RemoveCategoryIgnored(const CInventoryCategory *);
-	void					RemoveCategoryIgnored(const char *CategoryName);
-	inline void				RemoveCategoryIgnored(const idStr &Name) { RemoveCategoryIgnored(Name.c_str()); };
+	void					RemoveCategoryIgnored(const idStr& categoryName);
 
 	void					SetCategoryIgnored(const CInventoryCategory *);
-	void					SetCategoryIgnored(const char *CategoryName);
-	inline void				SetCategoryIgnored(const idStr &Name) { SetCategoryIgnored(Name.c_str()); };
+	void					SetCategoryIgnored(const idStr& categoryName);
 
 	void					DropCurrentItem(void);
 
