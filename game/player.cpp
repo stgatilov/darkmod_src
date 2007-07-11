@@ -9676,6 +9676,7 @@ void idPlayer::inventoryDropItem()
 		CInventoryCursor* cursor = InventoryCursor();
 
 		CInventoryItem* item = cursor->GetCurrentItem();
+		CInventoryCategory* category = cursor->GetCurrentCategory();
 
 		// Initialise the parameters for calling the custom drop script to NULL
 		idEntity *ent = NULL;
@@ -9701,21 +9702,34 @@ void idPlayer::inventoryDropItem()
 				}
 				// old code: m_Inventory->PutEntityInMap(ent, this, item);
 			}
+			else {
+				// Call the custom drop script
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Running inventory drop script...\r");
+				idThread* thread = new idThread(dropScript);
+				thread->CallFunctionArgs(dropScript, true, "ee", ent, this);
+				thread->DelayedStart(0);
+			}
 
 			// greebo: Decrease the stack counter, if applicable
 			if (item->IsStackable()) {
 				item->SetCount(item->GetCount() - 1);
+
+				if (item->GetCount() <= 0) {
+					// Stackable item count reached zero, remove item from category
+					category->removeItem(item);
+				}
+				
+				// Check for empty categories after the item has been removed
+				if (category->isEmpty()) {
+					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
+					// Switch the cursor to the next category
+					cursor->GetNextCategory();
+					// Remove category from inventory
+					cursor->Inventory()->removeCategory(category);
+				}
+
 				UpdateHud();
 			}
-		}
-
-		// greebo: Is there a drop script on the entity?
-		if (dropScript != NULL)
-		{
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Running inventory drop script...\r");
-			idThread* thread = new idThread(dropScript);
-			thread->CallFunctionArgs(dropScript, true, "ee", ent, this);
-			thread->DelayedStart(0);
 		}
 	}
 }

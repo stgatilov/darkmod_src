@@ -79,6 +79,12 @@ public:
 	CInventoryCategory		*CreateCategory(const idStr& CategoryName, int *Index = NULL);
 
 	/**
+	 * greebo: Removes the category from this inventory. Will NOT check whether the
+	 *         the category is empty or not.
+	 */
+	void					removeCategory(CInventoryCategory* category);
+
+	/**
 	 * GetCategory returns the pointer to the given group and it's index, 
 	 * if the pointer is not NULL.
 	 */

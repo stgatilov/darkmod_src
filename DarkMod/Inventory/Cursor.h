@@ -40,11 +40,17 @@ public:
 
 	CInventoryCategory		*GetNextCategory(void);
 	CInventoryCategory		*GetPrevCategory(void);
-
+	
 	/**
 	 * Set the current group index.
 	 */
 	void				SetCurrentCategory(int Index);
+
+	/**
+	 * greebo: Returns the category of the focused item
+	 *         or NULL if no inventory is attached.
+	 */
+	CInventoryCategory*      GetCurrentCategory();
 
 	/**
 	 * Set the current item index.

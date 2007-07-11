@@ -34,6 +34,10 @@ CInventoryCategory::~CInventoryCategory()
 		delete m_Item[i];
 }
 
+bool CInventoryCategory::isEmpty() const {
+	return (m_Item.Num() == 0);
+}
+
 void CInventoryCategory::Save(idSaveGame *savefile) const
 {
 	// TODO
@@ -193,4 +197,14 @@ int CInventoryCategory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	}
 
 	return Gold + Jewelry + Goods;
+}
+
+void CInventoryCategory::removeItem(CInventoryItem* item) {
+	for (int i = 0; i < m_Item.Num(); i++) {
+		if (m_Item[i] == item) {
+			m_Item.RemoveIndex(i);
+			delete item;
+			break;
+		}
+	}
 }

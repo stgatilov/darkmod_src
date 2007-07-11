@@ -315,3 +315,7 @@ bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory *c) const
 Quit:
 	return rc;
 }
+
+CInventoryCategory* CInventoryCursor::GetCurrentCategory() {
+	return (m_Inventory != NULL) ? m_Inventory->m_Category[m_CurrentCategory] : NULL;
+}

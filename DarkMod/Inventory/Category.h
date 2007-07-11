@@ -39,6 +39,15 @@ public:
 
 	int					GetLoot(int &Gold, int &Jewelry, int &Goods);
 
+	/**
+	 * greebo: Removes the specified <item> from this category.
+	 */
+	void				removeItem(CInventoryItem* item);
+
+	/** greebo: Returns true if the category contains no items.
+	 */
+	bool				isEmpty() const;
+
 protected:
 	CInventoryCategory(CInventory* inventory, const idStr& name = "");
 	~CInventoryCategory();

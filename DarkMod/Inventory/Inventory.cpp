@@ -540,3 +540,14 @@ void CInventory::Restore(idRestoreGame *savefile)
 {
 	// TODO: Has to call the groups and items as well.
 }
+
+void CInventory::removeCategory(CInventoryCategory* category) {
+	// Cycle through the categories and remove the specified category.
+	for (int i = 0; i < m_Category.Num(); i++) {
+		if (m_Category[i] == category) {
+			m_Category.RemoveIndex(i);
+			delete category;
+			break;
+		}
+	}
+}
