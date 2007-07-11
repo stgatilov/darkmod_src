@@ -6007,8 +6007,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_52:	// Inventory drop item
 		{
-			if(GetImmobilization() & EIM_ITEM_SELECT)
+			/* greebo: disabled this allow inventoryDropItem() to be called
+					   when an item is held in the grabber hands.
+			if(GetImmobilization() & EIM_ITEM_SELECT) {
 				return;
+			}*/
 
 			inventoryDropItem();
 			break;
@@ -9692,8 +9695,11 @@ void idPlayer::inventoryDropItem()
 			if (dropScript == NULL) {
 				// Drop the item into the grabber hands 
 				
-				// TODO
-				//m_Inventory->PutEntityInMap(ent, this, item);
+				if (!grabber->PutInHands(ent, this)) {
+					// The grabber could not put the item into the player hands
+					// TODO: Emit a sound?
+				}
+				// old code: m_Inventory->PutEntityInMap(ent, this, item);
 			}
 
 			// greebo: Decrease the stack counter, if applicable
