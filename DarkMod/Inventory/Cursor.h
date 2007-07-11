@@ -61,8 +61,6 @@ public:
 	void					SetCategoryIgnored(const CInventoryCategory *);
 	void					SetCategoryIgnored(const idStr& categoryName);
 
-	void					DropCurrentItem(void);
-
 protected:
 	bool					IsCategoryIgnored(const CInventoryCategory *) const;
 

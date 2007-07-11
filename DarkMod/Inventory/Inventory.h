@@ -15,6 +15,7 @@
 #define TDM_LOOT_INFO_ITEM				"loot_info"
 #define TDM_LOOT_SCRIPTOBJECT			"loot_gui"
 #define TDM_DUMMY_ITEM					"dummy"
+#define TDM_INVENTORY_DROPSCRIPT		"inventoryDrop"
 
  /* DESCRIPTION: This file contains the inventory handling for TDM. The inventory 
  * has nothing in common with the original idInventory and is totally independent
