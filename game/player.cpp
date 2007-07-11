@@ -9696,6 +9696,12 @@ void idPlayer::inventoryDropItem()
 			if (dropScript == NULL) {
 				// Drop the item into the grabber hands 
 				
+				// Stackable items only have one "real" entity for the whole item stack.
+				// When the stack size == 1, this entity can be dropped as it is,
+				// otherwise we need to spawn a new entity (and restore the spawnargs).
+
+				// TODO
+
 				if (!grabber->PutInHands(ent, this)) {
 					// The grabber could not put the item into the player hands
 					// TODO: Emit a sound?
@@ -9715,6 +9721,7 @@ void idPlayer::inventoryDropItem()
 				item->SetCount(item->GetCount() - 1);
 
 				if (item->GetCount() <= 0) {
+					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty stackable item from category.\r");
 					// Stackable item count reached zero, remove item from category
 					category->removeItem(item);
 				}
