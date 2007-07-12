@@ -1121,6 +1121,12 @@
 					<File
 						RelativePath=".\DarkMod\Inventory\Item.h">
 					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\WeaponItem.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Inventory\WeaponItem.h">
+					</File>
 				</Filter>
 			</Filter>
 			<Filter
