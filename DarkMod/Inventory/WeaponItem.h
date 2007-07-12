@@ -26,14 +26,16 @@ protected:
 	// The maximum amount of ammo for this weapon
 	int		_maxAmmo;
 
-	// The current amount of ammonition (set to maxAmmo in constructor)
+	// The current amount of ammonition (set to getStartAmmo() in constructor)
 	int		_ammo;
 
 public:
 	CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner);
 
 	// Retrieves the maximum amount of ammo this weapon can hold
-	int getMaxAmmo() const;
+	int getMaxAmmo();
+	// Retrives the amount of ammo at player spawn time
+	int getStartAmmo();
 
 	// Returns the currently available ammonition
 	int getAmmo() const;

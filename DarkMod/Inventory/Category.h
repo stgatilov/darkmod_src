@@ -72,7 +72,7 @@ protected:
 	// The name of this group.
 	idStr						m_Name;
 
-	// A list of contained item.
+	// A list of contained items (are deleted on destruction of this object).
 	idList<CInventoryItem *>	m_Item;
 };
 

@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:0
 #include "WeaponItem.h"
 
 #define WEAPON_MAX_AMMO_PREFIX "max_ammo_"
+#define WEAPON_START_AMMO_PREFIX "ammo_"
 
 CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
@@ -24,10 +25,10 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr&
 	_weaponDefName(weaponDefName)
 {
 	_maxAmmo = getMaxAmmo();
-	_ammo = _maxAmmo;
+	_ammo = getStartAmmo();
 }
 
-int CInventoryWeaponItem::getMaxAmmo() const {
+int CInventoryWeaponItem::getMaxAmmo() {
 	// Sanity check
 	if (m_Owner.GetEntity() == NULL) {
 		return -1;
@@ -38,6 +39,20 @@ int CInventoryWeaponItem::getMaxAmmo() const {
 	weaponName.Strip("weapon_");
 
 	idStr key = WEAPON_MAX_AMMO_PREFIX + weaponName;
+	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
+}
+
+int CInventoryWeaponItem::getStartAmmo() {
+	// Sanity check
+	if (m_Owner.GetEntity() == NULL) {
+		return -1;
+	}
+
+	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
+	idStr weaponName = _weaponDefName;
+	weaponName.Strip("weapon_");
+
+	idStr key = WEAPON_START_AMMO_PREFIX + weaponName;
 	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
 }
 
