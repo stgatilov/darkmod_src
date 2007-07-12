@@ -1704,7 +1704,7 @@ void idPlayer::addWeaponsToInventory() {
 			if (entityDef != NULL) {
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding weapon to inventory: %s\r", weaponDef.c_str());
 				// Allocate a new weapon item using the found entityDef
-				CInventoryWeaponItem* item = new CInventoryWeaponItem(*entityDef, this);
+				CInventoryWeaponItem* item = new CInventoryWeaponItem(*entityDef, weaponDef, this);
 
 				// Add it to the weapon category
 				m_WeaponCursor->GetCurrentCategory()->PutItem(item);

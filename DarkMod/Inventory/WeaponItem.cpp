@@ -16,9 +16,39 @@ static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:0
 
 #include "WeaponItem.h"
 
-CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, idEntity* owner) :
+#define WEAPON_MAX_AMMO_PREFIX "max_ammo_"
+
+CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
-	_weaponDef(weaponDef)
+	_weaponDef(weaponDef),
+	_weaponDefName(weaponDefName)
 {
-	
+	_maxAmmo = getMaxAmmo();
+	_ammo = _maxAmmo;
+}
+
+int CInventoryWeaponItem::getMaxAmmo() const {
+	// Sanity check
+	if (m_Owner.GetEntity() == NULL) {
+		return -1;
+	}
+
+	// Construct the weapon name to retrieve the "max_ammo_mossarrow" string, for instance
+	idStr weaponName = _weaponDefName;
+	weaponName.Strip("weapon_");
+
+	idStr key = WEAPON_MAX_AMMO_PREFIX + weaponName;
+	return m_Owner.GetEntity()->spawnArgs.GetInt(key, "0");
+}
+
+int CInventoryWeaponItem::getAmmo() const {
+	return _ammo;
+}
+
+void CInventoryWeaponItem::setAmmo(int newAmount) {
+	_ammo = (newAmount > _maxAmmo) ? _maxAmmo : newAmount;
+
+	if (_ammo < 0) {
+		_ammo = 0;
+	}
 }

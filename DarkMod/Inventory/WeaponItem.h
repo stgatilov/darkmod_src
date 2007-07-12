@@ -21,8 +21,25 @@ protected:
 	// The entityDef this weapon is associated to
 	const idDict& _weaponDef;
 
+	idStr _weaponDefName;
+
+	// The maximum amount of ammo for this weapon
+	int		_maxAmmo;
+
+	// The current amount of ammonition (set to maxAmmo in constructor)
+	int		_ammo;
+
 public:
-	CInventoryWeaponItem(const idDict& weaponDef, idEntity* owner);
+	CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner);
+
+	// Retrieves the maximum amount of ammo this weapon can hold
+	int getMaxAmmo() const;
+
+	// Returns the currently available ammonition
+	int getAmmo() const;
+	// Sets the new ammonition value (is automatically clamped to [0,maxAmmo])
+	void setAmmo(int newAmount);
+
 };
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */
