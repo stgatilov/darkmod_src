@@ -393,14 +393,17 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	if(ent == NULL)
 		return;
 
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Hiding entity from game: %s...\r", ent->name.c_str());
 	// Make the item invisible
 	ent->Unbind();
 	ent->GetPhysics()->PutToRest();
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
-	if(bDelete == true)
+	if(bDelete == true) {
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Deleting entity from game: %s...\r", ent->name.c_str());
 		ent->PostEventMS(&EV_Remove, 0);
+	}
 }
 
 void CInventory::PutItem(CInventoryItem *item, const idStr& category)
