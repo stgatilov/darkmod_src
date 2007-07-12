@@ -3836,7 +3836,7 @@ idPlayer::NextBestWeapon
 ===============
 */
 void idPlayer::NextBestWeapon( void ) {
-	const char *weap;
+	/*const char *weap;
 	int w = MAX_WEAPONS;
 
 	if ( gameLocal.isClient || !weaponEnabled ) {
@@ -3856,7 +3856,9 @@ void idPlayer::NextBestWeapon( void ) {
 	}
 	idealWeapon = w;
 	weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-	UpdateHudWeapon();
+	UpdateHudWeapon();*/
+	// greebo: No "best" weapons in TDM, route the call to NextWeapon()
+	NextWeapon();
 }
 
 /*
@@ -3907,12 +3909,6 @@ void idPlayer::NextWeapon( void ) {
 			nextWeaponIndex = 0;
 		}
 	} while (!SelectWeapon(nextWeaponIndex, false) && nextWeaponIndex != curWeaponIndex);
-
-	if (nextWeaponIndex != curWeaponIndex) {
-		// A new weapon could be selected
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-	}
-
 
 	/*w = idealWeapon;
 	while( 1 ) {
@@ -3985,11 +3981,6 @@ void idPlayer::PrevWeapon( void ) {
 			prevWeaponIndex = MAX_WEAPONS;
 		}
 	} while (!SelectWeapon(prevWeaponIndex, false) && prevWeaponIndex != curWeaponIndex);
-
-	if (prevWeaponIndex != curWeaponIndex) {
-		// A new weapon could be selected
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-	}
 
 	/*// check if we have any weapons
 	if ( !inventory.weapons ) {
@@ -4079,6 +4070,8 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 				// Set the cursor onto this item
 				m_WeaponCursor->SetCurrentItem(item);
 
+				weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+				idealWeapon = num;
 				UpdateHudWeapon();
 				return true;
 			}
