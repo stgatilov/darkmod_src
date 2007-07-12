@@ -610,6 +610,8 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *
 #elif defined(_WIN32)
 
 #include <xmmintrin.h>
+#pragma warning( push )
+#pragma warning( disable: 4127 )
 
 #define SHUFFLEPS( x, y, z, w )		(( (x) & 3 ) << 6 | ( (y) & 3 ) << 4 | ( (z) & 3 ) << 2 | ( (w) & 3 ))
 #define R_SHUFFLEPS( x, y, z, w )	(( (w) & 3 ) << 6 | ( (z) & 3 ) << 4 | ( (y) & 3 ) << 2 | ( (x) & 3 ))
@@ -18069,5 +18071,6 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 
 #endif
 }
+#pragma warning( pop )
 
 #endif /* _WIN32 */
