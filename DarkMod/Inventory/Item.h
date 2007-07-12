@@ -41,7 +41,7 @@ public:
 	// Create an inventoryitem out of the given entity and the given owner
 	CInventoryItem(idEntity* itemEntity, idEntity* owner);
 
-	~CInventoryItem();
+	virtual ~CInventoryItem();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );

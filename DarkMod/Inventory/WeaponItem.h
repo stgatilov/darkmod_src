@@ -29,6 +29,9 @@ protected:
 	// The current amount of ammonition (set to getStartAmmo() in constructor)
 	int		_ammo;
 
+	// The index of this weapon (between 0 and MAX_WEAPONS)
+	int		_weaponIndex;
+
 public:
 	CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner);
 
@@ -37,11 +40,17 @@ public:
 	// Retrives the amount of ammo at player spawn time
 	int getStartAmmo();
 
+	// Returns TRUE if this weapon doesn't need ammo and therefore can be selected 
+	bool allowedEmpty();
+
 	// Returns the currently available ammonition
 	int getAmmo() const;
 	// Sets the new ammonition value (is automatically clamped to [0,maxAmmo])
 	void setAmmo(int newAmount);
 
+	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
+	void setWeaponIndex(int index);
+	int  getWeaponIndex() const;
 };
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */

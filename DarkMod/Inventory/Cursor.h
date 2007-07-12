@@ -58,6 +58,12 @@ public:
 	 * so we don't really care wether this is a valid index or not.
 	 */
 	inline void				SetCurrentItem(int Index) { m_CurrentItem = Index; }
+
+	/**
+	 * Returns the current index within the category of the item pointed at.
+	 */
+	int							GetCurrentItemIndex() { return m_CurrentItem; }
+
 	inline void				SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
 	inline void				SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 

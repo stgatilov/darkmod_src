@@ -1705,6 +1705,8 @@ void idPlayer::addWeaponsToInventory() {
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding weapon to inventory: %s\r", weaponDef.c_str());
 				// Allocate a new weapon item using the found entityDef
 				CInventoryWeaponItem* item = new CInventoryWeaponItem(*entityDef, weaponDef, this);
+				
+				item->setWeaponIndex(i);
 
 				// Add it to the weapon category
 				m_WeaponCursor->GetCurrentCategory()->PutItem(item);
@@ -2801,25 +2803,21 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 		}
 	}
 
-	if ( !hud ) {
+	if (hud == NULL || m_WeaponCursor == NULL) {
 		return;
 	}
 
-	for ( int i = 0; i < MAX_WEAPONS; i++ ) {
-		const char *weapnum = va( "def_weapon%d", i );
-		const char *hudWeap = va( "weapon%d", i );
-		int weapstate = 0;
-		if ( inventory.weapons & ( 1 << i ) ) {
-			const char *weap = spawnArgs.GetString( weapnum );
-			if ( weap && *weap ) {
-				weapstate++;
-			}
-			if ( idealWeapon == i ) {
-				weapstate++;
-			}
-		}
-		hud->SetStateInt( hudWeap, weapstate );
+	int curWeaponIndex = m_WeaponCursor->GetCurrentItemIndex();
+
+	for (int i = 0; i < MAX_WEAPONS; i++) {
+		// Determine the weapon state (2 for selected, 0 for not selected)
+		int weapstate = (i == curWeaponIndex) ? 2 : 0;
+		
+		// Construct the HUD weapon string
+		idStr hudWeap = va("weapon%d", i);
+		hud->SetStateInt(hudWeap.c_str(), weapstate);
 	}
+
 	if ( flashWeapon ) {
 		hud->HandleNamedEvent( "weaponChange" );
 	}
@@ -3967,7 +3965,7 @@ idPlayer::SelectWeapon
 ===============
 */
 void idPlayer::SelectWeapon( int num, bool force ) {
-	const char *weap;
+	//const char *weap;
 
 	if ( !weaponEnabled || spectating || gameLocal.inCinematic || health < 0 ) {
 		return;
@@ -3991,7 +3989,38 @@ void idPlayer::SelectWeapon( int num, bool force ) {
 		}
 	}	
 
-	weap = spawnArgs.GetString( va( "def_weapon%d", num ) );
+	if (m_WeaponCursor == NULL) {
+		return;
+	}
+
+	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
+	if (category == NULL) {
+		return;
+	}
+
+	// Cycle through the weapons and find the one with the given weaponIndex
+	for (int i = 0; i < category->size(); i++) {
+		// Try to retrieve a weapon item from the given category
+		CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
+		
+		if (item != NULL) {
+			if (item->getWeaponIndex() == num) {
+				if (item->getAmmo() <= 0 && !item->allowedEmpty()) {
+					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Weapon requires ammo. Cannot select: %d\r", num);
+					break;
+				}
+
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Selecting weapon #%d\r", num);
+				// Set the cursor onto this item
+				m_WeaponCursor->SetCurrentItem(item);
+
+				UpdateHudWeapon();
+				break;
+			}
+		}
+	}
+
+	/*weap = spawnArgs.GetString( va( "def_weapon%d", num ) );
 	if ( !weap[ 0 ] ) {
 		gameLocal.Printf( "Invalid weapon\n" );
 		return;
@@ -4014,7 +4043,7 @@ void idPlayer::SelectWeapon( int num, bool force ) {
 			idealWeapon = num;
 		}
 		UpdateHudWeapon();
-	}
+	}*/
 }
 
 /*
@@ -9834,7 +9863,6 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 
 			case CInventoryItem::IT_DUMMY:
 			{
-				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Displaying dummy item: %s...\r", cur->GetName().c_str());
 				// All objects are set to empty, so we have an empty entry in the
 				// inventory.
 				s = "";
