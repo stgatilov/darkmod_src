@@ -144,7 +144,14 @@ public:
 protected:
 	void				Save(idSaveGame *savefile) const;
 	void				Restore(idRestoreGame *savefile);
-	CInventoryItem		*ValidateLoot(idEntity *ent, CInventoryItem::LootType, int value);
+
+	/**
+	 * greebo: This checks the given entity for loot items and adds the loot value 
+	 *         to the loot sum.
+	 * 
+	 * @returns: The standard loot info InventoryItem or NULL if the item is not a valid loot item.
+	 */
+	CInventoryItem*		ValidateLoot(idEntity *ent);
 
 protected:
 	idEntityPtr<idEntity>				m_Owner;

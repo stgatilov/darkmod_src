@@ -37,6 +37,10 @@ public:
 
 public:
 	CInventoryItem(idEntity *m_Owner);
+
+	// Create an inventoryitem out of the given entity and the given owner
+	CInventoryItem(idEntity* itemEntity, idEntity* owner);
+
 	~CInventoryItem();
 
 	void					Save( idSaveGame *savefile ) const;
@@ -79,11 +83,15 @@ public:
 	void					SetHUD(const idStr &HudName, int layer);
 	inline idStr			GetHUD(void) { return m_HudName; };
 
+	inline idStr&			GetIcon() { return m_Icon; };
+
 	void					SetDeletable(bool bDeletable = true);
 	inline bool				IsDeletable(void) { return m_Deletable; };
 
 	inline void				SetItemId(const idStr &id) { m_ItemId = id; };
 	inline idStr			GetItemId(void) { return m_ItemId; };
+
+	static LootType			getLootTypeFromSpawnargs(const idDict& spawnargs);
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -108,6 +116,7 @@ protected:
 	bool					m_Droppable;		// If the item is not dropable it will be inaccessible after it 
 											// is put into the inventory
 	bool					m_Hud;
+	idStr					m_Icon;			// The inventory icon string
 	bool					m_Orientated;	// Taken from the entity
 	bool					m_Deletable;	// Can the entity be deleted when it has been put into the inventory?
 

@@ -65,7 +65,7 @@ bool CInventoryCursor::SetCurrentItem(CInventoryItem *Item)
 	if((group = m_Inventory->GetCategoryItemIndex(Item, &item)) == -1)
 		goto Quit;
 
-	// Only change the group and item indizies, if they are valid.
+	// Only change the group and item indices, if they are valid.
 	// Otherwise we might have an invalid index (-1).
 	m_CurrentCategory = group;
 	m_CurrentItem = item;

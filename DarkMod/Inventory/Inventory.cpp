@@ -73,30 +73,33 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	return Gold + Jewelry + Goods;
 }
 
-CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType lt, int v)
+CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 {
 	CInventoryItem *rc = NULL;
 	int LGroupVal = 0;
 	int dummy = 0; // for calling GetLoot
 
-	if(lt != CInventoryItem::LT_NONE && v > 0)
+	CInventoryItem::LootType lootType = CInventoryItem::getLootTypeFromSpawnargs(ent->spawnArgs);
+	int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
+
+	if (lootType != CInventoryItem::LT_NONE && value > 0)
 	{
 		// If we have an anonymous loot item, we don't need to 
 		// store it in the inventory.
-		switch(lt)
+		switch(lootType)
 		{
 			case CInventoryItem::LT_GOLD:
-				m_Gold += v;
+				m_Gold += value;
 				LGroupVal = m_Gold;
 			break;
 
 			case CInventoryItem::LT_GOODS:
-				m_Goods += v;
+				m_Goods += value;
 				LGroupVal = m_Goods;
 			break;
 
 			case CInventoryItem::LT_JEWELS:
-				m_Jewelry += v;
+				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
 			break;
 		}
@@ -107,10 +110,13 @@ CInventoryItem *CInventory::ValidateLoot(idEntity *ent, CInventoryItem::LootType
 
 		// Objective Callback for loot:
 		// Pass the loot type name and the net loot value of that group
-		gameLocal.m_MissionData->InventoryCallback
-									( ent, sLootTypeName[lt], LGroupVal, 
-										GetLoot( dummy, dummy, dummy ), 
-										true );
+		gameLocal.m_MissionData->InventoryCallback( 
+			ent, 
+			sLootTypeName[lootType], 
+			LGroupVal, 
+			GetLoot( dummy, dummy, dummy ), 
+			true 
+		);
 	}
 	else
 	{
@@ -243,133 +249,91 @@ int CInventory::GetCategoryItemIndex(CInventoryItem *Item, int *ItemIndex)
 
 CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 {
-	CInventoryItem *rc = NULL;
-	CInventoryItem *item = NULL;
-	idStr s;
-	idStr name;
-	idStr icon;
-	idStr category;
-	idStr id;
-	bool stackable = false;
-//	bool bValidItem = false;
-	int v, droppable = 0, del = -1, count = 0;
-	CInventoryItem::LootType lt = CInventoryItem::LT_NONE;
-	CInventoryItem::ItemType it = CInventoryItem::IT_ITEM;
+	CInventoryItem* returnValue = NULL;
 
-	if(ent == NULL || owner == NULL)
-		goto Quit;
-
-	del = 0;
-	if(ent->spawnArgs.GetInt("inv_loot_type", "", v) != false)
-	{
-		if(v >= CInventoryItem::LT_NONE && v < CInventoryItem::LT_COUNT)
-			lt = (CInventoryItem::LootType)v;
-		else
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid loot type: %d for InventoryItemType on %s\r", v, ent->name.c_str());
+	// Sanity checks
+	if(ent == NULL || owner == NULL) {
+		return returnValue;
 	}
 
-	ent->spawnArgs.GetString("inv_icon", "", icon);
-	ent->spawnArgs.GetInt("inv_loot_value", "-1", v);
-	ent->spawnArgs.GetInt("inv_droppable", "0", droppable);
-	ent->spawnArgs.GetInt("inv_delete", "0", del);
+	// Check for loot items
+	returnValue = ValidateLoot(ent);
 
-	// If the item can be dropped we can not allow the item
-	// to be deleted.
-	if(del == 1 && droppable == 1)
-		del = 0;
+	if (returnValue != NULL) {
+		// The item is a valid loot item, remove the entity and return
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added loot item to inventory: %s\r", ent->name.c_str());
 
-	// If we have an item without an icon and it is loot, then we can 
-	// simply add the value to the global values. If the item
-	// is not loot and has no icon, it is an error, because it means
-	// that it is an individual item but can not be displayed.
-	if(icon.Length() == 0)
-	{
-		if((rc = ValidateLoot(ent, lt, v)) == NULL)
-			del = -1;
+		// Remove the entity, it is a loot item (which vanish when added to the inventory)
+		RemoveEntityFromMap(ent, true);
 
-		// We can skip the rest of this, because either
-		// it was an anonymous loot item or it was an error.
-		goto Quit;
+		return returnValue;
 	}
 
-	ent->spawnArgs.GetInt("inv_count", "1", count);
-	if(count < 0)
-		count = 0;
+	// Not a loot item, determine name and category to check for existing item of same name/category
+	idStr name = ent->spawnArgs.GetString("inv_name", "");
+	idStr category = ent->spawnArgs.GetString("inv_category", "");
 
-	ent->spawnArgs.GetString("inv_category", "", category);
-	ent->spawnArgs.GetString("inv_name", "", name);
-	ent->spawnArgs.GetInt("inv_stackable", "0", v);
-	ent->spawnArgs.GetString("inv_item_id", "", id);
-	if(v != 0)
-	{
-		CInventoryItem *exists = GetItem(name.c_str(), category.c_str(), true);
-		stackable = true;
+	if (name.IsEmpty() || category.IsEmpty()) {
+		// Invalid inv_name or inv_category
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: inv_name or inv_category not specified.\r", ent->name.c_str());
+		return returnValue;
+	}
 
-		if(exists != NULL)
-		{
-			exists->SetCount(exists->GetCount()+count);
-			rc = exists;
+	// Check for existing items (create the category if necessary (hence the TRUE))
+	CInventoryItem* existing = GetItem(name, category, true);
 
-			// We added a stackable item that was already in the inventory
-			gameLocal.m_MissionData->InventoryCallback
-								( exists->GetItemEntity(), exists->GetName(), 
-									exists->GetCount(), 1, true );
-			goto Quit;
+	if (existing != NULL) {
+		// Item must be stackable, if items of the same name/category already exist
+		if (!ent->spawnArgs.GetBool("inv_stackable", "0")) {
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: not stackable.\r", ent->name.c_str());
+			return returnValue;
 		}
+
+		// Item is stackable, determine how many items should be added to the stack
+		int count = ent->spawnArgs.GetInt("inv_count", "1");
+		// Increase the stack count
+		existing->SetCount(existing->GetCount() + count);
+
+		// We added a stackable item that was already in the inventory
+		gameLocal.m_MissionData->InventoryCallback(
+			existing->GetItemEntity(), existing->GetName(), 
+			existing->GetCount(), 
+			1, 
+			true
+		);
+
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Added stackable item to inventory: %s\r", ent->name.c_str());
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("New inventory item stack count is: %d\r", existing->GetCount());
+
+		// Remove the entity, it has been stacked
+		RemoveEntityFromMap(ent, true);
+
+		// Return the existing value instead of a newly created one
+		returnValue = existing;
 	}
-	else
-		count = 0;
+	else {
+		// Item doesn't exist, create a new InventoryItem
+		CInventoryItem* item = new CInventoryItem(ent, owner);
 
-	// We're ready to actually create an inventory item
-	item = new CInventoryItem(owner);
+		if (item != NULL) {
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
+			// Put the item into its category
+			PutItem(item, category);
 
-	// "Item" Entity is NULL for deletable inventory items
-	if(del == 1)
-		item->SetItem(NULL);
-	else
-		item->SetItem(ent);
-	item->SetLootType(lt);
+			// Hide the entity from the map (don't delete the entity)
+			RemoveEntityFromMap(ent, false);
 
-	if(lt != CInventoryItem::LT_NONE)
-	{
-		int dummy;
+			// Prevent this item from being deleted, even if it's stackable
+			item->SetDeletable(false);
+		}
+		else {
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put item into category: %s.\r", ent->name.c_str());
+		}
 
-		it = CInventoryItem::IT_LOOT;
-		v = 0;
-		if(ent->spawnArgs.GetInt("inv_loot_value", "", v) != false && v != 0)
-			item->SetValue(v);
-		else
-			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Value for loot item missing on entity %s\r", ent->name.c_str());
-
-		gameLocal.m_MissionData->InventoryCallback
-									( ent, sLootTypeName[lt], v, 
-										GetLoot( dummy, dummy, dummy ), 
-										true );
+		returnValue = item;
 	}
-
-	// Store the temporary variables into the Item's settings
-	item->SetItemId(id);
-	item->SetType(it);
-	item->SetDroppable(droppable);
-	item->SetDeletable(del);
-	item->SetName(name);
-	item->SetStackable(stackable);			// has to come before SetCount :)
-	item->SetCount(count);
-
-	item->m_BindMaster = ent->GetBindMaster();
-	item->m_Orientated = ent->fl.bindOrientated;
-
-	// Put the item into its category
-	PutItem(item, category);
-
-	rc = item;
-
-Quit:
-	// Remove the entity from the map, if this has been requested
-	if(del != -1)
-		RemoveEntityFromMap(ent, del);
-
-	return rc;
+	
+	return returnValue;
 }
 
 void CInventory::PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item)
@@ -430,12 +394,12 @@ void CInventory::PutItem(CInventoryItem *item, const idStr& category)
 	// Pack the item into the category
 	gr->PutItem(item);
 
-	if (item->IsDeletable() && item->IsDroppable())	{
+	/*if (item->IsDeletable() && item->IsDroppable())	{
 		// Prevent droppable objects from being deletable
 		item->SetDeletable(false);
 	}
 
-	RemoveEntityFromMap(item->GetItemEntity(), item->IsDeletable());
+	RemoveEntityFromMap(item->GetItemEntity(), item->IsDeletable());*/
 
 	// Objective callback for non-loot items:
 	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1

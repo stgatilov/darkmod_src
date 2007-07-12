@@ -7698,7 +7698,7 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 	// Focus the cursor on the newly added item
 	crsr->SetCurrentItem(rc);
 
-	// Fire the script event on the previously selected inventory item
+	// Fire the script events and update the HUD
 	if(_hud != NULL)
 		inventoryChangeSelection(_hud, true, prev);
 

@@ -34,6 +34,49 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Deletable = false;
 }
 
+CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
+	// Don't allow NULL pointers
+	assert(owner && itemEntity);
+
+	m_Inventory = NULL;
+	m_Category = NULL;
+	m_Overlay = OVERLAYS_INVALID_HANDLE;
+	m_Hud = false;
+
+	m_Owner = owner;
+	m_Item = itemEntity;
+	
+	// Determine and set the loot type
+	m_LootType = getLootTypeFromSpawnargs(itemEntity->spawnArgs);
+
+	// Read the spawnargs into the member variables
+	m_Name = itemEntity->spawnArgs.GetString("inv_name", "");
+	m_Value	= itemEntity->spawnArgs.GetInt("inv_loot_value", "-1");
+	m_Stackable	= itemEntity->spawnArgs.GetBool("inv_stackable", "0");
+
+	// Only stackable items have a non-zero count
+	m_Count = (m_Stackable) ? itemEntity->spawnArgs.GetInt("inv_count", "1") : 0;
+
+	m_Droppable = itemEntity->spawnArgs.GetBool("inv_droppable", "0");
+	m_Deletable = itemEntity->spawnArgs.GetBool("inv_delete", "0");
+	m_ItemId = itemEntity->spawnArgs.GetString("inv_item_id", "");
+
+	m_Icon = itemEntity->spawnArgs.GetString("inv_icon", "");
+	if (m_Icon.IsEmpty() && m_LootType == LT_NONE) {
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Warning: non-loot item %s has no icon.\r", itemEntity->name.c_str());
+	}
+
+	if (m_LootType != LT_NONE && m_Value <= 0) {
+		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Warning: Value for loot item missing on entity %s\r", itemEntity->name.c_str());
+	}
+
+	// Set the item type according to the loot property
+	m_Type = (m_LootType != LT_NONE) ? IT_LOOT : IT_ITEM;
+
+	m_BindMaster = itemEntity->GetBindMaster();
+	m_Orientated = itemEntity->fl.bindOrientated;
+}
+
 CInventoryItem::~CInventoryItem()
 {
 	idEntity *e = m_Item.GetEntity();
@@ -120,4 +163,19 @@ void CInventoryItem::SetDeletable(bool bDeletable)
 		m_Deletable = false;
 	else
 		m_Deletable = bDeletable;
+}
+
+CInventoryItem::LootType CInventoryItem::getLootTypeFromSpawnargs(const idDict& spawnargs) {
+	// Determine the loot type
+	int lootTypeInt;
+	LootType returnValue = CInventoryItem::LT_NONE;
+
+	if (spawnargs.GetInt("inv_loot_type", "", lootTypeInt) != false) 	{
+		if (lootTypeInt >= LT_NONE && lootTypeInt < LT_COUNT)
+			returnValue = static_cast<LootType>(lootTypeInt);
+		else
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Invalid loot type: %d\r", lootTypeInt);
+	}
+
+	return returnValue;
 }
