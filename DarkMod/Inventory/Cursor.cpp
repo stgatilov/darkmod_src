@@ -98,7 +98,7 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventoryCursor::GetNextItem(void)
+CInventoryItem *CInventoryCursor::GetNextItem()
 {
 	CInventoryItem *rc = NULL;
 	int ni;
@@ -125,7 +125,7 @@ Quit:
 	return rc;
 }
 
-CInventoryItem *CInventoryCursor::GetPrevItem(void)
+CInventoryItem *CInventoryCursor::GetPrevItem()
 {
 	CInventoryItem *rc = NULL;
 
@@ -149,7 +149,7 @@ Quit:
 	return rc;
 }
 
-CInventoryCategory *CInventoryCursor::GetNextCategory(void)
+CInventoryCategory *CInventoryCursor::GetNextCategory()
 {
 	CInventoryCategory *rc = NULL;
 
@@ -196,7 +196,7 @@ CInventoryCategory *CInventoryCursor::GetNextCategory(void)
 	return rc;
 }
 
-CInventoryCategory *CInventoryCursor::GetPrevCategory(void)
+CInventoryCategory *CInventoryCursor::GetPrevCategory()
 {
 	CInventoryCategory *rc = NULL;
 

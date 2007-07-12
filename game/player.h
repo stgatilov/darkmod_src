@@ -525,7 +525,10 @@ public:
 	void					NextWeapon( void );
 	void					NextBestWeapon( void );
 	void					PrevWeapon( void );
-	void					SelectWeapon( int num, bool force );
+
+	// returns FALSE if the weapon with the requested index could not be selected
+	bool					SelectWeapon( int num, bool force );
+
 	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );
 	void					AddProjectilesFired( int count );

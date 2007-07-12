@@ -35,11 +35,11 @@ public:
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of CategoryLock and WrapAround.
 	 */
-	CInventoryItem			*GetNextItem(void);
-	CInventoryItem			*GetPrevItem(void);
+	CInventoryItem			*GetNextItem();
+	CInventoryItem			*GetPrevItem();
 
-	CInventoryCategory		*GetNextCategory(void);
-	CInventoryCategory		*GetPrevCategory(void);
+	CInventoryCategory		*GetNextCategory();
+	CInventoryCategory		*GetPrevCategory();
 	
 	/**
 	 * Set the current group index.

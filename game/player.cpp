@@ -3865,8 +3865,8 @@ idPlayer::NextWeapon
 ===============
 */
 void idPlayer::NextWeapon( void ) {
-	const char *weap;
-	int w;
+	//const char *weap;
+	//int w;
 
 	if ( !weaponEnabled || spectating || hiddenWeapon || gameLocal.inCinematic || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || health < 0 ) {
 		return;
@@ -3877,11 +3877,44 @@ void idPlayer::NextWeapon( void ) {
 	}
 
 	// check if we have any weapons
-	if ( !inventory.weapons ) {
+	/*if ( !inventory.weapons ) {
+		return;
+	}*/
+
+	if (m_WeaponCursor == NULL || m_WeaponCursor->GetCurrentCategory() == NULL) {
 		return;
 	}
+
+	if (m_WeaponCursor->GetCurrentCategory()->size() == 0) {
+		return; // no weapons...
+	}
 	
-	w = idealWeapon;
+	// Get the current weaponItem
+	CInventoryWeaponItem* curItem = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+
+	if (curItem == NULL) {
+		return;
+	}
+
+	int curWeaponIndex = curItem->getWeaponIndex();
+	int nextWeaponIndex = curWeaponIndex;
+
+	do {
+		// Try to select the next weapon item
+		nextWeaponIndex++;
+
+		if (nextWeaponIndex >= MAX_WEAPONS) {
+			nextWeaponIndex = 0;
+		}
+	} while (!SelectWeapon(nextWeaponIndex, false) && nextWeaponIndex != curWeaponIndex);
+
+	if (nextWeaponIndex != curWeaponIndex) {
+		// A new weapon could be selected
+		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+	}
+
+
+	/*w = idealWeapon;
 	while( 1 ) {
 		w++;
 		if ( w >= MAX_WEAPONS ) {
@@ -3906,7 +3939,7 @@ void idPlayer::NextWeapon( void ) {
 		idealWeapon = w;
 		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
 		UpdateHudWeapon();
-	}
+	}*/
 }
 
 /*
@@ -3915,8 +3948,8 @@ idPlayer::PrevWeapon
 ===============
 */
 void idPlayer::PrevWeapon( void ) {
-	const char *weap;
-	int w;
+	//const char *weap;
+	//int w;
 
 	if ( !weaponEnabled || spectating || hiddenWeapon || gameLocal.inCinematic || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || health < 0 ) {
 		return;
@@ -3926,7 +3959,39 @@ void idPlayer::PrevWeapon( void ) {
 		return;
 	}
 
-	// check if we have any weapons
+	if (m_WeaponCursor == NULL || m_WeaponCursor->GetCurrentCategory() == NULL) {
+		return;
+	}
+
+	if (m_WeaponCursor->GetCurrentCategory()->size() == 0) {
+		return; // no weapons...
+	}
+
+	// Get the current weaponItem
+	CInventoryWeaponItem* curItem = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+
+	if (curItem == NULL) {
+		return;
+	}
+
+	int curWeaponIndex = curItem->getWeaponIndex();
+	int prevWeaponIndex = curWeaponIndex;
+
+	do {
+		// Try to select the previous weapon item
+		prevWeaponIndex--;
+
+		if (prevWeaponIndex < 0) {
+			prevWeaponIndex = MAX_WEAPONS;
+		}
+	} while (!SelectWeapon(prevWeaponIndex, false) && prevWeaponIndex != curWeaponIndex);
+
+	if (prevWeaponIndex != curWeaponIndex) {
+		// A new weapon could be selected
+		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
+	}
+
+	/*// check if we have any weapons
 	if ( !inventory.weapons ) {
 		return;
 	}
@@ -3956,7 +4021,7 @@ void idPlayer::PrevWeapon( void ) {
 		idealWeapon = w;
 		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
 		UpdateHudWeapon();
-	}
+	}*/
 }
 
 /*
@@ -3964,19 +4029,19 @@ void idPlayer::PrevWeapon( void ) {
 idPlayer::SelectWeapon
 ===============
 */
-void idPlayer::SelectWeapon( int num, bool force ) {
+bool idPlayer::SelectWeapon( int num, bool force ) {
 	//const char *weap;
 
 	if ( !weaponEnabled || spectating || gameLocal.inCinematic || health < 0 ) {
-		return;
+		return false;
 	}
 
 	if ( ( num < 0 ) || ( num >= MAX_WEAPONS ) ) {
-		return;
+		return false;
 	}
 
 	if ( gameLocal.isClient ) {
-		return;
+		return false;
 	}
 
 	if ( ( num != weapon_pda ) && gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
@@ -3990,12 +4055,12 @@ void idPlayer::SelectWeapon( int num, bool force ) {
 	}	
 
 	if (m_WeaponCursor == NULL) {
-		return;
+		return false;
 	}
 
 	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
 	if (category == NULL) {
-		return;
+		return false;
 	}
 
 	// Cycle through the weapons and find the one with the given weaponIndex
@@ -4015,10 +4080,12 @@ void idPlayer::SelectWeapon( int num, bool force ) {
 				m_WeaponCursor->SetCurrentItem(item);
 
 				UpdateHudWeapon();
-				break;
+				return true;
 			}
 		}
 	}
+
+	return false;
 
 	/*weap = spawnArgs.GetString( va( "def_weapon%d", num ) );
 	if ( !weap[ 0 ] ) {
