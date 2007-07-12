@@ -31,7 +31,6 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
 	m_Orientated = false;
-	m_Deletable = false;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -58,7 +57,6 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Count = (m_Stackable) ? itemEntity->spawnArgs.GetInt("inv_count", "1") : 0;
 
 	m_Droppable = itemEntity->spawnArgs.GetBool("inv_droppable", "0");
-	m_Deletable = itemEntity->spawnArgs.GetBool("inv_delete", "0");
 	m_ItemId = itemEntity->spawnArgs.GetString("inv_item_id", "");
 
 	m_Icon = itemEntity->spawnArgs.GetString("inv_icon", "");
@@ -155,14 +153,6 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 	}
 	else
 		m_Hud = false;
-}
-
-void CInventoryItem::SetDeletable(bool bDeletable)
-{
-	if(m_Droppable == true)
-		m_Deletable = false;
-	else
-		m_Deletable = bDeletable;
 }
 
 CInventoryItem::LootType CInventoryItem::getLootTypeFromSpawnargs(const idDict& spawnargs) {

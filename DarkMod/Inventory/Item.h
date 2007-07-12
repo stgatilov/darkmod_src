@@ -85,9 +85,6 @@ public:
 
 	inline idStr&			GetIcon() { return m_Icon; };
 
-	void					SetDeletable(bool bDeletable = true);
-	inline bool				IsDeletable(void) { return m_Deletable; };
-
 	inline void				SetItemId(const idStr &id) { m_ItemId = id; };
 	inline idStr			GetItemId(void) { return m_ItemId; };
 
@@ -118,8 +115,6 @@ protected:
 	bool					m_Hud;
 	idStr					m_Icon;			// The inventory icon string
 	bool					m_Orientated;	// Taken from the entity
-	bool					m_Deletable;	// Can the entity be deleted when it has been put into the inventory?
-
 };
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

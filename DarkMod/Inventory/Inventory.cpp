@@ -322,9 +322,6 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
-
-			// Prevent this item from being deleted, even if it's stackable
-			item->SetDeletable(false);
 		}
 		else {
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put item into category: %s.\r", ent->name.c_str());
@@ -393,13 +390,6 @@ void CInventory::PutItem(CInventoryItem *item, const idStr& category)
 
 	// Pack the item into the category
 	gr->PutItem(item);
-
-	/*if (item->IsDeletable() && item->IsDroppable())	{
-		// Prevent droppable objects from being deletable
-		item->SetDeletable(false);
-	}
-
-	RemoveEntityFromMap(item->GetItemEntity(), item->IsDeletable());*/
 
 	// Objective callback for non-loot items:
 	// non-loot item passes in inv_name and individual item count, SuperGroupVal of 1
