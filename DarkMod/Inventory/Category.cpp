@@ -208,3 +208,7 @@ void CInventoryCategory::removeItem(CInventoryItem* item) {
 		}
 	}
 }
+
+int CInventoryCategory::size() const {
+	return m_Item.Num();
+}

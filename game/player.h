@@ -386,7 +386,17 @@ public:
 
 	void					Spawn( void );
 	void					Think( void );
+
+	/**
+	* greebo: This creates all the default inventory items and adds the weapons.
+	*/
 	void					SetupInventory();
+
+	/**
+	* greebo: Parses the spawnargs for any weapon definitions and adds them
+	*         to the inventory. Expects the weapon category to exist.
+	*/
+	void					addWeaponsToInventory();
 
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file

@@ -40,6 +40,10 @@ public:
 	int					GetLoot(int &Gold, int &Jewelry, int &Goods);
 
 	/**
+	 * greebo: Adds the given item to this category
+	 */
+	void				PutItem(CInventoryItem *Item);
+	/**
 	 * greebo: Removes the specified <item> from this category.
 	 */
 	void				removeItem(CInventoryItem* item);
@@ -48,11 +52,15 @@ public:
 	 */
 	bool				isEmpty() const;
 
+	/**
+	 * Returns the number of items in this category.
+	 */
+	int					size() const;
+
 protected:
 	CInventoryCategory(CInventory* inventory, const idStr& name = "");
 	~CInventoryCategory();
 
-	void				PutItem(CInventoryItem *Item);
 	void				SetOwner(idEntity *Owner);
 	void				Save(idSaveGame *savefile) const;
 	void				Restore(idRestoreGame *savefile);

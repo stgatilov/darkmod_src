@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/Inventory/Inventory.h"
+#include "../DarkMod/Inventory/WeaponItem.h"
 #include "../DarkMod/KeyboardHook.h"
 /*
 ===============================================================================
@@ -1690,6 +1691,33 @@ void idPlayer::Spawn( void )
 	SetupInventory();
 }
 
+void idPlayer::addWeaponsToInventory() {
+
+	for (unsigned int i = 0; i < MAX_WEAPONS; i++) {
+		// Construct the spawnarg name
+		idStr key(va("def_weapon%d", i));
+
+		idStr weaponDef = spawnArgs.GetString(key.c_str());
+		if (!weaponDef.IsEmpty()) {
+			const idDict* entityDef = gameLocal.FindEntityDefDict(weaponDef.c_str());
+
+			if (entityDef != NULL) {
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding weapon to inventory: %s\r", weaponDef.c_str());
+				// Allocate a new weapon item using the found entityDef
+				CInventoryWeaponItem* item = new CInventoryWeaponItem(*entityDef, this);
+
+				// Add it to the weapon category
+				m_WeaponCursor->GetCurrentCategory()->PutItem(item);
+			}
+			else {
+				DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Weapon entityDef not found: %s\r", weaponDef.c_str());
+			}
+		}
+	}
+
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->size());
+}
+
 void idPlayer::SetupInventory()
 {
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
@@ -1702,6 +1730,9 @@ void idPlayer::SetupInventory()
 	inv->CreateCategory(TDM_PLAYER_WEAPON_CATEGORY, &idx);
 	m_WeaponCursor->SetCurrentCategory(idx);
 	m_WeaponCursor->SetCategoryLock(true);
+
+	// greebo: Parse the spawnargs and add the weapon items to the inventory.
+	addWeaponsToInventory();
 
 	// Now create the standard cursor for all the other inventory items (excl. weapons)
 	CInventoryCursor *crsr = InventoryCursor();
@@ -10424,10 +10455,7 @@ void idPlayer::PerformFrob(void)
 
 		// First we have to check wether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
-		// hide the entity. Since we can not know wether the item can
-		// later on be revoked, either by script or by the player, we
-		// only hide the entity. Also if a frobactionscript is associated
-		// with it, it would be triggered, so the entity must stay around.
+		// hide the entity.
 		CInventoryItem* item = AddToInventory(frob, hud);
 
 		if (item != NULL) {
