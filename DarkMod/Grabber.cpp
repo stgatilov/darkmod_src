@@ -713,6 +713,21 @@ void CGrabber::RemoveFromClipList( int index )
 	}
 }
 
+void CGrabber::RemoveFromClipList(idEntity* entity)
+{
+	for (int i = 0; i < m_clipList.Num(); i++) {
+		if (m_clipList[i].m_ent == entity) {
+			m_clipList.RemoveIndex(i);
+			break;
+		}
+	}
+	
+	if( !this->HasClippedEntity() ) {
+		// cancel CheckClipList because the list is empty
+		this->CancelEvents( &EV_Grabber_CheckClipList );
+	}
+}
+
 /*
 ==============
 CGrabber::Event_CheckClipList

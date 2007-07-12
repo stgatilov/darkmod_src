@@ -51,6 +51,14 @@ public:
 		bool					HasClippedEntity( void ) const;
 
 		/**
+		 * Cycles through the cliplist and removes the given entity.
+		 *
+		 * greebo: I added this to prevent deleted entities (after beind added to 
+		 *         the inventory, for instance) from being checked and causing segfaults.
+		 */
+		void					RemoveFromClipList(idEntity* entity);
+
+		/**
 		* Clamp the current velocity to max velocity
 		**/
 		void					ClampVelocity( float maxLin, float maxAng, int idVal = 0 );

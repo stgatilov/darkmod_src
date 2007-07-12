@@ -10420,16 +10420,24 @@ void idPlayer::PerformFrob(void)
 		// Fire the STIM_FROB response (if defined) on this entity
 		frob->ResponseTrigger(this, ST_FROB);
 		
+		frob->FrobAction(true);
+
 		// First we have to check wether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity. Since we can not know wether the item can
 		// later on be revoked, either by script or by the player, we
 		// only hide the entity. Also if a frobactionscript is associated
 		// with it, it would be triggered, so the entity must stay around.
-		if(AddToInventory(frob, hud) != NULL)
+		CInventoryItem* item = AddToInventory(frob, hud);
+
+		if (item != NULL) {
+			// Item has been added to the inventory
 			pDM->m_FrobEntity = NULL;
 
-		frob->FrobAction(true); 
+			// greebo: Prevent the grabber from checking the added entity (it may be 
+			// entirely removed from the game, which would cause crashes).
+			g_Global.m_DarkModPlayer->grabber->RemoveFromClipList(frob);
+		}
 	}
 Quit:
 	return;
