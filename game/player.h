@@ -14,6 +14,7 @@
 #define __GAME_PLAYER_H__
 
 #include "../DarkMod/ButtonStateTracker.h"
+class CInventoryWeaponItem;
 
 /*
 ===============================================================================
@@ -528,6 +529,12 @@ public:
 
 	// returns FALSE if the weapon with the requested index could not be selected
 	bool					SelectWeapon( int num, bool force );
+
+	/**
+	 * greebo: This returns the current weapon being focused at by the weapon inventory cursor.
+	 *         Can return NULL, but should not in 99% of the cases.
+	 */
+	CInventoryWeaponItem*	getCurrentWeaponItem();
 
 	void					DropWeapon( bool died ) ;
 	void					StealWeapon( idPlayer *player );

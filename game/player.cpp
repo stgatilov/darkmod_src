@@ -1693,6 +1693,14 @@ void idPlayer::Spawn( void )
 	SetupInventory();
 }
 
+CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
+	if (m_WeaponCursor == NULL) {
+		return NULL;
+	}
+
+	return dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+}
+
 void idPlayer::addWeaponsToInventory() {
 
 	for (unsigned int i = 0; i < MAX_WEAPONS; i++) {
@@ -2696,11 +2704,7 @@ idPlayer::UpdateHudAmmo
 ===============
 */
 void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
-	if (m_WeaponCursor == NULL) {
-		return;
-	}
-
-	CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+	CInventoryWeaponItem* item = getCurrentWeaponItem();
 
 	if (_hud != NULL && item != NULL) {
 		int ammoAmount = item->getAmmo();
@@ -3881,7 +3885,7 @@ void idPlayer::NextWeapon( void ) {
 	}
 	
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+	CInventoryWeaponItem* curItem = getCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
@@ -3953,7 +3957,7 @@ void idPlayer::PrevWeapon( void ) {
 	}
 
 	// Get the current weaponItem
-	CInventoryWeaponItem* curItem = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
+	CInventoryWeaponItem* curItem = getCurrentWeaponItem();
 
 	if (curItem == NULL) {
 		return;
