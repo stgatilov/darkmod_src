@@ -704,24 +704,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( give_all || idStr::Icmp( name, "weapons" ) == 0 ) {
-		player->inventory.weapons = BIT( MAX_WEAPONS ) - 1;
-		player->CacheWeapons();
-
-		if ( !give_all ) {
-			return;
-		}
-	}
-
-	/*if ( give_all || idStr::Icmp( name, "ammo" ) == 0 ) {
-		for ( i = 0 ; i < AMMO_NUMTYPES; i++ ) {
-			player->inventory.ammo[ i ] = player->inventory.MaxAmmoForAmmoClass( player, idWeapon::GetAmmoNameForNum( ( ammo_t )i ) );
-		}
-		if ( !give_all ) {
-			return;
-		}
-	}*/
-
 	if ( give_all || idStr::Icmp( name, "armor" ) == 0 ) {
 		player->inventory.armor = player->inventory.maxarmor;
 		if ( !give_all ) {

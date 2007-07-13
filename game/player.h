@@ -126,12 +126,9 @@ enum {
 class idInventory {
 public:
 	int						maxHealth;
-	int						weapons;
 	int						powerups;
 	int						armor;
 	int						maxarmor;
-	//int						ammo[ AMMO_NUMTYPES ];
-	//int						clip[ MAX_WEAPONS ];
 	int						powerupEndTime[ MAX_POWERUPS ];
 
 	int						deplete_armor;
@@ -174,11 +171,6 @@ public:
 	void					RestoreInventory( idPlayer *owner, const idDict &dict );
 	bool					Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud );
 	void					Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index );
-	ammo_t					AmmoIndexForAmmoClass( const char *ammo_classname ) const;
-	int						MaxAmmoForAmmoClass( idPlayer *owner, const char *ammo_classname ) const;
-	int						WeaponIndexForAmmoClass( const idDict & spawnArgs, const char *ammo_classname ) const;
-	ammo_t					AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );
-	const char *			AmmoPickupNameForIndex( ammo_t ammonum ) const;
 	void					AddPickupName( const char *name, const char *icon );
 
 	void					UpdateArmor( void );

@@ -179,7 +179,6 @@ idInventory::Clear
 */
 void idInventory::Clear( void ) {
 	maxHealth		= 0;
-	weapons			= 0;
 	powerups		= 0;
 	armor			= 0;
 	maxarmor		= 0;
@@ -306,9 +305,6 @@ void idInventory::GetPersistantData( idDict &dict )
 	}
 	dict.SetInt( "emails", emails.Num() );
 
-	// weapons
-	dict.SetInt( "weapon_bits", weapons );
-
 	dict.SetInt( "levelTriggers", levelTriggers.Num() );
 	for ( i = 0; i < levelTriggers.Num(); i++ ) {
 		sprintf( key, "levelTrigger_Level_%i", i );
@@ -395,9 +391,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 		emails[i] = dict.GetString( itemname, "default" );
 	}
 
-	// weapons are stored as a number for persistant data, but as strings in the entityDef
-	weapons	= dict.GetInt( "weapon_bits", "0" );
-
 #ifdef ID_DEMO_BUILD
 		Give( owner, dict, "weapon", dict.GetString( "weapon" ), NULL, false );
 #else
@@ -429,7 +422,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	int i;
 
 	savefile->WriteInt( maxHealth );
-	savefile->WriteInt( weapons );
 	savefile->WriteInt( powerups );
 	savefile->WriteInt( armor );
 	savefile->WriteInt( maxarmor );
@@ -522,7 +514,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 	int i, num;
 
 	savefile->ReadInt( maxHealth );
-	savefile->ReadInt( weapons );
 	savefile->ReadInt( powerups );
 	savefile->ReadInt( armor );
 	savefile->ReadInt( maxarmor );
@@ -628,75 +619,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( armorPulse );
 
 	savefile->ReadInt( lastGiveTime );
-}
-
-/*
-==============
-idInventory::AmmoIndexForAmmoClass
-==============
-*/
-ammo_t idInventory::AmmoIndexForAmmoClass( const char *ammo_classname ) const {
-	return idWeapon::GetAmmoNumForName( ammo_classname );
-}
-
-/*
-==============
-idInventory::AmmoIndexForAmmoClass
-==============
-*/
-int idInventory::MaxAmmoForAmmoClass( idPlayer *owner, const char *ammo_classname ) const {
-	return owner->spawnArgs.GetInt( va( "max_%s", ammo_classname ), "0" );
-}
-
-/*
-==============
-idInventory::AmmoPickupNameForIndex
-==============
-*/
-const char *idInventory::AmmoPickupNameForIndex( ammo_t ammonum ) const {
-	return idWeapon::GetAmmoPickupNameForNum( ammonum );
-}
-
-/*
-==============
-idInventory::WeaponIndexForAmmoClass
-mapping could be prepared in the constructor
-==============
-*/
-int idInventory::WeaponIndexForAmmoClass( const idDict & spawnArgs, const char *ammo_classname ) const {
-	int i;
-	const char *weapon_classname;
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		weapon_classname = spawnArgs.GetString( va( "def_weapon%d", i ) );
-		if ( !weapon_classname ) {
-			continue;
-		}
-		const idDeclEntityDef *decl = gameLocal.FindEntityDef( weapon_classname, false );
-		if ( !decl ) {
-			continue;
-		}
-		if ( !idStr::Icmp( ammo_classname, decl->dict.GetString( "ammoType" ) ) ) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-/*
-==============
-idInventory::AmmoIndexForWeaponClass
-==============
-*/
-ammo_t idInventory::AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired ) {
-	const idDeclEntityDef *decl = gameLocal.FindEntityDef( weapon_classname, false );
-	if ( !decl ) {
-		gameLocal.Error( "Unknown weapon in decl '%s'", weapon_classname );
-	}
-	if ( ammoRequired ) {
-		*ammoRequired = decl->dict.GetInt( "ammoRequired" );
-	}
-	ammo_t ammo_i = AmmoIndexForAmmoClass( decl->dict.GetString( "ammoType" ) );
-	return ammo_i;
 }
 
 /*
@@ -808,14 +730,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 			// cache the media for this weapon
 			weaponDecl = gameLocal.FindEntityDef( weaponName, false );
 
-			// don't pickup "no ammo" weapon types twice
-			// not for D3 SP .. there is only one case in the game where you can get a no ammo
-			// weapon when you might already have it, in that case it is more conistent to pick it up
-			if ( gameLocal.isMultiplayer && weaponDecl && ( weapons & ( 1 << i ) ) && !weaponDecl->dict.GetInt( "ammoRequired" ) ) {
-				continue;
-			}
-
-			if ( !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || ( weaponName == "weapon_fists" ) || ( weaponName == "weapon_soulcube" ) ) {
+			/*if ( !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || ( weaponName == "weapon_fists" ) || ( weaponName == "weapon_soulcube" ) ) {
 				if ( ( weapons & ( 1 << i ) ) == 0 || gameLocal.isMultiplayer ) {
 					if ( owner->GetUserInfo()->GetBool( "ui_autoSwitch" ) && idealWeapon ) {
 						assert( !gameLocal.isClient );
@@ -830,7 +745,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 					weapons |= ( 1 << i );
 					tookWeapon = true;
 				}
-			}
+			}*/
 		}
 		return tookWeapon;
 	} else if ( !idStr::Icmp( statname, "item" ) || !idStr::Icmp( statname, "icon" ) || !idStr::Icmp( statname, "name" ) ) {
@@ -866,7 +781,7 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 	} else if ( !weapon_classname ) {
 		weapon_classname = spawnArgs.GetString( va( "def_weapon%d", weapon_index ) );
 	}
-	weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
+	//weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
 }
 
 /*
@@ -3046,22 +2961,11 @@ idPlayer::CacheWeapons
 ===============
 */
 void idPlayer::CacheWeapons( void ) {
-	idStr	weap;
-	int		w;
-
-	// check if we have any weapons
-	if ( !inventory.weapons ) {
-		return;
-	}
-	
-	for( w = 0; w < MAX_WEAPONS; w++ ) {
-		if ( inventory.weapons & ( 1 << w ) ) {
-			weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-			if ( weap != "" ) {
-				idWeapon::CacheWeapon( weap );
-			} else {
-				inventory.weapons &= ~( 1 << w );
-			}
+	// greebo: Cache all weapons, regardless if we have them or not
+	for( int w = 0; w < MAX_WEAPONS; w++ ) {
+		idStr weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
+		if ( weap != "" ) {
+			idWeapon::CacheWeapon( weap );
 		}
 	}
 }
@@ -4091,10 +3995,7 @@ void idPlayer::StealWeapon( idPlayer *player )
 	if ( newweap == -1 ) {
 		return;
 	}
-	// might be just dropped - check inventory
-	if ( ! ( player->inventory.weapons & ( 1 << newweap ) ) ) {
-		return;
-	}
+
 	const char *weapon_classname = spawnArgs.GetString( va( "def_weapon%d", newweap ) );
 	assert( weapon_classname );
 	int ammoavailable = player->weapon.GetEntity()->AmmoAvailable();
@@ -4120,7 +4021,6 @@ void idPlayer::StealWeapon( idPlayer *player )
 
 	// give weapon, setup the ammo count
 	Give( "weapon", weapon_classname );
-	ammo_t ammo_i = player->inventory.AmmoIndexForWeaponClass( weapon_classname, NULL );
 	idealWeapon = newweap;
 }
 
@@ -5669,12 +5569,12 @@ void idPlayer::TogglePDA( void ) {
 			const char *weapnum = va( "def_weapon%d", j );
 			const char *hudWeap = va( "weapon%d", j );
 			int weapstate = 0;
-			if ( inventory.weapons & ( 1 << j ) ) {
+			/*if ( inventory.weapons & ( 1 << j ) ) {
 				const char *weap = spawnArgs.GetString( weapnum );
 				if ( weap && *weap ) {
 					weapstate++;
 				}
-			}
+			}*/
 			objectiveSystem->SetStateInt( hudWeap, weapstate );
 		}
 
@@ -8171,24 +8071,8 @@ idPlayer::AddAIKill
 =============
 */
 void idPlayer::AddAIKill( void ) {
-	int max_souls;
-	int ammo_souls;
-
-	if ( ( weapon_soulcube < 0 ) || ( inventory.weapons & ( 1 << weapon_soulcube ) ) == 0 ) {
-		return;
-	}
-
-	assert( hud );
-
-	ammo_souls = idWeapon::GetAmmoNumForName( "ammo_souls" );
-	max_souls = inventory.MaxAmmoForAmmoClass( this, "ammo_souls" );
-	/*if ( inventory.ammo[ ammo_souls ] < max_souls ) {
-		inventory.ammo[ ammo_souls ]++;
-		if ( inventory.ammo[ ammo_souls ] >= max_souls ) {
-			hud->HandleNamedEvent( "soulCubeReady" );
-			StartSound( "snd_soulcube_ready", SND_CHANNEL_ANY, 0, false, NULL );
-		}
-	}*/
+	// greebo: Disabled this routine, no soulcube in TDM
+	return;
 }
 
 /*
@@ -8471,24 +8355,14 @@ void idPlayer::Event_SelectWeapon( const char *weaponName ) {
 
 	weaponNum = -1;
 	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		if ( inventory.weapons & ( 1 << i ) ) {
-			const char *weap = spawnArgs.GetString( va( "def_weapon%d", i ) );
-			if ( !idStr::Cmp( weap, weaponName ) ) {
-				weaponNum = i;
-				break;
-			}
+		const char *weap = spawnArgs.GetString( va( "def_weapon%d", i ) );
+		if ( !idStr::Cmp( weap, weaponName ) ) {
+			weaponNum = i;
+			break;
 		}
 	}
-
-	if ( weaponNum < 0 ) {
-		gameLocal.Warning( "%s is not carrying weapon '%s'", name.c_str(), weaponName );
-		return;
-	}
-
-	hiddenWeapon = false;
-	idealWeapon = weaponNum;
-
-	UpdateHudWeapon();
+	// Try to select the weapon, might as well return false
+	SelectWeapon(weaponNum, false);
 }
 
 /*
@@ -8833,7 +8707,6 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
 	msg.WriteBits( idealWeapon, idMath::BitsForInteger( MAX_WEAPONS ) );
-	msg.WriteBits( inventory.weapons, MAX_WEAPONS );
 	msg.WriteBits( weapon.GetSpawnId(), 32 );
 	msg.WriteBits( spectator, idMath::BitsForInteger( MAX_CLIENTS ) );
 	msg.WriteBits( lastHitToggle, 1 );
@@ -8870,7 +8743,6 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
 	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( MAX_WEAPONS ) );
-	inventory.weapons = msg.ReadBits( MAX_WEAPONS );
 	weaponSpawnId = msg.ReadBits( 32 );
 	spectator = msg.ReadBits( idMath::BitsForInteger( MAX_CLIENTS ) );
 	newHitToggle = msg.ReadBits( 1 ) != 0;
