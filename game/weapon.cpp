@@ -2537,7 +2537,7 @@ void idWeapon::Event_UseAmmo( int amount ) {
 		return;
 	}
 
-	owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? amount : ( amount * ammoRequired ) );
+	owner->getCurrentWeaponItem()->useAmmo(( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	if ( clipSize && ammoRequired ) {
 		ammoClip -= powerAmmo ? amount : ( amount * ammoRequired );
 		if ( ammoClip < 0 ) {

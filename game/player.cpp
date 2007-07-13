@@ -188,13 +188,8 @@ void idInventory::Clear( void ) {
 	deplete_ammount	= 0;
 	nextArmorDepleteTime = 0;
 
-	memset( ammo, 0, sizeof( ammo ) );
-
 	ClearPowerUps();
 
-	// set to -1 so that the gun knows to have a full clip the first time we get it and at the start of the level
-	memset( clip, -1, sizeof( clip ) );
-	
 	items.DeleteContents( true );
 	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
 	pdas.Clear();
@@ -214,8 +209,6 @@ void idInventory::Clear( void ) {
 	onePickupTime = 0;
 	pickupItemNames.Clear();
 	objectiveNames.Clear();
-
-	ammoPredictTime = 0;
 
 	lastGiveTime = 0;
 
@@ -276,18 +269,9 @@ void idInventory::GetPersistantData( idDict &dict )
 {
 	int		i;
 	idStr	key;
-	const char *name;
 
 	// armor
 	dict.SetInt( "armor", armor );
-
-	// ammo
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		name = idWeapon::GetAmmoNameForNum( ( ammo_t )i );
-		if ( name ) {
-			dict.SetInt( name, ammo[ i ] );
-		}
-	}
 
 	// pdas viewed
 	for ( i = 0; i < 4; i++ ) {
@@ -346,7 +330,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 	idStr		key;
 	idStr		itemname;
 	const idKeyValue *kv;
-	const char	*name;
 
 	Clear();
 
@@ -359,14 +342,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 	deplete_ammount	= dict.GetInt( "deplete_ammount", "1" );
 
 	// the clip and powerups aren't restored
-
-	// ammo
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		name = idWeapon::GetAmmoNameForNum( ( ammo_t )i );
-		if ( name ) {
-			ammo[ i ] = dict.GetInt( name );
-		}
-	}
 
 	// items
 	num = dict.GetInt( "items" );
@@ -458,18 +433,11 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( powerups );
 	savefile->WriteInt( armor );
 	savefile->WriteInt( maxarmor );
-	savefile->WriteInt( ammoPredictTime );
 	savefile->WriteInt( deplete_armor );
 	savefile->WriteFloat( deplete_rate );
 	savefile->WriteInt( deplete_ammount );
 	savefile->WriteInt( nextArmorDepleteTime );
 
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		savefile->WriteInt( ammo[ i ] );
-	}
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		savefile->WriteInt( clip[ i ] );
-	}
 	for( i = 0; i < MAX_POWERUPS; i++ ) {
 		savefile->WriteInt( powerupEndTime[ i ] );
 	}
@@ -558,18 +526,11 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( powerups );
 	savefile->ReadInt( armor );
 	savefile->ReadInt( maxarmor );
-	savefile->ReadInt( ammoPredictTime );
 	savefile->ReadInt( deplete_armor );
 	savefile->ReadFloat( deplete_rate );
 	savefile->ReadInt( deplete_ammount );
 	savefile->ReadInt( nextArmorDepleteTime );
 
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		savefile->ReadInt( ammo[ i ] );
-	}
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		savefile->ReadInt( clip[ i ] );
-	}
 	for( i = 0; i < MAX_POWERUPS; i++ ) {
 		savefile->ReadInt( powerupEndTime[ i ] );
 	}
@@ -770,14 +731,14 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 	const char				*end;
 	int						len;
 	idStr					weaponString;
-	int						max;
+//	int						max;
 	const idDeclEntityDef	*weaponDecl;
 	bool					tookWeapon;
 	int						amount;
 	idItemInfo				info;
-	const char				*name;
+//	const char				*name;
 
-	if ( !idStr::Icmpn( statname, "ammo_", 5 ) ) {
+	/*if ( !idStr::Icmpn( statname, "ammo_", 5 ) ) {
 		i = AmmoIndexForAmmoClass( statname );
 		max = MaxAmmoForAmmoClass( owner, statname );
 		if ( ammo[ i ] >= max ) {
@@ -796,7 +757,8 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 				AddPickupName( name, "" );
 			}
 		}
-	} else if ( !idStr::Icmp( statname, "armor" ) ) {
+	} else*/ 
+	if ( !idStr::Icmp( statname, "armor" ) ) {
 		if ( armor >= maxarmor ) {
 			return false;	// can't hold any more, so leave the item
 		}
@@ -809,13 +771,13 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 			nextArmorDepleteTime = 0;
 			armorPulse = true;
 		}
-	} else if ( idStr::FindText( statname, "inclip_" ) == 0 ) {
+	} /*else if ( idStr::FindText( statname, "inclip_" ) == 0 ) {
 		i = WeaponIndexForAmmoClass( spawnArgs, statname + 7 );
 		if ( i != -1 ) {
 			// set, don't add. not going over the clip size limit.
 			clip[ i ] = atoi( value );
 		}
-	} else if ( !idStr::Icmp( statname, "berserk" ) ) {
+	}*/ else if ( !idStr::Icmp( statname, "berserk" ) ) {
 		GivePowerUp( owner, BERSERK, SEC2MS( atof( value ) ) );
 	} else if ( !idStr::Icmp( statname, "mega" ) ) {
 		GivePowerUp( owner, MEGAHEALTH, SEC2MS( atof( value ) ) );
@@ -905,61 +867,6 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 		weapon_classname = spawnArgs.GetString( va( "def_weapon%d", weapon_index ) );
 	}
 	weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
-	ammo_t ammo_i = AmmoIndexForWeaponClass( weapon_classname, NULL );
-	if ( ammo_i ) {
-		clip[ weapon_index ] = -1;
-		ammo[ ammo_i ] = 0;
-	}
-}
-
-/*
-===============
-idInventory::HasAmmo
-===============
-*/
-int idInventory::HasAmmo( ammo_t type, int amount ) {
-	if ( ( type == 0 ) || !amount ) {
-		// always allow weapons that don't use ammo to fire
-		return -1;
-	}
-
-	// check if we have infinite ammo
-	if ( ammo[ type ] < 0 ) {
-		return -1;
-	}
-
-	// return how many shots we can fire
-	return ammo[ type ] / amount;
-}
-
-/*
-===============
-idInventory::HasAmmo
-===============
-*/
-int idInventory::HasAmmo( const char *weapon_classname ) {
-	int ammoRequired;
-	ammo_t ammo_i = AmmoIndexForWeaponClass( weapon_classname, &ammoRequired );
-	return HasAmmo( ammo_i, ammoRequired );
-}
-
-/*
-===============
-idInventory::UseAmmo
-===============
-*/
-bool idInventory::UseAmmo( ammo_t type, int amount ) {
-	if ( !HasAmmo( type, amount ) ) {
-		return false;
-	}
-
-	// take an ammo away if not infinite
-	if ( ammo[ type ] >= 0 ) {
-		ammo[ type ] -= amount;
-		ammoPredictTime = gameLocal.time; // mp client: we predict this. mark time so we're not confused by snapshots
-	}
-
-	return true;
 }
 
 /*
@@ -4215,8 +4122,6 @@ void idPlayer::StealWeapon( idPlayer *player )
 	Give( "weapon", weapon_classname );
 	ammo_t ammo_i = player->inventory.AmmoIndexForWeaponClass( weapon_classname, NULL );
 	idealWeapon = newweap;
-	inventory.ammo[ ammo_i ] += ammoavailable;
-	inventory.clip[ newweap ] = inclip;
 }
 
 /*
@@ -4266,7 +4171,7 @@ void idPlayer::Weapon_Combat( void ) {
 			currentWeapon = idealWeapon;
 			weaponGone = false;
 			animPrefix = spawnArgs.GetString( va( "def_weapon%d", currentWeapon ) );
-			weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ currentWeapon ] );
+			weapon.GetEntity()->GetWeaponDef( animPrefix, 0 /*inventory.clip[ currentWeapon ]*/ );
 			animPrefix.Strip( "weapon_" );
 
 			weapon.GetEntity()->NetCatchup();
@@ -4291,7 +4196,7 @@ void idPlayer::Weapon_Combat( void ) {
 				currentWeapon = idealWeapon;
 				weaponGone = false;
 				animPrefix = spawnArgs.GetString( va( "def_weapon%d", currentWeapon ) );
-				weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ currentWeapon ] );
+				weapon.GetEntity()->GetWeaponDef( animPrefix, 0/*inventory.clip[ currentWeapon ]*/ );
 				animPrefix.Strip( "weapon_" );
 
 				weapon.GetEntity()->Raise();
@@ -4326,7 +4231,7 @@ void idPlayer::Weapon_Combat( void ) {
 
 	// update our ammo clip in our inventory
 	if ( ( currentWeapon >= 0 ) && ( currentWeapon < MAX_WEAPONS ) ) {
-		inventory.clip[ currentWeapon ] = weapon.GetEntity()->AmmoInClip();
+		//inventory.clip[ currentWeapon ] = weapon.GetEntity()->AmmoInClip();
 		if ( hud && ( currentWeapon == idealWeapon ) ) {
 			UpdateHudAmmo( hud );
 		}
@@ -4462,7 +4367,7 @@ void idPlayer::UpdateWeapon( void ) {
 	if ( !weapon.GetEntity()->IsLinked() ) {
 		if ( idealWeapon != -1 ) {
 			animPrefix = spawnArgs.GetString( va( "def_weapon%d", idealWeapon ) );
-			weapon.GetEntity()->GetWeaponDef( animPrefix, inventory.clip[ idealWeapon ] );
+			weapon.GetEntity()->GetWeaponDef( animPrefix, 0/*inventory.clip[ idealWeapon ]*/ );
 			assert( weapon.GetEntity()->IsLinked() );
 		} else {
 			return;
@@ -8277,13 +8182,13 @@ void idPlayer::AddAIKill( void ) {
 
 	ammo_souls = idWeapon::GetAmmoNumForName( "ammo_souls" );
 	max_souls = inventory.MaxAmmoForAmmoClass( this, "ammo_souls" );
-	if ( inventory.ammo[ ammo_souls ] < max_souls ) {
+	/*if ( inventory.ammo[ ammo_souls ] < max_souls ) {
 		inventory.ammo[ ammo_souls ]++;
 		if ( inventory.ammo[ ammo_souls ] >= max_souls ) {
 			hud->HandleNamedEvent( "soulCubeReady" );
 			StartSound( "snd_soulcube_ready", SND_CHANNEL_ANY, 0, false, NULL );
 		}
-	}
+	}*/
 }
 
 /*
@@ -8943,7 +8848,7 @@ idPlayer::ReadFromSnapshot
 ================
 */
 void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int		i, oldHealth, newIdealWeapon, weaponSpawnId;
+	int		oldHealth, newIdealWeapon, weaponSpawnId;
 	bool	newHitToggle, stateHitch;
 
 	if ( snapshotSequence - lastSnapshotSequence > 1 ) {
@@ -8981,12 +8886,6 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			weapon.GetEntity()->SetOwner( this );
 		}
 		currentWeapon = -1;
-	}
-	// if not a local client assume the client has all ammo types
-	if ( entityNumber != gameLocal.localClientNum ) {
-		for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-			inventory.ammo[ i ] = 999;
-		}
 	}
 
 	if ( oldHealth > 0 && health <= 0 ) {
@@ -9077,20 +8976,11 @@ idPlayer::WritePlayerStateToSnapshot
 ================
 */
 void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
-	int i;
+	//int i;
 
 	msg.WriteByte( bobCycle );
 	msg.WriteLong( stepUpTime );
 	msg.WriteFloat( stepUpDelta );
-	msg.WriteShort( inventory.weapons );
-	msg.WriteByte( inventory.armor );
-
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		msg.WriteBits( inventory.ammo[i], ASYNC_PLAYER_INV_AMMO_BITS );
-	}
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		msg.WriteBits( inventory.clip[i], ASYNC_PLAYER_INV_CLIP_BITS );
-	}
 }
 
 /*
@@ -9099,23 +8989,11 @@ idPlayer::ReadPlayerStateFromSnapshot
 ================
 */
 void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
-	int i, ammo;
+	//int i, ammo;
 
 	bobCycle = msg.ReadByte();
 	stepUpTime = msg.ReadLong();
 	stepUpDelta = msg.ReadFloat();
-	inventory.weapons = msg.ReadShort();
-	inventory.armor = msg.ReadByte();
-
-	for( i = 0; i < AMMO_NUMTYPES; i++ ) {
-		ammo = msg.ReadBits( ASYNC_PLAYER_INV_AMMO_BITS );
-		if ( gameLocal.time >= inventory.ammoPredictTime ) {
-			inventory.ammo[ i ] = ammo;
-		}
-	}
-	for( i = 0; i < MAX_WEAPONS; i++ ) {
-		inventory.clip[i] = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
-	}
 }
 
 /*

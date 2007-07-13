@@ -130,12 +130,9 @@ public:
 	int						powerups;
 	int						armor;
 	int						maxarmor;
-	int						ammo[ AMMO_NUMTYPES ];
-	int						clip[ MAX_WEAPONS ];
+	//int						ammo[ AMMO_NUMTYPES ];
+	//int						clip[ MAX_WEAPONS ];
 	int						powerupEndTime[ MAX_POWERUPS ];
-
-	// mp
-	int						ammoPredictTime;
 
 	int						deplete_armor;
 	float					deplete_rate;
@@ -183,10 +180,6 @@ public:
 	ammo_t					AmmoIndexForWeaponClass( const char *weapon_classname, int *ammoRequired );
 	const char *			AmmoPickupNameForIndex( ammo_t ammonum ) const;
 	void					AddPickupName( const char *name, const char *icon );
-
-	int						HasAmmo( ammo_t type, int amount );
-	bool					UseAmmo( ammo_t type, int amount );
-	int						HasAmmo( const char *weapon_classname );			// looks up the ammo information for the weapon class first
 
 	void					UpdateArmor( void );
 
