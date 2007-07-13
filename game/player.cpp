@@ -192,8 +192,6 @@ void idInventory::Clear( void ) {
 	pdaOpened = false;
 	turkeyScore = false;
 
-	levelTriggers.Clear();
-
 	nextItemPickup = 0;
 	nextItemNum = 1;
 	onePickupTime = 0;
@@ -244,14 +242,6 @@ void idInventory::GetPersistantData( idDict &dict )
 		dict.Set( key, emails[ i ].c_str() );
 	}
 	dict.SetInt( "emails", emails.Num() );
-
-	dict.SetInt( "levelTriggers", levelTriggers.Num() );
-	for ( i = 0; i < levelTriggers.Num(); i++ ) {
-		sprintf( key, "levelTrigger_Level_%i", i );
-		dict.Set( key, levelTriggers[i].levelName );
-		sprintf( key, "levelTrigger_Trigger_%i", i );
-		dict.Set( key, levelTriggers[i].triggerName );
-	}
 }
 
 /*
@@ -333,17 +323,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 		Give( owner, dict, "weapon", dict.GetString( "weapon" ), NULL, false );
 	}
 #endif
-
-	num = dict.GetInt( "levelTriggers" );
-	for ( i = 0; i < num; i++ ) {
-		sprintf( itemname, "levelTrigger_Level_%i", i );
-		idLevelTriggerInfo lti;
-		lti.levelName = dict.GetString( itemname );
-		sprintf( itemname, "levelTrigger_Trigger_%i", i );
-		lti.triggerName = dict.GetString( itemname );
-		levelTriggers.Append( lti );
-	}
-
 }
 
 /*
@@ -405,12 +384,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	for( i = 0; i < pickupItemNames.Num(); i++ ) {
 		savefile->WriteString( pickupItemNames[i].icon );
 		savefile->WriteString( pickupItemNames[i].name );
-	}
-
-	savefile->WriteInt( levelTriggers.Num() );
-	for ( i = 0; i < levelTriggers.Num(); i++ ) {
-		savefile->WriteString( levelTriggers[i].levelName );
-		savefile->WriteString( levelTriggers[i].triggerName );
 	}
 
 	savefile->WriteInt( lastGiveTime );
@@ -493,14 +466,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( info.name );
 
 		pickupItemNames.Append( info );
-	}
-
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		idLevelTriggerInfo lti;
-		savefile->ReadString( lti.levelName );
-		savefile->ReadString( lti.triggerName );
-		levelTriggers.Append( lti );
 	}
 
 	savefile->ReadInt( lastGiveTime );
@@ -1338,7 +1303,8 @@ void idPlayer::Spawn( void )
 	tipUp = false;
 	objectiveUp = false;
 
-	if ( inventory.levelTriggers.Num() )
+	// See if any levelTriggers are pending. Trigger them now, if this is the case
+	if ( levelTriggers.Num() )
 	{
 		PostEventMS( &EV_Player_LevelTrigger, 0 );
 	}
@@ -1519,6 +1485,13 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	// idBoolFields don't need to be saved, just re-linked in Restore
 
 	inventory.Save( savefile );
+
+	savefile->WriteInt( levelTriggers.Num() );
+	for ( i = 0; i < levelTriggers.Num(); i++ ) {
+		savefile->WriteString( levelTriggers[i].levelName );
+		savefile->WriteString( levelTriggers[i].triggerName );
+	}
+
 	weapon.Save( savefile );
 
 	savefile->WriteUserInterface( hud, false );
@@ -1752,6 +1725,15 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	LinkScriptVariables();
 
 	inventory.Restore( savefile );
+
+	savefile->ReadInt( num );
+	for ( i = 0; i < num; i++ ) {
+		idLevelTriggerInfo lti;
+		savefile->ReadString( lti.levelName );
+		savefile->ReadString( lti.triggerName );
+		levelTriggers.Append( lti );
+	}
+
 	weapon.Restore( savefile );
 
 	for ( i = 0; i < inventory.emails.Num(); i++ ) {
@@ -8654,7 +8636,7 @@ void idPlayer::SetLevelTrigger( const char *levelName, const char *triggerName )
 		idLevelTriggerInfo lti;
 		lti.levelName = levelName;
 		lti.triggerName = triggerName;
-		inventory.levelTriggers.Append( lti );
+		levelTriggers.Append( lti );
 	}
 }
 
@@ -8667,9 +8649,9 @@ void idPlayer::Event_LevelTrigger( void ) {
 	idStr mapName = gameLocal.GetMapName();
 	mapName.StripPath();
 	mapName.StripFileExtension();
-	for ( int i = inventory.levelTriggers.Num() - 1; i >= 0; i-- ) {
-		if ( idStr::Icmp( mapName, inventory.levelTriggers[i].levelName) == 0 ){
-			idEntity *ent = gameLocal.FindEntity( inventory.levelTriggers[i].triggerName );
+	for ( int i = levelTriggers.Num() - 1; i >= 0; i-- ) {
+		if ( idStr::Icmp( mapName, levelTriggers[i].levelName) == 0 ){
+			idEntity *ent = gameLocal.FindEntity( levelTriggers[i].triggerName );
 			if ( ent ) {
 				ent->PostEventMS( &EV_Activate, 1, this );
 			}
