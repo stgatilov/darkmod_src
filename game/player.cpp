@@ -181,10 +181,6 @@ void idInventory::Clear( void ) {
 	maxHealth		= 0;
 
 	items.DeleteContents( true );
-	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
-	pdas.Clear();
-	selPDA = 0;
-	pdaOpened = false;
 }
 
 /*
@@ -193,25 +189,7 @@ idInventory::GetPersistantData
 ==============
 */
 void idInventory::GetPersistantData( idDict &dict )
-{
-	int		i;
-	idStr	key;
-
-	// pdas viewed
-	for ( i = 0; i < 4; i++ ) {
-		dict.SetInt( va("pdasViewed_%i", i), pdasViewed[i] );
-	}
-
-	dict.SetInt( "selPDA", selPDA );
-	dict.SetInt( "pdaOpened", pdaOpened );
-
-	// pdas
-	for ( i = 0; i < pdas.Num(); i++ ) {
-		sprintf( key, "pda_%i", i );
-		dict.Set( key, pdas[ i ] );
-	}
-	dict.SetInt( "pdas", pdas.Num() );
-}
+{}
 
 /*
 ==============
@@ -247,22 +225,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 		}
 	}
 
-	// pdas viewed
-	for ( i = 0; i < 4; i++ ) {
-		pdasViewed[i] = dict.GetInt(va("pdasViewed_%i", i));
-	}
-
-	selPDA = dict.GetInt( "selPDA" );
-	pdaOpened = dict.GetBool( "pdaOpened" );
-
-	// pdas
-	num = dict.GetInt( "pdas" );
-	pdas.SetNum( num );
-	for ( i = 0; i < num; i++ ) {
-		sprintf( itemname, "pda_%i", i );
-		pdas[i] = dict.GetString( itemname, "default" );
-	}
-
 #ifdef ID_DEMO_BUILD
 		Give( owner, dict, "weapon", dict.GetString( "weapon" ), NULL, false );
 #else
@@ -288,23 +250,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	for( i = 0; i < items.Num(); i++ ) {
 		savefile->WriteDict( items[ i ] );
 	}
-
-	savefile->WriteInt( pdasViewed[0] );
-
-	savefile->WriteInt( pdasViewed[1] );
-
-	savefile->WriteInt( pdasViewed[2] );
-
-	savefile->WriteInt( pdasViewed[3] );
-
-
-	savefile->WriteInt( selPDA );
-	savefile->WriteBool( pdaOpened );
-
-	savefile->WriteInt( pdas.Num() );
-	for( i = 0; i < pdas.Num(); i++ ) {
-		savefile->WriteString( pdas[ i ] );
-	}
 }
 
 /*
@@ -323,26 +268,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 
 		savefile->ReadDict( itemdict );
 		items.Append( itemdict );
-	}
-
-	// pdas
-	savefile->ReadInt( pdasViewed[0] );
-
-	savefile->ReadInt( pdasViewed[1] );
-
-	savefile->ReadInt( pdasViewed[2] );
-
-	savefile->ReadInt( pdasViewed[3] );
-
-
-	savefile->ReadInt( selPDA );
-	savefile->ReadBool( pdaOpened );
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strPda;
-		savefile->ReadString( strPda );
-		pdas.Append( strPda );
 	}
 }
 
@@ -1162,9 +1087,6 @@ void idPlayer::Spawn( void )
 	{
 		PostEventMS( &EV_Player_LevelTrigger, 0 );
 	}
-
-	inventory.pdaOpened = false;
-	inventory.selPDA = 0;
 
 	// copy step volumes over from cvars
 	UpdateMoveVolumes();
@@ -2913,7 +2835,8 @@ idPlayer::GivePDA
 */
 void idPlayer::GivePDA( const char *pdaName, idDict *item )
 {
-	if ( gameLocal.isMultiplayer && spectating ) {
+	// greebo: Commented out this whole block, no PDAs in TDM
+	/*if ( gameLocal.isMultiplayer && spectating ) {
 		return;
 	}
 
@@ -2950,7 +2873,7 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item )
 		if ( inventory.pdas.Num() > 1 && pda->GetNumVideos() > 0 && hud ) {
 			hud->HandleNamedEvent( "videoPickup" );
 		}
-	}
+	}*/
 }
 
 /*
@@ -4603,11 +4526,11 @@ idPlayer::GetPDA
 ==============
  */
 const idDeclPDA *idPlayer::GetPDA( void ) const {
-	if ( inventory.pdas.Num() ) {
+	/*if ( inventory.pdas.Num() ) {
 		return static_cast< const idDeclPDA* >( declManager->FindType( DECL_PDA, inventory.pdas[ 0 ] ) );
-	} else {
+	} else {*/
 		return NULL;
-	}
+	//}
 }
 
 /*
@@ -4616,7 +4539,8 @@ idPlayer::UpdatePDAInfo
 ==============
 */
 void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
-	int j, sel;
+	// greebo: Commented out this whole block, no PDAs in TDM
+	/*int j, sel;
 
 	if ( objectiveSystem == NULL ) {
 		return;
@@ -4705,7 +4629,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 				objectiveSystem->SetStateString( "pda_name", cvarSystem->GetCVarString( "ui_name") );
 				AddGuiPDAData( DECL_VIDEO, "listPDAVideo", pda, objectiveSystem );
 				sel = objectiveSystem->State().GetInt( "listPDAVideo_sel_0", "0" );
-				/*const idDeclVideo *vid = NULL;
+				const idDeclVideo *vid = NULL;
 				if ( sel >= 0 && sel < inventory.videos.Num() ) {
 					vid = static_cast< const idDeclVideo * >( declManager->FindType( DECL_VIDEO, inventory.videos[ sel ], false ) );
 				}
@@ -4722,20 +4646,20 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 					objectiveSystem->SetStateString( "PDAVideoIcon", "sound/vo/video/welcome.tga" );
 					objectiveSystem->SetStateString( "PDAVideoTitle", "" );
 					objectiveSystem->SetStateString( "PDAVideoInfo", "" );
-				}*/
+				}
 			} else {
 				// Selected, non-personal pda
 				// Add audio logs
 				if ( updatePDASel ) {
 				objectiveSystem->HandleNamedEvent( "playerPDANotActive" );
 				objectiveSystem->SetStateString( "pda_personal", "0" );
-					inventory.pdaOpened = true;
+					//inventory.pdaOpened = true;
 				}
 				objectiveSystem->SetStateString( "pda_location", pda->GetPost() );
 				objectiveSystem->SetStateString( "pda_name", pda->GetFullName() );
 				int audioCount = AddGuiPDAData( DECL_AUDIO, "listPDAAudio", pda, objectiveSystem );
 				objectiveSystem->SetStateInt( "audioLogCount", audioCount );
-				sel = objectiveSystem->State().GetInt( "listPDAAudio_sel_0", "0" );
+				l = objectiveSystem->State().GetInt( "listPDAAudio_sel_0", "0" );
 				/*const idDeclAudio *aud = NULL;
 				if ( sel >= 0 ) {
 					aud = pda->GetAudioByIndex( sel );
@@ -4749,7 +4673,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 					objectiveSystem->SetStateString( "PDAAudioIcon", "sound/vo/video/welcome.tga" );
 					objectiveSystem->SetStateString( "PDAAutioTitle", "" );
 					objectiveSystem->SetStateString( "PDAAudioInfo", "" );
-				}*/
+				}
 			}
 			// add emails
 			name = "";
@@ -4771,7 +4695,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 	if ( objectiveSystem->State().GetInt( "listPDA_sel_0", "-1" ) == -1 ) {
 		objectiveSystem->SetStateInt( "listPDA_sel_0", 0 );
 	}
-	objectiveSystem->StateChanged( gameLocal.time );
+	objectiveSystem->StateChanged( gameLocal.time );*/
 }
 
 /*
@@ -4784,10 +4708,10 @@ void idPlayer::TogglePDA( void ) {
 		return;
 	}
 
-	if ( inventory.pdas.Num() == 0 ) {
+	/*if ( inventory.pdas.Num() == 0 ) {
 		ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_noPDA" ), true );
 		return;
-	}
+	}*/
 
 	assert( hud );
 
@@ -4828,13 +4752,13 @@ void idPlayer::TogglePDA( void ) {
 			objectiveSystem->SetStateInt( hudWeap, weapstate );
 		}
 
-		objectiveSystem->SetStateInt( "listPDA_sel_0", inventory.selPDA );
+		//objectiveSystem->SetStateInt( "listPDA_sel_0", inventory.selPDA );
 		UpdatePDAInfo( false );
 		objectiveSystem->Activate( true, gameLocal.time );
 		hud->HandleNamedEvent( "pdaPickupHide" );
 		hud->HandleNamedEvent( "videoPickupHide" );
 	} else {
-		inventory.selPDA = objectiveSystem->State().GetInt( "listPDA_sel_0" );
+		//inventory.selPDA = objectiveSystem->State().GetInt( "listPDA_sel_0" );
 		objectiveSystem->Activate( false, gameLocal.time );
 	}
 	objectiveSystemOpen ^= 1;

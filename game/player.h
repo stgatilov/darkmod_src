@@ -116,12 +116,7 @@ class idInventory {
 public:
 	int						maxHealth;
 
-	int						pdasViewed[4]; // 128 bit flags for indicating if a pda has been viewed
-
-	int						selPDA;
-	bool					pdaOpened;
 	idList<idDict *>		items;
-	idStrList				pdas;
 
 							idInventory() { Clear(); }
 							~idInventory() { Clear(); }
