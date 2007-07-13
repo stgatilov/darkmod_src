@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
+#include "../DarkMod/Inventory/WeaponItem.h"
 
 /***********************************************************************
 
@@ -961,7 +962,10 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	if ( ( ammoClip < 0 ) || ( ammoClip > clipSize ) ) {
 		// first time using this weapon so have it fully loaded to start
 		ammoClip = clipSize;
-		ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		CInventoryWeaponItem* weaponItem = owner->getCurrentWeaponItem();
+		if (weaponItem != NULL) {
+			ammoAvail = weaponItem->hasAmmo();
+		}
 		if ( ammoClip > ammoAvail ) {
 			ammoClip = ammoAvail;
 		}
@@ -2246,7 +2250,7 @@ idWeapon::AmmoAvailable
 */
 int idWeapon::AmmoAvailable( void ) const {
 	if ( owner ) {
-		return owner->inventory.HasAmmo( ammoType, ammoRequired );
+		return owner->getCurrentWeaponItem()->hasAmmo();
 	} else {
 		return 0;
 	}
@@ -2559,7 +2563,7 @@ void idWeapon::Event_AddToClip( int amount ) {
 		ammoClip = clipSize;
 	}
 
-	ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	ammoAvail = owner->getCurrentWeaponItem()->hasAmmo();
 	if ( ammoClip > ammoAvail ) {
 		ammoClip = ammoAvail;
 	}
@@ -2581,7 +2585,7 @@ idWeapon::Event_AmmoAvailable
 ===============
 */
 void idWeapon::Event_AmmoAvailable( void ) {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+	int ammoAvail = owner->getCurrentWeaponItem()->hasAmmo();
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2591,7 +2595,7 @@ idWeapon::Event_TotalAmmoCount
 ===============
 */
 void idWeapon::Event_TotalAmmoCount( void ) {
-	int ammoAvail = owner->inventory.HasAmmo( ammoType, 1 );
+	int ammoAvail = owner->getCurrentWeaponItem()->hasAmmo();
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2915,8 +2919,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// avoid all ammo considerations on an MP client
 	if ( !gameLocal.isClient ) {
 
+		CInventoryWeaponItem* weaponItem = owner->getCurrentWeaponItem();
+
 		// check if we're out of ammo or the clip is empty
-		int ammoAvail = owner->inventory.HasAmmo( ammoType, ammoRequired );
+		int ammoAvail = weaponItem->hasAmmo();
 		if ( !ammoAvail || ( ( clipSize != 0 ) && ( ammoClip <= 0 ) ) ) {
 			return;
 		}
@@ -2934,7 +2940,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 		}
 
-		owner->inventory.UseAmmo( ammoType, ( powerAmmo ) ? dmgPower : ammoRequired );
+		weaponItem->useAmmo(( powerAmmo ) ? dmgPower : ammoRequired);
 		if ( clipSize && ammoRequired ) {
 			ammoClip -= powerAmmo ? dmgPower : 1;
 		}

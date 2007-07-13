@@ -77,11 +77,28 @@ int CInventoryWeaponItem::getAmmo() const {
 }
 
 void CInventoryWeaponItem::setAmmo(int newAmount) {
+	if (allowedEmpty()) {
+		// Don't set ammo of weapons that don't need any
+		return;
+	}
+
 	_ammo = (newAmount > _maxAmmo) ? _maxAmmo : newAmount;
 
 	if (_ammo < 0) {
 		_ammo = 0;
 	}
+}
+
+int CInventoryWeaponItem::hasAmmo() {
+	if (allowedEmpty()) {
+		// Always return 1 for non-ammo weapons
+		return 1;
+	}
+	return _ammo;
+}
+
+void CInventoryWeaponItem::useAmmo(int amount) {
+	setAmmo(_ammo - amount);
 }
 
 void CInventoryWeaponItem::setWeaponIndex(int index) {

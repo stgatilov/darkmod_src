@@ -48,6 +48,19 @@ public:
 	// Sets the new ammonition value (is automatically clamped to [0,maxAmmo])
 	void setAmmo(int newAmount);
 
+	/**
+ 	 * This is used to check whether a weapon can "fire". This is always "1" for 
+	 * weapons without ammo (sword, blackjack). For all other weapons, the ammo amount
+	 * is returned.
+	 */
+	int hasAmmo();
+
+	/**
+	 * "Uses" a certain <amount> of ammo. This decreases the current ammo counter
+	 * by the given value. Only affects the ammo count of weapons that actually need ammo.
+	 */
+	void useAmmo(int amount);
+
 	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
 	void setWeaponIndex(int index);
 	int  getWeaponIndex() const;
