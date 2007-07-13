@@ -112,24 +112,6 @@ enum {
 	EIM_ITEM_SELECT			= BIT(11),	// Selecting items.
 };
 
-class idInventory {
-public:
-	idList<idDict *>		items;
-
-							idInventory() { Clear(); }
-							~idInventory() { Clear(); }
-
-	// save games
-	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
-	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
-
-	void					Clear( void );
-	void					GetPersistantData( idDict &dict );
-	void					RestoreInventory( idPlayer *owner, const idDict &dict );
-	bool					Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud );
-	void					Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index );
-};
-
 typedef struct {
 	int		time;
 	idVec3	dir;		// scaled larger for running
@@ -201,11 +183,6 @@ public:
 	* Set to true if the player is creeping
 	**/
 	idScriptBool			AI_CREEP;
-
-	/*!
-	* container for the player's inventory
-	*/
-	idInventory				inventory;
 
 	// greebo: The levelTrigger were in the old idInventory structure. This contains
 	// all the leveltriggers (which can be used to trigger targets in an upcoming map)

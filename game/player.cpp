@@ -159,10 +159,7 @@ END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
 const int RAGDOLL_DEATH_TIME = 3000;
-const int MAX_PDAS = 64;
-const int MAX_PDA_ITEMS = 128;
 const int STEPUP_TIME = 200;
-const int MAX_INVENTORY_ITEMS = 20;
 
 idVec3 idPlayer::colorBarTable[ 5 ] = {
 	idVec3( 0.25f, 0.25f, 0.25f ),
@@ -171,238 +168,6 @@ idVec3 idPlayer::colorBarTable[ 5 ] = {
 	idVec3( 0.20f, 0.50f, 0.80f ),
 	idVec3( 1.00f, 0.80f, 0.10f )
 };
-
-/*
-==============
-idInventory::Clear
-==============
-*/
-void idInventory::Clear( void ) {
-	items.DeleteContents( true );
-}
-
-/*
-==============
-idInventory::GetPersistantData
-==============
-*/
-void idInventory::GetPersistantData( idDict &dict )
-{}
-
-/*
-==============
-idInventory::RestoreInventory
-==============
-*/
-void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
-	int			i;
-	int			num;
-	idDict		*item;
-	idStr		key;
-	idStr		itemname;
-	const idKeyValue *kv;
-
-	Clear();
-
-	// items
-	num = dict.GetInt( "items" );
-	items.SetNum( num );
-	for( i = 0; i < num; i++ ) {
-		item = new idDict();
-		items[ i ] = item;
-		sprintf( itemname, "item_%i ", i );
-		kv = dict.MatchPrefix( itemname );
-		while( kv ) {
-			key = kv->GetKey();
-			key.Strip( itemname );
-			item->Set( key, kv->GetValue() );
-			kv = dict.MatchPrefix( itemname, kv );
-		}
-	}
-
-#ifdef ID_DEMO_BUILD
-		Give( owner, dict, "weapon", dict.GetString( "weapon" ), NULL, false );
-#else
-	if ( g_skill.GetInteger() >= 3 ) {
-		Give( owner, dict, "weapon", dict.GetString( "weapon_nightmare" ), NULL, false );
-	} else {
-		Give( owner, dict, "weapon", dict.GetString( "weapon" ), NULL, false );
-	}
-#endif
-}
-
-/*
-==============
-idInventory::Save
-==============
-*/
-void idInventory::Save( idSaveGame *savefile ) const {
-	int i;
-
-	savefile->WriteInt( items.Num() );
-	for( i = 0; i < items.Num(); i++ ) {
-		savefile->WriteDict( items[ i ] );
-	}
-}
-
-/*
-==============
-idInventory::Restore
-==============
-*/
-void idInventory::Restore( idRestoreGame *savefile ) {
-	int i, num;
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idDict *itemdict = new idDict;
-
-		savefile->ReadDict( itemdict );
-		items.Append( itemdict );
-	}
-}
-
-/*
-==============
-idInventory::Give
-==============
-*/
-bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud ) {
-	int						i;
-	const char				*pos;
-	const char				*end;
-	int						len;
-	idStr					weaponString;
-//	int						max;
-	const idDeclEntityDef	*weaponDecl;
-	bool					tookWeapon;
-//	int						amount;
-//	idItemInfo				info;
-//	const char				*name;
-
-	/*if ( !idStr::Icmpn( statname, "ammo_", 5 ) ) {
-		i = AmmoIndexForAmmoClass( statname );
-		max = MaxAmmoForAmmoClass( owner, statname );
-		if ( ammo[ i ] >= max ) {
-			return false;
-		}
-		amount = atoi( value );
-		if ( amount ) {			
-			ammo[ i ] += amount;
-			if ( ( max > 0 ) && ( ammo[ i ] > max ) ) {
-				ammo[ i ] = max;
-			}
-			ammoPulse = true;
-
-			name = AmmoPickupNameForIndex( i );
-			if ( idStr::Length( name ) ) {
-				AddPickupName( name, "" );
-			}
-		}
-	} else 
-	if ( !idStr::Icmp( statname, "armor" ) ) {
-		if ( armor >= maxarmor ) {
-			return false;	// can't hold any more, so leave the item
-		}
-		amount = atoi( value );
-		if ( amount ) {
-			armor += amount;
-			if ( armor > maxarmor ) {
-				armor = maxarmor;
-			}
-			nextArmorDepleteTime = 0;
-			armorPulse = true;
-		}
-	} else if ( idStr::FindText( statname, "inclip_" ) == 0 ) {
-		i = WeaponIndexForAmmoClass( spawnArgs, statname + 7 );
-		if ( i != -1 ) {
-			// set, don't add. not going over the clip size limit.
-			clip[ i ] = atoi( value );
-		}
-	} else if ( !idStr::Icmp( statname, "berserk" ) ) {
-		GivePowerUp( owner, BERSERK, SEC2MS( atof( value ) ) );
-	} else if ( !idStr::Icmp( statname, "mega" ) ) {
-		GivePowerUp( owner, MEGAHEALTH, SEC2MS( atof( value ) ) );
-	} else*/ if ( !idStr::Icmp( statname, "weapon" ) ) {
-		tookWeapon = false;
-		for( pos = value; pos != NULL; pos = end ) {
-			end = strchr( pos, ',' );
-			if ( end ) {
-				len = end - pos;
-				end++;
-			} else {
-				len = strlen( pos );
-			}
-
-			idStr weaponName( pos, 0, len );
-
-			// find the number of the matching weapon name
-			for( i = 0; i < MAX_WEAPONS; i++ ) {
-				if ( weaponName == spawnArgs.GetString( va( "def_weapon%d", i ) ) ) {
-					break;
-				}
-			}
-
-			if ( i >= MAX_WEAPONS ) {
-				gameLocal.Error( "Unknown weapon '%s'", weaponName.c_str() );
-			}
-
-			// cache the media for this weapon
-			weaponDecl = gameLocal.FindEntityDef( weaponName, false );
-
-			/*if ( !gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || ( weaponName == "weapon_fists" ) || ( weaponName == "weapon_soulcube" ) ) {
-				if ( ( weapons & ( 1 << i ) ) == 0 || gameLocal.isMultiplayer ) {
-					if ( owner->GetUserInfo()->GetBool( "ui_autoSwitch" ) && idealWeapon ) {
-						assert( !gameLocal.isClient );
-						*idealWeapon = i;
-					} 
-					if ( owner->hud && updateHud && lastGiveTime + 1000 < gameLocal.time ) {
-						owner->hud->SetStateInt( "newWeapon", i );
-						owner->hud->HandleNamedEvent( "newWeapon" );
-						lastGiveTime = gameLocal.time;
-					}
-					weaponPulse = true;
-					weapons |= ( 1 << i );
-					tookWeapon = true;
-				}
-			}*/
-		}
-		return tookWeapon;
-	} else if ( !idStr::Icmp( statname, "item" ) || !idStr::Icmp( statname, "icon" ) || !idStr::Icmp( statname, "name" ) ) {
-		// ignore these as they're handled elsewhere
-		return false;
-	} else {
-		// unknown item
-		gameLocal.Warning( "Unknown stat '%s' added to player's inventory", statname );
-		return false;
-	}
-
-	return true;
-}
-
-/*
-===============
-idInventoy::Drop
-===============
-*/
-void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index ) {
-	// remove the weapon bit
-	// also remove the ammo associated with the weapon as we pushed it in the item
-	assert( weapon_index != -1 || weapon_classname );
-	if ( weapon_index == -1 ) {
-		for( weapon_index = 0; weapon_index < MAX_WEAPONS; weapon_index++ ) {
-			if ( !idStr::Icmp( weapon_classname, spawnArgs.GetString( va( "def_weapon%d", weapon_index ) ) ) ) {
-				break;
-			}
-		}
-		if ( weapon_index >= MAX_WEAPONS ) {
-			gameLocal.Error( "Unknown weapon '%s'", weapon_classname );
-		}
-	} else if ( !weapon_classname ) {
-		weapon_classname = spawnArgs.GetString( va( "def_weapon%d", weapon_index ) );
-	}
-	//weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
-}
 
 /*
 ==============
@@ -1253,8 +1018,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	// idBoolFields don't need to be saved, just re-linked in Restore
 
-	inventory.Save( savefile );
-
 	savefile->WriteInt( levelTriggers.Num() );
 	for ( i = 0; i < levelTriggers.Num(); i++ ) {
 		savefile->WriteString( levelTriggers[i].levelName );
@@ -1492,8 +1255,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	// Re-link idBoolFields to the scriptObject, values will be restored in scriptObject's restore
 	LinkScriptVariables();
-
-	inventory.Restore( savefile );
 
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) {
@@ -1950,7 +1711,6 @@ void idPlayer::SavePersistantInfo( void ) {
 	idDict &playerInfo = gameLocal.persistentPlayerInfo[entityNumber];
 
 	playerInfo.Clear();
-	inventory.GetPersistantData( playerInfo );
 	playerInfo.SetInt( "health", health );
 	playerInfo.SetInt( "current_weapon", currentWeapon );
 }
@@ -1969,7 +1729,6 @@ void idPlayer::RestorePersistantInfo( void ) {
 
 	spawnArgs.Copy( gameLocal.persistentPlayerInfo[entityNumber] );
 
-	inventory.RestoreInventory( this, spawnArgs );
 	health = spawnArgs.GetInt( "health", "100" );
 	if ( !gameLocal.isClient ) {
 		idealWeapon = spawnArgs.GetInt( "current_weapon", "1" );
@@ -2612,7 +2371,7 @@ bool idPlayer::Give( const char *statname, const char *value ) {
 			airTics = pm_airTics.GetInteger();
 		}
 	} else {
-		return inventory.Give( this, spawnArgs, statname, value, &idealWeapon, true );
+		return false;//inventory.Give( this, spawnArgs, statname, value, &idealWeapon, true );
 	}
 	return true;
 }
@@ -3147,7 +2906,7 @@ void idPlayer::DropWeapon( bool died ) {
 	}
 	if ( !died ) {
 		// remove from our local inventory completely
-		inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
+		//inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
 		weapon.GetEntity()->ResetAmmoClip();
 		NextWeapon();
 		weapon.GetEntity()->WeaponStolen();
@@ -3193,7 +2952,7 @@ void idPlayer::StealWeapon( idPlayer *player )
 	}
 
 	player->weapon.GetEntity()->WeaponStolen();
-	player->inventory.Drop( player->spawnArgs, NULL, newweap );
+	//player->inventory.Drop( player->spawnArgs, NULL, newweap );
 	player->SelectWeapon( weapon_fists, false );
 	// in case the robbed player is firing rounds with a continuous fire weapon like the chaingun/plasma etc.
 	// this will ensure the firing actually stops
@@ -4697,14 +4456,15 @@ idPlayer::TogglePDA
 ==============
 */
 void idPlayer::TogglePDA( void ) {
-	if ( objectiveSystem == NULL ) {
+	// greebo: Commented this out, no PDAs in TDM.
+	/*if ( objectiveSystem == NULL ) {
 		return;
 	}
 
-	/*if ( inventory.pdas.Num() == 0 ) {
+	if ( inventory.pdas.Num() == 0 ) {
 		ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_noPDA" ), true );
 		return;
-	}*/
+	}
 
 	assert( hud );
 
@@ -4736,12 +4496,12 @@ void idPlayer::TogglePDA( void ) {
 			const char *weapnum = va( "def_weapon%d", j );
 			const char *hudWeap = va( "weapon%d", j );
 			int weapstate = 0;
-			/*if ( inventory.weapons & ( 1 << j ) ) {
+			if ( inventory.weapons & ( 1 << j ) ) {
 				const char *weap = spawnArgs.GetString( weapnum );
 				if ( weap && *weap ) {
 					weapstate++;
 				}
-			}*/
+			}
 			objectiveSystem->SetStateInt( hudWeap, weapstate );
 		}
 
@@ -4754,7 +4514,7 @@ void idPlayer::TogglePDA( void ) {
 		//inventory.selPDA = objectiveSystem->State().GetInt( "listPDA_sel_0" );
 		objectiveSystem->Activate( false, gameLocal.time );
 	}
-	objectiveSystemOpen ^= 1;
+	objectiveSystemOpen ^= 1;*/
 }
 
 /*
@@ -8191,7 +7951,8 @@ idPlayer::RemoveWeapon
 */
 void idPlayer::RemoveWeapon( const char *weap ) {
 	if ( weap && *weap ) {
-		inventory.Drop( spawnArgs, spawnArgs.GetString( weap ), -1 );
+		// greebo: Not yet implemented for TDM inventory
+		//inventory.Drop( spawnArgs, spawnArgs.GetString( weap ), -1 );
 	}
 }
 
