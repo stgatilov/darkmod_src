@@ -141,9 +141,6 @@ public:
 	idStrList				videos;
 	idStrList				emails;
 
-	bool					ammoPulse;
-	bool					weaponPulse;
-	bool					armorPulse;
 	int						lastGiveTime;
 
 	idList<idLevelTriggerInfo> levelTriggers;

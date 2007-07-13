@@ -201,10 +201,6 @@ void idInventory::Clear( void ) {
 	objectiveNames.Clear();
 
 	lastGiveTime = 0;
-
-	ammoPulse	= false;
-	weaponPulse	= false;
-	armorPulse	= false;
 }
 
 /*
@@ -425,10 +421,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( levelTriggers[i].triggerName );
 	}
 
-	savefile->WriteBool( ammoPulse );
-	savefile->WriteBool( weaponPulse );
-	savefile->WriteBool( armorPulse );
-
 	savefile->WriteInt( lastGiveTime );
 }
 
@@ -529,10 +521,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( lti.triggerName );
 		levelTriggers.Append( lti );
 	}
-
-	savefile->ReadBool( ammoPulse );
-	savefile->ReadBool( weaponPulse );
-	savefile->ReadBool( armorPulse );
 
 	savefile->ReadInt( lastGiveTime );
 }
@@ -2469,23 +2457,6 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 		_hud->HandleNamedEvent( "healthPulse" );
 		StartSound( "snd_healthtake", SND_CHANNEL_ITEM, 0, false, NULL );
 		healthTake = false;
-	}
-
-	if ( inventory.ammoPulse ) { 
-		_hud->HandleNamedEvent( "ammoPulse" );
-		inventory.ammoPulse = false;
-	}
-	if ( inventory.weaponPulse ) {
-		// We need to update the weapon hud manually, but not
-		// the armor/ammo/health because they are updated every
-		// frame no matter what
-		UpdateHudWeapon();
-		_hud->HandleNamedEvent( "weaponPulse" );
-		inventory.weaponPulse = false;
-	}
-	if ( inventory.armorPulse ) { 
-		_hud->HandleNamedEvent( "armorPulse" );
-		inventory.armorPulse = false;
 	}
 
 	UpdateHudAmmo( _hud );
@@ -8523,8 +8494,6 @@ idPlayer::WritePlayerStateToSnapshot
 ================
 */
 void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
-	//int i;
-
 	msg.WriteByte( bobCycle );
 	msg.WriteLong( stepUpTime );
 	msg.WriteFloat( stepUpDelta );
@@ -8536,8 +8505,6 @@ idPlayer::ReadPlayerStateFromSnapshot
 ================
 */
 void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
-	//int i, ammo;
-
 	bobCycle = msg.ReadByte();
 	stepUpTime = msg.ReadLong();
 	stepUpDelta = msg.ReadFloat();
