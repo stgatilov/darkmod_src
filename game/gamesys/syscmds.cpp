@@ -704,13 +704,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( give_all || idStr::Icmp( name, "armor" ) == 0 ) {
-		player->inventory.armor = player->inventory.maxarmor;
-		if ( !give_all ) {
-			return;
-		}
-	}
-
 	if ( idStr::Icmp( name, "berserk" ) == 0 ) {
 		player->GivePowerUp( BERSERK, SEC2MS( 30.0f ) );
 		return;

@@ -179,15 +179,6 @@ idInventory::Clear
 */
 void idInventory::Clear( void ) {
 	maxHealth		= 0;
-	powerups		= 0;
-	armor			= 0;
-	maxarmor		= 0;
-	deplete_armor	= 0;
-	deplete_rate	= 0.0f;
-	deplete_ammount	= 0;
-	nextArmorDepleteTime = 0;
-
-	ClearPowerUps();
 
 	items.DeleteContents( true );
 	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
@@ -218,49 +209,6 @@ void idInventory::Clear( void ) {
 
 /*
 ==============
-idInventory::GivePowerUp
-==============
-*/
-void idInventory::GivePowerUp( idPlayer *player, int powerup, int msec ) {
-	if ( !msec ) {
-		// get the duration from the .def files
-		const idDeclEntityDef *def = NULL;
-		switch ( powerup ) {
-			case BERSERK:
-				def = gameLocal.FindEntityDef( "powerup_berserk", false );
-				break;
-			case INVISIBILITY:
-				def = gameLocal.FindEntityDef( "powerup_invisibility", false );
-				break;
-			case MEGAHEALTH:
-				def = gameLocal.FindEntityDef( "powerup_megahealth", false );
-				break;
-			case ADRENALINE: 
-				def = gameLocal.FindEntityDef( "powerup_adrenaline", false );
-				break;
-		}
-		assert( def );
-		msec = def->dict.GetInt( "time" ) * 1000;
-	}
-	powerups |= 1 << powerup;
-	powerupEndTime[ powerup ] = gameLocal.time + msec;
-}
-
-/*
-==============
-idInventory::ClearPowerUps
-==============
-*/
-void idInventory::ClearPowerUps( void ) {
-	int i;
-	for ( i = 0; i < MAX_POWERUPS; i++ ) {
-		powerupEndTime[ i ] = 0;
-	}
-	powerups = 0;
-}
-
-/*
-==============
 idInventory::GetPersistantData
 ==============
 */
@@ -268,9 +216,6 @@ void idInventory::GetPersistantData( idDict &dict )
 {
 	int		i;
 	idStr	key;
-
-	// armor
-	dict.SetInt( "armor", armor );
 
 	// pdas viewed
 	for ( i = 0; i < 4; i++ ) {
@@ -331,13 +276,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 
 	// health/armor
 	maxHealth		= dict.GetInt( "maxhealth", "100" );
-	armor			= dict.GetInt( "armor", "50" );
-	maxarmor		= dict.GetInt( "maxarmor", "100" );
-	deplete_armor	= dict.GetInt( "deplete_armor", "0" );
-	deplete_rate	= dict.GetFloat( "deplete_rate", "2.0" );
-	deplete_ammount	= dict.GetInt( "deplete_ammount", "1" );
-
-	// the clip and powerups aren't restored
 
 	// items
 	num = dict.GetInt( "items" );
@@ -422,17 +360,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	int i;
 
 	savefile->WriteInt( maxHealth );
-	savefile->WriteInt( powerups );
-	savefile->WriteInt( armor );
-	savefile->WriteInt( maxarmor );
-	savefile->WriteInt( deplete_armor );
-	savefile->WriteFloat( deplete_rate );
-	savefile->WriteInt( deplete_ammount );
-	savefile->WriteInt( nextArmorDepleteTime );
-
-	for( i = 0; i < MAX_POWERUPS; i++ ) {
-		savefile->WriteInt( powerupEndTime[ i ] );
-	}
 
 	savefile->WriteInt( items.Num() );
 	for( i = 0; i < items.Num(); i++ ) {
@@ -514,17 +441,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 	int i, num;
 
 	savefile->ReadInt( maxHealth );
-	savefile->ReadInt( powerups );
-	savefile->ReadInt( armor );
-	savefile->ReadInt( maxarmor );
-	savefile->ReadInt( deplete_armor );
-	savefile->ReadFloat( deplete_rate );
-	savefile->ReadInt( deplete_ammount );
-	savefile->ReadInt( nextArmorDepleteTime );
-
-	for( i = 0; i < MAX_POWERUPS; i++ ) {
-		savefile->ReadInt( powerupEndTime[ i ] );
-	}
 
 	savefile->ReadInt( num );
 	for( i = 0; i < num; i++ ) {
@@ -656,7 +572,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 //	int						max;
 	const idDeclEntityDef	*weaponDecl;
 	bool					tookWeapon;
-	int						amount;
+//	int						amount;
 	idItemInfo				info;
 //	const char				*name;
 
@@ -679,7 +595,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 				AddPickupName( name, "" );
 			}
 		}
-	} else*/ 
+	} else 
 	if ( !idStr::Icmp( statname, "armor" ) ) {
 		if ( armor >= maxarmor ) {
 			return false;	// can't hold any more, so leave the item
@@ -693,17 +609,17 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 			nextArmorDepleteTime = 0;
 			armorPulse = true;
 		}
-	} /*else if ( idStr::FindText( statname, "inclip_" ) == 0 ) {
+	} else if ( idStr::FindText( statname, "inclip_" ) == 0 ) {
 		i = WeaponIndexForAmmoClass( spawnArgs, statname + 7 );
 		if ( i != -1 ) {
 			// set, don't add. not going over the clip size limit.
 			clip[ i ] = atoi( value );
 		}
-	}*/ else if ( !idStr::Icmp( statname, "berserk" ) ) {
+	} else if ( !idStr::Icmp( statname, "berserk" ) ) {
 		GivePowerUp( owner, BERSERK, SEC2MS( atof( value ) ) );
 	} else if ( !idStr::Icmp( statname, "mega" ) ) {
 		GivePowerUp( owner, MEGAHEALTH, SEC2MS( atof( value ) ) );
-	} else if ( !idStr::Icmp( statname, "weapon" ) ) {
+	} else*/ if ( !idStr::Icmp( statname, "weapon" ) ) {
 		tookWeapon = false;
 		for( pos = value; pos != NULL; pos = end ) {
 			end = strchr( pos, ',' );
@@ -782,25 +698,6 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 		weapon_classname = spawnArgs.GetString( va( "def_weapon%d", weapon_index ) );
 	}
 	//weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
-}
-
-/*
-===============
-idInventory::UpdateArmor
-===============
-*/
-void idInventory::UpdateArmor( void ) {
-	if ( deplete_armor != 0.0f && deplete_armor < armor ) {
-		if ( !nextArmorDepleteTime ) {
-			nextArmorDepleteTime = gameLocal.time + deplete_rate * 1000;
-		} else if ( gameLocal.time > nextArmorDepleteTime ) {
-			armor -= deplete_ammount;
-			if ( armor < deplete_armor ) {
-				armor = deplete_armor;
-			}
-			nextArmorDepleteTime = gameLocal.time + deplete_rate * 1000;
-		}
-	}
 }
 
 /*
@@ -2560,7 +2457,6 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	_hud->SetStateInt( "player_health", health );
 	_hud->SetStateInt( "player_stamina", staminapercentage );
 	_hud->SetStateInt( "player_shadow", 1 );
-	_hud->SetStateInt( "player_armor", inventory.armor );
 
 	_hud->SetStateInt( "player_hr", heartRate );
 	_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
@@ -3148,7 +3044,7 @@ idPlayer::PowerUpActive
 ===============
 */
 bool idPlayer::PowerUpActive( int powerup ) const {
-	return ( inventory.powerups & ( 1 << powerup ) ) != 0;
+	return false;//( inventory.powerups & ( 1 << powerup ) ) != 0;
 }
 
 /*
@@ -3172,9 +3068,9 @@ bool idPlayer::GivePowerUp( int powerup, int time ) {
 			ServerSendEvent( EVENT_POWERUP, &msg, false, -1 );
 		}
 
-		if ( powerup != MEGAHEALTH ) {
+		/*if ( powerup != MEGAHEALTH ) {
 			inventory.GivePowerUp( this, powerup, time );
-		}
+		}*/
 
 		const idDeclEntityDef *def = NULL;
 
@@ -3251,8 +3147,8 @@ void idPlayer::ClearPowerup( int i ) {
 	}
 
 	powerUpSkin = NULL;
-	inventory.powerups &= ~( 1 << i );
-	inventory.powerupEndTime[ i ] = 0;
+	//inventory.powerups &= ~( 1 << i );
+	//inventory.powerupEndTime[ i ] = 0;
 	switch( i ) {
 		case BERSERK: {
 			StopSound( SND_CHANNEL_DEMONIC, false );
@@ -3273,15 +3169,15 @@ idPlayer::UpdatePowerUps
 ==============
 */
 void idPlayer::UpdatePowerUps( void ) {
-	int i;
+	//int i;
 
-	if ( !gameLocal.isClient ) {
+	/*if ( !gameLocal.isClient ) {
 		for ( i = 0; i < MAX_POWERUPS; i++ ) {
 			if ( PowerUpActive( i ) && inventory.powerupEndTime[i] <= gameLocal.time ) {
 				ClearPowerup( i );
 			}
 		}
-	}
+	}*/
 
 	if ( health > 0 ) {
 		if ( powerUpSkin ) {
@@ -3333,13 +3229,13 @@ idPlayer::ClearPowerUps
 ===============
 */
 void idPlayer::ClearPowerUps( void ) {
-	int i;
+	/*int i;
 	for ( i = 0; i < MAX_POWERUPS; i++ ) {
 		if ( PowerUpActive( i ) ) {
 			ClearPowerup( i );
 		}
 	}
-	inventory.ClearPowerUps();
+	inventory.ClearPowerUps();*/
 }
 
 /*
@@ -3640,27 +3536,6 @@ idPlayer::NextBestWeapon
 ===============
 */
 void idPlayer::NextBestWeapon( void ) {
-	/*const char *weap;
-	int w = MAX_WEAPONS;
-
-	if ( gameLocal.isClient || !weaponEnabled ) {
-		return;
-	}
-
-	while ( w > 0 ) {
-		w--;
-		weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-		if ( !weap[ 0 ] || ( ( inventory.weapons & ( 1 << w ) ) == 0 ) || ( !inventory.HasAmmo( weap ) ) ) {
-			continue;
-		}
-		if ( !spawnArgs.GetBool( va( "weapon%d_best", w ) ) ) {
-			continue;
-		}
-		break;
-	}
-	idealWeapon = w;
-	weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-	UpdateHudWeapon();*/
 	// greebo: No "best" weapons in TDM, route the call to NextWeapon()
 	NextWeapon();
 }
@@ -3671,9 +3546,6 @@ idPlayer::NextWeapon
 ===============
 */
 void idPlayer::NextWeapon( void ) {
-	//const char *weap;
-	//int w;
-
 	if ( !weaponEnabled || spectating || hiddenWeapon || gameLocal.inCinematic || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || health < 0 ) {
 		return;
 	}
@@ -3681,11 +3553,6 @@ void idPlayer::NextWeapon( void ) {
 	if ( gameLocal.isClient ) {
 		return;
 	}
-
-	// check if we have any weapons
-	/*if ( !inventory.weapons ) {
-		return;
-	}*/
 
 	if (m_WeaponCursor == NULL || m_WeaponCursor->GetCurrentCategory() == NULL) {
 		return;
@@ -3713,33 +3580,6 @@ void idPlayer::NextWeapon( void ) {
 			nextWeaponIndex = 0;
 		}
 	} while (!SelectWeapon(nextWeaponIndex, false) && nextWeaponIndex != curWeaponIndex);
-
-	/*w = idealWeapon;
-	while( 1 ) {
-		w++;
-		if ( w >= MAX_WEAPONS ) {
-			w = 0;
-		} 
-		weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-		if ( !spawnArgs.GetBool( va( "weapon%d_cycle", w ) ) ) {
-			continue;
-		}
-		if ( !weap[ 0 ] ) {
-			continue;
-		}
-		if ( ( inventory.weapons & ( 1 << w ) ) == 0 ) {
-			continue;
-		}
-		if ( inventory.HasAmmo( weap ) ) {
-			break;
-		}
-	}
-
-	if ( ( w != currentWeapon ) && ( w != idealWeapon ) ) {
-		idealWeapon = w;
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-		UpdateHudWeapon();
-	}*/
 }
 
 /*
@@ -3748,9 +3588,6 @@ idPlayer::PrevWeapon
 ===============
 */
 void idPlayer::PrevWeapon( void ) {
-	//const char *weap;
-	//int w;
-
 	if ( !weaponEnabled || spectating || hiddenWeapon || gameLocal.inCinematic || gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) || health < 0 ) {
 		return;
 	}
@@ -3785,38 +3622,6 @@ void idPlayer::PrevWeapon( void ) {
 			prevWeaponIndex = MAX_WEAPONS;
 		}
 	} while (!SelectWeapon(prevWeaponIndex, false) && prevWeaponIndex != curWeaponIndex);
-
-	/*// check if we have any weapons
-	if ( !inventory.weapons ) {
-		return;
-	}
-
-	w = idealWeapon;
-	while( 1 ) {
-		w--;
-		if ( w < 0 ) {
-			w = MAX_WEAPONS - 1;
-		}
-		weap = spawnArgs.GetString( va( "def_weapon%d", w ) );
-		if ( !spawnArgs.GetBool( va( "weapon%d_cycle", w ) ) ) {
-			continue;
-		}
-		if ( !weap[ 0 ] ) {
-			continue;
-		}
-		if ( ( inventory.weapons & ( 1 << w ) ) == 0 ) {
-			continue;
-		}
-		if ( inventory.HasAmmo( weap ) ) {
-			break;
-		}
-	}
-
-	if ( ( w != currentWeapon ) && ( w != idealWeapon ) ) {
-		idealWeapon = w;
-		weaponSwitchTime = gameLocal.time + WEAPON_SWITCH_DELAY;
-		UpdateHudWeapon();
-	}*/
 }
 
 /*
@@ -3890,31 +3695,6 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 	}
 
 	return false;
-
-	/*weap = spawnArgs.GetString( va( "def_weapon%d", num ) );
-	if ( !weap[ 0 ] ) {
-		gameLocal.Printf( "Invalid weapon\n" );
-		return;
-	}
-
-	if ( force || ( inventory.weapons & ( 1 << num ) ) ) {
-		if ( !inventory.HasAmmo( weap ) && !spawnArgs.GetBool( va( "weapon%d_allowempty", num ) ) ) {
-			return;
-		}
-		if ( ( previousWeapon >= 0 ) && ( idealWeapon == num ) && ( spawnArgs.GetBool( va( "weapon%d_toggle", num ) ) ) ) {
-			weap = spawnArgs.GetString( va( "def_weapon%d", previousWeapon ) );
-			if ( !inventory.HasAmmo( weap ) && !spawnArgs.GetBool( va( "weapon%d_allowempty", previousWeapon ) ) ) {
-				return;
-			}
-			idealWeapon = previousWeapon;
-		} else if ( ( weapon_pda >= 0 ) && ( num == weapon_pda ) && ( inventory.pdas.Num() == 0 ) ) {
-			ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_noPDA" ), true );
-			return;
-		} else {
-			idealWeapon = num;
-		}
-		UpdateHudWeapon();
-	}*/
 }
 
 /*
@@ -6941,8 +6721,6 @@ void idPlayer::Think( void )
 
 	FrobCheck();
 
-	inventory.UpdateArmor();
-
 	idStr strText;
 /*
 	// TODO: remove this because it is just to determine how to fill out the renderstructure.
@@ -7305,14 +7083,15 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 
 	// save some from armor
 	if ( !damageDef->GetBool( "noArmor" ) ) {
-		float armor_protection;
+		/*float armor_protection;
 
 		armor_protection = ( gameLocal.isMultiplayer ) ? g_armorProtectionMP.GetFloat() : g_armorProtection.GetFloat();
 
 		armorSave = ceil( damage * armor_protection );
 		if ( armorSave >= inventory.armor ) {
 			armorSave = inventory.armor;
-		}
+		}*/
+		armorSave = 0;
 
 		if ( !damage ) {
 			armorSave = 0;
@@ -7426,14 +7205,14 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	}
 
 	// give feedback on the player view and audibly when armor is helping
-	if ( armorSave ) {
+	/*if ( armorSave ) {
 		inventory.armor -= armorSave;
 
 		if ( gameLocal.time > lastArmorPulse + 200 ) {
 			StartSound( "snd_hitArmor", SND_CHANNEL_ITEM, 0, false, NULL );
 		}
 		lastArmorPulse = gameLocal.time;
-	}
+	}*/
 	
 	if ( damageDef->dict.GetBool( "burn" ) ) 
 	{

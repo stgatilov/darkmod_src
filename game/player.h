@@ -126,15 +126,6 @@ enum {
 class idInventory {
 public:
 	int						maxHealth;
-	int						powerups;
-	int						armor;
-	int						maxarmor;
-	int						powerupEndTime[ MAX_POWERUPS ];
-
-	int						deplete_armor;
-	float					deplete_rate;
-	int						deplete_ammount;
-	int						nextArmorDepleteTime;
 
 	int						pdasViewed[4]; // 128 bit flags for indicating if a pda has been viewed
 
@@ -165,15 +156,11 @@ public:
 	void					Restore( idRestoreGame *savefile );					// unarchives object from save game file
 
 	void					Clear( void );
-	void					GivePowerUp( idPlayer *player, int powerup, int msec );
-	void					ClearPowerUps( void );
 	void					GetPersistantData( idDict &dict );
 	void					RestoreInventory( idPlayer *owner, const idDict &dict );
 	bool					Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud );
 	void					Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index );
 	void					AddPickupName( const char *name, const char *icon );
-
-	void					UpdateArmor( void );
 
 	int						nextItemPickup;
 	int						nextItemNum;

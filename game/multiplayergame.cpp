@@ -3338,7 +3338,7 @@ void idMultiplayerGame::ServerWriteInitialReliableMessages( int clientNum ) {
 		ent = gameLocal.entities[ i ]; 
 		if ( i != clientNum && ent && ent->IsType( idPlayer::Type ) ) {
 			outMsg.WriteShort( i );
-			outMsg.WriteShort( static_cast< idPlayer * >( ent )->inventory.powerups );
+//			outMsg.WriteShort( static_cast< idPlayer * >( ent )->inventory.powerups );
 			outMsg.WriteBits( static_cast< idPlayer * >( ent )->spectating, 1 );
 		}
 	}
