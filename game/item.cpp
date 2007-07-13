@@ -995,7 +995,7 @@ idVideoCDItem::GiveToPlayer
 bool idVideoCDItem::GiveToPlayer( idPlayer *player ) {
 	idStr str = spawnArgs.GetString( "video" );
 	if ( player && str.Length() ) {
-		player->GiveVideo( str, &spawnArgs );
+		//player->GiveVideo( str, &spawnArgs );
 	}
 	return true;
 }

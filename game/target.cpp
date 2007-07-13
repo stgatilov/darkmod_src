@@ -644,7 +644,7 @@ void idTarget_GiveEmail::Event_Activate( idEntity *activator ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	const idDeclPDA *pda = player->GetPDA();
 	if ( pda ) {
-		player->GiveEmail( spawnArgs.GetString( "email" ) );
+		//player->GiveEmail( spawnArgs.GetString( "email" ) );
 	} else {
 		player->ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_PDANeeded" ), true );
 	}
@@ -1610,7 +1610,7 @@ idTarget_GiveEmail::Event_Activate
 void idTarget_GiveSecurity::Event_Activate( idEntity *activator ) {
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player ) {
-		player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
+		//player->GiveSecurity( spawnArgs.GetString( "text_security" ) );
 	}
 }
 

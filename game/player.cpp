@@ -183,14 +183,8 @@ void idInventory::Clear( void ) {
 	items.DeleteContents( true );
 	memset(pdasViewed, 0, 4 * sizeof( pdasViewed[0] ) );
 	pdas.Clear();
-	videos.Clear();
-	emails.Clear();
-	selVideo = 0;
-	selEMail = 0;
 	selPDA = 0;
-	selAudio = 0;
 	pdaOpened = false;
-	turkeyScore = false;
 }
 
 /*
@@ -209,11 +203,7 @@ void idInventory::GetPersistantData( idDict &dict )
 	}
 
 	dict.SetInt( "selPDA", selPDA );
-	dict.SetInt( "selVideo", selVideo );
-	dict.SetInt( "selEmail", selEMail );
-	dict.SetInt( "selAudio", selAudio );
 	dict.SetInt( "pdaOpened", pdaOpened );
-	dict.SetInt( "turkeyScore", turkeyScore );
 
 	// pdas
 	for ( i = 0; i < pdas.Num(); i++ ) {
@@ -221,20 +211,6 @@ void idInventory::GetPersistantData( idDict &dict )
 		dict.Set( key, pdas[ i ] );
 	}
 	dict.SetInt( "pdas", pdas.Num() );
-
-	// video cds
-	for ( i = 0; i < videos.Num(); i++ ) {
-		sprintf( key, "video_%i", i );
-		dict.Set( key, videos[ i ].c_str() );
-	}
-	dict.SetInt( "videos", videos.Num() );
-
-	// emails
-	for ( i = 0; i < emails.Num(); i++ ) {
-		sprintf( key, "email_%i", i );
-		dict.Set( key, emails[ i ].c_str() );
-	}
-	dict.SetInt( "emails", emails.Num() );
 }
 
 /*
@@ -277,11 +253,7 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 	}
 
 	selPDA = dict.GetInt( "selPDA" );
-	selEMail = dict.GetInt( "selEmail" );
-	selVideo = dict.GetInt( "selVideo" );
-	selAudio = dict.GetInt( "selAudio" );
 	pdaOpened = dict.GetBool( "pdaOpened" );
-	turkeyScore = dict.GetBool( "turkeyScore" );
 
 	// pdas
 	num = dict.GetInt( "pdas" );
@@ -289,22 +261,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 	for ( i = 0; i < num; i++ ) {
 		sprintf( itemname, "pda_%i", i );
 		pdas[i] = dict.GetString( itemname, "default" );
-	}
-
-	// videos
-	num = dict.GetInt( "videos" );
-	videos.SetNum( num );
-	for ( i = 0; i < num; i++ ) {
-		sprintf( itemname, "video_%i", i );
-		videos[i] = dict.GetString( itemname, "default" );
-	}
-
-	// emails
-	num = dict.GetInt( "emails" );
-	emails.SetNum( num );
-	for ( i = 0; i < num; i++ ) {
-		sprintf( itemname, "email_%i", i );
-		emails[i] = dict.GetString( itemname, "default" );
 	}
 
 #ifdef ID_DEMO_BUILD
@@ -343,30 +299,11 @@ void idInventory::Save( idSaveGame *savefile ) const {
 
 
 	savefile->WriteInt( selPDA );
-	savefile->WriteInt( selVideo );
-	savefile->WriteInt( selEMail );
-	savefile->WriteInt( selAudio );
 	savefile->WriteBool( pdaOpened );
-	savefile->WriteBool( turkeyScore );
 
 	savefile->WriteInt( pdas.Num() );
 	for( i = 0; i < pdas.Num(); i++ ) {
 		savefile->WriteString( pdas[ i ] );
-	}
-
-	savefile->WriteInt( pdaSecurity.Num() );
-	for( i=0; i < pdaSecurity.Num(); i++ ) {
-		savefile->WriteString( pdaSecurity[ i ] );
-	}
-
-	savefile->WriteInt( videos.Num() );
-	for( i = 0; i < videos.Num(); i++ ) {
-		savefile->WriteString( videos[ i ] );
-	}
-
-	savefile->WriteInt( emails.Num() );
-	for ( i = 0; i < emails.Num(); i++ ) {
-		savefile->WriteString( emails[ i ] );
 	}
 }
 
@@ -399,41 +336,13 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 
 
 	savefile->ReadInt( selPDA );
-	savefile->ReadInt( selVideo );
-	savefile->ReadInt( selEMail );
-	savefile->ReadInt( selAudio );
 	savefile->ReadBool( pdaOpened );
-	savefile->ReadBool( turkeyScore );
 
 	savefile->ReadInt( num );
 	for( i = 0; i < num; i++ ) {
 		idStr strPda;
 		savefile->ReadString( strPda );
 		pdas.Append( strPda );
-	}
-
-	// pda security clearances
-	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
-		idStr invName;
-		savefile->ReadString( invName );
-		pdaSecurity.Append( invName );
-	}
-
-	// videos
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strVideo;
-		savefile->ReadString( strVideo );
-		videos.Append( strVideo );
-	}
-
-	// email
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idStr strEmail;
-		savefile->ReadString( strEmail );
-		emails.Append( strEmail );
 	}
 }
 
@@ -1680,10 +1589,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	}
 
 	weapon.Restore( savefile );
-
-	for ( i = 0; i < inventory.emails.Num(); i++ ) {
-		GetPDA()->AddEmail( inventory.emails[i] );
-	}
 
 	savefile->ReadUserInterface( hud );
 	savefile->ReadUserInterface( objectiveSystem );
@@ -3003,56 +2908,6 @@ void idPlayer::UpdatePowerUps( void ) {
 
 /*
 ===============
-idPlayer::GiveVideo
-===============
-*/
-void idPlayer::GiveVideo( const char *videoName, idDict *item ) {
-
-	if ( videoName == NULL || *videoName == NULL ) {
-		return;
-	}
-
-	inventory.videos.AddUnique( videoName );
-
-	if ( hud ) {
-		hud->HandleNamedEvent( "videoPickup" );
-	}
-}
-
-/*
-===============
-idPlayer::GiveSecurity
-===============
-*/
-void idPlayer::GiveSecurity( const char *security ) {
-	GetPDA()->SetSecurity( security );
-	if ( hud ) {
-		hud->SetStateString( "pda_security", "1" );
-		hud->HandleNamedEvent( "securityPickup" );
-	}
-}
-
-/*
-===============
-idPlayer::GiveEmail
-===============
-*/
-void idPlayer::GiveEmail( const char *emailName ) {
-
-	if ( emailName == NULL || *emailName == NULL ) {
-		return;
-	}
-
-	inventory.emails.AddUnique( emailName );
-	GetPDA()->AddEmail( emailName );
-
-	if ( hud ) {
-		hud->HandleNamedEvent( "emailPickup" );
-	}
-}
-
-/*
-===============
 idPlayer::GivePDA
 ===============
 */
@@ -3062,10 +2917,6 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item )
 		return;
 	}
 
-	if ( item ) {
-		inventory.pdaSecurity.AddUnique( item->GetString( "inv_name" ) );
-	}
-
 	if ( pdaName == NULL || *pdaName == NULL ) {
 		pdaName = "personal";
 	}
@@ -3073,14 +2924,6 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item )
 	const idDeclPDA *pda = static_cast< const idDeclPDA* >( declManager->FindType( DECL_PDA, pdaName ) );
 
 	inventory.pdas.AddUnique( pdaName );
-
-	// Copy any videos over
-	for ( int i = 0; i < pda->GetNumVideos(); i++ ) {
-		const idDeclVideo *video = pda->GetVideoByIndex( i );
-		if ( video ) {
-			inventory.videos.AddUnique( video->GetName() );
-		}
-	}
 
 	// This is kind of a hack, but it works nicely
 	// We don't want to display the 'you got a new pda' message during a map load
@@ -4708,7 +4551,7 @@ idPlayer::AddGuiPDAData
 ==============
  */
 int idPlayer::AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui ) {
-	int c, i;
+	/*int c, i;
 	idStr work;
 	if ( dataType == DECL_EMAIL ) {
 		c = src->GetNumEmails();
@@ -4750,7 +4593,7 @@ int idPlayer::AddGuiPDAData( const declType_t dataType, const char *listName, co
 			gui->SetStateString( va( "%s_item_%i", listName, i ), work );
 		}
 		return c;
-	}
+	}*/
 	return 0;
 }
 
@@ -4766,20 +4609,6 @@ const idDeclPDA *idPlayer::GetPDA( void ) const {
 		return NULL;
 	}
 }
-
-
-/*
-==============
-idPlayer::GetVideo
-==============
-*/
-const idDeclVideo *idPlayer::GetVideo( int index ) {
-	if ( index >= 0 && index < inventory.videos.Num() ) {
-		return static_cast< const idDeclVideo* >( declManager->FindType( DECL_VIDEO, inventory.videos[index], false ) );
-	}
-	return NULL;
-}
-
 
 /*
 ==============
@@ -4876,7 +4705,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 				objectiveSystem->SetStateString( "pda_name", cvarSystem->GetCVarString( "ui_name") );
 				AddGuiPDAData( DECL_VIDEO, "listPDAVideo", pda, objectiveSystem );
 				sel = objectiveSystem->State().GetInt( "listPDAVideo_sel_0", "0" );
-				const idDeclVideo *vid = NULL;
+				/*const idDeclVideo *vid = NULL;
 				if ( sel >= 0 && sel < inventory.videos.Num() ) {
 					vid = static_cast< const idDeclVideo * >( declManager->FindType( DECL_VIDEO, inventory.videos[ sel ], false ) );
 				}
@@ -4893,7 +4722,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 					objectiveSystem->SetStateString( "PDAVideoIcon", "sound/vo/video/welcome.tga" );
 					objectiveSystem->SetStateString( "PDAVideoTitle", "" );
 					objectiveSystem->SetStateString( "PDAVideoInfo", "" );
-				}
+				}*/
 			} else {
 				// Selected, non-personal pda
 				// Add audio logs
@@ -4907,7 +4736,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 				int audioCount = AddGuiPDAData( DECL_AUDIO, "listPDAAudio", pda, objectiveSystem );
 				objectiveSystem->SetStateInt( "audioLogCount", audioCount );
 				sel = objectiveSystem->State().GetInt( "listPDAAudio_sel_0", "0" );
-				const idDeclAudio *aud = NULL;
+				/*const idDeclAudio *aud = NULL;
 				if ( sel >= 0 ) {
 					aud = pda->GetAudioByIndex( sel );
 				}
@@ -4920,7 +4749,7 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 					objectiveSystem->SetStateString( "PDAAudioIcon", "sound/vo/video/welcome.tga" );
 					objectiveSystem->SetStateString( "PDAAutioTitle", "" );
 					objectiveSystem->SetStateString( "PDAAudioInfo", "" );
-				}
+				}*/
 			}
 			// add emails
 			name = "";
@@ -5000,18 +4829,12 @@ void idPlayer::TogglePDA( void ) {
 		}
 
 		objectiveSystem->SetStateInt( "listPDA_sel_0", inventory.selPDA );
-		objectiveSystem->SetStateInt( "listPDAVideo_sel_0", inventory.selVideo );
-		objectiveSystem->SetStateInt( "listPDAAudio_sel_0", inventory.selAudio );
-		objectiveSystem->SetStateInt( "listPDAEmail_sel_0", inventory.selEMail );
 		UpdatePDAInfo( false );
 		objectiveSystem->Activate( true, gameLocal.time );
 		hud->HandleNamedEvent( "pdaPickupHide" );
 		hud->HandleNamedEvent( "videoPickupHide" );
 	} else {
 		inventory.selPDA = objectiveSystem->State().GetInt( "listPDA_sel_0" );
-		inventory.selVideo = objectiveSystem->State().GetInt( "listPDAVideo_sel_0" );
-		inventory.selAudio = objectiveSystem->State().GetInt( "listPDAAudio_sel_0" );
-		inventory.selEMail = objectiveSystem->State().GetInt( "listPDAEmail_sel_0" );
 		objectiveSystem->Activate( false, gameLocal.time );
 	}
 	objectiveSystemOpen ^= 1;

@@ -719,11 +719,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( idStr::Icmp( name, "video" ) == 0 ) {
-		player->GiveVideo( args.Argv(2), NULL );
-		return;
-	}
-
 	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2) ) ) {
 		gameLocal.Printf( "unknown item\n" );
 	}
