@@ -20,12 +20,15 @@ static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:0
 #define WEAPON_START_AMMO_PREFIX "ammo_"
 #define WEAPON_PREFIX "weapon_"
 #define WEAPON_ALLOWEMPTY_FORMAT "weapon%d_allowempty"
+#define WEAPON_TOGGLEABLE_FORMAT "weapon%d_toggle"
 
 CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
 	_weaponDef(weaponDef),
 	_weaponDefName(weaponDefName),
-	_weaponIndex(-1)
+	_weaponIndex(-1),
+	_toggleable(false),
+	_allowedEmpty(false)
 {
 	_maxAmmo = getMaxAmmo();
 	_ammo = getStartAmmo();
@@ -48,14 +51,7 @@ int CInventoryWeaponItem::getMaxAmmo() {
 }
 
 bool CInventoryWeaponItem::allowedEmpty() {
-	// Sanity check
-	if (m_Owner.GetEntity() == NULL) {
-		return false;
-	}
-
-	// Query the key "weaponNN_allowempty"
-	idStr allowKey(va(WEAPON_ALLOWEMPTY_FORMAT, _weaponIndex));
-	return m_Owner.GetEntity()->spawnArgs.GetBool(allowKey, "0");
+	return _allowedEmpty;
 }
 
 int CInventoryWeaponItem::getStartAmmo() {
@@ -103,8 +99,23 @@ void CInventoryWeaponItem::useAmmo(int amount) {
 
 void CInventoryWeaponItem::setWeaponIndex(int index) {
 	_weaponIndex = index;
+
+	// Now that the weapon index is known, cache a few values from the owner spawnargs
+
+	// Sanity check
+	if (m_Owner.GetEntity() != NULL) {
+		idStr toggleKey(va(WEAPON_TOGGLEABLE_FORMAT, _weaponIndex));
+		_toggleable = m_Owner.GetEntity()->spawnArgs.GetBool(toggleKey, "0");
+
+		idStr allowKey(va(WEAPON_ALLOWEMPTY_FORMAT, _weaponIndex));
+		_allowedEmpty = m_Owner.GetEntity()->spawnArgs.GetBool(allowKey, "0");
+	}
 }
 
 int CInventoryWeaponItem::getWeaponIndex() const {
 	return _weaponIndex;
+}
+
+bool CInventoryWeaponItem::isToggleable() const {
+	return _toggleable;
 }

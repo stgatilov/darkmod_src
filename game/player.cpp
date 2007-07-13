@@ -3853,6 +3853,13 @@ bool idPlayer::SelectWeapon( int num, bool force ) {
 		return false;
 	}
 
+	// Check if we want to toggle the current weapon item (requested index == current index)
+	CInventoryWeaponItem* item = getCurrentWeaponItem();
+	if (item != NULL && item->getWeaponIndex() == num && item->isToggleable()) {
+		// Requested toggleable weapon is already active, hide it (switch to unarmed)
+		num = 0;
+	}
+
 	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
 	if (category == NULL) {
 		return false;

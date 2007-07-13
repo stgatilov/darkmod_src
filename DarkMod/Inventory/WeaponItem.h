@@ -32,6 +32,12 @@ protected:
 	// The index of this weapon (between 0 and MAX_WEAPONS)
 	int		_weaponIndex;
 
+	// Is TRUE for weapons that can be toggled (like the lantern)
+	bool	_toggleable;
+
+	// TRUE, if this weapon doesn't need ammo (like shortsword, blackjack)
+	bool	_allowedEmpty;
+
 public:
 	CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner);
 
@@ -64,6 +70,11 @@ public:
 	// Sets/Returns the weapon index (corresponds to the keyboard number keys used to access the weapons)
 	void setWeaponIndex(int index);
 	int  getWeaponIndex() const;
+
+	/**
+	 * greebo: Returns TRUE if this weapon is meant to be toggleable (like the player lantern).
+	 */
+	bool isToggleable() const;
 };
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */
