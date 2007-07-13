@@ -698,7 +698,7 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 	}
 
 	if ( give_all || idStr::Icmp( name, "health" ) == 0 )	{
-		player->health = player->inventory.maxHealth;
+		player->health = player->maxHealth;
 		if ( !give_all ) {
 			return;
 		}
@@ -1856,9 +1856,9 @@ static void Cmd_TestDamage_f( const idCmdArgs &args ) {
 
 	// give the player full health before and after
 	// running the damage
-	player->health = player->inventory.maxHealth;
+	player->health = player->maxHealth;
 	player->Damage( NULL, NULL, dir, damageDefName, 1.0f, INVALID_JOINT );
-	player->health = player->inventory.maxHealth;
+	player->health = player->maxHealth;
 }
 
 /*

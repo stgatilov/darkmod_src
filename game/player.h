@@ -114,8 +114,6 @@ enum {
 
 class idInventory {
 public:
-	int						maxHealth;
-
 	idList<idDict *>		items;
 
 							idInventory() { Clear(); }

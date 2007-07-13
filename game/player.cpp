@@ -178,8 +178,6 @@ idInventory::Clear
 ==============
 */
 void idInventory::Clear( void ) {
-	maxHealth		= 0;
-
 	items.DeleteContents( true );
 }
 
@@ -205,9 +203,6 @@ void idInventory::RestoreInventory( idPlayer *owner, const idDict &dict ) {
 	const idKeyValue *kv;
 
 	Clear();
-
-	// health/armor
-	maxHealth		= dict.GetInt( "maxhealth", "100" );
 
 	// items
 	num = dict.GetInt( "items" );
@@ -244,8 +239,6 @@ idInventory::Save
 void idInventory::Save( idSaveGame *savefile ) const {
 	int i;
 
-	savefile->WriteInt( maxHealth );
-
 	savefile->WriteInt( items.Num() );
 	for( i = 0; i < items.Num(); i++ ) {
 		savefile->WriteDict( items[ i ] );
@@ -259,8 +252,6 @@ idInventory::Restore
 */
 void idInventory::Restore( idRestoreGame *savefile ) {
 	int i, num;
-
-	savefile->ReadInt( maxHealth );
 
 	savefile->ReadInt( num );
 	for( i = 0; i < num; i++ ) {
@@ -938,6 +929,8 @@ void idPlayer::Spawn( void )
 		// do this before SetClipModel to get the right bounding box
 		spectating = true;
 	}
+
+	maxHealth = spawnArgs.GetInt("maxhealth", "100");
 
 	m_immobilization.Clear();
 	m_immobilizationCache = 0;
@@ -2581,14 +2574,14 @@ bool idPlayer::Give( const char *statname, const char *value ) {
 	}
 
 	if ( !idStr::Icmp( statname, "health" ) ) {
-		if ( health >= inventory.maxHealth ) {
+		if ( health >= maxHealth ) {
 			return false;
 		}
 		amount = atoi( value );
 		if ( amount ) {
 			health += amount;
-			if ( health > inventory.maxHealth ) {
-				health = inventory.maxHealth;
+			if ( health > maxHealth ) {
+				health = maxHealth;
 			}
 			if ( hud ) {
 				hud->HandleNamedEvent( "healthPulse" );
@@ -2640,8 +2633,8 @@ void idPlayer::GiveHealthPool( float amt ) {
 
 	if ( health > 0 ) {
 		healthPool += amt;
-		if ( healthPool > inventory.maxHealth - health ) {
-			healthPool = inventory.maxHealth - health;
+		if ( healthPool > maxHealth - health ) {
+			healthPool = maxHealth - health;
 		}
 		nextHealthPulse = gameLocal.time;
 
@@ -2800,8 +2793,8 @@ void idPlayer::UpdatePowerUps( void ) {
 		int amt = ( healthPool > healthPoolStepAmount ) ? healthPoolStepAmount : healthPool;
 
 		health += amt;
-		if ( health > inventory.maxHealth ) {
-			health = inventory.maxHealth;
+		if ( health > maxHealth ) {
+			health = maxHealth;
 			healthPool = 0;
 		} else {
 			healthPool -= amt;
