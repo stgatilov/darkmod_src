@@ -12,7 +12,8 @@
 #include "Item.h"
 
 /**
- * WeaponInventoryItem is an item that belongs to a group.
+ * WeaponInventoryItem is an item that belongs to a group. This item represents
+ * a weapon entityDef and provides some methods to manage the weapon's ammo.
  */
 class CInventoryWeaponItem :
 	public CInventoryItem

@@ -28,27 +28,28 @@
  * named "DEFAULT".
  *
  * Each item belongs to a group. If no group is specified, then it will be 
- * put in the default group. Each item also knows it's owning entity and the
+ * put in the default group. Each item also knows its owning entity and the
  * entity it references. When an entity is destroyed, it will also destroy
- * it's item. Therefore you should never keep a pointer of an item in memory
+ * its item. Therefore you should never keep a pointer of an item in memory
  * and always fetch it from the inventory when you need it, as you can never 
  * know for sure, that the respective entity hasn't been destroyed yet (or
  * the item itself).
  *
- * Categories and inventories are not cleared even if they are empty. Only when 
- * the owning entity is destroyed, it will destroy it's inventory along with
- * all groups and items. Keep in mind that destroying an item does NOT mean 
- * that the entity is also destroyed. After all, an entity can be an item
- * but it doesn't need to and it can exist without being one. Only the item
- * pointer is cleared, when the item is destroyed.
- * You should also not make any assumptions about item or group orderings as
- * they can be created and destroyed in arbitrary order. Only the default
- * group is always at index 0.
+ * Categories and inventories are removed when they are empty. This happens
+ * after inventoryDrop() in the idPlayer code.
  *
- * Inventories are accessed via a cursor. This way you can have multiple
+ * Inventories are accessed via cursors. This way you can have multiple
  * cursors pointing to the same inventory with different tasks. You can
  * also add a ignore filter, so that a given cursor can only cycle through
  * a subset of the existing categories in a given inventory.
+ *
+ * At the time of writing, there are two implementations of CInventoryItem:
+ * The default implementation for loot and ordinary inventory items and
+ * items representing weapons (CInventoryWeaponItem). The WeaponItem extend
+ * the interface and member variables with weapon-related stuff like ammo-handling.
+ * For instance: The idWeapon class requests the active WeaponItem 
+ * from the idPlayer class to check whether the active weapon is ready to fire.
+ * 
  */
 
 /**
