@@ -65,11 +65,6 @@ const int SAVING_THROW_TIME = 5000;		// maximum one "saving throw" every five se
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
 
-struct idItemInfo {
-	idStr name;
-	idStr icon;
-};
-
 struct idLevelTriggerInfo {
 	idStr levelName;
 	idStr triggerName;
@@ -149,12 +144,6 @@ public:
 	void					RestoreInventory( idPlayer *owner, const idDict &dict );
 	bool					Give( idPlayer *owner, const idDict &spawnArgs, const char *statname, const char *value, int *idealWeapon, bool updateHud );
 	void					Drop( const idDict &spawnArgs, const char *weapon_classname, int weapon_index );
-	void					AddPickupName( const char *name, const char *icon );
-
-	int						nextItemPickup;
-	int						nextItemNum;
-	int						onePickupTime;
-	idList<idItemInfo>		pickupItemNames;
 };
 
 typedef struct {
@@ -468,12 +457,6 @@ public:
 	void					GiveItem( const char *name );
 	void					GiveHealthPool( float amt );
 	
-	bool					GiveInventoryItem( idDict *item );
-	void					RemoveInventoryItem( idDict *item );
-	bool					GiveInventoryItem( const char *name );
-	void					RemoveInventoryItem( const char *name );
-	idDict *				FindInventoryItem( const char *name );
-
 	void					GivePDA( const char *pdaName, idDict *item );
 	void					GiveVideo( const char *videoName, idDict *item );
 	void					GiveEmail( const char *emailName );

@@ -3859,10 +3859,10 @@ bool idGameLocal::RequirementMet( idEntity *activator, const idStr &requires, in
 	if ( requires.Length() ) {
 		if ( activator->IsType( idPlayer::Type ) ) {
 			idPlayer *player = static_cast<idPlayer *>(activator);
-			idDict *item = player->FindInventoryItem( requires );
+			idDict *item = NULL;//player->FindInventoryItem( requires );
 			if ( item ) {
 				if ( removeItem ) {
-					player->RemoveInventoryItem( item );
+					//player->RemoveInventoryItem( item );
 				}
 				return true;
 			} else {

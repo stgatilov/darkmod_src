@@ -192,11 +192,6 @@ void idInventory::Clear( void ) {
 	pdaOpened = false;
 	turkeyScore = false;
 
-	nextItemPickup = 0;
-	nextItemNum = 1;
-	onePickupTime = 0;
-	pickupItemNames.Clear();
-
 	lastGiveTime = 0;
 }
 
@@ -376,16 +371,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( emails[ i ] );
 	}
 
-	savefile->WriteInt( nextItemPickup );
-	savefile->WriteInt( nextItemNum );
-	savefile->WriteInt( onePickupTime );
-
-	savefile->WriteInt( pickupItemNames.Num() );
-	for( i = 0; i < pickupItemNames.Num(); i++ ) {
-		savefile->WriteString( pickupItemNames[i].icon );
-		savefile->WriteString( pickupItemNames[i].name );
-	}
-
 	savefile->WriteInt( lastGiveTime );
 }
 
@@ -455,41 +440,7 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		emails.Append( strEmail );
 	}
 
-	savefile->ReadInt( nextItemPickup );
-	savefile->ReadInt( nextItemNum );
-	savefile->ReadInt( onePickupTime );
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idItemInfo info;
-
-		savefile->ReadString( info.icon );
-		savefile->ReadString( info.name );
-
-		pickupItemNames.Append( info );
-	}
-
 	savefile->ReadInt( lastGiveTime );
-}
-
-/*
-==============
-idInventory::AddPickupName
-==============
-*/
-void idInventory::AddPickupName( const char *name, const char *icon ) {
-	int num;
-
-	num = pickupItemNames.Num();
-	if ( ( num == 0 ) || ( pickupItemNames[ num - 1 ].name.Icmp( name ) != 0 ) ) {
-		idItemInfo &info = pickupItemNames.Alloc();
-
-		if ( idStr::Cmpn( name, STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
-			info.name = common->GetLanguageDict()->GetString( name );
-		} else {
-			info.name = name;
-		}
-		info.icon = icon;
-	} 
 }
 
 /*
@@ -507,7 +458,7 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
 	const idDeclEntityDef	*weaponDecl;
 	bool					tookWeapon;
 //	int						amount;
-	idItemInfo				info;
+//	idItemInfo				info;
 //	const char				*name;
 
 	/*if ( !idStr::Icmpn( statname, "ammo_", 5 ) ) {
@@ -2885,14 +2836,14 @@ void idPlayer::GiveHealthPool( float amt ) {
 idPlayer::GiveItem
 
 Returns false if the item shouldn't be picked up
+
+greebo: This routine can probably be removed completely
 ===============
 */
 bool idPlayer::GiveItem( idItem *item ) {
-	int					i;
 	const idKeyValue	*arg;
 	idDict				attr;
 	bool				gave;
-	int					numPickup;
 
 	if ( gameLocal.isMultiplayer && spectating ) {
 		return false;
@@ -2901,13 +2852,6 @@ bool idPlayer::GiveItem( idItem *item ) {
 	item->GetAttributes( attr );
 	
 	gave = false;
-	numPickup = inventory.pickupItemNames.Num();
-	for( i = 0; i < attr.GetNumKeyVals(); i++ ) {
-		arg = attr.GetKeyVal( i );
-		if ( Give( arg->GetKey(), arg->GetValue() ) ) {
-			gave = true;
-		}
-	}
 
 	arg = item->spawnArgs.MatchPrefix( "inv_weapon", NULL );
 	if ( arg && hud ) {
@@ -2916,11 +2860,6 @@ bool idPlayer::GiveItem( idItem *item ) {
 		// frame no matter what
 		UpdateHudWeapon( false );
 		hud->HandleNamedEvent( "weaponPulse" );
-	}
-
-	// display the pickup feedback on the hud
-	if ( gave && ( numPickup == inventory.pickupItemNames.Num() ) ) {
-		inventory.AddPickupName( item->spawnArgs.GetString( "inv_name" ), item->spawnArgs.GetString( "inv_icon" ) );
 	}
 
 	return gave;
@@ -3070,32 +3009,6 @@ void idPlayer::UpdatePowerUps( void ) {
 
 /*
 ===============
-idPlayer::GiveInventoryItem
-===============
-*/
-bool idPlayer::GiveInventoryItem( idDict *item ) {
-	if ( gameLocal.isMultiplayer && spectating ) {
-		return false;
-	}
-	inventory.items.Append( new idDict( *item ) );
-	idItemInfo info;
-	const char* itemName = item->GetString( "inv_name" );
-	if ( idStr::Cmpn( itemName, STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
-		info.name = common->GetLanguageDict()->GetString( itemName );
-	} else {
-		info.name = itemName;
-	}
-	info.icon = item->GetString( "inv_icon" );
-	inventory.pickupItemNames.Append( info );
-	if ( hud ) {
-		hud->SetStateString( "itemicon", info.icon );
-		hud->HandleNamedEvent( "invPickup" );
-	}
-	return true;
-}
-
-/*
-===============
 idPlayer::GiveVideo
 ===============
 */
@@ -3107,12 +3020,6 @@ void idPlayer::GiveVideo( const char *videoName, idDict *item ) {
 
 	inventory.videos.AddUnique( videoName );
 
-	if ( item ) {
-		idItemInfo info;
-		info.name = item->GetString( "inv_name" );
-		info.icon = item->GetString( "inv_icon" );
-		inventory.pickupItemNames.Append( info );
-	}
 	if ( hud ) {
 		hud->HandleNamedEvent( "videoPickup" );
 	}
@@ -3207,45 +3114,6 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item )
 			hud->HandleNamedEvent( "videoPickup" );
 		}
 	}
-}
-
-/*
-===============
-idPlayer::FindInventoryItem
-===============
-*/
-idDict *idPlayer::FindInventoryItem( const char *name ) {
-	for ( int i = 0; i < inventory.items.Num(); i++ ) {
-		const char *iname = inventory.items[i]->GetString( "inv_name" );
-		if ( iname && *iname ) {
-			if ( idStr::Icmp( name, iname ) == 0 ) {
-				return inventory.items[i];
-			}
-		}
-	}
-	return NULL;
-}
-
-/*
-===============
-idPlayer::RemoveInventoryItem
-===============
-*/
-void idPlayer::RemoveInventoryItem( const char *name ) {
-	idDict *item = FindInventoryItem(name);
-	if ( item ) {
-		RemoveInventoryItem( item );
-	}
-}
-
-/*
-===============
-idPlayer::RemoveInventoryItem
-===============
-*/
-void idPlayer::RemoveInventoryItem( idDict *item ) {
-	inventory.items.Remove( item );
-	delete item;
 }
 
 /*
@@ -6176,30 +6044,6 @@ void idPlayer::UpdateHud( void ) {
 
 	if ( entityNumber != gameLocal.localClientNum ) {
 		return;
-	}
-
-	int c = inventory.pickupItemNames.Num();
-	if ( c > 0 ) {
-		if ( gameLocal.time > inventory.nextItemPickup ) {
-			if ( inventory.nextItemPickup && gameLocal.time - inventory.nextItemPickup > 2000 ) {
-				inventory.nextItemNum = 1;
-			}
-			int i;
-			for ( i = 0; i < 5, i < c; i++ ) {
-				hud->SetStateString( va( "itemtext%i", inventory.nextItemNum ), inventory.pickupItemNames[0].name );
-				hud->SetStateString( va( "itemicon%i", inventory.nextItemNum ), inventory.pickupItemNames[0].icon );
-				hud->HandleNamedEvent( va( "itemPickup%i", inventory.nextItemNum++ ) );
-				inventory.pickupItemNames.RemoveIndex( 0 );
-				if (inventory.nextItemNum == 1 ) {
-					inventory.onePickupTime = gameLocal.time;
-				} else 	if ( inventory.nextItemNum > 5 ) {
-					inventory.nextItemNum = 1;
-					inventory.nextItemPickup = inventory.onePickupTime + 2000;
-				} else {
-					inventory.nextItemPickup = gameLocal.time + 400;
-				}
-			}
-		}
 	}
 
 	if ( gameLocal.realClientTime == lastMPAimTime ) {

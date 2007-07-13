@@ -393,10 +393,13 @@ bool idItem::GiveToPlayer( idPlayer *player )
 		return false;
 	}
 
-	if ( spawnArgs.GetBool( "inv_carry" ) )
+	// greebo: Inventory Items are not handled here. InvItems should be added to the inventory
+	// by calling AddToInventory().
+	
+	/*if ( spawnArgs.GetBool( "inv_carry" ) )
 	{
 		return player->GiveInventoryItem( &spawnArgs );
-	} 
+	}*/ 
 	
 	return player->GiveItem( this );
 }
@@ -1442,7 +1445,8 @@ void idItemRemover::RemoveItem( idPlayer *player ) {
 	const char *remove;
 	
 	remove = spawnArgs.GetString( "remove" );
-	player->RemoveInventoryItem( remove );
+	// greebo: TDM inventory not handled by this itemRemover (yet)
+	//player->RemoveInventoryItem( remove );
 }
 
 /*
