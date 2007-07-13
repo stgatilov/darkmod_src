@@ -585,6 +585,7 @@ idEntity::idEntity()
 	renderView		= NULL;
 	cameraTarget	= NULL;
 	health			= 0;
+	maxHealth		= 0;
 
 	physics			= NULL;
 	bindMaster		= NULL;
@@ -921,6 +922,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteObject( cameraTarget );
 
 	savefile->WriteInt( health );
+	savefile->WriteInt( maxHealth );
 
 	savefile->WriteInt( targets.Num() );
 	for( i = 0; i < targets.Num(); i++ ) {
@@ -1006,6 +1008,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) );
 
 	savefile->ReadInt( health );
+	savefile->ReadInt( maxHealth );
 
 	targets.Clear();
 	savefile->ReadInt( num );
