@@ -198,7 +198,6 @@ void idInventory::Clear( void ) {
 	nextItemNum = 1;
 	onePickupTime = 0;
 	pickupItemNames.Clear();
-	objectiveNames.Clear();
 
 	lastGiveTime = 0;
 }
@@ -408,13 +407,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( pickupItemNames[i].name );
 	}
 
-	savefile->WriteInt( objectiveNames.Num() );
-	for( i = 0; i < objectiveNames.Num(); i++ ) {
-		savefile->WriteString( objectiveNames[i].screenshot );
-		savefile->WriteString( objectiveNames[i].text );
-		savefile->WriteString( objectiveNames[i].title );
-	}
-
 	savefile->WriteInt( levelTriggers.Num() );
 	for ( i = 0; i < levelTriggers.Num(); i++ ) {
 		savefile->WriteString( levelTriggers[i].levelName );
@@ -501,17 +493,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( info.name );
 
 		pickupItemNames.Append( info );
-	}
-
-	savefile->ReadInt( num );
-	for( i = 0; i < num; i++ ) {
-		idObjectiveInfo obj;
-
-		savefile->ReadString( obj.screenshot );
-		savefile->ReadString( obj.text );
-		savefile->ReadString( obj.title );
-
-		objectiveNames.Append( obj );
 	}
 
 	savefile->ReadInt( num );
@@ -3132,64 +3113,6 @@ bool idPlayer::GiveInventoryItem( idDict *item ) {
 }
 
 /*
-==============
-idPlayer::UpdateObjectiveInfo
-==============
- */
-void idPlayer::UpdateObjectiveInfo( void ) {
-	if ( objectiveSystem == NULL ) {
-		return;
-	}
-	objectiveSystem->SetStateString( "objective1", "" );
-	objectiveSystem->SetStateString( "objective2", "" );
-	objectiveSystem->SetStateString( "objective3", "" );
-	for ( int i = 0; i < inventory.objectiveNames.Num(); i++ ) {
-		objectiveSystem->SetStateString( va( "objective%i", i+1 ), "1" );
-		objectiveSystem->SetStateString( va( "objectivetitle%i", i+1 ), inventory.objectiveNames[i].title.c_str() );
-		objectiveSystem->SetStateString( va( "objectivetext%i", i+1 ), inventory.objectiveNames[i].text.c_str() );
-		objectiveSystem->SetStateString( va( "objectiveshot%i", i+1 ), inventory.objectiveNames[i].screenshot.c_str() );
-	}
-	objectiveSystem->StateChanged( gameLocal.time );
-}
-
-/*
-===============
-idPlayer::GiveObjective
-===============
-*/
-void idPlayer::GiveObjective( const char *title, const char *text, const char *screenshot ) {
-	idObjectiveInfo info;
-	info.title = title;
-	info.text = text;
-	info.screenshot = screenshot;
-	inventory.objectiveNames.Append( info );
-	ShowObjective( "newObjective" );
-	if ( hud ) {
-		hud->HandleNamedEvent( "newObjective" );
-	}
-}
-
-/*
-===============
-idPlayer::CompleteObjective
-===============
-*/
-void idPlayer::CompleteObjective( const char *title ) {
-	int c = inventory.objectiveNames.Num();
-	for ( int i = 0;  i < c; i++ ) {
-		if ( idStr::Icmp(inventory.objectiveNames[i].title, title) == 0 ) {
-			inventory.objectiveNames.RemoveIndex( i );
-			break;
-		}
-	}
-	ShowObjective( "newObjectiveComplete" );
-
-	if ( hud ) {
-		hud->HandleNamedEvent( "newObjectiveComplete" );
-	}
-}
-
-/*
 ===============
 idPlayer::GiveVideo
 ===============
@@ -5237,7 +5160,6 @@ void idPlayer::TogglePDA( void ) {
 		objectiveSystem->SetStateInt( "listPDAAudio_sel_0", inventory.selAudio );
 		objectiveSystem->SetStateInt( "listPDAEmail_sel_0", inventory.selEMail );
 		UpdatePDAInfo( false );
-		UpdateObjectiveInfo();
 		objectiveSystem->Activate( true, gameLocal.time );
 		hud->HandleNamedEvent( "pdaPickupHide" );
 		hud->HandleNamedEvent( "videoPickupHide" );

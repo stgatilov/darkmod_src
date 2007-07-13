@@ -70,12 +70,6 @@ struct idItemInfo {
 	idStr icon;
 };
 
-struct idObjectiveInfo {
-	idStr title;
-	idStr text;
-	idStr screenshot;
-};
-
 struct idLevelTriggerInfo {
 	idStr levelName;
 	idStr triggerName;
@@ -163,7 +157,6 @@ public:
 	int						nextItemNum;
 	int						onePickupTime;
 	idList<idItemInfo>		pickupItemNames;
-	idList<idObjectiveInfo>	objectiveNames;
 };
 
 typedef struct {
@@ -482,8 +475,6 @@ public:
 	void					GiveVideo( const char *videoName, idDict *item );
 	void					GiveEmail( const char *emailName );
 	void					GiveSecurity( const char *security );
-	void					GiveObjective( const char *title, const char *text, const char *screenshot );
-	void					CompleteObjective( const char *title );
 
 	bool					GivePowerUp( int powerup, int time );
 	float					PowerUpModifier( int type );
@@ -874,7 +865,6 @@ private:
 	void					UpdatePDAInfo( bool updatePDASel );
 	int						AddGuiPDAData( const declType_t dataType, const char *listName, const idDeclPDA *src, idUserInterface *gui );
 	void					ExtractEmailInfo( const idStr &email, const char *scan, idStr &out );
-	void					UpdateObjectiveInfo( void );
 
 	void					UseVehicle( void );
 

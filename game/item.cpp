@@ -913,7 +913,7 @@ void idObjective::Event_Trigger( idEntity *activator )
 				player->hud->SetStateString( "objective", "1" );
 				player->hud->SetStateString( "objectivetext", spawnArgs.GetString( "objectivetext" ) );
 				player->hud->SetStateString( "objectivetitle", spawnArgs.GetString( "objectivetitle" ) );
-				player->GiveObjective( spawnArgs.GetString( "objectivetitle" ), spawnArgs.GetString( "objectivetext" ), shotName );
+				//player->GiveObjective( spawnArgs.GetString( "objectivetitle" ), spawnArgs.GetString( "objectivetext" ), shotName );
 
 				// a tad slow but keeps from having to update all objectives in all maps with a name ptr
 				for( int i = 0; i < gameLocal.num_entities; i++ )
@@ -1525,7 +1525,7 @@ void idObjectiveComplete::Event_Trigger( idEntity *activator ) {
 				player->hud->SetStateString( "objective", "2");
 				player->hud->SetStateString( "objectivetext", spawnArgs.GetString( "objectivetext" ) );
 				player->hud->SetStateString( "objectivetitle", spawnArgs.GetString( "objectivetitle" ) );
-				player->CompleteObjective( spawnArgs.GetString( "objectivetitle" ) );
+				//player->CompleteObjective( spawnArgs.GetString( "objectivetitle" ) );
 				PostEventMS( &EV_GetPlayerPos, 2000 );
 			}
 		}
