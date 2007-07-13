@@ -776,8 +776,6 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
 			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
-		} else if ( player->PowerUpActive( BERSERK ) ) {
-			BerserkVision( hud, view );
 		} else {
 			SingleView( hud, view );
 		}

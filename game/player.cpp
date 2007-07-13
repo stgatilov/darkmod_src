@@ -2016,7 +2016,6 @@ idPlayer::PrepareForRestart
 ================
 */
 void idPlayer::PrepareForRestart( void ) {
-	ClearPowerUps();
 	Spectate( true );
 	forceRespawn = true;
 	
@@ -2310,9 +2309,6 @@ void idPlayer::UpdateSkinSetup( bool restart ) {
 		colorBarIndex = 0;
 	}
 	colorBar = colorBarTable[ colorBarIndex ];
-	if ( PowerUpActive( BERSERK ) ) {
-		powerUpSkin = declManager->FindSkin( baseSkinName + "_berserk" );
-	}
 }
 
 /*
@@ -3002,49 +2998,8 @@ idPlayer::PowerUpModifier
 ===============
 */
 float idPlayer::PowerUpModifier( int type ) {
-	float mod = 1.0f;
-
-	if ( PowerUpActive( BERSERK ) ) {
-		switch( type ) {
-			case SPEED: {
-				mod *= 1.7f;
-				break;
-			}
-			case PROJECTILE_DAMAGE: {
-				mod *= 2.0f;
-				break;
-			}
-			case MELEE_DAMAGE: {
-				mod *= 30.0f;
-				break;
-			}
-			case MELEE_DISTANCE: {
-				mod *= 2.0f;
-				break;
-			}
-		}
-	}
-
-	if ( gameLocal.isMultiplayer && !gameLocal.isClient ) {
-		if ( PowerUpActive( MEGAHEALTH ) ) {
-			if ( healthPool <= 0 ) {
-				GiveHealthPool( 100 );
-			}
-		} else {
-			healthPool = 0;
-		}
-	}
-
-	return mod;
-}
-
-/*
-===============
-idPlayer::PowerUpActive
-===============
-*/
-bool idPlayer::PowerUpActive( int powerup ) const {
-	return false;//( inventory.powerups & ( 1 << powerup ) ) != 0;
+	// greebo: Unused at the moment, maybe in the future
+	return 1.0f;
 }
 
 /*
@@ -3131,54 +3086,10 @@ bool idPlayer::GivePowerUp( int powerup, int time ) {
 
 /*
 ==============
-idPlayer::ClearPowerup
-==============
-*/
-void idPlayer::ClearPowerup( int i ) {
-
-	if ( gameLocal.isServer ) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.WriteShort( i );
-		msg.WriteBits( 0, 1 );
-		ServerSendEvent( EVENT_POWERUP, &msg, false, -1 );
-	}
-
-	powerUpSkin = NULL;
-	//inventory.powerups &= ~( 1 << i );
-	//inventory.powerupEndTime[ i ] = 0;
-	switch( i ) {
-		case BERSERK: {
-			StopSound( SND_CHANNEL_DEMONIC, false );
-			break;
-		}
-		case INVISIBILITY: {
-			if ( weapon.GetEntity() ) {
-				weapon.GetEntity()->UpdateSkin();
-			}
-			break;
-		}
-	}
-}
-
-/*
-==============
 idPlayer::UpdatePowerUps
 ==============
 */
 void idPlayer::UpdatePowerUps( void ) {
-	//int i;
-
-	/*if ( !gameLocal.isClient ) {
-		for ( i = 0; i < MAX_POWERUPS; i++ ) {
-			if ( PowerUpActive( i ) && inventory.powerupEndTime[i] <= gameLocal.time ) {
-				ClearPowerup( i );
-			}
-		}
-	}*/
-
 	if ( health > 0 ) {
 		if ( powerUpSkin ) {
 			renderEntity.customSkin = powerUpSkin;
@@ -3221,21 +3132,6 @@ void idPlayer::UpdatePowerUps( void ) {
 		healthTake = true;
 	}
 #endif
-}
-
-/*
-===============
-idPlayer::ClearPowerUps
-===============
-*/
-void idPlayer::ClearPowerUps( void ) {
-	/*int i;
-	for ( i = 0; i < MAX_POWERUPS; i++ ) {
-		if ( PowerUpActive( i ) ) {
-			ClearPowerup( i );
-		}
-	}
-	inventory.ClearPowerUps();*/
 }
 
 /*
@@ -5421,7 +5317,6 @@ void idPlayer::Spectate( bool spectate ) {
 
 	if ( spectating ) {
 		// join the spectators
-		ClearPowerUps();
 		spectator = this->entityNumber;
 		Init();
 		StopRagdoll();
@@ -5957,7 +5852,7 @@ void idPlayer::AdjustSpeed( void )
 	// DarkMod: removed check for not crouching..
 	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
 	{
-		if ( !gameLocal.isMultiplayer && !PowerUpActive( ADRENALINE ) ) {
+		if ( !gameLocal.isMultiplayer ) {
 			stamina -= MS2SEC( gameLocal.msec );
 		}
 		if ( stamina < 0 ) {
@@ -6962,7 +6857,7 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		// no gibbing in MP. Event_Gib will early out in MP
 		if ( attacker->IsType( idPlayer::Type ) ) {
 			killer = static_cast<idPlayer*>(attacker);
-			if ( health < -20 || killer->PowerUpActive( BERSERK ) ) {
+			if ( health < -20 ) {
 				gibDeath = true;
 				gibsDir = dir;
 				gibsLaunched = false;
@@ -6975,8 +6870,6 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		if( m_StimResponseColl->HasResponse() )
 			physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 	}
-
-	ClearPowerUps();
 
 	UpdateVisuals();
 
@@ -7164,9 +7057,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	}
 
 	if ( attacker->IsType( idAI::Type ) ) {
-		if ( PowerUpActive( BERSERK ) ) {
-			return;
-		}
 		// don't take damage from monsters during influences
 		if ( influenceActive != 0 ) {
 			return;
@@ -8553,7 +8443,6 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		}
 		// die
 		AI_DEAD = true;
-		ClearPowerUps();
 		SetAnimState( ANIMCHANNEL_LEGS, "Legs_Death", 4 );
 		SetAnimState( ANIMCHANNEL_TORSO, "Torso_Death", 4 );
 		SetWaitState( "" );
@@ -8590,7 +8479,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 				common->Warning( "NET: no damage def for damage feedback '%d'\n", lastDamageDef );
 			}
 		}
-	} else if ( health > oldHealth && PowerUpActive( MEGAHEALTH ) && !stateHitch ) {
+	} else if ( health > oldHealth && !stateHitch ) {
 		// just pulse, for any health raise
 		healthPulse = true;
 	}
@@ -8683,9 +8572,6 @@ idPlayer::ClientReceiveEvent
 ================
 */
 bool idPlayer::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-	int powerup;
-	bool start;
-
 	switch ( event ) {
 		case EVENT_EXIT_TELEPORTER:
 			Event_ExitTeleporter();
@@ -8694,13 +8580,7 @@ bool idPlayer::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			SetPrivateCameraView( NULL );
 			return true;
 		case EVENT_POWERUP: {
-			powerup = msg.ReadShort();
-			start = msg.ReadBits( 1 ) != 0;
-			if ( start ) {
-				GivePowerUp( powerup, 0 );
-			} else {
-				ClearPowerup( powerup );
-			}	
+			// greebo: No EVENT_POWERUP handling at the moment
 			return true;
 		}
 		case EVENT_SPECTATE: {

@@ -489,8 +489,6 @@ public:
 	void					CompleteObjective( const char *title );
 
 	bool					GivePowerUp( int powerup, int time );
-	void					ClearPowerUps( void );
-	bool					PowerUpActive( int powerup ) const;
 	float					PowerUpModifier( int type );
 
 	int						SlotForWeapon( const char *weaponName );
@@ -870,7 +868,6 @@ private:
 	void					Move( void );
 	void					UpdatePowerUps( void );
 	void					UpdateDeathSkin( bool state_hitch );
-	void					ClearPowerup( int i );
 	void					SetSpectateOrigin( void );
 
 	void					ClearFocus( void );
