@@ -9143,11 +9143,12 @@ CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 	CInventoryItem* prev = NULL;
 
 	if (weaponItem != NULL) {
-		// This is a weapon-related inventory item, use the weapon inventory cursor
-		m_WeaponCursor->SetCurrentItem(returnValue);
-
-		// TODO: CVAR check goes here
-		SelectWeapon(weaponItem->getWeaponIndex(), false);
+		// greebo: This is a weapon-related inventory item, use the weapon inventory cursor
+		// Do it only if the respective CVAR is set
+		if (cv_frob_ammo_selects_weapon.GetBool()) {
+			m_WeaponCursor->SetCurrentItem(returnValue);
+			SelectWeapon(weaponItem->getWeaponIndex(), false);
+		}
 	}
 	else {
 		// Ordinary inventory item, set the cursor onto it

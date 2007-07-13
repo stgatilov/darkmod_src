@@ -79,6 +79,7 @@ extern idCVar cv_pm_lean_door_bounds_exp;
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;
 extern idCVar cv_frob_fadetime;
+extern idCVar cv_frob_ammo_selects_weapon;
 
 // physics
 extern idCVar cv_collision_damage_scale_vert;
