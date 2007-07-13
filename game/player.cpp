@@ -191,8 +191,6 @@ void idInventory::Clear( void ) {
 	selAudio = 0;
 	pdaOpened = false;
 	turkeyScore = false;
-
-	lastGiveTime = 0;
 }
 
 /*
@@ -370,8 +368,6 @@ void idInventory::Save( idSaveGame *savefile ) const {
 	for ( i = 0; i < emails.Num(); i++ ) {
 		savefile->WriteString( emails[ i ] );
 	}
-
-	savefile->WriteInt( lastGiveTime );
 }
 
 /*
@@ -439,8 +435,6 @@ void idInventory::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString( strEmail );
 		emails.Append( strEmail );
 	}
-
-	savefile->ReadInt( lastGiveTime );
 }
 
 /*

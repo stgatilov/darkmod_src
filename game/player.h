@@ -130,8 +130,6 @@ public:
 	idStrList				videos;
 	idStrList				emails;
 
-	int						lastGiveTime;
-
 							idInventory() { Clear(); }
 							~idInventory() { Clear(); }
 
