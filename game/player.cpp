@@ -12,6 +12,8 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable : 4355) // greebo: Disable warning "'this' used in constructor"
+
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
@@ -2694,31 +2696,19 @@ idPlayer::UpdateHudAmmo
 ===============
 */
 void idPlayer::UpdateHudAmmo( idUserInterface *_hud ) {
-	int inclip;
-	int ammoamount;
+	if (m_WeaponCursor == NULL) {
+		return;
+	}
 
-	assert( weapon.GetEntity() );
-	assert( _hud );
+	CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(m_WeaponCursor->GetCurrentItem());
 
-	inclip		= weapon.GetEntity()->AmmoInClip();
-	ammoamount	= weapon.GetEntity()->AmmoAvailable();
-	if ( ammoamount < 0 || !weapon.GetEntity()->IsReady() ) {
-		// show infinite ammo
-		_hud->SetStateString( "player_ammo", "" );
-		_hud->SetStateString( "player_totalammo", "" );
-	} else { 
-		// show remaining ammo
-		_hud->SetStateString( "player_totalammo", va( "%i", ammoamount - inclip ) );
-		_hud->SetStateString( "player_ammo", weapon.GetEntity()->ClipSize() ? va( "%i", inclip ) : "--" );		// how much in the current clip
-		_hud->SetStateString( "player_clips", weapon.GetEntity()->ClipSize() ? va( "%i", ammoamount / weapon.GetEntity()->ClipSize() ) : "--" );
-		_hud->SetStateString( "player_allammo", va( "%i/%i", inclip, ammoamount - inclip ) );
-	} 
+	if (_hud != NULL && item != NULL) {
+		int ammoAmount = item->getAmmo();
 
-	_hud->SetStateBool( "player_ammo_empty", ( ammoamount == 0 ) );
-	_hud->SetStateBool( "player_clip_empty", ( weapon.GetEntity()->ClipSize() ? inclip == 0 : false ) );
-	_hud->SetStateBool( "player_clip_low", ( weapon.GetEntity()->ClipSize() ? inclip <= weapon.GetEntity()->LowAmmo() : false ) );
-
-	_hud->HandleNamedEvent( "updateAmmo" );
+		// Hide ammo display for ammo == -1 and weapons without ammo
+		_hud->SetStateBool("ammo_visible", !(item->allowedEmpty() || ammoAmount < 0));
+		_hud->SetStateString("ammo_amount", va("%d", ammoAmount));
+	}
 }
 
 /*
@@ -2814,8 +2804,7 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon ) {
 		int weapstate = (i == curWeaponIndex) ? 2 : 0;
 		
 		// Construct the HUD weapon string
-		idStr hudWeap = va("weapon%d", i);
-		hud->SetStateInt(hudWeap.c_str(), weapstate);
+		hud->SetStateInt(va("weapon%d", i), weapstate);
 	}
 
 	if ( flashWeapon ) {
