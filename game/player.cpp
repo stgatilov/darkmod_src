@@ -9133,6 +9133,37 @@ idVec3 idPlayer::GetDoorListenLoc( void )
 	return m_DoorListenLoc;
 }
 
+CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
+	// Pass the call to the base class first
+	CInventoryItem* returnValue = idEntity::AddToInventory(ent, _hud);
+
+	// Has this item been added to a weapon item?
+	CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(returnValue);
+
+	CInventoryItem* prev = NULL;
+
+	if (weaponItem != NULL) {
+		// This is a weapon-related inventory item, use the weapon inventory cursor
+		m_WeaponCursor->SetCurrentItem(returnValue);
+
+		// TODO: CVAR check goes here
+		SelectWeapon(weaponItem->getWeaponIndex(), false);
+	}
+	else {
+		// Ordinary inventory item, set the cursor onto it
+		prev = InventoryCursor()->GetCurrentItem();
+		// Focus the cursor on the newly added item
+		InventoryCursor()->SetCurrentItem(returnValue);
+	}
+
+	// Fire the script events and update the HUD
+	if(_hud != NULL) {
+		inventoryChangeSelection(_hud, true, prev);
+	}
+
+	return returnValue;
+}
+
 void idPlayer::PerformFrob(void)
 {
 	idEntity *frob;
@@ -9159,6 +9190,8 @@ void idPlayer::PerformFrob(void)
 		frob->ResponseTrigger(this, ST_FROB);
 		
 		frob->FrobAction(true);
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %s \r", frob->name.c_str());
 
 		// First we have to check wether that entity is an inventory 
 		// item. In that case, we have to add it to the inventory and

@@ -7661,9 +7661,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
 		goto Quit; // not an inventory item
 
-	// Get the pointer to the current item before adding the new one (needed for script events)
-	prev = crsr->GetCurrentItem();
-
 	// Add the new item to the Inventory (with <this> as owner)
 	rc = crsr->Inventory()->PutItem(ent, this);
 
@@ -7683,13 +7680,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 			rc->SetHUD(s, v);
 		}
 	}
-
-	// Focus the cursor on the newly added item
-	crsr->SetCurrentItem(rc);
-
-	// Fire the script events and update the HUD
-	if(_hud != NULL)
-		inventoryChangeSelection(_hud, true, prev);
 
 Quit:
 	return rc;

@@ -119,3 +119,9 @@ int CInventoryWeaponItem::getWeaponIndex() const {
 bool CInventoryWeaponItem::isToggleable() const {
 	return _toggleable;
 }
+
+idStr CInventoryWeaponItem::getWeaponName() {
+	idStr weaponName = _weaponDefName;
+	weaponName.Strip(WEAPON_PREFIX);
+	return weaponName;
+}

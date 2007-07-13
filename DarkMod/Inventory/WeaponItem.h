@@ -75,6 +75,12 @@ public:
 	 * greebo: Returns TRUE if this weapon is meant to be toggleable (like the player lantern).
 	 */
 	bool isToggleable() const;
+
+	/**
+	 * greebo: Returns the name of the weapon, as derived from the weaponDef name.
+	 *         entityDef "weapon_broadhead" => weapon name: "broadhead"
+	 */
+	idStr getWeaponName();
 };
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */

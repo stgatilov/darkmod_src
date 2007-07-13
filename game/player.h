@@ -604,6 +604,11 @@ public:
 	void inventoryUseItem(bool bImpulse, idEntity* useEnt);
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
+
+	/**
+	 * Overload the idEntity::AddToInventory method to catch weapon items.
+	 */
+	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 	
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);

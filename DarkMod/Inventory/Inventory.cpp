@@ -15,6 +15,7 @@
 static bool init_version = FileVersionList("$Id: Inventory.cpp 987 2007-05-12 13:36:09Z greebo $", init_version);
 
 #include "Inventory.h"
+#include "WeaponItem.h"
 
 #include "../game/game_local.h"
 
@@ -277,6 +278,48 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Invalid inv_name or inv_category
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot put %s in inventory: inv_name or inv_category not specified.\r", ent->name.c_str());
 		return returnValue;
+	}
+
+	// Check for ammonition
+	if (category == TDM_CATEGORY_AMMO) {
+		idStr ammoAmountKey = TDM_INVENTORY_AMMO_PREFIX;
+		const idKeyValue* key = ent->spawnArgs.MatchPrefix(TDM_INVENTORY_AMMO_PREFIX);
+		if (key != NULL) {
+			int amount = ent->spawnArgs.GetInt(key->GetKey().c_str(), "0");
+
+			// Retrieve the weapon name, e.g. "broadhead", by stripping the prefix
+			idStr weaponName = key->GetKey();
+			weaponName.Strip(TDM_INVENTORY_AMMO_PREFIX);
+
+			// Find the weapon category
+			CInventoryCategory* weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
+
+			if (weaponCategory == NULL) {
+				DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find weapon category in inventory.\r");
+				return returnValue;
+			}
+			
+			for (int i = 0; i < weaponCategory->size(); i++) {
+				CInventoryWeaponItem* weaponItem = dynamic_cast<CInventoryWeaponItem*>(weaponCategory->GetItem(i));
+
+				// Is this the right weapon?
+				if (weaponItem != NULL && weaponItem->getWeaponName() == weaponName) {
+					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding %d ammo to weapon %s.\r", amount, weaponName.c_str());
+					// Add the ammo to this weapon
+					weaponItem->setAmmo(weaponItem->getAmmo() + amount);
+
+					// Remove the entity, the ammonition is added
+					RemoveEntityFromMap(ent, true);
+
+					// We're done
+					return weaponItem;
+				}
+			}
+
+		}
+		else {
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Cannot add ammo entity %s to inventory: no key with inv_ammo_* prefix.\r", ent->name.c_str());
+		}
 	}
 
 	// Check for existing items (create the category if necessary (hence the TRUE))
