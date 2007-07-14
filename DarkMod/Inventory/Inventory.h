@@ -156,6 +156,13 @@ protected:
 	 */
 	CInventoryItem*		ValidateLoot(idEntity *ent);
 
+	/**
+	 * greebo: Checks the given entity for ammo definitions. Does not remove the entity.
+	 *
+	 * @returns: The weaponItem the ammo has been added to or NULL, if <ent> isn't a valid ammo item.
+	 */
+	CInventoryItem*		ValidateAmmo(idEntity* ent);
+
 protected:
 	idEntityPtr<idEntity>				m_Owner;
 
