@@ -8450,6 +8450,7 @@ void idPlayer::inventoryDropItem()
 				if (!grabber->PutInHands(ent, this)) {
 					// The grabber could not put the item into the player hands
 					// TODO: Emit a sound?
+					DM_LOG(LC_INVENTORY, LT_WARNING)LOGSTRING("Grabber could not put entity in hands: %s\r", ent->name.c_str());
 				}
 				// old code: m_Inventory->PutEntityInMap(ent, this, item);
 			}
@@ -8461,13 +8462,11 @@ void idPlayer::inventoryDropItem()
 				thread->DelayedStart(0);
 			}
 
-			// greebo: Decrease the stack counter, if applicable
-			if (item->IsStackable()) {
-				// Decrease the inventory count (this will also clear empty categories)
-				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
+			// Decrease the inventory count (this will also clear empty categories)
+			// This applies for both stackable as well as droppable items
+			ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
 
-				UpdateHud();
-			}
+			UpdateHud();
 		}
 	}
 }

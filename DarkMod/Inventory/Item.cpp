@@ -53,8 +53,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Value	= itemEntity->spawnArgs.GetInt("inv_loot_value", "-1");
 	m_Stackable	= itemEntity->spawnArgs.GetBool("inv_stackable", "0");
 
-	// Only stackable items have a non-zero count
-	m_Count = (m_Stackable) ? itemEntity->spawnArgs.GetInt("inv_count", "1") : 0;
+	m_Count = (m_Stackable) ? itemEntity->spawnArgs.GetInt("inv_count", "1") : 1;
 
 	m_Droppable = itemEntity->spawnArgs.GetBool("inv_droppable", "0");
 	m_ItemId = itemEntity->spawnArgs.GetString("inv_item_id", "");
@@ -111,8 +110,8 @@ void CInventoryItem::SetValue(int n)
 
 void CInventoryItem::SetCount(int n)
 {
-	// Only positive values are allowed if stackable is true
-	if(n >= 0 && m_Stackable == true)
+	// Only positive values are allowed
+	if(n >= 0)
 		m_Count = n;
 	else
 		m_Count = 0;

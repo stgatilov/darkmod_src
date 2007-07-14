@@ -330,6 +330,7 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
 			// Put the item into its category
 			PutItem(item, category);
+			item->SetCount(1);
 
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
