@@ -94,6 +94,14 @@ public:
 	CInventoryCategory	*GetCategory(const idStr& CategoryName, int *Index = NULL);
 
 	/**
+	 * Retrieves the category with the given index. Useful for scriptevents to 
+	 * reference a certain inventory category.
+	 *
+	 * @returns: NULL, if the category with the given inedx was not found.
+	 */
+	CInventoryCategory* GetCategory(int index);
+
+	/**
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
 	int					GetCategoryIndex(const idStr& CategoryName);

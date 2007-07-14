@@ -161,30 +161,31 @@ Quit:
 	return rc;
 }
 
-CInventoryCategory *CInventory::GetCategory(const idStr& CategoryName, int *Index)
-{
-	CInventoryCategory *rc = NULL;
-	int i, n;
-
+CInventoryCategory *CInventory::GetCategory(const idStr& CategoryName, int *Index) {
 	// If the groupname is empty we look for the default group
-	if (CategoryName.IsEmpty())
+	if (CategoryName.IsEmpty()) {
 		return GetCategory(TDM_INVENTORY_DEFAULT_GROUP);
+	}
 
-	n = m_Category.Num();
-	for(i = 0; i < n; i++)
-	{
-		if (m_Category[i]->m_Name == CategoryName)
-		{
-			rc = m_Category[i];
-			if(Index != NULL)
+	// Traverse the categories and find the one matching <CategoryName>
+	for (int i = 0; i < m_Category.Num(); i++) {
+		if (m_Category[i]->m_Name == CategoryName) {
+			if (Index != NULL) {
 				*Index = i;
+			}
 
-			goto Quit;
+			return m_Category[i];
 		}
 	}
 
-Quit:
-	return rc;
+	return NULL;
+}
+
+CInventoryCategory* CInventory::GetCategory(int index) {
+	if (index >= 0 && index < m_Category.Num()) {
+		return m_Category[index];
+	}
+	return NULL;
 }
 
 int CInventory::GetCategoryIndex(const idStr& CategoryName)

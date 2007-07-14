@@ -30,7 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 /*
 ===============================================================================
 
-	Player control of the Doom Marine.
+	Player control of the TDM player thief.
 	This object handles all player movement and world interaction.
 
 ===============================================================================
