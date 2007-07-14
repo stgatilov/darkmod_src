@@ -834,7 +834,11 @@ void CGrabber::Throw( int HeldTime )
 	ImpulseVec *= ThrowImpulse;  
 
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
-	ent->ApplyImpulse( m_player, m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+
+	// Only apply the impulse for throwable items
+	if (ent->spawnArgs.GetBool("throwable", "1")) {
+		ent->ApplyImpulse( m_player, m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+	}
 
 	StopDrag();
 }
