@@ -93,7 +93,7 @@ public:
 protected:
 
 		/**
-		* Start grabbing an item.  Called internally and by the inventory
+		* Start grabbing an item.  Called internally.
 		* 
 		* If newEnt argument is NULL, it tries to grab the entity the player is frobbing
 		* Otherwise it places newEnt in the hands.

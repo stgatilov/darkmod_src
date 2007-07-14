@@ -6375,7 +6375,7 @@ void idEntity::UpdateFrobDisplay( void )
 
 	// clamp between 0 and 1
 	param = idMath::ClampFloat(0.0, 1.0, param);
-	DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f\r", name.c_str(), param );
+	//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob fader: Entity %s, param = %f\r", name.c_str(), param );
 	SetShaderParm(11, param);
 
 Quit:

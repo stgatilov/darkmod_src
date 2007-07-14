@@ -8365,8 +8365,9 @@ void idPlayer::inventoryUseItem(bool bImpulse)
 	// precedence over the frobaction.
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
-	if(it->GetType() != CInventoryItem::IT_DUMMY)
+	if(it->GetType() != CInventoryItem::IT_DUMMY) {
 		inventoryUseItem(bImpulse, it->GetItemEntity());
+	}
 }
 
 void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
@@ -8376,7 +8377,7 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 
 	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Inventory selection %08lX  Impulse: %u\r", ent, (int)bImpulse);
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %08lX  Impulse: %u\r", ent, (int)bImpulse);
 	if(frob != NULL)
 	{
 		// We have a frob entity in front of the player
@@ -8904,7 +8905,7 @@ void idPlayer::FrobCheck( void )
 	if( trace.fraction < 1.0f )
 	{
 		idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
+		//DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
 		
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
@@ -8974,7 +8975,7 @@ void idPlayer::FrobCheck( void )
 
 	if( BestEnt && BestEnt != g_Global.m_DarkModPlayer->grabber->GetSelected() )
 	{
-		DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
+		//DM_LOG(LC_FROBBING,LT_DEBUG)LOGSTRING("Frob radius expansion found best entity %s\r", BestEnt->name.c_str() );
 		// Mark the entity as frobbed this frame
 		BestEnt->SetFrobbed(true);
 		g_Global.m_DarkModPlayer->m_FrobTrace = trace;
@@ -9176,14 +9177,13 @@ void idPlayer::PerformFrob(void)
 
 	// if the grabber is currently holding something and frob is pressed,
 	// release it.  Do not frob anything new since you're holding an item.
-	if( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	if( pDM->grabber->GetSelected() )
 	{
-		g_Global.m_DarkModPlayer->grabber->Update( this );
+		pDM->grabber->Update( this );
 		goto Quit;
 	}
 
 	frob = pDM->m_FrobEntity;
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob: %08lX\r", frob);
 
 	if(frob != NULL)
 	{
@@ -9203,9 +9203,12 @@ void idPlayer::PerformFrob(void)
 			// Item has been added to the inventory
 			pDM->m_FrobEntity = NULL;
 
+			// greebo: Release any items from the grabber, this immobilized the player somehow before
+			pDM->grabber->Update( this, false );
+
 			// greebo: Prevent the grabber from checking the added entity (it may be 
 			// entirely removed from the game, which would cause crashes).
-			g_Global.m_DarkModPlayer->grabber->RemoveFromClipList(frob);
+			pDM->grabber->RemoveFromClipList(frob);
 		}
 	}
 Quit:

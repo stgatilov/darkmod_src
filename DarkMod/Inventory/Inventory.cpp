@@ -372,6 +372,8 @@ void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)
 	ent->GetPhysics()->UnlinkClip();
 	ent->Hide();
 
+
+
 	if(bDelete == true) {
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Deleting entity from game: %s...\r", ent->name.c_str());
 		ent->PostEventMS(&EV_Remove, 0);
