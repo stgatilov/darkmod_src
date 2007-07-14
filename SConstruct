@@ -275,20 +275,15 @@ BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
 
-# Abort on first error, rather than give a stupid slew of never-ending errors
-BASECPPFLAGS.append('-Wfatal-errors')
-
 # Don't throw warnings for unknown pragmas (used by VC++)
 BASECPPFLAGS.append('-Wno-unknown-pragmas')
-
 BASECPPFLAGS.append('-Wno-non-virtual-dtor')
 
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )
+
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
-# gcc 4.0
-BASECPPFLAGS.append( '-fpermissive' )
 
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO

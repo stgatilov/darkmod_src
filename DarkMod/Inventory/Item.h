@@ -9,6 +9,10 @@
 #ifndef __DARKMOD_INVENTORYITEM_H__
 #define __DARKMOD_INVENTORYITEM_H__
 
+/* FORWARD DECLS */
+class CInventory;
+class CInventoryCategory;
+
 /**
  * InventoryItem is an item that belongs to a group.
  */

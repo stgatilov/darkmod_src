@@ -127,7 +127,6 @@ Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 idAbsenceMarkerEntity.cpp \
 Intersection.cpp \
-inventory.cpp \
 KeyboardHook.cpp \
 liquid.cpp \
 MissionData.cpp \
@@ -142,6 +141,11 @@ sndProp.cpp \
 sndPropLoader.cpp \
 Strip.cpp \
 ToUpper.cpp \
+Inventory/Category.cpp \
+Inventory/Cursor.cpp \
+Inventory/Inventory.cpp \
+Inventory/Item.cpp \
+Inventory/WeaponItem.cpp \
 randomizer/mersenne.cpp \
 randomizer/mother.cpp \
 randomizer/ranrotb.cpp \

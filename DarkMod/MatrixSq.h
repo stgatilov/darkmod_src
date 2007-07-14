@@ -542,7 +542,7 @@ inline int CMatrixSq<type>::Ind2dTo1d ( int row, int col )
 template <class type>
 inline CMatRUT<type>::~CMatRUT( void )
 {
-	Clear();
+	CMatrixSq<type>::Clear();
 }
 
 template <class type>
