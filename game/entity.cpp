@@ -144,7 +144,7 @@ const idEventDef EV_GetGroupItem("getGroupItem", "ss", 'e');				// itemname, gro
 const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not in any group
 const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current value for the given group
 const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
-
+const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
@@ -300,6 +300,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetItem,				idEntity::Event_GetItem )
 	EVENT( EV_GetLoot,				idEntity::Event_GetLoot )
 	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
+	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7683,6 +7684,42 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 Quit:
 	return rc;
+}
+
+void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) {
+	CInventory* inventory = Inventory();
+
+	CInventoryCategory* category = inventory->GetCategory(invCategory);
+	if (category != NULL) {
+		CInventoryItem* item = category->GetItem(invName);
+		if (item != NULL && item->IsStackable()) {
+			// Change the counter by amount
+			item->SetCount(item->GetCount() + amount);
+
+			if (item->GetCount() <= 0) {
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty stackable item from category.\r");
+				// Advance the cursor
+				InventoryCursor()->GetNextItem();
+				// Stackable item count reached zero, remove item from category
+				category->removeItem(item);
+			}
+			
+			// Check for empty categories after the item has been removed
+			if (category->isEmpty()) {
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
+				// Switch the cursor to the next category
+				InventoryCursor()->GetNextCategory();
+				// Remove category from inventory
+				InventoryCursor()->Inventory()->removeCategory(category);
+			}
+		}
+		else {
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not decrease item count, item name %s not found\r", invName);
+		}
+	}
+	else {
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not decrease item count, inventory category %s not found\r", invCategory);
+	}
 }
 
 void idEntity::Event_DestroyOverlay(int handle)

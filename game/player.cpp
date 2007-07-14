@@ -8463,22 +8463,8 @@ void idPlayer::inventoryDropItem()
 
 			// greebo: Decrease the stack counter, if applicable
 			if (item->IsStackable()) {
-				item->SetCount(item->GetCount() - 1);
-
-				if (item->GetCount() <= 0) {
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty stackable item from category.\r");
-					// Stackable item count reached zero, remove item from category
-					category->removeItem(item);
-				}
-				
-				// Check for empty categories after the item has been removed
-				if (category->isEmpty()) {
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
-					// Switch the cursor to the next category
-					cursor->GetNextCategory();
-					// Remove category from inventory
-					cursor->Inventory()->removeCategory(category);
-				}
+				// Decrease the inventory count (this will also clear empty categories)
+				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
 
 				UpdateHud();
 			}

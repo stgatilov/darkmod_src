@@ -693,6 +693,11 @@ public:
 	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
 
 	/**
+	 * Script event: Changes the inventory count of the given item <name> in <category> by <amount>
+	 */
+	void ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount);
+
+	/**
 	 * Return true if this entity can be mantled, false otherwise.
 	 */
 	virtual bool			IsMantleable();
