@@ -569,6 +569,16 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_FUNCTION: %c\r", pm->Value[0]);
 		}
+		if(FindMap(ps, "LogClass_ENTITY", TRUE, &pm) != static_cast<ULONG>(-1))
+		{
+			if(pm->Value[0] == '1')
+			{
+				m_ClassArray[LC_ENTITY] = true;
+				Frame = true;
+			}
+
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_ENTITY: %c\r", pm->Value[0]);
+		}
 		if(FindMap(ps, "LogClass_INVENTORY", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
