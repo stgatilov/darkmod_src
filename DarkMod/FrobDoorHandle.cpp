@@ -67,7 +67,6 @@ void CFrobDoorHandle::Spawn(void)
 	CBinaryFrobMover::Spawn();
 	LoadTDMSettings();
 
-	spawnArgs.GetString("door_handle_script", "door_handle_rotate", m_DoorHandleScript);
 	PostEventMS(&EV_TDM_Handle_FindDoor, 0);
 
 	// Dorhandles are always non-interruptable
@@ -186,12 +185,15 @@ void CFrobDoorHandle::DoneMoving(void)
 void CFrobDoorHandle::Tap(void)
 {
 	double signal = 0;
+	idStr s;
 
-	if(m_DoorHandleScript.Length() == 0 || m_Door == NULL)
+//	spawnArgs.GetString("door_handle_script", "door_handle_rotate", s);
+	spawnArgs.GetString("door_handle_script", "", s);
+	if(s.Length() == 0 || m_Door == NULL)
 		return;
 
 	signal = m_Door->AddSDKSignal(SigOpen, NULL);
-	CallScriptFunctionArgs(m_DoorHandleScript.c_str(), true, 0, "eef", this, m_Door, signal);
+	CallScriptFunctionArgs(s.c_str(), true, 0, "eef", this, m_Door, signal);
 }
 
 bool CFrobDoorHandle::isLocked(void)

@@ -77,7 +77,6 @@ protected:
 	**/
 	CFrobDoor				*m_Door;
 	bool					m_FrobLock;
-	idStr					m_DoorHandleScript;
 
 private:
 };
