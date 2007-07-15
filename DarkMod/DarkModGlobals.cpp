@@ -35,6 +35,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndPropLoader.h"
 #include "sndProp.h"
 #include "Relations.h"
+#include "shop.h"
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
@@ -131,6 +132,7 @@ CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
 CMissionData	g_MissionData;
+CShop			g_Shop;
 
 static idList<const char *> *s_FileVersion = NULL;
 

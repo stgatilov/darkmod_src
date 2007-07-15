@@ -976,6 +976,12 @@
 					RelativePath=".\DarkMod\Relations.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\shop.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\shop.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\sndProp.cpp">
 				</File>
 				<File

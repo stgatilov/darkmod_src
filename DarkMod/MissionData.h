@@ -319,10 +319,10 @@ public:
 	bool m_bOngoing;
 
 	/**
-	* Sets the difficulty level of this objective. Objective only appears at and above this difficutly level
-	* TODO: Change to bitfield so objectives can also disappear at higher difficulties
+	* True if this objective applies to the current skill level. Otherwise
+	* the objective can be ignored.
 	**/
-	int m_MinDifficulty;
+	bool m_applies;
 
 protected:
 	/**

@@ -27,6 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/WeaponItem.h"
 #include "../DarkMod/KeyboardHook.h"
+#include "../DarkMod/shop.h"
 /*
 ===============================================================================
 
@@ -35,6 +36,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 ===============================================================================
 */
+
+extern CShop		g_Shop;
 
 bool NextFrame = true;
 
@@ -931,6 +934,18 @@ void idPlayer::SetupInventory()
 	m_WeaponCursor->SetCurrentCategory(idx);
 	m_WeaponCursor->SetCategoryLock(true);
 
+	// Set ammo spawnargs based on Purchased and Starting items
+	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
+	for (int si = 0; si < startingItems->Num(); si++) {
+		idStr weaponName = (*startingItems)[si]->GetID();
+		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0) {
+			weaponName.Strip("weapon_");
+			idStr key = "ammo_" + weaponName;
+			int ammoCount = spawnArgs.GetInt(key, "0");
+			spawnArgs.SetInt(key, ammoCount + (*startingItems)[si]->GetCount());
+		}
+	}
+
 	// greebo: Parse the spawnargs and add the weapon items to the inventory.
 	addWeaponsToInventory();
 
@@ -973,6 +988,22 @@ void idPlayer::SetupInventory()
 
 	// Focus on the empty dummy inventory item
 	crsr->SetCurrentItem(TDM_DUMMY_ITEM);
+
+	// Give player non-weapon items obtained from the Shop
+	for (int si = 0; si < startingItems->Num(); si++) {
+		const char * weaponName = (*startingItems)[si]->GetID();
+		const idDict *itemDict = gameLocal.FindEntityDefDict(weaponName, true);
+		int count = (*startingItems)[si]->GetCount();
+		if (idStr::Cmpn(weaponName, "weapon_", 7) != 0 && count > 0) {
+			// spawn the item, put it in the inventory
+			idEntity *entity;
+			gameLocal.SpawnEntityDef( *itemDict, &entity );
+			CInventoryItem* item = crsr->Inventory()->PutItem(entity, this);
+			item->SetCount(count);
+		}
+	}
+	delete startingItems;
+
 }
 
 

@@ -30,6 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/func_shooter.h"
+#include "../DarkMod/shop.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -45,6 +46,7 @@ extern CRelations		g_globalRelations;
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
+extern CShop				g_Shop;
 
 #define BUFFER_LEN 4096
 
@@ -2849,10 +2851,14 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 /*
 ================
 idGameLocal::HandleMainMenuCommands
+
+Currently the shop (purchase screen) is the only component that
+handles main menu commands.
 ================
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
+	g_Shop.HandleCommands(menuCommand, gui);
 }
 
 /*

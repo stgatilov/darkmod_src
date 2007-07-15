@@ -1145,7 +1145,27 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		}
 		src.FreeSource();
 
-// TODO: Parse difficulty level when that is coded
+		// Parse difficulty level. If difficulty not specified, then
+		// this objective applies to all levels.
+		TempStr2 = args->GetString( StrTemp + "difficulty", "" );
+		if (TempStr2.Length() > 0) {
+			ObjTemp.m_applies = false;
+			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
+			while( src.ReadToken( &token ) )
+			{
+				if( token.IsNumeric() )
+					if (g_skill.GetInteger() == token.GetIntValue()) {
+						ObjTemp.m_applies = true;
+						break;
+					}
+			}
+			if (!ObjTemp.m_applies) {
+				// Objectives that don't apply to this difficulty level are considered invalid.
+				// They don't need to be completed.
+				ObjTemp.m_state = STATE_INVALID;
+			}
+			src.FreeSource();
+		}
 
 		// parse objective components
 		Counter2 = 1;
@@ -1276,7 +1296,7 @@ void CObjective::Clear( void )
 	m_bLatched = false;
 	m_bVisible = true;
 	m_bOngoing = false;
-	m_MinDifficulty = 0;
+	m_applies = true;
 	m_Components.Clear();
 	m_EnablingObjs.Clear();
 	m_CompletionScript.Clear();
