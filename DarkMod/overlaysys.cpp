@@ -571,3 +571,14 @@ idUserInterface* COverlaySys::findInteractive()
 	}
 	return m_highestInteractive;
 }
+
+void COverlaySys::broadcastNamedEvent(const char* eventName)
+{
+	// Cycle through the nodes
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	while(oNode)
+	{
+		oNode->Owner()->m_gui->HandleNamedEvent(eventName);
+		oNode = oNode->NextNode();
+	}
+}

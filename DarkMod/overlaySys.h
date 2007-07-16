@@ -108,6 +108,12 @@ class COverlaySys
 	/// Return whether or not an overlay is considered interactive.
 	bool					isInteractive( int handle );
 
+	/**
+	 * greebo: This cycles through all overlays and calls HandleNamedEvent() 
+	 *		   on each visible GUI.
+	 */
+	void					broadcastNamedEvent(const char* eventName);
+
   private:
 
 	/// Returns the overlay associated with a handle.

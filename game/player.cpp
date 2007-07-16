@@ -4701,11 +4701,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 
-		case IMPULSE_14: 
+		case IMPULSE_14:		// Next weapon
 		{
 			// If the grabber is active, next weapon increments the distance
 			if(m_bGrabberActive)
 				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
+
+			// Pass the "next weapon" event to the GUIs
+			int handle = OVERLAYS_INVALID_HANDLE;
+			while ((handle = m_overlays.getNextOverlay(handle) ) != OVERLAYS_INVALID_HANDLE)
+			{
+				// Retrieve the GUI and set the state variable
+				idUserInterface* gui = m_overlays.getGui(handle);
+				gui->HandleNamedEvent("nextWeapon");
+			}
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -4716,11 +4725,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 			NextWeapon();
 			break;
 		}
-		case IMPULSE_15: 
+		case IMPULSE_15:		// Previous Weapon
 		{
-			// If the grabber is active, next weapon increments the distance
+			// If the grabber is active, previous weapon increments the distance
 			if(m_bGrabberActive)
 				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
+
+			// Pass the "previous weapon" event to the GUIs
+			int handle = OVERLAYS_INVALID_HANDLE;
+			while ((handle = m_overlays.getNextOverlay(handle) ) != OVERLAYS_INVALID_HANDLE)
+			{
+				// Retrieve the GUI and set the state variable
+				idUserInterface* gui = m_overlays.getGui(handle);
+				gui->HandleNamedEvent("prevWeapon");
+			}
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
