@@ -531,7 +531,7 @@ public:
 	*
 	* This is the most generic version, will be called by the inventory after it puts "value" into the parms
 	**/
-	void CMissionData::MissionEvent
+	void MissionEvent
 		( 
 		EComponentType CompType, 					 
 		SObjEntParms *EntDat1, 				 
@@ -539,7 +539,7 @@ public:
 		bool bBoolArg = false
 		);
 
-	void CMissionData::MissionEvent
+	void MissionEvent
 		( 
 		EComponentType CompType, 					 
 		SObjEntParms *EntDat1, 				 
@@ -552,7 +552,7 @@ public:
 	* (for real ents as opposed to fake inventory items)
 	* Used by AI events, locations, etc
 	**/
-	void CMissionData::MissionEvent
+	void MissionEvent
 		( 
 		EComponentType CompType, 					 
 		idEntity *Ent1, 				 
@@ -561,7 +561,7 @@ public:
 		bool bWhileAirborne = false
 		);
 
-	void CMissionData::MissionEvent
+	void MissionEvent
 		( 
 		EComponentType CompType, 					 
 		idEntity *Ent1, 				 

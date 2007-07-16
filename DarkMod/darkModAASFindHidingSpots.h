@@ -289,7 +289,7 @@ protected:
 	*	so no need to call this again the search is done
 	*
 	*/
-	bool darkModAASFindHidingSpots::findMoreHidingSpots
+	bool findMoreHidingSpots
 	(
 		//idList<darkModHidingSpot_t>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,

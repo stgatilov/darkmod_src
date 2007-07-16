@@ -210,11 +210,11 @@ private:
 	/**
 	* TDM priority queue events
 	**/
-	void						idThread::Event_pqNew();
-	void						idThread::Event_pqDelete(int pqueueID);
-	void						idThread::Event_pqPush( int queueID, const char* task, int priority );
-	void						idThread::Event_pqPeek( int queueID );
-	void						idThread::Event_pqPop( int queueID );
+	void						Event_pqNew();
+	void						Event_pqDelete(int pqueueID);
+	void						Event_pqPush( int queueID, const char* task, int priority );
+	void						Event_pqPeek( int queueID );
+	void						Event_pqPop( int queueID );
 
 
 public:							

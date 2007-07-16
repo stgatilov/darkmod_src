@@ -2,7 +2,7 @@
 #pragma hdrstop
 
 #include "shop.h"
-#include "../game/Game_local.h"
+#include "../game/game_local.h"
 
 // type-in field for map name (temporary)
 idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
@@ -107,42 +107,42 @@ idList<CShopItem *>* CShop::GetPlayerItems() {
  * Handle Main Menu commands
  */
 void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui) {
-	if (stricmp(menuCommand, "shopLoad") == 0)
+	if (idStr::Icmp(menuCommand, "shopLoad") == 0)
 	{
 		// Initialize the shop
 		Init();
 		DisplayShop(gui);
 	}
-	else if (stricmp(menuCommand, "shopBuy") == 0)
+	else if (idStr::Icmp(menuCommand, "shopBuy") == 0)
 	{
 		// Buy an item
 		int boughtItem = gui->GetStateInt("boughtItem", "0");
 		BuyItem(boughtItem);
 	}
-	else if (stricmp(menuCommand, "shopSold") == 0)
+	else if (idStr::Icmp(menuCommand, "shopSold") == 0)
 	{
 		// Return an item to the shelf
 		int soldItem = gui->GetStateInt("soldItem", "0");
 		SellItem(soldItem);
 	}
-	else if (stricmp(menuCommand, "shopDrop") == 0)
+	else if (idStr::Icmp(menuCommand, "shopDrop") == 0)
 	{
 		// Drop one of the starting items
 		int dropItem = gui->GetStateInt("dropItem", "0");
 		DropItem(dropItem);
 	}
-	else if (stricmp(menuCommand, "shopMore") == 0)
+	else if (idStr::Icmp(menuCommand, "shopMore") == 0)
 	{
 		const char * listName = gui->GetStateString("moreList", "");
-		if (stricmp(listName, "forSale") == 0) {	
+		if (idStr::Icmp(listName, "forSale") == 0) {
 			ScrollList(&forSaleTop, LIST_SIZE_FOR_SALE, &itemsForSale);
-		} else if (stricmp(listName, "starting") == 0) {	
+		} else if (idStr::Icmp(listName, "starting") == 0) {
 			ScrollList(&startingTop, LIST_SIZE_STARTING, &startingItems);
-		} else if (stricmp(listName, "purchased") == 0) {	
+		} else if (idStr::Icmp(listName, "purchased") == 0) {
 			ScrollList(&purchasedTop, LIST_SIZE_PURCHASED, &itemsPurchased);
 		}
 	}
-	else if (stricmp(menuCommand, "shopDone") == 0)
+	else if (idStr::Icmp(menuCommand, "shopDone") == 0)
 	{
 		// nothing to do here
 	}
@@ -219,7 +219,6 @@ void CShop::DisplayShop(idUserInterface *gui) {
 		gameLocal.Warning( "Couldn't load %s", filename );
 		return;
 	}
-	const char* mapFileName = mapFile->GetName();
 	idMapEntity* mapEnt = mapFile->GetEntity( 0 );
 	idDict mapDict = mapEnt->epairs;
 
@@ -256,7 +255,8 @@ void CShop::SellItem(int index) {
 		itemsPurchased.RemoveIndex(purchasedTop + index);
 		// scroll so appropriate items visible
 		if ((purchasedTop >= itemsPurchased.Num()) || (purchasedTop % LIST_SIZE_PURCHASED != 0)) {
-			purchasedTop = max(itemsPurchased.Num() - LIST_SIZE_PURCHASED, 0);
+			purchasedTop = itemsPurchased.Num() - LIST_SIZE_PURCHASED;
+			if (purchasedTop < 0) purchasedTop = 0;
 		}
 	}
 	ChangeGold(boughtItem->GetCost());

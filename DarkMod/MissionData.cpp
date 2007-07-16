@@ -23,7 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 * Add new component type names here.  Must be in exact same order as EComponentType
 *	enum, defined in MissionData.h
 **/
-static const char *gCompTypeName[COMP_COUNT] = 
+static const char *gCompTypeName[COMP_COUNT] =
 {
 	"kill",
 	"ko",
@@ -42,7 +42,7 @@ static const char *gCompTypeName[COMP_COUNT] =
 * Add in new specification types here.  Must be in exact same order as
 *	ESpecificationMethod enum, defined in MissionData.h
 **/
-static const char *gSpecTypeName[SPEC_COUNT] = 
+static const char *gSpecTypeName[SPEC_COUNT] =
 {
 	"none",
 	"name",
@@ -190,11 +190,11 @@ void CMissionData::Clear( void )
 
 
 void CMissionData::MissionEvent
-	( 
-		EComponentType CompType, 
-		SObjEntParms *EntDat1, 
+	(
+		EComponentType CompType,
+		SObjEntParms *EntDat1,
 		SObjEntParms *EntDat2,
-		bool bBoolArg 
+		bool bBoolArg
 	)
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Mission event called \r");
@@ -209,7 +209,7 @@ void CMissionData::MissionEvent
 
 	// Update AI stats, don't add to stats if playerresponsible is false
 	// Stas for KOs, kills, body found, item found
-	if( ( ( CompType == COMP_KILL && EntDat1->bIsAI ) || CompType == COMP_KO 
+	if( ( ( CompType == COMP_KILL && EntDat1->bIsAI ) || CompType == COMP_KO
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) && bBoolArg )
 	{
@@ -232,7 +232,7 @@ void CMissionData::MissionEvent
 			DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Objectives: No AI stat found for comptype %d\r", CompType );
 			goto Quit;
 		}
-		
+
 		// Add to all appropriate stats
 		pStat->Overall++;
 		pStat->ByTeam[ EntDat1->team ]++;
@@ -258,7 +258,7 @@ void CMissionData::MissionEvent
 			if( pComp->m_Type != CompType )
 				continue;
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i+1, j+1 );
-			
+
 			// check if the specifiers match, for first spec and second if it exists
 			if( !MatchSpec(pComp, EntDat1, 0) )
 				continue;
@@ -337,7 +337,7 @@ bool	CMissionData::MatchSpec
 	{
 		case SPEC_NONE:
 			bReturnVal = true;
-			break;		
+			break;
 		case SPEC_NAME:
 			bReturnVal = ( pComp->m_SpecStrVal[ind] == EntDat->name );
 			break;
@@ -394,7 +394,7 @@ bool	CMissionData::EvaluateObjective
 	}
 
 	// AI COMPONENTS:
-	if( ( CompType == COMP_KILL || CompType == COMP_KO 
+	if( ( CompType == COMP_KILL || CompType == COMP_KO
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) )
 	{
@@ -469,7 +469,7 @@ void CMissionData::UpdateObjectives( void )
 	bool bTest(true), bObjEnabled(true);
 
 // =============== Begin Handling of Clocked Objective Components ===============
-	
+
 	for( int k=0; k < m_ClockedComponents.Num(); k++ )
 	{
 		CObjectiveComponent *pComp = m_ClockedComponents[k];
@@ -497,10 +497,10 @@ void CMissionData::UpdateObjectives( void )
 
 			ent1 = gameLocal.FindEntity( pComp->m_StrArgs[0].c_str() );
 			ent2 = gameLocal.FindEntity( pComp->m_StrArgs[1].c_str() );
-			
+
 			if( !ent1 || !ent2 )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0], pComp->m_StrArgs[1] ); 
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str(), pComp->m_StrArgs[1].c_str() );
 				continue;
 			}
 
@@ -546,7 +546,7 @@ void CMissionData::UpdateObjectives( void )
 			pComp->m_TimeStamp = gameLocal.time;
 
 			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_StrArgs[0].c_str() );
-			
+
 			if(pScriptFun)
 			{
 				idThread *pThread = new idThread( pScriptFun );
@@ -573,7 +573,7 @@ void CMissionData::UpdateObjectives( void )
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
 		CObjective *pObj = &m_Objectives[i];
-		
+
 		// skip objectives that don't need updating
 		if( !pObj->m_bNeedsUpdate || pObj->m_state == STATE_INVALID )
 			continue;
@@ -644,7 +644,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			idThread *pThread = new idThread( pScriptFun );
 			pThread->CallFunction( pScriptFun, true );
 			pThread->DelayedStart( 0 );
-		}		
+		}
 
 // TODO: Update the GUI to mark the objective as complete
 
@@ -655,7 +655,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
 		CObjective *pObj = &m_Objectives[i];
-		bTemp = ( pObj->m_state == STATE_COMPLETE || pObj->m_state == STATE_INVALID 
+		bTemp = ( pObj->m_state == STATE_COMPLETE || pObj->m_state == STATE_INVALID
 					 || !pObj->m_bMandatory );
 		bTest = bTest && bTemp;
 	}
@@ -672,7 +672,7 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 	else
 	{
 		// play an objective failed sound for optional objectives?
-		
+
 		// call failure script
 		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
 		if(pScriptFun)
@@ -688,7 +688,7 @@ void CMissionData::Event_MissionComplete( void )
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
 	gameLocal.Printf("MISSION COMPLETED\n");
-	
+
 	// TODO: Go to mission successful GUI
 	// TODO: Read off which map to go to next
 
@@ -704,7 +704,7 @@ void CMissionData::Event_MissionFailed( void )
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
-	
+
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if(player)
 	{
@@ -719,7 +719,7 @@ void CMissionData::Event_MissionFailed( void )
 int CMissionData::GetStatOverall( EComponentType CompType, int AlertNum )
 {
 	int returnVal(0);
-	
+
 	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 		goto Quit;
 
@@ -735,7 +735,7 @@ Quit:
 int CMissionData::GetStatByTeam( EComponentType CompType, int index, int AlertNum )
 {
 	int returnVal(0);
-	
+
 	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
@@ -750,7 +750,7 @@ Quit:
 int CMissionData::GetStatByType( EComponentType CompType, int index, int AlertNum )
 {
 	int returnVal(0);
-	
+
 	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
@@ -765,7 +765,7 @@ Quit:
 int CMissionData::GetStatByInnocence( EComponentType CompType, int index, int AlertNum )
 {
 	int returnVal(0);
-	
+
 	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
@@ -780,7 +780,7 @@ Quit:
 int CMissionData::GetStatAirborne( EComponentType CompType, int AlertNum )
 {
 	int returnVal(0);
-	
+
 	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
@@ -827,7 +827,7 @@ void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 	if( ent->IsType(idActor::Type) )
 	{
 		idActor *actor = static_cast<idActor *>(ent);
-		
+
 		parms->team = actor->team;
 		parms->type = actor->m_AItype;
 		parms->innocence = (int) actor->m_Innocent;
@@ -869,7 +869,7 @@ void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
 	CObjectiveComponent *pComp(NULL);
 
 	pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
-	
+
 	if( !pComp )
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: NULL component found \r" );
@@ -977,7 +977,7 @@ bool CMissionData::GetComponentState( int ObjIndex, int CompIndex )
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
 		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
-		gameLocal.Printf("WARNING: Objective System: GetComponentState: Objective num %d out of bounds. \n", (ObjIndex+1) ); 
+		gameLocal.Printf("WARNING: Objective System: GetComponentState: Objective num %d out of bounds. \n", (ObjIndex+1) );
 		goto Quit;
 	}
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
@@ -1173,34 +1173,34 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		{
 			StrTemp2 = StrTemp + va("%d_", Counter2);
 			CObjectiveComponent CompTemp;
-			
+
 			CompTemp.m_bState = args->GetBool( StrTemp2 + "state", "0" );
 			CompTemp.m_bNotted = args->GetBool( StrTemp2 + "not", "0" );
 			CompTemp.m_bReversible = !args->GetBool( StrTemp2 + "irreversible", "0" );
-			
+
 			// use comp. type hash to convert text type to EComponentType
 			idStr TypeString = args->GetString( StrTemp2 + "type", "");
 			int TypeNum = m_CompTypeHash.First(m_CompTypeHash.GenerateKey( TypeString, false ));
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing objective component type '%s', typenum %d \r", TypeString.c_str(), TypeNum );
-			
+
 			if( TypeNum == -1 )
 			{
 				DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
-				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString, Counter, Counter2 ); 
+				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString, Counter, Counter2 );
 				continue;
 			}
 			CompTemp.m_Type = (EComponentType) TypeNum;
-			
+
 			for( int ind=0; ind<2; ind++ )
 			{
 				// Use spec. type hash to convert text specifier to ESpecificationMethod enum
 				idStr SpecString = args->GetString(va(StrTemp2 + "spec%d", ind + 1), "none");
 				int SpecNum = m_SpecTypeHash.First(m_SpecTypeHash.GenerateKey( SpecString, false ));
-				
+
 				if( SpecNum == -1 )
 				{
 					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
-					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 ); 
+					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 );
 					SpecNum = 0;
 				}
 				CompTemp.m_SpecMethod[ind] = (ESpecificationMethod) SpecNum;
@@ -1216,7 +1216,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			TempStr2 = args->GetString( StrTemp2 + "args_str", "" );
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
-			
+
 			while( src.ReadToken( &token ) )
 				CompTemp.m_StrArgs.Append( token.c_str() );
 			src.FreeSource();
@@ -1244,7 +1244,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			ObjTemp.m_Components.Append( CompTemp );
 			Counter2++;
 		}
-		
+
 		if( ObjTemp.m_Components.Num() > 0 )
 		{
 			m_Objectives.Append( ObjTemp );
@@ -1261,7 +1261,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
 			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) || (pComp->m_Type == COMP_INFO_LOCATION) )
 				m_ClockedComponents.Append( pComp );
-		}	
+		}
 	}
 
 	// check if any objectives were actually added, if not return -1
@@ -1357,15 +1357,15 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	idToken		token;
 //	idDict		*args( NULL );
 	int			col(0), row(0), level(0);
-	
-	bool		bReturnVal( false );	
+
+	bool		bReturnVal( false );
 	bool		bFollowingOperator( false ); // whether we expect an identifier or open parenthesis
 	bool		bOperatorOK( false ); // can the next token be an operator
 	bool		bNOTed( false ); // next parse node will be NOTted
 	// initialize as advancing to 0,0 at start of parsing
 	bool		bRowAdvanced( true );
 	bool		bColAdvanced( true );
-	
+
 //	SBoolParseNode *CurrentNode( NULL );
 
 
@@ -1400,7 +1400,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 			else if( token.IsNumeric() )
 			{
 				// node is a leaf
-				
+
 				bOperatorOK = true;
 
 				// set CompNum to the identifier
@@ -1472,7 +1472,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 				// Error: Identifier expected, found ")"
 
 			level--;
-			
+
 			// retrieve the rows/columns for the higher level from the lower level parse node data
 		}
 
@@ -1506,7 +1506,7 @@ Quit:
 }
 
 /**
-* Evaluates the boolean logic matrix, using components of the objective 
+* Evaluates the boolean logic matrix, using components of the objective
 *	that calls this function.
 **/
 bool CObjective::EvalBoolLogic( SBoolParseNode *StartNode )
@@ -1519,7 +1519,7 @@ bool CObjective::EvalBoolLogic( SBoolParseNode *StartNode )
 	SBoolParseNode *CurrentNode = NULL;
 
 	int CurrentCol(0), CurrentRow(0); // matrix coordinates in the current level
-	
+
 
 	if(!StartNode)
 	{
@@ -1542,9 +1542,9 @@ Going down one level can only happen because we finished an evaluation in
 
 When we advance to the next matrix spot, it can happen in two ways:
 1. We have evaluated TRUE in the previous step
-	
+
 	If there is a next column, go to the first row of that next column and go down a level
-	
+
 	If there is no next column, we are done with this level, eval it as TRUE and go up
 
 2. We have evaluated FALSE in the previous step
@@ -1566,7 +1566,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 			CurrentNode = CurrentNode->PrevNode;
 			CurrentCol = CurrentNode->PrevCol;
 			CurrentRow = CurrentNode->PrevRow;
-			
+
 			level--;
 			continue;
 		}
@@ -1584,7 +1584,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 				CurrentNode = CurrentNode->PrevNode;
 				CurrentCol = CurrentNode->PrevCol;
 				CurrentRow = CurrentNode->PrevRow;
-				
+
 				level--;
 				continue;
 			}
@@ -1606,7 +1606,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 				CurrentNode = CurrentNode->PrevNode;
 				CurrentCol = CurrentNode->PrevCol;
 				CurrentRow = CurrentNode->PrevRow;
-				
+
 				level--;
 				continue;
 			}
@@ -1619,7 +1619,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 		// If we get to this point in the loop, we must be going down a level
 		bResolvedLevel = false;
 		CurrentNode = &CurrentNode->Cols[CurrentCol].operator[](CurrentRow);
-		
+
 		level++;
 	}
 
@@ -1629,8 +1629,8 @@ Quit:
 	return bReturnVal;
 }
 
-/*=========================================================================== 
-* 
+/*===========================================================================
+*
 *CObjectiveLocation
 *
 *============================================================================*/
@@ -1653,7 +1653,7 @@ void CObjectiveLocation::Spawn()
 // Set the contents to a useless trigger so that the collision model will be loaded
 // FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
 	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
-	
+
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
@@ -1749,7 +1749,7 @@ void CObjectiveLocation::Think()
 	// copy over the list
 	m_EntsInBounds.Clear();
 	m_EntsInBounds = current;
-	
+
 	current.Clear();
 	missing.Clear();
 	added.Clear();

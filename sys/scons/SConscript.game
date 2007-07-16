@@ -151,6 +151,7 @@ randomizer/mother.cpp \
 randomizer/ranrotb.cpp \
 randomizer/ranrotw.cpp \
 randomizer/userintf.cpp \
+shop.cpp \
 StimResponse/Response.cpp \
 StimResponse/ResponseEffect.cpp \
 StimResponse/Stim.cpp \
