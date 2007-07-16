@@ -61,6 +61,9 @@ void CShop::Init() {
 	itemsPurchased.Clear();
 	startingItems.Clear();
 	itemDefs.Clear();
+	forSaleTop = 0;
+	purchasedTop = 0;
+	startingTop = 0;
 }
 
 void CShop::AddItemForSale(CShopItem* CShopItem) {
@@ -128,11 +131,30 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui) {
 		int dropItem = gui->GetStateInt("dropItem", "0");
 		DropItem(dropItem);
 	}
+	else if (stricmp(menuCommand, "shopMore") == 0)
+	{
+		const char * listName = gui->GetStateString("moreList", "");
+		if (stricmp(listName, "forSale") == 0) {	
+			ScrollList(&forSaleTop, LIST_SIZE_FOR_SALE, &itemsForSale);
+		} else if (stricmp(listName, "starting") == 0) {	
+			ScrollList(&startingTop, LIST_SIZE_STARTING, &startingItems);
+		} else if (stricmp(listName, "purchased") == 0) {	
+			ScrollList(&purchasedTop, LIST_SIZE_PURCHASED, &itemsPurchased);
+		}
+	}
 	else if (stricmp(menuCommand, "shopDone") == 0)
 	{
 		// nothing to do here
 	}
 	UpdateGUI(gui);
+}
+
+void CShop::ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list) {
+	if (*topItem + maxItems < list->Num()) {
+		*topItem += maxItems;
+	} else {
+		*topItem = 0;
+	}
 }
 
 void CShop::LoadShopItemDefinitions() {
@@ -224,14 +246,18 @@ void CShop::DisplayShop(idUserInterface *gui) {
 }
 
 void CShop::SellItem(int index) {
-	CShopItem* boughtItem = itemsPurchased[index];
+	CShopItem* boughtItem = itemsPurchased[purchasedTop + index];
 	CShopItem* forSaleItem = FindForSaleByID(boughtItem->GetID());
 	boughtItem->ChangeCount(-1);
 
 	// If last in the purchased items list, remove it from the list
 	if (boughtItem->GetCount() == 0)
 	{
-		itemsPurchased.RemoveIndex(index);
+		itemsPurchased.RemoveIndex(purchasedTop + index);
+		// scroll so appropriate items visible
+		if ((purchasedTop >= itemsPurchased.Num()) || (purchasedTop % LIST_SIZE_PURCHASED != 0)) {
+			purchasedTop = max(itemsPurchased.Num() - LIST_SIZE_PURCHASED, 0);
+		}
 	}
 	ChangeGold(boughtItem->GetCost());
 
@@ -265,7 +291,7 @@ CShopItem* CShop::FindByID(idList<CShopItem *>* items, const char *id) {
 }
 
 void CShop::BuyItem(int index) {
-	CShopItem* forSaleItem = itemsForSale[index];
+	CShopItem* forSaleItem = itemsForSale[forSaleTop + index];
 	CShopItem* boughtItem = FindPurchasedByID(forSaleItem->GetID());
 	forSaleItem->ChangeCount(-1);
 	ChangeGold(-(forSaleItem->GetCost()));
@@ -275,12 +301,16 @@ void CShop::BuyItem(int index) {
 	{
 		boughtItem = new CShopItem(forSaleItem->GetID(), forSaleItem->GetName(), forSaleItem->GetDescription(), forSaleItem->GetCost(), forSaleItem->GetImage(), 0);
 		itemsPurchased.Append(boughtItem);
+		// scroll so new item is visible in purchased list
+		if (itemsPurchased.Num() > purchasedTop + LIST_SIZE_PURCHASED) {
+			purchasedTop = itemsPurchased.Num() - LIST_SIZE_PURCHASED;
+		}
 	}
 	boughtItem->ChangeCount(1);
 };
 
 void CShop::DropItem(int index) {
-	CShopItem* dropItem = startingItems[index];
+	CShopItem* dropItem = startingItems[startingTop + index];
 	dropItem->ChangeCount(-1);
 };
 
@@ -304,67 +334,73 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 	gui->SetStateInt("soldItem", -1);
 	gui->SetStateInt("dropItem", -1);
 	gui->SetStateInt("gold", gold);
-	for (int i = 0; i < itemsForSale.Num(); i++) {
-		CShopItem* item = itemsForSale[i];
+	gui->SetStateInt("forSaleMoreVisible", itemsForSale.Num() > LIST_SIZE_FOR_SALE);
+	gui->SetStateInt("purchasedMoreVisible", itemsPurchased.Num() > LIST_SIZE_PURCHASED);
+	gui->SetStateInt("startingMoreVisible", startingItems.Num() > LIST_SIZE_STARTING);
+	for (int i = 0; i < LIST_SIZE_FOR_SALE; i++) {
 		idStr guiCost = idStr("forSaleCost") + i + "_cost";
 		idStr guiName = idStr("forSale") + i + "_name";
 		idStr guiDesc = idStr("forSale") + i + "_desc";
 		idStr guiAvailable = idStr("forSaleAvail") + i;
-		idStr listTest = idStr("listTest_item_") + i;
-		idStr name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-		gui->SetStateString(guiCost, idStr(item->GetCost()) + " GP");
-		gui->SetStateInt(guiAvailable, item->GetCost() <= gold ? item->GetCount() : 0);
+		idStr name = idStr("");
+		idStr desc = idStr("");
+		idStr cost = idStr("");
+		int available = 0;
+		if (forSaleTop + i < itemsForSale.Num()) {
+			CShopItem* item = itemsForSale[forSaleTop + i];
+			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
+			desc = idStr(item->GetName()) + ": " + item->GetDescription();
+			available = item->GetCost() <= gold ? item->GetCount() : 0;
+			cost = idStr(item->GetCost()) + " GP";
+		}
+		gui->SetStateString(guiCost, cost);
+		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
-		gui->SetStateString(guiDesc, idStr(item->GetName()) + ": " + item->GetDescription());
-		gui->SetStateString(listTest, item->GetName());
+		gui->SetStateString(guiDesc, desc);
 	}
-	for (int i = itemsForSale.Num(); i < MAX_ITEM_TYPES_FOR_SALE; i++) {
-		idStr guiCost = idStr("forSaleCost") + i + "_cost";
-		idStr guiName = idStr("forSale") + i + "_name";
-		idStr guiDesc = idStr("forSale") + i + "_desc";
-		idStr guiAvailable = idStr("forSaleAvail") + i;
-		gui->SetStateString(guiCost, "");
-		gui->SetStateInt(guiAvailable, 0);
-		gui->SetStateString(guiName, "");
-		gui->SetStateString(guiDesc, "");
-	}
-	for (int i = 0; i < itemsPurchased.Num(); i++) {
-		CShopItem* item = itemsPurchased[i];
+
+	for (int i = 0; i < LIST_SIZE_PURCHASED; i++) {
 		idStr guiCost = idStr("boughtCost") + i + "_cost";
 		idStr guiName = idStr("bought") + i + "_name";
 		idStr guiDesc = idStr("bought") + i + "_desc";
 		idStr guiAvailable = idStr("boughtAvail") + i;
-		idStr name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-		gui->SetStateString(guiCost, idStr(item->GetCost()) + " GP");
-		gui->SetStateInt(guiAvailable, item->GetCount());
+		idStr name = idStr("");
+		idStr desc = idStr("");
+		idStr cost = idStr("");
+		int available = 0;
+		if (purchasedTop + i < itemsPurchased.Num()) {
+			CShopItem* item = itemsPurchased[purchasedTop + i];
+			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
+			desc = idStr(item->GetName()) + ": " + item->GetDescription();
+			available = item->GetCost() <= gold ? item->GetCount() : 0;
+			cost = idStr(item->GetCost()) + " GP";
+		}
+		gui->SetStateString(guiCost, cost);
+		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
-		gui->SetStateString(guiDesc, idStr(item->GetName()) + ": " + item->GetDescription());
+		gui->SetStateString(guiDesc, desc);
 	}
-	for (int i = itemsPurchased.Num(); i < MAX_ITEM_TYPES_FOR_SALE; i++) {
-		idStr guiCost = idStr("boughtCost") + i + "_cost";
-		idStr guiName = idStr("bought") + i + "_name";
-		idStr guiDesc = idStr("bought") + i + "_desc";
-		idStr guiAvailable = idStr("boughtAvail") + i;
-		gui->SetStateString(guiCost, "");
-		gui->SetStateInt(guiAvailable, 0);
-		gui->SetStateString(guiName, "");
-		gui->SetStateString(guiDesc, "");
-	}
-	for (int i = 0; i < startingItems.Num(); i++) {
-		CShopItem* item = startingItems[i];
+
+	for (int i = 0; i < LIST_SIZE_STARTING; i++) {
 		idStr guiName = idStr("starting") + i + "_name";
 		idStr guiDesc = idStr("starting") + i + "_desc";
 		idStr guiAvailable = idStr("startingAvail") + i;
-		idStr name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-		gui->SetStateInt(guiAvailable, item->GetCount());
+		idStr guiDrop = idStr("dropVisible") + i;
+		idStr name = idStr("");
+		idStr desc = idStr("");
+		int available = 0;
+		int dropVisible = 0;
+		if (startingTop + i < startingItems.Num()) {
+			CShopItem* item = startingItems[startingTop + i];
+			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
+			desc = idStr(item->GetName()) + ": " + item->GetDescription();
+			available = item->GetCost() <= gold ? item->GetCount() : 0;
+			dropVisible = 1;
+		}
+		gui->SetStateInt(guiDrop, dropVisible);
+		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
-		gui->SetStateString(guiDesc, idStr(item->GetName()) + ": " + item->GetDescription());
-		idStr guiDrop = idStr("dropVisible") + i;
-		gui->SetStateInt(guiDrop, 1);
-	}
-	for (int i = startingItems.Num(); i < MAX_ITEM_TYPES_STARTING; i++) {
-		idStr guiDrop = idStr("dropVisible") + i;
-		gui->SetStateInt(guiDrop, 0);
+		gui->SetStateString(guiDesc, desc);
 	}
 }
 

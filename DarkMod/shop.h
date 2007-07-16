@@ -1,9 +1,9 @@
 #ifndef __SHOP_H__
 #define	__SHOP_H__
 
-// will go away when we have listDef solution
-#define MAX_ITEM_TYPES_FOR_SALE 6
-#define MAX_ITEM_TYPES_STARTING 5
+#define LIST_SIZE_FOR_SALE 6
+#define LIST_SIZE_PURCHASED 6
+#define LIST_SIZE_STARTING 5
 
 // Represents an item for sale
 class CShopItem {
@@ -52,6 +52,9 @@ private:
 	idList<CShopItem *>	itemsPurchased;
 	idList<CShopItem *>	startingItems;
 	int				gold;
+	int				forSaleTop;
+	int				purchasedTop;
+	int				startingTop;
 
 public:
 	CShop();
@@ -102,6 +105,9 @@ public:
 
 	// initialize the shop
 	void DisplayShop(idUserInterface *gui);
+
+	// scroll a list to the next "page" of values
+	void ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list);
 };
 
 
