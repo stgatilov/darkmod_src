@@ -4708,13 +4708,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
 
 			// Pass the "next weapon" event to the GUIs
-			int handle = OVERLAYS_INVALID_HANDLE;
-			while ((handle = m_overlays.getNextOverlay(handle) ) != OVERLAYS_INVALID_HANDLE)
-			{
-				// Retrieve the GUI and set the state variable
-				idUserInterface* gui = m_overlays.getGui(handle);
-				gui->HandleNamedEvent("nextWeapon");
-			}
+			m_overlays.broadcastNamedEvent("nextWeapon");
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -4732,13 +4726,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
 
 			// Pass the "previous weapon" event to the GUIs
-			int handle = OVERLAYS_INVALID_HANDLE;
-			while ((handle = m_overlays.getNextOverlay(handle) ) != OVERLAYS_INVALID_HANDLE)
-			{
-				// Retrieve the GUI and set the state variable
-				idUserInterface* gui = m_overlays.getGui(handle);
-				gui->HandleNamedEvent("prevWeapon");
-			}
+			m_overlays.broadcastNamedEvent("prevWeapon");
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -4945,6 +4933,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
+			// Notify the GUIs about the change event, a readable might be open
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
+
 			inventoryPrevItem();
 			break;
 		}
@@ -4953,6 +4944,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
+
+			// Notify the GUIs about the change event, a readable might be open
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 
 			inventoryNextItem();
 			break;
@@ -4963,6 +4957,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
+			// Notify the GUIs about the change event, a readable might be open
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
+
 			inventoryPrevGroup();
 			break;
 		}
@@ -4971,6 +4968,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
+
+			// Notify the GUIs about the change event, a readable might be open
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 
 			inventoryNextGroup();
 			break;
