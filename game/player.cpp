@@ -1242,6 +1242,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
+	savefile->WriteInt(mInventoryOverlay);
+
 	if(hud)
 	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -1507,6 +1509,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
+
+	savefile->ReadInt(mInventoryOverlay);
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();

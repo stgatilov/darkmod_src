@@ -73,6 +73,7 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(_weaponIndex);
 	savefile->ReadBool(_toggleable);
 	savefile->ReadBool(_allowedEmpty);
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restored weapon item %s.\r", _weaponDefName.c_str());
 }
 
 int CInventoryWeaponItem::getMaxAmmo() {

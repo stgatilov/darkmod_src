@@ -137,6 +137,7 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadString(m_Icon);
 
 	savefile->ReadBool(m_Orientated);
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restored inventory item %s.\r", m_Name.c_str());
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)

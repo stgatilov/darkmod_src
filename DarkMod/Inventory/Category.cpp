@@ -71,9 +71,11 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 		switch (itemType)
 		{
 		case CInventoryItem::IT_WEAPON:
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item #%d (weapon item).\r", i);
 			item = new CInventoryWeaponItem();
 			break;
 		default:
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item #%d (ordinary item).\r", i);
 			item = new CInventoryItem(NULL);
 			break;
 		};
