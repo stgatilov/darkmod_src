@@ -1162,6 +1162,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( airTics );
 	savefile->WriteInt( lastAirDamage );
 
+	savefile->WriteBool(underWaterEffectsActive);
+	savefile->WriteInt(underWaterGUIHandle);
+
 	savefile->WriteBool( gibDeath );
 	savefile->WriteBool( gibsLaunched );
 	savefile->WriteVec3( gibsDir );
@@ -1415,6 +1418,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( airless );
 	savefile->ReadInt( airTics );
 	savefile->ReadInt( lastAirDamage );
+
+	savefile->ReadBool(underWaterEffectsActive);
+	savefile->ReadInt(underWaterGUIHandle);
 
 	savefile->ReadBool( gibDeath );
 	savefile->ReadBool( gibsLaunched );
