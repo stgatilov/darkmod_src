@@ -33,12 +33,20 @@ CInventoryCursor::~CInventoryCursor()
 
 void CInventoryCursor::Save(idSaveGame *savefile) const
 {
-	// TODO: Has to call the groups and items as well.
+	savefile->WriteBool(m_CategoryLock);
+	savefile->WriteBool(m_WrapAround);
+	savefile->WriteInt(m_CurrentCategory);
+	savefile->WriteInt(m_CurrentItem);
+	savefile->WriteInt(m_CursorId);
 }
 
 void CInventoryCursor::Restore(idRestoreGame *savefile)
 {
-	// TODO: Has to call the groups and items as well.
+	savefile->ReadBool(m_CategoryLock);
+	savefile->ReadBool(m_WrapAround);
+	savefile->ReadInt(m_CurrentCategory);
+	savefile->ReadInt(m_CurrentItem);
+	savefile->ReadInt(m_CursorId);
 }
 
 CInventoryItem *CInventoryCursor::GetCurrentItem()
