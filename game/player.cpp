@@ -1242,6 +1242,10 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
+	savefile->WriteInt(healthPoolStepAmount);
+	savefile->WriteInt(healthPoolTimeInterval);
+	savefile->WriteInt(healthPoolTimeIntervalFactor);
+
 	savefile->WriteInt(mInventoryOverlay);
 
 	if(hud)
@@ -1509,6 +1513,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
+
+	savefile->ReadInt(healthPoolStepAmount);
+	savefile->ReadInt(healthPoolTimeInterval);
+	savefile->ReadInt(healthPoolTimeIntervalFactor);
 
 	savefile->ReadInt(mInventoryOverlay);
 
