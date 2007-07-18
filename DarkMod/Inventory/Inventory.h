@@ -105,6 +105,7 @@ public:
 	 * GetCategoryIndex returns the index to the given group or -1 if not found.
 	 */
 	int					GetCategoryIndex(const idStr& CategoryName);
+	int					GetCategoryIndex(const CInventoryCategory* Category);
 
 	/**
 	 * Return the groupindex of the item or -1 if it doesn't exist. Optionally

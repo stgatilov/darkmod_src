@@ -38,6 +38,12 @@ void CInventoryCursor::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_CurrentCategory);
 	savefile->WriteInt(m_CurrentItem);
 	savefile->WriteInt(m_CursorId);
+
+	savefile->WriteInt(m_CategoryIgnore.Num());
+	for (int i = 0; i < m_CategoryIgnore.Num(); i++)
+	{
+		savefile->WriteInt(m_CategoryIgnore[i]);
+	}
 }
 
 void CInventoryCursor::Restore(idRestoreGame *savefile)
@@ -47,6 +53,15 @@ void CInventoryCursor::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(m_CurrentCategory);
 	savefile->ReadInt(m_CurrentItem);
 	savefile->ReadInt(m_CursorId);
+
+	int num;
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; i++)
+	{
+		int ignoreIndex;
+		savefile->ReadInt(ignoreIndex);
+		m_CategoryIgnore.AddUnique(ignoreIndex);
+	}
 }
 
 CInventoryItem *CInventoryCursor::GetCurrentItem()
@@ -268,7 +283,9 @@ void CInventoryCursor::SetCurrentCategory(int Index)
 void CInventoryCursor::SetCategoryIgnored(const CInventoryCategory *c)
 {
 	if(c != NULL)
-		m_CategoryIgnore.AddUnique(c);
+	{
+		m_CategoryIgnore.AddUnique(m_Inventory->GetCategoryIndex(c));
+	}
 }
 
 void CInventoryCursor::SetCategoryIgnored(const idStr& categoryName)
@@ -286,7 +303,7 @@ void CInventoryCursor::RemoveCategoryIgnored(const CInventoryCategory *c)
 
 	for(i = 0; i < m_CategoryIgnore.Num(); i++)
 	{
-		if(m_CategoryIgnore[i] == c)
+		if(m_CategoryIgnore[i] == m_Inventory->GetCategoryIndex(c))
 		{
 			m_CategoryIgnore.RemoveIndex(i);
 			goto Quit;
@@ -313,7 +330,7 @@ bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategory *c) const
 
 	for(i = 0; i < m_CategoryIgnore.Num(); i++)
 	{
-		if(m_CategoryIgnore[i] == c)
+		if(m_CategoryIgnore[i] == m_Inventory->GetCategoryIndex(c))
 		{
 			rc = true;
 			goto Quit;

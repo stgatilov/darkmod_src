@@ -197,6 +197,23 @@ int CInventory::GetCategoryIndex(const idStr& CategoryName)
 	return i;
 }
 
+int CInventory::GetCategoryIndex(const CInventoryCategory* Category)
+{
+	// If the groupname is empty we look for the default group
+	if (Category == NULL) {
+		return -1;
+	}
+
+	// Traverse the categories and find the one matching <CategoryName>
+	for (int i = 0; i < m_Category.Num(); i++) {
+		if (m_Category[i] == Category) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 int CInventory::GetCategoryItemIndex(const idStr& ItemName, int *ItemIndex)
 {
 	int rc = -1;

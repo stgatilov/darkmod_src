@@ -80,11 +80,11 @@ protected:
 	CInventory				*m_Inventory;
 
 	/**
-	 * List of categories that should be ignored for this cursor.
+	 * List of category indices that should be ignored for this cursor.
 	 * The resulting behaviour is that the cursor will cycle through
-	 * items and categories, as if categories, which listed here, don't exist.
+	 * items and categories, as if the categories in this list didn't exist.
 	 */
-	idList<const CInventoryCategory *> m_CategoryIgnore;
+	idList<int> m_CategoryIgnore;
 
 	/**
 	 * If true it means that the scrolling with next/prev is locked
