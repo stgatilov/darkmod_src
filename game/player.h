@@ -108,7 +108,7 @@ enum {
 	EIM_FROB				= BIT( 7),	// Frobbing.
 	EIM_ATTACK				= BIT( 8),	// Using weapons (NYI)
 	EIM_WEAPON_SELECT		= BIT( 9),	// Selecting weapons.
-	EIM_ITEM				= BIT(10),	// Using items (NYI)
+	EIM_ITEM				= BIT(10),	// Using items
 	EIM_ITEM_SELECT			= BIT(11),	// Selecting items.
 };
 

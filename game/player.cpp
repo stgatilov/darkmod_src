@@ -4872,7 +4872,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_51:	// Inventory use item
 		{
-			if(GetImmobilization() & EIM_ITEM_SELECT)
+			if (GetImmobilization() & EIM_ITEM)
 				return;
 
 			inventoryUseItem(true);
@@ -4881,11 +4881,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_52:	// Inventory drop item
 		{
-			/* greebo: disabled this allow inventoryDropItem() to be called
-					   when an item is held in the grabber hands.
-			if(GetImmobilization() & EIM_ITEM_SELECT) {
+			if (GetImmobilization() & EIM_ITEM) {
 				return;
-			}*/
+			}
 
 			inventoryDropItem();
 			break;
@@ -4930,49 +4928,61 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_47:	// Inventory previous item
 		{
+			// Notify the GUIs about the button event
+			m_overlays.broadcastNamedEvent("inventoryPrevItem");
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			// Notify the GUIs about the change event, a readable might be open
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-
 			inventoryPrevItem();
+
+			// Notify the GUIs about the change event
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 			break;
 		}
 
 		case IMPULSE_48:	// Inventory next item
 		{
+			// Notify the GUIs about the button event
+			m_overlays.broadcastNamedEvent("inventoryNextItem");
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			// Notify the GUIs about the change event, a readable might be open
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-
 			inventoryNextItem();
+
+			// Notify the GUIs about the change event
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 			break;
 		}
 
 		case IMPULSE_49:	// Inventory previous group
 		{
+			// Notify the GUIs about the button event
+			m_overlays.broadcastNamedEvent("inventoryPrevGroup");
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			// Notify the GUIs about the change event, a readable might be open
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-
 			inventoryPrevGroup();
+
+			// Notify the GUIs about the change event
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 			break;
 		}
 
 		case IMPULSE_50:	// Inventory next group
 		{
+			// Notify the GUIs about the button event
+			m_overlays.broadcastNamedEvent("inventoryNextGroup");
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
-			// Notify the GUIs about the change event, a readable might be open
-			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-
 			inventoryNextGroup();
+
+			// Notify the GUIs about the change event
+			m_overlays.broadcastNamedEvent("inventorySelectionChange");
 			break;
 		}
 	} 
