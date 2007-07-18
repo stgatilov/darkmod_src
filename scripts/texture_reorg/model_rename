@@ -1,0 +1,148 @@
+#!/usr/bin/python
+
+# This script replaces a string in a file with another. 
+# model_rename -i inputfile <list of files>
+
+import os
+import string
+import sys
+import re
+import glob
+import scriptutil
+
+#from DebugMessage import stdMsg, dbgMsg, errMsg, setDebugging
+
+class Line:
+	def __init__(self):
+		self.LineNumber = -1
+		self.Text = ""
+
+	def __repr__(self):
+		return "[ " + self.LineNumber.__repr__() + ", '" + self.Text + "' ]"
+
+class File:
+	def __init__(self, name):
+		self.Filename = name
+		self.Modified = 0
+		self.Line = []
+		self.PreLoadFile(name)
+
+	def __repr__(self):
+		return "[ '"+self.Filename+"', "+self.Modified.__repr__()+", "+len(self.Line).__repr__()+" ]"
+
+	def PreLoadFile(self, filename):
+		f = open(filename)
+		b = f.read()
+		f.close()
+
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		b = b.split("\n")
+
+		r = Line()
+		nr = 0
+
+		for l in b:
+			s = l.strip()
+
+			nr = nr + 1
+			r.Text = l
+			r.LineNumber = nr
+
+			self.Line.append(r)
+			r = Line()
+
+		return
+
+	def ReplaceString(self, old, new):
+		rc = 0
+		#print old, new
+		for i in self.Line:
+			t = i.Text.split(old)
+			if(len(t) <= 1):
+				continue
+
+			t = i.Text.split('"model"')
+			if(len(t) <= 1):
+				continue
+
+			i.Text = '"model" "'+new+'"'
+			rc = 1
+
+		return rc
+
+class ModelRename:
+	def __init__(self):
+		self.Map = {}
+
+	def LoadInput(self, fn):
+		fl = open(fn, "r+b")
+		b = fl.read()
+		fl.close()
+
+		b = b.replace("\r\n", "\n")
+		b = b.replace("\r", "\n")
+		b = b.split("\n")
+
+		for l in b:
+			t = l.split(" ")
+			if(len(t) <= 1):
+				continue
+			
+			o = t[0]
+			n = t[1]
+			self.Map[o] = n
+			#print o, n
+		return
+
+	def Replace(self, fn):
+		mat = File(fn)
+		rc = 0
+		for i in self.Map:
+			o = i.split(".")[0]
+			n = self.Map[i].split(".")[0]
+			rc = rc + mat.ReplaceString(o, n)
+
+		if(rc != 0):
+			#fl = open(fn+".new", "w+b")
+			fl = open(fn, "w+b")
+			print  fn+" ... updating"
+			for i in mat.Line:
+				fl.write(i.Text+"\n")
+			fl.close()
+		return
+
+def Usage():
+	print "USAGE: texture_rename -i inputfile <replacefilename>"
+	sys.exit(1)
+
+if __name__ == '__main__':
+	fl = 0
+	if len(sys.argv) <= 1:
+		Usage()
+
+ 	sr = ModelRename()
+
+	i = 0
+	n = len(sys.argv)
+
+	if(n <= 2):
+		Usage()
+
+	if sys.argv[1] == '-i':
+		if(n <= 3):
+			Usage()
+		i = 3
+		fl = 1
+		sr.LoadInput(sys.argv[2])
+
+	if fl == 0:
+		Usage()
+
+	while( i < n):
+		fn = sys.argv[i]
+		#print "Processing "+fn
+		sr.Replace(fn)
+		i = i + 1
+
+	sys.exit(0)
