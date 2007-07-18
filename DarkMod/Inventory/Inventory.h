@@ -152,9 +152,10 @@ public:
 
 	CInventoryItem			*GetItemById(const idStr& Name, const idStr& Category = "", bool bCreateCategory = false);
 
+	void					Save(idSaveGame *savefile) const;
+	void					Restore(idRestoreGame *savefile);
+
 protected:
-	void				Save(idSaveGame *savefile) const;
-	void				Restore(idRestoreGame *savefile);
 
 	/**
 	 * greebo: This checks the given entity for loot items and adds the loot value 

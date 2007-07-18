@@ -975,6 +975,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( mpGUIState );
 	savefile->WriteObject(m_Inventory);
+
+	m_Inventory->Save(savefile);
 }
 
 /*
@@ -1075,6 +1077,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( mpGUIState );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_Inventory ) );
+	m_Inventory->Restore(savefile);
 
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {
