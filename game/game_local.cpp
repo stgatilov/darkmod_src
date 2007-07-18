@@ -1597,6 +1597,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_LightgemSurface->GetRenderEntity()->noSelfShadow = true;
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface);
 
+	//FIX: Set the walkspeed back to the stored value.
+	pm_walkspeed.SetFloat( m_walkSpeed );
+
 	Printf( "--------------------------------------\n" );
 
 	return true;
@@ -1698,6 +1701,9 @@ void idGameLocal::MapShutdown( void ) {
 	gameSoundWorld = NULL;
 
 	gamestate = GAMESTATE_NOMAP;
+
+	// Save the current walkspeed
+	m_walkSpeed = pm_walkspeed.GetFloat();
 
 	Printf( "--------------------------------------\n" );
 }
