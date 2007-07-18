@@ -47,6 +47,7 @@ void CInventoryCategory::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Item.Num());
 	for (int i = 0; i < m_Item.Num(); i++)
 	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Item type: %d.\r", static_cast<int>(m_Item[i]->GetType()));
 		savefile->WriteInt(static_cast<int>(m_Item[i]->GetType()));
 		m_Item[i]->Save(savefile);
 	}
@@ -63,20 +64,18 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 	{
 		int itemTypeInt;
 		savefile->ReadInt(itemTypeInt);
-		EItemType itemType = static_cast<EItemType>(itemTypeInt);
+		CInventoryItem::ItemType itemType = static_cast<CInventoryItem::ItemType>(itemTypeInt);
 
 		CInventoryItem* item = NULL;
 
 		switch (itemType)
 		{
-		case EInventoryItem:
-			item = new CInventoryItem(NULL);
-			break;
-		case EInventoryWeaponItem:
+		case CInventoryItem::IT_WEAPON:
 			item = new CInventoryWeaponItem();
 			break;
 		default:
-			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid item type encountered.\r");
+			item = new CInventoryItem(NULL);
+			break;
 		};
 
 		if (item != NULL)

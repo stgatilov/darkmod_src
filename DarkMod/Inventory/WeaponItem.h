@@ -45,11 +45,6 @@ public:
 	virtual void	Save( idSaveGame *savefile ) const;
 	virtual void	Restore(idRestoreGame *savefile);
 
-	/**
-	 * Returns the type of this item.
-	 */
-	virtual EItemType		GetType() const { return EInventoryWeaponItem; };
-
 	// Retrieves the maximum amount of ammo this weapon can hold
 	int getMaxAmmo();
 	// Retrives the amount of ammo at player spawn time

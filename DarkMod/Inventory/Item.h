@@ -13,11 +13,6 @@
 class CInventory;
 class CInventoryCategory;
 
-enum EItemType {
-	EInventoryItem,
-	EInventoryWeaponItem
-};
-
 /**
  * InventoryItem is an item that belongs to a group.
  */
@@ -31,6 +26,7 @@ public:
 	typedef enum {
 		IT_ITEM,			// Normal item, which is associated to an entity
 		IT_LOOT,			// this is a loot item
+		IT_WEAPON,			// a weapon item
 		IT_DUMMY,			// This also doesn't have an entity, but provides a dummy so 
 							// we can have an empty space in the inventory.
 		IT_COUNT
@@ -51,11 +47,6 @@ public:
 	CInventoryItem(idEntity* itemEntity, idEntity* owner);
 
 	virtual ~CInventoryItem();
-
-	/**
-	 * Returns the type of this item.
-	 */
-	virtual EItemType		GetType() const { return EInventoryItem; };
 
 	virtual void			Save( idSaveGame *savefile ) const;
 	virtual void			Restore( idRestoreGame *savefile );

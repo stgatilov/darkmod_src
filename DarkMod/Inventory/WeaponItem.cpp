@@ -30,7 +30,9 @@ CInventoryWeaponItem::CInventoryWeaponItem() :
 	_allowedEmpty(false),
 	_maxAmmo(0),
 	_ammo(0)
-{}
+{
+	SetType(IT_WEAPON);
+}
 
 CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
@@ -39,6 +41,8 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	_toggleable(false),
 	_allowedEmpty(false)
 {
+	SetType(IT_WEAPON);
+
 	_maxAmmo = getMaxAmmo();
 	_ammo = getStartAmmo();
 
