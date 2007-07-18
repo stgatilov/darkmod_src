@@ -1075,8 +1075,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( mpGUIState );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( m_Inventory ) );
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_InventoryItem ) );
-	savefile->ReadObject( reinterpret_cast<idClass *&>( m_InventoryCursor ) );
 
 	// restore must retrieve modelDefHandle from the renderer
 	if ( modelDefHandle != -1 ) {

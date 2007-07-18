@@ -1588,6 +1588,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	gamestate = GAMESTATE_ACTIVE;
 
+	// Set the lightgem surface pointer to the lightgem entity
+	m_LightgemSurface = FindEntity(DARKMOD_LG_ENTITY_NAME);
+	m_LightgemSurface->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LG_VIEWID;
+	m_LightgemSurface->GetRenderEntity()->suppressShadowInViewID = 0;
+	m_LightgemSurface->GetRenderEntity()->noDynamicInteractions = false;
+	m_LightgemSurface->GetRenderEntity()->noShadow = true;
+	m_LightgemSurface->GetRenderEntity()->noSelfShadow = true;
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface);
+
 	Printf( "--------------------------------------\n" );
 
 	return true;

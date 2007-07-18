@@ -2249,7 +2249,7 @@ idWeapon::AmmoAvailable
 ================
 */
 int idWeapon::AmmoAvailable( void ) const {
-	if ( owner ) {
+	if (owner && owner->getCurrentWeaponItem()) {
 		return owner->getCurrentWeaponItem()->hasAmmo();
 	} else {
 		return 0;
