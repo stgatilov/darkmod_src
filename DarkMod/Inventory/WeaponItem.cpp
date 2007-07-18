@@ -47,12 +47,28 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 
 void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
 {
-	// TODO
+	// Pass the call to the base class first
+	CInventoryItem::Save(savefile);
+
+	savefile->WriteString(_weaponDefName.c_str());
+	savefile->WriteInt(_maxAmmo);
+	savefile->WriteInt(_ammo);
+	savefile->WriteInt(_weaponIndex);
+	savefile->WriteBool(_toggleable);
+	savefile->WriteBool(_allowedEmpty);
 }
 
 void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	// Pass the call to the base class first
+	CInventoryItem::Restore(savefile);
+
+	savefile->ReadString(_weaponDefName);
+	savefile->ReadInt(_maxAmmo);
+	savefile->ReadInt(_ammo);
+	savefile->ReadInt(_weaponIndex);
+	savefile->ReadBool(_toggleable);
+	savefile->ReadBool(_allowedEmpty);
 }
 
 int CInventoryWeaponItem::getMaxAmmo() {

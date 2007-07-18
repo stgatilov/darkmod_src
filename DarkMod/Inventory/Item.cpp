@@ -84,12 +84,59 @@ CInventoryItem::~CInventoryItem()
 
 void CInventoryItem::Save( idSaveGame *savefile ) const
 {
-	// TODO
+	m_Owner.Save(savefile);
+	m_Item.Save(savefile);
+	m_BindMaster.Save(savefile);
+
+	savefile->WriteString(m_Name.c_str());
+	savefile->WriteString(m_HudName.c_str());
+	savefile->WriteString(m_ItemId.c_str());
+
+	savefile->WriteInt(static_cast<int>(m_Type));
+	savefile->WriteInt(static_cast<int>(m_LootType));
+
+	savefile->WriteInt(m_Value);
+	savefile->WriteInt(m_Overlay);
+	savefile->WriteInt(m_Count);
+
+	savefile->WriteBool(m_Stackable);
+	savefile->WriteBool(m_Droppable);
+	savefile->WriteBool(m_Hud);
+
+	savefile->WriteString(m_Icon.c_str());
+
+	savefile->WriteBool(m_Orientated);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	int tempInt;
+
+	m_Owner.Restore(savefile);
+	m_Item.Restore(savefile);
+	m_BindMaster.Restore(savefile);
+
+	savefile->ReadString(m_Name);
+	savefile->ReadString(m_HudName);
+	savefile->ReadString(m_ItemId);
+
+	savefile->ReadInt(tempInt);
+	m_Type = static_cast<ItemType>(tempInt);
+
+	savefile->ReadInt(tempInt);
+	m_LootType = static_cast<LootType>(tempInt);
+
+	savefile->ReadInt(m_Value);
+	savefile->ReadInt(m_Overlay);
+	savefile->ReadInt(m_Count);
+
+	savefile->ReadBool(m_Stackable);
+	savefile->ReadBool(m_Droppable);
+	savefile->ReadBool(m_Hud);
+
+	savefile->ReadString(m_Icon);
+
+	savefile->ReadBool(m_Orientated);
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)

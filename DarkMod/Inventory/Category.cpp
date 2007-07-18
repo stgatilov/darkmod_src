@@ -59,7 +59,8 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 
 	int num;
 	savefile->ReadInt(num);
-	for (int i = 0; i < num; i++) {
+	for (int i = 0; i < num; i++)
+	{
 		int itemTypeInt;
 		savefile->ReadInt(itemTypeInt);
 		EItemType itemType = static_cast<EItemType>(itemTypeInt);
@@ -78,8 +79,15 @@ void CInventoryCategory::Restore(idRestoreGame *savefile)
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid item type encountered.\r");
 		};
 
-		item->Restore(savefile);
-		m_Item.Append(item);
+		if (item != NULL)
+		{
+			item->Restore(savefile);
+			m_Item.Append(item);
+
+			// Set the pointers of the item class directly
+			item->m_Category = this;
+			item->m_Inventory = m_Inventory;
+		}
 	}
 }
 
