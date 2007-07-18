@@ -62,11 +62,21 @@ class File:
 			if(len(t) <= 1):
 				continue
 
+			b = 0
 			t = i.Text.split('"model"')
-			if(len(t) <= 1):
-				continue
+			if(len(t) > 1):
+				b = 1
 
-			i.Text = '"model" "'+new+'"'
+			if(b == 0):
+				t = i.Text.split('model')
+				if(len(t) <= 1):
+					continue
+
+			if(b == 0):
+				i.Text = 'model '+new
+			else:
+				i.Text = '"model" "'+new+'"'
+
 			rc = 1
 
 		return rc
