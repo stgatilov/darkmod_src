@@ -22,9 +22,18 @@ static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:0
 #define WEAPON_ALLOWEMPTY_FORMAT "weapon%d_allowempty"
 #define WEAPON_TOGGLEABLE_FORMAT "weapon%d_toggle"
 
-CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner) :
+CInventoryWeaponItem::CInventoryWeaponItem() :
+	CInventoryItem(NULL),
+	_weaponDefName(""),
+	_weaponIndex(-1),
+	_toggleable(false),
+	_allowedEmpty(false),
+	_maxAmmo(0),
+	_ammo(0)
+{}
+
+CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity* owner) :
 	CInventoryItem(owner),
-	_weaponDef(weaponDef),
 	_weaponDefName(weaponDefName),
 	_weaponIndex(-1),
 	_toggleable(false),
@@ -33,7 +42,17 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idDict& weaponDef, const idStr&
 	_maxAmmo = getMaxAmmo();
 	_ammo = getStartAmmo();
 
-	m_Name = weaponDef.GetString("inv_name", "Unknown weapon");
+	m_Name = gameLocal.FindEntityDefDict(weaponDefName.c_str())->GetString("inv_name", "Unknown weapon");
+}
+
+void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
+{
+	// TODO
+}
+
+void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
+{
+	// TODO
 }
 
 int CInventoryWeaponItem::getMaxAmmo() {

@@ -506,11 +506,6 @@ void CInventory::Save(idSaveGame *savefile) const
 {
 	m_Owner.Save(savefile);
 	
-	savefile->WriteInt(m_Cursor.Num());
-	for (int i = 0; i < m_Cursor.Num(); i++) {
-		m_Cursor[i]->Save(savefile);
-	}
-
 	savefile->WriteInt(m_Category.Num());
 	for (int i = 0; i < m_Category.Num(); i++) {
 		m_Category[i]->Save(savefile);
@@ -520,6 +515,11 @@ void CInventory::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Gold);
 	savefile->WriteInt(m_Jewelry);
 	savefile->WriteInt(m_Goods);
+
+	savefile->WriteInt(m_Cursor.Num());
+	for (int i = 0; i < m_Cursor.Num(); i++) {
+		m_Cursor[i]->Save(savefile);
+	}
 }
 
 void CInventory::Restore(idRestoreGame *savefile)
@@ -530,24 +530,24 @@ void CInventory::Restore(idRestoreGame *savefile)
 
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
-		CInventoryCursor* cursor = new CInventoryCursor(this);
-
-		cursor->Restore(savefile);
-		m_Cursor.Append( cursor );
-	}
-
-	savefile->ReadInt(num);
-	for(int i = 0; i < num; i++) {
 		CInventoryCategory* category = new CInventoryCategory(this, "");
 
 		category->Restore(savefile);
-		m_Category.Append( category );
+		m_Category.Append(category);
 	}
 
 	savefile->ReadInt(m_LootItemCount);
 	savefile->ReadInt(m_Gold);
 	savefile->ReadInt(m_Jewelry);
 	savefile->ReadInt(m_Goods);
+
+	savefile->ReadInt(num);
+	for(int i = 0; i < num; i++) {
+		CInventoryCursor* cursor = new CInventoryCursor(this);
+
+		cursor->Restore(savefile);
+		m_Cursor.Append(cursor);
+	}
 }
 
 void CInventory::removeCategory(CInventoryCategory* category) {

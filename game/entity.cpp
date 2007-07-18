@@ -976,7 +976,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( mpGUIState );
 	savefile->WriteObject(m_Inventory);
 
-	m_Inventory->Save(savefile);
+	if (m_Inventory != NULL) {
+		m_Inventory->Save(savefile);
+	}
 }
 
 /*

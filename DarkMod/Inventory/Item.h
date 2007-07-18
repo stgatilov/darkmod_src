@@ -13,6 +13,11 @@
 class CInventory;
 class CInventoryCategory;
 
+enum EItemType {
+	EInventoryItem,
+	EInventoryWeaponItem
+};
+
 /**
  * InventoryItem is an item that belongs to a group.
  */
@@ -47,8 +52,13 @@ public:
 
 	virtual ~CInventoryItem();
 
-	void					Save( idSaveGame *savefile ) const;
-	void					Restore( idRestoreGame *savefile );
+	/**
+	 * Returns the type of this item.
+	 */
+	virtual EItemType		GetType() const { return EInventoryItem; };
+
+	virtual void			Save( idSaveGame *savefile ) const;
+	virtual void			Restore( idRestoreGame *savefile );
 
 	inline CInventory		*Inventory() const { return m_Inventory; }
 	inline CInventoryCategory	*Category() const { return m_Category; }

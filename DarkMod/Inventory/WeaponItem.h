@@ -19,9 +19,6 @@ class CInventoryWeaponItem :
 	public CInventoryItem
 {
 protected:
-	// The entityDef this weapon is associated to
-	const idDict& _weaponDef;
-
 	idStr _weaponDefName;
 
 	// The maximum amount of ammo for this weapon
@@ -40,7 +37,18 @@ protected:
 	bool	_allowedEmpty;
 
 public:
-	CInventoryWeaponItem(const idDict& weaponDef, const idStr& weaponDefName, idEntity* owner);
+	// Default constructor, should only be used during restoring from savegames
+	CInventoryWeaponItem();
+
+	CInventoryWeaponItem(const idStr& weaponDefName, idEntity* owner);
+
+	virtual void	Save( idSaveGame *savefile ) const;
+	virtual void	Restore(idRestoreGame *savefile);
+
+	/**
+	 * Returns the type of this item.
+	 */
+	virtual EItemType		GetType() const { return EInventoryWeaponItem; };
 
 	// Retrieves the maximum amount of ammo this weapon can hold
 	int getMaxAmmo();

@@ -15,6 +15,7 @@
 static bool init_version = FileVersionList("$Id: Category.cpp 987 2007-05-12 13:36:09Z greebo $", init_version);
 
 #include "Category.h"
+#include "WeaponItem.h"
 #include "Inventory.h"
 
 // Constructor
@@ -40,12 +41,46 @@ bool CInventoryCategory::isEmpty() const {
 
 void CInventoryCategory::Save(idSaveGame *savefile) const
 {
-	// TODO
+	m_Owner.Save(savefile);
+	savefile->WriteString(m_Name.c_str());
+
+	savefile->WriteInt(m_Item.Num());
+	for (int i = 0; i < m_Item.Num(); i++)
+	{
+		savefile->WriteInt(static_cast<int>(m_Item[i]->GetType()));
+		m_Item[i]->Save(savefile);
+	}
 }
 
 void CInventoryCategory::Restore(idRestoreGame *savefile)
 {
-	// TODO
+	m_Owner.Restore(savefile);
+	savefile->ReadString(m_Name);
+
+	int num;
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; i++) {
+		int itemTypeInt;
+		savefile->ReadInt(itemTypeInt);
+		EItemType itemType = static_cast<EItemType>(itemTypeInt);
+
+		CInventoryItem* item = NULL;
+
+		switch (itemType)
+		{
+		case EInventoryItem:
+			item = new CInventoryItem(NULL);
+			break;
+		case EInventoryWeaponItem:
+			item = new CInventoryWeaponItem();
+			break;
+		default:
+			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid item type encountered.\r");
+		};
+
+		item->Restore(savefile);
+		m_Item.Append(item);
+	}
 }
 
 void CInventoryCategory::SetOwner(idEntity *owner)
