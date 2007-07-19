@@ -75,7 +75,7 @@ CInventoryItem *CInventoryCursor::GetCurrentItem()
 	CInventoryItem *rc = NULL;
 
 	if(m_Inventory->m_Category.Num() > 0)
-		rc = m_Inventory->m_Category[m_CurrentCategory]->GetItem(m_CurrentItem);
+		rc = m_Inventory->GetCategory(m_CurrentCategory)->GetItem(m_CurrentItem);
 
 	return rc;
 }
@@ -130,25 +130,30 @@ Quit:
 CInventoryItem *CInventoryCursor::GetNextItem()
 {
 	CInventoryItem *rc = NULL;
-	int ni;
 
-	ni = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num();
+	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+	if (curCategory == NULL)
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Current Category doesn't exist anymore!\r", m_CurrentCategory);
+		return NULL;
+	}
 
 	m_CurrentItem++;
-	if(m_CurrentItem >= ni)
+	// Have we reached the end of the current category?
+	if (m_CurrentItem >= curCategory->size())
 	{
-		GetNextCategory();
+		curCategory = GetNextCategory();
 
-		if(m_WrapAround == true)
+		if (m_WrapAround == true)
 			m_CurrentItem = 0;
 		else 
 		{
-			m_CurrentItem = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num()-1;
+			m_CurrentItem = curCategory->m_Item.Num()-1;
 			goto Quit;
 		}
 	}
 
-	rc = m_Inventory->m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
+	rc = curCategory->GetItem(m_CurrentItem);
 
 Quit:
 	return rc;
@@ -217,9 +222,9 @@ CInventoryCategory *CInventoryCursor::GetNextCategory()
 				m_CurrentCategory = n;
 		}
 
-		rc = m_Inventory->m_Category[m_CurrentCategory];
-		if(IsCategoryIgnored(rc) == false)
-			break;
+		rc = m_Inventory->GetCategory(m_CurrentCategory);
+		if (!IsCategoryIgnored(rc))
+			break; // We found a suitable category (not ignored)
 	}
 
 	return rc;

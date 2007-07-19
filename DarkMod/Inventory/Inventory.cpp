@@ -40,12 +40,12 @@ CInventory::CInventory()
 : idClass()
 {
 	m_Owner = NULL;
-	CreateCategory(TDM_INVENTORY_DEFAULT_GROUP);	// We always have a defaultgroup if nothing else
 	m_LootItemCount = 0;
 	m_Gold = 0;
 	m_Jewelry = 0;
 	m_Goods = 0;
 	m_HighestCursorId = 0;
+	CreateCategory(TDM_INVENTORY_DEFAULT_GROUP);	// We always have a defaultgroup if nothing else
 }
 
 CInventory::~CInventory()
@@ -571,6 +571,12 @@ void CInventory::Restore(idRestoreGame *savefile)
 	int num;
 
 	m_Owner.Restore(savefile);
+
+	// Clear the current categories, there may remain some default items
+	for (int i = 0; i < m_Category.Num(); i++) {
+		delete m_Category[i];
+	}
+	m_Category.Clear();
 
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
