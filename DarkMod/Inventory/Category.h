@@ -19,7 +19,6 @@
 class CInventoryCategory
 {
 	friend class CInventory;
-	friend class CInventoryCursor;
 
 public:
 	inline idStr		&GetName() { return m_Name; }
