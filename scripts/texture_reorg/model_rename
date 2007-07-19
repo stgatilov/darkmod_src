@@ -109,8 +109,9 @@ class ModelRename:
 		mat = File(fn)
 		rc = 0
 		for i in self.Map:
-			o = i.split(".")[0]
-			n = self.Map[i].split(".")[0]
+			o = i.split(" ")[0]
+			n = self.Map[i].split(" ")[0]
+			#print o, n
 			rc = rc + mat.ReplaceString(o, n)
 
 		if(rc != 0):
