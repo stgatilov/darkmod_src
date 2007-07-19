@@ -64,8 +64,6 @@ class CInventory : public idClass
 public:
 	CLASS_PROTOTYPE(CInventory);
 
-	friend class CInventoryCursor;
-
 	CInventory();
 	~CInventory();
 
@@ -164,6 +162,11 @@ public:
 	 * Returns the highest active cursor index associated to this inventory
 	 */
 	int						GetHighestCursorId();
+
+	/**
+	 * greebo: Returns the number of categories in this inventory.
+	 */
+	int						GetNumCategories() const;
 
 protected:
 

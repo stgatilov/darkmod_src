@@ -74,7 +74,7 @@ CInventoryItem *CInventoryCursor::GetCurrentItem()
 {
 	CInventoryItem *rc = NULL;
 
-	if(m_Inventory->m_Category.Num() > 0)
+	if(m_Inventory->GetNumCategories() > 0)
 		rc = m_Inventory->GetCategory(m_CurrentCategory)->GetItem(m_CurrentItem);
 
 	return rc;
@@ -148,7 +148,7 @@ CInventoryItem *CInventoryCursor::GetNextItem()
 			m_CurrentItem = 0;
 		else 
 		{
-			m_CurrentItem = curCategory->m_Item.Num()-1;
+			m_CurrentItem = curCategory->size() - 1;
 			goto Quit;
 		}
 	}
@@ -163,13 +163,20 @@ CInventoryItem *CInventoryCursor::GetPrevItem()
 {
 	CInventoryItem *rc = NULL;
 
-	m_CurrentItem--;
-	if(m_CurrentItem < 0)
+	CInventoryCategory* curCategory = m_Inventory->GetCategory(m_CurrentCategory);
+	if (curCategory == NULL)
 	{
-		GetPrevCategory();
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Current Category doesn't exist anymore!\r", m_CurrentCategory);
+		return NULL;
+	}
 
-		if(m_WrapAround == true)
-			m_CurrentItem = m_Inventory->m_Category[m_CurrentCategory]->m_Item.Num()-1;
+	m_CurrentItem--;
+	if (m_CurrentItem < 0)
+	{
+		curCategory = GetPrevCategory();
+
+		if (m_WrapAround == true)
+			m_CurrentItem = curCategory->size() - 1;
 		else 
 		{
 			m_CurrentItem = 0;
@@ -177,7 +184,7 @@ CInventoryItem *CInventoryCursor::GetPrevItem()
 		}
 	}
 
-	rc = m_Inventory->m_Category[m_CurrentCategory]->m_Item[m_CurrentItem];
+	rc = curCategory->GetItem(m_CurrentItem);
 
 Quit:
 	return rc;
@@ -192,7 +199,7 @@ CInventoryCategory *CInventoryCursor::GetNextCategory()
 	if(m_CategoryLock == true)
 		return NULL;
 
-	int n = m_Inventory->m_Category.Num();
+	int n = m_Inventory->GetNumCategories();
 	int cnt = 0;
 
 	n--;
@@ -239,7 +246,7 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory()
 	if(m_CategoryLock == true)
 		return NULL;
 
-	int n = m_Inventory->m_Category.Num();
+	int n = m_Inventory->GetNumCategories();
 	int cnt = 0;
 
 	n--;
@@ -269,9 +276,9 @@ CInventoryCategory *CInventoryCursor::GetPrevCategory()
 				m_CurrentCategory = 0;
 		}
 
-		rc = m_Inventory->m_Category[m_CurrentCategory];
-		if(IsCategoryIgnored(rc) == false)
-			break;
+		rc = m_Inventory->GetCategory(m_CurrentCategory);
+		if (!IsCategoryIgnored(rc))
+			break; // We found a suitable category (not ignored)
 	}
 
 	return rc;
@@ -282,9 +289,9 @@ void CInventoryCursor::SetCurrentCategory(int Index)
 	if(Index < 0)
 		Index = 0;
 	
-	if(Index >= m_Inventory->m_Category.Num())
+	if(Index >= m_Inventory->GetNumCategories())
 	{
-		Index = m_Inventory->m_Category.Num();
+		Index = m_Inventory->GetNumCategories();
 		if(Index != 0)
 			Index--;
 	}
@@ -352,6 +359,7 @@ Quit:
 	return rc;
 }
 
-CInventoryCategory* CInventoryCursor::GetCurrentCategory() {
-	return (m_Inventory != NULL) ? m_Inventory->m_Category[m_CurrentCategory] : NULL;
+CInventoryCategory* CInventoryCursor::GetCurrentCategory()
+{
+	return (m_Inventory != NULL) ? m_Inventory->GetCategory(m_CurrentCategory) : NULL;
 }

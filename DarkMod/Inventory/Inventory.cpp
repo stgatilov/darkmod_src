@@ -57,6 +57,11 @@ CInventory::~CInventory()
 		delete m_Category[i];
 }
 
+int	CInventory::GetNumCategories() const
+{
+	return m_Category.Num();
+}
+
 int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 {
 	int i;
