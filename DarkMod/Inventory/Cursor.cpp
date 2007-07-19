@@ -18,17 +18,23 @@ static bool init_version = FileVersionList("$Id: Cursor.cpp 987 2007-05-12 13:36
 
 #include "Inventory.h"
 
-CInventoryCursor::CInventoryCursor(CInventory *inv)
+CInventoryCursor::CInventoryCursor(CInventory* inventory, int id)
 {
-	m_Inventory = inv;
+	m_Inventory = inventory;
 	m_CategoryLock = false;							// Default behaviour ...
 	m_WrapAround = true;							// ... is like standard Thief inventory.
 	m_CurrentCategory = 0;
 	m_CurrentItem = 0;
+	m_CursorId = id;
 }
 
 CInventoryCursor::~CInventoryCursor()
 {
+}
+
+int	CInventoryCursor::GetId()
+{
+	return m_CursorId;
 }
 
 void CInventoryCursor::Save(idSaveGame *savefile) const

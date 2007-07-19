@@ -980,6 +980,12 @@ void idEntity::Save( idSaveGame *savefile ) const
 	if (m_Inventory != NULL) {
 		m_Inventory->Save(savefile);
 	}
+
+	savefile->WriteBool(m_InventoryCursor != NULL);
+	if (m_InventoryCursor != NULL) {
+		// Save the ID of the cursor
+		savefile->WriteInt(m_InventoryCursor->GetId());
+	}
 }
 
 /*
@@ -1085,6 +1091,15 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(hasInventory);
 	if (hasInventory) {
 		Inventory()->Restore(savefile);
+	}
+
+	bool hasInventoryCursor;
+	savefile->ReadBool(hasInventoryCursor);
+	if (hasInventoryCursor) {
+		// Get the ID of the cursor
+		int cursorId;
+		savefile->ReadInt(cursorId);
+		m_InventoryCursor = Inventory()->GetCursor(cursorId);
 	}
 
 	// restore must retrieve modelDefHandle from the renderer

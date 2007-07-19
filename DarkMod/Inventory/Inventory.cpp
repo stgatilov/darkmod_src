@@ -45,6 +45,7 @@ CInventory::CInventory()
 	m_Gold = 0;
 	m_Jewelry = 0;
 	m_Goods = 0;
+	m_HighestCursorId = 0;
 }
 
 CInventory::~CInventory()
@@ -509,14 +510,39 @@ Quit:
 	return rc;
 }
 
-CInventoryCursor *CInventory::CreateCursor(void)
+CInventoryCursor* CInventory::CreateCursor(void)
 {
 	CInventoryCursor *rc = NULL;
 
-	if((rc = new CInventoryCursor(this)) != NULL)
+	// Get a new ID for this cursor
+	int id = GetHighestCursorId() + 1;
+
+	if((rc = new CInventoryCursor(this, id)) != NULL)
+	{
 		m_Cursor.AddUnique(rc);
+		m_HighestCursorId++;
+	}
 
 	return rc;
+}
+
+CInventoryCursor* CInventory::GetCursor(int id)
+{
+	for(int i = 0; i < m_Cursor.Num(); i++)
+	{
+		if (m_Cursor[i]->GetId() == id)
+		{
+			return m_Cursor[i];
+		}
+	}
+
+	DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Requested Cursor Id %d not found!\r", id);
+	return NULL;
+}
+
+int CInventory::GetHighestCursorId()
+{
+	return m_HighestCursorId;
 }
 
 void CInventory::Save(idSaveGame *savefile) const
@@ -532,6 +558,7 @@ void CInventory::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Gold);
 	savefile->WriteInt(m_Jewelry);
 	savefile->WriteInt(m_Goods);
+	savefile->WriteInt(m_HighestCursorId);
 
 	savefile->WriteInt(m_Cursor.Num());
 	for (int i = 0; i < m_Cursor.Num(); i++) {
@@ -557,10 +584,11 @@ void CInventory::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(m_Gold);
 	savefile->ReadInt(m_Jewelry);
 	savefile->ReadInt(m_Goods);
+	savefile->ReadInt(m_HighestCursorId);
 
 	savefile->ReadInt(num);
 	for(int i = 0; i < num; i++) {
-		CInventoryCursor* cursor = new CInventoryCursor(this);
+		CInventoryCursor* cursor = new CInventoryCursor(this, 0);
 
 		cursor->Restore(savefile);
 		m_Cursor.Append(cursor);

@@ -16,7 +16,10 @@ class CInventoryCursor
 	friend class CInventory;
 
 protected:
-	CInventoryCursor(CInventory *);
+	/**
+	 * greebo: Construct this cursor with a pointer to the parent inventory and its ID.
+	 */
+	CInventoryCursor(CInventory* inventory, int id);
 	~CInventoryCursor();
 
 	void					Save( idSaveGame *savefile ) const;
@@ -72,6 +75,8 @@ public:
 
 	void					SetCategoryIgnored(const CInventoryCategory *);
 	void					SetCategoryIgnored(const idStr& categoryName);
+
+	int						GetId();
 
 protected:
 	bool					IsCategoryIgnored(const CInventoryCategory *) const;

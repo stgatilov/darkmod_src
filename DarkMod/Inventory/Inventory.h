@@ -69,7 +69,11 @@ public:
 	CInventory();
 	~CInventory();
 
-	CInventoryCursor		*CreateCursor(void);
+	CInventoryCursor*		CreateCursor(void);
+	/**
+	 * Retrieves the cursor with the given Id or NULL if the Id doesn't exist
+	 */
+	CInventoryCursor*		GetCursor(int id);
 
 	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
 
@@ -156,6 +160,11 @@ public:
 	void					Save(idSaveGame *savefile) const;
 	void					Restore(idRestoreGame *savefile);
 
+	/**
+	 * Returns the highest active cursor index associated to this inventory
+	 */
+	int						GetHighestCursorId();
+
 protected:
 
 	/**
@@ -177,6 +186,7 @@ protected:
 	idEntityPtr<idEntity>				m_Owner;
 
 	idList<CInventoryCursor *>			m_Cursor;
+	int									m_HighestCursorId;
 
 	/**
 	 * List of groups in that inventory
