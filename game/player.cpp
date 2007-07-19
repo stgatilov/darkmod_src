@@ -1251,6 +1251,11 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(mInventoryOverlay);
 
+	savefile->WriteBool(m_WeaponCursor != NULL);
+	if (m_WeaponCursor != NULL) {
+		savefile->WriteInt(m_WeaponCursor->GetId());
+	}
+
 	if(hud)
 	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -1525,6 +1530,14 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(healthPoolTimeIntervalFactor);
 
 	savefile->ReadInt(mInventoryOverlay);
+
+	bool hasWeaponCursor;
+	savefile->ReadBool(hasWeaponCursor);
+	if (hasWeaponCursor) {
+		int cursorId;
+		savefile->ReadInt(cursorId);
+		m_WeaponCursor = Inventory()->GetCursor(cursorId);
+	}
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
