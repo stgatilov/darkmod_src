@@ -1066,6 +1066,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( weapon_fists );
 
 	savefile->WriteInt( heartRate );
+	savefile->WriteBool(m_HeartBeatAllow);
 
 	savefile->WriteFloat( heartInfo.GetStartTime() );
 	savefile->WriteFloat( heartInfo.GetDuration() );
@@ -1084,6 +1085,10 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( healthPulse );
 	savefile->WriteInt( nextHealthTake );
 	savefile->WriteBool( healthTake );
+
+	savefile->WriteInt(healthPoolStepAmount);
+	savefile->WriteInt(healthPoolTimeInterval);
+	savefile->WriteInt(healthPoolTimeIntervalFactor);
 
 	savefile->WriteBool( hiddenWeapon );
 	soulCubeProjectile.Save( savefile );
@@ -1245,10 +1250,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
-	savefile->WriteInt(healthPoolStepAmount);
-	savefile->WriteInt(healthPoolTimeInterval);
-	savefile->WriteInt(healthPoolTimeIntervalFactor);
-
 	savefile->WriteInt(mInventoryOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
@@ -1320,6 +1321,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( weapon_fists );
 
 	savefile->ReadInt( heartRate );
+	savefile->ReadBool(m_HeartBeatAllow);
 
 	savefile->ReadFloat( set );
 	heartInfo.SetStartTime( set );
@@ -1342,6 +1344,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( healthPulse );
 	savefile->ReadInt( nextHealthTake );
 	savefile->ReadBool( healthTake );
+
+	savefile->ReadInt(healthPoolStepAmount);
+	savefile->ReadInt(healthPoolTimeInterval);
+	savefile->ReadInt(healthPoolTimeIntervalFactor);
 
 	savefile->ReadBool( hiddenWeapon );
 	soulCubeProjectile.Restore( savefile );
@@ -1524,10 +1530,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bGrabberActive );
 	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
-
-	savefile->ReadInt(healthPoolStepAmount);
-	savefile->ReadInt(healthPoolTimeInterval);
-	savefile->ReadInt(healthPoolTimeIntervalFactor);
 
 	savefile->ReadInt(mInventoryOverlay);
 
