@@ -1203,6 +1203,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteDict( &m_hinderance );
 	savefile->WriteFloat( m_hinderanceCache );
 
+	savefile->WriteBool(m_ContinuousUse);
+
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
 	}
@@ -1473,6 +1475,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadDict( &m_hinderance );
 	savefile->ReadFloat( m_hinderanceCache );
+
+	savefile->ReadBool(m_ContinuousUse);
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
