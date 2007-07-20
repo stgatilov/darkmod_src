@@ -8505,6 +8505,7 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 
 void idPlayer::inventoryDropItem()
 {
+	bool bDropped = false;
 	CGrabber *grabber = g_Global.m_DarkModPlayer->grabber;
 	idEntity *heldEntity = grabber->GetSelected();
 
@@ -8513,7 +8514,8 @@ void idPlayer::inventoryDropItem()
 	{
 		grabber->Update( this, false );
 	}
-	else {
+	else 
+	{
 		// Grabber is empty (no item is held), drop the current inventory item
 		CInventoryCursor* cursor = InventoryCursor();
 
@@ -8528,16 +8530,29 @@ void idPlayer::inventoryDropItem()
 
 			// greebo: Try to locate a drop script function on the entity's scriptobject
 			const function_t* dropScript = ent->scriptObject.GetFunction(TDM_INVENTORY_DROPSCRIPT);
-
+			
+			if( dropScript != NULL )
+			{
+				// Call the custom drop script
+				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Running inventory drop script...\r");
+				idThread* thread = new idThread(dropScript);
+				thread->CallFunctionArgs(dropScript, true, "ee", ent, this);
+				thread->DelayedStart(0);
+				
+				bDropped = true;
+			}
 			// greebo: Only place the entity in the world, if there is no custom dropscript
 			// The flashbomb for example is spawning projectiles on its own.
-			if (dropScript == NULL) {
+			// Test that the item fits in grabber with dummy item first, before spawning the drop item
+			else if (grabber->FitsInHands(ent, this)) 
+			{
 				// Drop the item into the grabber hands 
 				
 				// Stackable items only have one "real" entity for the whole item stack.
 				// When the stack size == 1, this entity can be dropped as it is,
 				// otherwise we need to spawn a new entity.
-				if (item->IsStackable() && item->GetCount() > 1) {
+				if (item->IsStackable() && item->GetCount() > 1) 
+				{
 					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Spawning new entity from stackable inventory item...\r");
 					// Spawn a new entity of this type
 					idEntity* spawnedEntity;
@@ -8548,26 +8563,24 @@ void idPlayer::inventoryDropItem()
 					ent = spawnedEntity;
 				}
 
-				if (!grabber->PutInHands(ent, this)) {
-					// The grabber could not put the item into the player hands
-					// TODO: Emit a sound?
-					DM_LOG(LC_INVENTORY, LT_WARNING)LOGSTRING("Grabber could not put entity in hands: %s\r", ent->name.c_str());
-				}
-				// old code: m_Inventory->PutEntityInMap(ent, this, item);
+				if( grabber->PutInHands(ent, this) )
+					bDropped = true;
 			}
-			else {
-				// Call the custom drop script
-				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Running inventory drop script...\r");
-				idThread* thread = new idThread(dropScript);
-				thread->CallFunctionArgs(dropScript, true, "ee", ent, this);
-				thread->DelayedStart(0);
+			else
+			{
+				// The grabber could not put the item into the player hands
+				// TODO: Emit a sound?
+				DM_LOG(LC_INVENTORY, LT_WARNING)LOGSTRING("Grabber could not put entity in hands: %s\r", ent->name.c_str());
 			}
 
 			// Decrease the inventory count (this will also clear empty categories)
 			// This applies for both stackable as well as droppable items
-			ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
+			if( bDropped)
+			{
+				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
 
-			UpdateHud();
+				UpdateHud();
+			}
 		}
 	}
 }
