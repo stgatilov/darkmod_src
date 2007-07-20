@@ -8539,7 +8539,8 @@ void idPlayer::inventoryDropItem()
 				thread->CallFunctionArgs(dropScript, true, "ee", ent, this);
 				thread->DelayedStart(0);
 				
-				bDropped = true;
+				// The dropScript changes the inventory count itself, so don't set 
+				// bDropped to true here.
 			}
 			// greebo: Only place the entity in the world, if there is no custom dropscript
 			// The flashbomb for example is spawning projectiles on its own.
@@ -8578,9 +8579,10 @@ void idPlayer::inventoryDropItem()
 			if( bDropped)
 			{
 				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
-
-				UpdateHud();
 			}
+
+			// Always update the HUD, the drop script might have changed the inventory count itself.
+			UpdateHud();
 		}
 	}
 }
