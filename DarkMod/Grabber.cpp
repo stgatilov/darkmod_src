@@ -934,7 +934,7 @@ bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
 	initOrigin = ent->GetPhysics()->GetOrigin();
 	ent->SetOrigin( FarAway );
 
-	gameLocal.clip.TraceBounds( trace, orig, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
+	gameLocal.clip.TraceBounds( trace, viewPoint, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
 
 	if( trace.fraction < 1.0f )
 	{
@@ -954,5 +954,73 @@ bool CGrabber::PutInHands(idEntity *ent, idPlayer *player, int bodyID)
 	StartDrag( player, ent, bodyID );
 
 Quit:
+	return bReturnVal;
+}
+
+bool CGrabber::FitsInHands(idEntity *ent, idPlayer *player, int bodyID)
+{
+	idClipModel *ClipModel = NULL;
+	bool bReturnVal = false, bStartedHidden(false);
+	int ContentsMask = 0;
+	float HeldDist = 0.0f;
+	trace_t trace;
+	idVec3 orig(vec3_zero), targetCOM(vec3_zero), COMLocal(vec3_zero);
+	idVec3 forward(1.0f, 0.0f, 0.0f), viewPoint, initOrigin;
+	idMat3 viewAxis;
+	idVec3 FarAway(0.0f, 0.0f, -4096.0f);
+
+	if( !ent || !player )
+		goto Quit;
+
+	player->GetViewPos( viewPoint, viewAxis );
+
+	bStartedHidden = ent->IsHidden();
+	// Momentarily show the entity if it was hidden, to enable the clipmodel
+	ent->Show();
+
+	// calculate where the origin should end up based on center of mass location and orientation
+	// also based on the minimum held distance
+	HeldDist = ent->spawnArgs.GetFloat("hold_distance_min", "-1" );
+	if( HeldDist < 0 )
+		HeldDist = MIN_HELD_DISTANCE;
+
+	// get the center of mass
+	ClipModel = ent->GetPhysics()->GetClipModel( bodyID );
+	if( ClipModel && ClipModel->IsTraceModel() ) 
+	{
+		float mass;
+		idMat3 inertiaTensor;
+		ClipModel->GetMassProperties( 1.0f, mass, COMLocal, inertiaTensor );
+	} else 
+	{
+		COMLocal.Zero();
+	}
+
+	targetCOM = (HeldDist * forward ) * viewAxis;
+	targetCOM += viewPoint;
+
+	orig = targetCOM - ( ent->GetPhysics()->GetAxis( bodyID ) * COMLocal );
+
+	ContentsMask = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL;
+	
+	// This is a hack:  We want the trace to ignore both the entity itself and the player
+	// But can only pass one entity in to ignore.  Therefore, we teleport it far away before doing the trace
+	// And put it back afterwards
+	initOrigin = ent->GetPhysics()->GetOrigin();
+	ent->SetOrigin( FarAway );
+
+	gameLocal.clip.TraceBounds( trace, viewPoint, orig, ent->GetPhysics()->GetBounds(), ContentsMask, player );
+
+	if( trace.fraction < 1.0f )
+		bReturnVal = false;
+	else
+		bReturnVal = true;
+
+	ent->SetOrigin( initOrigin );
+
+Quit:
+	if(bStartedHidden)
+		ent->Hide();
+
 	return bReturnVal;
 }

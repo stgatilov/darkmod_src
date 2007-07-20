@@ -72,12 +72,19 @@ public:
 		/**
 		* Attempts to teleport an entity to the minimum hold distance and start holding it
 		* Returns false and does nothing if there was not space to teleport in the entity
-		* Body ID may be optionally set for AF or multi-clipmodel entities
+		* Body ID may be optionally set to specify which body to hold for AF or multi-clipmodel entities
 		*
 		* NOTE: Rotation of the entity to the desired orientation should be done externally
 		* before calling this.
 		**/
 		bool					PutInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
+
+		/**
+		* Returns true if there is space to put an item in the player's hands at the minimum hold distance
+		* Otherwise returns false.
+		* Body ID may be optionally set to specify which body to hold for AF or multi-clipmodel entities
+		**/
+		bool					FitsInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
 
 public:
 		/**
