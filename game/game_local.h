@@ -852,7 +852,7 @@ private:
 	 * Lightgemsurface contains a pointer to the lightgem surface entity. This
 	 * is constantly required and therfore we store it permanently.
 	 */
-	idEntity				*m_LightgemSurface;
+	idEntityPtr<idEntity>	m_LightgemSurface;
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
