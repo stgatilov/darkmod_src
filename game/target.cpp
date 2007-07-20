@@ -1761,6 +1761,12 @@ CLASS_DECLARATION( idTarget, CTarget_AddObjectives )
 	EVENT( EV_Activate,	CTarget_AddObjectives::Event_Activate )
 END_CLASS
 
+void CTarget_AddObjectives::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+		PostEventMS( &EV_Activate, 0, this );
+}
+
 void CTarget_AddObjectives::Event_Activate( idEntity *activator )
 {
 	int SetVal(-1);

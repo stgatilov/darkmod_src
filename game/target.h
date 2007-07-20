@@ -561,6 +561,7 @@ public:
 	CLASS_PROTOTYPE( CTarget_AddObjectives );
 private:
 	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
 };
 
 
