@@ -92,8 +92,6 @@ bool CObjectiveComponent::SetState( bool bState )
 {
 	bool bReturnVal(false);
 
-// TODO: Check for irreversible, if it is irreversible and already changed, do not change back
-
 	if( m_bNotted )
 		bState = !bState;
 
@@ -466,7 +464,7 @@ Quit:
 
 void CMissionData::UpdateObjectives( void )
 {
-	bool bTest(true), bObjEnabled(true);
+	bool bObjEnabled(true);
 
 // =============== Begin Handling of Clocked Objective Components ===============
 
@@ -580,15 +578,8 @@ void CMissionData::UpdateObjectives( void )
 		pObj->m_bNeedsUpdate = false;
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i+1);
 
-// TODO: Implement arbitrary boolean logic here, for mission failure and mission success
-// For now, just AND everything, and fail the objective if it's ongoing and not successful
-		for( int j=0; j < pObj->m_Components.Num(); j++ )
-		{
-			bTest = bTest && pObj->m_Components[j].m_bState;
-		}
-
-		// Objective was just completed
-		if( bTest )
+		// If objective was just completed
+		if( pObj->CheckSuccess() )
 		{
 			// Check for enabling objectives
 			for( int k=0; k < pObj->m_EnablingObjs.Num(); k++ )
@@ -607,11 +598,9 @@ void CMissionData::UpdateObjectives( void )
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
 			SetCompletionState( i, STATE_COMPLETE );
 		}
-// TODO: This is temporary and should be replaced with a failure logic check
-// For now: If ANY components of an ongoing objective are false, the objective is failed
-		else if( pObj->m_bOngoing && !(pObj->m_state == STATE_INVALID) )
+		else if( pObj->CheckFailure() )
 		{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i);
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
 				SetCompletionState(i, STATE_FAILED );
 		}
 		else
@@ -634,7 +623,6 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		idPlayer *   player;
 		player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
 
-		// TODO: Play this sound on the player, not the world, because global channel will cut off ambients
 		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
 		// call completion script
@@ -690,7 +678,7 @@ void CMissionData::Event_MissionComplete( void )
 	gameLocal.Printf("MISSION COMPLETED\n");
 
 	// TODO: Go to mission successful GUI
-	// TODO: Read off which map to go to next
+	// TODO: Read off which map to go to next, basically call endLevel
 
 	// for now, just play the sound (later it will be played in the GUI)
 	idPlayer *player = gameLocal.GetLocalPlayer();
@@ -1097,7 +1085,6 @@ Quit:
 }
 
 // Objective parsing:
-// TODO: Figure out how to parse/"compile" arbitrary boolean logic.  For now, don't
 // returns the index of the first objective added, for scripting purposes
 int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
@@ -1134,6 +1121,8 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		ObjTemp.m_bOngoing = args->GetBool( StrTemp + "ongoing", "0");
 		ObjTemp.m_CompletionScript = args->GetString( StrTemp + "script_complete" );
 		ObjTemp.m_FailureScript = args->GetString( StrTemp + "script_failed" );
+		ObjTemp.m_SuccessLogicStr = args->GetString( StrTemp + "logic_success", "" );
+		ObjTemp.m_FailureLogicStr = args->GetString( StrTemp + "logic_failure", "" );
 
 		// parse in the int list of "enabling objectives"
 		TempStr2 = args->GetString( StrTemp + "enabling_objs", "" );
@@ -1245,6 +1234,9 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			Counter2++;
 		}
 
+		// Parse success/failure logic
+		gameLocal.Printf("Objective %d: Parsing success and failure logic\n", Counter);
+		ObjTemp.ParseLogicStrs();
 		if( ObjTemp.m_Components.Num() > 0 )
 		{
 			m_Objectives.Append( ObjTemp );
@@ -1297,10 +1289,15 @@ void CObjective::Clear( void )
 	m_bVisible = true;
 	m_bOngoing = false;
 	m_applies = true;
+	m_handle = 0;
 	m_Components.Clear();
 	m_EnablingObjs.Clear();
 	m_CompletionScript.Clear();
 	m_FailureScript.Clear();
+	m_SuccessLogicStr.Clear();
+	m_FailureLogicStr.Clear();
+	m_SuccessLogic.Clear();
+	m_FailureLogic.Clear();
 }
 
 void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, int OverallVal, bool bPickedUp)
@@ -1324,12 +1321,47 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 
 bool CObjective::CheckFailure( void )
 {
-	return EvalBoolLogic( &m_FailureLogic );
+	bool bTest(false);
+
+	if( !m_FailureLogic.IsEmpty() )
+		bTest = EvalBoolLogic( &m_FailureLogic );
+	else
+	{
+		// Default logic: If ANY components of an ongoing objective are false, the objective is failed
+		if( m_bOngoing && !(m_state == STATE_INVALID) )
+		{
+			bTest = true;
+			for( int j=0; j < m_Components.Num(); j++ )
+			{
+				bTest = bTest && m_Components[j].m_bState;
+			}
+
+			bTest = !bTest;
+		}
+	}
+	return bTest;
 }
 
 bool CObjective::CheckSuccess( void )
 {
-	return EvalBoolLogic( &m_SuccessLogic );
+	bool bTest(true);
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Check Success Called \r");
+
+	if( !m_SuccessLogic.IsEmpty() )
+	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating custom success logic \r");
+		bTest = EvalBoolLogic( &m_SuccessLogic );
+	}
+	else
+	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating default success logic \r");
+		// Default logic: All components must be true to succeed
+		for( int j=0; j < m_Components.Num(); j++ )
+		{
+			bTest = bTest && m_Components[j].m_bState;
+		}
+	}
+	return bTest;
 }
 
 
@@ -1339,10 +1371,24 @@ bool CObjective::CheckSuccess( void )
 **/
 bool CObjective::ParseLogicStrs( void )
 {
-	bool bReturnVal(false);
+	bool bReturnVal(true), bTemp(false);
 
-	bReturnVal = ParseLogicStr( &m_SuccessLogicStr, m_SuccessLogic );
-	bReturnVal = bReturnVal && ParseLogicStr( &m_FailureLogicStr, m_FailureLogic );
+	if( m_SuccessLogicStr != "" )
+	{
+		bReturnVal = ParseLogicStr( &m_SuccessLogicStr, &m_SuccessLogic );
+		
+		if( !bReturnVal )
+			gameLocal.Error("Objective success logic failed to parse \n");
+	}
+	if( m_FailureLogicStr != "" )
+	{
+		bTemp = ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
+		
+		if( !bTemp )
+			gameLocal.Error("Objective failure logic failed to parse \n");
+
+		bReturnVal = bReturnVal && bTemp;
+	}
 
 	return bReturnVal;
 }
@@ -1351,11 +1397,10 @@ bool CObjective::ParseLogicStrs( void )
 * Parse a string into a logic matrix.
 * Returns false if there was an error in the parsing
 **/
-bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
+bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
 {
 	idLexer		src;
 	idToken		token;
-//	idDict		*args( NULL );
 	int			col(0), row(0), level(0);
 
 	bool		bReturnVal( false );
@@ -1366,69 +1411,101 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 	bool		bRowAdvanced( true );
 	bool		bColAdvanced( true );
 
-//	SBoolParseNode *CurrentNode( NULL );
+	SBoolParseNode *CurrentNode( NULL );
 
 
-	// Clear existing parse node structure
-	output.Clear();
+	// set up outer node:
+	output->Clear();
+	output->PrevNode = NULL;
+	CurrentNode = output;
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing string: %s \r", input->c_str() );
 
 	src.LoadMemory( input->c_str(), input->Length(), "" );
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Loaded memory to lexer \r" );
 
 	while( src.ReadToken( &token ))
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing token: %s At level: %d \r", token.c_str(), level );
 		if( level < 0 )
 		{
-			// error: Unbalanced parenthesis, found unexpected ")"
+			gameLocal.Printf("[Objective Logic] ERROR: Unbalanced parenthesis, found unexpected \")\" \n"); 
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, found unexpected \")\" \r");
 			goto Quit;
 		}
 
 		// New parse node (identifier or parenthesis)
-		if( token.IsNumeric() || token.Cmp( "(" ) )
+		if( token.IsNumeric() || (token.Cmp( "(" ) == 0) )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] New parse node ( identifier or \"(\" ) \r" );
 			bFollowingOperator = false;
 
-			//create a new ParseNode
+			SBoolParseNode NewNode;
+			NewNode.bNotted = bNOTed;
+			NewNode.PrevRow = row;
+			NewNode.PrevCol = col;
+			// PROBLEM : THIS DOES NOT SEEM TO BE LINKING BACK CORRECTLY FOR SOME REASON
+			NewNode.PrevNode = CurrentNode;
 
-			if( token.Cmp( "(" ) )
+			if( token.IsNumeric() )
 			{
-				// node is a branch
-				level++;
-
-				bOperatorOK = false;
-				// enter previous levels' row, column, and pointer, to the new entry
-			}
-			else if( token.IsNumeric() )
-			{
-				// node is a leaf
-
-				bOperatorOK = true;
-
-				// set CompNum to the identifier
-				// leave this node's lists empty, since it is a leaf
+				// Node is a leaf: set CompNum to the identifier
+				NewNode.CompNum = token.GetIntValue() - 1;
 			}
 
-			// Step 2. add node to the appropriate point in the matrix-tree - same for both "(" and <INTEGER>
+			// Add node to the appropriate point in the matrix-tree - same for leaves and branches
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Adding new node to matrix-tree \r" );
+			if( bColAdvanced )
+			{
+				idList< SBoolParseNode > NewCol;
+				NewCol.Append( NewNode );
+				CurrentNode->Cols.Append( NewCol );
+			}
+			else if( bRowAdvanced )
+			{
+				CurrentNode->Cols[ col ].Append( NewNode );
+			}
 
-			if( bRowAdvanced )
-			{
-				// append this node as a new row to the Cols[current col] vector
-			}
-			else if( bColAdvanced )
-			{
-				// Create new entry for Cols list, and append this node as the first row entry in the new Cols list
-			}
-			// If neither row nor column advanced, we have a problem, such as two identifiers right beside eachother
+			// If neither row nor column advanced, we have a problem, such as two leaves in a row
 			else
 			{
-				// log error: Unexpected identifier found
+				gameLocal.Printf("[Objective Logic] ERROR: Unexpected identifier found \n");
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unexpected identifier found \r");
+				goto Quit;
 			}
-		}
 
-		else if( token.Icmp( "AND" ) )
+			// Node is a branch, step in
+			if( token.Cmp( "(" ) == 0 )
+			{
+				level++;
+				bOperatorOK = false;
+
+				CurrentNode = &NewNode;
+				row = 0;
+				col = 0;
+				// new level expects these to be true
+				bRowAdvanced = true;
+				bColAdvanced = true;
+			}
+			// node is a leaf, keep going on same level
+			else
+			{
+				bOperatorOK = true;
+				bRowAdvanced = false;
+				bColAdvanced = false;
+			}
+
+			bNOTed = false;
+		} // New Parse Node
+
+		else if( token.Icmp( "AND" ) == 0 )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing AND operator \r" );
+
 			if( bFollowingOperator || !bOperatorOK )
 			{
-				// report error
+				gameLocal.Printf("[Objective Logic] ERROR: Found unexpected operator AND \n");
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator AND \r");
 				goto Quit;
 			}
 			bFollowingOperator = true;
@@ -1436,67 +1513,87 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode &output )
 
 			col++;
 			bColAdvanced = true;
-		}
+		} // AND
 
-		else if( token.Icmp( "OR" ) )
+		else if( token.Icmp( "OR" ) == 0 )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing OR operator \r" );
+
 			if( bFollowingOperator || !bOperatorOK )
 			{
-				// report error
+				gameLocal.Printf("[Objective Logic] ERROR: Found unexpected operator OR \n");
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator OR \r");
 				goto Quit;
 			}
-			// We expect next either an identifier or a "("
+
 			bFollowingOperator = true;
 			bOperatorOK = false;
 
 			row++;
 			bRowAdvanced = true;
-		}
+		} // OR
 
-		else if( token.Icmp( "NOT" ) )
+		else if( token.Icmp( "NOT" ) == 0 )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing NOT operator \r" );
 			bNOTed = true;
 			bOperatorOK = false;
-		}
+		} // NOT
 
-		else if( token.Cmp( ")" ) )
+		else if( token.Cmp( ")" ) == 0 )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing \")\" \r" );
 			if( bFollowingOperator )
 			{
-				// report error : Identifier expected, found ")"
+				gameLocal.Printf("[Objective Logic] ERROR: Identifier expected, found \")\" \n");
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
 				goto Quit;
 			}
 
-			// TODO: Check if level has been filled out before we go up
-			// If it is empty, report error
-				// Error: Identifier expected, found ")"
-
+			// If level is empty, report error
+			if( CurrentNode->Cols.Num() == 0 )
+			{
+				gameLocal.Printf("[Objective Logic] ERROR: Identifier expected, found \")\" \n");
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
+				goto Quit;
+			}
+		
+			// step out
 			level--;
 
-			// retrieve the rows/columns for the higher level from the lower level parse node data
-		}
+			row = CurrentNode->PrevRow;
+			col = CurrentNode->PrevRow;
+			CurrentNode = CurrentNode->PrevNode;
+		} // Step Out of Node
 
 		else
 		{
-			// log unrecognized token
+			gameLocal.Printf("[Objective Logic] ERROR: Unrecognized token: %s \n", token.c_str() ); 
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unrecognized token: %s \r", token.c_str() ); 
+			goto Quit;
 		}
 	}
 
 
 // Finished parsing
+DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Reached EOF \r");
 
 if( level != 0 )
 	{
-		// error: Unbalanced parenthesis, expected ")" not found
+		gameLocal.Printf("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \n");
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \r");
 		goto Quit;
 	}
 
 if( bFollowingOperator )
 	{
-		// error: Expected identifier, found EOF
+		gameLocal.Printf("[Objective Logic] ERROR: Expected identifier, found EOF \n");
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Expected identifier, found EOF \n");
 		goto Quit;
 	}
 
+	// Successfully parsed
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Successfully parsed \r");
 	bReturnVal = true;
 
 Quit:
