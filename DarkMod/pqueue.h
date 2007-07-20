@@ -111,8 +111,9 @@ public:
 		savefile->WriteInt(data->size());
 		for (std::vector<std::pair<int, std::string*> >::const_iterator i = data->begin(); i != data->end(); i++)
 		{
-			savefile->WriteInt((*i).first);
-			savefile->WriteString((*i).second->c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Saving task %s with priority %d.\r", i->second->c_str(), i->first);
+			savefile->WriteInt(i->first);
+			savefile->WriteString(i->second->c_str());
 		}
 	}
 
@@ -131,6 +132,7 @@ public:
 			idStr str;
 			savefile->ReadInt(priority);
 			savefile->ReadString(str);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Restoring task %s with priority %d.\r", str.c_str(), priority);
 			data->push_back(std::make_pair(priority, new std::string(str.c_str())));
 		}
 		

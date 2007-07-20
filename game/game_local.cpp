@@ -696,6 +696,13 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
 
+	// greebo: Save the priority queue list
+	savegame.WriteInt(m_PriorityQueues.Num());
+	for (int i = 0; i < m_PriorityQueues.Num(); i++)
+	{
+		m_PriorityQueues[i]->Save(&savegame);
+	}
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -1566,6 +1573,17 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadBool( influenceActive );
 	savegame.ReadInt( nextGibTime );
+
+	// greebo: Restore the saved priority queues
+	int numQueues;
+	savegame.ReadInt(numQueues);
+	m_PriorityQueues.Clear();
+	for (int i = 0; i < numQueues; i++)
+	{
+		CPriorityQueue* queue = new CPriorityQueue;
+		queue->Restore(&savegame);
+		m_PriorityQueues.Append(queue);
+	}
 
 	// spawnSpots
 	// initialSpots
