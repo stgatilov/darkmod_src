@@ -104,7 +104,7 @@ public:
 	}
 	
 	/**
-	* Save this data structure to a savefile (21/2/07: not tested yet since saving is broken)
+	* Save this data structure to a savefile
 	*/
 	void Save( idSaveGame *savefile ) const
 	{
@@ -118,7 +118,7 @@ public:
 	}
 
 	/**
-	* Restore this data structure from a savefile (21/2/07: not tested yet since saving is broken)
+	* Restore this data structure from a savefile
 	*/
 	void Restore( idRestoreGame *savefile )
 	{

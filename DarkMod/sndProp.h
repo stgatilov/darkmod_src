@@ -131,6 +131,9 @@ public:
 
 	void Clear( void );
 
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
+
 	void Propagate 
 		( float volMod, float durMod, idStr soundName,
 		idVec3 origin, idEntity *maker, USprFlags *addFlags = NULL );

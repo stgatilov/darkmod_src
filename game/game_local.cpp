@@ -712,6 +712,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteFloat(m_LightgemShotValue[i]);
 	}
 
+	m_sndProp->Save(&savegame);
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -1609,6 +1611,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noShadow = true;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noSelfShadow = true;
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface.GetEntity());
+
+	m_sndProp->Restore(&savegame);
 
 	// spawnSpots
 	// initialSpots

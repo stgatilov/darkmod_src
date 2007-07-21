@@ -147,6 +147,15 @@ CsndProp::~CsndProp ( void )
 	Clear();
 }
 
+void CsndProp::Save(idSaveGame *savefile) const
+{
+	// TODO
+}
+
+void CsndProp::Restore(idRestoreGame *savefile)
+{
+	// TODO
+}
 
 void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 {
