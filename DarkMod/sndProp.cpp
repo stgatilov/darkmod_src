@@ -152,15 +152,90 @@ void CsndProp::Save(idSaveGame *savefile) const
 	// Pass the call to the base class first
 	CsndPropBase::Save(savefile);
 
-	// TODO
+	savefile->WriteInt(m_TimeStampProp);
+	savefile->WriteInt(m_TimeStampPortLoss);
+
+	savefile->WriteInt(m_PopAreasInd.Num());
+	for (int i = 0; i < m_PopAreasInd.Num(); i++)
+	{
+		savefile->WriteInt(m_PopAreasInd[i]);
+	}
+
+	savefile->WriteBool(m_PopAreas != NULL);
+	if (m_PopAreas != NULL)
+	{
+		savefile->WriteInt(m_PopAreas->addedTime);
+		savefile->WriteBool(m_PopAreas->bVisited);
+
+		//TODO: Save: idList<idAI *>	AIContents; // list of AI that are present in area
+
+		savefile->WriteInt(m_PopAreas->VisitedPorts.Num());
+		for (int i = 0; i < m_PopAreas->VisitedPorts.Num(); i++)
+		{
+			savefile->WriteInt(m_PopAreas->VisitedPorts[i]);
+		}
+	}
+
+	savefile->WriteBool(m_EventAreas != NULL);
+	if (m_EventAreas != NULL)
+	{
+		savefile->WriteBool(m_EventAreas->bVisited);
+
+		//TODO: Save: m_EventAreas->PortalDat
+	}
 }
 
 void CsndProp::Restore(idRestoreGame *savefile)
 {
+	int num;
+
 	// Pass the call to the base class first
 	CsndPropBase::Restore(savefile);
 
-	// TODO
+	savefile->ReadInt(m_TimeStampProp);
+	savefile->ReadInt(m_TimeStampPortLoss);
+
+	m_PopAreasInd.Clear();
+	savefile->ReadInt(num);
+	m_PopAreasInd.Resize(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(m_PopAreasInd[i]);
+	}
+
+	bool hasPopAreas;
+	m_PopAreas = NULL;
+	savefile->ReadBool(hasPopAreas);
+
+	if (hasPopAreas)
+	{
+		m_PopAreas = new SPopArea;
+		savefile->ReadInt(m_PopAreas->addedTime);
+		savefile->ReadBool(m_PopAreas->bVisited);
+
+		m_PopAreas->AIContents.Clear();
+		//TODO: Restore: idList<idAI *>	AIContents; // list of AI that are present in area
+
+		savefile->ReadInt(num);
+		m_PopAreas->VisitedPorts.Clear();
+		m_PopAreas->VisitedPorts.Resize(num);
+		for (int i = 0; i < num; i++)
+		{
+			savefile->ReadInt(m_PopAreas->VisitedPorts[i]);
+		}
+	}
+
+	bool hasEventAreas;
+	m_EventAreas = NULL;
+	savefile->ReadBool(hasEventAreas);
+
+	if (hasEventAreas)
+	{
+		m_EventAreas = new SEventArea;
+		savefile->ReadBool(m_EventAreas->bVisited);
+
+		//TODO: Save: m_EventAreas->PortalDat
+	}
 }
 
 void CsndProp::SetupFromLoader( const CsndPropLoader *in )
