@@ -161,40 +161,38 @@ void CsndProp::Save(idSaveGame *savefile) const
 		savefile->WriteInt(m_PopAreasInd[i]);
 	}
 
-	savefile->WriteBool(m_PopAreas != NULL);
-	if (m_PopAreas != NULL)
+	for (int i = 0; i < m_numAreas; i++)
 	{
-		savefile->WriteInt(m_PopAreas->addedTime);
-		savefile->WriteBool(m_PopAreas->bVisited);
+		savefile->WriteInt(m_PopAreas[i].addedTime);
+		savefile->WriteBool(m_PopAreas[i].bVisited);
 
-		savefile->WriteInt(m_PopAreas->AIContents.Num());
-		for (int i = 0; i < m_PopAreas->AIContents.Num(); i++)
+		savefile->WriteInt(m_PopAreas[i].AIContents.Num());
+		for (int j = 0; j < m_PopAreas[i].AIContents.Num(); j++)
 		{
-			m_PopAreas->AIContents[i].Save(savefile);
+			m_PopAreas[i].AIContents[j].Save(savefile);
 		}
 
-		savefile->WriteInt(m_PopAreas->VisitedPorts.Num());
-		for (int i = 0; i < m_PopAreas->VisitedPorts.Num(); i++)
+		savefile->WriteInt(m_PopAreas[i].VisitedPorts.Num());
+		for (int i = 0; i < m_PopAreas[i].VisitedPorts.Num(); i++)
 		{
-			savefile->WriteInt(m_PopAreas->VisitedPorts[i]);
+			savefile->WriteInt(m_PopAreas[i].VisitedPorts[i]);
 		}
 	}
 
-	savefile->WriteBool(m_EventAreas != NULL);
-	if (m_EventAreas != NULL)
+	for (int i = 0; i < m_numAreas; i++)
 	{
-		savefile->WriteBool(m_EventAreas->bVisited);
+		savefile->WriteBool(m_EventAreas[i].bVisited);
 
-		savefile->WriteBool(m_EventAreas->PortalDat != NULL);
-		if (m_EventAreas->PortalDat != NULL)
+		for (int portal = 0; portal < m_sndAreas[i].numPortals; portal++)
 		{
-			savefile->WriteFloat(m_EventAreas->PortalDat->Loss);
-			savefile->WriteFloat(m_EventAreas->PortalDat->Dist);
-			savefile->WriteFloat(m_EventAreas->PortalDat->Att);
-			savefile->WriteInt(m_EventAreas->PortalDat->Floods);
+			savefile->WriteFloat(m_EventAreas[i].PortalDat[portal].Loss);
+			savefile->WriteFloat(m_EventAreas[i].PortalDat[portal].Dist);
+			savefile->WriteFloat(m_EventAreas[i].PortalDat[portal].Att);
+			savefile->WriteInt(m_EventAreas[i].PortalDat[portal].Floods);
 
-			/*SsndPortal *ThisPort; // pointer to the snd portal object for this portal 
-			  SPortEvent_s *PrevPort; // the portal visited immediately before each portal*/
+			// Don't save ThisPort, it's just pointing at m_sndAreas
+
+			// greebo: TODO: How to save PrevPort?
 		}
 	}
 }
@@ -217,55 +215,48 @@ void CsndProp::Restore(idRestoreGame *savefile)
 		savefile->ReadInt(m_PopAreasInd[i]);
 	}
 
-	bool hasPopAreas;
-	m_PopAreas = NULL;
-	savefile->ReadBool(hasPopAreas);
-
-	if (hasPopAreas)
+	m_PopAreas = new SPopArea[m_numAreas];
+	for (int i = 0; i < m_numAreas; i++)
 	{
-		m_PopAreas = new SPopArea;
-		savefile->ReadInt(m_PopAreas->addedTime);
-		savefile->ReadBool(m_PopAreas->bVisited);
+		savefile->ReadInt(m_PopAreas[i].addedTime);
+		savefile->ReadBool(m_PopAreas[i].bVisited);
 
-		m_PopAreas->AIContents.Clear();
 		savefile->ReadInt(num);
-		for (int i = 0; i < num; i++)
+		m_PopAreas[i].AIContents.Clear();
+		for (int j = 0; j < num; j++)
 		{
 			idEntityPtr<idAI> ai;
 			ai.Restore(savefile);
-			m_PopAreas->AIContents.Append(ai);
+			m_PopAreas[i].AIContents.Append(ai);
 		}
 
 		savefile->ReadInt(num);
-		m_PopAreas->VisitedPorts.Clear();
-		m_PopAreas->VisitedPorts.Resize(num);
+		m_PopAreas[i].VisitedPorts.Clear();
+		m_PopAreas[i].VisitedPorts.Resize(num);
 		for (int i = 0; i < num; i++)
 		{
-			savefile->ReadInt(m_PopAreas->VisitedPorts[i]);
+			savefile->ReadInt(m_PopAreas[i].VisitedPorts[i]);
 		}
 	}
 
-	bool hasEventAreas;
-	m_EventAreas = NULL;
-	savefile->ReadBool(hasEventAreas);
-
-	if (hasEventAreas)
+	m_EventAreas = new SEventArea[m_numAreas];
+	for (int i = 0; i < m_numAreas; i++)
 	{
-		m_EventAreas = new SEventArea;
-		savefile->ReadBool(m_EventAreas->bVisited);
+		savefile->ReadBool(m_EventAreas[i].bVisited);
 
-		bool hasPortalDat;
-		savefile->ReadBool(hasPortalDat);
-		if (hasPortalDat)
+		m_EventAreas[i].PortalDat = new SPortEvent[m_sndAreas[i].numPortals];
+
+		for (int portal = 0; portal < m_sndAreas[i].numPortals; portal++)
 		{
-			m_EventAreas->PortalDat = new SPortEvent;
-			savefile->ReadFloat(m_EventAreas->PortalDat->Loss);
-			savefile->ReadFloat(m_EventAreas->PortalDat->Dist);
-			savefile->ReadFloat(m_EventAreas->PortalDat->Att);
-			savefile->ReadInt(m_EventAreas->PortalDat->Floods);
+			savefile->ReadFloat(m_EventAreas[i].PortalDat[portal].Loss);
+			savefile->ReadFloat(m_EventAreas[i].PortalDat[portal].Dist);
+			savefile->ReadFloat(m_EventAreas[i].PortalDat[portal].Att);
+			savefile->ReadInt(m_EventAreas[i].PortalDat[portal].Floods);
 
-			/*SsndPortal *ThisPort; // pointer to the snd portal object for this portal 
-			  SPortEvent_s *PrevPort; // the portal visited immediately before each portal*/
+			// Restore the ThisPort pointer, it's just pointing at m_sndAreas
+			m_EventAreas[i].PortalDat[portal].ThisPort = &m_sndAreas[i].portals[portal];
+
+			// greebo: TODO: How to restore PrevPort?
 		}
 	}
 }
