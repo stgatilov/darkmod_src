@@ -167,7 +167,11 @@ void CsndProp::Save(idSaveGame *savefile) const
 		savefile->WriteInt(m_PopAreas->addedTime);
 		savefile->WriteBool(m_PopAreas->bVisited);
 
-		//TODO: Save: idList<idAI *>	AIContents; // list of AI that are present in area
+		savefile->WriteInt(m_PopAreas->AIContents.Num());
+		for (int i = 0; i < m_PopAreas->AIContents.Num(); i++)
+		{
+			m_PopAreas->AIContents[i].Save(savefile);
+		}
 
 		savefile->WriteInt(m_PopAreas->VisitedPorts.Num());
 		for (int i = 0; i < m_PopAreas->VisitedPorts.Num(); i++)
@@ -214,7 +218,13 @@ void CsndProp::Restore(idRestoreGame *savefile)
 		savefile->ReadBool(m_PopAreas->bVisited);
 
 		m_PopAreas->AIContents.Clear();
-		//TODO: Restore: idList<idAI *>	AIContents; // list of AI that are present in area
+		savefile->ReadInt(num);
+		for (int i = 0; i < num; i++)
+		{
+			idEntityPtr<idAI> ai;
+			ai.Restore(savefile);
+			m_PopAreas->AIContents.Append(ai);
+		}
 
 		savefile->ReadInt(num);
 		m_PopAreas->VisitedPorts.Clear();
