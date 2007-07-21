@@ -63,7 +63,7 @@ typedef struct SPopArea_s
 	
 	bool			bVisited; // area was visited at least once in wavefront expansion
 
-	idList<idAI *>	AIContents; // list of AI that are present in area
+	idList< idEntityPtr<idAI> >	AIContents; // list of AI that are present in area
 
 	//TODO: Handle Listeners in another list here
 
