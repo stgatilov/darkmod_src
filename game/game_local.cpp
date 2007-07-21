@@ -705,6 +705,12 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save the lightgem entity spawnId
 	m_LightgemSurface.Save(&savegame);
+	savegame.WriteBool(m_DoLightgem);
+	savegame.WriteInt(m_LightgemShotSpot);
+	for (int i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
+	{
+		savegame.WriteFloat(m_LightgemShotValue[i]);
+	}
 
 	// spawnSpots
 	// initialSpots
@@ -1590,6 +1596,12 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore the lightgem entity pointer
 	m_LightgemSurface.Restore(&savegame);
+	savegame.ReadBool(m_DoLightgem);
+	savegame.ReadInt(m_LightgemShotSpot);
+	for (int i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
+	{
+		savegame.ReadFloat(m_LightgemShotValue[i]);
+	}
 
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LG_VIEWID;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->suppressShadowInViewID = 0;
