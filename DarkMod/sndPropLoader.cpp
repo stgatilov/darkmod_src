@@ -48,6 +48,15 @@ const float s_DBM_TO_M = 1.0/(10*log10( idMath::E )); // convert between dB/m an
 *
 **********************************************************/
 
+void CsndPropBase::Save(idSaveGame *savefile) const
+{
+	// TODO
+}
+
+void CsndPropBase::Restore(idRestoreGame *savefile)
+{
+	// TODO
+}
 
 void CsndPropBase::GlobalsFromDef( void )
 {
@@ -137,6 +146,22 @@ CsndPropLoader::~CsndPropLoader ( void )
 {
 	// Call shutdown in case it was not called before destruction
 	Shutdown();
+}
+
+void CsndPropLoader::Save(idSaveGame *savefile) const
+{
+	// Pass the call to the base class first
+	CsndPropBase::Save(savefile);
+
+	// TODO
+}
+
+void CsndPropLoader::Restore(idRestoreGame *savefile)
+{
+	// Pass the call to the base class first
+	CsndPropBase::Restore(savefile);
+
+	// TODO
 }
 
 /**

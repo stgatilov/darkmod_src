@@ -228,6 +228,9 @@ public:
 	CsndPropBase( void ) {}
 	virtual ~CsndPropBase( void ) {}
 
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
+
 	/**
 	* Structure containing global sound properties.
 	**/
@@ -343,6 +346,9 @@ public:
 
 	CsndPropLoader ( void );
 	~CsndPropLoader ( void );
+
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
 
 	/**
 	* Load sound prop system from a loaded mapfile.

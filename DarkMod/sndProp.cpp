@@ -149,11 +149,17 @@ CsndProp::~CsndProp ( void )
 
 void CsndProp::Save(idSaveGame *savefile) const
 {
+	// Pass the call to the base class first
+	CsndPropBase::Save(savefile);
+
 	// TODO
 }
 
 void CsndProp::Restore(idRestoreGame *savefile)
 {
+	// Pass the call to the base class first
+	CsndPropBase::Restore(savefile);
+
 	// TODO
 }
 

@@ -713,6 +713,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	m_sndProp->Save(&savegame);
+	m_sndPropLoader->Save(&savegame);
 
 	// spawnSpots
 	// initialSpots
@@ -1613,6 +1614,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface.GetEntity());
 
 	m_sndProp->Restore(&savegame);
+	m_sndPropLoader->Restore(&savegame);
 
 	// spawnSpots
 	// initialSpots
