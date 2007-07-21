@@ -609,6 +609,13 @@ public:
 	 * Overload the idEntity::AddToInventory method to catch weapon items.
 	 */
 	virtual CInventoryItem *AddToInventory(idEntity *ent, idUserInterface *_hud = NULL);
+
+	/**
+	 * greebo: Attempts to put the current grabber item back into the inventory.
+	 *
+	 * @returns: TRUE if an item was put back, FALSE if the grabber hands are empty.
+	 */
+	bool AddGrabberEntityToInventory();
 	
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);
