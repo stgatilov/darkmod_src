@@ -91,9 +91,15 @@ void CsndPropBase::Save(idSaveGame *savefile) const
 		savefile->WriteFloat(m_AreaPropsG[i].VolMod);
 		savefile->WriteBool(m_AreaPropsG[i].DataEntered);
 	}
-	/*SPortData			*m_PortData;*/
-
-	// TODO
+	
+	for (int i = 0; i < m_numPortals; i++)
+	{
+		savefile->WriteInt(m_PortData[i].LocalIndex[0]);
+		savefile->WriteInt(m_PortData[i].LocalIndex[1]);
+		savefile->WriteInt(m_PortData[i].Areas[0]);
+		savefile->WriteInt(m_PortData[i].Areas[1]);
+		savefile->WriteFloat(m_PortData[i].loss);
+	}
 }
 
 void CsndPropBase::Restore(idRestoreGame *savefile)
@@ -154,9 +160,16 @@ void CsndPropBase::Restore(idRestoreGame *savefile)
 		savefile->ReadFloat(m_AreaPropsG[i].VolMod);
 		savefile->ReadBool(m_AreaPropsG[i].DataEntered);
 	}
-	/*SPortData			*m_PortData;*/
 
-	// TODO
+	m_PortData = new SPortData[m_numPortals];
+	for (int i = 0; i < m_numPortals; i++)
+	{
+		savefile->ReadInt(m_PortData[i].LocalIndex[0]);
+		savefile->ReadInt(m_PortData[i].LocalIndex[1]);
+		savefile->ReadInt(m_PortData[i].Areas[0]);
+		savefile->ReadInt(m_PortData[i].Areas[1]);
+		savefile->ReadFloat(m_PortData[i].loss);
+	}
 }
 
 void CsndPropBase::GlobalsFromDef( void )
