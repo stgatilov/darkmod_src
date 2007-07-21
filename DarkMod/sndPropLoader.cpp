@@ -83,9 +83,15 @@ void CsndPropBase::Save(idSaveGame *savefile) const
 		}
 	}
 
-	/*
-	idList<SAreaProp>	 m_AreaPropsG;
-	SPortData			*m_PortData;*/
+	savefile->WriteInt(m_AreaPropsG.Num());
+	for (int i = 0; i < m_AreaPropsG.Num(); i++)
+	{
+		savefile->WriteInt(m_AreaPropsG[i].area);
+		savefile->WriteFloat(m_AreaPropsG[i].LossMult);
+		savefile->WriteFloat(m_AreaPropsG[i].VolMod);
+		savefile->WriteBool(m_AreaPropsG[i].DataEntered);
+	}
+	/*SPortData			*m_PortData;*/
 
 	// TODO
 }
@@ -137,9 +143,18 @@ void CsndPropBase::Restore(idRestoreGame *savefile)
 		}
 	}
 
-	/*
-	idList<SAreaProp>	 m_AreaPropsG;
-	SPortData			*m_PortData;*/
+	int num;
+	savefile->ReadInt(num);
+	m_AreaPropsG.Clear();
+	m_AreaPropsG.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(m_AreaPropsG[i].area);
+		savefile->ReadFloat(m_AreaPropsG[i].LossMult);
+		savefile->ReadFloat(m_AreaPropsG[i].VolMod);
+		savefile->ReadBool(m_AreaPropsG[i].DataEntered);
+	}
+	/*SPortData			*m_PortData;*/
 
 	// TODO
 }
