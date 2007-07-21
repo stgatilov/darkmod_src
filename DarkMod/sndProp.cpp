@@ -185,7 +185,17 @@ void CsndProp::Save(idSaveGame *savefile) const
 	{
 		savefile->WriteBool(m_EventAreas->bVisited);
 
-		//TODO: Save: m_EventAreas->PortalDat
+		savefile->WriteBool(m_EventAreas->PortalDat != NULL);
+		if (m_EventAreas->PortalDat != NULL)
+		{
+			savefile->WriteFloat(m_EventAreas->PortalDat->Loss);
+			savefile->WriteFloat(m_EventAreas->PortalDat->Dist);
+			savefile->WriteFloat(m_EventAreas->PortalDat->Att);
+			savefile->WriteInt(m_EventAreas->PortalDat->Floods);
+
+			/*SsndPortal *ThisPort; // pointer to the snd portal object for this portal 
+			  SPortEvent_s *PrevPort; // the portal visited immediately before each portal*/
+		}
 	}
 }
 
@@ -244,7 +254,19 @@ void CsndProp::Restore(idRestoreGame *savefile)
 		m_EventAreas = new SEventArea;
 		savefile->ReadBool(m_EventAreas->bVisited);
 
-		//TODO: Save: m_EventAreas->PortalDat
+		bool hasPortalDat;
+		savefile->ReadBool(hasPortalDat);
+		if (hasPortalDat)
+		{
+			m_EventAreas->PortalDat = new SPortEvent;
+			savefile->ReadFloat(m_EventAreas->PortalDat->Loss);
+			savefile->ReadFloat(m_EventAreas->PortalDat->Dist);
+			savefile->ReadFloat(m_EventAreas->PortalDat->Att);
+			savefile->ReadInt(m_EventAreas->PortalDat->Floods);
+
+			/*SsndPortal *ThisPort; // pointer to the snd portal object for this portal 
+			  SPortEvent_s *PrevPort; // the portal visited immediately before each portal*/
+		}
 	}
 }
 
