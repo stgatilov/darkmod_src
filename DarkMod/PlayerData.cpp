@@ -48,13 +48,16 @@ void CDarkModPlayer::Save( idSaveGame *savefile ) const
 	m_FrobEntityPrevious.Save(savefile);
 	savefile->WriteInt(m_LightgemValue);
 	savefile->WriteFloat(m_fColVal);
-	//idList<idLight *>			m_LightList;
+
+	savefile->WriteInt(m_LightList.Num());
+	for (int i = 0; i < m_LightList.Num(); i++)
+	{
+		m_LightList[i].Save(savefile);
+	}
 }
 
 void CDarkModPlayer::Restore( idRestoreGame *savefile )
 {
-	// TODO
-
 	grabber->Restore(savefile);
 
 	m_FrobEntity.Restore(savefile);
@@ -64,14 +67,23 @@ void CDarkModPlayer::Restore( idRestoreGame *savefile )
 	m_FrobEntityPrevious.Restore(savefile);
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
-	//idList<idLight *>			m_LightList;
+	
+	int num;
+	savefile->ReadInt(num);
+	m_LightList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_LightList[i].Restore(savefile);
+	}
 }
 
 unsigned long CDarkModPlayer::AddLight(idLight *light)
 {
 	if(light)
 	{
-		m_LightList.Append(light);
+		idEntityPtr<idLight> lightPtr;
+		lightPtr = light;
+		m_LightList.Append(lightPtr);
 		DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu added to LightList\r", light, light->name.c_str(), m_LightList.Num());
 	}
 
@@ -80,14 +92,17 @@ unsigned long CDarkModPlayer::AddLight(idLight *light)
 
 unsigned long CDarkModPlayer::RemoveLight(idLight *light)
 {
-	int n;
-
 	if(light)
 	{
-		if((n = m_LightList.FindIndex(light)) != -1)
+		for (int i = 0; i < m_LightList.Num(); i++)
 		{
-			m_LightList.RemoveIndex(n);
-			DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
+			if (m_LightList[i].GetEntity() == light) 
+			{
+				// Light found, remove it
+				m_LightList.RemoveIndex(i);
+				DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("%08lX [%s] %lu removed from LightList\r", light, light->name.c_str(), m_LightList.Num());
+				break;
+			}
 		}
 	}
 

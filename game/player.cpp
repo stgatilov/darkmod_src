@@ -8217,8 +8217,10 @@ void idPlayer::AdjustLightgem(void)
 
 	for(i = 0; i < n; i++)
 	{
-		if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
-			continue;
+		light = pDM->m_LightList[i].GetEntity();
+		// greebo: The lightlist doesn't contain other entity types than idLight, right?
+		/*if((light = dynamic_cast<idLight *>(pDM->m_LightList[i])) == NULL)
+			continue;*/
 
 		vPlayer = vPlayerPos;
 		idVec3 vLight(light->GetPhysics()->GetOrigin());
@@ -8313,7 +8315,7 @@ void idPlayer::AdjustLightgem(void)
 		// time to sort an everchanging array.
 		if(h != -1)
 		{
-			helper = pDM->m_LightList[h];
+			helper = pDM->m_LightList[h].GetEntity();
 			pDM->m_LightList[h] = light;
 			pDM->m_LightList[i] = helper;
 			h = -1;

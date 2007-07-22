@@ -88,7 +88,7 @@ public:
 	 * Each light entity must register here itself. This is used
 	 * to calculate the value for the lightgem.
 	 */
-	idList<idLight *>			m_LightList;
+	idList< idEntityPtr<idLight> >	m_LightList;
 };
 
 #endif
