@@ -61,13 +61,6 @@ protected:
 
 protected:
 	/**
-	 * Once this stimulus is finished, another one can be fired. So you
-	 * can chain multiple stimulis one after the other. If NULL this is
-	 * a single event.
-	 */
-	CResponse			*m_FollowUp;
-
-	/**
 	 * Scriptfunction that is to be executed when this response 
 	 * is triggered.
 	 */

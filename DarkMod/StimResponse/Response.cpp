@@ -22,7 +22,6 @@ static bool init_version = FileVersionList("$Id: Response.cpp 870 2007-03-27 14:
 CResponse::CResponse(idEntity *e, int Type)
 : CStimResponse(e, Type)
 {
-	m_FollowUp = NULL;
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
 	m_MaxDamage = 0;
@@ -40,8 +39,6 @@ void CResponse::Save(idSaveGame *savefile) const
 {
 	CStimResponse::Save(savefile);
 
-	// TODO: Save this: CResponse			*m_FollowUp;
-
 	savefile->WriteString(m_ScriptFunction.c_str());
 	savefile->WriteFloat(m_MinDamage);
 	savefile->WriteFloat(m_MaxDamage);
@@ -57,8 +54,6 @@ void CResponse::Save(idSaveGame *savefile) const
 void CResponse::Restore(idRestoreGame *savefile)
 {
 	CStimResponse::Restore(savefile);
-
-	// TODO: Restore this m_FollowUp
 
 	savefile->ReadString(m_ScriptFunction);
 	savefile->ReadFloat(m_MinDamage);
@@ -141,13 +136,6 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		for (int i = 0; i < m_ResponseEffects.Num(); i++) {
 			m_ResponseEffects[i]->runScript(m_Owner.GetEntity(), sourceEntity, magnitude);
 		}
-	}
-
-	// Continue the chain if we have a followup response to be triggered.
-	if(m_FollowUp != NULL)
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Followup: %08lX\r", m_FollowUp);
-		m_FollowUp->TriggerResponse(sourceEntity, stim);
 	}
 }
 

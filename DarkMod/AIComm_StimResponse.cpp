@@ -165,13 +165,6 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
 	}
-
-	// Continue the chain if we have a followup response to be triggered.
-	if(m_FollowUp != NULL)
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Followup: %08lX\r", m_FollowUp);
-		m_FollowUp->TriggerResponse(StimEnt, stim);
-	}
 }
 
 /*
