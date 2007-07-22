@@ -120,8 +120,7 @@ void CGrabber::Clear( void )
 void CGrabber::Save( idSaveGame *savefile ) const
 {
 	idEntity::Save(savefile);
-	// TODO
-
+	
 	m_dragEnt.Save(savefile);
 	savefile->WriteJoint(m_joint);
 	savefile->WriteInt(m_id);
@@ -139,8 +138,23 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_rotationAxis);
 	savefile->WriteVec2(m_mousePosition);
 	
-	/*	idList<CGrabbedEnt>		m_clipList;*/
+	savefile->WriteInt(m_clipList.Num());
+	for (int i = 0; i < m_clipList.Num(); i++)
+	{
+		m_clipList[i].m_ent.Save(savefile);
+		savefile->WriteInt(m_clipList[i].m_clipMask);
+		savefile->WriteInt(m_clipList[i].m_contents);
+	}
 
+	savefile->WriteBool(m_bAttackPressed);
+	savefile->WriteInt(m_ThrowTimer);
+	savefile->WriteInt(m_DragUpTimer);
+	savefile->WriteFloat(m_AFBodyLastZ);
+	savefile->WriteBool(m_bAFOffGround);
+	savefile->WriteInt(m_DistanceCount);
+	savefile->WriteInt(m_MaxDistCount);
+	savefile->WriteInt(m_MinHeldDist);
+	savefile->WriteInt(m_LockedHeldDist);
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -169,7 +183,25 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_rotationAxis);
 	savefile->ReadVec2(m_mousePosition);
 
-	/*	idList<CGrabbedEnt>		m_clipList;*/
+	int num;
+	savefile->ReadInt(num);
+	m_clipList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_clipList[i].m_ent.Restore(savefile);
+		savefile->ReadInt(m_clipList[i].m_clipMask);
+		savefile->ReadInt(m_clipList[i].m_contents);
+	}
+
+	savefile->ReadBool(m_bAttackPressed);
+	savefile->ReadInt(m_ThrowTimer);
+	savefile->ReadInt(m_DragUpTimer);
+	savefile->ReadFloat(m_AFBodyLastZ);
+	savefile->ReadBool(m_bAFOffGround);
+	savefile->ReadInt(m_DistanceCount);
+	savefile->ReadInt(m_MaxDistCount);
+	savefile->ReadInt(m_MinHeldDist);
+	savefile->ReadInt(m_LockedHeldDist);
 }
 
 /*
@@ -759,8 +791,8 @@ void CGrabber::RemoveFromClipList( int index )
 {
 	// remove the entity and reset the clipMask
 	if( index != -1 ) {
-		m_clipList[index].m_ent->GetPhysics()->SetClipMask( m_clipList[index].m_clipMask );
-		m_clipList[index].m_ent->GetPhysics()->SetContents( m_clipList[index].m_contents );
+		m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetClipMask( m_clipList[index].m_clipMask );
+		m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetContents( m_clipList[index].m_contents );
 		m_clipList.RemoveIndex( index );
 	}
 
@@ -773,7 +805,7 @@ void CGrabber::RemoveFromClipList( int index )
 void CGrabber::RemoveFromClipList(idEntity* entity)
 {
 	for (int i = 0; i < m_clipList.Num(); i++) {
-		if (m_clipList[i].m_ent == entity) {
+		if (m_clipList[i].m_ent.GetEntity() == entity) {
 			m_clipList.RemoveIndex(i);
 			break;
 		}
@@ -801,10 +833,10 @@ void CGrabber::Event_CheckClipList( void )
 	num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
 	for( i = 0; i < m_clipList.Num(); i++ ) 
 	{
-		// Check clipEntites against entites touching player
+		// Check clipEntites against entities touching player
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == m_clipList[i].m_ent ) 
+		if( this->GetSelected() == m_clipList[i].m_ent.GetEntity() ) 
 		{
 			keep = true;
 		}
@@ -815,7 +847,7 @@ void CGrabber::Event_CheckClipList( void )
 			// OR if it's touching the player and still in the clipList
 			for( j = 0; !keep && j < num; j++ ) 
 			{
-				if( m_clipList[i].m_ent == ent[j] ) 
+				if( m_clipList[i].m_ent.GetEntity() == ent[j] ) 
 					keep = true;
 			}
 		}
