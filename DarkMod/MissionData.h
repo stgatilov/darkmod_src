@@ -437,6 +437,9 @@ public:
 
 	void Clear( void );
 
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
 	/**
 	* Update objectives if they need it
 	* Called each frame by idPlayer::Think, does nothing if no objectives need updating

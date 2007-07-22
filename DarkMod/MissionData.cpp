@@ -186,6 +186,15 @@ void CMissionData::Clear( void )
 	m_Stats.LootOverall = 0;
 }
 
+void CMissionData::Save( idSaveGame *savefile ) const
+{
+	// TODO
+}
+
+void CMissionData::Restore( idRestoreGame *savefile )
+{
+	// TODO
+}
 
 void CMissionData::MissionEvent
 	(
