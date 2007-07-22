@@ -4894,7 +4894,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			idEntity *useEnt = grabber->GetSelected();
 			if(useEnt == NULL)
 			{
-				idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
+				idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 				if(frob != NULL)
 					grabber->PutInHands(frob, this);
 			}
@@ -8492,7 +8492,7 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 	// Sanity check
 	if (ent == NULL) return;
 
-	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity;
+	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %08lX  Impulse: %u\r", ent, (int)bImpulse);
 	if(frob != NULL)
@@ -9302,7 +9302,7 @@ void idPlayer::PerformFrob(void)
 		goto Quit;
 	}
 
-	frob = pDM->m_FrobEntity;
+	frob = pDM->m_FrobEntity.GetEntity();
 
 	if(frob != NULL)
 	{

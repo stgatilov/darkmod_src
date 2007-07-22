@@ -352,7 +352,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// If an entity was not explictly passed in, use the frob entity
     if ( !newEnt ) 
 	{
-		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity;
+		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 		if( !FrobEnt )
 #ifdef __linux__
 			return;

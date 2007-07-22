@@ -1529,7 +1529,7 @@ void idEntity::Hide( void )
 		// set the frob pointers to NULL to avoid stale pointers
 		CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 	
-		if( pDM && pDM->m_FrobEntity == this )
+		if( pDM && pDM->m_FrobEntity.GetEntity() == this )
 			pDM->m_FrobEntity = NULL;
 		if( pDM && pDM->m_FrobEntityPrevious == this )
 			pDM->m_FrobEntityPrevious = NULL;
@@ -6298,7 +6298,7 @@ void idEntity::UpdateFrob(void)
 		// a new entity that is now frobbed.
 
 		// If this is true, this entity is updating before the newly frobbed entity
-		if(pDM->m_FrobEntity == this)
+		if(pDM->m_FrobEntity.GetEntity() == this)
 		{
 			pDM->m_FrobEntity = NULL;
 			pDM->m_FrobEntityPrevious = NULL;
@@ -6312,7 +6312,7 @@ void idEntity::UpdateFrob(void)
 		{
 			// if this one updates last, set the previous frob entity to 
 			// the newly frobbed ent for the next frame.
-			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity;
+			pDM->m_FrobEntityPrevious = pDM->m_FrobEntity.GetEntity();
 
 			// stop highlight, tell peers
 			FrobHighlight(false );
@@ -6326,7 +6326,7 @@ void idEntity::UpdateFrob(void)
 	m_bFrobbed = false;
 
 	// Check if we are newly frobbed this frame
-	if( pDM->m_FrobEntity != this )
+	if( pDM->m_FrobEntity.GetEntity() != this )
 	{
 		pDM->m_FrobEntity = this;
 		FrobHighlight( true );

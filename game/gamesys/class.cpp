@@ -1037,7 +1037,7 @@ void idClass::Event_Remove( void )
 	// set the frob pointers to NULL to avoid stale pointers
 	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
-	if( pDM && pDM->m_FrobEntity == this )
+	if( pDM && pDM->m_FrobEntity.GetEntity() == this )
 		pDM->m_FrobEntity = NULL;
 	if( pDM && pDM->m_FrobEntityPrevious == this )
 		pDM->m_FrobEntityPrevious = NULL;

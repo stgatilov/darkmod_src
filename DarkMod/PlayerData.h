@@ -46,7 +46,7 @@ public:
 	 * FrobEntity is NULL when no entity is highlighted. Otherwise it will point 
 	 * to the entity which is currently highlighted.
 	 */
-	idEntity		*m_FrobEntity;
+	idEntityPtr<idEntity>	m_FrobEntity;
 
 	/**
 	* Frobbed joint and frobbed clipmodel ID if an AF has been frobbed

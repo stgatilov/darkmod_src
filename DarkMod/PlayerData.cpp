@@ -41,7 +41,7 @@ void CDarkModPlayer::Save( idSaveGame *savefile ) const
 {
 	grabber->Save(savefile);
 
-	// idEntity		*m_FrobEntity;
+	m_FrobEntity.Save(savefile);
 	savefile->WriteJoint(m_FrobJoint);
 	savefile->WriteInt(m_FrobID);
 	savefile->WriteTrace(m_FrobTrace);
@@ -57,7 +57,7 @@ void CDarkModPlayer::Restore( idRestoreGame *savefile )
 
 	grabber->Restore(savefile);
 
-	// idEntity		*m_FrobEntity;
+	m_FrobEntity.Restore(savefile);
 	savefile->ReadJoint(m_FrobJoint);
 	savefile->ReadInt(m_FrobID);
 	savefile->ReadTrace(m_FrobTrace);
