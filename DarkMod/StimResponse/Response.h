@@ -19,6 +19,9 @@ class CResponse : public CStimResponse {
 	friend class CStimResponseCollection;
 
 public:
+	virtual void Save(idSaveGame *savefile) const;
+	virtual void Restore(idRestoreGame *savefile);
+
 	/**
 	* This method is called when the response should
 	* make its script callback. It is virtual

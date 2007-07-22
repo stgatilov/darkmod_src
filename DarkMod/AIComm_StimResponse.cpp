@@ -41,13 +41,13 @@ CAIComm_Response::~CAIComm_Response(void)
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 {
 	// Can't respond if we are unconscious or dead
-	if (m_Owner != NULL)
+	if (m_Owner.GetEntity() != NULL)
 	{
 		// If we are descended from AI ...
-		if (m_Owner->IsType(idAI::Type))
+		if (m_Owner.GetEntity()->IsType(idAI::Type))
 		{
 			// check if dead or knocked out
-			idAI* p_AIOwner = static_cast< idAI * >( m_Owner );
+			idAI* p_AIOwner = static_cast< idAI * >( m_Owner.GetEntity() );
 			if (p_AIOwner->IsKnockedOut() )
 			{
 				return;
@@ -82,7 +82,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 //	unsigned long numMessages = p_CommStim->getNumMessages();
 
 	// Get the script function specified in this response
-	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	const function_t *pScriptFkt = m_Owner.GetEntity()->scriptObject.GetFunction(m_ScriptFunction.c_str());
 	if(pScriptFkt == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
@@ -119,7 +119,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 			// Calculate distance of the owner of the response from the position of the message at issuance
 			float distanceFromIssuance = maxRadiusForResponse + 1.0;
 			
-			idPhysics* p_phys = m_Owner->GetPhysics();
+			idPhysics* p_phys = m_Owner.GetEntity()->GetPhysics();
 			if (p_phys != NULL)
 			{
 				idVec3 ownerOrigin = p_phys->GetOrigin();

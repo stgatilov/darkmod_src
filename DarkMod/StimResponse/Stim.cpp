@@ -44,6 +44,20 @@ CStim::~CStim(void)
 	gameLocal.m_StimTimer.Remove(this);
 }
 
+void CStim::Save(idSaveGame *savefile) const
+{
+	CStimResponse::Save(savefile);
+
+	// TODO
+}
+
+void CStim::Restore(idRestoreGame *savefile)
+{
+	CStimResponse::Restore(savefile);
+
+	// TODO
+}
+
 void CStim::AddResponseIgnore(idEntity *e)
 {
 	if(CheckResponseIgnore(e) != true)

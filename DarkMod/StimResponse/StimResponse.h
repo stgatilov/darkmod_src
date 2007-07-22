@@ -63,6 +63,9 @@ protected:
 	virtual ~CStimResponse(void);
 
 public:
+	virtual void Save(idSaveGame *savefile) const;
+	virtual void Restore(idRestoreGame *savefile);
+
 	void EnableSR(bool Enable = true);
 
 	/** 
@@ -143,7 +146,7 @@ public:
 	**/
 	int						m_Duration;
 
-	idEntity			*m_Owner;
+	idEntityPtr<idEntity>	m_Owner;
 };
 
 #endif /* SR_STIMRESPONSE__H */

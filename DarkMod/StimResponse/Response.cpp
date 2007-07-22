@@ -36,6 +36,20 @@ CResponse::~CResponse(void)
 		delete m_ResponseEffects[i];
 }
 
+void CResponse::Save(idSaveGame *savefile) const
+{
+	CStimResponse::Save(savefile);
+
+	// TODO
+}
+
+void CResponse::Restore(idRestoreGame *savefile)
+{
+	CStimResponse::Restore(savefile);
+
+	// TODO
+}
+
 void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 {
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse::TriggerResponse \r");
@@ -47,7 +61,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		return;
 	}
 
-	const function_t *pScriptFkt = m_Owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	const function_t *pScriptFkt = m_Owner.GetEntity()->scriptObject.GetFunction(m_ScriptFunction.c_str());
 	if(pScriptFkt == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
@@ -59,7 +73,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
 		idThread *pThread = new idThread(pScriptFkt);
 		int n = pThread->GetThreadNum();
-		pThread->CallFunctionArgs(pScriptFkt, true, "eef", m_Owner, sourceEntity, n);
+		pThread->CallFunctionArgs(pScriptFkt, true, "eef", m_Owner.GetEntity(), sourceEntity, n);
 		pThread->DelayedStart(0);
 	}
 	else
@@ -75,7 +89,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 
 		// Calculate the magnitude of the stim based on the distance and the falloff model
 		magnitude = stim->m_Magnitude;
-		float distance = (m_Owner->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
+		float distance = (m_Owner.GetEntity()->GetPhysics()->GetOrigin() - sourceEntity->GetPhysics()->GetOrigin()).LengthFast();
 		
 #ifdef __linux__
 		// Import std::min for GCC, since global min() function is non-standard
@@ -94,13 +108,13 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		for (int i = 1; i <= m_NumRandomEffects; i++) {
 			// Get a random effectIndex in the range of [0, m_ResponseEffects.Num()[
 			int effectIndex = gameLocal.random.RandomInt(m_ResponseEffects.Num());
-			m_ResponseEffects[effectIndex]->runScript(m_Owner, sourceEntity, magnitude);
+			m_ResponseEffects[effectIndex]->runScript(m_Owner.GetEntity(), sourceEntity, magnitude);
 		}
 	}
 	else {
 		// "Normal" mode, all the effects get fired in order
 		for (int i = 0; i < m_ResponseEffects.Num(); i++) {
-			m_ResponseEffects[i]->runScript(m_Owner, sourceEntity, magnitude);
+			m_ResponseEffects[i]->runScript(m_Owner.GetEntity(), sourceEntity, magnitude);
 		}
 	}
 
@@ -138,7 +152,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 
 		if (scriptStr != "")
 		{
-			const function_t* scriptFunc = m_Owner->scriptObject.GetFunction(scriptStr.c_str());
+			const function_t* scriptFunc = m_Owner.GetEntity()->scriptObject.GetFunction(scriptStr.c_str());
 			if (scriptFunc == NULL)
 			{
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse: %s not found in local space, checking for global.\r", scriptStr.c_str());

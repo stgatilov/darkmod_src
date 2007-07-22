@@ -26,6 +26,9 @@ protected:
 	virtual ~CStim(void);
 
 public:
+	virtual void Save(idSaveGame *savefile) const;
+	virtual void Restore(idRestoreGame *savefile);
+
 	/**
 	 * Add a responseentity to the ignore list. If the response is already
 	 * in the list, it is not entered again.

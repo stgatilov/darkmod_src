@@ -69,6 +69,40 @@ CStimResponse::~CStimResponse(void)
 {
 }
 
+void CStimResponse::Save(idSaveGame *savefile) const
+{
+	savefile->WriteInt(m_StimTypeId);
+	savefile->WriteString(m_StimTypeName.c_str());
+	savefile->WriteBool(m_Removable);
+	savefile->WriteInt(static_cast<int>(m_State));
+	savefile->WriteFloat(m_Chance);
+	savefile->WriteInt(m_ChanceTimer);
+	savefile->WriteInt(m_NextChanceTime);
+	savefile->WriteBool(m_Default);
+	savefile->WriteInt(m_EnabledTimeStamp);
+	savefile->WriteInt(m_Duration);
+	m_Owner.Save(savefile);
+}
+
+void CStimResponse::Restore(idRestoreGame *savefile)
+{
+	savefile->ReadInt(m_StimTypeId);
+	savefile->ReadString(m_StimTypeName);
+	savefile->ReadBool(m_Removable);
+
+	int tempInt;
+	savefile->ReadInt(tempInt);
+	m_State = static_cast<StimState>(m_State);
+
+	savefile->ReadFloat(m_Chance);
+	savefile->ReadInt(m_ChanceTimer);
+	savefile->ReadInt(m_NextChanceTime);
+	savefile->ReadBool(m_Default);
+	savefile->ReadInt(m_EnabledTimeStamp);
+	savefile->ReadInt(m_Duration);
+	m_Owner.Restore(savefile);
+}
+
 StimType CStimResponse::getStimType(const idStr& stimName) {
 	int i = 0;
 	

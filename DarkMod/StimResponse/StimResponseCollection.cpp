@@ -24,12 +24,40 @@ CStimResponseCollection::~CStimResponseCollection(void)
 
 void CStimResponseCollection::Save(idSaveGame *savefile) const
 {
-	// TODO
+	savefile->WriteInt(m_Stim.Num());
+	for (int i = 0; i < m_Stim.Num(); i++)
+	{
+		m_Stim[i]->Save(savefile);
+	}
+
+	savefile->WriteInt(m_Response.Num());
+	for (int i = 0; i < m_Response.Num(); i++)
+	{
+		m_Response[i]->Save(savefile);
+	}
 }
 
 void CStimResponseCollection::Restore(idRestoreGame *savefile)
 {
-	// TODO
+	int num;
+
+	savefile->ReadInt(num);
+	m_Stim.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		// Allocate a new stim class (type info will be required)
+		m_Stim[i] = new CStim(NULL, 0);
+		m_Stim[i]->Restore(savefile);
+	}
+
+	savefile->ReadInt(num);
+	m_Response.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		// Allocate a new response class (type info will be required)
+		m_Response[i] = new CResponse(NULL, 0);
+		m_Response[i]->Restore(savefile);
+	}
 }
 
 CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
@@ -165,7 +193,7 @@ CStim *CStimResponseCollection::AddStim(CStim *s)
 		pRet = s;
 		m_Stim.Append(pRet);
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, s->m_Owner); 
+		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, s->m_Owner.GetEntity()); 
 	}
 
 Quit:
@@ -195,7 +223,7 @@ CResponse *CStimResponseCollection::AddResponse(CResponse *r)
 		pRet = r;
 		m_Response.Append(pRet);
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, r->m_Owner);
+		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, r->m_Owner.GetEntity());
 	}
 
 Quit:
@@ -240,7 +268,7 @@ int CStimResponseCollection::RemoveResponse(int Type)
 			pRet = m_Response[i];
 			if(pRet->m_Removable == true)
 			{
-				owner = pRet->m_Owner;
+				owner = pRet->m_Owner.GetEntity();
 				m_Response.RemoveIndex(i);
 				delete pRet;
 			}
