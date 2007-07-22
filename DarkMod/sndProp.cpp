@@ -209,7 +209,7 @@ void CsndProp::Restore(idRestoreGame *savefile)
 
 	m_PopAreasInd.Clear();
 	savefile->ReadInt(num);
-	m_PopAreasInd.Resize(num);
+	m_PopAreasInd.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
 		savefile->ReadInt(m_PopAreasInd[i]);
@@ -232,7 +232,7 @@ void CsndProp::Restore(idRestoreGame *savefile)
 
 		savefile->ReadInt(num);
 		m_PopAreas[i].VisitedPorts.Clear();
-		m_PopAreas[i].VisitedPorts.Resize(num);
+		m_PopAreas[i].VisitedPorts.SetNum(num);
 		for (int i = 0; i < num; i++)
 		{
 			savefile->ReadInt(m_PopAreas[i].VisitedPorts[i]);
