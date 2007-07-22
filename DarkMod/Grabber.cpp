@@ -115,6 +115,16 @@ void CGrabber::Clear( void )
 		this->RemoveFromClipList( 0 );
 }
 
+void CGrabber::Save( idSaveGame *savefile ) const
+{
+	// TODO
+}
+
+void CGrabber::Restore( idRestoreGame *savefile )
+{
+	// TODO
+}
+
 /*
 ==============
 CGrabber::Spawn

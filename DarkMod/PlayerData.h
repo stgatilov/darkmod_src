@@ -36,6 +36,9 @@ public:
 	CDarkModPlayer(void);
 	~CDarkModPlayer(void);
 
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
 	// grabber to help with object manipulation
 	CGrabber		*grabber;
 

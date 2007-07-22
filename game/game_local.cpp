@@ -714,6 +714,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_sndProp->Save(&savegame);
 	m_MissionData->Save(&savegame);
+	
+	// Save the DarkMod player object, this contains a lot of other TDM-related classes
+	g_Global.m_DarkModPlayer->Save(&savegame);
 
 	// spawnSpots
 	// initialSpots
@@ -1615,6 +1618,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	m_sndProp->Restore(&savegame);
 	m_MissionData->Restore(&savegame);
+
+	// Restore the DarkMod player object, this contains a lot of other TDM-related classes
+	g_Global.m_DarkModPlayer->Restore(&savegame);
 
 	// spawnSpots
 	// initialSpots

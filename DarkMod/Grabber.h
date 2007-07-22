@@ -43,6 +43,10 @@ public:
 		void					Clear( void );
 		void					Update( idPlayer *player, bool hold = false );
 
+		void Save( idSaveGame *savefile ) const;
+		void Restore( idRestoreGame *savefile );
+
+
 		void					Spawn( void );
 
 		idEntity *				GetSelected( void ) const { return m_dragEnt.GetEntity(); }
