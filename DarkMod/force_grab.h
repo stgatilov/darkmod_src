@@ -42,6 +42,9 @@ class CForce_Grab : public idForce {
 							// rotates p about the center of mass of the grabbed object
 		void				Rotate( const idVec3 &vec, float angle );
 
+		void				Save( idSaveGame *savefile ) const;
+		void				Restore( idRestoreGame *savefile );
+
 	public: // common force interface
 		virtual void		Evaluate( int time );
 		virtual void		RemovePhysics( const idPhysics *phys );

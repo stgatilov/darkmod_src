@@ -16,6 +16,7 @@
 class idPlayer;
 
 extern const idEventDef EV_Grabber_CheckClipList;
+extern const idEventDef EV_Grabber_RestorePhysics;
 
 class CGrabbedEnt 
 {
@@ -43,8 +44,8 @@ public:
 		void					Clear( void );
 		void					Update( idPlayer *player, bool hold = false );
 
-		void Save( idSaveGame *savefile ) const;
-		void Restore( idRestoreGame *savefile );
+		void					Save( idSaveGame *savefile ) const;
+		void					Restore( idRestoreGame *savefile );
 
 
 		void					Spawn( void );
@@ -125,6 +126,11 @@ protected:
 		void					RemoveFromClipList( int index );
 
 		void					Event_CheckClipList( void );
+
+		/**
+		 * Restores the physics object from the drag entity after loading.
+		 */
+		void					Event_RestorePhysics();
 
 		/**
 		* Throws the current item.

@@ -31,6 +31,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 */
 
 const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
+const idEventDef EV_Grabber_RestorePhysics("<grabberRestorePhysics>", NULL, NULL);
 
 const int CHECK_CLIP_LIST_INTERVAL =	1000;
 
@@ -59,6 +60,7 @@ const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPE
 CLASS_DECLARATION( idEntity, CGrabber )
 
 	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
+	EVENT( EV_Grabber_RestorePhysics,	CGrabber::Event_RestorePhysics )
 
 END_CLASS
 
@@ -126,14 +128,18 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteVec3(m_localEntityPoint);
 	m_player.Save(savefile);
 
-	/*	idPlayer				*m_player;
-		CForce_Grab				m_drag;
+	m_drag.Save(savefile);
 
-		idRotation				m_rotation;
-		int						m_rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
-		idVec2					m_mousePosition;		// mouse position when user pressed BUTTON_ZOOM
+	// Save the three relevant values of the idRotation object
+	savefile->WriteVec3(m_rotation.GetOrigin());
+	savefile->WriteVec3(m_rotation.GetVec());
+	savefile->WriteFloat(m_rotation.GetAngle());
 
-		idList<CGrabbedEnt>		m_clipList;*/
+
+	savefile->WriteInt(m_rotationAxis);
+	savefile->WriteVec2(m_mousePosition);
+	
+	/*	idList<CGrabbedEnt>		m_clipList;*/
 
 }
 
@@ -146,7 +152,24 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_id);
 	savefile->ReadVec3(m_localEntityPoint);
 	m_player.Restore(savefile);
-	// TODO
+
+	m_drag.Restore(savefile);
+	// Schedule the event to restore the physics object from the drag entity
+	PostEventMS( &EV_Grabber_RestorePhysics, 0 );
+
+	// Read the three relevant values of the idRotation object
+	idVec3 origin;
+	idVec3 vec;
+	float angle;
+	savefile->ReadVec3(origin);
+	savefile->ReadVec3(vec);
+	savefile->ReadFloat(angle);
+	m_rotation = idRotation(origin, vec, angle);
+
+	savefile->ReadInt(m_rotationAxis);
+	savefile->ReadVec2(m_mousePosition);
+
+	/*	idList<CGrabbedEnt>		m_clipList;*/
 }
 
 /*
@@ -808,6 +831,14 @@ void CGrabber::Event_CheckClipList( void )
 	if( this->HasClippedEntity() ) 
 	{
 		this->PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
+	}
+}
+
+void CGrabber::Event_RestorePhysics() 
+{
+	if (m_dragEnt.GetEntity() != NULL)
+	{
+		m_drag.SetPhysics(m_dragEnt.GetEntity()->GetPhysics(), m_id, m_localEntityPoint );
 	}
 }
 

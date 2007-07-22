@@ -62,6 +62,32 @@ void CForce_Grab::Init( float damping ) {
 	}
 }
 
+void CForce_Grab::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteFloat(m_damping);
+	savefile->WriteVec3(m_centerOfMass);
+
+	// Don't save m_physics, gets restored from the parent class after load
+	
+	savefile->WriteVec3(m_p);
+	savefile->WriteInt(m_id);
+	savefile->WriteVec3(m_dragPosition);
+	savefile->WriteVec3(m_prevOrigin);
+}
+
+void CForce_Grab::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadFloat(m_damping);
+	savefile->ReadVec3(m_centerOfMass);
+
+	m_physics = NULL; // gets restored from the parent class after loading
+
+	savefile->ReadVec3(m_p);
+	savefile->ReadInt(m_id);
+	savefile->ReadVec3(m_dragPosition);
+	savefile->ReadVec3(m_prevOrigin);
+}
+
 /*
 ================
 CForce_Grab::SetPhysics
