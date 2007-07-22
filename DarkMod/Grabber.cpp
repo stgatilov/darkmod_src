@@ -31,7 +31,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 */
 
 const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
-const idEventDef EV_Grabber_RestorePhysics("<grabberRestorePhysics>", NULL, NULL);
 
 const int CHECK_CLIP_LIST_INTERVAL =	1000;
 
@@ -60,7 +59,6 @@ const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPE
 CLASS_DECLARATION( idEntity, CGrabber )
 
 	EVENT( EV_Grabber_CheckClipList, 	CGrabber::Event_CheckClipList )
-	EVENT( EV_Grabber_RestorePhysics,	CGrabber::Event_RestorePhysics )
 
 END_CLASS
 
@@ -168,8 +166,6 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	m_player.Restore(savefile);
 
 	m_drag.Restore(savefile);
-	// Schedule the event to restore the physics object from the drag entity
-	PostEventMS( &EV_Grabber_RestorePhysics, 0 );
 
 	// Read the three relevant values of the idRotation object
 	idVec3 origin;
@@ -790,13 +786,18 @@ CGrabber::RemoveFromClipList
 void CGrabber::RemoveFromClipList( int index ) 
 {
 	// remove the entity and reset the clipMask
-	if( index != -1 ) {
-		m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetClipMask( m_clipList[index].m_clipMask );
-		m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetContents( m_clipList[index].m_contents );
+	if( index != -1)
+	{
+		if (m_clipList[index].m_ent.GetEntity() != NULL)
+		{
+			m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetClipMask( m_clipList[index].m_clipMask );
+			m_clipList[index].m_ent.GetEntity()->GetPhysics()->SetContents( m_clipList[index].m_contents );
+		}
 		m_clipList.RemoveIndex( index );
 	}
 
-	if( !this->HasClippedEntity() ) {
+	if( !this->HasClippedEntity() )
+	{
 		// cancel CheckClipList because the list is empty
 		this->CancelEvents( &EV_Grabber_CheckClipList );
 	}
@@ -866,7 +867,7 @@ void CGrabber::Event_CheckClipList( void )
 	}
 }
 
-void CGrabber::Event_RestorePhysics() 
+void CGrabber::SetPhysicsFromDragEntity() 
 {
 	if (m_dragEnt.GetEntity() != NULL)
 	{

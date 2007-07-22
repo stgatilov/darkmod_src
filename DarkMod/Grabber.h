@@ -16,7 +16,6 @@
 class idPlayer;
 
 extern const idEventDef EV_Grabber_CheckClipList;
-extern const idEventDef EV_Grabber_RestorePhysics;
 
 class CGrabbedEnt 
 {
@@ -89,6 +88,11 @@ public:
 		**/
 		bool					FitsInHands( idEntity *ent, idPlayer *player, int bodyID = 0 );
 
+		/**
+		 * Restores the physics object from the drag entity after loading.
+		 */
+		void					SetPhysicsFromDragEntity();
+
 public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
@@ -124,11 +128,6 @@ protected:
 		void					RemoveFromClipList( int index );
 
 		void					Event_CheckClipList( void );
-
-		/**
-		 * Restores the physics object from the drag entity after loading.
-		 */
-		void					Event_RestorePhysics();
 
 		/**
 		* Throws the current item.
