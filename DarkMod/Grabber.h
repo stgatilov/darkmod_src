@@ -150,7 +150,7 @@ protected:
 		int						m_id;					// id of body being dragged
 		idVec3					m_localEntityPoint;	// dragged point in entity space
 
-		idPlayer				*m_player;
+		idEntityPtr<idPlayer>	m_player;
 		CForce_Grab				m_drag;
 
 		idRotation				m_rotation;

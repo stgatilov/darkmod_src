@@ -117,11 +117,35 @@ void CGrabber::Clear( void )
 
 void CGrabber::Save( idSaveGame *savefile ) const
 {
+	idEntity::Save(savefile);
 	// TODO
+
+	m_dragEnt.Save(savefile);
+	savefile->WriteJoint(m_joint);
+	savefile->WriteInt(m_id);
+	savefile->WriteVec3(m_localEntityPoint);
+	m_player.Save(savefile);
+
+	/*	idPlayer				*m_player;
+		CForce_Grab				m_drag;
+
+		idRotation				m_rotation;
+		int						m_rotationAxis;		// 0 = none, 1 = x, 2 = y, 3 = z
+		idVec2					m_mousePosition;		// mouse position when user pressed BUTTON_ZOOM
+
+		idList<CGrabbedEnt>		m_clipList;*/
+
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
 {
+	idEntity::Restore(savefile);
+
+	m_dragEnt.Restore(savefile);
+	savefile->ReadJoint(m_joint);
+	savefile->ReadInt(m_id);
+	savefile->ReadVec3(m_localEntityPoint);
+	m_player.Restore(savefile);
 	// TODO
 }
 
@@ -153,13 +177,13 @@ void CGrabber::StopDrag( void )
 	m_DistanceCount = 0;
 	m_dragEnt = NULL;
 
-	if(m_player)
+	if(m_player.GetEntity())
 	{
-		m_player->m_bDraggingBody = false;
-		m_player->m_bGrabberActive = false;
-		m_player->SetImmobilization( "Grabber", 0 );
-		m_player->SetHinderance( "Grabber", 1.0f, 1.0f );
-		m_player->RaiseWeapon();
+		m_player.GetEntity()->m_bDraggingBody = false;
+		m_player.GetEntity()->m_bGrabberActive = false;
+		m_player.GetEntity()->SetImmobilization( "Grabber", 0 );
+		m_player.GetEntity()->SetHinderance( "Grabber", 1.0f, 1.0f );
+		m_player.GetEntity()->RaiseWeapon();
 	}
 }
 
@@ -665,8 +689,8 @@ CGrabber::DeadMouse
 bool CGrabber::DeadMouse( void ) 
 {
 	// check mouse is in the deadzone along the x-axis or the y-axis
-	if( idMath::Fabs( m_player->usercmd.mx - m_mousePosition.x ) > MOUSE_DEADZONE ||
-		idMath::Fabs( m_player->usercmd.my - m_mousePosition.y ) > MOUSE_DEADZONE )
+	if( idMath::Fabs( m_player.GetEntity()->usercmd.mx - m_mousePosition.x ) > MOUSE_DEADZONE ||
+		idMath::Fabs( m_player.GetEntity()->usercmd.my - m_mousePosition.y ) > MOUSE_DEADZONE )
 		return false;
 
 	return true;
@@ -751,7 +775,7 @@ void CGrabber::Event_CheckClipList( void )
 
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
-	num = gameLocal.clip.EntitiesTouchingBounds( m_player->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
 	for( i = 0; i < m_clipList.Num(); i++ ) 
 	{
 		// Check clipEntites against entites touching player
@@ -831,7 +855,7 @@ void CGrabber::Throw( int HeldTime )
 	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1);
 
 	idEntity *ent = m_dragEnt.GetEntity();
-	ImpulseVec = m_player->firstPersonViewAxis[0];
+	ImpulseVec = m_player.GetEntity()->firstPersonViewAxis[0];
 	ImpulseVec.Normalize();
 
 	FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
@@ -847,7 +871,7 @@ void CGrabber::Throw( int HeldTime )
 
 	// Only apply the impulse for throwable items
 	if (ent->spawnArgs.GetBool("throwable", "1")) {
-		ent->ApplyImpulse( m_player, m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+		ent->ApplyImpulse( m_player.GetEntity(), m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
 	}
 
 	StopDrag();
