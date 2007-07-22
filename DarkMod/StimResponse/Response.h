@@ -61,7 +61,7 @@ protected:
 
 protected:
 	/**
-	 * Once this stimuls is finished, another one can be fired. So you
+	 * Once this stimulus is finished, another one can be fired. So you
 	 * can chain multiple stimulis one after the other. If NULL this is
 	 * a single event.
 	 */

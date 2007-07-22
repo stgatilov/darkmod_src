@@ -139,7 +139,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 					pScriptFkt, 
 					true, 
 					"eeffeeev", 
-					m_Owner, 
+					m_Owner.GetEntity(), 
 					StimEnt, 
 					(float) n,
 					(float) commType,

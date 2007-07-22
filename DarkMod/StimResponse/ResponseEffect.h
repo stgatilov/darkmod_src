@@ -16,18 +16,31 @@ class CResponseEffect
 protected:
 	const function_t* _scriptFunction;
 
+	// The name of the script
+	idStr _scriptName;
+
 	// The effect postfix, "1_1" for example
 	// This is passed to the script along with the "owner" entity,
 	// so that the script can lookup any arguments it might need.
 	idStr _effectPostfix;
 
+	// The owning entity of the script function. If this is empty, 
+	// the response script function is global.
+	idEntityPtr<idEntity> _owner;
+
+	// This is set to FALSE after loading, so that the script function
+	// gets resolved again.
+	bool _scriptFunctionValid;
+
 public:
-	// Pass the effect entity to this structure
-	CResponseEffect(const function_t* scriptFunction,
-					const idStr& effectPostfix) :
-		_scriptFunction(scriptFunction),
-		_effectPostfix(effectPostfix)
-	{}
+	// Pass the scriptowner to this structure or NULL for global functions
+	CResponseEffect(idEntity* scriptOwner,
+					const function_t* scriptFunction,
+					const idStr& scriptName,
+					const idStr& effectPostfix);
+
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 
 	/**
 	* Runs the attached response effect script 

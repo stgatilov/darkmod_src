@@ -40,14 +40,39 @@ void CResponse::Save(idSaveGame *savefile) const
 {
 	CStimResponse::Save(savefile);
 
-	// TODO
+	// TODO: Save this: CResponse			*m_FollowUp;
+
+	savefile->WriteString(m_ScriptFunction.c_str());
+	savefile->WriteFloat(m_MinDamage);
+	savefile->WriteFloat(m_MaxDamage);
+	savefile->WriteInt(m_NumRandomEffects);
+
+	savefile->WriteInt(m_ResponseEffects.Num());
+	for (int i = 0; i < m_ResponseEffects.Num(); i++)
+	{
+		m_ResponseEffects[i]->Save(savefile);
+	}
 }
 
 void CResponse::Restore(idRestoreGame *savefile)
 {
 	CStimResponse::Restore(savefile);
 
-	// TODO
+	// TODO: Restore this m_FollowUp
+
+	savefile->ReadString(m_ScriptFunction);
+	savefile->ReadFloat(m_MinDamage);
+	savefile->ReadFloat(m_MaxDamage);
+	savefile->ReadInt(m_NumRandomEffects);
+
+	int num;
+	savefile->ReadInt(num);
+	m_ResponseEffects.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_ResponseEffects[i] = new CResponseEffect(m_Owner.GetEntity(), NULL, "", "");
+		m_ResponseEffects[i]->Restore(savefile);
+	}
 }
 
 void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
@@ -161,8 +186,9 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 
 			if (scriptFunc != NULL)
 			{
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse: %s SCRIPTFUNC.\r", scriptFunc->Name());
 				// Allocate a new effect object
-				CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
+				CResponseEffect* newEffect = new CResponseEffect(m_Owner.GetEntity(), scriptFunc, effectPostfix, scriptStr);
 				// Add the item to the list
 				m_ResponseEffects.Append(newEffect);
 
@@ -185,7 +211,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 		if (scriptFunc != NULL)
 		{
 			// Allocate a new effect object
-			CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix);
+			CResponseEffect* newEffect = new CResponseEffect(m_Owner.GetEntity(), scriptFunc, effectPostfix, scriptStr);
 			
 			// Add the item to the list
 			m_ResponseEffects.Append(newEffect);
