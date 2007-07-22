@@ -67,7 +67,7 @@ public:
 	* Cannot rely on m_FrobEntity for this, because it could change to a new
 	* entity before the old entity is updated.
 	**/
-	idEntity	*m_FrobEntityPrevious;
+	idEntityPtr<idEntity>	m_FrobEntityPrevious;
 
 	unsigned long			AddLight(idLight *);
 	unsigned long			RemoveLight(idLight *);

@@ -1039,7 +1039,7 @@ void idClass::Event_Remove( void )
 
 	if( pDM && pDM->m_FrobEntity.GetEntity() == this )
 		pDM->m_FrobEntity = NULL;
-	if( pDM && pDM->m_FrobEntityPrevious == this )
+	if( pDM && pDM->m_FrobEntityPrevious.GetEntity() == this )
 		pDM->m_FrobEntityPrevious = NULL;
 
 	delete this;

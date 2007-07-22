@@ -45,7 +45,7 @@ void CDarkModPlayer::Save( idSaveGame *savefile ) const
 	savefile->WriteJoint(m_FrobJoint);
 	savefile->WriteInt(m_FrobID);
 	savefile->WriteTrace(m_FrobTrace);
-	//idEntity	*m_FrobEntityPrevious;
+	m_FrobEntityPrevious.Save(savefile);
 	savefile->WriteInt(m_LightgemValue);
 	savefile->WriteFloat(m_fColVal);
 	//idList<idLight *>			m_LightList;
@@ -61,7 +61,7 @@ void CDarkModPlayer::Restore( idRestoreGame *savefile )
 	savefile->ReadJoint(m_FrobJoint);
 	savefile->ReadInt(m_FrobID);
 	savefile->ReadTrace(m_FrobTrace);
-	//idEntity	*m_FrobEntityPrevious;
+	m_FrobEntityPrevious.Restore(savefile);
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
 	//idList<idLight *>			m_LightList;
