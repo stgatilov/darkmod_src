@@ -34,6 +34,52 @@ CStimResponseTimer::~CStimResponseTimer(void)
 {
 }
 
+void CStimResponseTimer::Save(idSaveGame *savefile) const
+{
+	savefile->WriteFloat(static_cast<float>(m_LastTick));
+	savefile->WriteFloat(static_cast<float>(m_Ticker));
+	savefile->WriteFloat(static_cast<float>(m_TicksPerMilliSecond));
+	savefile->WriteBool(m_Fired);
+
+	savefile->WriteInt(static_cast<int>(m_Type));
+	savefile->WriteInt(static_cast<int>(m_State));
+
+	savefile->WriteInt(m_Reload);
+	savefile->WriteInt(m_ReloadVal);
+
+	savefile->Write(&m_Timer, sizeof(m_Timer));
+	savefile->Write(&m_TimerVal, sizeof(m_TimerVal));
+}
+
+void CStimResponseTimer::Restore(idRestoreGame *savefile)
+{
+	float tempFloat;
+	int tempInt;
+
+	savefile->ReadFloat(tempFloat);
+	m_LastTick = static_cast<long>(tempFloat);
+
+	savefile->ReadFloat(tempFloat);
+	m_Ticker = static_cast<long>(tempFloat);
+
+	savefile->ReadFloat(tempFloat);
+	m_TicksPerMilliSecond = static_cast<long>(tempFloat);
+
+	savefile->ReadBool(m_Fired);
+
+	savefile->ReadInt(tempInt);
+	m_Type = static_cast<TimerType>(tempInt);
+
+	savefile->ReadInt(tempInt);
+	m_State = static_cast<TimerState>(tempInt);
+
+	savefile->ReadInt(m_Reload);
+	savefile->ReadInt(m_ReloadVal);
+
+	savefile->Read(&m_Timer, sizeof(m_Timer));
+	savefile->Read(&m_TimerVal, sizeof(m_TimerVal));
+}
+
 void CStimResponseTimer::SetTicks(double const &TicksPerSecond)
 {
 	m_TicksPerMilliSecond = static_cast<unsigned long>(TicksPerSecond);

@@ -48,14 +48,56 @@ void CStim::Save(idSaveGame *savefile) const
 {
 	CStimResponse::Save(savefile);
 
-	// TODO
+	m_Timer.Save(savefile);
+
+	// TODO: Save this: idList<idEntity *>		m_ResponseIgnore;
+
+	savefile->WriteBool(m_bUseEntBounds);
+	savefile->WriteBool(m_bCollisionBased);
+	savefile->WriteBool(m_bCollisionFired);
+
+	// Don't save collision ents (probably not required)
+	
+	savefile->WriteInt(m_TimeInterleave);
+	savefile->WriteInt(m_TimeInterleaveStamp);
+	savefile->WriteInt(m_MaxFireCount);
+	savefile->WriteFloat(m_Radius);
+	savefile->WriteBounds(m_Bounds);
+	savefile->WriteVec3(m_Velocity);
+	savefile->WriteFloat(m_Magnitude);
+	savefile->WriteInt(m_FallOffExponent);
+	savefile->WriteInt(m_MaxResponses);
+	savefile->WriteInt(m_CurResponses);
+	savefile->WriteInt(m_ApplyTimer);
+	savefile->WriteInt(m_ApplyTimerVal);
 }
 
 void CStim::Restore(idRestoreGame *savefile)
 {
 	CStimResponse::Restore(savefile);
 
-	// TODO
+	m_Timer.Restore(savefile);
+
+	// TODO: Restore this: idList<idEntity *>		m_ResponseIgnore;
+
+	savefile->ReadBool(m_bUseEntBounds);
+	savefile->ReadBool(m_bCollisionBased);
+	savefile->ReadBool(m_bCollisionFired);
+
+	// Don't restore collision ents (probably not required)
+	
+	savefile->ReadInt(m_TimeInterleave);
+	savefile->ReadInt(m_TimeInterleaveStamp);
+	savefile->ReadInt(m_MaxFireCount);
+	savefile->ReadFloat(m_Radius);
+	savefile->ReadBounds(m_Bounds);
+	savefile->ReadVec3(m_Velocity);
+	savefile->ReadFloat(m_Magnitude);
+	savefile->ReadInt(m_FallOffExponent);
+	savefile->ReadInt(m_MaxResponses);
+	savefile->ReadInt(m_CurResponses);
+	savefile->ReadInt(m_ApplyTimer);
+	savefile->ReadInt(m_ApplyTimerVal);
 }
 
 void CStim::AddResponseIgnore(idEntity *e)

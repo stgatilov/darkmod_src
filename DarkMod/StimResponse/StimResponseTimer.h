@@ -74,6 +74,9 @@ public:
 	} TimerState;
 
 public:
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
+
 	/**
 	 * If the stim contains information for a timed event, this function parses the string
 	 * and returns a timervalue.
