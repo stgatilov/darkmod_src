@@ -1,159 +1,507 @@
-models/darkmod/props/containers/barrel01.cm models/darkmod/containers/barrel01.cm
-models/darkmod/props/containers/barrel01.lwo models/darkmod/containers/barrel01.lwo
-models/darkmod/props/containers/barrell_large.lwo models/darkmod/containers/barrell_large.lwo
-models/darkmod/props/containers/bucket.lwo models/darkmod/containers/bucket.lwo
-models/darkmod/props/containers/bucket_wood.lwo models/darkmod/containers/bucket_wood.lwo
-models/darkmod/props/containers/crate01.lwo models/darkmod/containers/crate01.lwo
-models/darkmod/props/containers/crate02.lwo models/darkmod/containers/crate02.lwo
-models/darkmod/props/containers/crate03.lwo models/darkmod/containers/crate03.lwo
-models/darkmod/props/containers/sack1_low.lwo models/darkmod/containers/sack1_low.lwo
-models/darkmod/props/containers/tray.lwo models/darkmod/containers/tray.lwo
-models/darkmod/props/containers/bc_chest1.ase models/darkmod/containers/openable/bc_chest1.ase
-models/darkmod/props/containers/bc_chest1_lid.ase models/darkmod/containers/openable/bc_chest1_lid.ase
-models/darkmod/props/containers/bc_chest2.ase models/darkmod/containers/openable/bc_chest2.ase
-models/darkmod/props/containers/bc_chest2_lid.ase models/darkmod/containers/openable/bc_chest2_lid.ase
-models/darkmod/props/containers/bc_chest3.ase models/darkmod/containers/openable/bc_chest3.ase
-models/darkmod/props/containers/bc_chest3_lid.ase models/darkmod/containers/openable/bc_chest3_lid.ase
-models/darkmod/props/decorative/bc_cerampot.ase models/darkmod/decorative/vases/bc_cerampot.ase
-models/darkmod/props/decorative/bc_cerampot_lid.ase models/darkmod/decorative/vases/bc_cerampot_lid.ase
-models/darkmod/props/decorative/bc_cerampot_open.ase models/darkmod/decorative/vases/bc_cerampot_open.ase
-models/darkmod/props/decorative/bc_largepot.ase models/darkmod/decorative/vases/bc_largepot.ase
-models/darkmod/props/decorative/bc_mediumpot.ase models/darkmod/decorative/vases/bc_mediumpot.ase
-models/darkmod/props/decorative/bc_smallpot.ase models/darkmod/decorative/vases/bc_smallpot.ase
-models/darkmod/props/decorative/bc_urn01.ase models/darkmod/decorative/vases/bc_urn01.ase
-models/darkmod/props/decorative/bc_urn01_lid.ase models/darkmod/decorative/vases/bc_urn01_lid.ase
-models/darkmod/props/decorative/bc_urn01_open.ase models/darkmod/decorative/vases/bc_urn01_open.ase
-models/darkmod/props/decorative/builder_guard_statuette.lwo models/darkmod/decorative/statues/builder_guard_statuette.lwo
-models/darkmod/props/decorative/cup_marble.ase models/darkmod/decorative/vases/cup_marble.ase
-models/darkmod/props/decorative/cup_stone_large.ase models/darkmod/decorative/vases/cup_stone_large.ase
-models/darkmod/props/decorative/cup_stone_small.ase models/darkmod/decorative/vases/cup_stone_small.ase
-models/darkmod/props/decorative/emptypot.lwo models/darkmod/decorative/vases/emptypot.lwo
-models/darkmod/props/decorative/empty_flowerpot.lwo models/darkmod/decorative/vases/empty_flowerpot.lwo
-models/darkmod/props/decorative/gameboard.lwo models/darkmod/decorative/games/gameboard.lwo
-models/darkmod/props/decorative/gamepiece2.lwo models/darkmod/decorative/games/gamepiece2.lwo
-models/darkmod/props/decorative/globe.lwo models/darkmod/decorative/globe.lwo
-models/darkmod/props/decorative/hammer_stone.ase models/darkmod/decorative/hammer_stone.ase
-models/darkmod/props/decorative/hammer_stone_large.ase models/darkmod/decorative/hammer_stone_large.ase
-models/darkmod/props/decorative/hammer_stone_long.ase models/darkmod/decorative/hammer_stone_long.ase
-models/darkmod/props/decorative/orchid.lwo models/darkmod/decorative/orchid.lwo
-models/darkmod/props/decorative/pagan_orb_01.lwo models/darkmod/decorative/pagan_orb_01.lwo
-models/darkmod/props/decorative/pagan_orb_holder_01.lwo models/darkmod/decorative/pagan_orb_holder_01.lwo
-models/darkmod/props/decorative/statuette_priest_torso.lwo models/darkmod/decorative/statues/statuette_priest_torso.lwo
-models/darkmod/props/decorative/statue_folded_hands_medium.ase models/darkmod/decorative/statues/statue_folded_hands_medium.ase
-models/darkmod/props/decorative/statue_gargoyle.ase models/darkmod/decorative/statues/statue_gargoyle.ase
-models/darkmod/props/decorative/statue_gargoyle_medium.ase models/darkmod/decorative/statues/statue_gargoyle_medium.ase
-models/darkmod/props/decorative/statue_gargoyle_small.ase models/darkmod/decorative/statues/statue_gargoyle_small.ase
-models/darkmod/props/decorative/statue_lion_small.ase models/darkmod/decorative/statues/statue_lion_small.ase
-models/darkmod/props/decorative/statue_open_hands_small.ase models/darkmod/decorative/statues/statue_open_hands_small.ase
-models/darkmod/props/decorative/statue_torch_left.ase models/darkmod/decorative/statues/statue_torch_left.ase
-models/darkmod/props/decorative/statue_torch_right.ase models/darkmod/decorative/statues/statue_torch_right.ase
-models/darkmod/props/decorative/stoup.ase models/darkmod/decorative/stoup.ase
-models/darkmod/props/decorative/stoup_broken.ase models/darkmod/decorative/stoup_broken.ase
-models/darkmod/props/decorative/vase1.lwo models/darkmod/decorative/vases/vase1.lwo
-models/darkmod/props/decorative/vase2_medium.ase models/darkmod/decorative/vases/vase2_medium.ase
-models/darkmod/props/decorative/vase2_mini.ase models/darkmod/decorative/vases/vase2_mini.ase
-models/darkmod/props/decorative/vase2_small.ase models/darkmod/decorative/vases/vase2_small.ase
-models/darkmod/props/decorative/vaseantique.ase models/darkmod/decorative/vases/vaseantique.ase
-models/darkmod/props/decorative/vase_squat.lwo models/darkmod/decorative/vases/vase_squat.lwo
-models/darkmod/props/decorative/decorative_oversized/font1.lwo models/darkmod/waterworks/font1.lwo
-models/darkmod/props/decorative/decorative_oversized/statue_citywatch_salute.lwo models/darkmod/decorative/statues/statue_citywatch_salute.lwo
-models/darkmod/props/decorative/decorative_oversized/statue_folded_hands_large.ase models/darkmod/decorative/statues/statue_folded_hands_large.ase
-models/darkmod/props/decorative/decorative_oversized/statue_inquisitor01.lwo models/darkmod/decorative/statues/statue_inquisitor01.lwo
-models/darkmod/props/decorative/decorative_oversized/statue_lion_large.ase models/darkmod/decorative/statues/statue_lion_large.ase
-models/darkmod/props/decorative/decorative_oversized/statue_lion_medium.ase models/darkmod/decorative/statues/statue_lion_medium.ase
-models/darkmod/props/decorative/decorative_oversized/statue_noblewoman01.lwo models/darkmod/decorative/statues/statue_noblewoman01.lwo
-models/darkmod/props/decorative/decorative_oversized/statue_open_hands_large.ase models/darkmod/decorative/statues/statue_open_hands_large.ase
-models/darkmod/props/decorative/decorative_oversized/statue_priest_pointing.lwo models/darkmod/decorative/statues/statue_priest_pointing.lwo
-models/darkmod/props/decorative/decorative_oversized/the_hammer_big.lwo models/darkmod/decorative/statues/the_hammer_big.lwo
-models/darkmod/props/decorative/decorative_oversized/the_hammer_big_ruined.lwo models/darkmod/decorative/statues/the_hammer_big_ruined.lwo
-models/darkmod/props/decorative/decorative_oversized/the_hammer_medium1.lwo models/darkmod/decorative/statues/the_hammer_medium1.lwo
-models/darkmod/props/decorative/decorative_oversized/the_hammer_medium2.lwo models/darkmod/decorative/statues/the_hammer_medium2.lwo
-models/darkmod/props/decorative/decorative_oversized/the_hammer_small1.lwo models/darkmod/decorative/statues/the_hammer_small1.lwo
-models/darkmod/props/decorative/decorative_oversized/vase2_broken.ase models/darkmod/decorative/vases/vase2_broken.ase
-models/darkmod/props/decorative/decorative_oversized/vase2_broken_bottom.ase models/darkmod/decorative/vases/vase2_broken_bottom.ase
-models/darkmod/props/decorative/decorative_oversized/vase2_broken_handle.ase models/darkmod/decorative/vases/vase2_broken_handle.ase
-models/darkmod/props/decorative/decorative_oversized/vase2_broken_top.ase models/darkmod/decorative/vases/vase2_broken_top.ase  
-models/darkmod/props/decorative/decorative_oversized/vase2_large.ase models/darkmod/decorative/vases/vase2_large.ase
-models/darkmod/props/decorative/decorative_wall/antlers.lwo models/darkmod/decorative/wall/antlers.lwo
-models/darkmod/props/decorative/decorative_wall/banner1.lwo models/darkmod/decorative/wall/banner1.lwo
-models/darkmod/props/decorative/decorative_wall/banner2.lwo models/darkmod/decorative/wall/banner2.lwo
-models/darkmod/props/decorative/decorative_wall/bc_sign01.ase models/darkmod/decorative/signs/bc_sign01.ase
-models/darkmod/props/decorative/decorative_wall/boarhead.lwo models/darkmod/decorative/wall/boarhead.lwo
-models/darkmod/props/decorative/decorative_wall/boarhead_open.lwo models/darkmod/decorative/wall/boarhead_open.lwo
-models/darkmod/props/decorative/decorative_wall/castironsign1.lwo models/darkmod/hangers/castironsign1.lwo
-models/darkmod/props/decorative/decorative_wall/curtain01left.lwo models/darkmod/decorative/wall/curtain01left.lwo
-models/darkmod/props/decorative/decorative_wall/curtain01right.lwo models/darkmod/decorative/wall/curtain01right.lwo
-models/darkmod/props/decorative/decorative_wall/hugebanner.lwo models/darkmod/decorative/wall/hugebanner.lwo
-models/darkmod/props/decorative/decorative_wall/ironsignmount.ase models/darkmod/hangers/ironsignmount.ase
-models/darkmod/props/decorative/decorative_wall/lamphanger_simple01.lwo models/darkmod/hangers/lamphanger_simple01.lwo
-models/darkmod/props/decorative/decorative_wall/longbanner.cm models/darkmod/decorative/wall/longbanner.cm
-models/darkmod/props/decorative/decorative_wall/longbanner.lwo models/darkmod/decorative/wall/longbanner.lwo
-models/darkmod/props/decorative/decorative_wall/longbanner_ragged.lwo models/darkmod/decorative/wall/longbanner_ragged.lwo
-models/darkmod/props/decorative/decorative_wall/mounted_mask01.lwo models/darkmod/decorative/wall/mounted_mask01.lwo
-models/darkmod/props/decorative/decorative_wall/painting01.lwo models/darkmod/decorative/wall/painting01.lwo
-models/darkmod/props/decorative/decorative_wall/painting01_l.lwo models/darkmod/decorative/wall/painting01_l.lwo
-models/darkmod/props/decorative/decorative_wall/painting01_m.lwo models/darkmod/decorative/wall/painting01_m.lwo
-models/darkmod/props/decorative/decorative_wall/plain_shield.lwo models/darkmod/decorative/wall/shields/plain_shield.lwo
-models/darkmod/props/decorative/decorative_wall/shield.lwo models/darkmod/decorative/wall/shields/shield.lwo
-models/darkmod/props/decorative/decorative_wall/shield_and_swords02.lwo models/darkmod/decorative/wall/shields/shield_and_swords02.lwo
-models/darkmod/props/decorative/decorative_wall/signhanger_simple01.lwo models/darkmod/hangers/signhanger_simple01.lwo
-models/darkmod/props/decorative/decorative_wall/sign_anvilshape.lwo models/darkmod/decorative/signs/sign_anvilshape.lwo
-models/darkmod/props/decorative/decorative_wall/sign_shieldshape01.lwo models/darkmod/decorative/signs/sign_shieldshape01.lwo
-models/darkmod/props/decorative/decorative_wall/snswallmount.lwo  models/darkmod/decorative/wall/shields/snswallmount.lwo 
-models/darkmod/props/decorative/decorative_wall/verylongbanner.lwo models/darkmod/decorative/wall/verylongbanner.lwo
-models/darkmod/props/decorative/decorative_wall/wooden_plaque_empty.lwo models/darkmod/decorative/wall/wooden_plaque_empty.lwo
-models/darkmod/props/dungeon/metal_ring.ase models/darkmod/dungeon/metal_ring.ase
-models/darkmod/props/dungeon/stock.lwo models/darkmod/dungeon/stock.lwo
-models/darkmod/props/dungeon/torturechair.lwo models/darkmod/dungeon/torturechair.lwo
-models/darkmod/props/fireplace/burntwood.lwo models/darkmod/fireplace/burntwood.lwo
-models/darkmod/props/fireplace/campfire_burnt_out.lwo models/darkmod/fireplace/campfire_burnt_out.lwo
-models/darkmod/props/fireplace/campfire_logs.lwo models/darkmod/fireplace/campfire_logs.lwo
-models/darkmod/props/fireplace/fireplace_brick.ase models/darkmod/fireplace/fireplace_brick.ase
-models/darkmod/props/fireplace/fireplace_stone.ase models/darkmod/fireplace/fireplace_stone.ase
-models/darkmod/props/fireplace/fireplace_wooden.ase models/darkmod/fireplace/fireplace_wooden.ase
-models/darkmod/props/fireplace/grate.lwo models/darkmod/fireplace/grate.lwo
-models/darkmod/props/fireplace/tools.lwo models/darkmod/fireplace/tools.lwo
-models/darkmod/props/furniture/bathtub01.lwo models/darkmod/waterworks/bathtub01.lwo
-models/darkmod/props/furniture/bc_coatrack.ase models/darkmod/hangers/bc_coatrack.ase
-models/darkmod/props/furniture/bookshelf1.lwo models/darkmod/props/furniture/bookshelf1.lwo
-models/darkmod/props/furniture/bookshelf_huge_01.lwo models/darkmod/furniture/shelves/bookshelf_huge_01.lwo
-models/darkmod/props/furniture/bookshelf_huge_02.lwo models/darkmod/furniture/shelves/bookshelf_huge_02.lwo
-models/darkmod/props/furniture/bookshelf_huge_geared_01.lwo models/darkmod/furniture/shelves/bookshelf_huge_geared_01.lwo
-models/darkmod/props/furniture/bookshelf_huge_geared_02.lwo models/darkmod/furniture/shelves//bookshelf_huge_geared_02.lwo
-models/darkmod/props/furniture/bookshelf_tall_empty.lwo models/darkmod/furniture/shelves/bookshelf_tall_empty.lwo 
-models/darkmod/props/furniture/bookshelf_wide01.lwo models/darkmod/furniture/shelves/bookshelf_wide01.lwo 
-models/darkmod/props/furniture/cabinet1.lwo models/darkmod/furniture/cabinet1.lwo
-models/darkmod/props/furniture/commode.lwo models/darkmod/furniture/commode.lwo
-models/darkmod/props/furniture/desk1.lwo models/darkmod/furniture/desk1.lwo
-models/darkmod/props/furniture/dresser02.lwo models/darkmod/furniture/dresser02.lwo
-models/darkmod/props/furniture/dresser03.lwo models/darkmod/furniture/dresser03.lwo
-models/darkmod/props/furniture/wardrobe.lwo models/darkmod/furniture/wardrobe.lwo
-models/darkmod/props/furniture/winerack.ase models/darkmod/furniture/shelves/winerack.ase
-models/darkmod/props/furniture/woodenchest.ase models/darkmod/furniture/woodenchest.ase
-models/darkmod/props/furniture/woodenchest_left.ase models/darkmod/furniture/woodenchest_left.ase
-models/darkmod/props/furniture/woodenchest_main.ase models/darkmod/furniture/woodenchest_main.ase
-models/darkmod/props/furniture/woodenchest_right.ase models/darkmod/furniture/woodenchest_right.ase
-models/darkmod/props/furniture/beds/4posterbed.lwo models/darkmod/furniture/beds/4posterbed.lwo
-models/darkmod/props/furniture/beds/mattress.lwo models/darkmod/furniture/beds/mattress.lwo
-models/darkmod/props/furniture/beds/singlebed1.lwo models/darkmod/furniture/beds/singlebed1.lwo
-models/darkmod/props/furniture/seating/armchair1.lwo models/darkmod/furniture/seating/armchair1.lwo
-models/darkmod/props/furniture/seating/bench_wooden01.lwo models/darkmod/furniture/seating/bench_wooden01.lwo
-models/darkmod/props/furniture/seating/church_pew.lwo models/darkmod/furniture/seating/church_pew.lwo
-models/darkmod/props/furniture/seating/dchair2.lwo models/darkmod//furniture/seating/dchair2.lwo
-models/darkmod/props/furniture/seating/pianostool.ase models/darkmod/furniture/seating/pianostool.ase
-models/darkmod/props/furniture/seating/rough_stool.ase models/darkmod/furniture/seating/rough_stool.ase
-models/darkmod/props/furniture/seating/round_stool.ase models/darkmod/furniture/seating/round_stool.ase
-models/darkmod/props/furniture/seating/rusticchair.lwo models/darkmod/furniture/seating/rusticchair.lwo
-models/darkmod/props/furniture/seating/sofa1.lwo models/darkmod/furniture/seating/sofa1.lwo
-models/darkmod/props/furniture/seating/vic_diningchair1.lwo models/darkmod/furniture/seating/vic_diningchair1.lwo
-models/darkmod/props/furniture/seating/wchair1.lwo models/darkmod/furniture/wchair1.lwo
-models/darkmod/props/furniture/tables/coffeetable1.lwo models/darkmod/furniture/tables/coffeetable1.lwo
-models/darkmod/props/furniture/tables/dining_table1.lwo models/darkmod/furniture/tables/dining_table1.lwo
-models/darkmod/props/furniture/tables/dining_table2.lwo models/darkmod/furniture/tables/dining_table2.lwo
-models/darkmod/props/furniture/tables/dining_table_huge1.lwo models/darkmod/furniture/tables/dining_table_huge1.lwo
-models/darkmod/props/furniture/tables/dining_table_small01.lwo models/darkmod/furniture/tables/dining_table_small01.lwo
-models/darkmod/props/furniture/tables/endtable1.lwo models/darkmod/furniture/tables/endtable1.lwo
-models/darkmod/props/furniture/tables/endtable_round01.lwo models/darkmod/furniture/tables/endtable_round01.lwo
-models/darkmod/props/furniture/tables/endtable_square01.lwo models/darkmod/furniture/tables/endtable_square01.lwo
-models/darkmod/props/furniture/tables/rtable1.lwo models/darkmod/furniture/tables/rtable1.lwo
-models/darkmod/props/furniture/tables/wtable1.lwo models/darkmod/furniture/tables/wtable1.lwo
+
+
+models/darkmod/props/furniture/bookshelf1.lwo models/darkmod/props/furniture/shelves/bookshelf1.lwo
+models/darkmod/furniture/wchair1.lwo models/darkmod/furniture/seating/wchair1.lwo
+
+
+
+models/darkmod/decorative/stoup_broken.ase models/darkmod/junk/stoup_broken.ase
+models/darkmod/decorative/vases/vase2_broken.ase models/darkmod/junk/vase2_broken.ase
+models/darkmod/decorative/vases/vase2_broken_bottom.ase models/darkmod/junk/vase2_broken_bottom.ase
+models/darkmod/decorative/vases/vase2_broken_handle.ase models/darkmod/junk/vase2_broken_handle.ase
+models/darkmod/decorative/vases/vase2_broken_top.ase models/darkmod/junk/vase2_broken_top.ase 
+
+
+models/darkmod/props/gen/gen_bucket.lwo models/darkmod/containers/gen_bucket.lwo
+models/darkmod/props/gen/gen_goblet1.lwo models/darkmod/kitchen/gen_goblet1.lwo
+models/darkmod/props/gen/gen_squarestreetlamp.lwo models/darkmod/lights/non-extinguishable/streetlamps/gen_squarestreetlamp.lwo
+models/darkmod/props/gen/gen_waterpump.lwo models/darkmod/waterworks/gen_waterpump.lwo
+
+
+
+models/darkmod/props/graveyard/bone.ase models/darkmod/graveyard/bones/bone.ase
+models/darkmod/props/graveyard/bones_arm_left.ase models/darkmod/graveyard/bones/bones_arm_left.ase
+models/darkmod/props/graveyard/bones_arm_right.ase models/darkmod/graveyard/bones/bones_arm_right.ase
+models/darkmod/props/graveyard/bones_legs.ase models/darkmod/graveyard/bones/bones_legs.ase
+models/darkmod/props/graveyard/bones_leg_left.ase models/darkmod/graveyard/bones/bones_leg_left.ase
+models/darkmod/props/graveyard/bones_leg_right.ase models/darkmod/graveyard/bones/bones_leg_right.ase
+models/darkmod/props/graveyard/bones_spine.ase models/darkmod/graveyard/bones/bones_spine.ase
+models/darkmod/props/graveyard/grave_big_1.lwo models/darkmod/graveyard/grave_big_1.lwo
+models/darkmod/props/graveyard/grave_big_2.lwo models/darkmod/graveyard/grave_big_2.lwo
+models/darkmod/props/graveyard/grave_big_3.lwo models/darkmod/graveyard/grave_big_3.lwo
+models/darkmod/props/graveyard/grave_big_4.lwo models/darkmod/graveyard/grave_big_4.lwo
+models/darkmod/props/graveyard/grave_big_5.lwo models/darkmod/graveyard/grave_big_5.lwo
+models/darkmod/props/graveyard/grave_chain_broken.lwo models/darkmod/graveyard/grave_chain_broken.lwo
+models/darkmod/props/graveyard/grave_chain_long.lwo models/darkmod/graveyard/grave_chain_long.lwo
+models/darkmod/props/graveyard/grave_chain_short.lwo models/darkmod/graveyard/grave_chain_short.lwo
+models/darkmod/props/graveyard/grave_fence.lwo models/darkmod/graveyard/grave_fence.lwo
+models/darkmod/props/graveyard/grave_fence_pole.lwo models/darkmod/graveyard/grave_fence_pole.lwo
+models/darkmod/props/graveyard/grave_pole.lwo models/darkmod/graveyard/grave_pole.lwo
+models/darkmod/props/graveyard/grave_rectangle.lwo models/darkmod/graveyard/grave_rectangle.lwo
+models/darkmod/props/graveyard/grave_rect_flinder.lwo models/darkmod/graveyard/grave_rect_flinder.lwo
+models/darkmod/props/graveyard/grave_rect_ruined.lwo models/darkmod/props/graveyard/grave_rect_ruined.lwo
+models/darkmod/props/graveyard/grave_simple_1.lwo models/darkmod/graveyard/grave_simple_1.lwo
+models/darkmod/props/graveyard/grave_simple_2.lwo models/darkmod/graveyard/grave_simple_2.lwo
+models/darkmod/props/graveyard/grave_simple_3.lwo models/darkmod/graveyard/grave_simple_3.lwo
+models/darkmod/props/graveyard/grave_simple_4.lwo models/darkmod/graveyard/grave_simple_4.lwo
+models/darkmod/props/graveyard/grave_simple_5.lwo models/darkmod/graveyard/grave_simple_5.lwo
+models/darkmod/props/graveyard/grave_wall_1.lwo models/darkmod/graveyard/grave_wall_1.lwo
+models/darkmod/props/graveyard/grave_wall_2.lwo models/darkmod/props/graveyard/grave_wall_2.lwo
+models/darkmod/props/graveyard/sarcophagus_closed.lwo models/darkmod/graveyard/sarcophagus_closed.lwo
+models/darkmod/props/graveyard/sarcophagus_lid.lwo models/darkmod/graveyard/sarcophagus_lid.lwo 
+models/darkmod/props/graveyard/sarcophagus_open.lwo models/darkmod/graveyard/sarcophagus_open.lwo
+models/darkmod/props/graveyard/sarcophagus_ruined.lwo models/darkmod/graveyard/sarcophagus_ruined.lwo
+models/darkmod/props/graveyard/sarcophagus_small_1.lwo models/darkmod/graveyard/sarcophagus_small_1.lwo
+models/darkmod/props/graveyard/sarcophagus_small_2.lwo models/darkmod/graveyard/sarcophagus_small_2.lwo
+models/darkmod/props/graveyard/skull.lwo models/darkmod/graveyard/bones/skull.lwo
+models/darkmod/props/graveyard/skull2.ase models/darkmod/graveyard/bones/skull2.ase
+models/darkmod/props/graveyard/skull2.cm models/darkmod/graveyard/bones/skull2.cm
+models/darkmod/props/graveyard/urn.ase models/darkmod/graveyard/urn.ase
+
+
+
+
+models/darkmod/props/junk/bc_ceramicpot_b.ase models/darkmod/junk/bc_ceramicpot_b.ase
+models/darkmod/props/junk/broken_cart.lwo models/darkmod/junk/broken_cart.lwo
+models/darkmod/props/junk/cartwheel.lwo models/darkmod/junk/cartwheel.lwo
+models/darkmod/props/junk/plank_long.lwo models/darkmod/junk/plank_long.lwo
+models/darkmod/props/junk/plank_longer.lwo models/darkmod/junk/plank_longer.lwo
+models/darkmod/props/junk/plank_short.lwo models/darkmod/junk/plank_short.lwo
+models/darkmod/props/junk/wbottle01_broken.lwo models/darkmod/junk/wbottle01_broken.lwo
+
+
+
+models/darkmod/props/junk/flinders/ceramicflind01.ase models/darkmod/junk/generic_shards/ceramicflind01.ase
+models/darkmod/props/junk/flinders/ceramicflind02.ase models/darkmod/junk/generic_shards/ceramicflind02.ase
+models/darkmod/props/junk/flinders/ceramicflind03.ase models/darkmod/junk/generic_shards/ceramicflind03.ase
+models/darkmod/props/junk/flinders/ceramicflind04.ase models/darkmod/junk/generic_shards/ceramicflind04.ase
+
+
+
+
+models/darkmod/props/kitchen/bottle01.lwo models/darkmod/kitchen/bottle01.lwo
+models/darkmod/props/kitchen/bottle02.lwo models/darkmod/kitchen/bottle02.lwo
+models/darkmod/props/kitchen/cake.lwo models/darkmod/kitchen/food/cake.lwo
+models/darkmod/props/kitchen/chamberpot.lwo models/darkmod/kitchen/chamberpot.lwo
+models/darkmod/props/kitchen/cheapbeermug.lwo models/darkmod/kitchen/cheapbeermug.lwo
+models/darkmod/props/kitchen/cookpot.lwo models/darkmod/kitchen/cookpot.lwo
+models/darkmod/props/kitchen/fork_ornamental.lwo models/darkmod/kitchen/utensils/fork_ornamental.lwo
+models/darkmod/props/kitchen/goblet2.lwo models/darkmod/kitchen/goblet2.lwo
+models/darkmod/props/kitchen/hanging_goose.ase models/darkmod/kitchen/food/hanging_goose.ase
+models/darkmod/props/kitchen/jar1.lwo models/darkmod/kitchen/jar1.lwo
+models/darkmod/props/kitchen/knife_ornamental.lwo models/darkmod/kitchen/utensils/knife_ornamental.lwo
+models/darkmod/props/kitchen/muffin.lwo models/darkmod/kitchen/food/muffin.lwo
+models/darkmod/props/kitchen/plate_s.lwo models/darkmod/kitchen/plate_s.lwo
+models/darkmod/props/kitchen/sack1.lwo models/darkmod/containers/sack1.lwo
+models/darkmod/props/kitchen/sack_bent.lwo models/darkmod/containers/sack_bent.lwo
+models/darkmod/props/kitchen/sack_closed.lwo models/darkmod/containers/sack_closed.lwo
+models/darkmod/props/kitchen/smspoon_ornamental.lwo models/darkmod/kitchen/utensils/smspoon_ornamental.lwo
+models/darkmod/props/kitchen/spoon_ornamental.lwo models/darkmod/kitchen/utensils/spoon_ornamental.lwo
+models/darkmod/props/kitchen/wbottle01.cm models/darkmod/kitchen/wbottle01.cm
+models/darkmod/props/kitchen/wbottle01.lwo models/darkmod/kitchen/wbottle01.lwo
+
+
+
+
+models/darkmod/props/kitchen/food/bc_carrot.ase models/darkmod/kitchen/food/bc_carrot.ase
+models/darkmod/props/kitchen/food/bc_turnip.ase models/darkmod/kitchen/food/bc_turnip.ase
+
+
+ 
+models/darkmod/props/lights/extinguishable/bracket.lwo models/darkmod/hangers/bracket.lwo
+models/darkmod/props/lights/extinguishable/candelabra01.lwo models/darkmod/lights/extinguishable/candelabra01.lwo
+models/darkmod/props/lights/extinguishable/candle1.lwo models/darkmod/lights/extinguishable/candle1.lwo
+models/darkmod/props/lights/extinguishable/candle2.lwo models/darkmod/lights/extinguishable/candle2.lwo
+models/darkmod/props/lights/extinguishable/candlestick1.cm models/darkmod/lights/extinguishable/candlestick1.cm
+models/darkmod/props/lights/extinguishable/candlestick1.lwo models/darkmod/lights/extinguishable/candlestick1.lwo
+models/darkmod/props/lights/extinguishable/candlestick2.cm models/darkmod/lights/extinguishable/candlestick2.cm
+models/darkmod/props/lights/extinguishable/candlestick2.lwo models/darkmod/lights/extinguishable/candlestick2.lwo
+models/darkmod/props/lights/extinguishable/candlestickholder.lwo models/darkmod/lights/extinguishable/candlestickholder.lwo
+models/darkmod/props/lights/extinguishable/candle_holder.lwo models/darkmod/lights/extinguishable/candle_holder.lwo
+models/darkmod/props/lights/extinguishable/chandelier1.lwo models/darkmod/lights/extinguishable/chandelier1.lwo
+models/darkmod/props/lights/extinguishable/flame_stand.ase models/darkmod/lights/extinguishable/flame_stand.ase
+models/darkmod/props/lights/extinguishable/gaslight4.lwo models/darkmod/lights/extinguishable/gaslight4.lwo
+models/darkmod/props/lights/extinguishable/sq_torch.lwo models/darkmod/lights/extinguishable/sq_torch.lwo
+models/darkmod/props/lights/extinguishable/standing_torch01.lwo models/darkmod/lights/extinguishable/standing_torch01.lwo
+models/darkmod/props/lights/extinguishable/torch.lwo models/darkmod/lights/extinguishable/torch.lwo
+models/darkmod/props/lights/extinguishable/torch_metal.ase models/darkmod/lights/extinguishable/torch_metal.ase
+models/darkmod/props/lights/extinguishable/torch_metal_wall.ase models/darkmod/lights/extinguishable/torch_metal_wall.ase
+models/darkmod/props/lights/extinguishable/wallcandles1.lwo models/darkmod/lights/extinguishable/wallcandles1.lwo
+
+
+models/darkmod/props/lights/non-extinguishable/arclight.lwo models/darkmod/lights/non-extinguishable/arclight.lwo
+models/darkmod/props/lights/non-extinguishable/bc_desklamp01.ase models/darkmod/lights/non-extinguishable/bc_desklamp01.ase
+models/darkmod/props/lights/non-extinguishable/bc_lantern.ase models/darkmod/lights/non-extinguishable/bc_lantern.ase
+models/darkmod/props/lights/non-extinguishable/bc_sphere_wall_light.ase models/darkmod/lights/non-extinguishable/bc_sphere_wall_light.ase
+models/darkmod/props/lights/non-extinguishable/bc_streetlamp01.ase models/darkmod/lights/non-extinguishable/streetlamps/bc_streetlamp01.ase
+models/darkmod/props/lights/non-extinguishable/bc_streetlampspot.ase models/darkmod/lights/non-extinguishable/streetlamps/bc_streetlampspot.ase
+models/darkmod/props/lights/non-extinguishable/bc_streetlamp_double.ase models/darkmod/lights/non-extinguishable/streetlamps/bc_streetlamp_double.ase
+models/darkmod/props/lights/non-extinguishable/bc_wall_lamp.ase models/darkmod/lights/non-extinguishable/bc_wall_lamp.ase
+models/darkmod/props/lights/non-extinguishable/grill_light.lwo models/darkmod/lights/non-extinguishable/grill_light.lwo
+models/darkmod/props/lights/non-extinguishable/hanging_lantern.lwo models/darkmod/lights/non-extinguishable/hanging_lantern.lwo
+models/darkmod/props/lights/non-extinguishable/hlamp.lwo models/darkmod/lights/non-extinguishable/hlamp.lwo
+models/darkmod/props/lights/non-extinguishable/hooded_lantern.lwo models/darkmod/lights/non-extinguishable/hooded_lantern.lwo
+models/darkmod/props/lights/non-extinguishable/lamp_shaded.lwo models/darkmod/lights/non-extinguishable/lamp_shaded.lwo
+models/darkmod/props/lights/non-extinguishable/roundstreetlamp.lwo models/darkmod/lights/non-extinguishable/streetlamps/roundstreetlamp.lwo
+models/darkmod/props/lights/non-extinguishable/ship_lamp.lwo models/darkmod/lights/non-extinguishable/ship_lamp.lwo
+models/darkmod/props/lights/non-extinguishable/squarehanginglamp.lwo models/darkmod/lights/non-extinguishable/squarehanginglamp.lwo
+models/darkmod/props/lights/non-extinguishable/squarestreetlamp.lwo models/darkmod/lights/non-extinguishable/streetlamps/squarestreetlamp.lwo
+models/darkmod/props/lights/non-extinguishable/streetlamp1.lwo models/darkmod/lights/non-extinguishable/streetlamps/streetlamp1.lwo
+models/darkmod/props/lights/non-extinguishable/wallight1.lwo models/darkmod/lights/non-extinguishable/wallight1.lwo
+models/darkmod/props/lights/non-extinguishable/wallight2.lwo models/darkmod/lights/non-extinguishable/wallight2.lwo
+models/darkmod/props/lights/non-extinguishable/wallight_outdoor3.lwo models/darkmod/lights/non-extinguishable/wallight_outdoor3.lwo
+
+
+
+
+models/darkmod/props/loot/amulet_round_g.lwo models/darkmod/loot/jewellery/amulet_round_g.lwo
+models/darkmod/props/loot/bc_bagdiamond.ase models/darkmod/loot/bc_bagdiamond.ase  
+models/darkmod/props/loot/bc_baggems.ase models/darkmod/loot/bc_baggems.ase
+models/darkmod/props/loot/bc_trophy.ase models/darkmod/loot/bc_trophy.ase
+models/darkmod/props/loot/coinsa.lwo models/darkmod/loot/coins/coinsa.lwo
+models/darkmod/props/loot/coinsb.lwo models/darkmod/loot/coins/coinsb.lwo
+models/darkmod/props/loot/coinsc.lwo models/darkmod/loot/coins/coinsc.lwo
+models/darkmod/props/loot/diamond.lwo models/darkmod/loot/diamond.lwo
+models/darkmod/props/loot/diamond_large.ase models/darkmod/loot/diamond_large.ase
+models/darkmod/props/loot/diamond_large.cm models/darkmod/loot/diamond_large.cm
+models/darkmod/props/loot/goblet1.lwo models/darkmod/loot/goblet1.lwo
+models/darkmod/props/loot/gold_coin.lwo models/darkmod/loot/coins/gold_coin.lwo
+models/darkmod/props/loot/plate_g.lwo models/darkmod/loot/plate_g.lwo
+models/darkmod/props/loot/purse_p.lwo models/darkmod/loot/purse_p.lwo
+models/darkmod/props/loot/purse_p_belt.lwo models/darkmod/loot/purse_p_belt.lwo
+models/darkmod/props/loot/purse_p_goldspilt.lwo models/darkmod/loot/coins/purse_p_goldspilt.lwo
+models/darkmod/props/loot/religious_symbol01.lwo models/darkmod/loot/religious_symbol01.lwo
+models/darkmod/props/loot/religious_symbol01_small.lwo models/darkmod/loot/religious_symbol01_small.lwo
+models/darkmod/props/loot/ring_diamond.lwo models/darkmod/loot/jewellery/ring_diamond.lwo
+models/darkmod/props/loot/ring_ruby.lwo models/darkmod/loot/jewellery/ring_ruby.lwo
+models/darkmod/props/loot/ruby.lwo models/darkmod/loot/ruby.lwo
+models/darkmod/props/loot/scepter.ase models/darkmod/loot/scepter.ase
+models/darkmod/props/loot/smallbowl.lwo models/darkmod/loot/smallbowl.lwo
+models/darkmod/props/loot/statue_loot.ase models/darkmod/loot/statue_loot.ase
+models/darkmod/props/loot/vase_g.lwo models/darkmod/loot/vase_g.lwo
+models/darkmod/props/loot/wbottle03.lwo models/darkmod/loot/wbottle03.lwo
+
+
+
+
+models/darkmod/props/mechanical/fan.lwo
+models/darkmod/props/mechanical/gear.lwo models/darkmod/mechanical/gears/gear.lwo
+models/darkmod/props/mechanical/gear_clock_hand_1.lwo models/darkmod/mechanical/gear_clock_hand_1.lwo
+models/darkmod/props/mechanical/gear_clock_hand_2.lwo models/darkmod/mechanical/gear_clock_hand_2.lwo
+models/darkmod/props/mechanical/gear_hollow_2_spoke.lwo models/darkmod/mechanical/gears/gear_hollow_2_spoke.lwo
+models/darkmod/props/mechanical/gear_hollow_3_spoke.lwo models/darkmod/mechanical/gears/gear_hollow_3_spoke.lwo
+models/darkmod/props/mechanical/gear_hollow_4_spoke.lwo models/darkmod/mechanical/gears/gear_hollow_4_spoke.lwo
+models/darkmod/props/mechanical/gear_hollow_5_spoke.lwo models/darkmod/mechanical/gears/gear_hollow_5_spoke.lwo
+models/darkmod/props/mechanical/gear_large_hollow_5_spoke.lwo models/darkmod/mechanical/gears/gear_large_hollow_5_spoke.lwo
+models/darkmod/props/mechanical/gear_small.lwo models/darkmod/mechanical/gears/gear_small.lwo
+models/darkmod/props/mechanical/gear_small_hollow_2_spoke.lwo models/darkmod/mechanical/gears/gear_small_hollow_2_spoke.lwo
+models/darkmod/props/mechanical/gear_small_hollow_3_spoke.lwo models/darkmod/mechanical/gears/gear_small_hollow_3_spoke.lwo
+models/darkmod/props/mechanical/gear_small_hollow_4_spoke.lwo models/darkmod/mechanical/gears/gear_small_hollow_4_spoke.lwo
+models/darkmod/props/mechanical/gear_small_hollow_5_spoke.lwo models/darkmod/mechanical/gears/gear_small_hollow_5_spoke.lwo
+models/darkmod/props/mechanical/generator1.lwo models/darkmod/mechanical/generator1.lwo
+models/darkmod/props/mechanical/generator_big.lwo models/darkmod/mechanical/generator_big.lwo
+models/darkmod/props/mechanical/numberwheel.lwo models/darkmod/mechanical/numberwheel.lwo
+models/darkmod/props/mechanical/numberwheel_button.lwo models/darkmod/mechanical/numberwheel_button.lwo
+models/darkmod/props/mechanical/numberwheel_lever.lwo models/darkmod/mechanical/switches/numberwheel_lever.lwo
+models/darkmod/props/mechanical/numberwheel_main.lwo models/darkmod/mechanical/numberwheel_main.lwo
+models/darkmod/props/mechanical/watermill_cogwheel_big.ase models/darkmod/mechanical/gears/watermill_cogwheel_big.ase
+models/darkmod/props/mechanical/watermill_cogwheel_small.ase models/darkmod/mechanical/gears/watermill_cogwheel_small.ase
+models/darkmod/props/mechanical/watermill_pole.ase models/darkmod/mechanical/watermill_pole.ase
+models/darkmod/props/mechanical/watermill_wheel.ase models/darkmod/mechanical/watermill_wheel.ase
+
+
+
+
+
+models/darkmod/props/mechanical/gauges/bc_gaugesteam.ase models/darkmod/mechanical/gauges/bc_gaugesteam.ase
+models/darkmod/props/mechanical/gauges/bc_r_gaugeneedle.ase models/darkmod/mechanical/gauges/bc_r_gaugeneedle.ase
+models/darkmod/props/mechanical/gauges/bc_squaregauge.ase models/darkmod/mechanical/gauges/bc_squaregauge.ase
+models/darkmod/props/mechanical/gauges/bc_s_gaugeneedle.ase models/darkmod/mechanical/gauges/bc_s_gaugeneedle.ase
+
+
+
+models/darkmod/props/mechanical/smokestacks/smokestack_short_wall.ase models/darkmod/mechanical/smokestack_short_wall.ase
+models/darkmod/props/mechanical/smokestacks/smokestack_tall_wall.ase models/darkmod/mechanical/smokestack_tall_wall.ase
+
+
+
+
+models/darkmod/props/mechanical/valves/valve1_large.ase models/darkmod/mechanical/pipes/valve1_large.ase
+models/darkmod/props/mechanical/valves/valve1_small.ase models/darkmod/mechanical/pipes/valve1_small.ase
+models/darkmod/props/mechanical/valves/valve1_xl.ase models/darkmod/mechanical/pipes/valve1_xl.ase
+models/darkmod/props/mechanical/valves/valve2_large.ase models/darkmod/mechanical/pipes/valve2_large.ase
+models/darkmod/props/mechanical/valves/valve2_small.ase models/darkmod/mechanical/pipes/valve2_small.ase
+models/darkmod/props/mechanical/valves/valve2_xl.ase models/darkmod/mechanical/pipes/valve2_xl.ase
+
+
+
+models/darkmod/props/misc/anchor.lwo models/darkmod/nautical/anchor.lwo
+models/darkmod/props/misc/bell01.ase models/darkmod/misc/bell01.ase
+models/darkmod/props/misc/bell02.ase models/darkmod/misc/bell02.ase
+models/darkmod/props/misc/cart_low.lwo models/darkmod/misc/cart_low.lwo
+models/darkmod/props/misc/dice.ase models/darkmod/decorative/games/dice.ase
+models/darkmod/props/misc/empty.lwo models/darkmod/misc/empty.lwo
+models/darkmod/props/misc/ink&quill.lwo models/darkmod/misc/ink&quill.lwo
+models/darkmod/props/misc/marketstall.lwo models/darkmod/misc/marketstall.lwo
+models/darkmod/props/misc/perftestmulti.lwo models/darkmod/misc/system/perftestmulti.lwo
+models/darkmod/props/misc/perftestmulti0.lwo models/darkmod/misc/system/perftestmulti0.lwo
+models/darkmod/props/misc/rope_coil01.lwo models/darkmod/misc/rope_coil01.lwo
+models/darkmod/props/misc/staff.lwo models/darkmod/misc/staff.lwo
+models/darkmod/props/misc/strawbale_large01.lwo models/darkmod/misc/strawbale_large01.lwo
+models/darkmod/props/misc/strawbale_small01.lwo models/darkmod/misc/strawbale_small01.lwo
+models/darkmod/props/misc/waterpump.ase models/darkmod/waterworks/waterpump.ase
+models/darkmod/props/misc/well.lwo models/darkmod/waterworks/well.lwo
+models/darkmod/props/misc/well_square.lwo models/darkmod/waterworks/well_square.lwo
+models/darkmod/props/misc/wheelbarrow01.lwo models/darkmod/tools/wheelbarrow01.lwo
+models/darkmod/props/misc/wheelbarrow02.lwo models/darkmod/tools/wheelbarrow02.lwo
+models/darkmod/props/misc/wood_pallette.lwo models/darkmod/misc/wood_pallette.lwo
+
+
+
+
+models/darkmod/props/musical/bc_doublebass.ase models/darkmod/musical/bc_doublebass.ase
+models/darkmod/props/musical/grammo3.ase models/darkmod/musical/grammo3.ase
+models/darkmod/props/musical/lyre.lwo models/darkmod/musical/lyre.lwo
+models/darkmod/props/musical/notestand.ase models/darkmod/furniture/notestand.ase
+
+
+
+models/darkmod/props/nautical/boat1.lwo models/darkmod/nautical/boat1.lwo
+models/darkmod/props/nautical/boat2.lwo models/darkmod/nautical/boat2.lwo
+models/darkmod/props/nautical/boat_wrecked.lwo models/darkmod/nautical/boat_wrecked.lwo
+models/darkmod/props/nautical/oar.lwo models/darkmod/nautical/oar.lwo
+
+
+
+ 
+models/darkmod/props/readables/bookrow1.lwo models/darkmod/readables/bookrow1.lwo
+models/darkmod/props/readables/book_open1.lwo models/darkmod/readables/book_open1.lwo
+models/darkmod/props/readables/book_red1.lwo models/darkmod/readables/book_red1.lwo
+models/darkmod/props/readables/book_t1.lwo models/darkmod/readables/book_t1.lwo
+models/darkmod/props/readables/gui_book_open01.cm models/darkmod/readables/gui_book_open01.cm
+models/darkmod/props/readables/gui_book_open01.lwo models/darkmod/readables/gui_book_open01.lwo
+models/darkmod/props/readables/gui_paper0.lwo models/darkmod/readables/gui_paper0.lwo
+models/darkmod/props/readables/gui_paper01.cm models/darkmod/readables/gui_paper01.cm
+models/darkmod/props/readables/gui_paper01.lwo models/darkmod/readables/gui_paper01.lwo
+models/darkmod/props/readables/gui_scroll01.cm models/darkmod/readables/gui_scroll01.cm
+models/darkmod/props/readables/gui_scroll01.lwo models/darkmod/readables/gui_scroll01.lwo
+models/darkmod/props/readables/paper1.lwo models/darkmod/readables/paper1.lwo
+models/darkmod/props/readables/scroll1.lwo models/darkmod/readables/scroll1.lwo
+
+
+
+models/darkmod/props/tools/anvil.lwo models/darkmod/tools/anvil.lwo
+models/darkmod/props/tools/bc_broom.ase models/darkmod/tools/household/bc_broom.ase
+models/darkmod/props/tools/broomstick.ase models/darkmod/tools/household/broomstick.ase
+models/darkmod/props/tools/brush.lwo models/darkmod/tools/household/brush.lwo
+models/darkmod/props/tools/mop.lwo models/darkmod/tools/household/mop.lwo
+models/darkmod/props/tools/pickaxe.lwo models/darkmod/tools/pickaxe.lwo
+models/darkmod/props/tools/smithyhammer.lwo models/darkmod/tools/smithyhammer.lwo
+models/darkmod/props/tools/spade.lwo models/darkmod/tools/spade.lwo
+
+
+
+models/darkmod/props/tools/laboratory/bc_flask1.ase models/darkmod/laboratory/bc_flask1.ase
+models/darkmod/props/tools/laboratory/bc_flask2.ase models/darkmod/laboratory/bc_flask2.ase
+
+
+
+models/darkmod/props/wearable/belt_buckle.lwo models/darkmod/wearable/belt_buckle.lwo
+models/darkmod/props/wearable/belt_pouch.lwo models/darkmod/wearable/belt_pouch.lwo
+models/darkmod/props/wearable/bg_pauldron_l.lwo models/darkmod/wearable/armour/bg_pauldron_l.lwo
+models/darkmod/props/wearable/bg_pauldron_r.lwo models/darkmod/wearable/armour/bg_pauldron_r.lwo
+models/darkmod/props/wearable/boot_large.lwo models/darkmod/wearable/boot_large.lwo
+models/darkmod/props/wearable/breastplate.lwo models/darkmod/wearable/armour/breastplate.lwo
+models/darkmod/props/wearable/broadbrim_hat.lwo models/darkmod/wearable/headgear/broadbrim_hat.lwo
+models/darkmod/props/wearable/citywatch_helmet.lwo models/darkmod/wearable/headgear/citywatch_helmet.lwo
+models/darkmod/props/wearable/cw_pauldron_l.lwo models/darkmod/wearable/armour/cw_pauldron_l.lwo
+models/darkmod/props/wearable/cw_pauldron_r.lwo models/darkmod/wearable/armour/cw_pauldron_r.lwo
+models/darkmod/props/wearable/ecw_pauldron_l.lwo models/darkmod/wearable/armour/ecw_pauldron_l.lwo
+models/darkmod/props/wearable/ecw_pauldron_r.lwo models/darkmod/wearable/armour/ecw_pauldron_r.lwo
+models/darkmod/props/wearable/elitecitywatch_helmet.lwo models/darkmod/wearable/headgear/elitecitywatch_helmet.lwo
+models/darkmod/props/wearable/feather.lwo models/darkmod/wearable/feather.lwo
+models/darkmod/props/wearable/head_gear.lwo models/darkmod/wearable/headgear/head_gear.lwo
+models/darkmod/props/wearable/proguard_helmet.lwo models/darkmod/wearable/headgear/proguard_helmet.lwo
+models/darkmod/props/wearable/quiver.lwo models/darkmod/wearable/quiver.lwo
+models/darkmod/props/wearable/spectacles.ase models/darkmod/wearable/headgear/spectacles.ase
+models/darkmod/props/wearable/woolen_cap.lwo models/darkmod/wearable/headgear/woolen_cap.lwo
+
+
+
+models/darkmod/architecture/city_house/balcony1.lwo models/darkmod/architecture/buildings/city_house/balcony1.lwo
+models/darkmod/architecture/city_house/chimne_left.lwo models/darkmod/architecture/buildings/city_house/chimne_left.lwo
+models/darkmod/architecture/city_house/chimne_right.lwo models/darkmod/architecture/buildings/city_house/chimne_right.lwo
+models/darkmod/architecture/city_house/roof_vault.lwo models/darkmod/architecture/buildings/city_house/roof_vault.lwo
+models/darkmod/architecture/city_house/stone_ledge.lwo models/darkmod/architecture/buildings/city_house/stone_ledge.lwo
+models/darkmod/architecture/city_house/window_stone_medium.lwo models/darkmod/architecture/buildings/city_house/window_stone_medium.lwo
+models/darkmod/architecture/city_house/window_stone_small.lwo models/darkmod/architecture/buildings/city_house/window_stone_small.lwo
+models/darkmod/architecture/city_house/wood_beams.lwo models/darkmod/architecture/buildings/city_house/wood_beams.lwo
+
+
+models/darkmod/architecture/city_house2/balcony.lwo models/darkmod/architecture/buildings/city_house2/balcony.lwo
+models/darkmod/architecture/city_house2/chimne_base.lwo models/darkmod/architecture/buildings/city_house2/chimne_base.lwo
+models/darkmod/architecture/city_house2/window_frame_long.lwo models/darkmod/architecture/buildings/city_house2/window_frame_long.lwo
+models/darkmod/architecture/city_house2/window_frame_medium.lwo models/darkmod/architecture/buildings/city_house2/window_frame_medium.lwo
+models/darkmod/architecture/city_house2/window_frame_small.lwo models/darkmod/architecture/buildings/city_house2/window_frame_small.lwo
+models/darkmod/architecture/city_house2/wood_frames.lwo models/darkmod/architecture/buildings/city_house2/wood_frames.lwo
+
+
+
+
+models/darkmod/architecture/guardhouse/support_beam01.lwo models/darkmod/architecture/buildings/guardhouse/support_beam01.lwo
+models/darkmod/architecture/guardhouse/window_frame_longroof.lwo models/darkmod/architecture/buildings/guardhouse/window_frame_longroof.lwo
+models/darkmod/architecture/guardhouse/window_frame_smallw.lwo models/darkmod/architecture/buildings/guardhouse/window_frame_smallw.lwo
+models/darkmod/architecture/guardhouse/window_frame_wide.lwo models/darkmod/architecture/buildings/guardhouse/window_frame_wide.lwo
+models/darkmod/architecture/guardhouse/wood_frames3.lwo models/darkmod/architecture/buildings/guardhouse/wood_frames3.lwo
+models/darkmod/architecture/guardhouse/wood_support_beams1.lwo models/darkmod/architecture/buildings/guardhouse/wood_support_beams1.lwo
+models/darkmod/architecture/guardhouse/wood_support_beams2.lwo models/darkmod/architecture/buildings/guardhouse/wood_support_beams2.lwo
+models/darkmod/architecture/guardhouse/wood_frames1.lwo models/darkmod/architecture/buildings/guardhouse/wood_frames1.lwo
+
+
+
+
+
+models/darkmod/architecture/small_house/brick_wall.lwo models/darkmod/architecture/buildings/small_house/brick_wall.lwo
+models/darkmod/architecture/small_house/chimne_smallh.lwo models/darkmod/architecture/buildings/small_house/chimne_smallh.lwo
+models/darkmod/architecture/small_house/support_beams3.lwomodels/darkmod/architecture/buildings/small_house/support_beams3.lwo
+models/darkmod/architecture/small_house/wood_beams2.lwo models/darkmod/architecture/buildings/small_house/wood_beams2.lwo
+models/darkmod/architecture/small_house/wood_frames2.lwo models/darkmod/architecture/buildings/small_house/wood_frames2.lwo
+models/darkmod/architecture/small_house/wood_shelter.lwo models/darkmod/architecture/buildings/small_house/wood_shelter.lwo
+
+
+
+models/darkmod/architecture/bc_spiralstair.ase models/darkmod/architecture/stairs/bc_spiralstair.ase
+models/darkmod/architecture/bc_spiralstair_norail.ase models/darkmod/architecture/stairs/bc_spiralstair_norail.ase
+models/darkmod/architecture/bc_spiralstair_norail_half.ase models/darkmod/architecture/stairs/bc_spiralstair_norail_half.ase
+models/darkmod/architecture/bc_spiralstair_norail_quar.ase models/darkmod/architecture/stairs/bc_spiralstair_norail_quar.ase
+
+models/darkmod/architecture/handrail_corner_inside.lwo models/darkmod/architecture/handrails/handrail_corner_inside.lwo
+models/darkmod/architecture/handrail_corner_outside.lwo models/darkmod/architecture/handrails/handrail_corner_outside.lwo
+models/darkmod/architecture/handrail_section_l.lwo models/darkmod/architecture/handrails/handrail_section_l.lwo
+models/darkmod/architecture/handrail_section_r.lwo models/darkmod/architecture/handrails/handrail_section_r.lwo
+
+
+
+models/darkmod/architecture/ladder_16steps.ase models/darkmod/architecture/ladders/ladder_16steps.ase
+models/darkmod/architecture/ladder_1step.ase models/darkmod/architecture/ladders/ladder_1step.ase
+models/darkmod/architecture/ladder_2steps.ase models/darkmod/architecture/ladders/ladder_2steps.ase
+models/darkmod/architecture/ladder_32steps.ase models/darkmod/architecture/ladders/ladder_32steps.ase
+models/darkmod/architecture/ladder_3steps.ase models/darkmod/architecture/ladders/ladder_3steps.ase
+models/darkmod/architecture/ladder_4steps.ase models/darkmod/architecture/ladders/ladder_4steps.ase
+models/darkmod/architecture/ladder_8steps.ase models/darkmod/architecture/ladders/ladder_8steps.ase
+
+models/darkmod/architecture/mansion_stairs_01.lwo models/darkmod/architecture/stairs/mansion_stairs_01.lwo
+models/darkmod/architecture/mansion_stairs_01b.lwo models/darkmod/architecture/stairs/mansion_stairs_01b.lwo
+
+models/darkmod/architecture/rail1.lwo models/darkmod/architecture/handrails/rail1.lwo
+
+models/darkmod/architecture/stairway.ase models/darkmod/architecture/stairs/stairway.ase
+
+
+
+
+models/darkmod/architecture/bonehoard/alcove.ase models/darkmod/map_specific/bonehoard/alcove.ase
+models/darkmod/architecture/bonehoard/arch.ase models/darkmod/map_specific/bonehoard/arch.ase
+models/darkmod/architecture/bonehoard/arch_2.ase models/darkmod/map_specific/bonehoard/arch_2.ase
+models/darkmod/architecture/bonehoard/entrance.ase models/darkmod/map_specific/bonehoard/entrance.ase
+models/darkmod/architecture/bonehoard/pillar.ase models/darkmod/map_specific/bonehoard/pillar.ase
+models/darkmod/architecture/bonehoard/pillar_2.ase models/darkmod/map_specific/bonehoard/pillar_2.ase
+models/darkmod/architecture/bonehoard/pillar_broken.ase models/darkmod/map_specific/bonehoard/pillar_broken.ase
+models/darkmod/architecture/bonehoard/pillar_broken_part.ase models/darkmod/map_specific/bonehoard/pillar_broken_part.ase
+
+
+
+models/darkmod/architecture/warehouse/warehouse_roof_d.tga models/darkmod/architecture/warehouse_roof_d.tga
+models/darkmod/architecture/warehouse/warehouse_roof_local.tga models/darkmod/architecture/warehouse_roof_local.tga
+models/darkmod/architecture/warehouse/wareouse_long_roof.lwo models/darkmod/architecture/wareouse_long_roof.lwo
+
+
+models/darkmod/architecture/irongate.ase models/darkmod/architecture/fencing/irongate.ase
+models/darkmod/architecture/irongatesegment.ase models/darkmod/architecture/fencing/irongatesegment.ase
+
+
+
+
+models/darkmod/door_related/door02.lwo models/darkmod/architecture/doors/door02.lwo
+models/darkmod/door_related/door1.lwo models/darkmod/architecture/doors/door1.lwo
+models/darkmod/door_related/door104x56_2hinge.ase models/darkmod/architecture/doors/door104x56_2hinge.ase
+models/darkmod/door_related/door104x56_3hinge.ase models/darkmod/architecture/doors/door104x56_3hinge.ase
+models/darkmod/door_related/door128x56_2hinge.ase models/darkmod/architecture/doors/door128x56_2hinge.ase
+models/darkmod/door_related/door128x56_3hinge.ase models/darkmod/architecture/doors/door128x56_3hinge.ase
+models/darkmod/door_related/door96x48_2hinge.ase models/darkmod/architecture/doors/door96x48_2hinge.ase
+models/darkmod/door_related/door96x48_3hinge.ase models/darkmod/architecture/doors/door96x48_3hinge.ase
+models/darkmod/door_related/door_handle1.tga models/darkmod/architecture/doors/door_handle1.tga
+models/darkmod/door_related/door_handle1_local.tga models/darkmod/architecture/doors/door_handle1_local.tga
+models/darkmod/door_related/door_handle1_s.tga models/darkmod/architecture/doors/door_handle1_s.tga
+models/darkmod/door_related/mansion_door_01.lwo models/darkmod/architecture/doors/mansion_door_01.lwo
+models/darkmod/door_related/mansion_door_02.lwo models/darkmod/architecture/doors/mansion_door_02.lwo
+models/darkmod/door_related/mansion_door_02_handle.lwo models/darkmod/architecture/doors/mansion_door_02_handle.lwo
+models/darkmod/door_related/mansion_door_02_small.lwo models/darkmod/architecture/doors/mansion_door_02_small.lwo
+models/darkmod/door_related/mansion_door_02_wide.lwo models/darkmod/architecture/doors/mansion_door_02_wide.lwo
+models/darkmod/door_related/mansion_front_doorframe.lwo models/darkmod/architecture/doors/mansion_front_doorframe.lwo
+models/darkmod/door_related/mansion_front_doorframe_b.lwo models/darkmod/architecture/doors/mansion_front_doorframe_b.lwo
+models/darkmod/door_related/mansion_front_doorframe_nowindow.lwo models/darkmod/architecture/doors/mansion_front_doorframe_nowindow.lwo
+models/darkmod/door_related/warehouse_front_doorframe.lwo models/darkmod/architecture/doors/warehouse_front_doorframe.lwo
+models/darkmod/door_related/windowed_door_01.lwo models/darkmod/architecture/doors/windowed_door_01.lwo
+models/darkmod/door_related/windowed_door_01b.lwo models/darkmod/architecture/doors/windowed_door_01b.lwo
+models/darkmod/door_related/windowed_door_01_handle.lwo models/darkmod/architecture/doors/windowed_door_01_handle.lwo
+models/darkmod/door_related/windowed_door_02.lwo models/darkmod/architecture/doors/windowed_door_02.lwo
+models/darkmod/door_related/windowed_door_02b.lwo models/darkmod/architecture/doors/windowed_door_02b.lwo
+models/darkmod/door_related/windowed_door_02c.lwo models/darkmod/architecture/doors/windowed_door_02c.lwo
+models/darkmod/door_related/old_door_01.lwo models/darkmod/architecture/doors/old_door_01.lwo
+
+
+
+models/darkmod/nature/rock_slab_01.lwo models/darkmod/nature/rocks/rock_slab_01.lwo
+models/darkmod/nature/rock_slab_02.lwo models/darkmod/nature/rocks/rock_slab_02.lwo
+models/darkmod/nature/rubble_huge_1.ase models/darkmod/nature/rocks/rubble_huge_1.ase
+models/darkmod/nature/rubble_huge_2.ase models/darkmod/nature/rocks/rubble_huge_2.ase
+models/darkmod/nature/rubble_large_1.ase models/darkmod/nature/rocks/rubble_large_1.ase
+models/darkmod/nature/rubble_large_2.ase models/darkmod/nature/rocks/rubble_large_2.ase
+models/darkmod/nature/rubble_large_3.ase models/darkmod/nature/rocks/rubble_large_3.ase
+models/darkmod/nature/rubble_medium_1.ase models/darkmod/nature/rocks/rubble_medium_1.ase
+models/darkmod/nature/rubble_medium_2.ase models/darkmod/nature/rocks/rubble_medium_2.ase
+models/darkmod/nature/rubble_pieces_1.ase models/darkmod/nature/rocks/rubble_pieces_1.ase
+
+models/props/pipekit/tap/tap1.lwo models/darkmod/mechanical/pipes/tap1.lwo
+
+models/darkmod/nature/smallrock1.lwo models/darkmod/nature/rocks/smallrock1.lwo
+models/darkmod/nature/smallrock2.lwo models/darkmod/nature/rocks/smallrock2.lwo
+
+
+
+
+models/weapons/axe_rustic.lwo models/darkmod/weapons/axe_rustic.lwo
+models/weapons/battleaxe.lwo models/darkmod/weapons/battleaxe.lwo
+models/weapons/blackjack.lwo models/darkmod/weapons/blackjack.lwo
+models/weapons/broadhead.lwo models/darkmod/weapons/broadhead.lwo
+models/weapons/broadhead_broken1.lwo models/darkmod/junk/broadhead_broken1.lwo
+models/weapons/broadhead_broken2.lwo models/darkmod/junk/broadhead_broken2.lwo
+models/weapons/broadhead_broken_back.lwo models/darkmod/junk/broadhead_broken_back.lwo
+models/weapons/broadhead_broken_tip.lwo models/darkmod/junk/broadhead_broken_tip.lwo
+models/weapons/broadhead_collision.lwo models/darkmod/weapons/broadhead_collision.lwo
+models/weapons/ceremonial_sword.lwo models/darkmod/weapons/ceremonial_sword.lwo
+models/weapons/dagger.lwo models/darkmod/weapons/dagger.lwo
+models/weapons/firearrow.lwo models/darkmod/weapons/firearrow.lwo
+models/weapons/gasarrow.lwo models/darkmod/weapons/gasarrow.lwo
+models/weapons/halberd.lwo models/darkmod/weapons/halberd.lwo
+models/weapons/hammer.lwo models/darkmod/weapons/hammer.lwo
+models/weapons/handaxe.lwo models/darkmod/weapons/handaxe.lwo
+models/weapons/longbow.lwo models/darkmod/weapons/longbow.lwo
+models/weapons/longbow_nostring.lwo models/darkmod/weapons/longbow_nostring.lwo
+models/weapons/longbow_simple.lwo models/darkmod/weapons/longbow_simple.lwo
+models/weapons/longbow_simple_nostring.lwo models/darkmod/weapons/longbow_simple_nostring.lwo
+models/weapons/longswordlow.lwo models/darkmod/weapons/longswordlow.lwo
+models/weapons/mace.lwo models/darkmod/weapons/mace.lwo
+models/weapons/mossarrow.lwo models/darkmod/weapons/mossarrow.lwo
+models/weapons/noisemaker.lwo models/darkmod/weapons/noisemaker.lwo
+models/weapons/noisemaker_collision.lwo models/darkmod/weapons/noisemaker_collision.lwo
+models/weapons/quarterstaff.lwo models/darkmod/weapons/quarterstaff.lwo
+models/weapons/ropearrow.lwo models/darkmod/weapons/ropearrow.lwo
+models/weapons/shortbow.lwo models/darkmod/weapons/shortbow.lwo
+models/weapons/shortbow_simple.lwo models/darkmod/weapons/shortbow_simple.lwo
+models/weapons/shortbow_simple_nostring.lwo models/darkmod/weapons/shortbow_simple_nostring.lwo
+models/weapons/shortsword.lwo models/darkmod/weapons/shortsword.lwo
+models/weapons/spear2.lwo models/darkmod/weapons/spear2.lwo
+models/weapons/vinearrow.lwo models/darkmod/weapons/vinearrow.lwo
+models/weapons/waterarrow.lwo models/darkmod/weapons/waterarrow.lwo
