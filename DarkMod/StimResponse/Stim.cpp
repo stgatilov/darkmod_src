@@ -50,7 +50,11 @@ void CStim::Save(idSaveGame *savefile) const
 
 	m_Timer.Save(savefile);
 
-	// TODO: Save this: idList<idEntity *>		m_ResponseIgnore;
+	savefile->WriteInt(m_ResponseIgnore.Num());
+	for (int i = 0; i < m_ResponseIgnore.Num(); i++)
+	{
+		m_ResponseIgnore[i].Save(savefile);
+	}
 
 	savefile->WriteBool(m_bUseEntBounds);
 	savefile->WriteBool(m_bCollisionBased);
@@ -78,7 +82,13 @@ void CStim::Restore(idRestoreGame *savefile)
 
 	m_Timer.Restore(savefile);
 
-	// TODO: Restore this: idList<idEntity *>		m_ResponseIgnore;
+	int num;
+	savefile->ReadInt(num);
+	m_ResponseIgnore.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_ResponseIgnore[i].Restore(savefile);
+	}
 
 	savefile->ReadBool(m_bUseEntBounds);
 	savefile->ReadBool(m_bCollisionBased);
@@ -103,12 +113,23 @@ void CStim::Restore(idRestoreGame *savefile)
 void CStim::AddResponseIgnore(idEntity *e)
 {
 	if(CheckResponseIgnore(e) != true)
-		m_ResponseIgnore.Append(e);
+	{
+		idEntityPtr<idEntity> entPtr;
+		entPtr = e;
+		m_ResponseIgnore.Append(entPtr);
+	}
 }
 
 void CStim::RemoveResponseIgnore(idEntity *e)
 {
-	m_ResponseIgnore.Remove(e);
+	for (int i = 0; i < m_ResponseIgnore.Num(); i++)
+	{
+		if (m_ResponseIgnore[i].GetEntity() == e)
+		{
+			m_ResponseIgnore.RemoveIndex(i);
+			break;
+		}
+	}
 }
 
 bool CStim::CheckResponseIgnore(idEntity *e)
@@ -119,7 +140,7 @@ bool CStim::CheckResponseIgnore(idEntity *e)
 	n = m_ResponseIgnore.Num();
 	for(i = 0; i < n; i++)
 	{
-		if(m_ResponseIgnore[i] == e)
+		if(m_ResponseIgnore[i].GetEntity() == e)
 		{
 			rc = true;
 			break;

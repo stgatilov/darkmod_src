@@ -62,7 +62,7 @@ public:
 	 * which already has fired, to the ignorelist. Until the response is removed
 	 * it will no longer fire.
 	 */
-	idList<idEntity *>		m_ResponseIgnore;
+	idList< idEntityPtr<idEntity> >		m_ResponseIgnore;
 
 	/**
 	* If set to true, the stim uses the entity's bounds in the stim intersection test.
