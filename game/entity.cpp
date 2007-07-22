@@ -954,6 +954,22 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_FrobPeerFloodFrame);
 	savefile->WriteInt(m_FrobChangeTime);
 
+	savefile->WriteString(m_FrobActionScript.c_str());
+
+	savefile->WriteInt(m_FrobPeers.Num());
+	for (i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		savefile->WriteString(m_FrobPeers[i].c_str());
+	}
+
+	savefile->WriteString(m_MasterFrob.c_str());
+
+	savefile->WriteInt(m_FrobList.Num());
+	for (i = 0; i < m_FrobList.Num(); i++)
+	{
+		savefile->WriteString(m_FrobList[i].c_str());
+	}
+
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
@@ -1067,6 +1083,24 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_bFrobHighlightState);
 	savefile->ReadInt(m_FrobPeerFloodFrame);
 	savefile->ReadInt(m_FrobChangeTime);
+
+	savefile->ReadString(m_FrobActionScript);
+
+	savefile->ReadInt(num);
+	m_FrobPeers.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_FrobPeers[i]);
+	}
+
+	savefile->ReadString(m_MasterFrob);
+
+	savefile->ReadInt(num);
+	m_FrobList.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_FrobList[i]);
+	}
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
