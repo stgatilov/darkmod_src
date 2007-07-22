@@ -936,6 +936,23 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->Write( &flags, sizeof( flags ) );
 
+	savefile->WriteInt(m_UsedBy.Num());
+	for (i = 0; i < m_UsedBy.Num(); i++)
+	{
+		savefile->WriteString(m_UsedBy[i].c_str());
+	}
+
+	savefile->WriteBool(m_bIsObjective);
+	savefile->WriteBool(m_bFrobable);
+	savefile->WriteInt(m_FrobDistance);
+	savefile->WriteFloat(m_FrobBias);
+
+	savefile->WriteBool(m_bIsClimbableRope);
+
+	savefile->WriteBool(m_bFrobbed);
+	savefile->WriteBool(m_bFrobHighlightState);
+	savefile->WriteInt(m_FrobPeerFloodFrame);
+	savefile->WriteInt(m_FrobChangeTime);
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -1031,6 +1048,25 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
+
+	savefile->ReadInt(num);
+	m_UsedBy.SetNum(num);
+	for (i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_UsedBy[i]);
+	}
+
+	savefile->ReadBool(m_bIsObjective);
+	savefile->ReadBool(m_bFrobable);
+	savefile->ReadInt(m_FrobDistance);
+	savefile->ReadFloat(m_FrobBias);
+
+	savefile->ReadBool(m_bIsClimbableRope);
+
+	savefile->ReadBool(m_bFrobbed);
+	savefile->ReadBool(m_bFrobHighlightState);
+	savefile->ReadInt(m_FrobPeerFloodFrame);
+	savefile->ReadInt(m_FrobChangeTime);
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
