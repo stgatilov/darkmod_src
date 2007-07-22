@@ -8595,6 +8595,8 @@ void idPlayer::inventoryDropItem()
 			if( bDropped)
 			{
 				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1);
+				// Objectives callback.  Cannot drop loot, so assume it is not loot
+				gameLocal.m_MissionData->InventoryCallback( ent, item->GetName(), item->GetValue(), 1, false ); 
 			}
 
 			// Always update the HUD, the drop script might have changed the inventory count itself.
