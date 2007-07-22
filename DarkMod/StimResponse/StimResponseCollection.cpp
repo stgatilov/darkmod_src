@@ -22,6 +22,16 @@ CStimResponseCollection::~CStimResponseCollection(void)
 {
 }
 
+void CStimResponseCollection::Save(idSaveGame *savefile) const
+{
+	// TODO
+}
+
+void CStimResponseCollection::Restore(idRestoreGame *savefile)
+{
+	// TODO
+}
+
 CStim* CStimResponseCollection::createStim(idEntity* p_owner, StimType type)
 {
 	CStim* pRet;

@@ -970,6 +970,15 @@ void idEntity::Save( idSaveGame *savefile ) const
 		savefile->WriteString(m_FrobList[i].c_str());
 	}
 
+	savefile->WriteInt(m_Signal);
+
+	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
+	//idList<SDKSignalInfo *>	m_SignalList;
+
+	savefile->WriteBool(m_bIsMantleable);
+
+	m_StimResponseColl->Save(savefile);
+
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
 	savefile->WriteRefSound( refSound );
@@ -1101,6 +1110,12 @@ void idEntity::Restore( idRestoreGame *savefile )
 	{
 		savefile->ReadString(m_FrobList[i]);
 	}
+
+	savefile->ReadInt(m_Signal);
+
+	savefile->ReadBool(m_bIsMantleable);
+
+	m_StimResponseColl->Restore(savefile);
 
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );

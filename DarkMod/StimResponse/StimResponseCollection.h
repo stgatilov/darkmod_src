@@ -31,6 +31,9 @@ public:
 	CStimResponseCollection(void);
 	~CStimResponseCollection(void);
 
+	void			Save(idSaveGame *savefile) const;
+	void			Restore(idRestoreGame *savefile);
+
 	/**
 	 * AddStim/Response creates a new stim of the given type and returns the pointer to
 	 * the new object. If the stim already existed, it is not created again but the 
