@@ -36,6 +36,20 @@ CAIComm_Response::~CAIComm_Response(void)
 {
 }
 
+void CAIComm_Response::Save(idSaveGame *savefile) const
+{
+	CResponse::Save(savefile);
+
+	// TODO
+}
+
+void CAIComm_Response::Restore(idRestoreGame *savefile)
+{
+	CResponse::Restore(savefile);
+
+	// TODO
+}
+
 /*----------------------------------------------------------------*/
 
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
@@ -189,6 +203,20 @@ CAIComm_Stim::CAIComm_Stim (idEntity* Owner, int Type) : CStim (Owner, Type)
 CAIComm_Stim::~CAIComm_Stim(void)
 {
 	clearMessages();
+}
+
+void CAIComm_Stim::Save(idSaveGame *savefile) const
+{
+	CStim::Save(savefile);
+
+	// TODO
+}
+
+void CAIComm_Stim::Restore(idRestoreGame *savefile)
+{
+	CStim::Restore(savefile);
+
+	// TODO
 }
 
 /*-------------------------------------------------------------------------*/

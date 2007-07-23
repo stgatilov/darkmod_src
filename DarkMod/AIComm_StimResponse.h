@@ -24,6 +24,9 @@ public:
 	CAIComm_Response(idEntity* Owner, int Type);
 	virtual ~CAIComm_Response(void);
 
+	virtual void Save(idSaveGame *savefile) const;
+	virtual void Restore(idRestoreGame *savefile);
+
 public:
 
 	/**
@@ -33,9 +36,6 @@ public:
 	* in the communication stim parameters.
 	*/
 	virtual void TriggerResponse(idEntity *Stim, CStim* stim);
-
-
-
 };
 
 /*------------------------------------------------------------------*/
@@ -79,6 +79,9 @@ public:
 	* Destructor
 	*/
 	virtual ~CAIComm_Stim(void);
+
+	virtual void Save(idSaveGame *savefile) const;
+	virtual void Restore(idRestoreGame *savefile);
 
 	/*!
 	* This method clears all the messages from the list and destroys
