@@ -1,24 +1,14 @@
-
-
 models/darkmod/props/furniture/bookshelf1.lwo models/darkmod/props/furniture/shelves/bookshelf1.lwo
 models/darkmod/furniture/wchair1.lwo models/darkmod/furniture/seating/wchair1.lwo
-
-
-
 models/darkmod/decorative/stoup_broken.ase models/darkmod/junk/stoup_broken.ase
 models/darkmod/decorative/vases/vase2_broken.ase models/darkmod/junk/vase2_broken.ase
 models/darkmod/decorative/vases/vase2_broken_bottom.ase models/darkmod/junk/vase2_broken_bottom.ase
 models/darkmod/decorative/vases/vase2_broken_handle.ase models/darkmod/junk/vase2_broken_handle.ase
 models/darkmod/decorative/vases/vase2_broken_top.ase models/darkmod/junk/vase2_broken_top.ase 
-
-
 models/darkmod/props/gen/gen_bucket.lwo models/darkmod/containers/gen_bucket.lwo
 models/darkmod/props/gen/gen_goblet1.lwo models/darkmod/kitchen/gen_goblet1.lwo
 models/darkmod/props/gen/gen_squarestreetlamp.lwo models/darkmod/lights/non-extinguishable/streetlamps/gen_squarestreetlamp.lwo
 models/darkmod/props/gen/gen_waterpump.lwo models/darkmod/waterworks/gen_waterpump.lwo
-
-
-
 models/darkmod/props/graveyard/bone.ase models/darkmod/graveyard/bones/bone.ase
 models/darkmod/props/graveyard/bones_arm_left.ase models/darkmod/graveyard/bones/bones_arm_left.ase
 models/darkmod/props/graveyard/bones_arm_right.ase models/darkmod/graveyard/bones/bones_arm_right.ase
@@ -57,10 +47,6 @@ models/darkmod/props/graveyard/skull.lwo models/darkmod/graveyard/bones/skull.lw
 models/darkmod/props/graveyard/skull2.ase models/darkmod/graveyard/bones/skull2.ase
 models/darkmod/props/graveyard/skull2.cm models/darkmod/graveyard/bones/skull2.cm
 models/darkmod/props/graveyard/urn.ase models/darkmod/graveyard/urn.ase
-
-
-
-
 models/darkmod/props/junk/bc_ceramicpot_b.ase models/darkmod/junk/bc_ceramicpot_b.ase
 models/darkmod/props/junk/broken_cart.lwo models/darkmod/junk/broken_cart.lwo
 models/darkmod/props/junk/cartwheel.lwo models/darkmod/junk/cartwheel.lwo
@@ -68,17 +54,10 @@ models/darkmod/props/junk/plank_long.lwo models/darkmod/junk/plank_long.lwo
 models/darkmod/props/junk/plank_longer.lwo models/darkmod/junk/plank_longer.lwo
 models/darkmod/props/junk/plank_short.lwo models/darkmod/junk/plank_short.lwo
 models/darkmod/props/junk/wbottle01_broken.lwo models/darkmod/junk/wbottle01_broken.lwo
-
-
-
 models/darkmod/props/junk/flinders/ceramicflind01.ase models/darkmod/junk/generic_shards/ceramicflind01.ase
 models/darkmod/props/junk/flinders/ceramicflind02.ase models/darkmod/junk/generic_shards/ceramicflind02.ase
 models/darkmod/props/junk/flinders/ceramicflind03.ase models/darkmod/junk/generic_shards/ceramicflind03.ase
 models/darkmod/props/junk/flinders/ceramicflind04.ase models/darkmod/junk/generic_shards/ceramicflind04.ase
-
-
-
-
 models/darkmod/props/kitchen/bottle01.lwo models/darkmod/kitchen/bottle01.lwo
 models/darkmod/props/kitchen/bottle02.lwo models/darkmod/kitchen/bottle02.lwo
 models/darkmod/props/kitchen/cake.lwo models/darkmod/kitchen/food/cake.lwo
@@ -99,15 +78,8 @@ models/darkmod/props/kitchen/smspoon_ornamental.lwo models/darkmod/kitchen/utens
 models/darkmod/props/kitchen/spoon_ornamental.lwo models/darkmod/kitchen/utensils/spoon_ornamental.lwo
 models/darkmod/props/kitchen/wbottle01.cm models/darkmod/kitchen/wbottle01.cm
 models/darkmod/props/kitchen/wbottle01.lwo models/darkmod/kitchen/wbottle01.lwo
-
-
-
-
 models/darkmod/props/kitchen/food/bc_carrot.ase models/darkmod/kitchen/food/bc_carrot.ase
 models/darkmod/props/kitchen/food/bc_turnip.ase models/darkmod/kitchen/food/bc_turnip.ase
-
-
- 
 models/darkmod/props/lights/extinguishable/bracket.lwo models/darkmod/hangers/bracket.lwo
 models/darkmod/props/lights/extinguishable/candelabra01.lwo models/darkmod/lights/extinguishable/candelabra01.lwo
 models/darkmod/props/lights/extinguishable/candle1.lwo models/darkmod/lights/extinguishable/candle1.lwo
@@ -127,8 +99,6 @@ models/darkmod/props/lights/extinguishable/torch.lwo models/darkmod/lights/extin
 models/darkmod/props/lights/extinguishable/torch_metal.ase models/darkmod/lights/extinguishable/torch_metal.ase
 models/darkmod/props/lights/extinguishable/torch_metal_wall.ase models/darkmod/lights/extinguishable/torch_metal_wall.ase
 models/darkmod/props/lights/extinguishable/wallcandles1.lwo models/darkmod/lights/extinguishable/wallcandles1.lwo
-
-
 models/darkmod/props/lights/non-extinguishable/arclight.lwo models/darkmod/lights/non-extinguishable/arclight.lwo
 models/darkmod/props/lights/non-extinguishable/bc_desklamp01.ase models/darkmod/lights/non-extinguishable/bc_desklamp01.ase
 models/darkmod/props/lights/non-extinguishable/bc_lantern.ase models/darkmod/lights/non-extinguishable/bc_lantern.ase
@@ -150,10 +120,6 @@ models/darkmod/props/lights/non-extinguishable/streetlamp1.lwo models/darkmod/li
 models/darkmod/props/lights/non-extinguishable/wallight1.lwo models/darkmod/lights/non-extinguishable/wallight1.lwo
 models/darkmod/props/lights/non-extinguishable/wallight2.lwo models/darkmod/lights/non-extinguishable/wallight2.lwo
 models/darkmod/props/lights/non-extinguishable/wallight_outdoor3.lwo models/darkmod/lights/non-extinguishable/wallight_outdoor3.lwo
-
-
-
-
 models/darkmod/props/loot/amulet_round_g.lwo models/darkmod/loot/jewellery/amulet_round_g.lwo
 models/darkmod/props/loot/bc_bagdiamond.ase models/darkmod/loot/bc_bagdiamond.ase  
 models/darkmod/props/loot/bc_baggems.ase models/darkmod/loot/bc_baggems.ase
@@ -180,10 +146,6 @@ models/darkmod/props/loot/smallbowl.lwo models/darkmod/loot/smallbowl.lwo
 models/darkmod/props/loot/statue_loot.ase models/darkmod/loot/statue_loot.ase
 models/darkmod/props/loot/vase_g.lwo models/darkmod/loot/vase_g.lwo
 models/darkmod/props/loot/wbottle03.lwo models/darkmod/loot/wbottle03.lwo
-
-
-
-
 models/darkmod/props/mechanical/fan.lwo
 models/darkmod/props/mechanical/gear.lwo models/darkmod/mechanical/gears/gear.lwo
 models/darkmod/props/mechanical/gear_clock_hand_1.lwo models/darkmod/mechanical/gear_clock_hand_1.lwo
@@ -208,33 +170,18 @@ models/darkmod/props/mechanical/watermill_cogwheel_big.ase models/darkmod/mechan
 models/darkmod/props/mechanical/watermill_cogwheel_small.ase models/darkmod/mechanical/gears/watermill_cogwheel_small.ase
 models/darkmod/props/mechanical/watermill_pole.ase models/darkmod/mechanical/watermill_pole.ase
 models/darkmod/props/mechanical/watermill_wheel.ase models/darkmod/mechanical/watermill_wheel.ase
-
-
-
-
-
 models/darkmod/props/mechanical/gauges/bc_gaugesteam.ase models/darkmod/mechanical/gauges/bc_gaugesteam.ase
 models/darkmod/props/mechanical/gauges/bc_r_gaugeneedle.ase models/darkmod/mechanical/gauges/bc_r_gaugeneedle.ase
 models/darkmod/props/mechanical/gauges/bc_squaregauge.ase models/darkmod/mechanical/gauges/bc_squaregauge.ase
 models/darkmod/props/mechanical/gauges/bc_s_gaugeneedle.ase models/darkmod/mechanical/gauges/bc_s_gaugeneedle.ase
-
-
-
 models/darkmod/props/mechanical/smokestacks/smokestack_short_wall.ase models/darkmod/mechanical/smokestack_short_wall.ase
 models/darkmod/props/mechanical/smokestacks/smokestack_tall_wall.ase models/darkmod/mechanical/smokestack_tall_wall.ase
-
-
-
-
 models/darkmod/props/mechanical/valves/valve1_large.ase models/darkmod/mechanical/pipes/valve1_large.ase
 models/darkmod/props/mechanical/valves/valve1_small.ase models/darkmod/mechanical/pipes/valve1_small.ase
 models/darkmod/props/mechanical/valves/valve1_xl.ase models/darkmod/mechanical/pipes/valve1_xl.ase
 models/darkmod/props/mechanical/valves/valve2_large.ase models/darkmod/mechanical/pipes/valve2_large.ase
 models/darkmod/props/mechanical/valves/valve2_small.ase models/darkmod/mechanical/pipes/valve2_small.ase
 models/darkmod/props/mechanical/valves/valve2_xl.ase models/darkmod/mechanical/pipes/valve2_xl.ase
-
-
-
 models/darkmod/props/misc/anchor.lwo models/darkmod/nautical/anchor.lwo
 models/darkmod/props/misc/bell01.ase models/darkmod/misc/bell01.ase
 models/darkmod/props/misc/bell02.ase models/darkmod/misc/bell02.ase
@@ -255,25 +202,14 @@ models/darkmod/props/misc/well_square.lwo models/darkmod/waterworks/well_square.
 models/darkmod/props/misc/wheelbarrow01.lwo models/darkmod/tools/wheelbarrow01.lwo
 models/darkmod/props/misc/wheelbarrow02.lwo models/darkmod/tools/wheelbarrow02.lwo
 models/darkmod/props/misc/wood_pallette.lwo models/darkmod/misc/wood_pallette.lwo
-
-
-
-
 models/darkmod/props/musical/bc_doublebass.ase models/darkmod/musical/bc_doublebass.ase
 models/darkmod/props/musical/grammo3.ase models/darkmod/musical/grammo3.ase
 models/darkmod/props/musical/lyre.lwo models/darkmod/musical/lyre.lwo
 models/darkmod/props/musical/notestand.ase models/darkmod/furniture/notestand.ase
-
-
-
 models/darkmod/props/nautical/boat1.lwo models/darkmod/nautical/boat1.lwo
 models/darkmod/props/nautical/boat2.lwo models/darkmod/nautical/boat2.lwo
 models/darkmod/props/nautical/boat_wrecked.lwo models/darkmod/nautical/boat_wrecked.lwo
 models/darkmod/props/nautical/oar.lwo models/darkmod/nautical/oar.lwo
-
-
-
- 
 models/darkmod/props/readables/bookrow1.lwo models/darkmod/readables/bookrow1.lwo
 models/darkmod/props/readables/book_open1.lwo models/darkmod/readables/book_open1.lwo
 models/darkmod/props/readables/book_red1.lwo models/darkmod/readables/book_red1.lwo
@@ -287,9 +223,6 @@ models/darkmod/props/readables/gui_scroll01.cm models/darkmod/readables/gui_scro
 models/darkmod/props/readables/gui_scroll01.lwo models/darkmod/readables/gui_scroll01.lwo
 models/darkmod/props/readables/paper1.lwo models/darkmod/readables/paper1.lwo
 models/darkmod/props/readables/scroll1.lwo models/darkmod/readables/scroll1.lwo
-
-
-
 models/darkmod/props/tools/anvil.lwo models/darkmod/tools/anvil.lwo
 models/darkmod/props/tools/bc_broom.ase models/darkmod/tools/household/bc_broom.ase
 models/darkmod/props/tools/broomstick.ase models/darkmod/tools/household/broomstick.ase
@@ -298,14 +231,8 @@ models/darkmod/props/tools/mop.lwo models/darkmod/tools/household/mop.lwo
 models/darkmod/props/tools/pickaxe.lwo models/darkmod/tools/pickaxe.lwo
 models/darkmod/props/tools/smithyhammer.lwo models/darkmod/tools/smithyhammer.lwo
 models/darkmod/props/tools/spade.lwo models/darkmod/tools/spade.lwo
-
-
-
 models/darkmod/props/tools/laboratory/bc_flask1.ase models/darkmod/laboratory/bc_flask1.ase
 models/darkmod/props/tools/laboratory/bc_flask2.ase models/darkmod/laboratory/bc_flask2.ase
-
-
-
 models/darkmod/props/wearable/belt_buckle.lwo models/darkmod/wearable/belt_buckle.lwo
 models/darkmod/props/wearable/belt_pouch.lwo models/darkmod/wearable/belt_pouch.lwo
 models/darkmod/props/wearable/bg_pauldron_l.lwo models/darkmod/wearable/armour/bg_pauldron_l.lwo
@@ -325,9 +252,6 @@ models/darkmod/props/wearable/proguard_helmet.lwo models/darkmod/wearable/headge
 models/darkmod/props/wearable/quiver.lwo models/darkmod/wearable/quiver.lwo
 models/darkmod/props/wearable/spectacles.ase models/darkmod/wearable/headgear/spectacles.ase
 models/darkmod/props/wearable/woolen_cap.lwo models/darkmod/wearable/headgear/woolen_cap.lwo
-
-
-
 models/darkmod/architecture/city_house/balcony1.lwo models/darkmod/architecture/buildings/city_house/balcony1.lwo
 models/darkmod/architecture/city_house/chimne_left.lwo models/darkmod/architecture/buildings/city_house/chimne_left.lwo
 models/darkmod/architecture/city_house/chimne_right.lwo models/darkmod/architecture/buildings/city_house/chimne_right.lwo
@@ -336,18 +260,12 @@ models/darkmod/architecture/city_house/stone_ledge.lwo models/darkmod/architectu
 models/darkmod/architecture/city_house/window_stone_medium.lwo models/darkmod/architecture/buildings/city_house/window_stone_medium.lwo
 models/darkmod/architecture/city_house/window_stone_small.lwo models/darkmod/architecture/buildings/city_house/window_stone_small.lwo
 models/darkmod/architecture/city_house/wood_beams.lwo models/darkmod/architecture/buildings/city_house/wood_beams.lwo
-
-
 models/darkmod/architecture/city_house2/balcony.lwo models/darkmod/architecture/buildings/city_house2/balcony.lwo
 models/darkmod/architecture/city_house2/chimne_base.lwo models/darkmod/architecture/buildings/city_house2/chimne_base.lwo
 models/darkmod/architecture/city_house2/window_frame_long.lwo models/darkmod/architecture/buildings/city_house2/window_frame_long.lwo
 models/darkmod/architecture/city_house2/window_frame_medium.lwo models/darkmod/architecture/buildings/city_house2/window_frame_medium.lwo
 models/darkmod/architecture/city_house2/window_frame_small.lwo models/darkmod/architecture/buildings/city_house2/window_frame_small.lwo
 models/darkmod/architecture/city_house2/wood_frames.lwo models/darkmod/architecture/buildings/city_house2/wood_frames.lwo
-
-
-
-
 models/darkmod/architecture/guardhouse/support_beam01.lwo models/darkmod/architecture/buildings/guardhouse/support_beam01.lwo
 models/darkmod/architecture/guardhouse/window_frame_longroof.lwo models/darkmod/architecture/buildings/guardhouse/window_frame_longroof.lwo
 models/darkmod/architecture/guardhouse/window_frame_smallw.lwo models/darkmod/architecture/buildings/guardhouse/window_frame_smallw.lwo
@@ -356,32 +274,20 @@ models/darkmod/architecture/guardhouse/wood_frames3.lwo models/darkmod/architect
 models/darkmod/architecture/guardhouse/wood_support_beams1.lwo models/darkmod/architecture/buildings/guardhouse/wood_support_beams1.lwo
 models/darkmod/architecture/guardhouse/wood_support_beams2.lwo models/darkmod/architecture/buildings/guardhouse/wood_support_beams2.lwo
 models/darkmod/architecture/guardhouse/wood_frames1.lwo models/darkmod/architecture/buildings/guardhouse/wood_frames1.lwo
-
-
-
-
-
 models/darkmod/architecture/small_house/brick_wall.lwo models/darkmod/architecture/buildings/small_house/brick_wall.lwo
 models/darkmod/architecture/small_house/chimne_smallh.lwo models/darkmod/architecture/buildings/small_house/chimne_smallh.lwo
 models/darkmod/architecture/small_house/support_beams3.lwomodels/darkmod/architecture/buildings/small_house/support_beams3.lwo
 models/darkmod/architecture/small_house/wood_beams2.lwo models/darkmod/architecture/buildings/small_house/wood_beams2.lwo
 models/darkmod/architecture/small_house/wood_frames2.lwo models/darkmod/architecture/buildings/small_house/wood_frames2.lwo
 models/darkmod/architecture/small_house/wood_shelter.lwo models/darkmod/architecture/buildings/small_house/wood_shelter.lwo
-
-
-
 models/darkmod/architecture/bc_spiralstair.ase models/darkmod/architecture/stairs/bc_spiralstair.ase
 models/darkmod/architecture/bc_spiralstair_norail.ase models/darkmod/architecture/stairs/bc_spiralstair_norail.ase
 models/darkmod/architecture/bc_spiralstair_norail_half.ase models/darkmod/architecture/stairs/bc_spiralstair_norail_half.ase
 models/darkmod/architecture/bc_spiralstair_norail_quar.ase models/darkmod/architecture/stairs/bc_spiralstair_norail_quar.ase
-
 models/darkmod/architecture/handrail_corner_inside.lwo models/darkmod/architecture/handrails/handrail_corner_inside.lwo
 models/darkmod/architecture/handrail_corner_outside.lwo models/darkmod/architecture/handrails/handrail_corner_outside.lwo
 models/darkmod/architecture/handrail_section_l.lwo models/darkmod/architecture/handrails/handrail_section_l.lwo
 models/darkmod/architecture/handrail_section_r.lwo models/darkmod/architecture/handrails/handrail_section_r.lwo
-
-
-
 models/darkmod/architecture/ladder_16steps.ase models/darkmod/architecture/ladders/ladder_16steps.ase
 models/darkmod/architecture/ladder_1step.ase models/darkmod/architecture/ladders/ladder_1step.ase
 models/darkmod/architecture/ladder_2steps.ase models/darkmod/architecture/ladders/ladder_2steps.ase
@@ -389,17 +295,10 @@ models/darkmod/architecture/ladder_32steps.ase models/darkmod/architecture/ladde
 models/darkmod/architecture/ladder_3steps.ase models/darkmod/architecture/ladders/ladder_3steps.ase
 models/darkmod/architecture/ladder_4steps.ase models/darkmod/architecture/ladders/ladder_4steps.ase
 models/darkmod/architecture/ladder_8steps.ase models/darkmod/architecture/ladders/ladder_8steps.ase
-
 models/darkmod/architecture/mansion_stairs_01.lwo models/darkmod/architecture/stairs/mansion_stairs_01.lwo
 models/darkmod/architecture/mansion_stairs_01b.lwo models/darkmod/architecture/stairs/mansion_stairs_01b.lwo
-
 models/darkmod/architecture/rail1.lwo models/darkmod/architecture/handrails/rail1.lwo
-
 models/darkmod/architecture/stairway.ase models/darkmod/architecture/stairs/stairway.ase
-
-
-
-
 models/darkmod/architecture/bonehoard/alcove.ase models/darkmod/map_specific/bonehoard/alcove.ase
 models/darkmod/architecture/bonehoard/arch.ase models/darkmod/map_specific/bonehoard/arch.ase
 models/darkmod/architecture/bonehoard/arch_2.ase models/darkmod/map_specific/bonehoard/arch_2.ase
@@ -408,20 +307,11 @@ models/darkmod/architecture/bonehoard/pillar.ase models/darkmod/map_specific/bon
 models/darkmod/architecture/bonehoard/pillar_2.ase models/darkmod/map_specific/bonehoard/pillar_2.ase
 models/darkmod/architecture/bonehoard/pillar_broken.ase models/darkmod/map_specific/bonehoard/pillar_broken.ase
 models/darkmod/architecture/bonehoard/pillar_broken_part.ase models/darkmod/map_specific/bonehoard/pillar_broken_part.ase
-
-
-
 models/darkmod/architecture/warehouse/warehouse_roof_d.tga models/darkmod/architecture/warehouse_roof_d.tga
 models/darkmod/architecture/warehouse/warehouse_roof_local.tga models/darkmod/architecture/warehouse_roof_local.tga
 models/darkmod/architecture/warehouse/wareouse_long_roof.lwo models/darkmod/architecture/wareouse_long_roof.lwo
-
-
 models/darkmod/architecture/irongate.ase models/darkmod/architecture/fencing/irongate.ase
 models/darkmod/architecture/irongatesegment.ase models/darkmod/architecture/fencing/irongatesegment.ase
-
-
-
-
 models/darkmod/door_related/door02.lwo models/darkmod/architecture/doors/door02.lwo
 models/darkmod/door_related/door1.lwo models/darkmod/architecture/doors/door1.lwo
 models/darkmod/door_related/door104x56_2hinge.ase models/darkmod/architecture/doors/door104x56_2hinge.ase
@@ -449,9 +339,6 @@ models/darkmod/door_related/windowed_door_02.lwo models/darkmod/architecture/doo
 models/darkmod/door_related/windowed_door_02b.lwo models/darkmod/architecture/doors/windowed_door_02b.lwo
 models/darkmod/door_related/windowed_door_02c.lwo models/darkmod/architecture/doors/windowed_door_02c.lwo
 models/darkmod/door_related/old_door_01.lwo models/darkmod/architecture/doors/old_door_01.lwo
-
-
-
 models/darkmod/nature/rock_slab_01.lwo models/darkmod/nature/rocks/rock_slab_01.lwo
 models/darkmod/nature/rock_slab_02.lwo models/darkmod/nature/rocks/rock_slab_02.lwo
 models/darkmod/nature/rubble_huge_1.ase models/darkmod/nature/rocks/rubble_huge_1.ase
@@ -462,15 +349,9 @@ models/darkmod/nature/rubble_large_3.ase models/darkmod/nature/rocks/rubble_larg
 models/darkmod/nature/rubble_medium_1.ase models/darkmod/nature/rocks/rubble_medium_1.ase
 models/darkmod/nature/rubble_medium_2.ase models/darkmod/nature/rocks/rubble_medium_2.ase
 models/darkmod/nature/rubble_pieces_1.ase models/darkmod/nature/rocks/rubble_pieces_1.ase
-
 models/props/pipekit/tap/tap1.lwo models/darkmod/mechanical/pipes/tap1.lwo
-
 models/darkmod/nature/smallrock1.lwo models/darkmod/nature/rocks/smallrock1.lwo
 models/darkmod/nature/smallrock2.lwo models/darkmod/nature/rocks/smallrock2.lwo
-
-
-
-
 models/weapons/axe_rustic.lwo models/darkmod/weapons/axe_rustic.lwo
 models/weapons/battleaxe.lwo models/darkmod/weapons/battleaxe.lwo
 models/weapons/blackjack.lwo models/darkmod/weapons/blackjack.lwo
