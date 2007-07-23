@@ -1,6 +1,6 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
-#include ".\difficultymenu.h"
+#include "DifficultyMenu.h"
 
 CDifficultyMenu::CDifficultyMenu(void)
 {
@@ -22,7 +22,7 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 
 void CDifficultyMenu::DisplayDifficulty(idUserInterface *gui)
 {
-	const char * mapName = tdm_mapName.GetString();
+	const char * mapName = "";//tdm_mapName.GetString();
 	const char * filename = va("maps/%s", mapName);
 
 	idMapFile* mapFile = new idMapFile;
