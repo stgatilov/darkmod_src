@@ -115,7 +115,7 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 
 		rc = GetItem(TDM_LOOT_INFO_ITEM);
 
-		// Objective Callback for loot:
+		// Objective Callback for loot on a specific entity:
 		// Pass the loot type name and the net loot value of that group
 		gameLocal.m_MissionData->InventoryCallback( 
 			ent, 
@@ -355,6 +355,14 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 			PutItem(item, category);
 			item->SetCount(1);
 
+			// We added a new inventory item
+			gameLocal.m_MissionData->InventoryCallback(
+				item->GetItemEntity(), item->GetName(), 
+				1, 
+				1, 
+				true
+			);
+
 			// Hide the entity from the map (don't delete the entity)
 			RemoveEntityFromMap(ent, false);
 		}
@@ -366,22 +374,6 @@ CInventoryItem *CInventory::PutItem(idEntity *ent, idEntity *owner)
 	}
 	
 	return returnValue;
-}
-
-void CInventory::PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item)
-{
-	if(ent == NULL || owner == NULL || item == NULL)
-		return;
-
-	// Make the item visible
-	ent->GetPhysics()->LinkClip();
-	ent->Bind(item->m_BindMaster.GetEntity(), item->m_Orientated);
-	ent->Show();
-	ent->UpdateVisuals();
-	ent->PostEventMS(&EV_Activate, 0, ent);
-
-	// Objectives callback.  Cannot drop loot, so assume it is not loot
-	gameLocal.m_MissionData->InventoryCallback( ent, item->GetName(), item->GetValue(), 1, false ); 
 }
 
 void CInventory::RemoveEntityFromMap(idEntity *ent, bool bDelete)

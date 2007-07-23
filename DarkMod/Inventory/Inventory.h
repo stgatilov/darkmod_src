@@ -127,14 +127,6 @@ public:
 	void					RemoveEntityFromMap(idEntity *ent, bool bDelete = false);
 
 	/**
-	 * Puts an item back into the map. This can only be done when the item is
-	 * droppable, otherwise it is ignored. If the item was an objective, the 
-	 * objective will to be toggled back again. Owner is needed to retrieve the
-	 * position where the item will be released.
-	 */
-	void					PutEntityInMap(idEntity *ent, idEntity *owner, CInventoryItem *item);
-
-	/**
 	 * Put an item in the inventory. Use the default group if none is specified.
 	 * The name, that is to be displayed on a GUI, must be set on the respective
 	 * entity.
