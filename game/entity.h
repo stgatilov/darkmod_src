@@ -698,6 +698,11 @@ public:
 	void ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount);
 
 	/**
+	 * Script event: Chagnes the amount of the given loot type in the inventory of this entity.
+	 */
+	void ChangeLootAmount(int lootType, int amount);
+
+	/**
 	 * Return true if this entity can be mantled, false otherwise.
 	 */
 	virtual bool			IsMantleable();

@@ -80,6 +80,13 @@ int CInventory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 	return Gold + Jewelry + Goods;
 }
 
+void CInventory::SetLoot(int Gold, int Jewelry, int Goods)
+{
+	m_Gold = Gold;
+	m_Jewelry = Jewelry;
+	m_Goods = Goods;
+}
+
 CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 {
 	CInventoryItem *rc = NULL;

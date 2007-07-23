@@ -146,6 +146,7 @@ const idEventDef EV_GetItem("getItem", "s", 'e');							// itemname -> NULL not 
 const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current value for the given group
 const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
+const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
@@ -302,6 +303,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetLoot,				idEntity::Event_GetLoot )
 	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
+	EVENT( EV_ChangeLootAmount,		idEntity::ChangeLootAmount )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7796,6 +7798,41 @@ Quit:
 	return rc;
 }
 
+void idEntity::ChangeLootAmount(int lootType, int amount)
+{
+	int Gold, Jewelry, Goods, Total;
+	int rc = 0;
+
+	Total = Inventory()->GetLoot(Gold, Jewelry, Goods);
+
+	switch(lootType)
+	{
+		case CInventoryItem::LT_GOLD:
+			Gold += amount;
+			rc = Gold;
+		break;
+
+		case CInventoryItem::LT_GOODS:
+			Goods += amount;
+			rc = Goods;
+		break;
+
+		case CInventoryItem::LT_JEWELS:
+			Jewelry += amount;
+			rc = Jewelry;
+		break;
+
+		default:
+			rc = 0;
+		break;
+	}
+
+	// Set the new values
+	Inventory()->SetLoot(Gold, Jewelry, Goods);
+
+	idThread::ReturnInt(rc);
+}
+
 void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) 
 {
 	CInventory* inventory = Inventory();
@@ -7812,26 +7849,15 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 
 			bDropped = amount < 0;
 
-			// Check for loot changes
-			bIsLoot = ( item->GetLootType() != CInventoryItem::LT_NONE );
-			if( bIsLoot )
-			{
-				// TODO: Handle loot.  Need function similar to CInventory::ValidateLoot, but not assuming an entity
-				// Can this even be called on generic loot categories?  Do they have an inventory name?
-			}
-			else
-			{
-				idEntity *ent = item->GetItemEntity();
-				// Assume item does not have an overall value since it's not loot
-				gameLocal.m_MissionData->InventoryCallback
-				( 
-					ent, 
-					item->GetName(), 
-					item->GetValue(), 
-					1, 
-					!bDropped 
-				);
-			}
+			// Assume item does not have an overall value since it's not loot
+			gameLocal.m_MissionData->InventoryCallback
+			( 
+				item->GetItemEntity(), 
+				item->GetName(), 
+				item->GetValue(), 
+				1, 
+				!bDropped 
+			);
 
 			if (item->GetCount() <= 0) 
 			{

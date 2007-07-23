@@ -74,6 +74,7 @@ public:
 	CInventoryCursor*		GetCursor(int id);
 
 	int						GetLoot(int &Gold, int &Jewelry, int &Goods);
+	void					SetLoot(int Gold, int Jewelry, int Goods);
 
 	inline idEntity			*GetOwner(void) { return m_Owner.GetEntity(); };
 	void					SetOwner(idEntity *Owner);
