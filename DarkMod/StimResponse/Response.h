@@ -56,7 +56,7 @@ public:
 									   const idDict *args);
 
 protected:
-	CResponse(idEntity *Owner, int Type);
+	CResponse(idEntity *Owner, int Type, int uniqueId);
 	virtual ~CResponse(void);
 
 protected:

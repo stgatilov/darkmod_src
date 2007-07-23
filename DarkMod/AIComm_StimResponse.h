@@ -21,7 +21,7 @@ class CAIComm_Response:
 	public CResponse
 {
 public:
-	CAIComm_Response(idEntity* Owner, int Type);
+	CAIComm_Response(idEntity* Owner, int Type, int uniqueId);
 	virtual ~CAIComm_Response(void);
 
 	virtual void Save(idSaveGame *savefile) const;
@@ -73,7 +73,7 @@ public:
 	/*!
 	* Constructor
 	*/
-	CAIComm_Stim (idEntity* Owner, int Type);
+	CAIComm_Stim (idEntity* Owner, int Type, int uniqueId);
 
 	/*!
 	* Destructor

@@ -59,7 +59,7 @@ class CStimResponse {
 	friend class CStimResponseCollection;
 
 protected:
-	CStimResponse(idEntity *Owner, int Type);
+	CStimResponse(idEntity *Owner, int Type, int uniqueId);
 	virtual ~CStimResponse(void);
 
 public:
@@ -67,6 +67,11 @@ public:
 	virtual void Restore(idRestoreGame *savefile);
 
 	void EnableSR(bool Enable = true);
+
+	/**
+	 * greebo: Returns the unique ID used to identify this S/R after map load.
+	 */
+	int	getUniqueId() const;
 
 	/** 
 	* greebo: This evaluates the m_Chance member variable against a random float.
@@ -84,6 +89,10 @@ public:
 	static StimType getStimType(const idStr& stimName);
 
 public:
+	// A unique ID as assigned by the StimResponseCollection. Used to identify 
+	// this stim after map load.
+	int					m_UniqueId;
+
 	/**
 	 * Id for the stimulus that uniquely identifies a stim, so they can
 	 * be associated to each other.

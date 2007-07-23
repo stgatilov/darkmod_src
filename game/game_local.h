@@ -459,6 +459,9 @@ public:
 **/
 	float					m_walkSpeed;
 
+	// The highest used unique stim/response id
+	int						m_HighestSRId;
+
 	idList<CStimResponseTimer *> m_Timer;			// generic timer used for other purposes than stims.
 	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
 	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state

@@ -51,8 +51,9 @@ char *cStimType[] = {
 /********************************************************************/
 /*                    CStimResponse                                 */
 /********************************************************************/
-CStimResponse::CStimResponse(idEntity *Owner, int Type)
+CStimResponse::CStimResponse(idEntity *Owner, int Type, int uniqueId)
 {
+	m_UniqueId = uniqueId;
 	m_StimTypeId = Type;
 	m_Owner = Owner;
 	m_State = SS_DISABLED;
@@ -69,8 +70,14 @@ CStimResponse::~CStimResponse(void)
 {
 }
 
+int	CStimResponse::getUniqueId() const
+{
+	return m_UniqueId;
+}
+
 void CStimResponse::Save(idSaveGame *savefile) const
 {
+	savefile->WriteInt(m_UniqueId);
 	savefile->WriteInt(m_StimTypeId);
 	savefile->WriteString(m_StimTypeName.c_str());
 	savefile->WriteBool(m_Removable);
@@ -86,6 +93,7 @@ void CStimResponse::Save(idSaveGame *savefile) const
 
 void CStimResponse::Restore(idRestoreGame *savefile)
 {
+	savefile->ReadInt(m_UniqueId);
 	savefile->ReadInt(m_StimTypeId);
 	savefile->ReadString(m_StimTypeName);
 	savefile->ReadBool(m_Removable);

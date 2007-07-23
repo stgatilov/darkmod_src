@@ -26,7 +26,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 /*----------------------------------------------------------------*/
 
-CAIComm_Response::CAIComm_Response(idEntity* Owner, int Type) : CResponse (Owner, Type)
+CAIComm_Response::CAIComm_Response(idEntity* Owner, int Type, int uniqueId) : 
+	CResponse (Owner, Type, uniqueId)
 {
 }
 
@@ -187,7 +188,8 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 **************************************************************************
 */
 
-CAIComm_Stim::CAIComm_Stim (idEntity* Owner, int Type) : CStim (Owner, Type)
+CAIComm_Stim::CAIComm_Stim (idEntity* Owner, int Type, int uniqueId) : 
+	CStim (Owner, Type, uniqueId)
 {
 	messageCount = 0;
 	p_firstMessage = NULL;

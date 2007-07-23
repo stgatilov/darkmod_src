@@ -19,8 +19,8 @@ static bool init_version = FileVersionList("$Id: Response.cpp 870 2007-03-27 14:
 /********************************************************************/
 /*                   CResponse                                      */
 /********************************************************************/
-CResponse::CResponse(idEntity *e, int Type)
-: CStimResponse(e, Type)
+CResponse::CResponse(idEntity *e, int Type, int uniqueId)
+: CStimResponse(e, Type, uniqueId)
 {
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
@@ -72,8 +72,6 @@ void CResponse::Restore(idRestoreGame *savefile)
 
 void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 {
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse::TriggerResponse \r");
-
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
 
 	// Perform the probability check

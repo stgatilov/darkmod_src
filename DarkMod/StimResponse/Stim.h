@@ -22,7 +22,7 @@ class CStim : public CStimResponse {
 	friend class CStimResponseCollection;
 
 protected:
-	CStim(idEntity *, int Type);
+	CStim(idEntity *, int Type, int uniqueId);
 	virtual ~CStim(void);
 
 public:

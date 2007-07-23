@@ -18,8 +18,8 @@ static bool init_version = FileVersionList("$Id: Stim.cpp 870 2007-03-27 14:21:5
 /********************************************************************/
 /*                     CStim                                        */
 /********************************************************************/
-CStim::CStim(idEntity *e, int Type)
-: CStimResponse(e, Type)
+CStim::CStim(idEntity *e, int Type, int uniqueId)
+: CStimResponse(e, Type, uniqueId)
 {
 	m_bUseEntBounds = false;
 	m_bCollisionBased = false;
