@@ -70,11 +70,11 @@ public:
 	bool			HasResponse( void );
 
 	/**
-	 * AddEntityToList will add the given entity to the list exactly once. If the entity
-	 * is already in the list, then nothing will happen and the entity stays in it.
+	 * greebo: Tries to find the Stim/Response with the given ID.
+	 * @returns: the pointer to the class, or NULL if the uniqueId couldn't be found.
 	 */
-	void			AddEntityToList(idList<void *> &List, void *);
- 
+	CStimResponse*	FindStimResponse(int uniqueId);
+
 	/**
 	 * If the stim contains information for a timed event, this function parses the string
 	 * and creates the appropriate timer structure.

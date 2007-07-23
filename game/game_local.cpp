@@ -733,9 +733,23 @@ void idGameLocal::SaveGame( idFile *f ) {
 		m_Timer[i]->Save(&savegame);
 	}
 
-	//TODO idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
-	//TODO idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
-	//TODO idList<idEntity *>		m_RespEntity;			// all entities that currently have a response regardless of it's state
+	savegame.WriteInt(m_StimTimer.Num());
+	for (int i = 0; i < m_StimTimer.Num(); i++)
+	{
+		savegame.WriteInt(m_StimTimer[i]->getUniqueId());
+	}
+
+	savegame.WriteInt(m_StimEntity.Num());
+	for (int i = 0; i < m_StimEntity.Num(); i++)
+	{
+		m_StimEntity[i].Save(&savegame);
+	}
+
+	savegame.WriteInt(m_RespEntity.Num());
+	for (int i = 0; i < m_RespEntity.Num(); i++)
+	{
+		m_RespEntity[i].Save(&savegame);
+	}
 
 	// spawnSpots
 	// initialSpots
@@ -1643,13 +1657,35 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadInt(m_HighestSRId);
 
-	int numTimers;
-	savegame.ReadInt(numTimers);
-	m_Timer.SetNum(numTimers);
-	for (int i = 0; i < m_Timer.Num(); i++)
+	savegame.ReadInt(num);
+	m_Timer.SetNum(num);
+	for (int i = 0; i < num; i++)
 	{
 		m_Timer[i] = new CStimResponseTimer;
 		m_Timer[i]->Restore(&savegame);
+	}
+
+	savegame.ReadInt(num);
+	m_StimTimer.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		int uniqueId;
+		savegame.ReadInt(uniqueId);
+		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(uniqueId));
+	}
+
+	savegame.ReadInt(num);
+	m_StimEntity.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_StimEntity[i].Restore(&savegame);
+	}
+
+	savegame.ReadInt(num);
+	m_RespEntity.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_RespEntity[i].Restore(&savegame);
 	}
 
 	// spawnSpots
@@ -5336,16 +5372,16 @@ void idGameLocal::SpawnLightgemEntity(void)
 	}
 }
 
-int idGameLocal::CheckStimResponse(idList<idEntity *> &l, idEntity *e)
+int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)
 {
 
 	int rc = -1;
 	int i, n;
 
-	n = l.Num();
+	n = list.Num();
 	for(i = 0; i < n; i++)
 	{
-		if(l[i] == e)
+		if(list[i].GetEntity() == e)
 		{
 			rc = i;
 			break;
@@ -5361,7 +5397,11 @@ bool idGameLocal::AddStim(idEntity *e)
 	bool rc = true;
 
 	if(CheckStimResponse(m_StimEntity, e) == -1)
-		m_StimEntity.Append(e);
+	{
+		idEntityPtr<idEntity> entPtr;
+		entPtr = e;
+		m_StimEntity.Append(entPtr);
+	}
 
 	return rc;
 }
@@ -5371,7 +5411,9 @@ void idGameLocal::RemoveStim(idEntity *e)
 	int i;
 
 	if((i = CheckStimResponse(m_StimEntity, e)) != -1)
+	{
 		m_StimEntity.RemoveIndex(i);
+	}
 }
 
 bool idGameLocal::AddResponse(idEntity *e)
@@ -5379,7 +5421,11 @@ bool idGameLocal::AddResponse(idEntity *e)
 	bool rc = true;
 
 	if(CheckStimResponse(m_RespEntity, e) == -1)
-		m_RespEntity.Append(e);
+	{
+		idEntityPtr<idEntity> entPtr;
+		entPtr = e;
+		m_RespEntity.Append(entPtr);
+	}
 
 	return rc;
 }
@@ -5390,7 +5436,9 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	int i;
 
 	if((i = CheckStimResponse(m_RespEntity, e)) != -1)
+	{
 		m_RespEntity.RemoveIndex(i);
+	}
 }
 
 int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
@@ -5457,6 +5505,29 @@ void idGameLocal::ProcessTimer(unsigned long ticks)
 	}
 }
 
+CStimResponse* idGameLocal::FindStimResponse(int uniqueId)
+{
+	for (int i = 0; i < MAX_GENTITIES; i++)
+	{
+		if (entities[i] != NULL && entities[i]->GetStimResponseCollection() != NULL)
+		{
+			CStimResponse* candidate = 
+				entities[i]->GetStimResponseCollection()->FindStimResponse(uniqueId);
+
+			if (candidate != NULL)
+			{
+				// We found the stim/response, return it
+				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StimResponse with Id %d found.\r", uniqueId);
+				return candidate;
+			}
+		}
+	}
+
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Warning: StimResponse with Id %d NOT found.\r", uniqueId);
+	// Search did not produce any results
+	return NULL;
+}
+
 void idGameLocal::ProcessStimResponse(unsigned long ticks)
 {
 	idEntity *e;
@@ -5497,7 +5568,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 	en = m_StimEntity.Num();
 	for(ei = 0; ei < en; ei++)
 	{
-		e = m_StimEntity[ei];
+		e = m_StimEntity[ei].GetEntity();
 		// Check if there are any Stims/Responses defined
 		if ((src = e->GetStimResponseCollection()) != NULL)
 		{

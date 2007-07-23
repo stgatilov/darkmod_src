@@ -160,7 +160,7 @@ CStim *CStimResponseCollection::AddStim(idEntity *Owner, int Type, float fRadius
 		pRet->m_Radius = fRadius;
 		pRet->m_State = SS_DISABLED;
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, Owner); 
+		gameLocal.AddStim(Owner);
 	}
 
 	return pRet;
@@ -193,7 +193,7 @@ CResponse *CStimResponseCollection::AddResponse(idEntity *Owner, int Type, bool 
 		pRet->m_Default = bDefault;
 		pRet->m_Removable = bRemovable;
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, Owner); 
+		gameLocal.AddResponse(Owner); 
 	}
 
 	// Optimization: Update clip contents to include contents_response
@@ -224,7 +224,7 @@ CStim *CStimResponseCollection::AddStim(CStim *s)
 		pRet = s;
 		m_Stim.Append(pRet);
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_StimEntity, s->m_Owner.GetEntity()); 
+		gameLocal.AddStim(s->m_Owner.GetEntity());
 	}
 
 Quit:
@@ -254,7 +254,7 @@ CResponse *CStimResponseCollection::AddResponse(CResponse *r)
 		pRet = r;
 		m_Response.Append(pRet);
 
-		AddEntityToList((idList<void *>	&)gameLocal.m_RespEntity, r->m_Owner.GetEntity());
+		gameLocal.AddResponse(r->m_Owner.GetEntity());
 	}
 
 Quit:
@@ -358,26 +358,6 @@ int CStimResponseCollection::RemoveResponse(CResponse *r)
 	}
 
 	return m_Response.Num();
-}
-
-
-void CStimResponseCollection::AddEntityToList(idList<void *> &oList, void *e)
-{
-	bool add = true;
-	int i, n;
-
-	n = oList.Num();
-	for(i = 0; i < n; i++)
-	{
-		if(oList[i] == e)
-		{
-			add = false;
-			break;
-		}
-	}
-
-	if(add == true)
-		oList.Append(e);
 }
 
 CStimResponse *CStimResponseCollection::GetStimResponse(int StimType, bool Stim)
@@ -679,4 +659,28 @@ bool CStimResponseCollection::HasStim( void )
 bool CStimResponseCollection::HasResponse( void )
 {
 	return (m_Response.Num() > 0);
+}
+
+CStimResponse* CStimResponseCollection::FindStimResponse(int uniqueId)
+{
+	// Search the stims
+	for (int i = 0; i < m_Stim.Num(); i++)
+	{
+		if (m_Stim[i]->getUniqueId() == uniqueId)
+		{
+			return m_Stim[i];
+		}
+	}
+
+	// Search the responses
+	for (int i = 0; i < m_Response.Num(); i++)
+	{
+		if (m_Response[i]->getUniqueId() == uniqueId)
+		{
+			return m_Response[i];
+		}
+	}
+
+	// Nothing found
+	return NULL;
 }

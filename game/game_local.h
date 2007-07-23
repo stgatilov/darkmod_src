@@ -191,6 +191,7 @@ class CsndPropLoader;
 class CsndProp;
 class CRelations;
 class CMissionData;
+class CStimResponse;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -464,8 +465,8 @@ public:
 
 	idList<CStimResponseTimer *> m_Timer;			// generic timer used for other purposes than stims.
 	idList<CStim *>			m_StimTimer;			// All stims that have a timer associated. 
-	idList<idEntity *>		m_StimEntity;			// all entities that currently have a stim regardless of it's state
-	idList<idEntity *>		m_RespEntity;			// all entities that currently have a response regardless of it's state
+	idList< idEntityPtr<idEntity> >		m_StimEntity;			// all entities that currently have a stim regardless of it's state
+	idList< idEntityPtr<idEntity> >		m_RespEntity;			// all entities that currently have a response regardless of it's state
 
 	int						cinematicSkipTime;		// don't allow skipping cinemetics until this time has passed so player doesn't skip out accidently from a firefight
 	int						cinematicStopTime;		// cinematics have several camera changes, so keep track of when we stop them so that we don't reset cinematicSkipTime unnecessarily
@@ -755,7 +756,12 @@ public:
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);
 	void					RemoveResponse(idEntity *);
-	int						CheckStimResponse(idList<idEntity *> &, idEntity *);
+
+	/**
+	 * Checks whether the entity <e> is in the given list named <list>. 
+	 * @returns: the list index or -1 if the entity is not in the list.
+	 */
+	int						CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *);
 
 	/**
 	* Fires off all the enabled responses to this stim of the entities in the given entites list.
@@ -775,6 +781,14 @@ public:
 	 * ProcessStimResponse will check wether stims are in reach of a response and if so activate them.
 	 */
 	void					ProcessStimResponse(unsigned long ticks);
+
+	/**
+	 * greebo: Traverses the entities and tries to find the Stim/Response with the given ID.
+	 * This is expensive, so don't call this during map runtime, only in between maps.
+	 *
+	 * @returns: the pointer to the class, or NULL if the uniqueId couldn't be found.
+	 */
+	CStimResponse*			FindStimResponse(int uniqueId);
 
 	/**
 	 * CheckSignal will call all entites registered for a signal actacvtion.
