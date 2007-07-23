@@ -27,12 +27,14 @@ void CStimResponseCollection::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Stim.Num());
 	for (int i = 0; i < m_Stim.Num(); i++)
 	{
+		savefile->WriteInt(static_cast<int>(m_Stim[i]->m_StimTypeId));
 		m_Stim[i]->Save(savefile);
 	}
 
 	savefile->WriteInt(m_Response.Num());
 	for (int i = 0; i < m_Response.Num(); i++)
 	{
+		savefile->WriteInt(static_cast<int>(m_Response[i]->m_StimTypeId));
 		m_Response[i]->Save(savefile);
 	}
 }
@@ -45,8 +47,18 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 	m_Stim.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
-		// Allocate a new stim class (type info will be required)
-		m_Stim[i] = new CStim(NULL, 0);
+		// Allocate a new stim class (according to the type info)
+		int typeInt;
+		savefile->ReadInt(typeInt);
+		if (static_cast<StimType>(typeInt) == ST_COMMUNICATION)
+		{
+			m_Stim[i] = new CAIComm_Stim(NULL, 0);
+		}
+		else 
+		{
+			m_Stim[i] = new CStim(NULL, 0);
+		}
+		
 		m_Stim[i]->Restore(savefile);
 	}
 
@@ -54,8 +66,18 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 	m_Response.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
-		// Allocate a new response class (type info will be required)
-		m_Response[i] = new CResponse(NULL, 0);
+		// Allocate a new response class (according to the type info)
+		int typeInt;
+		savefile->ReadInt(typeInt);
+		if (static_cast<StimType>(typeInt) == ST_COMMUNICATION)
+		{
+			m_Response[i] = new CAIComm_Response(NULL, 0);
+		}
+		else 
+		{
+			m_Response[i] = new CResponse(NULL, 0);
+		}
+		
 		m_Response[i]->Restore(savefile);
 	}
 }
