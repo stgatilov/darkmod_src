@@ -112,24 +112,28 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui) {
 		// Initialize the shop
 		Init();
 		DisplayShop(gui);
+		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopBuy") == 0)
 	{
 		// Buy an item
 		int boughtItem = gui->GetStateInt("boughtItem", "0");
 		BuyItem(boughtItem);
+		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopSold") == 0)
 	{
 		// Return an item to the shelf
 		int soldItem = gui->GetStateInt("soldItem", "0");
 		SellItem(soldItem);
+		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopDrop") == 0)
 	{
 		// Drop one of the starting items
 		int dropItem = gui->GetStateInt("dropItem", "0");
 		DropItem(dropItem);
+		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopMore") == 0)
 	{
@@ -141,12 +145,12 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui) {
 		} else if (idStr::Icmp(listName, "purchased") == 0) {
 			ScrollList(&purchasedTop, LIST_SIZE_PURCHASED, &itemsPurchased);
 		}
+		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopDone") == 0)
 	{
 		// nothing to do here
 	}
-	UpdateGUI(gui);
 }
 
 void CShop::ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list) {
@@ -223,7 +227,7 @@ void CShop::DisplayShop(idUserInterface *gui) {
 	idDict mapDict = mapEnt->epairs;
 
 	gui->SetStateInt("isShopMenuVisible", 1);
-	gui->SetStateInt("isNewGameRootMenuVisible", 0);
+	gui->SetStateInt("isDiffMenuVisible", 0);
 	gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapName));
 
 	// get list of all items that can be sold

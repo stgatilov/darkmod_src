@@ -36,6 +36,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndProp.h"
 #include "Relations.h"
 #include "shop.h"
+#include "DifficultyMenu.h"
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
@@ -133,6 +134,7 @@ CsndProp		g_SoundProp;
 CRelations		g_globalRelations;
 CMissionData	g_MissionData;
 CShop			g_Shop;
+CDifficultyMenu	g_Diff;
 
 static idList<const char *> *s_FileVersion = NULL;
 

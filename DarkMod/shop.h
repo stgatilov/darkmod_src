@@ -5,6 +5,8 @@
 #define LIST_SIZE_PURCHASED 6
 #define LIST_SIZE_STARTING 5
 
+extern idCVar	tdm_mapName;
+
 // Represents an item for sale
 class CShopItem {
 private:

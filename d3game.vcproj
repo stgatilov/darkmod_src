@@ -850,6 +850,12 @@
 					RelativePath=".\DarkMod\declxdata.h">
 				</File>
 				<File
+					RelativePath=".\DifficultyMenu.cpp">
+				</File>
+				<File
+					RelativePath=".\DifficultyMenu.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\fdchar.cpp">
 				</File>
 				<File

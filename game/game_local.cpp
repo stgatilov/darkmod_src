@@ -31,6 +31,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/func_shooter.h"
 #include "../DarkMod/shop.h"
+#include "../DarkMod/DifficultyMenu.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -46,7 +47,8 @@ extern CRelations		g_globalRelations;
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
-extern CShop				g_Shop;
+extern CShop			g_Shop;
+extern CDifficultyMenu	g_Diff;
 
 #define BUFFER_LEN 4096
 
@@ -2924,6 +2926,7 @@ handles main menu commands.
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
+	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui);
 }
 
