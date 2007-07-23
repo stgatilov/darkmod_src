@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/declxdata.h"
 #include "../DarkMod/PlayerData.h"
+#include "../DarkMod/MissionData.h"
 #include "../DarkMod/sndProp.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/Inventory/Inventory.h"
@@ -7795,17 +7796,45 @@ Quit:
 	return rc;
 }
 
-void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) {
+void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) 
+{
 	CInventory* inventory = Inventory();
+	bool bDropped( false ), bIsLoot( false );
 
 	CInventoryCategory* category = inventory->GetCategory(invCategory);
-	if (category != NULL) {
+	if (category != NULL) 
+	{
 		CInventoryItem* item = category->GetItem(invName);
-		if (item != NULL) {
+		if (item != NULL) 
+		{
 			// Change the counter by amount
 			item->SetCount(item->GetCount() + amount);
 
-			if (item->GetCount() <= 0) {
+			bDropped = amount < 0;
+
+			// Check for loot changes
+			bIsLoot = ( item->GetLootType() != CInventoryItem::LT_NONE );
+			if( bIsLoot )
+			{
+				// TODO: Handle loot.  Need function similar to CInventory::ValidateLoot, but not assuming an entity
+				// Can this even be called on generic loot categories?  Do they have an inventory name?
+			}
+			else
+			{
+				idEntity *ent = item->GetItemEntity();
+				// Assume item does not have an overall value since it's not loot
+				gameLocal.m_MissionData->InventoryCallback
+				( 
+					ent, 
+					item->GetName(), 
+					item->GetValue(), 
+					1, 
+					!bDropped 
+				);
+			}
+
+			if (item->GetCount() <= 0) 
+			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty item from category.\r");
 				// Advance the cursor
 				InventoryCursor()->GetNextItem();
@@ -7814,7 +7843,8 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 			}
 			
 			// Check for empty categories after the item has been removed
-			if (category->isEmpty()) {
+			if (category->isEmpty()) 
+			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
 				// Switch the cursor to the next category
 				InventoryCursor()->GetNextCategory();
@@ -7822,12 +7852,14 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 				InventoryCursor()->Inventory()->removeCategory(category);
 			}
 		}
-		else {
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not decrease item count, item name %s not found\r", invName);
+		else
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, item name %s not found\r", invName);
 		}
 	}
-	else {
-		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not decrease item count, inventory category %s not found\r", invCategory);
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, inventory category %s not found\r", invCategory);
 	}
 }
 
