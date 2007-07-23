@@ -1665,13 +1665,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		m_Timer[i]->Restore(&savegame);
 	}
 
+	// The list to take all the values, they will be restored later on
+	idList<int> tempStimTimerIdList;
 	savegame.ReadInt(num);
-	m_StimTimer.SetNum(num);
+	tempStimTimerIdList.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
-		int uniqueId;
-		savegame.ReadInt(uniqueId);
-		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(uniqueId));
+		savegame.ReadInt(tempStimTimerIdList[i]);
 	}
 
 	savegame.ReadInt(num);
@@ -1717,6 +1717,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore the physics pointer in the grabber.
 	g_Global.m_DarkModPlayer->grabber->SetPhysicsFromDragEntity();
+
+	// Restore the CStim* pointers in the m_StimTimer list
+	m_StimTimer.SetNum(tempStimTimerIdList.Num());
+	for (int i = 0; i < tempStimTimerIdList.Num(); i++)
+	{
+		m_StimTimer[i] = static_cast<CStim*>(FindStimResponse(tempStimTimerIdList[i]));
+	}
 
 	Printf( "--------------------------------------\n" );
 
