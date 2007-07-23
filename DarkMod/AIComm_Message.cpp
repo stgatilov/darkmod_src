@@ -56,9 +56,9 @@ CAIComm_Message::CAIComm_Message
 	m_positionOfIssuance.x = 0.0;
 	m_positionOfIssuance.y = 0.0;
 	m_positionOfIssuance.z = 0.0;
-	if (m_p_issuingEntity != NULL)
+	if (m_p_issuingEntity.GetEntity() != NULL)
 	{
-		idPhysics* p_phys  = m_p_issuingEntity->GetPhysics();
+		idPhysics* p_phys  = m_p_issuingEntity.GetEntity()->GetPhysics();
 		if (p_phys != NULL)
 		{
 			m_positionOfIssuance = p_phys->GetOrigin();
@@ -85,10 +85,24 @@ CAIComm_Message::~CAIComm_Message()
 
 void CAIComm_Message::Save(idSaveGame *savefile) const
 {
-	// TODO
+	savefile->WriteInt(static_cast<int>(m_commType));
+	m_p_issuingEntity.Save(savefile);
+	m_p_recipientEntity.Save(savefile);
+	m_p_directObjectEntity.Save(savefile);
+	savefile->WriteVec3(m_directObjectLocation);
+	savefile->WriteVec3(m_positionOfIssuance);
+	savefile->WriteFloat(m_maximumRadiusInWorldCoords);
 }
 
 void CAIComm_Message::Restore(idRestoreGame *savefile)
 {
-	// TODO
+	int tempInt;
+	savefile->ReadInt(tempInt);
+	m_commType = static_cast<TCommType>(tempInt);
+	m_p_issuingEntity.Restore(savefile);
+	m_p_recipientEntity.Restore(savefile);
+	m_p_directObjectEntity.Restore(savefile);
+	savefile->ReadVec3(m_directObjectLocation);
+	savefile->ReadVec3(m_positionOfIssuance);
+	savefile->ReadFloat(m_maximumRadiusInWorldCoords);
 }

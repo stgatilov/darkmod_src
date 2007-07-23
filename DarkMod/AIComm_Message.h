@@ -45,10 +45,6 @@
 class CAIComm_Message
 {
 public:
-
-	void Save(idSaveGame *savefile) const;
-	void Restore(idRestoreGame *savefile);
-
 	/*!
 	* This enumeration defines the meaning of the communication.
 	* Each enumeration value indicates 
@@ -216,7 +212,7 @@ public:
 	*/
 	idEntity* getIssuingEntity()
 	{
-		return m_p_issuingEntity;
+		return m_p_issuingEntity.GetEntity();
 	};
 
 	/*!
@@ -226,7 +222,7 @@ public:
 	*/
 	idEntity* getRecipientEntity()
 	{
-		return m_p_recipientEntity;
+		return m_p_recipientEntity.GetEntity();
 	};
 
 	/*!
@@ -235,7 +231,7 @@ public:
 	*/
 	idEntity* getDirectObjectEntity()
 	{
-		return m_p_directObjectEntity;
+		return m_p_directObjectEntity.GetEntity();
 	};
 
 	/*!
@@ -277,6 +273,8 @@ public:
 	*/
 	~CAIComm_Message();
 
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 
 protected:
 
@@ -289,21 +287,21 @@ protected:
 	/*!
 	* This field indicates the entity which issued the communication
 	*/
-	idEntity* m_p_issuingEntity;
+	idEntityPtr<idEntity> m_p_issuingEntity;
 
 	/*!
 	* This field indicates the entity which is the intended recipient of the
 	* communication.  A value of NULL indicates the communication has no
 	* specific recipient in mind.
 	*/
-	idEntity* m_p_recipientEntity;
+	idEntityPtr<idEntity> m_p_recipientEntity;
 
 	/*!
 	* This field indicates the entity which is the entity mentioned in the
 	* communication.
 	*
 	*/
-	idEntity* m_p_directObjectEntity;
+	idEntityPtr<idEntity> m_p_directObjectEntity;
 
 	/*!
 	* This field indicates the location which is the location mentioned in
@@ -321,9 +319,6 @@ protected:
 	* This field indicates the maximum radius of the message for responders
 	*/
 	float m_maximumRadiusInWorldCoords;
-
-
-
 };
 
 
