@@ -83,3 +83,12 @@ CAIComm_Message::~CAIComm_Message()
 	// Nothing to do here 
 }
 
+void CAIComm_Message::Save(idSaveGame *savefile) const
+{
+	// TODO
+}
+
+void CAIComm_Message::Restore(idRestoreGame *savefile)
+{
+	// TODO
+}

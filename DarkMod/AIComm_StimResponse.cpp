@@ -40,14 +40,14 @@ void CAIComm_Response::Save(idSaveGame *savefile) const
 {
 	CResponse::Save(savefile);
 
-	// TODO
+	// Nothing special to save here. I'll leave this virtual method for future members.
 }
 
 void CAIComm_Response::Restore(idRestoreGame *savefile)
 {
 	CResponse::Restore(savefile);
 
-	// TODO
+	// Nothing special to save here. I'll leave this virtual method for future members.
 }
 
 /*----------------------------------------------------------------*/
@@ -209,14 +209,83 @@ void CAIComm_Stim::Save(idSaveGame *savefile) const
 {
 	CStim::Save(savefile);
 
-	// TODO
+	savefile->WriteFloat(static_cast<float>(messageCount));
+	
+	TAICommMessageNode* cur = p_firstMessage;
+	
+	for (unsigned long i = 0; i < messageCount; i++)
+	{
+		if (cur == NULL)
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("MessageCount/list count discrepancy while saving!\r");
+			break;
+		}
+		cur->p_message->Save(savefile);
+
+		cur = cur->p_next;
+	}
+
+	// Check if any more nodes are available
+	if (cur != NULL)
+	{
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("MessageCount/list count discrepancy after saving!\r");
+	}
 }
 
 void CAIComm_Stim::Restore(idRestoreGame *savefile)
 {
 	CStim::Restore(savefile);
 
-	// TODO
+	float tempFloat;
+	savefile->ReadFloat(tempFloat);
+	messageCount = static_cast<unsigned long>(tempFloat);
+
+	TAICommMessageNode* prev = NULL;
+	p_firstMessage = NULL;
+
+	// greebo: Restore the linked list, one by one
+	for (unsigned long i = 0; i < messageCount; i++)
+	{
+		// Allocate a new node
+		TAICommMessageNode* cur = new TAICommMessageNode;
+
+		// See if the first message node is still NULL
+		if (p_firstMessage == NULL)
+		{
+			// Set the first node to this one
+			p_firstMessage = cur;
+		}
+
+		// Link back to the previous node
+		cur->p_prev = prev;
+
+		// Next is still NULL, will be set in the next loop
+		cur->p_next = NULL;
+
+		// Link the previous node to the current one
+		if (prev != NULL)
+		{
+			prev->p_next = cur;
+		}
+
+		// Allocate an empty message class
+		cur->p_message = new CAIComm_Message(
+			static_cast<CAIComm_Message::TCommType>(0),
+			0.0f,
+			NULL,
+			NULL,
+			NULL,
+			idVec3(0,0,0)
+		);
+		// Tell the message to load its values from the savefile
+		cur->p_message->Restore(savefile);
+
+		// Set the previous pointer for the next loop
+		prev = cur;
+	}
+
+	// "prev" is pointing to the last allocated node
+	p_lastMessage = prev;
 }
 
 /*-------------------------------------------------------------------------*/

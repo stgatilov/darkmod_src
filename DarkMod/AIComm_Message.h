@@ -46,6 +46,9 @@ class CAIComm_Message
 {
 public:
 
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
+
 	/*!
 	* This enumeration defines the meaning of the communication.
 	* Each enumeration value indicates 
