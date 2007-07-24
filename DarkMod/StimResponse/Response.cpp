@@ -65,7 +65,7 @@ void CResponse::Restore(idRestoreGame *savefile)
 	m_ResponseEffects.SetNum(num);
 	for (int i = 0; i < num; i++)
 	{
-		m_ResponseEffects[i] = new CResponseEffect(m_Owner.GetEntity(), NULL, "", "");
+		m_ResponseEffects[i] = new CResponseEffect(NULL, "", "", false);
 		m_ResponseEffects[i]->Restore(savefile);
 	}
 }
@@ -130,6 +130,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		}
 	}
 	else {
+		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Iterating through ResponseEffects: %d\r", m_ResponseEffects.Num());
 		// "Normal" mode, all the effects get fired in order
 		for (int i = 0; i < m_ResponseEffects.Num(); i++) {
 			m_ResponseEffects[i]->runScript(m_Owner.GetEntity(), sourceEntity, magnitude);
@@ -163,18 +164,21 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 
 		if (scriptStr != "")
 		{
+			bool isLocalScript = true;
+
 			const function_t* scriptFunc = m_Owner.GetEntity()->scriptObject.GetFunction(scriptStr.c_str());
 			if (scriptFunc == NULL)
 			{
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse: %s not found in local space, checking for global.\r", scriptStr.c_str());
 				scriptFunc = gameLocal.program.FindFunction(scriptStr.c_str());
+				isLocalScript = false;
 			}
 
 			if (scriptFunc != NULL)
 			{
 				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("CResponse: %s SCRIPTFUNC.\r", scriptFunc->Name());
 				// Allocate a new effect object
-				CResponseEffect* newEffect = new CResponseEffect(m_Owner.GetEntity(), scriptFunc, effectPostfix, scriptStr);
+				CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix, scriptStr, isLocalScript);
 				// Add the item to the list
 				m_ResponseEffects.Append(newEffect);
 
@@ -197,7 +201,7 @@ CResponseEffect* CResponse::addResponseEffect(const idStr& effectEntityDef,
 		if (scriptFunc != NULL)
 		{
 			// Allocate a new effect object
-			CResponseEffect* newEffect = new CResponseEffect(m_Owner.GetEntity(), scriptFunc, effectPostfix, scriptStr);
+			CResponseEffect* newEffect = new CResponseEffect(scriptFunc, effectPostfix, scriptStr, false);
 			
 			// Add the item to the list
 			m_ResponseEffects.Append(newEffect);

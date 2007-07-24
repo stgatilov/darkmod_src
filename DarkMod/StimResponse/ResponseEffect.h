@@ -24,9 +24,8 @@ protected:
 	// so that the script can lookup any arguments it might need.
 	idStr _effectPostfix;
 
-	// The owning entity of the script function. If this is empty, 
-	// the response script function is global.
-	idEntityPtr<idEntity> _owner;
+	// Is TRUE of the script function is on the entity scriptobject, FALSE for local functions
+	bool _localScript;
 
 	// This is set to FALSE after loading, so that the script function
 	// gets resolved again.
@@ -34,10 +33,10 @@ protected:
 
 public:
 	// Pass the scriptowner to this structure or NULL for global functions
-	CResponseEffect(idEntity* scriptOwner,
-					const function_t* scriptFunction,
+	CResponseEffect(const function_t* scriptFunction,
 					const idStr& effectPostfix,
-					const idStr& scriptName	);
+					const idStr& scriptName	,
+					bool localScript);
 
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);

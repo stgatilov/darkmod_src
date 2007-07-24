@@ -18,26 +18,31 @@ static bool init_version = FileVersionList("$Id: ResponseEffect.cpp 870 2007-03-
 /********************************************************************/
 
 CResponseEffect::CResponseEffect(
-		idEntity* scriptOwner,
-		const function_t* scriptFunction, 
+		const function_t* scriptFunction,
 		const idStr& effectPostfix,
-		const idStr& scriptName	) :
+		const idStr& scriptName	,
+		bool localScript) :
 	_scriptFunction(scriptFunction),
 	_scriptName(scriptName),
 	_effectPostfix(effectPostfix),
+	_localScript(localScript),
 	_scriptFunctionValid(true)
-{
-	_owner = scriptOwner;
-}
+{}
 
 void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float magnitude) {
 	if (!_scriptFunctionValid)
 	{
+		if (owner == NULL)
+		{
+			DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Cannot restore scriptfunction, owner is NULL: %s\r", _scriptName.c_str());
+			return;
+		}
+
 		_scriptFunctionValid = true;
 
-		if (_owner.GetEntity() != NULL)	{
+		if (_localScript)	{
 			// Local scriptfunction
-			_scriptFunction = _owner.GetEntity()->scriptObject.GetFunction(_scriptName.c_str());
+			_scriptFunction = owner->scriptObject.GetFunction(_scriptName.c_str());
 		}
 		else {
 			// Global Method
@@ -56,16 +61,16 @@ void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float mag
 
 void CResponseEffect::Save(idSaveGame *savefile) const
 {
-	_owner.Save(savefile);
 	savefile->WriteString(_effectPostfix.c_str());
 	savefile->WriteString(_scriptName.c_str());
+	savefile->WriteBool(_localScript);
 }
 
 void CResponseEffect::Restore(idRestoreGame *savefile)
 {
-	_owner.Restore(savefile);
 	savefile->ReadString(_effectPostfix);
 	savefile->ReadString(_scriptName);
+	savefile->ReadBool(_localScript);
 
 	// The script function pointer has to be restored after loading, set the dirty flag
 	_scriptFunctionValid = false;
