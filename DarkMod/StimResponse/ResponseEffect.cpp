@@ -20,8 +20,8 @@ static bool init_version = FileVersionList("$Id: ResponseEffect.cpp 870 2007-03-
 CResponseEffect::CResponseEffect(
 		idEntity* scriptOwner,
 		const function_t* scriptFunction, 
-		const idStr& scriptName,
-		const idStr& effectPostfix) :
+		const idStr& effectPostfix,
+		const idStr& scriptName	) :
 	_scriptFunction(scriptFunction),
 	_scriptName(scriptName),
 	_effectPostfix(effectPostfix),
@@ -47,7 +47,7 @@ void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float mag
 
 	if (_scriptFunction == NULL) return;
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script...\r");
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script, effectPostfix = %s...\r", _effectPostfix.c_str());
 	idThread *pThread = new idThread(_scriptFunction);
 	int n = pThread->GetThreadNum();
 	pThread->CallFunctionArgs(_scriptFunction, true, "eesff", owner, stimEntity, _effectPostfix.c_str(), magnitude, n);

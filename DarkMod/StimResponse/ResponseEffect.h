@@ -36,8 +36,8 @@ public:
 	// Pass the scriptowner to this structure or NULL for global functions
 	CResponseEffect(idEntity* scriptOwner,
 					const function_t* scriptFunction,
-					const idStr& scriptName,
-					const idStr& effectPostfix);
+					const idStr& effectPostfix,
+					const idStr& scriptName	);
 
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
