@@ -100,7 +100,7 @@ void CStimResponse::Restore(idRestoreGame *savefile)
 
 	int tempInt;
 	savefile->ReadInt(tempInt);
-	m_State = static_cast<StimState>(m_State);
+	m_State = static_cast<StimState>(tempInt);
 
 	savefile->ReadFloat(m_Chance);
 	savefile->ReadInt(m_ChanceTimer);
