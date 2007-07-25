@@ -1545,6 +1545,12 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		m_WeaponCursor = Inventory()->GetCursor(cursorId);
 	}
 
+	// greebo: Workaround for invisible arrows after loading >> switch to unarmed
+	if (m_WeaponCursor != NULL)
+	{
+		SelectWeapon(0, false);
+	}
+
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
 
