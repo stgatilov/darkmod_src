@@ -53,7 +53,7 @@ darkModLAS::~darkModLAS(void)
 __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLight, int oldAreaNum, int newAreaNum )
 {
 	assert ((oldAreaNum >= 0) && (oldAreaNum < m_numAreas));
-	assert ((newAreaNum >= 0) && (newAreaNum < m_numAreas));
+	assert (((newAreaNum >= 0) && (newAreaNum < m_numAreas)) || newAreaNum == -1);
 
 	// Remove from old area
 	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[oldAreaNum];
@@ -79,6 +79,12 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Failed to remove LAS light record from list for area %d", oldAreaNum);
 
 		// Failed
+		return false;
+	}
+
+	if (newAreaNum == -1)
+	{
+		// Light is now in the void, return without doing anything
 		return false;
 	}
 
