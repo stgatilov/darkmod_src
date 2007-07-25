@@ -812,6 +812,12 @@ public:
 	 */
 	bool GetInventoryEntity(const idStr &Targetname, idEntity **);
 
+	/**
+	 * greebo: Returns the priority queue with the given index
+	 *		   or NULL for invalid indices.
+	 */
+	CPriorityQueue*	GetPriorityQueue(int index);
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

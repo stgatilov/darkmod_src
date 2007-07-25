@@ -584,6 +584,13 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	program.Save( &savegame );
 
+	// greebo: Save the priority queue list
+	savegame.WriteInt(m_PriorityQueues.Num());
+	for (int i = 0; i < m_PriorityQueues.Num(); i++)
+	{
+		m_PriorityQueues[i]->Save(&savegame);
+	}
+
 	savegame.WriteInt( g_skill.GetInteger() );
 
 	savegame.WriteDict( &serverInfo );
@@ -705,13 +712,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
-
-	// greebo: Save the priority queue list
-	savegame.WriteInt(m_PriorityQueues.Num());
-	for (int i = 0; i < m_PriorityQueues.Num(); i++)
-	{
-		m_PriorityQueues[i]->Save(&savegame);
-	}
 
 	// Save the lightgem entity spawnId
 	m_LightgemSurface.Save(&savegame);
@@ -1462,11 +1462,23 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// load the map needed for this savegame
 	LoadMap( mapName, 0 );
 
+	// greebo: Restore the saved priority queues, this must happen before 
+	// the entities are saved, because the Actors request their queues upon Restore().
+	int numQueues;
+	savegame.ReadInt(numQueues);
+	m_PriorityQueues.Clear();
+	for (int i = 0; i < numQueues; i++)
+	{
+		CPriorityQueue* queue = new CPriorityQueue;
+		queue->Restore(&savegame);
+		m_PriorityQueues.Append(queue);
+	}
+
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );
 
 	// precache the player
-	FindEntityDef( "player_doommarine", false );
+	FindEntityDef( "player_tdm_thief", false );
 
 	// precache the empty model (used by idEntity::m_renderTrigger)
 	renderModelManager->FindModel( EMPTY_MODEL );
@@ -1624,17 +1636,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadBool( influenceActive );
 	savegame.ReadInt( nextGibTime );
-
-	// greebo: Restore the saved priority queues
-	int numQueues;
-	savegame.ReadInt(numQueues);
-	m_PriorityQueues.Clear();
-	for (int i = 0; i < numQueues; i++)
-	{
-		CPriorityQueue* queue = new CPriorityQueue;
-		queue->Restore(&savegame);
-		m_PriorityQueues.Append(queue);
-	}
 
 	// Restore the lightgem entity pointer
 	m_LightgemSurface.Restore(&savegame);
@@ -5820,4 +5821,9 @@ bool idGameLocal::GetInventoryEntity(const idStr &TargetName, idEntity **e)
 
 Quit:
 	return rc;
+}
+
+CPriorityQueue*	idGameLocal::GetPriorityQueue(int index)
+{
+	return (index < 0 || index >= m_PriorityQueues.Num()) ? NULL : m_PriorityQueues[index];
 }

@@ -323,7 +323,11 @@ protected:
 	/**
 	* The priority queue that this actor uses as a task queue.
 	* Used for, and initialised by, AI scripts. Can be NULL.
+	*
+	* greebo: The task queue ID is the one that gets saved and
+	*		  restored to/from a savegame.
 	**/
+	int						m_TaskQueueID;
 	CPriorityQueue*			m_TaskQueue;
 
 	// joint handles

@@ -458,6 +458,7 @@ idActor::idActor( void ) {
 	task				= "";
 	taskPriority        = 0;
 	m_TaskQueue			= NULL;
+	m_TaskQueueID		= -1;
 
 	leftEyeJoint		= INVALID_JOINT;
 	rightEyeJoint		= INVALID_JOINT;
@@ -900,15 +901,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	
 	// Save task info
 	savefile->WriteString(task.c_str());
-	if (m_TaskQueue)
-	{
-		savefile->WriteBool(true);
-		m_TaskQueue->Save(savefile);
-	}
-	else
-	{
-		savefile->WriteBool(false);
-	}
+	savefile->WriteInt(m_TaskQueueID);
 }
 
 /*
@@ -1025,12 +1018,10 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	
 	// Restore task info
 	savefile->ReadString(task);
-	bool taskqueueexists=false;
-	savefile->ReadBool(taskqueueexists);
-	if (taskqueueexists)
+	savefile->ReadInt(m_TaskQueueID);
+	if (m_TaskQueueID != -1)
 	{
-		if (!m_TaskQueue) m_TaskQueue = new CPriorityQueue();
-		m_TaskQueue->Restore(savefile);
+		m_TaskQueue = gameLocal.GetPriorityQueue(m_TaskQueueID);
 	}
 }
 
@@ -3956,15 +3947,22 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 
 void idActor::Event_AttachTaskQueue(int queueID)
 {
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
+	// Request the queue with the given ID from gameLocal
+	CPriorityQueue* taskQueue = gameLocal.GetPriorityQueue(queueID);
+
+	if (taskQueue != NULL)
+	{
+		m_TaskQueueID = queueID;
+		m_TaskQueue = taskQueue;
+	}
+	else 
 	{
 		scriptThread->Error("attachTaskQueue: Priority queue #%d does not exist");
-		return;
 	}
-	m_TaskQueue = gameLocal.m_PriorityQueues[queueID];
 }
 
 void idActor::Event_DetachTaskQueue()
 {
 	m_TaskQueue = NULL;
+	m_TaskQueueID = -1;
 }
