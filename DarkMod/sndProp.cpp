@@ -173,9 +173,9 @@ void CsndProp::Save(idSaveGame *savefile) const
 		}
 
 		savefile->WriteInt(m_PopAreas[i].VisitedPorts.Num());
-		for (int i = 0; i < m_PopAreas[i].VisitedPorts.Num(); i++)
+		for (int j = 0; j < m_PopAreas[i].VisitedPorts.Num(); j++)
 		{
-			savefile->WriteInt(m_PopAreas[i].VisitedPorts[i]);
+			savefile->WriteInt(m_PopAreas[i].VisitedPorts[j]);
 		}
 	}
 
@@ -233,9 +233,9 @@ void CsndProp::Restore(idRestoreGame *savefile)
 		savefile->ReadInt(num);
 		m_PopAreas[i].VisitedPorts.Clear();
 		m_PopAreas[i].VisitedPorts.SetNum(num);
-		for (int i = 0; i < num; i++)
+		for (int j = 0; j < num; j++)
 		{
-			savefile->ReadInt(m_PopAreas[i].VisitedPorts[i]);
+			savefile->ReadInt(m_PopAreas[i].VisitedPorts[j]);
 		}
 	}
 
