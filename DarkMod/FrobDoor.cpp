@@ -86,10 +86,87 @@ CFrobDoor::~CFrobDoor(void)
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
+	savefile->WriteString(m_MasterOpen.c_str());
+
+	savefile->WriteInt(m_OpenList.Num());
+	for (int i = 0; i < m_OpenList.Num(); i++)
+	{
+		savefile->WriteString(m_OpenList[i].c_str());
+	}
+
+	savefile->WriteString(m_MasterLock.c_str());
+
+	savefile->WriteInt(m_LockList.Num());
+	for (int i = 0; i < m_LockList.Num(); i++)
+	{
+		savefile->WriteString(m_LockList[i].c_str());
+	}
+
+	savefile->WriteInt(m_Pins.Num());
+	for (int i = 0; i < m_Pins.Num(); i++)
+	{
+		idStringList& stringList = *m_Pins[i];
+
+		savefile->WriteInt(stringList.Num());
+		for (int j = 0; j < stringList.Num(); j++)
+		{
+			savefile->WriteString(stringList[j].c_str());
+		}
+	}
+
+	savefile->WriteBool(m_Pickable);
+	savefile->WriteInt(m_FirstLockedPinIndex);
+	savefile->WriteInt(m_SoundPinSampleIndex);
+	savefile->WriteInt(m_SoundTimerStarted);
+
+	m_DoubleDoor.Save(savefile);
+	m_Doorhandle.Save(savefile);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
 {
+	int num;
+
+	savefile->ReadString(m_MasterOpen);
+
+	savefile->ReadInt(num);
+	m_OpenList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_OpenList[i]);
+	}
+
+	savefile->ReadString(m_MasterLock);
+
+	savefile->ReadInt(num);
+	m_LockList.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_LockList[i]);
+	}
+
+	int numPins;
+	savefile->ReadInt(numPins);
+	m_Pins.SetNum(numPins);
+	for (int i = 0; i < numPins; i++)
+	{
+		m_Pins[i] = new idStringList;
+		
+		savefile->ReadInt(num);
+		m_Pins[i]->SetNum(num);
+		for (int j = 0; j < num; j++)
+		{
+			savefile->ReadString( (*m_Pins[i])[j] );
+		}
+	}
+
+	savefile->ReadBool(m_Pickable);
+	savefile->ReadInt(m_FirstLockedPinIndex);
+	savefile->ReadInt(m_SoundPinSampleIndex);
+	savefile->ReadInt(m_SoundTimerStarted);
+
+	m_DoubleDoor.Restore(savefile);
+	m_Doorhandle.Restore(savefile);
 }
 
 void CFrobDoor::WriteToSnapshot( idBitMsgDelta &msg ) const
@@ -267,10 +344,10 @@ void CFrobDoor::Open(bool bMaster)
 
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
 	// already interrupted
-	if ((m_Doorhandle) && (!m_bInterrupted))
+	if (m_Doorhandle.GetEntity() != NULL && !m_bInterrupted)
 	{
 		m_StateChange = true;
-		m_Doorhandle->Tap();
+		m_Doorhandle.GetEntity()->Tap();
 	}
 	else
 	{
@@ -287,8 +364,8 @@ void CFrobDoor::OpenDoor(bool bMaster)
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
 	// Open door handle if there is one
-	if(m_Doorhandle)
-		m_Doorhandle->Open(false);
+	if(m_Doorhandle.GetEntity() != NULL)
+		m_Doorhandle.GetEntity()->Open(false);
 
 	// Handle master mode
 	if(bMaster == true && m_MasterLock.Length() != 0)
@@ -492,8 +569,8 @@ void CFrobDoor::UpdateSoundLoss(void)
 	if( !areaPortal )
 		goto Quit;
 
-	if( m_DoubleDoor )
-		bDoubleOpen = m_DoubleDoor->m_Open;
+	if( m_DoubleDoor.GetEntity() )
+		bDoubleOpen = m_DoubleDoor.GetEntity()->m_Open;
 
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
@@ -556,7 +633,7 @@ void CFrobDoor::FindDoubleDoor(void)
 	UpdateSoundLoss();
 
 	// Open the portal if either of the doors is open
-	if( m_Open || (m_DoubleDoor && m_DoubleDoor->m_Open) )
+	if( m_Open || (m_DoubleDoor.GetEntity() && m_DoubleDoor.GetEntity()->m_Open) )
 		Event_OpenPortal();
 }
 
@@ -567,17 +644,17 @@ void CFrobDoor::GetPickable(void)
 
 void CFrobDoor::GetDoorhandle(void)
 {
-	idThread::ReturnEntity(m_Doorhandle);
+	idThread::ReturnEntity(m_Doorhandle.GetEntity());
 }
 
 CFrobDoor* CFrobDoor::GetDoubleDoor( void )
 {
-	return m_DoubleDoor;
+	return m_DoubleDoor.GetEntity();
 }
 
 void CFrobDoor::ClosePortal( void )
 {
-	if( !m_DoubleDoor || !m_DoubleDoor->m_Open )
+	if( !m_DoubleDoor.GetEntity() || !m_DoubleDoor.GetEntity()->m_Open )
 		Event_ClosePortal();
 }
 
@@ -595,8 +672,8 @@ void CFrobDoor::SetFrobbed(bool val)
 {
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
 	idEntity::SetFrobbed(val);
-	if(m_Doorhandle)
-		m_Doorhandle->SetFrobbed(val);
+	if(m_Doorhandle.GetEntity())
+		m_Doorhandle.GetEntity()->SetFrobbed(val);
 }
 
 bool CFrobDoor::IsFrobbed(void)
@@ -604,9 +681,9 @@ bool CFrobDoor::IsFrobbed(void)
 	// If the door has a handle and it is frobbed, then we are also considered 
 	// to be frobbed. Maybe this changes later, when the lockpicking is
 	// implemented, but usually this should be true.
-	if(m_Doorhandle)
+	if(m_Doorhandle.GetEntity())
 	{
-		if(m_Doorhandle->IsFrobbed() == true)
+		if(m_Doorhandle.GetEntity()->IsFrobbed() == true)
 			return true;
 	}
 
@@ -621,15 +698,15 @@ void CFrobDoor::DoneStateChange(void)
 void CFrobDoor::ToggleOpen(void)
 {
 	CBinaryFrobMover::ToggleOpen();
-	if(m_Doorhandle)
-		m_Doorhandle->ToggleOpen();
+	if(m_Doorhandle.GetEntity())
+		m_Doorhandle.GetEntity()->ToggleOpen();
 }
 
 void CFrobDoor::ToggleLock(void)
 {
 	CBinaryFrobMover::ToggleLock();
-	if(m_Doorhandle)
-		m_Doorhandle->ToggleLock();
+	if(m_Doorhandle.GetEntity())
+		m_Doorhandle.GetEntity()->ToggleLock();
 }
 
 idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount)

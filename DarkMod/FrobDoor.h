@@ -167,12 +167,12 @@ protected:
 	* The doubledoor does not necessarily have to be linked in a frob chain,
 	*	it could be independently opened.
 	**/
-	CFrobDoor					*m_DoubleDoor;
+	idEntityPtr<CFrobDoor>		m_DoubleDoor;
 
 	/**
 	 * Handle that is associated with this door, if the door has one.
 	 */
-	CFrobDoorHandle				*m_Doorhandle;
+	idEntityPtr<CFrobDoorHandle>	m_Doorhandle;
 
 private:
 };
