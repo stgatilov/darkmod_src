@@ -86,6 +86,8 @@ CFrobDoor::~CFrobDoor(void)
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
+	CBinaryFrobMover::Save(savefile);
+
 	savefile->WriteString(m_MasterOpen.c_str());
 
 	savefile->WriteInt(m_OpenList.Num());
@@ -126,6 +128,8 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 void CFrobDoor::Restore( idRestoreGame *savefile )
 {
 	int num;
+
+	CBinaryFrobMover::Restore(savefile);
 
 	savefile->ReadString(m_MasterOpen);
 
