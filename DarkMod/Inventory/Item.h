@@ -95,6 +95,14 @@ public:
 
 	static LootType			getLootTypeFromSpawnargs(const idDict& spawnargs);
 
+	/**
+	 * greebo: This returns the number of persistent items contained in this InventoryItem.
+	 *         For ordinary persistent items, this is always 1, for non-persistent items this is 0.
+	 *         Stackable persistent items will return the current stack count.
+	 */
+	int						GetPersistentCount();
+	void					SetPersistent(bool newValue);
+
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
@@ -120,6 +128,8 @@ protected:
 	bool					m_Hud;
 	idStr					m_Icon;			// The inventory icon string
 	bool					m_Orientated;	// Taken from the entity
+
+	bool					m_Persistent;	// Can be taken to the next map (default is FALSE)
 };
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

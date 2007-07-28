@@ -31,6 +31,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Overlay = OVERLAYS_INVALID_HANDLE;
 	m_Hud = false;
 	m_Orientated = false;
+	m_Persistent = false;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -72,6 +73,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 
 	m_BindMaster = itemEntity->GetBindMaster();
 	m_Orientated = itemEntity->fl.bindOrientated;
+	m_Persistent = itemEntity->spawnArgs.GetBool("inv_persistent", "0");;
 }
 
 CInventoryItem::~CInventoryItem()
@@ -106,6 +108,7 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteString(m_Icon.c_str());
 
 	savefile->WriteBool(m_Orientated);
+	savefile->WriteBool(m_Persistent);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
@@ -137,7 +140,7 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadString(m_Icon);
 
 	savefile->ReadBool(m_Orientated);
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restored inventory item %s.\r", m_Name.c_str());
+	savefile->ReadBool(m_Persistent);
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
@@ -215,4 +218,21 @@ CInventoryItem::LootType CInventoryItem::getLootTypeFromSpawnargs(const idDict& 
 	}
 
 	return returnValue;
+}
+
+int CInventoryItem::GetPersistentCount()
+{
+	if (m_Persistent)
+	{
+		return m_Count;
+	}
+	else 
+	{
+		return 0;
+	}
+}
+
+void CInventoryItem::SetPersistent(bool newValue)
+{
+	m_Persistent = newValue;
 }
