@@ -147,6 +147,7 @@ const idEventDef EV_GetLoot("getLoot", "d", 'd');							// returns the current v
 const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item to the inventory
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
@@ -304,6 +305,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_AddToInventory,		idEntity::AddToInventory )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
 	EVENT( EV_ChangeLootAmount,		idEntity::ChangeLootAmount )
+	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7831,6 +7833,29 @@ void idEntity::ChangeLootAmount(int lootType, int amount)
 	Inventory()->SetLoot(Gold, Jewelry, Goods);
 
 	idThread::ReturnInt(rc);
+}
+
+void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value)
+{
+	CInventoryCategory* category = Inventory()->GetCategory(invCategory);
+
+	if (category != NULL) 
+	{
+		CInventoryItem* item = category->GetItem(invName);
+		if (item != NULL) 
+		{
+			// Item found, set the value
+			item->SetLightgemModifier(value);
+		}
+		else
+		{
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, item name %s not found\r", invName);
+		}
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, inventory category %s not found\r", invCategory);
+	}
 }
 
 void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCategory, int amount) 

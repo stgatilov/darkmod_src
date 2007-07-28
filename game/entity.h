@@ -703,6 +703,11 @@ public:
 	void ChangeLootAmount(int lootType, int amount);
 
 	/**
+	 * Script event: Changes the lightgem modifier value of the given item <name> in <category> to <value>
+	 */
+	void ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value);
+
+	/**
 	 * Return true if this entity can be mantled, false otherwise.
 	 */
 	virtual bool			IsMantleable();
