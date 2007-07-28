@@ -109,6 +109,9 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
+// greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
+const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -156,7 +159,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
 
-	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool)
+	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
+
+	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
 
 END_CLASS
 
@@ -382,6 +387,8 @@ idPlayer::idPlayer() :
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
 	m_ContinuousUse			= false;
+
+	m_LightgemModifier		= 0;
 }
 
 /*
@@ -879,6 +886,9 @@ void idPlayer::Spawn( void )
 		}
 	}
 
+	// Clear the lightgem modifiers
+	m_LightgemModifierList.clear();
+
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 	SetupInventory();
@@ -1259,6 +1269,15 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_WeaponCursor->GetId());
 	}
 
+	savefile->WriteInt(m_LightgemModifier);
+
+	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
+	for (std::map<idStr, int>::const_iterator i = m_LightgemModifierList.begin(); i != m_LightgemModifierList.end(); i++)
+	{
+		savefile->WriteString(i->first.c_str());
+		savefile->WriteInt(i->second);
+	}
+
 	if(hud)
 	{
 		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
@@ -1543,6 +1562,19 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		int cursorId;
 		savefile->ReadInt(cursorId);
 		m_WeaponCursor = Inventory()->GetCursor(cursorId);
+	}
+
+	savefile->ReadInt(m_LightgemModifier);
+
+	savefile->ReadInt(num);
+	for (int i = 0; i < num; i++)
+	{
+		idStr name;
+		int value;
+		savefile->ReadString(name);
+		savefile->ReadInt(value);
+		// Store the pair into the map
+		m_LightgemModifierList[name] = value;
 	}
 
 	// create combat collision hull for exact collision detection
@@ -9367,7 +9399,8 @@ bool idPlayer::AddGrabberEntityToInventory()
 
 int idPlayer::GetLightgemModifier()
 {
-	int returnValue = 0;
+	// Take the compiled lightgem modifier as starting point
+	int returnValue = m_LightgemModifier;
 
 	// First, check the inventory items
 	if (m_WeaponCursor != NULL)
@@ -9391,9 +9424,46 @@ int idPlayer::GetLightgemModifier()
 		returnValue += cv_lg_crouch_modifier.GetInteger();
 	}
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Modifier: %d\r", returnValue);
-
 	// No need to cap the value, this is done in idGameLocal again.
 
 	return returnValue;
+}
+
+void idPlayer::Event_SetLightgemModifier(const char* modifierName, int amount)
+{
+	if (amount != 0)
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting modifier %s to %d\r", modifierName, amount);
+		m_LightgemModifierList[modifierName] = amount;
+	}
+	else 
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Removing modifier %s as %d was passed\r", modifierName, amount);
+		// Zero value passed, remove the named value
+		idStr modifierNameStr(modifierName);
+		std::map<idStr, int>::iterator i = m_LightgemModifierList.begin();//find(modifierNameStr);
+		while (i != m_LightgemModifierList.end())
+		{
+			if (i->first == modifierNameStr)
+			{
+				// Value found, remove it
+				m_LightgemModifierList.erase(i);
+				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Removed.\r");
+				break;
+			}
+		}
+	}
+
+	// Recalculate the lightgem modifier value
+	m_LightgemModifier = 0;
+
+	for (std::map<idStr, int>::const_iterator i = m_LightgemModifierList.begin(); 
+	     i != m_LightgemModifierList.end();
+		 i++)
+	{
+		// Add the value to the lightgem modifier
+		m_LightgemModifier += i->second;
+	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("New lightgem modifier value: %d\r", m_LightgemModifier);
 }

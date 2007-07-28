@@ -739,6 +739,16 @@ private:
 	 */
 	bool					m_ContinuousUse;
 
+	/**
+	 * greebo: This is the list of named lightgem modifier values. These can be accessed
+	 *         via script events to allow several modifiers to be active at the same time.
+	 *         To save for performance, the sum of these values is stored in m_LightgemModifier
+	 */
+	std::map<idStr, int>	m_LightgemModifierList;
+
+	// greebo: The sum of the values in the above list
+	int						m_LightgemModifier;
+
 	static const int		NUM_LOGGED_VIEW_ANGLES = 64;		// for weapon turning angle offsets
 	idAngles				loggedViewAngles[NUM_LOGGED_VIEW_ANGLES];	// [gameLocal.framenum&(LOGGED_VIEW_ANGLES-1)]
 	static const int		NUM_LOGGED_ACCELS = 16;			// for weapon turning angle offsets
@@ -877,6 +887,12 @@ private:
 
 	void					Event_HoldEntity( idEntity *ent );
 	void					Event_HeldEntity( void );
+
+	/**
+	 * greebo: Sets the named lightgem modifier to a particular value. 
+	 * Setting the modifier to 0 removes it from the internal list.
+	 */
+	void					Event_SetLightgemModifier(const char* modifierName, int amount);
 
 /**
 * NOTE: The following objective functions all take the "user" objective indices
