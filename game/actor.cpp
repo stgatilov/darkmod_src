@@ -902,6 +902,16 @@ void idActor::Save( idSaveGame *savefile ) const {
 	// Save task info
 	savefile->WriteString(task.c_str());
 	savefile->WriteInt(m_TaskQueueID);
+
+	savefile->WriteFloat(m_stepvol_walk);
+	savefile->WriteFloat(m_stepvol_run);
+	savefile->WriteFloat(m_stepvol_creep);
+
+	savefile->WriteFloat(m_stepvol_crouch_walk);
+	savefile->WriteFloat(m_stepvol_crouch_creep);
+	savefile->WriteFloat(m_stepvol_crouch_run);
+
+	savefile->WriteDict(&m_replacementAnims);
 }
 
 /*
@@ -1023,6 +1033,16 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	{
 		m_TaskQueue = gameLocal.GetPriorityQueue(m_TaskQueueID);
 	}
+
+	savefile->ReadFloat(m_stepvol_walk);
+	savefile->ReadFloat(m_stepvol_run);
+	savefile->ReadFloat(m_stepvol_creep);
+
+	savefile->ReadFloat(m_stepvol_crouch_walk);
+	savefile->ReadFloat(m_stepvol_crouch_creep);
+	savefile->ReadFloat(m_stepvol_crouch_run);
+
+	savefile->ReadDict(&m_replacementAnims);
 }
 
 /*
