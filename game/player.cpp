@@ -9365,10 +9365,11 @@ bool idPlayer::AddGrabberEntityToInventory()
 	return false;
 }
 
-int idPlayer::GetInventoryLightgemModifier()
+int idPlayer::GetLightgemModifier()
 {
 	int returnValue = 0;
 
+	// First, check the inventory items
 	if (m_WeaponCursor != NULL)
 	{
 		CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
@@ -9384,11 +9385,15 @@ int idPlayer::GetInventoryLightgemModifier()
 		returnValue += item->GetLightgemModifier();
 	}
 
-	// Cap the value at LG_MAX
-	if (returnValue > DARKMOD_LG_MAX)
+	// Take the crouching into account
+	if (physicsObj.IsCrouching())
 	{
-		returnValue = DARKMOD_LG_MAX;
+		returnValue += cv_lg_crouch_modifier.GetInteger();
 	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Modifier: %d\r", returnValue);
+
+	// No need to cap the value, this is done in idGameLocal again.
 
 	return returnValue;
 }

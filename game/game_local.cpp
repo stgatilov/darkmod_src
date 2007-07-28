@@ -2938,10 +2938,10 @@ void idGameLocal::ProcessLightgem(idPlayer *player, bool bProcessing)
 	pDM->m_fColVal = fColVal;
 	pDM->m_LightgemValue = int(DARKMOD_LG_MAX * fColVal);
 
-	// Give the inventory items a chance to adjust the lightgem 
-	pDM->m_LightgemValue += player->GetInventoryLightgemModifier();
+	// Give the player and inventory items a chance to adjust the lightgem (fire arrow, crouching)
+	pDM->m_LightgemValue += player->GetLightgemModifier();
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("After inventory adjustment %d\r", pDM->m_LightgemValue);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("After player adjustment %d\r", pDM->m_LightgemValue);
 
 	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
 		pDM->m_LightgemValue = DARKMOD_LG_MIN;

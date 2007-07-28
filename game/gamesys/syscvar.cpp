@@ -179,7 +179,7 @@ idCVar cv_lg_model("tdm_lg_model",		"models/darkmod/misc/system/lightgem.lwo",	C
 idCVar cv_lg_adjust("tdm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
 idCVar cv_lg_split("tdm_lg_split",		"1",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,	"Lightgem is always fully calculated (no splitting between interleaves)." );
 idCVar cv_lg_path("tdm_lg_path",		"",	CVAR_GAME,	"Dump the rendersnapshot to the filepath specified here." );
-
+idCVar cv_lg_crouch_modifier("tdm_lg_crouch_modifier",	"-5",	CVAR_GAME | CVAR_INTEGER,	"The value the lightgem is adjusted by when the player is crouching." );
 /**
  * Variables needed for lockpicking.
  */
