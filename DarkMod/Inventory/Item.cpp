@@ -33,7 +33,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Hud = false;
 	m_Orientated = false;
 	m_Persistent = false;
-	m_LightgemModifier = 0.0f;
+	m_LightgemModifier = 0;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -77,7 +77,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Orientated = itemEntity->fl.bindOrientated;
 	m_Persistent = itemEntity->spawnArgs.GetBool("inv_persistent", "0");
 
-	m_LightgemModifier = itemEntity->spawnArgs.GetFloat("inv_lgmodifier", "0");
+	m_LightgemModifier = itemEntity->spawnArgs.GetInt("inv_lgmodifier", "0");
 }
 
 CInventoryItem::~CInventoryItem()
@@ -114,7 +114,7 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_Orientated);
 	savefile->WriteBool(m_Persistent);
 	
-	savefile->WriteFloat(m_LightgemModifier);
+	savefile->WriteInt(m_LightgemModifier);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
@@ -148,7 +148,7 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_Orientated);
 	savefile->ReadBool(m_Persistent);
 
-	savefile->ReadFloat(m_LightgemModifier);
+	savefile->ReadInt(m_LightgemModifier);
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
@@ -245,17 +245,12 @@ void CInventoryItem::SetPersistent(bool newValue)
 	m_Persistent = newValue;
 }
 
-float CInventoryItem::GetLightgemModifier()
-{
-	return m_LightgemModifier;
-}
-
-void CInventoryItem::SetLightgemModifier(float newValue)
+void CInventoryItem::SetLightgemModifier(int newValue)
 {
 	m_LightgemModifier = newValue;
 
 	// greebo: Clamp the value to [0..1]
 	using std::min;
 	using std::max;
-	m_LightgemModifier = max(0.0f, min(1.0f, m_LightgemModifier));
+	m_LightgemModifier = max(0, min(DARKMOD_LG_MAX, m_LightgemModifier));
 }

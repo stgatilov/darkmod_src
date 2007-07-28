@@ -46,7 +46,10 @@ CInventoryWeaponItem::CInventoryWeaponItem(const idStr& weaponDefName, idEntity*
 	_maxAmmo = getMaxAmmo();
 	_ammo = getStartAmmo();
 
-	m_Name = gameLocal.FindEntityDefDict(weaponDefName.c_str())->GetString("inv_name", "Unknown weapon");
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponDefName.c_str());
+	m_Name = weaponDict->GetString("inv_name", "Unknown weapon");
+	m_Persistent = weaponDict->GetBool("inv_persistent", "0");
+	m_LightgemModifier = weaponDict->GetInt("inv_lgmodifier", "0");
 }
 
 void CInventoryWeaponItem::Save( idSaveGame *savefile ) const
@@ -73,7 +76,6 @@ void CInventoryWeaponItem::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(_weaponIndex);
 	savefile->ReadBool(_toggleable);
 	savefile->ReadBool(_allowedEmpty);
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restored weapon item %s.\r", _weaponDefName.c_str());
 }
 
 int CInventoryWeaponItem::getMaxAmmo() {

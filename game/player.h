@@ -617,6 +617,12 @@ public:
 	 */
 	bool AddGrabberEntityToInventory();
 	
+	/**
+	 * greebo: Returns the lightgem modifier value according to the currently selected inventory items.
+	 * Returns a value between 0 and DARKMOD_LG_MAX. This value is added to the calculated lightgem value.
+	 */
+	int GetInventoryLightgemModifier();
+
 	/// Am I a ranged threat to the given entity (or entities in general if target is NULL)?
 	float			RangedThreatTo(idEntity* target);
 	

@@ -9364,3 +9364,31 @@ bool idPlayer::AddGrabberEntityToInventory()
 
 	return false;
 }
+
+int idPlayer::GetInventoryLightgemModifier()
+{
+	int returnValue = 0;
+
+	if (m_WeaponCursor != NULL)
+	{
+		CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
+		if (weapon != NULL)
+		{
+			returnValue += weapon->GetLightgemModifier();
+		}
+	}
+
+	CInventoryItem* item = InventoryCursor()->GetCurrentItem();
+	if (item != NULL)
+	{
+		returnValue += item->GetLightgemModifier();
+	}
+
+	// Cap the value at LG_MAX
+	if (returnValue > DARKMOD_LG_MAX)
+	{
+		returnValue = DARKMOD_LG_MAX;
+	}
+
+	return returnValue;
+}

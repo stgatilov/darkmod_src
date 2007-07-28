@@ -105,11 +105,11 @@ public:
 
 	/**
 	 * greebo: When this item is active, the lightgem can be modified by this value.
-	 *         The floating point value should be between 0.0 and 1.0 and is added to the
+	 *         The integer value should be between 0 and DARKMOD_LG_MAX and is added to the
 	 *         the result of the lightgem renderpasses. Corresponds to the spawnarg "inv_lgmodifier"
 	 */
-	inline float			GetLightgemModifier();
-	void					SetLightgemModifier(float newValue);
+	inline int				GetLightgemModifier() { return m_LightgemModifier; }
+	void					SetLightgemModifier(int newValue);
 
 protected:
 	idEntityPtr<idEntity>	m_Owner;
@@ -139,7 +139,7 @@ protected:
 
 	bool					m_Persistent;	// Can be taken to the next map (default is FALSE)
 
-	float					m_LightgemModifier; // Is added to the lightgem when this item is active
+	int						m_LightgemModifier; // Is added to the lightgem when this item is active
 };
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */
