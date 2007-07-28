@@ -367,6 +367,14 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( allowDrop );
 	savefile->WriteObject( projectileEnt );
 
+	savefile->WriteInt(m_Attachments.Num());
+	for (int i = 0; i < m_Attachments.Num(); i++) 
+	{
+		m_Attachments[i].entPtr.Save(savefile);
+		savefile->WriteJoint(m_Attachments[i].joint);
+		savefile->WriteVec3(m_Attachments[i].originOffset);
+		savefile->WriteMat3(m_Attachments[i].angleOffsetMat);
+	}
 }
 
 /*
@@ -520,6 +528,17 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( allowDrop );
 	savefile->ReadObject( reinterpret_cast<idClass *&>( projectileEnt ) );
+
+	int num;
+	savefile->ReadInt(num);
+	m_Attachments.SetNum(num);
+	for (int i = 0; i < num; i++) 
+	{
+		m_Attachments[i].entPtr.Restore(savefile);
+		savefile->ReadJoint(m_Attachments[i].joint);
+		savefile->ReadVec3(m_Attachments[i].originOffset);
+		savefile->ReadMat3(m_Attachments[i].angleOffsetMat);
+	}
 }
 
 /***********************************************************************
@@ -1004,6 +1023,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 		if ( !ent ) {
 			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", KeyVal->GetValue().c_str(), name.c_str() );
 		} else {
+			DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Def_Attaching entity %s to weapon entity %s.\r", ent->name.c_str(), name.c_str());
 			Attach( ent );
 		}
 		KeyVal = weaponDef->dict.MatchPrefix( "def_attach", KeyVal );
