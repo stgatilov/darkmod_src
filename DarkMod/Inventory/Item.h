@@ -103,6 +103,14 @@ public:
 	int						GetPersistentCount();
 	void					SetPersistent(bool newValue);
 
+	/**
+	 * greebo: When this item is active, the lightgem can be modified by this value.
+	 *         The floating point value should be between 0.0 and 1.0 and is added to the
+	 *         the result of the lightgem renderpasses. Corresponds to the spawnarg "inv_lgmodifier"
+	 */
+	inline float			GetLightgemModifier();
+	void					SetLightgemModifier(float newValue);
+
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
@@ -130,6 +138,8 @@ protected:
 	bool					m_Orientated;	// Taken from the entity
 
 	bool					m_Persistent;	// Can be taken to the next map (default is FALSE)
+
+	float					m_LightgemModifier; // Is added to the lightgem when this item is active
 };
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

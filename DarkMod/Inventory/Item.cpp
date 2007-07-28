@@ -15,6 +15,7 @@
 static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:09Z greebo $", init_version);
 
 #include "Item.h"
+#include <algorithm>
 
 CInventoryItem::CInventoryItem(idEntity *owner)
 {
@@ -32,6 +33,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Hud = false;
 	m_Orientated = false;
 	m_Persistent = false;
+	m_LightgemModifier = 0.0f;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -73,7 +75,9 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 
 	m_BindMaster = itemEntity->GetBindMaster();
 	m_Orientated = itemEntity->fl.bindOrientated;
-	m_Persistent = itemEntity->spawnArgs.GetBool("inv_persistent", "0");;
+	m_Persistent = itemEntity->spawnArgs.GetBool("inv_persistent", "0");
+
+	m_LightgemModifier = itemEntity->spawnArgs.GetFloat("inv_lgmodifier", "0");
 }
 
 CInventoryItem::~CInventoryItem()
@@ -109,6 +113,8 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_Orientated);
 	savefile->WriteBool(m_Persistent);
+	
+	savefile->WriteFloat(m_LightgemModifier);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
@@ -141,6 +147,8 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_Orientated);
 	savefile->ReadBool(m_Persistent);
+
+	savefile->ReadFloat(m_LightgemModifier);
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
@@ -235,4 +243,19 @@ int CInventoryItem::GetPersistentCount()
 void CInventoryItem::SetPersistent(bool newValue)
 {
 	m_Persistent = newValue;
+}
+
+float CInventoryItem::GetLightgemModifier()
+{
+	return m_LightgemModifier;
+}
+
+void CInventoryItem::SetLightgemModifier(float newValue)
+{
+	m_LightgemModifier = newValue;
+
+	// greebo: Clamp the value to [0..1]
+	using std::min;
+	using std::max;
+	m_LightgemModifier = max(0.0f, min(1.0f, m_LightgemModifier));
 }
