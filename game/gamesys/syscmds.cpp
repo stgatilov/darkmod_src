@@ -323,69 +323,43 @@ Cmd_InventoryUse_f
 */
 void Cmd_InventoryUse_f( const idCmdArgs &args )
 {
-/*	static const char *key = "inv_hotkey";
-
 	if ( 0 > args.Argc() || args.Argc() > 2 ) {
 		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
-		goto Quit;
+		return;
 	}
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player == NULL ) {
 		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
-		goto Quit;
+		return;
 	}
-	CtdmInventoryCursor *pCur = gameLocal.GetLocalPlayer()->InventoryCursor();
-	CtdmInventoryItem *item = NULL;
-	idEntity *ent = NULL;
-	const char *hotkey;
 
-	if( args.Argc() == 2 ) {
+	CInventoryCursor* cursor = player->InventoryCursor();
+	CInventory* inventory = cursor->Inventory();
+	
+	if (inventory == NULL)
+	{
+		gameLocal.Printf( "%s: Could not find player inventory.\n", args.Argv(0) );
+		return;
+	}
 
-		// Skip to the item with the given hotkey.
-		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
+	if( args.Argc() == 2)
+	{
+		idStr itemName = args.Argv(1);
 
-			if ( pCur && pCur->Inventory() ) {
+		// Try to lookup the item in the inventory
+		CInventoryItem* item = inventory->GetItem(itemName);
 
-				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
-				// that save/restore can't be called while this function is running.
-				CtdmInventoryCursor cur;
-
-				cur.SetInventory( pCur->Inventory() );
-				cur.IterateItem( false, true );
-				while ( cur.Item() ) {
-
-					ent = cur.Item()->m_owner.GetEntity();
-					hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
-					if ( idStr::Cmp( hotkey, args.Argv(1) ) == 0 ) {
-						item = cur.Item();
-						break;
-					}
-
-					cur.IterateItem( false, true );
-				}
-
-			}
-
+		if (item != NULL)
+		{
+			// Item found, set the cursor to it
+			player->inventoryUseItem(true, item->GetItemEntity());
 		}
-
-	} else if ( pCur ) {
-		item = pCur->Item();
+		else
+		{
+			gameLocal.Printf( "%s: Could not find item in player inventory: %s\n", args.Argv(0), args.Argv(1) );
+		}
 	}
-
-	if ( item ) {
-		ent = item->m_owner.GetEntity();
-	}
-
-	if ( ent ) {
-		player->inventoryUseItem( ent );
-	} else {
-		gameLocal.Printf( "%s: Unable to find item: \"%s\"", args.Argv(0), args.Argv(1) );
-	}
-
-	Quit:
-	return;
-*/
 }
 
 /*
