@@ -18,7 +18,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game_local.h"
 #include "../../DarkMod/sndPropLoader.h"
 #include "../../DarkMod/Relations.h"
-#include "../DarkMod/KeyboardHook.h"
+#include "../../DarkMod/KeyboardHook.h"
+#include "../../DarkMod/Inventory/Inventory.h"
 
 #include "typeinfo.h"
 
@@ -276,79 +277,43 @@ Cmd_InventoryHotkey_f
 */
 void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 {
-/*	static const char *key = "inv_hotkey";
-
 	if ( 0 > args.Argc() || args.Argc() > 2 ) {
 		gameLocal.Printf( "Usage: %s [item]\n", args.Argv(0) );
-		goto Quit;
+		return;
 	}
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if ( player == NULL ) {
 		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
-		goto Quit;
+		return;
 	}
-	CtdmInventoryCursor *pCur = gameLocal.GetLocalPlayer()->InventoryCursor();
-	CtdmInventoryItem *item = NULL;
-	idEntity *ent;
-	const char *hotkey;
 
-	if( args.Argc() == 2 ) {
+	CInventoryCursor* cursor = player->InventoryCursor();
+	CInventory* inventory = cursor->Inventory();
+	
+	if (inventory == NULL)
+	{
+		gameLocal.Printf( "%s: Could not find player inventory.\n", args.Argv(0) );
+		return;
+	}
 
-		// Skip to the item with the given hotkey.
-		if ( idStr::Cmp( args.Argv(1), "" ) != 0 ) {
+	if( args.Argc() == 2)
+	{
+		idStr itemName = args.Argv(1);
 
-			if ( pCur && pCur->Inventory() ) {
+		// Try to lookup the item in the inventory
+		CInventoryItem* item = inventory->GetItem(itemName);
 
-				// Normally, statically allocating a cursor is a bad idea... however I'm assuming
-				// that save/restore can't be called while this function is running.
-				CtdmInventoryCursor cur;
-
-				cur.SetInventory( pCur->Inventory() );
-				cur.IterateItem( false, true );
-				while ( cur.Item() ) {
-
-					ent = cur.Item()->m_owner.GetEntity();
-					hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
-					if ( idStr::Cmp( hotkey, args.Argv(1) ) == 0 ) {
-						item = cur.Item();
-						break;
-					}
-
-					cur.IterateItem( false, true );
-				}
-
-			}
-
-			if ( item )
-				pCur->SelectItem( item );
-			else
-				gameLocal.Printf( "%s: Unable to find item: \"%s\"", args.Argv(0), args.Argv(1) );
-
-		} else {
-			// Clear the current slot.
-			if ( pCur && pCur->Inventory() )
-				pCur->SelectItem( NULL );
+		if (item != NULL)
+		{
+			// Item found, set the cursor to it
+			cursor->SetCurrentItem(item);
 		}
-
-	} else {
-
-		// List the hotkey of the current item.
-
-		item = pCur ? pCur->Item() : NULL;
-		ent = item ? item->m_owner.GetEntity() : NULL;
-		hotkey = ent ? ent->spawnArgs.GetString( key ) : "";
-
-		if ( idStr::Cmp( hotkey, "" ) != 0 )
-			gameLocal.Printf( "%s: Hotkey found: \"%s\"\n", args.Argv(0), hotkey );
 		else
-			gameLocal.Printf( "%s: No hotkey found.\n", args.Argv(0) );
-
+		{
+			gameLocal.Printf( "%s: Could not find item in player inventory: %s\n", args.Argv(0), args.Argv(1) );
+		}
 	}
-
-	Quit:
-	return;
-*/
 }
 
 /*
