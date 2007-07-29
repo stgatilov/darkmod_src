@@ -764,6 +764,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_VisDistMax);
 	// greebo: TODO m_HidingSpotSearchHandle is a raw pointer (void*)
 	// greebo: TODO Save CDarkmodHidingSpotTree m_hidingSpots
+	m_hidingSpots.Save(savefile);
 
 	savefile->WriteInt(m_AirCheckTimer);
 	savefile->WriteBool(m_bCanDrown);
@@ -979,7 +980,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat(m_VisDistMax);
 	// greebo: TODO m_HidingSpotSearchHandle is a raw pointer (void*)
-	// greebo: TODO Save CDarkmodHidingSpotTree m_hidingSpots
+	m_hidingSpots.Restore(savefile);
 
 	savefile->ReadInt(m_AirCheckTimer);
 	savefile->ReadBool(m_bCanDrown);

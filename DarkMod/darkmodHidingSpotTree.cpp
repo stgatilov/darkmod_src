@@ -78,6 +78,16 @@ void CDarkmodHidingSpotTree::clear()
 
 }
 
+void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
+{
+	// TODO
+}
+
+void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
+{
+	// TODO
+}
+
 //-------------------------------------------------------------------------
 
 TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getArea

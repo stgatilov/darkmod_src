@@ -192,6 +192,9 @@ public:
 	*/
 	void clear();
 
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
 	/*!
 	* Get the number of spots in the entire tree
 	*/
