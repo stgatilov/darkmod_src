@@ -208,12 +208,116 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 
 void darkModAASFindHidingSpots::Save( idSaveGame *savefile ) const
 {
-	// NULL
+	savefile->WriteFloat(hidingSpotRedundancyDistance);
+	savefile->WriteInt(static_cast<int>(searchState));
+	savefile->WriteVec3(hideFromPosition);
+
+	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
+	{
+		savefile->WriteInt(hideFromPVSAreas[i]);
+	}
+
+	savefile->WriteInt(numHideFromPVSAreas);
+	
+	savefile->WriteInt(h_hideFromPVS.i);
+	savefile->WriteUnsignedInt(h_hideFromPVS.h);
+
+	// PVS areas we need to test as good hiding spots
+	savefile->WriteInt(numPVSAreas);
+
+	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
+	{
+		savefile->WriteInt(PVSAreas[i]);
+	}
+	
+	savefile->WriteInt(numPVSAreasIterated);
+
+	savefile->WriteInt(aasAreaIndices.Num());
+	for (int i = 0; i < aasAreaIndices.Num(); i++)
+	{
+		savefile->WriteInt(aasAreaIndices[i]);
+	}
+	
+	savefile->WriteInt(numAASAreaIndicesSearched);
+    
+	// TODO: idAAS *p_aas;
+
+	savefile->WriteFloat(hidingHeight);
+	savefile->WriteBounds(searchLimits);
+	savefile->WriteVec3(searchCenter);
+	savefile->WriteFloat(searchRadius);
+	savefile->WriteBounds(searchIgnoreLimits);
+	savefile->WriteInt(hidingSpotTypesAllowed);
+
+	// TODO: idEntity* p_ignoreEntity;
+
+	savefile->WriteInt(lastProcessingFrameNumber);
+
+	savefile->WriteInt(currentGridSearchAASAreaNum);
+	savefile->WriteBounds(currentGridSearchBounds);
+	savefile->WriteVec3(currentGridSearchBoundMins);
+	savefile->WriteVec3(currentGridSearchBoundMaxes);
+	savefile->WriteVec3(currentGridSearchPoint);
 }
 
 void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
 {
-	// NULL
+	savefile->ReadFloat(hidingSpotRedundancyDistance);
+
+	int tempInt;
+	savefile->ReadInt(tempInt);
+	searchState = static_cast<TDarkModHidingSpotSearchState>(tempInt);
+
+	savefile->ReadVec3(hideFromPosition);
+
+	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
+	{
+		savefile->ReadInt(hideFromPVSAreas[i]);
+	}
+
+	savefile->ReadInt(numHideFromPVSAreas);
+	
+	savefile->ReadInt(h_hideFromPVS.i);
+	savefile->ReadUnsignedInt(h_hideFromPVS.h);
+
+	// PVS areas we need to test as good hiding spots
+	savefile->ReadInt(numPVSAreas);
+
+	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
+	{
+		savefile->ReadInt(PVSAreas[i]);
+	}
+	
+	savefile->ReadInt(numPVSAreasIterated);
+
+	int num;
+	savefile->ReadInt(num);
+	aasAreaIndices.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadInt(aasAreaIndices[i]);
+	}
+	
+	savefile->ReadInt(numAASAreaIndicesSearched);
+    
+	// TODO: idAAS *p_aas;
+
+	savefile->ReadFloat(hidingHeight);
+	savefile->ReadBounds(searchLimits);
+	savefile->ReadVec3(searchCenter);
+	savefile->ReadFloat(searchRadius);
+	savefile->ReadBounds(searchIgnoreLimits);
+	savefile->ReadInt(hidingSpotTypesAllowed);
+
+	// TODO: idEntity* p_ignoreEntity;
+
+	savefile->ReadInt(lastProcessingFrameNumber);
+
+	savefile->ReadInt(currentGridSearchAASAreaNum);
+	savefile->ReadBounds(currentGridSearchBounds);
+	savefile->ReadVec3(currentGridSearchBoundMins);
+	savefile->ReadVec3(currentGridSearchBoundMaxes);
+	savefile->ReadVec3(currentGridSearchPoint);
 }
 
 //-------------------------------------------------------------------------------------------------------

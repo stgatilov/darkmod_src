@@ -67,7 +67,7 @@ void CHidingSpotSearchCollection::clear()
 
 void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
 {
-	savefile->WriteFloat(static_cast<float>(numSearchesInUse));
+	savefile->WriteUnsignedInt(numSearchesInUse);
 
 	int searchesSaved = 0;
 	TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
@@ -92,9 +92,7 @@ void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
 {
 	clear();
 
-	float tempFloat;
-	savefile->ReadFloat(tempFloat);
-	numSearchesInUse = static_cast<unsigned int>(tempFloat);
+	savefile->ReadUnsignedInt(numSearchesInUse);
 
 	p_firstSearch = NULL;
 
