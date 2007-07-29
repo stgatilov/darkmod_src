@@ -762,8 +762,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 
 	savefile->WriteFloat(m_VisDistMax);
-	// greebo: TODO m_HidingSpotSearchHandle is a raw pointer (void*)
-	// greebo: TODO Save CDarkmodHidingSpotTree m_hidingSpots
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Saved hiding spot search with id %d\r", HidingSpotSearchCollection.getSearchId(m_HidingSpotSearchHandle));
+	savefile->WriteInt(HidingSpotSearchCollection.getSearchId(m_HidingSpotSearchHandle));
 	m_hidingSpots.Save(savefile);
 
 	savefile->WriteInt(m_AirCheckTimer);
@@ -979,7 +980,15 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadFloat(m_VisDistMax);
-	// greebo: TODO m_HidingSpotSearchHandle is a raw pointer (void*)
+
+	int searchId;
+	savefile->ReadInt(searchId);
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Restored hiding spot search with id %d (entity %s)\r", searchId, name.c_str());
+	m_HidingSpotSearchHandle = HidingSpotSearchCollection.getSearchHandle(searchId);
+	if (searchId != -1 && m_HidingSpotSearchHandle == NULL_HIDING_SPOT_SEARCH_HANDLE)
+	{
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Warning! Could not resolve hiding spot search with id %d (entity %s)\r", searchId, name.c_str());
+	}
 	m_hidingSpots.Restore(savefile);
 
 	savefile->ReadInt(m_AirCheckTimer);

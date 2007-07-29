@@ -344,6 +344,10 @@ public:
 	*/
 	darkModAASFindHidingSpots();
 
+	// Save/Restores this class to/from a savegame
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
 	/*!
 	* This should be called if the default (paramterless) constructor was
 	* used

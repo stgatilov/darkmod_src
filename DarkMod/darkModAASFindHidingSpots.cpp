@@ -206,6 +206,16 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 }
 
 
+void darkModAASFindHidingSpots::Save( idSaveGame *savefile ) const
+{
+	// NULL
+}
+
+void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
+{
+	// NULL
+}
+
 //-------------------------------------------------------------------------------------------------------
 
 bool darkModAASFindHidingSpots::findMoreHidingSpots

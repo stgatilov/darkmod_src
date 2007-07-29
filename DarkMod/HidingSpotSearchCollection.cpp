@@ -67,12 +67,62 @@ void CHidingSpotSearchCollection::clear()
 
 void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
 {
-	// TODO
+	savefile->WriteFloat(static_cast<float>(numSearchesInUse));
+
+	int searchesSaved = 0;
+	TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
+	while (p_cursor != NULL)
+	{
+		savefile->WriteInt(p_cursor->searchId);
+		savefile->WriteInt(p_cursor->refCount);
+		
+		p_cursor->search.Save(savefile);
+
+		searchesSaved++;
+		p_cursor = p_cursor->p_next;
+	}
+
+	if (searchesSaved != numSearchesInUse)
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString("Error while saving collection: searchesSaved != numSearchesInUse\r");
+	}
 }
 
 void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	clear();
+
+	float tempFloat;
+	savefile->ReadFloat(tempFloat);
+	numSearchesInUse = static_cast<unsigned int>(tempFloat);
+
+	p_firstSearch = NULL;
+
+	TDarkmodHidingSpotSearchNode* lastSearch = NULL;
+	for (unsigned int i = 0; i < numSearchesInUse; i++)
+	{
+		TDarkmodHidingSpotSearchNode* curSearch = new TDarkmodHidingSpotSearchNode;
+
+		if (p_firstSearch == NULL)
+		{
+			p_firstSearch = curSearch;
+		}
+
+		curSearch->p_prev = lastSearch;
+		curSearch->p_next = NULL;
+
+		if (curSearch->p_prev != NULL)
+		{
+			curSearch->p_prev->p_next = curSearch;
+		}
+
+		savefile->ReadInt(curSearch->searchId);
+		savefile->ReadInt(curSearch->refCount);
+
+		curSearch->search.Restore(savefile);
+
+		lastSearch = curSearch;
+	}
 }
 
 //--------------------------------------------------------------------
@@ -94,6 +144,9 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 		// We are returning to somebody, so they have a reference
 		p_node->refCount = 1;
 
+		// greebo: Use the numSearchesInUse counter, this should give a nice unique id
+		p_node->searchId = numSearchesInUse;
+
 		p_node->p_prev = NULL;
 		p_node->p_next = p_firstSearch;
 		if (p_firstSearch != NULL)
@@ -114,6 +167,38 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 //**********************************************************************
 // Public
 //**********************************************************************
+
+int CHidingSpotSearchCollection::getSearchId(THidingSpotSearchHandle searchHandle)
+{
+	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
+	while (p_node != NULL)
+	{
+		if (static_cast<THidingSpotSearchHandle>(p_node) == searchHandle)
+		{
+			return p_node->searchId;
+		}
+		p_node = p_node->p_next;
+	}
+
+	// None found
+	return -1;
+}
+
+THidingSpotSearchHandle CHidingSpotSearchCollection::getSearchHandle(int searchId)
+{
+	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
+	while (p_node != NULL)
+	{
+		if (p_node->searchId == searchId)
+		{
+			return static_cast<THidingSpotSearchHandle>(p_node);
+		}
+		p_node = p_node->p_next;
+	}
+
+	// None found
+	return NULL_HIDING_SPOT_SEARCH_HANDLE;
+}
 
 darkModAASFindHidingSpots* CHidingSpotSearchCollection::getSearchByHandle
 (
