@@ -137,6 +137,44 @@ typedef struct SObjEntParms_s
 	}
 } SObjEntParms;
 
+/**
+* Structure for parsing boolean logic
+**/
+typedef struct SBoolParseNode_s
+{
+	int Ident;
+	bool bNotted; // set to true if this node is NOTed
+
+	idList< idList< SBoolParseNode_s > > Cols; // list of columns, each can contain a different number of rows
+
+	// Link back to previous node this one branched off from
+	SBoolParseNode_s *PrevNode;
+
+	// matrix coordinates of this node within the matrix of the previous node
+	int PrevCol; 
+	int PrevRow;
+
+	// Functions:
+
+	SBoolParseNode_s( void ) { Clear(); }
+	~SBoolParseNode_s( void ) { Clear(); }
+	bool IsEmpty( void ) { return (Cols.Num() == 0 && Ident == -1); }
+
+	/**
+	* Clear the parse node
+	**/
+	void Clear( void )
+	{
+		Ident = -1;
+		PrevCol = -1;
+		PrevRow = -1;
+
+		bNotted = false;
+		Cols.Clear();
+		PrevNode = NULL;
+	}
+} SBoolParseNode;
+
 class CObjectiveComponent
 {
 public:
@@ -217,43 +255,6 @@ protected:
 
 class CObjective
 {
-	/**
-	* Structure for parsing boolean logic
-	**/
-	typedef struct SBoolParseNode_s
-	{
-		int CompNum;
-		bool bNotted; // set to true if this node is NOTed
-
-		idList< idList< SBoolParseNode_s > > Cols; // list of columns, each can contain a different number of rows
-
-		// Link back to previous node this one branched off from
-		SBoolParseNode_s *PrevNode;
-
-		// matrix coordinates of this node within the matrix of the previous node
-		int PrevCol; 
-		int PrevRow;
-
-		// Functions:
-
-		SBoolParseNode_s( void ) { Clear(); }
-		~SBoolParseNode_s( void ) { Clear(); }
-		bool IsEmpty( void ) { return (Cols.Num() == 0 && CompNum == -1); }
-
-		/**
-		* Clear the parse node
-		**/
-		void Clear( void )
-		{
-			CompNum = -1;
-			PrevCol = -1;
-			PrevRow = -1;
-	
-			bNotted = false;
-			Cols.Clear();
-			PrevNode = NULL;
-		}
-	} SBoolParseNode;
 
 public:
 	friend class CObjectiveComponent;
@@ -309,17 +310,6 @@ public:
 	* the objective can be ignored.
 	**/
 	bool m_bApplies;
-
-protected:
-	/**
-	* Internal function used by CheckFailure and CheckSuccess
-	**/
-	bool EvalBoolLogic( SBoolParseNode *input );
-
-	/**
-	* Internal function used by ParseLogicStrs
-	**/
-	bool ParseLogicStr( idStr *input, SBoolParseNode *output );
 
 protected:
 
@@ -427,6 +417,8 @@ typedef struct SMissionStats_s
 class CMissionData 
 {
 public:
+	friend class CObjective;
+
 	CMissionData( void );
 	virtual ~CMissionData( void );
 
@@ -596,6 +588,9 @@ public:
 	**/
 	void InventoryCallback( idEntity *ent, idStr ItemName, int value, int OverallVal = 1, bool bPickedUp = false );
 
+	int GetTotalLoot( void );
+	void ChangeTotalLoot( int amount );
+
 	/**
 	* Parse the objective data on an entity and add it to the objectives system
 	* Called by CTarget_AddObjectives
@@ -651,6 +646,22 @@ protected:
 	**/
 	bool	MatchSpec( CObjectiveComponent *pComp, SObjEntParms *EntDat, int ind );
 
+	/**
+	* Internal function used to check success or failure logic
+	* 
+	* If bObjComp is true, we are evaluating at the objective level 
+	* and ObjNum need not be specified
+	*
+	* If bObjComp is false, we are evaluating at the component level, 
+	* and ObjNum should be specified
+	**/
+	bool EvalBoolLogic( SBoolParseNode *input, bool bObjComp, int ObjNum = 0 );
+
+	/**
+	* Internal function used to parse boolean logic into a conditional matrix
+	**/
+	bool ParseLogicStr( idStr *input, SBoolParseNode *output );
+
 protected:
 	/**
 	* Set to true if any of the objective states have changed and objectives need updating
@@ -683,6 +694,18 @@ protected:
 	**/
 	idHashIndex m_CompTypeHash;
 	idHashIndex m_SpecTypeHash;
+
+	/**
+	* Success and failure logic strings for overall mission.  Used to reload the parse matrix on save/restore
+	**/
+	idStr m_SuccessLogicStr;
+	idStr m_FailureLogicStr;
+
+	/**
+	* Success and failure boolean parsing matrices for overall mission
+	**/
+	SBoolParseNode m_SuccessLogic;
+	SBoolParseNode m_FailureLogic;
 
 }; // CMissionData
 

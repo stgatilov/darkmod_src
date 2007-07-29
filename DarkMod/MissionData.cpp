@@ -247,6 +247,12 @@ void CMissionData::Clear( void )
 	m_Stats.DamageDealt = 0;
 	m_Stats.DamageReceived = 0;
 	m_Stats.LootOverall = 0;
+
+	m_SuccessLogicStr.Clear();
+	m_FailureLogicStr.Clear();
+
+	m_SuccessLogic.Clear();
+	m_FailureLogic.Clear();
 }
 
 void CMissionData::Save( idSaveGame *savefile ) const
@@ -1470,6 +1476,16 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	return;
 }
 
+int CMissionData::GetTotalLoot( void )
+{
+	return m_Stats.LootOverall;
+}
+
+void CMissionData::ChangeTotalLoot(int amount)
+{
+	m_Stats.LootOverall += amount;
+}
+
 
 // =============== Boolean Logic Parsing for Objective Failure/Success ==============
 
@@ -1478,7 +1494,7 @@ bool CObjective::CheckFailure( void )
 	bool bTest(false);
 
 	if( !m_FailureLogic.IsEmpty() )
-		bTest = EvalBoolLogic( &m_FailureLogic );
+		bTest = gameLocal.m_MissionData->EvalBoolLogic( &m_FailureLogic, false, m_ObjNum );
 	else
 	{
 		// Default logic: If ANY components of an ongoing objective are false, the objective is failed
@@ -1504,7 +1520,7 @@ bool CObjective::CheckSuccess( void )
 	if( !m_SuccessLogic.IsEmpty() )
 	{
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating custom success logic \r");
-		bTest = EvalBoolLogic( &m_SuccessLogic );
+		bTest = gameLocal.m_MissionData->EvalBoolLogic( &m_SuccessLogic, false, m_ObjNum );
 	}
 	else
 	{
@@ -1529,14 +1545,14 @@ bool CObjective::ParseLogicStrs( void )
 
 	if( m_SuccessLogicStr != "" )
 	{
-		bReturnVal = ParseLogicStr( &m_SuccessLogicStr, &m_SuccessLogic );
+		bReturnVal = gameLocal.m_MissionData->ParseLogicStr( &m_SuccessLogicStr, &m_SuccessLogic );
 		
 		if( !bReturnVal )
 			gameLocal.Error("Objective success logic failed to parse \n");
 	}
 	if( m_FailureLogicStr != "" )
 	{
-		bTemp = ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
+		bTemp = gameLocal.m_MissionData->ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
 		
 		if( !bTemp )
 			gameLocal.Error("Objective failure logic failed to parse \n");
@@ -1551,7 +1567,7 @@ bool CObjective::ParseLogicStrs( void )
 * Parse a string into a logic matrix.
 * Returns false if there was an error in the parsing
 **/
-bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
+bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 {
 	idLexer		src;
 	idToken		token;
@@ -1604,8 +1620,8 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
 
 			if( token.IsNumeric() )
 			{
-				// Node is a leaf: set CompNum to the identifier
-				NewNode.CompNum = token.GetIntValue() - 1;
+				// Node is a leaf: set Ident to the identifier
+				NewNode.Ident = token.GetIntValue() - 1;
 			}
 
 			// Add node to the appropriate point in the matrix-tree - same for leaves and branches
@@ -1757,11 +1773,7 @@ Quit:
 	return bReturnVal;
 }
 
-/**
-* Evaluates the boolean logic matrix, using components of the objective
-*	that calls this function.
-**/
-bool CObjective::EvalBoolLogic( SBoolParseNode *StartNode )
+bool CMissionData::EvalBoolLogic( SBoolParseNode *StartNode, bool bObjComp, int ObjNum )
 {
 
 	int level(0); // current level of branching
@@ -1814,8 +1826,16 @@ When we advance to the next matrix spot, it can happen in two ways:
 		if( CurrentNode->Cols.Num() <= 0 )
 		{
 			// Leaf found, evaluate and go up a level
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating leaf with component num %d\r", CurrentNode->CompNum);
-			bLowerLevResult = gameLocal.m_MissionData->GetComponentState( m_ObjNum, CurrentNode->CompNum );
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating leaf with identifier %d\r", CurrentNode->Ident);
+			
+			if( bObjComp )
+			{
+				int state = GetCompletionState( CurrentNode->Ident );
+				bLowerLevResult = (state == STATE_COMPLETE);
+			}
+			else
+				bLowerLevResult = GetComponentState( ObjNum, CurrentNode->Ident );
+
 			if( CurrentNode->bNotted )
 				bLowerLevResult = !bLowerLevResult;
 
