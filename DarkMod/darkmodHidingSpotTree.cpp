@@ -80,12 +80,71 @@ void CDarkmodHidingSpotTree::clear()
 
 void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 {
-	// TODO
+	savefile->WriteFloat(static_cast<float>(numAreas));
+	savefile->WriteFloat(static_cast<float>(numSpots));
+
+	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
+	while (p_node != NULL)
+	{
+		// Save areaNode members
+		savefile->WriteFloat(static_cast<float>(p_node->aasAreaIndex));
+		savefile->WriteFloat(static_cast<float>(p_node->count));
+		
+		//p_prevSibling && p_nextSibling get automatically restored;
+
+		// Save all spots
+		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
+		while (p_spot != NULL)
+		{
+			// Save the aasgoal_t
+			savefile->WriteInt(p_spot->spot.goal.areaNum);
+			savefile->WriteVec3(p_spot->spot.goal.origin);
+			
+			savefile->WriteInt(p_spot->spot.hidingSpotTypes);
+			savefile->WriteFloat(p_spot->spot.lightQuotient);
+			savefile->WriteFloat(p_spot->spot.qualityWithoutDistanceFactor);
+			savefile->WriteFloat(p_spot->spot.quality);
+						
+			p_spot = p_spot->p_next;
+		}
+
+		// Quality of the best spot in the area
+		savefile->WriteFloat(p_node->bestSpotQuality);
+		savefile->WriteBounds(p_node->bounds);
+
+		p_node = p_node->p_nextSibling;
+	}
+
+	//p_firstArea and p_lastArea get restored automatically
+
+	// Handles
+	savefile->WriteFloat(static_cast<float>(lastIndex_indexRetrieval));
+	savefile->WriteFloat(static_cast<float>(lastAreaHandle_indexRetrieval));
+	savefile->WriteFloat(static_cast<float>(lastSpotHandle_indexRetrieval));
 }
 
 void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	float tempFloat;
+
+	savefile->ReadFloat(tempFloat);
+	numAreas = static_cast<unsigned long>(tempFloat);
+	savefile->ReadFloat(tempFloat);
+	numSpots = static_cast<unsigned long>(tempFloat);
+
+	// The first area
+	//TDarkmodHidingSpotAreaNode* p_firstArea;
+	//TDarkmodHidingSpotAreaNode* p_lastArea;
+
+	// Handles
+	savefile->ReadFloat(tempFloat);
+	lastIndex_indexRetrieval = static_cast<unsigned long>(tempFloat);
+
+	savefile->ReadFloat(tempFloat);
+	lastAreaHandle_indexRetrieval = static_cast<TDarkModHidingSpotTreeIterationHandle>(tempFloat);
+
+	savefile->ReadFloat(tempFloat);
+	lastSpotHandle_indexRetrieval = static_cast<TDarkModHidingSpotTreeIterationHandle>(tempFloat);
 }
 
 //-------------------------------------------------------------------------
