@@ -92,8 +92,19 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 		
 		//p_prevSibling && p_nextSibling get automatically restored;
 
-		// Save all spots
+		// First iteration: Get the number of spots in this area
+		int numSpots = 0;
 		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
+		while (p_spot != NULL)
+		{
+			numSpots++;
+			p_spot = p_spot->p_next;
+		}
+
+		savefile->WriteInt(numSpots);
+
+		// Second iteration: Save all spots
+		p_spot = p_node->p_firstSpot;
 		while (p_spot != NULL)
 		{
 			// Save the aasgoal_t
@@ -132,9 +143,85 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(tempFloat);
 	numSpots = static_cast<unsigned long>(tempFloat);
 
-	// The first area
-	//TDarkmodHidingSpotAreaNode* p_firstArea;
-	//TDarkmodHidingSpotAreaNode* p_lastArea;
+	p_firstArea = NULL;
+
+	TDarkmodHidingSpotAreaNode* lastArea = NULL;
+	for (unsigned long areaIndex = 0; areaIndex < numAreas; areaIndex++)
+	{
+		TDarkmodHidingSpotAreaNode* curArea = new TDarkmodHidingSpotAreaNode;
+
+		if (p_firstArea == NULL)
+		{
+			// Pointer to first area still NULL, take this one
+			p_firstArea = curArea;
+		}
+
+		// Restore areaNode members
+		savefile->ReadFloat(tempFloat);
+		curArea->aasAreaIndex = static_cast<unsigned int>(tempFloat);
+
+		savefile->ReadFloat(tempFloat);
+		curArea->count = static_cast<unsigned int>(tempFloat);
+		
+		// Restore the "previous" pointer
+		curArea->p_prevSibling = lastArea;
+		curArea->p_nextSibling = NULL;
+
+		if (curArea->p_prevSibling != NULL)
+		{
+			// Point the "next" pointer of the previous class to this one
+			curArea->p_prevSibling->p_nextSibling = curArea;
+		}
+
+		int numSpots;
+		savefile->ReadInt(numSpots);
+
+		// Restore all spots
+		curArea->p_firstSpot = NULL;
+
+		darkModHidingSpotNode* lastSpot = NULL;
+		for (int spot = 0; spot < numSpots; spot++)
+		{
+			darkModHidingSpotNode* curSpot = new darkModHidingSpotNode;
+
+			// No next node by default
+			curSpot->p_next = NULL;
+
+			// No first pointer yet, take this one
+			if (curArea->p_firstSpot == NULL)
+			{
+				curArea->p_firstSpot = curSpot;
+			}
+
+			// Establish the link from the previous node to this one
+			if (lastSpot != NULL)
+			{
+				lastSpot->p_next = curSpot;
+			}
+
+			// Restore the aasgoal_t
+			savefile->ReadInt(curSpot->spot.goal.areaNum);
+			savefile->ReadVec3(curSpot->spot.goal.origin);
+			
+			savefile->ReadInt(curSpot->spot.hidingSpotTypes);
+			savefile->ReadFloat(curSpot->spot.lightQuotient);
+			savefile->ReadFloat(curSpot->spot.qualityWithoutDistanceFactor);
+			savefile->ReadFloat(curSpot->spot.quality);
+
+			// Update the "last" pointer for the next loop
+			lastSpot = curSpot;
+		}
+		curArea->p_lastSpot = lastSpot;
+		
+		// Quality of the best spot in the area
+		savefile->ReadFloat(curArea->bestSpotQuality);
+		savefile->ReadBounds(curArea->bounds);
+
+		// Update the "lastArea" before the next loop
+		lastArea = curArea;
+	}
+
+	p_lastArea = lastArea;
 
 	// Handles
 	savefile->ReadFloat(tempFloat);
