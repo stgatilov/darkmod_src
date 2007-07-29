@@ -2610,7 +2610,6 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_RopeDetachTimer );
 	m_RopeEntity.Save( savefile );
 	m_RopeEntTouched.Save( savefile );
-	savefile->WriteFloat( m_lastCommandViewYaw );
 
 	savefile->WriteBool( m_bClimbableAhead );
 	savefile->WriteBool( m_bOnClimb );
@@ -2693,7 +2692,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_RopeDetachTimer );
 	m_RopeEntity.Restore( savefile );
 	m_RopeEntTouched.Restore( savefile );
-	savefile->ReadFloat( m_lastCommandViewYaw );
+	// Angle storage vars need to be reset on a restore, since D3 resets the command angle to 0
+	m_lastCommandViewYaw = 0.0f;
+	m_DeltaViewYaw = 0.0f;
 
 	savefile->ReadBool( m_bClimbableAhead );
 	savefile->ReadBool( m_bOnClimb );
