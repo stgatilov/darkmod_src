@@ -225,23 +225,23 @@ void CMissionData::Clear( void )
 	ClearedSt.ByInnocence[0] = 0;
 	ClearedSt.ByInnocence[1] = 0;
 	ClearedSt.WhileAirborne = 0;
-	for( int n=0; n<MAX_TEAMS; n++ )
+	for( int n1=0; n1<MAX_TEAMS; n1++ )
 	{
-		ClearedSt.ByTeam[n] = 0;
+		ClearedSt.ByTeam[n1] = 0;
 	}
-	for( int n=0; n<MAX_TYPES; n++ )
+	for( int n2=0; n2<MAX_TYPES; n2++ )
 	{
-		ClearedSt.ByType[n] = 0;
+		ClearedSt.ByType[n2] = 0;
 	}
 	ClearedSt.Overall = 0;
 
-	for( int n=0; n<MAX_AICOMP; n++ )
+	for( int n2=0; n2<MAX_AICOMP; n2++ )
 	{
-		m_Stats.AIStats[n] = ClearedSt;
+		m_Stats.AIStats[n2] = ClearedSt;
 	}
-	for( int n=0; n<MAX_ALERTNUMS; n++ )
+	for( int n3=0; n3<MAX_ALERTNUMS; n3++ )
 	{
-		m_Stats.AIAlerts[n] = ClearedSt;
+		m_Stats.AIAlerts[n3] = ClearedSt;
 	}
 
 	m_Stats.DamageDealt = 0;
@@ -257,7 +257,34 @@ void CMissionData::Save( idSaveGame *savefile ) const
 	for( int i=0; i < m_Objectives.Num(); i++ )
 		m_Objectives[i].Save( savefile );
 
-	// TODO Save/restore mission stats
+	// Save mission stats
+	for( int j=0; j < MAX_AICOMP; j++ )
+	{
+		savefile->WriteInt( m_Stats.AIStats[j].Overall );
+		savefile->WriteInt( m_Stats.AIStats[j].WhileAirborne );
+		for( int k1=0; k1 < MAX_TEAMS; k1++ )
+			savefile->WriteInt( m_Stats.AIStats[j].ByTeam[k1] );
+		for( int k2=0; k2 < MAX_TEAMS; k2++ )
+			savefile->WriteInt( m_Stats.AIStats[j].ByType[k2] );
+		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[0] );
+		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[1] );
+	}
+
+	for( int l=0; l < MAX_ALERTNUMS; l++ )
+	{
+		savefile->WriteInt( m_Stats.AIAlerts[l].Overall );
+		savefile->WriteInt( m_Stats.AIAlerts[l].WhileAirborne );
+		for( int m1=0; m1 < MAX_TEAMS; m1++ )
+			savefile->WriteInt( m_Stats.AIAlerts[l].ByTeam[m1] );
+		for( int m2=0; m2 < MAX_TEAMS; m2++ )
+			savefile->WriteInt( m_Stats.AIAlerts[l].ByType[m2] );
+		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[0] );
+		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[1] );
+	}
+
+	savefile->WriteInt( m_Stats.DamageDealt );
+	savefile->WriteInt( m_Stats.DamageReceived );
+	savefile->WriteInt( m_Stats.LootOverall );
 }
 
 void CMissionData::Restore( idRestoreGame *savefile )
@@ -282,7 +309,34 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		}
 	}
 
-	// TODO: Save/restore mission stats
+	// Restore mission stats
+	for( int j=0; j < MAX_AICOMP; j++ )
+	{
+		savefile->ReadInt( m_Stats.AIStats[j].Overall );
+		savefile->ReadInt( m_Stats.AIStats[j].WhileAirborne );
+		for( int k1=0; k1 < MAX_TEAMS; k1++ )
+			savefile->ReadInt( m_Stats.AIStats[j].ByTeam[k1] );
+		for( int k2=0; k2 < MAX_TEAMS; k2++ )
+			savefile->ReadInt( m_Stats.AIStats[j].ByType[k2] );
+		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[0] );
+		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[1] );
+	}
+
+	for( int l=0; l < MAX_ALERTNUMS; l++ )
+	{
+		savefile->ReadInt( m_Stats.AIAlerts[l].Overall );
+		savefile->ReadInt( m_Stats.AIAlerts[l].WhileAirborne );
+		for( int m1=0; m1 < MAX_TEAMS; m1++ )
+			savefile->ReadInt( m_Stats.AIAlerts[l].ByTeam[m1] );
+		for( int m2=0; m2 < MAX_TEAMS; m2++ )
+			savefile->ReadInt( m_Stats.AIAlerts[l].ByType[m2] );
+		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[0] );
+		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[1] );
+	}	
+
+	savefile->ReadInt( m_Stats.DamageDealt );
+	savefile->ReadInt( m_Stats.DamageReceived );
+	savefile->ReadInt( m_Stats.LootOverall );
 }
 
 void CMissionData::MissionEvent
@@ -1850,6 +1904,7 @@ void CObjective::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bVisible );
 	savefile->WriteBool( m_bOngoing );
 	savefile->WriteBool( m_bApplies );
+	savefile->WriteInt( m_ObjNum );
 	savefile->WriteInt( m_handle );
 	savefile->WriteInt( m_state );
 	savefile->WriteBool( m_bNeedsUpdate );
@@ -1878,6 +1933,7 @@ void CObjective::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bVisible );
 	savefile->ReadBool( m_bOngoing );
 	savefile->ReadBool( m_bApplies );
+	savefile->ReadInt( m_ObjNum );
 	savefile->ReadInt( m_handle );
 	savefile->ReadInt( tempInt );
 	m_state = (EObjCompletionState) tempInt;

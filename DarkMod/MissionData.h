@@ -16,8 +16,6 @@
 // If that's the case, we don't have to track both variables in the stats, since
 // AI will only call FindBody if they react to that type of body.
 
-// TODO: Make difficulty a bitfield instead of a minimum integer value
-
 #ifndef MISSIONDATA_H
 #define MISSIONDATA_H
 
