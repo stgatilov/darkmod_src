@@ -254,3 +254,8 @@ void CInventoryItem::SetLightgemModifier(int newValue)
 	using std::max;
 	m_LightgemModifier = max(0, min(DARKMOD_LG_MAX, m_LightgemModifier));
 }
+
+void CInventoryItem::SetIcon(const idStr& newIcon)
+{
+	m_Icon = newIcon;
+}

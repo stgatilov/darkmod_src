@@ -148,6 +148,7 @@ const idEventDef EV_AddToInventory("addToInventory", "e");					// Adds an item t
 const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
 const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
 const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
+const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss"); // Changes the inventory icon of the given item.
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
@@ -306,6 +307,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ChangeInvItemCount,	idEntity::ChangeInventoryItemCount )
 	EVENT( EV_ChangeLootAmount,		idEntity::ChangeLootAmount )
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
+	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -7837,24 +7839,30 @@ void idEntity::ChangeLootAmount(int lootType, int amount)
 
 void idEntity::ChangeInventoryLightgemModifier(const char* invName, const char* invCategory, int value)
 {
-	CInventoryCategory* category = Inventory()->GetCategory(invCategory);
-
-	if (category != NULL) 
+	CInventoryItem* item = Inventory()->GetItem(invName, invCategory);
+	if (item != NULL) 
 	{
-		CInventoryItem* item = category->GetItem(invName);
-		if (item != NULL) 
-		{
-			// Item found, set the value
-			item->SetLightgemModifier(value);
-		}
-		else
-		{
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, item name %s not found\r", invName);
-		}
+		// Item found, set the value
+		item->SetLightgemModifier(value);
 	}
 	else
 	{
-		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, inventory category %s not found\r", invCategory);
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change lightgem modifier, item %s not found\r", invName);
+	}
+}
+
+void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory, const char* icon)
+{
+	CInventoryItem* item = Inventory()->GetItem(invName, invCategory); 
+
+	if (item != NULL) 
+	{
+		// Item found, set the icon
+		item->SetIcon(icon);
+	}
+	else
+	{
+		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change inventory icon, item %s not found\r", invName);
 	}
 }
 

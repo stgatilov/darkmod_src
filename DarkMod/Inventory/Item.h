@@ -89,6 +89,7 @@ public:
 	inline idStr			GetHUD(void) { return m_HudName; };
 
 	inline idStr&			GetIcon() { return m_Icon; };
+	void					SetIcon(const idStr& newIcon);
 
 	inline void				SetItemId(const idStr &id) { m_ItemId = id; };
 	inline idStr			GetItemId(void) { return m_ItemId; };
