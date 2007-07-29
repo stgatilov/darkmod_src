@@ -1243,12 +1243,14 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			Counter2++;
 		}
 
-		// Parse success/failure logic
-		gameLocal.Printf("Objective %d: Parsing success and failure logic\n", Counter);
-		ObjTemp.ParseLogicStrs();
 		if( ObjTemp.m_Components.Num() > 0 )
 		{
 			m_Objectives.Append( ObjTemp );
+			
+			// Parse success/failure logic
+			gameLocal.Printf("Objective %d: Parsing success and failure logic\n", Counter);
+			m_Objectives[ m_Objectives.Num() - 1 ].ParseLogicStrs();
+
 			ObjTemp.Clear();
 		}
 		Counter++;
@@ -1429,6 +1431,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
 	CurrentNode = output;
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing string: %s \r", input->c_str() );
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Outer parse node is %08lx \r", CurrentNode);
 
 	src.LoadMemory( input->c_str(), input->Length(), "" );
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Loaded memory to lexer \r" );
@@ -1453,8 +1456,8 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
 			NewNode.bNotted = bNOTed;
 			NewNode.PrevRow = row;
 			NewNode.PrevCol = col;
-			// PROBLEM : THIS DOES NOT SEEM TO BE LINKING BACK CORRECTLY FOR SOME REASON
 			NewNode.PrevNode = CurrentNode;
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parse: New node at %d, %d, points at previous node: %08lx \r", row, col, CurrentNode);
 
 			if( token.IsNumeric() )
 			{
@@ -1489,7 +1492,7 @@ bool CObjective::ParseLogicStr( idStr *input, SBoolParseNode *output )
 				level++;
 				bOperatorOK = false;
 
-				CurrentNode = &NewNode;
+				CurrentNode = &CurrentNode->Cols[ col ].operator[]( row );
 				row = 0;
 				col = 0;
 				// new level expects these to be true
@@ -1659,21 +1662,29 @@ When we advance to the next matrix spot, it can happen in two ways:
 	If there is no next row, we are done with this level, eval it as FALSE and go up
 */
 
-	while( level >= 0 )
+	while( level >= 0 && (CurrentNode != NULL) )
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating: level %d, row %d, column %d\r", level, CurrentRow, CurrentCol);
+		
 		// check if the node on this level contains a matrix (branch)
 		// If it does not, it must be directly addressing a component (leaf)
 		if( CurrentNode->Cols.Num() <= 0 )
 		{
 			// Leaf found, evaluate and go up a level
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating leaf with component num %d\r", CurrentNode->CompNum);
 			bLowerLevResult = gameLocal.m_MissionData->GetComponentState( m_ObjNum, CurrentNode->CompNum );
+			if( CurrentNode->bNotted )
+				bLowerLevResult = !bLowerLevResult;
+
 			bResolvedLevel = true;
 
-			CurrentNode = CurrentNode->PrevNode;
 			CurrentCol = CurrentNode->PrevCol;
 			CurrentRow = CurrentNode->PrevRow;
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("PrevNode in leaf at %d, %d, points at previous node: %08lx \r", CurrentRow, CurrentCol, CurrentNode->PrevNode);
+			CurrentNode = CurrentNode->PrevNode;
 
 			level--;
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Leaf evaluated, stepping out \r");
 			continue;
 		}
 
@@ -1682,14 +1693,16 @@ When we advance to the next matrix spot, it can happen in two ways:
 		// If we evaluate TRUE in the lower level:
 		if( bResolvedLevel && bLowerLevResult )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as TRUE\r");
 			// if there is no next column, this level evals to TRUE due to AND logic success
-			if( CurrentCol >= CurrentNode->Cols.Num() )
+			if( CurrentCol + 1 >= CurrentNode->Cols.Num() )
 			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] AND logic success at current level, stepping out \r");
 				bLowerLevResult = true;
 
-				CurrentNode = CurrentNode->PrevNode;
 				CurrentCol = CurrentNode->PrevCol;
 				CurrentRow = CurrentNode->PrevRow;
+				CurrentNode = CurrentNode->PrevNode;
 
 				level--;
 				continue;
@@ -1697,6 +1710,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 			// else, advance to next column and go down a level
 			else
 			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next column \r");
 				CurrentCol++;
 				CurrentRow = 0;
 			}
@@ -1704,24 +1718,29 @@ When we advance to the next matrix spot, it can happen in two ways:
 		// If we came back up after we evaluated to FALSE in the lower level
 		if( bResolvedLevel && !bLowerLevResult )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as FALSE\r");
+
 			// If there are no more rows in this column, evaluate this level to FALSE (Due to AND logic failure)
-			if( CurrentRow >= CurrentNode->Cols.operator[](CurrentCol).Num() )
+			if( CurrentRow + 1 >= CurrentNode->Cols.operator[](CurrentCol).Num() )
 			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Current level failed (no more rows to OR), stepping out\r");
 				bLowerLevResult = false;
 
-				CurrentNode = CurrentNode->PrevNode;
 				CurrentCol = CurrentNode->PrevCol;
 				CurrentRow = CurrentNode->PrevRow;
+				CurrentNode = CurrentNode->PrevNode;
 
 				level--;
 				continue;
 			}
 			// else, advance to the next row
 			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next row\r");
 				CurrentRow++;
 			}
 		}
 
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Going down a level\r");
 		// If we get to this point in the loop, we must be going down a level
 		bResolvedLevel = false;
 		CurrentNode = &CurrentNode->Cols[CurrentCol].operator[](CurrentRow);
