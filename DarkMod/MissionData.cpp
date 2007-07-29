@@ -117,6 +117,69 @@ bool CObjectiveComponent::SetState( bool bState )
 	return bReturnVal;
 }
 
+void CObjectiveComponent::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteInt( m_Index[0] );
+	savefile->WriteInt( m_Index[1] );
+	savefile->WriteBool( m_bNotted );
+	savefile->WriteInt( m_Type );
+	savefile->WriteInt( m_SpecMethod[0] );
+	savefile->WriteInt( m_SpecMethod[1] );
+	savefile->WriteString( m_SpecStrVal[0] );
+	savefile->WriteString( m_SpecStrVal[1] );
+	savefile->WriteInt( m_SpecIntVal[0] );
+	savefile->WriteInt( m_SpecIntVal[1] );
+	savefile->WriteBool( m_bState );
+	savefile->WriteBool( m_bLatched );
+
+	savefile->WriteInt( m_IntArgs.Num() );
+	for( int i=0; i<m_IntArgs.Num(); i++ )
+		savefile->WriteInt( m_IntArgs[i] );
+
+	savefile->WriteInt( m_StrArgs.Num() );
+	for( int j=0; j<m_StrArgs.Num(); j++ )
+		savefile->WriteString( m_StrArgs[j] );
+
+	savefile->WriteInt( m_ClockInterval );
+	savefile->WriteInt( m_TimeStamp );
+	savefile->WriteBool( m_bReversible );
+}
+
+void CObjectiveComponent::Restore( idRestoreGame *savefile )
+{
+	int num(0), tempInt(0);
+
+	savefile->ReadInt( m_Index[0] );
+	savefile->ReadInt( m_Index[1] );
+	savefile->ReadBool( m_bNotted );
+	savefile->ReadInt( tempInt );
+	m_Type = (EComponentType) tempInt;
+	savefile->ReadInt( tempInt );
+	m_SpecMethod[0] = (ESpecificationMethod) tempInt;
+	savefile->ReadInt( tempInt );
+	m_SpecMethod[1] = (ESpecificationMethod) tempInt;
+	savefile->ReadString( m_SpecStrVal[0] );
+	savefile->ReadString( m_SpecStrVal[1] );
+	savefile->ReadInt( m_SpecIntVal[0] );
+	savefile->ReadInt( m_SpecIntVal[1] );
+	savefile->ReadBool( m_bState );
+	savefile->ReadBool( m_bLatched );
+
+	savefile->ReadInt( num );
+	m_IntArgs.SetNum( num );
+	for( int i=0; i<num; i++ )
+		savefile->ReadInt( m_IntArgs[i] );
+
+	savefile->ReadInt( num );
+	m_StrArgs.SetNum( num );
+	for( int j=0; j<num; j++ )
+		savefile->ReadString( m_StrArgs[j] );
+
+	savefile->ReadInt( m_ClockInterval );
+	savefile->ReadInt( m_TimeStamp );
+	savefile->ReadBool( m_bReversible );
+}
+
 CMissionData::CMissionData( void )
 {
 	int i;
@@ -188,12 +251,38 @@ void CMissionData::Clear( void )
 
 void CMissionData::Save( idSaveGame *savefile ) const
 {
-	// TODO
+	savefile->WriteBool( m_bObjsNeedUpdate );
+	
+	savefile->WriteInt( m_Objectives.Num() );
+	for( int i=0; i < m_Objectives.Num(); i++ )
+		m_Objectives[i].Save( savefile );
+
+	// TODO Save/restore mission stats
 }
 
 void CMissionData::Restore( idRestoreGame *savefile )
 {
-	// TODO
+	int num(0);
+
+	savefile->ReadBool( m_bObjsNeedUpdate );
+	
+	savefile->ReadInt( num );
+	m_Objectives.SetNum( num );
+	for( int i=0; i < num; i++ )
+		m_Objectives[i].Restore( savefile );
+
+	// Rebuild list of clocked components now that we've loaded objectives
+	for( int ind = 0; ind < m_Objectives.Num(); ind++ )
+	{
+		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
+		{
+			CObjectiveComponent *pComp = &m_Objectives[ind].m_Components[ind2];
+			if( (pComp->m_Type == COMP_CUSTOM_CLOCKED) || (pComp->m_Type == COMP_DISTANCE) || (pComp->m_Type == COMP_INFO_LOCATION) )
+				m_ClockedComponents.Append( pComp );
+		}
+	}
+
+	// TODO: Save/restore mission stats
 }
 
 void CMissionData::MissionEvent
@@ -1147,17 +1236,17 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		// this objective applies to all levels.
 		TempStr2 = args->GetString( StrTemp + "difficulty", "" );
 		if (TempStr2.Length() > 0) {
-			ObjTemp.m_applies = false;
+			ObjTemp.m_bApplies = false;
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			while( src.ReadToken( &token ) )
 			{
 				if( token.IsNumeric() )
 					if (g_skill.GetInteger() == token.GetIntValue()) {
-						ObjTemp.m_applies = true;
+						ObjTemp.m_bApplies = true;
 						break;
 					}
 			}
-			if (!ObjTemp.m_applies) {
+			if (!ObjTemp.m_bApplies) {
 				// Objectives that don't apply to this difficulty level are considered invalid.
 				// They don't need to be completed.
 				ObjTemp.m_state = STATE_INVALID;
@@ -1299,7 +1388,7 @@ void CObjective::Clear( void )
 	m_bLatched = false;
 	m_bVisible = true;
 	m_bOngoing = false;
-	m_applies = true;
+	m_bApplies = true;
 	m_handle = 0;
 	m_Components.Clear();
 	m_EnablingObjs.Clear();
@@ -1753,6 +1842,68 @@ When we advance to the next matrix spot, it can happen in two ways:
 Quit:
 	return bReturnVal;
 }
+
+void CObjective::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteString( m_text );
+	savefile->WriteBool( m_bMandatory );
+	savefile->WriteBool( m_bVisible );
+	savefile->WriteBool( m_bOngoing );
+	savefile->WriteBool( m_bApplies );
+	savefile->WriteInt( m_handle );
+	savefile->WriteInt( m_state );
+	savefile->WriteBool( m_bNeedsUpdate );
+	savefile->WriteBool( m_bReversible );
+	savefile->WriteBool( m_bLatched );
+
+	savefile->WriteInt( m_Components.Num() );
+	for( int i=0; i < m_Components.Num(); i++ )
+		m_Components[i].Save( savefile );
+
+	savefile->WriteInt( m_EnablingObjs.Num() );
+	for( int j=0; j < m_EnablingObjs.Num(); j++ )
+		savefile->WriteInt( m_EnablingObjs[j] );
+
+	savefile->WriteString( m_CompletionScript );
+	savefile->WriteString( m_FailureScript );
+	savefile->WriteString( m_SuccessLogicStr );
+	savefile->WriteString( m_FailureLogicStr );
+}
+
+void CObjective::Restore( idRestoreGame *savefile )
+{
+	int num(0), tempInt(0);
+	savefile->ReadString( m_text );
+	savefile->ReadBool( m_bMandatory );
+	savefile->ReadBool( m_bVisible );
+	savefile->ReadBool( m_bOngoing );
+	savefile->ReadBool( m_bApplies );
+	savefile->ReadInt( m_handle );
+	savefile->ReadInt( tempInt );
+	m_state = (EObjCompletionState) tempInt;
+	savefile->ReadBool( m_bNeedsUpdate );
+	savefile->ReadBool( m_bReversible );
+	savefile->ReadBool( m_bLatched );
+
+	savefile->ReadInt( num );
+	m_Components.SetNum( num );
+	for( int i=0; i < num; i++ )
+		m_Components[i].Restore( savefile );
+
+	savefile->ReadInt( num );
+	m_EnablingObjs.SetNum( num );
+	for( int j=0; j < num; j++ )
+		savefile->ReadInt( m_EnablingObjs[j] );
+
+	savefile->ReadString( m_CompletionScript );
+	savefile->ReadString( m_FailureScript );
+	savefile->ReadString( m_SuccessLogicStr );
+	savefile->ReadString( m_FailureLogicStr );
+
+	// We have to re-parse the logic since the parse nodes involve raw pointer linkages
+	ParseLogicStrs();
+}
+
 
 /*===========================================================================
 *
