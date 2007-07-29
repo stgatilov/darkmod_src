@@ -38,6 +38,8 @@ CDarkmodHidingSpotTree::CDarkmodHidingSpotTree()
 	lastAreaHandle_indexRetrieval = NULL;
 	lastSpotHandle_indexRetrieval = NULL;
 
+	maxAreaNodeId = 0;
+	maxSpotNodeId = 0;
 }
 
 //--------------------------------------------------------------------------
@@ -75,11 +77,95 @@ void CDarkmodHidingSpotTree::clear()
 	numSpots = 0;
 	p_firstArea = NULL;
 	p_lastArea = NULL;
+	maxAreaNodeId = 0;
+	maxSpotNodeId = 0;
+}
 
+int CDarkmodHidingSpotTree::getAreaNodeId(TDarkmodHidingSpotAreaNode* area) const
+{
+	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
+	while (p_node != NULL)
+	{
+		if (p_node == area) 
+		{
+			return p_node->id;
+		}
+
+		p_node = p_node->p_nextSibling;
+	}
+
+	return -1;
+}
+
+TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getAreaNode(int areaNodeId) const
+{
+	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
+	while (p_node != NULL)
+	{
+		if (p_node->id == areaNodeId) 
+		{
+			return p_node;
+		}
+
+		p_node = p_node->p_nextSibling;
+	}
+
+	return NULL;
+}
+
+int CDarkmodHidingSpotTree::getSpotNodeId(darkModHidingSpotNode* spotNode) const
+{
+	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
+	while (p_node != NULL)
+	{
+		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
+
+		while (p_spot != NULL)
+		{
+			if (p_spot == spotNode)
+			{
+				// Found 
+				return p_spot->id;
+			}
+
+			p_spot = p_spot->p_next;
+		}
+
+		p_node = p_node->p_nextSibling;
+	}
+
+	return -1;
+}
+
+darkModHidingSpotNode* CDarkmodHidingSpotTree::getSpotNode(int spotNodeId) const
+{
+	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
+	while (p_node != NULL)
+	{
+		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
+
+		while (p_spot != NULL)
+		{
+			if (p_spot->id == spotNodeId)
+			{
+				// Found 
+				return p_spot;
+			}
+
+			p_spot = p_spot->p_next;
+		}
+
+		p_node = p_node->p_nextSibling;
+	}
+
+	return NULL;
 }
 
 void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 {
+	savefile->WriteInt(maxAreaNodeId);
+	savefile->WriteInt(maxSpotNodeId);
+
 	savefile->WriteFloat(static_cast<float>(numAreas));
 	savefile->WriteFloat(static_cast<float>(numSpots));
 
@@ -87,6 +173,7 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 	while (p_node != NULL)
 	{
 		// Save areaNode members
+		savefile->WriteInt(p_node->id);
 		savefile->WriteFloat(static_cast<float>(p_node->aasAreaIndex));
 		savefile->WriteFloat(static_cast<float>(p_node->count));
 		
@@ -107,6 +194,8 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 		p_spot = p_node->p_firstSpot;
 		while (p_spot != NULL)
 		{
+			savefile->WriteInt(p_spot->id);
+
 			// Save the aasgoal_t
 			savefile->WriteInt(p_spot->spot.goal.areaNum);
 			savefile->WriteVec3(p_spot->spot.goal.origin);
@@ -130,13 +219,18 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 
 	// Handles
 	savefile->WriteFloat(static_cast<float>(lastIndex_indexRetrieval));
-	savefile->WriteFloat(static_cast<float>(lastAreaHandle_indexRetrieval));
-	savefile->WriteFloat(static_cast<float>(lastSpotHandle_indexRetrieval));
+
+	// greebo: These are pointers in disguise (unsigned long), resolve the indices
+	savefile->WriteInt(getAreaNodeId((TDarkmodHidingSpotAreaNode*)lastAreaHandle_indexRetrieval));
+	savefile->WriteInt(getSpotNodeId((darkModHidingSpotNode*)lastSpotHandle_indexRetrieval));
 }
 
 void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 {
 	float tempFloat;
+
+	savefile->ReadInt(maxAreaNodeId);
+	savefile->ReadInt(maxSpotNodeId);
 
 	savefile->ReadFloat(tempFloat);
 	numAreas = static_cast<unsigned long>(tempFloat);
@@ -157,6 +251,8 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 		}
 
 		// Restore areaNode members
+		savefile->ReadInt(curArea->id);
+
 		savefile->ReadFloat(tempFloat);
 		curArea->aasAreaIndex = static_cast<unsigned int>(tempFloat);
 
@@ -199,6 +295,8 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 				lastSpot->p_next = curSpot;
 			}
 
+			savefile->ReadInt(curSpot->id);
+
 			// Restore the aasgoal_t
 			savefile->ReadInt(curSpot->spot.goal.areaNum);
 			savefile->ReadVec3(curSpot->spot.goal.origin);
@@ -227,11 +325,13 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(tempFloat);
 	lastIndex_indexRetrieval = static_cast<unsigned long>(tempFloat);
 
-	savefile->ReadFloat(tempFloat);
-	lastAreaHandle_indexRetrieval = static_cast<TDarkModHidingSpotTreeIterationHandle>(tempFloat);
+	int areaNodeId;
+	savefile->ReadInt(areaNodeId);
+	lastAreaHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) getAreaNode(areaNodeId);
 
-	savefile->ReadFloat(tempFloat);
-	lastSpotHandle_indexRetrieval = static_cast<TDarkModHidingSpotTreeIterationHandle>(tempFloat);
+	int spotNodeId;
+	savefile->ReadInt(spotNodeId);
+	lastSpotHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) getSpotNode(spotNodeId);
 }
 
 //-------------------------------------------------------------------------
@@ -278,6 +378,9 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::insertArea
 		return NULL;
 	}
 
+	// Generate a unique id for this node
+	maxAreaNodeId++;
+	p_node->id = maxAreaNodeId;
 
 	p_node->aasAreaIndex = areaIndex;
 	p_node->count = 0;
@@ -436,6 +539,9 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 	{
 		return false;
 	}
+
+	maxSpotNodeId++;
+	p_spot->id = maxSpotNodeId;
 
 	p_spot->spot.goal = goal;
 	p_spot->spot.hidingSpotTypes = hidingSpotTypes;
@@ -679,6 +785,9 @@ bool CDarkmodHidingSpotTree::subDivideArea
 					// Doh, structure corrupt, out of memory
 					return false;
 				}
+
+				maxAreaNodeId++;
+				p_areaNode->id = maxAreaNodeId;
 
 				// Fill out node properties that don't change from original
 				p_areaNode->aasAreaIndex = in_p_areaNode->aasAreaIndex;

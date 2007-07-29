@@ -6292,7 +6292,7 @@ float idAI::GetAcuity( const char *type ) const
 			}
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
 
 Quit:
 	return returnval;

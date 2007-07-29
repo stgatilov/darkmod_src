@@ -45,6 +45,9 @@ typedef struct
 
 typedef struct tagDarkModHidingSpotNode
 {
+	// The unique spot id
+	int id;
+
 	// The spot
 	darkModHidingSpot_t spot;
 
@@ -59,6 +62,8 @@ typedef struct tagDarkModHidingSpotNode
 
 typedef struct tagTDarkmodHidingSpotAreaNode
 {
+	// greebo: This is a unique ID to resolve pointers after map restore
+	int id;
 
 	unsigned int aasAreaIndex;
 	unsigned int count;
@@ -85,6 +90,13 @@ typedef unsigned long TDarkModHidingSpotTreeIterationHandle;
 
 class CDarkmodHidingSpotTree
 {
+private:
+	// The highest used area node id (0 on initialisiation)
+	int maxAreaNodeId;
+
+	// The highest used spot node id (0 on initialisation)
+	int maxSpotNodeId;
+
 protected:
 
 	// The number of areas
@@ -100,6 +112,13 @@ protected:
 	unsigned long lastIndex_indexRetrieval;
 	TDarkModHidingSpotTreeIterationHandle lastAreaHandle_indexRetrieval;
 	TDarkModHidingSpotTreeIterationHandle lastSpotHandle_indexRetrieval;
+
+	// Mapping methods, retrieves node pointers for indices and vice versa
+	int getAreaNodeId(TDarkmodHidingSpotAreaNode* area) const; // returns -1 for invalid pointer
+	TDarkmodHidingSpotAreaNode* getAreaNode(int areaNodeId) const; // returns NULL for invalid Id
+
+	int getSpotNodeId(darkModHidingSpotNode* spotNode) const; // Returns -1 for invalid pointer
+	darkModHidingSpotNode* getSpotNode(int spotNodeId) const; // Returns NULL for invalid id
 
 	void clearIndexRetrievalTracking();
 	
