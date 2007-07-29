@@ -106,7 +106,7 @@ protected:
 	float searchRadius;
 	idBounds searchIgnoreLimits;
 	int hidingSpotTypesAllowed;
-	idEntity* p_ignoreEntity;
+	idEntityPtr<idEntity> p_ignoreEntity;
 
 	/* This tracks the last game frame during which points were tested so 
 	* we don't test more and more points if more than one AI sharing the search
