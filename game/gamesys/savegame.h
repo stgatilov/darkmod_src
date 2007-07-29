@@ -52,6 +52,7 @@ public:
 
 	void					Write( const void *buffer, int len );
 	void					WriteInt( const int value );
+	void					WriteUnsignedInt( const unsigned int value );
 	void					WriteJoint( const jointHandle_t value );
 	void					WriteShort( const short value );
 	void					WriteByte( const byte value );
@@ -112,6 +113,7 @@ public:
 
 	void					Read( void *buffer, int len );
 	void					ReadInt( int &value );
+	void					ReadUnsignedInt( unsigned int &value );
 	void					ReadJoint( jointHandle_t &value );
 	void					ReadShort( short &value );
 	void					ReadByte( byte &value );

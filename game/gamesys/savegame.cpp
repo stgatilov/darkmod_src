@@ -157,6 +157,15 @@ void idSaveGame::WriteInt( const int value ) {
 
 /*
 ================
+idSaveGame::WriteUnsignedInt
+================
+*/
+void idSaveGame::WriteUnsignedInt( const unsigned int value ) {
+	file->WriteUnsignedInt( value );
+}
+
+/*
+================
 idSaveGame::WriteJoint
 ================
 */
@@ -902,6 +911,15 @@ idRestoreGame::ReadInt
 */
 void idRestoreGame::ReadInt( int &value ) {
 	file->ReadInt( value );
+}
+
+/*
+================
+idRestoreGame::ReadUnsignedInt
+================
+*/
+void idRestoreGame::ReadUnsignedInt( unsigned int &value ) {
+	file->ReadUnsignedInt( value );
 }
 
 /*
