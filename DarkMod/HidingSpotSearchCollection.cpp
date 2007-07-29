@@ -65,6 +65,16 @@ void CHidingSpotSearchCollection::clear()
 
 }
 
+void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
+{
+	// TODO
+}
+
+void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
+{
+	// TODO
+}
+
 //--------------------------------------------------------------------
 
 THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()

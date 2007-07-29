@@ -764,6 +764,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	// Save the DarkMod player object, this contains a lot of other TDM-related classes
 	g_Global.m_DarkModPlayer->Save(&savegame);
 
+	// Save the global hiding spot search collection
+	HidingSpotSearchCollection.Save(&savegame);
+
 	savegame.Close();
 }
 
@@ -1701,6 +1704,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore the DarkMod player object, this contains a lot of other TDM-related classes
 	g_Global.m_DarkModPlayer->Restore(&savegame);
+
+	// Restore the global hiding spot search collection
+	HidingSpotSearchCollection.Restore(&savegame);
 
 	savegame.RestoreObjects();
 

@@ -108,6 +108,8 @@ public:
 	);
 		
 
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
 	
 protected:
 
