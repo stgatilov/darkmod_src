@@ -1150,12 +1150,27 @@ void idPhysics_Player::RopeMove( void )
 	
 	// apply the player's weight to the AF body - COMMENTED OUT DUE TO AF CRAZINESS
 //	static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->AddForce(bodID, ropePoint, mass * gravityVector );
-
+	
 	// if the player has hit the rope this frame, apply an impulse based on their velocity
 	// pretend the deceleration takes place over a number of frames for realism (100 ms?)
 	if( m_bJustHitRope )
 	{
 		m_bJustHitRope = false;
+
+		// greebo: Apply an impulse on the entity the rope arrow is bound to
+		idEntity* ropeBindMaster = m_RopeEntity.GetEntity()->GetBindMaster();
+		if (ropeBindMaster != NULL)
+		{
+			idVec3 direction = GetGravity();
+			direction.NormalizeFast();
+
+			//gameLocal.Printf("ropeBindMaster.name.c_str() = %s\n", ropeBindMaster->name.c_str());
+			idPhysics* bindMasterPhysics = ropeBindMaster->GetPhysics();
+
+			idVec3 ropeOrigin = m_RopeEntity.GetEntity()->GetPhysics()->GetOrigin();
+			//gameRenderWorld->DebugArrow(colorBlue, ropeOrigin, ropeOrigin + direction * 6, 1, 10000);
+			bindMasterPhysics->ApplyImpulse(0, ropeOrigin, direction * mass * 400);
+		}
 
 		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
 		vImpulse *= mass;
@@ -1342,22 +1357,22 @@ idPhysics_Player::RopeDetach
 */
 void idPhysics_Player::RopeDetach( void ) 
 {
-		m_bOnRope = false;
+	m_bOnRope = false;
 
-		// start the reattach timer
-		m_RopeDetachTimer = gameLocal.time;
+	// start the reattach timer
+	m_RopeDetachTimer = gameLocal.time;
 
-		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", 0 );
+	static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", 0 );
 
-		// switch movement modes to the appropriate one
-		if ( waterLevel > WATERLEVEL_FEET ) 
-		{
-			idPhysics_Player::WaterMove();
-		}
-		else 
-		{
-			idPhysics_Player::AirMove();
-		}
+	// switch movement modes to the appropriate one
+	if ( waterLevel > WATERLEVEL_FEET ) 
+	{
+		idPhysics_Player::WaterMove();
+	}
+	else 
+	{
+		idPhysics_Player::AirMove();
+	}
 }
 
 /*
@@ -1367,29 +1382,29 @@ idPhysics_Player::ClimbDetach
 */
 void idPhysics_Player::ClimbDetach( bool bStepUp ) 
 {
-		m_bOnClimb = false;
-		m_ClimbingOnEnt = NULL;
-		m_bClimbDetachThisFrame = true;
+	m_bOnClimb = false;
+	m_ClimbingOnEnt = NULL;
+	m_bClimbDetachThisFrame = true;
 
-		static_cast<idPlayer *>(self)->SetImmobilization("ClimbMove", 0);
+	static_cast<idPlayer *>(self)->SetImmobilization("ClimbMove", 0);
 
-		// switch movement modes to the appropriate one
-		if( bStepUp )
-		{
-			// Step up at the top of a ladder
-			idVec3 ClimbNormXY = m_vClimbNormal - (gravityNormal * m_vClimbNormal) * gravityNormal;
-			ClimbNormXY.Normalize();
-			current.velocity += -ClimbNormXY * LADDER_TOPVELOCITY;
-			idPhysics_Player::SlideMove( false, true, false, true );
-		}
-		else if ( waterLevel > WATERLEVEL_FEET ) 
-		{
-			idPhysics_Player::WaterMove();
-		}
-		else 
-		{
-			idPhysics_Player::AirMove();
-		}
+	// switch movement modes to the appropriate one
+	if( bStepUp )
+	{
+		// Step up at the top of a ladder
+		idVec3 ClimbNormXY = m_vClimbNormal - (gravityNormal * m_vClimbNormal) * gravityNormal;
+		ClimbNormXY.Normalize();
+		current.velocity += -ClimbNormXY * LADDER_TOPVELOCITY;
+		idPhysics_Player::SlideMove( false, true, false, true );
+	}
+	else if ( waterLevel > WATERLEVEL_FEET ) 
+	{
+		idPhysics_Player::WaterMove();
+	}
+	else 
+	{
+		idPhysics_Player::AirMove();
+	}
 }
 
 /*
@@ -2295,6 +2310,21 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// continue moving on the rope if still attached
 	else if ( m_bOnRope )
 	{
+		// Check rope movement and let go if the rope is moving too fast
+		float maxRopeVelocity = cv_pm_rope_velocity_letgo.GetFloat();
+		idEntity* ropeEntity = m_RopeEntity.GetEntity();
+		if (ropeEntity != NULL)
+		{
+			float ropeVelocity = ropeEntity->/*GetBindMaster()->*/GetPhysics()->GetLinearVelocity().LengthFast();
+
+			//gameLocal.Printf("Rope Velocity: %f\n", m_RopeEntity.GetEntity()->GetBindMaster()->GetPhysics()->GetLinearVelocity().LengthFast());
+			if (ropeVelocity > maxRopeVelocity)
+			{
+				gameLocal.Printf("Rope is too fast (%f)! Letting go...\n", ropeVelocity);
+				RopeDetach();
+			}
+		}
+
 		idPhysics_Player::RopeMove();
 	}
 	else if ( m_bRopeContact ) 

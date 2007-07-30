@@ -2605,7 +2605,8 @@ idWeapon::Event_AmmoAvailable
 ===============
 */
 void idWeapon::Event_AmmoAvailable( void ) {
-	int ammoAvail = owner->getCurrentWeaponItem()->hasAmmo();
+	CInventoryWeaponItem* currentWeapon = owner->getCurrentWeaponItem();
+	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->hasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
 
@@ -2615,7 +2616,8 @@ idWeapon::Event_TotalAmmoCount
 ===============
 */
 void idWeapon::Event_TotalAmmoCount( void ) {
-	int ammoAvail = owner->getCurrentWeaponItem()->hasAmmo();
+	CInventoryWeaponItem* currentWeapon = owner->getCurrentWeaponItem();
+	int ammoAvail = (currentWeapon != NULL) ? currentWeapon->hasAmmo() : 0;
 	idThread::ReturnFloat( ammoAvail );
 }
 
