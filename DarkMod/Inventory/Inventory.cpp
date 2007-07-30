@@ -131,6 +131,7 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 			GetLoot( dummy, dummy, dummy ), 
 			true 
 		);
+		gameLocal.m_MissionData->ChangeTotalLoot( value );
 	}
 	else
 	{
