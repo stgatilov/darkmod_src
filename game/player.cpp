@@ -3211,10 +3211,12 @@ void idPlayer::LowerWeapon( void ) {
 idPlayer::RaiseWeapon
 ===============
 */
-void idPlayer::RaiseWeapon( void ) {
-	if ( weapon.GetEntity() && weapon.GetEntity()->IsHidden() ) {
+void idPlayer::RaiseWeapon( void ) 
+{
+	if ( weapon.GetEntity() 
+		&& weapon.GetEntity()->IsHidden()
+		&& ! (GetImmobilization() & EIM_ATTACK) ) 
 		weapon.GetEntity()->RaiseWeapon();
-	}
 }
 
 /*
@@ -3327,11 +3329,15 @@ void idPlayer::UpdateWeapon( void ) {
 	} else 	if ( focusCharacter && ( focusCharacter->health > 0 ) ) {
 		Weapon_NPC();
 	} else if( g_Global.m_DarkModPlayer->grabber->GetSelected() ) {
-		StopFiring();
-		weapon.GetEntity()->LowerWeapon();
 		g_Global.m_DarkModPlayer->grabber->Update( this, true );
 	} else {
 		Weapon_Combat();
+	}
+
+	if( GetImmobilization() & EIM_ATTACK )
+	{
+		StopFiring();
+		weapon.GetEntity()->LowerWeapon();
 	}
 	
 	if ( hiddenWeapon ) {
