@@ -2357,6 +2357,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	*/
 
 	m_lastCommandViewYaw = command.angles[1];
+	m_lastCommandViewPitch = command.angles[0];
 
 }
 
@@ -2480,7 +2481,6 @@ idPhysics_Player::idPhysics_Player( void )
 	m_RopeEntity = NULL;
 	m_RopeEntTouched = NULL;
 	m_RopeDetachTimer = 0;
-	m_lastCommandViewYaw = 0;
 
 	// wall/ladder climbing
 	m_bClimbableAhead = false;
@@ -2518,6 +2518,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_leanMoveMaxAngle = 0.0;
 	m_leanMoveMaxStretch = 0.0;
 
+	m_lastCommandViewYaw = 0;
+	m_lastCommandViewPitch = 0;
 	m_viewLeanAngles = ang_zero;
 	m_viewLeanTranslation = vec3_zero;
 
@@ -2525,6 +2527,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_LeanDoorEnt = NULL;
 
 	m_DeltaViewYaw = 0.0;
+	m_DeltaViewPitch = 0.0;
 
 	// Initialize lean view bounds used for collision
 	m_LeanViewBounds.Zero();
@@ -2686,7 +2689,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	m_RopeEntTouched.Restore( savefile );
 	// Angle storage vars need to be reset on a restore, since D3 resets the command angle to 0
 	m_lastCommandViewYaw = 0.0f;
+	m_lastCommandViewPitch = 0.0f;
 	m_DeltaViewYaw = 0.0f;
+	m_DeltaViewPitch = 0.0f;
 
 	savefile->ReadBool( m_bClimbableAhead );
 	savefile->ReadBool( m_bOnClimb );
@@ -2769,15 +2774,30 @@ void idPhysics_Player::SetPlayerInput( const usercmd_t &cmd, const idAngles &new
 	command = cmd;
 
 	m_DeltaViewYaw = command.angles[1] - m_lastCommandViewYaw;
+	m_DeltaViewPitch = command.angles[0] - m_lastCommandViewPitch;
 	m_DeltaViewYaw = SHORT2ANGLE(m_DeltaViewYaw);
+	m_DeltaViewPitch = SHORT2ANGLE(m_DeltaViewPitch);
 
-	// don't return a change if the player's view is locked in place
+	// Test for pitch clamping
+	float TestPitch = viewAngles.pitch + m_DeltaViewPitch;
+	TestPitch = idMath::AngleNormalize180( TestPitch );
+
+	if( TestPitch > pm_maxviewpitch.GetFloat() )
+		m_DeltaViewPitch = pm_maxviewpitch.GetFloat() - viewAngles.pitch;
+	else if( TestPitch < pm_minviewpitch.GetFloat() )
+		m_DeltaViewPitch = pm_minviewpitch.GetFloat() - viewAngles.pitch;
+
+	// zero the delta angles if the player's view is locked in place
 	if( static_cast<idPlayer *>(self)->GetImmobilization() & EIM_VIEW_ANGLE )
-		m_DeltaViewYaw = 0;
+	{
+		m_DeltaViewYaw = 0.0f;
+		m_DeltaViewPitch = 0.0f;
+	}
 
 	viewAngles = newViewAngles;	// can't use cmd.angles cause of the delta_angles
 
 	m_lastCommandViewYaw = command.angles[1];
+	m_lastCommandViewPitch = command.angles[0];
 }
 
 /*
@@ -4700,6 +4720,11 @@ void idPhysics_Player::UpdateLeanPhysics( void )
 float idPhysics_Player::GetDeltaViewYaw( void )
 {
 	return m_DeltaViewYaw;
+}
+
+float idPhysics_Player::GetDeltaViewPitch( void )
+{
+	return m_DeltaViewPitch;
 }
 
 void idPhysics_Player::UpdateLeanedInputYaw( idAngles &InputAngles )
