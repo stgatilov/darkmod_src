@@ -560,8 +560,8 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_drag.SetPhysics( phys, m_id, m_localEntityPoint );
 
 	player->m_bGrabberActive = true;
-	// don't let the player switch weapons or items
-	player->SetImmobilization( "Grabber", EIM_ITEM_SELECT | EIM_WEAPON_SELECT );
+	// don't let the player switch weapons or items, and lower their weapon
+	player->SetImmobilization( "Grabber", EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK );
 
 	// Set movement encumbrance
 	player->SetHinderance( "Grabber", 1.0f, m_dragEnt.GetEntity()->spawnArgs.GetFloat("grab_encumbrance", "1.0") );
