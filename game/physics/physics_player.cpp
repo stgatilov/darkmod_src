@@ -787,11 +787,7 @@ void idPhysics_Player::WaterMove( void ) {
 
 	// Lower weapons while swimming
 // TODO : In future, only disable some weapons, keep the sword for underwater bashing?
-	if( !static_cast<idPlayer *>(self)->hiddenWeapon )
-	{
-		static_cast<idPlayer *>(self)->LowerWeapon();
-		static_cast<idPlayer *>(self)->hiddenWeapon = true;
-	}
+	static_cast<idPlayer *>(self)->SetImmobilization( "WaterMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
 	idPhysics_Player::Friction();
 
@@ -1351,8 +1347,7 @@ void idPhysics_Player::RopeDetach( void )
 		// start the reattach timer
 		m_RopeDetachTimer = gameLocal.time;
 
-		static_cast<idPlayer *>(self)->RaiseWeapon();
-		static_cast<idPlayer *>(self)->hiddenWeapon = false;
+		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", 0 );
 
 		// switch movement modes to the appropriate one
 		if ( waterLevel > WATERLEVEL_FEET ) 
@@ -1376,12 +1371,12 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 		m_ClimbingOnEnt = NULL;
 		m_bClimbDetachThisFrame = true;
 
-		static_cast<idPlayer *>(self)->RaiseWeapon();
-		static_cast<idPlayer *>(self)->hiddenWeapon = false;
+		static_cast<idPlayer *>(self)->SetImmobilization("ClimbMove", 0);
 
 		// switch movement modes to the appropriate one
 		if( bStepUp )
 		{
+			// Step up at the top of a ladder
 			idVec3 ClimbNormXY = m_vClimbNormal - (gravityNormal * m_vClimbNormal) * gravityNormal;
 			ClimbNormXY.Normalize();
 			current.velocity += -ClimbNormXY * LADDER_TOPVELOCITY;
@@ -1393,7 +1388,6 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 		}
 		else 
 		{
-			// TODO: This doesn't work to step up at the end of a ladder
 			idPhysics_Player::AirMove();
 		}
 }
@@ -1979,11 +1973,13 @@ void idPhysics_Player::CheckClimbable( void )
 					m_vClimbNormal = trace.c.normal;
 					m_ClimbingOnEnt = gameLocal.entities[ trace.c.entityNum ];
 					
+					// Initial climbing attachment
 					// FIX: Used to get stuck hovering in some cases, now there's an initial phase
 					if( !m_bOnClimb )
 					{
 						m_bClimbInitialPhase = true;
 						m_vClimbPoint = vStickPoint;
+						static_cast<idPlayer *>(self)->SetImmobilization( "ClimbMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 					}
 
 					m_bClimbableAhead = true;
@@ -2307,8 +2303,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		m_bOnRope = true;
 
 		// lower weapon
-		static_cast<idPlayer *>(self)->LowerWeapon();
-		static_cast<idPlayer *>(self)->hiddenWeapon = true;
+		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
 		idPhysics_Player::RopeMove();
 	}
@@ -2336,14 +2331,11 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		idPhysics_Player::AirMove();
 	}
 
-	// raise weapon if not swimming, mantling or on a rope
-	if( m_mantlePhase == notMantling_DarkModMantlePhase && waterLevel <= 1 && !m_bOnRope )
+	// raise weapon if not swimming
+	if( waterLevel <= 1 
+		&& static_cast<idPlayer *>(self)->GetImmobilization("WaterMove") )
 	{
-		if( static_cast<idPlayer *>(self)->hiddenWeapon )
-		{
-			static_cast<idPlayer *>(self)->RaiseWeapon();
-			static_cast<idPlayer *>(self)->hiddenWeapon = false;
-		}
+		static_cast<idPlayer *>(self)->SetImmobilization("WaterMove", 0);
 	}
 
 	// set watertype, waterlevel and groundentity
@@ -3430,9 +3422,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			{
 				// Handle end of mantle
 				// Ishtvan 11/20/05 - Raise weapons after mantle is done
-				static_cast<idPlayer *>(self)->RaiseWeapon();
-				static_cast<idPlayer *>(self)->hiddenWeapon = false;
-				
+				static_cast<idPlayer *>(self)->SetImmobilization("MantleMove", 0);		
 			}
 					
 		}
@@ -3550,8 +3540,7 @@ void idPhysics_Player::StartMantle
 	}
 
 	// Ishtvan 11/20/05 - Lower weapons when mantling
-	static_cast<idPlayer *>(self)->LowerWeapon();
-	static_cast<idPlayer *>(self)->hiddenWeapon = true;
+	static_cast<idPlayer *>(self)->SetImmobilization( "MantleMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
 	// If mantling from a jump, cancel any velocity so that it does
 	// not continue after the mantle is completed.
