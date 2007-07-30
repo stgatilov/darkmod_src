@@ -96,7 +96,10 @@ void CGrabber::Clear( void )
 	m_player			= NULL;
 	m_joint			= INVALID_JOINT;
 	m_id				= 0;
-	m_localEntityPoint.Zero();
+	m_LocalEntPoint.Zero();
+	m_vLocalEntOffset.Zero();
+	m_vOffset.Zero();
+	m_bMaintainPitch = true;
 	m_bAttackPressed = false;
 	m_ThrowTimer = 0;
 	m_bIsColliding = false;
@@ -122,7 +125,11 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	m_dragEnt.Save(savefile);
 	savefile->WriteJoint(m_joint);
 	savefile->WriteInt(m_id);
-	savefile->WriteVec3(m_localEntityPoint);
+	savefile->WriteVec3(m_LocalEntPoint);
+	savefile->WriteVec3(m_vLocalEntOffset);
+	savefile->WriteVec3(m_vOffset);
+	savefile->WriteBool(m_bMaintainPitch);
+
 	m_player.Save(savefile);
 
 	m_drag.Save(savefile);
@@ -162,7 +169,10 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	m_dragEnt.Restore(savefile);
 	savefile->ReadJoint(m_joint);
 	savefile->ReadInt(m_id);
-	savefile->ReadVec3(m_localEntityPoint);
+	savefile->ReadVec3(m_LocalEntPoint);
+	savefile->ReadVec3(m_vLocalEntOffset);
+	savefile->ReadVec3(m_vOffset);
+	savefile->ReadBool(m_bMaintainPitch);
 	m_player.Restore(savefile);
 
 	m_drag.Restore(savefile);
@@ -323,6 +333,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	vPlayerPoint.x = 1.0f; // (1, 0, 0)
 	/* float */ distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
 	vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+	vPlayerPoint += m_vOffset;
 
 	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
 
@@ -530,12 +541,13 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	origin = phys->GetOrigin( m_id );
 	axis = phys->GetAxis( m_id );
-	m_localEntityPoint = COM;
+	m_LocalEntPoint = COM;
 
 	// find the nearest distance and set it to that
 	m_MinHeldDist = int(newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" ));
 	if( m_MinHeldDist < 0 )
 		m_MinHeldDist = int(MIN_HELD_DISTANCE);
+	m_vOffset = newEnt->spawnArgs.GetVector( "hold_offset" );
 
 	delta2 = COMWorld - viewPoint;
 	m_DistanceCount = int(idMath::Floor( m_MaxDistCount * (delta2.Length() - m_MinHeldDist) / (newEnt->m_FrobDistance - m_MinHeldDist ) ));
@@ -557,7 +569,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	else
 		m_drag.Init( cv_drag_damping.GetFloat() );
 
-	m_drag.SetPhysics( phys, m_id, m_localEntityPoint );
+	m_drag.SetPhysics( phys, m_id, m_LocalEntPoint );
 
 	player->m_bGrabberActive = true;
 	// don't let the player switch weapons or items, and lower their weapon
@@ -711,7 +723,7 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 	if( !ent->IsType( idAFEntity_Base::Type ) && !rotating && !m_bIsColliding ) 
 	{
 		idVec3	normal;
-		float	deltaYawAng(0);
+		float	deltaYawAng(0), deltaPitchAng(0);
 		normal = physics->GetGravityNormal();
 
 		deltaYawAng = static_cast<idPhysics_Player *>(player->GetPhysics())->GetDeltaViewYaw();
@@ -721,6 +733,19 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		trace_t trResults;
 		physics->ClipRotation( trResults, m_rotation, NULL );
 		physics->Rotate( m_rotation * trResults.fraction );
+
+		if( !m_bMaintainPitch )
+		{
+			idVec3 dummy;
+			deltaPitchAng = static_cast<idPhysics_Player *>(player->GetPhysics())->GetDeltaViewPitch();
+			
+			player->viewAngles.ToVectors( &dummy, &normal, &dummy );
+			m_rotation.Set(m_drag.GetCenterOfMass(), normal, deltaPitchAng );
+			
+			// rotate the object directly
+			physics->ClipRotation( trResults, m_rotation, NULL );
+			physics->Rotate( m_rotation * trResults.fraction );
+		}
 		
 		//I can't seem to get setting the angular velocity to work here for some reason
 		// Might be due to disparity between actual frame integration time and 1/60 sec
@@ -871,7 +896,7 @@ void CGrabber::SetPhysicsFromDragEntity()
 {
 	if (m_dragEnt.GetEntity() != NULL)
 	{
-		m_drag.SetPhysics(m_dragEnt.GetEntity()->GetPhysics(), m_id, m_localEntityPoint );
+		m_drag.SetPhysics(m_dragEnt.GetEntity()->GetPhysics(), m_id, m_LocalEntPoint );
 	}
 }
 
