@@ -76,6 +76,7 @@ extern idCVar cv_pm_lean_to_valid_increments;
 extern idCVar cv_pm_lean_door_increments;
 extern idCVar cv_pm_lean_door_max;
 extern idCVar cv_pm_lean_door_bounds_exp;
+extern idCVar cv_pm_lean_toggle;
 
 extern idCVar cv_frob_width;
 extern idCVar cv_frob_debug_bounds;

@@ -5085,6 +5085,24 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime) {
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Button %d has been released, has been held down %d ms.\r", impulse, holdTime);
 
 	switch (impulse) {
+		case IMPULSE_44:
+			if ( !cv_pm_lean_toggle.GetBool() )
+			{
+				physicsObj.ToggleLean(90.0);
+			}
+			break;
+		case IMPULSE_45:
+			if ( !cv_pm_lean_toggle.GetBool() )
+			{
+				physicsObj.ToggleLean(180.0);
+			}
+			break;
+		case IMPULSE_46:
+			if ( !cv_pm_lean_toggle.GetBool() )
+			{
+				physicsObj.ToggleLean(0.0);
+			}
+			break;
 		case IMPULSE_51:
 			inventoryUseKeyRelease(holdTime);
 			break;
