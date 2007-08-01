@@ -543,8 +543,10 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 			// clip & push
 			
-			// greebo: Don't use the idPusher
-			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end - current.origin, cv_pm_pushmod.GetFloat() );
+			// greebo: Use the idPusher only for trace completion
+			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end /*- current.origin*/, cv_pm_pushmod.GetFloat() );
+			trace.fraction = 0.0f;
+			trace.endpos = current.origin;
 
 			// greebo: Tell the object to take the impulse and propagate it to any touching objects (if there are any)
 			idEntity* pushedEnt = gameLocal.entities[trace.c.entityNum];
