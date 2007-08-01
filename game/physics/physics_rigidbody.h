@@ -137,6 +137,14 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+public:
+	/**
+	 * greebo: This is similar to ApplyImpulse, although this distributes the impulse
+	 *         on all entities in contact with this one in *this* very frame. If no
+	 *         no entities are in contact, all the impulse gets applied to this one.
+	 */
+	bool					PropagateImpulse(const idVec3& point, const idVec3& impulse);
+
 private:
 	// state of the rigid body
 	rigidBodyPState_t		current;

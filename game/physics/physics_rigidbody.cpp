@@ -252,6 +252,115 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 	next.atRest = current.atRest;
 }
 
+bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& impulse)
+{
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
+
+	// greebo: Check all entities touching this physics object
+	EvaluateContacts();
+
+	/**
+	 * greebo: The incoming impulse goes through 3 stages:
+	 * 
+	 * 1) The contact friction of this object reduces the impulse
+	 * 2) The reduced impulse is distributed among the contact entities
+	 * 3) The remaining impulse is applied to self.
+	 */
+	
+	// Save the current state
+	rigidBodyPState_t savedState = current;
+
+	// Apply the impulse the current state, as if the object was resting
+	current.i.linearMomentum.Zero();
+	current.i.angularMomentum.Zero();
+	ApplyImpulse(0, point, impulse);
+
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum before friction:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum before friction:", current.i.angularMomentum);
+
+	// Calculate the friction using this state
+	ContactFriction(current.lastTimeStep);
+
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum after friction:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum after friction:", current.i.angularMomentum);
+
+	// The list of all the touching entities
+	idList<contactInfo_t> touching;
+	
+	//gameRenderWorld->DebugArrow(colorGreen, point, point + impulseN*10, 1, 5000);
+
+	// greebo: Check for any contact normals that are suitable for this impulse direction
+	//         Contact normals with angles larger than pi/2 are discarded.
+	for (int i = 0; i < contacts.Num(); i++)
+	{
+		if (contacts[i].entityNum == ENTITYNUM_WORLD)
+			continue;
+
+		idEntity* contactEntity = gameLocal.entities[contacts[i].entityNum];
+
+		//gameRenderWorld->DebugArrow(colorBlue, contacts[i].point, contacts[i].point + contacts[i].normal*20, 1, 5000);
+		
+		if (contactEntity == NULL)
+			continue;
+
+		if ((impulse * -contacts[i].normal) < 0.0f)
+		{
+			DM_LOG(LC_ENTITY, LT_INFO).LogString("Entity %s is not in push direction.\r", contactEntity->name.c_str());
+			continue;
+		}
+		
+		// Add the contact info to the list, it is significant
+		touching.Append(contacts[i]);
+	}
+
+	int numTouching = touching.Num();
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s without world = %d\r", self->name.c_str(), numTouching);
+
+	if (numTouching > 0)
+	{
+		// Distribute the impulse evenly across the touching entities
+		idVec3 impulseFraction(current.i.linearMomentum / touching.Num());
+		float impulseFractionLen(impulseFraction.LengthFast());
+
+		// Now apply the impulse to the touching entities
+		for (int i = 0; i < numTouching; i++)
+		{
+			idEntity* pushed = gameLocal.entities[touching[i].entityNum];
+
+			if (pushed == NULL)
+				continue;
+
+			idPhysics_RigidBody* rigidBodyPhysics = dynamic_cast<idPhysics_RigidBody*>(pushed->GetPhysics());
+
+			if (rigidBodyPhysics == NULL)
+				continue;
+
+			DM_LOG(LC_ENTITY, LT_INFO).LogString("Propagating impulse to entity %s\r", pushed->name.c_str());
+			gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
+
+			rigidBodyPhysics->PropagateImpulse(touching[i].point, -touching[i].normal * impulseFractionLen);
+
+			// Substract this propagated impulse from the remaining one
+			current.i.linearMomentum -= impulseFraction;
+		}
+	}
+
+	// Save the remaining impulse before reverting the physics state
+	idVec3 remainingImpulse(current.i.linearMomentum);
+
+	// Revert the state to as it was before
+	current = savedState;
+	
+	// Apply the remaining impulse to this object
+	ApplyImpulse(0, point, remainingImpulse);
+
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum after applyImpulse:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum after applyImpulse:", current.i.angularMomentum);
+
+	// Return TRUE if we pushed any neighbours, FALSE if this was a single pushed object
+	return (numTouching > 0);
+}
+
 /*
 ================
 idPhysics_RigidBody::CollisionImpulse
@@ -1269,7 +1378,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	if ( collided ) {
 		// if the rigid body didn't come to rest or the other entity is not at rest
 		ent = gameLocal.entities[collision.c.entityNum];
-		if ( ent && ( !cameToRest || !ent->IsAtRest() ) ) {
+		if ( ent /*&& current.atRest < gameLocal.time*/ /*( !cameToRest || !ent->IsAtRest() )*/ ) {
 			// apply impact to other entity
 			ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
 		}
