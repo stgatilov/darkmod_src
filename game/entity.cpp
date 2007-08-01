@@ -3350,7 +3350,6 @@ bool idEntity::RunPhysics( void ) {
 		for ( part = this; part != blockedPart; part = part->teamChain ) {
 
 			if ( part->physics ) {
-
 				// restore the physics state
 				part->physics->RestoreState();
 
@@ -3363,6 +3362,13 @@ bool idEntity::RunPhysics( void ) {
 				// update the physics time without moving
 				part->physics->UpdateTime( endTime );
 			}
+		}
+
+		// greebo: Apply the "reactio" to the team master
+		idPhysics_RigidBody* rigidBodyPhysics = dynamic_cast<idPhysics_RigidBody*>(physics);
+		if (rigidBodyPhysics != NULL)
+		{
+			rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), -physics->GetLinearVelocity()*physics->GetMass());
 		}
 
 		// restore the positions of any pushed entities

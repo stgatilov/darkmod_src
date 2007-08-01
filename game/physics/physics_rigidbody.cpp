@@ -730,6 +730,9 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 #ifdef RB_TIMINGS
 	lastTimerReset = 0;
 #endif
+
+	isBlocked = false;
+	memset(&collisionTrace, 0, sizeof(collisionTrace));
 }
 
 /*
@@ -817,6 +820,9 @@ void idPhysics_RigidBody::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( hasMaster );
 	savefile->WriteBool( isOrientated );
+
+	savefile->WriteBool(isBlocked);
+	savefile->WriteTrace(collisionTrace);
 }
 
 /*
@@ -851,6 +857,9 @@ void idPhysics_RigidBody::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( hasMaster );
 	savefile->ReadBool( isOrientated );
+
+	savefile->ReadBool(isBlocked);
+	savefile->ReadTrace(collisionTrace);
 }
 
 /*
@@ -1101,6 +1110,16 @@ const idBounds &idPhysics_RigidBody::GetAbsBounds( int id ) const {
 	return clipModel->GetAbsBounds();
 }
 
+const trace_t*	idPhysics_RigidBody::GetBlockingInfo() const
+{
+	return isBlocked ? &collisionTrace : NULL;
+}
+
+idEntity* idPhysics_RigidBody::GetBlockingEntity() const
+{
+	return isBlocked ? gameLocal.entities[collisionTrace.c.entityNum] : NULL;
+}
+
 /*
 ================
 idPhysics_RigidBody::Evaluate
@@ -1121,6 +1140,9 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	float timeStep;
 	bool collided, cameToRest = false;
 
+	// greebo: For now, we aren't blocked
+	isBlocked = false;
+
 	timeStep = MS2SEC( timeStepMSec );
 	current.lastTimeStep = timeStep;
 
@@ -1128,18 +1150,32 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		oldOrigin = current.i.position;
 		oldAxis = current.i.orientation;
 		self->GetMasterPosition( masterOrigin, masterAxis );
+
 		current.i.position = masterOrigin + current.localOrigin * masterAxis;
+
 		if ( isOrientated ) {
 			current.i.orientation = current.localAxis * masterAxis;
 		}
 		else {
 			current.i.orientation = current.localAxis;
 		}
-		clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
-		current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
-		current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
-		current.externalForce.Zero();
-		current.externalTorque.Zero();
+
+		gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
+		if ( collisionTrace.fraction < 1.0f ) {
+			clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
+			current.i.position = oldOrigin;
+			current.i.orientation = oldAxis;
+			isBlocked = true;
+			return false;
+		}
+		else
+		{
+			clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
+			current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
+			current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
+			current.externalForce.Zero();
+			current.externalTorque.Zero();
+		}
 
 		return ( current.i.position != oldOrigin || current.i.orientation != oldAxis );
 	}

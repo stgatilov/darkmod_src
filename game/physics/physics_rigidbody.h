@@ -114,6 +114,12 @@ public:	// common physics interface
 	void					ClipRotation( trace_t &results, const idRotation &rotation, const idClipModel *model ) const;
 	int						ClipContents( const idClipModel *model ) const;
 
+	/**
+	 * greebo: Override empty default implementation of idPhysics_Base::GetBlockingEntity().
+	 */
+	virtual const trace_t*	GetBlockingInfo( void ) const;
+	virtual idEntity *		GetBlockingEntity( void ) const;
+
 	void					DisableClip( void );
 	void					EnableClip( void );
 
@@ -163,6 +169,12 @@ private:
 	bool					hasMaster;
 	bool					isOrientated;
 
+	/**
+	 * greebo: This saved the collision information when this object is in "bind slave mode".
+	 */
+	trace_t					collisionTrace;
+	bool					isBlocked;
+
 #ifdef MOD_WATERPHYSICS
 	// buoyancy
 	int						noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
@@ -172,7 +184,9 @@ private:
 	friend void				RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives );
 	void					Integrate( const float deltaTime, rigidBodyPState_t &next );
 	bool					CheckForCollisions( const float deltaTime, rigidBodyPState_t &next, trace_t &collision );
+public:
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
+private:
 	void					ContactFriction( float deltaTime );
 	void					DropToFloorAndRest( void );
 #ifdef MOD_WATERPHYSICS
