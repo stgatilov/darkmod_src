@@ -4947,7 +4947,10 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_51:	// Inventory use item
 		{
-			if (GetImmobilization() & EIM_ITEM)
+			// Pass the "inventoryUseItem" event to the GUIs
+			m_overlays.broadcastNamedEvent("inventoryUseItem");
+
+			if (GetImmobilization() & EIM_ITEM_USE)
 				return;
 
 			inventoryUseItem(true);
@@ -4956,7 +4959,10 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_52:	// Inventory drop item
 		{
-			if (GetImmobilization() & EIM_ITEM) {
+			// Pass the "inventoryDropItem" event to the GUIs
+			m_overlays.broadcastNamedEvent("inventoryDropItem");
+
+			if (GetImmobilization() & EIM_ITEM_DROP) {
 				return;
 			}
 
