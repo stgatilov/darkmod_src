@@ -5086,19 +5086,19 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime) {
 
 	switch (impulse) {
 		case IMPULSE_44:
-			if ( !cv_pm_lean_toggle.GetBool() )
+			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(90.0);
 			}
 			break;
 		case IMPULSE_45:
-			if ( !cv_pm_lean_toggle.GetBool() )
+			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(180.0);
 			}
 			break;
 		case IMPULSE_46:
-			if ( !cv_pm_lean_toggle.GetBool() )
+			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(0.0);
 			}
