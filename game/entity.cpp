@@ -7915,10 +7915,10 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 			if (item->GetCount() <= 0) 
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty item from category.\r");
-				// Advance the cursor
-				InventoryCursor()->GetNextItem();
 				// Stackable item count reached zero, remove item from category
 				category->removeItem(item);
+				// Advance the cursor (after removal, otherwise we stick to an invalid id)
+				InventoryCursor()->GetNextItem();
 			}
 			
 			// Check for empty categories after the item has been removed

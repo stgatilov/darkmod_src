@@ -8607,6 +8607,7 @@ void idPlayer::inventoryDropItem()
 		{
 			// Retrieve the actual entity behind the inventory item
 			idEntity* ent = item->GetItemEntity();
+			DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Attempting to drop inventory entity %s\r", ent->name.c_str());
 
 			// greebo: Try to locate a drop script function on the entity's scriptobject
 			const function_t* dropScript = ent->scriptObject.GetFunction(TDM_INVENTORY_DROPSCRIPT);
@@ -8628,13 +8629,14 @@ void idPlayer::inventoryDropItem()
 			else if (grabber->FitsInHands(ent, this)) 
 			{
 				// Drop the item into the grabber hands 
+				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
 				
 				// Stackable items only have one "real" entity for the whole item stack.
 				// When the stack size == 1, this entity can be dropped as it is,
 				// otherwise we need to spawn a new entity.
 				if (item->IsStackable() && item->GetCount() > 1) 
 				{
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Spawning new entity from stackable inventory item...\r");
+					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Spawning new entity from stackable inventory item...\r");
 					// Spawn a new entity of this type
 					idEntity* spawnedEntity;
 					const idDict* entityDef = gameLocal.FindEntityDefDict(ent->GetEntityDefName());
@@ -8645,7 +8647,10 @@ void idPlayer::inventoryDropItem()
 				}
 
 				if( grabber->PutInHands(ent, this) )
+				{
+					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
 					bDropped = true;
+				}
 			}
 			else
 			{
@@ -8658,6 +8663,8 @@ void idPlayer::inventoryDropItem()
 			// This applies for both stackable as well as droppable items
 			if( bDropped)
 			{
+				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item dropped, changing inventory count.\r");
+
 				ChangeInventoryItemCount(item->GetName().c_str(), category->GetName().c_str(), -1); 
 			}
 
