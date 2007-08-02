@@ -7402,6 +7402,8 @@ void idEntity::BindNotify( idEntity *ent )
 
 void idEntity::UnbindNotify( idEntity *ent )
 {
+	// greebo: Activate physics on "Unbind" of any slaves
+	physics->Activate();
 }
 
 void idEntity::Event_TimerCreate(int StimType, int Hour, int Minute, int Seconds, int Millisecond)
