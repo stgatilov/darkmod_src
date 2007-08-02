@@ -1273,22 +1273,27 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 			current.i.orientation = current.localAxis;
 		}
 
-		gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
-		if ( collisionTrace.fraction < 1.0f ) {
-			clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
-			current.i.position = oldOrigin;
-			current.i.orientation = oldAxis;
-			isBlocked = true;
-			return false;
-		}
-		else
+		bool isAF = self->GetBindMaster()->GetPhysics()->IsType(idPhysics_AF::Type);
+		
+		if (!isAF)
 		{
-			clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
-			current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
-			current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
-			current.externalForce.Zero();
-			current.externalTorque.Zero();
+			// For non-AF masters we check for collisions
+			gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
+
+			if (collisionTrace.fraction < 1.0f ) {
+				clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
+				current.i.position = oldOrigin;
+				current.i.orientation = oldAxis;
+				isBlocked = true;
+				return false;
+			}
 		}
+
+		clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
+		current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
+		current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
+		current.externalForce.Zero();
+		current.externalTorque.Zero();		
 
 		return ( current.i.position != oldOrigin || current.i.orientation != oldAxis );
 	}

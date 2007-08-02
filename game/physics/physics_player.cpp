@@ -543,8 +543,10 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 			// clip & push
 			
-			// greebo: Use the idPusher only for trace completion
-			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end /*- current.origin*/, cv_pm_pushmod.GetFloat() );
+			// greebo: Don't use the idPusher
+			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end - current.origin, cv_pm_pushmod.GetFloat() );
+
+			// Set the trace result to zero, we're pushing into things here
 			trace.fraction = 0.0f;
 			trace.endpos = current.origin;
 
