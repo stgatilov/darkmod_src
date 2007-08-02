@@ -145,6 +145,11 @@ public:
 	 */
 	bool					PropagateImpulse(const idVec3& point, const idVec3& impulse);
 
+	/**
+	 * greebo: "Accessor" method to the internal state. This is a bit hacky, I admit.
+	 */
+	rigidBodyPState_t&		State() { return current; }
+
 private:
 	// state of the rigid body
 	rigidBodyPState_t		current;

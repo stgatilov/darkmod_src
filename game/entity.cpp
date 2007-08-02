@@ -3368,7 +3368,25 @@ bool idEntity::RunPhysics( void ) {
 		idPhysics_RigidBody* rigidBodyPhysics = dynamic_cast<idPhysics_RigidBody*>(physics);
 		if (rigidBodyPhysics != NULL)
 		{
-			rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), -physics->GetLinearVelocity()*physics->GetMass());
+			// Calculate the movement (proportional to kinetic energy)
+			float movement = rigidBodyPhysics->GetLinearVelocity().LengthSqr() + 
+				              rigidBodyPhysics->GetAngularVelocity().LengthSqr();
+
+			//DM_LOG(LC_ENTITY, LT_INFO).LogString("Movement is %f\r", movement);
+
+			if (movement < 10.0f)
+			{
+				DM_LOG(LC_ENTITY, LT_INFO).LogString("Putting %s to rest, velocity was %f\r", name.c_str(), physics->GetLinearVelocity().LengthFast());
+				physics->PutToRest();
+			}
+			else
+			{
+				rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), -physics->GetLinearVelocity()*physics->GetMass());
+
+				// greebo: Apply some damping due to the collision with a slave
+				rigidBodyPhysics->State().i.linearMomentum *= 0.95f;
+				rigidBodyPhysics->State().i.angularMomentum *= 0.99f;
+			}
 		}
 
 		// restore the positions of any pushed entities

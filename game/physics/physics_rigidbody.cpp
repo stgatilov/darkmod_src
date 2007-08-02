@@ -420,6 +420,8 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += r.Cross(impulse);
 
+	//DM_LOG(LC_ENTITY, LT_INFO).LogString("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
+
 	// if no movement at all don't blow up
 	if ( collision.fraction < 0.0001f ) {
 		current.i.linearMomentum *= 0.5f;
@@ -1281,6 +1283,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 			gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
 
 			if (collisionTrace.fraction < 1.0f ) {
+
 				clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
 				current.i.position = oldOrigin;
 				current.i.orientation = oldAxis;
