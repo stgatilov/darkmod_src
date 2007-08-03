@@ -2606,7 +2606,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// update the game time
 		framenum++;
 		previousTime = time;
-		time += msec;
+		time += msec * g_timeModifier.GetFloat();
 		realClientTime = time;
 
 #ifdef GAME_DLL

@@ -209,6 +209,8 @@ extern idCVar	g_showEnemies;
 extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
 
+extern idCVar	g_timeModifier;
+
 extern idCVar	ai_debugScript;
 extern idCVar	ai_debugMove;
 extern idCVar	ai_debugTrajectory;
