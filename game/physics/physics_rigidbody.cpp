@@ -416,6 +416,26 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	}
 	impulse = (impulseNumerator / impulseDenominator) * collision.c.normal;
 
+#ifdef DEBUG_COLLISIONS
+	idVec3 velocityN(GetLinearVelocity());
+	velocityN.NormalizeFast();
+
+	idVec3 velocityA(GetAngularVelocity());
+	velocityA.NormalizeFast();
+
+	idVec3 impulseN(impulse);
+	impulseN.NormalizeFast();
+
+	idVec3 impulseA(r.Cross(impulse));
+	impulseA.NormalizeFast();
+
+	gameRenderWorld->DebugArrow(colorRed, current.i.position, current.i.position + velocityN*20, 1, 1000);
+	gameRenderWorld->DebugArrow(colorBlue, current.i.position, current.i.position + velocityA*20, 1, 1000);
+
+	gameRenderWorld->DebugArrow(colorMagenta, current.i.position + velocityN*20, current.i.position + velocityN*20 + impulseN*10, 1, 1000);
+	gameRenderWorld->DebugArrow(colorGreen, current.i.position + velocityA*20, current.i.position + velocityA*20 + impulseA*10, 1, 1000);
+#endif
+
 	// update linear and angular momentum with impulse
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += r.Cross(impulse);
