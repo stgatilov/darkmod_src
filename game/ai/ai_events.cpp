@@ -1559,7 +1559,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = pointToObserve; 
 
 			// Draw the AI Debug Graphics
-			if (cv_ai_search_show.GetFloat() >= 1.0)
+			if (cv_ai_search_show.GetInteger() >= 1.0)
 			{
 				idVec4 markerColor (0.0, 1.0, 1.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1569,8 +1569,8 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					markerColor,
 					observeFromPos + arrowLength,
 					observeFromPos,
-					2.0f,
-					cv_ai_search_show.GetFloat()
+					2,
+					cv_ai_search_show.GetInteger()
 				);
 			}
 
@@ -1586,7 +1586,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = goal.origin;
 
 			// Draw the AI Debug Graphics
-			if (cv_ai_search_show.GetFloat() >= 1.0)
+			if (cv_ai_search_show.GetInteger() >= 1.0)
 			{
 				idVec4 markerColor (1.0, 1.0, 0.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1596,8 +1596,8 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					markerColor,
 					observeFromPos,
 					pointToObserve,
-					2.0f,
-					cv_ai_search_show.GetFloat()
+					2,
+					cv_ai_search_show.GetInteger()
 				);
 			}
 
@@ -1608,7 +1608,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 			observeFromPos = pointToObserve; 
 
 			// Draw the AI Debug Graphics
-			if (cv_ai_search_show.GetFloat() >= 1.0)
+			if (cv_ai_search_show.GetInteger() >= 1.0)
 			{
 				idVec4 markerColor (1.0, 0.0, 0.0, 1.0);
 				idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1618,8 +1618,8 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 					markerColor,
 					observeFromPos + arrowLength,
 					observeFromPos,
-					2.0f,
-					cv_ai_search_show.GetFloat()
+					2,
+					cv_ai_search_show.GetInteger()
 				);
 			}
 
@@ -1637,7 +1637,7 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 		AI_DEST_UNREACHABLE = false;
 
 		// Draw the AI Debug Graphics
-		if (cv_ai_search_show.GetFloat() >= 1.0)
+		if (cv_ai_search_show.GetInteger() >= 1.0)
 		{
 			idVec4 markerColor (0.0, 1.0, 0.0, 1.0);
 			idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -1647,8 +1647,8 @@ void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const flo
 				markerColor,
 				observeFromPos,
 				pointToObserve,
-				2.0f,
-				cv_ai_search_show.GetFloat()
+				2,
+				cv_ai_search_show.GetInteger()
 			);
 		}
 
@@ -3621,7 +3621,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	// grace period vars
 	float grace_time;
 	float grace_frac;
-	float grace_count;
+	int grace_count;
 
 	// If alert level is less than 3, sheathe weapon (if appropriate), otherwise draw it
 	if (newAlertLevel < thresh_3) SheathWeapon();
@@ -3963,12 +3963,12 @@ void idAI::Event_ContinueSearchForHidingSpots()
 
 
 			// DEBUGGING
-			if (cv_ai_search_show.GetFloat() >= 1.0)
+			if (cv_ai_search_show.GetInteger() >= 1.0)
 			{
 				// Clear the debug draw list and then fill with our results
 				p_hidingSpotFinder->debugClearHidingSpotDrawList();
 				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetFloat());
+				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
 			}
 
 			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
@@ -4043,7 +4043,7 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 			outLocation = p_spot->goal.origin;
 		}
 
-		if (cv_ai_search_show.GetFloat() >= 1.0)
+		if (cv_ai_search_show.GetInteger() >= 1.0)
 		{
 			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
 			idVec3 arrowLength (0.0, 0.0, 50.0);
@@ -4054,8 +4054,8 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 				markerColor,
 				outLocation + arrowLength,
 				outLocation,
-				2.0f,
-				cv_ai_search_show.GetFloat()
+				2,
+				cv_ai_search_show.GetInteger()
 			);
 
 			// Debug draw the bounds of the area node containing the hiding spot point
@@ -4065,7 +4065,7 @@ void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 				markerColor,
 				areaNodeBounds,
 				vec3_origin,
-				cv_ai_search_show.GetFloat()
+				cv_ai_search_show.GetInteger()
 			);
 
 

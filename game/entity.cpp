@@ -3381,7 +3381,10 @@ bool idEntity::RunPhysics( void ) {
 			}
 			else
 			{
-				rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), -physics->GetLinearVelocity()*physics->GetMass());
+				// Crispy: the use of a separate kineticEnergy variable here is necessary because gcc
+				// doesn't let you pass temporaries into functions by reference.
+				idVec3 kineticEnergy = -physics->GetLinearVelocity()*physics->GetMass();
+				rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), kineticEnergy);
 
 				// greebo: Apply some damping due to the collision with a slave
 				rigidBodyPhysics->State().i.linearMomentum *= 0.95f;

@@ -237,6 +237,8 @@ int CInventoryCategory::GetLoot(int &Gold, int &Jewelry, int &Goods)
 			case CInventoryItem::LT_GOODS:
 				Goods += it->GetValue();
 			break;
+			
+			default: break;
 		}
 	}
 

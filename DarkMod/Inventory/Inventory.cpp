@@ -116,6 +116,8 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
 			break;
+			
+			default: break;
 		}
 
 		m_LootItemCount++;

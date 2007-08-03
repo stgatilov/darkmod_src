@@ -16,13 +16,13 @@ public:
 	void HandleCommands(const char *menuCommand, idUserInterface *gui);
 
 	// initialize the difficulty data (read in objectives)
-	void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui);
+	void InitializeDifficulty(idUserInterface *gui);
 
 	// set the GUI variables to display difficulty/objectives
-	void CDifficultyMenu::DisplayDifficulty(idUserInterface *gui);
+	void DisplayDifficulty(idUserInterface *gui);
 
 	// generate the list of objectives based on difficulty choice
-	void CDifficultyMenu::GenerateObjectivesDisplay();
+	void GenerateObjectivesDisplay();
 
 private:
 	idList<const char *> diffObjectives[DIFFICULTY_COUNT]; 

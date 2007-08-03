@@ -561,13 +561,6 @@ bool	CMissionData::EvaluateObjective
 		if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 			goto Quit;
 
-		// name, classname and spawnclass are all one-shot objectives and not counted up (for now)
-		if( SpecMeth == SPEC_NONE || SpecMeth == SPEC_NAME || SpecMeth == SPEC_CLASSNAME || SpecMeth == SPEC_SPAWNCLASS )
-		{
-			bReturnVal = true;
-			goto Quit;
-		}
-
 		switch(SpecMeth)
 		{
 			case SPEC_OVERALL:
@@ -584,6 +577,14 @@ bool	CMissionData::EvaluateObjective
 			case SPEC_AI_INNOCENCE:
 				index = EntDat1->innocence;
 				value = GetStatByInnocence( CompType, index, AlertNum );
+				break;
+			// name, classname and spawnclass are all one-shot objectives and not counted up (for now)
+			case SPEC_NONE:
+			case SPEC_NAME:
+			case SPEC_CLASSNAME:
+			case SPEC_SPAWNCLASS:
+				bReturnVal = true;
+				goto Quit;
 				break;
 		}
 
@@ -1332,8 +1333,8 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 			if( TypeNum == -1 )
 			{
-				DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
-				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString, Counter, Counter2 );
+				DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
+				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString.c_str(), Counter, Counter2 );
 				continue;
 			}
 			CompTemp.m_Type = (EComponentType) TypeNum;
