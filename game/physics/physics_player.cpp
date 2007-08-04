@@ -2497,6 +2497,11 @@ bool idPhysics_Player::IsCrouching( void ) const {
 	return ( ( current.movementFlags & PMF_DUCKED ) != 0 );
 }
 
+idEntity* idPhysics_Player::GetRopeEntity()
+{
+	return (m_bOnRope) ? m_RopeEntity.GetEntity() : NULL;
+}
+
 /*
 ================
 idPhysics_Player::OnRope

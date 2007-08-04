@@ -9095,10 +9095,15 @@ void idPlayer::FrobCheck( void )
 		idEntity *ent = gameLocal.entities[ trace.c.entityNum ];
 		//DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Frob: Direct hit on entity %s\r", ent->name.c_str());
 		
+		idPhysics_Player* playerPhysics = static_cast<idPhysics_Player*>(GetPhysics());
+
+		// greebo: Check if the frobbed entity is the bind master of the currently climbed rope
+		bool isRopeMaster = playerPhysics->OnRope() && playerPhysics->GetRopeEntity()->GetBindMaster() == ent;
+	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands
 		if( ent->m_bFrobable && !ent->IsHidden() && (TraceDist < ent->m_FrobDistance)
-			&& ent != g_Global.m_DarkModPlayer->grabber->GetSelected() )
+			&& ent != g_Global.m_DarkModPlayer->grabber->GetSelected() && !isRopeMaster)
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity %s was within frobdistance\r", ent->name.c_str());
 			// TODO: Mark as frobbed for this frame

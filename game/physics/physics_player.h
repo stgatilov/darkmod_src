@@ -110,6 +110,12 @@ public:
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
+
+	/**
+	 * greebo: Returns the rope entity or NULL if the player is not attached to any rope.
+	 */
+	idEntity*				GetRopeEntity();
+
     bool					OnRope( void ) const;
 	/**
 	* True if the player is climbing on a ladder or wall
