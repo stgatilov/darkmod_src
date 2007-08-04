@@ -1183,20 +1183,17 @@ void idPhysics_Player::RopeMove( void )
 			idVec3 direction = GetGravity();
 			direction.NormalizeFast();
 
-			//gameLocal.Printf("ropeBindMaster.name.c_str() = %s\n", ropeBindMaster->name.c_str());
 			idPhysics* bindMasterPhysics = ropeBindMaster->GetPhysics();
 			
 			idVec3 ropeOrigin = m_RopeEntity.GetEntity()->GetPhysics()->GetOrigin();
-			//gameRenderWorld->DebugArrow(colorBlue, ropeOrigin, ropeOrigin + direction * 6, 1, 10000);
 
 			idPhysics_AF* ropePhysics = static_cast<idPhysics_AF*>(m_RopeEntity.GetEntity()->GetPhysics());
 			idAFBody* topMostBody = ropePhysics->GetBody(0);
 			if (topMostBody != NULL)
 			{
-				// Correc the pull direction using the orientation of the topmost body.
+				// Correct the pull direction using the orientation of the topmost body.
 				const idMat3& axis = topMostBody->GetWorldAxis();
 				direction = topMostBody->GetWorldAxis() * idVec3(0,0,1);
-				//gameRenderWorld->DebugAxis(ropeOrigin, topMostBody->GetWorldAxis());
 			}
 
 			bindMasterPhysics->ApplyImpulse(0, ropeOrigin, direction * mass * 400);
@@ -2374,7 +2371,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		m_bOnRope = true;
 
 		// lower weapon
-		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+		static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_DROP );
 
 		idPhysics_Player::RopeMove();
 	}
