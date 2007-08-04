@@ -58,12 +58,22 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 	// let the entity know about the collision
 	self->Collide( groundTrace, state.velocity );
 
-	// apply impact to a non world floor entity
-	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEntityPtr.GetEntity() ) {
+	idEntity* groundEnt = groundEntityPtr.GetEntity();
+
+	// greebo: Apply force/impulse to entities below the clipmodel
+	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEnt != NULL )
+	{
+		idPhysics* groundPhysics = groundEnt->GetPhysics();
+
 		impactInfo_t info;
-		groundEntityPtr.GetEntity()->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
-		if ( info.invMass != 0.0f ) {
-			groundEntityPtr.GetEntity()->ApplyImpulse( self, 0, groundTrace.c.point, state.velocity  / ( info.invMass * 10.0f ) );
+		groundEnt->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
+
+		// greebo: Don't push entities that already have a velocity towards the ground.
+		if ( groundPhysics && info.invMass != 0.0f ) {
+			// greebo: Apply a force to the entity below the player
+			//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
+			groundPhysics->AddForce(0, current.origin, gravityNormal);
+			groundPhysics->Activate();
 		}
 	}
 }

@@ -1397,7 +1397,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 		// check if the body has come to rest
 		if ( current.externalForce.LengthSqr() == 0.0f && TestIfAtRest() ) {
-			gameRenderWorld->DebugArrow(colorBrown, current.i.position, current.i.position + idVec3(10,0,0), 1, 15000);
 			// put to rest
 			Rest();
 			cameToRest = true;
@@ -1422,15 +1421,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		// greebo: Are we stuck? We still have to consider gravity and external forces
 		if (collision.fraction <= 0.001f)
 		{
-			/*idBounds bounds = this->GetBounds();
-			bounds.FromTransformedBounds(GetBounds(), current.i.position, current.i.orientation);
-			
-			DM_LOG(LC_ENTITY, LT_INFO).LogVector("Bounds[0]", bounds[0]);
-			DM_LOG(LC_ENTITY, LT_INFO).LogVector("Bounds[1]", bounds[1]);
-			idVec3 radius = bounds[1] - bounds[0];
-
-			gameRenderWorld->DebugArrow(colorCyan, current.i.position - radius*0.5f, current.i.position + radius*0.5f, 1, 1000);*/
-
 			// Get the mass center in world coordinates
 			idVec3 massCenter(current.i.position + centerOfMass * current.i.orientation);
 
@@ -1440,42 +1430,32 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 			idVec3 arm1N(arm1);
 			arm1N.NormalizeFast();
 
-			gameRenderWorld->DebugArrow(colorCyan, massCenter, massCenter + arm1, 1, 20);
-			gameRenderWorld->DebugArrow(colorMagenta, collision.c.point, collision.c.point + arm2, 1, 20);
+			//gameRenderWorld->DebugArrow(colorCyan, massCenter, massCenter + arm1, 1, 20);
+			//gameRenderWorld->DebugArrow(colorMagenta, collision.c.point, collision.c.point + arm2, 1, 20);
 
 			float l1 = arm1.LengthFast();
 			float l2 = arm1N * arm2;
-			DM_LOG(LC_ENTITY, LT_INFO).LogString("Arm 1: %f, Arm2: %f\r", l1, l2);
+			//DM_LOG(LC_ENTITY, LT_INFO).LogString("Arm 1: %f, Arm2: %f\r", l1, l2);
 
-			if (l2 < 0.0f)
+			if (arm2.LengthFast() > l1)
 			{
-				gameRenderWorld->DebugArrow(colorGreen, massCenter, massCenter + idVec3(10,0,0), 1, 16);
-			}
-			else 
-			/*if (arm2.LengthFast() > l1)
-			{
-				DM_LOG(LC_ENTITY, LT_INFO).LogString("Further away!\r");
-				DM_LOG(LC_ENTITY, LT_INFO).LogVector("Current impulse", current.i.linearMomentum);
-				DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force", current.externalForce);
-				// Apply the linear momentum caused by the lever force
-				current.i.linearMomentum += current.externalForce;
+				// Apply the linear momentum caused by the external force
+				current.i.linearMomentum -= current.externalForce*2;
 				current.i.angularMomentum += (current.externalForcePoint - collision.c.point).Cross(current.externalForce);
 			}
-			else */if (fabs(l1) > 0.01f)
+			else if (fabs(l1) > 0.01f)
 			{
 				float armRatio = l2/l1;
 				float forceFactor = 4*armRatio*(armRatio - 1);
 
 				forceFactor *= 15;
-
-				DM_LOG(LC_ENTITY, LT_INFO).LogString("forceFactor: %f\r", forceFactor);
-				DM_LOG(LC_ENTITY, LT_INFO).LogVector("Current impulse", current.i.linearMomentum);
-				DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force", current.externalForce);
-				DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force Modified", current.externalForce*forceFactor);
-
 				idVec3 leverForceLinear = current.externalForce * forceFactor;
-				//leverForceLinear.NormalizeFast();
-				gameRenderWorld->DebugArrow(colorMdGrey, massCenter, massCenter + leverForceLinear, 1, 20);
+
+				//DM_LOG(LC_ENTITY, LT_INFO).LogString("forceFactor: %f\r", forceFactor);
+				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("Current impulse", current.i.linearMomentum);
+				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force", current.externalForce);
+				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force Modified", current.externalForce*forceFactor);
+				//gameRenderWorld->DebugArrow(colorMdGrey, massCenter, massCenter + leverForceLinear, 1, 20);
 
 				// Apply the linear momentum caused by the lever force
 				current.i.linearMomentum += leverForceLinear;
