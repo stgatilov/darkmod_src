@@ -4456,7 +4456,11 @@ void idPhysics_Player::ToggleLean
 
 //----------------------------------------------------------------------
 
+#ifdef linux
+bool idPhysics_Player::IsLeaning()
+#else
 __inline bool idPhysics_Player::IsLeaning()
+#endif
 {
 	if (m_CurrentLeanTiltDegrees < 0.001)
 	{

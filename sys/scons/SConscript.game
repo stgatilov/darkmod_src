@@ -118,6 +118,7 @@ darkmodHidingSpotTree.cpp \
 darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \
+DifficultyMenu.cpp \
 fdchar.cpp \
 force_grab.cpp \
 func_shooter.cpp \

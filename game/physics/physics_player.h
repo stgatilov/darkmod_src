@@ -794,7 +794,11 @@ public:
 	* @retval true if the player is changing lean
 	* @retval false if the player is not changing lean
 	*/
+	#ifdef linux
+	bool IsLeaning();
+	#else
 	__inline bool IsLeaning();
+	#endif
 
 	/**
 	* Returns true if the player is leaning against a door
