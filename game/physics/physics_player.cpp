@@ -1807,6 +1807,8 @@ void idPhysics_Player::CheckGround( void ) {
 			gameLocal.Printf( "%i:steep\n", c_pmove );
 		}
 
+		gameLocal.Printf("Too steep.\n");
+
 		// FIXME: if they can't slide down the slope, let them walk (sharp crevices)
 
 		// make sure we don't die from sliding down a steep slope
@@ -1842,11 +1844,23 @@ void idPhysics_Player::CheckGround( void ) {
 	// let the entity know about the collision
 	self->Collide( groundTrace, current.velocity );
 
-	if ( groundEntityPtr.GetEntity() ) {
+	idEntity* groundEnt = groundEntityPtr.GetEntity();
+
+	if ( groundTrace.c.entityNum != ENTITYNUM_WORLD && groundEnt != NULL ) {
+		idPhysics* groundPhysics = groundEnt->GetPhysics();
+
 		impactInfo_t info;
-		groundEntityPtr.GetEntity()->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
-		if ( info.invMass != 0.0f ) {
-			groundEntityPtr.GetEntity()->ApplyImpulse( self, groundTrace.c.id, groundTrace.c.point, current.velocity / ( info.invMass * 10.0f ) );
+		groundEnt->GetImpactInfo( self, groundTrace.c.id, groundTrace.c.point, &info );
+
+		// greebo: Don't push entities that already have a velocity towards the ground.
+		if ( groundPhysics && info.invMass != 0.0f /*&& info.velocity*gravityNormal <= 0.0f*/ ) {
+			//gameLocal.Printf("Applying force %f to %s\n", mass, groundEnt->name.c_str());
+			// greebo: Apply a force to the entity below the player
+			gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
+			groundPhysics->AddForce(0, current.origin, gravityNormal*mass);
+			
+			//groundEnt->ApplyImpulse( self, groundTrace.c.id, groundTrace.c.point, gravityNormal / ( info.invMass * 10.0f ) );
+			groundPhysics->Activate();
 		}
 	}
 }

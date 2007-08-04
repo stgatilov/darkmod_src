@@ -39,6 +39,7 @@ typedef struct rigidBodyPState_s {
 	idVec6					pushVelocity;				// push velocity
 	idVec3					externalForce;				// external force relative to center of mass
 	idVec3					externalTorque;				// external torque relative to center of mass
+	idVec3					externalForcePoint;			// point where the externalForce is being applied at
 	rigidBodyIState_t		i;							// state used for integration
 } rigidBodyPState_t;
 
