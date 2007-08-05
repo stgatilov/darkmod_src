@@ -399,6 +399,13 @@ protected:
 	*/
 	EDarkMod_MantlePhase m_mantlePhase;
 
+	/**
+	 * greebo: Set to TRUE if the next mantling can start. Set to FALSE at the 
+	 *         beginning of a mantle process - the jump button has to be released
+	 *         again during a non-mantling phase to set this to TRUE again.
+	 */
+	bool m_mantleStartPossible;
+
 	/*!
 	* Points along the mantle path
 	*/

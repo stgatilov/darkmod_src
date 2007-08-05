@@ -2276,6 +2276,13 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	if ( command.upmove < 10 ) {
 		// not holding jump
 		current.movementFlags &= ~PMF_JUMP_HELD;
+
+		if (m_mantlePhase == notMantling_DarkModMantlePhase)
+		{
+			// greebo: Jump button is released and no mantle phase is active, 
+			// we can allow the next mantling process.
+			m_mantleStartPossible = true;
+		}
 	}
 
 	// if no movement at all
@@ -2579,6 +2586,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_p_mantledEntity = NULL;
 	m_mantledEntityID = 0;
 	m_jumpHeldDownTime = 0.0;
+	m_mantleStartPossible = true;
 
 	// Leaning Mod
 	m_bIsLeaning = false;
@@ -2703,6 +2711,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteString (m_mantledEntityName);
 	savefile->WriteFloat (m_mantleTime);
 	savefile->WriteFloat (m_jumpHeldDownTime);
+	savefile->WriteBool(m_mantleStartPossible);
 
 	// Lean mod
 	savefile->WriteFloat (m_leanYawAngleDegrees);
@@ -2790,6 +2799,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString (m_mantledEntityName);
 	savefile->ReadFloat (m_mantleTime);
 	savefile->ReadFloat (m_jumpHeldDownTime);
+	savefile->ReadBool(m_mantleStartPossible);
 
 	// Mantle mod... it would be nice to restore the mantled
 	// entity pointers here, but we can't, because during a load
@@ -2798,6 +2808,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	// Therefore, we have a section in "MantleMove" that
 	// finds the entity if we have not found it yet, and cancels
 	// the mantle if it can not be found.
+
+	// greebo: TODO: This should be an idEntityPtr, shouldn't it?
 	m_mantledEntityID = 0;
 	m_p_mantledEntity = NULL;
 
@@ -3635,6 +3647,10 @@ void idPhysics_Player::StartMantle
 	// Ishtvan 11/20/05 - Lower weapons when mantling
 	static_cast<idPlayer *>(self)->SetImmobilization( "MantleMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
+	// greebo: Disable the next mantle start here, this is set to TRUE again 
+	// when the jump key is released outside a mantle phase
+	m_mantleStartPossible = false;
+
 	// If mantling from a jump, cancel any velocity so that it does
 	// not continue after the mantle is completed.
 	current.velocity.Zero();
@@ -4272,8 +4288,8 @@ void idPhysics_Player::PerformMantle()
 {
 	trace_t		trace;
 
-	// Can't start mantle if already mantling
-	if (m_mantlePhase != notMantling_DarkModMantlePhase)
+	// Can't start mantle if already mantling or not yet possible (jump button not yet released)
+	if (m_mantlePhase != notMantling_DarkModMantlePhase || !m_mantleStartPossible)
 	{
 		return;
 	}
