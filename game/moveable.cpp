@@ -61,6 +61,10 @@ idMoveable::idMoveable( void ) {
 	unbindOnDeath		= false;
 	allowStep			= false;
 	canDamage			= false;
+
+	// greebo: A fraction of -1 is considered to be an invalid trace here
+	memset(&lastCollision, 0, sizeof(lastCollision));
+	lastCollision.fraction = -1;
 }
 
 /*
@@ -201,6 +205,8 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( initialSplineDir );
 
 	savefile->WriteStaticObject( physicsObj );
+
+	savefile->WriteTrace(lastCollision);
 }
 
 /*
@@ -234,6 +240,8 @@ void idMoveable::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadStaticObject( physicsObj );
 	RestorePhysics( &physicsObj );
+
+	savefile->ReadTrace(lastCollision);
 }
 
 /*
@@ -276,8 +284,14 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	idStr SndNameLocal;
 	const char *SndName(NULL);
 
+	// greebo: Check whether we are colliding with the nearly exact same point again
+	bool sameCollisionAgain = (lastCollision.fraction != -1 && lastCollision.c.point.Compare(collision.c.point, 0.05f));
+
+	// greebo: Save the collision info for the next call
+	lastCollision = collision;
+
 	v = -( velocity * collision.c.normal );
-	if ( v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
+	if ( !sameCollisionAgain && v > BOUNCE_SOUND_MIN_VELOCITY && gameLocal.time > nextSoundTime ) 
 	{
 		material = collision.c.material;
 		if( material != NULL)

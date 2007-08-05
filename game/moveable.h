@@ -65,6 +65,9 @@ protected:
 	int						nextDamageTime;			// next time the movable can hurt the player
 	int						nextSoundTime;			// next time the moveable can make a sound
 
+	// greebo: Stores the last collision info to avoid constant playing of the collision sound when stuck
+	trace_t					lastCollision;
+
 	const idMaterial *		GetRenderModelMaterial( void ) const;
 	void					BecomeNonSolid( void );
 	void					InitInitialSpline( int startTime );
