@@ -379,14 +379,13 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	// get info from other entity involved
 	ent = gameLocal.entities[collision.c.entityNum];
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
-	
-	// Check if we are grabbed by the grabber, and limit collision speed to the maximum grabber external speed
+
+	// Check if we are grabbed by the grabber, and set collision var if so
 	if ( self == g_Global.m_DarkModPlayer->grabber->GetSelected() )
 	{
 		// greebo: Don't collide grabbed entities with its own bindslaves
 		if (ent->GetBindMaster() == NULL || self != ent->GetBindMaster())
 		{
-			g_Global.m_DarkModPlayer->grabber->ClampVelocity( MAX_GRABBER_EXT_VELOCITY, MAX_GRABBER_EXT_ANGVEL );
 			g_Global.m_DarkModPlayer->grabber->m_bIsColliding = true;
 		}
 	}
