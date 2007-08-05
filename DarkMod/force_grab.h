@@ -20,7 +20,8 @@
 ===============================================================================
 */
 
-class CForce_Grab : public idForce {
+class CForce_Grab : public idForce 
+{
 	public:
 		CLASS_PROTOTYPE( CForce_Grab );
 
@@ -45,11 +46,37 @@ class CForce_Grab : public idForce {
 		void				Save( idSaveGame *savefile ) const;
 		void				Restore( idRestoreGame *savefile );
 
+		/**
+		* Toggle whether the force_grab should use a max force limit
+		**/
+		void				LimitForce( bool bVal );
+
+		/**
+		* Toggle whether the force_grab should apply damping or not
+		**/
+		void				ApplyDamping( bool bVal );
+
+		/**
+		* Set the reference entity
+		**/
+		void				SetRefEnt( idEntity *ent );
+
 	public: // common force interface
 		virtual void		Evaluate( int time );
 		virtual void		RemovePhysics( const idPhysics *phys );
 
 	private:
+
+		/**
+		* Entity to which this drag force is referenced, if any
+		**/
+		idEntityPtr<idEntity>	m_RefEnt;
+
+		/**
+		* If true, limit force or apply damping
+		**/
+		bool				m_bLimitForce;
+		bool				m_bApplyDamping;
 
 		// properties
 		float				m_damping;

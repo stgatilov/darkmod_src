@@ -36,6 +36,10 @@ CForce_Grab::CForce_Grab( void )
 	m_dragPosition		= vec3_zero;
 	m_centerOfMass		= vec3_zero;
 	m_prevOrigin		= vec3_zero;
+
+	m_bApplyDamping = false;
+	m_bLimitForce = false;
+	m_RefEnt = NULL;
 }
 
 /*
@@ -64,6 +68,7 @@ void CForce_Grab::Init( float damping ) {
 
 void CForce_Grab::Save( idSaveGame *savefile ) const
 {
+	m_RefEnt.Save( savefile );
 	savefile->WriteFloat(m_damping);
 	savefile->WriteVec3(m_centerOfMass);
 
@@ -73,10 +78,13 @@ void CForce_Grab::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_id);
 	savefile->WriteVec3(m_dragPosition);
 	savefile->WriteVec3(m_prevOrigin);
+	savefile->WriteBool(m_bApplyDamping);
+	savefile->WriteBool(m_bLimitForce);
 }
 
 void CForce_Grab::Restore( idRestoreGame *savefile )
 {
+	m_RefEnt.Restore( savefile );
 	savefile->ReadFloat(m_damping);
 	savefile->ReadVec3(m_centerOfMass);
 
@@ -86,6 +94,8 @@ void CForce_Grab::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_id);
 	savefile->ReadVec3(m_dragPosition);
 	savefile->ReadVec3(m_prevOrigin);
+	savefile->ReadBool(m_bApplyDamping);
+	savefile->ReadBool(m_bLimitForce);
 }
 
 /*
@@ -145,8 +155,8 @@ CForce_Grab::Evaluate
 */
 void CForce_Grab::Evaluate( int time ) 
 {
-	float l1;
-	idVec3 dragOrigin, dir1, dir2, velocity, COM;
+	float l1, Accel, MaxAccel, dT;
+	idVec3 dragOrigin, dir1, dir2, velocity, COM, prevVel;
 	idRotation rotation;
 
 	if ( !m_physics ) 
@@ -159,15 +169,34 @@ void CForce_Grab::Evaluate( int time )
 	dragOrigin = COM;
 
 	dir1 = m_dragPosition - dragOrigin;
-
 	l1 = dir1.Normalize();
+	dT = MS2SEC( USERCMD_MSEC ); // time elapsed is time between user mouse commands
 
-	velocity = m_physics->GetLinearVelocity( m_id ) * m_damping + dir1 * ( l1 * ( 1.0f - m_damping ) / MS2SEC( USERCMD_MSEC ) );
-	m_physics->SetLinearVelocity( velocity, m_id );
-	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
+	if( !m_bApplyDamping )
+		m_damping = 0.0f;
+
+	// Test: Realistic finite acceleration
+	Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
+	if( m_bLimitForce )
 	{
-		g_Global.m_DarkModPlayer->grabber->ClampVelocity( 1.0f, 0.0f, m_id );
+		MaxAccel = cv_drag_force_max.GetFloat() / m_physics->GetMass();
+		Accel = idMath::ClampFloat(0.0f, MaxAccel, Accel );
 	}
+
+	// Test: Zero initial velocity when we start out colliding
+	if( g_Global.m_DarkModPlayer->grabber->m_bIsColliding )
+		prevVel = vec3_zero;
+	else 
+		prevVel = m_physics->GetLinearVelocity( m_id );
+
+	velocity = prevVel * m_damping + dir1 * Accel * dT;
+
+	if( m_RefEnt.GetEntity() )
+	{
+		// reference frame velocity
+		velocity += m_RefEnt.GetEntity()->GetPhysics()->GetLinearVelocity();
+	}
+	m_physics->SetLinearVelocity( velocity, m_id );
 
 	m_prevOrigin = m_physics->GetOrigin( m_id );
 }
@@ -199,7 +228,8 @@ idVec3 CForce_Grab::GetCenterOfMass( void ) const
 CForce_Grab::Rotate
 ================
 */
-void CForce_Grab::Rotate( const idVec3 &vec, float angle ) {
+void CForce_Grab::Rotate( const idVec3 &vec, float angle ) 
+{
 	idRotation r;
 /*
 	idVec3 temp;
@@ -214,4 +244,19 @@ void CForce_Grab::Rotate( const idVec3 &vec, float angle ) {
 	r.RotatePoint( m_p );
 
 	gameRenderWorld->DebugArrow( colorGreen, this->GetCenterOfMass(), this->GetCenterOfMass() + m_p, 1, 200 );
+}
+
+void CForce_Grab::ApplyDamping( bool bVal )
+{
+	m_bApplyDamping = bVal;
+}
+
+void CForce_Grab::LimitForce( bool bVal )
+{
+	m_bLimitForce = bVal;
+}
+
+void CForce_Grab::SetRefEnt( idEntity *InputEnt )
+{
+	m_RefEnt = InputEnt;
 }
