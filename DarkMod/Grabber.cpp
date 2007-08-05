@@ -113,6 +113,7 @@ void CGrabber::Clear( void )
 	m_MinHeldDist	= 0;
 	m_MaxDistCount	= DIST_GRANULARITY;
 	m_LockedHeldDist = 0;
+	m_bObjStuck = false;
 
 	while( this->HasClippedEntity() )
 		this->RemoveFromClipList( 0 );
@@ -160,6 +161,7 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_MaxDistCount);
 	savefile->WriteInt(m_MinHeldDist);
 	savefile->WriteInt(m_LockedHeldDist);
+	savefile->WriteBool(m_bObjStuck);
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -208,6 +210,7 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_MaxDistCount);
 	savefile->ReadInt(m_MinHeldDist);
 	savefile->ReadInt(m_LockedHeldDist);
+	savefile->ReadBool(m_bObjStuck);
 }
 
 /*
@@ -230,6 +233,7 @@ void CGrabber::StopDrag( void )
 {
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
+	m_bObjStuck = false;
 	
 	m_bAFOffGround = false;
 	m_DragUpTimer = 0;
@@ -238,13 +242,14 @@ void CGrabber::StopDrag( void )
 	m_DistanceCount = 0;
 	m_dragEnt = NULL;
 
+	m_drag.SetRefEnt( NULL );
+
 	if(m_player.GetEntity())
 	{
 		m_player.GetEntity()->m_bDraggingBody = false;
 		m_player.GetEntity()->m_bGrabberActive = false;
 		m_player.GetEntity()->SetImmobilization( "Grabber", 0 );
 		m_player.GetEntity()->SetHinderance( "Grabber", 1.0f, 1.0f );
-		m_player.GetEntity()->RaiseWeapon();
 	}
 }
 
@@ -256,7 +261,7 @@ CGrabber::Update
 void CGrabber::Update( idPlayer *player, bool hold ) 
 {
 	idVec3 viewPoint(vec3_zero), origin(vec3_zero);
-	idVec3 COM(vec3_zero), COMWorld(vec3_zero);
+	idVec3 COM(vec3_zero);
 	idVec3 draggedPosition(vec3_zero), vPlayerPoint(vec3_zero);
 	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
 	trace_t trace;
@@ -272,7 +277,7 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	// if there is an entity selected, we let it go and exit
 	if( !hold && m_dragEnt.GetEntity() ) 
 	{
-		ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
+		// ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
 		this->StopDrag();
 		
@@ -346,6 +351,9 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		
 		if( AFPtr->IsActiveAF() && AFPtr->m_bGroundWhenDragged )
 		{
+			// Quick fix : Do not add player's reference velocity when grounding
+			m_drag.SetRefEnt( NULL );
+
 			// Poll the critical AF bodies and see how many are off the ground
 			int OnGroundCount = 0;
 			for( int i=0; i<AFPtr->m_GroundBodyList.Num(); i++ )
@@ -397,8 +405,14 @@ void CGrabber::Update( idPlayer *player, bool hold )
 			
 		}
 	}
+// ===================== End AF Grounding Test ====================
 
 	m_drag.SetDragPosition( draggedPosition );
+
+	// Test: Drop the object if it is stuck
+	CheckStuck();
+	if( m_bObjStuck )
+		StopDrag();
 
 	// evaluate physics
 	// Note: By doing these operations in this order, we overwrite idForce_Drag angular velocity
@@ -510,14 +524,6 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	
 // Set up the distance and orientation and stuff
 
-	// TODO: The !idStaticEntity here is temporary to fix a bug that should go away once frobbing moveables works again
-	if( newEnt->IsType(idStaticEntity::Type) )
-#ifdef __linux__
-		return;
-#else
-		goto Quit;
-#endif
-
 	// get the center of mass
 	idPhysics *phys = newEnt->GetPhysics();
 	idClipModel *clipModel;
@@ -570,6 +576,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 		m_drag.Init( cv_drag_damping.GetFloat() );
 
 	m_drag.SetPhysics( phys, m_id, m_LocalEntPoint );
+	m_drag.SetRefEnt( player );
 
 	player->m_bGrabberActive = true;
 	// don't let the player switch weapons or items, and lower their weapon
@@ -577,6 +584,9 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// Set movement encumbrance
 	player->SetHinderance( "Grabber", 1.0f, m_dragEnt.GetEntity()->spawnArgs.GetFloat("grab_encumbrance", "1.0") );
+
+	m_drag.LimitForce( cv_drag_limit_force.GetBool() );
+	m_drag.ApplyDamping( true );
 
 Quit:
 	return;
@@ -1147,3 +1157,31 @@ Quit:
 
 	return bReturnVal;
 }
+
+void CGrabber::CheckStuck( void )
+{
+	idVec3 EntPoint, delta;
+	float lensqr, maxsqr;
+	idEntity *ent = m_dragEnt.GetEntity();
+	bool bColliding(false);
+	
+	if( ent->IsType(idAFEntity_Base::Type) )
+		bColliding = ent->GetPhysics()->GetNumContacts() > 0;
+	else
+		bColliding = m_bIsColliding;
+
+	if( ent && bColliding )
+	{
+		delta = m_drag.GetDraggedPosition() - m_drag.GetDragPosition();
+		lensqr = delta.LengthSqr();
+
+		maxsqr = cv_drag_stuck_dist.GetFloat();
+		maxsqr = maxsqr * maxsqr;
+
+		if( lensqr > maxsqr )
+			m_bObjStuck = true;
+		else
+			m_bObjStuck = false;
+	}
+}
+

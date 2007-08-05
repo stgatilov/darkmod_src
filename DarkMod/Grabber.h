@@ -93,6 +93,11 @@ public:
 		 */
 		void					SetPhysicsFromDragEntity();
 
+		/**
+		* Returns true if the item held by the grabber is stuck
+		**/
+		bool					ObjStuck( void );
+
 public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
@@ -146,6 +151,12 @@ protected:
 		**/
 		bool					DeadMouse( void );
 
+		/**
+		* Checks for a stuck object and updates m_bObjStuck.  
+		* Stuck means too far away from the drag point.
+		**/
+		void					CheckStuck( void );
+
 protected:
 		/**
 		* Entity being dragged
@@ -159,6 +170,7 @@ protected:
 		idVec3					m_LocalEntPoint;
 		/**
 		* Offset between object center of mass and dragged point
+		* NYI
 		**/
 		idVec3					m_vLocalEntOffset;
 		/**
@@ -232,6 +244,12 @@ protected:
 		* before they see any response.
 		**/
 		int						m_LockedHeldDist;
+
+		/**
+		* Set to true if the object held by the grabber is "stuck"
+		* Stuck in this context means too far away from the grab point
+		**/
+		bool					m_bObjStuck;
 };
 
 
