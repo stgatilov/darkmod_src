@@ -109,6 +109,12 @@ public:
 		**/
 		bool					m_bPrevFrameCollided;
 
+		/**
+		* Stores the max force the player can apply in [mass] * doomunits/sec^2
+		* Currently only effects linear motion, not angular
+		**/
+		float					m_MaxForce;
+
 protected:
 
 		/**

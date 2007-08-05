@@ -179,7 +179,7 @@ void CForce_Grab::Evaluate( int time )
 	Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
 	if( m_bLimitForce )
 	{
-		MaxAccel = cv_drag_force_max.GetFloat() / m_physics->GetMass();
+		MaxAccel = g_Global.m_DarkModPlayer->grabber->m_MaxForce / m_physics->GetMass();
 		Accel = idMath::ClampFloat(0.0f, MaxAccel, Accel );
 	}
 
