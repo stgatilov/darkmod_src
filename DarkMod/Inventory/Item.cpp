@@ -78,6 +78,15 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Persistent = itemEntity->spawnArgs.GetBool("inv_persistent", "0");
 
 	m_LightgemModifier = itemEntity->spawnArgs.GetInt("inv_lgmodifier", "0");
+
+	idStr hudName;
+	// Item could be added to the inventory, check for custom HUD
+	if (itemEntity->spawnArgs.GetString("inv_hud", "", hudName) != false)
+	{
+		int hudLayer;
+		itemEntity->spawnArgs.GetInt("inv_hud_layer", "0", hudLayer);
+		SetHUD(hudName, hudLayer);
+	}
 }
 
 CInventoryItem::~CInventoryItem()
@@ -183,6 +192,7 @@ void CInventoryItem::SetStackable(bool stack)
 
 void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 {
+	DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("Setting hud %s on layer %d\r", HudName.c_str(), layer); 
 	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
 	{
 		idEntity *it;

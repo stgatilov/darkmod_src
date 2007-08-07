@@ -7816,16 +7816,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
 
-	if(rc)
-	{
-		// Item could be added to the inventory, check for custom HUD
-		if(ent->spawnArgs.GetString("inv_hud", "", s) != false)
-		{
-			ent->spawnArgs.GetInt("inv_hud_layer", "0", v);
-			rc->SetHUD(s, v);
-		}
-	}
-
 Quit:
 	return rc;
 }
