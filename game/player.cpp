@@ -8694,16 +8694,22 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 	// Notify the previous entity and the new one that they are un-/selected.
 	if(prev && cur != prev)
 	{
+		// greebo: Call the "UN-SELECT" script method on the "old" item
 		idEntity *ce = prev->GetItemEntity();
 		if(ce) {
 			thread = ce->CallScriptFunctionArgs("inventory_item_unselect", true, 0, "eef", ce, prev->GetOwner(), (float)prev->GetOverlay());
+		}
+
+		// greebo: Call the "SELECT" script method on the newly selected item
+		if(e) {
+			thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
 		}
 	}
 
 	if(cur)
 	{
 		if(e && bUpdate == true) {
-			thread = e->CallScriptFunctionArgs("inventory_item_select", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
+			thread = e->CallScriptFunctionArgs("inventory_item_update", true, 0, "eef", e, cur->GetOwner(), (float)cur->GetOverlay());
 		}
 
 		type = cur->GetType();

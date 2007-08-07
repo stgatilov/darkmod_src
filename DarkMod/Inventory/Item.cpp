@@ -63,7 +63,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 
 	m_Icon = itemEntity->spawnArgs.GetString("inv_icon", "");
 	if (m_Icon.IsEmpty() && m_LootType == LT_NONE) {
-		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Warning: non-loot item %s has no icon.\r", itemEntity->name.c_str());
+		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Information: non-loot item %s has no icon.\r", itemEntity->name.c_str());
 	}
 
 	if (m_LootType != LT_NONE && m_Value <= 0) {
