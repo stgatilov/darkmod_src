@@ -540,7 +540,11 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	} else 
 	{
 		// don't drag it if its clipmodel is not a trace model
+#ifdef __linux__
+		return;
+#else
 		goto Quit;
+#endif
 	}
 	COMWorld = phys->GetOrigin( m_id ) + COM * phys->GetAxis( m_id );
 
