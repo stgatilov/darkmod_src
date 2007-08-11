@@ -62,6 +62,11 @@ public:
 	void					Link( idClip &clp, idEntity *ent, int newId, const idVec3 &newOrigin, const idMat3 &newAxis, int renderModelHandle = -1 );
 	void					Unlink( void );						// unlink from sectors
 	void					SetPosition( const idVec3 &newOrigin, const idMat3 &newAxis );	// unlinks the clip model
+	/**
+	* Translates the origin of the clip model relative to the clipmodel itself
+	* Unlinks the clip model
+	**/
+	void					TranslateOrigin( const idVec3 &translation );
 	void					Translate( const idVec3 &translation );							// unlinks the clip model
 	void					Rotate( const idRotation &rotation );							// unlinks the clip model
 	void					Enable( void );						// enable for clipping

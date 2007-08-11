@@ -1650,3 +1650,15 @@ bool idClip::DrawModelContactFeature( const contactInfo_t &contact, const idClip
 
 	return true;
 }
+
+void idClipModel::TranslateOrigin( const idVec3 &translation )
+{
+	if( IsTraceModel() )
+	{
+		// Copy the tracemodel
+		idTraceModel trm = *(idClipModel::GetCachedTraceModel( traceModelIndex ));
+		trm.Translate( translation );
+		
+		LoadModel( trm );
+	}
+}
