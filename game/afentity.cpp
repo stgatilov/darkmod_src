@@ -569,6 +569,7 @@ idAFEntity_Base::idAFEntity_Base( void )
 	m_bCollideWithTeam = true;
 	m_bAFPosedByAnim = false;
 	m_bAFPushMoveables = false;
+	m_AddedEnts.Clear();
 }
 
 /*
@@ -581,6 +582,7 @@ idAFEntity_Base::~idAFEntity_Base( void )
 	delete combatModel;
 	combatModel = NULL;
 	m_GroundBodyList.Clear();
+	m_AddedEnts.Clear();
 }
 
 /*
@@ -604,6 +606,13 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bDragAFDamping );
 	savefile->WriteBool( m_bCollideWithTeam );
 
+	savefile->WriteInt( m_AddedEnts.Num() );
+	for( int j = 0; j < m_AddedEnts.Num(); j++ )
+	{
+		m_AddedEnts[j].ent.Save( savefile );
+		savefile->WriteString( m_AddedEnts[j].bodyName );
+	}
+
 	af.Save( savefile );
 }
 
@@ -622,18 +631,25 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile )
 	LinkCombat();
 
 	savefile->ReadBool( m_bGroundWhenDragged );
+
 	int GroundBodyListNum;
 	savefile->ReadInt( GroundBodyListNum );
+	m_GroundBodyList.SetNum( GroundBodyListNum );
 	for( int i = 0; i < GroundBodyListNum; i++ )
-	{
-		int tmp;
-		savefile->ReadInt( tmp );
-		m_GroundBodyList.Append( tmp );
-	}
+		savefile->ReadInt( m_GroundBodyList[i] );
 
 	savefile->ReadInt( m_GroundBodyMinNum );
 	savefile->ReadBool( m_bDragAFDamping );
 	savefile->ReadBool( m_bCollideWithTeam );
+
+	int AddedEntsNum;
+	savefile->ReadInt( AddedEntsNum );
+	m_AddedEnts.SetNum( AddedEntsNum );
+	for( int j = 0; j < AddedEntsNum; j++ )
+	{
+		m_AddedEnts[j].ent.Restore( savefile );
+		savefile->ReadString( m_AddedEnts[j].bodyName );
+	}
 
 	af.Restore( savefile );
 }
@@ -1116,6 +1132,89 @@ bool idAFEntity_Base::CollidesWithTeam( void )
 	return m_bCollideWithTeam;
 }
 
+void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t jointNum )
+{
+	int bodyID;
+	
+	bodyID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
+	AddEntByBody( ent, bodyID );
+}
+
+void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodyID )
+{
+	float EntMass, AFMass, MassOut, density;
+	idVec3 COM, orig;
+	idMat3 inertiaTensor, axis;
+	idClipModel *EntClip, *NewClip;
+
+	// Test: Add to AF structure
+	axis = ent->GetPhysics()->GetAxis();
+	orig = ent->GetPhysics()->GetOrigin();
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Called for entity %s\r", ent->name.c_str() );
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Entity origin: %s \r", orig.ToString() );
+	
+	EntClip = ent->GetPhysics()->GetClipModel();
+	
+	EntMass = ent->GetPhysics()->GetMass();
+	if ( EntMass <= 0.0f || FLOAT_IS_NAN( EntMass ) ) 
+	{
+		EntMass = 1.0f;
+	}
+	AFMass = GetPhysics()->GetMass();
+
+	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
+	EntClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
+//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Old Clip COM: %s \r", COM.ToString() );;
+
+	NewClip = new idClipModel(EntClip);
+	// AF bodies want to have their origin at the center of mass
+	NewClip->TranslateOrigin( -COM );
+	orig += COM * axis;
+
+	// DEBUG:
+//	idVec3 COMNew;
+//	NewClip->GetMassProperties( 1.0f, MassOut, COMNew, inertiaTensor );
+//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: New Clip COM: %s \r", COMNew.ToString() );
+//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Modified origin: %s \r", orig.ToString() );
+
+	NewClip->Link( gameLocal.clip, this, 0, orig, axis );
+	// Leave the old clipmodel active for stim/response?
+
+	// Add the mass in the AF Structure
+	density = idMath::Fabs( EntMass / MassOut );
+	GetPhysics()->SetMass( AFMass + EntMass );
+	
+	idStr AddName = name + idStr(gameLocal.time);
+
+	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodyID);
+	idAFBody *body = new idAFBody( AddName, NewClip, density );
+	body->SetSelfCollision( false );
+	GetAFPhysics()->AddBody( body );
+	
+	idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
+	GetAFPhysics()->AddConstraint( cf );
+
+	// Add to list
+	SAddedEnt Entry;
+	Entry.ent = ent;
+	Entry.bodyName = AddName;
+
+	// NOTE: Call this function BEFORE bind to joint
+}
+
+void idAFEntity_Base::UnbindNotify( idEntity *ent )
+{
+	idEntity::UnbindNotify( ent );
+
+	for( int i=0; i<m_AddedEnts.Num(); i++ )
+	{
+		if(m_AddedEnts[i].ent.GetEntity() == ent)
+		{
+			GetAFPhysics()->DeleteBody( m_AddedEnts[i].bodyName.c_str() );
+			m_AddedEnts.RemoveIndex(i);
+		}
+	}
+}
 
 /*
 ===============================================================================

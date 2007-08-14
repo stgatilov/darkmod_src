@@ -1925,6 +1925,8 @@ idActor::UnbindNotify
 */
 void idActor::BindNotify( idEntity *ent )
 {
+	idAFEntity_Base::UnbindNotify( ent );
+
 	// Override our animations based on the bound entity's replace_anim_* spawnargs
 	const idKeyValue *KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", NULL );
 	while ( KeyVal )

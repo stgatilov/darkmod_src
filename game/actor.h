@@ -213,7 +213,7 @@ public:
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.
 	**/
-	void					UnbindNotify( idEntity *ent );
+	virtual void			UnbindNotify( idEntity *ent );
 
 	/**
 	* Attach an entity.  Entity spawnArgs checked for attachments are:
