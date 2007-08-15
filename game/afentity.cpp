@@ -1189,6 +1189,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodyID )
 	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodyID);
 	idAFBody *body = new idAFBody( AddName, NewClip, density );
 	body->SetSelfCollision( false );
+	body->SetRerouteEnt( ent );
 	GetAFPhysics()->AddBody( body );
 	
 	idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
@@ -1214,6 +1215,27 @@ void idAFEntity_Base::UnbindNotify( idEntity *ent )
 			m_AddedEnts.RemoveIndex(i);
 		}
 	}
+}
+
+void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr )
+{
+	idEntity *reroute = NULL;
+	idAFBody *StruckBody = NULL;
+	
+	if( tr )
+	{
+		int bodID = BodyForClipModelId( tr->c.id );
+		StruckBody = GetAFPhysics()->GetBody( bodID );
+		
+		if( StruckBody != NULL )
+			reroute = StruckBody->GetRerouteEnt();
+	}
+	
+	// check for reroute entity on the AF body and damage this instead
+	if( reroute != NULL )
+		reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+	else
+		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
 }
 
 /*
@@ -1364,11 +1386,15 @@ void idAFEntity_Gibbable::Present( void ) {
 idAFEntity_Gibbable::Damage
 ================
 */
-void idAFEntity_Gibbable::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr ) {
-	if ( !fl.takedamage ) {
+void idAFEntity_Gibbable::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
+{
+	idAFEntity_Base::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );	
+	
+	if ( !fl.takedamage ) 
+	{
 		return;
 	}
-	idAFEntity_Base::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+	
 	if ( health < -20 && spawnArgs.GetBool( "gib" ) ) {
 		Gib( dir, damageDefName );
 	}

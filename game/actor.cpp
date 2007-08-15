@@ -2415,6 +2415,24 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  trace_t *collision ) 
 {
 	bool bKO(false), bKOPowerBlow(false);
+	int bodID(0);
+	idEntity *reroute = NULL;
+	idAFBody *StruckBody = NULL;
+
+	if( collision )
+	{
+		bodID = BodyForClipModelId( collision->c.id );
+		StruckBody = GetAFPhysics()->GetBody( bodID );
+		
+		if( StruckBody != NULL )
+			reroute = StruckBody->GetRerouteEnt();
+	}
+
+	if( reroute != NULL )
+	{
+		reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, collision );
+		goto Quit;
+	}
 	
 	if ( !fl.takedamage ) {
 		return;

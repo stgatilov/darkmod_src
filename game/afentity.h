@@ -171,6 +171,9 @@ public:
 	const char *			GetAFName( void ) const { return af.GetName(); }
 	idPhysics_AF *			GetAFPhysics( void ) { return af.GetPhysics(); }
 
+	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+									const char *damageDefName, const float damageScale,
+									const int location, trace_t *tr = NULL );
 	void					SetCombatModel( void );
 	idClipModel *			GetCombatModel( void ) const;
 							// contents of combatModel can be set to 0 or re-enabled (mp)
