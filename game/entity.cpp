@@ -8186,9 +8186,28 @@ void idEntity::Event_CanSeeEntity(idEntity* target, int useLighting)
 	idThread::ReturnInt(canSeeEntity(target, useLighting) ? 1 : 0);
 }
 
-void idEntity::ProcCollisionStims( idEntity *other )
+void idEntity::ProcCollisionStims( idEntity *other, int body )
 {
-	CStimResponseCollection *coll, *coll2;
+	CStimResponseCollection *coll(NULL), *coll2(NULL);
+	idEntity *reroute(NULL);
+	
+	if( IsType(idAFEntity_Base::Type) && body >= 0 )
+	{
+		idAFBody *StruckBody(NULL);
+
+		idAFEntity_Base *selfAF = static_cast<idAFEntity_Base *>(this);
+		int bodID = selfAF->BodyForClipModelId( body );
+		StruckBody = selfAF->GetAFPhysics()->GetBody( bodID );
+
+		if( StruckBody != NULL )
+			reroute = StruckBody->GetRerouteEnt();
+	}
+
+	if( reroute != NULL )
+	{
+		reroute->ProcCollisionStims( other, body );
+		goto Quit;
+	}
 
 	if(	other != NULL
 		&& (coll = GetStimResponseCollection()) != NULL
@@ -8207,5 +8226,8 @@ void idEntity::ProcCollisionStims( idEntity *other )
 			}
 		}
 	}
+
+Quit:
+	return;
 }
 

@@ -891,7 +891,7 @@ bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity 
 	float v, f;
 
 	idEntity *e = gameLocal.entities[collision.c.entityNum];
-	ProcCollisionStims( e );
+	ProcCollisionStims( e, collision.c.id );
 
 	if ( af.IsActive() ) 
 	{

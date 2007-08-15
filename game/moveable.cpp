@@ -330,7 +330,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// Darkmod: Collision stims and a tactile alert if it collides with an AI
 	if ( ent )
 	{
-		ProcCollisionStims( ent );
+		ProcCollisionStims( ent, collision.c.id );
 
 		if( ent->IsType( idAI::Type ) )
 		{

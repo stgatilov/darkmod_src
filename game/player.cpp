@@ -3559,7 +3559,7 @@ bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// don't let player collide with grabber entity
 	if ( other && other != g_Global.m_DarkModPlayer->grabber->GetSelected() ) 
 	{
-		ProcCollisionStims( other );
+		ProcCollisionStims( other, collision.c.id );
 
 		other->Signal( SIG_TOUCH );
 		if ( !spectating ) {
