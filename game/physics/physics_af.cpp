@@ -4231,6 +4231,8 @@ void idAFBody::Init( void ) {
 
 	fl.selfCollision			= true;
 	fl.isZero					= true;
+
+	m_RerouteEnt				= NULL;
 }
 
 /*
@@ -4446,6 +4448,7 @@ void idAFBody::Save( idSaveGame *saveFile ) {
 	saveFile->WriteVec6( current->externalForce );
 	saveFile->WriteVec3( atRestOrigin );
 	saveFile->WriteMat3( atRestAxis );
+	m_RerouteEnt.Save( saveFile );
 }
 
 /*
@@ -4482,6 +4485,17 @@ void idAFBody::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadVec6( current->externalForce );
 	saveFile->ReadVec3( atRestOrigin );
 	saveFile->ReadMat3( atRestAxis );
+	m_RerouteEnt.Restore( saveFile );
+}
+
+idEntity *idAFBody::GetRerouteEnt( void )
+{
+	return m_RerouteEnt.GetEntity();
+}
+
+void idAFBody::SetRerouteEnt( idEntity *ent )
+{
+	m_RerouteEnt = ent;
 }
 
 #ifdef MOD_WATERPHYSICS
