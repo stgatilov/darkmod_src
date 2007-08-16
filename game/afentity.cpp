@@ -1231,6 +1231,7 @@ void idAFEntity_Base::UnbindNotify( idEntity *ent )
 			GetAFPhysics()->DeleteBody( m_AddedEnts[i].bodyName.c_str() );
 			ent->GetPhysics()->SetContents( m_AddedEnts[i].contents );
 			m_AddedEnts.RemoveIndex(i);
+			GetPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
 		}
 	}
 }
