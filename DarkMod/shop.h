@@ -16,10 +16,14 @@ private:
 	int			cost;
 	const char	*image;
 	int			count;
+	idEntity	*entity;
+	bool		persistent;
+	bool		canDrop;
 	
 public:
-	CShopItem(const char *id, const char *name, const char *description, int cost, const char *image, int count);
-	CShopItem(CShopItem* item, int count, int cost = 0);
+	CShopItem(const char *id, const char *name, const char *description, int cost,
+		const char *image, int count, bool persistent = false, idEntity *entity = NULL, bool canDrop = true);
+	CShopItem(CShopItem* item, int count, int cost = 0, bool persistent = NULL);
 
 	// unique identifier for this item
 	const char *GetID( void ) const;
@@ -40,6 +44,16 @@ public:
 	// or number user has bought, or number user started with)
 	int GetCount( void );				
 
+	// whether the item can be carried to the next mission
+	bool GetPersistent(void);
+
+	// whether the item can dropped by the player from the starting items list
+	bool GetCanDrop(void);
+	void SetCanDrop(bool canDrop);
+
+	// existing entity for this item
+	idEntity *GetEntity( void );				
+
 	// modifies number of items
 	void ChangeCount( int amount );				
 };
@@ -57,6 +71,7 @@ private:
 	int				forSaleTop;
 	int				purchasedTop;
 	int				startingTop;
+	bool			nothingForSale;
 
 public:
 	CShop();
@@ -67,8 +82,11 @@ public:
 	// read from defs and map to initialze the shop
 	void LoadShopItemDefinitions();
 
+	// move the current inventory to the Starting Items list
+	void LoadFromInventory(idPlayer *player);
+
 	// handles main menu commands
-	void HandleCommands(const char *menuCommand, idUserInterface *gui);
+	void HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player);
 
 	// how much gold the player has left to spend
 	int GetGold();
@@ -82,7 +100,7 @@ public:
 	void AddStartingItem(CShopItem *item);
 
 	// initializes the 'list' based on the map
-	void AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list);
+	int AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list);
 
 	// returns the various lists
 	idList<CShopItem *>* GetItemsForSale();
@@ -110,6 +128,9 @@ public:
 
 	// scroll a list to the next "page" of values
 	void ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list);
+
+	// true if there are no items for sale
+	bool GetNothingForSale();
 };
 
 

@@ -59,6 +59,11 @@ void CDifficultyMenu::DisplayDifficulty(idUserInterface *gui)
 // generate a list of objective description strings for each difficulty level
 void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui)
 {
+	// clear out objectives
+	for (int i = 0; i < DIFFICULTY_COUNT; i++) {
+		diffObjectives[i].Clear();
+	}
+
 	// read the map
 	const char * mapName = tdm_mapName.GetString();
 	const char * filename = va("maps/%s", mapName);
@@ -70,8 +75,17 @@ void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui)
 		gameLocal.Warning( "Couldn't load %s", filename );
 		return;
 	}
+	gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapName));
 	idMapEntity* worldSpawn = mapFile->GetEntity( 0 );
 	idDict mapDict = worldSpawn->epairs;
+
+	if (mapDict.GetInt("shop_skip", "0") == 1) {
+		// skip the shop, so define the map start command now
+		gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", mapName));
+	} else {
+		// there will be a shop, so don't run the map right away
+		gui->SetStateString("mapStartCmdNow", "");
+	}
 
 	// Determine the difficulty level string. The defaults are the "difficultyMenu" entityDef.
 	// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
@@ -89,21 +103,18 @@ void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui)
 	gui->SetStateInt("isDiffMenuVisible", 1);
 	gui->SetStateInt("isNewGameRootMenuVisible", 0);
 
-	// Search map for targets; find the first target that points to objectives
+	// Search map for objectives
 	idMapEntity* objectiveEnt = NULL;
-	const idKeyValue* targetKey = NULL;
-	do {
-		targetKey = mapDict.MatchPrefix("target", targetKey);
-		if (targetKey == NULL)
+	for (int entNum = 0; entNum < mapFile->GetNumEntities(); entNum++)
+	{
+		idMapEntity* ent = mapFile->GetEntity(entNum);
+		if (ent != NULL && idStr::Icmp(ent->epairs.GetString("classname"), "target_tdm_addobjectives") == 0
+			&& !ent->epairs.GetBool("wait_for_trigger"))
 		{
-			continue;
-		}
-		objectiveEnt = mapFile->FindEntity(targetKey->GetValue());
-		if (objectiveEnt != NULL && idStr::Icmp(objectiveEnt->epairs.GetString("classname"), "target_tdm_addobjectives") == 0)
-		{
+			objectiveEnt = ent;
 			break;
 		}
-	} while (targetKey != NULL);
+	}
 
 	// found some objectives?
 	if (objectiveEnt != NULL)

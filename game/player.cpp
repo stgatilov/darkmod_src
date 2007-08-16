@@ -944,20 +944,26 @@ void idPlayer::SetupInventory()
 	m_WeaponCursor->SetCurrentCategory(idx);
 	m_WeaponCursor->SetCategoryLock(true);
 
-	// Set ammo spawnargs based on Purchased and Starting items
-	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
-	for (int si = 0; si < startingItems->Num(); si++) {
-		idStr weaponName = (*startingItems)[si]->GetID();
-		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0) {
-			weaponName.Strip("weapon_");
-			idStr key = "ammo_" + weaponName;
-			int ammoCount = spawnArgs.GetInt(key, "0");
-			spawnArgs.SetInt(key, ammoCount + (*startingItems)[si]->GetCount());
-		}
-	}
-
 	// greebo: Parse the spawnargs and add the weapon items to the inventory.
 	addWeaponsToInventory();
+
+	// give the player weapon ammo based on shop purchases
+	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
+	idList<CShopItem*>* startingItems = g_Shop.GetPlayerItems();
+	for (int si = 0; si < startingItems->Num(); si++) {
+		CShopItem *shopItem = (*startingItems)[si];
+		idStr weaponName = shopItem->GetID();
+		if (idStr::Cmpn(weaponName, "weapon_", 7) == 0) {
+			weaponName.Strip("weapon_");
+			for (int i = 0; i < category->size(); i++) {
+				CInventoryWeaponItem* item = dynamic_cast<CInventoryWeaponItem*>(category->GetItem(i));
+				if (item->getWeaponName() == weaponName) {
+					item->SetPersistent(shopItem->GetPersistent());
+					item->setAmmo(shopItem->GetCount());
+				}
+			}
+		}
+	}
 
 	// Now create the standard cursor for all the other inventory items (excl. weapons)
 	CInventoryCursor *crsr = InventoryCursor();
@@ -1001,15 +1007,22 @@ void idPlayer::SetupInventory()
 
 	// Give player non-weapon items obtained from the Shop
 	for (int si = 0; si < startingItems->Num(); si++) {
-		const char * weaponName = (*startingItems)[si]->GetID();
+		CShopItem * item = (*startingItems)[si];
+		const char * weaponName = item->GetID();
 		const idDict *itemDict = gameLocal.FindEntityDefDict(weaponName, true);
-		int count = (*startingItems)[si]->GetCount();
+		int count = item->GetCount();
 		if (idStr::Cmpn(weaponName, "weapon_", 7) != 0 && count > 0) {
-			// spawn the item, put it in the inventory
-			idEntity *entity;
-			gameLocal.SpawnEntityDef( *itemDict, &entity );
-			CInventoryItem* item = crsr->Inventory()->PutItem(entity, this);
-			item->SetCount(count);
+			// does the item already exist?
+			idEntity *entity = item->GetEntity();
+			if (entity == NULL)
+			{
+				// no, spawn it
+				gameLocal.SpawnEntityDef( *itemDict, &entity );
+			}
+			// add it to the inventory
+			CInventoryItem* invItem = crsr->Inventory()->PutItem(entity, this);
+			invItem->SetCount(count);
+			invItem->SetPersistent(item->GetPersistent());
 		}
 	}
 	delete startingItems;

@@ -3,26 +3,34 @@
 
 #include "shop.h"
 #include "../game/game_local.h"
+#include "./Inventory/Inventory.h"
 
 // type-in field for map name (temporary)
 idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
 
-CShopItem::CShopItem(const char *id, const char *name, const char *description, int cost, const char *image, int count) {
+CShopItem::CShopItem(const char *id, const char *name, const char *description,
+					 int cost, const char *image, int count, bool persistent, idEntity *entity, bool canDrop) {
 	this->id = id;
 	this->name = name;
 	this->description = description;
 	this->cost = cost;
 	this->image = image;
 	this->count = count;
+	this->persistent = persistent;
+	this->entity = entity;
+	this->canDrop = canDrop;
 };
 
-CShopItem::CShopItem(CShopItem* item, int count, int cost) {
+CShopItem::CShopItem(CShopItem* item, int count, int cost, bool persistent) {
 	this->id = item->id;
 	this->name = item->name;
 	this->description = item->description;
 	this->cost = cost == 0 ? item->cost : cost;
 	this->image = item->image;
 	this->count = count;
+	this->persistent = persistent == NULL ? item->persistent : persistent;
+	this->entity = item->entity;
+	this->canDrop = item->canDrop;
 };
 
 const char *CShopItem::GetID(void) const {
@@ -47,6 +55,22 @@ int CShopItem::GetCost(void) {
 
 int CShopItem::GetCount(void) {
 	return this->count;
+};
+
+bool CShopItem::GetPersistent(void) {
+	return this->persistent;
+};
+
+bool CShopItem::GetCanDrop(void) {
+	return this->canDrop;
+};
+
+void CShopItem::SetCanDrop(bool canDrop) {
+	this->canDrop = canDrop;
+};
+
+idEntity *CShopItem::GetEntity(void) {
+	return this->entity;
 };
 
 void CShopItem::ChangeCount(int amount) {
@@ -86,6 +110,10 @@ idList<CShopItem *>* CShop::GetPurchasedItems() {
 	return &itemsPurchased;
 }
 
+bool CShop::GetNothingForSale() {
+	return nothingForSale;
+}
+
 /**
  * Combine the purchased list and the starting list
  */
@@ -106,13 +134,20 @@ idList<CShopItem *>* CShop::GetPlayerItems() {
 /**
  * Handle Main Menu commands
  */
-void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui) {
+void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui, idPlayer *player) {
 	if (idStr::Icmp(menuCommand, "shopLoad") == 0)
 	{
-		// Initialize the shop
+		// Clear out the shop
 		Init();
+
+		// get list of all items that can be sold
+		LoadShopItemDefinitions();
+
+		// load persistent items into Starting Items list
+		LoadFromInventory(player);
+
+		// init and update the shop GUI
 		DisplayShop(gui);
-		UpdateGUI(gui);
 	}
 	else if (idStr::Icmp(menuCommand, "shopBuy") == 0)
 	{
@@ -161,6 +196,33 @@ void CShop::ScrollList(int* topItem, int maxItems, idList<CShopItem *>* list) {
 	}
 }
 
+void CShop::LoadFromInventory(idPlayer *player) {
+	if (player == NULL)
+	{
+		return;
+	}
+	int count = 0;
+	for (int catNum = 0; catNum < player->Inventory()->GetNumCategories(); catNum++)
+	{
+		CInventoryCategory * cat = player->Inventory()->GetCategory(catNum);
+		for (int itemNum = 0; itemNum < cat->size(); itemNum++)
+		{
+			CInventoryItem *it = cat->GetItem(itemNum);
+			if ((count = it->GetPersistentCount()) > 0)
+			{
+				idEntity * itemEntity = it->GetItemEntity();
+				const char * name = itemEntity->spawnArgs.GetString("classname");
+				CShopItem * shopItem = FindByID(&itemDefs, itemEntity->spawnArgs.GetString("classname"));
+				if (shopItem != NULL)
+				{
+					CShopItem * item = new CShopItem(shopItem, count, true);
+					startingItems.Append(item);
+				}
+			}
+		}
+	}
+}
+
 void CShop::LoadShopItemDefinitions() {
 	// Load the definitions for the shop items. Include classname (for spawing),
 	// display name and description, modal name (for image display), and cost
@@ -182,12 +244,12 @@ void CShop::LoadShopItemDefinitions() {
 	}
 }
 
-void CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) {
+int CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) {
 	int itemNum = 1;
 	while (true) {
 		const char* itemName = mapDict->GetString(va("%s_%d_item",itemKey,itemNum));
 		if (strlen(itemName) == 0) {
-			break;
+			return itemNum-1;
 		}
 		// look for skill-specific quantity first
 		int quantity = mapDict->GetInt(va("%s_%d_%d_qty",itemKey,itemNum,g_skill.GetInteger()));
@@ -199,14 +261,27 @@ void CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) 
 		if (price == 0) {
 			price = mapDict->GetInt(va("%s_%d_price",itemKey,itemNum));
 		}
-		// put the items in the shop
+		// look for skill-specific persistentcy first
+		bool persistent = false;
+		const idKeyValue *keyValue = mapDict->FindKey(va("%s_%d_%d_persistent",itemKey,itemNum,g_skill.GetInteger()));
+		if (keyValue != NULL) {
+			persistent = mapDict->GetBool(va("%s_%d_%d_persistent",itemKey,itemNum,g_skill.GetInteger()));
+		} else {
+			persistent = mapDict->GetBool(va("%s_%d_persistent",itemKey,itemNum));
+		}
+		// look for skill-specific canDrop flag first
+		bool canDrop = true;
+		keyValue = mapDict->FindKey(va("%s_%d_%d_canDrop",itemKey,itemNum,g_skill.GetInteger()));
+		if (keyValue != NULL) {
+			canDrop = mapDict->GetBool(va("%s_%d_%d_canDrop",itemKey,itemNum,g_skill.GetInteger()));
+		} else {
+			canDrop = mapDict->GetBool(va("%s_%d_canDrop",itemKey,itemNum), "1");
+		}
+		// put the item in the shop
 		if (quantity > 0) {
-			for (int i = 0; i < itemDefs.Num(); i++) {
-				if (strcmp(itemDefs[i]->GetID(), itemName) == 0) {
-					CShopItem* anItem = new CShopItem(itemDefs[i], quantity, price);
-					list->Append(anItem);
-				}
-			}
+			CShopItem* anItem = new CShopItem(FindByID(&itemDefs, itemName), quantity, price, persistent);
+			anItem->SetCanDrop(canDrop);
+			list->Append(anItem);
 		}
 		itemNum++;
 	}
@@ -226,21 +301,26 @@ void CShop::DisplayShop(idUserInterface *gui) {
 	idMapEntity* mapEnt = mapFile->GetEntity( 0 );
 	idDict mapDict = mapEnt->epairs;
 
-	gui->SetStateInt("isShopMenuVisible", 1);
 	gui->SetStateInt("isDiffMenuVisible", 0);
+
+	if (mapDict.GetBool("shop_skip","0")) {
+		// if skip flag is set, skip the shop
+		return;
+	}
+	int gold = mapDict.GetInt("shop_gold_start", "0");
+
 	gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapName));
 
-	// get list of all items that can be sold
-	LoadShopItemDefinitions();
-
-	// get the starting information from spawnargs on the worldspawn in the map
+	gui->SetStateInt("isShopMenuVisible", 1);
 
 	// the starting gold
-	int gold = mapDict.GetInt("shop_gold_start", "0");
 	SetGold(gold);
 
 	// items for sale
-	AddItems(&mapDict, "shopItem", GetItemsForSale());
+	if (AddItems(&mapDict, "shopItem", GetItemsForSale()) == 0)
+	{
+		nothingForSale = true;
+	}
 
 	// starting items (items that player already has
 	AddItems(&mapDict, "startingItem", GetStartingItems());
@@ -286,7 +366,7 @@ CShopItem* CShop::FindByID(idList<CShopItem *>* items, const char *id) {
 	for (int i = 0; i < items->Num(); i++)
 	{
 		CShopItem* item = (*items)[i];
-		if (item->GetID() == id)
+		if (idStr::Icmp(item->GetID(),id) == 0)
 		{
 			return item;
 		}
@@ -303,7 +383,8 @@ void CShop::BuyItem(int index) {
 	// if the weapon class wasn't in the purchased item list, add it
 	if (boughtItem == NULL)
 	{
-		boughtItem = new CShopItem(forSaleItem->GetID(), forSaleItem->GetName(), forSaleItem->GetDescription(), forSaleItem->GetCost(), forSaleItem->GetImage(), 0);
+		boughtItem = new CShopItem(forSaleItem->GetID(), forSaleItem->GetName(), forSaleItem->GetDescription(),
+			forSaleItem->GetCost(), forSaleItem->GetImage(), 0, forSaleItem->GetPersistent());
 		itemsPurchased.Append(boughtItem);
 		// scroll so new item is visible in purchased list
 		if (itemsPurchased.Num() > purchasedTop + LIST_SIZE_PURCHASED) {
@@ -341,26 +422,35 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 	gui->SetStateInt("forSaleMoreVisible", itemsForSale.Num() > LIST_SIZE_FOR_SALE);
 	gui->SetStateInt("purchasedMoreVisible", itemsPurchased.Num() > LIST_SIZE_PURCHASED);
 	gui->SetStateInt("startingMoreVisible", startingItems.Num() > LIST_SIZE_STARTING);
-	for (int i = 0; i < LIST_SIZE_FOR_SALE; i++) {
-		idStr guiCost = idStr("forSaleCost") + i + "_cost";
-		idStr guiName = idStr("forSale") + i + "_name";
-		idStr guiDesc = idStr("forSale") + i + "_desc";
-		idStr guiAvailable = idStr("forSaleAvail") + i;
-		idStr name = idStr("");
-		idStr desc = idStr("");
-		idStr cost = idStr("");
-		int available = 0;
-		if (forSaleTop + i < itemsForSale.Num()) {
-			CShopItem* item = itemsForSale[forSaleTop + i];
-			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
-			desc = idStr(item->GetName()) + ": " + item->GetDescription();
-			available = item->GetCost() <= gold ? item->GetCount() : 0;
-			cost = idStr(item->GetCost()) + " GP";
+	if (GetNothingForSale())
+	{
+		// nothing for sale, let the user know
+		gui->SetStateInt("forSaleAvail0", 0);
+		gui->SetStateString("forSale0_name", "<no items for sale>");
+	}
+	else
+	{
+		for (int i = 0; i < LIST_SIZE_FOR_SALE; i++) {
+			idStr guiCost = idStr("forSaleCost") + i + "_cost";
+			idStr guiName = idStr("forSale") + i + "_name";
+			idStr guiDesc = idStr("forSale") + i + "_desc";
+			idStr guiAvailable = idStr("forSaleAvail") + i;
+			idStr name = idStr("");
+			idStr desc = idStr("");
+			idStr cost = idStr("");
+			int available = 0;
+			if (forSaleTop + i < itemsForSale.Num()) {
+				CShopItem* item = itemsForSale[forSaleTop + i];
+				name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
+				desc = idStr(item->GetName()) + ": " + item->GetDescription();
+				available = item->GetCost() <= gold ? item->GetCount() : 0;
+				cost = idStr(item->GetCost()) + " GP";
+			}
+			gui->SetStateString(guiCost, cost);
+			gui->SetStateInt(guiAvailable, available);
+			gui->SetStateString(guiName, name);
+			gui->SetStateString(guiDesc, desc);
 		}
-		gui->SetStateString(guiCost, cost);
-		gui->SetStateInt(guiAvailable, available);
-		gui->SetStateString(guiName, name);
-		gui->SetStateString(guiDesc, desc);
 	}
 
 	for (int i = 0; i < LIST_SIZE_PURCHASED; i++) {
@@ -393,15 +483,15 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 		idStr name = idStr("");
 		idStr desc = idStr("");
 		int available = 0;
-		int dropVisible = 0;
+		bool dropVisible = true;
 		if (startingTop + i < startingItems.Num()) {
 			CShopItem* item = startingItems[startingTop + i];
 			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
 			desc = idStr(item->GetName()) + ": " + item->GetDescription();
 			available = item->GetCost() <= gold ? item->GetCount() : 0;
-			dropVisible = 1;
+			dropVisible = item->GetCanDrop();
 		}
-		gui->SetStateInt(guiDrop, dropVisible);
+		gui->SetStateBool(guiDrop, dropVisible);
 		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
 		gui->SetStateString(guiDesc, desc);

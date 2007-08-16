@@ -3013,7 +3013,7 @@ handles main menu commands.
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
 	g_Diff.HandleCommands(menuCommand, gui);
-	g_Shop.HandleCommands(menuCommand, gui);
+	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
 }
 
 /*
