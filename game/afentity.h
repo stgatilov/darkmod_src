@@ -141,6 +141,8 @@ typedef struct SAddedEnt_s
 	// Must store string name because body ID's get reassigned when any are deleted
 	idStr bodyName;
 	// don't need to store constraint since they are deleted along with body
+
+	int contents; // original clipmodel contents
 } SAddedEnt;
 
 
