@@ -7576,7 +7576,7 @@ idPhysics_AF::GetBody
 */
 idAFBody *idPhysics_AF::GetBody( const int id ) const {
 	if ( id < 0 || id >= bodies.Num() ) {
-		gameLocal.Error( "GetBody: no body with id %d exists\n", id );
+		gameLocal.Error( "GetBody: no body with id %d exists on ent %s\n", id, self->name.c_str() );
 		return NULL;
 	}
 	return bodies[id];
