@@ -2533,9 +2533,8 @@ idEntity::Bind
 */
 void idEntity::Bind( idEntity *master, bool orientated )
 {
-	if ( !InitBind( master ) ) {
+	if ( !InitBind( master ) )
 		return;
-	}
 
 	PreBind();
 
@@ -2560,17 +2559,31 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 	jointHandle_t	jointnum;
 	idAnimator		*masterAnimator;
 
-	if ( !InitBind( master ) ) {
-		return;
-	}
-
 	masterAnimator = master->GetAnimator();
-	if ( !masterAnimator ) {
+	if ( !masterAnimator ) 
+	{
 		gameLocal.Warning( "idEntity::BindToJoint: entity '%s' cannot support skeletal models.", master->GetName() );
 		return;
 	}
 
 	jointnum = masterAnimator->GetJointHandle( jointname );
+
+	if ( !InitBind( master ) )
+		return;
+
+	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		master->IsType( idAFEntity_Base::Type )
+		&& !IsType( idAFEntity_Base::Type )
+		&& ( jointnum != INVALID_JOINT )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
+	}
+
 	if ( jointnum == INVALID_JOINT ) {
 		gameLocal.Warning( "idEntity::BindToJoint: joint '%s' not found on entity '%s'.", jointname, master->GetName() );
 	}
@@ -2594,10 +2607,22 @@ idEntity::BindToJoint
   bind relative to a joint of the md5 model used by the master
 ================
 */
-void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated ) {
-
-	if ( !InitBind( master ) ) {
+void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated ) 
+{
+	if ( !InitBind( master ) )
 		return;
+
+	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		master->IsType( idAFEntity_Base::Type )
+		&& !IsType( idAFEntity_Base::Type )
+		&& ( jointnum != INVALID_JOINT )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		static_cast<idAFEntity_Base *>(master)->AddEntByJoint( this, jointnum );
 	}
 
 	PreBind();
@@ -2619,15 +2644,25 @@ idEntity::BindToBody
   bind relative to a collision model used by the physics of the master
 ================
 */
-void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated ) {
-
-	if ( !InitBind( master ) ) {
+void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated ) 
+{
+	if ( !InitBind( master ) )
 		return;
+
+	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
+	if	( 
+		master->IsType( idAFEntity_Base::Type )
+		&& !IsType( idAFEntity_Base::Type )
+		&& ( GetPhysics()->GetClipModel() != NULL )
+		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
+		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
+		)
+	{
+		static_cast<idAFEntity_Base *>(master)->AddEntByBody( this, bodyId );
 	}
 
-	if ( bodyId < 0 ) {
+	if ( bodyId < 0 )
 		gameLocal.Warning( "idEntity::BindToBody: body '%d' not found.", bodyId );
-	}
 
 	PreBind();
 
@@ -5390,7 +5425,8 @@ idEntity::Event_CopyBind
 
 */
 
-void idEntity::Event_CopyBind( idEntity *other ) {
+void idEntity::Event_CopyBind( idEntity *other ) 
+{
 
 	idEntity *master = other->GetBindMaster();
 
@@ -5404,7 +5440,7 @@ void idEntity::Event_CopyBind( idEntity *other ) {
 
 		// joint is specified so bind to that joint
 
-		this->BindToJoint( master, joint, true );
+		BindToJoint( master, joint, true );
 
 	}
 
@@ -5412,7 +5448,7 @@ void idEntity::Event_CopyBind( idEntity *other ) {
 
 		// body is specified so bind to it
 
-		this->BindToBody( master, body, true );
+		BindToBody( master, body, true );
 
 	}
 
@@ -5420,7 +5456,7 @@ void idEntity::Event_CopyBind( idEntity *other ) {
 
 		// no joint and no body specified to bind to master
 
-		this->Bind( master, true );
+		Bind( master, true );
 
 	}
 
@@ -8190,28 +8226,23 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 {
 	CStimResponseCollection *coll(NULL), *coll2(NULL);
 	idEntity *reroute(NULL);
+
+	if( !other || ((coll = GetStimResponseCollection()) == NULL) )
+		goto Quit;
 	
-	if( IsType(idAFEntity_Base::Type) && body >= 0 )
+	if( other->IsType(idAFEntity_Base::Type) && body >= 0 )
 	{
 		idAFBody *StruckBody(NULL);
 
-		idAFEntity_Base *selfAF = static_cast<idAFEntity_Base *>(this);
-		int bodID = selfAF->BodyForClipModelId( body );
-		StruckBody = selfAF->GetAFPhysics()->GetBody( bodID );
-
-		if( StruckBody != NULL )
-			reroute = StruckBody->GetRerouteEnt();
+		idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
+		int bodID = otherAF->BodyForClipModelId( body );
+		StruckBody = otherAF->GetAFPhysics()->GetBody( bodID );
+		reroute = StruckBody->GetRerouteEnt();
+		if( reroute )
+			other = reroute;
 	}
 
-	if( reroute != NULL )
-	{
-		reroute->ProcCollisionStims( other, body );
-		goto Quit;
-	}
-
-	if(	other != NULL
-		&& (coll = GetStimResponseCollection()) != NULL
-		&& (coll2 = other->GetStimResponseCollection()) != NULL
+	if(	(coll2 = other->GetStimResponseCollection()) != NULL
 		&& coll2->HasResponse() )
 	{
 		// check each stim to see if it's a collision stim

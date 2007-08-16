@@ -1134,26 +1134,28 @@ bool idAFEntity_Base::CollidesWithTeam( void )
 
 void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t jointNum )
 {
-	int bodyID;
+	int bodID;
 	
-	bodyID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
-	AddEntByBody( ent, bodyID );
+	bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
+	AddEntByBody( ent, bodID );
 }
 
-void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodyID )
+void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 {
 	float EntMass, AFMass, MassOut, density;
 	idVec3 COM, orig;
 	idMat3 inertiaTensor, axis;
 	idClipModel *EntClip, *NewClip;
+	int newBodID(0);
 
-	// Test: Add to AF structure
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
+
 	axis = ent->GetPhysics()->GetAxis();
 	orig = ent->GetPhysics()->GetOrigin();
-	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Called for entity %s\r", ent->name.c_str() );
-	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Entity origin: %s \r", orig.ToString() );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Entity origin: %s \r", orig.ToString() );
 	
 	EntClip = ent->GetPhysics()->GetClipModel();
+	NewClip = new idClipModel(EntClip);
 	
 	EntMass = ent->GetPhysics()->GetMass();
 	if ( EntMass <= 0.0f || FLOAT_IS_NAN( EntMass ) ) 
@@ -1161,12 +1163,11 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodyID )
 		EntMass = 1.0f;
 	}
 	AFMass = GetPhysics()->GetMass();
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. \r" );
 
 	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
-	EntClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
-//	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Old Clip COM: %s \r", COM.ToString() );;
+	NewClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
 
-	NewClip = new idClipModel(EntClip);
 	// AF bodies want to have their origin at the center of mass
 	NewClip->TranslateOrigin( -COM );
 	orig += COM * axis;
@@ -1177,30 +1178,35 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodyID )
 //	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: New Clip COM: %s \r", COMNew.ToString() );
 //	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("AF Bind: Modified origin: %s \r", orig.ToString() );
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Linking clipmodel copy... \r" );
 	NewClip->Link( gameLocal.clip, this, 0, orig, axis );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Clipmodel linked.\r");
 	// Leave the old clipmodel active for stim/response?
 
 	// Add the mass in the AF Structure
 	density = idMath::Fabs( EntMass / MassOut );
 	GetPhysics()->SetMass( AFMass + EntMass );
 	
-	idStr AddName = name + idStr(gameLocal.time);
+	idStr AddName = ent->name + idStr(gameLocal.time);
 
-	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodyID);
+	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodID);
 	idAFBody *body = new idAFBody( AddName, NewClip, density );
 	body->SetSelfCollision( false );
 	body->SetRerouteEnt( ent );
-	GetAFPhysics()->AddBody( body );
+	newBodID = GetAFPhysics()->AddBody( body );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added with id %d.\r", newBodID);
 	
 	idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
 	GetAFPhysics()->AddConstraint( cf );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added.\r");
 
 	// Add to list
 	SAddedEnt Entry;
 	Entry.ent = ent;
 	Entry.bodyName = AddName;
 
-	// NOTE: Call this function BEFORE bind to joint
+	m_AddedEnts.Append( Entry );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
 }
 
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
@@ -1209,8 +1215,10 @@ void idAFEntity_Base::UnbindNotify( idEntity *ent )
 
 	for( int i=0; i<m_AddedEnts.Num(); i++ )
 	{
-		if(m_AddedEnts[i].ent.GetEntity() == ent)
+		if(ent && (m_AddedEnts[i].ent.GetEntity() == ent))
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("UnbindNotify: Destroyed added body for ent %s\r", ent->name.c_str());
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("UnbindNotify: Deleting body named %s\r",  m_AddedEnts[i].bodyName.c_str());
 			GetAFPhysics()->DeleteBody( m_AddedEnts[i].bodyName.c_str() );
 			m_AddedEnts.RemoveIndex(i);
 		}
