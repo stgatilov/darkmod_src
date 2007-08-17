@@ -291,6 +291,9 @@ void CMissionData::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_Stats.DamageDealt );
 	savefile->WriteInt( m_Stats.DamageReceived );
 	savefile->WriteInt( m_Stats.LootOverall );
+
+	savefile->WriteString( m_SuccessLogicStr );
+	savefile->WriteString( m_FailureLogicStr );
 }
 
 void CMissionData::Restore( idRestoreGame *savefile )
@@ -343,6 +346,12 @@ void CMissionData::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( m_Stats.DamageDealt );
 	savefile->ReadInt( m_Stats.DamageReceived );
 	savefile->ReadInt( m_Stats.LootOverall );
+
+	savefile->ReadString( m_SuccessLogicStr );
+	savefile->ReadString( m_FailureLogicStr );
+
+	// re-parse the logic strings
+	ParseLogicStrs();
 }
 
 void CMissionData::MissionEvent
@@ -792,19 +801,22 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			pThread->CallFunction( pScriptFun, true );
 			pThread->DelayedStart( 0 );
 		}
-
 // TODO: Update the GUI to mark the objective as complete
-
 	}
 
-	// check if all mandatory, valid and active objectives have been completed
-	// If so, the mission is complete
-	for( int i=0; i<m_Objectives.Num(); i++ )
+	if( !m_SuccessLogic.IsEmpty() )
+		bTest = EvalBoolLogic( &m_SuccessLogic, true );
+	else
 	{
-		CObjective *pObj = &m_Objectives[i];
-		bTemp = ( pObj->m_state == STATE_COMPLETE || pObj->m_state == STATE_INVALID
-					 || !pObj->m_bMandatory );
-		bTest = bTest && bTemp;
+		// default logic: check if all mandatory, valid objectives have been completed
+		// If so, the mission is complete
+		for( int i=0; i<m_Objectives.Num(); i++ )
+		{
+			CObjective *pObj = &m_Objectives[i];
+			bTemp = ( pObj->m_state == STATE_COMPLETE || pObj->m_state == STATE_INVALID
+						 || !pObj->m_bMandatory );
+			bTest = bTest && bTemp;
+		}
 	}
 
 	if( bTest )
@@ -813,22 +825,28 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 
 void CMissionData::Event_ObjectiveFailed( int ind )
 {
-	// if the objective was mandatory, fail the mission
-	if( m_Objectives[ind].m_bMandatory )
-		Event_MissionFailed();
+	bool bTest(false);
+	// play an objective failed sound for optional objectives?
+
+	// call failure script
+	function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
+	if(pScriptFun)
+	{
+		idThread *pThread = new idThread( pScriptFun );
+		pThread->CallFunction( pScriptFun, true );
+		pThread->DelayedStart( 0 );
+	}
+
+	if( !m_FailureLogic.IsEmpty() )
+		bTest = EvalBoolLogic( &m_FailureLogic, true );
 	else
 	{
-		// play an objective failed sound for optional objectives?
-
-		// call failure script
-		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
-		if(pScriptFun)
-		{
-			idThread *pThread = new idThread( pScriptFun );
-			pThread->CallFunction( pScriptFun, true );
-			pThread->DelayedStart( 0 );
-		}
+		// default logic: if the objective was mandatory, fail the mission
+		bTest = m_Objectives[ind].m_bMandatory;
 	}
+
+	if( bTest )
+		Event_MissionFailed();
 }
 
 void CMissionData::Event_MissionComplete( void )
@@ -1254,6 +1272,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 	idStr				StrTemp, StrTemp2, TempStr2;
 	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
 	int					ReturnVal(-1);
+	bool				bLogicMod(false); // modified mission logic
 
 	if( !ent )
 		goto Quit;
@@ -1417,6 +1436,24 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 		}
 	}
 
+	// parse overall mission logic
+	// Only one of these per mission, so empty args on this object should not overwrite existing args
+	StrTemp = args->GetString("mission_logic_success", "");
+	if( StrTemp != "" )
+	{
+		bLogicMod = true;
+		m_SuccessLogicStr = StrTemp;
+	}
+	StrTemp = args->GetString("mission_logic_failure", "");
+	if( StrTemp != "" )
+	{
+		bLogicMod = true;
+		m_FailureLogicStr = StrTemp;
+	}
+	
+	if( bLogicMod )
+		ParseLogicStrs();
+
 	// check if any objectives were actually added, if not return -1
 	if( m_Objectives.Num() == ReturnVal )
 		ReturnVal = -1;
@@ -1563,6 +1600,35 @@ bool CObjective::ParseLogicStrs( void )
 
 	return bReturnVal;
 }
+
+/**
+* Parse the boolean logic strings into matrices.
+* Returns false if there was an error in the parsing.
+**/
+bool CMissionData::ParseLogicStrs( void )
+{
+	bool bReturnVal(true), bTemp(false);
+
+	if( m_SuccessLogicStr != "" )
+	{
+		bReturnVal = ParseLogicStr( &m_SuccessLogicStr, &m_SuccessLogic );
+		
+		if( !bReturnVal )
+			gameLocal.Error("Mission success logic failed to parse \n");
+	}
+	if( m_FailureLogicStr != "" )
+	{
+		bTemp = ParseLogicStr( &m_FailureLogicStr, &m_FailureLogic );
+		
+		if( !bTemp )
+			gameLocal.Error("Mission failure logic failed to parse \n");
+
+		bReturnVal = bReturnVal && bTemp;
+	}
+
+	return bReturnVal;
+}
+
 
 /**
 * Parse a string into a logic matrix.

@@ -662,6 +662,12 @@ protected:
 	**/
 	bool ParseLogicStr( idStr *input, SBoolParseNode *output );
 
+	/**
+	* Parse the success and failure logic strings if they are non-empty
+	* Returns true if parsing succeeded
+	**/
+	bool ParseLogicStrs( void );
+
 protected:
 	/**
 	* Set to true if any of the objective states have changed and objectives need updating
