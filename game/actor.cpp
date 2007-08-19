@@ -2418,6 +2418,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	int bodID(0);
 	idEntity *reroute = NULL;
 	idAFBody *StruckBody = NULL;
+	const idDict *damageDef = NULL;
+	int damage;
 
 	if( collision )
 	{
@@ -2449,12 +2451,12 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		return;
 	}
 
-	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+	damageDef = gameLocal.FindEntityDefDict( damageDefName );
 	if ( !damageDef ) {
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
-	int	damage = damageDef->GetInt( "damage" ) * damageScale;
+	damage = damageDef->GetInt( "damage" ) * damageScale;
 
 	damage = GetDamageForLocation( damage, location );
 
@@ -3997,7 +3999,7 @@ void idActor::Event_AttachTaskQueue(int queueID)
 	}
 	else 
 	{
-		scriptThread->Error("attachTaskQueue: Priority queue #%d does not exist");
+		scriptThread->Error("attachTaskQueue: Priority queue #%d does not exist", queueID);
 	}
 }
 
