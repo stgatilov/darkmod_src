@@ -158,7 +158,8 @@ class idGamePaks( idSetupBase ):
 		# NOTE: ew should have done with zipfile module
 		temp_dir = tempfile.mkdtemp( prefix = 'gamepak' )
 		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, 'gamex86.so' ) ) )
-		self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, 'gamex86.so' ) )
+		# Removed by Crispy: don't strip the .so; debugging symbols are useful
+		#self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, 'gamex86.so' ) )
 		self.SimpleCommand( 'echo 2 > %s' % ( os.path.join( temp_dir, 'binary.conf' ) ) )
 		self.SimpleCommand( 'cd %s ; zip %s gamex86.so binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ) ) )
 		self.SimpleCommand( 'rm -r %s' % temp_dir )
