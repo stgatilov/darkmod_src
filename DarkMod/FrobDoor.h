@@ -155,9 +155,9 @@ protected:
 	int							m_SoundPinSampleIndex;
 
 	/**
-	 * SoundTimerStarted increasedfor each soundsample that is started
+	 * SoundTimerStarted increased for each soundsample that is started
 	 */
-	int						m_SoundTimerStarted;
+	int							m_SoundTimerStarted;
 
 	/**
 	* Pointer to the door's partner in a double door.
@@ -173,6 +173,18 @@ protected:
 	 * Handle that is associated with this door, if the door has one.
 	 */
 	idEntityPtr<CFrobDoorHandle>	m_Doorhandle;
+
+	/**
+	 * These fractions define the stepping that a handle is moved for each pin,
+	 * while it is picked. This will define the boundary of the jiggling effect
+	 * to indicate the progress of the picking for each pin. The value is 
+	 * determined by the boundary that a handle is moving when it is tapped.
+	 * For example: If a handle rotates 45 degree (default for a regular door
+	 * handle) and the lock has 6 pins, then the fraction is 45/6 = 7.5 degrees
+	 * per successfully picked pin.
+	 */
+	idVec3						m_PinTranslationFraction;
+	idAngles					m_PinRotationFraction;
 
 private:
 };
