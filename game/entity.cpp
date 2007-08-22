@@ -2574,7 +2574,7 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
 		master->IsType( idAFEntity_Base::Type )
-		&& !IsType( idAFEntity_Base::Type )
+		&& !IsType( idAnimatedEntity::Type )
 		&& ( jointnum != INVALID_JOINT )
 		&& ( GetPhysics()->GetClipModel() != NULL )
 		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
@@ -2615,7 +2615,7 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
 		master->IsType( idAFEntity_Base::Type )
-		&& !IsType( idAFEntity_Base::Type )
+		&& !IsType( idAnimatedEntity::Type )
 		&& ( jointnum != INVALID_JOINT )
 		&& ( GetPhysics()->GetClipModel() != NULL )
 		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
@@ -2652,7 +2652,7 @@ void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated )
 	// Add the ent clipmodel to the AF if appropriate (not done if this ent is an AF)
 	if	( 
 		master->IsType( idAFEntity_Base::Type )
-		&& !IsType( idAFEntity_Base::Type )
+		&& !IsType( idAnimatedEntity::Type )
 		&& ( GetPhysics()->GetClipModel() != NULL )
 		&& ( GetPhysics()->GetClipModel()->IsTraceModel() )
 		&& ( (GetPhysics()->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) != 0 ) 
