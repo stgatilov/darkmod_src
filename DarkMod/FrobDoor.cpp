@@ -78,6 +78,8 @@ CFrobDoor::CFrobDoor(void)
 	m_FirstLockedPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
 	m_SoundTimerStarted = 0;
+	m_PinTranslationFractionFlag = false;
+	m_PinRotationFractionFlag = false;
 }
 
 CFrobDoor::~CFrobDoor(void)
@@ -114,10 +116,17 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 		}
 	}
 
+	savefile->WriteBool(m_PinTranslationFractionFlag);
 	savefile->WriteVec3(m_PinTranslationFraction);
+	savefile->WriteVec3(m_OriginalPosition);
+
+	savefile->WriteBool(m_PinRotationFractionFlag);
 	savefile->WriteFloat(m_PinRotationFraction.pitch);
 	savefile->WriteFloat(m_PinRotationFraction.yaw);
 	savefile->WriteFloat(m_PinRotationFraction.roll);
+	savefile->WriteFloat(m_OriginalAngle.pitch);
+	savefile->WriteFloat(m_OriginalAngle.yaw);
+	savefile->WriteFloat(m_OriginalAngle.roll);
 
 	savefile->WriteBool(m_Pickable);
 	savefile->WriteInt(m_FirstLockedPinIndex);
@@ -126,6 +135,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 	m_DoubleDoor.Save(savefile);
 	m_Doorhandle.Save(savefile);
+	m_Tap.Save(savefile);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -165,10 +175,17 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 		}
 	}
 
+	savefile->ReadBool(m_PinTranslationFractionFlag);
 	savefile->ReadVec3(m_PinTranslationFraction);
+	savefile->ReadVec3(m_OriginalPosition);
+
+	savefile->ReadBool(m_PinRotationFractionFlag);
 	savefile->ReadFloat(m_PinRotationFraction.pitch);
 	savefile->ReadFloat(m_PinRotationFraction.yaw);
 	savefile->ReadFloat(m_PinRotationFraction.roll);
+	savefile->ReadFloat(m_OriginalAngle.pitch);
+	savefile->ReadFloat(m_OriginalAngle.yaw);
+	savefile->ReadFloat(m_OriginalAngle.roll);
 
 	savefile->ReadBool(m_Pickable);
 	savefile->ReadInt(m_FirstLockedPinIndex);
@@ -177,6 +194,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 
 	m_DoubleDoor.Restore(savefile);
 	m_Doorhandle.Restore(savefile);
+	m_Tap.Restore(savefile);
 }
 
 void CFrobDoor::WriteToSnapshot( idBitMsgDelta &msg ) const
@@ -217,8 +235,27 @@ void CFrobDoor::Spawn( void )
 				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, str[i]);
 		}
 
-		m_PinRotationFraction = spawnArgs.GetAngles("rotate", "0 90 0")/m_Pins.Num();
+		m_PinRotationFraction = m_Rotate/m_Pins.Num();
+		// Check if the rotation is empty and set the flag.
+		{
+			idAngles cmp;
+			cmp.Zero();
+			if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+				m_PinRotationFractionFlag = false;
+			else
+				m_PinRotationFractionFlag = true;
+		}
+
 		m_PinTranslationFraction = spawnArgs.GetVector("translate", "0 0 0")/m_Pins.Num();
+		// Check if the translation is empty and set the flag.
+		{
+			idVec3 cmp;
+			cmp.Zero();
+			if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+				m_PinTranslationFractionFlag = false;
+			else
+				m_PinTranslationFractionFlag = true;
+		}
 	}
 
 	if(spawnArgs.GetString("master_open", "", str))
@@ -677,8 +714,10 @@ void CFrobDoor::SetDoorhandle(CFrobDoorHandle *h)
 	m_FrobPeers.AddUnique(h->name);
 	h->m_FrobPeers.AddUnique(name);
 	h->m_bFrobable = m_bFrobable;
-
 	h->Bind(this, true);
+
+	m_OriginalPosition = h->GetPhysics()->GetOrigin();
+	m_OriginalAngle = h->GetPhysics()->GetAxis().ToAngles();
 }
 
 void CFrobDoor::SetFrobbed(bool val)
@@ -769,6 +808,8 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	char type = cType;
 	int length = 0;
 	idStr pick;
+	idVec3 pos;
+	idAngles angle;
 
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
@@ -917,8 +958,19 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				pick_timeout = 0;
 
 			oPickSound = l[m_SoundPinSampleIndex];
-
 			m_SoundTimerStarted++;
+
+			if(m_PinRotationFractionFlag == true)
+			{
+				idAngles a = m_PinRotationFraction * m_FirstLockedPinIndex * m_SoundPinSampleIndex;
+				idMover *m = m_Tap.GetEntity();
+				if(m)
+				{
+					m->SetOrigin(m_OriginalPosition);
+					m->SetAngles(m_OriginalAngle);
+				}
+			}
+
 			PropSoundDirect(oPickSound, true, false );
 			idSoundShader const *shader = declManager->FindSound(oPickSound);
 			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
