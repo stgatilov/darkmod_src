@@ -1804,8 +1804,6 @@ void idPhysics_Player::CheckGround( void ) {
 			gameLocal.Printf( "%i:steep\n", c_pmove );
 		}
 
-		gameLocal.Printf("Too steep.\n");
-
 		// FIXME: if they can't slide down the slope, let them walk (sharp crevices)
 
 		// make sure we don't die from sliding down a steep slope
