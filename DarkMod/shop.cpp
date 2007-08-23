@@ -279,9 +279,17 @@ int CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) {
 		}
 		// put the item in the shop
 		if (quantity > 0) {
-			CShopItem* anItem = new CShopItem(FindByID(&itemDefs, itemName), quantity, price, persistent);
-			anItem->SetCanDrop(canDrop);
-			list->Append(anItem);
+			CShopItem* found = FindByID(&itemDefs, itemName);
+			if (found != NULL) 
+			{
+				CShopItem* anItem = new CShopItem(found, quantity, price, persistent);
+				anItem->SetCanDrop(canDrop);
+				list->Append(anItem);
+			}
+			else
+			{
+				gameLocal.Printf("Could not add item to shop: %s\n", itemName);
+			}
 		}
 		itemNum++;
 	}
