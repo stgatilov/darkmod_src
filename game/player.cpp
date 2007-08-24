@@ -109,6 +109,11 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
+// greebo: These events are handling the FOV.
+const idEventDef EV_Player_StartZoom("startZoom", "fff");
+const idEventDef EV_Player_StopZoom("endZoom", "f");
+const idEventDef EV_Player_ResetZoom("resetZoom", NULL);
+
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
 
@@ -162,6 +167,10 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 
 	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
+
+	EVENT( EV_Player_StartZoom,				idPlayer::Event_StartZoom )
+	EVENT( EV_Player_StopZoom,				idPlayer::Event_StopZoom )
+	EVENT( EV_Player_ResetZoom,				idPlayer::Event_ResetZoom )
 
 END_CLASS
 
@@ -9088,6 +9097,21 @@ void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 void idPlayer::Event_GiveHealthPool( float amount ) {
 	// Pass the call to the proper member method
 	GiveHealthPool(amount);
+}
+
+void idPlayer::Event_StartZoom(float duration, float startFOV, float endFOV)
+{
+	// TODO
+}
+
+void idPlayer::Event_StopZoom(float duration)
+{
+	// TODO
+}
+
+void idPlayer::Event_ResetZoom()
+{
+	// TODO
 }
 
 void idPlayer::FrobCheck( void )

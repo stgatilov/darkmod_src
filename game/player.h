@@ -917,6 +917,13 @@ private:
 	* greebo: This scriptevent routes the call to the member method "GiveHealthPool".
 	*/
 	void					Event_GiveHealthPool( float amount );
+
+	/**
+	 * greebo: These scriptevents handle the player zoom in/out behaviour.
+	 */
+	void					Event_StartZoom(float duration, float startFOV, float endFOV);
+	void					Event_StopZoom(float duration);
+	void					Event_ResetZoom();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
