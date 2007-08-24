@@ -1148,6 +1148,14 @@ void idMoveableItem::Spawn( void )
 	physicsObj.SetGravity( gameLocal.GetGravity() );
 	physicsObj.SetContents( CONTENTS_RENDERMODEL );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_MOVEABLECLIP );
+
+	// greebo: Allow the entityDef to override the clipmodel contents
+	if( spawnArgs.FindKey( "clipmodel_contents" ) )
+	{
+		DM_LOG(LC_ENTITY,LT_INFO).LogString("Setting clipmask of %s to %d again\r", name.c_str(), spawnArgs.GetInt("clipmodel_contents"));
+		physicsObj.SetContents( spawnArgs.GetInt("clipmodel_contents") );
+	}
+
 	// SR CONTENTS_RESONSE FIX
 	if( m_StimResponseColl->HasResponse() )
 		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
@@ -1385,9 +1393,16 @@ void idMoveableItem::Show( void )
 	idEntity::Show();
 	physicsObj.SetContents( CONTENTS_RENDERMODEL );
 
+	// greebo: Allow the entityDef to override the clipmodel contents
+	if( spawnArgs.FindKey( "clipmodel_contents" ) )
+	{
+		DM_LOG(LC_ENTITY,LT_INFO).LogString("Setting clipmask of %s to %d in show\r", name.c_str(), spawnArgs.GetInt("clipmodel_contents"));
+		GetPhysics()->SetContents( spawnArgs.GetInt("clipmodel_contents") );
+	}
+
 // SR CONTENTS_RESPONSE FIX:
 	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_RESPONSE );
+		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
 
 	trigger->SetContents( CONTENTS_FROBABLE );
 }

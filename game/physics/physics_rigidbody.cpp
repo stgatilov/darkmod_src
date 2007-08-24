@@ -446,7 +446,7 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += r.Cross(impulse);
 
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
+	//DM_LOG(LC_ENTITY, LT_INFO).LogString("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
 
 	// if no movement at all don't blow up
 	if ( collision.fraction < 0.0001f ) {
@@ -1293,23 +1293,17 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		self->GetMasterPosition( masterOrigin, masterAxis );
 
 		current.i.position = masterOrigin + current.localOrigin * masterAxis;
+		current.i.orientation = (isOrientated) ? current.localAxis * masterAxis : current.localAxis;
 
-		if ( isOrientated ) {
-			current.i.orientation = current.localAxis * masterAxis;
-		}
-		else {
-			current.i.orientation = current.localAxis;
-		}
-
-		bool isAF = self->GetBindMaster()->GetPhysics()->IsType(idPhysics_AF::Type);
-		
-		if (!isAF)
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Clipmask of %s: %d\r", self->name.c_str(), GetContents());
+		// greebo: Only check for collisions for "solid" bind slaves and if the master is non-AF
+		if ((clipModel->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) && !self->GetBindMaster()->GetPhysics()->IsType(idPhysics_AF::Type))
 		{
 			// For non-AF masters we check for collisions
 			gameLocal.push.ClipPush( collisionTrace, self, PUSHFL_CLIP|PUSHFL_APPLYIMPULSE, oldOrigin, oldAxis, current.i.position, current.i.orientation );
 
-			if (collisionTrace.fraction < 1.0f ) {
-
+			if (collisionTrace.fraction < 1.0f )
+			{
 				clipModel->Link( gameLocal.clip, self, 0, oldOrigin, oldAxis );
 				current.i.position = oldOrigin;
 				current.i.orientation = oldAxis;
