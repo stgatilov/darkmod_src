@@ -1152,7 +1152,6 @@ void idMoveableItem::Spawn( void )
 	// greebo: Allow the entityDef to override the clipmodel contents
 	if( spawnArgs.FindKey( "clipmodel_contents" ) )
 	{
-		DM_LOG(LC_ENTITY,LT_INFO).LogString("Setting clipmask of %s to %d again\r", name.c_str(), spawnArgs.GetInt("clipmodel_contents"));
 		physicsObj.SetContents( spawnArgs.GetInt("clipmodel_contents") );
 	}
 

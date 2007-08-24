@@ -1295,7 +1295,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		current.i.position = masterOrigin + current.localOrigin * masterAxis;
 		current.i.orientation = (isOrientated) ? current.localAxis * masterAxis : current.localAxis;
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Clipmask of %s: %d\r", self->name.c_str(), GetContents());
 		// greebo: Only check for collisions for "solid" bind slaves and if the master is non-AF
 		if ((clipModel->GetContents() & (CONTENTS_SOLID|CONTENTS_CORPSE)) && !self->GetBindMaster()->GetPhysics()->IsType(idPhysics_AF::Type))
 		{
