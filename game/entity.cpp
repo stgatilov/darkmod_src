@@ -7973,10 +7973,10 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 			if (category->isEmpty()) 
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Removing empty inventory category.\r");
-				// Switch the cursor to the next category
-				InventoryCursor()->GetNextCategory();
 				// Remove category from inventory
 				InventoryCursor()->Inventory()->removeCategory(category);
+				// Switch the cursor to the next category (after removal)
+				InventoryCursor()->GetNextCategory();
 			}
 		}
 		else

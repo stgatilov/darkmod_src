@@ -8682,7 +8682,7 @@ void idPlayer::inventoryDropItem()
 			}
 
 			// Always update the HUD, the drop script might have changed the inventory count itself.
-			UpdateHud();
+			inventoryChangeSelection(hud, true, item);
 		}
 	}
 }
