@@ -5022,7 +5022,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_47:	// Inventory previous item
 		{
-			// Check for an held grabber entity, which should be put back into the inventory
+			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
 				return;
 
@@ -5041,7 +5041,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_48:	// Inventory next item
 		{
-			// Check for an held grabber entity, which should be put back into the inventory
+			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
 				return;
 
@@ -5060,7 +5060,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_49:	// Inventory previous group
 		{
-			// Check for an held grabber entity, which should be put back into the inventory
+			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
 				return;
 
@@ -5079,7 +5079,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_50:	// Inventory next group
 		{
-			// Check for an held grabber entity, which should be put back into the inventory
+			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
 				return;
 
@@ -9440,7 +9440,7 @@ bool idPlayer::AddGrabberEntityToInventory()
 
 	if (heldEntity != NULL)
 	{
-		CInventoryItem* item = AddToInventory(heldEntity);
+		CInventoryItem* item = AddToInventory(heldEntity, hud);
 
 		if (item != NULL)
 		{
