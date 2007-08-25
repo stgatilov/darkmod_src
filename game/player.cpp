@@ -111,7 +111,7 @@ const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
 // greebo: These events are handling the FOV.
 const idEventDef EV_Player_StartZoom("startZoom", "fff");
-const idEventDef EV_Player_StopZoom("endZoom", "f");
+const idEventDef EV_Player_EndZoom("endZoom", "f");
 const idEventDef EV_Player_ResetZoom("resetZoom", NULL);
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
@@ -169,7 +169,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
 
 	EVENT( EV_Player_StartZoom,				idPlayer::Event_StartZoom )
-	EVENT( EV_Player_StopZoom,				idPlayer::Event_StopZoom )
+	EVENT( EV_Player_EndZoom,				idPlayer::Event_EndZoom )
 	EVENT( EV_Player_ResetZoom,				idPlayer::Event_ResetZoom )
 
 END_CLASS
@@ -901,6 +901,9 @@ void idPlayer::Spawn( void )
 	//FIX: Set the walkspeed back to the stored value.
 	pm_walkspeed.SetFloat( gameLocal.m_walkSpeed );
 	SetupInventory();
+
+	// greebo: Initialise the default fov.
+	zoomFov.Init(gameLocal.time, 0, g_fov.GetFloat(), g_fov.GetFloat());
 }
 
 CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
@@ -6719,11 +6722,17 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return DefaultFov();
 	}
 
-	if ( zoomFov.IsDone( gameLocal.time ) ) {
+	// greebo: TODO: Add immobilization check for zooming. The player has to be prevented from
+	// using the spyglass zoom functionality when a weapon is used.
+
+	/*if ( zoomFov.IsDone( gameLocal.time ) ) {
 		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
 	} else {
 		fov = zoomFov.GetCurrentValue( gameLocal.time );
-	}
+	}*/
+
+	// Retrieve the current zoom value for the given game time
+	fov = zoomFov.GetCurrentValue( gameLocal.time );
 
 	// bound normal viewsize
 	if ( fov < 1 ) {
@@ -9101,17 +9110,20 @@ void idPlayer::Event_GiveHealthPool( float amount ) {
 
 void idPlayer::Event_StartZoom(float duration, float startFOV, float endFOV)
 {
-	// TODO
+	// greebo: Start the new transition from startFOV >> endFOV
+	zoomFov.Init(gameLocal.time, duration, startFOV, endFOV);
 }
 
-void idPlayer::Event_StopZoom(float duration)
+void idPlayer::Event_EndZoom(float duration)
 {
-	// TODO
+	// greebo: Make a transition from the current FOV back to the default FOV.
+	zoomFov.Init(gameLocal.time, duration, zoomFov.GetCurrentValue(gameLocal.time), DefaultFov());
 }
 
 void idPlayer::Event_ResetZoom()
 {
-	// TODO
+	// Reset the FOV to the default values
+	zoomFov.Init(gameLocal.time, 0, DefaultFov(), DefaultFov());
 }
 
 void idPlayer::FrobCheck( void )

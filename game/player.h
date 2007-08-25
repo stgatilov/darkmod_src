@@ -922,7 +922,7 @@ private:
 	 * greebo: These scriptevents handle the player zoom in/out behaviour.
 	 */
 	void					Event_StartZoom(float duration, float startFOV, float endFOV);
-	void					Event_StopZoom(float duration);
+	void					Event_EndZoom(float duration);
 	void					Event_ResetZoom();
 };
 
