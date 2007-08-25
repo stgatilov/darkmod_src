@@ -559,7 +559,8 @@ bool idAF::LoadBody( const idDeclAF_Body *fb, const idJointMat *joints ) {
 	if ( fb->linearFriction != -1.0f ) {
 		body->SetFriction( fb->linearFriction, fb->angularFriction, fb->contactFriction );
 	}
-	body->SetClipMask( fb->clipMask );
+	// TDM FIX: Remove MOVEABLE_CLIP flag that the parser seems to add in by default
+	body->SetClipMask( fb->clipMask & ~CONTENTS_MOVEABLECLIP );
 	body->SetSelfCollision( fb->selfCollision );
 
 	if ( fb->jointName == "origin" ) {
