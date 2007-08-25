@@ -124,6 +124,7 @@ const idEventDef EV_TDM_pqNew( "pqNew", NULL, 'd' );
 const idEventDef EV_TDM_pqDelete( "pqDelete", "d" );
 const idEventDef EV_TDM_pqPush( "pqPush", "dsd" );
 const idEventDef EV_TDM_pqPeek( "pqPeek", "d", 's' );
+const idEventDef EV_TDM_pqPeekPriority( "pqPeekPriority", "d", 'd' );
 const idEventDef EV_TDM_pqPop( "pqPop", "d", 's' );
 
 CLASS_DECLARATION( idClass, idThread )
@@ -221,6 +222,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_TDM_pqDelete,					idThread::Event_pqDelete )
 	EVENT( EV_TDM_pqPush,					idThread::Event_pqPush )
 	EVENT( EV_TDM_pqPeek,					idThread::Event_pqPeek )
+	EVENT( EV_TDM_pqPeekPriority,				idThread::Event_pqPeekPriority )
 	EVENT( EV_TDM_pqPop,					idThread::Event_pqPop )
 
 END_CLASS
@@ -1985,7 +1987,7 @@ void idThread::Event_pqDelete( int queueID )
 {
 	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
 	{
-		Error("pqPop: Priority queue #%d does not exist");
+		Error("pqPop: Priority queue #%d does not exist", queueID);
 		return;
 	}
 	
@@ -1997,7 +1999,7 @@ void idThread::Event_pqPush( int queueID, const char* task, int priority )
 {
 	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
 	{
-		Error("pqPush: Priority queue #%d does not exist");
+		Error("pqPush: Priority queue #%d does not exist", queueID);
 		return;
 	}
 	
@@ -2008,18 +2010,29 @@ void idThread::Event_pqPeek( int queueID )
 {
 	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
 	{
-		Error("pqPeek: Priority queue #%d does not exist");
+		Error("pqPeek: Priority queue #%d does not exist", queueID);
 		return;
 	}
 	
 	ReturnString(gameLocal.m_PriorityQueues[queueID]->Peek());
 }
 
+void idThread::Event_pqPeekPriority( int queueID )
+{
+	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
+	{
+		Error("pqPeekPriority: Priority queue #%d does not exist", queueID);
+		return;
+	}
+	
+	ReturnInt(gameLocal.m_PriorityQueues[queueID]->PeekPriority());
+}
+
 void idThread::Event_pqPop( int queueID )
 {
 	if (queueID < 0 || queueID >= (int)gameLocal.m_PriorityQueues.Num())
 	{
-		Error("pqPop: Priority queue #%d does not exist");
+		Error("pqPop: Priority queue #%d does not exist", queueID);
 		return;
 	}
 	

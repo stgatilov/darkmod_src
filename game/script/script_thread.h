@@ -214,6 +214,7 @@ private:
 	void						Event_pqDelete(int pqueueID);
 	void						Event_pqPush( int queueID, const char* task, int priority );
 	void						Event_pqPeek( int queueID );
+	void						Event_pqPeekPriority( int queueID );
 	void						Event_pqPop( int queueID );
 
 
