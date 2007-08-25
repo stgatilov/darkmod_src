@@ -6722,17 +6722,11 @@ float idPlayer::CalcFov( bool honorZoom ) {
 		return DefaultFov();
 	}
 
-	// greebo: TODO: Add immobilization check for zooming. The player has to be prevented from
-	// using the spyglass zoom functionality when a weapon is used.
-
-	/*if ( zoomFov.IsDone( gameLocal.time ) ) {
-		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : DefaultFov();
+	if ( zoomFov.IsDone( gameLocal.time ) ) {
+		fov = ( honorZoom && usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ? weapon.GetEntity()->GetZoomFov() : zoomFov.GetCurrentValue(gameLocal.time);
 	} else {
 		fov = zoomFov.GetCurrentValue( gameLocal.time );
-	}*/
-
-	// Retrieve the current zoom value for the given game time
-	fov = zoomFov.GetCurrentValue( gameLocal.time );
+	}
 
 	// bound normal viewsize
 	if ( fov < 1 ) {
