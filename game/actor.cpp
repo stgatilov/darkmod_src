@@ -570,6 +570,7 @@ void idActor::Spawn( void )
 
 	SetupDamageGroups();
 	SetupHead();
+	ParseAttachmentsAF();
 
 	// clear the bind anim
 	animator.ClearAllAnims( gameLocal.time, 0 );

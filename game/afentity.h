@@ -37,6 +37,19 @@ public:
 	virtual void			Present( void );
 
 protected:
+	/**
+	* Parsing attachments happens at a different time in the spawn routine for
+	* idAFEntities.  To accomplish this, the function is overloaded to do
+	* nothing and a new function is called at the proper time.
+	**/
+	virtual void			ParseAttachments( void );
+
+	/**
+	* Same as idEntity::ParseAttachments, but called at a different point in spawn routine
+	**/
+	virtual void			ParseAttachmentsAF( void );
+
+protected:
 	idPhysics_AF			physicsObj;
 
 	void					SetModelForId( int id, const idStr &modelName );
@@ -282,6 +295,18 @@ protected:
 	* If the AF physics pointer is NULL, it returns 0.
 	**/
 	void					Event_GetNumBodies( void );
+
+	/**
+	* Parsing attachments happens at a different time in the spawn routine for
+	* idAFEntities.  To accomplish this, the function is overloaded to do
+	* nothing and a new function is called at the proper time.
+	**/
+	virtual void			ParseAttachments( void );
+
+	/**
+	* Same as idEntity::ParseAttachments, but called at a different point in spawn routine
+	**/
+	virtual void			ParseAttachmentsAF( void );
 
 	/**
 	* Set the linear and angular velocities of a particular body given by ID argument

@@ -675,7 +675,6 @@ void idEntity::Spawn( void )
 	const idKeyValue	*networkSync;
 	const char			*classname;
 	const char			*scriptObjectName;
-	idEntity			*ent;
 
 	gameLocal.RegisterEntity( this );
 
@@ -780,27 +779,7 @@ void idEntity::Spawn( void )
 	}
 
 	//TDM: Spawn and attach any attachments
-	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
-	while ( kv ) {
-		idDict args;
-
-		args.Set( "classname", kv->GetValue().c_str() );
-
-		// make items non-touchable so the player can't take them out of the character's hands
-		args.Set( "no_touch", "1" );
-
-		// don't let them drop to the floor
-		args.Set( "dropToFloor", "0" );
-		
-		gameLocal.SpawnEntityDef( args, &ent );
-		if ( !ent ) {
-			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
-		} else {
-			Attach( ent );
-		}
-		kv = spawnArgs.MatchPrefix( "def_attach", kv );
-	}
-
+	ParseAttachments();
 
 	// auto-start a sound on the entity
 	if ( refSound.shader && !refSound.waitfortrigger ) {
@@ -8262,3 +8241,28 @@ Quit:
 	return;
 }
 
+void idEntity::ParseAttachments( void )
+{
+	idEntity *ent = NULL;
+
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
+	while ( kv ) {
+		idDict args;
+
+		args.Set( "classname", kv->GetValue().c_str() );
+
+		// make items non-touchable so the player can't take them out of the character's hands
+		args.Set( "no_touch", "1" );
+
+		// don't let them drop to the floor
+		args.Set( "dropToFloor", "0" );
+		
+		gameLocal.SpawnEntityDef( args, &ent );
+		if ( !ent ) {
+			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
+		} else {
+			Attach( ent );
+		}
+		kv = spawnArgs.MatchPrefix( "def_attach", kv );
+	}
+}

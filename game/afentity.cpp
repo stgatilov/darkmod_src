@@ -118,6 +118,26 @@ void idMultiModelAF::Think( void ) {
 	Present();
 }
 
+/*
+======================
+idMultiModelAF::ParseAttachments
+======================
+*/
+void idMultiModelAF::ParseAttachments( void )
+{
+	return;
+}
+
+/*
+======================
+idMultiModelAF::ParseAttachmentsAF
+======================
+*/
+void idMultiModelAF::ParseAttachmentsAF( void )
+{
+	idEntity::ParseAttachments();
+}
+
 
 /*
 ===============================================================================
@@ -226,6 +246,8 @@ void idChain::Spawn( void ) {
 	SetPhysics( &physicsObj );
 
 	BuildChain( "link", origin, linkLength, linkWidth, density, numLinks, !drop );
+
+	ParseAttachmentsAF();
 }
 
 /*
@@ -1134,19 +1156,27 @@ bool idAFEntity_Base::CollidesWithTeam( void )
 
 void idAFEntity_Base::AddEntByJoint( idEntity *ent, jointHandle_t jointNum )
 {
-	int bodID;
+	int bodID(0);
 	
-	bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
-	AddEntByBody( ent, bodID );
+	if( af.IsLoaded() )
+	{
+		bodID = BodyForClipModelId( JOINT_HANDLE_TO_CLIPMODEL_ID( jointNum ) );
+		AddEntByBody( ent, bodID );
+	}
 }
 
 void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 {
-	float EntMass, AFMass, MassOut, density;
-	idVec3 COM, orig;
+	float EntMass(0.0), AFMass(0.0), MassOut(0.0), density(0.0);
+	idVec3 COM(vec3_zero), orig(vec3_zero);
 	idMat3 inertiaTensor, axis;
-	idClipModel *EntClip, *NewClip;
+	idClipModel *EntClip(NULL), *NewClip(NULL);
 	int newBodID(0);
+	SAddedEnt Entry;
+	idStr AddName;
+
+	if( !af.IsLoaded() )
+		goto Quit;
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
 
@@ -1162,7 +1192,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	{
 		EntMass = 1.0f;
 	}
-	AFMass = GetPhysics()->GetMass();
+	AFMass = GetAFPhysics()->GetMass();
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. \r" );
 
 	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
@@ -1184,9 +1214,9 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 
 	// Add the mass in the AF Structure
 	density = idMath::Fabs( EntMass / MassOut );
-	GetPhysics()->SetMass( AFMass + EntMass );
+	GetAFPhysics()->SetMass( AFMass + EntMass );
 	
-	idStr AddName = ent->name + idStr(gameLocal.time);
+	AddName = ent->name + idStr(gameLocal.time);
 
 	idAFBody *bodyExist = GetAFPhysics()->GetBody(bodID);
 	idAFBody *body = new idAFBody( AddName, NewClip, density );
@@ -1200,7 +1230,6 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added.\r");
 
 	// Add to list
-	SAddedEnt Entry;
 	Entry.ent = ent;
 	Entry.bodyName = AddName;
 	Entry.contents = EntClip->GetContents();
@@ -1218,6 +1247,9 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	EntClip->SetContents( SetContents );
 		
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
+
+Quit:
+	return;
 }
 
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
@@ -1255,6 +1287,26 @@ void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idV
 		reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
 	else
 		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+}
+
+/*
+======================
+idAFEntity_Base::ParseAttachments
+======================
+*/
+void idAFEntity_Base::ParseAttachments( void )
+{
+	return;
+}
+
+/*
+======================
+idAFEntity_Base::ParseAttachmentsAF
+======================
+*/
+void idAFEntity_Base::ParseAttachmentsAF( void )
+{
+	idEntity::ParseAttachments();
 }
 
 /*
@@ -1594,6 +1646,8 @@ void idAFEntity_Generic::Spawn( void ) {
 
 	SetPhysics( af.GetPhysics() );
 
+	ParseAttachmentsAF();
+
 	af.GetPhysics()->PutToRest();
 	if ( !spawnArgs.GetBool( "nodrop", "0" ) ) {
 		af.GetPhysics()->Activate();
@@ -1674,14 +1728,16 @@ idAFEntity_WithAttachedHead::~idAFEntity_WithAttachedHead() {
 idAFEntity_WithAttachedHead::Spawn
 ================
 */
-void idAFEntity_WithAttachedHead::Spawn( void ) {
-	SetupHead();
-
+void idAFEntity_WithAttachedHead::Spawn( void ) 
+{
 	LoadAF();
 
 	SetCombatModel();
 
 	SetPhysics( af.GetPhysics() );
+
+	SetupHead();
+	ParseAttachmentsAF();
 
 	af.GetPhysics()->PutToRest();
 	if ( !spawnArgs.GetBool( "nodrop", "0" ) ) {
@@ -1948,6 +2004,8 @@ void idAFEntity_Vehicle::Spawn( void ) {
 	SetCombatModel();
 
 	SetPhysics( af.GetPhysics() );
+
+	ParseAttachmentsAF();
 
 	fl.takedamage = true;
 
@@ -2652,6 +2710,8 @@ void idAFEntity_SteamPipe::Spawn( void ) {
 
 	SetPhysics( af.GetPhysics() );
 
+	ParseAttachmentsAF();
+
 	fl.takedamage = true;
 
 	steamBodyName = spawnArgs.GetString( "steamBody", "" );
@@ -2809,6 +2869,8 @@ void idAFEntity_ClawFourFingers::Spawn( void ) {
 	af.GetPhysics()->LockWorldConstraints( true );
 	af.GetPhysics()->SetForcePushable( true );
 	SetPhysics( af.GetPhysics() );
+
+	ParseAttachmentsAF();
 
 	fl.takedamage = true;
 

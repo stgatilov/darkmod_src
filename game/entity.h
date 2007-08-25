@@ -741,6 +741,11 @@ protected:
 	void FrobHighlight( bool bVal );
 
 	/**
+	* Parses spawnarg list of attachments and binds them on to the ent
+	**/
+	virtual void ParseAttachments( void );
+
+	/**
 	* Bind to the same object that the "other" argument is bound to
 	**/
 	void					Event_CopyBind( idEntity *other );
