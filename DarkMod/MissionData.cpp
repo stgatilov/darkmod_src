@@ -373,7 +373,7 @@ void CMissionData::MissionEvent
 	}
 
 	// Update AI stats, don't add to stats if playerresponsible is false
-	// Stas for KOs, kills, body found, item found
+	// Stats for KOs, kills, body found, item found
 	if( ( ( CompType == COMP_KILL && EntDat1->bIsAI ) || CompType == COMP_KO
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) && bBoolArg )
@@ -1510,8 +1510,29 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	Parms.valueSuperGroup = OverallVal;
 
 	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
+}
 
-	return;
+void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal)
+{
+	SObjEntParms Parms1, Parms2;
+	bool bPlayerResponsible(false);
+
+	if( Alerted )
+	{
+		FillParmsData( Alerted, &Parms1 );
+		// The alert value is stored in the alerted entity data packet
+		Parms1.value = AlertVal;
+	}
+
+	if( Alerter )
+	{
+		FillParmsData( Alerter, &Parms2 );
+
+		if( Alerter == gameLocal.GetLocalPlayer() )
+			bPlayerResponsible = true;
+	}
+
+	MissionEvent( COMP_ALERT, &Parms1, &Parms2, bPlayerResponsible );
 }
 
 int CMissionData::GetTotalLoot( void )

@@ -588,6 +588,12 @@ public:
 	**/
 	void InventoryCallback( idEntity *ent, idStr ItemName, int value, int OverallVal = 1, bool bPickedUp = false );
 
+	/**
+	* Called when AI are alerted
+	* The alert value is the alert state, e.g. state 0 = no significant alert, 4 = combat
+	**/
+	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
+
 	int GetTotalLoot( void );
 	void ChangeTotalLoot( int amount );
 
