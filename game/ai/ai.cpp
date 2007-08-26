@@ -7357,6 +7357,15 @@ void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 		if (shader && !strstr(shader->GetDescription(), "nolipsync"))
 		{
 			// The sound exists and isn't marked "nolipsync", so start the lipsync
+			
+			// Get the default animation name if necessary
+			if (animName==NULL || animName[0]=='\0')
+			{
+				// Not specified; get the default from a spawnarg.
+				// If even the spawnarg doesn't exist, revert to talk.
+				animName = spawnArgs.GetString("lipsync_anim_name","talk");
+			}
+			
 			m_lipSyncActive = true;
 			m_lipSyncAnim = GetAnim( ANIMCHANNEL_HEAD, animName );
 			m_lipSyncEndTimer = gameLocal.time + duration;
