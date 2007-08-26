@@ -968,6 +968,12 @@ protected:
 	**/
 	void					Knockout( void );
 
+	/**
+	* Drop certain attachments and def_drop items when transitioning into a ragdoll state
+	* Called by idActor::Killed and idActor::KnockedOut
+	**/
+	void					DropOnRagdoll( void );
+
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
 	bool					ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const;
