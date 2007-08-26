@@ -3627,9 +3627,14 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	if (newAlertLevel < thresh_3) SheathWeapon();
 	else DrawWeapon();
 
-	// How long should this alert level last?
+	// How long should this alert level last, and which alert index should we be in now?
 	if (newAlertLevel >= thresh_3)
 	{
+		if (newAlertLevel >= thresh_combat) {
+			AI_AlertIndex = 4;
+		} else {
+			AI_AlertIndex = 3;
+		}
 		AI_currentAlertLevelDuration = atime3;
 		grace_time = m_gracetime_3;
 		grace_frac = m_gracefrac_3;
@@ -3637,6 +3642,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_2)
 	{
+		AI_AlertIndex = 2;
 		AI_currentAlertLevelDuration = atime2;
 		grace_time = m_gracetime_2;
 		grace_frac = m_gracefrac_2;
@@ -3644,6 +3650,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_1)
 	{
+		AI_AlertIndex = 1;
 		AI_currentAlertLevelDuration = atime1;
 		grace_time = m_gracetime_1;
 		grace_frac = m_gracefrac_1;
@@ -3651,6 +3658,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	}
 	else
 	{
+		AI_AlertIndex = 0;
 		AI_currentAlertLevelDuration = 0.0;
 		grace_time = 0.0;
 		grace_frac = 0.0;
