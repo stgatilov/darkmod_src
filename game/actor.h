@@ -446,6 +446,10 @@ private:
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
+	/**
+	* Attaches the entity and also returns its index in the attachment list
+	**/
+	void					Event_Attach( idEntity *ent );
 	void					Event_GetAttachment( int ind );
 	void					Event_GetNumAttachments( void );
 	void					Event_AttachTaskQueue(int queueID);

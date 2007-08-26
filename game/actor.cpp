@@ -363,7 +363,7 @@ const idEventDef AI_GetHead( "getHead", NULL, 'e' );
 const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
 
 // Attachment Related Events:
-const idEventDef AI_Attach( "attach", "e" );
+const idEventDef AI_Attach( "attach", "e", 'd' );
 const idEventDef AI_ReAttach( "reAttach", "dsvv" );
 const idEventDef AI_DropAttachment( "dropAttachment", "d" );
 const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
@@ -418,7 +418,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetHead,					idActor::Event_GetHead )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
 	
-	EVENT ( AI_Attach,					idActor::Attach )
+	EVENT ( AI_Attach,					idActor::Event_Attach )
 	EVENT ( AI_ReAttach,				idActor::ReAttach )
 	EVENT ( AI_DropAttachment,			idActor::DropAttachment )
 	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
@@ -2850,7 +2850,6 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles
 	jointHandle_t	joint;
 	idAttachInfo	*attachment;
 
-	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
 		// TODO: log invalid index error
@@ -2901,7 +2900,6 @@ void idActor::ShowAttachment( int ind, bool bShow )
 {
 	idEntity *ent( NULL );
 
-	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
 		// TODO: log invalid index error
@@ -2929,7 +2927,6 @@ void idActor::DropAttachment( int ind )
 {
 	idEntity *ent = NULL;
 
-	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
 		// TODO: log invalid index error
@@ -2957,7 +2954,6 @@ bool idActor::GetAttachInfo( int ind, idStr &jointName, idVec3 &offset,
 	bool bReturnVal = false;
 	idEntity *ent = NULL;
 
-	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
 		// TODO: log invalid index error
@@ -2986,7 +2982,6 @@ idEntity *idActor::GetAttachedEnt( int ind )
 {
 	idEntity *ent = NULL;
 
-	ind--;
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
 		// TODO: log invalid index error
@@ -3888,6 +3883,17 @@ idActor::Event_GetEyePos
 void idActor::Event_GetEyePos( void )
 {
 	idThread::ReturnVector( GetEyePosition() );
+}
+
+/*
+=====================
+idActor::Event_Attach
+=====================
+*/
+void idActor::Event_Attach( idEntity *ent )
+{
+	Attach( ent );
+	idThread::ReturnInt( m_attachments.Num() );
 }
 
 /*
