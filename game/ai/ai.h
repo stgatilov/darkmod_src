@@ -737,6 +737,12 @@ protected:
 	idScriptFloat			AI_currentAlertLevelStartTime;
 
 	/**
+	* Boolean scriptvars set to true if either ranged or melee weapons are drawn
+	**/
+	idScriptBool			AI_bMeleeWeapDrawn;
+	idScriptBool			AI_bRangedWeapDrawn;
+
+	/**
 	* This tracks if the AI has information about any enemies having been spotted.
 	* It is used for stateful communication with other AIs and can also influence behaivior.
 	**/

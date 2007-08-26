@@ -1728,6 +1728,9 @@ void idAI::LinkScriptVariables( void )
 	AI_currentAlertLevelDuration.LinkTo(	scriptObject, "AI_currentAlertLevelDuration");
 	AI_currentAlertLevelStartTime.LinkTo(	scriptObject, "AI_currentAlertLevelStartTime");
 
+	AI_bMeleeWeapDrawn.LinkTo( scriptObject, "AI_bMeleeWeapDrawn" );
+	AI_bRangedWeapDrawn.LinkTo( scriptObject, "AI_bRangedWeapDrawn" );
+
 	stateOfMind_b_enemiesHaveBeenSeen.LinkTo ( scriptObject, "stateOfMind_b_enemiesHaveBeenSeen" );
 	stateOfMind_b_itemsHaveBeenStolen.LinkTo ( scriptObject, "stateOfMind_b_itemsHaveBeenStolen" );
 	stateOfMind_count_evidenceOfIntruders.LinkTo ( scriptObject, "stateOfMind_count_evidenceOfIntruders" );
@@ -7411,7 +7414,7 @@ void idAI::SheathWeapon()
 void idAI::DropOnRagdoll( void )
 {
 	idEntity *ent = NULL;
-	bool bDrop(false), bDropWhenDrawn(false), bSetSolid(false), bSetCorpse(false);
+	bool bDrop(false), bDropWhenDrawn(false), bSetSolid(false), bSetCorpse(false), bSetFrob(false);
 	int mask(0);
 	// Id style def_drops
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_drops", NULL );
@@ -7433,18 +7436,26 @@ void idAI::DropOnRagdoll( void )
 		if( !ent || !m_attachments[i].ent.IsValid() )
 			continue;
 
-		bDrop = ent->spawnArgs.GetBool( "drops_on_ragdoll" );
-		bDropWhenDrawn = ent->spawnArgs.GetBool( "drops_when_drawn" );
-		bSetSolid = ent->spawnArgs.GetBool( "drop_add_cont_solid" );
-		bSetCorpse = ent->spawnArgs.GetBool( "drop_add_cont_corpse" );
+		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
+		bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
+		bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
+		bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
+		bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
+
 
 		if( !bDrop )
 			continue;
 
 		if( bDropWhenDrawn )
 		{
-		// TODO: Check if this weapon is drawn here
-			if( !true )
+			bool bIsMelee(false), bIsRanged(false);
+
+			bIsMelee = ent->spawnArgs.GetBool( "is_weapon_melee" );
+			if( bIsMelee && !AI_bMeleeWeapDrawn )
+				continue;
+
+			bIsRanged = ent->spawnArgs.GetBool( "is_weapon_ranged" );
+			if( bIsRanged && !AI_bRangedWeapDrawn )
 				continue;
 		}
 
@@ -7459,7 +7470,9 @@ void idAI::DropOnRagdoll( void )
 		if( mask )
 			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | mask );
 
+		if( bSetFrob )
+			ent->m_bFrobable = true;
+
 		ent->GetPhysics()->Activate();
 	}
-
 }
