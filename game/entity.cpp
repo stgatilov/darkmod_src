@@ -68,6 +68,12 @@ const idEventDef EV_GetLinearVelocity( "getLinearVelocity", NULL, 'v' );
 const idEventDef EV_SetLinearVelocity( "setLinearVelocity", "v" );
 const idEventDef EV_GetAngularVelocity( "getAngularVelocity", NULL, 'v' );
 const idEventDef EV_SetAngularVelocity( "setAngularVelocity", "v" );
+// greebo: Accessor events for the clipmask/contents flags
+const idEventDef EV_SetContents( "setContents", "f" );
+const idEventDef EV_GetContents( "getContents", NULL, 'f' );
+const idEventDef EV_SetClipMask( "setClipMask", "d" );
+const idEventDef EV_GetClipMask( "getClipMask", NULL, 'd' );
+
 const idEventDef EV_GetSize( "getSize", NULL, 'v' );
 const idEventDef EV_SetSize( "setSize", "vv" );
 const idEventDef EV_GetMins( "getMins", NULL, 'v' );
@@ -248,6 +254,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetLinearVelocity,	idEntity::Event_SetLinearVelocity )
 	EVENT( EV_GetAngularVelocity,	idEntity::Event_GetAngularVelocity )
 	EVENT( EV_SetAngularVelocity,	idEntity::Event_SetAngularVelocity )
+
+	EVENT( EV_SetContents,			idEntity::Event_SetContents )
+	EVENT( EV_GetContents,			idEntity::Event_GetContents )
+	EVENT( EV_SetClipMask,			idEntity::Event_SetClipMask )
+	EVENT( EV_GetClipMask,			idEntity::Event_GetClipMask )
+
 	EVENT( EV_GetSize,				idEntity::Event_GetSize )
 	EVENT( EV_SetSize,				idEntity::Event_SetSize )
 	EVENT( EV_GetMins,				idEntity::Event_GetMins)
@@ -8265,4 +8277,24 @@ void idEntity::ParseAttachments( void )
 		}
 		kv = spawnArgs.MatchPrefix( "def_attach", kv );
 	}
+}
+
+void idEntity::Event_SetContents(const int contents)
+{
+	GetPhysics()->SetContents(contents);
+}
+
+void idEntity::Event_GetContents()
+{
+	idThread::ReturnInt(GetPhysics()->GetContents());
+}
+
+void idEntity::Event_SetClipMask(const int clipMask)
+{
+	GetPhysics()->SetClipMask(clipMask);
+}
+
+void idEntity::Event_GetClipMask()
+{
+	idThread::ReturnInt(GetPhysics()->GetClipMask());
 }

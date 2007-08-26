@@ -958,6 +958,12 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetLinearVelocity( void );
 	void					Event_SetAngularVelocity( const idVec3 &velocity );
 	void					Event_GetAngularVelocity( void );
+
+	void					Event_SetContents(const int contents);
+	void					Event_GetContents();
+	void					Event_SetClipMask(const int clipMask);
+	void					Event_GetClipMask();
+
 	void					Event_SetSize( const idVec3 &mins, const idVec3 &maxs );
 	void					Event_GetSize( void );
 	void					Event_GetMins( void );
