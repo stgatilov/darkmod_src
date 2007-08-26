@@ -3615,6 +3615,9 @@ void idAI::Event_SetAudThresh( float val )
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
 	bool bool_alertRising = false;
+	
+	if (AI_DEAD || AI_KNOCKEDOUT) return;
+	
 	if (newAlertLevel > AI_AlertNum) bool_alertRising = true;
 	AI_AlertNum = newAlertLevel;
 	
