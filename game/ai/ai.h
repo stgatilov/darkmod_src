@@ -467,6 +467,11 @@ public:
 	void SetAcuity( const char *type, float acuity );
 
 	/**
+	* Calls objective system when the AI finds a body
+	**/
+	void FoundBody( idEntity *body );
+
+	/**
 	* Get the volume modifier for a given movement type
 	* Use the same function as idPlayer::GetMovementVolMod.
 	* Unfortunately this is exactly the same as idPlayer::GetMovementVolMod
@@ -1157,6 +1162,7 @@ protected:
 	void					Event_HeardSound( int ignore_team );
 	void					Event_SetEnemy( idEntity *ent );
 	void					Event_ClearEnemy( void );
+	void					Event_FoundBody( idEntity *body );
 	void					Event_MuzzleFlash( const char *jointname );
 	void					Event_CreateMissile( const char *jointname );
 	void					Event_AttackMissile( const char *jointname );
