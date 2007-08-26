@@ -1175,8 +1175,7 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	SAddedEnt Entry;
 	idStr AddName;
 
-	if( !af.IsLoaded() )
-		goto Quit;
+	if( !af.IsLoaded() ) return;
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AddEntByBody: Called, ent %s, body %d\r", ent->name.c_str(), bodID );
 
