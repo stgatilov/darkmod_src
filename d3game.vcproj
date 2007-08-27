@@ -1003,6 +1003,12 @@
 					RelativePath=".\DarkMod\Strip.cpp">
 				</File>
 				<File
+					RelativePath=".\game\ai\tdmAASFindEscape.cpp">
+				</File>
+				<File
+					RelativePath=".\game\ai\tdmAASFindEscape.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\ToUpper.cpp">
 				</File>
 				<Filter
