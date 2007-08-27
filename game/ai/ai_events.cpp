@@ -70,6 +70,8 @@ const idEventDef AI_MoveToCoverFrom( "moveToCoverFrom", "E" );
 const idEventDef AI_MoveToEnemy( "moveToEnemy" );
 const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight" );
 const idEventDef AI_MoveOutOfRange( "moveOutOfRange", "ef" );
+// greebo: Flee from an entity
+const idEventDef AI_Flee( "flee", "ef" );
 const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", "es" );
 const idEventDef AI_Wander( "wander" );
 const idEventDef AI_MoveToEntity( "moveToEntity", "e" );
@@ -434,6 +436,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_MoveToEnemy,						idAI::Event_MoveToEnemy )
 	EVENT( AI_MoveToEnemyHeight,				idAI::Event_MoveToEnemyHeight )
 	EVENT( AI_MoveOutOfRange,					idAI::Event_MoveOutOfRange )
+	EVENT( AI_Flee,								idAI::Event_Flee )
 	EVENT( AI_MoveToAttackPosition,				idAI::Event_MoveToAttackPosition )
 	EVENT( AI_Wander,							idAI::Event_Wander )
 	EVENT( AI_MoveToEntity,						idAI::Event_MoveToEntity )
@@ -1484,6 +1487,16 @@ idAI::Event_MoveOutOfRange
 void idAI::Event_MoveOutOfRange( idEntity *entity, float range ) {
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 	MoveOutOfRange( entity, range );
+}
+
+/*
+=====================
+idAI::Event_Flee
+=====================
+*/
+void idAI::Event_Flee(idEntity *entityToFleeFrom, float maxDist) {
+	StopMove(MOVE_STATUS_DEST_NOT_FOUND);
+	Flee(entityToFleeFrom, maxDist);
 }
 
 /*

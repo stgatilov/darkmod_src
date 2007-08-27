@@ -71,6 +71,7 @@ typedef enum {
 	MOVE_TO_POSITION_DIRECT,
 	MOVE_SLIDE_TO_POSITION,
 	MOVE_WANDER,
+	MOVE_FLEE, // (TDM)
 	NUM_MOVE_COMMANDS
 } moveCommand_t;
 
@@ -1030,6 +1031,10 @@ protected:
 	bool					DirectMoveToPosition( const idVec3 &pos );
 	bool					MoveToEnemyHeight( void );
 	bool					MoveOutOfRange( idEntity *entity, float range );
+	/**
+	 * greebo: Flee from the given entity. Pass the maximum distance this AI should search escape areas in.
+	 */
+	bool					Flee(idEntity* entityToFleeFrom, float maxDist);
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
@@ -1219,6 +1224,7 @@ protected:
 	void					Event_MoveToEnemy( void );
 	void					Event_MoveToEnemyHeight( void );
 	void					Event_MoveOutOfRange( idEntity *entity, float range );
+	void					Event_Flee(idEntity* entityToFleeFrom, float maxDist);
 	void					Event_MoveToAttackPosition( idEntity *entity, const char *attack_anim );
 	void					Event_MoveToEntity( idEntity *ent );
 	void					Event_MoveToPosition( const idVec3 &pos );

@@ -27,6 +27,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/BinaryFrobMover.h"
 #include "../../DarkMod/FrobDoor.h"
 #include "../../DarkMod/FrobDoorHandle.h"
+#include "tdmAASFindEscape.h"
 
 
 //TODO: Move these to AI def:
@@ -1918,6 +1919,7 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 		} else {
 			//idBounds bnds( idVec3( -16.0, -16.0f, -8.0f ), idVec3( 16.0, 16.0f, 64.0f ) );
 			// SZ: We are using AAS48 for our characters so we are changing this to 24 in each direction
+			// greebo: TODO: We are using AAS32 as of August 2007
 			idBounds bnds( idVec3( -24.0, -24.0f, -8.0f ), idVec3( 24.0, 24.0f, 128.0f ) );
 
 			bnds.TranslateSelf( physicsObj.GetOrigin() );
@@ -2355,6 +2357,58 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	return true;
 }
 
+bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
+{
+	int				areaNum;
+	aasObstacle_t	obstacle;
+	idBounds		bounds;
+	idVec3			pos;
+
+	if ( !aas || !entityToFleeFrom ) {
+		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+		AI_DEST_UNREACHABLE = true;
+		return false;
+	}
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	areaNum	= PointReachableAreaNum( org );
+
+	// consider the entity the monster is getting close to as an obstacle
+	obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
+
+	if ( entityToFleeFrom == enemy.GetEntity() ) {
+		pos = lastVisibleEnemyPos;
+	} else {
+		pos = entityToFleeFrom->GetPhysics()->GetOrigin();
+	}
+
+	// Setup the evaluator class
+	tdmAASFindEscape findEscapeArea(pos, maxDist);
+	aasGoal_t dummy;
+	aas->FindNearestGoal( dummy, areaNum, org, pos, travelFlags, &obstacle, 1, findEscapeArea );
+
+	aasGoal_t& goal = findEscapeArea.GetEscapeGoal();
+
+	if ( ReachedPos( goal.origin, move.moveCommand ) ) {
+		StopMove( MOVE_STATUS_DONE );
+		return true;
+	}
+
+	move.moveDest		= goal.origin;
+	move.toAreaNum		= goal.areaNum;
+	move.goalEntity		= entityToFleeFrom;
+	move.moveCommand	= MOVE_FLEE;
+	move.moveStatus		= MOVE_STATUS_MOVING;
+	move.range			= maxDist;
+	move.speed			= fly_speed;
+	move.startTime		= gameLocal.time;
+	AI_MOVE_DONE		= false;
+	AI_DEST_UNREACHABLE = false;
+	AI_FORWARD			= true;
+
+	return true;
+}
+
 /*
 =====================
 idAI::MoveOutOfRange
@@ -2391,6 +2445,8 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
+
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Best fleeing location is: %f %f %f in area %d\r", goal.origin.x, goal.origin.y, goal.origin.z, goal.areaNum);
 
 	if ( ReachedPos( goal.origin, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
