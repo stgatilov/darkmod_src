@@ -9127,6 +9127,12 @@ void idPlayer::FrobCheck( void )
 	idVec3 delta, VecForward;
 	idBounds FrobBounds;
 
+	// greebo: Don't run this when dead
+	if (AI_DEAD) 
+	{
+		return;
+	}
+
 	idVec3	EyePos = GetEyePosition();
 	idVec3 start = EyePos;
 	idVec3 end = start + viewAngles.ToForward() * g_Global.m_MaxFrobDistance;
