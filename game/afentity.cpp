@@ -1246,9 +1246,6 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	EntClip->SetContents( SetContents );
 		
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
-
-Quit:
-	return;
 }
 
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
