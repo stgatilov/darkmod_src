@@ -1518,7 +1518,7 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
 	
 	// Also call the pickocket event if stolen from living AI
-	if( bPickedUp && ent->GetBindMaster() )
+	if( bPickedUp && ent != NULL && ent->GetBindMaster() )
 	{
 		idEntity *bm = ent->GetBindMaster();
 		if( bm->IsType( idActor::Type )
