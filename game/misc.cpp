@@ -409,6 +409,27 @@ void idPathCorner::Event_RandomPath( void ) {
 /*
 ===============================================================================
 
+tdmPathFlee
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idEntity, tdmPathFlee )
+END_CLASS
+
+/*
+=====================
+tdmPathFlee::Spawn
+=====================
+*/
+void tdmPathFlee::Spawn( void ) {
+	// Register this class with the flee location manager
+	DM_LOG(LC_AI, LT_INFO).LogString("tdmPathFlee spawned.\r");
+}
+
+/*
+===============================================================================
+
   idDamagable
 	
 ===============================================================================

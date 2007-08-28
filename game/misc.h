@@ -124,6 +124,21 @@ private:
 	void				Event_RandomPath( void );
 };
 
+/*
+===============================================================================
+
+  Path entities for AI to flee to.
+
+===============================================================================
+*/
+class tdmPathFlee : public idEntity {
+public:
+	CLASS_PROTOTYPE( tdmPathFlee );
+
+	void				Spawn( void );
+
+	static void		DrawDebugInfo( void );
+};
 
 /*
 ===============================================================================
