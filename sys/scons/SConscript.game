@@ -66,6 +66,7 @@ game_string = ' \
 	ai/ai_events.cpp \
 	ai/ai_pathing.cpp \
 	ai/ai_vagary.cpp \
+	ai/tdmAASFindEscape.cpp \
 	gamesys/debuggraph.cpp \
 	gamesys/class.cpp \
 	gamesys/event.cpp \
@@ -119,6 +120,7 @@ darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \
 DifficultyMenu.cpp \
+EscapePointManager.cpp \
 fdchar.cpp \
 force_grab.cpp \
 func_shooter.cpp \
