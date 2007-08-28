@@ -193,7 +193,7 @@ CMissionData::CMissionData( void )
 	for(i = 0; i < COMP_COUNT; i++)
 		CompTypeNames.Append(gCompTypeName[i]);
 
-	for(i = 0; i < COMP_COUNT; i++)
+	for(i = 0; i < SPEC_COUNT; i++)
 		SpecTypeNames.Append(gSpecTypeName[i]);
 
 	CompTypeNames.Condense();
