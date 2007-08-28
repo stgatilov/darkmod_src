@@ -421,7 +421,7 @@ END_CLASS
 tdmPathFlee::~tdmPathFlee()
 {
 	// Unregister self with the escape point manager
-	gameLocal.m_EscapePointManager.RemoveEscapePoint(this);
+	gameLocal.m_EscapePointManager->RemoveEscapePoint(this);
 }
 
 /*
@@ -432,7 +432,7 @@ tdmPathFlee::Spawn
 void tdmPathFlee::Spawn( void ) {
 	// Register this class with the escape point manager
 	DM_LOG(LC_AI, LT_INFO).LogString("tdmPathFlee spawned.\r");
-	gameLocal.m_EscapePointManager.AddEscapePoint(this);
+	gameLocal.m_EscapePointManager->AddEscapePoint(this);
 }
 
 /*

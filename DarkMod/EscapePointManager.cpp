@@ -43,3 +43,26 @@ void CEscapePointManager::RemoveEscapePoint(tdmPathFlee* escapePoint)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Removing escape point: %s\r", escapePoint->name.c_str());
 }
+
+EscapeGoal CEscapePointManager::GetEscapePoint(const EscapeConditions& conditions)
+{
+	EscapeGoal goal;
+
+	if (_escapePoints.Num() == 0) {
+		gameLocal.Warning("No escape point information available in map!\n");
+		goal.escapePoint = NULL;
+		return goal;
+	}
+
+	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\n");
+
+	goal.escapePoint = _escapePoints[0];
+
+	return goal;
+}
+
+CEscapePointManager* CEscapePointManager::Instance()
+{
+	static CEscapePointManager _manager;
+	return &_manager;
+}

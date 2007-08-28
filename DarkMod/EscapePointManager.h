@@ -14,7 +14,29 @@
 template<class type>
 class idEntityPtr;
 
+class idEntity;
 class tdmPathFlee;
+
+typedef struct EscapeConditions_t {
+	// The position to flee from
+	idVec3 fromPosition;
+
+	// The threatening entity to flee from
+	idEntityPtr<idEntity> fromEntity;
+
+	// The maximum distance
+	float maxDistance;
+} EscapeConditions;
+
+// This is a result structure delivered by the escape point manager
+// containing information about how to get to an escape point 
+typedef struct EscapeGoal_t {
+	// The escape point entity
+	idEntityPtr<tdmPathFlee> escapePoint;
+
+	// The distance to this escape point
+	float distance;
+} EscapeGoal;
 
 class CEscapePointManager
 {
@@ -33,6 +55,14 @@ public:
 
 	void	AddEscapePoint(tdmPathFlee* escapePoint);
 	void	RemoveEscapePoint(tdmPathFlee* escapePoint);
+
+	/**
+	 * greebo: Retrieve an escape point for the given escape conditions.
+	 */
+	EscapeGoal GetEscapePoint(const EscapeConditions& conditions);
+
+	// Accessor to the singleton instance of this class
+	static CEscapePointManager* Instance();
 };
 
 #endif /* ESCAPE_POINT_MANAGER__H */

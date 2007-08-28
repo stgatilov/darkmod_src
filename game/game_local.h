@@ -180,8 +180,6 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
-#include "../DarkMod/EscapePointManager.h"
-
 #ifdef __linux__
 #include "renderer/renderworld.h"
 #endif
@@ -194,6 +192,7 @@ class CsndProp;
 class CRelations;
 class CMissionData;
 class CStimResponse;
+class CEscapePointManager;
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -455,7 +454,7 @@ public:
 	 * greebo: The escape point manager which is keeping track
 	 *         of all the tdmPathFlee entities.
 	 */
-	CEscapePointManager		m_EscapePointManager;
+	CEscapePointManager*	m_EscapePointManager;
 	
 	/**
 	* All priority queues that have been instantiated during the run of this map.
