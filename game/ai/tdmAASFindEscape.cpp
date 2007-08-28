@@ -29,7 +29,7 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 	idStr numberStr(areaNum);
 	idMat3 viewAngles;
 	viewAngles.Identity();
-	gameRenderWorld->DrawTextA(numberStr.c_str(), aas->AreaCenter(areaNum), 1, colorRed, viewAngles, 1, 20000);
+	gameRenderWorld->DrawText(numberStr.c_str(), aas->AreaCenter(areaNum), 1, colorRed, viewAngles, 1, 20000);
 
 	float distSqr(( _threatPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
 
