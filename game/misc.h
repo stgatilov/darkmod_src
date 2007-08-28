@@ -135,6 +135,8 @@ class tdmPathFlee : public idEntity {
 public:
 	CLASS_PROTOTYPE( tdmPathFlee );
 
+	virtual ~tdmPathFlee();
+
 	void				Spawn( void );
 
 	static void		DrawDebugInfo( void );

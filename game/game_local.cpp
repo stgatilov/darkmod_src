@@ -349,6 +349,7 @@ void idGameLocal::Clear( void )
 	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
 #endif
 
+	m_EscapePointManager.Clear();
 }
 
 /*
@@ -753,6 +754,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	{
 		m_RespEntity[i].Save(&savegame);
 	}
+
+	m_EscapePointManager.Save(&savegame);
 
 	// spawnSpots
 	// initialSpots
@@ -1694,6 +1697,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	{
 		m_RespEntity[i].Restore(&savegame);
 	}
+
+	m_EscapePointManager.Restore(&savegame);
 
 	// spawnSpots
 	// initialSpots

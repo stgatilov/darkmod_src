@@ -180,6 +180,8 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
+#include "../DarkMod/EscapePointManager.h"
+
 #ifdef __linux__
 #include "renderer/renderworld.h"
 #endif
@@ -448,6 +450,12 @@ public:
 * Pointer to global sound prop gameplay object
 **/
 	CsndProp *				m_sndProp;
+
+	/**
+	 * greebo: The escape point manager which is keeping track
+	 *         of all the tdmPathFlee entities.
+	 */
+	CEscapePointManager		m_EscapePointManager;
 	
 	/**
 	* All priority queues that have been instantiated during the run of this map.
