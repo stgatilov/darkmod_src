@@ -31,6 +31,7 @@ static const char *gCompTypeName[COMP_COUNT] =
 	"ai_find_body",
 	"alert",
 	"item",
+	"pickpocket",
 	"location",
 	"custom",
 	"custom_clocked",
@@ -246,6 +247,7 @@ void CMissionData::Clear( void )
 
 	m_Stats.DamageDealt = 0;
 	m_Stats.DamageReceived = 0;
+	m_Stats.PocketsPicked = 0;
 	m_Stats.LootOverall = 0;
 
 	m_SuccessLogicStr.Clear();
@@ -290,6 +292,7 @@ void CMissionData::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_Stats.DamageDealt );
 	savefile->WriteInt( m_Stats.DamageReceived );
+	savefile->WriteInt( m_Stats.PocketsPicked );
 	savefile->WriteInt( m_Stats.LootOverall );
 
 	savefile->WriteString( m_SuccessLogicStr );
@@ -345,6 +348,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_Stats.DamageDealt );
 	savefile->ReadInt( m_Stats.DamageReceived );
+	savefile->ReadInt( m_Stats.PocketsPicked );
 	savefile->ReadInt( m_Stats.LootOverall );
 
 	savefile->ReadString( m_SuccessLogicStr );
@@ -601,7 +605,7 @@ bool	CMissionData::EvaluateObjective
 	}
 
 	// ITEMS:
-	else if( CompType == COMP_ITEM )
+	else if( CompType == COMP_ITEM || CompType == COMP_PICKPOCKET )
 	{
 		// name, classname and spawnclass are all one-shot objectives and not counted up (for now)
 		if( SpecMeth == SPEC_NONE || SpecMeth == SPEC_NAME || SpecMeth == SPEC_CLASSNAME || SpecMeth == SPEC_SPAWNCLASS )
@@ -627,6 +631,8 @@ bool	CMissionData::EvaluateObjective
 	}
 
 Quit:
+	if( CompType == COMP_PICKPOCKET && bBoolArg )
+		m_Stats.PocketsPicked++;
 	return bReturnVal;
 }
 
@@ -1510,6 +1516,19 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	Parms.valueSuperGroup = OverallVal;
 
 	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
+	
+	// Also call the pickocket event if stolen from living AI
+	if( bPickedUp && ent->GetBindMaster() )
+	{
+		idEntity *bm = ent->GetBindMaster();
+		if( bm->IsType( idActor::Type )
+			&& bm->health > 0
+			&& !static_cast<idActor *>(bm)->IsKnockedOut()
+			)
+		{
+			MissionEvent( COMP_PICKPOCKET, &Parms, true );
+		}
+	}
 }
 
 void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal)

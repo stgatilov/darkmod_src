@@ -77,6 +77,7 @@ typedef enum
 // END AI components that must be kept together
 	COMP_ALERT,
 	COMP_ITEM,			// Add inventory item or imaginary loot (find object X)
+	COMP_PICKPOCKET,	// Take inventory item from conscious AI
 	COMP_LOCATION,		// Item X is at location Y
 	COMP_CUSTOM_ASYNC,	// asynchronously updated custom objective (updated by mapper from script)
 
@@ -400,6 +401,7 @@ typedef struct SMissionStats_s
 
 	int DamageDealt;
 	int DamageReceived;
+	int PocketsPicked;
 
 	// Item stats are handled by the inventory, not here, 
 	// Might need this for copying over to career stats though
@@ -586,7 +588,7 @@ public:
 	* For loot items, OverallVal should be set to the overall loot count
 	* Ent is the actual entity picked up/dropped.  If NULL, default entity properties will be used.
 	**/
-	void InventoryCallback( idEntity *ent, idStr ItemName, int value, int OverallVal = 1, bool bPickedUp = false );
+	void InventoryCallback( idEntity *ent, idStr ItemName, int value, int OverallVal = 1, bool bPickedUp = true );
 
 	/**
 	* Called when AI are alerted
