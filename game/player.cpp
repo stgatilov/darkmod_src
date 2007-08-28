@@ -113,6 +113,7 @@ const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 const idEventDef EV_Player_StartZoom("startZoom", "fff");
 const idEventDef EV_Player_EndZoom("endZoom", "f");
 const idEventDef EV_Player_ResetZoom("resetZoom", NULL);
+const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
@@ -171,6 +172,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_StartZoom,				idPlayer::Event_StartZoom )
 	EVENT( EV_Player_EndZoom,				idPlayer::Event_EndZoom )
 	EVENT( EV_Player_ResetZoom,				idPlayer::Event_ResetZoom )
+	EVENT( EV_Player_GetFov,				idPlayer::Event_GetFov )
 
 END_CLASS
 
@@ -9128,6 +9130,12 @@ void idPlayer::Event_ResetZoom()
 {
 	// Reset the FOV to the default values, this enables the idInterpolate
 	zoomFov.Init(gameLocal.time, 0, DefaultFov(), DefaultFov());
+}
+
+void idPlayer::Event_GetFov()
+{
+	// greebo: Return the current fov
+	idThread::ReturnFloat(CalcFov(true));
 }
 
 void idPlayer::FrobCheck( void )

@@ -924,6 +924,7 @@ private:
 	void					Event_StartZoom(float duration, float startFOV, float endFOV);
 	void					Event_EndZoom(float duration);
 	void					Event_ResetZoom();
+	void					Event_GetFov();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
