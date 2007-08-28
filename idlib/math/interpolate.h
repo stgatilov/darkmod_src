@@ -26,6 +26,7 @@ class idInterpolate {
 public:
 						idInterpolate();
 
+	// Start a transition, this automatically sets the idInterpolate to "enabled"
 	void				Init( const float startTime, const float duration, const type &startValue, const type &endValue );
 	void				SetStartTime( float time ) { this->startTime = time; }
 	void				SetDuration( float duration ) { this->duration = duration; }
@@ -41,7 +42,12 @@ public:
 	const type &		GetStartValue( void ) const { return startValue; }
 	const type &		GetEndValue( void ) const { return endValue; }
 
+	// greebo: Returns TRUE if this interpolation is active.
+	inline bool		Enabled() const { return enabled; };
+	void				SetEnabled(bool isEnabled) { enabled = isEnabled; };
+
 private:
+	bool				enabled;
 	float				startTime;
 	float				duration;
 	type				startValue;
@@ -56,7 +62,9 @@ idInterpolate::idInterpolate
 ====================
 */
 template< class type >
-ID_INLINE idInterpolate<type>::idInterpolate() {
+ID_INLINE idInterpolate<type>::idInterpolate() :
+	enabled(true)
+{
 	currentTime = startTime = duration = 0;
 	memset( &currentValue, 0, sizeof( currentValue ) );
 	startValue = endValue = currentValue;
@@ -75,6 +83,7 @@ ID_INLINE void idInterpolate<type>::Init( const float startTime, const float dur
 	this->endValue = endValue;
 	this->currentTime = startTime - 1;
 	this->currentValue = startValue;
+	this->enabled = true;
 }
 
 /*
@@ -99,7 +108,6 @@ ID_INLINE type idInterpolate<type>::GetCurrentValue( float time ) const {
 	}
 	return currentValue;
 }
-
 
 /*
 ==============================================================================================
