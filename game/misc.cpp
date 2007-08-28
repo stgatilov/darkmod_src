@@ -430,8 +430,11 @@ tdmPathFlee::Spawn
 =====================
 */
 void tdmPathFlee::Spawn( void ) {
+
+	// Get the location of this entity within the AAS
+	
+
 	// Register this class with the escape point manager
-	DM_LOG(LC_AI, LT_INFO).LogString("tdmPathFlee spawned.\r");
 	gameLocal.m_EscapePointManager->AddEscapePoint(this);
 }
 

@@ -1377,6 +1377,9 @@ void idGameLocal::MapPopulate( void ) {
 	m_sndProp->SetupFromLoader( m_sndPropLoader );
 
 	m_sndPropLoader->Shutdown();
+	
+	// Initialise the escape point manager after all the entities have been spawned.
+	m_EscapePointManager->InitAAS();
 
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called

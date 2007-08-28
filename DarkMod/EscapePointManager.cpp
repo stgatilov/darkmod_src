@@ -37,11 +37,38 @@ void CEscapePointManager::Restore( idRestoreGame *savefile )
 void CEscapePointManager::AddEscapePoint(tdmPathFlee* escapePoint)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Adding escape point: %s\r", escapePoint->name.c_str());
+
+	idEntityPtr<tdmPathFlee> pathFlee;
+	pathFlee = escapePoint;
+	_escapePoints.Append(pathFlee);
 }
 
 void CEscapePointManager::RemoveEscapePoint(tdmPathFlee* escapePoint)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Removing escape point: %s\r", escapePoint->name.c_str());
+	for (int i = 0; i < _escapePoints.Num(); i++)
+	{
+		if (_escapePoints[i].GetEntity() == escapePoint) 
+		{
+			_escapePoints.RemoveIndex(i);
+			return;
+		}
+	}
+
+	// Not found
+	DM_LOG(LC_AI, LT_ERROR).LogString("Failed to remove escape point: %s\r", escapePoint->name.c_str());
+}
+
+void CEscapePointManager::InitAAS()
+{
+	for (int i = 0; i < gameLocal.NumAAS(); i++)
+	{
+		idAAS* aas = gameLocal.GetAAS(i);
+
+		if (aas != NULL) {
+			gameLocal.Printf("EscapePointManager: AAS initialized: %s\n", aas->GetSettings()->fileExtension.c_str());
+		}
+	}
 }
 
 EscapeGoal CEscapePointManager::GetEscapePoint(const EscapeConditions& conditions)

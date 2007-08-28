@@ -14,10 +14,15 @@
 template<class type>
 class idEntityPtr;
 
+class idAI;
 class idEntity;
 class tdmPathFlee;
 
-typedef struct EscapeConditions_t {
+typedef struct EscapeConditions_t
+{
+	// The AI who is fleeing
+	idEntityPtr<idAI> self;
+
 	// The position to flee from
 	idVec3 fromPosition;
 
@@ -30,7 +35,8 @@ typedef struct EscapeConditions_t {
 
 // This is a result structure delivered by the escape point manager
 // containing information about how to get to an escape point 
-typedef struct EscapeGoal_t {
+typedef struct EscapeGoal_t
+{
 	// The escape point entity
 	idEntityPtr<tdmPathFlee> escapePoint;
 
@@ -55,6 +61,12 @@ public:
 
 	void	AddEscapePoint(tdmPathFlee* escapePoint);
 	void	RemoveEscapePoint(tdmPathFlee* escapePoint);
+
+	/**
+	 * greebo: Call this after the entities are spawned. This sets up the
+	 *         AAS types for each pathFlee entity.
+	 */
+	void	InitAAS();
 
 	/**
 	 * greebo: Retrieve an escape point for the given escape conditions.
