@@ -20,7 +20,7 @@ class idAI;
 class idEntity;
 class tdmPathFlee;
 
-typedef struct EscapeConditions_t
+struct EscapeConditions
 {
 	// The AI who is fleeing
 	idEntityPtr<idAI> self;
@@ -36,35 +36,68 @@ typedef struct EscapeConditions_t
 
 	// The maximum distance
 	float maxDistance;
-} EscapeConditions;
+};
+
+/**
+ * greebo: This represents one escape point in a given AAS grid. 
+ */
+struct EscapePoint
+{
+	// The actual entity this escape point is located in
+	idEntityPtr<tdmPathFlee> pathFlee;
+
+	// The AAS id of this point
+	int aasId;
+
+	// The actual origin of the entity
+	idVec3 origin;
+
+	// The AAS area number of the entity's origin.
+	int areaNum;
+
+	// Constructor
+	EscapePoint() :
+		aasId(-1),
+		areaNum(-1)
+	{}
+};
 
 // This is a result structure delivered by the escape point manager
 // containing information about how to get to an escape point 
-typedef struct EscapeGoal_t
+struct EscapeGoal
 {
+	bool valid;
+
 	// The escape point entity
-	idEntityPtr<tdmPathFlee> escapePoint;
+	//const EscapePoint& escapePoint;
 
 	// The distance to this escape point
 	float distance;
-} EscapeGoal;
+
+	/*EscapeGoal(const EscapePoint& point) :
+		escapePoint(point)
+	{}*/
+};
 
 class CEscapePointManager
 {
 	// A list of Escape Point entities
-	typedef idList< idEntityPtr<tdmPathFlee> > EscapePointList;
+	typedef idList< idEntityPtr<tdmPathFlee> > EscapeEntityList;
 
 	// The pointer-type for the list above
+	typedef boost::shared_ptr<EscapeEntityList> EscapeEntityListPtr;
+
+	// The list of AAS-specific escape points plus shared_ptr typedef.
+	typedef idList<EscapePoint> EscapePointList;
 	typedef boost::shared_ptr<EscapePointList> EscapePointListPtr;
 
 	// A map associating an AAS to EscapePointLists.
 	typedef std::map<idAAS*, EscapePointListPtr> AASEscapePointMap;
 
 	// This is the master list containing all the escape point entities in this map
-	EscapePointListPtr _escapePoints;
+	EscapeEntityListPtr _escapeEntities;
 
 	// The map of escape points for each AAS type.
-	// Each of the lists is a subset of the master list above
 	AASEscapePointMap _aasEscapePoints;
 
 public:

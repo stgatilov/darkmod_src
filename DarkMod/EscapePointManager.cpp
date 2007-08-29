@@ -14,7 +14,7 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 #include "EscapePointManager.h"
 
 CEscapePointManager::CEscapePointManager() :
-	_escapePoints(new EscapePointList)
+	_escapeEntities(new EscapeEntityList)
 {}
 
 CEscapePointManager::~CEscapePointManager()
@@ -22,7 +22,7 @@ CEscapePointManager::~CEscapePointManager()
 
 void CEscapePointManager::Clear()
 {
-	_escapePoints->Clear();
+	_escapeEntities->Clear();
 }
 
 void CEscapePointManager::Save( idSaveGame *savefile ) const
@@ -41,17 +41,17 @@ void CEscapePointManager::AddEscapePoint(tdmPathFlee* escapePoint)
 
 	idEntityPtr<tdmPathFlee> pathFlee;
 	pathFlee = escapePoint;
-	_escapePoints->Append(pathFlee);
+	_escapeEntities->Append(pathFlee);
 }
 
 void CEscapePointManager::RemoveEscapePoint(tdmPathFlee* escapePoint)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Removing escape point: %s\r", escapePoint->name.c_str());
-	for (int i = 0; i < _escapePoints->Num(); i++)
+	for (int i = 0; i < _escapeEntities->Num(); i++)
 	{
-		if ((*_escapePoints)[i].GetEntity() == escapePoint) 
+		if ((*_escapeEntities)[i].GetEntity() == escapePoint) 
 		{
-			_escapePoints->RemoveIndex(i);
+			_escapeEntities->RemoveIndex(i);
 			return;
 		}
 	}
@@ -74,16 +74,24 @@ void CEscapePointManager::InitAAS()
 
 			// Now go through our master list and retrieve the area numbers 
 			// for each tdmPathFlee entity
-			for (int i = 0; i < _escapePoints->Num(); i++)
+			for (int i = 0; i < _escapeEntities->Num(); i++)
 			{
-				tdmPathFlee* escapePoint = (*_escapePoints)[i].GetEntity();
-				int areaNum = aas->PointAreaNum(escapePoint->GetPhysics()->GetOrigin());
+				tdmPathFlee* escapeEnt = (*_escapeEntities)[i].GetEntity();
+				int areaNum = aas->PointAreaNum(escapeEnt->GetPhysics()->GetOrigin());
 
-				DM_LOG(LC_AI, LT_INFO).LogString("Flee entity %s is in area number %d\r", escapePoint->name.c_str(), areaNum);
+				DM_LOG(LC_AI, LT_INFO).LogString("Flee entity %s is in area number %d\r", escapeEnt->name.c_str(), areaNum);
 				if (areaNum != -1)
 				{
-					// Add the pathFlee entity to this list
-					_aasEscapePoints[aas]->Append( (*_escapePoints)[i] );
+					// Fill the EscapePoint structure with the relevant information
+					EscapePoint escPoint;
+
+					escPoint.aasId = gameLocal.GetAASId(aas);
+					escPoint.areaNum = areaNum;
+					escPoint.origin = escapeEnt->GetPhysics()->GetOrigin();
+					escPoint.pathFlee = (*_escapeEntities)[i];
+
+					// Pack the info structure to this list
+					_aasEscapePoints[aas]->Append(escPoint);
 				}
 			}
 
@@ -94,17 +102,29 @@ void CEscapePointManager::InitAAS()
 
 EscapeGoal CEscapePointManager::GetEscapePoint(const EscapeConditions& conditions)
 {
-	EscapeGoal goal;
-
-	if (_escapePoints->Num() == 0) {
-		gameLocal.Warning("No escape point information available in map!\n");
-		goal.escapePoint = NULL;
-		return goal;
-	}
+	assert(aas != NULL);
+	// Assert on a known AAS pointer
+	assert(_aasEscapePoints.find(conditions.aas) != _aasEscapePoints.end());
 
 	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\n");
 
-	goal.escapePoint = (*_escapePoints)[0];
+	// Create a shortcut to the list
+	EscapePointList& escapePoints = *_aasEscapePoints[conditions.aas];
+
+	EscapeGoal goal;
+
+	if (escapePoints.Num() == 0) {
+		gameLocal.Warning("No escape point information available for the given aas type in map!\n");
+		//goal.escapePoint = NULL;
+		return goal;
+	}
+
+	for (int i = 0; i < escapePoints.Num(); i++)
+	{
+		
+	}
+
+	//goal.escapePoint = escapePoints[0];
 
 	return goal;
 }
