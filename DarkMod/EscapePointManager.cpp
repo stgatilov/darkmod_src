@@ -68,7 +68,7 @@ void CEscapePointManager::InitAAS()
 		idAAS* aas = gameLocal.GetAAS(i);
 
 		if (aas != NULL) {
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePointManager: Initialising AAS: %s\r", aas->GetSettings()->fileExtension.c_str());
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePointManager: Initializing AAS: %s\r", aas->GetSettings()->fileExtension.c_str());
 
 			// Allocate a new list for this AAS type
 			_aasEscapePoints[aas] = EscapePointListPtr(new EscapePointList);
@@ -119,7 +119,7 @@ EscapePoint* CEscapePointManager::GetEscapePoint(int id)
 EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions)
 {
 	assert(aas != NULL);
-	// Assert on a known AAS pointer
+	// The AAS pointer has to be known
 	assert(_aasEscapePoints.find(conditions.aas) != _aasEscapePoints.end());
 
 	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\r");
@@ -146,12 +146,12 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 		return goal;
 	}
 
-	// The location of the fleeing entity
-	idVec3 selfOrigin = conditions.self.GetEntity()->GetPhysics()->GetOrigin();
+	// The location of the threat
+	idVec3 threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
 
 	// The index of the best point so far (= the first one, better than nothing)
 	int bestPoint = 0;
-	goal.distance = (selfOrigin - escapePoints[0].origin).LengthFast();
+	goal.distance = (threatOrigin - escapePoints[0].origin).LengthFast();
 
 	// Start with the second point in the list
 	for (int i = 1; i < escapePoints.Num(); i++)
@@ -159,7 +159,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 		// Evaluate the given escape point
 
 		// Is this point nearer than the currently best candidate?
-		float distance = (selfOrigin - escapePoints[i].origin).LengthFast();
+		float distance = (threatOrigin - escapePoints[i].origin).LengthFast();
 
 		if (distance > goal.distance)
 		{

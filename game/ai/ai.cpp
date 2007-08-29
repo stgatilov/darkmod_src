@@ -2377,7 +2377,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
 	// Setup the escape conditions
 	EscapeConditions conditions;
 	
-	conditions.fromEntity = dynamic_cast<idAI*>(entityToFleeFrom);
+	conditions.fromEntity = entityToFleeFrom;
 	conditions.aas = aas;
 	conditions.fromPosition = org;
 	conditions.maxDistance = 1000.0f;
