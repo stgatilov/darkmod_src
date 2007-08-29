@@ -118,12 +118,17 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 	savefile->WriteBool(m_PinTranslationFractionFlag);
 	savefile->WriteVec3(m_PinTranslationFraction);
-	savefile->WriteVec3(m_OriginalPosition);
+	savefile->WriteVec3(m_SampleTranslationFraction);
 
 	savefile->WriteBool(m_PinRotationFractionFlag);
 	savefile->WriteFloat(m_PinRotationFraction.pitch);
 	savefile->WriteFloat(m_PinRotationFraction.yaw);
 	savefile->WriteFloat(m_PinRotationFraction.roll);
+	savefile->WriteFloat(m_SampleRotationFraction.pitch);
+	savefile->WriteFloat(m_SampleRotationFraction.yaw);
+	savefile->WriteFloat(m_SampleRotationFraction.roll);
+
+	savefile->WriteVec3(m_OriginalPosition);
 	savefile->WriteFloat(m_OriginalAngle.pitch);
 	savefile->WriteFloat(m_OriginalAngle.yaw);
 	savefile->WriteFloat(m_OriginalAngle.roll);
@@ -177,12 +182,17 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_PinTranslationFractionFlag);
 	savefile->ReadVec3(m_PinTranslationFraction);
-	savefile->ReadVec3(m_OriginalPosition);
+	savefile->ReadVec3(m_SampleTranslationFraction);
 
 	savefile->ReadBool(m_PinRotationFractionFlag);
 	savefile->ReadFloat(m_PinRotationFraction.pitch);
 	savefile->ReadFloat(m_PinRotationFraction.yaw);
 	savefile->ReadFloat(m_PinRotationFraction.roll);
+	savefile->ReadFloat(m_SampleRotationFraction.pitch);
+	savefile->ReadFloat(m_SampleRotationFraction.yaw);
+	savefile->ReadFloat(m_SampleRotationFraction.roll);
+
+	savefile->ReadVec3(m_OriginalPosition);
 	savefile->ReadFloat(m_OriginalAngle.pitch);
 	savefile->ReadFloat(m_OriginalAngle.yaw);
 	savefile->ReadFloat(m_OriginalAngle.roll);
@@ -801,6 +811,39 @@ void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
 }
 
 
+void CFrobDoor::SetHandlePosition(bool bReset)
+{
+	idMover *m = m_Tap.GetEntity();
+	if(!m)
+		m = m_Doorhandle.GetEntity();
+
+	if(!m)
+		return;
+
+	if(bReset == true)
+	{
+		idMat3 mat = m_OriginalAngle.ToMat3();
+
+		m->GetPhysics()->SetAxis(mat);
+		m->SetOrigin(m_OriginalPosition);
+	}
+	else
+	{
+		if(m_PinRotationFractionFlag == true)
+		{
+			idAngles a = m_PinRotationFraction * (m_FirstLockedPinIndex+1) * (m_SoundPinSampleIndex+1);
+			idMat3 mat = a.ToMat3();
+			m->GetPhysics()->SetAxis(mat);
+		}
+
+		if(m_PinTranslationFractionFlag == true)
+		{
+			idVec3 v = m_PinTranslationFraction * (m_FirstLockedPinIndex+1) * (m_SoundPinSampleIndex+1);
+			m->SetOrigin(v);
+		}
+	}
+}
+
 void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
 	int sample_delay, pick_timeout;
@@ -904,7 +947,9 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 					{
 						m_FirstLockedPinIndex = m_Pins.Num();
 						oPickSound = "lockpick_pin_success";
+						SetHandlePosition(true);			// Reset the handle position to the original state.
 						m_SoundTimerStarted++;
+
 						PropSoundDirect(oPickSound, true, false );
 						idSoundShader const *shader = declManager->FindSound(oPickSound);
 						StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
@@ -918,6 +963,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				{
 					oPickSound = "lockpick_pin_fail";
 					m_SoundTimerStarted++;
+
 					PropSoundDirect(oPickSound, true, false );
 					idSoundShader const *shader = declManager->FindSound(oPickSound);
 					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
@@ -926,6 +972,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 					// Reset the pin to the first sample for the next try.
 					m_SoundPinSampleIndex = -1;
+					SetHandlePosition();
 				}
 			}
 		}
@@ -958,18 +1005,8 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				pick_timeout = 0;
 
 			oPickSound = l[m_SoundPinSampleIndex];
+			SetHandlePosition(false);
 			m_SoundTimerStarted++;
-
-			if(m_PinRotationFractionFlag == true)
-			{
-				idAngles a = m_PinRotationFraction * m_FirstLockedPinIndex * m_SoundPinSampleIndex;
-				idMover *m = m_Tap.GetEntity();
-				if(m)
-				{
-					m->SetOrigin(m_OriginalPosition);
-					m->SetAngles(m_OriginalAngle);
-				}
-			}
 
 			PropSoundDirect(oPickSound, true, false );
 			idSoundShader const *shader = declManager->FindSound(oPickSound);

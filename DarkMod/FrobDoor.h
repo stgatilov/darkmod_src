@@ -69,27 +69,27 @@ public:
 	bool					UsedBy(bool bInit, idEntity *);
 
 	/**
-	* Write the proper sound loss value to the soundprop portal data
-	* Called when door spawns, is and when it is opened or closed
-	**/
+	 * Write the proper sound loss value to the soundprop portal data
+	 * Called when door spawns, is and when it is opened or closed
+	 **/
 	void					UpdateSoundLoss(void);
 
 	/**
-	* Find out if this door is touching another door, and if they share the same portal
-	* If so, store a pointer to the other door m_DoubleDoor on this door.
-	*
-	* This is posted as an event to be called on all doors after entities spawn
-	**/
+	 * Find out if this door is touching another door, and if they share the same portal
+	 * If so, store a pointer to the other door m_DoubleDoor on this door.
+	 *
+	 * This is posted as an event to be called on all doors after entities spawn
+	 **/
 	void					FindDoubleDoor( void );
 
 	/**
-	* Return the double door.  Returns NULL if there is none.
-	**/
+	 * Return the double door.  Returns NULL if there is none.
+	 **/
 	CFrobDoor *				GetDoubleDoor( void );
 
 	/**
-	* Close the visportal, but only if the double door is also closed.
-	**/
+	 * Close the visportal, but only if the double door is also closed.
+	 **/
 	void					ClosePortal( void );
 
 	void					SetDoorhandle(CFrobDoorHandle *);
@@ -103,10 +103,14 @@ public:
 	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
+	void					SetHandlePosition(bool bReset = false);
+
 protected:
-	// Create a random pin pattern for a given pin. Clicks defines the required 
-	// number of clicks for this pin, and BaseCount, defines the minimum number
-	// of clicks, which is always added.
+	/**
+	 * Create a random pin pattern for a given pin. Clicks defines the required 
+	 * number of clicks for this pin, and BaseCount, defines the minimum number
+	 * of clicks, which is always added.
+	 */
 	idStringList				*CreatePinPattern(int Clicks, int BaseCount);
 
 protected:
@@ -188,6 +192,15 @@ protected:
 	bool						m_PinRotationFractionFlag;
 	idVec3						m_PinTranslationFraction;
 	idAngles					m_PinRotationFraction;
+
+	/**
+	 * These fractions define the stepping for a pin. These are recalculated
+	 * whenever a new pin is used, because they only make sense within a given
+	 * pin and each pin can have it's individual number of samples.
+	 */
+	idVec3						m_SampleTranslationFraction;
+	idAngles					m_SampleRotationFraction;
+
 	idVec3						m_OriginalPosition;
 	idAngles					m_OriginalAngle;
 
