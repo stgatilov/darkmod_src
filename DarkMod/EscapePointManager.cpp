@@ -14,10 +14,11 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 #include "EscapePointManager.h"
 
 CEscapePointManager::CEscapePointManager() :
-	_escapeEntities(new EscapeEntityList)
+	_escapeEntities(new EscapeEntityList),
+	_highestEscapePointId(0)
 {}
 
-CEscapePointManager::~CEscapePointManager()
+	CEscapePointManager::~CEscapePointManager()
 {}
 
 void CEscapePointManager::Clear()
@@ -82,16 +83,24 @@ void CEscapePointManager::InitAAS()
 				DM_LOG(LC_AI, LT_INFO).LogString("Flee entity %s is in area number %d\r", escapeEnt->name.c_str(), areaNum);
 				if (areaNum != -1)
 				{
+					// Increase the unique escape point ID
+					_highestEscapePointId++;
+
 					// Fill the EscapePoint structure with the relevant information
 					EscapePoint escPoint;
 
+					escPoint.id = _highestEscapePointId;
 					escPoint.aasId = gameLocal.GetAASId(aas);
 					escPoint.areaNum = areaNum;
 					escPoint.origin = escapeEnt->GetPhysics()->GetOrigin();
 					escPoint.pathFlee = (*_escapeEntities)[i];
 
 					// Pack the info structure to this list
-					_aasEscapePoints[aas]->Append(escPoint);
+					int newIndex = _aasEscapePoints[aas]->Append(escPoint);
+
+					// Store the pointer to this escape point into the lookup table
+					// Looks ugly, it basically does this: map[int] = EscapePoint*
+					_aasEscapePointIndex[escPoint.id] = &( (*_aasEscapePoints[aas])[newIndex] );
 				}
 			}
 
@@ -100,31 +109,73 @@ void CEscapePointManager::InitAAS()
 	}
 }
 
-EscapeGoal CEscapePointManager::GetEscapePoint(const EscapeConditions& conditions)
+EscapePoint* CEscapePointManager::GetEscapePoint(int id)
+{
+	// Check the id for validity
+	assert(_aasEscapePointIndex.find(id) != _aasEscapePointIndex.end());
+	return _aasEscapePointIndex[id];
+}
+
+EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions)
 {
 	assert(aas != NULL);
 	// Assert on a known AAS pointer
 	assert(_aasEscapePoints.find(conditions.aas) != _aasEscapePoints.end());
 
-	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\n");
+	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\r");
 
 	// Create a shortcut to the list
 	EscapePointList& escapePoints = *_aasEscapePoints[conditions.aas];
 
 	EscapeGoal goal;
 
-	if (escapePoints.Num() == 0) {
+	if (escapePoints.Num() == 0)
+	{
 		gameLocal.Warning("No escape point information available for the given aas type in map!\n");
-		//goal.escapePoint = NULL;
+		goal.escapePointId = -1;
+		goal.distance = -1;
+		return goal;
+	}
+	else if (escapePoints.Num() == 1) 
+	{
+		// Only one point available, return that one
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Only one escape point available, returning this one: %d.\r", escapePoints[0].id);
+
+		goal.escapePointId = escapePoints[0].id;
+		goal.distance = (conditions.self.GetEntity()->GetPhysics()->GetOrigin() - escapePoints[0].origin).LengthFast();
 		return goal;
 	}
 
-	for (int i = 0; i < escapePoints.Num(); i++)
+	// The location of the fleeing entity
+	idVec3 selfOrigin = conditions.self.GetEntity()->GetPhysics()->GetOrigin();
+
+	// The index of the best point so far (= the first one, better than nothing)
+	int bestPoint = 0;
+	goal.distance = (selfOrigin - escapePoints[0].origin).LengthFast();
+
+	// Start with the second point in the list
+	for (int i = 1; i < escapePoints.Num(); i++)
 	{
-		
+		// Evaluate the given escape point
+
+		// Is this point nearer than the currently best candidate?
+		float distance = (selfOrigin - escapePoints[i].origin).LengthFast();
+
+		if (distance > goal.distance)
+		{
+			// Yes, this is a better flee point
+			bestPoint = i;
+			goal.escapePointId = escapePoints[i].id;
+			goal.distance = distance;
+		}
 	}
 
-	//goal.escapePoint = escapePoints[0];
+	DM_LOG(LC_AI, LT_DEBUG).LogString(
+		"Best escape point has ID %d at %f %f %f in area %d.\r", 
+		goal.escapePointId, 
+		escapePoints[bestPoint].origin.x, escapePoints[bestPoint].origin.y, escapePoints[bestPoint].origin.z, 
+		escapePoints[bestPoint].areaNum
+	);
 
 	return goal;
 }
