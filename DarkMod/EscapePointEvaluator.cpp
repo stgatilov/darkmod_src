@@ -15,9 +15,11 @@ static bool init_version = FileVersionList("$Id: EscapePointEvaluator.cpp 870 20
 
 #include "EscapePointManager.h"
 
+/**
+ * FarthestEscapePointFinder
+ */
 FarthestEscapePointFinder::FarthestEscapePointFinder(const EscapeConditions& conditions) :
 	_conditions(conditions),
-	_bestId(-1),
 	_bestTime(-1)
 {
 	// The location of the threat
@@ -48,7 +50,37 @@ bool FarthestEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 	return true; // TRUE = continue search
 }
 
-int FarthestEscapePointFinder::GetBestEscapePoint()
+/**
+ * NearestGuardedEscapePointFinder
+ */
+NearestGuardedEscapePointFinder::NearestGuardedEscapePointFinder(const EscapeConditions& conditions) :
+	_conditions(conditions),
+	_bestTime(-1)
 {
-	return _bestId;
+	// The location of the threat
+	_threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
+
+	// Get the starting area number
+	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
+}
+
+bool NearestGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
+{
+	int travelTime;
+	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
+
+	// Calculate the traveltime
+	idReachability* reach;
+	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
+	
+	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
+
+	if (travelTime > _bestTime)
+	{
+		// Yes, this is a better flee point
+		_bestId = escapePoint.id;
+		_bestTime = travelTime;
+	}
+
+	return true; // TRUE = continue search
 }

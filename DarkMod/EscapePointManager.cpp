@@ -15,7 +15,8 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 
 CEscapePointManager::CEscapePointManager() :
 	_escapeEntities(new EscapeEntityList),
-	_highestEscapePointId(0)
+	_highestEscapePointId(0),
+	_evaluatorType(FIND_FARTHEST)
 {}
 
 CEscapePointManager::~CEscapePointManager()
@@ -152,20 +153,34 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 
 	// At this point we have more than 1 escape point, run the evaluation
 
-	// Setup the walker class
-	FarthestEscapePointFinder evaluator(conditions);
+	// The evaluator pointer
+	EscapePointEvaluatorPtr evaluator;
+	
+	switch (_evaluatorType)
+	{
+		case FIND_FARTHEST:
+			evaluator = EscapePointEvaluatorPtr(new FarthestEscapePointFinder(conditions));
+			break;
+		case FIND_NEAREST_GUARDED:
+			evaluator = EscapePointEvaluatorPtr(new NearestGuardedEscapePointFinder(conditions));
+		default:
+			// This is the default algorithm: seek the farthest point
+			evaluator = EscapePointEvaluatorPtr(new FarthestEscapePointFinder(conditions));
+	};
 
+	assert(evaluator); // the pointer must be non-NULL after this point
+	
 	// Start with the second point in the list
 	for (int i = 0; i < escapePoints.Num(); i++)
 	{
-		if (!evaluator.Evaluate(escapePoints[i])) 
+		if (!evaluator->Evaluate(escapePoints[i])) 
 		{
 			// Evaluator returned FALSE, break the loop
 			break;
 		}
 	}
 
-	goal.escapePointId = evaluator.GetBestEscapePoint();
+	goal.escapePointId = evaluator->GetBestEscapePoint();
 
 	if (goal.escapePointId == -1)
 	{

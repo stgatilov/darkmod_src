@@ -11,6 +11,8 @@
 
 #include "../idlib/precompiled.h"
 
+#include <boost/shared_ptr.hpp>
+
 // Forward Declaration
 struct EscapePoint;
 struct EscapeConditions;
@@ -23,7 +25,16 @@ struct EscapeConditions;
  */
 class EscapePointEvaluator
 {
+protected:
+	// This holds the ID of the best escape point so far
+	int _bestId;
+
 public:
+	// Default Constructor
+	EscapePointEvaluator() :
+		_bestId(-1) // Set the ID to invalid
+	{}
+
 	/**
 	 * greebo: Evaluate the given escape point.
 	 *
@@ -37,8 +48,12 @@ public:
 	 *
 	 * @returns: an ID of -1 is returned if no point was found to be suitable.
 	 */
-	virtual int GetBestEscapePoint() = 0; 
+	virtual inline int GetBestEscapePoint()
+	{
+		return _bestId;
+	}
 };
+typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 
 /**
  * ==== EVALUATOR IMPLEMENTATIONS === 
@@ -49,13 +64,10 @@ public:
  *         from the threatening entity.
  */
 class FarthestEscapePointFinder :
-	EscapePointEvaluator
+	public EscapePointEvaluator
 {
 	// The escape conditions for reference
 	const EscapeConditions& _conditions;
-
-	// This holds the ID of the best escape point so far
-	int _bestId;
 
 	// The origin of the threatening entity
 	idVec3 _threatOrigin;
@@ -70,7 +82,31 @@ public:
 	FarthestEscapePointFinder(const EscapeConditions& conditions);
 
 	virtual bool Evaluate(EscapePoint& escapePoint);
-	virtual inline int GetBestEscapePoint(); 
+};
+
+/**
+ * greebo: This visitor tries to locate the nearest
+ *         guarded escape point.
+ */
+class NearestGuardedEscapePointFinder :
+	public EscapePointEvaluator
+{
+	// The escape conditions for reference
+	const EscapeConditions& _conditions;
+
+	// The origin of the threatening entity
+	idVec3 _threatOrigin;
+
+	// The area number the AI starts to flee in
+	int _startAreaNum;
+
+	// The best travel time so far
+	int _bestTime;
+
+public:
+	NearestGuardedEscapePointFinder(const EscapeConditions& conditions);
+
+	virtual bool Evaluate(EscapePoint& escapePoint);
 };
 
 #endif /* ESCAPE_POINT_EVALUATOR__H */

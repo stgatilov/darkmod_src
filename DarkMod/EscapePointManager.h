@@ -22,6 +22,15 @@ class idAI;
 class idEntity;
 class tdmPathFlee;
 
+/**
+ * greebo: The algorithm type to be used for 
+ *         evaluating the escape points.
+ */
+enum EscapePointAlgorithm {
+	FIND_FARTHEST = 1,
+	FIND_NEAREST_GUARDED,
+};
+
 struct EscapeConditions
 {
 	// The AI who is fleeing
@@ -107,6 +116,8 @@ class CEscapePointManager
 
 	// The highest used escape point ID
 	int _highestEscapePointId;
+
+	EscapePointAlgorithm _evaluatorType;
 
 public:
 
