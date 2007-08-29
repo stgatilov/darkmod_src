@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id: EscapePointEvaluator.cpp 870 20
  * AnyEscapePointFinder
  */
 AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator(conditions.findNearest ? 1 : -1),
+	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_conditions(conditions),
 	_bestTime(0)
 {
@@ -28,6 +28,12 @@ AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
 
 bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
+	if (_conditions.distanceOption == DIST_DONT_CARE)
+	{
+		_bestId = escapePoint.id;
+		return false; // we have a point, we don't care about distance, end the search
+	}
+
 	int travelTime;
 	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
 
@@ -52,9 +58,9 @@ bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  * GuardedEscapePointFinder
  */
 GuardedEscapePointFinder::GuardedEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator(conditions.findNearest ? 1 : -1),
+	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_conditions(conditions),
-	_bestTime(conditions.findNearest ? 1000000 : -1)
+	_bestTime(0)
 {
 	// Get the starting area number
 	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
@@ -67,6 +73,12 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not guarded, continue the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not guarded.\r", escapePoint.id);
 		return true;
+	}
+
+	if (_conditions.distanceOption == DIST_DONT_CARE)
+	{
+		_bestId = escapePoint.id;
+		return false; // we have a point, we don't care about distance, end the search
 	}
 
 	// Escape point is guarded, now calculate the walk distance
@@ -93,9 +105,9 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  * FriendlyEscapePointFinder
  */
 FriendlyEscapePointFinder::FriendlyEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator(conditions.findNearest ? 1 : -1),
+	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_conditions(conditions),
-	_bestTime(conditions.findNearest ? 1000000 : -1),
+	_bestTime(0),
 	_team(conditions.self.GetEntity()->team)
 {
 	// Get the starting area number
@@ -109,6 +121,12 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not guarded, continue the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not friendly.\r", escapePoint.id);
 		return true;
+	}
+
+	if (_conditions.distanceOption == DIST_DONT_CARE)
+	{
+		_bestId = escapePoint.id;
+		return false; // we have a point, we don't care about distance, end the search
 	}
 
 	// Escape point is guarded, now calculate the walk distance

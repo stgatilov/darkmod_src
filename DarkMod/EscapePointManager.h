@@ -32,6 +32,12 @@ enum EscapePointAlgorithm {
 	FIND_FRIENDLY,
 };
 
+enum EscapeDistanceOption {
+	DIST_DONT_CARE, // Don't care whether nearer or farther
+	DIST_NEAREST,   // Find the nearest
+	DIST_FARTHEST   // Find the farthest escape point
+};
+
 struct EscapeConditions
 {
 	// The AI who is fleeing
@@ -46,8 +52,8 @@ struct EscapeConditions
 	// The AAS the fleeing AI is using.
 	idAAS* aas;
 
-	// TRUE if the nearest, FALSE if the farthest should be found.
-	bool findNearest;
+	// Whether the distance should be considered or not
+	EscapeDistanceOption distanceOption;
 
 	// The algorithm to use
 	EscapePointAlgorithm algorithm;
