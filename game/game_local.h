@@ -602,6 +602,7 @@ public:
 	const char *			GetMapName( void ) const;
 
 	int						NumAAS( void ) const;
+	int						GetAASId( idAAS* aas ) const; // greebo: Returns the ID for the given pointer (-1 for invalid pointers)
 	idAAS *					GetAAS( int num ) const;
 	idAAS *					GetAAS( const char *name ) const;
 	void					SetAASAreaState( const idBounds &bounds, const int areaContents, bool closed );
