@@ -14,24 +14,22 @@ static bool init_version = FileVersionList("$Id: EscapePointEvaluator.cpp 870 20
 #include "EscapePointEvaluator.h"
 #include "EscapePointManager.h"
 
-/**
- * AnyEscapePointFinder
- */
-AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
+EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
+	_bestId(-1), // Set the ID to invalid
+	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_bestTime(0)
 {
 	// Get the starting area number
 	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
 }
 
-bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
+bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 {
 	if (_conditions.distanceOption == DIST_DONT_CARE)
 	{
 		_bestId = escapePoint.id;
-		return false; // we have a point, we don't care about distance, end the search
+		return false; // we have a valid point, we don't care about distance, end the search
 	}
 
 	int travelTime;
@@ -51,20 +49,28 @@ bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		_bestTime = travelTime;
 	}
 
-	return true; // TRUE = continue search
+	return true;
+}
+
+/**
+ * AnyEscapePointFinder
+ */
+AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
+	EscapePointEvaluator(conditions)
+{}
+
+bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
+{
+	// Just pass the call to the base class
+	return PerformDistanceCheck(escapePoint);
 }
 
 /**
  * GuardedEscapePointFinder
  */
 GuardedEscapePointFinder::GuardedEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
-	_conditions(conditions),
-	_bestTime(0)
-{
-	// Get the starting area number
-	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
-}
+	EscapePointEvaluator(conditions)
+{}
 
 bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
@@ -75,44 +81,16 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		return true;
 	}
 
-	if (_conditions.distanceOption == DIST_DONT_CARE)
-	{
-		_bestId = escapePoint.id;
-		return false; // we have a point, we don't care about distance, end the search
-	}
-
-	// Escape point is guarded, now calculate the walk distance
-	int travelTime;
-	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
-
-	// Calculate the traveltime
-	idReachability* reach;
-	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
-	
-	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
-
-	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
-	{
-		// Yes, this is a better flee point
-		_bestId = escapePoint.id;
-		_bestTime = travelTime;
-	}
-
-	return true; // TRUE = continue search
+	return PerformDistanceCheck(escapePoint);
 }
 
 /**
  * FriendlyEscapePointFinder
  */
 FriendlyEscapePointFinder::FriendlyEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
-	_conditions(conditions),
-	_bestTime(0),
+	EscapePointEvaluator(conditions),
 	_team(conditions.self.GetEntity()->team)
-{
-	// Get the starting area number
-	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
-}
+{}
 
 bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
@@ -123,44 +101,16 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		return true;
 	}
 
-	if (_conditions.distanceOption == DIST_DONT_CARE)
-	{
-		_bestId = escapePoint.id;
-		return false; // we have a point, we don't care about distance, end the search
-	}
-
-	// Escape point is guarded, now calculate the walk distance
-	int travelTime;
-	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
-
-	// Calculate the traveltime
-	idReachability* reach;
-	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
-	
-	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
-
-	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
-	{
-		// Yes, this is a better flee point
-		_bestId = escapePoint.id;
-		_bestTime = travelTime;
-	}
-
-	return true; // TRUE = continue search
+	return PerformDistanceCheck(escapePoint);
 }
 
 /**
  * FriendlyGuardedEscapePointFinder
  */
 FriendlyGuardedEscapePointFinder::FriendlyGuardedEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
-	_conditions(conditions),
-	_bestTime(0),
+	EscapePointEvaluator(conditions),
 	_team(conditions.self.GetEntity()->team)
-{
-	// Get the starting area number
-	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
-}
+{}
 
 bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
@@ -171,28 +121,5 @@ bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		return true;
 	}
 
-	if (_conditions.distanceOption == DIST_DONT_CARE)
-	{
-		_bestId = escapePoint.id;
-		return false; // we have a point, we don't care about distance, end the search
-	}
-
-	// Escape point is guarded, now calculate the walk distance
-	int travelTime;
-	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
-
-	// Calculate the traveltime
-	idReachability* reach;
-	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
-	
-	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
-
-	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
-	{
-		// Yes, this is a better flee point
-		_bestId = escapePoint.id;
-		_bestTime = travelTime;
-	}
-
-	return true; // TRUE = continue search
+	return PerformDistanceCheck(escapePoint);
 }

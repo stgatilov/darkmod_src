@@ -26,17 +26,20 @@ class tdmPathFlee;
  * greebo: The algorithm type to be used for 
  *         evaluating the escape points.
  */
-enum EscapePointAlgorithm {
+enum EscapePointAlgorithm
+{
 	FIND_ANY,
 	FIND_GUARDED,
 	FIND_FRIENDLY,
 	FIND_FRIENDLY_GUARDED,
 };
 
-enum EscapeDistanceOption {
-	DIST_DONT_CARE, // Don't care whether nearer or farther
-	DIST_NEAREST,   // Find the nearest
-	DIST_FARTHEST   // Find the farthest escape point
+enum EscapeDistanceOption
+{
+	DIST_DONT_CARE,           // Don't care whether nearer or farther
+	DIST_NEAREST,             // Find the nearest
+	DIST_FARTHEST,            // Find the farthest escape point
+	DIST_MINIMUM_FROM_THREAT, // Find a point that is reasonably far from the threating entity
 };
 
 struct EscapeConditions

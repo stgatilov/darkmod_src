@@ -26,18 +26,23 @@ struct EscapeConditions;
 class EscapePointEvaluator
 {
 protected:
+	const EscapeConditions& _conditions;
+
 	// This holds the ID of the best escape point so far
 	int _bestId;
+
+	// The area number the AI starts to flee in
+	int _startAreaNum;
+
+		// The best travel time so far
+	int _bestTime;
 
 	// This is either -1 (find farthest) or 1 (find nearest)
 	int _distanceMultiplier;
 
 public:
 	// Default Constructor
-	EscapePointEvaluator(int distanceMultiplier) :
-		_bestId(-1), // Set the ID to invalid
-		_distanceMultiplier(distanceMultiplier)
-	{}
+	EscapePointEvaluator(const EscapeConditions& conditions);
 
 	/**
 	 * greebo: Evaluate the given escape point.
@@ -56,6 +61,16 @@ public:
 	{
 		return _bestId;
 	}
+
+protected:
+	/**
+	 * Performs the distance check according to the escape conditions.
+	 * If the given escapePoint is better, the _bestId is updated.
+	 *
+	 * @returns FALSE if the search is finished (DIST_DONT_CARE) or 
+	 *          TRUE if the search can continue.
+	 */
+	bool	PerformDistanceCheck(EscapePoint& escapePoint);
 };
 typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 
@@ -71,15 +86,6 @@ typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 class AnyEscapePointFinder :
 	public EscapePointEvaluator
 {
-	// The escape conditions for reference
-	const EscapeConditions& _conditions;
-
-	// The area number the AI starts to flee in
-	int _startAreaNum;
-
-	// The best travel time so far
-	int _bestTime;
-
 public:
 	AnyEscapePointFinder(const EscapeConditions& conditions);
 
@@ -92,15 +98,6 @@ public:
 class GuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
-	// The escape conditions for reference
-	const EscapeConditions& _conditions;
-
-	// The area number the AI starts to flee in
-	int _startAreaNum;
-
-	// The best travel time so far
-	int _bestTime;
-
 public:
 	GuardedEscapePointFinder(const EscapeConditions& conditions);
 
@@ -116,15 +113,6 @@ public:
 class FriendlyEscapePointFinder :
 	public EscapePointEvaluator
 {
-	// The escape conditions for reference
-	const EscapeConditions& _conditions;
-
-	// The area number the AI starts to flee in
-	int _startAreaNum;
-
-	// The best travel time so far
-	int _bestTime;
-
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point.
 	int _team;
@@ -144,15 +132,6 @@ public:
 class FriendlyGuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
-	// The escape conditions for reference
-	const EscapeConditions& _conditions;
-
-	// The area number the AI starts to flee in
-	int _startAreaNum;
-
-	// The best travel time so far
-	int _bestTime;
-
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point.
 	int _team;
