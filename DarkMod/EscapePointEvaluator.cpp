@@ -18,30 +18,31 @@ static bool init_version = FileVersionList("$Id: EscapePointEvaluator.cpp 870 20
 FarthestEscapePointFinder::FarthestEscapePointFinder(const EscapeConditions& conditions) :
 	_conditions(conditions),
 	_bestId(-1),
-	_bestDistance(-1.0f)
+	_bestTime(-1)
 {
 	// The location of the threat
 	_threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
+
+	// Get the starting area number
+	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
 }
 
 bool FarthestEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
-	// Is this point nearer than the currently best candidate?
-	float distance = (_threatOrigin - escapePoint.origin).LengthFast();
+	int travelTime;
+	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
 
-	if (_bestId == -1) 
-	{
-		// No candidate found so far, take this one
-		_bestId = escapePoint.id;
-		_bestDistance = distance;
-		return true; // continue search
-	}
+	// Calculate the traveltime
+	idReachability* reach;
+	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
+	
+	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
 
-	if (distance > _bestDistance)
+	if (travelTime > _bestTime)
 	{
 		// Yes, this is a better flee point
 		_bestId = escapePoint.id;
-		_bestDistance = distance;
+		_bestTime = travelTime;
 	}
 
 	return true; // TRUE = continue search

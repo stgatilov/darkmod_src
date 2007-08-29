@@ -60,7 +60,11 @@ class FarthestEscapePointFinder :
 	// The origin of the threatening entity
 	idVec3 _threatOrigin;
 
-	float _bestDistance;
+	// The area number the AI starts to flee in
+	int _startAreaNum;
+
+	// The best travel time so far
+	int _bestTime;
 
 public:
 	FarthestEscapePointFinder(const EscapeConditions& conditions);
