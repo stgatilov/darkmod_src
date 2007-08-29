@@ -148,3 +148,51 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 
 	return true; // TRUE = continue search
 }
+
+/**
+ * FriendlyGuardedEscapePointFinder
+ */
+FriendlyGuardedEscapePointFinder::FriendlyGuardedEscapePointFinder(const EscapeConditions& conditions) :
+	EscapePointEvaluator((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
+	_conditions(conditions),
+	_bestTime(0),
+	_team(conditions.self.GetEntity()->team)
+{
+	// Get the starting area number
+	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
+}
+
+bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
+{
+	if (!escapePoint.isGuarded || !gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
+	{
+		// Not guarded, continue the search
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is either not friendly or not guarded.\r", escapePoint.id);
+		return true;
+	}
+
+	if (_conditions.distanceOption == DIST_DONT_CARE)
+	{
+		_bestId = escapePoint.id;
+		return false; // we have a point, we don't care about distance, end the search
+	}
+
+	// Escape point is guarded, now calculate the walk distance
+	int travelTime;
+	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
+
+	// Calculate the traveltime
+	idReachability* reach;
+	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
+	
+	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
+
+	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
+	{
+		// Yes, this is a better flee point
+		_bestId = escapePoint.id;
+		_bestTime = travelTime;
+	}
+
+	return true; // TRUE = continue search
+}

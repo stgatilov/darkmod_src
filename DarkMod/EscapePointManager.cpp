@@ -174,6 +174,10 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_FRIENDLY\r");
 			evaluator = EscapePointEvaluatorPtr(new FriendlyEscapePointFinder(conditions));
 			break;
+		case FIND_FRIENDLY_GUARDED:
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_FRIENDLY_GUARDED\r");
+			evaluator = EscapePointEvaluatorPtr(new FriendlyGuardedEscapePointFinder(conditions));
+			break;
 		default:
 			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: DEFAULT = FIND_ANY\r");
 			// This is the default algorithm: seek the farthest point

@@ -2382,7 +2382,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
 	conditions.fromPosition = org;
 	conditions.self = this;
 	conditions.distanceOption = DIST_DONT_CARE;
-	conditions.algorithm = FIND_GUARDED;
+	conditions.algorithm = FIND_FRIENDLY_GUARDED;
 
 	// Request the escape goal from the manager
 	EscapeGoal goal = gameLocal.m_EscapePointManager->GetEscapeGoal(conditions);

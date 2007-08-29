@@ -30,6 +30,7 @@ enum EscapePointAlgorithm {
 	FIND_ANY,
 	FIND_GUARDED,
 	FIND_FRIENDLY,
+	FIND_FRIENDLY_GUARDED,
 };
 
 enum EscapeDistanceOption {
