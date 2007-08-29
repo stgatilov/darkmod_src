@@ -29,6 +29,7 @@ class tdmPathFlee;
 enum EscapePointAlgorithm {
 	FIND_ANY,
 	FIND_GUARDED,
+	FIND_FRIENDLY,
 };
 
 struct EscapeConditions
@@ -72,6 +73,9 @@ struct EscapePoint
 	// The AAS area number of the entity's origin.
 	int areaNum;
 
+	// The team this escape point is belonging to (default = 0, neutral)
+	int team;
+
 	// TRUE, if an armed AI is supposed to hang around at the escape point.
 	bool isGuarded;
 
@@ -79,7 +83,8 @@ struct EscapePoint
 	EscapePoint() :
 		aasId(-1),
 		areaNum(-1),
-		isGuarded(false)
+		isGuarded(false),
+		team(0) // neutral
 	{}
 };
 

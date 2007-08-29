@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 #include "EscapePointManager.h"
 
 #define SPAWNARG_IS_GUARDED "is_guarded"
+#define SPAWNARG_TEAM "team"
 
 CEscapePointManager::CEscapePointManager() :
 	_escapeEntities(new EscapeEntityList),
@@ -97,6 +98,7 @@ void CEscapePointManager::InitAAS()
 					escPoint.origin = escapeEnt->GetPhysics()->GetOrigin();
 					escPoint.pathFlee = (*_escapeEntities)[i];
 					escPoint.isGuarded = escapeEnt->spawnArgs.GetBool(SPAWNARG_IS_GUARDED);
+					escPoint.team = escapeEnt->spawnArgs.GetInt(SPAWNARG_TEAM);
 
 					// Pack the info structure to this list
 					int newIndex = _aasEscapePoints[aas]->Append(escPoint);
@@ -167,6 +169,10 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 		case FIND_GUARDED:
 			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_GUARDED\r");
 			evaluator = EscapePointEvaluatorPtr(new GuardedEscapePointFinder(conditions));
+			break;
+		case FIND_FRIENDLY:
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_FRIENDLY\r");
+			evaluator = EscapePointEvaluatorPtr(new FriendlyEscapePointFinder(conditions));
 			break;
 		default:
 			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: DEFAULT = FIND_ANY\r");

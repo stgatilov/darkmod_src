@@ -22,9 +22,6 @@ AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
 	_conditions(conditions),
 	_bestTime(0)
 {
-	// The location of the threat
-	_threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
-
 	// Get the starting area number
 	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
 }
@@ -59,9 +56,6 @@ GuardedEscapePointFinder::GuardedEscapePointFinder(const EscapeConditions& condi
 	_conditions(conditions),
 	_bestTime(conditions.findNearest ? 1000000 : -1)
 {
-	// The location of the threat
-	_threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
-
 	// Get the starting area number
 	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
 }
@@ -72,6 +66,48 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 	{
 		// Not guarded, continue the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not guarded.\r", escapePoint.id);
+		return true;
+	}
+
+	// Escape point is guarded, now calculate the walk distance
+	int travelTime;
+	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
+
+	// Calculate the traveltime
+	idReachability* reach;
+	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
+	
+	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
+
+	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
+	{
+		// Yes, this is a better flee point
+		_bestId = escapePoint.id;
+		_bestTime = travelTime;
+	}
+
+	return true; // TRUE = continue search
+}
+
+/**
+ * FriendlyEscapePointFinder
+ */
+FriendlyEscapePointFinder::FriendlyEscapePointFinder(const EscapeConditions& conditions) :
+	EscapePointEvaluator(conditions.findNearest ? 1 : -1),
+	_conditions(conditions),
+	_bestTime(conditions.findNearest ? 1000000 : -1),
+	_team(conditions.self.GetEntity()->team)
+{
+	// Get the starting area number
+	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
+}
+
+bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
+{
+	if (!gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
+	{
+		// Not guarded, continue the search
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not friendly.\r", escapePoint.id);
 		return true;
 	}
 

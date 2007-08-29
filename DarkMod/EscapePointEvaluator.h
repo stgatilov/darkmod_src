@@ -74,9 +74,6 @@ class AnyEscapePointFinder :
 	// The escape conditions for reference
 	const EscapeConditions& _conditions;
 
-	// The origin of the threatening entity
-	idVec3 _threatOrigin;
-
 	// The area number the AI starts to flee in
 	int _startAreaNum;
 
@@ -98,9 +95,6 @@ class GuardedEscapePointFinder :
 	// The escape conditions for reference
 	const EscapeConditions& _conditions;
 
-	// The origin of the threatening entity
-	idVec3 _threatOrigin;
-
 	// The area number the AI starts to flee in
 	int _startAreaNum;
 
@@ -109,6 +103,34 @@ class GuardedEscapePointFinder :
 
 public:
 	GuardedEscapePointFinder(const EscapeConditions& conditions);
+
+	virtual bool Evaluate(EscapePoint& escapePoint);
+};
+
+/**
+ * greebo: This visitor tries to locate a friendly escape point.
+ *         Whether an escape point is friendly or not is determined
+ *         by the "team" spawnarg on the PathFlee entity and is checked
+ *         using the RelationsManager.
+ */
+class FriendlyEscapePointFinder :
+	public EscapePointEvaluator
+{
+	// The escape conditions for reference
+	const EscapeConditions& _conditions;
+
+	// The area number the AI starts to flee in
+	int _startAreaNum;
+
+	// The best travel time so far
+	int _bestTime;
+
+	// The team of the fleeing AI, which is evaluated against the
+	// team of the escape point.
+	int _team;
+
+public:
+	FriendlyEscapePointFinder(const EscapeConditions& conditions);
 
 	virtual bool Evaluate(EscapePoint& escapePoint);
 };
