@@ -27,8 +27,8 @@ class tdmPathFlee;
  *         evaluating the escape points.
  */
 enum EscapePointAlgorithm {
-	FIND_FARTHEST = 1,
-	FIND_NEAREST_GUARDED,
+	FIND_ANY,
+	FIND_GUARDED,
 };
 
 struct EscapeConditions
@@ -45,8 +45,11 @@ struct EscapeConditions
 	// The AAS the fleeing AI is using.
 	idAAS* aas;
 
-	// The maximum distance
-	float maxDistance;
+	// TRUE if the nearest, FALSE if the farthest should be found.
+	bool findNearest;
+
+	// The algorithm to use
+	EscapePointAlgorithm algorithm;
 };
 
 /**
@@ -69,10 +72,14 @@ struct EscapePoint
 	// The AAS area number of the entity's origin.
 	int areaNum;
 
+	// TRUE, if an armed AI is supposed to hang around at the escape point.
+	bool isGuarded;
+
 	// Constructor
 	EscapePoint() :
 		aasId(-1),
-		areaNum(-1)
+		areaNum(-1),
+		isGuarded(false)
 	{}
 };
 
@@ -116,8 +123,6 @@ class CEscapePointManager
 
 	// The highest used escape point ID
 	int _highestEscapePointId;
-
-	EscapePointAlgorithm _evaluatorType;
 
 public:
 

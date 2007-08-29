@@ -29,10 +29,14 @@ protected:
 	// This holds the ID of the best escape point so far
 	int _bestId;
 
+	// This is either -1 (find farthest) or 1 (find nearest)
+	int _distanceMultiplier;
+
 public:
 	// Default Constructor
-	EscapePointEvaluator() :
-		_bestId(-1) // Set the ID to invalid
+	EscapePointEvaluator(int distanceMultiplier) :
+		_bestId(-1), // Set the ID to invalid
+		_distanceMultiplier(distanceMultiplier)
 	{}
 
 	/**
@@ -60,10 +64,11 @@ typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
  */
 
 /**
- * greebo: This visitor returns the escape point which is farthest away
- *         from the threatening entity.
+ * greebo: This visitor returns the escape point which is nearest or farthest away
+ *         from the threatening entity. This is determined by the algorithm in the
+ *         EscapeConditions structure.
  */
-class FarthestEscapePointFinder :
+class AnyEscapePointFinder :
 	public EscapePointEvaluator
 {
 	// The escape conditions for reference
@@ -79,16 +84,15 @@ class FarthestEscapePointFinder :
 	int _bestTime;
 
 public:
-	FarthestEscapePointFinder(const EscapeConditions& conditions);
+	AnyEscapePointFinder(const EscapeConditions& conditions);
 
 	virtual bool Evaluate(EscapePoint& escapePoint);
 };
 
 /**
- * greebo: This visitor tries to locate the nearest
- *         guarded escape point.
+ * greebo: This visitor tries to locate a guarded escape point.
  */
-class NearestGuardedEscapePointFinder :
+class GuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
 	// The escape conditions for reference
@@ -104,7 +108,7 @@ class NearestGuardedEscapePointFinder :
 	int _bestTime;
 
 public:
-	NearestGuardedEscapePointFinder(const EscapeConditions& conditions);
+	GuardedEscapePointFinder(const EscapeConditions& conditions);
 
 	virtual bool Evaluate(EscapePoint& escapePoint);
 };

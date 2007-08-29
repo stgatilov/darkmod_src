@@ -13,10 +13,11 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 
 #include "EscapePointManager.h"
 
+#define SPAWNARG_IS_GUARDED "is_guarded"
+
 CEscapePointManager::CEscapePointManager() :
 	_escapeEntities(new EscapeEntityList),
-	_highestEscapePointId(0),
-	_evaluatorType(FIND_FARTHEST)
+	_highestEscapePointId(0)
 {}
 
 CEscapePointManager::~CEscapePointManager()
@@ -95,6 +96,7 @@ void CEscapePointManager::InitAAS()
 					escPoint.areaNum = areaNum;
 					escPoint.origin = escapeEnt->GetPhysics()->GetOrigin();
 					escPoint.pathFlee = (*_escapeEntities)[i];
+					escPoint.isGuarded = escapeEnt->spawnArgs.GetBool(SPAWNARG_IS_GUARDED);
 
 					// Pack the info structure to this list
 					int newIndex = _aasEscapePoints[aas]->Append(escPoint);
@@ -156,16 +158,20 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	// The evaluator pointer
 	EscapePointEvaluatorPtr evaluator;
 	
-	switch (_evaluatorType)
+	switch (conditions.algorithm)
 	{
-		case FIND_FARTHEST:
-			evaluator = EscapePointEvaluatorPtr(new FarthestEscapePointFinder(conditions));
+		case FIND_ANY:
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_ANY\r");
+			evaluator = EscapePointEvaluatorPtr(new AnyEscapePointFinder(conditions));
 			break;
-		case FIND_NEAREST_GUARDED:
-			evaluator = EscapePointEvaluatorPtr(new NearestGuardedEscapePointFinder(conditions));
+		case FIND_GUARDED:
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_GUARDED\r");
+			evaluator = EscapePointEvaluatorPtr(new GuardedEscapePointFinder(conditions));
+			break;
 		default:
+			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: DEFAULT = FIND_ANY\r");
 			// This is the default algorithm: seek the farthest point
-			evaluator = EscapePointEvaluatorPtr(new FarthestEscapePointFinder(conditions));
+			evaluator = EscapePointEvaluatorPtr(new AnyEscapePointFinder(conditions));
 	};
 
 	assert(evaluator); // the pointer must be non-NULL after this point
