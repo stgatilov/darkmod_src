@@ -118,7 +118,7 @@ EscapePoint* CEscapePointManager::GetEscapePoint(int id)
 
 EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions)
 {
-	assert(aas != NULL);
+	assert(conditions.aas != NULL);
 	// The AAS pointer has to be known
 	assert(_aasEscapePoints.find(conditions.aas) != _aasEscapePoints.end());
 
