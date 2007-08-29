@@ -39,7 +39,6 @@ enum EscapeDistanceOption
 	DIST_DONT_CARE,           // Don't care whether nearer or farther
 	DIST_NEAREST,             // Find the nearest
 	DIST_FARTHEST,            // Find the farthest escape point
-	DIST_MINIMUM_FROM_THREAT, // Find a point that is reasonably far from the threating entity
 };
 
 struct EscapeConditions
@@ -58,6 +57,10 @@ struct EscapeConditions
 
 	// Whether the distance should be considered or not
 	EscapeDistanceOption distanceOption;
+
+	// The minimum distance to the threatening entity.
+	// Set this to negative values if this should be ignored.
+	float minDistanceToThreat;
 
 	// The algorithm to use
 	EscapePointAlgorithm algorithm;

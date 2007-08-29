@@ -18,11 +18,10 @@ EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
 	_bestId(-1), // Set the ID to invalid
 	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
-	_bestTime(0)
-{
-	// Get the starting area number
-	_startAreaNum = conditions.aas->PointAreaNum(conditions.fromPosition);
-}
+	_startAreaNum(conditions.aas->PointAreaNum(conditions.fromPosition)),
+	_bestTime(0),
+	_threatPosition(conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin())
+{}
 
 bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 {
@@ -44,9 +43,15 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	// Take this if no point has been found yet or if this one is better
 	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
 	{
-		// Yes, this is a better flee point
-		_bestId = escapePoint.id;
-		_bestTime = travelTime;
+		// Either the minDistanceToThreat is negative, or the distance has to be larger
+		// for the escape point to be considered as better
+		if (_conditions.minDistanceToThreat < 0 || 
+			(_threatPosition - escapePoint.origin).LengthFast() >= _conditions.minDistanceToThreat)
+		{
+			// This is a better flee point
+			_bestId = escapePoint.id;
+			_bestTime = travelTime;
+		}
 	}
 
 	return true;

@@ -40,6 +40,8 @@ protected:
 	// This is either -1 (find farthest) or 1 (find nearest)
 	int _distanceMultiplier;
 
+	idVec3 _threatPosition;
+
 public:
 	// Default Constructor
 	EscapePointEvaluator(const EscapeConditions& conditions);
