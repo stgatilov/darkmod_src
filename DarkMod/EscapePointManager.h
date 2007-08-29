@@ -10,6 +10,8 @@
 #define ESCAPE_POINT_MANAGER__H
 
 #include "../idlib/precompiled.h"
+#include <map>
+#include <boost/shared_ptr.hpp>
 
 template<class type>
 class idEntityPtr;
@@ -29,6 +31,9 @@ typedef struct EscapeConditions_t
 	// The threatening entity to flee from
 	idEntityPtr<idEntity> fromEntity;
 
+	// The AAS the fleeing AI is using.
+	idAAS* aas;
+
 	// The maximum distance
 	float maxDistance;
 } EscapeConditions;
@@ -46,8 +51,21 @@ typedef struct EscapeGoal_t
 
 class CEscapePointManager
 {
-	// The list of all the escape points in this map
-	idList< idEntityPtr<tdmPathFlee> > _escapePoints;
+	// A list of Escape Point entities
+	typedef idList< idEntityPtr<tdmPathFlee> > EscapePointList;
+
+	// The pointer-type for the list above
+	typedef boost::shared_ptr<EscapePointList> EscapePointListPtr;
+
+	// A map associating an AAS to EscapePointLists.
+	typedef std::map<idAAS*, EscapePointListPtr> AASEscapePointMap;
+
+	// This is the master list containing all the escape point entities in this map
+	EscapePointListPtr _escapePoints;
+
+	// The map of escape points for each AAS type.
+	// Each of the lists is a subset of the master list above
+	AASEscapePointMap _aasEscapePoints;
 
 public:
 
