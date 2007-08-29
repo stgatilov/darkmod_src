@@ -13,6 +13,8 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 
+#include "EscapePointEvaluator.h"
+
 template<class type>
 class idEntityPtr;
 

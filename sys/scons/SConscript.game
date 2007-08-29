@@ -120,6 +120,7 @@ darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \
 DifficultyMenu.cpp \
+EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
 fdchar.cpp \
 force_grab.cpp \

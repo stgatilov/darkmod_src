@@ -18,7 +18,7 @@ CEscapePointManager::CEscapePointManager() :
 	_highestEscapePointId(0)
 {}
 
-	CEscapePointManager::~CEscapePointManager()
+CEscapePointManager::~CEscapePointManager()
 {}
 
 void CEscapePointManager::Clear()
@@ -124,6 +124,10 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 
 	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\r");
 
+	// A timer object to measure the time it needs to calculate the escape route
+	idTimer timer;
+	timer.Start();
+
 	// Create a shortcut to the list
 	EscapePointList& escapePoints = *_aasEscapePoints[conditions.aas];
 
@@ -146,36 +150,44 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 		return goal;
 	}
 
-	// The location of the threat
-	idVec3 threatOrigin = conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin();
+	// At this point we have more than 1 escape point, run the evaluation
 
-	// The index of the best point so far (= the first one, better than nothing)
-	int bestPoint = 0;
-	goal.distance = (threatOrigin - escapePoints[0].origin).LengthFast();
+	// Setup the walker class
+	FarthestEscapePointFinder evaluator(conditions);
 
 	// Start with the second point in the list
-	for (int i = 1; i < escapePoints.Num(); i++)
+	for (int i = 0; i < escapePoints.Num(); i++)
 	{
-		// Evaluate the given escape point
-
-		// Is this point nearer than the currently best candidate?
-		float distance = (threatOrigin - escapePoints[i].origin).LengthFast();
-
-		if (distance > goal.distance)
+		if (!evaluator.Evaluate(escapePoints[i])) 
 		{
-			// Yes, this is a better flee point
-			bestPoint = i;
-			goal.escapePointId = escapePoints[i].id;
-			goal.distance = distance;
+			// Evaluator returned FALSE, break the loop
+			break;
 		}
 	}
+
+	goal.escapePointId = evaluator.GetBestEscapePoint();
+
+	if (goal.escapePointId == -1)
+	{
+		// No point found, return false
+		DM_LOG(LC_AI, LT_DEBUG).LogString("No escape point found!\r");
+		return goal;
+	}
+
+	timer.Stop();
+
+	// Calculate the distance and store it into the goal structure
+	EscapePoint* bestPoint = GetEscapePoint(goal.escapePointId);
+	goal.distance = (conditions.self.GetEntity()->GetPhysics()->GetOrigin() - bestPoint->origin).LengthFast();
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString(
 		"Best escape point has ID %d at %f %f %f in area %d.\r", 
 		goal.escapePointId, 
-		escapePoints[bestPoint].origin.x, escapePoints[bestPoint].origin.y, escapePoints[bestPoint].origin.z, 
-		escapePoints[bestPoint].areaNum
+		bestPoint->origin.x, bestPoint->origin.y, bestPoint->origin.z, 
+		bestPoint->areaNum
 	);
+
+	DM_LOG(LC_AI, LT_INFO).LogString("Escape route calculation took %f msec.\r", timer.Milliseconds());
 
 	return goal;
 }
