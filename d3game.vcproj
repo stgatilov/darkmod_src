@@ -856,6 +856,12 @@
 					RelativePath=".\DarkMod\DifficultyMenu.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\EscapePointManager.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\EscapePointManager.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\fdchar.cpp">
 				</File>
 				<File
