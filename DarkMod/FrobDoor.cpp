@@ -850,6 +850,8 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
 			m->SetOrigin(v);
 		}
+
+		m->UpdateVisuals();
 	}
 }
 
