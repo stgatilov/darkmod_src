@@ -162,7 +162,7 @@ const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
 
 // TDM
-const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss" );
+const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
 const idEventDef AI_RegisterKilledTask( "registerKilledTask", "sd" );
 const idEventDef AI_RegisterKnockedOutTask( "registerKnockedOutTask", "sd" );
 

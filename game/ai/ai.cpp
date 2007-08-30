@@ -7455,6 +7455,7 @@ void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 			headAnim.CycleAnim( m_lipSyncAnim );
 		}
 	}
+	idThread::ReturnInt(MS2SEC(duration));
 }
 
 void idAI::StopLipSync()
