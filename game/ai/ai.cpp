@@ -2362,66 +2362,93 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 
 bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 {
-	int				areaNum;
-	aasObstacle_t	obstacle;
-	idBounds		bounds;
-	idVec3			pos;
-
+	EscapePointAlgorithm algorithmType = static_cast<EscapePointAlgorithm>(algorithm);
+	
 	if ( !aas || !entityToFleeFrom ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
 
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
+	// The current AI origin
+	const idVec3& org = physicsObj.GetOrigin();
 
-	// Setup the escape conditions
-	EscapeConditions conditions;
-	
-	conditions.fromEntity = entityToFleeFrom;
-	conditions.aas = aas;
-	conditions.fromPosition = org;
-	conditions.self = this;
-	conditions.distanceOption = static_cast<EscapeDistanceOption>(distanceOption);
-	conditions.algorithm = static_cast<EscapePointAlgorithm>(algorithm);
-	conditions.minDistanceToThreat = 400.0f;
+	// These two will hold the travel destination info
+	idVec3 moveDest;
+	int moveAreaNum(-1);
 
-	// Request the escape goal from the manager
-	EscapeGoal goal = gameLocal.m_EscapePointManager->GetEscapeGoal(conditions);
-
-	if (goal.escapePointId == -1)
+	if (algorithmType != FIND_AAS_AREA_FAR_FROM_THREAT)
 	{
-		// Invalid escape point id returned
-		return false;
-	}
+		// Use the EscapePointManager to locate a pathFlee entity
 
-	// Get the actual point (this should never be NULL)
-	EscapePoint* targetPoint = gameLocal.m_EscapePointManager->GetEscapePoint(goal.escapePointId);
+		// Setup the escape conditions
+		EscapeConditions conditions;
 		
-	// consider the entity the monster is getting close to as an obstacle
-	/*obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
+		conditions.fromEntity = entityToFleeFrom;
+		conditions.aas = aas;
+		conditions.fromPosition = org;
+		conditions.self = this;
+		conditions.distanceOption = static_cast<EscapeDistanceOption>(distanceOption);
+		conditions.algorithm = algorithmType;
+		conditions.minDistanceToThreat = 400.0f;
 
-	if ( entityToFleeFrom == enemy.GetEntity() ) {
-		pos = lastVisibleEnemyPos;
-	} else {
-		pos = entityToFleeFrom->GetPhysics()->GetOrigin();
+		// Request the escape goal from the manager
+		EscapeGoal goal = gameLocal.m_EscapePointManager->GetEscapeGoal(conditions);
+
+		if (goal.escapePointId == -1)
+		{
+			// Invalid escape point id returned
+			return false;
+		}
+
+		// Get the actual point (this should never be NULL)
+		EscapePoint* targetPoint = gameLocal.m_EscapePointManager->GetEscapePoint(goal.escapePointId);
+
+		moveDest = targetPoint->origin;
+		moveAreaNum = targetPoint->areaNum;
+	}
+	else 
+	{
+		// algorithm == FIND_AAS_AREA_FAR_FROM_THREAT
+
+		int	areaNum = PointReachableAreaNum(org);
+		
+		// consider the entity the monster is getting close to as an obstacle
+		aasObstacle_t obstacle;
+		obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
+
+		idVec3 pos;
+
+		if ( entityToFleeFrom == enemy.GetEntity() ) {
+			pos = lastVisibleEnemyPos;
+		} else {
+			pos = entityToFleeFrom->GetPhysics()->GetOrigin();
+		}
+
+		// Setup the evaluator class
+		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100);
+		aasGoal_t dummy;
+		aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, &obstacle, 1, findEscapeArea);
+
+		aasGoal_t& goal = findEscapeArea.GetEscapeGoal();
+
+		if (goal.areaNum == -1)
+		{
+			// Invalid escape point id returned
+			return false;
+		}
+
+		moveDest = goal.origin;
+		moveAreaNum = goal.areaNum;
 	}
 
-	// Setup the evaluator class
-	tdmAASFindEscape findEscapeArea(pos, maxDist);
-	aasGoal_t dummy;
-	aas->FindNearestGoal( dummy, areaNum, org, pos, travelFlags, &obstacle, 1, findEscapeArea );
-
-	aasGoal_t& goal = findEscapeArea.GetEscapeGoal();*/
-
-	if ( ReachedPos( targetPoint->origin, move.moveCommand ) ) {
+	if ( ReachedPos( moveDest, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
 		return true;
 	}
 
-	move.moveDest		= targetPoint->origin;
-	move.toAreaNum		= targetPoint->areaNum;
+	move.moveDest		= moveDest;
+	move.toAreaNum		= moveAreaNum;
 	move.goalEntity		= entityToFleeFrom;
 	move.moveCommand	= MOVE_FLEE;
 	move.moveStatus		= MOVE_STATUS_MOVING;

@@ -14,9 +14,16 @@ static bool init_version = FileVersionList("$Id: tdmAASFindEscape.cpp 1246 2007-
 
 #include "tdmAASFindEscape.h"
 
-tdmAASFindEscape::tdmAASFindEscape(const idVec3& threatPosition, float maxDist) :
+tdmAASFindEscape::tdmAASFindEscape(
+	const idVec3& threatPosition, 
+	const idVec3& selfPosition, 
+	float minDistToThreat,
+	float minDistToSelf
+) :
 	_threatPosition(threatPosition),
-	_maxDistSqr(maxDist*maxDist),
+	_selfPosition(selfPosition),
+	_minDistSelfSqr(minDistToSelf*minDistToSelf),
+	_minDistThreatSqr(minDistToThreat*minDistToThreat),
 	_bestDistSqr(0)
 {
 	_goal.areaNum = -1;
@@ -29,16 +36,25 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 	idStr numberStr(areaNum);
 	idMat3 viewAngles;
 	viewAngles.Identity();
-	gameRenderWorld->DrawText(numberStr.c_str(), aas->AreaCenter(areaNum), 1, colorRed, viewAngles, 1, 20000);
+	//gameRenderWorld->DrawText(numberStr.c_str(), aas->AreaCenter(areaNum), 1, colorRed, viewAngles, 1, 5000);
 
-	float distSqr(( _threatPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
+	float distThreatSqr(( _threatPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
+	float distSelfSqr(( _selfPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Testing area: %d, distSqr = %f, maxDistSqr = %f\r", areaNum, distSqr, _maxDistSqr);
+	DM_LOG(LC_AI, LT_DEBUG).LogString(
+		"Testing area: %d, distThreatSqr = %f, distSelfSqr = %f, _minDistThreatSqr = %f\r", 
+		areaNum, distThreatSqr, distSelfSqr, _minDistThreatSqr
+	);
 
-	if (distSqr < _maxDistSqr && distSqr > _bestDistSqr)
+	// Minimum distances must be obeyed and the distance 
+	// to the threat must be greater than the one of the best candidate so far
+	if (distThreatSqr > _bestDistSqr && 
+		distThreatSqr >= _minDistThreatSqr && 
+		distSelfSqr >= _minDistSelfSqr)
 	{
+		DM_LOG(LC_AI, LT_DEBUG).LogString("This one is better.\r");
 		// We've got a new best candidate, which is farther away than the previous candidate
-		_bestDistSqr = distSqr;
+		_bestDistSqr = distThreatSqr;
 
 		// Fill the goal with the new values
 		_goal.areaNum = areaNum;

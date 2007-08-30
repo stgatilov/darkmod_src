@@ -28,10 +28,11 @@ class tdmPathFlee;
  */
 enum EscapePointAlgorithm
 {
-	FIND_ANY = 0,
-	FIND_GUARDED,
-	FIND_FRIENDLY,
-	FIND_FRIENDLY_GUARDED,
+	FIND_ANY = 0,                  // Find any escape point
+	FIND_GUARDED,                  // Find a guarded escape point
+	FIND_FRIENDLY,                 // Find a friendly escape point
+	FIND_FRIENDLY_GUARDED,		   // Find a guarded AND friendly escape point
+	FIND_AAS_AREA_FAR_FROM_THREAT, // Finds any AAS area that is far away enough from the threat
 };
 
 enum EscapeDistanceOption
