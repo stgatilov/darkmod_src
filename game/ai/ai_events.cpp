@@ -71,7 +71,7 @@ const idEventDef AI_MoveToEnemy( "moveToEnemy" );
 const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight" );
 const idEventDef AI_MoveOutOfRange( "moveOutOfRange", "ef" );
 // greebo: Flee from an entity
-const idEventDef AI_Flee( "flee", "ef" );
+const idEventDef AI_Flee( "flee", "edd" );
 const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", "es" );
 const idEventDef AI_Wander( "wander" );
 const idEventDef AI_MoveToEntity( "moveToEntity", "e" );
@@ -1494,9 +1494,9 @@ void idAI::Event_MoveOutOfRange( idEntity *entity, float range ) {
 idAI::Event_Flee
 =====================
 */
-void idAI::Event_Flee(idEntity *entityToFleeFrom, float maxDist) {
+void idAI::Event_Flee(idEntity *entityToFleeFrom, int algorithm, int distanceOption) {
 	StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-	Flee(entityToFleeFrom, maxDist);
+	Flee(entityToFleeFrom, algorithm, distanceOption);
 }
 
 /*

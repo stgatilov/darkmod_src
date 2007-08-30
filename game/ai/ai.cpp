@@ -55,6 +55,8 @@ static const float s_AITactDist = 1.0f;
 
 const float s_DOOM_TO_METERS = 0.0254f;
 
+// TDM: Maximum flee distance for any AI
+const float MAX_FLEE_DISTANCE = 10000.0f;
 
 class CRelations;
 class CsndProp;
@@ -2358,7 +2360,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	return true;
 }
 
-bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
+bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 {
 	int				areaNum;
 	aasObstacle_t	obstacle;
@@ -2381,8 +2383,8 @@ bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
 	conditions.aas = aas;
 	conditions.fromPosition = org;
 	conditions.self = this;
-	conditions.distanceOption = DIST_NEAREST;
-	conditions.algorithm = FIND_FRIENDLY_GUARDED;
+	conditions.distanceOption = static_cast<EscapeDistanceOption>(distanceOption);
+	conditions.algorithm = static_cast<EscapePointAlgorithm>(algorithm);
 	conditions.minDistanceToThreat = 400.0f;
 
 	// Request the escape goal from the manager
@@ -2423,7 +2425,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, float maxDist)
 	move.goalEntity		= entityToFleeFrom;
 	move.moveCommand	= MOVE_FLEE;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.range			= maxDist;
+	move.range			= MAX_FLEE_DISTANCE;
 	move.speed			= fly_speed;
 	move.startTime		= gameLocal.time;
 	AI_MOVE_DONE		= false;

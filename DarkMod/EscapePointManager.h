@@ -28,7 +28,7 @@ class tdmPathFlee;
  */
 enum EscapePointAlgorithm
 {
-	FIND_ANY,
+	FIND_ANY = 0,
 	FIND_GUARDED,
 	FIND_FRIENDLY,
 	FIND_FRIENDLY_GUARDED,
@@ -36,7 +36,7 @@ enum EscapePointAlgorithm
 
 enum EscapeDistanceOption
 {
-	DIST_DONT_CARE,           // Don't care whether nearer or farther
+	DIST_DONT_CARE = 0,       // Don't care whether nearer or farther
 	DIST_NEAREST,             // Find the nearest
 	DIST_FARTHEST,            // Find the farthest escape point
 };
