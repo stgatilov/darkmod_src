@@ -44,6 +44,12 @@ typedef enum
  */
 class CFrobDoor : public CBinaryFrobMover {
 public:
+	typedef enum {
+		HANDLE_POS_ORIGINAL,	// Reset it to the original starting value
+		HANDLE_POS_SAMPLE		// Position it to a sample index.
+	} EHandleReset;
+
+public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
 							CFrobDoor( void );
@@ -103,7 +109,7 @@ public:
 	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
-	void					SetHandlePosition(bool bReset = false);
+	void					SetHandlePosition(EHandleReset, int pin_index = 0, int sample_index = 0);
 
 protected:
 	/**
