@@ -70,8 +70,9 @@ struct EscapeConditions
 /**
  * greebo: This represents one escape point in a given AAS grid. 
  */
-struct EscapePoint
+class EscapePoint
 {
+public:
 	// A unique ID for this escape point
 	int id;
 
@@ -100,6 +101,9 @@ struct EscapePoint
 		isGuarded(false),
 		team(0) // neutral
 	{}
+
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
 };
 
 // This is a result structure delivered by the escape point manager

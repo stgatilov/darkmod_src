@@ -14,7 +14,7 @@
 #include <boost/shared_ptr.hpp>
 
 // Forward Declaration
-struct EscapePoint;
+class EscapePoint;
 struct EscapeConditions;
 
 /**

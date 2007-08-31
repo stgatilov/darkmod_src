@@ -16,6 +16,34 @@ static bool init_version = FileVersionList("$Id: EscapePointManager.cpp 870 2007
 #define SPAWNARG_IS_GUARDED "is_guarded"
 #define SPAWNARG_TEAM "team"
 
+/**
+ * ---------------- EscapePoint implementation ----------------
+ */
+void EscapePoint::Save(idSaveGame *savefile) const
+{
+	savefile->WriteInt(id);
+	pathFlee.Save(savefile);
+	savefile->WriteInt(aasId);
+	savefile->WriteVec3(origin);
+	savefile->WriteInt(areaNum);
+	savefile->WriteInt(team);
+	savefile->WriteBool(isGuarded);
+}
+
+void EscapePoint::Restore(idRestoreGame *savefile)
+{
+	savefile->ReadInt(id);
+	pathFlee.Restore(savefile);
+	savefile->ReadInt(aasId);
+	savefile->ReadVec3(origin);
+	savefile->ReadInt(areaNum);
+	savefile->ReadInt(team);
+	savefile->ReadBool(isGuarded);
+}
+
+/**
+ * ---------------- CEscapePointManager implementation ----------------------
+ */
 CEscapePointManager::CEscapePointManager() :
 	_escapeEntities(new EscapeEntityList),
 	_highestEscapePointId(0)
@@ -29,14 +57,84 @@ void CEscapePointManager::Clear()
 	_escapeEntities->Clear();
 }
 
-void CEscapePointManager::Save( idSaveGame *savefile ) const
+void CEscapePointManager::Save(idSaveGame *savefile) const
 {
-	// TODO
+	savefile->WriteInt(_highestEscapePointId);
+
+	savefile->WriteInt(_escapeEntities->Num());
+	for (int i = 0; i < _escapeEntities->Num(); i++)
+	{
+		(*_escapeEntities)[i].Save(savefile);
+	}
+
+	// The number of AAS escape point maps
+	savefile->WriteInt(_aasEscapePoints.size());
+		
+	for (AASEscapePointMap::const_iterator it = _aasEscapePoints.begin();
+		 it != _aasEscapePoints.end();
+		 it++)
+	{
+		idAAS* aasPtr = it->first;
+		const EscapePointList& escapePointList = *it->second;
+		
+		// First get the AAS id for the pointer
+		savefile->WriteInt(gameLocal.GetAASId(aasPtr));
+
+		// Second, write out the list of escape points
+		savefile->WriteInt(escapePointList.Num());
+		for (int i = 0; i < escapePointList.Num(); i++)
+		{
+			escapePointList[i].Save(savefile);
+		}
+	}
+
+	// The _aasEscapePointIndex is rebuilt on restore
 }
 
-void CEscapePointManager::Restore( idRestoreGame *savefile )
+void CEscapePointManager::Restore(idRestoreGame *savefile)
 {
-	// TODO
+	int num; // dummy integer
+
+	savefile->ReadInt(_highestEscapePointId);
+
+	savefile->ReadInt(num);
+	_escapeEntities->SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		(*_escapeEntities)[i].Restore(savefile);
+	}
+
+	// Clear the shortcut index map, it gets filled on the fly
+	_aasEscapePointIndex.clear();
+
+	// The number of AAS escape point maps
+	savefile->ReadInt(num);
+	
+	for (int map = 0; map < num; map++)
+	{
+		// Get the idAAS* pointer from the savegame
+		int aasId;
+		savefile->ReadInt(aasId);
+		idAAS* aasPtr = gameLocal.GetAAS(aasId);
+
+		// Allocate a new list for the aasPtr
+		_aasEscapePoints[aasPtr] = EscapePointListPtr(new EscapePointList);
+		// Get a shortcut reference (for better code readabiltiy)
+		EscapePointList& escapePointList = *_aasEscapePoints[aasPtr];
+
+		int numPoints;
+		savefile->ReadInt(numPoints);
+		
+		// Resize the list according to the savefile info
+		escapePointList.SetNum(numPoints);
+		for (int i = 0; i < numPoints; i++)
+		{
+			escapePointList[i].Restore(savefile);
+
+			// Store the pointer to this escape point into the lookup table
+			_aasEscapePointIndex[escapePointList[i].id] = &escapePointList[i];
+		}
+	}
 }
 
 void CEscapePointManager::AddEscapePoint(tdmPathFlee* escapePoint)
