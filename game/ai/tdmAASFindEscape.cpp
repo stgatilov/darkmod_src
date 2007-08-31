@@ -52,13 +52,18 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 		distThreatSqr >= _minDistThreatSqr && 
 		distSelfSqr >= _minDistSelfSqr)
 	{
-		DM_LOG(LC_AI, LT_DEBUG).LogString("This one is better.\r");
 		// We've got a new best candidate, which is farther away than the previous candidate
 		_bestDistSqr = distThreatSqr;
 
 		// Fill the goal with the new values
 		_goal.areaNum = areaNum;
 		_goal.origin = areaCenter;
+
+		// There's a 50% chance that the search is truncated here.
+		if (gameLocal.random.RandomFloat() < 0.1f)
+		{
+			return true;
+		}
 	}
 
 	// Always return false, we're collecting all areas

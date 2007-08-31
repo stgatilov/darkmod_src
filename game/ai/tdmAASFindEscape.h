@@ -16,7 +16,7 @@
  * greebo: This evaluator is designed to find escape routes
  *         for fleeing actors. The TestArea method evaluates area
  *         candidates based on their distance to the threatening entity
- *         and returns TRUE for suitable areas.
+ *         and the current AI location.
  */
 class tdmAASFindEscape : public idAASCallback {
 public:
