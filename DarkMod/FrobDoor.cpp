@@ -828,6 +828,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 	{
 		m->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
 		m->SetOrigin(m_OriginalPosition);
+		m->UpdateVisuals();
 	}
 	else
 	{
