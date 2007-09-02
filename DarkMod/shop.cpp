@@ -5,9 +5,6 @@
 #include "../game/game_local.h"
 #include "./Inventory/Inventory.h"
 
-// type-in field for map name (temporary)
-idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
-
 CShopItem::CShopItem(const char *id, const char *name, const char *description,
 					 int cost, const char *image, int count, bool persistent, idEntity *entity, bool canDrop) {
 	this->id = id;
@@ -296,7 +293,7 @@ int CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) {
 }
 
 void CShop::DisplayShop(idUserInterface *gui) {
-	const char * mapName = tdm_mapName.GetString();
+	const char * mapName = gui->GetStateString("mapName");
 	const char * filename = va("maps/%s", mapName);
 
 	idMapFile* mapFile = new idMapFile;

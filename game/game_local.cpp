@@ -33,6 +33,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/shop.h"
 #include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
+#include "../DarkMod/ModMenu.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -50,6 +51,7 @@ extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
 extern CShop			g_Shop;
 extern CDifficultyMenu	g_Diff;
+extern CModMenu			g_Mods;
 
 #define BUFFER_LEN 4096
 
@@ -3024,6 +3026,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 {
 	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
+	g_Mods.HandleCommands(menuCommand, gui);
 }
 
 /*

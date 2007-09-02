@@ -17,8 +17,18 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 {
 	if (idStr::Icmp(menuCommand, "diffLoad") == 0)
 	{
-		// read in the objectives from map
-		InitializeDifficulty(gui);
+		// New game, determine the map
+		char * mapName = NULL;
+		idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);
+
+		if (mapName != NULL) {
+			InitializeDifficulty(gui, mapName);
+			gui->SetStateString("mapName", mapName);
+			idLib::fileSystem->FreeFile(mapName);
+		} else {
+			gameLocal.Warning( "Couldn't open startingMap.txt file" );
+			return;
+		}
 
 		// show the top of the "easy" list
 		scrollPos = 0;
@@ -57,7 +67,7 @@ void CDifficultyMenu::DisplayDifficulty(idUserInterface *gui)
 }
 
 // generate a list of objective description strings for each difficulty level
-void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui)
+void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui, const char * mapName)
 {
 	// clear out objectives
 	for (int i = 0; i < DIFFICULTY_COUNT; i++) {
@@ -65,7 +75,6 @@ void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui)
 	}
 
 	// read the map
-	const char * mapName = tdm_mapName.GetString();
 	const char * filename = va("maps/%s", mapName);
 	scrollPos = 0;
 	idMapFile* mapFile = new idMapFile;

@@ -16,7 +16,7 @@ public:
 	void HandleCommands(const char *menuCommand, idUserInterface *gui);
 
 	// initialize the difficulty data (read in objectives)
-	void InitializeDifficulty(idUserInterface *gui);
+	void InitializeDifficulty(idUserInterface *gui, const char * mapName);
 
 	// set the GUI variables to display difficulty/objectives
 	void DisplayDifficulty(idUserInterface *gui);
