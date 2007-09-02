@@ -45,12 +45,6 @@ public:
 	CFrobDoor				*GetDoor(void);
 	void					Event_GetDoor(void);
 	void					Event_Tap(void);
-	void					Event_FindHandleDoor(void);
-
-	/**
-	 * Find the door, that is associated with this handle.
-	 */
-	CFrobDoor				*FindDoor(idStr &Doorname);
 
 	/**
 	 * Functions that must be forwarded to the door.

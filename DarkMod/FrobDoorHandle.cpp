@@ -28,12 +28,10 @@ extern E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData);
 
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
 const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
-const idEventDef EV_TDM_Handle_FindDoor( "FindHandleDoor", NULL );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoorHandle )
 	EVENT( EV_TDM_Handle_GetDoor,		CFrobDoorHandle::Event_GetDoor )
 	EVENT( EV_TDM_Handle_Tap,			CFrobDoorHandle::Event_Tap )
-	EVENT( EV_TDM_Handle_FindDoor,		CFrobDoorHandle::Event_FindHandleDoor)
 END_CLASS
 
 
@@ -67,43 +65,8 @@ void CFrobDoorHandle::Spawn(void)
 	CBinaryFrobMover::Spawn();
 	LoadTDMSettings();
 
-	PostEventMS(&EV_TDM_Handle_FindDoor, 0);
-
 	// Dorhandles are always non-interruptable
 	m_bInterruptable = false;
-}
-
-void CFrobDoorHandle::Event_FindHandleDoor(void)
-{
-	idStr str;
-	idEntity *cst;
-
-	spawnArgs.GetString("door_body", "", str);
-	if(str.Length() > 0 && (cst = FindDoor(str)) != NULL)
-	{
-		if((m_Door = dynamic_cast<CFrobDoor *>(cst)) != NULL)
-			m_Door->SetDoorhandle(this);
-	}
-	else
-	{
-		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("door_body [%s] for handle [%s] not found.\r", str.c_str(), name.c_str());
-	}
-}
-
-CFrobDoor *CFrobDoorHandle::FindDoor(idStr &name)
-{
-	idEntity *e;
-	CFrobDoor *rc = NULL;
-
-	if((e = gameLocal.FindEntity(name.c_str())) != NULL)
-	{
-		if((rc = dynamic_cast<CFrobDoor *>(e)) != NULL)
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("door_body [%s] %08lX\r", name.c_str(), e);
-		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("door_body [%s] is not an entity of type CFrobDoor\r", name.c_str());
-	}
-
-	return rc;
 }
 
 CFrobDoor *CFrobDoorHandle::GetDoor(void)

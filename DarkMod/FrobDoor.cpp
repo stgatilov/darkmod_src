@@ -39,8 +39,10 @@ const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
+const idEventDef EV_TDM_Door_Init( "Init", NULL);						// set the bar/handle entity on the door
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
+	EVENT( EV_TDM_Door_Init,				CFrobDoor::Event_Init)
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
 	EVENT( EV_TDM_Door_Close,				CFrobDoor::Close)
 	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
@@ -92,17 +94,13 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 	savefile->WriteInt(m_OpenList.Num());
 	for (int i = 0; i < m_OpenList.Num(); i++)
-	{
 		savefile->WriteString(m_OpenList[i].c_str());
-	}
 
 	savefile->WriteString(m_MasterLock.c_str());
 
 	savefile->WriteInt(m_LockList.Num());
 	for (int i = 0; i < m_LockList.Num(); i++)
-	{
 		savefile->WriteString(m_LockList[i].c_str());
-	}
 
 	savefile->WriteInt(m_Pins.Num());
 	for (int i = 0; i < m_Pins.Num(); i++)
@@ -111,9 +109,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
-		{
 			savefile->WriteString(stringList[j].c_str());
-		}
 	}
 
 	savefile->WriteBool(m_PinTranslationFractionFlag);
@@ -140,7 +136,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 	m_DoubleDoor.Save(savefile);
 	m_Doorhandle.Save(savefile);
-	m_Tap.Save(savefile);
+	m_Bar.Save(savefile);
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -152,18 +148,14 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(num);
 	m_OpenList.SetNum(num);
 	for (int i = 0; i < num; i++)
-	{
 		savefile->ReadString(m_OpenList[i]);
-	}
 
 	savefile->ReadString(m_MasterLock);
 
 	savefile->ReadInt(num);
 	m_LockList.SetNum(num);
 	for (int i = 0; i < num; i++)
-	{
 		savefile->ReadString(m_LockList[i]);
-	}
 
 	int numPins;
 	savefile->ReadInt(numPins);
@@ -175,9 +167,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 		savefile->ReadInt(num);
 		m_Pins[i]->SetNum(num);
 		for (int j = 0; j < num; j++)
-		{
 			savefile->ReadString( (*m_Pins[i])[j] );
-		}
 	}
 
 	savefile->ReadBool(m_PinTranslationFractionFlag);
@@ -204,7 +194,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 
 	m_DoubleDoor.Restore(savefile);
 	m_Doorhandle.Restore(savefile);
-	m_Tap.Restore(savefile);
+	m_Bar.Restore(savefile);
 }
 
 void CFrobDoor::WriteToSnapshot( idBitMsgDelta &msg ) const
@@ -218,9 +208,6 @@ void CFrobDoor::ReadFromSnapshot( const idBitMsgDelta &msg )
 void CFrobDoor::Spawn( void )
 {
 	idStr str;
-	idEntity *e;
-	CFrobDoor *master;
-	idAngles tempAngle, partialAngle;
 
 	CBinaryFrobMover::Spawn();
 
@@ -244,69 +231,13 @@ void CFrobDoor::Spawn( void )
 			else
 				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, str[i]);
 		}
-
-		m_PinRotationFraction = m_Rotate/m_Pins.Num();
-		// Check if the rotation is empty and set the flag.
-		{
-			idAngles cmp;
-			cmp.Zero();
-			if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-				m_PinRotationFractionFlag = false;
-			else
-				m_PinRotationFractionFlag = true;
-		}
-
-		m_PinTranslationFraction = spawnArgs.GetVector("translate", "0 0 0")/m_Pins.Num();
-		// Check if the translation is empty and set the flag.
-		{
-			idVec3 cmp;
-			cmp.Zero();
-			if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-				m_PinTranslationFractionFlag = false;
-			else
-				m_PinTranslationFractionFlag = true;
-		}
-	}
-
-	if(spawnArgs.GetString("master_open", "", str))
-	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
-		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-			{
-				if(AddToMasterList(master->m_OpenList, str) == true)
-					m_MasterOpen = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
-			}
-			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
-		}
-		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
-	}
-
-	if(spawnArgs.GetString("master_lock", "", str))
-	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
-		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-			{
-				if(AddToMasterList(master->m_LockList, str) == true)
-					m_MasterLock = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
-			}
-			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
-		}
-		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not yet defined\r", m_MasterOpen.c_str());
 	}
 
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
 
-	//schedule finding the double doors for after all entities have spawned
-	PostEventMS( &EV_TDM_Door_FindDouble, 0 );
+	//schedule intialization of the doors for after all entities have spawned
+	PostEventMS(&EV_TDM_Door_Init, 0);
 
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
@@ -725,9 +656,6 @@ void CFrobDoor::SetDoorhandle(CFrobDoorHandle *h)
 	h->m_FrobPeers.AddUnique(name);
 	h->m_bFrobable = m_bFrobable;
 	h->Bind(this, true);
-
-	m_OriginalPosition = h->GetPhysics()->GetOrigin();
-	m_OriginalAngle = h->GetPhysics()->GetAxis().ToAngles();
 }
 
 void CFrobDoor::SetFrobbed(bool val)
@@ -817,7 +745,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 	idVec3 v;
 	double n;
 
-	idMover *m = m_Tap.GetEntity();
+	idEntity *m = m_Bar.GetEntity();
 	if(!m)
 		m = m_Doorhandle.GetEntity();
 
@@ -849,6 +777,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 			m_SampleTranslationFraction = m_PinTranslationFraction/n;
 
 			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
+			m->GetPhysics()->Set
 			m->SetOrigin(v);
 		}
 
@@ -1032,4 +961,128 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 Quit:
 	return;
+}
+
+void CFrobDoor::Event_Init(void)
+{
+	idStr str;
+	idEntity *e;
+	CFrobDoor *master;
+	idAngles tempAngle, partialAngle;
+
+	if(spawnArgs.GetString("master_open", "", str))
+	{
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_OpenList, str) == true)
+					m_MasterOpen = str;
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
+	}
+
+	if(spawnArgs.GetString("master_lock", "", str))
+	{
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_LockList, str) == true)
+					m_MasterLock = str;
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
+	}
+
+	if(spawnArgs.GetString("door_handle", "", str))
+	{
+		e = gameLocal.FindEntity(str);
+
+		if(e)
+		{
+			CFrobDoorHandle *dh = dynamic_cast<CFrobDoorHandle *>(e);
+			if(dh)
+			{
+				m_Doorhandle = dh;
+				m_OriginalPosition = e->GetPhysics()->GetOrigin();
+				m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
+				dh->m_Door = this;
+			}
+			else
+				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not a valid doorhandle: %s\r", str.c_str());
+
+			/*
+			This should not be done, because the door and the lock
+			may not be in the same position, and in such a case it may
+			not be desireable to highlight the lock/handle along with the door.
+
+			m_FrobPeers.AddUnique(e->name);
+			e->m_FrobPeers.AddUnique(name);
+			e->m_bFrobable = m_bFrobable;
+			*/
+		}
+		else
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not found: %s\r", str.c_str());
+	}
+
+	if(spawnArgs.GetString("lockpick_bar", "", str))
+	{
+		e = gameLocal.FindEntity(str);
+
+		if(e)
+		{
+			m_Bar = e;
+
+			// The bar overrides the handle info if it exists, because
+			// this is the one that has to move if the lock is picked.
+			m_OriginalPosition = e->GetPhysics()->GetOrigin();
+			m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
+
+			/*
+			This should not be done, because the door and the lock
+			may not be in the same position, and in such a case it may
+			not be desireable to highlight the lock/handle along with the door.
+
+			m_FrobPeers.AddUnique(e->name);
+			e->m_FrobPeers.AddUnique(name);
+			e->m_bFrobable = m_bFrobable;
+			*/
+		}
+		else
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", str.c_str());
+	}
+
+	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0")/m_Pins.Num();
+	// Check if the rotation is empty and set the flag.
+	{
+		idAngles cmp;
+		cmp.Zero();
+		if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+			m_PinRotationFractionFlag = false;
+		else
+			m_PinRotationFractionFlag = true;
+	}
+
+	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0")/m_Pins.Num();
+	// Check if the translation is empty and set the flag.
+	{
+		idVec3 cmp;
+		cmp.Zero();
+		if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+			m_PinTranslationFractionFlag = false;
+		else
+			m_PinTranslationFractionFlag = true;
+	}
+
+	FindDoubleDoor();
 }

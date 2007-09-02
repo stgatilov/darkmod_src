@@ -111,6 +111,14 @@ public:
 
 	void					SetHandlePosition(EHandleReset, int pin_index = 0, int sample_index = 0);
 
+	/**
+	 * Init will read the spawnargs lockpick_bar, lockpick_rotate and 
+	 * lockpick_translate, to setup the parameters how the bar or handle should behave
+	 * while it is picked. Also other intialization stuff, that can only be done after all
+	 * the entities are loaded, should be done here.
+	 */
+	void					Event_Init(void);
+
 protected:
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
@@ -185,6 +193,13 @@ protected:
 	idEntityPtr<CFrobDoorHandle>	m_Doorhandle;
 
 	/**
+	 * Bar is the movable part of a lock that should jiggle, while
+	 * the lock is being picked. The default is to use the doorhandle
+	 * but if lockpick_bar is set on the door, then this is used instead.
+	 */
+	idEntityPtr<idEntity>		m_Bar;
+
+	/**
 	 * These fractions define the stepping that a handle is moved for each pin,
 	 * while it is picked. This will define the boundary of the jiggling effect
 	 * to indicate the progress of the picking for each pin. The value is 
@@ -193,7 +208,6 @@ protected:
 	 * handle) and the lock has 6 pins, then the fraction is 45/6 = 7.5 degrees
 	 * per successfully picked pin.
 	 */
-	idEntityPtr<idMover>		m_Tap;
 	bool						m_PinTranslationFractionFlag;
 	bool						m_PinRotationFractionFlag;
 	idVec3						m_PinTranslationFraction;
