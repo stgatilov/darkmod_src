@@ -3116,8 +3116,8 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 					markerColor,
 					observeFrom,
 					observeFrom + arrowLength,
-					2.0f,
-					cv_ai_visdist_show.GetFloat()
+					2,
+					cv_ai_visdist_show.GetInteger()
 				);
 
 
@@ -3127,8 +3127,8 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 					markerColor2,
 					observeFrom + arrowLength,
 					midPoint,
-					2.0f,
-					cv_ai_visdist_show.GetFloat()
+					2,
+					cv_ai_visdist_show.GetInteger()
 				);
 			}
 			else
@@ -3141,8 +3141,8 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 					markerColor,
 					observeFrom,
 					midPoint,
-					2.0f,
-					cv_ai_visdist_show.GetFloat()
+					2,
+					cv_ai_visdist_show.GetInteger()
 				);
 			}
 
@@ -6742,8 +6742,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 					markerColor,
 					observeFrom,
 					p_physics->GetOrigin(),
-					2.0f,
-					cv_ai_visdist_show.GetFloat()
+					2,
+					cv_ai_visdist_show.GetInteger()
 				);
 
 
@@ -6799,8 +6799,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						markerColor,
 						observeFrom,
 						observeFrom + arrowLength,
-						2.0f,
-						cv_ai_visdist_show.GetFloat()
+						2,
+						cv_ai_visdist_show.GetInteger()
 					);
 
 
@@ -6810,8 +6810,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						markerColor2,
 						observeFrom + arrowLength,
 						midPoint,
-						2.0f,
-						cv_ai_visdist_show.GetFloat()
+						2,
+						cv_ai_visdist_show.GetInteger()
 					);
 
 
@@ -6832,8 +6832,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						markerColor,
 						observeFrom,
 						midPoint,
-						2.0f,
-						cv_ai_visdist_show.GetFloat()
+						2,
+						cv_ai_visdist_show.GetInteger()
 					);
 
 				}
