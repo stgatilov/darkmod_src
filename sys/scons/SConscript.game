@@ -134,6 +134,7 @@ Intersection.cpp \
 KeyboardHook.cpp \
 liquid.cpp \
 MissionData.cpp \
+ModMenu.cpp \
 overlaysys.cpp \
 PlayerData.cpp \
 Profile.cpp \

@@ -3,7 +3,11 @@
 #include "ModMenu.h"
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"
+#ifdef _WINDOWS
 #include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 CModMenu::CModMenu()
 {
@@ -55,7 +59,11 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		
 		// Set DOOM3.EXE path
 		darkmodPath = idLib::fileSystem->RelativePathToOSPath("", "fs_basepath");
+#ifdef _WINDOWS
 		char * doomExe = va("%s../doom3.exe", darkmodPath);
+#else
+		char * doomExe = va("%s../doom.x86", darkmodPath);
+#endif
 
 		// Shutdown file system and delete existing mod file
 		char * pk4ToDelete = NULL;
@@ -69,8 +77,15 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		}
 
 		// start up doom again and exit
+#ifdef _WINDOWS
 		intptr_t x = _spawnl(_P_NOWAIT, doomExe, doomExe, "+set fs_game darkmod", NULL);
 		_exit(EXIT_SUCCESS); 
+#else
+		if (execlp("", doomExe, doomExe, "+set fs_game darkmod", NULL)==-1) {
+			gameLocal.Error("execve failed with error code %d", errno);
+		}
+		_exit(EXIT_FAILURE);
+#endif
 	}
 }
 void CModMenu::UpdateGUI(idUserInterface* gui) {

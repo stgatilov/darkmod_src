@@ -777,8 +777,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 			m_SampleTranslationFraction = m_PinTranslationFraction/n;
 
 			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
-			m->GetPhysics()->Set
-			m->SetOrigin(v);
+			m->GetPhysics()->SetOrigin(v);
 		}
 
 		m->UpdateVisuals();
