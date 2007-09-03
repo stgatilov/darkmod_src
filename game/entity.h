@@ -248,6 +248,14 @@ public:
 	**/
 	bool					m_bIsClimbableRope;
 
+	/**
+	* TDM: The default playback rate of each animation, indexed by the animation's
+	* index number. Only used by idActor; but the animation classes deal with idEntity
+	* directly, and it's more efficient to declare this on all entities than to do
+	* RTTI on every animation frame.
+	**/
+	idList<float>                           m_animRates;
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 

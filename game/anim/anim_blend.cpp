@@ -1268,10 +1268,21 @@ bool idAnimBlend::SetSyncedAnimWeight( int num, float weight ) {
 
 /*
 =====================
+idAnimBlend::UpdatePlaybackRate
+=====================
+*/
+void idAnimBlend::UpdatePlaybackRate(int _animNum, const idEntity* ent) {
+	if (ent != NULL && _animNum >= 0 && animNum < ent->m_animRates.Num()) {
+		this->rate = ent->m_animRates[_animNum];
+	}
+}
+
+/*
+=====================
 idAnimBlend::SetFrame
 =====================
 */
-void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _frame, int currentTime, int blendTime ) {
+void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _frame, int currentTime, int blendTime, const idEntity *ent ) {
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1281,6 +1292,8 @@ void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _f
 	if ( !_anim ) {
 		return;
 	}
+	
+	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1314,7 +1327,7 @@ void idAnimBlend::SetFrame( const idDeclModelDef *modelDef, int _animNum, int _f
 idAnimBlend::CycleAnim
 =====================
 */
-void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime ) {
+void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity* ent ) {
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1324,6 +1337,8 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 	if ( !_anim ) {
 		return;
 	}
+
+	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1337,7 +1352,7 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 	cycle				= -1;
 	if ( _anim->GetAnimFlags().random_cycle_start ) {
 		// start the animation at a random time so that characters don't walk in sync
-		starttime = currentTime - gameLocal.random.RandomFloat() * _anim->Length();
+		starttime = (int)(currentTime - gameLocal.random.RandomFloat() * _anim->Length());
 	} else {
 		starttime = currentTime;
 	}
@@ -1354,7 +1369,7 @@ void idAnimBlend::CycleAnim( const idDeclModelDef *modelDef, int _animNum, int c
 idAnimBlend::PlayAnim
 =====================
 */
-void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime ) {
+void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int currentTime, int blendTime, const idEntity *ent ) {
 	Reset( modelDef );
 	if ( !modelDef ) {
 		return;
@@ -1364,6 +1379,8 @@ void idAnimBlend::PlayAnim( const idDeclModelDef *modelDef, int _animNum, int cu
 	if ( !_anim ) {
 		return;
 	}
+
+	UpdatePlaybackRate(_animNum, ent);
 
 	const idMD5Anim *md5anim = _anim->MD5Anim( 0 );
 	if ( modelDef->Joints().Num() != md5anim->NumJoints() ) {
@@ -1475,7 +1492,7 @@ void idAnimBlend::SetCycleCount( int count ) {
 			if ( rate == 1.0f ) {
 				endtime	= starttime - timeOffset + anim->Length();
 			} else if ( rate != 0.0f ) {
-				endtime	= starttime - timeOffset + anim->Length() / rate;
+				endtime	= (int)(starttime - timeOffset + anim->Length() / rate);
 			} else {
 				endtime = -1;
 			}
@@ -1485,7 +1502,7 @@ void idAnimBlend::SetCycleCount( int count ) {
 			if ( rate == 1.0f ) {
 				endtime	= starttime - timeOffset + anim->Length() * cycle;
 			} else if ( rate != 0.0f ) {
-				endtime	= starttime - timeOffset + ( anim->Length() * cycle ) / rate;
+				endtime	= (int)(starttime - timeOffset + ( anim->Length() * cycle ) / rate);
 			} else {
 				endtime = -1;
 			}
@@ -1509,7 +1526,7 @@ void idAnimBlend::SetPlaybackRate( int currentTime, float newRate ) {
 	if ( newRate == 1.0f ) {
 		timeOffset = animTime - ( currentTime - starttime );
 	} else {
-		timeOffset = animTime - ( currentTime - starttime ) * newRate;
+		timeOffset = (int)(animTime - ( currentTime - starttime ) * newRate);
 	}
 
 	rate = newRate;
@@ -3501,7 +3518,7 @@ void idAnimator::SetFrame( int channelNum, int animNum, int frame, int currentTi
 	}
 
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].SetFrame( modelDef, animNum, frame, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].SetFrame( modelDef, animNum, frame, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -3522,7 +3539,7 @@ void idAnimator::CycleAnim( int channelNum, int animNum, int currentTime, int bl
 	}
 	
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].CycleAnim( modelDef, animNum, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].CycleAnim( modelDef, animNum, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
@@ -3543,7 +3560,7 @@ void idAnimator::PlayAnim( int channelNum, int animNum, int currentTime, int ble
 	}
 	
 	PushAnims( channelNum, currentTime, blendTime );
-	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime );
+	channels[ channelNum ][ 0 ].PlayAnim( modelDef, animNum, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}

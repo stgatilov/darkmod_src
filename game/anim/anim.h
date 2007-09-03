@@ -400,9 +400,11 @@ private:
 
 	void						Reset( const idDeclModelDef *_modelDef );
 	void						CallFrameCommands( idEntity *ent, int fromtime, int totime ) const;
-	void						SetFrame( const idDeclModelDef *modelDef, int animnum, int frame, int currenttime, int blendtime );
-	void						CycleAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
-	void						PlayAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime );
+	void						SetFrame( const idDeclModelDef *modelDef, int animnum, int frame, int currenttime, int blendtime, const idEntity *ent );
+	/** TDM: UpdatePlaybackRate sets the playback rate to the one given by animnum in ent->m_animRates */
+	void						UpdatePlaybackRate(int animnum, const idEntity *ent);
+	void						CycleAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime, const idEntity *ent );
+	void						PlayAnim( const idDeclModelDef *modelDef, int animnum, int currenttime, int blendtime, const idEntity *ent );
 	bool						BlendAnim( int currentTime, int channel, int numJoints, idJointQuat *blendFrame, float &blendWeight, bool removeOrigin, bool overrideBlend, bool printInfo ) const;
 	void						BlendOrigin( int currentTime, idVec3 &blendPos, float &blendWeight, bool removeOriginOffset ) const;
 	void						BlendDelta( int fromtime, int totime, idVec3 &blendDelta, float &blendWeight ) const;
