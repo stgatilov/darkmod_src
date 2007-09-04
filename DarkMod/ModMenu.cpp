@@ -81,8 +81,9 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		intptr_t x = _spawnl(_P_NOWAIT, doomExe, doomExe, "+set fs_game darkmod", NULL);
 		_exit(EXIT_SUCCESS); 
 #else
-		if (execlp("", doomExe, doomExe, "+set fs_game darkmod", NULL)==-1) {
-			gameLocal.Error("execve failed with error code %d", errno);
+		if (execlp(doomExe, doomExe, "+set", "fs_game", "darkmod", NULL)==-1) {
+			int errnum = errno;
+			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 		}
 		_exit(EXIT_FAILURE);
 #endif
