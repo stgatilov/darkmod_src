@@ -739,7 +739,7 @@ void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
 }
 
 
-void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
+void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
 {
 	idAngles a;
 	idVec3 v;
@@ -755,7 +755,8 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 	if(nPos == HANDLE_POS_ORIGINAL)
 	{
 		m->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
-		m->SetOrigin(m_OriginalPosition);
+		v = m->GetLocalCoordinates(m_OriginalPosition);
+		m->SetOrigin(v);
 		m->UpdateVisuals();
 	}
 	else
@@ -777,7 +778,9 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int pin, int sample)
 			m_SampleTranslationFraction = m_PinTranslationFraction/n;
 
 			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
-			m->GetPhysics()->SetOrigin(v);
+			v += m_OriginalPosition;
+			v = m->GetLocalCoordinates(v);
+			m->SetOrigin(v);
 		}
 
 		m->UpdateVisuals();
@@ -860,7 +863,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			// Otherwise we reset the lock to the initial soundsample for the current pin. Pins are not
 			// reset, so the player doesn't have to start all over if he gets interrupted while picking.
 			m_SoundPinSampleIndex = -1;
-			SetHandlePosition(HANDLE_POS_SAMPLE, m_FirstLockedPinIndex);
+			SetHandlePosition(HANDLE_POS_SAMPLE, 0, m_FirstLockedPinIndex);
 		}
 		break;
 
@@ -888,12 +891,12 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 					{
 						m_FirstLockedPinIndex = m_Pins.Num();
 						oPickSound = "lockpick_pin_success";
-						SetHandlePosition(HANDLE_POS_ORIGINAL);
 						m_SoundTimerStarted++;
 
 						PropSoundDirect(oPickSound, true, false );
 						idSoundShader const *shader = declManager->FindSound(oPickSound);
 						StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+						SetHandlePosition(HANDLE_POS_ORIGINAL, length);
 						DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
 						Unlock(true);
 						PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_SUCCESS);
@@ -913,7 +916,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 					// Reset the pin to the first sample for the next try.
 					m_SoundPinSampleIndex = -1;
-					SetHandlePosition(HANDLE_POS_SAMPLE, m_FirstLockedPinIndex);
+					SetHandlePosition(HANDLE_POS_SAMPLE, length, m_FirstLockedPinIndex);
 				}
 			}
 		}
@@ -946,12 +949,12 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				pick_timeout = 0;
 
 			oPickSound = l[m_SoundPinSampleIndex];
-			SetHandlePosition(HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 			m_SoundTimerStarted++;
 
 			PropSoundDirect(oPickSound, true, false );
 			idSoundShader const *shader = declManager->FindSound(oPickSound);
 			StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+			SetHandlePosition(HANDLE_POS_SAMPLE, length, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 			PostEventMS(&EV_TDM_LockpickTimer, length+sample_delay+pick_timeout, cType, LPSOUND_PIN_SAMPLE);
 			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Picksound started [%s] %u/%u Type: %c\r", oPickSound.c_str(), m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
 		}

@@ -109,7 +109,7 @@ public:
 	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
-	void					SetHandlePosition(EHandleReset, int pin_index = 0, int sample_index = 0);
+	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
 
 	/**
 	 * Init will read the spawnargs lockpick_bar, lockpick_rotate and 
