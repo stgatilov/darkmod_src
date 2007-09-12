@@ -426,6 +426,7 @@ void CsndProp::Propagate
 	idList<idEntity *>	validTypeEnts, validEnts;
 	const idDict *		parms;
 	SPopArea			*pPopArea;
+	int areaNum;
 
 	timer_Prop.Clear();
 	timer_Prop.Start();
@@ -455,8 +456,9 @@ void CsndProp::Propagate
 
 	vol0 = parms->GetFloat("vol","0") + volMod;
 
-	// add the area-specific volMod
-	vol0 += m_AreaPropsG[ gameRenderWorld->PointInArea(origin) ].VolMod;
+	// add the area-specific volMod, if we're in an area
+	areaNum = gameRenderWorld->PointInArea(origin);
+	if (areaNum >= 0) vol0 += m_AreaPropsG[areaNum].VolMod;
 
 	// scale the volume by some amount that is be a cvar for now for tweaking
 	// later we will put a permananet value in the def for globals->Vol
