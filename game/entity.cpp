@@ -8258,23 +8258,36 @@ void idEntity::ParseAttachments( void )
 	idEntity *ent = NULL;
 
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_attach", NULL );
-	while ( kv ) {
+	while ( kv )
+	{
 		idDict args;
 
-		args.Set( "classname", kv->GetValue().c_str() );
-
-		// make items non-touchable so the player can't take them out of the character's hands
-		args.Set( "no_touch", "1" );
-
-		// don't let them drop to the floor
-		args.Set( "dropToFloor", "0" );
+		// Read the classname of the attachment
+		idStr className(kv->GetValue());
 		
-		gameLocal.SpawnEntityDef( args, &ent );
-		if ( !ent ) {
-			gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
-		} else {
-			Attach( ent );
+		// Don't process keyvalues equal to "-" (empty attachment).
+		if (className != "-")
+		{
+			args.Set( "classname", kv->GetValue().c_str() );
+
+			// make items non-touchable so the player can't take them out of the character's hands
+			args.Set( "no_touch", "1" );
+
+			// don't let them drop to the floor
+			args.Set( "dropToFloor", "0" );
+
+			gameLocal.SpawnEntityDef( args, &ent );
+
+			if ( ent != NULL)
+			{
+				Attach(ent);
+			}
+			else
+			{
+				gameLocal.Error( "Couldn't spawn '%s' to attach to entity '%s'", kv->GetValue().c_str(), name.c_str() );
+			}
 		}
+
 		kv = spawnArgs.MatchPrefix( "def_attach", kv );
 	}
 }
