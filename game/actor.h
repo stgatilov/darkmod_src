@@ -257,6 +257,13 @@ public:
 	**/
 	idEntity *GetAttachedEnt( int ind );
 
+	/**
+	 * greebo: Returns the number of attached melee weapons. These are the entities
+	 *         with the according spawnarg "is_weapon_melee" etc. set to "1".
+	 */
+	int GetNumMeleeWeapons();
+	int GetNumRangedWeapons();
+
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
 
 	virtual	renderView_t *	GetRenderView();	
@@ -452,6 +459,11 @@ private:
 	void					Event_Attach( idEntity *ent );
 	void					Event_GetAttachment( int ind );
 	void					Event_GetNumAttachments( void );
+
+	// Returns the number of ranged/melee weapons attached to the calling script
+	void					Event_GetNumMeleeWeapons();
+	void					Event_GetNumRangedWeapons();
+
 	void					Event_AttachTaskQueue(int queueID);
 	void					Event_DetachTaskQueue();
 };

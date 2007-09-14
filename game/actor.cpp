@@ -369,6 +369,9 @@ const idEventDef AI_DropAttachment( "dropAttachment", "d" );
 const idEventDef AI_ShowAttachment( "showAttachment", "dd" );
 const idEventDef AI_GetAttachment( "getAttachment", "d", 'e' );
 const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
+// Weapon attachment related events
+const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
+const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
 
 // Task queue events
 const idEventDef AI_AttachTaskQueue( "attachTaskQueue", "d" );
@@ -424,6 +427,8 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_ShowAttachment,			idActor::ShowAttachment )
 	EVENT ( AI_GetAttachment,			idActor::Event_GetAttachment )
 	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
+	EVENT ( AI_GetNumRangedWeapons,		idActor::Event_GetNumRangedWeapons )
+	EVENT ( AI_GetNumMeleeWeapons,		idActor::Event_GetNumMeleeWeapons )
 
 	EVENT ( AI_AttachTaskQueue,			idActor::Event_AttachTaskQueue )
 	EVENT ( AI_DetachTaskQueue,			idActor::Event_DetachTaskQueue )
@@ -3930,6 +3935,36 @@ idActor::Event_GetAttachment
 void idActor::Event_GetNumAttachments( void )
 {
 	idThread::ReturnInt( m_attachments.Num() );
+}
+
+/*
+=====================
+idActor::Event_GetNumMeleeWeapons
+=====================
+*/
+void idActor::Event_GetNumMeleeWeapons()
+{
+	idThread::ReturnInt(GetNumMeleeWeapons());
+}
+
+/*
+=====================
+idActor::Event_GetNumRangedWeapons
+=====================
+*/
+void idActor::Event_GetNumRangedWeapons()
+{
+	idThread::ReturnInt(GetNumRangedWeapons());
+}
+
+int idActor::GetNumMeleeWeapons()
+{
+	return 0;
+}
+
+int idActor::GetNumRangedWeapons()
+{
+	return 0;
 }
 
 /****************************************************************************************
