@@ -3959,12 +3959,46 @@ void idActor::Event_GetNumRangedWeapons()
 
 int idActor::GetNumMeleeWeapons()
 {
-	return 0;
+	int numMeleeWeapons(0);
+
+	for (int i = 0; i < m_attachments.Num(); i++)
+	{
+		idEntity* ent = m_attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("is_weapon_melee"))
+		{
+			numMeleeWeapons++;
+		}
+	}
+
+	return numMeleeWeapons;
 }
 
 int idActor::GetNumRangedWeapons()
 {
-	return 0;
+	int numRangedWeapons(0);
+
+	for (int i = 0; i < m_attachments.Num(); i++)
+	{
+		idEntity* ent = m_attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		{
+			continue;
+		}
+
+		if (ent->spawnArgs.GetBool("is_weapon_ranged"))
+		{
+			numRangedWeapons++;
+		}
+	}
+
+	return numRangedWeapons;
 }
 
 /****************************************************************************************
