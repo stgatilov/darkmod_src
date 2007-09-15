@@ -384,6 +384,14 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	physicsObj.SetLinearVelocity( axis[ 2 ] * speed + pushVelocity );
 	physicsObj.SetAngularVelocity( angular_velocity.ToAngularVelocity() * axis );
 	physicsObj.SetOrigin( start );
+
+	// greebo: Allow overriding of the projectile orientation via "angles" spawnarg
+	idAngles angles;
+	if (spawnArgs.GetAngles("angles", "0 0 0", angles))
+	{
+		axis = angles.ToMat3();
+	}
+
 	physicsObj.SetAxis( axis );
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
