@@ -72,6 +72,9 @@ private:
 	// This is the maximum tolerance the fireInterval can have
 	int					_fireIntervalFuzzyness;
 
+	// Start delay in ms
+	int					_startDelay;
+
 	// The last time the shooter fired a projectile
 	int					_lastFireTime;
 

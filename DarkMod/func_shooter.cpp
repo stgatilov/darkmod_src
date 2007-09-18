@@ -42,6 +42,7 @@ tdmFuncShooter::tdmFuncShooter( void ) :
 	_nextFireTime(0),
 	_fireInterval(-1),
 	_fireIntervalFuzzyness(0),
+	_startDelay(0),
 	_lastStimVisit(0),
 	_requiredStimTimeOut(0),
 	_requiredStim(ST_DEFAULT),
@@ -65,6 +66,7 @@ void tdmFuncShooter::Spawn( void ) {
 	_lastFireTime = 0;
 	_fireInterval = spawnArgs.GetInt("fire_interval", "-1");
 	_fireIntervalFuzzyness = spawnArgs.GetInt("fire_interval_fuzzyness", "0");
+	_startDelay = spawnArgs.GetInt("start_delay", "0");
 	
 	idStr reqStimStr = spawnArgs.GetString("required_stim");
 
@@ -82,6 +84,7 @@ void tdmFuncShooter::Spawn( void ) {
 	if (_active && _fireInterval > 0) {
 		BecomeActive( TH_THINK );
 		setupNextFireTime();
+		_nextFireTime += _startDelay;
 	}
 
 	// Always react to stims if a required stim is setup.
@@ -102,6 +105,7 @@ void tdmFuncShooter::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( _nextFireTime );
 	savefile->WriteInt( _fireInterval );
 	savefile->WriteInt( _fireIntervalFuzzyness );
+	savefile->WriteInt( _startDelay );
 	savefile->WriteInt( _requiredStim );
 	savefile->WriteInt( _requiredStimTimeOut );
 	savefile->WriteInt( _lastStimVisit );
@@ -123,6 +127,7 @@ void tdmFuncShooter::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( _nextFireTime );
 	savefile->ReadInt( _fireInterval );
 	savefile->ReadInt( _fireIntervalFuzzyness );
+	savefile->ReadInt( _startDelay );
 
 	int stimType;
 	savefile->ReadInt( stimType );
@@ -156,6 +161,7 @@ void tdmFuncShooter::Event_Activate( idEntity *activator ) {
 		_ammo = spawnArgs.GetInt("ammo", "-1");
 		_lastFireTime = gameLocal.time;
 		setupNextFireTime();
+		_nextFireTime += _startDelay;
 	}
 }
 
@@ -175,6 +181,7 @@ void tdmFuncShooter::Event_ShooterSetState( bool state ) {
 		// Reset the ammo on script activation (useAmmo can still override this)
 		_ammo = spawnArgs.GetInt("ammo", "-1");
 		setupNextFireTime();
+		_nextFireTime += _startDelay;
 	}
 }
 
