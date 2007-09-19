@@ -274,6 +274,20 @@ void tdmFuncShooter::Fire() {
 			// Fire!
 			projectile->Launch(GetPhysics()->GetOrigin(), direction, direction*velocity);
 
+			if (spawnArgs.GetBool("override_projectile_angles", "0"))
+			{
+				// Read the angles from the projectile
+				idAngles tempAngles(projectile->spawnArgs.GetAngles("angles"));
+
+				// Add the angles of the shoot direction
+				tempAngles.yaw += angle;
+				tempAngles.pitch += pitch;
+				tempAngles.roll += 0;
+				
+				// Convert the angles to an axis matrix and store it into the projectile
+				projectile->GetPhysics()->SetAxis(tempAngles.ToMat3());
+			}
+
 			// Check the ammonition
 			if (_useAmmo && --_ammo <= 0) {
 				// Clamp the ammo value to zero
