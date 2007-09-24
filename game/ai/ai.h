@@ -1187,6 +1187,16 @@ protected:
 	void					Event_FindEnemy( int useFOV );
 	void					Event_FindEnemyAI( int useFOV );
 	void					Event_FindEnemyInCombatNodes( void );
+
+	/**
+	 * greebo: Finds the nearest friendly and visible AI. Used to look for allies.
+	 *         The <team> argument is optional and can be used to limit the search to a given team.
+	 *         Set <team> to -1 to disable the team search.
+	 *
+	 *         Returns the best candidate (can be the nullentity) to the script thread.
+	 */
+	void					Event_FindFriendlyAI(int requiredTeam);
+
 	void					Event_ClosestReachableEnemyOfEntity( idEntity *team_mate );
 	void					Event_HeardSound( int ignore_team );
 	void					Event_SetEnemy( idEntity *ent );

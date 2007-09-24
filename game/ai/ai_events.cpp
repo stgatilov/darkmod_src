@@ -37,6 +37,9 @@ const idEventDef AI_FindEnemyAI( "findEnemyAI", "d", 'e' );
 const idEventDef AI_FindEnemyInCombatNodes( "findEnemyInCombatNodes", NULL, 'e' );
 const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntity", "E", 'e' );
 const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
+// greebo: TDM Event: Try to find a visible AI of the given team
+const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
+
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
 const idEventDef AI_MuzzleFlash( "muzzleFlash", "s" );
@@ -401,6 +404,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_FindEnemyAI,						idAI::Event_FindEnemyAI )
 	EVENT( AI_FindEnemyInCombatNodes,			idAI::Event_FindEnemyInCombatNodes )
 	EVENT( AI_ClosestReachableEnemyOfEntity,	idAI::Event_ClosestReachableEnemyOfEntity )
+	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
 	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
@@ -618,55 +622,31 @@ idAI::Event_FindEnemy
 void idAI::Event_FindEnemy( int useFOV ) 
 {
 	int			i;
-
 	idEntity	*ent;
-
 	idActor		*actor;
 
-
-
 	if ( gameLocal.InPlayerPVS( this ) ) {
-
 		for ( i = 0; i < gameLocal.numClients ; i++ ) {
-
 			ent = gameLocal.entities[ i ];
 
-
-
 			if ( !ent || !ent->IsType( idActor::Type ) ) {
-
 				continue;
-
 			}
-
-
 
 			actor = static_cast<idActor *>( ent );
 
 			if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
-
 				continue;
-
 			}
-
-
 
 			if ( CanSee( actor, useFOV != 0 ) ) {
-
 				idThread::ReturnEntity( actor );
-
 				return;
-
 			}
-
 		}
-
 	}
 
-
-
 	idThread::ReturnEntity( NULL );
-
 }
 
 /*
@@ -711,6 +691,61 @@ void idAI::Event_FindEnemyAI( int useFOV ) {
 
 	gameLocal.pvs.FreeCurrentPVS( pvs );
 	idThread::ReturnEntity( bestEnemy );
+}
+
+void idAI::Event_FindFriendlyAI(int requiredTeam)
+{
+	// This is our return value
+	idEntity* candidate(NULL);
+	// The distance of the nearest found AI
+	float bestDist = idMath::INFINITY;
+
+	// Setup the PVS areas of this entity using the PVSAreas set, this returns a handle
+	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
+
+	// Iterate through all active entities and find an AI with the given team.
+	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+			continue;
+		}
+
+		idActor* actor = static_cast<idActor *>(ent);
+		if (actor->health <= 0) {
+			continue;
+		}
+
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s into account\r", actor->name.c_str());
+
+		if (requiredTeam != -1 && actor->team != requiredTeam) {
+			// wrong team
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
+			continue;
+		}
+
+		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
+			// Not friendly
+			continue;
+		}
+
+		if (!gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas())) {
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not in PVS\r", actor->name.c_str());
+			// greebo: This actor is not in our PVS, skip it
+			continue;
+		}
+
+		float dist = (physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin()).LengthSqr();
+		if ( (dist < bestDist) && CanSee(actor, true) ) {
+			// Actor can be seen and is nearer than the best candidate, save it
+			bestDist = dist;
+			candidate = actor;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS(pvs);
+
+	idThread::ReturnEntity(candidate);
 }
 
 /*

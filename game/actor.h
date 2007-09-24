@@ -466,6 +466,12 @@ private:
 
 	void					Event_AttachTaskQueue(int queueID);
 	void					Event_DetachTaskQueue();
+
+	/**
+	 * greebo: Script events to get/set the team of this actor.
+	 */
+	void					Event_GetTeam();
+	void					Event_SetTeam(int newTeam);
 };
 
 #endif /* !__GAME_ACTOR_H__ */

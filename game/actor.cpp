@@ -377,6 +377,10 @@ const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
 const idEventDef AI_AttachTaskQueue( "attachTaskQueue", "d" );
 const idEventDef AI_DetachTaskQueue( "detachTaskQueue" );
 
+// greebo: TDM: Team accessor script events
+const idEventDef AI_GetTeam("getTeam", NULL, 'd');
+const idEventDef AI_SetTeam("setTeam", "d");
+
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
 	EVENT( AI_DisableEyeFocus,			idActor::Event_DisableEyeFocus )
@@ -432,6 +436,9 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 
 	EVENT ( AI_AttachTaskQueue,			idActor::Event_AttachTaskQueue )
 	EVENT ( AI_DetachTaskQueue,			idActor::Event_DetachTaskQueue )
+	
+	EVENT ( AI_GetTeam,					idActor::Event_GetTeam )
+	EVENT ( AI_SetTeam,					idActor::Event_SetTeam )
 END_CLASS
 
 /*
@@ -4098,4 +4105,15 @@ void idActor::Event_DetachTaskQueue()
 {
 	m_TaskQueue = NULL;
 	m_TaskQueueID = -1;
+}
+
+void idActor::Event_GetTeam()
+{
+	idThread::ReturnInt(team);
+}
+
+void idActor::Event_SetTeam(int newTeam)
+{
+	// greebo: No validity checking so far - todo?
+	team = newTeam;
 }
