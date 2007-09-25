@@ -125,7 +125,7 @@ protected:
 	 * number of clicks for this pin, and BaseCount, defines the minimum number
 	 * of clicks, which is always added.
 	 */
-	idStringList				*CreatePinPattern(int Clicks, int BaseCount);
+	idStringList				*CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
 
 protected:
 	/**
@@ -157,6 +157,7 @@ protected:
 	idList<idStr>				m_LockList;
 
 	idList<idStringList *>		m_Pins;
+	idList<idStringList *>		m_RandomPins;
 	bool						m_Pickable;
 
 	/**
