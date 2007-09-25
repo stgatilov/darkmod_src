@@ -726,6 +726,8 @@ public:
 	 */
 	virtual bool			IsMantleable();
 
+	inline idStrList		GetFrobPeers(void) { return m_FrobPeers; }
+
 protected:
 	/**
 	* Update frob highlighting and frob entity if frobbed.

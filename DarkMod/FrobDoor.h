@@ -98,7 +98,6 @@ public:
 	 **/
 	void					ClosePortal( void );
 
-	void					SetDoorhandle(CFrobDoorHandle *);
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
 
