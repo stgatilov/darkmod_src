@@ -216,6 +216,8 @@ private:
 	void						Event_pqPeek( int queueID );
 	void						Event_pqPeekPriority( int queueID );
 	void						Event_pqPop( int queueID );
+	// greebo: removes the given task from the queue, returns 1 if the item was existing, 0 if not
+	void						Event_pqRemoveTask(int queueID, const char* task);
 
 
 public:							
