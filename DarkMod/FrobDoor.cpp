@@ -741,8 +741,11 @@ idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCoun
 	idStr head;
 	sprintf(head, str+"%%0%uu", StrNumLen);
 
-	sprintf(click, head, 0);
-	rc->Append(click);
+	if(cv_lp_pawlow.GetBool() == false)
+	{
+		sprintf(click, head, 0);
+		rc->Append(click);
+	}
 
 	for(i = 0; i < Clicks; i++)
 	{
@@ -754,6 +757,12 @@ idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCoun
 		sprintf(click, head, r);
 		rc->Append(click);
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("PinPattern %u : %s\r", i, click.c_str());
+	}
+
+	if(cv_lp_pawlow.GetBool() == true)
+	{
+		sprintf(click, head, 0);
+		rc->Append(click);
 	}
 
 	return rc;

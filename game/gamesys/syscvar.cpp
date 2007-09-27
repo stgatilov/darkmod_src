@@ -194,6 +194,7 @@ idCVar cv_lp_pick_timeout("tdm_lp_pick_timeout",	"100",	CVAR_GAME | CVAR_INTEGER
 idCVar cv_lp_max_pick_attempts("tdm_lp_max_pick_attempts",	"0",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "How many pick attemps before it automatically gets picked? 0 = unlimited (you must solve it yourself)" );
 idCVar cv_lp_auto_pick("tdm_lp_auto_pick",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Determines if auto picking is enabled (see tdm_lp_max_pick_attempts)" );
 idCVar cv_lp_randomize("tdm_lp_randomize",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, the jiggling, while lockpicking, will be randomized, otherwise it is linear." );
+idCVar cv_lp_pawlow("tdm_lp_pawlow",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 the sweetspot sound will play at the end of the pattern instead of at the beginning. Thus making it into a reaction game." );
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 

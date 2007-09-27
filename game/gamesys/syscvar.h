@@ -144,6 +144,7 @@ extern idCVar cv_lp_pick_timeout;
 extern idCVar cv_lp_pick_attempts;
 extern idCVar cv_lp_auto_pick;
 extern idCVar cv_lp_randomize;
+extern idCVar cv_lp_pawlow;
 
 extern idCVar cv_dm_distance;
 
