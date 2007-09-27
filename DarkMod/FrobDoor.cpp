@@ -53,6 +53,18 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 END_CLASS
 
+static char *sSampleTypeText[] = 
+{
+	"LPSOUND_INIT",					// Initial call (impulse has been triggered)
+	"LPSOUND_REPEAT",				// Call from the keyboardhandler for repeated presses
+	"LPSOUND_RELEASED",				// Call from the keyboardhandler for released presses
+	"LPSOUND_PIN_SAMPLE",			// Callback for pin sample
+	"LPSOUND_PIN_FAILED",			// Callback when the pin failed sound is finished
+	"LPSOUND_PIN_SUCCESS",			// Callback for the success sound sample
+	"LPSOUND_WRONG_LOCKPICK",		// Callback for the wrong lockpick sample
+	"LPSOUND_LOCK_PICKED"			// Callback for the pin picked
+};
+
 
 E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData)
 {
@@ -82,6 +94,7 @@ CFrobDoor::CFrobDoor(void)
 	m_SoundTimerStarted = 0;
 	m_PinTranslationFractionFlag = false;
 	m_PinRotationFractionFlag = false;
+	m_KeyReleased = false;
 }
 
 CFrobDoor::~CFrobDoor(void)
@@ -528,7 +541,7 @@ void CFrobDoor::Close(bool bMaster)
 	}
 }
 
-bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
+bool CFrobDoor::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *ent)
 {
 	bool bRc = false;
 	int i, n;
@@ -555,7 +568,18 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 
 	// Process the lockpick
 	if(type != 0)
-		ProcessLockpick((int)type, (bInit == true) ? LPSOUND_INIT : LPSOUND_REPEAT);
+	{
+		ELockpickSoundsample v;
+
+		if(bInit == true)
+			v = LPSOUND_INIT;
+		else if(nState == IS_RELEASED)
+			v = LPSOUND_RELEASED;
+		else
+			v = LPSOUND_REPEAT;
+
+		ProcessLockpick((int)type, v);
+	}
 
 	// When we are here we know that the item is usable
 	// so we have to check if it is associated with this entity.
@@ -576,7 +600,7 @@ bool CFrobDoor::UsedBy(bool bInit, idEntity *ent)
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
 		{
 			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				bRc = master->UsedBy(bInit, ent);
+				bRc = master->UsedBy(bInit, nState, ent);
 			else
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}
@@ -840,6 +864,9 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	idVec3 pos;
 	idAngles angle;
 
+	if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+		m_KeyReleased = true;
+
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
 	// if there is not currently a sound sample still playing, in which case we 
@@ -892,6 +919,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		}
 	}
 
+	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("%s : Timer: %u  PinIndex: %u  SampleIndex: %u\r", sSampleTypeText[nSampleType], m_SoundTimerStarted, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 	switch(nSampleType)
 	{
 		case LPSOUND_INIT:
@@ -901,7 +929,10 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			// We can safely ignore this case, because this should be treated the same as if the user
 			// didn't release the key at all while playing the lockpick samples.
 			if(m_SoundTimerStarted > 0)
+			{
+				m_KeyReleased = false;
 				goto Quit;
+			}
 
 			// Otherwise we reset the lock to the initial soundsample for the current pin. Pins are not
 			// reset, so the player doesn't have to start all over if he gets interrupted while picking.
@@ -910,66 +941,68 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		}
 		break;
 
-		// If the pin sample has been finished and we get the callback we check if
-		// the key is still pressed. If the user released the key in this intervall
-		// and we have to check wether it was the correct pin, and if yes, it will
-		// be unlocked.
-		case LPSOUND_PIN_SAMPLE:
-		{
-			m_SoundTimerStarted--;
-
-			if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
-			{
-				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
-
-				idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
-
-				if(m_SoundPinSampleIndex == l.Num()-1)
-				{
-					// It was correct so we advance to the next pin.
-					m_FirstLockedPinIndex++;
-
-					// If it was the last pin, the user successfully picked the lock.
-					if(m_FirstLockedPinIndex >= m_Pins.Num())
-					{
-						m_FirstLockedPinIndex = m_Pins.Num();
-						oPickSound = "lockpick_pin_success";
-						m_SoundTimerStarted++;
-
-						PropSoundDirect(oPickSound, true, false );
-						idSoundShader const *shader = declManager->FindSound(oPickSound);
-						StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-						SetHandlePosition(HANDLE_POS_ORIGINAL, length);
-						DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
-						Unlock(true);
-						PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_SUCCESS);
-						goto Quit;
-					}
-				}
-				else
-				{
-					oPickSound = "lockpick_pin_fail";
-					m_SoundTimerStarted++;
-
-					PropSoundDirect(oPickSound, true, false );
-					idSoundShader const *shader = declManager->FindSound(oPickSound);
-					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
-					PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_FAILED);
-					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
-
-					// Reset the pin to the first sample for the next try.
-					m_SoundPinSampleIndex = -1;
-					SetHandlePosition(HANDLE_POS_SAMPLE, length, m_FirstLockedPinIndex);
-				}
-			}
-		}
-		break;
-
 		case LPSOUND_PIN_FAILED:
 		case LPSOUND_PIN_SUCCESS:
 		case LPSOUND_WRONG_LOCKPICK:
 		case LPSOUND_LOCK_PICKED:			// Should never happen but it doesn't hurt either. :)
 			m_SoundTimerStarted--;
+		break;
+
+		case LPSOUND_PIN_SAMPLE:
+			m_SoundTimerStarted--;
+		break;
+
+		// If the pin sample has been finished and we get the callback we check if
+		// the key is still pressed. If the user released the key in this intervall
+		// and we have to check wether it was the correct pin, and if yes, it will
+		// be unlocked.
+		case LPSOUND_RELEASED:
+		{
+			CancelEvents(&EV_TDM_LockpickTimer);
+			m_SoundTimerStarted--;
+
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u Type: %c\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, type);
+
+			idList<idStr> &l = *m_Pins[m_FirstLockedPinIndex];
+
+			if(m_SoundPinSampleIndex == l.Num()-1)
+			{
+				// It was correct so we advance to the next pin.
+				m_FirstLockedPinIndex++;
+
+				// If it was the last pin, the user successfully picked the lock.
+				if(m_FirstLockedPinIndex >= m_Pins.Num())
+				{
+					m_FirstLockedPinIndex = m_Pins.Num();
+					oPickSound = "lockpick_pin_success";
+					m_SoundTimerStarted++;
+
+					PropSoundDirect(oPickSound, true, false );
+					idSoundShader const *shader = declManager->FindSound(oPickSound);
+					StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+					SetHandlePosition(HANDLE_POS_ORIGINAL, length);
+					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
+					Unlock(true);
+					PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_SUCCESS);
+					goto Quit;
+				}
+			}
+			else
+			{
+				oPickSound = "lockpick_pin_fail";
+				m_SoundTimerStarted++;
+
+				PropSoundDirect(oPickSound, true, false );
+				idSoundShader const *shader = declManager->FindSound(oPickSound);
+				StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+				PostEventMS(&EV_TDM_LockpickTimer, length, cType, LPSOUND_PIN_FAILED);
+				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
+
+				// Reset the pin to the first sample for the next try.
+				m_SoundPinSampleIndex = -1;
+				SetHandlePosition(HANDLE_POS_SAMPLE, length, m_FirstLockedPinIndex);
+			}
+		}
 		break;
 
 		case LPSOUND_REPEAT:				// Here is the interesting part.

@@ -8551,29 +8551,14 @@ void idPlayer::inventoryPrevGroup()
 	InventoryCursor()->GetPrevCategory();
 }
 
-void idPlayer::inventoryUseKeyRelease(int holdTime) {
+void idPlayer::inventoryUseKeyRelease(int holdTime)
+{
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-	{
-		// greebo: Notify the inventory item about the key release event
-		idEntity* item = it->GetItemEntity();
-
-		if (item != NULL)
-		{
-			idThread* thread = item->CallScriptFunctionArgs(
-				"inventoryUseKeyRelease", true, 0, 
-				"eef", item, this, static_cast<float>(holdTime)
-			);
-
-			if (thread)
-			{
-				thread->Start(); // Start the thread immediately.
-			}
-		}
-	}
+		inventoryUseItem(false, IS_RELEASED, it->GetItemEntity(), holdTime);
 }
 
 void idPlayer::inventoryUseItem(bool bImpulse)
@@ -8583,12 +8568,11 @@ void idPlayer::inventoryUseItem(bool bImpulse)
 	// precedence over the frobaction.
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
-	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY) {
-		inventoryUseItem(bImpulse, it->GetItemEntity());
-	}
+	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+		inventoryUseItem(bImpulse, (bImpulse == true) ? IS_PRESSED : IS_REPEAT, it->GetItemEntity(), 0);
 }
 
-void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
+void idPlayer::inventoryUseItem(bool bImpulse, IMPULSE_STATE nState, idEntity *ent, int holdTime)
 {
 	// Sanity check
 	if (ent == NULL) return;
@@ -8605,18 +8589,25 @@ void idPlayer::inventoryUseItem(bool bImpulse, idEntity *ent)
 		if(ent->spawnArgs.GetBool("usable"))
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			frob->UsedBy(bImpulse, ent);
+			frob->UsedBy(bImpulse, nState, ent);
 		}
 	}
 	else
 	{
-		if (bImpulse) {
+		idThread *thread = NULL;
+		if (bImpulse)
+		{
 			// greebo: No frob entity highlighted, try to call the "use" method in the entity's scriptobject
-			idThread* thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "ee", ent, this);
-			if (thread) {
-				thread->Start(); // Start the thread immediately.
-			}
+			thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eed", ent, this, nState);
 		}
+		else
+		{
+			if(nState == IS_RELEASED)
+				thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eef", ent, this, static_cast<float>(holdTime));
+		}
+
+		if (thread)
+			thread->Start(); // Start the thread immediately.
 	}
 }
 
