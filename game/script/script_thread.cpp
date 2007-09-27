@@ -126,7 +126,7 @@ const idEventDef EV_TDM_pqPush( "pqPush", "dsd" );
 const idEventDef EV_TDM_pqPeek( "pqPeek", "d", 's' );
 const idEventDef EV_TDM_pqPeekPriority( "pqPeekPriority", "d", 'd' );
 const idEventDef EV_TDM_pqPop( "pqPop", "d", 's' );
-const idEventDef EV_TDM_pqRemoveTask("pqRemoveTask", "s", 'd');
+const idEventDef EV_TDM_pqRemoveTask("pqRemoveTask", "ds", 'd');
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
