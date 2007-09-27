@@ -27,12 +27,14 @@
 class CPriorityQueue
 {
 protected:
-	std::vector<std::pair<int, std::string*> >* data;
+	// The internal queue structure is an unsorted list of int => string pairs
+	typedef std::vector<std::pair<int, std::string*> > Queue;
+	Queue* data;
 
 public:
 	CPriorityQueue()
 	{
-		data = new std::vector<std::pair<int, std::string*> >();
+		data = new Queue;
 	}
 
 	~CPriorityQueue()
@@ -68,6 +70,26 @@ public:
 	}
 
 	/**
+	 * greebo: Removes the given <element> from the queue.
+	 *
+	 * @returns: TRUE if the element was found and removed, FALSE otherwise
+	 */
+	bool Remove(const std::string& element)
+	{
+		for (Queue::iterator i = data->begin(); i != data->end(); i++)
+		{
+			// Compare the visited string to the given <element>
+			if (*i->second == element)
+			{
+				data->erase(i);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	* Return the element with the highest priority.
 	* The pointer will remain valid until this CPriorityQueue instance is destroyed.
 	* Returns an empty string if the queue is empty.
@@ -94,7 +116,7 @@ public:
 	const std::string DebuggingInfo() const
 	{
 		std::stringstream debugInfo;
-		for (std::vector<std::pair<int, std::string*> >::const_iterator i = data->begin(); i != data->end(); i++) {
+		for (Queue::const_iterator i = data->begin(); i != data->end(); i++) {
 			debugInfo << (*i).first;
 			debugInfo << "   ";
 			debugInfo << (*i).second->c_str();
@@ -109,7 +131,7 @@ public:
 	void Save( idSaveGame *savefile ) const
 	{
 		savefile->WriteInt(data->size());
-		for (std::vector<std::pair<int, std::string*> >::const_iterator i = data->begin(); i != data->end(); i++)
+		for (Queue::const_iterator i = data->begin(); i != data->end(); i++)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Saving task %s with priority %d.\r", i->second->c_str(), i->first);
 			savefile->WriteInt(i->first);
