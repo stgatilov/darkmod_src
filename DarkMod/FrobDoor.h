@@ -119,6 +119,8 @@ public:
 	 */
 	void					Event_Init(void);
 
+	void					PropPickSound(idStr &picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
+
 protected:
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
