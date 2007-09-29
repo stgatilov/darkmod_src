@@ -4235,6 +4235,9 @@ bool idAnimator::CreateFrame( int currentTime, bool force ) {
 			return false;
 		}
 	}
+	
+	// Optional optimisation: Skip animations for dormant entities
+	if (cv_ai_opt_noanims.GetBool() && entity->CheckDormant()) return false;
 
 	lastTransformTime = currentTime;
 	stoppedAnimatingUpdate = false;

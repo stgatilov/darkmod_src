@@ -1502,9 +1502,11 @@ idAI::Think
 */
 void idAI::Think( void ) {
 	// if we are completely closed off from the player, don't do anything at all
-	if ( CheckDormant() ) {
+	bool outsidePVS = CheckDormant();
+	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
 		return;
 	}
+	
 	idVec3 oldOrigin;
 	idVec3 oldVelocity;
 
@@ -1527,7 +1529,7 @@ void idAI::Think( void ) {
 		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
 
 		// TDM: Fake lipsync
-		if ( m_lipSyncActive && GetSoundEmitter() )
+		if ( m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT )
 		{
 			if (gameLocal.time < m_lipSyncEndTimer )
 			{
@@ -1546,8 +1548,11 @@ void idAI::Think( void ) {
 		}
 
 		// Look for enemies
-		idActor* actor = this->VisualScan();
-		if (actor) SetEnemy(actor);
+		if ( !(outsidePVS && cv_ai_opt_novisualscan.GetBool()) )
+		{
+			idActor* actor = this->VisualScan();
+			if (actor) SetEnemy(actor);
+		}
 
 		// Check for tactile alert due to AI movement
 		CheckTactile();
@@ -2950,6 +2955,9 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 		seekPos = org;
 		return false;
 		break;
+	default:
+		break; // Handled below (note the returns in all cases above)
+		// (default case added to suppress GCC warnings)
 	}
 
 	if ( move.moveCommand == MOVE_TO_ENTITY ) {

@@ -1268,6 +1268,7 @@ off from the player can skip all of their work
 */
 bool idEntity::DoDormantTests( void )
 {
+	if (cv_ai_opt_forceopt.GetBool()) return true; // Everything always dormant!
 	if ( fl.neverDormant ) {
 		return false;
 	}
@@ -1285,7 +1286,10 @@ bool idEntity::DoDormantTests( void )
 	} else {
 		// the monster area is topologically connected to a player, but if
 		// the monster hasn't been woken up before, do the more precise PVS check
-		if ( !fl.hasAwakened ) {
+		// TDM: Never wake up permanently; always do PVS check.
+		//      (This may cause bugs. I did this for AI optimisation testing.)
+		//	--Crispy
+		if ( true || !fl.hasAwakened ) {
 			if ( !gameLocal.InPlayerPVS( this ) ) {
 				return true;		// stay dormant
 			}
@@ -1294,6 +1298,7 @@ bool idEntity::DoDormantTests( void )
 		// wake up
 		dormantStart = 0;
 		fl.hasAwakened = true;		// only go dormant when area closed off now, not just out of PVS
+		
 		return false;
 	}
 

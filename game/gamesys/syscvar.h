@@ -38,6 +38,10 @@ extern idCVar cv_ai_acuity_L2;
 extern idCVar cv_ai_acuity_L3;
 extern idCVar cv_ai_acuity_susp;
 extern idCVar cv_ai_visdist_show;
+extern idCVar cv_ai_opt_disable;
+extern idCVar cv_ai_opt_noanims;
+extern idCVar cv_ai_opt_novisualscan;
+extern idCVar cv_ai_opt_forceopt;
 
 
 extern idCVar cv_spr_debug;
