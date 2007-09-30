@@ -7854,7 +7854,7 @@ Quit:
 
 void idEntity::ChangeLootAmount(int lootType, int amount)
 {
-	int Gold, Jewelry, Goods, GroupTotal, Total;
+	int Gold, Jewelry, Goods, GroupTotal = 0, Total;
 	int rc = 0;
 	idStr Groupname;
 
