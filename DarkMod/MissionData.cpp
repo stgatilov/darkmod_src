@@ -68,10 +68,7 @@ CObjectiveComponent::CObjectiveComponent( void )
 	m_Type = COMP_ITEM;
 	m_SpecMethod[0] = SPEC_NONE;
 	m_SpecMethod[1] = SPEC_NONE;
-	m_SpecIntVal[0] = 0;
-	m_SpecIntVal[1] = 0;
-	m_IntArgs.Clear();
-	m_StrArgs.Clear();
+	m_Args.Clear();
 
 	m_ClockInterval = 1000;
 	m_TimeStamp = 0;
@@ -82,11 +79,10 @@ CObjectiveComponent::CObjectiveComponent( void )
 
 CObjectiveComponent::~CObjectiveComponent( void )
 {
-	m_SpecStrVal[0].Clear();
-	m_SpecStrVal[1].Clear();
+	m_SpecVal[0].Clear();
+	m_SpecVal[1].Clear();
 
-	m_IntArgs.Clear();
-	m_StrArgs.Clear();
+	m_Args.Clear();
 }
 
 bool CObjectiveComponent::SetState( bool bState )
@@ -126,20 +122,14 @@ void CObjectiveComponent::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_Type );
 	savefile->WriteInt( m_SpecMethod[0] );
 	savefile->WriteInt( m_SpecMethod[1] );
-	savefile->WriteString( m_SpecStrVal[0] );
-	savefile->WriteString( m_SpecStrVal[1] );
-	savefile->WriteInt( m_SpecIntVal[0] );
-	savefile->WriteInt( m_SpecIntVal[1] );
+	savefile->WriteString( m_SpecVal[0] );
+	savefile->WriteString( m_SpecVal[1] );
 	savefile->WriteBool( m_bState );
 	savefile->WriteBool( m_bLatched );
 
-	savefile->WriteInt( m_IntArgs.Num() );
-	for( int i=0; i<m_IntArgs.Num(); i++ )
-		savefile->WriteInt( m_IntArgs[i] );
-
-	savefile->WriteInt( m_StrArgs.Num() );
-	for( int j=0; j<m_StrArgs.Num(); j++ )
-		savefile->WriteString( m_StrArgs[j] );
+	savefile->WriteInt( m_Args.Num() );
+	for( int j=0; j<m_Args.Num(); j++ )
+		savefile->WriteString( m_Args[j] );
 
 	savefile->WriteInt( m_ClockInterval );
 	savefile->WriteInt( m_TimeStamp );
@@ -159,22 +149,15 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 	m_SpecMethod[0] = (ESpecificationMethod) tempInt;
 	savefile->ReadInt( tempInt );
 	m_SpecMethod[1] = (ESpecificationMethod) tempInt;
-	savefile->ReadString( m_SpecStrVal[0] );
-	savefile->ReadString( m_SpecStrVal[1] );
-	savefile->ReadInt( m_SpecIntVal[0] );
-	savefile->ReadInt( m_SpecIntVal[1] );
+	savefile->ReadString( m_SpecVal[0] );
+	savefile->ReadString( m_SpecVal[1] );
 	savefile->ReadBool( m_bState );
 	savefile->ReadBool( m_bLatched );
 
 	savefile->ReadInt( num );
-	m_IntArgs.SetNum( num );
-	for( int i=0; i<num; i++ )
-		savefile->ReadInt( m_IntArgs[i] );
-
-	savefile->ReadInt( num );
-	m_StrArgs.SetNum( num );
+	m_Args.SetNum( num );
 	for( int j=0; j<num; j++ )
-		savefile->ReadString( m_StrArgs[j] );
+		savefile->ReadString( m_Args[j] );
 
 	savefile->ReadInt( m_ClockInterval );
 	savefile->ReadInt( m_TimeStamp );
@@ -508,28 +491,28 @@ bool	CMissionData::MatchSpec
 			bReturnVal = true;
 			break;
 		case SPEC_NAME:
-			bReturnVal = ( pComp->m_SpecStrVal[ind] == EntDat->name );
+			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->name );
 			break;
 		case SPEC_OVERALL:
 			bReturnVal = true;
 			break;
 		case SPEC_GROUP:
-			bReturnVal = ( pComp->m_SpecStrVal[ind] == EntDat->group );
+			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->group );
 			break;
 		case SPEC_CLASSNAME:
-			bReturnVal = ( pComp->m_SpecStrVal[ind] == EntDat->classname );
+			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->classname );
 			break;
 		case SPEC_SPAWNCLASS:
-			bReturnVal = ( pComp->m_SpecStrVal[ind] == EntDat->spawnclass );
+			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->spawnclass );
 			break;
 		case SPEC_AI_TYPE:
-			bReturnVal = ( pComp->m_SpecIntVal[ind] == EntDat->type );
+			bReturnVal = ( atoi(pComp->m_SpecVal[ind]) == EntDat->type );
 			break;
 		case SPEC_AI_TEAM:
-			bReturnVal = ( pComp->m_SpecIntVal[ind] == EntDat->team );
+			bReturnVal = ( atoi(pComp->m_SpecVal[ind]) == EntDat->team );
 			break;
 		case SPEC_AI_INNOCENCE:
-			bReturnVal = ( pComp->m_SpecIntVal[ind] == EntDat->innocence );
+			bReturnVal = ( atoi(pComp->m_SpecVal[ind]) == EntDat->innocence );
 			break;
 		default:
 			break;
@@ -569,7 +552,7 @@ bool	CMissionData::EvaluateObjective
 	{
 		int AlertNum = 0;
 		if( CompType == COMP_ALERT )
-			AlertNum = pComp->m_IntArgs[1];
+			AlertNum = atoi(pComp->m_Args[1]);
 
 		if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
 			goto Quit;
@@ -601,7 +584,7 @@ bool	CMissionData::EvaluateObjective
 				break;
 		}
 
-		bReturnVal = value >= pComp->m_IntArgs[0];
+		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
 	// ITEMS:
@@ -627,7 +610,7 @@ bool	CMissionData::EvaluateObjective
 			default:
 				break;
 		}
-		bReturnVal = value >= pComp->m_IntArgs[0];
+		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
 Quit:
@@ -667,19 +650,19 @@ void CMissionData::UpdateObjectives( void )
 			idVec3 delta;
 			int dist(0);
 
-			ent1 = gameLocal.FindEntity( pComp->m_StrArgs[0].c_str() );
-			ent2 = gameLocal.FindEntity( pComp->m_StrArgs[1].c_str() );
+			ent1 = gameLocal.FindEntity( pComp->m_Args[0].c_str() );
+			ent2 = gameLocal.FindEntity( pComp->m_Args[1].c_str() );
 
 			if( !ent1 || !ent2 )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str(), pComp->m_StrArgs[1].c_str() );
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str(), pComp->m_Args[1].c_str() );
 				continue;
 			}
 
 			delta = ent1->GetPhysics()->GetOrigin();
 			delta = delta - ent2->GetPhysics()->GetOrigin();
 
-			dist = pComp->m_IntArgs[0];
+			dist = atof(pComp->m_Args[0]);
 			dist *= dist;
 
 			SetComponentState( pComp, ( delta.LengthSqr() < dist ) );
@@ -693,10 +676,10 @@ void CMissionData::UpdateObjectives( void )
 
 			// Spec method 0 is always by name, so no need to check it.
 			// we should indicate this in the objective setup GUI
-			checkEnt = gameLocal.FindEntity( pComp->m_SpecStrVal[0].c_str() );
+			checkEnt = gameLocal.FindEntity( pComp->m_SpecVal[0].c_str() );
 			if( !checkEnt )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_location objective could not find entity: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_SpecStrVal[0].c_str() );
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_location objective could not find entity: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_SpecVal[0].c_str() );
 				continue;
 			}
 
@@ -704,9 +687,9 @@ void CMissionData::UpdateObjectives( void )
 			if( loc )
 			{
 				if( pComp->m_SpecMethod[1] == SPEC_GROUP )
-					bEval = (pComp->m_SpecIntVal[1] == loc->m_ObjectiveGroup );
+					bEval = (pComp->m_SpecVal[1] == loc->m_ObjectiveGroup );
 				else
-					bEval = ( pComp->m_SpecStrVal[1] == loc->name );
+					bEval = ( pComp->m_SpecVal[1] == loc->name );
 			}
 
 			SetComponentState( pComp, bEval );
@@ -717,7 +700,7 @@ void CMissionData::UpdateObjectives( void )
 		{
 			pComp->m_TimeStamp = gameLocal.time;
 
-			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_StrArgs[0].c_str() );
+			function_t *pScriptFun = gameLocal.program.FindFunction( pComp->m_Args[0].c_str() );
 
 			if(pScriptFun)
 			{
@@ -727,8 +710,8 @@ void CMissionData::UpdateObjectives( void )
 			}
 			else
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
-				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_StrArgs[0].c_str() );
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str() );
+				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str() );
 			}
 		}
 	}
@@ -1381,33 +1364,21 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 			for( int ind=0; ind < 2; ind++ )
 			{
-				CompTemp.m_SpecStrVal[ind] = args->GetString( va(StrTemp2 + "spec_strval%d", ind + 1), "" );
-				CompTemp.m_SpecIntVal[ind] = args->GetInt( va(StrTemp2 + "spec_intval%d", ind + 1), "0" );
+				CompTemp.m_SpecVal[ind] = args->GetString( va(StrTemp2 + "spec_val%d", ind + 1), "" );
 			}
 
-			// Use idLexer to read in string args and int args, space delimited lists
-			TempStr2 = args->GetString( StrTemp2 + "args_str", "" );
+			// Use idLexer to read in args, a space-delimited string list
+			TempStr2 = args->GetString( StrTemp2 + "args", "" );
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
 
 			while( src.ReadToken( &token ) )
-				CompTemp.m_StrArgs.Append( token.c_str() );
-			src.FreeSource();
-			// same for int args:
-			TempStr2 = args->GetString( StrTemp2 + "args_int", "" );
-			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
-			while( src.ReadToken( &token ) )
-			{
-				if( token.IsNumeric() )
-					CompTemp.m_IntArgs.Append( token.GetIntValue() );
-			}
+				CompTemp.m_Args.Append( token.c_str() );
 			src.FreeSource();
 
 			// Pad args with dummies to prevent a hard crash when they are read, if otherwise empty
-			CompTemp.m_StrArgs.Append("");
-			CompTemp.m_StrArgs.Append("");
-			CompTemp.m_IntArgs.Append(0);
-			CompTemp.m_IntArgs.Append(0);
+			CompTemp.m_Args.Append("");
+			CompTemp.m_Args.Append("");
 
 			CompTemp.m_ClockInterval = 1000 * int(args->GetFloat( StrTemp2 + "clock_interval", "1.0" ));
 
