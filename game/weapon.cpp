@@ -791,7 +791,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	const char *projectileName;
 	const char *brassDefName;
 	const char *smokeName;
-	int			ammoAvail;
+	int			ammoAvail = 0;
 
 	Clear();
 
@@ -2962,9 +2962,9 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 		}
 
-		weaponItem->useAmmo(( powerAmmo ) ? dmgPower : ammoRequired);
+		weaponItem->useAmmo(( powerAmmo ) ? (int) dmgPower : ammoRequired);
 		if ( clipSize && ammoRequired ) {
-			ammoClip -= powerAmmo ? dmgPower : 1;
+			ammoClip -= powerAmmo ? (int) dmgPower : 1;
 		}
 
 	}
