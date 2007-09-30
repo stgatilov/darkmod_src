@@ -467,9 +467,9 @@ public:
 	**/
 	float				m_SndVolMod;
 	/**
-	* Objective system: Location's objective index int for objective checks
+	* Objective system: Location's objective group name for objective checks
 	**/
-	int					m_ObjectiveGroup;
+	idStr				m_ObjectiveGroup;
 
 private:
 };

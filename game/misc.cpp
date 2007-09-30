@@ -2130,7 +2130,7 @@ idLocationEntity::idLocationEntity( void )
 {
 	m_SndLossMult = 1.0;
 	m_SndVolMod = 0.0;
-	m_ObjectiveGroup = 0;
+	m_ObjectiveGroup.Clear();
 }
 
 /*
