@@ -12,22 +12,29 @@ CDifficultyMenu::~CDifficultyMenu()
 {
 }
 
+
 // Handle mainmenu commands
 void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
 	if (idStr::Icmp(menuCommand, "diffLoad") == 0)
 	{
+		// type-in field for map name (temporary)
+		idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
+
 		// New game, determine the map
 		char * mapName = NULL;
-		idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);
-
-		if (mapName != NULL) {
-			InitializeDifficulty(gui, mapName);
-			gui->SetStateString("mapName", mapName);
-			idLib::fileSystem->FreeFile(mapName);
-		} else {
+		char * startingMap = NULL;
+		idLib::fileSystem->ReadFile("startingMap.txt", (void**) &startingMap);
+		
+		if (mapName == NULL) {
 			gameLocal.Warning( "Couldn't open startingMap.txt file" );
-			return;
+			mapName = va("%s", tdm_mapName.GetString());
+		} else {
+			mapName = startingMap;
+		}
+		InitializeDifficulty(gui, mapName);
+		if (startingMap != NULL) {
+			idLib::fileSystem->FreeFile((void*)startingMap);
 		}
 
 		// show the top of the "easy" list

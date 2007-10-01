@@ -20,8 +20,8 @@ public:
 	void UpdateGUI(idUserInterface* gui);
 
 private:
-	idFileList * modsAvailable; 
-	int modTop;
+	idList<const char *> modsAvailable; 
+	unsigned int modTop;
 };
 
 #endif	/* !__MODS_H__ */
