@@ -111,10 +111,10 @@ bool CFrobDoorHandle::IsFrobbed(void)
 
 // A handle itself can not be used by other objects, so we only
 // forward it in case of a door.
-bool CFrobDoorHandle::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *e)
+bool CFrobDoorHandle::UsedBy(IMPULSE_STATE nState, idEntity *e)
 {
 	if(m_Door)
-		return m_Door->UsedBy(bInit, nState, e);
+		return m_Door->UsedBy(nState, e);
 
 	return false;
 }

@@ -552,7 +552,7 @@ void CFrobDoor::Close(bool bMaster)
 	}
 }
 
-bool CFrobDoor::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *ent)
+bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 {
 	bool bRc = false;
 	int i, n;
@@ -582,7 +582,7 @@ bool CFrobDoor::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *ent)
 	{
 		ELockpickSoundsample v;
 
-		if(bInit == true)
+		if(nState == IS_PRESSED)
 			v = LPSOUND_INIT;
 		else if(nState == IS_RELEASED)
 			v = LPSOUND_RELEASED;
@@ -611,7 +611,7 @@ bool CFrobDoor::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *ent)
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
 		{
 			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				bRc = master->UsedBy(bInit, nState, ent);
+				bRc = master->UsedBy(nState, ent);
 			else
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
 		}

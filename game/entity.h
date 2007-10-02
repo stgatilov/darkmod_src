@@ -534,7 +534,7 @@ public:
 	 * like using the lockpíck), the feirst call when the USE button is pressed, this
 	 * would be set to true and in subsequent calls it would be set to false.
 	 */
-	virtual bool UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *);
+	virtual bool UsedBy(IMPULSE_STATE nState, idEntity *);
 
 	/**
 	 * Parses a used_by string. For a detailed information on how to use this feature

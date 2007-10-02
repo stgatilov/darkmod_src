@@ -6694,7 +6694,7 @@ void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
 	}
 }
 
-bool idEntity::UsedBy(bool bInit, IMPULSE_STATE nState, idEntity *ent)
+bool idEntity::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 {
 	return false;
 }

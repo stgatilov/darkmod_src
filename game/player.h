@@ -484,6 +484,15 @@ public:
 	*/
 	void					PerformKeyRelease(int impulse, int holdTime);
 
+	/**
+	* sparhawk: This gets called by the ButtonStateTracker helper class
+	*			whenever a key is held.
+	*
+	* @impulse: The impulse number
+	* @holdTime: The time the button has been held down
+	*/
+	void					PerformKeyRepeat(int impulse, int holdTime);
+
 	void					Spectate( bool spectate );
 	void					TogglePDA( void );
 	void					ToggleScoreboard( void );
@@ -597,12 +606,12 @@ public:
 	void inventoryDropItem( void );
 
 	// Uses the currently held/selected item.
-	void inventoryUseItem(bool bImpulse);
+	void inventoryUseItem();
 	// Performs the inventory action for onButtonRelease
 	void inventoryUseKeyRelease(int holdTime);
 
 	// Uses a specific item, if it's in the same inventory.
-	void inventoryUseItem(bool bImpulse, IMPULSE_STATE nState, idEntity* useEnt, int holdTime);
+	void inventoryUseItem(IMPULSE_STATE nState, idEntity* useEnt, int holdTime);
 
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
@@ -731,15 +740,6 @@ private:
 	**/
 	idDict					m_hinderance;
 	float					m_hinderanceCache;
-
-	/**
-	 * ContinousFrob determines wether the frob should be processed in a continous
-	 * way (aka button) or as an impulse. The default is to set it to impulse. However
-	 * for some actions it needs to be continous until the frob key is released, and it
-	 * is switched back to impulse. The continous mode is, for example, needed when the
-	 * player uses the lockpicks on a lock.
-	 */
-	bool					m_ContinuousUse;
 
 	/**
 	 * greebo: This is the list of named lightgem modifier values. These can be accessed

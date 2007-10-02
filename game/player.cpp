@@ -28,6 +28,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/Inventory/WeaponItem.h"
 #include "../DarkMod/KeyboardHook.h"
 #include "../DarkMod/shop.h"
+
 /*
 ===============================================================================
 
@@ -397,7 +398,6 @@ idPlayer::idPlayer() :
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
-	m_ContinuousUse			= false;
 
 	m_LightgemModifier		= 0;
 }
@@ -1240,8 +1240,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteDict( &m_hinderance );
 	savefile->WriteFloat( m_hinderanceCache );
 
-	savefile->WriteBool(m_ContinuousUse);
-
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
 	}
@@ -1521,8 +1519,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadDict( &m_hinderance );
 	savefile->ReadFloat( m_hinderanceCache );
-
-	savefile->ReadBool(m_ContinuousUse);
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
@@ -2340,17 +2336,6 @@ void idPlayer::UpdateConditions( void )
 	
 	// DarkMod: Catch the creep modifier
 	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
-
-	// Check if the frob is to be a continous action.
-	if(m_ContinuousUse == true)
-	{
-		if (common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51))) {
-			inventoryUseItem(false);
-		}
-		else {
-			m_ContinuousUse = false;
-		}
-	}
 }
 
 /*
@@ -4792,9 +4777,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 		return;
 	}
 
-	// Register the impulse for tracking
-	m_ButtonStateTracker.startTracking(impulse);
-
 	switch( impulse )
 	{
 		case IMPULSE_13:
@@ -4972,36 +4954,12 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_51:	// Inventory use item
-		{
-			// Pass the "inventoryUseItem" event to the GUIs
-			m_overlays.broadcastNamedEvent("inventoryUseItem");
-
-			if (GetImmobilization() & EIM_ITEM_USE)
-				return;
-
-			inventoryUseItem(true);
-			break;
-		}
-
-		case IMPULSE_52:	// Inventory drop item
-		{
-			// Pass the "inventoryDropItem" event to the GUIs
-			m_overlays.broadcastNamedEvent("inventoryDropItem");
-
-			if (GetImmobilization() & EIM_ITEM_DROP) {
-				return;
-			}
-
-			inventoryDropItem();
-			break;
-		}
-
 		/*!
 		* Lean forward is impulse 44
 		*/
 		case IMPULSE_44:		// Lean forward
 		{
+			m_ButtonStateTracker.startTracking(impulse);
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 				physicsObj.ToggleLean(90.0);
 		}
@@ -5012,6 +4970,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		*/
 		case IMPULSE_45:		// Lean left
 		{
+			m_ButtonStateTracker.startTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left lean impulse pressed\r");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 			{
@@ -5028,6 +4987,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		*/
 		case IMPULSE_46:		// Lean right
 		{
+			m_ButtonStateTracker.startTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right lean impulse pressed\r");
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
 				physicsObj.ToggleLean(0.0);
@@ -5050,8 +5010,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the change event
 			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-			break;
 		}
+		break;
 
 		case IMPULSE_48:	// Inventory next item
 		{
@@ -5069,8 +5029,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the change event
 			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-			break;
 		}
+		break;
 
 		case IMPULSE_49:	// Inventory previous group
 		{
@@ -5088,8 +5048,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the change event
 			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-			break;
 		}
+		break;
 
 		case IMPULSE_50:	// Inventory next group
 		{
@@ -5107,38 +5067,83 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the change event
 			m_overlays.broadcastNamedEvent("inventorySelectionChange");
-			break;
 		}
+		break;
+
+		case IMPULSE_51:	// Inventory use item
+		{
+			// Pass the "inventoryUseItem" event to the GUIs
+			m_overlays.broadcastNamedEvent("inventoryUseItem");
+
+			if (GetImmobilization() & EIM_ITEM_USE)
+				return;
+
+			inventoryUseItem();
+		}
+		break;
+
+		case IMPULSE_52:	// Inventory drop item
+		{
+			// Pass the "inventoryDropItem" event to the GUIs
+			m_overlays.broadcastNamedEvent("inventoryDropItem");
+
+			if (GetImmobilization() & EIM_ITEM_DROP) {
+				return;
+			}
+
+			inventoryDropItem();
+		}
+		break;
+
 	} 
 }
 
-void idPlayer::PerformKeyRelease(int impulse, int holdTime) {
+void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
+{
+	switch (impulse)
+	{
+		case IMPULSE_51:
+		{
+			CInventoryCursor *crsr = InventoryCursor();
+			CInventoryItem *it = crsr->GetCurrentItem();
+			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+				inventoryUseItem(IS_REPEAT, it->GetItemEntity(), holdTime);
+		}
+		break;
+	}
+}
+
+void idPlayer::PerformKeyRelease(int impulse, int holdTime)
+{
 	// The key associated to <impulse> has been released
-	
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("Button %d has been released, has been held down %d ms.\r", impulse, holdTime);
 
-	switch (impulse) {
+	switch (impulse)
+	{
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(90.0);
 			}
-			break;
+		break;
+
 		case IMPULSE_45:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(180.0);
 			}
-			break;
+		break;
+
 		case IMPULSE_46:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(0.0);
 			}
-			break;
+		break;
+
 		case IMPULSE_51:
 			inventoryUseKeyRelease(holdTime);
-			break;
+		break;
 	}
 }
 
@@ -8558,10 +8563,10 @@ void idPlayer::inventoryUseKeyRelease(int holdTime)
 
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(false, IS_RELEASED, it->GetItemEntity(), holdTime);
+		inventoryUseItem(IS_RELEASED, it->GetItemEntity(), holdTime);
 }
 
-void idPlayer::inventoryUseItem(bool bImpulse)
+void idPlayer::inventoryUseItem()
 {
 	// If the player has an item that is selected we need to check if this
 	// is a usable item (like a key). In this case the use action takes
@@ -8569,46 +8574,39 @@ void idPlayer::inventoryUseItem(bool bImpulse)
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(bImpulse, (bImpulse == true) ? IS_PRESSED : IS_REPEAT, it->GetItemEntity(), 0);
+		inventoryUseItem(IS_PRESSED, it->GetItemEntity(), 0);
 }
 
-void idPlayer::inventoryUseItem(bool bImpulse, IMPULSE_STATE nState, idEntity *ent, int holdTime)
+void idPlayer::inventoryUseItem(IMPULSE_STATE nState, idEntity *ent, int holdTime)
 {
 	// Sanity check
 	if (ent == NULL) return;
 
+	idThread *thread = NULL;
 	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 
-	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %08lX  Impulse: %u\r", ent, (int)bImpulse);
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %08lX  KeyState: %u\r", ent, nState);
 	if(frob != NULL)
 	{
-		// We have a frob entity in front of the player
-
-		// Check if the usage should become continuous when this item is active
-		m_ContinuousUse = ent->spawnArgs.GetBool("inv_cont_use");
-		if(ent->spawnArgs.GetBool("usable"))
+		if(ent->spawnArgs.GetBool("usable") == true)
 		{
+			// We have a frob entity in front of the player
+			// Check if the usage should become continuous when this item is active
+			if(nState == IS_PRESSED && ent->spawnArgs.GetBool("inv_cont_use") == true)
+				m_ButtonStateTracker.startTracking(IMPULSE_51);
+
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
-			frob->UsedBy(bImpulse, nState, ent);
+			frob->UsedBy(nState, ent);
 		}
 	}
-	else
-	{
-		idThread *thread = NULL;
-		if (bImpulse)
-		{
-			// greebo: No frob entity highlighted, try to call the "use" method in the entity's scriptobject
-			thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eed", ent, this, nState);
-		}
-		else
-		{
-			if(nState == IS_RELEASED)
-				thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eef", ent, this, static_cast<float>(holdTime));
-		}
 
-		if (thread)
-			thread->Start(); // Start the thread immediately.
-	}
+	if(nState == IS_PRESSED)
+		thread = ent->CallScriptFunctionArgs("inventoryUse", true, 0, "eeed", ent, this, frob, nState);
+	else if(nState == IS_RELEASED)
+		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, frob, static_cast<float>(holdTime));
+
+	if (thread)
+		thread->Start(); // Start the thread immediately.
 }
 
 void idPlayer::inventoryDropItem()

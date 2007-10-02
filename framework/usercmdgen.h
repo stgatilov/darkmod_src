@@ -35,6 +35,54 @@ const int BUTTON_6				= BIT(6);
 const int BUTTON_7				= BIT(7);
 
 // usercmd_t->impulse commands
+enum {
+	IMPULSE_0,
+	IMPULSE_1,
+	IMPULSE_2,
+	IMPULSE_3,
+	IMPULSE_4,
+	IMPULSE_5,
+	IMPULSE_6,
+	IMPULSE_7,
+	IMPULSE_8,
+	IMPULSE_9,
+	IMPULSE_10,
+	IMPULSE_11,
+	IMPULSE_12,
+	IMPULSE_13,
+	IMPULSE_14,
+	IMPULSE_15,
+	IMPULSE_16,
+	IMPULSE_17,
+	IMPULSE_18,
+	IMPULSE_19,
+	IMPULSE_20,
+	IMPULSE_21,
+	IMPULSE_22,
+	IMPULSE_23,
+	IMPULSE_24,
+	IMPULSE_25,
+	IMPULSE_26,
+	IMPULSE_27,
+	IMPULSE_28,
+	IMPULSE_29,
+	IMPULSE_40 = 40,
+	IMPULSE_41,
+	IMPULSE_42,
+	IMPULSE_43,
+	IMPULSE_44,
+	IMPULSE_45,
+	IMPULSE_46,
+	IMPULSE_47,
+	IMPULSE_48,
+	IMPULSE_49,
+	IMPULSE_50,
+	IMPULSE_51,
+	IMPULSE_52,
+	IMPULSE_MAX
+};
+
+/*
 const int IMPULSE_0				= 0;			// weap 0
 const int IMPULSE_1				= 1;			// weap 1
 const int IMPULSE_2				= 2;			// weap 2
@@ -78,6 +126,7 @@ const int IMPULSE_49			= 49;			// Inventory prev group
 const int IMPULSE_50			= 50;			// Inventory next group
 const int IMPULSE_51			= 51;			// Inventory use item
 const int IMPULSE_52			= 52;			// Inventory drop item
+*/
 
 // Darkmod: Added as a baseoffset for the impulse keys, when used with ButtonState.
 // This function requires an int as input which defines the key that should be used,
