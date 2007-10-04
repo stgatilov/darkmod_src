@@ -7795,7 +7795,7 @@ void idEntity::InitInventory(void)
 	// Check if this object should be put into the inventory of some entity
 	// when the object spawns. Default is no.
 	if (spawnArgs.GetBool("inv_map_start", "0")) {
-		idStr target = spawnArgs.GetString("inv_target", "");
+		idStr target = spawnArgs.GetString("inv_target", "player1");
 
 		idPlayer *p = gameLocal.GetLocalPlayer();
 		if(p)

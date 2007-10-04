@@ -8700,6 +8700,34 @@ void idPlayer::inventoryDropItem()
 	}
 }
 
+void idPlayer::inventoryChangeSelection(const idStr& name)
+{
+	CInventoryItem* prev = InventoryCursor()->GetCurrentItem();
+	idStr itemName(name);
+
+	if (itemName.IsEmpty())
+	{
+		// Empty name specified, clear the inventory cursor
+		itemName = TDM_DUMMY_ITEM;
+	}
+	
+	// Try to lookup the item in the inventory
+	CInventoryItem* item = Inventory()->GetItem(itemName);
+
+	if (item != NULL)
+	{
+		// Item found, set the cursor to it
+		InventoryCursor()->SetCurrentItem(item);
+
+		// Trigger an update, passing the previous item along
+		inventoryChangeSelection(hud, true, prev);
+	}
+	else
+	{
+		gameLocal.Printf("Could not find item in player inventory: %s\n", itemName.c_str());
+	}
+}
+
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
 {
 	float opacity( cv_tdm_inv_opacity.GetFloat() );

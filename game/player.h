@@ -613,6 +613,9 @@ public:
 	// Uses a specific item, if it's in the same inventory.
 	void inventoryUseItem(IMPULSE_STATE nState, idEntity* useEnt, int holdTime);
 
+	// Changes the inventory selection to the item with the given name
+	void inventoryChangeSelection(const idStr& name);
+
 	// Sends appropriate messages/updates varaiables/etc after the cursor has changed. Returns if shifting should occur.
 	void inventoryChangeSelection(idUserInterface *_hud, bool bUpdate = false, CInventoryItem *Prev = NULL);
 
