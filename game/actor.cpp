@@ -2288,14 +2288,16 @@ int idActor::GetAnim( int channel, const char *animname ) {
 	}
 
 	if ( animPrefix.Length() ) {
-		temp = LookupReplacementAnim( va( "%s_%s", animPrefix.c_str(), animname ) );
-		anim = animatorPtr->GetAnim( temp );
-		if ( anim ) {
+		temp = va( "%s_%s", animPrefix.c_str(), animname );
+		anim = animatorPtr->GetAnim( LookupReplacementAnim( temp ) );
+		if (!anim) anim = animatorPtr->GetAnim( temp );
+		if (anim) {
 			return anim;
 		}
 	}
 
 	anim = animatorPtr->GetAnim( LookupReplacementAnim( animname ) );
+	if (!anim) anim = animatorPtr->GetAnim( animname );
 
 	return anim;
 }
