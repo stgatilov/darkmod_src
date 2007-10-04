@@ -485,7 +485,7 @@ idActor::idActor( void ) {
 
 	waitState			= "";
 	
-	blink_anim			= NULL;
+	blink_anim			= 0;
 	blink_time			= 0;
 	blink_min			= 0;
 	blink_max			= 0;
@@ -1266,7 +1266,7 @@ void idActor::CheckBlink( void ) {
 	}
 
 	// set the next blink time
-	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomFloat() * ( blink_max - blink_min );
+	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomInt( blink_max - blink_min );
 }
 
 /*
@@ -2486,7 +2486,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
-	damage = damageDef->GetInt( "damage" ) * damageScale;
+	damage = (int)(damageDef->GetInt( "damage" ) * damageScale);
 
 	damage = GetDamageForLocation( damage, location );
 
@@ -3044,7 +3044,7 @@ idActor::Event_EnableEyeFocus
 */
 void idActor::Event_EnableEyeFocus( void ) {
 	allowEyeFocus = true;
-	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomFloat() * ( blink_max - blink_min );
+	blink_time = gameLocal.time + blink_min + gameLocal.random.RandomInt( blink_max - blink_min );
 }
 
 /*
@@ -3695,7 +3695,7 @@ idActor::Event_HasAnim
 ================
 */
 void idActor::Event_HasAnim( int channel, const char *animname ) {
-	if ( GetAnim( channel, animname ) != NULL ) {
+	if ( GetAnim( channel, animname ) ) {
 		idThread::ReturnFloat( 1.0f );
 	} else {
 		idThread::ReturnFloat( 0.0f );
