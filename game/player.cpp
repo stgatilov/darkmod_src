@@ -5783,6 +5783,9 @@ void idPlayer::UpdateHud( void ) {
 		hud->SetStateString( "hudLag", "0" );
 	}
 
+	// Broadcast the HUD opacity value
+	m_overlays.setGlobalStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
+
 	// Trigger an update of the HUD
 	// TODO: This shouldn't be called so often, so cache this
 	inventoryChangeSelection(hud, true);
@@ -8716,6 +8719,9 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 
 	if (item != NULL)
 	{
+		// Notify the GUIs about the change event
+		m_overlays.broadcastNamedEvent("inventorySelectionChange");
+
 		// Item found, set the cursor to it
 		InventoryCursor()->SetCurrentItem(item);
 
@@ -8730,7 +8736,7 @@ void idPlayer::inventoryChangeSelection(const idStr& name)
 
 void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *prev)
 {
-	float opacity( cv_tdm_inv_opacity.GetFloat() );
+	float opacity( cv_tdm_hud_opacity.GetFloat() );
 	int groupvis;
 	CInventoryItem::ItemType type = CInventoryItem::IT_ITEM;
 	CInventoryItem *cur = NULL;
@@ -8808,9 +8814,9 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 		// TODO: implement a fade in/out if the opacity should be temporarily
 	}
 	else
-		opacity = cv_tdm_inv_opacity.GetFloat()*groupvis;
+		opacity = cv_tdm_hud_opacity.GetFloat()*groupvis;
 
-	SetGuiFloat(mInventoryOverlay, "Inventory_Opacity", opacity);
+	//SetGuiFloat(mInventoryOverlay, "HUD_Opacity", opacity);
 	_hud->StateChanged(gameLocal.time);
 }
 

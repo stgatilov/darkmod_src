@@ -582,3 +582,47 @@ void COverlaySys::broadcastNamedEvent(const char* eventName)
 		oNode = oNode->NextNode();
 	}
 }
+
+void COverlaySys::setGlobalStateString(const char* varName, const char *value) 
+{
+	// Cycle through the nodes
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	while(oNode)
+	{
+		oNode->Owner()->m_gui->SetStateString(varName, value);
+		oNode = oNode->NextNode();
+	}
+}
+
+void COverlaySys::setGlobalStateBool(const char* varName, const bool value)
+{
+	// Cycle through the nodes
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	while(oNode)
+	{
+		oNode->Owner()->m_gui->SetStateBool(varName, value);
+		oNode = oNode->NextNode();
+	}
+}
+
+void COverlaySys::setGlobalStateInt(const char* varName, const int value) 
+{
+	// Cycle through the nodes
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	while(oNode)
+	{
+		oNode->Owner()->m_gui->SetStateInt(varName, value);
+		oNode = oNode->NextNode();
+	}
+}
+
+void COverlaySys::setGlobalStateFloat(const char* varName, const float value) 
+{
+	// Cycle through the nodes
+	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
+	while(oNode)
+	{
+		oNode->Owner()->m_gui->SetStateFloat(varName, value);
+		oNode = oNode->NextNode();
+	}
+}

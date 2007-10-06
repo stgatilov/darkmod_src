@@ -103,9 +103,10 @@ extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
 extern idCVar cv_throw_time;
 
+extern idCVar cv_tdm_hud_opacity;
+
 extern idCVar cv_tdm_inv_loot_group;
 extern idCVar cv_tdm_inv_grouping;
-extern idCVar cv_tdm_inv_opacity;
 extern idCVar cv_tdm_inv_groupvis;
 extern idCVar cv_tdm_inv_hud_file;
 extern idCVar cv_tdm_inv_loot_hud;
