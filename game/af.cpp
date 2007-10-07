@@ -276,7 +276,8 @@ void idAF::ChangePose( idEntity *ent, int time ) {
 	idAnimator *animatorPtr;
 	renderEntity_t *renderEntity;
 
-	if ( !IsLoaded() || !ent ) {
+//	if ( !IsLoaded() || !ent ) {
+	if ( !IsLoaded() || !ent || IsActive() ) {
 		return;
 	}
 
@@ -451,6 +452,67 @@ void idAF::AddBody( idAFBody *body, const idJointMat *joints, const char *jointN
 	jointMods[index].jointMod = mod;
 	jointMods[index].jointBodyOrigin = ( body->GetWorldOrigin() - origin ) * axis.Transpose();
 	jointMods[index].jointBodyAxis = body->GetWorldAxis() * axis.Transpose();
+}
+
+void idAF::AddBodyExtern( idAFEntity_Base *ent, idAFBody *bodyNew, idAFBody *bodyExist, AFJointModType_t mod )
+{
+	int indexNew(0), indexExist(-1), matchID(0);
+	jointHandle_t joint = INVALID_JOINT;
+
+	idVec3 origin;
+	idMat3 axis;
+
+	matchID = physicsObj.GetBodyId( bodyExist );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAF::AddBodyExtern: Existing body name is %s, id is %d\r", bodyExist->GetName().c_str(), matchID);
+	for( int i = 0; i < jointMods.Num(); i++ )
+	{
+		if( jointMods[i].bodyId == matchID )
+		{
+			indexExist = i;
+			break;
+		}
+	}
+
+	if( indexExist >= 0 )
+	{
+		joint = jointMods[indexExist].jointHandle;
+
+		if ( joint == INVALID_JOINT ) 
+		{
+			gameLocal.Error( "idAF for entity '%s' at (%s) modifies unknown joint %d", self->name.c_str(), self->GetPhysics()->GetOrigin().ToString(0), (int) joint );
+		}
+		assert( joint < animator->NumJoints() );
+
+		ent->GetJointWorldTransform( joint, gameLocal.time, origin, axis );
+		// animator->GetJointTransform( joint, gameLocal.time, origin, axis );
+
+		indexNew = jointMods.Num();
+		jointMods.SetNum( indexNew + 1, false );
+		jointMods[indexNew].bodyId = physicsObj.GetBodyId( bodyNew );
+		jointMods[indexNew].jointHandle = joint;
+		jointMods[indexNew].jointMod = mod;
+		jointMods[indexNew].jointBodyOrigin = ( bodyNew->GetWorldOrigin() - origin ) * axis.Transpose();
+		jointMods[indexNew].jointBodyAxis = bodyNew->GetWorldAxis() * axis.Transpose();
+	}
+}
+
+void idAF::DeleteBodyExtern( idAFEntity_Base *ent, const char *bodyName )
+{
+	int bodyID;
+
+	if( ent )
+	{
+		bodyID = ent->GetAFPhysics()->GetBodyId( bodyName );
+		
+		for( int i = jointMods.Num() - 1; i >= 0; i-- ) 
+		{
+			if( jointMods[i].bodyId == bodyID )
+			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %d from joint mod index\r", bodyID );
+				jointMods.RemoveIndex(i);
+			}
+		}
+	}
 }
 
 /*
@@ -923,6 +985,7 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 
 	physicsObj.SetMass( file->totalMass );
 	physicsObj.SetChanged();
+	physicsObj.BuildTrees();
 
 	// disable the articulated figure for collision detection until activated
 	physicsObj.DisableClip();

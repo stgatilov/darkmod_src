@@ -271,13 +271,8 @@ protected:
 	/**
 	* Set to true if this animated AF should activate the AF body collision models
 	*	and move them around to collide with the world when animating.
-	* NOTE: This should NOT be set on AI, since they do this anyway
-	**/
-	bool					m_bAFPosedByAnim;
-
-	/**
-	* Set to true if the AF should push aside moveables while animating
-	* NOTE: This does not apply to AI, they have their own var for this
+	* NOTE: This MUST be set on AI in order for animation-based tactile alert
+	*		to work properly.
 	**/
 	bool					m_bAFPushMoveables;
 

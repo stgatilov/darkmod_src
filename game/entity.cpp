@@ -8232,6 +8232,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 
 		idAFEntity_Base *otherAF = static_cast<idAFEntity_Base *>(other);
 		int bodID = otherAF->BodyForClipModelId( body );
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ProcCollisionStims called GetBody on id %d\r", bodID);
 		StruckBody = otherAF->GetAFPhysics()->GetBody( bodID );
 		reroute = StruckBody->GetRerouteEnt();
 		if( reroute )

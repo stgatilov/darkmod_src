@@ -589,7 +589,6 @@ idAFEntity_Base::idAFEntity_Base( void )
 	m_GroundBodyMinNum = 0;
 	m_bDragAFDamping = false;
 	m_bCollideWithTeam = true;
-	m_bAFPosedByAnim = false;
 	m_bAFPushMoveables = false;
 	m_AddedEnts.Clear();
 }
@@ -690,7 +689,6 @@ void idAFEntity_Base::Spawn( void )
 	m_GroundBodyMinNum = spawnArgs.GetInt( "ground_min_number", "0" );
 	m_bDragAFDamping = spawnArgs.GetBool( "drag_af_damping", "0" );
 	m_bCollideWithTeam = spawnArgs.GetBool( "af_collide_with_team", "1" ); // true by default
-	m_bAFPosedByAnim = spawnArgs.GetBool( "af_posed_by_anim", "0" );
 	m_bAFPushMoveables = spawnArgs.GetBool( "af_push_moveables", "0" );
 }
 
@@ -725,7 +723,7 @@ bool idAFEntity_Base::LoadAF( void )
 
 	SetUpGroundingVars();
 
-	if( m_bAFPosedByAnim )
+	if( m_bAFPushMoveables )
 	{
 		af.SetupPose( this, gameLocal.time );
 		af.GetPhysics()->EnableClip();
@@ -750,45 +748,39 @@ void idAFEntity_Base::Think( void ) {
 // TDM: Anim/AF physics mods, generalized behavior that originally was just on AI
 
 	// Update the AF bodies for the anim if we are set to do that
-	if ( m_bAFPosedByAnim && af.IsLoaded() 
+	if ( m_bAFPushMoveables && af.IsLoaded() 
 		&& animator.FrameHasChanged( gameLocal.time )
 		&& !IsType(idAI::Type) ) 
 	{
 		af.ChangePose( this, gameLocal.time );
 
-		// push moveables aside while animating the AF, if set
-		// Do not do this for AI, since they have their own way
-		if( m_bAFPushMoveables )
+		// copied from idAI::PushWithAF
+		afTouch_t touchList[ MAX_GENTITIES ];
+		idEntity *pushed_ents[ MAX_GENTITIES ];
+		idEntity *ent;
+		idVec3 vel( vec3_origin );
+		int num_pushed(0), i, j;
+
+		int num = af.EntitiesTouchingAF( touchList );
+		for( i = 0; i < num; i++ ) 
 		{
+			// skip projectiles
+			if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) )
+				continue;
 
-// copied from idAI::PushWithAF
-			afTouch_t touchList[ MAX_GENTITIES ];
-			idEntity *pushed_ents[ MAX_GENTITIES ];
-			idEntity *ent;
-			idVec3 vel( vec3_origin );
-			int num_pushed(0), i, j;
-
-			int num = af.EntitiesTouchingAF( touchList );
-			for( i = 0; i < num; i++ ) 
+			// make sure we havent pushed this entity already.  this avoids causing double damage
+			for( j = 0; j < num_pushed; j++ ) 
 			{
-				// skip projectiles
-				if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) )
-					continue;
-
-				// make sure we havent pushed this entity already.  this avoids causing double damage
-				for( j = 0; j < num_pushed; j++ ) 
-				{
-					if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
-						break;
-				}
-				if ( j >= num_pushed ) 
-				{
-					ent = touchList[ i ].touchedEnt;
-					pushed_ents[num_pushed++] = ent;
-					vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
-					vel.Normalize();
-					ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
-				}
+				if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
+					break;
+			}
+			if ( j >= num_pushed ) 
+			{
+				ent = touchList[ i ].touchedEnt;
+				pushed_ents[num_pushed++] = ent;
+				vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
+				vel.Normalize();
+				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );
 			}
 		}
 	}
@@ -1186,13 +1178,17 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	EntClip = ent->GetPhysics()->GetClipModel();
 	NewClip = new idClipModel(EntClip);
 	
-	EntMass = ent->GetPhysics()->GetMass();
+	// EntMass = ent->GetPhysics()->GetMass();
+	// FIX: Large masses aren't working, the AFs are not quite that flexible that you can put on a huge mass
+	// Or it could be the occasional small negative elements in the inertia tensor.
+	// In any case for now, we set the masses to 1 so they only collide, don't pull on the AF
+	EntMass = 1.0f;
 	if ( EntMass <= 0.0f || FLOAT_IS_NAN( EntMass ) ) 
 	{
 		EntMass = 1.0f;
 	}
 	AFMass = GetAFPhysics()->GetMass();
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. \r" );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Retrieved masses. AF mass: %f , Ent mass: %f \r", AFMass, EntMass );
 
 	// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
 	NewClip->GetMassProperties( 1.0f, MassOut, COM, inertiaTensor );
@@ -1222,11 +1218,16 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	body->SetSelfCollision( false );
 	body->SetRerouteEnt( ent );
 	newBodID = GetAFPhysics()->AddBody( body );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added with id %d.\r", newBodID);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Body added to physics_AF with id %d.\r", newBodID);
 	
 	idAFConstraint_Fixed *cf = new idAFConstraint_Fixed( AddName, body, bodyExist );
 	GetAFPhysics()->AddConstraint( cf );
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added.\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
+
+	// Now add body to AF object, for updating with idAF::ChangePos and the like
+	jointHandle_t joint = CLIPMODEL_ID_TO_JOINT_HANDLE( bodID );
+	
+	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_AXIS );
 
 	// Add to list
 	Entry.ent = ent;
@@ -1251,15 +1252,21 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
 {
 	idEntity::UnbindNotify( ent );
+	
+	idStr bodyName;
 
-	for( int i=0; i<m_AddedEnts.Num(); i++ )
+	for( int i=m_AddedEnts.Num() - 1; i >= 0; i-- )
 	{
 		if(ent && (m_AddedEnts[i].ent.GetEntity() == ent))
 		{
-			GetAFPhysics()->DeleteBody( m_AddedEnts[i].bodyName.c_str() );
+			bodyName = m_AddedEnts[i].bodyName;
+			af.DeleteBodyExtern( this, bodyName.c_str() );
+			GetAFPhysics()->DeleteBody( bodyName.c_str() );
+			
 			ent->GetPhysics()->SetContents( m_AddedEnts[i].contents );
 			m_AddedEnts.RemoveIndex(i);
-			GetPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
+			// GetAFPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
+			GetAFPhysics()->SetMass( GetPhysics()->GetMass() - 1.0f );
 		}
 	}
 }
@@ -1268,10 +1275,11 @@ void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idV
 {
 	idEntity *reroute = NULL;
 	idAFBody *StruckBody = NULL;
+	int bodID;
 	
 	if( tr )
 	{
-		int bodID = BodyForClipModelId( tr->c.id );
+		bodID = BodyForClipModelId( tr->c.id );
 		StruckBody = GetAFPhysics()->GetBody( bodID );
 		
 		if( StruckBody != NULL )
