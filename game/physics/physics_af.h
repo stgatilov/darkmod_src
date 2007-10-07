@@ -986,6 +986,10 @@ public:	// common physics interface
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
+	/**
+	* TDM: Had to make this public so we could call it earlier than intended
+	**/
+	void					BuildTrees( void );
 
 private:
 							// articulated figure
@@ -1055,7 +1059,6 @@ private:
 	idLCP *					lcp;							// linear complementarity problem solver
 
 private:
-	void					BuildTrees( void );
 	bool					IsClosedLoop( const idAFBody *body1, const idAFBody *body2 ) const;
 	void					PrimaryFactor( void );
 	void					EvaluateBodies( float timeStep );
