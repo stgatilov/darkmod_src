@@ -2852,7 +2852,7 @@ idAI::Event_EnableAFPush
 =====================
 */
 void idAI::Event_EnableAFPush( void ) {
-	af_push_moveables = true;
+	m_bAFPushMoveables = true;
 }
 
 /*
@@ -2861,7 +2861,7 @@ idAI::Event_DisableAFPush
 =====================
 */
 void idAI::Event_DisableAFPush( void ) {
-	af_push_moveables = false;
+	m_bAFPushMoveables = false;
 }
 
 /*

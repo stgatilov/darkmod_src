@@ -657,7 +657,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( allowMove );
 	savefile->WriteBool( allowHiddenMovement );
 	savefile->WriteBool( disableGravity );
-	savefile->WriteBool( af_push_moveables );
+	savefile->WriteBool( m_bAFPushMoveables );
 
 	savefile->WriteBool( lastHitCheckResult );
 	savefile->WriteInt( lastHitCheckTime );
@@ -854,7 +854,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( allowMove );
 	savefile->ReadBool( allowHiddenMovement );
 	savefile->ReadBool( disableGravity );
-	savefile->ReadBool( af_push_moveables );
+	savefile->ReadBool( m_bAFPushMoveables );
 
 	savefile->ReadBool( lastHitCheckResult );
 	savefile->ReadInt( lastHitCheckTime );
@@ -1126,7 +1126,6 @@ void idAI::Spawn( void )
 	}
 
 	spawnArgs.GetBool( "animate_z",				"0",		disableGravity );
-	spawnArgs.GetBool( "af_push_moveables",		"0",		af_push_moveables );
 	spawnArgs.GetFloat( "kick_force",			"4096",		kickForce );
 	spawnArgs.GetBool( "ignore_obstacles",		"0",		ignore_obstacles );
 	spawnArgs.GetFloat( "blockedRadius",		"-1",		blockedRadius );
@@ -1377,11 +1376,6 @@ void idAI::Spawn( void )
 
 	BecomeActive( TH_THINK );
 
-	if ( af_push_moveables ) {
-		af.SetupPose( this, gameLocal.time );
-		af.GetPhysics()->EnableClip();
-	}
-
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
 }
@@ -1627,7 +1621,7 @@ void idAI::Think( void ) {
 		RunPhysics();
 	}
 
-	if ( af_push_moveables )
+	if ( m_bAFPushMoveables )
 	{
 		PushWithAF();
 	}
@@ -3739,7 +3733,7 @@ void idAI::AnimMove( void ) {
 	}
 
 	moveResult = physicsObj.GetMoveResult();
-	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
+	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
 		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
@@ -3868,7 +3862,7 @@ void idAI::SlideMove( void ) {
 	}
 
 	moveResult = physicsObj.GetMoveResult();
-	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
+	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
 		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
@@ -4116,7 +4110,7 @@ void idAI::FlyMove( void ) {
 	RunPhysics();
 
 	monsterMoveResult_t	moveResult = physicsObj.GetMoveResult();
-	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
+	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
 		idEntity *blockEnt = physicsObj.GetSlideMoveEntity();
@@ -4170,7 +4164,7 @@ void idAI::StaticMove( void ) {
 
 	AI_ONGROUND = false;
 
-	if ( !af_push_moveables && attack.Length() && TestMelee() ) {
+	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemyEnt );
 	}
 
@@ -4383,7 +4377,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	disableGravity = false;
 	move.moveType = MOVETYPE_DEAD;
-	af_push_moveables = false;
+	m_bAFPushMoveables = false;
 
 	physicsObj.UseFlyMove( false );
 	physicsObj.ForceDeltaMove( false );
@@ -7210,7 +7204,7 @@ void idAI::Knockout( void )
 
 	disableGravity = false;
 	move.moveType = MOVETYPE_DEAD;
-	af_push_moveables = false;
+	m_bAFPushMoveables = false;
 
 	physicsObj.UseFlyMove( false );
 	physicsObj.ForceDeltaMove( false );
@@ -7566,11 +7560,15 @@ void idAI::DropOnRagdoll( void )
 
 		if( bDropWhenDrawn )
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Testing drop weapon %s\r", ent->name.c_str() );
 			bool bIsMelee(false), bIsRanged(false);
 
 			bIsMelee = ent->spawnArgs.GetBool( "is_weapon_melee" );
 			if( bIsMelee && !AI_bMeleeWeapDrawn )
+			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Melee weapon was not drawn\r" );
 				continue;
+			}
 
 			bIsRanged = ent->spawnArgs.GetBool( "is_weapon_ranged" );
 			if( bIsRanged && !AI_bRangedWeapDrawn )

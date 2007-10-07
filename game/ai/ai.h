@@ -576,7 +576,6 @@ protected:
 	bool					allowMove;					// disables any animation movement
 	bool					allowHiddenMovement;		// allows character to still move around while hidden
 	bool					disableGravity;				// disables gravity and allows vertical movement by the animation
-	bool					af_push_moveables;			// allow the articulated figure to push moveable objects
 	
 	// weapon/attack vars
 	bool					lastHitCheckResult;
