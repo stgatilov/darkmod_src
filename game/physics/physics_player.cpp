@@ -1196,7 +1196,7 @@ void idPhysics_Player::RopeMove( void )
 				direction = topMostBody->GetWorldAxis() * idVec3(0,0,1);
 			}
 
-			bindMasterPhysics->ApplyImpulse(0, ropeOrigin, direction * mass * 400);
+			bindMasterPhysics->ApplyImpulse(0, ropeOrigin, direction * mass * cv_tdm_rope_pull_force_factor.GetFloat());
 		}
 
 		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
