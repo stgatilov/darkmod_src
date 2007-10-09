@@ -1690,6 +1690,10 @@ void idAFEntity_Generic::Event_Activate( idEntity *activator ) {
 	} else {
 		PostEventSec( &EV_SetAngularVelocity, delay, init_avelocity );
 	}
+
+	// greebo: Reactivate the animation flag, just in case
+	// This hopefully helps rope arrows to not stick out straight in the air
+	BecomeActive(TH_ANIMATE);
 }
 
 
