@@ -1,0 +1,69 @@
+
+Compiling DarkMod on 32 bit Linux
+=================================
+
+For compilation under Linux, you need the following:
+
+  * SCONS
+  * Python
+  * libdevil-dev
+  * libdevil1c2
+
+In addition, when running Doom and using the DarkMod, you will also need:
+
+  * libmng1
+
+To actually compile, you can use the script:
+
+  ./linuxBuild.sh
+
+If you have less than 2Gbyte memory, you might want to remove the "-j2"
+switch from the scons line. This switch makes scons run two compiler in
+parallel, and this eats quite a lot of memory and can result in very strange
+compiling errors.
+
+Compiling DarkMod on 64 bit Linux
+=================================
+
+If you run a 64 bit Linux distribution, you still need to build a 32 bit
+version of DarkMod, since Doom3 itself only exists as a 32 bit version.
+
+To get this to work, you will need to install the 32 bit compatibility libraries.
+
+Under some distributions like SuSE these are installed by default, but on
+Ubuntu/Kubuntu, you need to install the following:
+
+  * ia32
+
+In addition to this, you will also need libdevil-dev, libmng1 and libdevil1c2.
+However, these libraries do not come in a compatibility version, only in different
+versions for each architecture.
+
+This means if you install them the regular way with your package manager, you
+will automatically get the 64bit libraries (f.i. amd64) on your system and this
+will cause errors like the following:
+
+	...  lib/bv/frustum_gcc.os -lIL
+	/usr/bin/ld: skipping incompatible /usr/bin/../lib/libIL.so when searching for -lIL
+	/usr/bin/ld: skipping incompatible /usr/bin/../lib/libIL.a when searching for -lIL
+	/usr/bin/ld: skipping incompatible /usr/lib/libIL.so when searching for -lIL
+	/usr/bin/ld: skipping incompatible /usr/lib/libIL.a when searching for -lIL
+	/usr/bin/ld: cannot find -lI
+
+To avoid this, fetch the i368 .deb package files from the net and unzip them manually:
+
+	libdevil1c2_1.6.7-5_i386.deb
+	libdevil-dev_1.6.7-5_i386.deb
+	libmng1_1.0.9-1_i386.deb
+
+(You might get slightly newer versions, but it should work)
+
+Then, as root, copy all the files that are under ./usr to your /lib32 directory.
+
+The run:
+
+	./linuxBuild.sh
+
+It will pick up the correct libraries. Likewise, when running, Doom3 will
+also use the right 32bit libraries.
+

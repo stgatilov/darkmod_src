@@ -291,6 +291,7 @@ if ( g_os == 'Linux' ):
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
+	BASELINKFLAGS.append( '-L/lib32' )
 
 	# Add the __linux__ define
 	BASECPPFLAGS.append('-D__linux__')
