@@ -6866,7 +6866,9 @@ Calculate the bobbing position of the view weapon
 */
 void idPlayer::CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ) {
 	float		scale;
-	float		fracsin;
+	float		fracsin1;
+	float		fracsin2;
+	float		fracsin3;
 	idAngles	angles;
 	int			delta;
 
@@ -6913,11 +6915,14 @@ void idPlayer::CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ) {
 	}
 
 	// speed sensitive idle drift
+	// Dram: Changed so that each axis has it's own fracsin. Now they move independantly of each other
 	scale = xyspeed + 40.0f;
-	fracsin = scale * sin( MS2SEC( gameLocal.time ) ) * 0.01f;
-	angles.roll		+= fracsin;
-	angles.yaw		+= fracsin;
-	angles.pitch	+= fracsin;
+	fracsin1 = scale * sin( MS2SEC( gameLocal.time * 0.42 ) ) * 0.006f;
+	fracsin2 = scale * sin( MS2SEC( gameLocal.time * 1.63 ) ) * 0.008f;
+	fracsin3 = scale * sin( MS2SEC( gameLocal.time * 2 ) ) * 0.01f;
+	angles.roll		+= fracsin1;
+	angles.yaw		+= fracsin2;
+	angles.pitch	+= fracsin3;
 
 	axis = angles.ToMat3() * viewAxis;
 }
