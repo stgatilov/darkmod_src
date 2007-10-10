@@ -288,10 +288,12 @@ BASECPPFLAGS.append( '-fmessage-length=0' )
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
-	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
+	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
+	# help 64 bit machines to find the compatibility 32bit libraries
 	BASELINKFLAGS.append( '-L/lib32' )
+	BASELINKFLAGS.append( '-L/usr/lib32' )
 
 	# Add the __linux__ define
 	BASECPPFLAGS.append('-D__linux__')
