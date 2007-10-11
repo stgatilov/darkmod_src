@@ -156,6 +156,9 @@ const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes
 const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
 const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss"); // Changes the inventory icon of the given item.
 
+// greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
+const idEventDef EV_InitInventory("initInventory", "d");
+
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
@@ -320,6 +323,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_ChangeLootAmount,		idEntity::ChangeLootAmount )
 	EVENT( EV_ChangeInvLightgemModifier, idEntity::ChangeInventoryLightgemModifier )
 	EVENT( EV_ChangeInvIcon,		idEntity::ChangeInventoryIcon )
+	EVENT( EV_InitInventory,		idEntity::Event_InitInventory )
 
 	EVENT( EV_StimAdd,				idEntity::StimAdd)
 	EVENT( EV_StimRemove,			idEntity::StimRemove)
@@ -813,13 +817,12 @@ void idEntity::Spawn( void )
 
 	m_StimResponseColl->ParseSpawnArgsToStimResponse(&spawnArgs, this);
 
-	// Check if some entities exists that want to get stuffed in our own
-	// inventory.
-	CheckInventoryInit();
-
-	// Check if we have to put ourselve into someones inventory.
-	InitInventory();
-
+	// greebo: Post the inventory check event. If this entity should be added
+	// to someone's inventory, the event takes care of that. This must happen
+	// after the entity has fully spawned (including subclasses), otherwise
+	// the clipmodel and things like that are not initialised (>> crash).
+	PostEventMS(&EV_InitInventory, 0, 0);
+	
 	LoadTDMSettings();
 }
 
@@ -7790,34 +7793,31 @@ void idEntity::Event_GetLoot(int LootType)
 	idThread::ReturnInt(rc);
 }
 
-void idEntity::InitInventory(void)
+void idEntity::Event_InitInventory(int callCount)
 {
 	// Check if this object should be put into the inventory of some entity
 	// when the object spawns. Default is no.
-	if (spawnArgs.GetBool("inv_map_start", "0")) {
+	if (spawnArgs.GetBool("inv_map_start", "0"))
+	{
+		// Get the name of the target entity, defaults to PLAYER1
 		idStr target = spawnArgs.GetString("inv_target", "player1");
 
-		idPlayer *p = gameLocal.GetLocalPlayer();
-		if(p)
+		idEntity* targetEnt = gameLocal.FindEntity(target.c_str());
+		if (targetEnt != NULL)
 		{
-			CInventoryItem *item;
-			item = p->Inventory()->PutItem(this, p);
+			// Put the item into the target entity's inventory
+			CInventoryItem* item = targetEnt->Inventory()->PutItem(this, targetEnt);
 		}
-		else
-			gameLocal.AddInventoryEntity(target, name);		// Schedule us for later addition to the inventory
-	}
-}
-
-void idEntity::CheckInventoryInit(void)
-{
-	bool cont;
-	idEntity *e;
-
-	// Check if we have some items that we need to add to our inventory.
-	while((cont = gameLocal.GetInventoryEntity(name, &e)) == true)
-	{
-		if(e)
-			e->InitInventory();
+		else 
+		{
+			// Target entity not found (not spawned yet?) Postpone this event
+			// Check how often we've been called to avoid infinite postponing
+			if (callCount < 20)
+			{
+				// Try again in 250 ms.
+				PostEventMS(&EV_InitInventory, 250, callCount+1);
+			}
+		}
 	}
 }
 

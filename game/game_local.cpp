@@ -5840,40 +5840,6 @@ void idGameLocal::PauseGame( bool bPauseState )
 	}
 }
 
-void idGameLocal::AddInventoryEntity(const idStr &TargetName, const idStr &ItemName)
-{
-	SInventoryTarget *s = new SInventoryTarget();
-	s->mTarget = TargetName;
-	s->mItem = ItemName;
-	mInventoryList.Append(s);
-}
-
-bool idGameLocal::GetInventoryEntity(const idStr &TargetName, idEntity **e)
-{
-	bool rc = false;
-	int i;
-
-	if(e == NULL)
-		goto Quit;
-
-	*e = NULL;
-
-	for(i = 0; i < mInventoryList.Num(); i++)
-	{
-		if(mInventoryList[i]->mTarget == TargetName)
-		{
-			*e = FindEntity(mInventoryList[i]->mItem);
-			delete mInventoryList[i];
-			mInventoryList.RemoveIndex(i);
-			rc = true;
-			break;
-		}
-	}
-
-Quit:
-	return rc;
-}
-
 CPriorityQueue*	idGameLocal::GetPriorityQueue(int index)
 {
 	return (index < 0 || index >= m_PriorityQueues.Num()) ? NULL : m_PriorityQueues[index];

@@ -614,21 +614,12 @@ public:
 	CInventoryCursor*	InventoryCursor();
 
 	/**
-	 * InitInventory reads the spawndata and puts this entity into the inventory
-	 * of the target entity, defined by the def or map argument inv_owner.
-	 * If the target entity does not yet exist, it will put itself into a list
-	 * on game_local, and each entity will check wether there are inventory items for itself.
-	 * if this is the case InitInventory will be called again, because at this point
-	 * the target definitely exists.
+	 * greebo: This event gets fired right after spawn time. It checks the spawnargs
+	 *         and adds itself to someone else's inventory on demand. If the target entity
+	 *         is not found, the event postpones itself by a few hundred msec.
+	 *         The optional count argument takes care that this doesn't happen too often.
 	 */
-	void InitInventory(void);
-
-	/**
-	 * CheckInventoryInit is the counterpart for InitInventory. It will check wether
-	 * some entities exists that have to put in it's own inventory. This is only needed
-	 * when entities are spawning out of order.
-	 */
-	void CheckInventoryInit(void);
+	void Event_InitInventory(int callCount = 0);
 
 	/**
 	 * CreateOverlay will create an overaly for the given entity. This is a hud element
