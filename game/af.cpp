@@ -992,6 +992,9 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 
 	isLoaded = true;
 
+	physicsObj.SetNumOrigBodies( physicsObj.GetNumBodies() );
+	physicsObj.SetNumOrigConstraints( physicsObj.GetNumConstraints() );
+
 	return true;
 }
 

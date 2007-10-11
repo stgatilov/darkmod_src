@@ -155,6 +155,8 @@ typedef struct SAddedEnt_s
 	idStr bodyName;
 	// don't need to store constraint since they are deleted along with body
 
+	idStr AddedToBody; // original body we added on to
+
 	int contents; // original clipmodel contents
 } SAddedEnt;
 
@@ -302,6 +304,11 @@ protected:
 	* Same as idEntity::ParseAttachments, but called at a different point in spawn routine
 	**/
 	virtual void			ParseAttachmentsAF( void );
+
+	/**
+	* Restore attached entities that have been added to the AF after a save
+	**/
+	virtual void			RestoreAddedEnts( void );
 
 	/**
 	* Set the linear and angular velocities of a particular body given by ID argument

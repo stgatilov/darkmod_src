@@ -559,6 +559,7 @@ const idEventDef EV_GetAngularVelocityB( "getAngularVelocityB", "d", 'v' );
 const idEventDef EV_SetLinearVelocityB( "setLinearVelocityB", "vd" );
 const idEventDef EV_SetAngularVelocityB( "setAngularVelocityB", "vd" );
 const idEventDef EV_GetNumBodies( "getNumBodies", NULL, 'd' );
+const idEventDef EV_RestoreAddedEnts( "restoreAddedEnts", NULL );
 
 CLASS_DECLARATION( idAnimatedEntity, idAFEntity_Base )
 	EVENT( EV_SetConstraintPosition,	idAFEntity_Base::Event_SetConstraintPosition )
@@ -567,6 +568,7 @@ CLASS_DECLARATION( idAnimatedEntity, idAFEntity_Base )
 	EVENT( EV_SetLinearVelocityB,		idAFEntity_Base::Event_SetLinearVelocityB )
 	EVENT( EV_SetAngularVelocityB,		idAFEntity_Base::Event_SetAngularVelocityB )
 	EVENT( EV_GetNumBodies,				idAFEntity_Base::Event_GetNumBodies )
+	EVENT( EV_RestoreAddedEnts,			idAFEntity_Base::RestoreAddedEnts )
 
 END_CLASS
 
@@ -632,6 +634,8 @@ void idAFEntity_Base::Save( idSaveGame *savefile ) const
 	{
 		m_AddedEnts[j].ent.Save( savefile );
 		savefile->WriteString( m_AddedEnts[j].bodyName );
+		savefile->WriteString( m_AddedEnts[j].AddedToBody );
+		savefile->WriteInt( m_AddedEnts[j].contents );
 	}
 
 	af.Save( savefile );
@@ -670,9 +674,14 @@ void idAFEntity_Base::Restore( idRestoreGame *savefile )
 	{
 		m_AddedEnts[j].ent.Restore( savefile );
 		savefile->ReadString( m_AddedEnts[j].bodyName );
+		savefile->ReadString( m_AddedEnts[j].AddedToBody );
+		savefile->ReadInt( m_AddedEnts[j].contents );
 	}
 
 	af.Restore( savefile );
+
+	// Schedule any added entities for re-adding when they have spawned
+	PostEventMS( &EV_RestoreAddedEnts, 0 );
 }
 
 /*
@@ -1225,12 +1234,11 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
 
 	// Now add body to AF object, for updating with idAF::ChangePos and the like
-	jointHandle_t joint = CLIPMODEL_ID_TO_JOINT_HANDLE( bodID );
-	
 	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_AXIS );
 
 	// Add to list
 	Entry.ent = ent;
+	Entry.AddedToBody = bodyExist->GetName();
 	Entry.bodyName = AddName;
 	Entry.contents = EntClip->GetContents();
 
@@ -1247,6 +1255,31 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	EntClip->SetContents( SetContents );
 		
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
+}
+
+void idAFEntity_Base::RestoreAddedEnts( void )
+{
+	// This must be called after all entities are loaded
+	int TempContents, bodyID;
+	idEntity *ent;
+	idList<SAddedEnt>	OldAdded;
+	idStr temp;
+	
+	OldAdded = m_AddedEnts;
+	m_AddedEnts.Clear();
+
+	for(int i=0; i<OldAdded.Num(); i++)
+	{
+		// First, we reset all the original clipmodel contents because AddEntByBody will read it and store it
+		TempContents = OldAdded[i].contents;
+		ent = OldAdded[i].ent.GetEntity();
+		ent->GetPhysics()->SetContents( TempContents );
+
+		bodyID = GetAFPhysics()->GetBodyId( OldAdded[i].AddedToBody );
+
+		// Add the body again
+		AddEntByBody( ent, bodyID );
+	}
 }
 
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
