@@ -1221,6 +1221,7 @@ idPhysics_RigidBody::SetContents
 ================
 */
 void idPhysics_RigidBody::SetContents( int contents, int id ) {
+	assert(clipModel != NULL);
 	clipModel->SetContents( contents );
 }
 
@@ -1230,6 +1231,7 @@ idPhysics_RigidBody::GetContents
 ================
 */
 int idPhysics_RigidBody::GetContents( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetContents();
 }
 
@@ -1239,6 +1241,7 @@ idPhysics_RigidBody::GetBounds
 ================
 */
 const idBounds &idPhysics_RigidBody::GetBounds( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetBounds();
 }
 
@@ -1248,6 +1251,7 @@ idPhysics_RigidBody::GetAbsBounds
 ================
 */
 const idBounds &idPhysics_RigidBody::GetAbsBounds( int id ) const {
+	assert(clipModel != NULL);
 	return clipModel->GetAbsBounds();
 }
 
