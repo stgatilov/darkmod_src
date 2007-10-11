@@ -3207,6 +3207,12 @@ void idGameLocal::RunDebugInfo( void ) {
 			if ( viewTextBounds.IntersectsBounds( entBounds ) ) {
 				gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
 				gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DrawText( 
+					va( "%d / %d", ent->GetPhysics()->GetContents(), ent->GetPhysics()->GetClipMask() ), 
+					entBounds.GetCenter() - up, 0.1f, 
+					colorWhite, 
+					axis, 1 
+				);
 			}
 		}
 	}
