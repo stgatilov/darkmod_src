@@ -991,6 +991,15 @@ public:	// common physics interface
 	**/
 	void					BuildTrees( void );
 
+	/**
+	* Get/Set the number of original bodies or constraints
+	* These are constraints that are added by this entity's AF only, not ones that are attached later
+	**/
+	int						GetNumOrigBodies( void ) { return m_NumOrigBodies; };
+	void					SetNumOrigBodies( int num ) { m_NumOrigBodies = num; };
+	int						GetNumOrigConstraints( void ) { return m_NumOrigConstraints; };
+	void					SetNumOrigConstraints( int num ) { m_NumOrigConstraints = num; };
+
 private:
 							// articulated figure
 	idList<idAFTree *>		trees;							// tree structures
@@ -1003,6 +1012,18 @@ private:
 	idList<int>				contactBodies;					// body id for each contact
 	idList<AFCollision_t>	collisions;						// collisions
 	bool					changedAF;						// true when the articulated figure just changed
+
+	/**
+	* TDM: Number of _original_ bodies from the loaded AF file
+	* We need this to implement a hack where added bodies aren't saved/loaded,
+	* because they will be added again from scratch on restore.
+	* We must do this because Id chose to re-load the AFs instead of restore them
+	**/
+	int						m_NumOrigBodies;
+	/**
+	* Number of original constraints loaded from this entity's AF file
+	**/
+	int						m_NumOrigConstraints;
 
 							// properties
 	float					linearFriction;					// default translational friction

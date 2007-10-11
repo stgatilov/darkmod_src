@@ -7008,6 +7008,11 @@ idPhysics_AF::idPhysics_AF( void ) {
 	worldConstraintsLocked = false;
 	forcePushable = false;
 
+	// Init these to -1, if they are still -1 on save time, 
+	// save just uses the actual numbers in the lists
+	m_NumOrigBodies = -1;
+	m_NumOrigConstraints = -1;
+
 #ifdef AF_TIMINGS
 	lastTimerReset = 0;
 #endif
@@ -7074,16 +7079,22 @@ void idPhysics_AF_RestorePState( idRestoreGame *saveFile, AFPState_t &state ) {
 idPhysics_AF::Save
 ================
 */
-void idPhysics_AF::Save( idSaveGame *saveFile ) const {
-	int i;
+void idPhysics_AF::Save( idSaveGame *saveFile ) const 
+{
+	int i, num;
 
 	// the articulated figure structure is handled by the owner
 
 	idPhysics_AF_SavePState( saveFile, current );
 	idPhysics_AF_SavePState( saveFile, saved );
 
-	saveFile->WriteInt( bodies.Num() );
-	for ( i = 0; i < bodies.Num(); i++ ) {
+	if( m_NumOrigBodies < 0 )
+		num = bodies.Num();
+	else
+		num = m_NumOrigBodies;
+
+	saveFile->WriteInt( num );
+	for ( i = 0; i < num; i++ ) {
 		bodies[i]->Save( saveFile );
 	}
 	if ( masterBody ) {
@@ -7093,8 +7104,13 @@ void idPhysics_AF::Save( idSaveGame *saveFile ) const {
 		saveFile->WriteBool( false );
 	}
 
-	saveFile->WriteInt( constraints.Num() );
-	for ( i = 0; i < constraints.Num(); i++ ) {
+	if( m_NumOrigConstraints < 0 )
+		num = constraints.Num();
+	else
+		num = m_NumOrigConstraints;
+
+	saveFile->WriteInt( num );
+	for ( i = 0; i < num; i++ ) {
 		constraints[i]->Save( saveFile );
 	}
 
