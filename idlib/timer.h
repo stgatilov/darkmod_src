@@ -35,6 +35,9 @@ public:
 	void			Start( void );
 	void			Stop( void );
 	void			Clear( void );
+
+	bool			Running() const;
+
 	double			ClockTicks( void ) const;
 	double			Milliseconds( void ) const;
 
@@ -146,6 +149,16 @@ ID_INLINE void idTimer::Stop( void ) {
 		clockTicks -= base;
 	}
 	state = TS_STOPPED;
+}
+
+/*
+=================
+TDM: idTimer::Clear
+=================
+*/
+ID_INLINE bool idTimer::Running() const
+{
+	return state == TS_STARTED;
 }
 
 /*

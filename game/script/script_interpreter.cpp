@@ -29,6 +29,12 @@ idInterpreter::idInterpreter() {
 	memset( localstack, 0, sizeof( localstack ) );
 	memset( callStack, 0, sizeof( callStack ) );
 	Reset();
+#ifdef PROFILE_SCRIPT
+	while (functionTimers.size() > 0)
+	{
+		functionTimers.pop();
+	}
+#endif
 }
 
 /*
@@ -142,6 +148,20 @@ idInterpreter::Reset
 ================
 */
 void idInterpreter::Reset( void ) {
+#ifdef PROFILE_SCRIPT
+	// Clear out any function timers
+	while (functionTimers.size() > 0)
+	{
+		idTimer& topMost = functionTimers.top();
+		if (topMost.Running())
+		{
+			topMost.Stop();
+		}
+		DM_LOG(LC_AI, LT_INFO).LogString("Resetting script stack, Timer: %lf\n", functionTimers.top().Milliseconds());
+		functionTimers.pop();
+	}
+#endif
+
 	callStackDepth = 0;
 	localstackUsed = 0;
 	localstackBase = 0;
@@ -940,6 +960,14 @@ bool idInterpreter::Execute( void ) {
 		instructionPointer--;
 	}
 
+#ifdef PROFILE_SCRIPT
+	if (functionTimers.size() == 0) {
+		// Create a new function timer, as we don't appear to have one
+		functionTimers.push(idTimer());
+	}
+	functionTimers.top().Start();
+#endif
+
 	runaway = 5000000;
 
 	doneProcessing = false;
@@ -955,7 +983,31 @@ bool idInterpreter::Execute( void ) {
 
 		switch( st->op ) {
 		case OP_RETURN:
+
+#ifdef PROFILE_SCRIPT
+	if (functionTimers.size() > 0)
+	{
+		// greebo: End the current timer, before adding a new one
+		functionTimers.top().Stop();
+
+		DM_LOG(LC_AI, LT_INFO).LogString("Function %s took %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
+
+		// Remove the stopped timer
+		functionTimers.pop();
+#endif
+			// Actually leave the function
 			LeaveFunction( st->a );
+
+#ifdef PROFILE_SCRIPT
+		// greebo: Maybe we have a timer of a previous function?
+		if (functionTimers.size() > 0)
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Restarting timer of previous function: %s", currentFunction->Name());
+			// Start the timer of the previous thread
+			functionTimers.top().Start();
+		}
+	}
+#endif
 			break;
 
 		case OP_THREAD:
@@ -986,7 +1038,25 @@ bool idInterpreter::Execute( void ) {
 			break;
 
 		case OP_CALL:
+
+#ifdef PROFILE_SCRIPT
+			if (functionTimers.size() > 0)
+			{
+				// End the current timer, before leaving the current one
+				functionTimers.top().Stop();
+				DM_LOG(LC_AI, LT_INFO).LogString("Stopping timer of %s at %lf msec.", 
+					   currentFunction->Name(), functionTimers.top().Milliseconds());
+			}
+#endif
 			EnterFunction( st->a->value.functionPtr, false );
+#ifdef PROFILE_SCRIPT
+			// Add and start a new timer
+			functionTimers.push(idTimer());
+
+			functionTimers.top().Clear();
+			functionTimers.top().Start();
+			DM_LOG(LC_AI, LT_INFO).LogString("Starting new timer on entering function %s.", currentFunction->Name());
+#endif
 			break;
 
 		case OP_EVENTCALL:
@@ -998,7 +1068,25 @@ bool idInterpreter::Execute( void ) {
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
 				func = obj->GetTypeDef()->GetFunction( st->b->value.virtualFunction );
+
+#ifdef PROFILE_SCRIPT
+				if (functionTimers.size() > 0)
+				{
+					// End the current timer, before leaving the current one
+					functionTimers.top().Stop();
+					DM_LOG(LC_AI, LT_INFO).LogString("Stopping timer of %s at %lf msec.", 
+						   currentFunction->Name(), functionTimers.top().Milliseconds());
+				}
+#endif
 				EnterFunction( func, false );
+#ifdef PROFILE_SCRIPT
+				// Add and start a new timer
+				functionTimers.push(idTimer());
+
+				functionTimers.top().Clear();
+				functionTimers.top().Start();
+				DM_LOG(LC_AI, LT_INFO).LogString("Starting new timer on entering function %s.", currentFunction->Name());
+#endif
 			} else {
 				// return a 'safe' value
 				gameLocal.program.ReturnVector( vec3_zero );
@@ -1816,6 +1904,12 @@ bool idInterpreter::Execute( void ) {
 			break;
 		}
 	}
+
+#ifdef PROFILE_SCRIPT
+	if (functionTimers.size() > 0) {
+		functionTimers.top().Stop();
+	}
+#endif
 
 	return threadDying;
 }

@@ -13,6 +13,10 @@
 #ifndef __SCRIPT_INTERPRETER_H__
 #define __SCRIPT_INTERPRETER_H__
 
+#ifdef PROFILE_SCRIPT
+#include <stack>
+#endif
+
 #define MAX_STACK_DEPTH 	64
 #define LOCALSTACK_SIZE 	6144
 
@@ -41,6 +45,11 @@ private:
 	idEntity			*eventEntity;
 
 	idThread			*thread;
+
+#ifdef PROFILE_SCRIPT
+	typedef std::stack<idTimer> TimerStack;
+	TimerStack			functionTimers;
+#endif
 
 	void				PopParms( int numParms );
 	void				PushString( const char *string );
