@@ -62,6 +62,12 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 		darkModLightRecord_t* p_thisLASLight = (darkModLightRecord_t*) (p_cursor->Owner());
 		if (p_thisLASLight == p_LASLight)
 		{
+			// angua: Check if this is the only light in this area. 
+			if (p_cursor->ListHead() == p_cursor && p_cursor->NextNode() == NULL) 
+			{
+				// set this list to empty.
+				m_pp_areaLightLists[oldAreaNum] = NULL;
+			}
 			// Remove this node from its list
 			p_cursor->RemoveHeadsafe();
 			break;
