@@ -594,6 +594,11 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 
 	// When we are here we know that the item is usable
 	// so we have to check if it is associated with this entity.
+	// We ignore all repeat or release events to make it a true 
+	// IMPULSE event.
+	if(nState != IS_PRESSED)
+		goto Quit;
+
 	n = m_UsedBy.Num();
 	for(i = 0; i < n; i++)
 	{
@@ -617,6 +622,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 		}
 	}
 
+Quit:
 	return bRc;
 }
 
