@@ -1519,18 +1519,23 @@ void idActor::UpdateScript( void ) {
 			// don't call script until it's done waiting
 			if ( scriptThread->IsWaiting() ) break;
 	        
-#ifdef PROFILE_SCRIPT
+#ifdef PROFILE_TASKS
 			idTimer scriptTimer(0);
-			scriptTimer.Clear();
-			DM_LOG(LC_AI, LT_INFO).LogString("Entering Task thread on entity %s, task is %s.", name.c_str(), task.c_str());
-			scriptTimer.Start();
+
+			if (ai_debugScript.GetInteger() == entityNumber) {
+				scriptTimer.Clear();
+				DM_LOG(LC_AI, LT_INFO).LogString("Entering Task thread on entity %s, task is %s.", name.c_str(), task.c_str());
+				scriptTimer.Start();
+			}
 #endif
 
 			scriptThread->Execute();
 
-#ifdef PROFILE_SCRIPT
-			scriptTimer.Stop();
-			DM_LOG(LC_AI, LT_INFO).LogString("AI Script thread on entity %s took %lf msec, task is %s.", name.c_str(), scriptTimer.Milliseconds(), task.c_str());
+#ifdef PROFILE_TASKS
+			if (ai_debugScript.GetInteger() == entityNumber) {
+				scriptTimer.Stop();
+				DM_LOG(LC_AI, LT_INFO).LogString("AI Script thread on entity %s took %lf msec, task is %s.", name.c_str(), scriptTimer.Milliseconds(), task.c_str());
+			}
 #endif
 			
 			// If the function returned, the task is done, so look for another task
