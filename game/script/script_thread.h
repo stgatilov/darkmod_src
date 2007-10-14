@@ -207,6 +207,9 @@ private:
 	void						Event_SetPortSoundLoss( int handle, float value );
 	void						Event_GetPortSoundLoss( int handle );
 	
+	// The scriptevent counterpart of DM_LOG
+	void						Event_LogString(int logClass, int logType, const char* output);
+
 	/**
 	* TDM priority queue events
 	**/
