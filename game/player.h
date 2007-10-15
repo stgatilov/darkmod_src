@@ -845,12 +845,6 @@ private:
 
 	void					UseVehicle( void );
 
-	/**
-	* TDM: Check if our "button" keys have been released this frame ( called by idPlayer::Think() )
-	* If they have been updated and have been released, perform the release action.
-	**/
-	void					CheckHeldKeys( void );
-
 	void					Event_GetButtons( void );
 	void					Event_GetMove( void );
 	void					Event_GetViewAngles( void );

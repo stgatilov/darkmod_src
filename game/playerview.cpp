@@ -12,7 +12,6 @@
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
-#include "../DarkMod/KeyboardHook.h"
 
 static bool init_version = FileVersionList("$Id$", init_version);
 

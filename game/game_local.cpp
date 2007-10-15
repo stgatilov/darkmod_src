@@ -38,7 +38,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "il/config.h"
 #include "il/il.h"
 #include "../DarkMod/randomizer/randomc.h"
-#include "../DarkMod/KeyboardHook.h" // Added By Rich for keyboard support encapsulation
 
 #include <iostream>
 
@@ -218,8 +217,6 @@ idGameLocal::idGameLocal
 idGameLocal::idGameLocal() 
 {
 	m_HighestSRId = 0;
-	m_Keyboard = CKeyboard::getInstance();
-	assert( NULL != m_Keyboard );
 	Clear();
 }
 
@@ -230,8 +227,6 @@ idGameLocal::~idGameLocal
 */
 idGameLocal::~idGameLocal() 
 {
-	assert( NULL != m_Keyboard );
-	delete m_Keyboard;
 }
 
 /*

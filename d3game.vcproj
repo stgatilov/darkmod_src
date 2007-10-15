@@ -919,18 +919,6 @@
 					RelativePath=".\DarkMod\Intersection.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\KeyboardHook.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\KeyboardHook.h">
-				</File>
-				<File
-					RelativePath=".\DarkMod\KeyboardHookWindows.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\KeyboardHookWindows.h">
-				</File>
-				<File
 					RelativePath=".\DarkMod\liquid.cpp">
 				</File>
 				<File

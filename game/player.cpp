@@ -26,7 +26,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/Inventory/Inventory.h"
 #include "../DarkMod/Inventory/WeaponItem.h"
-#include "../DarkMod/KeyboardHook.h"
 #include "../DarkMod/shop.h"
 
 /*
@@ -4985,7 +4984,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 				// Do we need to enter the leaning state?
 				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
 				physicsObj.ToggleLean(180.0);
-				gameLocal.m_Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
 			}
 		}
 		break;
@@ -5130,23 +5128,17 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 	{
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
-			{
 				physicsObj.ToggleLean(90.0);
-			}
 		break;
 
 		case IMPULSE_45:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
-			{
 				physicsObj.ToggleLean(180.0);
-			}
 		break;
 
 		case IMPULSE_46:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
-			{
 				physicsObj.ToggleLean(0.0);
-			}
 		break;
 
 		case IMPULSE_51:
@@ -5248,8 +5240,6 @@ void idPlayer::EvaluateControls( void )
 		// in single player, we let the session handle restarting the level or loading a game
 		gameLocal.sessionCommand = "died";
 	}
-
-	CheckHeldKeys();
 
 	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) )
 	{
@@ -9314,93 +9304,6 @@ void idPlayer::SetImmobilization( const char *source, int type )
 void idPlayer::SetHinderance( const char *source, float mCap, float aCap )
 {
 	Event_SetHinderance( source, mCap, aCap );
-}
-
-void idPlayer::CheckHeldKeys( void )
-{
-	CKeyboard* Keyboard = CKeyboard::getInstance();
-	CKeyCode ck = Keyboard->GetCurrentKey();
-	
-	// NOTE: For now, keep this compatible with both a toggle lean and hold lean setup
-	
-	// Forward lean
-	if( Keyboard->ImpulseIsUpdated(IR_LEAN_FORWARD) == true)
-	{
-		// Check if the key is just reported as repeating or released.
-		// If it is released we can unlean, as we don't care about repeats.
-		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_FORWARD);
-		if( !key )
-		{
-			// Something bad happened
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped (bad pointer to key handler)\r");
-			physicsObj.ToggleLean(90.0);
-			Keyboard->ImpulseFree(IR_LEAN_FORWARD);
-		}
-		else if( key->GetPressed() == false )
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning stopped\r");
-			physicsObj.ToggleLean(90.0);
-			Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
-		}
-		else
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Forward leaning ignored\r");
-			Keyboard->ImpulseProcessed(IR_LEAN_FORWARD);
-		}
-	}
-
-// Left lean
-	if( Keyboard->ImpulseIsUpdated(IR_LEAN_LEFT) == true )
-	{
-		// Check if the key is just reported as repeating or released.
-		// If it is released we can unlean, as we don't care about repeats.
-		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_LEFT);
-		if( !key )
-		{
-			// Something bad happened
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped (bad pointer to key handler)\r");
-			physicsObj.ToggleLean(180.0);
-			Keyboard->ImpulseFree(IR_LEAN_LEFT);
-		}
-		else if( key->GetPressed() == false )
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning stopped\r");
-			physicsObj.ToggleLean(180.0);
-			Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
-		}
-		else
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning ignored\r");
-			Keyboard->ImpulseProcessed(IR_LEAN_LEFT);
-		}
-		
-	}
-
-// Right lean
-	if( Keyboard->ImpulseIsUpdated(IR_LEAN_RIGHT) == true)
-	{
-		// Check if the key is just reported as repeating or released.
-		// If it is released we can unlean, as we don't care about repeats.
-		const CKeyCode *key = Keyboard->ImpulseData(IR_LEAN_RIGHT);
-		if( !key )
-		{
-			// Something bad happened
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped (bad pointer to key handler)\r");
-			physicsObj.ToggleLean(0.0);
-			Keyboard->ImpulseFree(IR_LEAN_RIGHT);
-		}
-		else if( key->GetPressed() == false )
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning stopped\r");
-			physicsObj.ToggleLean(0.0);
-			Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
-		}
-		else
-		{
-			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right leaning ignored\r");
-			Keyboard->ImpulseProcessed(IR_LEAN_RIGHT);
-		}
-	}
 }
 
 /*
