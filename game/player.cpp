@@ -4902,22 +4902,24 @@ void idPlayer::PerformImpulse( int impulse ) {
 			searchBounds.AddPoint (endPoint);
 
 			// Get AAS
-			idAAS* p_aas = gameLocal.GetAAS( 0 );
-			if (p_aas != NULL)
+			idAAS* p_aas = NULL;
+			for (int i = 0; i < gameLocal.NumAAS(); i++) {
+				p_aas = gameLocal.GetAAS(i);
+				if (p_aas != NULL) {
+					darkModAASFindHidingSpots::testFindHidingSpots(
+						searchOrigin,
+						0.35f,
+						searchBounds,
+						this, // Ignore self as a hiding screen
+						p_aas
+					);
+					DM_LOG(LC_AI, LT_DEBUG).LogString("Done hiding spot test");
+				}
+			}
+
+			if (p_aas == NULL)
 			{
-				darkModAASFindHidingSpots::testFindHidingSpots 
-				(
-					searchOrigin,
-					0.35f,
-					searchBounds,
-					this, // Ignore self as a hiding screen
-					p_aas
-				);
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Done hiding spot test");
-			}				
-			else
-			{
-				DM_LOG(LC_AI, LT_WARNING).LogString("No default AAS is present for map");
+				DM_LOG(LC_AI, LT_WARNING).LogString("No default AAS is present for map, number of AAS: %d\n", gameLocal.NumAAS());
 			}
 			
 		}

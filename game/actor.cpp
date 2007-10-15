@@ -1524,7 +1524,7 @@ void idActor::UpdateScript( void ) {
 
 			if (ai_debugScript.GetInteger() == entityNumber) {
 				scriptTimer.Clear();
-				DM_LOG(LC_AI, LT_INFO).LogString("Entering Task thread on entity %s, task is %s.", name.c_str(), task.c_str());
+				DM_LOG(LC_AI, LT_INFO).LogString("Entering Task thread on entity %s, task is %s.\n", name.c_str(), task.c_str());
 				scriptTimer.Start();
 			}
 #endif
@@ -1534,7 +1534,7 @@ void idActor::UpdateScript( void ) {
 #ifdef PROFILE_TASKS
 			if (ai_debugScript.GetInteger() == entityNumber) {
 				scriptTimer.Stop();
-				DM_LOG(LC_AI, LT_INFO).LogString("AI Script thread on entity %s took %lf msec, task is %s.", name.c_str(), scriptTimer.Milliseconds(), task.c_str());
+				DM_LOG(LC_AI, LT_INFO).LogString("AI Script thread on entity %s took %lf msec, task is %s.\n", name.c_str(), scriptTimer.Milliseconds(), task.c_str());
 			}
 #endif
 			
@@ -3998,6 +3998,11 @@ void idActor::Event_GetNumRangedWeapons()
 int idActor::GetNumMeleeWeapons()
 {
 	int numMeleeWeapons(0);
+
+	// greebo: Always return 1 if this type of actor doesn't need weapons to fight
+	if (spawnArgs.GetBool("unarmed_melee", "0")) {
+		return 1;
+	}
 
 	for (int i = 0; i < m_attachments.Num(); i++)
 	{
