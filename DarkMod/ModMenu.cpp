@@ -125,16 +125,25 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 			pk4ToDelete = va("%s%s.pk4", darkmodPath, current);
 			fileSystem->FreeFile( current );
 		}
+
+#ifdef _WINDOWS
+		// start up dmlauncher and exit
+		STARTUPINFO siStartupInfo;
+		PROCESS_INFORMATION piProcessInfo;
+		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
+		memset(&piProcessInfo, 0, sizeof(piProcessInfo));
+		siStartupInfo.cb = sizeof(siStartupInfo);
+		char * lpCmdLine = va("%s %s +set fs_game darkmod %s", launcherExe, doomExe, pk4ToDelete);
+		CreateProcess(NULL, lpCmdLine, NULL, NULL,  false, 0, NULL, NULL, &siStartupInfo, &piProcessInfo);
+
+		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
+#else
+		// delete the current pk4
 		idLib::fileSystem->Shutdown(false);
 		if (pk4ToDelete != NULL) {
 			remove(pk4ToDelete);
 		}
-
-		// start up doom again and exit
-#ifdef _WINDOWS
-		intptr_t x = _execl(launcherExe, launcherExe, doomExe, "+set fs_game darkmod", NULL);
-		_exit(EXIT_SUCCESS);
-#else
+		// start doom
 		if (execlp(doomExe, doomExe, "+set", "fs_game", "darkmod", NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
