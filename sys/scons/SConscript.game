@@ -131,7 +131,6 @@ Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 idAbsenceMarkerEntity.cpp \
 Intersection.cpp \
-KeyboardHook.cpp \
 liquid.cpp \
 MissionData.cpp \
 ModMenu.cpp \
