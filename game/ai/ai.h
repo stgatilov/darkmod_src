@@ -14,6 +14,8 @@
 #define __AI_H__
 
 #include "../../DarkMod/Relations.h"
+#include "../../DarkMod/AI/Mind.h"
+#include "../../DarkMod/AI/Subsystem.h"
 #include "../../DarkMod/HidingSpotSearchCollection.h"
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 
@@ -532,6 +534,17 @@ public:
 	int		getAirTicks() const;
 	void	setAirTicks(int airTicks);
 
+	// greebo: Accessor methods for the array of subsystems
+	ID_INLINE ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id)
+	{
+		return subsystems[id];
+	}
+
+	ID_INLINE void InstallSubsystem(ai::SubsystemId id, ai::SubsystemPtr& subsystem)
+	{
+		subsystems[id] = subsystem;
+	}
+
 protected:
 	// navigation
 	idAAS *					aas;
@@ -908,7 +921,13 @@ protected:
 	int m_gracecount_1, m_gracecount_2, m_gracecount_3;
 	// De-alert times for each alert level
 	float atime1, atime2, atime3;
-	
+
+	// The mind of this AI
+	ai::MindPtr mind;
+
+	// The array of subsystems of this AI
+	ai::SubsystemPtr subsystems[ai::SubsystemCount];
+
 	//
 	// ai/ai.cpp
 	//
