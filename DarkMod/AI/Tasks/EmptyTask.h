@@ -15,36 +15,23 @@
 namespace ai
 {
 
+// Define the name of this task
+const char* TASK_EMPTY = "Empty";
+
 class EmptyTask :
 	public Task
 {
-	idStr _name;
-
 public:
 	// Get the name of this task
-	virtual const idStr& GetName() const
-	{
-		return _name;
-	}
+	virtual const idStr& GetName() const;
 
-	// Performs the task, whatever this may be
-	virtual void Perform()
-	{
-		// Do nothing
-	}
+	// Empty implementation
+	virtual void Perform();
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{
-		
-	}
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
-	virtual void Restore(idRestoreGame* savefile)
-	{
-
-	}
-
-private:
 	// Creates a new Instance of this task
 	static TaskPtr CreateInstance();
 };

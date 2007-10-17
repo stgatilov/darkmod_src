@@ -66,6 +66,17 @@ public:
 	static TaskLibrary& Instance();
 };
 
+// Helper functor which registers the given task in its constructor
+class TaskRegistrar 
+{
+public:
+	TaskRegistrar(const idStr& name, const CreateInstanceFunc& func)
+	{
+		// Pass the call
+		TaskLibrary::Instance().RegisterTask(name, func);
+	}
+};
+
 } // namespace ai
 
 #endif /* __AI_TASK_LIBRARY_H__ */
