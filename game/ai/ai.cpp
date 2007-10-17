@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
 #include "../../DarkMod/AI/BasicMind.h"
-#include "../../DarkMod/AI/MovementSubsystem.h"
+#include "../../DarkMod/AI/Subsystem.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
@@ -595,10 +595,11 @@ idAI::idAI()
 
 	m_lipSyncActive		= false;
 
-	subsystems[ai::SubsysMovement] = ai::SubsystemPtr(new ai::MovementSubsystem(this));
-	subsystems[ai::SubsysSenses] = ai::SubsystemPtr();
-	subsystems[ai::SubsysCommunication] = ai::SubsystemPtr();
-	subsystems[ai::SubsysAction] = ai::SubsystemPtr();
+	// Allocate and install the subsystems
+	InstallSubsystem(ai::SubsysMovement, ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysSenses, ai::SubsystemPtr());
+	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr());
+	InstallSubsystem(ai::SubsysAction, ai::SubsystemPtr());
 }
 
 /*

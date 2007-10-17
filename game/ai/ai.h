@@ -540,7 +540,11 @@ public:
 		return subsystems[id];
 	}
 
-	ID_INLINE void InstallSubsystem(ai::SubsystemId id, ai::SubsystemPtr& subsystem)
+	/**
+	 * greebo: Replaces an AI subsystem with the given one. This removes the old
+	 *         subsystem from the array (which usually triggers a shared_ptr destruction).
+	 */ 
+	ID_INLINE void InstallSubsystem(ai::SubsystemId id, const ai::SubsystemPtr& subsystem)
 	{
 		subsystems[id] = subsystem;
 	}

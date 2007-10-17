@@ -12,6 +12,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "Tasks/Task.h"
+
 namespace ai
 {
 
@@ -28,25 +30,30 @@ class Subsystem
 protected:
 	idEntityPtr<idAI> _owner;
 
+	TaskPtr _task;
+
+	// TRUE if this subsystem is performing, default is ON
+	bool _enabled;
+
 public:
-	Subsystem(idAI* owner) {
-		assert(owner != NULL);
-		_owner = owner;
-	}
+	Subsystem(idAI* owner);
 
 	// Called regularly by the Mind to run the currently assigned routine.
-	virtual void PerformTask() = 0;
+	virtual void PerformTask();
+
+	// Plugs a new task into this subsystem
+	virtual void InstallTask(const TaskPtr& newTask);
+
+	// Enables/disables this subsystem
+	virtual void Enable();
+	virtual void Disable();
+
+	// Returns TRUE if this subsystem is performing.
+	virtual bool IsEnabled() const;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{
-		_owner.Save(savefile);
-	}
-
-	virtual void Restore(idRestoreGame* savefile)
-	{
-		_owner.Restore(savefile);
-	}
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 };
 typedef boost::shared_ptr<Subsystem> SubsystemPtr;
 
