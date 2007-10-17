@@ -13,6 +13,8 @@
 static bool init_version = FileVersionList("$Id: Subsystem.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "Subsystem.h"
+#include "Tasks/TaskLibrary.h"
+#include "Tasks/EmptyTask.h"
 
 namespace ai
 {
@@ -22,6 +24,10 @@ Subsystem::Subsystem(idAI* owner) :
 {
 	assert(owner != NULL);
 	_owner = owner;
+
+	InstallTask(
+		TaskLibrary::Instance().CreateTask(TASK_EMPTY)
+	);
 }
 
 void Subsystem::Enable()
@@ -46,15 +52,14 @@ void Subsystem::PerformTask()
 	{
 		assert(_task != NULL);
 
-		// Subsystem performing
-
+		_task->Perform();
 	}
 }
 
 void Subsystem::InstallTask(const TaskPtr& newTask)
 {
 	// Don't accept NULL tasks, use the EmptyTask class instead
-	assert(_task);
+	assert(newTask != NULL);
 
 	// Install the new task, this may trigger a shared_ptr destruction of the old task
 	_task = newTask;

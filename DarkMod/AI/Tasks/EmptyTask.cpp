@@ -27,7 +27,9 @@ const idStr& EmptyTask::GetName() const
 
 // Performs nothing
 void EmptyTask::Perform()
-{}
+{
+	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\n");
+}
 
 // Save/Restore methods
 void EmptyTask::Save(idSaveGame* savefile) const
@@ -42,6 +44,9 @@ TaskPtr EmptyTask::CreateInstance()
 }
 
 // Register this task with the TaskLibrary
-TaskRegistrar _emptyTask(TASK_EMPTY, CreateInstanceFunc(&EmptyTask::CreateInstance));
+TaskRegistrar emptyTaskRegistrar(
+	TASK_EMPTY, // Task Name
+	CreateInstanceFunc(&EmptyTask::CreateInstance) // Instance creation callback
+);
 
 } // namespace ai

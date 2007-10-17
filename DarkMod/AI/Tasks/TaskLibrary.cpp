@@ -21,7 +21,7 @@ namespace ai
 TaskLibrary::TaskLibrary()
 {}
 
-TaskPtr TaskLibrary::CreateTask(const idStr& taskName)
+TaskPtr TaskLibrary::CreateTask(const std::string& taskName)
 {
 	TaskPtr returnValue; // NULL by default
 
@@ -45,7 +45,7 @@ TaskPtr TaskLibrary::CreateTask(const idStr& taskName)
 	return returnValue;
 }
 
-void TaskLibrary::RegisterTask(const idStr& taskName, const CreateInstanceFunc& func)
+void TaskLibrary::RegisterTask(const std::string& taskName, const CreateInstanceFunc& func)
 {
 	// Insert this task into the map
 	_tasks.insert(

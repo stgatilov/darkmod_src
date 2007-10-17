@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-const char* TASK_EMPTY = "Empty";
+#define TASK_EMPTY "Empty"
 
 class EmptyTask :
 	public Task

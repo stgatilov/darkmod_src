@@ -11,6 +11,7 @@
 #define __AI_TASK_LIBRARY_H__
 
 #include <map>
+#include <string>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 
@@ -39,7 +40,10 @@ typedef boost::function<TaskPtr()> CreateInstanceFunc;
 class TaskLibrary :
 	public boost::noncopyable
 {
-	typedef std::map<idStr, CreateInstanceFunc> TaskMap;
+	// This is the map associating task names with CreateInstance() methods
+	// greebo: Use std::string as index, idStr doesn't work!
+	typedef std::map<std::string, CreateInstanceFunc> TaskMap;
+
 	TaskMap _tasks;
 
 private:
@@ -52,7 +56,7 @@ public:
 	 * greebo: Tries to lookup the task name in the TaskMap
 	 *         and instantiates a Task of this type.
 	 */
-	TaskPtr CreateTask(const idStr& taskName);
+	TaskPtr CreateTask(const std::string& taskName);
 
 	/**
 	 * greebo: Each Task has to register itself here.
@@ -60,7 +64,7 @@ public:
 	 *         CreateTask, so place this call right below 
 	 *         the Task declaration.
 	 */
-	void RegisterTask(const idStr& taskName, const CreateInstanceFunc& func);
+	void RegisterTask(const std::string& taskName, const CreateInstanceFunc& func);
 
 	// Accessor method for the singleton instance
 	static TaskLibrary& Instance();
@@ -70,7 +74,7 @@ public:
 class TaskRegistrar 
 {
 public:
-	TaskRegistrar(const idStr& name, const CreateInstanceFunc& func)
+	TaskRegistrar(const std::string& name, const CreateInstanceFunc& func)
 	{
 		// Pass the call
 		TaskLibrary::Instance().RegisterTask(name, func);

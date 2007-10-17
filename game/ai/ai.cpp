@@ -596,10 +596,10 @@ idAI::idAI()
 	m_lipSyncActive		= false;
 
 	// Allocate and install the subsystems
-	InstallSubsystem(ai::SubsysMovement, ai::SubsystemPtr(new ai::Subsystem(this)));
-	InstallSubsystem(ai::SubsysSenses, ai::SubsystemPtr());
-	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr());
-	InstallSubsystem(ai::SubsysAction, ai::SubsystemPtr());
+	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(this)));
 }
 
 /*
