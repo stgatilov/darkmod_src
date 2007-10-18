@@ -15,6 +15,14 @@
 namespace ai
 {
 
+/**
+ * greebo: This is the abstract declaration of a Task.
+ * 
+ * Tasks are attached to a subsystem, which act as "slots". 
+ * Only one (arbitrary) task can be attached to each subsystem at once.
+ *
+ * A task needs to have a unique name and a Perform() method.
+ */
 class Task
 {
 public:

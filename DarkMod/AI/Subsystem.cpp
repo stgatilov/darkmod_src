@@ -92,7 +92,14 @@ void Subsystem::Restore(idRestoreGame* savefile)
 		savefile->ReadString(taskName);
 
 		_task = TaskLibrary::Instance().CreateTask(taskName.c_str());
+
+		assert(_task != NULL);
 		_task->Restore(savefile);
+	}
+	else
+	{
+		// Assure the task pointer to be NULL.
+		_task = TaskPtr();
 	}
 }
 
