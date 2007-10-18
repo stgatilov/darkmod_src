@@ -7,25 +7,29 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_STATE_H__
-#define __AI_STATE_H__
+#ifndef __AI_IDLE_STATE_H__
+#define __AI_IDLE_STATE_H__
 
-#include <boost/shared_ptr.hpp>
+#include "State.h"
 
 namespace ai
 {
 
-class State
+#define STATE_IDLE "Idle"
+
+class IdleState :
+	public State
 {
 public:
 	// Get the name of this state
-	virtual const idStr& GetName() const = 0;
+	virtual const idStr& GetName() const;
 
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init(idAI* owner) = 0;
+	virtual void Init(idAI* owner);
+
+	static StatePtr CreateInstance();
 };
-typedef boost::shared_ptr<State> StatePtr;
 
 } // namespace ai
 
-#endif /* __AI_STATE_H__ */
+#endif /* __AI_IDLE_STATE_H__ */

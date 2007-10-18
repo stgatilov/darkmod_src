@@ -25,9 +25,8 @@ Subsystem::Subsystem(idAI* owner) :
 	assert(owner != NULL);
 	_owner = owner;
 
-	InstallTask(
-		TaskLibrary::Instance().CreateInstance(TASK_EMPTY)
-	);
+	// We start with an empty task
+	InstallTask(EmptyTask::CreateInstance());
 }
 
 void Subsystem::Enable()

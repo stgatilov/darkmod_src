@@ -10,9 +10,9 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: EmptyState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "EmptyState.h"
+#include "IdleState.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Library.h"
 
@@ -20,15 +20,15 @@ namespace ai
 {
 
 // Get the name of this state
-const idStr& EmptyState::GetName() const
+const idStr& IdleState::GetName() const
 {
-	static idStr _name(STATE_EMPTY);
+	static idStr _name(STATE_IDLE);
 	return _name;
 }
 
-void EmptyState::Init(idAI* owner)
+void IdleState::Init(idAI* owner)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("EmptyState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
 	// Fill the subsystems with Empty Tasks
@@ -38,15 +38,15 @@ void EmptyState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());
 }
 
-StatePtr EmptyState::CreateInstance()
+StatePtr IdleState::CreateInstance()
 {
-	return StatePtr(new EmptyState);
+	return StatePtr(new IdleState);
 }
 
 // Register this task with the TaskLibrary
-StateLibrary::Registrar emptyStateRegistrar(
-	STATE_EMPTY, // Task Name
-	StateLibrary::CreateInstanceFunc(&EmptyState::CreateInstance) // Instance creation callback
+StateLibrary::Registrar idleStateRegistrar(
+	STATE_IDLE, // Task Name
+	StateLibrary::CreateInstanceFunc(&IdleState::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai

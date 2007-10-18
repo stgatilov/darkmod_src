@@ -15,12 +15,19 @@
 namespace ai
 {
 
+#define STATE_EMPTY "Empty"
+
 class EmptyState :
 	public State
 {
 public:
+	// Get the name of this state
+	virtual const idStr& GetName() const;
+
 	// This is called when the state is first attached to the AI's Mind.
-	virtual void Init();
+	virtual void Init(idAI* owner);
+
+	static StatePtr CreateInstance();
 };
 
 } // namespace ai

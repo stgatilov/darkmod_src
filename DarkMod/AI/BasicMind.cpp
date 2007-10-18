@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "BasicMind.h"
+#include "Library.h"
 
 namespace ai
 {
@@ -34,14 +35,39 @@ void BasicMind::Think()
 
 	idAI* owner = _owner.GetEntity();
 
-	owner->GetSubsystem(SubsysMovement)->PerformTask();
-	//owner->GetSubsystem(SubsysCommunication)->PerformTask();
+	switch (gameLocal.framenum % 4) {
+		case 0:
+			owner->GetSubsystem(SubsysSenses)->PerformTask();
+			break;
+		case 1:
+			owner->GetSubsystem(SubsysMovement)->PerformTask();
+			break;
+		case 2:
+			owner->GetSubsystem(SubsysCommunication)->PerformTask();
+			break;
+		case 3:
+			owner->GetSubsystem(SubsysAction)->PerformTask();
+			break;
+	};
 }
 
 // Changes the state
 void BasicMind::ChangeState(const idStr& stateName)
 {
-	
+	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
+
+	if (newState != NULL)
+	{
+		// Change the state, the pointer is ok
+		_state = newState;
+
+		// Initialise the new state
+		_state->Init(_owner.GetEntity());
+	}
+	else
+	{
+		gameLocal.Error("BasicMind: Could not change state to %s", stateName.c_str());
+	}
 }
 
 // Returns the reference to the current state

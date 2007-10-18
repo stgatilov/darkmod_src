@@ -549,6 +549,11 @@ public:
 		subsystems[id] = subsystem;
 	}
 
+	ID_INLINE ai::MindPtr& GetMind()
+	{
+		return mind;
+	}
+
 protected:
 	// navigation
 	idAAS *					aas;
