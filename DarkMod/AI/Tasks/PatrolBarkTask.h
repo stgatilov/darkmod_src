@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_PATROL_BARK_TASK_H__
-#define __AI_PATROL_BARK_TASK_H__
+#ifndef __AI_IDLE_BARK_TASK_H__
+#define __AI_IDLE_BARK_TASK_H__
 
 #include <boost/shared_ptr.hpp>
 
@@ -16,12 +16,12 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATROL_BARK "Patrol_Bark"
+#define TASK_IDLE_BARK "Idle_Bark"
 
-class PatrolBarkTask;
-typedef boost::shared_ptr<PatrolBarkTask> PatrolBarkTaskPtr;
+class IdleBarkTask;
+typedef boost::shared_ptr<IdleBarkTask> IdleBarkTaskPtr;
 
-class PatrolBarkTask :
+class IdleBarkTask :
 	public Task
 {
 	// Corresponds to AI spawnarg "bark_repeat_patrol"
@@ -41,9 +41,9 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static PatrolBarkTaskPtr CreateInstance();
+	static IdleBarkTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_PATROL_BARK_TASK_H__ */
+#endif /* __AI_IDLE_BARK_TASK_H__ */

@@ -10,9 +10,9 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PatrolBarkTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: IdleBarkTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "PatrolBarkTask.h"
+#include "IdleBarkTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -20,13 +20,13 @@ namespace ai
 {
 
 // Get the name of this task
-const idStr& PatrolBarkTask::GetName() const
+const idStr& IdleBarkTask::GetName() const
 {
 	static idStr _name(TASK_PATROL_BARK);
 	return _name;
 }
 
-void PatrolBarkTask::Init(idAI* owner, Subsystem& subsystem)
+void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
@@ -41,7 +41,7 @@ void PatrolBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-void PatrolBarkTask::Perform(Subsystem& subsystem)
+void IdleBarkTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Bark Task performing.\r");
 
@@ -61,27 +61,27 @@ void PatrolBarkTask::Perform(Subsystem& subsystem)
 }
 
 // Save/Restore methods
-void PatrolBarkTask::Save(idSaveGame* savefile) const
+void IdleBarkTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 	savefile->WriteInt(_barkRepeatInterval);
 }
 
-void PatrolBarkTask::Restore(idRestoreGame* savefile)
+void IdleBarkTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 	savefile->ReadInt(_barkRepeatInterval);
 }
 
-PatrolBarkTaskPtr PatrolBarkTask::CreateInstance()
+IdleBarkTaskPtr IdleBarkTask::CreateInstance()
 {
-	return PatrolBarkTaskPtr(new PatrolBarkTask);
+	return IdleBarkTaskPtr(new IdleBarkTask);
 }
 
 // Register this task with the TaskLibrary
-TaskLibrary::Registrar patrolBarkTaskRegistrar(
-	TASK_PATROL_BARK, // Task Name
-	TaskLibrary::CreateInstanceFunc(&PatrolBarkTask::CreateInstance) // Instance creation callback
+TaskLibrary::Registrar idleBarkTaskRegistrar(
+	TASK_IDLE_BARK, // Task Name
+	TaskLibrary::CreateInstanceFunc(&IdleBarkTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai
