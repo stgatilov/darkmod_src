@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 
 #include "IdleState.h"
 #include "../Tasks/EmptyTask.h"
+#include "../Tasks/IdleSensoryTask.h"
 #include "../Tasks/PatrolTask.h"
 #include "../Tasks/PatrolBarkTask.h"
 #include "../Library.h"
@@ -41,8 +42,11 @@ void IdleState::Init(idAI* owner)
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->InstallTask(PatrolBarkTask::CreateInstance());
 
+	// The sensory system does its Idle tasks
+	owner->GetSubsystem(SubsysSenses)->InstallTask(IdleSensoryTask::CreateInstance());
+
+	// No action so far
 	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);

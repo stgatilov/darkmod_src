@@ -44,7 +44,6 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_RUN = (_path.GetEntity()->spawnArgs.GetBool("run", "0"));
 }
 
-// Called each frame
 void PathCornerTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
