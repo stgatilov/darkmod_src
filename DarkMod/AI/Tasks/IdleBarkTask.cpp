@@ -22,7 +22,7 @@ namespace ai
 // Get the name of this task
 const idStr& IdleBarkTask::GetName() const
 {
-	static idStr _name(TASK_PATROL_BARK);
+	static idStr _name(TASK_IDLE_BARK);
 	return _name;
 }
 
