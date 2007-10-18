@@ -32,9 +32,21 @@ public:
 	// The last time the AI has been barking when patrolling
 	int lastPatrolChatTime;
 
+	/*!
+	* This variable indicates the number of out of place things that the
+	* AI has witness, such as sounds, missing items, open doors, torches gone
+	* out etc..
+	*/
+	int countEvidenceOfIntruders;
+
+	// The last time a check for randomly turning the head was done
+	int lastRandomHeadTurnCheckTime;
+
 	Memory() :
 		alertState(ERelaxed),
-		lastPatrolChatTime(-1)
+		lastPatrolChatTime(-1),
+		countEvidenceOfIntruders(0),
+		lastRandomHeadTurnCheckTime(-1)
 	{}
 
 	// Save/Restore routines
@@ -43,6 +55,8 @@ public:
 		savefile->WriteInt(static_cast<int>(alertState));
 		currentPath.Save(savefile);
 		savefile->WriteInt(lastPatrolChatTime);
+		savefile->WriteInt(countEvidenceOfIntruders);
+		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -53,6 +67,8 @@ public:
 
 		currentPath.Restore(savefile);
 		savefile->ReadInt(lastPatrolChatTime);
+		savefile->ReadInt(countEvidenceOfIntruders);
+		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 	}
 };
 

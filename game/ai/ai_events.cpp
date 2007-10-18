@@ -3079,7 +3079,6 @@ void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, floa
 	}
 
 	focusTime = gameLocal.time + SEC2MS( durationInSeconds );
-
 }
 
 /*

@@ -39,6 +39,13 @@ public:
 
 	// Creates a new Instance of this task
 	static IdleSensoryTaskPtr CreateInstance();
+
+private:
+	/**
+	* SophisticatedZombie: This method handles a random chance of turning the AIs head
+	* (visual gaze movement)
+	*/
+	void PerformRandomHeadTurnCheck();
 };
 
 } // namespace ai
