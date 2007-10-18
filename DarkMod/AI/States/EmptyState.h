@@ -27,6 +27,13 @@ public:
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
 
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const
+	{} // nothing yet
+
+	virtual void Restore(idRestoreGame* savefile)
+	{} // nothing yet
+
 	static StatePtr CreateInstance();
 };
 

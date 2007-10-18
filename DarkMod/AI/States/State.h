@@ -23,6 +23,10 @@ public:
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner) = 0;
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const = 0;
+	virtual void Restore(idRestoreGame* savefile) = 0;
 };
 typedef boost::shared_ptr<State> StatePtr;
 

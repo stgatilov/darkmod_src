@@ -91,12 +91,43 @@ void BasicMind::SetAlertState(EAlertState newState)
 
 void BasicMind::Save(idSaveGame* savefile) const 
 {
-	// TODO
+	_owner.Save(savefile);
+	
+	// Save the task, if there is an active one
+	savefile->WriteBool(_state != NULL);
+	if (_state != NULL)
+	{
+		savefile->WriteString(_state->GetName().c_str());
+		_state->Save(savefile);
+	}
+
+	_memory.Save(savefile);
 }
 
 void BasicMind::Restore(idRestoreGame* savefile) 
 {
-	// TODO
+	_owner.Restore(savefile);
+
+	bool hasState;
+	savefile->ReadBool(hasState);
+
+	if (hasState)
+	{
+		idStr stateName;
+		savefile->ReadString(stateName);
+
+		_state = StateLibrary::Instance().CreateInstance(stateName.c_str());
+
+		assert(_state != NULL);
+		_state->Restore(savefile);
+	}
+	else
+	{
+		// Assure the state pointer to be NULL.
+		_state = StatePtr();
+	}
+
+	_memory.Restore(savefile);
 }
 
 } // namespace ai

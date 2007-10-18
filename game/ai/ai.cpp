@@ -1041,7 +1041,14 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadString(m_knockedOutTask);
 	savefile->ReadInt(m_knockedOutTaskPriority);
 
+	mind = ai::MindPtr(new ai::BasicMind(this));
 	mind->Restore(savefile);
+
+	// Allocate and install the subsystems
+	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(this)));
+	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(this)));
 
 	// Subsystems are already allocated in the constructor
 	for (int i = 0; i < ai::SubsystemCount; i++) 
