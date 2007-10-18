@@ -35,6 +35,11 @@ public:
 	{} // nothing yet
 
 	static StatePtr CreateInstance();
+
+private:
+	// Returns the initial idle bark sound, depending on the alert level 
+	// and the current state of mind
+	idStr GetInitialIdleBark(idAI* owner);
 };
 
 } // namespace ai

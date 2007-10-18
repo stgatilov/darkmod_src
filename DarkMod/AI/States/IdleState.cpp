@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/IdleSensoryTask.h"
 #include "../Tasks/PatrolTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
 #include "../Library.h"
 
@@ -42,6 +43,13 @@ void IdleState::Init(idAI* owner)
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+
+	// Push a single bark to the communication subsystem first, it fires only once
+	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
+	singleBark->SetSound(GetInitialIdleBark(owner));
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(singleBark);
+
+	// Push the regular patrol barking to the list too
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(IdleBarkTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
@@ -55,6 +63,36 @@ void IdleState::Init(idAI* owner)
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+}
+
+idStr IdleState::GetInitialIdleBark(idAI* owner)
+{
+	// Decide what sound it is appropriate to play
+	idStr soundName("");
+	
+	if (owner->AI_AlertNum <= 0)
+	{
+		soundName = "snd_relaxed";
+	}
+	/*else if (stateOfMind_b_enemiesHaveBeenSeen)
+	{
+		soundName = "snd_alertdown0SeenEvidence";
+	}
+	else if (stateOfMind_b_itemsHaveBeenStolen)
+	{
+		soundName = "snd_alertdown0SeenEvidence";
+	}
+	else if (stateOfMind_count_evidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
+	{
+		soundName = "snd_alertdown0SeenEvidence";
+	}*/
+	else
+	{
+		// Play its idle sound
+		soundName = "snd_alertdown0SeenNoEvidence";
+	}
+
+	return soundName;
 }
 
 StatePtr IdleState::CreateInstance()
