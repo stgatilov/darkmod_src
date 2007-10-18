@@ -15,8 +15,11 @@
 namespace ai
 {
 
+// Forward declaration
+class Subsystem;
+
 /**
- * greebo: This is the abstract declaration of a Task.
+ * greebo: This is the basic declaration of a Task.
  * 
  * Tasks are attached to a subsystem, which act as "slots". 
  * Only one (arbitrary) task can be attached to each subsystem at once.
@@ -25,6 +28,10 @@ namespace ai
  */
 class Task
 {
+protected:
+	// Each task has an owning entity
+	idEntityPtr<idAI> _owner;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const = 0;
@@ -32,9 +39,23 @@ public:
 	// Performs the task, whatever this may be
 	virtual void Perform() = 0;
 
+	// Let the task perform some initialisation. This is called
+	// right after the task is installed into the subsystem.
+	virtual void Init(idAI* owner, Subsystem& subsystem)
+	{
+		_owner = owner;
+	}
+
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const = 0;
-	virtual void Restore(idRestoreGame* savefile) = 0;
+	virtual void Save(idSaveGame* savefile) const
+	{
+		_owner.Save(savefile);
+	}
+
+	virtual void Restore(idRestoreGame* savefile)
+	{
+		_owner.Restore(savefile);
+	}
 };
 typedef boost::shared_ptr<Task> TaskPtr;
 

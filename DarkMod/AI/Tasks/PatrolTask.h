@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_EMPTY_TASK_H__
-#define __AI_EMPTY_TASK_H__
+#ifndef __AI_PATROL_TASK_H__
+#define __AI_PATROL_TASK_H__
 
 #include <boost/shared_ptr.hpp>
 
@@ -16,17 +16,22 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_EMPTY "Empty"
+#define TASK_PATROL "Patrol"
 
-class EmptyTask;
-typedef boost::shared_ptr<EmptyTask> EmptyTaskPtr;
+class PatrolTask;
+typedef boost::shared_ptr<PatrolTask> PatrolTaskPtr;
 
-class EmptyTask :
+class PatrolTask :
 	public Task
 {
+	idEntityPtr<idPathCorner> _currentPath;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
+
+	// Override the base Init method
+	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	// Empty implementation
 	virtual void Perform();
@@ -36,9 +41,9 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static EmptyTaskPtr CreateInstance();
+	static PatrolTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_EMPTY_TASK_H__ */
+#endif /* __AI_PATROL_TASK_H__ */

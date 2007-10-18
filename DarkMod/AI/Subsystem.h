@@ -30,7 +30,12 @@ class Subsystem
 protected:
 	idEntityPtr<idAI> _owner;
 
+	// The currently active task
 	TaskPtr _task;
+
+	// One task may be queued. It is installed the next
+	// time PerformTask() is called.
+	TaskPtr _nextTask;
 
 	// TRUE if this subsystem is performing, default is ON
 	bool _enabled;
@@ -43,6 +48,11 @@ public:
 
 	// Plugs a new task into this subsystem
 	virtual void InstallTask(const TaskPtr& newTask);
+
+	// Puts another task into the queue of this subsystem
+	// This can be used by the Tasks to swap themselves with another task
+	// without having to fear their immediate destruction.
+	virtual void QueueTask(const TaskPtr& nextTask);
 
 	// Enables/disables this subsystem
 	virtual void Enable();

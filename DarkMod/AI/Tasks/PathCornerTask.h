@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_EMPTY_TASK_H__
-#define __AI_EMPTY_TASK_H__
+#ifndef __AI_PATH_CORNER_TASK_H__
+#define __AI_PATH_CORNER_TASK_H__
 
 #include <boost/shared_ptr.hpp>
 
@@ -16,17 +16,22 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_EMPTY "Empty"
+#define TASK_PATH_CORNER "Path_Corner"
 
-class EmptyTask;
-typedef boost::shared_ptr<EmptyTask> EmptyTaskPtr;
+class PathCornerTask;
+typedef boost::shared_ptr<PathCornerTask> PathCornerTaskPtr;
 
-class EmptyTask :
+class PathCornerTask :
 	public Task
 {
+	idEntityPtr<idPathCorner> _path;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
+
+	// Override the base Init method
+	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	// Empty implementation
 	virtual void Perform();
@@ -36,9 +41,12 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static EmptyTaskPtr CreateInstance();
+	static PathCornerTaskPtr CreateInstance();
+
+	// Class-specific methods
+	virtual void SetTargetEntity(idPathCorner* path);
 };
 
 } // namespace ai
 
-#endif /* __AI_EMPTY_TASK_H__ */
+#endif /* __AI_PATH_CORNER_TASK_H__ */

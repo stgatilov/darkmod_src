@@ -49,6 +49,14 @@ void Subsystem::PerformTask()
 {
 	if (_enabled)
 	{
+		// Check for a task in the queue
+		if (_nextTask != NULL)
+		{
+			// We have a new task in the queue, install it now
+			InstallTask(_nextTask);
+			_nextTask = TaskPtr();
+		}
+
 		assert(_task != NULL);
 
 		_task->Perform();
@@ -62,6 +70,16 @@ void Subsystem::InstallTask(const TaskPtr& newTask)
 
 	// Install the new task, this may trigger a shared_ptr destruction of the old task
 	_task = newTask;
+
+	// Initialise the new task with a reference to the owner and <self>
+	_task->Init(_owner.GetEntity(), *this);
+}
+
+void Subsystem::QueueTask(const TaskPtr& nextTask)
+{
+	assert(nextTask != NULL);
+	// Take this pointer and store it in _nextTask
+	_nextTask = nextTask;
 }
 
 // Save/Restore methods

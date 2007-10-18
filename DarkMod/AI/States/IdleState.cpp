@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 
 #include "IdleState.h"
 #include "../Tasks/EmptyTask.h"
+#include "../Tasks/PatrolTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -31,8 +32,11 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
-	// Fill the subsystems with Empty Tasks
-	owner->GetSubsystem(SubsysMovement)->InstallTask(EmptyTask::CreateInstance());
+	// Fill the subsystems with their tasks
+
+	// The movement subsystem should start patrolling
+	owner->GetSubsystem(SubsysMovement)->InstallTask(PatrolTask::CreateInstance());
+
 	owner->GetSubsystem(SubsysCommunication)->InstallTask(EmptyTask::CreateInstance());
 	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
 	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());

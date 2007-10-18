@@ -10,7 +10,7 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: TaskLibrary.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: EmptyTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "EmptyTask.h"
 #include "../Library.h"
@@ -38,9 +38,9 @@ void EmptyTask::Save(idSaveGame* savefile) const
 void EmptyTask::Restore(idRestoreGame* savefile)
 {}
 
-TaskPtr EmptyTask::CreateInstance()
+EmptyTaskPtr EmptyTask::CreateInstance()
 {
-	return TaskPtr(new EmptyTask);
+	return EmptyTaskPtr(new EmptyTask);
 }
 
 // Register this task with the TaskLibrary

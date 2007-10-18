@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "BasicMind.h"
+#include "States/IdleState.h"
 #include "Library.h"
 
 namespace ai
@@ -29,7 +30,13 @@ void BasicMind::Think()
 {
 	// Thinking
 	DM_LOG(LC_AI, LT_INFO).LogString("Mind is thinking...\r");
-	
+
+	if (_state == NULL)
+	{
+		// We start with the idle state
+		ChangeState(STATE_IDLE);
+	}
+
 	// greebo: We do not check for NULL pointers in the owner at this point, 
 	// as this method is called by the owner itself.
 
