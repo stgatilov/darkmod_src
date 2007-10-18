@@ -23,8 +23,6 @@ BasicMind::BasicMind(idAI* owner)
 {
 	// Set the idEntityPtr
 	_owner = owner;
-
-	_memory.alertState = ERelaxed;
 }
 
 void BasicMind::Think()

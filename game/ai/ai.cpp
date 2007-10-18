@@ -7486,7 +7486,7 @@ void idAI::setAirTicks(int airTicks) {
 /*
 ===================== Lipsync =====================
 */
-void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
+int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 {
 	const idSoundShader *shader;
 	const char *sound;
@@ -7518,7 +7518,13 @@ void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 			headAnim.CycleAnim( m_lipSyncAnim );
 		}
 	}
-	idThread::ReturnInt(MS2SEC(duration));
+
+	return duration;
+}
+
+void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
+{
+	idThread::ReturnInt(MS2SEC(PlayAndLipSync(soundName, animName)));
 }
 
 void idAI::StopLipSync()

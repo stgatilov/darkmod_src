@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "IdleState.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/PatrolTask.h"
+#include "../Tasks/PatrolBarkTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -37,10 +38,13 @@ void IdleState::Init(idAI* owner)
 	// The movement subsystem should start patrolling
 	owner->GetSubsystem(SubsysMovement)->InstallTask(PatrolTask::CreateInstance());
 
-	owner->GetSubsystem(SubsysCommunication)->InstallTask(EmptyTask::CreateInstance());
+	// The communication system is barking in regular intervals
+	owner->GetSubsystem(SubsysCommunication)->InstallTask(PatrolBarkTask::CreateInstance());
+
 	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
 	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());
 
+	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 }
