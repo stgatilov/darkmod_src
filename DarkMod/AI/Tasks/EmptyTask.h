@@ -29,7 +29,7 @@ public:
 	virtual const idStr& GetName() const;
 
 	// Empty implementation
-	virtual void Perform();
+	virtual void Perform(Subsystem& subsystem);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

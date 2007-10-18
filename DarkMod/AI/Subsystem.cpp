@@ -59,7 +59,7 @@ void Subsystem::PerformTask()
 
 		assert(_task != NULL);
 
-		_task->Perform();
+		_task->Perform(*this);
 	}
 }
 

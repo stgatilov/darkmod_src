@@ -26,7 +26,7 @@ const idStr& EmptyTask::GetName() const
 }
 
 // Performs nothing
-void EmptyTask::Perform()
+void EmptyTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\r");
 }

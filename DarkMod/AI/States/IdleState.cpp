@@ -40,6 +40,9 @@ void IdleState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->InstallTask(EmptyTask::CreateInstance());
 	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
 	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());
+
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 }
 
 StatePtr IdleState::CreateInstance()

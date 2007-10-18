@@ -675,6 +675,7 @@ protected:
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
 
+public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;
 	idScriptBool			AI_DAMAGE;

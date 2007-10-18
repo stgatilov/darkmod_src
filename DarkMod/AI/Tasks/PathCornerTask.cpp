@@ -19,6 +19,10 @@ static bool init_version = FileVersionList("$Id: PathCornerTask.cpp 1435 2007-10
 namespace ai
 {
 
+PathCornerTask::PathCornerTask() :
+	_moveInitiated(false)
+{}
+
 // Get the name of this task
 const idStr& PathCornerTask::GetName() const
 {
@@ -30,19 +34,124 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
+
+	if (_path.GetEntity() == NULL) {
+		gameLocal.Error("PathCornerTask: Path Entity not set before Init()");
+	}
+
+	// Check the "run" spawnarg of this path entity
+	owner->AI_RUN = (_path.GetEntity()->spawnArgs.GetBool("run", "0"));
 }
 
 // Called each frame
-void PathCornerTask::Perform()
+void PathCornerTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
+	idAI* owner = _owner.GetEntity();
 
-	// This task may not be performed with an empty entity
-	assert(path);
+	// This task may not be performed with empty entity pointers
+	assert(path != NULL && owner != NULL);
 
-	// TODO
+	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
+
+	if (_moveInitiated)
+	{
+		if (owner->AI_MOVE_DONE)
+		{
+			// Move is done, fall back to PatrolTask
+			DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
+			return;
+		}
+		else if (owner->AI_DEST_UNREACHABLE)
+		{
+			// Unreachable, fall back to PatrolTask
+			DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
+			return;
+		}
+
+		// We should be moving already
+		/*while( !AI_MOVE_DONE ) 
+		{
+			// Random chance of turning head		
+			subFrameTask_randomHeadTurn (AI_chancePerSecond_RandomLookAroundWhileIdle, -60.0, 60.0, -45.0, 45.0, 1.0, 6.0);
+		}*/
+	}
+	else
+	{
+		// moveToEntity() not yet called, do it now
+		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
+		owner->MoveToEntity(path);
+
+		_moveInitiated = true;
+	}
+
+	/*string customAnim;
+
+	customAnim = current_path.getKey( "anim" );
+
+	while( 1 ) {
+		if ( customAnim != "" ) 
+		{
+			playCustomCycle( customAnim, 4 );
+		}
+		moveToEntity( current_path );
+		waitFrame();
+
+		while( !AI_MOVE_DONE ) 
+		{
+			if ( sys.influenceActive() ) 
+			{
+				break;
+			}
+
+			PatrolBark();
+
+			if ( checkAlerted() )
+			{
+				m_stopPatrol = true;
+			}
+
+
+			if (m_stopPatrol)
+			{
+				break;
+			}
+
+			// Random chance of turning head		
+			subFrameTask_randomHeadTurn (AI_chancePerSecond_RandomLookAroundWhileIdle, -60.0, 60.0, -45.0, 45.0, 1.0, 6.0);
+
+			waitFrame();
+		}
+
+		if ( customAnim != "" ) 
+		{
+			animState( ANIMCHANNEL_TORSO, "Torso_Idle", 4 );
+		}
+
+		if (m_stopPatrol)
+		{
+			break;
+		}
+
+		if ( sys.influenceActive() ) 
+		{
+			stopMove();
+			while( sys.influenceActive() ) 
+			{
+				waitFrame();
+			}
+			continue;
+		}
+		break;
+	}
+
+	if ( AI_DEST_UNREACHABLE ) {
+		// Can't reach
+		sys.logString(LC_AI, LT_WARNING, "entity '" + getName() + "' couldn't reach path_corner '" + current_path.getName() + "'");
+		sys.wait(2);
+	}*/
 }
 
 void PathCornerTask::SetTargetEntity(idPathCorner* path) 

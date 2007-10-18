@@ -37,7 +37,7 @@ public:
 	virtual const idStr& GetName() const = 0;
 
 	// Performs the task, whatever this may be
-	virtual void Perform() = 0;
+	virtual void Perform(Subsystem& subsystem) = 0;
 
 	// Let the task perform some initialisation. This is called
 	// right after the task is installed into the subsystem.

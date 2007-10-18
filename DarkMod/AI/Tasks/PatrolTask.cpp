@@ -52,7 +52,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 }
 
 // Called each frame
-void PatrolTask::Perform()
+void PatrolTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
 
@@ -62,14 +62,18 @@ void PatrolTask::Perform()
 	assert(path);
 
 	// Move to entity path!
-	if (path->spawnArgs.GetString("classname") == "path_corner")
+	idStr classname = path->spawnArgs.GetString("classname");
+
+	if (classname == "path_corner")
 	{
 		// Allocate a new PathCornerTask
 		PathCornerTaskPtr pathTask = PathCornerTask::CreateInstance();
 
-		assert(pathTask != NULL);
+		assert(pathTask != NULL); // task must be found
 
 		pathTask->SetTargetEntity(path);
+
+		subsystem.QueueTask(pathTask);
 	}
 }
 

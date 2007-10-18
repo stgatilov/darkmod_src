@@ -26,15 +26,17 @@ class PathCornerTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
+	bool _moveInitiated;
 public:
+	PathCornerTask();
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
-	// Empty implementation
-	virtual void Perform();
+	virtual void Perform(Subsystem& subsystem);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
