@@ -69,16 +69,31 @@ void Subsystem::InstallTask(const TaskPtr& newTask)
 void Subsystem::Save(idSaveGame* savefile) const
 {
 	_owner.Save(savefile);
+
+	// Save the task, if there is an active one
+	savefile->WriteBool(_task != NULL);
+	if (_task != NULL)
+	{
+		savefile->WriteString(_task->GetName().c_str());
+		_task->Save(savefile);
+	}
 }
 
 void Subsystem::Restore(idRestoreGame* savefile)
 {
 	_owner.Restore(savefile);
 
-	// Restore the task
-	// Get the name of the installed task
+	bool hasTask;
+	savefile->ReadBool(hasTask);
 
-	// Which task to allocate TaskPtr(new ???)
+	if (hasTask)
+	{
+		idStr taskName;
+		savefile->ReadString(taskName);
+
+		_task = TaskLibrary::Instance().CreateTask(taskName.c_str());
+		_task->Restore(savefile);
+	}
 }
 
 } // namespace ai

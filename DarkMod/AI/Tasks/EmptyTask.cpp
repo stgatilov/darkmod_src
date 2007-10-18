@@ -28,7 +28,7 @@ const idStr& EmptyTask::GetName() const
 // Performs nothing
 void EmptyTask::Perform()
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\n");
+	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\r");
 }
 
 // Save/Restore methods
