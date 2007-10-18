@@ -48,14 +48,12 @@ public:
 		return _memory;
 	}
 
-	// Get the current alert state 
-	virtual EAlertState GetAlertState() const;
-
-	// Set the current alert state
-	virtual void SetAlertState(EAlertState newState);
-
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
+
+private:
+	// Test if the alert state can be decreased
+	virtual void TestAlertStateTimer();
 };
 
 } // namespace ai

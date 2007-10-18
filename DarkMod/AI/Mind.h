@@ -60,12 +60,6 @@ public:
 	// Returns the Memory structure, which holds the various mind variables
 	virtual Memory& GetMemory() = 0;
 
-	// Get the current alert state 
-	virtual EAlertState GetAlertState() const = 0;
-
-	// Set the current alert state
-	virtual void SetAlertState(EAlertState newState) = 0;
-
 	// Save/Restore routines
 	virtual void Save(idSaveGame* savefile) const = 0;
 	virtual void Restore(idRestoreGame* savefile) = 0;
