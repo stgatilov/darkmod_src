@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
+#include "../Memory.h"
 #include "PatrolTask.h"
 #include "EmptyTask.h"
 #include "PathCornerTask.h"
@@ -37,7 +38,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (owner->spawnArgs.GetBool("patrol", "1")) 
 	{
-		idPathCorner* path = owner->GetMind()->GetCurrentPath();
+		idPathCorner* path = owner->GetMind()->GetMemory().currentPath.GetEntity();
 
 		// Check if we already have a path entity
 		if (path == NULL)
@@ -58,7 +59,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		}
 
 		// Store the path entity back into the mind, it might have changed
-		owner->GetMind()->SetCurrentPath(path);
+		owner->GetMind()->GetMemory().currentPath = path;
 	}
 }
 
@@ -67,7 +68,7 @@ void PatrolTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
 
-	idPathCorner* path = _owner.GetEntity()->GetMind()->GetCurrentPath();
+	idPathCorner* path = _owner.GetEntity()->GetMind()->GetMemory().currentPath.GetEntity();
 
 	// This task may not be performed with an empty path corner entity,
 	// that case should have been caught by the Init() routine

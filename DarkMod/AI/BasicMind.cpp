@@ -19,11 +19,12 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 namespace ai
 {
 
-BasicMind::BasicMind(idAI* owner) :
-	_alertState(ERelaxed)
+BasicMind::BasicMind(idAI* owner)
 {
 	// Set the idEntityPtr
 	_owner = owner;
+
+	_memory.alertState = ERelaxed;
 }
 
 void BasicMind::Think()
@@ -77,33 +78,16 @@ void BasicMind::ChangeState(const idStr& stateName)
 	}
 }
 
-// Returns the reference to the current state
-StatePtr& BasicMind::GetState()
-{
-	return _state;
-}
-
-// Gets/Sets the current path entity of this AI
-void BasicMind::SetCurrentPath(idPathCorner* path) 
-{
-	_currentPath = path;
-}
-
-idPathCorner* BasicMind::GetCurrentPath() 
-{
-	return _currentPath.GetEntity();
-}
-
 // Get the current alert state 
 EAlertState BasicMind::GetAlertState() const
 {
-	return _alertState;
+	return _memory.alertState;
 }
 
 // Set the current alert state
 void BasicMind::SetAlertState(EAlertState newState)
 {
-	_alertState = newState;
+	_memory.alertState = newState;
 	// TODO: Emit onAlertChange signal
 }
 

@@ -12,6 +12,7 @@
 
 static bool init_version = FileVersionList("$Id: PathCornerTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
+#include "../Memory.h"
 #include "PatrolTask.h"
 #include "PathCornerTask.h"
 #include "../Library.h"
@@ -86,7 +87,7 @@ void PathCornerTask::Perform(Subsystem& subsystem)
 			}
 
 			// Store the new path entity into the AI's mind
-			owner->GetMind()->SetCurrentPath(next);
+			owner->GetMind()->GetMemory().currentPath = next;
 
 			// Fall back to the PatrolTask now we're done here
 			TaskPtr patrolTask = PatrolTask::CreateInstance();

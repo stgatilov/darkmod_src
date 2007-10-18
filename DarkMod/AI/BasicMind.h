@@ -10,6 +10,7 @@
 #ifndef __AI_BASICMIND_H__
 #define __AI_BASICMIND_H__
 
+#include "Memory.h"
 #include "States/State.h"
 
 namespace ai
@@ -22,12 +23,11 @@ private:
 	// The reference to the owning entity
 	idEntityPtr<idAI> _owner;
 
-	// The current alert state
-	EAlertState _alertState;
-
+	// The state we're in
 	StatePtr _state;
 
-	idEntityPtr<idPathCorner> _currentPath;
+	// The structure holding all the variables
+	Memory _memory;
 
 public:
 	BasicMind(idAI* owner);
@@ -39,17 +39,20 @@ public:
 	virtual void ChangeState(const idStr& stateName);
 
 	// Returns the reference to the current state
-	virtual StatePtr& GetState();
+	ID_INLINE StatePtr& GetState() {
+		return _state;
+	}
+
+	// Returns the Memory structure, which holds the various mind variables
+	ID_INLINE Memory& GetMemory() {
+		return _memory;
+	}
 
 	// Get the current alert state 
 	virtual EAlertState GetAlertState() const;
 
 	// Set the current alert state
 	virtual void SetAlertState(EAlertState newState);
-
-	// Gets/Sets the current path entity of this AI
-	virtual void SetCurrentPath(idPathCorner* path);
-	virtual idPathCorner* GetCurrentPath();
 
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

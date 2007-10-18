@@ -21,6 +21,8 @@ namespace ai
 class State;
 typedef boost::shared_ptr<State> StatePtr;
 
+class Memory;
+
 enum EAlertState {
 	ERelaxed,
 	EAroused,
@@ -55,15 +57,14 @@ public:
 	 */
 	virtual StatePtr& GetState() = 0;
 
+	// Returns the Memory structure, which holds the various mind variables
+	virtual Memory& GetMemory() = 0;
+
 	// Get the current alert state 
 	virtual EAlertState GetAlertState() const = 0;
 
 	// Set the current alert state
 	virtual void SetAlertState(EAlertState newState) = 0;
-
-	// Gets/Sets the current path entity of this AI
-	virtual void SetCurrentPath(idPathCorner* path) = 0;
-	virtual idPathCorner* GetCurrentPath() = 0;
 
 	// Save/Restore routines
 	virtual void Save(idSaveGame* savefile) const = 0;
