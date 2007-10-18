@@ -32,10 +32,10 @@ void EmptyState::Init(idAI* owner)
 	assert(owner);
 
 	// Fill the subsystems with Empty Tasks
-	owner->GetSubsystem(SubsysMovement)->InstallTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysCommunication)->InstallTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysSenses)->InstallTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
 }
 
 StatePtr EmptyState::CreateInstance()

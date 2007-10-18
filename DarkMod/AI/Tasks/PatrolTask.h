@@ -31,7 +31,7 @@ public:
 	// Override the base Init method
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
-	virtual void Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem);
 
 	// Creates a new Instance of this task
 	static PatrolTaskPtr CreateInstance();

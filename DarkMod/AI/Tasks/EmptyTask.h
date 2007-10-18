@@ -29,7 +29,7 @@ public:
 	virtual const idStr& GetName() const;
 
 	// Empty implementation
-	virtual void Perform(Subsystem& subsystem);
+	virtual bool Perform(Subsystem& subsystem);
 
 	// Creates a new Instance of this task
 	static EmptyTaskPtr CreateInstance();

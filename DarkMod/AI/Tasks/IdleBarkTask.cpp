@@ -41,9 +41,9 @@ void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-void IdleBarkTask::Perform(Subsystem& subsystem)
+bool IdleBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Bark Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("Idle Bark Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
@@ -53,11 +53,13 @@ void IdleBarkTask::Perform(Subsystem& subsystem)
 	if (gameLocal.time - owner->GetMind()->GetMemory().lastPatrolChatTime > _barkRepeatInterval)
 	{
 		// The time has come, bark now
-		owner->PlayAndLipSync("snd_relaxed", "talk1");
+		owner->PlayAndLipSync("snd_patrol_idle", "talk1");
 
 		// Reset the timer
 		owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time;
 	}
+
+	return false; // not finished yet
 }
 
 // Save/Restore methods

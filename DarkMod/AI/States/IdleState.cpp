@@ -37,16 +37,20 @@ void IdleState::Init(idAI* owner)
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should start patrolling
-	owner->GetSubsystem(SubsysMovement)->InstallTask(PatrolTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->GetSubsystem(SubsysMovement)->QueueTask(PatrolTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
-	owner->GetSubsystem(SubsysCommunication)->InstallTask(IdleBarkTask::CreateInstance());
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(IdleBarkTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->InstallTask(IdleSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
 
 	// No action so far
-	owner->GetSubsystem(SubsysAction)->InstallTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);

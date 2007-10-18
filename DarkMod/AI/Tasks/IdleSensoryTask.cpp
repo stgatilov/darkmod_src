@@ -48,7 +48,7 @@ void IdleSensoryTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-void IdleSensoryTask::Perform(Subsystem& subsystem)
+bool IdleSensoryTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleSensory Task performing.\r");
 
@@ -58,6 +58,8 @@ void IdleSensoryTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	PerformRandomHeadTurnCheck();
+
+	return false; // not finished yet
 }
 
 void IdleSensoryTask::PerformRandomHeadTurnCheck()

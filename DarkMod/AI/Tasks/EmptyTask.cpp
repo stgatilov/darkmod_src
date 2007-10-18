@@ -26,9 +26,10 @@ const idStr& EmptyTask::GetName() const
 }
 
 // Performs nothing
-void EmptyTask::Perform(Subsystem& subsystem)
+bool EmptyTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\r");
+	//DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\r");
+	return false; // not finished yet
 }
 
 EmptyTaskPtr EmptyTask::CreateInstance()

@@ -11,6 +11,7 @@
 #define __AI_SUBSYSTEM_H__
 
 #include <boost/shared_ptr.hpp>
+#include <list>
 
 #include "Tasks/Task.h"
 
@@ -30,12 +31,14 @@ class Subsystem
 protected:
 	idEntityPtr<idAI> _owner;
 
+	// The stack of tasks, pushed tasks get added at the end
+	typedef std::list<TaskPtr> TaskQueue;
+	TaskQueue _taskQueue;
+
+	bool _finishCurrentTask;
+
 	// The currently active task
 	TaskPtr _task;
-
-	// One task may be queued. It is installed the next
-	// time PerformTask() is called.
-	TaskPtr _nextTask;
 
 	// TRUE if this subsystem is performing, default is ON
 	bool _enabled;
@@ -46,16 +49,14 @@ public:
 	// Called regularly by the Mind to run the currently assigned routine.
 	virtual void PerformTask();
 
-	// Plugs a new task into this subsystem
-	virtual void InstallTask(const TaskPtr& newTask);
-
-	// Puts another task into the queue of this subsystem
-	// This can be used by the Tasks to swap themselves with another task
-	// without having to fear their immediate destruction.
+	// Puts another task at the end of the queue
 	virtual void QueueTask(const TaskPtr& nextTask);
 
 	// Sets the current task to the EmptyTask
-	virtual void ClearTask();
+	virtual void FinishCurrentTask();
+
+	// Clears out the current task plus the entire queue and disables the subsystem
+	virtual void ClearTasks();
 
 	// Enables/disables this subsystem
 	virtual void Enable();

@@ -54,7 +54,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 			// No path corner entities found!
 			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
 			
-			subsystem.ClearTask();
+			subsystem.FinishCurrentTask();
 			return;
 		}
 
@@ -63,8 +63,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-// Called each frame
-void PatrolTask::Perform(Subsystem& subsystem)
+bool PatrolTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
 
@@ -86,7 +85,11 @@ void PatrolTask::Perform(Subsystem& subsystem)
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
 		subsystem.QueueTask(pathTask);
+
+		return true; // finish this task
 	}
+
+	return false; // not finished yet
 }
 
 PatrolTaskPtr PatrolTask::CreateInstance()

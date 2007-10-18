@@ -44,7 +44,7 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_RUN = (_path.GetEntity()->spawnArgs.GetBool("run", "0"));
 }
 
-void PathCornerTask::Perform(Subsystem& subsystem)
+bool PathCornerTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
 
@@ -81,26 +81,19 @@ void PathCornerTask::Perform(Subsystem& subsystem)
 			if (next == NULL)
 			{
 				DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
-				subsystem.ClearTask();
-				return;
+				return true; // finish this task
 			}
 
 			// Store the new path entity into the AI's mind
 			owner->GetMind()->GetMemory().currentPath = next;
 
 			// Fall back to the PatrolTask now we're done here
-			TaskPtr patrolTask = PatrolTask::CreateInstance();
-			subsystem.QueueTask(patrolTask);
+			subsystem.QueueTask(PatrolTask::CreateInstance());
 
-			return;
+			return true; // finish this task
 		}
 
-		// We should be moving already
-		/*while( !AI_MOVE_DONE ) 
-		{
-			// Random chance of turning head		
-			subFrameTask_randomHeadTurn (AI_chancePerSecond_RandomLookAroundWhileIdle, -60.0, 60.0, -45.0, 45.0, 1.0, 6.0);
-		}*/
+		// Move...
 	}
 	else
 	{
@@ -110,6 +103,8 @@ void PathCornerTask::Perform(Subsystem& subsystem)
 
 		_moveInitiated = true;
 	}
+
+	return false; // not finished yet
 }
 
 void PathCornerTask::SetTargetEntity(idPathCorner* path) 
