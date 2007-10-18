@@ -31,10 +31,6 @@ public:
 	// Empty implementation
 	virtual void Perform(Subsystem& subsystem);
 
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
-
 	// Creates a new Instance of this task
 	static EmptyTaskPtr CreateInstance();
 };

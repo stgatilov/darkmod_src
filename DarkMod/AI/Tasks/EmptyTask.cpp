@@ -31,13 +31,6 @@ void EmptyTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO).LogString("Empty Task performing.\r");
 }
 
-// Save/Restore methods
-void EmptyTask::Save(idSaveGame* savefile) const
-{}
-
-void EmptyTask::Restore(idRestoreGame* savefile)
-{}
-
 EmptyTaskPtr EmptyTask::CreateInstance()
 {
 	return EmptyTaskPtr(new EmptyTask);

@@ -89,13 +89,6 @@ void PatrolTask::Perform(Subsystem& subsystem)
 	}
 }
 
-// Save/Restore methods
-void PatrolTask::Save(idSaveGame* savefile) const
-{}
-
-void PatrolTask::Restore(idRestoreGame* savefile)
-{}
-
 PatrolTaskPtr PatrolTask::CreateInstance()
 {
 	return PatrolTaskPtr(new PatrolTask);

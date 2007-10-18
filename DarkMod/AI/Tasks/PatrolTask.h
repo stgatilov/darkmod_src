@@ -24,8 +24,6 @@ typedef boost::shared_ptr<PatrolTask> PatrolTaskPtr;
 class PatrolTask :
 	public Task
 {
-	idEntityPtr<idPathCorner> _currentPath;
-
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -34,10 +32,6 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual void Perform(Subsystem& subsystem);
-
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
 	static PatrolTaskPtr CreateInstance();

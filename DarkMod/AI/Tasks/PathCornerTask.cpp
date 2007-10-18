@@ -121,10 +121,20 @@ void PathCornerTask::SetTargetEntity(idPathCorner* path)
 
 // Save/Restore methods
 void PathCornerTask::Save(idSaveGame* savefile) const
-{}
+{
+	Task::Save(savefile);
+
+	savefile->WriteBool(_moveInitiated);
+	_path.Save(savefile);
+}
 
 void PathCornerTask::Restore(idRestoreGame* savefile)
-{}
+{
+	Task::Restore(savefile);
+
+	savefile->ReadBool(_moveInitiated);
+	_path.Restore(savefile);
+}
 
 PathCornerTaskPtr PathCornerTask::CreateInstance()
 {
