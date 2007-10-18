@@ -1791,7 +1791,7 @@ idAI::UpdateAIScript
 */
 void idAI::UpdateAIScript( void )
 {
-	UpdateScript();
+	//UpdateScript();
 
 	// clear the hit enemy flag so we catch the next time we hit someone
 	AI_HIT_ENEMY = false;

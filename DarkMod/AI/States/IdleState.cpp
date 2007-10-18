@@ -43,7 +43,7 @@ StatePtr IdleState::CreateInstance()
 	return StatePtr(new IdleState);
 }
 
-// Register this task with the TaskLibrary
+// Register this state with the StateLibrary
 StateLibrary::Registrar idleStateRegistrar(
 	STATE_IDLE, // Task Name
 	StateLibrary::CreateInstanceFunc(&IdleState::CreateInstance) // Instance creation callback

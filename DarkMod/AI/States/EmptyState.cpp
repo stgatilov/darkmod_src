@@ -43,7 +43,7 @@ StatePtr EmptyState::CreateInstance()
 	return StatePtr(new EmptyState);
 }
 
-// Register this task with the TaskLibrary
+// Register this state with the StateLibrary
 StateLibrary::Registrar emptyStateRegistrar(
 	STATE_EMPTY, // Task Name
 	StateLibrary::CreateInstanceFunc(&EmptyState::CreateInstance) // Instance creation callback
