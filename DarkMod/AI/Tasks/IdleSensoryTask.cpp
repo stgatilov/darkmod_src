@@ -116,17 +116,6 @@ void IdleSensoryTask::PerformRandomHeadTurnCheck()
 	owner->Event_LookAtAngles(headYawAngle, headPitchAngle, 0.0, durationInSeconds);
 }
 
-// Save/Restore methods
-void IdleSensoryTask::Save(idSaveGame* savefile) const
-{
-	// TODO
-}
-
-void IdleSensoryTask::Restore(idRestoreGame* savefile)
-{
-	// TODO
-}
-
 IdleSensoryTaskPtr IdleSensoryTask::CreateInstance()
 {
 	return IdleSensoryTaskPtr(new IdleSensoryTask);

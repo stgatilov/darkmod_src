@@ -116,22 +116,51 @@ void Subsystem::Save(idSaveGame* savefile) const
 {
 	_owner.Save(savefile);
 
-	// TODO
-	/*// Save the task, if there is an active one
+	savefile->WriteBool(_enabled);
+	savefile->WriteBool(_finishCurrentTask);
+
+	savefile->WriteInt(_taskQueue.size());
+	for (TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++)
+	{
+		savefile->WriteString((*i)->GetName().c_str());
+		(*i)->Save(savefile);
+	}
+
+	// Save the task, if there is an active one
 	savefile->WriteBool(_task != NULL);
 	if (_task != NULL)
 	{
 		savefile->WriteString(_task->GetName().c_str());
 		_task->Save(savefile);
-	}*/
+	}
 }
 
 void Subsystem::Restore(idRestoreGame* savefile)
 {
 	_owner.Restore(savefile);
 
-	// TODO
-	/*bool hasTask;
+	savefile->ReadBool(_enabled);
+	savefile->ReadBool(_finishCurrentTask);
+
+	_taskQueue.clear(); // remove all tasks before restore
+	int num;
+	savefile->ReadInt(num);
+
+	// Now read in all the tasks in the queue, one by one
+	for (int i = 0; i < num; i++)
+	{
+		idStr taskName;
+		savefile->ReadString(taskName);
+
+		TaskPtr task = TaskLibrary::Instance().CreateInstance(taskName.c_str());
+
+		assert(task != NULL);
+		task->Restore(savefile);
+
+		_taskQueue.push_back(task);
+	}
+
+	bool hasTask;
 	savefile->ReadBool(hasTask);
 
 	if (hasTask)
@@ -148,7 +177,7 @@ void Subsystem::Restore(idRestoreGame* savefile)
 	{
 		// Assure the task pointer to be NULL.
 		_task = TaskPtr();
-	}*/
+	}
 }
 
 } // namespace ai
