@@ -83,6 +83,17 @@ StatePtr& BasicMind::GetState()
 	return _state;
 }
 
+// Gets/Sets the current path entity of this AI
+void BasicMind::SetCurrentPath(idPathCorner* path) 
+{
+	_currentPath = path;
+}
+
+idPathCorner* BasicMind::GetCurrentPath() 
+{
+	return _currentPath.GetEntity();
+}
+
 // Get the current alert state 
 EAlertState BasicMind::GetAlertState() const
 {

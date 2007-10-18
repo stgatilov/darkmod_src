@@ -32,22 +32,33 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	// Check if we are supposed to patrol and make sure that there
+	// is a valid PathCorner entity set in the AI's mind
+
 	if (owner->spawnArgs.GetBool("patrol", "1")) 
 	{
-		// Find the next path associated with the owning AI
-		idPathCorner* path = idPathCorner::RandomPath(owner, NULL);
+		idPathCorner* path = owner->GetMind()->GetCurrentPath();
 
+		// Check if we already have a path entity
+		if (path == NULL)
+		{
+			// Path not yet initialised, get it afresh
+			// Find the next path associated with the owning AI
+			path = idPathCorner::RandomPath(owner, NULL);
+		}
+
+		// If the path is still NULL, there is nothing setup, quit this task
 		if (path == NULL)
 		{
 			// No path corner entities found!
 			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
-			// Replace this task with an empty one
-			TaskPtr emptyTask(TaskLibrary::Instance().CreateInstance(TASK_EMPTY));
-			subsystem.QueueTask(emptyTask);
+			
+			subsystem.ClearTask();
 			return;
 		}
 
-		_currentPath = path;
+		// Store the path entity back into the mind, it might have changed
+		owner->GetMind()->SetCurrentPath(path);
 	}
 }
 
@@ -56,23 +67,23 @@ void PatrolTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
 
-	idPathCorner* path = _currentPath.GetEntity();
+	idPathCorner* path = _owner.GetEntity()->GetMind()->GetCurrentPath();
 
-	// This task may not be performed with an empty path corner entity
+	// This task may not be performed with an empty path corner entity,
+	// that case should have been caught by the Init() routine
 	assert(path);
 
-	// Move to entity path!
+	// Get the classname, this determines the child routine we're spawning.
 	idStr classname = path->spawnArgs.GetString("classname");
 
 	if (classname == "path_corner")
 	{
 		// Allocate a new PathCornerTask
 		PathCornerTaskPtr pathTask = PathCornerTask::CreateInstance();
-
 		assert(pathTask != NULL); // task must be found
 
+		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-
 		subsystem.QueueTask(pathTask);
 	}
 }

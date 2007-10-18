@@ -54,6 +54,9 @@ public:
 	// without having to fear their immediate destruction.
 	virtual void QueueTask(const TaskPtr& nextTask);
 
+	// Sets the current task to the EmptyTask
+	virtual void ClearTask();
+
 	// Enables/disables this subsystem
 	virtual void Enable();
 	virtual void Disable();

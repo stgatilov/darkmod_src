@@ -61,6 +61,10 @@ public:
 	// Set the current alert state
 	virtual void SetAlertState(EAlertState newState) = 0;
 
+	// Gets/Sets the current path entity of this AI
+	virtual void SetCurrentPath(idPathCorner* path) = 0;
+	virtual idPathCorner* GetCurrentPath() = 0;
+
 	// Save/Restore routines
 	virtual void Save(idSaveGame* savefile) const = 0;
 	virtual void Restore(idRestoreGame* savefile) = 0;

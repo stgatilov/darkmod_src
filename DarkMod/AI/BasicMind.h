@@ -27,6 +27,8 @@ private:
 
 	StatePtr _state;
 
+	idEntityPtr<idPathCorner> _currentPath;
+
 public:
 	BasicMind(idAI* owner);
 	virtual ~BasicMind() {}
@@ -44,6 +46,10 @@ public:
 
 	// Set the current alert state
 	virtual void SetAlertState(EAlertState newState);
+
+	// Gets/Sets the current path entity of this AI
+	virtual void SetCurrentPath(idPathCorner* path);
+	virtual idPathCorner* GetCurrentPath();
 
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

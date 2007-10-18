@@ -82,6 +82,11 @@ void Subsystem::QueueTask(const TaskPtr& nextTask)
 	_nextTask = nextTask;
 }
 
+void Subsystem::ClearTask()
+{
+	QueueTask(EmptyTask::CreateInstance());
+}
+
 // Save/Restore methods
 void Subsystem::Save(idSaveGame* savefile) const
 {

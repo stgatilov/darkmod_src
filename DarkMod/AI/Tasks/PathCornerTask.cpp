@@ -58,16 +58,40 @@ void PathCornerTask::Perform(Subsystem& subsystem)
 
 	if (_moveInitiated)
 	{
-		if (owner->AI_MOVE_DONE)
+		if (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE)
 		{
-			// Move is done, fall back to PatrolTask
-			DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
-			return;
-		}
-		else if (owner->AI_DEST_UNREACHABLE)
-		{
-			// Unreachable, fall back to PatrolTask
-			DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
+			if (owner->AI_MOVE_DONE)
+			{
+				// Trigger path targets, now that we've reached the corner
+				owner->ActivateTargets(owner);
+
+				// Move is done, fall back to PatrolTask
+				DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
+			}
+			
+			if (owner->AI_DEST_UNREACHABLE)
+			{
+				// Unreachable, fall back to PatrolTask
+				DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
+			}
+
+			// Advance to the next path entity pointer
+			idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+
+			if (next == NULL)
+			{
+				DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
+				subsystem.ClearTask();
+				return;
+			}
+
+			// Store the new path entity into the AI's mind
+			owner->GetMind()->SetCurrentPath(next);
+
+			// Fall back to the PatrolTask now we're done here
+			TaskPtr patrolTask = PatrolTask::CreateInstance();
+			subsystem.QueueTask(patrolTask);
+
 			return;
 		}
 
@@ -86,72 +110,6 @@ void PathCornerTask::Perform(Subsystem& subsystem)
 
 		_moveInitiated = true;
 	}
-
-	/*string customAnim;
-
-	customAnim = current_path.getKey( "anim" );
-
-	while( 1 ) {
-		if ( customAnim != "" ) 
-		{
-			playCustomCycle( customAnim, 4 );
-		}
-		moveToEntity( current_path );
-		waitFrame();
-
-		while( !AI_MOVE_DONE ) 
-		{
-			if ( sys.influenceActive() ) 
-			{
-				break;
-			}
-
-			PatrolBark();
-
-			if ( checkAlerted() )
-			{
-				m_stopPatrol = true;
-			}
-
-
-			if (m_stopPatrol)
-			{
-				break;
-			}
-
-			// Random chance of turning head		
-			subFrameTask_randomHeadTurn (AI_chancePerSecond_RandomLookAroundWhileIdle, -60.0, 60.0, -45.0, 45.0, 1.0, 6.0);
-
-			waitFrame();
-		}
-
-		if ( customAnim != "" ) 
-		{
-			animState( ANIMCHANNEL_TORSO, "Torso_Idle", 4 );
-		}
-
-		if (m_stopPatrol)
-		{
-			break;
-		}
-
-		if ( sys.influenceActive() ) 
-		{
-			stopMove();
-			while( sys.influenceActive() ) 
-			{
-				waitFrame();
-			}
-			continue;
-		}
-		break;
-	}
-
-	if ( AI_DEST_UNREACHABLE ) {
-		// Can't reach
-		sys.logString(LC_AI, LT_WARNING, "entity '" + getName() + "' couldn't reach path_corner '" + current_path.getName() + "'");
-		sys.wait(2);
-	}*/
 }
 
 void PathCornerTask::SetTargetEntity(idPathCorner* path) 
