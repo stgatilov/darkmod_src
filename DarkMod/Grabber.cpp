@@ -32,16 +32,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
 
+// TODO: Make most of these cvars
+
 const int CHECK_CLIP_LIST_INTERVAL =	1000;
 
 const int MOUSE_DEADZONE =				5;
-const float MOUSE_SCALE =				0.7f;
+// const float MOUSE_SCALE =				0.7f;
+ const float MOUSE_SCALE =				0.2f;
 
-const float MAX_PICKUP_DISTANCE =		1000.0f;
-//const float ROTATION_SPEED =			0.9f;
-const float ROTATION_SPEED	=			1.0f;
-const float ROTATION_DAMPER =			0.9f;
-const float MAX_ROTATION_SPEED =		30.0f;
 // when you let go of an item, the velocity is clamped to this value
 const float MAX_RELEASE_LINVEL =		30.0f;
 // when you let go of an item, the angular velocity is clamped to this value
@@ -50,9 +48,6 @@ const float MAX_RELEASE_ANGVEL =		10.0f;
 const float MIN_HELD_DISTANCE  =		35.0f;
 // granularity of the distance control
 const int	DIST_GRANULARITY	=		12;
-
-const idVec3 rotateMin( -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED, -MAX_ROTATION_SPEED );
-const idVec3 rotateMax( MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, MAX_ROTATION_SPEED );
 
 
 
@@ -657,67 +652,47 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		
 		if( !this->DeadMouse() ) 
 		{
-			switch( m_rotationAxis ) 
-			{
-				case 1:
-					angle = idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) - MOUSE_DEADZONE;
-					if( player->usercmd.mx < m_mousePosition.x )
-						angle = -angle;
+			float xMag, yMag;
+			idVec3 xAxis, yAxis;
 
-					rotationVec.Set( 1.0f, 0.0f, 0.0f );
-					m_rotationAxis = 1;
+			xMag = player->usercmd.mx - m_mousePosition.x;
+			yMag = player->usercmd.my - m_mousePosition.y;
 
-					break;
+			yAxis.Set( 0.0f, 1.0f, 0.0f ); // y is always pitch
 
-				case 2:
-					angle = idMath::Fabs( player->usercmd.my - m_mousePosition.y ) - MOUSE_DEADZONE;
-					if( player->usercmd.my < m_mousePosition.y )
-						angle = -angle;
+			// run held => x = roll, release => x = yaw
+			if( player->usercmd.buttons & BUTTON_RUN )
+				xAxis.Set( -1.0f, 0.0f, 0.0f ); // roll
+			else
+				xAxis.Set( 0.0f, 0.0f, -1.0f ); // yaw
 
-					rotationVec.Set( 0.0f, -1.0f, 0.0f );
-					m_rotationAxis = 2;
+			rotationVec = xMag*xAxis + yMag*yAxis;
+			angle = rotationVec.Normalize();
 
-					break;
-
-				case 3:
-					angle = idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) - MOUSE_DEADZONE;
-					if( player->usercmd.mx < m_mousePosition.x )
-						angle = -angle;
-
-					rotationVec.Set( 0.0f, 0.0f, 1.0f );
-					m_rotationAxis = 3;
-
-					break;
-
-				default:
-					// wait for motion on the x-axis, if nothing, check the y-axis.
-					if( idMath::Fabs( player->usercmd.mx - m_mousePosition.x ) > idMath::Fabs( player->usercmd.my - m_mousePosition.y ) ) {
-						// if BUTTON_RUN, then toggle rotating the x-axis, else just do the z-axis
-						if( player->usercmd.buttons & BUTTON_RUN ) {
-							m_rotationAxis = 3;
-						}
-						else 
-						{
-							m_rotationAxis = 1;
-						}
-					}
-					else 
-					{
-						m_rotationAxis = 2;
-					}
-
-					rotationVec.Set( 0.0f, 0.0f, 0.0f );
-			}
+			m_mousePosition.x = player->usercmd.mx;
+			m_mousePosition.y = player->usercmd.my;
 		}
 
-		angle = idMath::ClampFloat( -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED, angle * MOUSE_SCALE );
+		angle = angle * MOUSE_SCALE;
 
+		// Convert rotation axis from player-view coords to world coords
 		idAngles viewAnglesXY = viewAxis.ToAngles();
 		// ignore the change in player pitch angles
 		viewAnglesXY[0] = 0;
 		idMat3 viewAxisXY = viewAnglesXY.ToMat3();
 		
-		angularVelocity = rotationVec * viewAxisXY * angle;
+		rotationVec = rotationVec * viewAxisXY;
+		rotationVec.Normalize();
+
+		idVec3 RotPointWorld = physics->GetOrigin( m_id ) + m_LocalEntPoint * physics->GetAxis( m_id );
+		idRotation DesiredRot;
+		DesiredRot.Set( RotPointWorld, rotationVec, angle );
+
+		// TODO: Toggle visual debugging with cvar
+		// gameRenderWorld->DebugLine( colorRed, RotPointWorld, (RotPointWorld + 30 * rotationVec), 1);
+
+		// Calc. desired cumulative rotation
+		m_drag.SetDragAxis( m_drag.GetDragAxis() * DesiredRot.ToMat3() );
 	}
 	else 
 	{
@@ -735,10 +710,12 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 			m_rotationAxis = 0;
 
 		angularVelocity = vec3_zero;
+		m_drag.SetDragAxis( ent->GetPhysics()->GetAxis( m_id ) );
 	}
 
 
 // ============== rotate object so it stays oriented with the player ===========
+
 	if( !ent->IsType( idAFEntity_Base::Type ) && !rotating && !m_bIsColliding ) 
 	{
 		idVec3	normal;
@@ -766,14 +743,9 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 			physics->Rotate( m_rotation * trResults.fraction );
 		}
 		
-		//I can't seem to get setting the angular velocity to work here for some reason
-		// Might be due to disparity between actual frame integration time and 1/60 sec
-
-// TODO: This may work now that setting angular velocity has been fixed
-		//angularVelocity += m_rotation.ToAngularVelocity() / MS2SEC( USERCMD_MSEC );
+		// Update the axis again since we rotated
+		m_drag.SetDragAxis( ent->GetPhysics()->GetAxis( m_id ) );
 	}
-
-	physics->SetAngularVelocity( angularVelocity, m_id );
 }
 
 /*

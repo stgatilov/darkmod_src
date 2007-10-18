@@ -36,8 +36,13 @@ class CForce_Grab : public idForce
 							// get the position dragged towards
 		const idVec3 &		GetDragPosition( void ) const;
 							// get the position on the dragged physics object
-		const idVec3		GetDraggedPosition( void ) const;
+		/**
+		* Set/get orientation to rotate toward
+		**/
+		void				SetDragAxis( const idMat3 &Axis );
+		idMat3				GetDragAxis( void );
 
+		const idVec3		GetDraggedPosition( void ) const;
 							// Gets the center of mass of the grabbed object
 		idVec3				GetCenterOfMass( void ) const;
 							// rotates p about the center of mass of the grabbed object
@@ -65,7 +70,7 @@ class CForce_Grab : public idForce
 		virtual void		Evaluate( int time );
 		virtual void		RemovePhysics( const idPhysics *phys );
 
-	private:
+	protected:
 
 		/**
 		* Entity to which this drag force is referenced, if any
@@ -83,12 +88,21 @@ class CForce_Grab : public idForce
 
 		// physics object properties
 		idVec3				m_centerOfMass;
+		idMat3				m_inertiaTensor;
 
 		// positioning
 		idPhysics *			m_physics;		// physics object
 		idVec3				m_p;				// position on clip model
 		int					m_id;				// clip model id of physics object
-		idVec3				m_dragPosition;	// drag towards this position
+		/**
+		*  drag towards this position
+		**/
+		idVec3				m_dragPosition;
+		/**
+		* Rotate toward this orientation
+		**/
+		idMat3				m_dragAxis;
+		
 		/**
 		* Origin of the dragged entity in the previous frame
 		**/
