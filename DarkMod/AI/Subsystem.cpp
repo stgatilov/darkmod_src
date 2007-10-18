@@ -13,7 +13,7 @@
 static bool init_version = FileVersionList("$Id: Subsystem.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "Subsystem.h"
-#include "Tasks/TaskLibrary.h"
+#include "Library.h"
 #include "Tasks/EmptyTask.h"
 
 namespace ai
@@ -26,7 +26,7 @@ Subsystem::Subsystem(idAI* owner) :
 	_owner = owner;
 
 	InstallTask(
-		TaskLibrary::Instance().CreateTask(TASK_EMPTY)
+		TaskLibrary::Instance().CreateInstance(TASK_EMPTY)
 	);
 }
 
@@ -91,7 +91,7 @@ void Subsystem::Restore(idRestoreGame* savefile)
 		idStr taskName;
 		savefile->ReadString(taskName);
 
-		_task = TaskLibrary::Instance().CreateTask(taskName.c_str());
+		_task = TaskLibrary::Instance().CreateInstance(taskName.c_str());
 
 		assert(_task != NULL);
 		_task->Restore(savefile);

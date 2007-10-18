@@ -38,6 +38,18 @@ void BasicMind::Think()
 	//owner->GetSubsystem(SubsysCommunication)->PerformTask();
 }
 
+// Changes the state
+void BasicMind::ChangeState(const idStr& stateName)
+{
+	
+}
+
+// Returns the reference to the current state
+StatePtr& BasicMind::GetState()
+{
+	return _state;
+}
+
 // Get the current alert state 
 EAlertState BasicMind::GetAlertState() const
 {

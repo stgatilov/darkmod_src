@@ -10,6 +10,8 @@
 #ifndef __AI_BASICMIND_H__
 #define __AI_BASICMIND_H__
 
+#include "States/State.h"
+
 namespace ai
 {
 
@@ -23,11 +25,19 @@ private:
 	// The current alert state
 	EAlertState _alertState;
 
+	StatePtr _state;
+
 public:
 	BasicMind(idAI* owner);
 	virtual ~BasicMind() {}
 
 	virtual void Think();
+
+	// Changes the state
+	virtual void ChangeState(const idStr& stateName);
+
+	// Returns the reference to the current state
+	virtual StatePtr& GetState();
 
 	// Get the current alert state 
 	virtual EAlertState GetAlertState() const;

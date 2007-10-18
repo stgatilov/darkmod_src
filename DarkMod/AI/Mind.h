@@ -17,6 +17,10 @@
 namespace ai
 {
 
+// Forward Declaration
+class State;
+typedef boost::shared_ptr<State> StatePtr;
+
 enum EAlertState {
 	ERelaxed,
 	EAroused,
@@ -39,6 +43,17 @@ public:
 	 *         subsystem's Think() methods, maybe in and interleaved way.
 	 */
 	virtual void Think() = 0;
+
+	/**
+	 * greebo: Sets the new state of this mind (this can be Idle, Combat).
+	 * This new state is attached and its Init() method is invoked.
+	 */
+	virtual void ChangeState(const idStr& stateName) = 0;
+
+	/**
+	 * Returns the reference to the current state (can be NULL).
+	 */
+	virtual StatePtr& GetState() = 0;
 
 	// Get the current alert state 
 	virtual EAlertState GetAlertState() const = 0;

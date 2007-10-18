@@ -13,7 +13,7 @@
 static bool init_version = FileVersionList("$Id: TaskLibrary.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "EmptyTask.h"
-#include "TaskLibrary.h"
+#include "../Library.h"
 
 namespace ai
 {
@@ -44,9 +44,9 @@ TaskPtr EmptyTask::CreateInstance()
 }
 
 // Register this task with the TaskLibrary
-TaskRegistrar emptyTaskRegistrar(
+TaskLibrary::Registrar emptyTaskRegistrar(
 	TASK_EMPTY, // Task Name
-	CreateInstanceFunc(&EmptyTask::CreateInstance) // Instance creation callback
+	TaskLibrary::CreateInstanceFunc(&EmptyTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai
