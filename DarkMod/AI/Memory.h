@@ -30,6 +30,9 @@ namespace ai
 #define AUDIO_ALERT_RADIUS 50.0f
 #define AUDIO_SEARCH_VOLUME idVec3(200,200,200)
 
+// Stim radii for various communication styles
+#define YELL_STIM_RADIUS 400
+#define TALK_STIM_RADIUS 200
 
 enum EAlertType {
 	EAlertVisual,
@@ -96,6 +99,10 @@ public:
 	// radius searches that don't re-search the inner points.
 	idVec3 alertSearchExclusionVolume;
 
+	// The last position the enemy was seen
+	// greebo: Note: Currently this is filled in before fleeing only.
+	idVec3 lastEnemyPos;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -110,7 +117,8 @@ public:
 		searchingDueToCommunication(false),
 		lastAlertPosSearched(0,0,0),
 		alertSearchVolume(0,0,0),
-		alertSearchExclusionVolume(0,0,0)
+		alertSearchExclusionVolume(0,0,0),
+		lastEnemyPos(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -131,6 +139,7 @@ public:
 		savefile->WriteVec3(lastAlertPosSearched);
 		savefile->WriteVec3(alertSearchVolume);
 		savefile->WriteVec3(alertSearchExclusionVolume);
+		savefile->WriteVec3(lastEnemyPos);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -156,6 +165,7 @@ public:
 		savefile->ReadVec3(lastAlertPosSearched);
 		savefile->ReadVec3(alertSearchVolume);
 		savefile->ReadVec3(alertSearchExclusionVolume);
+		savefile->ReadVec3(lastEnemyPos);
 	}
 };
 

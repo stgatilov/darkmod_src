@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 #include "States/IdleState.h"
 #include "Library.h"
 #include "../idAbsenceMarkerEntity.h"
+#include "../AIComm_Message.h"
 
 namespace ai
 {
@@ -426,40 +427,56 @@ bool BasicMind::SetTarget()
 
 void BasicMind::PerformCombatCheck()
 {
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	// Check for an enemy, if this returns TRUE, we have an enemy
 	bool targetFound = SetTarget();
 	
-	/*if(targetFound)
+	if (targetFound)
 	{
-		//DEBUG_PRINT ("COMBAT NOW!");
+		DM_LOG(LC_AI, LT_INFO).LogString("COMBAT NOW!\r");
 		
 		// Spotted an enemy
-		stateOfMind_b_enemiesHaveBeenSeen = true;
+		memory.enemiesHaveBeenSeen = true;
 		
-		entity enemy = getEnemy();
-		m_LastEnemyPos = enemy.getOrigin();
-		issueCommunication_DOE(DetectedEnemy_MessageType, YELL_STIM_RADIUS, enemy, m_LastEnemyPos);
+		idActor* enemy = owner->GetEnemy();
+
+		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
+		
+		// Issue a communication stim
+		owner->IssueCommunication_Internal(
+			static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
+			YELL_STIM_RADIUS, 
+			NULL,
+			enemy,
+			memory.lastEnemyPos
+		);
 
 		// greebo: Check for weapons and flee if we are unarmed.
-		if (getNumMeleeWeapons() == 0 && getNumRangedWeapons() == 0)
+		if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
 		{
-			DEBUG_PRINT("I'm unarmed, I'm afraid!");
-			pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+			DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
+			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
 			return;
 		}
 
 		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
-		if (getFloatKey("is_civilian"))
+		if (owner->spawnArgs.GetBool("is_civilian", "0"))
 		{
-			DEBUG_PRINT("I'm civilian. I'm afraid.");
-			pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+			DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
+			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
 			return;
 		}
 	
+		// TODO: Implement move to enemy task and attach to movement subsystem
+
 		// Try to set up movement path to enemy
-		moveToEnemy();
+		owner->MoveToEnemy();
 		
-		if( !AI_DEST_UNREACHABLE && canReachEnemy() )
+		/*if( !AI_DEST_UNREACHABLE && canReachEnemy() )
 		{	
 			pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
 		}
@@ -480,14 +497,14 @@ void BasicMind::PerformCombatCheck()
 			}
 		}
 	
-		return;	
+		return;	*/
 	}
 
 	// If we got here there is no target
-	//DEBUG_PRINT ("no Target to justify combat alert level, lowering to agitated search");
+	DM_LOG(LC_AI, LT_INFO).LogString("No Target to justify combat alert level, lowering to agitated search\r");
 		
 	// Lower alert level from combat to agitated search
-	setAlertLevel(thresh_combat - 0.01);*/
+	owner->Event_SetAlertLevel(owner->thresh_combat - 0.01);
 }
 
 void BasicMind::PerformSensoryScan(bool processNewStimuli)
