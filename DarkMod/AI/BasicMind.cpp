@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 #include "BasicMind.h"
 #include "States/IdleState.h"
 #include "Library.h"
+#include "../idAbsenceMarkerEntity.h"
 
 namespace ai
 {
@@ -138,6 +139,197 @@ void BasicMind::TestAlertStateTimer()
 		
 		// Alert level is changing
 		owner->Event_SetAlertLevel(newAlertLevel);
+	}
+}
+
+void BasicMind::SetAlertPos()
+{
+	// greebo: This has been ported from ai_darkmod_base::setAlertPos() written by SZ
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// Create a shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// NOTE: If several alerts happen in the same frame,
+	// the priority is tactile, visual, then sound
+
+	// Stim bark type
+	// 1 is saw
+	// 2 is heard
+	int stimBarkType = 0;
+	
+	if (owner->AI_TACTALERT)
+	{
+		/**
+		* FIX: They should not try to MOVE to the tactile alert position
+		* because if it's above their head, they can't get to it and will
+		* just run in circles.  
+		*
+		* Instead, turn to this position manually, then set the search target
+		* to the AI's own origin, to execute a search starting from where it's standing
+		*
+		* TODO later: Predict where the thrown object might have come from, and search
+		* in that direction (requires a "directed search" algorithm)
+		*/
+		idEntity* target = owner->GetTactEnt();
+
+		if (IsEnemy(target, owner)) // also checks for NULL pointers
+		{
+			owner->Event_SetEnemy(target);
+
+			memory.alertType = EAlertTactile;
+			memory.alertPos = owner->GetPhysics()->GetOrigin();
+			memory.alertRadius = TACTILE_ALERT_RADIUS;
+			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
+			memory.alertSearchExclusionVolume.Zero();
+
+			// execute the turn manually here
+			owner->TurnToward(memory.alertPos);
+			
+			owner->AI_TACTALERT = false;
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("No tactile alert entity was set");
+		}
+	}
+	/*else if( AI_VISALERT )
+	{
+		m_alertType = "v";
+		m_alertPos = getVisDir();
+		m_alertRadius = VISUAL_ALERT_RADIUS;
+		m_alertSearchVolume = VISUAL_SEARCH_VOLUME;
+		m_alertSearchExclusionVolume = '0 0 0';
+		
+		AI_VISALERT = false;
+		stimBarkType = 1.0;
+		
+		//DEBUG_PRINT ("Visual alert pos " + m_alertPos);
+	}	
+	else if( AI_HEARDSOUND )
+	{
+		
+		m_alertType = "s";
+		m_alertPos = getSndDir();
+		
+		// Search within radius of stimulus that is 1/3 the distance from the
+		// observer to the point at the time heard
+		float distanceToStim = sys.vecLength(self.getOrigin() - m_alertPos);
+		float searchVolModifier = (distanceToStim/3.0) / 200.0;
+		if (searchVolModifier < 0.01)
+		{
+			searchVolModifier = 0.01;
+		}
+
+		m_alertRadius = AUDIO_ALERT_RADIUS;
+		m_alertSearchVolume = AUDIO_SEARCH_VOLUME;
+		m_alertSearchExclusionVolume = '0 0 0';
+		m_alertSearchVolume = m_alertSearchVolume * searchVolModifier;
+				
+		AI_HEARDSOUND = false;
+		stimBarkType = 2.0;
+
+
+		//DEBUG_PRINT ("Audio alert pos " + m_alertPos);
+	}
+	
+	// Handle stimulus "barks"
+	if 
+	(
+		(stimBarkType >= 1.0) && 
+		( (sys.getTime() - AI_timeOfLastStimulusBark) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	)
+	{
+		AI_timeOfLastStimulusBark = sys.getTime();
+
+		// Check for any friends nearby we might want to talk to
+		boolean b_friendNearby = false;
+		if ( (sys.getTime() - stateOfMind_lastTimeFriendlyAISeen) <= (MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK) )
+		{
+			DEBUG_PRINT ("Time since friend is " + (sys.getTime() - stateOfMind_lastTimeFriendlyAISeen));
+			b_friendNearby = true;
+		}
+
+	
+		if ((stimBarkType >= 1.9) && (stimBarkType <= 2.1))
+		{
+			// Play speech: heard something 
+			if (!b_friendNearby)
+			{
+				if (AI_AlertNum >= thresh_2)
+				{
+					bark( "snd_alert2h" );
+				}
+				else if (AI_AlertNum >= thresh_1)
+				{
+					bark( "snd_alert1h" );
+				}
+			}
+			else
+			{
+				if (AI_AlertNum >= thresh_2)
+				{
+					bark( "snd_alert2ch" );
+				}
+				else if (AI_AlertNum >= thresh_1)
+				{
+					bark( "snd_alert1ch" );
+				}
+			}
+		}
+		else if ((stimBarkType >= 0.9) && (stimBarkType <= 1.1))
+		{
+			// Play speech: saw something
+			if (!b_friendNearby)
+			{
+				if (AI_AlertNum >= thresh_3)
+				{
+					bark ("snd_alert3s" );
+				}
+				if (AI_AlertNum >= thresh_2)
+				{
+					bark( "snd_alert2s" );
+				}
+				else if (AI_AlertNum >= thresh_1)
+				{
+					bark( "snd_alert1s" );
+				}
+			}
+			else
+			{
+				if (AI_AlertNum >= thresh_2)
+				{
+					bark( "snd_alert2cs" );
+				}
+				else if (AI_AlertNum >= thresh_1)
+				{
+					bark( "snd_alert1cs" );
+				}
+			}
+	
+		}
+	}
+
+	// Done stimulus barks	*/
+}
+
+bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
+{
+	if (entity == NULL)
+	{
+		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
+		return false;
+	}
+	else if (entity->IsType(idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(entity);
+		return gameLocal.m_RelationsManager->IsEnemy(self->team, marker->ownerTeam);
+	}
+	else
+	{
+		// Ordinary entity, pass the call to the idAI::IsEnemy method
+		return self->IsEnemy(entity);
 	}
 }
 

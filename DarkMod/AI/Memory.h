@@ -18,6 +18,10 @@ namespace ai
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 
+// Considered cause radius around a tactile event
+#define TACTILE_ALERT_RADIUS 10.0f
+#define TACTILE_SEARCH_VOLUME idVec3(40,40,40)
+
 enum EAlertType {
 	EAlertVisual,
 	EAlertTactile,
@@ -76,6 +80,13 @@ public:
     // to determine if a new search is necessary
 	idVec3 lastAlertPosSearched;
 
+	// A search area vector that is m_alertRadius on each side
+	idVec3 alertSearchVolume;
+
+	// An area within the search volume that is to be ignored. It is used for expanding
+	// radius searches that don't re-search the inner points.
+	idVec3 alertSearchExclusionVolume;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -88,7 +99,9 @@ public:
 		alertRadius(-1),
 		stimulusLocationItselfShouldBeSearched(false),
 		searchingDueToCommunication(false),
-		lastAlertPosSearched(0,0,0)
+		lastAlertPosSearched(0,0,0),
+		alertSearchVolume(0,0,0),
+		alertSearchExclusionVolume(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -107,6 +120,8 @@ public:
 		savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 		savefile->WriteBool(searchingDueToCommunication);
 		savefile->WriteVec3(lastAlertPosSearched);
+		savefile->WriteVec3(alertSearchVolume);
+		savefile->WriteVec3(alertSearchExclusionVolume);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -130,6 +145,8 @@ public:
 		savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 		savefile->ReadBool(searchingDueToCommunication);
 		savefile->ReadVec3(lastAlertPosSearched);
+		savefile->ReadVec3(alertSearchVolume);
+		savefile->ReadVec3(alertSearchExclusionVolume);
 	}
 };
 

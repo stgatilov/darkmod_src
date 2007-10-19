@@ -48,6 +48,8 @@ public:
 		return _memory;
 	}
 
+	virtual void SetAlertPos();
+
 	virtual void PerformSensoryScan(bool processNewStimuli);
 
 	virtual void Save(idSaveGame* savefile) const;
@@ -56,6 +58,9 @@ public:
 private:
 	// Test if the alert state can be decreased
 	virtual void TestAlertStateTimer();
+
+	// Returns TRUE if the <entity> is on an opposite team or owned by it
+	virtual bool IsEnemy(idEntity* entity, idAI* self);
 };
 
 } // namespace ai
