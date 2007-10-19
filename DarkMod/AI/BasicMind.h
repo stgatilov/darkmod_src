@@ -52,6 +52,8 @@ public:
 
 	virtual void PerformSensoryScan(bool processNewStimuli);
 
+	virtual void PerformCombatCheck();
+
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 

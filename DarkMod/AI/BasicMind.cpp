@@ -333,6 +333,11 @@ bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
 	}
 }
 
+void BasicMind::PerformCombatCheck()
+{
+	// TODO
+}
+
 void BasicMind::PerformSensoryScan(bool processNewStimuli)
 {
 	// greebo: Ported from ai_darkmod_base::subFrameTask_canSwitchState_sensoryScan() written by SZ
