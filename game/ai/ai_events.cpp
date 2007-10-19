@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../../DarkMod/AIComm_StimResponse.h"
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
+#include "../../DarkMod/AI/Memory.h"
 
 class CRelations;
 
@@ -3692,7 +3693,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
 
 	// Only bark if we haven't barked too recently
-	if (( gameLocal.realClientTime - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	if (( MS2SEC(gameLocal.time) - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		// Note: Alert rising sounds are played based on the type of stimulus before we ever reach this function
 		// We only have to do alert-down sounds here
@@ -3700,19 +3701,19 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 		{
 			if (newAlertLevel > thresh_3)
 			{
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				// TODO: Shouldn't hard-code the animation name, talk1, here (and below)
 				Event_PlayAndLipSync( "snd_alert3s", "" );
 			}
 			else if (newAlertLevel > thresh_2)
 			{
 			
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown2", "" );
 			}	
 			else if (newAlertLevel > thresh_1) 
 			{
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown1", "" );
 			}
 		}
