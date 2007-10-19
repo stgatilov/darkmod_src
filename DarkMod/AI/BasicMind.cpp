@@ -323,16 +323,19 @@ void BasicMind::SetAlertPos()
 	// Done stimulus barks	
 }
 
-
 void BasicMind::Bark(const idStr& soundname)
 {
 	idAI* owner = _owner.GetEntity();
+
+	// Clear out any previous tasks in the commsystem
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+
+	// Allocate a singlebarktask, set the sound and enqueue it
 	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
 	singleBark->SetSound(soundname);
+
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(singleBark);
 }
-
 
 bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
 {
@@ -375,10 +378,10 @@ bool BasicMind::SetTarget()
 	{
 		idEntity* tactEnt = owner->GetTactEnt();
 
-		if (!target->IsType(idActor::Type)) 
+		if (!tactEnt->IsType(idActor::Type)) 
 		{
 			// Invalid enemy type, todo?
-			DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", target->name.c_str());
+			DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
 			return false;
 		}
 
@@ -477,31 +480,6 @@ void BasicMind::PerformCombatCheck()
 		// TODO: Switch to combat state.
 		// in Combat::Init: Issue communication, check for fleeing
 
-		/*// Issue a communication stim
-		owner->IssueCommunication_Internal(
-			static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
-			YELL_STIM_RADIUS, 
-			NULL,
-			enemy,
-			memory.lastEnemyPos
-		);*/
-
-		// greebo: Check for weapons and flee if we are unarmed.
-		/*if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
-		{
-			DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
-			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
-			return;
-		}
-
-		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
-		if (owner->spawnArgs.GetBool("is_civilian", "0"))
-		{
-			DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
-			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
-			return;
-		}*/
-	
 		// TODO: Implement move to enemy task and attach to movement subsystem
 
 		// Try to set up movement path to enemy

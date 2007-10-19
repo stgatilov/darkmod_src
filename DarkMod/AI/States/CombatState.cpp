@@ -61,6 +61,9 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	// Try to set up movement path to enemy
+	owner->MoveToEnemy();
+
 	// Check if the AI has an enemy.
 
 	// Fill the subsystems with their tasks
