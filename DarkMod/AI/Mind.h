@@ -53,6 +53,14 @@ public:
 	virtual void ChangeState(const idStr& stateName) = 0;
 
 	/**
+	 * greebo: Changes to the given state if <statePriority> is higher than the
+	 *         priority of the current state.
+	 *
+	 * @returns: TRUE if the state was changed, FALSE otherwise.
+	 */
+	virtual bool ChangeStateIfHigherPriority(const idStr& stateName, int statePriority) = 0;
+
+	/**
 	 * Returns the reference to the current state (can be NULL).
 	 */
 	virtual StatePtr& GetState() = 0;

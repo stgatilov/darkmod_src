@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 
 #include "CombatState.h"
 #include "../Memory.h"
+#include "../../AIComm_Message.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Library.h"
 

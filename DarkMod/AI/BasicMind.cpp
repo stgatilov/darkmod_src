@@ -83,6 +83,17 @@ void BasicMind::ChangeState(const idStr& stateName)
 	}
 }
 
+bool BasicMind::ChangeStateIfHigherPriority(const idStr& stateName, int statePriority)
+{
+	if (_state == NULL || statePriority > _state->GetPriority())
+	{
+		ChangeState(stateName);
+		return true;
+	}
+
+	return false; // not installed
+}
+
 void BasicMind::TestAlertStateTimer()
 {
 	// greebo: This has been ported from ai_darkmod_base::subFrameTask_testAlertStateTimer() by SZ
@@ -459,7 +470,7 @@ void BasicMind::PerformCombatCheck()
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
 		StatePtr combatState = CombatState::CreateInstance();
-		ChangeState(STATE_COMBAT);
+		ChangeStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 
 		return;
 
