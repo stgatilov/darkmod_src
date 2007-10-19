@@ -15,10 +15,11 @@
 namespace ai
 {
 
+// SZ: Minimum count of evidence of intruders to communicate suspicion to others
+#define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
+
 /**
- * greebo: This defines the ABC of an AI mind. It basically
- *         handles the incoming stimuli and emits signals to the 
- *         AI subsystems like movement, interaction and sensory stuff.
+ * greebo: This class acts as container for all kinds of state variables.
  */
 class Memory
 {
@@ -42,11 +43,19 @@ public:
 	// The last time a check for randomly turning the head was done
 	int lastRandomHeadTurnCheckTime;
 
+	// TRUE if enemies have been seen
+	bool enemiesHaveBeenSeen;
+
+	// TRUE if the AI knows that items have been stolen
+	bool itemsHaveBeenStolen;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
 		countEvidenceOfIntruders(0),
-		lastRandomHeadTurnCheckTime(-1)
+		lastRandomHeadTurnCheckTime(-1),
+		enemiesHaveBeenSeen(false),
+		itemsHaveBeenStolen(false)
 	{}
 
 	// Save/Restore routines
@@ -57,6 +66,8 @@ public:
 		savefile->WriteInt(lastPatrolChatTime);
 		savefile->WriteInt(countEvidenceOfIntruders);
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
+		savefile->WriteBool(enemiesHaveBeenSeen);
+		savefile->WriteBool(itemsHaveBeenStolen);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -69,6 +80,8 @@ public:
 		savefile->ReadInt(lastPatrolChatTime);
 		savefile->ReadInt(countEvidenceOfIntruders);
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
+		savefile->ReadBool(enemiesHaveBeenSeen);
+		savefile->ReadBool(itemsHaveBeenStolen);
 	}
 };
 

@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "IdleState.h"
+#include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/IdleSensoryTask.h"
 #include "../Tasks/PatrolTask.h"
@@ -67,6 +68,8 @@ void IdleState::Init(idAI* owner)
 
 idStr IdleState::GetInitialIdleBark(idAI* owner)
 {
+	// greebo: Ported from ai_darkmod_base::task_Idle written by SZ
+
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 	
@@ -74,18 +77,18 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	{
 		soundName = "snd_relaxed";
 	}
-	/*else if (stateOfMind_b_enemiesHaveBeenSeen)
+	else if (owner->GetMind()->GetMemory().enemiesHaveBeenSeen)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
 	}
-	else if (stateOfMind_b_itemsHaveBeenStolen)
+	else if (owner->GetMind()->GetMemory().itemsHaveBeenStolen)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
 	}
-	else if (stateOfMind_count_evidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
+	else if (owner->GetMind()->GetMemory().countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
-	}*/
+	}
 	else
 	{
 		// Play its idle sound
