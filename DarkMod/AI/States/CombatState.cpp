@@ -32,9 +32,39 @@ void CombatState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
 	assert(owner);
 
+	// Shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// Issue a communication stim
+	owner->IssueCommunication_Internal(
+		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
+		YELL_STIM_RADIUS, 
+		NULL,
+		owner->GetEnemy(),
+		memory.lastEnemyPos
+	);
+
+	// greebo: Check for weapons and flee if we are unarmed.
+	if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
+		// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+		return;
+	}
+
+	// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
+	if (owner->spawnArgs.GetBool("is_civilian", "0"))
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
+		// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+		return;
+	}
+
+	// Check if the AI has an enemy.
+
 	// Fill the subsystems with their tasks
 
-	// The movement subsystem should start patrolling
+	// The movement subsystem should start running to the last enemy position
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->QueueTask(EmptyTask::CreateInstance());
 

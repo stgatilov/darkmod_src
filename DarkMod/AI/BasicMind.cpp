@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 
 #include "BasicMind.h"
 #include "States/IdleState.h"
+#include "States/CombatState.h"
 #include "Library.h"
 #include "../idAbsenceMarkerEntity.h"
 #include "../AIComm_Message.h"
@@ -446,20 +447,25 @@ void BasicMind::PerformCombatCheck()
 
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
+		StatePtr combatState = CombatState::CreateInstance();
+		ChangeState(STATE_COMBAT);
+
+		return;
+
 		// TODO: Switch to combat state.
 		// in Combat::Init: Issue communication, check for fleeing
 
-		// Issue a communication stim
+		/*// Issue a communication stim
 		owner->IssueCommunication_Internal(
 			static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
 			YELL_STIM_RADIUS, 
 			NULL,
 			enemy,
 			memory.lastEnemyPos
-		);
+		);*/
 
 		// greebo: Check for weapons and flee if we are unarmed.
-		if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
+		/*if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
 			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
@@ -472,7 +478,7 @@ void BasicMind::PerformCombatCheck()
 			DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
 			// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
 			return;
-		}
+		}*/
 	
 		// TODO: Implement move to enemy task and attach to movement subsystem
 
