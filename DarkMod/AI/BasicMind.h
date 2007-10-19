@@ -62,6 +62,8 @@ private:
 
 	// Returns TRUE if the <entity> is on an opposite team or owned by it
 	virtual bool IsEnemy(idEntity* entity, idAI* self);
+
+	virtual void Bark(const idStr& soundname);
 };
 
 } // namespace ai

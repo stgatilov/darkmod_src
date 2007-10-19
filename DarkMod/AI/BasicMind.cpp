@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 
 #include "BasicMind.h"
 #include "States/IdleState.h"
+#include "Tasks/SingleBarkTask.h"
 #include "States/CombatState.h"
 #include "Library.h"
 #include "../idAbsenceMarkerEntity.h"
@@ -231,86 +232,96 @@ void BasicMind::SetAlertPos()
 		stimBarkType = 2;
 	}
 
-	/*
 	// Handle stimulus "barks"
 	if 
 	(
-		(stimBarkType >= 1.0) && 
-		( (sys.getTime() - AI_timeOfLastStimulusBark) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		(stimBarkType >= 1) && 
+		( (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	)
 	{
-		AI_timeOfLastStimulusBark = sys.getTime();
+		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 
 		// Check for any friends nearby we might want to talk to
-		boolean b_friendNearby = false;
-		if ( (sys.getTime() - stateOfMind_lastTimeFriendlyAISeen) <= (MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK) )
+		bool b_friendNearby = false;
+		if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 		{
-			DEBUG_PRINT ("Time since friend is " + (sys.getTime() - stateOfMind_lastTimeFriendlyAISeen));
+			DM_LOG(LC_AI,LT_INFO).LogString("Time since friend is %d\r", (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen));
 			b_friendNearby = true;
 		}
 
 	
-		if ((stimBarkType >= 1.9) && (stimBarkType <= 2.1))
+		if (stimBarkType == 2) 
 		{
 			// Play speech: heard something 
 			if (!b_friendNearby)
 			{
-				if (AI_AlertNum >= thresh_2)
+				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
-					bark( "snd_alert2h" );
+					Bark( "snd_alert2h" );
 				}
-				else if (AI_AlertNum >= thresh_1)
+				else if (owner->AI_AlertNum >= owner->thresh_1)
 				{
-					bark( "snd_alert1h" );
+					Bark( "snd_alert1h" );
 				}
 			}
 			else
 			{
-				if (AI_AlertNum >= thresh_2)
+				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
-					bark( "snd_alert2ch" );
+					Bark( "snd_alert2ch" );
 				}
-				else if (AI_AlertNum >= thresh_1)
+				else if (owner->AI_AlertNum >= owner->thresh_1)
 				{
-					bark( "snd_alert1ch" );
+					Bark( "snd_alert1ch" );
 				}
 			}
 		}
-		else if ((stimBarkType >= 0.9) && (stimBarkType <= 1.1))
+		else if (stimBarkType == 1) 
 		{
 			// Play speech: saw something
 			if (!b_friendNearby)
 			{
-				if (AI_AlertNum >= thresh_3)
+				if (owner->AI_AlertNum >= owner->thresh_3)
 				{
-					bark ("snd_alert3s" );
+					Bark ("snd_alert3s" );
 				}
-				if (AI_AlertNum >= thresh_2)
+				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
-					bark( "snd_alert2s" );
+					Bark( "snd_alert2s" );
 				}
-				else if (AI_AlertNum >= thresh_1)
+				else if (owner->AI_AlertNum >= owner->thresh_1)
 				{
-					bark( "snd_alert1s" );
+					Bark( "snd_alert1s" );
 				}
 			}
 			else
 			{
-				if (AI_AlertNum >= thresh_2)
+				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
-					bark( "snd_alert2cs" );
+					Bark( "snd_alert2cs" );
 				}
-				else if (AI_AlertNum >= thresh_1)
+				else if (owner->AI_AlertNum >= owner->thresh_1)
 				{
-					bark( "snd_alert1cs" );
+					Bark( "snd_alert1cs" );
 				}
 			}
 	
 		}
 	}
 
-	// Done stimulus barks	*/
+	// Done stimulus barks	
 }
+
+
+void BasicMind::Bark(const idStr& soundname)
+{
+	idAI* owner = _owner.GetEntity();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
+	singleBark->SetSound(soundname);
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(singleBark);
+}
+
 
 bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
 {

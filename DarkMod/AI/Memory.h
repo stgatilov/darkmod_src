@@ -41,6 +41,14 @@ enum EAlertType {
 	EAlertTypeCount
 };
 
+#define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15.0f
+
+// SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
+// group stimulous barks, in seconds
+#define MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK 10.0f
+
+
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -55,6 +63,8 @@ public:
 
 	// The last time the AI has been barking when patrolling
 	int lastPatrolChatTime;
+
+	int	lastTimeFriendlyAISeen;
 
 	/*!
 	* This variable indicates the number of out of place things that the
@@ -71,6 +81,8 @@ public:
 
 	// TRUE if the AI knows that items have been stolen
 	bool itemsHaveBeenStolen;
+
+
 
 	// position of alert causing stimulus
 	idVec3 alertPos;
@@ -106,6 +118,7 @@ public:
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
+		lastTimeFriendlyAISeen(-1000),
 		countEvidenceOfIntruders(0),
 		lastRandomHeadTurnCheckTime(-1),
 		enemiesHaveBeenSeen(false),
@@ -129,6 +142,7 @@ public:
 		savefile->WriteInt(lastPatrolChatTime);
 		savefile->WriteInt(countEvidenceOfIntruders);
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
+		savefile->WriteInt(lastTimeFriendlyAISeen);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
 		savefile->WriteVec3(alertPos);
@@ -152,6 +166,7 @@ public:
 		savefile->ReadInt(lastPatrolChatTime);
 		savefile->ReadInt(countEvidenceOfIntruders);
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
+		savefile->ReadInt(lastTimeFriendlyAISeen);
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
 		savefile->ReadVec3(alertPos);
