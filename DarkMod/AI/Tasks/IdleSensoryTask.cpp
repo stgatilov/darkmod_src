@@ -59,6 +59,9 @@ bool IdleSensoryTask::Perform(Subsystem& subsystem)
 
 	PerformRandomHeadTurnCheck();
 
+	// Let the mind check its senses (TRUE = process new stimuli)
+	owner->GetMind()->PerformSensoryScan(true);
+
 	return false; // not finished yet
 }
 

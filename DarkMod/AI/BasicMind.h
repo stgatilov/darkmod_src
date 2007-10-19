@@ -48,6 +48,8 @@ public:
 		return _memory;
 	}
 
+	virtual void PerformSensoryScan(bool processNewStimuli);
+
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
