@@ -655,42 +655,7 @@ idAI::Event_FindEnemyAI
 =====================
 */
 void idAI::Event_FindEnemyAI( int useFOV ) {
-	idEntity	*ent;
-	idActor		*actor;
-	idActor		*bestEnemy;
-	float		bestDist;
-	float		dist;
-	idVec3		delta;
-	pvsHandle_t pvs;
-
-	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
-
-	bestDist = idMath::INFINITY;
-	bestEnemy = NULL;
-	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		actor = static_cast<idActor *>( ent );
-		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
-			continue;
-		}
-
-		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
-			continue;
-		}
-
-		delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
-		dist = delta.LengthSqr();
-		if ( ( dist < bestDist ) && CanSee( actor, useFOV != 0 ) ) {
-			bestDist = dist;
-			bestEnemy = actor;
-		}
-	}
-
-	gameLocal.pvs.FreeCurrentPVS( pvs );
-	idThread::ReturnEntity( bestEnemy );
+	idThread::ReturnEntity(FindEnemyAI(useFOV));
 }
 
 void idAI::Event_FindFriendlyAI(int requiredTeam)

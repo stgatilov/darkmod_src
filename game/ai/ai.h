@@ -1102,6 +1102,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 **/
 	idActor * FindEnemy( bool useFOV ) ;
 
+	idActor* FindEnemyAI(bool useFOV);
+
 /**
 * Similarly to FindEnemy, this was previously only an Event_ scripting
 * function.  I moved it over to a new SDK function and had the Event_ 

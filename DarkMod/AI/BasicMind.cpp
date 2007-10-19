@@ -333,9 +333,165 @@ bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
 	}
 }
 
+bool BasicMind::SetTarget()
+{
+	// greebo: Ported from ai_darkmod_base::setTarget() written by SZ
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	idActor* target = NULL;
+
+	// NOTE: To work properly, the priority here must be: check tactile first, then sight.
+	
+	// Done if we already have a target
+	if (owner->GetEnemy() != NULL)
+	{
+		//DEBUG_PRINT ("Target already assigned, using that one");
+		return true;
+	}
+
+	// If the AI touched you, you're a target
+	if (owner->AI_TACTALERT)
+	{
+		idEntity* tactEnt = owner->GetTactEnt();
+
+		if (!target->IsType(idActor::Type)) 
+		{
+			// Invalid enemy type, todo?
+			DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", target->name.c_str());
+			return false;
+		}
+
+		target = static_cast<idActor*>(tactEnt);
+		
+		/** 
+		* If the entity that bumped the AI is an inanimate object, isEnemy will return 0,
+		* so the AI will not try to attack an inanimate object.
+		**/
+		if (IsEnemy(target, owner))
+		{
+			owner->SetEnemy(target);
+			
+			DM_LOG(LC_AI, LT_INFO).LogString("Set tactile alert enemy to entity %s\r", target->name.c_str());
+
+			// set the bool back
+			owner->AI_TACTALERT = false;
+			return true;
+		}
+		else
+		{
+			// They bumped into a non entity, so they should ignore it and not set an
+			// alert from it.
+			// set the bool back (man, this is annoying)
+			owner->AI_TACTALERT = false;
+			return false;
+		}
+	}
+	// If the AI saw you, you're a target
+	else if (owner->AI_VISALERT)
+	{	
+		target = owner->FindEnemy(false);
+
+		if (target != NULL)
+		{
+			owner->SetEnemy(target);
+			return true;
+		}
+		else
+		{
+			target = owner->FindEnemyAI(false);
+
+			if (target != NULL)
+			{
+				owner->SetEnemy(target);
+				return true;
+			}
+		}
+		
+		DM_LOG(LC_AI, LT_INFO).LogString("No target\r");
+		
+		return false;
+	}
+	/*
+	* Sound is the only thing that does not guarantee combat
+	* The AI will just stay in the highest alert state and
+	* run at the sound location until it bumps into something
+	* (No cheating here!)
+	*/
+	else if (owner->AI_HEARDSOUND)
+	{
+		// do not set HEARDSOUND to false here because we still want to use it after exit
+		return false;
+	}
+
+	// something weird must have happened
+	return false;
+}
+
 void BasicMind::PerformCombatCheck()
 {
-	// TODO
+	// Check for an enemy, if this returns TRUE, we have an enemy
+	bool targetFound = SetTarget();
+	
+	/*if(targetFound)
+	{
+		//DEBUG_PRINT ("COMBAT NOW!");
+		
+		// Spotted an enemy
+		stateOfMind_b_enemiesHaveBeenSeen = true;
+		
+		entity enemy = getEnemy();
+		m_LastEnemyPos = enemy.getOrigin();
+		issueCommunication_DOE(DetectedEnemy_MessageType, YELL_STIM_RADIUS, enemy, m_LastEnemyPos);
+
+		// greebo: Check for weapons and flee if we are unarmed.
+		if (getNumMeleeWeapons() == 0 && getNumRangedWeapons() == 0)
+		{
+			DEBUG_PRINT("I'm unarmed, I'm afraid!");
+			pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+			return;
+		}
+
+		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
+		if (getFloatKey("is_civilian"))
+		{
+			DEBUG_PRINT("I'm civilian. I'm afraid.");
+			pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+			return;
+		}
+	
+		// Try to set up movement path to enemy
+		moveToEnemy();
+		
+		if( !AI_DEST_UNREACHABLE && canReachEnemy() )
+		{	
+			pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
+		}
+		else
+ 		{
+ 			// TODO: find alternate path, etc
+
+ 			// Do we have a ranged weapon?
+ 			if (m_HasRangedWeapon)
+ 			{
+ 				// Just use ranged weapon
+ 				pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
+ 			}
+ 			else
+ 			{
+				// Can't reach the target
+				pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
+			}
+		}
+	
+		return;	
+	}
+
+	// If we got here there is no target
+	//DEBUG_PRINT ("no Target to justify combat alert level, lowering to agitated search");
+		
+	// Lower alert level from combat to agitated search
+	setAlertLevel(thresh_combat - 0.01);*/
 }
 
 void BasicMind::PerformSensoryScan(bool processNewStimuli)
@@ -356,7 +512,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 		{
 			// This reflects the alert level inside it as well
 			//DEBUG_PRINT ("Initiating combat due to stim");
-			// TODO: subFrameTask_canSwitchState_initiateCombat();
+			PerformCombatCheck();
 		}
 		
 		// If it was not a combat level alert, or we returned here because there

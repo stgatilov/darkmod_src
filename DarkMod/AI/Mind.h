@@ -82,12 +82,27 @@ public:
 	virtual void SetAlertPos() = 0;
 
 	/**
-	* This method tests to see if the target can be reached.
+	* SZ: This method tests to see if the target can be reached.
 	* If it can't, then the AI chooses another action.
 	*
 	* This method often switches the AI to a new state.
 	*/
 	virtual void PerformCombatCheck() = 0;
+
+	/**
+	* SZ: setTarget should only be called when the combat threshold has been
+	* reached and the AI needs to try to attack something.
+	* The only alert that does not set a target is sound.
+	* In the case of sound, the AI will keep running at the source of the noise
+	* and executing the running search until it sees or bumps into the player
+	*
+	* @return true if a target was found
+	* @return false if no target found
+	*
+	* SophisticatedZombie Note: Note that this method and setTarget are mutually exclusive
+	* as they clear flags that the other needs. 
+	*/
+	virtual bool SetTarget() = 0;
 
 	/** 
 	* SophisticatedZombie: This method performs a visual scan and 
