@@ -20,10 +20,6 @@ static bool init_version = FileVersionList("$Id: PathTurnTask.cpp 1435 2007-10-1
 namespace ai
 {
 
-PathTurnTask::PathTurnTask() :
-	_moveInitiated(false)
-{}
-
 // Get the name of this task
 const idStr& PathTurnTask::GetName() const
 {
@@ -36,10 +32,14 @@ void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	if (_path.GetEntity() == NULL) {
+	idPathCorner* path = _path.GetEntity();
+
+	if (path == NULL) {
 		gameLocal.Error("PathTurnTask: Path Entity not set before Init()");
 	}
 
+	float angle = path->spawnArgs.GetFloat("angle","0");
+	owner->TurnToward(angle);
 }
 
 bool PathTurnTask::Perform(Subsystem& subsystem)
@@ -53,59 +53,33 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	assert(path != NULL && owner != NULL);
 
 	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
-	
 
-
-
-	if (_moveInitiated)
+	if (owner->FacingIdeal())
 	{
-		if (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE)
+		// Trigger path targets, now that we've reached the corner
+		owner->ActivateTargets(owner);
+
+		// Move is done, fall back to PatrolTask
+		DM_LOG(LC_AI, LT_INFO).LogString("Turn is done.\r");
+
+		// Advance to the next path entity pointer
+		idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+
+		if (next == NULL)
 		{
-			if (owner->AI_MOVE_DONE)
-			{
-				// Trigger path targets, now that we've reached the corner
-				owner->ActivateTargets(owner);
-
-				// Move is done, fall back to PatrolTask
-				DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
-			}
-			
-			if (owner->AI_DEST_UNREACHABLE)
-			{
-				// Unreachable, fall back to PatrolTask
-				DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
-			}
-
-			// Advance to the next path entity pointer
-			idPathCorner* next = idPathCorner::RandomPath(path, NULL);
-
-			if (next == NULL)
-			{
-				DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
-				return true; // finish this task
-			}
-
-			// Store the new path entity into the AI's mind
-			owner->GetMind()->GetMemory().currentPath = next;
-
-			// Fall back to the PatrolTask now we're done here
-			subsystem.QueueTask(PatrolTask::CreateInstance());
-
+			DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
 			return true; // finish this task
 		}
 
-		// Move...
-	}
-	else
-	{
-		// moveToEntity() not yet called, do it now
-		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-		owner->MoveToEntity(path);
+		// Store the new path entity into the AI's mind
+		owner->GetMind()->GetMemory().currentPath = next;
 
-		_moveInitiated = true;
-	}
+		// Fall back to the PatrolTask now we're done here
+		subsystem.QueueTask(PatrolTask::CreateInstance());
 
-	return false; // not finished yet
+		return true; // finish this task
+	}
+	return false;
 }
 
 void PathTurnTask::SetTargetEntity(idPathCorner* path) 
@@ -119,7 +93,6 @@ void PathTurnTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
-	savefile->WriteBool(_moveInitiated);
 	_path.Save(savefile);
 }
 
@@ -127,7 +100,6 @@ void PathTurnTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 
-	savefile->ReadBool(_moveInitiated);
 	_path.Restore(savefile);
 }
 

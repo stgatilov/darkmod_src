@@ -26,10 +26,7 @@ class PathTurnTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
-	bool _moveInitiated;
 public:
-	PathTurnTask();
-
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
