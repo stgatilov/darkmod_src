@@ -10,24 +10,24 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PathTurnTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: PathWaitTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "../Memory.h"
 #include "PatrolTask.h"
-#include "PathTurnTask.h"
+#include "PathWaitTask.h"
 #include "../Library.h"
 
 namespace ai
 {
 
 // Get the name of this task
-const idStr& PathTurnTask::GetName() const
+const idStr& PathWaitTask::GetName() const
 {
-	static idStr _name(TASK_PATH_TURN);
+	static idStr _name(TASK_PATH_WAIT);
 	return _name;
 }
 
-void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
+void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
@@ -35,14 +35,23 @@ void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
 	idPathCorner* path = _path.GetEntity();
 
 	if (path == NULL) {
-		gameLocal.Error("PathTurnTask: Path Entity not set before Init()");
+		gameLocal.Error("PathWaitTask: Path Entity not set before Init()");
 	}
 
-	float angle = path->spawnArgs.GetFloat("angle","0");
-	owner->TurnToward(angle);
+	float waittime = path->spawnArgs.GetFloat("wait","0");
+	float waitmax = path->spawnArgs.GetFloat("waitmax", "0");
+
+	if (waitmax > 0)
+	{
+		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+	}
+
+	waittime = SEC2MS(waittime);
+
+	_endtime = waittime + gameLocal.time;
 }
 
-bool PathTurnTask::Perform(Subsystem& subsystem)
+bool PathWaitTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
 
@@ -52,9 +61,7 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
-
-	if (owner->FacingIdeal())
+	if (gameLocal.time >= _endtime)
 	{
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
@@ -82,36 +89,38 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	return false;
 }
 
-void PathTurnTask::SetTargetEntity(idPathCorner* path) 
+void PathWaitTask::SetTargetEntity(idPathCorner* path) 
 {
 	assert(path);
 	_path = path;
 }
 
 // Save/Restore methods
-void PathTurnTask::Save(idSaveGame* savefile) const
+void PathWaitTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
+	savefile->WriteFloat(_endtime);
 	_path.Save(savefile);
 }
 
-void PathTurnTask::Restore(idRestoreGame* savefile)
+void PathWaitTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 
+	savefile->ReadFloat(_endtime);
 	_path.Restore(savefile);
 }
 
-PathTurnTaskPtr PathTurnTask::CreateInstance()
+PathWaitTaskPtr PathWaitTask::CreateInstance()
 {
-	return PathTurnTaskPtr(new PathTurnTask);
+	return PathWaitTaskPtr(new PathWaitTask);
 }
 
 // Register this task with the TaskLibrary
-TaskLibrary::Registrar pathTurnTaskRegistrar(
-	TASK_PATH_TURN, // Task Name
-	TaskLibrary::CreateInstanceFunc(&PathTurnTask::CreateInstance) // Instance creation callback
+TaskLibrary::Registrar PathWaitTaskRegistrar(
+	TASK_PATH_WAIT, // Task Name
+	TaskLibrary::CreateInstanceFunc(&PathWaitTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai
