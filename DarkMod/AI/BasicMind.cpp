@@ -216,10 +216,10 @@ void BasicMind::SetAlertPos()
 		// Search within radius of stimulus that is 1/3 the distance from the
 		// observer to the point at the time heard
 		float distanceToStim = (owner->GetPhysics()->GetOrigin() - memory.alertPos).LengthFast();
-		float searchVolModifier = distanceToStim / 600.0;
-		if (searchVolModifier < 0.01)
+		float searchVolModifier = distanceToStim / 600.0f;
+		if (searchVolModifier < 0.01f)
 		{
-			searchVolModifier = 0.01;
+			searchVolModifier = 0.01f;
 		}
 
 		memory.alertRadius = AUDIO_ALERT_RADIUS;
@@ -446,6 +446,9 @@ void BasicMind::PerformCombatCheck()
 
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
+		// TODO: Switch to combat state.
+		// in Combat::Init: Issue communication, check for fleeing
+
 		// Issue a communication stim
 		owner->IssueCommunication_Internal(
 			static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
