@@ -194,46 +194,42 @@ void BasicMind::SetAlertPos()
 			DM_LOG(LC_AI, LT_INFO).LogString("No tactile alert entity was set");
 		}
 	}
-	/*else if( AI_VISALERT )
+	else if( owner->AI_VISALERT )
 	{
-		m_alertType = "v";
-		m_alertPos = getVisDir();
-		m_alertRadius = VISUAL_ALERT_RADIUS;
-		m_alertSearchVolume = VISUAL_SEARCH_VOLUME;
-		m_alertSearchExclusionVolume = '0 0 0';
+		memory.alertType = EAlertVisual;
+		memory.alertPos = owner->GetVisDir();
+		memory.alertRadius = VISUAL_ALERT_RADIUS;
+		memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
 		
-		AI_VISALERT = false;
-		stimBarkType = 1.0;
+		owner->AI_VISALERT = false;
+		stimBarkType = 1;
 		
 		//DEBUG_PRINT ("Visual alert pos " + m_alertPos);
 	}	
-	else if( AI_HEARDSOUND )
+	else if( owner->AI_HEARDSOUND )
 	{
-		
-		m_alertType = "s";
-		m_alertPos = getSndDir();
+		memory.alertType = EAlertAudio;
+		memory.alertPos = owner->GetSndDir();
 		
 		// Search within radius of stimulus that is 1/3 the distance from the
 		// observer to the point at the time heard
-		float distanceToStim = sys.vecLength(self.getOrigin() - m_alertPos);
-		float searchVolModifier = (distanceToStim/3.0) / 200.0;
+		float distanceToStim = (owner->GetPhysics()->GetOrigin() - memory.alertPos).LengthFast();
+		float searchVolModifier = distanceToStim / 600.0;
 		if (searchVolModifier < 0.01)
 		{
 			searchVolModifier = 0.01;
 		}
 
-		m_alertRadius = AUDIO_ALERT_RADIUS;
-		m_alertSearchVolume = AUDIO_SEARCH_VOLUME;
-		m_alertSearchExclusionVolume = '0 0 0';
-		m_alertSearchVolume = m_alertSearchVolume * searchVolModifier;
+		memory.alertRadius = AUDIO_ALERT_RADIUS;
+		memory.alertSearchVolume = AUDIO_SEARCH_VOLUME * searchVolModifier;
+		memory.alertSearchExclusionVolume.Zero();
 				
-		AI_HEARDSOUND = false;
-		stimBarkType = 2.0;
-
-
-		//DEBUG_PRINT ("Audio alert pos " + m_alertPos);
+		owner->AI_HEARDSOUND = false;
+		stimBarkType = 2;
 	}
-	
+
+	/*
 	// Handle stimulus "barks"
 	if 
 	(

@@ -22,6 +22,15 @@ namespace ai
 #define TACTILE_ALERT_RADIUS 10.0f
 #define TACTILE_SEARCH_VOLUME idVec3(40,40,40)
 
+// Considered cause radius around a visual event
+#define VISUAL_ALERT_RADIUS 25.0f
+#define VISUAL_SEARCH_VOLUME idVec3(100,100,100)
+
+// Considered cause radius around an audio event
+#define AUDIO_ALERT_RADIUS 50.0f
+#define AUDIO_SEARCH_VOLUME idVec3(200,200,200)
+
+
 enum EAlertType {
 	EAlertVisual,
 	EAlertTactile,
