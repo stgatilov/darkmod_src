@@ -476,37 +476,6 @@ void BasicMind::PerformCombatCheck()
 		ChangeStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 
 		return;
-
-		// TODO: Switch to combat state.
-		// in Combat::Init: Issue communication, check for fleeing
-
-		// TODO: Implement move to enemy task and attach to movement subsystem
-
-		// Try to set up movement path to enemy
-		owner->MoveToEnemy();
-		
-		/*if( !AI_DEST_UNREACHABLE && canReachEnemy() )
-		{	
-			pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
-		}
-		else
- 		{
- 			// TODO: find alternate path, etc
-
- 			// Do we have a ranged weapon?
- 			if (m_HasRangedWeapon)
- 			{
- 				// Just use ranged weapon
- 				pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
- 			}
- 			else
- 			{
-				// Can't reach the target
-				pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
-			}
-		}
-	
-		return;	*/
 	}
 
 	// If we got here there is no target

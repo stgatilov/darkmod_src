@@ -3420,41 +3420,7 @@ idAI::Event_CanReachEnemy
 ================
 */
 void idAI::Event_CanReachEnemy( void ) {
-	aasPath_t	path;
-	int			toAreaNum;
-	int			areaNum;
-	idVec3		pos;
-	idActor		*enemyEnt;
-
-	enemyEnt = enemy.GetEntity();
-	if ( !enemyEnt ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	if ( move.moveType != MOVETYPE_FLY ) {
-		if ( enemyEnt->OnLadder() ) {
-			idThread::ReturnInt( false );
-			return;
-		}
-		enemyEnt->GetAASLocation( aas, pos, toAreaNum );
-	}  else {
-		pos = enemyEnt->GetPhysics()->GetOrigin();
-		toAreaNum = PointReachableAreaNum( pos );
-	}
-
-	if ( !toAreaNum ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
-	if ( !PathToGoal( path, areaNum, org, toAreaNum, pos ) ) {
-		idThread::ReturnInt( false );
-	} else {
-		idThread::ReturnInt( true );
-	}
+	idThread::ReturnInt(CanReachEnemy());
 }
 
 /*

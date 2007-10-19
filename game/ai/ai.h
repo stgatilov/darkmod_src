@@ -1168,6 +1168,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					LinkScriptVariables( void );
 	void					UpdateAIScript( void );
 
+	// Returns true if the current enemy can be reached
+	bool					CanReachEnemy();
+
 	/**
 	* Returns true if AI's mouth is underwater
 	**/

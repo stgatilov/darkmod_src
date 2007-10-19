@@ -7442,6 +7442,38 @@ Quit:
 	return;
 }
 
+bool idAI::CanReachEnemy()
+{
+	aasPath_t	path;
+	int			toAreaNum;
+	int			areaNum;
+	idVec3		pos;
+	idActor		*enemyEnt;
+
+	enemyEnt = enemy.GetEntity();
+	if ( !enemyEnt ) {
+		return false;
+	}
+
+	if ( move.moveType != MOVETYPE_FLY ) {
+		if ( enemyEnt->OnLadder() ) {
+			return false;
+		}
+		enemyEnt->GetAASLocation( aas, pos, toAreaNum );
+	}  else {
+		pos = enemyEnt->GetPhysics()->GetOrigin();
+		toAreaNum = PointReachableAreaNum( pos );
+	}
+
+	if ( !toAreaNum ) {
+		return false;
+	}
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	areaNum	= PointReachableAreaNum( org );
+	return PathToGoal(path, areaNum, org, toAreaNum, pos);
+}
+
 bool idAI::MouthIsUnderwater( void )
 {
 	bool bReturnVal( false );
