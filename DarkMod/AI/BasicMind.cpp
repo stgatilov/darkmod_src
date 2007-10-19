@@ -148,73 +148,64 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	idAI* owner = _owner.GetEntity(); 
 	assert(owner != NULL);
 
-	/*vector newAlertDeltaFromLastOneSearched;
-	vector tempVector;
-	float alertDeltaLength;
-	float xComponent;
-	float yComponent;
-	float zComponent;*/
+	// Create a shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
 
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{
 		// Process alert flags for combat or stimulus location (both destroy flag values)?
-		/*if (AI_AlertNum >= thresh_combat)
+		if (owner->AI_AlertNum >= owner->thresh_combat)
 		{
 			// This reflects the alert level inside it as well
 			//DEBUG_PRINT ("Initiating combat due to stim");
-			subFrameTask_canSwitchState_initiateCombat();
+			// TODO: subFrameTask_canSwitchState_initiateCombat();
 		}
 		
 		// If it was not a combat level alert, or we returned here because there
 		// was no target, set the alert position
-		setAlertPos();*/
+		// TODO setAlertPos();
 		
 		// Are we searching out new alerts		
 		if (processNewStimuli)
 		{
-			
 			// Is this alert far enough away from the last one we reacted to to
 			// consider it a new alert? Visual alerts are highly compelling and
 			// are always considered new
-			/*newAlertDeltaFromLastOneSearched = (m_alertPos - AI_lastAlertPosSearched);
-			alertDeltaLength = sys.vecLength(newAlertDeltaFromLastOneSearched);
+			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
+			float alertDeltaLength = newAlertDeltaFromLastOneSearched.LengthFast();
 			
-			if ((m_alertType == "v") || (alertDeltaLength > m_alertRadius))
+			if (memory.alertType == EAlertVisual || alertDeltaLength > memory.alertRadius)
 			{
-				
-			
-				// This is a new alert 
+				// This is a new alert
 				// SZ Dec 30, 2006
 				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions
-				if (AI_AlertNum >= thresh_2)
+				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
-				
-					if (m_alertType == "v")
+					if (memory.alertType == EAlertVisual)
 					{
 						// Visual stimuli are locatable enough that we should
 						// search the exact stim location first
-						b_stimulusLocationItselfShouldBeSearched = true;
+						memory.stimulusLocationItselfShouldBeSearched = true;
 					}
 					else
 					{
 						// Don't bother to search direct stim location as we don't know 
 						// exactly where the stim is
-						b_stimulusLocationItselfShouldBeSearched = false;
+						memory.stimulusLocationItselfShouldBeSearched = false;
 					}
 					
 					// One more piece of evidence of something out of place
-					stateOfMind_count_evidenceOfIntruders = stateOfMind_count_evidenceOfIntruders + 1.0;
+					memory.countEvidenceOfIntruders++;
 				
 					// Do new reaction to stimulus
-					waitFrame();
-					b_searchingDueToCommunication = false;
-					pushTaskIfHighestPriority("task_ReactingToStimulus", PRIORITY_REACTTOSTIMULUS);
+					memory.searchingDueToCommunication = false;
+
+					// TODO
+					//pushTaskIfHighestPriority("task_ReactingToStimulus", PRIORITY_REACTTOSTIMULUS);
 					return;
 				}	
-			
-			}*/ // Not too close to last stimulus or is visual stimulus
-		
+			} // Not too close to last stimulus or is visual stimulus
 		} // Not ignoring new stimuli
 	}
 }

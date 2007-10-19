@@ -18,6 +18,13 @@ namespace ai
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 
+enum EAlertType {
+	EAlertVisual,
+	EAlertTactile,
+	EAlertAudio,
+	EAlertTypeCount
+};
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -49,13 +56,39 @@ public:
 	// TRUE if the AI knows that items have been stolen
 	bool itemsHaveBeenStolen;
 
+	// position of alert causing stimulus
+	idVec3 alertPos;
+
+	// Type of alert (visual, tactile, audio)
+	EAlertType alertType;
+
+	// radius of alert causing stimulus (depends on the type and distance)
+	float alertRadius;
+
+	// This is true if the original alert position is to be searched
+	bool stimulusLocationItselfShouldBeSearched;
+
+	// This flag indicates if the search is due to a communication
+	bool searchingDueToCommunication;
+
+	// Position of the last alert causing stimulus which was searched.
+    // This is used to compare new stimuli to the previous stimuli searched
+    // to determine if a new search is necessary
+	idVec3 lastAlertPosSearched;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
 		countEvidenceOfIntruders(0),
 		lastRandomHeadTurnCheckTime(-1),
 		enemiesHaveBeenSeen(false),
-		itemsHaveBeenStolen(false)
+		itemsHaveBeenStolen(false),
+		alertPos(0,0,0),
+		alertType(EAlertTypeCount),
+		alertRadius(-1),
+		stimulusLocationItselfShouldBeSearched(false),
+		searchingDueToCommunication(false),
+		lastAlertPosSearched(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -68,6 +101,12 @@ public:
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
+		savefile->WriteVec3(alertPos);
+		savefile->WriteInt(static_cast<int>(alertType));
+		savefile->WriteFloat(alertRadius);
+		savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
+		savefile->WriteBool(searchingDueToCommunication);
+		savefile->WriteVec3(lastAlertPosSearched);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -82,6 +121,15 @@ public:
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
+		savefile->ReadVec3(alertPos);
+
+		savefile->ReadInt(temp);
+		alertType = static_cast<EAlertType>(temp);
+
+		savefile->ReadFloat(alertRadius);
+		savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
+		savefile->ReadBool(searchingDueToCommunication);
+		savefile->ReadVec3(lastAlertPosSearched);
 	}
 };
 

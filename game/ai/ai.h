@@ -753,7 +753,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptFloat			AI_AlertIndex;
 	
 	/* Additional scriptvars, imported from scripting. TODO: Document properly (for now, see script for docs) */
-	idScriptVector			AI_lastAlertPosSearched;
+	idScriptVector			AI_lastAlertPosSearched; // greebo: TODO: Remove this, idVec3 doesn't work?
 	idScriptFloat			AI_chancePerSecond_RandomLookAroundWhileIdle;
 	idScriptFloat			AI_timeOfLastStimulusBark;
 	idScriptFloat			AI_currentAlertLevelDuration;
