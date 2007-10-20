@@ -31,14 +31,62 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	
+	owner->AI_RUN = true;
 }
 
 bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
 
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
 
+	if (owner->AI_ENEMY_DEAD) {
+		// TODO enemy_dead();
+	}
+
+	owner->UpdateEnemyPosition();
+
+	// Look at the enemy
+	if (owner->AI_ENEMY_IN_FOV) {
+		owner->Event_LookAtEnemy(1);
+	}
+
+	owner->MoveToEnemy();
+
+	/*if (!owner->AI_ENEMY_REACHABLE)
+	{
+		// Try to set up movement path to enemy
+		owner->AI_RUN = true;
+		owner->MoveToEnemy();
+	}
+	else
+	{
+		// Enemy reachable;
+		DM_LOG(LC_AI, LT_INFO).LogString("Enemy reachable.\r");;
+	}*/
+
+	/*attack_flags = check_attacks();
+	if ( attack_flags ) {
+		do_attack( attack_flags );
+		return true;
+	}
+
+	if ( check_blocked() ) {
+		return true;
+	}
+
+	range = enemyRange();
+	if ( !AI_ENEMY_VISIBLE || ( range > run_distance ) ) {
+		do_run = true;
+	}
+	
+	delta = getTurnDelta();
+	if ( ( delta > walk_turn ) || ( delta < -walk_turn ) ) {
+		AI_RUN = false;
+	} else {
+		AI_RUN = do_run;
+	}*/
 	
 	return false; // not finished yet
 }

@@ -16,6 +16,8 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
 #include "../Tasks/EmptyTask.h"
+#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/ChaseEnemyTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -98,7 +100,7 @@ void CombatState::Init(idAI* owner)
 
 	// The movement subsystem should start running to the last enemy position
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->QueueTask(ChaseEnemyTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -106,7 +108,7 @@ void CombatState::Init(idAI* owner)
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
