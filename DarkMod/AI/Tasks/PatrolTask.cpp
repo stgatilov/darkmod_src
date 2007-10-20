@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 #include "PathCornerTask.h"
 #include "PathTurnTask.h"
 #include "PathWaitTask.h"
+#include "PathWaitForTriggerTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -106,6 +107,18 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	{
 		// Allocate a new PathCornerTask
 		PathWaitTaskPtr pathTask = PathWaitTask::CreateInstance();
+		assert(pathTask != NULL); // task must be found
+
+		// Set the target entity and push the task
+		pathTask->SetTargetEntity(path);
+		subsystem.QueueTask(pathTask);
+
+		return true; // finish this task
+	}
+	else if (classname == "path_waitfortrigger")
+	{
+		// Allocate a new PathCornerTask
+		PathWaitForTriggerTaskPtr pathTask = PathWaitForTriggerTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 
 		// Set the target entity and push the task

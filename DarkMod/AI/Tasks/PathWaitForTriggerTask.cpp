@@ -10,24 +10,24 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PathTurnTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: PathWaitForTriggerTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "../Memory.h"
 #include "PatrolTask.h"
-#include "PathTurnTask.h"
+#include "PathWaitForTriggerTask.h"
 #include "../Library.h"
 
 namespace ai
 {
 
 // Get the name of this task
-const idStr& PathTurnTask::GetName() const
+const idStr& PathWaitForTriggerTask::GetName() const
 {
-	static idStr _name(TASK_PATH_TURN);
+	static idStr _name(TASK_PATH_WAIT_FOR_TRIGGER);
 	return _name;
 }
 
-void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
+void PathWaitForTriggerTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
@@ -35,16 +35,15 @@ void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
 	idPathCorner* path = _path.GetEntity();
 
 	if (path == NULL) {
-		gameLocal.Error("PathTurnTask: Path Entity not set before Init()");
+		gameLocal.Error("PathWaitForTriggerTask: Path Entity not set before Init()");
 	}
-
-	float angle = path->spawnArgs.GetFloat("angle","0");
-	owner->TurnToward(angle);
+	
+	owner->AI_ACTIVATED = false;
 }
 
-bool PathTurnTask::Perform(Subsystem& subsystem)
+bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Turn Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("Path WaitForTrigger Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -52,15 +51,15 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
-
-	if (owner->FacingIdeal())
+	if (owner->AI_ACTIVATED = true)
 	{
+		owner->AI_ACTIVATED = false;
+
 		// Trigger path targets, now that we've reached the corner
 		owner->ActivateTargets(owner);
 
 		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO).LogString("Turn is done.\r");
+		DM_LOG(LC_AI, LT_INFO).LogString("Waiting for trigger is done.\r");
 
 		// Advance to the next path entity pointer
 		idPathCorner* next = idPathCorner::RandomPath(path, NULL);
@@ -82,36 +81,36 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	return false;
 }
 
-void PathTurnTask::SetTargetEntity(idPathCorner* path) 
+void PathWaitForTriggerTask::SetTargetEntity(idPathCorner* path) 
 {
 	assert(path);
 	_path = path;
 }
 
 // Save/Restore methods
-void PathTurnTask::Save(idSaveGame* savefile) const
+void PathWaitForTriggerTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
 	_path.Save(savefile);
 }
 
-void PathTurnTask::Restore(idRestoreGame* savefile)
+void PathWaitForTriggerTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 
 	_path.Restore(savefile);
 }
 
-PathTurnTaskPtr PathTurnTask::CreateInstance()
+PathWaitForTriggerTaskPtr PathWaitForTriggerTask::CreateInstance()
 {
-	return PathTurnTaskPtr(new PathTurnTask);
+	return PathWaitForTriggerTaskPtr(new PathWaitForTriggerTask);
 }
 
 // Register this task with the TaskLibrary
-TaskLibrary::Registrar pathTurnTaskRegistrar(
-	TASK_PATH_TURN, // Task Name
-	TaskLibrary::CreateInstanceFunc(&PathTurnTask::CreateInstance) // Instance creation callback
+TaskLibrary::Registrar pathWaitForTriggerTaskRegistrar(
+	TASK_PATH_WAIT_FOR_TRIGGER, // Task Name
+	TaskLibrary::CreateInstanceFunc(&PathWaitForTriggerTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai
