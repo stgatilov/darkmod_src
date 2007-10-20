@@ -6385,13 +6385,11 @@ void idAI::AlertAI(const char *type, float amount)
 	// Ignore actors in notarget mode
 	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if (actor == NULL && actor->fl.notarget)
+	if (actor != NULL && actor->fl.notarget)
 	{
 		// No alerting actor, or actor is set to notarget, quit
 		return;
 	}
-
-	// greebo: Below this point, we have a valid enemy <actor> (which is not NULL)
 
 	if (m_AlertGraceTime)
 	{
@@ -6407,6 +6405,7 @@ void idAI::AlertAI(const char *type, float amount)
 			m_AlertGraceCountLimit = 0;
 		}
 		else if (alertInc < m_AlertGraceThresh && 
+				  actor != NULL &&
 				  actor == m_AlertGraceActor.GetEntity() && 
 				  m_AlertGraceCount < m_AlertGraceCountLimit)
 		{
