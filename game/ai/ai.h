@@ -1141,7 +1141,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* The point of this function is to determine the visual stimulus level caused
 	* by the players current lightgem value.
 	*/
-	float getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const;
+	float GetPlayerVisualStimulusAmount(idEntity* p_playerEntity) const;
 
 
 	// attacks

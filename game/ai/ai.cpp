@@ -6573,7 +6573,7 @@ idActor* idAI::VisualScan(float timecheck)
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
 		// Get the visual alert amount by the enemy
-		float incAlert = getPlayerVisualStimulusAmount(actor);
+		float incAlert = GetPlayerVisualStimulusAmount(actor);
 
 		// If the alert amount is larger than everything else encountered this frame
 		// ignore the previous alerts and remember this actor as enemy.
@@ -6790,36 +6790,44 @@ float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, 
 
 /*---------------------------------------------------------------------------------*/
 
-float idAI::getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
+float idAI::GetPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
 {
 	float alertAmount = 0.0;
 
-	//Quick fix for blind AI:
-	if( GetAcuity("vis") > 0 )
+	// Quick fix for blind AI:
+	if (GetAcuity("vis") > 0 )
 	{
-//		float visFrac = GetVisibility( p_playerEntity );
-//		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
-
+		// float visFrac = GetVisibility( p_playerEntity );
+		// float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 		// Convert to alert units ( 0.6931472 = ln(2) )
-
 		// Old method, commented out
 		// alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
 
-		float CurAlert = (float) AI_AlertNum;
+		// The current alert number is stored in logarithmic units
+		float curAlertLog = AI_AlertNum;
+
 		// convert current alert from log to linear scale, add, then convert back
 		// this might not be as good for performance, but it lets us keep all alerts
 		// on the same scale.
-		if( CurAlert > 0 )
+		if (curAlertLog > 0)
 		{
-			CurAlert = idMath::Pow16(2,(CurAlert - 1)/10.0f );
-			CurAlert += cv_ai_sight_mag.GetFloat() * 1.0;
-			// convert back to linear
-			CurAlert = 1 + 10.0f * idMath::Log16(CurAlert) / 0.6931472f;
-			alertAmount = CurAlert - AI_AlertNum;
+			// greebo: Convert log to lin units by using Alin = 2^[(Alog-1)/10]
+			float curAlertLin = idMath::Pow16(2, (curAlertLog - 1)*0.1f);
 
+			// Increase the linear alert number with the cvar
+			curAlertLin += cv_ai_sight_mag.GetFloat() * 1.0;
+
+			// greebo: Convert back to logarithmic alert units
+			// The 0.69 in the equation is the ln(2) used to compensate for using the natural Log16 method
+			curAlertLog = 1 + 10.0f * idMath::Log16(curAlertLin) / 0.6931472f;
+
+			// Now calculate the difference in logarithmic units and return it
+			alertAmount = curAlertLog - AI_AlertNum;
 		}
 		else
+		{
 			alertAmount = 1;
+		}
 	}
 
 	return alertAmount;
@@ -6838,7 +6846,7 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 		if (p_entity->IsType(idPlayer::Type ))
 		{
 			// Get the amount of visual stimulation based on the player's lightgem and the AI's alertness
-			float incAlert = getPlayerVisualStimulusAmount(p_entity);
+			float incAlert = GetPlayerVisualStimulusAmount(p_entity);
 
 			// greebo: Debug output, comment me out
 			idStr alertText(incAlert);
