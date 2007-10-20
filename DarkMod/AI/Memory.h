@@ -47,8 +47,6 @@ enum EAlertType {
 // group stimulous barks, in seconds
 #define MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK 10.0f
 
-
-
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -82,8 +80,6 @@ public:
 	// TRUE if the AI knows that items have been stolen
 	bool itemsHaveBeenStolen;
 
-
-
 	// position of alert causing stimulus
 	idVec3 alertPos;
 
@@ -115,6 +111,9 @@ public:
 	// greebo: Note: Currently this is filled in before fleeing only.
 	idVec3 lastEnemyPos;
 
+	// false during combat_chase()
+	bool chaseFinished;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -131,7 +130,8 @@ public:
 		lastAlertPosSearched(0,0,0),
 		alertSearchVolume(0,0,0),
 		alertSearchExclusionVolume(0,0,0),
-		lastEnemyPos(0,0,0)
+		lastEnemyPos(0,0,0),
+		chaseFinished(false)
 	{}
 
 	// Save/Restore routines
@@ -154,6 +154,7 @@ public:
 		savefile->WriteVec3(alertSearchVolume);
 		savefile->WriteVec3(alertSearchExclusionVolume);
 		savefile->WriteVec3(lastEnemyPos);
+		savefile->WriteBool(chaseFinished);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -181,6 +182,7 @@ public:
 		savefile->ReadVec3(alertSearchVolume);
 		savefile->ReadVec3(alertSearchExclusionVolume);
 		savefile->ReadVec3(lastEnemyPos);
+		savefile->ReadBool(chaseFinished);
 	}
 };
 

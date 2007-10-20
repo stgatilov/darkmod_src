@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/IdleSensoryTask.h"
 #include "../Tasks/ChaseEnemyTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -104,11 +105,14 @@ void CombatState::Init(idAI* owner)
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+
+	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
+	barkTask->SetSound("snd_combat");
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(EmptyTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

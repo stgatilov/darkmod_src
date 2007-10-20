@@ -1232,7 +1232,7 @@ idAI::Event_CanBecomeSolid
 =====================
 */
 void idAI::Event_CanBecomeSolid( void ) {
-	idThread::ReturnFloat( CanBecomeSolid );
+	idThread::ReturnFloat( CanBecomeSolid() );
 }
 
 /*
@@ -3567,6 +3567,11 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
+	if (newAlertLevel > thresh_3 + 10)
+	{
+		newAlertLevel = thresh_3 + 10;
+	}
+
 	bool bool_alertRising = false;
 	
 	if (AI_DEAD || AI_KNOCKEDOUT) return;

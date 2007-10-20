@@ -32,63 +32,71 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	owner->AI_RUN = true;
+
+	_enemy = owner->GetEnemy();
+	owner->GetMind()->GetMemory().chaseFinished = false;
 }
 
 bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("Chase Enemy Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	if (owner->AI_ENEMY_DEAD) {
-		// TODO enemy_dead();
-	}
-
-	owner->UpdateEnemyPosition();
-
-	// Look at the enemy
-	if (owner->AI_ENEMY_IN_FOV) {
-		owner->Event_LookAtEnemy(1);
-	}
-
-	owner->MoveToEnemy();
-
-	/*if (!owner->AI_ENEMY_REACHABLE)
+	idActor* enemy = _enemy.GetEntity();
+	if (enemy == NULL)
 	{
-		// Try to set up movement path to enemy
-		owner->AI_RUN = true;
-		owner->MoveToEnemy();
+		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		return true;
+	}
+
+	if (!owner->MoveToEnemy())
+	{
+		if (owner->AI_MOVE_DONE)
+		{
+			owner->UpdateEnemyPosition();
+
+			if (owner->AI_ENEMY_VISIBLE)
+			{
+				// Update the enemy position if the move is done.
+				owner->SetEnemyPosition();
+			}
+		}
+		else if (owner->AI_DEST_UNREACHABLE)
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+		}
 	}
 	else
 	{
-		// Enemy reachable;
-		DM_LOG(LC_AI, LT_INFO).LogString("Enemy reachable.\r");;
-	}*/
-
-	/*attack_flags = check_attacks();
-	if ( attack_flags ) {
-		do_attack( attack_flags );
-		return true;
+		if (owner->AI_ENEMY_VISIBLE)
+		{
+			// Update the enemy position, if the enemy is visible, otherwise, just run to that location
+			owner->SetEnemyPosition();
+		}
 	}
+		
+	/*if (!Chase())
+	{
+		if (!Chase()) 
+		{
+			owner->Event_ClearEnemy();
 
-	if ( check_blocked() ) {
-		return true;
-	}
-
-	range = enemyRange();
-	if ( !AI_ENEMY_VISIBLE || ( range > run_distance ) ) {
-		do_run = true;
-	}
-	
-	delta = getTurnDelta();
-	if ( ( delta > walk_turn ) || ( delta < -walk_turn ) ) {
-		AI_RUN = false;
-	} else {
-		AI_RUN = do_run;
+			owner->Event_SetAlertLevel(owner->thresh_3);
+			
+			// Lost the target
+			//pushTaskIfHighestPriority("task_LostTrackOfEnemy", PRIORITY_LOSTTARGET);
+			return;
+		}
 	}*/
 	
 	return false; // not finished yet
+}
+
+void ChaseEnemyTask::SetEnemy(idActor* enemy)
+{
+	_enemy = enemy;
 }
 
 ChaseEnemyTaskPtr ChaseEnemyTask::CreateInstance()

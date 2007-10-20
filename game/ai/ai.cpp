@@ -4896,6 +4896,7 @@ void idAI::UpdateEnemyPosition( void ) {
 
 	if ( CanSee( enemyEnt, false ) )
 	{
+		gameRenderWorld->DebugArrow(colorGreen, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
 		AI_ENEMY_VISIBLE = true;
 		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) )
 		{
@@ -4909,6 +4910,7 @@ void idAI::UpdateEnemyPosition( void ) {
 	}
 	else
 	{
+		gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
 		// check if we heard any sounds in the last frame
 		if ( enemyEnt == gameLocal.GetAlertEntity() ) {
 			float dist = ( enemyEnt->GetPhysics()->GetOrigin() - org ).LengthSqr();
@@ -6808,22 +6810,18 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 	idPhysics* p_physics = p_entity->GetPhysics();
 	if (p_physics != NULL)
 	{
-		// Get alert level thresholds
-		float thresh_1;
-		float thresh_2;
-		float thresh_3;
-		spawnArgs.GetFloat("alert_thresh1", "1.0", thresh_1);
-		spawnArgs.GetFloat("alert_thresh2", "1.0", thresh_2);
-		spawnArgs.GetFloat("alert_thresh3", "1.0", thresh_3);
-
 		// Use lightgem if it is the player
 		if (p_entity->IsType(idPlayer::Type ))
 		{
-
+			// Get the amount of visual stimulation based on the player's lightgem and the AI's alertness
 			float incAlert = getPlayerVisualStimulusAmount(p_entity);
 
+			// greebo: Debug output, comment me out
+			idStr alertText(incAlert);
+			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.09f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+
 			// Get base sight threshold
-			float sightThreshold = cv_ai_sight_thresh.GetFloat();
+			float sightThreshold = cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
 			// Draw debug graphic
 			if (cv_ai_visdist_show.GetFloat() > 1.0)
@@ -6853,19 +6851,17 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 					2,
 					cv_ai_visdist_show.GetInteger()
 				);
-
-
 			}
 
 			// Very low threshold for visibility
-			if( incAlert < sightThreshold)
+			if (incAlert < sightThreshold)
 			{
-				// Fully seen
+				// Not visible, entity is hidden in darkness
 				return true;
 			}
 			else
 			{
-				// Not fully seen
+				// Visible, visual stim above threshold
 				return false;
 			}
 		}
@@ -6911,7 +6907,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						cv_ai_visdist_show.GetInteger()
 					);
 
-
 					// Gap to where we want to see
 					gameRenderWorld->DebugArrow
 					(
@@ -6921,8 +6916,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						2,
 						cv_ai_visdist_show.GetInteger()
 					);
-
-
 				}
 
 				return true;
@@ -6943,7 +6936,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						2,
 						cv_ai_visdist_show.GetInteger()
 					);
-
 				}
 				return false;
 			}
@@ -6952,8 +6944,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 
 	// Not in darkness
 	return false;
-
-
 }
 
 /*---------------------------------------------------------------------------------*/

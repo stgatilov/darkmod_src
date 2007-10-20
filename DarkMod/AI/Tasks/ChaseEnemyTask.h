@@ -24,6 +24,8 @@ typedef boost::shared_ptr<ChaseEnemyTask> ChaseEnemyTaskPtr;
 class ChaseEnemyTask :
 	public Task
 {
+	idEntityPtr<idActor> _enemy;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -35,6 +37,13 @@ public:
 
 	// Creates a new Instance of this task
 	static ChaseEnemyTaskPtr CreateInstance();
+
+	// Class-specific methods
+	virtual void SetEnemy(idActor* enemy);
+
+private:
+	// Chases the enemy, sets memory.chaseFinished to true when done.
+	void Chase();
 };
 
 } // namespace ai
