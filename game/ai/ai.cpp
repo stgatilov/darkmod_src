@@ -6572,8 +6572,8 @@ idActor* idAI::VisualScan(float timecheck)
 		AI_VISALERT = true;
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
-		// Get the visual alert amount by the enemy
-		float incAlert = GetPlayerVisualStimulusAmount(actor);
+		// Get the visual alert amount casued by the CVAR setting
+		float incAlert = GetPlayerVisualStimulusAmount();
 
 		// If the alert amount is larger than everything else encountered this frame
 		// ignore the previous alerts and remember this actor as enemy.
@@ -6790,7 +6790,7 @@ float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, 
 
 /*---------------------------------------------------------------------------------*/
 
-float idAI::GetPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
+float idAI::GetPlayerVisualStimulusAmount() const
 {
 	float alertAmount = 0.0;
 
@@ -6836,7 +6836,7 @@ float idAI::GetPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
 
 /*---------------------------------------------------------------------------------*/
 
-bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
+bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 {
 	// Quick test using LAS at entity origin
 	idPhysics* p_physics = p_entity->GetPhysics();
@@ -6845,8 +6845,8 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 		// Use lightgem if it is the player
 		if (p_entity->IsType(idPlayer::Type ))
 		{
-			// Get the amount of visual stimulation based on the player's lightgem and the AI's alertness
-			float incAlert = GetPlayerVisualStimulusAmount(p_entity);
+			// Get the alert increase amount (log) caused by the CVAR tdm_ai_sight_mag
+			float incAlert = GetPlayerVisualStimulusAmount();
 
 			// greebo: Debug output, comment me out
 			idStr alertText(incAlert);
