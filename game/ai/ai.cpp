@@ -5736,7 +5736,35 @@ void idAI::Show( void ) {
 	SetChatSound();
 	StartSound( "snd_ambient", SND_CHANNEL_AMBIENT, 0, false, NULL );
 }
+/*
+================
+idAI::CanBecomeSolid
+================
+*/
+bool idAI::CanBecomeSolid( void ) {
+	idClipModel* clipModels[ MAX_GENTITIES ];
 
+	int num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	for ( int i = 0; i < num; i++ ) {
+		idClipModel* cm = clipModels[ i ];
+
+		// don't check render entities
+		if ( cm->IsRenderModel() ) {
+			continue;
+		}
+
+		idEntity* hit = cm->GetEntity();
+		if ( ( hit == this ) || !hit->fl.takedamage ) {
+			continue;
+		}
+
+		if ( physicsObj.ClipContents( cm ) ) {
+			return false;
+		}
+	}
+	return true;
+
+}
 /*
 =====================
 idAI::SetChatSound

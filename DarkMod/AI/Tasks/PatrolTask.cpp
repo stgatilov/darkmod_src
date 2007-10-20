@@ -19,6 +19,8 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 #include "PathTurnTask.h"
 #include "PathWaitTask.h"
 #include "PathWaitForTriggerTask.h"
+#include "PathHideTask.h"
+#include "PathShowTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -127,8 +129,30 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		return true; // finish this task
 	}
+	else if (classname == "path_hide")
+	{
+		// Allocate a new PathCornerTask
+		PathHideTaskPtr pathTask = PathHideTask::CreateInstance();
+		assert(pathTask != NULL); // task must be found
 
+		// Set the target entity and push the task
+		pathTask->SetTargetEntity(path);
+		subsystem.QueueTask(pathTask);
 
+		return true; // finish this task
+	}
+	else if (classname == "path_show")
+	{
+		// Allocate a new PathCornerTask
+		PathShowTaskPtr pathTask = PathShowTask::CreateInstance();
+		assert(pathTask != NULL); // task must be found
+
+		// Set the target entity and push the task
+		pathTask->SetTargetEntity(path);
+		subsystem.QueueTask(pathTask);
+
+		return true; // finish this task
+	}
 
 	return false; // not finished yet
 }
