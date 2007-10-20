@@ -6373,25 +6373,30 @@ void idAI::HearSound
 	}
 }
 
-
-void idAI::AlertAI( const char *type, float amount )
+void idAI::AlertAI(const char *type, float amount)
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AlertAI called\r");
-	float mod(0), alertInc(0);
-	idActor *act(NULL);
 
-	mod = GetAcuity( type );
-	alertInc = amount * mod/100.0;
+	float acuity = GetAcuity(type);
+
+	// Calculate the amount the current AI_AlertNum is about to be increased
+	float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
 
 	// Ignore actors in notarget mode
-	act = m_AlertedByActor.GetEntity();
-	if( act && act->fl.notarget )
-		goto Quit;
+	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if( m_AlertGraceTime )
+	if (actor == NULL && actor->fl.notarget)
+	{
+		// No alerting actor, or actor is set to notarget, quit
+		return;
+	}
+
+	// greebo: Below this point, we have a valid enemy <actor> (which is not NULL)
+
+	if (m_AlertGraceTime)
 	{
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period active, testing... \r");
-		if( gameLocal.time > (m_AlertGraceStart + m_AlertGraceTime) )
+		if (gameLocal.time > m_AlertGraceStart + m_AlertGraceTime)
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period found to have expired. Resetting. \r");
 			m_AlertGraceTime = 0;
@@ -6401,39 +6406,44 @@ void idAI::AlertAI( const char *type, float amount )
 			m_AlertGraceCount = 0;
 			m_AlertGraceCountLimit = 0;
 		}
-		else if( alertInc < m_AlertGraceThresh
-			&& act != NULL
-			&& act == m_AlertGraceActor.GetEntity()
-			&& m_AlertGraceCount < m_AlertGraceCountLimit )
+		else if (alertInc < m_AlertGraceThresh && 
+				  actor == m_AlertGraceActor.GetEntity() && 
+				  m_AlertGraceCount < m_AlertGraceCountLimit)
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period allowed, ignoring alert. \r");
 			m_AlertGraceCount++;
-// Quick hack: Large lightgem values and visual alerts override the grace period count faster
-			if( AI_VISALERT )
-				m_AlertGraceCount += idMath::Rint( g_Global.m_DarkModPlayer->m_LightgemValue / 8.0f );
-			goto Quit;
+
+			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
+			if (AI_VISALERT)
+			{
+				// greebo: Let the alert grace count increase by 25% of the current lightgem value
+				// The maximum increase is therefore 32/8 = 4 based on DARKMOD_LG_MAX at the time of writing.
+				m_AlertGraceCount += idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f);
+			}
+			return;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
 	}
 	
+	// The grace check has failed, increase the AI_AlertNum float by the increase amount
 	Event_SetAlertLevel(AI_AlertNum + alertInc);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
 
 	if( cv_ai_debug.GetBool() )
-		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
 
-	if( gameLocal.isNewFrame )
+	if (gameLocal.isNewFrame)
+	{
+		// AI has been alerted, set the boolean
 		AI_ALERTED = true;
+	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
 	m_AlertNumThisFrame = amount;
 
 	// Objectives callback
-	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), (int) AI_AlertIndex );
-
-Quit:
-	return;
+	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 }
 
 float idAI::GetAcuity(const char *type) const
