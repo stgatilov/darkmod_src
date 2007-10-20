@@ -51,7 +51,7 @@ bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	if (owner->AI_ACTIVATED = true)
+	if (owner->AI_ACTIVATED == true)
 	{
 		owner->AI_ACTIVATED = false;
 
