@@ -6611,44 +6611,56 @@ float idAI::GetVisibility( idEntity *ent ) const
 **/
 	// NOTE: Returns the probability that the entity will be seen in a half second
 
-	float lgem, safedist, clampdist, clampVal;
-	float dist, returnval(0);
-	idVec3 delta;
+	
+	float returnval(0);
 
 	// for now, only players may have their visibility checked
-	if(!ent->IsType( idPlayer::Type ))
-		goto Quit;
+	if (!ent->IsType( idPlayer::Type ))
+	{
+		return returnval;
+	}
 
-	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
+
 	// debug for formula checking
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
+	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
 
-	clampdist = (lgem -1) * ( cv_ai_sightmindist.GetFloat() / 31 );
-	safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
+	float clampdist = (lgem - 1) * ( cv_ai_sightmindist.GetFloat() / (DARKMOD_LG_MAX - 1) );
 
 	// clampVal is normalized to 100% at TimeNorm
 	// In other words: Visibility percentage scales linearly with the lightgem
-	//clampVal = (lgem-1)/31;
+	//clampVal = (lgem-1)/(lgem_max-1);
 
 	//NOTE: Linear model didn't work so well ingame, not enough response to increasing
 	// brightness.. try an exponential model (between 0 and 1) :
 	// the formula for now is: 1/e^1.2 * exp(1.2* lgem / lgem_max )
 	// TODO: Make the 1.2 a factor that you can tweak.
-	clampVal = 1/3.3201f * idMath::Exp16( 1.2 * (float) (lgem/32));
+	float clampVal = 0.30119f * idMath::Exp16( 1.2 * (lgem/DARKMOD_LG_MAX));
 
-	delta = GetEyePosition() - ent->GetPhysics()->GetOrigin();
-	dist = delta.Length()*s_DOOM_TO_METERS;
+
+	idVec3 delta = GetEyePosition() - ent->GetPhysics()->GetOrigin();
+	float dist = delta.Length()*s_DOOM_TO_METERS;
 
 	//TODO : Add acuity in to this calculation
 
-	if (dist < clampdist)
+	if (dist < clampdist) 
+	{
 		returnval = clampVal;
-	else if (dist > safedist)
-		returnval = 0;
-	else
-		returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
-
-Quit:
+	}
+	else 
+	{
+		float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
+		
+		if (dist > safedist) 
+		{
+			returnval = 0;
+		}
+		else
+		{
+			returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
+		}
+	}
+	
 	return returnval;
 }
 
