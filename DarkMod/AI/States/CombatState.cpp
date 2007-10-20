@@ -65,25 +65,32 @@ void CombatState::Init(idAI* owner)
 	owner->AI_RUN = true;
 	owner->MoveToEnemy();
 
-	/*if (!owner->AI_DEST_UNREACHABLE && canReachEnemy())
-	{	
-		pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
+	// TODO: DrawWeapon
+
+	// set our annoying bools back to false.
+	owner->AI_VISALERT = false;
+	owner->AI_HEARDSOUND = false;
+	owner->AI_TACTALERT = false;
+
+	if (!owner->AI_DEST_UNREACHABLE && owner->CanReachEnemy())
+	{
+		//pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
 	}
 	else
 	{
 		// TODO: find alternate path, etc
 		// Do we have a ranged weapon?
-		if (m_HasRangedWeapon)
+		if (owner->GetNumRangedWeapons() > 0)
 		{
  			// Just use ranged weapon
- 			pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
+ 			//pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
  		}
  		else
  		{
 			// Can't reach the target
-			pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
+			// TODO pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
 		}
-	}*/
+	}
 
 	// Check if the AI has an enemy.
 
