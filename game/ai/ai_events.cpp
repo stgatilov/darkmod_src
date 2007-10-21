@@ -3567,16 +3567,16 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
-	if (newAlertLevel > thresh_3 + 10)
+	// greebo: Clamp the (log) alert number to twice the third threshold.
+	if (newAlertLevel > thresh_3*2)
 	{
-		newAlertLevel = thresh_3 + 10;
+		newAlertLevel = thresh_3*2;
 	}
 
-	bool bool_alertRising = false;
+	bool bool_alertRising = (newAlertLevel > AI_AlertNum);
 	
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
-	if (newAlertLevel > AI_AlertNum) bool_alertRising = true;
 	AI_AlertNum = newAlertLevel;
 	
 	// grace period vars
@@ -3585,15 +3585,24 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	int grace_count;
 
 	// If alert level is less than 3, sheathe weapon (if appropriate), otherwise draw it
-	if (newAlertLevel < thresh_3) SheathWeapon();
-	else DrawWeapon();
+	if (newAlertLevel < thresh_3) 
+	{
+		SheathWeapon();
+	}
+	else 
+	{
+		DrawWeapon();
+	}
 
 	// How long should this alert level last, and which alert index should we be in now?
 	if (newAlertLevel >= thresh_3)
 	{
-		if (newAlertLevel >= thresh_combat) {
+		if (newAlertLevel >= thresh_combat)
+		{
 			AI_AlertIndex = 4;
-		} else {
+		}
+		else
+		{
 			AI_AlertIndex = 3;
 		}
 		AI_currentAlertLevelDuration = atime3;
