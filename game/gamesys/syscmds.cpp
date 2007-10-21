@@ -1882,9 +1882,8 @@ static void Cmd_SaveSelected_f( const idCmdArgs &args ) {
 		mapFile->AddEntity( mapEnt );
 		for ( i = 0; i < 9999; i++ ) {
 			name = va( "%s_%d", s->GetEntityDefName(), i );
-			if ( !gameLocal.FindEntity( name ) ) {
+			if ( !mapFile->FindEntity( name ) )
 				break;
-			}
 		}
 		s->name = name;
 		mapEnt->epairs.Set( "classname", s->GetEntityDefName() );
@@ -1990,9 +1989,8 @@ static void Cmd_SaveMoveables_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", m->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			m->name = name;
 			mapEnt->epairs.Set( "classname", m->GetEntityDefName() );
@@ -2044,9 +2042,12 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs &args ) {
 			continue;
 		}
 
+		// Ish: Not sure why they did this
+		/*
 		if ( af->IsBound() ) {
 			continue;
 		}
+		*/
 
 		if ( !af->IsAtRest() ) {
 			gameLocal.Warning( "the articulated figure for entity %s is not at rest", gameLocal.entities[ e ]->name.c_str() );
@@ -2063,9 +2064,8 @@ static void Cmd_SaveRagdolls_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", af->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			af->name = name;
 			mapEnt->epairs.Set( "classname", af->GetEntityDefName() );
@@ -2168,9 +2168,8 @@ static void Cmd_SaveLights_f( const idCmdArgs &args ) {
 			mapFile->AddEntity( mapEnt );
 			for ( i = 0; i < 9999; i++ ) {
 				name = va( "%s_%d", light->GetEntityDefName(), i );
-				if ( !gameLocal.FindEntity( name ) ) {
+				if ( !mapFile->FindEntity( name ) )
 					break;
-				}
 			}
 			light->name = name;
 			mapEnt->epairs.Set( "classname", light->GetEntityDefName() );
