@@ -1544,12 +1544,6 @@ void idAI::Think( void ) {
 
 	if (thinkFlags & TH_THINK)
 	{
-		// greebo: We always rely on having a mind
-		assert(mind);
-
-		// Let the mind do the thinking
-		mind->Think();
-
 		// clear out the enemy when he dies
 		idActor* enemyEnt = enemy.GetEntity();
 		if (enemyEnt != NULL)
@@ -1667,6 +1661,12 @@ void idAI::Think( void ) {
 				break;
 			}
 		}
+
+		// greebo: We always rely on having a mind
+		assert(mind);
+
+		// Let the mind do the thinking (after the move updates)
+		mind->Think();
 
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
 		AI_PAIN = false;
