@@ -3567,10 +3567,10 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
-	// greebo: Clamp the (log) alert number to twice the third threshold.
-	if (newAlertLevel > thresh_3*2)
+	// greebo: Clamp the (log) alert number to twice the combat threshold.
+	if (newAlertLevel > thresh_combat*2)
 	{
-		newAlertLevel = thresh_3*2;
+		newAlertLevel = thresh_combat*2;
 	}
 
 	bool bool_alertRising = (newAlertLevel > AI_AlertNum);
