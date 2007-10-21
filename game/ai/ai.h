@@ -418,9 +418,11 @@ public:
 
 	/**
 	* Checks to see if the AI is being blocked by an actor when it tries to move,
-	*	call HadTactile on both this AI and the other actor if this is so.
+	* call HadTactile this AI and if this is the case.
+	*
+	* greebo: Note: Only works if the AI is not Dead, KO or already engaged in combat.
 	**/
-	void CheckTactile( void );
+	void CheckTactile();
 
 	/**
 	* Tactile Alerts:
@@ -1119,7 +1121,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	void					SetEnemyPosition();
 	void					UpdateEnemyPosition( void );
-	void					SetEnemy( idActor *newEnemy );
+
+	/**
+	 * greebo: Updates the enemy pointer and tries to set up a path to the enemy by
+	 *         using SetEnemyPosition(), but ONLY if the enemy has actually changed.
+	 */
+	void					SetEnemy(idActor *newEnemy);
 /**
 * DarkMod: Ishtvan note:
 * Before I added this, this code was only called in

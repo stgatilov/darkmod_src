@@ -1592,6 +1592,7 @@ void idAI::Think( void ) {
 			idActor* actor = VisualScan();
 			if (actor != NULL)
 			{
+				// We have an enemy, check if the enemy has changed.
 				SetEnemy(actor);
 			}
 		}
@@ -4996,8 +4997,6 @@ idAI::SetEnemy
 */
 void idAI::SetEnemy(idActor* newEnemy)
 {
-	int enemyAreaNum;
-
 	// Don't continue if we're dead or knocked out
 	if (newEnemy == NULL || AI_DEAD || AI_KNOCKEDOUT)
 	{
@@ -5020,6 +5019,8 @@ void idAI::SetEnemy(idActor* newEnemy)
 			EnemyDead();
 			return;
 		}
+
+		int enemyAreaNum(-1);
 
 		// greebo: Get the reachable position and area number of this enemy
 		newEnemy->GetAASLocation(aas, lastReachableEnemyPos, enemyAreaNum);
@@ -7223,20 +7224,19 @@ idAI::CheckTactile
 Modified 5/25/06 , removed trace computation, found better way of checking
 =====================
 */
-
-// TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
-void idAI::CheckTactile( void )
+void idAI::CheckTactile()
 {
-	if( !AI_KNOCKEDOUT && !AI_DEAD )
+	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
+	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertNum < thresh_3)
 	{
-		idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
-		if ( BlockEnt && BlockEnt->IsType( idActor::Type ) )
+		idEntity* blockingEnt = physicsObj.GetSlideMoveEntity();
+
+		if (blockingEnt && blockingEnt->IsType(idActor::Type))
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
-			HadTactile( static_cast<idActor *>(BlockEnt) );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
+			HadTactile(static_cast<idActor*>(blockingEnt));
 		}
 	}
-	return;
 }
 
 /**
