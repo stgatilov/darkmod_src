@@ -4923,45 +4923,67 @@ void idAI::SetEnemyPosition()
 idAI::UpdateEnemyPosition
 =====================
 */
-void idAI::UpdateEnemyPosition( void ) {
-	idActor *enemyEnt = enemy.GetEntity();
-	int				enemyAreaNum;
-	int				areaNum;
-	aasPath_t		path;
-	predictedPath_t predictedPath;
-	idVec3			enemyPos;
-	bool			onGround;
+void idAI::UpdateEnemyPosition()
+{
+	idActor* enemyEnt = enemy.GetEntity();
 
-	if ( !enemyEnt ) {
+	if (enemyEnt == NULL)
+	{
 		return;
 	}
 
+	int				enemyAreaNum;
+	int				areaNum;
+	aasPath_t		path;
+	idVec3			enemyPos;
+	bool			onGround;
+
 	const idVec3 &org = physicsObj.GetOrigin();
 
-	if ( move.moveType == MOVETYPE_FLY ) {
+	if ( move.moveType == MOVETYPE_FLY )
+	{
 		enemyPos = enemyEnt->GetPhysics()->GetOrigin();
+		// greebo: Flying AI always consider their enemies to be on the ground
 		onGround = true;
-	} else {
-		onGround = enemyEnt->GetFloorPos( 64.0f, enemyPos );
-		if ( enemyEnt->OnLadder() ) {
+	}
+	else
+	{
+		// non-flying AI, get the floor position of the enemy
+		onGround = enemyEnt->GetFloorPos(64.0f, enemyPos);
+
+		if (enemyEnt->OnLadder())
+		{
 			onGround = false;
 		}
 	}
 
-	if ( onGround ) {
-		// when we don't have an AAS, we can't tell if an enemy is reachable or not,
-		// so just assume that he is.
-		if ( !aas ) {
-			enemyAreaNum = 0;
-			lastReachableEnemyPos = enemyPos;
-		} else {
-			enemyAreaNum = PointReachableAreaNum( enemyPos, 1.0f );
-			if ( enemyAreaNum ) {
-				areaNum = PointReachableAreaNum( org );
-				if ( PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos ) ) {
+	if (onGround)
+	{
+		// greebo: Enemy is on ground, hence reachable, try to setup a path
+		if (aas != NULL)
+		{
+			// We have a valid AAS, try to get the area of the enemy (floorpos or origin)
+			enemyAreaNum = PointReachableAreaNum(enemyPos, 1.0f);
+
+			if (enemyAreaNum)
+			{
+				// Enemy origin/floorposition is reachable, get our own area number
+				areaNum = PointReachableAreaNum(org);
+
+				// Try to setup a path to the goal
+				if (PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos))
+				{
+					// Path successfully setup, store the position as "reachable"
 					lastReachableEnemyPos = enemyPos;
 				}
 			}
+		}
+		else
+		{
+			// We don't have an AAS, we can't tell if an enemy is reachable or not,
+			// so just assume that he is.
+			enemyAreaNum = 0;
+			lastReachableEnemyPos = enemyPos;
 		}
 	}
 
@@ -4969,15 +4991,22 @@ void idAI::UpdateEnemyPosition( void ) {
 	AI_ENEMY_VISIBLE	= false;
 	AI_ENEMY_REACHABLE  = false;
 
-	if ( CanSee( enemyEnt, false ) )
+	if (CanSee(enemyEnt, false))
 	{
+		// greebo: A trace to the enemy is possible (no FOV check!) and the entity is not hidden in darkness
 		gameRenderWorld->DebugArrow(colorGreen, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+
+		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
-		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) )
+
+		// Now perform the FOV check manually
+		if (CheckFOV( enemyEnt->GetPhysics()->GetOrigin()))
 		{
 			AI_ENEMY_IN_FOV = true;
+			// TODO: call SetEnemyPosition here only?
 		}
 
+		// greebo: Added an AI_ENEMY_REACHABLE test here, FIXME: is this beneficial at all?
 		idVec3 distance(GetEyePosition() - enemyEnt->GetEyePosition());
 		AI_ENEMY_REACHABLE = (distance.LengthFast() < 100);
 
@@ -4985,17 +5014,25 @@ void idAI::UpdateEnemyPosition( void ) {
 	}
 	else
 	{
+		// Enemy can't be seen (obscured or hidden in darkness)
 		gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+
 		// check if we heard any sounds in the last frame
-		if ( enemyEnt == gameLocal.GetAlertEntity() ) {
-			float dist = ( enemyEnt->GetPhysics()->GetOrigin() - org ).LengthSqr();
-			if ( dist < Square( AI_HEARING_RANGE ) ) {
+		if (enemyEnt == gameLocal.GetAlertEntity())
+		{
+			float dist = (enemyEnt->GetPhysics()->GetOrigin() - org).LengthSqr();
+
+			if (dist < Square(AI_HEARING_RANGE))
+			{
+				// Enemy within hearing distance, update position
+				// greebo: TODO: This also updates lastVisibleReachableEnemyPos, is this ok?
 				SetEnemyPosition();
 			}
 		}
 	}
 
-	if ( ai_debugMove.GetBool() ) {
+	if (ai_debugMove.GetBool())
+	{
 		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
 		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
 	}

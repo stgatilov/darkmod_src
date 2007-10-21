@@ -1120,7 +1120,18 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * Basically, this method relies on "lastReachableEnemyPos" being set beforehand.
 	 */
 	void					SetEnemyPosition();
-	void					UpdateEnemyPosition( void );
+
+	/**
+	 * greebo: This is pretty similar to SetEnemyPosition, but not the same.
+	 *
+	 * First, this tries to locate the current enemy position (disregards visibility!) and
+	 * to set up a path to the entity's origin/floorposition. If this succeeds,
+	 * the "lastReachableEnemyPos" member is updated, but ONLY if the enemy is on ground.
+	 *
+	 * Second, if the enemy is visible or heard, SetEnemyPosition is called, which updates
+	 * the lastVisibleReachableEnemyPosition.
+	 */
+	void					UpdateEnemyPosition();
 
 	/**
 	 * greebo: Updates the enemy pointer and tries to set up a path to the enemy by
