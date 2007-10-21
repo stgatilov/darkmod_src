@@ -620,7 +620,7 @@ protected:
 	const idSoundShader		*chat_snd;
 	int						chat_min;
 	int						chat_max;
-	int						chat_time;
+	int						chat_time; // The next time chattering is allowed
 	talkState_t				talk_state;
 	idEntityPtr<idActor>	talkTarget;
 
@@ -958,7 +958,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					CheckForEnemy( void );
 	void					EnemyDead( void );
 	virtual bool			CanPlayChatterSounds( void ) const;
-	void					SetChatSound( void );
+
+	/**
+	 * greebo: Sets the chatter sound depending on having an enemy or not. The chat_time
+	 * member is updated as well, but the sound is not actually played, it only paves the way.
+	 */
+	void					SetChatSound();
+
 	void					PlayChatter( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
@@ -1107,6 +1113,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * 
 	 * Note: This overwrites a few lastVisibleReachableEnemyPos IN ANY CASE with the 
 	 * lastReachableEnemyPos, so this is kind of cheating if the enemy is not visible before calling this.
+	 * Also, lastVisibleEnemyPos is overwritten by the enemy's origin IN ANY CASE.
 	 *
 	 * Basically, this method relies on "lastReachableEnemyPos" being set beforehand.
 	 */

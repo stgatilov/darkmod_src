@@ -5024,13 +5024,24 @@ void idAI::SetEnemy(idActor* newEnemy)
 		// greebo: Get the reachable position and area number of this enemy
 		newEnemy->GetAASLocation(aas, lastReachableEnemyPos, enemyAreaNum);
 
+		// SetEnemyPosition() can now try to setup a path, 
+		// lastVisibleReachableEnemyPosition is set in ANY CASE by this method
 		SetEnemyPosition();
+
+		// Set the (combat) chattering sound, we have an enemy
 		SetChatSound();
 
+		// greebo: This looks suspicious. It overwrites REACHABLE and
+		// and VISIBLEREACHABLE with VISIBLE enemy position,
+		// regardless of what happened before. WTF? TODO
 		lastReachableEnemyPos = lastVisibleEnemyPos;
 		lastVisibleReachableEnemyPos = lastReachableEnemyPos;
-		enemyAreaNum = PointReachableAreaNum( lastReachableEnemyPos, 1.0f );
-		if ( aas && enemyAreaNum ) {
+
+		// Get the area number of the enemy
+		enemyAreaNum = PointReachableAreaNum(lastReachableEnemyPos, 1.0f);
+
+		if (aas != NULL && enemyAreaNum)
+		{
 			aas->PushPointIntoAreaNum( enemyAreaNum, lastReachableEnemyPos );
 			lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 		}
@@ -5845,29 +5856,43 @@ bool idAI::CanBecomeSolid( void ) {
 idAI::SetChatSound
 =====================
 */
-void idAI::SetChatSound( void ) {
+void idAI::SetChatSound() {
 	const char *snd;
 
-	if ( IsHidden() ) {
+	if ( IsHidden() )
+	{
+		// greebo: No sound when hidden
 		snd = NULL;
-	} else if ( enemy.GetEntity() ) {
+	} 
+	else if ( enemy.GetEntity() )
+	{
+		// greebo: We have an enemy, switch to combat chatter
 		snd = spawnArgs.GetString( "snd_chatter_combat", NULL );
 		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_combat_min", "5" ) );
 		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_combat_max", "10" ) );
-	} else if ( !spawnArgs.GetBool( "no_idle_chatter" ) ) {
+	}
+	else if ( !spawnArgs.GetBool( "no_idle_chatter" ) )
+	{
+		// greebo: No enemy, idle chattering is allowed
 		snd = spawnArgs.GetString( "snd_chatter", NULL );
 		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_min", "5" ) );
 		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_max", "10" ) );
-	} else {
+	}
+	else
+	{
 		snd = NULL;
 	}
 
-	if ( snd && *snd ) {
+	if (snd && *snd)
+	{
+		// Lookup the soundshader
 		chat_snd = declManager->FindSound( snd );
 
 		// set the next chat time
-		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * ( chat_max - chat_min );
-	} else {
+		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * (chat_max - chat_min);
+	}
+	else
+	{
 		chat_snd = NULL;
 	}
 }
