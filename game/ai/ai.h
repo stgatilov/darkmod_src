@@ -1214,9 +1214,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool MouthIsUnderwater( void );
 
 	/**
-	* Checks for drowning, damages if drowning
+	* Checks for drowning, damages if drowning.
+	*
+	* greebo: Only enabled if the entity is able to drown and the 
+	* interleave timer is elapsed (is not checked each frame).
 	**/
-	void UpdateAir( void );
+	void					UpdateAir();
 
 	/**
 	* Halts lipsync

@@ -1600,9 +1600,8 @@ void idAI::Think( void ) {
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
-		// Check if drowning
-		if( m_bCanDrown && gameLocal.time > m_AirCheckTimer )
-			UpdateAir();
+		// Check air ticks (is interleaved and not checked each frame)
+		UpdateAir();
 
 		if ( num_cinematics ) {
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
@@ -7662,13 +7661,21 @@ bool idAI::MouthIsUnderwater( void )
 	return bReturnVal;
 }
 
-void idAI::UpdateAir( void )
+void idAI::UpdateAir()
 {
-	if( MouthIsUnderwater() )
+	// Are we able to drown at all? Has the time for next air check already come?
+	if (!m_bCanDrown || gameLocal.time < m_AirCheckTimer)
+	{
+		return;
+	}
+
+	if (MouthIsUnderwater())
 	{
 		// don't let KO'd AI hold their breath
-		if( AI_KNOCKEDOUT )
+		if (AI_KNOCKEDOUT)
+		{
 			m_AirTics = 0;
+		}
 
 		m_AirTics--;
 	}
@@ -7677,20 +7684,21 @@ void idAI::UpdateAir( void )
 		// regain breath twice as fast as losing
 		m_AirTics += 2;
 
-		if( m_AirTics > m_AirTicksMax )
+		if (m_AirTics > m_AirTicksMax)
+		{
 			m_AirTics = m_AirTicksMax;
+		}
 	}
 
-
-	if( m_AirTics < 0 )
+	if (m_AirTics < 0)
 	{
 		m_AirTics = 0;
 
 		// do the damage, damage_noair is already defined for the player
-		Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
+		Damage(NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0);
 	}
 
-	// set the timer
+	// set the timer for next air check
 	m_AirCheckTimer += m_AirCheckInterval;
 }
 
