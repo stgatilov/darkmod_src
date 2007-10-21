@@ -1089,7 +1089,28 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// enemy management
 	void					ClearEnemy( void );
 	bool					EnemyPositionValid( void ) const;
-	void					SetEnemyPosition( void );
+
+	/**
+	 * greebo: SetEnemyPos() tries to determine the enemy location and to setup a path
+	 *         to the enemy, depending on the AI's move type (FLY/WALK).
+	 *
+	 * If this method succeeds in setting up a path to the enemy, the following members are
+	 * set: lastVisibleReachableEnemyPos, lastVisibleReachableEnemyAreaNum, AI_DEST_UNREACHABLE
+	 * and the movecommands move.toAreaNum and move.dest are updated, but ONLY if the movecommand
+	 * is set to MOVE_TO_ENEMY beforehand.
+	 *
+	 * The AI_DEST_UNREACHABLE is updated if the movecommand is currently set to MOVE_TO_ENEMY. 
+	 * It is TRUE (enemy unreachable) in the following cases:
+	 * - Enemy is not on ground (OnLadder) for non-flying AI.
+	 * - The entity area number could not be determined.
+	 * - PathToGoal failed, no path to the enemy could be found.
+	 * 
+	 * Note: This overwrites a few lastVisibleReachableEnemyPos IN ANY CASE with the 
+	 * lastReachableEnemyPos, so this is kind of cheating if the enemy is not visible before calling this.
+	 *
+	 * Basically, this method relies on "lastReachableEnemyPos" being set beforehand.
+	 */
+	void					SetEnemyPosition();
 	void					UpdateEnemyPosition( void );
 	void					SetEnemy( idActor *newEnemy );
 /**

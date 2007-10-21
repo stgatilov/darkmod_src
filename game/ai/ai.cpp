@@ -1542,29 +1542,32 @@ void idAI::Think( void ) {
 	oldOrigin = physicsObj.GetOrigin();
 	oldVelocity = physicsObj.GetLinearVelocity();
 
-	if ( thinkFlags & TH_THINK ) {
-		
+	if (thinkFlags & TH_THINK)
+	{
 		// greebo: We always rely on having a mind
 		assert(mind);
 
 		// Let the mind do the thinking
 		mind->Think();
 
-		// clear out the enemy when he dies or is hidden
-		idActor *enemyEnt = enemy.GetEntity();
-		if ( enemyEnt ) {
-			if ( enemyEnt->health <= 0 ) {
+		// clear out the enemy when he dies
+		idActor* enemyEnt = enemy.GetEntity();
+		if (enemyEnt != NULL)
+		{
+			if (enemyEnt->health <= 0)
+			{
 				EnemyDead();
 			}
 		}
 
+		// Calculate the new view axis based on the turning settings
 		current_yaw += deltaViewAngles.yaw;
-		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
+		ideal_yaw = idMath::AngleNormalize180(ideal_yaw + deltaViewAngles.yaw);
 		deltaViewAngles.Zero();
-		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+		viewAxis = idAngles(0, current_yaw, 0).ToMat3();
 
 		// TDM: Fake lipsync
-		if ( m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT )
+		if (m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT)
 		{
 			if (gameLocal.time < m_lipSyncEndTimer )
 			{
@@ -1573,7 +1576,7 @@ void idAI::Think( void ) {
 				// So for now the frame count of the animation is hardcoded
 				// at 20.
 				int frame = 20*GetSoundEmitter()->CurrentAmplitude();
-				headAnim.SetFrame( m_lipSyncAnim, frame );
+				headAnim.SetFrame(m_lipSyncAnim, frame);
 			}
 			else
 			{
@@ -1582,11 +1585,15 @@ void idAI::Think( void ) {
 			}
 		}
 
-		// Look for enemies
-		if ( !(outsidePVS && cv_ai_opt_novisualscan.GetBool()) )
+		// greebo: Look for enemies, perform the visual scan if not disabled
+		if (!(outsidePVS && cv_ai_opt_novisualscan.GetBool()))
 		{
-			idActor* actor = this->VisualScan();
-			if (actor) SetEnemy(actor);
+			// Try to locate an enemy actor (= player in TDM)
+			idActor* actor = VisualScan();
+			if (actor != NULL)
+			{
+				SetEnemy(actor);
+			}
 		}
 
 		// Check for tactile alert due to AI movement
@@ -4754,8 +4761,15 @@ bool idAI::EnemyPositionValid( void ) const {
 idAI::SetEnemyPosition
 =====================
 */
-void idAI::SetEnemyPosition( void ) {
-	idActor		*enemyEnt = enemy.GetEntity();
+void idAI::SetEnemyPosition()
+{
+	idActor* enemyEnt = enemy.GetEntity();
+
+	if (enemyEnt == NULL)
+	{
+		return;
+	}
+
 	int			enemyAreaNum;
 	int			areaNum;
 	int			lastVisibleReachableEnemyAreaNum = -1;
@@ -4763,76 +4777,125 @@ void idAI::SetEnemyPosition( void ) {
 	idVec3		pos;
 	bool		onGround;
 
-	if ( !enemyEnt ) {
-		return;
-	}
-
 	lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 	lastVisibleEnemyEyeOffset = enemyEnt->EyeOffset();
 	lastVisibleEnemyPos = enemyEnt->GetPhysics()->GetOrigin();
-	if ( move.moveType == MOVETYPE_FLY ) {
+
+	if (move.moveType == MOVETYPE_FLY)
+	{
+		// Flying AI assume the enemy to be always on ground
 		pos = lastVisibleEnemyPos;
 		onGround = true;
-	} else {
-		onGround = enemyEnt->GetFloorPos( 64.0f, pos );
-		if ( enemyEnt->OnLadder() ) {
+	} 
+	else
+	{
+		// For non-flying AI, check if the enemy is on the ground
+		onGround = enemyEnt->GetFloorPos(64.0f, pos);
+
+		if (enemyEnt->OnLadder()) // greebo: TODO: What about ropes?
+		{
 			onGround = false;
 		}
 	}
 
-	if ( !onGround ) {
-		if ( move.moveCommand == MOVE_TO_ENEMY ) {
+	// greebo: "pos" now holds the enemy position used for pathing (floor pos or visible pos)
+
+	if (!onGround)
+	{
+		// greebo: The AI considers a non-grounded entity to be unreachable
+		// TODO: Check for climb height? The enemy might still be reachable?
+		if (move.moveCommand == MOVE_TO_ENEMY)
+		{
 			AI_DEST_UNREACHABLE = true;
 		}
 		return;
 	}
 
-	// when we don't have an AAS, we can't tell if an enemy is reachable or not,
-	// so just assume that he is.
-	if ( !aas ) {
+	if (aas != NULL)
+	{
+		// We have a valid AAS attached, try to reach the enemy
+
+		// The default reachable area number is taken from the move command
+		lastVisibleReachableEnemyAreaNum = move.toAreaNum;
+
+		// Get the area number of the point the enemy has last been seen in (== enemy origin)
+		enemyAreaNum = PointReachableAreaNum(lastVisibleEnemyPos, 1.0f);
+
+		// If the area number is invalid, try to look it up again using the REACHABLE position
+		if (!enemyAreaNum)
+		{
+			enemyAreaNum = PointReachableAreaNum(lastReachableEnemyPos, 1.0f);
+			pos = lastReachableEnemyPos;
+		}
+		
+		// Do we have a valid area number now?
+		if (enemyAreaNum)
+		{
+			// We have a valid enemy area number
+
+			// Get the own origin and area number
+			const idVec3 &org = physicsObj.GetOrigin();
+			areaNum = PointReachableAreaNum(org);
+
+			// Try to set up a walk/fly path to the enemy
+			if (PathToGoal(path, areaNum, org, enemyAreaNum, pos))
+			{
+				// Succeeded, we have a visible and reachable enemy position
+				lastVisibleReachableEnemyPos = pos;
+				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
+
+				if (move.moveCommand == MOVE_TO_ENEMY)
+				{
+					// Enemy is reachable
+					AI_DEST_UNREACHABLE = false;
+				}
+			} 
+			else if (move.moveCommand == MOVE_TO_ENEMY)
+			{
+				// No path to goal available, enemy is unreachable
+				AI_DEST_UNREACHABLE = true;
+			}
+		}
+		else
+		{
+			// The area number lookup failed, fallback to unreachable
+			if (move.moveCommand == MOVE_TO_ENEMY)
+			{
+				AI_DEST_UNREACHABLE = true;
+			}
+			areaNum = 0;
+		}
+	}
+	else
+	{
+		// We don't have a valid AAS, we can't tell if an enemy is reachable or not,
+		// so just assume that he is.
 		lastVisibleReachableEnemyPos = lastVisibleEnemyPos;
-		if ( move.moveCommand == MOVE_TO_ENEMY ) {
+		if (move.moveCommand == MOVE_TO_ENEMY)
+		{
 			AI_DEST_UNREACHABLE = false;
 		}
 		enemyAreaNum = 0;
 		areaNum = 0;
-	} else {
-		lastVisibleReachableEnemyAreaNum = move.toAreaNum;
-		enemyAreaNum = PointReachableAreaNum( lastVisibleEnemyPos, 1.0f );
-		if ( !enemyAreaNum ) {
-			enemyAreaNum = PointReachableAreaNum( lastReachableEnemyPos, 1.0f );
-			pos = lastReachableEnemyPos;
-		}
-		if ( !enemyAreaNum ) {
-			if ( move.moveCommand == MOVE_TO_ENEMY ) {
-				AI_DEST_UNREACHABLE = true;
-			}
-			areaNum = 0;
-		} else {
-			const idVec3 &org = physicsObj.GetOrigin();
-			areaNum = PointReachableAreaNum( org );
-			if ( PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) {
-				lastVisibleReachableEnemyPos = pos;
-				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
-				if ( move.moveCommand == MOVE_TO_ENEMY ) {
-					AI_DEST_UNREACHABLE = false;
-				}
-			} else if ( move.moveCommand == MOVE_TO_ENEMY ) {
-				AI_DEST_UNREACHABLE = true;
-			}
-		}
 	}
 
-	if ( move.moveCommand == MOVE_TO_ENEMY ) {
-		if ( !aas ) {
-			// keep the move destination up to date for wandering
+	// General move command update
+	if (move.moveCommand == MOVE_TO_ENEMY)
+	{
+		if (!aas)
+		{
+			// Invalid AAS keep the move destination up to date for wandering
 			move.moveDest = lastVisibleReachableEnemyPos;
-		} else if ( enemyAreaNum ) {
+		}
+		else if (enemyAreaNum)
+		{
+			// The previous pathing attempt succeeded, update the move command
 			move.toAreaNum = lastVisibleReachableEnemyAreaNum;
 			move.moveDest = lastVisibleReachableEnemyPos;
 		}
 
-		if ( move.moveType == MOVETYPE_FLY ) {
+		if (move.moveType == MOVETYPE_FLY)
+		{
 			predictedPath_t path;
 			idVec3 end = move.moveDest;
 			end.z += enemyEnt->EyeOffset().z + fly_offset;
@@ -4931,26 +4994,36 @@ void idAI::UpdateEnemyPosition( void ) {
 idAI::SetEnemy
 =====================
 */
-void idAI::SetEnemy( idActor *newEnemy ) {
+void idAI::SetEnemy(idActor* newEnemy)
+{
 	int enemyAreaNum;
 
-	if ( AI_DEAD || AI_KNOCKEDOUT ) {
+	// Don't continue if we're dead or knocked out
+	if (newEnemy == NULL || AI_DEAD || AI_KNOCKEDOUT)
+	{
 		ClearEnemy();
 		return;
 	}
 
 	AI_ENEMY_DEAD = false;
-	if ( !newEnemy ) {
-		ClearEnemy();
-	} else if ( enemy.GetEntity() != newEnemy ) {
+
+	// greebo: Check if the new enemy is different
+	if (enemy.GetEntity() != newEnemy)
+	{
+		// Update the enemy pointer 
 		enemy = newEnemy;
-		enemyNode.AddToEnd( newEnemy->enemyList );
-		if ( newEnemy->health <= 0 ) {
+		enemyNode.AddToEnd(newEnemy->enemyList);
+
+		// Check if the new enemy is dead
+		if (newEnemy->health <= 0)
+		{
 			EnemyDead();
 			return;
 		}
-		// let the monster know where the enemy is
-		newEnemy->GetAASLocation( aas, lastReachableEnemyPos, enemyAreaNum );
+
+		// greebo: Get the reachable position and area number of this enemy
+		newEnemy->GetAASLocation(aas, lastReachableEnemyPos, enemyAreaNum);
+
 		SetEnemyPosition();
 		SetChatSound();
 
@@ -6815,11 +6888,11 @@ float idAI::GetPlayerVisualStimulusAmount() const
 			float curAlertLin = idMath::Pow16(2, (curAlertLog - 1)*0.1f);
 
 			// Increase the linear alert number with the cvar
-			curAlertLin += cv_ai_sight_mag.GetFloat() * 1.0;
+			curAlertLin += cv_ai_sight_mag.GetFloat();
 
 			// greebo: Convert back to logarithmic alert units
-			// The 0.69 in the equation is the ln(2) used to compensate for using the natural Log16 method
-			curAlertLog = 1 + 10.0f * idMath::Log16(curAlertLin) / 0.6931472f;
+			// The 1.44269 in the equation is the 1/ln(2) used to compensate for using the natural Log16 method.
+			curAlertLog = 1 + 10.0f * idMath::Log16(curAlertLin) * 1.442695f;
 
 			// Now calculate the difference in logarithmic units and return it
 			alertAmount = curAlertLog - AI_AlertNum;
@@ -6832,7 +6905,6 @@ float idAI::GetPlayerVisualStimulusAmount() const
 
 	return alertAmount;
 }
-
 
 /*---------------------------------------------------------------------------------*/
 
