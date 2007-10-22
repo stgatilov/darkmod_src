@@ -31,19 +31,12 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	owner->AI_RUN = true;
-
 	_enemy = owner->GetEnemy();
-
-	if (!owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
-	{
-		// TODO: Destination unreachable?
-	}
 }
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Chase Enemy Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("Melee Combat Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -52,35 +45,14 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
-		return true;
+		return true; // terminate me
 	}
 
 	// Can we damage the enemy already?
 	if (owner->CanHitEntity(enemy))
 	{
-		// Yes, stop the move!
-		owner->StopMove(MOVE_STATUS_DONE);
-		gameLocal.Printf("Enemy is reachable!\n");
-	}
-	// no, push the AI forward and try to get to the last visible reachable enemy position
-	else if (owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
-	{
-		if (owner->AI_MOVE_DONE)
-		{
-			// Position has been reached
-			gameLocal.Printf("Position reached!\n");
-		}
-		else
-		{
-			// AI is moving, this is ok
-			
-		}
-	}
-	else
-	{
-		// Destination unreachable!
-		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
-		gameLocal.Printf("Destination unreachable... \n");
+		// Yes, let him bleed!
+		
 	}
 
 	return false; // not finished yet
