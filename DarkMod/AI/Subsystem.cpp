@@ -48,47 +48,50 @@ bool Subsystem::IsEnabled() const
 // Called regularly by the Mind to run the currently assigned routine.
 void Subsystem::PerformTask()
 {
-	if (_enabled)
+	if (!_enabled)
 	{
-		// Check if we don't have a task or the current one should be deleted
-		if (_finishCurrentTask || _task == NULL)
+		return;
+	}
+
+	// Check if we don't have a task or the current one should be deleted
+	if (_finishCurrentTask || _task == NULL)
+	{
+		// Reset the flag in any case
+		_finishCurrentTask = false;
+
+		// Clear out the current task
+		_task = TaskPtr();
+
+		if (_taskQueue.size() > 0)
 		{
-			// Reset the flag in any case
-			_finishCurrentTask = false;
+			// Pop the foremost element from the list
+			_task = *_taskQueue.begin();
+			_taskQueue.pop_front();
 
-			// Clear out the current task
-			_task = TaskPtr();
+			// Set the enabled flag BEFORE the Init() call, as it
+			// might set the subsystem to disabled again.
+			_enabled = true;
 
-			if (_taskQueue.size() > 0)
-			{
-				// Pop the foremost element from the list
-				_task = *_taskQueue.begin();
-				_taskQueue.pop_front();
-
-				// Set the enabled flag BEFORE the Init() call, as it
-				// might set the subsystem to disabled again.
-				_enabled = true;
-
-				// Initialise the new task with a reference to the owner and <self>
-				_task->Init(_owner.GetEntity(), *this);
-			}
-			else
-			{
-				// No more tasks, disable this Subsystem
-				DM_LOG(LC_AI, LT_INFO).LogString("No more tasks, disabling subsystem.\r");
-				_enabled = false;
-				return;
-			}
+			// Initialise the new task with a reference to the owner and <self>
+			_task->Init(_owner.GetEntity(), *this);
 		}
-
-		// No NULL pointer past this point
-		assert(_task != NULL);
-
-		// If the task returns TRUE, it will be removed next round
-		if (_task->Perform(*this))
+		else
 		{
-			FinishCurrentTask();
+			// No more tasks, disable this Subsystem
+			DM_LOG(LC_AI, LT_INFO).LogString("No more tasks, disabling subsystem.\r");
+			_enabled = false;
+			return;
 		}
+	}
+
+	// No NULL pointer past this point
+	assert(_task != NULL);
+
+	// If the task returns TRUE, it will be removed next round
+	// Only execute the task if the "finish" flag isn't set.
+	if (!_finishCurrentTask && _task->Perform(*this))
+	{
+		FinishCurrentTask();
 	}
 }
 
