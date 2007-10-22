@@ -546,7 +546,16 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// get the entity the projectile collided with
 	ent = gameLocal.entities[ collision.c.entityNum ];
 
-	ProcCollisionStims( ent, collision.c.id );
+	if ( ent )
+	{
+		ProcCollisionStims( ent, collision.c.id );
+
+		if( ent->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(ent);
+			alertee->TactileAlert( this );
+		}
+	}
 
 	if ( ent == owner.GetEntity() ) {
 		assert( 0 );

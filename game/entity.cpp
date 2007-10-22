@@ -636,6 +636,8 @@ idEntity::idEntity()
 
 	mpGUIState = -1;
 
+	m_SetInMotionByActor = NULL;
+	m_MovedByActor = NULL;
 	m_bFrobable = false;
 	m_FrobDistance = 0;
 	m_FrobBias = 1.0f;
@@ -950,6 +952,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bIsClimbableRope);
 
+	m_SetInMotionByActor.Save(savefile);
+	m_MovedByActor.Save(savefile);
+
 	savefile->WriteBool(m_bFrobbed);
 	savefile->WriteBool(m_bFrobHighlightState);
 	savefile->WriteInt(m_FrobPeerFloodFrame);
@@ -1088,6 +1093,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_FrobBias);
 
 	savefile->ReadBool(m_bIsClimbableRope);
+
+	m_SetInMotionByActor.Restore(savefile);
+	m_MovedByActor.Restore(savefile);
 
 	savefile->ReadBool(m_bFrobbed);
 	savefile->ReadBool(m_bFrobHighlightState);
