@@ -6794,12 +6794,26 @@ float idAI::GetVisibility( idEntity *ent ) const
 		return returnval;
 	}
 
+
+	idPlayer* player = static_cast<idPlayer*>(ent);
+
 	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
 
+	float lgemPercent = (lgem - 1) / (DARKMOD_LG_MAX - 1);
+	float clampVal = 0.5 * (1 - idMath::Cos(lgemPercent * idMath::PI));
+
+	float clampdist = cv_ai_sightmindist.GetFloat() * lgemPercent;
+	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
+
+
+
+/*
 	// debug for formula checking
 	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
 
+
 	float clampdist = (lgem - 1) * ( cv_ai_sightmindist.GetFloat() / (DARKMOD_LG_MAX - 1) );
+	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
 
 	// clampVal is normalized to 100% at TimeNorm
 	// In other words: Visibility percentage scales linearly with the lightgem
@@ -6811,8 +6825,8 @@ float idAI::GetVisibility( idEntity *ent ) const
 	// TODO: Make the 1.2 a factor that you can tweak.
 	float clampVal = 0.30119f * idMath::Exp16( 1.2 * (lgem/DARKMOD_LG_MAX));
 
-
-	idVec3 delta = GetEyePosition() - ent->GetPhysics()->GetOrigin();
+*/
+	idVec3 delta = GetEyePosition() - player->GetEyePosition();
 	float dist = delta.Length()*s_DOOM_TO_METERS;
 
 	//TODO : Add acuity in to this calculation
@@ -6823,7 +6837,6 @@ float idAI::GetVisibility( idEntity *ent ) const
 	}
 	else 
 	{
-		float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
 		
 		if (dist > safedist) 
 		{
@@ -6834,6 +6847,29 @@ float idAI::GetVisibility( idEntity *ent ) const
 			returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
 		}
 	}
+
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
+		// greebo: Debug output, comment me out
+		idStr alertText(clampVal);
+		alertText = "clampVal: "+ alertText;
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText2(clampdist);
+		alertText2 = "clampdist: "+ alertText2;
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText3(safedist);
+		alertText3 = "savedist: "+ alertText3;
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText4(returnval);
+		alertText4 = "returnval: "+ alertText4;
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText5(lgem);
+		alertText5 = "lgem: "+ alertText5;
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+}
+	
+	
+	
 	
 	return returnval;
 }
@@ -7035,11 +7071,11 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 			
 			// greebo: Check the visibility of the player depending on lgem and distance
 			float visFraction = GetVisibility(p_entity); // returns values in [0..1]
-
+/*
 			// greebo: Debug output, comment me out
 			idStr alertText(visFraction);
 			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-
+*/
 			// Get base sight threshold
 			float sightThreshold = 0.4f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
