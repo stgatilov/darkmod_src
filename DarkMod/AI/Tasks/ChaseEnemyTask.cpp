@@ -34,7 +34,6 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_RUN = true;
 
 	_enemy = owner->GetEnemy();
-	owner->GetMind()->GetMemory().chaseFinished = false;
 
 	if (!owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
 	{
@@ -69,19 +68,12 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		if (owner->AI_MOVE_DONE)
 		{
 			// Position has been reached
-			/*owner->UpdateEnemyPosition();
-
-			if (owner->AI_ENEMY_VISIBLE)
-			{
-				// Update the enemy position if the move is done.
-				owner->SetEnemyPosition();
-			}*/
 			gameLocal.Printf("Position reached!\n");
 		}
 		else
 		{
 			// AI is moving, this is ok
-			gameLocal.Printf("AI is moving... \n");
+			
 		}
 	}
 	else
@@ -89,28 +81,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		// Destination unreachable!
 		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
 		gameLocal.Printf("Destination unreachable... \n");
-
-		/*if (owner->AI_ENEMY_VISIBLE)
-		{
-			// Update the enemy position, if the enemy is visible, otherwise, just run to that location
-			owner->SetEnemyPosition();
-		}*/
 	}
 
-	/*if (!Chase())
-	{
-		if (!Chase()) 
-		{
-			owner->Event_ClearEnemy();
-
-			owner->Event_SetAlertLevel(owner->thresh_3);
-			
-			// Lost the target
-			//pushTaskIfHighestPriority("task_LostTrackOfEnemy", PRIORITY_LOSTTARGET);
-			return;
-		}
-	}*/
-	
 	return false; // not finished yet
 }
 

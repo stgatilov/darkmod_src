@@ -111,9 +111,6 @@ public:
 	// greebo: Note: Currently this is filled in before fleeing only.
 	idVec3 lastEnemyPos;
 
-	// false during combat_chase()
-	bool chaseFinished;
-
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -130,8 +127,7 @@ public:
 		lastAlertPosSearched(0,0,0),
 		alertSearchVolume(0,0,0),
 		alertSearchExclusionVolume(0,0,0),
-		lastEnemyPos(0,0,0),
-		chaseFinished(false)
+		lastEnemyPos(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -154,7 +150,6 @@ public:
 		savefile->WriteVec3(alertSearchVolume);
 		savefile->WriteVec3(alertSearchExclusionVolume);
 		savefile->WriteVec3(lastEnemyPos);
-		savefile->WriteBool(chaseFinished);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -182,7 +177,6 @@ public:
 		savefile->ReadVec3(alertSearchVolume);
 		savefile->ReadVec3(alertSearchExclusionVolume);
 		savefile->ReadVec3(lastEnemyPos);
-		savefile->ReadBool(chaseFinished);
 	}
 };
 
