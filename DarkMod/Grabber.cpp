@@ -298,8 +298,12 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	if ( !drag || !m_dragEnt.IsValid() )
 		goto Quit;
 
+	// Set actor info on the entity
+	drag->m_SetInMotionByActor = (idActor *) player;
+	drag->m_MovedByActor = (idActor *) player;
+
 	// Check for throwing:
-	/* bool */ bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+	bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
 
 	if( m_bAttackPressed && !bAttackHeld )
 	{
@@ -418,8 +422,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	m_drag.Evaluate( gameLocal.time );
 	this->ManipulateObject( player );
 
-	/* renderEntity_t* */ renderEntity = drag->GetRenderEntity();
-	/* idAnimator* */ dragAnimator = drag->GetAnimator();
+	renderEntity = drag->GetRenderEntity();
+	dragAnimator = drag->GetAnimator();
 
 	if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) 
 	{
@@ -954,6 +958,8 @@ void CGrabber::Throw( int HeldTime )
 	{
 		ThrowPoint = ent->GetPhysics()->GetOrigin(m_id) + ent->GetPhysics()->GetAxis(m_id) * m_LocalEntPoint;
 		ent->ApplyImpulse( m_player.GetEntity(), m_id, ThrowPoint, ImpulseVec );
+		ent->m_SetInMotionByActor = m_player.GetEntity();
+		ent->m_MovedByActor =  m_player.GetEntity();
 	}
 
 	StopDrag();
