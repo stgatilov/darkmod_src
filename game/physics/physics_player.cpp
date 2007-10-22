@@ -1137,16 +1137,23 @@ void idPhysics_Player::SpectatorMove( void ) {
 idPhysics_Player::RopeMove
 ============
 */
+// TODO: This will probably reverse the up/down controls for upside-down ropes
+// Would need some fix where desired direction of travel is flipped
+// if climbDir * gravNormal is < 0
 #pragma warning( disable : 4533 )
 void idPhysics_Player::RopeMove( void ) 
 {
-	idVec3	wishdir, wishvel, right, ropePoint, offset, newOrigin;
+	idVec3	wishdir, wishvel, right, ropeBodyOrig;
+	idVec3	ropePoint, offset, newOrigin, climbDir;
 	float	wishspeed, scale, temp, deltaYaw, deltaAng1, deltaAng2;
 	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
 	idBounds ropeBounds;
 	trace_t transTrace; // used for clipping tests when moving the player
 	idVec3 transVec, forward, playerVel(0,0,0), PlayerPoint(0,0,0);
+	// shaft of rope in the rope coordinates, may need to be a spawnarg if rope models are inconsistent
+	idVec3 ropeShaft( 0.0f, 0.0f, 1.0f );
 	int bodID(0);
+	idPhysics_AF *ropePhys;
 
 	if( !m_RopeEntity.GetEntity() )
 	{
@@ -1158,17 +1165,33 @@ void idPhysics_Player::RopeMove( void )
 #endif
 	}
 
-	// store and kill the player's transverse velocity
-	playerVel = current.velocity;
-	current.velocity.x = 0;
-	current.velocity.y = 0;
+	ropePhys = static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics());
 
 	// stick the player to the rope at an AF origin point closest to their arms
-	PlayerPoint = current.origin + -gravityNormal*ROPE_GRABHEIGHT;
-	ropePoint = static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->NearestBodyOrig( PlayerPoint, &bodID );
+	PlayerPoint = current.origin - gravityNormal*ROPE_GRABHEIGHT;
+	ropeBodyOrig = ropePhys->NearestBodyOrig( PlayerPoint, &bodID );
+	climbDir = ropePhys->GetAxis( bodID ) * ropeShaft;
+	// Find the rope attachment point, which now moves along the individual AF body axis
+	// Drawing a diagram, we find:
+	// (orig - ropeOrig) * gravNormal = | offset along rope axis | * (rope axis * gravNormal)
+	// Solve for offset along rope axis
+	idVec3 deltaPlayerBody = PlayerPoint - ropeBodyOrig;
+	float offsetMag = (deltaPlayerBody * gravityNormal) / (climbDir * gravityNormal);
+	ropePoint = ropeBodyOrig + offsetMag * climbDir;
 	
+	// Uncomment for climb axis debugging
+	// gameRenderWorld->DebugArrow( colorRed, ropeBodyOrig, ropePoint, 1 );
+
+	SetRefEntVel( m_RopeEntity.GetEntity(), bodID );
+	// move the player velocity into the rope reference frame
+	current.velocity -= m_RefEntVelocity;
+
+	// store and then kill the player's transverse velocity
+	playerVel = current.velocity;
+	current.velocity = (current.velocity * climbDir) * climbDir;
+
 	// apply the player's weight to the AF body - COMMENTED OUT DUE TO AF CRAZINESS
-//	static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->AddForce(bodID, ropePoint, mass * gravityVector );
+//	ropePhys->AddForce(bodID, ropePoint, mass * gravityVector );
 	
 	// if the player has hit the rope this frame, apply an impulse based on their velocity
 	// pretend the deceleration takes place over a number of frames for realism (100 ms?)
@@ -1185,25 +1208,26 @@ void idPhysics_Player::RopeMove( void )
 
 			idPhysics* bindMasterPhysics = ropeBindMaster->GetPhysics();
 			
-			idVec3 ropeOrigin = m_RopeEntity.GetEntity()->GetPhysics()->GetOrigin();
+			idVec3 ropeOrigin = ropePhys->GetOrigin();
 
-			idPhysics_AF* ropePhysics = static_cast<idPhysics_AF*>(m_RopeEntity.GetEntity()->GetPhysics());
-			idAFBody* topMostBody = ropePhysics->GetBody(0);
+			idAFBody* topMostBody = ropePhys->GetBody(0);
 			if (topMostBody != NULL)
 			{
 				// Correct the pull direction using the orientation of the topmost body.
 				const idMat3& axis = topMostBody->GetWorldAxis();
-				direction = topMostBody->GetWorldAxis() * idVec3(0,0,1);
+				direction = topMostBody->GetWorldAxis() * ropeShaft;
 			}
 
 			bindMasterPhysics->ApplyImpulse(0, ropeOrigin, direction * mass * cv_tdm_rope_pull_force_factor.GetFloat());
 		}
 
-		idVec3 vImpulse(playerVel.x, playerVel.y, 0);
+		idVec3 vImpulse = playerVel - (playerVel * climbDir) * climbDir;
 		vImpulse *= mass;
 
-		static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics())->AddForce( bodID, ropePoint, vImpulse/0.1f );
+		ropePhys->AddForce( bodID, ropePoint, vImpulse/0.1f );
 	}
+
+// ==== Translate the player to the rope attachment point =====
 
 	offset = (current.origin - ropePoint);
 	offset.ProjectOntoPlane( -gravityNormal );
@@ -1211,8 +1235,8 @@ void idPhysics_Player::RopeMove( void )
 	offset *= ROPE_DISTANCE;
 
 	newOrigin = ropePoint + offset;
-	newOrigin.z = current.origin.z;
 	transVec = newOrigin - current.origin;
+	transVec -= (transVec * gravityNormal)*gravityNormal;
 
 	// check whether the player will clip anything, and only translate up to that point
 	ClipTranslation(transTrace, transVec, NULL);
@@ -1223,8 +1247,8 @@ void idPhysics_Player::RopeMove( void )
 	// Find the top and bottom of the rope
 	// This must be done every frame since the rope may be deforming
 	ropeBounds = m_RopeEntity.GetEntity()->GetPhysics()->GetAbsBounds();
-	ropeTop = ropeBounds[0].z;
-	ropeBot = ropeBounds[1].z;
+	ropeTop = ropeBounds[0] * -gravityNormal;
+	ropeBot = ropeBounds[1] * -gravityNormal;
 
 	if( ropeTop < ropeBot )
 	{
@@ -1279,7 +1303,7 @@ void idPhysics_Player::RopeMove( void )
 
 	// ================ read control input for climbing movement ===============
 
-	upscale = (-gravityNormal * viewForward + 0.5f) * 2.5f;
+	upscale = (climbDir * viewForward - 0.5f) * 2.5f;
 	if ( upscale > 1.0f ) 
 	{
 		upscale = 1.0f;
@@ -1290,11 +1314,13 @@ void idPhysics_Player::RopeMove( void )
 	}
 
 	scale = idPhysics_Player::CmdScale( command );
-	wishvel = -0.9f * gravityNormal * upscale * scale * (float)command.forwardmove;
-   	// up down movement
+	// up down movement
+	
+	wishvel = 0.9f * climbDir * upscale * scale * (float)command.forwardmove;
+
 	if ( command.upmove ) 
 	{
-		wishvel += -0.5f * gravityNormal * scale * (float) command.upmove;
+		wishvel += 0.5f * climbDir * scale * (float) command.upmove;
 	}
 
 	// detach the player from the rope if they jump, or if they hit crouch
@@ -1310,16 +1336,16 @@ void idPhysics_Player::RopeMove( void )
 	if  ( 
 			(
 				wishvel * gravityNormal <= 0.0f 
-				&& ((current.origin.z + ROPE_GRABHEIGHT ) > ropeTop)
+				&& (((current.origin * -gravityNormal) + ROPE_GRABHEIGHT ) > ropeTop)
 			)
 			||
 			(
 				wishvel * gravityNormal >= 0.0f
-				&& ((current.origin.z + ROPE_GRABHEIGHT + 35.0f) < ropeBot)
+				&& (((current.origin * -gravityNormal) + ROPE_GRABHEIGHT + 35.0f) < ropeBot)
 			)
 		)
 	{
-		current.velocity.z = 0;
+		current.velocity -= (current.velocity * climbDir) * climbDir;
 		goto Quit;
 	}
 
@@ -1327,18 +1353,18 @@ void idPhysics_Player::RopeMove( void )
 	wishspeed = wishvel.Normalize();
 	idPhysics_Player::Accelerate( wishvel, wishspeed, PM_ACCELERATE );
 
-	// cap the vertical velocity
-	upscale = current.velocity * -gravityNormal;
+	// cap the climb velocity
+	upscale = current.velocity * -climbDir;
 	if ( upscale < -PM_ROPESPEED ) 
 	{
-		current.velocity += gravityNormal * (upscale + PM_ROPESPEED);
+		current.velocity += climbDir * (upscale + PM_ROPESPEED);
 	}
 	else if ( upscale > PM_ROPESPEED ) 
 	{
-		current.velocity += gravityNormal * (upscale - PM_ROPESPEED);
+		current.velocity += climbDir * (upscale - PM_ROPESPEED);
 	}
 
-	// stop the player from sliding down or up when they let go of the button
+	// stop the player from sliding when they let go of the button
 	if ( (wishvel * gravityNormal) == 0.0f ) 
 	{
 		if ( current.velocity * gravityNormal < 0.0f ) 
@@ -1365,9 +1391,9 @@ void idPhysics_Player::RopeMove( void )
 		RopeDetach();
 		goto Quit;
 	}
-
-	// Add in the z velocity of the rope segment they're clinging to
-	current.velocity += gravityNormal * (gravityNormal * m_RopeEntity.GetEntity()->GetPhysics()->GetLinearVelocity( bodID )); 
+	
+	// move the player velocity back into the world frame
+	current.velocity += m_RefEntVelocity;
 
 	// slide the player up and down with their calculated velocity
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
@@ -1390,6 +1416,9 @@ void idPhysics_Player::RopeDetach( void )
 	m_RopeDetachTimer = gameLocal.time;
 
 	static_cast<idPlayer *>(self)->SetImmobilization( "RopeMove", 0 );
+
+	// move the player velocity back into the world frame
+	current.velocity += m_RefEntVelocity;
 
 	// switch movement modes to the appropriate one
 	if ( waterLevel > WATERLEVEL_FEET ) 
@@ -1414,6 +1443,8 @@ void idPhysics_Player::ClimbDetach( bool bStepUp )
 	m_bClimbDetachThisFrame = true;
 
 	static_cast<idPlayer *>(self)->SetImmobilization("ClimbMove", 0);
+
+	current.velocity += m_RefEntVelocity;
 
 	// switch movement modes to the appropriate one
 	if( bStepUp )
@@ -1452,6 +1483,12 @@ void idPhysics_Player::LadderMove( void )
 
 	accel = PM_ACCELERATE;
 
+	// TODO: Support non-rope climbable AFs by storing the AF body hit in the trace?
+	SetRefEntVel( m_ClimbingOnEnt.GetEntity() );
+
+	// Move player into climbed on ent reference frame
+	current.velocity -= m_RefEntVelocity;
+
 	idVec3 ClimbNormXY = m_vClimbNormal - (m_vClimbNormal * gravityNormal) * gravityNormal;
 	ClimbNormXY.Normalize();
 
@@ -1477,23 +1514,6 @@ void idPhysics_Player::LadderMove( void )
 		goto Quit;
 #endif
 	}
-
-	// Add the velocity of whatever entity they're climbing on:
-	// TODO: ADD REF FRAME ANGULAR VELOCITY!!
-	if( m_ClimbingOnEnt.GetEntity() )
-	{
-		idEntity *ent = m_ClimbingOnEnt.GetEntity();
-		if( ent->GetBindMaster() )
-			ent = ent->GetBindMaster();
-
-		if( ent->GetPhysics() )
-		{
-			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Adding ref frame velocity %s for entity %s \r", RefFrameVel.ToString(), ent->name.c_str() );
-			RefFrameVel = ent->GetPhysics()->GetLinearVelocity();
-			//RefFrameVel += ent->GetPhysics()->GetPushedLinearVelocity();
-		}
-	}
-	DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Climb ref frame velocity = %s \r", RefFrameVel.ToString() );
 
 	// ====================== stick to the ladder ========================
 	// Do a trace to figure out where to attach the player:
@@ -1641,7 +1661,6 @@ void idPhysics_Player::LadderMove( void )
 		}
 
 		accel = idMath::INFINITY;
-		//wishvel = RefFrameVel;
 		wishvel = vec3_zero;
 	}
 
@@ -1687,9 +1706,10 @@ void idPhysics_Player::LadderMove( void )
 			}
 		}
 	}
-
-	current.velocity += RefFrameVel;
 	
+	// Move player velocity back into the world frame
+	current.velocity += m_RefEntVelocity;
+
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
 
 Quit:
@@ -1938,9 +1958,11 @@ void idPhysics_Player::CheckClimbable( void )
 	if ( IsMantling() )
 		goto Quit;
 
+/*
 	// Don't attach if we are holding an object in our hands
 	if( g_Global.m_DarkModPlayer->grabber->GetSelected() != NULL )
 		goto Quit;
+*/
 
 	// forward vector orthogonal to gravity
 	forward = viewForward - (gravityNormal * viewForward) * gravityNormal;
@@ -2551,6 +2573,8 @@ idPhysics_Player::idPhysics_Player( void )
 	groundPlane = false;
 	memset( &groundTrace, 0, sizeof( groundTrace ) );
 	groundMaterial = NULL;
+
+	m_RefEntVelocity.Zero();
 	
 	// rope climbing
 	m_bRopeContact = false;
@@ -2678,6 +2702,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteTrace( groundTrace );
 	savefile->WriteMaterial( groundMaterial );
 
+	savefile->WriteVec3( m_RefEntVelocity );
+
 	savefile->WriteBool( m_bRopeContact );
 	savefile->WriteBool( m_bJustHitRope );
 	savefile->WriteBool( m_bOnRope );
@@ -2760,6 +2786,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( groundPlane );
 	savefile->ReadTrace( groundTrace );
 	savefile->ReadMaterial( groundMaterial );
+
+	savefile->ReadVec3( m_RefEntVelocity );
 
 	savefile->ReadBool( m_bRopeContact );
 	savefile->ReadBool( m_bJustHitRope );
@@ -5068,4 +5096,70 @@ float idPhysics_Player::GetClimbLateralCoord( idVec3 OrigVec ) const
 	}
 	
 	return ReturnVal;
+}
+
+void idPhysics_Player::SetRefEntVel( idEntity *ent, int bodID)
+{
+	idVec3 EntCOM, ThisCOM, r, AngVel;
+	idMat3 DummyMat;
+	float dummy;
+
+	if( !ent )
+	{
+		m_RefEntVelocity.Zero();
+	}
+	else
+	{
+		idPhysics *phys = ent->GetPhysics();
+
+		// Sometimes we have statics bound to movers, and the static doesn't return a velocity
+		if( phys->IsType(idPhysics_Static::Type) 
+			|| phys->IsType(idPhysics_StaticMulti::Type) )
+		{
+			if( ent->GetBindMaster() )
+			{
+				phys = ent->GetBindMaster()->GetPhysics();
+				// TODO: Replace this with ent->bindbody
+				bodID = 0;
+				DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("SetRefVel switched from ent %s to bindmaster %s\r", ent->name.c_str(), ent->GetBindMaster()->name.c_str() );
+			}
+		}
+
+		m_RefEntVelocity = phys->GetLinearVelocity( bodID );
+		// Apparently this is needed for moveables riding on movers:
+		m_RefEntVelocity += phys->GetPushedLinearVelocity( bodID );
+
+		// Add orbit velocity from angular vel of mover
+		// v_tangential = omega X r, where r is the distance between COM
+		AngVel = phys->GetAngularVelocity( bodID );
+		AngVel += phys->GetPushedAngularVelocity( bodID );
+
+		// Find our center of mass:
+		GetClipModel()->GetMassProperties( 1.0f, dummy, ThisCOM, DummyMat );
+		ThisCOM = GetOrigin() + ThisCOM * GetAxis();
+		// Find entity center of mass
+		if( phys->GetClipModel( bodID)->IsTraceModel() )
+		{
+			phys->GetClipModel( bodID )->GetMassProperties( 1.0f, dummy, EntCOM, DummyMat );
+			EntCOM = phys->GetOrigin( bodID ) + EntCOM * phys->GetAxis( bodID );
+		}
+		else
+			EntCOM = phys->GetOrigin( bodID );
+
+		// r = ThisCOM - EntCOM;
+		r = GetOrigin() - phys->GetOrigin( bodID );
+
+// Linear component due to angular velocity commented out for now
+// Is not correct and tends to kill the player.
+
+//		m_RefEntVelocity += AngVel.Cross( r );
+
+		// Uncomment for debugging
+		// DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("SetRefEntVelocity: Ent angular velocity is %s, Ent COM is %s, player COM is %s, added linear velocity due to angular rotation of ent is: %s\r",AngVel.ToString(),EntCOM.ToString(),ThisCOM.ToString(),AngVel.Cross(r).ToString() ); 
+	}
+}
+
+idVec3 idPhysics_Player::GetRefEntVel( void ) const
+{
+	return m_RefEntVelocity;
 }

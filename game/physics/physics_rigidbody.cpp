@@ -369,7 +369,8 @@ idPhysics_RigidBody::CollisionImpulse
   The current state should be set to the moment of impact.
 ================
 */
-bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &impulse ) {
+bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &impulse ) 
+{
 	idVec3 r, linearVelocity, angularVelocity, velocity;
 	idMat3 inverseWorldInertiaTensor;
 	float impulseNumerator, impulseDenominator, vel;
@@ -388,6 +389,22 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 		{
 			g_Global.m_DarkModPlayer->grabber->m_bIsColliding = true;
 		}
+	}
+
+	// Update moved by and set in motion by actor
+	if( self->m_SetInMotionByActor.GetEntity() != NULL )
+	{
+		ent->m_SetInMotionByActor = self->m_SetInMotionByActor.GetEntity();
+		ent->m_MovedByActor = self->m_MovedByActor.GetEntity();
+	}
+	// Note: Actors should not overwrite the moved by other actors when they are hit with something
+	// So only overwrite if MovedByActor is NULL
+	if( ent->IsType(idActor::Type) 
+		&& self->m_SetInMotionByActor.GetEntity() == NULL
+		&& !(static_cast<idActor *>(ent)->IsKnockedOut() || ent->health < 0) )
+	{
+		self->m_SetInMotionByActor = (idActor *) ent;
+		self->m_MovedByActor = (idActor *) ent;
 	}
 
 	// collision point relative to the body center of mass
@@ -1150,11 +1167,13 @@ void idPhysics_RigidBody::SetBouncyness( const float b ) {
 idPhysics_RigidBody::Rest
 ================
 */
-void idPhysics_RigidBody::Rest( void ) {
+void idPhysics_RigidBody::Rest( void ) 
+{
 	current.atRest = gameLocal.time;
 	current.i.linearMomentum.Zero();
 	current.i.angularMomentum.Zero();
 	self->BecomeInactive( TH_PHYSICS );
+	self->m_SetInMotionByActor = NULL;
 }
 
 /*

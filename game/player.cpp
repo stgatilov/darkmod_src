@@ -5669,8 +5669,13 @@ void idPlayer::Move( void )
 	if( physicsObj.OnRope() )
 	{
 		int old_vert(0), new_vert(0);
+		// Correct for moving reference frame
+		int startTime = gameLocal.previousTime;
+		int endTime = gameLocal.time;
+		float RefZOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel().z;
+		
 		old_vert = savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger();
-		new_vert = physicsObj.GetOrigin().z / cv_pm_rope_snd_rep_dist.GetInteger();
+		new_vert = (physicsObj.GetOrigin().z - RefZOffset) / cv_pm_rope_snd_rep_dist.GetInteger();
 		
 		if ( old_vert != new_vert ) 
 		{
@@ -5685,19 +5690,27 @@ void idPlayer::Move( void )
 		idStr TempStr, LocalSound, sound;
 		bool bSoundPlayed = false;
 		sound.Clear();
-
 		int old_vert(0), new_vert(0), old_horiz(0), new_horiz(0);
+		
+		// Correct for moving reference frame
+		int startTime = gameLocal.previousTime;
+		int endTime = gameLocal.time;
+		idVec3 RefFrameOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel();
+		idVec3 GravNormal = physicsObj.GetGravityNormal();
+		idVec3 RefFrameOffsetXY = RefFrameOffset - (RefFrameOffset * GravNormal ) * GravNormal;
+
 		old_vert = savedOrigin.z / physicsObj.GetClimbSndRepDistVert();
-		new_vert = physicsObj.GetOrigin().z / physicsObj.GetClimbSndRepDistVert();
+		new_vert = (physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert();
 
 		old_horiz = physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz();
-		new_horiz = physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() ) / physicsObj.GetClimbSndRepDistHoriz();
+		new_horiz = physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz();
 
 		if ( old_vert != new_vert ) 
 		{
 			LocalSound = "snd_climb_vert_";
 			bSoundPlayed = true;
 		}
+
 		else if( old_horiz != new_horiz )
 		{
 			LocalSound = "snd_climb_horiz_";

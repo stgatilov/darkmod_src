@@ -303,8 +303,12 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	if ( !drag || !m_dragEnt.IsValid() )
 		goto Quit;
 
+	// Set actor info on the entity
+	drag->m_SetInMotionByActor = (idActor *) player;
+	drag->m_MovedByActor = (idActor *) player;
+
 	// Check for throwing:
-	/* bool */ bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
+	bAttackHeld = player->usercmd.buttons & BUTTON_ATTACK;
 
 	if( m_bAttackPressed && !bAttackHeld )
 	{
@@ -423,8 +427,8 @@ void CGrabber::Update( idPlayer *player, bool hold )
 	m_drag.Evaluate( gameLocal.time );
 	this->ManipulateObject( player );
 
-	/* renderEntity_t* */ renderEntity = drag->GetRenderEntity();
-	/* idAnimator* */ dragAnimator = drag->GetAnimator();
+	renderEntity = drag->GetRenderEntity();
+	dragAnimator = drag->GetAnimator();
 
 	if ( m_joint != INVALID_JOINT && renderEntity && dragAnimator ) 
 	{
@@ -960,7 +964,7 @@ CGrabber::Throw
 void CGrabber::Throw( int HeldTime )
 {
 	float ThrowImpulse(0), FracPower(0);
-	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1);
+	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1), ThrowPoint(vec3_zero);
 
 	idEntity *ent = m_dragEnt.GetEntity();
 	ImpulseVec = m_player.GetEntity()->firstPersonViewAxis[0];
@@ -978,8 +982,12 @@ void CGrabber::Throw( int HeldTime )
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
 	// Only apply the impulse for throwable items
-	if (ent->spawnArgs.GetBool("throwable", "1")) {
-		ent->ApplyImpulse( m_player.GetEntity(), m_id, ent->GetPhysics()->GetOrigin(), ImpulseVec );
+	if (ent->spawnArgs.GetBool("throwable", "1")) 
+	{
+		ThrowPoint = ent->GetPhysics()->GetOrigin(m_id) + ent->GetPhysics()->GetAxis(m_id) * m_LocalEntPoint;
+		ent->ApplyImpulse( m_player.GetEntity(), m_id, ThrowPoint, ImpulseVec );
+		ent->m_SetInMotionByActor = m_player.GetEntity();
+		ent->m_MovedByActor =  m_player.GetEntity();
 	}
 
 	StopDrag();

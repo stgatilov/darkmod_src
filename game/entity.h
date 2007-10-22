@@ -262,6 +262,17 @@ public:
 	**/
 	idList<float>                           m_animRates;
 
+	/**
+	* Actor who set this item in motion.  Cleared when it comes to rest.
+	* Always NULL for non-physical items.
+	**/
+	idEntityPtr<idActor>	m_SetInMotionByActor;
+	/**
+	* Actor who last moved this item.  Never cleared.
+	* Always NULL for non-physical items.
+	**/
+	idEntityPtr<idActor>	m_MovedByActor;
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 

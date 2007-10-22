@@ -914,7 +914,16 @@ bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity 
 	float v, f;
 
 	idEntity *e = gameLocal.entities[collision.c.entityNum];
-	ProcCollisionStims( e, collision.c.id );
+
+	if(e)
+	{
+		ProcCollisionStims( e, collision.c.id );
+		if( e->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(e);
+			alertee->TactileAlert( this );
+		}
+	}
 
 	if ( af.IsActive() ) 
 	{

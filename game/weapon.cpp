@@ -3073,6 +3073,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 
 			proj->Launch( muzzle_pos, dir, pushVelocity, fuseOffset, launchPower, dmgPower );
+
+			// TDM: Update responsible actor for the projectile, so it can be tracked for alerts
+			proj->m_SetInMotionByActor = owner;
+			proj->m_MovedByActor = owner;
 		}
 
 		// toss the brass

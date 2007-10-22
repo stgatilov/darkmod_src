@@ -172,6 +172,8 @@ void idDragEntity::Update( idPlayer *player ) {
 				newEnt = gameLocal.entities[ trace.c.entityNum ];
 				if ( newEnt ) {
 
+					// Ish: We sometimes want to select things that are bound
+					/*
 					if ( newEnt->GetBindMaster() ) {
 						if ( newEnt->GetBindJoint() ) {
 							trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
@@ -180,6 +182,7 @@ void idDragEntity::Update( idPlayer *player ) {
 						}
 						newEnt = newEnt->GetBindMaster();
 					}
+					*/
 
 					if ( newEnt->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base *>(newEnt)->IsActiveAF() ) {
 						idAFEntity_Base *af = static_cast<idAFEntity_Base *>(newEnt);
