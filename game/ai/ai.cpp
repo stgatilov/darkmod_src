@@ -1494,7 +1494,8 @@ void idAI::DormantEnd( void ) {
 idAI::Think
 =====================
 */
-void idAI::Think( void ) {
+void idAI::Think( void ) 
+{
 	// if we are completely closed off from the player, don't do anything at all
 	bool outsidePVS = CheckDormant();
 	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
@@ -1892,7 +1893,8 @@ idAI::DrawRoute
 =====================
 */
 void idAI::DrawRoute( void ) const {
-	if ( aas && move.toAreaNum && move.moveCommand != MOVE_NONE && move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_FACE_ENEMY && move.moveCommand != MOVE_FACE_ENTITY && move.moveCommand != MOVE_TO_POSITION_DIRECT ) {
+	if ( aas && move.toAreaNum && move.moveCommand != MOVE_NONE && move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_FACE_ENEMY && move.moveCommand != MOVE_FACE_ENTITY && move.moveCommand != MOVE_TO_POSITION_DIRECT && move.moveCommand != MOVE_VECTOR ) 
+	{
 		if ( move.moveType == MOVETYPE_FLY ) {
 			aas->ShowFlyPath( physicsObj.GetOrigin(), move.toAreaNum, move.moveDest );
 		} else {
@@ -2819,7 +2821,26 @@ bool idAI::StepDirection( float dir ) {
 
 	return ( path.endEvent == 0 );
 }
+/*
+================
+idAI::MoveAlongVector
+================
+*/
+bool idAI::MoveAlongVector( float yaw ) 
+{
+	StopMove( MOVE_STATUS_DONE );
+	move.moveDir = idAngles( 0, dir, 0 ).ToForward();
+	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
 
+	move.moveCommand	= MOVE_VECTOR;
+	move.moveStatus		= MOVE_STATUS_MOVING;
+	move.startTime		= gameLocal.time;
+	move.speed			= fly_speed;
+	AI_MOVE_DONE		= false;
+	AI_FORWARD			= true;
+
+	return true;
+}
 /*
 ================
 idAI::NewWanderDir
@@ -2948,6 +2969,11 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 	case MOVE_SLIDE_TO_POSITION :
 		seekPos = org;
 		return false;
+		break;
+
+	case MOVE_VECTOR :
+		seekPos = move.moveDest;
+		return true;
 		break;
 	default:
 		break; // Handled below (note the returns in all cases above)
@@ -3688,8 +3714,10 @@ void idAI::AnimMove( void ) {
 	} else if ( ( move.moveCommand == MOVE_FACE_ENTITY ) && move.goalEntity.GetEntity() ) {
 		TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
 		goalPos = oldorigin;
-	} else if ( GetMovePos( goalPos ) ) {
-		if ( move.moveCommand != MOVE_WANDER ) {
+	} else if ( GetMovePos( goalPos ) ) 
+	{
+		if ( (move.moveCommand != MOVE_WANDER) || move.moveCommand != MOVE_VECTOR ) 
+		{
 			CheckObstacleAvoidance( goalPos, newDest );
 			TurnToward( newDest );
 		} else {

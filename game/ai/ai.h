@@ -71,6 +71,7 @@ typedef enum {
 	MOVE_TO_POSITION_DIRECT,
 	MOVE_SLIDE_TO_POSITION,
 	MOVE_WANDER,
+	MOVE_VECTOR, // (TDM)
 	MOVE_FLEE, // (TDM)
 	NUM_MOVE_COMMANDS
 } moveCommand_t;
@@ -1041,6 +1042,12 @@ protected:
 	bool					MoveToCover( idEntity *entity, const idVec3 &pos );
 	bool					SlideToPosition( const idVec3 &pos, float time );
 	bool					WanderAround( void );
+	/**
+	* Ish : Move AI along a vector without worrying about AAS or obstacles
+	* Can be used for direct control of an AI
+	* Applies finite turn speed toward the direction
+	**/
+	bool					MoveAlongVector( float yaw );
 	bool					StepDirection( float dir );
 	bool					NewWanderDir( const idVec3 &dest );
 
