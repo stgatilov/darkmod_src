@@ -2829,7 +2829,7 @@ idAI::MoveAlongVector
 bool idAI::MoveAlongVector( float yaw ) 
 {
 	StopMove( MOVE_STATUS_DONE );
-	move.moveDir = idAngles( 0, dir, 0 ).ToForward();
+	move.moveDir = idAngles( 0, yaw, 0 ).ToForward();
 	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
 
 	move.moveCommand	= MOVE_VECTOR;
