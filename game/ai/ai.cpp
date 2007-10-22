@@ -1668,6 +1668,11 @@ void idAI::Think( void ) {
 		// Let the mind do the thinking (after the move updates)
 		mind->Think();
 
+		// Clear DarkMod per frame vars now that the mind had time to think
+		AI_ALERTED = false;
+		m_AlertNumThisFrame = 0;
+		m_AlertedByActor = NULL;
+
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
 		AI_PAIN = false;
 		AI_SPECIAL_DAMAGE = 0;
@@ -1827,11 +1832,6 @@ void idAI::UpdateAIScript( void )
 		// update the animstate if we're not hidden
 		UpdateAnimState();
 	}
-
-	// Clear DarkMod per frame vars now that the script was updated.
-	AI_ALERTED = false;
-	m_AlertNumThisFrame = 0;
-	m_AlertedByActor = NULL;
 }
 
 /***********************************************************************
@@ -6719,7 +6719,7 @@ idActor* idAI::VisualScan(float timecheck)
 		AI_VISALERT = true;
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
-		// Get the visual alert amount casued by the CVAR setting
+		// Get the visual alert amount caused by the CVAR setting
 		float incAlert = GetPlayerVisualStimulusAmount();
 
 		// If the alert amount is larger than everything else encountered this frame
@@ -7002,17 +7002,21 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 		if (p_entity->IsType(idPlayer::Type ))
 		{
 			// Get the alert increase amount (log) caused by the CVAR tdm_ai_sight_mag
-			float incAlert = GetPlayerVisualStimulusAmount();
+			// greebo: Commented this out, this is not suitable to detect if player is hidden in darkness
+			//float incAlert = GetPlayerVisualStimulusAmount();
+			
+			// greebo: Check the visibility of the player depending on lgem and distance
+			float visFraction = GetVisibility(p_entity); // returns values in [0..1]
 
 			// greebo: Debug output, comment me out
-			idStr alertText(incAlert);
-			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.09f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+			idStr alertText(visFraction);
+			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 
 			// Get base sight threshold
-			float sightThreshold = cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
+			float sightThreshold = 0.4f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
 			// Draw debug graphic
-			if (cv_ai_visdist_show.GetFloat() > 1.0)
+			/*if (cv_ai_visdist_show.GetFloat() > 1.0)
 			{
 				idVec4 markerColor (0.0, 0.0, 0.0, 0.0);
 
@@ -7039,10 +7043,10 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 					2,
 					cv_ai_visdist_show.GetInteger()
 				);
-			}
+			}*/
 
 			// Very low threshold for visibility
-			if (incAlert < sightThreshold)
+			if (visFraction < sightThreshold)
 			{
 				// Not visible, entity is hidden in darkness
 				return true;
