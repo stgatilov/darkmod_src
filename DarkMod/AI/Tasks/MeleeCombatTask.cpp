@@ -36,6 +36,8 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
 {
+	static bool test = true;
+
 	DM_LOG(LC_AI, LT_INFO).LogString("Melee Combat Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
@@ -51,18 +53,23 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	// Can we damage the enemy already?
 	if (owner->CanHitEntity(enemy))
 	{
-		// Yes, let him bleed!
-		PerformAttack();
+		if (test)
+		{
+			test = false;
+			// Yes, let him bleed!
+			PerformAttack(owner);
+		}
 	}
 
 	return false; // not finished yet
 }
 
-void MeleeCombatTask::PerformAttack()
+void MeleeCombatTask::PerformAttack(idAI* owner)
 {
 	if (gameLocal.random.RandomFloat() < 0.5f)
 	{
 		// Quick melee
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_QuickMelee", 5);
 		/*lookAtEnemy( 100 );
 		animState( ANIMCHANNEL_TORSO, "Torso_QuickMelee", 5 );
 		waitAction( "melee_attack" );
@@ -71,6 +78,7 @@ void MeleeCombatTask::PerformAttack()
 	else
 	{
 		// Long melee
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_LongMelee", 5);
 		/*
 		lookAtEnemy( 100 );
 		animState( ANIMCHANNEL_TORSO, "Torso_LongMelee", 5 );

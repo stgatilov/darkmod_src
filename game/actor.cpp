@@ -3689,33 +3689,37 @@ void idActor::Event_FinishAction( const char *actionname ) {
 	}
 }
 
+bool idActor::AnimDone( int channel, int blendFrames ) const
+{
+	bool result = false;
+
+	switch( channel ) {
+		case ANIMCHANNEL_HEAD :
+			result = headAnim.AnimDone( blendFrames );
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			result = torsoAnim.AnimDone( blendFrames );
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			result = legsAnim.AnimDone( blendFrames );
+			break;
+
+		default:
+			gameLocal.Error( "Unknown anim group" );
+	}
+
+	return result;
+}
+
 /*
 ===============
 idActor::Event_AnimDone
 ===============
 */
 void idActor::Event_AnimDone( int channel, int blendFrames ) {
-	bool result;
-
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
-		result = headAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	case ANIMCHANNEL_TORSO :
-		result = torsoAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	case ANIMCHANNEL_LEGS :
-		result = legsAnim.AnimDone( blendFrames );
-		idThread::ReturnInt( result );
-		break;
-
-	default:
-		gameLocal.Error( "Unknown anim group" );
-	}
+	idThread::ReturnInt(AnimDone(channel, blendFrames));
 }
 
 /*

@@ -60,7 +60,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	{
 		// Yes, stop the move!
 		owner->StopMove(MOVE_STATUS_DONE);
-		gameLocal.Printf("Enemy is reachable!\n");
+		//gameLocal.Printf("Enemy is reachable!\n");
 
 		if (owner->AI_ENEMY_VISIBLE)
 		{

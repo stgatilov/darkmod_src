@@ -39,7 +39,7 @@ public:
 	static MeleeCombatTaskPtr CreateInstance();
 
 private:
-	void PerformAttack();
+	void PerformAttack(idAI* owner);
 };
 
 } // namespace ai
