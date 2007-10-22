@@ -1894,34 +1894,7 @@ idAI::Event_EntityInAttackCone
 =====================
 */
 void idAI::Event_EntityInAttackCone( idEntity *ent ) {
-	float	attack_cone;
-	idVec3	delta;
-	float	yaw;
-	float	relYaw;
-	
-	if ( !ent ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	delta = ent->GetPhysics()->GetOrigin() - GetEyePosition();
-
-	// get our gravity normal
-	const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-
-	// infinite vertical vision, so project it onto our orientation plane
-	delta -= gravityDir * ( gravityDir * delta );
-
-	delta.Normalize();
-	yaw = delta.ToYaw();
-
-	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
-	relYaw = idMath::AngleNormalize180( ideal_yaw - yaw );
-	if ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) ) {
-		idThread::ReturnInt( true );
-	} else {
-		idThread::ReturnInt( false );
-	}
+	idThread::ReturnInt( EntityInAttackCone(ent) );
 }
 
 /*

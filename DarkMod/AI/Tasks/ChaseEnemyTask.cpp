@@ -35,6 +35,11 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_enemy = owner->GetEnemy();
 	owner->GetMind()->GetMemory().chaseFinished = false;
+
+	if (!owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
+	{
+		// TODO: Destination unreachable?
+	}
 }
 
 bool ChaseEnemyTask::Perform(Subsystem& subsystem)
@@ -51,32 +56,47 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	if (!owner->MoveToEnemy())
+	// Can we damage the enemy already?
+	if (owner->CanHitEntity(enemy))
+	{
+		// Yes, stop the move!
+		owner->StopMove(MOVE_STATUS_DONE);
+		gameLocal.Printf("Enemy is reachable!\n");
+	}
+	// no, push the AI forward and try to get to the last visible reachable enemy position
+	else if (owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
 	{
 		if (owner->AI_MOVE_DONE)
 		{
-			owner->UpdateEnemyPosition();
+			// Position has been reached
+			/*owner->UpdateEnemyPosition();
 
 			if (owner->AI_ENEMY_VISIBLE)
 			{
 				// Update the enemy position if the move is done.
 				owner->SetEnemyPosition();
-			}
+			}*/
+			gameLocal.Printf("Position reached!\n");
 		}
-		else if (owner->AI_DEST_UNREACHABLE)
+		else
 		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+			// AI is moving, this is ok
+			gameLocal.Printf("AI is moving... \n");
 		}
 	}
 	else
 	{
-		if (owner->AI_ENEMY_VISIBLE)
+		// Destination unreachable!
+		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+		gameLocal.Printf("Destination unreachable... \n");
+
+		/*if (owner->AI_ENEMY_VISIBLE)
 		{
 			// Update the enemy position, if the enemy is visible, otherwise, just run to that location
 			owner->SetEnemyPosition();
-		}
+		}*/
 	}
-		
+
 	/*if (!Chase())
 	{
 		if (!Chase()) 

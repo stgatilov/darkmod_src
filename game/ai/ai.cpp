@@ -2890,7 +2890,7 @@ idAI::MoveAlongVector
 bool idAI::MoveAlongVector( float yaw ) 
 {
 	StopMove( MOVE_STATUS_DONE );
-	move.moveDir = idAngles( 0, dir, 0 ).ToForward();
+	/*move.moveDir = idAngles( 0, dir, 0 ).ToForward();
 	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
 
 	move.moveCommand	= MOVE_VECTOR;
@@ -2898,7 +2898,7 @@ bool idAI::MoveAlongVector( float yaw )
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
-	AI_FORWARD			= true;
+	AI_FORWARD			= true;*/
 
 	return true;
 }
@@ -4946,6 +4946,45 @@ void idAI::SetEnemyPosition()
 	}
 }
 
+bool idAI::EntityInAttackCone(idEntity* ent)
+{
+	float	attack_cone;
+	idVec3	delta;
+	float	yaw;
+	float	relYaw;
+	
+	if ( !ent ) {
+		return false;
+	}
+
+	delta = ent->GetPhysics()->GetOrigin() - GetEyePosition();
+
+	// get our gravity normal
+	const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+
+	// infinite vertical vision, so project it onto our orientation plane
+	delta -= gravityDir * ( gravityDir * delta );
+
+	delta.Normalize();
+	yaw = delta.ToYaw();
+
+	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
+	relYaw = idMath::AngleNormalize180( ideal_yaw - yaw );
+
+	return ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) );
+}
+
+bool idAI::CanHitEntity(idActor* entity)
+{
+	if (entity != NULL)
+	{
+		float distance = (entity->GetEyePosition() - GetEyePosition()).LengthSqr();
+		return (distance < 2500);
+	}
+
+	return false;
+}
+
 /*
 =====================
 idAI::UpdateEnemyPosition
@@ -5017,8 +5056,7 @@ void idAI::UpdateEnemyPosition()
 
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
-	AI_ENEMY_REACHABLE  = false;
-
+	
 	if (CanSee(enemyEnt, false))
 	{
 		// greebo: A trace to the enemy is possible (no FOV check!) and the entity is not hidden in darkness
@@ -5033,10 +5071,6 @@ void idAI::UpdateEnemyPosition()
 			AI_ENEMY_IN_FOV = true;
 			// TODO: call SetEnemyPosition here only?
 		}
-
-		// greebo: Added an AI_ENEMY_REACHABLE test here, FIXME: is this beneficial at all?
-		idVec3 distance(GetEyePosition() - enemyEnt->GetEyePosition());
-		AI_ENEMY_REACHABLE = (distance.LengthFast() < 100);
 
 		SetEnemyPosition();
 	}
@@ -7717,6 +7751,11 @@ void idAI::FOVDebugDraw( void )
 
 Quit:
 	return;
+}
+
+moveStatus_t idAI::GetMoveStatus() const
+{
+	return move.moveStatus;
 }
 
 bool idAI::CanReachEnemy()

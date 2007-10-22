@@ -670,6 +670,7 @@ protected:
 	jointHandle_t			focusJoint;
 	jointHandle_t			orientationJoint;
 
+public: // greebo: Made these public
 	// enemy variables
 	idEntityPtr<idActor>	enemy;
 	idVec3					lastVisibleEnemyPos;
@@ -694,7 +695,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptBool			AI_ACTIVATED;
 	idScriptBool			AI_FORWARD;
 	idScriptBool			AI_JUMP;
-	bool					AI_ENEMY_REACHABLE;
 	idScriptBool			AI_BLOCKED;
 	idScriptBool			AI_OBSTACLE_IN_PATH;
 	idScriptBool			AI_DEST_UNREACHABLE;
@@ -1062,6 +1062,22 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*/
 	bool IsEntityHiddenByDarkness (idEntity* p_entity) const;
 
+	/**
+	 * greebo: Returns TRUE if the entity is within the "attack_cone".
+	 */
+	bool EntityInAttackCone(idEntity* entity);
+
+	/**
+	 * Returns TRUE or FALSE, depending on the distance to the 
+	 * given entity and the weapons attached to this AI.
+	 * Melee AI normally perform a distance check,
+	 * ranged AI should implement a more sophisticated check.
+	 *
+	 * @entityHeight: The height measured from the entity's origin
+	 *                this AI should try to attack.
+	 */
+	bool CanHitEntity(idActor* entity);
+
 
 	// movement control
 	void					StopMove( moveStatus_t status );
@@ -1077,6 +1093,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
+
+	/**
+	 * greebo: This moves the entity to the given point.
+	 *
+	 * @returns: FALSE, if the position is not reachable (AI_DEST_UNREACHABLE && AI_MOVE_DONE == true)
+	 * @returns: TRUE, if the position is reachable and the AI is moving (AI_MOVE_DONE == false) 
+	 *                 OR the position is already reached (AI_MOVE_DONE == true).
+	 */
 	bool					MoveToPosition( const idVec3 &pos );
 	bool					MoveToCover( idEntity *entity, const idVec3 &pos );
 	bool					SlideToPosition( const idVec3 &pos, float time );
@@ -1225,6 +1249,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// Returns true if the current enemy can be reached
 	bool					CanReachEnemy();
+
+	// Returns the current move status (MOVE_STATUS_MOVING, for instance).
+	moveStatus_t			GetMoveStatus() const;
 
 	/**
 	* Returns true if AI's mouth is underwater
