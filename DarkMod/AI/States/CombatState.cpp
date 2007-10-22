@@ -64,18 +64,9 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
-	// Try to set up movement path to enemy
-	owner->AI_RUN = true;
-	owner->MoveToEnemy();
+	owner->DrawWeapon();
 
-	// TODO: DrawWeapon
-
-	// set our annoying bools back to false.
-	owner->AI_VISALERT = false;
-	owner->AI_HEARDSOUND = false;
-	owner->AI_TACTALERT = false;
-
-	if (!owner->AI_DEST_UNREACHABLE && owner->CanReachEnemy())
+	/*if (!owner->AI_DEST_UNREACHABLE && owner->CanReachEnemy())
 	{
 		//pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
 	}
@@ -93,9 +84,7 @@ void CombatState::Init(idAI* owner)
 			// Can't reach the target
 			// TODO pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
 		}
-	}
-
-	// Check if the AI has an enemy.
+	}*/
 
 	// Fill the subsystems with their tasks
 
@@ -108,7 +97,7 @@ void CombatState::Init(idAI* owner)
 
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_combat");
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(barkTask);
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();

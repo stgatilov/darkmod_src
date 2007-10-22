@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_CHASE_ENEMY_TASK_H__
-#define __AI_CHASE_ENEMY_TASK_H__
+#ifndef __AI_MELEE_COMBAT_TASK_H__
+#define __AI_MELEE_COMBAT_TASK_H__
 
 #include <boost/shared_ptr.hpp>
 
@@ -16,12 +16,12 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_CHASE_ENEMY "Chase_Enemy"
+#define TASK_MELEE_COMBAT "Melee_Combat"
 
-class ChaseEnemyTask;
-typedef boost::shared_ptr<ChaseEnemyTask> ChaseEnemyTaskPtr;
+class MeleeCombatTask;
+typedef boost::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
 
-class ChaseEnemyTask :
+class MeleeCombatTask :
 	public Task
 {
 	idEntityPtr<idActor> _enemy;
@@ -36,12 +36,9 @@ public:
 	virtual bool Perform(Subsystem& subsystem);
 
 	// Creates a new Instance of this task
-	static ChaseEnemyTaskPtr CreateInstance();
-
-	// Class-specific methods
-	virtual void SetEnemy(idActor* enemy);
+	static MeleeCombatTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_CHASE_ENEMY_TASK_H__ */
+#endif /* __AI_MELEE_COMBAT_TASK_H__ */
