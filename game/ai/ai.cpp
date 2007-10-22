@@ -2889,7 +2889,7 @@ idAI::MoveAlongVector
 */
 bool idAI::MoveAlongVector( float yaw ) 
 {
-	StopMove( MOVE_STATUS_DONE );
+	/*StopMove( MOVE_STATUS_DONE );
 	/*move.moveDir = idAngles( 0, dir, 0 ).ToForward();
 	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
 
@@ -2899,8 +2899,9 @@ bool idAI::MoveAlongVector( float yaw )
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;*/
-
+*/
 	return true;
+	
 }
 /*
 ================
@@ -6818,7 +6819,6 @@ float idAI::GetVisibility( idEntity *ent ) const
 * will be factored in to the lightgem.
 **/
 	// NOTE: Returns the probability that the entity will be seen in a half second
-
 	
 	float returnval(0);
 
@@ -6827,25 +6827,18 @@ float idAI::GetVisibility( idEntity *ent ) const
 	{
 		return returnval;
 	}
-
-
 	idPlayer* player = static_cast<idPlayer*>(ent);
 
-	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
+	float clampVal = GetCalibratedLightgemValue();
 
-	float lgemPercent = (lgem - 1) / (DARKMOD_LG_MAX - 1);
-	float clampVal = 0.5 * (1 - idMath::Cos(lgemPercent * idMath::PI));
-
-	float clampdist = cv_ai_sightmindist.GetFloat() * lgemPercent;
+	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
 
 
-
-/*
 	// debug for formula checking
 	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
-
-
+/*
+	old version:
 	float clampdist = (lgem - 1) * ( cv_ai_sightmindist.GetFloat() / (DARKMOD_LG_MAX - 1) );
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
 
@@ -6858,8 +6851,8 @@ float idAI::GetVisibility( idEntity *ent ) const
 	// the formula for now is: 1/e^1.2 * exp(1.2* lgem / lgem_max )
 	// TODO: Make the 1.2 a factor that you can tweak.
 	float clampVal = 0.30119f * idMath::Exp16( 1.2 * (lgem/DARKMOD_LG_MAX));
-
 */
+
 	idVec3 delta = GetEyePosition() - player->GetEyePosition();
 	float dist = delta.Length()*s_DOOM_TO_METERS;
 
@@ -6871,7 +6864,6 @@ float idAI::GetVisibility( idEntity *ent ) const
 	}
 	else 
 	{
-		
 		if (dist > safedist) 
 		{
 			returnval = 0;
@@ -6897,15 +6889,36 @@ float idAI::GetVisibility( idEntity *ent ) const
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
 		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+	}
+	
+	return returnval;
+}
+
+float idAI::GetCalibratedLightgemValue() const
+{
+	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
+
+	float clampVal = 0.00453f 
+					- 0.000483687f * lgem 
+					+ 0.00289f * idMath::Pow16(lgem, 2)
+					+ 1.19658e-4f * idMath::Pow16(lgem, 3)
+					- 1.2142e-5f * idMath::Pow16(lgem, 4)	
+					+ 2.0494e-7f * idMath::Pow16(lgem, 5);
+
+	if (clampVal > 1)
+	{
+		clampVal = 1;
+	}	
+
+	// Debug output
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
 		idStr alertText5(lgem);
 		alertText5 = "lgem: "+ alertText5;
 		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-}
-	
-	
-	
-	
-	return returnval;
+	}
+
+	return clampVal;
 }
 
 void idAI::TactileAlert( idEntity *entest, float amount )
@@ -7104,14 +7117,14 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 			//float incAlert = GetPlayerVisualStimulusAmount();
 			
 			// greebo: Check the visibility of the player depending on lgem and distance
-			float visFraction = GetVisibility(p_entity); // returns values in [0..1]
+			float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
 /*
 			// greebo: Debug output, comment me out
 			idStr alertText(visFraction);
 			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 */
 			// Get base sight threshold
-			float sightThreshold = 0.4f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
+			float sightThreshold = 0.25f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
 			// Draw debug graphic
 			/*if (cv_ai_visdist_show.GetFloat() > 1.0)
