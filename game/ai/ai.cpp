@@ -4978,8 +4978,10 @@ bool idAI::CanHitEntity(idActor* entity)
 {
 	if (entity != NULL)
 	{
-		float distance = (entity->GetEyePosition() - GetEyePosition()).LengthSqr();
-		return (distance < 2500);
+		// greebo: Route this call to TestMelee
+		return TestMelee();
+
+		// TODO: Support for ranged attacks
 	}
 
 	return false;

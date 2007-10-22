@@ -52,10 +52,32 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	if (owner->CanHitEntity(enemy))
 	{
 		// Yes, let him bleed!
-		
+		PerformAttack();
 	}
 
 	return false; // not finished yet
+}
+
+void MeleeCombatTask::PerformAttack()
+{
+	if (gameLocal.random.RandomFloat() < 0.5f)
+	{
+		// Quick melee
+		/*lookAtEnemy( 100 );
+		animState( ANIMCHANNEL_TORSO, "Torso_QuickMelee", 5 );
+		waitAction( "melee_attack" );
+		lookAtEnemy( 1 );*/
+	}
+	else
+	{
+		// Long melee
+		/*
+		lookAtEnemy( 100 );
+		animState( ANIMCHANNEL_TORSO, "Torso_LongMelee", 5 );
+		waitAction( "melee_attack" );
+		lookAtEnemy( 1 );
+		stopMove();*/
+	}
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()

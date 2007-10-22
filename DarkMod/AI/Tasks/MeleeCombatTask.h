@@ -37,6 +37,9 @@ public:
 
 	// Creates a new Instance of this task
 	static MeleeCombatTaskPtr CreateInstance();
+
+private:
+	void PerformAttack();
 };
 
 } // namespace ai

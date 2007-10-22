@@ -61,14 +61,26 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		// Yes, stop the move!
 		owner->StopMove(MOVE_STATUS_DONE);
 		gameLocal.Printf("Enemy is reachable!\n");
+
+		if (owner->AI_ENEMY_VISIBLE)
+		{
+			// angua: Turn to the player
+			idVec3 diff = enemy->GetEyePosition() - owner->GetEyePosition();
+			owner->TurnToward(diff.ToAngles().yaw);
+		}
 	}
 	// no, push the AI forward and try to get to the last visible reachable enemy position
 	else if (owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
 	{
 		if (owner->AI_MOVE_DONE)
 		{
-			// Position has been reached
-			gameLocal.Printf("Position reached!\n");
+			// Position has been reached, turn to player, if visible
+			if (owner->AI_ENEMY_VISIBLE)
+			{
+				// angua: Turn to the player
+				idVec3 diff = enemy->GetEyePosition() - owner->GetEyePosition();
+				owner->TurnToward(diff.ToAngles().yaw);
+			}
 		}
 		else
 		{
