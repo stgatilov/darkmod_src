@@ -2889,8 +2889,8 @@ idAI::MoveAlongVector
 */
 bool idAI::MoveAlongVector( float yaw ) 
 {
-	/*StopMove( MOVE_STATUS_DONE );
-	/*move.moveDir = idAngles( 0, dir, 0 ).ToForward();
+	StopMove( MOVE_STATUS_DONE );
+	move.moveDir = idAngles( 0, yaw, 0 ).ToForward();
 	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
 
 	move.moveCommand	= MOVE_VECTOR;
@@ -2898,10 +2898,9 @@ bool idAI::MoveAlongVector( float yaw )
 	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
-	AI_FORWARD			= true;*/
-*/
+	AI_FORWARD			= true;
+
 	return true;
-	
 }
 /*
 ================

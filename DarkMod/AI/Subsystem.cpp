@@ -65,10 +65,12 @@ void Subsystem::PerformTask()
 				_task = *_taskQueue.begin();
 				_taskQueue.pop_front();
 
+				// Set the enabled flag BEFORE the Init() call, as it
+				// might set the subsystem to disabled again.
+				_enabled = true;
+
 				// Initialise the new task with a reference to the owner and <self>
 				_task->Init(_owner.GetEntity(), *this);
-
-				_enabled = true;
 			}
 			else
 			{
