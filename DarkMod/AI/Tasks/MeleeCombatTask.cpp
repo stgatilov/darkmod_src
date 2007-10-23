@@ -36,8 +36,6 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
 {
-	static bool test = true;
-
 	DM_LOG(LC_AI, LT_INFO).LogString("Melee Combat Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
@@ -53,11 +51,16 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	// Can we damage the enemy already?
 	if (owner->CanHitEntity(enemy))
 	{
-		if (test)
+		idStr waitState(owner->WaitState());
+		if (waitState != "melee_attack")
 		{
-			test = false;
-			// Yes, let him bleed!
+			// Waitstate is not matching, this means that the animation 
+			// can be started.
 			PerformAttack(owner);
+
+			// greebo: Set the waitstate, this gets cleared by 
+			// the script function when the animation is done.
+			owner->SetWaitState("melee_attack");
 		}
 	}
 
@@ -70,21 +73,11 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 	{
 		// Quick melee
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_QuickMelee", 5);
-		/*lookAtEnemy( 100 );
-		animState( ANIMCHANNEL_TORSO, "Torso_QuickMelee", 5 );
-		waitAction( "melee_attack" );
-		lookAtEnemy( 1 );*/
 	}
 	else
 	{
 		// Long melee
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_LongMelee", 5);
-		/*
-		lookAtEnemy( 100 );
-		animState( ANIMCHANNEL_TORSO, "Torso_LongMelee", 5 );
-		waitAction( "melee_attack" );
-		lookAtEnemy( 1 );
-		stopMove();*/
 	}
 }
 
