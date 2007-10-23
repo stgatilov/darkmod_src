@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 
 #include "BasicMind.h"
 #include "States/IdleState.h"
+#include "States/ReactingToStimulusState.h"
 #include "Tasks/SingleBarkTask.h"
 #include "States/CombatState.h"
 #include "Library.h"
@@ -521,7 +522,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 		
 		// If it was not a combat level alert, or we returned here because there
 		// was no target, set the alert position
-		// TODO setAlertPos();
+		SetAlertPos();
 		
 		// Are we searching out new alerts		
 		if (processNewStimuli)
@@ -558,8 +559,8 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 					// Do new reaction to stimulus
 					memory.searchingDueToCommunication = false;
 
-					// TODO
-					//pushTaskIfHighestPriority("task_ReactingToStimulus", PRIORITY_REACTTOSTIMULUS);
+					// Switch to reacting stimulus task
+					SwitchStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
 					return;
 				}	
 			} // Not too close to last stimulus or is visual stimulus

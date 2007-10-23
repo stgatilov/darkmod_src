@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: ReactingToStimulusState.cpp 143
 #include "ReactingToStimulusState.h"
 #include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
+#include "../Tasks/StimulusSensoryTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -35,7 +36,12 @@ void ReactingToStimulusState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMind()->GetMemory();
 
-	
+	// Look to the alert position
+	owner->Event_LookAtPosition(memory.alertPos, 2.0f);
+
+	// Take the idle sensory scan task and plug it into the senses subsystem
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->QueueTask(StimulusSensoryTask::CreateInstance());
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
