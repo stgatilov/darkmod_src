@@ -756,6 +756,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
 	savefile->WriteFloat( m_AlertNumThisFrame );
+	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
 	m_TactAlertEnt.Save( savefile );
@@ -974,6 +975,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
 	savefile->ReadFloat( m_AlertNumThisFrame );
+	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
 	m_TactAlertEnt.Restore( savefile );
@@ -1139,6 +1141,7 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time1",			"4",		atime1 );
 	spawnArgs.GetFloat( "alert_time2",			"30",		atime2 );
 	spawnArgs.GetFloat( "alert_time3",			"120",		atime3 );
+	spawnArgs.GetBool( "ignore_alerts",			"0",		m_bIgnoreAlerts );
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
 	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
@@ -6539,13 +6542,16 @@ void idAI::HearSound
 	( SSprParms *propParms, float noise,
 	  idVec3 origin )
 {
+	float psychLoud(0.0f);
+
+	if( m_bIgnoreAlerts )
+		goto Quit;
+
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI Hear Sound called\r");
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
 	// see how well the AI distinguishes signal from noise
-
-	float psychLoud;
 
 	//psychLoud = pow(2, (propParms->loudness - threshold)/10 );
 	// this scale didn't make much sense for the alerts ingame
@@ -6582,11 +6588,19 @@ void idAI::HearSound
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
+
+Quit:
+	return;
 }
 
 void idAI::AlertAI(const char *type, float amount)
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AlertAI called\r");
+
+	if (m_bIgnoreAlerts)
+	{
+		return;
+	}
 
 	float acuity = GetAcuity(type);
 
@@ -6747,9 +6761,9 @@ idActor* idAI::VisualScan(float timecheck)
 	// and the AI can see the player actor.
 	idActor* actor = FindEnemy(true);
 
-	if (actor == NULL)
+	if (actor == NULL || m_bIgnoreAlerts)
 	{
-		// No actor in sight, quit
+		// No actor in sight or alerts disabled, quit
 		return NULL;
 	}
 
@@ -6929,7 +6943,7 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 	if ( amount == -1 )
 		amount = cv_ai_tactalert.GetFloat();
 
-	if( entest == NULL )
+	if( entest == NULL || m_bIgnoreAlerts )
 	{
 		goto Quit;
 	}
