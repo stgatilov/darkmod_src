@@ -198,7 +198,7 @@ bool tdmDeclXData::Parse( const char *text, const int textLength )
 					if ( !src.ReadToken( &tKey ) ||
 						 tKey.type != TT_NAME ||
 						 tKey.Icmp("from") != 0 ) {
-						src.Warning( "Missing from statement.", tKey.c_str() );
+						src.Warning( "Missing from statement: %s.", tKey.c_str() );
 						goto Quit;
 					}
 

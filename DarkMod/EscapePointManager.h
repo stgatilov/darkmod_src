@@ -98,8 +98,8 @@ public:
 	EscapePoint() :
 		aasId(-1),
 		areaNum(-1),
-		isGuarded(false),
-		team(0) // neutral
+		team(0), // neutral
+		isGuarded(false)
 	{}
 
 	void Save( idSaveGame *savefile ) const;
