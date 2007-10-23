@@ -40,6 +40,21 @@ void BasicMind::Think()
 		ChangeState(STATE_IDLE);
 	}
 
+	if (_nextState != NULL)
+	{
+		// Get the next state, this destroys the old one
+		_state = _nextState;
+
+		// Clear the queue
+		_nextState = StatePtr();
+
+		// Initialise the new state
+		_state->Init(_owner.GetEntity());
+	}
+
+	// We MUST have a state
+	assert(_state != NULL);
+
 	// greebo: We do not check for NULL pointers in the owner at this point, 
 	// as this method is called by the owner itself.
 
@@ -72,11 +87,8 @@ void BasicMind::ChangeState(const idStr& stateName)
 
 	if (newState != NULL)
 	{
-		// Change the state, the pointer is ok
-		_state = newState;
-
-		// Initialise the new state
-		_state->Init(_owner.GetEntity());
+		// Store the pointer, it will be used the next round
+		_nextState = newState;
 	}
 	else
 	{

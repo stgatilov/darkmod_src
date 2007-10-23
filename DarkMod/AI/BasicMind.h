@@ -26,6 +26,9 @@ private:
 	// The state we're in
 	StatePtr _state;
 
+	// The next state, if this is non-NULL, the current one will be terminated.
+	StatePtr _nextState;
+
 	// The structure holding all the variables
 	Memory _memory;
 
