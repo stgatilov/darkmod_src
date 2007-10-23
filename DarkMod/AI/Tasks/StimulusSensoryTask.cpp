@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: StimulusSensoryTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "StimulusSensoryTask.h"
+#include "../States/IdleState.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -46,7 +47,17 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
 
-	
+	if (owner->AI_AlertNum >= owner->thresh_2)
+	{
+		
+	}
+	else if (owner->AI_AlertNum <= owner->thresh_1)
+	{
+		// Fallback to idle, but with increased alertness
+		owner->Event_SetAlertLevel(owner->thresh_1 * 0.5f);
+		owner->GetMind()->SwitchState(STATE_IDLE);
+		return true;
+	}
 
 	return false; // not finished yet
 }
