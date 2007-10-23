@@ -5070,6 +5070,9 @@ void idAI::UpdateEnemyPosition()
 		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
 
+		// Store the last time the enemy was visible
+		mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
+
 		// Now perform the FOV check manually
 		if (CheckFOV( enemyEnt->GetPhysics()->GetOrigin()))
 		{

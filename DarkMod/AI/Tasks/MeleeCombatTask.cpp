@@ -48,8 +48,8 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 		return true; // terminate me
 	}
 
-	// Can we damage the enemy already?
-	if (owner->CanHitEntity(enemy))
+	// Can we damage the enemy already? (this flag is set by the sensory task)
+	if (owner->GetMind()->GetMemory().canHitEnemy)
 	{
 		idStr waitState(owner->WaitState());
 		if (waitState != "melee_attack")

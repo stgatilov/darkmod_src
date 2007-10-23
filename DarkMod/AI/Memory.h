@@ -64,6 +64,9 @@ public:
 
 	int	lastTimeFriendlyAISeen;
 
+	// This is the last time the enemy was visible
+	int	lastTimeEnemySeen;
+
 	/*!
 	* This variable indicates the number of out of place things that the
 	* AI has witness, such as sounds, missing items, open doors, torches gone
@@ -111,6 +114,12 @@ public:
 	// greebo: Note: Currently this is filled in before fleeing only.
 	idVec3 lastEnemyPos;
 
+	// This is set to TRUE by the CombatSensoryTask to indicate whether
+	// the AI is in the position to damage the player.
+	// This flag is mostly for caching purposes so that the subsystem tasks
+	// don't need to query idAI::CanHitEnemy() independently.
+	bool canHitEnemy;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -127,7 +136,8 @@ public:
 		lastAlertPosSearched(0,0,0),
 		alertSearchVolume(0,0,0),
 		alertSearchExclusionVolume(0,0,0),
-		lastEnemyPos(0,0,0)
+		lastEnemyPos(0,0,0),
+		canHitEnemy(false)
 	{}
 
 	// Save/Restore routines
@@ -150,6 +160,7 @@ public:
 		savefile->WriteVec3(alertSearchVolume);
 		savefile->WriteVec3(alertSearchExclusionVolume);
 		savefile->WriteVec3(lastEnemyPos);
+		savefile->WriteBool(canHitEnemy);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -177,6 +188,7 @@ public:
 		savefile->ReadVec3(alertSearchVolume);
 		savefile->ReadVec3(alertSearchExclusionVolume);
 		savefile->ReadVec3(lastEnemyPos);
+		savefile->ReadBool(canHitEnemy);
 	}
 };
 

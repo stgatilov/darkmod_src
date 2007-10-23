@@ -47,6 +47,7 @@ void BasicMind::Think()
 
 	switch (gameLocal.framenum % 4) {
 		case 0:
+			// Let the senses tasks perform before the other subsystems
 			owner->GetSubsystem(SubsysSenses)->PerformTask();
 			break;
 		case 1:

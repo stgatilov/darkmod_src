@@ -48,6 +48,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
@@ -55,8 +57,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	// Can we damage the enemy already?
-	if (owner->CanHitEntity(enemy))
+	// Can we damage the enemy already? (this flag is set by the sensory task)
+	if (memory.canHitEnemy)
 	{
 		// Yes, stop the move!
 		owner->StopMove(MOVE_STATUS_DONE);

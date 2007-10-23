@@ -19,6 +19,9 @@ static bool init_version = FileVersionList("$Id: CombatSensoryTask.cpp 1435 2007
 namespace ai
 {
 
+// The maximum time the AI is able to follow the enemy although it's visible
+#define MAX_BLIND_CHASE_TIME 1500
+
 // Get the name of this task
 const idStr& CombatSensoryTask::GetName() const
 {
@@ -41,6 +44,8 @@ bool CombatSensoryTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
@@ -48,7 +53,21 @@ bool CombatSensoryTask::Perform(Subsystem& subsystem)
 		return true; // terminate me
 	}
 
-	// Move canhitenemy here
+	// Check the distance to the enemy, the other subsystem tasks need it.
+	memory.canHitEnemy = owner->CanHitEntity(enemy);
+
+	if (!owner->AI_ENEMY_VISIBLE)
+	{
+		// The enemy is not visible, let's keep track of him for a small amount of time
+		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+		{
+			// Cheat a bit and take the last reachable position as "visible & reachable"
+			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
+
+			// Debug, comment me out
+			//gameRenderWorld->DrawText("Flying Blind", owner->GetEyePosition() + idVec3(0,0,10), 0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20);
+		}
+	}
 
 	return false; // not finished yet
 }
