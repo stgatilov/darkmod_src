@@ -22,8 +22,8 @@ tdmAASFindEscape::tdmAASFindEscape(
 ) :
 	_threatPosition(threatPosition),
 	_selfPosition(selfPosition),
-	_minDistSelfSqr(minDistToSelf*minDistToSelf),
 	_minDistThreatSqr(minDistToThreat*minDistToThreat),
+	_minDistSelfSqr(minDistToSelf*minDistToSelf),
 	_bestDistSqr(0)
 {
 	_goal.areaNum = -1;

@@ -17,9 +17,9 @@ static bool init_version = FileVersionList("$Id: EscapePointEvaluator.cpp 870 20
 EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
 	_bestId(-1), // Set the ID to invalid
-	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_startAreaNum(conditions.aas->PointAreaNum(conditions.fromPosition)),
 	_bestTime(0),
+	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_threatPosition(conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin())
 {}
 

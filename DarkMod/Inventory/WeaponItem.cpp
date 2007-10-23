@@ -25,11 +25,11 @@ static bool init_version = FileVersionList("$Id: Item.cpp 987 2007-05-12 13:36:0
 CInventoryWeaponItem::CInventoryWeaponItem() :
 	CInventoryItem(NULL),
 	_weaponDefName(""),
+	_maxAmmo(0),
+	_ammo(0),
 	_weaponIndex(-1),
 	_toggleable(false),
-	_allowedEmpty(false),
-	_maxAmmo(0),
-	_ammo(0)
+	_allowedEmpty(false)
 {
 	SetType(IT_WEAPON);
 }
