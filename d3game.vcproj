@@ -796,6 +796,12 @@
 					RelativePath=".\DarkMod\AIComm_StimResponse.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\AIVehicle.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AIVehicle.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\BinaryFrobMover.cpp">
 				</File>
 				<File
