@@ -1,0 +1,56 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1435 $
+ * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
+ * $Author: greebo $
+ *
+ ***************************************************************************/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
+static bool init_version = FileVersionList("$Id: ReactingToStimulusState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+
+#include "ReactingToStimulusState.h"
+#include "../Memory.h"
+#include "../Tasks/EmptyTask.h"
+#include "../Library.h"
+
+namespace ai
+{
+
+// Get the name of this state
+const idStr& ReactingToStimulusState::GetName() const
+{
+	static idStr _name(STATE_REACTING_TO_STIMULUS);
+	return _name;
+}
+
+void ReactingToStimulusState::Init(idAI* owner)
+{
+	DM_LOG(LC_AI, LT_INFO).LogString("ReactingToStimulusState initialised.\r");
+	assert(owner);
+
+	// Shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	
+
+	// For now, clear the action tasks
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
+}
+
+StatePtr ReactingToStimulusState::CreateInstance()
+{
+	return StatePtr(new ReactingToStimulusState);
+}
+
+// Register this state with the StateLibrary
+StateLibrary::Registrar reactingToStimulusStateRegistrar(
+	STATE_REACTING_TO_STIMULUS, // Task Name
+	StateLibrary::CreateInstanceFunc(&ReactingToStimulusState::CreateInstance) // Instance creation callback
+);
+
+} // namespace ai

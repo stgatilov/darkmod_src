@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: LostTrackOfEnemyState.cpp 1435 
 #include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../States/ReactingToStimulusState.h"
 #include "../Library.h"
 
 namespace ai
@@ -39,30 +40,29 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Draw weapon, if we haven't already
 	owner->DrawWeapon();
 
-	// Set AI_RUN to true depending on the walk distance to the last visible reachable enemy position
-	// TODO >> implement in Task_Investigate
-	owner->GetMind()->SwitchState("Investigate");
+	// Setup the search parameters
+	memory.alertPos = owner->lastVisibleReachableEnemyPos;
+	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+	memory.alertSearchExclusionVolume.Zero();
 
-	// Fill the subsystems with their tasks
+	memory.searchingDueToCommunication = false;
+	memory.stimulusLocationItselfShouldBeSearched = true;
 
-	// The movement subsystem should start running to the last enemy position
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(EmptyTask::CreateInstance());
+	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
+	owner->ClearEnemy();
 
-	// The communication system is barking in regular intervals
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-
+	// Enqueue a lost track of enemy bark
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_lostTrackOfEnemy");
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(barkTask);
 
-	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
-
-	// For now, we assume a melee combat (TODO: Ranged combat decision)
+	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
+
+	// Switch the state
+	owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
 }
 
 StatePtr LostTrackOfEnemyState::CreateInstance()

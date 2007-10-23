@@ -30,6 +30,10 @@ namespace ai
 #define AUDIO_ALERT_RADIUS 50.0f
 #define AUDIO_SEARCH_VOLUME idVec3(200,200,200)
 
+// Area searched around last sighting after losing an enemy
+#define LOST_ENEMY_ALERT_RADIUS 200.0
+#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 200.0)
+
 // Stim radii for various communication styles
 #define YELL_STIM_RADIUS 400
 #define TALK_STIM_RADIUS 200
