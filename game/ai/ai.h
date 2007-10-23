@@ -771,6 +771,11 @@ protected:
 	float					m_AlertNumThisFrame;
 
 	/**
+	* If true, the AI ignores alerts during all actions
+	**/
+	bool					m_bIgnoreAlerts;
+
+	/**
 	* Array containing the various AI acuities (visual, aural, tactile, etc)
 	**/
 	idList<float>			m_Acuities;
