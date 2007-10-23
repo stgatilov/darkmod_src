@@ -37,7 +37,7 @@ void BasicMind::Think()
 	if (_state == NULL)
 	{
 		// We start with the idle state
-		ChangeState(STATE_IDLE);
+		SwitchState(STATE_IDLE);
 	}
 
 	if (_nextState != NULL)
@@ -81,7 +81,7 @@ void BasicMind::Think()
 }
 
 // Changes the state
-void BasicMind::ChangeState(const idStr& stateName)
+void BasicMind::SwitchState(const idStr& stateName)
 {
 	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
 
@@ -96,11 +96,11 @@ void BasicMind::ChangeState(const idStr& stateName)
 	}
 }
 
-bool BasicMind::ChangeStateIfHigherPriority(const idStr& stateName, int statePriority)
+bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int statePriority)
 {
 	if (_state == NULL || statePriority > _state->GetPriority())
 	{
-		ChangeState(stateName);
+		SwitchState(stateName);
 		return true;
 	}
 
@@ -486,7 +486,7 @@ void BasicMind::PerformCombatCheck()
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
 		StatePtr combatState = CombatState::CreateInstance();
-		ChangeStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+		SwitchStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 
 		return;
 	}

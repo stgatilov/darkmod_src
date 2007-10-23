@@ -71,7 +71,7 @@ bool CombatSensoryTask::Perform(Subsystem& subsystem)
 		else
 		{
 			// BLIND_CHASE_TIME has expired, we have lost the enemy!
-			owner->GetMind()->ChangeState(STATE_LOST_TRACK_OF_ENEMY);
+			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		}
 	}
 

@@ -38,11 +38,11 @@ public:
 
 	virtual void Think();
 
-	// Changes the state
-	virtual void ChangeState(const idStr& stateName);
+	// Switches the state
+	virtual void SwitchState(const idStr& stateName);
 
-	// Changes the state if the given priority is higher than the current one
-	virtual bool ChangeStateIfHigherPriority(const idStr& stateName, int statePriority);
+	// Switches the state if the given priority is higher than the current one
+	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int statePriority);
 
 	// Returns the reference to the current state
 	ID_INLINE StatePtr& GetState() {

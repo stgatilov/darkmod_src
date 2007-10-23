@@ -50,15 +50,15 @@ public:
 	 * greebo: Sets the new state of this mind (this can be Idle, Combat).
 	 * This new state is attached and its Init() method is invoked.
 	 */
-	virtual void ChangeState(const idStr& stateName) = 0;
+	virtual void SwitchState(const idStr& stateName) = 0;
 
 	/**
-	 * greebo: Changes to the given state if <statePriority> is higher than the
+	 * greebo: Switches to the given state if <statePriority> is higher than the
 	 *         priority of the current state.
 	 *
-	 * @returns: TRUE if the state was changed, FALSE otherwise.
+	 * @returns: TRUE if the state was switched, FALSE otherwise.
 	 */
-	virtual bool ChangeStateIfHigherPriority(const idStr& stateName, int statePriority) = 0;
+	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int statePriority) = 0;
 
 	/**
 	 * Returns the reference to the current state (can be NULL).

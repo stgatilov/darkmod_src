@@ -39,6 +39,10 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Draw weapon, if we haven't already
 	owner->DrawWeapon();
 
+	// Set AI_RUN to true depending on the walk distance to the last visible reachable enemy position
+	// TODO >> implement in Task_Investigate
+	owner->GetMind()->SwitchState("Investigate");
+
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should start running to the last enemy position
