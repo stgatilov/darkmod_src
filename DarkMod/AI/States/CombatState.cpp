@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/ChaseEnemyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
+#include "../Tasks/CombatSensoryTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -102,7 +103,7 @@ void CombatState::Init(idAI* owner)
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->QueueTask(CombatSensoryTask::CreateInstance());
 
 	// For now, we assume a melee combat (TODO: Ranged combat decision)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

@@ -56,7 +56,7 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 		{
 			// Waitstate is not matching, this means that the animation 
 			// can be started.
-			PerformAttack(owner);
+			StartAttack(owner);
 
 			// greebo: Set the waitstate, this gets cleared by 
 			// the script function when the animation is done.
@@ -67,7 +67,7 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
-void MeleeCombatTask::PerformAttack(idAI* owner)
+void MeleeCombatTask::StartAttack(idAI* owner)
 {
 	if (gameLocal.random.RandomFloat() < 0.5f)
 	{
@@ -79,6 +79,20 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		// Long melee
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_LongMelee", 5);
 	}
+}
+
+void MeleeCombatTask::Save(idSaveGame* savefile) const
+{
+	Task::Save(savefile);
+
+	_enemy.Save(savefile);
+}
+
+void MeleeCombatTask::Restore(idRestoreGame* savefile)
+{
+	Task::Restore(savefile);
+
+	_enemy.Restore(savefile);
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()

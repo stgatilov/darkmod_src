@@ -10,7 +10,7 @@
 #ifndef __AI_CHASE_ENEMY_TASK_H__
 #define __AI_CHASE_ENEMY_TASK_H__
 
-#include <boost/shared_ptr.hpp>
+#include "Task.h"
 
 namespace ai
 {
@@ -34,6 +34,10 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
 	static ChaseEnemyTaskPtr CreateInstance();

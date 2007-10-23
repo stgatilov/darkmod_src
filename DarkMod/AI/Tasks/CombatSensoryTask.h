@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_MELEE_COMBAT_TASK_H__
-#define __AI_MELEE_COMBAT_TASK_H__
+#ifndef __AI_COMBAT_SENSORY_TASK_H__
+#define __AI_COMBAT_SENSORY_TASK_H__
 
 #include "Task.h"
 
@@ -16,12 +16,12 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_MELEE_COMBAT "Melee_Combat"
+#define TASK_COMBAT_SENSORY "Combat_Sensory"
 
-class MeleeCombatTask;
-typedef boost::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
+class CombatSensoryTask;
+typedef boost::shared_ptr<CombatSensoryTask> CombatSensoryTaskPtr;
 
-class MeleeCombatTask :
+class CombatSensoryTask :
 	public Task
 {
 	idEntityPtr<idActor> _enemy;
@@ -35,18 +35,14 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
-	// Creates a new Instance of this task
-	static MeleeCombatTaskPtr CreateInstance();
-
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
-private:
-	// Starts the attack animation (either long or quick melee)
-	void StartAttack(idAI* owner);
+	// Creates a new Instance of this task
+	static CombatSensoryTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_MELEE_COMBAT_TASK_H__ */
+#endif /* __AI_COMBAT_SENSORY_TASK_H__ */

@@ -10,7 +10,7 @@
 #ifndef __AI_PATH_SHOW_TASK_H__
 #define __AI_PATH_SHOW_TASK_H__
 
-#include <boost/shared_ptr.hpp>
+#include "Task.h"
 
 namespace ai
 {

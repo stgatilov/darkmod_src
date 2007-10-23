@@ -103,6 +103,20 @@ void ChaseEnemyTask::SetEnemy(idActor* enemy)
 	_enemy = enemy;
 }
 
+void ChaseEnemyTask::Save(idSaveGame* savefile) const
+{
+	Task::Save(savefile);
+
+	_enemy.Save(savefile);
+}
+
+void ChaseEnemyTask::Restore(idRestoreGame* savefile)
+{
+	Task::Restore(savefile);
+
+	_enemy.Restore(savefile);
+}
+
 ChaseEnemyTaskPtr ChaseEnemyTask::CreateInstance()
 {
 	return ChaseEnemyTaskPtr(new ChaseEnemyTask);
