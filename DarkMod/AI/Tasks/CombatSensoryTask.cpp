@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: CombatSensoryTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "CombatSensoryTask.h"
+#include "../States/LostTrackOfEnemyState.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -66,6 +67,11 @@ bool CombatSensoryTask::Perform(Subsystem& subsystem)
 
 			// Debug, comment me out
 			//gameRenderWorld->DrawText("Flying Blind", owner->GetEyePosition() + idVec3(0,0,10), 0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20);
+		}
+		else
+		{
+			// BLIND_CHASE_TIME has expired, we have lost the enemy!
+			owner->GetMind()->ChangeState(STATE_LOST_TRACK_OF_ENEMY);
 		}
 	}
 
