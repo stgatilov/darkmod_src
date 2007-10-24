@@ -67,40 +67,14 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 
 		// Switch to searching mode, this will take care of the details
 		owner->GetMind()->SwitchState(STATE_SEARCHING);
-
-		// Implement as private method of this task
-		// TODO subFrameTask_startNewHidingSpotSearch (self.getEyePos(), m_alertPos, m_alertSearchVolume, m_alertSearchExclusionVolume);
-		
-		// No current search completed that we know of
-		memory.numPossibleHidingSpotsSearched = 0;
-		memory.currentHidingSpotListSearchMaxDuration = -1;
-
-		// If we are supposed to search the stimulus location do that instead of just standing around while the search
-		// completes
-		if (memory.stimulusLocationItselfShouldBeSearched)
-		{
-			// Spot search should go to a state to wait for thinking to complete
-			// when done (may transition out of that instantaneously if thinking
-			// is done)
-			
-			// TODO pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
-			memory.currentSearchSpot = memory.alertPos;
-			
-			// Determine the search duration
-			// TODO: subFrameTask_determineSearchDuration();
-			// TODO: pushTask("task_SearchingSpot", PRIORITY_SEARCHSPOT);
-		}		
-		else
-		{
-			// TODO: pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
-		}
+		return true; // task finished
 	}
 	else if (owner->AI_AlertNum <= owner->thresh_1)
 	{
 		// Fallback to idle, but with increased alertness
 		owner->Event_SetAlertLevel(owner->thresh_1 * 0.5f);
 		owner->GetMind()->SwitchState(STATE_IDLE);
-		return true;
+		return true; // task finished
 	}
 
 	return false; // not finished yet

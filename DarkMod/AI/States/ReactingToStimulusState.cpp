@@ -39,7 +39,7 @@ void ReactingToStimulusState::Init(idAI* owner)
 	// Look to the alert position
 	owner->Event_LookAtPosition(memory.alertPos, 2.0f);
 
-	// Take the idle sensory scan task and plug it into the senses subsystem
+	// Take the stimulus sensory scan task and plug it into the senses subsystem
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->QueueTask(StimulusSensoryTask::CreateInstance());
 
