@@ -197,7 +197,7 @@ void BasicMind::ChooseFirstHidingSpotToSearch(idAI* owner)
 		_memory.currentChosenHidingSpotIndex = spotIndex;
 		
 		// Get location
-		//_memory.chosenHidingSpot = getNthHidingSpotLocation (spotIndex);
+		_memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
 		
 		DM_LOG(LC_AI, LT_INFO).LogString(
 			"First spot chosen is index %d of %d spots.\r", 
