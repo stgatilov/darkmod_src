@@ -166,6 +166,14 @@ public:
 	*/
 	bool hidingSpotSearchDone;
 
+	// This counts the number of frames we have been thinking, in case
+	// we have a problem with hiding spot searches not returning
+	int hidingSpotThinkFrameCount;
+
+	int firstChosenHidingSpotIndex;
+	int currentChosenHidingSpotIndex;
+	idVec3 chosenHidingSpot;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -189,7 +197,11 @@ public:
 		numPossibleHidingSpotsSearched(0),
 		currentSearchSpot(0,0,0),
 		hidingSpotTestStarted(false),
-		hidingSpotSearchDone(false)
+		hidingSpotSearchDone(false),
+		hidingSpotThinkFrameCount(0),
+		firstChosenHidingSpotIndex(0),
+		currentChosenHidingSpotIndex(0),
+		chosenHidingSpot(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -219,6 +231,10 @@ public:
 		savefile->WriteVec3(currentSearchSpot);
 		savefile->WriteBool(hidingSpotTestStarted);
 		savefile->WriteBool(hidingSpotSearchDone);
+		savefile->WriteInt(hidingSpotThinkFrameCount);
+		savefile->WriteInt(firstChosenHidingSpotIndex);
+		savefile->WriteInt(currentChosenHidingSpotIndex);
+		savefile->WriteVec3(chosenHidingSpot);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -253,6 +269,10 @@ public:
 		savefile->ReadVec3(currentSearchSpot);
 		savefile->ReadBool(hidingSpotTestStarted);
 		savefile->ReadBool(hidingSpotSearchDone);
+		savefile->ReadInt(hidingSpotThinkFrameCount);
+		savefile->ReadInt(firstChosenHidingSpotIndex);
+		savefile->ReadInt(currentChosenHidingSpotIndex);
+		savefile->ReadVec3(chosenHidingSpot);
 	}
 };
 

@@ -67,12 +67,18 @@ public:
 
 private:
 	// Test if the alert state can be decreased
-	virtual void TestAlertStateTimer();
+	void TestAlertStateTimer();
 
 	// Returns TRUE if the <entity> is on an opposite team or owned by it
-	virtual bool IsEnemy(idEntity* entity, idAI* self);
+	bool IsEnemy(idEntity* entity, idAI* self);
 
-	virtual void Bark(const idStr& soundname);
+	void Bark(const idStr& soundname);
+
+	// This is called each frame to perform a multiframe hiding spot search
+	void PerformHidingSpotSearch(idAI* owner);
+
+	// Gets called when the hiding spot search is completed
+	void ChooseFirstHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai

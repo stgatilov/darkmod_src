@@ -65,6 +65,7 @@ void BasicMind::Think()
 	if (!_memory.hidingSpotSearchDone)
 	{
 		// Let the hiding spot search do its task
+		PerformHidingSpotSearch(owner);
 	}
 
 	// Try to perform the subsystem tasks, skipping inactive subsystems
@@ -76,6 +77,7 @@ void BasicMind::Think()
 			(static_cast<int>(_subsystemIterator) + 1) % static_cast<int>(SubsystemCount)
 		);
 
+		// Subsystems return TRUE when their task was executed
 		if (owner->GetSubsystem(_subsystemIterator)->PerformTask())
 		{
 			// Task performed, break, iterator will be increased next round
@@ -112,6 +114,103 @@ bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int statePri
 	}
 
 	return false; // not installed
+}
+
+void BasicMind::PerformHidingSpotSearch(idAI* owner)
+{
+	// Increase the frame count
+	_memory.hidingSpotThinkFrameCount++;
+
+	int res = owner->ContinueSearchForHidingSpots();
+	if (res < 0.9)
+	{
+		// search completed
+		_memory.hidingSpotSearchDone = true;
+
+		/*float searchTimeSpan;
+
+		// Hiding spot test is done
+		hidingSpotTestStarted = false;
+		
+		// Here we transition to the state for handling the behavior of
+		// the AI once it thinks it knows where the stimulus may have
+		// come from
+		
+		// For now, starts searching for the stimulus.  We probably want
+		// a way for different AIs to act differently
+		// TODO: Morale check etc...
+
+		// Determine the search duration
+		subFrameTask_determineSearchDuration();
+
+		// Yell that you noticed something if you are responding directly to a stimulus
+		if (!b_searchingDueToCommunication)
+		{
+			subFrameTask_yellNoticedSomethingSuspicious();
+		
+			// Wait a frame to let others respond
+			waitFrame();
+		}
+
+		// Get location
+		chosenHidingSpot = getNthHidingSpotLocation (currentChosenHidingSpotIndex);
+
+		// Set time search is starting
+		currentHidingSpotListSearchStartTime = sys.getTime();
+		
+		// Switch state
+		waitFrame();
+		pushTask("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
+
+		ChooseFirstHidingSpotToSearch(owner);
+	}
+}
+
+void BasicMind::ChooseFirstHidingSpotToSearch(idAI* owner)
+{
+	int numSpots = owner->m_hidingSpots.getNumSpots();
+	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);
+
+	// Choose randomly
+	if (numSpots > 0)
+	{
+		/*
+		// Get visual acuity
+		float visAcuity = getAcuity("vis");
+			
+		// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
+		// higher visual acuity should bias toward earlier in the list
+		float bias = 1.0 - visAcuity;
+		if (bias < 0.0)
+		{
+			bias = 0.0;
+		}
+		*/
+		// greebo: TODO? This isn't random choosing...
+
+		int spotIndex = 0; 
+
+		// Remember which hiding spot we have chosen at start
+		_memory.firstChosenHidingSpotIndex = spotIndex;
+			
+		// Note currently chosen hiding spot
+		_memory.currentChosenHidingSpotIndex = spotIndex;
+		
+		// Get location
+		//_memory.chosenHidingSpot = getNthHidingSpotLocation (spotIndex);
+		
+		DM_LOG(LC_AI, LT_INFO).LogString(
+			"First spot chosen is index %d of %d spots.\r", 
+			_memory.firstChosenHidingSpotIndex, numSpots
+		);
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
+		_memory.firstChosenHidingSpotIndex = -1;
+		_memory.currentChosenHidingSpotIndex = -1;
+		_memory.chosenHidingSpot.Zero();
+	}
 }
 
 void BasicMind::TestAlertStateTimer()

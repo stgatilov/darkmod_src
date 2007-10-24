@@ -1008,6 +1008,17 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 		idEntity* p_ignoreEntity
 	);
 
+	/*
+	* This method continues searching for hiding spots. It will only find so many before
+	* returning so as not to cause long delays.  Detected spots are added to the currently
+	* building hiding spot list.
+	*
+	* The return value is 0 if the end of the search was reached, or 1 if there
+	* is more processing to do (call this method again next AI frame)
+	*
+	*/
+	int ContinueSearchForHidingSpots();
+
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant

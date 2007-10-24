@@ -8112,3 +8112,79 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 		return 0;
 	}
 }
+
+int idAI::ContinueSearchForHidingSpots()
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\n");
+
+	// Get hiding spot search instance from handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
+	{
+		p_hidingSpotFinder = HidingSpotSearchCollection.getSearchByHandle(
+			m_HidingSpotSearchHandle
+		);
+	}
+
+	// Make sure search still around
+	if (p_hidingSpotFinder == NULL)
+	{
+		// No hiding spot search to continue
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\n");
+		return 0;
+	}
+	else
+	{
+		// Call finder method to continue search
+		bool b_moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
+		(
+			p_hidingSpotFinder->hidingSpotList,
+			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
+			gameLocal.framenum
+		);
+
+
+		// Return result
+		if (b_moreProcessingToDo)
+		{
+			return 1;
+		}
+		else
+		{
+			unsigned int refCount;
+
+			// Get finder we just referenced
+			darkModAASFindHidingSpots* p_hidingSpotFinder = 
+				HidingSpotSearchCollection.getSearchAndReferenceCountByHandle 
+				(
+					m_HidingSpotSearchHandle,
+					refCount
+				);
+
+			m_hidingSpots.clear();
+			p_hidingSpotFinder->hidingSpotList.getOneNth
+			(
+				refCount,
+				&m_hidingSpots
+			);
+
+			// Done with search object, dereference so other AIs know how many
+			// AIs will still be retrieving points from the search
+			HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
+			m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+
+			// DEBUGGING
+			if (cv_ai_search_show.GetInteger() >= 1.0)
+			{
+				// Clear the debug draw list and then fill with our results
+				p_hidingSpotFinder->debugClearHidingSpotDrawList();
+				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
+				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
+			}
+
+			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
+			return 0;
+		}
+	}
+}
