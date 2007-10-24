@@ -64,17 +64,21 @@ void BasicMind::Think()
 	switch (gameLocal.framenum % 4) {
 		case 0:
 			// Let the senses tasks perform before the other subsystems
-			owner->GetSubsystem(SubsysSenses)->PerformTask();
-			break;
+			if (owner->GetSubsystem(SubsysSenses)->PerformTask()) {
+				break; // task performed => break, else fall through
+			}
 		case 1:
-			owner->GetSubsystem(SubsysMovement)->PerformTask();
-			break;
+			if (owner->GetSubsystem(SubsysMovement)->PerformTask())	{
+				break; // task performed => break, else fall through
+			}
 		case 2:
-			owner->GetSubsystem(SubsysCommunication)->PerformTask();
-			break;
+			if (owner->GetSubsystem(SubsysCommunication)->PerformTask()) {
+				break; // task performed => break, else fall through
+			}
 		case 3:
-			owner->GetSubsystem(SubsysAction)->PerformTask();
-			break;
+			if (owner->GetSubsystem(SubsysAction)->PerformTask()) {
+				break; // task performed => break, else fall through
+			}
 	};
 
 	// Check if we can decrease the alert level

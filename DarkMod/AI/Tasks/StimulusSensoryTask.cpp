@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: StimulusSensoryTask.cpp 1435 20
 
 #include "StimulusSensoryTask.h"
 #include "../States/IdleState.h"
+#include "../States/SearchingState.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -44,12 +45,55 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
+	// Get a shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
 
 	if (owner->AI_AlertNum >= owner->thresh_2)
 	{
+		// Let the AI stop, before going into search mode
+		owner->StopMove(MOVE_STATUS_DONE);
+
+		// Look at the location of the alert stimulus. 
+		owner->Event_LookAtPosition(memory.alertPos, 3.0f);
+
+		// Turn to it if we are really agitated (body preparedness for combat)
+		if (owner->AI_AlertNum >= owner->thresh_3)
+		{
+			owner->Event_TurnToPos(memory.alertPos);
+		}
+
+		// Switch to searching mode, this will take care of the details
+		owner->GetMind()->SwitchState(STATE_SEARCHING);
+
+		// Implement as private method of this task
+		// TODO subFrameTask_startNewHidingSpotSearch (self.getEyePos(), m_alertPos, m_alertSearchVolume, m_alertSearchExclusionVolume);
 		
+		// No current search completed that we know of
+		memory.numPossibleHidingSpotsSearched = 0;
+		memory.currentHidingSpotListSearchMaxDuration = -1;
+
+		// If we are supposed to search the stimulus location do that instead of just standing around while the search
+		// completes
+		if (memory.stimulusLocationItselfShouldBeSearched)
+		{
+			// Spot search should go to a state to wait for thinking to complete
+			// when done (may transition out of that instantaneously if thinking
+			// is done)
+			
+			// TODO pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
+			memory.currentSearchSpot = memory.alertPos;
+			
+			// Determine the search duration
+			// TODO: subFrameTask_determineSearchDuration();
+			// TODO: pushTask("task_SearchingSpot", PRIORITY_SEARCHSPOT);
+		}		
+		else
+		{
+			// TODO: pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
+		}
 	}
 	else if (owner->AI_AlertNum <= owner->thresh_1)
 	{

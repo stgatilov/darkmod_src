@@ -124,6 +124,33 @@ public:
 	// don't need to query idAI::CanHitEnemy() independently.
 	bool canHitEnemy;
 
+	/*!
+	* This is the time at which the current hiding spot
+	* list search started
+	* @author SophisticatedZombie
+	*/
+	int currentHidingSpotListSearchStartTime;
+
+	/*!
+	* This is the maximum duration of the current
+	* hiding spot list search
+	* @author SophisticatedZombie
+	*/
+	int currentHidingSpotListSearchMaxDuration;
+	
+	/*!
+	* This is the number of hiding spots from the current
+	* hiding spot list which have been searched
+	* @author SophisticatedZombie
+	*/
+	int numPossibleHidingSpotsSearched;
+
+	/*!
+	* These hold the current spot search target, regardless of whether
+	* or not it is a hiding spot search or some other sort of spot search
+	*/
+	idVec3 currentSearchSpot;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -141,7 +168,11 @@ public:
 		alertSearchVolume(0,0,0),
 		alertSearchExclusionVolume(0,0,0),
 		lastEnemyPos(0,0,0),
-		canHitEnemy(false)
+		canHitEnemy(false),
+		currentHidingSpotListSearchStartTime(-1),
+		currentHidingSpotListSearchMaxDuration(-1),
+		numPossibleHidingSpotsSearched(0),
+		currentSearchSpot(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -165,6 +196,10 @@ public:
 		savefile->WriteVec3(alertSearchExclusionVolume);
 		savefile->WriteVec3(lastEnemyPos);
 		savefile->WriteBool(canHitEnemy);
+		savefile->WriteInt(currentHidingSpotListSearchStartTime);
+		savefile->WriteInt(currentHidingSpotListSearchMaxDuration);
+		savefile->WriteInt(numPossibleHidingSpotsSearched);
+		savefile->WriteVec3(currentSearchSpot);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -193,6 +228,10 @@ public:
 		savefile->ReadVec3(alertSearchExclusionVolume);
 		savefile->ReadVec3(lastEnemyPos);
 		savefile->ReadBool(canHitEnemy);
+		savefile->ReadInt(currentHidingSpotListSearchStartTime);
+		savefile->ReadInt(currentHidingSpotListSearchMaxDuration);
+		savefile->ReadInt(numPossibleHidingSpotsSearched);
+		savefile->ReadVec3(currentSearchSpot);
 	}
 };
 

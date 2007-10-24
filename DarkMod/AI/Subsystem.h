@@ -47,7 +47,9 @@ public:
 	Subsystem(idAI* owner);
 
 	// Called regularly by the Mind to run the currently assigned routine.
-	virtual void PerformTask();
+	// @returns: TRUE if the subsystem is enabled and the task was performed, 
+	// @returns: FALSE if the subsystem is disabled and nothing happened.
+	virtual bool PerformTask();
 
 	// Puts another task at the end of the queue
 	virtual void QueueTask(const TaskPtr& nextTask);

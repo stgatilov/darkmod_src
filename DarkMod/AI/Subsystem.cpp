@@ -46,11 +46,11 @@ bool Subsystem::IsEnabled() const
 }
 
 // Called regularly by the Mind to run the currently assigned routine.
-void Subsystem::PerformTask()
+bool Subsystem::PerformTask()
 {
 	if (!_enabled)
 	{
-		return;
+		return false;
 	}
 
 	// Check if we don't have a task or the current one should be deleted
@@ -80,7 +80,7 @@ void Subsystem::PerformTask()
 			// No more tasks, disable this Subsystem
 			DM_LOG(LC_AI, LT_INFO).LogString("No more tasks, disabling subsystem.\r");
 			_enabled = false;
-			return;
+			return false;
 		}
 	}
 
@@ -93,6 +93,9 @@ void Subsystem::PerformTask()
 	{
 		FinishCurrentTask();
 	}
+
+	// task was performed, return true
+	return true; 
 }
 
 void Subsystem::QueueTask(const TaskPtr& nextTask)
