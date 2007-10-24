@@ -19,8 +19,8 @@ namespace ai
 {
 
 enum SubsystemId {
-	SubsysMovement = 0,
-	SubsysSenses,
+	SubsysSenses = 0,
+	SubsysMovement,
 	SubsysCommunication,
 	SubsysAction,
 	SubsystemCount,

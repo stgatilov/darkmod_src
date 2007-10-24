@@ -31,11 +31,11 @@ void EmptyState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("EmptyState initialised.\r");
 	assert(owner);
 
-	// Fill the subsystems with Empty Tasks
-	owner->GetSubsystem(SubsysMovement)->QueueTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
-	owner->GetSubsystem(SubsysSenses)->QueueTask(EmptyTask::CreateInstance());
+	// Disable all subsystems
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 }
 
 StatePtr EmptyState::CreateInstance()

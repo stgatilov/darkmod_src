@@ -59,7 +59,6 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
 
 	// Switch the state
 	owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);

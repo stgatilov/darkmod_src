@@ -41,6 +41,12 @@ public:
 	{} // nothing yet
 
 	static StatePtr CreateInstance();
+
+private:
+	/*!
+	* This method is used to start a new hiding spot search. Any existing search in progress is replaced.
+	*/
+	void StartNewHidingSpotSearch(idAI* owner);
 };
 
 } // namespace ai

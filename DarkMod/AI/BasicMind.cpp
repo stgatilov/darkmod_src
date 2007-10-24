@@ -24,7 +24,8 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 namespace ai
 {
 
-BasicMind::BasicMind(idAI* owner)
+BasicMind::BasicMind(idAI* owner) :
+	_subsystemIterator(SubsystemCount)
 {
 	// Set the idEntityPtr
 	_owner = owner;
@@ -61,25 +62,26 @@ void BasicMind::Think()
 
 	idAI* owner = _owner.GetEntity();
 
-	switch (gameLocal.framenum % 4) {
-		case 0:
-			// Let the senses tasks perform before the other subsystems
-			if (owner->GetSubsystem(SubsysSenses)->PerformTask()) {
-				break; // task performed => break, else fall through
-			}
-		case 1:
-			if (owner->GetSubsystem(SubsysMovement)->PerformTask())	{
-				break; // task performed => break, else fall through
-			}
-		case 2:
-			if (owner->GetSubsystem(SubsysCommunication)->PerformTask()) {
-				break; // task performed => break, else fall through
-			}
-		case 3:
-			if (owner->GetSubsystem(SubsysAction)->PerformTask()) {
-				break; // task performed => break, else fall through
-			}
-	};
+	if (!_memory.hidingSpotSearchDone)
+	{
+		// Let the hiding spot search do its task
+	}
+
+	// Try to perform the subsystem tasks, skipping inactive subsystems
+	// Maximum number of tries is SubsystemCount.
+	for (int i = 0; i < static_cast<int>(SubsystemCount); i++)
+	{
+		// Increase the iterator and wrap around, if necessary
+		_subsystemIterator = static_cast<SubsystemId>(
+			(static_cast<int>(_subsystemIterator) + 1) % static_cast<int>(SubsystemCount)
+		);
+
+		if (owner->GetSubsystem(_subsystemIterator)->PerformTask())
+		{
+			// Task performed, break, iterator will be increased next round
+			break;
+		}
+	}
 
 	// Check if we can decrease the alert level
 	TestAlertStateTimer();

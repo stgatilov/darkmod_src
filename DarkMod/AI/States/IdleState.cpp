@@ -59,7 +59,6 @@ void IdleState::Init(idAI* owner)
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);

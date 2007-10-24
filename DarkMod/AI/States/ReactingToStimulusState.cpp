@@ -45,7 +45,6 @@ void ReactingToStimulusState::Init(idAI* owner)
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
 }
 
 StatePtr ReactingToStimulusState::CreateInstance()

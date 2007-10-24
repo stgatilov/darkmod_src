@@ -51,6 +51,10 @@ enum EAlertType {
 // group stimulous barks, in seconds
 #define MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK 10.0f
 
+// TODO: Parameterize these as darkmod globals
+#define HIDING_OBJECT_HEIGHT 0.35f
+#define MAX_SPOTS_PER_SEARCH_CALL 100
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -151,6 +155,17 @@ public:
 	*/
 	idVec3 currentSearchSpot;
 
+	/*!
+	* This flag indicates if a hiding spot test was started
+	* @author SophisticatedZombie
+	*/
+	bool hidingSpotTestStarted;
+
+	/*!
+	* This flag idnicates if a hiding spot was chosen
+	*/
+	bool hidingSpotSearchDone;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -172,7 +187,9 @@ public:
 		currentHidingSpotListSearchStartTime(-1),
 		currentHidingSpotListSearchMaxDuration(-1),
 		numPossibleHidingSpotsSearched(0),
-		currentSearchSpot(0,0,0)
+		currentSearchSpot(0,0,0),
+		hidingSpotTestStarted(false),
+		hidingSpotSearchDone(false)
 	{}
 
 	// Save/Restore routines
@@ -200,6 +217,8 @@ public:
 		savefile->WriteInt(currentHidingSpotListSearchMaxDuration);
 		savefile->WriteInt(numPossibleHidingSpotsSearched);
 		savefile->WriteVec3(currentSearchSpot);
+		savefile->WriteBool(hidingSpotTestStarted);
+		savefile->WriteBool(hidingSpotSearchDone);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -232,6 +251,8 @@ public:
 		savefile->ReadInt(currentHidingSpotListSearchMaxDuration);
 		savefile->ReadInt(numPossibleHidingSpotsSearched);
 		savefile->ReadVec3(currentSearchSpot);
+		savefile->ReadBool(hidingSpotTestStarted);
+		savefile->ReadBool(hidingSpotSearchDone);
 	}
 };
 

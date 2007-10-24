@@ -32,6 +32,9 @@ private:
 	// The structure holding all the variables
 	Memory _memory;
 
+	// This holds the id of the subsystem whose turn it is next frame
+	SubsystemId _subsystemIterator;
+
 public:
 	BasicMind(idAI* owner);
 	virtual ~BasicMind() {}

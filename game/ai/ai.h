@@ -968,6 +968,46 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*/
 	void destroyCurrentHidingSpotSearch();
 
+	/*!
+	* This method finds hiding spots in the bounds given by two vectors, and also excludes
+	* any points contained within a different pair of vectors.
+	*
+	* The first paramter is a vector which gives the location of the
+	* eye from which hiding is desired.
+	*
+	* The second vector gives the minimums in each dimension for the
+	* search space.  
+	*
+	* The third and fourth vectors give the min and max bounds within which spots should be tested
+	*
+	* The fifth and sixth vectors give the min and max bounds of an area where
+	*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
+	*	(producing a dead zone where points are not tested)
+	*
+	* The seventh parameter gives the bit flags of the types of hiding spots
+	* for which the search should look.
+	*
+	* The eighth parameter indicates an entity that should be ignored in
+	* the visual occlusion checks.  This is usually the searcher itself but
+	* can be NULL.
+	*
+	* This method will only start the search, if it returns 1, you should call
+	* continueSearchForHidingSpots every frame to do more processing until that function
+	* returns 0.
+	*
+	* The return value is a 0 for failure, 1 for success.
+	*/
+	int StartSearchForHidingSpotsWithExclusionArea
+	(
+		const idVec3& hideFromLocation,
+		const idVec3& minBounds, 
+		const idVec3& maxBounds, 
+		const idVec3& exclusionMinBounds, 
+		const idVec3& exclusionMaxBounds, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant

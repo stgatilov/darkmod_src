@@ -267,35 +267,7 @@ const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 
 */
 const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", "vvvdE", 'd');
 
-/*!
-* This event finds hiding spots in the bounds given by two vectors, and also excludes
-* any points contained within a different pair of vectors.
-*
-* The first paramter is a vector which gives the location of the
-* eye from which hiding is desired.
-*
-* The second vector gives the minimums in each dimension for the
-* search space.  
-*
-* The third and fourth vectors give the min and max bounds within which spots should be tested
-*
-* The fifth and sixth vectors give the min and max bounds of an area where
-*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
-*	(producing a dead zone where points are not tested)
-*
-* The seventh parameter gives the bit flags of the types of hiding spots
-* for which the search should look.
-*
-* The eighth parameter indicates an entity that should be ignored in
-* the visual occlusion checks.  This is usually the searcher itself but
-* can be NULL.
-*
-* This method will only start the search, if it returns 1, you should call
-* continueSearchForHidingSpots every frame to do more processing until that function
-* returns 0.
-*
-* The return value is a 0 for failure, 1 for success.
-*/
+// Documentation see idAI::StartSearchForHidingSpotsWithExclusionArea
 const idEventDef AI_StartSearchForHidingSpotsWithExclusionArea ("startSearchForHidingSpotsWithExclusionArea", "vvvvvdE", 'd');
 
 /*
@@ -3731,10 +3703,6 @@ void idAI::destroyCurrentHidingSpotSearch()
 
 //-----------------------------------------------------------------------------------------------------
 
-// TODO: Parameterize these as darkmod globals
-#define HIDING_OBJECT_HEIGHT 0.35f
-#define MAX_SPOTS_PER_SEARCH_CALL 100
-
 void idAI::Event_StartSearchForHidingSpots
 (
 	const idVec3& hideFromLocation,
@@ -3804,48 +3772,10 @@ void idAI::Event_StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
-
-	// Destroy any current search
-	destroyCurrentHidingSpotSearch();
-
-	// Make caller's search bounds
-	idBounds searchBounds (minBounds, maxBounds);
-	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
-
-	// Get aas
-	if (aas != NULL)
-	{
-		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
-		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
-		(
-			hideFromLocation, 
-			aas, 
-			HIDING_OBJECT_HEIGHT,
-			searchBounds,
-			searchExclusionBounds,
-			hidingSpotTypesAllowed,
-			p_ignoreEntity,
-			gameLocal.framenum,
-			b_searchCompleted
-		);
-
-		// Wait at least one frame for other AIs to indicate they want to share
-		// this search. Return result indicating search is not done yet.
-		idThread::ReturnInt(1);
-
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\n");
-	
-		// Search is done since there is no search
-		idThread::ReturnInt(0);
-	}
-
-
+	idThread::ReturnInt(StartSearchForHidingSpotsWithExclusionArea(
+		hideFromLocation, minBounds, maxBounds, exclusionMinBounds, 
+		exclusionMaxBounds, hidingSpotTypesAllowed, p_ignoreEntity
+	));
 }
 
 

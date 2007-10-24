@@ -8060,3 +8060,55 @@ void idAI::DropOnRagdoll( void )
 		ent->GetPhysics()->Activate();
 	}
 }
+
+int idAI::StartSearchForHidingSpotsWithExclusionArea
+(
+	const idVec3& hideFromLocation,
+	const idVec3& minBounds, 
+	const idVec3& maxBounds, 
+	const idVec3& exclusionMinBounds, 
+	const idVec3& exclusionMaxBounds, 
+	int hidingSpotTypesAllowed, 
+	idEntity* p_ignoreEntity
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
+
+	// Destroy any current search
+	destroyCurrentHidingSpotSearch();
+
+	// Make caller's search bounds
+	idBounds searchBounds (minBounds, maxBounds);
+	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
+
+	// Get aas
+	if (aas != NULL)
+	{
+		// Allocate object that handles the search
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
+		bool b_searchCompleted = false;
+		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
+		(
+			hideFromLocation, 
+			aas, 
+			HIDING_OBJECT_HEIGHT,
+			searchBounds,
+			searchExclusionBounds,
+			hidingSpotTypesAllowed,
+			p_ignoreEntity,
+			gameLocal.framenum,
+			b_searchCompleted
+		);
+
+		// Wait at least one frame for other AIs to indicate they want to share
+		// this search. Return result indicating search is not done yet.
+		return 1;
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\n");
+	
+		// Search is done since there is no search
+		return 0;
+	}
+}
