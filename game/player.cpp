@@ -9495,6 +9495,8 @@ int idPlayer::GetLightgemModifier()
 		returnValue += cv_lg_crouch_modifier.GetInteger();
 	}
 
+	returnValue += cv_lg_modifier.GetInteger();
+
 	// No need to cap the value, this is done in idGameLocal again.
 
 	return returnValue;
