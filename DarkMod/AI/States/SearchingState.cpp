@@ -94,6 +94,9 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	memory.hidingSpotSearchDone = false;
 	memory.hidingSpotTestStarted = true;
 
+	// Invalidate the vector
+	memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+
 	// Start search
 	int res = owner->StartSearchForHidingSpotsWithExclusionArea(
 		owner->GetEyePosition(), 
@@ -106,7 +109,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	{
 		// Search completed on first round
 		memory.hidingSpotSearchDone = true;
-		// TODO: subFrameTask_chooseFirstSpotToSearch();
+
+		// Moved: ChooseFirstHidingSpotToSearch(owner);
 	}
 }
 

@@ -77,9 +77,6 @@ private:
 	// This is called each frame to perform a multiframe hiding spot search
 	void PerformHidingSpotSearch(idAI* owner);
 
-	// Gets called when the hiding spot search is completed
-	void ChooseFirstHidingSpotToSearch(idAI* owner);
-
 	/**
 	* This method looks at the alert level and determines
 	* the duration to set for the currentHidingSpotListSearchMaxDuration

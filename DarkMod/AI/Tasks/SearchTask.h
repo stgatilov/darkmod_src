@@ -35,6 +35,11 @@ public:
 
 	// Creates a new Instance of this task
 	static SearchTaskPtr CreateInstance();
+
+private:
+	// Gets called after the hiding spot search is completed
+	// Stores the result in the AI's Memory (hiding spot indices)
+	void ChooseFirstHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai

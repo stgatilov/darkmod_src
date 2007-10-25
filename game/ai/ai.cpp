@@ -8072,7 +8072,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\r");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -8085,7 +8085,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	if (aas != NULL)
 	{
 		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
 		bool b_searchCompleted = false;
 		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
 		(
@@ -8106,7 +8106,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\n");
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
 	
 		// Search is done since there is no search
 		return 0;
@@ -8115,7 +8115,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 
 int idAI::ContinueSearchForHidingSpots()
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\r");
 
 	// Get hiding spot search instance from handle
 	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
@@ -8130,7 +8130,7 @@ int idAI::ContinueSearchForHidingSpots()
 	if (p_hidingSpotFinder == NULL)
 	{
 		// No hiding spot search to continue
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\n");
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\r");
 		return 0;
 	}
 	else
@@ -8183,7 +8183,7 @@ int idAI::ContinueSearchForHidingSpots()
 				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
 			}
 
-			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
+			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\r");
 			return 0;
 		}
 	}
@@ -8240,7 +8240,7 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
     }
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\n", hidingSpotIndex, numSpots);
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
 	}
 
 	// Return the location

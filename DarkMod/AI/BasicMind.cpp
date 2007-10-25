@@ -141,25 +141,27 @@ void BasicMind::PerformHidingSpotSearch(idAI* owner)
 		DetermineSearchDuration(owner);
 
 		// Yell that you noticed something if you are responding directly to a stimulus
-		/*if (!b_searchingDueToCommunication)
+		if (!_memory.searchingDueToCommunication)
 		{
-			subFrameTask_yellNoticedSomethingSuspicious();
-		
-			// Wait a frame to let others respond
-			waitFrame();
+			owner->IssueCommunication_Internal(
+				CAIComm_Message::DetectedSomethingSuspicious_CommType, 
+				YELL_STIM_RADIUS, 
+				NULL,
+				NULL,
+				_memory.alertPos
+			);
 		}
 
 		// Get location
-		chosenHidingSpot = getNthHidingSpotLocation (currentChosenHidingSpotIndex);
+		_memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(_memory.currentChosenHidingSpotIndex);
 
 		// Set time search is starting
-		currentHidingSpotListSearchStartTime = sys.getTime();
+		_memory.currentHidingSpotListSearchStartTime = gameLocal.time;
 		
-		// Switch state
-		waitFrame();
-		pushTask("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
+		// Switch state // greebo: TODO: necessary?
+		// TODO pushTask("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
 
-		ChooseFirstHidingSpotToSearch(owner);
+		// Moved: ChooseFirstHidingSpotToSearch(owner);
 	}
 }
 
@@ -191,53 +193,6 @@ int BasicMind::DetermineSearchDuration(idAI* owner)
 	
 	// Done
 	return _memory.currentHidingSpotListSearchMaxDuration;
-}
-
-void BasicMind::ChooseFirstHidingSpotToSearch(idAI* owner)
-{
-	int numSpots = owner->m_hidingSpots.getNumSpots();
-	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);
-
-	// Choose randomly
-	if (numSpots > 0)
-	{
-		/*
-		// Get visual acuity
-		float visAcuity = getAcuity("vis");
-			
-		// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
-		// higher visual acuity should bias toward earlier in the list
-		float bias = 1.0 - visAcuity;
-		if (bias < 0.0)
-		{
-			bias = 0.0;
-		}
-		*/
-		// greebo: TODO? This isn't random choosing...
-
-		int spotIndex = 0; 
-
-		// Remember which hiding spot we have chosen at start
-		_memory.firstChosenHidingSpotIndex = spotIndex;
-			
-		// Note currently chosen hiding spot
-		_memory.currentChosenHidingSpotIndex = spotIndex;
-		
-		// Get location
-		_memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
-		
-		DM_LOG(LC_AI, LT_INFO).LogString(
-			"First spot chosen is index %d of %d spots.\r", 
-			_memory.firstChosenHidingSpotIndex, numSpots
-		);
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
-		_memory.firstChosenHidingSpotIndex = -1;
-		_memory.currentChosenHidingSpotIndex = -1;
-		_memory.chosenHidingSpot.Zero();
-	}
 }
 
 void BasicMind::TestAlertStateTimer()
