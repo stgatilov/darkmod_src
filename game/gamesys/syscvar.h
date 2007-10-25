@@ -143,7 +143,6 @@ extern idCVar cv_lg_adjust;
 extern idCVar cv_lg_split;
 extern idCVar cv_lg_path;
 extern idCVar cv_lg_crouch_modifier;
-extern idCVar cv_lg_modifier;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
