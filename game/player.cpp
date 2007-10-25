@@ -117,6 +117,7 @@ const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
+const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", NULL);
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -168,6 +169,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 
 	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
+	EVENT( EV_ReadLightgemModifierFromWorldspawn, idPlayer::Event_ReadLightgemModifierFromWorldspawn )
 
 	EVENT( EV_Player_StartZoom,				idPlayer::Event_StartZoom )
 	EVENT( EV_Player_EndZoom,				idPlayer::Event_EndZoom )
@@ -905,6 +907,9 @@ void idPlayer::Spawn( void )
 
 	// greebo: Initialise the default fov.
 	zoomFov.Init(gameLocal.time, 0, g_fov.GetFloat(), g_fov.GetFloat());
+
+	// Post an event to read the LG modifier from the worldspawn entity
+	PostEventMS(&EV_ReadLightgemModifierFromWorldspawn, 0);
 }
 
 CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
@@ -9537,4 +9542,19 @@ void idPlayer::Event_SetLightgemModifier(const char* modifierName, int amount)
 	}
 
 	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("New lightgem modifier value: %d\r", m_LightgemModifier);
+}
+
+void idPlayer::Event_ReadLightgemModifierFromWorldspawn()
+{
+	int modifierValue(0);
+
+	idEntity* worldspawn = gameLocal.entities[ENTITYNUM_WORLD];
+
+	if (worldspawn != NULL)
+	{
+		// Read the modifier value from the worldspawn, default to zero
+		modifierValue = worldspawn->spawnArgs.GetInt("lightgem_adjust", "0");
+	}
+
+	Event_SetLightgemModifier("world", modifierValue);
 }

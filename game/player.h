@@ -893,6 +893,11 @@ private:
 	 */
 	void					Event_SetLightgemModifier(const char* modifierName, int amount);
 
+	/**
+	 * greebo: Reads the lightgem modifier setting from the worldspawn entity (defaults to 0).
+	 */
+	void					Event_ReadLightgemModifierFromWorldspawn();
+
 /**
 * NOTE: The following objective functions all take the "user" objective indices
 * That is, the indices start at 1 instead of 0
