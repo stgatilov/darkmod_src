@@ -79,6 +79,16 @@ private:
 
 	// Gets called when the hiding spot search is completed
 	void ChooseFirstHidingSpotToSearch(idAI* owner);
+
+	/**
+	* This method looks at the alert level and determines
+	* the duration to set for the currentHidingSpotListSearchMaxDuration
+	* variable that controls the length of an ensuing search.
+	*
+	* @return Returns the duration that was also set in the
+	*	currentHidingSpotListSearchMaxDuration in the Memory.
+	*/
+	int DetermineSearchDuration(idAI* owner);
 };
 
 } // namespace ai

@@ -121,16 +121,13 @@ void BasicMind::PerformHidingSpotSearch(idAI* owner)
 	// Increase the frame count
 	_memory.hidingSpotThinkFrameCount++;
 
-	int res = owner->ContinueSearchForHidingSpots();
-	if (res < 0.9)
+	if (owner->ContinueSearchForHidingSpots() == 0)
 	{
 		// search completed
 		_memory.hidingSpotSearchDone = true;
 
-		/*float searchTimeSpan;
-
 		// Hiding spot test is done
-		hidingSpotTestStarted = false;
+		_memory.hidingSpotTestStarted = false;
 		
 		// Here we transition to the state for handling the behavior of
 		// the AI once it thinks it knows where the stimulus may have
@@ -141,10 +138,10 @@ void BasicMind::PerformHidingSpotSearch(idAI* owner)
 		// TODO: Morale check etc...
 
 		// Determine the search duration
-		subFrameTask_determineSearchDuration();
+		DetermineSearchDuration(owner);
 
 		// Yell that you noticed something if you are responding directly to a stimulus
-		if (!b_searchingDueToCommunication)
+		/*if (!b_searchingDueToCommunication)
 		{
 			subFrameTask_yellNoticedSomethingSuspicious();
 		
@@ -164,6 +161,36 @@ void BasicMind::PerformHidingSpotSearch(idAI* owner)
 
 		ChooseFirstHidingSpotToSearch(owner);
 	}
+}
+
+int BasicMind::DetermineSearchDuration(idAI* owner)
+{
+	// Determine how much time we should spend searching based on the alert times
+	int searchTimeSpan(0);
+
+	if (owner->AI_AlertNum >= owner->thresh_1)
+	{
+		searchTimeSpan += owner->atime1;
+	}
+
+	if (owner->AI_AlertNum >= owner->thresh_2)
+	{
+		searchTimeSpan += owner->atime2;
+	}
+
+	if (owner->AI_AlertNum >= owner->thresh_3)
+	{
+		searchTimeSpan += owner->atime3;
+	}
+
+	// Randomize duration by up to 20% increase
+	_memory.currentHidingSpotListSearchMaxDuration = 
+		searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f);
+
+	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d\r", _memory.currentHidingSpotListSearchMaxDuration);
+	
+	// Done
+	return _memory.currentHidingSpotListSearchMaxDuration;
 }
 
 void BasicMind::ChooseFirstHidingSpotToSearch(idAI* owner)
