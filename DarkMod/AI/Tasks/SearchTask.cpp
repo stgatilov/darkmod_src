@@ -13,7 +13,7 @@
 static bool init_version = FileVersionList("$Id: SearchTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "SearchTask.h"
-#include "EmptyTask.h"
+#include "InvestigateSpotTask.h"
 #include "../States/IdleState.h"
 #include "../Memory.h"
 #include "../Library.h"
@@ -33,7 +33,7 @@ void SearchTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	// nothing so far, remove me (FIXME)
+	owner->GetMind()->GetMemory().hidingSpotInvestigationInProgress = false;
 }
 
 bool SearchTask::Perform(Subsystem& subsystem)
@@ -54,6 +54,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	if (memory.hidingSpotInvestigationInProgress)
 	{
 		// AI is currently searching, perform some tasks in the meantime
+		DM_LOG(LC_AI, LT_INFO).LogString("Moving to hiding spot...\r");
 	}
 	else if (memory.hidingSpotSearchDone)
 	{
@@ -69,14 +70,20 @@ bool SearchTask::Perform(Subsystem& subsystem)
 			return true; // finish this task
 		}
 
+		// We have a chosen hiding spot, this means that the search is completed
+		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+
 		// Enqueue an InvestigateSpot task which should fall back to this one
-		subsystem.QueueTask(EmptyTask::CreateInstance());
-		// Enqueue self as fallback task
-		subsystem.QueueTask(CreateInstance());
+		owner->GetSubsystem(SubsysAction)->ClearTasks();
+		owner->GetSubsystem(SubsysAction)->QueueTask(InvestigateSpotTask::CreateInstance());
+
+		// Prevent falling into the same hole twice
+		memory.hidingSpotInvestigationInProgress = true;
 	}
 	else
 	{
 		// Hiding spot search not yet done, wait...
+		DM_LOG(LC_AI, LT_INFO).LogString("Hiding spot search not yet done...\r");
 	}
 
 	// Do we have a search spot already stored in the queue?
@@ -197,6 +204,7 @@ void SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 					memory.currentChosenHidingSpotIndex, numSpots, memory.firstChosenHidingSpotIndex);
 
 				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
+				memory.currentSearchSpot = memory.chosenHidingSpot;
 				memory.hidingSpotSearchDone = true;
 			}
 		}
