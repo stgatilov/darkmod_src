@@ -137,7 +137,7 @@ public:
 
 	/*!
 	* This is the maximum duration of the current
-	* hiding spot list search
+	* hiding spot list search in msec.
 	* @author SophisticatedZombie
 	*/
 	int currentHidingSpotListSearchMaxDuration;
@@ -174,6 +174,9 @@ public:
 	int currentChosenHidingSpotIndex;
 	idVec3 chosenHidingSpot;
 
+	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
+	bool hidingSpotInvestigationInProgress;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -201,7 +204,8 @@ public:
 		hidingSpotThinkFrameCount(0),
 		firstChosenHidingSpotIndex(0),
 		currentChosenHidingSpotIndex(0),
-		chosenHidingSpot(0,0,0)
+		chosenHidingSpot(0,0,0),
+		hidingSpotInvestigationInProgress(false)
 	{}
 
 	// Save/Restore routines
@@ -235,6 +239,7 @@ public:
 		savefile->WriteInt(firstChosenHidingSpotIndex);
 		savefile->WriteInt(currentChosenHidingSpotIndex);
 		savefile->WriteVec3(chosenHidingSpot);
+		savefile->WriteBool(hidingSpotInvestigationInProgress);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -273,6 +278,7 @@ public:
 		savefile->ReadInt(firstChosenHidingSpotIndex);
 		savefile->ReadInt(currentChosenHidingSpotIndex);
 		savefile->ReadVec3(chosenHidingSpot);
+		savefile->ReadBool(hidingSpotInvestigationInProgress);
 	}
 };
 

@@ -157,11 +157,6 @@ void BasicMind::PerformHidingSpotSearch(idAI* owner)
 
 		// Set time search is starting
 		_memory.currentHidingSpotListSearchStartTime = gameLocal.time;
-		
-		// Switch state // greebo: TODO: necessary?
-		// TODO pushTask("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
-
-		// Moved: ChooseFirstHidingSpotToSearch(owner);
 	}
 }
 
@@ -187,9 +182,9 @@ int BasicMind::DetermineSearchDuration(idAI* owner)
 
 	// Randomize duration by up to 20% increase
 	_memory.currentHidingSpotListSearchMaxDuration = 
-		searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f);
+		SEC2MS(searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f));
 
-	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d\r", _memory.currentHidingSpotListSearchMaxDuration);
+	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d msec\r", _memory.currentHidingSpotListSearchMaxDuration);
 	
 	// Done
 	return _memory.currentHidingSpotListSearchMaxDuration;

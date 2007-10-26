@@ -36,6 +36,9 @@ void SearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMind()->GetMemory();
 
+	// Stop moving
+	owner->StopMove(MOVE_STATUS_DONE);
+
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 	
@@ -43,38 +46,30 @@ void SearchingState::Init(idAI* owner)
 	memory.numPossibleHidingSpotsSearched = 0;
 	memory.currentHidingSpotListSearchMaxDuration = -1;
 
-	// Clear out any pending sensory tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes
 	if (memory.stimulusLocationItselfShouldBeSearched)
 	{
-		// Spot search should go to a state to wait for thinking to complete
-		// when done (may transition out of that instantaneously if thinking
-		// is done)
-
-		// Enqueue a InvestigateSpot Task before the SearchTask
+		// The SearchTask will take this point as first hiding spot
 		memory.currentSearchSpot = memory.alertPos;
-		
-		// TODO pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
-		
-		// Determine the search duration
-		// TODO: subFrameTask_determineSearchDuration();
-		// TODO: pushTask("task_SearchingSpot", PRIORITY_SEARCHSPOT);
+		memory.hidingSpotInvestigationInProgress = true;
 	}
 	else
 	{
-		// TODO: pushTask("task_WaitingForHidingSpotThinkingToComplete", PRIORITY_SEARCH_THINKING);
+		// AI is not moving, wait for spot search to complete
+		memory.hidingSpotInvestigationInProgress = false;
 	}
-	// ----- End TODO
-
+	
 	// Pass control to the SearchTask which will keep track of the hiding spot search
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->QueueTask(SearchTask::CreateInstance());
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
+
+	// The SearchTask is responsible of controlling the movement subsystem
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 }
 
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
@@ -94,7 +89,9 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	memory.hidingSpotSearchDone = false;
 	memory.hidingSpotTestStarted = true;
 
-	// Invalidate the vector
+	// Invalidate the vector, clear the indices
+	memory.firstChosenHidingSpotIndex = -1;
+	memory.currentChosenHidingSpotIndex = -1;
 	memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 
 	// Start search
@@ -109,8 +106,6 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	{
 		// Search completed on first round
 		memory.hidingSpotSearchDone = true;
-
-		// Moved: ChooseFirstHidingSpotToSearch(owner);
 	}
 }
 

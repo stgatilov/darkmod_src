@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: SearchTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "SearchTask.h"
+#include "EmptyTask.h"
 #include "../States/IdleState.h"
 #include "../Memory.h"
 #include "../Library.h"
@@ -50,12 +51,53 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	// Let the mind check its senses (TRUE = process new stimuli)
 	//owner->GetMind()->PerformSensoryScan(true);
 
-	// Do we have a search spot already stored in the Memory?
-	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	if (memory.hidingSpotInvestigationInProgress)
+	{
+		// AI is currently searching, perform some tasks in the meantime
+	}
+	else if (memory.hidingSpotSearchDone)
+	{
+		// Spot search and investigation done, choose a hiding spot
+		// Try to get a first hiding spot
+		ChooseNextHidingSpotToSearch(owner);
+
+		// If we have a valid search pool, the chosen index is positive
+		if (memory.currentChosenHidingSpotIndex == -1)
+		{
+			// Whoops, no hiding spots?
+			DM_LOG(LC_AI, LT_INFO).LogString("No hiding spots although search is done!\r");
+			return true; // finish this task
+		}
+
+		// Enqueue an InvestigateSpot task which should fall back to this one
+		subsystem.QueueTask(EmptyTask::CreateInstance());
+		// Enqueue self as fallback task
+		subsystem.QueueTask(CreateInstance());
+	}
+	else
+	{
+		// Hiding spot search not yet done, wait...
+	}
+
+	// Do we have a search spot already stored in the queue?
+	/*if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// We have a chosen hiding spot, this means that the search is completed
-		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 20);
+		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
+		// Switch task, and enqueue this task as fallback
+		subsystem.QueueTask(EmptyTask::CreateInstance());
+
+		// Post self into the queue, when the InvestigateSpot task is done, this routine
+		// gets invoked again.
+		subsystem.QueueTask(CreateInstance());
+
+		return true;
+		DM_LOG(LC_AI, LT_INFO).LogVector("Moving to position...\r", memory.currentSearchSpot);
+		
+		owner->MoveToPosition(memory.currentSearchSpot);
+
+		// TODO: Check the walking distance and set AI_RUN
 	}
 	else
 	{
@@ -75,12 +117,12 @@ bool SearchTask::Perform(Subsystem& subsystem)
 		}
 
 		// hiding spot search still running, let it finish, try again next frame
-	}
+	}*/
 
 	return false; // not finished yet
 }
 
-void SearchTask::ChooseFirstHidingSpotToSearch(idAI* owner)
+void SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMind()->GetMemory();
 
@@ -90,42 +132,82 @@ void SearchTask::ChooseFirstHidingSpotToSearch(idAI* owner)
 	// Choose randomly
 	if (numSpots > 0)
 	{
-		/*
-		// Get visual acuity
-		float visAcuity = getAcuity("vis");
-			
-		// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
-		// higher visual acuity should bias toward earlier in the list
-		float bias = 1.0 - visAcuity;
-		if (bias < 0.0)
+		if (memory.firstChosenHidingSpotIndex == -1)
 		{
-			bias = 0.0;
-		}
-		*/
-		// greebo: TODO? This isn't random choosing...
+			// No hiding spot chosen yet, initialise
+			/*
+			// Get visual acuity
+			float visAcuity = getAcuity("vis");
+				
+			// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
+			// higher visual acuity should bias toward earlier in the list
+			float bias = 1.0 - visAcuity;
+			if (bias < 0.0)
+			{
+				bias = 0.0;
+			}
+			*/
+			// greebo: TODO? This isn't random choosing...
 
-		int spotIndex = 0; 
+			int spotIndex = 0; 
 
-		// Remember which hiding spot we have chosen at start
-		memory.firstChosenHidingSpotIndex = spotIndex;
+			// Remember which hiding spot we have chosen at start
+			memory.firstChosenHidingSpotIndex = spotIndex;
+				
+			// Note currently chosen hiding spot
+			memory.currentChosenHidingSpotIndex = spotIndex;
 			
-		// Note currently chosen hiding spot
-		memory.currentChosenHidingSpotIndex = spotIndex;
-		
-		// Get location
-		memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
-		
-		DM_LOG(LC_AI, LT_INFO).LogString(
-			"First spot chosen is index %d of %d spots.\r", 
-			memory.firstChosenHidingSpotIndex, numSpots
-		);
+			// Get location
+			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
+			memory.currentSearchSpot = memory.chosenHidingSpot;
+			
+			DM_LOG(LC_AI, LT_INFO).LogString(
+				"First spot chosen is index %d of %d spots.\r", 
+				memory.firstChosenHidingSpotIndex, numSpots
+			);
+		}
+		else 
+		{
+			// First hiding spot index is valid, so get the next one
+			// TODO: Copy from task_IteratingHidingSpotSearch
+			memory.numPossibleHidingSpotsSearched++;
+
+			// Make sure we stay in bounds
+			memory.currentChosenHidingSpotIndex++;
+			if (memory.currentChosenHidingSpotIndex >= numSpots)
+			{
+				memory.currentChosenHidingSpotIndex = 0;
+			}
+
+			// Have we wrapped around to first one searched?
+			if (memory.currentChosenHidingSpotIndex == memory.firstChosenHidingSpotIndex || 
+				memory.currentChosenHidingSpotIndex < 0)
+			{
+				// No more hiding spots
+				DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots to search.\r");
+				memory.hidingSpotSearchDone = false;
+				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+				memory.currentChosenHidingSpotIndex = -1;
+				memory.firstChosenHidingSpotIndex = -1;
+			}
+			else
+			{
+				// Index is valid, let's acquire the position
+				DM_LOG(LC_AI, LT_INFO).LogString("Next spot chosen is index %d of %d, first was %d.\r", 
+					memory.currentChosenHidingSpotIndex, numSpots, memory.firstChosenHidingSpotIndex);
+
+				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
+				memory.hidingSpotSearchDone = true;
+			}
+		}
 	}
 	else
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
 		memory.firstChosenHidingSpotIndex = -1;
 		memory.currentChosenHidingSpotIndex = -1;
-		memory.chosenHidingSpot.Zero();
+		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	}
 }
 
