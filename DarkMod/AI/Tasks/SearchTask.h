@@ -39,7 +39,8 @@ public:
 private:
 	// Gets called when a new hiding spot should be acquired for searching.
 	// Stores the result in the AI's Memory (hiding spot indices)
-	void ChooseNextHidingSpotToSearch(idAI* owner);
+	// return TRUE when a hiding spot is available, FALSE if not.
+	bool ChooseNextHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai

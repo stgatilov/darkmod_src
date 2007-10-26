@@ -60,18 +60,18 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	{
 		// Spot search and investigation done, choose a hiding spot
 		// Try to get a first hiding spot
-		ChooseNextHidingSpotToSearch(owner);
-
-		// If we have a valid search pool, the chosen index is positive
-		if (memory.currentChosenHidingSpotIndex == -1)
+		if (!ChooseNextHidingSpotToSearch(owner))
 		{
-			// Whoops, no hiding spots?
-			DM_LOG(LC_AI, LT_INFO).LogString("No hiding spots although search is done!\r");
+			// No more hiding spots to search
+			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
+
+			// Fall back into idle mode
+			owner->GetMind()->SwitchState(STATE_IDLE);
+
 			return true; // finish this task
 		}
 
-		// We have a chosen hiding spot, this means that the search is completed
-		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
 		// Enqueue an InvestigateSpot task which should fall back to this one
 		owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -129,7 +129,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
-void SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
+bool SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMind()->GetMemory();
 
@@ -196,6 +196,7 @@ void SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 				memory.currentChosenHidingSpotIndex = -1;
 				memory.firstChosenHidingSpotIndex = -1;
+				return false;
 			}
 			else
 			{
@@ -216,7 +217,10 @@ void SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 		memory.currentChosenHidingSpotIndex = -1;
 		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		return false;
 	}
+
+	return true;
 }
 
 SearchTaskPtr SearchTask::CreateInstance()
