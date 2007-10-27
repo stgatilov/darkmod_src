@@ -45,7 +45,7 @@ void TakeCoverState::Init(idAI* owner)
 
 	// The movement subsystem should start running to the last enemy position
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(MoveToCoverTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->PushTask(MoveToCoverTask::CreateInstance());
 
 	// The communication system is barking 
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -53,7 +53,7 @@ void TakeCoverState::Init(idAI* owner)
 
 	// The sensory system does its Combat Sensory tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-//	owner->GetSubsystem(SubsysSenses)->QueueTask(CombatSensoryTask::CreateInstance());
+//	owner->GetSubsystem(SubsysSenses)->PushTask(CombatSensoryTask::CreateInstance());
 
 	// Object throwing
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

@@ -59,7 +59,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 			// No path corner entities found!
 			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
 			
-			subsystem.FinishCurrentTask();
+			subsystem.FinishTask();
 			return;
 		}
 
@@ -156,7 +156,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else
 	{
-		subsystem.FinishCurrentTask();
+		subsystem.FinishTask();
 		return true;
 	}
 

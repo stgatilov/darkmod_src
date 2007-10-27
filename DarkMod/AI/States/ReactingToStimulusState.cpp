@@ -41,7 +41,7 @@ void ReactingToStimulusState::Init(idAI* owner)
 
 	// Take the stimulus sensory scan task and plug it into the senses subsystem
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(StimulusSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->PushTask(StimulusSensoryTask::CreateInstance());
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

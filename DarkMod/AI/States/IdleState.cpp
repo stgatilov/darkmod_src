@@ -44,7 +44,7 @@ void IdleState::Init(idAI* owner)
 
 	// The movement subsystem should start patrolling
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(PatrolTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->PushTask(PatrolTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -52,14 +52,14 @@ void IdleState::Init(idAI* owner)
 	// Push a single bark to the communication subsystem first, it fires only once
 	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
 	singleBark->SetSound(GetInitialIdleBark(owner));
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(singleBark);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(singleBark);
 
 	// Push the regular patrol barking to the list too
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(IdleBarkTask::CreateInstance());
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

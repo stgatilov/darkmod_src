@@ -92,14 +92,14 @@ void CombatState::Init(idAI* owner)
 
 	// The movement subsystem should start running to the last enemy position
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(ChaseEnemyTask::CreateInstance());
+	owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_combat");
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(barkTask);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -107,7 +107,7 @@ void CombatState::Init(idAI* owner)
 
 	// For now, we assume a melee combat (TODO: Ranged combat decision)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(MeleeCombatTask::CreateInstance());
+	owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 }
 
 StatePtr CombatState::CreateInstance()

@@ -205,6 +205,12 @@ void BasicMind::QueueState(const idStr& stateName)
 
 	if (newState != NULL)
 	{
+		if (_stateQueue.empty())
+		{
+			// This is the only task, let's switch states
+			_switchState = true;
+		}
+
 		// Append the state at the end of the queue
 		_stateQueue.push_back(newState);
 	}
@@ -534,7 +540,7 @@ void BasicMind::Bark(const idStr& soundname)
 	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
 	singleBark->SetSound(soundname);
 
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(singleBark);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(singleBark);
 }
 
 bool BasicMind::IsEnemy(idEntity* entity, idAI* self)

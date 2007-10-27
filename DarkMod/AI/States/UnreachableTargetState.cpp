@@ -60,15 +60,15 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_cantReachTarget");
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(barkTask);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
 	// The sensory system does its Combat Sensory tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(CombatSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->PushTask(CombatSensoryTask::CreateInstance());
 
 	// Object throwing
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(ThrowObjectTask::CreateInstance());
+	owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
 }
 
 StatePtr UnreachableTargetState::CreateInstance()

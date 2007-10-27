@@ -20,14 +20,11 @@ namespace ai
 {
 
 Subsystem::Subsystem(idAI* owner) :
-	_enabled(true),
-	_finishCurrentTask(false)
+	_enabled(false),
+	_initTask(false)
 {
 	assert(owner != NULL);
 	_owner = owner;
-
-	// We start with an empty task
-	_taskQueue.push_front(EmptyTask::CreateInstance());
 }
 
 void Subsystem::Enable()
@@ -48,74 +45,123 @@ bool Subsystem::IsEnabled() const
 // Called regularly by the Mind to run the currently assigned routine.
 bool Subsystem::PerformTask()
 {
-	if (!_enabled)
+	// Clear any dying tasks from the previous frame, enabled or not
+	_recycleBin = TaskPtr();
+
+	if (!_enabled || _taskQueue.empty())
 	{
+		// No tasks or disabled, return FALSE
 		return false;
 	}
 
-	// Check if we don't have a task or the current one should be deleted
-	if (_finishCurrentTask || _task == NULL)
+	// Pick the foremost task from the queue
+	const TaskPtr& task = _taskQueue.front();
+
+	// No NULL pointers allowed
+	assert(task != NULL);
+
+	if (_initTask)
 	{
-		// Reset the flag in any case
-		_finishCurrentTask = false;
+		// New task, let's initialise it
+		_initTask = false;
 
-		// Clear out the current task
-		_task = TaskPtr();
-
-		if (_taskQueue.size() > 0)
-		{
-			// Pop the foremost element from the list
-			_task = *_taskQueue.begin();
-			_taskQueue.pop_front();
-
-			// Set the enabled flag BEFORE the Init() call, as it
-			// might set the subsystem to disabled again.
-			_enabled = true;
-
-			// Initialise the new task with a reference to the owner and <self>
-			_task->Init(_owner.GetEntity(), *this);
-		}
-		else
-		{
-			// No more tasks, disable this Subsystem
-			DM_LOG(LC_AI, LT_INFO).LogString("No more tasks, disabling subsystem.\r");
-			_enabled = false;
-			return false;
-		}
+		// Initialise the newcomer
+		task->Init(_owner.GetEntity(), *this);
 	}
 
-	// No NULL pointer past this point
-	assert(_task != NULL);
-
-	// If the task returns TRUE, it will be removed next round
-	// Only execute the task if the "finish" flag isn't set.
-	if (!_finishCurrentTask && _task->Perform(*this))
+	// greebo: If the task returns TRUE, it will be removed next round.
+	// Only execute the task if the initTask is not set, this might indicate
+	// a task switch invoked by the previous Init() call.
+	// An uninitialised task must not be performed.
+	if (!_initTask && task->Perform(*this))
 	{
-		FinishCurrentTask();
+		FinishTask();
 	}
 
 	// task was performed, return true
 	return true; 
 }
 
-void Subsystem::QueueTask(const TaskPtr& nextTask)
+void Subsystem::PushTask(const TaskPtr& newTask)
 {
-	assert(nextTask != NULL);
-	// Take this pointer and add it to the stack
-	_taskQueue.push_back(nextTask);
+	assert(newTask != NULL);
+
+	// Add the task to the front and initialise it next round
+	_taskQueue.push_front(newTask);
+	_initTask = true;
 	_enabled = true;
 }
 
-void Subsystem::FinishCurrentTask()
+bool Subsystem::FinishTask()
 {
-	// Set the flag to true, this ends the current task in the next PerformTask() call.
-	_finishCurrentTask = true;
+	if (!_taskQueue.empty())
+	{
+		// Move the task pointer from the queue to the recyclebin
+		_recycleBin = _taskQueue.front();
+		_taskQueue.pop_front();
+	}
+
+	if (_taskQueue.empty())
+	{
+		// No more tasks, disable this subsystem
+		_enabled = false;
+		return false;
+	}
+
+	// More tasks to do, initialise the new front task
+	_initTask = true;
+
+	// More tasks to do, return TRUE
+	return true;
+}
+
+void Subsystem::SwitchTask(const TaskPtr& newTask)
+{
+	assert(newTask != NULL);
+
+	if (!_taskQueue.empty())
+	{
+		// Move the previous front task to the bin
+		_recycleBin = _taskQueue.front();
+		_taskQueue.pop_front();
+	}
+
+	// Add the new task to the front
+	_taskQueue.push_front(newTask);
+
+	_initTask = true;
+	_enabled = true;
+}
+
+void Subsystem::QueueTask(const TaskPtr& task)
+{
+	assert(task != NULL);
+
+	if (_taskQueue.empty())
+	{
+		// Queue is empty, this will be our primary task, let's initialise it
+		_initTask = true;
+	}
+
+	// Add the task at the end of the queue
+	_taskQueue.push_back(task);
+
+	// Enable this subsystem, we have tasks to do
+	_enabled = true;
 }
 
 void Subsystem::ClearTasks()
 {
-	_taskQueue.clear();
-	_task = TaskPtr();
+	if (!_taskQueue.empty())
+	{
+		// Move the TaskPtr from the queue into the bin
+		_recycleBin = _taskQueue.front();
+
+		// Remove ALL tasks
+		_taskQueue.clear();
+	}
+
+	// Disable this subsystem
 	_enabled = false;
 }
 
@@ -125,21 +171,16 @@ void Subsystem::Save(idSaveGame* savefile) const
 	_owner.Save(savefile);
 
 	savefile->WriteBool(_enabled);
-	savefile->WriteBool(_finishCurrentTask);
+	savefile->WriteBool(_initTask);
 
-	savefile->WriteInt(_taskQueue.size());
-	for (TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++)
-	{
-		savefile->WriteString((*i)->GetName().c_str());
-		(*i)->Save(savefile);
-	}
+	_taskQueue.Save(savefile);
 
-	// Save the task, if there is an active one
-	savefile->WriteBool(_task != NULL);
-	if (_task != NULL)
+	// Save the dying task too
+	savefile->WriteBool(_recycleBin != NULL);
+	if (_recycleBin != NULL)
 	{
-		savefile->WriteString(_task->GetName().c_str());
-		_task->Save(savefile);
+		savefile->WriteString(_recycleBin->GetName().c_str());
+		_recycleBin->Save(savefile);
 	}
 }
 
@@ -148,25 +189,9 @@ void Subsystem::Restore(idRestoreGame* savefile)
 	_owner.Restore(savefile);
 
 	savefile->ReadBool(_enabled);
-	savefile->ReadBool(_finishCurrentTask);
+	savefile->ReadBool(_initTask);
 
-	_taskQueue.clear(); // remove all tasks before restore
-	int num;
-	savefile->ReadInt(num);
-
-	// Now read in all the tasks in the queue, one by one
-	for (int i = 0; i < num; i++)
-	{
-		idStr taskName;
-		savefile->ReadString(taskName);
-
-		TaskPtr task = TaskLibrary::Instance().CreateInstance(taskName.c_str());
-
-		assert(task != NULL);
-		task->Restore(savefile);
-
-		_taskQueue.push_back(task);
-	}
+	_taskQueue.Restore(savefile);
 
 	bool hasTask;
 	savefile->ReadBool(hasTask);
@@ -176,15 +201,15 @@ void Subsystem::Restore(idRestoreGame* savefile)
 		idStr taskName;
 		savefile->ReadString(taskName);
 
-		_task = TaskLibrary::Instance().CreateInstance(taskName.c_str());
+		_recycleBin = TaskLibrary::Instance().CreateInstance(taskName.c_str());
 
-		assert(_task != NULL);
-		_task->Restore(savefile);
+		assert(_recycleBin != NULL);
+		_recycleBin->Restore(savefile);
 	}
 	else
 	{
-		// Assure the task pointer to be NULL.
-		_task = TaskPtr();
+		// Assure the recyclebin pointer to be NULL.
+		_recycleBin = TaskPtr();
 	}
 }
 

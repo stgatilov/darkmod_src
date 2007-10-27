@@ -55,7 +55,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Enqueue a lost track of enemy bark
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_lostTrackOfEnemy");
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(barkTask);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

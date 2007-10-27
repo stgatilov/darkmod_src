@@ -85,7 +85,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 
 		// Enqueue an InvestigateSpot task which should fall back to this one
 		owner->GetSubsystem(SubsysAction)->ClearTasks();
-		owner->GetSubsystem(SubsysAction)->QueueTask(InvestigateSpotTask::CreateInstance());
+		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
 
 		// Prevent falling into the same hole twice
 		memory.hidingSpotInvestigationInProgress = true;

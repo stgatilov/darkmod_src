@@ -14,6 +14,7 @@
 #include <list>
 
 #include "Tasks/Task.h"
+#include "Queue.h"
 
 namespace ai
 {
@@ -32,13 +33,13 @@ protected:
 	idEntityPtr<idAI> _owner;
 
 	// The stack of tasks, pushed tasks get added at the end
-	typedef std::list<TaskPtr> TaskQueue;
 	TaskQueue _taskQueue;
 
-	bool _finishCurrentTask;
+	// A temporary container, gets cleared in each PerformTask() call.
+	TaskPtr _recycleBin;
 
-	// The currently active task
-	TaskPtr _task;
+	// Is TRUE during task switching, this will call Task::Init() in PerformTask().
+	bool _initTask;
 
 	// TRUE if this subsystem is performing, default is ON
 	bool _enabled;
@@ -51,13 +52,36 @@ public:
 	// @returns: FALSE if the subsystem is disabled and nothing happened.
 	virtual bool PerformTask();
 
-	// Puts another task at the end of the queue
-	virtual void QueueTask(const TaskPtr& nextTask);
+	/**
+	 * greebo: Switches to the named Task. The currently active
+	 *         Task will be pushed back in the queue and is postponed 
+	 *         until the newly added Task is finished.
+	 */
+	virtual void PushTask(const TaskPtr& newTask);
 
-	// Sets the current task to the EmptyTask
-	virtual void FinishCurrentTask();
+	/**
+	 * greebo: Ends the current task - the Subsystem will pick the next Task
+	 *         from the TaskQueue or disable itself if none is available.
+	 *
+	 * @returns: TRUE if there are still Tasks in the queue after this one is finished.
+	 */
+	virtual bool FinishTask();
 
-	// Clears out the current task plus the entire queue and disables the subsystem
+	/**
+	 * greebo: Sets the new task of this subsystem.
+	 * This new state REPLACES the currently active one.
+	 */
+	virtual void SwitchTask(const TaskPtr& newTask);
+
+	/**
+	 * greebo: Adds the named Task at the end of the queue. It becomes active when
+	 *         all other currently enqueued Tasks will be finished.
+	 */
+	virtual void QueueTask(const TaskPtr& task);
+
+	/**
+	 * greebo: Removes all Tasks from the Queue and disables this subsystem.
+	 */
 	virtual void ClearTasks();
 
 	// Enables/disables this subsystem

@@ -62,11 +62,11 @@ void SearchingState::Init(idAI* owner)
 	
 	// Pass control to the SearchTask which will keep track of the hiding spot search
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(SearchTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->PushTask(SearchTask::CreateInstance());
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->QueueTask(EmptyTask::CreateInstance());
+	owner->GetSubsystem(SubsysAction)->PushTask(EmptyTask::CreateInstance());
 
 	// The SearchTask is responsible of controlling the movement subsystem
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
