@@ -31,9 +31,10 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	_projectileDelayMin = owner->spawnArgs.GetFloat("outofreach_projectile_delay_min", "7.0");
-	_projectileDelayMax = owner->spawnArgs.GetFloat("outofreach_projectile_delay_max", "10.0");
+	_projectileDelayMin = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_min", "7.0"));
+	_projectileDelayMax = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_max", "10.0"));
 
+	// First throw immediately
 	_nextThrowObjectTime = gameLocal.time;
 }
 
@@ -50,12 +51,22 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		_nextThrowObjectTime < gameLocal.time && 
 		owner->spawnArgs.GetFloat("outofreach_projectile_enabled", "0") != 0)
 	{
-		gameLocal.Printf("throwing a random object...\n");
-		//TODO	ai_darkmod_base::subFrameTask_throwRandomObject();
-			
+
+		idStr waitState(owner->WaitState());
+		if (waitState != "throw")
+		{
+			// Waitstate is not matching, this means that the animation 
+			// can be started.
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Throw", 5);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Throw", 5);
+
+			// greebo: Set the waitstate, this gets cleared by 
+			// the script function when the animation is done.
+			owner->SetWaitState("throw");
+		}
+			// Set next throwing time
 			_nextThrowObjectTime = gameLocal.time + _projectileDelayMin
 								+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin);
-				
 	}
 
 	if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
