@@ -43,7 +43,7 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 	if (_takingCoverPossible = owner->LookForCover(hideGoal, owner->GetEnemy(), owner->lastVisibleEnemyPos))
 	{
 		// We should not go into TakeCoverState if we are already at a suitable position
-		if (hideGoal.origin == owner->GetPhysics()->GetOrigin())
+		if (!owner->spawnArgs.GetBool("taking_cover_enabled","0") || hideGoal.origin == owner->GetPhysics()->GetOrigin() )
 		{
 			_takingCoverPossible = false;
 		}
@@ -61,6 +61,11 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 	Memory& memory = owner->GetMind()->GetMemory();
 	idActor* enemy = owner->GetEnemy();
 
+	if (enemy == NULL)
+	{
+		return true;
+	}
+
 	if (owner->AI_ENEMY_VISIBLE)
 	{
 		// Turn to the player
@@ -69,11 +74,12 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		owner->TurnToward(diff.ToAngles().yaw);
 	}
 
+	// angua: Throw animation plays after the delay has expired 
+	// if the player is visible  and object throwing is enabled for this AI
 	if (owner->AI_ENEMY_VISIBLE &&
 		_nextThrowObjectTime <= gameLocal.time && 
 		owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
 	{
-
 		idStr waitState(owner->WaitState());
 		if (waitState != "throw")
 		{
@@ -91,9 +97,10 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 							+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin);
 	}
 
-	// Go take cover when throwing is done
+	// Take cover when throwing is done if it is possible and a ranged threat from the player is detected
 	idStr waitState(owner->WaitState());
-	if (_takingCoverPossible && waitState != "throw" && owner->spawnArgs.GetBool("taking_cover_enabled","0"))
+	if (_takingCoverPossible && waitState != "throw" && 
+			( !owner->spawnArgs.GetBool("taking_cover_only_from_archers","0") || enemy->RangedThreatTo(owner) ) )
 	{
 		owner->GetMind()->SwitchState(STATE_TAKE_COVER);
 	}
