@@ -49,11 +49,11 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	Memory& memory = owner->GetMind()->GetMemory();
 
 	// Let the mind check its senses (TRUE = process new stimuli)
-	//owner->GetMind()->PerformSensoryScan(true);
+	owner->GetMind()->PerformSensoryScan(true);
 
 	if (memory.hidingSpotInvestigationInProgress)
 	{
-		// AI is currently searching, perform some tasks in the meantime
+		// AI is currently searching, perform some tasks in the meantime?
 		DM_LOG(LC_AI, LT_INFO).LogString("Moving to hiding spot...\r");
 	}
 	else if (memory.hidingSpotSearchDone)
@@ -85,46 +85,6 @@ bool SearchTask::Perform(Subsystem& subsystem)
 		// Hiding spot search not yet done, wait...
 		DM_LOG(LC_AI, LT_INFO).LogString("Hiding spot search not yet done...\r");
 	}
-
-	// Do we have a search spot already stored in the queue?
-	/*if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
-	{
-		// We have a chosen hiding spot, this means that the search is completed
-		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
-
-		// Switch task, and enqueue this task as fallback
-		subsystem.QueueTask(EmptyTask::CreateInstance());
-
-		// Post self into the queue, when the InvestigateSpot task is done, this routine
-		// gets invoked again.
-		subsystem.QueueTask(CreateInstance());
-
-		return true;
-		DM_LOG(LC_AI, LT_INFO).LogVector("Moving to position...\r", memory.currentSearchSpot);
-		
-		owner->MoveToPosition(memory.currentSearchSpot);
-
-		// TODO: Check the walking distance and set AI_RUN
-	}
-	else
-	{
-		// No hiding spot index chosen so far, is the search still in progress?
-		if (memory.hidingSpotSearchDone)
-		{
-			// Try to get a first hiding spot
-			ChooseFirstHidingSpotToSearch(owner);
-
-			// If we have a valid search pool, the chosen index is positive
-			if (memory.currentChosenHidingSpotIndex == -1)
-			{
-				// Whoops, no hiding spots?
-				DM_LOG(LC_AI, LT_INFO).LogString("No hiding spots after search is done!\r");
-				return true; // finish this task
-			}			
-		}
-
-		// hiding spot search still running, let it finish, try again next frame
-	}*/
 
 	return false; // not finished yet
 }

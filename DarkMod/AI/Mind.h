@@ -94,8 +94,10 @@ public:
 	* If it can't, then the AI chooses another action.
 	*
 	* This method often switches the AI to a new state.
+	*
+	* @returns: TRUE if combat mode was entered, FALSE otherwise
 	*/
-	virtual void PerformCombatCheck() = 0;
+	virtual bool PerformCombatCheck() = 0;
 
 	/**
 	* SZ: setTarget should only be called when the combat threshold has been

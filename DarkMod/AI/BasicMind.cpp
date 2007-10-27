@@ -547,7 +547,7 @@ bool BasicMind::SetTarget()
 	return false;
 }
 
-void BasicMind::PerformCombatCheck()
+bool BasicMind::PerformCombatCheck()
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner);
@@ -569,9 +569,9 @@ void BasicMind::PerformCombatCheck()
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
 		StatePtr combatState = CombatState::CreateInstance();
-		SwitchStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+		SwitchState(STATE_COMBAT);
 
-		return;
+		return true; // entered combat mode
 	}
 
 	// If we got here there is no target
@@ -579,6 +579,8 @@ void BasicMind::PerformCombatCheck()
 		
 	// Lower alert level from combat to agitated search
 	owner->Event_SetAlertLevel(owner->thresh_combat - 0.01);
+
+	return false; // combat mode not entered
 }
 
 void BasicMind::PerformSensoryScan(bool processNewStimuli)
@@ -599,7 +601,11 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 		{
 			// This reflects the alert level inside it as well
 			//DEBUG_PRINT ("Initiating combat due to stim");
-			PerformCombatCheck();
+			if (PerformCombatCheck())
+			{
+				// Combat state entered, quit processing
+				return;
+			}
 		}
 		
 		// If it was not a combat level alert, or we returned here because there

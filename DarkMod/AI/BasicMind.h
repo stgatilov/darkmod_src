@@ -59,7 +59,7 @@ public:
 
 	virtual void SetAlertPos();
 	virtual void PerformSensoryScan(bool processNewStimuli);
-	virtual void PerformCombatCheck();
+	virtual bool PerformCombatCheck();
 	virtual bool SetTarget();
 
 	virtual void Save(idSaveGame* savefile) const;
