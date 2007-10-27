@@ -65,6 +65,16 @@ bool SearchTask::Perform(Subsystem& subsystem)
 			// No more hiding spots to search
 			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
 
+			if (owner->m_hidingSpots.getNumSpots() > 0)
+			{
+				// Number of hiding spot is greater than zero, so we
+				// came here after the search has been finished
+
+				// Rub neck
+				// Bark
+				// Wait
+			}
+
 			// Fall back into idle mode
 			owner->GetMind()->SwitchState(STATE_IDLE);
 
@@ -162,7 +172,7 @@ bool SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 			{
 				// Index is valid, let's acquire the position
 				DM_LOG(LC_AI, LT_INFO).LogString("Next spot chosen is index %d of %d, first was %d.\r", 
-					memory.currentChosenHidingSpotIndex, numSpots, memory.firstChosenHidingSpotIndex);
+					memory.currentChosenHidingSpotIndex, numSpots-1, memory.firstChosenHidingSpotIndex);
 
 				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
 				memory.currentSearchSpot = memory.chosenHidingSpot;

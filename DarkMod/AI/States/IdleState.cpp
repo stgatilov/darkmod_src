@@ -36,6 +36,10 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
+	// No weapons in idle mode
+	owner->SheathWeapon();
+	owner->AI_RUN = false;
+
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should start patrolling
