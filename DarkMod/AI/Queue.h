@@ -13,8 +13,8 @@
 #include <list>
 #include <sstream>
 
-#include "../../DarkModGlobals.h"
-#include "../Library.h"
+#include "../DarkModGlobals.h"
+#include "Library.h"
 
 namespace ai 
 {
