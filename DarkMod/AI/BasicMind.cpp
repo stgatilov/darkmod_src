@@ -24,8 +24,12 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 namespace ai
 {
 
+// This is the default state
+#define STATE_DEFAULT STATE_IDLE
+
 BasicMind::BasicMind(idAI* owner) :
-	_subsystemIterator(SubsystemCount)
+	_subsystemIterator(SubsystemCount),
+	_switchState(false)
 {
 	// Set the idEntityPtr
 	_owner = owner;
@@ -36,32 +40,36 @@ void BasicMind::Think()
 	// Thinking
 	DM_LOG(LC_AI, LT_INFO).LogString("Mind is thinking...\r");
 
-	if (_state == NULL)
+	// Clear the recyclebin, it might hold a finished state from the last frame
+	_recycleBin = StatePtr();
+
+	if (_stateQueue.empty())
 	{
 		// We start with the idle state
-		SwitchState(STATE_IDLE);
+		PushState(STATE_DEFAULT);
 	}
 
-	if (_nextState != NULL)
-	{
-		// Get the next state, this destroys the old one
-		_state = _nextState;
+	// At this point, we MUST have a State
+	assert(_stateQueue.size() > 0);
 
-		// Clear the queue
-		_nextState = StatePtr();
-
-		// Initialise the new state
-		_state->Init(_owner.GetEntity());
-	}
-
-	// We MUST have a state
-	assert(_state != NULL);
+	const StatePtr& state = _stateQueue.front();
 
 	// greebo: We do not check for NULL pointers in the owner at this point, 
-	// as this method is called by the owner itself.
-
+	// as this method is called by the owner itself, it _has_ to exist.
 	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
 
+	// Should we switch states (i.e. initialise a new one)?
+	if (_switchState)
+	{
+		// Clear the flag
+		_switchState = false;
+
+		// Initialise the state, this will put the Subsystem Tasks in-place
+		state->Init(owner);
+	}
+
+	// Do we have an ongoing hiding spot search?
 	if (!_memory.hidingSpotSearchDone)
 	{
 		// Let the hiding spot search do its task
@@ -89,31 +97,127 @@ void BasicMind::Think()
 	TestAlertStateTimer();
 }
 
-// Changes the state
-void BasicMind::SwitchState(const idStr& stateName)
+void BasicMind::PushState(const idStr& stateName)
 {
+	// Get a new state with the given name
 	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
 
 	if (newState != NULL)
 	{
-		// Store the pointer, it will be used the next round
-		_nextState = newState;
+		// Push the state to the front of the queue
+		_stateQueue.push_front(newState);
+
+		// Trigger a stateswitch next round
+		_switchState = true;
 	}
 	else
 	{
-		gameLocal.Error("BasicMind: Could not change state to %s", stateName.c_str());
+		gameLocal.Error("BasicMind: Could not push state %s", stateName.c_str());
 	}
 }
 
-bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int statePriority)
+bool BasicMind::PushStateIfHigherPriority(const idStr& stateName, int priority)
 {
-	if (_state == NULL || statePriority > _state->GetPriority())
+	if (_stateQueue.size() > 0) 
 	{
-		SwitchState(stateName);
+		const StatePtr& curState = _stateQueue.front();
+
+		if (curState->GetPriority() < priority)
+		{
+			// Priority of the current task is lower, take the new one
+			SwitchState(stateName);
+			return true;
+		}
+	}
+	else
+	{
+		// No tasks in the queue, take this one immediately
+		PushState(stateName);
 		return true;
 	}
 
-	return false; // not installed
+	return false;
+}
+
+bool BasicMind::EndState()
+{
+	if (_stateQueue.empty())
+	{
+		// No states to end, add the default state at least
+		PushState(STATE_DEFAULT);
+		return true;
+	}
+
+	// Don't destroy the State object this round
+	_recycleBin = _stateQueue.front();
+
+	// Remove the current state from the queue
+	_stateQueue.pop_front();
+
+	// Trigger a stateswitch next round
+	_switchState = true;
+
+	// Return TRUE if there are additional states left
+	return !_stateQueue.empty();
+}
+
+void BasicMind::SwitchState(const idStr& stateName)
+{
+	// greebo: Switch the state without destroying the State object immediately
+	_recycleBin = _stateQueue.front();
+
+	// Remove the first element from the queue
+	_stateQueue.pop_front();
+
+	// Add the new task
+	PushState(stateName);
+}
+
+bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int priority)
+{
+	// greebo: Switch the state without destroying the State object immediately
+
+	// Store the shared_ptr in the temporary container
+	_recycleBin = _stateQueue.front();
+
+	// Remove the first element from the queue
+	_stateQueue.pop_front();
+
+	// Switch to the new State (conditionally)
+	bool stateInstalled = PushStateIfHigherPriority(stateName, priority);
+
+	if (!stateInstalled)
+	{
+		// State could not be pushed, revert the queue
+		_stateQueue.push_front(_recycleBin);
+
+		// Prevent re-initialisation of the old state
+		_switchState = false;
+	}
+
+	return stateInstalled;
+}
+
+void BasicMind::QueueState(const idStr& stateName)
+{
+	// Get a new state with the given name
+	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
+
+	if (newState != NULL)
+	{
+		// Append the state at the end of the queue
+		_stateQueue.push_back(newState);
+	}
+	else
+	{
+		gameLocal.Error("BasicMind: Could not enqueue state %s", stateName.c_str());
+	}
+}
+
+void BasicMind::ClearStates()
+{
+	_switchState = true;
+	_stateQueue.clear();
 }
 
 void BasicMind::PerformHidingSpotSearch(idAI* owner)
@@ -659,41 +763,14 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 void BasicMind::Save(idSaveGame* savefile) const 
 {
 	_owner.Save(savefile);
-	
-	// Save the task, if there is an active one
-	savefile->WriteBool(_state != NULL);
-	if (_state != NULL)
-	{
-		savefile->WriteString(_state->GetName().c_str());
-		_state->Save(savefile);
-	}
-
+	_stateQueue.Save(savefile);
 	_memory.Save(savefile);
 }
 
 void BasicMind::Restore(idRestoreGame* savefile) 
 {
 	_owner.Restore(savefile);
-
-	bool hasState;
-	savefile->ReadBool(hasState);
-
-	if (hasState)
-	{
-		idStr stateName;
-		savefile->ReadString(stateName);
-
-		_state = StateLibrary::Instance().CreateInstance(stateName.c_str());
-
-		assert(_state != NULL);
-		_state->Restore(savefile);
-	}
-	else
-	{
-		// Assure the state pointer to be NULL.
-		_state = StatePtr();
-	}
-
+	_stateQueue.Restore(savefile);
 	_memory.Restore(savefile);
 }
 

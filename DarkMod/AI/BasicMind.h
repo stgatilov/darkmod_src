@@ -12,6 +12,7 @@
 
 #include "Memory.h"
 #include "States/State.h"
+#include "States/StateQueue.h"
 
 namespace ai
 {
@@ -23,11 +24,7 @@ private:
 	// The reference to the owning entity
 	idEntityPtr<idAI> _owner;
 
-	// The state we're in
-	StatePtr _state;
-
-	// The next state, if this is non-NULL, the current one will be terminated.
-	StatePtr _nextState;
+	StateQueue _stateQueue;
 
 	// The structure holding all the variables
 	Memory _memory;
@@ -35,21 +32,32 @@ private:
 	// This holds the id of the subsystem whose turn it is next frame
 	SubsystemId _subsystemIterator;
 
+	// TRUE if the the State is about to be switched the next frame
+	bool _switchState;
+
+	// A temporary variable to hold dying states
+	// This is needed to avoid immediate destruction of states upon switching
+	StatePtr _recycleBin;
+
 public:
 	BasicMind(idAI* owner);
 	virtual ~BasicMind() {}
 
 	virtual void Think();
 
-	// Switches the state
+	// State-related methods, see Mind base class for documentation
+	virtual void PushState(const idStr& stateName);
+	virtual bool PushStateIfHigherPriority(const idStr& stateName, int priority);
+	virtual bool EndState();
 	virtual void SwitchState(const idStr& stateName);
-
-	// Switches the state if the given priority is higher than the current one
-	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int statePriority);
+	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int priority);
+	virtual void QueueState(const idStr& stateName);
+	virtual void ClearStates();
 
 	// Returns the reference to the current state
-	ID_INLINE StatePtr& GetState() {
-		return _state;
+	ID_INLINE const StatePtr& GetState() const {
+		assert(_stateQueue.size() > 0);
+		return _stateQueue.front();
 	}
 
 	// Returns the Memory structure, which holds the various mind variables

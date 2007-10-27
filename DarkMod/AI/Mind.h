@@ -32,9 +32,8 @@ enum EAlertState {
 };
 
 /**
- * greebo: This defines the ABC of an AI mind. It basically
- *         handles the incoming stimuli and emits signals to the 
- *         AI subsystems like movement, interaction and sensory stuff.
+ * greebo: This defines the ABC of an AI mind. A Mind can be in all kind
+ *         of States and provides a few methods to switch between them.
  */
 class Mind
 {
@@ -47,23 +46,61 @@ public:
 	virtual void Think() = 0;
 
 	/**
+	 * greebo: Switches the Mind to the named State. The currently active
+	 *         State will be pushed back in the queue and is postponed 
+	 *         until the new State is finished.
+	 */
+	virtual void PushState(const idStr& stateName) = 0;
+
+	/**
+	 * greebo: Switches the Mind to the named State, but ONLY if the 
+	 *         new State has a higher priority than the current one. 
+	 *         In case the new one is accepted, the currently active
+	 *         State will be pushed back in the queue and is postponed 
+	 *         until the new State is finished.
+	 *
+	 * @returns: TRUE if the new State was accepted, FALSE otherwise.
+	 */
+	virtual bool PushStateIfHigherPriority(const idStr& stateName, int priority) = 0;
+
+	/**
+	 * greebo: Ends the current state - the Mind will pick the next State
+	 *         from the StateQueue or create a new Idle State if none is available.
+	 *
+	 * @returns: TRUE if there are still States in the queue after this one is finished.
+	 */
+	virtual bool EndState() = 0;
+
+	/**
 	 * greebo: Sets the new state of this mind (this can be Idle, Combat).
-	 * This new state is attached and its Init() method is invoked.
+	 * This new state REPLACES the currently active one.
 	 */
 	virtual void SwitchState(const idStr& stateName) = 0;
 
 	/**
-	 * greebo: Switches to the given state if <statePriority> is higher than the
-	 *         priority of the current state.
+	 * greebo: Sets the new state of this mind (this can be Idle, Combat),
+	 * but ONLY if the priority is higher than the one of the current state.
+	 * This new state REPLACES the currently active one, if its priority is higher.
 	 *
-	 * @returns: TRUE if the state was switched, FALSE otherwise.
+	 * @returns: TRUE, if the State was switched (priority higher), FALSE otherwise.
 	 */
-	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int statePriority) = 0;
+	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int priority) = 0;
+
+	/**
+	 * greebo: Adds the named State at the end of the queue. It becomes active when
+	 *         all other currently enqueued states will be finished.
+	 */
+	virtual void QueueState(const idStr& stateName) = 0;
+
+	/**
+	 * greebo: Removes all States from the Queue and falls back to the default State (Idle).
+	 */
+	virtual void ClearStates() = 0;
 
 	/**
 	 * Returns the reference to the current state (can be NULL).
 	 */
-	virtual StatePtr& GetState() = 0;
+	virtual const StatePtr& GetState() const = 0;
 
 	// Returns the Memory structure, which holds the various mind variables
 	virtual Memory& GetMemory() = 0;
