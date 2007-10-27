@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: StimulusSensoryTask.cpp 1435 20
 #include "StimulusSensoryTask.h"
 #include "../States/IdleState.h"
 #include "../States/SearchingState.h"
+#include "../States/CombatState.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -51,7 +52,12 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
 
-	if (owner->AI_AlertNum >= owner->thresh_2)
+	if (owner->AI_AlertNum >= owner->thresh_combat)
+	{
+		owner->GetMind()->PerformCombatCheck();
+	}
+
+	else if (owner->AI_AlertNum >= owner->thresh_2 && owner->AI_AlertNum < owner->thresh_combat)
 	{
 		// Let the AI stop, before going into search mode
 		owner->StopMove(MOVE_STATUS_DONE);

@@ -65,6 +65,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// Store the path entity back into the mind, it might have changed
 		owner->GetMind()->GetMemory().currentPath = path;
+
 	}
 }
 
@@ -152,6 +153,11 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		subsystem.QueueTask(pathTask);
 
 		return true; // finish this task
+	}
+	else
+	{
+		subsystem.FinishCurrentTask();
+		return true;
 	}
 
 	return false; // not finished yet

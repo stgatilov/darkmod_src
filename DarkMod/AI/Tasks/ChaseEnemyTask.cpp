@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: ChaseEnemyTask.cpp 1435 2007-10
 #include "ChaseEnemyTask.h"
 #include "../Memory.h"
 #include "../Library.h"
+#include "../States/UnreachableTargetState.h"
 
 namespace ai
 {
@@ -35,9 +36,10 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_enemy = owner->GetEnemy();
 
-	if (!owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
+	if (!owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		// TODO: Destination unreachable?
+		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 	}
 }
 
@@ -72,7 +74,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		}
 	}
 	// no, push the AI forward and try to get to the last visible reachable enemy position
-	else if (owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
+	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		if (owner->AI_MOVE_DONE)
 		{
@@ -96,6 +98,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		// Destination unreachable!
 		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
 		gameLocal.Printf("Destination unreachable... \n");
+		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+		return true;
 	}
 
 	return false; // not finished yet
