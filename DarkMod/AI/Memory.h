@@ -200,7 +200,7 @@ public:
 		numPossibleHidingSpotsSearched(0),
 		currentSearchSpot(0,0,0),
 		hidingSpotTestStarted(false),
-		hidingSpotSearchDone(false),
+		hidingSpotSearchDone(true),
 		hidingSpotThinkFrameCount(0),
 		firstChosenHidingSpotIndex(0),
 		currentChosenHidingSpotIndex(0),
