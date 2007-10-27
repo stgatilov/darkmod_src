@@ -47,6 +47,12 @@ protected:
 public:
 	Subsystem(idAI* owner);
 
+	// Returns the currently active task
+	TaskPtr GetCurrentTask() const;
+
+	// Returns the name of the current task ("" if empty)
+	idStr GetCurrentTaskName() const;
+
 	// Called regularly by the Mind to run the currently assigned routine.
 	// @returns: TRUE if the subsystem is enabled and the task was performed, 
 	// @returns: FALSE if the subsystem is disabled and nothing happened.
@@ -94,6 +100,9 @@ public:
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
+
+	// Returns some debug text for console or renderworld display
+	idStr GetDebugInfo();
 };
 typedef boost::shared_ptr<Subsystem> SubsystemPtr;
 

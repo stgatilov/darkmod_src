@@ -42,6 +42,21 @@ bool Subsystem::IsEnabled() const
 	return _enabled;
 }
 
+idStr Subsystem::GetDebugInfo()
+{
+	return (_enabled) ? GetCurrentTaskName() : "";
+}
+
+idStr Subsystem::GetCurrentTaskName() const
+{
+	return (_taskQueue.empty()) ? "" : _taskQueue.front()->GetName();
+}
+
+TaskPtr Subsystem::GetCurrentTask() const
+{
+	return (_taskQueue.empty()) ? TaskPtr() : _taskQueue.front();
+}
+
 // Called regularly by the Mind to run the currently assigned routine.
 bool Subsystem::PerformTask()
 {

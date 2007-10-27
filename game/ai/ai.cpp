@@ -1742,8 +1742,15 @@ void idAI::Think( void )
 	{
 		/*idStr str = idStr::FormatNumber(taskPriority) + "   ";
 		str += idStr(task);*/
-		idStr str = mind->GetState()->GetName();
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		idStr str("State: ");
+		str += mind->GetState()->GetName() + "\n";
+		
+		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
+
+		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		/*if (m_TaskQueue != NULL)
 		{
 			gameRenderWorld->DrawText( m_TaskQueue->DebuggingInfo().c_str(), (GetEyePosition() - physicsObj.GetGravityNormal()*10.0f), 0.20f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
