@@ -74,9 +74,6 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 		// Store the new path entity into the AI's mind
 		owner->GetMind()->GetMemory().currentPath = next;
 
-		// Fall back to the PatrolTask now we're done here
-		subsystem.QueueTask(PatrolTask::CreateInstance());
-
 		return true; // finish this task
 	}
 	return false;

@@ -90,9 +90,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}	
 	else if (classname == "path_turn")
 	{
@@ -102,9 +100,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}
 	else if (classname == "path_wait")
 	{
@@ -114,9 +110,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}
 	else if (classname == "path_waitfortrigger")
 	{
@@ -126,9 +120,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}
 	else if (classname == "path_hide")
 	{
@@ -138,9 +130,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}
 	else if (classname == "path_show")
 	{
@@ -150,13 +140,11 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.QueueTask(pathTask);
-
-		return true; // finish this task
+		subsystem.PushTask(pathTask);
 	}
 	else
 	{
-		subsystem.FinishTask();
+		// Finish this task
 		return true;
 	}
 

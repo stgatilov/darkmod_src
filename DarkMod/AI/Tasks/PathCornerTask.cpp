@@ -36,7 +36,8 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	if (_path.GetEntity() == NULL) {
+	if (_path.GetEntity() == NULL)
+	{
 		gameLocal.Error("PathCornerTask: Path Entity not set before Init()");
 	}
 
@@ -86,9 +87,6 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 
 			// Store the new path entity into the AI's mind
 			owner->GetMind()->GetMemory().currentPath = next;
-
-			// Fall back to the PatrolTask now we're done here
-			subsystem.QueueTask(PatrolTask::CreateInstance());
 
 			return true; // finish this task
 		}
