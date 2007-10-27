@@ -2688,15 +2688,33 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 
 /*
 =====================
+idAI::LookForCover
+=====================
+*/
+bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 &hideFromPos) 
+{
+	idBounds bounds;
+	aasObstacle_t obstacle;
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	int areaNum	= PointReachableAreaNum( org );
+
+	// consider the entity the monster tries to hide from as an obstacle
+	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
+
+	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
+	return aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") );
+}
+
+/*
+=====================
 idAI::MoveToCover
 =====================
 */
 bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
-	int				areaNum;
-	aasObstacle_t	obstacle;
-	aasGoal_t		hideGoal;
-	idBounds		bounds;
 	//common->Printf("MoveToCover called... ");
+
+	aasGoal_t hideGoal;
 
 	if ( !aas || !hideFromEnt ) {
 		common->Printf("MoveToCover failed: null aas or entity\n");
@@ -2704,15 +2722,8 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
-
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
-
-	// consider the entity the monster tries to hide from as an obstacle
-	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
-
-	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
-	if ( !aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") ) ) {
+	
+	if (!LookForCover(hideGoal, hideFromEnt, hideFromPos)) {
 		//common->Printf("MoveToCover failed: destination unreachable\n");
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;

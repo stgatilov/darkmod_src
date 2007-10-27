@@ -1175,6 +1175,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 *                 OR the position is already reached (AI_MOVE_DONE == true).
 	 */
 	bool					MoveToPosition( const idVec3 &pos );
+
+	/**
+	 * angua: This looks for a suitable position for taking cover
+	 *
+	 * @returns: FALSE, if no suitable position is found
+	 * @returns: TRUE, if the position is reachable 
+	 * The position is stored in <hideGoal>.           
+	 */	
+	bool					LookForCover(aasGoal_t& hideGoal, idEntity *entity, const idVec3 &pos );
 	bool					MoveToCover( idEntity *entity, const idVec3 &pos );
 	bool					SlideToPosition( const idVec3 &pos, float time );
 	bool					WanderAround( void );

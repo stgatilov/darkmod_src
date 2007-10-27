@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_THROW_OBJECT_TASK_H__
-#define __AI_THROW_OBJECT_TASK_H__
+#ifndef __AI_MOVE_TO_COVER_TASK_H__
+#define __AI_MOVE_TO_COVER_TASK_H__
 
 #include "Task.h"
 
@@ -16,19 +16,14 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_THROW_OBJECT "Throw_Object"
+#define TASK_MOVE_TO_COVER "Move_To_Cover"
 
-class ThrowObjectTask;
-typedef boost::shared_ptr<ThrowObjectTask> ThrowObjectTaskPtr;
+class MoveToCoverTask;
+typedef boost::shared_ptr<MoveToCoverTask> MoveToCoverTaskPtr;
 
-class ThrowObjectTask :
+class MoveToCoverTask :
 	public Task
 {
-	int _projectileDelayMin;
-	int _projectileDelayMax;
-	int _nextThrowObjectTime;
-	bool _takingCoverPossible;
-
 
 public:
 	// Get the name of this task
@@ -44,10 +39,10 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static ThrowObjectTaskPtr CreateInstance();
+	static MoveToCoverTaskPtr CreateInstance();
 
 };
 
 } // namespace ai
 
-#endif /* __AI_THROW_OBJECT_TASK_H__ */
+#endif /* __AI_MOVE_TO_COVER_TASK_H__ */
