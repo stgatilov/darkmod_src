@@ -62,7 +62,7 @@ public:
 		ElementPtr returnValue; // NULL by default
 
 		// Try to lookup the task in the map
-		ElementMap::iterator i = _elements.find(elementName);
+		typename ElementMap::iterator i = _elements.find(elementName);
 
 		if (i != _elements.end())
 		{

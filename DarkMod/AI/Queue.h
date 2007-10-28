@@ -33,6 +33,9 @@ template <class Element>
 class Queue :
 	public std::list< boost::shared_ptr<Element> >
 {
+	// Parent list type
+	typedef std::list<boost::shared_ptr<Element> > ListType;
+		
 	// greebo: Don't define data members in a class deriving from an STL container
 	// (std::list destructor is non-virtual)
 
@@ -47,7 +50,9 @@ public:
 	const std::string DebuggingInfo() const
 	{
 		std::stringstream debugInfo;
-		for (const_iterator i = begin(); i != end(); i++)
+		for (typename ListType::const_iterator i = ListType::begin(); 
+			 i != ListType::end(); 
+			 ++i)
 		{
 			debugInfo << (*i)->GetName();
 			debugInfo << "\n";
@@ -60,8 +65,10 @@ public:
 	*/
 	void Save(idSaveGame *savefile) const
 	{
-		savefile->WriteInt(size());
-		for (const_iterator i = begin(); i != end(); i++)
+		savefile->WriteInt(ListType::size());
+		for (typename ListType::const_iterator i = ListType::begin(); 
+			 i != ListType::end(); 
+			 ++i)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Saving element %s.\r", (*i)->GetName().c_str());
 			savefile->WriteString((*i)->GetName().c_str());
@@ -74,7 +81,7 @@ public:
 	void Restore(idRestoreGame *savefile)
 	{
 		// Clear the queue before restoring
-		clear();
+		ListType::clear();
 		
 		int elements;
 		savefile->ReadInt(elements);
