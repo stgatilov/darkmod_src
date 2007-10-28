@@ -59,6 +59,9 @@ void SearchingState::Init(idAI* owner)
 		// AI is not moving, wait for spot search to complete
 		memory.hidingSpotInvestigationInProgress = false;
 	}
+
+	// Clear the communication system
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	
 	// Pass control to the SearchTask which will keep track of the hiding spot search
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
