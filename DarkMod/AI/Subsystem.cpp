@@ -82,13 +82,21 @@ bool Subsystem::PerformTask()
 
 		// Initialise the newcomer
 		task->Init(_owner.GetEntity(), *this);
+
+		if (!_enabled || _initTask)
+		{
+			// Subsystem has been disabled by the Init() call OR
+			// the Task has been changed (_initTask == true), quit
+			return false;
+		}
 	}
 
 	// greebo: If the task returns TRUE, it will be removed next round.
 	// Only execute the task if the initTask is not set, this might indicate
 	// a task switch invoked by the previous Init() call.
 	// An uninitialised task must not be performed.
-	if (!_initTask && task->Perform(*this))
+	// Also, the subsystem must be enabled, it might have been disabled in the Init call.
+	if (task->Perform(*this))
 	{
 		FinishTask();
 	}
