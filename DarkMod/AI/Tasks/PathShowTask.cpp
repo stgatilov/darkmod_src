@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -37,7 +37,6 @@ void PathShowTask::Init(idAI* owner, Subsystem& subsystem)
 	if (path == NULL) {
 		gameLocal.Error("PathShowTask: Path Entity not set before Init()");
 	}
-
 }
 
 bool PathShowTask::Perform(Subsystem& subsystem)

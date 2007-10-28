@@ -177,6 +177,9 @@ public:
 	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
 	bool hidingSpotInvestigationInProgress;
 
+	// angua: The last position of the AI before it takes cover, so it can return to it later.
+	idVec3 positionBeforeTakingCover;
+
 	Memory() :
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
@@ -205,7 +208,8 @@ public:
 		firstChosenHidingSpotIndex(0),
 		currentChosenHidingSpotIndex(0),
 		chosenHidingSpot(0,0,0),
-		hidingSpotInvestigationInProgress(false)
+		hidingSpotInvestigationInProgress(false),
+		positionBeforeTakingCover(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -240,6 +244,7 @@ public:
 		savefile->WriteInt(currentChosenHidingSpotIndex);
 		savefile->WriteVec3(chosenHidingSpot);
 		savefile->WriteBool(hidingSpotInvestigationInProgress);
+		savefile->WriteVec3(positionBeforeTakingCover);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -279,6 +284,7 @@ public:
 		savefile->ReadInt(currentChosenHidingSpotIndex);
 		savefile->ReadVec3(chosenHidingSpot);
 		savefile->ReadBool(hidingSpotInvestigationInProgress);
+		savefile->ReadVec3(positionBeforeTakingCover);
 	}
 };
 

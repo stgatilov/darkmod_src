@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -92,12 +92,13 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 			// the script function when the animation is done.
 			owner->SetWaitState("throw");
 		}
+
 		// Set next throwing time
 		_nextThrowObjectTime = gameLocal.time + _projectileDelayMin
 							+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin);
 	}
 
-	// Take cover when throwing is done if it is possible and a ranged threat from the player is detected
+	// Take cover after throwing is done if it is possible and a ranged threat from the player is detected
 	idStr waitState(owner->WaitState());
 	if (_takingCoverPossible && waitState != "throw" && 
 			( !owner->spawnArgs.GetBool("taking_cover_only_from_archers","0") || enemy->RangedThreatTo(owner) ) )

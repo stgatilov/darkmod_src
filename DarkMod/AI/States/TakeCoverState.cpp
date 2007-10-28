@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -14,12 +14,10 @@ static bool init_version = FileVersionList("$Id: TakeCoverState.cpp 1435 2007-10
 
 #include "TakeCoverState.h"
 #include "../Memory.h"
-#include "../../AIComm_Message.h"
-#include "../Tasks/EmptyTask.h"
-#include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/CombatSensoryTask.h"
-#include "../Tasks/ThrowObjectTask.h"
 #include "../Tasks/MoveToCoverTask.h"
+#include "../Tasks/WaitTask.h"
+#include "../Tasks/EmergeFromCoverTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -40,22 +38,34 @@ void TakeCoverState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMind()->GetMemory();
 
+	// Remember current position
+	memory.positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();
+
 
 	// Fill the subsystems with their tasks
 
-	// The movement subsystem should start running to the last enemy position
+	// The movement subsystem should run to Cover position, 
+	// wait there for some time and then emerge to have a look.
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(MoveToCoverTask::CreateInstance());
 
-	// The communication system is barking 
+	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));
+	int coverDelayMax = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_max"));
+	int emergeDelay = coverDelayMin + gameLocal.random.RandomFloat() * (coverDelayMax - coverDelayMin);
+	WaitTaskPtr waitInCover = WaitTask::CreateInstance();
+	waitInCover->SetTime(emergeDelay);
+	owner->GetSubsystem(SubsysMovement)->QueueTask(waitInCover);
+
+	owner->GetSubsystem(SubsysMovement)->QueueTask(EmergeFromCoverTask::CreateInstance());
+
+	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
-
-	// The sensory system does its Combat Sensory tasks
+	// The sensory system 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 //	owner->GetSubsystem(SubsysSenses)->PushTask(CombatSensoryTask::CreateInstance());
 
-	// Object throwing
+	// No action
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 }
 

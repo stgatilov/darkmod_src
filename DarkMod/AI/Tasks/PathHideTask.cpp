@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -29,7 +29,7 @@ const idStr& PathHideTask::GetName() const
 
 void PathHideTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
+	// Init the base class
 	Task::Init(owner, subsystem);
 
 	idPathCorner* path = _path.GetEntity();
@@ -38,6 +38,7 @@ void PathHideTask::Init(idAI* owner, Subsystem& subsystem)
 		gameLocal.Error("PathHideTask: Path Entity not set before Init()");
 	}
 
+	// Make invisible and nonsolid
 	owner->Hide();
 }
 
@@ -51,8 +52,7 @@ bool PathHideTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
-
+	// Move on to next target
 	if (owner->IsHidden())
 	{
 		// Trigger path targets, now that we've reached the corner

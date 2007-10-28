@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -13,8 +13,8 @@
 static bool init_version = FileVersionList("$Id: MoveToCoverTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "../Memory.h"
-#include "PatrolTask.h"
 #include "MoveToCoverTask.h"
+#include "IdleSensoryTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -29,14 +29,15 @@ const idStr& MoveToCoverTask::GetName() const
 
 void MoveToCoverTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	// Just init the base class
+	// Init the base class
 	Task::Init(owner, subsystem);
 	idActor* enemy = owner->GetEnemy();
 
+	//Move to cover position
 	owner->AI_RUN = true;
 	owner->AI_FORWARD = true;
+
 	owner->MoveToCover(enemy, owner->lastVisibleEnemyPos);
-		
 }
 
 bool MoveToCoverTask::Perform(Subsystem& subsystem)
@@ -48,43 +49,38 @@ bool MoveToCoverTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointer
 	assert(owner != NULL);
 
-
 	if (owner->AI_DEST_UNREACHABLE)
 	{
 		//TODO
 		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable.\r");
+		return true;
 	}
-
-
 
 	if (owner->AI_MOVE_DONE)
 	{
-
 		// Move is done, 
 		DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
-	//	owner->FaceEnemy();
-	}
-			
-			
+		owner->FaceEnemy();
 
-		
-	
+		// Start sensory scan and finish this task
+		owner->GetSubsystem(SubsysSenses)->ClearTasks();
+		owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
+
+		return true;
+	}
 
 	return false; // not finished yet
 }
-
 
 // Save/Restore methods
 void MoveToCoverTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
-
 }
 
 void MoveToCoverTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
-
 }
 
 MoveToCoverTaskPtr MoveToCoverTask::CreateInstance()

@@ -3,7 +3,7 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
@@ -38,6 +38,7 @@ void PathTurnTask::Init(idAI* owner, Subsystem& subsystem)
 		gameLocal.Error("PathTurnTask: Path Entity not set before Init()");
 	}
 
+	//Start turning
 	float angle = path->spawnArgs.GetFloat("angle","0");
 	owner->TurnToward(angle);
 }
@@ -52,8 +53,7 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);
 
-	// TODO: ai_darkmod_base::playCustomCycle? needed? "anim" spawnarg?
-
+	// Move on to next target when turning is done
 	if (owner->FacingIdeal())
 	{
 		// Trigger path targets, now that we've reached the corner

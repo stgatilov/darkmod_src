@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_THROW_OBJECT_TASK_H__
-#define __AI_THROW_OBJECT_TASK_H__
+#ifndef __AI_WAIT_TASK_H__
+#define __AI_WAIT_TASK_H__
 
 #include "Task.h"
 
@@ -16,18 +16,17 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_THROW_OBJECT "Throw_Object"
+#define TASK_WAIT "Wait"
 
-class ThrowObjectTask;
-typedef boost::shared_ptr<ThrowObjectTask> ThrowObjectTaskPtr;
+class WaitTask;
+typedef boost::shared_ptr<WaitTask> WaitTaskPtr;
 
-class ThrowObjectTask :
+class WaitTask :
 	public Task
 {
-	int _projectileDelayMin;
-	int _projectileDelayMax;
-	int _nextThrowObjectTime;
-	bool _takingCoverPossible;
+
+	int _waitTime;
+	int _waitEndTime;
 
 public:
 	// Get the name of this task
@@ -38,15 +37,16 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
+	void SetTime(int waitTime);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static ThrowObjectTaskPtr CreateInstance();
-
+	static WaitTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_THROW_OBJECT_TASK_H__ */
+#endif /* __AI_WAIT_TASK_H__ */
