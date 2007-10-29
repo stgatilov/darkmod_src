@@ -55,6 +55,9 @@ enum EAlertType {
 #define HIDING_OBJECT_HEIGHT 0.35f
 #define MAX_SPOTS_PER_SEARCH_CALL 100
 
+// The maximum time the AI is able to follow the enemy although it's visible
+#define MAX_BLIND_CHASE_TIME 1500
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -122,7 +125,7 @@ public:
 	// greebo: Note: Currently this is filled in before fleeing only.
 	idVec3 lastEnemyPos;
 
-	// This is set to TRUE by the CombatSensoryTask to indicate whether
+	// This is set to TRUE by the sensory routines to indicate whether
 	// the AI is in the position to damage the player.
 	// This flag is mostly for caching purposes so that the subsystem tasks
 	// don't need to query idAI::CanHitEnemy() independently.

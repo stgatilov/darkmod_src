@@ -21,6 +21,9 @@ namespace ai
 class UnreachableTargetState :
 	public State
 {
+	// The AI's enemy
+	idEntityPtr<idActor> _enemy;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -37,11 +40,8 @@ public:
 	virtual void Think(idAI* owner);
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{} // nothing yet
-
-	virtual void Restore(idRestoreGame* savefile)
-	{} // nothing yet
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	static StatePtr CreateInstance();
 };

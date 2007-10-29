@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/ChaseEnemyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
-#include "../Tasks/CombatSensoryTask.h"
+#include "LostTrackOfEnemyState.h"
 #include "../Library.h"
 
 namespace ai
@@ -49,6 +49,9 @@ void CombatState::Init(idAI* owner)
 		owner->GetEnemy(),
 		memory.lastEnemyPos
 	);
+
+	// Store the enemy entity locally
+	_enemy = owner->GetEnemy();
 
 	// greebo: Check for weapons and flee if we are unarmed.
 	if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
@@ -101,9 +104,8 @@ void CombatState::Init(idAI* owner)
 	barkTask->SetSound("snd_combat");
 	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
-	// The sensory system does its Idle tasks
+	// The sensory system does nothing so far
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->QueueTask(CombatSensoryTask::CreateInstance());
 
 	// For now, we assume a melee combat (TODO: Ranged combat decision)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -113,7 +115,42 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
+	Memory& memory = owner->GetMind()->GetMemory();
 
+	idActor* enemy = _enemy.GetEntity();
+	if (enemy == NULL)
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		return;
+	}
+
+	// Check the distance to the enemy, the other subsystem tasks need it.
+	memory.canHitEnemy = owner->CanHitEntity(enemy);
+
+	if (!owner->AI_ENEMY_VISIBLE)
+	{
+		// The enemy is not visible, let's keep track of him for a small amount of time
+		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+		{
+			// Cheat a bit and take the last reachable position as "visible & reachable"
+			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
+		}
+		else
+		{
+			// BLIND_CHASE_TIME has expired, we have lost the enemy!
+			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+		}
+	}
+}
+
+void CombatState::Save(idSaveGame* savefile) const
+{
+	_enemy.Save(savefile);
+}
+
+void CombatState::Restore(idRestoreGame* savefile)
+{
+	_enemy.Restore(savefile);
 }
 
 StatePtr CombatState::CreateInstance()

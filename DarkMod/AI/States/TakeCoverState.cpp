@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: TakeCoverState.cpp 1435 2007-10
 
 #include "TakeCoverState.h"
 #include "../Memory.h"
-#include "../Tasks/CombatSensoryTask.h"
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/EmergeFromCoverTask.h"

@@ -76,8 +76,11 @@ void BasicMind::Think()
 		PerformHidingSpotSearch(owner);
 	}
 
-	// Let the State do its monitoring task
-	state->Think(owner);
+	if (!_switchState)
+	{
+		// Let the State do its monitoring task
+		state->Think(owner);
+	}
 
 	// Try to perform the subsystem tasks, skipping inactive subsystems
 	// Maximum number of tries is SubsystemCount.
