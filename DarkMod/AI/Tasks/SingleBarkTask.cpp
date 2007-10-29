@@ -19,6 +19,14 @@ static bool init_version = FileVersionList("$Id: SingleBarkTask.cpp 1435 2007-10
 namespace ai
 {
 
+SingleBarkTask::SingleBarkTask() :
+	_soundName("")
+{}
+
+SingleBarkTask::SingleBarkTask(const idStr& soundName) :
+	_soundName(soundName)
+{}
+
 // Get the name of this task
 const idStr& SingleBarkTask::GetName() const
 {
@@ -26,21 +34,9 @@ const idStr& SingleBarkTask::GetName() const
 	return _name;
 }
 
-void SingleBarkTask::Init(idAI* owner, Subsystem& subsystem)
-{
-	// Just init the base class
-	Task::Init(owner, subsystem);
-
-	// If the last chat time is not yet set, initialise it to play the sound now
-	/*if (owner->GetMind()->GetMemory().lastPatrolChatTime == -1)
-	{
-		owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time - _barkRepeatInterval;
-	}*/
-}
-
 bool SingleBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Idle Bark Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("SingleBarkTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
@@ -51,15 +47,6 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 
 	// Disable the patrol barking for now.
 	owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time;
-
-	/*if (gameLocal.time - owner->GetMind()->GetMemory().lastPatrolChatTime > _barkRepeatInterval)
-	{
-		// The time has come, bark now
-		owner->PlayAndLipSync("snd_patrol_idle", "talk1");
-
-		// Reset the timer
-		owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time;
-	}*/
 
 	return true; // finished!
 }

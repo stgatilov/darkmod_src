@@ -26,12 +26,16 @@ class SingleBarkTask :
 {
 	// The name of the sound to be played
 	idStr _soundName;
+
+	// Default constructor
+	SingleBarkTask();
+
 public:
+	// Constructor taking a sound name as argument
+	SingleBarkTask(const idStr& soundName);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
-
-	// Override the base Init method
-	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
 

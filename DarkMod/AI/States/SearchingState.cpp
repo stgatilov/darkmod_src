@@ -16,7 +16,10 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 #include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/SearchTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
+#include "../../idAbsenceMarkerEntity.h"
+#include "../../AIComm_Message.h"
 
 namespace ai
 {
@@ -62,6 +65,10 @@ void SearchingState::Init(idAI* owner)
 
 	// Clear the communication system
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	// Allocate a singlebarktask, set the sound and enqueue it
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+	);
 	
 	// Pass control to the SearchTask which will keep track of the hiding spot search
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -78,7 +85,14 @@ void SearchingState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void SearchingState::Think(idAI* owner)
 {
+	Memory& memory = owner->GetMind()->GetMemory();
 
+	// Do we have an ongoing hiding spot search?
+	if (!memory.hidingSpotSearchDone)
+	{
+		// Let the hiding spot search do its task
+		PerformHidingSpotSearch(owner);
+	}
 }
 
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
@@ -116,6 +130,85 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 		// Search completed on first round
 		memory.hidingSpotSearchDone = true;
 	}
+}
+
+void SearchingState::PerformHidingSpotSearch(idAI* owner)
+{
+	// Shortcut reference
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// Increase the frame count
+	memory.hidingSpotThinkFrameCount++;
+
+	if (owner->ContinueSearchForHidingSpots() == 0)
+	{
+		// search completed
+		memory.hidingSpotSearchDone = true;
+
+		// Hiding spot test is done
+		memory.hidingSpotTestStarted = false;
+		
+		// Here we transition to the state for handling the behavior of
+		// the AI once it thinks it knows where the stimulus may have
+		// come from
+		
+		// For now, starts searching for the stimulus.  We probably want
+		// a way for different AIs to act differently
+		// TODO: Morale check etc...
+
+		// Determine the search duration
+		DetermineSearchDuration(owner);
+
+		// Yell that you noticed something if you are responding directly to a stimulus
+		if (!memory.searchingDueToCommunication)
+		{
+			owner->IssueCommunication_Internal(
+				CAIComm_Message::DetectedSomethingSuspicious_CommType, 
+				YELL_STIM_RADIUS, 
+				NULL,
+				NULL,
+				memory.alertPos
+			);
+		}
+
+		// Get location
+		memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
+
+		// Set time search is starting
+		memory.currentHidingSpotListSearchStartTime = gameLocal.time;
+	}
+}
+
+int SearchingState::DetermineSearchDuration(idAI* owner)
+{
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// Determine how much time we should spend searching based on the alert times
+	int searchTimeSpan(0);
+
+	if (owner->AI_AlertNum >= owner->thresh_1)
+	{
+		searchTimeSpan += owner->atime1;
+	}
+
+	if (owner->AI_AlertNum >= owner->thresh_2)
+	{
+		searchTimeSpan += owner->atime2;
+	}
+
+	if (owner->AI_AlertNum >= owner->thresh_3)
+	{
+		searchTimeSpan += owner->atime3;
+	}
+
+	// Randomize duration by up to 20% increase
+	memory.currentHidingSpotListSearchMaxDuration = 
+		SEC2MS(searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f));
+
+	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d msec\r", memory.currentHidingSpotListSearchMaxDuration);
+	
+	// Done
+	return memory.currentHidingSpotListSearchMaxDuration;
 }
 
 StatePtr SearchingState::CreateInstance()

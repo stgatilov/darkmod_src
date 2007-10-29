@@ -50,6 +50,19 @@ private:
 	* This method is used to start a new hiding spot search. Any existing search in progress is replaced.
 	*/
 	void StartNewHidingSpotSearch(idAI* owner);
+
+	// This is called each frame to complete a multiframe hiding spot search
+	void PerformHidingSpotSearch(idAI* owner);
+
+	/**
+	* This method looks at the alert level and determines
+	* the duration to set for the currentHidingSpotListSearchMaxDuration
+	* variable that controls the length of an ensuing search.
+	*
+	* @return Returns the duration that was also set in the
+	*	currentHidingSpotListSearchMaxDuration in the Memory.
+	*/
+	int DetermineSearchDuration(idAI* owner);
 };
 
 } // namespace ai

@@ -69,13 +69,6 @@ void BasicMind::Think()
 		state->Init(owner);
 	}
 
-	// Do we have an ongoing hiding spot search?
-	if (!_memory.hidingSpotSearchDone)
-	{
-		// Let the hiding spot search do its task
-		PerformHidingSpotSearch(owner);
-	}
-
 	if (!_switchState)
 	{
 		// Let the State do its monitoring task
@@ -235,80 +228,6 @@ void BasicMind::ClearStates()
 {
 	_switchState = true;
 	_stateQueue.clear();
-}
-
-void BasicMind::PerformHidingSpotSearch(idAI* owner)
-{
-	// Increase the frame count
-	_memory.hidingSpotThinkFrameCount++;
-
-	if (owner->ContinueSearchForHidingSpots() == 0)
-	{
-		// search completed
-		_memory.hidingSpotSearchDone = true;
-
-		// Hiding spot test is done
-		_memory.hidingSpotTestStarted = false;
-		
-		// Here we transition to the state for handling the behavior of
-		// the AI once it thinks it knows where the stimulus may have
-		// come from
-		
-		// For now, starts searching for the stimulus.  We probably want
-		// a way for different AIs to act differently
-		// TODO: Morale check etc...
-
-		// Determine the search duration
-		DetermineSearchDuration(owner);
-
-		// Yell that you noticed something if you are responding directly to a stimulus
-		if (!_memory.searchingDueToCommunication)
-		{
-			owner->IssueCommunication_Internal(
-				CAIComm_Message::DetectedSomethingSuspicious_CommType, 
-				YELL_STIM_RADIUS, 
-				NULL,
-				NULL,
-				_memory.alertPos
-			);
-		}
-
-		// Get location
-		_memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(_memory.currentChosenHidingSpotIndex);
-
-		// Set time search is starting
-		_memory.currentHidingSpotListSearchStartTime = gameLocal.time;
-	}
-}
-
-int BasicMind::DetermineSearchDuration(idAI* owner)
-{
-	// Determine how much time we should spend searching based on the alert times
-	int searchTimeSpan(0);
-
-	if (owner->AI_AlertNum >= owner->thresh_1)
-	{
-		searchTimeSpan += owner->atime1;
-	}
-
-	if (owner->AI_AlertNum >= owner->thresh_2)
-	{
-		searchTimeSpan += owner->atime2;
-	}
-
-	if (owner->AI_AlertNum >= owner->thresh_3)
-	{
-		searchTimeSpan += owner->atime3;
-	}
-
-	// Randomize duration by up to 20% increase
-	_memory.currentHidingSpotListSearchMaxDuration = 
-		SEC2MS(searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f));
-
-	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d msec\r", _memory.currentHidingSpotListSearchMaxDuration);
-	
-	// Done
-	return _memory.currentHidingSpotListSearchMaxDuration;
 }
 
 void BasicMind::TestAlertStateTimer()
@@ -548,10 +467,9 @@ void BasicMind::Bark(const idStr& soundname)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	// Allocate a singlebarktask, set the sound and enqueue it
-	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
-	singleBark->SetSound(soundname);
-
-	owner->GetSubsystem(SubsysCommunication)->PushTask(singleBark);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask(soundname))
+	);
 }
 
 bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
