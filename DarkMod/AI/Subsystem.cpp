@@ -14,12 +14,14 @@ static bool init_version = FileVersionList("$Id: Subsystem.cpp 1435 2007-10-16 1
 
 #include "Subsystem.h"
 #include "Library.h"
+#include "States/State.h"
 #include "Tasks/EmptyTask.h"
 
 namespace ai
 {
 
-Subsystem::Subsystem(idAI* owner) :
+Subsystem::Subsystem(SubsystemId subsystemId, idAI* owner) :
+	_id(subsystemId),
 	_enabled(false),
 	_initTask(false)
 {
@@ -122,6 +124,10 @@ bool Subsystem::FinishTask()
 		// Move the task pointer from the queue to the recyclebin
 		_recycleBin = _taskQueue.front();
 		_taskQueue.pop_front();
+
+		// Issue the "TaskFinished" signal to the MindState
+		MindPtr mind = _owner.GetEntity()->GetMind();
+		mind->GetState()->OnSubsystemTaskFinished(_id);
 	}
 
 	if (_taskQueue.empty())
@@ -191,6 +197,8 @@ void Subsystem::ClearTasks()
 // Save/Restore methods
 void Subsystem::Save(idSaveGame* savefile) const
 {
+	savefile->WriteInt(static_cast<int>(_id));
+
 	_owner.Save(savefile);
 
 	savefile->WriteBool(_enabled);
@@ -209,6 +217,10 @@ void Subsystem::Save(idSaveGame* savefile) const
 
 void Subsystem::Restore(idRestoreGame* savefile)
 {
+	int temp;
+	savefile->ReadInt(temp);
+	_id = static_cast<SubsystemId>(temp);
+
 	_owner.Restore(savefile);
 
 	savefile->ReadBool(_enabled);

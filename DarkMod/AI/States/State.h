@@ -38,6 +38,10 @@ public:
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const = 0;
 	virtual void Restore(idRestoreGame* savefile) = 0;
+
+	// Incoming events issued by the Subsystems
+	virtual void OnSubsystemTaskFinished(SubsystemId subSystem)
+	{} // empty default implementation
 };
 typedef boost::shared_ptr<State> StatePtr;
 

@@ -30,6 +30,9 @@ enum SubsystemId {
 class Subsystem
 {
 protected:
+	// The subsystem knows what type it is
+	SubsystemId _id;
+
 	idEntityPtr<idAI> _owner;
 
 	// The stack of tasks, pushed tasks get added at the end
@@ -45,7 +48,7 @@ protected:
 	bool _enabled;
 
 public:
-	Subsystem(idAI* owner);
+	Subsystem(SubsystemId subsystemId, idAI* owner);
 
 	// Returns the currently active task
 	TaskPtr GetCurrentTask() const;
