@@ -1534,6 +1534,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
 
+	// Script interface for state manipulation
+	void					Event_PushState(const char* state);
+	void					Event_QueueState(const char* state);
+	void					Event_SwitchState(const char* state);
+	void					Event_EndState();
+	void					Event_PushStateIfHigherPriority(const char* state, int priority);
+	void					Event_SwitchStateIfHigherPriority(const char* state, int priority);
+
 	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
 	void					Event_RegisterKilledTask( const char* taskName, int priority );
 	void					Event_RegisterKnockedOutTask(const char* taskName, int priority);
