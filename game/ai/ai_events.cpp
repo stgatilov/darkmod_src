@@ -167,7 +167,6 @@ const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e
 
 // TDM
 const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
-const idEventDef AI_RegisterKilledTask( "registerKilledTask", "sd" );
 
 const idEventDef AI_PushState("pushState", "s");
 const idEventDef AI_QueueState("queueState", "s");
@@ -520,7 +519,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT(  AI_SwitchStateIfHigherPriority,		idAI::Event_SwitchStateIfHigherPriority )
 
 	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
-	EVENT( AI_RegisterKilledTask,				idAI::Event_RegisterKilledTask )
 	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
 	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
 	EVENT( AI_IsFriend,							idAI::Event_IsFriend )
@@ -3409,12 +3407,6 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 
 	idThread::ReturnVector( pos );
 
-}
-
-void idAI::Event_RegisterKilledTask(const char* taskName, int priority)
-{
-	m_killedTask = taskName;
-	m_killedTaskPriority = priority;
 }
 
 /**

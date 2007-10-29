@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: KnockedOutState.cpp 1435 2007-1
 
 #include "KnockedOutState.h"
 #include "../Memory.h"
-#include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
 
 namespace ai

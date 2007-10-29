@@ -169,11 +169,14 @@ bool BasicMind::EndState()
 
 void BasicMind::SwitchState(const idStr& stateName)
 {
-	// greebo: Switch the state without destroying the State object immediately
-	_recycleBin = _stateQueue.front();
-
-	// Remove the first element from the queue
-	_stateQueue.pop_front();
+	// greebo: Switch the state without destroying the current State object immediately
+	if (_stateQueue.size() > 0)
+	{
+		// Store the shared_ptr in the temporary container
+		_recycleBin = _stateQueue.front();
+		// Remove the first element from the queue
+		_stateQueue.pop_front();
+	}
 
 	// Add the new task
 	PushState(stateName);
@@ -183,20 +186,22 @@ bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int priority
 {
 	// greebo: Switch the state without destroying the State object immediately
 
-	// Store the shared_ptr in the temporary container
-	_recycleBin = _stateQueue.front();
-
-	// Remove the first element from the queue
-	_stateQueue.pop_front();
+	if (_stateQueue.size() > 0)
+	{
+		// Store the shared_ptr in the temporary container
+		_recycleBin = _stateQueue.front();
+		// Remove the first element from the queue
+		_stateQueue.pop_front();
+	}
 
 	// Switch to the new State (conditionally)
 	bool stateInstalled = PushStateIfHigherPriority(stateName, priority);
 
-	if (!stateInstalled)
+	if (!stateInstalled && _recycleBin != NULL)
 	{
 		// State could not be pushed, revert the queue
 		_stateQueue.push_front(_recycleBin);
-
+		
 		// Prevent re-initialisation of the old state
 		_switchState = false;
 	}

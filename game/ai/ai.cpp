@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/BasicMind.h"
 #include "../../DarkMod/AI/Subsystem.h"
 #include "../../DarkMod/AI/States/KnockedOutState.h"
+#include "../../DarkMod/AI/States/DeadState.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
@@ -807,9 +808,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime2);
 	savefile->WriteFloat(atime3);
 
-	savefile->WriteString(m_killedTask.c_str());
-	savefile->WriteInt(m_killedTaskPriority);
-	
 	mind->Save(savefile);
 
 	for (int i = 0; i < ai::SubsystemCount; i++) 
@@ -1036,9 +1034,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime1);
 	savefile->ReadFloat(atime2);
 	savefile->ReadFloat(atime3);
-
-	savefile->ReadString(m_killedTask);
-	savefile->ReadInt(m_killedTaskPriority);
 
 	mind = ai::MindPtr(new ai::BasicMind(this));
 	mind->Restore(savefile);
@@ -4542,7 +4537,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	restartParticles = false;
 
-	if (m_TaskQueue && m_killedTask.Length())
+	mind->ClearStates();
+	mind->PushState(STATE_DEAD);
+	/*if (m_TaskQueue && m_killedTask.Length())
 	{
 		m_TaskQueue->Push(m_killedTaskPriority, m_killedTask.c_str());
 	}
@@ -4551,7 +4548,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		state = GetScriptFunction( "state_Killed" );
 		SetState( state );
 		SetWaitState( "" );
-	}
+	}*/
 
 	// drop items
 	DropOnRagdoll();
@@ -7686,7 +7683,8 @@ void idAI::Knockout( void )
 	restartParticles = false;
 
 	// greebo: Switch the mind to KO state
-	mind->SwitchState(STATE_KNOCKED_OUT);
+	mind->ClearStates();
+	mind->PushState(STATE_KNOCKED_OUT);
 	
 	/*if (m_TaskQueue && m_knockedOutTask.Length())
 	{

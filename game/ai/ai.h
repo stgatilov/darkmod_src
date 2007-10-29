@@ -1368,10 +1368,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/** Call the script function SheathWeapon (in a new thread) if it exists */
 	void					SheathWeapon();
 	
-	// Tasks to push onto the queue when the AI dies or is KOed
-	idStr					m_killedTask;
-	int						m_killedTaskPriority;
-
 	//
 	// ai/ai_events.cpp
 	//
