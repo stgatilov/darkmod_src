@@ -1371,8 +1371,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// Tasks to push onto the queue when the AI dies or is KOed
 	idStr					m_killedTask;
 	int						m_killedTaskPriority;
-	idStr					m_knockedOutTask;
-	int						m_knockedOutTaskPriority;
 
 	//
 	// ai/ai_events.cpp

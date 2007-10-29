@@ -18,6 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game_local.h"
 #include "../../DarkMod/AI/BasicMind.h"
 #include "../../DarkMod/AI/Subsystem.h"
+#include "../../DarkMod/AI/States/KnockedOutState.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
@@ -808,9 +809,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString(m_killedTask.c_str());
 	savefile->WriteInt(m_killedTaskPriority);
-	savefile->WriteString(m_knockedOutTask.c_str());
-	savefile->WriteInt(m_knockedOutTaskPriority);
-
+	
 	mind->Save(savefile);
 
 	for (int i = 0; i < ai::SubsystemCount; i++) 
@@ -1040,8 +1039,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadString(m_killedTask);
 	savefile->ReadInt(m_killedTaskPriority);
-	savefile->ReadString(m_knockedOutTask);
-	savefile->ReadInt(m_knockedOutTaskPriority);
 
 	mind = ai::MindPtr(new ai::BasicMind(this));
 	mind->Restore(savefile);
@@ -7688,7 +7685,10 @@ void idAI::Knockout( void )
 
 	restartParticles = false;
 
-	if (m_TaskQueue && m_knockedOutTask.Length())
+	// greebo: Switch the mind to KO state
+	mind->SwitchState(STATE_KNOCKED_OUT);
+	
+	/*if (m_TaskQueue && m_knockedOutTask.Length())
 	{
 		m_TaskQueue->Push(m_knockedOutTaskPriority, m_knockedOutTask.c_str());
 	}
@@ -7697,7 +7697,7 @@ void idAI::Knockout( void )
 		state = GetScriptFunction( "state_KnockedOut" );
 		SetState( state );
 		SetWaitState( "" );
-	}
+	}*/
 
 	// drop items
 	DropOnRagdoll();
