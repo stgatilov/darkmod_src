@@ -38,6 +38,12 @@ void EmptyState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 }
 
+// Gets called each time the mind is thinking
+void EmptyState::Think(idAI* owner)
+{
+
+}
+
 StatePtr EmptyState::CreateInstance()
 {
 	return StatePtr(new EmptyState);

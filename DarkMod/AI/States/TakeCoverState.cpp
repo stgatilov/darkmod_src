@@ -69,6 +69,12 @@ void TakeCoverState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 }
 
+// Gets called each time the mind is thinking
+void TakeCoverState::Think(idAI* owner)
+{
+
+}
+
 StatePtr TakeCoverState::CreateInstance()
 {
 	return StatePtr(new TakeCoverState);

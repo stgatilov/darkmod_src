@@ -47,6 +47,12 @@ void ReactingToStimulusState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 }
 
+// Gets called each time the mind is thinking
+void ReactingToStimulusState::Think(idAI* owner)
+{
+
+}
+
 StatePtr ReactingToStimulusState::CreateInstance()
 {
 	return StatePtr(new ReactingToStimulusState);

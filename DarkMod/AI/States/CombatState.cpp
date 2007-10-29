@@ -110,6 +110,12 @@ void CombatState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 }
 
+// Gets called each time the mind is thinking
+void CombatState::Think(idAI* owner)
+{
+
+}
+
 StatePtr CombatState::CreateInstance()
 {
 	return StatePtr(new CombatState);

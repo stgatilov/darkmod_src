@@ -69,6 +69,12 @@ void IdleState::Init(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 }
 
+// Gets called each time the mind is thinking
+void IdleState::Think(idAI* owner)
+{
+
+}
+
 idStr IdleState::GetInitialIdleBark(idAI* owner)
 {
 	// greebo: Ported from ai_darkmod_base::task_Idle written by SZ

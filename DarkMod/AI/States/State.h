@@ -24,8 +24,16 @@ public:
 	// Returns the priority of this state
 	virtual int GetPriority() const = 0;
 
-	// This is called when the state is first attached to the AI's Mind.
+	// This is called when the state is about to be invoked the first time by Mind.
 	virtual void Init(idAI* owner) = 0;
+
+	/**
+	 * greebo: This is called each time the Mind is thinking and gives 
+	 *         the State an opportunity to monitor the Subsystems.
+	 *         
+	 * Note: This is basically called each frame, so don't do expensive things in here.
+	 */
+	virtual void Think(idAI* owner) = 0;
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const = 0;

@@ -75,6 +75,12 @@ void SearchingState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 }
 
+// Gets called each time the mind is thinking
+void SearchingState::Think(idAI* owner)
+{
+
+}
+
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMind()->GetMemory();

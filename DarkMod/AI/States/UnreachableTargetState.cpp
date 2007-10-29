@@ -71,6 +71,12 @@ void UnreachableTargetState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
 }
 
+// Gets called each time the mind is thinking
+void UnreachableTargetState::Think(idAI* owner)
+{
+
+}
+
 StatePtr UnreachableTargetState::CreateInstance()
 {
 	return StatePtr(new UnreachableTargetState);

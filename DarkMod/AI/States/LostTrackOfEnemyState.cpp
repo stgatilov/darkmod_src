@@ -64,6 +64,12 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
 }
 
+// Gets called each time the mind is thinking
+void LostTrackOfEnemyState::Think(idAI* owner)
+{
+
+}
+
 StatePtr LostTrackOfEnemyState::CreateInstance()
 {
 	return StatePtr(new LostTrackOfEnemyState);

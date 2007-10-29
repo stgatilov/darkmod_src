@@ -33,6 +33,9 @@ public:
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
 
+	// Gets called each time the mind is thinking
+	virtual void Think(idAI* owner);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const
 	{} // nothing yet
