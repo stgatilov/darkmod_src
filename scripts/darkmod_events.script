@@ -1,0 +1,804 @@
+/***********************************************************************
+
+darkmod_events.script
+
+This defines script functions offered by the TDM SDK.
+
+***********************************************************************/
+
+#ifndef __DARKMOD_EVENTS__
+#define __DARKMOD_EVENTS__
+
+/***********************************************************************
+
+	all entities
+
+***********************************************************************/
+
+// Sound propagation scriptunctions on all entities
+// propagate a sound directly without playing an audible sound
+scriptEvent void	propSound( string name );
+
+// propagate a sound directly with a volume modifier
+scriptEvent void	propSoundMod( string name, float volMod );
+
+// Load an external xdata declaration.
+scriptEvent float	loadExternalData( string declFile, string prefix );
+
+// set and get whether the entity is frobable
+scriptEvent void	setFrobable( float frobable );
+scriptEvent float	isFrobable( );
+
+// Returns true if entity is currently frobhilighted
+scriptEvent float   	isHilighted( );
+scriptEvent void	SDKSignal(float SigId, float state);
+
+// could this entity threaten the given (target) entity from a distance?
+scriptEvent float	rangedThreatTo(entity target);
+
+// Returns non-zero iff this entity is in PVS.
+// For lights, it will return true when the light's bounding box is in PVS,
+// even though the light may not actually be in PVS. (an unmoved shadowcasting
+// light may not be visible to PVS areas its bounding box intersects with)
+scriptEvent float   inPVS();
+
+// Removes a key from an object's spawnargs, so things like getNextKey()
+// don't retrieve it.
+scriptEvent void    removeKey( string key );
+
+/**
+* greebo: This is a general version of idAI::canSee, that can be used
+*		  by all entities. It doesn't regard FOV,
+*		  it just performs a trace to check whether the target is
+*		  occluded by world geometry. Is probably useful for stim/response 
+*		  as well.
+*		  Pass useLighting = true to take the lighting of the target entity
+*		  into account.
+*
+* The constant threshold value for useLighting is defined within the SDK in game/entity.h.
+*/
+scriptEvent float	canSeeEntity(entity target, float useLighting);
+
+// ========== Entity physics ==========
+
+/**
+* gets mass of a body for an entity
+**/
+scriptEvent float getMass( float body );
+
+/**
+* returns 1 if the entity is in or touching a liquid
+**/
+scriptEvent float isInLiquid( );
+
+/**
+* Returns the entity's bindmaster
+**/
+scriptEvent entity getBindMaster( );
+
+/**
+* Returns the number of bound entities lower down in the
+* bind chain than this entity
+**/
+scriptEvent float numBindChildren( );
+
+/**
+* Returns the ind_th bind child of this entity
+* Returns NULL if index is invalid.
+* NOTE: indices start at zero
+**/
+scriptEvent entity getBindChild( float ind );
+
+/**
+* copy bind information of other to this entity
+* (i.e., bind this entity to the same entity that other is bound to)
+**/
+scriptEvent void copyBind( entity other );
+
+/**
+ * greebo: Returns/sets the clipmask of the physics object.
+ */
+scriptEvent float getClipMask();
+scriptEvent void  setClipMask(float clipMask);
+
+/**
+ * greebo: Returns/sets the contents of the physics object.
+ */
+scriptEvent float getContents();
+scriptEvent void  setContents(float contents);
+
+/***********************************************************************
+
+	system events (called via 'sys.')
+
+***********************************************************************/
+
+// greebo: This is the script counterpart to DM_LOG
+scriptEvent void	logString(float logClass, float logType, string output);
+
+// AI Team Relationships (functions on sys object)
+scriptEvent	float	getRelation( float team1, float team2 );
+scriptEvent	void	setRelation( float team1, float team2, float val );
+scriptEvent	void	offsetRelation( float team1, float team2, float val );
+
+// Sound propagation scriptfunctions on the SYS object
+scriptEvent void	setPortSoundLoss( float handle, float value );
+scriptEvent float	getPortSoundLoss( float handle );
+
+// Priority queue management
+scriptEvent float	pqNew();
+scriptEvent void	pqDelete(float queueID);
+scriptEvent void	pqPush(float queueID, string task, float priority);
+scriptEvent string	pqPeek(float queueID);
+scriptEvent float	pqPeekPriority(float queueID);
+scriptEvent string	pqPop(float queueID);
+// greebo: Removes the task with the given name (e.g. "task_Idle"). Returns 1 if the task was existing and removed.
+scriptEvent float	pqRemoveTask(float queueID, string task);
+
+// Suspends the current thread until 'e' might have been rendered.
+// It's event based, so it doesn't waste CPU repeatedly checking inPVS().
+// e.inPVS() will very likely be true when the thread resumes.
+// If e.inPVS() is true, calling waitForRender() will probably just wait
+// a frame, unless D3 can figure out that the entity doesn't need to be rendered.
+// Optimizations regarding shadowcasting lights may not apply to this function -
+// it is based purely off whether or not the entity's bounding box is visible.
+scriptEvent void    waitForRender( entity e );
+
+// For temporary debuging purposes only. Should be removed eventually.
+scriptEvent void debug_tdm_material( string file );
+
+// greebo: Checks if a point is in a liquid, returns 1 if this is the case.
+scriptEvent float pointInLiquid( vector point, entity ignoreEntity );
+
+/***********************************************************************
+	inventories
+***********************************************************************/
+
+#define		LOOT_TOTAL					0
+#define		LOOT_JEWELRY				1
+#define		LOOT_GOLD					2
+#define		LOOT_GOODS					3
+
+scriptEvent float getLoot(float Type);
+
+/**
+ * greebo: Changes the loot amount of the given Type (e.g. GOODS) by <amount>
+ *
+ * The new value of the changed amount is returned (e.g. the new GOODS value if this has been changed).
+ * Note: The LOOT_TOTAL type can't be changed and 0 is returned.
+ */
+scriptEvent float changeLootAmount(float type, float amount);
+
+scriptEvent void addToInventory(entity inv_item);
+
+/**
+ * greebo: Decreases the inventory item stack count by amount. The item is addressed
+ * using the name and category of the item. These are usually defined on the inventory
+ * item entity ("inv_name", "inv_category").
+ *
+ * Amount can be both negative and positive.
+ */
+scriptEvent void changeInvItemCount(string name, string category, float amount);
+
+/**
+ * greebo: Sets the lightgem modifier value of the given item. Valid arguments are
+ *         between 0 and 32 (which is the maximum lightgem value).
+ */
+scriptEvent void changeInvLightgemModifier(string name, string category, float modifier);
+
+/**
+ * greebo: Sets the inventory icon of the given item in the given category to <icon>.
+ */
+scriptEvent void changeInvIcon(string name, string category, string icon);
+
+/***********************************************************************
+	GUIs
+***********************************************************************/
+
+// Gets the default inventory overlay for the player. All other 
+// entities will return an invalid value.
+scriptEvent float   getInventoryOverlay();
+
+// Creates a GUI overlay. (must be used on the player)
+scriptEvent float   createOverlay( string guiFile, float layer );
+
+// Destroys a GUI overlay. (must be used on the player)
+scriptEvent void    destroyOverlay( float handle );
+
+// Loads a new file into an existing GUI.
+scriptEvent void    setGui( float handle, string guiFile );
+
+// Returns the file currently loaded by a GUI.
+scriptEvent string  getGui( float handle );
+
+// Sets a GUI parameter.
+scriptEvent void    setGuiString( float handle, string key, string val );
+
+// Returns a GUI parameter.
+scriptEvent string  getGuiString( float handle, string key );
+
+// Sets a GUI parameter.
+scriptEvent void    setGuiFloat( float handle, string key, float val );
+
+// Returns a GUI parameter.
+scriptEvent float   getGuiFloat( float handle, string key );
+
+// Sets a GUI parameter.
+scriptEvent void    setGuiInt( float handle, string key, float val );
+
+// Returns a GUI parameter.
+scriptEvent float   getGuiInt( float handle, string key );
+
+// This is a kludge. It is equivelant to: setGuiString( handle, key, src.getKey(srcKey) )
+// However, it's used to bypass the 127 char size limit on script strings.
+scriptEvent void    setGuiStringFromKey( float handle, string key, entity src, string srcKey );
+
+// Calls a named event in a GUI.
+scriptEvent void    callGui( float handle, string namedEvent );
+
+/***********************************************************************
+
+	doors
+
+***********************************************************************/
+
+// Toggles the doorstates
+scriptEvent	void 	ToggleOpen();
+scriptEvent	void 	ToggleLock();
+scriptEvent	void 	Open(float Master);
+scriptEvent	void 	Close(float Master);
+scriptEvent	void 	Lock(float Master);
+scriptEvent	void 	Unlock(float Master);
+scriptEvent	void 	FindDoubleDoor();
+scriptEvent	float 	GetOpen();
+scriptEvent	float 	GetLock();
+scriptEvent	float 	GetPickable();
+scriptEvent entity	GetDoorhandle();
+
+// Doorhandle
+scriptEvent void	Tap();
+
+
+/***********************************************************************
+
+	skeletal animation (weapons, players, ai, func_animated)
+
+***********************************************************************/
+
+// Articulated Figure (AF) Events
+
+// GetNumBodies returns the number of bodies in the AF.
+// If the AF physics pointer is NULL, it returns 0.
+scriptEvent float	getNumBodies();
+
+// Set the linear and angular velocities of a particular body
+scriptEvent void	setLinearVelocityB( vector velocity, float id);
+scriptEvent void	setAngularVelocityB( vector velocity, float id);
+
+// Get the linear and angular velocities of a particular body
+// Returns (0,0,0) if the body ID is invalid
+scriptEvent vector	getLinearVelocityB( float id);
+scriptEvent vector	getAngularVelocityB( float id);
+
+/***********************************************************************
+
+	projectiles
+
+***********************************************************************/
+
+// Projectile Result Events
+// Getters for projectile result variables
+scriptEvent vector	getFinalVel();
+scriptEvent vector	getFinalAngVel();
+scriptEvent vector	getAxialDir();
+scriptEvent float	getProjMass();
+scriptEvent string	getSurfType();
+scriptEvent vector	getSurfNormal();
+scriptEvent entity	getStruckEnt(); 
+scriptEvent float	getIncidenceAngle();
+// Launches the projectile from <start> into direction <dir> with the given <velocity>
+scriptEvent void	launch(vector start, vector dir, vector velocity);
+
+/***********************************************************************
+
+	actors (players and AI)
+
+***********************************************************************/
+
+// AI Team Relationships (functions on actors)
+scriptEvent	float	getRelationEnt( entity ent );
+scriptEvent	float	isEnemy( entity ent );
+scriptEvent	float	isFriend( entity ent );
+scriptEvent	float	isNeutral( entity ent );
+
+// greebo: Returns the current team number 
+scriptEvent float	getTeam();
+// greebo: Sets the team number of this actor
+scriptEvent void	setTeam(float newTeam);
+
+// get eye position of the player and the AI
+scriptEvent vector	getEyePos();
+
+/**
+* Attach an entity to the AI.  
+* Entity spawnArgs checked for attachments are:
+* "origin", "angles", and "joint".
+* These must be set prior to calling attach.
+* Returns the integer index of the attachment.  
+* The first attachment is index 0
+**/
+scriptEvent float	attach( entity ent);
+
+/**
+* Reattach an existing attachment
+* Effects the attachment at index ind (where the first attachment starts at 0)
+* 
+* The next arguments are the name of the joint to attach to, the translation
+* offset from that joint, and a (pitch, yaw, roll) angle vector that defines the 
+* rotation of the attachment relative to the joint's orientation.
+**/
+scriptEvent void	reAttach( float ind, string joint, vector offset, vector angles );
+
+/**
+* Show or hide an attachment.  Index starts at 0.
+* Second argument set to true shows attachment, false hides it.
+**/
+scriptEvent void	showAttachment( float ind, float bShow );
+
+/**
+* Drop the attachment for the given index
+**/
+scriptEvent void	dropAttachment( float ind );
+
+/**
+* Get the attached entity at the given index
+* Will be NULL if the index is invalid or the entity no longer exists
+**/
+scriptEvent entity	getAttachment( float ind );
+
+/**
+* Return the number of attachments on an AI.
+* Used to iterate through the attachments if desired.
+**/
+scriptEvent float	getNumAttachments( );
+
+/**
+ * greebo: Returns the number of melee weapons attached to an actor.
+ *         This refers to the TDM-style attachments with the spawnarg
+ *         "is_weapon_melee" set to "1".
+ */
+scriptEvent float	getNumMeleeWeapons();
+
+/**
+ * greebo: Returns the number of ranged weapons attached to an actor.
+ *         This refers to the TDM-style attachments with the spawnarg
+ *         "is_weapon_ranged" set to "1".
+ */
+scriptEvent float	getNumRangedWeapons();
+
+// Task queue attachment
+scriptEvent void	attachTaskQueue(float queueID);
+scriptEvent void	detachTaskQueue();
+
+/***********************************************************************
+
+	players
+
+***********************************************************************/
+
+// Used to set/get immobilization from a source.
+// Warning: Not a finalized version. It's subject to change,
+// so use it at your own risk.
+scriptEvent	void	setImmobilization( string source, float type );
+scriptEvent	float	getImmobilization( string source );
+scriptEvent string	getNextImmobilization( string prefix, string lastMatch );
+
+// Used to set/get hinderance from a source.
+// Warning: Not a finalized version. It's subject to change,
+// so use it at your own risk.
+scriptEvent	void	setHinderance( string source, float mCap, float fCap );
+scriptEvent	vector	getHinderance( string source );
+scriptEvent string	getNextHinderance( string prefix, string lastMatch );
+
+// Forces the player to hold an entity.
+// Drops whatever is in the player's hands if $null is passed to it.
+// Returns 1 if successful, 0 if not.
+scriptEvent float   holdEntity( entity e );
+// Returns the entity currently being held, or $null if the player's hands are empty.
+scriptEvent entity  heldEntity();
+
+/**
+* Used to set the state of objectives from the script.
+* For example, use this to invalidate an objective when something
+* happens in your mission.
+* The first argument is the numerical index of the objective
+* Choose from the following for the second argument: 
+* OBJ_INCOMPLETE, OBJ_COMPLETE, OBJ_FAILED, OBJ_INVALID
+**/
+scriptEvent void	setObjectiveState( float ObjNum, float State );
+
+scriptEvent float	getObjectiveState( float ObjNum );
+
+/**
+* Used to set the state of custom objective components
+* The first argument is the objective number, second argument the component number
+* The third argument is the state (1 or 0 for true or false)
+**/
+scriptEvent void	setObjectiveComp( float ObjNum, float CompNum, float state );
+
+scriptEvent float	getObjectiveComp( float ObjNum, float CompNum );
+
+/**
+* Set various properties of the objective, visible, mandatory and ongoing
+**/
+scriptEvent void	setObjectiveVisible( float ObjNum, float val );
+scriptEvent void	setObjectiveOptional( float ObjNum, float val );
+scriptEvent void	setObjectiveOngoing( float ObjNum, float val );
+
+/**
+* Set an objective's enabling objectives (objectives that must be completed 
+* before that objective may be completed).
+* 
+* The input takes the form of a string that is a space-delimited list of 
+* integer objectives representing the new enabling objectives.
+* E.g. : "1 2 3 4"
+**/
+scriptEvent void	setObjectiveEnabling( float ObjNum, string strIn );
+
+
+/**
+* Unlatch an irreversible objective that has latched into a state
+**/
+scriptEvent void	objectiveUnlatch( float ObjNum );
+
+/**
+* Unlatch an irreversible objective component that has latched into a state
+**/
+scriptEvent void	objectiveCompUnlatch( float ObjNum, float CompNum );
+
+/**
+* Called when rope arrow ropes are removed, removes stale pointers on
+* the player object.
+**/
+scriptEvent void	ropeRemovalCleanup( entity ropeEnt );
+
+/**
+* greebo: This increases/decreases the healthpool of the player by the given amount.
+*		  The healthpool is gradually decreased over time, healing (damaging?) the player.
+*/
+scriptEvent void	giveHealthPool(float amount);
+
+/**
+ * greebo: Sets the named lightgem modifier to a certain value. An example would be the
+ *         player lantern: setLightgemModifier("lantern", 32). This way multiple modifiers
+ *         can be set by concurrent script threads.
+ */
+scriptEvent void	setLightgemModifier(string modifierName, float value);
+
+/**
+ * greebo: Call this to start the "zoom in" event. The player FOV is gradually
+ *         zoomed in until over the given timespan.
+ *
+ * @param duration: The duration of the transition in msec.
+ * @param startFOV,endFOV: The start/end FOV, this is clamped to [1..179]
+ */
+scriptEvent void startZoom(float duration, float startFOV, float endFOV);
+
+/**
+ * greebo: Starts the "zoom out" event, which performs a gradual transition back 
+ *         to the default FOV. May be called during a transition as well to intercept
+ *         a pending "zoom in" transition.
+ */
+scriptEvent void endZoom(float duration);
+
+/**
+ * greebo: Cancels any pending zoom transitions and resets the FOV to normal.
+ */
+scriptEvent void resetZoom();
+
+/**
+ * greebo: This returns the current FOV of the player.
+ */ 
+scriptEvent float getFov();
+
+/***********************************************************************
+//	AI characters and monsters
+// 	AI Events
+***********************************************************************/
+
+// greebo: State manipulation script events, state names: see darkmod_ai_constants.script
+
+// Pushes the state with the given name, current one is postponed
+scriptEvent void pushState(string stateName);
+
+// Adds the state with the given name to the end of the queue
+scriptEvent void queueState(string stateName);
+
+// Switches to the state with the given name, current one is ended
+scriptEvent void switchState(string stateName);
+
+// Ends the current state with the given name, returns TRUE if more than one state is remaining
+scriptEvent float endState();
+
+// Pushes/Switches the state with the given name if the priority is higher, current one is postponed/removed, 
+// returns TRUE if the state was accepted
+scriptEvent float pushStateIfHigherPriority(string stateName, float priority);
+scriptEvent float switchStateIfHigherPriority(string stateName, float priority);
+
+// AI hiding spot search functions
+scriptEvent float startSearchForHidingSpots (vector hideFromPos, vector minSearchBounds, vector maxSearchBounds, float hidingSpotTypesAllowed, entity ignoreEntity);
+scriptEvent float startSearchForHidingSpotsWithExclusionArea (vector hideFromPos, vector minSearchBounds, vector maxSearchBounds, vector minSearchExclusionBounds, vector maxSearchExclusionBounds, float hidingSpotTypesAllowed, entity ignoreEntity);
+scriptEvent float continueSearchForHidingSpots ();
+scriptEvent void closeHidingSpotSearch ();
+scriptEvent float getNumHidingSpots();
+scriptEvent vector getNthHidingSpotLocation (float hidingSpotIndex);
+scriptEvent float getNthHidingSpotType (float hidingSpotIndex);
+
+/*!
+* This event splits off half of the hiding spot list of another entity
+* and sets our hiding spot list to the "taken" points.
+*
+* As such, it is useful for getting hiding spots from a seraching AI that this
+* AI is trying to assist.
+*
+* @param p_otherEntity The other entity who's hiding spots we are taking
+* 
+* @return The number of points in the list gotten
+*/
+scriptEvent float getSomeOfOtherEntitiesHidingSpotList (entity otherEntity);
+
+/*!
+* This event gets the alert number of another AI entity.
+*
+* @param otherEntity The entity who's alert number we are querying
+*
+* @return Their alert number (AI_AlertNum variable)
+*/
+scriptEvent float getAlertNumOfOtherAI (entity otherEntity);
+
+/*!
+* This event gets the value of a script variable on the other AI
+* 
+* @param otherEntity The entity who's script variable we are retrieving
+*
+* @param variableName The script name of the variable to be retrieved
+*
+* @return floating values are returned as is
+* @return boolean values are 0.0 for false, 1.0 for true
+* @return int values are returned as float casts
+*
+*/
+scriptEvent float getVariableFromOtherAI (entity otherAIEntity, string variableName);
+
+/*!
+* This method is used to find a reachable position from which an AI
+* can observe another position. 
+*
+* @param targetPoint The world position to be observed
+*
+* @param visualAcuityZeroToOne The visual acuity of the AI on a scale
+*	of 0.0 to 1.0 where 0.0 is blind and 1.0 is perfect vision.
+*
+* @return A world position from which the observation can take 
+* place. Returns the current AI origin if no such point is found.
+*
+* @sideEffect This uses the AI_DEST_UNREACHABLE flag variable 
+* to indicate if a point was found. It will be true if none
+* was found, false if one was found.
+*
+*/
+scriptEvent vector getObservationPosition (vector targetPoint, float visualAcuityZeroToOne);
+
+/*!
+* This method is just like the vanilla Doom3 lookAt and lookAtEnemy
+* methods, but instead of looking at an entity, it looks at a position
+* in worldspace.
+*
+* That is, it turns the head of the AI to look at the position.
+*
+* @param lookAtWorldPosition The position in world space to look at
+*
+* @param durationInSeconds The duration to look in seconds
+*
+*/
+scriptEvent void lookAtPosition (vector lookAtWorldPosition, float durationInSeconds);
+
+/*!
+* This method is just like the vanilla Doom3 lookAt and lookAtEnemy
+* methods, but it looks at the specified angles from the current body
+* facing of the AI.
+* 
+* @param yawAngleClockwise Negative angles are to the left of the AIs body
+*	and positive angles are to the right.
+*
+* @param pitchAngleUp Negative values are down and positive values are up
+*	where down and up are defined by the body axis.
+*
+* @param rollAngle This is currently unused and does nothing
+*
+* @param durationInSeconds The duration to look in seconds
+*/
+scriptEvent void lookAtAngles (float yawAngleClockwise, float pitchAngleUp, float rollAngle, float durationInSeconds);
+
+
+/*!
+* This method spawns a projectile of the type named by the caller and
+* attaches it to the joint given by the caller.  The projectile becomes
+* the AI's firable projectile.
+*
+* @param projectileName The name of the projectile type to be created
+*	(as defined in a .def file)
+*
+* @param jointName The name of the joint to which the projectile should be
+*	attached prior to throwing.  If empty, then it is attached to the model
+*	in general.
+*
+* @return The projectile entity that was created
+*
+*/
+scriptEvent entity spawnThrowableProjectile (string projectileName, string jointName);
+
+/*!
+* This method is used to issue a communication stim.
+* Because there is no way to pass NULL entities, there are multiple
+* forms of this method. The naming convention adds IR if there
+* is an intended recipient entity, and DOE if there is a direct object
+* entity.
+*
+*/
+scriptEvent void issueCommunication_IR_DOE (float messageType, float maxRadius, entity intendedRecipient, entity directObjectEntity, vector directObjectLocation );
+scriptEvent void issueCommunication_IR (float messageType, float maxRadius, entity intendedRecipient,  vector directObjectLocation );
+scriptEvent void issueCommunication_DOE (float messageType, float maxRadius,  entity directObjectEntity, vector directObjectLocation );
+scriptEvent void issueCommunication (float messageType, float maxRadius, vector directObjectLocation );
+
+// ai generalized alerts
+scriptEvent void		alert( string type, float val );
+scriptEvent void		setAcuity( string type, float val );
+scriptEvent float		getAcuity( string type );
+
+/**
+* This starts the alert grace period for an AI.
+* Should be called in the same frame as the alert that pushes them into
+* a higher state.
+* First argument is the fraction of the alert below which they should ignore 
+* alerts during the grace period.
+* Second arg is the duration of the period in seconds.
+* Third arg is the number of alerts ignored above which the grace period is invalid
+**/
+scriptEvent void		setAlertGracePeriod( float frac, float duration, float count );
+
+/**
+* Set the alert level (AI_AlertNum). This should always be called instead of setting AI_AlertNum directly.
+*/
+scriptEvent void		setAlertLevel(float newLevel);
+
+// ai visibility 
+scriptEvent entity	visScan();
+scriptEvent vector	getVisDir();
+
+/**
+* This is an alternate version of canSee that can optionally
+* choose to use field of vision and lighting calculations.
+*
+* If b_useFOV is 0 the entity will be visible even if the AI's back is turned to it
+*
+* If b_useLighting is 0 the entity will be visible in complete darkness
+*/
+scriptEvent float canSeeExt(entity ent, float b_useFOV, float b_useLighting );
+
+/**
+* This is an alternate version of canSeeExt that tests a location
+* rather than an entity. Note that any actor at the position may make it
+* not seeable from a distance.
+*
+* If b_useFOV is 0 the entity will be visible even if the AI's back is turned to it
+*
+* If b_useLighting is 0 the entity will be visible in complete darkness
+*/
+scriptEvent float canSeePositionExt(vector position, float b_useFOV, float b_useLighting );
+
+// ai hearing of sound 
+scriptEvent vector 	getSndDir();
+
+// ai sense of touch
+scriptEvent entity	getTactEnt();
+
+// used for determining tactile alert targets
+scriptEvent entity	closestReachableEnemy();
+
+// AI knockout
+scriptEvent void	knockout();
+
+/**
+* Get the actor that alerted the AI in this frame
+**/
+scriptEvent entity	getAlertActor();
+
+
+/**
+* Objective callback for when an AI finds a body
+**/
+scriptEvent	void	foundBody( entity body );
+
+/**
+* Play the given sound, using the given lipsync animation.
+* The lipsync animation should just be a simple non-loopable animation
+* of the mouth opening in a linear fashion. The code will select individual
+* frames from this to construct a simple lipsyncing effect which is in
+* time with the sound.
+*
+* @returns: The length of the played sound in seconds.
+**/
+scriptEvent float	playAndLipSync( string soundName, string animName );
+
+/** greebo: Deals damage to this entity (gets translated into the idEntity::Damage() method within the SDK).
+* @inflictor: This is the entity causing the damage (maybe a projectile)
+* @attacker: This is the "parent" entity of the inflictor, the one that is responsible for the inflictor (can be the same)
+* @dir: The direction the attack is coming from.
+* @damageDefName: The name of the damage entityDef to know what damage is being dealt to <self> (e.g. "damage_lava")
+* @damageScale: The scale of the damage (pass 1.0 as default, this should be ok).
+*/
+scriptEvent void	damage( entity inflictor, entity attacker, vector dir, string damageDefName, float damageScale );
+
+/** greebo: Heals the entity this is called on using the specified healing entityDef.
+* 
+* @healDefName: The name of the entityDef containing the healing information (e.g. "heal_potion")
+* @healScale: the scaling value to be applied to the healAmount found in the healEntityDef
+*
+* @returns: 1, if the entity could be healed, 0 otherwise (if the entity is already at full health, for ex.)
+*/
+scriptEvent float	heal( string healDefName, float healScale );
+
+/**
+ * greebo: Flee from the given entity. Pass the escape point lookup algorithm (e.g. EP_FIND_GUARDED) 
+ *         and the distanceOption (e.g. EP_DIST_NEAREST) to specify how the best escape point can be found.
+ *         Refer to the darkmod_defs.script file to see all the constants.
+ *
+ *         When algorithm is set to EP_FIND_AAS_AREA_FAR_FROM_THREAT, the distanceOption is interpreted as minimum threat distance.
+ *
+ * @returns: FALSE if no escape point could be found.
+ */
+scriptEvent float   flee(entity entToFleeFrom, float algorithm, float distanceOption);
+
+/**
+ * greebo: Use this to find a visible AI friendly to ourselves.
+ *         It basically iterates over all active entities in the map and looks for friendly actors.
+ *         The pythagorean distance is taken to evaluate the distance.
+ *
+ *         The <team> argument can be used to constrain the search to a given team. Set this to -1 to
+ *         let the code ignore this argument.
+ *
+ *         Don't call this every frame, this might get expensive in larger maps.
+ *
+ * @returns: The nearest visible actor entity or the NullEntity, if none was found.
+ */
+scriptEvent entity	findFriendlyAI(float team);
+
+/************************************************
+* Lights
+*************************************************/
+
+// Set origin of lights independent of model origin
+scriptEvent void	setLightOrigin( vector pos );
+scriptEvent vector	getLightOrigin();
+
+// Get level (intensity) of a light, <= 0.0 indicates it is off
+scriptEvent float getLightLevel();
+
+/************************************************
+* func_shooter entities
+*************************************************/
+
+// Activates / deactivates the shooter entity
+scriptEvent float	shooterGetState();
+scriptEvent void	shooterSetState( float state );
+
+// Fires a projectile
+scriptEvent void	shooterFireProjectile();
+
+// Set/get the ammonition
+scriptEvent float	shooterGetAmmo();
+scriptEvent void	shooterSetAmmo(float newAmmo);
+
+
+#endif //__DARKMOD_EVENTS__

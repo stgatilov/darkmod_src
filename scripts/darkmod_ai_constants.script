@@ -1,0 +1,34 @@
+#define STATE_EMPTY					"Empty"
+#define STATE_IDLE					"Idle"
+#define STATE_COMBAT				"Combat"
+#define STATE_LOST_TRACK_OF_ENEMY	"LostTrackOfEnemy"
+#define STATE_REACTING_TO_STIMULUS	"ReactingToStimulus"
+#define STATE_SEARCHING				"Searching"
+#define STATE_TAKE_COVER			"TakeCover"
+#define STATE_UNREACHABLE_TARGET	"UnreachableTarget"
+
+#define PRIORITY_IDLE				  1000 // Doing nothing, or patrolling.
+#define PRIORITY_MENIALTASK			  5000 // Some special action performed while not under threat. e.g. Lighting torches, sitting down.
+#define PRIORITY_SEARCH_THINKING     20000 // More important than being idle; but less important than facing an immediate combat threat.
+#define PRIORITY_SEARCHSPOT    	     20100 // More important than being idle; but less important than facing an immediate combat threat.
+#define PRIORITY_LOSTTARGET          30000 // We'd fight if we could, but we don't know where the enemy is.
+                           			       // If we find out, we'll go straight to combat.
+#define PRIORITY_INVESTIGATE_ENEMY_POSITION 35000 // This is active when an AI is investigating the position the player was last seen.
+#define PRIORITY_COMBAT				 40000 // FIGHT!
+#define PRIORITY_CANNOTREACHTARGET	 50000 // We know where the enemy is but we can't reach them. More important than combat because we don't
+                                  	       // want to go into combat mode again and again and again when we continue to see an enemy.
+#define PRIORITY_TAKINGCOVER		 60000 // We don't care right now about fighting, or if we can't reach the target - just TAKE COVER!
+
+#define PRIORITY_FLEEDONE            55000 // Fleeing is done, but this is not as important as fleeing itself
+#define PRIORITY_FLEE                60000 // Fleeing is as important as taking cover.
+
+#define PRIORITY_BLINDED			 70000 // Incapable of performing any other actions while blinded.
+#define PRIORITY_STARTLIVING		 80000 // More important than most actions.
+#define PRIORITY_KO					100000 // Out of action permanently. Almost nothing can override this.
+#define PRIORITY_DEAD				101000 // ...but when you're knocked out, you can still be killed.
+#define PRIORITY_RESURRECT			102000 // Resurrection overcomes death.
+#define PRIORITY_REACTTOSTIMULUS    200000 // Processing immediate reactions is more important than anything.
+                                           // This task should check explicitly to see if the AI is KOed/dead, and if so, quit.
+                                           // However it is more important than being dead beceause we don't want these reaction tasks to queue up.
+
+#include "script/darkmod_ai_constants_usevalues.script"
