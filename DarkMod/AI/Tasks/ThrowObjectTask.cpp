@@ -37,18 +37,6 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// First throw immediately
 	_nextThrowObjectTime = gameLocal.time;
-
-	// This checks if there is a suitable position for taking cover
-	aasGoal_t hideGoal;
-	if (_takingCoverPossible = owner->LookForCover(hideGoal, owner->GetEnemy(), owner->lastVisibleEnemyPos))
-	{
-		// We should not go into TakeCoverState if we are already at a suitable position
-		if (!owner->spawnArgs.GetBool("taking_cover_enabled","0") || hideGoal.origin == owner->GetPhysics()->GetOrigin() )
-		{
-			_takingCoverPossible = false;
-		}
-		DM_LOG(LC_AI, LT_INFO).LogString("Taking Cover Possible: %d \r" , _takingCoverPossible);
-	}
 }
 
 bool ThrowObjectTask::Perform(Subsystem& subsystem)
@@ -74,8 +62,8 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		owner->TurnToward(diff.ToAngles().yaw);
 	}
 
-	// angua: Throw animation plays after the delay has expired 
-	// if the player is visible  and object throwing is enabled for this AI
+	// angua: Throw after the delay has expired, but only if
+	// the player is visible  and object throwing is enabled for this AI
 	if (owner->AI_ENEMY_VISIBLE &&
 		_nextThrowObjectTime <= gameLocal.time && 
 		owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
@@ -97,22 +85,9 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		_nextThrowObjectTime = gameLocal.time + _projectileDelayMin
 							+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin);
 	}
-
-	// Take cover after throwing is done if it is possible and a ranged threat from the player is detected
-	idStr waitState(owner->WaitState());
-	if (_takingCoverPossible && waitState != "throw" && 
-			( !owner->spawnArgs.GetBool("taking_cover_only_from_archers","0") || enemy->RangedThreatTo(owner) ) )
-	{
-		owner->GetMind()->SwitchState(STATE_TAKE_COVER);
-	}
-
-	if (owner->MoveToPosition(owner->lastVisibleEnemyPos) || owner->TestMelee())
-	{
-		owner->GetMind()->PerformCombatCheck();
-	}
-
 	return false; // not finished yet
 }
+
 
 void ThrowObjectTask::Save(idSaveGame* savefile) const
 {
@@ -121,7 +96,6 @@ void ThrowObjectTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_projectileDelayMin);
 	savefile->WriteInt(_projectileDelayMax);
 	savefile->WriteInt(_nextThrowObjectTime);
-	savefile->WriteBool(_takingCoverPossible);
 }
 
 void ThrowObjectTask::Restore(idRestoreGame* savefile)
@@ -131,7 +105,6 @@ void ThrowObjectTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_projectileDelayMin);
 	savefile->ReadInt(_projectileDelayMax);
 	savefile->ReadInt(_nextThrowObjectTime);
-	savefile->ReadBool(_takingCoverPossible);
 }
 
 ThrowObjectTaskPtr ThrowObjectTask::CreateInstance()

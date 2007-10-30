@@ -7673,19 +7673,6 @@ if the player has a bow equipped and 0 otherwise.
 float idEntity::RangedThreatTo(idEntity* target)
 {
 	// Most entities are not capable of attacking at range
-	if (target == NULL)
-	{
-		return 0;
-	}
-
-	if (target->IsType(idPlayer::Type))
-	{
-		idPlayer* player = static_cast<idPlayer*>(target);
-		CInventoryWeaponItem* currentWeapon = player->getCurrentWeaponItem();
-
-		// TODO: Check for ranged weapon
-		return 0;
-	}
 	return 0;
 }
 

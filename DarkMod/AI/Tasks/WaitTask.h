@@ -25,10 +25,19 @@ class WaitTask :
 	public Task
 {
 
+private:
+
 	int _waitTime;
 	int _waitEndTime;
 
+	// Default constructor
+	WaitTask();
+
 public:
+
+	// Constructor with waittime (in ms) as input argument
+	WaitTask(const int waitTime);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

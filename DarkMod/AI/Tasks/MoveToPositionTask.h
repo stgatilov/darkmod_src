@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_EMERGE_FROM_COVER_TASK_H__
-#define __AI_EMERGE_FROM_COVER_TASK_H__
+#ifndef __AI_MOVE_TO_POSITION_H__
+#define __AI_MOVE_TO_POSITION_H__
 
 #include "Task.h"
 
@@ -16,15 +16,26 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_EMERGE_FROM_COVER "Emerge_From_Cover"
+#define TASK_MOVE_TO_POSITION "Move_To_Position"
 
-class EmergeFromCoverTask;
-typedef boost::shared_ptr<EmergeFromCoverTask> EmergeFromCoverTaskPtr;
+class MoveToPositionTask;
+typedef boost::shared_ptr<MoveToPositionTask> MoveToPositionTaskPtr;
 
-class EmergeFromCoverTask :
+class MoveToPositionTask :
 	public Task
 {
+private:
+
+	// The target position
+	idVec3 _targetPosition;
+
+	// Default constructor
+	MoveToPositionTask();
+
 public:
+	// Constructor taking the target position as input argument
+	MoveToPositionTask(const idVec3 targetPosition);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
@@ -33,15 +44,16 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
+	void SetPosition(idVec3 targetPosition);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static EmergeFromCoverTaskPtr CreateInstance();
-
+	static MoveToPositionTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_EMERGE_FROM_COVER_TASK_H__ */
+#endif /* __AI_MOVE_TO_POSITION_H__ */

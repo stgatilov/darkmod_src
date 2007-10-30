@@ -19,6 +19,14 @@ static bool init_version = FileVersionList("$Id: WaitTask.cpp 1435 2007-10-16 16
 namespace ai
 {
 
+WaitTask::WaitTask() :
+	_waitTime(0)
+{}
+
+WaitTask::WaitTask(const int waitTime) : 
+	_waitTime(waitTime)
+{}
+
 // Get the name of this task
 const idStr& WaitTask::GetName() const
 {

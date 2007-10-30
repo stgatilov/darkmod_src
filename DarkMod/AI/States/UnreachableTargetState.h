@@ -23,6 +23,9 @@ class UnreachableTargetState :
 {
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
+	bool _takingCoverPossible;
+	int _takeCoverTime;
+	bool _moveRequired;
 
 public:
 	// Get the name of this state

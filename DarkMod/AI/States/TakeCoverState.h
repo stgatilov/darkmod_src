@@ -21,6 +21,10 @@ namespace ai
 class TakeCoverState :
 	public State
 {
+	idVec3 _positionBeforeTakingCover;
+	int _emergeDelay;
+	bool _takingCover;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -37,12 +41,9 @@ public:
 	virtual void Think(idAI* owner);
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{} // nothing yet
-
-	virtual void Restore(idRestoreGame* savefile)
-	{} // nothing yet
-
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
+	
 	static StatePtr CreateInstance();
 };
 

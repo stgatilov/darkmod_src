@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
 #include "LostTrackOfEnemyState.h"
+//#include "FleeState.h"
 #include "../Library.h"
 
 namespace ai
@@ -57,7 +58,7 @@ void CombatState::Init(idAI* owner)
 	if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
-		// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+	//	owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
 
@@ -65,7 +66,8 @@ void CombatState::Init(idAI* owner)
 	if (owner->spawnArgs.GetBool("is_civilian", "0"))
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
-		// TODO pushTaskIfHighestPriority("task_Flee", PRIORITY_FLEE);
+	//	owner->GetMind()->SwitchState(STATE_FLEE);
+
 		return;
 	}
 

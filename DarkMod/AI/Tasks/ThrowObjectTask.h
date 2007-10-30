@@ -27,7 +27,6 @@ class ThrowObjectTask :
 	int _projectileDelayMin;
 	int _projectileDelayMax;
 	int _nextThrowObjectTime;
-	bool _takingCoverPossible;
 
 public:
 	// Get the name of this task

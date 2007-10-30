@@ -62,9 +62,7 @@ bool MoveToCoverTask::Perform(Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
 		owner->FaceEnemy();
 
-		// Start sensory scan and finish this task
-		owner->GetSubsystem(SubsysSenses)->ClearTasks();
-		owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
+		// finish this task
 
 		return true;
 	}
