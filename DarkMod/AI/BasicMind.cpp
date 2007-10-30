@@ -230,13 +230,6 @@ void BasicMind::ClearStates()
 	_stateQueue.clear();
 }
 
-void BasicMind::OnAICommMessage(CAIComm_Message* message)
-{
-	assert(message); // Don't accept NULL messages
-
-	
-}
-
 void BasicMind::TestAlertStateTimer()
 {
 	// greebo: This has been ported from ai_darkmod_base::subFrameTask_testAlertStateTimer() by SZ

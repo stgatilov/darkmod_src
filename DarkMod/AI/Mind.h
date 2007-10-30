@@ -108,9 +108,6 @@ public:
 	// Returns the Memory structure, which holds the various mind variables
 	virtual Memory& GetMemory() = 0;
 
-	// Handles the incoming AI communication message (usually delivered by AIComm_Responses)
-	virtual void OnAICommMessage(CAIComm_Message* message) = 0;
-
 	/* greebo: Copied over the comments from the script function
 	=====================
 	ai_darkmod_base::setAlertPos( void )

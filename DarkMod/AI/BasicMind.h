@@ -66,9 +66,6 @@ public:
 		return _memory;
 	}
 
-	// Handles incoming communication messages
-	virtual void OnAICommMessage(CAIComm_Message* message);
-
 	virtual void SetAlertPos();
 	virtual void PerformSensoryScan(bool processNewStimuli);
 	virtual bool PerformCombatCheck();

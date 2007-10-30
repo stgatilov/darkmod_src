@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DarkModGlobals.h"
 #include "AIComm_StimResponse.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "AI/States/State.h"
 
 #define MAX_COMMUNICATION_RADIUS 5000.0
 
@@ -46,7 +47,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 	idAI* owner = static_cast<idAI*>(ownerEnt);
 
 	// Can't respond if we are unconscious or dead
-	if (owner->IsKnockedOut())
+	if (owner->IsKnockedOut() || owner->AI_DEAD)
 	{
 		return;
 	}
@@ -126,7 +127,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		if (distanceFromIssuance <= maxRadiusForResponse)
 		{
 			// Pass the AIComm_Message object to the AI's Mind
-			owner->GetMind()->OnAICommMessage(p_message);
+			owner->GetMind()->GetState()->OnAICommMessage(p_message);
 
 			/*idThread *pThread = new idThread(pScriptFkt);
 			int n = pThread->GetThreadNum();

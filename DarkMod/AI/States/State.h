@@ -42,6 +42,9 @@ public:
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(SubsystemId subSystem)
 	{} // empty default implementation
+
+	// Handles incoming messages from other AI
+	virtual void OnAICommMessage(CAIComm_Message* message);
 };
 typedef boost::shared_ptr<State> StatePtr;
 
