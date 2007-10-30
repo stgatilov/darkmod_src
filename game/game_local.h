@@ -75,9 +75,9 @@ class CPriorityQueue;
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
 #define DARKMOD_LG_VIEWID					-1
 #define DARKMOD_LG_RENDERPIPE_NAME			"\\\\.\\pipe\\dm_renderpipe"
-#define DARKMOD_LG_RENDERPIPE_BUFSIZE		50*1024		// Buffersize for the renderpipe
+#define DARKMOD_LG_RENDERPIPE_BUFSIZE		1*1024		// Buffersize for the renderpipe
 #define DARKMOD_LG_RENDERPIPE_TIMEOUT		1000
-#define DARKMOD_LG_RENDER_WIDTH				50
+#define DARKMOD_LG_RENDER_WIDTH				1
 // The colour is converted to a grayscale value which determines the state
 // of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
