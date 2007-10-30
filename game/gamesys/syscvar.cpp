@@ -193,6 +193,9 @@ idCVar cv_lg_split("tdm_lg_split",		"1",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,	
 idCVar cv_lg_path("tdm_lg_path",		"",	CVAR_GAME,	"Dump the rendersnapshot to the filepath specified here." );
 idCVar cv_lg_crouch_modifier("tdm_lg_crouch_modifier",	"-5",	CVAR_GAME | CVAR_INTEGER,	"The value the lightgem is adjusted by when the player is crouching." );
 idCVar cv_lg_image_width("tdm_lg_image_width",	"50",	CVAR_GAME | CVAR_INTEGER,		"Defines the pixel width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
+idCVar cv_lg_screen_width("tdm_lg_screen_width",	"640",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
+idCVar cv_lg_screen_height("tdm_lg_screen_height",	"480",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen height of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
+
 /**
  * Variables needed for lockpicking.
  */

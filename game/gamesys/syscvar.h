@@ -144,6 +144,8 @@ extern idCVar cv_lg_split;
 extern idCVar cv_lg_path;
 extern idCVar cv_lg_crouch_modifier;
 extern idCVar cv_lg_image_width;
+extern idCVar cv_lg_screen_width;
+extern idCVar cv_lg_screen_height;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;

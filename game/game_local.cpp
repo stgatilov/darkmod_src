@@ -5147,8 +5147,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		rv.shaderParms[i] = gameLocal.globalShaderParms[i];
 
 	rv.globalMaterial = gameLocal.GetGlobalMaterial();
-	rv.width = SCREEN_WIDTH;
-	rv.height = SCREEN_HEIGHT;
+//	rv.width = SCREEN_WIDTH;
+//	rv.height = SCREEN_HEIGHT;
+	rv.width = cv_lg_screen_width.GetInteger();
+	rv.height = cv_lg_screen_height.GetInteger();
 	rv.fov_x = cv_lg_fov.GetInteger();
 	rv.fov_y = cv_lg_fov.GetInteger();		// Bigger values means more compressed view
 	rv.forceUpdate = false;
