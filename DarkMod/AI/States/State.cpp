@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 
 #include "State.h"
 #include "../Memory.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../../AIComm_Message.h"
 
 namespace ai
@@ -101,26 +102,32 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::RequestForHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForHelp_CommType\r");
-			/*if (owner->IsFr(issuingEntity))
+			if (owner->IsFriend(issuingEntity))
 			{
 				// Do we already have a target we are dealing with?
-				if (getEnemy())
+				if (owner->GetEnemy() != NULL)
 				{
-					DEBUG_PRINT ("I'm too busy, I have a target!");
-					return;
+					gameLocal.Printf("I'm too busy, I have a target!\n");
+					break;
 				}
 
-				DEBUG_PRINT("Ok, I'm helping you.");
+				if (directObjectEntity->IsType(idActor::Type))
+				{
+					// Bark
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					);
 
-				bark( "snd_assistFriend" );
+					gameLocal.Printf("Ok, I'm helping you.\n");
 
-				setEnemy(directObjectEntity);
-				subFrameTask_canSwitchState_initiateCombat();
+					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
+					owner->GetMind()->PerformCombatCheck();
+				}
 			}
-			else if (AI_AlertNum < thresh_1 / 2.0)
+			else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
 			{
-				setAlertLevel(thresh_1 / 2.0);
-			}*/
+				owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+			}
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMissileHelp_CommType\r");
