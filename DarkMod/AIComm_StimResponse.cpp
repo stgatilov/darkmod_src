@@ -33,26 +33,6 @@ CAIComm_Response::CAIComm_Response(idEntity* Owner, int Type, int uniqueId) :
 
 /*----------------------------------------------------------------*/
 
-CAIComm_Response::~CAIComm_Response(void)
-{
-}
-
-void CAIComm_Response::Save(idSaveGame *savefile) const
-{
-	CResponse::Save(savefile);
-
-	// Nothing special to save here. I'll leave this virtual method for future members.
-}
-
-void CAIComm_Response::Restore(idRestoreGame *savefile)
-{
-	CResponse::Restore(savefile);
-
-	// Nothing special to save here. I'll leave this virtual method for future members.
-}
-
-/*----------------------------------------------------------------*/
-
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 {
 	// Can't respond if we are unconscious or dead
