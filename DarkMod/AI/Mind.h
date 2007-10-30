@@ -14,10 +14,13 @@
 
 #include <boost/shared_ptr.hpp>
 
+// Forward declarations
+class CAIComm_Message;
+
 namespace ai
 {
 
-// Forward Declaration
+// Forward Declarations
 class State;
 typedef boost::shared_ptr<State> StatePtr;
 
@@ -104,6 +107,9 @@ public:
 
 	// Returns the Memory structure, which holds the various mind variables
 	virtual Memory& GetMemory() = 0;
+
+	// Handles the incoming AI communication message (usually delivered by AIComm_Responses)
+	virtual void OnAICommMessage(CAIComm_Message* message) = 0;
 
 	/* greebo: Copied over the comments from the script function
 	=====================

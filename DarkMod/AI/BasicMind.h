@@ -10,6 +10,7 @@
 #ifndef __AI_BASICMIND_H__
 #define __AI_BASICMIND_H__
 
+#include "Mind.h"
 #include "Memory.h"
 #include "States/State.h"
 #include "Queue.h"
@@ -64,6 +65,9 @@ public:
 	ID_INLINE Memory& GetMemory() {
 		return _memory;
 	}
+
+	// Handles incoming communication messages
+	virtual void OnAICommMessage(CAIComm_Message* message);
 
 	virtual void SetAlertPos();
 	virtual void PerformSensoryScan(bool processNewStimuli);
