@@ -35,16 +35,20 @@ CAIComm_Response::CAIComm_Response(idEntity* Owner, int Type, int uniqueId) :
 
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 {
-	idEntity* owner = m_Owner.GetEntity();
+	idEntity* ownerEnt = m_Owner.GetEntity();
+
+	if (ownerEnt == NULL || !ownerEnt->IsType(idAI::Type))
+	{
+		// Only process valid owners (must be AI type)
+		return;
+	}
+
+	idAI* owner = static_cast<idAI*>(ownerEnt);
 
 	// Can't respond if we are unconscious or dead
-	if (owner != NULL && owner->IsType(idAI::Type))
+	if (owner->IsKnockedOut())
 	{
-		// check if dead or knocked out
-		if (static_cast<idAI*>(owner)->IsKnockedOut())
-		{
-			return;
-		}
+		return;
 	}
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
@@ -73,7 +77,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 //	unsigned long numMessages = p_CommStim->getNumMessages();
 
 	// Get the script function specified in this response
-	const function_t *pScriptFkt = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	/*const function_t *pScriptFkt = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
 	if (pScriptFkt == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
@@ -84,7 +88,7 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in global space\r", m_ScriptFunction.c_str());
 			return;
 		}
-	}
+	}*/
 
 	// At this point, there is a script function in the response
 	unsigned long iterationHandle;
@@ -97,15 +101,18 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
 		
 		// Get the message parameters
-		CAIComm_Message::TCommType commType = p_message->getCommunicationType();
-		float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
+		/*CAIComm_Message::TCommType commType = p_message->getCommunicationType();
+		
 		idEntity* p_issuingEntity = p_message->getIssuingEntity();
 		idEntity* p_recipientEntity = p_message->getRecipientEntity();
 		idEntity* p_directObjectEntity = p_message->getDirectObjectEntity();
-		idVec3 directObjectLocation = p_message->getDirectObjectLocation();
-		idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
+		idVec3 directObjectLocation = p_message->getDirectObjectLocation();*/
+		
 
 		// Calculate distance of the owner of the response from the position of the message at issuance
+		float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
+		idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
+
 		float distanceFromIssuance = maxRadiusForResponse + 1.0;
 		
 		idPhysics* p_phys = owner->GetPhysics();
@@ -118,7 +125,10 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 		// Only respond if response owner is within maximum radius of issuance position
 		if (distanceFromIssuance <= maxRadiusForResponse)
 		{
-			idThread *pThread = new idThread(pScriptFkt);
+			// Pass the AIComm_Message object to the AI's Mind
+			owner->GetMind()->OnAICommMessage(p_message);
+
+			/*idThread *pThread = new idThread(pScriptFkt);
 			int n = pThread->GetThreadNum();
 
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running AIComm_StimResponse ResponseScript %s, threadID = %d, commType = %d \r", m_ScriptFunction.c_str(), n, commType);
@@ -141,12 +151,12 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 			// Run the response script
 			pThread->DelayedStart(0);
 
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Done running AIComm_StimResponse ResponseScript %s\r", m_ScriptFunction.c_str());
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Done running AIComm_StimResponse ResponseScript %s\r", m_ScriptFunction.c_str());*/
 
 		} // Responder was within maximum radius of message
 
 		// Get next message
-		p_message = p_CommStim->getNextMessage (iterationHandle);
+		p_message = p_CommStim->getNextMessage(iterationHandle);
 
 	} // Loop until no more messages in Stim
 }
