@@ -5198,7 +5198,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	if((hdef = player->GetHeadEntity()->GetModelDefHandle()) != -1)
 		gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
-	dim = DARKMOD_LG_RENDER_WIDTH;
+	dim = cv_lg_image_width.GetInteger();
+	if(dim <= 0 || dim > 1024)
+		dim = DARKMOD_LG_RENDER_WIDTH;
+
 	fRetVal = 0.0;
 
 	name = DARKMOD_LG_RENDERPIPE_NAME;

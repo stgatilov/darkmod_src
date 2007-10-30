@@ -2703,45 +2703,6 @@ idPlayer::GivePDA
 */
 void idPlayer::GivePDA( const char *pdaName, idDict *item )
 {
-	// greebo: Commented out this whole block, no PDAs in TDM
-	/*if ( gameLocal.isMultiplayer && spectating ) {
-		return;
-	}
-
-	if ( pdaName == NULL || *pdaName == NULL ) {
-		pdaName = "personal";
-	}
-
-	const idDeclPDA *pda = static_cast< const idDeclPDA* >( declManager->FindType( DECL_PDA, pdaName ) );
-
-	inventory.pdas.AddUnique( pdaName );
-
-	// This is kind of a hack, but it works nicely
-	// We don't want to display the 'you got a new pda' message during a map load
-	if ( gameLocal.GetFrameNum() > 10 ) {
-		if ( pda && hud ) {
-			idStr pdaName = pda->GetPdaName();
-			pdaName.RemoveColors();
-			hud->SetStateString( "pda", "1" );
-			hud->SetStateString( "pda_text", pdaName );
-			const char *sec = pda->GetSecurity();
-			hud->SetStateString( "pda_security", ( sec && *sec ) ? "1" : "0" );
-			hud->HandleNamedEvent( "pdaPickup" );
-		}
-
-		if ( inventory.pdas.Num() == 1 ) {
-			GetPDA()->RemoveAddedEmailsAndVideos();
-			if ( !objectiveSystemOpen ) {
-				TogglePDA();
-			}
-			objectiveSystem->HandleNamedEvent( "showPDATip" );
-			//ShowTip( spawnArgs.GetString( "text_infoTitle" ), spawnArgs.GetString( "text_firstPDA" ), true );
-		}
-
-		if ( inventory.pdas.Num() > 1 && pda->GetNumVideos() > 0 && hud ) {
-			hud->HandleNamedEvent( "videoPickup" );
-		}
-	}*/
 }
 
 /*
