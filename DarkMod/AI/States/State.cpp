@@ -131,12 +131,75 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMissileHelp_CommType\r");
+			// Respond if they are a friend and we have a ranged weapon
+			if (owner->IsFriend(issuingEntity) && owner->GetNumRangedWeapons() > 0)
+			{
+				// Do we already have a target we are dealing with?
+				if (owner->GetEnemy() != NULL)
+				{
+					gameLocal.Printf("I'm too busy, I have a target!\n");
+					break;
+				}
+
+				if (directObjectEntity->IsType(idActor::Type))
+				{
+					gameLocal.Printf("I'll attack it with my ranged weapon!\n");
+
+					// Bark
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					);
+					
+					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
+					owner->GetMind()->PerformCombatCheck();
+				}
+			}
+			else 
+			{
+				gameLocal.Printf("I don't have a ranged weapon or I am not getting involved.\n");
+				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				{
+					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				}
+			}
 			break;
 		case CAIComm_Message::RequestForMeleeHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMeleeHelp_CommType\r");
+			// Respond if they are a friend and we have a ranged weapon
+			if (owner->IsFriend(issuingEntity) && owner->GetNumMeleeWeapons() > 0)
+			{
+				// Do we already have a target we are dealing with?
+				if (owner->GetEnemy() != NULL)
+				{
+					gameLocal.Printf("I'm too busy, I have a target!\n");
+					break;
+				}
+
+				if (directObjectEntity->IsType(idActor::Type))
+				{
+					gameLocal.Printf("I'll attack it with my melee weapon!\n");
+
+					// Bark
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					);
+					
+					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
+					owner->GetMind()->PerformCombatCheck();
+				}
+			}
+			else 
+			{
+				gameLocal.Printf("I don't have a melee weapon or I am not getting involved.\n");
+				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				{
+					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				}
+			}
 			break;
 		case CAIComm_Message::RequestForLight_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForLight_CommType\r");
+			gameLocal.Printf("I don't know how to bring light!\n");
 			break;
 		case CAIComm_Message::DetectedSomethingSuspicious_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedSomethingSuspicious_CommType\r");
