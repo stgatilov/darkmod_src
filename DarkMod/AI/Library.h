@@ -34,19 +34,20 @@ template <class Element>
 class Library :
 	public boost::noncopyable
 {
+public:
 	// The shared_ptr type of a registered Element
 	typedef boost::shared_ptr<Element> ElementPtr;
 
 	// Define the function type to Create an Element Instance
 	typedef boost::function<ElementPtr()> CreateInstanceFunc;
 
+private:
 	// This is the map associating task names with CreateInstance() methods
 	// greebo: Use std::string as index, idStr doesn't work!
 	typedef std::map<std::string, CreateInstanceFunc> ElementMap;
 
 	ElementMap _elements;
 
-private:
 	// Private constructor
 	Library() 
 	{}
@@ -91,7 +92,7 @@ public:
 	{
 		// Insert this task into the map
 		_elements.insert(
-			ElementMap::value_type(elementName, func)
+			typename ElementMap::value_type(elementName, func)
 		);
 	}
 
