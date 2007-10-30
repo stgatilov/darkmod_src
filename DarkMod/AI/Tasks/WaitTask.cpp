@@ -44,7 +44,7 @@ void WaitTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool WaitTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Stay Cover Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("WaitTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
@@ -53,9 +53,9 @@ bool WaitTask::Perform(Subsystem& subsystem)
 
 	// This task does nothing but wait until the time is over.
 	 if (_waitEndTime <= gameLocal.time)
-		{
-			return true;
-		}
+	{
+		return true;
+	}
 		
 	return false; // not finished yet
 }

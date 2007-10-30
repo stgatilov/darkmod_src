@@ -43,6 +43,7 @@ void TakeCoverState::Init(idAI* owner)
 	_positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();
 
 
+	owner->StopMove(MOVE_STATUS_DONE);
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should wait half a second and then run to Cover position, 

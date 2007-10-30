@@ -104,6 +104,7 @@ void UnreachableTargetState::Init(idAI* owner)
 		throwPos.z = owner->GetPhysics()->GetOrigin().z;
 
 		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
+		owner->AI_MOVE_DONE = false;
 
 	}
 	else 
