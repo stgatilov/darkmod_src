@@ -17,6 +17,9 @@ namespace ai
 
 class State
 {
+	// The owning entity
+	idEntityPtr<idAI> _owner;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const = 0;
@@ -25,7 +28,7 @@ public:
 	virtual int GetPriority() const = 0;
 
 	// This is called when the state is about to be invoked the first time by Mind.
-	virtual void Init(idAI* owner) = 0;
+	virtual void Init(idAI* owner);
 
 	/**
 	 * greebo: This is called each time the Mind is thinking and gives 

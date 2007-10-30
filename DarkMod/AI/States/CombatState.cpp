@@ -36,6 +36,9 @@ const idStr& CombatState::GetName() const
 
 void CombatState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
 	assert(owner);
 
@@ -147,11 +150,15 @@ void CombatState::Think(idAI* owner)
 
 void CombatState::Save(idSaveGame* savefile) const
 {
+	State::Save(savefile);
+
 	_enemy.Save(savefile);
 }
 
 void CombatState::Restore(idRestoreGame* savefile)
 {
+	State::Restore(savefile);
+
 	_enemy.Restore(savefile);
 }
 

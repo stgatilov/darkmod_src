@@ -28,6 +28,9 @@ const idStr& KnockedOutState::GetName() const
 
 void KnockedOutState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("KnockedOutState initialised.\r");
 	assert(owner);
 

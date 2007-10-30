@@ -33,6 +33,9 @@ const idStr& TakeCoverState::GetName() const
 
 void TakeCoverState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("TakeCoverState initialised.\r");
 	assert(owner);
 
@@ -113,6 +116,8 @@ void TakeCoverState::Think(idAI* owner)
 
 void TakeCoverState::Save(idSaveGame* savefile) const
 {
+	State::Save(savefile);
+
 	savefile->WriteVec3(_positionBeforeTakingCover);
 	savefile->WriteInt(_emergeDelay);
 	savefile->WriteBool(_takingCover);
@@ -120,6 +125,8 @@ void TakeCoverState::Save(idSaveGame* savefile) const
 
 void TakeCoverState::Restore(idRestoreGame* savefile)
 {
+	State::Restore(savefile);
+
 	savefile->ReadVec3(_positionBeforeTakingCover);
 	savefile->ReadInt(_emergeDelay);
 	savefile->ReadBool(_takingCover);

@@ -28,6 +28,9 @@ const idStr& DeadState::GetName() const
 
 void DeadState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("DeadState initialised.\r");
 	assert(owner);
 

@@ -13,10 +13,27 @@
 static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "State.h"
+#include "../Memory.h"
 #include "../../AIComm_Message.h"
 
 namespace ai
 {
+
+void State::Init(idAI* owner)
+{
+	_owner = owner;
+}
+
+// Save/Restore methods
+void State::Save(idSaveGame* savefile) const
+{
+	_owner.Save(savefile);
+}
+
+void State::Restore(idRestoreGame* savefile)
+{
+	_owner.Restore(savefile);
+}
 
 void State::OnAICommMessage(CAIComm_Message* message)
 {
@@ -35,10 +52,24 @@ void State::OnAICommMessage(CAIComm_Message* message)
 		DM_LOG(LC_AI, LT_INFO).LogString("Got incoming message from %s\r", issuingEntity->name.c_str());
 	}
 
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	switch (commType)
 	{
 		case CAIComm_Message::Greeting_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: Greeting_CommType\r");
+
+			// If not too upset, look at them
+			if (owner->AI_AlertNum < owner->thresh_2)
+			{
+				owner->Event_LookAtEntity(issuingEntity, 3.0); // 3 seconds
+			}
+			
+			// Have seen a friend
+			memory.lastTimeFriendlyAISeen = gameLocal.time;
 			break;
 		case CAIComm_Message::FriendlyJoke_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FriendlyJoke_CommType\r");

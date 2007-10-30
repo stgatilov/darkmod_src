@@ -35,6 +35,9 @@ const idStr& UnreachableTargetState::GetName() const
 
 void UnreachableTargetState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("UnreachableTargetState initialised.\r");
 	assert(owner);
 
@@ -186,6 +189,8 @@ void UnreachableTargetState::Think(idAI* owner)
 
 void UnreachableTargetState::Save(idSaveGame* savefile) const
 {
+	State::Save(savefile);
+
 	savefile->WriteBool(_takingCoverPossible);
 	savefile->WriteInt(_takeCoverTime);
 	savefile->WriteBool(_moveRequired);
@@ -194,6 +199,8 @@ void UnreachableTargetState::Save(idSaveGame* savefile) const
 
 void UnreachableTargetState::Restore(idRestoreGame* savefile)
 {
+	State::Restore(savefile);
+
 	savefile->ReadBool(_takingCoverPossible);
 	savefile->ReadInt(_takeCoverTime);
 	savefile->ReadBool(_moveRequired);

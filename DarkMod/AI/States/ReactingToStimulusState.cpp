@@ -30,6 +30,9 @@ const idStr& ReactingToStimulusState::GetName() const
 
 void ReactingToStimulusState::Init(idAI* owner)
 {
+	// Init base class first
+	State::Init(owner);
+
 	DM_LOG(LC_AI, LT_INFO).LogString("ReactingToStimulusState initialised.\r");
 	assert(owner);
 
