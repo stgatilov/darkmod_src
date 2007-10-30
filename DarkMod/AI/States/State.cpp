@@ -61,24 +61,66 @@ void State::OnAICommMessage(CAIComm_Message* message)
 	{
 		case CAIComm_Message::Greeting_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: Greeting_CommType\r");
+			// Have seen a friend
+			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			// If not too upset, look at them
 			if (owner->AI_AlertNum < owner->thresh_2)
 			{
 				owner->Event_LookAtEntity(issuingEntity, 3.0); // 3 seconds
 			}
-			
-			// Have seen a friend
-			memory.lastTimeFriendlyAISeen = gameLocal.time;
 			break;
 		case CAIComm_Message::FriendlyJoke_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FriendlyJoke_CommType\r");
+			// Have seen a friend
+			memory.lastTimeFriendlyAISeen = gameLocal.time;
+
+			if (directObjectEntity == owner)
+			{
+				gameLocal.Printf("Hah, yer no better!\n");
+			}
+			else
+			{
+				gameLocal.Printf("Ha, yer right, they be an ass\n");
+			}
 			break;
 		case CAIComm_Message::Insult_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: Insult_CommType\r");
+			if (directObjectEntity == owner)
+			{
+				gameLocal.Printf("Same to you, buddy\n");
+			}
+			else if (owner->IsEnemy(directObjectEntity))
+			{
+				gameLocal.Printf("Hah!\n");
+			}
+			else
+			{
+				gameLocal.Printf("I'm not gettin' involved\n");
+			}
 			break;
 		case CAIComm_Message::RequestForHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForHelp_CommType\r");
+			/*if (owner->IsFr(issuingEntity))
+			{
+				// Do we already have a target we are dealing with?
+				if (getEnemy())
+				{
+					DEBUG_PRINT ("I'm too busy, I have a target!");
+					return;
+				}
+
+				DEBUG_PRINT("Ok, I'm helping you.");
+
+				bark( "snd_assistFriend" );
+
+				setEnemy(directObjectEntity);
+				subFrameTask_canSwitchState_initiateCombat();
+			}
+			else if (AI_AlertNum < thresh_1 / 2.0)
+			{
+				setAlertLevel(thresh_1 / 2.0);
+			}*/
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMissileHelp_CommType\r");

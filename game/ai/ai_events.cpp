@@ -3430,63 +3430,17 @@ void idAI::Event_GetRelationEnt( idEntity *ent )
 
 void idAI::Event_IsEnemy( idEntity *ent )
 {
-	if (!ent)
-	{
-		/* The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes. */
-		idThread::ReturnInt(0);
-	}
-	else if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsEnemy( team, marker->ownerTeam ) );
-	}
-	else
-	{
-		idThread::ReturnInt( (int) IsEnemy( ent ) );
-	}
+	idThread::ReturnInt(static_cast<int>(IsEnemy(ent)));
 }
 
 void idAI::Event_IsFriend( idEntity *ent )
 {
-
-	if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, marker->ownerTeam ) );
-	}
-	else if ( ent->IsType( idActor::Type ) ) 
-	{
-		idActor *actor;
-		actor = static_cast<idActor *>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
-	}
-	else
-	{
-		idThread::ReturnInt( 0 );
-	}
+	idThread::ReturnInt(IsFriend(ent));
 }
 
 void idAI::Event_IsNeutral( idEntity *ent )
 {
-	idActor *actor;
-
-
-	if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, marker->ownerTeam ) );
-	}
-	else if ( !ent->IsType( idActor::Type ) ) 
-	{
-		// inanimate objects are neutral to everyone
-		idThread::ReturnInt( 1 );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, actor->team ) );
+	idThread::ReturnInt(IsNeutral(ent));
 }
 
 void idAI::Event_GetAcuity( const char *type )

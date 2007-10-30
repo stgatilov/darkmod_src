@@ -345,6 +345,10 @@ public:
 	* other entity is an enemy of this AI.
 	**/
 	bool IsEnemy( idEntity *other );
+	// As above, but checks for Friend
+	bool IsFriend( idEntity *other );
+	// As above, but checks for Neutral
+	bool IsNeutral( idEntity *other );
 	
 	/**
 	* Interface with Dark Mod Sound Propagation
