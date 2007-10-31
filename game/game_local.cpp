@@ -5264,6 +5264,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			// The result is an image that is split in four triangles with an angle of 
 			// 45 degree, thus the square shape.
 			renderSystem->CropRenderSize(dim, dim, true);
+			gameRenderWorld->SetRenderView(&rv);
 			gameRenderWorld->RenderScene(&rv);
 			renderSystem->CaptureRenderToFile(name);
 			dp = cv_lg_path.GetString();
