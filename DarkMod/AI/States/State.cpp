@@ -298,7 +298,7 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 				otherAlertNum = static_cast<idAI*>(issuingEntity)->AI_AlertNum;
 			}
 
-			gameLocal.Printf("The AI who noticed something has an alert num of %d\n", otherAlertNum);
+			gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertNum);
 			if (otherAlertNum > owner->AI_AlertNum)
 			{
 				owner->Event_SetAlertLevel(otherAlertNum);
@@ -306,28 +306,6 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 			
 			memory.searchingDueToCommunication = true;
 			owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
-
-			/*// Set time of search
-			subFrameTask_determineSearchDuration();
-			
-			// Set time search is starting
-			currentHidingSpotListSearchStartTime = sys.getTime();
-					
-			float spotIndex = 0; 
-
-			// Remember which hiding spot we have chosen at start
-			firstChosenHidingSpotIndex = spotIndex;
-			
-			// Note currently chosen hiding spot
-			currentChosenHidingSpotIndex = spotIndex;
-		
-			// Get location
-			chosenHidingSpot = getNthHidingSpotLocation (spotIndex);
-			numPossibleHidingSpotsSearched = 0;
-		
-			waitFrame();
-			b_searchingDueToCommunication = true;
-			pushStateIfHigherPriority("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
 			return;
 		}
 		else

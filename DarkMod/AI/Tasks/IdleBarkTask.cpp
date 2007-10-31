@@ -34,10 +34,15 @@ void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get the repeat interval in seconds, convert to ms
 	_barkRepeatInterval = SEC2MS(owner->spawnArgs.GetFloat("bark_repeat_patrol", "45"));
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	// If the last chat time is not yet set, initialise it to play the sound now
-	if (owner->GetMind()->GetMemory().lastPatrolChatTime == -1)
+	if (memory.lastPatrolChatTime == -1)
 	{
-		owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time - _barkRepeatInterval;
+		memory.lastPatrolChatTime = gameLocal.time - _barkRepeatInterval;
+		// greebo: Add some random offset of up to 20 seconds before barking the first time
+		// This prevents guards barking in choirs.
+		memory.lastPatrolChatTime -= SEC2MS(gameLocal.random.RandomFloat()*10);
 	}
 }
 
@@ -50,13 +55,15 @@ bool IdleBarkTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
-	if (gameLocal.time - owner->GetMind()->GetMemory().lastPatrolChatTime > _barkRepeatInterval)
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	if (gameLocal.time - memory.lastPatrolChatTime > _barkRepeatInterval)
 	{
 		// The time has come, bark now
 		owner->PlayAndLipSync("snd_patrol_idle", "talk1");
 
 		// Reset the timer
-		owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time;
+		memory.lastPatrolChatTime = gameLocal.time;
 	}
 
 	return false; // not finished yet
