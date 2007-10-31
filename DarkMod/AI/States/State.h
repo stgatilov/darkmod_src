@@ -48,6 +48,9 @@ public:
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
+
+private:
+	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);
 };
 typedef boost::shared_ptr<State> StatePtr;
 

@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../AIComm_Message.h"
+#include "SearchingState.h"
 
 namespace ai
 {
@@ -203,6 +204,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::DetectedSomethingSuspicious_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedSomethingSuspicious_CommType\r");
+			OnMessageDetectedSomethingSuspicious(message);
 			break;
 		case CAIComm_Message::DetectedEnemy_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedEnemy_CommType\r");
@@ -238,79 +240,106 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_EnemiesHaveBeenSeen_CommType\r");
 			break;
 	}
+}
 
-	/*if (MessageType == Greeting_MessageType)
+void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
+{
+	idEntity* issuingEntity = message->getIssuingEntity();
+	idEntity* recipientEntity = message->getRecipientEntity();
+	idEntity* directObjectEntity = message->getDirectObjectEntity();
+	idVec3 directObjectLocation = message->getDirectObjectLocation();
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	gameLocal.Printf("Somebody else noticed something suspicious...\n");
+
+	if (owner->GetEnemy() != NULL)
 	{
-		responseTo_Greeting (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
+		gameLocal.Printf ("I'm too busy with my own target!");
+		return;
 	}
-	else if (MessageType == FriendlyJoke_MessageType)
+
+	if (owner->IsFriend(issuingEntity))
 	{
-		responseTo_FriendlyJoke (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
+		// If not already searching something else
+		if (GetName() == STATE_SEARCHING)
+		{
+			gameLocal.Printf ("I'm too busy searching something else\n");
+			return;
+		}
+		
+		gameLocal.Printf ("They're my friend, I'll look too!\n");
+		
+		// Get some search points from them.
+		int numSpots = owner->GetSomeOfOtherEntitiesHidingSpotList(issuingEntity);
+
+		if (numSpots > 0)
+		{
+			// What is the distance to the friend.  If it is greater than a certain amount, shout intention
+			// to come help
+			float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+			if (distanceToIssuer >= MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
+			{
+				// Bark
+				owner->GetSubsystem(SubsysCommunication)->PushTask(
+					SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+				);
+			}
+			
+			// If AI that called out has a higher alert num, raise ours
+			// to match theres due to urgency in their voice
+			float otherAlertNum = 0.0f;
+			
+			if (issuingEntity->IsType(idAI::Type))
+			{
+				otherAlertNum = static_cast<idAI*>(issuingEntity)->AI_AlertNum;
+			}
+
+			gameLocal.Printf("The AI who noticed something has an alert num of %d\n", otherAlertNum);
+			if (otherAlertNum > owner->AI_AlertNum)
+			{
+				owner->Event_SetAlertLevel(otherAlertNum);
+			}
+			
+			memory.searchingDueToCommunication = true;
+			owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+
+			/*// Set time of search
+			subFrameTask_determineSearchDuration();
+			
+			// Set time search is starting
+			currentHidingSpotListSearchStartTime = sys.getTime();
+					
+			float spotIndex = 0; 
+
+			// Remember which hiding spot we have chosen at start
+			firstChosenHidingSpotIndex = spotIndex;
+			
+			// Note currently chosen hiding spot
+			currentChosenHidingSpotIndex = spotIndex;
+		
+			// Get location
+			chosenHidingSpot = getNthHidingSpotLocation (spotIndex);
+			numPossibleHidingSpotsSearched = 0;
+		
+			waitFrame();
+			b_searchingDueToCommunication = true;
+			pushStateIfHigherPriority("task_SearchingHidingSpotList", PRIORITY_SEARCH_THINKING);*/
+			return;
+		}
+		else
+		{
+			gameLocal.Printf("Hmpfh, no spots to help them with :(\n");
+		}
+		
 	}
-	else if (MessageType == ConveyWarning_EvidenceOfIntruders_MessageType)
+	else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
 	{
-		responseTo_conveyWarningEvidenceOfIntruders (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
+		owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
 	}
-	else if (MessageType == ConveyWarning_ItemsHaveBeenStolen_MessageType)
-	{
-		responseTo_conveyWarningItemsStolen (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == ConveyWarning_EnemiesHaveBeenSeen_MessageType)
-	{
-		responseTo_conveyWarningEnemiesSeen (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == Insult_MessageType)
-	{
-		responseTo_Insult (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == RequestForHelp_MessageType)
-	{
-		responseTo_RequestForHelp (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == RequestForMissileHelp_MessageType)
-	{
-		responseTo_RequestForMissileHelp (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == RequestForMeleeHelp_MessageType)
-	{
-		responseTo_RequestForMeleeHelp (issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == RequestForLight_MessageType)
-	{
-		responseTo_RequestForLight(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == DetectedSomethingSuspicious_MessageType)
-	{
-		responseTo_DetectedSomethingSuspicious(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == DetectedEnemy_MessageType)
-	{
-		responseTo_DetectedEnemy(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == FollowOrder_MessageType)
-	{
-		responseTo_FollowOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == GuardLocationOrder_MessageType)
-	{
-		responseTo_GuardLocationOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == GuardEntityOrder_MessageType)
-	{
-		responseTo_GuardEntityOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == PatrolOrder_MessageType)
-	{
-		responseTo_PatrolOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == SearchOrder_MessageType)
-	{
-		responseTo_SearchOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}
-	else if (MessageType == AttackOrder_MessageType)
-	{
-		responseTo_AttackOrder(issuingEntity, intendedRecipientEntity, directObjectEntity, directObjectLocation);
-	}*/
 }
 
 } // namespace ai

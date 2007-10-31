@@ -18,6 +18,10 @@ namespace ai
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 
+// SZ: Someone hearing a distress call won't bother to shout that it is coming to their assisitance unless
+// it is at least this far away. This is to simulate more natural human behaivior.
+#define MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE 200
+
 // Considered cause radius around a tactile event
 #define TACTILE_ALERT_RADIUS 10.0f
 #define TACTILE_SEARCH_VOLUME idVec3(40,40,40)

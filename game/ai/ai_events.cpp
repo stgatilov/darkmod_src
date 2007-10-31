@@ -3902,45 +3902,7 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 
 void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch)
 {
-	// Test parameters
-	if (p_ownerOfSearch == NULL) 
-	{
-		idThread::ReturnInt (0);
-		return;
-	}
-
-
-	// The other entity must be an AI
-	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
-	if (p_otherAI == NULL)
-	{
-		// Not an AI
-		idThread::ReturnInt (0);
-		return;
-	}
-
-
-	CDarkmodHidingSpotTree* p_othersTree = &(p_otherAI->m_hidingSpots);
-	if (p_othersTree->getNumSpots() <= 1)
-	{
-		// No points
-		idThread::ReturnInt (0);
-		return;
-	}
-
-	// We must clear our current hiding spot search
-	destroyCurrentHidingSpotSearch();
-
-	// Move points from their tree to ours
-	p_othersTree->getOneNth
-	(
-		2,
-		&m_hidingSpots
-	);
-
-	// Done
-	idThread::ReturnInt (m_hidingSpots.getNumSpots());
-
+	idThread::ReturnInt(GetSomeOfOtherEntitiesHidingSpotList(p_ownerOfSearch));
 }
 
 //--------------------------------------------------------------------------------

@@ -1029,6 +1029,19 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*/
 	idVec3 GetNthHidingSpotLocation(int hidingSpotIndex);
 
+	/*!
+	* This event splits off half of the hiding spot list of another entity
+	* and sets our hiding spot list to the "taken" points.
+	*
+	* As such, it is useful for getting hiding spots from a seraching AI that this
+	* AI is trying to assist.
+	*
+	* @param p_otherEntity The other entity who's hiding spots we are taking
+	* 
+	* @return The number of points in the list gotten
+	*/
+	int GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch);
+
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant

@@ -8272,17 +8272,11 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
 	int numSpots = m_hidingSpots.getNumSpots();
 
 	// In bounds?
-	if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
+	if (hidingSpotIndex >= 0 && hidingSpotIndex < numSpots)
 	{
 		idBounds areaNodeBounds;
 		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
-		if (p_spot == NULL)
-		{
-			outLocation.x = 0;
-			outLocation.y = 0;
-			outLocation.z = 0;
-		}
-		else
+		if (p_spot != NULL)
 		{
 			outLocation = p_spot->goal.origin;
 		}
@@ -8321,4 +8315,37 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
 
 	// Return the location
 	return outLocation;
+}
+
+int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
+{
+	// Test parameters
+	if (p_ownerOfSearch == NULL) 
+	{
+		return 0;
+	}
+
+	// The other entity must be an AI
+	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
+	if (p_otherAI == NULL)
+	{
+		// Not an AI
+		return 0;
+	}
+
+	CDarkmodHidingSpotTree* p_othersTree = &(p_otherAI->m_hidingSpots);
+	if (p_othersTree->getNumSpots() <= 1)
+	{
+		// No points
+		return 0;
+	}
+
+	// We must clear our current hiding spot search
+	destroyCurrentHidingSpotSearch();
+
+	// Move points from their tree to ours
+	p_othersTree->getOneNth(2, &m_hidingSpots);
+
+	// Done
+	return m_hidingSpots.getNumSpots();
 }
