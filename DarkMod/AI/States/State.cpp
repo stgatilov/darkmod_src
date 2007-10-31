@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../Tasks/SingleBarkTask.h"
 #include "../../AIComm_Message.h"
 #include "SearchingState.h"
+#include "CombatState.h"
 
 namespace ai
 {
@@ -229,35 +230,115 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::FollowOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FollowOrder_CommType\r");
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				gameLocal.Printf("But I don't know how to follow somebody!\n");
+			}
 			break;
 		case CAIComm_Message::GuardLocationOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GuardLocationOrder_CommType\r");
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				gameLocal.Printf("But I don't know how to guard a location!\n");
+			}
 			break;
 		case CAIComm_Message::GuardEntityOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GuardEntityOrder_CommType\r");
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				gameLocal.Printf("But I don't know how to guard an entity!\n");
+			}
 			break;
 		case CAIComm_Message::PatrolOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: PatrolOrder_CommType\r");
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				gameLocal.Printf("But I don't know how to switch my patrol route!\n");
+			}
 			break;
 		case CAIComm_Message::SearchOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: SearchOrder_CommType\r");
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				// Set alert pos to the position we were ordered to search
+				memory.alertPos = directObjectLocation;
+				memory.chosenHidingSpot = directObjectLocation;
+				memory.numPossibleHidingSpotsSearched = 0;
+
+				// Alert position is set, go into searching mode
+				owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+			}
 			break;
 		case CAIComm_Message::AttackOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: AttackOrder_CommType\r");
+			// Set this as our enemy and enter combat
+			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
+			{
+				gameLocal.Printf("Yes sir! Attacking your specified target!\n");
+
+				if (directObjectEntity->IsType(idActor::Type))
+				{
+					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
+					owner->GetMind()->SwitchStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+				}
+			}
+			else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+			{
+				owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+			}
 			break;
 		case CAIComm_Message::GetOutOfTheWayOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GetOutOfTheWayOrder_CommType\r");
 			break;
 		case CAIComm_Message::ConveyWarning_EvidenceOfIntruders_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
+			if (issuingEntity->IsType(idAI::Type))
+			{
+				idAI* issuer = static_cast<idAI*>(issuingEntity);
+				// Note: We deliberately don't care if the issuer is a friend or not
+				float warningAmount = issuer->GetMind()->GetMemory().countEvidenceOfIntruders;
+				
+				if (memory.countEvidenceOfIntruders < warningAmount)
+				{
+					gameLocal.Printf("I've been warned about evidence of intruders.\n");
+					memory.countEvidenceOfIntruders = warningAmount;
+
+					if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+					{
+						owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+					}
+				}
+			}
 			break;
 		case CAIComm_Message::ConveyWarning_ItemsHaveBeenStolen_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
+			// Note: We deliberately don't care if the issuer is a friend or not
+			if (!memory.itemsHaveBeenStolen)
+			{
+				gameLocal.Printf("I've been warned that items have been stolen.\n");
+				memory.itemsHaveBeenStolen = true;
+
+				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				{
+					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				}
+			}
 			break;
 		case CAIComm_Message::ConveyWarning_EnemiesHaveBeenSeen_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_EnemiesHaveBeenSeen_CommType\r");
+			// Note: We deliberately don't care if the issuer is a friend or not
+			if (!memory.enemiesHaveBeenSeen)
+			{
+				gameLocal.Printf("I've been warned that enemies have been seen.\n");
+				memory.enemiesHaveBeenSeen = true;
+				
+				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				{
+					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				}
+			}
 			break;
-	}
+	} // switch
 }
 
 void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
