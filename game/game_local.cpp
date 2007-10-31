@@ -5154,8 +5154,8 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	rv.fov_x = cv_lg_fov.GetInteger();
 	rv.fov_y = cv_lg_fov.GetInteger();		// Bigger values means more compressed view
 	rv.forceUpdate = false;
-	rv.x = 0+100;
-	rv.y = 0+100;
+	rv.x = 0;
+	rv.y = 0;
 	rv.time = time;
 
 	n = cv_lg_renderpasses.GetInteger();
