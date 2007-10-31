@@ -208,6 +208,24 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::DetectedEnemy_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedEnemy_CommType\r");
+			gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
+	
+			if (owner->GetEnemy() != NULL)
+			{
+				gameLocal.Printf("I'm too busy with my own target!\n");
+				return;
+			}
+
+			if (owner->IsFriend(issuingEntity) && owner->IsEnemy(directObjectEntity))
+			{
+				owner->Event_SetAlertLevel(owner->thresh_combat);
+				
+				gameLocal.Printf("They're my friend, I'll attack it too!\n");
+				memory.alertPos = directObjectLocation;
+
+				// Alert position is set, go into searching mode
+				owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+			}
 			break;
 		case CAIComm_Message::FollowOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FollowOrder_CommType\r");
