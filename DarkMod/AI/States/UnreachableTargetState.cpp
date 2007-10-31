@@ -49,6 +49,13 @@ void UnreachableTargetState::Init(idAI* owner)
 	idActor* enemy = owner->GetEnemy();
 	_enemy = enemy;
 
+	if (!enemy)
+	{
+		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+		return;
+	}
+
+
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
 		static_cast<float>(CAIComm_Message::RequestForMissileHelp_CommType), 
@@ -70,7 +77,6 @@ void UnreachableTargetState::Init(idAI* owner)
 		}
 		DM_LOG(LC_AI, LT_INFO).LogString("Taking Cover Possible: %d \r" , _takingCoverPossible);
 	}
-
 	_takeCoverTime = -1;
 	
 
@@ -120,7 +126,6 @@ void UnreachableTargetState::Init(idAI* owner)
 		_takeCoverTime = gameLocal.time + 3000;
 	}
 	DM_LOG(LC_AI, LT_INFO).LogString("move required: %d \r" , _moveRequired);
-
 }
 
 
