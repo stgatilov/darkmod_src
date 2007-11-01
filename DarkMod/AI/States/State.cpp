@@ -261,6 +261,8 @@ void State::OnVisualStimPerson(idEntity* stimSource)
 	idAI* owner = _owner.GetEntity();
 	assert(owner);
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
 	bool ignoreStimulusFromNowOn = true;
 	
 	idActor* other = dynamic_cast<idActor*>(stimSource);
@@ -298,7 +300,127 @@ void State::OnVisualStimPerson(idEntity* stimSource)
 		}
 		else if (owner->IsFriend(other))
 		{
-			// Living friend
+			// Remember last time a friendly AI was seen
+			memory.lastTimeFriendlyAISeen = gameLocal.time;
+
+			idAI* otherAI = dynamic_cast<idAI*>(other);
+
+			// Get the type of person
+			idStr personType(other->spawnArgs.GetString(PERSONTYPE_KEY));
+			idStr soundName;
+
+			// Issue a communication stim to the friend we spotted.
+			// We can issue warnings, greetings, etc...
+			
+			if (memory.enemiesHaveBeenSeen)
+			{
+				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().enemiesHaveBeenSeen)
+				{
+					gameLocal.Printf("I see a friend, I'm going to warn them that enemies have been seen.\n");
+					owner->IssueCommunication_Internal(
+						CAIComm_Message::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
+						TALK_STIM_RADIUS,
+						other, 
+						NULL,
+						owner->GetPhysics()->GetOrigin()
+					);
+					soundName = "snd_warnSawEnemy";
+				}
+			}
+			else if (memory.itemsHaveBeenStolen)
+			{
+				if (otherAI != NULL && !otherAI->GetMind()->GetMemory().itemsHaveBeenStolen)
+				{
+					gameLocal.Printf("I see a friend, I'm going to warn them that items have been stolen.\n");
+					owner->IssueCommunication_Internal(
+						CAIComm_Message::ConveyWarning_ItemsHaveBeenStolen_CommType,
+						TALK_STIM_RADIUS, 
+						other, 
+						NULL,
+						owner->GetPhysics()->GetOrigin()
+					);
+					soundName = "snd_warnMissingItem";
+				}
+			}
+			else if (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
+			{
+				if (otherAI != NULL && otherAI->GetMind()->GetMemory().countEvidenceOfIntruders < memory.countEvidenceOfIntruders)
+				{
+					gameLocal.Printf("I see a friend, I'm going to warn them of evidence I'm concerned about\n");
+					owner->IssueCommunication_Internal(
+						CAIComm_Message::ConveyWarning_EvidenceOfIntruders_CommType, 
+						TALK_STIM_RADIUS, 
+						other, 
+						NULL,
+						owner->GetPhysics()->GetOrigin()
+					);
+					soundName = "snd_warnSawEvidence";
+				}
+			}
+			else if (gameLocal.random.RandomFloat() < 0.025)
+			{
+				// Chance check passed, greetings!
+				gameLocal.Printf("I see a friend, I'm going to say hello.\n");
+				owner->IssueCommunication_Internal(
+					CAIComm_Message::Greeting_CommType, 
+					TALK_STIM_RADIUS, 
+					other, 
+					NULL,
+					owner->GetPhysics()->GetOrigin()
+				);
+
+				if (personType == PERSONTYPE_NOBLE)
+				{
+					idStr personGender = other->spawnArgs.GetString(PERSONGENDER_KEY);
+					if (personGender == PERSONGENDER_FEMALE)
+					{
+						gameLocal.Printf("proper greeting is 'Hello your ladyship.'\n");
+						soundName = "snd_greeting_nobleFemale";
+					}
+					else
+					{
+						gameLocal.Printf("proper greeting is 'Hello your lordship.'\n");
+						soundName = "snd_greeting_nobleMale";
+					}
+				}
+				else if (personType == PERSONTYPE_PAGAN)
+				{
+					gameLocal.Printf("proper greeting is 'Hello your hippieness.'\n");
+					soundName = "snd_greeting_pagan";
+				}
+				else if (personType == PERSONTYPE_MERC_PROGUARD) 
+				{
+					gameLocal.Printf("proper greeting is 'Hello mercenary guard.'\n");
+					soundName = "snd_greeting_guard";
+				}
+				else if (personType == PERSONTYPE_CITYWATCH)
+				{
+					gameLocal.Printf("proper greeting is 'Hello city watch.'\n");
+					soundName = "snd_greeting_guard";
+				}
+				else if (personType == PERSONTYPE_BUILDER)
+				{
+					gameLocal.Printf("proper greeting is 'Hello builder.'\n");
+					soundName = "snd_greeting_builder";
+				}
+				else
+				{
+					gameLocal.Printf("proper greeting is 'Hello generic person.'\n");
+					soundName = "snd_greeting_generic";
+				}
+			}
+			
+			// Speak the chosen sound
+			if (!soundName.IsEmpty() && gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+			{
+				memory.lastTimeVisualStimBark = gameLocal.time;
+				owner->GetSubsystem(SubsysCommunication)->PushTask(
+					TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+				);
+			}
+			
+			// Don't ignore in future
+			ignoreStimulusFromNowOn = false;
 		}
 		else
 		{
@@ -392,12 +514,87 @@ bool State::OnVisualStimDeadPerson(idActor* person)
 		// Switch state
 		owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 	}
+
+	// Ignore from now on
+	return true;
 }
 
 bool State::OnVisualStimUnconsciousPerson(idActor* person)
 {
 	assert(person != NULL); // must not be NULL
 
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// Memory shortcut
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	gameLocal.Printf("I see unconscious people!\n");
+
+	if (owner->IsEnemy(person))
+	{
+		// The unconscious person is your enemy, ignore from now on
+		return true;
+	}
+	else 
+	{
+		// We've seen this object, don't respond to it again
+		person->ResponseIgnore(ST_VISUAL, owner);
+
+		// Determine what to say
+		idStr soundName;
+		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+
+		if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+		{
+			soundName = "snd_foundComradeBody";
+		}
+		else if (personGender == PERSONGENDER_FEMALE)
+		{
+			soundName = "snd_foundDeadFemale";
+		}
+		else
+		{
+			soundName = "snd_foundDeadMale";
+		}
+
+		// Speak a reaction
+		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		{
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(soundName))
+			);
+		}
+
+		// Raise alert level
+		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+		{
+			memory.alertPos = person->GetPhysics()->GetOrigin();
+			memory.alertType = EAlertVisual;
+			
+			// Do search as if there is an enemy that has escaped
+			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+			memory.alertSearchExclusionVolume.Zero();
+			
+			owner->AI_VISALERT = false;
+			
+			owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+		}
+					
+		// Do new reaction to stimulus
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.searchingDueToCommunication = false;
+		
+		// Callback for objectives
+		owner->FoundBody(person);
+
+		// Switch state
+		owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+	}
+
+	// Ignore from now on
 	return true;
 }
 
