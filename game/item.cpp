@@ -674,7 +674,7 @@ idItem::Event_Touch
 ================
 */
 void idItem::Event_Touch( idEntity *other, trace_t *trace ) {
-	/* only allow touches from the player */
+	// only allow touches from the player
 	if ( !other->IsType( idPlayer::Type ) ) {
 		return;
 	}
