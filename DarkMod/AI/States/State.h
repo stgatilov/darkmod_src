@@ -49,6 +49,9 @@ public:
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
 
+	// Handles incoming visual stims coming from the given entity
+	virtual void OnVisualStim(idEntity* stimSource);
+
 private:
 	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);
 };

@@ -38,6 +38,11 @@ void State::Restore(idRestoreGame* savefile)
 	_owner.Restore(savefile);
 }
 
+void State::OnVisualStim(idEntity* stimSource)
+{
+	// Stim processing here (TODO)
+}
+
 void State::OnAICommMessage(CAIComm_Message* message)
 {
 	assert(message); // Don't accept NULL messages

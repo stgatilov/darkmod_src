@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AIComm_StimResponse.h"
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
 #include "../../DarkMod/AI/Memory.h"
+#include "../../DarkMod/AI/States/State.h"
 
 class CRelations;
 
@@ -40,6 +41,7 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 // greebo: TDM Event: Try to find a visible AI of the given team
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
+const idEventDef AI_ProcessVisualStim("processVisualStim", "e", NULL);
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -383,6 +385,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_FindEnemyInCombatNodes,			idAI::Event_FindEnemyInCombatNodes )
 	EVENT( AI_ClosestReachableEnemyOfEntity,	idAI::Event_ClosestReachableEnemyOfEntity )
 	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
+	EVENT( AI_ProcessVisualStim,				idAI::Event_ProcessVisualStim )
 	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
@@ -639,7 +642,7 @@ idAI::Event_FindEnemyAI
 =====================
 */
 void idAI::Event_FindEnemyAI( int useFOV ) {
-	idThread::ReturnEntity(FindEnemyAI(useFOV));
+	idThread::ReturnEntity(FindEnemyAI(useFOV==1));
 }
 
 void idAI::Event_FindFriendlyAI(int requiredTeam)
@@ -3958,4 +3961,9 @@ void idAI::Event_PushStateIfHigherPriority(const char* state, int priority)
 void idAI::Event_SwitchStateIfHigherPriority(const char* state, int priority)
 {
 	idThread::ReturnInt(static_cast<int>(mind->SwitchStateIfHigherPriority(state, priority)));
+}
+
+void idAI::Event_ProcessVisualStim(idEntity* stimSource)
+{
+	mind->GetState()->OnVisualStim(stimSource);
 }

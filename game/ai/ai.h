@@ -1645,6 +1645,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation);
 	void Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation);
 
+	/**
+	 * greebo: Script event for processing a visual stim coming from the entity <stimSource>
+	 */
+	void Event_ProcessVisualStim(idEntity* stimSource);
+
 	/*!
 	* Spawns a new stone projectile that the AI can throw
 	*
