@@ -37,8 +37,6 @@ BasicMind::BasicMind(idAI* owner) :
 
 void BasicMind::Think()
 {
-	// Thinking
-	DM_LOG(LC_AI, LT_INFO).LogString("Mind is thinking...\r");
 
 	// Clear the recyclebin, it might hold a finished state from the last frame
 	_recycleBin = StatePtr();
@@ -58,6 +56,10 @@ void BasicMind::Think()
 	// as this method is called by the owner itself, it _has_ to exist.
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// Thinking
+	DM_LOG(LC_AI, LT_INFO).LogString("Mind is thinking... %s\r", owner->name.c_str());
+
 
 	// Should we switch states (i.e. initialise a new one)?
 	if (_switchState)

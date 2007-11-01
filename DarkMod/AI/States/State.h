@@ -17,6 +17,7 @@ namespace ai
 
 class State
 {
+protected:
 	// The owning entity
 	idEntityPtr<idAI> _owner;
 

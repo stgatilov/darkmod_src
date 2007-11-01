@@ -1223,6 +1223,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Turn( void );
 	bool					TurnToward( float yaw );
 	bool					TurnToward( const idVec3 &pos );
+	ID_INLINE float			GetCurrentYaw() { return current_yaw; }
+	ID_INLINE float			GetTurnRate() { return turnRate; }
+	ID_INLINE void			SetTurnRate(float newTurnRate) { turnRate = newTurnRate; }
 
 	// enemy management
 	void					ClearEnemy( void );
@@ -1281,6 +1284,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idActor * FindEnemy( bool useFOV ) ;
 
 	idActor* FindEnemyAI(bool useFOV);
+
+	idActor* FindFriendlyAI(int requiredTeam);
+
 
 /**
 * Similarly to FindEnemy, this was previously only an Event_ scripting

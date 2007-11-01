@@ -645,59 +645,15 @@ void idAI::Event_FindEnemyAI( int useFOV ) {
 	idThread::ReturnEntity(FindEnemyAI(useFOV==1));
 }
 
+/*
+=====================
+idAI::Event_FindFriendlyAI
+=====================
+*/
 void idAI::Event_FindFriendlyAI(int requiredTeam)
 {
-	// This is our return value
-	idEntity* candidate(NULL);
-	// The distance of the nearest found AI
-	float bestDist = idMath::INFINITY;
-
-	// Setup the PVS areas of this entity using the PVSAreas set, this returns a handle
-	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
-
-	// Iterate through all active entities and find an AI with the given team.
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		idActor* actor = static_cast<idActor *>(ent);
-		if (actor->health <= 0) {
-			continue;
-		}
-
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s into account\r", actor->name.c_str());
-
-		if (requiredTeam != -1 && actor->team != requiredTeam) {
-			// wrong team
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
-			continue;
-		}
-
-		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
-		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
-			// Not friendly
-			continue;
-		}
-
-		if (!gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas())) {
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not in PVS\r", actor->name.c_str());
-			// greebo: This actor is not in our PVS, skip it
-			continue;
-		}
-
-		float dist = (physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin()).LengthSqr();
-		if ( (dist < bestDist) && CanSee(actor, true) ) {
-			// Actor can be seen and is nearer than the best candidate, save it
-			bestDist = dist;
-			candidate = actor;
-		}
-	}
-
-	gameLocal.pvs.FreeCurrentPVS(pvs);
-
-	idThread::ReturnEntity(candidate);
+	
+	idThread::ReturnEntity(FindFriendlyAI(requiredTeam));
 }
 
 /*

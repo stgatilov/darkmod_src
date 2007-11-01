@@ -34,10 +34,10 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
-	
-	owner->AI_RUN = true;
-	owner->AI_FORWARD = true;
 
+	Memory& memory = owner->GetMind()->GetMemory();
+	memory.fleeingDone = false;
+	
 	int _escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
 	DM_LOG(LC_AI, LT_INFO).LogString("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
 	// Flee to the nearest friendly guarded escape point
@@ -71,7 +71,8 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			}
 			if (_failureCount > 5)
 			{
-				 return true;
+				memory.fleeingDone = true;
+				return true;
 			}
 		}
 	}
@@ -111,7 +112,9 @@ bool FleeTask::Perform(Subsystem& subsystem)
 
 	if (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE) 
 	{
+		//TODO: check if can see player, need other fleepoint then
 		//Fleeing is done
+		memory.fleeingDone = true;
 		return true;
 	}
 
