@@ -149,7 +149,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimWeapon(stimSource);
+			OnVisualStimWeapon(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_PERSON)
@@ -157,7 +157,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimPerson(stimSource);
+			OnVisualStimPerson(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
@@ -165,7 +165,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimBlood(stimSource);
+			OnVisualStimBlood(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_LIGHTSOURCE)
@@ -173,7 +173,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimLightSource(stimSource);
+			OnVisualStimLightSource(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
@@ -181,7 +181,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimMissingItem(stimSource);
+			OnVisualStimMissingItem(stimSource, owner);
 		}
 	}
 	else if (aiUse == AIUSE_DOOR)
@@ -189,17 +189,14 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
 		if (chance < chanceToNotice)
 		{
-			OnVisualStimOpenDoor(stimSource);
+			OnVisualStimOpenDoor(stimSource, owner);
 		}
 	}
 }
 
-void State::OnVisualStimWeapon(idEntity* stimSource)
+void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 {
-	assert(stimSource != NULL); // must be fulfilled
-
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMind()->GetMemory();
@@ -256,10 +253,9 @@ void State::OnVisualStimWeapon(idEntity* stimSource)
 	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
 }
 
-void State::OnVisualStimPerson(idEntity* stimSource)
+void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 {
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	Memory& memory = owner->GetMind()->GetMemory();
 
@@ -277,12 +273,12 @@ void State::OnVisualStimPerson(idEntity* stimSource)
 	if (other->health <= 0)
 	{
 		// React to finding body
-		ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other);
+		ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
 	}
 	else if (other->IsKnockedOut())
 	{
 		// React to finding unconscious person
-		ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other);
+		ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
 	}
 	else
 	{
@@ -436,13 +432,10 @@ void State::OnVisualStimPerson(idEntity* stimSource)
 	}
 }
 
-bool State::OnVisualStimDeadPerson(idActor* person)
+bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 {
-	assert(person); // must not be NULL
-
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
-
+	assert(person != NULL && owner != NULL); // must be fulfilled
+	
 	// Memory shortcut
 	Memory& memory = owner->GetMind()->GetMemory();
 
@@ -519,12 +512,9 @@ bool State::OnVisualStimDeadPerson(idActor* person)
 	return true;
 }
 
-bool State::OnVisualStimUnconsciousPerson(idActor* person)
+bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 {
-	assert(person != NULL); // must not be NULL
-
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
+	assert(person != NULL && owner != NULL); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMind()->GetMemory();
@@ -598,23 +588,76 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person)
 	return true;
 }
 
-void State::OnVisualStimBlood(idEntity* stimSource)
+void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 }
 
-void State::OnVisualStimLightSource(idEntity* stimSource)
+void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 {
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 }
 
-void State::OnVisualStimMissingItem(idEntity* stimSource)
+void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 {
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// We've seen this object, don't respond to it again
+	stimSource->ResponseIgnore(ST_VISUAL, owner);
+	
+	// Can we notice missing items
+	if (owner->spawnArgs.GetFloat("chanceNoticeMissingItem") <= 0.0)
+	{
+		return;
+	}
+	
+	// Does it belong to a friendly team
+	if (!owner->IsFriend(stimSource))
+	{
+		// Its not something we know about
+		gameLocal.Printf("The missing item wasn't on my team\n");
+		return;
+	}
+
+	gameLocal.Printf("Something is missing from over there!\n");
+
+	// Speak a reaction
+	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+			TaskPtr(new SingleBarkTask("snd_foundMissingItem"))
+		);
+	}
+
+	// One more piece of evidence of something out of place
+	memory.itemsHaveBeenStolen = true;
+	memory.countEvidenceOfIntruders++;
+
+	// Raise alert level
+	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+	{
+		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+		memory.alertType = EAlertVisual; // visual
+		
+		// Preapare search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		
+		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+	}
 }
 
-void State::OnVisualStimOpenDoor(idEntity* stimSource)
+void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 {
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 }
 
