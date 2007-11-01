@@ -52,6 +52,15 @@ public:
 	// Handles incoming visual stims coming from the given entity
 	virtual void OnVisualStim(idEntity* stimSource);
 
+	// These get called by the above OnVisualStim() method. 
+	// The passed <stimSource> pointer is guaranteed to be non-NULL.
+	virtual void OnVisualStimWeapon(idEntity* stimSource);
+	virtual void OnVisualStimPerson(idEntity* stimSource);
+	virtual void OnVisualStimBlood(idEntity* stimSource);
+	virtual void OnVisualStimLightSource(idEntity* stimSource);
+	virtual void OnVisualStimMissingItem(idEntity* stimSource);
+	virtual void OnVisualStimOpenDoor(idEntity* stimSource);
+
 private:
 	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);
 };

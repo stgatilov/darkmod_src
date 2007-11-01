@@ -95,7 +95,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_Weapon (stimSource, ThreadNum);
+			OnVisualStimWeapon(stimSource);
 		}
 	}
 	else if (aiUse == AIUSE_PERSON)
@@ -103,7 +103,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_Person (stimSource, ThreadNum);
+			OnVisualStimPerson(stimSource);
 		}
 	}
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
@@ -111,7 +111,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_Blood (stimSource, ThreadNum);
+			OnVisualStimBlood(stimSource);
 		}
 	}
 	else if (aiUse == AIUSE_LIGHTSOURCE)
@@ -119,7 +119,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_LightSource (stimSource, ThreadNum);
+			OnVisualStimLightSource(stimSource);
 		}
 	}
 	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
@@ -127,7 +127,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_MissingItem (stimSource, ThreadNum);
+			OnVisualStimMissingItem(stimSource);
 		}
 	}
 	else if (aiUse == AIUSE_DOOR)
@@ -135,9 +135,39 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
 		if (chance < chanceToNotice)
 		{
-			// TODO response_visualStim_OpenDoor (stimSource, ThreadNum);
+			OnVisualStimOpenDoor(stimSource);
 		}
 	}
+}
+
+void State::OnVisualStimWeapon(idEntity* stimSource)
+{
+
+}
+
+void State::OnVisualStimPerson(idEntity* stimSource)
+{
+
+}
+
+void State::OnVisualStimBlood(idEntity* stimSource)
+{
+
+}
+
+void State::OnVisualStimLightSource(idEntity* stimSource)
+{
+
+}
+
+void State::OnVisualStimMissingItem(idEntity* stimSource)
+{
+
+}
+
+void State::OnVisualStimOpenDoor(idEntity* stimSource)
+{
+
 }
 
 void State::OnAICommMessage(CAIComm_Message* message)
