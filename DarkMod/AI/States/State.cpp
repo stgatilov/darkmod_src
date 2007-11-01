@@ -40,6 +40,54 @@ namespace ai
 #define AIUSE_DOOR				"AIUSE_DOOR"
 #define AIUSE_MISSING_ITEM_MARKER "AIUSE_MISSING_ITEM_MARKER"
 
+//----------------------------------------------------------------------------------------
+// The following strings define classes of person, these are used if AIUse is AIUSE_PERSON 
+
+// This is the key value
+#define PERSONTYPE_KEY				"personType"
+
+// And these are values in use, add to this list as needed
+#define PERSONTYPE_GENERIC			"PERSONTYPE_GENERIC"
+#define PERSONTYPE_NOBLE			"PERSONTYPE_NOBLE"
+#define PERSONTYPE_CITYWATCH		"PERSONTYPE_CITYWATCH"
+#define PERSONTYPE_MERC_PROGUARD	"PERSONTYPE_MERC_PROGUARD"
+#define PERSONTYPE_BUILDER			"PERSONTYPE_BUILDER"
+#define PERSONTYPE_PAGAN			"PERSONTYPE_PAGAN"
+#define PERSONTYPE_THIEF			"PERSONTYPE_THIEF"
+
+//----------------------------------------------------------------------------------------
+// The following strings define genders of person, these are used if AIUse is AIUSE_PERSON 
+// I don't want to get into the politics of gender identity here, this is just because the recorded
+// voices will likely be in gendered languages.  As such, I'm just including the categories
+// that are involved in word gender selection in many languages.
+#define PERSONGENDER_KEY		"personGender"
+
+#define PERSONGENDER_MALE		"PERSONGENDER_MALE"
+#define PERSONGENDER_FEMALE		"PERSONGENDER_FEMALE"
+#define PERSONGENDER_UNKNOWN	"PERSONGENDER_UNKNOWN"
+
+//----------------------------------------------------------------------------------------
+// The following key and values are used for identifying types of lights
+#define AIUSE_LIGHTTYPE_KEY		"lightType"
+#define AIUSE_LIGHTTYPE_TORCH	"AIUSE_LIGHTTYPE_TORCH"
+#define AIUSE_LIGHTTYPE_GASLAMP	 "AIUSE_LIGHTTYPE_GASLAMP"
+#define AIUSE_LIGHTTYPE_ELECTRIC "AIUSE_LIGHTTYPE_ELECTRIC"
+#define AIUSE_LIGHTTYPE_MAGIC	 "AIUSE_LIGHTTYPE_MAGIC"
+#define AIUSE_LIGHTTYPE_AMBIENT	 "AIUSE_LIGHTTYPE_AMBIENT"
+
+//----------------------------------------------------------------------------------------
+// The following key is used to identify the name of the switch entity used to turn on
+// a AIUSE_LIGHTTYPE_ELECTRIC light.
+#define AIUSE_LIGHTSWITCH_NAME_KEY	"switchName"
+
+//----------------------------------------------------------------------------------------
+// The following defines a key that should be non-0 if the device should be on
+#define AIUSE_SHOULDBEON_KEY		"shouldBeOn"
+
+//----------------------------------------------------------------------------------------
+// The following defines a key that should be non-0 if the device should be closed
+#define AIUSE_SHOULDBECLOSED_KEY		"shouldBeClosed"
+
 void State::Init(idAI* owner)
 {
 	_owner = owner;
@@ -153,7 +201,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource)
 	idAI* owner = _owner.GetEntity();
 	assert(owner);
 
-	// Memory shortuct
+	// Memory shortcut
 	Memory& memory = owner->GetMind()->GetMemory();
 
 	// We've seen this object, don't respond to it again
@@ -210,7 +258,147 @@ void State::OnVisualStimWeapon(idEntity* stimSource)
 
 void State::OnVisualStimPerson(idEntity* stimSource)
 {
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
 
+	bool ignoreStimulusFromNowOn = true;
+	
+	idActor* other = dynamic_cast<idActor*>(stimSource);
+
+	if (other == NULL)
+	{
+		// No Actor, quit
+		return;
+	}
+
+	// Are they dead or unconscious?
+	if (other->health <= 0)
+	{
+		// React to finding body
+		ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other);
+	}
+	else if (other->IsKnockedOut())
+	{
+		// React to finding unconscious person
+		ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other);
+	}
+	else
+	{
+		// Not knocked out, not dead, deal with it
+		if (owner->IsEnemy(other))
+		{
+			// Living enemy
+			gameLocal.Printf("I see a living enemy!\n");
+			owner->SetEnemy(other);
+			owner->AI_VISALERT = true;
+			
+			owner->GetMind()->PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+			// An enemy should not be ignored in the future
+			ignoreStimulusFromNowOn = false;
+		}
+		else if (owner->IsFriend(other))
+		{
+			// Living friend
+		}
+		else
+		{
+			// Living neutral persons are not being handled, ignore it from now on
+			ignoreStimulusFromNowOn = true;
+		}
+	}
+
+	if (ignoreStimulusFromNowOn)
+	{
+		// We've seen this object, don't respond to it again
+		stimSource->ResponseIgnore(ST_VISUAL, owner);
+	}
+}
+
+bool State::OnVisualStimDeadPerson(idActor* person)
+{
+	assert(person); // must not be NULL
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// Memory shortcut
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	if (owner->IsEnemy(person))
+	{
+		// The dead person is your enemy, ignore from now on
+		return true;
+	}
+	else 
+	{
+		// The dead person is neutral or friendly, this is suspicious
+		gameLocal.Printf("I see dead people!\n");
+
+		// We've seen this object, don't respond to it again
+		person->ResponseIgnore(ST_VISUAL, owner);
+
+		// Three more piece of evidence of something out of place: A dead body is a REALLY bad thing
+		memory.countEvidenceOfIntruders += 3;
+		
+		// Determine what to say
+		idStr soundName;
+		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+
+		if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+		{
+			soundName = "snd_foundComradeBody";
+		}
+		else if (personGender == PERSONGENDER_FEMALE)
+		{
+			soundName = "snd_foundDeadFemale";
+		}
+		else
+		{
+			soundName = "snd_foundDeadMale";
+		}
+
+		// Speak a reaction
+		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		{
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(soundName))
+			);
+		}
+
+		// Raise alert level
+		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+		{
+			memory.alertPos = person->GetPhysics()->GetOrigin();
+			memory.alertType = EAlertVisual;
+			
+			// Do search as if there is an enemy that has escaped
+			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+			memory.alertSearchExclusionVolume.Zero();
+			
+			owner->AI_VISALERT = false;
+			
+			owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+		}
+					
+		// Do new reaction to stimulus
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.searchingDueToCommunication = false;
+		
+		// Callback for objectives
+		owner->FoundBody(person);
+
+		// Switch state
+		owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
+	}
+}
+
+bool State::OnVisualStimUnconsciousPerson(idActor* person)
+{
+	assert(person != NULL); // must not be NULL
+
+	return true;
 }
 
 void State::OnVisualStimBlood(idEntity* stimSource)

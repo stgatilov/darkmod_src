@@ -52,7 +52,7 @@ public:
 	// Handles incoming visual stims coming from the given entity
 	virtual void OnVisualStim(idEntity* stimSource);
 
-	// These get called by the above OnVisualStim() method. 
+	// greebo: These get called by the above OnVisualStim() method. 
 	// The passed <stimSource> pointer is guaranteed to be non-NULL.
 	virtual void OnVisualStimWeapon(idEntity* stimSource);
 	virtual void OnVisualStimPerson(idEntity* stimSource);
@@ -60,6 +60,11 @@ public:
 	virtual void OnVisualStimLightSource(idEntity* stimSource);
 	virtual void OnVisualStimMissingItem(idEntity* stimSource);
 	virtual void OnVisualStimOpenDoor(idEntity* stimSource);
+
+	// greebo: Gets called by OnVisualStimPerson on finding a dead body
+	// returns TRUE when the stim should be ignored from now on, FALSE otherwise
+	virtual bool OnVisualStimDeadPerson(idActor* person);
+	virtual bool OnVisualStimUnconsciousPerson(idActor* person);
 
 private:
 	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);

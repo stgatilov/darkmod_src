@@ -332,7 +332,7 @@ void idItem::Spawn( void )
 		{
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
-		PostEventMS( &EV_Touch, 0, ent, NULL );
+		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
 	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer )
@@ -674,6 +674,7 @@ idItem::Event_Touch
 ================
 */
 void idItem::Event_Touch( idEntity *other, trace_t *trace ) {
+	/* only allow touches from the player */
 	if ( !other->IsType( idPlayer::Type ) ) {
 		return;
 	}
