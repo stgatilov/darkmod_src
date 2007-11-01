@@ -5129,7 +5129,10 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	lg = m_LightgemSurface.GetEntity();
 	idVec3 Cam = player->GetEyePosition();
 	idVec3 Pos = player->GetPhysics()->GetOrigin();
-	idVec3 LGPos = Cam;
+	idVec3 LGPos = Pos; // Set the lightgem position to that of the player
+	LGPos.x += ( Cam.x - Pos.x ) * 0.3; // Move the lightgem out a fraction along the leaning x vector
+	LGPos.y += ( Cam.y - Pos.y ) * 0.3; // Move the lightgem out a fraction along the leaning y vector
+	LGPos.z = Cam.z; // Set the lightgem's Z-axis position to that of the player's eyes
 
 	// Adjust the modelposition with userdefined offsets.
 	// Move the lightgem testmodel to the players feet based on the eye position
