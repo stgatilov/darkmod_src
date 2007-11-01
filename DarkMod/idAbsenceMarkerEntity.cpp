@@ -209,8 +209,6 @@ void idAbsenceMarkerEntity::Save( idSaveGame *savefile ) const
 
 void idAbsenceMarkerEntity::Restore( idRestoreGame *savefile )
 {
-	int refEntityNum = -1;
-
 	idVec3 refPosition;
 	idMat3 refOrientation;
 
@@ -248,7 +246,7 @@ void idAbsenceMarkerEntity::Restore( idRestoreGame *savefile )
 		}
 		else
 		{
-			DM_LOG(LC_AI, LT_ERROR).LogString ("Failed to get spawn args from entity def name on restore, name = '%s'\r", referenced_entityDefName);
+			DM_LOG(LC_AI, LT_ERROR).LogString ("Failed to get spawn args from entity def name on restore, name = '%s'\r", referenced_entityDefName.c_str());
 		}
 	}
 

@@ -49,7 +49,7 @@ enum EAlertType {
 	EAlertTypeCount
 };
 
-#define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15.0f
+#define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15000 // milliseconds
 
 // SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
 // group stimulous barks, in seconds
@@ -81,6 +81,9 @@ public:
 
 	// This is the last time the enemy was visible
 	int	lastTimeEnemySeen;
+
+	// The last time a visual stim made the AI bark
+	int lastTimeVisualStimBark;
 
 	/*!
 	* This variable indicates the number of out of place things that the
@@ -188,6 +191,7 @@ public:
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
 		lastTimeFriendlyAISeen(-1000),
+		lastTimeVisualStimBark(-1),
 		countEvidenceOfIntruders(0),
 		lastRandomHeadTurnCheckTime(-1),
 		enemiesHaveBeenSeen(false),
@@ -224,6 +228,7 @@ public:
 		savefile->WriteInt(countEvidenceOfIntruders);
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 		savefile->WriteInt(lastTimeFriendlyAISeen);
+		savefile->WriteInt(lastTimeVisualStimBark);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
 		savefile->WriteVec3(alertPos);
@@ -260,6 +265,7 @@ public:
 		savefile->ReadInt(countEvidenceOfIntruders);
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 		savefile->ReadInt(lastTimeFriendlyAISeen);
+		savefile->ReadInt(lastTimeVisualStimBark);
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
 		savefile->ReadVec3(alertPos);

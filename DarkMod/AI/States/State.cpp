@@ -16,7 +16,9 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../AIComm_Message.h"
+#include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
+#include "ReactingToStimulusState.h"
 #include "CombatState.h"
 
 namespace ai
@@ -57,7 +59,11 @@ void State::Restore(idRestoreGame* savefile)
 void State::OnVisualStim(idEntity* stimSource)
 {
 	idAI* owner = _owner.GetEntity();
-	assert(owner);
+	if (owner == NULL)
+	{
+		// Owner might not be initialised, serviceEvents is called after Mind::Think()
+		return;
+	}
 
 	// Don't respond to NULL entities or when dead/knocked out and no enemy in sight
 	if (stimSource == NULL || 
@@ -142,7 +148,64 @@ void State::OnVisualStim(idEntity* stimSource)
 
 void State::OnVisualStimWeapon(idEntity* stimSource)
 {
+	assert(stimSource != NULL); // must be fulfilled
 
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// Memory shortuct
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// We've seen this object, don't respond to it again
+	stimSource->ResponseIgnore(ST_VISUAL, owner);
+
+	if (stimSource->IsType(idWeapon::Type))
+	{
+		// Is it a friendly weapon?  To find out we need to get its owner.
+		idActor* objectOwner = static_cast<idWeapon*>(stimSource)->GetOwner();
+		
+		if (owner->IsFriend(objectOwner))
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Ignoring visual stim from weapon with friendly owner\r");
+			return;
+		}
+	}
+	
+	// Vocalize that see something out of place
+	gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
+	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+			TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+		);
+	}
+
+	// TWO more piece of evidence of something out of place: A weapon is not a good thing
+	memory.countEvidenceOfIntruders += 2;
+
+	// Raise alert level
+	if (owner->AI_AlertNum < owner->thresh_combat-0.1)
+	{
+		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+	}
+	
+	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+	memory.alertType = EAlertVisual;
+
+	// Do search as if there is an enemy that has escaped
+	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+	memory.alertSearchExclusionVolume.Zero();
+	
+	owner->AI_VISALERT = false;
+	
+	// Do new reaction to stimulus
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.searchingDueToCommunication = false;
+	
+	// Switch state
+	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
 }
 
 void State::OnVisualStimPerson(idEntity* stimSource)
