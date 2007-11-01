@@ -840,6 +840,13 @@ void State::OnAICommMessage(CAIComm_Message* message)
 {
 	assert(message); // Don't accept NULL messages
 
+	idAI* owner = _owner.GetEntity();
+	if (owner == NULL)
+	{
+		// State not yet initialised
+		return;
+	}
+
 	// Get the message parameters
 	CAIComm_Message::TCommType commType = message->getCommunicationType();
 	
@@ -852,9 +859,6 @@ void State::OnAICommMessage(CAIComm_Message* message)
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("Got incoming message from %s\r", issuingEntity->name.c_str());
 	}
-
-	idAI* owner = _owner.GetEntity();
-	assert(owner != NULL);
 
 	Memory& memory = owner->GetMind()->GetMemory();
 
