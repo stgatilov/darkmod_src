@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_FLEE_TASK_H__
-#define __AI_FLEE_TASK_H__
+#ifndef __AI_REPEATED_BARK_TASK_H__
+#define __AI_REPEATED_BARK_TASK_H__
 
 #include "Task.h"
 
@@ -16,19 +16,28 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_FLEE "Flee_Task"
+#define TASK_REPEATED_BARK "Repeated_Bark"
 
-class FleeTask;
-typedef boost::shared_ptr<FleeTask> FleeTaskPtr;
+class RepeatedBarkTask;
+typedef boost::shared_ptr<RepeatedBarkTask> RepeatedBarkTaskPtr;
 
-class FleeTask :
+class RepeatedBarkTask :
 	public Task
 {
-	idEntityPtr<idActor> _enemy;
-	int _escapeSearchLevel;
-	int _failureCount;
+private:
+	// Corresponds to AI spawnarg "bark_repeat_patrol"
+	idStr _soundName;
+	int _barkRepeatIntervalMin;
+	int _barkRepeatIntervalMax;
+	int _nextBarkTime;
+
+	// Default Constructor
+	RepeatedBarkTask();
 
 public:
+
+	RepeatedBarkTask(const char* soundName, const int barkRepeatIntervalMin, const int barkRepeatIntervalMax);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
@@ -42,10 +51,9 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static FleeTaskPtr CreateInstance();
-
+	static RepeatedBarkTaskPtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_FLEE_TASK_H__ */
+#endif /* __AI_REPEATED_BARK_TASK_H__ */

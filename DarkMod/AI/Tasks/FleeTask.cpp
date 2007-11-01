@@ -33,11 +33,17 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	_enemy = owner->GetEnemy();
+	idActor* enemy = _enemy.GetEntity();
+	
 	owner->AI_RUN = true;
 	owner->AI_FORWARD = true;
 
 	int _escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
+	DM_LOG(LC_AI, LT_INFO).LogString("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
+	// Flee to the nearest friendly guarded escape point
+	owner->Flee(enemy, FIND_FRIENDLY_GUARDED, DIST_NEAREST);
 
+	int _failureCount = 0; // This is used for _escapeLevel 1 only
 }
 
 bool FleeTask::Perform(Subsystem& subsystem)
@@ -50,23 +56,30 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 	
 	Memory& memory = owner->GetMind()->GetMemory();
-	
 
-	if (_escapeSearchLevel >= 3)
+	if (_escapeSearchLevel == 1 && owner->AI_DEST_UNREACHABLE)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
-		// Flee to the nearest friendly guarded escape point
-		owner->Flee(enemy, FIND_FRIENDLY_GUARDED, DIST_NEAREST);
+		float enemyDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), enemy->GetPhysics()->GetOrigin());
+
+		DM_LOG(LC_AI, LT_INFO).LogString("Enemy is as near as %d", enemyDistance);
+		if (enemyDistance < 500)
+		{
+			if (!owner->Flee(enemy, FIND_AAS_AREA_FAR_FROM_THREAT, 500))
+			{
+				// No point could be found.
+				_failureCount++;			
+			}
+			if (_failureCount > 5)
+			{
+				 return true;
+			}
+		}
 	}
-	else if (_escapeSearchLevel == 2)
+
+
+	if (_escapeSearchLevel == 2 && owner->AI_DEST_UNREACHABLE)
 	{
-		// Try to find another escape route
-		DM_LOG(LC_AI, LT_INFO).LogString("Trying alternate escape route - FIND_FRIENDLY.");
-		// Find another escape route to ANY friendly escape point
-		owner->Flee(enemy, FIND_FRIENDLY, DIST_NEAREST);
-	}
-	else // escapeSearchLevel is 1
-	{
+		_escapeSearchLevel = 1;
 		DM_LOG(LC_AI, LT_INFO).LogString("Searchlevel = 1, ZOMG, Panic mode, gotta run now!");
 
 		// Get the distance to the enemy
@@ -76,29 +89,23 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		if (enemyDistance < 500)
 		{
 			// Increase the fleeRadius (the nearer the enemy, the more)
-			int failureCount = 0;
 			// The enemy is still near, run further
 			if (!owner->Flee(enemy, FIND_AAS_AREA_FAR_FROM_THREAT, 500))
 			{
 				// No point could be found.
-				failureCount++;
-
-				if (failureCount > 5)
-				{
-					 return true;
-				}
+				_failureCount++;
 			}
 		}
 	}
-		
-
-	if (owner->AI_DEST_UNREACHABLE)
+	
+	if (_escapeSearchLevel == 3 && owner->AI_DEST_UNREACHABLE)
 	{
-		if (_escapeSearchLevel > 1)
-		{
-			// Decrease the escape search level
-			_escapeSearchLevel--;
-		}
+		_escapeSearchLevel = 2;
+		// Try to find another escape route
+		DM_LOG(LC_AI, LT_INFO).LogString("Trying alternate escape route - FIND_FRIENDLY.");
+		// Find another escape route to ANY friendly escape point
+		owner->Flee(enemy, FIND_FRIENDLY, DIST_NEAREST);
+
 	}
 
 
@@ -106,7 +113,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	{
 		//Fleeing is done
 		return true;
-
 	}
 
 
@@ -118,6 +124,7 @@ void FleeTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	savefile->WriteInt(_escapeSearchLevel);
+	savefile->WriteInt(_failureCount);
 	_enemy.Save(savefile);
 }
 
@@ -126,6 +133,7 @@ void FleeTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	savefile->ReadInt(_escapeSearchLevel);
+	savefile->ReadInt(_failureCount);
 	_enemy.Restore(savefile);
 }
 
