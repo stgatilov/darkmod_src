@@ -776,7 +776,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertType = EAlertVisual; // visual
 		
-		// Preapare search as if there is an enemy that has escaped
+		// Prepare search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
 		memory.alertSearchExclusionVolume.Zero();
