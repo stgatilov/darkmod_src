@@ -592,6 +592,46 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	// Ignore from now on
+	stimSource->ResponseIgnore(ST_VISUAL, owner);
+
+	// Vocalize that see something out of place
+	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+			TaskPtr(new SingleBarkTask("snd_foundBlood"))
+		);
+	}
+	gameLocal.Printf("Is that blood!\n");
+	
+	// One more piece of evidence of something out of place
+	memory.countEvidenceOfIntruders++;
+
+	// Raise alert level
+	if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+	{
+		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+		memory.alertType = EAlertVisual; // visual
+		
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+
+		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1f);
+	}
+				
+	// Do new reaction to stimulus
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.searchingDueToCommunication = false;
+	
+	// Switch state
+	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
 }
 
 void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
