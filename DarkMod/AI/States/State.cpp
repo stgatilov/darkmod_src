@@ -638,6 +638,98 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
+	Memory& memory = owner->GetMind()->GetMemory();
+
+	idLight* light = dynamic_cast<idLight*>(stimSource);
+
+	if (light == NULL)
+	{
+		// not a light
+		return;
+	}
+
+	// Is it on?
+	if (light->GetLightLevel() > 0)
+	{
+		// We've seen this light and it is on.
+		// Don't respond to it again until it changes state and clears
+		// its ignore list
+		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		return;
+	}
+
+	// What type of light is it?
+	idStr lightType = stimSource->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+	bool turnLightOn = false;
+
+	// Is it supposed to be on?
+	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
+	{
+		// Vocalize that see something out of place because this light is supposed to be on
+		gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
+
+		// Vocalize that see something out of place
+		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		{
+			idStr soundName((lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff");
+
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(soundName))
+			);
+		}
+
+		// One more piece of evidence of something out of place
+		memory.countEvidenceOfIntruders++;
+
+		// Raise alert level
+		if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+		{
+			memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+			memory.alertType = EAlertVisual;
+			
+			// Prepare search as if there is an enemy that has escaped
+			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+			memory.alertSearchExclusionVolume.Zero();
+				
+			owner->AI_VISALERT = false;
+		
+			owner->Event_SetAlertLevel(owner->thresh_combat - 0.1f);
+		}
+
+		// Do new reaction to stimulus after relighting
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.searchingDueToCommunication = false;
+	
+		// We will be turning the light on
+		turnLightOn = true;
+	}
+
+	// Check abilities to turn lights on
+	if (lightType == AIUSE_LIGHTTYPE_TORCH && owner->spawnArgs.GetBool("canLightTorches"))
+	{
+		turnLightOn = false;
+	}
+	else if (!owner->spawnArgs.GetBool("canOperateSwitchLights"))
+	{
+		// Can't operate switchlights
+		turnLightOn = false;
+	}
+	else if (memory.enemiesHaveBeenSeen || memory.itemsHaveBeenStolen || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
+	{
+		gameLocal.Printf("For my safety, I should turn on the light %s\n", stimSource->name.c_str());
+		turnLightOn = true;
+	}
+
+	// Turning the light on?
+	if (turnLightOn)
+	{
+		// Enqueue a search task which gets activated after turning on the light
+		owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+		// Switch to STATE_SWITCHON_LIGHT
+		// TODO owner->GetMind()->PushStateIfHigherPriority(STATE_SWITCHON_LIGHT, PRIORITY_SWITCHON_LIGHT);
+	}
 }
 
 void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
