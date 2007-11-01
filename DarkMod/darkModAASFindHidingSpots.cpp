@@ -157,7 +157,7 @@ bool darkModAASFindHidingSpots::initialize
 	p_aas = gameLocal.GetAAS (LAS.getAASName());
 	if (p_aas == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("AAS with name %s not found\n", LAS.getAASName());
+		DM_LOG(LC_AI, LT_ERROR).LogString("AAS with name %s not found\n", LAS.getAASName().c_str());
 		return false;
 	}
 

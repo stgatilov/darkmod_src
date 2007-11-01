@@ -1355,8 +1355,8 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 				if( SpecNum == -1 )
 				{
-					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString, Counter, Counter2 );
-					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString, Counter, Counter2 );
+					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
+					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString.c_str(), Counter, Counter2 );
 					SpecNum = 0;
 				}
 				CompTemp.m_SpecMethod[ind] = (ESpecificationMethod) SpecNum;
