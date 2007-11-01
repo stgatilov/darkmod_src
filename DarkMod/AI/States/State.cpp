@@ -22,6 +22,22 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 namespace ai
 {
 
+#define AIUSE_WEAPON			"AIUSE_WEAPON"
+#define AIUSE_LIGHTSOURCE		"AIUSE_LIGHTSOURCE"
+#define AIUSE_BLOOD_EVIDENCE	"AIUSE_BLOOD_EVIDENCE"
+#define AIUSE_SEAT				"AIUSE_SEAT"
+#define AIUSE_COOK				"AIUSE_COOK"
+#define AIUSE_EAT				"AIUSE_EAT"
+#define AIUSE_PET				"AIUSE_PET"
+#define AIUSE_MONSTER			"AIUSE_MONSTER"  // a random or caged monster, not a pet
+#define AIUSE_UNDEAD			"AIUSE_UNDEAD" // An undead creature
+#define AIUSE_CATTLE			"AIUSE_CATTLE"
+#define AIUSE_PERSON			"AIUSE_PERSON"
+#define AIUSE_PEST				"AIUSE_PEST"
+#define AIUSE_DRINK			"AIUSE_DRINK"
+#define AIUSE_DOOR				"AIUSE_DOOR"
+#define AIUSE_MISSING_ITEM_MARKER "AIUSE_MISSING_ITEM_MARKER"
+
 void State::Init(idAI* owner)
 {
 	_owner = owner;
@@ -40,7 +56,88 @@ void State::Restore(idRestoreGame* savefile)
 
 void State::OnVisualStim(idEntity* stimSource)
 {
-	// Stim processing here (TODO)
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// Don't respond to NULL entities or when dead/knocked out and no enemy in sight
+	if (stimSource == NULL || 
+		owner->AI_KNOCKEDOUT || owner->AI_DEAD ||
+		owner->GetEnemy() != NULL)
+	{
+		return;
+	}
+
+	// Get AI use of the stim
+	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
+
+	// Only respond if we can actually see it
+	if (aiUse == AIUSE_LIGHTSOURCE)
+	{
+		// Special case for lights, we know it is off if there is no light. Also we can notice it
+		// if we are not looking right at it.
+		if (!owner->CanSeeExt(stimSource, false, false))
+		{
+			return;
+		}
+	}
+	else if (!owner->CanSee(stimSource, true))
+	{
+		//DEBUG_PRINT ("I can't see the " + aiUse);
+		return;
+	}
+
+	// Random chance
+	float chance(gameLocal.random.RandomFloat());
+	float chanceToNotice(0);
+		
+	if (aiUse == AIUSE_WEAPON)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_Weapon (stimSource, ThreadNum);
+		}
+	}
+	else if (aiUse == AIUSE_PERSON)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticePerson");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_Person (stimSource, ThreadNum);
+		}
+	}
+	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_Blood (stimSource, ThreadNum);
+		}
+	}
+	else if (aiUse == AIUSE_LIGHTSOURCE)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_LightSource (stimSource, ThreadNum);
+		}
+	}
+	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_MissingItem (stimSource, ThreadNum);
+		}
+	}
+	else if (aiUse == AIUSE_DOOR)
+	{
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
+		if (chance < chanceToNotice)
+		{
+			// TODO response_visualStim_OpenDoor (stimSource, ThreadNum);
+		}
+	}
 }
 
 void State::OnAICommMessage(CAIComm_Message* message)
