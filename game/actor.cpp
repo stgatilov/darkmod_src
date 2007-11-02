@@ -373,10 +373,6 @@ const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
 const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
 const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
 
-// Task queue events
-const idEventDef AI_AttachTaskQueue( "attachTaskQueue", "d" );
-const idEventDef AI_DetachTaskQueue( "detachTaskQueue" );
-
 // greebo: TDM: Team accessor script events
 const idEventDef AI_GetTeam("getTeam", NULL, 'd');
 const idEventDef AI_SetTeam("setTeam", "d");
@@ -433,9 +429,6 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT ( AI_GetNumAttachments,		idActor::Event_GetNumAttachments )
 	EVENT ( AI_GetNumRangedWeapons,		idActor::Event_GetNumRangedWeapons )
 	EVENT ( AI_GetNumMeleeWeapons,		idActor::Event_GetNumMeleeWeapons )
-
-	EVENT ( AI_AttachTaskQueue,			idActor::Event_AttachTaskQueue )
-	EVENT ( AI_DetachTaskQueue,			idActor::Event_DetachTaskQueue )
 	
 	EVENT ( AI_GetTeam,					idActor::Event_GetTeam )
 	EVENT ( AI_SetTeam,					idActor::Event_SetTeam )
@@ -466,11 +459,6 @@ idActor::idActor( void ) {
 
 	state				= NULL;
 	idealState			= NULL;
-
-	task				= "";
-	taskPriority        = 0;
-	m_TaskQueue			= NULL;
-	m_TaskQueueID		= -1;
 
 	leftEyeJoint		= INVALID_JOINT;
 	rightEyeJoint		= INVALID_JOINT;
@@ -509,8 +497,6 @@ idActor::~idActor( void ) {
 
 	DeconstructScriptObject();
 	scriptObject.Free();
-
-	m_TaskQueue = NULL;
 
 	StopSound( SND_CHANNEL_ANY, false );
 
@@ -928,10 +914,6 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteString( "" );
 	}
 	
-	// Save task info
-	savefile->WriteString(task.c_str());
-	savefile->WriteInt(m_TaskQueueID);
-
 	savefile->WriteFloat(m_stepvol_walk);
 	savefile->WriteFloat(m_stepvol_run);
 	savefile->WriteFloat(m_stepvol_creep);
@@ -1055,14 +1037,6 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		idealState = GetScriptFunction( statename );
 	}
 	
-	// Restore task info
-	savefile->ReadString(task);
-	savefile->ReadInt(m_TaskQueueID);
-	if (m_TaskQueueID != -1)
-	{
-		m_TaskQueue = gameLocal.GetPriorityQueue(m_TaskQueueID);
-	}
-
 	savefile->ReadFloat(m_stepvol_walk);
 	savefile->ReadFloat(m_stepvol_run);
 	savefile->ReadFloat(m_stepvol_creep);
@@ -1431,19 +1405,6 @@ void idActor::SetState( const char *statename ) {
 	newState = GetScriptFunction( statename );
 	SetState( newState );
 }
-/*
-=====================
-idActor::SetTask
-=====================
-*/
-void idActor::SetTask(const idStr& newTask, int newTaskPriority) {
-	task = newTask.c_str();
-	taskPriority = newTaskPriority;
-	if (newTask.Length())
-	{
-		scriptThread->CallFunction(this, GetScriptFunction( newTask.c_str() ), true);
-	}
-}
 
 /*
 =====================
@@ -1479,83 +1440,6 @@ void idActor::UpdateScript( void ) {
 
 	if ( i == 20 ) {
 		scriptThread->Warning( "idActor::UpdateScript: exited loop to prevent lockup" );
-	}
-	
-	// TDM: Task management
-	if (m_TaskQueue != NULL)
-	{
-		for( i = 0; i < 20; i++ ) // Permit multiple task changes per frame, but avoid infinite loops
-		{
-			//gameLocal.Printf("Task management for queue %d, iteration %d\n", gameLocal.m_PriorityQueues.FindIndex(m_TaskQueue), i);
-			//gameLocal.Printf("Queue contents: %s\n", m_TaskQueue->DebuggingInfo().c_str());
-			idStr topTask = idStr(m_TaskQueue->Peek());
-			int topTaskPriority = m_TaskQueue->PeekPriority();
-			if (topTask.Length() && (topTaskPriority > taskPriority || !task.Length()))
-			{
-				//// There's a more important task to do, so do it
-				
-				// Do a cleanup task first if we need to
-				// Note that a cleanup task should not have its own cleanup task. The resulting behaviour
-				// would be undefined, since it'd be dependent on the implementation of the priority queue.
-				idStr cleanupTask = task+"_cleanup";
-				const function_t *func = scriptObject.GetFunction(cleanupTask.c_str());
-				if (func)
-				{
-					// There's a cleanup task available, so add it as the highest priority task and do it
-					topTask = cleanupTask;
-					topTaskPriority = PQUEUE_HIGHEST_PRIORITY;
-				}
-				else
-				{
-					// There's no cleanup task to take care of first, so go ahead
-					// and pop the new task off the queue.
-					// (Once we start a task, it should be removed from the queue so that
-					// it doesn't get re-entered later.)
-					m_TaskQueue->Pop();
-				}
-				SetTask(topTask, topTaskPriority);
-			}
-			
-			// don't call script until it's done waiting
-			if ( scriptThread->IsWaiting() ) break;
-	        
-#ifdef PROFILE_TASKS
-			idTimer scriptTimer(0);
-
-			if (ai_debugScript.GetInteger() == entityNumber) {
-				scriptTimer.Clear();
-				DM_LOG(LC_AI, LT_INFO).LogString("Entering Task thread on entity %s, task is %s.\n", name.c_str(), task.c_str());
-				scriptTimer.Start();
-			}
-#endif
-
-			scriptThread->Execute();
-
-#ifdef PROFILE_TASKS
-			if (ai_debugScript.GetInteger() == entityNumber) {
-				scriptTimer.Stop();
-				DM_LOG(LC_AI, LT_INFO).LogString("AI Script thread on entity %s took %lf msec, task is %s.\n", name.c_str(), scriptTimer.Milliseconds(), task.c_str());
-			}
-#endif
-			
-			// If the function returned, the task is done, so look for another task
-			if (scriptThread->IsDying() && task.Length())
-			{
-				task = ""; // Erase current task so that we get a new one
-			}
-			else
-			{
-				// If we're still doing the highest priority task,
-				// or there are no more tasks,
-				// then we don't need to change tasks any further
-				if ( m_TaskQueue->PeekPriority() <= taskPriority || !task.Length() ) break;
-			}
-		}
-
-		if ( i == 20 )
-		{
-			scriptThread->Warning( "idActor::UpdateScript: exited task loop to prevent lockup" );
-		}
 	}
 }
 
@@ -4121,30 +4005,6 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 		}// if ( delta >= 1.0f )
 	} // if( !noDamage )
 	return delta;
-}
-
-/* Task queue attachment and detachment */
-
-void idActor::Event_AttachTaskQueue(int queueID)
-{
-	// Request the queue with the given ID from gameLocal
-	CPriorityQueue* taskQueue = gameLocal.GetPriorityQueue(queueID);
-
-	if (taskQueue != NULL)
-	{
-		m_TaskQueueID = queueID;
-		m_TaskQueue = taskQueue;
-	}
-	else 
-	{
-		scriptThread->Error("attachTaskQueue: Priority queue #%d does not exist", queueID);
-	}
-}
-
-void idActor::Event_DetachTaskQueue()
-{
-	m_TaskQueue = NULL;
-	m_TaskQueueID = -1;
 }
 
 void idActor::Event_GetTeam()

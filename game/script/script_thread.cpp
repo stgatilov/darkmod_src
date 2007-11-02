@@ -122,15 +122,6 @@ const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 // greebo: Writes the string to the Darkmod.log file using DM_LOG
 const idEventDef EV_LogString("logString", "dds");
 
-// Priority queue events
-const idEventDef EV_TDM_pqNew( "pqNew", NULL, 'd' );
-const idEventDef EV_TDM_pqDelete( "pqDelete", "d" );
-const idEventDef EV_TDM_pqPush( "pqPush", "dsd" );
-const idEventDef EV_TDM_pqPeek( "pqPeek", "d", 's' );
-const idEventDef EV_TDM_pqPeekPriority( "pqPeekPriority", "d", 'd' );
-const idEventDef EV_TDM_pqPop( "pqPop", "d", 's' );
-const idEventDef EV_TDM_pqRemoveTask("pqRemoveTask", "ds", 'd');
-
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -223,14 +214,6 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
 	
 	EVENT( EV_LogString,					idThread::Event_LogString )
-
-	EVENT( EV_TDM_pqNew,					idThread::Event_pqNew )
-	EVENT( EV_TDM_pqDelete,					idThread::Event_pqDelete )
-	EVENT( EV_TDM_pqPush,					idThread::Event_pqPush )
-	EVENT( EV_TDM_pqPeek,					idThread::Event_pqPeek )
-	EVENT( EV_TDM_pqPeekPriority,				idThread::Event_pqPeekPriority )
-	EVENT( EV_TDM_pqPop,					idThread::Event_pqPop )
-	EVENT( EV_TDM_pqRemoveTask,				idThread::Event_pqRemoveTask )
 
 END_CLASS
 
@@ -1977,90 +1960,6 @@ void idThread::Event_DebugTDM_MatInfo( const char *mat )
 	} else {
 		gameLocal.Warning( "Non-existant tdm material declaration: %s", mat );
 	}
-}
-
-/***********************************************************************
-
-	TDM: task queue events
-
-***********************************************************************/
-
-void idThread::Event_pqNew()
-{
-	CPriorityQueue* pqueue = new CPriorityQueue();
-	gameLocal.m_PriorityQueues.Append(pqueue);
-	
-	// Return the ID (actually the index) of the queue we just added
-	int id = gameLocal.m_PriorityQueues.Num()-1;
-	ReturnInt(id);
-}
-
-void idThread::Event_pqDelete( int queueID )
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPop: Priority queue #%d does not exist", queueID);
-		return;
-	}
-	
-	delete gameLocal.m_PriorityQueues[queueID];
-	gameLocal.m_PriorityQueues[queueID] = NULL;
-}
-
-void idThread::Event_pqPush( int queueID, const char* task, int priority )
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPush: Priority queue #%d does not exist", queueID);
-		return;
-	}
-	
-	gameLocal.m_PriorityQueues[queueID]->Push(priority, task);
-}
-
-void idThread::Event_pqPeek( int queueID )
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPeek: Priority queue #%d does not exist", queueID);
-		return;
-	}
-	
-	ReturnString(gameLocal.m_PriorityQueues[queueID]->Peek());
-}
-
-void idThread::Event_pqPeekPriority( int queueID )
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPeekPriority: Priority queue #%d does not exist", queueID);
-		return;
-	}
-	
-	ReturnInt(gameLocal.m_PriorityQueues[queueID]->PeekPriority());
-}
-
-void idThread::Event_pqPop( int queueID )
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPop: Priority queue #%d does not exist", queueID);
-		return;
-	}
-	
-	ReturnString(gameLocal.m_PriorityQueues[queueID]->Pop());
-}
-
-void idThread::Event_pqRemoveTask(int queueID, const char* task)
-{
-	if (queueID < 0 || queueID >= gameLocal.m_PriorityQueues.Num())
-	{
-		Error("pqPop: Priority queue #%d does not exist", queueID);
-		idThread::ReturnInt(0);
-		return;
-	}
-
-	idThread::ReturnInt(gameLocal.m_PriorityQueues[queueID]->Remove(task) ? 1 : 0);
 }
 
 void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity ) {

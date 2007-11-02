@@ -210,19 +210,6 @@ private:
 	// The scriptevent counterpart of DM_LOG
 	void						Event_LogString(int logClass, int logType, const char* output);
 
-	/**
-	* TDM priority queue events
-	**/
-	void						Event_pqNew();
-	void						Event_pqDelete(int pqueueID);
-	void						Event_pqPush( int queueID, const char* task, int priority );
-	void						Event_pqPeek( int queueID );
-	void						Event_pqPeekPriority( int queueID );
-	void						Event_pqPop( int queueID );
-	// greebo: removes the given task from the queue, returns 1 if the item was existing, 0 if not
-	void						Event_pqRemoveTask(int queueID, const char* task);
-
-
 public:							
 								CLASS_PROTOTYPE( idThread );
 								

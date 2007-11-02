@@ -14,10 +14,6 @@
 #ifndef __GAME_ACTOR_H__
 #define __GAME_ACTOR_H__
 
-#include "../DarkMod/pqueue.h"
-// [OrbWeaver] previously "../../DarkMod/pqueue.h", not sure why the path was
-// wrong. Hopefully this hasn't broken anything.
-
 /*
 ===============================================================================
 
@@ -145,9 +141,6 @@ public:
 	void					SetState( const function_t *newState );
 	void					SetState( const char *statename );
 	
-							// TDM: Task management
-	void					SetTask(const idStr& newTask, int newTaskPriority);
-
 							// vision testing
 	void					SetEyeHeight( float height );
 	float					EyeHeight( void ) const;
@@ -331,21 +324,6 @@ protected:
 	const function_t		*state;
 	const function_t		*idealState;
 	
-	/** Name of current task */
-	idStr				task;
-	/** Priority of current task */
-	int					taskPriority;
-
-	/**
-	* The priority queue that this actor uses as a task queue.
-	* Used for, and initialised by, AI scripts. Can be NULL.
-	*
-	* greebo: The task queue ID is the one that gets saved and
-	*		  restored to/from a savegame.
-	**/
-public:
-	int						m_TaskQueueID;
-	CPriorityQueue*			m_TaskQueue;
 protected:
 
 	// joint handles
@@ -474,9 +452,6 @@ private:
 	// Returns the number of ranged/melee weapons attached to the calling script
 	void					Event_GetNumMeleeWeapons();
 	void					Event_GetNumRangedWeapons();
-
-	void					Event_AttachTaskQueue(int queueID);
-	void					Event_DetachTaskQueue();
 
 	/**
 	 * greebo: Script events to get/set the team of this actor.
