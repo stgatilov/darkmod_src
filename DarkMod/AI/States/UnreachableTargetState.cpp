@@ -55,7 +55,6 @@ void UnreachableTargetState::Init(idAI* owner)
 		return;
 	}
 
-
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
 		static_cast<float>(CAIComm_Message::RequestForMissileHelp_CommType), 
@@ -64,7 +63,6 @@ void UnreachableTargetState::Init(idAI* owner)
 		enemy,
 		memory.lastEnemyPos
 	);
-
 
 	// This checks if taking cover is possible and enabled for this AI
 	aasGoal_t hideGoal;
@@ -84,16 +82,16 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	// The communication system is barking 
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-
-	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
-	barkTask->SetSound("snd_cantReachTarget");
-	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_cantReachTarget"))
+	);
 
 	// The sensory system does nothing so far
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	// Check the distance between AI and the player, if it is too large try to move closer
@@ -114,7 +112,6 @@ void UnreachableTargetState::Init(idAI* owner)
 
 		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
 		owner->AI_MOVE_DONE = false;
-
 	}
 	else 
 	{
@@ -138,6 +135,7 @@ void UnreachableTargetState::Think(idAI* owner)
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy!\r");
+		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		return;
 	}
 
@@ -170,17 +168,15 @@ void UnreachableTargetState::Think(idAI* owner)
 		_takeCoverTime = gameLocal.time + 3000;
 	}
 
-
 	// This checks if the enemy is reachable again so we can go into combat state
-	if (owner->CanReachEnemy() || owner->TestMelee())
+	if (owner->CanReachEnemy() || owner->TestMelee() || memory.canHitEnemy)
 	{
 		owner->GetMind()->PerformCombatCheck();
 	}
-
 	
 	// Wait at least for 3 seconds (_takeCoverTime) after starting to throw before taking cover
 	// If a ranged thread from the player is detected (bow is out)
-	// take cover if it is possible after throwing animation is finished
+	// take cover if possible after throwing animation is finished
 	idStr waitState(owner->WaitState());
 
 	if ( _takingCoverPossible && waitState != "throw" &&
@@ -189,7 +185,6 @@ void UnreachableTargetState::Think(idAI* owner)
 	{
 		owner->GetMind()->SwitchState(STATE_TAKE_COVER);
 	}
-
 }
 
 void UnreachableTargetState::Save(idSaveGame* savefile) const

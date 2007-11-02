@@ -45,20 +45,18 @@ void TakeCoverState::Init(idAI* owner)
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	_positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();
 
-
-	owner->StopMove(MOVE_STATUS_DONE);
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should wait half a second and then run to Cover position, 
 	// wait there for some time and then emerge to have a look.
+	owner->StopMove(MOVE_STATUS_DONE);
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(500)));
 	owner->GetSubsystem(SubsysMovement)->QueueTask(MoveToCoverTask::CreateInstance());
-
 	_takingCover = true;
 	owner->AI_MOVE_DONE = false;
-	
 
+	// Calculate the time we should stay in cover
 	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));
 	int coverDelayMax = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_max"));
 	_emergeDelay = coverDelayMin + gameLocal.random.RandomFloat() * (coverDelayMax - coverDelayMin);
@@ -68,7 +66,6 @@ void TakeCoverState::Init(idAI* owner)
 
 	// The sensory system 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-//	owner->GetSubsystem(SubsysSenses)->PushTask(CombatSensoryTask::CreateInstance());
 
 	// No action
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -80,6 +77,8 @@ void TakeCoverState::Think(idAI* owner)
 
 	if (_takingCover && owner->AI_MOVE_DONE)
 	{
+		// When we are done moving to cover position, stay for some time there 
+		// then come out and move back to where we were standing before taking cover
 		owner->AI_RUN = false;
 		owner->FaceEnemy();
 		owner->GetSubsystem(SubsysMovement)->ClearTasks();
@@ -90,16 +89,17 @@ void TakeCoverState::Think(idAI* owner)
 		owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
 		
 		_takingCover = false;
-
 	}
 
 	if (owner->AI_DEST_UNREACHABLE && !_takingCover)
 	{
+		// Can't move back to position before taking cover
 		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 	}
 	
 	if (owner->AI_MOVE_DONE && owner->GetPhysics()->GetOrigin() == _positionBeforeTakingCover && !_takingCover)
 	{
+		// Reached position before taking cover, look for enemy
 		// Turn to last visible enemy position
 		owner->TurnToward(owner->lastVisibleEnemyPos);
 
@@ -110,9 +110,7 @@ void TakeCoverState::Think(idAI* owner)
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		}
 	}
-
 }
-
 
 void TakeCoverState::Save(idSaveGame* savefile) const
 {
