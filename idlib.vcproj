@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="mssdk/include"
+				AdditionalIncludeDirectories="mssdk/include;include"
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,_DEBUG,_WINDOWS,GAME_DLL"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="3"
@@ -76,7 +76,7 @@
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="mssdk/include"
+				AdditionalIncludeDirectories="mssdk/include;include"
 				PreprocessorDefinitions="__DOOM__,__IDLIB__,WIN32,NDEBUG,_WINDOWS,GAME_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
