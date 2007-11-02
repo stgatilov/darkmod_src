@@ -79,7 +79,6 @@ void SearchingState::Init(idAI* owner)
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->PushTask(EmptyTask::CreateInstance());
 
 	// The SearchTask is responsible of controlling the movement subsystem
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();

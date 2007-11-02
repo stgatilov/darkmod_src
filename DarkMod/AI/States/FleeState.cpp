@@ -70,10 +70,8 @@ void FleeState::Init(idAI* owner)
 	// Placeholder, replace with "snd_flee" when available
 	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new RepeatedBarkTask("snd_combat", 4000,8000)));
 
-
 	// The sensory system 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-//	owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 
 	// No action
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

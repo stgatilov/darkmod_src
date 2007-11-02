@@ -50,7 +50,6 @@ void FleeDoneState::Init(idAI* owner)
 
 	_searchForFriendDone = false;
 
-
 	// Slow turning
 	owner->StopMove(MOVE_STATUS_DONE);
 	_oldTurnRate = owner->GetTurnRate();
@@ -98,13 +97,14 @@ void FleeDoneState::Think(idAI* owner)
 			owner->Event_SetAlertLevel(owner->thresh_2 * 0.5);
 
 			// Wait some time before going back to idle
+			// TODO: un-hardcode
+
 			owner->GetSubsystem(SubsysAction)->ClearTasks();
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
 
 			// The sensory system does its Idle tasks
 			owner->GetSubsystem(SubsysSenses)->ClearTasks();
 			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
-
 		}
 	
 		else if (gameLocal.time >= _turnEndTime)
@@ -116,6 +116,8 @@ void FleeDoneState::Think(idAI* owner)
 			owner->Event_SetAlertLevel(owner->thresh_2 * 0.5);
 
 			// Wait some time before going back to idle
+			// TODO: un-hardcode
+			owner->GetSubsystem(SubsysAction)->ClearTasks();
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
 			
 			// The sensory system does its Idle tasks
@@ -123,7 +125,6 @@ void FleeDoneState::Think(idAI* owner)
 			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-
 		}
 	}
 }
@@ -136,7 +137,6 @@ void FleeDoneState::Save(idSaveGame* savefile) const
 	savefile->WriteFloat(_oldTurnRate);
 	savefile->WriteInt(_turnEndTime);
 	savefile->WriteBool(_searchForFriendDone);
-
 } 
 
 void FleeDoneState::Restore(idRestoreGame* savefile)
@@ -146,7 +146,6 @@ void FleeDoneState::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(_oldTurnRate);
 	savefile->ReadInt(_turnEndTime);
 	savefile->ReadBool(_searchForFriendDone);
-
 } 
 
 void FleeDoneState::OnSubsystemTaskFinished(SubsystemId subSystem)
@@ -158,8 +157,6 @@ void FleeDoneState::OnSubsystemTaskFinished(SubsystemId subSystem)
 		owner->GetMind()->SwitchState(STATE_IDLE);
 	}
 }
-
-
 
 StatePtr FleeDoneState::CreateInstance()
 {

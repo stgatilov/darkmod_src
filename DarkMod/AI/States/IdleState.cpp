@@ -53,9 +53,9 @@ void IdleState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	// Push a single bark to the communication subsystem first, it fires only once
-	SingleBarkTaskPtr singleBark = SingleBarkTask::CreateInstance();
-	singleBark->SetSound(GetInitialIdleBark(owner));
-	owner->GetSubsystem(SubsysCommunication)->PushTask(singleBark);
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
+	);
 
 	// Push the regular patrol barking to the list too
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(IdleBarkTask::CreateInstance());
