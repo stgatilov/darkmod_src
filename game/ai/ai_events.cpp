@@ -22,6 +22,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../../DarkMod/AIComm_StimResponse.h"
 #include "../../DarkMod/idAbsenceMarkerEntity.h"
+#include "../../DarkMod/AI/Memory.h"
+#include "../../DarkMod/AI/States/State.h"
 
 class CRelations;
 
@@ -39,6 +41,7 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 // greebo: TDM Event: Try to find a visible AI of the given team
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
+const idEventDef AI_ProcessVisualStim("processVisualStim", "e", NULL);
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -166,8 +169,13 @@ const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e
 
 // TDM
 const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
-const idEventDef AI_RegisterKilledTask( "registerKilledTask", "sd" );
-const idEventDef AI_RegisterKnockedOutTask( "registerKnockedOutTask", "sd" );
+
+const idEventDef AI_PushState("pushState", "s");
+const idEventDef AI_QueueState("queueState", "s");
+const idEventDef AI_SwitchState("switchState", "s");
+const idEventDef AI_EndState("endState", NULL, 'd');
+const idEventDef AI_PushStateIfHigherPriority("pushStateIfHigherPriority", "sd", 'd');
+const idEventDef AI_SwitchStateIfHigherPriority("switchStateIfHigherPriority", "sd", 'd');
 
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
@@ -266,35 +274,7 @@ const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 
 */
 const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", "vvvdE", 'd');
 
-/*!
-* This event finds hiding spots in the bounds given by two vectors, and also excludes
-* any points contained within a different pair of vectors.
-*
-* The first paramter is a vector which gives the location of the
-* eye from which hiding is desired.
-*
-* The second vector gives the minimums in each dimension for the
-* search space.  
-*
-* The third and fourth vectors give the min and max bounds within which spots should be tested
-*
-* The fifth and sixth vectors give the min and max bounds of an area where
-*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
-*	(producing a dead zone where points are not tested)
-*
-* The seventh parameter gives the bit flags of the types of hiding spots
-* for which the search should look.
-*
-* The eighth parameter indicates an entity that should be ignored in
-* the visual occlusion checks.  This is usually the searcher itself but
-* can be NULL.
-*
-* This method will only start the search, if it returns 1, you should call
-* continueSearchForHidingSpots every frame to do more processing until that function
-* returns 0.
-*
-* The return value is a 0 for failure, 1 for success.
-*/
+// Documentation see idAI::StartSearchForHidingSpotsWithExclusionArea
 const idEventDef AI_StartSearchForHidingSpotsWithExclusionArea ("startSearchForHidingSpotsWithExclusionArea", "vvvvvdE", 'd');
 
 /*
@@ -405,6 +385,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_FindEnemyInCombatNodes,			idAI::Event_FindEnemyInCombatNodes )
 	EVENT( AI_ClosestReachableEnemyOfEntity,	idAI::Event_ClosestReachableEnemyOfEntity )
 	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
+	EVENT( AI_ProcessVisualStim,				idAI::Event_ProcessVisualStim )
 	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
 	EVENT( AI_ClearEnemy,						idAI::Event_ClearEnemy )
@@ -532,9 +513,15 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
 	
+	// greebo: State manipulation interface
+	EVENT(  AI_PushState,						idAI::Event_PushState )
+	EVENT(  AI_QueueState,						idAI::Event_QueueState )
+	EVENT(  AI_SwitchState,						idAI::Event_SwitchState )
+	EVENT(  AI_EndState,						idAI::Event_EndState )
+	EVENT(  AI_PushStateIfHigherPriority,		idAI::Event_PushStateIfHigherPriority )
+	EVENT(  AI_SwitchStateIfHigherPriority,		idAI::Event_SwitchStateIfHigherPriority )
+
 	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
-	EVENT( AI_RegisterKilledTask,				idAI::Event_RegisterKilledTask )
-	EVENT( AI_RegisterKnockedOutTask,			idAI::Event_RegisterKnockedOutTask )
 	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
 	EVENT( AI_IsEnemy,							idAI::Event_IsEnemy )
 	EVENT( AI_IsFriend,							idAI::Event_IsFriend )
@@ -655,97 +642,18 @@ idAI::Event_FindEnemyAI
 =====================
 */
 void idAI::Event_FindEnemyAI( int useFOV ) {
-	idEntity	*ent;
-	idActor		*actor;
-	idActor		*bestEnemy;
-	float		bestDist;
-	float		dist;
-	idVec3		delta;
-	pvsHandle_t pvs;
-
-	pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
-
-	bestDist = idMath::INFINITY;
-	bestEnemy = NULL;
-	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		actor = static_cast<idActor *>( ent );
-		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
-			continue;
-		}
-
-		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
-			continue;
-		}
-
-		delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
-		dist = delta.LengthSqr();
-		if ( ( dist < bestDist ) && CanSee( actor, useFOV != 0 ) ) {
-			bestDist = dist;
-			bestEnemy = actor;
-		}
-	}
-
-	gameLocal.pvs.FreeCurrentPVS( pvs );
-	idThread::ReturnEntity( bestEnemy );
+	idThread::ReturnEntity(FindEnemyAI(useFOV==1));
 }
 
+/*
+=====================
+idAI::Event_FindFriendlyAI
+=====================
+*/
 void idAI::Event_FindFriendlyAI(int requiredTeam)
 {
-	// This is our return value
-	idEntity* candidate(NULL);
-	// The distance of the nearest found AI
-	float bestDist = idMath::INFINITY;
-
-	// Setup the PVS areas of this entity using the PVSAreas set, this returns a handle
-	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
-
-	// Iterate through all active entities and find an AI with the given team.
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
-			continue;
-		}
-
-		idActor* actor = static_cast<idActor *>(ent);
-		if (actor->health <= 0) {
-			continue;
-		}
-
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s into account\r", actor->name.c_str());
-
-		if (requiredTeam != -1 && actor->team != requiredTeam) {
-			// wrong team
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
-			continue;
-		}
-
-		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
-		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
-			// Not friendly
-			continue;
-		}
-
-		if (!gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas())) {
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not in PVS\r", actor->name.c_str());
-			// greebo: This actor is not in our PVS, skip it
-			continue;
-		}
-
-		float dist = (physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin()).LengthSqr();
-		if ( (dist < bestDist) && CanSee(actor, true) ) {
-			// Actor can be seen and is nearer than the best candidate, save it
-			bestDist = dist;
-			candidate = actor;
-		}
-	}
-
-	gameLocal.pvs.FreeCurrentPVS(pvs);
-
-	idThread::ReturnEntity(candidate);
+	
+	idThread::ReturnEntity(FindFriendlyAI(requiredTeam));
 }
 
 /*
@@ -999,7 +907,7 @@ void idAI::Event_SpawnThrowableProjectile
 	projectileDef = gameLocal.FindEntityDefDict( pstr_projectileName );
 	if (!projectileDef)
 	{
-		DM_LOG(LC_AI, LT_WARNING).LogString ("Projectile with name '%s' was not found\n", pstr_projectileName);
+		DM_LOG(LC_AI, LT_WARNING).LogString ("Projectile with name '%s' was not found\r", pstr_projectileName);
 		idThread::ReturnEntity (NULL);
 	}
 
@@ -1266,33 +1174,7 @@ idAI::Event_CanBecomeSolid
 =====================
 */
 void idAI::Event_CanBecomeSolid( void ) {
-	int			i;
-	int			num;
-	idEntity *	hit;
-	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
-
-	num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
-	for ( i = 0; i < num; i++ ) {
-		cm = clipModels[ i ];
-
-		// don't check render entities
-		if ( cm->IsRenderModel() ) {
-			continue;
-		}
-
-		hit = cm->GetEntity();
-		if ( ( hit == this ) || !hit->fl.takedamage ) {
-			continue;
-		}
-
-		if ( physicsObj.ClipContents( cm ) ) {
-			idThread::ReturnFloat( false );
-			return;
-		}
-	}
-
-	idThread::ReturnFloat( true );
+	idThread::ReturnFloat( CanBecomeSolid() );
 }
 
 /*
@@ -1954,34 +1836,7 @@ idAI::Event_EntityInAttackCone
 =====================
 */
 void idAI::Event_EntityInAttackCone( idEntity *ent ) {
-	float	attack_cone;
-	idVec3	delta;
-	float	yaw;
-	float	relYaw;
-	
-	if ( !ent ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	delta = ent->GetPhysics()->GetOrigin() - GetEyePosition();
-
-	// get our gravity normal
-	const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-
-	// infinite vertical vision, so project it onto our orientation plane
-	delta -= gravityDir * ( gravityDir * delta );
-
-	delta.Normalize();
-	yaw = delta.ToYaw();
-
-	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
-	relYaw = idMath::AngleNormalize180( ideal_yaw - yaw );
-	if ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) ) {
-		idThread::ReturnInt( true );
-	} else {
-		idThread::ReturnInt( false );
-	}
+	idThread::ReturnInt( EntityInAttackCone(ent) );
 }
 
 /*
@@ -3079,7 +2934,6 @@ void idAI::Event_LookAtAngles (float yawAngleClockwise, float pitchAngleUp, floa
 	}
 
 	focusTime = gameLocal.time + SEC2MS( durationInSeconds );
-
 }
 
 /*
@@ -3455,41 +3309,7 @@ idAI::Event_CanReachEnemy
 ================
 */
 void idAI::Event_CanReachEnemy( void ) {
-	aasPath_t	path;
-	int			toAreaNum;
-	int			areaNum;
-	idVec3		pos;
-	idActor		*enemyEnt;
-
-	enemyEnt = enemy.GetEntity();
-	if ( !enemyEnt ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	if ( move.moveType != MOVETYPE_FLY ) {
-		if ( enemyEnt->OnLadder() ) {
-			idThread::ReturnInt( false );
-			return;
-		}
-		enemyEnt->GetAASLocation( aas, pos, toAreaNum );
-	}  else {
-		pos = enemyEnt->GetPhysics()->GetOrigin();
-		toAreaNum = PointReachableAreaNum( pos );
-	}
-
-	if ( !toAreaNum ) {
-		idThread::ReturnInt( false );
-		return;
-	}
-
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
-	if ( !PathToGoal( path, areaNum, org, toAreaNum, pos ) ) {
-		idThread::ReturnInt( false );
-	} else {
-		idThread::ReturnInt( true );
-	}
+	idThread::ReturnInt(CanReachEnemy());
 }
 
 /*
@@ -3548,18 +3368,6 @@ void idAI::Event_GetReachableEntityPosition( idEntity *ent ) {
 
 }
 
-void idAI::Event_RegisterKilledTask(const char* taskName, int priority)
-{
-	m_killedTask = taskName;
-	m_killedTaskPriority = priority;
-}
-
-void idAI::Event_RegisterKnockedOutTask(const char* taskName, int priority)
-{
-	m_knockedOutTask = taskName;
-	m_knockedOutTaskPriority = priority;
-}
-
 /**
 * DarkMod: Begin Team Relationship Events.  See the definitions on CRelations
 * for descriptions of the Relations functions that are called.
@@ -3581,63 +3389,17 @@ void idAI::Event_GetRelationEnt( idEntity *ent )
 
 void idAI::Event_IsEnemy( idEntity *ent )
 {
-	if (!ent)
-	{
-		/* The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes. */
-		idThread::ReturnInt(0);
-	}
-	else if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsEnemy( team, marker->ownerTeam ) );
-	}
-	else
-	{
-		idThread::ReturnInt( (int) IsEnemy( ent ) );
-	}
+	idThread::ReturnInt(static_cast<int>(IsEnemy(ent)));
 }
 
 void idAI::Event_IsFriend( idEntity *ent )
 {
-
-	if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, marker->ownerTeam ) );
-	}
-	else if ( ent->IsType( idActor::Type ) ) 
-	{
-		idActor *actor;
-		actor = static_cast<idActor *>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsFriend( team, actor->team ) );
-	}
-	else
-	{
-		idThread::ReturnInt( 0 );
-	}
+	idThread::ReturnInt(IsFriend(ent));
 }
 
 void idAI::Event_IsNeutral( idEntity *ent )
 {
-	idActor *actor;
-
-
-	if (ent->IsType (idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker;
-		marker = static_cast<idAbsenceMarkerEntity*>( ent );
-		idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, marker->ownerTeam ) );
-	}
-	else if ( !ent->IsType( idActor::Type ) ) 
-	{
-		// inanimate objects are neutral to everyone
-		idThread::ReturnInt( 1 );
-	}
-
-	actor = static_cast<idActor *>( ent );
-	idThread::ReturnInt( gameLocal.m_RelationsManager->IsNeutral( team, actor->team ) );
+	idThread::ReturnInt(IsNeutral(ent));
 }
 
 void idAI::Event_GetAcuity( const char *type )
@@ -3662,11 +3424,16 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
-	bool bool_alertRising = false;
+	// greebo: Clamp the (log) alert number to twice the combat threshold.
+	if (newAlertLevel > thresh_combat*2)
+	{
+		newAlertLevel = thresh_combat*2;
+	}
+
+	bool bool_alertRising = (newAlertLevel > AI_AlertNum);
 	
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
-	if (newAlertLevel > AI_AlertNum) bool_alertRising = true;
 	AI_AlertNum = newAlertLevel;
 	
 	// grace period vars
@@ -3675,15 +3442,24 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	int grace_count;
 
 	// If alert level is less than 3, sheathe weapon (if appropriate), otherwise draw it
-	if (newAlertLevel < thresh_3) SheathWeapon();
-	else DrawWeapon();
+	if (newAlertLevel < thresh_3) 
+	{
+		SheathWeapon();
+	}
+	else 
+	{
+		DrawWeapon();
+	}
 
 	// How long should this alert level last, and which alert index should we be in now?
 	if (newAlertLevel >= thresh_3)
 	{
-		if (newAlertLevel >= thresh_combat) {
+		if (newAlertLevel >= thresh_combat)
+		{
 			AI_AlertIndex = 4;
-		} else {
+		}
+		else
+		{
 			AI_AlertIndex = 3;
 		}
 		AI_currentAlertLevelDuration = atime3;
@@ -3728,7 +3504,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	Event_SetAlertGracePeriod( grace_frac, grace_time, grace_count );
 
 	// Only bark if we haven't barked too recently
-	if (( gameLocal.realClientTime - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	if (( MS2SEC(gameLocal.time) - AI_timeOfLastStimulusBark) > MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		// Note: Alert rising sounds are played based on the type of stimulus before we ever reach this function
 		// We only have to do alert-down sounds here
@@ -3736,19 +3512,19 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 		{
 			if (newAlertLevel > thresh_3)
 			{
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				// TODO: Shouldn't hard-code the animation name, talk1, here (and below)
 				Event_PlayAndLipSync( "snd_alert3s", "" );
 			}
 			else if (newAlertLevel > thresh_2)
 			{
 			
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown2", "" );
 			}	
 			else if (newAlertLevel > thresh_1) 
 			{
-				AI_timeOfLastStimulusBark = gameLocal.realClientTime;
+				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown1", "" );
 			}
 		}
@@ -3828,7 +3604,7 @@ void idAI::destroyCurrentHidingSpotSearch()
 		HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
 		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search dereferenced\n");
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search dereferenced\r");
 	}
 
 	// No hiding spots
@@ -3839,10 +3615,6 @@ void idAI::destroyCurrentHidingSpotSearch()
 
 //-----------------------------------------------------------------------------------------------------
 
-// TODO: Parameterize these as darkmod globals
-#define HIDING_OBJECT_HEIGHT 0.35f
-#define MAX_SPOTS_PER_SEARCH_CALL 100
-
 void idAI::Event_StartSearchForHidingSpots
 (
 	const idVec3& hideFromLocation,
@@ -3852,7 +3624,7 @@ void idAI::Event_StartSearchForHidingSpots
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\r");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -3868,7 +3640,7 @@ void idAI::Event_StartSearchForHidingSpots
 	if (aas != NULL)
 	{
 		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
 		bool b_searchCompleted = false;
 		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
 		(
@@ -3890,7 +3662,7 @@ void idAI::Event_StartSearchForHidingSpots
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\n");
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\r");
 	
 		// Search is done since there is no search
 		idThread::ReturnInt(0);
@@ -3912,48 +3684,10 @@ void idAI::Event_StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\n");
-
-	// Destroy any current search
-	destroyCurrentHidingSpotSearch();
-
-	// Make caller's search bounds
-	idBounds searchBounds (minBounds, maxBounds);
-	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
-
-	// Get aas
-	if (aas != NULL)
-	{
-		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\n");
-		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
-		(
-			hideFromLocation, 
-			aas, 
-			HIDING_OBJECT_HEIGHT,
-			searchBounds,
-			searchExclusionBounds,
-			hidingSpotTypesAllowed,
-			p_ignoreEntity,
-			gameLocal.framenum,
-			b_searchCompleted
-		);
-
-		// Wait at least one frame for other AIs to indicate they want to share
-		// this search. Return result indicating search is not done yet.
-		idThread::ReturnInt(1);
-
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\n");
-	
-		// Search is done since there is no search
-		idThread::ReturnInt(0);
-	}
-
-
+	idThread::ReturnInt(StartSearchForHidingSpotsWithExclusionArea(
+		hideFromLocation, minBounds, maxBounds, exclusionMinBounds, 
+		exclusionMaxBounds, hidingSpotTypesAllowed, p_ignoreEntity
+	));
 }
 
 
@@ -3961,79 +3695,7 @@ void idAI::Event_StartSearchForHidingSpotsWithExclusionArea
 
 void idAI::Event_ContinueSearchForHidingSpots()
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_ContinueSearchForHidingSpots called.\n");
-
-	// Get hiding spot search instance from handle
-	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
-	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
-	{
-		p_hidingSpotFinder = HidingSpotSearchCollection.getSearchByHandle
-		(
-			m_HidingSpotSearchHandle
-		);
-	}
-
-	// Make sure search still around
-	if (p_hidingSpotFinder == NULL)
-	{
-		// No hiding spot search to continue
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\n");
-		idThread::ReturnInt(0);
-	}
-	else
-	{
-		// Call finder method to continue search
-		bool b_moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
-		(
-			p_hidingSpotFinder->hidingSpotList,
-			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
-			gameLocal.framenum
-		);
-
-
-		// Return result
-		if (b_moreProcessingToDo)
-		{
-			idThread::ReturnInt(1);
-		}
-		else
-		{
-			unsigned int refCount;
-
-			// Get finder we just referenced
-			darkModAASFindHidingSpots* p_hidingSpotFinder = 
-				HidingSpotSearchCollection.getSearchAndReferenceCountByHandle 
-				(
-					m_HidingSpotSearchHandle,
-					refCount
-				);
-
-			m_hidingSpots.clear();
-			p_hidingSpotFinder->hidingSpotList.getOneNth
-			(
-				refCount,
-				&m_hidingSpots
-			);
-
-			// Done with search object, dereference so other AIs know how many
-			// AIs will still be retrieving points from the search
-			HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
-			m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-
-			// DEBUGGING
-			if (cv_ai_search_show.GetInteger() >= 1.0)
-			{
-				// Clear the debug draw list and then fill with our results
-				p_hidingSpotFinder->debugClearHidingSpotDrawList();
-				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
-			}
-
-			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\n");
-			idThread::ReturnInt(0);
-		}
-	}
+	idThread::ReturnInt(ContinueSearchForHidingSpots());
 }
 
 
@@ -4043,7 +3705,7 @@ void idAI::Event_CloseHidingSpotSearch ()
 {
        
 	// Destroy current hiding spot search
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\r");
 	destroyCurrentHidingSpotSearch();
 }
 
@@ -4055,7 +3717,7 @@ void idAI::Event_ResortHidingSpots
 	const idVec3& searchRadius
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Resorting hiding spots for new search center\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Resorting hiding spots for new search center\r");
 	m_hidingSpots.sortForNewCenter
 	(
 		searchCenter,
@@ -4082,64 +3744,7 @@ void idAI::Event_GetNumHidingSpots ()
 
 void idAI::Event_GetNthHidingSpotLocation (int hidingSpotIndex)
 {
-	idVec3 outLocation (0.0f, 0.0f, 0.0f);
-
-	int numSpots = m_hidingSpots.getNumSpots();
-
-	// In bounds?
-	if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
-	{
-		idBounds areaNodeBounds;
-		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
-		if (p_spot == NULL)
-		{
-			outLocation.x = 0;
-			outLocation.y = 0;
-			outLocation.z = 0;
-		}
-		else
-		{
-			outLocation = p_spot->goal.origin;
-		}
-
-		if (cv_ai_search_show.GetInteger() >= 1.0)
-		{
-			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
-			idVec3 arrowLength (0.0, 0.0, 50.0);
-
-			// Debug draw the point to be searched
-			gameRenderWorld->DebugArrow
-			(
-				markerColor,
-				outLocation + arrowLength,
-				outLocation,
-				2,
-				cv_ai_search_show.GetInteger()
-			);
-
-			// Debug draw the bounds of the area node containing the hiding spot point
-			// This may be smaller than the containing AAS area due to octant subdivision.
-			gameRenderWorld->DebugBounds
-			(
-				markerColor,
-				areaNodeBounds,
-				vec3_origin,
-				cv_ai_search_show.GetInteger()
-			);
-
-
-		}
-
-    }
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\n", hidingSpotIndex, numSpots);
-	}
-
-
-	// Return the location
-	idThread::ReturnVector (outLocation);
-
+	idThread::ReturnVector(GetNthHidingSpotLocation(hidingSpotIndex));
 }
 
 /*------------------------------------------------------------------------------*/
@@ -4165,7 +3770,7 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\n", hidingSpotIndex, numSpots);
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
 	}
 
 	// Return the type
@@ -4214,7 +3819,7 @@ void idAI::Event_GetVariableFromOtherAI (idEntity* p_otherEntity, const char* ps
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Unexpected AI variable name '%s' requested, value 0.0 returned\n", pstr_variableName);
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Unexpected AI variable name '%s' requested, value 0.0 returned\r", pstr_variableName);
 		value = 0.0;
 	}
 
@@ -4256,45 +3861,7 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 
 void idAI::Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch)
 {
-	// Test parameters
-	if (p_ownerOfSearch == NULL) 
-	{
-		idThread::ReturnInt (0);
-		return;
-	}
-
-
-	// The other entity must be an AI
-	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
-	if (p_otherAI == NULL)
-	{
-		// Not an AI
-		idThread::ReturnInt (0);
-		return;
-	}
-
-
-	CDarkmodHidingSpotTree* p_othersTree = &(p_otherAI->m_hidingSpots);
-	if (p_othersTree->getNumSpots() <= 1)
-	{
-		// No points
-		idThread::ReturnInt (0);
-		return;
-	}
-
-	// We must clear our current hiding spot search
-	destroyCurrentHidingSpotSearch();
-
-	// Move points from their tree to ours
-	p_othersTree->getOneNth
-	(
-		2,
-		&m_hidingSpots
-	);
-
-	// Done
-	idThread::ReturnInt (m_hidingSpots.getNumSpots());
-
+	idThread::ReturnInt(GetSomeOfOtherEntitiesHidingSpotList(p_ownerOfSearch));
 }
 
 //--------------------------------------------------------------------------------
@@ -4320,4 +3887,39 @@ void idAI::Event_SetAlertGracePeriod( float frac, float duration, int count )
 void idAI::Event_FoundBody( idEntity *body )
 {
 	FoundBody( body );
+}
+
+void idAI::Event_PushState(const char* state)
+{
+	mind->PushState(state);
+}
+
+void idAI::Event_QueueState(const char* state)
+{
+	mind->QueueState(state);
+}
+
+void idAI::Event_SwitchState(const char* state)
+{
+	mind->SwitchState(state);
+}
+
+void idAI::Event_EndState()
+{
+	idThread::ReturnInt(static_cast<int>(mind->EndState()));
+}
+
+void idAI::Event_PushStateIfHigherPriority(const char* state, int priority)
+{
+	idThread::ReturnInt(static_cast<int>(mind->PushStateIfHigherPriority(state, priority)));
+}
+
+void idAI::Event_SwitchStateIfHigherPriority(const char* state, int priority)
+{
+	idThread::ReturnInt(static_cast<int>(mind->SwitchStateIfHigherPriority(state, priority)));
+}
+
+void idAI::Event_ProcessVisualStim(idEntity* stimSource)
+{
+	mind->GetState()->OnVisualStim(stimSource);
 }

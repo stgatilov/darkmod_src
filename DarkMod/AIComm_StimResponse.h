@@ -22,12 +22,6 @@ class CAIComm_Response:
 {
 public:
 	CAIComm_Response(idEntity* Owner, int Type, int uniqueId);
-	virtual ~CAIComm_Response(void);
-
-	virtual void Save(idSaveGame *savefile) const;
-	virtual void Restore(idRestoreGame *savefile);
-
-public:
 
 	/**
 	* This override of the base class version

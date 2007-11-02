@@ -418,7 +418,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 			return false;
 		}
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Testing PVS area %d, which is %d out of %d in the set\n", PVSAreas[numPVSAreasIterated], numPVSAreasIterated+1, numPVSAreas);
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Testing PVS area %d, which is %d out of %d in the set\r", PVSAreas[numPVSAreasIterated], numPVSAreasIterated+1, numPVSAreas);
 
 		// Our current PVS given by h_hidePVS holds the list of areas visible from
 		// the "hide from" point.
@@ -433,7 +433,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 				// Get AAS areas in this visible PVS area
 				aasAreaIndices.Clear();
 				LAS.pvsToAASMappingTable.getAASAreasForPVSArea (PVSAreas[numPVSAreasIterated], aasAreaIndices);
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Non-visible PVS area %d contains %d AAS areas\n", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
+				DM_LOG(LC_AI, LT_DEBUG).LogString("Non-visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
 
 				// None searched yet
 				numAASAreaIndicesSearched = 0;
@@ -455,7 +455,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 			// PVS area is visible, get its AAS areas
 			aasAreaIndices.Clear();
 			LAS.pvsToAASMappingTable.getAASAreasForPVSArea (PVSAreas[numPVSAreasIterated], aasAreaIndices);
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Visible PVS area %d contains %d AAS areas\n", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
 
 			// None searched yet
 			numAASAreaIndicesSearched = 0;
@@ -553,7 +553,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 				hidingSpotRedundancyDistance
 			);
 			
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \n", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum);
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \r", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum);
 		}
 
 		// This counts as a point tested
@@ -761,7 +761,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 					hidingSpotRedundancyDistance
 				);
 
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\n", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
+				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
 			// One more point tested
@@ -798,7 +798,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 
 	} // X iteration
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\n", currentGridSearchAASAreaNum);
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\r", currentGridSearchAASAreaNum);
 
 	// One more AAS area searched
 	numAASAreaIndicesSearched ++;

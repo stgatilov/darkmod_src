@@ -16,9 +16,14 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
+#include "../../DarkMod/AI/BasicMind.h"
+#include "../../DarkMod/AI/Subsystem.h"
+#include "../../DarkMod/AI/States/KnockedOutState.h"
+#include "../../DarkMod/AI/States/DeadState.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
+#include "../../DarkMod/idAbsenceMarkerEntity.h"
 #include "../../DarkMod/DarkModGlobals.h"
 #include "../../DarkMod/PlayerData.h"
 #include "../../DarkMod/sndProp.h"
@@ -460,7 +465,8 @@ bool idAASFindObservationPosition::getBestGoalResult
 idAI::idAI
 =====================
 */
-idAI::idAI() {
+idAI::idAI()
+{
 	aas					= NULL;
 	travelFlags			= TFL_WALK|TFL_AIR;
 
@@ -803,10 +809,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime2);
 	savefile->WriteFloat(atime3);
 
-	savefile->WriteString(m_killedTask.c_str());
-	savefile->WriteInt(m_killedTaskPriority);
-	savefile->WriteString(m_knockedOutTask.c_str());
-	savefile->WriteInt(m_knockedOutTaskPriority);
+	mind->Save(savefile);
+
+	for (int i = 0; i < ai::SubsystemCount; i++) 
+	{
+		subsystems[i]->Save(savefile);
+	}
 }
 
 /*
@@ -1028,10 +1036,20 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime2);
 	savefile->ReadFloat(atime3);
 
-	savefile->ReadString(m_killedTask);
-	savefile->ReadInt(m_killedTaskPriority);
-	savefile->ReadString(m_knockedOutTask);
-	savefile->ReadInt(m_knockedOutTaskPriority);
+	mind = ai::MindPtr(new ai::BasicMind(this));
+	mind->Restore(savefile);
+
+	// Allocate and install the subsystems
+	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this)));
+	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this)));
+	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(ai::SubsysCommunication, this)));
+	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this)));
+
+	// Subsystems are already allocated in the constructor
+	for (int i = 0; i < ai::SubsystemCount; i++) 
+	{
+		subsystems[i]->Restore(savefile);
+	}
 
 	SetCombatModel();
 	LinkCombat();
@@ -1060,6 +1078,15 @@ void idAI::Spawn( void )
 	jointHandle_t		joint;
 	idVec3				local_dir;
 	bool				talks;
+
+	// Allocate a new default mind
+	mind = ai::MindPtr(new ai::BasicMind(this));
+
+	// Allocate and install the subsystems
+	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this)));
+	InstallSubsystem(ai::SubsysSenses,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this)));
+	InstallSubsystem(ai::SubsysCommunication, ai::SubsystemPtr(new ai::Subsystem(ai::SubsysCommunication, this)));
+	InstallSubsystem(ai::SubsysAction,		ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this)));
 
 	if ( !g_monsters.GetBool() ) {
 		PostEventMS( &EV_Remove, 0 );
@@ -1512,22 +1539,26 @@ void idAI::Think( void )
 	oldOrigin = physicsObj.GetOrigin();
 	oldVelocity = physicsObj.GetLinearVelocity();
 
-	if ( thinkFlags & TH_THINK ) {
-		// clear out the enemy when he dies or is hidden
-		idActor *enemyEnt = enemy.GetEntity();
-		if ( enemyEnt ) {
-			if ( enemyEnt->health <= 0 ) {
+	if (thinkFlags & TH_THINK)
+	{
+		// clear out the enemy when he dies
+		idActor* enemyEnt = enemy.GetEntity();
+		if (enemyEnt != NULL)
+		{
+			if (enemyEnt->health <= 0)
+			{
 				EnemyDead();
 			}
 		}
 
+		// Calculate the new view axis based on the turning settings
 		current_yaw += deltaViewAngles.yaw;
-		ideal_yaw = idMath::AngleNormalize180( ideal_yaw + deltaViewAngles.yaw );
+		ideal_yaw = idMath::AngleNormalize180(ideal_yaw + deltaViewAngles.yaw);
 		deltaViewAngles.Zero();
-		viewAxis = idAngles( 0, current_yaw, 0 ).ToMat3();
+		viewAxis = idAngles(0, current_yaw, 0).ToMat3();
 
 		// TDM: Fake lipsync
-		if ( m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT )
+		if (m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT)
 		{
 			if (gameLocal.time < m_lipSyncEndTimer )
 			{
@@ -1536,7 +1567,7 @@ void idAI::Think( void )
 				// So for now the frame count of the animation is hardcoded
 				// at 20.
 				int frame = 20*GetSoundEmitter()->CurrentAmplitude();
-				headAnim.SetFrame( m_lipSyncAnim, frame );
+				headAnim.SetFrame(m_lipSyncAnim, frame);
 			}
 			else
 			{
@@ -1545,33 +1576,45 @@ void idAI::Think( void )
 			}
 		}
 
-		// Look for enemies
-		if ( !(outsidePVS && cv_ai_opt_novisualscan.GetBool()) )
+		// greebo: Look for enemies, perform the visual scan if not disabled
+		if (!(outsidePVS && cv_ai_opt_novisualscan.GetBool()))
 		{
-			idActor* actor = this->VisualScan();
-			if (actor) SetEnemy(actor);
+			// Try to locate an enemy actor (= player in TDM)
+			idActor* actor = VisualScan();
+			if (actor != NULL)
+			{
+				// We have an enemy, check if the enemy has changed.
+				SetEnemy(actor);
+			}
 		}
 
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
-		// Check if drowning
-		if( m_bCanDrown && gameLocal.time > m_AirCheckTimer )
-			UpdateAir();
+		// Check air ticks (is interleaved and not checked each frame)
+		UpdateAir();
 
-		if ( num_cinematics ) {
+		if (num_cinematics > 0)
+		{
+			// Active cinematics
 			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
 				PlayCinematic();
 			}
 			RunPhysics();
-		} else if ( !allowHiddenMovement && IsHidden() ) {
+		}
+		else if (!allowHiddenMovement && IsHidden())
+		{
 			// hidden monsters
 			UpdateAIScript();
-		} else {
+		}
+		else
+		{
 			// clear the ik before we do anything else so the skeleton doesn't get updated twice
 			walkIK.ClearJointMods();
 
-			switch( move.moveType ) {
+			// Update moves, depending on move type 
+			switch (move.moveType)
+			{
 			case MOVETYPE_DEAD :
 				// dead monsters
 				UpdateAIScript();
@@ -1616,21 +1659,42 @@ void idAI::Think( void )
 			}
 		}
 
+		// greebo: We always rely on having a mind
+		assert(mind);
+
+		idTimer thinkTimer;
+		thinkTimer.Clear();
+		thinkTimer.Start();
+
+		// Let the mind do the thinking (after the move updates)
+		mind->Think();
+
+		thinkTimer.Stop();
+		DM_LOG(LC_AI,LT_DEBUG).LogString("Mind's thinking timer says: %lf msecs.\r", thinkTimer.Milliseconds());
+
+		// Clear DarkMod per frame vars now that the mind had time to think
+		AI_ALERTED = false;
+		m_AlertNumThisFrame = 0;
+		m_AlertedByActor = NULL;
+
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
 		AI_PAIN = false;
 		AI_SPECIAL_DAMAGE = 0;
 		AI_PUSHED = false;
-
-	} else if ( thinkFlags & TH_PHYSICS ) {
+	}
+	else if (thinkFlags & TH_PHYSICS)
+	{
+		// Thinking not allowed, but physics are still enabled
 		RunPhysics();
 	}
 
-	if ( m_bAFPushMoveables )
+	if (m_bAFPushMoveables)
 	{
 		PushWithAF();
 	}
 
-	if ( fl.hidden && allowHiddenMovement ) {
+	if (fl.hidden && allowHiddenMovement)
+	{
 		// UpdateAnimation won't call frame commands when hidden, so call them here when we allow hidden movement
 		animator.ServiceAnims( gameLocal.previousTime, gameLocal.time );
 	}
@@ -1646,6 +1710,11 @@ void idAI::Think( void )
 	Present();
 	UpdateDamageEffects();
 	LinkCombat();
+
+	if ( health > 0 )
+	{
+		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
+	}
 
 	// DarkMod: Show debug info
 	if( cv_ai_ko_show.GetBool() )
@@ -1671,22 +1740,26 @@ void idAI::Think( void )
 
 	if ( cv_ai_task_show.GetBool())
 	{
-		idStr str = idStr::FormatNumber(taskPriority) + "   ";
-		str += idStr(task);
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-		if (m_TaskQueue != NULL)
+		/*idStr str = idStr::FormatNumber(taskPriority) + "   ";
+		str += idStr(task);*/
+		idStr str("State: ");
+		str += mind->GetState()->GetName() + "\n";
+		
+		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
+
+		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		/*if (m_TaskQueue != NULL)
 		{
 			gameRenderWorld->DrawText( m_TaskQueue->DebuggingInfo().c_str(), (GetEyePosition() - physicsObj.GetGravityNormal()*10.0f), 0.20f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-		}
+		}*/
 	}
 
 	if( cv_ai_alertnum_show.GetBool() )
 	{
 		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertNum, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*32.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-	if ( health > 0 )
-	{
-		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
 	}
 }
 
@@ -1761,7 +1834,7 @@ idAI::UpdateAIScript
 */
 void idAI::UpdateAIScript( void )
 {
-	UpdateScript();
+	//UpdateScript();
 
 	// clear the hit enemy flag so we catch the next time we hit someone
 	AI_HIT_ENEMY = false;
@@ -1770,11 +1843,6 @@ void idAI::UpdateAIScript( void )
 		// update the animstate if we're not hidden
 		UpdateAnimState();
 	}
-
-	// Clear DarkMod per frame vars now that the script was updated.
-	AI_ALERTED = false;
-	m_AlertNumThisFrame = 0;
-	m_AlertedByActor = NULL;
 }
 
 /***********************************************************************
@@ -2627,15 +2695,33 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 
 /*
 =====================
+idAI::LookForCover
+=====================
+*/
+bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 &hideFromPos) 
+{
+	idBounds bounds;
+	aasObstacle_t obstacle;
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	int areaNum	= PointReachableAreaNum( org );
+
+	// consider the entity the monster tries to hide from as an obstacle
+	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
+
+	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
+	return aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") );
+}
+
+/*
+=====================
 idAI::MoveToCover
 =====================
 */
 bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
-	int				areaNum;
-	aasObstacle_t	obstacle;
-	aasGoal_t		hideGoal;
-	idBounds		bounds;
 	//common->Printf("MoveToCover called... ");
+
+	aasGoal_t hideGoal;
 
 	if ( !aas || !hideFromEnt ) {
 		common->Printf("MoveToCover failed: null aas or entity\n");
@@ -2643,15 +2729,8 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
-
-	const idVec3 &org = physicsObj.GetOrigin();
-	areaNum	= PointReachableAreaNum( org );
-
-	// consider the entity the monster tries to hide from as an obstacle
-	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
-
-	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
-	if ( !aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") ) ) {
+	
+	if (!LookForCover(hideGoal, hideFromEnt, hideFromPos)) {
 		//common->Printf("MoveToCover failed: destination unreachable\n");
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
@@ -4459,7 +4538,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	restartParticles = false;
 
-	if (m_TaskQueue && m_killedTask.Length())
+	mind->ClearStates();
+	mind->PushState(STATE_DEAD);
+	/*if (m_TaskQueue && m_killedTask.Length())
 	{
 		m_TaskQueue->Push(m_killedTaskPriority, m_killedTask.c_str());
 	}
@@ -4468,7 +4549,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		state = GetScriptFunction( "state_Killed" );
 		SetState( state );
 		SetWaitState( "" );
-	}
+	}*/
 
 	// drop items
 	DropOnRagdoll();
@@ -4743,8 +4824,15 @@ bool idAI::EnemyPositionValid( void ) const {
 idAI::SetEnemyPosition
 =====================
 */
-void idAI::SetEnemyPosition( void ) {
-	idActor		*enemyEnt = enemy.GetEntity();
+void idAI::SetEnemyPosition()
+{
+	idActor* enemyEnt = enemy.GetEntity();
+
+	if (enemyEnt == NULL)
+	{
+		return;
+	}
+
 	int			enemyAreaNum;
 	int			areaNum;
 	int			lastVisibleReachableEnemyAreaNum = -1;
@@ -4752,76 +4840,125 @@ void idAI::SetEnemyPosition( void ) {
 	idVec3		pos;
 	bool		onGround;
 
-	if ( !enemyEnt ) {
-		return;
-	}
-
 	lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 	lastVisibleEnemyEyeOffset = enemyEnt->EyeOffset();
 	lastVisibleEnemyPos = enemyEnt->GetPhysics()->GetOrigin();
-	if ( move.moveType == MOVETYPE_FLY ) {
+
+	if (move.moveType == MOVETYPE_FLY)
+	{
+		// Flying AI assume the enemy to be always on ground
 		pos = lastVisibleEnemyPos;
 		onGround = true;
-	} else {
-		onGround = enemyEnt->GetFloorPos( 64.0f, pos );
-		if ( enemyEnt->OnLadder() ) {
+	} 
+	else
+	{
+		// For non-flying AI, check if the enemy is on the ground
+		onGround = enemyEnt->GetFloorPos(64.0f, pos);
+
+		if (enemyEnt->OnLadder()) // greebo: TODO: What about ropes?
+		{
 			onGround = false;
 		}
 	}
 
-	if ( !onGround ) {
-		if ( move.moveCommand == MOVE_TO_ENEMY ) {
+	// greebo: "pos" now holds the enemy position used for pathing (floor pos or visible pos)
+
+	if (!onGround)
+	{
+		// greebo: The AI considers a non-grounded entity to be unreachable
+		// TODO: Check for climb height? The enemy might still be reachable?
+		if (move.moveCommand == MOVE_TO_ENEMY)
+		{
 			AI_DEST_UNREACHABLE = true;
 		}
 		return;
 	}
 
-	// when we don't have an AAS, we can't tell if an enemy is reachable or not,
-	// so just assume that he is.
-	if ( !aas ) {
+	if (aas != NULL)
+	{
+		// We have a valid AAS attached, try to reach the enemy
+
+		// The default reachable area number is taken from the move command
+		lastVisibleReachableEnemyAreaNum = move.toAreaNum;
+
+		// Get the area number of the point the enemy has last been seen in (== enemy origin)
+		enemyAreaNum = PointReachableAreaNum(lastVisibleEnemyPos, 1.0f);
+
+		// If the area number is invalid, try to look it up again using the REACHABLE position
+		if (!enemyAreaNum)
+		{
+			enemyAreaNum = PointReachableAreaNum(lastReachableEnemyPos, 1.0f);
+			pos = lastReachableEnemyPos;
+		}
+		
+		// Do we have a valid area number now?
+		if (enemyAreaNum)
+		{
+			// We have a valid enemy area number
+
+			// Get the own origin and area number
+			const idVec3 &org = physicsObj.GetOrigin();
+			areaNum = PointReachableAreaNum(org);
+
+			// Try to set up a walk/fly path to the enemy
+			if (PathToGoal(path, areaNum, org, enemyAreaNum, pos))
+			{
+				// Succeeded, we have a visible and reachable enemy position
+				lastVisibleReachableEnemyPos = pos;
+				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
+
+				if (move.moveCommand == MOVE_TO_ENEMY)
+				{
+					// Enemy is reachable
+					AI_DEST_UNREACHABLE = false;
+				}
+			} 
+			else if (move.moveCommand == MOVE_TO_ENEMY)
+			{
+				// No path to goal available, enemy is unreachable
+				AI_DEST_UNREACHABLE = true;
+			}
+		}
+		else
+		{
+			// The area number lookup failed, fallback to unreachable
+			if (move.moveCommand == MOVE_TO_ENEMY)
+			{
+				AI_DEST_UNREACHABLE = true;
+			}
+			areaNum = 0;
+		}
+	}
+	else
+	{
+		// We don't have a valid AAS, we can't tell if an enemy is reachable or not,
+		// so just assume that he is.
 		lastVisibleReachableEnemyPos = lastVisibleEnemyPos;
-		if ( move.moveCommand == MOVE_TO_ENEMY ) {
+		if (move.moveCommand == MOVE_TO_ENEMY)
+		{
 			AI_DEST_UNREACHABLE = false;
 		}
 		enemyAreaNum = 0;
 		areaNum = 0;
-	} else {
-		lastVisibleReachableEnemyAreaNum = move.toAreaNum;
-		enemyAreaNum = PointReachableAreaNum( lastVisibleEnemyPos, 1.0f );
-		if ( !enemyAreaNum ) {
-			enemyAreaNum = PointReachableAreaNum( lastReachableEnemyPos, 1.0f );
-			pos = lastReachableEnemyPos;
-		}
-		if ( !enemyAreaNum ) {
-			if ( move.moveCommand == MOVE_TO_ENEMY ) {
-				AI_DEST_UNREACHABLE = true;
-			}
-			areaNum = 0;
-		} else {
-			const idVec3 &org = physicsObj.GetOrigin();
-			areaNum = PointReachableAreaNum( org );
-			if ( PathToGoal( path, areaNum, org, enemyAreaNum, pos ) ) {
-				lastVisibleReachableEnemyPos = pos;
-				lastVisibleReachableEnemyAreaNum = enemyAreaNum;
-				if ( move.moveCommand == MOVE_TO_ENEMY ) {
-					AI_DEST_UNREACHABLE = false;
-				}
-			} else if ( move.moveCommand == MOVE_TO_ENEMY ) {
-				AI_DEST_UNREACHABLE = true;
-			}
-		}
 	}
 
-	if ( move.moveCommand == MOVE_TO_ENEMY ) {
-		if ( !aas ) {
-			// keep the move destination up to date for wandering
+	// General move command update
+	if (move.moveCommand == MOVE_TO_ENEMY)
+	{
+		if (!aas)
+		{
+			// Invalid AAS keep the move destination up to date for wandering
 			move.moveDest = lastVisibleReachableEnemyPos;
-		} else if ( enemyAreaNum ) {
+		}
+		else if (enemyAreaNum)
+		{
+			// The previous pathing attempt succeeded, update the move command
 			move.toAreaNum = lastVisibleReachableEnemyAreaNum;
 			move.moveDest = lastVisibleReachableEnemyPos;
 		}
 
-		if ( move.moveType == MOVETYPE_FLY ) {
+		if (move.moveType == MOVETYPE_FLY)
+		{
 			predictedPath_t path;
 			idVec3 end = move.moveDest;
 			end.z += enemyEnt->EyeOffset().z + fly_offset;
@@ -4832,79 +4969,160 @@ void idAI::SetEnemyPosition( void ) {
 	}
 }
 
+bool idAI::EntityInAttackCone(idEntity* ent)
+{
+	float	attack_cone;
+	idVec3	delta;
+	float	yaw;
+	float	relYaw;
+	
+	if ( !ent ) {
+		return false;
+	}
+
+	delta = ent->GetPhysics()->GetOrigin() - GetEyePosition();
+
+	// get our gravity normal
+	const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+
+	// infinite vertical vision, so project it onto our orientation plane
+	delta -= gravityDir * ( gravityDir * delta );
+
+	delta.Normalize();
+	yaw = delta.ToYaw();
+
+	attack_cone = spawnArgs.GetFloat( "attack_cone", "70" );
+	relYaw = idMath::AngleNormalize180( ideal_yaw - yaw );
+
+	return ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) );
+}
+
+bool idAI::CanHitEntity(idActor* entity)
+{
+	if (entity != NULL)
+	{
+		// greebo: Route this call to TestMelee
+		return TestMelee();
+
+		// TODO: Support for ranged attacks
+	}
+
+	return false;
+}
+
 /*
 =====================
 idAI::UpdateEnemyPosition
 =====================
 */
-void idAI::UpdateEnemyPosition( void ) {
-	idActor *enemyEnt = enemy.GetEntity();
-	int				enemyAreaNum;
-	int				areaNum;
-	aasPath_t		path;
-	predictedPath_t predictedPath;
-	idVec3			enemyPos;
-	bool			onGround;
+void idAI::UpdateEnemyPosition()
+{
+	idActor* enemyEnt = enemy.GetEntity();
 
-	if ( !enemyEnt ) {
+	if (enemyEnt == NULL)
+	{
 		return;
 	}
 
+	int				enemyAreaNum;
+	int				areaNum;
+	aasPath_t		path;
+	idVec3			enemyPos;
+	bool			onGround;
+
 	const idVec3 &org = physicsObj.GetOrigin();
 
-	if ( move.moveType == MOVETYPE_FLY ) {
+	if ( move.moveType == MOVETYPE_FLY )
+	{
 		enemyPos = enemyEnt->GetPhysics()->GetOrigin();
+		// greebo: Flying AI always consider their enemies to be on the ground
 		onGround = true;
-	} else {
-		onGround = enemyEnt->GetFloorPos( 64.0f, enemyPos );
-		if ( enemyEnt->OnLadder() ) {
+	}
+	else
+	{
+		// non-flying AI, get the floor position of the enemy
+		onGround = enemyEnt->GetFloorPos(64.0f, enemyPos);
+
+		if (enemyEnt->OnLadder())
+		{
 			onGround = false;
 		}
 	}
 
-	if ( onGround ) {
-		// when we don't have an AAS, we can't tell if an enemy is reachable or not,
-		// so just assume that he is.
-		if ( !aas ) {
-			enemyAreaNum = 0;
-			lastReachableEnemyPos = enemyPos;
-		} else {
-			enemyAreaNum = PointReachableAreaNum( enemyPos, 1.0f );
-			if ( enemyAreaNum ) {
-				areaNum = PointReachableAreaNum( org );
-				if ( PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos ) ) {
+	if (onGround)
+	{
+		// greebo: Enemy is on ground, hence reachable, try to setup a path
+		if (aas != NULL)
+		{
+			// We have a valid AAS, try to get the area of the enemy (floorpos or origin)
+			enemyAreaNum = PointReachableAreaNum(enemyPos, 1.0f);
+
+			if (enemyAreaNum)
+			{
+				// Enemy origin/floorposition is reachable, get our own area number
+				areaNum = PointReachableAreaNum(org);
+
+				// Try to setup a path to the goal
+				if (PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos))
+				{
+					// Path successfully setup, store the position as "reachable"
 					lastReachableEnemyPos = enemyPos;
 				}
 			}
+		}
+		else
+		{
+			// We don't have an AAS, we can't tell if an enemy is reachable or not,
+			// so just assume that he is.
+			enemyAreaNum = 0;
+			lastReachableEnemyPos = enemyPos;
 		}
 	}
 
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
-
-	if ( CanSee( enemyEnt, false ) )
+	
+	if (CanSee(enemyEnt, false))
 	{
+		// greebo: A trace to the enemy is possible (no FOV check!) and the entity is not hidden in darkness
+		gameRenderWorld->DebugArrow(colorGreen, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
 
+		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
-		if ( CheckFOV( enemyEnt->GetPhysics()->GetOrigin() ) )
+
+		// Store the last time the enemy was visible
+		mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
+
+		// Now perform the FOV check manually
+		if (CheckFOV( enemyEnt->GetPhysics()->GetOrigin()))
 		{
 			AI_ENEMY_IN_FOV = true;
+			// TODO: call SetEnemyPosition here only?
 		}
 
 		SetEnemyPosition();
 	}
 	else
 	{
+		// Enemy can't be seen (obscured or hidden in darkness)
+		gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+
 		// check if we heard any sounds in the last frame
-		if ( enemyEnt == gameLocal.GetAlertEntity() ) {
-			float dist = ( enemyEnt->GetPhysics()->GetOrigin() - org ).LengthSqr();
-			if ( dist < Square( AI_HEARING_RANGE ) ) {
+		if (enemyEnt == gameLocal.GetAlertEntity())
+		{
+			float dist = (enemyEnt->GetPhysics()->GetOrigin() - org).LengthSqr();
+
+			if (dist < Square(AI_HEARING_RANGE))
+			{
+				// Enemy within hearing distance, update position
+				// greebo: TODO: This also updates lastVisibleReachableEnemyPos, is this ok?
 				SetEnemyPosition();
 			}
 		}
 	}
 
-	if ( ai_debugMove.GetBool() ) {
+	if (ai_debugMove.GetBool())
+	{
 		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
 		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
 	}
@@ -4915,33 +5133,54 @@ void idAI::UpdateEnemyPosition( void ) {
 idAI::SetEnemy
 =====================
 */
-void idAI::SetEnemy( idActor *newEnemy ) {
-	int enemyAreaNum;
-
-	if ( AI_DEAD || AI_KNOCKEDOUT ) {
+void idAI::SetEnemy(idActor* newEnemy)
+{
+	// Don't continue if we're dead or knocked out
+	if (newEnemy == NULL || AI_DEAD || AI_KNOCKEDOUT)
+	{
 		ClearEnemy();
 		return;
 	}
 
 	AI_ENEMY_DEAD = false;
-	if ( !newEnemy ) {
-		ClearEnemy();
-	} else if ( enemy.GetEntity() != newEnemy ) {
+
+	// greebo: Check if the new enemy is different
+	if (enemy.GetEntity() != newEnemy)
+	{
+		// Update the enemy pointer 
 		enemy = newEnemy;
-		enemyNode.AddToEnd( newEnemy->enemyList );
-		if ( newEnemy->health <= 0 ) {
+		enemyNode.AddToEnd(newEnemy->enemyList);
+
+		// Check if the new enemy is dead
+		if (newEnemy->health <= 0)
+		{
 			EnemyDead();
 			return;
 		}
-		// let the monster know where the enemy is
-		newEnemy->GetAASLocation( aas, lastReachableEnemyPos, enemyAreaNum );
+
+		int enemyAreaNum(-1);
+
+		// greebo: Get the reachable position and area number of this enemy
+		newEnemy->GetAASLocation(aas, lastReachableEnemyPos, enemyAreaNum);
+
+		// SetEnemyPosition() can now try to setup a path, 
+		// lastVisibleReachableEnemyPosition is set in ANY CASE by this method
 		SetEnemyPosition();
+
+		// Set the (combat) chattering sound, we have an enemy
 		SetChatSound();
 
+		// greebo: This looks suspicious. It overwrites REACHABLE and
+		// and VISIBLEREACHABLE with VISIBLE enemy position,
+		// regardless of what happened before. WTF? TODO
 		lastReachableEnemyPos = lastVisibleEnemyPos;
 		lastVisibleReachableEnemyPos = lastReachableEnemyPos;
-		enemyAreaNum = PointReachableAreaNum( lastReachableEnemyPos, 1.0f );
-		if ( aas && enemyAreaNum ) {
+
+		// Get the area number of the enemy
+		enemyAreaNum = PointReachableAreaNum(lastReachableEnemyPos, 1.0f);
+
+		if (aas != NULL && enemyAreaNum)
+		{
 			aas->PushPointIntoAreaNum( enemyAreaNum, lastReachableEnemyPos );
 			lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 		}
@@ -5722,35 +5961,77 @@ void idAI::Show( void ) {
 	SetChatSound();
 	StartSound( "snd_ambient", SND_CHANNEL_AMBIENT, 0, false, NULL );
 }
+/*
+================
+idAI::CanBecomeSolid
+================
+*/
+bool idAI::CanBecomeSolid( void ) {
+	idClipModel* clipModels[ MAX_GENTITIES ];
 
+	int num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	for ( int i = 0; i < num; i++ ) {
+		idClipModel* cm = clipModels[ i ];
+
+		// don't check render entities
+		if ( cm->IsRenderModel() ) {
+			continue;
+		}
+
+		idEntity* hit = cm->GetEntity();
+		if ( ( hit == this ) || !hit->fl.takedamage ) {
+			continue;
+		}
+
+		if ( physicsObj.ClipContents( cm ) ) {
+			return false;
+		}
+	}
+	return true;
+
+}
 /*
 =====================
 idAI::SetChatSound
 =====================
 */
-void idAI::SetChatSound( void ) {
+void idAI::SetChatSound() {
 	const char *snd;
 
-	if ( IsHidden() ) {
+	if ( IsHidden() )
+	{
+		// greebo: No sound when hidden
 		snd = NULL;
-	} else if ( enemy.GetEntity() ) {
+	} 
+	else if ( enemy.GetEntity() )
+	{
+		// greebo: We have an enemy, switch to combat chatter
 		snd = spawnArgs.GetString( "snd_chatter_combat", NULL );
 		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_combat_min", "5" ) );
 		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_combat_max", "10" ) );
-	} else if ( !spawnArgs.GetBool( "no_idle_chatter" ) ) {
+	}
+	else if ( !spawnArgs.GetBool( "no_idle_chatter" ) )
+	{
+		// greebo: No enemy, idle chattering is allowed
 		snd = spawnArgs.GetString( "snd_chatter", NULL );
 		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_min", "5" ) );
 		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_max", "10" ) );
-	} else {
+	}
+	else
+	{
 		snd = NULL;
 	}
 
-	if ( snd && *snd ) {
+	if (snd && *snd)
+	{
+		// Lookup the soundshader
 		chat_snd = declManager->FindSound( snd );
 
 		// set the next chat time
-		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * ( chat_max - chat_min );
-	} else {
+		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * (chat_max - chat_min);
+	}
+	else
+	{
 		chat_snd = NULL;
 	}
 }
@@ -6335,28 +6616,33 @@ Quit:
 	return;
 }
 
-
-void idAI::AlertAI( const char *type, float amount )
+void idAI::AlertAI(const char *type, float amount)
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AlertAI called\r");
-	float mod(0), alertInc(0);
-	idActor *act(NULL);
 
-	if( m_bIgnoreAlerts )
-		goto Quit;
+	if (m_bIgnoreAlerts)
+	{
+		return;
+	}
 
-	mod = GetAcuity( type );
-	alertInc = amount * mod/100.0;
+	float acuity = GetAcuity(type);
+
+	// Calculate the amount the current AI_AlertNum is about to be increased
+	float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
 
 	// Ignore actors in notarget mode
-	act = m_AlertedByActor.GetEntity();
-	if( act && act->fl.notarget )
-		goto Quit;
+	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if( m_AlertGraceTime )
+	if (actor != NULL && actor->fl.notarget)
+	{
+		// No alerting actor, or actor is set to notarget, quit
+		return;
+	}
+
+	if (m_AlertGraceTime)
 	{
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period active, testing... \r");
-		if( gameLocal.time > (m_AlertGraceStart + m_AlertGraceTime) )
+		if (gameLocal.time > m_AlertGraceStart + m_AlertGraceTime)
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period found to have expired. Resetting. \r");
 			m_AlertGraceTime = 0;
@@ -6366,86 +6652,90 @@ void idAI::AlertAI( const char *type, float amount )
 			m_AlertGraceCount = 0;
 			m_AlertGraceCountLimit = 0;
 		}
-		else if( alertInc < m_AlertGraceThresh
-			&& act != NULL
-			&& act == m_AlertGraceActor.GetEntity()
-			&& m_AlertGraceCount < m_AlertGraceCountLimit )
+		else if (alertInc < m_AlertGraceThresh && 
+				  actor != NULL &&
+				  actor == m_AlertGraceActor.GetEntity() && 
+				  m_AlertGraceCount < m_AlertGraceCountLimit)
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period allowed, ignoring alert. \r");
 			m_AlertGraceCount++;
-// Quick hack: Large lightgem values and visual alerts override the grace period count faster
-			if( AI_VISALERT )
-				m_AlertGraceCount += idMath::Rint( g_Global.m_DarkModPlayer->m_LightgemValue / 8.0f );
-			goto Quit;
+
+			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
+			if (AI_VISALERT)
+			{
+				// greebo: Let the alert grace count increase by 25% of the current lightgem value
+				// The maximum increase is therefore 32/8 = 4 based on DARKMOD_LG_MAX at the time of writing.
+				m_AlertGraceCount += idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f);
+			}
+			return;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
 	}
 	
+	// The grace check has failed, increase the AI_AlertNum float by the increase amount
 	Event_SetAlertLevel(AI_AlertNum + alertInc);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
 
 	if( cv_ai_debug.GetBool() )
-		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, mod, (float) AI_AlertNum );
+		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
 
-	if( gameLocal.isNewFrame )
+	if (gameLocal.isNewFrame)
+	{
+		// AI has been alerted, set the boolean
 		AI_ALERTED = true;
+	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
 	m_AlertNumThisFrame = amount;
 
 	// Objectives callback
-	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), (int) AI_AlertIndex );
-
-Quit:
-	return;
+	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 }
 
-float idAI::GetAcuity( const char *type ) const
+float idAI::GetAcuity(const char *type) const
 {
-	float returnval;
-	int ind;
+	float returnval(-1);
 
-	ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey( type, false ) );
+	// Try to lookup the ID in the hashindex. This corresponds to an entry in m_acuityNames.
+	int ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey(type, false) );
 //	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Retrived Acuity index %d for type %s\r", ind, type);
 
 	if (ind == -1 )
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
 		gameLocal.Warning("[AI] AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
-		returnval = -1;
-		goto Quit;
+		return returnval;
 	}
-	else if( ind > m_Acuities.Num() )
+	else if (ind > m_Acuities.Num())
+	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Acuity index %d exceed acuity array size %d!\r", ind, m_Acuities.Num());
+		return returnval;
+	}
 
+	// Lookup the acuity value using the index from the hashindex
 	returnval = m_Acuities[ind];
 
 	// SZ: June 10, 2007
-	// Accuities are now modified by alert level
+	// Acuities are now modified by alert level
 	if (returnval > 0.0)
 	{
-			float thresh_1 = spawnArgs.GetFloat ("alert_thresh1");
-			float thresh_2 = spawnArgs.GetFloat ("alert_thresh2");
-			float thresh_3 = spawnArgs.GetFloat ("alert_thresh3");
-
-			if (AI_AlertNum >= thresh_3)
-			{
-				returnval *= cv_ai_acuity_L3.GetFloat();
-			}
-			else if (AI_AlertNum >= thresh_2)
-			{
-				returnval *= cv_ai_acuity_L2.GetFloat();
-			}
-			else if (AI_AlertNum >= thresh_1)
-			{
-				returnval *= cv_ai_acuity_L1.GetFloat();
-			}
+		if (AI_AlertNum >= thresh_3)
+		{
+			returnval *= cv_ai_acuity_L3.GetFloat();
+		}
+		else if (AI_AlertNum >= thresh_2)
+		{
+			returnval *= cv_ai_acuity_L2.GetFloat();
+		}
+		else if (AI_AlertNum >= thresh_1)
+		{
+			returnval *= cv_ai_acuity_L1.GetFloat();
+		}
 	}
 
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);
 
-Quit:
 	return returnval;
 }
 
@@ -6488,63 +6778,68 @@ idEntity *idAI::GetTactEnt( void )
 	return m_TactAlertEnt.GetEntity();
 }
 
-idActor *idAI::VisualScan( float timecheck )
+idActor* idAI::VisualScan(float timecheck)
 {
-	float visFrac, randFrac, incAlert(0);
-	idActor *actor;
+	// greebo: This returns non-NULL if this AI is in the player's PVS
+	// and the AI can see the player actor.
+	idActor* actor = FindEnemy(true);
 
-	actor = FindEnemy( true );
-
-	if( !actor || m_bIgnoreAlerts )
+	if (actor == NULL || m_bIgnoreAlerts)
 	{
-		goto Quit;
+		// No actor in sight or alerts disabled, quit
+		return NULL;
 	}
 
 	if( !actor->IsType( idPlayer::Type ) )
 	{
-		actor = NULL;
-		goto Quit;
+		// Not a player, quit
+		return NULL;
 	}
 
-	visFrac = GetVisibility( actor );
+	// Check the candidate's visibility.
+	float visFrac = GetVisibility(actor);
 
 	// uncomment for visibility fraction debugging (spams the log)
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visibility fraction for %s = %f\r", actor->name.c_str(), visFrac );
 
 	// Do the percentage check
-	randFrac = gameLocal.random.RandomFloat( );
+	float randFrac = gameLocal.random.RandomFloat();
 	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat()) * visFrac ) )
 	{
 		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
-		actor = NULL;
-		goto Quit;
+		return NULL;
 	}
+
+	// greebo: At this point, the actor is identified as enemy and is visible
 
 	// set AI_VISALERT and the vector for last sighted position
 
 	//quick fix for blind AI:
-	if( GetAcuity("vis") > 0 )
+	if (GetAcuity("vis") > 0)
 	{
 		AI_VISALERT = true;
 		m_LastSight = actor->GetPhysics()->GetOrigin();
 
-		incAlert = getPlayerVisualStimulusAmount(actor);
+		// Get the visual alert amount caused by the CVAR setting
+		float incAlert = GetPlayerVisualStimulusAmount();
 
-		if( incAlert > m_AlertNumThisFrame )
+		// If the alert amount is larger than everything else encountered this frame
+		// ignore the previous alerts and remember this actor as enemy.
+		if (incAlert > m_AlertNumThisFrame)
 		{
+			// Remember this actor
 			m_AlertedByActor = actor;
-			AlertAI( "vis", incAlert );
+			AlertAI("vis", incAlert);
+		}
+
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
+
+		if (cv_ai_debug.GetBool())
+		{
+			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
 		}
 	}
 
-	if ( actor )
-	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
-		if( cv_ai_debug.GetBool() )
-			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
-	}
-
-Quit:
 	return actor;
 }
 
@@ -6562,46 +6857,106 @@ float idAI::GetVisibility( idEntity *ent ) const
 * will be factored in to the lightgem.
 **/
 	// NOTE: Returns the probability that the entity will be seen in a half second
-
-	float lgem, safedist, clampdist, clampVal;
-	float dist, returnval(0);
-	idVec3 delta;
+	
+	float returnval(0);
 
 	// for now, only players may have their visibility checked
-	if(!ent->IsType( idPlayer::Type ))
-		goto Quit;
+	if (!ent->IsType( idPlayer::Type ))
+	{
+		return returnval;
+	}
+	idPlayer* player = static_cast<idPlayer*>(ent);
 
-	lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
+	float clampVal = GetCalibratedLightgemValue();
+
+	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
+	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
+
+
 	// debug for formula checking
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
-
-	clampdist = (lgem -1) * ( cv_ai_sightmindist.GetFloat() / 31 );
-	safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos(lgem * 1/31 * idMath::PI /2));
+	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
+/*
+	old version:
+	float clampdist = (lgem - 1) * ( cv_ai_sightmindist.GetFloat() / (DARKMOD_LG_MAX - 1) );
+	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
 
 	// clampVal is normalized to 100% at TimeNorm
 	// In other words: Visibility percentage scales linearly with the lightgem
-	//clampVal = (lgem-1)/31;
+	//clampVal = (lgem-1)/(lgem_max-1);
 
 	//NOTE: Linear model didn't work so well ingame, not enough response to increasing
 	// brightness.. try an exponential model (between 0 and 1) :
 	// the formula for now is: 1/e^1.2 * exp(1.2* lgem / lgem_max )
 	// TODO: Make the 1.2 a factor that you can tweak.
-	clampVal = 1/3.3201f * idMath::Exp16( 1.2 * (float) (lgem/32));
+	float clampVal = 0.30119f * idMath::Exp16( 1.2 * (lgem/DARKMOD_LG_MAX));
+*/
 
-	delta = GetEyePosition() - ent->GetPhysics()->GetOrigin();
-	dist = delta.Length()*s_DOOM_TO_METERS;
+	idVec3 delta = GetEyePosition() - player->GetEyePosition();
+	float dist = delta.Length()*s_DOOM_TO_METERS;
 
 	//TODO : Add acuity in to this calculation
 
-	if (dist < clampdist)
+	if (dist < clampdist) 
+	{
 		returnval = clampVal;
-	else if (dist > safedist)
-		returnval = 0;
-	else
-		returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
+	}
+	else 
+	{
+		if (dist > safedist) 
+		{
+			returnval = 0;
+		}
+		else
+		{
+			returnval = clampVal * (1 - (dist-clampdist)/(safedist-clampdist) );
+		}
+	}
 
-Quit:
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
+		// greebo: Debug output, comment me out
+		idStr alertText(clampVal);
+		alertText = "clampVal: "+ alertText;
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText2(clampdist);
+		alertText2 = "clampdist: "+ alertText2;
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText3(safedist);
+		alertText3 = "savedist: "+ alertText3;
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText4(returnval);
+		alertText4 = "returnval: "+ alertText4;
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+	}
+	
 	return returnval;
+}
+
+float idAI::GetCalibratedLightgemValue() const
+{
+	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
+
+	float clampVal = 0.00453f 
+					- 0.000483687f * lgem 
+					+ 0.00289f * idMath::Pow16(lgem, 2)
+					+ 1.19658e-4f * idMath::Pow16(lgem, 3)
+					- 1.2142e-5f * idMath::Pow16(lgem, 4)	
+					+ 2.0494e-7f * idMath::Pow16(lgem, 5);
+
+	if (clampVal > 1)
+	{
+		clampVal = 1;
+	}	
+
+	// Debug output
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
+		idStr alertText5(lgem);
+		alertText5 = "lgem: "+ alertText5;
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+	}
+
+	return clampVal;
 }
 
 void idAI::TactileAlert( idEntity *entest, float amount )
@@ -6692,6 +7047,96 @@ Quit:
 	return actor;
 }
 
+idActor* idAI::FindEnemyAI(bool useFOV)
+{
+	pvsHandle_t pvs = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
+
+	float bestDist = idMath::INFINITY;
+	idActor* bestEnemy = NULL;
+
+	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+			continue;
+		}
+
+		idActor* actor = static_cast<idActor *>( ent );
+		if ( ( actor->health <= 0 ) || !( ReactionTo( actor ) & ATTACK_ON_SIGHT ) ) {
+			continue;
+		}
+
+		if ( !gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
+			continue;
+		}
+
+		idVec3 delta = physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin();
+		float dist = delta.LengthSqr();
+		if ( ( dist < bestDist ) && CanSee( actor, useFOV != 0 ) ) {
+			bestDist = dist;
+			bestEnemy = actor;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS(pvs);
+	return bestEnemy;
+}
+
+idActor* idAI::FindFriendlyAI(int requiredTeam)
+{
+// This is our return value
+	idActor* candidate(NULL);
+	// The distance of the nearest found AI
+	float bestDist = idMath::INFINITY;
+
+	// Setup the PVS areas of this entity using the PVSAreas set, this returns a handle
+	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
+
+	// Iterate through all active entities and find an AI with the given team.
+	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+			continue;
+		}
+
+		idActor* actor = static_cast<idActor *>(ent);
+		if (actor->health <= 0) {
+			continue;
+		}
+
+		DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s into account\r", actor->name.c_str());
+
+		if (requiredTeam != -1 && actor->team != requiredTeam) {
+			// wrong team
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
+			continue;
+		}
+
+		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
+			// Not friendly
+			continue;
+		}
+
+		if (!gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas())) {
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not in PVS\r", actor->name.c_str());
+			// greebo: This actor is not in our PVS, skip it
+			continue;
+		}
+
+		float dist = (physicsObj.GetOrigin() - actor->GetPhysics()->GetOrigin()).LengthSqr();
+		if ( (dist < bestDist) && CanSee(actor, true) ) {
+			// Actor can be seen and is nearer than the best candidate, save it
+			bestDist = dist;
+			candidate = actor;
+		}
+	}
+
+	gameLocal.pvs.FreeCurrentPVS(pvs);
+	
+	return candidate;
+
+}
+
+
 /*---------------------------------------------------------------------------------*/
 
 float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const
@@ -6708,69 +7153,76 @@ float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, 
 
 /*---------------------------------------------------------------------------------*/
 
-float idAI::getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const
+float idAI::GetPlayerVisualStimulusAmount() const
 {
 	float alertAmount = 0.0;
 
-	//Quick fix for blind AI:
-	if( GetAcuity("vis") > 0 )
+	// Quick fix for blind AI:
+	if (GetAcuity("vis") > 0 )
 	{
-//		float visFrac = GetVisibility( p_playerEntity );
-//		float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
-
+		// float visFrac = GetVisibility( p_playerEntity );
+		// float lgem = (float) g_Global.m_DarkModPlayer->m_LightgemValue;
 		// Convert to alert units ( 0.6931472 = ln(2) )
-
 		// Old method, commented out
 		// alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
 
-		float CurAlert = (float) AI_AlertNum;
+		// The current alert number is stored in logarithmic units
+		float curAlertLog = AI_AlertNum;
+
 		// convert current alert from log to linear scale, add, then convert back
 		// this might not be as good for performance, but it lets us keep all alerts
 		// on the same scale.
-		if( CurAlert > 0 )
+		if (curAlertLog > 0)
 		{
-			CurAlert = idMath::Pow16(2,(CurAlert - 1)/10.0f );
-			CurAlert += cv_ai_sight_mag.GetFloat() * 1.0;
-			// convert back to linear
-			CurAlert = 1 + 10.0f * idMath::Log16(CurAlert) / 0.6931472f;
-			alertAmount = CurAlert - AI_AlertNum;
+			// greebo: Convert log to lin units by using Alin = 2^[(Alog-1)/10]
+			float curAlertLin = idMath::Pow16(2, (curAlertLog - 1)*0.1f);
 
+			// Increase the linear alert number with the cvar
+			curAlertLin += cv_ai_sight_mag.GetFloat();
+
+			// greebo: Convert back to logarithmic alert units
+			// The 1.44269 in the equation is the 1/ln(2) used to compensate for using the natural Log16 method.
+			curAlertLog = 1 + 10.0f * idMath::Log16(curAlertLin) * 1.442695f;
+
+			// Now calculate the difference in logarithmic units and return it
+			alertAmount = curAlertLog - AI_AlertNum;
 		}
 		else
+		{
 			alertAmount = 1;
+		}
 	}
 
 	return alertAmount;
 }
 
-
 /*---------------------------------------------------------------------------------*/
 
-bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
+bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 {
 	// Quick test using LAS at entity origin
 	idPhysics* p_physics = p_entity->GetPhysics();
 	if (p_physics != NULL)
 	{
-		// Get alert level thresholds
-		float thresh_1;
-		float thresh_2;
-		float thresh_3;
-		spawnArgs.GetFloat("alert_thresh1", "1.0", thresh_1);
-		spawnArgs.GetFloat("alert_thresh2", "1.0", thresh_2);
-		spawnArgs.GetFloat("alert_thresh3", "1.0", thresh_3);
-
 		// Use lightgem if it is the player
 		if (p_entity->IsType(idPlayer::Type ))
 		{
-
-			float incAlert = getPlayerVisualStimulusAmount(p_entity);
-
+			// Get the alert increase amount (log) caused by the CVAR tdm_ai_sight_mag
+			// greebo: Commented this out, this is not suitable to detect if player is hidden in darkness
+			//float incAlert = GetPlayerVisualStimulusAmount();
+			
+			// greebo: Check the visibility of the player depending on lgem and distance
+			float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
+/*
+			// greebo: Debug output, comment me out
+			idStr alertText(visFraction);
+			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+*/
 			// Get base sight threshold
-			float sightThreshold = cv_ai_sight_thresh.GetFloat();
+			float sightThreshold = 0.25f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
 			// Draw debug graphic
-			if (cv_ai_visdist_show.GetFloat() > 1.0)
+			/*if (cv_ai_visdist_show.GetFloat() > 1.0)
 			{
 				idVec4 markerColor (0.0, 0.0, 0.0, 0.0);
 
@@ -6797,19 +7249,17 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 					2,
 					cv_ai_visdist_show.GetInteger()
 				);
-
-
-			}
+			}*/
 
 			// Very low threshold for visibility
-			if( incAlert < sightThreshold)
+			if (visFraction < sightThreshold)
 			{
-				// Fully seen
+				// Not visible, entity is hidden in darkness
 				return true;
 			}
 			else
 			{
-				// Not fully seen
+				// Visible, visual stim above threshold
 				return false;
 			}
 		}
@@ -6855,7 +7305,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						cv_ai_visdist_show.GetInteger()
 					);
 
-
 					// Gap to where we want to see
 					gameRenderWorld->DebugArrow
 					(
@@ -6865,8 +7314,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						2,
 						cv_ai_visdist_show.GetInteger()
 					);
-
-
 				}
 
 				return true;
@@ -6887,7 +7334,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 						2,
 						cv_ai_visdist_show.GetInteger()
 					);
-
 				}
 				return false;
 			}
@@ -6896,8 +7342,6 @@ bool idAI::IsEntityHiddenByDarkness (idEntity* p_entity) const
 
 	// Not in darkness
 	return false;
-
-
 }
 
 /*---------------------------------------------------------------------------------*/
@@ -6958,15 +7402,67 @@ Quit:
 	return bestEnemy;
 }
 
+bool idAI::IsFriend(idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->IsType (idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		return gameLocal.m_RelationsManager->IsFriend(team, marker->ownerTeam);
+	}
+	else if (other->IsType(idActor::Type)) 
+	{
+		idActor* actor = static_cast<idActor*>(other);
+		return gameLocal.m_RelationsManager->IsFriend(team, actor->team);
+	}
+	
+	return false;
+}
+
+bool idAI::IsNeutral(idEntity *other)
+{
+	if (other == NULL)
+	{
+		return false;
+	}
+	else if (other->IsType(idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		return gameLocal.m_RelationsManager->IsNeutral(team, marker->ownerTeam);
+	}
+	else if (!other->IsType(idActor::Type)) 
+	{
+		// inanimate objects are neutral to everyone
+		return true;
+	}
+
+	// Must be an actor
+	idActor* actor = static_cast<idActor*>(other);
+	return gameLocal.m_RelationsManager->IsNeutral(team, actor->team);
+}
+
 bool idAI::IsEnemy( idEntity *other )
 {
-	bool returnval = false;
-	if ( other->IsType( idActor::Type ) )
+	if (other == NULL)
 	{
-		idActor *actor = static_cast<idActor *>( other );
-		returnval = gameLocal.m_RelationsManager->IsEnemy( team, actor->team );
+		/* The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes. */
+		return false;
 	}
-	return returnval;
+	else if (other->IsType(idAbsenceMarkerEntity::Type))
+	{
+		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
+		return gameLocal.m_RelationsManager->IsEnemy(team, marker->ownerTeam);
+	}
+	else if (other->IsType(idActor::Type))
+	{
+		idActor* actor = static_cast<idActor*>(other);
+		return gameLocal.m_RelationsManager->IsEnemy(team, actor->team);
+	}
+
+	return false;
 }
 
 void idAI::HadTactile( idActor *actor )
@@ -7048,20 +7544,19 @@ idAI::CheckTactile
 Modified 5/25/06 , removed trace computation, found better way of checking
 =====================
 */
-
-// TODO OPTIMIZATION: Do not check for touching if the AI is already engaged in combat!
-void idAI::CheckTactile( void )
+void idAI::CheckTactile()
 {
-	if( !AI_KNOCKEDOUT && !AI_DEAD )
+	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
+	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertNum < thresh_3)
 	{
-		idEntity *BlockEnt = physicsObj.GetSlideMoveEntity();
-		if ( BlockEnt && BlockEnt->IsType( idActor::Type ) )
+		idEntity* blockingEnt = physicsObj.GetSlideMoveEntity();
+
+		if (blockingEnt && blockingEnt->IsType(idActor::Type))
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), BlockEnt->name.c_str() );
-			HadTactile( static_cast<idActor *>(BlockEnt) );
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
+			HadTactile(static_cast<idActor*>(blockingEnt));
 		}
 	}
-	return;
 }
 
 /**
@@ -7297,7 +7792,11 @@ void idAI::Knockout( void )
 
 	restartParticles = false;
 
-	if (m_TaskQueue && m_knockedOutTask.Length())
+	// greebo: Switch the mind to KO state
+	mind->ClearStates();
+	mind->PushState(STATE_KNOCKED_OUT);
+	
+	/*if (m_TaskQueue && m_knockedOutTask.Length())
 	{
 		m_TaskQueue->Push(m_knockedOutTaskPriority, m_knockedOutTask.c_str());
 	}
@@ -7306,7 +7805,7 @@ void idAI::Knockout( void )
 		state = GetScriptFunction( "state_KnockedOut" );
 		SetState( state );
 		SetWaitState( "" );
-	}
+	}*/
 
 	// drop items
 	DropOnRagdoll();
@@ -7418,6 +7917,43 @@ Quit:
 	return;
 }
 
+moveStatus_t idAI::GetMoveStatus() const
+{
+	return move.moveStatus;
+}
+
+bool idAI::CanReachEnemy()
+{
+	aasPath_t	path;
+	int			toAreaNum;
+	int			areaNum;
+	idVec3		pos;
+	idActor		*enemyEnt;
+
+	enemyEnt = enemy.GetEntity();
+	if ( !enemyEnt ) {
+		return false;
+	}
+
+	if ( move.moveType != MOVETYPE_FLY ) {
+		if ( enemyEnt->OnLadder() ) {
+			return false;
+		}
+		enemyEnt->GetAASLocation( aas, pos, toAreaNum );
+	}  else {
+		pos = enemyEnt->GetPhysics()->GetOrigin();
+		toAreaNum = PointReachableAreaNum( pos );
+	}
+
+	if ( !toAreaNum ) {
+		return false;
+	}
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	areaNum	= PointReachableAreaNum( org );
+	return PathToGoal(path, areaNum, org, toAreaNum, pos);
+}
+
 bool idAI::MouthIsUnderwater( void )
 {
 	bool bReturnVal( false );
@@ -7455,13 +7991,21 @@ bool idAI::MouthIsUnderwater( void )
 	return bReturnVal;
 }
 
-void idAI::UpdateAir( void )
+void idAI::UpdateAir()
 {
-	if( MouthIsUnderwater() )
+	// Are we able to drown at all? Has the time for next air check already come?
+	if (!m_bCanDrown || gameLocal.time < m_AirCheckTimer)
+	{
+		return;
+	}
+
+	if (MouthIsUnderwater())
 	{
 		// don't let KO'd AI hold their breath
-		if( AI_KNOCKEDOUT )
+		if (AI_KNOCKEDOUT)
+		{
 			m_AirTics = 0;
+		}
 
 		m_AirTics--;
 	}
@@ -7470,20 +8014,21 @@ void idAI::UpdateAir( void )
 		// regain breath twice as fast as losing
 		m_AirTics += 2;
 
-		if( m_AirTics > m_AirTicksMax )
+		if (m_AirTics > m_AirTicksMax)
+		{
 			m_AirTics = m_AirTicksMax;
+		}
 	}
 
-
-	if( m_AirTics < 0 )
+	if (m_AirTics < 0)
 	{
 		m_AirTics = 0;
 
 		// do the damage, damage_noair is already defined for the player
-		Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
+		Damage(NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0);
 	}
 
-	// set the timer
+	// set the timer for next air check
 	m_AirCheckTimer += m_AirCheckInterval;
 }
 
@@ -7502,7 +8047,7 @@ void idAI::setAirTicks(int airTicks) {
 /*
 ===================== Lipsync =====================
 */
-void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
+int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 {
 	const idSoundShader *shader;
 	const char *sound;
@@ -7534,7 +8079,13 @@ void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 			headAnim.CycleAnim( m_lipSyncAnim );
 		}
 	}
-	idThread::ReturnInt(MS2SEC(duration));
+
+	return duration;
+}
+
+void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
+{
+	idThread::ReturnInt(MS2SEC(PlayAndLipSync(soundName, animName)));
 }
 
 void idAI::StopLipSync()
@@ -7641,4 +8192,217 @@ void idAI::DropOnRagdoll( void )
 
 		ent->GetPhysics()->Activate();
 	}
+}
+
+int idAI::StartSearchForHidingSpotsWithExclusionArea
+(
+	const idVec3& hideFromLocation,
+	const idVec3& minBounds, 
+	const idVec3& maxBounds, 
+	const idVec3& exclusionMinBounds, 
+	const idVec3& exclusionMaxBounds, 
+	int hidingSpotTypesAllowed, 
+	idEntity* p_ignoreEntity
+)
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\r");
+
+	// Destroy any current search
+	destroyCurrentHidingSpotSearch();
+
+	// Make caller's search bounds
+	idBounds searchBounds (minBounds, maxBounds);
+	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
+
+	// Get aas
+	if (aas != NULL)
+	{
+		// Allocate object that handles the search
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
+		bool b_searchCompleted = false;
+		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
+		(
+			hideFromLocation, 
+			aas, 
+			HIDING_OBJECT_HEIGHT,
+			searchBounds,
+			searchExclusionBounds,
+			hidingSpotTypesAllowed,
+			p_ignoreEntity,
+			gameLocal.framenum,
+			b_searchCompleted
+		);
+
+		// Wait at least one frame for other AIs to indicate they want to share
+		// this search. Return result indicating search is not done yet.
+		return 1;
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
+	
+		// Search is done since there is no search
+		return 0;
+	}
+}
+
+int idAI::ContinueSearchForHidingSpots()
+{
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\r");
+
+	// Get hiding spot search instance from handle
+	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
+	{
+		p_hidingSpotFinder = HidingSpotSearchCollection.getSearchByHandle(
+			m_HidingSpotSearchHandle
+		);
+	}
+
+	// Make sure search still around
+	if (p_hidingSpotFinder == NULL)
+	{
+		// No hiding spot search to continue
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\r");
+		return 0;
+	}
+	else
+	{
+		// Call finder method to continue search
+		bool b_moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
+		(
+			p_hidingSpotFinder->hidingSpotList,
+			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
+			gameLocal.framenum
+		);
+
+
+		// Return result
+		if (b_moreProcessingToDo)
+		{
+			return 1;
+		}
+		else
+		{
+			unsigned int refCount;
+
+			// Get finder we just referenced
+			darkModAASFindHidingSpots* p_hidingSpotFinder = 
+				HidingSpotSearchCollection.getSearchAndReferenceCountByHandle 
+				(
+					m_HidingSpotSearchHandle,
+					refCount
+				);
+
+			m_hidingSpots.clear();
+			p_hidingSpotFinder->hidingSpotList.getOneNth
+			(
+				refCount,
+				&m_hidingSpots
+			);
+
+			// Done with search object, dereference so other AIs know how many
+			// AIs will still be retrieving points from the search
+			HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
+			m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+
+			// DEBUGGING
+			if (cv_ai_search_show.GetInteger() >= 1.0)
+			{
+				// Clear the debug draw list and then fill with our results
+				p_hidingSpotFinder->debugClearHidingSpotDrawList();
+				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
+				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
+			}
+
+			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\r");
+			return 0;
+		}
+	}
+}
+
+idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
+{
+	idVec3 outLocation(0,0,0);
+
+	int numSpots = m_hidingSpots.getNumSpots();
+
+	// In bounds?
+	if (hidingSpotIndex >= 0 && hidingSpotIndex < numSpots)
+	{
+		idBounds areaNodeBounds;
+		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
+		if (p_spot != NULL)
+		{
+			outLocation = p_spot->goal.origin;
+		}
+
+		if (cv_ai_search_show.GetInteger() >= 1.0)
+		{
+			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
+			idVec3 arrowLength (0.0, 0.0, 50.0);
+
+			// Debug draw the point to be searched
+			gameRenderWorld->DebugArrow
+			(
+				markerColor,
+				outLocation + arrowLength,
+				outLocation,
+				2,
+				cv_ai_search_show.GetInteger()
+			);
+
+			// Debug draw the bounds of the area node containing the hiding spot point
+			// This may be smaller than the containing AAS area due to octant subdivision.
+			gameRenderWorld->DebugBounds
+			(
+				markerColor,
+				areaNodeBounds,
+				vec3_origin,
+				cv_ai_search_show.GetInteger()
+			);
+		}
+
+    }
+	else
+	{
+		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
+	}
+
+	// Return the location
+	return outLocation;
+}
+
+int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
+{
+	// Test parameters
+	if (p_ownerOfSearch == NULL) 
+	{
+		return 0;
+	}
+
+	// The other entity must be an AI
+	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
+	if (p_otherAI == NULL)
+	{
+		// Not an AI
+		return 0;
+	}
+
+	CDarkmodHidingSpotTree* p_othersTree = &(p_otherAI->m_hidingSpots);
+	if (p_othersTree->getNumSpots() <= 1)
+	{
+		// No points
+		return 0;
+	}
+
+	// We must clear our current hiding spot search
+	destroyCurrentHidingSpotSearch();
+
+	// Move points from their tree to ours
+	p_othersTree->getOneNth(2, &m_hidingSpots);
+
+	// Done
+	return m_hidingSpots.getNumSpots();
 }

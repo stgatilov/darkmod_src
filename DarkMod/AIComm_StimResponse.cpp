@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DarkModGlobals.h"
 #include "AIComm_StimResponse.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "AI/States/State.h"
 
 #define MAX_COMMUNICATION_RADIUS 5000.0
 
@@ -33,42 +34,22 @@ CAIComm_Response::CAIComm_Response(idEntity* Owner, int Type, int uniqueId) :
 
 /*----------------------------------------------------------------*/
 
-CAIComm_Response::~CAIComm_Response(void)
-{
-}
-
-void CAIComm_Response::Save(idSaveGame *savefile) const
-{
-	CResponse::Save(savefile);
-
-	// Nothing special to save here. I'll leave this virtual method for future members.
-}
-
-void CAIComm_Response::Restore(idRestoreGame *savefile)
-{
-	CResponse::Restore(savefile);
-
-	// Nothing special to save here. I'll leave this virtual method for future members.
-}
-
-/*----------------------------------------------------------------*/
-
 void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 {
-	// Can't respond if we are unconscious or dead
-	if (m_Owner.GetEntity() != NULL)
+	idEntity* ownerEnt = m_Owner.GetEntity();
+
+	if (ownerEnt == NULL || !ownerEnt->IsType(idAI::Type))
 	{
-		// If we are descended from AI ...
-		if (m_Owner.GetEntity()->IsType(idAI::Type))
-		{
-			// check if dead or knocked out
-			idAI* p_AIOwner = static_cast< idAI * >( m_Owner.GetEntity() );
-			if (p_AIOwner->IsKnockedOut() )
-			{
-				return;
-			}
-		}
-	
+		// Only process valid owners (must be AI type)
+		return;
+	}
+
+	idAI* owner = static_cast<idAI*>(ownerEnt);
+
+	// Can't respond if we are unconscious or dead
+	if (owner->IsKnockedOut() || owner->AI_DEAD)
+	{
+		return;
 	}
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response for Id %s triggered (Action: %s)\r", m_StimTypeName.c_str(), m_ScriptFunction.c_str());
@@ -84,102 +65,101 @@ void CAIComm_Response::TriggerResponse(idEntity *StimEnt, CStim* stim)
 	}
 	else
 	{
-		CStim* p_stim = p_StimResponseCollection->GetStim (ST_COMMUNICATION);
+		CStim* p_stim = p_StimResponseCollection->GetStim(ST_COMMUNICATION);
 		if (p_stim == NULL)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Source entity has no communications stim\r");
 			return;
 		}
-		p_CommStim = (CAIComm_Stim*) p_stim;
+		p_CommStim = static_cast<CAIComm_Stim*>(p_stim);
 	}
 
 	// Get the number of messages
 //	unsigned long numMessages = p_CommStim->getNumMessages();
 
 	// Get the script function specified in this response
-	const function_t *pScriptFkt = m_Owner.GetEntity()->scriptObject.GetFunction(m_ScriptFunction.c_str());
-	if(pScriptFkt == NULL)
+	/*const function_t *pScriptFkt = owner->scriptObject.GetFunction(m_ScriptFunction.c_str());
+	if (pScriptFkt == NULL)
 	{
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", m_ScriptFunction.c_str());
 		pScriptFkt = gameLocal.program.FindFunction(m_ScriptFunction.c_str());
+
 		if (pScriptFkt == NULL)
 		{
 			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Action: %s not found in global space\r", m_ScriptFunction.c_str());
 			return;
-
 		}
-	}
+	}*/
 
-	// If there is a script function in the response
-	if(pScriptFkt)
+	// At this point, there is a script function in the response
+	unsigned long iterationHandle;
+	CAIComm_Message* p_message = NULL;
+	p_message = p_CommStim->getFirstMessage(iterationHandle);
+
+	// Call the script function for each of the messages
+	while (p_message != NULL)
 	{
-		unsigned long iterationHandle;
-		CAIComm_Message* p_message = NULL;
-		p_message = p_CommStim->getFirstMessage (iterationHandle);
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
+		
+		// Get the message parameters
+		/*CAIComm_Message::TCommType commType = p_message->getCommunicationType();
+		
+		idEntity* p_issuingEntity = p_message->getIssuingEntity();
+		idEntity* p_recipientEntity = p_message->getRecipientEntity();
+		idEntity* p_directObjectEntity = p_message->getDirectObjectEntity();
+		idVec3 directObjectLocation = p_message->getDirectObjectLocation();*/
+		
 
-		// Call the script function for each of the messages
-		while (p_message != NULL)
+		// Calculate distance of the owner of the response from the position of the message at issuance
+		float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
+		idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
+
+		float distanceFromIssuance = maxRadiusForResponse + 1.0;
+		
+		idPhysics* p_phys = owner->GetPhysics();
+		if (p_phys != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Got message to respond\r");
-			
-			// Get the message parameters
-			CAIComm_Message::TCommType commType = p_message->getCommunicationType();
-			float maxRadiusForResponse = p_message->getMaximumRadiusInWorldCoords();
-			idEntity* p_issuingEntity = p_message->getIssuingEntity();
-			idEntity* p_recipientEntity = p_message->getRecipientEntity();
-			idEntity* p_directObjectEntity = p_message->getDirectObjectEntity();
-			idVec3 directObjectLocation = p_message->getDirectObjectLocation();
-			idVec3 positionOfIssuance = p_message->getPositionOfIssuance();
+			idVec3 ownerOrigin = p_phys->GetOrigin();
+			distanceFromIssuance = (ownerOrigin - positionOfIssuance).Length();
+		}
 
-			// Calculate distance of the owner of the response from the position of the message at issuance
-			float distanceFromIssuance = maxRadiusForResponse + 1.0;
-			
-			idPhysics* p_phys = m_Owner.GetEntity()->GetPhysics();
-			if (p_phys != NULL)
-			{
-				idVec3 ownerOrigin = p_phys->GetOrigin();
-				distanceFromIssuance = (ownerOrigin - positionOfIssuance).Length();
-			}
+		// Only respond if response owner is within maximum radius of issuance position
+		if (distanceFromIssuance <= maxRadiusForResponse)
+		{
+			// Pass the AIComm_Message object to the AI's Mind
+			owner->GetMind()->GetState()->OnAICommMessage(p_message);
 
-			// Only respond if response owner is within maximum radius of issuance position
-			if (distanceFromIssuance <= maxRadiusForResponse)
-			{
-				idThread *pThread = new idThread(pScriptFkt);
-				int n = pThread->GetThreadNum();
+			/*idThread *pThread = new idThread(pScriptFkt);
+			int n = pThread->GetThreadNum();
 
-				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running AIComm_StimResponse ResponseScript %s, threadID = %d, commType = %d \r", m_ScriptFunction.c_str(), n, commType);
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running AIComm_StimResponse ResponseScript %s, threadID = %d, commType = %d \r", m_ScriptFunction.c_str(), n, commType);
 
-				pThread->CallFunctionArgs
-				(
-					pScriptFkt, 
-					true, 
-					"eeffeeev", 
-					m_Owner.GetEntity(), 
-					StimEnt, 
-					(float) n,
-					(float) commType,
-					p_issuingEntity,
-					p_recipientEntity,
-					p_directObjectEntity,
-					&directObjectLocation
-				);
+			pThread->CallFunctionArgs
+			(
+				pScriptFkt, 
+				true, 
+				"eeffeeev", 
+				owner, 
+				StimEnt, 
+				(float) n,
+				(float) commType,
+				p_issuingEntity,
+				p_recipientEntity,
+				p_directObjectEntity,
+				&directObjectLocation
+			);
 
-				// Run the response script
-				pThread->DelayedStart(0);
+			// Run the response script
+			pThread->DelayedStart(0);
 
-				DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Done running AIComm_StimResponse ResponseScript %s\r", m_ScriptFunction.c_str());
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Done running AIComm_StimResponse ResponseScript %s\r", m_ScriptFunction.c_str());*/
 
-			} // Responder was within maximum radius of message
+		} // Responder was within maximum radius of message
 
-			// Get next message
-			p_message = p_CommStim->getNextMessage (iterationHandle);
+		// Get next message
+		p_message = p_CommStim->getNextMessage(iterationHandle);
 
-		} // Loop until no more messages in Stim
-	}
-	else
-	{
-		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("ResponseActionScript not found! [%s]\r", m_ScriptFunction.c_str());
-	}
+	} // Loop until no more messages in Stim
 }
 
 /*
@@ -428,12 +408,11 @@ CAIComm_Message* CAIComm_Stim::getNextMessage (unsigned long& inout_iterationHan
 
 /*-------------------------------------------------------------------------*/
 
-void CAIComm_Stim::PostFired (int numResponses)
+void CAIComm_Stim::PostFired(int numResponses)
 {
 	// Clear all the messages
 	clearMessages();
 
 	// We are no longer active until a message is added
 	m_State = SS_DISABLED;
-
 }

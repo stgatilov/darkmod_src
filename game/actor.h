@@ -156,6 +156,15 @@ public:
 	virtual void			GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					SetFOV( float fov );
 	virtual bool			CheckFOV( const idVec3 &pos ) const;
+
+	/**
+	 * greebo: This method returns TRUE, if the given entity <ent> is visible by this actor.
+	 *         For actor entities, the eye position is taken into account, for ordinary entities,
+	 *         the origin is taken.
+	 *         First, the origin/eye position is checked against the FOV of this actor, and second,
+	 *         a trace is performed from eye (this) to origin/eye (other entity). If the trace is
+	 *         blocked, the entity is considered hidden and the method returns FALSE.
+	 */
 	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 	bool					PointVisible( const idVec3 &point ) const;
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
@@ -334,8 +343,10 @@ protected:
 	* greebo: The task queue ID is the one that gets saved and
 	*		  restored to/from a savegame.
 	**/
+public:
 	int						m_TaskQueueID;
 	CPriorityQueue*			m_TaskQueue;
+protected:
 
 	// joint handles
 	jointHandle_t			leftEyeJoint;

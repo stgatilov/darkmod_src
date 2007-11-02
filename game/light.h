@@ -66,6 +66,11 @@ public:
 	void			SetLightParent( idEntity *lparent ) { lightParent = lparent; }
 	void			SetLightLevel( void );
 
+	/**
+	 * greebo: Returns the current lightlevel (currentlevel).
+	 */
+	int				GetLightLevel() const;
+
 	virtual void	ShowEditingDialog( void );
 
 	enum {

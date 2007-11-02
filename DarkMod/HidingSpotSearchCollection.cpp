@@ -356,14 +356,14 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	);
 
 	// Start search
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Starting search for hiding spots\n");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("Starting search for hiding spots\r");
 	bool b_moreProcessingToDo = p_search->startHidingSpotSearch
 	(
 		p_search->hidingSpotList,
 		g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
 		frameIndex
 	);
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\n", p_search->hidingSpotList.getNumSpots());
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\r", p_search->hidingSpotList.getNumSpots());
 
 	// Is search completed?
 	out_b_searchCompleted = !b_moreProcessingToDo;

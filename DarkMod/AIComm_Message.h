@@ -194,7 +194,14 @@ public:
 		* The proper response is to have a uniform way of
 		* passing each other
 		*/
-		GetOutOfTheWayOrder_CommType
+		GetOutOfTheWayOrder_CommType,
+
+		/**
+		 * greebo: These three were defined the script, but not here >> added.
+		 */
+		ConveyWarning_EvidenceOfIntruders_CommType,
+		ConveyWarning_ItemsHaveBeenStolen_CommType,
+		ConveyWarning_EnemiesHaveBeenSeen_CommType,
 
 	} TCommType;
 

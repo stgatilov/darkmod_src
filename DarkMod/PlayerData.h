@@ -76,7 +76,7 @@ public:
 	/**
 	 * LightgemValue determines the level of visibillity of the player.
 	 * This value is used to light up the lightgem and is defined as
-	 * 1 <= N <= 16
+	 * 1 <= N <= 32
 	 */
 	int							m_LightgemValue;
 	/**

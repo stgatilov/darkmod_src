@@ -706,6 +706,11 @@ void idLight::Killed( idEntity *inflictor, idEntity *attacker, int damage, const
 	BecomeBroken( attacker );
 }
 
+int idLight::GetLightLevel() const
+{
+	return currentLevel;
+}
+
 /*
 ================
 idLight::BecomeBroken

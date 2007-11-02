@@ -14,6 +14,8 @@
 #define __AI_H__
 
 #include "../../DarkMod/Relations.h"
+#include "../../DarkMod/AI/Mind.h"
+#include "../../DarkMod/AI/Subsystem.h"
 #include "../../DarkMod/HidingSpotSearchCollection.h"
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 
@@ -343,6 +345,10 @@ public:
 	* other entity is an enemy of this AI.
 	**/
 	bool IsEnemy( idEntity *other );
+	// As above, but checks for Friend
+	bool IsFriend( idEntity *other );
+	// As above, but checks for Neutral
+	bool IsNeutral( idEntity *other );
 	
 	/**
 	* Interface with Dark Mod Sound Propagation
@@ -394,14 +400,25 @@ public:
 	**/
 
 	/**
-	* Do a visibility calculation based on 3 things:
-	* The lightgem value, the distance to entity, and the movement velocity
-	* of the entity.
+	* Do a visibility calculation based on 2 things:
+	* The lightgem value, and the distance to entity
+	* NYI: take velocity into account
 	*
 	* The visibility can also be integrated over a number
 	* of frames if we need to do that for optimization later.
 	**/
 	float GetVisibility( idEntity *ent ) const;
+
+	/**
+	* angua: The uncorrected linear light values [1..DARKMOD_LG_MAX] 
+	* didn't produce very believable results when used 
+	* in GetVisibility(). This function takes the linear values
+	* and corrects them with an "empirical" correction curve.
+	* 
+	* @returns: a float between [0...1].It is fairly high at 
+	* values above 20, fairly low below 6 and increases linearly in between.
+	**/
+	float GetCalibratedLightgemValue() const;
 
 	/**
 	* Checks enemies in the AI's FOV and calls Alert( "vis", amount )
@@ -417,9 +434,11 @@ public:
 
 	/**
 	* Checks to see if the AI is being blocked by an actor when it tries to move,
-	*	call HadTactile on both this AI and the other actor if this is so.
+	* call HadTactile this AI and if this is the case.
+	*
+	* greebo: Note: Only works if the AI is not Dead, KO or already engaged in combat.
 	**/
-	void CheckTactile( void );
+	void CheckTactile();
 
 	/**
 	* Tactile Alerts:
@@ -533,6 +552,26 @@ public:
 	int		getAirTicks() const;
 	void	setAirTicks(int airTicks);
 
+	// greebo: Accessor methods for the array of subsystems
+	ID_INLINE ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id)
+	{
+		return subsystems[id];
+	}
+
+	/**
+	 * greebo: Replaces an AI subsystem with the given one. This removes the old
+	 *         subsystem from the array (which usually triggers a shared_ptr destruction).
+	 */ 
+	ID_INLINE void InstallSubsystem(ai::SubsystemId id, const ai::SubsystemPtr& subsystem)
+	{
+		subsystems[id] = subsystem;
+	}
+
+	ID_INLINE ai::MindPtr& GetMind()
+	{
+		return mind;
+	}
+
 protected:
 	// navigation
 	idAAS *					aas;
@@ -599,7 +638,7 @@ protected:
 	const idSoundShader		*chat_snd;
 	int						chat_min;
 	int						chat_max;
-	int						chat_time;
+	int						chat_time; // The next time chattering is allowed
 	talkState_t				talk_state;
 	idEntityPtr<idActor>	talkTarget;
 
@@ -646,6 +685,7 @@ protected:
 	jointHandle_t			focusJoint;
 	jointHandle_t			orientationJoint;
 
+public: // greebo: Made these public
 	// enemy variables
 	idEntityPtr<idActor>	enemy;
 	idVec3					lastVisibleEnemyPos;
@@ -654,6 +694,7 @@ protected:
 	idVec3					lastReachableEnemyPos;
 	bool					wakeOnFlashlight;
 
+public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;
 	idScriptBool			AI_DAMAGE;
@@ -669,7 +710,6 @@ protected:
 	idScriptBool			AI_ACTIVATED;
 	idScriptBool			AI_FORWARD;
 	idScriptBool			AI_JUMP;
-	idScriptBool			AI_ENEMY_REACHABLE;
 	idScriptBool			AI_BLOCKED;
 	idScriptBool			AI_OBSTACLE_IN_PATH;
 	idScriptBool			AI_DEST_UNREACHABLE;
@@ -731,7 +771,7 @@ protected:
 	idScriptFloat			AI_AlertIndex;
 	
 	/* Additional scriptvars, imported from scripting. TODO: Document properly (for now, see script for docs) */
-	idScriptVector			AI_lastAlertPosSearched;
+	idScriptVector			AI_lastAlertPosSearched; // greebo: TODO: Remove this, idVec3 doesn't work?
 	idScriptFloat			AI_chancePerSecond_RandomLookAroundWhileIdle;
 	idScriptFloat			AI_timeOfLastStimulusBark;
 	idScriptFloat			AI_currentAlertLevelDuration;
@@ -914,7 +954,13 @@ protected:
 	int m_gracecount_1, m_gracecount_2, m_gracecount_3;
 	// De-alert times for each alert level
 	float atime1, atime2, atime3;
-	
+
+	// The mind of this AI
+	ai::MindPtr mind;
+
+	// The array of subsystems of this AI
+	ai::SubsystemPtr subsystems[ai::SubsystemCount];
+
 	//
 	// ai/ai.cpp
 	//
@@ -926,6 +972,76 @@ protected:
 	*/
 	void destroyCurrentHidingSpotSearch();
 
+	/*!
+	* This method finds hiding spots in the bounds given by two vectors, and also excludes
+	* any points contained within a different pair of vectors.
+	*
+	* The first paramter is a vector which gives the location of the
+	* eye from which hiding is desired.
+	*
+	* The second vector gives the minimums in each dimension for the
+	* search space.  
+	*
+	* The third and fourth vectors give the min and max bounds within which spots should be tested
+	*
+	* The fifth and sixth vectors give the min and max bounds of an area where
+	*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
+	*	(producing a dead zone where points are not tested)
+	*
+	* The seventh parameter gives the bit flags of the types of hiding spots
+	* for which the search should look.
+	*
+	* The eighth parameter indicates an entity that should be ignored in
+	* the visual occlusion checks.  This is usually the searcher itself but
+	* can be NULL.
+	*
+	* This method will only start the search, if it returns 1, you should call
+	* continueSearchForHidingSpots every frame to do more processing until that function
+	* returns 0.
+	*
+	* The return value is a 0 for failure, 1 for success.
+	*/
+	int StartSearchForHidingSpotsWithExclusionArea
+	(
+		const idVec3& hideFromLocation,
+		const idVec3& minBounds, 
+		const idVec3& maxBounds, 
+		const idVec3& exclusionMinBounds, 
+		const idVec3& exclusionMaxBounds, 
+		int hidingSpotTypesAllowed, 
+		idEntity* p_ignoreEntity
+	);
+
+	/*
+	* This method continues searching for hiding spots. It will only find so many before
+	* returning so as not to cause long delays.  Detected spots are added to the currently
+	* building hiding spot list.
+	*
+	* The return value is 0 if the end of the search was reached, or 1 if there
+	* is more processing to do (call this method again next AI frame)
+	*
+	*/
+	int ContinueSearchForHidingSpots();
+
+	/*!
+	* This method returns the Nth hiding spot location. 
+	* Param is 0-based hiding spot index.
+	*/
+	idVec3 GetNthHidingSpotLocation(int hidingSpotIndex);
+
+	/*!
+	* This event splits off half of the hiding spot list of another entity
+	* and sets our hiding spot list to the "taken" points.
+	*
+	* As such, it is useful for getting hiding spots from a seraching AI that this
+	* AI is trying to assist.
+	*
+	* @param p_otherEntity The other entity who's hiding spots we are taking
+	* 
+	* @return The number of points in the list gotten
+	*/
+	int GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch);
+
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
 	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
@@ -935,10 +1051,17 @@ protected:
 	bool					CheckForEnemy( void );
 	void					EnemyDead( void );
 	virtual bool			CanPlayChatterSounds( void ) const;
-	void					SetChatSound( void );
+
+	/**
+	 * greebo: Sets the chatter sound depending on having an enemy or not. The chat_time
+	 * member is updated as well, but the sound is not actually played, it only paves the way.
+	 */
+	void					SetChatSound();
+
 	void					PlayChatter( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
+	virtual bool			CanBecomeSolid();
 	idVec3					FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target, int travelFlags ) const;
 	void					CalculateAttackOffsets( void );
 	void					PlayCinematic( void );
@@ -997,7 +1120,8 @@ protected:
 	bool					MoveDone( void ) const;
 	
 	/**
-	* This is a virtual override of the idActor method.  It takes lighting levels into consideration.
+	* This is a virtual override of the idActor method.  It takes lighting levels into consideration
+	* additional to the ordinary FOV/trace check in idActor.
 	*/
 	virtual bool			CanSee( idEntity *ent, bool useFOV ) const;
 
@@ -1028,6 +1152,22 @@ protected:
 	*/
 	bool IsEntityHiddenByDarkness (idEntity* p_entity) const;
 
+	/**
+	 * greebo: Returns TRUE if the entity is within the "attack_cone".
+	 */
+	bool EntityInAttackCone(idEntity* entity);
+
+	/**
+	 * Returns TRUE or FALSE, depending on the distance to the 
+	 * given entity and the weapons attached to this AI.
+	 * Melee AI normally perform a distance check,
+	 * ranged AI should implement a more sophisticated check.
+	 *
+	 * @entityHeight: The height measured from the entity's origin
+	 *                this AI should try to attack.
+	 */
+	bool CanHitEntity(idActor* entity);
+
 
 	// movement control
 	void					StopMove( moveStatus_t status );
@@ -1043,7 +1183,24 @@ protected:
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
+
+	/**
+	 * greebo: This moves the entity to the given point.
+	 *
+	 * @returns: FALSE, if the position is not reachable (AI_DEST_UNREACHABLE && AI_MOVE_DONE == true)
+	 * @returns: TRUE, if the position is reachable and the AI is moving (AI_MOVE_DONE == false) 
+	 *                 OR the position is already reached (AI_MOVE_DONE == true).
+	 */
 	bool					MoveToPosition( const idVec3 &pos );
+
+	/**
+	 * angua: This looks for a suitable position for taking cover
+	 *
+	 * @returns: FALSE, if no suitable position is found
+	 * @returns: TRUE, if the position is reachable 
+	 * The position is stored in <hideGoal>.           
+	 */	
+	bool					LookForCover(aasGoal_t& hideGoal, idEntity *entity, const idVec3 &pos );
 	bool					MoveToCover( idEntity *entity, const idVec3 &pos );
 	bool					SlideToPosition( const idVec3 &pos, float time );
 	bool					WanderAround( void );
@@ -1066,13 +1223,54 @@ protected:
 	void					Turn( void );
 	bool					TurnToward( float yaw );
 	bool					TurnToward( const idVec3 &pos );
+	ID_INLINE float			GetCurrentYaw() { return current_yaw; }
+	ID_INLINE float			GetTurnRate() { return turnRate; }
+	ID_INLINE void			SetTurnRate(float newTurnRate) { turnRate = newTurnRate; }
 
 	// enemy management
 	void					ClearEnemy( void );
 	bool					EnemyPositionValid( void ) const;
-	void					SetEnemyPosition( void );
-	void					UpdateEnemyPosition( void );
-	void					SetEnemy( idActor *newEnemy );
+
+	/**
+	 * greebo: SetEnemyPos() tries to determine the enemy location and to setup a path
+	 *         to the enemy, depending on the AI's move type (FLY/WALK).
+	 *
+	 * If this method succeeds in setting up a path to the enemy, the following members are
+	 * set: lastVisibleReachableEnemyPos, lastVisibleReachableEnemyAreaNum, AI_DEST_UNREACHABLE
+	 * and the movecommands move.toAreaNum and move.dest are updated, but ONLY if the movecommand
+	 * is set to MOVE_TO_ENEMY beforehand.
+	 *
+	 * The AI_DEST_UNREACHABLE is updated if the movecommand is currently set to MOVE_TO_ENEMY. 
+	 * It is TRUE (enemy unreachable) in the following cases:
+	 * - Enemy is not on ground (OnLadder) for non-flying AI.
+	 * - The entity area number could not be determined.
+	 * - PathToGoal failed, no path to the enemy could be found.
+	 * 
+	 * Note: This overwrites a few lastVisibleReachableEnemyPos IN ANY CASE with the 
+	 * lastReachableEnemyPos, so this is kind of cheating if the enemy is not visible before calling this.
+	 * Also, lastVisibleEnemyPos is overwritten by the enemy's origin IN ANY CASE.
+	 *
+	 * Basically, this method relies on "lastReachableEnemyPos" being set beforehand.
+	 */
+	void					SetEnemyPosition();
+
+	/**
+	 * greebo: This is pretty similar to SetEnemyPosition, but not the same.
+	 *
+	 * First, this tries to locate the current enemy position (disregards visibility!) and
+	 * to set up a path to the entity's origin/floorposition. If this succeeds,
+	 * the "lastReachableEnemyPos" member is updated, but ONLY if the enemy is on ground.
+	 *
+	 * Second, if the enemy is visible or heard, SetEnemyPosition is called, which updates
+	 * the lastVisibleReachableEnemyPosition.
+	 */
+	void					UpdateEnemyPosition();
+
+	/**
+	 * greebo: Updates the enemy pointer and tries to set up a path to the enemy by
+	 *         using SetEnemyPosition(), but ONLY if the enemy has actually changed.
+	 */
+	void					SetEnemy(idActor *newEnemy);
 /**
 * DarkMod: Ishtvan note:
 * Before I added this, this code was only called in
@@ -1084,6 +1282,11 @@ protected:
 * calculation.
 **/
 	idActor * FindEnemy( bool useFOV ) ;
+
+	idActor* FindEnemyAI(bool useFOV);
+
+	idActor* FindFriendlyAI(int requiredTeam);
+
 
 /**
 * Similarly to FindEnemy, this was previously only an Event_ scripting
@@ -1118,10 +1321,10 @@ protected:
 
 	/**
 	* The point of this function is to determine the visual stimulus level caused
-	* by the players current lightgem value.
+	* by addition of the CVAR tdm_ai_sight_mag. The current alert level is taken 
+	* as reference value and the difference in logarithmic alert units is returned.
 	*/
-	float getPlayerVisualStimulusAmount(idEntity* p_playerEntity) const;
-
+	float GetPlayerVisualStimulusAmount() const;
 
 	// attacks
 	void					CreateProjectileClipModel( void ) const;
@@ -1149,20 +1352,35 @@ protected:
 	void					LinkScriptVariables( void );
 	void					UpdateAIScript( void );
 
+	// Returns true if the current enemy can be reached
+	bool					CanReachEnemy();
+
+	// Returns the current move status (MOVE_STATUS_MOVING, for instance).
+	moveStatus_t			GetMoveStatus() const;
+
 	/**
 	* Returns true if AI's mouth is underwater
 	**/
 	bool MouthIsUnderwater( void );
 
 	/**
-	* Checks for drowning, damages if drowning
+	* Checks for drowning, damages if drowning.
+	*
+	* greebo: Only enabled if the entity is able to drown and the 
+	* interleave timer is elapsed (is not checked each frame).
 	**/
-	void UpdateAir( void );
+	void					UpdateAir();
 
 	/**
 	* Halts lipsync
 	**/
 	void					StopLipSync();
+
+	/**
+	 * Plays and lipsyncs the given sound name, returns the duration in msecs.
+	 */
+	int						PlayAndLipSync(const char *soundName, const char *animName);
+
 	// Lip sync stuff
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
@@ -1173,12 +1391,6 @@ protected:
 	/** Call the script function SheathWeapon (in a new thread) if it exists */
 	void					SheathWeapon();
 	
-	// Tasks to push onto the queue when the AI dies or is KOed
-	idStr					m_killedTask;
-	int						m_killedTaskPriority;
-	idStr					m_knockedOutTask;
-	int						m_knockedOutTaskPriority;
-
 	//
 	// ai/ai_events.cpp
 	//
@@ -1339,6 +1551,14 @@ protected:
 	void					Event_CanReachEnemy( void );
 	void					Event_GetReachableEntityPosition( idEntity *ent );
 
+	// Script interface for state manipulation
+	void					Event_PushState(const char* state);
+	void					Event_QueueState(const char* state);
+	void					Event_SwitchState(const char* state);
+	void					Event_EndState();
+	void					Event_PushStateIfHigherPriority(const char* state, int priority);
+	void					Event_SwitchStateIfHigherPriority(const char* state, int priority);
+
 	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
 	void					Event_RegisterKilledTask( const char* taskName, int priority );
 	void					Event_RegisterKnockedOutTask(const char* taskName, int priority);
@@ -1430,6 +1650,11 @@ protected:
 	void Event_IssueCommunication_IR ( float messageType, float maxRadius, idEntity* intendedRecipientEntity, const idVec3& directObjectLocation);
 	void Event_IssueCommunication_DOE ( float messageType, float maxRadius, idEntity* directObjectEntity, const idVec3& directObjectLocation);
 	void Event_IssueCommunication ( float messageType, float maxRadius, const idVec3& directObjectLocation);
+
+	/**
+	 * greebo: Script event for processing a visual stim coming from the entity <stimSource>
+	 */
+	void Event_ProcessVisualStim(idEntity* stimSource);
 
 	/*!
 	* Spawns a new stone projectile that the AI can throw
