@@ -1082,6 +1082,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					FlyMove( void );
 	void					StaticMove( void );
 
+	// greebo: Overrides idActor::PlayFootStepSound()
+	virtual void			PlayFootStepSound();
+
 	// damage
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );

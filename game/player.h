@@ -358,6 +358,11 @@ public:
 	**/
 	void					SetHinderance( const char *source, float mCap, float aCap );
 
+	/**
+	 * greebo: Plays the footstep sound according to the current movement type.
+	 */
+	virtual void			PlayFootStepSound();
+
 	void					UpdateConditions( void );
 	void					SetViewAngles( const idAngles &angles );
 

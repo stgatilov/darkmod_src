@@ -395,11 +395,16 @@ protected:
 	**/
 	virtual bool TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow ) {return false;} ;
 
+	/**
+	 * greebo: Plays the footstep sound according to the current movement type.
+	 *         Note: AI and Player are overriding this method.
+	 */
+	virtual void PlayFootStepSound(); // empty default implementation
+
 private:
 	void					SyncAnimChannels( int channel, int syncToChannel, int blendFrames );
 	void					FinishSetup( void );
 	void					SetupHead( void );
-	void					PlayFootStepSound( void );
 
 	void					Event_EnableEyeFocus( void );
 	void					Event_DisableEyeFocus( void );
