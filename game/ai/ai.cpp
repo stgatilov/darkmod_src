@@ -1753,7 +1753,7 @@ void idAI::Think( void )
 
 	if( cv_ai_alertnum_show.GetBool() )
 	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertNum, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*32.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertNum, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 }
 
