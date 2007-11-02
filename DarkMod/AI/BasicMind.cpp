@@ -301,7 +301,7 @@ void BasicMind::SetAlertPos()
 	assert(owner);
 
 	// Create a shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// NOTE: If several alerts happen in the same frame,
 	// the priority is tactile, visual, then sound
@@ -593,7 +593,7 @@ bool BasicMind::PerformCombatCheck()
 	idAI* owner = _owner.GetEntity();
 	assert(owner);
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Check for an enemy, if this returns TRUE, we have an enemy
 	bool targetFound = SetTarget();
@@ -632,7 +632,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	assert(owner != NULL);
 
 	// Create a shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Test if alerted
 	if (owner->AI_ALERTED)

@@ -40,7 +40,7 @@ void TakeCoverState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	_positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();

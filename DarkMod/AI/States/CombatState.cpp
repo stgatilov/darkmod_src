@@ -43,7 +43,7 @@ void CombatState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
@@ -120,7 +120,7 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)

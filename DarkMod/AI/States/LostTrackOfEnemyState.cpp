@@ -38,7 +38,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Draw weapon, if we haven't already
 	owner->DrawWeapon();

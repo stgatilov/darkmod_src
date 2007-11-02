@@ -47,7 +47,7 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	// Get a shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);

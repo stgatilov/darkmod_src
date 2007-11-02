@@ -42,7 +42,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	owner->DrawWeapon();
 	
@@ -129,7 +129,7 @@ void UnreachableTargetState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void UnreachableTargetState::Think(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)

@@ -40,7 +40,7 @@ void SearchingState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
@@ -87,7 +87,7 @@ void SearchingState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void SearchingState::Think(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Do we have an ongoing hiding spot search?
 	if (!memory.hidingSpotSearchDone)
@@ -99,7 +99,7 @@ void SearchingState::Think(idAI* owner)
 
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	idVec3 minBounds(memory.alertPos - memory.alertSearchVolume);
 	idVec3 maxBounds(memory.alertPos + memory.alertSearchVolume);
@@ -137,7 +137,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 void SearchingState::PerformHidingSpotSearch(idAI* owner)
 {
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Increase the frame count
 	memory.hidingSpotThinkFrameCount++;
@@ -183,7 +183,7 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 
 int SearchingState::DetermineSearchDuration(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Determine how much time we should spend searching based on the alert times
 	int searchTimeSpan(0);

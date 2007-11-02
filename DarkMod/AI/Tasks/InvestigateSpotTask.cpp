@@ -32,7 +32,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	// Get a shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Stop previous moves
 	owner->StopMove(MOVE_STATUS_DONE);
@@ -62,7 +62,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	if (owner->AI_MOVE_DONE)
 	{
 		// Get a shortcut reference
-		Memory& memory = owner->GetMind()->GetMemory();
+		Memory& memory = owner->GetMemory();
 
 		if (owner->AI_DEST_UNREACHABLE)
 		{

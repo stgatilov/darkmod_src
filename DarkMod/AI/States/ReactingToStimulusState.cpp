@@ -37,7 +37,7 @@ void ReactingToStimulusState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Look to the alert position
 	owner->Event_LookAtPosition(memory.alertPos, 2.0f);

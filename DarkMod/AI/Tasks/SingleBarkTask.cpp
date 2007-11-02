@@ -46,7 +46,7 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 	owner->PlayAndLipSync(_soundName.c_str(), "talk1");
 
 	// Disable the patrol barking for now.
-	owner->GetMind()->GetMemory().lastPatrolChatTime = gameLocal.time;
+	owner->GetMemory().lastPatrolChatTime = gameLocal.time;
 
 	return true; // finished!
 }

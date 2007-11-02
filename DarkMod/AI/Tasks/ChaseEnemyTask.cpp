@@ -50,7 +50,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)

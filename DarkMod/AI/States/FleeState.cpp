@@ -40,7 +40,7 @@ void FleeState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = false;
 
 	owner->FaceEnemy();
@@ -81,7 +81,7 @@ void FleeState::Init(idAI* owner)
 void FleeState::Think(idAI* owner)
 {
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	if (memory.fleeingDone)
 	{

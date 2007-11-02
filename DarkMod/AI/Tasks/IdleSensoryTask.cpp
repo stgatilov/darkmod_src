@@ -42,9 +42,9 @@ void IdleSensoryTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	if (owner->GetMind()->GetMemory().lastRandomHeadTurnCheckTime == -1)
+	if (owner->GetMemory().lastRandomHeadTurnCheckTime == -1)
 	{
-		owner->GetMind()->GetMemory().lastRandomHeadTurnCheckTime = gameLocal.time;
+		owner->GetMemory().lastRandomHeadTurnCheckTime = gameLocal.time;
 	}
 }
 
@@ -74,7 +74,7 @@ void IdleSensoryTask::PerformRandomHeadTurnCheck()
 	// The time between random head turns is now affected by how many out of place things
 	// they have witnessed. In other words, they get more agitated and nervous and look around
 	// more if they have seen too many things out of place.
-	int timeMultiplier = owner->GetMind()->GetMemory().countEvidenceOfIntruders;
+	int timeMultiplier = owner->GetMemory().countEvidenceOfIntruders;
 
 	if (timeMultiplier > 5)
 	{
@@ -87,11 +87,11 @@ void IdleSensoryTask::PerformRandomHeadTurnCheck()
 
 	// Check if it is time to see if we should turn our head, don't go below 1 second
 	float nowTime = gameLocal.time;
-	if (((nowTime - owner->GetMind()->GetMemory().lastRandomHeadTurnCheckTime) * timeMultiplier) < 1000)
+	if (((nowTime - owner->GetMemory().lastRandomHeadTurnCheckTime) * timeMultiplier) < 1000)
 	{
 		return;
 	}
-	owner->GetMind()->GetMemory().lastRandomHeadTurnCheckTime = nowTime;
+	owner->GetMemory().lastRandomHeadTurnCheckTime = nowTime;
 
 	// Chance to turn head
 	float chance = owner->AI_chancePerSecond_RandomLookAroundWhileIdle;

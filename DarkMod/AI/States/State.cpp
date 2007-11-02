@@ -199,7 +199,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	// Memory shortcut
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
@@ -257,7 +257,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	bool ignoreStimulusFromNowOn = true;
 	
@@ -437,7 +437,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 	assert(person != NULL && owner != NULL); // must be fulfilled
 	
 	// Memory shortcut
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	if (owner->IsEnemy(person))
 	{
@@ -517,7 +517,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 	assert(person != NULL && owner != NULL); // must be fulfilled
 
 	// Memory shortcut
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	gameLocal.Printf("I see unconscious people!\n");
 
@@ -592,7 +592,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Ignore from now on
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
@@ -638,7 +638,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	idLight* light = dynamic_cast<idLight*>(stimSource);
 
@@ -736,7 +736,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
@@ -791,7 +791,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Is it supposed to be closed?
 	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
@@ -860,7 +860,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 		DM_LOG(LC_AI, LT_INFO).LogString("Got incoming message from %s\r", issuingEntity->name.c_str());
 	}
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	switch (commType)
 	{
@@ -1153,7 +1153,7 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	gameLocal.Printf("Somebody else noticed something suspicious...\n");
 

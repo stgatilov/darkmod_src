@@ -34,7 +34,7 @@ void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get the repeat interval in seconds, convert to ms
 	_barkRepeatInterval = SEC2MS(owner->spawnArgs.GetFloat("bark_repeat_patrol", "45"));
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// If the last chat time is not yet set, initialise it to play the sound now
 	if (memory.lastPatrolChatTime == -1)
@@ -55,7 +55,7 @@ bool IdleBarkTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	if (gameLocal.time - memory.lastPatrolChatTime > _barkRepeatInterval)
 	{

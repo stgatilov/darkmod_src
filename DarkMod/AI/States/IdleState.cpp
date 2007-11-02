@@ -89,15 +89,15 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	{
 		soundName = "snd_relaxed";
 	}
-	else if (owner->GetMind()->GetMemory().enemiesHaveBeenSeen)
+	else if (owner->GetMemory().enemiesHaveBeenSeen)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
 	}
-	else if (owner->GetMind()->GetMemory().itemsHaveBeenStolen)
+	else if (owner->GetMemory().itemsHaveBeenStolen)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
 	}
-	else if (owner->GetMind()->GetMemory().countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
+	else if (owner->GetMemory().countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
 	{
 		soundName = "snd_alertdown0SeenEvidence";
 	}

@@ -572,6 +572,11 @@ public:
 		return mind;
 	}
 
+	ID_INLINE ai::Memory& GetMemory()
+	{
+		return mind->GetMemory();
+	}
+
 protected:
 	// navigation
 	idAAS *					aas;

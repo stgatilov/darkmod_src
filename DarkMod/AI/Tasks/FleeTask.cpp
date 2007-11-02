@@ -35,7 +35,7 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = false;
 	
 	int _escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
@@ -55,7 +55,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 
 	assert(owner != NULL);
 	
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	if (_escapeSearchLevel == 1 && owner->AI_DEST_UNREACHABLE)
 	{

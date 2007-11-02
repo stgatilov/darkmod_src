@@ -43,7 +43,7 @@ void FleeDoneState::Init(idAI* owner)
 	assert(owner);
 
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// greebo: At this point we should be at a presumably safe place, 
 	// start looking for allies
@@ -64,7 +64,7 @@ void FleeDoneState::Init(idAI* owner)
 void FleeDoneState::Think(idAI* owner)
 {
 	// Shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	if (!_searchForFriendDone)
 	{

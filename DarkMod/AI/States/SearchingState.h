@@ -12,6 +12,23 @@
 
 #include "State.h"
 
+/**
+* greebo: A SearchingState is handling the AI's search routines.
+* 
+* The routine needs "memory.alertPos" to be set as prerequisite.
+*
+* The boolean variable "memory.stimulusLocationItselfShouldBeSearched" can be used
+* to let the AI the "memory.alertPos" position as first hiding spot.
+* If the boolean is not set to TRUE, the hiding spot search is based around memory.alertPos.
+*
+* The actual hiding spot search algorithm is called over multiple
+* frames. Once finished, the AI can use its results (unless the 
+* stimulusLocationItselfShouldBeSearched bool is set to TRUE, then alertPos is used as
+* first hiding spot right away.
+*
+* For each hiding spot, an InvestigateSpotTask is invoked which takes care of the details.
+*/
+
 namespace ai
 {
 

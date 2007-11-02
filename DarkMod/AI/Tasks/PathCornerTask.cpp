@@ -86,7 +86,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			}
 
 			// Store the new path entity into the AI's mind
-			owner->GetMind()->GetMemory().currentPath = next;
+			owner->GetMemory().currentPath = next;
 
 			return true; // finish this task
 		}

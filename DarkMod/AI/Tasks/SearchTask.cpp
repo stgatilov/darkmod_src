@@ -33,7 +33,7 @@ void SearchTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	owner->GetMind()->GetMemory().hidingSpotInvestigationInProgress = false;
+	owner->GetMemory().hidingSpotInvestigationInProgress = false;
 }
 
 bool SearchTask::Perform(Subsystem& subsystem)
@@ -46,7 +46,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	// Get a shortcut reference
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
@@ -101,7 +101,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 
 bool SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
 {
-	Memory& memory = owner->GetMind()->GetMemory();
+	Memory& memory = owner->GetMemory();
 
 	int numSpots = owner->m_hidingSpots.getNumSpots();
 	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);

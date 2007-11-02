@@ -43,7 +43,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (owner->spawnArgs.GetBool("patrol", "1")) 
 	{
-		idPathCorner* path = owner->GetMind()->GetMemory().currentPath.GetEntity();
+		idPathCorner* path = owner->GetMemory().currentPath.GetEntity();
 
 		// Check if we already have a path entity
 		if (path == NULL)
@@ -64,7 +64,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		}
 
 		// Store the path entity back into the mind, it might have changed
-		owner->GetMind()->GetMemory().currentPath = path;
+		owner->GetMemory().currentPath = path;
 
 	}
 }
