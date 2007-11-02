@@ -5187,7 +5187,7 @@ void idAI::UpdateEnemyPosition()
 	if (CanSee(enemyEnt, false))
 	{
 		// greebo: A trace to the enemy is possible (no FOV check!) and the entity is not hidden in darkness
-		gameRenderWorld->DebugArrow(colorGreen, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+		//gameRenderWorld->DebugArrow(colorGreen, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
 
 		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
@@ -5207,7 +5207,7 @@ void idAI::UpdateEnemyPosition()
 	else
 	{
 		// Enemy can't be seen (obscured or hidden in darkness)
-		gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
+		//gameRenderWorld->DebugArrow(colorRed, GetEyePosition(), GetEyePosition() + idVec3(0,0,10), 2, 100);
 
 		// check if we heard any sounds in the last frame
 		if (enemyEnt == gameLocal.GetAlertEntity())
