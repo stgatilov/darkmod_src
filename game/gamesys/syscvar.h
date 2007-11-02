@@ -98,6 +98,11 @@ extern idCVar cv_drag_damping;
 extern idCVar cv_drag_damping_AF;
 extern idCVar cv_drag_AF_ground_timer;
 extern idCVar cv_drag_AF_free;
+extern idCVar cv_drag_jump_masslimit;
+extern idCVar cv_drag_encumber_minmass;
+extern idCVar cv_drag_encumber_minmass;
+extern idCVar cv_drag_encumber_maxmass;
+extern idCVar cv_drag_encumber_max;
 
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
