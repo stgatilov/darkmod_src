@@ -88,6 +88,12 @@ bool RandomTurningTask::Perform(Subsystem& subsystem)
 	return false;
 }
 
+void RandomTurningTask::OnFinish(idAI* owner)
+{
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+}
+
 
 // Save/Restore methods
 void RandomTurningTask::Save(idSaveGame* savefile) const

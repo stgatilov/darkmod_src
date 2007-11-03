@@ -30,14 +30,16 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
 	Task::Init(owner, subsystem);
+	_fleeStartFrame = gameLocal.framenum;
 
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
 	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = false;
-	owner->StopMove(MOVE_STATUS_DONE);
 	owner->AI_MOVE_DONE = false;
+	owner->AI_RUN = true;
+	_oldPosition = owner->GetPhysics()->GetOrigin();
 	
 	_escapeSearchLevel = 3; // 3 means FIND_FRIENDLY_GUARDED
 	 _distOpt = DIST_NEAREST;
@@ -52,6 +54,8 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 	Memory& memory = owner->GetMemory();
 	idActor* enemy = _enemy.GetEntity();
+	assert(enemy != NULL);
+
 
 	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
 		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
@@ -84,13 +88,26 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	}
 
 	
-	if (owner->GetMoveStatus() != MOVE_STATUS_MOVING)
+	if (owner->GetMoveStatus() == MOVE_STATUS_MOVING)
 	{
+		if (gameLocal.framenum > _fleeStartFrame && gameLocal.framenum % 5 == 0)
+		{
+			idVec3 newPosition = owner->GetPhysics()->GetOrigin();
+			if (newPosition == _oldPosition)
+			{
+			//	owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+			}
+		}
+	}
+	else
+	{
+		owner->AI_RUN = true;
 		if (_escapeSearchLevel >= 3)
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
 			// Flee to the nearest friendly guarded escape point
 			owner->Flee(enemy, FIND_FRIENDLY_GUARDED, _distOpt);
+			_fleeStartFrame = gameLocal.framenum;
 		}
 
 		else if (_escapeSearchLevel == 2)
@@ -126,6 +143,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			}
 		}
 	}
+	
 
 	if (owner->AI_DEST_UNREACHABLE && _escapeSearchLevel > 1)
 	{
@@ -141,6 +159,8 @@ void FleeTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(_escapeSearchLevel);
 	savefile->WriteInt(_failureCount);
+	savefile->WriteVec3(_oldPosition);
+	savefile->WriteInt(_fleeStartFrame);
 
 	savefile->WriteInt(static_cast<int>(_distOpt));
 
@@ -153,6 +173,8 @@ void FleeTask::Restore(idRestoreGame* savefile)
 
 	savefile->ReadInt(_escapeSearchLevel);
 	savefile->ReadInt(_failureCount);
+	savefile->ReadVec3(_oldPosition);
+	savefile->ReadInt(_fleeStartFrame);
 
 	int distOptInt;
 	savefile->ReadInt(distOptInt);

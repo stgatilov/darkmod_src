@@ -59,6 +59,8 @@ void CombatState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 
 	// greebo: Check for weapons and flee if we are unarmed.
@@ -106,7 +108,6 @@ void CombatState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
 	barkTask->SetSound("snd_combat");
@@ -114,7 +115,6 @@ void CombatState::Init(idAI* owner)
 
 
 	// For now, we assume a melee combat (TODO: Ranged combat decision)
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 }
 

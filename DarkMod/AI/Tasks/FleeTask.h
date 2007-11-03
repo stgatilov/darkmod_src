@@ -28,6 +28,8 @@ class FleeTask :
 	idEntityPtr<idActor> _enemy;
 	int _escapeSearchLevel;
 	int _failureCount;
+	idVec3 _oldPosition;
+	int _fleeStartFrame;
 	EscapeDistanceOption _distOpt;
 
 public:

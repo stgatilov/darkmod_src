@@ -2508,10 +2508,22 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 		moveAreaNum = goal.areaNum;
 	}
 
+	StopMove(MOVE_STATUS_DONE);
+	MoveToPosition(moveDest);
+	return true;
+/*
 	if ( ReachedPos( moveDest, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
 		return true;
 	}
+	
+	if ( !move.toAreaNum && !NewWanderDir( moveDest ) ) 
+	{
+		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+		AI_DEST_UNREACHABLE = true;
+		return false;
+	}
+*/
 
 	move.moveDest		= moveDest;
 	move.toAreaNum		= moveAreaNum;

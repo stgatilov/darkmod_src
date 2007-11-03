@@ -55,9 +55,8 @@ void FleeState::Init(idAI* owner)
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should wait half a second before starting to run
-	owner->AI_RUN = true;
-	owner->AI_FORWARD = true;
-
+	owner->StopMove(MOVE_STATUS_DONE);
+	owner->FaceEnemy();
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(500)));
 	owner->GetSubsystem(SubsysMovement)->QueueTask(FleeTask::CreateInstance());
@@ -65,6 +64,7 @@ void FleeState::Init(idAI* owner)
 	// The communication system cries for help
 	owner->StopSound(SND_CHANNEL_VOICE, false);
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));
 	// Placeholder, replace with "snd_flee" when available
 	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new RepeatedBarkTask("snd_combat", 4000,8000)));
 
