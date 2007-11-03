@@ -205,7 +205,7 @@ int SearchingState::DetermineSearchDuration(idAI* owner)
 
 	// Randomize duration by up to 20% increase
 	memory.currentHidingSpotListSearchMaxDuration = 
-		SEC2MS(searchTimeSpan + (searchTimeSpan * gameLocal.random.RandomFloat()*0.2f));
+		SEC2MS(searchTimeSpan * (1 + gameLocal.random.RandomFloat()*0.2f));
 
 	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d msec\r", memory.currentHidingSpotListSearchMaxDuration);
 	
