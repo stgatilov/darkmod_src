@@ -771,13 +771,24 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	}
 	else 
 	{
-		if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
+		
+		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
 			InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
 			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
-		} else {
+		} else {*/
+
+		// greebo: For underwater effects, use the Doom3 Doubleview
+		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+		{
+			DoubleVision(hud, view, 1);
+		}
+		else
+		{
 			SingleView( hud, view );
 		}
+
+		//}
 		ScreenFade();
 	}
 	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
