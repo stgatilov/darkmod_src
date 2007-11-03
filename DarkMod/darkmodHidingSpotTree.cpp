@@ -35,8 +35,8 @@ CDarkmodHidingSpotTree::CDarkmodHidingSpotTree()
 	p_lastArea = NULL;
 
 	lastIndex_indexRetrieval = 0;
-	lastAreaHandle_indexRetrieval = NULL;
-	lastSpotHandle_indexRetrieval = NULL;
+	lastAreaHandle_indexRetrieval = 0;
+	lastSpotHandle_indexRetrieval = 0;
 
 	maxAreaNodeId = 0;
 	maxSpotNodeId = 0;
@@ -360,8 +360,8 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getArea
 void CDarkmodHidingSpotTree::clearIndexRetrievalTracking()
 {
 	lastIndex_indexRetrieval = 0;
-	lastAreaHandle_indexRetrieval = NULL;
-	lastSpotHandle_indexRetrieval = NULL;
+	lastAreaHandle_indexRetrieval = 0;
+	lastSpotHandle_indexRetrieval = 0;
 
 }
 
@@ -1125,8 +1125,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 			p_areaCursor = p_areaCursor->p_nextSibling;
 			if (p_areaCursor == NULL)
 			{
-				lastAreaHandle_indexRetrieval = NULL;
-				lastSpotHandle_indexRetrieval = NULL;
+				lastAreaHandle_indexRetrieval = 0;
+				lastSpotHandle_indexRetrieval = 0;
 				lastIndex_indexRetrieval = 0;
 				return NULL;
 			}
@@ -1162,8 +1162,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 	}
 
 	// Index requested is out of bounds
-	lastAreaHandle_indexRetrieval = NULL;
-	lastSpotHandle_indexRetrieval = NULL;
+	lastAreaHandle_indexRetrieval = 0;
+	lastSpotHandle_indexRetrieval = 0;
 	lastIndex_indexRetrieval = 0;
 	return NULL;
 
@@ -1249,8 +1249,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 			p_areaCursor = p_areaCursor->p_nextSibling;
 			if (p_areaCursor == NULL)
 			{
-				lastAreaHandle_indexRetrieval = NULL;
-				lastSpotHandle_indexRetrieval = NULL;
+				lastAreaHandle_indexRetrieval = 0;
+				lastSpotHandle_indexRetrieval = 0;
 				lastIndex_indexRetrieval = 0;
 				out_areaNodeBounds.Clear();
 				return NULL;
@@ -1288,8 +1288,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	}
 
 	// Index requested is out of bounds
-	lastAreaHandle_indexRetrieval = NULL;
-	lastSpotHandle_indexRetrieval = NULL;
+	lastAreaHandle_indexRetrieval = 0;
+	lastSpotHandle_indexRetrieval = 0;
 	lastIndex_indexRetrieval = 0;
 	out_areaNodeBounds.Clear();
 	return NULL;

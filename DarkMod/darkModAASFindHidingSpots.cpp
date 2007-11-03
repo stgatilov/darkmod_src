@@ -46,7 +46,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots()
 
 	// Start empty
 	h_hideFromPVS.i = -1;
-	h_hideFromPVS.h = NULL;
+	h_hideFromPVS.h = 0;
 
 	// Remember the hide form position
 	hideFromPosition = vec3_origin;
@@ -89,7 +89,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 
 	// Start empty
 	h_hideFromPVS.i = -1;
-	h_hideFromPVS.h = NULL;
+	h_hideFromPVS.h = 0;
 
 	// Remember the hide form position
 	hideFromPosition = hideFromPos;
@@ -146,7 +146,7 @@ bool darkModAASFindHidingSpots::initialize
 	if ((h_hideFromPVS.h != NULL) || (h_hideFromPVS.i != -1))
 	{
 		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
-		h_hideFromPVS.h = NULL;
+		h_hideFromPVS.h = 0;
 		h_hideFromPVS.i = -1;
 	}
 
@@ -200,7 +200,7 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 	if ((h_hideFromPVS.h != NULL) || (h_hideFromPVS.i != -1))
 	{
 		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
-		h_hideFromPVS.h = NULL;
+		h_hideFromPVS.h = 0;
 		h_hideFromPVS.i = -1;
 	}
 }
@@ -336,7 +336,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 	idVec3	areaCenter;
 
 	// Make sure search wasn't destroyed
-	if ((h_hideFromPVS.h == NULL) && (h_hideFromPVS.i == -1))
+	if ((h_hideFromPVS.h == 0) && (h_hideFromPVS.i == -1))
 	{
 		// Search was destroyed, there are no more hiding spots
 		return false;
@@ -1167,7 +1167,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 bool darkModAASFindHidingSpots::isSearchCompleted()
 {
 	// Make sure search wasn't destroyed
-	if ((h_hideFromPVS.h == NULL) && (h_hideFromPVS.i == -1))
+	if ((h_hideFromPVS.h == 0) && (h_hideFromPVS.i == -1))
 	{
 		// Search was destroyed, search is done
 		return true;
