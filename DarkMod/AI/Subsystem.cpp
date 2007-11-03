@@ -46,7 +46,7 @@ bool Subsystem::IsEnabled() const
 
 idStr Subsystem::GetDebugInfo()
 {
-	return (_enabled) ? GetCurrentTaskName() : "";
+	return (_enabled) ? GetCurrentTaskName() + " (" + idStr(_taskQueue.size()) + ")" : "";
 }
 
 idStr Subsystem::GetCurrentTaskName() const
