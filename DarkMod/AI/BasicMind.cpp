@@ -530,13 +530,12 @@ bool BasicMind::SetTarget()
 		**/
 		if (IsEnemy(target, owner))
 		{
-			owner->SetEnemy(target);
-			
 			DM_LOG(LC_AI, LT_INFO).LogString("Set tactile alert enemy to entity %s\r", target->name.c_str());
 
 			// set the bool back
 			owner->AI_TACTALERT = false;
-			return true;
+			// Return TRUE if the enemy is valid
+			return owner->SetEnemy(target);
 		}
 		else
 		{
@@ -554,8 +553,8 @@ bool BasicMind::SetTarget()
 
 		if (target != NULL)
 		{
-			owner->SetEnemy(target);
-			return true;
+			// Try to set the enemy, returns TRUE if valid
+			return owner->SetEnemy(target);
 		}
 		else
 		{
@@ -563,8 +562,8 @@ bool BasicMind::SetTarget()
 
 			if (target != NULL)
 			{
-				owner->SetEnemy(target);
-				return true;
+				// Try to set the enemy, returns TRUE if valid
+				return owner->SetEnemy(target);;
 			}
 		}
 		

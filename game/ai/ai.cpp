@@ -5253,16 +5253,14 @@ void idAI::UpdateEnemyPosition()
 idAI::SetEnemy
 =====================
 */
-void idAI::SetEnemy(idActor* newEnemy)
+bool idAI::SetEnemy(idActor* newEnemy)
 {
 	// Don't continue if we're dead or knocked out
 	if (newEnemy == NULL || AI_DEAD || AI_KNOCKEDOUT)
 	{
 		ClearEnemy();
-		return;
+		return false; // not a valid enemy
 	}
-
-	AI_ENEMY_DEAD = false;
 
 	// greebo: Check if the new enemy is different
 	if (enemy.GetEntity() != newEnemy)
@@ -5275,7 +5273,7 @@ void idAI::SetEnemy(idActor* newEnemy)
 		if (newEnemy->health <= 0)
 		{
 			EnemyDead();
-			return;
+			return false; // not a valid enemy
 		}
 
 		int enemyAreaNum(-1);
@@ -5304,6 +5302,14 @@ void idAI::SetEnemy(idActor* newEnemy)
 			aas->PushPointIntoAreaNum( enemyAreaNum, lastReachableEnemyPos );
 			lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 		}
+
+		return true; // valid enemy
+	}
+	else
+	{
+		// greebo: update the ENEMY_DEAD status
+		AI_ENEMY_DEAD = (newEnemy->health <= 0); 
+		return true; // still a valid enemy
 	}
 }
 

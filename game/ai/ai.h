@@ -1277,8 +1277,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/**
 	 * greebo: Updates the enemy pointer and tries to set up a path to the enemy by
 	 *         using SetEnemyPosition(), but ONLY if the enemy has actually changed.
+	 *
+	 * AI_ENEMY_DEAD is updated at any rate.
+	 *
+	 * @returns: TRUE if the enemy has been set and is non-NULL, FALSE if the enemy
+	 *           is dead or has been cleared by anything else.
 	 */
-	void					SetEnemy(idActor *newEnemy);
+	bool					SetEnemy(idActor *newEnemy);
 /**
 * DarkMod: Ishtvan note:
 * Before I added this, this code was only called in
