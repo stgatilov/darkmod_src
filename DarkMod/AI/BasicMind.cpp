@@ -534,6 +534,8 @@ bool BasicMind::SetTarget()
 
 			// set the bool back
 			owner->AI_TACTALERT = false;
+			owner->GetMemory().lastTimeEnemySeen = gameLocal.time;
+
 			// Return TRUE if the enemy is valid
 			return owner->SetEnemy(target);
 		}
@@ -563,7 +565,7 @@ bool BasicMind::SetTarget()
 			if (target != NULL)
 			{
 				// Try to set the enemy, returns TRUE if valid
-				return owner->SetEnemy(target);;
+				return owner->SetEnemy(target);
 			}
 		}
 		

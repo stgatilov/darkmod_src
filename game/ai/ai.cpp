@@ -5303,6 +5303,8 @@ bool idAI::SetEnemy(idActor* newEnemy)
 			lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 		}
 
+		GetMemory().lastTimeEnemySeen = gameLocal.time;
+
 		return true; // valid enemy
 	}
 	else

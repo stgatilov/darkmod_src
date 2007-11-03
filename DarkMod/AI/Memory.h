@@ -196,6 +196,7 @@ public:
 		alertState(ERelaxed),
 		lastPatrolChatTime(-1),
 		lastTimeFriendlyAISeen(-1000),
+		lastTimeEnemySeen(-1),
 		lastTimeVisualStimBark(-1),
 		countEvidenceOfIntruders(0),
 		lastRandomHeadTurnCheckTime(-1),
@@ -234,6 +235,7 @@ public:
 		savefile->WriteInt(countEvidenceOfIntruders);
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 		savefile->WriteInt(lastTimeFriendlyAISeen);
+		savefile->WriteInt(lastTimeEnemySeen);
 		savefile->WriteInt(lastTimeVisualStimBark);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
@@ -272,6 +274,7 @@ public:
 		savefile->ReadInt(countEvidenceOfIntruders);
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 		savefile->ReadInt(lastTimeFriendlyAISeen);
+		savefile->ReadInt(lastTimeEnemySeen);
 		savefile->ReadInt(lastTimeVisualStimBark);
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
