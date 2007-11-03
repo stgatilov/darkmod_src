@@ -444,7 +444,7 @@ idAngles idPlayerView::AngleOffset() const {
 idPlayerView::SingleView
 ==================
 */
-void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) {
+void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, bool drawHUD ) {
 
 	// normal rendering
 	if ( !view ) {
@@ -532,7 +532,10 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view ) 
 				renderSystem->DrawStretchPic( blob->x, blob->y, blob->w, blob->h,blob->s1, blob->t1, blob->s2, blob->t2, blob->material );
 			}
 		}
-		player->DrawHUD( hud );
+		if (drawHUD)
+		{
+			player->DrawHUD( hud );
+		}
 
 		//PrintMessage( 100, 20, strText, idVec4( 1, 1, 1, 1 ), font_an );
 		//PrintMessage( 100, 120, strText, idVec4( 1, 1, 1, 1 ), font_bank );
@@ -617,8 +620,11 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	shift = fabs( shift );
 
 	// if double vision, render to a texture
-	renderSystem->CropRenderSize( 512, 256, true );
-	SingleView( hud, view );
+	renderSystem->CropRenderSize( SCREEN_WIDTH, SCREEN_HEIGHT, true );
+
+	// greebo: Draw the single view, but skip the HUD, this is done later
+	SingleView( hud, view, false ); 
+
 	renderSystem->CaptureRenderToImage( "_scratch" );
 	renderSystem->UnCrop();
 
@@ -633,6 +639,8 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, shift, 1, 1, 0, dvMaterial );
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, 0, dvMaterial );
+
+	player->DrawHUD(hud);
 }
 
 /*
@@ -781,7 +789,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		// greebo: For underwater effects, use the Doom3 Doubleview
 		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
 		{
-			DoubleVision(hud, view, 1);
+			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
 		}
 		else
 		{

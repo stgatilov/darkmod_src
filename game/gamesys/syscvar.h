@@ -112,6 +112,7 @@ extern idCVar cv_throw_time;
 extern idCVar cv_tdm_rope_pull_force_factor;
 
 extern idCVar cv_tdm_hud_opacity;
+extern idCVar cv_tdm_underwater_blur;
 
 extern idCVar cv_tdm_inv_loot_group;
 extern idCVar cv_tdm_inv_grouping;
