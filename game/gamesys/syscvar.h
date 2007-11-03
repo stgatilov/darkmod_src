@@ -368,6 +368,7 @@ extern idCVar	g_testParticle;
 extern idCVar	g_testParticleName;
 
 extern idCVar	g_testPostProcess;
+extern idCVar	g_rotoscope;
 
 extern idCVar	g_testModelRotate;
 extern idCVar	g_testModelAnimate;

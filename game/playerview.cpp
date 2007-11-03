@@ -587,6 +587,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		
 	}
 
+	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg)
+	if ( g_rotoscope.GetBool() ) {
+		const idMaterial *mtr = declManager->FindMaterial( "textures/postprocess/rotoedge", false );
+		if ( !mtr ) {
+			common->Printf( "Rotoscope material not found.\n" );
+		} else {
+			renderSystem->CaptureRenderToImage( "_currentRender" );
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr );
+		}
+	}
+
 	// test a single material drawn over everything
 	if ( g_testPostProcess.GetString()[0] ) {
 		const idMaterial *mtr = declManager->FindMaterial( g_testPostProcess.GetString(), false );
