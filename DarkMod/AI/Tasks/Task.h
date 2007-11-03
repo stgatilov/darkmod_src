@@ -47,6 +47,17 @@ public:
 		_owner = owner;
 	}
 
+	/**
+	 * greebo: OnFinish gets called when the Task is regularly (by returning true)
+	 *         or forcedly (by being removed from the queue / cleartasks / etc.)
+	 *         This gives the task the opportunity to react/cleanup.
+	 *
+	 * Note: OnFinish MUST NOT alter the Subsystem, only perform cleanup taks
+	 *       affecting the Task itself or the owning AI.
+	 */
+	virtual void OnFinish(idAI* owner)
+	{} // empty default implementation
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const
 	{

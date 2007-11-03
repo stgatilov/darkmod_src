@@ -121,13 +121,17 @@ bool Subsystem::FinishTask()
 {
 	if (!_taskQueue.empty())
 	{
+		idAI* owner = _owner.GetEntity();
+
 		// Move the task pointer from the queue to the recyclebin
 		_recycleBin = _taskQueue.front();
 		_taskQueue.pop_front();
 
+		// Call the OnFinish event of the task
+		_recycleBin->OnFinish(owner);
+
 		// Issue the "TaskFinished" signal to the MindState
-		MindPtr mind = _owner.GetEntity()->GetMind();
-		mind->GetState()->OnSubsystemTaskFinished(_id);
+		owner->GetMind()->GetState()->OnSubsystemTaskFinished(_id);
 	}
 
 	if (_taskQueue.empty())
@@ -153,6 +157,9 @@ void Subsystem::SwitchTask(const TaskPtr& newTask)
 		// Move the previous front task to the bin
 		_recycleBin = _taskQueue.front();
 		_taskQueue.pop_front();
+
+		// Call the OnFinish event of the task
+		_recycleBin->OnFinish(_owner.GetEntity());
 	}
 
 	// Add the new task to the front
@@ -185,6 +192,9 @@ void Subsystem::ClearTasks()
 	{
 		// Move the TaskPtr from the queue into the bin
 		_recycleBin = _taskQueue.front();
+
+		// Call the OnFinish event of the task
+		_recycleBin->OnFinish(_owner.GetEntity());
 
 		// Remove ALL tasks
 		_taskQueue.clear();
