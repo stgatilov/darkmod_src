@@ -41,7 +41,7 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 // greebo: TDM Event: Try to find a visible AI of the given team
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
-const idEventDef AI_ProcessVisualStim("processVisualStim", "e", NULL);
+const idEventDef AI_ProcessVisualStim("processVisualStim", "e", 0);
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
