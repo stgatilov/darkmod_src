@@ -5932,14 +5932,14 @@ void idPlayer::Think( void )
 		centerView.Init( gameLocal.time, 200, viewAngles.pitch, 0 );
 	}
 
-	// zooming
-	if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
+	// zooming (greebo: Disabled this due to interference with the spyglass, isn't needed anymore)
+	/*if ( ( usercmd.buttons ^ oldCmd.buttons ) & BUTTON_ZOOM ) {
 		if ( ( usercmd.buttons & BUTTON_ZOOM ) && weapon.GetEntity() ) {
 			zoomFov.Init( gameLocal.time, 200.0f, CalcFov( false ), weapon.GetEntity()->GetZoomFov() );
 		} else {
 			zoomFov.Init( gameLocal.time, 200.0f, zoomFov.GetCurrentValue( gameLocal.time ), DefaultFov() );
 		}
-	}
+	}*/
 
 	// if we have an active gui, we will unrotate the view angles as
 	// we turn the mouse movements into gui events
