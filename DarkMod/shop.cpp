@@ -209,10 +209,10 @@ void CShop::LoadFromInventory(idPlayer *player) {
 			{
 				idEntity * itemEntity = it->GetItemEntity();
 				const char * name = itemEntity->spawnArgs.GetString("classname");
-				CShopItem * shopItem = FindByID(&itemDefs, itemEntity->spawnArgs.GetString("classname"));
+				CShopItem * shopItem = FindByID(&itemDefs, name);
 				if (shopItem != NULL)
 				{
-					CShopItem * item = new CShopItem(shopItem, count, true);
+					CShopItem * item = new CShopItem(shopItem, count, 0, true);
 					startingItems.Append(item);
 				}
 			}
