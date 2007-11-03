@@ -22,8 +22,8 @@ namespace ai
 
 Subsystem::Subsystem(SubsystemId subsystemId, idAI* owner) :
 	_id(subsystemId),
-	_enabled(false),
-	_initTask(false)
+	_initTask(false),
+	_enabled(false)
 {
 	assert(owner != NULL);
 	_owner = owner;

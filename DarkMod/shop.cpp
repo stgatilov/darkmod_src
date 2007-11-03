@@ -25,7 +25,7 @@ CShopItem::CShopItem(CShopItem* item, int count, int cost, bool persistent) {
 	this->cost = cost == 0 ? item->cost : cost;
 	this->image = item->image;
 	this->count = count;
-	this->persistent = persistent == NULL ? item->persistent : persistent;
+	this->persistent = persistent == 0 ? item->persistent : persistent;
 	this->entity = item->entity;
 	this->canDrop = item->canDrop;
 };

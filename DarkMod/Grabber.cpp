@@ -30,7 +30,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 ===============================================================================
 */
 
-const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, NULL );
+const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, 0 );
 
 // TODO: Make most of these cvars
 
@@ -456,11 +456,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	{
 		FrobEnt = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 		if( !FrobEnt )
-#ifdef __linux__
 			return;
-#else
-			goto Quit;
-#endif
 
 		newEnt = FrobEnt;
 
@@ -518,11 +514,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// ent but was found to be invalid.
 
 	if ( !newEnt ) 
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	
 // Set up the distance and orientation and stuff
 
@@ -539,11 +531,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	} else 
 	{
 		// don't drag it if its clipmodel is not a trace model
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	}
 	COMWorld = phys->GetOrigin( m_id ) + COM * phys->GetAxis( m_id );
 
@@ -594,7 +582,6 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_drag.LimitForce( cv_drag_limit_force.GetBool() );
 	m_drag.ApplyDamping( true );
 
-Quit:
 	return;
 }
 
