@@ -81,6 +81,13 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 	}
 }
 
+
+void MeleeCombatTask::OnFinish(idAI* owner)
+{
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
+}
+
+
 void MeleeCombatTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);

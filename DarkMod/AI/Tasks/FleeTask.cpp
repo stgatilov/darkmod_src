@@ -72,35 +72,23 @@ bool FleeTask::Perform(Subsystem& subsystem)
 				_distOpt = DIST_FARTHEST;
 				_escapeSearchLevel = 3;
 			}
-			else
+			else if (_escapeSearchLevel > 1)
 			{
-				if (_escapeSearchLevel > 1)
-				{
-					_escapeSearchLevel --;
-				}
+				_escapeSearchLevel --;
 			}
 		}
 		else
 		{
 			memory.fleeingDone = true;
+			// Turn around to look back to where we came from
+			owner->TurnToward(owner->GetCurrentYaw() + 180);
 			return true;
 		}
 	}
-
 	
-	if (owner->GetMoveStatus() == MOVE_STATUS_MOVING)
+	if (owner->GetMoveStatus() != MOVE_STATUS_MOVING)
 	{
-		if (gameLocal.framenum > _fleeStartFrame && gameLocal.framenum % 5 == 0)
-		{
-			idVec3 newPosition = owner->GetPhysics()->GetOrigin();
-			if (newPosition == _oldPosition)
-			{
-			//	owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			}
-		}
-	}
-	else
-	{
+		// If the AI is not running yet, start fleeing
 		owner->AI_RUN = true;
 		if (_escapeSearchLevel >= 3)
 		{
@@ -109,7 +97,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			owner->Flee(enemy, FIND_FRIENDLY_GUARDED, _distOpt);
 			_fleeStartFrame = gameLocal.framenum;
 		}
-
 		else if (_escapeSearchLevel == 2)
 		{
 			// Try to find another escape route

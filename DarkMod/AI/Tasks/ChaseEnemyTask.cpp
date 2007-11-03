@@ -38,7 +38,6 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (!owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
-		// TODO: Destination unreachable?
 		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 	}
 }

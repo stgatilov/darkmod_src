@@ -40,6 +40,9 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
+
+	owner->Event_SetAlertLevel(owner->thresh_3 + (owner->thresh_combat - owner->thresh_3) * 0.5);
+
 	// Draw weapon, if we haven't already
 	owner->DrawWeapon();
 

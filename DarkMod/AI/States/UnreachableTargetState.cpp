@@ -44,8 +44,6 @@ void UnreachableTargetState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	owner->DrawWeapon();
-	
 	idActor* enemy = owner->GetEnemy();
 	_enemy = enemy;
 

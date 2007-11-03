@@ -47,16 +47,17 @@ void FleeDoneState::Init(idAI* owner)
 
 	// greebo: At this point we should be at a presumably safe place, 
 	// start looking for allies
-
 	_searchForFriendDone = false;
 
-	// Slow turning
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+	// Slow turning for 5 seconds to look for friends
 	owner->StopMove(MOVE_STATUS_DONE);
 	_oldTurnRate = owner->GetTurnRate();
 	owner->SetTurnRate(90);
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(RandomTurningTask::CreateInstance());
-
 	_turnEndTime = gameLocal.time + 5000;
 }
 
@@ -71,6 +72,9 @@ void FleeDoneState::Think(idAI* owner)
 		idActor* friendlyAI = owner->FindFriendlyAI(-1);
 		if ( friendlyAI != NULL)
 		{
+			// We found a friend, cry for help to him
+			DM_LOG(LC_AI, LT_INFO).LogString("Found friendly AI %s \r", friendlyAI->name.c_str());
+
 			_searchForFriendDone = true;
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
@@ -79,13 +83,10 @@ void FleeDoneState::Think(idAI* owner)
 			
 			float distanceToFriend = (friendlyAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 
-			DM_LOG(LC_AI, LT_INFO).LogString("Found friendly AI %s \r", friendlyAI->name.c_str());
-
 			// Cry for help
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			// Placeholder, replace with "snd_help" when available
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_somethingSuspicious")));
-
 			owner->IssueCommunication_Internal(
 				static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
 				distanceToFriend*1.2, 
@@ -94,28 +95,26 @@ void FleeDoneState::Think(idAI* owner)
 				owner->lastVisibleEnemyPos
 			);
 
-			owner->Event_SetAlertLevel(owner->thresh_2 * 0.5);
+			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 
 			// Wait some time before going back to idle
 			// TODO: un-hardcode
-
-			owner->GetSubsystem(SubsysAction)->ClearTasks();
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
 
 			// The sensory system does its Idle tasks
-			owner->GetSubsystem(SubsysSenses)->ClearTasks();
 			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 		}
 	
 		else if (gameLocal.time >= _turnEndTime)
 		{
+			// We didn't find a friend, stop looking for them after some time
 			_searchForFriendDone = true;
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
 
-			owner->Event_SetAlertLevel(owner->thresh_2 * 0.5);
+			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 
-			// Wait some time before going back to idle
+			// Wait some time before going back to idle (wait longer since we didn't get help)
 			// TODO: un-hardcode
 			owner->GetSubsystem(SubsysAction)->ClearTasks();
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
@@ -124,6 +123,7 @@ void FleeDoneState::Think(idAI* owner)
 			owner->GetSubsystem(SubsysSenses)->ClearTasks();
 			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 
+			// No more barking please
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 		}
 	}

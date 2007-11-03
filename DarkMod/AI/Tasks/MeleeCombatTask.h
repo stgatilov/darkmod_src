@@ -38,6 +38,8 @@ public:
 	// Creates a new Instance of this task
 	static MeleeCombatTaskPtr CreateInstance();
 
+	virtual void OnFinish(idAI* owner);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

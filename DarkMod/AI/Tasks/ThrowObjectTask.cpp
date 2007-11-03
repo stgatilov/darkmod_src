@@ -88,6 +88,14 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
+void ThrowObjectTask::OnFinish(idAI* owner)
+{
+	// Set animations back to idle
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+	owner->SetWaitState("");
+
+}
 
 void ThrowObjectTask::Save(idSaveGame* savefile) const
 {
