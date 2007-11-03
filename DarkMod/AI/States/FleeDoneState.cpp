@@ -57,7 +57,7 @@ void FleeDoneState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(RandomTurningTask::CreateInstance());
 
-	_turnEndTime = gameLocal.time + 10000;
+	_turnEndTime = gameLocal.time + 5000;
 }
 
 // Gets called each time the mind is thinking

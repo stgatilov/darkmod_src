@@ -43,7 +43,7 @@ void RandomTurningTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool RandomTurningTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Turn Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("Random Turning Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 

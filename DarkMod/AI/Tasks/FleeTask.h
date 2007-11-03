@@ -11,6 +11,7 @@
 #define __AI_FLEE_TASK_H__
 
 #include "Task.h"
+#include "../../EscapePointManager.h"
 
 namespace ai
 {
@@ -27,6 +28,7 @@ class FleeTask :
 	idEntityPtr<idActor> _enemy;
 	int _escapeSearchLevel;
 	int _failureCount;
+	EscapeDistanceOption _distOpt;
 
 public:
 	// Get the name of this task

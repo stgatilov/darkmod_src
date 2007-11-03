@@ -57,6 +57,10 @@ void CombatState::Init(idAI* owner)
 	// Store the enemy entity locally
 	_enemy = owner->GetEnemy();
 
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+
+
 	// greebo: Check for weapons and flee if we are unarmed.
 	if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
 	{
@@ -99,7 +103,6 @@ void CombatState::Init(idAI* owner)
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should start running to the last enemy position
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
 
 	// The communication system is barking in regular intervals
@@ -109,8 +112,6 @@ void CombatState::Init(idAI* owner)
 	barkTask->SetSound("snd_combat");
 	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
 
-	// The sensory system does nothing so far
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 
 	// For now, we assume a melee combat (TODO: Ranged combat decision)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();

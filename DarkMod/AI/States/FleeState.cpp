@@ -43,8 +43,6 @@ void FleeState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = false;
 
-	owner->FaceEnemy();
-
 	// Cry for help
 	owner->IssueCommunication_Internal(
 		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
