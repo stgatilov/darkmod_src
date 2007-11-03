@@ -143,7 +143,7 @@ bool darkModAASFindHidingSpots::initialize
 )
 {
 	// Be certain we free our PVS node graph
-	if ((h_hideFromPVS.h != NULL) || (h_hideFromPVS.i != -1))
+	if ((h_hideFromPVS.h != 0) || (h_hideFromPVS.i != -1))
 	{
 		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
 		h_hideFromPVS.h = 0;
@@ -197,7 +197,7 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 {
 
 	// Be certain we free our PVS node graph
-	if ((h_hideFromPVS.h != NULL) || (h_hideFromPVS.i != -1))
+	if ((h_hideFromPVS.h != 0) || (h_hideFromPVS.i != -1))
 	{
 		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
 		h_hideFromPVS.h = 0;
