@@ -16,12 +16,12 @@ namespace ai
 {
 
 /**
-* greebo: This task requires memory.currentSearchSpot to something valid.
+* greebo: This task requires memory.currentSearchSpot to be valid.
 * 
 * This task is intended to be pushed into the action Subsystem and
 * performs single-handedly how the given hiding spot should be handled.
 *
-* Note: This Task employs the MovementSubsystem when the algorithm
+* Note: This Task employs the Movement Subsystem when the algorithm
 * judges to walk/run over to the given search spot.
 **/
 

@@ -137,7 +137,7 @@ void SearchingState::Think(idAI* owner)
 
 		// ChooseNextHidingSpot returned TRUE, so we have memory.currentSearchSpot set
 
-		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
 		// Delegate the spot investigation to a new task, this will take the correct action.
 		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());

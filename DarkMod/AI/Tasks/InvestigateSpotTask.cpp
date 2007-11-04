@@ -44,7 +44,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		if (owner->CanSeePositionExt(memory.currentSearchSpot, false, true))
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogVector("I can see the point...\r", memory.currentSearchSpot);
+			DM_LOG(LC_AI, LT_INFO).LogVector("I can see the point...\r", memory.currentSearchSpot);
 
 			if (!owner->CheckFOV(memory.currentSearchSpot))
 			{
@@ -84,15 +84,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	if (_exitTime > 0)
 	{
 		// Return TRUE if the time is over, else FALSE (continue)
-		if (gameLocal.time > _exitTime)
-		{
-			DM_LOG(LC_AI, LT_INFO).LogString("ExitTime has passed: %d!\r", gameLocal.time);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return (gameLocal.time > _exitTime);
 	}
 	
 	// No exit time set, continue with ordinary process
@@ -107,8 +99,8 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", memory.currentSearchSpot);
 
-		// Move is done
-		return true;
+		// Wait a bit, setting _exitTime sets the lifetime of this task
+		_exitTime = gameLocal.time + 300*(1 + gameLocal.random.RandomFloat()*0.2f);
 	}
 	else
 	{
@@ -121,7 +113,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		// Can we already see the point?
 		if (owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogVector("Stop, I can see the point now...\r", memory.currentSearchSpot);
+			DM_LOG(LC_AI, LT_INFO).LogVector("Stop, I can see the point now...\r", memory.currentSearchSpot);
 
 			// Stop moving, we can see the point
 			owner->StopMove(MOVE_STATUS_DONE);
