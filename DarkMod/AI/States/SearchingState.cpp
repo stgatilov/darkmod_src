@@ -15,9 +15,10 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 #include "SearchingState.h"
 #include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
-#include "../Tasks/SearchTask.h"
+#include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
+#include "IdleState.h"
 #include "../../idAbsenceMarkerEntity.h"
 #include "../../AIComm_Message.h"
 
@@ -52,12 +53,22 @@ void SearchingState::Init(idAI* owner)
 	memory.numPossibleHidingSpotsSearched = 0;
 	memory.currentHidingSpotListSearchMaxDuration = -1;
 
+	// Clear all the ongoing tasks
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes
 	if (memory.stimulusLocationItselfShouldBeSearched)
 	{
 		// The SearchTask will take this point as first hiding spot
 		memory.currentSearchSpot = memory.alertPos;
+
+		// Delegate the spot investigation to a new task, this will take the correct action.
+		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
+
+		// Prevent overwriting this hiding spot in the upcoming Think() call
 		memory.hidingSpotInvestigationInProgress = true;
 	}
 	else
@@ -72,16 +83,18 @@ void SearchingState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
 	);
-	
-	// Pass control to the SearchTask which will keep track of the hiding spot search
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(SearchTask::CreateInstance());
+}
 
-	// For now, clear the action tasks
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
+void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
+{
+	Memory& memory = owner->GetMemory();
 
-	// The SearchTask is responsible of controlling the movement subsystem
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	if (memory.hidingSpotInvestigationInProgress && subSystem == SubsysAction)
+	{
+		// The action subsystem has finished investigating its task, set the
+		// boolean back to false, so that the next spot can be chosen
+		memory.hidingSpotInvestigationInProgress = false;
+	}
 }
 
 // Gets called each time the mind is thinking
@@ -94,6 +107,48 @@ void SearchingState::Think(idAI* owner)
 	{
 		// Let the hiding spot search do its task
 		PerformHidingSpotSearch(owner);
+	}
+
+	// Is a hiding spot search in progress?
+	if (!memory.hidingSpotInvestigationInProgress)
+	{
+		// Pick a hiding spot and push the task
+
+		// Spot search and investigation done, choose a hiding spot
+		// Try to get a first hiding spot
+		if (!ChooseNextHidingSpotToSearch(owner))
+		{
+			// No more hiding spots to search
+			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
+
+			if (owner->m_hidingSpots.getNumSpots() > 0)
+			{
+				// Number of hiding spot is greater than zero, so we
+				// came here after the search has been finished
+
+				// Rub neck
+				// Bark
+				// Wait
+			}
+
+			// Fall back into idle mode
+			owner->GetMind()->SwitchState(STATE_IDLE);
+			return; // Exit, state will be switched next frame, we're done here
+		}
+
+		// ChooseNextHidingSpot returned TRUE, so we have memory.currentSearchSpot set
+
+		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+
+		// Delegate the spot investigation to a new task, this will take the correct action.
+		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
+
+		// Prevent falling into the same hole twice
+		memory.hidingSpotInvestigationInProgress = true;
+	}
+	else
+	{
+		// Move to Hiding spot is ongoing, do additional sensory tasks here
 	}
 }
 
@@ -179,6 +234,100 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 		// Set time search is starting
 		memory.currentHidingSpotListSearchStartTime = gameLocal.time;
 	}
+}
+
+bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
+{
+	Memory& memory = owner->GetMemory();
+
+	int numSpots = owner->m_hidingSpots.getNumSpots();
+	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);
+
+	// Choose randomly
+	if (numSpots > 0)
+	{
+		if (memory.firstChosenHidingSpotIndex == -1)
+		{
+			// No hiding spot chosen yet, initialise
+			/*
+			// Get visual acuity
+			float visAcuity = getAcuity("vis");
+				
+			// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
+			// higher visual acuity should bias toward earlier in the list
+			float bias = 1.0 - visAcuity;
+			if (bias < 0.0)
+			{
+				bias = 0.0;
+			}
+			*/
+			// greebo: TODO? This isn't random choosing...
+
+			int spotIndex = 0; 
+
+			// Remember which hiding spot we have chosen at start
+			memory.firstChosenHidingSpotIndex = spotIndex;
+				
+			// Note currently chosen hiding spot
+			memory.currentChosenHidingSpotIndex = spotIndex;
+			
+			// Get location
+			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
+			memory.currentSearchSpot = memory.chosenHidingSpot;
+			
+			DM_LOG(LC_AI, LT_INFO).LogString(
+				"First spot chosen is index %d of %d spots.\r", 
+				memory.firstChosenHidingSpotIndex, numSpots
+			);
+		}
+		else 
+		{
+			// First hiding spot index is valid, so get the next one
+			// TODO: Copy from task_IteratingHidingSpotSearch
+			memory.numPossibleHidingSpotsSearched++;
+
+			// Make sure we stay in bounds
+			memory.currentChosenHidingSpotIndex++;
+			if (memory.currentChosenHidingSpotIndex >= numSpots)
+			{
+				memory.currentChosenHidingSpotIndex = 0;
+			}
+
+			// Have we wrapped around to first one searched?
+			if (memory.currentChosenHidingSpotIndex == memory.firstChosenHidingSpotIndex || 
+				memory.currentChosenHidingSpotIndex < 0)
+			{
+				// No more hiding spots
+				DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots to search.\r");
+				memory.hidingSpotSearchDone = false;
+				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+				memory.currentChosenHidingSpotIndex = -1;
+				memory.firstChosenHidingSpotIndex = -1;
+				return false;
+			}
+			else
+			{
+				// Index is valid, let's acquire the position
+				DM_LOG(LC_AI, LT_INFO).LogString("Next spot chosen is index %d of %d, first was %d.\r", 
+					memory.currentChosenHidingSpotIndex, numSpots-1, memory.firstChosenHidingSpotIndex);
+
+				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
+				memory.currentSearchSpot = memory.chosenHidingSpot;
+				memory.hidingSpotSearchDone = true;
+			}
+		}
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
+		memory.firstChosenHidingSpotIndex = -1;
+		memory.currentChosenHidingSpotIndex = -1;
+		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		return false;
+	}
+
+	return true;
 }
 
 int SearchingState::DetermineSearchDuration(idAI* owner)

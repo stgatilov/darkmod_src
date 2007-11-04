@@ -94,10 +94,6 @@ bool Subsystem::PerformTask()
 	}
 
 	// greebo: If the task returns TRUE, it will be removed next round.
-	// Only execute the task if the initTask is not set, this might indicate
-	// a task switch invoked by the previous Init() call.
-	// An uninitialised task must not be performed.
-	// Also, the subsystem must be enabled, it might have been disabled in the Init call.
 	if (task->Perform(*this))
 	{
 		FinishTask();
@@ -125,13 +121,15 @@ bool Subsystem::FinishTask()
 
 		// Move the task pointer from the queue to the recyclebin
 		_recycleBin = _taskQueue.front();
-		_taskQueue.pop_front();
-
+		
 		// Call the OnFinish event of the task
 		_recycleBin->OnFinish(owner);
 
 		// Issue the "TaskFinished" signal to the MindState
-		owner->GetMind()->GetState()->OnSubsystemTaskFinished(_id);
+		owner->GetMind()->GetState()->OnSubsystemTaskFinished(owner, _id);
+
+		// Now remove the State from the queue
+		_taskQueue.pop_front();
 	}
 
 	if (_taskQueue.empty())

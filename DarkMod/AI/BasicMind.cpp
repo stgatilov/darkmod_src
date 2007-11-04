@@ -37,7 +37,6 @@ BasicMind::BasicMind(idAI* owner) :
 
 void BasicMind::Think()
 {
-
 	// Clear the recyclebin, it might hold a finished state from the last frame
 	_recycleBin = StatePtr();
 
@@ -67,7 +66,7 @@ void BasicMind::Think()
 		// Clear the flag
 		_switchState = false;
 
-		// Initialise the state, this will put the Subsystem Tasks in-place
+		// Initialise the state, this will put the Subsystem Tasks in place
 		state->Init(owner);
 	}
 

@@ -44,7 +44,7 @@ public:
 	virtual void Restore(idRestoreGame* savefile) = 0;
 
 	// Incoming events issued by the Subsystems
-	virtual void OnSubsystemTaskFinished(SubsystemId subSystem)
+	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 	{} // empty default implementation
 
 	// Handles incoming messages from other AI

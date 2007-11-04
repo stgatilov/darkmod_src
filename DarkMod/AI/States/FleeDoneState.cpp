@@ -148,11 +148,10 @@ void FleeDoneState::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_searchForFriendDone);
 } 
 
-void FleeDoneState::OnSubsystemTaskFinished(SubsystemId subSystem)
+void FleeDoneState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 {
 	if (subSystem == SubsysAction)
 	{
-		idAI* owner = _owner.GetEntity();
 		// Go back to idle after the WaitTask has finished
 		owner->GetMind()->SwitchState(STATE_IDLE);
 	}

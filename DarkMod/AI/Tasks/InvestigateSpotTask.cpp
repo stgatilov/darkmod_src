@@ -37,16 +37,22 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Stop previous moves
 	owner->StopMove(MOVE_STATUS_DONE);
 
-	memory.hidingSpotInvestigationInProgress = true;
-
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
+		// TODO: Judge the point reachability
+
 		// TODO AI_RUN distance check
 
 		// Let's move
 		owner->MoveToPosition(memory.currentSearchSpot);
 
 		// AI_MOVE_DONE and AI_DEST_UNREACHABLE flags are checked in Perform()
+	}
+	else
+	{
+		// Invalid hiding spot, terminate task
+		DM_LOG(LC_AI, LT_DEBUG).LogString("memory.currentSearchSpot not set to something valid, terminating task.\r");
+		subsystem.FinishTask();
 	}
 }
 
@@ -61,7 +67,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->AI_MOVE_DONE)
 	{
-		// Get a shortcut reference
 		Memory& memory = owner->GetMemory();
 
 		if (owner->AI_DEST_UNREACHABLE)
@@ -70,9 +75,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		}
 
 		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", memory.currentSearchSpot);
-
-		// Investigation completed
-		memory.hidingSpotInvestigationInProgress = false;
 
 		// Move is done
 		return true;

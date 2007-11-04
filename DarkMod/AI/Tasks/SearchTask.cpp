@@ -60,7 +60,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	{
 		// Spot search and investigation done, choose a hiding spot
 		// Try to get a first hiding spot
-		if (!ChooseNextHidingSpotToSearch(owner))
+		/*if (!ChooseNextHidingSpotToSearch(owner))
 		{
 			// No more hiding spots to search
 			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
@@ -78,6 +78,8 @@ bool SearchTask::Perform(Subsystem& subsystem)
 			// Fall back into idle mode
 			owner->GetMind()->SwitchState(STATE_IDLE);
 
+			// TODO: decrease alert level?
+
 			return true; // finish this task
 		}
 
@@ -88,7 +90,7 @@ bool SearchTask::Perform(Subsystem& subsystem)
 		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
 
 		// Prevent falling into the same hole twice
-		memory.hidingSpotInvestigationInProgress = true;
+		memory.hidingSpotInvestigationInProgress = true;*/
 	}
 	else
 	{
@@ -97,100 +99,6 @@ bool SearchTask::Perform(Subsystem& subsystem)
 	}
 
 	return false; // not finished yet
-}
-
-bool SearchTask::ChooseNextHidingSpotToSearch(idAI* owner)
-{
-	Memory& memory = owner->GetMemory();
-
-	int numSpots = owner->m_hidingSpots.getNumSpots();
-	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);
-
-	// Choose randomly
-	if (numSpots > 0)
-	{
-		if (memory.firstChosenHidingSpotIndex == -1)
-		{
-			// No hiding spot chosen yet, initialise
-			/*
-			// Get visual acuity
-			float visAcuity = getAcuity("vis");
-				
-			// Since earlier hiding spots are "better" (ie closer to stimulus and darker or more occluded)
-			// higher visual acuity should bias toward earlier in the list
-			float bias = 1.0 - visAcuity;
-			if (bias < 0.0)
-			{
-				bias = 0.0;
-			}
-			*/
-			// greebo: TODO? This isn't random choosing...
-
-			int spotIndex = 0; 
-
-			// Remember which hiding spot we have chosen at start
-			memory.firstChosenHidingSpotIndex = spotIndex;
-				
-			// Note currently chosen hiding spot
-			memory.currentChosenHidingSpotIndex = spotIndex;
-			
-			// Get location
-			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
-			memory.currentSearchSpot = memory.chosenHidingSpot;
-			
-			DM_LOG(LC_AI, LT_INFO).LogString(
-				"First spot chosen is index %d of %d spots.\r", 
-				memory.firstChosenHidingSpotIndex, numSpots
-			);
-		}
-		else 
-		{
-			// First hiding spot index is valid, so get the next one
-			// TODO: Copy from task_IteratingHidingSpotSearch
-			memory.numPossibleHidingSpotsSearched++;
-
-			// Make sure we stay in bounds
-			memory.currentChosenHidingSpotIndex++;
-			if (memory.currentChosenHidingSpotIndex >= numSpots)
-			{
-				memory.currentChosenHidingSpotIndex = 0;
-			}
-
-			// Have we wrapped around to first one searched?
-			if (memory.currentChosenHidingSpotIndex == memory.firstChosenHidingSpotIndex || 
-				memory.currentChosenHidingSpotIndex < 0)
-			{
-				// No more hiding spots
-				DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots to search.\r");
-				memory.hidingSpotSearchDone = false;
-				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-				memory.currentChosenHidingSpotIndex = -1;
-				memory.firstChosenHidingSpotIndex = -1;
-				return false;
-			}
-			else
-			{
-				// Index is valid, let's acquire the position
-				DM_LOG(LC_AI, LT_INFO).LogString("Next spot chosen is index %d of %d, first was %d.\r", 
-					memory.currentChosenHidingSpotIndex, numSpots-1, memory.firstChosenHidingSpotIndex);
-
-				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
-				memory.currentSearchSpot = memory.chosenHidingSpot;
-				memory.hidingSpotSearchDone = true;
-			}
-		}
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
-		memory.firstChosenHidingSpotIndex = -1;
-		memory.currentChosenHidingSpotIndex = -1;
-		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-		return false;
-	}
-
-	return true;
 }
 
 SearchTaskPtr SearchTask::CreateInstance()

@@ -47,7 +47,7 @@ public:
 
 	virtual void Restore(idRestoreGame* savefile);
 
-	virtual void OnSubsystemTaskFinished(SubsystemId subSystem);
+	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	static StatePtr CreateInstance();
 };

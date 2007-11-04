@@ -35,12 +35,6 @@ public:
 
 	// Creates a new Instance of this task
 	static SearchTaskPtr CreateInstance();
-
-private:
-	// Gets called when a new hiding spot should be acquired for searching.
-	// Stores the result in the AI's Memory (hiding spot indices)
-	// return TRUE when a hiding spot is available, FALSE if not.
-	bool ChooseNextHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai
