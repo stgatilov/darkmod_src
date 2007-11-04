@@ -20,6 +20,8 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/ChaseEnemyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
+#include "../Tasks/RangedCombatTask.h"
+#include "../Tasks/ChaseEnemyRangedTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "FleeState.h"
 #include "ReactingToStimulusState.h"
@@ -106,18 +108,25 @@ void CombatState::Init(idAI* owner)
 
 	// Fill the subsystems with their tasks
 
-	// The movement subsystem should start running to the last enemy position
-	owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
 
-	// The communication system is barking in regular intervals
+	// The communication system 
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_combat"))
+	);
 
-	SingleBarkTaskPtr barkTask = SingleBarkTask::CreateInstance();
-	barkTask->SetSound("snd_combat");
-	owner->GetSubsystem(SubsysCommunication)->PushTask(barkTask);
-
-
-	// For now, we assume a melee combat (TODO: Ranged combat decision)
-	owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+	// Ranged combat
+	if (owner->GetNumRangedWeapons() > 0)
+	{
+		owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
+		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+	}
+	// Melee combat
+	else
+	{
+		// The movement subsystem should start running to the last enemy position
+		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
+		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+	}
 }
 
 // Gets called each time the mind is thinking

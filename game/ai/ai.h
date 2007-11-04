@@ -627,6 +627,7 @@ protected:
 	int						lastHitCheckTime;
 	int						lastAttackTime;
 	float					melee_range;
+	float					fire_range;
 	float					projectile_height_to_distance_ratio;	// calculates the maximum height a projectile can be thrown
 	idList<idVec3>			missileLaunchOffset;
 
@@ -1347,6 +1348,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 	void					DirectDamage( const char *meleeDefName, idEntity *ent );
 	bool					TestMelee( void ) const;
+	bool					TestRanged( void ) const;
 	bool					AttackMelee( const char *meleeDefName );
 	void					BeginAttack( const char *name );
 	void					EndAttack( void );

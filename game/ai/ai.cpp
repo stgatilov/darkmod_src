@@ -498,6 +498,7 @@ idAI::idAI()
 	lastHitCheckTime	= 0;
 	lastAttackTime		= 0;
 	melee_range			= 0.0f;
+	fire_range			= 0.0f;
 	projectile_height_to_distance_ratio = 1.0f;
 	projectileDef		= NULL;
 	projectile			= NULL;
@@ -1107,6 +1108,7 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "fly_pitch_max",		"30",		fly_pitch_max );
 
 	spawnArgs.GetFloat( "melee_range",			"64",		melee_range );
+	spawnArgs.GetFloat( "fire_range",			"0",		fire_range );
 	spawnArgs.GetFloat( "projectile_height_to_distance_ratio",	"1", projectile_height_to_distance_ratio );
 
 	spawnArgs.GetFloat( "turn_rate",			"360",		turnRate );
@@ -5115,10 +5117,15 @@ bool idAI::CanHitEntity(idActor* entity)
 {
 	if (entity != NULL)
 	{
-		// greebo: Route this call to TestMelee
-		return TestMelee();
+		if (GetNumRangedWeapons() > 0)
+		{
+			return TestRanged();
+		}
+		else if (GetNumMeleeWeapons() > 0)
+		{
+			return TestMelee();
+		}
 
-		// TODO: Support for ranged attacks
 	}
 
 	return false;
@@ -5774,6 +5781,28 @@ bool idAI::TestMelee( void ) const {
 
 	return false;
 }
+
+/*
+=====================
+idAI::TestRanged
+=====================
+*/
+bool idAI::TestRanged() const 
+{
+	trace_t trace;
+	idActor *enemyEnt = enemy.GetEntity();
+
+	if ( !enemyEnt) 
+	{
+		return false;
+	}
+
+	// Test if the enemy is within range, in FOV and not occluded
+	float dist = (GetEyePosition() - enemyEnt->GetEyePosition()).LengthFast();
+
+	return dist <= fire_range && CanSeeExt(enemyEnt, false, false);
+}
+
 
 /*
 =====================

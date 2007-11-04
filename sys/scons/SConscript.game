@@ -178,6 +178,7 @@ AI/States/SearchingState.cpp \
 AI/States/State.cpp \
 AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
+AI/Tasks/ChaseEnemyRangedTask.cpp \
 AI/Tasks/ChaseEnemyTask.cpp \
 AI/Tasks/EmptyTask.cpp \
 AI/Tasks/FleeTask.cpp \
@@ -195,6 +196,7 @@ AI/Tasks/PathWaitForTriggerTask.cpp \
 AI/Tasks/PathWaitTask.cpp \
 AI/Tasks/PatrolTask.cpp \
 AI/Tasks/RandomTurningTask.cpp \
+AI/Tasks/RangedCombatTask.cpp \
 AI/Tasks/RepeatedBarkTask.cpp \
 AI/Tasks/SingleBarkTask.cpp \
 AI/Tasks/StimulusSensoryTask.cpp \
