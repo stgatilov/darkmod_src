@@ -34,6 +34,9 @@ typedef boost::shared_ptr<InvestigateSpotTask> InvestigateSpotTaskPtr;
 class InvestigateSpotTask :
 	public Task
 {
+	// The time this task may exit
+	int _exitTime;
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

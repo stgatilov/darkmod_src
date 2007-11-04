@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: InvestigateSpotTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "InvestigateSpotTask.h"
+#include "WaitTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -31,6 +32,8 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
+	_exitTime = -1;
+
 	// Get a shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -39,12 +42,31 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
-		// TODO: Judge the point reachability
+		if (owner->CanSeePositionExt(memory.currentSearchSpot, false, true))
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogVector("I can see the point...\r", memory.currentSearchSpot);
 
-		// TODO AI_RUN distance check
+			if (!owner->CheckFOV(memory.currentSearchSpot))
+			{
+				// Search spot is not within FOV, turn towards the position
+				owner->TurnToward(memory.currentSearchSpot);
+			}
 
-		// Let's move
-		owner->MoveToPosition(memory.currentSearchSpot);
+			// In any case, look at the point to investigate
+			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
+
+			// Wait about half a sec.
+			_exitTime = gameLocal.time + 500*(1 + gameLocal.random.RandomFloat()*0.2f);
+
+			DM_LOG(LC_AI, LT_DEBUG).LogString("Time: %d, exit time: %d\r", gameLocal.time, _exitTime);
+		}
+		else 
+		{
+			// TODO AI_RUN distance check
+
+			// Let's move
+			owner->MoveToPosition(memory.currentSearchSpot);
+		}
 
 		// AI_MOVE_DONE and AI_DEST_UNREACHABLE flags are checked in Perform()
 	}
@@ -61,9 +83,23 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO).LogString("InvestigateSpotTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
-	
-	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
+
+	if (_exitTime > 0)
+	{
+		// Return TRUE if the time is over, else FALSE (continue)
+		if (gameLocal.time > _exitTime)
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("ExitTime has passed: %d!\r", gameLocal.time);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	// No exit time set, continue with ordinary process
 
 	if (owner->AI_MOVE_DONE)
 	{
