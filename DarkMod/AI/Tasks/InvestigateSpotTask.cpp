@@ -117,6 +117,21 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		// For distances larger than 300, set run to TRUE
 		owner->AI_RUN = (dist > 90000); // dist > 300^2
+
+		// Can we already see the point?
+		if (owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
+		{
+			DM_LOG(LC_AI, LT_DEBUG).LogVector("Stop, I can see the point now...\r", memory.currentSearchSpot);
+
+			// Stop moving, we can see the point
+			owner->StopMove(MOVE_STATUS_DONE);
+
+			//Look at the point to investigate
+			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
+
+			// Wait about half a sec., this sets the lifetime of this task
+			_exitTime = gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f);
+		}
 	}
 
 	return false; // not finished yet
