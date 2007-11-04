@@ -108,9 +108,8 @@ void SearchingState::Think(idAI* owner)
 		// Let the hiding spot search do its task
 		PerformHidingSpotSearch(owner);
 	}
-
 	// Is a hiding spot search in progress?
-	if (!memory.hidingSpotInvestigationInProgress)
+	else if (!memory.hidingSpotInvestigationInProgress)
 	{
 		// Pick a hiding spot and push the task
 
