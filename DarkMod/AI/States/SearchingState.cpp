@@ -62,7 +62,7 @@ void SearchingState::Init(idAI* owner)
 	// of just standing around while the search completes
 	if (memory.stimulusLocationItselfShouldBeSearched)
 	{
-		// The SearchTask will take this point as first hiding spot
+		// The InvestigateSpotTask will take this point as first hiding spot
 		memory.currentSearchSpot = memory.alertPos;
 
 		// Delegate the spot investigation to a new task, this will take the correct action.
@@ -148,6 +148,9 @@ void SearchingState::Think(idAI* owner)
 	else
 	{
 		// Move to Hiding spot is ongoing, do additional sensory tasks here
+
+		// Let the mind check its senses (TRUE = process new stimuli)
+		owner->GetMind()->PerformSensoryScan(true);
 	}
 }
 
