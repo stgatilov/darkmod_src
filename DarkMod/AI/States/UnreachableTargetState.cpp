@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id: UnreachableTargetState.cpp 1435
 #include "../Tasks/MoveToPositionTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "TakeCoverState.h"
+#include "ReactingToStimulusState.h"
 #include "../Library.h"
 
 namespace ai
@@ -135,6 +136,12 @@ void UnreachableTargetState::Think(idAI* owner)
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy!\r");
 		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		return;
+	}
+	if (owner->AI_ENEMY_DEAD)
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+		owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
 	}
 
 	// Check the distance to the enemy, the other subsystem tasks need it.

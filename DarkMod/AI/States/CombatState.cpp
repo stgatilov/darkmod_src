@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/MeleeCombatTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "FleeState.h"
+#include "ReactingToStimulusState.h"
 #include "../Library.h"
 
 namespace ai
@@ -56,6 +57,7 @@ void CombatState::Init(idAI* owner)
 
 	// Store the enemy entity locally
 	_enemy = owner->GetEnemy();
+	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -130,6 +132,13 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
+	if (owner->AI_ENEMY_DEAD)
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+		owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
+	}
+
 	// Check the distance to the enemy, the other subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy);
 
@@ -147,12 +156,21 @@ void CombatState::Think(idAI* owner)
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		}
 	}
+
+	if (owner->health < _criticalHealth)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("I'm badly hurt, I'm afraid!\r");
+		owner->GetMind()->SwitchState(STATE_FLEE);
+		return;
+
+	}
 }
 
 void CombatState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
 
+	savefile->WriteInt(_criticalHealth);
 	_enemy.Save(savefile);
 }
 
@@ -160,6 +178,7 @@ void CombatState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
 
+	savefile->ReadInt(_criticalHealth);
 	_enemy.Restore(savefile);
 }
 

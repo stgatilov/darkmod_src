@@ -23,6 +23,7 @@ class CombatState :
 {
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
+	int _criticalHealth;
 
 public:
 	// Get the name of this state
