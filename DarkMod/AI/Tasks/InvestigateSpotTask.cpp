@@ -56,14 +56,10 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
 
 			// Wait about half a sec.
-			_exitTime = gameLocal.time + 500*(1 + gameLocal.random.RandomFloat()*0.2f);
-
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Time: %d, exit time: %d\r", gameLocal.time, _exitTime);
+			_exitTime = gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f);
 		}
 		else 
 		{
-			// TODO AI_RUN distance check
-
 			// Let's move
 			owner->MoveToPosition(memory.currentSearchSpot);
 		}
@@ -100,11 +96,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	}
 	
 	// No exit time set, continue with ordinary process
+	Memory& memory = owner->GetMemory();
 
 	if (owner->AI_MOVE_DONE)
 	{
-		Memory& memory = owner->GetMemory();
-
 		if (owner->AI_DEST_UNREACHABLE)
 		{
 			DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot unreachable.\r", memory.currentSearchSpot);
@@ -114,6 +109,14 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		// Move is done
 		return true;
+	}
+	else
+	{
+		// Still moving, check distance
+		float dist = (memory.currentSearchSpot - owner->GetEyePosition()).LengthSqr();
+
+		// For distances larger than 300, set run to TRUE
+		owner->AI_RUN = (dist > 90000); // dist > 300^2
 	}
 
 	return false; // not finished yet
