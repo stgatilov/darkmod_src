@@ -125,13 +125,14 @@ void SearchingState::Think(idAI* owner)
 				// Number of hiding spot is greater than zero, so we
 				// came here after the search has been finished
 
-				// Rub neck
-				// Bark
-				// Wait
+				// Rub neck?
+				// Bark?
+				// Wait?
 			}
 
-			// Fall back into idle mode
-			owner->GetMind()->SwitchState(STATE_IDLE);
+			// Fall back into the previous state
+			owner->GetMind()->EndState();
+
 			return; // Exit, state will be switched next frame, we're done here
 		}
 

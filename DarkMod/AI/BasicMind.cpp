@@ -141,24 +141,26 @@ bool BasicMind::PushStateIfHigherPriority(const idStr& stateName, int priority)
 
 bool BasicMind::EndState()
 {
-	if (_stateQueue.empty())
+	if (!_stateQueue.empty())
 	{
-		// No states to end, add the default state at least
-		PushState(STATE_DEFAULT);
-		return true;
+		// Don't destroy the State object this round
+		_recycleBin = _stateQueue.front();
+
+		// Remove the current state from the queue
+		_stateQueue.pop_front();
+
+		// Trigger a stateswitch next round in any case
+		_switchState = true;
 	}
 
-	// Don't destroy the State object this round
-	_recycleBin = _stateQueue.front();
-
-	// Remove the current state from the queue
-	_stateQueue.pop_front();
-
-	// Trigger a stateswitch next round
-	_switchState = true;
-
+	if (_stateQueue.empty())
+	{
+		// No states left, add the default state at least
+		PushState(STATE_DEFAULT);
+	}
+	
 	// Return TRUE if there are additional states left
-	return !_stateQueue.empty();
+	return true;
 }
 
 void BasicMind::SwitchState(const idStr& stateName)
