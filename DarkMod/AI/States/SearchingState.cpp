@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 #include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
 #include "IdleState.h"
+#include "AgitatedSearchingState.h"
 #include "../../idAbsenceMarkerEntity.h"
 #include "../../AIComm_Message.h"
 
@@ -40,11 +41,10 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(2, "STATE_AGITATED_SEARCHING"))
+	if (!CheckAlertLevel(2, STATE_AGITATED_SEARCHING))
 	{
 		return;
 	}
-
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
@@ -109,7 +109,7 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 // Gets called each time the mind is thinking
 void SearchingState::Think(idAI* owner)
 {
-	if(!CheckAlertLevel(2, "STATE_AGITATED_SEARCHING"))
+	if(!CheckAlertLevel(2, STATE_AGITATED_SEARCHING))
 	{
 		return;
 	}
@@ -127,6 +127,8 @@ void SearchingState::Think(idAI* owner)
 		owner->StopMove(MOVE_STATUS_DONE);
 
 		// End the state, fall back to idle if nothing left
+		// TODO: wander around
+		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 		owner->GetMind()->EndState();
 		return;
 	}
@@ -162,6 +164,8 @@ void SearchingState::Think(idAI* owner)
 			owner->StopMove(MOVE_STATUS_DONE);
 
 			// Fall back into the previous state
+			// TODO: wander around
+			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 			owner->GetMind()->EndState();
 
 			return; // Exit, state will be switched next frame, we're done here

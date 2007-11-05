@@ -39,7 +39,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
-	if(!CheckAlertLevel(3, STATE_COMBAT)´)
+	if(!CheckAlertLevel(3, STATE_COMBAT))
 	{
 		return;
 	}
@@ -108,7 +108,7 @@ void AgitatedSearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId su
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
-	if(!CheckAlertLevel(3, "STATE_COMBAT"))
+	if(!CheckAlertLevel(3, STATE_COMBAT))
 	{
 		return;
 	}
@@ -126,6 +126,8 @@ void AgitatedSearchingState::Think(idAI* owner)
 		owner->StopMove(MOVE_STATUS_DONE);
 
 		// End the state, fall back to idle if nothing left
+		// TODO : wander
+		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 		owner->GetMind()->EndState();
 		return;
 	}
@@ -161,6 +163,8 @@ void AgitatedSearchingState::Think(idAI* owner)
 			owner->StopMove(MOVE_STATUS_DONE);
 
 			// Fall back into the previous state
+			// TODO: wander
+			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
 			owner->GetMind()->EndState();
 
 			return; // Exit, state will be switched next frame, we're done here

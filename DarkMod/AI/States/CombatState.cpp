@@ -156,7 +156,7 @@ void CombatState::Think(idAI* owner)
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
 		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-		owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
+		return;
 	}
 
 	// Check the distance to the enemy, the other subsystem tasks need it.

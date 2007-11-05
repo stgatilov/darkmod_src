@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "SuspiciousState.h"
 #include "../Library.h"
 
 namespace ai
@@ -45,7 +46,7 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(0, "STATE_SUSPICIOUS"))
+	if (!CheckAlertLevel(0, STATE_SUSPICIOUS))
 	{
 		return;
 	}
@@ -109,7 +110,7 @@ void IdleState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void IdleState::Think(idAI* owner)
 {
-	if (!CheckAlertLevel(0, "STATE_SUSPICIOUS"))
+	if (!CheckAlertLevel(0, STATE_SUSPICIOUS))
 		{
 		return;
 	}

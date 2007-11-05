@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: SuspiciousState.cpp 1435 2007-1
 #include "SuspiciousState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
+#include "SearchingState.h"
 #include "../Library.h"
 
 namespace ai
@@ -54,7 +55,7 @@ void SuspiciousState::Init(idAI* owner)
 void SuspiciousState::Think(idAI* owner)
 {
 
-	if (!CheckAlertLevel(1, "STATE_SEARCHING"))
+	if (!CheckAlertLevel(1, STATE_SEARCHING))
 	{
 		return;
 	}

@@ -95,14 +95,9 @@ void FleeDoneState::Think(idAI* owner)
 				owner->lastVisibleEnemyPos
 			);
 
+			// Go back to suspicious (higher level since we didn't find someone to help)
 			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-
-			// Wait some time before going back to idle
-			// TODO: un-hardcode
-			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
-
-			// The sensory system does its Idle tasks
-			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
+			return;
 		}
 	
 		else if (gameLocal.time >= _turnEndTime)
@@ -112,19 +107,9 @@ void FleeDoneState::Think(idAI* owner)
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();
 			owner->SetTurnRate(_oldTurnRate);
 
-			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-
-			// Wait some time before going back to idle (wait longer since we didn't get help)
-			// TODO: un-hardcode
-			owner->GetSubsystem(SubsysAction)->ClearTasks();
-			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
-			
-			// The sensory system does its Idle tasks
-			owner->GetSubsystem(SubsysSenses)->ClearTasks();
-			owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
-
-			// No more barking please
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+			// Go back to suspicious (higher level since we didn't find someone to help)
+			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+			return;
 		}
 	}
 }
