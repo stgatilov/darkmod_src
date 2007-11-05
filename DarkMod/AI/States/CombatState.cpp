@@ -45,6 +45,11 @@ void CombatState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
 	assert(owner);
 
+	if (!CheckAlertLevel(4, ""))
+	{
+		return;
+	}
+
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -132,6 +137,12 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
+	if (!CheckAlertLevel(4, ""))
+	{
+		return;
+	}
+
+
 	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = _enemy.GetEntity();

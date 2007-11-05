@@ -3,22 +3,21 @@
  * PROJECT: The Dark Mod
  * $Revision: 1435 $
  * $Date: 2007-10-16 18:53:28 +0200 (Di, 16 Okt 2007) $
- * $Author: greebo $
+ * $Author: angua $
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: AgitatedSearchingState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "SearchingState.h"
+#include "AgitatedSearchingState.h"
 #include "../Memory.h"
-#include "../Tasks/EmptyTask.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "CombatState.h"
 #include "../Library.h"
-#include "IdleState.h"
 #include "../../idAbsenceMarkerEntity.h"
 #include "../../AIComm_Message.h"
 
@@ -26,21 +25,21 @@ namespace ai
 {
 
 // Get the name of this state
-const idStr& SearchingState::GetName() const
+const idStr& AgitatedSearchingState::GetName() const
 {
-	static idStr _name(STATE_SEARCHING);
+	static idStr _name(STATE_AGITATED_SEARCHING);
 	return _name;
 }
 
-void SearchingState::Init(idAI* owner)
+void AgitatedSearchingState::Init(idAI* owner)
 {
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(2, "STATE_AGITATED_SEARCHING"))
+	if(!CheckAlertLevel(3, STATE_COMBAT)´)
 	{
 		return;
 	}
@@ -94,7 +93,7 @@ void SearchingState::Init(idAI* owner)
 	);
 }
 
-void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
+void AgitatedSearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 {
 	Memory& memory = owner->GetMemory();
 
@@ -107,9 +106,9 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 }
 
 // Gets called each time the mind is thinking
-void SearchingState::Think(idAI* owner)
+void AgitatedSearchingState::Think(idAI* owner)
 {
-	if(!CheckAlertLevel(2, "STATE_AGITATED_SEARCHING"))
+	if(!CheckAlertLevel(3, "STATE_COMBAT"))
 	{
 		return;
 	}
@@ -186,7 +185,7 @@ void SearchingState::Think(idAI* owner)
 	}
 }
 
-void SearchingState::StartNewHidingSpotSearch(idAI* owner)
+void AgitatedSearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
@@ -223,7 +222,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	}
 }
 
-void SearchingState::PerformHidingSpotSearch(idAI* owner)
+void AgitatedSearchingState::PerformHidingSpotSearch(idAI* owner)
 {
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
@@ -270,7 +269,7 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 	}
 }
 
-bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
+bool AgitatedSearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
@@ -364,7 +363,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	return true;
 }
 
-int SearchingState::DetermineSearchDuration(idAI* owner)
+int AgitatedSearchingState::DetermineSearchDuration(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
@@ -396,15 +395,15 @@ int SearchingState::DetermineSearchDuration(idAI* owner)
 	return memory.currentHidingSpotListSearchMaxDuration;
 }
 
-StatePtr SearchingState::CreateInstance()
+StatePtr AgitatedSearchingState::CreateInstance()
 {
-	return StatePtr(new SearchingState);
+	return StatePtr(new AgitatedSearchingState);
 }
 
 // Register this state with the StateLibrary
-StateLibrary::Registrar searchingStateRegistrar(
-	STATE_SEARCHING, // Task Name
-	StateLibrary::CreateInstanceFunc(&SearchingState::CreateInstance) // Instance creation callback
+StateLibrary::Registrar agitatedSearchingStateRegistrar(
+	STATE_AGITATED_SEARCHING, // Task Name
+	StateLibrary::CreateInstanceFunc(&AgitatedSearchingState::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai

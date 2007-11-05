@@ -45,6 +45,11 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
+	if (!CheckAlertLevel(0, "STATE_SUSPICIOUS"))
+	{
+		return;
+	}
+
 	// No weapons in idle mode
 	owner->SheathWeapon();
 	owner->AI_RUN = false;
@@ -104,6 +109,10 @@ void IdleState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void IdleState::Think(idAI* owner)
 {
+	if (!CheckAlertLevel(0, "STATE_SUSPICIOUS"))
+		{
+		return;
+	}
 
 }
 

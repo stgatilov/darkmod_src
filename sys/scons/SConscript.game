@@ -165,6 +165,7 @@ StimResponse/StimResponseCollection.cpp \
 StimResponse/StimResponseTimer.cpp \
 AI/BasicMind.cpp \
 AI/Subsystem.cpp \
+AI/States/AgitatedSearchingState.cpp \
 AI/States/CombatState.cpp \
 AI/States/DeadState.cpp \
 AI/States/EmptyState.cpp \
@@ -176,6 +177,7 @@ AI/States/LostTrackOfEnemyState.cpp \
 AI/States/ReactingToStimulusState.cpp \
 AI/States/SearchingState.cpp \
 AI/States/State.cpp \
+AI/States/SuspiciousState.cpp \
 AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
 AI/Tasks/ChaseEnemyRangedTask.cpp \
