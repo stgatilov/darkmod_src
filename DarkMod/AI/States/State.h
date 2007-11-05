@@ -40,8 +40,8 @@ public:
 	virtual void Think(idAI* owner) = 0;
 
 	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const = 0;
-	virtual void Restore(idRestoreGame* savefile) = 0;
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)

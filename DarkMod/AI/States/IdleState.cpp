@@ -107,6 +107,22 @@ void IdleState::Think(idAI* owner)
 
 }
 
+void IdleState::Save(idSaveGame* savefile) const
+{
+	State::Save(savefile);
+
+	savefile->WriteVec3(_idlePosition);
+	savefile->WriteFloat(_idleYaw);
+}
+
+void IdleState::Restore(idRestoreGame* savefile)
+{
+	State::Restore(savefile);
+
+	savefile->ReadVec3(_idlePosition);
+	savefile->ReadFloat(_idleYaw);
+}
+
 idStr IdleState::GetInitialIdleBark(idAI* owner)
 {
 	// greebo: Ported from ai_darkmod_base::task_Idle written by SZ

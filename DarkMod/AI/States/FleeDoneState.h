@@ -21,7 +21,6 @@ namespace ai
 class FleeDoneState :
 	public State
 {
-
 private:
 	float _oldTurnRate;
 	int _turnEndTime;
@@ -44,7 +43,6 @@ public:
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
-
 	virtual void Restore(idRestoreGame* savefile);
 
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);

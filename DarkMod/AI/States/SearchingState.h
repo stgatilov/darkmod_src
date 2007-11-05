@@ -56,13 +56,6 @@ public:
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{} // nothing yet
-
-	virtual void Restore(idRestoreGame* savefile)
-	{} // nothing yet
-
 	static StatePtr CreateInstance();
 
 private:

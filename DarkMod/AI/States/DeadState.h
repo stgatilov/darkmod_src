@@ -36,13 +36,6 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const
-	{} // nothing yet
-
-	virtual void Restore(idRestoreGame* savefile)
-	{} // nothing yet
-
 	static StatePtr CreateInstance();
 };
 
