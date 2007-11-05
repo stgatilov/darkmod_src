@@ -199,7 +199,6 @@ AI/Tasks/RandomTurningTask.cpp \
 AI/Tasks/RangedCombatTask.cpp \
 AI/Tasks/RepeatedBarkTask.cpp \
 AI/Tasks/SingleBarkTask.cpp \
-AI/Tasks/StimulusSensoryTask.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 sourcehook/sourcehook.cpp'
