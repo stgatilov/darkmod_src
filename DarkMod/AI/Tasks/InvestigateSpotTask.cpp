@@ -62,9 +62,18 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 		{
 			// Let's move
 			owner->MoveToPosition(memory.currentSearchSpot);
-		}
 
-		// AI_MOVE_DONE and AI_DEST_UNREACHABLE flags are checked in Perform()
+			if (!owner->AI_DEST_UNREACHABLE)
+			{
+				// Run if the point is more than 500 
+				// greebo: This is taxing and can be replaced by a simpler distance check 
+				// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
+				float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), memory.currentSearchSpot);
+
+				DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
+				owner->AI_RUN = (travelDist > 300);
+			}
+		}
 	}
 	else
 	{
@@ -104,12 +113,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	}
 	else
 	{
-		// Still moving, check distance
-		float dist = (memory.currentSearchSpot - owner->GetEyePosition()).LengthSqr();
-
-		// For distances larger than 300, set run to TRUE
-		owner->AI_RUN = (dist > 90000); // dist > 300^2
-
 		// Can we already see the point?
 		if (owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
 		{
