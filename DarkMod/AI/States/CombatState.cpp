@@ -50,6 +50,10 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	if (!owner->GetMind()->PerformCombatCheck())
+	{
+		return;
+	}
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 

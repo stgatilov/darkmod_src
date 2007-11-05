@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: SuspiciousState.cpp 1435 2007-1
 #include "SuspiciousState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
+#include "../Tasks/IdleSensoryTask.h"
 #include "SearchingState.h"
 #include "../Library.h"
 
@@ -36,7 +37,7 @@ void SuspiciousState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SuspiciousState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(1, "STATE_SEARCHING"))
+	if (!CheckAlertLevel(1, STATE_SEARCHING))
 	{
 		return;
 	}
@@ -48,6 +49,8 @@ void SuspiciousState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+	owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
 
 }
 

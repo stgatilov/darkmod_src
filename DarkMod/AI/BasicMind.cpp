@@ -611,8 +611,8 @@ bool BasicMind::PerformCombatCheck()
 
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
-		StatePtr combatState = CombatState::CreateInstance();
-		PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+		//StatePtr combatState = CombatState::CreateInstance();
+		//PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 
 		return true; // entered combat mode
 	}
@@ -639,6 +639,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{
+		/*
 		// Process alert flags for combat or stimulus location (both destroy flag values)?
 		if (owner->AI_AlertNum >= owner->thresh_combat)
 		{
@@ -650,7 +651,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 				return;
 			}
 		}
-		
+		*/
 		// If it was not a combat level alert, or we returned here because there
 		// was no target, set the alert position
 		SetAlertPos();
@@ -691,8 +692,8 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 					memory.searchingDueToCommunication = false;
 
 					// Push a reacting-to-stimulus state
-					PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
-					return;
+			//		PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+			//		return;
 				}	
 			} // Not too close to last stimulus or is visual stimulus
 		} // Not ignoring new stimuli
