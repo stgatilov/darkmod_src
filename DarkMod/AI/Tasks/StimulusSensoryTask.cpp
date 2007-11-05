@@ -56,8 +56,7 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 	{
 		owner->GetMind()->PerformCombatCheck();
 	}
-
-	else if (owner->AI_AlertNum >= owner->thresh_2 && owner->AI_AlertNum < owner->thresh_combat)
+	else if (owner->AI_AlertNum >= owner->thresh_2)
 	{
 		// Let the AI stop, before going into search mode
 		owner->StopMove(MOVE_STATUS_DONE);
@@ -72,14 +71,16 @@ bool StimulusSensoryTask::Perform(Subsystem& subsystem)
 		}
 
 		// Switch to searching mode, this will take care of the details
-		owner->GetMind()->SwitchState(STATE_SEARCHING);
+		owner->GetMind()->SwitchStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
 		return true; // task finished
 	}
 	else if (owner->AI_AlertNum <= owner->thresh_1)
 	{
 		// Fallback to idle, but with increased alertness
 		owner->Event_SetAlertLevel(owner->thresh_1 * 0.5f);
-		owner->GetMind()->SwitchState(STATE_IDLE);
+
+		owner->GetMind()->EndState();
+
 		return true; // task finished
 	}
 

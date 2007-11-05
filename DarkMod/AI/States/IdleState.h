@@ -21,6 +21,13 @@ namespace ai
 class IdleState :
 	public State
 {
+	// These are finite if the guard has no patrol route
+	idVec3 _idlePosition;
+	float _idleYaw;
+
+	// Private constructor
+	IdleState();
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;

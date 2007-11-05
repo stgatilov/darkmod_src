@@ -16,7 +16,7 @@ namespace ai
 {
 
 #define STATE_REACTING_TO_STIMULUS "ReactingToStimulus"
-#define PRIORITY_REACTING_TO_STIMULUS 200000
+#define PRIORITY_REACTING_TO_STIMULUS 1000
 
 class ReactingToStimulusState :
 	public State

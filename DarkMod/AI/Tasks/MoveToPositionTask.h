@@ -29,12 +29,15 @@ private:
 	// The target position
 	idVec3 _targetPosition;
 
+	// Target yaw (is not INFINITY if set)
+	float _targetYaw;
+
 	// Default constructor
 	MoveToPositionTask();
 
 public:
-	// Constructor taking the target position as input argument
-	MoveToPositionTask(const idVec3 targetPosition);
+	// Constructor taking the target position (and optional target yaw) as input argument
+	MoveToPositionTask(const idVec3 targetPosition, float targetYaw = idMath::INFINITY);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

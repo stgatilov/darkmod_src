@@ -19,10 +19,16 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/PatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
+#include "../Tasks/MoveToPositionTask.h"
 #include "../Library.h"
 
 namespace ai
 {
+
+IdleState::IdleState() :
+	_idlePosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
+	_idleYaw(idMath::INFINITY)
+{}
 
 // Get the name of this state
 const idStr& IdleState::GetName() const
@@ -70,6 +76,29 @@ void IdleState::Init(idAI* owner)
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+
+	// Check if the owner has patrol routes set
+	idPathCorner* path = idPathCorner::RandomPath(owner, NULL);
+
+	if (path == NULL)
+	{
+		// We don't have any patrol routes, so we're supposed to stand around
+		// where the mapper has put us.
+		if (_idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+		{
+			// No idle position saved yet, take the current one
+			_idlePosition = owner->GetPhysics()->GetOrigin();
+			_idleYaw = owner->GetCurrentYaw();
+		}
+		else
+		{
+			// We already HAVE an idle position set, this means that we are
+			// supposed to be there, let's move
+			owner->GetSubsystem(SubsysMovement)->PushTask(
+				TaskPtr(new MoveToPositionTask(_idlePosition, _idleYaw))
+			);
+		}
+	}
 }
 
 // Gets called each time the mind is thinking

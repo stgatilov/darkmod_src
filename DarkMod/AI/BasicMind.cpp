@@ -125,7 +125,7 @@ bool BasicMind::PushStateIfHigherPriority(const idStr& stateName, int priority)
 		if (curState->GetPriority() < priority)
 		{
 			// Priority of the current task is lower, take the new one
-			SwitchState(stateName);
+			PushState(stateName);
 			return true;
 		}
 	}
@@ -612,7 +612,7 @@ bool BasicMind::PerformCombatCheck()
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
 		StatePtr combatState = CombatState::CreateInstance();
-		SwitchState(STATE_COMBAT);
+		PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 
 		return true; // entered combat mode
 	}
@@ -690,8 +690,8 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 					// Do new reaction to stimulus
 					memory.searchingDueToCommunication = false;
 
-					// Switch to reacting stimulus task
-					SwitchStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+					// Push a reacting-to-stimulus state
+					PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
 					return;
 				}	
 			} // Not too close to last stimulus or is visual stimulus

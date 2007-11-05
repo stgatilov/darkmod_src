@@ -77,6 +77,9 @@ void SearchingState::Init(idAI* owner)
 		memory.hidingSpotInvestigationInProgress = false;
 	}
 
+	// No starting time yet
+	//memory.currentHidingSpotListSearchStartTime = -1;
+
 	// Clear the communication system
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	// Allocate a singlebarktask, set the sound and enqueue it
@@ -101,6 +104,20 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 void SearchingState::Think(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
+
+	// Check the maximum search duration, if there is one set
+	if (memory.currentHidingSpotListSearchStartTime > 0 &&
+		gameLocal.time > memory.currentHidingSpotListSearchStartTime + memory.currentHidingSpotListSearchMaxDuration)
+	{
+		// No more hiding spots to search
+		DM_LOG(LC_AI, LT_INFO).LogString("Search time expired!\r");
+
+		owner->StopMove(MOVE_STATUS_DONE);
+
+		// End the state, fall back to idle if nothing left
+		owner->GetMind()->EndState();
+		return;
+	}
 
 	// Do we have an ongoing hiding spot search?
 	if (!memory.hidingSpotSearchDone)
@@ -129,6 +146,8 @@ void SearchingState::Think(idAI* owner)
 				// Bark?
 				// Wait?
 			}
+
+			owner->StopMove(MOVE_STATUS_DONE);
 
 			// Fall back into the previous state
 			owner->GetMind()->EndState();
@@ -347,12 +366,12 @@ int SearchingState::DetermineSearchDuration(idAI* owner)
 
 	if (owner->AI_AlertNum >= owner->thresh_2)
 	{
-		searchTimeSpan += owner->atime2;
+		searchTimeSpan += owner->atime2 * 0.6f;
 	}
 
 	if (owner->AI_AlertNum >= owner->thresh_3)
 	{
-		searchTimeSpan += owner->atime3;
+		searchTimeSpan += owner->atime3 * 0.5f;
 	}
 
 	// Randomize duration by up to 20% increase

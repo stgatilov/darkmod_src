@@ -21,11 +21,13 @@ namespace ai
 
 // This should be unreachable if no target position is specified.
 MoveToPositionTask::MoveToPositionTask() :
-	_targetPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY)
+	_targetPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
+	_targetYaw(idMath::INFINITY)
 {}
 
-MoveToPositionTask::MoveToPositionTask(const idVec3 targetPosition) :
-	_targetPosition(targetPosition)
+MoveToPositionTask::MoveToPositionTask(const idVec3 targetPosition, float targetYaw) :
+	_targetPosition(targetPosition),
+	_targetYaw(targetYaw)
 {}
 
 
@@ -40,7 +42,6 @@ void MoveToPositionTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
-
 }
 
 bool MoveToPositionTask::Perform(Subsystem& subsystem)
@@ -54,11 +55,17 @@ bool MoveToPositionTask::Perform(Subsystem& subsystem)
 
 	if (!owner->MoveToPosition(_targetPosition))
 	{
+		// Destination unreachable, end task
 		return true;
 	}
 		
 	if (owner->AI_MOVE_DONE)
 	{
+		// Position reached, turn to the given yaw, if valid
+		if (_targetYaw != idMath::INFINITY)
+		{
+			owner->TurnToward(_targetYaw);
+		}
 		return true;
 	}
 		 
@@ -76,6 +83,7 @@ void MoveToPositionTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	savefile->WriteVec3(_targetPosition);
+	savefile->WriteFloat(_targetYaw);
 }
 
 void MoveToPositionTask::Restore(idRestoreGame* savefile)
@@ -83,6 +91,7 @@ void MoveToPositionTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	savefile->ReadVec3(_targetPosition);
+	savefile->ReadFloat(_targetYaw);
 }
 
 MoveToPositionTaskPtr MoveToPositionTask::CreateInstance()
