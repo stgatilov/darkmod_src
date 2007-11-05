@@ -24,11 +24,13 @@ typedef boost::shared_ptr<PathCornerTask> PathCornerTaskPtr;
 class PathCornerTask :
 	public Task
 {
+private:
 	idEntityPtr<idPathCorner> _path;
-
 	bool _moveInitiated;
-public:
+
 	PathCornerTask();
+
+public:
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

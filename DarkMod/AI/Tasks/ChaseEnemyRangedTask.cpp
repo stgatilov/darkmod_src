@@ -39,7 +39,7 @@ void ChaseEnemyRangedTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Chase Enemy Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("ChaseEnemyRangedTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -85,9 +85,17 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	else 
 	{
 		idVec3 enemyDirection = enemy->GetEyePosition() - owner->GetEyePosition();
-		owner->MoveAlongVector(enemyDirection.ToYaw());
-	//	float enemyDistance = enemyDirection.LengthFast();
-	
+		float enemyDistance = enemyDirection.NormalizeFast();
+		idVec3 targetPosition = owner->GetEyePosition() + enemyDirection * 40;
+		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), targetPosition, 1, 2000);
+		if (!owner->MoveToPosition(targetPosition))
+		{
+
+			// Alternate route
+		}
+
+		
+
 	}
 	/*
 	else

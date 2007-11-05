@@ -24,7 +24,6 @@ typedef boost::shared_ptr<MoveToCoverTask> MoveToCoverTaskPtr;
 class MoveToCoverTask :
 	public Task
 {
-
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -34,13 +33,8 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
-	// Save/Restore methods
-	virtual void Save(idSaveGame* savefile) const;
-	virtual void Restore(idRestoreGame* savefile);
-
 	// Creates a new Instance of this task
 	static MoveToCoverTaskPtr CreateInstance();
-
 };
 
 } // namespace ai

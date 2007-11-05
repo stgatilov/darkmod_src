@@ -43,7 +43,6 @@ public:
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
-
 };
 
 } // namespace ai

@@ -70,17 +70,6 @@ bool MoveToCoverTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
-// Save/Restore methods
-void MoveToCoverTask::Save(idSaveGame* savefile) const
-{
-	Task::Save(savefile);
-}
-
-void MoveToCoverTask::Restore(idRestoreGame* savefile)
-{
-	Task::Restore(savefile);
-}
-
 MoveToCoverTaskPtr MoveToCoverTask::CreateInstance()
 {
 	return MoveToCoverTaskPtr(new MoveToCoverTask);

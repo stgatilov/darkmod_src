@@ -24,7 +24,6 @@ typedef boost::shared_ptr<WaitTask> WaitTaskPtr;
 class WaitTask :
 	public Task
 {
-
 private:
 
 	int _waitTime;
