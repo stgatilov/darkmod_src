@@ -28,10 +28,11 @@ class Memory;
 
 enum EAlertState {
 	ERelaxed,
-	EAroused,
+	ESuspicious,
 	EInvestigating,
 	EAgitatedSearching,
 	ECombat,
+	EAlertStateNum
 };
 
 /**
