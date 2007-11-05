@@ -67,16 +67,6 @@ private:
 	// This is called each frame to complete a multiframe hiding spot search
 	void PerformHidingSpotSearch(idAI* owner);
 
-	/**
-	* This method looks at the alert level and determines
-	* the duration to set for the currentHidingSpotListSearchMaxDuration
-	* variable that controls the length of an ensuing search.
-	*
-	* @return Returns the duration that was also set in the
-	*	currentHidingSpotListSearchMaxDuration in the Memory.
-	*/
-	int DetermineSearchDuration(idAI* owner);
-
 	// Gets called when a new hiding spot should be acquired for searching.
 	// Stores the result in the AI's Memory (hiding spot indices)
 	// return TRUE when a hiding spot is available, FALSE if not.

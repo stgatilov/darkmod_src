@@ -44,7 +44,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 		return;
 	}
 
-
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -56,7 +55,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 	
 	// No current search completed that we know of
 	memory.numPossibleHidingSpotsSearched = 0;
-	memory.currentHidingSpotListSearchMaxDuration = -1;
 
 	// Clear all the ongoing tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -81,9 +79,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 		// AI is not moving, wait for spot search to complete
 		memory.hidingSpotInvestigationInProgress = false;
 	}
-
-	// No starting time yet
-	memory.currentHidingSpotListSearchStartTime = -1;
 
 	// Clear the communication system
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -115,22 +110,6 @@ void AgitatedSearchingState::Think(idAI* owner)
 
 
 	Memory& memory = owner->GetMemory();
-
-	// Check the maximum search duration, if there is one set
-	if (memory.currentHidingSpotListSearchStartTime > 0 &&
-		gameLocal.time > memory.currentHidingSpotListSearchStartTime + memory.currentHidingSpotListSearchMaxDuration)
-	{
-		// No more hiding spots to search
-		DM_LOG(LC_AI, LT_INFO).LogString("Search time expired!\r");
-
-		owner->StopMove(MOVE_STATUS_DONE);
-
-		// End the state, fall back to idle if nothing left
-		// TODO : wander
-		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-		owner->GetMind()->EndState();
-		return;
-	}
 
 	// Do we have an ongoing hiding spot search?
 	if (!memory.hidingSpotSearchDone)
@@ -250,9 +229,6 @@ void AgitatedSearchingState::PerformHidingSpotSearch(idAI* owner)
 		// a way for different AIs to act differently
 		// TODO: Morale check etc...
 
-		// Determine the search duration
-		DetermineSearchDuration(owner);
-
 		// Yell that you noticed something if you are responding directly to a stimulus
 		if (!memory.searchingDueToCommunication)
 		{
@@ -267,9 +243,6 @@ void AgitatedSearchingState::PerformHidingSpotSearch(idAI* owner)
 
 		// Get location
 		memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
-
-		// Set time search is starting
-		memory.currentHidingSpotListSearchStartTime = gameLocal.time;
 	}
 }
 
@@ -365,38 +338,6 @@ bool AgitatedSearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	}
 
 	return true;
-}
-
-int AgitatedSearchingState::DetermineSearchDuration(idAI* owner)
-{
-	Memory& memory = owner->GetMemory();
-
-	// Determine how much time we should spend searching based on the alert times
-	int searchTimeSpan(0);
-
-	if (owner->AI_AlertNum >= owner->thresh_1)
-	{
-		searchTimeSpan += owner->atime1;
-	}
-
-	if (owner->AI_AlertNum >= owner->thresh_2)
-	{
-		searchTimeSpan += owner->atime2 * 0.6f;
-	}
-
-	if (owner->AI_AlertNum >= owner->thresh_3)
-	{
-		searchTimeSpan += owner->atime3 * 0.5f;
-	}
-
-	// Randomize duration by up to 20% increase
-	memory.currentHidingSpotListSearchMaxDuration = 
-		SEC2MS(searchTimeSpan * (1 + gameLocal.random.RandomFloat()*0.2f));
-
-	DM_LOG(LC_AI, LT_INFO).LogString("Search duration set to %d msec\r", memory.currentHidingSpotListSearchMaxDuration);
-	
-	// Done
-	return memory.currentHidingSpotListSearchMaxDuration;
 }
 
 StatePtr AgitatedSearchingState::CreateInstance()

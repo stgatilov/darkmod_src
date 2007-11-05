@@ -141,20 +141,6 @@ public:
 	bool canHitEnemy;
 
 	/*!
-	* This is the time at which the current hiding spot
-	* list search started
-	* @author SophisticatedZombie
-	*/
-	int currentHidingSpotListSearchStartTime;
-
-	/*!
-	* This is the maximum duration of the current
-	* hiding spot list search in msec.
-	* @author SophisticatedZombie
-	*/
-	int currentHidingSpotListSearchMaxDuration;
-	
-	/*!
 	* This is the number of hiding spots from the current
 	* hiding spot list which have been searched
 	* @author SophisticatedZombie
@@ -212,8 +198,6 @@ public:
 		alertSearchExclusionVolume(0,0,0),
 		lastEnemyPos(0,0,0),
 		canHitEnemy(false),
-		currentHidingSpotListSearchStartTime(-1),
-		currentHidingSpotListSearchMaxDuration(-1),
 		numPossibleHidingSpotsSearched(0),
 		currentSearchSpot(0,0,0),
 		hidingSpotTestStarted(false),
@@ -249,8 +233,6 @@ public:
 		savefile->WriteVec3(alertSearchExclusionVolume);
 		savefile->WriteVec3(lastEnemyPos);
 		savefile->WriteBool(canHitEnemy);
-		savefile->WriteInt(currentHidingSpotListSearchStartTime);
-		savefile->WriteInt(currentHidingSpotListSearchMaxDuration);
 		savefile->WriteInt(numPossibleHidingSpotsSearched);
 		savefile->WriteVec3(currentSearchSpot);
 		savefile->WriteBool(hidingSpotTestStarted);
@@ -291,8 +273,6 @@ public:
 		savefile->ReadVec3(alertSearchExclusionVolume);
 		savefile->ReadVec3(lastEnemyPos);
 		savefile->ReadBool(canHitEnemy);
-		savefile->ReadInt(currentHidingSpotListSearchStartTime);
-		savefile->ReadInt(currentHidingSpotListSearchMaxDuration);
 		savefile->ReadInt(numPossibleHidingSpotsSearched);
 		savefile->ReadVec3(currentSearchSpot);
 		savefile->ReadBool(hidingSpotTestStarted);
