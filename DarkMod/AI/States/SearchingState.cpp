@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/WanderInLocationTask.h"
 #include "../Library.h"
 #include "IdleState.h"
 #include "AgitatedSearchingState.h"
@@ -130,35 +131,26 @@ void SearchingState::Think(idAI* owner)
 			// No more hiding spots to search
 			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
 
-			if (owner->m_hidingSpots.getNumSpots() > 0)
-			{
-				// Number of hiding spot is greater than zero, so we
-				// came here after the search has been finished
-
-				// Rub neck?
-				// Bark?
-				// Wait?
-			}
-
 			owner->StopMove(MOVE_STATUS_DONE);
 
-			// Fall back into the previous state
-			// TODO: wander around
-			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-			owner->GetMind()->EndState();
+			owner->GetSubsystem(SubsysMovement)->PushTask(
+				TaskPtr(new WanderInLocationTask(memory.alertPos))
+			);
 
-			return; // Exit, state will be switched next frame, we're done here
+			memory.hidingSpotInvestigationInProgress = true;
 		}
+		else
+		{
+			// ChooseNextHidingSpot returned TRUE, so we have memory.currentSearchSpot set
 
-		// ChooseNextHidingSpot returned TRUE, so we have memory.currentSearchSpot set
+			//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
-		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+			// Delegate the spot investigation to a new task, this will take the correct action.
+			owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
 
-		// Delegate the spot investigation to a new task, this will take the correct action.
-		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
-
-		// Prevent falling into the same hole twice
-		memory.hidingSpotInvestigationInProgress = true;
+			// Prevent falling into the same hole twice
+			memory.hidingSpotInvestigationInProgress = true;
+		}
 	}
 	else
 	{
