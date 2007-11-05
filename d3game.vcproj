@@ -573,6 +573,12 @@
 					Name="States"
 					Filter="">
 					<File
+						RelativePath=".\DarkMod\Ai\States\AgitatedSearchingState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\AgitatedSearchingState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\CombatState.cpp">
 					</File>
 					<File
@@ -639,6 +645,12 @@
 						RelativePath=".\DarkMod\Ai\States\State.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\SuspiciousState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\SuspiciousState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\TakeCoverState.cpp">
 					</File>
 					<File
@@ -654,6 +666,12 @@
 				<Filter
 					Name="Tasks"
 					Filter="">
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\ChaseEnemyRangedTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\ChaseEnemyRangedTask.h">
+					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\ChaseEnemyTask.cpp">
 					</File>
@@ -757,28 +775,22 @@
 						RelativePath=".\DarkMod\Ai\Tasks\RandomTurningTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\RangedCombatTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\RangedCombatTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\RepeatedBarkTask.cpp">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\RepeatedBarkTask.h">
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\Tasks\SearchTask.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\SearchTask.h">
-					</File>
-					<File
 						RelativePath=".\DarkMod\Ai\Tasks\SingleBarkTask.cpp">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\SingleBarkTask.h">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\StimulusSensoryTask.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\StimulusSensoryTask.h">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\Task.h">
