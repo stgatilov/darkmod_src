@@ -461,6 +461,10 @@ void CFrobDoor::OpenDoor(bool bMaster)
 				
 				// Open visportal
 				Event_OpenPortal();
+
+				// trigger our targets on opening, if set to do so
+				if( spawnArgs.GetBool("trigger_on_open","") )
+					ActivateTargets( this );
 			}
 
 			physicsObj.GetLocalAngles( tempAng );

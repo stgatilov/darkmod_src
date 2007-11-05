@@ -272,6 +272,10 @@ void CBinaryFrobMover::Open(bool bMaster)
 			
 			// Open visportal
 			Event_OpenPortal();
+
+			// trigger our targets on opening, if set to do so
+			if( spawnArgs.GetBool("trigger_on_open","") )
+				ActivateTargets( this );
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
@@ -404,6 +408,10 @@ void CBinaryFrobMover::DoneStateChange(void)
 		
 		// close visportal
 		ClosePortal();
+
+		// trigger our targets on completely closing, if set to do so
+		if( spawnArgs.GetBool("trigger_on_close","") )
+			ActivateTargets( this );
 	}
 	else	// door has completely opened
 	{
