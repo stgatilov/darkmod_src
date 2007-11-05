@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_WAIT "Path_Wait"
+#define TASK_PATH_WAIT "PathWait"
 
 class PathWaitTask;
 typedef boost::shared_ptr<PathWaitTask> PathWaitTaskPtr;

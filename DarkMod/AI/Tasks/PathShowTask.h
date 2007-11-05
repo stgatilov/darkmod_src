@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_SHOW "Path_Show"
+#define TASK_PATH_SHOW "PathShow"
 
 class PathShowTask;
 typedef boost::shared_ptr<PathShowTask> PathShowTaskPtr;

@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_SINGLE_BARK "Single_Bark"
+#define TASK_SINGLE_BARK "SingleBark"
 
 class SingleBarkTask;
 typedef boost::shared_ptr<SingleBarkTask> SingleBarkTaskPtr;

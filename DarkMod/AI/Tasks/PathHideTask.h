@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_HIDE "Path_Hide"
+#define TASK_PATH_HIDE "PathHide"
 
 class PathHideTask;
 typedef boost::shared_ptr<PathHideTask> PathHideTaskPtr;

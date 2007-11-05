@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_CORNER "Path_Corner"
+#define TASK_PATH_CORNER "PathCorner"
 
 class PathCornerTask;
 typedef boost::shared_ptr<PathCornerTask> PathCornerTaskPtr;

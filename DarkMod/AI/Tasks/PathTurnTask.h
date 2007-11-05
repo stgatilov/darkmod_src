@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_TURN "Path_Turn"
+#define TASK_PATH_TURN "PathTurn"
 
 class PathTurnTask;
 typedef boost::shared_ptr<PathTurnTask> PathTurnTaskPtr;

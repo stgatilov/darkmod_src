@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_REPEATED_BARK "Repeated_Bark"
+#define TASK_REPEATED_BARK "RepeatedBark"
 
 class RepeatedBarkTask;
 typedef boost::shared_ptr<RepeatedBarkTask> RepeatedBarkTaskPtr;

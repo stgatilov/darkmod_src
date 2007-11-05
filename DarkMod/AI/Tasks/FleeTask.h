@@ -17,7 +17,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_FLEE "Flee_Task"
+#define TASK_FLEE "FleeTask"
 
 class FleeTask;
 typedef boost::shared_ptr<FleeTask> FleeTaskPtr;

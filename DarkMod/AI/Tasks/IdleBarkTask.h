@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_IDLE_BARK "Idle_Bark"
+#define TASK_IDLE_BARK "IdleBark"
 
 class IdleBarkTask;
 typedef boost::shared_ptr<IdleBarkTask> IdleBarkTaskPtr;

@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_THROW_OBJECT "Throw_Object"
+#define TASK_THROW_OBJECT "ThrowObject"
 
 class ThrowObjectTask;
 typedef boost::shared_ptr<ThrowObjectTask> ThrowObjectTaskPtr;

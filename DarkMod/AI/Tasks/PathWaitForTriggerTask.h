@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_WAIT_FOR_TRIGGER "Path_Wait_For_Trigger"
+#define TASK_PATH_WAIT_FOR_TRIGGER "PathWaitForTrigger"
 
 class PathWaitForTriggerTask;
 typedef boost::shared_ptr<PathWaitForTriggerTask> PathWaitForTriggerTaskPtr;

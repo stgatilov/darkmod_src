@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_IDLE_SENSORY "Idle_Sensory"
+#define TASK_IDLE_SENSORY "IdleSensory"
 
 class IdleSensoryTask;
 typedef boost::shared_ptr<IdleSensoryTask> IdleSensoryTaskPtr;

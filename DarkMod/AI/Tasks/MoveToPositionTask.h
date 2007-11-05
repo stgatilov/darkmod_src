@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_MOVE_TO_POSITION "Move_To_Position"
+#define TASK_MOVE_TO_POSITION "MoveToPosition"
 
 class MoveToPositionTask;
 typedef boost::shared_ptr<MoveToPositionTask> MoveToPositionTaskPtr;

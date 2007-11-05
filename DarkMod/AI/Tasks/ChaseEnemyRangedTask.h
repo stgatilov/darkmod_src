@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_CHASE_ENEMY_RANGED "Chase_Enemy_Ranged"
+#define TASK_CHASE_ENEMY_RANGED "ChaseEnemyRanged"
 
 class ChaseEnemyRangedTask;
 typedef boost::shared_ptr<ChaseEnemyRangedTask> ChaseEnemyRangedTaskPtr;

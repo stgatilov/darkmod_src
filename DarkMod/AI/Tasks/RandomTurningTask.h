@@ -16,7 +16,7 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_RANDOM_TURNING "Random_Turning"
+#define TASK_RANDOM_TURNING "RandomTurning"
 
 class RandomTurningTask;
 typedef boost::shared_ptr<RandomTurningTask> RandomTurningTaskPtr;
