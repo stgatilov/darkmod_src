@@ -516,6 +516,7 @@ void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 	propEntry.LossMult = lossMult * m_SndGlobals.kappa0;
 	propEntry.VolMod = VolMod;
 	propEntry.area = area;
+	propEntry.DataEntered = false; // greebo: Initialised to false to fix gcc warning
 
 	//add to the area properties list
 	m_AreaProps.Append( static_cast<const SAreaProp>(propEntry) );

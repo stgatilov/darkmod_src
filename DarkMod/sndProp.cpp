@@ -288,6 +288,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 		defaultArea.area = 0;
 		defaultArea.LossMult = 1.0 * m_SndGlobals.kappa0;
 		defaultArea.VolMod = 0.0;
+		defaultArea.DataEntered = false;
 
 		m_AreaPropsG.Append( defaultArea );
 		m_AreaPropsG.Condense();
@@ -1506,6 +1507,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 			tempQEntry.curAtt = tempAtt;
 			tempQEntry.portalH = pSndAreas->portals[i2].handle;
 			tempQEntry.PrevPort = NULL;
+			tempQEntry.curLoss = 0.0f; // greebo: Initialised to 0.0f to fix gcc warning
 
 			NextAreas.Append( tempQEntry );
 		}
