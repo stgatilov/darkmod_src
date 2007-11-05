@@ -83,7 +83,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	}
 
 	// No starting time yet
-	//memory.currentHidingSpotListSearchStartTime = -1;
+	memory.currentHidingSpotListSearchStartTime = -1;
 
 	// Clear the communication system
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
