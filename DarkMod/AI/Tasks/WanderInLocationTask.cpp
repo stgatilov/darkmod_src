@@ -39,9 +39,13 @@ void WanderInLocationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	owner->AI_RUN = true;
+	owner->AI_RUN = false;
 
+	// Turn toward the initial location
+	owner->TurnToward(_location);
 	
+	// Move toward the initial loation
+	owner->MoveToPosition(_location);
 }
 
 bool WanderInLocationTask::Perform(Subsystem& subsystem)
@@ -53,7 +57,16 @@ bool WanderInLocationTask::Perform(Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
-	
+	// if we are approaching or past maximum distance, next wander is back toward the initial position
+	if ((owner->GetPhysics()->GetOrigin() - _location).LengthFast() >= memory.alertRadius)
+	{
+		owner->MoveToPosition(_location);
+	}
+	else if (owner->AI_MOVE_DONE)
+	{
+		// Wander in a new direction if wander phase time expired or we got stopped by something
+		owner->WanderAround();
+	}
 
 	return false; // not finished yet
 }
