@@ -586,6 +586,14 @@ private:
 	* Current frob state, whether stuff inside has been set frobable or not
 	**/
 	bool				m_bCurFrobState;
+
+	/**
+	* List of the names of entities previously set unfrobable
+	* This list is maintained to avoid accidentally setting anything frobable
+	* that was not frobable before it went in the brush
+	* Only ents that get added to this list will become frobable.
+	**/
+	idStrList			m_EntsSetUnfrobable;
 };
 
 

@@ -1794,6 +1794,7 @@ END_CLASS
 CTarget_SetFrobable::CTarget_SetFrobable( void )
 {
 	m_bCurFrobState = false;
+	m_EntsSetUnfrobable.Clear();
 }
 
 void CTarget_SetFrobable::Spawn( void )
@@ -1824,6 +1825,8 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 {
 	int NumEnts(0);
 	idEntity *Ents[MAX_GENTITIES];
+	idEntity *ent( NULL );
+	bool bOnList(false);
 
 	// Contents mask:
 	int cm = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_BODY | CONTENTS_FROBABLE;
@@ -1836,37 +1839,76 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 	// toggle frobability
 	m_bCurFrobState = !m_bCurFrobState;
 	
-	// TODO: Maintain a list of items that were originally frobable which we toggled off
-	// We don't want something that shouldn't be frobable to go in and get set frobable
 	for( int i=0; i < NumEnts; i++ )
 	{
 		// Don't set self or the world, or the player frobable
-		if( Ents[i] == this 
+		if( Ents[i] == NULL
+			|| Ents[i] == this 
 			|| Ents[i] == gameLocal.world
 			|| Ents[i] == gameLocal.GetLocalPlayer() )
 		{
 			continue;
 		}
 
-		Ents[i]->SetFrobable( m_bCurFrobState );
+		ent = Ents[i];
+
+		if( m_bCurFrobState )
+		{
+			// Before setting something frobable, check if it is on the
+			// list of things we set un-frobable earlier
+			bOnList = false;
+
+			for( int k=0; k < m_EntsSetUnfrobable.Num(); k++ )
+			{
+				if( m_EntsSetUnfrobable[k] == ent->name )
+				{
+					bOnList = true;
+					break;
+				}
+			}
+
+			if( bOnList )
+				ent->SetFrobable( m_bCurFrobState );
+		}
+		else 
+		{	
+			// setting unfrobable
+			if( ent->m_bFrobable )
+			{
+				m_EntsSetUnfrobable.AddUnique( ent->name );
+				ent->SetFrobable( m_bCurFrobState );
+			}
+		}
 
 // Uncomment for debugging
-/*
+
 		idStr frobnofrob = "not frobable.";
 		if( m_bCurFrobState )
 			frobnofrob = "frobable.";
 
 		DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_SetFrobable: Set entity %s to frob state: %s\r", Ents[i]->name.c_str(), frobnofrob.c_str() );
-*/
+
 	}
 }
 
 void CTarget_SetFrobable::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteBool( m_bCurFrobState );
+
+	savefile->WriteInt( m_EntsSetUnfrobable.Num() );
+	for( int i=0;i < m_EntsSetUnfrobable.Num(); i++ )
+		savefile->WriteString( m_EntsSetUnfrobable[i] );
 }
 
 void CTarget_SetFrobable::Restore( idRestoreGame *savefile )
 {
+	int num;
+
 	savefile->ReadBool( m_bCurFrobState );
+
+	m_EntsSetUnfrobable.Clear();
+	savefile->ReadInt( num );
+	m_EntsSetUnfrobable.SetNum( num );
+	for( int i=0;i < num; i++ )
+		savefile->ReadString( m_EntsSetUnfrobable[i] );
 }
