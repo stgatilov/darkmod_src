@@ -21,6 +21,21 @@ protected:
 	// The owning entity
 	idEntityPtr<idAI> _owner;
 
+protected:
+	/**
+	 * greebo: Base class service method employed by the Backbone States.
+	 *
+	 * Basically checks whether the AI is in the given alert index.
+	 *
+	 * If the AlertIndex is smaller, EndState() is invoked,
+	 * when it is higher, the Mind is switched to the State 
+	 * with the given name <higherStateName>.
+	 *
+	 * @returns: TRUE if the alert level is ok, FALSE otherwise (State is about to End/Switch).
+	 *           When FALSE is returned, the calling State be returned.
+	 */
+	bool CheckAlertLevel(int reqAlertIndex, const idStr& higherStateName);
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const = 0;
