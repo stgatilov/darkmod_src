@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 /*
 ===============================================================================
@@ -1777,4 +1778,95 @@ void CTarget_AddObjectives::Event_Activate( idEntity *activator )
 	}
 
 	spawnArgs.Set( "obj_num_offset", va("%d", SetVal) );
+}
+
+/*
+===============================================================================
+
+CTarget_SetFrobable
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetFrobable )
+	EVENT( EV_Activate,	CTarget_SetFrobable::Event_Activate )
+END_CLASS
+
+CTarget_SetFrobable::CTarget_SetFrobable( void )
+{
+	m_bCurFrobState = false;
+}
+
+void CTarget_SetFrobable::Spawn( void )
+{
+	spawnArgs.GetBool( "start_frobable", "0", m_bCurFrobState );
+
+	// Set the contents to a useless trigger so that the collision model will be loaded
+	// FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
+	GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
+
+	// SR CONTENTS_RESONSE FIX
+	if( m_StimResponseColl->HasResponse() )
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+
+	// Disable the clipmodel for now, only enable when needed
+	GetPhysics()->DisableClip();
+
+	// If we don't start frobable, activate once and set everything to not frobable
+	// This saves the mapper the time of manually setting everything inside not frobable to start out with
+	if( !m_bCurFrobState )
+	{
+		m_bCurFrobState = true;
+		PostEventMS( &EV_Activate, 0, this );
+	}
+}
+
+void CTarget_SetFrobable::Event_Activate( idEntity *activator )
+{
+	int NumEnts(0);
+	idEntity *Ents[MAX_GENTITIES];
+
+	// Contents mask:
+	int cm = CONTENTS_SOLID | CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_BODY | CONTENTS_FROBABLE;
+
+	// bounding box test to get entities inside
+	GetPhysics()->EnableClip();
+	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents, MAX_GENTITIES);
+	GetPhysics()->DisableClip();
+
+	// toggle frobability
+	m_bCurFrobState = !m_bCurFrobState;
+	
+	// TODO: Maintain a list of items that were originally frobable which we toggled off
+	// We don't want something that shouldn't be frobable to go in and get set frobable
+	for( int i=0; i < NumEnts; i++ )
+	{
+		// Don't set self or the world, or the player frobable
+		if( Ents[i] == this 
+			|| Ents[i] == gameLocal.world
+			|| Ents[i] == gameLocal.GetLocalPlayer() )
+		{
+			continue;
+		}
+
+		Ents[i]->SetFrobable( m_bCurFrobState );
+
+// Uncomment for debugging
+/*
+		idStr frobnofrob = "not frobable.";
+		if( m_bCurFrobState )
+			frobnofrob = "frobable.";
+
+		DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_SetFrobable: Set entity %s to frob state: %s\r", Ents[i]->name.c_str(), frobnofrob.c_str() );
+*/
+	}
+}
+
+void CTarget_SetFrobable::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteBool( m_bCurFrobState );
+}
+
+void CTarget_SetFrobable::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadBool( m_bCurFrobState );
 }

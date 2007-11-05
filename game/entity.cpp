@@ -6546,6 +6546,15 @@ void idEntity::UpdateFrobDisplay( void )
 {
 	float param = renderEntity.shaderParms[ 11 ];
 	int TimePassed = 0;
+
+	// FIX: If we have just been set not frobable, go instantly to un-frobbed hilight state
+	if( !m_bFrobable )
+	{
+		param = 0.0f;
+		m_FrobChangeTime = gameLocal.time;
+		SetShaderParm(11, param);
+		goto Quit;
+	}
 	
 	if( (!param && !m_bFrobHighlightState) || ((param == 1.0) && m_bFrobHighlightState)  )
 		goto Quit;
@@ -6718,6 +6727,24 @@ void idEntity::SetFrobbed( bool val )
 bool idEntity::IsFrobbed( void )
 {
 	return m_bFrobbed;
+}
+
+void idEntity::SetFrobable( bool bVal )
+{
+	m_bFrobable = bVal;
+
+	// If this entity is currently being hilighted, make sure to un-frob it
+	if( !bVal )
+	{
+		SetFrobbed(false);
+		FrobHighlight(false);
+	}
+
+	UpdateFrob();
+	UpdateFrobDisplay();
+
+	// Make sure Present gets called when we make something frobable
+	BecomeActive( TH_UPDATEVISUALS );
 }
 
 void idEntity::StimAdd(int Type, float Radius)
@@ -7539,10 +7566,7 @@ Quit:
 
 void idEntity::Event_SetFrobable( bool bVal )
 {
-	m_bFrobable = bVal;
-
-	if( m_bFrobable )
-		BecomeActive( TH_UPDATEVISUALS );
+	SetFrobable( bVal );
 }
 
 void idEntity::Event_IsFrobable( void )

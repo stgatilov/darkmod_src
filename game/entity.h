@@ -559,6 +559,11 @@ public:
 	virtual void SetFrobbed( bool val );
 
 	/**
+	* Set whether this entity is frobable or not
+	**/
+	virtual void SetFrobable( bool val );
+
+	/**
 	* Return whether the entity is currently frobbed.
 	* Should be false at the beginning of the frame
 	**/
