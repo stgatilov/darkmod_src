@@ -118,6 +118,22 @@ void SearchingState::Think(idAI* owner)
 	{
 		// Let the hiding spot search do its task
 		PerformHidingSpotSearch(owner);
+
+		// Let the mind check its senses (TRUE = process new stimuli)
+		owner->GetMind()->PerformSensoryScan(true);
+
+		idStr waitState(owner->WaitState());
+		if (waitState != "look_around")
+		{
+			// Waitstate is not matching, this means that the animation 
+			// can be started.
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_LookAround", 5);
+			//owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_LookAround", 5);
+
+			// Set the waitstate, this gets cleared by 
+			// the script function when the animation is done.
+			owner->SetWaitState("look_around");
+		}
 	}
 	// Is a hiding spot search in progress?
 	else if (!memory.hidingSpotInvestigationInProgress)
