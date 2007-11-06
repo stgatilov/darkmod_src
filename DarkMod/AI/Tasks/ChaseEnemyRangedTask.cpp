@@ -63,7 +63,7 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		owner->TurnToward(enemy->GetEyePosition());
 	}
 	
-	// no, push the AI forward and try to get to the last visible reachable enemy position
+	// try to get to the last visible reachable enemy position
 	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		if (owner->AI_MOVE_DONE)
@@ -84,29 +84,31 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	}
 	else 
 	{
-		idVec3 enemyDirection = enemy->GetEyePosition() - owner->GetEyePosition();
-		float enemyDistance = enemyDirection.NormalizeFast();
-		idVec3 targetPosition = owner->GetEyePosition() + enemyDirection * 40;
-		gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), targetPosition, 1, 2000);
-		if (!owner->MoveToPosition(targetPosition))
+		// Can't reach the last visible enemy position,find another position within range
+		aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
+		if (goal.areaNum != -1)
 		{
+			// Found a suitable attack position, now move to it
+			owner->MoveToPosition(goal.origin);
+		}
+		
+		else
+		{
+			// Destination unreachable!
+			// it is likely that the archer is not able to reach the enemy at all
+			// should run and alert everybody?
+			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+			gameLocal.Printf("Destination unreachable... \n");
+			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 
-			// Alternate route
+			
+			//owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+			//return true;
 		}
 
-		
 
 	}
-	/*
-	else
-	{
-		// Destination unreachable!
-		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
-		gameLocal.Printf("Destination unreachable... \n");
-		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-		return true;
-	}
-	*/
+	
 
 	return false; // not finished yet
 }

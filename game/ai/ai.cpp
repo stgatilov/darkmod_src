@@ -28,6 +28,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/PlayerData.h"
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/EscapePointManager.h"
+#include "../../DarkMod/PositionWithinRangeFinder.h"
 
 // For handling the opening of doors and other binary Frob movers
 #include "../../DarkMod/BinaryFrobMover.h"
@@ -2540,6 +2541,195 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	AI_FORWARD			= true;
 
 	return true;
+}
+
+/*
+=====================
+idAI::GetPositionWithinRange
+=====================
+*/
+aasGoal_t idAI::GetPositionWithinRange(const idVec3& targetPos)
+{
+	idVec3 org = physicsObj.GetOrigin();
+	idVec3 eye = GetEyePosition();
+	float fireRange = spawnArgs.GetFloat("fire_range", "0");
+
+	PositionWithinRangeFinder findGoal(this, physicsObj.GetGravityAxis(), targetPos, eye - org, fireRange);
+
+	aasGoal_t goal;
+	int areaNum	= PointReachableAreaNum(org);
+
+	aas->FindNearestGoal(goal, areaNum, org, targetPos, travelFlags, NULL, 0, findGoal);
+	
+	goal.areaNum = -1;
+
+	float bestDistance;
+	findGoal.GetBestGoalResult(bestDistance, goal);
+	return goal;
+}
+
+
+
+
+/*
+=====================
+idAI::GetObservationPosition
+=====================
+*/
+idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
+{
+	int				areaNum;
+	aasObstacle_t	obstacle;
+	aasGoal_t		goal;
+	idBounds		bounds;
+	idVec3			observeFromPos;
+	aasPath_t	path;
+
+	if ( !aas ) 
+	{	
+		observeFromPos = GetPhysics()->GetOrigin();
+		AI_DEST_UNREACHABLE = true;
+		return observeFromPos;
+	}
+
+	const idVec3 &org = physicsObj.GetOrigin();
+	areaNum	= PointReachableAreaNum( org );
+
+	// Raise point up just a bit so it isn't on the floor of the aas
+	idVec3 pointToObserve2 = pointToObserve;
+	pointToObserve2.z += 45.0;
+
+	// What is the lighting along the line where the thing to be observed
+	// might be.
+	float maxDistanceToObserve = getMaximumObservationDistance
+	(
+		pointToObserve,
+		pointToObserve2,
+		NULL
+	);
+		
+	idAASFindObservationPosition findGoal
+	(
+		this, 
+		physicsObj.GetGravityAxis(), 
+		pointToObserve2, 
+		GetEyePosition() - org,  // Offset of eye from origin
+		maxDistanceToObserve // Maximum distance from which we can observe
+	);
+
+	if (!aas->FindNearestGoal
+	(
+		goal, 
+		areaNum, 
+		org,
+		pointToObserve2, // It is also the goal target
+		travelFlags, 
+		NULL, 
+		0, 
+		findGoal 
+	) ) 
+	{
+		float bestDistance;
+
+		// See if we can get to the point itself since noplace was good enough
+		// for just looking from a distance due to lighting/occlusion/reachability.
+		if (PathToGoal( path, areaNum, physicsObj.GetOrigin(), areaNum, org ) ) 
+		{
+
+			// Can reach the point itself, so walk right up to it
+			observeFromPos = pointToObserve; 
+
+			// Draw the AI Debug Graphics
+			if (cv_ai_search_show.GetInteger() >= 1.0)
+			{
+				idVec4 markerColor (0.0, 1.0, 1.0, 1.0);
+				idVec3 arrowLength (0.0, 0.0, 50.0);
+
+				gameRenderWorld->DebugArrow
+				(
+					markerColor,
+					observeFromPos + arrowLength,
+					observeFromPos,
+					2,
+					cv_ai_search_show.GetInteger()
+				);
+			}
+
+		}
+
+		else if (findGoal.getBestGoalResult
+		(
+			bestDistance,
+			goal
+		))
+		{
+
+			// Use closest reachable observation point that we found
+			observeFromPos = goal.origin;
+
+			// Draw the AI Debug Graphics
+			if (cv_ai_search_show.GetInteger() >= 1.0)
+			{
+				idVec4 markerColor (1.0, 1.0, 0.0, 1.0);
+				idVec3 arrowLength (0.0, 0.0, 50.0);
+
+				gameRenderWorld->DebugArrow
+				(
+					markerColor,
+					observeFromPos,
+					pointToObserve,
+					2,
+					cv_ai_search_show.GetInteger()
+				);
+			}
+		}
+
+		else
+		{
+			// No choice but to try to walk up to it as much as we can
+			observeFromPos = pointToObserve; 
+
+			// Draw the AI Debug Graphics
+			if (cv_ai_search_show.GetInteger() >= 1.0)
+			{
+				idVec4 markerColor (1.0, 0.0, 0.0, 1.0);
+				idVec3 arrowLength (0.0, 0.0, 50.0);
+
+				gameRenderWorld->DebugArrow
+				(
+					markerColor,
+					observeFromPos + arrowLength,
+					observeFromPos,
+					2,
+					cv_ai_search_show.GetInteger()
+				);
+			}
+		}
+		return observeFromPos;
+	}
+
+	else
+	{
+		observeFromPos = goal.origin;
+		AI_DEST_UNREACHABLE = false;
+
+		// Draw the AI Debug Graphics
+		if (cv_ai_search_show.GetInteger() >= 1.0)
+		{
+			idVec4 markerColor (0.0, 1.0, 0.0, 1.0);
+			idVec3 arrowLength (0.0, 0.0, 50.0);
+
+			gameRenderWorld->DebugArrow
+			(
+				markerColor,
+				observeFromPos,
+				pointToObserve,
+				2,
+				cv_ai_search_show.GetInteger()
+			);
+		}
+		return observeFromPos;
+	}
 }
 
 /*
