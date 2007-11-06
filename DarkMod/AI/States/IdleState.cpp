@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "../Tasks/IdleAnimationTask.h"
 #include "SuspiciousState.h"
 #include "../Library.h"
 
@@ -80,6 +81,7 @@ void IdleState::Init(idAI* owner)
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);

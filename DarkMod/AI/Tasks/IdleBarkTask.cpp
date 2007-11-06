@@ -56,7 +56,7 @@ void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool IdleBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Idle Bark Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("IdleBarkTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
