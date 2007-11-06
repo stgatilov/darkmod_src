@@ -1245,6 +1245,8 @@ void idAI::Spawn( void )
 
 	// DarkMod: State of mind, allow the FM author to set initial values
 	AI_AlertNum			= spawnArgs.GetFloat( "alert_initial", "0" );
+
+	// greebo: TODO: Redirect this into the Memory container.
 	stateOfMind_b_enemiesHaveBeenSeen = spawnArgs.GetBool ("stateOfMind_b_enemiesHaveBeenSeen");
 	stateOfMind_b_itemsHaveBeenStolen = spawnArgs.GetBool ("stateOfMind_b_itemsHaveBeenStolen");
 	stateOfMind_count_evidenceOfIntruders = spawnArgs.GetFloat ("stateOfMind_count_evidenceOfIntruders", "0.0");
@@ -6970,9 +6972,9 @@ void idAI::AlertAI(const char *type, float amount)
 	// Ignore actors in notarget mode
 	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if (actor == NULL || actor->fl.notarget)
+	if (actor != NULL && actor->fl.notarget)
 	{
-		// No alerting actor, or actor is set to notarget, quit
+		// Actor is set to notarget, quit
 		return;
 	}
 
@@ -7127,7 +7129,7 @@ idActor* idAI::VisualScan(float timecheck)
 		return NULL;
 	}
 
-	if( !actor->IsType( idPlayer::Type ) )
+	if (!actor->IsType(idPlayer::Type))
 	{
 		// Not a player, quit
 		return NULL;
@@ -7347,32 +7349,34 @@ void idAI::TactileAlert(idEntity *entest, float amount)
 idActor *idAI::FindEnemy(bool useFOV)
 {
 	// Only perform enemy checks if we are in the player's PVS
-	if (gameLocal.InPlayerPVS(this))
+	if (!gameLocal.InPlayerPVS(this))
 	{
-		// Go through all clients (=players)
-		for (int i = 0; i < gameLocal.numClients ; i++)
+		return NULL;
+	}
+
+	// Go through all clients (=players)
+	for (int i = 0; i < gameLocal.numClients ; i++)
+	{
+		idEntity* ent = gameLocal.entities[i];
+
+		if (ent == NULL || ent->fl.notarget || !ent->IsType(idActor::Type))
 		{
-			idEntity* ent = gameLocal.entities[i];
+			// NULL, notarget or non-Actor, continue
+			continue;
+		}
 
-			if (ent == NULL || ent->fl.notarget || !ent->IsType(idActor::Type))
-			{
-				// NULL, notarget or non-Actor, continue
-				continue;
-			}
+		idActor* actor = static_cast<idActor*>(ent);
 
-			idActor* actor = static_cast<idActor*>(ent);
+		// Ignore dead actors or non-enemies
+		if (actor->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, actor->team))
+		{
+			continue;
+		}
 
-			// Ignore dead actors or non-enemies
-			if (actor->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, actor->team))
-			{
-				continue;
-			}
-
-			if (CanSee(actor, useFOV))
-			{
-				// Enemy actor found and visible, return it 
-				return actor;
-			}
+		if (CanSee(actor, useFOV))
+		{
+			// Enemy actor found and visible, return it 
+			return actor;
 		}
 	}
 
@@ -7788,7 +7792,7 @@ bool idAI::IsEnemy( idEntity *other )
 		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(other);
 		return gameLocal.m_RelationsManager->IsEnemy(team, marker->ownerTeam);
 	}
-	else if (other->IsType(idActor::Type))
+	else if (other->IsType(idActor::Type) && !other->fl.notarget)
 	{
 		idActor* actor = static_cast<idActor*>(other);
 		return gameLocal.m_RelationsManager->IsEnemy(team, actor->team);

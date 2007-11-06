@@ -11,22 +11,14 @@
 #define __AI_AGITATED_SEARCHING_STATE_H__
 
 #include "State.h"
+#include "SearchingState.h"
 
 /**
-* greebo: A SearchingState is handling the AI's search routines.
+* greebo: AgitatedSearchingState is one alert index above SearchingState.
+*
+* Apart from a few minor things this is similar to the base class SearchingState.
 * 
-* The routine needs "memory.alertPos" to be set as prerequisite.
-*
-* The boolean variable "memory.stimulusLocationItselfShouldBeSearched" can be used
-* to let the AI the "memory.alertPos" position as first hiding spot.
-* If the boolean is not set to TRUE, the hiding spot search is based around memory.alertPos.
-*
-* The actual hiding spot search algorithm is called over multiple
-* frames. Once finished, the AI can use its results (unless the 
-* stimulusLocationItselfShouldBeSearched bool is set to TRUE, then alertPos is used as
-* first hiding spot right away.
-*
-* For each hiding spot, an InvestigateSpotTask is invoked which takes care of the details.
+* See the base class for documentation.
 */
 
 namespace ai
@@ -36,7 +28,7 @@ namespace ai
 #define PRIORITY_AGITATED_SEARCHING 25000
 
 class AgitatedSearchingState :
-	public State
+	protected SearchingState
 {
 public:
 	// Get the name of this state
@@ -53,24 +45,7 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	// Incoming events issued by the Subsystems
-	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
-
 	static StatePtr CreateInstance();
-
-private:
-	/*!
-	* This method is used to start a new hiding spot search. Any existing search in progress is replaced.
-	*/
-	void StartNewHidingSpotSearch(idAI* owner);
-
-	// This is called each frame to complete a multiframe hiding spot search
-	void PerformHidingSpotSearch(idAI* owner);
-
-	// Gets called when a new hiding spot should be acquired for searching.
-	// Stores the result in the AI's Memory (hiding spot indices)
-	// return TRUE when a hiding spot is available, FALSE if not.
-	bool ChooseNextHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai

@@ -47,6 +47,12 @@ void SearchingState::Init(idAI* owner)
 		return;
 	}
 
+	// Execute the hiding spot setup routine 
+	SetupSearch(owner);
+}
+
+void SearchingState::SetupSearch(idAI* owner)
+{
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -97,7 +103,7 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 
 	if (memory.hidingSpotInvestigationInProgress && subSystem == SubsysAction)
 	{
-		// The action subsystem has finished investigating its task, set the
+		// The action subsystem has finished investigating the spot, set the
 		// boolean back to false, so that the next spot can be chosen
 		memory.hidingSpotInvestigationInProgress = false;
 	}

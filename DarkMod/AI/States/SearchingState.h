@@ -58,19 +58,23 @@ public:
 
 	static StatePtr CreateInstance();
 
-private:
+protected:
+	// This is a service method for this class and the subclasses.
+	// It basically starts a new hidingspot search and initialises the subsystems
+	void SetupSearch(idAI* owner);
+
 	/*!
 	* This method is used to start a new hiding spot search. Any existing search in progress is replaced.
 	*/
-	void StartNewHidingSpotSearch(idAI* owner);
+	virtual void StartNewHidingSpotSearch(idAI* owner);
 
 	// This is called each frame to complete a multiframe hiding spot search
-	void PerformHidingSpotSearch(idAI* owner);
+	virtual void PerformHidingSpotSearch(idAI* owner);
 
 	// Gets called when a new hiding spot should be acquired for searching.
 	// Stores the result in the AI's Memory (hiding spot indices)
 	// return TRUE when a hiding spot is available, FALSE if not.
-	bool ChooseNextHidingSpotToSearch(idAI* owner);
+	virtual bool ChooseNextHidingSpotToSearch(idAI* owner);
 };
 
 } // namespace ai
