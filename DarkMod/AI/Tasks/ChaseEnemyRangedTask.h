@@ -24,6 +24,8 @@ typedef boost::shared_ptr<ChaseEnemyRangedTask> ChaseEnemyRangedTaskPtr;
 class ChaseEnemyRangedTask :
 	public Task
 {
+	bool _hasGoal;
+
 	idEntityPtr<idActor> _enemy;
 
 public:

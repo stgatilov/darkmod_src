@@ -35,6 +35,7 @@ void ChaseEnemyRangedTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_RUN = true;
 
 	_enemy = owner->GetEnemy();
+	_hasGoal = false;
 }
 
 bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
@@ -52,10 +53,12 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
 		return true;
 	}
+	idStr waitState(owner->WaitState());
 
 	// Can we damage the enemy already? (this flag is set by the sensory task)
 	if (memory.canHitEnemy)
 	{
+		_hasGoal = false;
 		// Yes, stop the move!
 		owner->StopMove(MOVE_STATUS_DONE);
 		//gameLocal.Printf("Enemy is reachable!\n");
@@ -64,14 +67,15 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	}
 	
 	// try to get to the last visible reachable enemy position
-	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
+	else if (waitState != "bow_fire" && owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
+		_hasGoal = false;
 		if (owner->AI_MOVE_DONE)
 		{
 			// Position has been reached, turn to player, if visible
 			if (owner->AI_ENEMY_VISIBLE)
 			{
-				// angua: Turn to the player
+				// Turn to the player
 				owner->TurnToward(owner->GetEyePosition());
 			}
 		}
@@ -84,27 +88,33 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	}
 	else 
 	{
-		// Can't reach the last visible enemy position,find another position within range
-		aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
-		if (goal.areaNum != -1)
+		if (waitState != "bow_fire" && (!_hasGoal || owner->AI_MOVE_DONE))
 		{
-			// Found a suitable attack position, now move to it
-			owner->MoveToPosition(goal.origin);
+			// Can't reach the last visible enemy position,find another position within range
+			aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
+			if (goal.areaNum != -1)
+			{
+				// Found a suitable attack position, now move to it
+				if (owner->MoveToPosition(goal.origin))
+				{
+					_hasGoal = true;
+				}
+			}
+			else
+			{
+				// We did not find a reachable attack position 
+				// it might be that the AI is not able to reach the enemy at all
+				// should run and alert everybody?
+				DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+				gameLocal.Printf("Destination unreachable... \n");
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+
+				
+				//owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+				//return true;
+			}
 		}
 		
-		else
-		{
-			// Destination unreachable!
-			// it is likely that the archer is not able to reach the enemy at all
-			// should run and alert everybody?
-			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
-			gameLocal.Printf("Destination unreachable... \n");
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-
-			
-			//owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-			//return true;
-		}
 
 
 	}
@@ -122,6 +132,7 @@ void ChaseEnemyRangedTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 
+	savefile->WriteBool(_hasGoal);
 	_enemy.Save(savefile);
 }
 
@@ -129,6 +140,7 @@ void ChaseEnemyRangedTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 
+	savefile->ReadBool(_hasGoal);
 	_enemy.Restore(savefile);
 }
 

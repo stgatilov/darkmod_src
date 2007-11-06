@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: RangedCombatTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "RangedCombatTask.h"
+#include "WaitTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -45,10 +46,10 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
-		return true; // terminate me
+		return false; // terminate me
 	}
 
-	// Can we damage the enemy already? (this flag is set by the sensory task)
+	// Can we damage the enemy already? (this flag is set by the combat state)
 	if (owner->GetMemory().canHitEnemy)
 	{
 		idStr waitState(owner->WaitState());
@@ -60,6 +61,7 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			// greebo: Set the waitstate, this gets cleared by 
 			// the script function when the animation is done.
 			owner->SetWaitState("bow_fire");
+			subsystem.PushTask(TaskPtr(new WaitTask(2000)));
 		}
 	}
 	else

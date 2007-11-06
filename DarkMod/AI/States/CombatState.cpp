@@ -49,6 +49,9 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	// Store the enemy entity locally
+	_enemy = owner->GetEnemy();
+
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
@@ -61,8 +64,6 @@ void CombatState::Init(idAI* owner)
 		memory.lastEnemyPos
 	);
 
-	// Store the enemy entity locally
-	_enemy = owner->GetEnemy();
 	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
@@ -84,34 +85,12 @@ void CombatState::Init(idAI* owner)
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
-
 		return;
 	}
 
 	owner->DrawWeapon();
 
-	/*if (!owner->AI_DEST_UNREACHABLE && owner->CanReachEnemy())
-	{
-		//pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
-	}
-	else
-	{
-		// TODO: find alternate path, etc
-		// Do we have a ranged weapon?
-		if (owner->GetNumRangedWeapons() > 0)
-		{
- 			// Just use ranged weapon
- 			//pushTaskIfHighestPriority("task_Combat", PRIORITY_COMBAT);
- 		}
- 		else
- 		{
-			// Can't reach the target
-			// TODO pushTaskIfHighestPriority("task_TargetCannotBeReached", PRIORITY_CANNOTREACHTARGET);
-		}
-	}*/
-
 	// Fill the subsystems with their tasks
-
 
 	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
@@ -158,7 +137,7 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
-	// Check the distance to the enemy, the other subsystem tasks need it.
+	// Check the distance to the enemy, the subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy);
 
 	if (!owner->AI_ENEMY_VISIBLE)
@@ -181,7 +160,6 @@ void CombatState::Think(idAI* owner)
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm badly hurt, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
-
 	}
 }
 

@@ -61,8 +61,11 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 		TaskPtr(new SingleBarkTask("snd_lostTrackOfEnemy"))
 	);
 
-	// For now, clear the action tasks
+	// For now, clear the action tasks and movement tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+
+	owner->GetMind()->EndState();
 }
 
 // Gets called each time the mind is thinking
