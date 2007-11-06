@@ -67,7 +67,6 @@ bool IdleBarkTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time - memory.lastPatrolChatTime > _barkRepeatInterval)
 	{
-		gameRenderWorld->DebugArrow(colorWhite, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,100), 0, 20000);
 		// The time has come, bark now
 		owner->PlayAndLipSync(_soundName.c_str(), "talk1");
 

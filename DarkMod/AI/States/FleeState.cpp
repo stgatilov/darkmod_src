@@ -58,7 +58,7 @@ void FleeState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->FaceEnemy();
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(500)));
+	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(1000)));
 	owner->GetSubsystem(SubsysMovement)->QueueTask(FleeTask::CreateInstance());
 
 	// The communication system cries for help
@@ -66,13 +66,21 @@ void FleeState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));
 	// Placeholder, replace with "snd_flee" when available
-	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new RepeatedBarkTask("snd_combat", 4000,8000)));
+	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new RepeatedBarkTask("snd_flee", 4000,8000)));
 
 	// The sensory system 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 
 	// No action
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+	// Play the surprised animation
+	idStr animIndex(gameLocal.random.RandomInt(1) + 1); // returns 1 or 2
+	idStr anim = "Torso_Surprise" + animIndex;
+	owner->SetAnimState(ANIMCHANNEL_TORSO, anim.c_str(), 5);
+
+	anim = "Legs_Surprise" + animIndex;
+	owner->SetAnimState(ANIMCHANNEL_LEGS, anim.c_str(), 5);
 }
 
 // Gets called each time the mind is thinking
