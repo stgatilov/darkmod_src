@@ -24,7 +24,6 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/ChaseEnemyRangedTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "FleeState.h"
-#include "ReactingToStimulusState.h"
 #include "../Library.h"
 
 namespace ai

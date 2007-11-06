@@ -175,7 +175,6 @@ AI/States/FleeDoneState.cpp \
 AI/States/IdleState.cpp \
 AI/States/KnockedOutState.cpp \
 AI/States/LostTrackOfEnemyState.cpp \
-AI/States/ReactingToStimulusState.cpp \
 AI/States/SearchingState.cpp \
 AI/States/State.cpp \
 AI/States/SuspiciousState.cpp \

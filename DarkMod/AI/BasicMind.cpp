@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 1
 
 #include "BasicMind.h"
 #include "States/IdleState.h"
-#include "States/ReactingToStimulusState.h"
 #include "Tasks/SingleBarkTask.h"
 #include "States/CombatState.h"
 #include "Library.h"

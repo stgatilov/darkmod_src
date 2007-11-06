@@ -16,7 +16,6 @@ static bool init_version = FileVersionList("$Id: LostTrackOfEnemyState.cpp 1435 
 #include "../Memory.h"
 #include "../Tasks/EmptyTask.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "../States/ReactingToStimulusState.h"
 #include "../Library.h"
 
 namespace ai
@@ -40,8 +39,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-
-	owner->Event_SetAlertLevel(owner->thresh_3 + (owner->thresh_combat - owner->thresh_3) * 0.5);
+	owner->Event_SetAlertLevel((owner->thresh_combat + owner->thresh_3) * 0.5);
 
 	// Draw weapon, if we haven't already
 	owner->DrawWeapon();
@@ -65,9 +63,6 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	// For now, clear the action tasks
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-
-	// Switch the state
-	owner->GetMind()->SwitchState(STATE_REACTING_TO_STIMULUS);
 }
 
 // Gets called each time the mind is thinking

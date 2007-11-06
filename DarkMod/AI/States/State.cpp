@@ -18,7 +18,6 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
-#include "ReactingToStimulusState.h"
 #include "CombatState.h"
 
 namespace ai
