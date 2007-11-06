@@ -691,6 +691,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\FleeTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\IdleAnimationTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\IdleAnimationTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\IdleBarkTask.cpp">
 					</File>
 					<File
@@ -1228,6 +1234,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\PlayerData.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PositionWithinRangeFinder.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\PositionWithinRangeFinder.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\pqueue.h">
