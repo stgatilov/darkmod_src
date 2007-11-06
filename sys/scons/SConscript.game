@@ -137,6 +137,7 @@ MissionData.cpp \
 ModMenu.cpp \
 overlaysys.cpp \
 PlayerData.cpp \
+PositionWithinRangeFinder.cpp \
 Profile.cpp \
 ProjectileResult.cpp \
 PVSToAASMapping.cpp \
@@ -184,6 +185,7 @@ AI/Tasks/ChaseEnemyRangedTask.cpp \
 AI/Tasks/ChaseEnemyTask.cpp \
 AI/Tasks/EmptyTask.cpp \
 AI/Tasks/FleeTask.cpp \
+AI/Tasks/IdleAnimationTask.cpp \
 AI/Tasks/IdleBarkTask.cpp \
 AI/Tasks/IdleSensoryTask.cpp \
 AI/Tasks/InvestigateSpotTask.cpp \
