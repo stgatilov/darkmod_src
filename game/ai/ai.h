@@ -476,6 +476,16 @@ public:
 	void AlertAI( const char *type, float amount );
 
 	/**
+	 * greebo: Sets the AI_AlertNum of this AI and updates the AI_AlertIndex.
+	 *
+	 * This also updates the grace timers, alert times and checks for
+	 * a valid agitatedsearching>combat transition.
+	 *
+	 * Additionally, the transition alert sounds ("snd_alertdown2") are played.
+	 */
+	void SetAlertLevel(float newAlertLevel);
+
+	/**
 	* Returns the float val of the specific AI's acuity
 	* Acuity type is a char, from the same list as alert types
 	* That list is defined in DarkModGlobals.cpp

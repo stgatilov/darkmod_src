@@ -141,6 +141,8 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 {
 	// greebo: Ported from ai_darkmod_base::task_Idle written by SZ
 
+	Memory& memory = owner->GetMemory();
+
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 	
@@ -167,6 +169,9 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 		// Play its idle sound
 		soundName = "snd_alertdown0SeenNoEvidence";
 	}
+
+	// Reset the patrol chat time
+	memory.lastPatrolChatTime = gameLocal.time;
 
 	return soundName;
 }

@@ -294,7 +294,7 @@ void BasicMind::TestAlertStateTimer()
 			newAlertLevel = (owner->thresh_1/ 2.0) - 0.01; // To prevent floating point comparison error
 
 			// Alert level is changing
-			owner->Event_SetAlertLevel(newAlertLevel);
+			owner->SetAlertLevel(newAlertLevel);
 			
 			// Go Idle
 			return;
@@ -310,7 +310,7 @@ void BasicMind::TestAlertStateTimer()
 		owner->AI_currentAlertLevelDuration = -1;
 		
 		// Alert level is changing
-		owner->Event_SetAlertLevel(newAlertLevel);
+		owner->SetAlertLevel(newAlertLevel);
 	}
 }
 
@@ -640,7 +640,7 @@ bool BasicMind::PerformCombatCheck()
 	DM_LOG(LC_AI, LT_INFO).LogString("No Target to justify combat alert level, lowering to agitated search\r");
 		
 	// Lower alert level from combat to agitated search
-	owner->Event_SetAlertLevel(owner->thresh_combat - 0.01);
+	owner->SetAlertLevel(owner->thresh_combat - 0.01);
 
 	return false; // combat mode not entered
 }
