@@ -109,6 +109,11 @@ void FleeDoneState::Think(idAI* owner)
 
 			// Go back to suspicious (higher level since we didn't find someone to help)
 			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+
+			// Play the cowering animation
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Cower", 4);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Cower", 4);
+
 			return;
 		}
 	}
