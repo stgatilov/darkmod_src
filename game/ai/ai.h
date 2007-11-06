@@ -753,11 +753,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idScriptBool			AI_TACTALERT;
 
 	/**
-	* Set to true if the actor responsible for alert is the player
-	**/
-	idScriptBool			AI_ALERTED_BY_PLAYER;
-
-	/**
 	* The current alert number of the AI.
 	* This is checked to see if the AI should
 	* change alert indices.  This var is very important!

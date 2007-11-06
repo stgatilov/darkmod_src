@@ -1194,7 +1194,6 @@ void idAI::Spawn( void )
 	AI_HEARDSOUND = false;
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
-	AI_ALERTED_BY_PLAYER = false;
 
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
 	enemy				= NULL;
@@ -1819,7 +1818,6 @@ void idAI::LinkScriptVariables( void )
 	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
 	AI_VISALERT.LinkTo(			scriptObject, "AI_VISALERT");
 	AI_TACTALERT.LinkTo(		scriptObject, "AI_TACTALERT");
-	AI_ALERTED_BY_PLAYER.LinkTo(	scriptObject, "AI_ALERTED_BY_PLAYER");
 
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH");
 	AI_RUN.LinkTo(				scriptObject, "AI_RUN");
