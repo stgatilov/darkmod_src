@@ -807,6 +807,12 @@
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\WaitTask.h">
 					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\WanderInLocationTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\WanderInLocationTask.h">
+					</File>
 				</Filter>
 			</Filter>
 			<Filter
