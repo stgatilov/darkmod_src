@@ -4846,16 +4846,6 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	mind->ClearStates();
 	mind->PushState(STATE_DEAD);
-	/*if (m_TaskQueue && m_killedTask.Length())
-	{
-		m_TaskQueue->Push(m_killedTaskPriority, m_killedTask.c_str());
-	}
-	else
-	{
-		state = GetScriptFunction( "state_Killed" );
-		SetState( state );
-		SetWaitState( "" );
-	}*/
 
 	// drop items
 	DropOnRagdoll();
@@ -6980,7 +6970,7 @@ void idAI::AlertAI(const char *type, float amount)
 	// Ignore actors in notarget mode
 	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if (actor != NULL && actor->fl.notarget)
+	if (actor == NULL || actor->fl.notarget)
 	{
 		// No alerting actor, or actor is set to notarget, quit
 		return;
@@ -7010,7 +7000,7 @@ void idAI::AlertAI(const char *type, float amount)
 			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
 			if (AI_VISALERT)
 			{
-				// greebo: Let the alert grace count increase by 25% of the current lightgem value
+				// greebo: Let the alert grace count increase by 12.5% of the current lightgem value
 				// The maximum increase is therefore 32/8 = 4 based on DARKMOD_LG_MAX at the time of writing.
 				m_AlertGraceCount += idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f);
 			}
@@ -7360,38 +7350,39 @@ Quit:
 	return;
 }
 
-idActor *idAI::FindEnemy( bool useFOV )
+idActor *idAI::FindEnemy(bool useFOV)
 {
-	int			i;
-	idEntity	*ent;
-	idActor		*actor;
-
-	if ( gameLocal.InPlayerPVS( this ) )
+	// Only perform enemy checks if we are in the player's PVS
+	if (gameLocal.InPlayerPVS(this))
 	{
-		for ( i = 0; i < gameLocal.numClients ; i++ ) {
-			ent = gameLocal.entities[ i ];
+		// Go through all clients (=players)
+		for (int i = 0; i < gameLocal.numClients ; i++)
+		{
+			idEntity* ent = gameLocal.entities[i];
 
-			if ( !ent || !ent->IsType( idActor::Type ) ) {
+			if (ent == NULL || ent->fl.notarget || !ent->IsType(idActor::Type))
+			{
+				// NULL, notarget or non-Actor, continue
 				continue;
 			}
 
-			actor = static_cast<idActor *>( ent );
-			if ( ( actor->health <= 0 ) || !( gameLocal.m_RelationsManager->IsEnemy(team, actor->team) ) )
+			idActor* actor = static_cast<idActor*>(ent);
+
+			// Ignore dead actors or non-enemies
+			if (actor->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, actor->team))
 			{
 				continue;
 			}
 
-			if ( CanSee( actor, useFOV ) )
+			if (CanSee(actor, useFOV))
 			{
-				goto Quit;
+				// Enemy actor found and visible, return it 
+				return actor;
 			}
 		}
 	}
 
-	actor = NULL;
-
-Quit:
-	return actor;
+	return NULL;
 }
 
 idActor* idAI::FindEnemyAI(bool useFOV)
@@ -7402,7 +7393,7 @@ idActor* idAI::FindEnemyAI(bool useFOV)
 	idActor* bestEnemy = NULL;
 
 	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
+		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || !ent->IsType( idActor::Type ) ) {
 			continue;
 		}
 

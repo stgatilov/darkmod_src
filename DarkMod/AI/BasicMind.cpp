@@ -104,6 +104,15 @@ void BasicMind::PushState(const idStr& stateName)
 
 	if (newState != NULL)
 	{
+		if (_stateQueue.size() > 0)
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Pushing %s from %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Pushing %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
+		}
+
 		// Push the state to the front of the queue
 		_stateQueue.push_front(newState);
 
@@ -146,6 +155,8 @@ bool BasicMind::EndState()
 		// Don't destroy the State object this round
 		_recycleBin = _stateQueue.front();
 
+		DM_LOG(LC_AI, LT_INFO).LogString("Ending State %s (%s)\r", _recycleBin->GetName().c_str(), _owner.GetEntity()->name.c_str());
+
 		// Remove the current state from the queue
 		_stateQueue.pop_front();
 
@@ -165,6 +176,15 @@ bool BasicMind::EndState()
 
 void BasicMind::SwitchState(const idStr& stateName)
 {
+	if (_stateQueue.size() > 0)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Switching to %s to %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Switching to %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
+	}
+
 	// greebo: Switch the state without destroying the current State object immediately
 	if (_stateQueue.size() > 0)
 	{

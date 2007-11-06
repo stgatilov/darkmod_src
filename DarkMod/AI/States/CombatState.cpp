@@ -45,15 +45,11 @@ void CombatState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(4, ""))
+	if (!CheckAlertLevel(4, "") || !owner->GetMind()->PerformCombatCheck())
 	{
 		return;
 	}
 
-	if (!owner->GetMind()->PerformCombatCheck())
-	{
-		return;
-	}
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 

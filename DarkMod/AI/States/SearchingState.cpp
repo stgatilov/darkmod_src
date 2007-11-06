@@ -338,7 +338,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus");
+		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus.\r");
 		memory.firstChosenHidingSpotIndex = -1;
 		memory.currentChosenHidingSpotIndex = -1;
 		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);

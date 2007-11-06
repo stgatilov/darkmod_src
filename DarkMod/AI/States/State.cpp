@@ -271,8 +271,8 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.searchingDueToCommunication = false;
 	
-	// Switch state
-	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+	// Switch state is performed by the Backbone States
+	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
@@ -312,7 +312,8 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			owner->SetEnemy(other);
 			owner->AI_VISALERT = true;
 			
-			owner->GetMind()->PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+			//owner->GetMind()->PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+			owner->Event_SetAlertLevel(owner->thresh_combat*2);
 			// An enemy should not be ignored in the future
 			ignoreStimulusFromNowOn = false;
 		}
@@ -526,8 +527,8 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		// Callback for objectives
 		owner->FoundBody(person);
 
-		// Switch state
-		owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
+		// Switch state is performed by the Backbone States
+		//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 	}
 
 	// Ignore from now on
@@ -602,8 +603,8 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		// Callback for objectives
 		owner->FoundBody(person);
 
-		// Switch state
-		owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+		// Switch state is performed by the Backbone States
+		//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 	}
 
 	// Ignore from now on
@@ -652,8 +653,8 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.searchingDueToCommunication = false;
 	
-	// Switch state
-	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+	// Switch state is performed by the Backbone States
+	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
@@ -748,7 +749,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	if (turnLightOn)
 	{
 		// Enqueue a search task which gets activated after turning on the light
-		owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+		//owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
 		// Switch to STATE_SWITCHON_LIGHT
 		// TODO owner->GetMind()->PushStateIfHigherPriority(STATE_SWITCHON_LIGHT, PRIORITY_SWITCHON_LIGHT);
 	}
@@ -854,8 +855,8 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.searchingDueToCommunication = false;
 	
-	// Switch state
-	owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
+	// Switch state is performed by the Backbone States
+	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnAICommMessage(CAIComm_Message* message)
@@ -1043,13 +1044,10 @@ void State::OnAICommMessage(CAIComm_Message* message)
 
 			if (owner->IsFriend(issuingEntity) && owner->IsEnemy(directObjectEntity))
 			{
-				owner->Event_SetAlertLevel(owner->thresh_combat);
+				owner->Event_SetAlertLevel(owner->thresh_combat*2);
 				
 				gameLocal.Printf("They're my friend, I'll attack it too!\n");
 				memory.alertPos = directObjectLocation;
-
-				// Alert position is set, go into searching mode
-				owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
 			}
 			break;
 		case CAIComm_Message::FollowOrder_CommType:
@@ -1089,8 +1087,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				memory.chosenHidingSpot = directObjectLocation;
 				memory.numPossibleHidingSpotsSearched = 0;
 
-				// Alert position is set, go into searching mode
-				owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
+				owner->Event_SetAlertLevel((owner->thresh_2 + owner->thresh_3)*0.5f);
 			}
 			break;
 		case CAIComm_Message::AttackOrder_CommType:
@@ -1103,7 +1100,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				if (directObjectEntity->IsType(idActor::Type))
 				{
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
-					owner->GetMind()->SwitchStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
+					owner->Event_SetAlertLevel(owner->thresh_combat*2);
 				}
 			}
 			else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
@@ -1228,7 +1225,6 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 			}
 			
 			memory.searchingDueToCommunication = true;
-			owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
 			return;
 		}
 		else

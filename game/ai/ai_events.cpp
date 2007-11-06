@@ -3297,7 +3297,8 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 	// How long should this alert level last, and which alert index should we be in now?
 	if (newAlertLevel >= thresh_3)
 	{
-		if (newAlertLevel >= thresh_combat)
+		// greebo: Only allow switching to combat if a valid enemy is set.
+		if (newAlertLevel >= thresh_combat && GetEnemy() != NULL)
 		{
 			AI_AlertIndex = 4;
 		}

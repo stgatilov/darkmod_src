@@ -39,7 +39,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
-	if(!CheckAlertLevel(3, STATE_COMBAT))
+	// Only switch to higher (combat) state when an AI is set
+	if (owner->GetMind()->PerformCombatCheck() && !CheckAlertLevel(3, STATE_COMBAT))
 	{
 		return;
 	}
