@@ -7296,44 +7296,40 @@ float idAI::GetCalibratedLightgemValue() const
 	return clampVal;
 }
 
-void idAI::TactileAlert( idEntity *entest, float amount )
+void idAI::TactileAlert(idEntity *entest, float amount)
 {
-	idActor *RespActor = NULL;
-
-	if ( amount == -1 )
-		amount = cv_ai_tactalert.GetFloat();
-
-	if( entest == NULL || m_bIgnoreAlerts )
+	if (entest == NULL || m_bIgnoreAlerts)
 	{
-		goto Quit;
+		return;
 	}
 
-	
-	if( entest->IsType(idActor::Type) )
-		RespActor = (idActor *) entest;
-	else
-		RespActor = entest->m_SetInMotionByActor.GetEntity();
+	// The actor is either the touched entity or the originator of the tactile alert
+	idActor* RespActor = (entest->IsType(idActor::Type)) ? static_cast<idActor*>(entest) : entest->m_SetInMotionByActor.GetEntity();
 
-	if( !RespActor || !gameLocal.m_RelationsManager->IsEnemy( team, RespActor->team ) )
-		goto Quit;
-
-	// aesthetic touch: Don't alert when the AI touches the dead player
-	if ( entest->IsType(idPlayer::Type)
-		&& ( static_cast< idPlayer * >( entest )->health < 0 ) )
+	// Don't get alerted by dead actors or non-enemies
+	if (RespActor == NULL || RespActor->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, RespActor->team))
 	{
-		goto Quit;
+		return;
+	}
+
+	// Set the alert amount to the according tactile alert value
+	if (amount == -1)
+	{
+		amount = cv_ai_tactalert.GetFloat();
 	}
 
 	// If we got this far, we give the alert
 	// NOTE: Latest tactile alert always overrides other alerts
 	m_TactAlertEnt = entest;
 	m_AlertedByActor = RespActor;
-	AlertAI( "tact", amount );
+	AlertAI("tact", amount);
 
 	// Set last visual contact location to this location as that is used in case
 	// the target gets away
 	m_LastSight = entest->GetPhysics()->GetOrigin();
-	if (enemy.GetEntity()== NULL)
+
+	// If no enemy set so far, set the last visible enemy position.
+	if (enemy.GetEntity() == NULL)
 	{
 		lastVisibleEnemyPos = entest->GetPhysics()->GetOrigin();
 	}
@@ -7346,8 +7342,6 @@ void idAI::TactileAlert( idEntity *entest, float amount )
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", name.c_str(), entest->name.c_str() );
 		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), entest->name.c_str() );
 	}
-Quit:
-	return;
 }
 
 idActor *idAI::FindEnemy(bool useFOV)
