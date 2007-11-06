@@ -19,6 +19,14 @@ static bool init_version = FileVersionList("$Id: IdleBarkTask.cpp 1435 2007-10-1
 namespace ai
 {
 
+IdleBarkTask::IdleBarkTask() :
+	_soundName("")
+{}
+
+IdleBarkTask::IdleBarkTask(const idStr& soundName) :
+	_soundName(soundName)
+{}
+
 // Get the name of this task
 const idStr& IdleBarkTask::GetName() const
 {
@@ -42,7 +50,7 @@ void IdleBarkTask::Init(idAI* owner, Subsystem& subsystem)
 		memory.lastPatrolChatTime = gameLocal.time - _barkRepeatInterval;
 		// greebo: Add some random offset of up to 20 seconds before barking the first time
 		// This prevents guards barking in choirs.
-		memory.lastPatrolChatTime -= SEC2MS(gameLocal.random.RandomFloat()*10);
+		memory.lastPatrolChatTime += SEC2MS(gameLocal.random.RandomFloat()*10);
 	}
 }
 
@@ -59,8 +67,9 @@ bool IdleBarkTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time - memory.lastPatrolChatTime > _barkRepeatInterval)
 	{
+		gameRenderWorld->DebugArrow(colorWhite, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,100), 0, 20000);
 		// The time has come, bark now
-		owner->PlayAndLipSync("snd_patrol_idle", "talk1");
+		owner->PlayAndLipSync(_soundName.c_str(), "talk1");
 
 		// Reset the timer
 		memory.lastPatrolChatTime = gameLocal.time;
@@ -74,12 +83,14 @@ void IdleBarkTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 	savefile->WriteInt(_barkRepeatInterval);
+	savefile->WriteString(_soundName);
 }
 
 void IdleBarkTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 	savefile->ReadInt(_barkRepeatInterval);
+	savefile->ReadString(_soundName);
 }
 
 IdleBarkTaskPtr IdleBarkTask::CreateInstance()

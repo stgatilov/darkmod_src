@@ -43,10 +43,10 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
-	owner->PlayAndLipSync(_soundName.c_str(), "talk1");
-
-	// Disable the patrol barking for now.
-	owner->GetMemory().lastPatrolChatTime = gameLocal.time;
+	if (!_soundName.IsEmpty())
+	{
+		owner->PlayAndLipSync(_soundName.c_str(), "talk1");
+	}
 
 	return true; // finished!
 }

@@ -27,7 +27,14 @@ class IdleBarkTask :
 	// Corresponds to AI spawnarg "bark_repeat_patrol"
 	int _barkRepeatInterval;
 
+	// The sound to play
+	idStr _soundName;
+
+	// Default constructor is private
+	IdleBarkTask();
 public:
+	IdleBarkTask(const idStr& soundName);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

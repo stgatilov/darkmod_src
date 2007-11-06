@@ -70,7 +70,9 @@ void IdleState::Init(idAI* owner)
 	);
 
 	// Push the regular patrol barking to the list too
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(IdleBarkTask::CreateInstance());
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		TaskPtr(new IdleBarkTask("snd_relaxed"))
+	);
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
@@ -142,7 +144,9 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	
 	if (owner->AI_AlertNum <= 0)
 	{
-		soundName = "snd_relaxed";
+		//soundName = "snd_relaxed";
+		// greebo: Relaxed sound playing is handled by the IdleBarkTask.
+		soundName = "";
 	}
 	else if (owner->GetMemory().enemiesHaveBeenSeen)
 	{
