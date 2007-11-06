@@ -1164,11 +1164,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	/**
 	 * Returns TRUE or FALSE, depending on the distance to the 
 	 * given entity and the weapons attached to this AI.
-	 * Melee AI normally perform a distance check,
-	 * ranged AI should implement a more sophisticated check.
-	 *
-	 * @entityHeight: The height measured from the entity's origin
-	 *                this AI should try to attack.
+	 * Melee AI normally perform a bounding box expansion check,
+	 * ranged AI implement a visual test incl. lighting.
 	 */
 	bool CanHitEntity(idActor* entity);
 
@@ -1242,11 +1239,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 *         to the enemy, depending on the AI's move type (FLY/WALK).
 	 *
 	 * If this method succeeds in setting up a path to the enemy, the following members are
-	 * set: lastVisibleReachableEnemyPos, lastVisibleReachableEnemyAreaNum, AI_DEST_UNREACHABLE
-	 * and the movecommands move.toAreaNum and move.dest are updated, but ONLY if the movecommand
-	 * is set to MOVE_TO_ENEMY beforehand.
+	 * set: lastVisibleReachableEnemyPos, lastVisibleReachableEnemyAreaNum
+	 * and the movecommands move.toAreaNum and move.dest are updated, but the latter two 
+	 * ONLY if the movecommand is set to MOVE_TO_ENEMY beforehand.
 	 *
 	 * The AI_DEST_UNREACHABLE is updated if the movecommand is currently set to MOVE_TO_ENEMY. 
+	 *
 	 * It is TRUE (enemy unreachable) in the following cases:
 	 * - Enemy is not on ground (OnLadder) for non-flying AI.
 	 * - The entity area number could not be determined.
@@ -1282,16 +1280,17 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 *           is dead or has been cleared by anything else.
 	 */
 	bool					SetEnemy(idActor *newEnemy);
-/**
-* DarkMod: Ishtvan note:
-* Before I added this, this code was only called in
-* Event_FindEnemy, so it could be used by scripting, but
-* not by the SDK.  I just moved the code to a new function,
-* and made Event_FindEnemy call this.
-*
-* This was because I needed to use FindEnemy in the visibility
-* calculation.
-**/
+
+	/**
+	* DarkMod: Ishtvan note:
+	* Before I added this, this code was only called in
+	* Event_FindEnemy, so it could be used by scripting, but
+	* not by the SDK.  I just moved the code to a new function,
+	* and made Event_FindEnemy call this.
+	*
+	* This was because I needed to use FindEnemy in the visibility
+	* calculation.
+	**/
 	idActor * FindEnemy( bool useFOV ) ;
 
 	idActor* FindEnemyAI(bool useFOV);
@@ -1299,28 +1298,28 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idActor* FindFriendlyAI(int requiredTeam);
 
 
-/**
-* Similarly to FindEnemy, this was previously only an Event_ scripting
-* function.  I moved it over to a new SDK function and had the Event_ 
-* call it, in case we want to use this later.  It returns the closest
-* AI or Player enemy.
-*
-* It was originally used to get tactile alerts, but is no longer used for that
-* IMO we should leave it in though, as we might use it for something later,
-* like determining what targets to engage with ranged weapons.
-**/	
+	/**
+	* Similarly to FindEnemy, this was previously only an Event_ scripting
+	* function.  I moved it over to a new SDK function and had the Event_ 
+	* call it, in case we want to use this later.  It returns the closest
+	* AI or Player enemy.
+	*
+	* It was originally used to get tactile alerts, but is no longer used for that
+	* IMO we should leave it in though, as we might use it for something later,
+	* like determining what targets to engage with ranged weapons.
+	**/	
 	idActor * FindNearestEnemy( bool useFOV = true );
 
-/**
-* Draw the debug cone representing valid knockout area
-* Called every frame when cvar cv_ai_ko_show is set to true.
-**/
+	/**
+	* Draw the debug cone representing valid knockout area
+	* Called every frame when cvar cv_ai_ko_show is set to true.
+	**/
 	void KnockoutDebugDraw( void );
 
-/**
-* Draw the debug cone representing the FOV
-* Called every frame when cvar cv_ai_fov_show is set to true.
-**/
+	/**
+	* Draw the debug cone representing the FOV
+	* Called every frame when cvar cv_ai_fov_show is set to true.
+	**/
 	void FOVDebugDraw( void );
 
 	/**
