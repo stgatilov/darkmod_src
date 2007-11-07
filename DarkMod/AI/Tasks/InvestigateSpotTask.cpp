@@ -20,6 +20,20 @@ static bool init_version = FileVersionList("$Id: InvestigateSpotTask.cpp 1435 20
 namespace ai
 {
 
+const int INVESTIGATE_SPOT_TIME_REMOTE = 600; // ms
+const int INVESTIGATE_SPOT_TIME_STANDARD = 300; // ms
+const int INVESTIGATE_SPOT_TIME_CLOSELY = 2500; // ms
+
+const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
+
+InvestigateSpotTask::InvestigateSpotTask() :
+	_investigateClosely(false)
+{}
+
+InvestigateSpotTask::InvestigateSpotTask(bool investigateClosely) :
+	_investigateClosely(investigateClosely)
+{}
+
 // Get the name of this task
 const idStr& InvestigateSpotTask::GetName() const
 {
@@ -42,7 +56,8 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
-		if (owner->CanSeePositionExt(memory.currentSearchSpot, false, true))
+		// Check if we can see the point from where we are (only for remote inspection)
+		if (!_investigateClosely && owner->CanSeePositionExt(memory.currentSearchSpot, false, true))
 		{
 			DM_LOG(LC_AI, LT_INFO).LogVector("I can see the point...\r", memory.currentSearchSpot);
 
@@ -56,7 +71,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
 
 			// Wait about half a sec.
-			_exitTime = gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f);
+			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()*0.2f);
 		}
 		else 
 		{
@@ -71,7 +86,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 				float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), memory.currentSearchSpot);
 
 				DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
-				owner->AI_RUN = (travelDist > 300);
+				owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
 			}
 		}
 	}
@@ -108,13 +123,29 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", memory.currentSearchSpot);
 
-		// Wait a bit, setting _exitTime sets the lifetime of this task
-		_exitTime = gameLocal.time + 300*(1 + gameLocal.random.RandomFloat()*0.2f);
+		if (_investigateClosely && !owner->AI_DEST_UNREACHABLE)
+		{
+			// Stop previous moves
+			owner->StopMove(MOVE_STATUS_DONE);
+
+			// We should investigate the spot closely, so kneel_down and do so
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KneelDown", 6);
+
+			// Wait a bit, setting _exitTime sets the lifetime of this task
+			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_CLOSELY*(1 + gameLocal.random.RandomFloat()*0.2f);
+		}
+		else
+		{
+			// Wait a bit, setting _exitTime sets the lifetime of this task
+			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_STANDARD*(1 + gameLocal.random.RandomFloat()*0.2f);
+		}
 	}
 	else
 	{
-		// Can we already see the point?
-		if (owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
+		// Can we already see the point? Only stop moving when the spot
+		// shouldn't be investigated closely
+		if (!_investigateClosely && owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
 		{
 			DM_LOG(LC_AI, LT_INFO).LogVector("Stop, I can see the point now...\r", memory.currentSearchSpot);
 
@@ -130,6 +161,22 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	}
 
 	return false; // not finished yet
+}
+
+void InvestigateSpotTask::Save(idSaveGame* savefile) const
+{
+	Task::Save(savefile);
+
+	savefile->WriteInt(_exitTime);
+	savefile->WriteBool(_investigateClosely);
+}
+
+void InvestigateSpotTask::Restore(idRestoreGame* savefile)
+{
+	Task::Restore(savefile);
+
+	savefile->ReadInt(_exitTime);
+	savefile->ReadBool(_investigateClosely);
 }
 
 InvestigateSpotTaskPtr InvestigateSpotTask::CreateInstance()

@@ -78,10 +78,16 @@ void SearchingState::SetupSearch(idAI* owner)
 		memory.currentSearchSpot = memory.alertPos;
 
 		// Delegate the spot investigation to a new task, this will take the correct action.
-		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
+		owner->GetSubsystem(SubsysAction)->PushTask(
+			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
+		);
 
 		// Prevent overwriting this hiding spot in the upcoming Think() call
 		memory.hidingSpotInvestigationInProgress = true;
+
+		// Reset the flags
+		memory.stimulusLocationItselfShouldBeSearched = false;
+		memory.investigateStimulusLocationClosely = false;
 	}
 	else
 	{

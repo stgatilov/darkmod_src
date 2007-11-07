@@ -115,6 +115,9 @@ public:
 	// This is true if the original alert position is to be searched
 	bool stimulusLocationItselfShouldBeSearched;
 
+	// Set this to TRUE if 
+	bool investigateStimulusLocationClosely;
+
 	// This flag indicates if the search is due to a communication
 	bool searchingDueToCommunication;
 
@@ -192,6 +195,7 @@ public:
 		alertType(EAlertTypeCount),
 		alertRadius(-1),
 		stimulusLocationItselfShouldBeSearched(false),
+		investigateStimulusLocationClosely(false),
 		searchingDueToCommunication(false),
 		lastAlertPosSearched(0,0,0),
 		alertSearchVolume(0,0,0),
@@ -227,6 +231,7 @@ public:
 		savefile->WriteInt(static_cast<int>(alertType));
 		savefile->WriteFloat(alertRadius);
 		savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
+		savefile->WriteBool(investigateStimulusLocationClosely);
 		savefile->WriteBool(searchingDueToCommunication);
 		savefile->WriteVec3(lastAlertPosSearched);
 		savefile->WriteVec3(alertSearchVolume);
@@ -267,6 +272,7 @@ public:
 
 		savefile->ReadFloat(alertRadius);
 		savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
+		savefile->ReadBool(investigateStimulusLocationClosely);
 		savefile->ReadBool(searchingDueToCommunication);
 		savefile->ReadVec3(lastAlertPosSearched);
 		savefile->ReadVec3(alertSearchVolume);

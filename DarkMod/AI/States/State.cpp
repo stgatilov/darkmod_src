@@ -251,9 +251,9 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders += 2;
 
 	// Raise alert level
-	if (owner->AI_AlertNum < owner->thresh_combat-0.1)
+	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
 	{
-		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+		owner->Event_SetAlertLevel(owner->thresh_3 - 0.1f);
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
@@ -268,10 +268,8 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.investigateStimulusLocationClosely = true; // deep investigation
 	memory.searchingDueToCommunication = false;
-	
-	// Switch state is performed by the Backbone States
-	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)

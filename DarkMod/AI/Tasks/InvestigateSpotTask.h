@@ -37,7 +37,16 @@ class InvestigateSpotTask :
 	// The time this task may exit
 	int _exitTime;
 
+	// Set to TRUE, if the AI should investigate the spot very closely
+	// usually by playing the kneel_down animation.
+	bool _investigateClosely;
+
+	// Private default constructor
+	InvestigateSpotTask();
 public:
+	// @param: see member _investigateClosely
+	InvestigateSpotTask(bool investigateClosely);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
@@ -45,6 +54,10 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
 	static InvestigateSpotTaskPtr CreateInstance();
