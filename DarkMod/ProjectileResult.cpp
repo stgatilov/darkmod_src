@@ -139,7 +139,7 @@ void CProjectileResult::Init
 		idStr value;
 		// Try to find a string like "sr_type_1"
 		sprintf(key, "sr_type_%u", stimIdx);
-		pProj->spawnArgs.GetString(key, "", value);
+		spawnArgs.GetString(key, "", value);
 
 		if (value == "")
 		{
@@ -150,69 +150,52 @@ void CProjectileResult::Init
 			// The stim type of the projectile result is defined on the projectile itself
 			// even though it is not used there. Logically, the stim type is a part of the
 			// projectile definition though, since this class is only a helper class.
-			pProj->spawnArgs.GetInt(key, "-1", StimType);
+			spawnArgs.GetInt(key, "-1", StimType);
 			if(StimType != ST_DEFAULT)
 			{
-				CStim *s;
+				spawnArgs.GetFloat(va("sr_radius_%u", stimIdx), "10", StimRadius);
+				spawnArgs.GetVector(va("sr_bounds_mins_%u", stimIdx), "0 0 0", stimBounds[0]);
+				spawnArgs.GetVector(va("sr_bounds_maxs_%u", stimIdx), "0 0 0", stimBounds[1]);
+				spawnArgs.GetFloat(va("sr_falloffexponent_%u", stimIdx), "1", StimFalloffExponent);
+				spawnArgs.GetInt(va("sr_duration_%u", stimIdx), "0", StimDuration );
+				spawnArgs.GetVector(va("sr_velocity_%u", stimIdx), "0 0 0", stimVelocity );
+				spawnArgs.GetInt(va("sr_time_interval_%u", stimIdx), "0", StimEvalInterval );
+				spawnArgs.GetBool(va("sr_use_bounds_%u", stimIdx), "0", bStimUseBounds );
+				spawnArgs.GetBool(va("sr_collision_%u", stimIdx), "0", bCollisionBased );
+				spawnArgs.GetFloat(va("sr_magnitude_%u", stimIdx), "1.0", StimMagnitude );
 
-				sprintf(key, "sr_radius_%u", stimIdx);
-				pProj->spawnArgs.GetFloat(key, "10", StimRadius);
-
-				sprintf(key, "sr_bounds_mins_%u", stimIdx);
-				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[0]);
-
-				sprintf(key, "sr_bounds_maxs_%u", stimIdx);
-				pProj->spawnArgs.GetVector(key, "0 0 0", stimBounds[1]);
-
-				sprintf(key, "sr_falloffexponent_%u", stimIdx);
-				pProj->spawnArgs.GetFloat(key, "1", StimFalloffExponent);
-
-				sprintf(key, "sr_duration_%u", stimIdx);
-				pProj->spawnArgs.GetInt(key, "0", StimDuration );
-
-				sprintf(key, "sr_velocity_%u", stimIdx);
-				pProj->spawnArgs.GetVector(key, "0 0 0", stimVelocity );
-
-				sprintf(key, "sr_time_interval_%u", stimIdx);
-				pProj->spawnArgs.GetInt(key, "0", StimEvalInterval );
-
-				sprintf(key, "sr_use_bounds_%u", stimIdx);
-				pProj->spawnArgs.GetBool(key, "0", bStimUseBounds );
-
-				sprintf(key, "sr_collision_%u", stimIdx);
-				pProj->spawnArgs.GetBool(key, "0", bCollisionBased );
-
-				sprintf(key, "sr_magnitude_%u", stimIdx);
-				pProj->spawnArgs.GetFloat(key, "1.0", StimMagnitude );
-
-				s = AddStim(StimType, StimRadius);
+				CStim* stim = AddStim(StimType, StimRadius);
 				
 				// TODO: Move these sets to the AddStim arguments once Addstim is rewritten
-				s->m_Duration = StimDuration;
-				s->m_TimeInterleave = StimEvalInterval;
-				s->m_bUseEntBounds = bStimUseBounds;
-				s->m_bCollisionBased = bCollisionBased;
-				s->m_Magnitude = StimMagnitude;
-				s->m_FallOffExponent = StimFalloffExponent;
-				s->m_Velocity = stimVelocity;
+				stim->m_Duration = StimDuration;
+				stim->m_TimeInterleave = StimEvalInterval;
+				stim->m_bUseEntBounds = bStimUseBounds;
+				stim->m_bCollisionBased = bCollisionBased;
+				stim->m_Magnitude = StimMagnitude;
+				stim->m_FallOffExponent = StimFalloffExponent;
+				stim->m_Velocity = stimVelocity;
 
 				// Check for valid bounds vectors
 				if (stimBounds[0] != idVec3(0,0,0)) {
-					s->m_Bounds = idBounds(stimBounds[0], stimBounds[1]);
-					s->m_Radius = 0;
+					stim->m_Bounds = idBounds(stimBounds[0], stimBounds[1]);
+					stim->m_Radius = 0;
 					DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim with bounds setup\r");
 				}
 
-				sprintf(key, "sr_state_%u", stimIdx);
-				if( pProj->spawnArgs.GetBool(key, "1") )
-					s->EnableSR(true);
+				if (spawnArgs.GetBool(va("sr_state_%u", stimIdx), "1"))
+				{
+					stim->EnableSR(true);
+				}
 				else
-					s->EnableSR(false);
+				{
+					stim->EnableSR(false);
+				}
 
-				idStr Name;
-				sprintf(Name, "%08lX_", this);
-				if(StimType < ST_USER)
+				idStr Name(va("%08lX_", this));
+				if (StimType < ST_USER)
+				{
 					Name += cStimType[StimType];
+				}
 
 				SetName(name.c_str());
 				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Stim index %u type %u with radius %f added to entity %08lX\r", stimIdx, StimType, StimRadius, this);

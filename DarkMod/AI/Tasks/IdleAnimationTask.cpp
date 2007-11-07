@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id: IdleAnimationTask.cpp 1435 2007
 namespace ai
 {
 
-#define ANIM_INTERVAL 10000 // msecs
+#define ANIM_INTERVAL 25000 // msecs
 
 const char* IDLE_ANIMS[3] = {
 	"Torso_Itch",

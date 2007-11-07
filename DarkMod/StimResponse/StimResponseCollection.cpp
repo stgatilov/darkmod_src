@@ -566,14 +566,14 @@ Quit:
 	{
 		if(stim != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim %08lX added to collection for %08lX\r", stim, Owner);
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Stim %s added to collection for %s\r", stim->m_StimTypeName.c_str(), Owner->name.c_str());
 			AddStim(stim);
 			stim->m_State = state;
 		}
 
 		if(resp != NULL)
 		{
-			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response %08lX added to collection for %08lX\r", resp, Owner);
+			DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Response %08lX added to collection for %s\r", resp->m_StimTypeName.c_str(), Owner->name.c_str());
 			AddResponse(resp);
 		}
 	}
