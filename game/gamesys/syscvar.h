@@ -410,6 +410,13 @@ extern const char *si_gameTypeArgs[];
 
 extern const char *ui_skinArgs[];
 
+
+// HDR-like Shift Sensitivity Bloom - by maha_x
+extern idCVar	z_bloom;
+extern idCVar	z_bloomBufferSize;
+extern idCVar	z_bloomIterations;
+extern idCVar	z_bloomShift;
+
 #ifdef MOD_WATERPHYSICS
 
 extern idCVar af_useBodyDensityBuoyancy;			// MOD_WATERPHYSICS

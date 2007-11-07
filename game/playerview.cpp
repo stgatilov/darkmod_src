@@ -803,6 +803,98 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		{
 			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
 		}
+		else if ( z_bloom.GetBool() )
+		{
+			// HDR-like Shift Sensitivity Bloom - by maha_x
+
+			int bW, bH, rbW, rbH;	// buffer and renderBuffer (currentRender)
+			float rbMx, rbMy;		// renderBuffer margin
+
+			// determine AFX buffer size
+			switch(z_bloomBufferSize.GetInteger())
+			{
+			case 0:
+				bW = 64; bH = 32; break;
+			case 1:
+				bW = 128; bH = 64; break;
+			case 2:
+				bW = 256; bH = 128; break;
+			case 3:
+				bW = 512; bH = 256; break;
+			case 4:
+				bW = 1024; bH = 512; break;
+			case 5:
+				bW = 2048; bH = 1024; break;
+			}
+
+			// determine currentRender buffer size
+			if(renderSystem->GetScreenWidth() > 1024)		rbW = 2048;
+			else											rbW = 1024;
+
+			if(renderSystem->GetScreenHeight() > 1024)		rbH = 2048;
+			else if(renderSystem->GetScreenHeight() < 512)	rbH = 512;
+			else											rbH = 1024;
+			
+			rbMx = renderSystem->GetScreenWidth()  / (float)rbW;
+			rbMy = renderSystem->GetScreenHeight() / (float)rbH;
+			
+			// render the clear output
+			SingleView( hud, view );
+
+			// capture original
+			renderSystem->CaptureRenderToImage( "_currentRender" );
+
+			if ( z_bloomShift.GetBool() ) // If HDR-like sensitivity shift is enabled
+			{
+				// create weight map
+				renderSystem->CropRenderSize(2, 2, true, true);
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXweightB" ) );
+				renderSystem->CaptureRenderToImage( "_zweight" );
+				renderSystem->UnCrop();
+			
+				// create lower res map
+				renderSystem->CropRenderSize(bW, bH, true, true);
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, rbMy, rbMx, 0, declManager->FindMaterial( "_currentRender" ) );
+				renderSystem->CaptureRenderToImage( "_zbloom" );
+		
+				// loop iterations
+				for(int i = 0;i < z_bloomIterations.GetInteger();i++)
+				{
+					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXblurB" ) );
+					renderSystem->CaptureRenderToImage( "_zbloom" );
+				}
+					
+				renderSystem->UnCrop();
+
+				// blend original and bloom
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddB" ) );
+			}
+			else // Normal bloom - no sensitivity shift
+			{
+				// create lower res map
+				renderSystem->CropRenderSize(bW, bH, true, true);
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, rbMy, rbMx, 0, declManager->FindMaterial( "_currentRender" ) );
+				renderSystem->CaptureRenderToImage( "_zbloom" );
+		
+				// loop iterations
+				for(int i = 0;i < z_bloomIterations.GetInteger();i++)
+				{
+					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXblurA" ) );
+					renderSystem->CaptureRenderToImage( "_zbloom" );
+				}
+					
+				renderSystem->UnCrop();
+
+				// blend original and bloom
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddA" ) );
+			}
+					
+			// redraw hud
+			if ( !pm_thirdPerson.GetBool() )
+			{
+				player->DrawHUD( hud );
+			}
+		}
 		else
 		{
 			SingleView( hud, view );
