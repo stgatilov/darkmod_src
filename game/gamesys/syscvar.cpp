@@ -524,5 +524,5 @@ idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIV
 // HDR-like Shift Sensitivity Bloom - by maha_x
 idCVar z_bloom("z_bloom", "0", CVAR_GAME | CVAR_BOOL, "Enable bloom" );
 idCVar z_bloomBufferSize("z_bloomBufferSize", "2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Bloom render to texture size: \n0 = 64x32\n1 = 128x64\n2 = 256x128\n3 = 512x256\n4 = 1024x512\n5 = 2048x1024" );
-idCVar z_bloomIterations("z_bloomIterations", "12",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Number of times the blur filter is applied" );
+idCVar z_bloomIterations("z_bloomIterations", "6",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Number of times the blur filter is applied" );
 idCVar z_bloomShift("z_bloomShift", "1", CVAR_GAME | CVAR_BOOL, "Enable HDR-like Sensitivity Shift" );
