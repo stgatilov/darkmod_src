@@ -23,8 +23,8 @@ namespace ai
 
 const char* IDLE_ANIMS[3] = {
 	"Torso_Itch",
-	"Torso_SniffArm1",
-	"Torso_Cough1"
+	"Torso_SniffArm",
+	"Torso_Cough"
 };
 
 IdleAnimationTask::IdleAnimationTask() :

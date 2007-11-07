@@ -75,12 +75,8 @@ void FleeState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	// Play the surprised animation
-	idStr animIndex(gameLocal.random.RandomInt(1) + 1); // returns 1 or 2
-	idStr anim = "Torso_Surprise" + animIndex;
-	owner->SetAnimState(ANIMCHANNEL_TORSO, anim.c_str(), 5);
-
-	anim = "Legs_Surprise" + animIndex;
-	owner->SetAnimState(ANIMCHANNEL_LEGS, anim.c_str(), 5);
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Surprise", 5);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Surprise", 5);
 }
 
 // Gets called each time the mind is thinking
