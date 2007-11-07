@@ -128,9 +128,16 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Stop previous moves
 			owner->StopMove(MOVE_STATUS_DONE);
 
-			// We should investigate the spot closely, so kneel_down and do so
-			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
-			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KneelDown", 6);
+			// Check the position of the stim, is it closer to the eyes than to the feet?
+			// If it's lower than the eye position, kneel down and investigate
+			const idVec3& origin = owner->GetPhysics()->GetOrigin();
+			idVec3 eyePos = owner->GetEyePosition();
+			if ((memory.currentSearchSpot - origin).LengthSqr() < (memory.currentSearchSpot - eyePos).LengthSqr())
+			{
+				// Close to the feet, kneel down and investigate closely
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
+				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KneelDown", 6);
+			}
 
 			// Wait a bit, setting _exitTime sets the lifetime of this task
 			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_CLOSELY*(1 + gameLocal.random.RandomFloat()*0.2f);
