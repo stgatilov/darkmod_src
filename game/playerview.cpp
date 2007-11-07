@@ -798,15 +798,11 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
 		} else {*/
 
-		// greebo: For underwater effects, use the Doom3 Doubleview
-		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
-		{
-			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
-		}
-		else if ( z_bloom.GetBool() )
-		{
-			// HDR-like Shift Sensitivity Bloom - by maha_x
 
+		// HDR-like Shift Sensitivity Bloom - by maha_x
+		// Added to TDM by Dram
+		if ( z_bloom.GetBool() ) // If bloom is enabled
+		{
 			int bW, bH, rbW, rbH;	// buffer and renderBuffer (currentRender)
 			float rbMx, rbMy;		// renderBuffer margin
 
@@ -837,9 +833,16 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			
 			rbMx = renderSystem->GetScreenWidth()  / (float)rbW;
 			rbMy = renderSystem->GetScreenHeight() / (float)rbH;
-			
+
 			// render the clear output
-			SingleView( hud, view );
+			if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+			{
+				DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger()); // greebo: For underwater effects, use the Doom3 Doubleview
+			}
+			else
+			{
+				SingleView( hud, view, false );
+			}
 
 			// capture original
 			renderSystem->CaptureRenderToImage( "_currentRender" );
@@ -866,6 +869,13 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 					
 				renderSystem->UnCrop();
 
+				// for bloom underwater effects - added by Dram
+				if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+				{
+					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/overlay_water" ) );
+					renderSystem->CaptureRenderToImage( "_currentRender" );
+				}
+
 				// blend original and bloom
 				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddB" ) );
 			}
@@ -885,19 +895,34 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 					
 				renderSystem->UnCrop();
 
+				// for bloom underwater effects - added by Dram
+				if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+				{
+					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/overlay_water" ) );
+					renderSystem->CaptureRenderToImage( "_currentRender" );
+				}
+
 				// blend original and bloom
 				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddA" ) );
 			}
-					
+
 			// redraw hud
 			if ( !pm_thirdPerson.GetBool() )
 			{
 				player->DrawHUD( hud );
 			}
 		}
-		else
+		else if ( !z_bloom.GetBool() ) // If bloom is disabled
 		{
-			SingleView( hud, view );
+			// greebo: For underwater effects, use the Doom3 Doubleview
+			if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+			{
+				DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
+			}
+			else
+			{
+				SingleView( hud, view );
+			}
 		}
 
 		//}
