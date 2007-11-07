@@ -346,21 +346,6 @@ const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitie
 const idEventDef AI_GetAlertNumOfOtherAI ("getAlertNumOfOtherAI", "e", 'f');
 
 /*!
-* This event gets a script linked variable value from another AI
-*
-* @param otherEntity The entity who's script variable we are retrieving
-*
-* @param variableName The script name of the variable to be retrieved
-*
-* @return floating values are returned as is
-* @return boolean values are 0.0 for false, 1.0 for true
-* @return int values are returned as float casts
-*
-*/
-const idEventDef AI_GetVariableFromOtherAI ("getVariableFromOtherAI", "es", 'f');
-
-
-/*!
 * This event is used to get a position that the AI can move to observe a 
 * given position.  It is useful for looking at hiding spots that can't be reached,
 * and performing other investigation functions.
@@ -554,7 +539,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
 
 	EVENT ( AI_GetAlertNumOfOtherAI,			idAI::Event_GetAlertNumOfOtherAI)
-	EVENT ( AI_GetVariableFromOtherAI,			idAI::Event_GetVariableFromOtherAI)
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
@@ -3500,60 +3484,6 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 
 	// Return the type
 	idThread::ReturnInt (outTypeFlags);
-
-}
-
-//-----------------------------------------------------------------------------------------
-
-void idAI::Event_GetVariableFromOtherAI (idEntity* p_otherEntity, const char* pstr_variableName)
-{
-	// Test parameters
-	if (p_otherEntity == NULL) 
-	{
-		idThread::ReturnFloat (0.0);
-		return;
-	}
-
-
-	// The other entity must be an AI
-	idAI* p_otherAI = dynamic_cast<idAI*>(p_otherEntity);
-	if (p_otherAI == NULL)
-	{
-		// Not an AI
-		idThread::ReturnFloat (0.0);
-		return;
-	}
-
-	// Get the variable from the script link map and convert to float
-	float value;
-	if (!strcmp (pstr_variableName, "stateOfMind_b_enemiesHaveBeenSeen") )
-	{
-		value = (float) (p_otherAI->stateOfMind_b_enemiesHaveBeenSeen);
-	}
-	else if (!strcmp (pstr_variableName, "stateOfMind_b_itemsHaveBeenStolen") )
-	{
-		value = (float) (p_otherAI->stateOfMind_b_itemsHaveBeenStolen);
-	}
-	else if (!strcmp (pstr_variableName, "stateOfMind_count_evidenceOfIntruders") )
-	{
-		value = p_otherAI->stateOfMind_count_evidenceOfIntruders;
-	}
-	else if (!strcmp (pstr_variableName, "AI_AlertNum") )
-	{
-		value = p_otherAI->AI_AlertNum;
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Unexpected AI variable name '%s' requested, value 0.0 returned\r", pstr_variableName);
-		value = 0.0;
-	}
-
-	// TODO: Add others as needed
-
-
-	// Return the value
-	idThread::ReturnFloat (value);
-
 }
 
 //-----------------------------------------------------------------------------------------
@@ -3567,7 +3497,6 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 		return;
 	}
 
-
 	// The other entity must be an AI
 	idAI* p_otherAI = dynamic_cast<idAI*>(p_otherEntity);
 	if (p_otherAI == NULL)
@@ -3579,7 +3508,6 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 
 	// Return the other AI's alert num
 	idThread::ReturnFloat (p_otherAI->AI_AlertNum);
-
 }
 
 /*---------------------------------------------------------------------------------*/
