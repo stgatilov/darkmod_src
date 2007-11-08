@@ -2091,9 +2091,10 @@ idActor::SetAnimState
 void idActor::SetAnimState( int channel, const char *statename, int blendFrames ) {
 	const function_t *func;
 
+	// greebo: Try to lookup the script function of this animstate
 	func = scriptObject.GetFunction( statename );
 	if ( !func ) {
-		assert( 0 );
+//		assert( 0 ); // greebo: don't just crash, a missing script function can happen...
 		gameLocal.Error( "Can't find function '%s' in object '%s'", statename, scriptObject.GetTypeName() );
 	}
 

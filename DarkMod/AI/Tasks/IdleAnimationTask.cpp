@@ -46,9 +46,10 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Read the animation set and interval from the owner's spawnarg
 	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
 
+	// Read the general-purpose animations first
 	std::string animStringList(owner->spawnArgs.GetString("idle_animations", ""));
 
-	std::vector<std::string> anims;
+	std::vector<std::string> anims; // will hold the separated strings
 	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
 
 	// Copy the strings into the idList<idStr>
@@ -57,13 +58,23 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 		_idleAnimations.Append(idStr(anims[i].c_str()));
 	}
 
-	if (_idleAnimationInterval > 0 && _idleAnimations.Num() > 0)
+	// Now read the anims for the torso only
+	animStringList = owner->spawnArgs.GetString("idle_animations_torso", "");
+	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+
+	// Copy the strings into the idList<idStr>
+	for (std::size_t i = 0; i < anims.size(); i++)
+	{
+		_idleAnimationsTorso.Append(idStr(anims[i].c_str()));
+	}
+
+	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num()))
 	{
 		_nextAnimationTime = gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval;
 	}
 	else
 	{
-		// No idle animation interval set, finish this task
+		// No idle animation interval set or no animations, finish this task
 		subsystem.FinishTask();
 	}
 }
@@ -81,9 +92,27 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time > _nextAnimationTime)
 	{
-		// The time has come, determine the animation to play
-		int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
-		owner->SetAnimState(ANIMCHANNEL_TORSO, _idleAnimations[animIdx].c_str(), 4);
+		// Check if the AI is moving, this determines which channel we can play on
+		idStr animState(owner->GetAnimState(ANIMCHANNEL_LEGS));
+
+		if (animState == "Legs_Idle")
+		{
+			// AI is not walking, play animations affecting all channels
+			int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+
+			idStr animName(_idleAnimations[animIdx]);
+
+			owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, ("Legs_" + animName).c_str(), 4);
+		}
+		else 
+		{
+			// AI is walking, only use animations for the Torso channel
+			int animIdx = gameLocal.random.RandomInt(_idleAnimationsTorso.Num());
+
+			idStr animName(_idleAnimationsTorso[animIdx]);
+			owner->SetAnimState(ANIMCHANNEL_TORSO, ("Torso_" + animName).c_str(), 4);
+		}
 		
 		// Reset the timer
 		_nextAnimationTime = gameLocal.time + _idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f);
