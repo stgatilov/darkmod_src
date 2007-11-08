@@ -26,6 +26,9 @@ class IdleAnimationTask :
 {
 	int _nextAnimationTime;
 
+	idList<idStr> _idleAnimations;
+	int _idleAnimationInterval;
+
 	// Default constructor is private
 	IdleAnimationTask();
 public:

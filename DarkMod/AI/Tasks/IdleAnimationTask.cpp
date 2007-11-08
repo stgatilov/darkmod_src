@@ -16,19 +16,17 @@ static bool init_version = FileVersionList("$Id: IdleAnimationTask.cpp 1435 2007
 #include "../Memory.h"
 #include "../Library.h"
 
+#include <vector>
+#include <string>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 namespace ai
 {
 
-#define ANIM_INTERVAL 25000 // msecs
-
-const char* IDLE_ANIMS[3] = {
-	"Torso_Itch",
-	"Torso_SniffArm",
-	"Torso_Cough"
-};
-
 IdleAnimationTask::IdleAnimationTask() :
-	_nextAnimationTime(-1)
+	_nextAnimationTime(-1),
+	_idleAnimationInterval(-1)
 {}
 
 // Get the name of this task
@@ -45,7 +43,29 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
-	_nextAnimationTime = gameLocal.time + gameLocal.random.RandomFloat()*ANIM_INTERVAL;
+	// Read the animation set and interval from the owner's spawnarg
+	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
+
+	std::string animStringList(owner->spawnArgs.GetString("idle_animations", ""));
+
+	std::vector<std::string> anims;
+	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+
+	// Copy the strings into the idList<idStr>
+	for (std::size_t i = 0; i < anims.size(); i++)
+	{
+		_idleAnimations.Append(idStr(anims[i].c_str()));
+	}
+
+	if (_idleAnimationInterval > 0 && _idleAnimations.Num() > 0)
+	{
+		_nextAnimationTime = gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval;
+	}
+	else
+	{
+		// No idle animation interval set, finish this task
+		subsystem.FinishTask();
+	}
 }
 
 bool IdleAnimationTask::Perform(Subsystem& subsystem)
@@ -62,11 +82,11 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	if (gameLocal.time > _nextAnimationTime)
 	{
 		// The time has come, determine the animation to play
-		int animIdx = gameLocal.random.RandomInt(3);
-		owner->SetAnimState(ANIMCHANNEL_TORSO, IDLE_ANIMS[animIdx], 4);
+		int animIdx = gameLocal.random.RandomInt(_idleAnimations.Num());
+		owner->SetAnimState(ANIMCHANNEL_TORSO, _idleAnimations[animIdx].c_str(), 4);
 		
 		// Reset the timer
-		_nextAnimationTime = gameLocal.time + ANIM_INTERVAL*(0.8f + gameLocal.random.RandomFloat()*0.4f);
+		_nextAnimationTime = gameLocal.time + _idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f);
 	}
 
 	return false; // not finished yet
@@ -77,12 +97,28 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 	savefile->WriteInt(_nextAnimationTime);
+	savefile->WriteInt(_idleAnimationInterval);
+
+	savefile->WriteInt(_idleAnimations.Num());
+	for (int i = 0; i < _idleAnimations.Num(); i++)
+	{
+		savefile->WriteString(_idleAnimations[i].c_str());
+	}
 }
 
 void IdleAnimationTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
 	savefile->ReadInt(_nextAnimationTime);
+	savefile->ReadInt(_idleAnimationInterval);
+
+	int num;
+	savefile->ReadInt(num);
+	_idleAnimations.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(_idleAnimations[i]);
+	}
 }
 
 IdleAnimationTaskPtr IdleAnimationTask::CreateInstance()
