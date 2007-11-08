@@ -181,7 +181,6 @@ AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
 AI/Tasks/ChaseEnemyRangedTask.cpp \
 AI/Tasks/ChaseEnemyTask.cpp \
-AI/Tasks/EmptyTask.cpp \
 AI/Tasks/FleeTask.cpp \
 AI/Tasks/IdleAnimationTask.cpp \
 AI/Tasks/IdleBarkTask.cpp \

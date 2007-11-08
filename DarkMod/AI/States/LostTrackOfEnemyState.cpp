@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: LostTrackOfEnemyState.cpp 1435 
 
 #include "LostTrackOfEnemyState.h"
 #include "../Memory.h"
-#include "../Tasks/EmptyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Library.h"
 

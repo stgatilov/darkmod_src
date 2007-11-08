@@ -15,7 +15,6 @@ static bool init_version = FileVersionList("$Id: UnreachableTargetState.cpp 1435
 #include "UnreachableTargetState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
-#include "../Tasks/EmptyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/ThrowObjectTask.h"
 #include "../Tasks/MoveToPositionTask.h"

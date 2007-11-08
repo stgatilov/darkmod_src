@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 
 #include "SearchingState.h"
 #include "../Memory.h"
-#include "../Tasks/EmptyTask.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/WanderInLocationTask.h"

@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 
 #include "../Memory.h"
 #include "PatrolTask.h"
-#include "EmptyTask.h"
 #include "PathCornerTask.h"
 #include "PathTurnTask.h"
 #include "PathWaitTask.h"

@@ -15,7 +15,6 @@ static bool init_version = FileVersionList("$Id: Subsystem.cpp 1435 2007-10-16 1
 #include "Subsystem.h"
 #include "Library.h"
 #include "States/State.h"
-#include "Tasks/EmptyTask.h"
 
 namespace ai
 {
