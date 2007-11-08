@@ -48,7 +48,7 @@ extern idCVar cv_ai_opt_forceopt;
 extern idCVar cv_spr_debug;
 extern idCVar cv_spr_show;
 extern idCVar cv_ko_show;
-
+extern idCVar cv_ai_animstate_show;
 
 extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_crouchmod;

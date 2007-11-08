@@ -1745,6 +1745,20 @@ void idAI::Think( void )
 	{
 		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertNum, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
+
+	if (cv_ai_animstate_show.GetBool())
+	{
+		idStr debugText("Torso: ");
+		debugText += GetAnimState(ANIMCHANNEL_TORSO);
+		debugText += "\nLegs: ";
+		debugText += GetAnimState(ANIMCHANNEL_LEGS);
+		debugText += "\n";
+		if (WaitState() != NULL)
+		{
+			debugText += idStr("Waitstate: ") + WaitState();
+		}
+		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-4), 0.25f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
 }
 
 /***********************************************************************
