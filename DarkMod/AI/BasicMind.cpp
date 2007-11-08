@@ -124,29 +124,6 @@ void BasicMind::PushState(const idStr& stateName)
 	}
 }
 
-bool BasicMind::PushStateIfHigherPriority(const idStr& stateName, int priority)
-{
-	if (_stateQueue.size() > 0) 
-	{
-		const StatePtr& curState = _stateQueue.front();
-
-		if (curState->GetPriority() < priority)
-		{
-			// Priority of the current task is lower, take the new one
-			PushState(stateName);
-			return true;
-		}
-	}
-	else
-	{
-		// No tasks in the queue, take this one immediately
-		PushState(stateName);
-		return true;
-	}
-
-	return false;
-}
-
 bool BasicMind::EndState()
 {
 	if (!_stateQueue.empty())
@@ -195,33 +172,6 @@ void BasicMind::SwitchState(const idStr& stateName)
 
 	// Add the new task
 	PushState(stateName);
-}
-
-bool BasicMind::SwitchStateIfHigherPriority(const idStr& stateName, int priority)
-{
-	// greebo: Switch the state without destroying the State object immediately
-
-	if (_stateQueue.size() > 0)
-	{
-		// Store the shared_ptr in the temporary container
-		_recycleBin = _stateQueue.front();
-		// Remove the first element from the queue
-		_stateQueue.pop_front();
-	}
-
-	// Switch to the new State (conditionally)
-	bool stateInstalled = PushStateIfHigherPriority(stateName, priority);
-
-	if (!stateInstalled && _recycleBin != NULL)
-	{
-		// State could not be pushed, revert the queue
-		_stateQueue.push_front(_recycleBin);
-		
-		// Prevent re-initialisation of the old state
-		_switchState = false;
-	}
-
-	return stateInstalled;
 }
 
 void BasicMind::QueueState(const idStr& stateName)

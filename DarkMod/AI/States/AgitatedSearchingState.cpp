@@ -45,6 +45,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
+
+	// Nothing to do here yet, everything is handled by the base SearchingState.
+	// (FIXME) Remove this method if unneeded for a long time.
 }
 
 // Gets called each time the mind is thinking

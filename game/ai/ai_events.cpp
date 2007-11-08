@@ -174,8 +174,6 @@ const idEventDef AI_PushState("pushState", "s");
 const idEventDef AI_QueueState("queueState", "s");
 const idEventDef AI_SwitchState("switchState", "s");
 const idEventDef AI_EndState("endState", NULL, 'd');
-const idEventDef AI_PushStateIfHigherPriority("pushStateIfHigherPriority", "sd", 'd');
-const idEventDef AI_SwitchStateIfHigherPriority("switchStateIfHigherPriority", "sd", 'd');
 
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
@@ -503,8 +501,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT(  AI_QueueState,						idAI::Event_QueueState )
 	EVENT(  AI_SwitchState,						idAI::Event_SwitchState )
 	EVENT(  AI_EndState,						idAI::Event_EndState )
-	EVENT(  AI_PushStateIfHigherPriority,		idAI::Event_PushStateIfHigherPriority )
-	EVENT(  AI_SwitchStateIfHigherPriority,		idAI::Event_SwitchStateIfHigherPriority )
 
 	EVENT( AI_PlayAndLipSync,					idAI::Event_PlayAndLipSync )
 	EVENT( AI_GetRelationEnt,					idAI::Event_GetRelationEnt )
@@ -3560,16 +3556,6 @@ void idAI::Event_SwitchState(const char* state)
 void idAI::Event_EndState()
 {
 	idThread::ReturnInt(static_cast<int>(mind->EndState()));
-}
-
-void idAI::Event_PushStateIfHigherPriority(const char* state, int priority)
-{
-	idThread::ReturnInt(static_cast<int>(mind->PushStateIfHigherPriority(state, priority)));
-}
-
-void idAI::Event_SwitchStateIfHigherPriority(const char* state, int priority)
-{
-	idThread::ReturnInt(static_cast<int>(mind->SwitchStateIfHigherPriority(state, priority)));
 }
 
 void idAI::Event_ProcessVisualStim(idEntity* stimSource)

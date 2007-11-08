@@ -57,17 +57,6 @@ public:
 	virtual void PushState(const idStr& stateName) = 0;
 
 	/**
-	 * greebo: Switches the Mind to the named State, but ONLY if the 
-	 *         new State has a higher priority than the current one. 
-	 *         In case the new one is accepted, the currently active
-	 *         State will be pushed back in the queue and is postponed 
-	 *         until the new State is finished.
-	 *
-	 * @returns: TRUE if the new State was accepted, FALSE otherwise.
-	 */
-	virtual bool PushStateIfHigherPriority(const idStr& stateName, int priority) = 0;
-
-	/**
 	 * greebo: Ends the current state - the Mind will pick the next State
 	 *         from the StateQueue or create a new Idle State if none is available.
 	 *
@@ -80,15 +69,6 @@ public:
 	 * This new state REPLACES the currently active one.
 	 */
 	virtual void SwitchState(const idStr& stateName) = 0;
-
-	/**
-	 * greebo: Sets the new state of this mind (this can be Idle, Combat),
-	 * but ONLY if the priority is higher than the one of the current state.
-	 * This new state REPLACES the currently active one, if its priority is higher.
-	 *
-	 * @returns: TRUE, if the State was switched (priority higher), FALSE otherwise.
-	 */
-	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int priority) = 0;
 
 	/**
 	 * greebo: Adds the named State at the end of the queue. It becomes active when

@@ -1557,8 +1557,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_QueueState(const char* state);
 	void					Event_SwitchState(const char* state);
 	void					Event_EndState();
-	void					Event_PushStateIfHigherPriority(const char* state, int priority);
-	void					Event_SwitchStateIfHigherPriority(const char* state, int priority);
 
 	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
 	void					Event_RegisterKilledTask( const char* taskName, int priority );

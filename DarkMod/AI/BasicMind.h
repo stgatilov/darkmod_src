@@ -48,10 +48,8 @@ public:
 
 	// State-related methods, see Mind base class for documentation
 	virtual void PushState(const idStr& stateName);
-	virtual bool PushStateIfHigherPriority(const idStr& stateName, int priority);
 	virtual bool EndState();
 	virtual void SwitchState(const idStr& stateName);
-	virtual bool SwitchStateIfHigherPriority(const idStr& stateName, int priority);
 	virtual void QueueState(const idStr& stateName);
 	virtual void ClearStates();
 
