@@ -71,12 +71,6 @@ public:
 	virtual void SwitchState(const idStr& stateName) = 0;
 
 	/**
-	 * greebo: Adds the named State at the end of the queue. It becomes active when
-	 *         all other currently enqueued states will be finished.
-	 */
-	virtual void QueueState(const idStr& stateName) = 0;
-
-	/**
 	 * greebo: Removes all States from the Queue and falls back to the default State (Idle).
 	 */
 	virtual void ClearStates() = 0;

@@ -171,7 +171,6 @@ const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e
 const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
 
 const idEventDef AI_PushState("pushState", "s");
-const idEventDef AI_QueueState("queueState", "s");
 const idEventDef AI_SwitchState("switchState", "s");
 const idEventDef AI_EndState("endState", NULL, 'd');
 
@@ -498,7 +497,6 @@ CLASS_DECLARATION( idActor, idAI )
 	
 	// greebo: State manipulation interface
 	EVENT(  AI_PushState,						idAI::Event_PushState )
-	EVENT(  AI_QueueState,						idAI::Event_QueueState )
 	EVENT(  AI_SwitchState,						idAI::Event_SwitchState )
 	EVENT(  AI_EndState,						idAI::Event_EndState )
 
@@ -3541,11 +3539,6 @@ void idAI::Event_FoundBody( idEntity *body )
 void idAI::Event_PushState(const char* state)
 {
 	mind->PushState(state);
-}
-
-void idAI::Event_QueueState(const char* state)
-{
-	mind->QueueState(state);
 }
 
 void idAI::Event_SwitchState(const char* state)

@@ -50,7 +50,6 @@ public:
 	virtual void PushState(const idStr& stateName);
 	virtual bool EndState();
 	virtual void SwitchState(const idStr& stateName);
-	virtual void QueueState(const idStr& stateName);
 	virtual void ClearStates();
 
 	// Returns the reference to the current state

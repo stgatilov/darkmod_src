@@ -174,28 +174,6 @@ void BasicMind::SwitchState(const idStr& stateName)
 	PushState(stateName);
 }
 
-void BasicMind::QueueState(const idStr& stateName)
-{
-	// Get a new state with the given name
-	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
-
-	if (newState != NULL)
-	{
-		if (_stateQueue.empty())
-		{
-			// This is the only task, let's switch states
-			_switchState = true;
-		}
-
-		// Append the state at the end of the queue
-		_stateQueue.push_back(newState);
-	}
-	else
-	{
-		gameLocal.Error("BasicMind: Could not enqueue state %s", stateName.c_str());
-	}
-}
-
 void BasicMind::ClearStates()
 {
 	_switchState = true;
