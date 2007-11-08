@@ -55,6 +55,7 @@ void CombatState::Init(idAI* owner)
 
 	// Store the enemy entity locally
 	_enemy = owner->GetEnemy();
+	idActor* enemy = _enemy.GetEntity();
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
@@ -64,7 +65,7 @@ void CombatState::Init(idAI* owner)
 		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
 		YELL_STIM_RADIUS, 
 		NULL,
-		owner->GetEnemy(),
+		enemy,
 		memory.lastEnemyPos
 	);
 
@@ -111,7 +112,10 @@ void CombatState::Init(idAI* owner)
 	else
 	{
 		// The movement subsystem should start running to the last enemy position
-		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyTask::CreateInstance());
+		ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
+		chaseEnemy->SetEnemy(enemy);
+		owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+
 		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 	}
 }
@@ -141,7 +145,7 @@ void CombatState::Think(idAI* owner)
 	// Check the distance to the enemy, the subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy);
 
-	if (!owner->AI_ENEMY_VISIBLE)
+	if (!owner->AI_ENEMY_VISIBLE && !memory.canHitEnemy)
 	{
 		// The enemy is not visible, let's keep track of him for a small amount of time
 		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)

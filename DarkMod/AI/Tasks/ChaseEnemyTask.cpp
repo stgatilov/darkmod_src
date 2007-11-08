@@ -32,10 +32,13 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	idActor* enemy = _enemy.GetEntity();
+	if (!enemy)
+	{
+		_enemy = owner->GetEnemy();
+	}
+
 	owner->AI_RUN = true;
-
-	_enemy = owner->GetEnemy();
-
 	if (!owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
@@ -58,7 +61,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	// Can we damage the enemy already? (this flag is set by the sensory task)
+	// Can we damage the enemy already? (this flag is set by the combat state)
 	if (memory.canHitEnemy)
 	{
 		// Yes, stop the move!

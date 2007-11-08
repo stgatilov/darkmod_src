@@ -102,6 +102,9 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 			}
 			else
 			{
+				
+				
+				
 				// We did not find a reachable attack position 
 				// it might be that the AI is not able to reach the enemy at all
 				// should run and alert everybody?

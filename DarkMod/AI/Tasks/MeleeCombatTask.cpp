@@ -40,14 +40,14 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
-
+/*
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
 		return true; // terminate me
 	}
-
+*/
 	// Can we damage the enemy already? (this flag is set by the sensory task)
 	if (owner->GetMemory().canHitEnemy)
 	{

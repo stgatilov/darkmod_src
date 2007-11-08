@@ -5375,14 +5375,16 @@ void idAI::UpdateEnemyPosition()
 		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
 
-		// Store the last time the enemy was visible
-		mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
 
 		// Now perform the FOV check manually
 		if (CheckFOV( enemyEnt->GetPhysics()->GetOrigin()))
 		{
 			AI_ENEMY_IN_FOV = true;
 			// TODO: call SetEnemyPosition here only?
+
+			// Store the last time the enemy was visible
+			mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
+
 		}
 
 		SetEnemyPosition();
@@ -7369,6 +7371,9 @@ float idAI::GetVisibility( idEntity *ent ) const
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
 		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText5(dist);
+		alertText4 = "distance: "+ alertText5;
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 	
 	return returnval;
@@ -7476,7 +7481,9 @@ idActor *idAI::FindEnemy(bool useFOV)
 			continue;
 		}
 
-		if (CanSee(actor, useFOV))
+		// angua: does not take lighting into account any more, 
+		// this is done afterwards in the visualscan
+		if (CanSeeExt(actor, useFOV, false))
 		{
 			// Enemy actor found and visible, return it 
 			return actor;
