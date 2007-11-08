@@ -1558,8 +1558,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Event_EndState();
 
 	void					Event_PlayAndLipSync( const char *soundName, const char *animName );
-	void					Event_RegisterKilledTask( const char* taskName, int priority );
-	void					Event_RegisterKnockedOutTask(const char* taskName, int priority);
 	
 	/**
 	* Frontend scripting functions for Dark Mod Relations Manager

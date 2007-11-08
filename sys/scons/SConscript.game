@@ -169,7 +169,6 @@ AI/Subsystem.cpp \
 AI/States/AgitatedSearchingState.cpp \
 AI/States/CombatState.cpp \
 AI/States/DeadState.cpp \
-AI/States/EmptyState.cpp \
 AI/States/FleeState.cpp \
 AI/States/FleeDoneState.cpp \
 AI/States/IdleState.cpp \
