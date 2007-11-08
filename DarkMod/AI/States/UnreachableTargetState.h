@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_UNREACHABLE_TARGET "UnreachableTarget"
-#define PRIORITY_CANNOTREACHTARGET 50000
 
 class UnreachableTargetState :
 	public State
@@ -30,11 +29,6 @@ class UnreachableTargetState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_CANNOTREACHTARGET;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

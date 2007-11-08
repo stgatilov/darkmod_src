@@ -59,7 +59,6 @@ bool FileVersionList(const char *str, bool state);
 
 class CStim;
 class CStimResponseTimer;
-class CPriorityQueue;
 
 // enables water physics
 #define MOD_WATERPHYSICS

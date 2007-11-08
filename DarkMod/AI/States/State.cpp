@@ -314,7 +314,6 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			owner->SetEnemy(other);
 			owner->AI_VISALERT = true;
 			
-			//owner->GetMind()->PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
 			owner->Event_SetAlertLevel(owner->thresh_combat*2);
 			// An enemy should not be ignored in the future
 			ignoreStimulusFromNowOn = false;
@@ -528,9 +527,6 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		
 		// Callback for objectives
 		owner->FoundBody(person);
-
-		// Switch state is performed by the Backbone States
-		//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 	}
 
 	// Ignore from now on
@@ -604,9 +600,6 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		
 		// Callback for objectives
 		owner->FoundBody(person);
-
-		// Switch state is performed by the Backbone States
-		//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 	}
 
 	// Ignore from now on
@@ -654,9 +647,6 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.searchingDueToCommunication = false;
-	
-	// Switch state is performed by the Backbone States
-	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
@@ -856,9 +846,6 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.searchingDueToCommunication = false;
-	
-	// Switch state is performed by the Backbone States
-	//owner->GetMind()->PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);			
 }
 
 void State::OnAICommMessage(CAIComm_Message* message)

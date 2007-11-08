@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_COMBAT "Combat"
-#define PRIORITY_COMBAT 40000
 
 class CombatState :
 	public State
@@ -28,11 +27,6 @@ class CombatState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_COMBAT;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

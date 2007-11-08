@@ -25,9 +25,6 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const = 0;
 
-	// Returns the priority of this state
-	virtual int GetPriority() const = 0;
-
 	// This is called when the state is about to be invoked the first time by Mind.
 	virtual void Init(idAI* owner);
 

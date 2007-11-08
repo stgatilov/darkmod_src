@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_LOST_TRACK_OF_ENEMY "LostTrackOfEnemy"
-#define PRIORITY_LOST_TRACK_OF_ENEMY 30000
 
 class LostTrackOfEnemyState :
 	public State
@@ -24,11 +23,6 @@ class LostTrackOfEnemyState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_LOST_TRACK_OF_ENEMY;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_DEAD "Dead"
-#define PRIORITY_DEAD 100000;
 
 class DeadState :
 	public State
@@ -24,11 +23,6 @@ class DeadState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_DEAD;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

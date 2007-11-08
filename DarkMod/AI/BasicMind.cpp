@@ -558,9 +558,6 @@ bool BasicMind::PerformCombatCheck()
 
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
 		
-		//StatePtr combatState = CombatState::CreateInstance();
-		//PushStateIfHigherPriority(STATE_COMBAT, PRIORITY_COMBAT);
-
 		return true; // entered combat mode
 	}
 
@@ -637,10 +634,6 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 				
 					// Do new reaction to stimulus
 					memory.searchingDueToCommunication = false;
-
-					// Push a reacting-to-stimulus state
-			//		PushStateIfHigherPriority(STATE_REACTING_TO_STIMULUS, PRIORITY_REACTING_TO_STIMULUS);
-			//		return;
 				}	
 			} // Not too close to last stimulus or is visual stimulus
 		} // Not ignoring new stimuli

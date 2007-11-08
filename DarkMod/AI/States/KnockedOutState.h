@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_KNOCKED_OUT "KnockedOut"
-#define PRIORITY_KNOCKED_OUT 50000;
 
 class KnockedOutState :
 	public State
@@ -24,11 +23,6 @@ class KnockedOutState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_KNOCKED_OUT;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);

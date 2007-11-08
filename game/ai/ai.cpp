@@ -8235,17 +8235,6 @@ void idAI::Knockout( void )
 	mind->ClearStates();
 	mind->PushState(STATE_KNOCKED_OUT);
 	
-	/*if (m_TaskQueue && m_knockedOutTask.Length())
-	{
-		m_TaskQueue->Push(m_knockedOutTaskPriority, m_knockedOutTask.c_str());
-	}
-	else
-	{
-		state = GetScriptFunction( "state_KnockedOut" );
-		SetState( state );
-		SetWaitState( "" );
-	}*/
-
 	// drop items
 	DropOnRagdoll();
 

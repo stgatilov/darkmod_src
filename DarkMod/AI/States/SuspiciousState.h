@@ -16,7 +16,6 @@ namespace ai
 {
 
 #define STATE_SUSPICIOUS "Suspicious"
-#define PRIORITY_SUSPICIOUS 2000
 
 class SuspiciousState :
 	public State
@@ -25,11 +24,6 @@ class SuspiciousState :
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
-
-	// Get/set the priority of this state
-	virtual int GetPriority() const {
-		return PRIORITY_SUSPICIOUS;
-	}
 
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
