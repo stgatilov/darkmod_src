@@ -1757,7 +1757,7 @@ void idAI::Think( void )
 		{
 			debugText += idStr("Waitstate: ") + WaitState();
 		}
-		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-4), 0.25f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 }
 
