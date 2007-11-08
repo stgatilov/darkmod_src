@@ -29,6 +29,12 @@ const idStr& SuspiciousState::GetName() const
 	return _name;
 }
 
+bool SuspiciousState::CheckAlertLevel(idAI* owner)
+{
+	// Use the base class method to conditionally switch states
+	return SwitchOnMismatchingAlertIndex(1, STATE_SEARCHING);
+}
+
 void SuspiciousState::Init(idAI* owner)
 {
 	// Init base class first
@@ -37,10 +43,8 @@ void SuspiciousState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SuspiciousState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(1, STATE_SEARCHING))
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
@@ -57,15 +61,8 @@ void SuspiciousState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void SuspiciousState::Think(idAI* owner)
 {
-
-	if (!CheckAlertLevel(1, STATE_SEARCHING))
-	{
-		return;
-	}
-
-	Memory& memory = owner->GetMemory();
-
-
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 }
 
 StatePtr SuspiciousState::CreateInstance()

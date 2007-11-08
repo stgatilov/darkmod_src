@@ -49,6 +49,10 @@ public:
 
 	static StatePtr CreateInstance();
 
+protected:
+	// Override base class method
+	virtual bool CheckAlertLevel(idAI* owner);
+
 private:
 	// Returns the initial idle bark sound, depending on the alert level 
 	// and the current state of mind

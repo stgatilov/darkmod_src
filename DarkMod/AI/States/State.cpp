@@ -92,7 +92,12 @@ void State::Init(idAI* owner)
 	_owner = owner;
 }
 
-bool State::CheckAlertLevel(int reqAlertIndex, const idStr& higherStateName)
+bool State::CheckAlertLevel(idAI* owner)
+{
+	return true; // always true by default
+}
+
+bool State::SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higherStateName)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

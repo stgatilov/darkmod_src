@@ -59,6 +59,9 @@ public:
 	static StatePtr CreateInstance();
 
 protected:
+	// Override base class method
+	virtual bool CheckAlertLevel(idAI* owner);
+
 	// This is a service method for this class and the subclasses.
 	// It basically starts a new hidingspot search and initialises the subsystems
 	void SetupSearch(idAI* owner);

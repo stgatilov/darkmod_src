@@ -45,6 +45,10 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 
 	static StatePtr CreateInstance();
+
+protected:
+	// Override base class method
+	virtual bool CheckAlertLevel(idAI* owner);
 };
 
 } // namespace ai

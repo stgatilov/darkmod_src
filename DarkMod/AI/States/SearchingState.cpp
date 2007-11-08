@@ -34,6 +34,12 @@ const idStr& SearchingState::GetName() const
 	return _name;
 }
 
+bool SearchingState::CheckAlertLevel(idAI* owner)
+{
+	// Use the base class method to conditionally switch states
+	return SwitchOnMismatchingAlertIndex(2, STATE_AGITATED_SEARCHING);
+}
+
 void SearchingState::Init(idAI* owner)
 {
 	// Init base class first
@@ -42,10 +48,8 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(2, STATE_AGITATED_SEARCHING))
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	// Execute the hiding spot setup routine 
 	SetupSearch(owner);
@@ -118,10 +122,8 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 // Gets called each time the mind is thinking
 void SearchingState::Think(idAI* owner)
 {
-	if(!CheckAlertLevel(2, STATE_AGITATED_SEARCHING))
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	Memory& memory = owner->GetMemory();
 

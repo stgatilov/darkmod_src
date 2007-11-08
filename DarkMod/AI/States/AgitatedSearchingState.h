@@ -46,6 +46,10 @@ public:
 	virtual void Think(idAI* owner);
 
 	static StatePtr CreateInstance();
+
+protected:
+	// Override base class method
+	virtual bool CheckAlertLevel(idAI* owner);
 };
 
 } // namespace ai

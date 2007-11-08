@@ -23,6 +23,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "../Tasks/RangedCombatTask.h"
 #include "../Tasks/ChaseEnemyRangedTask.h"
 #include "LostTrackOfEnemyState.h"
+#include "AgitatedSearchingState.h"
 #include "FleeState.h"
 #include "../Library.h"
 
@@ -36,6 +37,12 @@ const idStr& CombatState::GetName() const
 	return _name;
 }
 
+bool CombatState::CheckAlertLevel(idAI* owner)
+{
+	// Return TRUE if the Alert Index is matching AND the combat check passes
+	return (SwitchOnMismatchingAlertIndex(4, "") && owner->GetMind()->PerformCombatCheck());
+}
+
 void CombatState::Init(idAI* owner)
 {
 	// Init base class first
@@ -44,10 +51,8 @@ void CombatState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(4, "") || !owner->GetMind()->PerformCombatCheck())
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	// Store the enemy entity locally
 	_enemy = owner->GetEnemy();
@@ -115,11 +120,8 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
-	if (!CheckAlertLevel(4, ""))
-	{
-		return;
-	}
-
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	Memory& memory = owner->GetMemory();
 

@@ -21,21 +21,6 @@ protected:
 	// The owning entity
 	idEntityPtr<idAI> _owner;
 
-protected:
-	/**
-	 * greebo: Base class service method employed by the Backbone States.
-	 *
-	 * Basically checks whether the AI is in the given alert index.
-	 *
-	 * If the AlertIndex is smaller, EndState() is invoked,
-	 * when it is higher, the Mind is switched to the State 
-	 * with the given name <higherStateName>.
-	 *
-	 * @returns: TRUE if the alert level is ok, FALSE otherwise (State is about to End/Switch).
-	 *           When FALSE is returned, the calling State be returned.
-	 */
-	bool CheckAlertLevel(int reqAlertIndex, const idStr& higherStateName);
-
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const = 0;
@@ -81,6 +66,28 @@ public:
 	// returns TRUE when the stim should be ignored from now on, FALSE otherwise
 	virtual bool OnVisualStimDeadPerson(idActor* person, idAI* owner);
 	virtual bool OnVisualStimUnconsciousPerson(idActor* person, idAI* owner);
+
+protected:
+	/**
+	 * greebo: Method implemented by the States to check
+	 *         for the correct alert index before continuing.
+	 *
+	 * returns TRUE by default. Backbone States override this method.
+	 */
+	virtual bool CheckAlertLevel(idAI* owner);
+
+	/**
+	 * Convenience method used by all the higher-level Backbone States.
+	 * Basically checks whether the AI is in the given alert index.
+	 *
+	 * If the AlertIndex is smaller, EndState() is invoked,
+	 * when it is higher, the Mind is switched to the State 
+	 * with the given name <higherStateName>.
+	 *
+	 * @returns: TRUE if the alert level is ok, FALSE otherwise (State is about to End/Switch).
+	 *           When FALSE is returned, the calling State be returned.
+	 */
+	bool SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higherStateName);
 
 private:
 	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);

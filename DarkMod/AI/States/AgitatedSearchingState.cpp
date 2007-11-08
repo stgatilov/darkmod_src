@@ -31,33 +31,27 @@ const idStr& AgitatedSearchingState::GetName() const
 	return _name;
 }
 
+bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
+{
+	// Use the base class method to conditionally switch states
+	// only switch states if the combat check passes
+	return !(owner->GetMind()->PerformCombatCheck() && !SwitchOnMismatchingAlertIndex(3, STATE_COMBAT));
+}
+
 void AgitatedSearchingState::Init(idAI* owner)
 {
-	// Init base classes first
-	// Note: do NOT initialise the SearchingState base class, this
-	// would trigger an infinite loop due to an inappropriate CheckAlertLevel() call.
-	State::Init(owner);
+	// Init base classes first (this also calls CheckAlertLevel)
+	SearchingState::Init(owner);
 
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
-
-	// Only switch to higher (combat) state when an AI is set
-	if (owner->GetMind()->PerformCombatCheck() && !CheckAlertLevel(3, STATE_COMBAT))
-	{
-		return;
-	}
-
-	// Setup the base class
-	SetupSearch(owner);
 }
 
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
-	if (!CheckAlertLevel(3, STATE_COMBAT))
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	Memory& memory = owner->GetMemory();
 

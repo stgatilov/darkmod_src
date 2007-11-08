@@ -39,6 +39,12 @@ const idStr& IdleState::GetName() const
 	return _name;
 }
 
+bool IdleState::CheckAlertLevel(idAI* owner)
+{
+	// Use the base class method to conditionally switch states
+	return SwitchOnMismatchingAlertIndex(0, STATE_SUSPICIOUS);
+}
+
 void IdleState::Init(idAI* owner)
 {
 	// Init base class first
@@ -47,10 +53,8 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
-	if (!CheckAlertLevel(0, STATE_SUSPICIOUS))
-	{
-		return;
-	}
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 
 	// No weapons in idle mode
 	owner->SheathWeapon();
@@ -114,11 +118,8 @@ void IdleState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void IdleState::Think(idAI* owner)
 {
-	if (!CheckAlertLevel(0, STATE_SUSPICIOUS))
-		{
-		return;
-	}
-
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
 }
 
 void IdleState::Save(idSaveGame* savefile) const
