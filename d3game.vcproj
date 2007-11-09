@@ -591,12 +591,6 @@
 						RelativePath=".\DarkMod\Ai\States\DeadState.h">
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\States\EmptyState.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\States\EmptyState.h">
-					</File>
-					<File
 						RelativePath=".\DarkMod\Ai\States\FleeDoneState.cpp">
 					</File>
 					<File
@@ -671,12 +665,6 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\ChaseEnemyTask.h">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\EmptyTask.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\EmptyTask.h">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\FleeTask.cpp">
