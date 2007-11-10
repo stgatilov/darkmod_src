@@ -29,9 +29,12 @@ static int MakePowerOfTwo( int num ) {
 
 }
 
-
-
 const int IMPULSE_DELAY = 150;
+
+// Bloom related - by JC_Denton & Maha_X - added by Dram
+const char *blurxMaterial[6] = { "textures/fsfx/blurx64", "textures/fsfx/blurx128", "textures/fsfx/blurx256", "textures/fsfx/blurx512", "textures/fsfx/blurx1024", "textures/fsfx/blurx2048" };
+const char *bluryMaterial[6] = { "textures/fsfx/blury32", "textures/fsfx/blury64", "textures/fsfx/blury128", "textures/fsfx/blury256", "textures/fsfx/blury512", "textures/fsfx/blury1024" };
+
 /*
 ==============
 idPlayerView::idPlayerView
@@ -49,8 +52,12 @@ idPlayerView::idPlayerView() {
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
 	bfgMaterial = declManager->FindMaterial( "textures/decals/bfgvision" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
-
 	bfgVision = false;
+
+	// Bloom related - by JC_Denton - added by Dram
+	shiftSensitivityDelay = 0;
+	screenHeight = screenWidth = 0;
+
 	dvFinishTime = 0;
 	kickFinishTime = 0;
 	kickAngles.Zero();
@@ -467,8 +474,6 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 	//gameRenderWorld->RenderScene( &hackedView );
 
-
-
 	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool() ) {
 
 		renderView_t	portalView = hackedView;
@@ -587,7 +592,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		
 	}
 
-	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg)
+	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg) - added by Dram
 	if ( g_rotoscope.GetBool() ) {
 		const idMaterial *mtr = declManager->FindMaterial( "textures/postprocess/rotoedge", false );
 		if ( !mtr ) {
@@ -652,7 +657,11 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->SetColor4( color.x, color.y, color.z, 0.5f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1-shift, shift, dvMaterial );
 
-	player->DrawHUD(hud);
+	// Bloom related - added by Dram
+	if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
+	{
+		player->DrawHUD(hud);
+	}
 }
 
 /*
@@ -791,141 +800,131 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	}
 	else 
 	{
-		
+		// Bloom related - by JC_Denton & Maha_X - added by Dram
+		// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
+		if( screenHeight != renderSystem->GetScreenHeight() || screenWidth !=renderSystem->GetScreenWidth() ) {
+			int width = 1, height = 1;	
+
+			screenHeight	= renderSystem->GetScreenHeight();
+			screenWidth		= renderSystem->GetScreenWidth();
+
+			while( width < screenWidth ) {
+				width <<= 1;
+			}
+			while( height < screenHeight ) {
+				height <<= 1;
+			}
+			shiftScale_x = screenWidth  / (float)width;
+			shiftScale_y = screenHeight / (float)height;
+		}
+
 		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
 			InfluenceVision( hud, view );
 		} else if ( gameLocal.time < dvFinishTime ) {
 			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
 		} else {*/
 
-
-		// HDR-like Shift Sensitivity Bloom - by maha_x
-		// Added to TDM by Dram
-		if ( z_bloom.GetBool() ) // If bloom is enabled
+		// greebo: For underwater effects, use the Doom3 Doubleview
+		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
 		{
-			int bW, bH, rbW, rbH;	// buffer and renderBuffer (currentRender)
-			float rbMx, rbMy;		// renderBuffer margin
-
-			// determine AFX buffer size
-			switch(z_bloomBufferSize.GetInteger())
+			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
+		}
+		else
+		{
+			if ( r_bloom_hud.GetBool() || !r_bloom.GetBool() ) // If HUD blooming is enabled or bloom is disabled
 			{
-			case 0:
-				bW = 64; bH = 32; break;
-			case 1:
-				bW = 128; bH = 64; break;
-			case 2:
-				bW = 256; bH = 128; break;
-			case 3:
-				bW = 512; bH = 256; break;
-			case 4:
-				bW = 1024; bH = 512; break;
-			case 5:
-				bW = 2048; bH = 1024; break;
-			}
-
-			// determine currentRender buffer size
-			if(renderSystem->GetScreenWidth() > 1024)		rbW = 2048;
-			else											rbW = 1024;
-
-			if(renderSystem->GetScreenHeight() > 1024)		rbH = 2048;
-			else if(renderSystem->GetScreenHeight() < 512)	rbH = 512;
-			else											rbH = 1024;
-			
-			rbMx = renderSystem->GetScreenWidth()  / (float)rbW;
-			rbMy = renderSystem->GetScreenHeight() / (float)rbH;
-
-			// render the clear output
-			if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
-			{
-				DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger()); // greebo: For underwater effects, use the Doom3 Doubleview
+				SingleView( hud, view );
 			}
 			else
 			{
 				SingleView( hud, view, false );
 			}
+		}
+		//}
 
-			// capture original
+		if ( r_bloom.GetBool() )
+		{
+			// Bloom related - by JC_Denton & Maha_X - added by Dram
 			renderSystem->CaptureRenderToImage( "_currentRender" );
 
-			if ( z_bloomShift.GetBool() ) // If HDR-like sensitivity shift is enabled
-			{
-				// create weight map
+			//------------------------------------------------
+			// Maha_x's Shift Sensitivity - Modified for compatibilty by Clone JCDenton
+			//------------------------------------------------
+
+			bool disableShiftSensitivity = ( r_bloom_shift_delay.GetInteger() == -1 );
+
+			if( !disableShiftSensitivity && gameLocal.time > shiftSensitivityDelay ) { 
 				renderSystem->CropRenderSize(2, 2, true, true);
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXweightB" ) );
-				renderSystem->CaptureRenderToImage( "_zweight" );
+				shiftSensitivityDelay = gameLocal.time + r_bloom_shift_delay.GetInteger(); 
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXweight" ) );
+				renderSystem->CaptureRenderToImage( "_afxweight" );
 				renderSystem->UnCrop();
-			
-				// create lower res map
-				renderSystem->CropRenderSize(bW, bH, true, true);
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, rbMy, rbMx, 0, declManager->FindMaterial( "_currentRender" ) );
-				renderSystem->CaptureRenderToImage( "_zbloom" );
-		
-				// loop iterations
-				for(int i = 0;i < z_bloomIterations.GetInteger();i++)
-				{
-					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXblurB" ) );
-					renderSystem->CaptureRenderToImage( "_zbloom" );
-				}
-					
-				renderSystem->UnCrop();
-
-				// for bloom underwater effects - added by Dram
-				if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
-				{
-					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/overlay_water" ) );
-					renderSystem->CaptureRenderToImage( "_currentRender" );
-				}
-
-				// blend original and bloom
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddB" ) );
 			}
-			else // Normal bloom - no sensitivity shift
-			{
-				// create lower res map
-				renderSystem->CropRenderSize(bW, bH, true, true);
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, rbMy, rbMx, 0, declManager->FindMaterial( "_currentRender" ) );
-				renderSystem->CaptureRenderToImage( "_zbloom" );
-		
-				// loop iterations
-				for(int i = 0;i < z_bloomIterations.GetInteger();i++)
-				{
-					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXblurA" ) );
-					renderSystem->CaptureRenderToImage( "_zbloom" );
+			//------------------------------------------------
+
+			//-------------------------------------------------
+			// User configurable buffer size - By Clone JC Denton
+			//-------------------------------------------------
+
+			int bufferMult = 6 - r_bloom_buffer.GetInteger();
+			int blurMtrIndex;
+
+			if( bufferMult < 6 ) {
+				if( bufferMult <= 0 ) {
+					bufferMult = 1;
+					blurMtrIndex = 5;
 				}
-					
-				renderSystem->UnCrop();
-
-				// for bloom underwater effects - added by Dram
-				if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
-				{
-					renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/overlay_water" ) );
-					renderSystem->CaptureRenderToImage( "_currentRender" );
+				else {
+					blurMtrIndex = 5 - bufferMult;
+					bufferMult = 1<<bufferMult;
 				}
+				renderSystem->CropRenderSize(2048/bufferMult, 1024/bufferMult, true, true);
+			}
+			else {
+				renderSystem->CropRenderSize(512, 256, true, true);
+				blurMtrIndex = 3;
+			}
+			//-------------------------------------------------
 
-				// blend original and bloom
-				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXaddA" ) );
+			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, shiftScale_y, shiftScale_x, 0, declManager->FindMaterial( "_currentRender" ) );
+
+			//Use the blurred image for obtaining bloom contrast.
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );	
+
+			if( !disableShiftSensitivity ) {
+				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_min.GetFloat(), 1, 1);
+			} else {
+				renderSystem->SetColor4(r_bloom_contrast_mult.GetFloat(), r_bloom_contrast_mult.GetFloat(), 1, 1);
+			}
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXmodulate" ) );
+
+			for( int i=0; i < r_bloom_blurIterations.GetInteger(); i++ ) {
+				// Two pass gaussian filter					
+				renderSystem->CaptureRenderToImage( "_fsfx_input" );
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( blurxMaterial[blurMtrIndex] ) );
+				renderSystem->CaptureRenderToImage( "_fsfx_input" );
+				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
 			}
 
-			// redraw hud
-			if ( !pm_thirdPerson.GetBool() )
+
+			renderSystem->CaptureRenderToImage( "_fsfx_input" );
+
+			renderSystem->UnCrop();
+
+			renderSystem->SetColor4( r_bloom_blur_mult.GetFloat(), r_bloom_src_mult.GetFloat(), 1.0f, 1.0f );
+			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( "textures/AFX/AFXadd" ) );
+
+			if ( !r_bloom_hud.GetBool() ) // If HUD blooming is disabled
 			{
-				player->DrawHUD( hud );
-			}
-		}
-		else if ( !z_bloom.GetBool() ) // If bloom is disabled
-		{
-			// greebo: For underwater effects, use the Doom3 Doubleview
-			if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
-			{
-				DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
-			}
-			else
-			{
-				SingleView( hud, view );
+				player->DrawHUD(hud);
 			}
 		}
 
-		//}
 		ScreenFade();
 	}
 	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {

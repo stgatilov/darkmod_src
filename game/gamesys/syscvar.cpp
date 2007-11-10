@@ -521,9 +521,14 @@ idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_AR
 
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
 
+// Bloom related - by JC_Denton & Maha_X - added by Dram
+idCVar r_bloom( "r_bloom", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable Bloom Post-Process Effects (requires DX9 Compliant Hardware)" );
+idCVar r_bloom_blur_mult( "r_bloom_blur_mult", "0.5", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Blurred image multiplier for bloom");
+idCVar r_bloom_src_mult( "r_bloom_src_mult", "1.0", CVAR_GAME | CVAR_FLOAT, "Source image multiplier for bloom");
+idCVar r_bloom_buffer( "r_bloom_buffer", "4", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Bloom buffer image size: \n1 = 64x32\n2 = 128x64\n3 = 256x128\n4 = 512x256\n5 = 1024x512\n6 = 2048x1024"); // New by Clone JCD
+idCVar r_bloom_contrast_mult( "r_bloom_contrast_mult", "1.55", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Contrast multiplier");
+idCVar r_bloom_contrast_min( "r_bloom_contrast_min", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "This is the minimum contrast value when (shift sensitivity based)bloom drops \nWhen shift sensitivty is turned on bloom contrast varies from (constrast_image x r_bloom_contrast_min) to (constrast_image x r_bloom_contrast_mult)");
+idCVar r_bloom_shift_delay( "r_bloom_shift_delay", "0", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Delay in millisecs for shifting the bloom sensitivity \n0 = No shift sensitivity delay, sensitvity shifts immediately. \n-1 = Disables sensitivity shifting"); // New by Clone JCD
+idCVar r_bloom_blurIterations( "r_bloom_blurIterations", "1", CVAR_GAME | CVAR_INTEGER, "Blur iterations for bloom"); // New by Clone JCD
+idCVar r_bloom_hud( "r_bloom_hud", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable blooming of the HUD" );
 
-// HDR-like Shift Sensitivity Bloom - by maha_x
-idCVar z_bloom("z_bloom", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable bloom" );
-idCVar z_bloomBufferSize("z_bloomBufferSize", "2",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Bloom render to texture size: \n0 = 64x32\n1 = 128x64\n2 = 256x128\n3 = 512x256\n4 = 1024x512\n5 = 2048x1024" );
-idCVar z_bloomIterations("z_bloomIterations", "6",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Number of times the blur filter is applied" );
-idCVar z_bloomShift("z_bloomShift", "1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable HDR-like Sensitivity Shift" );

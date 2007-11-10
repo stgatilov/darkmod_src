@@ -86,6 +86,13 @@ private:
 
 	bool				bfgVision;			// 
 
+	// Bloom related - by JC_Denton & Maha_X - added by Dram
+	int					shiftSensitivityDelay;
+	int					screenHeight;
+	int					screenWidth;
+	float				shiftScale_x;
+	float				shiftScale_y;
+
 	const idMaterial *	tunnelMaterial;		// health tunnel vision
 	const idMaterial *	armorMaterial;		// armor damage view effect
 	const idMaterial *	berserkMaterial;	// berserk effect

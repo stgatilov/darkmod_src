@@ -404,18 +404,11 @@ extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
 
 
-
 extern const char *si_gameTypeArgs[];
 
 
 extern const char *ui_skinArgs[];
 
-
-// HDR-like Shift Sensitivity Bloom - by maha_x
-extern idCVar	z_bloom;
-extern idCVar	z_bloomBufferSize;
-extern idCVar	z_bloomIterations;
-extern idCVar	z_bloomShift;
 
 #ifdef MOD_WATERPHYSICS
 
@@ -427,5 +420,15 @@ extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
 
 #endif
 
+// Bloom related - by JC_Denton & Maha_X - added by Dram
+extern idCVar	r_bloom;
+extern idCVar	r_bloom_blur_mult;
+extern idCVar	r_bloom_src_mult;
+extern idCVar   r_bloom_contrast_mult;				// clone_jc_denton
+extern idCVar   r_bloom_contrast_min;				// clone_jc_denton
+extern idCVar   r_bloom_shift_delay;				// clone_jc_denton
+extern idCVar   r_bloom_blurIterations;				// clone_jc_denton
+extern idCVar   r_bloom_buffer;						// clone_jc_denton
+extern idCVar	r_bloom_hud;
 
 #endif /* !__SYS_CVAR_H__ */
