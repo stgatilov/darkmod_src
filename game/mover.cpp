@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 
-// a mover will update any gui entities in it's target list with 
+// a mover will update any gui entities in its target list with 
 // a key/val pair of "mover" "state" from below.. guis can represent
 // realtime info like this
 // binary only
