@@ -2093,6 +2093,30 @@ void CObjectiveLocation::Spawn()
 	BecomeActive( TH_THINK );
 }
 
+void CObjectiveLocation::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteInt( m_Interval );
+	savefile->WriteInt( m_TimeStamp );
+
+	savefile->WriteInt( m_EntsInBounds.Num() );
+	for( int i=0;i < m_EntsInBounds.Num(); i++ )
+		savefile->WriteString( m_EntsInBounds[i] );
+}
+
+void CObjectiveLocation::Restore( idRestoreGame *savefile )
+{
+	int num;
+
+	savefile->ReadInt( m_Interval );
+	savefile->ReadInt( m_TimeStamp );
+
+	m_EntsInBounds.Clear();
+	savefile->ReadInt( num );
+	m_EntsInBounds.SetNum( num );
+	for( int i=0;i < num; i++ )
+		savefile->ReadString( m_EntsInBounds[i] );
+}
+
 void CObjectiveLocation::Think()
 {
 	int NumEnts(0);

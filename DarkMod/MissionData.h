@@ -732,8 +732,8 @@ public:
 	void Think( void );
 	void Spawn( void );
 
-//	void Save( idSaveGame *savefile ) const;
-//	void Restore( idRestoreGame *savefile );
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
 
 protected:
 	/**
