@@ -205,7 +205,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 			remove(pk4ToDelete.file_string().c_str());
 		}
 		// start doom
-		if (execlp(doomExe.file_string().c_str(), doomExe.file_string().c_str(), "+set", "fs_game", "darkmod", NULL)==-1) {
+		if (execlp(doomExe, doomExe, "+set", "fs_game", "darkmod", NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 		}
