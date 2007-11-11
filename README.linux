@@ -2,12 +2,14 @@
 Compiling DarkMod on 32 bit Linux
 =================================
 
-For compilation under Linux, you need the following:
+For compilation under Linux, you need the following including their
+prerequisites:
 
   * SCONS
   * Python
   * libdevil-dev
   * libdevil1c2
+  * libboost-filesystem-dev
 
 In addition, when running Doom and using the DarkMod, you will also need:
 
@@ -55,15 +57,33 @@ To avoid this, fetch the i368 .deb package files from the net and unzip them man
 	libdevil1c2_1.6.7-5_i386.deb
 	libdevil-dev_1.6.7-5_i386.deb
 	libmng1_1.0.9-1_i386.deb
+	libboost-filesystem1.34.1_1.34.1-2ubuntu1_i386.deb
 
 (You might get slightly newer versions, but it should work)
 
-Then, as root, copy all the files that are under ./usr to your /lib32 directory.
+Then, as root, copy all the files that are in these packages under ./usr to your
+/lib32 directory.
 
-The run:
+Also, make sure that you rename the libboost_filesystem-gcc41-1_34_1.so etc. file to
+just the basename like so:
+
+	/lib32/libboost_filesystem.so
+	/lib32/libboost_filesystem-mt.so
+
+Then run:
 
 	./linuxBuild.sh
 
 It will pick up the correct libraries. Likewise, when running, Doom3 will
 also use the right 32bit libraries.
+
+Troubleshooting
+===============
+
+If you still get linker errors from ld, please make sure that the libraries
+can be found under the right name under /lib32. Also, running:
+
+	su ldconfig
+
+might help.
 

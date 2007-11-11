@@ -211,6 +211,7 @@ local_env = g_game_env.Copy()
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append(LIBS = ['IL'])
+local_env.Append(LIBS = ['boost_filesystem'])
 
 ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects )
 Return( 'ret' )
