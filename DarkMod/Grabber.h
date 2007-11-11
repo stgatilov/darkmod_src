@@ -98,6 +98,12 @@ public:
 		**/
 		bool					ObjStuck( void );
 
+		/**
+		* Try to eqiup/dequip a junk item
+		* Returns true if the current item was equipped or dequipped
+		**/
+		bool					ToggleEquip( void );
+
 public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
@@ -263,6 +269,14 @@ protected:
 		* Stuck in this context means too far away from the grab point
 		**/
 		bool					m_bObjStuck;
+
+		/**
+		* Set to true when the junk object is "equipped"
+		* This can mean different things for different objects
+		* For AI bodies, it means toggling between shouldering the AI
+		* and dragging the AI.
+		**/
+		bool					m_bObjEquipped;
 };
 
 

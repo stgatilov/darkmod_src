@@ -109,6 +109,7 @@ void CGrabber::Clear( void )
 	m_MaxDistCount	= DIST_GRANULARITY;
 	m_LockedHeldDist = 0;
 	m_bObjStuck = false;
+	m_bObjEquipped = false;
 	m_MaxForce = 0;
 
 	while( this->HasClippedEntity() )
@@ -158,6 +159,7 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_MinHeldDist);
 	savefile->WriteInt(m_LockedHeldDist);
 	savefile->WriteBool(m_bObjStuck);
+	savefile->WriteBool(m_bObjEquipped);
 	savefile->WriteFloat(m_MaxForce);
 }
 
@@ -208,6 +210,7 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_MinHeldDist);
 	savefile->ReadInt(m_LockedHeldDist);
 	savefile->ReadBool(m_bObjStuck);
+	savefile->ReadBool(m_bObjEquipped);
 	savefile->ReadFloat(m_MaxForce);
 }
 
@@ -1195,5 +1198,11 @@ void CGrabber::SetDragEncumbrance( void )
 
 Quit:
 	return;
+}
+
+bool CGrabber::ToggleEquip( void )
+{
+	// TODO: Equip code goes here
+	return false;
 }
 
