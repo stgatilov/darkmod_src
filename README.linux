@@ -52,7 +52,8 @@ will cause errors like the following:
 	/usr/bin/ld: skipping incompatible /usr/lib/libIL.a when searching for -lIL
 	/usr/bin/ld: cannot find -lI
 
-To avoid this, fetch the i368 .deb package files from the net and unzip them manually:
+To avoid this, fetch the i368 .deb package files from http://www.rpmseek.com/
+and unzip them manually:
 
 	libdevil1c2_1.6.7-5_i386.deb
 	libdevil-dev_1.6.7-5_i386.deb
