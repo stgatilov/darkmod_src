@@ -4968,9 +4968,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_47:	// Inventory previous item
 		{
-			// Check for a held grabber entity, which should be put back into the inventory
-			if (AddGrabberEntityToInventory())
-				return;
+			// If the grabber is active, prev weapon increments the distance
+			if(m_bGrabberActive)
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
@@ -4987,9 +4987,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_48:	// Inventory next item
 		{
-			// Check for a held grabber entity, which should be put back into the inventory
-			if (AddGrabberEntityToInventory())
-				return;
+			// If the grabber is active, next weapon increments the distance
+			if(m_bGrabberActive)
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
@@ -5044,6 +5044,17 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_51:	// Inventory use item
 		{
+			// Check for a held grabber entity, which should be put back into the inventory
+			if (AddGrabberEntityToInventory())
+				return;
+
+			// If the grabber item can be equipped/dequipped, use item does this
+			if ( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+			{
+				if( g_Global.m_DarkModPlayer->grabber->ToggleEquip() )
+					return;
+			}
+
 			// Pass the "inventoryUseItem" event to the GUIs
 			m_overlays.broadcastNamedEvent("inventoryUseItem");
 
