@@ -719,7 +719,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 
 	// setup other parms
 	propParms->duration = parms->GetFloat("dur","200");
-	propParms->frequency = parms->GetFloat("freq","-1");
+	propParms->frequency = parms->GetInt("freq","-1");
 	propParms->bandwidth = parms->GetFloat("width", "-1");
 	
 	if( cv_spr_debug.GetBool() )
@@ -1247,10 +1247,10 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 
 	// If point is within the rectangular surface boundaries, we're done
 	// Use the v axes (going to edge midpoints) to check if point is within rectangle
-	if( abs(lineSect * v1/lenV1) <= lenV1 && abs( lineSect * v2/lenV2) <= lenV2 )
+	if( fabs(lineSect * v1/lenV1) <= lenV1 && fabs( lineSect * v2/lenV2) <= lenV2 )
 	{
 //		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("MinSurf: Line itersects inside portal surface\r" );
-//		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("v1/lenV1 = %f, v2/lenV2 = %f\r", abs(lineSect * v1/lenV1)/lenV1, abs( lineSect * v2/lenV2)/lenV2 );
+//		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("v1/lenV1 = %f, v2/lenV2 = %f\r", fabs(lineSect * v1/lenV1)/lenV1, fabs( lineSect * v2/lenV2)/lenV2 );
 		returnVec = isect;
 		goto Quit;
 	}
