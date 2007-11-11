@@ -531,4 +531,5 @@ idCVar r_bloom_contrast_min( "r_bloom_contrast_min", "0.1", CVAR_GAME | CVAR_FLO
 idCVar r_bloom_shift_delay( "r_bloom_shift_delay", "0", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Delay in millisecs for shifting the bloom sensitivity \n0 = No shift sensitivity delay, sensitvity shifts immediately. \n-1 = Disables sensitivity shifting"); // New by Clone JCD
 idCVar r_bloom_blurIterations( "r_bloom_blurIterations", "1", CVAR_GAME | CVAR_INTEGER, "Blur iterations for bloom"); // New by Clone JCD
 idCVar r_bloom_hud( "r_bloom_hud", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Enable blooming of the HUD" );
+idCVar r_bloom_lightRayScale( "r_bloom_lightRayScale", "1.3", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Brightness scale of light ray effects when bloom is active");
 

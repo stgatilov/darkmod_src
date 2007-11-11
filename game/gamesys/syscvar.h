@@ -430,5 +430,6 @@ extern idCVar   r_bloom_shift_delay;				// clone_jc_denton
 extern idCVar   r_bloom_blurIterations;				// clone_jc_denton
 extern idCVar   r_bloom_buffer;						// clone_jc_denton
 extern idCVar	r_bloom_hud;
+extern idCVar	r_bloom_lightRayScale;
 
 #endif /* !__SYS_CVAR_H__ */

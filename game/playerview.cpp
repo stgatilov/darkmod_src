@@ -842,9 +842,48 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		}
 		//}
 
-		if ( r_bloom.GetBool() )
+		// =====================================================
+		// Bloom related - by JC_Denton & Maha_X - added by Dram
+		// =====================================================
+
+		if ( !r_bloom.GetBool() ) // if bloom is disabled
 		{
-			// Bloom related - by JC_Denton & Maha_X - added by Dram
+			// A global parameter (0) that is used by fake bloom effects to hide/lessen them etc - by Dram
+			if ( gameLocal.globalShaderParms[0] != 1 ) // if the brightness of the hazes is not 1
+			{
+				gameLocal.globalShaderParms[0] = 1; // set it to 1
+			}
+
+			// A global parameter (1) that is used to scale the brightness of light rays if bloom is on - by Dram
+			if ( gameLocal.globalShaderParms[1] != 1 ) // if the brightness scale of the light rays is not 1
+			{
+				gameLocal.globalShaderParms[1] = 1; // set it to 1
+			}
+		}
+		else // if bloom is enabled
+		{
+			// set up the light haze brightness - by Dram
+			float lightHazeBrightness = 1 - ( r_bloom_blur_mult.GetFloat() - 0.5 ); // get the blur mult and derive a haze brightness
+
+			if ( lightHazeBrightness < 0.2f ) // if the haze brightness is lower then 0.2
+			{
+				lightHazeBrightness = 0.2f; // set it to 0.2
+			}
+			else if ( lightHazeBrightness > 1 ) // if the haze brightness is higher then 1
+			{
+				lightHazeBrightness = 1; // set it to 1
+			}
+
+			if ( gameLocal.globalShaderParms[0] != lightHazeBrightness ) // if the haze global parameter other then equals the light haze brightness
+			{
+				gameLocal.globalShaderParms[0] = lightHazeBrightness; // set it to light haze brightness
+			}
+
+			if ( gameLocal.globalShaderParms[1] != r_bloom_lightRayScale.GetFloat() ) // if the brightness scale of the light rays is not r_bloom_lightRayScale
+			{
+				gameLocal.globalShaderParms[1] = r_bloom_lightRayScale.GetFloat(); // set it to r_bloom_lightRayScale
+			}
+
 			renderSystem->CaptureRenderToImage( "_currentRender" );
 
 			//------------------------------------------------
