@@ -1553,7 +1553,7 @@ void idAI::Think( void )
 		viewAxis = idAngles(0, current_yaw, 0).ToMat3();
 
 		// TDM: Fake lipsync
-		if (m_lipSyncActive && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT)
+		if (m_lipSyncActive && !cv_ai_opt_nolipsync.GetBool() && GetSoundEmitter() && !AI_DEAD && !AI_KNOCKEDOUT)
 		{
 			if (gameLocal.time < m_lipSyncEndTimer )
 			{
@@ -1654,18 +1654,21 @@ void idAI::Think( void )
 			}
 		}
 
-		// greebo: We always rely on having a mind
-		assert(mind);
+		if (!cv_ai_opt_nomind.GetBool())
+		{
+			// greebo: We always rely on having a mind
+			assert(mind);
 
-		idTimer thinkTimer;
-		thinkTimer.Clear();
-		thinkTimer.Start();
+			idTimer thinkTimer;
+			thinkTimer.Clear();
+			thinkTimer.Start();
 
-		// Let the mind do the thinking (after the move updates)
-		mind->Think();
+			// Let the mind do the thinking (after the move updates)
+			mind->Think();
 
-		thinkTimer.Stop();
-		DM_LOG(LC_AI,LT_DEBUG).LogString("Mind's thinking timer says: %lf msecs.\r", thinkTimer.Milliseconds());
+			thinkTimer.Stop();
+			DM_LOG(LC_AI,LT_DEBUG).LogString("Mind's thinking timer says: %lf msecs.\r", thinkTimer.Milliseconds());
+		}
 
 		// Clear DarkMod per frame vars now that the mind had time to think
 		AI_ALERTED = false;

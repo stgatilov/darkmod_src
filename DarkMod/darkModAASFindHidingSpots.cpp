@@ -666,6 +666,8 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	// No hiding spot area node yet used
 	TDarkmodHidingSpotAreaNode* p_hidingAreaNode = NULL;
 
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
+
 	// Iterate X grid
 	while (currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE + 0.1)
 	{
