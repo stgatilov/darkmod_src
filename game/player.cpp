@@ -4970,7 +4970,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, prev weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
@@ -4989,7 +4989,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			// If the grabber is active, next weapon increments the distance
 			if(m_bGrabberActive)
-				g_Global.m_DarkModPlayer->grabber->IncrementDistance( true );
+				g_Global.m_DarkModPlayer->grabber->IncrementDistance( false );
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
