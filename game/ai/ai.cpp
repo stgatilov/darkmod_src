@@ -7040,7 +7040,12 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		newAlertLevel = thresh_combat*2;
 	}
 
-	bool bool_alertRising = (newAlertLevel > AI_AlertNum);
+	bool alertRising = (newAlertLevel > AI_AlertNum);
+
+	if (alertRising)
+	{
+		GetMemory().lastAlertRiseTime = gameLocal.time;
+	}
 	
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
@@ -7130,7 +7135,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	{
 		// Note: Alert rising sounds are played based on the type of stimulus before we ever reach this function
 		// We only have to do alert-down sounds here
-		if (!bool_alertRising)
+		if (!alertRising)
 		{
 			if (newAlertLevel > thresh_3)
 			{

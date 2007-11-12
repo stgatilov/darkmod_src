@@ -76,6 +76,9 @@ public:
 	// The path entity we're supposed to be heading to
 	idEntityPtr<idPathCorner> currentPath;
 
+	// The game time, the alertNum was last increased.
+	int lastAlertRiseTime;
+
 	// The last time the AI has been barking when patrolling
 	int lastPatrolChatTime;
 
@@ -183,6 +186,7 @@ public:
 
 	Memory() :
 		alertState(ERelaxed),
+		lastAlertRiseTime(-1),
 		lastPatrolChatTime(-1),
 		lastTimeFriendlyAISeen(-1000),
 		lastTimeEnemySeen(-1),
@@ -219,6 +223,7 @@ public:
 	{
 		savefile->WriteInt(static_cast<int>(alertState));
 		currentPath.Save(savefile);
+		savefile->WriteInt(lastAlertRiseTime);
 		savefile->WriteInt(lastPatrolChatTime);
 		savefile->WriteInt(countEvidenceOfIntruders);
 		savefile->WriteInt(lastRandomHeadTurnCheckTime);
@@ -257,6 +262,7 @@ public:
 		alertState = static_cast<EAlertState>(temp);
 
 		currentPath.Restore(savefile);
+		savefile->ReadInt(lastAlertRiseTime);
 		savefile->ReadInt(lastPatrolChatTime);
 		savefile->ReadInt(countEvidenceOfIntruders);
 		savefile->ReadInt(lastRandomHeadTurnCheckTime);
