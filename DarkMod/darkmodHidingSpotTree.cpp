@@ -221,8 +221,8 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(static_cast<float>(lastIndex_indexRetrieval));
 
 	// greebo: These are pointers in disguise (unsigned long), resolve the indices
-	savefile->WriteInt(getAreaNodeId((TDarkmodHidingSpotAreaNode*)lastAreaHandle_indexRetrieval));
-	savefile->WriteInt(getSpotNodeId((darkModHidingSpotNode*)lastSpotHandle_indexRetrieval));
+	savefile->WriteInt(getAreaNodeId(lastAreaHandle_indexRetrieval));
+	savefile->WriteInt(getSpotNodeId(lastSpotHandle_indexRetrieval));
 }
 
 void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
@@ -934,7 +934,7 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getNextArea(TDarkmodHidingSp
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area)
+darkModHidingSpot* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area)
 {
 	TDarkmodHidingSpotAreaNode* p_areaCursor = area;
 	if (p_areaCursor == NULL)
@@ -954,7 +954,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHi
 
 //-------------------------------------------------------------------------
 
-/*darkModHidingSpot_t* CDarkmodHidingSpotTree::getNextHidingSpotInArea
+/*darkModHidingSpot* CDarkmodHidingSpotTree::getNextHidingSpotInArea
 (
 	TDarkModHidingSpotTreeIterationHandle& inout_spotHandle
 )
@@ -980,7 +980,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHi
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotInternal
+darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotInternal
 (
 	unsigned int index,
 	idBounds& out_areaNodeBounds
@@ -1036,7 +1036,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotInternal
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
+darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
 (
 	unsigned int index
 )
@@ -1152,7 +1152,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 //-------------------------------------------------------------------------
 
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
+darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 (
 	unsigned int index,
 	idBounds& out_areaNodeBounds
@@ -1497,7 +1497,7 @@ bool CDarkmodHidingSpotTree::sortForNewCenter
 
 	for (spotIndex = 0; spotIndex < numSpots; spotIndex ++)
 	{
-		darkModHidingSpot_t* p_spot = getNthSpot(spotIndex);
+		darkModHidingSpot* p_spot = getNthSpot(spotIndex);
 		
 		if (p_spot != NULL)
 		{

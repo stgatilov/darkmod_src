@@ -141,7 +141,7 @@ protected:
 	*/
 	void FindHidingSpotsInVisibleAASArea
 	(
-		idList<darkModHidingSpot_t>& inout_hidingSpots, 
+		idList<darkModHidingSpot>& inout_hidingSpots, 
 		float hidingHeight,
 		const idAAS* aas, 
 		int AASAreaNum, 
@@ -188,7 +188,7 @@ protected:
 	* The following static variables are used for rendering a debug display of
 	* hiding spot find results
 	*/
-	static idList<darkModHidingSpot_t> DebugDrawList;
+	static idList<darkModHidingSpot> DebugDrawList;
 
 
 	/*!
@@ -197,7 +197,7 @@ protected:
 	*/
 	static void CombineRedundantHidingSpots
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		float distanceAtWhichToCombine
 	);
@@ -207,7 +207,7 @@ protected:
 	*/
 	static void sortByQuality
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots
+		//idList<darkModHidingSpot>& inout_hidingSpots
 		CDarkmodHidingSpotTree& inout_hidingSpots
 	);
 
@@ -221,8 +221,8 @@ protected:
 	// DEPRECATED
 	static void insertHidingSpotWithQualitySorting
 	(
-		darkModHidingSpot_t& hidingSpot,
-		idList<darkModHidingSpot_t>& inout_hidingSpots
+		darkModHidingSpot& hidingSpot,
+		idList<darkModHidingSpot>& inout_hidingSpots
 	);
 	*/
 
@@ -236,7 +236,7 @@ protected:
 	*/
 	bool testNewPVSArea 
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
@@ -244,7 +244,7 @@ protected:
 
 	bool testingAASAreas_InNonVisiblePVSArea
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
@@ -252,7 +252,7 @@ protected:
 
 	bool testingAASAreas_InVisiblePVSArea
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
@@ -260,7 +260,7 @@ protected:
 
 	bool testingInsideVisibleAASArea
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
@@ -291,7 +291,7 @@ protected:
 	*/
 	bool findMoreHidingSpots
 	(
-		//idList<darkModHidingSpot_t>& inout_hidingSpots,
+		//idList<darkModHidingSpot>& inout_hidingSpots,
 		CDarkmodHidingSpotTree& inout_hidingSpots,
 		int numPointsToTestThisPass,
 		int& inout_numPointsTestedThisPass
@@ -464,7 +464,7 @@ public:
 	*/
 	static void debugAppendHidingSpotsToDraw 
 	(
-		// const idList<darkModHidingSpot_t>& hidingSpotsToAppend
+		// const idList<darkModHidingSpot>& hidingSpotsToAppend
 		CDarkmodHidingSpotTree& inout_hidingSpots
 	);
 

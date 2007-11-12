@@ -3461,7 +3461,7 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 	// In bounds?
 	if ((hidingSpotIndex >= 0) && (hidingSpotIndex < numSpots))
 	{
-		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpot(hidingSpotIndex);
+		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpot(hidingSpotIndex);
 		if (p_spot == NULL)
 		{
 			outTypeFlags = 0;

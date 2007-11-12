@@ -17,11 +17,11 @@
 #define DARKMOD_HIDING_SPOT_TREE
 
 /*!
-// @structure darkModHidingSpot_t
+// @structure darkModHidingSpot
 // @author SophisticatedAZombie (DMH)
 // This structure holds information about a hiding spot.
 */
-typedef struct
+struct darkModHidingSpot
 {
 	aasGoal_t goal;
 
@@ -38,29 +38,25 @@ typedef struct
 
 	// The hiding spot "hidingness" quality, from 0 to 1.0
 	float quality;
-
-} darkModHidingSpot_t;
+};
 
 //-------------------------------------------------------------------------
 
-typedef struct tagDarkModHidingSpotNode
+struct darkModHidingSpotNode
 {
 	// The unique spot id
 	int id;
 
 	// The spot
-	darkModHidingSpot_t spot;
+	darkModHidingSpot spot;
 
 	// Next hiding spot
-	tagDarkModHidingSpotNode* p_next;
-
-} darkModHidingSpotNode;
-
-
+	darkModHidingSpotNode* p_next;
+};
 
 /*---------------------------------------------------------------------------*/
 
-typedef struct tagTDarkmodHidingSpotAreaNode
+struct TDarkmodHidingSpotAreaNode
 {
 	// greebo: This is a unique ID to resolve pointers after map restore
 	int id;
@@ -68,19 +64,18 @@ typedef struct tagTDarkmodHidingSpotAreaNode
 	unsigned int aasAreaIndex;
 	unsigned int count;
 
-	tagTDarkmodHidingSpotAreaNode* p_prevSibling;
-	tagTDarkmodHidingSpotAreaNode* p_nextSibling;
+	TDarkmodHidingSpotAreaNode* p_prevSibling;
+	TDarkmodHidingSpotAreaNode* p_nextSibling;
 	darkModHidingSpotNode* p_firstSpot;
 	darkModHidingSpotNode* p_lastSpot;
 
 	// Quality of the best spot in the area
 	float bestSpotQuality;
 
-	/* The extents*/
+	// The extents
 	idBounds bounds;
 
-	
-} TDarkmodHidingSpotAreaNode;
+};
 
 /*---------------------------------------------------------------------------*/
 
@@ -127,7 +122,7 @@ protected:
 	*
 	* @return Pointer to spot, NULL if index was out of bounds
 	*/
-	darkModHidingSpot_t* getNthSpotInternal
+	darkModHidingSpot* getNthSpotInternal
 	(
 		unsigned int index,
 		idBounds& out_areaNodeBounds
@@ -319,13 +314,13 @@ public:
 	/*!
 	* Gets first hiding spot in area
 	*/
-	darkModHidingSpot_t* getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area);
+	darkModHidingSpot* getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area);
 
 	/*!
 	* Gets next hiding spot in area
 	*/
 	// greebo: Commented this out, the hidingspot structures are a linked list anyway.
-	//darkModHidingSpot_t* getNextHidingSpotInArea(TDarkModHidingSpotTreeIterationHandle& inout_spotHandle);
+	//darkModHidingSpot* getNextHidingSpotInArea(TDarkModHidingSpotTreeIterationHandle& inout_spotHandle);
 
 	/*!
 	* This speeds up requests for the Nth spot if N is >= the
@@ -334,7 +329,7 @@ public:
 	* @param index The index of the spot to get
 	*
 	*/
-	darkModHidingSpot_t* getNthSpot(unsigned int index);
+	darkModHidingSpot* getNthSpot(unsigned int index);
 
 	/*!
 	* This speeds up requests for the Nth spot if N is >= the
@@ -346,7 +341,7 @@ public:
 	*	the spot
 	*
 	*/
-	darkModHidingSpot_t* getNthSpotWithAreaNodeBounds(unsigned int index, idBounds& out_areaNodeBounds);
+	darkModHidingSpot* getNthSpotWithAreaNodeBounds(unsigned int index, idBounds& out_areaNodeBounds);
 
 	/*!
 	* Attempts to split off one Nth of the tree (1/N) in a logical fashion

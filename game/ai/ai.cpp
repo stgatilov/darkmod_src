@@ -8794,7 +8794,7 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
 	if (hidingSpotIndex >= 0 && hidingSpotIndex < numSpots)
 	{
 		idBounds areaNodeBounds;
-		darkModHidingSpot_t* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
+		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
 		if (p_spot != NULL)
 		{
 			outLocation = p_spot->goal.origin;
