@@ -7065,9 +7065,20 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	if (newAlertLevel >= thresh_3)
 	{
 		// greebo: Only allow switching to combat if a valid enemy is set.
-		if (newAlertLevel >= thresh_combat && GetEnemy() != NULL)
+		if (newAlertLevel >= thresh_combat)
 		{
-			AI_AlertIndex = 4;
+			if (GetEnemy() != NULL) 
+			{
+				// We have an enemy, raise the index
+				AI_AlertIndex = 4;
+			}
+			else
+			{
+				// No enemy, can't switch to Combat mode
+				AI_AlertIndex = 3;
+				// Set the alert level back to just below combat threshold
+				AI_AlertNum = thresh_combat - 0.01;
+			}
 		}
 		else
 		{
