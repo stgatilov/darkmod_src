@@ -914,60 +914,47 @@ bool CDarkmodHidingSpotTree::subDivideAreas
 
 //-------------------------------------------------------------------------
 
-TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getFirstArea
-(
-	TDarkModHidingSpotTreeIterationHandle& out_iterationHandle
-)
+TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getFirstArea()
 {
-	out_iterationHandle = (TDarkModHidingSpotTreeIterationHandle) p_firstArea;
 	return p_firstArea;
 }
 
 //-------------------------------------------------------------------------
 
-TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getNextArea
-(
-	TDarkModHidingSpotTreeIterationHandle& inout_iterationHandle
-)
+TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getNextArea(TDarkmodHidingSpotAreaNode* curArea)
 {
-	TDarkmodHidingSpotAreaNode* p_cursor = (TDarkmodHidingSpotAreaNode*) inout_iterationHandle;
+	TDarkmodHidingSpotAreaNode* p_cursor = curArea;
 	if (p_cursor != NULL)
 	{
 		p_cursor = p_cursor->p_nextSibling;
 	}
 
-    inout_iterationHandle = (TDarkModHidingSpotTreeIterationHandle) p_cursor;
-	return p_cursor;
-
+    return p_cursor;
 }
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getFirstHidingSpotInArea
-(
-	TDarkModHidingSpotTreeIterationHandle& inout_areaIterationHandle,
-	TDarkModHidingSpotTreeIterationHandle& out_spotHandle
-)
+darkModHidingSpot_t* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area)
 {
-	TDarkmodHidingSpotAreaNode* p_areaCursor = (TDarkmodHidingSpotAreaNode*) inout_areaIterationHandle;
+	TDarkmodHidingSpotAreaNode* p_areaCursor = area;
 	if (p_areaCursor == NULL)
 	{
 		return NULL;
 	}
 
-	out_spotHandle = (TDarkModHidingSpotTreeIterationHandle) (p_areaCursor->p_firstSpot);
-	if (p_areaCursor->p_firstSpot == NULL)
+	darkModHidingSpotNode* spotNode = p_areaCursor->p_firstSpot;
+	if (spotNode == NULL)
 	{
 		return NULL;
 	}
 
-	return &(p_areaCursor->p_firstSpot->spot);
+	return &(spotNode->spot);
 
 }
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot_t* CDarkmodHidingSpotTree::getNextHidingSpotInArea
+/*darkModHidingSpot_t* CDarkmodHidingSpotTree::getNextHidingSpotInArea
 (
 	TDarkModHidingSpotTreeIterationHandle& inout_spotHandle
 )
@@ -989,7 +976,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNextHidingSpotInArea
 	{
 		return NULL;
 	}
-}
+}*/
 
 //-------------------------------------------------------------------------
 
@@ -1136,7 +1123,7 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 			}
 
 			// Is this the spot?
-			if ((spotDelta == 0) && (p_spotCursor != NULL))
+			if (spotDelta == 0 && p_spotCursor != NULL)
 			{
 				// Found it
 				lastAreaHandle_indexRetrieval = p_areaCursor;

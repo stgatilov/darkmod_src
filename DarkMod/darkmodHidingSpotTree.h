@@ -84,10 +84,6 @@ typedef struct tagTDarkmodHidingSpotAreaNode
 
 /*---------------------------------------------------------------------------*/
 
-typedef unsigned long TDarkModHidingSpotTreeIterationHandle;
-
-/*---------------------------------------------------------------------------*/
-
 class CDarkmodHidingSpotTree
 {
 private:
@@ -313,31 +309,23 @@ public:
 	/*! 
 	* Starts an iteration of the areas in the tree
 	*/
-	TDarkmodHidingSpotAreaNode* getFirstArea
-	(
-		TDarkModHidingSpotTreeIterationHandle& out_iterationHandle
-	);
+	TDarkmodHidingSpotAreaNode* getFirstArea();
 
 	/*!
-	* Moves forward in an itreation of the tree
+	* Moves forward in an iteration of the tree
 	*/
-	TDarkmodHidingSpotAreaNode* getNextArea
-	(
-		TDarkModHidingSpotTreeIterationHandle& inout_iterationHandle
-	);
+	TDarkmodHidingSpotAreaNode* getNextArea(TDarkmodHidingSpotAreaNode* curArea);
 
 	/*!
 	* Gets first hiding spot in area
 	*/
-	darkModHidingSpot_t* getFirstHidingSpotInArea(
-		TDarkModHidingSpotTreeIterationHandle& inout_areaIterationHandle,
-		TDarkModHidingSpotTreeIterationHandle& out_spotHandle
-	);
+	darkModHidingSpot_t* getFirstHidingSpotInArea(TDarkmodHidingSpotAreaNode* area);
 
 	/*!
 	* Gets next hiding spot in area
 	*/
-	darkModHidingSpot_t* getNextHidingSpotInArea(TDarkModHidingSpotTreeIterationHandle& inout_spotHandle);
+	// greebo: Commented this out, the hidingspot structures are a linked list anyway.
+	//darkModHidingSpot_t* getNextHidingSpotInArea(TDarkModHidingSpotTreeIterationHandle& inout_spotHandle);
 
 	/*!
 	* This speeds up requests for the Nth spot if N is >= the
