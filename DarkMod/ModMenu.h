@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define MODS_PER_PAGE 12
+#define MODS_PER_PAGE 10
 
 // Handles mainmenu that displays list of mods (FMs) and lets user
 // chose which one to load.
