@@ -387,6 +387,10 @@ public:
 	idDict					persistentPlayerInfo[MAX_CLIENTS];
 	idEntity *				entities[MAX_GENTITIES];// index to entities
 	int						spawnIds[MAX_GENTITIES];// for use in idEntityPtr
+
+	// greebo: For use in Stim/Response system (gets invalidated each frame)
+	idEntity*				srEntities[MAX_GENTITIES]; 
+
 	int						firstFreeIndex;			// first free index in the entities array
 	int						num_entities;			// current number <= MAX_GENTITIES
 	idHashIndex				entityHash;				// hash table to quickly find entities by name
@@ -749,7 +753,7 @@ public:
 	* @return The number of responses triggered
 	*
 	*/
-	int						DoResponseAction(CStim *, idEntity *Ent[MAX_GENTITIES], int NumEntities, idEntity *Originator);
+	int						DoResponseAction(CStim* stim, int numEntities, idEntity* originator);
 
 	/**
 	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.

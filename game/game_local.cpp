@@ -5484,39 +5484,39 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	}
 }
 
-int idGameLocal::DoResponseAction(CStim *stim, idEntity *Ent[MAX_GENTITIES], int n, idEntity *e)
+int idGameLocal::DoResponseAction(CStim* stim, int numEntities, idEntity* originator)
 {
-	int i;
-	CResponse *r;
 	int numResponses = 0;
 
-	for(i = 0; i < n; i++)
+	for (int i = 0; i < numEntities; i++)
 	{
 		// ignore the original entity because an entity shouldn't respond 
 		// to it's own stims.
-		if (Ent[i] == e)
+		if (srEntities[i] == originator)
 			continue;
 
 		// Check for a shooter entity, these don't need to have a response
-		tdmFuncShooter* shooter = dynamic_cast<tdmFuncShooter*>(Ent[i]);
-		if (shooter != NULL) {
-			shooter->stimulate(static_cast<StimType>(stim->m_StimTypeId));
+		if (srEntities[i]->IsType(tdmFuncShooter::Type))
+		{
+			static_cast<tdmFuncShooter*>(srEntities[i])->stimulate(static_cast<StimType>(stim->m_StimTypeId));
 		}
 
-		if((r = Ent[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId)) != NULL)
+		CResponse* response = srEntities[i]->GetStimResponseCollection()->GetResponse(stim->m_StimTypeId);
+
+		if (response != NULL)
 		{
-			if (r->m_State == SS_ENABLED && stim->CheckResponseIgnore(Ent[i]) == false)
+			if (response->m_State == SS_ENABLED && stim->CheckResponseIgnore(srEntities[i]) == false)
 			{
 				// Check duration, disable if past duration
-				if(r->m_Duration && (gameLocal.time - r->m_EnabledTimeStamp) > r->m_Duration )
+				if (response->m_Duration && (gameLocal.time - response->m_EnabledTimeStamp) > response->m_Duration )
 				{
-					r->EnableSR(false);
+					response->EnableSR(false);
 					continue;
 				}
 
 				// Fire the response and pass the originating entity plus the stim object itself
 				// The stim object can be queried for values like magnitude, falloff and such.
-				r->TriggerResponse(e, stim);
+				response->TriggerResponse(originator, stim);
 				numResponses++;
 			}
 		}
@@ -5603,7 +5603,6 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 
 	int n;
 	idBounds bounds;
-	idEntity* entities[MAX_GENTITIES];
 
 	// Now check the rest of the stims.
 	for (int i = 0; i < m_StimEntity.Num(); i++)
@@ -5705,7 +5704,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 
 					for (int n2 = 0; n2 < n; n2++)
 					{
-						entities[n2] = stim->m_CollisionEnts[n2];
+						srEntities[n2] = stim->m_CollisionEnts[n2];
 					}
 
 					// clear the collision vars for the next frame
@@ -5715,13 +5714,13 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				else 
 				{
 					// Radius based stims
-					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, entities, MAX_GENTITIES);
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
 				}
 				
 				if (n > 0)
 				{
 					// Do responses for entities within the radius of the stim
-					numResponses = DoResponseAction(stim, entities, n, entity);
+					numResponses = DoResponseAction(stim, n, entity);
 				}
 
 				// The stim has fired, let it do any post-firing activity it may have
