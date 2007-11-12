@@ -220,6 +220,12 @@ public:
 	void					AddEntByBody( idEntity *ent, int bodyID );
 	void					AddEntByJoint( idEntity *ent, jointHandle_t jointNum );
 
+	/**
+	* TDM: Remove a dynamically added ent from the AF of this AFEntity
+	* Called by UnBindNotify
+	**/
+	void					RemoveAddedEnt( idEntity *ent );
+
 	virtual void			ShowEditingDialog( void );
 
 	static void				DropAFs( idEntity *ent, const char *type, idList<idEntity *> *list );

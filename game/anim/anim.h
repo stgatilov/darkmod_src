@@ -454,7 +454,8 @@ public:
 typedef enum {
 	AF_JOINTMOD_AXIS,
 	AF_JOINTMOD_ORIGIN,
-	AF_JOINTMOD_BOTH
+	AF_JOINTMOD_BOTH,
+	AF_JOINTMOD_NONE // Added for TDM
 } AFJointModType_t;
 
 class idAFPoseJointMod {

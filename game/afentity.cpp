@@ -1243,7 +1243,8 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Constraint added between new body %s and original body %s.\r", body->GetName().c_str(), bodyExist->GetName().c_str());
 
 	// Now add body to AF object, for updating with idAF::ChangePos and the like
-	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_AXIS );
+	// We use AF_JOINTMOD_NONE since this new AF shouldn't actually stretch joints on the model when it moves
+	af.AddBodyExtern( this, body, bodyExist, AF_JOINTMOD_NONE );
 
 	// Add to list
 	Entry.ent = ent;
@@ -1262,8 +1263,38 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 		SetContents = SetContents | CONTENTS_FROBABLE;
 
 	EntClip->SetContents( SetContents );
+
+	// Make sure the AF activates as soon as this is done
+	if( af.IsActive() )
+		GetAFPhysics()->Activate();
 		
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AddEntByBody: Done.\r");
+}
+
+/*
+================
+idAFEntity_Base::RemoveAddedEnt
+================
+*/
+void idAFEntity_Base::RemoveAddedEnt( idEntity *ent )
+{
+	idStr bodyName;
+
+	for( int i=m_AddedEnts.Num() - 1; i >= 0; i-- )
+	{
+		if(ent && (m_AddedEnts[i].ent.GetEntity() == ent))
+		{
+			bodyName = m_AddedEnts[i].bodyName;
+			GetAFPhysics()->DeleteBody( bodyName.c_str() );
+			af.DeleteBodyExtern( this, bodyName.c_str() );
+			
+			ent->GetPhysics()->SetContents( m_AddedEnts[i].contents );
+			m_AddedEnts.RemoveIndex(i);
+			// Added ent AF bodies have a mass of 1 for now
+			// GetAFPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
+			GetAFPhysics()->SetMass( GetPhysics()->GetMass() - 1.0f );
+		}
+	}
 }
 
 void idAFEntity_Base::RestoreAddedEnts( void )
@@ -1294,23 +1325,8 @@ void idAFEntity_Base::RestoreAddedEnts( void )
 void idAFEntity_Base::UnbindNotify( idEntity *ent )
 {
 	idEntity::UnbindNotify( ent );
-	
-	idStr bodyName;
-
-	for( int i=m_AddedEnts.Num() - 1; i >= 0; i-- )
-	{
-		if(ent && (m_AddedEnts[i].ent.GetEntity() == ent))
-		{
-			bodyName = m_AddedEnts[i].bodyName;
-			af.DeleteBodyExtern( this, bodyName.c_str() );
-			GetAFPhysics()->DeleteBody( bodyName.c_str() );
-			
-			ent->GetPhysics()->SetContents( m_AddedEnts[i].contents );
-			m_AddedEnts.RemoveIndex(i);
-			// GetAFPhysics()->SetMass( GetPhysics()->GetMass() - ent->GetPhysics()->GetMass() );
-			GetAFPhysics()->SetMass( GetPhysics()->GetMass() - 1.0f );
-		}
-	}
+	// remove ent from AF if it was dynamically added as an AF body
+	RemoveAddedEnt( ent );
 }
 
 void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location, trace_t *tr )

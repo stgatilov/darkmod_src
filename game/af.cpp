@@ -163,7 +163,11 @@ bool idAF::UpdateAnimation( void ) {
 		bodyAxis = physicsObj.GetAxis( jointMods[i].bodyId );
 		axis = jointMods[i].jointBodyAxis.Transpose() * ( bodyAxis * renderAxis.Transpose() );
 		origin = ( bodyOrigin - jointMods[i].jointBodyOrigin * axis - renderOrigin ) * renderAxis.Transpose();
-		animator->SetAFPoseJointMod( jointMods[i].jointHandle, jointMods[i].jointMod, axis, origin );
+		
+		// TDM: Do not add AF jointmod if it has AF_JOINTMOD_NONE
+		// This is used for added bodies that we don't want to stretch the mesh
+		if( jointMods[i].jointMod != AF_JOINTMOD_NONE )
+			animator->SetAFPoseJointMod( jointMods[i].jointHandle, jointMods[i].jointMod, axis, origin );
 	}
 	animator->FinishAFPose( modifiedAnim, GetBounds().Expand( POSE_BOUNDS_EXPANSION ), gameLocal.time );
 	animator->SetAFPoseBlendWeight( 1.0f );
@@ -448,6 +452,7 @@ void idAF::AddBody( idAFBody *body, const idJointMat *joints, const char *jointN
 	index = jointMods.Num();
 	jointMods.SetNum( index + 1, false );
 	jointMods[index].bodyId = physicsObj.GetBodyId( body );
+	jointMods[index].bodyName = body->GetName();
 	jointMods[index].jointHandle = handle;
 	jointMods[index].jointMod = mod;
 	jointMods[index].jointBodyOrigin = ( body->GetWorldOrigin() - origin ) * axis.Transpose();
@@ -484,11 +489,11 @@ void idAF::AddBodyExtern( idAFEntity_Base *ent, idAFBody *bodyNew, idAFBody *bod
 		assert( joint < animator->NumJoints() );
 
 		ent->GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-		// animator->GetJointTransform( joint, gameLocal.time, origin, axis );
 
 		indexNew = jointMods.Num();
 		jointMods.SetNum( indexNew + 1, false );
 		jointMods[indexNew].bodyId = physicsObj.GetBodyId( bodyNew );
+		jointMods[indexNew].bodyName = bodyNew->GetName();
 		jointMods[indexNew].jointHandle = joint;
 		jointMods[indexNew].jointMod = mod;
 		jointMods[indexNew].jointBodyOrigin = ( bodyNew->GetWorldOrigin() - origin ) * axis.Transpose();
@@ -498,20 +503,23 @@ void idAF::AddBodyExtern( idAFEntity_Base *ent, idAFBody *bodyNew, idAFBody *bod
 
 void idAF::DeleteBodyExtern( idAFEntity_Base *ent, const char *bodyName )
 {
-	int bodyID;
-
 	if( ent )
 	{
-		bodyID = ent->GetAFPhysics()->GetBodyId( bodyName );
-		
 		for( int i = jointMods.Num() - 1; i >= 0; i-- ) 
 		{
-			if( jointMods[i].bodyId == bodyID )
+			if( jointMods[i].bodyName == bodyName )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %d from joint mod index\r", bodyID );
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Removed body %s from AF\r", bodyName );
 				jointMods.RemoveIndex(i);
 			}
 		}
+	}
+
+	// Refresh the bodyIDs in the list, since they will have changed
+	// When AF physics condenses the list when removing a body in the middle
+	for( int i = jointMods.Num() - 1; i >= 0; i-- ) 
+	{
+		jointMods[i].bodyId = ent->GetAFPhysics()->GetBodyId( jointMods[i].bodyName );
 	}
 }
 
