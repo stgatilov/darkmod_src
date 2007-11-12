@@ -5573,6 +5573,11 @@ CStimResponse* idGameLocal::FindStimResponse(int uniqueId)
 
 void idGameLocal::ProcessStimResponse(unsigned long ticks)
 {
+	if (cv_sr_disable.GetBool())
+	{
+		return; // S/R disabled, skip this
+	}
+
 	idEntity *e;
 	int ei, en;
 	int n;

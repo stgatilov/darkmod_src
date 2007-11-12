@@ -43,7 +43,9 @@ extern idCVar cv_ai_opt_disable;
 extern idCVar cv_ai_opt_noanims;
 extern idCVar cv_ai_opt_novisualscan;
 extern idCVar cv_ai_opt_forceopt;
+extern idCVar cv_ai_opt_nothink;
 
+extern idCVar cv_sr_disable;
 
 extern idCVar cv_spr_debug;
 extern idCVar cv_spr_show;

@@ -1516,6 +1516,11 @@ idAI::Think
 */
 void idAI::Think( void ) 
 {
+	if (cv_ai_opt_nothink.GetBool()) 
+	{
+		return; // Thinking is disabled.
+	}
+
 	// if we are completely closed off from the player, don't do anything at all
 	bool outsidePVS = CheckDormant();
 	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
