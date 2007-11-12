@@ -5715,6 +5715,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				{
 					// Radius based stims
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
+					//DM_LOG(LC_STIM_RESPONSE, LT_INFO).LogString("Entities touching bounds: %d\r", n);
 				}
 				
 				if (n > 0)

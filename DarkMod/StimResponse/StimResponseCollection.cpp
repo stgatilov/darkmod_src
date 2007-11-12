@@ -508,6 +508,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		sprintf(name, "sr_time_interval_%u", Counter);
 		stim->m_TimeInterleave = args->GetInt(name, "0");
 
+		// greebo: Add fuzzyness to the timer (ranging from 0.9 - 1.3);
+		stim->m_TimeInterleave *= 0.9f + gameLocal.random.RandomFloat()*0.4f;
+
 		// userfriendly stim duration time
 		sprintf(name, "sr_duration_%u", Counter);
 		stim->m_Duration = args->GetInt(name, "0");
