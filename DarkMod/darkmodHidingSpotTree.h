@@ -110,8 +110,8 @@ protected:
 
 	// Handles
 	unsigned long lastIndex_indexRetrieval;
-	TDarkModHidingSpotTreeIterationHandle lastAreaHandle_indexRetrieval;
-	TDarkModHidingSpotTreeIterationHandle lastSpotHandle_indexRetrieval;
+	TDarkmodHidingSpotAreaNode* lastAreaHandle_indexRetrieval;
+	darkModHidingSpotNode* lastSpotHandle_indexRetrieval;
 
 	// Mapping methods, retrieves node pointers for indices and vice versa
 	int getAreaNodeId(TDarkmodHidingSpotAreaNode* area) const; // returns -1 for invalid pointer
@@ -329,8 +329,7 @@ public:
 	/*!
 	* Gets first hiding spot in area
 	*/
-	darkModHidingSpot_t* getFirstHidingSpotInArea
-	(
+	darkModHidingSpot_t* getFirstHidingSpotInArea(
 		TDarkModHidingSpotTreeIterationHandle& inout_areaIterationHandle,
 		TDarkModHidingSpotTreeIterationHandle& out_spotHandle
 	);
@@ -338,10 +337,7 @@ public:
 	/*!
 	* Gets next hiding spot in area
 	*/
-	darkModHidingSpot_t* getNextHidingSpotInArea
-	(
-		TDarkModHidingSpotTreeIterationHandle& inout_spotHandle
-	);
+	darkModHidingSpot_t* getNextHidingSpotInArea(TDarkModHidingSpotTreeIterationHandle& inout_spotHandle);
 
 	/*!
 	* This speeds up requests for the Nth spot if N is >= the
@@ -350,10 +346,7 @@ public:
 	* @param index The index of the spot to get
 	*
 	*/
-	darkModHidingSpot_t* getNthSpot
-	(
-		unsigned int index
-	);
+	darkModHidingSpot_t* getNthSpot(unsigned int index);
 
 	/*!
 	* This speeds up requests for the Nth spot if N is >= the
@@ -365,11 +358,7 @@ public:
 	*	the spot
 	*
 	*/
-	darkModHidingSpot_t* getNthSpotWithAreaNodeBounds
-	(
-		unsigned int index,
-		idBounds& out_areaNodeBounds
-	);
+	darkModHidingSpot_t* getNthSpotWithAreaNodeBounds(unsigned int index, idBounds& out_areaNodeBounds);
 
 	/*!
 	* Attempts to split off one Nth of the tree (1/N) in a logical fashion
@@ -383,19 +372,12 @@ public:
 	*	will be moved.  The tree is cleared before any areas or spots are moved
 	*	to it.
 	*/
-	bool getOneNth
-	(
-		unsigned int N,
-		CDarkmodHidingSpotTree* p_out_otherTree
-	);
+	bool getOneNth(unsigned int N, CDarkmodHidingSpotTree* p_out_otherTree);
 
 	/*!
 	* This copies this tree into another tree.
 	*/
-	bool copy
-	(
-		CDarkmodHidingSpotTree* p_out_otherTree
-	);
+	bool copy(CDarkmodHidingSpotTree* p_out_otherTree);
 
 	/*!
 	* This method rescores the points and repriortizes the list based on a new search center.
@@ -403,20 +385,7 @@ public:
 	* toward the new stimulous.
 	*
 	*/
-	bool sortForNewCenter
-	(
-		idVec3 center,
-		float searchRadius
-	);
-
-
+	bool sortForNewCenter(idVec3 center, float searchRadius);
 };
-
-
-
-
-
-
-
 
 #endif

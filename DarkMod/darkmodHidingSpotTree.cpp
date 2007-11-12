@@ -327,11 +327,11 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 
 	int areaNodeId;
 	savefile->ReadInt(areaNodeId);
-	lastAreaHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) getAreaNode(areaNodeId);
+	lastAreaHandle_indexRetrieval = getAreaNode(areaNodeId);
 
 	int spotNodeId;
 	savefile->ReadInt(spotNodeId);
-	lastSpotHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) getSpotNode(spotNodeId);
+	lastSpotHandle_indexRetrieval = getSpotNode(spotNodeId);
 }
 
 //-------------------------------------------------------------------------
@@ -1075,20 +1075,13 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 	darkModHidingSpotNode* p_spotCursor;
 
 	// Determine where to start search
-	if 
-	(
-		(index < lastIndex_indexRetrieval) || 
-		(
-			(index == lastIndex_indexRetrieval) && 
-			(index == 0) 
-		)
-	)
+	if (index < lastIndex_indexRetrieval || (index == lastIndex_indexRetrieval && index == 0))
 	{
 		spotDelta = index;
 		p_areaCursor = p_firstArea;
 		if (p_firstArea != NULL)
 		{
-			p_spotCursor = (p_firstArea->p_firstSpot);
+			p_spotCursor = p_firstArea->p_firstSpot;
 		}
 		else
 		{
@@ -1146,8 +1139,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpot
 			if ((spotDelta == 0) && (p_spotCursor != NULL))
 			{
 				// Found it
-				lastAreaHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) p_areaCursor;
-				lastSpotHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) p_spotCursor;
+				lastAreaHandle_indexRetrieval = p_areaCursor;
+				lastSpotHandle_indexRetrieval = p_spotCursor;
 				lastIndex_indexRetrieval = index;
 				return &(p_spotCursor->spot);
 			}
@@ -1199,20 +1192,13 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	darkModHidingSpotNode* p_spotCursor;
 
 	// Determine where to start search
-	if 
-	(
-		(index < lastIndex_indexRetrieval) || 
-		(
-			(index == lastIndex_indexRetrieval) && 
-			(index == 0) 
-		)
-	)
+	if (index < lastIndex_indexRetrieval || (index == lastIndex_indexRetrieval && index == 0))
 	{
 		spotDelta = index;
 		p_areaCursor = p_firstArea;
 		if (p_firstArea != NULL)
 		{
-			p_spotCursor = (p_firstArea->p_firstSpot);
+			p_spotCursor = p_firstArea->p_firstSpot;
 		}
 		else
 		{
@@ -1222,8 +1208,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	else
 	{
 		spotDelta = index - lastIndex_indexRetrieval;
-		p_areaCursor = (TDarkmodHidingSpotAreaNode*) lastAreaHandle_indexRetrieval;
-		p_spotCursor = (darkModHidingSpotNode*) lastSpotHandle_indexRetrieval;
+		p_areaCursor = lastAreaHandle_indexRetrieval;
+		p_spotCursor = lastSpotHandle_indexRetrieval;
 	}
 
 	// There can't be a spot cursor if there is no area cursor
@@ -1249,8 +1235,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 			p_areaCursor = p_areaCursor->p_nextSibling;
 			if (p_areaCursor == NULL)
 			{
-				lastAreaHandle_indexRetrieval = 0;
-				lastSpotHandle_indexRetrieval = 0;
+				lastAreaHandle_indexRetrieval = NULL;
+				lastSpotHandle_indexRetrieval = NULL;
 				lastIndex_indexRetrieval = 0;
 				out_areaNodeBounds.Clear();
 				return NULL;
@@ -1271,8 +1257,8 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 			if ((spotDelta == 0) && (p_spotCursor != NULL))
 			{
 				// Found it
-				lastAreaHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) p_areaCursor;
-				lastSpotHandle_indexRetrieval = (TDarkModHidingSpotTreeIterationHandle) p_spotCursor;
+				lastAreaHandle_indexRetrieval = p_areaCursor;
+				lastSpotHandle_indexRetrieval = p_spotCursor;
 				lastIndex_indexRetrieval = index;
 				out_areaNodeBounds = p_areaCursor->bounds;
 				return &(p_spotCursor->spot);
@@ -1293,7 +1279,6 @@ darkModHidingSpot_t* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	lastIndex_indexRetrieval = 0;
 	out_areaNodeBounds.Clear();
 	return NULL;
-
 }
 
 //-------------------------------------------------------------------------
@@ -1768,10 +1753,5 @@ void CDarkmodHidingSpotTree::quicksortAreaList
 	{
 		inout_p_firstNode = p_firstLess;
 	}
-
 	// Done
-
 }
-
-
-
