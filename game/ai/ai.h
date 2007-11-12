@@ -1098,6 +1098,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					Knockout( void );
 
 	/**
+	 * greebo: Does a few things after the knockout animation has finished.
+	 *         This includes setting the model, dropping attachments and starting ragdoll mode.
+	 *         Note: Gets called by the Mind's KnockOutState.
+	 */
+	void					PostKnockOut();
+
+	/**
 	* Drop certain attachments and def_drop items when transitioning into a ragdoll state
 	* Called by idActor::Killed and idActor::KnockedOut
 	**/

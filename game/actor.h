@@ -273,6 +273,7 @@ public:
 							// animation state control
 	int						GetAnim( int channel, const char *name );
 	const char*				LookupReplacementAnim( const char *name );
+	void					StopAnim(int channel, int frames);
 	void					UpdateAnimState( void );
 	void					SetAnimState( int channel, const char *name, int blendFrames );
 	const char *			GetAnimState( int channel ) const;

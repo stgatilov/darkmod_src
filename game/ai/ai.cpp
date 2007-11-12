@@ -8174,29 +8174,18 @@ Based on idAI::Killed
 void idAI::Knockout( void )
 {
 	idAngles ang;
-	const char *modelKOd;
 
 	if( !m_bCanBeKnockedOut )
-#ifdef __linux__
-		return; // [OrbWeaver] Jumping past an initialisation is UB, GCC will
-			    // not compile
-#else
-		goto Quit;
-#endif
+		return;
 
 	if( AI_KNOCKEDOUT || AI_DEAD )
 	{
 		AI_PAIN = true;
 		AI_DAMAGE = true;
 
-#ifdef __linux__
-		return; // [OrbWeaver] Jumping past an initialisation is UB, GCC will
-			    // not compile
-#else
-		goto Quit;
-#endif
-
+		return;
 	}
+
 	EndAttack();
 
 	// stop all voice sounds
@@ -8225,6 +8214,14 @@ void idAI::Knockout( void )
 
 	AI_KNOCKEDOUT = true;
 
+	// greebo: Switch the mind to KO state, this will trigger PostKnockout() when
+	// the animation is done
+	mind->ClearStates();
+	mind->PushState(STATE_KNOCKED_OUT);
+}
+
+void idAI::PostKnockOut()
+{
 	// make original self nonsolid
 	physicsObj.SetContents( 0 );
 	physicsObj.GetClipModel()->Unlink();
@@ -8235,6 +8232,8 @@ void idAI::Knockout( void )
 	{
 		StartSound( "snd_knockout", SND_CHANNEL_VOICE, 0, false, NULL );
 	}
+
+	const char *modelKOd;
 
 	if ( spawnArgs.GetString( "model_knockedout", "", &modelKOd ) )
 	{
@@ -8252,19 +8251,12 @@ void idAI::Knockout( void )
 
 	restartParticles = false;
 
-	// greebo: Switch the mind to KO state
-	mind->ClearStates();
-	mind->PushState(STATE_KNOCKED_OUT);
-	
 	// drop items
 	DropOnRagdoll();
 
 	// Update TDM objective system
 	// TODO: Need a way to determine if player was responsible for the KO
 	gameLocal.m_MissionData->MissionEvent( COMP_KO, this, true );
-
-Quit:
-	return;
 }
 
 /**

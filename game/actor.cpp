@@ -2279,6 +2279,27 @@ const char* idActor::LookupReplacementAnim( const char *animname )
 	return replacement;
 }
 
+void idActor::StopAnim(int channel, int frames) 
+{
+	switch( channel ) {
+	case ANIMCHANNEL_HEAD :
+		headAnim.StopAnim( frames );
+		break;
+
+	case ANIMCHANNEL_TORSO :
+		torsoAnim.StopAnim( frames );
+		break;
+
+	case ANIMCHANNEL_LEGS :
+		legsAnim.StopAnim( frames );
+		break;
+
+	default:
+		gameLocal.Error( "Unknown anim group" );
+		break;
+	}
+}
+
 /*
 ===============
 idActor::SyncAnimChannels
@@ -2997,23 +3018,7 @@ idActor::Event_StopAnim
 ===============
 */
 void idActor::Event_StopAnim( int channel, int frames ) {
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
-		headAnim.StopAnim( frames );
-		break;
-
-	case ANIMCHANNEL_TORSO :
-		torsoAnim.StopAnim( frames );
-		break;
-
-	case ANIMCHANNEL_LEGS :
-		legsAnim.StopAnim( frames );
-		break;
-
-	default:
-		gameLocal.Error( "Unknown anim group" );
-		break;
-	}
+	StopAnim(channel, frames);
 }
 
 /*

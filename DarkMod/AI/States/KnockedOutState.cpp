@@ -34,15 +34,20 @@ void KnockedOutState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("KnockedOutState initialised.\r");
 	assert(owner);
 
+	_waitingForKnockout = true;
+
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
+
+	owner->StopAnim(ANIMCHANNEL_TORSO, 0);
+	owner->StopAnim(ANIMCHANNEL_LEGS, 0);
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KO", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KO", 0);
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
-	owner->SetWaitState("knockedout");
+	owner->SetWaitState("knock_out");
 
 	// Don't do anything else, the KO animation will finish in a few frames
 	// and the AI is done afterwards.
@@ -57,7 +62,24 @@ void KnockedOutState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void KnockedOutState::Think(idAI* owner)
 {
-	// Do nothing
+	if (_waitingForKnockout && idStr(owner->WaitState()) != "knock_out") 
+	{
+		owner->PostKnockOut();
+		_waitingForKnockout = false;
+	}
+}
+
+// Save/Restore methods
+void KnockedOutState::Save(idSaveGame* savefile) const
+{
+	State::Save(savefile);
+	savefile->WriteBool(_waitingForKnockout);
+}
+
+void KnockedOutState::Restore(idRestoreGame* savefile) 
+{
+	State::Restore(savefile);
+	savefile->ReadBool(_waitingForKnockout);
 }
 
 StatePtr KnockedOutState::CreateInstance()

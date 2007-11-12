@@ -20,6 +20,7 @@ namespace ai
 class KnockedOutState :
 	public State
 {
+	bool _waitingForKnockout;
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -29,6 +30,10 @@ public:
 
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	static StatePtr CreateInstance();
 };
