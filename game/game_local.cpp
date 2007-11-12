@@ -5578,33 +5578,22 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 		return; // S/R disabled, skip this
 	}
 
-	idEntity *e;
-	int ei, en;
-	int n;
-	idVec3 origin;
-
-	CStimResponseCollection *src;
-	CStimResponseTimer *timer;
-	idBounds bounds;
-	idEntity *Ent[MAX_GENTITIES];
-
 	// Check the timed stims first.
-	en = m_StimTimer.Num();
-	for(ei = 0; ei < en; ei++)
+	for (int i = 0; i < m_StimTimer.Num(); i++)
 	{
-		CStim *stim = m_StimTimer[ei];
+		CStim* stim = m_StimTimer[i];
 
 		// Only advance the timer if the stim can be fired in the first place
 		if (stim->m_MaxFireCount > 0 || stim->m_MaxFireCount == -1)
 		{
 			// Advance the timer
-			timer = stim->GetTimer();
+			CStimResponseTimer* timer = stim->GetTimer();
 
-			if(timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
+			if (timer->GetState() == CStimResponseTimer::SRTS_RUNNING)
 			{
 				if (timer->Tick(ticks))
 				{
-					gameLocal.Printf("Timer elapsed!\n");
+					//gameLocal.Printf("Timer elapsed!\n");
 					// Enable the stim when the timer has expired
 					stim->EnableSR(true);
 				}
@@ -5612,126 +5601,131 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 		}
 	}
 
+	int n;
+	idBounds bounds;
+	idEntity* entities[MAX_GENTITIES];
+
 	// Now check the rest of the stims.
-	en = m_StimEntity.Num();
-	for(ei = 0; ei < en; ei++)
+	for (int i = 0; i < m_StimEntity.Num(); i++)
 	{
-		e = m_StimEntity[ei].GetEntity();
-		// Check if there are any Stims/Responses defined
-		if ((src = e->GetStimResponseCollection()) != NULL)
+		idEntity* entity = m_StimEntity[i].GetEntity();
+
+		// greebo: Get the S/R collection, this is always non-NULL
+		CStimResponseCollection* srColl = entity->GetStimResponseCollection();
+		assert(srColl != NULL);
+
+		idVec3 origin(entity->GetPhysics()->GetOrigin());
+
+		idList<CStim*>& stimList = srColl->GetStimList();
+
+		// Traverse through all the stims on this entity
+		for (int stimIdx = 0; stimIdx < stimList.Num(); stimIdx++)
 		{
-			origin = e->GetPhysics()->GetOrigin();
+			CStim* stim = stimList[stimIdx];
 
-			idList<CStim*>& stimList = src->GetStimList();
+			if (stim->m_MaxFireCount == 0)
+				// Maximum number of firings reached, do not process this stim
+				continue;
 
-			// Traverse through all the stims on this entity
-			for (int si = 0; si < stimList.Num(); si++)
+			if (stim->m_State != SS_ENABLED)
+				continue; // Stim is not enabled
+
+			if (stim->m_bCollisionBased && !stim->m_bCollisionFired)
+				continue; // Collision-based stim that did not fire with ::Collide this frame
+
+			// Check the interleaving timer and don't eval stim if it's not up yet
+			if (gameLocal.time - stim->m_TimeInterleaveStamp < stim->m_TimeInterleave)
+				continue;
+
+			// If stim has a finite duration, check if it expired. If so, disable the stim.
+			if (stim->m_Duration != 0 && (gameLocal.time - stim->m_EnabledTimeStamp) > stim->m_Duration )
 			{
-				CStim *pStim = stimList[si];
+				stim->EnableSR(false);
+				continue;
+			}
 
-				if (pStim->m_MaxFireCount == 0) {
-					// Maximum number of firings reached, do not process this stim
-					continue;
+			// Initial checks passed, decrease the fire count
+			if (stim->m_MaxFireCount > 0)
+			{
+				stim->m_MaxFireCount--;
+			}
+
+			// Check if a stim velocity has been specified
+			if (stim->m_Velocity != idVec3(0,0,0)) {
+				// The velocity mutliplied by the time gives the translation
+				// Updates the location of this stim relative to the time it last fired.
+				origin += stim->m_Velocity * (gameLocal.time - stim->m_EnabledTimeStamp)/1000;
+			}
+
+			// Save the current timestamp into the stim, so that we know when it was last fired
+			stim->m_TimeInterleaveStamp = gameLocal.time;
+
+			// greebo: Check if the stim passes the "chance" test
+			// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
+			// from being re-evaluated in the very next frame in case it failed the test.
+			if (!stim->checkChance()) {
+				continue;
+			}
+
+			// If stim is not disabled
+			if (stim->m_State == SS_DISABLED)
+				continue;
+
+			float radius = stim->m_Radius;
+
+			if (radius != 0.0 || stim->m_bCollisionBased ||
+				stim->m_bUseEntBounds || stim->m_Bounds.GetVolume() > 0)
+			{
+				int numResponses = 0;
+
+				// Check if we have fixed bounds to work with (sr_bounds_mins & maxs set)
+				if (stim->m_Bounds.GetVolume() > 0) {
+					bounds = idBounds(stim->m_Bounds[0] + origin, stim->m_Bounds[1] + origin);
 				}
+				else {
+					// No bounds set, check for radius and useBounds
 
-				if( pStim->m_State != SS_ENABLED ) {
-					continue; // Stim is not enabled
-				}
-
-				if( pStim->m_bCollisionBased && !pStim->m_bCollisionFired ) {
-					continue; // Collision-based stim that did not fire with ::Collide this frame
-				}
-
-				// Check the interleaving timer and don't eval stim if it's not up yet
-				if( (gameLocal.time - pStim->m_TimeInterleaveStamp) < pStim->m_TimeInterleave )
-					continue;
-
-				// If stim has a finite duration, check if it expired. If so, disable the stim.
-				if( pStim->m_Duration 
-					&& (gameLocal.time - pStim->m_EnabledTimeStamp) > pStim->m_Duration )
-				{
-					pStim->EnableSR(false);
-					continue;
-				}
-
-				// Initial checks passed, decrease the fire count
-				if (pStim->m_MaxFireCount > 0) {
-					pStim->m_MaxFireCount--;
-				}
-
-				// Check if a stim velocity has been specified
-				if (pStim->m_Velocity != idVec3(0,0,0)) {
-					// The velocity mutliplied by the time gives the translation
-					// Updates the location of this stim relative to the time it last fired.
-					origin += pStim->m_Velocity * (gameLocal.time - pStim->m_EnabledTimeStamp)/1000;
-				}
-
-				// Save the current timestamp into the stim, so that we know when it was last fired
-				pStim->m_TimeInterleaveStamp = gameLocal.time;
-
-				// greebo: Check if the stim passes the "chance" test
-				// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
-				// from being re-evaluated in the very next frame in case it failed the test.
-				if (!pStim->checkChance()) {
-					continue;
-				}
-
-				// If stim is not disabled
-				if (pStim->m_State == SS_DISABLED)
-					continue;
-
-				float radius = pStim->m_Radius;
-
-				if ( radius != 0.0 || pStim->m_bCollisionBased
-					|| pStim->m_bUseEntBounds 
-					|| pStim->m_Bounds.GetVolume() > 0 )
-				{
-					int numResponses = 0;
-
-					// Check if we have fixed bounds to work with (sr_bounds_mins & maxs set)
-					if (pStim->m_Bounds.GetVolume() > 0) {
-						bounds = idBounds(pStim->m_Bounds[0] + origin, pStim->m_Bounds[1] + origin);
-					}
-					else {
-						// No bounds set, check for radius and useBounds
-
-						// Find entities in the radius of the stim
-						if( pStim->m_bUseEntBounds ) {
-							bounds = e->GetPhysics()->GetAbsBounds();
-						}
-						else {
-							bounds = idBounds(origin);
-						}
-
-						bounds.ExpandSelf(radius);
-					}
-
-					// Collision-based stims
-					if( pStim->m_bCollisionBased )
+					// Find entities in the radius of the stim
+					if (stim->m_bUseEntBounds )
 					{
-						n = pStim->m_CollisionEnts.Num();
-
-						for( int n2=0; n2<n; n2++ )
-						{
-							Ent[n2] = pStim->m_CollisionEnts[n2];
-						}
-
-						// clear the collision vars for the next frame
-						pStim->m_bCollisionFired = false;
-						pStim->m_CollisionEnts.Clear();
+						bounds = entity->GetPhysics()->GetAbsBounds();
 					}
-					else // Radius based stims
-						n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, Ent, MAX_GENTITIES);
-					
-					if(n > 0)
+					else
 					{
-						// Do responses for entities within the radius of the stim
-						numResponses = DoResponseAction(pStim, Ent, n, e);
+						bounds = idBounds(origin);
 					}
 
-					// The stim has fired, let it do any post-firing activity it may have
-					pStim->PostFired(numResponses);
+					bounds.ExpandSelf(radius);
 				}
+
+				// Collision-based stims
+				if (stim->m_bCollisionBased)
+				{
+					n = stim->m_CollisionEnts.Num();
+
+					for (int n2 = 0; n2 < n; n2++)
+					{
+						entities[n2] = stim->m_CollisionEnts[n2];
+					}
+
+					// clear the collision vars for the next frame
+					stim->m_bCollisionFired = false;
+					stim->m_CollisionEnts.Clear();
+				}
+				else 
+				{
+					// Radius based stims
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, entities, MAX_GENTITIES);
+				}
+				
+				if (n > 0)
+				{
+					// Do responses for entities within the radius of the stim
+					numResponses = DoResponseAction(stim, entities, n, entity);
+				}
+
+				// The stim has fired, let it do any post-firing activity it may have
+				stim->PostFired(numResponses);
 			}
 		}
 	}
