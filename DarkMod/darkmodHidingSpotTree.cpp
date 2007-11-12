@@ -613,7 +613,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 {
 
 	// test params
-	if ((out_p_subAreas == NULL) || (in_p_areaNode == NULL))
+	if (out_p_subAreas == NULL || in_p_areaNode == NULL)
 	{
 		return false;
 	}
@@ -758,8 +758,6 @@ bool CDarkmodHidingSpotTree::subDivideArea
 	TDarkmodHidingSpotAreaNode* p_newNodePreviousSibling = in_p_areaNode;
 	TDarkmodHidingSpotAreaNode* p_newNodeNextSibling = in_p_areaNode->p_nextSibling;
 
-
-
 	for (int subAreaIndex = 0; subAreaIndex < NUM_SECTORS_IN_SUBDIVIDE; subAreaIndex ++)
 	{
 		TDarkmodHidingSpotAreaNode* p_areaNode = NULL;
@@ -845,15 +843,11 @@ bool CDarkmodHidingSpotTree::subDivideArea
 
 	// Done
 	return true;
-
 }
 
 //-------------------------------------------------------------------------
 
-bool CDarkmodHidingSpotTree::subDivideAreas
-(
-	unsigned int maxPointsPerArea
-)
+bool CDarkmodHidingSpotTree::subDivideAreas(unsigned int maxPointsPerArea)
 {
 	// Ride the list of areas
 	TDarkmodHidingSpotAreaNode* p_firstAreaNeedingSubDivision = p_firstArea;
@@ -882,19 +876,14 @@ bool CDarkmodHidingSpotTree::subDivideAreas
 				unsigned int numSubAreasWithPoints = 0;
 				TDarkmodHidingSpotAreaNode* p_subAreas[8];
 
-				if (!subDivideArea
-				(
-					p_originalAreaCursor,
-					numSubAreasWithPoints,
-					p_subAreas
-				))
+				if (!subDivideArea(p_originalAreaCursor, numSubAreasWithPoints,	p_subAreas))
 				{
 					// Failed to sub-divide this area due to lack of memory
 					return false;
 				}
 
 				// is this the first area that we found this pass that needed sub-division?
-				if ((numSubAreasWithPoints > 1) && (p_firstAreaNeedingSubDivision == NULL))
+				if (numSubAreasWithPoints > 1 && p_firstAreaNeedingSubDivision == NULL)
 				{
 					p_firstAreaNeedingSubDivision = p_originalAreaCursor;
 				}
@@ -993,7 +982,7 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotInternal
 	// Find correct area
 	while (p_areaCursor != NULL)
 	{
-		if ((accumulatedIndex + p_areaCursor->count) > index)
+		if (accumulatedIndex + p_areaCursor->count > index)
 		{
 			break;
 		}
@@ -1018,7 +1007,7 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotInternal
 	unsigned int spotIndex = 0;
 	darkModHidingSpotNode* p_spot = p_areaCursor->p_firstSpot;
 
-	while ((p_spot != NULL) && (spotIndex < chosenSpotIndex))
+	while (p_spot != NULL && spotIndex < chosenSpotIndex)
 	{
 		spotIndex ++;
 		p_spot = p_spot->p_next;
@@ -1078,8 +1067,8 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
 	else
 	{
 		spotDelta = index - lastIndex_indexRetrieval;
-		p_areaCursor = (TDarkmodHidingSpotAreaNode*) lastAreaHandle_indexRetrieval;
-		p_spotCursor = (darkModHidingSpotNode*) lastSpotHandle_indexRetrieval;
+		p_areaCursor = lastAreaHandle_indexRetrieval;
+		p_spotCursor = lastSpotHandle_indexRetrieval;
 	}
 
 	// There can't be a spot cursor if there is no area cursor
@@ -1095,14 +1084,11 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
 	while (p_areaCursor != NULL)
 	{
 		// Check if we can just skip this entire area
-		if 
-		(
-			(p_spotCursor == p_areaCursor->p_firstSpot) &&
-			(spotDelta >= p_areaCursor->count)
-		)
+		if (p_spotCursor == p_areaCursor->p_firstSpot && spotDelta >= p_areaCursor->count)
 		{
 			spotDelta -= p_areaCursor->count;
 			p_areaCursor = p_areaCursor->p_nextSibling;
+
 			if (p_areaCursor == NULL)
 			{
 				lastAreaHandle_indexRetrieval = 0;
@@ -1116,7 +1102,7 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
 		else
 		{
 			// No we can't skip the entire area, so advance spot cursor
-			while ((spotDelta > 0) && (p_spotCursor != NULL))
+			while (spotDelta > 0 && p_spotCursor != NULL)
 			{
 				p_spotCursor = p_spotCursor->p_next;
 				spotDelta --;
@@ -1146,11 +1132,9 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
 	lastSpotHandle_indexRetrieval = 0;
 	lastIndex_indexRetrieval = 0;
 	return NULL;
-
 }
 
 //-------------------------------------------------------------------------
-
 
 darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 (
