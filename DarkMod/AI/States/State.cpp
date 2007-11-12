@@ -132,6 +132,11 @@ void State::Restore(idRestoreGame* savefile)
 
 void State::OnVisualStim(idEntity* stimSource)
 {
+	if (cv_ai_opt_novisualstim.GetBool()) 
+	{
+		return;
+	}
+
 	idAI* owner = _owner.GetEntity();
 	if (owner == NULL)
 	{

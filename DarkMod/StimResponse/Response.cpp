@@ -130,7 +130,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, CStim* stim)
 		}
 	}
 	else {
-		DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Iterating through ResponseEffects: %d\r", m_ResponseEffects.Num());
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Iterating through ResponseEffects: %d\r", m_ResponseEffects.Num());
 		// "Normal" mode, all the effects get fired in order
 		for (int i = 0; i < m_ResponseEffects.Num(); i++) {
 			m_ResponseEffects[i]->runScript(m_Owner.GetEntity(), sourceEntity, magnitude);

@@ -130,7 +130,7 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 		goto Quit;
 	}
 
-	DM_LOG(LC_STIM_RESPONSE, LT_ERROR)LOGSTRING("Parsed timer string: [%s] to %d:%d:%d:%d\r", str.c_str(), h, m, s, ms);
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Parsed timer string: [%s] to %d:%d:%d:%d\r", str.c_str(), h, m, s, ms);
 
 	v.Time.Hour = h;
 	v.Time.Minute = m;
