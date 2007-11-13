@@ -591,6 +591,12 @@
 						RelativePath=".\DarkMod\Ai\States\DeadState.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\EmergeFromCoverState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\EmergeFromCoverState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\FleeDoneState.cpp">
 					</File>
 					<File
@@ -631,6 +637,12 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\States\State.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\StayInCoverState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\StayInCoverState.h">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\States\SuspiciousState.cpp">
