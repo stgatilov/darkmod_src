@@ -697,12 +697,6 @@
 						RelativePath=".\DarkMod\Ai\Tasks\IdleBarkTask.h">
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\Tasks\IdleSensoryTask.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\IdleSensoryTask.h">
-					</File>
-					<File
 						RelativePath=".\DarkMod\Ai\Tasks\InvestigateSpotTask.cpp">
 					</File>
 					<File
@@ -767,6 +761,12 @@
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PatrolTask.h">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\RandomHeadturnTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\RandomHeadturnTask.h">
 					</File>
 					<File
 						RelativePath=".\DarkMod\Ai\Tasks\RandomTurningTask.cpp">
