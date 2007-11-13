@@ -221,8 +221,23 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		if (!pk4ToDelete.empty()) {
 			remove(pk4ToDelete.file_string().c_str());
 		}
+		// read dmargs file
+		FILE* argFile = fopen(dmArgs.file_string().c_str(), "r");
+		char args[200];
+		if (argFile) {
+			// read command line args from file
+			do {
+				if (fgets(args, 200, argFile) == NULL) {
+					break;
+				}
+			} while (args[0] == '#');
+			fclose(argFile);
+		} else {
+			// default args
+			strcpy(args, "+set fs_game darkmod");
+		}
 		// start doom
-		if (execlp(doomExe, doomExe, "+set", "fs_game", "darkmod", NULL)==-1) {
+		if (execlp(doomExe.file_string().c_str(), doomExe.file_string().c_str(), args, NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 		}

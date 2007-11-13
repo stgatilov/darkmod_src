@@ -19,17 +19,22 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
-	char exe[100];
-	char pk4ToDelete[100];
-	char argFileName[100];
-	char args[100];
+	char exe[200];
+	char pk4ToDelete[200];
+	char argFileName[200];
+	char args[200];
 	sscanf(lpCmdLine, "%s%s%s%", &exe, &argFileName, &pk4ToDelete);
 	Sleep(2000);
 	remove(pk4ToDelete);
+	args[0] = 0;
 	FILE* argFile = fopen(argFileName, "r");
 	if (argFile) {
 		// read command line args from file
-		fgets(args, 100, argFile);
+		do {
+			if (fgets(args, 200, argFile) == NULL) {
+				break;
+			}
+		} while (args[0] == '#');
 		fclose(argFile);
 	} else {
 		// default args
