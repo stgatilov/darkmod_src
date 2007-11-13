@@ -237,7 +237,8 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 			strcpy(args, "+set fs_game darkmod");
 		}
 		// start doom
-		if (execlp(doomExe.file_string().c_str(), doomExe.file_string().c_str(), args, NULL)==-1) {
+		// under linux, doomExe is already a char* to the executable name:
+		if (execlp(doomExe, doomExe, args, NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 		}
