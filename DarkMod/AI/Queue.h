@@ -72,6 +72,9 @@ public:
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Saving element %s.\r", (*i)->GetName().c_str());
 			savefile->WriteString((*i)->GetName().c_str());
+
+			// Write the Element data into the savefile
+			(*i)->Save(savefile);
 		}
 	}
 
@@ -93,6 +96,9 @@ public:
 
 			ElementPtr element = Library<Element>::Instance().CreateInstance(str.c_str());
 			assert(element != NULL); // the element must be found
+
+			// Restore the element's state
+			element->Restore(savefile);
 
 			// Add the element to the queue
 			push_back(element);

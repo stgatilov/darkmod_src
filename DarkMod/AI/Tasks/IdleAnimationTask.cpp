@@ -140,6 +140,12 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteString(_idleAnimations[i].c_str());
 	}
+
+	savefile->WriteInt(_idleAnimationsTorso.Num());
+	for (int i = 0; i < _idleAnimationsTorso.Num(); i++)
+	{
+		savefile->WriteString(_idleAnimationsTorso[i].c_str());
+	}
 }
 
 void IdleAnimationTask::Restore(idRestoreGame* savefile)
@@ -154,6 +160,13 @@ void IdleAnimationTask::Restore(idRestoreGame* savefile)
 	for (int i = 0; i < num; i++)
 	{
 		savefile->ReadString(_idleAnimations[i]);
+	}
+
+	savefile->ReadInt(num);
+	_idleAnimationsTorso.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(_idleAnimationsTorso[i]);
 	}
 }
 
