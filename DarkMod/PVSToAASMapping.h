@@ -95,5 +95,10 @@ public:
    */
    void getAASAreasForPVSArea(int pvsAreaIndex, idList<int>& out_aasAreaIndices);
 
-
+	/**
+     * greebo: Draws the AAS areas per PVS area.
+	 *
+	 * @lifetime: How long the debug draws should be visible (in msecs.)
+	 */
+	void DebugShowMappings(int lifetime);
 };

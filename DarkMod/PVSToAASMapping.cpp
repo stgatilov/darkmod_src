@@ -252,3 +252,35 @@ void PVSToAASMapping::getAASAreasForPVSArea(int pvsAreaIndex, idList<int>& out_a
 	// Done
 }
 
+void PVSToAASMapping::DebugShowMappings(int lifetime)
+{
+	if (numPVSAreas <= 0)
+	{
+		gameLocal.Printf("Cannot draw mappings, no PVS areas available.\n");
+	}
+
+	idAAS* aas = gameLocal.GetAAS(aasName.c_str());
+
+	idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+
+	idVec4 color(1,1,1,1);
+
+	for (int i = 0; i < numPVSAreas; i++)
+	{
+		PVSToAASMappingNode* node = m_p_AASAreaIndicesPerPVSArea[i];
+
+		while (node != NULL)
+		{
+			int aasArea = node->AASAreaIndex;
+			idVec3 areaCenter = aas->AreaCenter(aasArea);
+
+			gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.75f, color, playerViewMatrix, 1, lifetime);
+
+			node = node->p_next;
+		}
+
+		color.x = gameLocal.random.RandomFloat() + 0.1f;
+		color.y = gameLocal.random.RandomFloat() + 0.1f;
+		color.z = gameLocal.random.RandomFloat() + 0.1f;
+	}
+}

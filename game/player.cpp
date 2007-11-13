@@ -4890,6 +4890,10 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
+		case IMPULSE_27:
+			LAS.pvsToAASMappingTable.DebugShowMappings(10000);
+			break;
+
 		case IMPULSE_28:
 		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
