@@ -97,7 +97,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 	{
 		// moveToEntity() not yet called, do it now
 		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-		owner->MoveToEntity(path);
+		owner->MoveToPosition(path->Getphysics()->GetOrigin());
 
 		_moveInitiated = true;
 	}
