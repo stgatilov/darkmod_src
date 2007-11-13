@@ -17,8 +17,9 @@ static bool init_version = FileVersionList("$Id: TakeCoverState.cpp 1435 2007-10
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/MoveToPositionTask.h"
-#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/RandomHeadturnTask.h"
 #include "LostTrackOfEnemyState.h"
+#include "StayInCoverState.h"
 #include "../Library.h"
 
 namespace ai
@@ -43,7 +44,7 @@ void TakeCoverState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
-	_positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();
+	memory.positionBeforeTakingCover = owner->GetPhysics()->GetOrigin();
 
 	// Fill the subsystems with their tasks
 
@@ -53,13 +54,7 @@ void TakeCoverState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(500)));
 	owner->GetSubsystem(SubsysMovement)->QueueTask(MoveToCoverTask::CreateInstance());
-	_takingCover = true;
 	owner->AI_MOVE_DONE = false;
-
-	// Calculate the time we should stay in cover
-	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));
-	int coverDelayMax = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_max"));
-	_emergeDelay = coverDelayMin + gameLocal.random.RandomFloat() * (coverDelayMax - coverDelayMin);
 
 	// The communication system 
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
@@ -74,60 +69,18 @@ void TakeCoverState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void TakeCoverState::Think(idAI* owner)
 {
-
-	if (_takingCover && owner->AI_MOVE_DONE)
+	if (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE)
 	{
 		// When we are done moving to cover position, stay for some time there 
 		// then come out and move back to where we were standing before taking cover
 		owner->AI_RUN = false;
-		owner->FaceEnemy();
-		owner->GetSubsystem(SubsysMovement)->ClearTasks();
-		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new WaitTask(_emergeDelay)));
-		owner->GetSubsystem(SubsysMovement)->QueueTask(TaskPtr(new MoveToPositionTask(_positionBeforeTakingCover)));
-
-		owner->GetSubsystem(SubsysSenses)->ClearTasks();
-		owner->GetSubsystem(SubsysSenses)->QueueTask(IdleSensoryTask::CreateInstance());
-		
-		_takingCover = false;
-	}
-
-	if (owner->AI_DEST_UNREACHABLE && !_takingCover)
-	{
-		// Can't move back to position before taking cover
-		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
-	}
-	
-	if (owner->AI_MOVE_DONE && owner->GetPhysics()->GetOrigin() == _positionBeforeTakingCover && !_takingCover)
-	{
-		// Reached position before taking cover, look for enemy
-		// Turn to last visible enemy position
 		owner->TurnToward(owner->lastVisibleEnemyPos);
-
-		// If no enemy is visible, we lost track of him
-		idActor* enemy = owner->GetEnemy();
-		if (!enemy || !owner->CanSeeExt(enemy, true, true))
-		{
-			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
-		}
+		owner->GetMind()->SwitchState(STATE_STAY_IN_COVER);
 	}
-}
-
-void TakeCoverState::Save(idSaveGame* savefile) const
-{
-	State::Save(savefile);
-
-	savefile->WriteVec3(_positionBeforeTakingCover);
-	savefile->WriteInt(_emergeDelay);
-	savefile->WriteBool(_takingCover);
-}
-
-void TakeCoverState::Restore(idRestoreGame* savefile)
-{
-	State::Restore(savefile);
-
-	savefile->ReadVec3(_positionBeforeTakingCover);
-	savefile->ReadInt(_emergeDelay);
-	savefile->ReadBool(_takingCover);
+	else if (owner->AI_DEST_UNREACHABLE)
+	{
+		owner->GetMind()->EndState();
+	}
 }
 
 StatePtr TakeCoverState::CreateInstance()

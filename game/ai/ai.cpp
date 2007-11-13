@@ -528,6 +528,7 @@ idAI::idAI()
 	lastVisibleEnemyEyeOffset.Zero();
 	lastVisibleReachableEnemyPos.Zero();
 	lastReachableEnemyPos.Zero();
+	enemyReachable		= false;
 	shrivel_rate		= 0.0f;
 	shrivel_start		= 0;
 	fl.neverDormant		= false;		// AI's can go dormant
@@ -733,6 +734,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( lastVisibleEnemyEyeOffset );
 	savefile->WriteVec3( lastVisibleReachableEnemyPos );
 	savefile->WriteVec3( lastReachableEnemyPos );
+	savefile->WriteBool( enemyReachable );
 	savefile->WriteBool( wakeOnFlashlight );
 
 	savefile->WriteAngles( eyeMin );
@@ -945,6 +947,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( lastVisibleEnemyEyeOffset );
 	savefile->ReadVec3( lastVisibleReachableEnemyPos );
 	savefile->ReadVec3( lastReachableEnemyPos );
+	savefile->ReadBool( enemyReachable );
+
 
 	savefile->ReadBool( wakeOnFlashlight );
 
@@ -1574,12 +1578,15 @@ void idAI::Think( void )
 		// greebo: Look for enemies, perform the visual scan if not disabled
 		if (!(outsidePVS && cv_ai_opt_novisualscan.GetBool()))
 		{
-			// Try to locate an enemy actor (= player in TDM)
-			idActor* actor = VisualScan();
-			if (actor != NULL)
+			if (!AI_DEAD && !AI_KNOCKEDOUT)
 			{
-				// We have an enemy, check if the enemy has changed.
-				SetEnemy(actor);
+				// Try to locate an enemy actor (= player in TDM)
+				idActor* actor = VisualScan();
+				if (actor != NULL)
+				{
+					// We have an enemy, check if the enemy has changed.
+					SetEnemy(actor);
+				}
 			}
 		}
 
@@ -5098,7 +5105,6 @@ void idAI::ClearEnemy( void ) {
 	enemy				= NULL;
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
-	AI_ENEMY_DEAD		= true;
 
 	SetChatSound();
 }
@@ -5334,6 +5340,7 @@ idAI::UpdateEnemyPosition
 void idAI::UpdateEnemyPosition()
 {
 	idActor* enemyEnt = enemy.GetEntity();
+	enemyReachable = false;
 
 	if (enemyEnt == NULL)
 	{
@@ -5383,6 +5390,7 @@ void idAI::UpdateEnemyPosition()
 				{
 					// Path successfully setup, store the position as "reachable"
 					lastReachableEnemyPos = enemyPos;
+					enemyReachable = true;
 				}
 			}
 		}
@@ -5392,6 +5400,7 @@ void idAI::UpdateEnemyPosition()
 			// so just assume that he is.
 			enemyAreaNum = 0;
 			lastReachableEnemyPos = enemyPos;
+			enemyReachable = true;
 		}
 	}
 
@@ -7311,9 +7320,14 @@ idActor* idAI::VisualScan(float timecheck)
 	//quick fix for blind AI:
 	if (GetAcuity("vis") > 0)
 	{
-		AI_VISALERT = true;
+		if (cv_ai_visdist_show.GetFloat() > 0) 
+		{
+			gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,60), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		}
+		// Store the position the enemy was visible
 		m_LastSight = actor->GetPhysics()->GetOrigin();
-
+		AI_VISALERT = true;
+		
 		// Get the visual alert amount caused by the CVAR setting
 		float incAlert = GetPlayerVisualStimulusAmount();
 
@@ -7422,8 +7436,8 @@ float idAI::GetVisibility( idEntity *ent ) const
 		alertText4 = "returnval: "+ alertText4;
 		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		idStr alertText5(dist);
-		alertText4 = "distance: "+ alertText5;
-		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		alertText5 = "distance: "+ alertText5;
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 	
 	return returnval;
@@ -7532,7 +7546,7 @@ idActor *idAI::FindEnemy(bool useFOV)
 		}
 
 		// angua: does not take lighting into account any more, 
-		// this is done afterwards in the visualscan
+		// this is done afterwards using GetVisibility
 		if (CanSeeExt(actor, useFOV, false))
 		{
 			// Enemy actor found and visible, return it 
@@ -7715,7 +7729,7 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 */
 			// Get base sight threshold
-			float sightThreshold = 0.25f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
+			float sightThreshold = 0.1f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
 
 			// Draw debug graphic
 			/*if (cv_ai_visdist_show.GetFloat() > 1.0)

@@ -169,6 +169,7 @@ AI/Subsystem.cpp \
 AI/States/AgitatedSearchingState.cpp \
 AI/States/CombatState.cpp \
 AI/States/DeadState.cpp \
+AI/States/EmergeFromCoverState.cpp \
 AI/States/FleeState.cpp \
 AI/States/FleeDoneState.cpp \
 AI/States/IdleState.cpp \
@@ -184,7 +185,6 @@ AI/Tasks/ChaseEnemyTask.cpp \
 AI/Tasks/FleeTask.cpp \
 AI/Tasks/IdleAnimationTask.cpp \
 AI/Tasks/IdleBarkTask.cpp \
-AI/Tasks/IdleSensoryTask.cpp \
 AI/Tasks/InvestigateSpotTask.cpp \
 AI/Tasks/MeleeCombatTask.cpp \
 AI/Tasks/MoveToCoverTask.cpp \
@@ -196,10 +196,12 @@ AI/Tasks/PathTurnTask.cpp \
 AI/Tasks/PathWaitForTriggerTask.cpp \
 AI/Tasks/PathWaitTask.cpp \
 AI/Tasks/PatrolTask.cpp \
+AI/Tasks/RandomHeadturnTask.cpp \
 AI/Tasks/RandomTurningTask.cpp \
 AI/Tasks/RangedCombatTask.cpp \
 AI/Tasks/RepeatedBarkTask.cpp \
 AI/Tasks/SingleBarkTask.cpp \
+AI/Tasks/StayInCoverState.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \

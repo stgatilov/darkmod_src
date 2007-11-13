@@ -7,17 +7,17 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_TAKE_COVER_STATE_H__
-#define __AI_TAKE_COVER_STATE_H__
+#ifndef __AI_EMERGE_FROM_COVER_STATE_H__
+#define __AI_EMERGE_FROM_COVER_STATE_H__
 
 #include "State.h"
 
 namespace ai
 {
 
-#define STATE_TAKE_COVER "TakeCover"
+#define STATE_EMERGE_FROM_COVER "EmergeFromCover"
 
-class TakeCoverState :
+class EmergeFromCoverState :
 	public State
 {
 public:
@@ -35,4 +35,4 @@ public:
 
 } // namespace ai
 
-#endif /* __AI_TAKE_COVER_STATE_H__ */
+#endif /* __AI_EMERGE_FROM_COVER_STATE_H__ */

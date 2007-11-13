@@ -14,7 +14,6 @@ static bool init_version = FileVersionList("$Id: MoveToCoverTask.cpp 1435 2007-1
 
 #include "../Memory.h"
 #include "MoveToCoverTask.h"
-#include "IdleSensoryTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -60,7 +59,7 @@ bool MoveToCoverTask::Perform(Subsystem& subsystem)
 	{
 		// Move is done, 
 		DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
-		owner->FaceEnemy();
+		owner->TurnToward(owner->lastVisibleEnemyPos);
 
 		// finish this task
 

@@ -184,6 +184,10 @@ public:
 	// True if fleeing is done, false if fleeing is in progress
 	bool fleeingDone;
 
+	// angua: The last position of the AI before it takes cover, so it can return to it later.
+	idVec3 positionBeforeTakingCover;
+
+
 	Memory() :
 		alertState(ERelaxed),
 		lastAlertRiseTime(-1),
@@ -215,7 +219,8 @@ public:
 		currentChosenHidingSpotIndex(0),
 		chosenHidingSpot(0,0,0),
 		hidingSpotInvestigationInProgress(false),
-		fleeingDone(true)
+		fleeingDone(true),
+		positionBeforeTakingCover(0,0,0)
 	{}
 
 	// Save/Restore routines
@@ -253,6 +258,7 @@ public:
 		savefile->WriteVec3(chosenHidingSpot);
 		savefile->WriteBool(hidingSpotInvestigationInProgress);
 		savefile->WriteBool(fleeingDone);
+		savefile->WriteVec3(positionBeforeTakingCover);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -295,6 +301,7 @@ public:
 		savefile->ReadVec3(chosenHidingSpot);
 		savefile->ReadBool(hidingSpotInvestigationInProgress);
 		savefile->ReadBool(fleeingDone);
+		savefile->ReadVec3(positionBeforeTakingCover);
 	}
 };
 

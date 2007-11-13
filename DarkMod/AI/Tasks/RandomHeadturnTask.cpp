@@ -10,9 +10,9 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: IdleSensoryTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: RandomHeadturnTask.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "IdleSensoryTask.h"
+#include "RandomHeadturnTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -31,13 +31,13 @@ namespace ai
 	}
 
 // Get the name of this task
-const idStr& IdleSensoryTask::GetName() const
+const idStr& RandomHeadturnTask::GetName() const
 {
-	static idStr _name(TASK_IDLE_SENSORY);
+	static idStr _name(TASK_RANDOM_HEADTURN);
 	return _name;
 }
 
-void IdleSensoryTask::Init(idAI* owner, Subsystem& subsystem)
+void RandomHeadturnTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
@@ -48,7 +48,7 @@ void IdleSensoryTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 }
 
-bool IdleSensoryTask::Perform(Subsystem& subsystem)
+bool RandomHeadturnTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleSensory Task performing.\r");
 
@@ -59,13 +59,10 @@ bool IdleSensoryTask::Perform(Subsystem& subsystem)
 
 	PerformRandomHeadTurnCheck();
 
-	// Let the mind check its senses (TRUE = process new stimuli)
-	owner->GetMind()->PerformSensoryScan(true);
-
 	return false; // not finished yet
 }
 
-void IdleSensoryTask::PerformRandomHeadTurnCheck()
+void RandomHeadturnTask::PerformRandomHeadTurnCheck()
 {
 	// greebo: This routine has been ported from the scripts written by SophisticatedZombie (SZ)
 	idAI* owner = _owner.GetEntity();
@@ -119,15 +116,15 @@ void IdleSensoryTask::PerformRandomHeadTurnCheck()
 	owner->Event_LookAtAngles(headYawAngle, headPitchAngle, 0.0, durationInSeconds);
 }
 
-IdleSensoryTaskPtr IdleSensoryTask::CreateInstance()
+RandomHeadturnTaskPtr RandomHeadturnTask::CreateInstance()
 {
-	return IdleSensoryTaskPtr(new IdleSensoryTask);
+	return RandomHeadturnTaskPtr(new RandomHeadturnTask);
 }
 
 // Register this task with the TaskLibrary
-TaskLibrary::Registrar idleSensoryTaskRegistrar(
-	TASK_IDLE_SENSORY, // Task Name
-	TaskLibrary::CreateInstanceFunc(&IdleSensoryTask::CreateInstance) // Instance creation callback
+TaskLibrary::Registrar randomHeadturnTaskRegistrar(
+	TASK_RANDOM_HEADTURN, // Task Name
+	TaskLibrary::CreateInstanceFunc(&RandomHeadturnTask::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai

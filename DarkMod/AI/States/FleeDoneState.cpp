@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id: FleeDoneState.cpp 1435 2007-10-
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/FleeTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
-#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
 
 #include "../Tasks/RandomTurningTask.h"
@@ -59,6 +59,8 @@ void FleeDoneState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysMovement)->PushTask(RandomTurningTask::CreateInstance());
 	_turnEndTime = gameLocal.time + 5000;
+
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking
@@ -80,7 +82,6 @@ void FleeDoneState::Think(idAI* owner)
 			owner->SetTurnRate(_oldTurnRate);
 
 			owner->TurnToward(friendlyAI->GetPhysics()->GetOrigin());
-			
 			float distanceToFriend = (friendlyAI->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 
 			// Cry for help
@@ -95,8 +96,11 @@ void FleeDoneState::Think(idAI* owner)
 				owner->lastVisibleEnemyPos
 			);
 
-			// Go back to suspicious (higher level since we didn't find someone to help)
+			// Go back to suspicious, 
+			// wait some time before going back to idle
 			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
+			owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 			return;
 		}
 	
@@ -108,14 +112,30 @@ void FleeDoneState::Think(idAI* owner)
 			owner->SetTurnRate(_oldTurnRate);
 
 			// Go back to suspicious (higher level since we didn't find someone to help)
+			// wait some time before going back to idle
 			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
 
 			// Play the cowering animation
 			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Cower", 4);
 			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Cower", 4);
 
+			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(60000)));
+			
 			return;
 		}
+	}
+	else
+	{
+		// Let the mind check its senses (TRUE = process new stimuli)
+		owner->GetMind()->PerformSensoryScan(true);
+	}
+}
+
+void FleeDoneState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
+{
+	if (subSystem == SubsysAction)
+	{
+		owner->GetMind()->EndState();
 	}
 }
 
@@ -137,15 +157,6 @@ void FleeDoneState::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_turnEndTime);
 	savefile->ReadBool(_searchForFriendDone);
 } 
-
-void FleeDoneState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
-{
-	if (subSystem == SubsysAction)
-	{
-		// Go back to idle after the WaitTask has finished
-		owner->GetMind()->SwitchState(STATE_IDLE);
-	}
-}
 
 StatePtr FleeDoneState::CreateInstance()
 {

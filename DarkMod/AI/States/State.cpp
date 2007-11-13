@@ -90,6 +90,7 @@ namespace ai
 void State::Init(idAI* owner)
 {
 	_owner = owner;
+	_alertLevelDecreaseRate = 0;
 }
 
 bool State::CheckAlertLevel(idAI* owner)
@@ -119,15 +120,34 @@ bool State::SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higher
 	return true;
 }
 
+void State::UpdateAlertLevel()
+{
+	idAI* owner = _owner.GetEntity();
+	int currentTime = gameLocal.time;
+	int frameDuration = currentTime - gameLocal.previousTime;
+	
+	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertNum > owner->thresh_1 * 0.5)
+	{
+		float decrease = _alertLevelDecreaseRate * MS2SEC(frameDuration);
+		float newAlertLevel = owner->AI_AlertNum - decrease;
+		owner->SetAlertLevel(newAlertLevel);
+	}
+}
+
+
 // Save/Restore methods
 void State::Save(idSaveGame* savefile) const
 {
 	_owner.Save(savefile);
+
+	savefile->WriteFloat(_alertLevelDecreaseRate);
 }
 
 void State::Restore(idRestoreGame* savefile)
 {
 	_owner.Restore(savefile);
+
+	savefile->ReadFloat(_alertLevelDecreaseRate);
 }
 
 void State::OnVisualStim(idEntity* stimSource)

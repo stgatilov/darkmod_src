@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id: SuspiciousState.cpp 1435 2007-1
 #include "SuspiciousState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
-#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/RandomHeadturnTask.h"
 #include "SearchingState.h"
 #include "../Library.h"
 
@@ -43,6 +43,9 @@ void SuspiciousState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SuspiciousState initialised.\r");
 	assert(owner);
 
+	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / owner->atime1;
+
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
@@ -54,15 +57,18 @@ void SuspiciousState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
-	owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
-
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking
 void SuspiciousState::Think(idAI* owner)
 {
+	UpdateAlertLevel();
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
+	
+	// Let the mind check its senses (TRUE = process new stimuli)
+	owner->GetMind()->PerformSensoryScan(true);
 }
 
 StatePtr SuspiciousState::CreateInstance()

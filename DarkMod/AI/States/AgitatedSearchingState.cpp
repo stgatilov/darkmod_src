@@ -46,6 +46,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
+	_alertLevelDecreaseRate = (owner->thresh_combat - owner->thresh_3) / owner->atime3;
+
+
 	// Nothing to do here yet, everything is handled by the base SearchingState.
 	// (FIXME) Remove this method if unneeded for a long time.
 }
@@ -53,6 +56,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
+	UpdateAlertLevel();
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 

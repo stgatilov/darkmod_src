@@ -47,6 +47,8 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
 	assert(owner);
 
+	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
@@ -121,6 +123,8 @@ void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 // Gets called each time the mind is thinking
 void SearchingState::Think(idAI* owner)
 {
+	UpdateAlertLevel();
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 

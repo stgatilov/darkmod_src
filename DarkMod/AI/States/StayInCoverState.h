@@ -7,19 +7,21 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_TAKE_COVER_STATE_H__
-#define __AI_TAKE_COVER_STATE_H__
+#ifndef __AI_STAY_IN_COVER_STATE_H__
+#define __AI_STAY_IN_COVER_STATE_H__
 
 #include "State.h"
 
 namespace ai
 {
 
-#define STATE_TAKE_COVER "TakeCover"
+#define STATE_STAY_IN_COVER "StayInCover"
 
-class TakeCoverState :
+class StayInCoverState :
 	public State
 {
+private:
+	int _emergeDelay;
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -30,9 +32,13 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
+	
 	static StatePtr CreateInstance();
 };
 
 } // namespace ai
 
-#endif /* __AI_TAKE_COVER_STATE_H__ */
+#endif /* __AI_STAY_IN_COVER_STATE_H__ */

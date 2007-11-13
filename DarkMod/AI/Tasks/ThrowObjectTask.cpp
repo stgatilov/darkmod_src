@@ -58,14 +58,12 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 	{
 		// Turn to the player
 		// We don't need the check for enemy == NULL, since this should not be the case if the enemy is visible
-		idVec3 diff = enemy->GetEyePosition() - owner->GetEyePosition();
-		owner->TurnToward(diff.ToAngles().yaw);
+		owner->TurnToward(enemy->GetEyePosition());
 	}
 
 	// angua: Throw after the delay has expired, but only if
 	// the player is visible  and object throwing is enabled for this AI
-	if (owner->AI_ENEMY_VISIBLE &&
-		_nextThrowObjectTime <= gameLocal.time && 
+	if (_nextThrowObjectTime <= gameLocal.time && 
 		owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
 	{
 		idStr waitState(owner->WaitState());

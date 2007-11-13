@@ -93,7 +93,7 @@ void BasicMind::Think()
 	}
 
 	// Check if we can decrease the alert level
-	TestAlertStateTimer();
+	//TestAlertStateTimer();
 }
 
 void BasicMind::PushState(const idStr& stateName)
@@ -565,7 +565,7 @@ bool BasicMind::PerformCombatCheck()
 	DM_LOG(LC_AI, LT_INFO).LogString("No Target to justify combat alert level, lowering to agitated search\r");
 		
 	// Lower alert level from combat to agitated search
-	owner->SetAlertLevel(owner->thresh_combat - 0.01);
+	// owner->SetAlertLevel(owner->thresh_combat - 0.01);
 
 	return false; // combat mode not entered
 }
@@ -583,7 +583,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{
-		/*
+	
 		// Process alert flags for combat or stimulus location (both destroy flag values)?
 		if (owner->AI_AlertNum >= owner->thresh_combat)
 		{
@@ -595,7 +595,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 				return;
 			}
 		}
-		*/
+	
 		// If it was not a combat level alert, or we returned here because there
 		// was no target, set the alert position
 		SetAlertPos();

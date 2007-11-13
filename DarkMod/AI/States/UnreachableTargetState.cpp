@@ -157,6 +157,7 @@ void UnreachableTargetState::Think(idAI* owner)
 		{
 			// BLIND_CHASE_TIME has expired, we have lost the enemy!
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+			return;
 		}
 	}
 
@@ -172,9 +173,13 @@ void UnreachableTargetState::Think(idAI* owner)
 	}
 
 	// This checks if the enemy is reachable again so we can go into combat state
-	if (owner->CanReachEnemy() || owner->TestMelee() || memory.canHitEnemy)
+	if (owner->enemyReachable || owner->TestMelee() || memory.canHitEnemy)
 	{
-		owner->GetMind()->PerformCombatCheck();
+		if (owner->GetMind()->PerformCombatCheck())
+		{
+			owner->GetMind()->EndState();
+			return;
+		}
 	}
 	
 	// Wait at least for 3 seconds (_takeCoverTime) after starting to throw before taking cover

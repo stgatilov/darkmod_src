@@ -57,8 +57,8 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	assert(enemy != NULL);
 
 
-	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
-		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+//	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
+//		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
 	if (_failureCount > 5 || (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE))
 	{
@@ -130,7 +130,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			}
 		}
 	}
-	
 
 	if (owner->AI_DEST_UNREACHABLE && _escapeSearchLevel > 1)
 	{

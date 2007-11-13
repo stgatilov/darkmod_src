@@ -20,6 +20,7 @@ class State
 protected:
 	// The owning entity
 	idEntityPtr<idAI> _owner;
+	float _alertLevelDecreaseRate;
 
 public:
 	// Get the name of this state
@@ -85,6 +86,8 @@ protected:
 	 *           When FALSE is returned, the calling State be returned.
 	 */
 	bool SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higherStateName);
+
+	virtual void UpdateAlertLevel();
 
 private:
 	void OnMessageDetectedSomethingSuspicious(CAIComm_Message* message);

@@ -19,7 +19,6 @@ static bool init_version = FileVersionList("$Id: FleeState.cpp 1435 2007-10-16 1
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/FleeTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
-#include "../Tasks/IdleSensoryTask.h"
 #include "FleeDoneState.h"
 
 namespace ai
@@ -77,6 +76,8 @@ void FleeState::Init(idAI* owner)
 	// Play the surprised animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Surprise", 5);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Surprise", 5);
+	owner->SetWaitState("surprise");
+
 }
 
 // Gets called each time the mind is thinking

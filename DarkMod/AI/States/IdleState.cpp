@@ -14,7 +14,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 
 #include "IdleState.h"
 #include "../Memory.h"
-#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/PatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
@@ -52,6 +52,8 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
+	_alertLevelDecreaseRate = 0.001;
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
@@ -80,7 +82,7 @@ void IdleState::Init(idAI* owner)
 
 	// The sensory system does its Idle tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(IdleSensoryTask::CreateInstance());
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
 	// No action so far
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -117,8 +119,13 @@ void IdleState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void IdleState::Think(idAI* owner)
 {
+	UpdateAlertLevel();
+
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
+
+	// Let the mind check its senses (TRUE = process new stimuli)
+	owner->GetMind()->PerformSensoryScan(true);
 }
 
 void IdleState::Save(idSaveGame* savefile) const

@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id: CombatState.cpp 1435 2007-10-16
 #include "CombatState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
-#include "../Tasks/IdleSensoryTask.h"
+#include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/ChaseEnemyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
@@ -145,7 +145,8 @@ void CombatState::Think(idAI* owner)
 	// Check the distance to the enemy, the subsystem tasks need it.
 	memory.canHitEnemy = owner->CanHitEntity(enemy);
 
-	if (!owner->AI_ENEMY_VISIBLE && !memory.canHitEnemy)
+	if (!owner->AI_ENEMY_VISIBLE && 
+		( (owner->GetNumRangedWeapons() == 0  && !memory.canHitEnemy) ||  owner->GetNumRangedWeapons() > 0))
 	{
 		// The enemy is not visible, let's keep track of him for a small amount of time
 		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)

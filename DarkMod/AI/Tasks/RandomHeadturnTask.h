@@ -7,8 +7,8 @@
  *
  ***************************************************************************/
 
-#ifndef __AI_IDLE_SENSORY_TASK_H__
-#define __AI_IDLE_SENSORY_TASK_H__
+#ifndef __AI_RANDOM_HEADTURN_TASK_H__
+#define __AI_RANDOM_HEADTURN_TASK_H__
 
 #include "Task.h"
 
@@ -16,12 +16,12 @@ namespace ai
 {
 
 // Define the name of this task
-#define TASK_IDLE_SENSORY "IdleSensory"
+#define TASK_RANDOM_HEADTURN "RandomHeadturn"
 
-class IdleSensoryTask;
-typedef boost::shared_ptr<IdleSensoryTask> IdleSensoryTaskPtr;
+class RandomHeadturnTask;
+typedef boost::shared_ptr<RandomHeadturnTask> RandomHeadturnTaskPtr;
 
-class IdleSensoryTask :
+class RandomHeadturnTask :
 	public Task
 {
 public:
@@ -34,7 +34,7 @@ public:
 	virtual bool Perform(Subsystem& subsystem);
 
 	// Creates a new Instance of this task
-	static IdleSensoryTaskPtr CreateInstance();
+	static RandomHeadturnTaskPtr CreateInstance();
 
 private:
 	/**
@@ -46,4 +46,4 @@ private:
 
 } // namespace ai
 
-#endif /* __AI_IDLE_SENSORY_TASK_H__ */
+#endif /* __AI_RANDOM_HEADTURN_TASK_H__ */

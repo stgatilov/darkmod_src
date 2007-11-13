@@ -121,6 +121,13 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
+void IdleAnimationTask::OnFinish(idAI* owner)
+{
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
+	owner->SetWaitState("");
+}
+
 // Save/Restore methods
 void IdleAnimationTask::Save(idSaveGame* savefile) const
 {
