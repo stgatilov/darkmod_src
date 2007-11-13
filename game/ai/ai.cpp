@@ -1638,7 +1638,10 @@ void idAI::Think( void )
 				// animation based movement
 				UpdateEnemyPosition();
 				UpdateAIScript();
-				AnimMove();
+				if (!cv_ai_opt_noanims.GetBool())
+				{
+					AnimMove();
+				}
 				PlayChatter();
 				CheckBlink();
 				break;
@@ -1703,9 +1706,15 @@ void idAI::Think( void )
 */
 
 	UpdateMuzzleFlash();
-	UpdateAnimation();
+	if (!cv_ai_opt_noanims.GetBool())
+	{
+		UpdateAnimation();
+	}
 	UpdateParticles();
-	Present();
+	if (!cv_ai_opt_nopresent.GetBool())
+	{
+		Present();
+	}
 	UpdateDamageEffects();
 	LinkCombat();
 
@@ -1841,7 +1850,10 @@ void idAI::UpdateAIScript( void )
 
 	if ( allowHiddenMovement || !IsHidden() ) {
 		// update the animstate if we're not hidden
-		UpdateAnimState();
+		if (!cv_ai_opt_noanims.GetBool())
+		{
+			UpdateAnimState();
+		}
 	}
 }
 

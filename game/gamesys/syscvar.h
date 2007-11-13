@@ -47,6 +47,7 @@ extern idCVar cv_ai_opt_nothink;
 extern idCVar cv_ai_opt_nomind;
 extern idCVar cv_ai_opt_novisualstim;
 extern idCVar cv_ai_opt_nolipsync;
+extern idCVar cv_ai_opt_nopresent;
 
 extern idCVar cv_sr_disable;
 
