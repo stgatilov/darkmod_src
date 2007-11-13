@@ -177,6 +177,7 @@ AI/States/KnockedOutState.cpp \
 AI/States/LostTrackOfEnemyState.cpp \
 AI/States/SearchingState.cpp \
 AI/States/State.cpp \
+AI/States/StayInCoverState.cpp \
 AI/States/SuspiciousState.cpp \
 AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
@@ -201,7 +202,6 @@ AI/Tasks/RandomTurningTask.cpp \
 AI/Tasks/RangedCombatTask.cpp \
 AI/Tasks/RepeatedBarkTask.cpp \
 AI/Tasks/SingleBarkTask.cpp \
-AI/Tasks/StayInCoverState.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \
