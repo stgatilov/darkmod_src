@@ -198,7 +198,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getSearchHandle(int searchI
 	return NULL_HIDING_SPOT_SEARCH_HANDLE;
 }
 
-darkModAASFindHidingSpots* CHidingSpotSearchCollection::getSearchByHandle
+CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle
 (
 	THidingSpotSearchHandle searchHandle
 )
@@ -220,7 +220,7 @@ darkModAASFindHidingSpots* CHidingSpotSearchCollection::getSearchByHandle
 
 //----------------------------------------------------------------------------------
 
-darkModAASFindHidingSpots* CHidingSpotSearchCollection::getSearchAndReferenceCountByHandle
+CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceCountByHandle
 (
 	THidingSpotSearchHandle searchHandle,
 	unsigned int& out_refCount
@@ -330,7 +330,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	THidingSpotSearchHandle hSearch = findSearchByBounds (in_searchLimits, in_searchExclusionLimits);
 	if (hSearch != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
-		darkModAASFindHidingSpots* p_search = getSearchByHandle(hSearch);
+		CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
 		out_b_searchCompleted = p_search->isSearchCompleted();
 		return hSearch;
 	}
@@ -343,7 +343,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	}
 
 	/* Initialize the search */
-	darkModAASFindHidingSpots* p_search = getSearchByHandle(hSearch);
+	CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
 	p_search->initialize
 	(
 		hideFromPos, 

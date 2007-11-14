@@ -21,7 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/Intersection.h"
 #include "../DarkMod/Relations.h"
-#include "../DarkMod/darkModAASFindHidingSpots.h"
+#include "../DarkMod/DarkmodAASHidingSpotFinder.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
 #include "../DarkMod/Inventory/Inventory.h"
@@ -4871,7 +4871,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			for (int i = 0; i < gameLocal.NumAAS(); i++) {
 				p_aas = gameLocal.GetAAS(i);
 				if (p_aas != NULL) {
-					darkModAASFindHidingSpots::testFindHidingSpots(
+					CDarkmodAASHidingSpotFinder::testFindHidingSpots(
 						searchOrigin,
 						0.35f,
 						searchBounds,

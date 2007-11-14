@@ -8745,7 +8745,7 @@ int idAI::ContinueSearchForHidingSpots()
 	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\r");
 
 	// Get hiding spot search instance from handle
-	darkModAASFindHidingSpots* p_hidingSpotFinder = NULL;
+	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
 	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		p_hidingSpotFinder = HidingSpotSearchCollection.getSearchByHandle(
@@ -8781,7 +8781,7 @@ int idAI::ContinueSearchForHidingSpots()
 			unsigned int refCount;
 
 			// Get finder we just referenced
-			darkModAASFindHidingSpots* p_hidingSpotFinder = 
+			CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = 
 				HidingSpotSearchCollection.getSearchAndReferenceCountByHandle 
 				(
 					m_HidingSpotSearchHandle,

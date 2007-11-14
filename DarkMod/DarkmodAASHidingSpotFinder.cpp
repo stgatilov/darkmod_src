@@ -12,7 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "CDarkmodAASHidingSpotFinder.h"
+#include "DarkmodAASHidingSpotFinder.h"
 #include "DarkModGlobals.h"
 #include "darkModLAS.h"
 #include "../sys/sys_public.h"

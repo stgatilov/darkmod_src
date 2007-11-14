@@ -114,7 +114,7 @@ AIComm_StimResponse.cpp \
 AIVehicle.cpp \
 BinaryFrobMover.cpp \
 ButtonStateTracker.cpp \
-darkModAASFindHidingSpots.cpp \
+DarkmodAASHidingSpotFinder.cpp \
 DarkModGlobals.cpp \
 darkmodHidingSpotTree.cpp \
 darkModLAS.cpp \

@@ -20,7 +20,7 @@
 */
 
 // Required includes
-#include "darkModAASFindHidingSpots.h"
+#include "DarkmodAASHidingSpotFinder.h"
 
 //---------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ typedef struct tagTDarkmodHidingSpotSearchNode
 	int searchId;
 
 	int refCount;
-	darkModAASFindHidingSpots search;
+	CDarkmodAASHidingSpotFinder search;
 
 	tagTDarkmodHidingSpotSearchNode* p_prev;
 	tagTDarkmodHidingSpotSearchNode* p_next;
@@ -76,7 +76,7 @@ public:
 	/**
 	* This gets a search by its handle
 	*/
-	darkModAASFindHidingSpots* getSearchByHandle
+	CDarkmodAASHidingSpotFinder* getSearchByHandle
 	(
 		THidingSpotSearchHandle searchHandle
 	);
@@ -85,7 +85,7 @@ public:
 	* This gets a search by its handle and indicates how many people
 	* (including the caller) have a reference handle to the search.
 	*/
-	darkModAASFindHidingSpots* getSearchAndReferenceCountByHandle
+	CDarkmodAASHidingSpotFinder* getSearchAndReferenceCountByHandle
 	(
 		THidingSpotSearchHandle searchHandle,
 		unsigned int& out_refCount
