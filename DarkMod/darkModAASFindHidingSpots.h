@@ -30,7 +30,7 @@ enum darkModHidingSpotType
 };
 
 /*!
-// @class darkmodAASFindHidingSpots
+// @class CDarkmodAASHidingSpotFinder
 // @author SophisticatedZombie (DMH)
 // 
 // This class acts similarly to an AAS goal locator, but does not use the
@@ -45,7 +45,7 @@ enum darkModHidingSpotType
 // 
 //
 */
-class darkModAASFindHidingSpots
+class CDarkmodAASHidingSpotFinder
 {
 	/*!
 	* This enumeration is used to track the hiding spot search
@@ -122,10 +122,6 @@ protected:
 	idVec3 currentGridSearchBoundMins;
 	idVec3 currentGridSearchBoundMaxes;
 	idVec3 currentGridSearchPoint;
-	//idVec3 currentareaCenter = aas->AreaCenter (AASAreaNum);
-	
-
-
 
 	/*
 	* This internal method is used for finding hiding spots within an area that
@@ -191,7 +187,6 @@ protected:
 	*/
 	static idList<darkModHidingSpot> DebugDrawList;
 
-
 	/*!
 	* This method combines hiding spots which are in the same area
 	* and have the same qualities 
@@ -211,7 +206,6 @@ protected:
 		//idList<darkModHidingSpot>& inout_hidingSpots
 		CDarkmodHidingSpotTree& inout_hidingSpots
 	);
-
 
 	/*!
 	* This method inserts a hiding spot into the given list
@@ -311,10 +305,6 @@ public:
 	*  own positoin, when considering the general case, or the posiiton
 	*  of an entity to be avoided, in the specific case.
 	*
-	* @param in_p_aas[in] The Area Awareness System to use
-	*
-	* @param in_p_aas Pointer to the Area Awareness System in use
-	*
 	* @param hidingHeight The height of the object that would be hiding
 	*
 	* @param in_searchLimits The limiting bounds which may be smaller or greater than the area being 
@@ -328,10 +318,9 @@ public:
 	*
 	* @param p_ignoreEntity An entity that should be ignored for testing visual occlusions (usually the self)
 	*/
-	darkModAASFindHidingSpots
+	CDarkmodAASHidingSpotFinder
 	(
 		const idVec3 &hideFromPos , 
-		//idAAS* in_p_aas, 
 		float in_hidingHeight,
 		idBounds in_searchLimits, 
 		idBounds in_searchIgnoreLimits, 
@@ -341,13 +330,19 @@ public:
 
 	/*!
 	* This constuctor is NOT suitable for starting a search unless Initialize
-	* is called immediately afterword.
+	* is called immediately afterwards.
 	*/
-	darkModAASFindHidingSpots();
+	CDarkmodAASHidingSpotFinder();
+
+	/*!
+	* Destructor
+	*/
+	virtual ~CDarkmodAASHidingSpotFinder();
+
 
 	// Save/Restores this class to/from a savegame
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 
 	/*!
 	* This should be called if the default (paramterless) constructor was
@@ -371,11 +366,6 @@ public:
 	* @return if search not yet completed
 	*/
 	bool isSearchCompleted();
-
-	/*!
-	* Destructor
-	*/
-	virtual ~darkModAASFindHidingSpots(void);
 
 	/*!
 	* This hiding spot list which is a member of the object can be used for the first
@@ -490,6 +480,4 @@ public:
 		idEntity* p_ignoreEntity, 
 		idAAS* p_aas
 	);
-
-
 };

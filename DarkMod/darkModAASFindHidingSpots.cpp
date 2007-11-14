@@ -12,7 +12,7 @@
 
 static bool init_version = FileVersionList("$Id$", init_version);
 
-#include "darkModAASFindHidingSpots.h"
+#include "CDarkmodAASHidingSpotFinder.h"
 #include "DarkModGlobals.h"
 #include "darkModLAS.h"
 #include "../sys/sys_public.h"
@@ -37,12 +37,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #define WALL_MARGIN_SIZE 1.0
 
 // Static member for debugging hiding spot results
-idList<darkModHidingSpot> darkModAASFindHidingSpots::DebugDrawList;
+idList<darkModHidingSpot> CDarkmodAASHidingSpotFinder::DebugDrawList;
 
 
 //----------------------------------------------------------------------------
 
-darkModAASFindHidingSpots::darkModAASFindHidingSpots()
+CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder()
 {
 	// Default value
 	hidingSpotRedundancyDistance = 50.0;
@@ -75,7 +75,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots()
 //----------------------------------------------------------------------------
 
 // Constructor
-darkModAASFindHidingSpots::darkModAASFindHidingSpots
+CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 (
 	const idVec3 &hideFromPos, 
 	//idAAS* in_p_aas, 
@@ -134,7 +134,7 @@ darkModAASFindHidingSpots::darkModAASFindHidingSpots
 
 //----------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::initialize
+bool CDarkmodAASHidingSpotFinder::initialize
 (
 	const idVec3 &hideFromPos , 
 	//idAAS* in_p_aas, 
@@ -196,7 +196,7 @@ bool darkModAASFindHidingSpots::initialize
 //----------------------------------------------------------------------------
 
 // Destructor
-darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
+CDarkmodAASHidingSpotFinder::~CDarkmodAASHidingSpotFinder(void)
 {
 
 	// Be certain we free our PVS node graph
@@ -209,7 +209,7 @@ darkModAASFindHidingSpots::~darkModAASFindHidingSpots(void)
 }
 
 
-void darkModAASFindHidingSpots::Save( idSaveGame *savefile ) const
+void CDarkmodAASHidingSpotFinder::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteFloat(hidingSpotRedundancyDistance);
 	savefile->WriteInt(static_cast<int>(searchState));
@@ -264,7 +264,7 @@ void darkModAASFindHidingSpots::Save( idSaveGame *savefile ) const
 	savefile->WriteVec3(currentGridSearchPoint);
 }
 
-void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
+void CDarkmodAASHidingSpotFinder::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadFloat(hidingSpotRedundancyDistance);
 
@@ -328,7 +328,7 @@ void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
 
 //-------------------------------------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::findMoreHidingSpots
+bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -402,7 +402,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 
 //-------------------------------------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::testNewPVSArea 
+bool CDarkmodAASHidingSpotFinder::testNewPVSArea 
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -475,7 +475,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 
 //-------------------------------------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
+bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -584,7 +584,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 
 //-------------------------------------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea 
+bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea 
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -651,7 +651,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 
 //-------------------------------------------------------------------------------------------------------
 
-bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
+bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -806,7 +806,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 //----------------------------------------------------------------------------
 
 // Internal helper
-int darkModAASFindHidingSpots::TestHidingPoint 
+int CDarkmodAASHidingSpotFinder::TestHidingPoint 
 (
 	idVec3 testPoint, 
 	idVec3 searchCenter,
@@ -927,7 +927,7 @@ int darkModAASFindHidingSpots::TestHidingPoint
 //----------------------------------------------------------------------------
 
 /*
-void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
+void CDarkmodAASHidingSpotFinder::insertHidingSpotWithQualitySorting
 (
 	darkModHidingSpot& hidingSpot,
 	//idList<darkModHidingSpot>& inout_hidingSpots
@@ -955,7 +955,7 @@ void darkModAASFindHidingSpots::insertHidingSpotWithQualitySorting
 
 //----------------------------------------------------------------------------
 
-void darkModAASFindHidingSpots::CombineRedundantHidingSpots
+void CDarkmodAASHidingSpotFinder::CombineRedundantHidingSpots
 (
 	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
@@ -996,15 +996,15 @@ void darkModAASFindHidingSpots::CombineRedundantHidingSpots
 
 // Debug functions
 
-void darkModAASFindHidingSpots::debugClearHidingSpotDrawList()
+void CDarkmodAASHidingSpotFinder::debugClearHidingSpotDrawList()
 {
 	// Clear the list
-	darkModAASFindHidingSpots::DebugDrawList.Clear();
+	CDarkmodAASHidingSpotFinder::DebugDrawList.Clear();
 }
 
 //----------------------------------------------------------------------------
 
-void darkModAASFindHidingSpots::debugAppendHidingSpotsToDraw 
+void CDarkmodAASHidingSpotFinder::debugAppendHidingSpotsToDraw 
 (
 	//const idList<darkModHidingSpot>& hidingSpotsToAppend
 	CDarkmodHidingSpotTree& inout_hidingSpots
@@ -1025,12 +1025,12 @@ void darkModAASFindHidingSpots::debugAppendHidingSpotsToDraw
 	}
 
 	// Append to the list
-	darkModAASFindHidingSpots::DebugDrawList.Append (hidingSpotsToAppend);
+	CDarkmodAASHidingSpotFinder::DebugDrawList.Append (hidingSpotsToAppend);
 }
 
 //----------------------------------------------------------------------------
 
-void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
+void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 {
 	// Set up some depiction values 
 	idVec4 DarknessMarkerColor(0.0f, 0.0f, 1.0f, 0.0);
@@ -1040,7 +1040,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 	idVec3 markerArrowLength (0.0, 0.0, 25.0f);
 
 	// Iterate the hiding spot debug draw list
-	size_t spotCount = darkModAASFindHidingSpots::DebugDrawList.Num();
+	size_t spotCount = CDarkmodAASHidingSpotFinder::DebugDrawList.Num();
 	for (size_t spotIndex = 0; spotIndex < spotCount; spotIndex++)
 	{
 		idVec4 markerColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1083,7 +1083,7 @@ void darkModAASFindHidingSpots::debugDrawHidingSpots(int viewLifetime)
 //----------------------------------------------------------------------------
 
 // Test stub
-void darkModAASFindHidingSpots::testFindHidingSpots 
+void CDarkmodAASHidingSpotFinder::testFindHidingSpots 
 (
 	idVec3 hideFromLocation, 
 	float in_hidingHeight,
@@ -1095,7 +1095,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 	idBounds emptyExcludeBounds;
 	emptyExcludeBounds.Clear();
 
-	darkModAASFindHidingSpots HidingSpotFinder (hideFromLocation, in_hidingHeight, in_hideSearchBounds, emptyExcludeBounds, ANY_HIDING_SPOT_TYPE, in_p_ignoreEntity);
+	CDarkmodAASHidingSpotFinder HidingSpotFinder (hideFromLocation, in_hidingHeight, in_hideSearchBounds, emptyExcludeBounds, ANY_HIDING_SPOT_TYPE, in_p_ignoreEntity);
 	HidingSpotFinder.searchIgnoreLimits.Clear();
 
 	CDarkmodHidingSpotTree hidingSpotList;
@@ -1123,9 +1123,9 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 	}
 
 	// Clear the debug list and add these
-	darkModAASFindHidingSpots::debugClearHidingSpotDrawList();
-	darkModAASFindHidingSpots::debugAppendHidingSpotsToDraw (hidingSpotList);
-	darkModAASFindHidingSpots::debugDrawHidingSpots (15000);
+	CDarkmodAASHidingSpotFinder::debugClearHidingSpotDrawList();
+	CDarkmodAASHidingSpotFinder::debugAppendHidingSpotsToDraw (hidingSpotList);
+	CDarkmodAASHidingSpotFinder::debugDrawHidingSpots (15000);
 	// Done
 }
 
@@ -1135,7 +1135,7 @@ void darkModAASFindHidingSpots::testFindHidingSpots
 ############################################################################################
 */
 
-bool darkModAASFindHidingSpots::isSearchCompleted()
+bool CDarkmodAASHidingSpotFinder::isSearchCompleted()
 {
 	// Make sure search wasn't destroyed
 	if ((h_hideFromPVS.h == 0) && (h_hideFromPVS.i == -1))
@@ -1151,7 +1151,7 @@ bool darkModAASFindHidingSpots::isSearchCompleted()
 //-----------------------------------------------------------------------------
 
 // The search start function
-bool darkModAASFindHidingSpots::startHidingSpotSearch
+bool CDarkmodAASHidingSpotFinder::startHidingSpotSearch
 (
 	CDarkmodHidingSpotTree& out_hidingSpots,
 	int numPointsToTestThisPass,
@@ -1203,7 +1203,7 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 //-------------------------------------------------------------------------------------------------------
 
 // The search continue function
-bool darkModAASFindHidingSpots::continueSearchForHidingSpots
+bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 (
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
