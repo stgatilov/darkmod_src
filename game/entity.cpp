@@ -7434,7 +7434,7 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 
 	if(pScriptFkt)
 	{
-		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction\r");
+		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction '%s'\r", fkt);
 		pThread = new idThread(pScriptFkt);
 		va_start(argptr, fmt);
 		pThread->CallFunctionArgsVN(pScriptFkt, ClearStack, fmt, argptr);

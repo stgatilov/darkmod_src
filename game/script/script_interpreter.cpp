@@ -1939,7 +1939,6 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 	char c;
 	int i;
 	float f;
-	bool b;
 	idEntity *e;
 	idVec3 *v;
 
@@ -1990,8 +1989,7 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 			break;
 
 			case 'b':
-				b = va_arg(args, bool);
-				i = b;
+				i = va_arg(args, int);
 				Push(i);
 			break;
 

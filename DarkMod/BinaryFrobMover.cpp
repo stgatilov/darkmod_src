@@ -432,8 +432,9 @@ void CBinaryFrobMover::CallStateScript(void)
 	idStr str;
 	if(spawnArgs.GetString("state_change_callback", "", str))
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript Open: %d  Locked: %d   Interrupt: %d\r", m_Open, isLocked(), m_bInterrupted);
-		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, isLocked(), m_bInterrupted);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Locked: %d   Interrupt: %d\r",
+			str.c_str(), m_Open, m_Locked, m_bInterrupted);
+		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
 	}
 }
 
