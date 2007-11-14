@@ -29,6 +29,9 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // in an octant to require it to be subdivided.
 #define NUM_POINTS_PER_AREA_FOR_SUBDIVISION 8
 
+// greebo: Maximum number of AAS areas to test per findMoreHidingSpot call.
+#define MAX_AREAS_PER_PASS 20
+
 // This is the distance inward from an AAS edge to move test points, so that we don't test inside objects or other
 // walls
 #define WALL_MARGIN_SIZE 1.0
@@ -211,6 +214,7 @@ void darkModAASFindHidingSpots::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(hidingSpotRedundancyDistance);
 	savefile->WriteInt(static_cast<int>(searchState));
 	savefile->WriteVec3(hideFromPosition);
+	savefile->WriteInt(areasTestedThisPass);
 
 	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
 	{
@@ -269,6 +273,7 @@ void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
 	searchState = static_cast<TDarkModHidingSpotSearchState>(tempInt);
 
 	savefile->ReadVec3(hideFromPosition);
+	savefile->ReadInt(areasTestedThisPass);
 
 	for (int i = 0; i < idEntity::MAX_PVS_AREAS; i++)
 	{
@@ -341,11 +346,13 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 
 	// Holds the center of an AAS area during testing
 	idVec3	areaCenter;
+	// The number of areas we tested in this pass.
+	areasTestedThisPass = 0;
 
 	// Branch based on state until search is done or we have tested enough points this pass
 	bool b_searchNotDone = (searchState != done_searchState);
 
-	while (b_searchNotDone && inout_numPointsTestedThisPass < numPointsToTestThisPass)
+	while (b_searchNotDone && inout_numPointsTestedThisPass < numPointsToTestThisPass && areasTestedThisPass < MAX_AREAS_PER_PASS)
 	{
 		if (searchState == newPVSArea_searchState)
 		{
@@ -601,11 +608,6 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 			// Initialize grid search for inside visible AAS area
 			idBounds currentAASAreaBounds = p_aas->GetAreaBounds (aasAreaIndex);
 
-			// greebo: Uncomment for AAS area bounds drawing
-			//idBounds testBounds(currentAASAreaBounds);
-			//idBox box(testBounds);
-			//gameRenderWorld->DebugBox(colorRed, box, 1000);
-
 			currentGridSearchBounds = searchLimits.Intersect (currentAASAreaBounds);
 			currentGridSearchAASAreaNum = aasAreaIndex;
 			currentGridSearchBoundMins = currentGridSearchBounds[0];
@@ -673,14 +675,13 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	// No hiding spot area node yet used
 	TDarkmodHidingSpotAreaNode* p_hidingAreaNode = NULL;
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
 
 	// Iterate X grid
 	while (currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE + 0.1)
 	{
 		while (currentGridSearchPoint.y <= currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE + 0.1)
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("iterating %f,%f\r", currentGridSearchPoint.x, currentGridSearchPoint.y);
 			// See if we have filled our point quota
 			if (inout_numPointsTestedThisPass >= numPointsToTestThisPass)
 			{
@@ -751,7 +752,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 					hidingSpotRedundancyDistance
 				);
 
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
+				//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
 			// One more point tested
@@ -787,10 +788,13 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 
 	} // X iteration
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\r", currentGridSearchAASAreaNum);
+	//DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\r", currentGridSearchAASAreaNum);
 
 	// One more AAS area searched
 	numAASAreaIndicesSearched ++;
+
+	// Increase the area investigation counter
+	areasTestedThisPass++;
 
 	// Go back to iterating the list of AAS areas in this visible PVS area
 	searchState = iteratingVisibleAASAreas_searchState;

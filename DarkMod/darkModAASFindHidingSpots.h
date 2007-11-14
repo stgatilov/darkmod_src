@@ -108,6 +108,9 @@ protected:
 	int hidingSpotTypesAllowed;
 	idEntityPtr<idEntity> p_ignoreEntity;
 
+	// A counter for AAS areas tested each findMoreHidingSpot call
+	int areasTestedThisPass;
+
 	/* This tracks the last game frame during which points were tested so 
 	* we don't test more and more points if more than one AI sharing the search
 	* tries to continue the search in the same game frame.
