@@ -272,9 +272,11 @@ void PVSToAASMapping::DebugShowMappings(int lifetime)
 		while (node != NULL)
 		{
 			int aasArea = node->AASAreaIndex;
-			idVec3 areaCenter = aas->AreaCenter(aasArea);
+			idBounds areaBounds = aas->GetAreaBounds(aasArea);
+			idVec3 areaCenter = areaBounds.GetCenter();
 
-			gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.75f, color, playerViewMatrix, 1, lifetime);
+			gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.2f, color, playerViewMatrix, 1, lifetime);
+			gameRenderWorld->DebugBox(color, idBox(areaBounds), lifetime);
 
 			node = node->p_next;
 		}

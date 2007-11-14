@@ -600,6 +600,12 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 		{
 			// Initialize grid search for inside visible AAS area
 			idBounds currentAASAreaBounds = p_aas->GetAreaBounds (aasAreaIndex);
+
+			// greebo: Uncomment for AAS area bounds drawing
+			//idBounds testBounds(currentAASAreaBounds);
+			//idBox box(testBounds);
+			//gameRenderWorld->DebugBox(colorRed, box, 1000);
+
 			currentGridSearchBounds = searchLimits.Intersect (currentAASAreaBounds);
 			currentGridSearchAASAreaNum = aasAreaIndex;
 			currentGridSearchBoundMins = currentGridSearchBounds[0];
@@ -674,6 +680,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	{
 		while (currentGridSearchPoint.y <= currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE + 0.1)
 		{
+			DM_LOG(LC_AI, LT_DEBUG).LogString("iterating %f,%f\r", currentGridSearchPoint.x, currentGridSearchPoint.y);
 			// See if we have filled our point quota
 			if (inout_numPointsTestedThisPass >= numPointsToTestThisPass)
 			{
