@@ -20,32 +20,14 @@
 /*!
 * This defines hiding spot characteristics as bit flags
 */
-typedef enum darkModHidingSpotType
+enum darkModHidingSpotType
 {
 	NONE_HIDING_SPOT_TYPE				= 0x00,				
 	PVS_AREA_HIDING_SPOT_TYPE			= 0x01,				// Hidden by the world geometry (ie, around a corner, through a closed portal)
 	DARKNESS_HIDING_SPOT_TYPE			= 0x02,				// Hidden by darkness
 	VISUAL_OCCLUSION_HIDING_SPOT_TYPE	= 0x04,				// Hidden by visual occlusions (objects, entities, water, etc..)
 	ANY_HIDING_SPOT_TYPE				= 0xFFFFFFFF		// Utility combination value
-
 };
-
-
-/*!
-* This enumeration is used to track the hiding spot search
-* state so that the search can be broken up among a sequence
-* of function calls on different AI frames.
-*
-*/
-typedef enum
-{
-	buildingPVSList_searchState,
-	newPVSArea_searchState,
-	iteratingVisibleAASAreas_searchState,
-	iteratingNonVisibleAASAreas_searchState,
-	testingInsideVisibleAASArea_searchState,
-	done_searchState
-} TDarkModHidingSpotSearchState;
 
 /*!
 // @class darkmodAASFindHidingSpots
@@ -65,6 +47,22 @@ typedef enum
 */
 class darkModAASFindHidingSpots
 {
+	/*!
+	* This enumeration is used to track the hiding spot search
+	* state so that the search can be broken up among a sequence
+	* of function calls on different AI frames.
+	*
+	*/
+	enum ESearchState
+	{
+		EBuildingPVSList,
+		ENewPVSArea,
+		EIteratingVisibleAASAreas,
+		EIteratingNonVisibleAASAreas,
+		ESubdivideVisibleAASArea,
+		EDone,
+	};
+
 protected:
 
 	// The distance from each other which is the minimum for two points
@@ -72,7 +70,7 @@ protected:
 	float hidingSpotRedundancyDistance;
 
 	// The search state
-	TDarkModHidingSpotSearchState searchState;
+	ESearchState searchState;
 
 	// The position from which the entity may be hiding
 	idVec3 hideFromPosition;

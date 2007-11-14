@@ -270,7 +270,7 @@ void darkModAASFindHidingSpots::Restore( idRestoreGame *savefile )
 
 	int tempInt;
 	savefile->ReadInt(tempInt);
-	searchState = static_cast<TDarkModHidingSpotSearchState>(tempInt);
+	searchState = static_cast<ESearchState>(tempInt);
 
 	savefile->ReadVec3(hideFromPosition);
 	savefile->ReadInt(areasTestedThisPass);
@@ -350,11 +350,11 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 	areasTestedThisPass = 0;
 
 	// Branch based on state until search is done or we have tested enough points this pass
-	bool b_searchNotDone = (searchState != done_searchState);
+	bool b_searchNotDone = (searchState != EDone);
 
 	while (b_searchNotDone && inout_numPointsTestedThisPass < numPointsToTestThisPass && areasTestedThisPass < MAX_AREAS_PER_PASS)
 	{
-		if (searchState == newPVSArea_searchState)
+		if (searchState == ENewPVSArea)
 		{
 			b_searchNotDone = testNewPVSArea
 			(
@@ -363,7 +363,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 				inout_numPointsTestedThisPass
 			);
 		}
-		else if (searchState == iteratingNonVisibleAASAreas_searchState)
+		else if (searchState == EIteratingNonVisibleAASAreas)
 		{
 			b_searchNotDone = testingAASAreas_InNonVisiblePVSArea
 			(
@@ -372,7 +372,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 				inout_numPointsTestedThisPass
 			);
 		}
-		else if (searchState == iteratingVisibleAASAreas_searchState)
+		else if (searchState == EIteratingVisibleAASAreas)
 		{
 			b_searchNotDone = testingAASAreas_InVisiblePVSArea
 			(
@@ -381,7 +381,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 				inout_numPointsTestedThisPass
 			);
 		}
-		else if (searchState == testingInsideVisibleAASArea_searchState)
+		else if (searchState == ESubdivideVisibleAASArea)
 		{
 			b_searchNotDone = testingInsideVisibleAASArea
 			(
@@ -390,7 +390,7 @@ bool darkModAASFindHidingSpots::findMoreHidingSpots
 				inout_numPointsTestedThisPass
 			);
 		}
-		else if (searchState == done_searchState)
+		else if (searchState == EDone)
 		{
 			b_searchNotDone = false;
 		}
@@ -412,7 +412,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 {
 
 	// Loop until we change states (go to test inside a PVS area)
- 	while (searchState == newPVSArea_searchState)
+ 	while (searchState == ENewPVSArea)
 	{
 		// Test if all PVS areas have been iterated
 		if (numPVSAreasIterated >= numPVSAreas)
@@ -420,7 +420,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 			// Search is done
 			// Combine redundant hiding spots
 			CombineRedundantHidingSpots ( inout_hidingSpots, HIDING_SPOT_COMBINATION_DISTANCE);
-			searchState = done_searchState;
+			searchState = EDone;
 
 			return false;
 		}
@@ -445,7 +445,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 				numAASAreaIndicesSearched = 0;
 
 				// Now searching AAS areas in non-visible PVS area
-				searchState = iteratingNonVisibleAASAreas_searchState;
+				searchState = EIteratingNonVisibleAASAreas;
 			}
 			else
 			{
@@ -465,7 +465,7 @@ bool darkModAASFindHidingSpots::testNewPVSArea
 			numAASAreaIndicesSearched = 0;
 
 			// Now searching AAS areas in visible PVS area
-			searchState = iteratingVisibleAASAreas_searchState;
+			searchState = EIteratingVisibleAASAreas;
 		}
 	}
 
@@ -516,7 +516,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 		}
 
 		// Test if it is inside the exclusion bounds
-		if (searchIgnoreLimits.ContainsPoint (hidingSpot.goal.origin))
+		if (searchIgnoreLimits.ContainsPoint(hidingSpot.goal.origin))
 		{
 			hidingSpot.quality = -1.0f;
 		}
@@ -576,7 +576,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InNonVisiblePVSArea
 	numPVSAreasIterated ++;
 
 	// On to next PVS area
-	searchState = newPVSArea_searchState;
+	searchState = ENewPVSArea;
 
 	// Potentially more PVS areas to search
 	return true;
@@ -601,7 +601,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 		int aasAreaIndex = aasAreaIndices[numAASAreaIndicesSearched];
 
 		// Check area flags
-		int areaFlags = p_aas->AreaFlags (aasAreaIndex);
+		int areaFlags = p_aas->AreaFlags(aasAreaIndex);
 
 		if ((areaFlags & AREA_REACHABLE_WALK) != 0)
 		{
@@ -616,7 +616,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 			currentGridSearchPoint.x += WALL_MARGIN_SIZE;
 			
 			// We are now searching for hiding spots inside a visible AAS area
-			searchState = testingInsideVisibleAASArea_searchState;
+			searchState = ESubdivideVisibleAASArea;
 
 			// There is more to do
 			return true; 
@@ -643,7 +643,7 @@ bool darkModAASFindHidingSpots::testingAASAreas_InVisiblePVSArea
 	numPVSAreasIterated ++;
 
 	// On to next PVS area
-	searchState = newPVSArea_searchState;
+	searchState = ENewPVSArea;
 
 	// Potentially more PVS areas to search
 	return true;
@@ -797,7 +797,7 @@ bool darkModAASFindHidingSpots::testingInsideVisibleAASArea
 	areasTestedThisPass++;
 
 	// Go back to iterating the list of AAS areas in this visible PVS area
-	searchState = iteratingVisibleAASAreas_searchState;
+	searchState = EIteratingVisibleAASAreas;
 
 	// There may be more searching to do
 	return true;
@@ -1145,7 +1145,7 @@ bool darkModAASFindHidingSpots::isSearchCompleted()
 	}
 
 	// Done if in searchDone state
-	return  (searchState == done_searchState);
+	return  (searchState == EDone);
 }
 
 //-----------------------------------------------------------------------------
@@ -1165,7 +1165,7 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 	lastProcessingFrameNumber = frameNumber;
 
 	// Set search state
-	searchState = buildingPVSList_searchState;
+	searchState = EBuildingPVSList;
 
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
@@ -1184,7 +1184,7 @@ bool darkModAASFindHidingSpots::startHidingSpotSearch
 	numPVSAreasIterated = 0;
 	
 	// Iterating PVS areas
-	searchState = newPVSArea_searchState;
+	searchState = ENewPVSArea;
 
 	// Call the interior function
 	if (!findMoreHidingSpots(out_hidingSpots, numPointsToTestThisPass, numPointsTestedThisPass))
