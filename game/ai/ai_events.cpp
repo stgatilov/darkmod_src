@@ -3276,15 +3276,12 @@ void idAI::Event_GetTactEnt( void )
 
 void idAI::Event_VisScan( void )
 {
-	idActor *actor;
-	float time;
-	
 	// assume we are checking over one frame
-	time = 1.0f/60.0f;
+	float time(1.0f/60.0f);
 
-	PerformVisualScan( time );
+	PerformVisualScan(time);
 	
-	idThread::ReturnEntity( GetEnemy() );
+	idThread::ReturnEntity(GetEnemy());
 }
 
 void idAI::Event_ClosestReachableEnemy( void ) 

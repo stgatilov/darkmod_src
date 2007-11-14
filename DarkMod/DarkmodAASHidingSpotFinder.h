@@ -35,15 +35,13 @@ enum darkModHidingSpotType
 // 
 // This class acts similarly to an AAS goal locator, but does not use the
 // AAS callback scheme due to its single goal response system.
-// Rathewr, this creates a list of goals.  A goal is simply a place within 
+// Rather, this creates a list of goals.  A goal is simply a place within 
 // the map. In this case, the goals found are potential hiding spots.
 //
 // This can be used both for hiding and searching behavior.
 // - An actor wishing to hide can evaluate hiding spots and choose one.
 // - An actor looking for something hiding can evaluate hiding
 //  spots in determining how to proceed.
-// 
-//
 */
 class CDarkmodAASHidingSpotFinder
 {
@@ -51,7 +49,6 @@ class CDarkmodAASHidingSpotFinder
 	* This enumeration is used to track the hiding spot search
 	* state so that the search can be broken up among a sequence
 	* of function calls on different AI frames.
-	*
 	*/
 	enum ESearchState
 	{
@@ -95,8 +92,7 @@ protected:
 	// The number of aas areas in the current pvs area already searched
 	int numAASAreaIndicesSearched;
 
-    
-	/* These are set when the background thread is created */
+	// These are set when the background thread is created
 	idAAS *p_aas;
 	float hidingHeight;
 	idBounds searchLimits;
@@ -292,7 +288,6 @@ protected:
 		int& inout_numPointsTestedThisPass
 	);
 
-
 public:
 
 	/*!
@@ -302,7 +297,7 @@ public:
 	*
 	* @param hideFromPos[in] This defines the position from which
 	*  the actor is seeking to find hiding spots.  It can be their
-	*  own positoin, when considering the general case, or the posiiton
+	*  own position, when considering the general case, or the posiiton
 	*  of an entity to be avoided, in the specific case.
 	*
 	* @param hidingHeight The height of the object that would be hiding
@@ -338,7 +333,6 @@ public:
 	* Destructor
 	*/
 	virtual ~CDarkmodAASHidingSpotFinder();
-
 
 	// Save/Restores this class to/from a savegame
 	void Save(idSaveGame *savefile) const;
@@ -412,7 +406,6 @@ public:
 		CDarkmodHidingSpotTree& out_hidingSpots,
 		int maxSpotsPerRound,
 		int frameNumber
-
 	);
 
 	/*
@@ -439,7 +432,6 @@ public:
 		int frameNumber
 	);
 
-
 	/*!
 	* This method clears the debug rendering hiding spot list. After this call,
 	* if debug hiding spot rendering is on, no hiding spots will be drawn until
@@ -453,11 +445,7 @@ public:
 	*
 	* @param hidingSpotsToAppend The list of hiding spots to be appended to the hiding spot debug list
 	*/
-	static void debugAppendHidingSpotsToDraw 
-	(
-		// const idList<darkModHidingSpot>& hidingSpotsToAppend
-		CDarkmodHidingSpotTree& inout_hidingSpots
-	);
+	static void debugAppendHidingSpotsToDraw(CDarkmodHidingSpotTree& inout_hidingSpots);
 
 	/*!
 	* This method renders a display of all the hiding spots in the debug draw hiding

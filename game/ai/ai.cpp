@@ -8770,7 +8770,6 @@ int idAI::ContinueSearchForHidingSpots()
 			gameLocal.framenum
 		);
 
-
 		// Return result
 		if (b_moreProcessingToDo)
 		{
@@ -8789,17 +8788,12 @@ int idAI::ContinueSearchForHidingSpots()
 				);
 
 			m_hidingSpots.clear();
-			p_hidingSpotFinder->hidingSpotList.getOneNth
-			(
-				refCount,
-				&m_hidingSpots
-			);
+			p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
 
 			// Done with search object, dereference so other AIs know how many
 			// AIs will still be retrieving points from the search
 			HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
 			m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-
 
 			// DEBUGGING
 			if (cv_ai_search_show.GetInteger() >= 1.0)
@@ -8884,8 +8878,8 @@ int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
 		return 0;
 	}
 
-	CDarkmodHidingSpotTree* p_othersTree = &(p_otherAI->m_hidingSpots);
-	if (p_othersTree->getNumSpots() <= 1)
+	CDarkmodHidingSpotTree& p_othersTree = p_otherAI->m_hidingSpots;
+	if (p_othersTree.getNumSpots() <= 1)
 	{
 		// No points
 		return 0;
@@ -8895,7 +8889,7 @@ int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
 	destroyCurrentHidingSpotSearch();
 
 	// Move points from their tree to ours
-	p_othersTree->getOneNth(2, &m_hidingSpots);
+	p_othersTree.getOneNth(2, m_hidingSpots);
 
 	// Done
 	return m_hidingSpots.getNumSpots();

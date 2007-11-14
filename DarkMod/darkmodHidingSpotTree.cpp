@@ -1313,19 +1313,13 @@ bool CDarkmodHidingSpotTree::copy
 bool CDarkmodHidingSpotTree::getOneNth
 (
 	unsigned int N,
-	CDarkmodHidingSpotTree* p_out_otherTree
+	CDarkmodHidingSpotTree& out_otherTree
 )
 {
-	// Test parameters
-	if (p_out_otherTree == NULL)
-	{
-		return false;
-	}
-
 	unsigned int numPointsMoved = 0;
 
 	// Other tree should be empty
-	p_out_otherTree->clear();
+	out_otherTree.clear();
 
 	// Test params
 	if (N == 0)
@@ -1359,8 +1353,8 @@ bool CDarkmodHidingSpotTree::getOneNth
 		}
 
 		// Add areas to other list
-		p_out_otherTree->numAreas = (numAreas - areaIndex);
-		p_out_otherTree->p_firstArea = p_areaCursor;
+		out_otherTree.numAreas = (numAreas - areaIndex);
+		out_otherTree.p_firstArea = p_areaCursor;
 
 		// Remove areas from this list
 		if (p_areaTrailer != NULL)
@@ -1375,16 +1369,14 @@ bool CDarkmodHidingSpotTree::getOneNth
 		}
 		numAreas = areaIndex;
 		
-		
 		// How many points were in the areas moved?
-		TDarkmodHidingSpotAreaNode* p_countCursor = p_out_otherTree->p_firstArea;
+		TDarkmodHidingSpotAreaNode* p_countCursor = out_otherTree.p_firstArea;
 		numPointsMoved = 0;
 		while (p_countCursor != NULL)
 		{
 			numPointsMoved += p_countCursor->count;
 			p_countCursor = p_countCursor->p_nextSibling;
 		}
-
 	}
 	else if (numAreas == 0)
 	{
@@ -1393,7 +1385,6 @@ bool CDarkmodHidingSpotTree::getOneNth
 	}
 	else
 	{
-
 		// Split points in the one and only area
 		TDarkmodHidingSpotAreaNode* p_area = p_firstArea;
 		if (p_area == NULL)
@@ -1402,7 +1393,7 @@ bool CDarkmodHidingSpotTree::getOneNth
 		}
 
 		// Create new area in other tree
-		TDarkmodHidingSpotAreaNode* p_otherArea = p_out_otherTree->insertArea (p_area->aasAreaIndex);
+		TDarkmodHidingSpotAreaNode* p_otherArea = out_otherTree.insertArea (p_area->aasAreaIndex);
 		if (p_otherArea == NULL)
 		{
 			return false;
@@ -1437,7 +1428,6 @@ bool CDarkmodHidingSpotTree::getOneNth
 			p_otherArea->p_firstSpot = NULL;
 		}
 		
-
 		numPointsMoved = p_area->count - splitPointIndex;
 		p_otherArea->count = numPointsMoved;
 
@@ -1453,17 +1443,14 @@ bool CDarkmodHidingSpotTree::getOneNth
 			p_area->p_firstSpot = NULL;
 		}
 		p_area->count -= numPointsMoved;
-
 	}
 
 	// Set point totals in both list based on number of points moved
 	numSpots -= numPointsMoved;
-	p_out_otherTree->numSpots = numPointsMoved;
-
+	out_otherTree.numSpots = numPointsMoved;
 
 	// Done
 	return true;
-
 }
 
 //------------------------------------------------------------------------------------------

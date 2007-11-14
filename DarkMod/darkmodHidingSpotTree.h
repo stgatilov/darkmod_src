@@ -351,11 +351,11 @@ public:
 	* @param N The fraction 1/Nth of this tree will be moved to the other tree
 	*	If N is 0 nothing is moved.
 	* 
-	* @param p_out_otherTree This is the tree to which the fraction of the tree
+	* @param out_otherTree This is the tree to which the fraction of the tree
 	*	will be moved.  The tree is cleared before any areas or spots are moved
 	*	to it.
 	*/
-	bool getOneNth(unsigned int N, CDarkmodHidingSpotTree* p_out_otherTree);
+	bool getOneNth(unsigned int N, CDarkmodHidingSpotTree& out_otherTree);
 
 	/*!
 	* This copies this tree into another tree.
