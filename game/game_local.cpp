@@ -585,7 +585,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	program.Save( &savegame );
 
 	// Save the global hiding spot search collection
-	HidingSpotSearchCollection.Save(&savegame);
+	CHidingSpotSearchCollection::Instance().Save(&savegame);
 
 	savegame.WriteInt( g_skill.GetInteger() );
 
@@ -1464,7 +1464,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	LoadMap( mapName, 0 );
 
 	// Restore the global hiding spot search collection
-	HidingSpotSearchCollection.Restore(&savegame);
+	CHidingSpotSearchCollection::Instance().Restore(&savegame);
 
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );

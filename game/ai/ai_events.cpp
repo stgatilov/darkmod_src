@@ -3298,7 +3298,7 @@ void idAI::destroyCurrentHidingSpotSearch()
 	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		// Dereference current search
-		HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
+		CHidingSpotSearchCollection::Instance().dereference(m_HidingSpotSearchHandle);
 		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search dereferenced\r");
@@ -3339,7 +3339,7 @@ void idAI::Event_StartSearchForHidingSpots
 		// Allocate object that handles the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
 		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
+		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
 		(
 			hideFromLocation, 
 			aas, 

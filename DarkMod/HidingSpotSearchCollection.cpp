@@ -20,26 +20,29 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 //--------------------------------------------------------------------
 
-// Global instance
-CHidingSpotSearchCollection HidingSpotSearchCollection;
-
-//--------------------------------------------------------------------
-
 // Constructor
 
-CHidingSpotSearchCollection::CHidingSpotSearchCollection(void)
-{
-	numSearchesInUse = 0;
-	p_firstSearch = NULL;
-}
+CHidingSpotSearchCollection::CHidingSpotSearchCollection() :
+	highestSearchId(0),
+	numSearchesInUse(0),
+	p_firstSearch(NULL)
+{}
 
 //--------------------------------------------------------------------
 
 // Destructor
 
-CHidingSpotSearchCollection::~CHidingSpotSearchCollection(void)
+CHidingSpotSearchCollection::~CHidingSpotSearchCollection()
 {
 	clear();
+}
+
+//--------------------------------------------------------------------
+
+CHidingSpotSearchCollection& CHidingSpotSearchCollection::Instance()
+{
+	static CHidingSpotSearchCollection _instance;
+	return _instance;
 }
 
 //--------------------------------------------------------------------
@@ -67,6 +70,7 @@ void CHidingSpotSearchCollection::clear()
 
 void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
 {
+	savefile->WriteInt(highestSearchId);
 	savefile->WriteUnsignedInt(numSearchesInUse);
 
 	int searchesSaved = 0;
@@ -92,6 +96,7 @@ void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
 {
 	clear();
 
+	savefile->ReadInt(highestSearchId);
 	savefile->ReadUnsignedInt(numSearchesInUse);
 
 	p_firstSearch = NULL;
@@ -142,8 +147,11 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 		// We are returning to somebody, so they have a reference
 		p_node->refCount = 1;
 
-		// greebo: Use the numSearchesInUse counter, this should give a nice unique id
-		p_node->searchId = numSearchesInUse;
+		// greebo: Assign a unique ID to this searchnode
+		p_node->searchId = highestSearchId;
+
+		// Increase the unique ID
+		highestSearchId++;
 
 		p_node->p_prev = NULL;
 		p_node->p_next = p_firstSearch;
@@ -154,7 +162,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 		p_firstSearch = p_node;
 
 		// One more search in use
-		numSearchesInUse ++;
+		numSearchesInUse++;
 
 		return (THidingSpotSearchHandle) p_node;
 	}
@@ -247,13 +255,15 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 
 //------------------------------------------------------------------------------
 
-void CHidingSpotSearchCollection::dereference (THidingSpotSearchHandle searchHandle)
+void CHidingSpotSearchCollection::dereference(THidingSpotSearchHandle searchHandle)
 {
-	TDarkmodHidingSpotSearchNode* p_node = (TDarkmodHidingSpotSearchNode*) searchHandle;
+	TDarkmodHidingSpotSearchNode* p_node = 
+		reinterpret_cast<TDarkmodHidingSpotSearchNode*>(searchHandle);
+
 	if (p_node != NULL)
 	{
 		// Decrement Refcount
-		p_node->refCount --;
+		p_node->refCount--;
 
 		if (p_node->refCount <= 0)
 		{

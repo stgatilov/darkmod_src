@@ -778,8 +778,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteFloat(m_VisDistMax);
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Saved hiding spot search with id %d\r", HidingSpotSearchCollection.getSearchId(m_HidingSpotSearchHandle));
-	savefile->WriteInt(HidingSpotSearchCollection.getSearchId(m_HidingSpotSearchHandle));
+	DM_LOG(LC_AI, LT_DEBUG).LogString("Saved hiding spot search with id %d\r", CHidingSpotSearchCollection::Instance().getSearchId(m_HidingSpotSearchHandle));
+	savefile->WriteInt(CHidingSpotSearchCollection::Instance().getSearchId(m_HidingSpotSearchHandle));
 	m_hidingSpots.Save(savefile);
 
 	savefile->WriteInt(m_AirCheckTimer);
@@ -1004,7 +1004,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	int searchId;
 	savefile->ReadInt(searchId);
 	DM_LOG(LC_AI, LT_DEBUG).LogString("Restored hiding spot search with id %d (entity %s)\r", searchId, name.c_str());
-	m_HidingSpotSearchHandle = HidingSpotSearchCollection.getSearchHandle(searchId);
+	m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getSearchHandle(searchId);
 	if (searchId != -1 && m_HidingSpotSearchHandle == NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		DM_LOG(LC_AI, LT_DEBUG).LogString("Warning! Could not resolve hiding spot search with id %d (entity %s)\r", searchId, name.c_str());
@@ -8714,7 +8714,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 		// Allocate object that handles the search
 		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
 		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = HidingSpotSearchCollection.getOrCreateSearch
+		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
 		(
 			hideFromLocation, 
 			aas, 
@@ -8748,7 +8748,7 @@ int idAI::ContinueSearchForHidingSpots()
 	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
 	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
-		p_hidingSpotFinder = HidingSpotSearchCollection.getSearchByHandle(
+		p_hidingSpotFinder = CHidingSpotSearchCollection::Instance().getSearchByHandle(
 			m_HidingSpotSearchHandle
 		);
 	}
@@ -8763,7 +8763,7 @@ int idAI::ContinueSearchForHidingSpots()
 	else
 	{
 		// Call finder method to continue search
-		bool b_moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
+		bool moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
 		(
 			p_hidingSpotFinder->hidingSpotList,
 			g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
@@ -8771,42 +8771,40 @@ int idAI::ContinueSearchForHidingSpots()
 		);
 
 		// Return result
-		if (b_moreProcessingToDo)
+		if (moreProcessingToDo)
 		{
 			return 1;
 		}
-		else
+		
+		unsigned int refCount;
+
+		// Get finder we just referenced
+		CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = 
+			CHidingSpotSearchCollection::Instance().getSearchAndReferenceCountByHandle 
+			(
+				m_HidingSpotSearchHandle,
+				refCount
+			);
+
+		m_hidingSpots.clear();
+		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
+
+		// Done with search object, dereference so other AIs know how many
+		// AIs will still be retrieving points from the search
+		CHidingSpotSearchCollection::Instance().dereference (m_HidingSpotSearchHandle);
+		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+		// DEBUGGING
+		if (cv_ai_search_show.GetInteger() >= 1.0)
 		{
-			unsigned int refCount;
-
-			// Get finder we just referenced
-			CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = 
-				HidingSpotSearchCollection.getSearchAndReferenceCountByHandle 
-				(
-					m_HidingSpotSearchHandle,
-					refCount
-				);
-
-			m_hidingSpots.clear();
-			p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
-
-			// Done with search object, dereference so other AIs know how many
-			// AIs will still be retrieving points from the search
-			HidingSpotSearchCollection.dereference (m_HidingSpotSearchHandle);
-			m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-			// DEBUGGING
-			if (cv_ai_search_show.GetInteger() >= 1.0)
-			{
-				// Clear the debug draw list and then fill with our results
-				p_hidingSpotFinder->debugClearHidingSpotDrawList();
-				p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-				p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
-			}
-
-			DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\r");
-			return 0;
+			// Clear the debug draw list and then fill with our results
+			p_hidingSpotFinder->debugClearHidingSpotDrawList();
+			p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
+			p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
 		}
+
+		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\r");
+		return 0;
 	}
 }
 
