@@ -580,6 +580,8 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	// Create a shortcut reference
 	Memory& memory = owner->GetMemory();
 
+	owner->PerformVisualScan();
+
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{

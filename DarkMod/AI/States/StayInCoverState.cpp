@@ -37,7 +37,7 @@ void StayInCoverState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("TakeCoverState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("StayInCoverState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference
@@ -69,7 +69,6 @@ void StayInCoverState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void StayInCoverState::Think(idAI* owner)
 {
-
 	if ((owner->AI_ENEMY_VISIBLE || owner->AI_TACTALERT) && owner->GetMind()->PerformCombatCheck())
 	{
 		// Get back to combat if we are done moving to cover and encounter the enemy

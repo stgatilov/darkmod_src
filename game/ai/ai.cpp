@@ -1574,22 +1574,17 @@ void idAI::Think( void )
 				StopLipSync();
 			}
 		}
-
+/*
 		// greebo: Look for enemies, perform the visual scan if not disabled
 		if (!(outsidePVS && cv_ai_opt_novisualscan.GetBool()))
 		{
 			if (!AI_DEAD && !AI_KNOCKEDOUT)
 			{
 				// Try to locate an enemy actor (= player in TDM)
-				idActor* actor = VisualScan();
-				if (actor != NULL)
-				{
-					// We have an enemy, check if the enemy has changed.
-					SetEnemy(actor);
-				}
+				PerformVisualScan();
 			}
 		}
-
+*/
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
@@ -7034,9 +7029,10 @@ void idAI::AlertAI(const char *type, float amount)
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
 	}
-	
+
 	// The grace check has failed, increase the AI_AlertNum float by the increase amount
-	SetAlertLevel(AI_AlertNum + alertInc);
+	float newAlertLevel = AI_AlertNum + alertInc;
+	SetAlertLevel(newAlertLevel);
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
 
@@ -7281,75 +7277,82 @@ idEntity *idAI::GetTactEnt( void )
 	return m_TactAlertEnt.GetEntity();
 }
 
-idActor* idAI::VisualScan(float timecheck)
+void idAI::PerformVisualScan(float timecheck)
 {
-	// greebo: This returns non-NULL if this AI is in the player's PVS
-	// and the AI can see the player actor.
-	idActor* actor = FindEnemy(true);
-
-	if (actor == NULL || m_bIgnoreAlerts)
+	// Only perform enemy checks if we are in the player's PVS
+	if (GetAcuity("vis") <= 0 || !gameLocal.InPlayerPVS(this))
 	{
-		// No actor in sight or alerts disabled, quit
-		return NULL;
+		return;
 	}
 
-	if (!actor->IsType(idPlayer::Type))
+	idActor* player = gameLocal.GetLocalPlayer();
+	if (m_bIgnoreAlerts || player->fl.notarget)
 	{
-		// Not a player, quit
-		return NULL;
+		// notarget
+		return;
+	}
+
+	// Ignore dead actors or non-enemies
+	if (player->health <= 0 || !gameLocal.m_RelationsManager->IsEnemy(team, player->team))
+	{
+		return;
+	}
+
+	if (!CheckFOV(player->GetPhysics()->GetOrigin()))
+	{
+		return;
 	}
 
 	// Check the candidate's visibility.
-	float visFrac = GetVisibility(actor);
-
-	// uncomment for visibility fraction debugging (spams the log)
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visibility fraction for %s = %f\r", actor->name.c_str(), visFrac );
-
+	float visFrac = GetVisibility(player);
 	// Do the percentage check
 	float randFrac = gameLocal.random.RandomFloat();
-	if( randFrac > ( (timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat()) * visFrac ) )
+	float chance = timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat() * visFrac;
+	if( randFrac > chance)
 	{
 		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
-		return NULL;
+		return;
+	}
+
+	// angua: does not take lighting and FOV into account
+	if (!CanSeeExt(player, false, false))
+	{
+		return;
 	}
 
 	// greebo: At this point, the actor is identified as enemy and is visible
-
 	// set AI_VISALERT and the vector for last sighted position
-
-	//quick fix for blind AI:
-	if (GetAcuity("vis") > 0)
+	if (cv_ai_visdist_show.GetFloat() > 0) 
 	{
-		if (cv_ai_visdist_show.GetFloat() > 0) 
-		{
-			gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,60), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		}
-		// Store the position the enemy was visible
-		m_LastSight = actor->GetPhysics()->GetOrigin();
-		AI_VISALERT = true;
-		
-		// Get the visual alert amount caused by the CVAR setting
-		float incAlert = GetPlayerVisualStimulusAmount();
+		gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,60), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+	}
+	// Store the position the enemy was visible
+	m_LastSight = player->GetPhysics()->GetOrigin();
+	AI_VISALERT = true;
+	
+	// Get the visual alert amount caused by the CVAR setting
+	float incAlert = GetPlayerVisualStimulusAmount();
 
-		// If the alert amount is larger than everything else encountered this frame
-		// ignore the previous alerts and remember this actor as enemy.
-		if (incAlert > m_AlertNumThisFrame)
-		{
-			// Remember this actor
-			m_AlertedByActor = actor;
-			AlertAI("vis", incAlert);
-		}
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), actor->name.c_str() );
-
-		if (cv_ai_debug.GetBool())
-		{
-			gameLocal.Printf( "[DM AI] AI %s SAW actor %s\n", name.c_str(), actor->name.c_str() );
-		}
+	float newAlertLevel = AI_AlertNum + incAlert;
+	if (newAlertLevel > thresh_combat)
+	{
+		SetEnemy(player);
 	}
 
-	return actor;
+	// If the alert amount is larger than everything else encountered this frame
+	// ignore the previous alerts and remember this actor as enemy.
+	if (incAlert > m_AlertNumThisFrame)
+	{
+		// Remember this actor
+		m_AlertedByActor = player;
+		AlertAI("vis", incAlert);
+	}
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), player->name.c_str() );
+
+	return;
 }
+
 
 float idAI::GetVisibility( idEntity *ent ) const
 {

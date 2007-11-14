@@ -47,77 +47,12 @@ void AgitatedSearchingState::Init(idAI* owner)
 	assert(owner);
 
 	_alertLevelDecreaseRate = (owner->thresh_combat - owner->thresh_3) / owner->atime3;
-
-
-	// Nothing to do here yet, everything is handled by the base SearchingState.
-	// (FIXME) Remove this method if unneeded for a long time.
 }
 
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
-	UpdateAlertLevel();
-
-	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
-
-	Memory& memory = owner->GetMemory();
-
-	// Do we have an ongoing hiding spot search?
-	if (!memory.hidingSpotSearchDone)
-	{
-		// Let the hiding spot search do its task
-		PerformHidingSpotSearch(owner);
-	}
-	// Is a hiding spot search in progress?
-	else if (!memory.hidingSpotInvestigationInProgress)
-	{
-		// Pick a hiding spot and push the task
-
-		// Spot search and investigation done, choose a hiding spot
-		// Try to get a first hiding spot
-		if (!ChooseNextHidingSpotToSearch(owner))
-		{
-			// No more hiding spots to search
-			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
-
-			if (owner->m_hidingSpots.getNumSpots() > 0)
-			{
-				// Number of hiding spot is greater than zero, so we
-				// came here after the search has been finished
-
-				// Rub neck?
-				// Bark?
-				// Wait?
-			}
-
-			owner->StopMove(MOVE_STATUS_DONE);
-
-			// Fall back into the previous state
-			// TODO: wander
-			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
-			owner->GetMind()->EndState();
-
-			return; // Exit, state will be switched next frame, we're done here
-		}
-
-		// ChooseNextHidingSpot returned TRUE, so we have memory.currentSearchSpot set
-
-		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
-
-		// Delegate the spot investigation to a new task, this will take the correct action.
-		owner->GetSubsystem(SubsysAction)->PushTask(InvestigateSpotTask::CreateInstance());
-
-		// Prevent falling into the same hole twice
-		memory.hidingSpotInvestigationInProgress = true;
-	}
-	else
-	{
-		// Move to Hiding spot is ongoing, do additional sensory tasks here
-
-		// Let the mind check its senses (TRUE = process new stimuli)
-		owner->GetMind()->PerformSensoryScan(true);
-	}
+	SearchingState::Think(owner);
 }
 
 StatePtr AgitatedSearchingState::CreateInstance()

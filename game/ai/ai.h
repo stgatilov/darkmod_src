@@ -424,13 +424,9 @@ public:
 	* Checks enemies in the AI's FOV and calls Alert( "vis", amount )
 	* The amount is calculated based on distance and the lightgem
 	*
-	* It also returns the most visible entity in case the AI script
-	* goes into a combat state and needs to get the enemy to attack.
-	*
-	* For now the check is only done on the player, and only the player
-	* may be returned.
+	* For now the check is only done on the player
 	**/
-	idActor *VisualScan( float time = 1.0f/60.0f );
+	void PerformVisualScan( float time = 1.0f/60.0f );
 
 	/**
 	* Checks to see if the AI is being blocked by an actor when it tries to move,

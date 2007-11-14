@@ -3282,12 +3282,9 @@ void idAI::Event_VisScan( void )
 	// assume we are checking over one frame
 	time = 1.0f/60.0f;
 
-	actor = VisualScan( time );
+	PerformVisualScan( time );
 	
-	if (!actor)
-		idThread::ReturnEntity( NULL );
-	else
-		idThread::ReturnEntity( actor );
+	idThread::ReturnEntity( GetEnemy() );
 }
 
 void idAI::Event_ClosestReachableEnemy( void ) 

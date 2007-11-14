@@ -140,6 +140,8 @@ void UnreachableTargetState::Think(idAI* owner)
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
 		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+		owner->GetMind()->EndState();
+		return;
 	}
 
 	// Check the distance to the enemy, the other subsystem tasks need it.

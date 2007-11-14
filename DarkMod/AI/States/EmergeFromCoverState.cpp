@@ -36,7 +36,7 @@ void EmergeFromCoverState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("TakeCoverState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("EmergeFromCoverState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference
@@ -47,7 +47,9 @@ void EmergeFromCoverState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->QueueTask(TaskPtr(new MoveToPositionTask(memory.positionBeforeTakingCover)));
+	owner->GetSubsystem(SubsysMovement)->QueueTask(
+		TaskPtr(new MoveToPositionTask(memory.positionBeforeTakingCover))
+	);
 }
 
 // Gets called each time the mind is thinking
