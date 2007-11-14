@@ -5114,6 +5114,12 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	LGPos.y += ( Cam.y - Pos.y ) * 0.3; // Move the lightgem out a fraction along the leaning y vector
 	LGPos.z = Cam.z; // Set the lightgem's Z-axis position to that of the player's eyes
 
+	if (LGPos.z < Pos.z + 50 && static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->IsCrouching())
+	{
+		// Prevent lightgem from clipping into the floor while crouching
+		LGPos.z = Pos.z + 50;
+	}
+
 	// Adjust the modelposition with userdefined offsets.
 	// Move the lightgem testmodel to the players feet based on the eye position
 	LGPos.x += cv_lg_oxoffs.GetInteger();
