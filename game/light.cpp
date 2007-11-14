@@ -1335,11 +1335,11 @@ int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 		// TODO: Just for now until the projected lights are implemented to not cause any crash.
 		// x = right
 		// y = up
-#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
-#pragma message(DARKMOD_NOTE "For projected lights this is likely not enough. As long as the light will")
-#pragma message(DARKMOD_NOTE "be straight up or down it should work, but if the cone is angled it might")
-#pragma message(DARKMOD_NOTE "give wrong results.")
-#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+//#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
+//#pragma message(DARKMOD_NOTE "For projected lights this is likely not enough. As long as the light will")
+//#pragma message(DARKMOD_NOTE "be straight up or down it should work, but if the cone is angled it might")
+//#pragma message(DARKMOD_NOTE "give wrong results. greebo: See DarkRadiant code for starters.")
+//#pragma message(DARKMOD_NOTE "-------------------------------------------------idLight::GetTextureIndex")
 		x = w2 - (w2/renderLight.right.x) * x;
 		y = h2 - (h2/renderLight.up.y) * y;
 	}
@@ -1395,11 +1395,11 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 	if(fot == NULL && img == NULL)
 	{
 		// TODO: Light falloff calculation
-#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
-#pragma message(DARKMOD_NOTE "The lightfalloff should be calculated for ellipsoids instead of spheres")
-#pragma message(DARKMOD_NOTE "when no textures are defined. The current code will give wrong results")
-#pragma message(DARKMOD_NOTE "when a light is defined as an ellipsoid.")
-#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
+//#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
+//#pragma message(DARKMOD_NOTE "The lightfalloff should be calculated for ellipsoids instead of spheres")
+//#pragma message(DARKMOD_NOTE "when no textures are defined. The current code will give wrong results")
+//#pragma message(DARKMOD_NOTE "when a light is defined as an ellipsoid.")
+//#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
 		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
 		fImgVal = 1;
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("No textures defined using distance: [%f]\r", fDistance);
