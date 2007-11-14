@@ -9442,7 +9442,8 @@ CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 
 	CInventoryItem* prev = NULL;
 
-	if (weaponItem != NULL) {
+	if (weaponItem != NULL)
+	{
 		// greebo: This is a weapon-related inventory item, use the weapon inventory cursor
 		// Do it only if the respective CVAR is set
 		if (cv_frob_ammo_selects_weapon.GetBool()) {
@@ -9450,16 +9451,18 @@ CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 			SelectWeapon(weaponItem->getWeaponIndex(), false);
 		}
 	}
-	else {
+	else if (returnValue != NULL)
+	{
 		// Ordinary inventory item, set the cursor onto it
 		prev = InventoryCursor()->GetCurrentItem();
 		// Focus the cursor on the newly added item
 		InventoryCursor()->SetCurrentItem(returnValue);
-	}
 
-	// Fire the script events and update the HUD
-	if(_hud != NULL) {
-		inventoryChangeSelection(_hud, true, prev);
+		// Fire the script events and update the HUD
+		if (_hud != NULL)
+		{
+			inventoryChangeSelection(_hud, true, prev);
+		}
 	}
 
 	return returnValue;
