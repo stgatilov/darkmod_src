@@ -466,7 +466,7 @@ bool BasicMind::SetTarget()
 		if (tactEnt == NULL || !tactEnt->IsType(idActor::Type)) 
 		{
 			// Invalid enemy type, todo?
-			DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
+			//DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
 			return false;
 		}
 
