@@ -1083,10 +1083,10 @@
 					RelativePath=".\DarkMod\ButtonStateTracker.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\darkModAASFindHidingSpots.cpp">
+					RelativePath=".\DarkMod\DarkmodAASHidingSpotFinder.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\darkModAASFindHidingSpots.h">
+					RelativePath=".\DarkMod\DarkmodAASHidingSpotFinder.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\DarkModGlobals.cpp">
