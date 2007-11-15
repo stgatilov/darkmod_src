@@ -14,10 +14,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "./HidingSpotSearchCollection.h"
 
-//---------------------------------------------------------------------------
-
-#define MAX_NUM_HIDING_SPOT_SEARCHES 4
-
 //--------------------------------------------------------------------
 
 // Constructor
@@ -50,30 +46,43 @@ CHidingSpotSearchCollection& CHidingSpotSearchCollection::Instance()
 void CHidingSpotSearchCollection::clear()
 {
 	// Destroy all searches
-	TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
+	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); i++)
+	{
+		delete i->second;
+	}
+	searches.clear();
+
+	/*TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
 	TDarkmodHidingSpotSearchNode* p_temp;
 	while (p_cursor != NULL)
 	{
 		p_temp = p_cursor->p_next;
 		delete p_cursor;
 		p_cursor = p_temp;
-	}
+	}*/
 
 	p_firstSearch = NULL;
 
 	// No active searches any more
 	numSearchesInUse = 0;
-
-	// Done
-
 }
 
-void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
+void CHidingSpotSearchCollection::Save(idSaveGame *savefile) const
 {
+	savefile->WriteInt(searches.size());
+	for (HidingSpotSearchMap::const_iterator i = searches.begin(); i != searches.end(); i++)
+	{
+		TDarkmodHidingSpotSearchNode* node = i->second;
+
+		savefile->WriteInt(node->searchId);
+		savefile->WriteInt(node->refCount);
+		node->search.Save(savefile);
+	}
+
 	savefile->WriteInt(highestSearchId);
 	savefile->WriteUnsignedInt(numSearchesInUse);
 
-	int searchesSaved = 0;
+	/*int searchesSaved = 0;
 	TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
 	while (p_cursor != NULL)
 	{
@@ -89,19 +98,36 @@ void CHidingSpotSearchCollection::Save( idSaveGame *savefile ) const
 	if (searchesSaved != numSearchesInUse)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("Error while saving collection: searchesSaved != numSearchesInUse\r");
-	}
+	}*/
 }
 
-void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
+void CHidingSpotSearchCollection::Restore(idRestoreGame *savefile)
 {
 	clear();
+
+	int num;
+	savefile->ReadInt(num);
+
+	for (int i = 0; i < num; i++)
+	{
+		TDarkmodHidingSpotSearchNode* node = new TDarkmodHidingSpotSearchNode;
+
+		savefile->ReadInt(node->searchId);
+		savefile->ReadInt(node->refCount);
+		node->search.Restore(savefile);
+
+		// Insert the allocated search into the map and take the searchid as index
+		searches.insert(
+			HidingSpotSearchMap::value_type(node->searchId, node)
+		);
+	}
 
 	savefile->ReadInt(highestSearchId);
 	savefile->ReadUnsignedInt(numSearchesInUse);
 
 	p_firstSearch = NULL;
 
-	TDarkmodHidingSpotSearchNode* lastSearch = NULL;
+	/*TDarkmodHidingSpotSearchNode* lastSearch = NULL;
 	for (unsigned int i = 0; i < numSearchesInUse; i++)
 	{
 		TDarkmodHidingSpotSearchNode* curSearch = new TDarkmodHidingSpotSearchNode;
@@ -125,7 +151,7 @@ void CHidingSpotSearchCollection::Restore( idRestoreGame *savefile )
 		curSearch->search.Restore(savefile);
 
 		lastSearch = curSearch;
-	}
+	}*/
 }
 
 //--------------------------------------------------------------------
@@ -150,23 +176,26 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 		// greebo: Assign a unique ID to this searchnode
 		p_node->searchId = highestSearchId;
 
+		searches.insert(
+			HidingSpotSearchMap::value_type(p_node->searchId, p_node)
+		);
+
 		// Increase the unique ID
 		highestSearchId++;
 
-		p_node->p_prev = NULL;
+		/*p_node->p_prev = NULL;
 		p_node->p_next = p_firstSearch;
 		if (p_firstSearch != NULL)
 		{
 			p_firstSearch->p_prev = p_node;
 		}
-		p_firstSearch = p_node;
+		p_firstSearch = p_node;*/
 
 		// One more search in use
 		numSearchesInUse++;
 
-		return (THidingSpotSearchHandle) p_node;
+		return p_node->searchId; // ID is handle
 	}
-	
 }
 
 
@@ -176,7 +205,12 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 
 int CHidingSpotSearchCollection::getSearchId(THidingSpotSearchHandle searchHandle)
 {
-	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
+	HidingSpotSearchMap::const_iterator found = searches.find(searchHandle);
+
+	// Return NULL handle if not found
+	return (found != searches.end()) ? searchHandle : NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
 	while (p_node != NULL)
 	{
 		if (static_cast<THidingSpotSearchHandle>(p_node) == searchHandle)
@@ -187,23 +221,25 @@ int CHidingSpotSearchCollection::getSearchId(THidingSpotSearchHandle searchHandl
 	}
 
 	// None found
-	return -1;
+	return -1;*/
 }
 
 THidingSpotSearchHandle CHidingSpotSearchCollection::getSearchHandle(int searchId)
 {
-	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
+	return searchId; // ID == handle
+
+	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
 	while (p_node != NULL)
 	{
 		if (p_node->searchId == searchId)
 		{
-			return static_cast<THidingSpotSearchHandle>(p_node);
+			return searchId; // ID == handle, TODO: remove this deprecated function, when done
 		}
 		p_node = p_node->p_next;
 	}
 
 	// None found
-	return NULL_HIDING_SPOT_SEARCH_HANDLE;
+	return NULL_HIDING_SPOT_SEARCH_HANDLE;*/
 }
 
 CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle
@@ -211,19 +247,10 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle
 	THidingSpotSearchHandle searchHandle
 )
 {
-	TDarkmodHidingSpotSearchNode* p_node = (TDarkmodHidingSpotSearchNode*) searchHandle;
-	if (p_node != NULL)
-	{
-		if (p_node->refCount <= 0)
-		{
-			return NULL;
-		}
-		return &(p_node->search);
-	}
-	else
-	{
-		return NULL;
-	}
+	HidingSpotSearchMap::const_iterator found = searches.find(searchHandle);
+
+	// Return NULL if not found
+	return (found != searches.end()) ? &found->second->search : NULL;
 }
 
 //----------------------------------------------------------------------------------
@@ -234,7 +261,21 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 	unsigned int& out_refCount
 )
 {
-	TDarkmodHidingSpotSearchNode* p_node = (TDarkmodHidingSpotSearchNode*) searchHandle;
+	HidingSpotSearchMap::const_iterator found = searches.find(searchHandle);
+
+	if (found != searches.end())
+	{
+		out_refCount = found->second->refCount;
+		return &found->second->search;
+	}
+	else
+	{
+		// not found
+		out_refCount = 0;
+		return NULL;
+	}
+
+	/*TDarkmodHidingSpotSearchNode* p_node = (TDarkmodHidingSpotSearchNode*) searchHandle;
 	if (p_node != NULL)
 	{
 		if (p_node->refCount <= 0)
@@ -249,7 +290,7 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 	else
 	{
 		return NULL;
-	}
+	}*/
 }
 
 
@@ -257,7 +298,24 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 
 void CHidingSpotSearchCollection::dereference(THidingSpotSearchHandle searchHandle)
 {
-	TDarkmodHidingSpotSearchNode* p_node = 
+	HidingSpotSearchMap::iterator found = searches.find(searchHandle);
+
+	if (found != searches.end())
+	{
+		found->second->refCount--;
+
+		if (found->second->refCount <= 0)
+		{
+			// Delete and remove from map 
+			delete found->second;
+			searches.erase(found);
+		
+			// One less search
+			numSearchesInUse--;
+		}
+	}
+
+	/*TDarkmodHidingSpotSearchNode* p_node = 
 		reinterpret_cast<TDarkmodHidingSpotSearchNode*>(searchHandle);
 
 	if (p_node != NULL)
@@ -286,7 +344,7 @@ void CHidingSpotSearchCollection::dereference(THidingSpotSearchHandle searchHand
 			// One less search
 			numSearchesInUse --;
 		}
-	}
+	}*/
 	
 }
 
@@ -298,7 +356,28 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::findSearchByBounds
 	idBounds exclusionBounds
 )
 {
-	TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
+	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); i++)
+	{
+		TDarkmodHidingSpotSearchNode* node = i->second;
+
+		idBounds existingBounds = node->search.getSearchLimits();
+		idBounds existingExclusionBounds = node->search.getSearchExclusionLimits();
+
+		if (existingBounds.Compare(bounds, 50.0))
+		{
+			if (existingExclusionBounds.Compare(exclusionBounds, 50.0))
+			{
+				// Reuse this one and return the ID
+				node->refCount++;
+				return i->first;
+			}
+		}
+	}
+
+	// None found
+	return NULL_HIDING_SPOT_SEARCH_HANDLE;
+
+	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
 	while (p_node != NULL)
 	{
 		idBounds existingBounds = p_node->search.getSearchLimits();
@@ -317,7 +396,7 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::findSearchByBounds
 	}
 
 	// None found
-	return NULL_HIDING_SPOT_SEARCH_HANDLE;
+	return NULL_HIDING_SPOT_SEARCH_HANDLE;*/
 
 }
 
@@ -336,8 +415,12 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	bool& out_b_searchCompleted
 )
 {
-	/* Search with same bounds already? */
-	THidingSpotSearchHandle hSearch = findSearchByBounds (in_searchLimits, in_searchExclusionLimits);
+	// Search with same bounds already?
+	THidingSpotSearchHandle hSearch = findSearchByBounds(in_searchLimits, in_searchExclusionLimits);
+
+	// greebo: TODO simplify this algorithm, we're inside the collection class, so we might as well
+	// access the members directly instead of using so many lookups.
+
 	if (hSearch != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
@@ -345,14 +428,14 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 		return hSearch;
 	}
 
-	/* Make new search */
+	// Make new search
 	hSearch = getUnusedSearch();
 	if (hSearch == NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		return hSearch;
 	}
 
-	/* Initialize the search */
+	// Initialize the search
 	CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
 	p_search->initialize
 	(
@@ -380,6 +463,4 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 
 	// Search created, return search to caller
 	return hSearch;
-		
-
 }
