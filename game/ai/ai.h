@@ -874,9 +874,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_AlertGraceCountLimit;
 
 	/**
-	* The current mod hiding spot search of this AI, usually NULL (0)
+	* The current mod hiding spot search of this AI, usually -1
 	*/
-	THidingSpotSearchHandle m_HidingSpotSearchHandle;
+	int						m_HidingSpotSearchHandle;
 
 	/**
 	* The spots resulting from the current search or gotten from

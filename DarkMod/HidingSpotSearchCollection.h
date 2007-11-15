@@ -19,28 +19,10 @@
 *
 */
 
-// Required includes
 #include "DarkmodAASHidingSpotFinder.h"
 #include <map>
 
 //---------------------------------------------------------------------------
-
-struct TDarkmodHidingSpotSearchNode
-{
-	// greebo: The id of this search, to resolve pointers after map restore
-	int searchId;
-
-	int refCount;
-	CDarkmodAASHidingSpotFinder search;
-};
-
-//---------------------------------------------------------------------------
-
-/**
-* This is the handle type by which an AI references searches in which it is 
-* interested.
-*/
-typedef int THidingSpotSearchHandle;
 
 #define NULL_HIDING_SPOT_SEARCH_HANDLE -1
 #define MAX_NUM_HIDING_SPOT_SEARCHES 4
@@ -50,6 +32,22 @@ typedef int THidingSpotSearchHandle;
 class CHidingSpotSearchCollection
 {
 private:
+
+	// greebo: This is the main data structure for keeping track of ongoing searches
+	struct HidingSpotSearchNode
+	{
+		// greebo: The id of this search, to resolve pointers after map restore
+		int searchId;
+
+		int refCount;
+		CDarkmodAASHidingSpotFinder search;
+	};
+
+	// greebo: The array holding all active hiding spot search pointers
+	typedef std::map<int, HidingSpotSearchNode*> HidingSpotSearchMap;
+	HidingSpotSearchMap searches;
+
+	// This provides a unique ID for the searches
 	int highestSearchId;
 
 	/**
@@ -71,20 +69,13 @@ public:
 	/**
 	* This gets a search by its handle
 	*/
-	CDarkmodAASHidingSpotFinder* getSearchByHandle
-	(
-		THidingSpotSearchHandle searchHandle
-	);
+	CDarkmodAASHidingSpotFinder* getSearchByHandle(int searchHandle);
 
 	/**
 	* This gets a search by its handle and indicates how many people
 	* (including the caller) have a reference handle to the search.
 	*/
-	CDarkmodAASHidingSpotFinder* getSearchAndReferenceCountByHandle
-	(
-		THidingSpotSearchHandle searchHandle,
-		unsigned int& out_refCount
-	);
+	CDarkmodAASHidingSpotFinder* getSearchAndReferenceCountByHandle(int searchHandle, unsigned int& out_refCount);
 
 	/**
 	* This should be called to dereference a hiding spot search. It ensures
@@ -93,7 +84,7 @@ public:
 	* Once this is called, the handle should be considered invalid and never
 	* be used again.
 	*/
-	void dereference(THidingSpotSearchHandle hSearch);
+	void dereference(int hSearch);
 
 	/**
 	* This attempts to get or create a new search. If the search
@@ -102,7 +93,7 @@ public:
 	* The search is referenced if the handle returned is not the null
 	* value, so the caller must eventually dereference it.
 	*/
-	THidingSpotSearchHandle getOrCreateSearch
+	int getOrCreateSearch
 	(
 		const idVec3 &hideFromPos, 
 		idAAS* in_p_aas, 
@@ -119,12 +110,7 @@ public:
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
 	
-protected:
-
-	// greebo: The array holding all active hiding spot search pointers
-	typedef std::map<int, TDarkmodHidingSpotSearchNode*> HidingSpotSearchMap;
-	HidingSpotSearchMap searches;
-
+private:
 	/**
 	* This destroys all searches. Don't call it unless you are shutting down the game.
 	*/
@@ -133,12 +119,11 @@ protected:
 	/**
 	* This gets an empty hiding spot search from the list and references
 	* it before returning it to the caller.
-	*
 	*/
-	THidingSpotSearchHandle getUnusedSearch();
+	int getNewSearch();
 
 	/**
 	* This searches the list for a search with similar bounds.
 	*/
-	THidingSpotSearchHandle findSearchByBounds(idBounds bounds, idBounds exclusionBounds);
+	int findSearchByBounds(idBounds bounds, idBounds exclusionBounds);
 };
