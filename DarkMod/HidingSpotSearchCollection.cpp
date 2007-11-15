@@ -24,15 +24,6 @@ CHidingSpotSearchCollection::CHidingSpotSearchCollection() :
 
 //--------------------------------------------------------------------
 
-// Destructor
-
-CHidingSpotSearchCollection::~CHidingSpotSearchCollection()
-{
-	clear();
-}
-
-//--------------------------------------------------------------------
-
 CHidingSpotSearchCollection& CHidingSpotSearchCollection::Instance()
 {
 	static CHidingSpotSearchCollection _instance;
@@ -43,11 +34,6 @@ CHidingSpotSearchCollection& CHidingSpotSearchCollection::Instance()
 
 void CHidingSpotSearchCollection::clear()
 {
-	// Destroy all searches
-	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); i++)
-	{
-		delete i->second;
-	}
 	// Clear the map now that the pointers are destroyed
 	searches.clear();
 }
@@ -57,7 +43,7 @@ void CHidingSpotSearchCollection::Save(idSaveGame *savefile) const
 	savefile->WriteInt(searches.size());
 	for (HidingSpotSearchMap::const_iterator i = searches.begin(); i != searches.end(); i++)
 	{
-		HidingSpotSearchNode* node = i->second;
+		const HidingSpotSearchNodePtr& node = i->second;
 
 		savefile->WriteInt(node->searchId);
 		savefile->WriteInt(node->refCount);
@@ -76,7 +62,7 @@ void CHidingSpotSearchCollection::Restore(idRestoreGame *savefile)
 
 	for (int i = 0; i < num; i++)
 	{
-		HidingSpotSearchNode* node = new HidingSpotSearchNode;
+		HidingSpotSearchNodePtr node(new HidingSpotSearchNode);
 
 		savefile->ReadInt(node->searchId);
 		savefile->ReadInt(node->refCount);
@@ -93,46 +79,38 @@ void CHidingSpotSearchCollection::Restore(idRestoreGame *savefile)
 
 //--------------------------------------------------------------------
 
-int CHidingSpotSearchCollection::getNewSearch()
+CHidingSpotSearchCollection::HidingSpotSearchNodePtr CHidingSpotSearchCollection::getNewSearch()
 {
 	if (searches.size() >= MAX_NUM_HIDING_SPOT_SEARCHES)
 	{
-		return NULL_HIDING_SPOT_SEARCH_HANDLE;
+		return HidingSpotSearchNodePtr();
 	}
 	else
 	{
-		HidingSpotSearchNode* p_node = new HidingSpotSearchNode;
-		if (p_node == NULL)
-		{
-			return NULL_HIDING_SPOT_SEARCH_HANDLE;
-		}
-
+		HidingSpotSearchNodePtr node(new HidingSpotSearchNode);
+		
 		// We are returning to somebody, so they have a reference
-		p_node->refCount = 1;
+		node->refCount = 1;
 
 		// greebo: Assign a unique ID to this searchnode
-		p_node->searchId = highestSearchId;
+		node->searchId = highestSearchId;
 
 		searches.insert(
-			HidingSpotSearchMap::value_type(p_node->searchId, p_node)
+			HidingSpotSearchMap::value_type(node->searchId, node)
 		);
 
 		// Increase the unique ID
 		highestSearchId++;
 
-		return p_node->searchId; // ID is handle
+		return node;
 	}
 }
-
 
 //**********************************************************************
 // Public
 //**********************************************************************
 
-CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle
-(
-	int searchHandle
-)
+CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle(int searchHandle)
 {
 	HidingSpotSearchMap::const_iterator found = searches.find(searchHandle);
 
@@ -163,7 +141,6 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 	}
 }
 
-
 //------------------------------------------------------------------------------
 
 void CHidingSpotSearchCollection::dereference(int searchHandle)
@@ -176,8 +153,7 @@ void CHidingSpotSearchCollection::dereference(int searchHandle)
 
 		if (found->second->refCount <= 0)
 		{
-			// Delete and remove from map 
-			delete found->second;
+			// Remove the search from the map, triggers auto-deletion
 			searches.erase(found);
 		}
 	}
@@ -193,7 +169,7 @@ int CHidingSpotSearchCollection::findSearchByBounds
 {
 	for (HidingSpotSearchMap::iterator i = searches.begin(); i != searches.end(); i++)
 	{
-		HidingSpotSearchNode* node = i->second;
+		const HidingSpotSearchNodePtr& node = i->second;
 
 		idBounds existingBounds = node->search.getSearchLimits();
 		idBounds existingExclusionBounds = node->search.getSearchExclusionLimits();
@@ -229,25 +205,25 @@ int CHidingSpotSearchCollection::getOrCreateSearch
 )
 {
 	// Search with same bounds already?
-	int hSearch = findSearchByBounds(in_searchLimits, in_searchExclusionLimits);
+	int searchHandle = findSearchByBounds(in_searchLimits, in_searchExclusionLimits);
 
-	if (hSearch != NULL_HIDING_SPOT_SEARCH_HANDLE)
+	if (searchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
-		CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
+		CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(searchHandle);
 		out_b_searchCompleted = p_search->isSearchCompleted();
-		return hSearch;
+		return searchHandle;
 	}
 
 	// Make new search
-	hSearch = getNewSearch();
-	if (hSearch == NULL_HIDING_SPOT_SEARCH_HANDLE)
-	{
-		return hSearch;
-	}
+	HidingSpotSearchNodePtr node = getNewSearch();
+	assert(node != NULL);
 
+	// At this point, we have a valid handle, we rely on it being inserted in the map
+	
 	// Initialize the search
-	CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch); // TODO don't look the search up, we know that it exists
-	p_search->initialize
+	
+	CDarkmodAASHidingSpotFinder& search = node->search;
+	search.initialize
 	(
 		hideFromPos, 
 		in_hidingHeight,
@@ -259,17 +235,17 @@ int CHidingSpotSearchCollection::getOrCreateSearch
 
 	// Start search
 	DM_LOG(LC_AI, LT_DEBUG).LogString ("Starting search for hiding spots\r");
-	bool b_moreProcessingToDo = p_search->startHidingSpotSearch
+	bool b_moreProcessingToDo = search.startHidingSpotSearch
 	(
-		p_search->hidingSpotList,
+		search.hidingSpotList,
 		g_Global.m_maxNumHidingSpotPointTestsPerAIFrame,
 		frameIndex
 	);
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\r", p_search->hidingSpotList.getNumSpots());
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("First pass of hiding spot search found %d spots\r", search.hidingSpotList.getNumSpots());
 
 	// Is search completed?
 	out_b_searchCompleted = !b_moreProcessingToDo;
 
-	// Search created, return search to caller
-	return hSearch;
+	// Search created, return ID to caller
+	return node->searchId;
 }

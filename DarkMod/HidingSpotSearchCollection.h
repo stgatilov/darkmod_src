@@ -21,6 +21,7 @@
 
 #include "DarkmodAASHidingSpotFinder.h"
 #include <map>
+#include <boost/shared_ptr.hpp>
 
 //---------------------------------------------------------------------------
 
@@ -43,8 +44,11 @@ private:
 		CDarkmodAASHidingSpotFinder search;
 	};
 
+	// Smart pointer typedef
+	typedef boost::shared_ptr<HidingSpotSearchNode> HidingSpotSearchNodePtr;
+
 	// greebo: The array holding all active hiding spot search pointers
-	typedef std::map<int, HidingSpotSearchNode*> HidingSpotSearchMap;
+	typedef std::map<int, HidingSpotSearchNodePtr> HidingSpotSearchMap;
 	HidingSpotSearchMap searches;
 
 	// This provides a unique ID for the searches
@@ -56,11 +60,6 @@ private:
 	CHidingSpotSearchCollection();
 
 public:
-	/**
-	* Destructor
-	*/
-	~CHidingSpotSearchCollection();
-
 	/**
 	 * greebo: Contains the singleton instance of this class.
 	 */
@@ -84,7 +83,7 @@ public:
 	* Once this is called, the handle should be considered invalid and never
 	* be used again.
 	*/
-	void dereference(int hSearch);
+	void dereference(int searchHandle);
 
 	/**
 	* This attempts to get or create a new search. If the search
@@ -120,7 +119,7 @@ private:
 	* This gets an empty hiding spot search from the list and references
 	* it before returning it to the caller.
 	*/
-	int getNewSearch();
+	HidingSpotSearchNodePtr getNewSearch();
 
 	/**
 	* This searches the list for a search with similar bounds.
