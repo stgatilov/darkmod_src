@@ -19,9 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // Constructor
 
 CHidingSpotSearchCollection::CHidingSpotSearchCollection() :
-	highestSearchId(0),
-	numSearchesInUse(0),
-	p_firstSearch(NULL)
+	highestSearchId(0)
 {}
 
 //--------------------------------------------------------------------
@@ -50,21 +48,8 @@ void CHidingSpotSearchCollection::clear()
 	{
 		delete i->second;
 	}
+	// Clear the map now that the pointers are destroyed
 	searches.clear();
-
-	/*TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
-	TDarkmodHidingSpotSearchNode* p_temp;
-	while (p_cursor != NULL)
-	{
-		p_temp = p_cursor->p_next;
-		delete p_cursor;
-		p_cursor = p_temp;
-	}*/
-
-	p_firstSearch = NULL;
-
-	// No active searches any more
-	numSearchesInUse = 0;
 }
 
 void CHidingSpotSearchCollection::Save(idSaveGame *savefile) const
@@ -80,25 +65,6 @@ void CHidingSpotSearchCollection::Save(idSaveGame *savefile) const
 	}
 
 	savefile->WriteInt(highestSearchId);
-	savefile->WriteUnsignedInt(numSearchesInUse);
-
-	/*int searchesSaved = 0;
-	TDarkmodHidingSpotSearchNode* p_cursor = p_firstSearch;
-	while (p_cursor != NULL)
-	{
-		savefile->WriteInt(p_cursor->searchId);
-		savefile->WriteInt(p_cursor->refCount);
-		
-		p_cursor->search.Save(savefile);
-
-		searchesSaved++;
-		p_cursor = p_cursor->p_next;
-	}
-
-	if (searchesSaved != numSearchesInUse)
-	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("Error while saving collection: searchesSaved != numSearchesInUse\r");
-	}*/
 }
 
 void CHidingSpotSearchCollection::Restore(idRestoreGame *savefile)
@@ -123,42 +89,13 @@ void CHidingSpotSearchCollection::Restore(idRestoreGame *savefile)
 	}
 
 	savefile->ReadInt(highestSearchId);
-	savefile->ReadUnsignedInt(numSearchesInUse);
-
-	p_firstSearch = NULL;
-
-	/*TDarkmodHidingSpotSearchNode* lastSearch = NULL;
-	for (unsigned int i = 0; i < numSearchesInUse; i++)
-	{
-		TDarkmodHidingSpotSearchNode* curSearch = new TDarkmodHidingSpotSearchNode;
-
-		if (p_firstSearch == NULL)
-		{
-			p_firstSearch = curSearch;
-		}
-
-		curSearch->p_prev = lastSearch;
-		curSearch->p_next = NULL;
-
-		if (curSearch->p_prev != NULL)
-		{
-			curSearch->p_prev->p_next = curSearch;
-		}
-
-		savefile->ReadInt(curSearch->searchId);
-		savefile->ReadInt(curSearch->refCount);
-
-		curSearch->search.Restore(savefile);
-
-		lastSearch = curSearch;
-	}*/
 }
 
 //--------------------------------------------------------------------
 
 THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 {
-	if (numSearchesInUse >= MAX_NUM_HIDING_SPOT_SEARCHES)
+	if (searches.size() >= MAX_NUM_HIDING_SPOT_SEARCHES)
 	{
 		return NULL_HIDING_SPOT_SEARCH_HANDLE;
 	}
@@ -183,17 +120,6 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 		// Increase the unique ID
 		highestSearchId++;
 
-		/*p_node->p_prev = NULL;
-		p_node->p_next = p_firstSearch;
-		if (p_firstSearch != NULL)
-		{
-			p_firstSearch->p_prev = p_node;
-		}
-		p_firstSearch = p_node;*/
-
-		// One more search in use
-		numSearchesInUse++;
-
 		return p_node->searchId; // ID is handle
 	}
 }
@@ -202,45 +128,6 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getUnusedSearch()
 //**********************************************************************
 // Public
 //**********************************************************************
-
-int CHidingSpotSearchCollection::getSearchId(THidingSpotSearchHandle searchHandle)
-{
-	HidingSpotSearchMap::const_iterator found = searches.find(searchHandle);
-
-	// Return NULL handle if not found
-	return (found != searches.end()) ? searchHandle : NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
-	while (p_node != NULL)
-	{
-		if (static_cast<THidingSpotSearchHandle>(p_node) == searchHandle)
-		{
-			return p_node->searchId;
-		}
-		p_node = p_node->p_next;
-	}
-
-	// None found
-	return -1;*/
-}
-
-THidingSpotSearchHandle CHidingSpotSearchCollection::getSearchHandle(int searchId)
-{
-	return searchId; // ID == handle
-
-	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
-	while (p_node != NULL)
-	{
-		if (p_node->searchId == searchId)
-		{
-			return searchId; // ID == handle, TODO: remove this deprecated function, when done
-		}
-		p_node = p_node->p_next;
-	}
-
-	// None found
-	return NULL_HIDING_SPOT_SEARCH_HANDLE;*/
-}
 
 CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchByHandle
 (
@@ -274,23 +161,6 @@ CDarkmodAASHidingSpotFinder* CHidingSpotSearchCollection::getSearchAndReferenceC
 		out_refCount = 0;
 		return NULL;
 	}
-
-	/*TDarkmodHidingSpotSearchNode* p_node = (TDarkmodHidingSpotSearchNode*) searchHandle;
-	if (p_node != NULL)
-	{
-		if (p_node->refCount <= 0)
-		{
-			out_refCount = 0;
-			return NULL;
-		}
-
-		out_refCount = p_node->refCount;
-		return &(p_node->search);
-	}
-	else
-	{
-		return NULL;
-	}*/
 }
 
 
@@ -309,43 +179,8 @@ void CHidingSpotSearchCollection::dereference(THidingSpotSearchHandle searchHand
 			// Delete and remove from map 
 			delete found->second;
 			searches.erase(found);
-		
-			// One less search
-			numSearchesInUse--;
 		}
 	}
-
-	/*TDarkmodHidingSpotSearchNode* p_node = 
-		reinterpret_cast<TDarkmodHidingSpotSearchNode*>(searchHandle);
-
-	if (p_node != NULL)
-	{
-		// Decrement Refcount
-		p_node->refCount--;
-
-		if (p_node->refCount <= 0)
-		{
-			if (p_node->p_prev != NULL)
-			{
-				p_node->p_prev->p_next = p_node->p_next;
-			}
-			else
-			{
-				p_firstSearch = p_node->p_next;
-			}
-
-			if (p_node->p_next != NULL)
-			{
-				p_node->p_next->p_prev = p_node->p_prev;
-			}
-
-			delete p_node;
-		
-			// One less search
-			numSearchesInUse --;
-		}
-	}*/
-	
 }
 
 //------------------------------------------------------------------------------
@@ -376,28 +211,6 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::findSearchByBounds
 
 	// None found
 	return NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-	/*TDarkmodHidingSpotSearchNode* p_node = p_firstSearch;
-	while (p_node != NULL)
-	{
-		idBounds existingBounds = p_node->search.getSearchLimits();
-		idBounds existingExclusionBounds = p_node->search.getSearchExclusionLimits();
-		if (existingBounds.Compare (bounds, 50.0))
-		{
-			if (existingExclusionBounds.Compare (exclusionBounds, 50.0))
-			{
-				// Reuse this one
-				p_node->refCount ++;
-				return (THidingSpotSearchHandle) p_node;
-			}
-		}
-
-		p_node = p_node->p_next;
-	}
-
-	// None found
-	return NULL_HIDING_SPOT_SEARCH_HANDLE;*/
-
 }
 
 //------------------------------------------------------------------------------
@@ -418,9 +231,6 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	// Search with same bounds already?
 	THidingSpotSearchHandle hSearch = findSearchByBounds(in_searchLimits, in_searchExclusionLimits);
 
-	// greebo: TODO simplify this algorithm, we're inside the collection class, so we might as well
-	// access the members directly instead of using so many lookups.
-
 	if (hSearch != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
@@ -436,11 +246,10 @@ THidingSpotSearchHandle CHidingSpotSearchCollection::getOrCreateSearch
 	}
 
 	// Initialize the search
-	CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch);
+	CDarkmodAASHidingSpotFinder* p_search = getSearchByHandle(hSearch); // TODO don't look the search up, we know that it exists
 	p_search->initialize
 	(
 		hideFromPos, 
-		//in_p_aas, 
 		in_hidingHeight,
 		in_searchLimits, 
 		in_searchExclusionLimits,

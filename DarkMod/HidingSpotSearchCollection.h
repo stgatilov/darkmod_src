@@ -69,16 +69,6 @@ public:
 	static CHidingSpotSearchCollection& Instance();
 
 	/**
-	 * greebo: Return the integer handle for the given search. Returns -1 for unknown searches.
-	 */
-	int getSearchId(THidingSpotSearchHandle searchHandle);
-
-	/**
-	 * greebo: Returns the search handle for the given id. Can return the NULL searchHandle.
-	 */
-	THidingSpotSearchHandle getSearchHandle(int searchId);
-
-	/**
 	* This gets a search by its handle
 	*/
 	CDarkmodAASHidingSpotFinder* getSearchByHandle
@@ -125,25 +115,15 @@ public:
 		bool& out_b_searchCompleted
 	);
 		
-
-	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
+	// Standard Save/Restore routines 
+	void Save(idSaveGame *savefile) const;
+	void Restore(idRestoreGame *savefile);
 	
 protected:
 
 	// greebo: The array holding all active hiding spot search pointers
 	typedef std::map<int, TDarkmodHidingSpotSearchNode*> HidingSpotSearchMap;
 	HidingSpotSearchMap searches;
-
-	/**
-	* The list of hiding spot searches. 
-	*/
-	TDarkmodHidingSpotSearchNode* p_firstSearch;
-	
-	/**
-	* The number of active hiding spot searches
-	*/
-	unsigned int numSearchesInUse;
 
 	/**
 	* This destroys all searches. Don't call it unless you are shutting down the game.
@@ -160,9 +140,5 @@ protected:
 	/**
 	* This searches the list for a search with similar bounds.
 	*/
-	THidingSpotSearchHandle findSearchByBounds 
-	(
-		idBounds bounds,
-		idBounds exclusionBounds
-	);
+	THidingSpotSearchHandle findSearchByBounds(idBounds bounds, idBounds exclusionBounds);
 };
