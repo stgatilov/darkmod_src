@@ -8775,6 +8775,8 @@ int idAI::ContinueSearchForHidingSpots()
 		{
 			return 1;
 		}
+
+		// No more processing to do at this point
 		
 		unsigned int refCount;
 
@@ -8787,6 +8789,8 @@ int idAI::ContinueSearchForHidingSpots()
 			);
 
 		m_hidingSpots.clear();
+		// greebo: Now retrieve our share from the completed hiding spot search
+		// Given that three other AI are referencing this hiding spot finder, this AI draws a third.
 		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
 
 		// Done with search object, dereference so other AIs know how many
