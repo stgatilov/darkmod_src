@@ -331,6 +331,30 @@ private:
 	int					fadeStart;
 	int					fadeEnd;
 	bool				runGui;
+
+	/**
+	* Set to true if whether this static entity should hide
+	* when outside a certain distance from the player
+	**/
+	bool				m_bDistDependent;
+
+	/**
+	* If true, the LOD distance check will only consider distance
+	* orthogonal to gravity.  This can be useful for things like
+	* turning on rainclouds high above the player.
+	**/
+	bool				m_bDistCheckXYOnly;
+	
+	/**
+	* Timestamp and interval between distance checks, in milliseconds
+	**/
+	int					m_DistCheckTimeStamp;
+	int					m_DistCheckInterval;
+	
+	/**
+	* Distance squared beyond which the entity hides, if it is distance dependent
+	**/
+	float				m_DistShowSq;
 };
 
 

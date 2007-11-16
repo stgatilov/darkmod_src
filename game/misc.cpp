@@ -1396,6 +1396,13 @@ idStaticEntity::idStaticEntity( void ) {
 	fadeStart = 0;
 	fadeEnd	= 0;
 	runGui = false;
+	
+	m_bDistDependent = false;
+	m_DistShowSq = 0;
+
+	m_DistCheckTimeStamp = 0;
+	m_DistCheckInterval = 0;
+	m_bDistCheckXYOnly = false;
 }
 
 /*
@@ -1411,6 +1418,12 @@ void idStaticEntity::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( fadeStart );
 	savefile->WriteInt( fadeEnd );
 	savefile->WriteBool( runGui );
+
+	savefile->WriteBool( m_bDistDependent );
+	savefile->WriteFloat( m_DistShowSq );
+	savefile->WriteInt( m_DistCheckTimeStamp );
+	savefile->WriteInt( m_DistCheckInterval );
+	savefile->WriteBool( m_bDistCheckXYOnly );
 }
 
 /*
@@ -1426,6 +1439,12 @@ void idStaticEntity::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( fadeStart );
 	savefile->ReadInt( fadeEnd );
 	savefile->ReadBool( runGui );
+
+	savefile->ReadBool( m_bDistDependent );
+	savefile->ReadFloat( m_DistShowSq );
+	savefile->ReadInt( m_DistCheckTimeStamp );
+	savefile->ReadInt( m_DistCheckInterval );
+	savefile->ReadBool( m_bDistCheckXYOnly );
 }
 
 /*
@@ -1475,6 +1494,27 @@ void idStaticEntity::Spawn( void ) {
 	if ( runGui ) {
 		BecomeActive( TH_THINK );
 	}
+
+	// Distance dependence:
+
+	if( (m_DistShowSq = spawnArgs.GetFloat( "hide_distance", "0.0" )) > 0 )
+	{
+		// distance dependent LOD from this point on:
+		m_bDistDependent = true;
+		m_DistShowSq *= m_DistShowSq;
+
+		m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
+
+		m_DistCheckInterval = (int) (1000.0f * spawnArgs.GetFloat( "dist_check_period", "0.5" ));
+
+		// add some phase diversity to the checks so that they don't all run in one frame
+		// make sure they all run on the first frame though, by initializing m_TimeStamp to
+		// be at least one interval early.
+		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + 0.5f*gameLocal.random.RandomFloat()) );
+
+		// Have to start thinking if we're distance dependent
+		BecomeActive( TH_THINK );
+	}
 }
 
 /*
@@ -1490,13 +1530,49 @@ void idStaticEntity::ShowEditingDialog( void ) {
 idStaticEntity::Think
 ================
 */
-void idStaticEntity::Think( void ) {
+void idStaticEntity::Think( void ) 
+{
+
+
 	idEntity::Think();
-	if ( thinkFlags & TH_THINK ) {
-		if ( runGui && renderEntity.gui[0] ) {
+
+	// Distance dependence checks
+	if( m_bDistDependent 
+		&& ( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval ) )
+	{
+		idVec3 delta, vGravNorm;
+		bool bWithinDist;
+
+		m_DistCheckTimeStamp = gameLocal.time;
+		bWithinDist = false;
+
+		// TODO: What to do about player looking thru spyglass?
+		delta = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin();
+		delta -= GetPhysics()->GetOrigin();
+
+		if( m_bDistCheckXYOnly )
+		{
+			vGravNorm = GetPhysics()->GetGravityNormal();
+			delta -= (vGravNorm * delta) * vGravNorm;
+		}
+
+		bWithinDist = (delta.LengthSqr() < m_DistShowSq);
+
+		if( fl.hidden && bWithinDist )
+			Show();
+		else if( !fl.hidden && !bWithinDist )
+			Hide();
+	}
+
+	if ( thinkFlags & TH_THINK ) 
+	{
+		if ( runGui && renderEntity.gui[0] ) 
+		{
 			idPlayer *player = gameLocal.GetLocalPlayer();
-			if ( player ) {
-				if ( !player->objectiveSystemOpen ) {
+			if ( player ) 
+			{
+				if ( !player->objectiveSystemOpen ) 
+				{
 					renderEntity.gui[0]->StateChanged( gameLocal.time, true );
 					if ( renderEntity.gui[1] ) {
 						renderEntity.gui[1]->StateChanged( gameLocal.time, true );
@@ -1507,14 +1583,18 @@ void idStaticEntity::Think( void ) {
 				}
 			}
 		}
-		if ( fadeEnd > 0 ) {
+		if ( fadeEnd > 0 ) 
+		{
 			idVec4 color;
 			if ( gameLocal.time < fadeEnd ) {
 				color.Lerp( fadeFrom, fadeTo, ( float )( gameLocal.time - fadeStart ) / ( float )( fadeEnd - fadeStart ) );
 			} else {
 				color = fadeTo;
 				fadeEnd = 0;
-				BecomeInactive( TH_THINK );
+				
+				// TDM: Don't deactivate if we have to keep doing distance checks
+				if( !m_bDistDependent )
+					BecomeInactive( TH_THINK );
 			}
 			SetColor( color );
 		}
@@ -2717,9 +2797,15 @@ idFuncPortal::idFuncPortal()
 idFuncPortal::Save
 ===============
 */
-void idFuncPortal::Save( idSaveGame *savefile ) const {
+void idFuncPortal::Save( idSaveGame *savefile ) const 
+{
 	savefile->WriteInt( (int)portal );
 	savefile->WriteBool( state );
+
+	savefile->WriteBool( m_bDistDependent );
+	savefile->WriteFloat( m_Distance );
+	savefile->WriteInt( m_TimeStamp );
+	savefile->WriteInt( m_Interval );
 }
 
 /*
@@ -2727,10 +2813,16 @@ void idFuncPortal::Save( idSaveGame *savefile ) const {
 idFuncPortal::Restore
 ===============
 */
-void idFuncPortal::Restore( idRestoreGame *savefile ) {
+void idFuncPortal::Restore( idRestoreGame *savefile ) 
+{
 	savefile->ReadInt( (int &)portal );
 	savefile->ReadBool( state );
 	gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+
+	savefile->ReadBool( m_bDistDependent );
+	savefile->ReadFloat( m_Distance );
+	savefile->ReadInt( m_TimeStamp );
+	savefile->ReadInt( m_Interval );
 }
 
 /*
