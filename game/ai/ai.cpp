@@ -5336,11 +5336,11 @@ void idAI::UpdateEnemyPosition()
 
 	int				enemyAreaNum;
 	int				areaNum;
-	aasPath_t		path;
 	idVec3			enemyPos;
 	bool			onGround;
-
-	const idVec3 &org = physicsObj.GetOrigin();
+	const idVec3&	org = physicsObj.GetOrigin();
+	int				lastVisibleReachableEnemyAreaNum = -1;
+	bool			enemyDetectable = false;
 
 	if ( move.moveType == MOVETYPE_FLY )
 	{
@@ -5369,16 +5369,27 @@ void idAI::UpdateEnemyPosition()
 
 			if (enemyAreaNum)
 			{
-				// Enemy origin/floorposition is reachable, get our own area number
+				// We have a valid enemy area number
+				// Get the own area number
 				areaNum = PointReachableAreaNum(org);
 
 				// Try to setup a path to the goal
+				aasPath_t path;
 				if (PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos))
 				{
 					// Path successfully setup, store the position as "reachable"
 					lastReachableEnemyPos = enemyPos;
 					enemyReachable = true;
 				}
+			}
+			else
+			{
+				// The area number lookup failed, fallback to unreachable
+				if (move.moveCommand == MOVE_TO_ENEMY)
+				{
+					AI_DEST_UNREACHABLE = true;
+				}
+				areaNum = 0;
 			}
 		}
 		else
@@ -5390,7 +5401,7 @@ void idAI::UpdateEnemyPosition()
 			enemyReachable = true;
 		}
 	}
-
+	
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
 	
@@ -5407,19 +5418,18 @@ void idAI::UpdateEnemyPosition()
 
 
 		// Now perform the FOV check manually
-		if (CheckFOV( enemyEnt->GetPhysics()->GetOrigin()))
+		if (CheckFOV(enemyPos))
 		{
 			AI_ENEMY_IN_FOV = true;
 			// TODO: call SetEnemyPosition here only?
 
 			// Store the last time the enemy was visible
 			mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
-
 		}
-
-		SetEnemyPosition();
+		enemyDetectable = true;
 	}
-	else
+
+	else	// enemy is not visible
 	{
 		if (cv_ai_show_enemy_visibility.GetBool())
 		{
@@ -5436,7 +5446,66 @@ void idAI::UpdateEnemyPosition()
 			{
 				// Enemy within hearing distance, update position
 				// greebo: TODO: This also updates lastVisibleReachableEnemyPos, is this ok?
-				SetEnemyPosition();
+				enemyDetectable= true;
+
+			}
+		}
+	}
+
+	if (enemyDetectable)
+	{
+		// angua: This was merged in from SetEnemyPosition
+		// to avoid doing the same reachability testing stuff twice
+		lastVisibleEnemyPos = enemyEnt->GetPhysics()->GetOrigin();
+		lastVisibleEnemyEyeOffset = enemyEnt->EyeOffset();
+
+		if (aas != NULL && enemyReachable)
+		{
+			// We have a visible and reachable enemy position
+			lastVisibleReachableEnemyPos = enemyPos;
+			lastVisibleReachableEnemyAreaNum = enemyAreaNum;
+		}
+		else
+		{
+			// We don't have a valid AAS, we can't tell if an enemy is reachable or not,
+			// so just assume that he is.
+			lastVisibleReachableEnemyPos = lastVisibleEnemyPos;
+			enemyAreaNum = 0;
+			areaNum = 0;
+		}
+
+		// General move command update
+		if (move.moveCommand == MOVE_TO_ENEMY)
+		{
+			if (!aas)
+			{
+				// Invalid AAS keep the move destination up to date for wandering
+				AI_DEST_UNREACHABLE = false;
+				move.moveDest = lastVisibleReachableEnemyPos;
+			}
+			else if (enemyAreaNum)
+			{
+				// The previous pathing attempt succeeded, update the move command
+				move.toAreaNum = lastVisibleReachableEnemyAreaNum;
+				move.moveDest = lastVisibleReachableEnemyPos;
+				AI_DEST_UNREACHABLE = !enemyReachable;
+			}
+
+			if (move.moveType == MOVETYPE_FLY)
+			{
+				predictedPath_t path;
+				idVec3 end = move.moveDest;
+				end.z += enemyEnt->EyeOffset().z + fly_offset;
+				idAI::PredictPath( this, aas, move.moveDest, end - move.moveDest, 1000, 1000, SE_BLOCKED, path );
+				move.moveDest = path.endPos;
+				move.toAreaNum = PointReachableAreaNum( move.moveDest, 1.0f );
+			}
+
+			if (!onGround)
+			{
+				// greebo: The AI considers a non-grounded entity to be unreachable
+				// TODO: Check for climb height? The enemy might still be reachable?
+				AI_DEST_UNREACHABLE = true;
 			}
 		}
 	}

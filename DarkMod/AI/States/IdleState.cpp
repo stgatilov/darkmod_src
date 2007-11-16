@@ -52,7 +52,7 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
-	_alertLevelDecreaseRate = 0.001;
+	_alertLevelDecreaseRate = 0.01f;
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
