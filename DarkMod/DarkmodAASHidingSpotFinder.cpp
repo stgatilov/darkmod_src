@@ -42,34 +42,35 @@ idList<darkModHidingSpot> CDarkmodAASHidingSpotFinder::DebugDrawList;
 
 //----------------------------------------------------------------------------
 
-CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder()
+CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder() :
+	hidingSpotRedundancyDistance(50.0f),
+	searchState(EDone),
+	hideFromPosition(vec3_origin),
+	numHideFromPVSAreas(0),
+	numPVSAreas(0),
+	numPVSAreasIterated(0),
+	numAASAreaIndicesSearched(0),
+	p_aas(NULL),
+	hidingHeight(0),
+	searchLimits(vec3_origin, vec3_origin),
+	searchCenter(vec3_origin),
+	searchRadius(0),
+	searchIgnoreLimits(vec3_origin, vec3_origin),
+	hidingSpotTypesAllowed(0),
+	areasTestedThisPass(0),
+	lastProcessingFrameNumber(-1),
+	currentGridSearchAASAreaNum(0),
+	currentGridSearchBounds(vec3_origin, vec3_origin),
+	currentGridSearchBoundMins(vec3_origin),
+	currentGridSearchBoundMaxes(vec3_origin),
+	currentGridSearchPoint(vec3_origin)
 {
-	// Default value
-	hidingSpotRedundancyDistance = 50.0;
-
 	// Start empty
 	h_hideFromPVS.i = -1;
 	h_hideFromPVS.h = 0;
 
-	// Remember the hide form position
-	hideFromPosition = vec3_origin;
-
-	// Set search parameters
-	p_aas = NULL;
-	hidingHeight = 0;
-	searchLimits[0] = vec3_origin;
-	searchLimits[1] = vec3_origin;
-	searchCenter = vec3_origin;
-	searchRadius = 0.0;
-	hidingSpotTypesAllowed = 0;
+	// idEntityPtrs are initialised by assignment
 	p_ignoreEntity = NULL;
-	lastProcessingFrameNumber = -1;
-
-	// No hiding spot PVS areas identified yet
-	numPVSAreas = 0;
-	numPVSAreasIterated = 0;
-
-	numHideFromPVSAreas = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -78,7 +79,6 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder()
 CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 (
 	const idVec3 &hideFromPos, 
-	//idAAS* in_p_aas, 
 	float in_hidingHeight,
 	idBounds in_searchLimits, 
 	idBounds in_searchExcludeLimits, 
@@ -86,7 +86,6 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 	idEntity* in_p_ignoreEntity
 )
 {
-
 	// Default value
 	hidingSpotRedundancyDistance = 50.0;
 
@@ -128,9 +127,7 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 		hideFromPVSAreas, 
 		numHideFromPVSAreas 
 	);
-
 }
-
 
 //----------------------------------------------------------------------------
 
@@ -146,9 +143,9 @@ bool CDarkmodAASHidingSpotFinder::initialize
 )
 {
 	// Be certain we free our PVS node graph
-	if ((h_hideFromPVS.h != 0) || (h_hideFromPVS.i != -1))
+	if (h_hideFromPVS.h != 0 || h_hideFromPVS.i != -1)
 	{
-		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
+		gameLocal.pvs.FreeCurrentPVS(h_hideFromPVS);
 		h_hideFromPVS.h = 0;
 		h_hideFromPVS.i = -1;
 	}
@@ -183,13 +180,8 @@ bool CDarkmodAASHidingSpotFinder::initialize
 	numHideFromPVSAreas = 1;
 
     // Setup our local copy of the pvs node graph
-	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS
-	(
-		hideFromPVSAreas, 
-		numHideFromPVSAreas 
-	);
+	h_hideFromPVS = gameLocal.pvs.SetupCurrentPVS(hideFromPVSAreas, numHideFromPVSAreas);
 	
-	// Done
 	return true;
 }
 
@@ -198,11 +190,10 @@ bool CDarkmodAASHidingSpotFinder::initialize
 // Destructor
 CDarkmodAASHidingSpotFinder::~CDarkmodAASHidingSpotFinder(void)
 {
-
 	// Be certain we free our PVS node graph
-	if ((h_hideFromPVS.h != 0) || (h_hideFromPVS.i != -1))
+	if (h_hideFromPVS.h != 0 || h_hideFromPVS.i != -1)
 	{
-		gameLocal.pvs.FreeCurrentPVS( h_hideFromPVS );
+		gameLocal.pvs.FreeCurrentPVS(h_hideFromPVS);
 		h_hideFromPVS.h = 0;
 		h_hideFromPVS.i = -1;
 	}
@@ -330,7 +321,6 @@ void CDarkmodAASHidingSpotFinder::Restore( idRestoreGame *savefile )
 
 bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 (
-	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
@@ -344,19 +334,19 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 		return false;
 	}
 
-	// Holds the center of an AAS area during testing
-	idVec3	areaCenter;
 	// The number of areas we tested in this pass.
 	areasTestedThisPass = 0;
 
 	// Branch based on state until search is done or we have tested enough points this pass
-	bool b_searchNotDone = (searchState != EDone);
+	bool searchNotDone = (searchState != EDone);
 
-	while (b_searchNotDone && inout_numPointsTestedThisPass < numPointsToTestThisPass && areasTestedThisPass < MAX_AREAS_PER_PASS)
+	while (searchNotDone && 
+			inout_numPointsTestedThisPass < numPointsToTestThisPass && 
+			areasTestedThisPass < MAX_AREAS_PER_PASS)
 	{
 		if (searchState == ENewPVSArea)
 		{
-			b_searchNotDone = testNewPVSArea
+			searchNotDone = testNewPVSArea
 			(
 				inout_hidingSpots,
 				numPointsToTestThisPass,
@@ -365,7 +355,7 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 		}
 		else if (searchState == EIteratingNonVisibleAASAreas)
 		{
-			b_searchNotDone = testingAASAreas_InNonVisiblePVSArea
+			searchNotDone = testingAASAreas_InNonVisiblePVSArea
 			(
 				inout_hidingSpots,
 				numPointsToTestThisPass,
@@ -374,7 +364,7 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 		}
 		else if (searchState == EIteratingVisibleAASAreas)
 		{
-			b_searchNotDone = testingAASAreas_InVisiblePVSArea
+			searchNotDone = testingAASAreas_InVisiblePVSArea
 			(
 				inout_hidingSpots,
 				numPointsToTestThisPass,
@@ -383,7 +373,7 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 		}
 		else if (searchState == ESubdivideVisibleAASArea)
 		{
-			b_searchNotDone = testingInsideVisibleAASArea
+			searchNotDone = testingInsideVisibleAASArea
 			(
 				inout_hidingSpots,
 				numPointsToTestThisPass,
@@ -392,25 +382,23 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 		}
 		else if (searchState == EDone)
 		{
-			b_searchNotDone = false;
+			searchNotDone = false;
 		}
 	}
 
 	// Done
-	return b_searchNotDone;
+	return searchNotDone;
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 bool CDarkmodAASHidingSpotFinder::testNewPVSArea 
 (
-	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
 )
 {
-
 	// Loop until we change states (go to test inside a PVS area)
  	while (searchState == ENewPVSArea)
 	{
@@ -431,7 +419,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 		// the "hide from" point.
 		// If the area is not in our h_hidePVS set, then it cannot be seen, and it is 
 		// thus considered hidden.
-		if (!gameLocal.pvs.InCurrentPVS( h_hideFromPVS, PVSAreas[numPVSAreasIterated]))
+		if (!gameLocal.pvs.InCurrentPVS(h_hideFromPVS, PVSAreas[numPVSAreasIterated]))
 		{
 			// Only put these in here if PVS based hiding spots are allowed
 			if ((hidingSpotTypesAllowed & PVS_AREA_HIDING_SPOT_TYPE) != 0)
@@ -477,7 +465,6 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 
 bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 (
-	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
@@ -586,7 +573,6 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 
 bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea 
 (
-	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
@@ -653,7 +639,6 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 
 bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 (
-	//idList<darkModHidingSpot>& inout_hidingSpots,
 	CDarkmodHidingSpotTree& inout_hidingSpots,
 	int numPointsToTestThisPass,
 	int& inout_numPointsTestedThisPass
@@ -1076,8 +1061,6 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 			viewLifetime
 		);
 	}
-
-	// Done
 }
 
 //----------------------------------------------------------------------------
@@ -1126,7 +1109,6 @@ void CDarkmodAASHidingSpotFinder::testFindHidingSpots
 	CDarkmodAASHidingSpotFinder::debugClearHidingSpotDrawList();
 	CDarkmodAASHidingSpotFinder::debugAppendHidingSpotsToDraw (hidingSpotList);
 	CDarkmodAASHidingSpotFinder::debugDrawHidingSpots (15000);
-	// Done
 }
 
 /*
@@ -1145,7 +1127,7 @@ bool CDarkmodAASHidingSpotFinder::isSearchCompleted()
 	}
 
 	// Done if in searchDone state
-	return  (searchState == EDone);
+	return (searchState == EDone);
 }
 
 //-----------------------------------------------------------------------------
