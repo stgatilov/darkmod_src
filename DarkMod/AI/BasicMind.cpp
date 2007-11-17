@@ -304,19 +304,25 @@ void BasicMind::SetAlertPos()
 		
 		owner->AI_VISALERT = false;
 		stimBarkType = 1;
-		
-		//DEBUG_PRINT ("Visual alert pos " + m_alertPos);
 	}	
 	else if( owner->AI_HEARDSOUND )
 	{
 		memory.alertType = EAlertAudio;
 
-		// TODO: Alert position should be fuzzy on audio alerts, depending on the distance
 		memory.alertPos = owner->GetSndDir();
-		
+
 		// Search within radius of stimulus that is 1/3 the distance from the
 		// observer to the point at the time heard
 		float distanceToStim = (owner->GetPhysics()->GetOrigin() - memory.alertPos).LengthFast();
+
+		// greebo: Apply a certain fuzziness to the audio alert position
+		// 200 units distance corresponds to 50 units fuzziness in X/Y direction
+		memory.alertPos += idVec3(
+			(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+			(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+			0 // no fuzziness in z-direction
+		) * distanceToStim / 400.0f;
+
 		float searchVolModifier = distanceToStim / 600.0f;
 		if (searchVolModifier < 0.01f)
 		{
@@ -329,14 +335,13 @@ void BasicMind::SetAlertPos()
 				
 		owner->AI_HEARDSOUND = false;
 		stimBarkType = 2;
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
 	}
 
 	// Handle stimulus "barks"
-	if 
-	(
-		(stimBarkType >= 1) && 
-		( (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	)
+	if (stimBarkType >= 1 && 
+		MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 
@@ -404,11 +409,8 @@ void BasicMind::SetAlertPos()
 					Bark( "snd_alert1cs" );
 				}
 			}
-	
 		}
 	}
-
-	// Done stimulus barks	
 }
 
 void BasicMind::Bark(const idStr& soundname)
@@ -564,12 +566,8 @@ bool BasicMind::PerformCombatCheck()
 	}
 
 	// If we got here there is no target
-	DM_LOG(LC_AI, LT_INFO).LogString("No Target to justify combat alert level, lowering to agitated search\r");
-		
-	// Lower alert level from combat to agitated search
-	// owner->SetAlertLevel(owner->thresh_combat - 0.01);
 
-	return false; // combat mode not entered
+	return false; // combat mode not justified
 }
 
 void BasicMind::PerformSensoryScan(bool processNewStimuli)
@@ -587,17 +585,11 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{
-	
 		// Process alert flags for combat or stimulus location (both destroy flag values)?
 		if (owner->AI_AlertNum >= owner->thresh_combat)
 		{
-			// This reflects the alert level inside it as well
-			//DEBUG_PRINT ("Initiating combat due to stim");
-			if (PerformCombatCheck())
-			{
-				// Combat state entered, quit processing
-				return;
-			}
+			// We're already in combat mode, ignore this stimulus
+			return;
 		}
 	
 		// If it was not a combat level alert, or we returned here because there

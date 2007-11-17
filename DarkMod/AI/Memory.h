@@ -34,6 +34,7 @@ namespace ai
 
 // Considered cause radius around an audio event
 #define AUDIO_ALERT_RADIUS 50.0f
+#define AUDIO_ALERT_FUZZINESS 100.0f
 #define AUDIO_SEARCH_VOLUME idVec3(200,200,200)
 
 // Area searched around last sighting after losing an enemy
