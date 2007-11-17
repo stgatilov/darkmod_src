@@ -19,6 +19,8 @@ static bool init_version = FileVersionList("$Id: WanderInLocationTask.cpp 1435 2
 namespace ai
 {
 
+const float WANDER_RADIUS = 400;
+
 WanderInLocationTask::WanderInLocationTask() :
 	_location(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY)
 {}
@@ -57,15 +59,15 @@ bool WanderInLocationTask::Perform(Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
-	// if we are approaching or past maximum distance, next wander is back toward the initial position
-	if ((owner->GetPhysics()->GetOrigin() - _location).LengthFast() >= memory.alertRadius)
-	{
-		owner->MoveToPosition(_location);
-	}
-	else if (owner->AI_MOVE_DONE)
+	if (owner->AI_MOVE_DONE)
 	{
 		// Wander in a new direction if wander phase time expired or we got stopped by something
 		owner->WanderAround();
+	}
+	// if we are approaching or past maximum distance, next wander is back toward the initial position
+	else if ((owner->GetPhysics()->GetOrigin() - _location).LengthFast() >= WANDER_RADIUS)
+	{
+		owner->MoveToPosition(_location);
 	}
 
 	return false; // not finished yet

@@ -603,9 +603,9 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 			// consider it a new alert? Visual alerts are highly compelling and
 			// are always considered new
 			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
-			float alertDeltaLength = newAlertDeltaFromLastOneSearched.LengthFast();
+			float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
 			
-			if (memory.alertType == EAlertVisual || alertDeltaLength > memory.alertRadius)
+			if (memory.alertType == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 			{
 				// This is a new alert // SZ Dec 30, 2006
 				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions
