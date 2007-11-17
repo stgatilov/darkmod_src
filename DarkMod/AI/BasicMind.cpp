@@ -310,6 +310,8 @@ void BasicMind::SetAlertPos()
 	else if( owner->AI_HEARDSOUND )
 	{
 		memory.alertType = EAlertAudio;
+
+		// TODO: Alert position should be fuzzy on audio alerts, depending on the distance
 		memory.alertPos = owner->GetSndDir();
 		
 		// Search within radius of stimulus that is 1/3 the distance from the
@@ -618,6 +620,10 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions
 				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
+					// We are in searching mode or we are switching to it, handle this new incoming alert
+
+					// TODO: Check if we are already in searching mode, re-initialise search if this is the case
+
 					if (memory.alertType == EAlertVisual)
 					{
 						// Visual stimuli are locatable enough that we should
@@ -631,6 +637,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 						memory.stimulusLocationItselfShouldBeSearched = false;
 					}
 					
+					// greebo: TODO: Each incoming stimulus == evidence of intruders?
 					// One more piece of evidence of something out of place
 					memory.countEvidenceOfIntruders++;
 				
