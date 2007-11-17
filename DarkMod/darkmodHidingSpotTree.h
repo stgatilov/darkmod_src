@@ -42,17 +42,6 @@ struct darkModHidingSpot
 
 //-------------------------------------------------------------------------
 
-struct darkModHidingSpotNode
-{
-	// The unique spot id
-	int id;
-
-	// The spot
-	darkModHidingSpot spot;
-};
-
-/*---------------------------------------------------------------------------*/
-
 struct TDarkmodHidingSpotAreaNode
 {
 	// greebo: This is a unique ID to resolve pointers after map restore
@@ -65,7 +54,7 @@ struct TDarkmodHidingSpotAreaNode
 	TDarkmodHidingSpotAreaNode* p_nextSibling;
 
 	// Each area node holds a list of hiding spots
-	idList<darkModHidingSpotNode*> spots;
+	idList<darkModHidingSpot*> spots;
 
 	// Quality of the best spot in the area
 	float bestSpotQuality;
@@ -75,16 +64,13 @@ struct TDarkmodHidingSpotAreaNode
 
 };
 
-/*---------------------------------------------------------------------------*/
+//---------------------------------------------------------------------------
 
 class CDarkmodHidingSpotTree
 {
 private:
 	// The highest used area node id (0 on initialisiation)
 	int maxAreaNodeId;
-
-	// The highest used spot node id (0 on initialisation)
-	int maxSpotNodeId;
 
 protected:
 
@@ -101,8 +87,6 @@ protected:
 	int getAreaNodeId(TDarkmodHidingSpotAreaNode* area) const; // returns -1 for invalid pointer
 	TDarkmodHidingSpotAreaNode* getAreaNode(int areaNodeId) const; // returns NULL for invalid Id
 
-	void clearIndexRetrievalTracking();
-	
 	/*!
 	* Gets the Nth spot from the tree, where N is a 0 based index.
 	* This is a slow iteration from the beginning of the tree
@@ -112,11 +96,7 @@ protected:
 	*
 	* @return Pointer to spot, NULL if index was out of bounds
 	*/
-	darkModHidingSpot* getNthSpotInternal
-	(
-		unsigned int index,
-		idBounds& out_areaNodeBounds
-	);
+	darkModHidingSpot* getNthSpotInternal(unsigned int index, idBounds& out_areaNodeBounds);
 
 	/*!
 	* This method sorts the area by hiding spot light internally
@@ -130,11 +110,7 @@ protected:
 	*	case you should fix it yourself, damnit.
 
 	*/
-	void quicksortHidingSpotList
-	(
-		darkModHidingSpotNode*& inout_p_firstNode,
-		unsigned long numSpots
-	);
+	void quicksortHidingSpotList(darkModHidingSpot*& inout_p_firstNode,	unsigned long numSpots);
 
 	/*!
 	* This method sorts the given area list
@@ -198,7 +174,7 @@ public:
 	/*!
 	* Get the number of spots in the entire tree
 	*/
-	unsigned long getNumSpots()
+	ID_INLINE unsigned long getNumSpots()
 	{
 		return numSpots;
 	}
@@ -206,19 +182,13 @@ public:
 	/*!
 	* Gets the node for an area by area index
 	*/
-	TDarkmodHidingSpotAreaNode* getArea
-	(
-		unsigned int areaIndex
-	);
+	TDarkmodHidingSpotAreaNode* getArea(unsigned int areaIndex);
 
 	/*!
 	* Inserts an area and returns the are node handle
 	* for use in inserting hiding spots.
 	*/
-	TDarkmodHidingSpotAreaNode* insertArea
-	(
-		unsigned int areaIndex
-	);
+	TDarkmodHidingSpotAreaNode* insertArea(unsigned int areaIndex);
 
 	/*!
 	* Tests a spot for redundancy with spots already in
@@ -286,10 +256,7 @@ public:
 	*	(time to shut down the application).
 	*
 	*/
-	bool subDivideAreas
-	(
-		unsigned int maxPointsPerArea
-	);
+	bool subDivideAreas(unsigned int maxPointsPerArea);
 
 	/*! 
 	* Starts an iteration of the areas in the tree
