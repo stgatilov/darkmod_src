@@ -171,6 +171,12 @@ public:
 	*/
 	bool hidingSpotSearchDone;
 
+	/**
+	 * greebo: This is queried by the SearchStates and indicates a new
+	 *         stimulus to be considered.
+	 */
+	bool restartSearchForHidingSpots;
+
 	// This counts the number of frames we have been thinking, in case
 	// we have a problem with hiding spot searches not returning
 	int hidingSpotThinkFrameCount;
@@ -216,6 +222,7 @@ public:
 		hidingSpotTestStarted(false),
 		hidingSpotSearchDone(true),
 		hidingSpotThinkFrameCount(0),
+		restartSearchForHidingSpots(false),
 		firstChosenHidingSpotIndex(0),
 		currentChosenHidingSpotIndex(0),
 		chosenHidingSpot(0,0,0),
@@ -254,6 +261,7 @@ public:
 		savefile->WriteBool(hidingSpotTestStarted);
 		savefile->WriteBool(hidingSpotSearchDone);
 		savefile->WriteInt(hidingSpotThinkFrameCount);
+		savefile->WriteBool(restartSearchForHidingSpots);
 		savefile->WriteInt(firstChosenHidingSpotIndex);
 		savefile->WriteInt(currentChosenHidingSpotIndex);
 		savefile->WriteVec3(chosenHidingSpot);
@@ -297,6 +305,7 @@ public:
 		savefile->ReadBool(hidingSpotTestStarted);
 		savefile->ReadBool(hidingSpotSearchDone);
 		savefile->ReadInt(hidingSpotThinkFrameCount);
+		savefile->ReadBool(restartSearchForHidingSpots);
 		savefile->ReadInt(firstChosenHidingSpotIndex);
 		savefile->ReadInt(currentChosenHidingSpotIndex);
 		savefile->ReadVec3(chosenHidingSpot);

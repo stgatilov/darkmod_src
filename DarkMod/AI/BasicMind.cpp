@@ -607,27 +607,15 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 			
 			if (memory.alertType == EAlertVisual || alertDeltaLength > memory.alertRadius)
 			{
-				// This is a new alert
-				// SZ Dec 30, 2006
+				// This is a new alert // SZ Dec 30, 2006
 				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions
 				if (owner->AI_AlertNum >= owner->thresh_2)
 				{
 					// We are in searching mode or we are switching to it, handle this new incoming alert
 
-					// TODO: Check if we are already in searching mode, re-initialise search if this is the case
-
-					if (memory.alertType == EAlertVisual)
-					{
-						// Visual stimuli are locatable enough that we should
-						// search the exact stim location first
-						memory.stimulusLocationItselfShouldBeSearched = true;
-					}
-					else
-					{
-						// Don't bother to search direct stim location as we don't know 
-						// exactly where the stim is
-						memory.stimulusLocationItselfShouldBeSearched = false;
-					}
+					// Visual stimuli are locatable enough that we should
+					// search the exact stim location first
+					memory.stimulusLocationItselfShouldBeSearched = true;
 					
 					// greebo: TODO: Each incoming stimulus == evidence of intruders?
 					// One more piece of evidence of something out of place
@@ -635,6 +623,9 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 				
 					// Do new reaction to stimulus
 					memory.searchingDueToCommunication = false;
+
+					// Restart the search, in case we're already searching
+					memory.restartSearchForHidingSpots = true;
 				}	
 			} // Not too close to last stimulus or is visual stimulus
 		} // Not ignoring new stimuli

@@ -56,13 +56,9 @@ protected:
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
 
-	// This is a service method for this class and the subclasses.
-	// It basically starts a new hidingspot search and initialises the subsystems
-	void SetupSearch(idAI* owner);
-
-	/*!
-	* This method is used to start a new hiding spot search. Any existing search in progress is replaced.
-	*/
+	/**
+	 * This method is used to start a new hiding spot search. Any existing search in progress is replaced.
+	 */
 	virtual void StartNewHidingSpotSearch(idAI* owner);
 
 	// This is called each frame to complete a multiframe hiding spot search

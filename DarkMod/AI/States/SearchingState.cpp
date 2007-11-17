@@ -52,54 +52,9 @@ void SearchingState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	// Execute the hiding spot setup routine 
-	SetupSearch(owner);
-}
-
-void SearchingState::SetupSearch(idAI* owner)
-{
-	// Shortcut reference
-	Memory& memory = owner->GetMemory();
-
-	// Stop moving
-	owner->StopMove(MOVE_STATUS_DONE);
-
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 	
-	// No current search completed that we know of
-	memory.numPossibleHidingSpotsSearched = 0;
-
-	// Clear all the ongoing tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-
-	// If we are supposed to search the stimulus location do that instead 
-	// of just standing around while the search completes
-	if (memory.stimulusLocationItselfShouldBeSearched)
-	{
-		// The InvestigateSpotTask will take this point as first hiding spot
-		memory.currentSearchSpot = memory.alertPos;
-
-		// Delegate the spot investigation to a new task, this will take the correct action.
-		owner->GetSubsystem(SubsysAction)->PushTask(
-			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
-		);
-
-		// Prevent overwriting this hiding spot in the upcoming Think() call
-		memory.hidingSpotInvestigationInProgress = true;
-
-		// Reset the flags
-		memory.stimulusLocationItselfShouldBeSearched = false;
-		memory.investigateStimulusLocationClosely = false;
-	}
-	else
-	{
-		// AI is not moving, wait for spot search to complete
-		memory.hidingSpotInvestigationInProgress = false;
-	}
-
 	// Clear the communication system
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	// Allocate a singlebarktask, set the sound and enqueue it
@@ -185,6 +140,12 @@ void SearchingState::Think(idAI* owner)
 			memory.hidingSpotInvestigationInProgress = true;
 		}
 	}
+	else if (memory.restartSearchForHidingSpots)
+	{
+		// We should restart the search (probably due to a new incoming stimulus)
+		// Setup a new hiding spot search
+		StartNewHidingSpotSearch(owner);
+	}
 	else
 	{
 		// Move to Hiding spot is ongoing, do additional sensory tasks here
@@ -197,6 +158,45 @@ void SearchingState::Think(idAI* owner)
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
+
+	// Clear the flag in any case
+	memory.restartSearchForHidingSpots = false;
+
+	// Stop moving
+	owner->StopMove(MOVE_STATUS_DONE);
+
+	// No current search completed that we know of
+	memory.numPossibleHidingSpotsSearched = 0;
+
+	// Clear all the ongoing tasks
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+
+	// If we are supposed to search the stimulus location do that instead 
+	// of just standing around while the search completes
+	if (memory.stimulusLocationItselfShouldBeSearched)
+	{
+		// The InvestigateSpotTask will take this point as first hiding spot
+		memory.currentSearchSpot = memory.alertPos;
+
+		// Delegate the spot investigation to a new task, this will take the correct action.
+		owner->GetSubsystem(SubsysAction)->PushTask(
+			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
+		);
+
+		// Prevent overwriting this hiding spot in the upcoming Think() call
+		memory.hidingSpotInvestigationInProgress = true;
+
+		// Reset the flags
+		memory.stimulusLocationItselfShouldBeSearched = false;
+		memory.investigateStimulusLocationClosely = false;
+	}
+	else
+	{
+		// AI is not moving, wait for spot search to complete
+		memory.hidingSpotInvestigationInProgress = false;
+	}
 
 	idVec3 minBounds(memory.alertPos - memory.alertSearchVolume);
 	idVec3 maxBounds(memory.alertPos + memory.alertSearchVolume);
