@@ -3799,26 +3799,25 @@ void idPhysics_Player::GetCurrentMantlingReachDistances
 	float& out_maxMantleTraceDistance
 )
 {
-	// Determine arm length
-	// Nyarlathotep 4/12/07 - use cv_pm_mantle_height instead of 
-	// g_Global.m_armLengthAsFractionOfPlayerHeight
-	float armLength = pm_normalheight.GetFloat() * cv_pm_mantle_height.GetFloat();
+	// Determine arm reach in each direction
+	float armReach = pm_normalheight.GetFloat() * cv_pm_mantle_reach.GetFloat();
+	float armVerticalReach = pm_normalheight.GetFloat() * cv_pm_mantle_height.GetFloat();
 
-	// Trace out as far as arm length from player
-	out_maxMantleTraceDistance = armLength;
+	// Trace out as far as horizontal arm length from player
+	out_maxMantleTraceDistance = armReach;
 
 	// Determine maximum vertical and horizontal distance components for
 	// a mantleable surface
 	if (current.movementFlags & PMF_DUCKED )
 	{
-		out_maxVerticalReachDistance = pm_crouchheight.GetFloat() + armLength;
-		out_maxHorizontalReachDistance = armLength;
+		out_maxVerticalReachDistance = pm_crouchheight.GetFloat() + armVerticalReach;
+		out_maxHorizontalReachDistance = armReach;
 	}
 	else
 	{
 		// This vertical distance is up from the players feet
-		out_maxVerticalReachDistance = pm_normalheight.GetFloat() + armLength;
-		out_maxHorizontalReachDistance = armLength;
+		out_maxVerticalReachDistance = pm_normalheight.GetFloat() + armVerticalReach;
+		out_maxHorizontalReachDistance = armReach;
 	}
 
 }

@@ -95,7 +95,8 @@ idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_ARCHIVE | CVAR
 idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
 idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
 idCVar cv_pm_pushmod(				"pm_pushmod",			"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Alters the impulse applied when the player runs into an object.  Fractional modifier that multiplies the default D3 impulse.  Default is 1.0" );
-idCVar cv_pm_mantle_height(			"pm_mantle_height",		"0.8",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Player arm length, as fraction of player height: about 3/5 plus some padding.  Default is 0.8" );
+idCVar cv_pm_mantle_reach(			"pm_mantle_reach",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Horizontal reach of mantle ability, as fraction of player height.  Default is 0.5" );
+idCVar cv_pm_mantle_height(			"pm_mantle_height",		"0.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Vertical reach of mantle ability, as fraction of player height.  Default is 0.2" );
 
 /**
 * Dark Mod Leaning
@@ -205,7 +206,7 @@ idCVar cv_lg_adjust("tdm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a cons
 idCVar cv_lg_split("tdm_lg_split",		"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,	"Lightgem is always fully calculated (no splitting between interleaves). Warning! This can cause particle flickering if set to 1." );
 idCVar cv_lg_path("tdm_lg_path",		"",	CVAR_GAME,	"Dump the rendersnapshot to the filepath specified here." );
 idCVar cv_lg_crouch_modifier("tdm_lg_crouch_modifier",	"-5",	CVAR_GAME | CVAR_INTEGER,	"The value the lightgem is adjusted by when the player is crouching." );
-idCVar cv_lg_image_width("tdm_lg_image_width",	"50",	CVAR_GAME | CVAR_INTEGER,		"Defines the pixel width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
+idCVar cv_lg_image_width("tdm_lg_image_width",	"64",	CVAR_GAME | CVAR_INTEGER,		"Defines the pixel width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 idCVar cv_lg_screen_width("tdm_lg_screen_width",	"640",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 idCVar cv_lg_screen_height("tdm_lg_screen_height",	"480",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen height of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 
