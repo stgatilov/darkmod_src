@@ -27,20 +27,14 @@ static bool init_version = FileVersionList("$Id$", init_version);
 /*!
 * Standard constructor, creates an empty tree.
 */
-CDarkmodHidingSpotTree::CDarkmodHidingSpotTree()
-{
-	numAreas = 0;
-	numSpots = 0;
-	p_firstArea = NULL;
-	p_lastArea = NULL;
-
-	lastIndex_indexRetrieval = 0;
-	lastAreaHandle_indexRetrieval = 0;
-	lastSpotHandle_indexRetrieval = 0;
-
-	maxAreaNodeId = 0;
-	maxSpotNodeId = 0;
-}
+CDarkmodHidingSpotTree::CDarkmodHidingSpotTree() :
+	maxAreaNodeId(0),
+	maxSpotNodeId(0),
+	numAreas(0),
+	numSpots(0),
+	p_firstArea(NULL),
+	p_lastArea(NULL)
+{}
 
 //--------------------------------------------------------------------------
 
@@ -59,13 +53,11 @@ void CDarkmodHidingSpotTree::clear()
 	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
 	while (p_node != NULL)
 	{
-		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
-		while (p_spot != NULL)
+		for (int i = 0; i < p_node->spots.Num(); i++)
 		{
-			darkModHidingSpotNode* p_temp = p_spot->p_next;
-			delete p_spot;
-			p_spot = p_temp;
+			delete p_node->spots[i];
 		}
+		p_node->spots.Clear();
 
 		TDarkmodHidingSpotAreaNode* p_temp2 = p_node->p_nextSibling;
 		delete p_node;
@@ -113,54 +105,6 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getAreaNode(int areaNodeId) 
 	return NULL;
 }
 
-int CDarkmodHidingSpotTree::getSpotNodeId(darkModHidingSpotNode* spotNode) const
-{
-	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
-	while (p_node != NULL)
-	{
-		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
-
-		while (p_spot != NULL)
-		{
-			if (p_spot == spotNode)
-			{
-				// Found 
-				return p_spot->id;
-			}
-
-			p_spot = p_spot->p_next;
-		}
-
-		p_node = p_node->p_nextSibling;
-	}
-
-	return -1;
-}
-
-darkModHidingSpotNode* CDarkmodHidingSpotTree::getSpotNode(int spotNodeId) const
-{
-	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
-	while (p_node != NULL)
-	{
-		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
-
-		while (p_spot != NULL)
-		{
-			if (p_spot->id == spotNodeId)
-			{
-				// Found 
-				return p_spot;
-			}
-
-			p_spot = p_spot->p_next;
-		}
-
-		p_node = p_node->p_nextSibling;
-	}
-
-	return NULL;
-}
-
 void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteInt(maxAreaNodeId);
@@ -179,33 +123,19 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 		
 		//p_prevSibling && p_nextSibling get automatically restored;
 
-		// First iteration: Get the number of spots in this area
-		int numSpots = 0;
-		darkModHidingSpotNode* p_spot = p_node->p_firstSpot;
-		while (p_spot != NULL)
+		savefile->WriteInt(p_node->spots.Num());
+		for (int i = 0; i < p_node->spots.Num(); i++)
 		{
-			numSpots++;
-			p_spot = p_spot->p_next;
-		}
-
-		savefile->WriteInt(numSpots);
-
-		// Second iteration: Save all spots
-		p_spot = p_node->p_firstSpot;
-		while (p_spot != NULL)
-		{
-			savefile->WriteInt(p_spot->id);
+			savefile->WriteInt(p_node->spots[i]->id);
 
 			// Save the aasgoal_t
-			savefile->WriteInt(p_spot->spot.goal.areaNum);
-			savefile->WriteVec3(p_spot->spot.goal.origin);
+			savefile->WriteInt(p_node->spots[i]->spot.goal.areaNum);
+			savefile->WriteVec3(p_node->spots[i]->spot.goal.origin);
 			
-			savefile->WriteInt(p_spot->spot.hidingSpotTypes);
-			savefile->WriteFloat(p_spot->spot.lightQuotient);
-			savefile->WriteFloat(p_spot->spot.qualityWithoutDistanceFactor);
-			savefile->WriteFloat(p_spot->spot.quality);
-						
-			p_spot = p_spot->p_next;
+			savefile->WriteInt(p_node->spots[i]->spot.hidingSpotTypes);
+			savefile->WriteFloat(p_node->spots[i]->spot.lightQuotient);
+			savefile->WriteFloat(p_node->spots[i]->spot.qualityWithoutDistanceFactor);
+			savefile->WriteFloat(p_node->spots[i]->spot.quality);
 		}
 
 		// Quality of the best spot in the area
@@ -216,13 +146,6 @@ void CDarkmodHidingSpotTree::Save( idSaveGame *savefile ) const
 	}
 
 	//p_firstArea and p_lastArea get restored automatically
-
-	// Handles
-	savefile->WriteFloat(static_cast<float>(lastIndex_indexRetrieval));
-
-	// greebo: These are pointers in disguise (unsigned long), resolve the indices
-	savefile->WriteInt(getAreaNodeId(lastAreaHandle_indexRetrieval));
-	savefile->WriteInt(getSpotNodeId(lastSpotHandle_indexRetrieval));
 }
 
 void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
@@ -271,46 +194,23 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 
 		int numSpots;
 		savefile->ReadInt(numSpots);
-
-		// Restore all spots
-		curArea->p_firstSpot = NULL;
-
-		darkModHidingSpotNode* lastSpot = NULL;
-		for (int spot = 0; spot < numSpots; spot++)
-		{
-			darkModHidingSpotNode* curSpot = new darkModHidingSpotNode;
-
-			// No next node by default
-			curSpot->p_next = NULL;
-
-			// No first pointer yet, take this one
-			if (curArea->p_firstSpot == NULL)
-			{
-				curArea->p_firstSpot = curSpot;
-			}
-
-			// Establish the link from the previous node to this one
-			if (lastSpot != NULL)
-			{
-				lastSpot->p_next = curSpot;
-			}
-
-			savefile->ReadInt(curSpot->id);
-
-			// Restore the aasgoal_t
-			savefile->ReadInt(curSpot->spot.goal.areaNum);
-			savefile->ReadVec3(curSpot->spot.goal.origin);
-			
-			savefile->ReadInt(curSpot->spot.hidingSpotTypes);
-			savefile->ReadFloat(curSpot->spot.lightQuotient);
-			savefile->ReadFloat(curSpot->spot.qualityWithoutDistanceFactor);
-			savefile->ReadFloat(curSpot->spot.quality);
-
-			// Update the "last" pointer for the next loop
-			lastSpot = curSpot;
-		}
-		curArea->p_lastSpot = lastSpot;
 		
+		curArea->spots.SetNum(numSpots);
+		for (int i = 0; i < numSpots; i++)
+		{
+			curArea->spots[i] = new darkModHidingSpotNode;
+			savefile->ReadInt(curArea->spots[i]->id);
+
+			// Read the aasgoal_t
+			savefile->ReadInt(curArea->spots[i]->spot.goal.areaNum);
+			savefile->ReadVec3(curArea->spots[i]->spot.goal.origin);
+			
+			savefile->ReadInt(curArea->spots[i]->spot.hidingSpotTypes);
+			savefile->ReadFloat(curArea->spots[i]->spot.lightQuotient);
+			savefile->ReadFloat(curArea->spots[i]->spot.qualityWithoutDistanceFactor);
+			savefile->ReadFloat(curArea->spots[i]->spot.quality);
+		}
+
 		// Quality of the best spot in the area
 		savefile->ReadFloat(curArea->bestSpotQuality);
 		savefile->ReadBounds(curArea->bounds);
@@ -320,18 +220,6 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 	}
 
 	p_lastArea = lastArea;
-
-	// Handles
-	savefile->ReadFloat(tempFloat);
-	lastIndex_indexRetrieval = static_cast<unsigned long>(tempFloat);
-
-	int areaNodeId;
-	savefile->ReadInt(areaNodeId);
-	lastAreaHandle_indexRetrieval = getAreaNode(areaNodeId);
-
-	int spotNodeId;
-	savefile->ReadInt(spotNodeId);
-	lastSpotHandle_indexRetrieval = getSpotNode(spotNodeId);
 }
 
 //-------------------------------------------------------------------------
@@ -359,10 +247,10 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::getArea
 
 void CDarkmodHidingSpotTree::clearIndexRetrievalTracking()
 {
-	lastIndex_indexRetrieval = 0;
+	/*lastIndex_indexRetrieval = 0;
 	lastAreaHandle_indexRetrieval = 0;
-	lastSpotHandle_indexRetrieval = 0;
-
+	lastSpotHandle_indexRetrieval = 0;*/
+	// FIXME: Remove if not needed
 }
 
 //-------------------------------------------------------------------------
@@ -385,8 +273,9 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::insertArea
 	p_node->aasAreaIndex = areaIndex;
 	p_node->count = 0;
 	p_node->bestSpotQuality = 0.0;
-	p_node->p_firstSpot = NULL;
-	p_node->p_lastSpot = NULL;
+	p_node->spots.Clear();
+	// greebo: Set granularity to something large to keep reallocations low
+	p_node->spots.SetGranularity(128);
 
 	// Put at end (worst areas) of list for now
 	p_node->p_nextSibling = NULL;
@@ -403,12 +292,11 @@ TDarkmodHidingSpotAreaNode* CDarkmodHidingSpotTree::insertArea
 		p_firstArea = p_node;
 	}
 
-	numAreas ++;
+	numAreas++;
 
 	clearIndexRetrievalTracking();
 
 	return p_node;
-
 }
 
 //-------------------------------------------------------------------------
@@ -429,7 +317,27 @@ bool CDarkmodHidingSpotTree::determineSpotRedundancy
 	}
 
 	// Compare distance with other points in the area
-	darkModHidingSpotNode* p_cursor = p_areaNode->p_firstSpot;
+	for (int i = 0; i < p_areaNode->spots.Num(); i++)
+	{
+		// Compute distance
+		idVec3 distanceVec = goal.origin - p_areaNode->spots[i]->spot.goal.origin;
+		if (distanceVec.LengthFast() <= redundancyDistance)
+		{
+			// This point is redundant, should combine.
+			p_areaNode->spots[i]->spot.hidingSpotTypes |= hidingSpotTypes;
+			if (p_areaNode->spots[i]->spot.quality < quality)
+			{
+				// Use higher quality location
+				p_areaNode->spots[i]->spot.quality = quality;
+				p_areaNode->spots[i]->spot.goal = goal;
+			}
+
+			// Combined
+			return true;
+		}
+	}
+
+	/*darkModHidingSpotNode* p_cursor = p_areaNode->p_firstSpot;
 	while (p_cursor != NULL)
 	{
 		// Compute distance
@@ -451,7 +359,7 @@ bool CDarkmodHidingSpotTree::determineSpotRedundancy
 
 		// Next spot
 		p_cursor = p_cursor->p_next;
-	}
+	}*/
 
 	// Not redundant
 	return false;
@@ -549,12 +457,49 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 	p_spot->spot.qualityWithoutDistanceFactor = qualityWithoutDistanceFactor;
 	p_spot->spot.quality = quality;
 
+	// Shortcut reference
+	idList<darkModHidingSpotNode*>& spotList = p_areaNode->spots;
 
 	// Add some randomness to the order of points in the areas.
+
+	if (spotList.Num() > 0)
+	{
+		// Insert the new spot to a random location in the list
+		// and move the current occupier to the end.
+		int randomLocation = gameLocal.random.RandomInt(spotList.Num());
+
+		spotList.Append( spotList[randomLocation] );
+		spotList[randomLocation] = p_spot;
+	}
+	else
+	{
+		// List is still empty, just add the new spot
+		spotList.Append(p_spot);
+	}
+
+	// The counter increases in any case
+	p_areaNode->count++;
+
+	// ---------------------------------------------
+
 	// Randomly add to either front or back of the area list
-	if (gameLocal.random.RandomFloat() < 0.5)
+	/*if (gameLocal.random.RandomFloat() < 0.5)
 	{
 		// Add to front of list
+
+		if (p_areaNode->spots.Num() <= 0)
+		{
+			p_areaNode->spots.Append(p_spot);
+		}
+		else
+		{
+			// Move the first item to the back
+			p_areaNode->spots.Append(p_spot);
+		}
+
+		// Append a dummy object at then end
+		p_areaNode->spots.Append(NULL);
+		
 		p_spot->p_next = p_areaNode->p_firstSpot;
 		p_areaNode->p_firstSpot = p_spot;
 		if (p_areaNode->p_lastSpot == NULL)
@@ -579,21 +524,19 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 			p_areaNode->p_lastSpot = p_spot;
 		}
 		p_areaNode->count ++;
-	}
+	}*/
 
 	// Change bounds of area
-	if (p_areaNode->count == 1)
+	if (p_areaNode->spots.Num() == 1)
 	{
+		// We only have one point, clear the bounds beforehand
 		p_areaNode->bounds.Clear();
-		p_areaNode->bounds.AddPoint (p_spot->spot.goal.origin);
 	}
-	else 
-	{
-		p_areaNode->bounds.AddPoint (p_spot->spot.goal.origin);
-	}
-
+	// Include the point in the bounds
+	p_areaNode->bounds.AddPoint (p_spot->spot.goal.origin);
+	
 	// One more point 
-	numSpots ++;
+	numSpots++;
 
 	clearIndexRetrievalTracking();
 
@@ -694,62 +637,43 @@ bool CDarkmodHidingSpotTree::subDivideArea
 	subAreaBounds[7][0].z = midPoint.z;
 	subAreaBounds[7][1].z = in_p_areaNode->bounds[1].z;
 
-
 	// Create sub lists for points
-	darkModHidingSpotNode* p_subAreaPointHeaders[NUM_SECTORS_IN_SUBDIVIDE] = 
+	idList<darkModHidingSpotNode*> subAreaSpots[NUM_SECTORS_IN_SUBDIVIDE];
+	for (int i = 0; i < NUM_SECTORS_IN_SUBDIVIDE; i++)
 	{
-		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-	};
-	darkModHidingSpotNode* p_subAreaPointTails[NUM_SECTORS_IN_SUBDIVIDE] = 
-	{
-		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-	};
+		subAreaSpots[i].SetGranularity(128);
+	}
+
 	unsigned int subAreaPointCounts[NUM_SECTORS_IN_SUBDIVIDE] = {0,0,0,0,0,0,0,0};
 	float subAreaPointBestQualities[NUM_SECTORS_IN_SUBDIVIDE] = {0,0,0,0,0,0,0,0};
 
-	// Ride list of points, and move points into sub lists
-	darkModHidingSpotNode* p_originalCursor = in_p_areaNode->p_firstSpot;
-	while (p_originalCursor != NULL)
+	// Iterate over the points and sort them into bounds
+	for (int i = 0; i < in_p_areaNode->spots.Num(); i++)
 	{
-		// Remember what the next point is
-		darkModHidingSpotNode* p_tempNextCursor = p_originalCursor->p_next;
-
 		// What subArea does the point fall within?
-		for (int subAreaIndex = 0; subAreaIndex < NUM_SECTORS_IN_SUBDIVIDE; subAreaIndex ++)
+		for (int subAreaIndex = 0; subAreaIndex < NUM_SECTORS_IN_SUBDIVIDE; subAreaIndex++)
 		{
 			// If point falls in here, or it is last subArea and no earlier one took it
-			if ( (subAreaBounds[subAreaIndex].ContainsPoint (p_originalCursor->spot.goal.origin)) || (subAreaIndex >= (NUM_SECTORS_IN_SUBDIVIDE-1) ))
+			if (subAreaIndex >= NUM_SECTORS_IN_SUBDIVIDE-1 || subAreaBounds[subAreaIndex].ContainsPoint(in_p_areaNode->spots[i]->spot.goal.origin))
 			{
 				// Point falls in this subArea
-				subAreaPointCounts[subAreaIndex] ++;
-				if (p_originalCursor->spot.quality > subAreaPointBestQualities[subAreaIndex])
+				subAreaPointCounts[subAreaIndex]++;
+				if (in_p_areaNode->spots[i]->spot.quality > subAreaPointBestQualities[subAreaIndex])
 				{
-					subAreaPointBestQualities[subAreaIndex] = p_originalCursor->spot.quality;
+					subAreaPointBestQualities[subAreaIndex] = in_p_areaNode->spots[i]->spot.quality;
 				}
 
 				// Put it at the end of its point list
-				if (p_subAreaPointHeaders[subAreaIndex] == NULL)
-				{
-					p_subAreaPointHeaders[subAreaIndex] = p_originalCursor;
-
-				}
-				else
-				{
-					p_subAreaPointTails[subAreaIndex]->p_next = p_originalCursor;
-				}
-
-				p_originalCursor->p_next = NULL;
-				p_subAreaPointTails[subAreaIndex] = p_originalCursor;
+				subAreaSpots[subAreaIndex].Append(in_p_areaNode->spots[i]);
 
 				break;
 			}
 		
 		} // Test next subArea
+	}
 
-		// next point
-		p_originalCursor = p_tempNextCursor;
-		
-	} // Continue until there are no more points to consider
+	// Remove all node pointers from the original list
+	in_p_areaNode->spots.Clear();
 
 	// Make nodes for any subArea that isn't empty
 	bool b_originalUsed = false;
@@ -766,7 +690,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 		if (subAreaPointCounts[subAreaIndex] > 0)
 		{
 			// One more sub area with points
-			out_numSubAreasWithPoints ++;
+			out_numSubAreasWithPoints++;
 
 			// Need node, is original already used?
 			if (!b_originalUsed)
@@ -778,11 +702,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 			{
 				// Make new node
 				p_areaNode = new TDarkmodHidingSpotAreaNode;
-				if (p_areaNode == NULL)
-				{
-					// Doh, structure corrupt, out of memory
-					return false;
-				}
+				assert(p_areaNode != NULL);
 
 				maxAreaNodeId++;
 				p_areaNode->id = maxAreaNodeId;
@@ -791,8 +711,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 				p_areaNode->aasAreaIndex = in_p_areaNode->aasAreaIndex;
 	
 				// One more area in the tree
-				numAreas ++;
-
+				numAreas++;
 			}
 
 			// Make pointer to the area node in out array for caller
@@ -802,8 +721,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 			p_areaNode->bestSpotQuality = subAreaPointBestQualities[subAreaIndex];
 			p_areaNode->bounds = subAreaBounds[subAreaIndex];
 			p_areaNode->count = subAreaPointCounts[subAreaIndex];
-			p_areaNode->p_firstSpot = p_subAreaPointHeaders[subAreaIndex];
-			p_areaNode->p_lastSpot = p_subAreaPointTails[subAreaIndex];
+			p_areaNode->spots = subAreaSpots[subAreaIndex];
 			
 			// Link into area list just after original (if not original already)
 			if (p_areaNode != in_p_areaNode)
@@ -834,11 +752,8 @@ bool CDarkmodHidingSpotTree::subDivideArea
 
 				// Next new node comes after this new node but before next original node
 				p_newNodePreviousSibling = p_areaNode;
-
 			}
-
 		} // Subarea had points, needs node
-		
 	} // Next subArea
 
 	// Done
@@ -931,14 +846,12 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getFirstHidingSpotInArea(TDarkmodHidi
 		return NULL;
 	}
 
-	darkModHidingSpotNode* spotNode = p_areaCursor->p_firstSpot;
-	if (spotNode == NULL)
+	if (p_areaCursor->spots.Num() > 0)
 	{
-		return NULL;
+		return &p_areaCursor->spots[0]->spot;
 	}
-
-	return &(spotNode->spot);
-
+	
+	return NULL;
 }
 
 //-------------------------------------------------------------------------
@@ -1003,134 +916,52 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotInternal
 	out_areaNodeBounds = p_areaCursor->bounds;
 
 	// How many spots within is this?
-	unsigned int chosenSpotIndex = index - accumulatedIndex;
-	unsigned int spotIndex = 0;
-	darkModHidingSpotNode* p_spot = p_areaCursor->p_firstSpot;
+	int chosenSpotIndex = index - accumulatedIndex;
 
-	while (p_spot != NULL && spotIndex < chosenSpotIndex)
-	{
-		spotIndex ++;
-		p_spot = p_spot->p_next;
-	}
+	assert(p_areaCursor->spots.Num() > chosenSpotIndex);
 
-	if (p_spot == NULL)
-	{
-		return NULL;
-	}
+	darkModHidingSpotNode* p_spot = p_areaCursor->spots[chosenSpotIndex];
 
 	// Found it
 	return &(p_spot->spot);
-
 }
 
 //-------------------------------------------------------------------------
 
-darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot
-(
-	unsigned int index
-)
+darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpot(unsigned int index)
 {
-	/*
-	* lastIndex_indexRetrieval The index of the spot for which the handles
-	*	are being supplied. If < index this is treated as meaning that
-	*   the handles are not initialized as input parameters and a slower
-	*	search must be used.  If this and "index" are both 0, the same
-	*	is assumed.
-	*
-	* lastAreaHandle_indexRetrieval On entry, the handle corresponding to the values
-	*	returned for the parameter "indexForHandles". 
-	*	On exit, will be the value corresponding to the parameter "index".
-	*
-	* lastSpotHandle_indexRetrieval On entry, handle corresponding to the values
-	*	returned for the parameter "indexForHandles". 
-	*	On exit, will be the value corresponding to the parameter "index".
-	*/
-
-	unsigned int spotDelta = 0;
-	TDarkmodHidingSpotAreaNode* p_areaCursor;
-	darkModHidingSpotNode* p_spotCursor;
-
-	// Determine where to start search
-	if (index < lastIndex_indexRetrieval || (index == lastIndex_indexRetrieval && index == 0))
-	{
-		spotDelta = index;
-		p_areaCursor = p_firstArea;
-		if (p_firstArea != NULL)
-		{
-			p_spotCursor = p_firstArea->p_firstSpot;
-		}
-		else
-		{
-			p_spotCursor = NULL;
-		}
-	}
-	else
-	{
-		spotDelta = index - lastIndex_indexRetrieval;
-		p_areaCursor = lastAreaHandle_indexRetrieval;
-		p_spotCursor = lastSpotHandle_indexRetrieval;
-	}
-
-	// There can't be a spot cursor if there is no area cursor
-	if (p_areaCursor == NULL) 
-	{
-		p_spotCursor = NULL;
-	}
-
-	// Handle special case of already being at the point
-	
+	int spotDelta = index;
+	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
+	darkModHidingSpotNode* p_spotCursor = NULL;
 
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
 	{
 		// Check if we can just skip this entire area
-		if (p_spotCursor == p_areaCursor->p_firstSpot && spotDelta >= p_areaCursor->count)
+		if (spotDelta >= p_areaCursor->spots.Num())
 		{
-			spotDelta -= p_areaCursor->count;
+			spotDelta -= p_areaCursor->spots.Num();
 			p_areaCursor = p_areaCursor->p_nextSibling;
 
 			if (p_areaCursor == NULL)
 			{
-				lastAreaHandle_indexRetrieval = 0;
-				lastSpotHandle_indexRetrieval = 0;
-				lastIndex_indexRetrieval = 0;
-				return NULL;
+				break;
 			}
-
-			p_spotCursor = p_areaCursor->p_firstSpot;
 		}
 		else
 		{
-			// No we can't skip the entire area, so advance spot cursor
-			while (spotDelta > 0 && p_spotCursor != NULL)
-			{
-				p_spotCursor = p_spotCursor->p_next;
-				spotDelta --;
-			}
+			// No we can't skip the entire area, get the spot
+			assert(spotDelta < p_areaCursor->spots.Num());
 
-			// Is this the spot?
-			if (spotDelta == 0 && p_spotCursor != NULL)
-			{
-				// Found it
-				lastAreaHandle_indexRetrieval = p_areaCursor;
-				lastSpotHandle_indexRetrieval = p_spotCursor;
-				lastIndex_indexRetrieval = index;
-				return &(p_spotCursor->spot);
-			}
+			p_spotCursor = p_areaCursor->spots[spotDelta];
 
-			// We have to go on to the next area
-			p_areaCursor = p_areaCursor->p_nextSibling;
-			if (p_areaCursor != NULL)
-			{
-				p_spotCursor = p_areaCursor->p_firstSpot;
-			}
+			// Found it
+			return &(p_spotCursor->spot);
 		}
 	}
 
 	// Index requested is out of bounds
-	lastAreaHandle_indexRetrieval = 0;
-	lastSpotHandle_indexRetrieval = 0;
-	lastIndex_indexRetrieval = 0;
+	DM_LOG(LC_AI, LT_ERROR).LogString("Requested spot index is out of bounds: %d\r", index);
 	return NULL;
 }
 
@@ -1142,122 +973,48 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	idBounds& out_areaNodeBounds
 )
 {
-	/*
-	* lastIndex_indexRetrieval The index of the spot for which the handles
-	*	are being supplied. If < index this is treated as meaning that
-	*   the handles are not initialized as input parameters and a slower
-	*	search must be used.  If this and "index" are both 0, the same
-	*	is assumed.
-	*
-	* lastAreaHandle_indexRetrieval On entry, the handle corresponding to the values
-	*	returned for the parameter "indexForHandles". 
-	*	On exit, will be the value corresponding to the parameter "index".
-	*
-	* lastSpotHandle_indexRetrieval On entry, handle corresponding to the values
-	*	returned for the parameter "indexForHandles". 
-	*	On exit, will be the value corresponding to the parameter "index".
-	*/
-
-	unsigned int spotDelta = 0;
-	TDarkmodHidingSpotAreaNode* p_areaCursor;
-	darkModHidingSpotNode* p_spotCursor;
-
-	// Determine where to start search
-	if (index < lastIndex_indexRetrieval || (index == lastIndex_indexRetrieval && index == 0))
-	{
-		spotDelta = index;
-		p_areaCursor = p_firstArea;
-		if (p_firstArea != NULL)
-		{
-			p_spotCursor = p_firstArea->p_firstSpot;
-		}
-		else
-		{
-			p_spotCursor = NULL;
-		}
-	}
-	else
-	{
-		spotDelta = index - lastIndex_indexRetrieval;
-		p_areaCursor = lastAreaHandle_indexRetrieval;
-		p_spotCursor = lastSpotHandle_indexRetrieval;
-	}
-
-	// There can't be a spot cursor if there is no area cursor
-	if (p_areaCursor == NULL) 
-	{
-		p_spotCursor = NULL;
-	}
-
-	// Handle special case of already being at the point
-	
+	int spotDelta = index;
+	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
+	darkModHidingSpotNode* p_spotCursor = NULL;
 
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
 	{
 		// Check if we can just skip this entire area
-		if 
-		(
-			(p_spotCursor == p_areaCursor->p_firstSpot) &&
-			(spotDelta >= p_areaCursor->count)
-		)
+		if (spotDelta >= p_areaCursor->spots.Num())
 		{
-			spotDelta -= p_areaCursor->count;
+			spotDelta -= p_areaCursor->spots.Num();
 			p_areaCursor = p_areaCursor->p_nextSibling;
+
 			if (p_areaCursor == NULL)
 			{
-				lastAreaHandle_indexRetrieval = NULL;
-				lastSpotHandle_indexRetrieval = NULL;
-				lastIndex_indexRetrieval = 0;
-				out_areaNodeBounds.Clear();
-				return NULL;
+				break;
 			}
-
-			p_spotCursor = p_areaCursor->p_firstSpot;
 		}
 		else
 		{
-			// No we can't skip the entire area, so advance spot cursor
-			while ((spotDelta > 0) && (p_spotCursor != NULL))
-			{
-				p_spotCursor = p_spotCursor->p_next;
-				spotDelta --;
-			}
+			// Copy bounds to output
+			out_areaNodeBounds = p_areaCursor->bounds;
 
-			// Is this the spot?
-			if ((spotDelta == 0) && (p_spotCursor != NULL))
-			{
-				// Found it
-				lastAreaHandle_indexRetrieval = p_areaCursor;
-				lastSpotHandle_indexRetrieval = p_spotCursor;
-				lastIndex_indexRetrieval = index;
-				out_areaNodeBounds = p_areaCursor->bounds;
-				return &(p_spotCursor->spot);
-			}
+			// No we can't skip the entire area, get the spot
+			assert(spotDelta < p_areaCursor->spots.Num());
 
-			// We have to go on to the next area
-			p_areaCursor = p_areaCursor->p_nextSibling;
-			if (p_areaCursor != NULL)
-			{
-				p_spotCursor = p_areaCursor->p_firstSpot;
-			}
+			p_spotCursor = p_areaCursor->spots[spotDelta];
+
+			// Found it
+			return &(p_spotCursor->spot);
 		}
 	}
 
 	// Index requested is out of bounds
-	lastAreaHandle_indexRetrieval = 0;
-	lastSpotHandle_indexRetrieval = 0;
-	lastIndex_indexRetrieval = 0;
+	DM_LOG(LC_AI, LT_ERROR).LogString("Requested spot index is out of bounds: %d\r", index);
 	out_areaNodeBounds.Clear();
 	return NULL;
 }
 
 //-------------------------------------------------------------------------
 
-bool CDarkmodHidingSpotTree::copy
-(
-	CDarkmodHidingSpotTree* p_out_otherTree
-)
+bool CDarkmodHidingSpotTree::copy(CDarkmodHidingSpotTree* p_out_otherTree)
 {
 	if (p_out_otherTree == NULL)
 	{
@@ -1273,7 +1030,7 @@ bool CDarkmodHidingSpotTree::copy
 		TDarkmodHidingSpotAreaNode* p_otherArea = p_out_otherTree->getArea (p_areaCursor->aasAreaIndex);
 		if (p_otherArea == NULL)
 		{
-			p_otherArea = p_out_otherTree->insertArea (p_areaCursor->aasAreaIndex);
+			p_otherArea = p_out_otherTree->insertArea(p_areaCursor->aasAreaIndex);
 			if (p_otherArea == NULL)
 			{
 				return false;
@@ -1281,40 +1038,30 @@ bool CDarkmodHidingSpotTree::copy
 		}
 
 		// Insert points
-		darkModHidingSpotNode* p_pointCursor = p_areaCursor->p_firstSpot;
-		while (p_pointCursor != NULL)
+		for (int i = 0; i < p_areaCursor->spots.Num(); i++)
 		{
 			p_out_otherTree->insertHidingSpot
 			(
 				p_otherArea,
-				p_pointCursor->spot.goal,
-				p_pointCursor->spot.hidingSpotTypes,
-				p_pointCursor->spot.lightQuotient,
-				p_pointCursor->spot.qualityWithoutDistanceFactor,
-				p_pointCursor->spot.quality,
+				p_areaCursor->spots[i]->spot.goal,
+				p_areaCursor->spots[i]->spot.hidingSpotTypes,
+				p_areaCursor->spots[i]->spot.lightQuotient,
+				p_areaCursor->spots[i]->spot.qualityWithoutDistanceFactor,
+				p_areaCursor->spots[i]->spot.quality,
 				-1.0 // No redundancy combination
 			);
-
-			// Next point
-			p_pointCursor = p_pointCursor->p_next;
 		}
 
 		// Next area
 		p_areaCursor = p_areaCursor->p_nextSibling;
-		
 	}
 
-	// Done
 	return true;
 }
 
 //-------------------------------------------------------------------------
 
-bool CDarkmodHidingSpotTree::getOneNth
-(
-	unsigned int N,
-	CDarkmodHidingSpotTree& out_otherTree
-)
+bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& out_otherTree)
 {
 	unsigned int numPointsMoved = 0;
 
@@ -1348,6 +1095,7 @@ bool CDarkmodHidingSpotTree::getOneNth
 			if (p_areaCursor == NULL)
 			{
 				// Bad area count in data structure
+				DM_LOG(LC_AI, LT_ERROR).LogString("Bad area count in data structure\r");
 				return false;
 			}
 		}
@@ -1389,60 +1137,35 @@ bool CDarkmodHidingSpotTree::getOneNth
 		TDarkmodHidingSpotAreaNode* p_area = p_firstArea;
 		if (p_area == NULL)
 		{
+			DM_LOG(LC_AI, LT_ERROR).LogString("Serious: Area count != 0, but firstArea == NULL!\r");
 			return false;
 		}
 
 		// Create new area in other tree
-		TDarkmodHidingSpotAreaNode* p_otherArea = out_otherTree.insertArea (p_area->aasAreaIndex);
+		TDarkmodHidingSpotAreaNode* p_otherArea = out_otherTree.insertArea(p_area->aasAreaIndex);
 		if (p_otherArea == NULL)
 		{
+			DM_LOG(LC_AI, LT_ERROR).LogString("Could not create area in other tree for copying.\r");
 			return false;
 		}
 
-		unsigned int splitPointIndex = p_area->count - (p_area->count / N);
-		unsigned int pointIndex = 0;
-		darkModHidingSpotNode* p_spotCursor = p_area->p_firstSpot;
-		darkModHidingSpotNode* p_spotTrailer = NULL;
-		while (pointIndex < splitPointIndex)
-		{
-			p_spotTrailer = p_spotCursor;
-			p_spotCursor = p_spotCursor->p_next;
+		int splitPointIndex = p_area->spots.Num() - (p_area->spots.Num() / N);
+		int pointIndex = 0;
 
-			pointIndex ++;
-			if (p_spotCursor == NULL)
-			{
-				// Bad spot count in area
-				return false;
-			}
+		// Copy all points from [splitPointIndex...N] to the other tree
+		for (int i = splitPointIndex; i < p_area->spots.Num(); i++)
+		{
+			p_otherArea->spots.Append(p_area->spots[i]);
 		}
 
-		// Everything from p_spotCursor onward goes in other tree
-		if (p_spotCursor != NULL)
-		{
-			p_otherArea->p_lastSpot = p_area->p_lastSpot;
-			p_otherArea->p_firstSpot = p_spotCursor;
-		}
-		else
-		{
-			p_otherArea->p_lastSpot = NULL;
-			p_otherArea->p_firstSpot = NULL;
-		}
+		// Now truncate the copied points from the source list
+		p_area->spots.SetNum(splitPointIndex);
 		
-		numPointsMoved = p_area->count - splitPointIndex;
-		p_otherArea->count = numPointsMoved;
+		p_otherArea->count = p_otherArea->spots.Num(); // TODO count is deprecated
+		p_area->count = p_area->spots.Num(); // TODO count is deprecated
 
-		// Evertyhing up until p_spotTrailer stays in this tree
-		if (p_spotTrailer != NULL)
-		{
-			p_area->p_lastSpot = p_spotTrailer;
-			p_spotTrailer->p_next = NULL;
-		}
-		else
-		{
-			p_area->p_lastSpot = NULL;
-			p_area->p_firstSpot = NULL;
-		}
-		p_area->count -= numPointsMoved;
+		// Set the overall counter
+		numPointsMoved = p_otherArea->spots.Num();
 	}
 
 	// Set point totals in both list based on number of points moved
@@ -1455,13 +1178,8 @@ bool CDarkmodHidingSpotTree::getOneNth
 
 //------------------------------------------------------------------------------------------
 
-bool CDarkmodHidingSpotTree::sortForNewCenter
-(
-	idVec3 center,
-	float searchRadius
-)
+bool CDarkmodHidingSpotTree::sortForNewCenter(idVec3 center, float searchRadius)
 {
-
 	// Run through entire tree, and recalculate quality of each point given new distance from center
 	unsigned long numSpots = getNumSpots();
 	unsigned long spotIndex = 0;
@@ -1556,7 +1274,7 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 	unsigned long numSpots
 )
 {
-	// If list is empty or only one node long , we are done
+	/*// If list is empty or only one node long , we are done
 	if (inout_p_firstNode == NULL)
 	{
 		return;
@@ -1628,7 +1346,7 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 		inout_p_firstNode = p_firstLess;
 	}
 
-	// Done
+	// Done*/
 	
 }
 

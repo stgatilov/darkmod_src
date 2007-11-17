@@ -49,9 +49,6 @@ struct darkModHidingSpotNode
 
 	// The spot
 	darkModHidingSpot spot;
-
-	// Next hiding spot
-	darkModHidingSpotNode* p_next;
 };
 
 /*---------------------------------------------------------------------------*/
@@ -66,8 +63,9 @@ struct TDarkmodHidingSpotAreaNode
 
 	TDarkmodHidingSpotAreaNode* p_prevSibling;
 	TDarkmodHidingSpotAreaNode* p_nextSibling;
-	darkModHidingSpotNode* p_firstSpot;
-	darkModHidingSpotNode* p_lastSpot;
+
+	// Each area node holds a list of hiding spots
+	idList<darkModHidingSpotNode*> spots;
 
 	// Quality of the best spot in the area
 	float bestSpotQuality;
@@ -99,17 +97,9 @@ protected:
 	TDarkmodHidingSpotAreaNode* p_firstArea;
 	TDarkmodHidingSpotAreaNode* p_lastArea;
 
-	// Handles
-	unsigned long lastIndex_indexRetrieval;
-	TDarkmodHidingSpotAreaNode* lastAreaHandle_indexRetrieval;
-	darkModHidingSpotNode* lastSpotHandle_indexRetrieval;
-
 	// Mapping methods, retrieves node pointers for indices and vice versa
 	int getAreaNodeId(TDarkmodHidingSpotAreaNode* area) const; // returns -1 for invalid pointer
 	TDarkmodHidingSpotAreaNode* getAreaNode(int areaNodeId) const; // returns NULL for invalid Id
-
-	int getSpotNodeId(darkModHidingSpotNode* spotNode) const; // Returns -1 for invalid pointer
-	darkModHidingSpotNode* getSpotNode(int spotNodeId) const; // Returns NULL for invalid id
 
 	void clearIndexRetrievalTracking();
 	
