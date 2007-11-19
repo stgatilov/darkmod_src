@@ -93,9 +93,6 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	}
 	if (idStr::Icmp(menuCommand, "darkmodLoad") == 0)
 	{
-		// TODO: get current mission, copy savefiles directory contents to this mission's directory
-		// if no current mission, copy to savefiles.original directory (or throw away?)
-
 		// Get selected mod
 		int modNum = gui->GetStateInt("modSelected", "0");
 		modNum += modTop;
@@ -105,7 +102,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		const char * modFileName = va("%s%s", modDirName, ".pk4");
 
 		// Path to the darkmod directory
-		fs::path darkmodPath(idLib::fileSystem->RelativePathToOSPath("", "fs_basepath"));
+		fs::path darkmodPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
 
 		// Path to the savegames directory
 		fs::path savegamePath(darkmodPath / "savegames");
@@ -119,30 +116,15 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Path to file that contains the command line arguments to DM
 		fs::path dmArgs(darkmodPath / "dmargs.txt");
 
-		// Path to the PK4 file in the mod directory
-		fs::path modpk4(modDirPath / modFileName);
-
-		// Path to copy the mod PK4 file to
-		fs::path modpk4dest(darkmodPath / modFileName);
-
-		// Copy the PK4
-		if (!fs::exists(modpk4dest)) {
-			fs::copy_file(modpk4, modpk4dest);
-		}
-
 		// Get the current mod name
 		char * current = NULL;
 		FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "r");
 
-		fs::path pk4ToDelete("");
 		if (currentFM) {
 			// read the mod name
 			current = new char[100];
 			fgets(current, 100, currentFM);
 			fclose(currentFM);
-
-			// current pk4
-			pk4ToDelete = darkmodPath / va("%s.pk4", current);
 
 			// Path to the savegames of the current mod (create if necessary)
 			fs::path modSavegamesPath(darkmodPath / "fms" / current / "savegames");
@@ -209,9 +191,10 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
 		memset(&piProcessInfo, 0, sizeof(piProcessInfo));
 		siStartupInfo.cb = sizeof(siStartupInfo);
-		char * lpCmdLine = va("%s %s %s %s",
+		char * lpCmdLine = va("%s %s %s %s %s",
 			launcherExe.file_string().c_str(), doomExe.file_string().c_str(),
-			dmArgs.file_string().c_str(), pk4ToDelete.file_string().c_str());
+			dmArgs.file_string().c_str(), darkmodPath.file_string().c_str(),
+			modDirPath.file_string().c_str());
 		CreateProcess(NULL, lpCmdLine, NULL, NULL,  false, 0, NULL, NULL, &siStartupInfo, &piProcessInfo);
 
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
