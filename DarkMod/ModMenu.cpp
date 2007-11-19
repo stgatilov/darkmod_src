@@ -200,10 +200,11 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
 #else
 		// delete the current pk4
-		idLib::fileSystem->Shutdown(false);
-		if (!pk4ToDelete.empty()) {
-			remove(pk4ToDelete.file_string().c_str());
-		}
+		// removed to enable compiling
+//		idLib::fileSystem->Shutdown(false);
+//		if (!pk4ToDelete.empty()) {
+//			remove(pk4ToDelete.file_string().c_str());
+//		}
 		// read dmargs file
 		FILE* argFile = fopen(dmArgs.file_string().c_str(), "r");
 		char args[200];
