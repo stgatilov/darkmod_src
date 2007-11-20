@@ -8,32 +8,24 @@
  ***************************************************************************/
 
 #include "DarkRadiantRCFServer.h"
-
-#include "RCFServiceDeclaration.h"
-
+#include "DarkRadiantRCFInterface.h"
 #include <RCF/TcpEndpoint.hpp>
 
 #include "../idlib/precompiled.h"
 
-class D3ConsoleWriterImpl
-{
-public:
-    void writeToConsole(const std::string& text)
-    {
-        gameLocal.Printf(text.c_str());
-    }
-};
-
-D3ConsoleWriterImpl doom3ConsoleWriterInstance;
-
 DarkRadiantRCFServer::DarkRadiantRCFServer() :
 	_server(RCF::TcpEndpoint(50001))
 {
-	_server.bind<D3ConsoleWriter>(doom3ConsoleWriterInstance);
+	_server.bind<D3ConsoleWriter>(*this);
     _server.start(true);
 }
 
 DarkRadiantRCFServer::~DarkRadiantRCFServer()
 {
 	_server.stop();
+}
+
+void DarkRadiantRCFServer::writeToConsole(const std::string& text)
+{
+    gameLocal.Printf(text.c_str());
 }

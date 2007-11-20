@@ -20,6 +20,9 @@
  * smart pointer, which handles the destruction of this object.
  *
  * Instantiation of this object is sufficient for starting the RCF server.
+ *
+ * Note: the RCF interface functions must exactly match the ones defined in 
+ * the declaration file within the DarkRadiant plugin (RCFInterface.h)
  */
 class DarkRadiantRCFServer
 {
@@ -32,6 +35,9 @@ public:
 
 	// Destructor stops the thread
 	~DarkRadiantRCFServer();
+
+	// --- DarkRadiant RCF interface goes below ----
+	void writeToConsole(const std::string& text);
 };
 typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;
 
