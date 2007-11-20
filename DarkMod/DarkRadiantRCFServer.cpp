@@ -14,6 +14,7 @@
 #include "../idlib/precompiled.h"
 
 extern idCmdSystem*	 cmdSystem;
+extern idCommon* common;
 
 DarkRadiantRCFServer::DarkRadiantRCFServer() :
 	_server(RCF::TcpEndpoint(50001))
@@ -32,8 +33,47 @@ void DarkRadiantRCFServer::writeToConsole(const std::string& text)
     gameLocal.Printf(text.c_str());
 }
 
-void DarkRadiantRCFServer::executeConsoleCommand(const std::string& command) 
+void DarkRadiantRCFServer::executeConsoleCommand(const std::string& command)
 {
 	assert(cmdSystem != NULL);
+
+	_largeBuffer.clear();
+
+	// Issue the command to the idCmdSystem
 	cmdSystem->BufferCommandText(CMD_EXEC_APPEND, command.c_str());
+	//cmdSystem->ExecuteCommandBuffer();
+
+	//common->EndRedirect();
+
+	//_largeBuffer.clear();
 }
+
+void DarkRadiantRCFServer::startConsoleBuffering(int dummy) 
+{
+	// Let the console output be redirected to the given buffer
+	instance = this;
+	common->BeginRedirect(_buffer, sizeof(_buffer), FlushBuffer);
+}
+
+void DarkRadiantRCFServer::endConsoleBuffering(int dummy)
+{
+	common->EndRedirect();
+	instance = NULL;
+}
+
+std::string DarkRadiantRCFServer::readConsoleBuffer(int dummy) {
+	DM_LOG(LC_AI, LT_INFO).LogString("readConsoleBuffer called, size is %d\r", _largeBuffer.size());
+	std::string temp(_largeBuffer);
+	_largeBuffer.clear();
+	return temp;
+}
+
+void DarkRadiantRCFServer::FlushBuffer(const char* text)
+{
+	if (instance != NULL)
+	{
+		instance->_largeBuffer.append(text);
+	}
+}
+
+DarkRadiantRCFServer* DarkRadiantRCFServer::instance = NULL;
