@@ -15,10 +15,10 @@
 
 #pragma warning(disable : 4127 4996 4805 4800)
 
-
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
+#include "../DarkMod/DarkRadiantRCFServer.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/darkModLAS.h"
 #include "../DarkMod/decltdm_matinfo.h"
@@ -34,7 +34,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
-#include "../DarkMod/DarkRadiantRCFServer.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -215,7 +214,7 @@ idGameLocal::idGameLocal
 ============
 */
 
-idGameLocal::idGameLocal() 
+idGameLocal::idGameLocal()
 {
 	m_HighestSRId = 0;
 	Clear();
@@ -456,7 +455,8 @@ void idGameLocal::Init( void ) {
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "bank" ), font_bank );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
 
-	TestStartRCFServer();
+	// Start the DarkRadiant RCF Server instance
+	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
 }
 
 /*

@@ -1,2 +1,0 @@
-
-#include <SF/SerializePolymorphic.hpp>

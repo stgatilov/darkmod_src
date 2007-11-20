@@ -11,7 +11,6 @@
 
 #include "RCFServiceDeclaration.h"
 
-#include <RCF/RcfServer.hpp>
 #include <RCF/TcpEndpoint.hpp>
 
 #include "../idlib/precompiled.h"
@@ -27,15 +26,23 @@ public:
 
 D3ConsoleWriterImpl doom3ConsoleWriterInstance;
 
-void TestStartRCFServer()
+DarkRadiantRCFServer::DarkRadiantRCFServer() /*:
+	_server*/
 {
-    RCF::RcfServer server(RCF::TcpEndpoint(50001));
-    server.bind<D3ConsoleWriter>(doom3ConsoleWriterInstance);
-    server.start(false);
+	// The actual RCF Server instance
+	RCF::RcfServer _server(RCF::TcpEndpoint(50001));
+
+	_server.bind<D3ConsoleWriter>(doom3ConsoleWriterInstance);
+    _server.start(false);
 	for (int i = 0; i < 5000; i++) 
 	{
 		Sleep(1);
-		server.cycle();
+		_server.cycle();
 	}
-	server.stop();
+	_server.stop();
+}
+
+DarkRadiantRCFServer::~DarkRadiantRCFServer()
+{
+
 }
