@@ -34,6 +34,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
+#include "../DarkMod/DarkRadiantRCFServer.h"
 
 #include "il/config.h"
 #include "il/il.h"
@@ -454,6 +455,8 @@ void idGameLocal::Init( void ) {
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "an" ), font_an );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "bank" ), font_bank );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
+
+	TestStartRCFServer();
 }
 
 /*

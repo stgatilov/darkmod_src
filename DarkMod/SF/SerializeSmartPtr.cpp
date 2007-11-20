@@ -1,0 +1,2 @@
+
+#include <SF/SerializeSmartPtr.hpp>
