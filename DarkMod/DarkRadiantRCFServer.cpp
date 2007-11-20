@@ -26,23 +26,14 @@ public:
 
 D3ConsoleWriterImpl doom3ConsoleWriterInstance;
 
-DarkRadiantRCFServer::DarkRadiantRCFServer() /*:
-	_server*/
+DarkRadiantRCFServer::DarkRadiantRCFServer() :
+	_server(RCF::TcpEndpoint(50001))
 {
-	// The actual RCF Server instance
-	RCF::RcfServer _server(RCF::TcpEndpoint(50001));
-
 	_server.bind<D3ConsoleWriter>(doom3ConsoleWriterInstance);
-    _server.start(false);
-	for (int i = 0; i < 5000; i++) 
-	{
-		Sleep(1);
-		_server.cycle();
-	}
-	_server.stop();
+    _server.start(true);
 }
 
 DarkRadiantRCFServer::~DarkRadiantRCFServer()
 {
-
+	_server.stop();
 }

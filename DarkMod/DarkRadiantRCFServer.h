@@ -23,6 +23,9 @@
  */
 class DarkRadiantRCFServer
 {
+	// The actual RCF Server instance
+	RCF::RcfServer _server;
+
 public:
 	// Constructor starts the server thread
 	DarkRadiantRCFServer();
