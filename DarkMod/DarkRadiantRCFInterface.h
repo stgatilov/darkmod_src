@@ -11,6 +11,7 @@
  */
 RCF_BEGIN(D3ConsoleWriter, "D3ConsoleWriter")
     RCF_METHOD_V1(void, writeToConsole, const std::string&);
+	RCF_METHOD_V1(void, executeConsoleCommand, const std::string&);
 RCF_END(D3ConsoleWriter);
 
 #endif /* __RCF_SERVICE_DECL_H__ */

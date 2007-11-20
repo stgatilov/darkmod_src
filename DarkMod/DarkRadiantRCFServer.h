@@ -38,6 +38,7 @@ public:
 
 	// --- DarkRadiant RCF interface goes below ----
 	void writeToConsole(const std::string& text);
+	void executeConsoleCommand(const std::string& command);
 };
 typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;
 

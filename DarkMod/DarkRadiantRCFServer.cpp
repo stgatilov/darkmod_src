@@ -13,6 +13,8 @@
 
 #include "../idlib/precompiled.h"
 
+extern idCmdSystem*	 cmdSystem;
+
 DarkRadiantRCFServer::DarkRadiantRCFServer() :
 	_server(RCF::TcpEndpoint(50001))
 {
@@ -28,4 +30,10 @@ DarkRadiantRCFServer::~DarkRadiantRCFServer()
 void DarkRadiantRCFServer::writeToConsole(const std::string& text)
 {
     gameLocal.Printf(text.c_str());
+}
+
+void DarkRadiantRCFServer::executeConsoleCommand(const std::string& command) 
+{
+	assert(cmdSystem != NULL);
+	cmdSystem->BufferCommandText(CMD_EXEC_APPEND, command.c_str());
 }
