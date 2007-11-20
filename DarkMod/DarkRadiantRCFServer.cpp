@@ -63,16 +63,29 @@ void DarkRadiantRCFServer::endConsoleBuffering(int dummy)
 
 std::string DarkRadiantRCFServer::readConsoleBuffer(int dummy) {
 	DM_LOG(LC_AI, LT_INFO).LogString("readConsoleBuffer called, size is %d\r", _largeBuffer.size());
-	std::string temp(_largeBuffer);
-	_largeBuffer.clear();
-	return temp;
+	//std::string temp(_largeBuffer);
+	//_largeBuffer.clear();
+	return "";
 }
 
 void DarkRadiantRCFServer::FlushBuffer(const char* text)
 {
 	if (instance != NULL)
 	{
-		instance->_largeBuffer.append(text);
+		try	{
+			// Instantiate a client and write the stuff to DarkRadiant
+			RcfClient<DarkRadiantRCFService> client(RCF::TcpEndpoint("localhost", 50002));
+
+			std::string textStr(text);
+			client.writeToConsole(textStr);
+		}
+		catch(const std::exception &e)	{
+			/* << "Caught exception:\n";
+			globalErrorStream() << "Type: " << typeid(e).name() << "\n";
+			globalErrorStream() << "What: " << e.what() << "\n";*/
+			std::cout << "caught";
+		}
+		//instance->_largeBuffer.append(text);
 	}
 }
 

@@ -18,4 +18,11 @@ RCF_BEGIN(D3ConsoleWriter, "D3ConsoleWriter")
 	RCF_METHOD_R1(std::string, readConsoleBuffer, int);
 RCF_END(D3ConsoleWriter);
 
+/**
+ * greebo: This defines DarkRadiant's RCF Interface, for use by Doom 3
+ */
+RCF_BEGIN(DarkRadiantRCFService, "DarkRadiant")
+	RCF_METHOD_V1(void, writeToConsole, const std::string&);
+RCF_END(DarkRadiantRCFService);
+
 #endif /* __RCF_SERVICE_DECL_H__ */
