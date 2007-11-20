@@ -650,6 +650,9 @@ void CMissionData::UpdateObjectives( void )
 			idVec3 delta;
 			int dist(0);
 
+			if( pComp->m_Args.Num() < 3 )
+				continue;
+
 			ent1 = gameLocal.FindEntity( pComp->m_Args[0].c_str() );
 			ent2 = gameLocal.FindEntity( pComp->m_Args[1].c_str() );
 
@@ -662,7 +665,7 @@ void CMissionData::UpdateObjectives( void )
 			delta = ent1->GetPhysics()->GetOrigin();
 			delta = delta - ent2->GetPhysics()->GetOrigin();
 
-			dist = atof(pComp->m_Args[0]);
+			dist = atof(pComp->m_Args[2]);
 			dist *= dist;
 
 			SetComponentState( pComp, ( delta.LengthSqr() < dist ) );
@@ -1487,6 +1490,8 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	Parms.valueSuperGroup = OverallVal;
 
 	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
+
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Inventory Callback: Overall loot value %d\r", OverallVal );
 	
 	// Also call the pickocket event if stolen from living AI
 	if( bPickedUp && ent != NULL && ent->GetBindMaster() )
