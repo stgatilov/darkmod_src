@@ -41,6 +41,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
+#include "DarkRadiantRCFServer.h"
 
 // Default length of time for holding down jump key to start
 // mantling.
@@ -123,12 +124,14 @@ int g_PLID = 0;
 const char *DM_OSPathToRelativePath(const char *OSPath);
 const char *DM_RelativePathToOSPath(const char *relativePath, const char *basePath = "fs_devpath");
 const char *DM_BuildOSPath(const char *base, const char *game, const char *relativePath);
+void DM_Frame();
 //void DM_Printf(const char* fmt, ...);
 
 // Intercept declarations
 //SH_DECL_HOOK1(idFileSystem, OSPathToRelativePath, SH_NOATTRIB, 0, const char *, const char *);
 //SH_DECL_HOOK2(idFileSystem, RelativePathToOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *);
 SH_DECL_HOOK3(idFileSystem, BuildOSPath, SH_NOATTRIB, 0, const char *, const char *, const char *, const char *);
+SH_DECL_HOOK0_void(idCommon, Frame, SH_NOATTRIB, 0);
 
 // greebo: Intercept declaration for idCommon::VPrintf 
 //SH_DECL_HOOK0_void_vafmt(idCommon, Printf, SH_NOATTRIB, 0);
@@ -336,6 +339,7 @@ void CGlobal::Init()
 
 #ifdef _WINDOWS_
 
+	SH_ADD_HOOK_STATICFUNC(idCommon, Frame, common, DarkRadiantRCFServer::Frame, 0);
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);

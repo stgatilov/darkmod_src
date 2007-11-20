@@ -13,7 +13,7 @@
 #include <RCF/RcfServer.hpp>
 #include "DarkRadiantRCFInterface.h"
 
-#define MAX_CONSOLE_BUFFER_SIZE 1
+#define MAX_CONSOLE_BUFFER_SIZE 64
 
 /**
  * greebo: This class encapsulates an RCF Server instance listening
@@ -32,9 +32,13 @@ class DarkRadiantRCFServer
 	// The actual RCF Server instance
 	RCF::RcfServer _server;
 
-	std::string _largeBuffer;
+	// The client for accessing DarkRadiant's interface (static
+	typedef boost::shared_ptr< RcfClient<DarkRadiantRCFService> > ClientPtr;
+	static ClientPtr _client;
 
 	char _buffer[MAX_CONSOLE_BUFFER_SIZE];
+
+	static DarkRadiantRCFServer* instance;
 
 public:
 	// Constructor starts the server thread
@@ -42,6 +46,12 @@ public:
 
 	// Destructor stops the thread
 	~DarkRadiantRCFServer();
+
+	// Lets the server think
+	void Cycle();
+
+	// SourceHook entry point
+	static void Frame();
 
 	// --- DarkRadiant RCF interface goes below ----
 	void writeToConsole(const std::string& text);
@@ -51,9 +61,6 @@ public:
 	void endConsoleBuffering(int dummy);
 
 private:
-	// Holds the pointer to this instance during executeConsoleCommand()
-	static DarkRadiantRCFServer* instance;
-
 	static void FlushBuffer(const char* text);
 };
 typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;

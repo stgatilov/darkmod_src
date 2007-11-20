@@ -20,12 +20,15 @@ DarkRadiantRCFServer::DarkRadiantRCFServer() :
 	_server(RCF::TcpEndpoint(50001))
 {
 	_server.bind<D3ConsoleWriter>(*this);
-    _server.start(true);
+    _server.start(false);
+
+	instance = this;
 }
 
 DarkRadiantRCFServer::~DarkRadiantRCFServer()
 {
 	_server.stop();
+	instance = NULL;
 }
 
 void DarkRadiantRCFServer::writeToConsole(const std::string& text)
@@ -37,56 +40,71 @@ void DarkRadiantRCFServer::executeConsoleCommand(const std::string& command)
 {
 	assert(cmdSystem != NULL);
 
-	_largeBuffer.clear();
-
 	// Issue the command to the idCmdSystem
 	cmdSystem->BufferCommandText(CMD_EXEC_APPEND, command.c_str());
-	//cmdSystem->ExecuteCommandBuffer();
-
-	//common->EndRedirect();
-
-	//_largeBuffer.clear();
 }
 
 void DarkRadiantRCFServer::startConsoleBuffering(int dummy) 
 {
 	// Let the console output be redirected to the given buffer
-	instance = this;
+	_client = ClientPtr(
+		new RcfClient<DarkRadiantRCFService>(RCF::TcpEndpoint("localhost", 50002))
+	);
 	common->BeginRedirect(_buffer, sizeof(_buffer), FlushBuffer);
 }
 
 void DarkRadiantRCFServer::endConsoleBuffering(int dummy)
 {
 	common->EndRedirect();
-	instance = NULL;
+	_client = ClientPtr();
 }
 
 std::string DarkRadiantRCFServer::readConsoleBuffer(int dummy) {
-	DM_LOG(LC_AI, LT_INFO).LogString("readConsoleBuffer called, size is %d\r", _largeBuffer.size());
 	//std::string temp(_largeBuffer);
 	//_largeBuffer.clear();
 	return "";
 }
 
+void DarkRadiantRCFServer::Cycle() 
+{
+	_server.cycle();
+}
+
 void DarkRadiantRCFServer::FlushBuffer(const char* text)
 {
-	if (instance != NULL)
+	if (_client != NULL)
 	{
 		try	{
-			// Instantiate a client and write the stuff to DarkRadiant
-			RcfClient<DarkRadiantRCFService> client(RCF::TcpEndpoint("localhost", 50002));
-
 			std::string textStr(text);
-			client.writeToConsole(textStr);
+			_client->writeToConsole(textStr);
 		}
-		catch(const std::exception &e)	{
-			/* << "Caught exception:\n";
-			globalErrorStream() << "Type: " << typeid(e).name() << "\n";
-			globalErrorStream() << "What: " << e.what() << "\n";*/
-			std::cout << "caught";
+		catch (const std::exception&)	{
+			// Disable the client to avoid application block
+			_client = ClientPtr();
+			common->EndRedirect();
 		}
-		//instance->_largeBuffer.append(text);
 	}
 }
 
+void DarkRadiantRCFServer::Frame()
+{
+	//DM_LOG(LC_AI, LT_INFO).LogString("RunFrame!\r");
+	if (instance != NULL)
+	{
+		instance->Cycle();
+	}
+	/*if (_client != NULL)
+	{
+		try	{
+			std::string textStr(text);
+			_client->writeToConsole(textStr);
+		}
+		catch (const std::exception&)	{
+			std::cout << "caught";
+		}
+	}*/
+}
+
+// Define the static member
+DarkRadiantRCFServer::ClientPtr DarkRadiantRCFServer::_client;
 DarkRadiantRCFServer* DarkRadiantRCFServer::instance = NULL;
