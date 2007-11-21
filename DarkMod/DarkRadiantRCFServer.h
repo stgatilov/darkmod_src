@@ -50,13 +50,15 @@ public:
 	// Lets the server think
 	void Cycle();
 
+	// Sends the "COMMAND DONE" signal back to DarkRadiant
+	void SignalCommandDone();
+
 	// SourceHook entry point
 	static void Frame();
 
 	// --- DarkRadiant RCF interface goes below ----
 	void writeToConsole(const std::string& text);
 	void executeConsoleCommand(const std::string& command);
-	std::string readConsoleBuffer(int dummy);
 	void startConsoleBuffering(int dummy);
 	void endConsoleBuffering(int dummy);
 

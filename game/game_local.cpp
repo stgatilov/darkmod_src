@@ -457,6 +457,7 @@ void idGameLocal::Init( void ) {
 
 	// Start the DarkRadiant RCF Server instance
 	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
+	Printf( "------------ RCF Server started -----------\n" );
 }
 
 /*
@@ -470,6 +471,9 @@ void idGameLocal::Shutdown( void ) {
 	if ( !common ) {
 		return;
 	}
+
+	Printf( "------------ Shutting down RCF Server -----------\n" );
+	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
 
 	Printf( "------------ Game Shutdown -----------\n" );
 

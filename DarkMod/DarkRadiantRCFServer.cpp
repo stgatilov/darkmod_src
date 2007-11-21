@@ -19,7 +19,7 @@ extern idCommon* common;
 DarkRadiantRCFServer::DarkRadiantRCFServer() :
 	_server(RCF::TcpEndpoint(50001))
 {
-	_server.bind<D3ConsoleWriter>(*this);
+	_server.bind<D3DarkModInterface>(*this);
     _server.start(false);
 
 	instance = this;
@@ -59,15 +59,24 @@ void DarkRadiantRCFServer::endConsoleBuffering(int dummy)
 	_client = ClientPtr();
 }
 
-std::string DarkRadiantRCFServer::readConsoleBuffer(int dummy) {
-	//std::string temp(_largeBuffer);
-	//_largeBuffer.clear();
-	return "";
+void DarkRadiantRCFServer::SignalCommandDone() 
+{
+	if (_client != NULL)
+	{
+		ClientPtr client = _client;
+		endConsoleBuffering(1);
+
+		try	{
+			// Emit the command done signal to DarkRadiant
+			client->signalCommandDone();
+		}
+		catch (const std::exception&)	{}
+	}
 }
 
 void DarkRadiantRCFServer::Cycle() 
 {
-	_server.cycle();
+	_server.cycle(1000);
 }
 
 void DarkRadiantRCFServer::FlushBuffer(const char* text)
@@ -86,23 +95,13 @@ void DarkRadiantRCFServer::FlushBuffer(const char* text)
 	}
 }
 
+// Intercepts idCommon::Frame(), lets the server think
 void DarkRadiantRCFServer::Frame()
 {
-	//DM_LOG(LC_AI, LT_INFO).LogString("RunFrame!\r");
 	if (instance != NULL)
 	{
 		instance->Cycle();
 	}
-	/*if (_client != NULL)
-	{
-		try	{
-			std::string textStr(text);
-			_client->writeToConsole(textStr);
-		}
-		catch (const std::exception&)	{
-			std::cout << "caught";
-		}
-	}*/
 }
 
 // Define the static member
