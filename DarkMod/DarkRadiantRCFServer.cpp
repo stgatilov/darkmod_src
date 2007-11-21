@@ -27,8 +27,8 @@ DarkRadiantRCFServer::DarkRadiantRCFServer() :
 
 DarkRadiantRCFServer::~DarkRadiantRCFServer()
 {
-	_server.stop();
 	instance = NULL;
+	_server.stop();
 }
 
 void DarkRadiantRCFServer::writeToConsole(const std::string& text)
@@ -76,7 +76,7 @@ void DarkRadiantRCFServer::SignalCommandDone()
 
 void DarkRadiantRCFServer::Cycle() 
 {
-	_server.cycle(1000);
+	_server.cycle();
 }
 
 void DarkRadiantRCFServer::FlushBuffer(const char* text)
