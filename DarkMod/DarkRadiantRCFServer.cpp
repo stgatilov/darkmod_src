@@ -44,11 +44,11 @@ void DarkRadiantRCFServer::executeConsoleCommand(const std::string& command)
 	cmdSystem->BufferCommandText(CMD_EXEC_APPEND, command.c_str());
 }
 
-void DarkRadiantRCFServer::startConsoleBuffering(int dummy) 
+void DarkRadiantRCFServer::startConsoleBuffering(int portNum) 
 {
 	// Let the console output be redirected to the given buffer
 	_client = ClientPtr(
-		new RcfClient<DarkRadiantRCFService>(RCF::TcpEndpoint("localhost", 50002))
+		new RcfClient<DarkRadiantRCFService>(RCF::TcpEndpoint("localhost", portNum))
 	);
 	common->BeginRedirect(_buffer, sizeof(_buffer), FlushBuffer);
 }

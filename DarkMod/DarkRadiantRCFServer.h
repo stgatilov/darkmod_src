@@ -59,7 +59,7 @@ public:
 	// --- DarkRadiant RCF interface goes below ----
 	void writeToConsole(const std::string& text);
 	void executeConsoleCommand(const std::string& command);
-	void startConsoleBuffering(int dummy);
+	void startConsoleBuffering(int portNum);
 	void endConsoleBuffering(int dummy);
 
 private:

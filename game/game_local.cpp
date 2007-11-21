@@ -472,9 +472,6 @@ void idGameLocal::Shutdown( void ) {
 		return;
 	}
 
-	Printf( "------------ Shutting down RCF Server -----------\n" );
-	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
-
 	Printf( "------------ Game Shutdown -----------\n" );
 
 	mpGame.Shutdown();
