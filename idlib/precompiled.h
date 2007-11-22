@@ -54,6 +54,8 @@
 #pragma warning(disable : 4714)				// function marked as __forceinline not inlined
 
 #include <malloc.h>							// no malloc.h on mac or unix
+
+#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
 #include <windows.h>						// for qgl.h
 #undef FindText								// stupid namespace poluting Microsoft monkeys
 
