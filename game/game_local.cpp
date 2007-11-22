@@ -35,6 +35,10 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
 
+#ifdef __linux__
+	#include <boost/asio.hpp>
+#endif
+
 #include "il/config.h"
 #include "il/il.h"
 #include "../DarkMod/randomizer/randomc.h"
@@ -456,8 +460,22 @@ void idGameLocal::Init( void ) {
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
 
 	// Start the DarkRadiant RCF Server instance
+	
+#ifdef __linux__
+	// Linux is using the boost::asio library, this may throw an exception
+	try {
+		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
+		Printf( "------------ RCF Server started -----------\n" );
+	}
+	catch (const boost::asio::error& e) {
+		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
+		Warning("Could not start RCF Server: %s", e.what());
+	}
+#else
+	// Win32 builds just instantiate the server, shouldn't throw
 	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
 	Printf( "------------ RCF Server started -----------\n" );
+#endif
 }
 
 /*
