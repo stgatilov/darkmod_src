@@ -66,6 +66,11 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		owner->GetMemory().currentPath = path;
 
 	}
+	else
+	{
+		subsystem.FinishTask();
+		return;
+	}
 }
 
 bool PatrolTask::Perform(Subsystem& subsystem)
@@ -78,6 +83,8 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	// that case should have been caught by the Init() routine
 	assert(path);
 
+	TaskPtr task;
+
 	// Get the classname, this determines the child routine we're spawning.
 	idStr classname = path->spawnArgs.GetString("classname");
 
@@ -89,7 +96,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}	
 	else if (classname == "path_turn")
 	{
@@ -99,7 +106,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}
 	else if (classname == "path_wait")
 	{
@@ -109,7 +116,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}
 	else if (classname == "path_waitfortrigger")
 	{
@@ -119,7 +126,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}
 	else if (classname == "path_hide")
 	{
@@ -129,7 +136,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}
 	else if (classname == "path_show")
 	{
@@ -139,13 +146,30 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
-		subsystem.PushTask(pathTask);
+		task = pathTask;
 	}
 	else
 	{
 		// Finish this task
 		return true;
 	}
+	
+	// Advance to the next path entity pointer
+	idPathCorner* next = idPathCorner::RandomPath(path, NULL);
+
+	if (next == NULL)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
+		subsystem.SwitchTask(task);
+		// finish patrolling after this path
+	}
+	else
+	{
+		// Store the new path entity into the AI's mind
+		_owner.GetEntity()->GetMind()->GetMemory().currentPath = next;
+		subsystem.PushTask(task);
+	}
+
 
 	return false; // not finished yet
 }

@@ -75,19 +75,7 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 				// Unreachable, fall back to PatrolTask
 				DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
 			}
-
-			// Advance to the next path entity pointer
-			idPathCorner* next = idPathCorner::RandomPath(path, NULL);
-
-			if (next == NULL)
-			{
-				DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
-				return true; // finish this task
-			}
-
-			// Store the new path entity into the AI's mind
-			owner->GetMemory().currentPath = next;
-
+		
 			return true; // finish this task
 		}
 

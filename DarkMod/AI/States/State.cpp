@@ -111,8 +111,19 @@ bool State::SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higher
 	}
 	else if (owner->AI_AlertIndex > reqAlertIndex && !higherStateName.IsEmpty())
 	{
-		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(higherStateName);
+		if (owner->AI_AlertIndex == 4)
+		{
+			if (owner->GetMind()->PerformCombatCheck())
+			{
+				// Alert index is too high, switch to the higher State
+				owner->GetMind()->PushState(higherStateName);
+			}
+		}
+		else
+		{
+			// Alert index is too high, switch to the higher State
+			owner->GetMind()->PushState(higherStateName);
+		}
 		return false;
 	}
 

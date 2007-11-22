@@ -91,7 +91,7 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 {
 	CInventoryItem *rc = NULL;
 	int LGroupVal = 0;
-	int dummy = 0; // for calling GetLoot
+	int dummy1(0), dummy2(0), dummy3(0); // for calling GetLoot
 
 	CInventoryItem::LootType lootType = CInventoryItem::getLootTypeFromSpawnargs(ent->spawnArgs);
 	int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
@@ -130,7 +130,7 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 			ent, 
 			sLootTypeName[lootType], 
 			LGroupVal, 
-			GetLoot( dummy, dummy, dummy ), 
+			GetLoot( dummy1, dummy2, dummy3 ), 
 			true 
 		);
 		gameLocal.m_MissionData->ChangeTotalLoot( value );

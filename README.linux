@@ -10,6 +10,8 @@ prerequisites:
   * libdevil-dev
   * libdevil1c2
   * libboost-filesystem-dev
+  * libboost-date-time-dev
+  * libboost-thread-dev
 
 In addition, when running Doom and using the DarkMod, you will also need:
 
