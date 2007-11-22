@@ -337,9 +337,11 @@ void CGlobal::Init()
 {
 	PROFILE_HANDLE *pfh = NULL;
 
+	// greebo: Intercept the periodic Frame call to run the RCF Server cycle
+	SH_ADD_HOOK_STATICFUNC(idCommon, Frame, common, DarkRadiantRCFServer::Frame, 0);
+	
 #ifdef _WINDOWS_
 
-	SH_ADD_HOOK_STATICFUNC(idCommon, Frame, common, DarkRadiantRCFServer::Frame, 0);
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, OSPathToRelativePath, fileSystem, DM_OSPathToRelativePath, 0);
 //	SH_ADD_HOOK_STATICFUNC(idFileSystem, RelativePathToOSPath, fileSystem, DM_RelativePathToOSPath, 0);
