@@ -109,12 +109,12 @@ float idPhysics_RigidBody::GetSubmergedPercent( const idVec3 &pos, const idMat3 
   bounds *= rotation;
 
   // gets the position of the object relative to the surface of the water
-  height = abs(bounds[1] * gravityNormal * 2);
+  height = fabs(bounds[1] * gravityNormal * 2);
 
   // calculates the depth of the bottom of the object
   bottom += (height * 0.5f) * gravityNormal;
   depth = this->water->GetDepth(bottom);
-  d = abs(depth * gravityNormal);
+  d = fabs(depth * gravityNormal);
 
   if( d > height ) {
     // the body is totally submerged

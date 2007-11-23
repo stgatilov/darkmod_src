@@ -1326,8 +1326,8 @@ void idAFConstraint_UniversalJoint::DebugDraw( void ) {
 		d2 *= m2.Transpose() * m1;
 	}
 
-	gameRenderWorld->DebugArrow( colorCyan, a1, a1 + s1 * 5.0f, 1.0f );
-	gameRenderWorld->DebugArrow( colorBlue, a2, a2 + s2 * 5.0f, 1.0f );
+	gameRenderWorld->DebugArrow( colorCyan, a1, a1 + s1 * 5.0f, 1 );
+	gameRenderWorld->DebugArrow( colorBlue, a2, a2 + s2 * 5.0f, 1 );
 	gameRenderWorld->DebugLine( colorGreen, a1, a1 + d1 * 5.0f );
 	gameRenderWorld->DebugLine( colorGreen, a2, a2 + d2 * 5.0f );
 
@@ -4540,7 +4540,7 @@ float idAFBody::SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal,
 		depth = l->GetDepth(point);
 	//	height = abs( (bounds[0] - bounds[1]) * gravityNormal ) * 0.5f;
 	//	d = abs( depth * gravityNormal );
-		height = abs( bounds[0].z - bounds[1].z ) * 0.5f;
+		height = fabs( bounds[0].z - bounds[1].z ) * 0.5f;
 		d = depth.z;
 
 		if( d < 0 )
@@ -4560,12 +4560,12 @@ float idAFBody::SetWaterLevel( idPhysics_Liquid *l, const idVec3 &gravityNormal,
 		bounds *= this->current->worldAxis.Transpose();
 
 		// gets the position of the object relative to the surface of the water
-		height = abs(bounds[1] * gravityNormal * 2);
+		height = fabs(bounds[1] * gravityNormal * 2);
 
 		// calculates the depth of the bottom of the object
 		bottom += (height * 0.5f) * gravityNormal;
 		depth = l->GetDepth(bottom);
-		d = abs(depth * gravityNormal);
+		d = fabs(depth * gravityNormal);
 
 		if( d > height ) {
 			// the body is totally submerged
