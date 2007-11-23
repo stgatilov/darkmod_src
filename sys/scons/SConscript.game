@@ -215,7 +215,7 @@ RCFLibList = scons_utils.BuildList('../../rcflib', RCFLibSrc);
 local_env = g_game_env.Copy()
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL', 'RCF_USE_BOOST_ASIO', 'RCF_USE_BOOST_THREADS', 'RCF_MULTI_THREADED' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-unused' ] )
+local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 local_env.Append( CPPPATH = [ '../../rcflib' ] )
 local_env.Append(LIBS = ['IL', 'boost_filesystem', 'boost_thread'])
 
