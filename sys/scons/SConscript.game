@@ -205,18 +205,18 @@ AI/Tasks/SingleBarkTask.cpp \
 AI/Tasks/ThrowObjectTask.cpp \
 AI/Tasks/WaitTask.cpp \
 AI/Tasks/WanderInLocationTask.cpp \
-DarkRadiantRCFServer.cpp \
 sourcehook/sourcehook.cpp'
 
 darkModList = scons_utils.BuildList('../../DarkMod', darkModSrc)
 
-RCFLibSrc = 'RCF/RCF.cpp'
-RCFLibList = scons_utils.BuildList('../../include', RCFLibSrc);
+RCFLibSrc = 'RCF/RCF.cpp DarkRadiantRCFServer.cpp'
+RCFLibList = scons_utils.BuildList('../../rcflib', RCFLibSrc);
 
 local_env = g_game_env.Copy()
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL', 'RCF_USE_BOOST_ASIO', 'RCF_USE_BOOST_THREADS', 'RCF_MULTI_THREADED' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused' ] )
+local_env.Append( CPPPATH = [ '../../rcflib' ] )
 local_env.Append(LIBS = ['IL', 'boost_filesystem', 'boost_thread'])
 
 ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects + RCFLibList )
