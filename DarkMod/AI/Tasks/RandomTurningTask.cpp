@@ -56,7 +56,7 @@ bool RandomTurningTask::Perform(Subsystem& subsystem)
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 
 		// TODO: un-hardcode
-		int turnDelay = 1000 + gameLocal.random.RandomFloat() * 400;
+		int turnDelay = static_cast<int>(1000 + gameLocal.random.RandomFloat() * 400);
 		
 		// Wait a bit before turning again
 		_nextTurningTime = gameLocal.time + turnDelay;

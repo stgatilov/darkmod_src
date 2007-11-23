@@ -71,7 +71,9 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
 
 			// Wait about half a sec.
-			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()*0.2f);
+			_exitTime = static_cast<int>(
+				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()*0.2f)
+			);
 		}
 		else 
 		{
@@ -140,12 +142,16 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			}
 
 			// Wait a bit, setting _exitTime sets the lifetime of this task
-			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_CLOSELY*(1 + gameLocal.random.RandomFloat()*0.2f);
+			_exitTime = static_cast<int>(
+				gameLocal.time + INVESTIGATE_SPOT_TIME_CLOSELY*(1 + gameLocal.random.RandomFloat()*0.2f)
+			);
 		}
 		else
 		{
 			// Wait a bit, setting _exitTime sets the lifetime of this task
-			_exitTime = gameLocal.time + INVESTIGATE_SPOT_TIME_STANDARD*(1 + gameLocal.random.RandomFloat()*0.2f);
+			_exitTime = static_cast<int>(
+				gameLocal.time + INVESTIGATE_SPOT_TIME_STANDARD*(1 + gameLocal.random.RandomFloat()*0.2f)
+			);
 		}
 	}
 	else
@@ -163,7 +169,9 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
 
 			// Wait about half a sec., this sets the lifetime of this task
-			_exitTime = gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f);
+			_exitTime = static_cast<int>(
+				gameLocal.time + 600*(1 + gameLocal.random.RandomFloat()*0.2f)
+			);
 		}
 	}
 

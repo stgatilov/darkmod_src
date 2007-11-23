@@ -6399,7 +6399,7 @@ void idEntity::LoadTDMSettings(void)
 		spawnArgs.GetFloat("frob_bias", "1.0", m_FrobBias);
 
 		if( m_FrobDistance <= 0  )
-			m_FrobDistance = g_Global.m_DefaultFrobDistance;
+			m_FrobDistance = static_cast<int>(g_Global.m_DefaultFrobDistance);
 	}
 
 	// update the max frobdistance if necessary

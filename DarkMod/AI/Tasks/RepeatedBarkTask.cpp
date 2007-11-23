@@ -67,8 +67,8 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 		// Reset the timer
 		if (_barkRepeatIntervalMax > 0)
 		{
-			_nextBarkTime = gameLocal.time + duration + _barkRepeatIntervalMin + 
-				gameLocal.random.RandomFloat() * (_barkRepeatIntervalMax - _barkRepeatIntervalMin);
+			_nextBarkTime = static_cast<int>(gameLocal.time + duration + _barkRepeatIntervalMin + 
+				gameLocal.random.RandomFloat() * (_barkRepeatIntervalMax - _barkRepeatIntervalMin));
 		}
 		else
 		{

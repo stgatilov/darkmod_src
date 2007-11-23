@@ -83,7 +83,7 @@ void RandomHeadturnTask::PerformRandomHeadTurnCheck()
 	}
 
 	// Check if it is time to see if we should turn our head, don't go below 1 second
-	float nowTime = gameLocal.time;
+	int nowTime = gameLocal.time;
 	if (((nowTime - owner->GetMemory().lastRandomHeadTurnCheckTime) * timeMultiplier) < 1000)
 	{
 		return;

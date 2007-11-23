@@ -80,8 +80,8 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		}
 
 		// Set next throwing time
-		_nextThrowObjectTime = gameLocal.time + _projectileDelayMin
-							+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin);
+		_nextThrowObjectTime = static_cast<int>(gameLocal.time + _projectileDelayMin
+							+ gameLocal.random.RandomFloat() * (_projectileDelayMax - _projectileDelayMin));
 	}
 	return false; // not finished yet
 }

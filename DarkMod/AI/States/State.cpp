@@ -1142,7 +1142,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			{
 				idAI* issuer = static_cast<idAI*>(issuingEntity);
 				// Note: We deliberately don't care if the issuer is a friend or not
-				float warningAmount = issuer->GetMind()->GetMemory().countEvidenceOfIntruders;
+				int warningAmount = issuer->GetMind()->GetMemory().countEvidenceOfIntruders;
 				
 				if (memory.countEvidenceOfIntruders < warningAmount)
 				{

@@ -5655,7 +5655,7 @@ void idPlayer::Move( void )
 		int endTime = gameLocal.time;
 		float RefZOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel().z;
 		
-		old_vert = savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger();
+		old_vert = static_cast<int>(savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger());
 		new_vert = (physicsObj.GetOrigin().z - RefZOffset) / cv_pm_rope_snd_rep_dist.GetInteger();
 		
 		if ( old_vert != new_vert ) 

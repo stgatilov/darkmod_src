@@ -70,7 +70,7 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_idleAnimationInterval > 0 && (_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num()))
 	{
-		_nextAnimationTime = gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval;
+		_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
 	}
 	else
 	{
@@ -115,7 +115,9 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		}
 		
 		// Reset the timer
-		_nextAnimationTime = gameLocal.time + _idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f);
+		_nextAnimationTime = static_cast<int>(
+			gameLocal.time + _idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f)
+		);
 	}
 
 	return false; // not finished yet

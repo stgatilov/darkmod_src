@@ -487,7 +487,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		stim->m_Radius = Radius;
 
 		sprintf(name, "sr_falloffexponent_%u", Counter);
-		stim->m_FallOffExponent = args->GetFloat(name, "0");
+		stim->m_FallOffExponent = args->GetInt(name, "0");
 
 		sprintf(name, "sr_use_bounds_%u", Counter);
 		stim->m_bUseEntBounds = args->GetBool(name, "0");
@@ -509,7 +509,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		stim->m_TimeInterleave = args->GetInt(name, "0");
 
 		// greebo: Add fuzzyness to the timer (ranging from 0.9 - 1.3);
-		stim->m_TimeInterleave *= 0.9f + gameLocal.random.RandomFloat()*0.4f;
+		stim->m_TimeInterleave = static_cast<int>(stim->m_TimeInterleave * (0.9f + gameLocal.random.RandomFloat()*0.4f));
 
 		// userfriendly stim duration time
 		sprintf(name, "sr_duration_%u", Counter);
@@ -519,7 +519,7 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 		stim->m_Magnitude = args->GetFloat(name, "1.0");
 
 		sprintf(name, "sr_max_fire_count_%u", Counter);
-		stim->m_MaxFireCount = args->GetFloat(name, "-1");
+		stim->m_MaxFireCount = args->GetInt(name, "-1");
 
 		// Check if we have a timer on this stim.
 		CreateTimer(args, stim, Counter);
@@ -527,10 +527,10 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict *args, idEntity *Owner,
 	else	// this is only for responses
 	{
 		sprintf(name, "sr_chance_timeout_%u", Counter);
-		sr->m_ChanceTimer = args->GetFloat(name, "-1");
+		sr->m_ChanceTimer = args->GetInt(name, "-1");
 
 		sprintf(name, "sr_random_effects_%u", Counter);
-		resp->m_NumRandomEffects = args->GetFloat(name, "0");
+		resp->m_NumRandomEffects = args->GetInt(name, "0");
 
 		// Get the name of the script function for processing the response
 		name = "sr_script_" + str;

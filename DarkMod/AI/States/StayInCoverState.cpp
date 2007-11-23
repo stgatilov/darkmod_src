@@ -52,7 +52,9 @@ void StayInCoverState::Init(idAI* owner)
 	// Calculate the time we should stay in cover
 	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));
 	int coverDelayMax = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_max"));
-	int waitTime = coverDelayMin + gameLocal.random.RandomFloat() * (coverDelayMax - coverDelayMin);
+	int waitTime = static_cast<int>(
+		coverDelayMin + gameLocal.random.RandomFloat() * (coverDelayMax - coverDelayMin)
+	);
 	_emergeDelay = gameLocal.time + waitTime;
 
 	// The communication system 
