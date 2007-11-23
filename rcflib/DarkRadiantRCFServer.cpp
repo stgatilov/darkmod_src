@@ -95,14 +95,6 @@ void DarkRadiantRCFServer::FlushBuffer(const char* text)
 	}
 }
 
-void DarkRadiantRCFServer::SetFrameInterleave(int interleave)
-{
-	if (interleave != 0)
-	{
-		frameInterleave = interleave;
-	}
-}
-
 // Intercepts idCommon::Frame(), lets the server think
 void DarkRadiantRCFServer::Frame()
 {
@@ -110,6 +102,16 @@ void DarkRadiantRCFServer::Frame()
 	{
 		frameCount++;
 		
+		// Default interleave = no interleave
+		int frameInterleave = 1;
+		
+		// greebo: Set the framecount to high values during load/play phases
+		if (gameLocal.GameState() >= GAMESTATE_STARTUP)
+		{
+			// Every 2 seconds at 60 FPS
+			frameInterleave = 120;
+		}
+				
 		if (frameCount % frameInterleave == 0)
 		{
 			instance->Cycle();
@@ -121,4 +123,3 @@ void DarkRadiantRCFServer::Frame()
 DarkRadiantRCFServer::ClientPtr DarkRadiantRCFServer::_client;
 DarkRadiantRCFServer* DarkRadiantRCFServer::instance = NULL;
 int DarkRadiantRCFServer::frameCount = 0;
-int DarkRadiantRCFServer::frameInterleave = 1;

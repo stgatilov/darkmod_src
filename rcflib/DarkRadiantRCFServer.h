@@ -41,7 +41,6 @@ class DarkRadiantRCFServer
 	static DarkRadiantRCFServer* instance;
 	
 	static int frameCount;
-	static int frameInterleave;
 
 public:
 	// Constructor starts the server thread
@@ -58,10 +57,6 @@ public:
 
 	// SourceHook entry point
 	static void Frame();
-	
-	// Sets the frame interleave for the server 
-	// (e.g. to avoid cycling the server each frame during gameplay)
-	static void SetFrameInterleave(int interleave);
 
 	// --- DarkRadiant RCF interface goes below ----
 	void writeToConsole(const std::string& text);
