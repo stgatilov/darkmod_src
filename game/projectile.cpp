@@ -975,7 +975,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 		float delay = spawnArgs.GetFloat( "delay_splash" );
 		if ( delay ) {
 			if ( removeTime < delay * 1000 ) {
-				removeTime = ( delay + 0.10 ) * 1000;
+				removeTime = static_cast<int>( delay + 0.10f ) * 1000;
 			}
 			PostEventSec( &EV_RadiusDamage, delay, ignore );
 		} else {

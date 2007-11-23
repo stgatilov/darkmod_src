@@ -1406,7 +1406,7 @@ static void Cmd_AddDebugLine_f( const idCmdArgs &args ) {
 	debugLines[i].end.x = Cmd_GetFloatArg( args, argNum );
 	debugLines[i].end.y = Cmd_GetFloatArg( args, argNum );
 	debugLines[i].end.z = Cmd_GetFloatArg( args, argNum );
-	debugLines[i].color = Cmd_GetFloatArg( args, argNum );
+	debugLines[i].color = static_cast<int>(Cmd_GetFloatArg( args, argNum ));
 }
 
 /*
@@ -1481,9 +1481,10 @@ PrintFloat
 ==================
 */
 static void PrintFloat( float f ) {
-	char buf[128], i;
+	char buf[128];
+	int i;
 
-	for ( i = sprintf( buf, "%3.2f", f ); i < 7; i++ ) {
+	for (i = sprintf( buf, "%3.2f", f ); i < 7; i++) {
 		buf[i] = ' ';
 	}
 	buf[i] = '\0';

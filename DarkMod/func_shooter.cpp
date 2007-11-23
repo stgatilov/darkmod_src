@@ -199,7 +199,7 @@ void tdmFuncShooter::Event_ShooterGetAmmo() {
 
 void tdmFuncShooter::setupNextFireTime() {
 	// Calculate the next fire time
-	int randomness = gameLocal.random.RandomFloat() * _fireIntervalFuzzyness - _fireIntervalFuzzyness/2;
+	int randomness = static_cast<int>(_fireIntervalFuzzyness*(gameLocal.random.RandomFloat() - 0.5f));
 	_nextFireTime = gameLocal.time + _fireInterval + randomness;
 }
 

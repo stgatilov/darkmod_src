@@ -5334,7 +5334,7 @@ void idAI::UpdateEnemyPosition()
 		return;
 	}
 
-	int				enemyAreaNum;
+	int				enemyAreaNum(-1);
 	int				areaNum;
 	idVec3			enemyPos;
 	bool			onGround;

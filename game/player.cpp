@@ -567,7 +567,7 @@ void idPlayer::Init( void ) {
 	stamina = pm_stamina.GetFloat();
 
 	// air always initialized to maximum too
-	airTics = pm_airTics.GetFloat();
+	airTics = pm_airTics.GetInteger();
 	airless = false;
 
 	gibDeath = false;
@@ -922,7 +922,7 @@ CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
 
 void idPlayer::addWeaponsToInventory() {
 
-	for (unsigned int i = 0; i < MAX_WEAPONS; i++) {
+	for (int i = 0; i < MAX_WEAPONS; i++) {
 		// Construct the spawnarg name
 		idStr key(va("def_weapon%d", i));
 
@@ -1129,7 +1129,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(healthPoolStepAmount);
 	savefile->WriteInt(healthPoolTimeInterval);
-	savefile->WriteInt(healthPoolTimeIntervalFactor);
+	savefile->WriteFloat(healthPoolTimeIntervalFactor);
 
 	savefile->WriteBool( hiddenWeapon );
 	soulCubeProjectile.Save( savefile );
@@ -1397,7 +1397,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt(healthPoolStepAmount);
 	savefile->ReadInt(healthPoolTimeInterval);
-	savefile->ReadInt(healthPoolTimeIntervalFactor);
+	savefile->ReadFloat(healthPoolTimeIntervalFactor);
 
 	savefile->ReadBool( hiddenWeapon );
 	soulCubeProjectile.Restore( savefile );
@@ -2047,7 +2047,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	max_stamina = pm_stamina.GetFloat();
 	if ( !max_stamina ) {
 		// stamina disabled, so show full stamina bar
-		staminapercentage = 100.0f;
+		staminapercentage = 100;
 	} else {
 		staminapercentage = idMath::FtoiFast( 100.0f * stamina / max_stamina );
 	}
@@ -2482,7 +2482,7 @@ bool idPlayer::Give( const char *statname, const char *value ) {
 		if ( airTics >= pm_airTics.GetInteger() ) {
 			return false;
 		}
-		airTics += atoi( value ) / 100.0 * pm_airTics.GetInteger();
+		airTics += static_cast<int>(atof( value ) / 100.0 * pm_airTics.GetInteger());
 		if ( airTics > pm_airTics.GetInteger() ) {
 			airTics = pm_airTics.GetInteger();
 		}
@@ -2665,7 +2665,7 @@ void idPlayer::UpdatePowerUps( void ) {
 
 		//int amt = ( healthPool > 5 ) ? 5 : healthPool; // old code
 		// greebo: Changed step amount to be a variable that can be set from the "outside"
-		int amt = ( healthPool > healthPoolStepAmount ) ? healthPoolStepAmount : healthPool;
+		int amt = ( healthPool > healthPoolStepAmount ) ? healthPoolStepAmount : static_cast<int>(healthPool);
 
 		health += amt;
 		if ( health > maxHealth ) {
@@ -2678,7 +2678,7 @@ void idPlayer::UpdatePowerUps( void ) {
 
 		// Check whether we have a valid interval factor and if yes: apply it
 		if (healthPoolTimeIntervalFactor > 0) {
-			healthPoolTimeInterval *= healthPoolTimeIntervalFactor;
+			healthPoolTimeInterval = static_cast<int>(healthPoolTimeInterval*healthPoolTimeIntervalFactor);
 		}
 
 		healthPulse = true;
@@ -3753,7 +3753,7 @@ void idPlayer::UpdateFocus( void ) {
  			HandleGuiCommands( focusGUIent, command );
 
 			// move to an absolute position
-			ev = sys->GenerateMouseMoveEvent( pt.x * SCREEN_WIDTH, pt.y * SCREEN_HEIGHT );
+			ev = sys->GenerateMouseMoveEvent( static_cast<int>(pt.x) * SCREEN_WIDTH, static_cast<int>(pt.y) * SCREEN_HEIGHT );
 			command = focusUI->HandleEvent( &ev, gameLocal.time );
 			HandleGuiCommands( focusGUIent, command );
 			focusTime = gameLocal.time + FOCUS_GUI_TIME;
@@ -4263,7 +4263,7 @@ void idPlayer::UpdateAir( void ) {
 			airTics = 0;
 			// check for damage
 			const idDict *damageDef = gameLocal.FindEntityDefDict( "damage_noair", false );
-			int dmgTiming = 1000 * ((damageDef) ? damageDef->GetFloat( "delay", "3.0" ) : 3.0f );
+			int dmgTiming = 1000 * (damageDef ? static_cast<int>(damageDef->GetFloat( "delay", "3.0" )) : 3 );
 			if ( gameLocal.time > lastAirDamage + dmgTiming ) {
 				Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
 				lastAirDamage = gameLocal.time;
@@ -8437,7 +8437,7 @@ void idPlayer::AdjustLightgem(void)
 		}
 	}
 
-	pDM->m_LightgemValue = DARKMOD_LG_MAX * fLightgemVal;
+	pDM->m_LightgemValue = static_cast<int>(DARKMOD_LG_MAX * fLightgemVal);
 	if(pDM->m_LightgemValue < DARKMOD_LG_MIN)
 		pDM->m_LightgemValue = DARKMOD_LG_MIN;
 	else

@@ -247,7 +247,7 @@ public:
 	// greebo: added these to make the interval customisable
 	int						healthPoolStepAmount;			// The amount of healing in each pulse
 	int						healthPoolTimeInterval;			// The time between health pulses
-	int						healthPoolTimeIntervalFactor;	// The factor to increase the time interval after each pulse
+	float					healthPoolTimeIntervalFactor;	// The factor to increase the time interval after each pulse
 
 
 	bool					hiddenWeapon;		// if the weapon is hidden ( in noWeapons maps )

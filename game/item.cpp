@@ -174,7 +174,7 @@ bool idItem::UpdateRenderEntity(renderEntity_s *renderEntity, const renderView_t
 			if(inView)
 			{
 				inView = false;
-				lastCycle = ceil(cycle);
+				lastCycle = static_cast<int>(ceil(cycle));
 			}
 		}
 

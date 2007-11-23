@@ -780,8 +780,8 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 		SingleView( hud, view );
 		return;
 	} else {
-		int offset =  25 + sin( (float)gameLocal.time );
-		DoubleVision( hud, view, pct * offset );
+		int offset =  static_cast<int>(25 + sin(static_cast<float>(gameLocal.time)));
+		DoubleVision( hud, view, static_cast<int>(pct * offset) );
 	}
 }
 
