@@ -19,7 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/sndPropLoader.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/Inventory/Inventory.h"
-#include "../../DarkMod/DarkRadiantRCFServer.h"
+#include <DarkRadiantRCFServer.h>
 
 #include "typeinfo.h"
 

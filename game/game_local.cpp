@@ -18,7 +18,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
-#include "../DarkMod/DarkRadiantRCFServer.h"
+#include <DarkRadiantRCFServer.h>
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/darkModLAS.h"
 #include "../DarkMod/decltdm_matinfo.h"
