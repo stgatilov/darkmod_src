@@ -217,7 +217,7 @@ namespace RCF {
                     sessionStatePtr->remoteAddress = IpAddress(*remoteAddr);
                     // TODO: byte ordering
                     unsigned int dataLength = *(unsigned int *)(&buffer[0]);
-                    if (dataLength <= static_cast<int>(getMaxMessageLength()))
+                    if (dataLength <= getMaxMessageLength())
                     {
                         buffer.resize(4+dataLength);
                         memset(&from, 0, sizeof(from));

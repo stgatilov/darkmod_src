@@ -119,7 +119,8 @@ namespace RCF {
             RCF_ASSERT(byteBuffer.isEmpty())(byteBuffer.getLength());
 
             RCF_ASSERT(
-                0 <= mInByteBufferPos && mInByteBufferPos < mInByteBuffer.getLength())
+            	// greebo: std::size_t is always >= 0
+                /* 0 <= mInByteBufferPos &&*/ mInByteBufferPos < mInByteBuffer.getLength())
                 (mInByteBufferPos)(mInByteBuffer.getLength());
 
             std::size_t bytesRemaining = mInByteBuffer.getLength() - mInByteBufferPos;

@@ -165,7 +165,7 @@ namespace RCF {
 
 
             RCF_VERIFY(
-                newPos != -1,
+                static_cast<int>(newPos) != -1,
                 RCF::SerializationException(
                 RcfError_Deserialization,
                 "extractSlice()"))

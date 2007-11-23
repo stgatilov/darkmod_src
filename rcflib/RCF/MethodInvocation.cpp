@@ -511,7 +511,8 @@ namespace RCF {
            
             int unfilteredLen_ = 0;
             decodeInt(unfilteredLen_, encodeddByteBuffer, pos);
-            RCF_VERIFY(0 <= unfilteredLen, Exception(RcfError_Decoding))(unfilteredLen);
+            // greebo: std::size_t is always >= 0
+            RCF_VERIFY(/*0 <= unfilteredLen*/1, Exception(RcfError_Decoding))(unfilteredLen);
 
             pos1 = pos;
             pos2 = pos1 + clearLen;

@@ -263,14 +263,14 @@ namespace SF {
     inline bool invokeSerializer(U *, T *, boost::mpl::int_<1> *, const U &u, Archive &ar)
     {
         BOOST_MPL_ASSERT(( boost::mpl::not_< RCF::IsPointer<T> > ));
-        return invokeCustomSerializer( (T **) (&u), ar, 0);
+        return invokeCustomSerializer( const_cast<T**>(&u), ar, 0);
     }
 
     template<typename U, typename T>
     inline bool invokeSerializer(U *, T *, boost::mpl::int_<2> *, const U &u, Archive &ar)
     {
         BOOST_MPL_ASSERT(( boost::mpl::not_< RCF::IsPointer<T> > ));
-        return invokeCustomSerializer( (T**) (u), ar, 0);
+        return invokeCustomSerializer( const_cast<T**>(u), ar, 0);
     }
 
     template<typename U>

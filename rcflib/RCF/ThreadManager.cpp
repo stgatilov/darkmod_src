@@ -263,7 +263,7 @@ namespace RCF {
         RCF1_TRACE("")(mParkedCount)(mUnparkCount)(mStopFlag)(userStopFlag);
 
         RCF_ASSERT(
-            static_cast<int>(mThreads.size()) <= mThreadMaxCount)
+            mThreads.size() <= mThreadMaxCount)
             (mThreads.size())(mThreadMaxCount);
 
        // if (static_cast<int>(mThreads.size()) == mThreadMaxCount)

@@ -713,7 +713,8 @@ namespace RCF {
         RCF_ASSERT(ret == 4)(ret);
         networkToMachineOrder(&length, sizeof(length), 1);
         RCF_VERIFY(
-            0 <= length && length <= getMaxMessageLength(),
+        	// greebo: removed comparison: unsigned >= 0
+            /*0 <= length && */ length <= getMaxMessageLength(),
             Exception(RcfError_ClientMessageLength))
             (length)(getMaxMessageLength());
 

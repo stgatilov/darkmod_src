@@ -7,8 +7,10 @@ namespace SF {
 
     static Registry *pRegistry;
     
+#ifndef WIN32 
     // greebo: Added missing forward declaration for Linux systems
     void initRegistrySingleton();
+#endif
 
     Registry::Registry() :
         readWriteMutex(Platform::Threads::writer_priority)

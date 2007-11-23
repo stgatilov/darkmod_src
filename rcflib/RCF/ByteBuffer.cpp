@@ -119,14 +119,14 @@ namespace RCF {
         	mSpvc(byteBuffer.mSpvc),
         	mSpos(byteBuffer.mSpos),
             mPv(byteBuffer.mPv + offset),
-            mPvlen( len == -1 ? byteBuffer.mPvlen-offset : len),
+            mPvlen( static_cast<int>(len) == -1 ? byteBuffer.mPvlen-offset : len),
             mLeftMargin( offset ? 0 : byteBuffer.mLeftMargin),
             mReadOnly(byteBuffer.mReadOnly)
     {
         RCF_ASSERT(offset <= byteBuffer.mPvlen)(offset)(byteBuffer.mPvlen);
 
         RCF_ASSERT(
-            len == -1 || offset+len <= byteBuffer.mPvlen)
+        	static_cast<int>(len) == -1 || offset+len <= byteBuffer.mPvlen)
             (offset)(len)(byteBuffer.mPvlen);
     }
 
