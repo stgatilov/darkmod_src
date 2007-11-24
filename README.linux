@@ -61,8 +61,11 @@ and unzip them manually:
 	libdevil-dev_1.6.7-5_i386.deb
 	libmng1_1.0.9-1_i386.deb
 	libboost-filesystem1.34.1_1.34.1-2ubuntu1_i386.deb
+	libboost-thread1.34.1_1.34.1-2ubuntu1_i386.deb 
 
-(You might get slightly newer versions, but it should work)
+You might get slightly newer versions, but it should work. Note that this
+list doesn't include the -dev variants, you should be able to just install the
+matching 64 bit developer packages.
 
 Then, as root, copy all the files that are in these packages under ./usr to your
 /lib32 directory.
@@ -72,6 +75,8 @@ just the basename like so:
 
 	/lib32/libboost_filesystem.so
 	/lib32/libboost_filesystem-mt.so
+	/lib32/libboost_thread.so
+	/lib32/libboost_thread-mt.so
 
 Then run:
 
