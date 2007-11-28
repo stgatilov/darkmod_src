@@ -498,6 +498,11 @@ bool	CMissionData::MatchSpec
 			break;
 		case SPEC_GROUP:
 			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->group );
+			
+			// Special case for items:
+			if( pComp->m_Type == COMP_ITEM && pComp->m_SpecVal[ind] == "loot_total" )
+				bReturnVal = true;
+
 			break;
 		case SPEC_CLASSNAME:
 			bReturnVal = ( pComp->m_SpecVal[ind] == EntDat->classname );
@@ -608,6 +613,10 @@ bool	CMissionData::EvaluateObjective
 				break;
 			case SPEC_GROUP:
 				value = EntDat1->value;
+
+				// special case for overall loot
+				if( pComp->m_SpecVal[1] == "loot_total" )
+					value = EntDat1->valueSuperGroup;
 				break;
 			default:
 				break;
