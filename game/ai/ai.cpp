@@ -2033,7 +2033,7 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 idAI::PointReachableAreaNum
 =====================
 */
-int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale ) const {
+int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, const idVec3& offset) const {
 	int areaNum;
 	idVec3 size;
 	idBounds bounds;
