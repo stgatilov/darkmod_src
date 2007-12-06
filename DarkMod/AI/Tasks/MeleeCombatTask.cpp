@@ -85,6 +85,7 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 void MeleeCombatTask::OnFinish(idAI* owner)
 {
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
+	owner->SetWaitState("");
 }
 
 

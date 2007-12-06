@@ -45,6 +45,15 @@ static const int s_MAXACUITIES = 15;
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
 
+
+enum ECombatType
+{
+	COMBAT_NONE,
+	COMBAT_MELEE, 
+	COMBAT_RANGED,
+	NUM_COMBAT_TYPES
+};
+
 // defined in script/ai_base.script.  please keep them up to date.
 typedef enum {
 	MOVETYPE_DEAD,
@@ -583,6 +592,12 @@ public:
 		return mind->GetMemory();
 	}
 
+	ID_INLINE float GetMeleeRange()
+	{
+		return melee_range;
+	}
+
+
 protected:
 	// navigation
 	idAAS *					aas;
@@ -1111,7 +1126,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
 	bool					ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const;
 	float					TravelDistance( const idVec3 &start, const idVec3 &end ) const;
-	int						PointReachableAreaNum( const idVec3 &pos, const float boundsScale = 2.0f ) const;
+	int						PointReachableAreaNum( const idVec3 &pos, const float boundsScale = 2.0f, const idVec3& offset = idVec3(0, 0, 0) ) const;
 	bool					PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	void					DrawRoute( void ) const;
 	bool					GetMovePos( idVec3 &seekPos );
@@ -1161,7 +1176,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * Melee AI normally perform a bounding box expansion check,
 	 * ranged AI implement a visual test incl. lighting.
 	 */
-	bool CanHitEntity(idActor* entity);
+	bool CanHitEntity(idActor* entity, ECombatType combatType = COMBAT_NONE);
 
 
 	// movement control

@@ -53,14 +53,16 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 	if (owner->GetMemory().canHitEnemy)
 	{
 		idStr waitState(owner->WaitState());
-		if (waitState != "bow_fire")
+		if (waitState != "ranged_attack")
 		{
 			// Waitstate is not matching, this means that the animation 
 			// can be started.
-			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_BowFire", 5);
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_RangedAttack", 5);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_RangedAttack", 5);
+
 			// greebo: Set the waitstate, this gets cleared by 
 			// the script function when the animation is done.
-			owner->SetWaitState("bow_fire");
+			owner->SetWaitState("ranged_attack");
 			subsystem.PushTask(TaskPtr(new WaitTask(2000)));
 		}
 	}

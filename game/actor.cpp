@@ -3839,6 +3839,10 @@ int idActor::GetNumMeleeWeapons()
 int idActor::GetNumRangedWeapons()
 {
 	int numRangedWeapons(0);
+	
+	if (spawnArgs.GetBool("unarmed_ranged", "0")) {
+		return 1;
+	}
 
 	for (int i = 0; i < m_attachments.Num(); i++)
 	{

@@ -2046,7 +2046,11 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale ) co
 	bounds[0] = -size;
 	size.z = 32.0f;
 	bounds[1] = size;
-
+/*
+	idBounds temp(bounds);
+	temp.TranslateSelf(pos);
+	gameRenderWorld->DebugBox(colorGreen, idBox(temp),gameLocal.msec);
+*/
 	if ( move.moveType == MOVETYPE_FLY ) {
 		areaNum = aas->PointReachableAreaNum( pos, bounds, AREA_REACHABLE_WALK | AREA_REACHABLE_FLY );
 	} else {
@@ -5301,19 +5305,29 @@ bool idAI::EntityInAttackCone(idEntity* ent)
 	return ( idMath::Fabs( relYaw ) < ( attack_cone * 0.5f ) );
 }
 
-bool idAI::CanHitEntity(idActor* entity)
+bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 {
 	if (entity != NULL)
 	{
-		if (GetNumRangedWeapons() > 0)
-		{
-			return TestRanged();
-		}
-		else if (GetNumMeleeWeapons() > 0)
+		if (combatType == COMBAT_MELEE)
 		{
 			return TestMelee();
 		}
-
+		else if (combatType == COMBAT_RANGED)
+		{
+			return TestRanged();
+		}
+		else
+		{
+			if (GetNumRangedWeapons() > 0)
+			{
+				return TestRanged();
+			}
+			else if (GetNumMeleeWeapons() > 0)
+			{
+				return TestMelee();
+			}
+		}
 	}
 
 	return false;
@@ -5371,7 +5385,6 @@ void idAI::UpdateEnemyPosition()
 			{
 				// We have a valid enemy area number
 				// Get the own area number
-				areaNum = PointReachableAreaNum(org);
 
 				// Try to setup a path to the goal
 				aasPath_t path;

@@ -76,9 +76,10 @@ void CombatState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
-
+	_meleePossible = owner->GetNumMeleeWeapons() > 0;
+	_rangedPossible = owner->GetNumRangedWeapons() > 0;
 	// greebo: Check for weapons and flee if we are unarmed.
-	if (owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0)
+	if (!_meleePossible && !_rangedPossible)
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
@@ -103,10 +104,24 @@ void CombatState::Init(idAI* owner)
 	);
 
 	// Ranged combat
-	if (owner->GetNumRangedWeapons() > 0)
+	if (_rangedPossible)
 	{
-		owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
-		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+		if (_meleePossible && 
+			(owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast() < 3 * owner->GetMeleeRange())
+		{
+			ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
+			chaseEnemy->SetEnemy(enemy);
+			owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+
+			owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+			_combatType = COMBAT_MELEE;
+		}
+		else
+		{
+			owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
+			owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+			_combatType = COMBAT_RANGED;
+		}
 	}
 	// Melee combat
 	else
@@ -117,6 +132,7 @@ void CombatState::Init(idAI* owner)
 		owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
 
 		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+		_combatType = COMBAT_MELEE;
 	}
 }
 
@@ -142,11 +158,19 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
+	if (owner->health < _criticalHealth)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("I'm badly hurt, I'm afraid!\r");
+		owner->GetMind()->SwitchState(STATE_FLEE);
+		return;
+	}
+
+
 	// Check the distance to the enemy, the subsystem tasks need it.
-	memory.canHitEnemy = owner->CanHitEntity(enemy);
+	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
 
 	if (!owner->AI_ENEMY_VISIBLE && 
-		( (owner->GetNumRangedWeapons() == 0  && !memory.canHitEnemy) ||  owner->GetNumRangedWeapons() > 0))
+		(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
 	{
 		// The enemy is not visible, let's keep track of him for a small amount of time
 		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
@@ -158,14 +182,35 @@ void CombatState::Think(idAI* owner)
 		{
 			// BLIND_CHASE_TIME has expired, we have lost the enemy!
 			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+			return;
 		}
 	}
 
-	if (owner->health < _criticalHealth)
+
+	// Switch between melee and ranged combat based on enemy distance
+	float enemyDist = (owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast();
+
+	if (_combatType == COMBAT_MELEE && _rangedPossible && enemyDist > 3 * owner->GetMeleeRange())
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("I'm badly hurt, I'm afraid!\r");
-		owner->GetMind()->SwitchState(STATE_FLEE);
-		return;
+		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+		owner->GetSubsystem(SubsysAction)->PushTask(RangedCombatTask::CreateInstance());
+		owner->GetSubsystem(SubsysMovement)->PushTask(ChaseEnemyRangedTask::CreateInstance());
+		_combatType = COMBAT_RANGED;
+	}
+
+	if (_combatType == COMBAT_RANGED && _meleePossible && enemyDist <= 3 * owner->GetMeleeRange())
+	{
+		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->GetSubsystem(SubsysAction)->ClearTasks();
+
+		ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
+		chaseEnemy->SetEnemy(enemy);
+		owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+
+		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
+		_combatType = COMBAT_MELEE;
 	}
 }
 
@@ -174,6 +219,11 @@ void CombatState::Save(idSaveGame* savefile) const
 	State::Save(savefile);
 
 	savefile->WriteInt(_criticalHealth);
+	savefile->WriteBool(_meleePossible);
+	savefile->WriteBool(_rangedPossible);
+
+	savefile->WriteInt(static_cast<int>(_combatType));
+
 	_enemy.Save(savefile);
 }
 
@@ -182,6 +232,13 @@ void CombatState::Restore(idRestoreGame* savefile)
 	State::Restore(savefile);
 
 	savefile->ReadInt(_criticalHealth);
+	savefile->ReadBool(_meleePossible);
+	savefile->ReadBool(_rangedPossible);
+
+	int temp;
+	savefile->ReadInt(temp);
+	_combatType = static_cast<ECombatType>(temp);
+
 	_enemy.Restore(savefile);
 }
 

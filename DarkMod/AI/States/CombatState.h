@@ -10,6 +10,7 @@
 #ifndef __AI_COMBAT_STATE_H__
 #define __AI_COMBAT_STATE_H__
 
+#include "../../game/ai/ai.h"
 #include "State.h"
 
 namespace ai
@@ -23,6 +24,11 @@ class CombatState :
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
 	int _criticalHealth;
+	bool _meleePossible;
+	bool _rangedPossible;
+
+	ECombatType _combatType;
+
 
 public:
 	// Get the name of this state

@@ -25,6 +25,7 @@ class ChaseEnemyTask :
 	public Task
 {
 	idEntityPtr<idActor> _enemy;
+	int _reachEnemyCheck;
 
 public:
 	// Get the name of this task

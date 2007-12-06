@@ -38,11 +38,9 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 		_enemy = owner->GetEnemy();
 	}
 
+	_reachEnemyCheck = 0;
 	owner->AI_RUN = true;
-	if (!owner->MoveToPosition(owner->lastVisibleEnemyPos))
-	{
-		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-	}
+	owner->MoveToPosition(owner->lastVisibleEnemyPos);
 }
 
 bool ChaseEnemyTask::Perform(Subsystem& subsystem)
@@ -64,6 +62,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	// Can we damage the enemy already? (this flag is set by the combat state)
 	if (memory.canHitEnemy)
 	{
+		_reachEnemyCheck = 0;
+
 		// Yes, stop the move!
 		owner->StopMove(MOVE_STATUS_DONE);
 		//gameLocal.Printf("Enemy is reachable!\n");
@@ -74,6 +74,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	// no, push the AI forward and try to get to the last visible reachable enemy position
 	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
+		_reachEnemyCheck = 0;
+
 		if (owner->AI_MOVE_DONE)
 		{
 			// Position has been reached, turn to player, if visible
@@ -90,6 +92,56 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			// TODO: check_blocked() port from scripts
 		}
 	}
+	
+	else if (owner->AI_MOVE_DONE)
+	{
+		if (_reachEnemyCheck < 4)
+		{
+			idVec3 enemyDirection = owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin();
+			enemyDirection.z = 0;
+			enemyDirection.NormalizeFast();
+			float angle = _reachEnemyCheck * 90;
+			float sinAngle = idMath::Sin(angle);
+			float cosAngle = idMath::Cos(angle);
+			idVec3 targetDirection = enemyDirection;
+			targetDirection.x = enemyDirection.x * cosAngle + enemyDirection.y * sinAngle;
+			targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
+
+			idVec3 targetPoint = enemy->GetPhysics()->GetOrigin() 
+					+ (targetDirection * owner->GetMeleeRange());
+			idVec3 bottomPoint = targetPoint;
+			bottomPoint.z -= 70;
+			
+			trace_t result;
+			if (gameLocal.clip.TracePoint(result, targetPoint, bottomPoint, MASK_OPAQUE, NULL))
+			{
+				targetPoint.z = result.endpos.z + 1;
+				idVec3 forward = owner->viewAxis.ToAngles().ToForward();
+				targetPoint -= 10 * forward;
+
+				if (!owner->MoveToPosition(targetPoint))
+				{
+					_reachEnemyCheck ++;
+				}
+			}
+			else
+			{
+				_reachEnemyCheck ++;
+			}
+		}
+		else
+		{
+			// Destination unreachable!
+			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+			gameLocal.Printf("Destination unreachable... \n");
+			owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+			return true;
+		}
+
+
+	}
+
+	/*
 	else
 	{
 		// Destination unreachable!
@@ -98,7 +150,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 		return true;
 	}
-
+*/
 	return false; // not finished yet
 }
 
@@ -112,6 +164,7 @@ void ChaseEnemyTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	_enemy.Save(savefile);
+	savefile->WriteInt(_reachEnemyCheck);
 }
 
 void ChaseEnemyTask::Restore(idRestoreGame* savefile)
@@ -119,6 +172,7 @@ void ChaseEnemyTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	_enemy.Restore(savefile);
+	savefile->ReadInt(_reachEnemyCheck);
 }
 
 ChaseEnemyTaskPtr ChaseEnemyTask::CreateInstance()
