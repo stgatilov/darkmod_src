@@ -35,7 +35,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
 	// Use the base class method to conditionally switch states
 	// only switch states if the combat check passes
-	return !(owner->GetMind()->PerformCombatCheck() && !SwitchOnMismatchingAlertIndex(3, STATE_COMBAT));
+	return (SwitchOnMismatchingAlertIndex(3, STATE_COMBAT));
 }
 
 void AgitatedSearchingState::Init(idAI* owner)

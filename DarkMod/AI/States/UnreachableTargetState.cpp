@@ -44,13 +44,14 @@ void UnreachableTargetState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = owner->GetEnemy();
-	_enemy = enemy;
 
 	if (!enemy)
 	{
 		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		return;
 	}
+
+	_enemy = enemy;
 
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(
@@ -62,18 +63,21 @@ void UnreachableTargetState::Init(idAI* owner)
 	);
 
 	// This checks if taking cover is possible and enabled for this AI
-	aasGoal_t hideGoal;
-	if (_takingCoverPossible = owner->LookForCover(hideGoal, enemy, owner->lastVisibleEnemyPos))
+	_takingCoverPossible = false;
+	if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
 	{
-		// We should not go into TakeCoverState if we are already at a suitable position
-		if (!owner->spawnArgs.GetBool("taking_cover_enabled","0") || hideGoal.origin == owner->GetPhysics()->GetOrigin() )
+		aasGoal_t hideGoal;
+		if (_takingCoverPossible = owner->LookForCover(hideGoal, enemy, owner->lastVisibleEnemyPos))
 		{
-			_takingCoverPossible = false;
+			// We should not go into TakeCoverState if we are already at a suitable position
+			if (hideGoal.origin == owner->GetPhysics()->GetOrigin() )
+			{
+				_takingCoverPossible = false;
+			}
+			DM_LOG(LC_AI, LT_INFO).LogString("Taking Cover Possible: %d \r" , _takingCoverPossible);
 		}
-		DM_LOG(LC_AI, LT_INFO).LogString("Taking Cover Possible: %d \r" , _takingCoverPossible);
 	}
 	_takeCoverTime = -1;
-	
 
 	// Fill the subsystems with their tasks
 
@@ -91,35 +95,48 @@ void UnreachableTargetState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
-	// Check the distance between AI and the player, if it is too large try to move closer
-	// Start throwing objects if we are close enough
-	idVec3 enemyDirection = enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
-	float dist = (enemyDirection).LengthFast();
 	_moveRequired = false;
-	
-	//TODO: make not hardcoded
-	if (dist > 300)
+
+	if (owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
 	{
-		_moveRequired = true;
+		// Check the distance between AI and the player, if it is too large try to move closer
+		// Start throwing objects if we are close enough
+		idVec3 enemyDirection = enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+		float dist = (enemyDirection).LengthFast();
+		
+		//TODO: make not hardcoded
+		if (dist > 300)
+		{
+			_moveRequired = true;
 
-		idVec3 throwPos = enemy->GetPhysics()->GetOrigin() - enemyDirection / dist * 300;
+			idVec3 throwPos = enemy->GetPhysics()->GetOrigin() - enemyDirection / dist * 300;
 
-		// TODO: Trace to get floor position
-		throwPos.z = owner->GetPhysics()->GetOrigin().z;
+			// TODO: Trace to get floor position
+			throwPos.z = owner->GetPhysics()->GetOrigin().z;
 
-		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
-		owner->AI_MOVE_DONE = false;
+			owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(throwPos)));
+			owner->AI_MOVE_DONE = false;
+		}
+		else 
+		{
+			owner->FaceEnemy();
+			owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
+
+			// Wait at least 3 sec after starting to throw before taking cover
+			// TODO: make not hardcoded, some randomness?
+			_takeCoverTime = gameLocal.time + 3000;
+		}
+		DM_LOG(LC_AI, LT_INFO).LogString("move required: %d \r" , _moveRequired);
 	}
-	else 
+	else
 	{
-		owner->FaceEnemy();
-		owner->GetSubsystem(SubsysAction)->PushTask(ThrowObjectTask::CreateInstance());
-
-		// Wait at least 3 sec after starting to throw before taking cover
-		// TODO: make not hardcoded, some randomness?
+		owner->GetSubsystem(SubsysMovement)->PushTask(
+			TaskPtr(new MoveToPositionTask(owner->lastVisibleReachableEnemyPos))
+		);
 		_takeCoverTime = gameLocal.time + 3000;
 	}
-	DM_LOG(LC_AI, LT_INFO).LogString("move required: %d \r" , _moveRequired);
+
+	_reachEnemyCheck = 0;
 }
 
 
@@ -163,10 +180,13 @@ void UnreachableTargetState::Think(idAI* owner)
 		}
 	}
 
-	// We were far away and are either finished moving closer or can't reach position
-	// Start throwing now
-	if (_moveRequired && (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE))
+	owner->TurnToward(enemy->GetPhysics()->GetOrigin());
+	
+	if (owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0") &&
+			_moveRequired && (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE))
 	{
+		// We are finished moving closer
+		// Start throwing now
 		_moveRequired = false;
 
 		owner->FaceEnemy();
@@ -182,6 +202,46 @@ void UnreachableTargetState::Think(idAI* owner)
 			owner->GetMind()->EndState();
 			return;
 		}
+	}
+
+	// This checks for a reachable position within combat range
+	idVec3 enemyDirection = owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin();
+	enemyDirection.z = 0;
+	enemyDirection.NormalizeFast();
+	float angle = (_reachEnemyCheck * 90) % 360;
+	float sinAngle = idMath::Sin(angle);
+	float cosAngle = idMath::Cos(angle);
+	idVec3 targetDirection = enemyDirection;
+	targetDirection.x = enemyDirection.x * cosAngle + enemyDirection.y * sinAngle;
+	targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
+
+	idVec3 targetPoint = enemy->GetPhysics()->GetOrigin() 
+				+ (targetDirection * (owner->spawnArgs.GetFloat("melee_range","64")));
+	idVec3 bottomPoint = targetPoint;
+	bottomPoint.z -= 70;
+	
+	trace_t result;
+	if (gameLocal.clip.TracePoint(result, targetPoint, bottomPoint, MASK_OPAQUE, NULL))
+	{
+		targetPoint.z = result.endpos.z + 1;
+		int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
+		idVec3 forward = owner->viewAxis.ToAngles().ToForward();
+		int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f, -10*forward);
+		aasPath_t path;
+
+		if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+		{
+			owner->GetMind()->EndState();
+			return;
+		}
+		else
+		{
+			_reachEnemyCheck ++;
+		}
+	}
+	else
+	{
+		_reachEnemyCheck ++;
 	}
 	
 	// Wait at least for 3 seconds (_takeCoverTime) after starting to throw before taking cover
@@ -204,6 +264,7 @@ void UnreachableTargetState::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_takingCoverPossible);
 	savefile->WriteInt(_takeCoverTime);
 	savefile->WriteBool(_moveRequired);
+	savefile->WriteInt(_reachEnemyCheck);
 	_enemy.Save(savefile);
 }
 
@@ -214,6 +275,7 @@ void UnreachableTargetState::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_takingCoverPossible);
 	savefile->ReadInt(_takeCoverTime);
 	savefile->ReadBool(_moveRequired);
+	savefile->ReadInt(_reachEnemyCheck);
 	_enemy.Restore(savefile);
 }
 

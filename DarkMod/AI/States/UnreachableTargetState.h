@@ -25,6 +25,7 @@ class UnreachableTargetState :
 	bool _takingCoverPossible;
 	int _takeCoverTime;
 	bool _moveRequired;
+	int _reachEnemyCheck;
 
 public:
 	// Get the name of this state
