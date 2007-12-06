@@ -2037,6 +2037,7 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 	int areaNum;
 	idVec3 size;
 	idBounds bounds;
+	idVec3 newPos = pos + offset;
 
 	if ( !aas ) {
 		return 0;
@@ -2048,13 +2049,13 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 	bounds[1] = size;
 /*
 	idBounds temp(bounds);
-	temp.TranslateSelf(pos);
+	temp.TranslateSelf(newPos);
 	gameRenderWorld->DebugBox(colorGreen, idBox(temp),gameLocal.msec);
 */
 	if ( move.moveType == MOVETYPE_FLY ) {
-		areaNum = aas->PointReachableAreaNum( pos, bounds, AREA_REACHABLE_WALK | AREA_REACHABLE_FLY );
+		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK | AREA_REACHABLE_FLY );
 	} else {
-		areaNum = aas->PointReachableAreaNum( pos, bounds, AREA_REACHABLE_WALK );
+		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK );
 	}
 
 	return areaNum;
@@ -5349,7 +5350,6 @@ void idAI::UpdateEnemyPosition()
 	}
 
 	int				enemyAreaNum(-1);
-	int				areaNum;
 	idVec3			enemyPos;
 	bool			onGround;
 	const idVec3&	org = physicsObj.GetOrigin();
@@ -5372,6 +5372,8 @@ void idAI::UpdateEnemyPosition()
 			onGround = false;
 		}
 	}
+
+	int areaNum = PointReachableAreaNum(org, 1.0f);
 
 	if (onGround)
 	{
