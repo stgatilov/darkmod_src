@@ -69,6 +69,7 @@ public:
 	bool					AnimDone( int blendFrames ) const;
 	bool					IsIdle( void ) const;
 	animFlags_t				GetAnimFlags( void ) const;
+	idAnimator*				GetAnimator();
 
 private:
 	idActor *				self;
@@ -272,6 +273,7 @@ public:
 	
 							// animation state control
 	int						GetAnim( int channel, const char *name );
+	idAnimator*				GetAnimatorForChannel(int channel);
 	const char*				LookupReplacementAnim( const char *name );
 	void					StopAnim(int channel, int frames);
 	void					UpdateAnimState( void );

@@ -267,6 +267,11 @@ animFlags_t idAnimState::GetAnimFlags( void ) const {
 	return flags;
 }
 
+idAnimator*	idAnimState::GetAnimator()
+{
+	return animator;
+}
+
 /*
 =====================
 idAnimState::Enable
@@ -2248,6 +2253,28 @@ int idActor::GetAnim( int channel, const char *animname ) {
 	if (!anim) anim = animatorPtr->GetAnim( animname );
 
 	return anim;
+}
+
+idAnimator*	idActor::GetAnimatorForChannel(int channel)
+{
+	switch (channel) 
+	{
+		case ANIMCHANNEL_HEAD :
+			return headAnim.GetAnimator();
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			torsoAnim.GetAnimator();
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			legsAnim.GetAnimator();
+			break;
+
+		default:
+			gameLocal.Error( "Unknown anim group" );
+			break;
+	};
 }
 
 /*
