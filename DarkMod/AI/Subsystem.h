@@ -39,7 +39,7 @@ protected:
 	TaskQueue _taskQueue;
 
 	// A temporary container, gets cleared in each PerformTask() call.
-	TaskPtr _recycleBin;
+	TaskQueue _recycleBin;
 
 	// Is TRUE during task switching, this will call Task::Init() in PerformTask().
 	bool _initTask;

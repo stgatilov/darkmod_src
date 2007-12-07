@@ -62,7 +62,7 @@ TaskPtr Subsystem::GetCurrentTask() const
 bool Subsystem::PerformTask()
 {
 	// Clear any dying tasks from the previous frame, enabled or not
-	_recycleBin = TaskPtr();
+	_recycleBin.clear();
 
 	if (!_enabled || _taskQueue.empty())
 	{
@@ -119,10 +119,10 @@ bool Subsystem::FinishTask()
 		idAI* owner = _owner.GetEntity();
 
 		// Move the task pointer from the queue to the recyclebin
-		_recycleBin = _taskQueue.front();
+		_recycleBin.push_back(_taskQueue.front());
 		
 		// Call the OnFinish event of the task
-		_recycleBin->OnFinish(owner);
+		_recycleBin.back()->OnFinish(owner);
 
 		// Issue the "TaskFinished" signal to the MindState
 		owner->GetMind()->GetState()->OnSubsystemTaskFinished(owner, _id);
@@ -152,11 +152,11 @@ void Subsystem::SwitchTask(const TaskPtr& newTask)
 	if (!_taskQueue.empty())
 	{
 		// Move the previous front task to the bin
-		_recycleBin = _taskQueue.front();
+		_recycleBin.push_back(_taskQueue.front());
 		_taskQueue.pop_front();
 
 		// Call the OnFinish event of the task
-		_recycleBin->OnFinish(_owner.GetEntity());
+		_recycleBin.back()->OnFinish(_owner.GetEntity());
 	}
 
 	// Add the new task to the front
@@ -187,13 +187,15 @@ void Subsystem::ClearTasks()
 {
 	if (!_taskQueue.empty())
 	{
-		// Move the TaskPtr from the queue into the bin
-		_recycleBin = _taskQueue.front();
-
-		// Call the OnFinish event of the task
-		_recycleBin->OnFinish(_owner.GetEntity());
-
-		// Remove ALL tasks
+		// Move all TaskPtrs from the queue into the bin (front to back)
+		for (TaskQueue::iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++)
+		{
+			// Call the OnFinish event of the task after adding it to the bin
+			_recycleBin.push_back(*i);
+			_recycleBin.back()->OnFinish(_owner.GetEntity());
+		}
+		
+		// Remove ALL tasks from the main queue
 		_taskQueue.clear();
 	}
 
@@ -213,13 +215,8 @@ void Subsystem::Save(idSaveGame* savefile) const
 
 	_taskQueue.Save(savefile);
 
-	// Save the dying task too
-	savefile->WriteBool(_recycleBin != NULL);
-	if (_recycleBin != NULL)
-	{
-		savefile->WriteString(_recycleBin->GetName().c_str());
-		_recycleBin->Save(savefile);
-	}
+	// Save the dying tasks too
+	_recycleBin.Save(savefile);
 }
 
 void Subsystem::Restore(idRestoreGame* savefile)
@@ -234,25 +231,7 @@ void Subsystem::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_initTask);
 
 	_taskQueue.Restore(savefile);
-
-	bool hasTask;
-	savefile->ReadBool(hasTask);
-
-	if (hasTask)
-	{
-		idStr taskName;
-		savefile->ReadString(taskName);
-
-		_recycleBin = TaskLibrary::Instance().CreateInstance(taskName.c_str());
-
-		assert(_recycleBin != NULL);
-		_recycleBin->Restore(savefile);
-	}
-	else
-	{
-		// Assure the recyclebin pointer to be NULL.
-		_recycleBin = TaskPtr();
-	}
+	_recycleBin.Restore(savefile);
 }
 
 } // namespace ai
