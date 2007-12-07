@@ -53,9 +53,10 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
 		return true;
 	}
+
 	idStr waitState(owner->WaitState());
 
-	// Can we damage the enemy already? (this flag is set by the sensory task)
+	// Can we damage the enemy already? (this flag is set by the combat state)
 	if (memory.canHitEnemy)
 	{
 		_hasGoal = false;
@@ -66,8 +67,8 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		owner->TurnToward(enemy->GetEyePosition());
 	}
 	
-	// try to get to the last visible reachable enemy position
-	else if (waitState != "bow_fire" && owner->MoveToPosition(owner->lastVisibleEnemyPos))
+	// try to get to the last visible enemy position
+	else if (waitState != "ranged_attack" && owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		_hasGoal = false;
 		if (owner->AI_MOVE_DONE)
@@ -88,7 +89,8 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	}
 	else 
 	{
-		if (waitState != "bow_fire" && (!_hasGoal || owner->AI_MOVE_DONE))
+		// try to find an attack position using the AAS system
+		if (waitState != "ranged_attack" && (!_hasGoal || owner->AI_MOVE_DONE))
 		{
 			// Can't reach the last visible enemy position,find another position within range
 			aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
@@ -102,26 +104,16 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 			}
 			else
 			{
-				
-				
-				
 				// We did not find a reachable attack position 
 				// it might be that the AI is not able to reach the enemy at all
-				// should run and alert everybody?
 				DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
 				gameLocal.Printf("Destination unreachable... \n");
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-
-				
-				//owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-				//return true;
+				owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+				return true;
 			}
 		}
-		
-
-
 	}
-	
 
 	return false; // not finished yet
 }

@@ -165,28 +165,6 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 
-
-	// Check the distance to the enemy, the subsystem tasks need it.
-	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
-
-	if (!owner->AI_ENEMY_VISIBLE && 
-		(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
-	{
-		// The enemy is not visible, let's keep track of him for a small amount of time
-		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
-		{
-			// Cheat a bit and take the last reachable position as "visible & reachable"
-			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
-		}
-		else
-		{
-			// BLIND_CHASE_TIME has expired, we have lost the enemy!
-			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
-			return;
-		}
-	}
-
-
 	// Switch between melee and ranged combat based on enemy distance
 	float enemyDist = (owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast();
 
@@ -211,6 +189,26 @@ void CombatState::Think(idAI* owner)
 
 		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 		_combatType = COMBAT_MELEE;
+	}
+
+	// Check the distance to the enemy, the subsystem tasks need it.
+	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
+
+	if (!owner->AI_ENEMY_VISIBLE && 
+		(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
+	{
+		// The enemy is not visible, let's keep track of him for a small amount of time
+		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+		{
+			// Cheat a bit and take the last reachable position as "visible & reachable"
+			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
+		}
+		else
+		{
+			// BLIND_CHASE_TIME has expired, we have lost the enemy!
+			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+			return;
+		}
 	}
 }
 

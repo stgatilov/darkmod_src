@@ -63,13 +63,14 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			// greebo: Set the waitstate, this gets cleared by 
 			// the script function when the animation is done.
 			owner->SetWaitState("ranged_attack");
-			subsystem.PushTask(TaskPtr(new WaitTask(2000)));
 		}
-	}
-	else
-	{
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
-		owner->SetWaitState("");
+		else
+		{
+			idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_LEGS);
+			int animint = animator->CurrentAnim(ANIMCHANNEL_LEGS)->AnimNum();
+			int length = animator->AnimLength(animint);
+			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(length + 1000)));
+		}
 	}
 
 	return false; // not finished yet
@@ -78,6 +79,7 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 void RangedCombatTask::OnFinish(idAI* owner)
 {
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
 	owner->SetWaitState("");
 }
 
