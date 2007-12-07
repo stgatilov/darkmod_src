@@ -2260,21 +2260,27 @@ idAnimator*	idActor::GetAnimatorForChannel(int channel)
 	switch (channel) 
 	{
 		case ANIMCHANNEL_HEAD :
-			return headAnim.GetAnimator();
+			if (head.GetEntity() == NULL)
+			{
+				return headAnim.GetAnimator();
+			}
+			return head.GetEntity()->GetAnimator();
 			break;
 
 		case ANIMCHANNEL_TORSO :
-			torsoAnim.GetAnimator();
+			return torsoAnim.GetAnimator();
 			break;
 
 		case ANIMCHANNEL_LEGS :
-			legsAnim.GetAnimator();
+			return legsAnim.GetAnimator();
 			break;
 
 		default:
-			gameLocal.Error( "Unknown anim group" );
+			gameLocal.Error("GetAnimatorForChannel: Unknown anim group");
 			break;
 	};
+
+	return NULL;
 }
 
 /*
