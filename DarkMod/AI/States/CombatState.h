@@ -10,7 +10,7 @@
 #ifndef __AI_COMBAT_STATE_H__
 #define __AI_COMBAT_STATE_H__
 
-#include "../../game/ai/ai.h"
+#include "../../../game/ai/ai.h"
 #include "State.h"
 
 namespace ai
