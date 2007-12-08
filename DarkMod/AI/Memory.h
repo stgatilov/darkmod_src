@@ -15,6 +15,41 @@
 namespace ai
 {
 
+#define AIUSE_WEAPON			"AIUSE_WEAPON"
+#define AIUSE_LIGHTSOURCE		"AIUSE_LIGHTSOURCE"
+#define AIUSE_BLOOD_EVIDENCE	"AIUSE_BLOOD_EVIDENCE"
+#define AIUSE_SEAT				"AIUSE_SEAT"
+#define AIUSE_COOK				"AIUSE_COOK"
+#define AIUSE_EAT				"AIUSE_EAT"
+#define AIUSE_PET				"AIUSE_PET"
+#define AIUSE_MONSTER			"AIUSE_MONSTER"  // a random or caged monster, not a pet
+#define AIUSE_UNDEAD			"AIUSE_UNDEAD" // An undead creature
+#define AIUSE_CATTLE			"AIUSE_CATTLE"
+#define AIUSE_PERSON			"AIUSE_PERSON"
+#define AIUSE_PEST				"AIUSE_PEST"
+#define AIUSE_DRINK			"AIUSE_DRINK"
+#define AIUSE_DOOR				"AIUSE_DOOR"
+#define AIUSE_MISSING_ITEM_MARKER "AIUSE_MISSING_ITEM_MARKER"
+
+//----------------------------------------------------------------------------------------
+// The following key and values are used for identifying types of lights
+#define AIUSE_LIGHTTYPE_KEY		"lightType"
+#define AIUSE_LIGHTTYPE_TORCH	"AIUSE_LIGHTTYPE_TORCH"
+#define AIUSE_LIGHTTYPE_GASLAMP	 "AIUSE_LIGHTTYPE_GASLAMP"
+#define AIUSE_LIGHTTYPE_ELECTRIC "AIUSE_LIGHTTYPE_ELECTRIC"
+#define AIUSE_LIGHTTYPE_MAGIC	 "AIUSE_LIGHTTYPE_MAGIC"
+#define AIUSE_LIGHTTYPE_AMBIENT	 "AIUSE_LIGHTTYPE_AMBIENT"
+
+//----------------------------------------------------------------------------------------
+// The following key is used to identify the name of the switch entity used to turn on
+// a AIUSE_LIGHTTYPE_ELECTRIC light.
+#define AIUSE_LIGHTSWITCH_NAME_KEY	"switchName"
+
+//----------------------------------------------------------------------------------------
+// The following defines a key that should be non-0 if the device should be on
+#define AIUSE_SHOULDBEON_KEY		"shouldBeOn"
+
+
 // SZ: Minimum count evidence of intruders to turn on all lights encountered
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS 2
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others

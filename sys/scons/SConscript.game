@@ -179,6 +179,7 @@ AI/States/SearchingState.cpp \
 AI/States/State.cpp \
 AI/States/StayInCoverState.cpp \
 AI/States/SuspiciousState.cpp \
+AI/States/SwitchOnLightState.cpp \
 AI/States/TakeCoverState.cpp \
 AI/States/UnreachableTargetState.cpp \
 AI/Tasks/ChaseEnemyRangedTask.cpp \

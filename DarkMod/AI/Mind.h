@@ -56,6 +56,8 @@ public:
 	 */
 	virtual void PushState(const idStr& stateName) = 0;
 
+	virtual void PushState(const StatePtr& state) = 0;
+
 	/**
 	 * greebo: Ends the current state - the Mind will pick the next State
 	 *         from the StateQueue or create a new Idle State if none is available.
@@ -69,6 +71,10 @@ public:
 	 * This new state REPLACES the currently active one.
 	 */
 	virtual void SwitchState(const idStr& stateName) = 0;
+
+	virtual void SwitchState(const StatePtr& state) = 0;
+
+
 
 	/**
 	 * greebo: Removes all States from the Queue and falls back to the default State (Idle).

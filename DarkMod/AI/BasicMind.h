@@ -48,8 +48,12 @@ public:
 
 	// State-related methods, see Mind base class for documentation
 	virtual void PushState(const idStr& stateName);
+	virtual	void PushState(const StatePtr& state);
+
 	virtual bool EndState();
 	virtual void SwitchState(const idStr& stateName);
+	virtual void SwitchState(const StatePtr& state);
+
 	virtual void ClearStates();
 
 	// Returns the reference to the current state

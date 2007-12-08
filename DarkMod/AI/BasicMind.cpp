@@ -103,25 +103,23 @@ void BasicMind::PushState(const idStr& stateName)
 
 	if (newState != NULL)
 	{
-		if (_stateQueue.size() > 0)
-		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Pushing %s from %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
-		}
-		else
-		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Pushing %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
-		}
-
-		// Push the state to the front of the queue
-		_stateQueue.push_front(newState);
-
-		// Trigger a stateswitch next round
-		_switchState = true;
+		PushState(newState);
 	}
 	else
 	{
 		gameLocal.Error("BasicMind: Could not push state %s", stateName.c_str());
 	}
+}
+
+void BasicMind::PushState(const StatePtr& state)
+{
+	assert(state != NULL);
+
+	// Push the state to the front of the queue
+	_stateQueue.push_front(state);
+
+	// Trigger a stateswitch next round
+	_switchState = true;
 }
 
 bool BasicMind::EndState()
@@ -173,6 +171,22 @@ void BasicMind::SwitchState(const idStr& stateName)
 	// Add the new task
 	PushState(stateName);
 }
+
+void BasicMind::SwitchState(const StatePtr& state)
+{
+	// greebo: Switch the state without destroying the current State object immediately
+	if (_stateQueue.size() > 0)
+	{
+		// Store the shared_ptr in the temporary container
+		_recycleBin = _stateQueue.front();
+		// Remove the first element from the queue
+		_stateQueue.pop_front();
+	}
+
+	// Add the new task
+	PushState(state);
+}
+
 
 void BasicMind::ClearStates()
 {
