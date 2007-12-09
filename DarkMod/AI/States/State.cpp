@@ -744,15 +744,9 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	}
 
 	// Turning the light on?
-	if (turnLightOn)
+	if (turnLightOn && owner->AI_AlertNum < owner->thresh_combat)
 	{
-		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(stimSource)));
-
-
-		// Enqueue a search task which gets activated after turning on the light
-		//owner->GetMind()->PushStateIfHigherPriority(STATE_SEARCHING, PRIORITY_SEARCHING);
-		// Switch to STATE_SWITCHON_LIGHT
-		// TODO owner->GetMind()->PushStateIfHigherPriority(STATE_SWITCHON_LIGHT, PRIORITY_SWITCHON_LIGHT);
+		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light)));
 	}
 }
 

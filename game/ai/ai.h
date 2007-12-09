@@ -592,11 +592,17 @@ public:
 		return mind->GetMemory();
 	}
 
-	ID_INLINE float GetMeleeRange()
+	ID_INLINE float GetMeleeRange() const
 	{
 		return melee_range;
 	}
 
+	ID_INLINE idAAS* GetAAS() const
+	{
+		return aas;
+	}
+
+	float GetArmReachLength();
 
 protected:
 	// navigation

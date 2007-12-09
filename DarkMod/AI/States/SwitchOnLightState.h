@@ -24,11 +24,11 @@ private:
 	// Default constructor
 	SwitchOnLightState();
 
-	idEntityPtr<idEntity> _stimSource;
+	idEntityPtr<idLight> _light;
 
 public:
 	// Constructor using light source as input parameter
-	SwitchOnLightState(idEntity* stimSource);
+	SwitchOnLightState(idLight* light);
 
 	// Get the name of this state
 	virtual const idStr& GetName() const;
