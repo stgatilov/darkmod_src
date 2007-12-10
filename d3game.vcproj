@@ -651,6 +651,12 @@
 						RelativePath=".\DarkMod\Ai\States\SuspiciousState.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\SwitchOnLightState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\SwitchOnLightState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\TakeCoverState.cpp">
 					</File>
 					<File
