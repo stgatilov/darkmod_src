@@ -988,7 +988,12 @@ void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 		goto Quit;
 
 	parms->name = ent->name;
-	parms->group = ent->spawnArgs.GetString("inv_name");
+	// group is interpreted differently for location entities
+	if( ent->IsType(idLocationEntity::Type) || ent->IsType(CObjectiveLocation::Type) )
+		parms->group = ent->spawnArgs.GetString("objective_group");
+	else
+		parms->group = ent->spawnArgs.GetString("inv_name");
+
 	parms->classname = ent->spawnArgs.GetString("classname");
 	parms->spawnclass = ent->spawnArgs.GetString("spawnclass");
 
@@ -2095,6 +2100,7 @@ void CObjectiveLocation::Spawn()
 {
 	m_Interval = static_cast<int>(1000.0f * spawnArgs.GetFloat( "interval", "1.0" ));
 	m_TimeStamp = gameLocal.time;
+	m_ObjectiveGroup = spawnArgs.GetString( "objective_group", "" );
 
 // Set the contents to a useless trigger so that the collision model will be loaded
 // FLASHLIGHT_TRIGGER seems to be the only one that doesn't do anything else we don't want
@@ -2113,6 +2119,7 @@ void CObjectiveLocation::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteInt( m_Interval );
 	savefile->WriteInt( m_TimeStamp );
+	savefile->WriteString( m_ObjectiveGroup );
 
 	savefile->WriteInt( m_EntsInBounds.Num() );
 	for( int i=0;i < m_EntsInBounds.Num(); i++ )
@@ -2125,6 +2132,7 @@ void CObjectiveLocation::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_Interval );
 	savefile->ReadInt( m_TimeStamp );
+	savefile->ReadString( m_ObjectiveGroup );
 
 	m_EntsInBounds.Clear();
 	savefile->ReadInt( num );
