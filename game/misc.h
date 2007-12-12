@@ -479,6 +479,9 @@ public:
 
 	void				Spawn( void );
 
+	void				Save( idSaveGame *savefile ) const;
+	void				Restore( idRestoreGame *savefile );
+
 	const char *		GetLocation( void ) const;
 
 public:

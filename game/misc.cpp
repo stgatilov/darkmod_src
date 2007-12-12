@@ -2232,6 +2232,31 @@ void idLocationEntity::Spawn()
 
 	m_SndLossMult = idMath::Fabs( spawnArgs.GetFloat("sound_loss_mult", "1.0") );
 	m_SndVolMod = spawnArgs.GetFloat( "sound_vol_offset", "0.0" );
+	m_ObjectiveGroup = spawnArgs.GetString( "objective_group", "" );
+}
+
+/*
+======================
+idLocationEntity::Save
+======================
+*/
+void idLocationEntity::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteFloat( m_SndLossMult );
+	savefile->WriteFloat( m_SndVolMod );
+	savefile->WriteString( m_ObjectiveGroup );
+}
+
+/*
+======================
+idLocationEntity::Restore
+======================
+*/
+void idLocationEntity::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadFloat( m_SndLossMult );
+	savefile->ReadFloat( m_SndVolMod );
+	savefile->ReadString( m_ObjectiveGroup );
 }
 
 /*
