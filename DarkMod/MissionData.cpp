@@ -30,6 +30,7 @@ static const char *gCompTypeName[COMP_COUNT] =
 	"ai_find_item",
 	"ai_find_body",
 	"alert",
+	"destroy",
 	"item",
 	"pickpocket",
 	"location",
@@ -361,7 +362,7 @@ void CMissionData::MissionEvent
 
 	// Update AI stats, don't add to stats if playerresponsible is false
 	// Stats for KOs, kills, body found, item found
-	if( ( ( CompType == COMP_KILL && EntDat1->bIsAI ) || CompType == COMP_KO
+	if( ( ( CompType == COMP_KILL ) || CompType == COMP_KO
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) && bBoolArg )
 	{
@@ -396,6 +397,10 @@ void CMissionData::MissionEvent
 
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Done adding to stats, checking for objectives...\r" );
 	}
+
+	// Update pickpocket stat
+	if( CompType == COMP_PICKPOCKET && bBoolArg )
+		m_Stats.PocketsPicked++;
 
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
@@ -624,9 +629,16 @@ bool	CMissionData::EvaluateObjective
 		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
+	// For now, destroy is a single-shot objective
+	// If it matches specifiers, and the player did it, the component succeeds
+	else if( CompType == COMP_DESTROY )
+	{
+		// Return value is set to whether the item entered or left the location
+		bReturnVal = bBoolArg;
+		goto Quit;
+	}
+
 Quit:
-	if( CompType == COMP_PICKPOCKET && bBoolArg )
-		m_Stats.PocketsPicked++;
 	return bReturnVal;
 }
 

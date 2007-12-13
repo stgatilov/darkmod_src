@@ -74,8 +74,9 @@ typedef enum
 	COMP_KO,
 	COMP_AI_FIND_ITEM,
 	COMP_AI_FIND_BODY,
-// END AI components that must be kept together
 	COMP_ALERT,
+// END AI components that must be kept together
+	COMP_DESTROY,		// Destroy an inanimate object
 	COMP_ITEM,			// Add inventory item or imaginary loot (find object X)
 	COMP_PICKPOCKET,	// Take inventory item from conscious AI
 	COMP_LOCATION,		// Item X is at location Y
