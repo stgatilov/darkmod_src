@@ -375,7 +375,7 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 
 	fl.takedamage = false;
 
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
 }
 
 /*

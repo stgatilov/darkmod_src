@@ -583,7 +583,7 @@ void idDamagable::Killed( idEntity *inflictor, idEntity *attacker, int damage, c
 		return;
 	}
 
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
 	BecomeBroken( attacker );
 }
 

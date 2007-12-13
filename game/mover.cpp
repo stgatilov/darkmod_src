@@ -443,7 +443,7 @@ void idMover::Killed( idEntity *inflictor, idEntity *attacker, int damage, const
 	fl.takedamage = false;
 	ActivateTargets( this );
 
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, false );
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
 }
 
 
