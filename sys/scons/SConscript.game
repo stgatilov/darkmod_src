@@ -143,6 +143,8 @@ ProjectileResult.cpp \
 PVSToAASMapping.cpp \
 rdline.cpp \
 Relations.cpp \
+renderpipe.cpp \
+renderpipeposix.cpp \
 sndProp.cpp \
 sndPropLoader.cpp \
 Strip.cpp \

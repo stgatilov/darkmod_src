@@ -952,59 +952,27 @@ void CImage::Unload(bool FreeMemory)
 	m_ImageId = (ILuint)-1;
 }
 
-#ifndef __linux__
-
-bool CImage::LoadImage(HANDLE &Handle)
+bool CImage::LoadImage(CRenderPipe* pipe)
 {
 	bool rc = false;
 
-	if(Handle != INVALID_HANDLE_VALUE)
+	if(pipe != NULL)
 		Unload(false);
 
 	if(m_Loaded == false)
 	{
-		if(Handle != INVALID_HANDLE_VALUE)
+		if(pipe != NULL)
 		{
 			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
-			DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
-
-
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", Handle);
-
-			dwBufSize = DARKMOD_LG_RENDERPIPE_BUFSIZE;
-
-			BufLen = 0;
-
-			while(1)
-
-			{
-
-				ReadFile(Handle, // handle to pipe
-
-					&pipe_buf[BufLen],						// buffer to receive data
-
-					dwBufSize,								// size of buffer
-
-					&cbBytesRead,							// number of bytes read
-
-					NULL);									// not overlapped I/O
-
-				dwLastError = GetLastError();
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu (%08lX) %lu\r", cbBytesRead, Handle, BufLen, m_Image, dwLastError);
-
-				BufLen += cbBytesRead;
-				dwBufSize -= cbBytesRead;
-
-				if(cbBytesRead == 0 || dwLastError == ERROR_BROKEN_PIPE)
-					break;
-				
-				if(dwBufSize <= 0)
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Bufferoverflow when reading from renderpipe\r");
-					goto Quit;
-				}
+			int BufLen = DARKMOD_LG_RENDERPIPE_BUFSIZE;
+			
+			// For debugging
+			printf("BufLen is %d, &BufLen is %x\n", BufLen, &BufLen);
+			for (int i=0; i<DARKMOD_LG_RENDERPIPE_BUFSIZE; i++) {
+				pipe_buf[i] = 42;
 			}
-
+			
+			pipe->Read(pipe_buf, &BufLen);
 
 			if(BufLen > m_BufferLength || m_Image == NULL)
 			{
@@ -1016,7 +984,7 @@ bool CImage::LoadImage(HANDLE &Handle)
 					goto Quit;
 				}
 			}
-//			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", cbBytesRead, m_Name.c_str(), m_BufferLength, m_Image);
+			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Total of %lu bytes read from renderpipe [%s]   %lu (%08lX)\r", BufLen, m_Name.c_str(), m_BufferLength, m_Image);
 
 			memcpy(m_Image, pipe_buf, m_BufferLength);
 			InitImageInfo();
@@ -1033,8 +1001,6 @@ Quit:
 
 	return rc;
 }
-
-#endif // __linux__
 
 bool CImage::LoadImage(const char *Filename)
 {
@@ -1148,17 +1114,18 @@ void DM_Printf(const char* fmt, ...)
 
 const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)
 {
-	static char p[1024];
 	char *pRet = NULL;
-	idStr Drive;
 	META_RES Ret = MRES_IGNORED;
 
+#ifdef _WINDOWS
+	static char p[1024];
 	if(idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
 	{
-		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME);
+		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME_WINDOWS);
 		Ret = MRES_SUPERCEDE;
 		pRet = p;
 	}
+#endif
 
 	RETURN_META_VALUE(Ret, pRet);
 }
