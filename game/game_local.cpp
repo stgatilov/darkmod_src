@@ -34,6 +34,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
+#ifdef _WINDOWS
+#include "../DarkMod/renderpipewindows.h"
+#else
+#include "DarkMod/renderpipeposix.h"
+#endif
 
 #ifdef __linux__
 	#include <boost/asio.hpp>
@@ -341,16 +346,6 @@ void idGameLocal::Clear( void )
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
 	//	ResetSlowTimeVars();
-
-#ifndef __linux__
-	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
-	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
-	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
-	m_saPipeSecurity.bInheritHandle = FALSE;
-	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
-#endif
 
 	m_EscapePointManager->Clear();
 }

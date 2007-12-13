@@ -10,16 +10,19 @@ public:
 	CRenderPipeWindows() : m_hPipe(INVALID_HANDLE_VALUE)
 	{
 	}
-	
+
 	int Initialize();
-	
+
 	const char* FileName();
-	
-	int Read(void *buf, int *size);
-	
+
+	int Read(char *buf, int *size);
+
 	~CRenderPipeWindows();
+
 private:
 	HANDLE m_hPipe;
+	SECURITY_ATTRIBUTES		m_saPipeSecurity;
+	PSECURITY_DESCRIPTOR	m_pPipeSD;
 };
 
 #endif // RENDERPIPEWINDOWS_HEADER

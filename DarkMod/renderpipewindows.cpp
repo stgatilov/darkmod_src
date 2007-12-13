@@ -1,3 +1,15 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1869 $
+ * $Date: 2007-12-13 12:45:27 +0100 (Do, 13 Dez 2007) $
+ * $Author: crispy $
+ *
+ ***************************************************************************/
+
+#include "../idlib/precompiled.h"
+#pragma hdrstop
+
 #include "renderpipewindows.h"
 
 #define DARKMOD_LG_RENDERPIPE_NAME			DARKMOD_LG_RENDERPIPE_NAME_WINDOWS
@@ -5,6 +17,14 @@
 
 int CRenderPipeWindows::Initialize()
 {
+	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
+	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
+	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
+	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
+	m_saPipeSecurity.bInheritHandle = FALSE;
+	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+
 	m_hPipe = CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
 		PIPE_ACCESS_DUPLEX,				// read/write access
 		PIPE_TYPE_MESSAGE |				// message type pipe
@@ -18,6 +38,8 @@ int CRenderPipeWindows::Initialize()
 	if (m_hPipe == INVALID_HANDLE_VALUE) {
 		return GetLastError();
 	}
+
+	return 0;
 }
 
 const char* CRenderPipeWindows::FileName()
@@ -25,27 +47,25 @@ const char* CRenderPipeWindows::FileName()
 	return DARKMOD_LG_RENDERPIPE_NAME;
 }
 
-int CRenderPipeWindows::Read(void *buf, int *size)
+int CRenderPipeWindows::Read(char *buf, int *size)
 {
 	DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", Handle);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", m_hPipe);
 
 	dwBufSize = *size;
 	BufLen = 0;
 	while(1)
-
 	{
-
-		ReadFile(Handle, // handle to pipe
-			&buf[BufLen],						// buffer to receive data
+		ReadFile(m_hPipe, // handle to pipe
+			&buf[BufLen],							// buffer to receive data
 			dwBufSize,								// size of buffer
 			&cbBytesRead,							// number of bytes read
 			NULL);									// not overlapped I/O
 
 		dwLastError = GetLastError();
-		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu (%08lX) %lu\r",
-			cbBytesRead, Handle, BufLen, m_Image, dwLastError);
+		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu %lu\r",
+			cbBytesRead, m_hPipe, BufLen, dwLastError);
 
 		BufLen += cbBytesRead;
 		dwBufSize -= cbBytesRead;
@@ -60,9 +80,11 @@ int CRenderPipeWindows::Read(void *buf, int *size)
 	}
 	
 	*size = BufLen;
+
+	return BufLen;
 }
 
-void CRenderPipeWindows::~CRenderPipeWindows()
+CRenderPipeWindows::~CRenderPipeWindows()
 {
 	if(m_hPipe != INVALID_HANDLE_VALUE)
 	{

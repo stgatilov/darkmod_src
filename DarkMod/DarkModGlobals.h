@@ -36,6 +36,8 @@ Darkmod LAS
 */
 #include "../DarkMod/darkModLAS.h"
 
+class CRenderPipe;
+
 #ifndef ILuint
 typedef unsigned int ILuint;
 #endif

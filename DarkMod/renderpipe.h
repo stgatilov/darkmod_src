@@ -26,7 +26,7 @@ public:
 	                If this function returns successfully, size will hold the number of bytes actually read.
 	    @return Zero upon success; a system-specific error code upon failure.
 	*/
-	virtual int Read(void *buf, int *size)=0;
+	virtual int Read(char *buf, int *size)=0;
 	
 	virtual ~CRenderPipe()=0;
 };

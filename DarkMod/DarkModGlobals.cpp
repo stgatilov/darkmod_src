@@ -42,6 +42,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
 #include "DarkRadiantRCFServer.h"
+#include "renderpipe.h"
 
 // Default length of time for holding down jump key to start
 // mantling.
