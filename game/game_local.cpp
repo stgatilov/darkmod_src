@@ -34,11 +34,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DifficultyMenu.h"
 #include "../DarkMod/EscapePointManager.h"
 #include "../DarkMod/ModMenu.h"
-#ifdef _WINDOWS
-#include "../DarkMod/renderpipewindows.h"
-#else
-#include "DarkMod/renderpipeposix.h"
-#endif
+#include "../DarkMod/renderpipe.h"
 
 #ifdef __linux__
 	#include <boost/asio.hpp>
@@ -264,7 +260,7 @@ void idGameLocal::Clear( void )
 	for(i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++)
 		m_LightgemShotValue[i] = 0.0;
 	m_DoLightgem = true;
-
+	
 	serverInfo.Clear();
 	numClients = 0;
 	for ( i = 0; i < MAX_CLIENTS; i++ ) {
@@ -471,6 +467,13 @@ void idGameLocal::Init( void ) {
 	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
 	Printf( "------------ RCF Server started -----------\n" );
 #endif
+	
+	// Create render pipe
+	m_RenderPipe = new CRenderPipe();
+	if (m_RenderPipe == NULL) {
+		// Out of memory
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Out of memory when allocating render pipe\n");
+	}
 }
 
 /*
@@ -5095,7 +5098,6 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 	renderEntity_t *prent;			// Player renderentity
 	renderEntity_t *hrent;			// Head renderentity
 	renderEntity_t *lgrend;
-	CRenderPipe* renderPipe = NULL;
 	const char *dp = NULL;
 
 	lg = m_LightgemSurface.GetEntity();
@@ -5237,17 +5239,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 		// the first one), or we only show the one that should be shown.
 		if(k == -1 || k == i)
 		{
-			#ifdef _WINDOWS
-			renderPipe = new CRenderPipeWindows();
-			#else
-			renderPipe = new CRenderPipePosix();
-			#endif
-			if (renderPipe == NULL) {
-				// Out of memory
-				DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Out of memory when allocating render pipe\n");
-				break;
-			}
-			renderPipe->Initialize();
+			m_RenderPipe->Prepare();
 
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
@@ -5256,7 +5248,7 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			renderSystem->CropRenderSize(dim, dim, true);
 			gameRenderWorld->SetRenderView(&rv);
 			gameRenderWorld->RenderScene(&rv);
-			renderSystem->CaptureRenderToFile(renderPipe->FileName());
+			renderSystem->CaptureRenderToFile(m_RenderPipe->FileName());
 			dp = cv_lg_path.GetString();
 			if(dp != NULL && strlen(dp) != 0)
 			{
@@ -5267,11 +5259,11 @@ float idGameLocal::CalcLightgem(idPlayer *player)
 			else
 				dp = NULL;
 
-			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s]\n", renderPipe->FileName());
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to file [%s]\n", m_RenderPipe->FileName());
 			renderSystem->UnCrop();
 
-			AnalyzeRenderImage(renderPipe, fColVal);
-			delete renderPipe; renderPipe=NULL;
+			AnalyzeRenderImage(m_RenderPipe, fColVal);
+			m_RenderPipe->CleanUp();
 
 			// Check which of the images has the brightest value, and this is what we will use.
 			for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
@@ -5314,10 +5306,8 @@ void idGameLocal::AnalyzeRenderImage(CRenderPipe* pipe, float fColVal[DARKMOD_LG
 	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
 	int i, in, k, kn, h, x;
 	
-	fprintf(stderr, "AnalyzeRenderImage called; pipe==%p\n", pipe);
 	im->LoadImage(pipe);
 	unsigned char *buffer = im->GetImage();
-	fprintf(stderr, "im->GetImage returned %p; first value is %d\n", buffer, buffer[0]);
 
 	// This is just an errorhandling to inform the player that something is wrong.
 	// The lightgem will simply blink if the renderpipe doesn't work.

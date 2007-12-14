@@ -829,7 +829,9 @@ private:
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
-
+	
+	CRenderPipe *			m_RenderPipe;
+	
 	idList<idEntity *>		m_SignalList;
 
 	void					Clear( void );
