@@ -10,19 +10,32 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "renderpipewindows.h"
+#include "renderpipe.h"
+
+static SECURITY_ATTRIBUTES	saPipeSecurity;
+static PSECURITY_DESCRIPTOR	pPipeSD;
+
+CRenderPipe::CRenderPipe()
+{
+	m_fd = INVALID_HANDLE_VALUE;
+}
+
+CRenderPipe::~CRenderPipe()
+{
+	CleanUp();
+}
 
 int CRenderPipe::Prepare()
 {
-	memset(&m_saPipeSecurity, 0, sizeof(m_saPipeSecurity));
-	m_pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-	InitializeSecurityDescriptor(m_pPipeSD, SECURITY_DESCRIPTOR_REVISION);
-	SetSecurityDescriptorDacl(m_pPipeSD, TRUE, (PACL)NULL, FALSE);
-	m_saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
-	m_saPipeSecurity.bInheritHandle = FALSE;
-	m_saPipeSecurity.lpSecurityDescriptor = m_pPipeSD;
+	memset(&saPipeSecurity, 0, sizeof(saPipeSecurity));
+	pPipeSD = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+	InitializeSecurityDescriptor(pPipeSD, SECURITY_DESCRIPTOR_REVISION);
+	SetSecurityDescriptorDacl(pPipeSD, TRUE, (PACL)NULL, FALSE);
+	saPipeSecurity.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saPipeSecurity.bInheritHandle = FALSE;
+	saPipeSecurity.lpSecurityDescriptor = pPipeSD;
 
-	m_hPipe = CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
+	m_fd = CreateNamedPipe (DARKMOD_LG_RENDERPIPE_NAME,
 		PIPE_ACCESS_DUPLEX,				// read/write access
 		PIPE_TYPE_MESSAGE |				// message type pipe
 		PIPE_READMODE_MESSAGE |			// message-read mode
@@ -31,39 +44,39 @@ int CRenderPipe::Prepare()
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// output buffer size
 		DARKMOD_LG_RENDERPIPE_BUFSIZE,		// input buffer size
 		DARKMOD_LG_RENDERPIPE_TIMEOUT,		// client time-out
-		&m_saPipeSecurity);				// no security attribute
-	if (m_hPipe == INVALID_HANDLE_VALUE) {
+		&saPipeSecurity);				// no security attribute
+
+	if (m_fd == INVALID_HANDLE_VALUE)
 		return GetLastError();
-	}
 
 	return 0;
 }
 
 void CRenderPipe::CleanUp()
 {
-	if(m_hPipe != INVALID_HANDLE_VALUE)
+	if(m_fd != INVALID_HANDLE_VALUE)
 	{
-		CloseHandle(m_hPipe);
-		m_hPipe = INVALID_HANDLE_VALUE;
+		CloseHandle(m_fd);
+		m_fd = INVALID_HANDLE_VALUE;
 	}
 }
 
 const char* CRenderPipe::FileName()
 {
-	return DARKMOD_LG_RENDERPIPE_NAME_WINDOWS;
+	return DARKMOD_LG_RENDERPIPE_NAME;
 }
 
-int CRenderPipe::Read(void *buf, int *size)
+int CRenderPipe::Read(char *buf, int *size)
 {
 	DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", m_hPipe);
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Reading from renderpipe [%08lX]\r", m_fd);
 
 	dwBufSize = *size;
 	BufLen = 0;
 	while(1)
 	{
-		ReadFile(m_hPipe, // handle to pipe
+		ReadFile(m_fd, // handle to pipe
 			&buf[BufLen],							// buffer to receive data
 			dwBufSize,								// size of buffer
 			&cbBytesRead,							// number of bytes read
@@ -72,7 +85,7 @@ int CRenderPipe::Read(void *buf, int *size)
 		dwLastError = GetLastError();
 		
 		DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("%lu bytes read from renderpipe [%08lX]   %lu %lu\r",
-			cbBytesRead, m_hPipe, BufLen, dwLastError);
+			cbBytesRead, m_fd, BufLen, dwLastError);
 		
 		BufLen += cbBytesRead;
 		dwBufSize -= cbBytesRead;

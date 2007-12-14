@@ -1275,16 +1275,10 @@
 					RelativePath=".\DarkMod\Relations.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\renderpipe.cpp">
-				</File>
-				<File
 					RelativePath=".\DarkMod\renderpipe.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\renderpipewindows.cpp">
-				</File>
-				<File
-					RelativePath=".\DarkMod\renderpipewindows.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\shop.cpp">

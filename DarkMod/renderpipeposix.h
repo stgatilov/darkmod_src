@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1869 $
+ * $Date: 2007-12-13 12:45:27 +0100 (Do, 13 Dez 2007) $
+ * $Author: crispy $
+ *
+ ***************************************************************************/
+
 #ifndef RENDERPIPEPOSIX_HEADER
 #define RENDERPIPEPOSIX_HEADER
 

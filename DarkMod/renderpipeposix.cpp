@@ -1,3 +1,12 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1869 $
+ * $Date: 2007-12-13 12:45:27 +0100 (Do, 13 Dez 2007) $
+ * $Author: crispy $
+ *
+ ***************************************************************************/
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -9,7 +18,7 @@
 #include "../game/game_local.h"
 #include "../idlib/precompiled.h"
 #include "framework/filesystem.h"
-#include "renderpipeposix.h"
+#include "renderpipe.h"
 
 // This "render pipe" isn't actually a pipe at all on POSIX systems. It's a file in /dev/shm (shared memory).
 // This is because the Doom 3 SDK's CaptureRenderToFile function refuses to write to a named pipe,
@@ -17,7 +26,7 @@
 // Files in /dev/shm never touch the disk so there's no additional performance penalty, and as an added
 // bonus they're nicer to code with than named pipes.
 
-CRenderPipe::CRenderPipe() : m_fd(-1)
+CRenderPipe::CRenderPipe() : m_fd(INVALID_HANDLE_VALUE)
 {
 	// We want the filename of the render "pipe" to be "/dev/shm/tdm_lg_render.tga". To make a relative
 	// path to that location, we need to count the slashes (and hence directories) in fs_savepath, and prepend
@@ -73,7 +82,7 @@ const char* CRenderPipe::FileName()
 	return m_filename;
 }
 
-int CRenderPipe::Read(void *buf, int *size)
+int CRenderPipe::Read(char *buf, int *size)
 {
 	int bytesRead = 0;
 	
@@ -86,7 +95,7 @@ int CRenderPipe::Read(void *buf, int *size)
 	
 	while(bytesRead < *size)
 	{
-		int retVal = read(m_fd, (void*)((int)buf + bytesRead), *size - bytesRead);
+		int retVal = read(m_fd, (void*)(&buf[bytesRead]), *size - bytesRead);
 		if (!retVal) break; // EOF
 		if (retVal < 0) return errno; // Error
 		bytesRead += retVal; // Got data. Loop.
@@ -98,4 +107,13 @@ int CRenderPipe::Read(void *buf, int *size)
 	if (lseek(m_fd, 0, SEEK_SET)) return errno; // Error
 	
 	return 0;
+}
+
+int CRenderPipe::Prepare()
+{
+	return 0;
+}
+	
+void CRenderPipe::CleanUp()
+{
 }

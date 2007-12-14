@@ -1121,7 +1121,7 @@ const char *DM_BuildOSPath(const char *basePath, const char *game, const char *r
 	static char p[1024];
 	if(idStr::Cmpn("\\\\.\\", relativePath, 4) == 0)
 	{
-		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME_WINDOWS);
+		strcpy(p, DARKMOD_LG_RENDERPIPE_NAME);
 		Ret = MRES_SUPERCEDE;
 		pRet = p;
 	}

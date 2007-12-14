@@ -1,11 +1,14 @@
+/***************************************************************************
+ *
+ * PROJECT: The Dark Mod
+ * $Revision: 1869 $
+ * $Date: 2007-12-13 12:45:27 +0100 (Do, 13 Dez 2007) $
+ * $Author: crispy $
+ *
+ ***************************************************************************/
+
 #ifndef RENDERPIPEWINDOWS_HEADER
 #define RENDERPIPEWINDOWS_HEADER
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-#define DARKMOD_LG_RENDERPIPE_TIMEOUT		1000
-#define DARKMOD_LG_RENDERPIPE_NAME_WINDOWS	"\\\\.\\pipe\\dm_renderpipe" // The filename of the render pipe, on Windows
 
 class CRenderPipe
 {
@@ -36,8 +39,6 @@ public:
 
 private:
 	HANDLE m_hPipe;
-	SECURITY_ATTRIBUTES		m_saPipeSecurity;
-	PSECURITY_DESCRIPTOR	m_pPipeSD;
 };
 
 #endif // RENDERPIPEWINDOWS_HEADER
