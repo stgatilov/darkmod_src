@@ -82,9 +82,9 @@ const char* CRenderPipe::FileName()
 	return m_filename;
 }
 
-int CRenderPipe::Read(char *buf, int *size)
+int CRenderPipe::Read(char *buf, unsigned int *size)
 {
-	int bytesRead = 0;
+	unsigned int bytesRead = 0;
 	
 	if (m_fd < 0)
 	{

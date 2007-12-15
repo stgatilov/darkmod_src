@@ -12,6 +12,9 @@
 
 #include "renderpipe.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 static SECURITY_ATTRIBUTES	saPipeSecurity;
 static PSECURITY_DESCRIPTOR	pPipeSD;
 
@@ -66,7 +69,7 @@ const char* CRenderPipe::FileName()
 	return DARKMOD_LG_RENDERPIPE_NAME;
 }
 
-int CRenderPipe::Read(char *buf, int *size)
+int CRenderPipe::Read(char *buf, unsigned int *size)
 {
 	DWORD cbBytesRead, dwBufSize, BufLen, dwLastError;
 

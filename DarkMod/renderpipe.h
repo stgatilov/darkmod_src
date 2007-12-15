@@ -20,17 +20,16 @@
 #define DARKMOD_LG_RENDERPIPE_NAME	"\\\\.\\pipe\\dm_renderpipe" // The filename of the render pipe, only needed for Windows
 
 #ifdef WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
 
-#ifndef INVALID_HANDLE_VALUE
+#else
+
 #define INVALID_HANDLE_VALUE -1
-#endif
-
-/*#ifndef HANDLE
 #define HANDLE int
-#endif*/
+
+#endif
 
 class CRenderPipe
 {
@@ -52,11 +51,11 @@ public:
 	/** Retrieve up to size bytes from the pipe, and store them into the given buffer.
 	    The actual number of bytes read is stored in size.
 	    
-	    @param size Value-result parameter. Must hold the maximum size of buf when passed it.
+	    @param size Value-result parameter. Must hold the maximum size of buf when passed in.
 	                If this function returns successfully, size will hold the number of bytes actually read.
 	    @return Zero upon success; a system-specific error code upon failure.
 	*/
-	int Read(char *buf, int *size);
+	int Read(char *buf, unsigned int *size);
 	
 private:
 	char m_filename[512]; // filename to read from

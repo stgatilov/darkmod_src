@@ -965,7 +965,7 @@ bool CImage::LoadImage(CRenderPipe* pipe)
 		if(pipe != NULL)
 		{
 			static char pipe_buf[DARKMOD_LG_RENDERPIPE_BUFSIZE];
-			int BufLen = DARKMOD_LG_RENDERPIPE_BUFSIZE;
+			unsigned int BufLen = DARKMOD_LG_RENDERPIPE_BUFSIZE;
 			
 			// For debugging
 			for (int i=0; i<DARKMOD_LG_RENDERPIPE_BUFSIZE; i++) {
