@@ -489,6 +489,8 @@ void idGameLocal::Shutdown( void ) {
 	}
 
 	Printf( "------------ Game Shutdown -----------\n" );
+	
+	delete m_RenderPipe;
 
 	mpGame.Shutdown();
 
