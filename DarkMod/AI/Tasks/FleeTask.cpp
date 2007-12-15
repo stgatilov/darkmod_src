@@ -94,7 +94,10 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
 			// Flee to the nearest friendly guarded escape point
-			owner->Flee(enemy, FIND_FRIENDLY_GUARDED, _distOpt);
+			if (!owner->Flee(enemy, FIND_FRIENDLY_GUARDED, _distOpt))
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+			}
 			_fleeStartFrame = gameLocal.framenum;
 		}
 		else if (_escapeSearchLevel == 2)
@@ -102,7 +105,10 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			// Try to find another escape route
 			DM_LOG(LC_AI, LT_INFO).LogString("Trying alternate escape route - FIND_FRIENDLY.");
 			// Find another escape route to ANY friendly escape point
-			owner->Flee(enemy, FIND_FRIENDLY, _distOpt);
+			if (!owner->Flee(enemy, FIND_FRIENDLY, _distOpt))
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+			}
 		}
 		else
 		{
@@ -119,6 +125,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 				if (!owner->Flee(enemy, FIND_AAS_AREA_FAR_FROM_THREAT, 500))
 				{
 					// No point could be found.
+					owner->AI_DEST_UNREACHABLE = true;
 					_failureCount++;
 				}
 			}
