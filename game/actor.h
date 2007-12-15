@@ -429,6 +429,7 @@ private:
 	void					Event_SetSyncedAnimWeight( int channel, int anim, float weight );
 	void					Event_OverrideAnim( int channel );
 	void					Event_EnableAnim( int channel, int blendFrames );
+	void					Event_DisableAnimchannel( int channel );
 	void					Event_SetBlendFrames( int channel, int blendFrames );
 	void					Event_GetBlendFrames( int channel );
 	void					Event_AnimState( int channel, const char *name, int blendFrames );

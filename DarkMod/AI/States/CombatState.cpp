@@ -139,22 +139,26 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
+	if (owner->AI_ENEMY_DEAD)
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+		owner->GetMind()->EndState();
+		return;
+	}
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
-
+	if (!CheckAlertLevel(owner))
+	{
+		owner->GetMind()->EndState();
+		return;
+	}
 	Memory& memory = owner->GetMemory();
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
-		return;
-	}
-
-	if (owner->AI_ENEMY_DEAD)
-	{
-		owner->StopMove(MOVE_STATUS_DONE);
-		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+		owner->GetMind()->EndState();
 		return;
 	}
 
