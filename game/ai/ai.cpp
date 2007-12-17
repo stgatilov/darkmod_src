@@ -4869,6 +4869,10 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 		static_cast< idPlayer* >( attacker )->AddAIKill();
 		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
 	}
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	{
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+	}
 
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );

@@ -577,13 +577,22 @@ void idDamagable::BecomeBroken( idEntity *activator ) {
 idDamagable::Killed
 ================
 */
-void idDamagable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	if ( gameLocal.time < nextTriggerTime ) {
+void idDamagable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
+	if ( gameLocal.time < nextTriggerTime ) 
+	{
 		health += damage;
 		return;
 	}
 
-	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );
 	BecomeBroken( attacker );
 }
 

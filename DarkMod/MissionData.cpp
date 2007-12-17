@@ -64,6 +64,8 @@ CObjectiveComponent::CObjectiveComponent( void )
 {
 	m_bNotted = false;
 	m_bState = false;
+	m_EventCount = 0;
+	m_bPlayerResponsibleOnly = true;
 	m_bReversible = true;
 	m_bLatched = false;
 	m_Type = COMP_ITEM;
@@ -126,6 +128,8 @@ void CObjectiveComponent::Save( idSaveGame *savefile ) const
 	savefile->WriteString( m_SpecVal[0] );
 	savefile->WriteString( m_SpecVal[1] );
 	savefile->WriteBool( m_bState );
+	savefile->WriteInt( m_EventCount );
+	savefile->WriteBool( m_bPlayerResponsibleOnly );
 	savefile->WriteBool( m_bLatched );
 
 	savefile->WriteInt( m_Args.Num() );
@@ -153,6 +157,8 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 	savefile->ReadString( m_SpecVal[0] );
 	savefile->ReadString( m_SpecVal[1] );
 	savefile->ReadBool( m_bState );
+	savefile->ReadInt( m_EventCount );
+	savefile->ReadBool( m_bPlayerResponsibleOnly );
 	savefile->ReadBool( m_bLatched );
 
 	savefile->ReadInt( num );
@@ -402,6 +408,7 @@ void CMissionData::MissionEvent
 	if( CompType == COMP_PICKPOCKET && bBoolArg )
 		m_Stats.PocketsPicked++;
 
+	// Check which objective components need updating
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
 		CObjective *pObj = &m_Objectives[i];
@@ -555,52 +562,8 @@ bool	CMissionData::EvaluateObjective
 		goto Quit;
 	}
 
-	// AI COMPONENTS:
-	if( ( CompType == COMP_KILL || CompType == COMP_KO
-		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
-		|| CompType == COMP_ALERT ) )
-	{
-		int AlertNum = 0;
-		if( CompType == COMP_ALERT )
-			AlertNum = atoi(pComp->m_Args[1]);
-
-		if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
-			goto Quit;
-
-		switch(SpecMeth)
-		{
-			case SPEC_OVERALL:
-				value = GetStatOverall( CompType, AlertNum );
-				break;
-			case SPEC_AI_TYPE:
-				index = EntDat1->type;
-				value = GetStatByType( CompType, index, AlertNum );
-				break;
-			case SPEC_AI_TEAM:
-				index = EntDat1->team;
-				value = GetStatByTeam( CompType, index, AlertNum );
-				break;
-			case SPEC_AI_INNOCENCE:
-				index = EntDat1->innocence;
-				value = GetStatByInnocence( CompType, index, AlertNum );
-				break;
-			// name, classname and spawnclass are all one-shot objectives and not counted up (for now)
-			case SPEC_NONE:
-			case SPEC_NAME:
-			case SPEC_CLASSNAME:
-			case SPEC_SPAWNCLASS:
-				bReturnVal = true;
-				goto Quit;
-				break;
-			default: // greebo: compiler complained about SPEC_GROUP not being handled
-				break;
-		}
-
-		bReturnVal = value >= atoi(pComp->m_Args[0]);
-	}
-
-	// ITEMS:
-	else if( CompType == COMP_ITEM || CompType == COMP_PICKPOCKET )
+	// Player inventory items:
+	else if( CompType == COMP_ITEM )
 	{
 		// name, classname and spawnclass are all one-shot objectives and not counted up (for now)
 		if( SpecMeth == SPEC_NONE || SpecMeth == SPEC_NAME || SpecMeth == SPEC_CLASSNAME || SpecMeth == SPEC_SPAWNCLASS )
@@ -629,13 +592,30 @@ bool	CMissionData::EvaluateObjective
 		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
-	// For now, destroy is a single-shot objective
-	// If it matches specifiers, and the player did it, the component succeeds
-	else if( CompType == COMP_DESTROY )
+	// AI ALERTS: Need to check against alert level
+	else if( CompType == COMP_ALERT )
 	{
-		// Return value is set to whether the item entered or left the location
-		bReturnVal = bBoolArg;
-		goto Quit;
+		if( pComp->m_bPlayerResponsibleOnly && !bBoolArg )
+			goto Quit;
+
+		int AlertNum = atoi(pComp->m_Args[1]);
+			if( EntDat1->value >= AlertNum )
+				pComp->m_EventCount++;
+
+		value = pComp->m_EventCount;
+		bReturnVal = value >= atoi(pComp->m_Args[0]);
+	}
+
+	// Everything else: Increment and check event counter
+	else
+	{
+		if( pComp->m_bPlayerResponsibleOnly && !bBoolArg )
+			goto Quit;
+
+		pComp->m_EventCount++;
+
+		value = pComp->m_EventCount;
+		bReturnVal = value >= atoi(pComp->m_Args[0]);
 	}
 
 Quit:
@@ -1362,6 +1342,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CObjectiveComponent CompTemp;
 
 			CompTemp.m_bState = args->GetBool( StrTemp2 + "state", "0" );
+			CompTemp.m_bPlayerResponsibleOnly = args->GetBool( StrTemp2 + "player_responsible", "1" );
 			CompTemp.m_bNotted = args->GetBool( StrTemp2 + "not", "0" );
 			CompTemp.m_bReversible = !args->GetBool( StrTemp2 + "irreversible", "0" );
 
@@ -1530,6 +1511,7 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 			&& !static_cast<idActor *>(bm)->IsKnockedOut()
 			)
 		{
+			// Player is always responsible for a pickpocket
 			MissionEvent( COMP_PICKPOCKET, &Parms, true );
 		}
 	}

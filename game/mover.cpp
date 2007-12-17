@@ -439,11 +439,19 @@ void idMover::Show( void ) {
 idMover::Killed
 ============
 */
-void idMover::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idMover::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
 	fl.takedamage = false;
 	ActivateTargets( this );
 
-	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );
 }
 
 

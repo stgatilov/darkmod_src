@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
 #include "../DarkMod/sndProp.h"
+#include "../DarkMod/MissionData.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 
 const idEventDef EV_TDM_UpdateSoundLoss( "updateSoundLoss", NULL );
@@ -999,11 +1000,21 @@ bool idBrittleFracture::IsBroken( void ) const {
 idBrittleFracture::Killed
 ================
 */
-void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
 	if ( !disableFracture ) {
 		ActivateTargets( this );
 		Break();
 	}
+
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );	
 }
 
 /*

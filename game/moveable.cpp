@@ -352,7 +352,10 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) {
 idMoveable::Killed
 ============
 */
-void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) 
+{
+	bool bPlayerResponsible(false);
+
 	if ( unbindOnDeath ) {
 		Unbind();
 	}
@@ -375,7 +378,12 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 
 	fl.takedamage = false;
 
-	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, false );
+	if ( attacker && attacker->IsType( idPlayer::Type ) )
+		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
+	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+
+	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );
 }
 
 /*

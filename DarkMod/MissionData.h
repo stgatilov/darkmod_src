@@ -229,6 +229,19 @@ protected:
 	bool		m_bState;
 
 	/**
+	* Current count of the number of times this event
+	* happened and the specifiers were matched.
+	* Some objective components use this, others rely on
+	* other counters, like overall stats or the inventory
+	**/
+	int			m_EventCount;
+
+	/**
+	* Set to true if this component is only satisfied when the player performs the action
+	**/
+	bool		m_bPlayerResponsibleOnly;
+
+	/**
 	* Whether the irreversible component has latched into a state
 	**/
 	bool		m_bLatched;
