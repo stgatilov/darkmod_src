@@ -47,6 +47,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	assert(owner);
 
 	_alertLevelDecreaseRate = (owner->thresh_combat - owner->thresh_3) / owner->atime3;
+	owner->DrawWeapon();
 }
 
 // Gets called each time the mind is thinking

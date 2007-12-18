@@ -70,6 +70,12 @@ public:
 	bool					IsIdle( void ) const;
 	animFlags_t				GetAnimFlags( void ) const;
 	idAnimator*				GetAnimator();
+	void					FinishAction(const idStr& actionname);
+	const char *			WaitState( void ) const;
+	void					SetWaitState( const char *_waitstate );
+
+protected:
+	idStr					waitState;
 
 private:
 	idActor *				self;
@@ -281,7 +287,9 @@ public:
 	const char *			GetAnimState( int channel ) const;
 	bool					InAnimState( int channel, const char *name ) const;
 	const char *			WaitState( void ) const;
+	const char *			WaitState( int channel ) const;
 	void					SetWaitState( const char *_waitstate );
+	void					SetWaitState( int channel, const char *_waitstate );
 	bool					AnimDone( int channel, int blendFrames ) const;
 	virtual void			SpawnGibs( const idVec3 &dir, const char *damageDefName );
 
@@ -436,6 +444,7 @@ private:
 	void					Event_GetAnimState( int channel );
 	void					Event_InAnimState( int channel, const char *name );
 	void					Event_FinishAction( const char *name );
+	void					Event_FinishChannelAction(int channel, const char *name );
 	void					Event_AnimDone( int channel, int blendFrames );
 	void					Event_HasAnim( int channel, const char *name );
 	void					Event_CheckAnim( int channel, const char *animname );

@@ -703,8 +703,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		// One more piece of evidence of something out of place
 		memory.countEvidenceOfIntruders++;
 
-		// Raise alert level
-		if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+		// Set up search
+		if (owner->AI_AlertNum < owner->thresh_3)
 		{
 			memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 			memory.alertType = EAlertVisual;
@@ -715,8 +715,20 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			memory.alertSearchExclusionVolume.Zero();
 				
 			owner->AI_VISALERT = false;
-		
-			owner->Event_SetAlertLevel(owner->thresh_3 - 0.1f);
+		}
+
+		// Raise alert level if we already have some evidence of intruders
+		if (owner->AI_AlertNum < owner->thresh_2 && 
+			(memory.enemiesHaveBeenSeen 
+				|| memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF))
+		{
+			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.2
+				* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF));
+
+			if (owner->AI_AlertNum >= (owner->thresh_combat + owner->thresh_3) * 0.5)
+			{
+				owner->Event_SetAlertLevel((owner->thresh_combat + owner->thresh_3) * 0.45);
+			}
 		}
 
 		// Do new reaction to stimulus after relighting
@@ -744,7 +756,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	}
 
 	// Turning the light on?
-	if (turnLightOn && owner->AI_AlertNum < owner->thresh_combat)
+	if (turnLightOn && owner->AI_AlertNum < (owner->thresh_combat + owner->thresh_3) * 0.5)
 	{
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light)));
 	}

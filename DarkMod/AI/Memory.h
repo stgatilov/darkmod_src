@@ -52,6 +52,9 @@ namespace ai
 
 // SZ: Minimum count evidence of intruders to turn on all lights encountered
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS 2
+// angua: The AI starts searching after encountering a switched off light 
+// only if it is already suspicious
+#define MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF 3
 // SZ: Minimum count of evidence of intruders to communicate suspicion to others
 #define MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION 3
 

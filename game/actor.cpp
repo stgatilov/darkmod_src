@@ -319,6 +319,43 @@ bool idAnimState::UpdateState( void ) {
 	return true;
 }
 
+
+/*
+=====================
+idAnimState::FinishAction
+=====================
+*/
+void idAnimState::FinishAction(const idStr& actionname)
+{
+	if ( waitState == actionname ) {
+		SetWaitState( "" );
+	}
+}
+
+/*
+=====================
+idAnimState::SetWaitState
+=====================
+*/
+void idAnimState::SetWaitState( const char *_waitstate )
+{
+	waitState = _waitstate;
+}
+
+/*
+=====================
+idAnimState::WaitState
+=====================
+*/
+const char *idAnimState::WaitState( void ) const 
+{
+	if ( waitState.Length() ) {
+		return waitState;
+	} else {
+		return NULL;
+	}
+}
+
 /***********************************************************************
 
 	idActor
@@ -345,6 +382,7 @@ const idEventDef AI_AnimState( "animState", "dsd" );
 const idEventDef AI_GetAnimState( "getAnimState", "d", 's' );
 const idEventDef AI_InAnimState( "inAnimState", "ds", 'd' );
 const idEventDef AI_FinishAction( "finishAction", "s" );
+const idEventDef AI_FinishChannelAction( "finishChannelAction", "ds" );
 const idEventDef AI_AnimDone( "animDone", "dd", 'd' );
 const idEventDef AI_OverrideAnim( "overrideAnim", "d" );
 const idEventDef AI_EnableAnim( "enableAnim", "dd" );
@@ -409,6 +447,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetAnimState,				idActor::Event_GetAnimState )
 	EVENT( AI_InAnimState,				idActor::Event_InAnimState )
 	EVENT( AI_FinishAction,				idActor::Event_FinishAction )
+	EVENT( AI_FinishChannelAction,		idActor::Event_FinishChannelAction )
 	EVENT( AI_AnimDone,					idActor::Event_AnimDone )
 	EVENT( AI_OverrideAnim,				idActor::Event_OverrideAnim )
 	EVENT( AI_EnableAnim,				idActor::Event_EnableAnim )
@@ -2203,6 +2242,33 @@ const char *idActor::WaitState( void ) const {
 	}
 }
 
+
+const char *idActor::WaitState( int channel ) const 
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			return headAnim.WaitState();
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			return torsoAnim.WaitState();			
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			return legsAnim.WaitState();
+			break;
+
+		default:
+			gameLocal.Error( "idActor::WaitState: Unknown anim group" );
+			break;
+	}
+
+	return NULL;
+}
+
+
+
 /*
 =====================
 idActor::SetWaitState
@@ -2210,6 +2276,29 @@ idActor::SetWaitState
 */
 void idActor::SetWaitState( const char *_waitstate ) {
 	waitState = _waitstate;
+}
+
+void idActor::SetWaitState(int channel, const char *_waitstate)
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			headAnim.SetWaitState(_waitstate);
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			torsoAnim.SetWaitState(_waitstate);
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			legsAnim.SetWaitState(_waitstate);
+			break;
+
+		default:
+			gameLocal.Error( "idActor::SetWaitState: Unknown anim group" );
+			break;
+	}
+
 }
 
 /*
@@ -3557,6 +3646,27 @@ idActor::Event_FinishAction
 void idActor::Event_FinishAction( const char *actionname ) {
 	if ( waitState == actionname ) {
 		SetWaitState( "" );
+	}
+}
+
+void idActor::Event_FinishChannelAction( int channel, const char *actionname)
+{
+	switch( channel ) 
+	{
+		case ANIMCHANNEL_HEAD :
+			headAnim.FinishAction( actionname);
+			break;
+
+		case ANIMCHANNEL_TORSO :
+			torsoAnim.FinishAction( actionname);
+			break;
+
+		case ANIMCHANNEL_LEGS :
+			legsAnim.FinishAction( actionname );
+			break;
+
+		default:
+			gameLocal.Error( "Unknown anim group" );
 	}
 }
 

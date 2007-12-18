@@ -39,6 +39,7 @@ void DeadState::Init(idAI* owner)
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Death", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Death", 0);
+	owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Death", 0);
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.

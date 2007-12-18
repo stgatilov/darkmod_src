@@ -1761,9 +1761,19 @@ void idAI::Think( void )
 	{
 		idStr debugText("Torso: ");
 		debugText += GetAnimState(ANIMCHANNEL_TORSO);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_TORSO);
 		debugText += "\nLegs: ";
 		debugText += GetAnimState(ANIMCHANNEL_LEGS);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_LEGS);
+		debugText += "\nHead: ";
+		debugText += GetAnimState(ANIMCHANNEL_HEAD);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_LEGS);
 		debugText += "\n";
+
+
 		if (WaitState() != NULL)
 		{
 			debugText += idStr("Waitstate: ") + WaitState();
@@ -7156,16 +7166,6 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	float grace_frac;
 	int grace_count;
 
-	// If alert level is less than 3, sheathe weapon (if appropriate), otherwise draw it
-	if (newAlertLevel < thresh_3) 
-	{
-		SheathWeapon();
-	}
-	else 
-	{
-		DrawWeapon();
-	}
-
 	// How long should this alert level last, and which alert index should we be in now?
 	if (newAlertLevel >= thresh_3)
 	{
@@ -8355,6 +8355,9 @@ void idAI::Knockout( void )
 
 void idAI::PostKnockOut()
 {
+	headAnim.Disable();
+	legsAnim.Disable();
+	torsoAnim.Disable();
 	// make original self nonsolid
 	physicsObj.SetContents( 0 );
 	physicsObj.GetClipModel()->Unlink();

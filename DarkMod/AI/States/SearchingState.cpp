@@ -61,6 +61,8 @@ void SearchingState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
 	);
+
+	owner->SheathWeapon();
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)

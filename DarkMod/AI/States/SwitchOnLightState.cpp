@@ -66,7 +66,7 @@ void SwitchOnLightState::Init(idAI* owner)
 //		targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
 	
 		idVec3 size = owner->GetAAS()->GetSettings()->boundingBoxes[0][1];
-		idVec3 targetPoint = light->GetPhysics()->GetOrigin() + lightDirection * size.x / 2;
+		idVec3 targetPoint = light->GetPhysics()->GetOrigin() + lightDirection * size.x * 0.5;
 		idVec3 bottomPoint = targetPoint;
 		bottomPoint.z -= size.z + owner->GetArmReachLength();
 		
@@ -86,7 +86,6 @@ void SwitchOnLightState::Init(idAI* owner)
 			}
 		}
 	}
-
 }
 
 // Gets called each time the mind is thinking
