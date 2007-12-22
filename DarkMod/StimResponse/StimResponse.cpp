@@ -42,7 +42,7 @@ char *cStimType[] = {
 	"STIM_GAS",
 	"STIM_TRIGGER",
 	"STIM_TARGET_REACHED",
-	"STIM_THIEF",
+	"STIM_PLAYER",
 	"STIM_FLASH",
 	"STIM_BLIND",
 	NULL

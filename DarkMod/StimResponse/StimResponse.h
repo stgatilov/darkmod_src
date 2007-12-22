@@ -38,7 +38,7 @@ typedef enum {
 	ST_GAS,				// triggered by gas arrows
 	ST_TRIGGER,			// Triggered by triggering :)
 	ST_TARGET_REACHED,	// Emitted, if the AI has reached its target (induced by effect_moveToPosition)
-	ST_THIEF,			// The Stim emitted by the player
+	ST_PLAYER,			// The Stim emitted by the player
 	ST_FLASH,			// Emitted by flashbombs
 	ST_BLIND,			// A stim that immediately blinds the AI (no visibility is needed) - for use in flashmines
 	ST_USER				= 1000,	// User defined types should use this as it's base
