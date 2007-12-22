@@ -1568,6 +1568,16 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 	if ( noImpact ) {
 		return;
 	}
+
+	// greebo: Check if we have a master - if yes, propagate the impulse to it
+	if ( hasMaster ) {
+		idEntity* master = self->GetBindMaster();
+
+		assert(master != NULL); // Bind master must not be null
+
+		master->GetPhysics()->ApplyImpulse(id, point, impulse);
+	}
+
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( impulse );
 	Activate();
