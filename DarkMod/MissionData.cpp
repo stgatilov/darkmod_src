@@ -796,7 +796,11 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			pThread->CallFunction( pScriptFun, true );
 			pThread->DelayedStart( 0 );
 		}
-// TODO: Update the GUI to mark the objective as complete
+
+		// greebo: Call the general "objective complete" function on the player's scriptobject
+		player->CallScriptFunctionArgs("on_objective_complete", true, 0, "e", player);
+
+		// TODO: Update the GUI to mark the objective as complete
 	}
 
 	if( !m_SuccessLogic.IsEmpty() )
