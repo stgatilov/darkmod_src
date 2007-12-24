@@ -21,7 +21,7 @@ To actually compile, you can use the script:
 
   ./linuxBuild.sh
 
-If you have less than 2Gbyte memory, you might want to remove the "-j2"
+If you have less than 2 Gbyte memory, you might want to remove the "-j2"
 switch from the scons line. This switch makes scons run two compiler in
 parallel, and this eats quite a lot of memory and can result in very strange
 compiling errors.
@@ -44,7 +44,7 @@ However, these libraries do not come in a compatibility version, only in differe
 versions for each architecture.
 
 This means if you install them the regular way with your package manager, you
-will automatically get the 64bit libraries (f.i. amd64) on your system and this
+will automatically get the 64 bit libraries (f.i. amd64) on your system and this
 will cause errors like the following:
 
 	...  lib/bv/frustum_gcc.os -lIL
@@ -91,7 +91,7 @@ Troubleshooting
 If you still get linker errors from ld, please make sure that the libraries
 can be found under the right name under /lib32. Also, running:
 
-	sudo -s ldconfig
+	su ldconfig
 
 might help.
 
