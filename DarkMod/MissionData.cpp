@@ -836,6 +836,12 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 		pThread->DelayedStart( 0 );
 	}
 
+	idPlayer* player = static_cast<idPlayer*>(gameLocal.entities[gameLocal.localClientNum]);
+	assert(player != NULL);
+
+	// greebo: Call the general "objective complete" function on the player's scriptobject
+	player->CallScriptFunctionArgs("on_objective_failed", true, 0, "e", player);
+
 	if( !m_FailureLogic.IsEmpty() )
 		bTest = EvalBoolLogic( &m_FailureLogic, true );
 	else
