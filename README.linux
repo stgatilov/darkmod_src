@@ -91,7 +91,7 @@ Troubleshooting
 If you still get linker errors from ld, please make sure that the libraries
 can be found under the right name under /lib32. Also, running:
 
-	su ldconfig
+	sudo -s ldconfig
 
 might help.
 
