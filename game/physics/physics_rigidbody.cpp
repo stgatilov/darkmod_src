@@ -336,7 +336,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& im
 				continue;
 
 			DM_LOG(LC_ENTITY, LT_INFO).LogString("Propagating impulse to entity %s\r", pushed->name.c_str());
-			gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
+			//gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
 
 			rigidBodyPhysics->PropagateImpulse(touching[i].point, -touching[i].normal * impulseFractionLen);
 
