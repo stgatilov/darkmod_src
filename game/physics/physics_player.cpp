@@ -241,7 +241,8 @@ Returns true if the velocity was clipped in some way
 bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool push ) {
 	int			i, j, k, pushFlags;
 	int			bumpcount, numbumps, numplanes;
-	float		d, time_left, into, totalMass;
+	float		d, time_left, into;
+	float		totalMass = 0.0f;
 	idVec3		dir, planes[MAX_CLIP_PLANES];
 	idVec3		end, stepEnd, primal_velocity, endVelocity, endClipVelocity, clipVelocity;
 	trace_t		trace, stepTrace, downTrace;
@@ -987,11 +988,7 @@ void idPhysics_Player::RopeMove( void )
 	if( !m_RopeEntity.GetEntity() )
 	{
 		RopeDetach();
-#ifdef __linux__
-		return;
-#else
-		goto Quit;
-#endif
+		return; // early exit
 	}
 
 	ropePhys = static_cast<idPhysics_AF *>(m_RopeEntity.GetEntity()->GetPhysics());
@@ -1153,7 +1150,7 @@ void idPhysics_Player::RopeMove( void )
 	}
 
 	// detach the player from the rope if they jump, or if they hit crouch
-	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
+	if ( idPhysics_Player::CheckRopeJump() || common->ButtonState(UB_DOWN) ) 
 	{
 		RopeDetach();
 		goto Quit;
@@ -1322,14 +1319,10 @@ void idPhysics_Player::LadderMove( void )
 	ClimbNormXY.Normalize();
 
 	// jump off the climbable surface if they jump, or fall off if they hit crouch
-	if ( idPhysics_Player::CheckRopeJump() || command.upmove < 0 ) 
+	if ( idPhysics_Player::CheckRopeJump() || common->ButtonState(UB_DOWN) ) 
 	{
 		ClimbDetach();
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	}
 
 	NormalDot = ClimbNormXY * viewForward;
@@ -1337,11 +1330,7 @@ void idPhysics_Player::LadderMove( void )
 	if ( walking && -NormalDot * command.forwardmove < LADDER_WALKDETACH_DOT )
 	{
 		ClimbDetach();
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	}
 
 	// ====================== stick to the ladder ========================
@@ -1482,11 +1471,7 @@ void idPhysics_Player::LadderMove( void )
 		if( NormalDot < 0.0f && -wishvel * gravityNormal > 0 && delta.LengthSqr() < 25.0f )
 		{
 			ClimbDetach( true );
-#ifdef __linux__
-		return;
-#else
-		goto Quit;
-#endif
+			return;
 		}
 
 		accel = idMath::INFINITY;
@@ -1722,8 +1707,8 @@ void idPhysics_Player::CheckDuck( void ) {
 	if ( current.movementType == PM_DEAD ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
-		// stand up when up against a ladder or rope
-		if ( command.upmove < 0 && !m_bOnClimb && !m_bClimbableAhead && !m_bOnRope ) {
+		// stand up when climbing a ladder or rope
+		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope ) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		}
@@ -3441,7 +3426,7 @@ int idPhysics_Player::CalculateMantleCollisionDamage
 * Please see previous revision for the code that was here
 **/
 	// Return amount
-	return 0.0f;	
+	return 0;
 
 }
 
