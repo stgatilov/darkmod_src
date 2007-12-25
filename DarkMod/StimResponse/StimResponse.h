@@ -117,13 +117,13 @@ public:
 
 	/**
 	 * Defines the chance that this stim/response works. Whenever the S/R is activated
-	 * the chance determines wether it will do its job.
+	 * the chance determines whether it will do its job.
 	 */
 	float				m_Chance;
 
 	/**
 	 * Whenever the chance test failed, and the stim has a timer before it can be 
-	 * reused again, the ChanceTimer determines wether the timer should be used (true)
+	 * reused again, the ChanceTimer determines whether the timer should be used (true)
 	 * or not (default = -1).
 	 * This can be used to create a stim that has a chance of failure but needs time 
 	 * to recharge, bevore it can be used again, but the reuse timer may not always 

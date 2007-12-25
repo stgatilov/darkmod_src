@@ -58,7 +58,7 @@ public:
 	/**
 	 * Set the current item index.
 	 * Validation of the index is done when doing Nex/Prev Category
-	 * so we don't really care wether this is a valid index or not.
+	 * so we don't really care whether this is a valid index or not.
 	 */
 	inline void				SetCurrentItem(int Index) { m_CurrentItem = Index; }
 

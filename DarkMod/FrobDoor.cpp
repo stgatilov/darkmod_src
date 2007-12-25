@@ -966,7 +966,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 		// If the pin sample has been finished and we get the callback we check if
 		// the key is still pressed. If the user released the key in this intervall
-		// and we have to check wether it was the correct pin, and if yes, it will
+		// and we have to check whether it was the correct pin, and if yes, it will
 		// be unlocked.
 		case LPSOUND_RELEASED:
 		{
