@@ -895,6 +895,9 @@ protected:
 	void					Event_SetFrobable( bool bVal );
 	void					Event_IsHilighted( void );
 
+	// Frobs this entity.
+	void					Event_Frob();
+
 private:
 	idPhysics_Static		defaultPhysicsObj;					// default physics object
 	idPhysics *				physics;							// physics used for this entity

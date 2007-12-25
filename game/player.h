@@ -571,10 +571,16 @@ public:
 	**/
 	void					FrobCheck( void );
 
+	// Gets called when the player hits the frob button.
+	void					PerformFrob();
+
 	/**
-	 *
+	 * greebo: Performs a frob action on the given entity. The above method
+	 *         PerformFrob() without arguments redirects the call to this one.
+	 *         This method might be invoked by scripts as well to simulate a 
+	 *         frob action without having the player to hit any buttons.
 	 */
-	void					PerformFrob(void);
+	void					PerformFrob(idEntity* frobbed);
 
 	/**
 	 * AdjustLightgem will calculate how much the lightgem should light up.

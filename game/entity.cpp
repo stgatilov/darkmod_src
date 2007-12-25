@@ -207,6 +207,7 @@ const idEventDef EV_CopyBind( "copyBind", "e" );
 const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
 const idEventDef EV_SetFrobable( "setFrobable", "d" );
 const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
+const idEventDef EV_Frob("frob", NULL, 'd');
 
 // greebo: Script event to check whether this entity can see a target entity
 const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
@@ -363,6 +364,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_IsFrobable,			idEntity::Event_IsFrobable )
 	EVENT( EV_SetFrobable,			idEntity::Event_SetFrobable )
 	EVENT( EV_IsHilighted,			idEntity::Event_IsHilighted )
+	EVENT( EV_Frob,					idEntity::Event_Frob )
 	EVENT( EV_CanSeeEntity,			idEntity::Event_CanSeeEntity )
 
 END_CLASS
@@ -7545,6 +7547,16 @@ void idEntity::Event_SetFrobable( bool bVal )
 void idEntity::Event_IsFrobable( void )
 {
 	idThread::ReturnInt( (int) m_bFrobable );
+}
+
+void idEntity::Event_Frob()
+{
+	idPlayer* player = static_cast<idPlayer*>(gameLocal.entities[gameLocal.localClientNum]);
+	if (player != NULL)
+	{
+		// Let the player frob this entity.
+		player->PerformFrob(this);
+	}
 }
 
 void idEntity::Event_IsHilighted( void )
