@@ -9208,11 +9208,7 @@ void idPlayer::FrobCheck( void )
 			g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 
 			// we have found our frobbed entity, so exit
-#ifdef __linux__
 			return;
-#else
-			goto Quit;
-#endif
 		}
 	}
 
@@ -9271,7 +9267,6 @@ void idPlayer::FrobCheck( void )
 		g_Global.m_DarkModPlayer->m_FrobTrace = trace;
 	}
 
-Quit:
 	return;
 }
 

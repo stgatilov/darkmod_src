@@ -144,7 +144,7 @@ int COverlaySys::getNextOverlay( int handle )
 	else
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("getNextOverlay: Non-existant GUI handle: %d\r", handle);
-		goto Quit;
+		return retHandle;
 	}
 
 	if(oNode)
@@ -154,7 +154,6 @@ int COverlaySys::getNextOverlay( int handle )
 		retHandle = m_lastUsedHandle;
 	}
 
-Quit:
 	return retHandle;
 }
 
@@ -199,11 +198,7 @@ int COverlaySys::createOverlay( int layer, int handle )
 		if(!foundHandle)
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("No more handles available.\r");
-#ifdef __linux__
 			return retHandle;
-#else
-			goto Quit;
-#endif
 		}
 
 		m_nextHandle = handle + 1;
@@ -219,11 +214,7 @@ int COverlaySys::createOverlay( int layer, int handle )
 		{
 			// If the handle is unavailable, don't create anything.
 			if(oNode->Owner()->m_handle == handle)
-#ifdef __linux__
 				return retHandle;
-#else
-				goto Quit;
-#endif
 
 			oNode = oNode->NextNode();
 		}
@@ -246,7 +237,7 @@ int COverlaySys::createOverlay( int layer, int handle )
 	if(!overlay)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to allocate overlay.\r");
-		goto Quit;
+		return retHandle;
 	}
 
 	overlay->m_node.SetOwner( overlay );
@@ -258,10 +249,7 @@ int COverlaySys::createOverlay( int layer, int handle )
 	overlay->m_opaque = false;
 	overlay->m_interactive = false;
 
-	retHandle = handle;
-
-	Quit:
-	return retHandle;
+	return handle;
 }
 
 void COverlaySys::destroyOverlay( int handle )
@@ -496,21 +484,12 @@ SOverlay* COverlaySys::findOverlay( int handle, bool updateCache )
 	SOverlay* retVal = NULL;
 
 	if ( handle < OVERLAYS_MIN_HANDLE )
-#ifdef __linux__
 		return NULL;
-#else
-		goto Quit;
-#endif
 
 	// Are we looking for the same handle as last time?
 	if ( handle == m_lastUsedHandle )
 	{
-#ifdef __linux__
 		return m_lastUsedOverlay;
-#else
-		retVal = m_lastUsedOverlay;
-		goto Quit;
-#endif
 	}
 
 	idLinkList<SOverlay>* oNode = m_overlays.NextNode();
@@ -526,14 +505,13 @@ SOverlay* COverlaySys::findOverlay( int handle, bool updateCache )
 				m_lastUsedHandle = handle;
 				m_lastUsedOverlay = retVal;
 			}
-			goto Quit;
+			return retVal;
 		}
 
 		oNode = oNode->NextNode();
 	}
 
-Quit:
-	return retVal;
+	return NULL;
 }
 
 idLinkList<SOverlay>* COverlaySys::findOpaque()

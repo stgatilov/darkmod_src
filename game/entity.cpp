@@ -7288,44 +7288,34 @@ used by readables to bypass the 127 char limit on string variables in scripts.
 */
 void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity *src, const char *spawnArg )
 {
-	if ( !src )
+	if(!src)
 	{
 		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	}
 
 	if(!m_overlays.exists(handle))
 	{
 		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
-#ifdef __linux__
 		return;
-#else
-		goto Quit;
-#endif
 	}
 
 	idUserInterface *gui = m_overlays.getGui( handle );
 	if(!gui)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
-		goto Quit;
+		return;
 	}
 
 	if(!gui->IsUniqued())
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Non-existant GUI handle: %d\r", handle);
-		goto Quit;
+		return;
 	}
 
 	gui->SetStateString( key, src->spawnArgs.GetString( spawnArg, "" ) );
 	gui->StateChanged( gameLocal.time );
 
-	Quit:
-	return;
 }
 
 void idEntity::CallGui(int handle, const char *namedEvent)
@@ -7336,13 +7326,13 @@ void idEntity::CallGui(int handle, const char *namedEvent)
 		if(gui == NULL)
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, namedEvent);
-			goto Quit;
+			return;
 		}
 
 		if(!gui->IsUniqued())
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, namedEvent);
-			goto Quit;
+			return;
 		}
 
 		gui->HandleNamedEvent( namedEvent );
@@ -7352,8 +7342,6 @@ void idEntity::CallGui(int handle, const char *namedEvent)
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d [%s]\r", handle, namedEvent);
 	}
 
-Quit:
-	return;
 }
 
 /*
@@ -7495,13 +7483,10 @@ void idEntity::Event_TimerStop(int StimType)
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StopTimer: Stimtype-%d \r", StimType);
-	if(timer == NULL)
-		goto Quit;
-
-	timer->Stop();
-
-Quit:
-	return;
+	if(timer)
+	{
+		timer->Stop();
+	}
 }
 
 void idEntity::Event_TimerStart(int StimType)
@@ -7510,13 +7495,10 @@ void idEntity::Event_TimerStart(int StimType)
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("StartTimer: Stimtype-%d \r", StimType);
-	if(timer == NULL)
-		goto Quit;
-
-	timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
-
-Quit:
-	return;
+	if(timer)
+	{
+		timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
+	}
 }
 
 void idEntity::Event_TimerRestart(int StimType)
@@ -7525,13 +7507,10 @@ void idEntity::Event_TimerRestart(int StimType)
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("RestartTimer: Stimtype-%d \r", StimType);
-	if(timer == NULL)
-		goto Quit;
-
-	timer->Restart(static_cast<unsigned long>(sys->GetClockTicks()));
-
-Quit:
-	return;
+	if(timer)
+	{
+		timer->Restart(static_cast<unsigned long>(sys->GetClockTicks()));
+	}
 }
 
 void idEntity::Event_TimerReset(int StimType)
@@ -7540,13 +7519,10 @@ void idEntity::Event_TimerReset(int StimType)
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("ResetTimer: Stimtype-%d \r", StimType);
-	if(timer == NULL)
-		goto Quit;
-
-	timer->Reset();
-
-Quit:
-	return;
+	if(timer)
+	{
+		timer->Reset();
+	}
 }
 
 void idEntity::Event_TimerSetState(int StimType, int State)
@@ -7555,13 +7531,10 @@ void idEntity::Event_TimerSetState(int StimType, int State)
 	CStimResponseTimer *timer = (stim != NULL) ? stim->GetTimer() : NULL;
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("SetTimerState: Stimtype-%d State: %d\r", StimType, State);
-	if(timer == NULL)
-		goto Quit;
-
+	if(timer)
+	{
 	timer->SetState((CStimResponseTimer::TimerState)State);
-
-Quit:
-	return;
+	}
 }
 
 void idEntity::Event_SetFrobable( bool bVal )
@@ -7608,7 +7581,7 @@ SDK_SIGNAL idEntity::AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, 
 	SDKSignalInfo *s;
 
 	if(oFkt == NULL)
-		goto Quit;
+		return rc;
 
 	s = new SDKSignalInfo;
 	s->m_Object = this;
@@ -7621,7 +7594,6 @@ SDK_SIGNAL idEntity::AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, 
 
 	rc = s->m_Id;
 
-Quit:
 	return rc;
 }
 
@@ -7780,12 +7752,10 @@ void idEntity::Event_GetCursorItem(void)
 void idEntity::Event_AddItem(idEntity *item)
 {
 	if(item == NULL || name == NULL)
-		goto Quit;
+		return;
 
 	m_Inventory->PutItem(item, this);
 
-Quit:
-	return;
 }
 
 void idEntity::Event_GetGroupItem(const char *name, const char *group)
@@ -7864,11 +7834,11 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 	// Sanity check
 	if(ent == NULL)
-		goto Quit;
+		return rc;
 
 	// Check if we have an inventory item.
 	if(ent->spawnArgs.GetString("inv_name", "", s) == false)
-		goto Quit; // not an inventory item
+		return rc; // not an inventory item
 
 	// Add the new item to the Inventory (with <this> as owner)
 	rc = crsr->Inventory()->PutItem(ent, this);
@@ -7880,7 +7850,6 @@ CInventoryItem *idEntity::AddToInventory(idEntity *ent, idUserInterface *_hud)
 
 	StartSoundShader(declManager->FindSound(s), SCHANNEL_ANY, 0, false, &v);
 
-Quit:
 	return rc;
 }
 
@@ -8042,37 +8011,24 @@ void idEntity::Event_CreateOverlay( const char *guiFile, int layer )
 
 int idEntity::CreateOverlay(const char *guiFile, int layer)
 {
-	int rc = OVERLAYS_INVALID_HANDLE;
 	int handle = OVERLAYS_INVALID_HANDLE;
 
 	if(guiFile == NULL || guiFile[0] == 0)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Invalid GUI file name\r");
-#ifdef __linux__
-		return rc;
-#else
-		goto Quit;
-#endif
+		return OVERLAYS_INVALID_HANDLE;
 	}
 
 	if(!uiManager->CheckGui(guiFile))
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI file: [%s]\r", guiFile);
-#ifdef __linux__
-		return rc;
-#else
-		goto Quit;
-#endif
+		return OVERLAYS_INVALID_HANDLE;
 	}
 	handle = m_overlays.createOverlay( layer );
 	if(handle == OVERLAYS_INVALID_HANDLE)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to create overlay for GUI [%s]\r", guiFile);
-#ifdef __linux__
-		return rc;
-#else
-		goto Quit;
-#endif
+		return OVERLAYS_INVALID_HANDLE;
 	}
 
 	m_overlays.setGui(handle, guiFile);
@@ -8080,7 +8036,9 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	if(gui == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Unable to load GUI [%s] into overlay.\r", guiFile);
-		goto Quit;
+		// free handle, or we would leak
+		m_overlays.destroyOverlay(handle);
+		return OVERLAYS_INVALID_HANDLE;
 	}
 
 	gui->SetStateInt("handle", handle);
@@ -8088,16 +8046,7 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	// Let's set a good default value for whether or not the overlay is interactive.
 	m_overlays.setInteractive(handle, gui->IsInteractive());
 
-	rc = handle;
-
-Quit:
-	if(rc == OVERLAYS_INVALID_HANDLE)
-	{
-		if(handle != OVERLAYS_INVALID_HANDLE)
-			m_overlays.destroyOverlay(handle);
-	}
-
-	return rc;
+	return handle;
 }
 
 void idEntity::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *Prev)
@@ -8256,7 +8205,7 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 	idEntity *reroute(NULL);
 
 	if( !other || ((coll = GetStimResponseCollection()) == NULL) )
-		goto Quit;
+		return;
 	
 	if( other->IsType(idAFEntity_Base::Type) && body >= 0 )
 	{
@@ -8287,7 +8236,6 @@ void idEntity::ProcCollisionStims( idEntity *other, int body )
 		}
 	}
 
-Quit:
 	return;
 }
 
