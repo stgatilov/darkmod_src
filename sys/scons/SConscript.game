@@ -168,6 +168,7 @@ StimResponse/StimResponseTimer.cpp \
 AI/BasicMind.cpp \
 AI/Subsystem.cpp \
 AI/States/AgitatedSearchingState.cpp \
+AI/States/BlindedState.cpp \
 AI/States/CombatState.cpp \
 AI/States/DeadState.cpp \
 AI/States/EmergeFromCoverState.cpp \
