@@ -62,6 +62,7 @@ extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
+extern idCVar cv_pm_mantle_minflatness;
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
 

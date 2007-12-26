@@ -3734,7 +3734,7 @@ void idPhysics_Player::MantleTargetTrace
 		{
 			// Oops, this entity isn't mantleable
 			m_p_mantledEntity = NULL;
-			out_trace.fraction = 0.0f; // Pretend we didn't hit anything
+			out_trace.fraction = 1.0f; // Pretend we didn't hit anything
 		}
 	}
 
@@ -3842,7 +3842,6 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 			if (b_lastCollisionWasMantleable)
 			{
 				b_mantlePossible = true;
-				out_mantleEndPoint = testPosition;
 			}
 		}
 		else
@@ -3908,7 +3907,41 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 		}
 		
 	}
+	
+	// Don't mantle onto surfaces that are too steep.
+	// Any surface with an angle whose cosine is
+	// smaller than MIN_FLATNESS is too steep.
+	float minFlatness = cv_pm_mantle_minflatness.GetFloat();
+	if (b_mantlePossible)
+	{
+		// Attempt to get the normal of the surface we'd be standing on
+		// In rare cases this may not collide
+		trace_t floorTrace;
+		gameLocal.clip.Translation( floorTrace, testPosition,
+			testPosition+(gravityNormal*MANTLE_TEST_INCREMENT),
+			clipModel, clipModel->GetAxis(), clipMask, self );
+		
+		if (floorTrace.fraction < 1.0f)
+		{
+			// Uses the dot product to compare against the cosine of an angle.
+			// Comparing to cos(90)=0 means we can mantle on top of any surface
+			// Comparing to cos(0)=1 means we can only mantle on top of perfectly flat surfaces
 			
+			float flatness = floorTrace.c.normal * (-gravityNormal);
+			
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING(
+				"Floor %.2f,%.2f,%.2f; grav %.2f,%.2f,%.2f; dot %f; %s\n",
+				floorTrace.c.normal.x, floorTrace.c.normal.y, floorTrace.c.normal.z,
+				gravityNormal.x, gravityNormal.y, gravityNormal.z,
+				flatness, flatness < minFlatness ? "too steep" : "OK");
+			
+			if (flatness < minFlatness)
+			{
+				b_mantlePossible = false;
+			}
+		}
+	}
+	
 	// Must restore standing model if player is not crouched
 	if (!(current.movementFlags & PMF_DUCKED))
 	{
@@ -3927,6 +3960,10 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 	}
 
 	// Return result
+	if (b_mantlePossible)
+	{
+		out_mantleEndPoint = testPosition;
+	}
 	return b_mantlePossible;
 
 }
