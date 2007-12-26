@@ -619,6 +619,15 @@ public:
 	**/
 	int AddObjsFromEnt( idEntity *ent );
 
+	/**
+	 * greebo: This updates the given GUI overlay with the current
+	 *         missiondata (objectives state). Called by idPlayer class.
+	 *
+	 * @entity: The entity whose GUI should be updated (usually the player).
+	 * @overlayHandle: the handle of the GUI to be updated.
+	 */
+	void UpdateGUIState(idEntity* entity, int overlayHandle);
+
 // Events
 	/**
 	* The following are called internally when an objective completes or fails

@@ -4727,6 +4727,10 @@ void idPlayer::ToggleObjectivesGUI()
 	{
 		// Objectives GUI not yet open, create
 		objectiveGUIHandle = CreateOverlay(cv_tdm_objectives_gui.GetString(), LAYER_OBJECTIVES);
+		
+		// Update the GUI with the current data
+		gameLocal.m_MissionData->UpdateGUIState(this, objectiveGUIHandle);
+
 		SetImmobilization("obj_gui", EIM_OBJECTIVES_OPEN);
 		gameLocal.PauseGame(true);
 	}

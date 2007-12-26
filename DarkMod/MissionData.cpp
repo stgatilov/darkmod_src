@@ -2022,6 +2022,19 @@ Quit:
 	return bReturnVal;
 }
 
+void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle) 
+{
+	assert(entity != NULL); // don't accept NULL entities.
+
+	for (int i = 0; i < m_Objectives.Num(); i++) 
+	{
+		idStr prefix = va("obj%d", i+1);
+		entity->Event_SetGuiString(overlayHandle, prefix + "_text", m_Objectives[i].m_text);
+		entity->Event_SetGuiInt(overlayHandle, prefix + "_state", m_Objectives[i].m_state);
+		entity->Event_SetGuiInt(overlayHandle, prefix + "_visible", m_Objectives[i].m_bVisible);
+	}
+}
+
 void CObjective::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteString( m_text );
