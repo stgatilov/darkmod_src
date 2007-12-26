@@ -5152,6 +5152,11 @@ bool idPlayer::HandleESC( void ) {
 		return true;
 	}
 
+	if (objectiveGUIHandle > 0) {
+		ToggleObjectivesGUI();
+		return true; // TRUE = don't propagate ESC to system
+	}
+
 	if ( m_overlays.findInteractive() ) {
 		// Handle the escape?
 		// Not yet implemented.
