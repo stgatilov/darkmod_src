@@ -48,6 +48,8 @@ public:
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
 
+	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);
+
 	// Handles incoming visual stims coming from the given entity
 	virtual void OnVisualStim(idEntity* stimSource);
 

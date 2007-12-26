@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
 #include "CombatState.h"
+#include "BlindedState.h"
 #include "SwitchOnLightState.h"
 
 namespace ai
@@ -131,6 +132,37 @@ void State::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(_alertLevelDecreaseRate);
 }
 
+
+void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
+{
+	idAI* owner = _owner.GetEntity();
+
+	// Don't react if we are already blind
+	if (owner->GetAcuity("vis") == 0)
+	{
+		return;
+	}
+
+	if (!skipVisibilityCheck) 
+	{
+		// Perform visibility check
+		if (owner->CanSeeExt(stimSource, 1, 0))
+		{
+			// DEBUG_PRINT("AI blinded.");
+			owner->GetMind()->PushState(STATE_BLINDED);
+		}
+		else 
+		{
+			// DEBUG_PRINT("AI can't see the flash.");
+		}
+	}
+	else 
+	{
+		// Skip visibility check
+		owner->GetMind()->PushState(STATE_BLINDED);
+	}
+}
+
 void State::OnVisualStim(idEntity* stimSource)
 {
 	if (cv_ai_opt_novisualstim.GetBool()) 
@@ -145,9 +177,9 @@ void State::OnVisualStim(idEntity* stimSource)
 		return;
 	}
 
-	// Don't respond to NULL entities or when dead/knocked out and no enemy in sight
+	// Don't respond to NULL entities or when dead/knocked out/blind and no enemy in sight
 	if (stimSource == NULL || 
-		owner->AI_KNOCKEDOUT || owner->AI_DEAD ||
+		owner->AI_KNOCKEDOUT || owner->AI_DEAD || owner->GetAcuity("vis") == 0 ||
 		owner->GetEnemy() != NULL)
 	{
 		return;

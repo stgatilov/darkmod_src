@@ -1593,12 +1593,6 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 		return false;
 	}*/
 
-	// This will hold the results of the traces
-	trace_t result;
-
-	// eye position of the AI
-	idVec3 eye(GetEyePosition());
-
 	// The enemy's origin
 	idVec3 entityOrigin = ent->GetPhysics()->GetOrigin();
 
@@ -1608,6 +1602,12 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 		// FOV check failed
 		return false;
 	}
+
+	// This will hold the results of the traces
+	trace_t result;
+
+	// eye position of the AI
+	idVec3 eye(GetEyePosition());
 
 	// angua: If the target entity is an idActor,
 	// use its eyeposition, the origin and the shoulders

@@ -41,6 +41,7 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_HeardSound( "heardSound", "d", 'e' );
 // greebo: TDM Event: Try to find a visible AI of the given team
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
+const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
 const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
@@ -367,6 +368,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_FindEnemyInCombatNodes,			idAI::Event_FindEnemyInCombatNodes )
 	EVENT( AI_ClosestReachableEnemyOfEntity,	idAI::Event_ClosestReachableEnemyOfEntity )
 	EVENT( AI_FindFriendlyAI,					idAI::Event_FindFriendlyAI )
+	EVENT( AI_ProcessBlindStim,					idAI::Event_ProcessBlindStim )
 	EVENT( AI_ProcessVisualStim,				idAI::Event_ProcessVisualStim )
 	EVENT( AI_HeardSound,						idAI::Event_HeardSound )
 	EVENT( AI_SetEnemy,							idAI::Event_SetEnemy )
@@ -3543,6 +3545,12 @@ void idAI::Event_SwitchState(const char* state)
 void idAI::Event_EndState()
 {
 	idThread::ReturnInt(static_cast<int>(mind->EndState()));
+}
+
+
+void idAI::Event_ProcessBlindStim(idEntity* stimSource, int skipVisibilityCheck)
+{
+	mind->GetState()->OnBlindStim(stimSource, skipVisibilityCheck != 0);
 }
 
 void idAI::Event_ProcessVisualStim(idEntity* stimSource)
