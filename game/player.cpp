@@ -6147,6 +6147,26 @@ void idPlayer::Think( void )
 
 	// determine if portal sky is in pvs
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
+
+	// greebo: Check if the objectives GUI requires attention
+	if (objectiveGUIHandle > 0)
+	{
+		idStr state(m_overlays.getGui(objectiveGUIHandle)->GetStateString("cmd"));
+
+		if (state == "close")
+		{
+			ToggleObjectivesGUI();
+		}
+
+		// greebo: This doesn't work for some obscure reason (the "togglemenu" command is not executable).
+		/*else if (state == "togglemenu")
+		{
+			// Execute the main menu command
+			cmdSystem->BufferCommandText(CMD_EXEC_NOW, "togglemenu\n");
+			cmdSystem->ExecuteCommandBuffer();
+			Event_SetGuiString(objectiveGUIHandle, "cmd", "");
+		}*/
+	}
 }
 
 /*
