@@ -4721,6 +4721,25 @@ void idPlayer::UseVehicle( void ) {
 	}
 }
 
+void idPlayer::ToggleObjectivesGUI() 
+{
+	if (objectiveGUIHandle == 0)
+	{
+		// Objectives GUI not yet open, create
+		objectiveGUIHandle = CreateOverlay(cv_tdm_objectives_gui.GetString(), LAYER_OBJECTIVES);
+		SetImmobilization("obj_gui", EIM_OBJECTIVES_OPEN);
+		gameLocal.PauseGame(true);
+	}
+	else 
+	{
+		// GUI already open (handle is non-zero), destroy
+		DestroyOverlay(objectiveGUIHandle);
+		objectiveGUIHandle = 0;
+		SetImmobilization("obj_gui", 0);
+		gameLocal.PauseGame(false);
+	}
+}
+
 /*
 ==============
 idPlayer::PerformImpulse
@@ -4811,19 +4830,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
-			if (objectiveGUIHandle == 0)
-			{
-				// Objectives GUI not yet open, create
-				objectiveGUIHandle = CreateOverlay(cv_tdm_objectives_gui.GetString(), LAYER_OBJECTIVES);
-				gameLocal.PauseGame(true);
-			}
-			else 
-			{
-				// GUI already open (handle is non-zero), destroy
-				DestroyOverlay(objectiveGUIHandle);
-				objectiveGUIHandle = 0;
-				gameLocal.PauseGame(false);
-			}
+			ToggleObjectivesGUI();
 			break;
 		}
 		case IMPULSE_20:

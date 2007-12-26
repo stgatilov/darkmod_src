@@ -112,6 +112,8 @@ enum {
 	EIM_ITEM_SELECT			= BIT(11),	// Selecting items.
 	EIM_ITEM_DROP			= BIT(12),	// Dropping inventory items.
 };
+// greebo: The immobilisation mask during objectives GUI display
+const int EIM_OBJECTIVES_OPEN = EIM_ALL;
 
 typedef struct {
 	int		time;
@@ -502,6 +504,10 @@ public:
 	void					Spectate( bool spectate );
 	void					TogglePDA( void );
 	void					ToggleScoreboard( void );
+
+	// greebo: Toggles the objectives GUI
+	void					ToggleObjectivesGUI();
+
 	void					RouteGuiMouse( idUserInterface *gui );
 	void					UpdateHud( void );
 	const idDeclPDA *		GetPDA( void ) const;
