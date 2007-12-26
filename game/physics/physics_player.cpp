@@ -1525,9 +1525,6 @@ void idPhysics_Player::LadderMove( void )
 	current.velocity += m_RefEntVelocity;
 
 	idPhysics_Player::SlideMove( false, ( command.forwardmove > 0 ), false, false );
-
-Quit:
-	return;
 }
 
 /*
@@ -1537,7 +1534,6 @@ idPhysics_Player::CorrectAllSolid
 */
 void idPhysics_Player::CorrectAllSolid( trace_t &trace, int contents ) {
 	if ( debugLevel ) {
-		
 		gameLocal.Printf( "%i:allsolid\n", c_pmove );
 	}
 

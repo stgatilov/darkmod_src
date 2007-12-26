@@ -222,8 +222,9 @@ public:
 
 	idEntityPtr<idWeapon>	weapon;
 	idUserInterface *		hud;				// MP: is NULL if not local player
-	idUserInterface *		objectiveSystem;
-	bool					objectiveSystemOpen;
+	idUserInterface *		objectiveSystem;	 // not used by TDM (only for PDA)
+	bool					objectiveSystemOpen; // not used by TDM (only for PDA)
+	int						objectiveGUIHandle; // is non-zero if objective system is open
 
 	int						weapon_soulcube;
 	int						weapon_pda;

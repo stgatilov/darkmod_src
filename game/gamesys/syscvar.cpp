@@ -173,6 +173,9 @@ idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR
 idCVar cv_tdm_rope_pull_force_factor("tdm_rope_pull_force_factor", "140", CVAR_GAME | CVAR_ARCHIVE, "The factor by which the pulling force when jumping on a rope gets multiplied.");
 
 idCVar cv_tdm_underwater_blur("tdm_underwater_blur", "3", CVAR_GAME | CVAR_ARCHIVE, "The strength of the blur effect when the player is underwater.");
+
+idCVar cv_tdm_objectives_gui("tdm_objectives_gui", "guis/objectives.gui", CVAR_GAME | CVAR_ARCHIVE, "The GUI file to use for the objectives display (relative to darkmod root).");
+
 /**
 * DarkMod movement volumes.  Walking volume is zero dB, other volumes are added to that
 **/
