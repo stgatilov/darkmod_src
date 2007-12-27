@@ -2031,13 +2031,63 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 		return; // invalid handle, do nothing
 	}
 
+	// Get the number of visible objectives
+	int numVisibleObjectives(0);
+
 	for (int i = 0; i < m_Objectives.Num(); i++) 
 	{
 		idStr prefix = va("obj%d", i+1);
+
+		if (m_Objectives[i].m_bVisible) {
+			numVisibleObjectives++;
+		}
+	}
+
+	ui->SetStateInt("NumVisibleObjectives", numVisibleObjectives);
+
+	int numObjectivesPerPage = 5;
+
+	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
+
+	// Check which buttons should be visible
+	bool nextButtonVisible = (startIdx + numObjectivesPerPage < numVisibleObjectives);
+	bool prevButtonVisible = (startIdx > 0);
+
+	ui->SetStateInt("ScrollDownVisible", nextButtonVisible ? 1 : 0);
+	ui->SetStateInt("ScrollUpVisible", prevButtonVisible ? 1 : 0);
+
+	//gameLocal.Printf("Starting index %d\n", startIdx);
+
+	int objCount(0); // number of objectives added
+	int objToSkip(startIdx); // number of objectives to skip
+
+	// Go through all objectives and add the visible ones
+	for (int i = 0; i < m_Objectives.Num(); i++) 
+	{
+		if (!m_Objectives[i].m_bVisible) {
+			continue; // skip invisible ones
+		}
+
+		if (objToSkip > 0) {
+			objToSkip--;
+			continue;
+		}
+
+		idStr prefix = va("obj%d", objCount+1);
+
 		ui->SetStateString(prefix + "_text", m_Objectives[i].m_text);
 		ui->SetStateInt(prefix + "_state", m_Objectives[i].m_state);
 		ui->SetStateInt(prefix + "_visible", m_Objectives[i].m_bVisible);
+
+		objCount++; // one more added
+
+		if (objCount >= numObjectivesPerPage) {
+			break; // enough
+		}
 	}
+
+	// Force a redraw
+	ui->StateChanged(gameLocal.time, true);
 }
 
 void CObjective::Save( idSaveGame *savefile ) const
