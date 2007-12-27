@@ -797,10 +797,8 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 			pThread->DelayedStart( 0 );
 		}
 
-		// greebo: Call the general "objective complete" function on the player's scriptobject
-		player->CallScriptFunctionArgs("on_objective_complete", true, 0, "e", player);
-
-		// TODO: Update the GUI to mark the objective as complete
+		// greebo: Notify the player
+		player->SendHUDMessage("Objective complete");
 	}
 
 	if( !m_SuccessLogic.IsEmpty() )
@@ -841,8 +839,8 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 
 	player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
 
-	// greebo: Call the general "objective failed" function on the player's scriptobject
-	player->CallScriptFunctionArgs("on_objective_failed", true, 0, "e", player);
+	// greebo: notify the player
+	player->SendHUDMessage("Objective failed");
 
 	if( !m_FailureLogic.IsEmpty() )
 		bTest = EvalBoolLogic( &m_FailureLogic, true );
