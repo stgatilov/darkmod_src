@@ -2031,59 +2031,42 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 		return; // invalid handle, do nothing
 	}
 
-	// Get the number of visible objectives
-	int numVisibleObjectives(0);
+	// The list of indices of visible, applicable objectives
+	idList<int> objIndices;
 
 	for (int i = 0; i < m_Objectives.Num(); i++) 
 	{
 		idStr prefix = va("obj%d", i+1);
 
-		if (m_Objectives[i].m_bVisible) {
-			numVisibleObjectives++;
+		if (m_Objectives[i].m_bVisible && m_Objectives[i].m_bApplies) {
+			objIndices.Append(i);
 		}
 	}
 
-	ui->SetStateInt("NumVisibleObjectives", numVisibleObjectives);
+	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 
 	int numObjectivesPerPage = 5;
 
 	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
 
 	// Check which buttons should be visible
-	bool nextButtonVisible = (startIdx + numObjectivesPerPage < numVisibleObjectives);
+	bool nextButtonVisible = (startIdx + numObjectivesPerPage < objIndices.Num());
 	bool prevButtonVisible = (startIdx > 0);
 
 	ui->SetStateInt("ScrollDownVisible", nextButtonVisible ? 1 : 0);
 	ui->SetStateInt("ScrollUpVisible", prevButtonVisible ? 1 : 0);
 
-	//gameLocal.Printf("Starting index %d\n", startIdx);
-
-	int objCount(0); // number of objectives added
-	int objToSkip(startIdx); // number of objectives to skip
-
-	// Go through all objectives and add the visible ones
-	for (int i = 0; i < m_Objectives.Num(); i++) 
+	for (int i = startIdx, objCount = 0; 
+		 i < objIndices.Num() && objCount < numObjectivesPerPage; 
+		 i++, objCount++)
 	{
-		if (!m_Objectives[i].m_bVisible) {
-			continue; // skip invisible ones
-		}
-
-		if (objToSkip > 0) {
-			objToSkip--;
-			continue;
-		}
+		int index = objIndices[i];
 
 		idStr prefix = va("obj%d", objCount+1);
 
-		ui->SetStateString(prefix + "_text", m_Objectives[i].m_text);
-		ui->SetStateInt(prefix + "_state", m_Objectives[i].m_state);
-		ui->SetStateInt(prefix + "_visible", m_Objectives[i].m_bVisible);
-
-		objCount++; // one more added
-
-		if (objCount >= numObjectivesPerPage) {
-			break; // enough
-		}
+		ui->SetStateString(prefix + "_text", m_Objectives[index].m_text);
+		ui->SetStateInt(prefix + "_state", m_Objectives[index].m_state);
+		ui->SetStateInt(prefix + "_visible", m_Objectives[index].m_bVisible);
 	}
 
 	// Force a redraw
