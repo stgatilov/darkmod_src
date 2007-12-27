@@ -785,6 +785,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	g_Global.m_DarkModPlayer->Save(&savegame);
 
 	savegame.Close();
+
+	// Send a message to the HUD
+	GetLocalPlayer()->SendHUDMessage("Game Saved");
 }
 
 /*

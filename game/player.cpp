@@ -779,7 +779,6 @@ void idPlayer::Spawn( void )
 	else
 		gameLocal.Warning( "Unable to create overlay for HUD.\n" );
 
-
 	SetLastHitTime( 0 );
 
 	// load the armor sound feedback
@@ -858,6 +857,8 @@ void idPlayer::Spawn( void )
 	{
 		UpdateHudWeapon();
 		hud->StateChanged( gameLocal.time );
+		// greebo: Initialise the Message code on the HUD
+		hud->HandleNamedEvent("SetupMessageSystem");
 	}
 
 	tipUp = false;
@@ -1103,6 +1104,12 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
 	savefile->WriteInt(objectiveGUIHandle);
+
+	savefile->WriteInt(hudMessages.Num());
+	for (int i = 0; i < hudMessages.Num(); i++) 
+	{
+		savefile->WriteString(hudMessages[i]);
+	}
 
 	savefile->WriteInt( weapon_soulcube );
 	savefile->WriteInt( weapon_pda );
@@ -1368,6 +1375,14 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
 	savefile->ReadInt(objectiveGUIHandle);
+
+	savefile->ReadInt(num);
+	hudMessages.Clear();
+	hudMessages.SetNum(num);
+	for (i = 0; i < num; i++) 
+	{
+		savefile->ReadString(hudMessages[i]);
+	}
 
 	savefile->ReadInt( weapon_soulcube );
 	savefile->ReadInt( weapon_pda );
@@ -5804,6 +5819,35 @@ void idPlayer::UpdateHud( void ) {
 	// Trigger an update of the HUD
 	// TODO: This shouldn't be called so often, so cache this
 	inventoryChangeSelection(hud, true);
+
+	// Check if any HUD messages are pending
+	UpdateHUDMessages();
+}
+
+void idPlayer::UpdateHUDMessages()
+{
+	if (hudMessages.Num() == 0) {
+		return; // nothing to do
+	}
+
+	// We have a message to display, check if the HUD is ready for it
+	if (hud == NULL) {
+		return; // no HUD?
+	}
+
+	int hasMessage = hud->GetStateInt("HasMessage");
+
+	if (hasMessage == 1) {
+		// The HUD is still busy, leave it for the moment being
+		return; 
+	}
+
+	// grebo: We have a message and the HUD is ready, shove it into the GUI.
+	hud->SetStateString("MessageText", hudMessages[0]);
+	hud->HandleNamedEvent("DisplayMessage");
+
+	// Remove the first string, now that it's been moved into the GUI
+	hudMessages.RemoveIndex(0);
 }
 
 /*
@@ -9695,4 +9739,13 @@ void idPlayer::Event_ReadLightgemModifierFromWorldspawn()
 	}
 
 	Event_SetLightgemModifier("world", modifierValue);
+}
+
+void idPlayer::SendHUDMessage(const idStr& text)
+{
+	if (text.IsEmpty()) {
+		return;
+	}
+
+	hudMessages.Append(text);
 }
