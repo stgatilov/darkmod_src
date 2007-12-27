@@ -356,7 +356,7 @@ void CMissionData::MissionEvent
 		bool bBoolArg
 	)
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Mission event called \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Mission event called \r");
 	SStat *pStat(NULL);
 	bool bCompState;
 
@@ -372,7 +372,7 @@ void CMissionData::MissionEvent
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) && bBoolArg )
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Determined AI event \r");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Determined AI event \r");
 		if( CompType == COMP_ALERT )
 		{
 			if( EntDat1->value > MAX_ALERTNUMS )
@@ -388,7 +388,7 @@ void CMissionData::MissionEvent
 
 		if( CompType > MAX_AICOMP || !pStat)
 		{
-			DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Objectives: No AI stat found for comptype %d\r", CompType );
+			DM_LOG(LC_OBJECTIVES,LT_ERROR)LOGSTRING("Objectives: No AI stat found for comptype %d\r", CompType );
 			goto Quit;
 		}
 
@@ -401,7 +401,7 @@ void CMissionData::MissionEvent
 		if( EntDat1->bWhileAirborne )
 			pStat->WhileAirborne++;
 
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Done adding to stats, checking for objectives...\r" );
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Done adding to stats, checking for objectives...\r" );
 	}
 
 	// Update pickpocket stat
@@ -421,28 +421,28 @@ void CMissionData::MissionEvent
 			// match component type
 			if( pComp->m_Type != CompType )
 				continue;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i+1, j+1 );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Matching Component found: %d, %d\r", i+1, j+1 );
 
 			// check if the specifiers match, for first spec and second if it exists
 			if( !MatchSpec(pComp, EntDat1, 0) )
 				continue;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: First specification check matched: %d, %d\r", i+1, j+1 );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: First specification check matched: %d, %d\r", i+1, j+1 );
 
 			if( pComp->m_SpecMethod[1] != SPEC_NONE )
 			{
 				if( !MatchSpec(pComp, EntDat2, 1) )
 					continue;
 			}
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Second specification check matched or absent: %d, %d\r", i+1, j+1 );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Second specification check matched or absent: %d, %d\r", i+1, j+1 );
 
 			bCompState = EvaluateObjective( pComp, EntDat1, EntDat2, bBoolArg );
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective component evaluation result: %d \r", (int) bCompState );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective component evaluation result: %d \r", (int) bCompState );
 
 			// notify the component of the current state. If the state changed,
 			// this will return true and we must mark this objective for update.
 			if( pComp->SetState( bCompState ) )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i+1, j+1 );
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i+1, j+1 );
 				pObj->m_bNeedsUpdate = true;
 				m_bObjsNeedUpdate = true;
 			}
@@ -661,7 +661,7 @@ void CMissionData::UpdateObjectives( void )
 
 			if( !ent1 || !ent2 )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str(), pComp->m_Args[1].c_str() );
+				DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("Objective %d, component %d: Distance objective component given bad entity names %s , %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str(), pComp->m_Args[1].c_str() );
 				continue;
 			}
 
@@ -685,7 +685,7 @@ void CMissionData::UpdateObjectives( void )
 			checkEnt = gameLocal.FindEntity( pComp->m_SpecVal[0].c_str() );
 			if( !checkEnt )
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_location objective could not find entity: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_SpecVal[0].c_str() );
+				DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("Objective %d, component %d: Info_location objective could not find entity: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_SpecVal[0].c_str() );
 				continue;
 			}
 
@@ -716,7 +716,7 @@ void CMissionData::UpdateObjectives( void )
 			}
 			else
 			{
-				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str() );
+				DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("Objective %d, component %d: Custom clocked objective called bad script: %s \r", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str() );
 				gameLocal.Printf("WARNING: Objective %d, component %d: Custom clocked objective called bad script: %s \n", pComp->m_Index[0], pComp->m_Index[1], pComp->m_Args[0].c_str() );
 			}
 		}
@@ -729,7 +729,7 @@ void CMissionData::UpdateObjectives( void )
 		goto Quit;
 	m_bObjsNeedUpdate = false;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objectives in need of updating \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objectives in need of updating \r");
 
 	for( int i=0; i<m_Objectives.Num(); i++ )
 	{
@@ -739,7 +739,7 @@ void CMissionData::UpdateObjectives( void )
 		if( !pObj->m_bNeedsUpdate || pObj->m_state == STATE_INVALID )
 			continue;
 		pObj->m_bNeedsUpdate = false;
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i+1);
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Found objective in need of update: %d \r", i+1);
 
 		// If objective was just completed
 		if( pObj->CheckSuccess() )
@@ -758,12 +758,12 @@ void CMissionData::UpdateObjectives( void )
 			if( !bObjEnabled )
 				goto Quit;
 
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
 			SetCompletionState( i, STATE_COMPLETE );
 		}
 		else if( pObj->CheckFailure() )
 		{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
 				SetCompletionState(i, STATE_FAILED );
 		}
 		else
@@ -858,7 +858,7 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 
 void CMissionData::Event_MissionComplete( void )
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
 	gameLocal.Printf("MISSION COMPLETED\n");
 
 	// TODO: Go to mission successful GUI
@@ -874,7 +874,7 @@ void CMissionData::Event_MissionComplete( void )
 
 void CMissionData::Event_MissionFailed( void )
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
@@ -1017,7 +1017,7 @@ Quit:
 
 void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState )
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("SetComponentState: Called for obj %d, comp %d, state %d. \r", ObjIndex, CompIndex, (int) bState );
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("SetComponentState: Called for obj %d, comp %d, state %d. \r", ObjIndex, CompIndex, (int) bState );
 
 	// Offset the indices into "internal" values (start at 0)
 	ObjIndex--;
@@ -1025,12 +1025,12 @@ void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bSta
 
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
 		goto Quit;
 	}
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		goto Quit;
 	}
 
@@ -1049,13 +1049,13 @@ void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
 
 	if( !pComp )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("SetComponentState: NULL component found \r" );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: NULL component found \r" );
 		goto Quit;
 	}
 
 	if( pComp->SetState( bState ) )
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("SetComponentState: Objective %d, Component %d state changed, needs updating", (ObjIndex+1), (CompIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("SetComponentState: Objective %d, Component %d state changed, needs updating", (ObjIndex+1), (CompIndex+1) );
 		m_Objectives[ObjIndex].m_bNeedsUpdate = true;
 		m_bObjsNeedUpdate = true;
 	}
@@ -1081,7 +1081,7 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt was made to set completion state of invalid objective index: %d \r", ObjIndex );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("Attempt was made to set completion state of invalid objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to set completion state of invalid objective index: %d \n", ObjIndex);
 		goto Quit;
 	}
@@ -1089,7 +1089,7 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 	// check if the state int is valid by comparing to highest number in enum
 	if( State < 0 || State > STATE_FAILED )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("Attempt was made to set objective index: %d to invalid completion state: %d \r", ObjIndex, State);
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("Attempt was made to set objective index: %d to invalid completion state: %d \r", ObjIndex, State);
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to set objective index: %d to invalid completion state: %d \n", ObjIndex, State);
 		goto Quit;
 	}
@@ -1097,7 +1097,7 @@ void CMissionData::SetCompletionState( int ObjIndex, int State )
 	pObj = &m_Objectives[ObjIndex];
 	if( !pObj )
 	{
-		DM_LOG(LC_AI,LT_ERROR)LOGSTRING("SetCompletionState: NULL Objective found for obj %d \r", ObjIndex );
+		DM_LOG(LC_OBJECTIVES,LT_ERROR)LOGSTRING("SetCompletionState: NULL Objective found for obj %d \r", ObjIndex );
 		goto Quit;
 	}
 
@@ -1136,7 +1136,7 @@ int CMissionData::GetCompletionState( int ObjIndex )
 
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to get completion state of invalid objective index: %d \n", ObjIndex);
 		goto Quit;
 	}
@@ -1153,13 +1153,13 @@ bool CMissionData::GetComponentState( int ObjIndex, int CompIndex )
 
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective System: GetComponentState: Objective num %d out of bounds. \n", (ObjIndex+1) );
 		goto Quit;
 	}
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("GetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective System: GetComponentState: Component num %d out of bounds for objective %d. \n", (CompIndex+1), (ObjIndex+1) );
 		goto Quit;
 	}
@@ -1174,7 +1174,7 @@ void CMissionData::UnlatchObjective( int ObjIndex )
 {
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch an invalid objective index: %d \n", ObjIndex);
 		goto Quit;
 	}
@@ -1189,14 +1189,14 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 {
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch a component of invalid objective index: %d \n", ObjIndex);
 		goto Quit;
 	}
 
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("UnlatchObjective: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
+		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("UnlatchObjective: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to unlatch invalid component: %d of objective: %d \n", (CompIndex+1), (ObjIndex+1) );
 		goto Quit;
 	}
@@ -1361,11 +1361,11 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			// use comp. type hash to convert text type to EComponentType
 			idStr TypeString = args->GetString( StrTemp2 + "type", "");
 			int TypeNum = m_CompTypeHash.First(m_CompTypeHash.GenerateKey( TypeString, false ));
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parsing objective component type '%s', typenum %d \r", TypeString.c_str(), TypeNum );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Parsing objective component type '%s', typenum %d \r", TypeString.c_str(), TypeNum );
 
 			if( TypeNum == -1 )
 			{
-				DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
+				DM_LOG(LC_OBJECTIVES,LT_ERROR)LOGSTRING("Unknown objective component type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
 				gameLocal.Printf("Objective System Error: Unknown objective component type '%s' when adding objective %d, component %d.  Objective component ignored. \n", TypeString.c_str(), Counter, Counter2 );
 				continue;
 			}
@@ -1379,7 +1379,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 				if( SpecNum == -1 )
 				{
-					DM_LOG(LC_AI,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
+					DM_LOG(LC_OBJECTIVES,LT_ERROR)LOGSTRING("Unknown objective component specification type '%s' when adding objective %d, component %d \r", TypeString.c_str(), Counter, Counter2 );
 					gameLocal.Printf("Objective System Error: Unknown objective component specification type '%s' when adding objective %d, component %d.  Setting default specifier type 'none' \n", TypeString.c_str(), Counter, Counter2 );
 					SpecNum = 0;
 				}
@@ -1512,7 +1512,7 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 
 	MissionEvent( COMP_ITEM, &Parms, bPickedUp );
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Inventory Callback: Overall loot value %d\r", OverallVal );
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Inventory Callback: Overall loot value %d\r", OverallVal );
 	
 	// Also call the pickocket event if stolen from living AI
 	if( bPickedUp && ent != NULL && ent->GetBindMaster() )
@@ -1591,16 +1591,16 @@ bool CObjective::CheckFailure( void )
 bool CObjective::CheckSuccess( void )
 {
 	bool bTest(true);
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Check Success Called \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Check Success Called \r");
 
 	if( !m_SuccessLogic.IsEmpty() )
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating custom success logic \r");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating custom success logic \r");
 		bTest = gameLocal.m_MissionData->EvalBoolLogic( &m_SuccessLogic, false, m_ObjNum );
 	}
 	else
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating default success logic \r");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating default success logic \r");
 		// Default logic: All components must be true to succeed
 		for( int j=0; j < m_Components.Num(); j++ )
 		{
@@ -1694,26 +1694,26 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 	output->PrevNode = NULL;
 	CurrentNode = output;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing string: %s \r", input->c_str() );
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Outer parse node is %08lx \r", CurrentNode);
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing string: %s \r", input->c_str() );
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Outer parse node is %08lx \r", CurrentNode);
 
 	src.LoadMemory( input->c_str(), input->Length(), "" );
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Loaded memory to lexer \r" );
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Loaded memory to lexer \r" );
 
 	while( src.ReadToken( &token ))
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing token: %s At level: %d \r", token.c_str(), level );
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing token: %s At level: %d \r", token.c_str(), level );
 		if( level < 0 )
 		{
 			gameLocal.Printf("[Objective Logic] ERROR: Unbalanced parenthesis, found unexpected \")\" \n"); 
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, found unexpected \")\" \r");
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, found unexpected \")\" \r");
 			goto Quit;
 		}
 
 		// New parse node (identifier or parenthesis)
 		if( token.IsNumeric() || (token.Cmp( "(" ) == 0) )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] New parse node ( identifier or \"(\" ) \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] New parse node ( identifier or \"(\" ) \r" );
 			bFollowingOperator = false;
 
 			SBoolParseNode NewNode;
@@ -1721,7 +1721,7 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 			NewNode.PrevRow = row;
 			NewNode.PrevCol = col;
 			NewNode.PrevNode = CurrentNode;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Parse: New node at %d, %d, points at previous node: %08lx \r", row, col, CurrentNode);
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Parse: New node at %d, %d, points at previous node: %08lx \r", row, col, CurrentNode);
 
 			if( token.IsNumeric() )
 			{
@@ -1730,7 +1730,7 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 			}
 
 			// Add node to the appropriate point in the matrix-tree - same for leaves and branches
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Adding new node to matrix-tree \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Adding new node to matrix-tree \r" );
 			if( bColAdvanced )
 			{
 				idList< SBoolParseNode > NewCol;
@@ -1746,7 +1746,7 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 			else
 			{
 				gameLocal.Printf("[Objective Logic] ERROR: Unexpected identifier found \n");
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unexpected identifier found \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unexpected identifier found \r");
 				goto Quit;
 			}
 
@@ -1776,12 +1776,12 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 
 		else if( token.Icmp( "AND" ) == 0 )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing AND operator \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing AND operator \r" );
 
 			if( bFollowingOperator || !bOperatorOK )
 			{
 				gameLocal.Printf("[Objective Logic] ERROR: Found unexpected operator AND \n");
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator AND \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator AND \r");
 				goto Quit;
 			}
 			bFollowingOperator = true;
@@ -1793,12 +1793,12 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 
 		else if( token.Icmp( "OR" ) == 0 )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing OR operator \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing OR operator \r" );
 
 			if( bFollowingOperator || !bOperatorOK )
 			{
 				gameLocal.Printf("[Objective Logic] ERROR: Found unexpected operator OR \n");
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator OR \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Found unexpected operator OR \r");
 				goto Quit;
 			}
 
@@ -1811,18 +1811,18 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 
 		else if( token.Icmp( "NOT" ) == 0 )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing NOT operator \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing NOT operator \r" );
 			bNOTed = true;
 			bOperatorOK = false;
 		} // NOT
 
 		else if( token.Cmp( ")" ) == 0 )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing \")\" \r" );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing \")\" \r" );
 			if( bFollowingOperator )
 			{
 				gameLocal.Printf("[Objective Logic] ERROR: Identifier expected, found \")\" \n");
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
 				goto Quit;
 			}
 
@@ -1830,7 +1830,7 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 			if( CurrentNode->Cols.Num() == 0 )
 			{
 				gameLocal.Printf("[Objective Logic] ERROR: Identifier expected, found \")\" \n");
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Identifier expected, found \")\" \r");
 				goto Quit;
 			}
 		
@@ -1845,31 +1845,31 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 		else
 		{
 			gameLocal.Printf("[Objective Logic] ERROR: Unrecognized token: %s \n", token.c_str() ); 
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unrecognized token: %s \r", token.c_str() ); 
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unrecognized token: %s \r", token.c_str() ); 
 			goto Quit;
 		}
 	}
 
 
 // Finished parsing
-DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Reached EOF \r");
+DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Reached EOF \r");
 
 if( level != 0 )
 	{
 		gameLocal.Printf("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \n");
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \r");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Unbalanced parenthesis, expected \")\" not found \r");
 		goto Quit;
 	}
 
 if( bFollowingOperator )
 	{
 		gameLocal.Printf("[Objective Logic] ERROR: Expected identifier, found EOF \n");
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Expected identifier, found EOF \n");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] ERROR: Expected identifier, found EOF \n");
 		goto Quit;
 	}
 
 	// Successfully parsed
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Successfully parsed \r");
+	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Successfully parsed \r");
 	bReturnVal = true;
 
 Quit:
@@ -1924,14 +1924,14 @@ When we advance to the next matrix spot, it can happen in two ways:
 
 	while( level >= 0 && (CurrentNode != NULL) )
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating: level %d, row %d, column %d\r", level, CurrentRow, CurrentCol);
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating: level %d, row %d, column %d\r", level, CurrentRow, CurrentCol);
 		
 		// check if the node on this level contains a matrix (branch)
 		// If it does not, it must be directly addressing a component (leaf)
 		if( CurrentNode->Cols.Num() <= 0 )
 		{
 			// Leaf found, evaluate and go up a level
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating leaf with identifier %d\r", CurrentNode->Ident);
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Evaluating leaf with identifier %d\r", CurrentNode->Ident);
 			
 			if( bObjComp )
 			{
@@ -1948,11 +1948,11 @@ When we advance to the next matrix spot, it can happen in two ways:
 
 			CurrentCol = CurrentNode->PrevCol;
 			CurrentRow = CurrentNode->PrevRow;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("PrevNode in leaf at %d, %d, points at previous node: %08lx \r", CurrentRow, CurrentCol, CurrentNode->PrevNode);
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("PrevNode in leaf at %d, %d, points at previous node: %08lx \r", CurrentRow, CurrentCol, CurrentNode->PrevNode);
 			CurrentNode = CurrentNode->PrevNode;
 
 			level--;
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Leaf evaluated, stepping out \r");
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Leaf evaluated, stepping out \r");
 			continue;
 		}
 
@@ -1961,11 +1961,11 @@ When we advance to the next matrix spot, it can happen in two ways:
 		// If we evaluate TRUE in the lower level:
 		if( bResolvedLevel && bLowerLevResult )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as TRUE\r");
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as TRUE\r");
 			// if there is no next column, this level evals to TRUE due to AND logic success
 			if( CurrentCol + 1 >= CurrentNode->Cols.Num() )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] AND logic success at current level, stepping out \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] AND logic success at current level, stepping out \r");
 				bLowerLevResult = true;
 
 				CurrentCol = CurrentNode->PrevCol;
@@ -1978,7 +1978,7 @@ When we advance to the next matrix spot, it can happen in two ways:
 			// else, advance to next column and go down a level
 			else
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next column \r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next column \r");
 				CurrentCol++;
 				CurrentRow = 0;
 			}
@@ -1986,12 +1986,12 @@ When we advance to the next matrix spot, it can happen in two ways:
 		// If we came back up after we evaluated to FALSE in the lower level
 		if( bResolvedLevel && !bLowerLevResult )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as FALSE\r");
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Resolved previous level as FALSE\r");
 
 			// If there are no more rows in this column, evaluate this level to FALSE (Due to AND logic failure)
 			if( CurrentRow + 1 >= CurrentNode->Cols.operator[](CurrentCol).Num() )
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Current level failed (no more rows to OR), stepping out\r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Current level failed (no more rows to OR), stepping out\r");
 				bLowerLevResult = false;
 
 				CurrentCol = CurrentNode->PrevCol;
@@ -2003,12 +2003,12 @@ When we advance to the next matrix spot, it can happen in two ways:
 			}
 			// else, advance to the next row
 			{
-				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next row\r");
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Continuing on in current level, to next row\r");
 				CurrentRow++;
 			}
 		}
 
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("[Objective Logic] Going down a level\r");
+		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Going down a level\r");
 		// If we get to this point in the loop, we must be going down a level
 		bResolvedLevel = false;
 		CurrentNode = &CurrentNode->Cols[CurrentCol].operator[](CurrentRow);
@@ -2179,7 +2179,7 @@ void CObjectiveLocation::Think()
 	{
 		if( Ents[i] && Ents[i]->m_bIsObjective )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
 			current.Append( Ents[i]->name );
 		}
 	}
@@ -2228,7 +2228,7 @@ void CObjectiveLocation::Think()
 		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
 		if( Ent )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
 			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent, this, true );
 		}
 	}
@@ -2238,7 +2238,7 @@ void CObjectiveLocation::Think()
 		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
 		if( Ent2 )
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
 			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent2, this, false );
 		}
 	}

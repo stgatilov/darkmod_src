@@ -79,6 +79,7 @@ typedef enum {
 	LC_LOCKPICK,
 	LC_FRAME,			// This is intended only as a framemarker and will always switched on if at least one other option is on.
 	LC_STIM_RESPONSE,
+	LC_OBJECTIVES,
 	LC_COUNT
 } LC_LogClass;
 
