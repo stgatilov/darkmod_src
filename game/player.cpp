@@ -116,7 +116,7 @@ const idEventDef EV_Player_ResetZoom("resetZoom", NULL);
 const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
 
 const idEventDef EV_Player_PauseGame("pauseGame", NULL);
-const idEventDef EV_Player_DestroyObjectivesGUI("destroyObjectivesGUI", NULL);
+const idEventDef EV_Player_UnpauseGame("unpauseGame", NULL);
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
@@ -181,7 +181,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	// Events needed for the Objectives GUI (is a blocking GUI - pauses the game)
 	EVENT( EV_Player_PauseGame,				idPlayer::Event_Pausegame )
-	EVENT( EV_Player_DestroyObjectivesGUI,	idPlayer::Event_DestroyObjectivesGUI )
+	EVENT( EV_Player_UnpauseGame,			idPlayer::Event_Unpausegame )
 
 END_CLASS
 
@@ -204,7 +204,7 @@ idPlayer::idPlayer
 */
 idPlayer::idPlayer() :
 	m_ButtonStateTracker(this),
-	objectiveGUIHandle(0)
+	objectiveGUIThread(NULL)
 {
 	memset( &usercmd, 0, sizeof( usercmd ) );
 
@@ -442,6 +442,9 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_LEAN_RIGHT.LinkTo(		scriptObject, "AI_LEAN_RIGHT" );
 	AI_LEAN_FORWARD.LinkTo(		scriptObject, "AI_LEAN_FORWARD" );
 	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP" );
+
+	// greebo: Connect the script bool
+	objectiveGUICloseRequest.LinkTo(scriptObject, "objectiveGUICloseRequest");
 }
 
 /*
@@ -1110,7 +1113,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteUserInterface( hud, false );
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
-	savefile->WriteInt(objectiveGUIHandle);
+	savefile->WriteObject(objectiveGUIThread);
 
 	savefile->WriteInt(hudMessages.Num());
 	for (int i = 0; i < hudMessages.Num(); i++) 
@@ -1381,7 +1384,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadUserInterface( hud );
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
-	savefile->ReadInt(objectiveGUIHandle);
+	savefile->ReadObject( reinterpret_cast<idClass *&>(objectiveGUIThread) );
 
 	savefile->ReadInt(num);
 	hudMessages.Clear();
@@ -4745,33 +4748,46 @@ void idPlayer::UseVehicle( void ) {
 
 void idPlayer::ToggleObjectivesGUI() 
 {
-	if (objectiveGUIHandle && !g_stopTime.GetBool())
+	if (objectiveGUIThread == NULL)
 	{
-		// We're in the middle of a transition, don't handle this request
-		return;
-	}
+		// No script running yet, create a new one
+		const function_t* objectivesFunc = scriptObject.GetFunction("toggleObjectivesGUI");
 
-	if (objectiveGUIHandle == 0)
+		if (objectivesFunc == NULL) {
+			gameLocal.Warning("Could not find objectives GUI toggle script function!\n");
+			return;
+		}
+
+		// Setup the thread with the found function
+		objectiveGUIThread = new idThread(objectivesFunc);
+		objectiveGUIThread->CallFunctionArgs(objectivesFunc, true, "e", this);
+		objectiveGUIThread->DelayedStart(0);
+	}
+	else
 	{
-		// Objectives GUI not yet open, create
-		objectiveGUIHandle = CreateOverlay(cv_tdm_objectives_gui.GetString(), LAYER_OBJECTIVES);
-		
-		// Update the GUI with the current data
-		gameLocal.m_MissionData->UpdateGUIState(this, objectiveGUIHandle);
-
-		SetImmobilization("obj_gui", EIM_OBJECTIVES_OPEN);
-		
-		// Pause the game in one second
-		PostEventMS(&EV_Player_PauseGame, 1000);
+		// Send a signal to the running thread, this should be enough
+		objectiveGUICloseRequest = true;
 	}
+	
+	/*// Objectives GUI not yet open, create
+	objectiveGUIHandle = CreateOverlay(cv_tdm_objectives_gui.GetString(), LAYER_OBJECTIVES);
+	
+	// Update the GUI with the current data
+	gameLocal.m_MissionData->UpdateGUIState(this, objectiveGUIHandle);
+
+	SetImmobilization("obj_gui", EIM_OBJECTIVES_OPEN);*/
+	/*}
 	else 
 	{
+		// Send the signal to the objectives GUI to begin the fade out
+		m_overlays.getGui(objectiveGUIHandle)->HandleNamedEvent("close");
+
 		// Unpause the game
 		gameLocal.PauseGame(false);
 
 		// Destroy the GUI in one second
 		PostEventMS(&EV_Player_DestroyObjectivesGUI, 1000);
-	}
+	}*/
 }
 
 /*
@@ -5186,7 +5202,7 @@ bool idPlayer::HandleESC( void ) {
 		return true;
 	}
 
-	if (objectiveGUIHandle > 0) {
+	if (objectiveGUIThread != NULL) {
 		ToggleObjectivesGUI();
 		return true; // TRUE = don't propagate ESC to system
 	}
@@ -6188,6 +6204,18 @@ void idPlayer::Think( void )
 
 		playerView.CalculateShake();
 	}
+	
+	// Check for a running objectives GUI thread, it won't get executed if time is stopped.
+	if (objectiveGUIThread != NULL) {
+		// Execute the thread, unless it's dying
+		if (!objectiveGUIThread->IsDying()) {
+			objectiveGUIThread->Execute();
+		}
+		else {
+			// The thread is dying, set the pointer to NULL
+			objectiveGUIThread = NULL;
+		}
+	}
 
 	if ( !( thinkFlags & TH_THINK ) ) {
 		gameLocal.Printf( "player %d not thinking?\n", entityNumber );
@@ -6206,26 +6234,6 @@ void idPlayer::Think( void )
 
 	// determine if portal sky is in pvs
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
-
-	// greebo: Check if the objectives GUI requires attention
-	if (objectiveGUIHandle > 0)
-	{
-		idStr state(m_overlays.getGui(objectiveGUIHandle)->GetStateString("cmd"));
-
-		if (state == "close")
-		{
-			ToggleObjectivesGUI();
-		}
-
-		// greebo: This doesn't work for some obscure reason (the "togglemenu" command is not executable).
-		/*else if (state == "togglemenu")
-		{
-			// Execute the main menu command
-			cmdSystem->BufferCommandText(CMD_EXEC_NOW, "togglemenu\n");
-			cmdSystem->ExecuteCommandBuffer();
-			Event_SetGuiString(objectiveGUIHandle, "cmd", "");
-		}*/
-	}
 }
 
 /*
@@ -9769,12 +9777,6 @@ void idPlayer::Event_Pausegame() {
 	gameLocal.PauseGame(true);
 }
 
-void idPlayer::Event_DestroyObjectivesGUI() {
-	if (objectiveGUIHandle > 0)
-	{
-		// GUI already open (handle is non-zero), destroy
-		DestroyOverlay(objectiveGUIHandle);
-		objectiveGUIHandle = 0;
-		SetImmobilization("obj_gui", 0);		
-	}
+void idPlayer::Event_Unpausegame() {
+	gameLocal.PauseGame(false);
 }
