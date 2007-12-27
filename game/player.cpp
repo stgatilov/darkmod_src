@@ -1322,7 +1322,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_LightgemModifier);
 
 	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
-	for (std::map<idStr, int>::const_iterator i = m_LightgemModifierList.begin(); i != m_LightgemModifierList.end(); i++)
+	for (std::map<std::string, int>::const_iterator i = m_LightgemModifierList.begin(); i != m_LightgemModifierList.end(); i++)
 	{
 		savefile->WriteString(i->first.c_str());
 		savefile->WriteInt(i->second);
@@ -1631,7 +1631,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		savefile->ReadString(name);
 		savefile->ReadInt(value);
 		// Store the pair into the map
-		m_LightgemModifierList[name] = value;
+		m_LightgemModifierList[std::string(name.c_str())] = value;
 	}
 
 	// create combat collision hull for exact collision detection
@@ -9697,30 +9697,26 @@ void idPlayer::Event_SetLightgemModifier(const char* modifierName, int amount)
 	if (amount != 0)
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Setting modifier %s to %d\r", modifierName, amount);
-		m_LightgemModifierList[modifierName] = amount;
+		m_LightgemModifierList[std::string(modifierName)] = amount;
 	}
 	else 
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Removing modifier %s as %d was passed\r", modifierName, amount);
 		// Zero value passed, remove the named value
-		idStr modifierNameStr(modifierName);
-		std::map<idStr, int>::iterator i = m_LightgemModifierList.begin();//find(modifierNameStr);
-		while (i != m_LightgemModifierList.end())
-		{
-			if (i->first == modifierNameStr)
-			{
-				// Value found, remove it
-				m_LightgemModifierList.erase(i);
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Removed.\r");
-				break;
-			}
+		std::string modifierNameStr(modifierName);
+		std::map<std::string, int>::iterator i = m_LightgemModifierList.find(modifierNameStr);
+
+		if (i != m_LightgemModifierList.end()) {
+			// Value found, remove it
+			m_LightgemModifierList.erase(i);
+			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Removed.\r");
 		}
 	}
 
 	// Recalculate the lightgem modifier value
 	m_LightgemModifier = 0;
 
-	for (std::map<idStr, int>::const_iterator i = m_LightgemModifierList.begin(); 
+	for (std::map<std::string, int>::const_iterator i = m_LightgemModifierList.begin(); 
 	     i != m_LightgemModifierList.end();
 		 i++)
 	{
