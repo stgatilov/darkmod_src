@@ -579,6 +579,12 @@
 						RelativePath=".\DarkMod\Ai\States\AgitatedSearchingState.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\BlindedState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\BlindedState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\CombatState.cpp">
 					</File>
 					<File
