@@ -2065,7 +2065,17 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 		idStr prefix = va("obj%d", objCount+1);
 
 		ui->SetStateString(prefix + "_text", m_Objectives[index].m_text);
-		ui->SetStateInt(prefix + "_state", m_Objectives[index].m_state);
+
+		ui->SetStateInt(
+			prefix + "_complete",
+			m_Objectives[index].m_state == STATE_COMPLETE && !m_Objectives[index].m_bOngoing // not complete if ongoing
+		);
+
+		ui->SetStateInt(
+			prefix + "_failed",
+			m_Objectives[index].m_state == STATE_FAILED
+		);
+
 		ui->SetStateInt(prefix + "_visible", m_Objectives[index].m_bVisible);
 	}
 
