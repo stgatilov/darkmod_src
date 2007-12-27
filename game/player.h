@@ -959,6 +959,7 @@ private:
 	// Objectives GUI-related events
 	void					Event_Pausegame();
 	void					Event_Unpausegame();
+	void					Event_UpdateObjectivesGUI(int guiHandle);
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
