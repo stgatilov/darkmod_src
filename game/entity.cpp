@@ -8061,6 +8061,11 @@ int idEntity::CreateOverlay(const char *guiFile, int layer)
 	return handle;
 }
 
+idUserInterface* idEntity::GetOverlay(int handle)
+{
+	return m_overlays.getGui(handle);
+}
+
 void idEntity::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CInventoryItem *Prev)
 {
 }

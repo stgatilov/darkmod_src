@@ -653,6 +653,9 @@ public:
 	void					Event_DestroyOverlay(int handle);
 	void					DestroyOverlay(int handle);
 
+	// Returns the GUI with the given handle or NULL if not found
+	idUserInterface*		GetOverlay(int handle);
+
 	/**
 	 * Generic function for calling a scriptfunction with arbitrary arguments.
 	 * The the thread is returned or NULL.

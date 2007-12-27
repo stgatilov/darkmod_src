@@ -2024,12 +2024,19 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 {
 	assert(entity != NULL); // don't accept NULL entities.
 
+	idUserInterface* ui = entity->GetOverlay(overlayHandle);
+
+	if (ui == NULL) {
+		gameLocal.Warning("Can't update objectives GUI, invalid handle.\n");
+		return; // invalid handle, do nothing
+	}
+
 	for (int i = 0; i < m_Objectives.Num(); i++) 
 	{
 		idStr prefix = va("obj%d", i+1);
-		entity->Event_SetGuiString(overlayHandle, prefix + "_text", m_Objectives[i].m_text);
-		entity->Event_SetGuiInt(overlayHandle, prefix + "_state", m_Objectives[i].m_state);
-		entity->Event_SetGuiInt(overlayHandle, prefix + "_visible", m_Objectives[i].m_bVisible);
+		ui->SetStateString(prefix + "_text", m_Objectives[i].m_text);
+		ui->SetStateInt(prefix + "_state", m_Objectives[i].m_state);
+		ui->SetStateInt(prefix + "_visible", m_Objectives[i].m_bVisible);
 	}
 }
 
