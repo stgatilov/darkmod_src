@@ -956,6 +956,10 @@ private:
 	void					Event_EndZoom(float duration);
 	void					Event_ResetZoom();
 	void					Event_GetFov();
+
+	// Objectives GUI-related events
+	void					Event_Pausegame();
+	void					Event_DestroyObjectivesGUI();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
