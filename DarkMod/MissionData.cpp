@@ -780,29 +780,10 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 {
 	bool bTest(true), bTemp(false);
 
-	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
-	if( !m_Objectives[ind].m_bOngoing )
+	if( !m_SuccessLogic.IsEmpty() ) 
 	{
-		idPlayer *   player;
-		player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
-
-		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
-
-		// call completion script
-		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
-		if(pScriptFun)
-		{
-			idThread *pThread = new idThread( pScriptFun );
-			pThread->CallFunction( pScriptFun, true );
-			pThread->DelayedStart( 0 );
-		}
-
-		// greebo: Notify the player
-		player->SendHUDMessage("Objective complete");
-	}
-
-	if( !m_SuccessLogic.IsEmpty() )
 		bTest = EvalBoolLogic( &m_SuccessLogic, true );
+	}
 	else
 	{
 		// default logic: check if all mandatory, valid objectives have been completed
@@ -816,8 +797,38 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		}
 	}
 
-	if( bTest )
+	idPlayer* player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
+
+	if (player == NULL) {
+		gameLocal.Error("No player at mission success!\n");
+	}
+
+	if (bTest)
+	{
+		// All objectives ok, mission complete
 		Event_MissionComplete();
+	}
+	else
+	{
+		// Only this objective is complete, not the entire mission
+		// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
+		if (!m_Objectives[ind].m_bOngoing)
+		{
+			player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
+
+			// call completion script
+			function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
+			if(pScriptFun)
+			{
+				idThread *pThread = new idThread( pScriptFun );
+				pThread->CallFunction( pScriptFun, true );
+				pThread->DelayedStart( 0 );
+			}
+
+			// greebo: Notify the player
+			player->SendHUDMessage("Objective complete");
+		}
+	}
 }
 
 void CMissionData::Event_ObjectiveFailed( int ind )
@@ -861,12 +872,14 @@ void CMissionData::Event_MissionComplete( void )
 
 	// TODO: Go to mission successful GUI
 	// TODO: Read off which map to go to next, basically call endLevel
-
+	
 	// for now, just play the sound (later it will be played in the GUI)
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if(player)
 	{
 		player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
+		player->SendHUDMessage("Mission Complete");
+		player->PostEventMS(&EV_Mission_Success, 1000);
 	}
 }
 
@@ -2036,8 +2049,6 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 
 	for (int i = 0; i < m_Objectives.Num(); i++) 
 	{
-		idStr prefix = va("obj%d", i+1);
-
 		if (m_Objectives[i].m_bVisible && m_Objectives[i].m_bApplies) {
 			objIndices.Append(i);
 		}

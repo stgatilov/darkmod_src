@@ -40,6 +40,7 @@ extern const idEventDef EV_Player_PlayStartSound;
 extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
 extern const idEventDef EV_Player_GiveHealthPool;
+extern const idEventDef EV_Mission_Success;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -960,6 +961,9 @@ private:
 	void					Event_Pausegame();
 	void					Event_Unpausegame();
 	void					Event_UpdateObjectivesGUI(int guiHandle);
+
+	// Ends the game (fade out, success.gui, etc.)
+	void					Event_MissionSuccess();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

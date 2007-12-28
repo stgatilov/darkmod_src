@@ -109,6 +109,8 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
+const idEventDef EV_Mission_Success("missionSuccess", NULL);
+
 // greebo: These events are handling the FOV.
 const idEventDef EV_Player_StartZoom("startZoom", "fff");
 const idEventDef EV_Player_EndZoom("endZoom", "f");
@@ -184,6 +186,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_PauseGame,				idPlayer::Event_Pausegame )
 	EVENT( EV_Player_UnpauseGame,			idPlayer::Event_Unpausegame )
 	EVENT( EV_Player_UpdateObjectivesGUI,	idPlayer::Event_UpdateObjectivesGUI)
+
+	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 
 END_CLASS
 
@@ -9765,4 +9769,16 @@ void idPlayer::Event_UpdateObjectivesGUI(int guiHandle)
 {
 	// Pass the call to the MissionData class
 	gameLocal.m_MissionData->UpdateGUIState(this, guiHandle);
+}
+
+void idPlayer::Event_MissionSuccess()
+{
+	if (hudMessages.Num() > 0)
+	{
+		// There are still HUD messages pending, postpone this event
+		PostEventMS(&EV_Mission_Success, 3000);
+		return;
+	}
+
+	playerView.Fade( colorBlack, 3000 );
 }
