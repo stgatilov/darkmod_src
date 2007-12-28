@@ -66,6 +66,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		//Fleeing is done, check if we can see the enemy
 		if (owner->AI_ENEMY_VISIBLE)
 		{
+			_failureCount = 0;
 			if (_distOpt == DIST_NEAREST)
 			{
 				// Find fleepoint far away
