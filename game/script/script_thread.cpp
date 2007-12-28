@@ -122,6 +122,9 @@ const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 // greebo: Writes the string to the Darkmod.log file using DM_LOG
 const idEventDef EV_LogString("logString", "dds");
 
+// Propagates the string to the sessioncommand variable in gameLocal
+const idEventDef EV_SessionCommand("sessionCommand", "s", NULL);
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -214,6 +217,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
 	
 	EVENT( EV_LogString,					idThread::Event_LogString )
+	EVENT( EV_SessionCommand,				idThread::Event_SessionCommand )
 
 END_CLASS
 
@@ -1966,4 +1970,9 @@ void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity 
 	// Check if the point is in water
 	int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, ignoreEntity );
 	ReturnFloat( (contents & MASK_WATER) ? 1 : 0);
+}
+
+void idThread::Event_SessionCommand(const char* cmd)
+{
+	gameLocal.sessionCommand = cmd;
 }

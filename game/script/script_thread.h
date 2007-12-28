@@ -187,6 +187,9 @@ private:
 	*/
 	void						Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity );
 
+	// Emits the string to the session command variable in gameLocal.
+	void						Event_SessionCommand(const char* cmd);
+
 	// For test purposes only.
 	void						Event_DebugTDM_MatInfo( const char *mat );
 
