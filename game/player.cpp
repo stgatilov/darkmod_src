@@ -123,6 +123,7 @@ const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
 const idEventDef EV_Player_PauseGame("pauseGame", NULL);
 const idEventDef EV_Player_UnpauseGame("unpauseGame", NULL);
 const idEventDef EV_Player_UpdateObjectivesGUI("updateObjectivesGUI", "d");
+const idEventDef EV_Player_UpdateStatisticsGUI("updateStatisticsGUI", "ds");
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
@@ -189,6 +190,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_PauseGame,				idPlayer::Event_Pausegame )
 	EVENT( EV_Player_UnpauseGame,			idPlayer::Event_Unpausegame )
 	EVENT( EV_Player_UpdateObjectivesGUI,	idPlayer::Event_UpdateObjectivesGUI)
+	EVENT( EV_Player_UpdateStatisticsGUI,	idPlayer::Event_UpdateStatisticsGUI)
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 	EVENT( EV_PrepareMapForMissionEnd,		idPlayer::Event_PrepareMapForMissionEnd )
@@ -9774,6 +9776,11 @@ void idPlayer::Event_UpdateObjectivesGUI(int guiHandle)
 {
 	// Pass the call to the MissionData class
 	gameLocal.m_MissionData->UpdateGUIState(this, guiHandle);
+}
+
+void idPlayer::Event_UpdateStatisticsGUI(int guiHandle, const char* listDefName) 
+{
+	gameLocal.m_MissionData->UpdateStatisticsGUI(this, guiHandle, listDefName);
 }
 
 void idPlayer::Event_MissionSuccess()

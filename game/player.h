@@ -961,6 +961,7 @@ private:
 	void					Event_Pausegame();
 	void					Event_Unpausegame();
 	void					Event_UpdateObjectivesGUI(int guiHandle);
+	void					Event_UpdateStatisticsGUI(int guiHandle, const char* listDefName);
 
 	// Ends the game (fade out, success.gui, etc.)
 	void					Event_MissionSuccess();

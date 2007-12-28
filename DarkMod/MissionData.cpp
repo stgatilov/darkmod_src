@@ -2095,6 +2095,41 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 	ui->StateChanged(gameLocal.time, true);
 }
 
+void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)
+{
+	assert(entity != NULL); // don't accept NULL entities.
+
+	idUserInterface* ui = entity->GetOverlay(overlayHandle);
+
+	if (ui == NULL) {
+		gameLocal.Warning("Can't update statistics GUI, invalid handle.\n");
+		return; // invalid handle, do nothing
+	}
+
+	int index(0);
+	idStr key("");
+	idStr value("");
+	
+	key = "Damage Dealt"; 
+	value = idStr(m_Stats.DamageDealt);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "Damage Received"; 
+	value = idStr(m_Stats.DamageReceived);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "Pockets Picked"; 
+	value = idStr(m_Stats.PocketsPicked);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "Loot Overall"; 
+	value = idStr(m_Stats.LootOverall);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	// Force a redraw
+	ui->StateChanged(gameLocal.time, true);
+}
+
 void CObjective::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteString( m_text );

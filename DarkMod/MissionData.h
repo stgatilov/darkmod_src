@@ -628,6 +628,15 @@ public:
 	 */
 	void UpdateGUIState(idEntity* entity, int overlayHandle);
 
+	/**
+	 * greebo: Updates the statistics in the given GUI.
+	 *
+	 * @entity: The entity the GUI is belonging to (usually the player).
+	 * @overlayHandle: The handle of the GUI to be updated.
+	 * @listDefName: the name of the listDef in the GUI, which should be filled with the values.
+	 */
+	void UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName);
+
 // Events
 	/**
 	* The following are called internally when an objective completes or fails
