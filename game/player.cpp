@@ -9791,6 +9791,34 @@ void idPlayer::Event_MissionSuccess()
 void idPlayer::Event_PrepareMapForMissionEnd() 
 {
 	gameLocal.Printf("Map shutdown for mission success.\n");
+
+	for (int i = 0; i < MAX_GENTITIES; i++)
+	{
+		idEntity* entity = gameLocal.entities[i];
+
+		if (entity == NULL) {
+			continue;
+		}
+
+		// Put moveables to rest
+		if (entity->IsType(idMoveable::Type)) {
+			static_cast<idMoveable*>(entity)->GetPhysics()->PutToRest();
+		}
+
+		if (entity->IsType(idAI::Type)) {
+			// Deleting the entity object is enough to remove it from the game
+			// It de-registers itself in its destructor
+			delete entity;
+		}
+
+		// Remove all lights, targets, triggers, emitters and speakers
+		if (entity->IsType(idLight::Type) || entity->IsType(idTarget::Type) ||
+			entity->IsType(idTrigger::Type) || entity->IsType(idFuncEmitter::Type) ||
+			entity->IsType(idSound::Type))
+		{
+			delete entity;
+		}
+	}
 }
 
 void idPlayer::Event_DisplaySuccessGUI(const char* guiFile) 
