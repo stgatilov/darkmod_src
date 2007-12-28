@@ -1783,6 +1783,51 @@ void CTarget_AddObjectives::Event_Activate( idEntity *activator )
 /*
 ===============================================================================
 
+CTarget_SetObjectiveState
+
+===============================================================================
+*/
+CLASS_DECLARATION( idTarget, CTarget_SetObjectiveState )
+	EVENT( EV_Activate,	CTarget_SetObjectiveState::Event_Activate )
+END_CLASS
+
+void CTarget_SetObjectiveState::Spawn( void )
+{
+	if( !spawnArgs.GetBool( "wait_for_trigger" ) )
+	{
+		// Immediately fire the activate event, as we 
+		// don't need to wait for a trigger event
+		PostEventMS(&EV_Activate, 0, this);
+	}
+}
+
+void CTarget_SetObjectiveState::Event_Activate( idEntity *activator )
+{
+	// greebo: Get the state we should set the objectives to
+	int state = spawnArgs.GetInt("obj_state", "0");
+
+	// Find all values that match the given prefix
+	const idKeyValue* keyVal = spawnArgs.MatchPrefix("obj_id");
+	
+	// greebo: Cycle through all matching spawnargs
+	while (keyVal != NULL) {
+		int objId = atoi(keyVal->GetValue().c_str());
+
+		if (objId > 0) {
+			gameLocal.m_MissionData->SetCompletionState(objId-1, state);
+		}
+		else {
+			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+		}
+
+		// greebo: Lookup the next matching spawnarg
+		keyVal = spawnArgs.MatchPrefix("obj_id", keyVal);
+	}
+}
+
+/*
+===============================================================================
+
 CTarget_SetFrobable
 
 ===============================================================================

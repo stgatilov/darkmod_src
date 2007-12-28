@@ -565,6 +565,19 @@ private:
 };
 
 /**
+ * greebo: Target for altering the state of certain objectives.
+ */
+class CTarget_SetObjectiveState : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveState );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
 * CTarget_SetFrobable
 * Sets all items inside frobable or not when triggered
 **/

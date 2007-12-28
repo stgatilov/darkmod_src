@@ -2098,8 +2098,13 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)
 {
 	assert(entity != NULL); // don't accept NULL entities.
-
-	idUserInterface* ui = entity->GetOverlay(overlayHandle);
+	if (!entity->IsType(idPlayer::Type)) {
+		return;
+	}
+	
+	idPlayer* player = static_cast<idPlayer*>(entity);
+	
+	idUserInterface* ui = player->GetOverlay(overlayHandle);
 
 	if (ui == NULL) {
 		gameLocal.Warning("Can't update statistics GUI, invalid handle.\n");
@@ -2124,6 +2129,14 @@ void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, cons
 
 	key = "Loot Overall"; 
 	value = idStr(m_Stats.LootOverall);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "Killed by the Player";
+	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[player->team]);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "KOed by the Player";
+	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[player->team]);
 	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
 
 	// Force a redraw
