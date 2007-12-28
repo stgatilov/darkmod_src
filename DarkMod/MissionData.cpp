@@ -577,14 +577,17 @@ bool	CMissionData::EvaluateObjective
 		{
 			// overall loot
 			case SPEC_OVERALL:
-				value = EntDat1->valueSuperGroup;
+				// greebo: Take the stored Total Loot Value, not the supergroup stuff, 
+				//         as non-loot items always have supergroup set to 1.
+				value = GetTotalLoot();
+				//value = EntDat1->valueSuperGroup;
 				break;
 			case SPEC_GROUP:
 				value = EntDat1->value;
 
 				// special case for overall loot
 				if( pComp->m_SpecVal[1] == "loot_total" )
-					value = EntDat1->valueSuperGroup;
+					value = GetTotalLoot();
 				break;
 			default:
 				break;
