@@ -110,6 +110,9 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
 const idEventDef EV_Mission_Success("missionSuccess", NULL);
+const idEventDef EV_PrepareMapForMissionEnd("prepareMapForMissionEnd", NULL);
+// returns the handle of the success GUI
+const idEventDef EV_DisplaySuccessGUI("displaySuccessGUI", "s", 'd');
 
 // greebo: These events are handling the FOV.
 const idEventDef EV_Player_StartZoom("startZoom", "fff");
@@ -188,6 +191,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_UpdateObjectivesGUI,	idPlayer::Event_UpdateObjectivesGUI)
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
+	EVENT( EV_PrepareMapForMissionEnd,		idPlayer::Event_PrepareMapForMissionEnd )
+	EVENT( EV_DisplaySuccessGUI,			idPlayer::Event_DisplaySuccessGUI )
 
 END_CLASS
 
@@ -9780,5 +9785,21 @@ void idPlayer::Event_MissionSuccess()
 		return;
 	}
 
-	playerView.Fade( colorBlack, 3000 );
+	CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
+}
+
+void idPlayer::Event_PrepareMapForMissionEnd() 
+{
+	gameLocal.Printf("Map shutdown for mission success.\n");
+}
+
+void idPlayer::Event_DisplaySuccessGUI(const char* guiFile) 
+{
+	gameLocal.Printf("Showing success GUI.\n");
+
+	int handle = CreateOverlay(guiFile, 20);
+
+	// Set up the success GUI here
+
+	idThread::ReturnInt(handle);
 }

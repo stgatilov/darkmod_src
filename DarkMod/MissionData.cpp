@@ -877,9 +877,10 @@ void CMissionData::Event_MissionComplete( void )
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if(player)
 	{
-		player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
+		// This sound is played by the success.gui
+		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
 		player->SendHUDMessage("Mission Complete");
-		player->PostEventMS(&EV_Mission_Success, 1000);
+		player->PostEventMS(&EV_Mission_Success, 100);
 	}
 }
 
