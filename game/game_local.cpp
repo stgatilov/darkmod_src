@@ -3045,17 +3045,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Objectives GUI requests closure, shut it down
 		gui->HandleNamedEvent("CloseObjectives");
 	}
-	else if (cmd == "objectives_closed")
-	{
-		//objectivesTriggered = false;//gui->SetStateBool("ObjectivesTriggered", "0");
-	}
 	else if (cmd == "mainmenu_heartbeat")
 	{
 		// The main menu is visible, check if we should switch to the objectives screen
-		bool alreadyTriggered = objectivesTriggered;//gui->GetStateBool("ObjectivesTriggered", "0");
-
+		
 		// Only switch during map runtime and if not already triggered
-		if (GameState() == GAMESTATE_ACTIVE && !alreadyTriggered)
+		if (GameState() == GAMESTATE_ACTIVE && !objectivesTriggered)
 		{
 			// Objectives not yet shown, trigger them now
 			gui->HandleNamedEvent("ShowObjectiveScreen");
@@ -3069,7 +3064,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "close") 
 	{
-		objectivesTriggered = false;//gui->SetStateBool("ObjectivesTriggered", "0");
+		objectivesTriggered = false;
+		gui->HandleNamedEvent("HideObjectiveScreen");
 	}
 
 	g_Diff.HandleCommands(menuCommand, gui);
