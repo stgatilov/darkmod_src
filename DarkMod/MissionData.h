@@ -626,7 +626,15 @@ public:
 	 * @entity: The entity whose GUI should be updated (usually the player).
 	 * @overlayHandle: the handle of the GUI to be updated.
 	 */
-	void UpdateGUIState(idEntity* entity, int overlayHandle);
+	void UpdateGUIState(idEntity* entity, int overlayHandle); // deprecated, do not call anymore
+
+	/**
+	 * greebo: This updates the given GUI with the current
+	 *         missiondata (objectives state). Called by gameLocal on demand of the main menu.
+	 *
+	 * @ui: the GUI to be updated.
+	 */
+	void UpdateGUIState(idUserInterface* ui);
 
 	/**
 	 * greebo: Updates the statistics in the given GUI.

@@ -2037,17 +2037,8 @@ Quit:
 	return bReturnVal;
 }
 
-void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle) 
+void CMissionData::UpdateGUIState(idUserInterface* ui) 
 {
-	assert(entity != NULL); // don't accept NULL entities.
-
-	idUserInterface* ui = entity->GetOverlay(overlayHandle);
-
-	if (ui == NULL) {
-		gameLocal.Warning("Can't update objectives GUI, invalid handle.\n");
-		return; // invalid handle, do nothing
-	}
-
 	// The list of indices of visible, applicable objectives
 	idList<int> objIndices;
 
@@ -2096,6 +2087,20 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 
 	// Force a redraw
 	ui->StateChanged(gameLocal.time, true);
+}
+
+void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle) 
+{
+	assert(entity != NULL); // don't accept NULL entities.
+
+	idUserInterface* ui = entity->GetOverlay(overlayHandle);
+
+	if (ui == NULL) {
+		gameLocal.Warning("Can't update objectives GUI, invalid handle.\n");
+		return; // invalid handle, do nothing
+	}
+
+	UpdateGUIState(ui);
 }
 
 void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)

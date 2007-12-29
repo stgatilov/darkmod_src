@@ -3036,6 +3036,23 @@ handles main menu commands.
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
+	if (idStr(menuCommand) == "mainmenu_heartbeat")
+	{
+		// The main menu is visible, check if we should switch to the objectives screen
+		bool alreadyTriggered = gui->GetStateBool("ObjectivesTriggered", "0");
+
+		// Only switch during map runtime and if not already triggered
+		if (GameState() == GAMESTATE_ACTIVE && !alreadyTriggered)
+		{
+			// Objectives not yet shown, trigger them now
+			gui->HandleNamedEvent("ShowObjectiveScreen");
+			gui->HandleNamedEvent("InitObjectives");
+
+			// Load the objectives into the GUI
+			m_MissionData->UpdateGUIState(gui); 
+		}
+	}
+
 	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
 	g_Mods.HandleCommands(menuCommand, gui);
