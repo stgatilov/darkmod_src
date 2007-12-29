@@ -488,6 +488,9 @@ void idGameLocal::Shutdown( void ) {
 		return;
 	}
 
+	// Destruct RCF server to avoid memory deallocation issues
+	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
+
 	Printf( "------------ Game Shutdown -----------\n" );
 	
 	delete m_RenderPipe;
