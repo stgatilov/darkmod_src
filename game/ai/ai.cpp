@@ -8983,6 +8983,13 @@ int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
 
 float idAI::GetArmReachLength()
 {
-	idVec3 size = aas->GetSettings()->boundingBoxes[0][1];
-	return size.z * 0.5;
+	if (idAAS* aas = GetAAS())
+	{
+		idVec3 size = aas->GetSettings()->boundingBoxes[0][1];
+		return size.z * 0.5;
+	}
+	else
+	{
+		return 41;
+	}
 }
