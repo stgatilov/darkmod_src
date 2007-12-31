@@ -158,7 +158,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	{
 		// Can we already see the point? Only stop moving when the spot
 		// shouldn't be investigated closely
-		if (!_investigateClosely && owner->CanSeePositionExt(memory.currentSearchSpot, true, true))
+		// angua: added distance check to avoid running in circles if the point is too close to a wall.
+		if (!_investigateClosely && 
+			( owner->CanSeePositionExt(memory.currentSearchSpot, true, true) 
+			|| (memory.currentSearchSpot - owner->GetPhysics()->GetOrigin()).LengthFast() < 20 ))
 		{
 			DM_LOG(LC_AI, LT_INFO).LogVector("Stop, I can see the point now...\r", memory.currentSearchSpot);
 

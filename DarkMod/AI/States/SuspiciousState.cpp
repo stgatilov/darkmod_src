@@ -57,6 +57,8 @@ void SuspiciousState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
+	owner->StopMove(MOVE_STATUS_DONE);
+
 	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 }
 
