@@ -3029,9 +3029,6 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 /*
 ================
 idGameLocal::HandleMainMenuCommands
-
-Currently the shop (purchase screen) is the only component that
-handles main menu commands.
 ================
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
