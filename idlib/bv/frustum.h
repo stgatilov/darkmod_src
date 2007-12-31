@@ -13,6 +13,10 @@
 #ifndef __BV_FRUSTUM_H__
 #define __BV_FRUSTUM_H__
 
+#ifdef __linux__
+#include <cassert>
+#endif
+
 /*
 ===============================================================================
 
