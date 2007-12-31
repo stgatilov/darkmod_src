@@ -3055,12 +3055,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("ShowObjectivesButton");
 			gui->HandleNamedEvent("ShowResumeGameButton");
 
-			// Objectives not yet shown, trigger them now
-			//gui->HandleNamedEvent("ShowObjectiveScreen");
-			//gui->HandleNamedEvent("InitObjectives");
-
-			//objectivesTriggered = true;
-
 			if (!objectivesUpdated)
 			{
 				// Load the objectives into the GUI
@@ -3074,6 +3068,19 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("HideResumeGameButton");
 			gui->HandleNamedEvent("HideObjectivesButton");
 		}
+	}
+	else if (cmd == "objective_open_request")
+	{
+		gui->HandleNamedEvent("ShowObjectiveScreen");
+		gui->HandleNamedEvent("InitObjectives");
+
+		if (!objectivesUpdated)
+		{
+			// Load the objectives into the GUI
+			m_MissionData->UpdateGUIState(gui); 
+		}
+
+		objectivesUpdated = true;
 	}
 	else if (cmd == "close") 
 	{
