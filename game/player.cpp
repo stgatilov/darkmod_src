@@ -9587,6 +9587,9 @@ void idPlayer::PerformFrob(idEntity* target)
 
 	// Fire the STIM_FROB response (if defined) on this entity
 	target->ResponseTrigger(this, ST_FROB);
+
+	// Trigger the frob action script
+	target->FrobAction(true);
 	
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
@@ -9606,12 +9609,6 @@ void idPlayer::PerformFrob(idEntity* target)
 		// greebo: Prevent the grabber from checking the added entity (it may be 
 		// entirely removed from the game, which would cause crashes).
 		pDM->grabber->RemoveFromClipList(target);
-	}
-	else
-	{
-		// greebo: Only perform the default FrobAction if adding the item to the
-		// inventory has failed.
-		target->FrobAction(true);
 	}
 }
 
