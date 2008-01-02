@@ -3047,6 +3047,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Only switch during map runtime and if not already triggered
 		if (GameState() == GAMESTATE_ACTIVE)
 		{
+			gui->HandleNamedEvent("SetupObjectivesForIngame");
+
 			gui->HandleNamedEvent("ShowObjectivesButton");
 			gui->HandleNamedEvent("ShowResumeGameButton");
 
@@ -3060,6 +3062,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 		else
 		{
+			gui->HandleNamedEvent("SetupObjectivesForMapStart");
+
 			gui->HandleNamedEvent("HideResumeGameButton");
 			gui->HandleNamedEvent("HideObjectivesButton");
 		}
@@ -3082,6 +3086,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 			// Hide the briefing screen
 			gui->HandleNamedEvent("HideBriefingScreen");
+			gui->SetStateInt("BriefingIsVisible", 0);
+
+			gui->HandleNamedEvent("SetupObjectivesForMapstart");
 		}
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
@@ -3107,6 +3114,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		objectivesUpdated = false;
 		gui->HandleNamedEvent("HideObjectiveScreen");
 		gui->HandleNamedEvent("HideBriefingScreen");
+		gui->SetStateInt("BriefingIsVisible", 0);
 	}
 
 	/* greebo: Commented these out for the Thief's Den release only.
