@@ -3087,8 +3087,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// Hide the briefing screen
 			gui->HandleNamedEvent("HideBriefingScreen");
 			gui->SetStateInt("BriefingIsVisible", 0);
-
-			gui->HandleNamedEvent("SetupObjectivesForMapstart");
 		}
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
