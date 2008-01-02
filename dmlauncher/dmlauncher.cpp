@@ -1,94 +1,96 @@
-// dmlauncher.cpp : Defines the entry point for the console application.
-//
+/*
+Darkmod Launcher (Windows only). Launches doom3. Builds command-line args
+from currentfm.txt and dmargs.txt.
+If the command line that invokes this executable is not blank, then
+pause 2 seconds before spawing doom3.
+*/
 
 #include <stdio.h>
 #include <tchar.h>
 #include <process.h>
 #include <windows.h>
 #include "boost/filesystem.hpp"
-/*
-Darkmod Launcher. Launches doom3 from command line arguments; used when
-swapping missions. Also deletes the .pk4 file from the "old" mission.
-Args:
- - doom3 exe to launch
- - name of file that contains command line arguments to doom3 exe
- - pk4 file to delete (optional)
-*/
+
+namespace fs = boost::filesystem;
+
+char * readFile(fs::path fileName)
+{
+	FILE* file = fopen(fileName.file_string().c_str(), "r");
+	char * buf = NULL;
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_END);
+		long len = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		buf = (char *)malloc(len+1);
+		fread(buf, len, 1, file);
+		buf[len] = 0;
+		fclose(file);
+	}
+	return buf;
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
-	namespace fs = boost::filesystem;
-	char exe[200];
-	char argFileName[200];
-	char darkModPathName[200];
-	char modDirPathName[200];
-	char buffer[200];
-	sscanf(lpCmdLine, "%s%s%s%s", &exe, &argFileName, &darkModPathName, &modDirPathName);
-	Sleep(2000);
+	char exename[1001];
+	char buffer[1001];
+	char doomArgs[1001];
+	char extraArgs[1001];
 
-	// Path to the darkmod directory
-	fs::path darkmodPath(darkModPathName);
+	// Get the path for this executable
+	GetModuleFileName(hInstance, exename, 1000);
 
-	// Path to the new mod directory
-	fs::path modDirPath(modDirPathName);
-
-	// Name of the file that contains the list of pk4s for the current mod
-	fs::path fmpk4list(darkmodPath / "fmpk4s.txt");
-
-	// Read the list of pk4s in the current mod, delete them
-	FILE* fmpk4file = fopen(fmpk4list.file_string().c_str(), "r");
-	if (fmpk4file) {
-		// read pk4s to delete from file
-		while (fgets(buffer, 200, fmpk4file) != NULL) {
-			size_t nLen = strlen(buffer);
-			if (buffer[nLen-1] == '\n' ) {
-				// strip newline
-				buffer[--nLen] = 0;
-			}
-			fs::path pk4ToDelete(darkmodPath / buffer);
-			fs::remove(pk4ToDelete);
-		}
-		fclose(fmpk4file);
+	// optionally pause 2 seconds
+	if (strlen(lpCmdLine)) {
+		Sleep(2000);
 	}
 
-	// Copy the pk4s from the new mod
-	fs::directory_iterator end_iter;
-	fmpk4file = fopen(fmpk4list.file_string().c_str(), "w+");
-	for (fs::directory_iterator dir_itr(modDirPath); dir_itr != end_iter; ++dir_itr)
-	{
-		if (!fs::is_directory(dir_itr->status()))
-		{
-			size_t pos = strlen(dir_itr->path().leaf().c_str()) - 4;
-			int comp = strcmp(&(dir_itr->path().leaf().c_str()[pos]), ".pk4");
-			if (comp == 0)
-			{
-				fs::path dest(darkmodPath / dir_itr->path().leaf());
-				fs::copy_file(dir_itr->path(), dest);
-				fputs(dir_itr->path().leaf().c_str(), fmpk4file);
-				fputs("\n", fmpk4file);
-			}
-		}
-	}
-	fclose(fmpk4file);
+	// path to this exe
+	fs::path dmlauncher(exename);
 
-	buffer[0] = 0;
-	FILE* argFile = fopen(argFileName, "r");
+	// path to the darkmod directory
+	fs::path darkmodDir = dmlauncher.remove_leaf();
+
+	// optional file that contains custom doom3 command line args
+	fs::path argFileName(darkmodDir / "dmargs.txt");
+
+	// file that contains name of the current FM directory
+	fs::path currentFMName(darkmodDir / "currentfm.txt");
+
+	// path to doom3.exe
+	fs::path doom3exe(darkmodDir / ".." / "doom3.exe");
+
+	// get the current FM
+	char * current = readFile(currentFMName);
+
+	doomArgs[0] = 0;
+	extraArgs[0] = 0;
+	FILE* argFile = fopen(argFileName.file_string().c_str(), "r");
 	if (argFile) {
 		// read command line args from file
 		do {
-			if (fgets(buffer, 200, argFile) == NULL) {
+			if (fgets(buffer, 1000, argFile) == NULL) {
 				break;
+			}
+			if (buffer[0] != '#') {
+				strcpy(extraArgs, buffer);
 			}
 		} while (buffer[0] == '#');
 		fclose(argFile);
-	} else {
-		// default args
-		strcpy(buffer, "+set fs_game darkmod");
 	}
 
-	intptr_t x = _spawnl(_P_NOWAIT, exe, exe, buffer, NULL);
+	// build command line to doom3
+	strcpy(doomArgs, "+set fs_game_base darkmod");
+	if (current != NULL) {
+		strcat(doomArgs, " +set fs_game ");
+		strcat(doomArgs, current);
+		strcat(doomArgs, " ");
+	}
+	strcat(doomArgs, extraArgs);
+	_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), doomArgs, NULL);
 	return 0;
 }
 

@@ -4,6 +4,7 @@
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"
 #include "boost/filesystem.hpp"
+#include <string>
 #ifdef _WINDOWS
 #include <process.h>
 #else
@@ -23,42 +24,68 @@ extern int errorno;
 idCVar tdm_mapName( "tdm_mapName", "", CVAR_GUI, "" );
 namespace fs = boost::filesystem;
 
+char * readFile(fs::path fileName)
+{
+	FILE* file = fopen(fileName.file_string().c_str(), "r");
+	char * buf = NULL;
+	if (file != NULL)
+	{
+		fseek(file, 0, SEEK_END);
+		long len = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		buf = (char *)malloc(len+1);
+		fread(buf, len, 1, file);
+		buf[len] = 0;
+		fclose(file);
+	}
+	return buf;
+}
+
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 {
 	if (idStr::Icmp(menuCommand, "showMods") == 0)
 	{
 		// list all FMs
+		fs::path doomPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+		doomPath /= "..";
+		fs::directory_iterator end_iter;
 		modsAvailable.Clear();
-		idFileList * modDirs = idLib::fileSystem->ListFiles( "fms", "/", true);
-		for (int i = 0; i < modDirs->GetNumFiles(); i++)
+		for (fs::directory_iterator dir_itr(doomPath); dir_itr != end_iter; ++dir_itr)
 		{
-			// filter out the .svn directory
-			if (idStr::Icmp(modDirs->GetFile(i), ".svn") != 0) {
-				modsAvailable.Append(modDirs->GetFile(i));
+			if (fs::is_directory(dir_itr->status()))
+			{
+				// look for darkmod.txt file
+				fs::path descFile(dir_itr->path() / "darkmod.txt");
+				if (fs::exists(descFile)) {
+					idStr * modName = new idStr(dir_itr->path().leaf().c_str());
+					modsAvailable.Append(modName->c_str());
+				}
 			}
 		}
 		gui->SetStateBool("isModsMoreVisible", modsAvailable.Num() > MODS_PER_PAGE); 
 		gui->SetStateBool("isNewGameRootMenuVisible", true); 
 
 		// Get the path to the darkmod directory
-		const char * darkmodPath = idLib::fileSystem->RelativePathToOSPath("", "fs_basepath");
+		fs::path doom3path(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+		doom3path /= "..";
+		fs::path darkmodPath(doom3path / "darkmod");
+
+		// Path to file that holds the current FM name
+		fs::path currentFMPath(darkmodPath / "currentfm.txt");
 
 		// Get the current mod
-		char * current = NULL;
-		idLib::fileSystem->ReadFile("currentfm.txt", ( void ** )&current);
-
+		char * current = readFile(currentFMPath);
 		idStr name = idStr("<No Mission Installed>");
 		idStr desc = idStr("");
 		gui->SetStateBool("hasCurrentMod", false); 
 		if (current != NULL) {
 			gui->SetStateBool("hasCurrentMod", true); 
-			char * modFileContent = NULL;
-			char * mapName = NULL;
-			idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);
+			fs::path startingMapPath(doom3path / current / "startingMap.txt");
+			char * mapName = readFile(startingMapPath);
 			tdm_mapName.SetString(mapName);
-			const char * modDescFile = va("fms/%s/%s.txt", current, current);
-			idLib::fileSystem->ReadFile(modDescFile, ( void ** )&modFileContent);
+			fs::path modDescFile(doom3path / current / "darkmod.txt");
+			char * modFileContent = readFile(modDescFile);
 			name = current;
 			desc = "";
 			if (modFileContent != NULL) {
@@ -74,7 +101,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 					desc.StripTrailingWhitespace();
 					desc.Strip(' ');
 				}
-				fileSystem->FreeFile( modFileContent );
+				delete modFileContent;
 			}
 		}
 		gui->SetStateString("currentModName", name); 
@@ -98,17 +125,15 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		modNum += modTop;
 		const char * modDirName = modsAvailable[modNum];
 
-		// The name of the mod .pk4 file
-		const char * modFileName = va("%s%s", modDirName, ".pk4");
+		// Path to the parent directory
+		fs::path parentPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+		parentPath = parentPath.remove_leaf().remove_leaf();
 
 		// Path to the darkmod directory
-		fs::path darkmodPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
-
-		// Path to the savegames directory
-		fs::path savegamePath(darkmodPath / "savegames");
+		fs::path darkmodPath(parentPath / "darkmod");
 
 		// Path to mod directory in fms folder
-		fs::path modDirPath(darkmodPath / "fms" / modDirName);
+		fs::path modDirPath(parentPath / modDirName);
 
 		// Path to file that holds the current FM name
 		fs::path currentFMPath(darkmodPath / "currentfm.txt");
@@ -116,113 +141,36 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		// Path to file that contains the command line arguments to DM
 		fs::path dmArgs(darkmodPath / "dmargs.txt");
 
-		// Get the current mod name
-		char * current = NULL;
-		FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "r");
-
-		if (currentFM) {
-			// read the mod name
-			current = new char[100];
-			fgets(current, 100, currentFM);
-			fclose(currentFM);
-
-			// Path to the savegames of the current mod (create if necessary)
-			fs::path modSavegamesPath(darkmodPath / "fms" / current / "savegames");
-			fs::create_directory(modSavegamesPath);
-
-			// Move all current savegames to mod directory in fms folder
-			fs::directory_iterator end_iter;
-		    for (fs::directory_iterator dir_itr(savegamePath); dir_itr != end_iter; ++dir_itr)
-		    {
-				if (!fs::is_directory(dir_itr->status()))
-				{
-					fs::path dest(modSavegamesPath / dir_itr->path().leaf());
-					if (fs::exists(dest)) {
-						fs::remove(dest);
-					}
-					fs::rename(dir_itr->path(), dest);
-				}
-			}
-			delete current;
-		}
-		else {
-			fs::directory_iterator end_iter;
-		    for (fs::directory_iterator dir_itr(savegamePath); dir_itr != end_iter; ++dir_itr)
-		    {
-				if (!fs::is_directory(dir_itr->status()))
-				{
-					fs::remove(dir_itr->path());
-				}
-			}
-		}
-
-		// Copy all existing savegames from mod directory in fms folder to current savegames folder
-		fs::path newmodSavegamesPath(darkmodPath / "fms" / modDirName / "savegames");
-		if (fs::exists(newmodSavegamesPath)) {
-			fs::directory_iterator end_iter;
-			for (fs::directory_iterator dir_itr(newmodSavegamesPath); dir_itr != end_iter; ++dir_itr)
-			{
-				if (!fs::is_directory(dir_itr->status()))
-				{
-					fs::copy_file(dir_itr->path(), savegamePath / dir_itr->path().leaf());
-				}
-			}
-		}
-
 		// Save the name of the new mod
-		currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
+		FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
 		fputs(modDirName, currentFM);
 		fclose(currentFM);
-		
-		// Set DOOM3.EXE path
+
+		// path to dmlauncher
 #ifdef _WINDOWS
-		fs::path doomExe(darkmodPath);
-		doomExe = doomExe.remove_leaf().remove_leaf();
-		doomExe /= "doom3.exe";
 		fs::path launcherExe(darkmodPath / "dmlauncher.exe");
 #else
-		char * doomExe = va("%s../doom.x86", darkmodPath.file_string().c_str());
+		// ???
+		fs::path launcherExe(darkmodPath / "dmlauncher");
 #endif
 
+		// command line to spawn dmlauncher
+		idStr commandLine(launcherExe.file_string().c_str());
+
 #ifdef _WINDOWS
-		// start up dmlauncher and exit
+		// Create a dmlauncher process, setting the working directory to the doom directory
 		STARTUPINFO siStartupInfo;
 		PROCESS_INFORMATION piProcessInfo;
 		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
 		memset(&piProcessInfo, 0, sizeof(piProcessInfo));
 		siStartupInfo.cb = sizeof(siStartupInfo);
-		char * lpCmdLine = va("%s %s %s %s %s",
-			launcherExe.file_string().c_str(), doomExe.file_string().c_str(),
-			dmArgs.file_string().c_str(), darkmodPath.file_string().c_str(),
-			modDirPath.file_string().c_str());
-		CreateProcess(NULL, lpCmdLine, NULL, NULL,  false, 0, NULL, NULL, &siStartupInfo, &piProcessInfo);
-
+		commandLine += " pause";
+		CreateProcess(NULL, (LPSTR) commandLine.c_str(), NULL, NULL,  false, 0, NULL,
+			parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
 #else
-		// delete the current pk4
-		// removed to enable compiling
-//		idLib::fileSystem->Shutdown(false);
-//		if (!pk4ToDelete.empty()) {
-//			remove(pk4ToDelete.file_string().c_str());
-//		}
-		// read dmargs file
-		FILE* argFile = fopen(dmArgs.file_string().c_str(), "r");
-		char args[200];
-		if (argFile) {
-			// read command line args from file
-			do {
-				if (fgets(args, 200, argFile) == NULL) {
-					break;
-				}
-			} while (args[0] == '#');
-			fclose(argFile);
-		} else {
-			// default args
-			strcpy(args, "+set fs_game darkmod");
-		}
-		// start doom
-		// under linux, doomExe is already a char* to the executable name:
-		if (execlp(doomExe, doomExe, args, NULL)==-1) {
+		// start dmlauncher
+		if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));
 		}
@@ -233,6 +181,8 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 void CModMenu::UpdateGUI(idUserInterface* gui) {
 	// Display the name of each FM
 	int modPos = 0;
+	fs::path doomPath(idLib::fileSystem->RelativePathToOSPath("", "fs_savepath"));
+	doomPath /= "..";
 	while (modPos < MODS_PER_PAGE) {
 		idStr guiName = idStr("mod") + modPos + "_name";
 		idStr guiDesc = idStr("mod") + modPos + "_desc";
@@ -246,8 +196,8 @@ void CModMenu::UpdateGUI(idUserInterface* gui) {
 		if (modTop + modPos < (unsigned) modsAvailable.Num()) {
 			const char * modDirName = modsAvailable[modTop + modPos];
 			// Read the text file that contains the name and description
-			const char * modNameFile = va("fms/%s/%s.txt", modDirName, modDirName);
-			idLib::fileSystem->ReadFile(modNameFile, ( void ** )&modFileContent);
+			fs::path modNameFile(doomPath / modDirName / "darkmod.txt");
+			modFileContent = readFile(modNameFile);
 			name = modDirName;
 			desc = "";
 			if (modFileContent != NULL) {
@@ -263,6 +213,7 @@ void CModMenu::UpdateGUI(idUserInterface* gui) {
 					desc.StripTrailingWhitespace();
 					desc.Strip(' ');
 				}
+				delete modFileContent;
 			}
 			
 			available = 1;
@@ -271,9 +222,6 @@ void CModMenu::UpdateGUI(idUserInterface* gui) {
 		gui->SetStateString(guiName, name);
 		gui->SetStateString(guiDesc, desc);
 		gui->SetStateString(guiImage, image);
-		if (modFileContent != NULL) {
-			fileSystem->FreeFile( modFileContent );
-		}
 		modPos++;
 	}
 }
