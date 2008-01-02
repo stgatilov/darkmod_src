@@ -618,6 +618,13 @@ public:
 	* Returns the index of the LAST objective added, for later addressing
 	**/
 	int AddObjsFromEnt( idEntity *ent );
+	int AddObjsFromDict(const idDict& dict);
+
+	/**
+	 * greebo: Load the objectives directly from the given map file.
+	 *         This is called by the main menu SDK code.
+	 **/
+	void LoadDirectlyFromMapFile(const idStr& mapName);
 
 	/**
 	 * greebo: This updates the given GUI overlay with the current

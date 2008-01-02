@@ -3066,6 +3066,24 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "objective_open_request")
 	{
+		if (gui->GetStateInt("BriefingIsVisible") == 1)
+		{
+			// We're coming from the briefing screen
+			// Clear the objectives data and load them from the map
+			m_MissionData->Clear();
+
+			idStr mapName = gui->GetStateString("map");
+
+			// Load the mission data directly from the given map
+			m_MissionData->LoadDirectlyFromMapFile(mapName);
+
+			// Clear the flag so that the objectives get updated
+			objectivesUpdated = false;
+
+			// Hide the briefing screen
+			gui->HandleNamedEvent("HideBriefingScreen");
+		}
+
 		gui->HandleNamedEvent("ShowObjectiveScreen");
 		gui->HandleNamedEvent("InitObjectives");
 
@@ -3081,6 +3099,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		// User requested a map start
 		gui->HandleNamedEvent("ShowBriefingScreen");
+		gui->SetStateInt("BriefingIsVisible", 1);
 	}
 	else if (cmd == "close") 
 	{
