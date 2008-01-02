@@ -2978,8 +2978,6 @@ idGameLocal::HandleESC
 */
 escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
 
-	// greebo: This could be a potential entry point for our in-game Objectives GUI Display.
-
 	if ( isMultiplayer ) {
 		*gui = StartMenu();
 		// we may set the gui back to NULL to hide it
@@ -3079,16 +3077,25 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		objectivesUpdated = true;
 	}
+	else if (cmd == "showMods") // Called by "New Mission"
+	{
+		// User requested a map start
+		gui->HandleNamedEvent("ShowBriefingScreen");
+	}
 	else if (cmd == "close") 
 	{
 		// Set the objectives state flag back to dirty
 		objectivesUpdated = false;
 		gui->HandleNamedEvent("HideObjectiveScreen");
+		gui->HandleNamedEvent("HideBriefingScreen");
 	}
 
+	/* greebo: Commented these out for the Thief's Den release only.
+	   Right after release, these have to be enabled again!
+	
 	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
-	g_Mods.HandleCommands(menuCommand, gui);
+	g_Mods.HandleCommands(menuCommand, gui);*/
 }
 
 /*
