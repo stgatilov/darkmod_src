@@ -1118,7 +1118,8 @@ void idTrigger_Touch::TouchEntities( void ) {
 	idBounds bounds;
 	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
 
-	if ( clipModel == NULL || scriptFunction == NULL ) {
+	if ( clipModel == NULL)
+	{
 		return;
 	}
 
@@ -1145,9 +1146,12 @@ void idTrigger_Touch::TouchEntities( void ) {
 
 		ActivateTargets( entity );
 
-		idThread *thread = new idThread();
-		thread->CallFunction( entity, scriptFunction, false );
-		thread->DelayedStart( 0 );
+		if (scriptFunction != NULL)
+		{
+			idThread *thread = new idThread();
+			thread->CallFunction( entity, scriptFunction, false );
+			thread->DelayedStart( 0 );
+		}
 	}
 }
 

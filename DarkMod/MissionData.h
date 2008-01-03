@@ -806,6 +806,10 @@ protected:
 	**/
 	idStr		m_ObjectiveGroup;
 
+private:
+	idClipModel *		clipModel;
+
+
 }; // CObjectiveLocation
 
 #endif // MISSIONDATA_H

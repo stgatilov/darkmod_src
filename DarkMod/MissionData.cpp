@@ -2315,6 +2315,12 @@ void CObjectiveLocation::Spawn()
 
 	GetPhysics()->EnableClip();
 
+	// get the clip model
+	clipModel = new idClipModel( GetPhysics()->GetClipModel() );
+
+	// remove the collision model from the physics object
+	GetPhysics()->SetClipModel( NULL, 1.0f );
+
 	BecomeActive( TH_THINK );
 }
 
@@ -2327,6 +2333,8 @@ void CObjectiveLocation::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_EntsInBounds.Num() );
 	for( int i=0;i < m_EntsInBounds.Num(); i++ )
 		savefile->WriteString( m_EntsInBounds[i] );
+
+	savefile->WriteClipModel( clipModel );
 }
 
 void CObjectiveLocation::Restore( idRestoreGame *savefile )
@@ -2342,14 +2350,13 @@ void CObjectiveLocation::Restore( idRestoreGame *savefile )
 	m_EntsInBounds.SetNum( num );
 	for( int i=0;i < num; i++ )
 		savefile->ReadString( m_EntsInBounds[i] );
+
+	savefile->ReadClipModel( clipModel );
 }
 
 void CObjectiveLocation::Think()
 {
-	int NumEnts(0);
-	idEntity *Ents[MAX_GENTITIES];
 	idStrList current, added, missing;
-	bool bFound(false);
 
 	// only check on clock ticks
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
@@ -2357,16 +2364,61 @@ void CObjectiveLocation::Think()
 
 	m_TimeStamp = gameLocal.time;
 
-	// bounding box test
-	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
-	for( int i=0; i<NumEnts; i++ )
+	if ( clipModel != NULL)
 	{
-		if( Ents[i] && Ents[i]->m_bIsObjective )
+		// angua: This is adapted from trigger_touch to allow more precise detection
+		idBounds bounds;
+		idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+
+		bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+
+		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+		for (int k = 0; k < numClipModels; k++ ) 
 		{
-			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
-			current.Append( Ents[i]->name );
+			cm = clipModelList[ k ];
+
+			if ( !cm->IsTraceModel() ) 
+			{
+				continue;
+			}
+
+			idEntity *entity = cm->GetEntity();
+			if ( !entity ) 
+			{
+				continue;
+			}
+			
+			if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
+										clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) 
+			{
+				continue;
+			}
+
+			if (entity->m_bIsObjective)
+			{
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), entity->name.c_str() );
+				current.Append( entity->name );
+			}
 		}
 	}
+	else
+	{
+		// bounding box test
+		int NumEnts(0);
+		idEntity *Ents[MAX_GENTITIES];
+
+		NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+		for( int i = 0; i < NumEnts; i++ )
+		{
+			if( Ents[i] && Ents[i]->m_bIsObjective )
+			{
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+				current.Append( Ents[i]->name );
+			}
+		}
+	}
+	
+	bool bFound(false);
 
 	// compare current list to previous clock tick list to generate added list
 	for( int i = 0; i < current.Num(); i++ )
@@ -2407,7 +2459,7 @@ void CObjectiveLocation::Think()
 	}
 
 	// call objectives system for all missing or added ents
-	for( int i=0; i<added.Num(); i++ )
+	for( int i = 0; i < added.Num(); i++ )
 	{
 		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
 		if( Ent )
@@ -2417,7 +2469,7 @@ void CObjectiveLocation::Think()
 		}
 	}
 
-	for( int j=0; j<missing.Num(); j++ )
+	for( int j = 0; j < missing.Num(); j++ )
 	{
 		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
 		if( Ent2 )
