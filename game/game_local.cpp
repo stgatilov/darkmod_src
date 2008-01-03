@@ -222,6 +222,7 @@ idGameLocal::idGameLocal
 idGameLocal::idGameLocal()
 {
 	m_HighestSRId = 0;
+	m_MissionResult = MISSION_NOTEVENSTARTED;
 	Clear();
 }
 
@@ -253,6 +254,7 @@ void idGameLocal::Clear( void )
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
 	m_MissionData = &g_MissionData;
+	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
@@ -745,6 +747,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_sndProp->Save(&savegame);
 	m_MissionData->Save(&savegame);
+	savegame.WriteInt(static_cast<int>(m_MissionResult));
 
 	savegame.WriteInt(m_HighestSRId);
 
@@ -1234,6 +1237,7 @@ void idGameLocal::LocalMapRestart( ) {
 	}
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1444,6 +1448,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	animationLib.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1675,6 +1680,10 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	m_sndProp->Restore(&savegame);
 	m_MissionData->Restore(&savegame);
+
+	int missResult;
+	savegame.ReadInt(missResult);
+	m_MissionResult = static_cast<EMissionResult>(missResult);
 
 	savegame.ReadInt(m_HighestSRId);
 
@@ -3042,6 +3051,22 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "mainmenu_heartbeat")
 	{
+		if (GetMissionResult() == MISSION_COMPLETE)
+		{
+			if (!gui->GetStateBool("SuccessScreenActive"))
+			{
+				// Show the success GUI
+				gui->HandleNamedEvent("ShowSuccessScreen");
+
+				gui->HandleNamedEvent("HideResumeGameButton");
+				gui->HandleNamedEvent("HideObjectivesButton");
+
+				// Avoid duplicate triggering
+				gui->SetStateBool("SuccessScreenActive", true);
+			}
+			return;
+		}
+		
 		// The main menu is visible, check if we should display the "Objectives" option
 		
 		// Only switch during map runtime and if not already triggered

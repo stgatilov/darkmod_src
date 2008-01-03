@@ -41,6 +41,13 @@ typedef enum
 // NOTE: STATE_INVALID may also be used for initially deactivating objectives, 
 // then activating later by setting STATE_INCOMPLETE
 
+enum EMissionResult {
+	MISSION_NOTEVENSTARTED = 0,	// before any map is loaded (at game startup, for instance)
+	MISSION_INPROGRESS = 1,		// mission not yet accomplished (in-game)
+	MISSION_FAILED = 2,			// mission failed
+	MISSION_COMPLETE = 3,		// mission completed
+};
+
 /**
 * Objective component specification types
 **/

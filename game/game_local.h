@@ -181,6 +181,8 @@ void gameError( const char *fmt, ... );
 class DarkRadiantRCFServer;
 typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;
 
+typedef enum EMissionResult;
+
 #ifdef __linux__
 #include "renderer/renderworld.h"
 #endif
@@ -438,6 +440,7 @@ public:
 * Pointer to global Mission Data object (objectives & stats)
 **/
 	CMissionData *			m_MissionData;
+	EMissionResult			m_MissionResult; // holds the global mission state
 
 /**
 * Pointer to global sound prop loader object
@@ -607,6 +610,9 @@ public:
 	 *         world and sets all moveables to rest.
 	 */
 	void					PrepareForMissionEnd();
+
+	void					 SetMissionResult(EMissionResult result) { m_MissionResult = result; }
+	ID_INLINE EMissionResult GetMissionResult() const { return m_MissionResult; }
 
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );

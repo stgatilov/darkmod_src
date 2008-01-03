@@ -883,7 +883,7 @@ void CMissionData::Event_MissionComplete( void )
 		// This sound is played by the success.gui
 		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
 		player->SendHUDMessage("Mission Complete");
-		player->PostEventMS(&EV_Mission_Success, 100);
+		player->PostEventMS(&EV_PrepareMapForMissionEnd, 100);
 	}
 }
 
@@ -891,6 +891,9 @@ void CMissionData::Event_MissionFailed( void )
 {
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
+
+	// greebo: Notify the local game about this
+	gameLocal.SetMissionResult(MISSION_FAILED);
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if(player)

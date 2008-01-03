@@ -9782,22 +9782,29 @@ void idPlayer::Event_UpdateStatisticsGUI(int guiHandle, const char* listDefName)
 
 void idPlayer::Event_MissionSuccess()
 {
-	if (hudMessages.Num() > 0)
-	{
-		// There are still HUD messages pending, postpone this event
-		PostEventMS(&EV_Mission_Success, 3000);
-		return;
-	}
+	// greebo: Hooked off this script, this will be handled via the main menu (TODO: Cleanup)
+	// CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
 
-	CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
+	// Set the gamestate (and remove all irrelevant entities <<-- can be skipped (FIXME))
+	gameLocal.PrepareForMissionEnd();
+	gameLocal.SetMissionResult(MISSION_COMPLETE);
+	gameLocal.sessionCommand = "disconnect";
 }
 
 void idPlayer::Event_PrepareMapForMissionEnd() 
 {
-	gameLocal.Printf("Map shutdown for mission success.\n");
+	if (hudMessages.Num() > 0)
+	{
+		// There are still HUD messages pending, postpone this event
+		PostEventMS(&EV_PrepareMapForMissionEnd, 3000);
+		return;
+	}
 
-	// Pass the call to gameLocal
-	gameLocal.PrepareForMissionEnd();
+	idVec4 fadeColor(0,0,0,1);
+	playerView.Fade(fadeColor, 1500);
+
+	// Schedule an mission success event right after fadeout
+	PostEventMS(&EV_Mission_Success, 1500);
 }
 
 void idPlayer::Event_DisplaySuccessGUI(const char* guiFile) 

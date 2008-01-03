@@ -41,6 +41,7 @@ extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
 extern const idEventDef EV_Player_GiveHealthPool;
 extern const idEventDef EV_Mission_Success;
+extern const idEventDef EV_PrepareMapForMissionEnd;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
