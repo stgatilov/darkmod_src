@@ -2357,7 +2357,8 @@ void CObjectiveLocation::Restore( idRestoreGame *savefile )
 void CObjectiveLocation::Think()
 {
 	idStrList current, added, missing;
-
+	bool bFound = false;
+	
 	// only check on clock ticks
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
 		goto Quit;
@@ -2418,8 +2419,6 @@ void CObjectiveLocation::Think()
 		}
 	}
 	
-	bool bFound(false);
-
 	// compare current list to previous clock tick list to generate added list
 	for( int i = 0; i < current.Num(); i++ )
 	{

@@ -175,13 +175,13 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
+#include "DarkMod/EMissionResult.h"
+
 #include <boost/shared_ptr.hpp>
 
 // Forward decl.
 class DarkRadiantRCFServer;
 typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;
-
-typedef enum EMissionResult;
 
 #ifdef __linux__
 #include "renderer/renderworld.h"
