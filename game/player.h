@@ -41,7 +41,7 @@ extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
 extern const idEventDef EV_Player_GiveHealthPool;
 extern const idEventDef EV_Mission_Success;
-extern const idEventDef EV_PrepareMapForMissionEnd;
+extern const idEventDef EV_TriggerMissionEnd;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -968,13 +968,9 @@ private:
 	void					Event_MissionSuccess();
 
 	// greebo: This event prepares the running map for mission success.
-	// Basically, this removes all AI, puts physics to rest and 
-	// immobilises the player, so that nothing bad happens during the display
-	// of the end game GUI.
-	void					Event_PrepareMapForMissionEnd();
-
-	// Sets up and starts the success GUI, returns the handle
-	void					Event_DisplaySuccessGUI(const char* guiFile);
+	// Basically waits for any HUD messages and fades out the screen, afterwards
+	// the Mission Success event is called.
+	void					Event_TriggerMissionEnd();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

@@ -3840,34 +3840,6 @@ gameState_t	idGameLocal::GameState( void ) const {
 void idGameLocal::PrepareForMissionEnd() {
 	// Raise the gamestate to "Completed"
 	gamestate = GAMESTATE_COMPLETED;
-
-	for (int i = 0; i < MAX_GENTITIES; i++)
-	{
-		idEntity* entity = gameLocal.entities[i];
-
-		if (entity == NULL) {
-			continue;
-		}
-
-		// Put moveables to rest
-		if (entity->IsType(idMoveable::Type)) {
-			static_cast<idMoveable*>(entity)->GetPhysics()->PutToRest();
-		}
-
-		if (entity->IsType(idAI::Type)) {
-			// Deleting the entity object is enough to remove it from the game
-			// It de-registers itself in its destructor
-			delete entity;
-		}
-
-		// Remove all lights, targets, triggers, emitters and speakers
-		if (entity->IsType(idLight::Type) || entity->IsType(idTarget::Type) ||
-			entity->IsType(idTrigger::Type) || entity->IsType(idFuncEmitter::Type) ||
-			entity->IsType(idSound::Type))
-		{
-			delete entity;
-		}
-	}
 }
 
 /*

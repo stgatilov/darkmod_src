@@ -883,7 +883,7 @@ void CMissionData::Event_MissionComplete( void )
 		// This sound is played by the success.gui
 		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
 		player->SendHUDMessage("Mission Complete");
-		player->PostEventMS(&EV_PrepareMapForMissionEnd, 100);
+		player->PostEventMS(&EV_TriggerMissionEnd, 100);
 	}
 }
 
