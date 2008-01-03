@@ -3060,6 +3060,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 				gui->HandleNamedEvent("HideResumeGameButton");
 				gui->HandleNamedEvent("HideObjectivesButton");
+				gui->HandleNamedEvent("SetupObjectivesForMapStart");
 
 				// Avoid duplicate triggering
 				gui->SetStateBool("SuccessScreenActive", true);
