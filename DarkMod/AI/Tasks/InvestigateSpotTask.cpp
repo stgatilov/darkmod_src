@@ -90,6 +90,12 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 				DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
 				owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
 			}
+			else
+			{
+				// Hiding spot not reachable, terminate task
+				DM_LOG(LC_AI, LT_DEBUG).LogString("memory.currentSearchSpot not reachable, terminating task.\r");
+				subsystem.FinishTask();
+			}
 		}
 	}
 	else
@@ -121,6 +127,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		if (owner->AI_DEST_UNREACHABLE)
 		{
 			DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot unreachable.\r", memory.currentSearchSpot);
+			return true;
 		}
 
 		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", memory.currentSearchSpot);

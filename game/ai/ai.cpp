@@ -3908,8 +3908,12 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 						bool b_canOpen = true;
 						if (p_door->isLocked())
 						{
+							b_canOpen = false;
+							AI_DEST_UNREACHABLE = true;
+							StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+
 							// TODO: Call script to see if I have this key. For now
-							// answer is always yes.
+							// answer is always no.
 
 						}
 
