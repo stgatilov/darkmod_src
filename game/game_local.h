@@ -175,7 +175,7 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
-#include "DarkMod/EMissionResult.h"
+#include "../DarkMod/EMissionResult.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -611,8 +611,8 @@ public:
 	 */
 	void					PrepareForMissionEnd();
 
-	void					 SetMissionResult(EMissionResult result) { m_MissionResult = result; }
-	ID_INLINE EMissionResult GetMissionResult() const { return m_MissionResult; }
+	void					 SetMissionResult(EMissionResult result);
+	ID_INLINE EMissionResult GetMissionResult() const;
 
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );

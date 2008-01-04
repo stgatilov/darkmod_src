@@ -5944,3 +5944,13 @@ void idGameLocal::PauseGame( bool bPauseState )
 		g_stopTime.SetBool( false );
 	}
 }
+
+void idGameLocal::SetMissionResult(EMissionResult result)
+{
+	m_MissionResult = result;
+}
+
+EMissionResult idGameLocal::GetMissionResult() const 
+{
+	return m_MissionResult;
+}
