@@ -4870,7 +4870,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
-			ToggleObjectivesGUI();
+			// ToggleObjectivesGUI(); // greebo: disabled for Thief's Den release
 			break;
 		}
 		case IMPULSE_20:
