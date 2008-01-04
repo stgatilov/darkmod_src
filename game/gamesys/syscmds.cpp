@@ -339,6 +339,23 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 
 /*
 ==================
+Cmd_InventoryCycleMaps_f
+==================
+*/
+void Cmd_InventoryCycleMaps_f( const idCmdArgs &args )
+{
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( player == NULL ) {
+		gameLocal.Printf( "%s: No player exists.\n", args.Argv(0) );
+		return;
+	}
+
+	// Pass the call to the specialised method
+	player->NextInventoryMap();
+}
+
+/*
+==================
 Cmd_GetFloatArg
 ==================
 */
@@ -2700,6 +2717,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 
 	cmdSystem->AddCommand( "inventory_hotkey",		Cmd_InventoryHotkey_f,		CMD_FL_GAME,				"Usage: inventory_hotkey [item]\nSelects an item from the currently available inventory. If 'item' is omitted, it will return the current item's hotkey name, if any." );
 	cmdSystem->AddCommand( "inventory_use",			Cmd_InventoryUse_f,			CMD_FL_GAME,				"Usage: inventory_use [item]\nUses an item in the currently available inventory without selectign it. If 'item' is omitted, it will use the currently selected item." );
+	cmdSystem->AddCommand( "inventory_cycle_maps",	Cmd_InventoryCycleMaps_f,	CMD_FL_GAME,				"Usage: Bind a key to this command to cycle through the inventory maps." );
 
 	cmdSystem->AddCommand( "darkradiant_signal_cmd_done",	Cmd_SignalCMDDone_f,		CMD_FL_GAME,				"Called by DarkRadiant to receive the DONE signal after issuing commands." );
 

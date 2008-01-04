@@ -417,6 +417,7 @@ idPlayer::idPlayer() :
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
+	m_MapCursor				= NULL;
 
 	m_LightgemModifier		= 0;
 }
@@ -971,6 +972,35 @@ void idPlayer::addWeaponsToInventory() {
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->size());
 }
 
+void idPlayer::NextInventoryMap()
+{
+	gameLocal.Printf("Cycling maps.\n");
+
+	if (m_MapCursor == NULL)
+	{
+		return; // We have no cursor!
+	}
+
+	CInventoryItem* mapItem = m_MapCursor->GetCurrentItem();
+
+	if (mapItem != NULL)
+	{
+		// We already have a map selected, toggle it off
+		inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+	}
+
+	// Advance the cursor to the next item
+	mapItem = m_MapCursor->GetNextItem();
+
+	if (mapItem == NULL)
+	{
+		return; // No item available
+	}
+	
+	// Use this item
+	inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+}
+
 void idPlayer::SetupInventory()
 {
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
@@ -986,6 +1016,14 @@ void idPlayer::SetupInventory()
 
 	// greebo: Parse the spawnargs and add the weapon items to the inventory.
 	addWeaponsToInventory();
+
+	// greebo: Create the cursor for map/floorplan inventory items.
+	m_MapCursor = inv->CreateCursor();
+	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, &idx);
+	m_MapCursor->SetCurrentCategory(idx);
+	m_MapCursor->SetCategoryLock(true);
+	m_MapCursor->SetWrapAround(false); // no wrap around, makes coding easier
+	m_MapCursor->ClearItem(); // invalidate the cursor
 
 	// give the player weapon ammo based on shop purchases
 	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
@@ -1327,6 +1365,11 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_WeaponCursor->GetId());
 	}
 
+	savefile->WriteBool(m_MapCursor != NULL);
+	if (m_MapCursor != NULL) {
+		savefile->WriteInt(m_MapCursor->GetId());
+	}
+
 	savefile->WriteInt(m_LightgemModifier);
 
 	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
@@ -1627,6 +1670,14 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		int cursorId;
 		savefile->ReadInt(cursorId);
 		m_WeaponCursor = Inventory()->GetCursor(cursorId);
+	}
+
+	bool hasMapCursor;
+	savefile->ReadBool(hasMapCursor);
+	if (hasMapCursor) {
+		int cursorId;
+		savefile->ReadInt(cursorId);
+		m_MapCursor = Inventory()->GetCursor(cursorId);
 	}
 
 	savefile->ReadInt(m_LightgemModifier);
