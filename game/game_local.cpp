@@ -255,6 +255,8 @@ void idGameLocal::Clear( void )
 	m_RelationsManager = &g_globalRelations;
 	m_MissionData = &g_MissionData;
 	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
+	m_MissionDataLoadedIntoGUI = false;
+
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
@@ -1425,6 +1427,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 		MapShutdown();
 	}
 
+	// greebo: Clear the mission data, it might have been filled during the objectives screen display
+	m_MissionData->Clear();
+
 	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
@@ -1449,6 +1454,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	gamestate = GAMESTATE_ACTIVE;
 	m_MissionResult = MISSION_INPROGRESS;
+
+	// We need an objectives update now that we've loaded the map
+	m_MissionDataLoadedIntoGUI = false;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1684,6 +1692,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	int missResult;
 	savegame.ReadInt(missResult);
 	m_MissionResult = static_cast<EMissionResult>(missResult);
+	m_MissionDataLoadedIntoGUI = false;
 
 	savegame.ReadInt(m_HighestSRId);
 
@@ -3042,8 +3051,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 {
 	idStr cmd(menuCommand);
 
-	static bool objectivesUpdated = false;
-
 	if (cmd == "objective_close_request")
 	{
 		// Objectives GUI requests closure, shut it down
@@ -3106,13 +3113,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("GameStateNoMap", false);
 			}
 
-			if (!objectivesUpdated)
+			if (!m_MissionDataLoadedIntoGUI)
 			{
 				// Load the objectives into the GUI
 				m_MissionData->UpdateGUIState(gui);
 			}
 
-			objectivesUpdated = true;
+			m_MissionDataLoadedIntoGUI = true;
 		}
 		else
 		{
@@ -3143,7 +3150,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			m_MissionData->LoadDirectlyFromMapFile(mapName);
 
 			// Clear the flag so that the objectives get updated
-			objectivesUpdated = false;
+			m_MissionDataLoadedIntoGUI = false;
 
 			// Hide the briefing screen
 			gui->HandleNamedEvent("HideBriefingScreen");
@@ -3153,13 +3160,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->HandleNamedEvent("ShowObjectiveScreen");
 		gui->HandleNamedEvent("InitObjectives");
 		
-		if (!objectivesUpdated)
+		if (!m_MissionDataLoadedIntoGUI)
 		{
 			// Load the objectives into the GUI
 			m_MissionData->UpdateGUIState(gui); 
 		}
 
-		objectivesUpdated = true;
+		m_MissionDataLoadedIntoGUI = true;
 	}
 	else if (cmd == "showMods") // Called by "New Mission"
 	{
@@ -3170,7 +3177,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "close") 
 	{
 		// Set the objectives state flag back to dirty
-		objectivesUpdated = false;
+		m_MissionDataLoadedIntoGUI = false;
 
 		gui->HandleNamedEvent("HideObjectiveScreen");
 		gui->HandleNamedEvent("HideBriefingScreen");
