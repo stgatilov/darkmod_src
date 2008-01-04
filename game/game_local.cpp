@@ -3058,6 +3058,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				// Show the success GUI
 				gui->HandleNamedEvent("ShowSuccessScreen");
 
+				// Stop the objectives music
+				gui->HandleNamedEvent("StopObjectivesMusic");
+
 				gui->HandleNamedEvent("HideResumeGameButton");
 				gui->HandleNamedEvent("HideObjectivesButton");
 				gui->HandleNamedEvent("SetupObjectivesForMapStart");
@@ -3066,6 +3069,24 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("SuccessScreenActive", true);
 			}
 			return;
+		}
+
+		// greebo: Check for the right ambient music
+		if (GameState() == GAMESTATE_ACTIVE)
+		{
+			if (!gui->GetStateBool("ObjectivesMusicPlaying")) 
+			{
+				gui->HandleNamedEvent("StartObjectivesMusic");
+				gui->SetStateBool("ObjectivesMusicPlaying", true);
+			}
+		}
+		else // GameState != ACTIVE
+		{
+			if (gui->GetStateBool("ObjectivesMusicPlaying"))
+			{
+				gui->HandleNamedEvent("StopObjectivesMusic");
+				gui->SetStateBool("ObjectivesMusicPlaying", false);
+			}
 		}
 		
 		// The main menu is visible, check if we should display the "Objectives" option
@@ -3088,7 +3109,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			if (!objectivesUpdated)
 			{
 				// Load the objectives into the GUI
-				m_MissionData->UpdateGUIState(gui); 
+				m_MissionData->UpdateGUIState(gui);
 			}
 
 			objectivesUpdated = true;
@@ -3131,7 +3152,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
 		gui->HandleNamedEvent("InitObjectives");
-
+		
 		if (!objectivesUpdated)
 		{
 			// Load the objectives into the GUI
@@ -3150,6 +3171,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		// Set the objectives state flag back to dirty
 		objectivesUpdated = false;
+
 		gui->HandleNamedEvent("HideObjectiveScreen");
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
