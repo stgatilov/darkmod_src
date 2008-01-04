@@ -3073,10 +3073,17 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Only switch during map runtime and if not already triggered
 		if (GameState() == GAMESTATE_ACTIVE)
 		{
-			gui->HandleNamedEvent("SetupObjectivesForIngame");
+			// Only trigger the visuals update once
+			if (!gui->GetStateBool("GameStateActive"))
+			{
+				gui->HandleNamedEvent("SetupObjectivesForIngame");
 
-			gui->HandleNamedEvent("ShowObjectivesButton");
-			gui->HandleNamedEvent("ShowResumeGameButton");
+				gui->HandleNamedEvent("ShowObjectivesButton");
+				gui->HandleNamedEvent("ShowResumeGameButton");
+
+				gui->SetStateBool("GameStateActive", true);
+				gui->SetStateBool("GameStateNoMap", false);
+			}
 
 			if (!objectivesUpdated)
 			{
@@ -3088,10 +3095,17 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 		else
 		{
-			gui->HandleNamedEvent("SetupObjectivesForMapStart");
+			// Only trigger the visuals once
+			if (!gui->GetStateBool("GameStateNoMap"))
+			{
+				gui->HandleNamedEvent("SetupObjectivesForMapStart");
 
-			gui->HandleNamedEvent("HideResumeGameButton");
-			gui->HandleNamedEvent("HideObjectivesButton");
+				gui->HandleNamedEvent("HideResumeGameButton");
+				gui->HandleNamedEvent("HideObjectivesButton");
+
+				gui->SetStateBool("GameStateNoMap", true);
+				gui->SetStateBool("GameStateActive", false);
+			}
 		}
 	}
 	else if (cmd == "objective_open_request")
