@@ -2958,9 +2958,7 @@ void idActor::DropAttachment( int ind )
 	m_attachments[ind].ent = NULL; 
 
 	// greebo: Check if we should extinguish the attachment, like torches
-	bool extinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
-
-	if (extinguish)
+	if (ent->spawnArgs.GetBool("extinguish_on_drop", "0"))
 	{
 		// Get the delay in milliseconds
 		int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
