@@ -110,6 +110,9 @@ const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
 const idEventDef EV_CallFunction( "callFunction", "s" );
 const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
 
+// greebo: Extinguishes all lights (i.e. the <self> entity plus all bound lights)
+const idEventDef EV_ExtinguishLights("extinguishLights", NULL);
+
 const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
 // greebo: Script event definition for dealing damage
 const idEventDef EV_Damage("damage", "EEvsf");
@@ -287,6 +290,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_HasFunction,			idEntity::Event_HasFunction )
 	EVENT( EV_CallFunction,			idEntity::Event_CallFunction )
 	EVENT( EV_SetNeverDormant,		idEntity::Event_SetNeverDormant )
+
+	EVENT( EV_ExtinguishLights,		idEntity::Event_ExtinguishLights )
 
 	EVENT( EV_InPVS,				idEntity::Event_InPVS )
 	EVENT( EV_Damage,				idEntity::Event_Damage )
@@ -8313,4 +8318,23 @@ void idEntity::Event_SetClipMask(const int clipMask)
 void idEntity::Event_GetClipMask()
 {
 	idThread::ReturnInt(GetPhysics()->GetClipMask());
+}
+
+void idEntity::Event_ExtinguishLights()
+{
+	// greebo: First, check if we ourselves are a light
+	if (IsType(idLight::Type)) 
+	{
+		// Call the script function to extinguish this light
+		CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
+	}
+
+	// Now go through the teamChain and check for lights
+	for (idEntity* ent = teamChain; ent != NULL; ent = ent->teamChain)
+	{
+		if (ent->IsType(idLight::Type))
+		{
+			ent->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", ent);
+		}
+	}
 }

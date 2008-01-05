@@ -80,6 +80,7 @@ extern const idEventDef EV_SetSkin;
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
+extern const idEventDef EV_ExtinguishLights;
 
 extern const idEventDef EV_IsType;
 
@@ -1016,6 +1017,11 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_HasFunction( const char *name );
 	void					Event_CallFunction( const char *name );
 	void					Event_SetNeverDormant( int enable );
+
+	/**
+	 * greebo: Extinguishes all lights in the teamchain, including self.
+	 */
+	void					Event_ExtinguishLights();
 
 	void					Event_InPVS( void );
 	void					Event_WaitForRender( void );

@@ -8731,14 +8731,15 @@ void idAI::DropOnRagdoll( void )
 			continue;
 
 		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
+		
+		if( !bDrop ) {
+			continue;
+		}
+
 		bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
 		bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
 		bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
 		bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
-
-
-		if( !bDrop )
-			continue;
 
 		if( bDropWhenDrawn )
 		{
