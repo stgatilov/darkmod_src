@@ -287,8 +287,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	/* idPhysics_Player* */ playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
 	// if the player is climbing a rope or ladder, don't let them grab things
-	if( playerPhys->OnRope() || playerPhys->OnLadder() )
-		goto Quit;
+	// greebo: Disabled this, it let things currently held by the grabber drop to the ground
+	// and the reattach them after the player has finished climbing
+	/*if( playerPhys->OnRope() || playerPhys->OnLadder() )
+		goto Quit;*/
 
 	player->GetViewPos( viewPoint, viewAxis );
 
