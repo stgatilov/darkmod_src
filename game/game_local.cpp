@@ -3104,6 +3104,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// Only trigger the visuals update once
 			if (!gui->GetStateBool("GameStateActive"))
 			{
+				gui->SetStateBool("SaveMissionEnabled", true);
+
 				gui->HandleNamedEvent("SetupObjectivesForIngame");
 
 				gui->HandleNamedEvent("ShowObjectivesButton");
@@ -3126,6 +3128,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// Only trigger the visuals once
 			if (!gui->GetStateBool("GameStateNoMap"))
 			{
+				gui->SetStateBool("SaveMissionEnabled", false);
+
 				gui->HandleNamedEvent("SetupObjectivesForMapStart");
 
 				gui->HandleNamedEvent("HideResumeGameButton");
