@@ -1576,6 +1576,18 @@ void idMover::SetPortalState( bool open ) {
 }
 
 /*
+================
+idMover::IsBlocked
+================
+*/
+bool idMover::IsBlocked( void )
+{
+	const trace_t* trace = physicsObj.GetBlockingInfo();
+	return (trace != NULL);
+}
+
+
+/*
 ===============================================================================
 
 	idSplinePath, holds a spline path to be used by an idMover
