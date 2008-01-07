@@ -3804,7 +3804,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				avoidBounds[1] = moverBounds[1] + idVec3(stopDistance, stopDistance, 0);
 				// gameRenderWorld->DebugBox(colorYellow, idBox(avoidBounds), gameLocal.msec);
 				
-				/*
+/*
 				// old version
 				delta.x = avoidBounds[1][0] - avoidBounds[0][0];
 				delta.y = avoidBounds[1][1] - avoidBounds[0][1];
@@ -3816,7 +3816,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				sizePerpGrav = gravity.Cross (delta);
 
 				stopDistance = sizePerpGrav.Length();
-
+*/
 				// The door becomes an active dynamic pathing obstacle when we
 				// reach that distance (we will open the door at that point)
 				if ( physicsObj.GetAbsBounds().IntersectsBounds(avoidBounds) )
