@@ -151,7 +151,16 @@ void idMoveable::Spawn( void ) {
 	physicsObj.SetBouncyness( bouncyness );
 	physicsObj.SetFriction( air_friction_linear, air_friction_angular, friction );
 	physicsObj.SetGravity( gameLocal.GetGravity() );
-	physicsObj.SetContents( CONTENTS_SOLID | CONTENTS_OPAQUE );
+
+	int contents = CONTENTS_SOLID | CONTENTS_OPAQUE;
+	// greebo: Set the frobable contents flag if the spawnarg says so
+	if (spawnArgs.GetBool("frobable", "0"))
+	{
+		contents |= CONTENTS_FROBABLE;
+	}
+	
+	physicsObj.SetContents( contents );
+
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
 
