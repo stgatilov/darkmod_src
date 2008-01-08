@@ -163,8 +163,9 @@ void SwitchOnLightState::Think(idAI* owner)
 	{
 		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
 		lightDirection.z = 0;
+		float delta = lightDirection.LengthFast();
 
-		if (lightDirection.LengthFast() <= size.x)
+		if (delta <= size.x)
 		{
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();
 			owner->StopMove(MOVE_STATUS_DONE);
@@ -173,7 +174,7 @@ void SwitchOnLightState::Think(idAI* owner)
 		}
 		else if (owner->AI_MOVE_DONE)
 		{
-			if (lightDirection.LengthFast() <= owner->GetArmReachLength())
+			if (delta <= 1.5 * owner->GetArmReachLength())
 			{
 				owner->GetSubsystem(SubsysMovement)->ClearTasks();
 				owner->StopMove(MOVE_STATUS_DONE);

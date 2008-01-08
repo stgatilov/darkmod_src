@@ -1047,7 +1047,7 @@ void idPhysics_RigidBody::SetClipModel( idClipModel *model, const float density,
 
 	// check whether or not the clip model has valid mass properties
 	if ( mass <= 0.0f || FLOAT_IS_NAN( mass ) ) {
-		gameLocal.Warning( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
+		DM_LOG(LC_ENTITY, LT_INFO).LogString( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
 							self->name.c_str(), self->GetType()->classname );
 		mass = 1.0f;
 		centerOfMass.Zero();
