@@ -977,9 +977,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				if (directObjectEntity->IsType(idActor::Type))
 				{
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 
 					gameLocal.Printf("Ok, I'm helping you.\n");
 
@@ -1009,9 +1009,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					gameLocal.Printf("I'll attack it with my ranged weapon!\n");
 
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -1043,9 +1043,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					gameLocal.Printf("I'll attack it with my melee weapon!\n");
 
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -1240,9 +1240,10 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 			if (distanceToIssuer >= MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
 			{
 				// Bark
-				owner->GetSubsystem(SubsysCommunication)->PushTask(
-					SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-				);
+				// angua: this one was getting quite annoying if you hear it all the time
+				//owner->GetSubsystem(SubsysCommunication)->PushTask(
+				//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+				//);
 			}
 			
 			// If AI that called out has a higher alert num, raise ours
