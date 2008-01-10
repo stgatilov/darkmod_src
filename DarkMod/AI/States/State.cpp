@@ -719,8 +719,9 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
 	{
 		// Vocalize that see something out of place because this light is supposed to be on
-		gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
-
+		//gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
+/*
+		// angua: commented out, it was getting annoying to hear it over and over
 		// Vocalize that see something out of place
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
@@ -731,7 +732,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				TaskPtr(new SingleBarkTask(soundName))
 			);
 		}
-
+*/
 		// One more piece of evidence of something out of place
 		memory.countEvidenceOfIntruders++;
 
