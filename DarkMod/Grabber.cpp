@@ -777,8 +777,10 @@ void CGrabber::AddToClipList( idEntity *ent )
 	// collides with the world
 	phys->SetClipMask( clipMask & (~MASK_PLAYERSOLID) );
 	phys->SetClipMask( phys->GetClipMask() | CONTENTS_SOLID );
-
-	phys->SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
+	
+	// Clear the solid flag to avoid player collision, 
+	// but enable monsterclip for AI and CONTENTS_RENDERMODEL for projectiles
+	phys->SetContents( (contents & (~CONTENTS_SOLID)) | CONTENTS_MONSTERCLIP | CONTENTS_RENDERMODEL );
 
 	if( HasClippedEntity() ) 
 	{
