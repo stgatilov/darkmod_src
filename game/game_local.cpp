@@ -779,6 +779,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_EscapePointManager->Save(&savegame);
 
+	// greebo: Save the maximum frob distance
+	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
+
 	// spawnSpots
 	// initialSpots
 	// currentInitialSpot
@@ -1728,6 +1731,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	m_EscapePointManager->Restore(&savegame);
+
+	// greebo: Restore the maximum frob distance
+	savegame.ReadFloat(g_Global.m_MaxFrobDistance);
 
 	// spawnSpots
 	// initialSpots
