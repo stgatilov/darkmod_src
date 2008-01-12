@@ -3073,9 +3073,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 				// Stop the objectives music
 				gui->HandleNamedEvent("StopObjectivesMusic");
-
-				gui->HandleNamedEvent("HideResumeGameButton");
-				gui->HandleNamedEvent("HideObjectivesButton");
 				gui->HandleNamedEvent("SetupObjectivesForMapStart");
 
 				// Avoid duplicate triggering
@@ -3110,12 +3107,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// Only trigger the visuals update once
 			if (!gui->GetStateBool("GameStateActive"))
 			{
-				gui->SetStateBool("SaveMissionEnabled", true);
-
 				gui->HandleNamedEvent("SetupObjectivesForIngame");
-
-				gui->HandleNamedEvent("ShowObjectivesButton");
-				gui->HandleNamedEvent("ShowResumeGameButton");
 
 				gui->SetStateBool("GameStateActive", true);
 				gui->SetStateBool("GameStateNoMap", false);
@@ -3134,12 +3126,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			// Only trigger the visuals once
 			if (!gui->GetStateBool("GameStateNoMap"))
 			{
-				gui->SetStateBool("SaveMissionEnabled", false);
-
 				gui->HandleNamedEvent("SetupObjectivesForMapStart");
-
-				gui->HandleNamedEvent("HideResumeGameButton");
-				gui->HandleNamedEvent("HideObjectivesButton");
 
 				gui->SetStateBool("GameStateNoMap", true);
 				gui->SetStateBool("GameStateActive", false);
