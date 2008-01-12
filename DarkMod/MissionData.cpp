@@ -240,8 +240,8 @@ void CMissionData::Clear( void )
 	m_Stats.PocketsPicked = 0;
 	m_Stats.LootOverall = 0;
 
-	m_SuccessLogicStr.Clear();
-	m_FailureLogicStr.Clear();
+	m_SuccessLogicStr = "";
+	m_FailureLogicStr = "";
 
 	m_SuccessLogic.Clear();
 	m_FailureLogic.Clear();
@@ -301,6 +301,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		m_Objectives[i].Restore( savefile );
 
 	// Rebuild list of clocked components now that we've loaded objectives
+	m_ClockedComponents.Clear();
 	for( int ind = 0; ind < m_Objectives.Num(); ind++ )
 	{
 		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
