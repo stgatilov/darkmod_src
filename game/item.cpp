@@ -1099,11 +1099,37 @@ void idMoveableItem::Spawn( void )
 	idTraceModel trm;
 	float density, friction, air_friction_linear, air_friction_angular, bouncyness, tsize;
 	idStr clipModelName;
-	idBounds bounds;
+	idBounds bounds, FrobBounds;
+	idTraceModel FrobTrm;
+	int numSides(0);
 
-	// create a trigger for item pickup
-	spawnArgs.GetFloat( "triggersize", "16.0", tsize );
-	trigger = new idClipModel( idTraceModel( idBounds( vec3_origin ).Expand( tsize ) ) );
+	// create a frob box separate from the collision box for easier frobbing
+	// First check if frobbox_mins and frobbox_maxs are set
+	if ( spawnArgs.GetVector( "frobbox_mins", NULL, FrobBounds[0] ) &&
+				spawnArgs.GetVector( "frobbox_maxs", NULL, FrobBounds[1] ) )
+	{
+		if ( FrobBounds[0][0] > FrobBounds[1][0] || FrobBounds[0][1] >FrobBounds[1][1] || FrobBounds[0][2] > FrobBounds[1][2] )
+		{
+			gameLocal.Error( "Invalid frob box bounds '%s'-'%s' on entity '%s'", FrobBounds[0].ToString(), FrobBounds[1].ToString(), name.c_str() );
+		}
+	} 
+	else 
+	{
+		spawnArgs.GetFloat( "frobbox_size", "10.0", tsize );
+		FrobBounds.Zero();
+		FrobBounds.ExpandSelf( tsize );
+	}
+
+	if ( spawnArgs.GetInt( "frobbox_cylinder", "0", numSides ) && numSides > 0 ) {
+		FrobTrm.SetupCylinder( FrobBounds, numSides < 3 ? 3 : numSides );
+	} else if ( spawnArgs.GetInt( "frobbox_cone", "0", numSides ) && numSides > 0 ) {
+		FrobTrm.SetupCone( FrobBounds, numSides < 3 ? 3 : numSides );
+	} else {
+		FrobTrm.SetupBox( FrobBounds );
+	}
+
+	// Initialize frob bounds based on previous spawnarg setup
+	trigger = new idClipModel( FrobTrm );
 	trigger->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	trigger->SetContents( CONTENTS_FROBABLE );
 
