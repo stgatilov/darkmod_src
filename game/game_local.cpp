@@ -3100,16 +3100,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		
 		// The main menu is visible, check if we should display the "Objectives" option
 		
-		// Only switch during map runtime and if not already triggered
+		// Only update the objectives during map runtime and if not already triggered
 		if (GameState() == GAMESTATE_ACTIVE)
 		{
-			// Only trigger the visuals update once
-			if (!gui->GetStateBool("GameStateActive"))
-			{
-				gui->SetStateBool("GameStateActive", true);
-				gui->SetStateBool("GameStateNoMap", false);
-			}
-
 			if (!m_MissionDataLoadedIntoGUI)
 			{
 				// Load the objectives into the GUI
@@ -3117,15 +3110,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 
 			m_MissionDataLoadedIntoGUI = true;
-		}
-		else
-		{
-			// Only trigger the visuals once
-			if (!gui->GetStateBool("GameStateNoMap"))
-			{
-				gui->SetStateBool("GameStateNoMap", true);
-				gui->SetStateBool("GameStateActive", false);
-			}
 		}
 	}
 	else if (cmd == "objective_open_request")
