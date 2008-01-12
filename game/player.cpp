@@ -9299,6 +9299,15 @@ void idPlayer::FrobCheck( void )
 
 		// greebo: Check if the frobbed entity is the bind master of the currently climbed rope
 		bool isRopeMaster = playerPhysics->OnRope() && playerPhysics->GetRopeEntity()->GetBindMaster() == ent;
+
+		// ishtvan: Check if the frobbed entity is a dynamically added AF body linked to another entity
+		if( ent->IsType(idAFEntity_Base::Type) )
+		{
+			idAFEntity_Base *afEnt = static_cast<idAFEntity_Base *>(ent);
+			idAFBody *AFbod = afEnt->GetAFPhysics()->GetBody( afEnt->BodyForClipModelId(trace.c.id) );
+			if( AFbod->GetRerouteEnt() && AFbod->GetRerouteEnt()->m_bFrobable )
+				ent = AFbod->GetRerouteEnt();
+		}
 	
 		// only frob frobable, non-hidden entities within their frobdistance
 		// also, do not frob the ent we are currently holding in our hands

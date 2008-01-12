@@ -1195,6 +1195,10 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	
 	EntClip = ent->GetPhysics()->GetClipModel();
 	NewClip = new idClipModel(EntClip);
+
+	// Propagate CONTENTS_CORPSE from AF to new clipmodel
+	if( GetAFPhysics()->GetContents() & CONTENTS_CORPSE )
+		NewClip->SetContents( (NewClip->GetContents() & (~CONTENTS_SOLID)) | CONTENTS_CORPSE ); 
 	
 	// EntMass = ent->GetPhysics()->GetMass();
 	// FIX: Large masses aren't working, the AFs are not quite that flexible that you can put on a huge mass
@@ -1259,7 +1263,10 @@ void idAFEntity_Base::AddEntByBody( idEntity *ent, int bodID )
 	int SetContents = 0;
 	if( (EntClip->GetContents() & CONTENTS_RESPONSE) != 0 )
 		SetContents = CONTENTS_RESPONSE;
-	if( (EntClip->GetContents() & CONTENTS_FROBABLE) != 0 )
+	
+	if( (EntClip->GetContents() & CONTENTS_FROBABLE) != 0
+		// Temporary fix: CONTENTS_FROBABLE is not currently set on all frobables
+		|| ent->m_bFrobable )
 		SetContents = SetContents | CONTENTS_FROBABLE;
 
 	EntClip->SetContents( SetContents );
