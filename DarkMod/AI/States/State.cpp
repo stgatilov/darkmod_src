@@ -473,7 +473,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			{
 				memory.lastTimeVisualStimBark = gameLocal.time;
 				owner->GetSubsystem(SubsysCommunication)->PushTask(
-					TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+					TaskPtr(new SingleBarkTask(soundName))
 				);
 			}
 			
