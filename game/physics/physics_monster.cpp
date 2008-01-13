@@ -92,6 +92,7 @@ monsterMoveResult_t idPhysics_Monster::SlideMove( idVec3 &start, idVec3 &velocit
 	move = delta;
 	for( i = 0; i < 3; i++ ) {
 		gameLocal.clip.Translation( tr, start, start + move, clipModel, clipModel->GetAxis(), clipMask, self );
+		//gameRenderWorld->DebugArrow(colorWhite, start, tr.endpos, 2, 5000);
 
 		start = tr.endpos;
 
@@ -172,6 +173,7 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	// try to step up
 	up = start - gravityNormal * maxStepHeight;
 	gameLocal.clip.Translation( tr, start, up, clipModel, clipModel->GetAxis(), clipMask, self );
+	//gameRenderWorld->DebugArrow(colorRed, start, up, 2, 5000);
 	if ( tr.fraction == 0.0f ) {
 		start = noStepPos;
 		velocity = noStepVel;
@@ -191,16 +193,23 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	// step down again
 	down = stepPos + gravityNormal * maxStepHeight;
 	gameLocal.clip.Translation( tr, stepPos, down, clipModel, clipModel->GetAxis(), clipMask, self );
+	//gameRenderWorld->DebugArrow(colorGreen, stepPos, down, 2, 5000);
+	//gameRenderWorld->DebugArrow(colorBlue, tr.c.point, tr.c.point + 5 * tr.c.normal, 2, 5000);
 	stepPos = tr.endpos;
 
-	// if the move is further without stepping up, or the slope is too steap, don't step up
+	// if the move is further without stepping up, or the slope is too steep, don't step up
 	nostepdist = ( noStepPos - start ).LengthSqr();
 	stepdist = ( stepPos - start ).LengthSqr();
-	if ( ( nostepdist >= stepdist ) || ( ( tr.c.normal * -gravityNormal ) < minFloorCosine ) ) {
+	
+	// angua: added check for (almost) horizontal normals (they seem to happen sometimes)
+	float projection = tr.c.normal * -gravityNormal;
+	if (nostepdist >= stepdist || (projection < minFloorCosine && projection > 0.06f)) 
+	{
 		start = noStepPos;
 		velocity = noStepVel;
 		return MM_SLIDING;
 	}
+	
 
 	start = stepPos;
 	velocity = stepVel;
