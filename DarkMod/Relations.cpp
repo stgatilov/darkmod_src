@@ -61,6 +61,7 @@ CRelations &CRelations::operator=(const CRelations &in)
 		Clear();
 
 	m_RelMat->Copy( in.m_RelMat );
+	m_bMatFailed = in.m_bMatFailed;
 
 	return *this;
 }
