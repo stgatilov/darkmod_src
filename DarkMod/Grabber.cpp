@@ -963,8 +963,12 @@ void CGrabber::Throw( int HeldTime )
 	if( FracPower > 1.0 )
 		FracPower = 1.0;
 
+	float mass = m_dragEnt.GetEntity()->GetPhysics()->GetMass();
+
 	// Try out a linear scaling between max and min
 	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
+	// Clamp to max velocity
+	ThrowImpulse = idMath::ClampFloat( 0.0f, cv_throw_max_vel.GetFloat() * mass, ThrowImpulse );
 	ImpulseVec *= ThrowImpulse;  
 
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
