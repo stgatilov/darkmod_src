@@ -116,6 +116,7 @@ extern idCVar cv_drag_encumber_max;
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
 extern idCVar cv_throw_time;
+extern idCVar cv_throw_max_vel;
 
 extern idCVar cv_tdm_rope_pull_force_factor;
 
