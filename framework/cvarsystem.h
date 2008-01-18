@@ -66,6 +66,7 @@
 #ifdef __linux__
 #include "cmdsystem.h"
 #include <typeinfo>
+#include <cassert>
 #endif
 
 typedef enum {

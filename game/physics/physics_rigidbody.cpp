@@ -256,6 +256,12 @@ bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& im
 {
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
 
+	if (impulse.LengthSqr() == 0)
+	{
+		// greebo: Don't process incoming zero impulses, quit at once.
+		return false;
+	}
+
 	// greebo: Check all entities touching this physics object
 	EvaluateContacts();
 
@@ -1047,7 +1053,7 @@ void idPhysics_RigidBody::SetClipModel( idClipModel *model, const float density,
 
 	// check whether or not the clip model has valid mass properties
 	if ( mass <= 0.0f || FLOAT_IS_NAN( mass ) ) {
-		gameLocal.Warning( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
+		DM_LOG(LC_ENTITY, LT_INFO).LogString( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
 							self->name.c_str(), self->GetType()->classname );
 		mass = 1.0f;
 		centerOfMass.Zero();

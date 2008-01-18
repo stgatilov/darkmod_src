@@ -110,9 +110,7 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 
 const idEventDef EV_Mission_Success("missionSuccess", NULL);
-const idEventDef EV_PrepareMapForMissionEnd("prepareMapForMissionEnd", NULL);
-// returns the handle of the success GUI
-const idEventDef EV_DisplaySuccessGUI("displaySuccessGUI", "s", 'd');
+const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", NULL);
 
 // greebo: These events are handling the FOV.
 const idEventDef EV_Player_StartZoom("startZoom", "fff");
@@ -193,8 +191,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_UpdateStatisticsGUI,	idPlayer::Event_UpdateStatisticsGUI)
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
-	EVENT( EV_PrepareMapForMissionEnd,		idPlayer::Event_PrepareMapForMissionEnd )
-	EVENT( EV_DisplaySuccessGUI,			idPlayer::Event_DisplaySuccessGUI )
+	EVENT( EV_TriggerMissionEnd,			idPlayer::Event_TriggerMissionEnd )
 
 END_CLASS
 
@@ -420,6 +417,7 @@ idPlayer::idPlayer() :
 	m_LeanButtonTimeStamp	= 0;
 	mInventoryOverlay		= -1;
 	m_WeaponCursor			= NULL;
+	m_MapCursor				= NULL;
 
 	m_LightgemModifier		= 0;
 }
@@ -974,6 +972,35 @@ void idPlayer::addWeaponsToInventory() {
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Total number of weapons found: %d\r", m_WeaponCursor->GetCurrentCategory()->size());
 }
 
+void idPlayer::NextInventoryMap()
+{
+	gameLocal.Printf("Cycling maps.\n");
+
+	if (m_MapCursor == NULL)
+	{
+		return; // We have no cursor!
+	}
+
+	CInventoryItem* mapItem = m_MapCursor->GetCurrentItem();
+
+	if (mapItem != NULL)
+	{
+		// We already have a map selected, toggle it off
+		inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+	}
+
+	// Advance the cursor to the next item
+	mapItem = m_MapCursor->GetNextItem();
+
+	if (mapItem == NULL)
+	{
+		return; // No item available
+	}
+	
+	// Use this item
+	inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+}
+
 void idPlayer::SetupInventory()
 {
 	mInventoryOverlay = CreateOverlay(cv_tdm_inv_hud_file.GetString(), LAYER_INVENTORY);
@@ -989,6 +1016,14 @@ void idPlayer::SetupInventory()
 
 	// greebo: Parse the spawnargs and add the weapon items to the inventory.
 	addWeaponsToInventory();
+
+	// greebo: Create the cursor for map/floorplan inventory items.
+	m_MapCursor = inv->CreateCursor();
+	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, &idx);
+	m_MapCursor->SetCurrentCategory(idx);
+	m_MapCursor->SetCategoryLock(true);
+	m_MapCursor->SetWrapAround(false); // no wrap around, makes coding easier
+	m_MapCursor->ClearItem(); // invalidate the cursor
 
 	// give the player weapon ammo based on shop purchases
 	CInventoryCategory* category = m_WeaponCursor->GetCurrentCategory();
@@ -1330,6 +1365,11 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_WeaponCursor->GetId());
 	}
 
+	savefile->WriteBool(m_MapCursor != NULL);
+	if (m_MapCursor != NULL) {
+		savefile->WriteInt(m_MapCursor->GetId());
+	}
+
 	savefile->WriteInt(m_LightgemModifier);
 
 	savefile->WriteInt(static_cast<int>(m_LightgemModifierList.size()));
@@ -1630,6 +1670,14 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		int cursorId;
 		savefile->ReadInt(cursorId);
 		m_WeaponCursor = Inventory()->GetCursor(cursorId);
+	}
+
+	bool hasMapCursor;
+	savefile->ReadBool(hasMapCursor);
+	if (hasMapCursor) {
+		int cursorId;
+		savefile->ReadInt(cursorId);
+		m_MapCursor = Inventory()->GetCursor(cursorId);
 	}
 
 	savefile->ReadInt(m_LightgemModifier);
@@ -4873,7 +4921,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
-			ToggleObjectivesGUI();
+			// ToggleObjectivesGUI(); // greebo: disabled for Thief's Den release
 			break;
 		}
 		case IMPULSE_20:
@@ -9596,6 +9644,9 @@ void idPlayer::PerformFrob(idEntity* target)
 
 	// Fire the STIM_FROB response (if defined) on this entity
 	target->ResponseTrigger(this, ST_FROB);
+
+	// Trigger the frob action script
+	target->FrobAction(true);
 	
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
@@ -9615,12 +9666,6 @@ void idPlayer::PerformFrob(idEntity* target)
 		// greebo: Prevent the grabber from checking the added entity (it may be 
 		// entirely removed from the game, which would cause crashes).
 		pDM->grabber->RemoveFromClipList(target);
-	}
-	else
-	{
-		// greebo: Only perform the default FrobAction if adding the item to the
-		// inventory has failed.
-		target->FrobAction(true);
 	}
 }
 
@@ -9794,56 +9839,28 @@ void idPlayer::Event_UpdateStatisticsGUI(int guiHandle, const char* listDefName)
 
 void idPlayer::Event_MissionSuccess()
 {
+	// greebo: Hooked off this script, this will be handled via the main menu (TODO: Cleanup)
+	// CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
+
+	// Set the gamestate (and remove all irrelevant entities <<-- can be skipped (FIXME))
+	gameLocal.SetMissionResult(MISSION_COMPLETE);
+	gameLocal.sessionCommand = "disconnect";
+}
+
+void idPlayer::Event_TriggerMissionEnd() 
+{
 	if (hudMessages.Num() > 0)
 	{
 		// There are still HUD messages pending, postpone this event
-		PostEventMS(&EV_Mission_Success, 3000);
+		PostEventMS(&EV_TriggerMissionEnd, 3000);
 		return;
 	}
 
-	CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
-}
+	gameLocal.PrepareForMissionEnd();
 
-void idPlayer::Event_PrepareMapForMissionEnd() 
-{
-	gameLocal.Printf("Map shutdown for mission success.\n");
+	idVec4 fadeColor(0,0,0,1);
+	playerView.Fade(fadeColor, 1500);
 
-	for (int i = 0; i < MAX_GENTITIES; i++)
-	{
-		idEntity* entity = gameLocal.entities[i];
-
-		if (entity == NULL) {
-			continue;
-		}
-
-		// Put moveables to rest
-		if (entity->IsType(idMoveable::Type)) {
-			static_cast<idMoveable*>(entity)->GetPhysics()->PutToRest();
-		}
-
-		if (entity->IsType(idAI::Type)) {
-			// Deleting the entity object is enough to remove it from the game
-			// It de-registers itself in its destructor
-			delete entity;
-		}
-
-		// Remove all lights, targets, triggers, emitters and speakers
-		if (entity->IsType(idLight::Type) || entity->IsType(idTarget::Type) ||
-			entity->IsType(idTrigger::Type) || entity->IsType(idFuncEmitter::Type) ||
-			entity->IsType(idSound::Type))
-		{
-			delete entity;
-		}
-	}
-}
-
-void idPlayer::Event_DisplaySuccessGUI(const char* guiFile) 
-{
-	gameLocal.Printf("Showing success GUI.\n");
-
-	int handle = CreateOverlay(guiFile, 20);
-
-	// Set up the success GUI here
-
-	idThread::ReturnInt(handle);
+	// Schedule an mission success event right after fadeout
+	PostEventMS(&EV_Mission_Success, 1500);
 }

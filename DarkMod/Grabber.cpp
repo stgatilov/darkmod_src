@@ -287,8 +287,10 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	/* idPhysics_Player* */ playerPhys = static_cast<idPhysics_Player *>(player->GetPhysics());
 	// if the player is climbing a rope or ladder, don't let them grab things
-	if( playerPhys->OnRope() || playerPhys->OnLadder() )
-		goto Quit;
+	// greebo: Disabled this, it let things currently held by the grabber drop to the ground
+	// and the reattach them after the player has finished climbing
+	/*if( playerPhys->OnRope() || playerPhys->OnLadder() )
+		goto Quit;*/
 
 	player->GetViewPos( viewPoint, viewAxis );
 
@@ -835,37 +837,61 @@ CGrabber::Event_CheckClipList
 */
 void CGrabber::Event_CheckClipList( void ) 
 {
-	idEntity *ent[MAX_GENTITIES];
+	idEntity *ListEnt(NULL);
+	idClipModel *PlayerClip(NULL), *EntClip(NULL);
+	trace_t tr;
 	bool keep;
-	int i, j, num;	
+	int i;	
 
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
-	num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	// num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
 	for( i = 0; i < m_clipList.Num(); i++ ) 
 	{
 		// Check clipEntites against entities touching player
+		ListEnt = m_clipList[i].m_ent.GetEntity();
 
 		// We keep an entity if it is the one we're dragging 
-		if( this->GetSelected() == m_clipList[i].m_ent.GetEntity() ) 
+		if( this->GetSelected() == ListEnt ) 
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist as it is currently selected\r", ListEnt->name.c_str() );
 			keep = true;
 		}
 		else 
 		{
 			keep = false;
 
-			// OR if it's touching the player and still in the clipList
-			for( j = 0; !keep && j < num; j++ ) 
+			// OR if it's currently touching the player
+			if( m_player.GetEntity() 
+				&& (EntClip = ListEnt->GetPhysics()->GetClipModel()) != NULL )
 			{
-				if( m_clipList[i].m_ent.GetEntity() == ent[j] ) 
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Testing entity %s for player clipping\r", ListEnt->name.c_str() );
+				PlayerClip = m_player.GetEntity()->GetPhysics()->GetClipModel();
+				gameLocal.clip.TranslationModel
+				( 
+					tr, EntClip->GetOrigin(), EntClip->GetOrigin(),
+					EntClip, EntClip->GetAxis(), CONTENTS_BODY,
+					PlayerClip->Handle(), PlayerClip->GetOrigin(), 
+					PlayerClip->GetAxis() 
+				);
+
+				if( tr.fraction < 1.0 )
+				{
 					keep = true;
+					DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Keeping entity %s in cliplist since it is still clipping player\r", ListEnt->name.c_str() );
+				}
+				else
+				{
+					DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Entity %s removed from cliplist since it is not selected or clipping player\r", ListEnt->name.c_str() );
+				}
+
 			}
 		}
 
 		// Note we have to decrement i otherwise we skip entities
 		if( !keep ) 
 		{
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("GRABBER CLIPLIST: Removing entity %s from cliplist\r", ListEnt->name.c_str() );
 			this->RemoveFromClipList( i );
 			i -= 1;
 		}
@@ -937,8 +963,12 @@ void CGrabber::Throw( int HeldTime )
 	if( FracPower > 1.0 )
 		FracPower = 1.0;
 
+	float mass = m_dragEnt.GetEntity()->GetPhysics()->GetMass();
+
 	// Try out a linear scaling between max and min
 	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
+	// Clamp to max velocity
+	ThrowImpulse = idMath::ClampFloat( 0.0f, cv_throw_max_vel.GetFloat() * mass, ThrowImpulse );
 	ImpulseVec *= ThrowImpulse;  
 
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );

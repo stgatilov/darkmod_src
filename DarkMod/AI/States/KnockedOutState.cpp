@@ -45,7 +45,9 @@ void KnockedOutState::Init(idAI* owner)
 
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
-
+/*
+// angua: disabled for Thief's Den release
+// anims didn't look good and produced problems
 	owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 	owner->StopAnim(ANIMCHANNEL_LEGS, 0);
 	owner->StopAnim(ANIMCHANNEL_HEAD, 0);
@@ -61,7 +63,7 @@ void KnockedOutState::Init(idAI* owner)
 	owner->SetWaitState(ANIMCHANNEL_HEAD, "knock_out");
 	// Don't do anything else, the KO animation will finish in a few frames
 	// and the AI is done afterwards.
-
+*/
 }
 
 // Gets called each time the mind is thinking

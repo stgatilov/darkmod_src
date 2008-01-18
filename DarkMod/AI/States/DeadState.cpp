@@ -36,7 +36,9 @@ void DeadState::Init(idAI* owner)
 
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
-
+/*
+// angua: disabled for Thief's den release
+// anims didn't look good and produced problems
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Death", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Death", 0);
 	owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_Death", 0);
@@ -44,6 +46,7 @@ void DeadState::Init(idAI* owner)
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
 	owner->SetWaitState("dead");
+*/
 
 	// Don't do anything else, the death animation will finish in a few frames
 	// and the AI is done afterwards.

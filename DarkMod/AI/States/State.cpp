@@ -418,7 +418,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			else if (gameLocal.random.RandomFloat() < 0.025)
 			{
 				// Chance check passed, greetings!
-				gameLocal.Printf("I see a friend, I'm going to say hello.\n");
+				// gameLocal.Printf("I see a friend, I'm going to say hello.\n");
 				owner->IssueCommunication_Internal(
 					CAIComm_Message::Greeting_CommType, 
 					TALK_STIM_RADIUS, 
@@ -463,7 +463,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 				}
 				else
 				{
-					gameLocal.Printf("proper greeting is 'Hello generic person.'\n");
+					// gameLocal.Printf("proper greeting is 'Hello generic person.'\n");
 					soundName = "snd_greeting_generic";
 				}
 			}
@@ -473,7 +473,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			{
 				memory.lastTimeVisualStimBark = gameLocal.time;
 				owner->GetSubsystem(SubsysCommunication)->PushTask(
-					TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
+					TaskPtr(new SingleBarkTask(soundName))
 				);
 			}
 			
@@ -719,8 +719,9 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
 	{
 		// Vocalize that see something out of place because this light is supposed to be on
-		gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
-
+		//gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
+/*
+		// angua: commented out, it was getting annoying to hear it over and over
 		// Vocalize that see something out of place
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
@@ -731,7 +732,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				TaskPtr(new SingleBarkTask(soundName))
 			);
 		}
-
+*/
 		// One more piece of evidence of something out of place
 		memory.countEvidenceOfIntruders++;
 
@@ -783,7 +784,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	}
 	else if (memory.enemiesHaveBeenSeen || memory.itemsHaveBeenStolen || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
 	{
-		gameLocal.Printf("For my safety, I should turn on the light %s\n", stimSource->name.c_str());
+		//gameLocal.Printf("For my safety, I should turn on the light %s\n", stimSource->name.c_str());
 		turnLightOn = true;
 	}
 
@@ -977,9 +978,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				if (directObjectEntity->IsType(idActor::Type))
 				{
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 
 					gameLocal.Printf("Ok, I'm helping you.\n");
 
@@ -1009,9 +1010,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					gameLocal.Printf("I'll attack it with my ranged weapon!\n");
 
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -1019,7 +1020,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			else 
 			{
-				gameLocal.Printf("I don't have a ranged weapon or I am not getting involved.\n");
+				//gameLocal.Printf("I don't have a ranged weapon or I am not getting involved.\n");
 				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
 				{
 					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
@@ -1043,9 +1044,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					gameLocal.Printf("I'll attack it with my melee weapon!\n");
 
 					// Bark
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					);
+					//owner->GetSubsystem(SubsysCommunication)->PushTask(
+					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+					//);
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -1070,11 +1071,11 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::DetectedEnemy_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedEnemy_CommType\r");
-			gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
+			//gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
 	
 			if (owner->GetEnemy() != NULL)
 			{
-				gameLocal.Printf("I'm too busy with my own target!\n");
+				//gameLocal.Printf("I'm too busy with my own target!\n");
 				return;
 			}
 
@@ -1082,7 +1083,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			{
 				owner->Event_SetAlertLevel(owner->thresh_combat*2);
 				
-				gameLocal.Printf("They're my friend, I'll attack it too!\n");
+				//gameLocal.Printf("They're my friend, I'll attack it too!\n");
 				memory.alertPos = directObjectLocation;
 			}
 			break;
@@ -1210,11 +1211,11 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 
 	Memory& memory = owner->GetMemory();
 
-	gameLocal.Printf("Somebody else noticed something suspicious...\n");
+	//gameLocal.Printf("Somebody else noticed something suspicious...\n");
 
 	if (owner->GetEnemy() != NULL)
 	{
-		gameLocal.Printf ("I'm too busy with my own target!");
+		//gameLocal.Printf ("I'm too busy with my own target!");
 		return;
 	}
 
@@ -1223,11 +1224,11 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 		// If not already searching something else
 		if (GetName() == STATE_SEARCHING)
 		{
-			gameLocal.Printf ("I'm too busy searching something else\n");
+			//gameLocal.Printf ("I'm too busy searching something else\n");
 			return;
 		}
 		
-		gameLocal.Printf ("They're my friend, I'll look too!\n");
+		//gameLocal.Printf ("They're my friend, I'll look too!\n");
 		
 		// Get some search points from them.
 		int numSpots = owner->GetSomeOfOtherEntitiesHidingSpotList(issuingEntity);
@@ -1240,9 +1241,10 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 			if (distanceToIssuer >= MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
 			{
 				// Bark
-				owner->GetSubsystem(SubsysCommunication)->PushTask(
-					SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-				);
+				// angua: this one was getting quite annoying if you hear it all the time
+				//owner->GetSubsystem(SubsysCommunication)->PushTask(
+				//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
+				//);
 			}
 			
 			// If AI that called out has a higher alert num, raise ours
@@ -1254,7 +1256,7 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 				otherAlertNum = static_cast<idAI*>(issuingEntity)->AI_AlertNum;
 			}
 
-			gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertNum);
+			//gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertNum);
 			if (otherAlertNum > owner->AI_AlertNum)
 			{
 				owner->Event_SetAlertLevel(otherAlertNum);
@@ -1265,7 +1267,7 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 		}
 		else
 		{
-			gameLocal.Printf("Hmpfh, no spots to help them with :(\n");
+			//gameLocal.Printf("Hmpfh, no spots to help them with :(\n");
 		}
 		
 	}

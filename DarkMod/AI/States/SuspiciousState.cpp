@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: SuspiciousState.cpp 1435 2007-1
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "SearchingState.h"
 #include "../Library.h"
 
@@ -57,7 +58,15 @@ void SuspiciousState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
+	owner->StopMove(MOVE_STATUS_DONE);
+
 	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+
+	idStr bark = "snd_alert1";
+	
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask(bark))
+	);
 }
 
 // Gets called each time the mind is thinking

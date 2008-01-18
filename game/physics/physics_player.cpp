@@ -1002,7 +1002,12 @@ void idPhysics_Player::RopeMove( void )
 	// (orig - ropeOrig) * gravNormal = | offset along rope axis | * (rope axis * gravNormal)
 	// Solve for offset along rope axis
 	idVec3 deltaPlayerBody = PlayerPoint - ropeBodyOrig;
-	float offsetMag = (deltaPlayerBody * gravityNormal) / (climbDir * gravityNormal);
+
+	// float offsetMag = (deltaPlayerBody * gravityNormal) / (climbDir * gravityNormal);
+
+	// angua: the other method got huge values for offsetMag at large angles 
+	// between the climbDir and the gravity axis.
+	float offsetMag = deltaPlayerBody * climbDir;
 	ropePoint = ropeBodyOrig + offsetMag * climbDir;
 	
 	// Uncomment for climb axis debugging
@@ -2190,7 +2195,8 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		idEntity* ropeEntity = m_RopeEntity.GetEntity();
 		if (ropeEntity != NULL)
 		{
-			float ropeVelocity = ropeEntity->/*GetBindMaster()->*/GetPhysics()->GetLinearVelocity().LengthFast();
+
+			float ropeVelocity = ropeEntity->/*GetBindMaster()->*/GetPhysics()->GetLinearVelocity().z;
 
 			//gameLocal.Printf("Rope Velocity: %f\n", m_RopeEntity.GetEntity()->GetBindMaster()->GetPhysics()->GetLinearVelocity().LengthFast());
 			if (ropeVelocity > maxRopeVelocity)

@@ -16,8 +16,10 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
+#include "../../DarkMod/AI/Mind.h"
 #include "../../DarkMod/AI/BasicMind.h"
 #include "../../DarkMod/AI/Subsystem.h"
+#include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/KnockedOutState.h"
 #include "../../DarkMod/AI/States/DeadState.h"
 #include "../../DarkMod/Relations.h"
@@ -3782,16 +3784,33 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 			/* SZ: Further distance for Binary Frob Movers (eg: doors) */
 			if (path.firstObstacle->IsType (CBinaryFrobMover::Type))
 			{
+				// angua: changed the code a bit...
 				// Calculate distance far enough away that we won't hit swinging door
 				// opening toward us
-				idVec3 delta;
-				idVec3 gravity;
-				idVec3 sizePerpGrav;
+				// idVec3 gravity;
+				// idVec3 sizePerpGrav;
+				const idVec3& org = path.firstObstacle->GetPhysics()->GetOrigin();
 
-				idBounds avoidBounds = path.firstObstacle->GetPhysics()->GetBounds();
-				delta.x = avoidBounds[0][1] - avoidBounds[0][0];
-				delta.y = avoidBounds[1][1] - avoidBounds[1][0];
-				delta.z = avoidBounds[2][1] - avoidBounds[2][0];
+				idBounds moverBounds;
+				moverBounds.FromTransformedBounds(path.firstObstacle->GetPhysics()->GetBounds(), 
+													org,
+													path.firstObstacle->GetPhysics()->GetAxis());
+
+				//gameRenderWorld->DebugBox(colorGreen, idBox(path.firstObstacle->GetPhysics()->GetBounds(), org, path.firstObstacle->GetPhysics()->GetAxis()), gameLocal.msec);
+				idVec3 delta = moverBounds[1] - moverBounds[0];
+				delta.z = 0;
+				stopDistance = delta.LengthFast() * 1.3;
+
+				idBounds avoidBounds;
+				avoidBounds[0] = moverBounds[0] - idVec3(stopDistance, stopDistance, 0);
+				avoidBounds[1] = moverBounds[1] + idVec3(stopDistance, stopDistance, 0);
+				// gameRenderWorld->DebugBox(colorYellow, idBox(avoidBounds), gameLocal.msec);
+				
+/*
+				// old version
+				delta.x = avoidBounds[1][0] - avoidBounds[0][0];
+				delta.y = avoidBounds[1][1] - avoidBounds[0][1];
+				delta.z = avoidBounds[1][2] - avoidBounds[0][2];
 
 				gravity = gameLocal.GetGravity();
 				gravity.Normalize();
@@ -3799,10 +3818,10 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				sizePerpGrav = gravity.Cross (delta);
 
 				stopDistance = sizePerpGrav.Length();
-
+*/
 				// The door becomes an active dynamic pathing obstacle when we
 				// reach that distance (we will open the door at that point)
-				if ( physicsObj.GetAbsBounds().Expand( stopDistance).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) )
+				if ( physicsObj.GetAbsBounds().IntersectsBounds(avoidBounds) )
 				{
 					obstacle = path.firstObstacle;
 				}
@@ -3875,7 +3894,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 			{
 				// Make the obstacle the door itself
 				obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
-
+/*
 				// Calculate distance far enough away that we won't hit swinging door
 				// opening toward us
 				idVec3 delta;
@@ -3893,6 +3912,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				sizePerpGrav = gravity.Cross (delta);
 
 				stopDistance = sizePerpGrav.Length();
+*/
 			}
 
 			// Handle doors
@@ -3900,16 +3920,23 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 			{
 				// Try to open doors
 				CFrobDoor* p_door = (CFrobDoor*) obstacle;
-				if (!p_door->isOpen())
+
+				// angua: If the door was interrupted half-open, it might be that the ai can't get through 
+				if (!p_door->isOpen() || 
+					(p_door->isOpen() && (p_door->wasInterrupted()|| p_door->IsBlocked())) )
 				{
 					// If it is not interrupted and not changing state
-					if ( (!p_door->isChangingState()) || (p_door->wasInterrupted() ) )
+					if ( !p_door->isChangingState() || p_door->wasInterrupted() || p_door->IsBlocked() )
 					{
 						bool b_canOpen = true;
 						if (p_door->isLocked())
 						{
+							b_canOpen = false;
+							StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+							AI_DEST_UNREACHABLE = true;
+
 							// TODO: Call script to see if I have this key. For now
-							// answer is always yes.
+							// answer is always no.
 
 						}
 
@@ -3919,11 +3946,11 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 							p_door->OpenDoor(false);
 						}
 
-					} // Door isn't changing state or was interrupted mid state-change
+					} 
 
-				} // Door isn't open
+				} 
 
-				newPos = obstacle->GetPhysics()->GetOrigin();
+
 				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
 					GetPhysics()->GetOrigin();
 
@@ -4696,13 +4723,34 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 			AI_SPECIAL_DAMAGE = 0;
 		}
 
-		if ( enemy.GetEntity() != attacker && attacker->IsType( idActor::Type ) ) {
-			actor = ( idActor * )attacker;
-			if ( ReactionTo( actor ) & ATTACK_ON_DAMAGE )
+		// angua: alert the AI
+		if (attacker->IsType(idActor::Type))
+		{
+			if (AI_AlertNum <= (thresh_combat - 0.1))
 			{
-				// being attacked always overrides the previous alert
-				gameLocal.AlertAI( actor );
-				SetEnemy( actor );
+				SetAlertLevel(thresh_combat - 0.1);
+				if (inflictor->IsType(idProjectile::Type))
+				{
+					// Set up search
+					ai::Memory& memory = GetMemory();
+					memory.alertPos = physicsObj.GetOrigin() - dir * 300;
+					memory.alertPos.x += 200 * gameLocal.random.RandomFloat() - 100;
+					memory.alertPos.y += 200 * gameLocal.random.RandomFloat() - 100;
+					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+					memory.alertSearchExclusionVolume.Zero();
+				}
+			}
+
+			if ( enemy.GetEntity() != attacker ) 
+			{
+				actor = ( idActor * )attacker;
+				if ( ReactionTo( actor ) & ATTACK_ON_DAMAGE )
+				{
+					// being attacked always overrides the previous alert
+					gameLocal.AlertAI( actor );
+					SetEnemy( actor );
+				}
 			}
 		}
 	}
@@ -8727,14 +8775,15 @@ void idAI::DropOnRagdoll( void )
 			continue;
 
 		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
+		
+		if( !bDrop ) {
+			continue;
+		}
+
 		bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
 		bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
 		bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
 		bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
-
-
-		if( !bDrop )
-			continue;
 
 		if( bDropWhenDrawn )
 		{
@@ -8983,6 +9032,13 @@ int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
 
 float idAI::GetArmReachLength()
 {
-	idVec3 size = aas->GetSettings()->boundingBoxes[0][1];
-	return size.z * 0.5;
+	if (idAAS* aas = GetAAS())
+	{
+		idVec3 size = aas->GetSettings()->boundingBoxes[0][1];
+		return size.z * 0.5;
+	}
+	else
+	{
+		return 41;
+	}
 }

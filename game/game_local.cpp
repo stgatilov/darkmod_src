@@ -222,6 +222,7 @@ idGameLocal::idGameLocal
 idGameLocal::idGameLocal()
 {
 	m_HighestSRId = 0;
+	m_MissionResult = MISSION_NOTEVENSTARTED;
 	Clear();
 }
 
@@ -253,6 +254,9 @@ void idGameLocal::Clear( void )
 	m_sndProp = &g_SoundProp;
 	m_RelationsManager = &g_globalRelations;
 	m_MissionData = &g_MissionData;
+	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
+	m_MissionDataLoadedIntoGUI = false;
+
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
@@ -487,6 +491,9 @@ void idGameLocal::Shutdown( void ) {
 	if ( !common ) {
 		return;
 	}
+
+	// Destruct RCF server to avoid memory deallocation issues
+	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
 
 	Printf( "------------ Game Shutdown -----------\n" );
 	
@@ -742,6 +749,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_sndProp->Save(&savegame);
 	m_MissionData->Save(&savegame);
+	savegame.WriteInt(static_cast<int>(m_MissionResult));
 
 	savegame.WriteInt(m_HighestSRId);
 
@@ -770,6 +778,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	m_EscapePointManager->Save(&savegame);
+
+	// greebo: Save the maximum frob distance
+	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
 
 	// spawnSpots
 	// initialSpots
@@ -1231,6 +1242,7 @@ void idGameLocal::LocalMapRestart( ) {
 	}
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1418,6 +1430,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 		MapShutdown();
 	}
 
+	// greebo: Clear the mission data, it might have been filled during the objectives screen display
+	m_MissionData->Clear();
+
 	Printf( "----------- Game Map Init ------------\n" );
 
 	gamestate = GAMESTATE_STARTUP;
@@ -1441,6 +1456,10 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	animationLib.FlushUnusedAnims();
 
 	gamestate = GAMESTATE_ACTIVE;
+	m_MissionResult = MISSION_INPROGRESS;
+
+	// We need an objectives update now that we've loaded the map
+	m_MissionDataLoadedIntoGUI = false;
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1673,6 +1692,11 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_sndProp->Restore(&savegame);
 	m_MissionData->Restore(&savegame);
 
+	int missResult;
+	savegame.ReadInt(missResult);
+	m_MissionResult = static_cast<EMissionResult>(missResult);
+	m_MissionDataLoadedIntoGUI = false;
+
 	savegame.ReadInt(m_HighestSRId);
 
 	savegame.ReadInt(num);
@@ -1707,6 +1731,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	m_EscapePointManager->Restore(&savegame);
+
+	// greebo: Restore the maximum frob distance
+	savegame.ReadFloat(g_Global.m_MaxFrobDistance);
 
 	// spawnSpots
 	// initialSpots
@@ -2974,11 +3001,18 @@ idGameLocal::HandleESC
 ================
 */
 escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
+
 	if ( isMultiplayer ) {
 		*gui = StartMenu();
 		// we may set the gui back to NULL to hide it
 		return ESC_GUI;
 	}
+
+	// If we're in the process of ending the mission, ignore all ESC keys.
+	if (GameState() == GAMESTATE_COMPLETED) {
+		return ESC_IGNORE;
+	}
+
 	idPlayer *player = GetLocalPlayer();
 	if ( player ) {
 		if ( player->HandleESC() ) {
@@ -3017,16 +3051,121 @@ const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
 /*
 ================
 idGameLocal::HandleMainMenuCommands
-
-Currently the shop (purchase screen) is the only component that
-handles main menu commands.
 ================
 */
 void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui )
 {
+	idStr cmd(menuCommand);
+
+	if (cmd == "objective_close_request")
+	{
+		// Objectives GUI requests closure, shut it down
+		gui->HandleNamedEvent("CloseObjectives");
+	}
+	else if (cmd == "mainmenu_heartbeat")
+	{
+		if (GetMissionResult() == MISSION_COMPLETE)
+		{
+			if (!gui->GetStateBool("SuccessScreenActive"))
+			{
+				// Show the success GUI
+				gui->HandleNamedEvent("ShowSuccessScreen");
+
+				// Stop the objectives music
+				gui->HandleNamedEvent("StopObjectivesMusic");
+
+				// Avoid duplicate triggering
+				gui->SetStateBool("SuccessScreenActive", true);
+			}
+			return;
+		}
+
+		// greebo: Check for the right ambient music
+		if (GameState() == GAMESTATE_ACTIVE)
+		{
+			if (!gui->GetStateBool("ObjectivesMusicPlaying")) 
+			{
+				gui->HandleNamedEvent("StartObjectivesMusic");
+				gui->SetStateBool("ObjectivesMusicPlaying", true);
+			}
+		}
+		else // GameState != ACTIVE
+		{
+			if (gui->GetStateBool("ObjectivesMusicPlaying"))
+			{
+				gui->HandleNamedEvent("StopObjectivesMusic");
+				gui->SetStateBool("ObjectivesMusicPlaying", false);
+			}
+		}
+		
+		// The main menu is visible, check if we should display the "Objectives" option
+		
+		// Only update the objectives during map runtime and if not already triggered
+		if (GameState() == GAMESTATE_ACTIVE)
+		{
+			if (!m_MissionDataLoadedIntoGUI)
+			{
+				// Load the objectives into the GUI
+				m_MissionData->UpdateGUIState(gui);
+			}
+
+			m_MissionDataLoadedIntoGUI = true;
+		}
+	}
+	else if (cmd == "objective_open_request")
+	{
+		if (gui->GetStateInt("BriefingIsVisible") == 1)
+		{
+			// We're coming from the briefing screen
+			// Clear the objectives data and load them from the map
+			m_MissionData->Clear();
+
+			idStr mapName = gui->GetStateString("map");
+
+			// Load the mission data directly from the given map
+			m_MissionData->LoadDirectlyFromMapFile(mapName);
+
+			// Clear the flag so that the objectives get updated
+			m_MissionDataLoadedIntoGUI = false;
+
+			// Hide the briefing screen
+			gui->HandleNamedEvent("HideBriefingScreen");
+			gui->SetStateInt("BriefingIsVisible", 0);
+		}
+
+		gui->HandleNamedEvent("ShowObjectiveScreen");
+		gui->HandleNamedEvent("InitObjectives");
+		
+		if (!m_MissionDataLoadedIntoGUI)
+		{
+			// Load the objectives into the GUI
+			m_MissionData->UpdateGUIState(gui); 
+		}
+
+		m_MissionDataLoadedIntoGUI = true;
+	}
+	else if (cmd == "showMods") // Called by "New Mission"
+	{
+		// User requested a map start
+		gui->HandleNamedEvent("ShowBriefingScreen");
+		gui->SetStateInt("BriefingIsVisible", 1);
+	}
+	else if (cmd == "close") 
+	{
+		// Set the objectives state flag back to dirty
+		m_MissionDataLoadedIntoGUI = false;
+
+		gui->HandleNamedEvent("HideObjectiveScreen");
+		gui->HandleNamedEvent("HideBriefingScreen");
+		gui->SetStateInt("BriefingIsVisible", 0);
+	}
+
+	/* greebo: Commented these out for the Thief's Den release only.
+	   Right after release, these have to be enabled again!
+	
 	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
-	g_Mods.HandleCommands(menuCommand, gui);
+	g_Mods.HandleCommands(menuCommand, gui);*/
 }
 
 /*
@@ -3716,6 +3855,11 @@ Used to allow entities to know if they're being spawned during the initial spawn
 */
 gameState_t	idGameLocal::GameState( void ) const {
 	return gamestate;
+}
+
+void idGameLocal::PrepareForMissionEnd() {
+	// Raise the gamestate to "Completed"
+	gamestate = GAMESTATE_COMPLETED;
 }
 
 /*
@@ -5818,4 +5962,14 @@ void idGameLocal::PauseGame( bool bPauseState )
 		
 		g_stopTime.SetBool( false );
 	}
+}
+
+void idGameLocal::SetMissionResult(EMissionResult result)
+{
+	m_MissionResult = result;
+}
+
+EMissionResult idGameLocal::GetMissionResult() const 
+{
+	return m_MissionResult;
 }

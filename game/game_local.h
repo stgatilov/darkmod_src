@@ -175,6 +175,8 @@ void gameError( const char *fmt, ... );
 #include "pvs.h"
 #include "multiplayergame.h"
 
+#include "../DarkMod/EMissionResult.h"
+
 #include <boost/shared_ptr.hpp>
 
 // Forward decl.
@@ -259,6 +261,7 @@ typedef enum {
 	GAMESTATE_NOMAP,				// no map loaded
 	GAMESTATE_STARTUP,				// inside InitFromNewMap().  spawning map entities.
 	GAMESTATE_ACTIVE,				// normal gameplay
+	GAMESTATE_COMPLETED,			// greebo: Active during "Mission Complete" (TDM)
 	GAMESTATE_SHUTDOWN				// inside MapShutdown().  clearing memory.
 } gameState_t;
 
@@ -437,6 +440,8 @@ public:
 * Pointer to global Mission Data object (objectives & stats)
 **/
 	CMissionData *			m_MissionData;
+	EMissionResult			m_MissionResult; // holds the global mission state
+	bool					m_MissionDataLoadedIntoGUI; // true if the main menu GUI is up to date
 
 /**
 * Pointer to global sound prop loader object
@@ -599,6 +604,17 @@ public:
 	bool					CheatsOk( bool requirePlayer = true );
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
+
+	/**
+	 * greebo: Prepares the running map for mission end. Does nothing if the current gamestate
+	 *         is lower than GAMESTATE_ACTIVE. Removes all entities of certain types from the
+	 *         world and sets all moveables to rest.
+	 */
+	void					PrepareForMissionEnd();
+
+	void					 SetMissionResult(EMissionResult result);
+	ID_INLINE EMissionResult GetMissionResult() const;
+
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
 	int						GetSpawnId( const idEntity *ent ) const;

@@ -240,8 +240,8 @@ void CMissionData::Clear( void )
 	m_Stats.PocketsPicked = 0;
 	m_Stats.LootOverall = 0;
 
-	m_SuccessLogicStr.Clear();
-	m_FailureLogicStr.Clear();
+	m_SuccessLogicStr = "";
+	m_FailureLogicStr = "";
 
 	m_SuccessLogic.Clear();
 	m_FailureLogic.Clear();
@@ -262,7 +262,7 @@ void CMissionData::Save( idSaveGame *savefile ) const
 		savefile->WriteInt( m_Stats.AIStats[j].WhileAirborne );
 		for( int k1=0; k1 < MAX_TEAMS; k1++ )
 			savefile->WriteInt( m_Stats.AIStats[j].ByTeam[k1] );
-		for( int k2=0; k2 < MAX_TEAMS; k2++ )
+		for( int k2=0; k2 < MAX_TYPES; k2++ )
 			savefile->WriteInt( m_Stats.AIStats[j].ByType[k2] );
 		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[0] );
 		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[1] );
@@ -274,7 +274,7 @@ void CMissionData::Save( idSaveGame *savefile ) const
 		savefile->WriteInt( m_Stats.AIAlerts[l].WhileAirborne );
 		for( int m1=0; m1 < MAX_TEAMS; m1++ )
 			savefile->WriteInt( m_Stats.AIAlerts[l].ByTeam[m1] );
-		for( int m2=0; m2 < MAX_TEAMS; m2++ )
+		for( int m2=0; m2 < MAX_TYPES; m2++ )
 			savefile->WriteInt( m_Stats.AIAlerts[l].ByType[m2] );
 		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[0] );
 		savefile->WriteInt( m_Stats.AIAlerts[l].ByInnocence[1] );
@@ -301,6 +301,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		m_Objectives[i].Restore( savefile );
 
 	// Rebuild list of clocked components now that we've loaded objectives
+	m_ClockedComponents.Clear();
 	for( int ind = 0; ind < m_Objectives.Num(); ind++ )
 	{
 		for( int ind2 = 0; ind2 < m_Objectives[ind].m_Components.Num(); ind2++ )
@@ -318,7 +319,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Stats.AIStats[j].WhileAirborne );
 		for( int k1=0; k1 < MAX_TEAMS; k1++ )
 			savefile->ReadInt( m_Stats.AIStats[j].ByTeam[k1] );
-		for( int k2=0; k2 < MAX_TEAMS; k2++ )
+		for( int k2=0; k2 < MAX_TYPES; k2++ )
 			savefile->ReadInt( m_Stats.AIStats[j].ByType[k2] );
 		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[0] );
 		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[1] );
@@ -330,7 +331,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Stats.AIAlerts[l].WhileAirborne );
 		for( int m1=0; m1 < MAX_TEAMS; m1++ )
 			savefile->ReadInt( m_Stats.AIAlerts[l].ByTeam[m1] );
-		for( int m2=0; m2 < MAX_TEAMS; m2++ )
+		for( int m2=0; m2 < MAX_TYPES; m2++ )
 			savefile->ReadInt( m_Stats.AIAlerts[l].ByType[m2] );
 		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[0] );
 		savefile->ReadInt( m_Stats.AIAlerts[l].ByInnocence[1] );
@@ -577,14 +578,17 @@ bool	CMissionData::EvaluateObjective
 		{
 			// overall loot
 			case SPEC_OVERALL:
-				value = EntDat1->valueSuperGroup;
+				// greebo: Take the stored Total Loot Value, not the supergroup stuff, 
+				//         as non-loot items always have supergroup set to 1.
+				value = GetTotalLoot();
+				//value = EntDat1->valueSuperGroup;
 				break;
 			case SPEC_GROUP:
 				value = EntDat1->value;
 
 				// special case for overall loot
 				if( pComp->m_SpecVal[1] == "loot_total" )
-					value = EntDat1->valueSuperGroup;
+					value = GetTotalLoot();
 				break;
 			default:
 				break;
@@ -880,7 +884,7 @@ void CMissionData::Event_MissionComplete( void )
 		// This sound is played by the success.gui
 		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
 		player->SendHUDMessage("Mission Complete");
-		player->PostEventMS(&EV_Mission_Success, 100);
+		player->PostEventMS(&EV_TriggerMissionEnd, 100);
 	}
 }
 
@@ -888,6 +892,9 @@ void CMissionData::Event_MissionFailed( void )
 {
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
+
+	// greebo: Notify the local game about this
+	gameLocal.SetMissionResult(MISSION_FAILED);
 
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if(player)
@@ -1289,45 +1296,48 @@ Quit:
 // returns the index of the first objective added, for scripting purposes
 int CMissionData::AddObjsFromEnt( idEntity *ent )
 {
+	if( !ent )
+		return m_Objectives.Num();
+
+	// greebo: pass the call further on
+	return AddObjsFromDict(ent->spawnArgs);
+}
+
+// Objective parsing:
+// returns the index of the first objective added, for scripting purposes
+int CMissionData::AddObjsFromDict(const idDict& dict)
+{
 	CObjective			ObjTemp;
 	idLexer				src;
 	idToken				token;
-	idDict				*args;
 	idStr				StrTemp, StrTemp2, TempStr2;
 	int					Counter(1), Counter2(1); // objective indices start at 1 and must be offset for the inner code
 	int					ReturnVal(-1);
 	bool				bLogicMod(false); // modified mission logic
 
-	if( !ent )
-		goto Quit;
-
-	args = &ent->spawnArgs;
-	if( !args )
-		goto Quit;
-
 	// store the first index of first added objective
 	ReturnVal = m_Objectives.Num();
 
 	// go thru all the objective-related spawnargs
-	while( args->MatchPrefix( va("obj%d_", Counter) ) != NULL )
+	while( dict.MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
 		ObjTemp.m_Components.Clear();
 		ObjTemp.m_ObjNum = Counter - 1;
 
 		StrTemp = va("obj%d_", Counter);
-		ObjTemp.m_state = (EObjCompletionState) args->GetInt( StrTemp + "state", "0");
-		ObjTemp.m_text = args->GetString( StrTemp + "desc", "" );
-		ObjTemp.m_bMandatory = args->GetBool( StrTemp + "mandatory", "1");
-		ObjTemp.m_bReversible = !args->GetBool (StrTemp + "irreversible", "0" );
-		ObjTemp.m_bVisible = args->GetBool( StrTemp + "visible", "1");
-		ObjTemp.m_bOngoing = args->GetBool( StrTemp + "ongoing", "0");
-		ObjTemp.m_CompletionScript = args->GetString( StrTemp + "script_complete" );
-		ObjTemp.m_FailureScript = args->GetString( StrTemp + "script_failed" );
-		ObjTemp.m_SuccessLogicStr = args->GetString( StrTemp + "logic_success", "" );
-		ObjTemp.m_FailureLogicStr = args->GetString( StrTemp + "logic_failure", "" );
+		ObjTemp.m_state = (EObjCompletionState) dict.GetInt( StrTemp + "state", "0");
+		ObjTemp.m_text = dict.GetString( StrTemp + "desc", "" );
+		ObjTemp.m_bMandatory = dict.GetBool( StrTemp + "mandatory", "1");
+		ObjTemp.m_bReversible = !dict.GetBool (StrTemp + "irreversible", "0" );
+		ObjTemp.m_bVisible = dict.GetBool( StrTemp + "visible", "1");
+		ObjTemp.m_bOngoing = dict.GetBool( StrTemp + "ongoing", "0");
+		ObjTemp.m_CompletionScript = dict.GetString( StrTemp + "script_complete" );
+		ObjTemp.m_FailureScript = dict.GetString( StrTemp + "script_failed" );
+		ObjTemp.m_SuccessLogicStr = dict.GetString( StrTemp + "logic_success", "" );
+		ObjTemp.m_FailureLogicStr = dict.GetString( StrTemp + "logic_failure", "" );
 
 		// parse in the int list of "enabling objectives"
-		TempStr2 = args->GetString( StrTemp + "enabling_objs", "" );
+		TempStr2 = dict.GetString( StrTemp + "enabling_objs", "" );
 		src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 		while( src.ReadToken( &token ) )
 		{
@@ -1338,7 +1348,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 		// Parse difficulty level. If difficulty not specified, then
 		// this objective applies to all levels.
-		TempStr2 = args->GetString( StrTemp + "difficulty", "" );
+		TempStr2 = dict.GetString( StrTemp + "difficulty", "" );
 		if (TempStr2.Length() > 0) {
 			ObjTemp.m_bApplies = false;
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
@@ -1360,18 +1370,18 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 		// parse objective components
 		Counter2 = 1;
-		while( args->MatchPrefix( va("obj%d_%d_", Counter, Counter2) ) != NULL )
+		while( dict.MatchPrefix( va("obj%d_%d_", Counter, Counter2) ) != NULL )
 		{
 			StrTemp2 = StrTemp + va("%d_", Counter2);
 			CObjectiveComponent CompTemp;
 
-			CompTemp.m_bState = args->GetBool( StrTemp2 + "state", "0" );
-			CompTemp.m_bPlayerResponsibleOnly = args->GetBool( StrTemp2 + "player_responsible", "1" );
-			CompTemp.m_bNotted = args->GetBool( StrTemp2 + "not", "0" );
-			CompTemp.m_bReversible = !args->GetBool( StrTemp2 + "irreversible", "0" );
+			CompTemp.m_bState = dict.GetBool( StrTemp2 + "state", "0" );
+			CompTemp.m_bPlayerResponsibleOnly = dict.GetBool( StrTemp2 + "player_responsible", "1" );
+			CompTemp.m_bNotted = dict.GetBool( StrTemp2 + "not", "0" );
+			CompTemp.m_bReversible = !dict.GetBool( StrTemp2 + "irreversible", "0" );
 
 			// use comp. type hash to convert text type to EComponentType
-			idStr TypeString = args->GetString( StrTemp2 + "type", "");
+			idStr TypeString = dict.GetString( StrTemp2 + "type", "");
 			int TypeNum = m_CompTypeHash.First(m_CompTypeHash.GenerateKey( TypeString, false ));
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Parsing objective component type '%s', typenum %d \r", TypeString.c_str(), TypeNum );
 
@@ -1386,7 +1396,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			for( int ind=0; ind<2; ind++ )
 			{
 				// Use spec. type hash to convert text specifier to ESpecificationMethod enum
-				idStr SpecString = args->GetString(va(StrTemp2 + "spec%d", ind + 1), "none");
+				idStr SpecString = dict.GetString(va(StrTemp2 + "spec%d", ind + 1), "none");
 				int SpecNum = m_SpecTypeHash.First(m_SpecTypeHash.GenerateKey( SpecString, false ));
 
 				if( SpecNum == -1 )
@@ -1400,11 +1410,11 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 			for( int ind=0; ind < 2; ind++ )
 			{
-				CompTemp.m_SpecVal[ind] = args->GetString( va(StrTemp2 + "spec_val%d", ind + 1), "" );
+				CompTemp.m_SpecVal[ind] = dict.GetString( va(StrTemp2 + "spec_val%d", ind + 1), "" );
 			}
 
 			// Use idLexer to read in args, a space-delimited string list
-			TempStr2 = args->GetString( StrTemp2 + "args", "" );
+			TempStr2 = dict.GetString( StrTemp2 + "args", "" );
 			src.LoadMemory( TempStr2.c_str(), TempStr2.Length(), "" );
 			src.SetFlags( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
 
@@ -1416,7 +1426,7 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 			CompTemp.m_Args.Append("");
 			CompTemp.m_Args.Append("");
 
-			CompTemp.m_ClockInterval = 1000 * int(args->GetFloat( StrTemp2 + "clock_interval", "1.0" ));
+			CompTemp.m_ClockInterval = 1000 * int(dict.GetFloat( StrTemp2 + "clock_interval", "1.0" ));
 
 			CompTemp.m_Index[0] = Counter;
 			CompTemp.m_Index[1] = Counter2;
@@ -1451,13 +1461,13 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 
 	// parse overall mission logic
 	// Only one of these per mission, so empty args on this object should not overwrite existing args
-	StrTemp = args->GetString("mission_logic_success", "");
+	StrTemp = dict.GetString("mission_logic_success", "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;
 		m_SuccessLogicStr = StrTemp;
 	}
-	StrTemp = args->GetString("mission_logic_failure", "");
+	StrTemp = dict.GetString("mission_logic_failure", "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;
@@ -1470,8 +1480,61 @@ int CMissionData::AddObjsFromEnt( idEntity *ent )
 	// check if any objectives were actually added, if not return -1
 	if( m_Objectives.Num() == ReturnVal )
 		ReturnVal = -1;
-Quit:
+
 	return ReturnVal;
+}
+
+void CMissionData::LoadDirectlyFromMapFile(const idStr& mapName) 
+{
+	idMapFile* mapFile = new idMapFile;
+
+	if (!mapFile->Parse(mapName))
+	{
+		delete mapFile;
+		mapFile = NULL;
+		gameLocal.Warning( "Couldn't load %s", mapName.c_str() );
+		return;
+	}
+	
+	// greebo: get the worldspawn entity
+	idMapEntity* worldspawn = mapFile->GetEntity(0);
+	idDict worldspawnDict = worldspawn->epairs;
+
+	// Now go and look for suitable objective entites
+	for (int i = 0; i < mapFile->GetNumEntities(); i++)
+	{
+		idMapEntity* mapEnt = mapFile->GetEntity(i);
+		idDict& mapDict = mapEnt->epairs;
+
+		idStr classname = mapDict.GetString("classname");
+
+		if (classname != "target_tdm_addobjectives") {
+			continue; // not the right entity
+		}
+
+		// Let's see if this entity has to be triggered
+		if (!mapDict.GetBool("wait_for_trigger", "0"))
+		{
+			// Doesn't need trigger, take it immediately
+			AddObjsFromDict(mapDict);
+		}
+		else 
+		{
+			// Entity is waiting for trigger, is it triggered by worldspawn?
+			const idKeyValue* target = worldspawnDict.MatchPrefix("target");
+			while (target != NULL)
+			{
+				if (target->GetValue() == mapDict.GetString("name"))
+				{
+					// Worldspawn triggers this entity, consider this
+					AddObjsFromDict(mapDict);
+				}
+
+				// Next key
+				target = worldspawnDict.MatchPrefix("target", target);
+			}
+		}
+	}
 }
 
 /**==========================================================================
@@ -2034,17 +2097,8 @@ Quit:
 	return bReturnVal;
 }
 
-void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle) 
+void CMissionData::UpdateGUIState(idUserInterface* ui) 
 {
-	assert(entity != NULL); // don't accept NULL entities.
-
-	idUserInterface* ui = entity->GetOverlay(overlayHandle);
-
-	if (ui == NULL) {
-		gameLocal.Warning("Can't update objectives GUI, invalid handle.\n");
-		return; // invalid handle, do nothing
-	}
-
 	// The list of indices of visible, applicable objectives
 	idList<int> objIndices;
 
@@ -2074,32 +2128,60 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 	{
 		int index = objIndices[i];
 
+		// Get a shortcut to the target objective
+		CObjective& obj = m_Objectives[index];
+
 		idStr prefix = va("obj%d", objCount+1);
 
-		ui->SetStateString(prefix + "_text", m_Objectives[index].m_text);
+		// Set the text
+		ui->SetStateString(prefix + "_text", obj.m_text);
 
-		ui->SetStateInt(
-			prefix + "_complete",
-			m_Objectives[index].m_state == STATE_COMPLETE && !m_Objectives[index].m_bOngoing // not complete if ongoing
-		);
+		// Set the state, this requires some logic
+		EObjCompletionState state = obj.m_state;
 
-		ui->SetStateInt(
-			prefix + "_failed",
-			m_Objectives[index].m_state == STATE_FAILED
-		);
+		// State is not complete for ongoing objectives
+		if (obj.m_state == STATE_COMPLETE && obj.m_bOngoing)
+		{
+			state = STATE_INCOMPLETE;
+		}
 
-		ui->SetStateInt(prefix + "_visible", m_Objectives[index].m_bVisible);
+		// Write the state to the GUI
+		ui->SetStateInt(prefix + "_state", static_cast<int>(state));
+
+		ui->SetStateInt(prefix + "_visible", obj.m_bVisible);
+
+		// Call UpdateObjectiveStateN to perform some GUI-specific updates
+		ui->HandleNamedEvent(va("UpdateObjective%d", index));
 	}
 
 	// Force a redraw
 	ui->StateChanged(gameLocal.time, true);
 }
 
-void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)
+void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle) 
 {
 	assert(entity != NULL); // don't accept NULL entities.
 
 	idUserInterface* ui = entity->GetOverlay(overlayHandle);
+
+	if (ui == NULL) {
+		gameLocal.Warning("Can't update objectives GUI, invalid handle.\n");
+		return; // invalid handle, do nothing
+	}
+
+	UpdateGUIState(ui);
+}
+
+void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)
+{
+	assert(entity != NULL); // don't accept NULL entities.
+	if (!entity->IsType(idPlayer::Type)) {
+		return;
+	}
+	
+	idPlayer* player = static_cast<idPlayer*>(entity);
+	
+	idUserInterface* ui = player->GetOverlay(overlayHandle);
 
 	if (ui == NULL) {
 		gameLocal.Warning("Can't update statistics GUI, invalid handle.\n");
@@ -2124,6 +2206,14 @@ void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, cons
 
 	key = "Loot Overall"; 
 	value = idStr(m_Stats.LootOverall);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "Killed by the Player";
+	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[player->team]);
+	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+
+	key = "KOed by the Player";
+	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[player->team]);
 	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
 
 	// Force a redraw
@@ -2226,6 +2316,12 @@ void CObjectiveLocation::Spawn()
 
 	GetPhysics()->EnableClip();
 
+	// get the clip model
+	clipModel = new idClipModel( GetPhysics()->GetClipModel() );
+
+	// remove the collision model from the physics object
+	GetPhysics()->SetClipModel( NULL, 1.0f );
+
 	BecomeActive( TH_THINK );
 }
 
@@ -2238,6 +2334,8 @@ void CObjectiveLocation::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_EntsInBounds.Num() );
 	for( int i=0;i < m_EntsInBounds.Num(); i++ )
 		savefile->WriteString( m_EntsInBounds[i] );
+
+	savefile->WriteClipModel( clipModel );
 }
 
 void CObjectiveLocation::Restore( idRestoreGame *savefile )
@@ -2253,32 +2351,75 @@ void CObjectiveLocation::Restore( idRestoreGame *savefile )
 	m_EntsInBounds.SetNum( num );
 	for( int i=0;i < num; i++ )
 		savefile->ReadString( m_EntsInBounds[i] );
+
+	savefile->ReadClipModel( clipModel );
 }
 
 void CObjectiveLocation::Think()
 {
-	int NumEnts(0);
-	idEntity *Ents[MAX_GENTITIES];
 	idStrList current, added, missing;
-	bool bFound(false);
-
+	bool bFound = false;
+	
 	// only check on clock ticks
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
 		goto Quit;
 
 	m_TimeStamp = gameLocal.time;
 
-	// bounding box test
-	NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
-	for( int i=0; i<NumEnts; i++ )
+	if ( clipModel != NULL)
 	{
-		if( Ents[i] && Ents[i]->m_bIsObjective )
+		// angua: This is adapted from trigger_touch to allow more precise detection
+		idBounds bounds;
+		idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+
+		bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+
+		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+		for (int k = 0; k < numClipModels; k++ ) 
 		{
-			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
-			current.Append( Ents[i]->name );
+			cm = clipModelList[ k ];
+
+			if ( !cm->IsTraceModel() ) 
+			{
+				continue;
+			}
+
+			idEntity *entity = cm->GetEntity();
+			if ( !entity ) 
+			{
+				continue;
+			}
+			
+			if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
+										clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) 
+			{
+				continue;
+			}
+
+			if (entity->m_bIsObjective)
+			{
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), entity->name.c_str() );
+				current.Append( entity->name );
+			}
 		}
 	}
+	else
+	{
+		// bounding box test
+		int NumEnts(0);
+		idEntity *Ents[MAX_GENTITIES];
 
+		NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+		for( int i = 0; i < NumEnts; i++ )
+		{
+			if( Ents[i] && Ents[i]->m_bIsObjective )
+			{
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+				current.Append( Ents[i]->name );
+			}
+		}
+	}
+	
 	// compare current list to previous clock tick list to generate added list
 	for( int i = 0; i < current.Num(); i++ )
 	{
@@ -2318,7 +2459,7 @@ void CObjectiveLocation::Think()
 	}
 
 	// call objectives system for all missing or added ents
-	for( int i=0; i<added.Num(); i++ )
+	for( int i = 0; i < added.Num(); i++ )
 	{
 		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
 		if( Ent )
@@ -2328,7 +2469,7 @@ void CObjectiveLocation::Think()
 		}
 	}
 
-	for( int j=0; j<missing.Num(); j++ )
+	for( int j = 0; j < missing.Num(); j++ )
 	{
 		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
 		if( Ent2 )

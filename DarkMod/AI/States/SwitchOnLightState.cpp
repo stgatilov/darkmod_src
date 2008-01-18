@@ -55,34 +55,66 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
-		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
-		lightDirection.z = 0;
-		lightDirection.NormalizeFast();
-//		float angle = (_reachEnemyCheck * 90) % 360;
-//		float sinAngle = idMath::Sin(angle);
-//		float cosAngle = idMath::Cos(angle);
-//		idVec3 targetDirection = enemyDirection;
-//		targetDirection.x = enemyDirection.x * cosAngle + enemyDirection.y * sinAngle;
-//		targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
-	
-		idVec3 size = owner->GetAAS()->GetSettings()->boundingBoxes[0][1];
-		idVec3 targetPoint = light->GetPhysics()->GetOrigin() + lightDirection * size.x * 0.5;
-		idVec3 bottomPoint = targetPoint;
-		bottomPoint.z -= size.z + owner->GetArmReachLength();
-		
-		trace_t result;
-		if (gameLocal.clip.TracePoint(result, targetPoint, bottomPoint, MASK_OPAQUE, NULL))
-		{
-			targetPoint.z = result.endpos.z + 1;
 
-			int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
-			int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
-			aasPath_t path;
-			if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
+		
+		idVec3 size(16, 16, 82);
+		idAAS* aas = owner->GetAAS();
+		if (aas)
+		{
+			size = aas->GetSettings()->boundingBoxes[0][1];
+		}
+
+		float maxHeight =  size.z + owner->GetArmReachLength();
+		idVec2 projection = lightDirection.ToVec2();
+
+		if (projection.LengthFast() < owner->GetArmReachLength() && lightDirection.z < maxHeight)
+		{
+			// If we are already close enough, relight the torch immediately
+			owner->StopMove(MOVE_STATUS_DONE);
+			// TODO: Play anim
+			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+		}
+		else
+		{
+			// Move a bit in front of the light origin towards the ai 
+			// and perform a trace down to detect the ground
+			lightDirection.NormalizeFast();
+		
+			idVec3 startPoint = light->GetPhysics()->GetOrigin() + lightDirection * size.x;
+			idVec3 bottomPoint = startPoint;
+			bottomPoint.z -= maxHeight;
+			
+			idVec3 targetPoint = startPoint;
+			trace_t result;
+			if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
 			{
 				targetPoint.z = result.endpos.z + 1;
-				owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
+				// gameRenderWorld->DebugArrow(colorRed, startPoint, targetPoint, 2, 5000);
+
+				int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
+				int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
+				aasPath_t path;
+				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+				{
+					targetPoint.z = result.endpos.z + 1;
+					owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
+					light->ResponseIgnore(ST_VISUAL, owner);
+				}
+				else
+				{
+					// Probably can't reach light, no path to goal found
+					light->ResponseIgnore(ST_VISUAL, owner);
+					owner->GetMind()->EndState();
+					return;
+				}
+			}
+			else
+			{
+				// Probably can't reach the light, too far above ground
 				light->ResponseIgnore(ST_VISUAL, owner);
+				owner->GetMind()->EndState();
+				return;
 			}
 		}
 	}
@@ -93,8 +125,8 @@ void SwitchOnLightState::Think(idAI* owner)
 {
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
-	idLight* light = _light.GetEntity();
 
+	idLight* light = _light.GetEntity();
 	if (light == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR).LogString("No stim source, terminating state!\r");
@@ -102,34 +134,61 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 
-	if (owner->AI_MOVE_DONE)
-	{
-		idVec3 size = owner->GetAAS()->GetSettings()->boundingBoxes[0][1];
-		float reachLength = size.z + owner->GetArmReachLength();
-		if ((owner->GetEyePosition() - light->GetPhysics()->GetOrigin()).LengthFast() < reachLength)
-		{
-			// TODO: play animation
-
-			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
-		}
-	}
-
-	if (light->GetLightLevel() > 0)
-	{
-		owner->GetMind()->EndState();
-		return;
-	}
-
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
-
 	if (owner->AI_AlertNum >= owner->thresh_combat)
 	{
 		light->ResponseAllow(ST_VISUAL, owner);
 		owner->GetMind()->EndState();
 		return;
 	}
+	
+	if (light->GetLightLevel() > 0)
+	{
+		// Light is on again
+		// TODO: Wait until anim is finished
+		owner->GetMind()->EndState();
+		return;
+	}
 
+	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+
+	idVec3 size(16, 16, 82);
+	if (idAAS* aas = owner->GetAAS())
+	{
+		size = aas->GetSettings()->boundingBoxes[0][1];
+	}
+
+	if (lightType == AIUSE_LIGHTTYPE_TORCH)
+	{
+		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
+		lightDirection.z = 0;
+		float delta = lightDirection.LengthFast();
+
+		if (delta <= size.x)
+		{
+			owner->GetSubsystem(SubsysMovement)->ClearTasks();
+			owner->StopMove(MOVE_STATUS_DONE);
+			// TODO: Play anim
+			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+		}
+		else if (owner->AI_MOVE_DONE)
+		{
+			if (delta <= 1.5 * owner->GetArmReachLength())
+			{
+				owner->GetSubsystem(SubsysMovement)->ClearTasks();
+				owner->StopMove(MOVE_STATUS_DONE);
+				// TODO: Play anim
+				light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+			}
+			else
+			{
+				// TODO: Try moving closer?
+				owner->GetMind()->EndState();
+				return;
+			}
+		}
+	}
 }
 
 void SwitchOnLightState::Save(idSaveGame* savefile) const

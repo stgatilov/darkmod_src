@@ -41,6 +41,7 @@ extern const idEventDef EV_Player_DeathMenu;
 extern const idEventDef EV_Player_MissionFailed;
 extern const idEventDef EV_Player_GiveHealthPool;
 extern const idEventDef EV_Mission_Success;
+extern const idEventDef EV_TriggerMissionEnd;
 
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
@@ -49,6 +50,7 @@ const int	FOCUS_TIME = 300;
 const int	FOCUS_GUI_TIME = 500;
 
 #define TDM_PLAYER_WEAPON_CATEGORY			"Weapons"
+#define TDM_PLAYER_MAPS_CATEGORY			"Maps"
 const int MAX_WEAPONS = 16;
 
 const int DEAD_HEARTRATE = 0;			// fall to as you die
@@ -299,7 +301,9 @@ public:
 	idDragEntity			dragEntity;
 
 	// A pointer to our weaponslot.
-	CInventoryCursor		*m_WeaponCursor;
+	CInventoryCursor*		m_WeaponCursor;
+	// A pointer to the current map/floorplan.
+	CInventoryCursor*		m_MapCursor;
 
 public:
 	CLASS_PROTOTYPE( idPlayer );
@@ -320,6 +324,14 @@ public:
 	*         to the inventory. Expects the weapon category to exist.
 	*/
 	void					addWeaponsToInventory();
+
+	/**
+	 * greebo: Cycles through the inventory and opens the next map.
+	 * If no map is displayed currently, the first map is toggled.
+	 * If there is a map currently on the HUD, the next one is chosen.
+	 * If there is no next map, the map is closed again.
+	 */
+	void					NextInventoryMap();
 
 	// save games
 	void					Save( idSaveGame *savefile ) const;					// archives object for save game file
@@ -967,13 +979,9 @@ private:
 	void					Event_MissionSuccess();
 
 	// greebo: This event prepares the running map for mission success.
-	// Basically, this removes all AI, puts physics to rest and 
-	// immobilises the player, so that nothing bad happens during the display
-	// of the end game GUI.
-	void					Event_PrepareMapForMissionEnd();
-
-	// Sets up and starts the success GUI, returns the handle
-	void					Event_DisplaySuccessGUI(const char* guiFile);
+	// Basically waits for any HUD messages and fades out the screen, afterwards
+	// the Mission Success event is called.
+	void					Event_TriggerMissionEnd();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

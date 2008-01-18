@@ -619,9 +619,17 @@ void idWeapon::Clear( void ) {
 
 	// clear out the sounds from our spawnargs since we'll copy them from the weapon def
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "snd_" );
-	while( kv ) {
+	while( kv ) 
+	{
 		spawnArgs.Delete( kv->GetKey() );
 		kv = spawnArgs.MatchPrefix( "snd_" );
+	}
+	// And the propagated sounds:
+	kv = spawnArgs.MatchPrefix( "sprS_" );
+	while( kv ) 
+	{
+		spawnArgs.Delete( kv->GetKey() );
+		kv = spawnArgs.MatchPrefix( "sprS_" );
 	}
 
 	hideTime		= 300;
@@ -859,9 +867,17 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// copy the sounds from the weapon view model def into out spawnargs
 	const idKeyValue *kv = weaponDef->dict.MatchPrefix( "snd_" );
-	while( kv ) {
+	while( kv ) 
+	{
 		spawnArgs.Set( kv->GetKey(), kv->GetValue() );
 		kv = weaponDef->dict.MatchPrefix( "snd_", kv );
+	}
+	// And the propagated sounds
+	kv = weaponDef->dict.MatchPrefix( "sprS_" );
+	while( kv ) 
+	{
+		spawnArgs.Set( kv->GetKey(), kv->GetValue() );
+		kv = weaponDef->dict.MatchPrefix( "sprS_", kv );
 	}
 
 	// find some joints in the model for locating effects
@@ -3128,7 +3144,8 @@ void idWeapon::Event_Melee( void ) {
 		}
 
 		bool hit = false;
-		const char *hitSound = meleeDef->dict.GetString( "snd_miss" );
+		idStr hitSound = meleeDef->dict.GetString( "snd_miss" );
+		idStr sndName = "snd_miss";
 
 		if ( ent ) {
 
@@ -3172,6 +3189,7 @@ void idWeapon::Event_Melee( void ) {
 				if ( ent->spawnArgs.GetBool( "bleed" ) ) {
 
 					hitSound = meleeDef->dict.GetString( "snd_hit" );
+					sndName = "snd_hit";
 
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
 
@@ -3188,9 +3206,12 @@ void idWeapon::Event_Melee( void ) {
 
 					// start impact sound based on material type
 					hitSound = meleeDef->dict.GetString( va( "snd_%s", materialType.c_str() ) );
-					if ( *hitSound == '\0' ) 
+					sndName = va( "snd_%s", materialType.c_str() );
+
+					if ( hitSound.IsEmpty() ) 
 					{
 						hitSound = meleeDef->dict.GetString( "snd_metal" );
+						sndName = "snd_metal";
 					}
 
 					if ( gameLocal.time > nextStrikeFx ) {
@@ -3203,6 +3224,7 @@ void idWeapon::Event_Melee( void ) {
 						nextStrikeFx = gameLocal.time + 200;
 					} else {
 						hitSound = "";
+						sndName = "";
 					}
 
 					strikeSmokeStartTime = gameLocal.time;
@@ -3212,9 +3234,16 @@ void idWeapon::Event_Melee( void ) {
 			}
 		}
 
-		if ( *hitSound != '\0' ) {
-			const idSoundShader *snd = declManager->FindSound( hitSound );
+		if ( !hitSound.IsEmpty() ) 
+		{
+			const idSoundShader *snd = declManager->FindSound( hitSound.c_str() );
 			StartSoundShader( snd, SND_CHANNEL_BODY2, 0, true, NULL );
+			
+			// Propagate the sound to AI, must find global sound first because it's on a different dict
+			sndName.StripLeading("snd_");
+			sndName = meleeDef->dict.GetString( va("sprS_%s", sndName.c_str()) );
+			if( !sndName.IsEmpty() )
+				PropSoundDirect( sndName.c_str(), false, false );
 		}
 
 		idThread::ReturnInt( hit );

@@ -45,9 +45,53 @@ void WanderInLocationTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// Turn toward the initial location
 	owner->TurnToward(_location);
-	
+
 	// Move toward the initial loation
-	owner->MoveToPosition(_location);
+	if (!owner->MoveToPosition(_location))
+	{
+		// If the initial location isn't reachable, try to find a reachable position nearby
+		idVec3 direction = owner->GetPhysics()->GetOrigin() - _location;
+		direction.z = 0;
+		if (direction.LengthFast() < 80)
+		{
+			// We're close enough to the alert position, take the current position of the AI
+			_location = owner->GetPhysics()->GetOrigin();
+		}
+		else
+		{
+			direction.Normalize();
+			idVec3 startPoint = _location + 80 * direction;
+			startPoint.z += 200;
+
+			idVec3 bottomPoint = startPoint;
+			bottomPoint.z -= 400;
+				
+			idVec3 targetPoint = startPoint;
+			trace_t result;
+			if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
+			{
+				targetPoint.z = result.endpos.z + 1;
+				
+				int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
+				int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
+				aasPath_t path;
+				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+				{
+					_location = targetPoint;
+				}
+				else
+				{
+					// This didn't work out, the current position of the ai is still better than nothing
+					_location = owner->GetPhysics()->GetOrigin();
+				}
+			}
+			else
+			{
+				
+				_location = owner->GetPhysics()->GetOrigin();
+			}
+		}
+	}
 }
 
 bool WanderInLocationTask::Perform(Subsystem& subsystem)
@@ -67,7 +111,11 @@ bool WanderInLocationTask::Perform(Subsystem& subsystem)
 	// if we are approaching or past maximum distance, next wander is back toward the initial position
 	else if ((owner->GetPhysics()->GetOrigin() - _location).LengthFast() >= WANDER_RADIUS)
 	{
-		owner->MoveToPosition(_location);
+		if (!owner->MoveToPosition(_location))
+		{
+			gameLocal.Printf("WanderInLocationTask: Destination unreachable... \n");
+		}
+
 	}
 
 	return false; // not finished yet

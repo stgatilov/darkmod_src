@@ -35,6 +35,12 @@ public:
 	bool					SetCurrentItem(const idStr& name);
 
 	/**
+	 * greebo: Clears the cursor. After calling this, the cursor is pointing
+	 *         at nothing. The category lock and other settings are not affected by this call.
+	 */
+	void					ClearItem();
+
+	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
 	 * depends on the settings of CategoryLock and WrapAround.
 	 */

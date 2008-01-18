@@ -19,6 +19,10 @@ instancing of objects.
 #ifndef __SYS_CLASS_H__
 #define __SYS_CLASS_H__
 
+#ifdef __linux__
+#include <cassert>
+#endif
+
 class idClass;
 class idTypeInfo;
 

@@ -15,6 +15,7 @@
 
 #ifdef __linux__
 #include "sys/sys_public.h"
+#include <cassert>
 #endif
 
 /*

@@ -80,6 +80,12 @@ CInventoryItem *CInventoryCursor::GetCurrentItem()
 	return rc;
 }
 
+void CInventoryCursor::ClearItem()
+{
+	// greebo: Invalidate the item index, this should be enough
+	m_CurrentItem = -1;
+}
+
 bool CInventoryCursor::SetCurrentItem(CInventoryItem *Item)
 {
 	bool rc = false;
@@ -144,12 +150,19 @@ CInventoryItem *CInventoryCursor::GetNextItem()
 	{
 		curCategory = GetNextCategory();
 
-		if (m_WrapAround == true)
+		if (m_WrapAround == true) 
+		{
 			m_CurrentItem = 0;
-		else 
+		}
+		else if (curCategory != NULL)
 		{
 			m_CurrentItem = curCategory->size() - 1;
 			goto Quit;
+		}
+		else
+		{
+			ClearItem();
+			goto Quit;			
 		}
 	}
 

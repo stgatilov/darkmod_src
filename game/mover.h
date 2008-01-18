@@ -47,6 +47,9 @@ public:
 
 	void					SetPortalState( bool open );
 
+	bool					IsBlocked( void );
+
+
 protected:
 	typedef enum {
 		ACCELERATION_STAGE,
