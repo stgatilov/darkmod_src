@@ -578,6 +578,32 @@ private:
 };
 
 /**
+* Target for hiding or showing certain objectives.
+**/
+class CTarget_SetObjectiveVisibility : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveVisibility );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
+* Target for setting the state of an objective component
+**/
+class CTarget_SetObjectiveComponentState : 
+	public idTarget 
+{
+public:
+	CLASS_PROTOTYPE( CTarget_SetObjectiveComponentState );
+private:
+	void				Event_Activate( idEntity *activator );
+	virtual void		Spawn( void );
+};
+
+/**
 * CTarget_SetFrobable
 * Sets all items inside frobable or not when triggered
 **/
