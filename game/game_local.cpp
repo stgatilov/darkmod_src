@@ -3057,12 +3057,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 {
 	idStr cmd(menuCommand);
 
-	if (cmd == "objective_close_request")
-	{
-		// Objectives GUI requests closure, shut it down
-		gui->HandleNamedEvent("CloseObjectives");
-	}
-	else if (cmd == "mainmenu_heartbeat")
+	if (cmd == "mainmenu_heartbeat")
 	{
 		if (GetMissionResult() == MISSION_COMPLETE)
 		{
@@ -3103,6 +3098,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Only update the objectives during map runtime and if not already triggered
 		if (GameState() == GAMESTATE_ACTIVE)
 		{
+			// greebo: Invoke the initialisation routine (only once)
+			if (!gui->GetStateBool("ObjectiveScreenInitialised"))
+			{
+				gui->HandleNamedEvent("InitObjectiveScreen");
+				gui->SetStateBool("ObjectiveScreenInitialised", true);
+			}
+
 			if (!m_MissionDataLoadedIntoGUI)
 			{
 				// Load the objectives into the GUI
@@ -3134,7 +3136,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
-		gui->HandleNamedEvent("InitObjectives");
 		
 		if (!m_MissionDataLoadedIntoGUI)
 		{
@@ -3144,11 +3145,30 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		m_MissionDataLoadedIntoGUI = true;
 	}
+	else if (cmd == "objective_close_request")
+	{
+		// Objectives GUI requests closure, shut it down
+		gui->HandleNamedEvent("CloseObjectives");
+	}
 	else if (cmd == "showMods") // Called by "New Mission"
 	{
 		// User requested a map start
 		gui->HandleNamedEvent("ShowBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 1);
+	}
+	else if (cmd == "objective_scroll_down_request") 
+	{
+		// Increment the start index
+		int curIdx = gui->GetStateInt("ObjStartIdx");
+		gui->SetStateInt("ObjStartIdx", curIdx + 1);
+		m_MissionDataLoadedIntoGUI = false; // trigger an update next frame
+	}
+	else if (cmd == "objective_scroll_up_request") 
+	{
+		// Increment the start index
+		int curIdx = gui->GetStateInt("ObjStartIdx");
+		gui->SetStateInt("ObjStartIdx", curIdx - 1);
+		m_MissionDataLoadedIntoGUI = false; // trigger an update next frame
 	}
 	else if (cmd == "close") 
 	{

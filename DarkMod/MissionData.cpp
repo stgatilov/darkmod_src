@@ -2112,6 +2112,7 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 
 	int numObjectivesPerPage = 5;
+	numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
 
 	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
 
