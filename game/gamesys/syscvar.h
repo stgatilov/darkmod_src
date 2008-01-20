@@ -30,6 +30,7 @@ extern idCVar cv_ai_tactalert;
 extern idCVar cv_ai_state_show;
 extern idCVar cv_ai_task_show;
 extern idCVar cv_ai_alertnum_show;
+extern idCVar cv_ai_dest_show;
 extern idCVar cv_ai_debug;
 extern idCVar cv_ai_sight_thresh;
 extern idCVar cv_ai_sight_scale;

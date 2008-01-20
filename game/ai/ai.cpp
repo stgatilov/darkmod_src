@@ -1729,6 +1729,11 @@ void idAI::Think( void )
 	{
 		FOVDebugDraw();
 	}
+	
+	if ( cv_ai_dest_show.GetBool() )
+	{
+		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
+	}
 
 	if( cv_ai_state_show.GetBool() )
 	{
@@ -2068,6 +2073,15 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK | AREA_REACHABLE_FLY );
 	} else {
 		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK );
+		
+		if (areaNum) {
+			// Sanity check the returned area. If the position isn't within the AI's vertical melee
+			// reach, then report it as unreachable.
+			idVec3 grav = physicsObj.GetGravity();
+			grav.Normalize();
+			float height = fabs((newPos - aas->AreaCenter(areaNum)) * grav);
+			if (height > melee_range) areaNum = 0;
+		}
 	}
 
 	return areaNum;

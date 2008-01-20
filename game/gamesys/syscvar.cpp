@@ -60,6 +60,8 @@ idCVar cv_ai_state_show (			"tdm_ai_showstate",			"0",			CVAR_GAME | CVAR_ARCHIV
 idCVar cv_ai_animstate_show (		"tdm_ai_showanimstate",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current animation state will be shown.");
 idCVar cv_ai_task_show (			"tdm_ai_showtasks",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the name of the AI's current tasks will be shown.");
 idCVar cv_ai_alertnum_show (		"tdm_ai_showalert",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, debug text showing the AI's current total alert units is shown (Note: This is not the alert state, use tdm_ai_showstate for that).");
+idCVar cv_ai_dest_show (			"tdm_ai_showdest",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, an arrow is drawn from every AI to its intended pathing destination.");
+
 idCVar cv_ai_sight_thresh	(		"tdm_ai_sight_thresh",		"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the minimum light per-AI-frame gem generated visual stimulus amount required for an AI to be able to see the player or another entity directly when searching.");
 idCVar cv_ai_sight_scale	(		"tdm_ai_sight_scale",		"1000.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the distance that is multiplied by the lightQuotient from the LAS and visual acuity of the AI scaled from 0 to 1, that indicates how far away the AI can be and see a location.");
 idCVar cv_ai_show_enemy_visibility ("tdm_ai_show_enemy_visibility",	"0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, the visibility of the AI's enemy is drawn (red = obscured or hidden in darkness, green = the opposite).");
