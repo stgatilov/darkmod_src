@@ -255,7 +255,7 @@ void idGameLocal::Clear( void )
 	m_RelationsManager = &g_globalRelations;
 	m_MissionData = &g_MissionData;
 	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
-	m_MissionDataLoadedIntoGUI = false;
+	m_MissionData->ClearGUIState();
 
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
@@ -1459,7 +1459,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	m_MissionResult = MISSION_INPROGRESS;
 
 	// We need an objectives update now that we've loaded the map
-	m_MissionDataLoadedIntoGUI = false;
+	m_MissionData->ClearGUIState();
 
 	Printf( "--------------------------------------\n" );
 }
@@ -1695,7 +1695,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	int missResult;
 	savegame.ReadInt(missResult);
 	m_MissionResult = static_cast<EMissionResult>(missResult);
-	m_MissionDataLoadedIntoGUI = false;
 
 	savegame.ReadInt(m_HighestSRId);
 
@@ -3057,6 +3056,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 {
 	idStr cmd(menuCommand);
 
+	// Watch out for objectives GUI-related commands
+	m_MissionData->HandleMainMenuCommands(cmd, gui);
+
 	if (cmd == "mainmenu_heartbeat")
 	{
 		if (GetMissionResult() == MISSION_COMPLETE)
@@ -3092,63 +3094,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				gui->SetStateBool("ObjectivesMusicPlaying", false);
 			}
 		}
-		
-		// The main menu is visible, check if we should display the "Objectives" option
-		
-		// Only update the objectives during map runtime and if not already triggered
-		if (GameState() == GAMESTATE_ACTIVE)
-		{
-			// greebo: Invoke the initialisation routine (only once)
-			if (!gui->GetStateBool("ObjectiveScreenInitialised"))
-			{
-				gui->HandleNamedEvent("InitObjectiveScreen");
-				gui->SetStateBool("ObjectiveScreenInitialised", true);
-			}
-
-			if (!m_MissionDataLoadedIntoGUI)
-			{
-				// Load the objectives into the GUI
-				m_MissionData->UpdateGUIState(gui);
-			}
-
-			m_MissionDataLoadedIntoGUI = true;
-		}
-	}
-	else if (cmd == "objective_open_request")
-	{
-		if (gui->GetStateInt("BriefingIsVisible") == 1)
-		{
-			// We're coming from the briefing screen
-			// Clear the objectives data and load them from the map
-			m_MissionData->Clear();
-
-			idStr mapName = gui->GetStateString("map");
-
-			// Load the mission data directly from the given map
-			m_MissionData->LoadDirectlyFromMapFile(mapName);
-
-			// Clear the flag so that the objectives get updated
-			m_MissionDataLoadedIntoGUI = false;
-
-			// Hide the briefing screen
-			gui->HandleNamedEvent("HideBriefingScreen");
-			gui->SetStateInt("BriefingIsVisible", 0);
-		}
-
-		gui->HandleNamedEvent("ShowObjectiveScreen");
-		
-		if (!m_MissionDataLoadedIntoGUI)
-		{
-			// Load the objectives into the GUI
-			m_MissionData->UpdateGUIState(gui); 
-		}
-
-		m_MissionDataLoadedIntoGUI = true;
-	}
-	else if (cmd == "objective_close_request")
-	{
-		// Objectives GUI requests closure, shut it down
-		gui->HandleNamedEvent("CloseObjectives");
 	}
 	else if (cmd == "showMods") // Called by "New Mission"
 	{
@@ -3156,26 +3101,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->HandleNamedEvent("ShowBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 1);
 	}
-	else if (cmd == "objective_scroll_down_request") 
-	{
-		// Increment the start index
-		int curIdx = gui->GetStateInt("ObjStartIdx");
-		gui->SetStateInt("ObjStartIdx", curIdx + 1);
-		m_MissionDataLoadedIntoGUI = false; // trigger an update next frame
-	}
-	else if (cmd == "objective_scroll_up_request") 
-	{
-		// Increment the start index
-		int curIdx = gui->GetStateInt("ObjStartIdx");
-		gui->SetStateInt("ObjStartIdx", curIdx - 1);
-		m_MissionDataLoadedIntoGUI = false; // trigger an update next frame
-	}
 	else if (cmd == "close") 
 	{
-		// Set the objectives state flag back to dirty
-		m_MissionDataLoadedIntoGUI = false;
-
-		gui->HandleNamedEvent("HideObjectiveScreen");
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
 	}

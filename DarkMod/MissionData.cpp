@@ -347,6 +347,9 @@ void CMissionData::Restore( idRestoreGame *savefile )
 
 	// re-parse the logic strings
 	ParseLogicStrs();
+
+	// We'll need a GUI update in any case
+	m_MissionDataLoadedIntoGUI = false;
 }
 
 void CMissionData::MissionEvent
@@ -2171,6 +2174,94 @@ void CMissionData::UpdateGUIState(idEntity* entity, int overlayHandle)
 	}
 
 	UpdateGUIState(ui);
+}
+
+void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui)
+{
+	if (cmd == "mainmenu_heartbeat")
+	{
+		// The main menu is visible, check if we should display the "Objectives" option
+		
+		// Only update the objectives during map runtime and if not already triggered
+		if (gameLocal.GameState() == GAMESTATE_ACTIVE)
+		{
+			// greebo: Invoke the initialisation routine (only once)
+			if (!gui->GetStateBool("ObjectiveScreenInitialised"))
+			{
+				gui->HandleNamedEvent("InitObjectiveScreen");
+				gui->SetStateBool("ObjectiveScreenInitialised", true);
+			}
+
+			if (!m_MissionDataLoadedIntoGUI)
+			{
+				// Load the objectives into the GUI
+				UpdateGUIState(gui);
+			}
+
+			m_MissionDataLoadedIntoGUI = true;
+		}
+	}
+	else if (cmd == "objective_open_request")
+	{
+		if (gui->GetStateInt("BriefingIsVisible") == 1)
+		{
+			// We're coming from the briefing screen
+			// Clear the objectives data and load them from the map
+			Clear();
+
+			idStr mapName = gui->GetStateString("map");
+
+			// Load the mission data directly from the given map
+			LoadDirectlyFromMapFile(mapName);
+
+			// Clear the flag so that the objectives get updated
+			ClearGUIState();
+
+			// Hide the briefing screen
+			gui->HandleNamedEvent("HideBriefingScreen");
+			gui->SetStateInt("BriefingIsVisible", 0);
+		}
+
+		gui->HandleNamedEvent("ShowObjectiveScreen");
+		
+		if (!m_MissionDataLoadedIntoGUI)
+		{
+			// Load the objectives into the GUI
+			UpdateGUIState(gui); 
+		}
+
+		m_MissionDataLoadedIntoGUI = true;
+	}
+	else if (cmd == "objective_close_request")
+	{
+		// Objectives GUI requests closure, shut it down
+		gui->HandleNamedEvent("CloseObjectives");
+	}
+	else if (cmd == "objective_scroll_down_request") 
+	{
+		// Increment the start index
+		int curIdx = gui->GetStateInt("ObjStartIdx");
+		gui->SetStateInt("ObjStartIdx", curIdx + 1);
+		ClearGUIState();
+	}
+	else if (cmd == "objective_scroll_up_request") 
+	{
+		// Increment the start index
+		int curIdx = gui->GetStateInt("ObjStartIdx");
+		gui->SetStateInt("ObjStartIdx", curIdx - 1);
+		ClearGUIState();
+	}
+	else if (cmd == "close") 
+	{
+		// Set the objectives state flag back to dirty
+		ClearGUIState();
+		gui->HandleNamedEvent("HideObjectiveScreen");
+	}
+}
+
+void CMissionData::ClearGUIState() 
+{
+	m_MissionDataLoadedIntoGUI = false;
 }
 
 void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)

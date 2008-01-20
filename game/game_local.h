@@ -441,7 +441,6 @@ public:
 **/
 	CMissionData *			m_MissionData;
 	EMissionResult			m_MissionResult; // holds the global mission state
-	bool					m_MissionDataLoadedIntoGUI; // true if the main menu GUI is up to date
 
 /**
 * Pointer to global sound prop loader object

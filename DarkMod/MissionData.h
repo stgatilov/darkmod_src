@@ -646,6 +646,15 @@ public:
 	void UpdateGUIState(idUserInterface* ui);
 
 	/**
+	 * greebo: Gets called when the main menu is active and a "cmd" string is pending.
+	 *         This watches out for any objectives-related commands and interprets them.
+	 */
+	void HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui);
+
+	// greebo: Call this to trigger an objective update next time the main menu is shown
+	void ClearGUIState();
+
+	/**
 	 * greebo: Updates the statistics in the given GUI.
 	 *
 	 * @entity: The entity the GUI is belonging to (usually the player).
@@ -767,6 +776,9 @@ protected:
 	**/
 	SBoolParseNode m_SuccessLogic;
 	SBoolParseNode m_FailureLogic;
+
+	// true if the main menu GUI is up to date
+	bool m_MissionDataLoadedIntoGUI; 
 
 }; // CMissionData
 
