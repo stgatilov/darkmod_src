@@ -9752,6 +9752,22 @@ int idPlayer::GetLightgemModifier()
 		returnValue += cv_lg_crouch_modifier.GetInteger();
 	}
 
+	// greebo: Take the current velocity into account
+	{
+		float velocity = physicsObj.GetLinearVelocity().LengthFast();
+		float minVelocity = cv_lg_velocity_mod_min_velocity.GetFloat();
+		float maxVelocity = cv_lg_velocity_mod_max_velocity.GetFloat();
+
+		float factor = (velocity - minVelocity) / (maxVelocity - minVelocity);
+
+		// Force the factor into [0..1]
+		if (factor > 1) factor = 1;
+		if (factor < 0) factor = 0;
+
+		int amount = cv_lg_velocity_mod_amount.GetInteger();
+		returnValue += amount * factor;
+	}
+
 	// No need to cap the value, this is done in idGameLocal again.
 
 	return returnValue;

@@ -163,6 +163,9 @@ extern idCVar cv_lg_crouch_modifier;
 extern idCVar cv_lg_image_width;
 extern idCVar cv_lg_screen_width;
 extern idCVar cv_lg_screen_height;
+extern idCVar cv_lg_velocity_mod_min_velocity;
+extern idCVar cv_lg_velocity_mod_max_velocity;
+extern idCVar cv_lg_velocity_mod_amount;
 
 // Lockpicking
 extern idCVar cv_lp_pin_base_count;
