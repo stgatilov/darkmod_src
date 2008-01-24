@@ -217,7 +217,7 @@ idCVar cv_lg_screen_width("tdm_lg_screen_width",	"640",	CVAR_GAME | CVAR_INTEGER
 idCVar cv_lg_screen_height("tdm_lg_screen_height",	"480",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen height of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 idCVar cv_lg_velocity_mod_min_velocity("tdm_lg_velocity_mod_min_velocity", "0", CVAR_GAME | CVAR_FLOAT, "The minimum velocity the player must be at to make the lightgem level increase.");
 idCVar cv_lg_velocity_mod_max_velocity("tdm_lg_velocity_mod_max_velocity", "300", CVAR_GAME | CVAR_FLOAT, "The maximum player speed taken into account for the lightgem.");
-idCVar cv_lg_velocity_mod_amount("tdm_lg_velocity_mod_amount", "6", CVAR_GAME | CVAR_INTEGER, "The maximum light level increase due to player velocity (this will be added when the player velocity is >= tdm_lg_player_velocity_mod_max).");
+idCVar cv_lg_velocity_mod_amount("tdm_lg_velocity_mod_amount", "1", CVAR_GAME | CVAR_FLOAT, "The maximum light level increase factor due to player velocity (this will be multiplied when the player velocity is >= tdm_lg_player_velocity_mod_max).");
 
 /**
  * Variables needed for lockpicking.

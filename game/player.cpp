@@ -9725,12 +9725,35 @@ bool idPlayer::AddGrabberEntityToInventory()
 	return false;
 }
 
-int idPlayer::GetLightgemModifier()
+int idPlayer::GetLightgemModifier(int curLightgemValue)
 {
 	// Take the compiled lightgem modifier as starting point
-	int returnValue = m_LightgemModifier;
+	int returnValue = curLightgemValue + m_LightgemModifier;
 
-	// First, check the inventory items
+	// greebo: Take the current velocity into account
+	// This is a multiplicative modifier and is applied first
+	{
+		// Get the velocity, but don't take "inherited" speed into account.
+		idVec3 velocityVec = physicsObj.GetLinearVelocity() - physicsObj.GetPushedLinearVelocity();
+
+		const idVec3& gravityDir = physicsObj.GetGravityNormal();
+		velocityVec -= (velocityVec * gravityDir) * gravityDir;
+		
+		float velocity = velocityVec.LengthFast();
+		float minVelocity = cv_lg_velocity_mod_min_velocity.GetFloat();
+		float maxVelocity = cv_lg_velocity_mod_max_velocity.GetFloat();
+
+		float velocityFactor = (velocity - minVelocity) / (maxVelocity - minVelocity);
+
+		// Force the factor into [0..1]
+		if (velocityFactor > 1) velocityFactor = 1;
+		if (velocityFactor < 0) velocityFactor = 0;
+
+		float factor = 1.0f + velocityFactor*cv_lg_velocity_mod_amount.GetFloat();
+		returnValue *= factor;
+	}
+
+	// Check the weapon/inventory items
 	if (m_WeaponCursor != NULL)
 	{
 		CInventoryItem* weapon = m_WeaponCursor->GetCurrentItem();
@@ -9750,22 +9773,6 @@ int idPlayer::GetLightgemModifier()
 	if (physicsObj.IsCrouching())
 	{
 		returnValue += cv_lg_crouch_modifier.GetInteger();
-	}
-
-	// greebo: Take the current velocity into account
-	{
-		float velocity = physicsObj.GetLinearVelocity().LengthFast();
-		float minVelocity = cv_lg_velocity_mod_min_velocity.GetFloat();
-		float maxVelocity = cv_lg_velocity_mod_max_velocity.GetFloat();
-
-		float factor = (velocity - minVelocity) / (maxVelocity - minVelocity);
-
-		// Force the factor into [0..1]
-		if (factor > 1) factor = 1;
-		if (factor < 0) factor = 0;
-
-		int amount = cv_lg_velocity_mod_amount.GetInteger();
-		returnValue += amount * factor;
 	}
 
 	// No need to cap the value, this is done in idGameLocal again.
