@@ -2050,37 +2050,45 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 idAI::PointReachableAreaNum
 =====================
 */
-int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, const idVec3& offset) const {
-	int areaNum;
-	idVec3 size;
-	idBounds bounds;
-	idVec3 newPos = pos + offset;
-
-	if ( !aas ) {
-		return 0;
+int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, const idVec3& offset) const
+{
+	if (aas == NULL) {
+		return 0; // no AAS, no area number
 	}
 
-	size = aas->GetSettings()->boundingBoxes[0][1] * boundsScale;
-	bounds[0] = -size;
-	size.z = 32.0f;
-	bounds[1] = size;
-/*
-	idBounds temp(bounds);
+	idVec3 size = aas->GetSettings()->boundingBoxes[0][1] * boundsScale;
+
+	// Construct the modifed bounds, based on the parameters (max.z = 32)
+	idBounds bounds(-size, idVec3(size.x, size.y, 32.0f));
+	idVec3 newPos = pos + offset;
+
+/*	idBounds temp(bounds);
 	temp.TranslateSelf(newPos);
-	gameRenderWorld->DebugBox(colorGreen, idBox(temp),gameLocal.msec);
-*/
-	if ( move.moveType == MOVETYPE_FLY ) {
+	gameRenderWorld->DebugBox(colorGreen, idBox(temp),gameLocal.msec);*/
+
+	int areaNum = 0;
+
+	if (move.moveType == MOVETYPE_FLY)
+	{
+		// Flying monsters
 		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK | AREA_REACHABLE_FLY );
-	} else {
+	} 
+	else
+	{
+		// Non-flying monsters
 		areaNum = aas->PointReachableAreaNum( newPos, bounds, AREA_REACHABLE_WALK );
 		
-		if (areaNum) {
+		if (areaNum != 0)
+		{
 			// Sanity check the returned area. If the position isn't within the AI's vertical melee
 			// reach, then report it as unreachable.
-			idVec3 grav = physicsObj.GetGravity();
-			grav.Normalize();
+			const idVec3& grav = physicsObj.GetGravityNormal();
+
 			float height = fabs((newPos - aas->AreaCenter(areaNum)) * grav);
-			if (height > melee_range) areaNum = 0;
+
+			if (height > melee_range) {
+				areaNum = 0;
+			}
 		}
 	}
 
@@ -3261,9 +3269,8 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 	int			areaNum;
 	aasPath_t	path;
 	bool		result;
-	idVec3		org;
 
-	org = physicsObj.GetOrigin();
+	const idVec3& org = physicsObj.GetOrigin();
 	seekPos = org;
 
 	switch( move.moveCommand ) {
@@ -3306,24 +3313,34 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 
 	move.moveStatus = MOVE_STATUS_MOVING;
 	result = false;
-	if ( gameLocal.time > move.blockTime ) {
-		if ( move.moveCommand == MOVE_WANDER ) {
+	if (gameLocal.time > move.blockTime)
+	{
+		if (move.moveCommand == MOVE_WANDER)
+		{
 			move.moveDest = org + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
-		} else {
-			if ( ReachedPos( move.moveDest, move.moveCommand ) ) {
+		} 
+		else
+		{
+			if (ReachedPos( move.moveDest, move.moveCommand))
+			{
 				StopMove( MOVE_STATUS_DONE );
 				seekPos	= org;
 				return false;
 			}
 		}
 
-		if ( aas && move.toAreaNum ) {
-			areaNum	= PointReachableAreaNum( org );
-			if ( PathToGoal( path, areaNum, org, move.toAreaNum, move.moveDest ) ) {
+		if (aas != NULL && move.toAreaNum)
+		{
+			areaNum	= PointReachableAreaNum(org);
+
+			if (PathToGoal(path, areaNum, org, move.toAreaNum, move.moveDest))
+			{
 				seekPos = path.moveGoal;
 				result = true;
 				move.nextWanderTime = 0;
-			} else {
+			}
+			else
+			{
 				AI_DEST_UNREACHABLE = true;
 			}
 		}
@@ -4053,20 +4070,33 @@ void idAI::AnimMove( void ) {
 	}
 
 	move.obstacle = NULL;
-	if ( ( move.moveCommand == MOVE_FACE_ENEMY ) && enemy.GetEntity() ) {
+	if (move.moveCommand == MOVE_FACE_ENEMY && enemy.GetEntity())
+	{
 		TurnToward( lastVisibleEnemyPos );
 		goalPos = oldorigin;
-	} else if ( ( move.moveCommand == MOVE_FACE_ENTITY ) && move.goalEntity.GetEntity() ) {
+	}
+	else if (move.moveCommand == MOVE_FACE_ENTITY && move.goalEntity.GetEntity())
+	{
 		TurnToward( move.goalEntity.GetEntity()->GetPhysics()->GetOrigin() );
 		goalPos = oldorigin;
-	} else if ( GetMovePos( goalPos ) ) 
+	} 
+	else if (GetMovePos(goalPos)) 
 	{
-		if ( (move.moveCommand != MOVE_WANDER) || move.moveCommand != MOVE_VECTOR ) 
+		if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
 		{
-			CheckObstacleAvoidance( goalPos, newDest );
-			TurnToward( newDest );
-		} else {
-			TurnToward( goalPos );
+			if (!cv_ai_opt_noobstacleavoidance.GetBool())
+			{
+				CheckObstacleAvoidance( goalPos, newDest );
+			}
+			else 
+			{
+				newDest = goalPos; // no avoidance, do nothing
+			}
+			TurnToward(newDest);
+		} 
+		else // MOVE_WANDER || MOVE_VECTOR
+		{
+			TurnToward(goalPos);
 		}
 	}
 

@@ -1130,9 +1130,27 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
+
+	/**
+	 * greebo: ReachedPos checks whether we the AI has reached the given target position <pos>.
+	 *         The check is a bounds check ("bounds contain point?"), the bounds radius is 
+	 *         depending on the given <moveCommand>.
+	 *
+	 * @returns: TRUE when the position has been reached, FALSE otherwise.
+	 */
 	bool					ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) const;
+
 	float					TravelDistance( const idVec3 &start, const idVec3 &end ) const;
-	int						PointReachableAreaNum( const idVec3 &pos, const float boundsScale = 2.0f, const idVec3& offset = idVec3(0, 0, 0) ) const;
+
+	/**
+	 * greebo: Returns the number of the nearest reachable area for the given point. 
+	 *         Depending on the move type, the call is routed to the AAS->PointReachableAreaNum 
+	 *         function. The bounds are modified before submission to the AAS function.
+	 *
+	 * @returns: the areanumber of the given point, 0 == no area found.
+	 */
+	int						PointReachableAreaNum(const idVec3 &pos, const float boundsScale = 2.0f, const idVec3& offset = idVec3(0,0,0)) const;
+
 	bool					PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	void					DrawRoute( void ) const;
 	bool					GetMovePos( idVec3 &seekPos );
