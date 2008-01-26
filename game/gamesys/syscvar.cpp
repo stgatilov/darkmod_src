@@ -458,7 +458,7 @@ idCVar pm_walkbob(					"pm_walkbob",				"0.3",			CVAR_GAME | CVAR_NETWORKSYNC | 
 idCVar pm_runbob(					"pm_runbob",				"0.35",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "bob faster when running" );
 idCVar pm_runpitch(					"pm_runpitch",				"0.001",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
 idCVar pm_runroll(					"pm_runroll",				"0.003",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
-idCVar pm_bobup(					"pm_bobup",					"0.03",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
+idCVar pm_bobup(					"pm_bobup",					"0.035",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
 idCVar pm_bobpitch(					"pm_bobpitch",				"0.001",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
 idCVar pm_bobroll(					"pm_bobroll",				"0.0015",		CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "" );
 idCVar pm_thirdPersonRange(			"pm_thirdPersonRange",		"80",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_FLOAT, "camera distance from player in 3rd person" );
