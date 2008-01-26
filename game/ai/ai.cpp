@@ -3265,11 +3265,8 @@ bool idAI::NewWanderDir( const idVec3 &dest ) {
 idAI::GetMovePos
 =====================
 */
-bool idAI::GetMovePos( idVec3 &seekPos ) {
-	int			areaNum;
-	aasPath_t	path;
-	bool		result;
-
+bool idAI::GetMovePos(idVec3 &seekPos)
+{
 	const idVec3& org = physicsObj.GetOrigin();
 	seekPos = org;
 
@@ -3287,7 +3284,8 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 
 	case MOVE_TO_POSITION_DIRECT :
 		seekPos = move.moveDest;
-		if ( ReachedPos( move.moveDest, move.moveCommand ) ) {
+		if ( ReachedPos(move.moveDest, move.moveCommand))
+		{
 			StopMove( MOVE_STATUS_DONE );
 		}
 		return false;
@@ -3307,36 +3305,43 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 		// (default case added to suppress GCC warnings)
 	}
 
-	if ( move.moveCommand == MOVE_TO_ENTITY ) {
-		MoveToEntity( move.goalEntity.GetEntity() );
+	if (move.moveCommand == MOVE_TO_ENTITY) {
+		MoveToEntity(move.goalEntity.GetEntity());
 	}
 
 	move.moveStatus = MOVE_STATUS_MOVING;
-	result = false;
+	bool result = false;
+
+	// Check if the blocking time has already expired
 	if (gameLocal.time > move.blockTime)
 	{
 		if (move.moveCommand == MOVE_WANDER)
 		{
-			move.moveDest = org + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
+			move.moveDest = org + viewAxis[0] * physicsObj.GetGravityAxis() * 256.0f;
 		} 
 		else
 		{
-			if (ReachedPos( move.moveDest, move.moveCommand))
+			// Check if we already reached the destination position
+			if (ReachedPos(move.moveDest, move.moveCommand))
 			{
-				StopMove( MOVE_STATUS_DONE );
+				// Yes, stop the move, move status is DONE
+				StopMove(MOVE_STATUS_DONE);
 				seekPos	= org;
-				return false;
+				return false; // nothing to do, return false
 			}
 		}
 
-		if (aas != NULL && move.toAreaNum)
+		if (aas != NULL && move.toAreaNum != 0)
 		{
-			areaNum	= PointReachableAreaNum(org);
+			// Get the area number we're currently in.
+			int areaNum = PointReachableAreaNum(org);
 
+			// Try to setup a path to the goal
+			aasPath_t path;
 			if (PathToGoal(path, areaNum, org, move.toAreaNum, move.moveDest))
 			{
 				seekPos = path.moveGoal;
-				result = true;
+				result = true; // We have a valid Path to the goal
 				move.nextWanderTime = 0;
 			}
 			else
@@ -3346,29 +3351,39 @@ bool idAI::GetMovePos( idVec3 &seekPos ) {
 		}
 	}
 
-	if ( !result ) {
-		// wander around
-		if ( ( gameLocal.time > move.nextWanderTime ) || !StepDirection( move.wanderYaw ) ) {
-			result = NewWanderDir( move.moveDest );
-			if ( !result ) {
-				StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+	if (!result)
+	{
+		// No path to the goal found, wander around
+		if (gameLocal.time > move.nextWanderTime || !StepDirection(move.wanderYaw))
+		{
+			result = NewWanderDir(move.moveDest);
+			if (!result)
+			{
+				StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				AI_DEST_UNREACHABLE = true;
 				seekPos	= org;
 				return false;
 			}
-		} else {
+		}
+		else
+		{
 			result = true;
 		}
 
+		// Set the seek position to something far away, but in the right direction
 		seekPos = org + move.moveDir * 2048.0f;
-		if ( ai_debugMove.GetBool() ) {
+
+		if (ai_debugMove.GetBool())	{
 			gameRenderWorld->DebugLine( colorYellow, org, seekPos, gameLocal.msec, true );
 		}
-	} else {
+	}
+	else
+	{
+		// result == true, we have a valid path
 		AI_DEST_UNREACHABLE = false;
 	}
 
-	if ( result && ( ai_debugMove.GetBool() ) ) {
+	if (result && ai_debugMove.GetBool()) {
 		gameRenderWorld->DebugLine( colorCyan, physicsObj.GetOrigin(), seekPos );
 	}
 
@@ -4050,10 +4065,9 @@ void idAI::DeadMove( void ) {
 idAI::AnimMove
 =====================
 */
-void idAI::AnimMove( void ) {
-
+void idAI::AnimMove()
+{
 	idVec3				goalPos;
-	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
 	monsterMoveResult_t	moveResult;
@@ -4082,6 +4096,7 @@ void idAI::AnimMove( void ) {
 	} 
 	else if (GetMovePos(goalPos)) 
 	{
+		// greebo: We have a valid goalposition (not reached the target yet), check for obstacles
 		if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
 		{
 			if (!cv_ai_opt_noobstacleavoidance.GetBool())
@@ -4100,9 +4115,13 @@ void idAI::AnimMove( void ) {
 		}
 	}
 
+	// greebo: Now actually turn towards the "ideal" yaw.
 	Turn();
 
-	if ( move.moveCommand == MOVE_SLIDE_TO_POSITION ) {
+	// Determine the delta depending on the move type
+	idVec3 delta(0,0,0);
+	if (move.moveCommand == MOVE_SLIDE_TO_POSITION)
+	{
 		if ( gameLocal.time < move.startTime + move.duration ) {
 			goalPos = move.moveDest - move.moveDir * MS2SEC( move.startTime + move.duration - gameLocal.time );
 			delta = goalPos - oldorigin;
@@ -4110,12 +4129,13 @@ void idAI::AnimMove( void ) {
 		} else {
 			delta = move.moveDest - oldorigin;
 			delta.z = 0.0f;
-			StopMove( MOVE_STATUS_DONE );
+			StopMove(MOVE_STATUS_DONE);
 		}
-	} else if ( allowMove ) {
+	}
+	else if (allowMove)
+	{
+		// Moving is allowed, get the delta
 		GetMoveDelta( oldaxis, viewAxis, delta );
-	} else {
-		delta.Zero();
 	}
 
 	if ( move.moveCommand == MOVE_TO_POSITION ) {
@@ -4149,8 +4169,8 @@ void idAI::AnimMove( void ) {
 
 	AI_ONGROUND = physicsObj.OnGround();
 
-	idVec3 org = physicsObj.GetOrigin();
-	if ( oldorigin != org ) {
+	const idVec3& org = physicsObj.GetOrigin();
+	if (oldorigin != org) {
 		TouchTriggers();
 	}
 
