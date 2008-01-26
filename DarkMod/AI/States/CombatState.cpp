@@ -38,8 +38,15 @@ const idStr& CombatState::GetName() const
 
 bool CombatState::CheckAlertLevel(idAI* owner)
 {
-	// Return TRUE if the Alert Index is matching AND the combat check passes
-	return (SwitchOnMismatchingAlertIndex(4, "") && owner->GetMind()->PerformCombatCheck());
+	if (owner->AI_AlertIndex < 4)
+	{
+		// Alert index is too low for this state, fall back
+		owner->GetMind()->EndState();
+		return false;
+	}
+
+	// Alert Index is matching, return OK
+	return true;
 }
 
 void CombatState::Init(idAI* owner)

@@ -40,8 +40,15 @@ const idStr& IdleState::GetName() const
 
 bool IdleState::CheckAlertLevel(idAI* owner)
 {
-	// Use the base class method to conditionally switch states
-	return SwitchOnMismatchingAlertIndex(0, STATE_SUSPICIOUS);
+	if (owner->AI_AlertIndex > 0)
+	{
+		// Alert index is too high, switch to the higher State
+		owner->GetMind()->PushState(STATE_SUSPICIOUS);
+		return false;
+	}
+
+	// Alert Index is matching, return OK
+	return true;
 }
 
 void IdleState::Init(idAI* owner)

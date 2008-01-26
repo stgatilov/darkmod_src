@@ -69,38 +69,7 @@ bool State::CheckAlertLevel(idAI* owner)
 	return true; // always true by default
 }
 
-bool State::SwitchOnMismatchingAlertIndex(int reqAlertIndex, const idStr& higherStateName)
-{
-	idAI* owner = _owner.GetEntity();
-	assert(owner != NULL);
 
-	if (owner->AI_AlertIndex < reqAlertIndex)
-	{
-		// Alert index is too low for this state, fall back
-		owner->GetMind()->EndState();
-		return false;
-	}
-	else if (owner->AI_AlertIndex > reqAlertIndex && !higherStateName.IsEmpty())
-	{
-		if (owner->AI_AlertIndex == 4)
-		{
-			if (owner->GetMind()->PerformCombatCheck())
-			{
-				// Alert index is too high, switch to the higher State
-				owner->GetMind()->PushState(higherStateName);
-			}
-		}
-		else
-		{
-			// Alert index is too high, switch to the higher State
-			owner->GetMind()->PushState(higherStateName);
-		}
-		return false;
-	}
-
-	// Alert Index is matching, return OK
-	return true;
-}
 
 void State::UpdateAlertLevel()
 {

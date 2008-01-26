@@ -32,8 +32,21 @@ const idStr& SuspiciousState::GetName() const
 
 bool SuspiciousState::CheckAlertLevel(idAI* owner)
 {
-	// Use the base class method to conditionally switch states
-	return SwitchOnMismatchingAlertIndex(1, STATE_SEARCHING);
+	if (owner->AI_AlertIndex < 1)
+	{
+		// Alert index is too low for this state, fall back
+		owner->GetMind()->EndState();
+		return false;
+	}
+	else if (owner->AI_AlertIndex > 1)
+	{
+		// Alert index is too high, switch to the higher State
+		owner->GetMind()->PushState(STATE_SEARCHING);
+		return false;
+	}
+
+	// Alert Index is matching, return OK
+	return true;
 }
 
 void SuspiciousState::Init(idAI* owner)
