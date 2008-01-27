@@ -176,6 +176,7 @@ void gameError( const char *fmt, ... );
 #include "multiplayergame.h"
 
 #include "../DarkMod/EMissionResult.h"
+#include "../DarkMod/DifficultyManager.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -431,6 +432,10 @@ public:
 
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
+
+	// The object handling the difficulty settings
+	CDifficultyManager		m_DifficultyManager;
+
 /**
 * Pointer to global AI Relations object
 **/

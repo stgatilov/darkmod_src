@@ -121,6 +121,7 @@ darkModLAS.cpp \
 decltdm_matinfo.cpp \
 declxdata.cpp \
 DifficultyMenu.cpp \
+DifficultyManager.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
 fdchar.cpp \

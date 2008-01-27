@@ -48,6 +48,10 @@ void CDifficultyMenu::HandleCommands(const char *menuCommand, idUserInterface *g
 		// change the difficulty (skill) level to selected value, redisplay objectives
 		scrollPos = 0;
 		g_skill.SetInteger(gui->GetStateInt("diffSelect", "0"));
+
+		// greebo: Tell the Difficulty Manager the chosen difficulty
+		gameLocal.m_DifficultyManager.SetDifficultyLevel(gui->GetStateInt("diffSelect", "0"));
+
 		GenerateObjectivesDisplay();
 		DisplayDifficulty(gui);
 	}
