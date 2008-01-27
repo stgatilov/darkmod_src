@@ -434,7 +434,7 @@ public:
 	idEditEntities *		editEntities;			// in game editing
 
 	// The object handling the difficulty settings
-	CDifficultyManager		m_DifficultyManager;
+	difficulty::DifficultyManager	m_DifficultyManager;
 
 /**
 * Pointer to global AI Relations object

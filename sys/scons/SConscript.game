@@ -122,6 +122,7 @@ decltdm_matinfo.cpp \
 declxdata.cpp \
 DifficultyMenu.cpp \
 DifficultyManager.cpp \
+DifficultySettings.cpp \
 EscapePointEvaluator.cpp \
 EscapePointManager.cpp \
 fdchar.cpp \

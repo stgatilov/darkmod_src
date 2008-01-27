@@ -117,6 +117,7 @@ static char *LCString[LC_COUNT+1] = {
 	"FRAME",
 	"STIMRESP",
 	"OBJECTIVES",
+	"DIFFICULTY",
 	"(empty)"
 };
 
@@ -196,6 +197,7 @@ CGlobal::CGlobal(void)
 	m_ClassArray[LC_FUNCTION] = false;
 	m_ClassArray[LC_MOVEMENT] = false;
 	m_ClassArray[LC_OBJECTIVES] = false;
+	m_ClassArray[LC_DIFFICULTY] = false;
 	m_ClassArray[LC_STIM_RESPONSE] = false;
 
 	m_Frame = 0;
@@ -669,6 +671,16 @@ void CGlobal::LoadINISettings(void *p)
 
 			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_OBJECTIVES: %c\r", pm->Value[0]);
 		}
+		if(FindMap(ps, "LogClass_DIFFICULTY", TRUE, &pm) != static_cast<ULONG>(-1))
+		{
+			if(pm->Value[0] == '1')
+			{
+				m_ClassArray[LC_DIFFICULTY] = true;
+				Frame = true;
+			}
+
+			DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("LogClass_DIFFICULTY: %c\r", pm->Value[0]);
+		}
 		if(FindMap(ps, "LogClass_LOCKPICK", TRUE, &pm) != static_cast<ULONG>(-1))
 		{
 			if(pm->Value[0] == '1')
@@ -787,7 +799,6 @@ void CGlobal::LoadINISettings(void *p)
 
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("AICommStimRadius: %f\r", m_AICommStimRadius);
 		DM_LOG(LC_FORCE, LT_FORCE)LOGSTRING("maxHidingSpotTestsPerAIFrame: %d\r", m_maxNumHidingSpotPointTestsPerAIFrame);
-
 	}
 }
 

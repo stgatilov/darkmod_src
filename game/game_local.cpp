@@ -1444,6 +1444,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	LoadMap( mapName, randseed );
 
+	// greebo: Initialize the Difficulty Manager, before any entities are spawned
+	m_DifficultyManager.Init(mapFile);
+	
 	InitScriptForMap();
 
 	MapPopulate();
