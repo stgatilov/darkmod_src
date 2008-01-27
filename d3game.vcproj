@@ -1143,6 +1143,12 @@
 					RelativePath=".\DarkMod\DifficultyManager.cpp">
 				</File>
 				<File
+					RelativePath=".\DarkMod\DifficultySettings.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\DifficultySettings.cpp">
+				</File>
+				<File
 					RelativePath=".\DarkMod\DifficultyMenu.cpp">
 				</File>
 				<File
