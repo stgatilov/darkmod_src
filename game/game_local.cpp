@@ -3095,24 +3095,22 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 		}
 	}
-	else if (cmd == "showMods") // Called by "New Mission"
+	// greebo: This was used for Thief's Den only
+	/*else if (cmd == "showMods") // Called by "New Mission"
 	{
 		// User requested a map start
 		gui->HandleNamedEvent("ShowBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 1);
-	}
+	}*/
 	else if (cmd == "close") 
 	{
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
 	}
 
-	/* greebo: Commented these out for the Thief's Den release only.
-	   Right after release, these have to be enabled again!
-	
 	g_Diff.HandleCommands(menuCommand, gui);
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
-	g_Mods.HandleCommands(menuCommand, gui);*/
+	g_Mods.HandleCommands(menuCommand, gui);
 }
 
 /*
