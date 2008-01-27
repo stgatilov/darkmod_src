@@ -1462,15 +1462,23 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 		}
 	}
 
-	// parse overall mission logic
+	// parse overall mission logic (for specific difficulty if applicable)
+	idStr DiffStr = va("_diff_%d", g_skill.GetInteger() );
+	StrTemp = "mission_logic_success";
+	if( dict.FindKey( StrTemp + DiffStr ) )
+		StrTemp = StrTemp + DiffStr;
 	// Only one of these per mission, so empty args on this object should not overwrite existing args
-	StrTemp = dict.GetString("mission_logic_success", "");
+	StrTemp = dict.GetString(StrTemp.c_str(), "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;
 		m_SuccessLogicStr = StrTemp;
 	}
-	StrTemp = dict.GetString("mission_logic_failure", "");
+
+	StrTemp = "mission_logic_failure";
+	if( dict.FindKey( StrTemp + DiffStr ) )
+		StrTemp = StrTemp + DiffStr;
+	StrTemp = dict.GetString(StrTemp.c_str(), "");
 	if( StrTemp != "" )
 	{
 		bLogicMod = true;
