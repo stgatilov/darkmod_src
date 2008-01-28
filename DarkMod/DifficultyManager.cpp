@@ -77,8 +77,6 @@ void DifficultyManager::ApplyDifficultySettings(idDict& target)
 
 	// greebo: Preliminary case: just apply the global settings
 	_globalSettings[_difficulty].ApplySettings(target);
-
-	// TODO: Apply map-specific settings, and disregard the global ones
 }
 
 void DifficultyManager::LoadDifficultySettings()

@@ -76,7 +76,7 @@ private:
 	// greebo: Returns the value of the "inherit" spawnarg for the given classname
 	// This parses the raw declaration text on a char-per-char basis, this is 
 	// necessary because the "inherit" key gets removed by the entityDef parser after loading.
-	idStr GetInheritKey(const idStr& className);
+	idStr GetInheritValue(const idStr& className);
 
 	// Returns the inheritance chain for the given dict
 	InheritanceChain GetInheritanceChain(const idDict& dict);

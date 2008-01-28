@@ -123,13 +123,15 @@ void DifficultySettings::ApplySettings(idDict& target)
 	typedef std::map<std::string, int> ChangeList;
 	ChangeList entityChanges;
 
+	// TODO: First sweep is missing here
+
 	// Get the inheritancechain for the given target dict
 	InheritanceChain inheritanceChain = GetInheritanceChain(target);
 
 	// Go through the inheritance chain front to back and apply the settings
 	for (InheritanceChain::iterator c = inheritanceChain.begin(); c != inheritanceChain.end(); c++)
 	{
-		std::string className = (*c).c_str();
+		std::string className = c->c_str();
 
 		// Process the list of default settings that apply to this entity class,
 		// but ignore all keys that have been addressed by the entity-specific settings.
@@ -146,8 +148,7 @@ void DifficultySettings::ApplySettings(idDict& target)
 				continue;
 			}
 
-			// Resolve the inheritance and apply the setting starting
-			// from the lowest level
+			// We have green light, apply the settings
 			ApplySetting(i->second, target);
 		}
 	}
@@ -187,7 +188,22 @@ void DifficultySettings::Restore(idRestoreGame* savefile)
 
 void DifficultySettings::ApplySetting(Setting& setting, idDict& target)
 {
-	
+	switch (setting.appType) 
+	{
+		case Setting::EAssign:
+			target.Set(setting.spawnArg, setting.argument);
+			break;
+		case Setting::EAdd:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			target.Set(setting.spawnArg, idStr(float(target.GetFloat(setting.spawnArg) + atof(setting.argument))));
+			break;
+		case Setting::EMultiply:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			target.Set(setting.spawnArg, idStr(float(target.GetFloat(setting.spawnArg) * atof(setting.argument))));
+			break;
+		default:
+			break;
+	};
 }
 
 DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(const idDict& dict)
@@ -199,15 +215,12 @@ DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(con
 
 	// greebo: Extract the inherit value from the raw declaration text, 
 	// as the "inherit" key has been removed in the given "dict"
-	idStr inherit = GetInheritKey(dict.GetString("classname"));
-
-	while (!inherit.IsEmpty())
+	for (idStr inherit = GetInheritValue(dict.GetString("classname")); 
+		 !inherit.IsEmpty(); 
+		 inherit = GetInheritValue(inherit))
 	{
 		// Has parent, add to list
 		inheritanceChain.push_front(inherit);
-
-		// Get the next def down the chain
-		inherit = GetInheritKey(inherit);
 	}
 
 	/*gameLocal.Printf("Inheritance chain: ");
@@ -221,7 +234,7 @@ DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(con
 	return inheritanceChain;
 }
 
-idStr DifficultySettings::GetInheritKey(const idStr& className)
+idStr DifficultySettings::GetInheritValue(const idStr& className)
 {
 	// Get the raw declaration, in the parsed entitydefs, all "inherit" keys have been remoed
 	const idDecl* decl = declManager->FindType(DECL_ENTITYDEF, className, false);
