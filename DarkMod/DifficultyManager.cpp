@@ -85,27 +85,31 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 {
 	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load default difficulty settings from entityDefs.\r");
 
-	// greebo: Try to lookup the entityDef for each difficulty level and load the settings
-	for (int i = 0; i < DIFFICULTY_COUNT; i++)
+	// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
+	idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
+
+	const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName);
+
+	if (difficultyDict != NULL)
 	{
-		// Let the setting structure know which level it is referring to
-		_globalSettings[i].SetLevel(i);
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found difficulty settings: %s.\r", defName.c_str());
 
-		// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
-		idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
-
-		const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName);
-
-		if (difficultyDict != NULL)
+		// greebo: Try to lookup the entityDef for each difficulty level and load the settings
+		for (int i = 0; i < DIFFICULTY_COUNT; i++)
 		{
-			DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found difficulty settings: %s.\r", defName.c_str());
+			// Let the setting structure know which level it is referring to
+			_globalSettings[i].SetLevel(i);
+			// And load the settings
 			_globalSettings[i].LoadFromEntityDef(*difficultyDict);
 		}
-		else
+	}
+	else
+	{
+		for (int i = 0; i < DIFFICULTY_COUNT; i++)
 		{
 			_globalSettings[i].Clear();
-			gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef!");
 		}
+		gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef!");
 	}
 }
 
