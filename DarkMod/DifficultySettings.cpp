@@ -161,8 +161,45 @@ void DifficultySettings::LoadFromEntityDef(const idDict& defDict)
 
 void DifficultySettings::LoadFromMapEntity(idMapEntity* ent)
 {
-	// Search the epairs for difficulty settings
+	int level = ent->epairs.GetInt("difficulty_level", "-1");
+	if (level != _level)
+	{
+		// Mismatching difficulty level, this entity is not for this setting
+		return;
+	}
 
+	// Search the epairs for difficulty settings
+	idList<Setting> settings = Setting::ParseFromDict(ent->epairs);
+
+	// greebo: Go through all found settings and remove all default
+	// settings with the same class/spawnarg combination
+	for (int i = 0; i < settings.Num(); i++)
+	{
+		// We need std::string for STL map lookups, not idStr
+		std::string className = settings[i].className.c_str();
+
+		// Search all stored settings matching this classname
+		for (SettingsMap::iterator found = _settings.find(className);
+			 found != _settings.upper_bound(className) && found != _settings.end();
+			 /* in-loop increment */)
+		{
+			if (found->second.spawnArg == settings[i].spawnArg)
+			{
+				// Spawnarg and classname match, remove it and post-increment the iterator
+				_settings.erase(found++);
+			}
+			else
+			{
+				found++; // no match, step forward
+			}
+		}
+	}
+
+	// Now copy all spawnargs into the SettingsMap
+	for (int i = 0; i < settings.Num(); i++)
+	{
+		_settings.insert(SettingsMap::value_type(settings[i].className.c_str(), settings[i]));
+	}
 }
 
 void DifficultySettings::ApplySettings(idDict& target)
