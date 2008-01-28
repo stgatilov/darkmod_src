@@ -41,12 +41,12 @@ public:
 	void Save(idSaveGame* savefile);
 	void Restore(idRestoreGame* savefile);
 
-	// Factory function: get the setting with the given index from the given dict
-	static Setting ParseFromDict(const idDict& dict, int index);
+	// Load the settings with the given <index> matching the given <level> from the given dict.
+	void ParseFromDict(const idDict& dict, int level, int index);
 
-	// Factory function: get all Settings from the given dict
+	// Factory function: get all Settings from the given dict (matching the given <level>)
 	// The returned list is guaranteed to contain only valid settings.
-	static idList<Setting> ParseFromDict(const idDict& dict);
+	static idList<Setting> ParseSettingsFromDict(const idDict& dict, int level);
 };
 
 /**
@@ -77,7 +77,8 @@ public:
 	int GetLevel() const;
 
 	/**
-	 * greebo: Loads the difficulty settings from the given entityDef
+	 * greebo: Loads the difficulty settings from the given entityDef.
+	 *         This considers only settings matching the level of this class.
 	 */
 	void LoadFromEntityDef(const idDict& defDict);
 

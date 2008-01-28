@@ -92,7 +92,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 		_globalSettings[i].SetLevel(i);
 
 		// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
-		idStr defName( va(DEFAULT_DIFFICULTY_ENTITYDEF_PATTERN, i) );
+		idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
 
 		const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName);
 
@@ -104,7 +104,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 		else
 		{
 			_globalSettings[i].Clear();
-			gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef for difficulty level %d", i);
+			gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef!");
 		}
 	}
 }

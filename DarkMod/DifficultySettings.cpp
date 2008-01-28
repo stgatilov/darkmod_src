@@ -15,10 +15,12 @@
 
 namespace difficulty {
 
+#define PATTERN_DIFF "diff_%d_"
 #define PREFIX_CLASS "class_"
-#define PATTERN_CLASS "class_%d"
-#define PATTERN_CHANGE "change_%d"
-#define PATTERN_ARG "arg_%d"
+
+#define PATTERN_CLASS "diff_%d_class_%d"
+#define PATTERN_CHANGE "diff_%d_change_%d"
+#define PATTERN_ARG "diff_%d_arg_%d"
 
 Setting::Setting() :
 	isValid(false)
@@ -45,71 +47,73 @@ void Setting::Restore(idRestoreGame* savefile)
 	appType = static_cast<EApplicationType>(temp);
 }
 
-Setting Setting::ParseFromDict(const idDict& dict, int index)
+void Setting::ParseFromDict(const idDict& dict, int level, int index)
 {
-	Setting returnValue;
-
-	returnValue.isValid = true; // in dubio pro reo
+	isValid = true; // in dubio pro reo
 
 	// Get the classname, target spawnarg and argument
-	returnValue.className = dict.GetString(va(PATTERN_CLASS, index));
-	returnValue.spawnArg = dict.GetString(va(PATTERN_CHANGE, index));
-	returnValue.argument = dict.GetString(va(PATTERN_ARG, index));
+	className = dict.GetString(va(PATTERN_CLASS, level, index));
+	spawnArg = dict.GetString(va(PATTERN_CHANGE, level, index));
+	argument = dict.GetString(va(PATTERN_ARG, level, index));
 
 	// Parse the application type
-	returnValue.appType = Setting::EAssign;
+	appType = EAssign;
 
-	if (!returnValue.argument.IsEmpty())
+	if (!argument.IsEmpty())
 	{
 		// Check for special modifiers
-		if (returnValue.argument[0] == '+')
+		if (argument[0] == '+')
 		{
-			returnValue.appType = Setting::EAdd;
+			appType = EAdd;
 			// Remove the first character
-			returnValue.argument = idStr(returnValue.argument, 1, returnValue.argument.Length());
+			argument = idStr(argument, 1, argument.Length());
 		}
-		else if (returnValue.argument[0] == '*')
+		else if (argument[0] == '*')
 		{
-			returnValue.appType = Setting::EMultiply;
+			appType = EMultiply;
 			// Remove the first character
-			returnValue.argument = idStr(returnValue.argument, 1, returnValue.argument.Length());
+			argument = idStr(argument, 1, argument.Length());
 		}
-		else if (returnValue.argument[0] == '-')
+		else if (argument[0] == '-')
 		{
-			returnValue.appType = Setting::EAdd;
+			appType = EAdd;
 			// Leave the "-" sign, it will be the sign of the parsed int
 		}
 	}
 
-	if (returnValue.spawnArg.IsEmpty() || returnValue.className.IsEmpty())
+	if (spawnArg.IsEmpty())
 	{
-		// Invalid classname/spawnarg combo
-		returnValue.isValid = false;
+		// Spawnarg must not be empty
+		isValid = false;
 	}
 
-	return returnValue;
+	// classname can be empty (this is valid for entity-specific difficulties)
 }
 
-idList<Setting> Setting::ParseFromDict(const idDict& dict)
+// Static parsing function
+idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 {
 	idList<Setting> list;
 
-	// Cycle through all difficulty settings (looking for "class_*")
-	const idKeyValue* keyVal = dict.MatchPrefix(PREFIX_CLASS);
-	while (keyVal != NULL)
+	// Cycle through all difficulty settings (looking for "diff_0_class_*")
+	idStr prefix = idStr(va(PATTERN_DIFF, level)) + PREFIX_CLASS;
+	for (const idKeyValue* keyVal = dict.MatchPrefix(prefix);
+		  keyVal != NULL;
+		  keyVal = dict.MatchPrefix(prefix, keyVal))
 	{
 		DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Parsing keyvalue: %s = %s.\r", keyVal->GetKey().c_str(), keyVal->GetValue().c_str());
 
 		// Get the index from this keyvalue (remove the prefix and convert to int)
 		idStr key = keyVal->GetKey();
-		key.StripLeadingOnce(PREFIX_CLASS);
+		key.StripLeadingOnce(prefix);
 		if (key.IsNumeric())
 		{
 			// Extract the index
 			int index = atoi(key);
 
 			// Parse the settings with the given index
-			Setting s = Setting::ParseFromDict(dict, index);
+			Setting s;
+			s.ParseFromDict(dict, level, index);
 
 			// Check for validity and insert into map
 			if (s.isValid)
@@ -122,9 +126,6 @@ idList<Setting> Setting::ParseFromDict(const idDict& dict)
 			gameLocal.Warning("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
 			DM_LOG(LC_DIFFICULTY, LT_ERROR).LogString("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
 		}
-
-		// Get the next match
-		keyVal = dict.MatchPrefix(PREFIX_CLASS, keyVal);
 	}
 
 	return list;
@@ -150,7 +151,7 @@ int DifficultySettings::GetLevel() const
 void DifficultySettings::LoadFromEntityDef(const idDict& defDict)
 {
 	// Parse all settings from the given entityDef
-	idList<Setting> settings = Setting::ParseFromDict(defDict);
+	idList<Setting> settings = Setting::ParseSettingsFromDict(defDict, _level);
 
 	// Copy all settings into the SettingsMap
 	for (int i = 0; i < settings.Num(); i++)
@@ -161,15 +162,8 @@ void DifficultySettings::LoadFromEntityDef(const idDict& defDict)
 
 void DifficultySettings::LoadFromMapEntity(idMapEntity* ent)
 {
-	int level = ent->epairs.GetInt("difficulty_level", "-1");
-	if (level != _level)
-	{
-		// Mismatching difficulty level, this entity is not for this setting
-		return;
-	}
-
 	// Search the epairs for difficulty settings
-	idList<Setting> settings = Setting::ParseFromDict(ent->epairs);
+	idList<Setting> settings = Setting::ParseSettingsFromDict(ent->epairs, _level);
 
 	// greebo: Go through all found settings and remove all default
 	// settings with the same class/spawnarg combination

@@ -15,7 +15,7 @@
 
 namespace difficulty {
 
-#define DEFAULT_DIFFICULTY_ENTITYDEF_PATTERN "atdm:difficulty_settings_default_%d"
+#define DEFAULT_DIFFICULTY_ENTITYDEF "atdm:difficulty_settings_default"
 #define DIFFICULTY_ENTITYDEF "atdm:difficulty_settings"
 
 /**
