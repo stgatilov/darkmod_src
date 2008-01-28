@@ -15,13 +15,21 @@
 
 namespace difficulty {
 
+#define DEFAULT_DIFFICULTY_ENTITYDEF_PATTERN "atdm:difficulty_settings_default_%d"
+#define DIFFICULTY_ENTITYDEF "atdm:difficulty_settings"
+
 /**
  * greebo: The Difficulty Manager provides methods to load
  *         the various spawnargs into the entities based on the
  *         selected mission difficulty.
  *
- *         The manager reads the default difficulty settings from the def/ folder
- *         and applies them to entities on demand. 
+ * During initialisation, the manager reads the default difficulty settings 
+ * from the def/ folder. The procedure is as follows:
+ *
+ * 1) Read global default settings from the entities matching DIFFICULTY_ENTITYDEF.
+ * 2) Search the map for tdm_difficulty_settings_map entities: these settings
+ *    will override any default settings found in step 1 (settings that target the same
+ *    entityclass/spawnarg combination will be removed and replaced by the ones defined in the map).
  */
 class DifficultyManager
 {
@@ -58,7 +66,13 @@ public:
 
 private:
 	// Loads the default difficulty settings from the entityDefs
-	void LoadDifficultySettings();
+	void LoadDefaultDifficultySettings();
+
+	// Loads the map-specific difficulty settings (these will override the default ones)
+	void LoadMapDifficultySettings(idMapFile* mapFile);
+
+	// Loads the map-specific difficulty settings from the given map entity
+	void LoadMapDifficultySettings(idMapEntity* ent);
 };
 
 } // namespace difficulty

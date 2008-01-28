@@ -16,11 +16,17 @@
 namespace difficulty {
 
 #define PREFIX_CLASS "class_"
+#define PATTERN_CLASS "class_%d"
 #define PATTERN_CHANGE "change_%d"
 #define PATTERN_ARG "arg_%d"
 
+Setting::Setting() :
+	isValid(false)
+{}
+
 void Setting::Save(idSaveGame* savefile)
 {
+	savefile->WriteBool(isValid);
 	savefile->WriteString(className);
 	savefile->WriteString(spawnArg);
 	savefile->WriteString(argument);
@@ -29,6 +35,7 @@ void Setting::Save(idSaveGame* savefile)
 
 void Setting::Restore(idRestoreGame* savefile)
 {
+	savefile->ReadBool(isValid);
 	savefile->ReadString(className);
 	savefile->ReadString(spawnArg);
 	savefile->ReadString(argument);
@@ -38,17 +45,57 @@ void Setting::Restore(idRestoreGame* savefile)
 	appType = static_cast<EApplicationType>(temp);
 }
 
-// =======================================================================
-
-void DifficultySettings::Clear()
+Setting Setting::ParseFromDict(const idDict& dict, int index)
 {
-	_settings.clear();
+	Setting returnValue;
+
+	returnValue.isValid = true; // in dubio pro reo
+
+	// Get the classname, target spawnarg and argument
+	returnValue.className = dict.GetString(va(PATTERN_CLASS, index));
+	returnValue.spawnArg = dict.GetString(va(PATTERN_CHANGE, index));
+	returnValue.argument = dict.GetString(va(PATTERN_ARG, index));
+
+	// Parse the application type
+	returnValue.appType = Setting::EAssign;
+
+	if (!returnValue.argument.IsEmpty())
+	{
+		// Check for special modifiers
+		if (returnValue.argument[0] == '+')
+		{
+			returnValue.appType = Setting::EAdd;
+			// Remove the first character
+			returnValue.argument = idStr(returnValue.argument, 1, returnValue.argument.Length());
+		}
+		else if (returnValue.argument[0] == '*')
+		{
+			returnValue.appType = Setting::EMultiply;
+			// Remove the first character
+			returnValue.argument = idStr(returnValue.argument, 1, returnValue.argument.Length());
+		}
+		else if (returnValue.argument[0] == '-')
+		{
+			returnValue.appType = Setting::EAdd;
+			// Leave the "-" sign, it will be the sign of the parsed int
+		}
+	}
+
+	if (returnValue.spawnArg.IsEmpty() || returnValue.className.IsEmpty())
+	{
+		// Invalid classname/spawnarg combo
+		returnValue.isValid = false;
+	}
+
+	return returnValue;
 }
 
-void DifficultySettings::InitFromEntityDef(const idDict& defDict)
+idList<Setting> Setting::ParseFromDict(const idDict& dict)
 {
+	idList<Setting> list;
+
 	// Cycle through all difficulty settings (looking for "class_*")
-	const idKeyValue* keyVal = defDict.MatchPrefix(PREFIX_CLASS);
+	const idKeyValue* keyVal = dict.MatchPrefix(PREFIX_CLASS);
 	while (keyVal != NULL)
 	{
 		DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Parsing keyvalue: %s = %s.\r", keyVal->GetKey().c_str(), keyVal->GetValue().c_str());
@@ -61,43 +108,14 @@ void DifficultySettings::InitFromEntityDef(const idDict& defDict)
 			// Extract the index
 			int index = atoi(key);
 
-			// Get the classname
-			std::string className = keyVal->GetValue().c_str();
-			
-			std::string change = defDict.GetString(va(PATTERN_CHANGE, index));
-			std::string argument = defDict.GetString(va(PATTERN_ARG, index));
+			// Parse the settings with the given index
+			Setting s = Setting::ParseFromDict(dict, index);
 
-			// Parse the application type
-			Setting::EApplicationType appType = Setting::EAssign;
-
-			// Check for special modifiers
-			if (!argument.empty() && argument[0] == '+')
+			// Check for validity and insert into map
+			if (s.isValid)
 			{
-				appType = Setting::EAdd;
-				// Remove the first character
-				argument = argument.substr(1);
+				list.Append(s);
 			}
-			else if (!argument.empty() && argument[0] == '*')
-			{
-				appType = Setting::EMultiply;
-				// Remove the first character
-				argument = argument.substr(1);
-			}
-			else if (!argument.empty() && argument[0] == '-')
-			{
-				appType = Setting::EAdd;
-				// Leave the "-" sign, it will be the sign of the parsed int
-			}
-
-			SettingsMap::iterator inserted = _settings.insert(
-				SettingsMap::value_type(className, Setting())
-			);
-
-			// Pump the values into the map
-			inserted->second.className = className.c_str();
-			inserted->second.argument = argument.c_str();
-			inserted->second.spawnArg = change.c_str();
-			inserted->second.appType = appType;
 		}
 		else
 		{
@@ -106,8 +124,45 @@ void DifficultySettings::InitFromEntityDef(const idDict& defDict)
 		}
 
 		// Get the next match
-		keyVal = defDict.MatchPrefix(PREFIX_CLASS, keyVal);
+		keyVal = dict.MatchPrefix(PREFIX_CLASS, keyVal);
 	}
+
+	return list;
+}
+
+// =======================================================================
+
+void DifficultySettings::Clear()
+{
+	_settings.clear();
+}
+
+void DifficultySettings::SetLevel(int level)
+{
+	_level = level;
+}
+
+int DifficultySettings::GetLevel() const
+{
+	return _level;
+}
+
+void DifficultySettings::LoadFromEntityDef(const idDict& defDict)
+{
+	// Parse all settings from the given entityDef
+	idList<Setting> settings = Setting::ParseFromDict(defDict);
+
+	// Copy all settings into the SettingsMap
+	for (int i = 0; i < settings.Num(); i++)
+	{
+		_settings.insert(SettingsMap::value_type(settings[i].className.c_str(), settings[i]));
+	}
+}
+
+void DifficultySettings::LoadFromMapEntity(idMapEntity* ent)
+{
+	// Search the epairs for difficulty settings
+
 }
 
 void DifficultySettings::ApplySettings(idDict& target)

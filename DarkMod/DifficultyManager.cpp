@@ -39,8 +39,10 @@ void DifficultyManager::Init(idMapFile* mapFile)
 		_difficulty = mapDifficulty;
 	}
 
-	// Load the difficulty settings from the entityDefs
-	LoadDifficultySettings();
+	// Load the default difficulty settings from the entityDefs
+	LoadDefaultDifficultySettings();
+
+	LoadMapDifficultySettings(mapFile);
 }
 
 void DifficultyManager::SetDifficultyLevel(int difficulty)
@@ -79,28 +81,60 @@ void DifficultyManager::ApplyDifficultySettings(idDict& target)
 	_globalSettings[_difficulty].ApplySettings(target);
 }
 
-void DifficultyManager::LoadDifficultySettings()
+void DifficultyManager::LoadDefaultDifficultySettings()
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load global difficulty settings from entityDefs.\r");
+	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load default difficulty settings from entityDefs.\r");
 
 	// greebo: Try to lookup the entityDef for each difficulty level and load the settings
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{
-		idStr defName("difficulty_settings_");
-		defName += i;
+		// Let the setting structure know which level it is referring to
+		_globalSettings[i].SetLevel(i);
+
+		// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
+		idStr defName( va(DEFAULT_DIFFICULTY_ENTITYDEF_PATTERN, i) );
 
 		const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName);
 
 		if (difficultyDict != NULL)
 		{
 			DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found difficulty settings: %s.\r", defName.c_str());
-			_globalSettings[i].InitFromEntityDef(*difficultyDict);
+			_globalSettings[i].LoadFromEntityDef(*difficultyDict);
 		}
 		else
 		{
 			_globalSettings[i].Clear();
 			gameLocal.Warning("DifficultyManager: Could not find default difficulty entityDef for difficulty level %d", i);
 		}
+	}
+}
+
+void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
+{
+	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load map-specific difficulty settings.\r");
+
+	if (mapFile == NULL) return;
+
+	for (int i = 0; i < mapFile->GetNumEntities(); i++)
+	{
+		idMapEntity* ent = mapFile->GetEntity(i);
+
+		if (idStr::Icmp(ent->epairs.GetString("classname"), DIFFICULTY_ENTITYDEF) == 0)
+		{
+			LoadMapDifficultySettings(ent);
+		}
+	}
+}
+
+void DifficultyManager::LoadMapDifficultySettings(idMapEntity* ent)
+{
+	if (ent == NULL) return;
+
+	// greebo: Let each global settings structure investigate the settings 
+	// on this entity.
+	for (int i = 0; i < DIFFICULTY_COUNT; i++)
+	{
+		_globalSettings[i].LoadFromMapEntity(ent);
 	}
 }
 

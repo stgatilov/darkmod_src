@@ -31,11 +31,22 @@ public:
 	// How the argument should be applied
 	EApplicationType appType;
 
-	//void Apply();
+	// Whether this setting is valid
+	bool isValid;
+
+	// Default constructor
+	Setting();
 
 	// Save/Restore methods
 	void Save(idSaveGame* savefile);
 	void Restore(idRestoreGame* savefile);
+
+	// Factory function: get the setting with the given index from the given dict
+	static Setting ParseFromDict(const idDict& dict, int index);
+
+	// Factory function: get all Settings from the given dict
+	// The returned list is guaranteed to contain only valid settings.
+	static idList<Setting> ParseFromDict(const idDict& dict);
 };
 
 /**
@@ -54,14 +65,28 @@ class DifficultySettings
 	// A linked list for representing the inheritance chain
 	typedef std::list<idStr> InheritanceChain;
 
+	// the difficulty level these settings are referring to
+	int _level; 
+
 public:
 	// Wipes the contents of this class
 	void Clear();
 
+	// Sets the level of these settings
+	void SetLevel(int level);
+	int GetLevel() const;
+
 	/**
 	 * greebo: Loads the difficulty settings from the given entityDef
 	 */
-	void InitFromEntityDef(const idDict& defDict);
+	void LoadFromEntityDef(const idDict& defDict);
+
+	/**
+	 * greebo: This loads the difficulty settings from the given map entity.
+	 * Settings loaded from the entity will replace settings with the same 
+	 * classname/spawnarg combination found in the default entityDefs.
+	 */
+	void LoadFromMapEntity(idMapEntity* ent);
 
 	/**
 	 * greebo: Applies the contained difficulty settings on the given set of spawnargs.
