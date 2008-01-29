@@ -256,9 +256,9 @@ bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& im
 {
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
 
-	if (impulse.LengthSqr() == 0)
+	if (impulse.LengthSqr() < 1e-5)
 	{
-		// greebo: Don't process incoming zero impulses, quit at once.
+		// greebo: Don't process incoming small impulses, quit at once.
 		return false;
 	}
 
