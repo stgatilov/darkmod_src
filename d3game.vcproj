@@ -1137,22 +1137,22 @@
 					RelativePath=".\DarkMod\declxdata.h">
 				</File>
 				<File
-					RelativePath=".\DarkMod\DifficultyManager.h">
-				</File>
-				<File
 					RelativePath=".\DarkMod\DifficultyManager.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\DifficultySettings.h">
-				</File>
-				<File
-					RelativePath=".\DarkMod\DifficultySettings.cpp">
+					RelativePath=".\DarkMod\DifficultyManager.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\DifficultyMenu.cpp">
 				</File>
 				<File
 					RelativePath=".\DarkMod\DifficultyMenu.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\DifficultySettings.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\DifficultySettings.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\EscapePointEvaluator.cpp">
@@ -1225,6 +1225,12 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\MatrixSq.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MeleeWeapon.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MeleeWeapon.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Misc.h">
