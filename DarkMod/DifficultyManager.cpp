@@ -19,6 +19,14 @@ DifficultyManager::DifficultyManager() :
 	_difficulty(0)
 {}
 
+void DifficultyManager::Clear()
+{
+	for (int i = 0; i < DIFFICULTY_COUNT; i++)
+	{
+		_globalSettings[i].Clear();
+	}
+}
+
 void DifficultyManager::Init(idMapFile* mapFile)
 {
 	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Searching for difficulty setting on worldspawn.\r");

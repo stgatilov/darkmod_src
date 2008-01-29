@@ -257,6 +257,8 @@ void idGameLocal::Clear( void )
 	// greebo: don't clear the Mission Result, Clear() is called during map shutdown
 	m_MissionData->ClearGUIState();
 
+	m_DifficultyManager.Clear();
+
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;

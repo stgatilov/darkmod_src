@@ -43,6 +43,9 @@ public:
 	// Constructor
 	DifficultyManager();
 
+	// Clears everything associated with difficulty settings.
+	void Clear();
+
 	/**
 	 * greebo: Initialises this class. This means loading the global default
 	 *         difficulty settings from the entityDef files and the ones
