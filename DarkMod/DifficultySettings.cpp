@@ -17,6 +17,7 @@ namespace difficulty {
 
 #define PATTERN_DIFF "diff_%d_"
 #define PREFIX_CLASS "class_"
+#define PREFIX_CHANGE "change_"
 
 #define PATTERN_CLASS "diff_%d_class_%d"
 #define PATTERN_CHANGE "diff_%d_change_%d"
@@ -126,8 +127,8 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 {
 	idList<Setting> list;
 
-	// Cycle through all difficulty settings (looking for "diff_0_class_*")
-	idStr prefix = idStr(va(PATTERN_DIFF, level)) + PREFIX_CLASS;
+	// Cycle through all difficulty settings (looking for "diff_0_change_*")
+	idStr prefix = idStr(va(PATTERN_DIFF, level)) + PREFIX_CHANGE;
 	for (const idKeyValue* keyVal = dict.MatchPrefix(prefix);
 		  keyVal != NULL;
 		  keyVal = dict.MatchPrefix(prefix, keyVal))
@@ -237,10 +238,17 @@ void DifficultySettings::ApplySettings(idDict& target)
 
 	// greebo: First, get the list of entity-specific difficulty settings from the dictionary
 	// Everything processed here will be ignored in the second run (where the default settings are applied)
-	typedef std::map<std::string, int> ChangeList;
-	ChangeList entityChanges;
+	idList<Setting> entSettings = Setting::ParseSettingsFromDict(target, _level);
+	DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found %d difficulty settings on the entity %s.\r", entSettings.Num(), target.GetString("name"));
 
-	// TODO: First sweep is missing here
+	// Apply the settings one by one
+	for (int i = 0; i < entSettings.Num(); i++)
+	{
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Applying entity-specific setting: %s => %s.\r", entSettings[i].spawnArg.c_str(), entSettings[i].argument.c_str());
+		entSettings[i].Apply(target);
+	}
+
+	// Second step: apply global settings
 
 	// Get the inheritancechain for the given target dict
 	InheritanceChain inheritanceChain = GetInheritanceChain(target);
@@ -257,18 +265,26 @@ void DifficultySettings::ApplySettings(idDict& target)
 			 i++)
 		{
 			Setting& setting = i->second;
+			bool settingApplicable = true;
 
-			// Get the name of the target spawnarg
-			std::string spawnArg = setting.spawnArg.c_str();
-		
-			if (entityChanges.find(spawnArg) != entityChanges.end())
+			// Check if the spawnarg has been processed in the entity-specific settings
+			for (int k = 0; k < entSettings.Num(); k++)
 			{
-				// This target spawnarg has already been processed in the first run, skip it
-				continue;
+				if (entSettings[k].spawnArg == setting.spawnArg)
+				{
+					// This target spawnarg has already been processed in the first run, skip it
+					DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Ignoring global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
+					settingApplicable = false;
+					break;
+				}
 			}
 
-			// We have green light, apply the setting
-			setting.Apply(target);
+			if (settingApplicable)
+			{
+				// We have green light, apply the setting
+				DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Applying global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
+				setting.Apply(target);
+			}
 		}
 	}
 }
