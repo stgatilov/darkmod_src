@@ -99,6 +99,12 @@ void idMoveable::Spawn( void ) {
 		return;
 	}
 
+	// angua: check if the cm is valid
+	if (idMath::Fabs(trm.bounds[0].x) == idMath::INFINITY)
+	{
+		gameLocal.Error( "idMoveable '%s': invalid collision model %s", name.c_str(), clipModelName.c_str() );
+	}
+
 	// if the model should be shrinked
 	clipShrink = spawnArgs.GetInt( "clipshrink" );
 	if ( clipShrink != 0 ) {
