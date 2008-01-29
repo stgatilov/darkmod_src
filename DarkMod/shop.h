@@ -1,9 +1,9 @@
 #ifndef __SHOP_H__
 #define	__SHOP_H__
 
-#define LIST_SIZE_FOR_SALE 6
-#define LIST_SIZE_PURCHASED 6
-#define LIST_SIZE_STARTING 5
+#define LIST_SIZE_FOR_SALE 11
+#define LIST_SIZE_PURCHASED 9
+#define LIST_SIZE_STARTING 7
 
 // Represents an item for sale
 class CShopItem {

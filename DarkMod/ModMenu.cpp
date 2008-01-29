@@ -106,6 +106,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		}
 		gui->SetStateString("currentModName", name); 
 		gui->SetStateString("currentModDesc", desc); 
+		gui->SetStateInt("modSelected", -1); 
 
 		UpdateGUI(gui);
 	}
@@ -146,19 +147,19 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		fputs(modDirName, currentFM);
 		fclose(currentFM);
 
-		// path to dmlauncher
+		// path to tdmlauncher
 #ifdef _WINDOWS
-		fs::path launcherExe(darkmodPath / "dmlauncher.exe");
+		fs::path launcherExe(darkmodPath / "tdmlauncher.exe");
 #else
 		// ???
-		fs::path launcherExe(darkmodPath / "dmlauncher");
+		fs::path launcherExe(darkmodPath / "tdmlauncher");
 #endif
 
-		// command line to spawn dmlauncher
+		// command line to spawn tdmlauncher
 		idStr commandLine(launcherExe.file_string().c_str());
 
 #ifdef _WINDOWS
-		// Create a dmlauncher process, setting the working directory to the doom directory
+		// Create a tdmlauncher process, setting the working directory to the doom directory
 		STARTUPINFO siStartupInfo;
 		PROCESS_INFORMATION piProcessInfo;
 		memset(&siStartupInfo, 0, sizeof(siStartupInfo));
@@ -169,7 +170,7 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 			parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "quit" );
 #else
-		// start dmlauncher
+		// start tdmlauncher
 		if (execlp(commandLine.c_str(), commandLine.c_str(), NULL)==-1) {
 			int errnum = errno;
 			gameLocal.Error("execlp failed with error code %d: %s", errnum, strerror(errnum));

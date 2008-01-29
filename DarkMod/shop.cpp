@@ -489,7 +489,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 		idStr name = idStr("");
 		idStr desc = idStr("");
 		int available = 0;
-		bool dropVisible = true;
+		bool dropVisible = false;
 		if (startingTop + i < startingItems.Num()) {
 			CShopItem* item = startingItems[startingTop + i];
 			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
