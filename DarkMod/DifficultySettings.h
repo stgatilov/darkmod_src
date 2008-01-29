@@ -17,6 +17,7 @@ public:
 		EAssign,
 		EAdd,
 		EMultiply,
+		EIgnore,
 	};
 
 	// The classname this setting applies to
@@ -40,6 +41,9 @@ public:
 	// Save/Restore methods
 	void Save(idSaveGame* savefile);
 	void Restore(idRestoreGame* savefile);
+
+	// Applies this setting to the given spawnargs
+	void Apply(idDict& target);
 
 	// Load the settings with the given <index> matching the given <level> from the given dict.
 	void ParseFromDict(const idDict& dict, int level, int index);
@@ -106,10 +110,6 @@ private:
 
 	// Returns the inheritance chain for the given dict
 	InheritanceChain GetInheritanceChain(const idDict& dict);
-
-	// Applies the given setting to the target dictionary.
-	// The inheritance of the given target dictionary is considered.
-	void ApplySetting(Setting& setting, idDict& target);
 };
 
 } // namespace difficulty

@@ -22,6 +22,8 @@ namespace difficulty {
 #define PATTERN_CHANGE "diff_%d_change_%d"
 #define PATTERN_ARG "diff_%d_arg_%d"
 
+#define APPTYPE_IGNORE "_IGNORE"
+
 Setting::Setting() :
 	isValid(false)
 {}
@@ -47,6 +49,29 @@ void Setting::Restore(idRestoreGame* savefile)
 	appType = static_cast<EApplicationType>(temp);
 }
 
+void Setting::Apply(idDict& target)
+{
+	switch (appType) 
+	{
+		case EAssign:
+			target.Set(spawnArg, argument);
+			break;
+		case EAdd:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			target.Set(spawnArg, idStr(float(target.GetFloat(spawnArg) + atof(argument))));
+			break;
+		case EMultiply:
+			// Convert the old setting to float, add the argument, convert back to string and set as value
+			target.Set(spawnArg, idStr(float(target.GetFloat(spawnArg) * atof(argument))));
+			break;
+		case EIgnore:
+			// Ignore => do nothing
+			break;
+		default:
+			break;
+	};
+}
+
 void Setting::ParseFromDict(const idDict& dict, int level, int index)
 {
 	isValid = true; // in dubio pro reo
@@ -61,8 +86,14 @@ void Setting::ParseFromDict(const idDict& dict, int level, int index)
 
 	if (!argument.IsEmpty())
 	{
+		// Check for ignore argument
+		if (argument == APPTYPE_IGNORE)
+		{
+			appType = EIgnore;
+			argument.Empty(); // clear the argument
+		}
 		// Check for special modifiers
-		if (argument[0] == '+')
+		else if (argument[0] == '+')
 		{
 			appType = EAdd;
 			// Remove the first character
@@ -225,8 +256,10 @@ void DifficultySettings::ApplySettings(idDict& target)
 			 i != _settings.upper_bound(className) && i != _settings.end();
 			 i++)
 		{
+			Setting& setting = i->second;
+
 			// Get the name of the target spawnarg
-			std::string spawnArg = i->second.spawnArg.c_str();
+			std::string spawnArg = setting.spawnArg.c_str();
 		
 			if (entityChanges.find(spawnArg) != entityChanges.end())
 			{
@@ -234,8 +267,8 @@ void DifficultySettings::ApplySettings(idDict& target)
 				continue;
 			}
 
-			// We have green light, apply the settings
-			ApplySetting(i->second, target);
+			// We have green light, apply the setting
+			setting.Apply(target);
 		}
 	}
 }
@@ -270,26 +303,6 @@ void DifficultySettings::Restore(idRestoreGame* savefile)
 		// Now restore the struct itself
 		inserted->second.Restore(savefile);
 	}
-}
-
-void DifficultySettings::ApplySetting(Setting& setting, idDict& target)
-{
-	switch (setting.appType) 
-	{
-		case Setting::EAssign:
-			target.Set(setting.spawnArg, setting.argument);
-			break;
-		case Setting::EAdd:
-			// Convert the old setting to float, add the argument, convert back to string and set as value
-			target.Set(setting.spawnArg, idStr(float(target.GetFloat(setting.spawnArg) + atof(setting.argument))));
-			break;
-		case Setting::EMultiply:
-			// Convert the old setting to float, add the argument, convert back to string and set as value
-			target.Set(setting.spawnArg, idStr(float(target.GetFloat(setting.spawnArg) * atof(setting.argument))));
-			break;
-		default:
-			break;
-	};
 }
 
 DifficultySettings::InheritanceChain DifficultySettings::GetInheritanceChain(const idDict& dict)
