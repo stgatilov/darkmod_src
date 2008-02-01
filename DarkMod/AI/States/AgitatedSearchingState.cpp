@@ -36,13 +36,13 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex < 3)
 	{
 		// Alert index is too low for this state, fall back
-		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->EndState();
 		return false;
 	}
 	else if (owner->AI_AlertIndex > 3 && owner->GetMind()->PerformCombatCheck())
 	{
 		// Alert index is too high, switch to the higher State
+		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->PushState(STATE_COMBAT);
 		return false;
 	}
@@ -53,13 +53,51 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 
 void AgitatedSearchingState::Init(idAI* owner)
 {
-	// Init base classes first (this also calls CheckAlertLevel)
-	SearchingState::Init(owner);
+	// Init base class first
+	State::Init(owner);
 
 	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
+
+	// Shortcut reference
+	Memory& memory = owner->GetMemory();
+
 	_alertLevelDecreaseRate = (owner->thresh_combat - owner->thresh_3) / owner->atime3;
+
+	// Setup a new hiding spot search
+	StartNewHidingSpotSearch(owner);
+
+	if (owner->AlertIndexIncreased())
+	{
+		if (memory.alertType == EAlertTypeEnemy)
+		{
+			idStr bark;
+			if (memory.alertClass == EAlertVisual)
+			{
+				bark = "snd_alert3s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				bark = "snd_alert2h";
+			}
+			else
+			{
+				bark = "snd_somethingSuspicious";
+			}
+
+			// Clear the communication system
+			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+			// Allocate a singlebarktask, set the sound and enqueue it
+
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(bark))
+			);
+		}
+	}
+	
 	owner->DrawWeapon();
 }
 

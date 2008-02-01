@@ -61,20 +61,54 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
 	assert(owner);
 
-	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	// Setup a new hiding spot search
-	StartNewHidingSpotSearch(owner);
-	
-	// Clear the communication system
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	// Allocate a singlebarktask, set the sound and enqueue it
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
-	);
+	// Shortcut reference
+	Memory& memory = owner->GetMemory();
+
+	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
+
+	idStr bark;
+
+	if (owner->AlertIndexIncreased())
+	{
+		// Setup a new hiding spot search
+		StartNewHidingSpotSearch(owner);
+
+		if (memory.alertType == EAlertTypeEnemy)
+		{
+			if (memory.alertClass == EAlertVisual)
+			{
+				bark = "snd_alert2s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				bark = "snd_alert2h";
+			}
+			else
+			{
+				bark = "snd_alert2";
+			}
+			// Clear the communication system
+			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+			// Allocate a singlebarktask, set the sound and enqueue it
+
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(bark))
+			);
+		}
+	}
+	else
+	{
+		// Clear the communication system
+		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+		// Allocate a singlebarktask, set the sound and enqueue it
+
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+			TaskPtr(new SingleBarkTask("snd_alertdown2"))
+		);
+	}
 
 	owner->SheathWeapon();
 }

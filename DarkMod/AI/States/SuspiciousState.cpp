@@ -59,7 +59,6 @@ void SuspiciousState::Init(idAI* owner)
 
 	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / owner->atime1;
 
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
@@ -68,18 +67,41 @@ void SuspiciousState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
 	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
-	idStr bark = "snd_alert1";
-	
+	// barking
+	idStr bark;
+
+	if (owner->AlertIndexIncreased())
+	{
+		if (memory.alertClass == EAlertVisual)
+		{
+			bark = "snd_alert1s";
+		}
+		else if (memory.alertClass == EAlertAudio)
+		{
+			bark = "snd_alert1h";
+		}
+		else
+		{
+			bark = "snd_alert1";
+		}
+	}
+	else
+	{
+		bark = "snd_alertdown1";
+	}
+
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->PushTask(
 		TaskPtr(new SingleBarkTask(bark))
 	);
+	
 }
 
 // Gets called each time the mind is thinking

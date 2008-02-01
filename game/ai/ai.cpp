@@ -574,6 +574,7 @@ idAI::idAI()
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
 	m_AlertNumThisFrame = 0.0f;
+	m_prevAlertIndex = 0;
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
@@ -765,6 +766,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
 	savefile->WriteFloat( m_AlertNumThisFrame );
+	savefile->WriteInt( m_prevAlertIndex );
 	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
@@ -980,6 +982,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
 	savefile->ReadFloat( m_AlertNumThisFrame );
+	savefile->ReadInt( m_prevAlertIndex );
 	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
@@ -4798,6 +4801,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 				{
 					// Set up search
 					ai::Memory& memory = GetMemory();
+					memory.alertClass = ai::EAlertTactile;
+					memory.alertType = ai::EAlertTypeDamage;
 					memory.alertPos = physicsObj.GetOrigin() - dir * 300;
 					memory.alertPos.x += 200 * gameLocal.random.RandomFloat() - 100;
 					memory.alertPos.y += 200 * gameLocal.random.RandomFloat() - 100;
@@ -7288,11 +7293,13 @@ void idAI::SetAlertLevel(float newAlertLevel)
 			if (GetEnemy() != NULL) 
 			{
 				// We have an enemy, raise the index
+				m_prevAlertIndex = AI_AlertIndex;
 				AI_AlertIndex = 4;
 			}
 			else
 			{
 				// No enemy, can't switch to Combat mode
+				m_prevAlertIndex = AI_AlertIndex;
 				AI_AlertIndex = 3;
 				// Set the alert level back to just below combat threshold
 				AI_AlertNum = thresh_combat - 0.01;
@@ -7300,6 +7307,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		}
 		else
 		{
+			m_prevAlertIndex = AI_AlertIndex;
 			AI_AlertIndex = 3;
 		}
 		AI_currentAlertLevelDuration = atime3;
@@ -7309,6 +7317,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_2)
 	{
+		m_prevAlertIndex = AI_AlertIndex;
 		AI_AlertIndex = 2;
 		AI_currentAlertLevelDuration = atime2;
 		grace_time = m_gracetime_2;
@@ -7317,6 +7326,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_1)
 	{
+		m_prevAlertIndex = AI_AlertIndex;
 		AI_AlertIndex = 1;
 		AI_currentAlertLevelDuration = atime1;
 		grace_time = m_gracetime_1;
@@ -7325,6 +7335,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else
 	{
+		m_prevAlertIndex = AI_AlertIndex;
 		AI_AlertIndex = 0;
 		AI_currentAlertLevelDuration = 0.0;
 		grace_time = 0.0;
@@ -7384,6 +7395,13 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		AI_chancePerSecond_RandomLookAroundWhileIdle = IDLE_RANDOM_HEAD_TURN_CHANCE_PER_SECOND * SLIGHTLY_AGITATED_HEAD_TURN_CHANCE_MULTIPLIER;
 	}
 }
+
+
+bool idAI::AlertIndexIncreased() 
+{
+	return (AI_AlertIndex > m_prevAlertIndex);
+}
+
 
 float idAI::GetAcuity(const char *type) const
 {

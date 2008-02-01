@@ -292,7 +292,8 @@ void BasicMind::SetAlertPos()
 		{
 			owner->Event_SetEnemy(target);
 
-			memory.alertType = EAlertTactile;
+			memory.alertClass = EAlertTactile;
+			memory.alertType = EAlertTypeEnemy;
 			memory.alertPos = owner->GetPhysics()->GetOrigin();
 			memory.alertRadius = TACTILE_ALERT_RADIUS;
 			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
@@ -310,7 +311,8 @@ void BasicMind::SetAlertPos()
 	}
 	else if( owner->AI_VISALERT )
 	{
-		memory.alertType = EAlertVisual;
+		memory.alertClass = EAlertVisual;
+		memory.alertType = EAlertTypeEnemy;
 		memory.alertPos = owner->GetVisDir();
 		memory.alertRadius = VISUAL_ALERT_RADIUS;
 		memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
@@ -321,7 +323,8 @@ void BasicMind::SetAlertPos()
 	}	
 	else if( owner->AI_HEARDSOUND )
 	{
-		memory.alertType = EAlertAudio;
+		memory.alertClass = EAlertAudio;
+		memory.alertType = EAlertTypeEnemy;
 
 		memory.alertPos = owner->GetSndDir();
 
@@ -619,7 +622,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
 			float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
 			
-			if (memory.alertType == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
+			if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 			{
 				// This is a new alert // SZ Dec 30, 2006
 				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions

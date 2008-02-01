@@ -83,10 +83,25 @@ namespace ai
 #define YELL_STIM_RADIUS 400
 #define TALK_STIM_RADIUS 200
 
-enum EAlertType {
+enum EAlertClass 
+{
 	EAlertVisual,
 	EAlertTactile,
 	EAlertAudio,
+	EAlertClassCount
+};
+
+enum EAlertType
+{
+	EAlertTypeEnemy,
+	EAlertTypeWeapon,
+	EAlertTypeDeadPerson,
+	EAlertTypeUnconsciousPerson,
+	EAlertTypeBlood,
+	EAlertTypeLightSource,
+	EAlertTypeMissingItem,
+	EAlertTypeDoor,
+	EAlertTypeDamage,
 	EAlertTypeCount
 };
 
@@ -149,6 +164,9 @@ public:
 	idVec3 alertPos;
 
 	// Type of alert (visual, tactile, audio)
+	EAlertClass alertClass;
+
+	// Source of the alert (enemy, weapon, blood, dead person, etc.)
 	EAlertType alertType;
 
 	// radius of alert causing stimulus (depends on the type and distance)
@@ -245,6 +263,7 @@ public:
 		enemiesHaveBeenSeen(false),
 		itemsHaveBeenStolen(false),
 		alertPos(0,0,0),
+		alertClass(EAlertClassCount),
 		alertType(EAlertTypeCount),
 		alertRadius(-1),
 		stimulusLocationItselfShouldBeSearched(false),
@@ -284,6 +303,7 @@ public:
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
 		savefile->WriteVec3(alertPos);
+		savefile->WriteInt(static_cast<int>(alertClass));
 		savefile->WriteInt(static_cast<int>(alertType));
 		savefile->WriteFloat(alertRadius);
 		savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
@@ -325,6 +345,9 @@ public:
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
 		savefile->ReadVec3(alertPos);
+
+		savefile->ReadInt(temp);
+		alertClass = static_cast<EAlertClass>(temp);
 
 		savefile->ReadInt(temp);
 		alertType = static_cast<EAlertType>(temp);

@@ -77,6 +77,8 @@ void State::UpdateAlertLevel()
 	int currentTime = gameLocal.time;
 	int frameDuration = currentTime - gameLocal.previousTime;
 	
+	// angua: alert level stays for a short time before starting to decrease
+	// alert level does not return to 0
 	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertNum > owner->thresh_1 * 0.5)
 	{
 		float decrease = _alertLevelDecreaseRate * MS2SEC(frameDuration);
@@ -251,9 +253,11 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	
 	// Vocalize that see something out of place
 	gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	if (owner->AI_AlertNum < owner->thresh_combat &&
+		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 		owner->GetSubsystem(SubsysCommunication)->PushTask(
 			TaskPtr(new SingleBarkTask("snd_somethingSuspicious"))
 		);
@@ -269,7 +273,8 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	memory.alertType = EAlertVisual;
+	memory.alertClass = EAlertVisual;
+	memory.alertType = EAlertTypeWeapon;
 
 	// Do search as if there is an enemy that has escaped
 	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -322,6 +327,8 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			owner->AI_VISALERT = true;
 			
 			owner->Event_SetAlertLevel(owner->thresh_combat*2);
+			memory.alertClass = EAlertVisual;
+			memory.alertType = EAlertTypeEnemy;
 			// An enemy should not be ignored in the future
 			ignoreStimulusFromNowOn = false;
 		}
@@ -507,6 +514,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
 			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			owner->GetSubsystem(SubsysCommunication)->PushTask(
 				TaskPtr(new SingleBarkTask(soundName))
 			);
@@ -516,7 +524,8 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertType = EAlertVisual;
+			memory.alertClass = EAlertVisual;
+			memory.alertType = EAlertTypeDeadPerson;
 			
 			// Do search as if there is an enemy that has escaped
 			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -529,6 +538,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		}
 					
 		// Do new reaction to stimulus
+		memory.investigateStimulusLocationClosely = true; // deep investigation
 		memory.stimulusLocationItselfShouldBeSearched = true;
 		memory.searchingDueToCommunication = false;
 		
@@ -569,17 +579,18 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		}
 		else if (personGender == PERSONGENDER_FEMALE)
 		{
-			soundName = "snd_foundDeadFemale";
+			soundName = "snd_foundUnconsciousFemale";
 		}
 		else
 		{
-			soundName = "snd_foundDeadMale";
+			soundName = "snd_foundUnconsciousMale";
 		}
 
 		// Speak a reaction
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
 			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			owner->GetSubsystem(SubsysCommunication)->PushTask(
 				TaskPtr(new SingleBarkTask(soundName))
 			);
@@ -589,7 +600,8 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertType = EAlertVisual;
+			memory.alertClass = EAlertVisual;
+			memory.alertType = EAlertTypeUnconsciousPerson;
 			
 			// Do search as if there is an enemy that has escaped
 			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -602,6 +614,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		}
 					
 		// Do new reaction to stimulus
+		memory.investigateStimulusLocationClosely = true; // deep investigation
 		memory.stimulusLocationItselfShouldBeSearched = true;
 		memory.searchingDueToCommunication = false;
 		
@@ -639,7 +652,9 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertType = EAlertVisual; // visual
+		memory.alertClass = EAlertVisual;
+		memory.alertType = EAlertTypeBlood;
+
 		
 		// Do search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -709,7 +724,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		if (owner->AI_AlertNum < owner->thresh_3)
 		{
 			memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-			memory.alertType = EAlertVisual;
+			memory.alertClass = EAlertVisual;
+			memory.alertType = EAlertTypeLightSource;
 			
 			// Prepare search as if there is an enemy that has escaped
 			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -806,7 +822,9 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertType = EAlertVisual; // visual
+		memory.alertClass = EAlertVisual;
+		memory.alertType = EAlertTypeMissingItem;
+
 		
 		// Prepare search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
@@ -848,7 +866,8 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertType = EAlertVisual; // visual
+		memory.alertClass = EAlertVisual;
+		memory.alertType = EAlertTypeDoor;
 		
 		// Do search as if there is an enemy that has escaped
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
