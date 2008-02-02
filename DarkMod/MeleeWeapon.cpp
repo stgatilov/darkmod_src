@@ -146,8 +146,7 @@ void CMeleeWeapon::Think( void )
 			ClipMask = CONTENTS_MELEEWEAP;
 
 		// NOTE: We really want two ignore entities, but we can't do that,
-		// so temporarily set our CONTENTS to none so we don't hit ourself
-
+		// so temporarily set our CONTENTS so that we don't hit ourself
 		int contents = pClip->GetContents();
 		pClip->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
 
@@ -157,10 +156,16 @@ void CMeleeWeapon::Think( void )
 			rotation, pClip, OldAxis, 
 			ClipMask, m_Owner.GetEntity()
 		);
-
-		// Call Collide on both us and other ent if we hit
-
 		pClip->SetContents( contents );
+
+		if( tr.fraction < 1.0f )
+		{
+			// hit something
+			idEntity *other = gameLocal.entities[ tr.c.entityNum ];
+		}
+
+
+
 	}
 }
 

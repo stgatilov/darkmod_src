@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4996)
 
 #include "MissionData.h"
+#include "DifficultyManager.h"
 #include "../game/player.h"
 #include "StimResponse/StimResponseCollection.h"
 
@@ -1358,7 +1359,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 			while( src.ReadToken( &token ) )
 			{
 				if( token.IsNumeric() )
-					if (g_skill.GetInteger() == token.GetIntValue()) {
+					if (gameLocal.m_DifficultyManager.GetDifficultyLevel() == token.GetIntValue()) {
 						ObjTemp.m_bApplies = true;
 						break;
 					}
@@ -1463,7 +1464,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	}
 
 	// parse overall mission logic (for specific difficulty if applicable)
-	idStr DiffStr = va("_diff_%d", g_skill.GetInteger() );
+	idStr DiffStr = va("_diff_%d", gameLocal.m_DifficultyManager.GetDifficultyLevel() );
 	StrTemp = "mission_logic_success";
 	if( dict.FindKey( StrTemp + DiffStr ) )
 		StrTemp = StrTemp + DiffStr;
