@@ -246,6 +246,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	{
 		// AI is not moving, wait for spot search to complete
 		memory.hidingSpotInvestigationInProgress = false;
+		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	}
 
 	idVec3 minBounds(memory.alertPos - memory.alertSearchVolume);
@@ -264,7 +265,6 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	// Invalidate the vector, clear the indices
 	memory.firstChosenHidingSpotIndex = -1;
 	memory.currentChosenHidingSpotIndex = -1;
-	memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 
 	// Start search
 	int res = owner->StartSearchForHidingSpotsWithExclusionArea(
