@@ -172,6 +172,12 @@ private:
 	*/
 	void			Event_GetLightLevel();
 
+
+	/*
+	*	Add the light to the appropriate LAS area
+	*/
+	void			Event_AddToLAS();
+
 	/**	Returns 1 if the light is in PVS.
 	 *	Doesn't take into account vis-area optimizations for shadowcasting lights.
 	 */

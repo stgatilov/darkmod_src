@@ -43,6 +43,7 @@ const idEventDef EV_Light_FadeIn( "fadeInLight", "f" );
 const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", NULL, 'v' );
 const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
 const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
+const idEventDef EV_Light_AddToLAS("addToLAS", NULL);
 
 
 CLASS_DECLARATION( idEntity, idLight )
@@ -64,6 +65,7 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_SetLightOrigin, idLight::Event_SetLightOrigin )
 	EVENT( EV_Light_GetLightOrigin, idLight::Event_GetLightOrigin )
 	EVENT( EV_Light_GetLightLevel,	idLight::Event_GetLightLevel )
+	EVENT( EV_Light_AddToLAS,		idLight::Event_AddToLAS )
 	EVENT( EV_InPVS,				idLight::Event_InPVS )
 END_CLASS
 
@@ -475,7 +477,8 @@ void idLight::Spawn( void )
 
 	// Sophisiticated Zombie (DMH)
 	// Darkmod Light Awareness System: Also need to add light to LAS
-	LAS.addLight (this);
+
+	PostEventMS(&EV_Light_AddToLAS, 40);
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
 		this, name.c_str(),
@@ -1486,6 +1489,11 @@ void idLight::Event_GetLightOrigin( void )
 void idLight::Event_GetLightLevel ( void )
 {
 	idThread::ReturnFloat( currentLevel );
+}
+
+void idLight::Event_AddToLAS()
+{
+	LAS.addLight(this);
 }
 
 /**	Returns 1 if the light is in PVS.
