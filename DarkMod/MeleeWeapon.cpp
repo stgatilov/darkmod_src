@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: MeleeWeapon.cpp 1998 2008-01-18
 
 #include "../game/game_local.h"
 #include "DarkModGlobals.h"
+#include "../DarkMod/PlayerData.h"
 #include "MeleeWeapon.h"
 
 CLASS_DECLARATION( idMoveable, CMeleeWeapon )
@@ -120,7 +121,7 @@ void CMeleeWeapon::Think( void )
 		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), CMaxis );
 	}
 
-	// Attack test:
+	// Attack test (TODO: Move this to separate function?):
 	if( m_bAttacking )
 	{
 		trace_t tr;
@@ -143,7 +144,7 @@ void CMeleeWeapon::Think( void )
 		if( m_bWorldCollide )
 			ClipMask = MASK_SHOT_RENDERMODEL;
 		else
-			ClipMask = CONTENTS_MELEEWEAP;
+			ClipMask = CONTENTS_MELEEWEAP | CONTENTS_BODY; // parries and AI
 
 		// NOTE: We really want two ignore entities, but we can't do that,
 		// so temporarily set our CONTENTS so that we don't hit ourself
@@ -157,18 +158,107 @@ void CMeleeWeapon::Think( void )
 			ClipMask, m_Owner.GetEntity()
 		);
 		pClip->SetContents( contents );
-
+		
+		// hit something 
 		if( tr.fraction < 1.0f )
 		{
-			// hit something
 			idEntity *other = gameLocal.entities[ tr.c.entityNum ];
+
+			// TODO: Incorporate angular momentum into dir?
+			idVec3 dir = NewOrigin - OldOrigin;
+			dir.NormalizeFast();
+
+			idEntity *AttachOwner(NULL);
+			if( other->IsType(idAFAttachment::Type) )
+				AttachOwner = static_cast<idAFAttachment *>(other)->GetBody();
+
+			// Hit an actor, or an AF attachment that is part of an actor
+			if( other->IsType(idActor::Type) || AttachOwner != NULL )
+			{
+				// Don't do anything if we hit our own AF attachment
+				if( AttachOwner != m_Owner.GetEntity() )
+				{
+					// Do the damage
+					// TODO: Scale damage with instantaneous velocity of the blade?
+					other->Damage
+						(
+							m_Owner.GetEntity(), m_Owner.GetEntity(), 
+							dir, m_MeleeDef->GetName(),
+							1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
+						);
+
+					// apply a LARGE tactile alert to AI
+					if( other->IsType(idAI::Type) )
+						static_cast<idAI *>(other)->TactileAlert( GetOwner(), 100 );
+					else if( AttachOwner && AttachOwner->IsType(idAI::Type) )
+						static_cast<idAI *>(AttachOwner)->TactileAlert( GetOwner(), 100 );
+
+					DeactivateAttack();
+					// TODO: Message owner AI that they hit an AI
+				}
+			}
+
+			// Hit a melee parry or held object
+			else if( tr.c.contents & CONTENTS_MELEEWEAP )
+			{
+				// hit a parry (make sure we don't hit our own other melee weapons)
+				if( other->IsType(CMeleeWeapon::Type)
+					&& static_cast<CMeleeWeapon *>(other)->GetOwner() != m_Owner.GetEntity() )
+				{
+					// Test our attack against their parry
+					TestParry( static_cast<CMeleeWeapon *>(other), dir, &tr );
+				}
+				// hit a held object
+				else if( other == g_Global.m_DarkModPlayer->grabber->GetSelected() )
+				{
+					other->Damage
+					(
+						m_Owner.GetEntity(), m_Owner.GetEntity(), 
+						dir, m_MeleeDef->GetName(),
+						1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
+					);
+
+					// TODO: Message the grabber that the grabbed object has been hit
+					// So that it can fly out of player's hands if desired
+
+					// TODO: Message the attacking AI to play a bounce off animation if appropriate
+
+					DeactivateAttack();
+				}
+			}
+			// Hit something else in the world (only happens to the player)
+			else
+			{
+				// TODO: Message the attacking player to play a bounce off animation if appropriate
+				
+				other->Damage
+				(
+					m_Owner.GetEntity(), m_Owner.GetEntity(), 
+					dir, m_MeleeDef->GetName(),
+					1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
+				);
+
+				// TODO: Play suspicious sounds like in idWeapon
+				// Would it make more sense to just create an "Impact" function
+				// that does the damage and plays sounds and makes spark or blood decals, etc?
+
+				DeactivateAttack();
+			}
 		}
-
-
-
 	}
 }
 
+void CMeleeWeapon::TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace )
+{
+	// TODO: Check parry type (slash, thrust) against attack type
+
+	// Notify ourself of hitting a parry, and the other AI of making a parry
+}
+
+void CheckAttack( idVec3 OldOrigin, idVec3 OldAxis )
+{
+	// TODO: Move attack check code from ::Think into here
+}
 
 
 

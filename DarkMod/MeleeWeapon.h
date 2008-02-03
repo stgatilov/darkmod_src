@@ -43,8 +43,9 @@ public:
 	virtual void			Think( void );
 
 	/**
-	* Set or clear the actor that owns this weapon
+	* Get, set or clear the actor that owns this weapon
 	**/
+	idActor *GetOwner( void ) { return m_Owner.GetEntity(); };
 	void SetOwner( idActor *actor );
 	void ClearOwner( void );
 
@@ -92,6 +93,27 @@ protected:
 	* resets member vars
 	**/
 	void ClearClipModel( void );
+
+	/**
+	* Test to see if a melee attack in progress collides with
+	* anything that should stop it.
+	**/
+	void CheckAttack( idVec3 OldOrigin, idVec3 OldAxis ); 
+
+	/**
+	* Parry success test, called when a melee attack hits a melee parry
+	* Also handles deactivating/bouncing the attack if parry succeeded
+	* 
+	* POTENTIAL PROBLEM: What happens for fake cases like thrust parry on slash attack, how does
+	* it let an attack thru if it fails, without always returning itself in the trace?
+	* One solution would be to temporarily disable the parry for a moment, but what if the thrust
+	* attack was not going to hit distance-wise, and another slash attack came in a little later?
+	* Would modeling just the very tip of a thrust attack help?
+	*
+	* Maybe a better solution is to modify the attack in progress so that
+	* it no longer collides with parries once it "gets past" an invalid parry
+	**/
+	void TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace );
 
 protected:
 	/**
