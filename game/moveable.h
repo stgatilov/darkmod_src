@@ -29,7 +29,7 @@ public:
 	CLASS_PROTOTYPE( idMoveable );
 
 							idMoveable( void );
-							~idMoveable( void );
+							virtual ~idMoveable( void );
 
 	void					Spawn( void );
 
@@ -131,7 +131,7 @@ public:
 	CLASS_PROTOTYPE( idExplodingBarrel );
 
 							idExplodingBarrel();
-							~idExplodingBarrel();
+							virtual ~idExplodingBarrel();
 
 	void					Spawn( void );
 

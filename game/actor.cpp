@@ -923,7 +923,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( painTime );
 
 	savefile->WriteInt( m_attachments.Num() );
-	for ( i = 0; i < m_attachments.Num(); i++ ) {
+	for ( i = 0; i < m_attachments.Num(); i++ ) 
+	{
 		m_attachments[i].ent.Save( savefile );
 		savefile->WriteInt( m_attachments[i].channel );
 	}
@@ -1060,7 +1061,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( painTime );
 
 	savefile->ReadInt( num );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		idAttachInfo &attach = m_attachments.Alloc();
 		attach.ent.Restore( savefile );
 		savefile->ReadInt( attach.channel );
@@ -1877,7 +1879,8 @@ bool idActor::UpdateAnimationControllers( void ) {
 idActor::RemoveAttachments
 ================
 */
-void idActor::RemoveAttachments( void ) {
+void idActor::RemoveAttachments( void ) 
+{
 	int i;
 	idEntity *ent;
 
@@ -1901,7 +1904,6 @@ void idActor::Attach( idEntity *ent )
 	idMat3			axis, rotate, newAxis;
 	jointHandle_t	joint;
 	idStr			jointName;
-	idAttachInfo	&attach = m_attachments.Alloc();
 	idAngles		angleOffset;
 	idVec3			originOffset;
 	idStr			nm;
@@ -1921,6 +1923,8 @@ void idActor::Attach( idEntity *ent )
 	sprintf(nm, "origin_%s", ClassName.c_str());
 	if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
 		originOffset = ent->spawnArgs.GetVector( "origin" );
+
+	idAttachInfo	&attach = m_attachments.Alloc();
 
 	attach.channel = animator.GetChannelForJoint( joint );
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
