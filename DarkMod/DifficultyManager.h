@@ -63,6 +63,13 @@ public:
 	 */
 	void ApplyDifficultySettings(idDict& target);
 
+	/**
+	 * greebo: Checks whether the given entity (represented by <dict>) is allowed to spawn.
+	 * 
+	 * @returns: TRUE if the entity should NOT be spawned.
+	 */
+	bool InhibitEntitySpawn(const idDict& target);
+
 	// Save/Restore methods
 	void Save(idSaveGame* savefile);
 	void Restore(idRestoreGame* savefile);

@@ -3751,6 +3751,7 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	
 	bool result = false;
 
+	/* greebo: Disabled vanilla D3 stuff, will be handled by our DifficultyManager 
 	if ( isMultiplayer ) {
 		spawnArgs.GetBool( "not_multiplayer", "0", result );
 	} else if ( g_skill.GetInteger() == 0 ) {
@@ -3776,7 +3777,10 @@ bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 		if ( idStr::Icmp( name, "weapon_bfg" ) == 0 || idStr::Icmp( name, "weapon_soulcube" ) == 0 ) {
 			result = true;
 		}
-	}
+	}*/
+
+	// Consult the difficulty manager, whether this entity should be prevented from being spawned.
+	result = m_DifficultyManager.InhibitEntitySpawn(spawnArgs);
 
 	return result;
 }

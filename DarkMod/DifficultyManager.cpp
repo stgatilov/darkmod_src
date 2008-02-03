@@ -89,6 +89,21 @@ void DifficultyManager::ApplyDifficultySettings(idDict& target)
 	_globalSettings[_difficulty].ApplySettings(target);
 }
 
+bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
+	bool isAllowed(true);
+
+	// Construct the key ("diff_0_spawn")
+	idStr key = va("diff_%d_spawn", _difficulty);
+
+	// The entity is allowed to spawn by default, must be set to 0 by the mapper
+	isAllowed = target.GetBool(key, "1");
+
+	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Entity %s is allowed to spawn: %s.\r", target.GetString("name"), isAllowed ? "YES" : "NO");
+
+	// Return false if the entity is allowed to spawn
+	return !isAllowed;
+}
+
 void DifficultyManager::LoadDefaultDifficultySettings()
 {
 	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load default difficulty settings from entityDefs.\r");
