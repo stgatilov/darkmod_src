@@ -276,7 +276,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& im
 	// Save the current state
 	rigidBodyPState_t savedState = current;
 
-	// Apply the impulse the current state, as if the object was resting
+	// Apply the impulse to the current state, as if the object was resting
 	current.i.linearMomentum.Zero();
 	current.i.angularMomentum.Zero();
 	ApplyImpulse(0, point, impulse);
@@ -356,7 +356,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const idVec3& point, const idVec3& im
 
 	// Revert the state to as it was before
 	current = savedState;
-	
+
 	// Apply the remaining impulse to this object
 	ApplyImpulse(0, point, remainingImpulse);
 

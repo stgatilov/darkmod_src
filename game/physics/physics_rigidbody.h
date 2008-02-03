@@ -141,7 +141,7 @@ public:	// common physics interface
 public:
 	/**
 	 * greebo: This is similar to ApplyImpulse, although this distributes the impulse
-	 *         on all entities in contact with this one in *this* very frame. If no
+	 *         on all entities in contact with this one in *this* very frame. If 
 	 *         no entities are in contact, all the impulse gets applied to this one.
 	 */
 	bool					PropagateImpulse(const idVec3& point, const idVec3& impulse);
@@ -160,24 +160,28 @@ private:
 	float					linearFriction;				// translational friction
 	float					angularFriction;			// rotational friction
 	float					contactFriction;			// friction with contact surfaces
-	float					bouncyness;					// bouncyness
+	float					bouncyness;				// bouncyness
 #ifdef MOD_WATERPHYSICS
-	float					volume;						// MOD_WATERPHYSICS object volume 
+	float					volume;					// MOD_WATERPHYSICS object volume 
 #endif		// MOD_WATERPHYSICS
 	idClipModel *			clipModel;					// clip model used for collision detection
 
+	// tels: if bound to a master, and non-zero, defines the force nec. to "break"
+	//       the bound between slave and master
+	idVec3					bindForce;				// spawnarg "bind_force"
+
 	// derived properties
-	float					mass;						// mass of body
+	float					mass;					// mass of body
 	float					inverseMass;				// 1 / mass
 	idVec3					centerOfMass;				// center of mass of trace model
 	idMat3					inertiaTensor;				// mass distribution
-	idMat3					inverseInertiaTensor;		// inverse inertia tensor
+	idMat3					inverseInertiaTensor;			// inverse inertia tensor
 
-	idODE *					integrator;					// integrator
+	idODE *					integrator;				// integrator
 	bool					dropToFloor;				// true if dropping to the floor and putting to rest
-	bool					testSolid;					// true if testing for solid when dropping to the floor
-	bool					noImpact;					// if true do not activate when another object collides
-	bool					noContact;					// if true do not determine contacts and no contact friction
+	bool					testSolid;				// true if testing for solid when dropping to the floor
+	bool					noImpact;				// if true do not activate when another object collides
+	bool					noContact;				// if true do not determine contacts and no contact friction
 
 	// master
 	bool					hasMaster;
@@ -191,7 +195,7 @@ private:
 
 #ifdef MOD_WATERPHYSICS
 	// buoyancy
-	int						noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
+	int					noMoveTime;	// MOD_WATERPHYSICS suspend simulation if hardly any movement for this many seconds
 #endif
 
 private:

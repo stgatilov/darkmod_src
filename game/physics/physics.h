@@ -39,7 +39,7 @@
 	Entities update their visual position and orientation from the physics
 	using GetOrigin() and GetAxis(). Direct origin and axis changes of
 	entities should go through the physics. In other words the physics origin
-	and axis are updated first and the entity updates it's visual position
+	and axis are updated first and the entity updates its visual position
 	from the physics.
 
 ===============================================================================

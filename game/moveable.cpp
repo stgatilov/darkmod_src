@@ -105,7 +105,7 @@ void idMoveable::Spawn( void ) {
 		gameLocal.Error( "idMoveable '%s': invalid collision model %s", name.c_str(), clipModelName.c_str() );
 	}
 
-	// if the model should be shrinked
+	// if the model should be shrunk
 	clipShrink = spawnArgs.GetInt( "clipshrink" );
 	if ( clipShrink != 0 ) {
 		trm.Shrink( clipShrink * CM_CLIP_EPSILON );

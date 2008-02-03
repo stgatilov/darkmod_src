@@ -935,20 +935,20 @@ protected:
 	idList<SAttachPosition>	m_AttachPositions;
 
 private:
-	idPhysics_Static		defaultPhysicsObj;					// default physics object
-	idPhysics *				physics;							// physics used for this entity
-	idEntity *				bindMaster;							// entity bound to if unequal NULL
-	jointHandle_t			bindJoint;							// joint bound to if unequal INVALID_JOINT
-	int						bindBody;							// body bound to if unequal -1
-	idEntity *				teamMaster;							// master of the physics team
-	idEntity *				teamChain;							// next entity in physics team
+	idPhysics_Static			defaultPhysicsObj;		// default physics object
+	idPhysics *				physics;			// physics used for this entity
+	idEntity *				bindMaster;			// entity bound to if unequal NULL
+	jointHandle_t				bindJoint;			// joint bound to if unequal INVALID_JOINT
+	int					bindBody;			// body bound to if unequal -1
+	idEntity *				teamMaster;			// master of the physics team
+	idEntity *				teamChain;			// next entity in physics team
 
-	int						numPVSAreas;						// number of renderer areas the entity covers
-	int						PVSAreas[MAX_PVS_AREAS];			// numbers of the renderer areas the entity covers
+	int					numPVSAreas;			// number of renderer areas the entity covers
+	int					PVSAreas[MAX_PVS_AREAS];	// numbers of the renderer areas the entity covers
 
-	signalList_t *			signals;
+	signalList_t *				signals;
 
-	int						mpGUIState;							// local cache to avoid systematic SetStateInt
+	int					mpGUIState;			// local cache to avoid systematic SetStateInt
 
 	// A pointer to our inventory.
 	CInventory				*m_Inventory;
@@ -962,19 +962,19 @@ private:
 private:
 	void					FixupLocalizedStrings();
 
-	bool					DoDormantTests( void );				// dormant == on the active list, but out of PVS
+	bool					DoDormantTests( void );		// dormant == on the active list, but out of PVS
 
 	// physics
-							// initialize the default physics
+	// initialize the default physics
 	void					InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis );
-							// update visual position from the physics
+	// update visual position from the physics
 	void					UpdateFromPhysics( bool moveBack );
 
 	// entity binding
-	bool					InitBind( idEntity *master );		// initialize an entity binding
-	void					FinishBind( void );					// finish an entity binding
-	void					RemoveBinds( void );				// deletes any entities bound to this object
-	void					QuitTeam( void );					// leave the current team
+	bool					InitBind( idEntity *master );	// initialize an entity binding
+	void					FinishBind( void );		// finish an entity binding
+	void					RemoveBinds( void );		// deletes any entities bound to this object
+	void					QuitTeam( void );		// leave the current team
 
 	void					UpdatePVSAreas( void );
 
