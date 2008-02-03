@@ -3344,7 +3344,7 @@ void idWeapon::ClientPredictionThink( void ) {
 idWeapon::Attach
 ================
 */
-void idWeapon::Attach( idEntity *ent ) 
+void idWeapon::Attach( idEntity *ent, const char *PosName ) 
 {
 	jointHandle_t		joint;
 	idStr				jointName;

@@ -1898,7 +1898,7 @@ void idActor::RemoveAttachments( void )
 idActor::Attach
 ================
 */
-void idActor::Attach( idEntity *ent ) 
+void idActor::Attach( idEntity *ent, const char *PosName ) 
 {
 	idVec3			origin;
 	idMat3			axis, rotate, newAxis;
@@ -1908,21 +1908,38 @@ void idActor::Attach( idEntity *ent )
 	idVec3			originOffset;
 	idStr			nm;
 	idStr			ClassName;
+	SAttachPosition *pos;
 
-	jointName = ent->spawnArgs.GetString( "joint" );
-	joint = animator.GetJointHandle( jointName );
-	if ( joint == INVALID_JOINT ) {
-		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+// New position system:
+	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
+	{
+		joint = pos->joint;
+
+		originOffset = pos->originOffset;
+		angleOffset = pos->angleOffset;
+
+		// etity-specific offsets to a given position
+		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
 	}
+// Old system, will be phased out
+	else
+	{
+		jointName = ent->spawnArgs.GetString( "joint" );
+		joint = animator.GetJointHandle( jointName );
+		if ( joint == INVALID_JOINT ) {
+			gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+		}
 
-	spawnArgs.GetString("classname", "", ClassName);
-	sprintf(nm, "angles_%s", ClassName.c_str());
-	if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
-		angleOffset = ent->spawnArgs.GetAngles( "angles" );
+		spawnArgs.GetString("classname", "", ClassName);
+		sprintf(nm, "angles_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
+			angleOffset = ent->spawnArgs.GetAngles( "angles" );
 
-	sprintf(nm, "origin_%s", ClassName.c_str());
-	if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
-		originOffset = ent->spawnArgs.GetVector( "origin" );
+		sprintf(nm, "origin_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
+			originOffset = ent->spawnArgs.GetVector( "origin" );
+	}
 
 	idAttachInfo	&attach = m_attachments.Alloc();
 

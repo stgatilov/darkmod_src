@@ -806,6 +806,9 @@ void idEntity::Spawn( void )
 		PostEventMS( &EV_SpawnBind, 0 );
 	}
 
+	//TDM: Parse list of pre-defined attachment positions from spawnargs
+	ParseAttachPositions();
+
 	//TDM: Spawn and attach any attachments
 	ParseAttachments();
 
@@ -4722,7 +4725,8 @@ void idEntity::Event_Unbind( void ) {
 idEntity::Event_SpawnBind
 ================
 */
-void idEntity::Event_SpawnBind( void ) {
+void idEntity::Event_SpawnBind( void ) 
+{
 	idEntity		*parent;
 	const char		*bind, *joint, *bindanim;
 	jointHandle_t	bindJoint;
@@ -4732,28 +4736,28 @@ void idEntity::Event_SpawnBind( void ) {
 	int				animNum;
 	idAnimator		*parentAnimator;
 	
-	if ( spawnArgs.GetString( "bind", "", &bind ) ) {
-		if ( idStr::Icmp( bind, "worldspawn" ) == 0 ) {
-			//FIXME: Completely unneccessary since the worldspawn is called "world"
-			parent = gameLocal.world;
-		} else {
-			parent = gameLocal.FindEntity( bind );
-		}
+	if ( spawnArgs.GetString( "bind", "", &bind ) ) 
+	{
+		parent = gameLocal.FindEntity( bind );
+
 		bindOrientated = spawnArgs.GetBool( "bindOrientated", "1" );
-		if ( parent ) {
+		if ( parent ) 
+		{
 			// bind to a joint of the skeletal model of the parent
-			if ( spawnArgs.GetString( "bindToJoint", "", &joint ) && *joint ) {
+			if ( spawnArgs.GetString( "bindToJoint", "", &joint ) && *joint ) 
+			{
 				parentAnimator = parent->GetAnimator();
-				if ( !parentAnimator ) {
+				if ( !parentAnimator )
 					gameLocal.Error( "Cannot bind to joint '%s' on '%s'.  Entity does not support skeletal models.", joint, name.c_str() );
-				}
+
 				bindJoint = parentAnimator->GetJointHandle( joint );
-				if ( bindJoint == INVALID_JOINT ) {
+				if ( bindJoint == INVALID_JOINT )
 					gameLocal.Error( "Joint '%s' not found for bind on '%s'", joint, name.c_str() );
-				}
 
 				// bind it relative to a specific anim
-				if ( ( parent->spawnArgs.GetString( "bindanim", "", &bindanim ) || parent->spawnArgs.GetString( "anim", "", &bindanim ) ) && *bindanim ) {
+				if ( ( parent->spawnArgs.GetString( "bindanim", "", &bindanim ) 
+						|| parent->spawnArgs.GetString( "anim", "", &bindanim ) ) && *bindanim ) 
+				{
 					animNum = parentAnimator->GetAnim( bindanim );
 					if ( !animNum ) {
 						gameLocal.Error( "Anim '%s' not found for bind on '%s'", bindanim, name.c_str() );
@@ -4772,18 +4776,16 @@ void idEntity::Event_SpawnBind( void ) {
 					gameEdit->ANIM_CreateAnimFrame( parentAnimator->ModelHandle(), anim->MD5Anim( 0 ), parent->renderEntity.numJoints, frame, 0, parentAnimator->ModelDef()->GetVisualOffset(), parentAnimator->RemoveOrigin() );
 					BindToJoint( parent, joint, bindOrientated );
 					parentAnimator->ForceUpdate();
-				} else {
+				} 
+				else
 					BindToJoint( parent, joint, bindOrientated );
-				}
 			}
 			// bind to a body of the physics object of the parent
-			else if ( spawnArgs.GetInt( "bindToBody", "0", id ) ) {
+			else if ( spawnArgs.GetInt( "bindToBody", "0", id ) )
 				BindToBody( parent, id, bindOrientated );
-			}
-			// bind to the parent
-			else {
+			// no joint specified, bind to the parent
+			else
 				Bind( parent, bindOrientated );
-			}
 		}
 	}
 }
@@ -6234,10 +6236,10 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 
 /*
 ================
-idAnimatedEntity::Attach( idEntity *ent )
+idAnimatedEntity::Attach
 ================
 */
-void idAnimatedEntity::Attach( idEntity *ent ) 
+void idAnimatedEntity::Attach( idEntity *ent, const char *PosName ) 
 {
 	idVec3			origin;
 	idMat3			axis;
@@ -6245,16 +6247,34 @@ void idAnimatedEntity::Attach( idEntity *ent )
 	idStr			jointName;
 	idAngles		angleOffset;
 	idVec3			originOffset;
+	SAttachPosition *pos;
 
-	jointName = ent->spawnArgs.GetString( "joint" );
-	joint = animator.GetJointHandle( jointName );
-	if ( joint == INVALID_JOINT ) 
+// New position system:
+	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
 	{
-		gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
-	}
+		joint = pos->joint;
 
-	angleOffset = ent->spawnArgs.GetAngles( "angles" );
-	originOffset = ent->spawnArgs.GetVector( "origin" );
+		originOffset = pos->originOffset;
+		angleOffset = pos->angleOffset;
+
+		// etity-specific offsets to a given position
+		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+	}
+// Old system, will be phased out
+	else
+	{
+		jointName = ent->spawnArgs.GetString( "joint" );
+		joint = animator.GetJointHandle( jointName );
+		if ( joint == INVALID_JOINT ) 
+		{
+			// TODO: Turn this into a warning and attach relative to origin instead?
+			gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+		}
+
+		angleOffset = ent->spawnArgs.GetAngles( "angles" );
+		originOffset = ent->spawnArgs.GetVector( "origin" );
+	}
 
 	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
 
@@ -7458,15 +7478,30 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 	return pThread;
 }
 
-void idEntity::Attach( idEntity *ent ) 
+void idEntity::Attach( idEntity *ent, const char *PosName ) 
 {
 	idVec3			origin;
 	idMat3			axis;
 	idAngles		angleOffset;
 	idVec3			originOffset;
+	SAttachPosition *pos;
 
-	angleOffset = ent->spawnArgs.GetAngles( "angles" );
-	originOffset = ent->spawnArgs.GetVector( "origin" );
+// New position system:
+	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
+	{
+		originOffset = pos->originOffset;
+		angleOffset = pos->angleOffset;
+
+		// etity-specific offsets to a given position
+		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
+		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
+	}
+// The following is the old system and will be phased out
+	else
+	{
+		angleOffset = ent->spawnArgs.GetAngles( "angles" );
+		originOffset = ent->spawnArgs.GetVector( "origin" );
+	}
 
 	origin = GetPhysics()->GetOrigin();
 	axis = GetPhysics()->GetAxis();
@@ -8304,7 +8339,15 @@ void idEntity::ParseAttachments( void )
 
 			if ( ent != NULL)
 			{
-				Attach(ent);
+				// check for attachment position spawnarg
+				idStr PosKey = kv->GetKey();
+				PosKey.StripLeading( "def_attach" );
+				PosKey = "pos_attach" + PosKey;
+
+				if( spawnArgs.FindKey(PosKey.c_str()) )
+					Attach( ent, spawnArgs.GetString(PosKey.c_str()) );
+				else
+					Attach( ent );
 			}
 			else
 			{
@@ -8326,7 +8369,7 @@ void idEntity::ParseAttachPositions( void )
 	SAttachPosition pos;
 	SAttachPosition *pPos;
 	int				Counter(1);
-	idStr			prefix, keyname;
+	idStr			prefix, keyname, jointname;
 
 	m_AttachPositions.Clear();
 
@@ -8336,7 +8379,21 @@ void idEntity::ParseAttachPositions( void )
 	{
 		prefix = va("attach_pos_%d_", Counter);
 		pos.name = spawnArgs.GetString( (prefix + "name").c_str() );
-		pos.joint = (jointHandle_t) spawnArgs.GetInt( (prefix + "joint").c_str() );
+		
+		// If entity has joints, find the joint handle for the joint name
+		if( GetAnimator() )
+		{
+			jointname = spawnArgs.GetString( (prefix + "joint").c_str() );
+			pos.joint = GetAnimator()->GetJointHandle( jointname );
+			if ( pos.joint == INVALID_JOINT ) 
+			{
+				// TODO: Turn this into a warning and attach relative to entity origin instead?
+				gameLocal.Error( "Joint '%s' not found for attachment position '%s' on entity '%s'", jointname.c_str(), pos.name.c_str(), name.c_str() );
+			}
+		}
+		else
+			pos.joint = INVALID_JOINT;
+
 		pos.originOffset = spawnArgs.GetVector( (prefix + "origin").c_str() );
 		pos.angleOffset = spawnArgs.GetAngles( (prefix + "angles").c_str() );
 

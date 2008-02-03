@@ -128,9 +128,10 @@ public:
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
 	/**
-	* TDM: Add ability to put AF attachments on weapon AFs
+	* TDM: Attach an entity to the weapon's AF.  Different than plain entity attachment
+	* Does not use position name for now
 	**/
-	void					Attach( idEntity *ent );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL );
 
 	enum {
 		EVENT_RELOAD = idEntity::EVENT_MAXEVENTS,

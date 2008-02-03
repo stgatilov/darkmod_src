@@ -228,7 +228,7 @@ public:
 	* Attach an entity.  Entity spawnArgs checked for attachments are:
 	* "origin", "angles", and "joint".
 	**/
-	void					Attach( idEntity *ent );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL );
 
 	/**
 	* Reattach an existing attachment
