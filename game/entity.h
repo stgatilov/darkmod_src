@@ -296,6 +296,12 @@ public:
 
 	void					Spawn( void );
 
+	/**
+	* Load and check the visual and collision model, as well as any model for
+	* the broken state.
+	*/
+	virtual void			LoadModels( void );
+
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
@@ -311,12 +317,13 @@ public:
 
 	// thinking
 	virtual void			Think( void );
-	bool					CheckDormant( void );	// dormant == on the active list, but out of PVS
-	virtual	void			DormantBegin( void );	// called when entity becomes dormant
-	virtual	void			DormantEnd( void );		// called when entity wakes from being dormant
+	bool					CheckDormant( void );	//!< dormant == on the active list, but out of PVS
+	virtual	void			DormantBegin( void );	//!< called when entity becomes dormant
+	virtual	void			DormantEnd( void );		//!< called when entity wakes from being dormant
 	bool					IsActive( void ) const;
 	void					BecomeActive( int flags );
 	void					BecomeInactive( int flags );
+	void					BecomeBroken( idEntity *activator );	//!< Entity breaks up
 	void					UpdatePVSAreas( const idVec3 &pos );
 
 	// visuals
@@ -378,6 +385,7 @@ public:
 	void					BindToBody( idEntity *master, int bodyId, bool orientated );
 	void					Unbind( void );
 	bool					IsBound( void ) const;
+	bool					IsBroken( void ) const;					//!< return true if model was broken
 	bool					IsBoundTo( idEntity *master ) const;
 	idEntity *				GetBindMaster( void ) const;
 	jointHandle_t			GetBindJoint( void ) const;
@@ -829,9 +837,10 @@ protected:
 	void					RemoveResponse(int Type);
 
 protected:
-	renderEntity_t			renderEntity;						// used to present a model to the renderer
-	int						modelDefHandle;						// handle to static renderer model
-	refSound_t				refSound;							// used to present sound to the audio engine
+	renderEntity_t			renderEntity;				//!< used to present a model to the renderer
+	int						modelDefHandle;				//!< handle to static renderer model
+	refSound_t				refSound;					//!< used to present sound to the audio engine
+	idStr					brokenModel;				//!< model set when health drops down to or below zero
 
 	/**
 	* Used to keep track of the GUIs used by this entity.
@@ -899,6 +908,11 @@ protected:
 
 	bool					m_bIsMantleable;
 
+	/**
+	* Set to true when entity becomes broken (via damage)
+	**/
+	bool						m_bIsBroken;
+
 	/** Used to implement waitForRender()...
 	 *	This merely contains a bounding box and a callback.
 	 */
@@ -935,34 +949,34 @@ protected:
 	idList<SAttachPosition>	m_AttachPositions;
 
 private:
-	idPhysics_Static			defaultPhysicsObj;		// default physics object
-	idPhysics *				physics;			// physics used for this entity
-	idEntity *				bindMaster;			// entity bound to if unequal NULL
-	jointHandle_t				bindJoint;			// joint bound to if unequal INVALID_JOINT
-	int					bindBody;			// body bound to if unequal -1
-	idEntity *				teamMaster;			// master of the physics team
-	idEntity *				teamChain;			// next entity in physics team
+	idPhysics_Static	defaultPhysicsObj;		// default physics object
+	idPhysics *			physics;				// physics used for this entity
+	idEntity *			bindMaster;				// entity bound to if unequal NULL
+	jointHandle_t		bindJoint;				// joint bound to if unequal INVALID_JOINT
+	int					bindBody;				// body bound to if unequal -1
+	idEntity *			teamMaster;				// master of the physics team
+	idEntity *			teamChain;				// next entity in physics team
 
 	int					numPVSAreas;			// number of renderer areas the entity covers
-	int					PVSAreas[MAX_PVS_AREAS];	// numbers of the renderer areas the entity covers
+	int					PVSAreas[MAX_PVS_AREAS];// numbers of the renderer areas the entity covers
 
-	signalList_t *				signals;
+	signalList_t *		signals;
 
-	int					mpGUIState;			// local cache to avoid systematic SetStateInt
+	int					mpGUIState;				// local cache to avoid systematic SetStateInt
 
 	// A pointer to our inventory.
-	CInventory				*m_Inventory;
+	CInventory			*m_Inventory;
 
 	// A pointer to our item, so that we can be added/removed to/from inventories.
-	CInventoryItem			*m_InventoryItem;
+	CInventoryItem		*m_InventoryItem;
 
 	// A pointer to our cursor - the cursor is for arbitrary use, and may not point to our own inventory.
-	CInventoryCursor		*m_InventoryCursor;
+	CInventoryCursor	*m_InventoryCursor;
 
 private:
-	void					FixupLocalizedStrings();
+	void				FixupLocalizedStrings();
 
-	bool					DoDormantTests( void );		// dormant == on the active list, but out of PVS
+	bool				DoDormantTests( void );	// dormant == on the active list, but out of PVS
 
 	// physics
 	// initialize the default physics
@@ -972,9 +986,9 @@ private:
 
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
-	void					FinishBind( void );		// finish an entity binding
-	void					RemoveBinds( void );		// deletes any entities bound to this object
-	void					QuitTeam( void );		// leave the current team
+	void					FinishBind( void );				// finish an entity binding
+	void					RemoveBinds( void );			// deletes any entities bound to this object
+	void					QuitTeam( void );				// leave the current team
 
 	void					UpdatePVSAreas( void );
 

@@ -30,6 +30,7 @@ idPhysics_Base::idPhysics_Base( void ) {
 #ifdef MOD_WATERPHYSICS
 	water = NULL;	// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
+
 	clipMask = 0;
 	SetGravity( gameLocal.GetGravity() );
 	ClearContacts();

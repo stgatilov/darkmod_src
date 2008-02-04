@@ -127,7 +127,6 @@ private:
 	idVec3			localLightOrigin;			// light origin relative to the physics origin
 	idMat3			localLightAxis;				// light axis relative to physics axis
 	qhandle_t		lightDefHandle;				// handle to renderer light def
-	idStr			brokenModel;
 	int				levels;
 	int				currentLevel;
 	idVec3			baseColor;

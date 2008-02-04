@@ -264,7 +264,6 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( localLightOrigin );
 	savefile->WriteMat3( localLightAxis );
 
-	savefile->WriteString( brokenModel );
 	savefile->WriteInt( levels );
 	savefile->WriteInt( currentLevel );
 
@@ -309,7 +308,6 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( localLightOrigin );
 	savefile->ReadMat3( localLightAxis );
 
-	savefile->ReadString( brokenModel );
 	savefile->ReadInt( levels );
 	savefile->ReadInt( currentLevel );
 
@@ -338,7 +336,6 @@ idLight::Spawn
 void idLight::Spawn( void )
 {
 	bool start_off;
-	bool needBroken;
 	const char *demonic_shader;
 
 	// do the parsing the same way dmap and the editor do
@@ -388,7 +385,6 @@ void idLight::Spawn( void )
 	}
 
 	health = spawnArgs.GetInt( "health", "0" );
-	spawnArgs.GetString( "broken", "", brokenModel );
 	spawnArgs.GetBool( "break", "0", breakOnTrigger );
 	spawnArgs.GetInt( "count", "1", count );
 
@@ -399,58 +395,12 @@ void idLight::Spawn( void )
 	fadeStart			= 0;
 	fadeEnd				= 0;
 
-	// if we have a health make light breakable
-	if ( health ) {
-		idStr model = spawnArgs.GetString( "model" );		// get the visual model
-		if ( !model.Length() ) {
-			gameLocal.Error( "Breakable light without a model set on entity #%d(%s)", entityNumber, name.c_str() );
-		}
-
-		fl.takedamage	= true;
-
-		// see if we need to create a broken model name
-		needBroken = true;
-		if ( model.Length() && !brokenModel.Length() ) {
-			int	pos;
-
-			needBroken = false;
-		
-			pos = model.Find( "." );
-			if ( pos < 0 ) {
-				pos = model.Length();
-			}
-			if ( pos > 0 ) {
-				model.Left( pos, brokenModel );
-			}
-			brokenModel += "_broken";
-			if ( pos > 0 ) {
-				brokenModel += &model[ pos ];
-			}
-		}
-	
-		// make sure the model gets cached
-		if ( !renderModelManager->CheckModel( brokenModel ) ) {
-			if ( needBroken ) {
-				gameLocal.Error( "Model '%s' not found for entity %d(%s)", brokenModel.c_str(), entityNumber, name.c_str() );
-			} else {
-				brokenModel = "";
-			}
-		}
-
-		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
-		// SR CONTENTS_RESONSE FIX
-		if( m_StimResponseColl->HasResponse() )
-			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
-		
-		// make sure the collision model gets cached
-		idClipModel::CheckModel( brokenModel );
-	}
+	// load visual and collision models
+	LoadModels();
 
 	PostEventMS( &EV_PostSpawn, 0 );
 
 	UpdateVisuals();
-
-//	CDarkModPlayer *pDM = g_Global.m_DarkModPlayer;
 
 	if(renderLight.pointLight == true)
 		m_MaxLightRadius = renderLight.lightRadius.Length();
@@ -722,22 +672,7 @@ idLight::BecomeBroken
 void idLight::BecomeBroken( idEntity *activator ) {
 	const char *damageDefName;
 
-	fl.takedamage = false;
-
-	if ( brokenModel.Length() ) {
-		SetModel( brokenModel );
-
-		if ( !spawnArgs.GetBool( "nonsolid" ) ) {
-			GetPhysics()->SetClipModel( new idClipModel( brokenModel.c_str() ), 1.0f );
-			GetPhysics()->SetContents( CONTENTS_SOLID );
-			// SR CONTENTS_RESONSE FIX
-			if( m_StimResponseColl->HasResponse() )
-				GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
-		}
-	} else if ( spawnArgs.GetBool( "hideModelOnBreak" ) ) {
-		SetModel( "" );
-		GetPhysics()->SetContents( 0 );
-	}
+	idEntity::BecomeBroken ( activator );
 
 	if ( gameLocal.isServer ) {
 
@@ -750,7 +685,7 @@ void idLight::BecomeBroken( idEntity *activator ) {
 
 	}
 
-		ActivateTargets( activator );
+	ActivateTargets( activator );
 
 	// offset the start time of the shader to sync it to the game time
 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );

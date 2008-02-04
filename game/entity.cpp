@@ -656,6 +656,7 @@ idEntity::idEntity()
 	m_bIsObjective = false;
 	m_bIsClimbableRope = false;
 	m_bIsMantleable = false;
+	m_bIsBroken = false;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
@@ -795,11 +796,7 @@ void idEntity::Spawn( void )
 	SetOrigin( origin );
 	SetAxis( axis );
 
-	temp = spawnArgs.GetString( "model" );
-	if ( temp && *temp ) 
-	{
-		SetModel( temp );
-	}
+	LoadModels();
 
 	if ( spawnArgs.GetString( "bind", "", &temp ) ) 
 	{
@@ -839,6 +836,84 @@ void idEntity::Spawn( void )
 	PostEventMS(&EV_InitInventory, 0, 0);
 	
 	LoadTDMSettings();
+}
+
+/*
+================
+idEntity::LoadModels
+================
+*/
+// tels: this routine loads all the visual and collision models
+void idEntity::LoadModels( void ) {
+	idStr model;
+	// we only use a brokenModel if we can find one automatically
+	bool needBroken = false;
+
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Loading models for entity %d (%s)\r", entityNumber, name.c_str() ); 
+
+	// load the normal visual model
+	spawnArgs.GetString( "model", "", model );
+	if ( model.Length() ) {
+		SetModel( model );
+	}
+
+	// was a brokenModel requested?
+	spawnArgs.GetString( "broken", "", brokenModel );
+
+	// see if we need to create a broken model name
+	if ( brokenModel.Length() ) {
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Need broken model '%s' for entity %d (%s)\r", brokenModel.c_str(), entityNumber, name.c_str() );
+		// spawnarg "broken" was set, so we need the broken model
+		needBroken = true;
+	} else if 
+		// only check for an auto-broken model if the entity could be damaged 
+		( health || spawnArgs.FindKey( "max_force" ) ) {
+		int pos;
+
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Trying to find broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
+
+		pos = model.Find( "." );
+		if ( pos < 0 ) {
+			pos = model.Length();
+		}
+		if ( pos > 0 ) {
+			model.Left( pos, brokenModel );
+		}
+		brokenModel += "_broken";
+		if ( pos > 0 ) {
+			brokenModel += &model[ pos ];
+		}
+	}
+
+	// check brokenModel to exist, and make sure the brokenModel gets cached
+	if ( !renderModelManager->CheckModel( brokenModel ) ) {
+		if ( needBroken ) {
+			gameLocal.Error( "Broken model '%s' not found for entity %d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+		} else {
+			// couldn't find automatically generated "model_broken.lwo", so don't use brokenModel at all
+			brokenModel = "";
+		}
+	}
+
+	if ( brokenModel.Length() ) {
+		if ( !model.Length() ) {
+			gameLocal.Error( "Breakable entity (broken model %s) without a model set on entity #%d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
+		}
+		fl.takedamage = true;
+
+		// make sure the collision model for the brokenModel gets cached
+        idClipModel::CheckModel( brokenModel );
+
+		// since we can be damaged, setup some physics
+
+		GetPhysics()->SetContents( spawnArgs.GetBool( "nonsolid" ) ? 0 : CONTENTS_SOLID );
+	    // SR CONTENTS_RESONSE FIX
+		if( m_StimResponseColl->HasResponse() ) {
+			GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+		}
+
+	} // end of loading of broken model(s) and their CM
+
 }
 
 /*
@@ -994,7 +1069,10 @@ void idEntity::Save( idSaveGame *savefile ) const
 	// greebo: TODO: Find a way to save function pointers in SDKSignalInfo?
 	//idList<SDKSignalInfo *>	m_SignalList;
 
-	savefile->WriteBool(m_bIsMantleable);
+	savefile->WriteBool( m_bIsMantleable );
+
+	savefile->WriteBool( m_bIsBroken );
+	savefile->WriteString( brokenModel );
 
 	m_StimResponseColl->Save(savefile);
 
@@ -1142,6 +1220,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_Signal);
 
 	savefile->ReadBool(m_bIsMantleable);
+
+	savefile->ReadBool( m_bIsBroken );
+	savefile->ReadString( brokenModel );
 
 	m_StimResponseColl->Restore(savefile);
 
@@ -1384,6 +1465,61 @@ called when entity wakes from being dormant
 ================
 */
 void idEntity::DormantEnd( void ) {
+}
+
+/*
+================
+idEntity::IsBroken
+================
+*/
+bool idEntity::IsBroken( void ) const {
+	return m_bIsBroken;
+}
+
+/*
+================
+idEntity::BecomeBroken
+================
+*/
+void idEntity::BecomeBroken( idEntity *activator ) {
+
+	if (m_bIsBroken)
+	{
+		// we are already broken, so do nothing
+		return;
+	}
+
+	m_bIsBroken = true;
+
+	// switch to the brokenModel if it was defined
+	if ( brokenModel.Length() )
+	{
+		SetModel( brokenModel );
+
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s (nonsolid: %i)\r", name.c_str(), spawnArgs.GetBool( "nonsolid" ) ); 
+		if ( !spawnArgs.GetBool( "nonsolid" ) )
+		{
+
+			DM_LOG(LC_ENTITY, LT_INFO).LogString("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
+
+			idClipModel* clipmodel = new idClipModel( brokenModel );
+
+			if (clipmodel && clipmodel->IsTraceModel() && GetPhysics())
+			{
+				GetPhysics()->SetClipModel( clipmodel, 1.0f );
+				GetPhysics()->SetContents( CONTENTS_SOLID );
+				// SR CONTENTS_RESONSE FIX
+				if( m_StimResponseColl->HasResponse() )
+				{
+					GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+				}
+			}
+		}
+	} else if ( spawnArgs.GetBool( "hideModelOnBreak" ) ) {
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Hiding broken entity %s\r", name.c_str() ); 
+		SetModel( "" );
+		GetPhysics()->SetContents( 0 );
+	}
 }
 
 /*
@@ -3279,8 +3415,9 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 			}
 		}
 	}
-	else
+	else {
 		DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("Entity [%s] does not contain a clipmodel\r", name.c_str());
+	}
 
 	defaultPhysicsObj.SetSelf( this );
 	defaultPhysicsObj.SetClipModel( clipModel, 1.0f );

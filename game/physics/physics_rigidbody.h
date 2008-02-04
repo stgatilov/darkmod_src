@@ -111,6 +111,13 @@ public:	// common physics interface
 	const idVec3 &			GetLinearVelocity( int id = 0 ) const;
 	const idVec3 &			GetAngularVelocity( int id = 0 ) const;
 
+    // tels: force and torque that make entitiy "break down" when exceeded
+	void					SetMaxForce( const idVec3 &newMaxForce );
+	void					SetMaxTorque( const idVec3 &newMaxTorque );
+
+	const idVec3 &			GetMaxForce( void ) const;
+	const idVec3 &			GetMaxTorque( void ) const;
+
 	void					ClipTranslation( trace_t &results, const idVec3 &translation, const idClipModel *model ) const;
 	void					ClipRotation( trace_t &results, const idRotation &rotation, const idClipModel *model ) const;
 	int						ClipContents( const idClipModel *model ) const;
@@ -157,28 +164,28 @@ private:
 	rigidBodyPState_t		saved;
 
 	// rigid body properties
-	float					linearFriction;				// translational friction
-	float					angularFriction;			// rotational friction
-	float					contactFriction;			// friction with contact surfaces
+	float					linearFriction;			// translational friction
+	float					angularFriction;		// rotational friction
+	float					contactFriction;		// friction with contact surfaces
 	float					bouncyness;				// bouncyness
 #ifdef MOD_WATERPHYSICS
 	float					volume;					// MOD_WATERPHYSICS object volume 
 #endif		// MOD_WATERPHYSICS
-	idClipModel *			clipModel;					// clip model used for collision detection
+	idClipModel *			clipModel;				// clip model used for collision detection
 
-	// tels: if bound to a master, and non-zero, defines the force nec. to "break"
-	//       the bound between slave and master
-	idVec3					bindForce;				// spawnarg "bind_force"
+	// tels: if the applied impulse/torque exceeds these values, the entity breaks down
+	idVec3					maxForce;				// spawnarg "max_force"
+	idVec3					maxTorque;				// spawnarg "max_torque"
 
 	// derived properties
 	float					mass;					// mass of body
-	float					inverseMass;				// 1 / mass
-	idVec3					centerOfMass;				// center of mass of trace model
-	idMat3					inertiaTensor;				// mass distribution
-	idMat3					inverseInertiaTensor;			// inverse inertia tensor
+	float					inverseMass;			// 1 / mass
+	idVec3					centerOfMass;			// center of mass of trace model
+	idMat3					inertiaTensor;			// mass distribution
+	idMat3					inverseInertiaTensor;	// inverse inertia tensor
 
 	idODE *					integrator;				// integrator
-	bool					dropToFloor;				// true if dropping to the floor and putting to rest
+	bool					dropToFloor;			// true if dropping to the floor and putting to rest
 	bool					testSolid;				// true if testing for solid when dropping to the floor
 	bool					noImpact;				// if true do not activate when another object collides
 	bool					noContact;				// if true do not determine contacts and no contact friction
