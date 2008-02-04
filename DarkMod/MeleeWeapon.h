@@ -98,7 +98,7 @@ protected:
 	* Test to see if a melee attack in progress collides with
 	* anything that should stop it.
 	**/
-	void CheckAttack( idVec3 OldOrigin, idVec3 OldAxis ); 
+	void CheckAttack( idVec3 OldOrigin, idMat3 OldAxis ); 
 
 	/**
 	* Parry success test, called when a melee attack hits a melee parry
