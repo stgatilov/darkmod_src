@@ -710,9 +710,6 @@ void idEntity::Spawn( void )
 		entityDefNumber = def->Index();
 	}
 
-	// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
-	gameLocal.m_DifficultyManager.ApplyDifficultySettings(spawnArgs);
-
 	FixupLocalizedStrings();
 
 	// parse static models the same way the editor display does

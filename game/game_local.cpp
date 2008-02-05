@@ -3881,6 +3881,9 @@ void idGameLocal::SpawnMapEntities( void ) {
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
 
+			// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
+			m_DifficultyManager.ApplyDifficultySettings(args);
+
 			SpawnEntityDef( args );
 			num++;
 		} else {

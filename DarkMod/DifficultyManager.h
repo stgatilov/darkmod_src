@@ -64,7 +64,7 @@ public:
 	void ApplyDifficultySettings(idDict& target);
 
 	/**
-	 * greebo: Checks whether the given entity (represented by <dict>) is allowed to spawn.
+	 * greebo: Checks whether the given entity (represented by "target") is allowed to spawn.
 	 * 
 	 * @returns: TRUE if the entity should NOT be spawned.
 	 */
