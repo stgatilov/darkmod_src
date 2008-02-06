@@ -98,7 +98,7 @@ void FleeDoneState::Think(idAI* owner)
 
 			// Go back to suspicious, 
 			// wait some time before going back to idle
-			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_2 - owner->thresh_1) * 0.5);
+			owner->Event_SetAlertLevel(owner->thresh_3 + (owner->thresh_3 - owner->thresh_2) * 0.5);
 			owner->GetSubsystem(SubsysAction)->PushTask(TaskPtr(new WaitTask(10000)));
 			owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 			return;
@@ -113,7 +113,7 @@ void FleeDoneState::Think(idAI* owner)
 
 			// Go back to suspicious (higher level since we didn't find someone to help)
 			// wait some time before going back to idle
-			owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 
 			// Play the cowering animation
 			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Cower", 4);

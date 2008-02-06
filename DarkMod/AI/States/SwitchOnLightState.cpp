@@ -136,7 +136,7 @@ void SwitchOnLightState::Think(idAI* owner)
 
 	// Let the mind check its senses (TRUE = process new stimuli)
 	owner->GetMind()->PerformSensoryScan(true);
-	if (owner->AI_AlertNum >= owner->thresh_combat)
+	if (owner->AI_AlertLevel >= owner->thresh_5)
 	{
 		light->ResponseAllow(ST_VISUAL, owner);
 		owner->GetMind()->EndState();

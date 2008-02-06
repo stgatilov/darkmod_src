@@ -35,14 +35,14 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 2)
+	if (owner->AI_AlertIndex < 3)
 	{
 		// Alert index is too low for this state, fall back
 		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->EndState();
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 2)
+	else if (owner->AI_AlertIndex > 3)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(STATE_AGITATED_SEARCHING);
@@ -67,7 +67,7 @@ void SearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
+	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / owner->atime3;
 
 	idStr bark;
 

@@ -78,11 +78,10 @@ void State::UpdateAlertLevel()
 	int frameDuration = currentTime - gameLocal.previousTime;
 	
 	// angua: alert level stays for a short time before starting to decrease
-	// alert level does not return to 0
-	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertNum > owner->thresh_1 * 0.5)
+	if (currentTime >= owner->GetMemory().lastAlertRiseTime + 300 && owner->AI_AlertLevel > 0)
 	{
 		float decrease = _alertLevelDecreaseRate * MS2SEC(frameDuration);
-		float newAlertLevel = owner->AI_AlertNum - decrease;
+		float newAlertLevel = owner->AI_AlertLevel - decrease;
 		owner->SetAlertLevel(newAlertLevel);
 	}
 }
@@ -253,7 +252,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	
 	// Vocalize that see something out of place
 	gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
-	if (owner->AI_AlertNum < owner->thresh_combat &&
+	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		memory.lastTimeVisualStimBark = gameLocal.time;
@@ -267,9 +266,9 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders += 2;
 
 	// Raise alert level
-	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
-		owner->Event_SetAlertLevel(owner->thresh_3 - 0.1f);
+		owner->Event_SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
@@ -326,7 +325,7 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 			owner->SetEnemy(other);
 			owner->AI_VISALERT = true;
 			
-			owner->Event_SetAlertLevel(owner->thresh_combat*2);
+			owner->Event_SetAlertLevel(owner->thresh_5*2);
 			memory.alertClass = EAlertVisual;
 			memory.alertType = EAlertTypeEnemy;
 			// An enemy should not be ignored in the future
@@ -521,7 +520,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		}
 
 		// Raise alert level
-		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+		if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
 			memory.alertClass = EAlertVisual;
@@ -534,7 +533,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 			
 			owner->AI_VISALERT = false;
 			
-			owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+			owner->Event_SetAlertLevel(owner->thresh_5 - 0.1);
 		}
 					
 		// Do new reaction to stimulus
@@ -597,7 +596,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		}
 
 		// Raise alert level
-		if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+		if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
 			memory.alertClass = EAlertVisual;
@@ -610,7 +609,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 			
 			owner->AI_VISALERT = false;
 			
-			owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+			owner->Event_SetAlertLevel(owner->thresh_5 - 0.1);
 		}
 					
 		// Do new reaction to stimulus
@@ -649,7 +648,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders++;
 
 	// Raise alert level
-	if (owner->AI_AlertNum < owner->thresh_combat - 0.1f)
+	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
@@ -663,7 +662,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 		
 		owner->AI_VISALERT = false;
 
-		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1f);
+		owner->Event_SetAlertLevel(owner->thresh_5 - 0.1f);
 	}
 				
 	// Do new reaction to stimulus
@@ -721,7 +720,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		memory.countEvidenceOfIntruders++;
 
 		// Set up search
-		if (owner->AI_AlertNum < owner->thresh_3)
+		if (owner->AI_AlertLevel < owner->thresh_4)
 		{
 			memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 			memory.alertClass = EAlertVisual;
@@ -736,16 +735,16 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		}
 
 		// Raise alert level if we already have some evidence of intruders
-		if (owner->AI_AlertNum < owner->thresh_2 && 
+		if (owner->AI_AlertLevel < owner->thresh_3 && 
 			(memory.enemiesHaveBeenSeen 
 				|| memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF))
 		{
-			owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.2
+			owner->Event_SetAlertLevel(owner->thresh_3 + (owner->thresh_4 - owner->thresh_3) * 0.2
 				* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF));
 
-			if (owner->AI_AlertNum >= (owner->thresh_combat + owner->thresh_3) * 0.5)
+			if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
 			{
-				owner->Event_SetAlertLevel((owner->thresh_combat + owner->thresh_3) * 0.45);
+				owner->Event_SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
 			}
 		}
 
@@ -774,7 +773,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	}
 
 	// Turning the light on?
-	if (turnLightOn && owner->AI_AlertNum < (owner->thresh_combat + owner->thresh_3) * 0.5)
+	if (turnLightOn && owner->AI_AlertLevel < (owner->thresh_5 + owner->thresh_4) * 0.5)
 	{
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light)));
 	}
@@ -819,7 +818,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders++;
 
 	// Raise alert level
-	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
@@ -833,7 +832,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		
 		owner->AI_VISALERT = false;
 		
-		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1);
+		owner->Event_SetAlertLevel(owner->thresh_5 - 0.1);
 	}
 }
 
@@ -863,7 +862,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders++;
 
 	// Raise alert level
-	if (owner->AI_AlertNum < owner->thresh_3 - 0.1f)
+	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
 		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual;
@@ -876,7 +875,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 		
 		owner->AI_VISALERT = false;
 
-		owner->Event_SetAlertLevel(owner->thresh_combat - 0.1f);
+		owner->Event_SetAlertLevel(owner->thresh_5 - 0.1f);
 	}
 				
 	// Do new reaction to stimulus
@@ -918,7 +917,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			// If not too upset, look at them
-			if (owner->AI_AlertNum < owner->thresh_2)
+			if (owner->AI_AlertLevel < owner->thresh_3)
 			{
 				owner->Event_LookAtEntity(issuingEntity, 3.0); // 3 seconds
 			}
@@ -976,9 +975,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					owner->GetMind()->PerformCombatCheck();
 				}
 			}
-			else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+			else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
-				owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 			}
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:
@@ -1009,9 +1008,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			else 
 			{
 				//gameLocal.Printf("I don't have a ranged weapon or I am not getting involved.\n");
-				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
-					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+					owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 				}
 			}
 			break;
@@ -1043,9 +1042,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			else 
 			{
 				gameLocal.Printf("I don't have a melee weapon or I am not getting involved.\n");
-				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
-					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+					owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 				}
 			}
 			break;
@@ -1069,7 +1068,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 
 			if (owner->IsFriend(issuingEntity) && owner->IsEnemy(directObjectEntity))
 			{
-				owner->Event_SetAlertLevel(owner->thresh_combat*2);
+				owner->Event_SetAlertLevel(owner->thresh_5*2);
 				
 				//gameLocal.Printf("They're my friend, I'll attack it too!\n");
 				memory.alertPos = directObjectLocation;
@@ -1112,7 +1111,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				memory.chosenHidingSpot = directObjectLocation;
 				memory.numPossibleHidingSpotsSearched = 0;
 
-				owner->Event_SetAlertLevel((owner->thresh_2 + owner->thresh_3)*0.5f);
+				owner->Event_SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 			}
 			break;
 		case CAIComm_Message::AttackOrder_CommType:
@@ -1125,12 +1124,12 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				if (directObjectEntity->IsType(idActor::Type))
 				{
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
-					owner->Event_SetAlertLevel(owner->thresh_combat*2);
+					owner->Event_SetAlertLevel(owner->thresh_5*2);
 				}
 			}
-			else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+			else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
-				owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+				owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 			}
 			break;
 		case CAIComm_Message::GetOutOfTheWayOrder_CommType:
@@ -1149,9 +1148,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					gameLocal.Printf("I've been warned about evidence of intruders.\n");
 					memory.countEvidenceOfIntruders = warningAmount;
 
-					if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+					if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 					{
-						owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+						owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 					}
 				}
 			}
@@ -1164,9 +1163,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				gameLocal.Printf("I've been warned that items have been stolen.\n");
 				memory.itemsHaveBeenStolen = true;
 
-				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
-					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+					owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 				}
 			}
 			break;
@@ -1178,9 +1177,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				gameLocal.Printf("I've been warned that enemies have been seen.\n");
 				memory.enemiesHaveBeenSeen = true;
 				
-				if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
-					owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+					owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 				}
 			}
 			break;
@@ -1237,17 +1236,17 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 			
 			// If AI that called out has a higher alert num, raise ours
 			// to match theres due to urgency in their voice
-			float otherAlertNum = 0.0f;
+			float otherAlertLevel = 0.0f;
 			
 			if (issuingEntity->IsType(idAI::Type))
 			{
-				otherAlertNum = static_cast<idAI*>(issuingEntity)->AI_AlertNum;
+				otherAlertLevel = static_cast<idAI*>(issuingEntity)->AI_AlertLevel;
 			}
 
-			//gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertNum);
-			if (otherAlertNum > owner->AI_AlertNum)
+			//gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertLevel);
+			if (otherAlertLevel > owner->AI_AlertLevel)
 			{
-				owner->Event_SetAlertLevel(otherAlertNum);
+				owner->Event_SetAlertLevel(otherAlertLevel);
 			}
 			
 			memory.searchingDueToCommunication = true;
@@ -1259,9 +1258,9 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 		}
 		
 	}
-	else if (owner->AI_AlertNum < owner->thresh_1*0.5f)
+	else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 	{
-		owner->Event_SetAlertLevel(owner->thresh_1*0.5f);
+		owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
 	}
 }
 

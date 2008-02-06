@@ -33,13 +33,13 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 3)
+	if (owner->AI_AlertIndex < 4)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 3 && owner->GetMind()->PerformCombatCheck())
+	else if (owner->AI_AlertIndex > 4)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->Event_CloseHidingSpotSearch();
@@ -65,7 +65,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	_alertLevelDecreaseRate = (owner->thresh_combat - owner->thresh_3) / owner->atime3;
+	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / owner->atime4;
 
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);

@@ -38,7 +38,7 @@ const idStr& CombatState::GetName() const
 
 bool CombatState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 4)
+	if (owner->AI_AlertIndex < 5)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
@@ -149,7 +149,7 @@ void CombatState::Think(idAI* owner)
 	if (owner->AI_ENEMY_DEAD)
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
-		owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+		owner->Event_SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 		owner->GetMind()->EndState();
 		return;
 	}

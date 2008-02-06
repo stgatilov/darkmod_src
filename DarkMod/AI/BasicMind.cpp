@@ -220,20 +220,20 @@ void BasicMind::TestAlertStateTimer()
 	{
 		// This alert level has expired, drop the alert level down halfway up the
 		// next lower category (to reflect nervousness in next lower category)
-		if (owner->AI_AlertNum > owner->thresh_3)
+		if (owner->AI_AlertLevel > owner->thresh_4)
 		{
 			//DEBUG_PRINT ("Dropping to alert level 2.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = owner->thresh_2 + ((owner->thresh_3 - owner->thresh_2) / 2.0);
+			newAlertLevel = owner->thresh_3 + ((owner->thresh_4 - owner->thresh_3) / 2.0);
 		}
-		else if (owner->AI_AlertNum > owner->thresh_2)
+		else if (owner->AI_AlertLevel > owner->thresh_3)
 		{
 			//DEBUG_PRINT ("Dropping to alert level 1.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = owner->thresh_1 + ((owner->thresh_2 - owner->thresh_1) / 2.0);
+			newAlertLevel = owner->thresh_2 + ((owner->thresh_3 - owner->thresh_2) / 2.0);
 		}
-		else if (owner->AI_AlertNum > (owner->thresh_1 / 2.0))
+		else if (owner->AI_AlertLevel > (owner->thresh_2 / 2.0))
 		{
 			//DEBUG_PRINT ("Dropping to alert level 0.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = (owner->thresh_1/ 2.0) - 0.01; // To prevent floating point comparison error
+			newAlertLevel = (owner->thresh_2/ 2.0) - 0.01; // To prevent floating point comparison error
 
 			// Alert level is changing
 			owner->SetAlertLevel(newAlertLevel);
@@ -243,7 +243,7 @@ void BasicMind::TestAlertStateTimer()
 		}
 		else
 		{
-			// Alert level is not changing if already < halfway between thresh_1 and thresh_2
+			// Alert level is not changing if already < halfway between thresh_2 and thresh_3
 			//DEBUG_PRINT ("Alert level already at 1.5 " + AI_currentAlertLevelDuration);
 			return;
 		}
@@ -376,22 +376,22 @@ void BasicMind::SetAlertPos()
 			// Play speech: heard something 
 			if (!b_friendNearby)
 			{
-				if (owner->AI_AlertNum >= owner->thresh_2)
+				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
 					Bark( "snd_alert2h" );
 				}
-				else if (owner->AI_AlertNum >= owner->thresh_1)
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
 					Bark( "snd_alert1h" );
 				}
 			}
 			else
 			{
-				if (owner->AI_AlertNum >= owner->thresh_2)
+				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
 					Bark( "snd_alert2ch" );
 				}
-				else if (owner->AI_AlertNum >= owner->thresh_1)
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
 					Bark( "snd_alert1ch" );
 				}
@@ -402,26 +402,26 @@ void BasicMind::SetAlertPos()
 			// Play speech: saw something
 			if (!b_friendNearby)
 			{
-				if (owner->AI_AlertNum >= owner->thresh_3)
+				if (owner->AI_AlertLevel >= owner->thresh_4)
 				{
 					Bark ("snd_alert3s" );
 				}
-				if (owner->AI_AlertNum >= owner->thresh_2)
+				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
 					Bark( "snd_alert2s" );
 				}
-				else if (owner->AI_AlertNum >= owner->thresh_1)
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
 					Bark( "snd_alert1s" );
 				}
 			}
 			else
 			{
-				if (owner->AI_AlertNum >= owner->thresh_2)
+				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
 					Bark( "snd_alert2cs" );
 				}
-				else if (owner->AI_AlertNum >= owner->thresh_1)
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
 					Bark( "snd_alert1cs" );
 				}
@@ -603,7 +603,7 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	if (owner->AI_ALERTED)
 	{
 		// Process alert flags for combat or stimulus location (both destroy flag values)?
-		if (owner->AI_AlertNum >= owner->thresh_combat)
+		if (owner->AI_AlertLevel >= owner->thresh_5)
 		{
 			// We're already in combat mode, ignore this stimulus
 			return;
@@ -625,8 +625,8 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 			if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 			{
 				// This is a new alert // SZ Dec 30, 2006
-				// Note changed this from thresh_1 to thresh_2 to match thresh designers intentions
-				if (owner->AI_AlertNum >= owner->thresh_2)
+				// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
+				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
 					// We are in searching mode or we are switching to it, handle this new incoming alert
 

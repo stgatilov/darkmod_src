@@ -335,13 +335,13 @@ const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
 const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitiesHidingSpotList", "e", 'd');
 
 /*!
-* This event gets the alert number of another AI (AI_alertNum variable value)
+* This event gets the alert number of another AI (AI_AlertLevel variable value)
 *
 * @param p_otherEntity The other AI entity who's alert number is being querried
 *
 * @return The alert number of the other AI, 0.0 if its not an AI or is NULL
 */
-const idEventDef AI_GetAlertNumOfOtherAI ("getAlertNumOfOtherAI", "e", 'f');
+const idEventDef AI_GetAlertLevelOfOtherAI ("getAlertLevelOfOtherAI", "e", 'f');
 
 /*!
 * This event is used to get a position that the AI can move to observe a 
@@ -534,7 +534,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_LookAtPosition,					idAI::Event_LookAtPosition)
 	EVENT ( AI_LookAtAngles,					idAI::Event_LookAtAngles)
 
-	EVENT ( AI_GetAlertNumOfOtherAI,			idAI::Event_GetAlertNumOfOtherAI)
+	EVENT ( AI_GetAlertLevelOfOtherAI,			idAI::Event_GetAlertLevelOfOtherAI)
 
 	EVENT( AI_Knockout,							idAI::Knockout )
 	EVENT ( AI_SpawnThrowableProjectile,		idAI::Event_SpawnThrowableProjectile)
@@ -3478,7 +3478,7 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 
 //-----------------------------------------------------------------------------------------
 
-void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
+void idAI::Event_GetAlertLevelOfOtherAI (idEntity* p_otherEntity)
 {
 	// Test parameters
 	if (p_otherEntity == NULL) 
@@ -3497,7 +3497,7 @@ void idAI::Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity)
 	}
 
 	// Return the other AI's alert num
-	idThread::ReturnFloat (p_otherAI->AI_AlertNum);
+	idThread::ReturnFloat (p_otherAI->AI_AlertLevel);
 }
 
 /*---------------------------------------------------------------------------------*/
@@ -3522,7 +3522,7 @@ void idAI::Event_SetAlertGracePeriod( float frac, float duration, int count )
 	m_AlertGraceActor = m_AlertedByActor.GetEntity();
 	m_AlertGraceStart = gameLocal.time;
 	m_AlertGraceTime = SEC2MS( duration );
-	m_AlertGraceThresh = m_AlertNumThisFrame * frac;
+	m_AlertGraceThresh = m_AlertLevelThisFrame * frac;
 	m_AlertGraceCountLimit = count;
 	m_AlertGraceCount = 0;
 }

@@ -130,7 +130,7 @@ public:
 	// The path entity we're supposed to be heading to
 	idEntityPtr<idPathCorner> currentPath;
 
-	// The game time, the alertNum was last increased.
+	// The game time, the AlertLevel was last increased.
 	int lastAlertRiseTime;
 
 	// The last time the AI has been barking when patrolling

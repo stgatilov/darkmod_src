@@ -573,8 +573,9 @@ idAI::idAI()
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
-	m_AlertNumThisFrame = 0.0f;
+	m_AlertLevelThisFrame = 0.0f;
 	m_prevAlertIndex = 0;
+	m_maxAlertLevel = 0;
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
@@ -765,8 +766,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_AudThreshold );
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
-	savefile->WriteFloat( m_AlertNumThisFrame );
+	savefile->WriteFloat( m_AlertLevelThisFrame );
 	savefile->WriteInt( m_prevAlertIndex );
+	savefile->WriteFloat( m_maxAlertLevel);
 	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
@@ -800,21 +802,26 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
 	savefile->WriteFloat(thresh_3);
-	savefile->WriteFloat(thresh_combat);
+	savefile->WriteFloat(thresh_4);
+	savefile->WriteFloat(thresh_5);
 
 	savefile->WriteFloat(m_gracetime_1);
 	savefile->WriteFloat(m_gracetime_2);
 	savefile->WriteFloat(m_gracetime_3);
+	savefile->WriteFloat(m_gracetime_4);
 	savefile->WriteFloat(m_gracefrac_1);
 	savefile->WriteFloat(m_gracefrac_2);
 	savefile->WriteFloat(m_gracefrac_3);
+	savefile->WriteFloat(m_gracefrac_4);
 	savefile->WriteFloat(m_gracecount_1);
 	savefile->WriteFloat(m_gracecount_2);
 	savefile->WriteFloat(m_gracecount_3);
+	savefile->WriteFloat(m_gracecount_4);
 
 	savefile->WriteFloat(atime1);
 	savefile->WriteFloat(atime2);
 	savefile->WriteFloat(atime3);
+	savefile->WriteFloat(atime4);
 
 	mind->Save(savefile);
 
@@ -981,8 +988,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_AudThreshold );
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
-	savefile->ReadFloat( m_AlertNumThisFrame );
+	savefile->ReadFloat( m_AlertLevelThisFrame );
 	savefile->ReadInt( m_prevAlertIndex );
+	savefile->ReadFloat( m_maxAlertLevel );
 	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
@@ -1023,21 +1031,26 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
 	savefile->ReadFloat(thresh_3);
-	savefile->ReadFloat(thresh_combat);
+	savefile->ReadFloat(thresh_4);
+	savefile->ReadFloat(thresh_5);
 
 	savefile->ReadFloat(m_gracetime_1);
 	savefile->ReadFloat(m_gracetime_2);
 	savefile->ReadFloat(m_gracetime_3);
+	savefile->ReadFloat(m_gracetime_4);
 	savefile->ReadFloat(m_gracefrac_1);
 	savefile->ReadFloat(m_gracefrac_2);
 	savefile->ReadFloat(m_gracefrac_3);
+	savefile->ReadFloat(m_gracefrac_4);
 	savefile->ReadInt(m_gracecount_1);
 	savefile->ReadInt(m_gracecount_2);
 	savefile->ReadInt(m_gracecount_3);
+	savefile->ReadInt(m_gracecount_4);
 
 	savefile->ReadFloat(atime1);
 	savefile->ReadFloat(atime2);
 	savefile->ReadFloat(atime3);
+	savefile->ReadFloat(atime4);
 
 	mind = ai::MindPtr(new ai::BasicMind(this));
 	mind->Restore(savefile);
@@ -1121,23 +1134,28 @@ void idAI::Spawn( void )
 	// The default values of these spawnargs are normally set in tdm_ai_base.def, so the default values
 	// here are somewhat superfluous. It's better than having defaults of 0 here though.
 	spawnArgs.GetFloat( "alert_thresh1",		"1.5",		thresh_1 );
-	spawnArgs.GetFloat( "alert_thresh2",		"8",		thresh_2 );
-	spawnArgs.GetFloat( "alert_thresh3",		"18",		thresh_3 );
-	spawnArgs.GetFloat( "alert_thresh_combat",	"23",		thresh_combat );
+	spawnArgs.GetFloat( "alert_thresh2",		"6",		thresh_2 );
+	spawnArgs.GetFloat( "alert_thresh3",		"8",		thresh_3 );
+	spawnArgs.GetFloat( "alert_thresh4",		"18",		thresh_4 );
+	spawnArgs.GetFloat( "alert_thresh5",		"23",		thresh_5 );
 	// Grace period info for each alert level
 	spawnArgs.GetFloat( "alert_gracetime1",		"2",		m_gracetime_1 );
-	spawnArgs.GetFloat( "alert_gracetime2",		"3.5",		m_gracetime_2 );
-	spawnArgs.GetFloat( "alert_gracetime3",		"2",		m_gracetime_3 );
+	spawnArgs.GetFloat( "alert_gracetime2",		"2",		m_gracetime_2 );
+	spawnArgs.GetFloat( "alert_gracetime3",		"3.5",		m_gracetime_3 );
+	spawnArgs.GetFloat( "alert_gracetime4",		"2",		m_gracetime_4 );
 	spawnArgs.GetFloat( "alert_gracefrac1",		"1.2",		m_gracefrac_1 );
 	spawnArgs.GetFloat( "alert_gracefrac2",		"1.2",		m_gracefrac_2 );
-	spawnArgs.GetFloat( "alert_gracefrac3",		"1.0",		m_gracefrac_3 );
+	spawnArgs.GetFloat( "alert_gracefrac3",		"1.2",		m_gracefrac_3 );
+	spawnArgs.GetFloat( "alert_gracefrac4",		"1.0",		m_gracefrac_4 );
 	spawnArgs.GetInt  ( "alert_gracecount1",	"5",		m_gracecount_1 );
 	spawnArgs.GetInt  ( "alert_gracecount2",	"5",		m_gracecount_2 );
-	spawnArgs.GetInt  ( "alert_gracecount3",	"4",		m_gracecount_3 );
+	spawnArgs.GetInt  ( "alert_gracecount3",	"5",		m_gracecount_3 );
+	spawnArgs.GetInt  ( "alert_gracecount4",	"4",		m_gracecount_4 );
 	// De-alert times for each alert level
 	spawnArgs.GetFloat( "alert_time1",			"4",		atime1 );
-	spawnArgs.GetFloat( "alert_time2",			"30",		atime2 );
-	spawnArgs.GetFloat( "alert_time3",			"120",		atime3 );
+	spawnArgs.GetFloat( "alert_time2",			"6",		atime2 );
+	spawnArgs.GetFloat( "alert_time3",			"30",		atime3 );
+	spawnArgs.GetFloat( "alert_time4",			"120",		atime4 );
 	spawnArgs.GetBool( "ignore_alerts",			"0",		m_bIgnoreAlerts );
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
@@ -1244,7 +1262,7 @@ void idAI::Spawn( void )
 	focusAlignTime		= SEC2MS( spawnArgs.GetFloat( "focus_align_time", "1" ) );
 
 	// DarkMod: State of mind, allow the FM author to set initial values
-	AI_AlertNum			= spawnArgs.GetFloat( "alert_initial", "0" );
+	AI_AlertLevel			= spawnArgs.GetFloat( "alert_initial", "0" );
 
 	flashJointWorld = animator.GetJointHandle( "flash" );
 
@@ -1674,7 +1692,7 @@ void idAI::Think( void )
 
 		// Clear DarkMod per frame vars now that the mind had time to think
 		AI_ALERTED = false;
-		m_AlertNumThisFrame = 0;
+		m_AlertLevelThisFrame = 0;
 		m_AlertedByActor = NULL;
 
 		// clear pain flag so that we recieve any damage between now and the next time we run the script
@@ -1762,9 +1780,9 @@ void idAI::Think( void )
 		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
-	if( cv_ai_alertnum_show.GetBool() )
+	if( cv_ai_alertlevel_show.GetBool() )
 	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertNum, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
 	if (cv_ai_animstate_show.GetBool())
@@ -1828,7 +1846,7 @@ void idAI::LinkScriptVariables( void )
 	//this is only set in a given frame
 	AI_ALERTED.LinkTo(			scriptObject, "AI_ALERTED" );
 
-	AI_AlertNum.LinkTo(			scriptObject, "AI_AlertNum" );
+	AI_AlertLevel.LinkTo(			scriptObject, "AI_AlertLevel" );
 	AI_AlertIndex.LinkTo(			scriptObject, "AI_AlertIndex" );
 
 	AI_lastAlertPosSearched.LinkTo(			scriptObject, "AI_lastAlertPosSearched");
@@ -4794,9 +4812,9 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		// angua: alert the AI
 		if (attacker->IsType(idActor::Type))
 		{
-			if (AI_AlertNum <= (thresh_combat - 0.1))
+			if (AI_AlertLevel <= (thresh_5 - 0.1))
 			{
-				SetAlertLevel(thresh_combat - 0.1);
+				SetAlertLevel(thresh_5 - 0.1);
 				if (inflictor->IsType(idProjectile::Type))
 				{
 					// Set up search
@@ -7153,9 +7171,9 @@ void idAI::HearSound
 
 
 	/**
-	* NOTE: an AlertNum of 1 constitutes just barely seeing something
+	* NOTE: an AlertLevel of 1 constitutes just barely seeing something
 	* out of the corner of your eye, or just barely hearing a whisper
-	* of a sound for a short instant.  An AlertNum of 10 is seeing/hearing twice
+	* of a sound for a short instant.  An AlertLevel of 10 is seeing/hearing twice
 	* as much, 20 is four times as much, etc.
 	**/
 
@@ -7163,7 +7181,7 @@ void idAI::HearSound
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	//	alert to overwrite another alert this frame
-	if (GetAcuity("aud") > 0 && psychLoud > m_AlertNumThisFrame)
+	if (GetAcuity("aud") > 0 && psychLoud > m_AlertLevelThisFrame)
 	{
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
@@ -7193,7 +7211,7 @@ void idAI::AlertAI(const char *type, float amount)
 
 	float acuity = GetAcuity(type);
 
-	// Calculate the amount the current AI_AlertNum is about to be increased
+	// Calculate the amount the current AI_AlertLevel is about to be increased
 	float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
 
 	// Ignore actors in notarget mode
@@ -7238,14 +7256,14 @@ void idAI::AlertAI(const char *type, float amount)
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
 	}
 
-	// The grace check has failed, increase the AI_AlertNum float by the increase amount
-	float newAlertLevel = AI_AlertNum + alertInc;
+	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
+	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
-		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertNum );
+		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
 	if (gameLocal.isNewFrame)
 	{
@@ -7254,7 +7272,7 @@ void idAI::AlertAI(const char *type, float amount)
 	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
-	m_AlertNumThisFrame = amount;
+	m_AlertLevelThisFrame = amount;
 
 	// Objectives callback
 	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
@@ -7263,12 +7281,16 @@ void idAI::AlertAI(const char *type, float amount)
 void idAI::SetAlertLevel(float newAlertLevel)
 {
 	// greebo: Clamp the (log) alert number to twice the combat threshold.
-	if (newAlertLevel > thresh_combat*2)
+	if (newAlertLevel > thresh_5*2)
 	{
-		newAlertLevel = thresh_combat*2;
+		newAlertLevel = thresh_5*2;
+	}
+	else if (newAlertLevel < 0)
+	{
+		newAlertLevel = 0;
 	}
 
-	bool alertRising = (newAlertLevel > AI_AlertNum);
+	bool alertRising = (newAlertLevel > AI_AlertLevel);
 
 	if (alertRising)
 	{
@@ -7277,7 +7299,12 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	
 	if (AI_DEAD || AI_KNOCKEDOUT) return;
 	
-	AI_AlertNum = newAlertLevel;
+	AI_AlertLevel = newAlertLevel;
+
+	if (AI_AlertLevel > m_maxAlertLevel)
+	{
+		m_maxAlertLevel = AI_AlertLevel;
+	}
 	
 	// grace period vars
 	float grace_time;
@@ -7285,31 +7312,40 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	int grace_count;
 
 	// How long should this alert level last, and which alert index should we be in now?
-	if (newAlertLevel >= thresh_3)
+	if (newAlertLevel >= thresh_4)
 	{
 		// greebo: Only allow switching to combat if a valid enemy is set.
-		if (newAlertLevel >= thresh_combat)
+		if (newAlertLevel >= thresh_5)
 		{
 			if (GetEnemy() != NULL) 
 			{
 				// We have an enemy, raise the index
 				m_prevAlertIndex = AI_AlertIndex;
-				AI_AlertIndex = 4;
+				AI_AlertIndex = 5;
 			}
 			else
 			{
 				// No enemy, can't switch to Combat mode
 				m_prevAlertIndex = AI_AlertIndex;
-				AI_AlertIndex = 3;
+				AI_AlertIndex = 4;
 				// Set the alert level back to just below combat threshold
-				AI_AlertNum = thresh_combat - 0.01;
+				AI_AlertLevel = thresh_5 - 0.01;
 			}
 		}
 		else
 		{
 			m_prevAlertIndex = AI_AlertIndex;
-			AI_AlertIndex = 3;
+			AI_AlertIndex = 4;
 		}
+		AI_currentAlertLevelDuration = atime4;
+		grace_time = m_gracetime_4;
+		grace_frac = m_gracefrac_4;
+		grace_count = m_gracecount_4;
+	}
+	else if (newAlertLevel >= thresh_3)
+	{
+		m_prevAlertIndex = AI_AlertIndex;
+		AI_AlertIndex = 3;
 		AI_currentAlertLevelDuration = atime3;
 		grace_time = m_gracetime_3;
 		grace_frac = m_gracefrac_3;
@@ -7328,7 +7364,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	{
 		m_prevAlertIndex = AI_AlertIndex;
 		AI_AlertIndex = 1;
-		AI_currentAlertLevelDuration = atime1;
+		AI_currentAlertLevelDuration = atime2;
 		grace_time = m_gracetime_1;
 		grace_frac = m_gracefrac_1;
 		grace_count = m_gracecount_1;
@@ -7346,7 +7382,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	// Add random variance to alert level duration
 	AI_currentAlertLevelDuration = AI_currentAlertLevelDuration*(1.0 + gameLocal.random.RandomFloat()*0.50);
 	
-	//DEBUG_PRINT ("Alert level duration set to " + AI_currentAlertLevelDuration + " due to alert factor " + AI_AlertNum);
+	//DEBUG_PRINT ("Alert level duration set to " + AI_currentAlertLevelDuration + " due to alert factor " + AI_AlertLevel);
 	
 	// Set time of start of new alert level
 	AI_currentAlertLevelStartTime = gameLocal.realClientTime;
@@ -7361,19 +7397,19 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		// We only have to do alert-down sounds here
 		if (!alertRising)
 		{
-			if (newAlertLevel > thresh_3)
+			if (newAlertLevel > thresh_4)
 			{
 				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				// TODO: Shouldn't hard-code the animation name, talk1, here (and below)
 				Event_PlayAndLipSync( "snd_alert3s", "" );
 			}
-			else if (newAlertLevel > thresh_2)
+			else if (newAlertLevel > thresh_3)
 			{
 			
 				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown2", "" );
 			}	
-			else if (newAlertLevel > thresh_1) 
+			else if (newAlertLevel > thresh_2) 
 			{
 				AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 				Event_PlayAndLipSync( "snd_alertdown1", "" );
@@ -7382,7 +7418,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	
 	// If less than alert 1, all new stimuli should be considered new
-	if (newAlertLevel < thresh_1)
+	if (newAlertLevel < thresh_2)
 	{
 		//DEBUG_PRINT ("Clearing last searched alert position");
 		AI_lastAlertPosSearched = idVec3(0,0,0);
@@ -7430,17 +7466,17 @@ float idAI::GetAcuity(const char *type) const
 	// Acuities are now modified by alert level
 	if (returnval > 0.0)
 	{
-		if (AI_AlertNum >= thresh_3)
+		if (m_maxAlertLevel >= thresh_5)
+		{
+			returnval *= cv_ai_acuity_L5.GetFloat();
+		}
+		else if (m_maxAlertLevel >= thresh_4)
+		{
+			returnval *= cv_ai_acuity_L4.GetFloat();
+		}
+		else if (m_maxAlertLevel >= thresh_3)
 		{
 			returnval *= cv_ai_acuity_L3.GetFloat();
-		}
-		else if (AI_AlertNum >= thresh_2)
-		{
-			returnval *= cv_ai_acuity_L2.GetFloat();
-		}
-		else if (AI_AlertNum >= thresh_1)
-		{
-			returnval *= cv_ai_acuity_L1.GetFloat();
 		}
 	}
 
@@ -7544,15 +7580,15 @@ void idAI::PerformVisualScan(float timecheck)
 	// Get the visual alert amount caused by the CVAR setting
 	float incAlert = GetPlayerVisualStimulusAmount();
 
-	float newAlertLevel = AI_AlertNum + incAlert;
-	if (newAlertLevel > thresh_combat)
+	float newAlertLevel = AI_AlertLevel + incAlert;
+	if (newAlertLevel > thresh_5)
 	{
 		SetEnemy(player);
 	}
 
 	// If the alert amount is larger than everything else encountered this frame
 	// ignore the previous alerts and remember this actor as enemy.
-	if (incAlert > m_AlertNumThisFrame)
+	if (incAlert > m_AlertLevelThisFrame)
 	{
 		// Remember this actor
 		m_AlertedByActor = player;
@@ -7891,7 +7927,7 @@ float idAI::GetPlayerVisualStimulusAmount() const
 		// alertAmount = 4*log( visFrac * lgem ) / 0.6931472;
 
 		// The current alert number is stored in logarithmic units
-		float curAlertLog = AI_AlertNum;
+		float curAlertLog = AI_AlertLevel;
 
 		// convert current alert from log to linear scale, add, then convert back
 		// this might not be as good for performance, but it lets us keep all alerts
@@ -7909,7 +7945,7 @@ float idAI::GetPlayerVisualStimulusAmount() const
 			curAlertLog = 1 + 10.0f * idMath::Log16(curAlertLin) * 1.442695f;
 
 			// Now calculate the difference in logarithmic units and return it
-			alertAmount = curAlertLog - AI_AlertNum;
+			alertAmount = curAlertLog - AI_AlertLevel;
 		}
 		else
 		{
@@ -8271,7 +8307,7 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 void idAI::CheckTactile()
 {
 	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
-	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertNum < thresh_3)
+	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertLevel < thresh_4)
 	{
 		idEntity* blockingEnt = physicsObj.GetSlideMoveEntity();
 
@@ -8328,7 +8364,7 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertNum > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
 	{
 		// abort KO if the AI is immune when alerted
 		if( spawnArgs.GetBool("ko_alert_immmune") )
@@ -8391,7 +8427,7 @@ void idAI::KnockoutDebugDraw( void )
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertNum > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
+	if( AI_AlertLevel > spawnArgs.GetFloat( va("alert_thresh%s", spawnArgs.GetString("ko_alert_state")) ) )
 	{
 		// Do not display if immune
 		if( spawnArgs.GetBool("ko_alert_immmune") )

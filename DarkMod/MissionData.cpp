@@ -231,7 +231,7 @@ void CMissionData::Clear( void )
 	{
 		m_Stats.AIStats[n2] = ClearedSt;
 	}
-	for( int n3=0; n3<MAX_ALERTNUMS; n3++ )
+	for( int n3=0; n3<MAX_ALERTLEVELS; n3++ )
 	{
 		m_Stats.AIAlerts[n3] = ClearedSt;
 	}
@@ -269,7 +269,7 @@ void CMissionData::Save( idSaveGame *savefile ) const
 		savefile->WriteInt( m_Stats.AIStats[j].ByInnocence[1] );
 	}
 
-	for( int l=0; l < MAX_ALERTNUMS; l++ )
+	for( int l=0; l < MAX_ALERTLEVELS; l++ )
 	{
 		savefile->WriteInt( m_Stats.AIAlerts[l].Overall );
 		savefile->WriteInt( m_Stats.AIAlerts[l].WhileAirborne );
@@ -326,7 +326,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 		savefile->ReadInt( m_Stats.AIStats[j].ByInnocence[1] );
 	}
 
-	for( int l=0; l < MAX_ALERTNUMS; l++ )
+	for( int l=0; l < MAX_ALERTLEVELS; l++ )
 	{
 		savefile->ReadInt( m_Stats.AIAlerts[l].Overall );
 		savefile->ReadInt( m_Stats.AIAlerts[l].WhileAirborne );
@@ -380,7 +380,7 @@ void CMissionData::MissionEvent
 		DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Determined AI event \r");
 		if( CompType == COMP_ALERT )
 		{
-			if( EntDat1->value > MAX_ALERTNUMS )
+			if( EntDat1->value > MAX_ALERTLEVELS )
 			{
 				// log error
 				goto Quit;
@@ -606,8 +606,8 @@ bool	CMissionData::EvaluateObjective
 		if( pComp->m_bPlayerResponsibleOnly && !bBoolArg )
 			goto Quit;
 
-		int AlertNum = atoi(pComp->m_Args[1]);
-			if( EntDat1->value >= AlertNum )
+		int AlertLevel = atoi(pComp->m_Args[1]);
+			if( EntDat1->value >= AlertLevel )
 				pComp->m_EventCount++;
 
 		value = pComp->m_EventCount;
@@ -911,15 +911,15 @@ void CMissionData::Event_MissionFailed( void )
 
 // ============================== Stats =================================
 
-int CMissionData::GetStatOverall( EComponentType CompType, int AlertNum )
+int CMissionData::GetStatOverall( EComponentType CompType, int AlertLevel )
 {
 	int returnVal(0);
 
-	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
+	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
 		goto Quit;
 
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertNum ].Overall;
+		returnVal = m_Stats.AIAlerts[ AlertLevel ].Overall;
 	else
 		returnVal = m_Stats.AIStats[ CompType ].Overall;
 
@@ -927,14 +927,14 @@ Quit:
 	return returnVal;
 }
 
-int CMissionData::GetStatByTeam( EComponentType CompType, int index, int AlertNum )
+int CMissionData::GetStatByTeam( EComponentType CompType, int index, int AlertLevel )
 {
 	int returnVal(0);
 
-	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
+	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertNum ].ByTeam[index];
+		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByTeam[index];
 	else
 		returnVal = m_Stats.AIStats[ CompType ].ByTeam[index];
 
@@ -942,14 +942,14 @@ Quit:
 	return returnVal;
 }
 
-int CMissionData::GetStatByType( EComponentType CompType, int index, int AlertNum )
+int CMissionData::GetStatByType( EComponentType CompType, int index, int AlertLevel )
 {
 	int returnVal(0);
 
-	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
+	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertNum ].ByType[index];
+		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByType[index];
 	else
 		returnVal = m_Stats.AIStats[ CompType ].ByType[index];
 
@@ -957,14 +957,14 @@ Quit:
 	return returnVal;
 }
 
-int CMissionData::GetStatByInnocence( EComponentType CompType, int index, int AlertNum )
+int CMissionData::GetStatByInnocence( EComponentType CompType, int index, int AlertLevel )
 {
 	int returnVal(0);
 
-	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
+	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertNum ].ByInnocence[index];
+		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByInnocence[index];
 	else
 		returnVal = m_Stats.AIStats[ CompType ].ByInnocence[index];
 
@@ -972,14 +972,14 @@ Quit:
 	return returnVal;
 }
 
-int CMissionData::GetStatAirborne( EComponentType CompType, int AlertNum )
+int CMissionData::GetStatAirborne( EComponentType CompType, int AlertLevel )
 {
 	int returnVal(0);
 
-	if( AlertNum < 0 || AlertNum > MAX_ALERTNUMS )
+	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
 		goto Quit;
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertNum ].WhileAirborne;
+		returnVal = m_Stats.AIAlerts[ AlertLevel ].WhileAirborne;
 	else
 		returnVal = m_Stats.AIStats[ CompType ].WhileAirborne;
 

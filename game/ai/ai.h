@@ -189,7 +189,7 @@ extern const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList;
 
 // Darkmod AI additions
 extern const idEventDef AI_GetVariableFromOtherAI;
-extern const idEventDef AI_GetAlertNumOfOtherAI;
+extern const idEventDef AI_GetAlertLevelOfOtherAI;
 
 // Set a grace period for alerts
 extern const idEventDef AI_SetAlertGracePeriod;
@@ -481,7 +481,7 @@ public:
 	void AlertAI( const char *type, float amount );
 
 	/**
-	 * greebo: Sets the AI_AlertNum of this AI and updates the AI_AlertIndex.
+	 * greebo: Sets the AI_AlertLevel of this AI and updates the AI_AlertIndex.
 	 *
 	 * This also updates the grace timers, alert times and checks for
 	 * a valid agitatedsearching>combat transition.
@@ -793,15 +793,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* NOTE: Don't change this directly. Instead, call Event_SetAlertLevel
 	* to change it.
 	**/
-	idScriptFloat			AI_AlertNum;
+	idScriptFloat			AI_AlertLevel;
 	
 	/**
-	* Current alert index of the AI. Is set based on AI_AlertNum and the alert threshold values:
-	* 	0 if AI_AlertNum < thresh_1
-	* 	1 if thresh_1 <= AI_AlertNum < thresh_2
-	* 	2 if thresh_2 <= AI_AlertNum < thresh_3
-	* 	3 if thresh_3 <= AI_AlertNum < thresh_combat
-	* 	4 if thresh_combat <= AI_AlertNum
+	* Current alert index of the AI. Is set based on AI_AlertLevel and the alert threshold values:
+	* 	0 if AI_AlertLevel < thresh_2
+	* 	1 if thresh_2 <= AI_AlertLevel < thresh_3
+	* 	2 if thresh_3 <= AI_AlertLevel < thresh_4
+	* 	3 if thresh_4 <= AI_AlertLevel < thresh_5
+	* 	4 if thresh_5 <= AI_AlertLevel
 	**/
 	idScriptFloat			AI_AlertIndex;
 	
@@ -823,11 +823,14 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Used to compare simultaneous alerts, the smaller one is ignored
 	* Should be cleared at the start of each frame.
 	**/
-	float					m_AlertNumThisFrame;
+	float					m_AlertLevelThisFrame;
 
 
 	// angua: stores the previous alert index at alert index changes
 	int						m_prevAlertIndex;
+
+	// angua: the highest alert level the AI reached already 
+	float						m_maxAlertLevel;
 
 	/**
 	* If true, the AI ignores alerts during all actions
@@ -964,15 +967,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	idVec3					m_KoOffset;
 	
-	// AI_AlertNum thresholds for each alert level
-	// Alert levels are: 1=aroused, 2=investigating, 3=agitated investigating, combat=hunting
-	float thresh_1, thresh_2, thresh_3, thresh_combat;
+	// AI_AlertLevel thresholds for each alert level
+	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
+	float thresh_1, thresh_2, thresh_3, thresh_4, thresh_5;
 	// Grace period info for each alert level
-	float m_gracetime_1, m_gracetime_2, m_gracetime_3;
-	float m_gracefrac_1, m_gracefrac_2, m_gracefrac_3;
-	int m_gracecount_1, m_gracecount_2, m_gracecount_3;
+	float m_gracetime_1, m_gracetime_2, m_gracetime_3, m_gracetime_4;
+	float m_gracefrac_1, m_gracefrac_2, m_gracefrac_3, m_gracefrac_4;
+	int m_gracecount_1, m_gracecount_2, m_gracecount_3, m_gracecount_4;
 	// De-alert times for each alert level
-	float atime1, atime2, atime3;
+	float atime1, atime2, atime3, atime4;
 
 	// The mind of this AI
 	ai::MindPtr mind;
@@ -1664,7 +1667,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Gets the alert number of an entity that is another AI.
 	* Will return 0.0 to script if other entity is NULL or not an AI.
 	*/
-	void Event_GetAlertNumOfOtherAI (idEntity* p_otherEntity);
+	void Event_GetAlertLevelOfOtherAI (idEntity* p_otherEntity);
 
 	/*!
 	* This event is used by an AI script to issue a message to other AI's through

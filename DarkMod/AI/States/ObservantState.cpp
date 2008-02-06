@@ -10,38 +10,39 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: SuspiciousState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: ObservantState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "SuspiciousState.h"
+#include "ObservantState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "SearchingState.h"
+#include "ObservantState.h"
+#include "SuspiciousState.h"
 #include "../Library.h"
 
 namespace ai
 {
 
 // Get the name of this state
-const idStr& SuspiciousState::GetName() const
+const idStr& ObservantState::GetName() const
 {
-	static idStr _name(STATE_SUSPICIOUS);
+	static idStr _name(STATE_OBSERVANT);
 	return _name;
 }
 
-bool SuspiciousState::CheckAlertLevel(idAI* owner)
+bool ObservantState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 2)
+	if (owner->AI_AlertIndex < 1)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 2)
+	else if (owner->AI_AlertIndex > 1)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_SEARCHING);
+		owner->GetMind()->PushState(STATE_SUSPICIOUS);
 		return false;
 	}
 
@@ -49,37 +50,21 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 	return true;
 }
 
-void SuspiciousState::Init(idAI* owner)
+void ObservantState::Init(idAI* owner)
 {
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("SuspiciousState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("ObservantState initialised.\r");
 	assert(owner);
 
-	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
+	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / owner->atime1;
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
-
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-
-	owner->StopMove(MOVE_STATUS_DONE);
-	if (!owner->CheckFOV(memory.alertPos))
-	{
-		// Search spot is not within FOV, turn towards the position
-		owner->TurnToward(memory.alertPos);
-	}
-
-	// In any case, look at the point to investigate
-	owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
-
 
 	// barking
 	idStr bark;
@@ -98,15 +83,22 @@ void SuspiciousState::Init(idAI* owner)
 		{
 			bark = "snd_alert1";
 		}
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask(bark))
+			);
+	}
+	else
+	{
+		bark = "snd_alertdown1";
 		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask(bark))
-		);
+				TaskPtr(new SingleBarkTask(bark))
+			);
 	}
 }
 
 // Gets called each time the mind is thinking
-void SuspiciousState::Think(idAI* owner)
+void ObservantState::Think(idAI* owner)
 {
 	UpdateAlertLevel();
 	// Ensure we are in the correct alert level
@@ -116,15 +108,15 @@ void SuspiciousState::Think(idAI* owner)
 	owner->GetMind()->PerformSensoryScan(true);
 }
 
-StatePtr SuspiciousState::CreateInstance()
+StatePtr ObservantState::CreateInstance()
 {
-	return StatePtr(new SuspiciousState);
+	return StatePtr(new ObservantState);
 }
 
 // Register this state with the StateLibrary
-StateLibrary::Registrar suspiciousStateRegistrar(
-	STATE_SUSPICIOUS, // Task Name
-	StateLibrary::CreateInstanceFunc(&SuspiciousState::CreateInstance) // Instance creation callback
+StateLibrary::Registrar observantStateRegistrar(
+	STATE_OBSERVANT, // Task Name
+	StateLibrary::CreateInstanceFunc(&ObservantState::CreateInstance) // Instance creation callback
 );
 
 } // namespace ai

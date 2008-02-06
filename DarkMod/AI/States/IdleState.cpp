@@ -20,7 +20,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/IdleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/IdleAnimationTask.h"
-#include "SuspiciousState.h"
+#include "ObservantState.h"
 #include "../Library.h"
 
 namespace ai
@@ -43,7 +43,7 @@ bool IdleState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > 0)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->GetMind()->PushState(STATE_SUSPICIOUS);
+		owner->GetMind()->PushState(STATE_OBSERVANT);
 		return false;
 	}
 
@@ -160,7 +160,7 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 	
-	if (owner->AI_AlertNum <= 0)
+	if (owner->AI_AlertLevel <= 0)
 	{
 		//soundName = "snd_relaxed";
 		// greebo: Relaxed sound playing is handled by the IdleBarkTask.
