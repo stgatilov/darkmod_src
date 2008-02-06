@@ -3674,6 +3674,9 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 
 	spawnArgs.SetDefaults( &def->dict );
 
+	// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
+	m_DifficultyManager.ApplyDifficultySettings(spawnArgs);
+
 	// check if we should spawn a class object
 	spawnArgs.GetString( "spawnclass", NULL, &spawn );
 	if ( spawn ) {
@@ -3880,9 +3883,6 @@ void idGameLocal::SpawnMapEntities( void ) {
 		if ( !InhibitEntitySpawn( args ) ) {
 			// precache any media specified in the map entity
 			CacheDictionaryMedia( &args );
-
-			// greebo: Apply the difficulty settings before any values get filled from the spawnarg data
-			m_DifficultyManager.ApplyDifficultySettings(args);
 
 			SpawnEntityDef( args );
 			num++;
