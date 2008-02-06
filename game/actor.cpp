@@ -3199,9 +3199,9 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		
 #ifndef SUPPRESS_CONSOLE_WARNINGS
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
 #endif
 
@@ -3282,9 +3282,9 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 		
 #ifndef SUPPRESS_CONSOLE_WARNINGS
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.DPrintf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
 		}
 #endif
 
