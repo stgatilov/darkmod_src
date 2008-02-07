@@ -633,6 +633,12 @@
 						RelativePath=".\DarkMod\Ai\States\LostTrackOfEnemyState.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\States\ObservantState.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\States\ObservantState.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\States\SearchingState.cpp">
 					</File>
 					<File
