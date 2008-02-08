@@ -17,7 +17,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../game_local.h"
 #include "../../DarkMod/AI/Mind.h"
-#include "../../DarkMod/AI/BasicMind.h"
 #include "../../DarkMod/AI/Subsystem.h"
 #include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/KnockedOutState.h"
@@ -1063,8 +1062,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime3_fuzzyness);
 	savefile->ReadFloat(atime4_fuzzyness);
 
-
-	mind = ai::MindPtr(new ai::BasicMind(this));
+	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
 
 	// Allocate and install the subsystems
@@ -1108,7 +1106,7 @@ void idAI::Spawn( void )
 	bool				talks;
 
 	// Allocate a new default mind
-	mind = ai::MindPtr(new ai::BasicMind(this));
+	mind = ai::MindPtr(new ai::Mind(this));
 
 	// Allocate and install the subsystems
 	InstallSubsystem(ai::SubsysMovement,	ai::SubsystemPtr(new ai::Subsystem(ai::SubsysMovement, this)));

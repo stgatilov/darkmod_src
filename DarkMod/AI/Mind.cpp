@@ -10,9 +10,9 @@
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: BasicMind.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id: Mind.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
-#include "BasicMind.h"
+#include "Mind.h"
 #include "States/IdleState.h"
 #include "Tasks/SingleBarkTask.h"
 #include "States/CombatState.h"
@@ -26,7 +26,7 @@ namespace ai
 // This is the default state
 #define STATE_DEFAULT STATE_IDLE
 
-BasicMind::BasicMind(idAI* owner) :
+Mind::Mind(idAI* owner) :
 	_subsystemIterator(SubsystemCount),
 	_switchState(false)
 {
@@ -34,7 +34,7 @@ BasicMind::BasicMind(idAI* owner) :
 	_owner = owner;
 }
 
-void BasicMind::Think()
+void Mind::Think()
 {
 	// Clear the recyclebin, it might hold a finished state from the last frame
 	_recycleBin = StatePtr();
@@ -96,7 +96,7 @@ void BasicMind::Think()
 	//TestAlertStateTimer();
 }
 
-void BasicMind::PushState(const idStr& stateName)
+void Mind::PushState(const idStr& stateName)
 {
 	// Get a new state with the given name
 	StatePtr newState = StateLibrary::Instance().CreateInstance(stateName.c_str());
@@ -107,11 +107,11 @@ void BasicMind::PushState(const idStr& stateName)
 	}
 	else
 	{
-		gameLocal.Error("BasicMind: Could not push state %s", stateName.c_str());
+		gameLocal.Error("Mind: Could not push state %s", stateName.c_str());
 	}
 }
 
-void BasicMind::PushState(const StatePtr& state)
+void Mind::PushState(const StatePtr& state)
 {
 	assert(state != NULL);
 
@@ -122,7 +122,7 @@ void BasicMind::PushState(const StatePtr& state)
 	_switchState = true;
 }
 
-bool BasicMind::EndState()
+bool Mind::EndState()
 {
 	if (!_stateQueue.empty())
 	{
@@ -148,7 +148,7 @@ bool BasicMind::EndState()
 	return true;
 }
 
-void BasicMind::SwitchState(const idStr& stateName)
+void Mind::SwitchState(const idStr& stateName)
 {
 	if (_stateQueue.size() > 0)
 	{
@@ -172,7 +172,7 @@ void BasicMind::SwitchState(const idStr& stateName)
 	PushState(stateName);
 }
 
-void BasicMind::SwitchState(const StatePtr& state)
+void Mind::SwitchState(const StatePtr& state)
 {
 	// greebo: Switch the state without destroying the current State object immediately
 	if (_stateQueue.size() > 0)
@@ -188,13 +188,13 @@ void BasicMind::SwitchState(const StatePtr& state)
 }
 
 
-void BasicMind::ClearStates()
+void Mind::ClearStates()
 {
 	_switchState = true;
 	_stateQueue.clear();
 }
 
-void BasicMind::TestAlertStateTimer()
+void Mind::TestAlertStateTimer()
 {
 	// greebo: This has been ported from ai_darkmod_base::subFrameTask_testAlertStateTimer() by SZ
 	idAI* owner = _owner.GetEntity();
@@ -256,7 +256,7 @@ void BasicMind::TestAlertStateTimer()
 	}
 }
 
-void BasicMind::SetAlertPos()
+void Mind::SetAlertPos()
 {
 	// greebo: This has been ported from ai_darkmod_base::setAlertPos() written by SZ
 	idAI* owner = _owner.GetEntity();
@@ -430,7 +430,7 @@ void BasicMind::SetAlertPos()
 	}
 }
 
-void BasicMind::Bark(const idStr& soundname)
+void Mind::Bark(const idStr& soundname)
 {
 	idAI* owner = _owner.GetEntity();
 
@@ -443,7 +443,7 @@ void BasicMind::Bark(const idStr& soundname)
 	);
 }
 
-bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
+bool Mind::IsEnemy(idEntity* entity, idAI* self)
 {
 	if (entity == NULL)
 	{
@@ -462,7 +462,7 @@ bool BasicMind::IsEnemy(idEntity* entity, idAI* self)
 	}
 }
 
-bool BasicMind::SetTarget()
+bool Mind::SetTarget()
 {
 	// greebo: Ported from ai_darkmod_base::setTarget() written by SZ
 	idAI* owner = _owner.GetEntity();
@@ -558,7 +558,7 @@ bool BasicMind::SetTarget()
 	return false;
 }
 
-bool BasicMind::PerformCombatCheck()
+bool Mind::PerformCombatCheck()
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner);
@@ -587,7 +587,7 @@ bool BasicMind::PerformCombatCheck()
 	return false; // combat mode not justified
 }
 
-void BasicMind::PerformSensoryScan(bool processNewStimuli)
+void Mind::PerformSensoryScan(bool processNewStimuli)
 {
 	// greebo: Ported from ai_darkmod_base::subFrameTask_canSwitchState_sensoryScan() written by SZ
 
@@ -649,14 +649,14 @@ void BasicMind::PerformSensoryScan(bool processNewStimuli)
 	}
 }
 
-void BasicMind::Save(idSaveGame* savefile) const 
+void Mind::Save(idSaveGame* savefile) const 
 {
 	_owner.Save(savefile);
 	_stateQueue.Save(savefile);
 	_memory.Save(savefile);
 }
 
-void BasicMind::Restore(idRestoreGame* savefile) 
+void Mind::Restore(idRestoreGame* savefile) 
 {
 	_owner.Restore(savefile);
 	_stateQueue.Restore(savefile);

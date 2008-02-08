@@ -105,6 +105,17 @@ enum EAlertType
 	EAlertTypeCount
 };
 
+// The alert index the AI is in
+enum EAlertState {
+	ERelaxed = 0,
+	EObservant,
+	ESuspicious,
+	EInvestigating,
+	EAgitatedSearching,
+	ECombat,
+	EAlertStateNum
+};
+
 #define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15000 // milliseconds
 
 // SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
