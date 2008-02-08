@@ -610,7 +610,24 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_SETRATE;
 		fc.string = new idStr( token );
 	} 
-	
+	else if ( token == "reattach" ) 
+	{
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		fc.type = FC_REATTACH;
+		fc.string = new idStr( token );
+
+		if( !src.ReadTokenOnLine( &token ) ) {
+			return "Unexpected end of line";
+		}
+		
+		jointInfo = modelDef->FindJoint( token );
+		if ( !jointInfo ) {
+			return va( "Joint '%s' not found", token.c_str() );
+		}
+		fc.index = jointInfo->num;
+	}
 	else {
 		return va( "Unknown command '%s'", token.c_str() );
 	}
@@ -950,7 +967,15 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					break;
 				}
 
-
+				case FC_REATTACH:
+				{
+					idActor* actor = dynamic_cast<idActor*>(ent);
+					if (actor != NULL)
+					{
+						// TODO
+					}
+					break;
+				}
 			}
 		}
 	}

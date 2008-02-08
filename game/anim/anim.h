@@ -140,7 +140,8 @@ typedef enum {
 * FC_SETRATE sets the anim rate, used for speeding up/slowing down walking
 * and crouchwalking animations to get correct footstep sounds.
 **/
-	FC_SETRATE
+	FC_SETRATE,
+	FC_REATTACH
 
 } frameCommandType_t;
 
