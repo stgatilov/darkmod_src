@@ -77,9 +77,6 @@ private:
 	// Test if the alert state can be decreased
 	void TestAlertStateTimer();
 
-	// Returns TRUE if the <entity> is on an opposite team or owned by it
-	bool IsEnemy(idEntity* entity, idAI* self);
-
 	void Bark(const idStr& soundname);
 };
 typedef boost::shared_ptr<Mind> MindPtr;

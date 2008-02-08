@@ -288,7 +288,7 @@ void Mind::SetAlertPos()
 		*/
 		idEntity* target = owner->GetTactEnt();
 
-		if (IsEnemy(target, owner)) // also checks for NULL pointers
+		if (owner->IsEnemy(target)) // also checks for NULL pointers
 		{
 			owner->Event_SetEnemy(target);
 
@@ -443,25 +443,6 @@ void Mind::Bark(const idStr& soundname)
 	);
 }
 
-bool Mind::IsEnemy(idEntity* entity, idAI* self)
-{
-	if (entity == NULL)
-	{
-		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
-		return false;
-	}
-	else if (entity->IsType(idAbsenceMarkerEntity::Type))
-	{
-		idAbsenceMarkerEntity* marker = static_cast<idAbsenceMarkerEntity*>(entity);
-		return gameLocal.m_RelationsManager->IsEnemy(self->team, marker->ownerTeam);
-	}
-	else
-	{
-		// Ordinary entity, pass the call to the idAI::IsEnemy method
-		return self->IsEnemy(entity);
-	}
-}
-
 bool Mind::SetTarget()
 {
 	// greebo: Ported from ai_darkmod_base::setTarget() written by SZ
@@ -497,7 +478,7 @@ bool Mind::SetTarget()
 		* If the entity that bumped the AI is an inanimate object, isEnemy will return 0,
 		* so the AI will not try to attack an inanimate object.
 		**/
-		if (IsEnemy(target, owner))
+		if (owner->IsEnemy(target))
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("Set tactile alert enemy to entity %s\r", target->name.c_str());
 
