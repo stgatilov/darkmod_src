@@ -174,7 +174,7 @@ typedef struct SAttachPosition_s
 } SAttachPosition;
 
 // Used by m_renderTrigger
-#define EMPTY_MODEL "models/darkmod/props/misc/empty.lwo"
+#define EMPTY_MODEL "models/darkmod/misc/system/empty.lwo"
 
 class idEntity : public idClass {
 public:
