@@ -546,19 +546,16 @@
 					RelativePath="game\ai\AI_Vagary.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Ai\BasicMind.cpp">
+					RelativePath=".\DarkMod\Ai\Mind.cpp">
 				</File>
 				<File
-					RelativePath=".\DarkMod\Ai\BasicMind.h">
+					RelativePath=".\DarkMod\Ai\Mind.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Ai\Library.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Ai\Memory.h">
-				</File>
-				<File
-					RelativePath=".\DarkMod\Ai\Mind.h">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Ai\Queue.h">
