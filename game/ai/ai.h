@@ -1109,6 +1109,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// greebo: Overrides idActor::PlayFootStepSound()
 	virtual void			PlayFootStepSound();
 
+	// greebo: Plays the given bark sound (will override any sounds currently playing)
+	virtual void			Bark(const idStr& soundName);
+
 	// damage
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );

@@ -76,8 +76,6 @@ public:
 private:
 	// Test if the alert state can be decreased
 	void TestAlertStateTimer();
-
-	void Bark(const idStr& soundname);
 };
 typedef boost::shared_ptr<Mind> MindPtr;
 

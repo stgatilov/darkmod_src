@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/KnockedOutState.h"
 #include "../../DarkMod/AI/States/DeadState.h"
+#include "../../DarkMod/AI/Tasks/SingleBarkTask.h"
 #include "../../DarkMod/Relations.h"
 #include "../../DarkMod/MissionData.h"
 #include "../../DarkMod/StimResponse/StimResponseCollection.h"
@@ -4636,6 +4637,17 @@ void idAI::StaticMove( void ) {
 	}
 }
 
+void idAI::Bark(const idStr& soundName)
+{
+	// Clear out any previous tasks in the commsystem
+	GetSubsystem(ai::SubsysCommunication)->ClearTasks();
+
+	// Allocate a singlebarktask with the given sound and enqueue it
+	GetSubsystem(ai::SubsysCommunication)->PushTask(
+		ai::TaskPtr(new ai::SingleBarkTask(soundName))
+	);
+}
+
 void idAI::PlayFootStepSound()
 {
 	idStr				moveType, localSound, sound;
@@ -8223,7 +8235,7 @@ bool idAI::IsEnemy( idEntity *other )
 {
 	if (other == NULL)
 	{
-		/* The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes. */
+		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
 		return false;
 	}
 	else if (other->IsType(idAbsenceMarkerEntity::Type))

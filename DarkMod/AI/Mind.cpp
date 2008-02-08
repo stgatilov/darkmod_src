@@ -370,7 +370,6 @@ void Mind::SetAlertPos()
 			b_friendNearby = true;
 		}
 
-	
 		if (stimBarkType == 2) 
 		{
 			// Play speech: heard something 
@@ -378,22 +377,22 @@ void Mind::SetAlertPos()
 			{
 				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
-					Bark( "snd_alert2h" );
+					owner->Bark( "snd_alert2h" );
 				}
 				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
-					Bark( "snd_alert1h" );
+					owner->Bark( "snd_alert1h" );
 				}
 			}
 			else
 			{
 				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
-					Bark( "snd_alert2ch" );
+					owner->Bark( "snd_alert2ch" );
 				}
 				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
-					Bark( "snd_alert1ch" );
+					owner->Bark( "snd_alert1ch" );
 				}
 			}
 		}
@@ -404,43 +403,30 @@ void Mind::SetAlertPos()
 			{
 				if (owner->AI_AlertLevel >= owner->thresh_4)
 				{
-					Bark ("snd_alert3s" );
+					owner->Bark("snd_alert3s");
 				}
 				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
-					Bark( "snd_alert2s" );
+					owner->Bark("snd_alert2s");
 				}
 				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
-					Bark( "snd_alert1s" );
+					owner->Bark( "snd_alert1s" );
 				}
 			}
 			else
 			{
 				if (owner->AI_AlertLevel >= owner->thresh_3)
 				{
-					Bark( "snd_alert2cs" );
+					owner->Bark( "snd_alert2cs" );
 				}
 				else if (owner->AI_AlertLevel >= owner->thresh_2)
 				{
-					Bark( "snd_alert1cs" );
+					owner->Bark( "snd_alert1cs" );
 				}
 			}
 		}
 	}
-}
-
-void Mind::Bark(const idStr& soundname)
-{
-	idAI* owner = _owner.GetEntity();
-
-	// Clear out any previous tasks in the commsystem
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-
-	// Allocate a singlebarktask, set the sound and enqueue it
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask(soundname))
-	);
 }
 
 bool Mind::SetTarget()
