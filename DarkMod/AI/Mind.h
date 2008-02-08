@@ -72,10 +72,6 @@ public:
 
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
-
-private:
-	// Test if the alert state can be decreased
-	void TestAlertStateTimer();
 };
 typedef boost::shared_ptr<Mind> MindPtr;
 

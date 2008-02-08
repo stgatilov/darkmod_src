@@ -91,9 +91,6 @@ void Mind::Think()
 			break;
 		}
 	}
-
-	// Check if we can decrease the alert level
-	//TestAlertStateTimer();
 }
 
 void Mind::PushState(const idStr& stateName)
@@ -192,68 +189,6 @@ void Mind::ClearStates()
 {
 	_switchState = true;
 	_stateQueue.clear();
-}
-
-void Mind::TestAlertStateTimer()
-{
-	// greebo: This has been ported from ai_darkmod_base::subFrameTask_testAlertStateTimer() by SZ
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
-
-	float newAlertLevel(0);
-	float curTime = gameLocal.time;
-
-	// restart the de-alert timer if we get another alert
-	if (owner->AI_ALERTED)
-	{
-		//DEBUG_PRINT ("Restarting alert state timer");
-		owner->AI_currentAlertLevelStartTime = curTime;
-		return;
-	}
-	
-	if (owner->AI_currentAlertLevelDuration <= 0)
-	{
-		return;
-	}
-	
-	if (MS2SEC(curTime - owner->AI_currentAlertLevelStartTime) >= owner->AI_currentAlertLevelDuration)
-	{
-		// This alert level has expired, drop the alert level down halfway up the
-		// next lower category (to reflect nervousness in next lower category)
-		if (owner->AI_AlertLevel > owner->thresh_4)
-		{
-			//DEBUG_PRINT ("Dropping to alert level 2.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = owner->thresh_3 + ((owner->thresh_4 - owner->thresh_3) / 2.0);
-		}
-		else if (owner->AI_AlertLevel > owner->thresh_3)
-		{
-			//DEBUG_PRINT ("Dropping to alert level 1.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = owner->thresh_2 + ((owner->thresh_3 - owner->thresh_2) / 2.0);
-		}
-		else if (owner->AI_AlertLevel > (owner->thresh_2 / 2.0))
-		{
-			//DEBUG_PRINT ("Dropping to alert level 0.5 after alert duration expired, duration " + AI_currentAlertLevelDuration);
-			newAlertLevel = (owner->thresh_2/ 2.0) - 0.01; // To prevent floating point comparison error
-
-			// Alert level is changing
-			owner->SetAlertLevel(newAlertLevel);
-			
-			// Go Idle
-			return;
-		}
-		else
-		{
-			// Alert level is not changing if already < halfway between thresh_2 and thresh_3
-			//DEBUG_PRINT ("Alert level already at 1.5 " + AI_currentAlertLevelDuration);
-			return;
-		}
-
-		// Alert timer has expired		
-		owner->AI_currentAlertLevelDuration = -1;
-		
-		// Alert level is changing
-		owner->SetAlertLevel(newAlertLevel);
-	}
 }
 
 void Mind::SetAlertPos()
