@@ -64,8 +64,6 @@ void IdleState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	// No weapons in idle mode
-	owner->SheathWeapon();
 	owner->AI_RUN = false;
 
 	// Fill the subsystems with their tasks
@@ -82,22 +80,28 @@ void IdleState::Init(idAI* owner)
 		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
 	);
 
-	// Push the regular patrol barking to the list too
-	owner->GetSubsystem(SubsysCommunication)->QueueTask(
-		TaskPtr(new IdleBarkTask("snd_relaxed"))
-	);
+	// No weapons in idle mode, unless we were really alerted before
+	if (owner->m_maxAlertLevel < owner->thresh_5)
+	{
+		owner->SheathWeapon();
 
-	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+		// Push the regular patrol barking to the list too
+		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+			TaskPtr(new IdleBarkTask("snd_relaxed"))
+		);
 
-	// No action so far
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
+		// The action subsystem plays the idle anims (scratching, yawning...)
+		owner->GetSubsystem(SubsysAction)->ClearTasks();
+		owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
+	}
 
 	// Initialise the animation state
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+
+	// The sensory system does its Idle tasks
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
 	// Check if the owner has patrol routes set
 	idPathCorner* path = idPathCorner::RandomPath(owner, NULL);

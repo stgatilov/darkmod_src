@@ -65,7 +65,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / owner->atime4;
+	float alertTime = owner->atime4 + owner->atime4_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / alertTime;
 
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);

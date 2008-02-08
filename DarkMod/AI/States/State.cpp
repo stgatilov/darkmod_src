@@ -520,7 +520,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 		}
 
 		// Raise alert level
-		if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
+		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
 			memory.alertClass = EAlertVisual;
@@ -533,7 +533,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 			
 			owner->AI_VISALERT = false;
 			
-			owner->Event_SetAlertLevel(owner->thresh_5 - 0.1);
+			owner->Event_SetAlertLevel(owner->thresh_5 + 0.1);
 		}
 					
 		// Do new reaction to stimulus
@@ -596,7 +596,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		}
 
 		// Raise alert level
-		if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
+		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
 		{
 			memory.alertPos = person->GetPhysics()->GetOrigin();
 			memory.alertClass = EAlertVisual;
@@ -609,7 +609,7 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 			
 			owner->AI_VISALERT = false;
 			
-			owner->Event_SetAlertLevel(owner->thresh_5 - 0.1);
+			owner->Event_SetAlertLevel(owner->thresh_5 + 0.1);
 		}
 					
 		// Do new reaction to stimulus

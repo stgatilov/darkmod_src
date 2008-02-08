@@ -57,7 +57,8 @@ void SuspiciousState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("SuspiciousState initialised.\r");
 	assert(owner);
 
-	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / owner->atime2;
+	float alertTime = owner->atime2 + owner->atime2_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_3 - owner->thresh_2) / alertTime;
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
@@ -65,11 +66,10 @@ void SuspiciousState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
 	owner->StopMove(MOVE_STATUS_DONE);
 	if (!owner->CheckFOV(memory.alertPos))
 	{
@@ -78,8 +78,7 @@ void SuspiciousState::Init(idAI* owner)
 	}
 
 	// In any case, look at the point to investigate
-	owner->Event_LookAtPosition(memory.currentSearchSpot, 2.0f);
-
+	owner->Event_LookAtPosition(memory.alertPos, 2.0f);
 
 	// barking
 	idStr bark;

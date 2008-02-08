@@ -60,32 +60,14 @@ void CombatState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	// Store the enemy entity locally
-	_enemy = owner->GetEnemy();
-	idActor* enemy = _enemy.GetEntity();
-
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	// Issue a communication stim
-	owner->IssueCommunication_Internal(
-		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
-		YELL_STIM_RADIUS, 
-		NULL,
-		enemy,
-		memory.lastEnemyPos
-	);
-
+	// greebo: Check for weapons and flee if we are unarmed.
 	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
-
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-
 	_meleePossible = owner->GetNumMeleeWeapons() > 0;
 	_rangedPossible = owner->GetNumRangedWeapons() > 0;
-	// greebo: Check for weapons and flee if we are unarmed.
+
 	if (!_meleePossible && !_rangedPossible)
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
@@ -100,6 +82,29 @@ void CombatState::Init(idAI* owner)
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
+
+
+
+	if (!owner->GetMind()->PerformCombatCheck()) return;
+
+	// We have an enemy, store the enemy entity locally
+	_enemy = owner->GetEnemy();
+	idActor* enemy = _enemy.GetEntity();
+
+
+	// Issue a communication stim
+	owner->IssueCommunication_Internal(
+		static_cast<float>(CAIComm_Message::DetectedEnemy_CommType), 
+		YELL_STIM_RADIUS, 
+		NULL,
+		enemy,
+		memory.lastEnemyPos
+	);
+
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
 
 	owner->DrawWeapon();
 

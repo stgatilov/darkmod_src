@@ -823,6 +823,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime3);
 	savefile->WriteFloat(atime4);
 
+	savefile->WriteFloat(atime1_fuzzyness);
+	savefile->WriteFloat(atime2_fuzzyness);
+	savefile->WriteFloat(atime3_fuzzyness);
+	savefile->WriteFloat(atime4_fuzzyness);
+
+
 	mind->Save(savefile);
 
 	for (int i = 0; i < ai::SubsystemCount; i++) 
@@ -1052,6 +1058,12 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime3);
 	savefile->ReadFloat(atime4);
 
+	savefile->ReadFloat(atime1_fuzzyness);
+	savefile->ReadFloat(atime2_fuzzyness);
+	savefile->ReadFloat(atime3_fuzzyness);
+	savefile->ReadFloat(atime4_fuzzyness);
+
+
 	mind = ai::MindPtr(new ai::BasicMind(this));
 	mind->Restore(savefile);
 
@@ -1156,6 +1168,11 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time2",			"6",		atime2 );
 	spawnArgs.GetFloat( "alert_time3",			"30",		atime3 );
 	spawnArgs.GetFloat( "alert_time4",			"120",		atime4 );
+	spawnArgs.GetFloat( "alert_time1_fuzzyness",			"4",		atime1_fuzzyness );
+	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"6",		atime2_fuzzyness );
+	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"30",		atime3_fuzzyness );
+	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"120",		atime4_fuzzyness );
+
 	spawnArgs.GetBool( "ignore_alerts",			"0",		m_bIgnoreAlerts );
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs

@@ -67,7 +67,9 @@ void SearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / owner->atime3;
+	float alertTime = owner->atime3 + owner->atime3_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+
+	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / alertTime;
 
 	idStr bark;
 
@@ -110,7 +112,10 @@ void SearchingState::Init(idAI* owner)
 		);
 	}
 
-	owner->SheathWeapon();
+	if (owner->m_maxAlertLevel < owner->thresh_5)
+	{
+		owner->SheathWeapon();
+	}
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)

@@ -17,7 +17,6 @@ static bool init_version = FileVersionList("$Id: ObservantState.cpp 1435 2007-10
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "ObservantState.h"
 #include "SuspiciousState.h"
 #include "../Library.h"
 
@@ -58,7 +57,8 @@ void ObservantState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("ObservantState initialised.\r");
 	assert(owner);
 
-	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / owner->atime1;
+	float alertTime = owner->atime1 + owner->atime1_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
+	_alertLevelDecreaseRate = (owner->thresh_2 - owner->thresh_1) / alertTime;
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;

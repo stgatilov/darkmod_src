@@ -2711,17 +2711,21 @@ idAI::Event_LookAtPosition
 */
 void idAI::Event_LookAtPosition (const idVec3& lookAtWorldPosition, float duration)
 {
-	if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+	// angua: AI must not look at infinity
+	// this rips their upper body off and leads to really low frame rates
+	if (lookAtWorldPosition.x != idMath::INFINITY)
 	{
-		focusEntity	= NULL;
-		currentFocusPos = lookAtWorldPosition;
-		alignHeadTime = gameLocal.time;
-		forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
-		blink_time = 0;
+		if ( ( focusEntity.GetEntity() != NULL ) || ( currentFocusPos != lookAtWorldPosition) || (gameLocal.time ) ) 
+		{
+			focusEntity	= NULL;
+			currentFocusPos = lookAtWorldPosition;
+			alignHeadTime = gameLocal.time;
+			forceAlignHeadTime = gameLocal.time + SEC2MS( 1 );
+			blink_time = 0;
+		}
+
+		focusTime = gameLocal.time + SEC2MS( duration );
 	}
-
-	focusTime = gameLocal.time + SEC2MS( duration );
-
 }
 
 
