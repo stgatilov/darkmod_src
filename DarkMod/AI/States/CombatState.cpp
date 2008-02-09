@@ -59,6 +59,11 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
+void CombatState::OnAudioAlert(idActor* enemy)
+{
+	// do nothing as of now, we are already in combat mode
+}
+
 void CombatState::Init(idAI* owner)
 {
 	// Init base class first

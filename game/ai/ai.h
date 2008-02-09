@@ -383,7 +383,7 @@ public:
 	* has been called and that the sound is above threshold without
 	* considering environmental noise masking.
 	**/
-	void HearSound( SSprParms *propParms, float noise, idVec3 origin );
+	void HearSound( SSprParms *propParms, float noise, const idVec3& origin );
 
 	/**
 	* Return the last point at which the AI heard a sound

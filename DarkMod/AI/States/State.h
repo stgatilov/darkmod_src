@@ -65,6 +65,11 @@ public:
 	 */
 	virtual void OnVisualAlert(idActor* enemy);
 
+	/**
+	 * greebo: Gets called when the AI is alerted by a suspicious sound.
+	 */
+	virtual void OnAudioAlert();
+
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
 

@@ -269,6 +269,83 @@ void State::OnProjectileHit(idProjectile* projectile)
 	}
 }
 
+void State::OnAudioAlert() 
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMemory();
+
+	memory.alertClass = EAlertAudio;
+	memory.alertType = EAlertTypeEnemy;
+	memory.alertPos = owner->GetSndDir();
+
+	// Search within radius of stimulus that is 1/3 the distance from the
+	// observer to the point at the time heard
+	float distanceToStim = (owner->GetPhysics()->GetOrigin() - memory.alertPos).LengthFast();
+
+	// greebo: Apply a certain fuzziness to the audio alert position
+	// 200 units distance corresponds to 50 units fuzziness in X/Y direction
+	memory.alertPos += idVec3(
+		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+		0 // no fuzziness in z-direction
+	) * distanceToStim / 400.0f;
+
+	float searchVolModifier = distanceToStim / 600.0f;
+	if (searchVolModifier < 0.01f)
+	{
+		searchVolModifier = 0.01f;
+	}
+
+	memory.alertRadius = AUDIO_ALERT_RADIUS;
+	memory.alertSearchVolume = AUDIO_SEARCH_VOLUME * searchVolModifier;
+	memory.alertSearchExclusionVolume.Zero();
+	
+	// Reset the flag (greebo: is this still necessary?)
+	owner->AI_HEARDSOUND = false;
+	
+	memory.stimulusLocationItselfShouldBeSearched = true;
+
+	// Handle stimulus "barks"
+	if (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
+
+		// Check for any friends nearby we might want to talk to
+		bool b_friendNearby = false;
+		if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+		{
+			DM_LOG(LC_AI,LT_INFO).LogString("Time since friend is %d\r", (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen));
+			b_friendNearby = true;
+		}
+
+		// Play speech: heard something 
+		if (!b_friendNearby)
+		{
+			if (owner->AI_AlertLevel >= owner->thresh_3)
+			{
+				owner->Bark( "snd_alert2h" );
+			}
+			else if (owner->AI_AlertLevel >= owner->thresh_2)
+			{
+				owner->Bark( "snd_alert1h" );
+			}
+		}
+		else
+		{
+			if (owner->AI_AlertLevel >= owner->thresh_3)
+			{
+				owner->Bark( "snd_alert2ch" );
+			}
+			else if (owner->AI_AlertLevel >= owner->thresh_2)
+			{
+				owner->Bark( "snd_alert1ch" );
+			}
+		}
+	}
+}
+
 void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 {
 	idAI* owner = _owner.GetEntity();

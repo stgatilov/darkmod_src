@@ -257,7 +257,7 @@ void Mind::SetAlertPos()
 		owner->AI_VISALERT = false;
 		stimBarkType = 1;
 	}	
-	else */if( owner->AI_HEARDSOUND )
+	else if( owner->AI_HEARDSOUND )
 	{
 		memory.alertClass = EAlertAudio;
 		memory.alertType = EAlertTypeEnemy;
@@ -290,10 +290,10 @@ void Mind::SetAlertPos()
 		stimBarkType = 2;
 
 		memory.stimulusLocationItselfShouldBeSearched = true;
-	}
+	}*/
 
 	// Handle stimulus "barks"
-	if (stimBarkType >= 1 && 
+	/*if (stimBarkType >= 1 && 
 		MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
@@ -362,7 +362,7 @@ void Mind::SetAlertPos()
 				}
 			}
 		}
-	}
+	}*/
 }
 
 bool Mind::SetTarget()

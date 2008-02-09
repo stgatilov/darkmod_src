@@ -7138,9 +7138,7 @@ bool idAI::CheckHearing( SSprParms *propParms )
 	return returnval;
 }
 
-void idAI::HearSound
-	( SSprParms *propParms, float noise,
-	  idVec3 origin )
+void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
 	float psychLoud(0.0f);
 
@@ -7185,6 +7183,10 @@ void idAI::HearSound
 
 		AlertAI( "aud", psychLoud );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
+
+		// greebo: Notify the currently active state
+		mind->GetState()->OnAudioAlert();
+
 		if( cv_ai_debug.GetBool() )
 			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str() );
 	}
