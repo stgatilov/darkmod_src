@@ -114,6 +114,7 @@ void Mind::PushState(const StatePtr& state)
 
 	// Push the state to the front of the queue
 	_stateQueue.push_front(state);
+	state->SetOwner(_owner.GetEntity());
 
 	// Trigger a stateswitch next round
 	_switchState = true;

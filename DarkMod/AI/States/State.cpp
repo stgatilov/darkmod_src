@@ -69,7 +69,10 @@ bool State::CheckAlertLevel(idAI* owner)
 	return true; // always true by default
 }
 
-
+void State::SetOwner(idAI* owner)
+{
+	_owner = owner;
+}
 
 void State::UpdateAlertLevel()
 {
@@ -102,6 +105,59 @@ void State::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(_alertLevelDecreaseRate);
 }
 
+void State::OnTactileAlert(idEntity* tactEnt, float alertAmount)
+{
+	assert(tactEnt != NULL); // don't take NULL entities
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	// The actor is either the touched entity or the originator of the tactile alert
+	idActor* responsibleActor = 
+		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
+
+	// Don't get alerted by dead actors or non-enemies
+	if (responsibleActor == NULL || responsibleActor->health <= 0)
+	{
+		return;
+	}
+
+	if (!gameLocal.m_RelationsManager->IsEnemy(owner->team, responsibleActor->team)) 
+	{
+		return; // not an enemy, no alert
+	}
+
+	// Set the alert amount to the according tactile alert value
+	if (alertAmount == -1)
+	{
+		alertAmount = cv_ai_tactalert.GetFloat();
+	}
+
+	// If we got this far, we give the alert
+	// NOTE: Latest tactile alert always overrides other alerts
+	owner->m_TactAlertEnt = tactEnt;
+	owner->m_AlertedByActor = responsibleActor;
+	owner->AlertAI("tact", alertAmount);
+
+	// Set last visual contact location to this location as that is used in case
+	// the target gets away
+	owner->m_LastSight = tactEnt->GetPhysics()->GetOrigin();
+
+	// If no enemy set so far, set the last visible enemy position.
+	if (owner->GetEnemy() == NULL)
+	{
+		owner->lastVisibleEnemyPos = tactEnt->GetPhysics()->GetOrigin();
+	}
+
+	owner->AI_TACTALERT = true;
+
+	if( cv_ai_debug.GetBool() )
+	{
+		// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", owner->name.c_str(), tactEnt->name.c_str() );
+		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", owner->name.c_str(), tactEnt->name.c_str() );
+	}
+}
 
 void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 {

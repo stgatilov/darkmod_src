@@ -28,6 +28,9 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const = 0;
 
+	// greebo: Sets the owner of this State, this is usually called by the mind
+	void SetOwner(idAI* owner);
+
 	// This is called when the state is about to be invoked the first time by Mind.
 	virtual void Init(idAI* owner);
 
@@ -46,6 +49,14 @@ public:
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
 	{} // empty default implementation
+
+	/**
+	 * greebo: This handles an incoming tactile alert.
+	 *
+	 * @tactEnt: is the entity in question (actor, projectile, moveable,...)
+	 * @alertAmount: the alert amount the AI alertlevel should be increased by.
+	 */
+	virtual void OnTactileAlert(idEntity* tactEnt, float alertAmount = -1);
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);

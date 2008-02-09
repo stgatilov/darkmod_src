@@ -26,7 +26,7 @@
 //---------------------------------------------------------------------------
 
 #define NULL_HIDING_SPOT_SEARCH_HANDLE -1
-#define MAX_NUM_HIDING_SPOT_SEARCHES 4
+#define MAX_NUM_HIDING_SPOT_SEARCHES 24
 
 //---------------------------------------------------------------------------
 
