@@ -4816,9 +4816,8 @@ int idAI::ReactionTo( const idEntity *ent )
 idAI::Pain
 =====================
 */
-bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	idActor	*actor;
-
+bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location )
+{
 	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location );
 	AI_DAMAGE = true;
 
@@ -4834,39 +4833,6 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		} else
 		{
 			AI_SPECIAL_DAMAGE = 0;
-		}
-
-		// angua: alert the AI
-		if (attacker->IsType(idActor::Type))
-		{
-			if (AI_AlertLevel <= (thresh_5 - 0.1))
-			{
-				SetAlertLevel(thresh_5 - 0.1);
-				if (inflictor->IsType(idProjectile::Type))
-				{
-					// Set up search
-					ai::Memory& memory = GetMemory();
-					memory.alertClass = ai::EAlertTactile;
-					memory.alertType = ai::EAlertTypeDamage;
-					memory.alertPos = physicsObj.GetOrigin() - dir * 300;
-					memory.alertPos.x += 200 * gameLocal.random.RandomFloat() - 100;
-					memory.alertPos.y += 200 * gameLocal.random.RandomFloat() - 100;
-					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-				}
-			}
-
-			if ( enemy.GetEntity() != attacker ) 
-			{
-				actor = ( idActor * )attacker;
-				if ( ReactionTo( actor ) & ATTACK_ON_DAMAGE )
-				{
-					// being attacked always overrides the previous alert
-					gameLocal.AlertAI( actor );
-					SetEnemy( actor );
-				}
-			}
 		}
 	}
 

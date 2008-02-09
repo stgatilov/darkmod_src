@@ -151,11 +151,44 @@ void State::OnTactileAlert(idEntity* tactEnt, float alertAmount)
 
 	owner->AI_TACTALERT = true;
 
+	// If this is a projectile, fire the corresponding event
+	if (tactEnt->IsType(idProjectile::Type))
+	{
+		OnProjectileHit(static_cast<idProjectile*>(tactEnt));
+	}
+
 	if( cv_ai_debug.GetBool() )
 	{
 		// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", owner->name.c_str(), tactEnt->name.c_str() );
 		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", owner->name.c_str(), tactEnt->name.c_str() );
+	}
+}
+
+void State::OnProjectileHit(idProjectile* projectile)
+{
+	idAI* owner = _owner.GetEntity();
+
+	if (owner->AI_AlertLevel <= (owner->thresh_5 - 0.1f))
+	{
+		// Set the alert level right below combat threshold
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		// The owner will start to search, setup the parameters
+		Memory& memory = owner->GetMemory();
+
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeDamage;
+
+		idVec3 projVel = projectile->GetPhysics()->GetLinearVelocity();
+		projVel.NormalizeFast();
+
+		memory.alertPos = owner->GetPhysics()->GetOrigin() - projVel * 300;
+		memory.alertPos.x += 200 * gameLocal.random.RandomFloat() - 100;
+		memory.alertPos.y += 200 * gameLocal.random.RandomFloat() - 100;
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
 	}
 }
 

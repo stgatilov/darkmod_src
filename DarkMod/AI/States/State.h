@@ -82,6 +82,13 @@ public:
 
 protected:
 	/**
+	 * greebo: Gets called by OnTactileAlert when the offending entity is 
+	 *         an idProjectile. It does not alert the owning AI, as this is
+	 *         handled in the calling OnTactileAlert method.
+	 */
+	virtual void OnProjectileHit(idProjectile* projectile);
+
+	/**
 	 * greebo: Method implemented by the States to check
 	 *         for the correct alert index before continuing.
 	 *
