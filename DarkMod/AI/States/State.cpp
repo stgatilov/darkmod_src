@@ -121,12 +121,11 @@ void State::OnVisualAlert(idActor* enemy)
 	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
 	memory.alertSearchExclusionVolume.Zero();
 	
+	// set the flag back (greebo: Is this still necessary?)
 	owner->AI_VISALERT = false;
-	int stimBarkType = 1;
 
 	// Handle stimulus "barks"
-	if (stimBarkType >= 1 && 
-		MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	if (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
 		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
 
@@ -138,60 +137,31 @@ void State::OnVisualAlert(idActor* enemy)
 			b_friendNearby = true;
 		}
 
-		if (stimBarkType == 2) 
+		// Play speech: saw something
+		if (!b_friendNearby)
 		{
-			// Play speech: heard something 
-			if (!b_friendNearby)
+			if (owner->AI_AlertLevel >= owner->thresh_4)
 			{
-				if (owner->AI_AlertLevel >= owner->thresh_3)
-				{
-					owner->Bark( "snd_alert2h" );
-				}
-				else if (owner->AI_AlertLevel >= owner->thresh_2)
-				{
-					owner->Bark( "snd_alert1h" );
-				}
+				owner->Bark("snd_alert3s");
 			}
-			else
+			if (owner->AI_AlertLevel >= owner->thresh_3)
 			{
-				if (owner->AI_AlertLevel >= owner->thresh_3)
-				{
-					owner->Bark( "snd_alert2ch" );
-				}
-				else if (owner->AI_AlertLevel >= owner->thresh_2)
-				{
-					owner->Bark( "snd_alert1ch" );
-				}
+				owner->Bark("snd_alert2s");
+			}
+			else if (owner->AI_AlertLevel >= owner->thresh_2)
+			{
+				owner->Bark( "snd_alert1s" );
 			}
 		}
-		else if (stimBarkType == 1) 
+		else
 		{
-			// Play speech: saw something
-			if (!b_friendNearby)
+			if (owner->AI_AlertLevel >= owner->thresh_3)
 			{
-				if (owner->AI_AlertLevel >= owner->thresh_4)
-				{
-					owner->Bark("snd_alert3s");
-				}
-				if (owner->AI_AlertLevel >= owner->thresh_3)
-				{
-					owner->Bark("snd_alert2s");
-				}
-				else if (owner->AI_AlertLevel >= owner->thresh_2)
-				{
-					owner->Bark( "snd_alert1s" );
-				}
+				owner->Bark( "snd_alert2cs" );
 			}
-			else
+			else if (owner->AI_AlertLevel >= owner->thresh_2)
 			{
-				if (owner->AI_AlertLevel >= owner->thresh_3)
-				{
-					owner->Bark( "snd_alert2cs" );
-				}
-				else if (owner->AI_AlertLevel >= owner->thresh_2)
-				{
-					owner->Bark( "snd_alert1cs" );
-				}
+				owner->Bark( "snd_alert1cs" );
 			}
 		}
 	}
@@ -202,7 +172,7 @@ void State::OnVisualAlert(idActor* enemy)
 	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
 	float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
 	
-	if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
+	if (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 	{
 		// This is a new alert // SZ Dec 30, 2006
 		// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
