@@ -146,8 +146,8 @@ void SearchingState::Think(idAI* owner)
 		// Let the hiding spot search do its task
 		PerformHidingSpotSearch(owner);
 
-		// Let the mind check its senses
-		owner->GetMind()->PerformSensoryScan();
+		// Let the AI check its senses
+		owner->PerformVisualScan();
 
 		idStr waitState(owner->WaitState());
 		if (waitState != "look_around")
@@ -205,8 +205,8 @@ void SearchingState::Think(idAI* owner)
 	{
 		// Move to Hiding spot is ongoing, do additional sensory tasks here
 
-		// Let the mind check its senses
-		owner->GetMind()->PerformSensoryScan();
+		// Let the AI check its senses
+		owner->PerformVisualScan();
 	}
 }
 

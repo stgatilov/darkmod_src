@@ -55,8 +55,8 @@ void EmergeFromCoverState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void EmergeFromCoverState::Think(idAI* owner)
 {
-	// Let the mind check its senses
-	owner->GetMind()->PerformSensoryScan();
+	// Let the AI check its senses
+	owner->PerformVisualScan();
 
 	if (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE)
 	{

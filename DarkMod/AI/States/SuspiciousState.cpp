@@ -111,8 +111,8 @@ void SuspiciousState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 	
-	// Let the mind check its senses
-	owner->GetMind()->PerformSensoryScan();
+	// Let the AI check its senses
+	owner->PerformVisualScan();
 }
 
 StatePtr SuspiciousState::CreateInstance()
