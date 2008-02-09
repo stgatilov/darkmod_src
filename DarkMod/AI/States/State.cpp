@@ -197,63 +197,48 @@ void State::OnVisualAlert(idActor* enemy)
 	} // Not too close to last stimulus or is visual stimulus
 }
 
-void State::OnTactileAlert(idEntity* tactEnt, float alertAmount)
+void State::OnTactileAlert(idEntity* tactEnt)
 {
 	assert(tactEnt != NULL); // don't take NULL entities
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	// The actor is either the touched entity or the originator of the tactile alert
-	idActor* responsibleActor = 
-		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
-
-	// Don't get alerted by dead actors or non-enemies
-	if (responsibleActor == NULL || responsibleActor->health <= 0)
-	{
-		return;
-	}
-
-	if (!gameLocal.m_RelationsManager->IsEnemy(owner->team, responsibleActor->team)) 
-	{
-		return; // not an enemy, no alert
-	}
-
-	// Set the alert amount to the according tactile alert value
-	if (alertAmount == -1)
-	{
-		alertAmount = cv_ai_tactalert.GetFloat();
-	}
-
-	// If we got this far, we give the alert
-	// NOTE: Latest tactile alert always overrides other alerts
-	owner->m_TactAlertEnt = tactEnt;
-	owner->m_AlertedByActor = responsibleActor;
-	owner->AlertAI("tact", alertAmount);
-
-	// Set last visual contact location to this location as that is used in case
-	// the target gets away
-	owner->m_LastSight = tactEnt->GetPhysics()->GetOrigin();
-
-	// If no enemy set so far, set the last visible enemy position.
-	if (owner->GetEnemy() == NULL)
-	{
-		owner->lastVisibleEnemyPos = tactEnt->GetPhysics()->GetOrigin();
-	}
-
-	owner->AI_TACTALERT = true;
-
 	// If this is a projectile, fire the corresponding event
 	if (tactEnt->IsType(idProjectile::Type))
 	{
 		OnProjectileHit(static_cast<idProjectile*>(tactEnt));
 	}
-
-	if( cv_ai_debug.GetBool() )
+	else 
 	{
-		// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", owner->name.c_str(), tactEnt->name.c_str() );
-		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", owner->name.c_str(), tactEnt->name.c_str() );
+		/**
+		* FIX: They should not try to MOVE to the tactile alert position
+		* because if it's above their head, they can't get to it and will
+		* just run in circles.  
+		*
+		* Instead, turn to this position manually, then set the search target
+		* to the AI's own origin, to execute a search starting from where it's standing
+		*
+		* TODO later: Predict where the thrown object might have come from, and search
+		* in that direction (requires a "directed search" algorithm)
+		*/
+		if (owner->IsEnemy(tactEnt)) // also checks for NULL pointers
+		{
+			owner->Event_SetEnemy(tactEnt);
+
+			Memory& memory = owner->GetMemory();
+			memory.alertClass = EAlertTactile;
+			memory.alertType = EAlertTypeEnemy;
+			memory.alertPos = owner->GetPhysics()->GetOrigin();
+			memory.alertRadius = TACTILE_ALERT_RADIUS;
+			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
+			memory.alertSearchExclusionVolume.Zero();
+
+			// execute the turn manually here
+			owner->TurnToward(memory.alertPos);
+			
+			owner->AI_TACTALERT = false;
+		}
 	}
 }
 

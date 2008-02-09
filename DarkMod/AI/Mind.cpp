@@ -209,8 +209,8 @@ void Mind::SetAlertPos()
 	// 2 is heard
 	int stimBarkType = 0;
 	
-	if (owner->AI_TACTALERT)
-	{
+	/*if (owner->AI_TACTALERT)
+	{*/
 		/**
 		* FIX: They should not try to MOVE to the tactile alert position
 		* because if it's above their head, they can't get to it and will
@@ -222,7 +222,7 @@ void Mind::SetAlertPos()
 		* TODO later: Predict where the thrown object might have come from, and search
 		* in that direction (requires a "directed search" algorithm)
 		*/
-		idEntity* target = owner->GetTactEnt();
+		/*idEntity* target = owner->GetTactEnt();
 
 		if (owner->IsEnemy(target)) // also checks for NULL pointers
 		{
@@ -244,7 +244,7 @@ void Mind::SetAlertPos()
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("No tactile alert entity was set");
 		}
-	}
+	}*/
 	/*else if( owner->AI_VISALERT )
 	{
 		memory.alertClass = EAlertVisual;
@@ -256,8 +256,8 @@ void Mind::SetAlertPos()
 		
 		owner->AI_VISALERT = false;
 		stimBarkType = 1;
-	}*/	
-	else if( owner->AI_HEARDSOUND )
+	}	
+	else */if( owner->AI_HEARDSOUND )
 	{
 		memory.alertClass = EAlertAudio;
 		memory.alertType = EAlertTypeEnemy;

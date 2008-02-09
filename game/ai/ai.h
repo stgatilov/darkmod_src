@@ -455,7 +455,7 @@ public:
 	* The amount is in alert units, so as usual 1 = barely noticible, 
 	*	10 = twice as noticable, etc.
 	**/
-	void TactileAlert( idEntity *ent, float amount = -1 );
+	void TactileAlert(idEntity* tactEnt, float amount = -1);
 
 	/**
 	* This is called in the frame if the AI bumped into another actor.

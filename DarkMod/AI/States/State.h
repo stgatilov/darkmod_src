@@ -54,9 +54,8 @@ public:
 	 * greebo: This handles an incoming tactile alert.
 	 *
 	 * @tactEnt: is the entity in question (actor, projectile, moveable,...)
-	 * @alertAmount: the alert amount the AI alertlevel should be increased by.
 	 */
-	virtual void OnTactileAlert(idEntity* tactEnt, float alertAmount = -1);
+	virtual void OnTactileAlert(idEntity* tactEnt);
 
 	/**
 	 * greebo: Gets called by idAI::PerformVisualScan when a visual alert is 

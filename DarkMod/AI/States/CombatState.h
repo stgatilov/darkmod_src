@@ -40,7 +40,8 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	// Override the visual alert method
+	// Override the visual and tactile alerts
+	virtual void OnTactileAlert(idEntity* tactEnt);
 	virtual void OnVisualAlert(idActor* enemy);
 
 	// Save/Restore methods

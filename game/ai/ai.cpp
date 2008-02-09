@@ -7716,12 +7716,60 @@ float idAI::GetCalibratedLightgemValue() const
 	return clampVal;
 }
 
-void idAI::TactileAlert(idEntity *entest, float amount)
+void idAI::TactileAlert(idEntity* tactEnt, float amount)
 {
-	if (entest != NULL && !m_bIgnoreAlerts)
+	if (tactEnt == NULL || m_bIgnoreAlerts)
 	{
-		// greebo: Tactile alerts are handled by the state of mind
-		mind->GetState()->OnTactileAlert(entest, amount);
+		return;
+	}
+
+	// The actor is either the touched entity or the originator of the tactile alert
+	idActor* responsibleActor = 
+		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
+
+	// Don't get alerted by dead actors or non-enemies
+	if (responsibleActor == NULL || responsibleActor->health <= 0)
+	{
+		return;
+	}
+
+	if (!gameLocal.m_RelationsManager->IsEnemy(team, responsibleActor->team)) 
+	{
+		return; // not an enemy, no alert
+	}
+
+	// Set the alert amount to the according tactile alert value
+	if (amount == -1)
+	{
+		amount = cv_ai_tactalert.GetFloat();
+	}
+
+	// If we got this far, we give the alert
+	// NOTE: Latest tactile alert always overrides other alerts
+	m_TactAlertEnt = tactEnt;
+	m_AlertedByActor = responsibleActor;
+	AlertAI("tact", amount);
+
+	// Notify the currently active state
+	mind->GetState()->OnTactileAlert(tactEnt);
+
+	// Set last visual contact location to this location as that is used in case
+	// the target gets away
+	m_LastSight = tactEnt->GetPhysics()->GetOrigin();
+
+	// If no enemy set so far, set the last visible enemy position.
+	if (GetEnemy() == NULL)
+	{
+		lastVisibleEnemyPos = tactEnt->GetPhysics()->GetOrigin();
+	}
+
+	AI_TACTALERT = true;
+
+	if( cv_ai_debug.GetBool() )
+	{
+		// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", name.c_str(), tactEnt->name.c_str() );
+		gameLocal.Printf( "[DM AI] AI %s FELT entity %s\n", name.c_str(), tactEnt->name.c_str() );
 	}
 }
 
