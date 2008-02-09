@@ -213,8 +213,7 @@ idPlayer::idPlayer
 ==============
 */
 idPlayer::idPlayer() :
-	m_ButtonStateTracker(this),
-	objectiveGUIThread(NULL)
+	m_ButtonStateTracker(this)
 {
 	memset( &usercmd, 0, sizeof( usercmd ) );
 
@@ -453,9 +452,6 @@ void idPlayer::LinkScriptVariables( void ) {
 	AI_LEAN_RIGHT.LinkTo(		scriptObject, "AI_LEAN_RIGHT" );
 	AI_LEAN_FORWARD.LinkTo(		scriptObject, "AI_LEAN_FORWARD" );
 	AI_CREEP.LinkTo(			scriptObject, "AI_CREEP" );
-
-	// greebo: Connect the script bool
-	objectiveGUICloseRequest.LinkTo(scriptObject, "objectiveGUICloseRequest");
 }
 
 /*
@@ -1161,7 +1157,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteUserInterface( hud, false );
 	savefile->WriteUserInterface( objectiveSystem, false );
 	savefile->WriteBool( objectiveSystemOpen );
-	savefile->WriteObject(objectiveGUIThread);
 
 	savefile->WriteInt(hudMessages.Num());
 	for (int i = 0; i < hudMessages.Num(); i++) 
@@ -1437,7 +1432,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadUserInterface( hud );
 	savefile->ReadUserInterface( objectiveSystem );
 	savefile->ReadBool( objectiveSystemOpen );
-	savefile->ReadObject( reinterpret_cast<idClass *&>(objectiveGUIThread) );
 
 	savefile->ReadInt(num);
 	hudMessages.Clear();
@@ -4807,30 +4801,6 @@ void idPlayer::UseVehicle( void ) {
 	}
 }
 
-void idPlayer::ToggleObjectivesGUI() 
-{
-	if (objectiveGUIThread == NULL)
-	{
-		// No script running yet, create a new one
-		const function_t* objectivesFunc = scriptObject.GetFunction("toggleObjectivesGUI");
-
-		if (objectivesFunc == NULL) {
-			gameLocal.Warning("Could not find objectives GUI toggle script function!\n");
-			return;
-		}
-
-		// Setup the thread with the found function
-		objectiveGUIThread = new idThread(objectivesFunc);
-		objectiveGUIThread->CallFunctionArgs(objectivesFunc, true, "e", this);
-		objectiveGUIThread->DelayedStart(0);
-	}
-	else
-	{
-		// Send a signal to the running thread, this should be enough
-		objectiveGUICloseRequest = true;
-	}
-}
-
 /*
 ==============
 idPlayer::PerformImpulse
@@ -4921,7 +4891,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
-			// ToggleObjectivesGUI(); // greebo: disabled for Thief's Den release
+			// TODO: Find a way to toggle the main menu from here
 			break;
 		}
 		case IMPULSE_20:
@@ -5241,11 +5211,6 @@ bool idPlayer::HandleESC( void ) {
 	if ( objectiveSystemOpen ) {
 		TogglePDA();
 		return true;
-	}
-
-	if (objectiveGUIThread != NULL) {
-		ToggleObjectivesGUI();
-		return true; // TRUE = don't propagate ESC to system
 	}
 
 	if ( m_overlays.findInteractive() ) {
@@ -6246,18 +6211,6 @@ void idPlayer::Think( void )
 		playerView.CalculateShake();
 	}
 	
-	// Check for a running objectives GUI thread, it won't get executed if time is stopped.
-	if (objectiveGUIThread != NULL) {
-		// Execute the thread, unless it's dying
-		if (!objectiveGUIThread->IsDying()) {
-			objectiveGUIThread->Execute();
-		}
-		else {
-			// The thread is dying, set the pointer to NULL
-			objectiveGUIThread = NULL;
-		}
-	}
-
 	if ( !( thinkFlags & TH_THINK ) ) {
 		gameLocal.Printf( "player %d not thinking?\n", entityNumber );
 	}

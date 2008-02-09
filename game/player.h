@@ -227,8 +227,6 @@ public:
 	idUserInterface *		hud;				// MP: is NULL if not local player
 	idUserInterface *		objectiveSystem;	 // not used by TDM (only for PDA)
 	bool					objectiveSystemOpen; // not used by TDM (only for PDA)
-	idThread*				objectiveGUIThread; // only non-NULL when objective system is open
-	idScriptBool			objectiveGUICloseRequest;
 
 	// greebo: A list of HUD messages which are displayed one after the other
 	idList<idStr>			hudMessages;
@@ -519,9 +517,6 @@ public:
 	void					Spectate( bool spectate );
 	void					TogglePDA( void );
 	void					ToggleScoreboard( void );
-
-	// greebo: Toggles the objectives GUI
-	void					ToggleObjectivesGUI();
 
 	void					RouteGuiMouse( idUserInterface *gui );
 	void					UpdateHud( void );
