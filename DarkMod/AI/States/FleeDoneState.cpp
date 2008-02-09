@@ -126,8 +126,8 @@ void FleeDoneState::Think(idAI* owner)
 	}
 	else
 	{
-		// Let the mind check its senses (TRUE = process new stimuli)
-		owner->GetMind()->PerformSensoryScan(true);
+		// Let the mind check its senses
+		owner->GetMind()->PerformSensoryScan();
 		if (owner->AI_ALERTED)
 		{
 			owner->GetMind()->EndState();

@@ -7586,6 +7586,9 @@ void idAI::PerformVisualScan(float timecheck)
 		// Remember this actor
 		m_AlertedByActor = player;
 		AlertAI("vis", incAlert);
+
+		// Call the visual alert handler on the current state
+		mind->GetState()->OnVisualAlert(player);
 	}
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), player->name.c_str() );

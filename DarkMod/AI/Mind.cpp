@@ -245,7 +245,7 @@ void Mind::SetAlertPos()
 			DM_LOG(LC_AI, LT_INFO).LogString("No tactile alert entity was set");
 		}
 	}
-	else if( owner->AI_VISALERT )
+	/*else if( owner->AI_VISALERT )
 	{
 		memory.alertClass = EAlertVisual;
 		memory.alertType = EAlertTypeEnemy;
@@ -256,7 +256,7 @@ void Mind::SetAlertPos()
 		
 		owner->AI_VISALERT = false;
 		stimBarkType = 1;
-	}	
+	}*/	
 	else if( owner->AI_HEARDSOUND )
 	{
 		memory.alertClass = EAlertAudio;
@@ -490,7 +490,7 @@ bool Mind::PerformCombatCheck()
 	return false; // combat mode not justified
 }
 
-void Mind::PerformSensoryScan(bool processNewStimuli)
+void Mind::PerformSensoryScan()
 {
 	// greebo: Ported from ai_darkmod_base::subFrameTask_canSwitchState_sensoryScan() written by SZ
 
@@ -505,50 +505,46 @@ void Mind::PerformSensoryScan(bool processNewStimuli)
 	// Test if alerted
 	if (owner->AI_ALERTED)
 	{
-		// Process alert flags for combat or stimulus location (both destroy flag values)?
+		/*// Process alert flags for combat or stimulus location (both destroy flag values)?
 		if (owner->AI_AlertLevel >= owner->thresh_5)
 		{
 			// We're already in combat mode, ignore this stimulus
 			return;
-		}
+		}*/
 	
 		// If it was not a combat level alert, or we returned here because there
 		// was no target, set the alert position
 		SetAlertPos();
 		
-		// Are we searching out new alerts		
-		if (processNewStimuli)
+		/*// Is this alert far enough away from the last one we reacted to to
+		// consider it a new alert? Visual alerts are highly compelling and
+		// are always considered new
+		idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
+		float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
+		
+		if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
 		{
-			// Is this alert far enough away from the last one we reacted to to
-			// consider it a new alert? Visual alerts are highly compelling and
-			// are always considered new
-			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
-			float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
-			
-			if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
+			// This is a new alert // SZ Dec 30, 2006
+			// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
+			if (owner->AI_AlertLevel >= owner->thresh_3)
 			{
-				// This is a new alert // SZ Dec 30, 2006
-				// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
-				if (owner->AI_AlertLevel >= owner->thresh_3)
-				{
-					// We are in searching mode or we are switching to it, handle this new incoming alert
+				// We are in searching mode or we are switching to it, handle this new incoming alert
 
-					// Visual stimuli are locatable enough that we should
-					// search the exact stim location first
-					memory.stimulusLocationItselfShouldBeSearched = true;
-					
-					// greebo: TODO: Each incoming stimulus == evidence of intruders?
-					// One more piece of evidence of something out of place
-					memory.countEvidenceOfIntruders++;
+				// Visual stimuli are locatable enough that we should
+				// search the exact stim location first
+				memory.stimulusLocationItselfShouldBeSearched = true;
 				
-					// Do new reaction to stimulus
-					memory.searchingDueToCommunication = false;
+				// greebo: TODO: Each incoming stimulus == evidence of intruders?
+				// One more piece of evidence of something out of place
+				memory.countEvidenceOfIntruders++;
+			
+				// Do new reaction to stimulus
+				memory.searchingDueToCommunication = false;
 
-					// Restart the search, in case we're already searching
-					memory.restartSearchForHidingSpots = true;
-				}	
-			} // Not too close to last stimulus or is visual stimulus
-		} // Not ignoring new stimuli
+				// Restart the search, in case we're already searching
+				memory.restartSearchForHidingSpots = true;
+			}	
+		} // Not too close to last stimulus or is visual stimulus*/
 	}
 }
 

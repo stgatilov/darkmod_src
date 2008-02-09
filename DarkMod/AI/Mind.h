@@ -118,12 +118,8 @@ public:
 	*
 	* If the alert level is driven to the combat threshold
 	* then combat will be attempted
-	*
-	* Otherwise, either nothing will be done or the stimuli
-	* source will be searched for, depending on the value
-	* of b_searchNewStimuli
 	*/
-	virtual void PerformSensoryScan(bool processNewStimuli);
+	virtual void PerformSensoryScan();
 
 	/**
 	* SZ: This method tests to see if the target can be reached.

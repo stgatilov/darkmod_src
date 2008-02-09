@@ -58,6 +58,14 @@ public:
 	 */
 	virtual void OnTactileAlert(idEntity* tactEnt, float alertAmount = -1);
 
+	/**
+	 * greebo: Gets called by idAI::PerformVisualScan when a visual alert is 
+	 *         justified under the current circumstances.
+	 *
+	 * @enemy: The detected entity (usually the player). Must not be NULL.
+	 */
+	virtual void OnVisualAlert(idActor* enemy);
+
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
 

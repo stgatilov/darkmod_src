@@ -105,6 +105,128 @@ void State::Restore(idRestoreGame* savefile)
 	savefile->ReadFloat(_alertLevelDecreaseRate);
 }
 
+void State::OnVisualAlert(idActor* enemy)
+{
+	assert(enemy != NULL);
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMemory();
+
+	memory.alertClass = EAlertVisual;
+	memory.alertType = EAlertTypeEnemy;
+	memory.alertPos = owner->GetVisDir();
+	memory.alertRadius = VISUAL_ALERT_RADIUS;
+	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
+	memory.alertSearchExclusionVolume.Zero();
+	
+	owner->AI_VISALERT = false;
+	int stimBarkType = 1;
+
+	// Handle stimulus "barks"
+	if (stimBarkType >= 1 && 
+		MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
+
+		// Check for any friends nearby we might want to talk to
+		bool b_friendNearby = false;
+		if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+		{
+			DM_LOG(LC_AI,LT_INFO).LogString("Time since friend is %d\r", (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen));
+			b_friendNearby = true;
+		}
+
+		if (stimBarkType == 2) 
+		{
+			// Play speech: heard something 
+			if (!b_friendNearby)
+			{
+				if (owner->AI_AlertLevel >= owner->thresh_3)
+				{
+					owner->Bark( "snd_alert2h" );
+				}
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
+				{
+					owner->Bark( "snd_alert1h" );
+				}
+			}
+			else
+			{
+				if (owner->AI_AlertLevel >= owner->thresh_3)
+				{
+					owner->Bark( "snd_alert2ch" );
+				}
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
+				{
+					owner->Bark( "snd_alert1ch" );
+				}
+			}
+		}
+		else if (stimBarkType == 1) 
+		{
+			// Play speech: saw something
+			if (!b_friendNearby)
+			{
+				if (owner->AI_AlertLevel >= owner->thresh_4)
+				{
+					owner->Bark("snd_alert3s");
+				}
+				if (owner->AI_AlertLevel >= owner->thresh_3)
+				{
+					owner->Bark("snd_alert2s");
+				}
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
+				{
+					owner->Bark( "snd_alert1s" );
+				}
+			}
+			else
+			{
+				if (owner->AI_AlertLevel >= owner->thresh_3)
+				{
+					owner->Bark( "snd_alert2cs" );
+				}
+				else if (owner->AI_AlertLevel >= owner->thresh_2)
+				{
+					owner->Bark( "snd_alert1cs" );
+				}
+			}
+		}
+	}
+
+	// Is this alert far enough away from the last one we reacted to to
+	// consider it a new alert? Visual alerts are highly compelling and
+	// are always considered new
+	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
+	float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
+	
+	if (memory.alertClass == EAlertVisual || alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
+	{
+		// This is a new alert // SZ Dec 30, 2006
+		// Note changed this from thresh_2 to thresh_3 to match thresh designers intentions
+		if (owner->AI_AlertLevel >= owner->thresh_3)
+		{
+			// We are in searching mode or we are switching to it, handle this new incoming alert
+
+			// Visual stimuli are locatable enough that we should
+			// search the exact stim location first
+			memory.stimulusLocationItselfShouldBeSearched = true;
+			
+			// greebo: TODO: Each incoming stimulus == evidence of intruders?
+			// One more piece of evidence of something out of place
+			memory.countEvidenceOfIntruders++;
+		
+			// Do new reaction to stimulus
+			memory.searchingDueToCommunication = false;
+
+			// Restart the search, in case we're already searching
+			memory.restartSearchForHidingSpots = true;
+		}	
+	} // Not too close to last stimulus or is visual stimulus
+}
+
 void State::OnTactileAlert(idEntity* tactEnt, float alertAmount)
 {
 	assert(tactEnt != NULL); // don't take NULL entities

@@ -135,8 +135,8 @@ void IdleState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	// Let the mind check its senses (TRUE = process new stimuli)
-	owner->GetMind()->PerformSensoryScan(true);
+	// Let the mind check its senses
+	owner->GetMind()->PerformSensoryScan();
 }
 
 void IdleState::Save(idSaveGame* savefile) const

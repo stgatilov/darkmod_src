@@ -40,6 +40,9 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
+	// Override the visual alert method
+	virtual void OnVisualAlert(idActor* enemy);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
