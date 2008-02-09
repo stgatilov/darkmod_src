@@ -2696,10 +2696,15 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// create a merged pvs for all players
 		SetupPlayerPVS();
 
+		idTimer lasTimer;
+		lasTimer.Clear();
+		lasTimer.Start();
 		// The Dark Mod
 		// 10/9/2005: SophisticatedZombie
 		// Update the Light Awareness System
 		LAS.updateLASState();
+		lasTimer.Stop();
+		DM_LOG(LC_LIGHT, LT_INFO).LogString("Time to update LAS: %lf\r", lasTimer.Milliseconds());
 
 		unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
 
@@ -2732,7 +2737,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				timer_singlethink.Stop();
 				ms = timer_singlethink.Milliseconds();
 				if ( ms >= g_timeentities.GetFloat() ) {
-					Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+					//Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+					DM_LOG(LC_ENTITY, LT_INFO).LogString("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
 				}
 				num++;
 			}
@@ -2772,6 +2778,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		}
 
 		timer_think.Stop();
+	
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Thinking timer: %lf\r", timer_think.Milliseconds());
+
 		timer_events.Clear();
 		timer_events.Start();
 
@@ -5680,6 +5689,10 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 		return; // S/R disabled, skip this
 	}
 
+	idTimer srTimer;
+	srTimer.Clear();
+	srTimer.Start();
+
 	// Check the timed stims first.
 	for (int i = 0; i < m_StimTimer.Num(); i++)
 	{
@@ -5831,6 +5844,9 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			}
 		}
 	}
+
+	srTimer.Stop();
+	DM_LOG(LC_STIM_RESPONSE, LT_INFO).LogString("Processing S/R took %lf\r", srTimer.Milliseconds());
 }
 
 /*

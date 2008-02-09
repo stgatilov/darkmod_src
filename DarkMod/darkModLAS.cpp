@@ -687,6 +687,9 @@ float darkModLAS::queryLightingAlongLine
 		bool b_useShadows
 )
 {
+	idTimer lightingTimer;
+	lightingTimer.Clear();
+	lightingTimer.Start();
 	if (p_ignoreEntity != NULL)
 	{
 		DM_LOG(LC_LIGHT, LT_DEBUG).LogString
@@ -804,6 +807,9 @@ float darkModLAS::queryLightingAlongLine
 		testPoint2.x, testPoint2.y, testPoint2.z,
 		totalIllumination
 	);
+
+	lightingTimer.Stop();
+	DM_LOG(LC_LIGHT, LT_INFO).LogString("Lighing along line took %lf\r", lightingTimer.Milliseconds());
 
 	// Return total illumination value to the caller
 	return totalIllumination;
