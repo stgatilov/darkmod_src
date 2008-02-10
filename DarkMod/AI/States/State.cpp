@@ -22,8 +22,8 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "BlindedState.h"
 #include "SwitchOnLightState.h"
 
-#include "../../DarkMod/BinaryFrobMover.h"
-#include "../../DarkMod/FrobDoor.h"
+#include "../../BinaryFrobMover.h"
+#include "../../FrobDoor.h"
 
 namespace ai
 {
