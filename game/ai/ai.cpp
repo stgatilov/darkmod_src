@@ -3824,31 +3824,29 @@ idAI::CheckObstacleAvoidance
 =====================
 */
 void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
-	idEntity		*obstacle;
-	obstaclePath_t	path;
-	idVec3			dir;
-	float			dist;
-	bool			foundPath;
-
-	// If there is an obstacle, this is the distance from it we should stop to
-	// take action
-	float stopDistance = 0.0f;
-
-	if ( ignore_obstacles ) {
+	if (ignore_obstacles)
+	{
 		newPos = goalPos;
 		move.obstacle = NULL;
 		return;
 	}
 
-	const idVec3 &origin = physicsObj.GetOrigin();
+	const idVec3& origin = physicsObj.GetOrigin();
 
-	obstacle = NULL;
+	idEntity* obstacle = NULL;
+	obstaclePath_t	path;
+
 	AI_OBSTACLE_IN_PATH = false;
-	foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path );
-	if ( ai_showObstacleAvoidance.GetBool() ) {
+	bool foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path );
+
+	if ( ai_showObstacleAvoidance.GetBool())
+	{
 		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), gameLocal.msec );
 		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), gameLocal.msec );
 	}
+
+	// If there is an obstacle, this is the distance from it we should stop to take action
+	float stopDistance = 0.0f;
 
 	if ( !foundPath ) {
 		// couldn't get around obstacles
@@ -3858,15 +3856,14 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 
 			// If its a door handle, switch the obstacle to the door so we don't get all hung
 			// up on door handles
-			if (path.firstObstacle->IsType (CFrobDoorHandle::Type))
+			if (path.firstObstacle->IsType(CFrobDoorHandle::Type))
 			{
 				// Make the obstacle the door itself
-				path.firstObstacle = ((CFrobDoorHandle*) (path.firstObstacle))->GetDoor();
+				path.firstObstacle = static_cast<CFrobDoorHandle*>(path.firstObstacle)->GetDoor();
 			}
 
-
-			/* SZ: Further distance for Binary Frob Movers (eg: doors) */
-			if (path.firstObstacle->IsType (CBinaryFrobMover::Type))
+			// SZ: Further distance for Binary Frob Movers (eg: doors) 
+			if (path.firstObstacle->IsType(CBinaryFrobMover::Type))
 			{
 				// angua: changed the code a bit...
 				// Calculate distance far enough away that we won't hit swinging door
@@ -3918,13 +3915,14 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 				}
 			}
 		}
-		else if ( path.startPosObstacle )
+		else if (path.startPosObstacle)
 		{
 			AI_OBSTACLE_IN_PATH = true;
 			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.startPosObstacle->GetPhysics()->GetAbsBounds() ) ) {
 				obstacle = path.startPosObstacle;
 			}
-		} else
+		}
+		else
 		{
 			// Blocked by wall
 			move.moveStatus = MOVE_STATUS_BLOCKED_BY_WALL;
@@ -3941,141 +3939,130 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		}
 #endif
 	}
-	else if ( path.seekPosObstacle )
+	else if (path.seekPosObstacle)
 	{
 		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
 		// then we want to push the path.seekPosObstacle entity out of the way
 		AI_OBSTACLE_IN_PATH = true;
 
 		// check if we're past where the goalPos was pushed out of the obstacle
-		dir = goalPos - origin;
-		dir.Normalize();
-		dist = ( path.seekPos - origin ) * dir;
-		if ( dist < 1.0f ) {
+		idVec3 dir = goalPos - origin;
+		dir.NormalizeFast();
+		float dist = (path.seekPos - origin) * dir;
+		if (dist < 1.0f)
+		{
 			obstacle = path.seekPosObstacle;
 		}
 	}
 
-	// if we had an obstacle, set our move status based on the type, and kick it out of the way if it's a moveable
-	if ( obstacle )
-	{
-		if ( obstacle->IsType( idActor::Type ) )
-		{
-			// monsters aren't kickable
-			if ( obstacle == enemy.GetEntity() )
-			{
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_ENEMY;
-			} else
-			{
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_MONSTER;
-			}
-		}
-		else
-		{
-			// If its a door handle, switch the obstacle to the door so we don't get all hung
-			// up on door handles
-			if (obstacle->IsType (CFrobDoorHandle::Type))
-			{
-				// Make the obstacle the door itself
-				obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
-/*
-				// Calculate distance far enough away that we won't hit swinging door
-				// opening toward us
-				idVec3 delta;
-				idVec3 gravity;
-				idVec3 sizePerpGrav;
-
-				idBounds avoidBounds = obstacle->GetPhysics()->GetBounds();
-				delta.x = avoidBounds[0][1] - avoidBounds[0][0];
-				delta.y = avoidBounds[1][1] - avoidBounds[1][0];
-				delta.z = avoidBounds[2][1] - avoidBounds[2][0];
-
-				gravity = gameLocal.GetGravity();
-				gravity.Normalize();
-
-				sizePerpGrav = gravity.Cross (delta);
-
-				stopDistance = sizePerpGrav.Length();
-*/
-			}
-
-			// Handle doors
-			if (obstacle->IsType (CFrobDoor::Type))
-			{
-				// Try to open doors
-				CFrobDoor* p_door = (CFrobDoor*) obstacle;
-
-				// angua: If the door was interrupted half-open, it might be that the ai can't get through 
-				if (!p_door->isOpen() || 
-					(p_door->isOpen() && (p_door->wasInterrupted()|| p_door->IsBlocked())) )
-				{
-					// If it is not interrupted and not changing state
-					if ( !p_door->isChangingState() || p_door->wasInterrupted() || p_door->IsBlocked() )
-					{
-						bool b_canOpen = true;
-						if (p_door->isLocked())
-						{
-							b_canOpen = false;
-							StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-							AI_DEST_UNREACHABLE = true;
-
-							// TODO: Call script to see if I have this key. For now
-							// answer is always no.
-
-						}
-
-						// Open the door
-						if (b_canOpen)
-						{
-							p_door->OpenDoor(false);
-						}
-
-					} 
-
-				} 
-
-
-				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
-					GetPhysics()->GetOrigin();
-
-				obstacleDelta.Normalize();
-				obstacleDelta *= stopDistance;
-
-				newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-
-				//newPos = path.seekPos;
-				move.obstacle = obstacle;
-				//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-
-			}
-			else
-			{
-				// try kicking the object out of the way
-				//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-				//newPos = obstacle->GetPhysics()->GetOrigin();
-
-				// Try backing away
-				newPos = obstacle->GetPhysics()->GetOrigin();
-				idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
-					GetPhysics()->GetOrigin();
-
-				obstacleDelta.Normalize();
-				obstacleDelta *= 128.0;
-
-				newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-				move.obstacle = obstacle;
-				move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-			}
-		}
-
-		move.obstacle = obstacle;
-
-	}
-	else
+	// If we don't have an obstacle, set the seekpos and return
+	if (obstacle == NULL)
 	{
 		newPos = path.seekPos;
 		move.obstacle = NULL;
+		return;
 	}
+
+	// if we had an obstacle, set our move status based on the type, and kick it out of the way if it's a moveable
+	if (obstacle->IsType(idActor::Type))
+	{
+		// monsters aren't kickable
+		move.moveStatus = (obstacle == enemy.GetEntity()) ? MOVE_STATUS_BLOCKED_BY_ENEMY : MOVE_STATUS_BLOCKED_BY_MONSTER;
+	}
+	else
+	{
+		// If its a door handle, switch the obstacle to the door so we don't get all hung
+		// up on door handles
+		if (obstacle->IsType (CFrobDoorHandle::Type))
+		{
+			// Make the obstacle the door itself
+			obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
+/*
+			// Calculate distance far enough away that we won't hit swinging door
+			// opening toward us
+			idVec3 delta;
+			idVec3 gravity;
+			idVec3 sizePerpGrav;
+
+			idBounds avoidBounds = obstacle->GetPhysics()->GetBounds();
+			delta.x = avoidBounds[0][1] - avoidBounds[0][0];
+			delta.y = avoidBounds[1][1] - avoidBounds[1][0];
+			delta.z = avoidBounds[2][1] - avoidBounds[2][0];
+
+			gravity = gameLocal.GetGravity();
+			gravity.Normalize();
+
+			sizePerpGrav = gravity.Cross (delta);
+
+			stopDistance = sizePerpGrav.Length();
+*/
+		}
+
+		// Handle doors
+		if (obstacle->IsType (CFrobDoor::Type))
+		{
+			// Try to open doors
+			CFrobDoor* p_door = static_cast<CFrobDoor*>(obstacle);
+
+			// angua: If the door was interrupted half-open, it might be that the ai can't get through 
+			if (!p_door->isOpen() || 
+				(p_door->isOpen() && (p_door->wasInterrupted() || p_door->IsBlocked())))
+			{
+				// If it is not interrupted and not changing state
+				if ( !p_door->isChangingState() || p_door->wasInterrupted() || p_door->IsBlocked() )
+				{
+					bool b_canOpen = true;
+
+					if (p_door->isLocked())
+					{
+						b_canOpen = false;
+						StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+						AI_DEST_UNREACHABLE = true;
+
+						// TODO: Call script to see if I have this key. For now
+						// answer is always no.
+					}
+
+					// Open the door
+					if (b_canOpen)
+					{
+						p_door->OpenDoor(false);
+					}
+				} 
+			} 
+
+			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+			obstacleDelta.NormalizeFast();
+
+			obstacleDelta *= stopDistance;
+
+			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+
+			//newPos = path.seekPos;
+			move.obstacle = obstacle;
+			//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+		}
+		else
+		{
+			// try kicking the object out of the way
+			//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+			//newPos = obstacle->GetPhysics()->GetOrigin();
+
+			// Try backing away
+			newPos = obstacle->GetPhysics()->GetOrigin();
+			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
+				GetPhysics()->GetOrigin();
+
+			obstacleDelta.Normalize();
+			obstacleDelta *= 128.0;
+
+			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
+			move.obstacle = obstacle;
+			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
+		}
+	}
+
+	move.obstacle = obstacle;
 }
 
 /*
