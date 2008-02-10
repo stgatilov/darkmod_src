@@ -3831,6 +3831,15 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		return;
 	}
 
+	if (cv_ai_goalpos_show.GetBool()) 
+	{
+		idVec4 color(colorCyan);
+		color.x = gameLocal.random.RandomFloat();
+		color.y = gameLocal.random.RandomFloat();
+		color.z = gameLocal.random.RandomFloat();
+		gameRenderWorld->DebugArrow(color, goalPos, goalPos + idVec3(0,0,15), 2, 16);
+	}
+
 	const idVec3& origin = physicsObj.GetOrigin();
 
 	idEntity* obstacle = NULL;
@@ -4124,6 +4133,7 @@ void idAI::AnimMove()
 		// greebo: We have a valid goalposition (not reached the target yet), check for obstacles
 		if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
 		{
+			//gameRenderWorld->DebugArrow(colorCyan, goalPos, goalPos + idVec3(0,0,15), 2, 1000);
 			if (!cv_ai_opt_noobstacleavoidance.GetBool())
 			{
 				CheckObstacleAvoidance( goalPos, newDest );
