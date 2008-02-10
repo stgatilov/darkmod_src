@@ -22,6 +22,9 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "BlindedState.h"
 #include "SwitchOnLightState.h"
 
+#include "../../DarkMod/BinaryFrobMover.h"
+#include "../../DarkMod/FrobDoor.h"
+
 namespace ai
 {
 
@@ -945,9 +948,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBEON_KEY))
 	{
 		// Vocalize that see something out of place because this light is supposed to be on
-		//gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
+		gameLocal.Printf("Hey who turned of the light %s?\n", stimSource->name.c_str());
 /*
-		// angua: commented out, it was getting annoying to hear it over and over
 		// Vocalize that see something out of place
 		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 		{
@@ -1002,12 +1004,23 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 	// Check abilities to turn lights on
 	if (lightType == AIUSE_LIGHTTYPE_TORCH && !owner->spawnArgs.GetBool("canLightTorches"))
 	{
+		// Can't light torches
 		turnLightOn = false;
+		stimSource->ResponseIgnore(ST_VISUAL, owner);
+		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		{
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->GetSubsystem(SubsysCommunication)->PushTask(
+				TaskPtr(new SingleBarkTask("snd_noRelightTorch"))
+			);
+		}
+
 	}
 	else if (!owner->spawnArgs.GetBool("canOperateSwitchLights"))
 	{
 		// Can't operate switchlights
 		turnLightOn = false;
+		stimSource->ResponseIgnore(ST_VISUAL, owner);
 	}
 	else if (memory.enemiesHaveBeenSeen || memory.itemsHaveBeenStolen || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
 	{
@@ -1085,8 +1098,20 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
+	// We've seen this object, don't respond to it again
+	// Will get cleared if door changes state again (TODO)
+	stimSource->ResponseIgnore(ST_VISUAL, owner);
+
 	// Is it supposed to be closed?
-	if (stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
+	if (!stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
+	{
+		return;
+	}
+
+	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
+
+	// Is it open?
+	if (!door->isOpen())
 	{
 		return;
 	}
@@ -1118,7 +1143,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 		
 		owner->AI_VISALERT = false;
 
-		owner->Event_SetAlertLevel(owner->thresh_5 - 0.1f);
+		owner->Event_SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
 				
 	// Do new reaction to stimulus
@@ -1218,9 +1243,9 @@ void State::OnAICommMessage(CAIComm_Message* message)
 					owner->GetMind()->PerformCombatCheck();
 				}
 			}
-			else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
+			else if (owner->AI_AlertLevel < owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f)
 			{
-				owner->Event_SetAlertLevel(owner->thresh_2*0.5f);
+				owner->Event_SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f);
 			}
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:

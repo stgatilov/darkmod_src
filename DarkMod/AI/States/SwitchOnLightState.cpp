@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: SwitchOnLightState.cpp 1435 200
 #include "SwitchOnLightState.h"
 #include "../Memory.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "../Tasks/SingleBarkTask.h"
 #include "../../StimResponse/StimResponse.h"
 
 namespace ai
@@ -46,16 +47,10 @@ void SwitchOnLightState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	idLight* light = _light.GetEntity();
 
-	// Fill the subsystems with their tasks
-
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysAction)->ClearTasks();
-
 	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
 
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
-
 		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
 		
 		idVec3 size(16, 16, 82);
@@ -71,6 +66,8 @@ void SwitchOnLightState::Init(idAI* owner)
 		if (projection.LengthFast() < owner->GetArmReachLength() && lightDirection.z < maxHeight)
 		{
 			// If we are already close enough, relight the torch immediately
+			owner->GetSubsystem(SubsysMovement)->ClearTasks();
+			owner->GetSubsystem(SubsysAction)->ClearTasks();
 			owner->StopMove(MOVE_STATUS_DONE);
 			// TODO: Play anim
 			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
@@ -98,13 +95,32 @@ void SwitchOnLightState::Init(idAI* owner)
 				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
 				{
 					targetPoint.z = result.endpos.z + 1;
+
+					owner->GetSubsystem(SubsysAction)->ClearTasks();
+					owner->GetSubsystem(SubsysMovement)->ClearTasks();
 					owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new MoveToPositionTask(targetPoint)));
+
+					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+					{
+						memory.lastTimeVisualStimBark = gameLocal.time;
+						owner->GetSubsystem(SubsysCommunication)->PushTask(
+							TaskPtr(new SingleBarkTask("snd_yesRelightTorch"))
+						);
+					}
+
 					light->ResponseIgnore(ST_VISUAL, owner);
 				}
 				else
 				{
 					// Probably can't reach light, no path to goal found
 					light->ResponseIgnore(ST_VISUAL, owner);
+					if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+					{
+						memory.lastTimeVisualStimBark = gameLocal.time;
+						owner->GetSubsystem(SubsysCommunication)->PushTask(
+							TaskPtr(new SingleBarkTask("snd_foundTorchOut"))
+						);
+					}
 					owner->GetMind()->EndState();
 					return;
 				}
@@ -113,6 +129,13 @@ void SwitchOnLightState::Init(idAI* owner)
 			{
 				// Probably can't reach the light, too far above ground
 				light->ResponseIgnore(ST_VISUAL, owner);
+				if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+				{
+					memory.lastTimeVisualStimBark = gameLocal.time;
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						TaskPtr(new SingleBarkTask("snd_foundTorchOut"))
+					);
+				}
 				owner->GetMind()->EndState();
 				return;
 			}
