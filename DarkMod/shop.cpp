@@ -440,15 +440,18 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 			idStr guiCost = idStr("forSaleCost") + i + "_cost";
 			idStr guiName = idStr("forSale") + i + "_name";
 			idStr guiDesc = idStr("forSale") + i + "_desc";
+			idStr guiImage = idStr("forSale") + i + "_image";
 			idStr guiAvailable = idStr("forSaleAvail") + i;
 			idStr name = idStr("");
 			idStr desc = idStr("");
+			idStr image = idStr("");
 			idStr cost = idStr("");
 			int available = 0;
 			if (forSaleTop + i < itemsForSale.Num()) {
 				CShopItem* item = itemsForSale[forSaleTop + i];
 				name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
 				desc = idStr(item->GetName()) + ": " + item->GetDescription();
+				image = idStr(item->GetImage());
 				available = item->GetCost() <= gold ? item->GetCount() : 0;
 				cost = idStr(item->GetCost()) + " GP";
 			}
@@ -456,6 +459,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 			gui->SetStateInt(guiAvailable, available);
 			gui->SetStateString(guiName, name);
 			gui->SetStateString(guiDesc, desc);
+			gui->SetStateString(guiImage, image);
 		}
 	}
 
@@ -463,15 +467,18 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 		idStr guiCost = idStr("boughtCost") + i + "_cost";
 		idStr guiName = idStr("bought") + i + "_name";
 		idStr guiDesc = idStr("bought") + i + "_desc";
+		idStr guiImage = idStr("bought") + i + "_image";
 		idStr guiAvailable = idStr("boughtAvail") + i;
 		idStr name = idStr("");
 		idStr desc = idStr("");
+		idStr image = idStr("");
 		idStr cost = idStr("");
 		int available = 0;
 		if (purchasedTop + i < itemsPurchased.Num()) {
 			CShopItem* item = itemsPurchased[purchasedTop + i];
 			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
 			desc = idStr(item->GetName()) + ": " + item->GetDescription();
+			image = idStr(item->GetImage());
 			available = item->GetCost() <= gold ? item->GetCount() : 0;
 			cost = idStr(item->GetCost()) + " GP";
 		}
@@ -479,21 +486,25 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
 		gui->SetStateString(guiDesc, desc);
+		gui->SetStateString(guiImage, image);
 	}
 
 	for (int i = 0; i < LIST_SIZE_STARTING; i++) {
 		idStr guiName = idStr("starting") + i + "_name";
 		idStr guiDesc = idStr("starting") + i + "_desc";
+		idStr guiImage = idStr("starting") + i + "_image";
 		idStr guiAvailable = idStr("startingAvail") + i;
 		idStr guiDrop = idStr("dropVisible") + i;
 		idStr name = idStr("");
 		idStr desc = idStr("");
+		idStr image = idStr("");
 		int available = 0;
 		bool dropVisible = false;
 		if (startingTop + i < startingItems.Num()) {
 			CShopItem* item = startingItems[startingTop + i];
 			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
 			desc = idStr(item->GetName()) + ": " + item->GetDescription();
+			image = idStr(item->GetImage());
 			available = item->GetCost() <= gold ? item->GetCount() : 0;
 			dropVisible = item->GetCanDrop();
 		}
@@ -501,6 +512,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 		gui->SetStateInt(guiAvailable, available);
 		gui->SetStateString(guiName, name);
 		gui->SetStateString(guiDesc, desc);
+		gui->SetStateString(guiImage, image);
 	}
 }
 
