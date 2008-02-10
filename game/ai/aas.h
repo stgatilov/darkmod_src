@@ -88,8 +88,21 @@ public:
 	virtual int					PointReachableAreaNum( const idVec3 &origin, const idBounds &bounds, const int areaFlags ) const = 0;
 								// Returns the number of the first reachable area in or touching the bounds.
 	virtual int					BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags ) const = 0;
-								// Push the point into the area.
+	
+	// Push the point into the area.
+	/**
+	 * greebo: Copied from d3world: this is what brian from id said about PushPointIntoAreaNum:
+	 * 
+	 * Quote: "If the point is already in the specified area, it does nothing, otherwise it 'pushes' 
+	 *         the point into the area by moving it along the surface normal of all the planes that make up the area.
+	 *         Imagine if an area were a box and the point were outside the bottom right side of the box,
+	 *         it would first push the point along the right normal so it would be below the box, then it 
+	 *         would push the point along the bottom normal so it would be inside the box."
+	 *
+	 * greebo: So basically, this alters the given idVec3 <origin>, so that it ends up being in the area box.
+	 */
 	virtual void				PushPointIntoAreaNum( int areaNum, idVec3 &origin ) const = 0;
+
 								// Returns a reachable point inside the given area.
 	virtual idVec3				AreaCenter( int areaNum ) const = 0;
 								// Returns the area flags.
