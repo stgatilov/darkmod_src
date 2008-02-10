@@ -10,8 +10,8 @@
 #ifndef __AI_STATE_H__
 #define __AI_STATE_H__
 
-#include "../AIComm_Message.h"
-#include "Subsystem.h"
+#include "../../AIComm_Message.h"
+#include "../Subsystem.h"
 #include <boost/shared_ptr.hpp>
 
 namespace ai
