@@ -497,7 +497,8 @@ idActor::idActor( void ) {
 	m_AItype			= 0;
 	m_Innocent			= false;
 	rank				= 0;
-	fovDot				= 0.0f;
+	m_fovDotHoriz		= 0.0f;
+	m_fovDotVert		= 0.0f;
 	eyeOffset.Zero();
 	pain_debounce_time	= 0;
 	pain_delay			= 0;
@@ -573,7 +574,7 @@ idActor::Spawn
 void idActor::Spawn( void ) 
 {
 	idStr			jointName;
-	float			fovDegrees;
+	float			fovDegHoriz, fovDegVert;
 	copyJoints_t	copyJoint;
 	const idKeyValue *kv = NULL;
 
@@ -595,8 +596,10 @@ void idActor::Spawn( void )
 
 	viewAxis = GetPhysics()->GetAxis();
 
-	spawnArgs.GetFloat( "fov", "90", fovDegrees );
-	SetFOV( fovDegrees );
+	spawnArgs.GetFloat( "fov", "150", fovDegHoriz );
+	// If fov_vert is -1, it will be set the same as horizontal
+	spawnArgs.GetFloat( "fov_vert", "-1", fovDegVert );
+	SetFOV( fovDegHoriz, fovDegVert );
 
 	pain_debounce_time	= 0;
 
@@ -865,7 +868,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject( ent );
 	}
 
-	savefile->WriteFloat( fovDot );
+	savefile->WriteFloat( m_fovDotHoriz );
+	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
 	savefile->WriteVec3( modelOffset );
 	savefile->WriteAngles( deltaViewAngles );
@@ -998,7 +1002,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		}
 	}
 
-	savefile->ReadFloat( fovDot );
+	savefile->ReadFloat( m_fovDotHoriz );
+	savefile->ReadFloat( m_fovDotVert );
 	savefile->ReadVec3( eyeOffset );
 	savefile->ReadVec3( modelOffset );
 	savefile->ReadAngles( deltaViewAngles );
@@ -1502,8 +1507,15 @@ void idActor::UpdateScript( void ) {
 idActor::setFov
 =====================
 */
-void idActor::SetFOV( float fov ) {
-	fovDot = (float)cos( DEG2RAD( fov * 0.5f ) );
+void idActor::SetFOV( float fovHoriz, float fovVert ) 
+{
+	m_fovDotHoriz = (float) cos( DEG2RAD( fovHoriz * 0.5f ) );
+
+	// if fovVert not specified (default val of -1), make same as horizontal
+	if( fovVert == -1 )
+		m_fovDotVert = m_fovDotHoriz;
+	else
+		m_fovDotVert = (float) cos( DEG2RAD( fovVert * 0.5f) );
 }
 
 /*
@@ -1561,7 +1573,7 @@ bool idActor::CheckFOV( const idVec3 &pos ) const
 {
 	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idActor::CheckFOV was called\r");
 
-	if ( fovDot == 1.0f ) {
+	if ( m_fovDotHoriz == 1.0f ) {
 		return true;
 	}
 
@@ -1579,7 +1591,7 @@ bool idActor::CheckFOV( const idVec3 &pos ) const
 	delta.Normalize();
 	dot = viewAxis[ 0 ] * delta;
 
-	return ( dot >= fovDot );
+	return ( dot >= m_fovDotHoriz );
 }
 
 /*

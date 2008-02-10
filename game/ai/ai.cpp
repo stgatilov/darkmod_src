@@ -601,7 +601,7 @@ idAI::idAI()
 	m_MouthOffset = vec3_zero;
 
 	m_bCanBeKnockedOut = true;
-	m_KoOffset = vec3_zero;
+	m_HeadCenterOffset = vec3_zero;
 
 	m_lipSyncActive		= false;
 }
@@ -797,7 +797,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteVec3(m_MouthOffset);
 	savefile->WriteBool(m_bCanBeKnockedOut);
-	savefile->WriteVec3(m_KoOffset);
+	savefile->WriteVec3(m_HeadCenterOffset);
 
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1032,7 +1032,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadVec3(m_MouthOffset);
 	savefile->ReadBool(m_bCanBeKnockedOut);
-	savefile->ReadVec3(m_KoOffset);
+	savefile->ReadVec3(m_HeadCenterOffset);
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1426,7 +1426,7 @@ void idAI::Spawn( void )
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Invalid head joint for joint %s on AI %s \r", HeadJointName, name.c_str());
 	}
 
-	m_KoOffset = spawnArgs.GetVector("ko_spot_offset");
+	m_HeadCenterOffset = spawnArgs.GetVector("ko_spot_offset");
 	// end KO setup
 
 	BecomeActive( TH_THINK );
@@ -8401,7 +8401,7 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	// store head joint base position to KOSpot, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
 
-	KOSpot += HeadAxis * m_KoOffset;
+	KOSpot += HeadAxis * m_HeadCenterOffset;
 
 	delta = KOSpot - tr->c.point;
 	delta.NormalizeFast();
@@ -8458,7 +8458,7 @@ void idAI::KnockoutDebugDraw( void )
 	// store head joint base position to KOSpot, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, HeadAxis );
 
-	KOSpot += HeadAxis * m_KoOffset;
+	KOSpot += HeadAxis * m_HeadCenterOffset;
 
 	// Assumes the head joint is facing the same way as the look joint
 	ConeDir = -HeadAxis[0];
@@ -8593,29 +8593,30 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 {
 	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CheckFOV called \r");
 
-	if ( fovDot == 1.0f )
-	{
-		return true;
-	}
-
-	float	dot;
-	idVec3	delta, HeadCenter;
+	float	dotHoriz, dotVert, lenDelta, lenDeltaH;
+	idVec3	delta, deltaH, deltaV, HeadCenter;
 	idMat3	HeadAxis;
 
 	// ugliness
 	const_cast<idAI *>(this)->GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
 
-	//GetJointWorldTransform just gives the head attachment joint coordinate.
-	//Offset this by the head center offset (same as KO offset) to get the real head center point
-	// TODO: Rename m_KoOffset to m_HeadCenterOffset?
-	HeadCenter += HeadAxis * m_KoOffset;
-
+	// Offset to get the center of the head
+	HeadCenter += HeadAxis * m_HeadCenterOffset;
 	delta = pos - HeadCenter;
-	delta.Normalize();
+	lenDelta = delta.Length(); // Consider LengthFast if error is not too bad
 
-	dot = HeadAxis[ 0 ] * delta;
+	// First, project delta into the horizontal plane of the head
+	// Assume HeadAxis[1] is the up direction in head coordinates
+	deltaH = delta - HeadAxis[1] * (HeadAxis[1] * delta);
+	lenDeltaH = deltaH.Normalize(); // Consider NormalizeFast
 
-	return ( dot >= fovDot );
+	dotHoriz = HeadAxis[ 0 ] * deltaH;
+	// cos (90-zenith) = adjacent / hypotenuse, applied to these vectors
+	// Technically this lets them see things behind them, but they won't because 
+	// of the horizontal check.
+	dotVert = idMath::Fabs( lenDeltaH / lenDelta );
+
+	return ( dotHoriz >= m_fovDotHoriz && dotVert >= m_fovDotVert );
 }
 
 void idAI::FOVDebugDraw( void )
@@ -8631,13 +8632,13 @@ void idAI::FOVDebugDraw( void )
 
 	// probably expensive, but that's okay since this is just for debug mode
 
-	FOVAng = idMath::ACos( fovDot );
+	FOVAng = idMath::ACos( m_fovDotHoriz );
 
 	// store head joint base position to HeadCenter, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, HeadCenter, HeadAxis );
 
 	// offset from head joint position to get the true head center
-	HeadCenter += HeadAxis * m_KoOffset;
+	HeadCenter += HeadAxis * m_HeadCenterOffset;
 
 	ConeDir = HeadAxis[0];
 
@@ -8657,10 +8658,9 @@ void idAI::FOVDebugDraw( void )
 		// Fix length and calculate radius
 		coneLength = 60.0f;
 
-		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate fovDot)
+		// SZ: FOVAng is divergence off to one side (idActor::setFOV uses COS(fov/2.0) to calculate m_fovDotHoriz)
 		radius = idMath::Tan(FOVAng) * coneLength;
 	}
-
 
 	gameRenderWorld->DebugCone( colorRed, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
 

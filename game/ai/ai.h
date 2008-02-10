@@ -962,10 +962,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bCanBeKnockedOut;
 
 	/**
-	* KO Offset in head body coordinates, relative to head joint
-	* Should be approximately the center of the head
+	* Head center offset in head joint coordinates, relative to head joint
+	* When this offset is added to the head joint, we should be at the head center
 	**/
-	idVec3					m_KoOffset;
+	idVec3					m_HeadCenterOffset;
 	
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
