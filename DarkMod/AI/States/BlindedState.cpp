@@ -51,7 +51,7 @@ void BlindedState::Init(idAI* owner)
 		TaskPtr(new SingleBarkTask("snd_blinded"))
 	);
 
-	_endTime = gameLocal.time + 4000 + gameLocal.random.RandomFloat() * 2000;
+	_endTime = gameLocal.time + 4000 + static_cast<int>(gameLocal.random.RandomFloat() * 2000);
 
 	// Set alert level a little bit below combat
 	if(owner->AI_AlertLevel < owner->thresh_5 - 1)
