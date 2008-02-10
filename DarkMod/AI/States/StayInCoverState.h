@@ -37,6 +37,10 @@ public:
 	virtual void Restore(idRestoreGame* savefile);
 	
 	static StatePtr CreateInstance();
+
+protected:
+	// Override the base class method to catch projectile hit events
+	virtual void OnProjectileHit(idProjectile* projectile);
 };
 
 } // namespace ai

@@ -1259,7 +1259,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			break;
 		case CAIComm_Message::RequestForMeleeHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMeleeHelp_CommType\r");
-			// Respond if they are a friend and we have a ranged weapon
+			// Respond if they are a friend and we have a melee weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumMeleeWeapons() > 0)
 			{
 				// Do we already have a target we are dealing with?

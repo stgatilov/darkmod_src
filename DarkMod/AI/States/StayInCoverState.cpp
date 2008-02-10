@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: TakeCoverState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "StayInCoverState.h"
+#include "FleeState.h"
 #include "../Memory.h"
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
@@ -83,6 +84,27 @@ void StayInCoverState::Think(idAI* owner)
 		// emerge from cover after waiting is done
 		owner->GetMind()->SwitchState(STATE_EMERGE_FROM_COVER);
 		return;
+	}
+}
+
+void StayInCoverState::OnProjectileHit(idProjectile* projectile)
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	// Call the base class first
+	State::OnProjectileHit(projectile);
+
+	if ((owner->GetNumMeleeWeapons() == 0 && owner->GetNumRangedWeapons() == 0) ||
+		owner->spawnArgs.GetBool("is_civilian"))
+	{
+		// We are unarmed or civilian and got hit by a projectile while in cover, run!
+		owner->GetMind()->SwitchState(STATE_FLEE);
+	}
+	else
+	{
+		// We are armed, so let's just end this state and deal with it
+		owner->GetMind()->EndState();
 	}
 }
 
