@@ -1028,10 +1028,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_BrokenSpawn.Num() );
 	for( i = 0; i < m_BrokenSpawn.Num(); i++ ) {
-		savefile->WriteString( m_BrokenSpawn[ i ]->m_Entity );
-		savefile->WriteVec3  ( m_BrokenSpawn[ i ]->m_Offset );
-		savefile->WriteInt   ( m_BrokenSpawn[ i ]->m_Count );
-		savefile->WriteFloat ( m_BrokenSpawn[ i ]->m_Probability );
+		m_BrokenSpawn[ i ].Save( savefile );
 	}
 
 	entityFlags_s flags = fl;
@@ -1189,19 +1186,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_BrokenSpawn.Clear();
 	savefile->ReadInt( num );
+	m_BrokenSpawn.SetNum( num );
 	for( i = 0; i < num; i++ ) {
-		// add one entry
-		BrokenSpawn *bs = new BrokenSpawn;
-		if (NULL == bs)
-			{
-			gameLocal.Error("Cannot allocate new brokenSpawn");
-			}
-		// fill in the values
-		savefile->ReadString( bs->m_Entity );
-		savefile->ReadVec3  ( bs->m_Offset );
-		savefile->ReadInt   ( bs->m_Count );
-		savefile->ReadFloat ( bs->m_Probability );
-		m_BrokenSpawn.Append( bs );
+		m_BrokenSpawn[ i ].Restore( savefile );
 	}
 	m_BrokenSpawn.Condense();
 
@@ -1526,7 +1513,7 @@ int idEntity::SpawnFlinder( const BrokenSpawn *bs )
 
 		// probability 0.6 => spawn in only 60% of all cases
 		if (bs->m_Probability < 1.0 &&
-			gameLocal.random.RandomFloat() < bs->m_Probability)
+			gameLocal.random.RandomFloat() >= bs->m_Probability)
 		{
 			continue;
 		}
@@ -1615,8 +1602,8 @@ void idEntity::BecomeBroken( idEntity *activator )
 		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s up into flinders\r", name.c_str() );
 		for (i = 0; i < num; i++)
 		{
-			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawning %s\r", m_BrokenSpawn[ i ]->m_Entity.c_str() );
-			SpawnFlinder( m_BrokenSpawn[ i ] );
+			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawning %s\r", m_BrokenSpawn[ i ].m_Entity.c_str() );
+			SpawnFlinder( &m_BrokenSpawn[ i ] );
 		}
 
 		// if we spawned flinders but have no broken model, remove this entity
@@ -1627,7 +1614,7 @@ void idEntity::BecomeBroken( idEntity *activator )
 			// remove us in 0.05 seconds
 			PostEventMS( &EV_Remove, 50 );
 			// and make inactive
-			GetPhysics()->SetContents( 0 );
+			BecomeInactive(TH_PHYSICS|TH_THINK);
 		}
 	}
 }
@@ -6680,11 +6667,9 @@ void idEntity::LoadBrokenSpawn(const idStr &name, const idStr &spawnarg)
 	BrokenSpawn *bs;
 
 	// add one entry
-	bs = new BrokenSpawn;
-	if (NULL == bs)
-		{
-		gameLocal.Error("Cannot allocate new brokenSpawn");
-		}
+	m_BrokenSpawn.SetNum( num + 1);
+	// and get a pointer to it
+	bs = &m_BrokenSpawn[ num ];
 	// fill in the name and some defaults
 	bs->m_Entity = name;
 	bs->m_Offset.Zero();
@@ -6704,17 +6689,15 @@ void idEntity::LoadBrokenSpawn(const idStr &name, const idStr &spawnarg)
 	spawnArgs.GetInt   ("broken_count"       + Index,   "1", bs->m_Count);
 	spawnArgs.GetFloat ("broken_probability" + Index, "1.0", bs->m_Probability);
 
-	m_BrokenSpawn.Append( bs );
-
 	// debug print:
 	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loaded def_broken (Index: %s) %s:\r",
-		Index.c_str(), m_BrokenSpawn[ num ]->m_Entity.c_str() );
+		Index.c_str(), m_BrokenSpawn[ num ].m_Entity.c_str() );
 	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Offset     : %f %f %f\r", 
-		m_BrokenSpawn[ num ]->m_Offset.x,
-		m_BrokenSpawn[ num ]->m_Offset.y,
-		m_BrokenSpawn[ num ]->m_Offset.z );
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Count      : %i\r", m_BrokenSpawn[ num ]->m_Count );
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Probability: %f\r", m_BrokenSpawn[ num ]->m_Probability );
+		m_BrokenSpawn[ num ].m_Offset.x,
+		m_BrokenSpawn[ num ].m_Offset.y,
+		m_BrokenSpawn[ num ].m_Offset.z );
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Count      : %i\r", m_BrokenSpawn[ num ].m_Count );
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Probability: %f\r", m_BrokenSpawn[ num ].m_Probability );
 }
 
 void idEntity::LoadTDMSettings(void)

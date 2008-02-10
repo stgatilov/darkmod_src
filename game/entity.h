@@ -48,12 +48,15 @@ typedef struct {
 * This struct defines one entity with an optional offset, count and
 * probability, to spawn it upon the death of another entity.
 */
-typedef struct {
+struct BrokenSpawn {
 	idStr		m_Entity;		//!< class of the entity to spawn
 	idVec3		m_Offset;		//!< optional offset
 	int			m_Count;		//!< count (default: 1)
 	float		m_Probability;	//!< probability (0 .. 1.0) that this entity spawns
-} BrokenSpawn;
+
+	void		Save( idSaveGame *savefile ) const;
+	void		Restore( idRestoreGame *savefile );
+};
 
 /*
 ===============================================================================
@@ -175,10 +178,10 @@ enum {
 **/
 typedef struct SAttachPosition_s
 {
-	idStr			name; // name of this position
-	jointHandle_t	joint; // joint its relative to
-	idAngles		angleOffset; // rotational offset relative to joint orientation
-	idVec3			originOffset; // origin offset relative to joint origin
+	idStr			name;			//!< name of this position
+	jointHandle_t	joint;		 	//!< joint it is relative to
+	idAngles		angleOffset;	//!< rotational offset relative to joint orientation
+	idVec3			originOffset;	//!< origin offset relative to joint origin
 
 	void			Save( idSaveGame *savefile ) const;
 	void			Restore( idRestoreGame *savefile );
@@ -869,7 +872,7 @@ protected:
 	/**
 	* List of entities to spawn upon death, along with their offsets and counts.
 	**/
-	idList<BrokenSpawn *>		m_BrokenSpawn;
+	idList<BrokenSpawn>			m_BrokenSpawn;
 
 	/**
 	* Used to keep track of the GUIs used by this entity.
