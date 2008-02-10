@@ -2779,7 +2779,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		timer_think.Stop();
 	
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Thinking timer: %lf\r", timer_think.Milliseconds());
+		//DM_LOG(LC_ENTITY, LT_INFO).LogString("Thinking timer: %lfms\r", timer_think.Milliseconds());
 
 		timer_events.Clear();
 		timer_events.Start();

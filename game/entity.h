@@ -44,6 +44,17 @@ typedef struct {
 	E_SDK_SIGNAL_STATE	(*m_Fkt)(idEntity *oObject, void *pData);
 } SDKSignalInfo;
 
+/**
+* This struct defines one entity with an optional offset, count and
+* probability, to spawn it upon the death of another entity.
+*/
+typedef struct {
+	idStr		m_Entity;		//!< class of the entity to spawn
+	idVec3		m_Offset;		//!< optional offset
+	int			m_Count;		//!< count (default: 1)
+	float		m_Probability;	//!< probability (0 .. 1.0) that this entity spawns
+} BrokenSpawn;
+
 /*
 ===============================================================================
 
@@ -165,7 +176,7 @@ enum {
 typedef struct SAttachPosition_s
 {
 	idStr			name; // name of this position
-	jointHandle_t	joint; // joint it's relative to
+	jointHandle_t	joint; // joint its relative to
 	idAngles		angleOffset; // rotational offset relative to joint orientation
 	idVec3			originOffset; // origin offset relative to joint origin
 
@@ -532,6 +543,19 @@ public:
 	virtual void			LoadTDMSettings(void);
 
 	/**
+	 * LoadBrokenSpawn will the settings for one broken_spawn sparnarg,
+	 * including broken_spawn_offset, broken_spawn_count and
+	 * broken_spawn_probability. Called from LoadTDMSettings().
+	*/
+	virtual void			LoadBrokenSpawn(const idStr &name, const idStr &spawnarg);
+
+	/**
+	 * Will evaluate one def_broken flinder and find out how many of this piece
+	 * to spawn, then spawn them. Called from BecomeBroken().
+	*/
+	virtual int				SpawnFlinder(const BrokenSpawn *bs);
+
+	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
 	 * The actual action depends on the type of the entity.
 	 * Loot is being picked up and counted to the loot.
@@ -541,11 +565,11 @@ public:
 	 *    lockpicks or an appropriate key is equipped the door will either unlock or the
 	 *    lockpick HUD should appear.
 	 * Windows are just smaller doors so they don't need special treatment.
-	 * AI is tested for it's state. If it is an ally some defined script should start. If
+	 * AI is tested for its state. If it is an ally some defined script should start. If
 	 *    it is unconscious or dead it is picked up and the player can carry it around.
 	 * If it is a movable item the item is picked up and the player can carry it around.
 	 * Switches are flipped and/or de-/activated and appropriate scripts are triggered.
-	 * bMaster indicates wheter the entity should call it's master or not.
+	 * bMaster indicates whether the entity should call its master or not.
 	 */
 	virtual void FrobAction(bool bMaster, bool bPeer = false);
 
@@ -843,9 +867,14 @@ protected:
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
 
 	/**
+	* List of entities to spawn upon death, along with their offsets and counts.
+	**/
+	idList<BrokenSpawn *>		m_BrokenSpawn;
+
+	/**
 	* Used to keep track of the GUIs used by this entity.
 	**/
-	COverlaySys				m_overlays;
+	COverlaySys					m_overlays;
 
 	/**
 	* This is set by idPlayer if the player is looking at the entity in a way

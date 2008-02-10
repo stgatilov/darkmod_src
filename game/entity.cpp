@@ -793,6 +793,7 @@ void idEntity::Spawn( void )
 	SetOrigin( origin );
 	SetAxis( axis );
 
+	// load visual model and broken model 
 	LoadModels();
 
 	if ( spawnArgs.GetString( "bind", "", &temp ) ) 
@@ -831,7 +832,7 @@ void idEntity::Spawn( void )
 	// after the entity has fully spawned (including subclasses), otherwise
 	// the clipmodel and things like that are not initialised (>> crash).
 	PostEventMS(&EV_InitInventory, 0, 0);
-	
+
 	LoadTDMSettings();
 }
 
@@ -867,7 +868,7 @@ void idEntity::LoadModels( void ) {
 		( health || spawnArgs.FindKey( "max_force" ) ) {
 		int pos;
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Trying to find broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Looking for broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
 
 		pos = model.Find( "." );
 		if ( pos < 0 ) {
@@ -892,11 +893,18 @@ void idEntity::LoadModels( void ) {
 		}
 	}
 
-	if ( brokenModel.Length() ) {
-		if ( !model.Length() ) {
+	// can we be damaged?
+	if ( health || spawnArgs.FindKey( "max_force" ) || brokenModel.Length() )
+	{
+		fl.takedamage = true;
+	}
+
+	if ( brokenModel.Length() )
+	{
+		if ( !model.Length() )
+		{
 			gameLocal.Error( "Breakable entity (broken model %s) without a model set on entity #%d (%s)", brokenModel.c_str(), entityNumber, name.c_str() );
 		}
-		fl.takedamage = true;
 
 		// make sure the collision model for the brokenModel gets cached
         idClipModel::CheckModel( brokenModel );
@@ -1016,6 +1024,14 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( targets.Num() );
 	for( i = 0; i < targets.Num(); i++ ) {
 		targets[ i ].Save( savefile );
+	}
+
+	savefile->WriteInt( m_BrokenSpawn.Num() );
+	for( i = 0; i < m_BrokenSpawn.Num(); i++ ) {
+		savefile->WriteString( m_BrokenSpawn[ i ]->m_Entity );
+		savefile->WriteVec3  ( m_BrokenSpawn[ i ]->m_Offset );
+		savefile->WriteInt   ( m_BrokenSpawn[ i ]->m_Count );
+		savefile->WriteFloat ( m_BrokenSpawn[ i ]->m_Probability );
 	}
 
 	entityFlags_s flags = fl;
@@ -1170,6 +1186,24 @@ void idEntity::Restore( idRestoreGame *savefile )
 	for( i = 0; i < num; i++ ) {
 		targets[ i ].Restore( savefile );
 	}
+
+	m_BrokenSpawn.Clear();
+	savefile->ReadInt( num );
+	for( i = 0; i < num; i++ ) {
+		// add one entry
+		BrokenSpawn *bs = new BrokenSpawn;
+		if (NULL == bs)
+			{
+			gameLocal.Error("Cannot allocate new brokenSpawn");
+			}
+		// fill in the values
+		savefile->ReadString( bs->m_Entity );
+		savefile->ReadVec3  ( bs->m_Offset );
+		savefile->ReadInt   ( bs->m_Count );
+		savefile->ReadFloat ( bs->m_Probability );
+		m_BrokenSpawn.Append( bs );
+	}
+	m_BrokenSpawn.Condense();
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
@@ -1473,12 +1507,66 @@ bool idEntity::IsBroken( void ) const {
 	return m_bIsBroken;
 }
 
+
+/**
+================
+idEntity::SpawnFlinder spawns zero, one or more flinder objects as
+described by the BrokenSpawn struct.
+
+@return: -1 for error, or the number of entities spawned
+
+*/
+int idEntity::SpawnFlinder( const BrokenSpawn *bs )
+{
+	int spawned = 0;
+	int i;
+
+	for (i = 0; i < bs->m_Count; i++)
+	{
+
+		// probability 0.6 => spawn in only 60% of all cases
+		if (bs->m_Probability < 1.0 &&
+			gameLocal.random.RandomFloat() < bs->m_Probability)
+		{
+			continue;
+		}
+
+		const idDict *p_entityDef = gameLocal.FindEntityDefDict( bs->m_Entity.c_str(), false );
+	    if( p_entityDef )
+		{
+			idEntity *flinder;
+			gameLocal.SpawnEntityDef( *p_entityDef, &flinder, false );
+
+			if ( !flinder )
+			{
+				gameLocal.Error( "Failed to spawn flinder entity %s", bs->m_Entity.c_str() );
+				return -1;
+	        }
+			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawned entity %s\r", flinder->GetName() ); 
+
+			// move the entity to the origin (plus offset) and orientation of the original
+			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + bs->m_Offset );
+			flinder->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
+			// give the flinders the same speed as the original entity (in case it breaks
+			// up while on the move
+			flinder->GetPhysics()->SetLinearVelocity( GetPhysics()->GetLinearVelocity() );
+			flinder->GetPhysics()->SetAngularVelocity( GetPhysics()->GetAngularVelocity() );
+			// FIXME add a small random impulse outwards from entity origin
+			spawned++;
+		}
+	} // end for m_Count
+
+	return spawned;
+}
+
 /*
 ================
 idEntity::BecomeBroken
 ================
 */
-void idEntity::BecomeBroken( idEntity *activator ) {
+void idEntity::BecomeBroken( idEntity *activator )
+{
+	int num, i;
 
 	if (m_bIsBroken)
 	{
@@ -1504,7 +1592,8 @@ void idEntity::BecomeBroken( idEntity *activator ) {
 			if (clipmodel && clipmodel->IsTraceModel() && GetPhysics())
 			{
 				GetPhysics()->SetClipModel( clipmodel, 1.0f );
-				GetPhysics()->SetContents( CONTENTS_SOLID );
+				// tels: should not be nec.
+				//GetPhysics()->SetContents( CONTENTS_SOLID );
 				// SR CONTENTS_RESONSE FIX
 				if( m_StimResponseColl->HasResponse() )
 				{
@@ -1516,6 +1605,30 @@ void idEntity::BecomeBroken( idEntity *activator ) {
 		DM_LOG(LC_ENTITY, LT_INFO).LogString("Hiding broken entity %s\r", name.c_str() ); 
 		SetModel( "" );
 		GetPhysics()->SetContents( 0 );
+	}
+
+	// tels: do we have flinders to spawn on break?
+    num = m_BrokenSpawn.Num();
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Entity %s has %i flinders\r", name.c_str(), num );
+    if ( num > 0 )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s up into flinders\r", name.c_str() );
+		for (i = 0; i < num; i++)
+		{
+			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawning %s\r", m_BrokenSpawn[ i ]->m_Entity.c_str() );
+			SpawnFlinder( m_BrokenSpawn[ i ] );
+		}
+
+		// if we spawned flinders but have no broken model, remove this entity
+		if ( !brokenModel.Length() )
+		{
+			// hide us
+			SetModel( "" );
+			// remove us in 0.05 seconds
+			PostEventMS( &EV_Remove, 50 );
+			// and make inactive
+			GetPhysics()->SetContents( 0 );
+		}
 	}
 }
 
@@ -6560,6 +6673,50 @@ Quit:
 	return bRc;
 }
 
+void idEntity::LoadBrokenSpawn(const idStr &name, const idStr &spawnarg)
+{
+	idStr Index;
+	const int num = m_BrokenSpawn.Num();
+	BrokenSpawn *bs;
+
+	// add one entry
+	bs = new BrokenSpawn;
+	if (NULL == bs)
+		{
+		gameLocal.Error("Cannot allocate new brokenSpawn");
+		}
+	// fill in the name and some defaults
+	bs->m_Entity = name;
+	bs->m_Offset.Zero();
+	bs->m_Count = 0;
+	bs->m_Probability = 1.0;
+
+	// check if we have spawnargs like count, offset or probability:
+
+	Index = "";
+	// strlen("def_broken") == 10 
+	if (spawnarg.Length() > 10)
+	{
+		spawnarg.Right( spawnarg.Length() - 10, Index );
+	}
+
+	spawnArgs.GetVector("broken_offset"      + Index,    "", bs->m_Offset);
+	spawnArgs.GetInt   ("broken_count"       + Index,   "1", bs->m_Count);
+	spawnArgs.GetFloat ("broken_probability" + Index, "1.0", bs->m_Probability);
+
+	m_BrokenSpawn.Append( bs );
+
+	// debug print:
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loaded def_broken (Index: %s) %s:\r",
+		Index.c_str(), m_BrokenSpawn[ num ]->m_Entity.c_str() );
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Offset     : %f %f %f\r", 
+		m_BrokenSpawn[ num ]->m_Offset.x,
+		m_BrokenSpawn[ num ]->m_Offset.y,
+		m_BrokenSpawn[ num ]->m_Offset.z );
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Count      : %i\r", m_BrokenSpawn[ num ]->m_Count );
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Probability: %f\r", m_BrokenSpawn[ num ]->m_Probability );
+}
+
 void idEntity::LoadTDMSettings(void)
 {
 	idStr str;
@@ -6614,6 +6771,22 @@ void idEntity::LoadTDMSettings(void)
 	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
 
 	m_bIsMantleable = spawnArgs.GetBool( "is_mantleable", "1" );
+
+	// by default we do not have any entities to spawn on breaking up
+	m_BrokenSpawn.Clear();
+
+	kv = spawnArgs.MatchPrefix( "def_broken", NULL );
+	// Fill the list of things to spawn upon breaking
+	while( kv )
+	{
+		idStr temp = kv->GetValue();
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_broken %s:\r", kv->GetKey().c_str() );
+		if( !temp.IsEmpty() )
+			LoadBrokenSpawn( temp, kv->GetKey() );
+		kv = spawnArgs.MatchPrefix( "def_broken", kv );
+	}
+	// reduce memory footprint (we expect less than 16 entries usually)
+	m_BrokenSpawn.Condense();
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
