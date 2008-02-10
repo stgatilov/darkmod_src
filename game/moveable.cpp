@@ -222,7 +222,7 @@ void idMoveable::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( canDamage );
 	savefile->WriteInt( nextDamageTime );
 	savefile->WriteInt( nextSoundTime );
-	savefile->WriteInt( initialSpline != NULL ? initialSpline->GetTime( 0 ) : -1 );
+	savefile->WriteInt( initialSpline != NULL ? (int)initialSpline->GetTime( 0 ) : -1 );
 	savefile->WriteVec3( initialSplineDir );
 
 	savefile->WriteStaticObject( physicsObj );
