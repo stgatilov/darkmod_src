@@ -23,6 +23,12 @@ class idPlayer;
 * the player is currently holding in the Grabber.
 **/
 
+typedef enum
+{
+	MELEETYPE_SLASH		= BIT(0),
+	MELEETYPE_THRUST	= BIT(1)
+} EMeleeTypes;
+
 class CMeleeWeapon : public idMoveable 
 {
 public:
@@ -115,6 +121,17 @@ protected:
 	**/
 	void TestParry( CMeleeWeapon *other, idVec3 dir, trace_t *trace );
 
+	/**
+	* Called to handle physics, particle FX, sound, damage
+	* When a melee weapon hits something
+	**/
+	void MeleeCollision( idEntity *other, idVec3 dir, trace_t *trace );
+
+	/**
+	* Set up the parry or attack clipmodel from the args in m_MeleeDef
+	**/
+	void SetupClipModel( void ); 
+
 protected:
 	/**
 	* Actor that owns this melee weapon.  Most likely also the bindmaster.
@@ -151,7 +168,7 @@ protected:
 	**/
 	idDeclEntityDef			*m_MeleeDef;
 
-	// TODO: Attack type, parry type.. hardcoded enum or mutable string list?
+	EMeleeTypes				m_MeleeType;
 
 };
 

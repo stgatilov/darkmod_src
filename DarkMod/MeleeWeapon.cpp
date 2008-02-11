@@ -41,11 +41,7 @@ void CMeleeWeapon::ActivateAttack
 
 	if( bChangeCM )
 	{
-		// lookup CM for given attack name
-		// TODO: Let the attacking entity decide the clipmodel instead?
-		// This would make it easier to do player weapons vs. AI weapons
-		m_WeapClip = new idClipModel( /* stuff */ );
-		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+		SetupClipModel();
 	}
 }
 
@@ -64,8 +60,7 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, idStr ParryName, bool bChan
 	if( bChangeCM )
 	{
 		// lookup CM for given parry name
-		m_WeapClip = new idClipModel( /* stuff */ );
-		m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
+		SetupClipModel();
 		pClip = m_WeapClip;
 	}
 	else
@@ -191,14 +186,8 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			// Don't do anything if we hit our own AF attachment
 			if( AttachOwner != m_Owner.GetEntity() )
 			{
-				// Do the damage
 				// TODO: Scale damage with instantaneous velocity of the blade?
-				other->Damage
-					(
-						m_Owner.GetEntity(), m_Owner.GetEntity(), 
-						dir, m_MeleeDef->GetName(),
-						1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
-					);
+				MeleeCollision( other, dir, &tr );
 
 				// apply a LARGE tactile alert to AI
 				if( other->IsType(idAI::Type) )
@@ -224,12 +213,7 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 			// hit a held object
 			else if( other == g_Global.m_DarkModPlayer->grabber->GetSelected() )
 			{
-				other->Damage
-				(
-					m_Owner.GetEntity(), m_Owner.GetEntity(), 
-					dir, m_MeleeDef->GetName(),
-					1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
-				);
+				MeleeCollision( other, dir, &tr );
 
 				// TODO: Message the grabber that the grabbed object has been hit
 				// So that it can fly out of player's hands if desired
@@ -242,22 +226,72 @@ void CMeleeWeapon::CheckAttack( idVec3 OldOrigin, idMat3 OldAxis )
 		// Hit something else in the world (only happens to the player)
 		else
 		{
-			// TODO: Message the attacking player to play a bounce off animation if appropriate
+			MeleeCollision( other, dir, &tr );
 			
-			other->Damage
-			(
-				m_Owner.GetEntity(), m_Owner.GetEntity(), 
-				dir, m_MeleeDef->GetName(),
-				1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr 
-			);
-
-			// TODO: Play suspicious sounds like in idWeapon
-			// Would make more sense to just create an "Impact" function
-			// that does the damage and plays sounds and makes spark or blood decals, etc?
+			// TODO: Message the attacking player to play a bounce off animation if appropriate
 
 			DeactivateAttack();
 		}
 	}
+}
+
+void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr )
+{
+	// Physical impulse
+	float push = m_MeleeDef->dict.GetFloat( "push" );
+	idVec3 impulse = -push * tr->c.normal;
+	
+	other->ApplyImpulse( this, tr->c.id, tr->c.point, impulse );
+
+	// Damage
+	if( other->fl.takedamage )
+	{
+		other->Damage
+		(
+			m_Owner.GetEntity(), m_Owner.GetEntity(), 
+			dir, m_MeleeDef->GetName(),
+			1.0f, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), tr 
+		);
+	}
+
+	// TODO: Do the particle FX, damage FX and sound
+}
+
+void CMeleeWeapon::SetupClipModel( void )
+{
+	float size;
+	idBounds CMBounds;
+	idTraceModel trm;
+	int numSides(0);
+
+	idDict *args = &m_MeleeDef->dict;
+
+	// TODO: Allow a custom brush-based CM to be used instead of this
+
+	if ( args->GetVector( "cm_mins", NULL, CMBounds[0] ) &&
+				args->GetVector( "cm_maxs", NULL, CMBounds[1] ) )
+	{
+		if ( CMBounds[0][0] > CMBounds[1][0] || CMBounds[0][1] > CMBounds[1][1] || CMBounds[0][2] > CMBounds[1][2] )
+		{
+			gameLocal.Error( "Invalid melee CM bounds '%s'-'%s' on entity '%s'", CMBounds[0].ToString(), CMBounds[1].ToString(), name.c_str() );
+		}
+	} 
+	else 
+	{
+		spawnArgs.GetFloat( "cm_size", "10.0", size );
+		CMBounds.Zero();
+		CMBounds.ExpandSelf( size );
+	}
+
+	if ( spawnArgs.GetInt( "cm_cylinder", "0", numSides ) && numSides > 0 )
+		trm.SetupCylinder( CMBounds, numSides < 3 ? 3 : numSides );
+	else if ( spawnArgs.GetInt( "cm_cone", "0", numSides ) && numSides > 0 )
+		trm.SetupCone( CMBounds, numSides < 3 ? 3 : numSides );
+	else
+		trm.SetupBox( CMBounds );
+
+	m_WeapClip = new idClipModel( trm );
+	m_WeapClip->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 }
 
 
