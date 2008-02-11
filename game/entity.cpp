@@ -561,6 +561,26 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 	}
 }
 
+// ------------ BrokenSpawn Save/Restore methods ------------------
+
+void BrokenSpawn::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteString(m_Entity);
+	savefile->WriteVec3(m_Offset);
+	savefile->WriteInt(m_Count);
+	savefile->WriteFloat(m_Probability);
+}
+
+void BrokenSpawn::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadString(m_Entity);
+	savefile->ReadVec3(m_Offset);
+	savefile->ReadInt(m_Count);
+	savefile->ReadFloat(m_Probability);
+}
+
+// ----------------------------------------------------------------
+
 /*
 ===============
 idEntity::UpdateChangeableSpawnArgs
@@ -1503,22 +1523,20 @@ described by the BrokenSpawn struct.
 @return: -1 for error, or the number of entities spawned
 
 */
-int idEntity::SpawnFlinder( const BrokenSpawn *bs )
+int idEntity::SpawnFlinder( const BrokenSpawn& bs )
 {
 	int spawned = 0;
-	int i;
-
-	for (i = 0; i < bs->m_Count; i++)
+	
+	for (int i = 0; i < bs.m_Count; i++)
 	{
-
 		// probability 0.6 => spawn in only 60% of all cases
-		if (bs->m_Probability < 1.0 &&
-			gameLocal.random.RandomFloat() >= bs->m_Probability)
+		if (bs.m_Probability < 1.0 &&
+			gameLocal.random.RandomFloat() >= bs.m_Probability)
 		{
 			continue;
 		}
 
-		const idDict *p_entityDef = gameLocal.FindEntityDefDict( bs->m_Entity.c_str(), false );
+		const idDict *p_entityDef = gameLocal.FindEntityDefDict( bs.m_Entity.c_str(), false );
 	    if( p_entityDef )
 		{
 			idEntity *flinder;
@@ -1526,13 +1544,13 @@ int idEntity::SpawnFlinder( const BrokenSpawn *bs )
 
 			if ( !flinder )
 			{
-				gameLocal.Error( "Failed to spawn flinder entity %s", bs->m_Entity.c_str() );
+				gameLocal.Error( "Failed to spawn flinder entity %s", bs.m_Entity.c_str() );
 				return -1;
 	        }
 			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawned entity %s\r", flinder->GetName() ); 
 
 			// move the entity to the origin (plus offset) and orientation of the original
-			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + bs->m_Offset );
+			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + bs.m_Offset );
 			flinder->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
 			// give the flinders the same speed as the original entity (in case it breaks
 			// up while on the move
@@ -1553,8 +1571,6 @@ idEntity::BecomeBroken
 */
 void idEntity::BecomeBroken( idEntity *activator )
 {
-	int num, i;
-
 	if (m_bIsBroken)
 	{
 		// we are already broken, so do nothing
@@ -1571,7 +1587,6 @@ void idEntity::BecomeBroken( idEntity *activator )
 		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s (nonsolid: %i)\r", name.c_str(), spawnArgs.GetBool( "nonsolid" ) ); 
 		if ( !spawnArgs.GetBool( "nonsolid" ) )
 		{
-
 			DM_LOG(LC_ENTITY, LT_INFO).LogString("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
 
 			idClipModel* clipmodel = new idClipModel( brokenModel );
@@ -1588,29 +1603,31 @@ void idEntity::BecomeBroken( idEntity *activator )
 				}
 			}
 		}
-	} else if ( spawnArgs.GetBool( "hideModelOnBreak" ) ) {
+	} 
+	else if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
+	{
 		DM_LOG(LC_ENTITY, LT_INFO).LogString("Hiding broken entity %s\r", name.c_str() ); 
 		SetModel( "" );
 		GetPhysics()->SetContents( 0 );
 	}
 
 	// tels: do we have flinders to spawn on break?
-    num = m_BrokenSpawn.Num();
+    int num = m_BrokenSpawn.Num();
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Entity %s has %i flinders\r", name.c_str(), num );
     if ( num > 0 )
 	{
 		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s up into flinders\r", name.c_str() );
-		for (i = 0; i < num; i++)
+		for (int i = 0; i < num; i++)
 		{
 			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawning %s\r", m_BrokenSpawn[ i ].m_Entity.c_str() );
-			SpawnFlinder( &m_BrokenSpawn[ i ] );
+			SpawnFlinder( m_BrokenSpawn[ i ] );
 		}
 
 		// if we spawned flinders but have no broken model, remove this entity
 		if ( !brokenModel.Length() )
 		{
 			// hide us
-			SetModel( "" );
+			Hide();
 			// remove us in 0.05 seconds
 			PostEventMS( &EV_Remove, 50 );
 			// and make inactive
@@ -6662,42 +6679,35 @@ Quit:
 
 void idEntity::LoadBrokenSpawn(const idStr &name, const idStr &spawnarg)
 {
-	idStr Index;
-	const int num = m_BrokenSpawn.Num();
-	BrokenSpawn *bs;
+	// Create a new struct and load the values
+	BrokenSpawn bs;
 
-	// add one entry
-	m_BrokenSpawn.SetNum( num + 1);
-	// and get a pointer to it
-	bs = &m_BrokenSpawn[ num ];
 	// fill in the name and some defaults
-	bs->m_Entity = name;
-	bs->m_Offset.Zero();
-	bs->m_Count = 0;
-	bs->m_Probability = 1.0;
+	bs.m_Entity = name;
+	bs.m_Offset.Zero();
+	bs.m_Count = 0;
+	bs.m_Probability = 1.0;
 
 	// check if we have spawnargs like count, offset or probability:
-
-	Index = "";
+	idStr index;
 	// strlen("def_broken") == 10 
 	if (spawnarg.Length() > 10)
 	{
-		spawnarg.Right( spawnarg.Length() - 10, Index );
+		index = spawnarg.Right( spawnarg.Length() - 10 );
 	}
 
-	spawnArgs.GetVector("broken_offset"      + Index,    "", bs->m_Offset);
-	spawnArgs.GetInt   ("broken_count"       + Index,   "1", bs->m_Count);
-	spawnArgs.GetFloat ("broken_probability" + Index, "1.0", bs->m_Probability);
+	spawnArgs.GetVector("broken_offset"      + index,    "", bs.m_Offset);
+	spawnArgs.GetInt   ("broken_count"       + index,   "1", bs.m_Count);
+	spawnArgs.GetFloat ("broken_probability" + index, "1.0", bs.m_Probability);
+
+	// add the struct to the list
+	m_BrokenSpawn.Append(bs);
 
 	// debug print:
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loaded def_broken (Index: %s) %s:\r",
-		Index.c_str(), m_BrokenSpawn[ num ].m_Entity.c_str() );
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Offset     : %f %f %f\r", 
-		m_BrokenSpawn[ num ].m_Offset.x,
-		m_BrokenSpawn[ num ].m_Offset.y,
-		m_BrokenSpawn[ num ].m_Offset.z );
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Count      : %i\r", m_BrokenSpawn[ num ].m_Count );
-	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Probability: %f\r", m_BrokenSpawn[ num ].m_Probability );
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Loaded def_broken (index: %s) %s:\r",	index.c_str(), bs.m_Entity.c_str() );
+	DM_LOG(LC_ENTITY, LT_INFO).LogVector(" Offset:\r", bs.m_Offset);
+	DM_LOG(LC_ENTITY, LT_INFO).LogString(" Count      : %i\r", bs.m_Count );
+	DM_LOG(LC_ENTITY, LT_INFO).LogString(" Probability: %f\r", bs.m_Probability );
 }
 
 void idEntity::LoadTDMSettings(void)

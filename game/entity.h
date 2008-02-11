@@ -556,7 +556,7 @@ public:
 	 * Will evaluate one def_broken flinder and find out how many of this piece
 	 * to spawn, then spawn them. Called from BecomeBroken().
 	*/
-	virtual int				SpawnFlinder(const BrokenSpawn *bs);
+	virtual int				SpawnFlinder(const BrokenSpawn& bs);
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
