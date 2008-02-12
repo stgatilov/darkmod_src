@@ -48,14 +48,11 @@ typedef struct {
 * This struct defines one entity with an optional offset, count and
 * probability, to spawn it upon the death of another entity.
 */
-struct BrokenSpawn {
+struct FlinderSpawn {
 	idStr		m_Entity;		//!< class of the entity to spawn
 	idVec3		m_Offset;		//!< optional offset
 	int			m_Count;		//!< count (default: 1)
 	float		m_Probability;	//!< probability (0 .. 1.0) that this entity spawns
-
-	void		Save( idSaveGame *savefile ) const;
-	void		Restore( idRestoreGame *savefile );
 };
 
 /*
@@ -546,17 +543,17 @@ public:
 	virtual void			LoadTDMSettings(void);
 
 	/**
-	 * LoadBrokenSpawn will the settings for one broken_spawn sparnarg,
-	 * including broken_spawn_offset, broken_spawn_count and
-	 * broken_spawn_probability. Called from LoadTDMSettings().
+	 * Will evaluate one def_broken flinder and find out how many of this piece
+	 * to spawn, then spawn them. Called from Flinderize().
+	 * @return: Count of entities that where spawned or -1 for error.
+	 *
 	*/
-	virtual void			LoadBrokenSpawn(const idStr &name, const idStr &spawnarg);
+	virtual int				SpawnFlinder(const FlinderSpawn& bs);
 
 	/**
-	 * Will evaluate one def_broken flinder and find out how many of this piece
-	 * to spawn, then spawn them. Called from BecomeBroken().
+	 * Evaluate def_flinder spawnargs and call SpawnFlinder() for each found.
 	*/
-	virtual int				SpawnFlinder(const BrokenSpawn& bs);
+	virtual void			Flinderize (void);
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
@@ -868,11 +865,6 @@ protected:
 	int						modelDefHandle;				//!< handle to static renderer model
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
-
-	/**
-	* List of entities to spawn upon death, along with their offsets and counts.
-	**/
-	idList<BrokenSpawn>			m_BrokenSpawn;
 
 	/**
 	* Used to keep track of the GUIs used by this entity.

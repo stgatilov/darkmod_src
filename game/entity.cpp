@@ -561,24 +561,6 @@ void idGameEdit::ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSo
 	}
 }
 
-// ------------ BrokenSpawn Save/Restore methods ------------------
-
-void BrokenSpawn::Save( idSaveGame *savefile ) const
-{
-	savefile->WriteString(m_Entity);
-	savefile->WriteVec3(m_Offset);
-	savefile->WriteInt(m_Count);
-	savefile->WriteFloat(m_Probability);
-}
-
-void BrokenSpawn::Restore( idRestoreGame *savefile )
-{
-	savefile->ReadString(m_Entity);
-	savefile->ReadVec3(m_Offset);
-	savefile->ReadInt(m_Count);
-	savefile->ReadFloat(m_Probability);
-}
-
 // ----------------------------------------------------------------
 
 /*
@@ -1046,11 +1028,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 		targets[ i ].Save( savefile );
 	}
 
-	savefile->WriteInt( m_BrokenSpawn.Num() );
-	for( i = 0; i < m_BrokenSpawn.Num(); i++ ) {
-		m_BrokenSpawn[ i ].Save( savefile );
-	}
-
 	entityFlags_s flags = fl;
 
 	LittleBitField( &flags, sizeof( flags ) );
@@ -1203,14 +1180,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 	for( i = 0; i < num; i++ ) {
 		targets[ i ].Restore( savefile );
 	}
-
-	m_BrokenSpawn.Clear();
-	savefile->ReadInt( num );
-	m_BrokenSpawn.SetNum( num );
-	for( i = 0; i < num; i++ ) {
-		m_BrokenSpawn[ i ].Restore( savefile );
-	}
-	m_BrokenSpawn.Condense();
 
 	savefile->Read( &fl, sizeof( fl ) );
 	LittleBitField( &fl, sizeof( fl ) );
@@ -1515,28 +1484,28 @@ bool idEntity::IsBroken( void ) const {
 }
 
 
-/**
+/*
 ================
 idEntity::SpawnFlinder spawns zero, one or more flinder objects as
-described by the BrokenSpawn struct.
+described by one FlinderSpawn struct.
 
 @return: -1 for error, or the number of entities spawned
 
 */
-int idEntity::SpawnFlinder( const BrokenSpawn& bs )
+int idEntity::SpawnFlinder( const FlinderSpawn& fs )
 {
 	int spawned = 0;
 	
-	for (int i = 0; i < bs.m_Count; i++)
+	for (int i = 0; i < fs.m_Count; i++)
 	{
 		// probability 0.6 => spawn in only 60% of all cases
-		if (bs.m_Probability < 1.0 &&
-			gameLocal.random.RandomFloat() >= bs.m_Probability)
+		if (fs.m_Probability < 1.0 &&
+			gameLocal.random.RandomFloat() >= fs.m_Probability)
 		{
 			continue;
 		}
 
-		const idDict *p_entityDef = gameLocal.FindEntityDefDict( bs.m_Entity.c_str(), false );
+		const idDict *p_entityDef = gameLocal.FindEntityDefDict( fs.m_Entity.c_str(), false );
 	    if( p_entityDef )
 		{
 			idEntity *flinder;
@@ -1544,18 +1513,21 @@ int idEntity::SpawnFlinder( const BrokenSpawn& bs )
 
 			if ( !flinder )
 			{
-				gameLocal.Error( "Failed to spawn flinder entity %s", bs.m_Entity.c_str() );
+				gameLocal.Error( "Failed to spawn flinder entity %s", fs.m_Entity.c_str() );
 				return -1;
 	        }
 			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawned entity %s\r", flinder->GetName() ); 
 
 			// move the entity to the origin (plus offset) and orientation of the original
-			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + bs.m_Offset );
+			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
 			flinder->GetPhysics()->SetAxis( GetPhysics()->GetAxis() );
 			// give the flinders the same speed as the original entity (in case it breaks
 			// up while on the move
 			flinder->GetPhysics()->SetLinearVelocity( GetPhysics()->GetLinearVelocity() );
 			flinder->GetPhysics()->SetAngularVelocity( GetPhysics()->GetAngularVelocity() );
+			// activate the flinder, so it falls realistically down
+			flinder->BecomeActive(TH_PHYSICS|TH_THINK);
+			// FIXME if this entity has a skin, set the same skin on the flinder
 			// FIXME add a small random impulse outwards from entity origin
 			spawned++;
 		}
@@ -1611,29 +1583,8 @@ void idEntity::BecomeBroken( idEntity *activator )
 		GetPhysics()->SetContents( 0 );
 	}
 
-	// tels: do we have flinders to spawn on break?
-    int num = m_BrokenSpawn.Num();
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Entity %s has %i flinders\r", name.c_str(), num );
-    if ( num > 0 )
-	{
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s up into flinders\r", name.c_str() );
-		for (int i = 0; i < num; i++)
-		{
-			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawning %s\r", m_BrokenSpawn[ i ].m_Entity.c_str() );
-			SpawnFlinder( m_BrokenSpawn[ i ] );
-		}
-
-		// if we spawned flinders but have no broken model, remove this entity
-		if ( !brokenModel.Length() )
-		{
-			// hide us
-			Hide();
-			// remove us in 0.05 seconds
-			PostEventMS( &EV_Remove, 50 );
-			// and make inactive
-			BecomeInactive(TH_PHYSICS|TH_THINK);
-		}
-	}
+	// tels: if we have flinders to spawn on break, do so now
+	Flinderize();
 }
 
 /*
@@ -6677,37 +6628,55 @@ Quit:
 	return bRc;
 }
 
-void idEntity::LoadBrokenSpawn(const idStr &name, const idStr &spawnarg)
+void idEntity::Flinderize( void )
 {
-	// Create a new struct and load the values
-	BrokenSpawn bs;
+	// Create a new struct
+	FlinderSpawn fs;
+	// count of entities that were actually spawned
+	int spawned = 0;
 
-	// fill in the name and some defaults
-	bs.m_Entity = name;
-	bs.m_Offset.Zero();
-	bs.m_Count = 0;
-	bs.m_Probability = 1.0;
-
-	// check if we have spawnargs like count, offset or probability:
-	idStr index;
-	// strlen("def_broken") == 10 
-	if (spawnarg.Length() > 10)
+	// tels: go through all the def_flinder spawnargs and call SpawnFlinder() for each
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_flinder", NULL );
+	while( kv )
 	{
-		index = spawnarg.Right( spawnarg.Length() - 10 );
+		idStr temp = kv->GetValue();
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_flinder %s:\r", kv->GetKey().c_str() );
+		if( !temp.IsEmpty() )
+		{
+			// fill in the name and some defaults
+			fs.m_Entity = temp;
+			fs.m_Offset.Zero();
+			fs.m_Count = 0;
+			fs.m_Probability = 1.0;
+
+			// check if we have spawnargs like count, offset or probability:
+			idStr index;
+			idStr spawnarg = kv->GetValue();
+			// strlen("def_broken") == 10 
+			if (spawnarg.Length() > 10)
+			{
+				index = spawnarg.Right( spawnarg.Length() - 10 );
+			}
+			spawnArgs.GetVector("flinder_offset"      + index,    "", fs.m_Offset);
+			spawnArgs.GetInt   ("flinder_count"       + index,   "1", fs.m_Count);
+			spawnArgs.GetFloat ("flinder_probability" + index, "1.0", fs.m_Probability);
+
+			// evaluate what we found and spawn the individual pieces
+			spawned += SpawnFlinder( fs );
+
+		}
+		kv = spawnArgs.MatchPrefix( "def_flinder", kv );
+	} // while MatchPrefix ("def_flinder")
+
+	// if we spawned flinders, but have no broken model, remove this entity
+	if ( spawned > 0 && !brokenModel.Length() )
+	{
+		Hide();
+		// remove us in 0.01 seconds
+		PostEventMS( &EV_Remove, 10 );
+		// and make inactive in the meantime
+		BecomeInactive(TH_PHYSICS|TH_THINK);
 	}
-
-	spawnArgs.GetVector("broken_offset"      + index,    "", bs.m_Offset);
-	spawnArgs.GetInt   ("broken_count"       + index,   "1", bs.m_Count);
-	spawnArgs.GetFloat ("broken_probability" + index, "1.0", bs.m_Probability);
-
-	// add the struct to the list
-	m_BrokenSpawn.Append(bs);
-
-	// debug print:
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Loaded def_broken (index: %s) %s:\r",	index.c_str(), bs.m_Entity.c_str() );
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector(" Offset:\r", bs.m_Offset);
-	DM_LOG(LC_ENTITY, LT_INFO).LogString(" Count      : %i\r", bs.m_Count );
-	DM_LOG(LC_ENTITY, LT_INFO).LogString(" Probability: %f\r", bs.m_Probability );
 }
 
 void idEntity::LoadTDMSettings(void)
@@ -6764,22 +6733,6 @@ void idEntity::LoadTDMSettings(void)
 	m_bIsClimbableRope = spawnArgs.GetBool( "is_climbable_rope", "0" );
 
 	m_bIsMantleable = spawnArgs.GetBool( "is_mantleable", "1" );
-
-	// by default we do not have any entities to spawn on breaking up
-	m_BrokenSpawn.Clear();
-
-	kv = spawnArgs.MatchPrefix( "def_broken", NULL );
-	// Fill the list of things to spawn upon breaking
-	while( kv )
-	{
-		idStr temp = kv->GetValue();
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_broken %s:\r", kv->GetKey().c_str() );
-		if( !temp.IsEmpty() )
-			LoadBrokenSpawn( temp, kv->GetKey() );
-		kv = spawnArgs.MatchPrefix( "def_broken", kv );
-	}
-	// reduce memory footprint (we expect less than 16 entries usually)
-	m_BrokenSpawn.Condense();
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] this: %08lX FrobDistance: %u\r", name.c_str(), this, m_FrobDistance);
 }
