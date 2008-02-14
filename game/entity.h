@@ -270,7 +270,7 @@ public:
 	/**
 	* Frob bias: Multiplies the angle deviation cosine test in idPlayer::FrobCheck
 	* Effectively biases the frob selection toward this object.  Used for small objects
-	* To make them easier to frob when placed next to large objects.
+	* to make them easier to frob when placed next to large objects.
 	**/
 	float					m_FrobBias;
 
@@ -286,7 +286,7 @@ public:
 	* directly, and it's more efficient to declare this on all entities than to do
 	* RTTI on every animation frame.
 	**/
-	idList<float>                           m_animRates;
+	idList<float>			m_animRates;
 
 	/**
 	* Actor who set this item in motion.  Cleared when it comes to rest.
@@ -588,7 +588,7 @@ public:
 	 * appropriate for usage on that entity and the default frobaction will be executed
 	 * instead.
 	 * bInit should be set to true if the Use just started. In case of continuous uses
-	 * like using the lockpíck), the feirst call when the USE button is pressed, this
+	 * like using the lockpick), the first call when the USE button is pressed, this
 	 * would be set to true and in subsequent calls it would be set to false.
 	 */
 	virtual bool UsedBy(IMPULSE_STATE nState, idEntity *);
