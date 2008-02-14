@@ -403,8 +403,6 @@ void idMover::Spawn( void )
 	if ( health ) {
 		fl.takedamage = true;
 	}
-
-	LoadTDMSettings();
 }
 
 /*
@@ -2415,9 +2413,6 @@ void idMover_Binary::Spawn( void )
 			FindGuiTargets();
 		}
 	}
-
-	// Load frobsettings
-	LoadTDMSettings();
 }
 
 /*
@@ -4462,8 +4457,6 @@ void idRotater::Spawn( void )
 	if ( spawnArgs.GetBool( "start_on" ) ) {
 		ProcessEvent( &EV_Activate, this );
 	}
-
-	LoadTDMSettings();
 }
 
 /*
@@ -4580,8 +4573,6 @@ void idBobber::Spawn( void )
 	}
 	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, speed * 500, GetPhysics()->GetOrigin(), delta * 2.0f, vec3_origin );
 	SetPhysics( &physicsObj );
-
-	LoadTDMSettings();
 }
 
 
@@ -4644,8 +4635,6 @@ void idPendulum::Spawn( void )
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, 500/freq, GetPhysics()->GetAxis().ToAngles(), idAngles( 0, 0, speed * 2.0f ), ang_zero );
 	SetPhysics( &physicsObj );
-
-	LoadTDMSettings();
 }
 
 
@@ -4690,8 +4679,6 @@ void idRiser::Spawn( void )
 	}
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
 	SetPhysics( &physicsObj );
-
-	LoadTDMSettings();
 }
 
 /*

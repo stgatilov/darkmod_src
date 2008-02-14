@@ -359,8 +359,6 @@ void idItem::Spawn( void )
 
 	// What team owns it?
 	spawnArgs.GetInt ("ownerTeam", "0", ownerTeam);
-
-	LoadTDMSettings();
 }
 
 /*
