@@ -295,13 +295,15 @@ bool GetFirstBlockingObstacle( const obstacle_t *obstacles, int numObstacles, in
 GetObstacles
 ============
 */
-int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, idBounds &clipBounds ) 
+int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, 
+				  const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, 
+				  idBounds &clipBounds ) 
 {
-	int i, j, numListedClipModels, numObstacles, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
+	int i, j, numListedClipModels, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
 	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
 	float stepHeight, headHeight, blockingScale, min, max;
-	idVec3 seekDelta, silVerts[32], start, end, nextStart, nextEnd;
-	idVec2 expBounds[2], edgeDir, edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0), lastEdgeNormal;
+	idVec3 silVerts[32], start, end, nextStart, nextEnd;
+	idVec2 edgeDir, edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0), lastEdgeNormal;
 	idVec2 obDelta;
 	idPhysics *obPhys;
 	idBox box;
@@ -315,13 +317,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	*/
 	CBinaryFrobMover* p_binaryFrobMover = NULL;
 
-	// TDM: Store our team.  const correctness in idPhysics SUCKS!!!
-//	int team = static_cast<const idActor *>( const_cast<idPhysics_Base *>(static_cast<const idPhysics_Base *>(physics))->GetSelf() )->team;
+	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
 	int team = static_cast<idActor *>( const_cast<idPhysics *>(physics)->GetSelf() )->team;
 
-	numObstacles = 0;
+	int numObstacles = 0;
 
-	seekDelta = seekPos - startPos;
+	idVec3 seekDelta = seekPos - startPos;
+	idVec2 expBounds[2];
 	expBounds[0] = physics->GetBounds()[0].ToVec2() - idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 	expBounds[1] = physics->GetBounds()[1].ToVec2() + idVec2( CM_BOX_EPSILON, CM_BOX_EPSILON );
 
@@ -333,6 +335,10 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	clipBounds.AddPoint( seekPos );
 	clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
 	clipMask = physics->GetClipMask();
+
+	if ( ai_showObstacleAvoidance.GetBool() ) {
+		gameRenderWorld->DebugBox(colorBlue, idBox(clipBounds), 16);
+	}
 
 	// find all obstacles touching the clip bounds
 	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
@@ -989,13 +995,7 @@ idAI::FindPathAroundObstacles
 ============
 */
 bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path ) {
-	int numObstacles, areaNum, insideObstacle;
-	obstacle_t obstacles[MAX_OBSTACLES];
-	idBounds clipBounds;
-	idBounds bounds;
-	pathNode_t *root;
-	bool pathToGoalExists;
-
+	// Initialise the path structure with reasonable defaults
 	path.seekPos = seekPos;
 	path.firstObstacle = NULL;
 	path.startPosOutsideObstacles = startPos;
@@ -1003,22 +1003,32 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	path.seekPosOutsideObstacles = seekPos;
 	path.seekPosObstacle = NULL;
 
-	if ( !aas ) {
+	if (aas == NULL) {
+		return true; // no AAS!
+	}
+
+	// greebo: Optimisation: don't perform obstace avoidance when we're basically at the seek position
+	idVec3 seekDelta = seekPos - startPos;
+	if (seekDelta.LengthSqr() < 100.0f) {
 		return true;
 	}
 
+	idBounds bounds;
 	bounds[1] = aas->GetSettings()->boundingBoxes[0][1];
 	bounds[0] = -bounds[1];
 	bounds[1].z = 32.0f;
 
 	// get the AAS area number and a valid point inside that area
-	areaNum = aas->PointReachableAreaNum( path.startPosOutsideObstacles, bounds, (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
+	int areaNum = aas->PointReachableAreaNum( path.startPosOutsideObstacles, bounds, (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
 	aas->PushPointIntoAreaNum( areaNum, path.startPosOutsideObstacles );
 
 	// get all the nearby obstacles
-	numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds );
+	obstacle_t obstacles[MAX_OBSTACLES];
+	idBounds clipBounds;
+	int numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds );
 
 	// get a source position outside the obstacles
+	int insideObstacle;
 	GetPointOutsideObstacles( obstacles, numObstacles, path.startPosOutsideObstacles.ToVec2(), &insideObstacle, NULL );
 	if ( insideObstacle != -1 ) {
 		path.startPosObstacle = obstacles[insideObstacle].entity;
@@ -1038,7 +1048,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	}
 
 	// build a path tree
-	root = BuildPathTree( obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path );
+	pathNode_t* root = BuildPathTree( obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path );
 
 	// draw the path tree
 	if ( ai_showObstacleAvoidance.GetBool() ) {
@@ -1049,7 +1059,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 
 	// find the optimal path
-	pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	bool pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
 
 	// free the tree
 	FreePathTree_r( root );

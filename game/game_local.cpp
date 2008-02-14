@@ -3388,7 +3388,7 @@ void idGameLocal::RunDebugInfo( void ) {
 	}
 
 	if ( ai_showObstacleAvoidance.GetInteger() == 2 ) {
-		idAAS *aas = GetAAS( 0 );
+		idAAS *aas = GetAAS("aas32");
 		if ( aas ) {
 			idVec3 seekPos;
 			obstaclePath_t path;
