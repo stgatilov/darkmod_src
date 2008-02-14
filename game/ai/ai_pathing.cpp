@@ -1007,12 +1007,6 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 		return true; // no AAS!
 	}
 
-	// greebo: Optimisation: don't perform obstace avoidance when we're basically at the seek position
-	idVec3 seekDelta = seekPos - startPos;
-	if (seekDelta.LengthSqr() < 100.0f) {
-		return true;
-	}
-
 	idBounds bounds;
 	bounds[1] = aas->GetSettings()->boundingBoxes[0][1];
 	bounds[0] = -bounds[1];
