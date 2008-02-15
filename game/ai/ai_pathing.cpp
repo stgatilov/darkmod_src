@@ -299,26 +299,22 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				  const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, 
 				  idBounds &clipBounds ) 
 {
-	int i, j, numListedClipModels, numVerts, clipMask, blockingObstacle, blockingEdgeNum;
+	int numVerts, clipMask, blockingObstacle, blockingEdgeNum;
 	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
 	float stepHeight, headHeight, blockingScale, min, max;
 	idVec3 silVerts[32], start, end, nextStart, nextEnd;
 	idVec2 edgeDir, edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0), lastEdgeNormal;
 	idVec2 obDelta;
-	idPhysics *obPhys;
-	idBox box;
-	idEntity *obEnt;
-	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
-
-	/* TDM: SZ: This variable tracks if the obstacle is a binary mover or not
-	* If NULL its not, if non NULL it is, and the pointer is a cast to it
-	* as a binary mover
-	*/
+		
+	/** TDM: SZ: This variable tracks if the obstacle is a binary mover or not
+	 * If NULL its not, if non NULL it is, and the pointer is a cast to it
+	 * as a binary mover
+	 */
 	CBinaryFrobMover* p_binaryFrobMover = NULL;
 
 	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
-	int team = static_cast<idActor *>( const_cast<idPhysics *>(physics)->GetSelf() )->team;
+	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf()); 
+	int team = self->team;
 
 	int numObstacles = 0;
 
@@ -341,12 +337,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	}
 
 	// find all obstacles touching the clip bounds
-	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
+	idClipModel* clipModelList[ MAX_GENTITIES ];
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
 
-	for ( i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) 
+	for ( int i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) 
 	{
-		clipModel = clipModelList[i];
-		obEnt = clipModel->GetEntity();
+		idClipModel* clipModel = clipModelList[i];
+		idEntity* obEnt = clipModel->GetEntity();
 
 		/*
 		* SZ: Oct 9, 2006: Not all binary frob movers have trace models as clip models
@@ -358,16 +355,14 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		}
 		*/
 
-		if ( obEnt->IsType( idActor::Type ) ) 
+		if (obEnt->IsType(idActor::Type)) 
 		{
-			obPhys = obEnt->GetPhysics();
+			idPhysics* obPhys = obEnt->GetPhysics();
+
 			// ignore myself, my enemy, and dead bodies
 			// TDM: Also ignore ALL enemies
-			if	( 
-				( obPhys == physics ) || ( obEnt == ignore ) 
-				|| ( obEnt->health <= 0 ) 
-				|| gameLocal.m_RelationsManager->IsEnemy( team, static_cast<idActor *>(obEnt)->team )
-				)
+			if	(obPhys == physics || obEnt == ignore || obEnt->health <= 0 || 
+				 gameLocal.m_RelationsManager->IsEnemy(team, static_cast<idActor*>(obEnt)->team ))
 			{
 				continue;
 			}
@@ -382,15 +377,16 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 					}
 				}
 			}
-		} else if ( obEnt->IsType( idMoveable::Type ) ) 
+		} 
+		// SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too
+		else if (obEnt->IsType(CBinaryFrobMover::Type))
+		{
+			p_binaryFrobMover = static_cast<CBinaryFrobMover*>(obEnt);
+		}
+		else if (obEnt->IsType(idMoveable::Type)) 
 		{
 			// moveables are considered obstacles
 		} 
-		/* SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too */
-		else if (obEnt->IsType (CBinaryFrobMover::Type) )
-		{
-			p_binaryFrobMover = (CBinaryFrobMover*) obEnt;
-		}
 		else 
 		{
 			// ignore everything else
@@ -412,7 +408,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		}
 
 		// Get the box boundign the obstacle
-		box = idBox( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
+		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 
 		/* TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
 		* the current position to where it is winding up, so the AI knows to stay clear
@@ -456,15 +452,15 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		// create a 2D winding for the obstacle;
 		obstacle_t &obstacle = obstacles[numObstacles++];
 		obstacle.winding.Clear();
-		for ( j = 0; j < numVerts; j++ ) {
+		for ( int j = 0; j < numVerts; j++ ) {
 			obstacle.winding.AddPoint( silVerts[j].ToVec2() );
 		}
 
 		if ( ai_showObstacleAvoidance.GetBool() ) {
-			for ( j = 0; j < numVerts; j++ ) {
+			for ( int j = 0; j < numVerts; j++ ) {
 				silVerts[j].z = startPos.z;
 			}
-			for ( j = 0; j < numVerts; j++ ) {
+			for ( int j = 0; j < numVerts; j++ ) {
 				gameRenderWorld->DebugArrow( colorWhite, silVerts[j], silVerts[(j+1)%numVerts], 4 );
 			}
 		}
@@ -497,7 +493,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		lastVerts[0] = lastVerts[1] = 0;
 		lastEdgeNormal.Zero();
 		nextVerts[0] = nextVerts[1] = 0;
-		for ( i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ ) {
+		for ( int i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ ) {
             aas->GetEdge( wallEdges[i], start, end );
 			aas->GetEdgeVertexNumbers( wallEdges[i], verts );
 			edgeDir = end.ToVec2() - start.ToVec2();
@@ -539,13 +535,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 	// show obstacles
 	if ( ai_showObstacleAvoidance.GetBool() ) {
-		for ( i = 0; i < numObstacles; i++ ) {
+		for ( int i = 0; i < numObstacles; i++ ) {
 			obstacle_t &obstacle = obstacles[i];
-			for ( j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
+			for ( int j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
 				silVerts[j].ToVec2() = obstacle.winding[j];
 				silVerts[j].z = startPos.z;
 			}
-			for ( j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
+			for ( int j = 0; j < obstacle.winding.GetNumPoints(); j++ ) {
 				gameRenderWorld->DebugArrow( colorGreen, silVerts[j], silVerts[(j+1)%obstacle.winding.GetNumPoints()], 4 );
 			}
 		}
