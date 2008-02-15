@@ -90,6 +90,10 @@ public:
 	int				GetProjectionSilhouetteVerts( const idVec3 &projectionOrigin, idVec3 silVerts[6] ) const;
 	int				GetParallelProjectionSilhouetteVerts( const idVec3 &projectionDir, idVec3 silVerts[6] ) const;
 
+					// angua: fills in the 8 corner vertices of the box
+					// verts must be an array of 8 idVec3s.
+	void			GetVerts(idVec3* verts) const;
+
 private:
 	idVec3			center;
 	idVec3			extents;
@@ -276,6 +280,18 @@ ID_INLINE void idBox::AxisProjection( const idMat3 &ax, idBounds &bounds ) const
 		bounds[0][i] = d1 - d2;
 		bounds[1][i] = d1 + d2;
 	}
+}
+
+ID_INLINE void idBox::GetVerts(idVec3* verts) const
+{
+	verts[0] = center + idVec3(extents.x, -extents.y, -extents.z) * axis;
+	verts[1] = center + idVec3(extents.x, extents.y, -extents.z) * axis;
+	verts[2] = center + idVec3(-extents.x, extents.y, -extents.z) * axis;
+	verts[3] = center + idVec3(-extents.x, -extents.y, -extents.z) * axis;
+	verts[4] = center + idVec3(extents.x, -extents.y, extents.z) * axis;
+	verts[5] = center + idVec3(extents.x, extents.y, extents.z) * axis;
+	verts[6] = center + idVec3(-extents.x, extents.y, extents.z) * axis;
+	verts[7] = center + idVec3(-extents.x, -extents.y, extents.z) * axis;
 }
 
 #endif /* !__BV_BOX_H__ */
