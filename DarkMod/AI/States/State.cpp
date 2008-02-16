@@ -1532,4 +1532,12 @@ void State::OnMessageDetectedSomethingSuspicious(CAIComm_Message* message)
 	}
 }
 
+void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
+}
+
 } // namespace ai

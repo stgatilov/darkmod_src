@@ -3950,6 +3950,17 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	}
 	else if (path.seekPosObstacle)
 	{
+		/*gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
+												  path.seekPosObstacle->GetPhysics()->GetOrigin(), 
+												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);*/
+
+		// greebo: Check if we have a frobmover entity at our seek position
+		if (path.seekPosObstacle->IsType(CBinaryFrobMover::Type)) 
+		{
+			// We have a frobmover in our way, raise a signal to the current state
+			mind->GetState()->OnFrobMoverEncounter(static_cast<CBinaryFrobMover*>(path.seekPosObstacle));
+		}
+
 		// if the AI is very close to the path.seekPos already and path.seekPosObstacle != NULL
 		// then we want to push the path.seekPosObstacle entity out of the way
 		AI_OBSTACLE_IN_PATH = true;
@@ -4136,7 +4147,12 @@ void idAI::AnimMove()
 			//gameRenderWorld->DebugArrow(colorCyan, goalPos, goalPos + idVec3(0,0,15), 2, 1000);
 			if (!cv_ai_opt_noobstacleavoidance.GetBool())
 			{
+				idTimer timer;
+				timer.Clear();
+				timer.Start();
 				CheckObstacleAvoidance( goalPos, newDest );
+				timer.Stop();
+				DM_LOG(LC_AI, LT_INFO).LogString("Obstacle avoidance took: %lf msec", timer.Milliseconds());
 			}
 			else 
 			{

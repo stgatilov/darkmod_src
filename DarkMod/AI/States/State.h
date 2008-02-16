@@ -11,6 +11,7 @@
 #define __AI_STATE_H__
 
 #include "../../AIComm_Message.h"
+#include "../../BinaryFrobMover.h"
 #include "../Subsystem.h"
 #include <boost/shared_ptr.hpp>
 
@@ -72,6 +73,9 @@ public:
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CAIComm_Message* message);
+
+	// greebo: An event called by the obstacle avoidance code to indicate that we have a frobmover ahead
+	virtual void OnFrobMoverEncounter(CBinaryFrobMover* frobMover);
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);
 

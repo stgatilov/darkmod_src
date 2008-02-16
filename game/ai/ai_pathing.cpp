@@ -299,11 +299,9 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				  const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, 
 				  idBounds &clipBounds ) 
 {
-	int numVerts, clipMask, blockingObstacle, blockingEdgeNum;
-	int wallEdges[MAX_AAS_WALL_EDGES], numWallEdges, verts[2], lastVerts[2], nextVerts[2];
-	float stepHeight, headHeight, blockingScale, min, max;
-	idVec3 silVerts[32], start, end, nextStart, nextEnd;
-	idVec2 edgeDir, edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0), lastEdgeNormal;
+	int clipMask;
+	float stepHeight, headHeight, min, max;
+	idVec3 silVerts[32];
 	idVec2 obDelta;
 		
 	/** TDM: SZ: This variable tracks if the obstacle is a binary mover or not
@@ -315,8 +313,6 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
 	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf()); 
 	int team = self->team;
-
-	int numObstacles = 0;
 
 	idVec3 seekDelta = seekPos - startPos;
 	idVec2 expBounds[2];
@@ -337,8 +333,10 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	}
 
 	// find all obstacles touching the clip bounds
-	idClipModel* clipModelList[ MAX_GENTITIES ];
+	static idClipModel* clipModelList[ MAX_GENTITIES ];
 	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
+
+	int numObstacles = 0; // no obstacles so far
 
 	for ( int i = 0; i < numListedClipModels && numObstacles < MAX_OBSTACLES; i++ ) 
 	{
@@ -399,7 +397,6 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			continue;
 		}
 		
-
 		// check if we can step over the object
 		clipModel->GetAbsBounds().AxisProjection( -physics->GetGravityNormal(), min, max );
 		if ( max < stepHeight || min > headHeight ) {
@@ -407,28 +404,23 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			continue;
 		}
 
-		// Get the box boundign the obstacle
+		// Get the box bounding the obstacle
 		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 
 		/* TDM: SZ Oct 9, 2006: If it is a binary mover, we need to sweep out its entire movement path from
 		* the current position to where it is winding up, so the AI knows to stay clear
 		*/
+
+		/* This isn't working due to rotation problem
 		if (p_binaryFrobMover != NULL)
 		{
-			// This isn't working due to rotation problem
-
-			/*
 			// Get remaining movement
 			idVec3 deltaPosition;
 			idAngles deltaAngles;
 			idRotation rotation;
 			idBox moveBox;
 
-			p_binaryFrobMover->getRemainingMovement
-			(
-				deltaPosition,
-				deltaAngles
-			);
+			p_binaryFrobMover->getRemainingMovement(deltaPosition, deltaAngles);
 
 			// Make translated version of self and add to bounds
 
@@ -441,16 +433,13 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			// Now both rotate and translate
 			moveBox.TranslateSelf (deltaPosition);
 			box.AddBox (moveBox);
-		*/
-
-
-		}
+		}*/
 
 		// project the box containing the obstacle onto the floor plane
-		numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
+		int numVerts = box.GetParallelProjectionSilhouetteVerts( physics->GetGravityNormal(), silVerts );
 
 		// create a 2D winding for the obstacle;
-		obstacle_t &obstacle = obstacles[numObstacles++];
+		obstacle_t& obstacle = obstacles[numObstacles++];
 		obstacle.winding.Clear();
 		for ( int j = 0; j < numVerts; j++ ) {
 			obstacle.winding.AddPoint( silVerts[j].ToVec2() );
@@ -476,45 +465,78 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		return 0;
 	}
 
+	int blockingObstacle; // will hold the index to the first blocking obstacle
+	int blockingEdgeNum; // will hold the edge number of the winding which intersects the path
+	float blockingScale;
 	// if the current path doesn't intersect any dynamic obstacles the path should be through valid AAS space
-	if ( PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2() ) == -1 ) {
-		if ( !GetFirstBlockingObstacle( obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), blockingScale, blockingObstacle, blockingEdgeNum ) ) {
+	if ( PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2() ) == -1 )
+	{
+		if (!GetFirstBlockingObstacle(obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
+									  blockingScale, blockingObstacle, blockingEdgeNum))
+		{
+			// No first obstacle found
 			return 0;
 		}
 	}
 
 	// create obstacles for AAS walls
-	if ( aas ) {
+	if ( aas != NULL )
+	{
 		float halfBoundsSize = ( expBounds[ 1 ].x - expBounds[ 0 ].x ) * 0.5f;
 
-		numWallEdges = aas->GetWallEdges( areaNum, clipBounds, TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES );
+		int wallEdges[MAX_AAS_WALL_EDGES];
+		int numWallEdges = aas->GetWallEdges( areaNum, clipBounds, TFL_WALK, wallEdges, MAX_AAS_WALL_EDGES );
 		aas->SortWallEdges( wallEdges, numWallEdges );
 
-		lastVerts[0] = lastVerts[1] = 0;
-		lastEdgeNormal.Zero();
-		nextVerts[0] = nextVerts[1] = 0;
-		for ( int i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ ) {
+		int lastVerts[2] = {0,0};
+		int nextVerts[2] = {0,0};
+		idVec2 lastEdgeNormal(0,0);		
+		int verts[2]; // will hold edge vertex indices
+		idVec2 edgeNormal, nextEdgeDir, nextEdgeNormal(0, 0);
+		idVec3 start, end, nextStart, nextEnd;
+
+		for ( int i = 0; i < numWallEdges && numObstacles < MAX_OBSTACLES; i++ )
+		{
             aas->GetEdge( wallEdges[i], start, end );
 			aas->GetEdgeVertexNumbers( wallEdges[i], verts );
-			edgeDir = end.ToVec2() - start.ToVec2();
+
+			// Get the edge direction 
+			idVec2 edgeDir(end.ToVec2() - start.ToVec2());
 			edgeDir.Normalize();
+
+			// Get the direction perpendicular to this edge
 			edgeNormal.x = edgeDir.y;
 			edgeNormal.y = -edgeDir.x;
-			if ( i < numWallEdges-1 ) {
+
+			// Do we have a next edge?
+			if ( i < numWallEdges-1 )
+			{
+				// Get the next edge direction plus normal
 				aas->GetEdge( wallEdges[i+1], nextStart, nextEnd );
 				aas->GetEdgeVertexNumbers( wallEdges[i+1], nextVerts );
+
 				nextEdgeDir = nextEnd.ToVec2() - nextStart.ToVec2();
 				nextEdgeDir.Normalize();
+
 				nextEdgeNormal.x = nextEdgeDir.y;
 				nextEdgeNormal.y = -nextEdgeDir.x;
 			}
 
-			obstacle_t &obstacle = obstacles[numObstacles++];
+			// greebo: TODO: Check if caching the AAS obstacle representations can save some CPU time.
+			// AAS areas never change during map runtime, so why calculate them each time?
+
+			// Start to fill the values in the new obstacle structure
+			obstacle_t& obstacle = obstacles[numObstacles++];
+
 			obstacle.winding.Clear();
+
+			// greebo: Populate the winding, this will form a trapezoid
+			// with the edge as one side. The longer side will be a bit away from the wall sticking into the room.
 			obstacle.winding.AddPoint( end.ToVec2() );
 			obstacle.winding.AddPoint( start.ToVec2() );
 			obstacle.winding.AddPoint( start.ToVec2() - edgeDir - edgeNormal * halfBoundsSize );
 			obstacle.winding.AddPoint( end.ToVec2() + edgeDir - edgeNormal * halfBoundsSize );
+
 			if ( lastVerts[1] == verts[0] ) {
 				obstacle.winding[2] -= lastEdgeNormal * halfBoundsSize;
 			} else {
@@ -528,7 +550,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			obstacle.winding.GetBounds( obstacle.bounds );
 			obstacle.entity = NULL;
 
-			memcpy( lastVerts, verts, sizeof( lastVerts ) );
+			lastVerts[0] = verts[0];
+			lastVerts[1] = verts[1];
 			lastEdgeNormal = edgeNormal;
 		}
 	}
