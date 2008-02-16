@@ -11,6 +11,7 @@
 #define __AI_MEMORY_H__
 
 #include "../idlib/precompiled.h"
+#include "../BinaryFrobMover.h"
 
 namespace ai
 {
@@ -261,6 +262,11 @@ public:
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	idVec3 positionBeforeTakingCover;
 
+	// Variables related to door opening/closing process
+	struct DoorRelatedVariables
+	{
+		idEntityPtr<CBinaryFrobMover> frobMover;
+	} doorRelated;
 
 	Memory() :
 		alertState(ERelaxed),
@@ -337,6 +343,8 @@ public:
 		savefile->WriteBool(hidingSpotInvestigationInProgress);
 		savefile->WriteBool(fleeingDone);
 		savefile->WriteVec3(positionBeforeTakingCover);
+
+		doorRelated.frobMover.Save(savefile);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -384,6 +392,8 @@ public:
 		savefile->ReadBool(hidingSpotInvestigationInProgress);
 		savefile->ReadBool(fleeingDone);
 		savefile->ReadVec3(positionBeforeTakingCover);
+
+		doorRelated.frobMover.Restore(savefile);
 	}
 };
 

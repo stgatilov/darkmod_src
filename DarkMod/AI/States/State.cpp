@@ -1537,7 +1537,15 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
+	gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
+
+	Memory& memory = owner->GetMemory();
+
+	// Store the current movestate
+	memory.doorRelated.frobMover = frobMover;
+	
+	// Let the owner save its move
+	owner->Event_SaveMove();
 }
 
 } // namespace ai

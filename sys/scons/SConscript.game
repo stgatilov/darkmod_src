@@ -66,6 +66,7 @@ game_string = ' \
 	ai/ai_events.cpp \
 	ai/ai_pathing.cpp \
 	ai/ai_vagary.cpp \
+	ai/MoveState.cpp \
 	ai/tdmAASFindEscape.cpp \
 	gamesys/debuggraph.cpp \
 	gamesys/class.cpp \
