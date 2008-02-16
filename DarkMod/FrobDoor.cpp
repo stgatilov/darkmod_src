@@ -244,10 +244,6 @@ void CFrobDoor::Spawn( void )
 {
 	idStr str;
 
-	CBinaryFrobMover::Spawn();
-
-	LoadTDMSettings();
-
 	// If a door is locked but has no pins, it means it can not be picked and needs a key.
 	// In that case we can ignore the pins, otherwise we must create the patterns.
 	if(spawnArgs.GetString("lock_pins", "", str))

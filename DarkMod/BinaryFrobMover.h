@@ -110,6 +110,21 @@ public:
 	*/
 	virtual bool isChangingState();
 
+	ID_INLINE const idVec3&		GetOpenPos() const
+	{
+		return m_OpenPos;
+	}
+
+	ID_INLINE const idVec3&		GetClosedPos() const
+	{
+		return m_ClosedPos;
+	}
+
+	ID_INLINE const idVec3&		GetOpenDir() const
+	{
+		return m_OpenDir;
+	}
+
 	/**
 	* This is used to get the remaining translation left on the clip model
 	* if it is moving
@@ -190,6 +205,15 @@ protected:
 	* Door angles when completely open
 	**/
 	idAngles					m_OpenAngles;
+
+	// angua: the positions of the far edge measured from the origin 
+	// when the door is closed or open.
+	idVec3						m_ClosedPos;
+	idVec3						m_OpenPos;
+
+	// angua: points toward the opening direction of the door 
+	// (perpendicular to door face and rotation axis)
+	idVec3						m_OpenDir;
 
 	/**
 	 * Scriptfunction that is called, whenever the door is finished rotating

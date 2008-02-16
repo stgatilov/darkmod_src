@@ -62,9 +62,6 @@ void CFrobDoorHandle::ReadFromSnapshot( const idBitMsgDelta &msg )
 
 void CFrobDoorHandle::Spawn(void)
 {
-	CBinaryFrobMover::Spawn();
-	LoadTDMSettings();
-
 	// Dorhandles are always non-interruptable
 	m_bInterruptable = false;
 }

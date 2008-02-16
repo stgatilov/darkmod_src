@@ -91,6 +91,10 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteFloat(m_OpenAngles.yaw);
 	savefile->WriteFloat(m_OpenAngles.roll);
 
+	savefile->WriteVec3(m_ClosedPos);
+	savefile->WriteVec3(m_OpenPos);
+	savefile->WriteVec3(m_OpenDir);
+
 	savefile->WriteString(m_CompletionScript.c_str());
 
 	savefile->WriteBool(m_Rotating);
@@ -126,6 +130,10 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_OpenAngles.yaw);
 	savefile->ReadFloat(m_OpenAngles.roll);
 
+	savefile->ReadVec3(m_ClosedPos);
+	savefile->ReadVec3(m_OpenPos);
+	savefile->ReadVec3(m_OpenDir);
+
 	savefile->ReadString(m_CompletionScript);
 
 	savefile->ReadBool(m_Rotating);
@@ -147,10 +155,7 @@ void CBinaryFrobMover::ReadFromSnapshot( const idBitMsgDelta &msg )
 void CBinaryFrobMover::Spawn( void )
 {
 	idStr str;
-	idMover::Spawn();
 	idAngles tempAngle, partialAngle;
-
-	LoadTDMSettings();
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
 
@@ -214,6 +219,53 @@ void CBinaryFrobMover::Spawn( void )
 		m_bInterrupted = true;
 		m_StateChange = true;
 	}
+
+	// angua: calculate the positions of the vertex  with the largest 
+	// distance to the origin when the door is closed or open
+	idClipModel *clipModel = GetPhysics()->GetClipModel();
+	if (clipModel == NULL)
+	{
+		gameLocal.Error("Binary Frob Mover %s has no clip model", name.c_str());
+	}
+	idBox closedBox(clipModel->GetBounds(), clipModel->GetOrigin(), m_ClosedAngles.ToMat3());
+	idVec3 closedBoxVerts[8];
+	closedBox.GetVerts(closedBoxVerts);
+
+	float maxDistSquare = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		float distSquare = (closedBoxVerts[i] - GetPhysics()->GetOrigin()).LengthSqr();
+		if (distSquare > maxDistSquare)
+		{
+			m_ClosedPos = closedBoxVerts[i];
+			maxDistSquare = distSquare;
+		}
+	}
+	// gameRenderWorld->DebugArrow(colorGreen, m_ClosedPos, m_ClosedPos + idVec3(0, 0, 30), 2, 200000);
+
+	idBox openBox(clipModel->GetBounds(), clipModel->GetOrigin(), m_OpenAngles.ToMat3());
+	idVec3 openBoxVerts[8];
+	openBox.GetVerts(openBoxVerts);
+
+	maxDistSquare = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		float distSquare = (openBoxVerts[i] - GetPhysics()->GetOrigin()).LengthSqr();
+		if (distSquare > maxDistSquare)
+		{
+			m_OpenPos = openBoxVerts[i];
+			maxDistSquare = distSquare;
+		}
+	}
+	// gameRenderWorld->DebugArrow(colorRed, m_OpenPos, m_OpenPos + idVec3(0, 0, 30), 2, 200000);
+
+	idRotation rot = m_Rotate.ToRotation();
+	idVec3 rotationAxis = rot.GetVec();
+	idVec3 normal = rotationAxis.Cross(m_ClosedPos - GetPhysics()->GetOrigin());
+
+	m_OpenDir = ( (m_OpenPos - GetPhysics()->GetOrigin()) * normal ) * normal;
+	m_OpenDir.Normalize();
+	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
