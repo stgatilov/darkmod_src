@@ -29,10 +29,14 @@ class HandleDoorTask :
 private:
 	idVec3 _frontPos;
 	idVec3 _backPos;
-	bool _movingToFrontPos;
-	bool _openingDoor;
-	bool _movingToBackPos;
-	bool _closingDoor;
+
+	enum EDoorHandlingState {
+		EStateNone,
+		EStateMovingToFrontPos,
+		EStateOpeningDoor,
+		EStateMovingToBackPos,
+		EStateClosingDoor
+	} _doorHandlingState;
 
 public:
 	// Get the name of this task
@@ -42,6 +46,8 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
+
+	virtual void OnFinish(idAI* owner);
 
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);

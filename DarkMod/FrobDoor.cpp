@@ -383,7 +383,7 @@ void CFrobDoor::Open(bool bMaster)
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true && !m_bInterrupted)
+	if(m_Open == true && !m_bInterrupted && !IsBlocked())
 		return;
 
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't

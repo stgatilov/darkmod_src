@@ -94,10 +94,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		_backPos = towardPos;
 	}
 
-	_movingToFrontPos = false;
-	_openingDoor = false;
-	_movingToBackPos = false;
-	_closingDoor = false;
+	_doorHandlingState = EStateNone;
 }
 
 bool HandleDoorTask::Perform(Subsystem& subsystem)
@@ -105,7 +102,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	DM_LOG(LC_AI, LT_INFO).LogString("HandleDoorTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
-
 	Memory& memory = owner->GetMemory();
 
 	CBinaryFrobMover* frobMover = memory.doorRelated.frobMover.GetEntity();
@@ -117,31 +113,27 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	// Door is closed
 	if (!frobMover->IsOpen() || frobMover->WasInterrupted())
 	{
-		if (!_movingToFrontPos && !_closingDoor)
+		if (_doorHandlingState == EStateNone)
 		{
 			if (!owner->MoveToPosition(_frontPos))
 			{
-				// position not reachable, need a better one
-				int bla = 1;
+				// TODO: position not reachable, need a better one
 			}
 			owner->AI_MOVE_DONE = false;
-			_movingToFrontPos = true;
+			_doorHandlingState = EStateMovingToFrontPos;
 		}
-		else if (_movingToFrontPos && owner->AI_MOVE_DONE)
+		else if (_doorHandlingState == EStateMovingToFrontPos && owner->AI_MOVE_DONE)
 		{
 			// reached position
 			owner->StopMove(MOVE_STATUS_WAITING);
 			owner->TurnToward(closedPos);
 			frobMover->Open(false);
 			// TODO: play anim
-			_movingToFrontPos = false;
-			_openingDoor = true;
+			_doorHandlingState = EStateOpeningDoor;
 		}
-		else if (_closingDoor)
+		else if (_doorHandlingState == EStateClosingDoor)
 		{
 			// we have moved through the door and closed it, continue what we were doing before.
-			owner->Event_RestoreMove();
-			memory.doorRelated.frobMover = NULL;
 			return true;
 		}
 		// moving to front position...
@@ -151,32 +143,60 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		// Door is open
 		if (!frobMover->IsChangingState())
 		{	
-			if (!_movingToBackPos)
+			if (_doorHandlingState != EStateMovingToBackPos)
 			{
-				_openingDoor = false;
 				owner->MoveToPosition(_backPos);
-				_movingToBackPos = true;
+				_doorHandlingState = EStateMovingToBackPos;
 				owner->AI_MOVE_DONE = false;
 			}
-			else if (_movingToBackPos && owner->AI_MOVE_DONE)
+			else if (_doorHandlingState == EStateMovingToBackPos && owner->AI_MOVE_DONE)
 			{
-				_movingToBackPos = false;
 				// close the door
 				//if (owner->ShouldCloseDoor(frobMover)
 				//{
 				owner->StopMove(MOVE_STATUS_WAITING);
-				_movingToBackPos = false;
+				_doorHandlingState = EStateClosingDoor;
 				owner->TurnToward(openPos);
 
 				frobMover->Close(false);
-				_closingDoor = true;
 				// TODO: play anim
 				//}
 			}
 		}
+		else if (frobMover->IsBlocked())
+		{
+			if (frobMover->GetPhysics()->GetBlockingEntity() == owner)
+			{
+				// we are blocking the door
+				owner->StopMove(MOVE_STATUS_WAITING);
+				if (_doorHandlingState == EStateMovingToBackPos)
+				{
+					owner->TurnToward(openPos);
+					frobMover->Open(false);
+					_doorHandlingState = EStateOpeningDoor;
+					// TODO: play anim
+				}
+			}
+			else
+			{
+				// something else is blocking the door
+				// possibly the player, another AI or an object
+			}
+		}
+
 	}
 	return false; // not finished yet
 }
+
+void HandleDoorTask::OnFinish(idAI* owner)
+{
+	Memory& memory = owner->GetMemory();
+
+	owner->Event_RestoreMove();
+	memory.doorRelated.frobMover = NULL;
+	_doorHandlingState = EStateNone;
+}
+
 
 void HandleDoorTask::Save(idSaveGame* savefile) const
 {
@@ -184,10 +204,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteVec3(_frontPos);
 	savefile->WriteVec3(_backPos);
-	savefile->WriteBool(_movingToFrontPos);
-	savefile->WriteBool(_openingDoor);
-	savefile->WriteBool(_movingToBackPos);
-	savefile->WriteBool(_closingDoor);
+	savefile->WriteInt(static_cast<int>(_doorHandlingState));
 }
 
 void HandleDoorTask::Restore(idRestoreGame* savefile)
@@ -196,10 +213,9 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 
 	savefile->ReadVec3(_frontPos);
 	savefile->ReadVec3(_backPos);
-	savefile->ReadBool(_movingToFrontPos);
-	savefile->ReadBool(_openingDoor);
-	savefile->ReadBool(_movingToBackPos);
-	savefile->ReadBool(_closingDoor);
+	int temp;
+	savefile->ReadInt(temp);
+	_doorHandlingState = static_cast<EDoorHandlingState>(temp);
 }
 
 HandleDoorTaskPtr HandleDoorTask::CreateInstance()
