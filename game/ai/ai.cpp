@@ -3776,7 +3776,14 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 	// If there is an obstacle, this is the distance from it we should stop to take action
 	float stopDistance = 0.0f;
 
-	if ( !foundPath ) {
+	if ( !foundPath )
+	{
+		if (path.frobMoverObstacle != NULL) 
+		{
+			// We have a frobmover in our way, raise a signal to the current state
+			mind->GetState()->OnFrobMoverEncounter(path.frobMoverObstacle);
+		}
+
 		// couldn't get around obstacles
 		if ( path.firstObstacle )
 		{

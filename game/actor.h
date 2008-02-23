@@ -74,10 +74,8 @@ public:
 	const char *			WaitState( void ) const;
 	void					SetWaitState( const char *_waitstate );
 
-protected:
-	idStr					waitState;
-
 private:
+	idStr					waitState;
 	idActor *				self;
 	idAnimator *			animator;
 	idThread *				thread;
