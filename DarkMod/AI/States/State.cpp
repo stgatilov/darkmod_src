@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "State.h"
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/HandleDoorTask.h"
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
@@ -1111,7 +1112,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
 
 	// Is it open?
-	if (!door->isOpen())
+	if (!door->IsOpen())
 	{
 		return;
 	}
@@ -1541,11 +1542,13 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 
 	Memory& memory = owner->GetMemory();
 
-	// Store the current movestate
-	memory.doorRelated.frobMover = frobMover;
-	
-	// Let the owner save its move
-	owner->Event_SaveMove();
+	if (memory.doorRelated.frobMover.GetEntity() != frobMover)
+	{
+		// Store the current movestate
+		memory.doorRelated.frobMover = frobMover;
+
+		owner->GetSubsystem(SubsysMovement)->PushTask(HandleDoorTask::CreateInstance());
+	}
 }
 
 } // namespace ai

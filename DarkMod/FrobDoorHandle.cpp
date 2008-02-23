@@ -161,7 +161,7 @@ bool CFrobDoorHandle::isLocked(void)
 	bool bLocked = m_Locked;
 
 	if(m_Door)
-		bLocked = m_Door->isLocked();
+		bLocked = m_Door->IsLocked();
 
 	return bLocked;
 }

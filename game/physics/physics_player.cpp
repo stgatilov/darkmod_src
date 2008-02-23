@@ -4466,7 +4466,7 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 		// Door leaning test
 		if( TrEnt 
 			&& TrEnt->IsType(CFrobDoor::Type)
-			&& !( static_cast<CFrobDoor *>(TrEnt)->isOpen() )
+			&& !( static_cast<CFrobDoor *>(TrEnt)->IsOpen() )
 			&& m_LeanDoorEnt.GetEntity() == NULL )
 		{
 			// If it is a door, can it be listened through?
@@ -4868,7 +4868,7 @@ void idPhysics_Player::UpdateLeanDoor( void )
 	if( door && pPlayer )
 	{
 		if( !m_LeanDoorEnt.IsValid() 
-			|| door->isOpen()
+			|| door->IsOpen()
 			|| !IsLeaning() )
 		{
 			m_LeanDoorEnt = NULL;

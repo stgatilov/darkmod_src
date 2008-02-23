@@ -311,7 +311,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
-	if(isLocked() == true)
+	if(IsLocked() == true)
 		StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
 	else
 	{
@@ -497,7 +497,7 @@ void CBinaryFrobMover::GetOpen(void)
 
 void CBinaryFrobMover::GetLock(void)
 {
-	idThread::ReturnInt(isLocked());
+	idThread::ReturnInt(IsLocked());
 }
 void CBinaryFrobMover::ClosePortal(void)
 {
@@ -546,14 +546,14 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 
 /*-------------------------------------------------------------------------*/
 
-bool CBinaryFrobMover::isMoving()
+bool CBinaryFrobMover::IsMoving()
 {
 	return ((m_Translating) || (m_Rotating));
 }
 
 /*-------------------------------------------------------------------------*/
 
-bool CBinaryFrobMover::isChangingState()
+bool CBinaryFrobMover::IsChangingState()
 {
 	return m_StateChange;
 }

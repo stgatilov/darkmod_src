@@ -3942,17 +3942,18 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		{
 			// Try to open doors
 			CFrobDoor* p_door = static_cast<CFrobDoor*>(obstacle);
-
+/*
+// angua: not needed any more, is done by HandleDoorTask.
 			// angua: If the door was interrupted half-open, it might be that the ai can't get through 
-			if (!p_door->isOpen() || 
-				(p_door->isOpen() && (p_door->wasInterrupted() || p_door->IsBlocked())))
+			if (!p_door->IsOpen() || 
+				(p_door->IsOpen() && (p_door->WasInterrupted() || p_door->IsBlocked())))
 			{
 				// If it is not interrupted and not changing state
-				if ( !p_door->isChangingState() || p_door->wasInterrupted() || p_door->IsBlocked() )
+				if ( !p_door->IsChangingState() || p_door->WasInterrupted() || p_door->IsBlocked() )
 				{
 					bool b_canOpen = true;
 
-					if (p_door->isLocked())
+					if (p_door->IsLocked())
 					{
 						b_canOpen = false;
 						StopMove(MOVE_STATUS_DEST_UNREACHABLE);
@@ -3969,7 +3970,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 					}
 				} 
 			} 
-
+*/
 			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 			obstacleDelta.NormalizeFast();
 
