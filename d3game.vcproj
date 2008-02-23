@@ -706,6 +706,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\FleeTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\HandleDoorTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\HandleDoorTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\IdleAnimationTask.cpp">
 					</File>
 					<File
