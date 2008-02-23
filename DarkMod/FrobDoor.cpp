@@ -745,11 +745,6 @@ bool CFrobDoor::IsFrobbed(void)
 	return idEntity::IsFrobbed();
 }
 
-void CFrobDoor::DoneStateChange(void)
-{
-	CBinaryFrobMover::DoneStateChange();
-}
-
 void CFrobDoor::ToggleOpen(void)
 {
 	CBinaryFrobMover::ToggleOpen();

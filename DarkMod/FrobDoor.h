@@ -102,7 +102,6 @@ public:
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
 
-	void					DoneStateChange(void);
 	void					ToggleOpen(void);
 	void					ToggleLock(void);
 

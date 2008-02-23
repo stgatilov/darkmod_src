@@ -155,13 +155,12 @@ void CBinaryFrobMover::ReadFromSnapshot( const idBitMsgDelta &msg )
 void CBinaryFrobMover::Spawn( void )
 {
 	idStr str;
-	idAngles tempAngle, partialAngle;
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
 
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
-	partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
+	idAngles partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
 
 	m_Locked = spawnArgs.GetBool("locked");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
@@ -173,6 +172,7 @@ void CBinaryFrobMover::Spawn( void )
 	if( areaPortal > 0 )
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
+	idAngles tempAngle;
 	physicsObj.GetLocalAngles( tempAngle );
 
 	// Original starting position of the door in case it is a sliding door.
