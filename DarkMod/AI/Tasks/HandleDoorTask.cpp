@@ -60,7 +60,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	idVec3 awayPos = closedPos - parallelAwayOffset - normalAwayOffset;
 	awayPos.z = frobMover->GetPhysics()->GetOrigin().z;
 
-	gameRenderWorld->DebugArrow(colorYellow, awayPos, awayPos + idVec3(0, 0, 20), 2, 100000);
 
 	// calculate where to stand when the door swings towards us
 	idVec3 parallelTowardOffset = (closedPos - frobMover->GetPhysics()->GetOrigin());
@@ -78,7 +77,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	towardPos *= (dist.LengthFast() + size * 2);
 	towardPos += frobMover->GetPhysics()->GetOrigin();
 
-	gameRenderWorld->DebugArrow(colorGreen, towardPos, towardPos + idVec3(0, 0, 20), 2, 100000);
 
 	// check if the door swings towards or away from us
 	if (openDir * (owner->GetPhysics()->GetOrigin() - frobMover->GetPhysics()->GetOrigin()) > 0)
@@ -109,6 +107,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 	idVec3 openPos = frobMover->GetOpenPos();
 	idVec3 closedPos = frobMover->GetClosedPos();
+
+	if (cv_ai_door_show.GetBool()) 
+	{
+		gameRenderWorld->DebugArrow(colorYellow, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
+		gameRenderWorld->DebugArrow(colorGreen, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
+	}
 
 	// Door is closed
 	if (!frobMover->IsOpen() || frobMover->WasInterrupted())
