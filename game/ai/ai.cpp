@@ -1488,6 +1488,17 @@ void idAI::Think( void )
 	oldOrigin = physicsObj.GetOrigin();
 	oldVelocity = physicsObj.GetLinearVelocity();
 
+	float interleavethinkdist = cv_ai_opt_interleavethinkdist.GetFloat();
+	if (interleavethinkdist > 0)
+	{
+		float playerDist = (oldOrigin - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast();
+		if (playerDist > interleavethinkdist && gameLocal.framenum % 5 != 0)
+		{
+			return;
+		}
+	}
+
+
 	if (thinkFlags & TH_THINK)
 	{
 		// clear out the enemy when he dies
