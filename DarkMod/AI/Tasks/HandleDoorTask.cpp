@@ -40,14 +40,17 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->Event_SaveMove();
 
 	CBinaryFrobMover* frobMover = memory.doorRelated.frobMover.GetEntity();
-	assert (frobMover != NULL);
+	if (frobMover == NULL)
+	{
+		return;
+	}
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = bounds[1][0];
 
-	idVec3 openDir = frobMover->GetOpenDir();
-	idVec3 openPos = frobMover->GetOpenPos();
-	idVec3 closedPos = frobMover->GetClosedPos();
+	const idVec3& openDir = frobMover->GetOpenDir();
+	const idVec3& openPos = frobMover->GetOpenPos();
+	const idVec3& closedPos = frobMover->GetClosedPos();
 
 	//calculate where to stand when the door swings away from us
 	idVec3 parallelAwayOffset = (closedPos - frobMover->GetPhysics()->GetOrigin());
@@ -103,10 +106,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 
 	CBinaryFrobMover* frobMover = memory.doorRelated.frobMover.GetEntity();
-	assert (frobMover != NULL);
+	if (frobMover == NULL)
+	{
+		return true;
+	}
 
-	idVec3 openPos = frobMover->GetOpenPos();
-	idVec3 closedPos = frobMover->GetClosedPos();
+	const idVec3& openPos = frobMover->GetOpenPos();
+	const idVec3& closedPos = frobMover->GetClosedPos();
 
 	if (cv_ai_door_show.GetBool()) 
 	{
