@@ -1094,6 +1094,13 @@ pvsHandle_t idPVS::AllocCurrentPVS( unsigned int h ) const {
 		if ( currentPVS[i].handle.i == -1 ) {
 			currentPVS[i].handle.i = i;
 			currentPVS[i].handle.h = h;
+/*
+			// angua: debug output, shows allocated PVS numbers in front of the player
+			idVec3 viewPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() + idVec3(0,0,50+6*i)
+				+ gameLocal.GetLocalPlayer()->viewAngles.ToForward() * 30;
+			idStr maxPVS(i);
+			gameRenderWorld->DrawText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  gameLocal.msec);
+*/
 			return currentPVS[i].handle;
 		}
 	}
