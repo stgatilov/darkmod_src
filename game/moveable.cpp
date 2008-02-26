@@ -211,6 +211,7 @@ idMoveable::Save
 */
 void idMoveable::Save( idSaveGame *savefile ) const {
 
+	savefile->WriteString( brokenModel );
 	savefile->WriteString( damage );
 	savefile->WriteString( fxCollide );
 	savefile->WriteInt( nextCollideFxTime );
