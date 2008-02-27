@@ -1001,6 +1001,20 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					EnemyDead( void );
 	virtual bool			CanPlayChatterSounds( void ) const;
 
+	/** angua: Interleaved thinking optimization
+	 *  The AI will only think once in a certain number of frames given 
+	 *  by m_maxInterleaveThinkFrames if the distance to the player > m_maxInterleaveThinkDist.
+	 *  The thinking frequency increases linearly between min and max dist.
+	 *  Below min dist, the AI thinks normally every frame.
+	 *  The variables can be set in the def files (set think frames to 0 to switch off).
+	 */
+	int						m_maxInterleaveThinkFrames;
+	float					m_minInterleaveThinkDist;
+	float					m_maxInterleaveThinkDist;
+
+	// returns thinking frequency frame number depending on distance
+	int						GetThinkInterleave();
+
 	/**
 	 * greebo: Sets the chatter sound depending on having an enemy or not. The chat_time
 	 * member is updated as well, but the sound is not actually played, it only paves the way.

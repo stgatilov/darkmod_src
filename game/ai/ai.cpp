@@ -523,6 +523,10 @@ idAI::idAI()
 	m_HeadCenterOffset = vec3_zero;
 
 	m_lipSyncActive		= false;
+
+	m_maxInterleaveThinkFrames = 0;
+	m_minInterleaveThinkDist = 1000;
+	m_maxInterleaveThinkDist = 3000;
 }
 
 /*
@@ -747,6 +751,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime3_fuzzyness);
 	savefile->WriteFloat(atime4_fuzzyness);
 
+	savefile->WriteInt(m_maxInterleaveThinkFrames);
+	savefile->WriteFloat(m_minInterleaveThinkDist);
+	savefile->WriteFloat(m_maxInterleaveThinkDist);
 
 	mind->Save(savefile);
 
@@ -982,6 +989,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime3_fuzzyness);
 	savefile->ReadFloat(atime4_fuzzyness);
 
+	savefile->ReadInt(m_maxInterleaveThinkFrames);
+	savefile->ReadFloat(m_minInterleaveThinkDist);
+	savefile->ReadFloat(m_maxInterleaveThinkDist);
+
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
 
@@ -1090,6 +1101,10 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"6",		atime2_fuzzyness );
 	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"30",		atime3_fuzzyness );
 	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"120",		atime4_fuzzyness );
+
+	spawnArgs.GetInt( "max_interleave_think_frames",		"120",		m_maxInterleaveThinkFrames );
+	spawnArgs.GetFloat( "min_interleave_think_dist",		"1000",		m_minInterleaveThinkDist);
+	spawnArgs.GetFloat( "max_interleave_think_dist",		"3000",		m_maxInterleaveThinkDist);
 
 	spawnArgs.GetBool( "ignore_alerts",			"0",		m_bIgnoreAlerts );
 
@@ -1488,16 +1503,15 @@ void idAI::Think( void )
 	oldOrigin = physicsObj.GetOrigin();
 	oldVelocity = physicsObj.GetLinearVelocity();
 
-	float interleavethinkdist = cv_ai_opt_interleavethinkdist.GetFloat();
-	if (interleavethinkdist > 0)
+	int thinkFrame = GetThinkInterleave();
+	if (thinkFrame > 1)
 	{
-		float playerDist = (oldOrigin - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast();
-		if (playerDist > interleavethinkdist && gameLocal.framenum % 5 != 0)
+		int frameNum = gameLocal.framenum;
+		if (frameNum > 10 && frameNum % thinkFrame != 0)
 		{
 			return;
 		}
 	}
-
 
 	if (thinkFlags & TH_THINK)
 	{
@@ -1753,6 +1767,35 @@ void idAI::Think( void )
 			debugText += idStr("Waitstate: ") + WaitState();
 		}
 		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+}
+
+/*
+=====================
+idAI::GetThinkInterleave
+=====================
+*/
+int idAI::GetThinkInterleave()
+{
+	if (m_maxInterleaveThinkFrames == 0)
+	{
+		return 0;
+	}
+
+	float playerDist = (physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast();
+	if (playerDist < m_minInterleaveThinkDist)
+	{
+		return 0;
+	}
+	else if (playerDist > m_maxInterleaveThinkDist)
+	{
+		return m_maxInterleaveThinkFrames;
+	}
+	else
+	{
+		int thinkFrames = 1 + m_maxInterleaveThinkFrames * 
+			(playerDist - m_minInterleaveThinkDist) / (m_maxInterleaveThinkDist - m_minInterleaveThinkDist);
+		return thinkFrames;
 	}
 }
 
