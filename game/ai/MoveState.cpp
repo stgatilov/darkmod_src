@@ -10,8 +10,8 @@
 // Copyright (C) 2004 Id Software, Inc.
 //
 
-#include "MoveState.h"
 #include "../../idlib/precompiled.h"
+#include "MoveState.h"
 #pragma hdrstop
 
 /*

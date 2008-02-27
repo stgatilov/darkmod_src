@@ -15,10 +15,6 @@ static bool init_version = FileVersionList("$Id: HandleDoorTask.cpp 1435 2007-10
 #include "../Memory.h"
 #include "HandleDoorTask.h"
 
-#include "../../DarkMod/BinaryFrobMover.h"
-#include "../../DarkMod/FrobDoor.h"
-
-
 namespace ai
 {
 

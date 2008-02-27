@@ -13,8 +13,6 @@
 #ifndef __AI_MOVESTATE_H__
 #define __AI_MOVESTATE_H__
 
-#include "../idlib/precompiled.h"
-
 // defined in script/ai_base.script.  please keep them up to date.
 enum moveType_t {
 	MOVETYPE_DEAD,
