@@ -160,36 +160,18 @@ void idMover::Save( idSaveGame *savefile ) const
 	int i;
 
 	savefile->WriteStaticObject( physicsObj );
-
 	savefile->WriteInt( move.stage );
-
 	savefile->WriteInt( move.acceleration );
-
 	savefile->WriteInt( move.movetime );
 
 	savefile->WriteInt( move.deceleration );
-
 	savefile->WriteVec3( move.dir );
 
-	
-
 	savefile->WriteInt( rot.stage );
-
 	savefile->WriteInt( rot.acceleration );
-
 	savefile->WriteInt( rot.movetime );
-
 	savefile->WriteInt( rot.deceleration );
-
-	savefile->WriteFloat( rot.rot.pitch );
-
-	savefile->WriteFloat( rot.rot.yaw );
-
-	savefile->WriteFloat( rot.rot.roll );
-
-
-	savefile->Write( &move, sizeof( move ) );
-	savefile->Write( &rot, sizeof( rot ) );
+	savefile->WriteAngles( rot.rot );
 
 	savefile->WriteInt( move_thread );
 	savefile->WriteInt( rotate_thread );
@@ -247,34 +229,17 @@ void idMover::Restore( idRestoreGame *savefile ) {
 	RestorePhysics( &physicsObj );
 
 	savefile->ReadInt( (int&)move.stage );
-
 	savefile->ReadInt( move.acceleration );
-
 	savefile->ReadInt( move.movetime );
-
 	savefile->ReadInt( move.deceleration );
-
 	savefile->ReadVec3( move.dir );
 
-	
-
 	savefile->ReadInt( (int&)rot.stage );
-
 	savefile->ReadInt( rot.acceleration );
-
 	savefile->ReadInt( rot.movetime );
-
 	savefile->ReadInt( rot.deceleration );
 
-	savefile->ReadFloat( rot.rot.pitch );
-
-	savefile->ReadFloat( rot.rot.yaw );
-
-	savefile->ReadFloat( rot.rot.roll );
-
-
-	savefile->Read( &move, sizeof( move ) );
-	savefile->Read( &rot, sizeof( rot ) );
+	savefile->ReadAngles( rot.rot );
 
 	savefile->ReadInt( move_thread );
 	savefile->ReadInt( rotate_thread );

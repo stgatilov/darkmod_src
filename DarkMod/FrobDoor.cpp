@@ -140,17 +140,11 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteVec3(m_SampleTranslationFraction);
 
 	savefile->WriteBool(m_PinRotationFractionFlag);
-	savefile->WriteFloat(m_PinRotationFraction.pitch);
-	savefile->WriteFloat(m_PinRotationFraction.yaw);
-	savefile->WriteFloat(m_PinRotationFraction.roll);
-	savefile->WriteFloat(m_SampleRotationFraction.pitch);
-	savefile->WriteFloat(m_SampleRotationFraction.yaw);
-	savefile->WriteFloat(m_SampleRotationFraction.roll);
+	savefile->WriteAngles(m_PinRotationFraction);
+	savefile->WriteAngles(m_SampleRotationFraction);
 
 	savefile->WriteVec3(m_OriginalPosition);
-	savefile->WriteFloat(m_OriginalAngle.pitch);
-	savefile->WriteFloat(m_OriginalAngle.yaw);
-	savefile->WriteFloat(m_OriginalAngle.roll);
+	savefile->WriteAngles(m_OriginalAngle);
 
 	savefile->WriteBool(m_Pickable);
 	savefile->WriteInt(m_FirstLockedPinIndex);
@@ -210,17 +204,11 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3(m_SampleTranslationFraction);
 
 	savefile->ReadBool(m_PinRotationFractionFlag);
-	savefile->ReadFloat(m_PinRotationFraction.pitch);
-	savefile->ReadFloat(m_PinRotationFraction.yaw);
-	savefile->ReadFloat(m_PinRotationFraction.roll);
-	savefile->ReadFloat(m_SampleRotationFraction.pitch);
-	savefile->ReadFloat(m_SampleRotationFraction.yaw);
-	savefile->ReadFloat(m_SampleRotationFraction.roll);
+	savefile->ReadAngles(m_PinRotationFraction);
+	savefile->ReadAngles(m_SampleRotationFraction);
 
 	savefile->ReadVec3(m_OriginalPosition);
-	savefile->ReadFloat(m_OriginalAngle.pitch);
-	savefile->ReadFloat(m_OriginalAngle.yaw);
-	savefile->ReadFloat(m_OriginalAngle.roll);
+	savefile->ReadAngles(m_OriginalAngle);
 
 	savefile->ReadBool(m_Pickable);
 	savefile->ReadInt(m_FirstLockedPinIndex);
