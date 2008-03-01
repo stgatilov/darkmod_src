@@ -905,14 +905,9 @@ void idMover::Event_UpdateRotation( void ) {
 	}
 }
 
-void idMover::CalculateMoveTime()
+float idMover::GetMoveTimeFraction()
 {
-	// rotation always uses move_time so that if a move was started before the rotation,
-	// the rotation will take the same amount of time as the move.  If no move has been
-	// started and no time is set, the rotation takes 1 second.
-	if ( !move_time ) {
-		move_time = 1;
-	}
+	return 1.0f;
 }
 
 /*
@@ -929,14 +924,15 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 	lastCommand	= MOVER_ROTATING;
 	rotate_thread = 0;
 
-/* greebo: Disabled this (new code is below), we need a flexible rotation speed for doors.
-	// rotation always uses move_time so that if a move was started before the rotation,
+	int moveTime = move_time;
+
+	// rotation always uses moveTime so that if a move was started before the rotation,
 	// the rotation will take the same amount of time as the move.  If no move has been
 	// started and no time is set, the rotation takes 1 second.
-	if ( !move_time ) {
-		move_time = 1;
+	if ( !moveTime ) {
+		moveTime = 1;
 	}
-*/
+
 	physicsObj.GetLocalAngles( ang );
 	angle_delta = dest_angles - ang;
 	if ( angle_delta == ang_zero ) {
@@ -948,22 +944,24 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 		return;
 	}
 
-	// greebo: Calculate the move_time according to the current rotation state
+	// greebo: Calculate the moveTime fraction according to the current rotation state
 	// this is overridden by BinaryFrobMovers to achieve a flexible rotation move time.
-	CalculateMoveTime();
+	float moveTimeFraction = GetMoveTimeFraction();
+
+	moveTime *= moveTimeFraction;
 
 	// scale times up to whole physics frames
 	at = idPhysics::SnapTimeToPhysicsFrame( acceltime );
-	move_time += at - acceltime;
+	moveTime += at - acceltime;
 	acceltime = at;
 	dt = idPhysics::SnapTimeToPhysicsFrame( deceltime );
-	move_time += dt - deceltime;
+	moveTime += dt - deceltime;
 	deceltime = dt;
-	move_time = idPhysics::SnapTimeToPhysicsFrame( move_time );
+	moveTime = idPhysics::SnapTimeToPhysicsFrame( moveTime );
 
 	if ( acceltime ) {
 		stage = ACCELERATION_STAGE;
-	} else if ( move_time <= deceltime ) {
+	} else if ( moveTime <= deceltime ) {
 		stage = DECELERATION_STAGE;
 	} else {
 		stage = LINEAR_STAGE;
@@ -972,20 +970,20 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 	at = acceltime;
 	dt = deceltime;
 
-	if ( at + dt > move_time ) {
+	if ( at + dt > moveTime ) {
 		// there's no real correct way to handle this, so we just scale
 		// the times to fit into the move time in the same proportions
-		at = idPhysics::SnapTimeToPhysicsFrame( at * move_time / ( at + dt ) );
-		dt = move_time - at;
+		at = idPhysics::SnapTimeToPhysicsFrame( at * moveTime / ( at + dt ) );
+		dt = moveTime - at;
 	}
 
-	angle_delta = angle_delta * ( 1000.0f / ( (float) move_time - ( at + dt ) * 0.5f ) );
+	angle_delta = angle_delta * ( 1000.0f / ( (float) moveTime - ( at + dt ) * 0.5f ) );
 
 	stopRotation = stopwhendone || ( dt != 0 );
 
 	rot.stage			= stage;
 	rot.acceleration	= at;
-	rot.movetime		= move_time - at - dt;
+	rot.movetime		= moveTime - at - dt;
 	rot.deceleration	= dt;
 	rot.rot				= angle_delta;
 

@@ -118,13 +118,14 @@ protected:
 	virtual void			BeginRotation( idThread *thread, bool stopwhendone );
 
 	/**
-	 * greebo: Calculates the move_time. For standard-movers, this does more or less nothing
+	 * greebo: Calculates the fraction of the move_time (the time it takes to complete the whole
+	 *         movement) based on the current state. For standard-movers, this does nothing (returns 1),
 	 *         but subclasses might do more complicated things based on the current rotation state,
 	 *         like BinaryFrobMovers do.
 	 *
-	 * Note: This is an internal function used by BeginRotation() only.
+	 * Note: This is an internal function used by BeginRotation() only
 	 */
-	virtual void			CalculateMoveTime();
+	virtual float			GetMoveTimeFraction();
 
 	moveState_t				move;
 

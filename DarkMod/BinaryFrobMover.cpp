@@ -586,3 +586,32 @@ void CBinaryFrobMover::getRemainingMovement
 
 	// Done
 }
+
+float CBinaryFrobMover::GetMoveTimeFraction()
+{
+	// Get the current angles
+	idAngles curAngles;
+	physicsObj.GetLocalAngles(curAngles);
+
+	// Calculate the delta
+	idAngles delta = dest_angles - curAngles;
+	delta[0] = idMath::Fabs(delta[0]);
+	delta[1] = idMath::Fabs(delta[1]);
+	delta[2] = idMath::Fabs(delta[2]);
+
+	// greebo: Note that we don't need to compare against zero angles here, because
+	// this code won't be called in this case (see idMover::BeginRotation).
+
+	idAngles fullRotation = m_OpenAngles - m_ClosedAngles;
+	fullRotation[0] = idMath::Fabs(fullRotation[0]);
+	fullRotation[1] = idMath::Fabs(fullRotation[1]);
+	fullRotation[2] = idMath::Fabs(fullRotation[2]);
+
+	// Get the maximum angle component
+	int index = (delta[0] > delta[1]) ? 0 : 1;
+	index = (delta[2] > delta[index]) ? 2 : index;
+
+	float fraction = delta[index]/fullRotation[index];
+
+	return fraction;
+}
