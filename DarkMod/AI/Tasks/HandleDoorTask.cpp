@@ -41,6 +41,20 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		return;
 	}
 
+	_wasLocked = false;
+
+	if (frobMover->IsLocked())
+	{
+		_wasLocked = true;
+		if (!owner->CanUnlock(frobMover))
+		{
+			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+			owner->AI_DEST_UNREACHABLE = true;
+			subsystem.FinishTask();
+			return;
+		}
+	}
+
 	const idVec3& frobMoverOrg = frobMover->GetPhysics()->GetOrigin();
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
@@ -175,6 +189,16 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	if (frobMover->IsLocked())
+	{
+		if (!owner->CanUnlock(frobMover))
+		{
+			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+			owner->AI_DEST_UNREACHABLE = true;
+			return true;
+		}
+	}
+
 	const idVec3& openPos = frobMover->GetOpenPos();
 	const idVec3& closedPos = frobMover->GetClosedPos();
 
@@ -211,6 +235,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateWaitBeforeOpen:
 				if (gameLocal.time >= _waitEndTime)
 				{
+					if (frobMover->IsLocked())
+					{
+						frobMover->Unlock(false);
+					}
 					frobMover->Open(false);
 					// TODO: play anim
 					_doorHandlingState = EStateOpeningDoor;
@@ -232,7 +260,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 				
 			case EStateClosingDoor:
-				// we have moved through the door and closed it, continue what we were doing before.
+				// we have moved through the door and closed it
+				if (_wasLocked)
+				{
+					// if the door was locked before, lock it again
+					frobMover->Lock(false);
+				}
+				// continue what we were doing before.
 				return true;
 				break;
 
@@ -313,6 +347,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(_backPos);
 	savefile->WriteInt(static_cast<int>(_doorHandlingState));
 	savefile->WriteInt(_waitEndTime);
+	savefile->WriteBool(_wasLocked);
 }
 
 void HandleDoorTask::Restore(idRestoreGame* savefile)
@@ -325,6 +360,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	_doorHandlingState = static_cast<EDoorHandlingState>(temp);
 	savefile->ReadInt(_waitEndTime);
+	savefile->ReadBool(_wasLocked);
 }
 
 HandleDoorTaskPtr HandleDoorTask::CreateInstance()

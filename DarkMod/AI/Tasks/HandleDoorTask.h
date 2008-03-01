@@ -41,6 +41,7 @@ private:
 	} _doorHandlingState;
 
 	int _waitEndTime;
+	bool _wasLocked;
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;

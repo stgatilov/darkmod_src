@@ -1496,13 +1496,7 @@ void idAI::Think( void )
 		return;
 	}
 	
-	idVec3 oldOrigin;
-	idVec3 oldVelocity;
-
-	// save old origin and velocity for crashlanding
-	oldOrigin = physicsObj.GetOrigin();
-	oldVelocity = physicsObj.GetLinearVelocity();
-
+	// Interleaved thinking
 	int thinkFrame = GetThinkInterleave();
 	if (thinkFrame > 1)
 	{
@@ -1512,6 +1506,10 @@ void idAI::Think( void )
 			return;
 		}
 	}
+
+	// save old origin and velocity for crashlanding
+	idVec3 oldOrigin = physicsObj.GetOrigin();
+	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
 
 	if (thinkFlags & TH_THINK)
 	{
@@ -4133,7 +4131,7 @@ void idAI::AnimMove()
 				timer.Start();
 				CheckObstacleAvoidance( goalPos, newDest );
 				timer.Stop();
-				DM_LOG(LC_AI, LT_INFO).LogString("Obstacle avoidance took: %lf msec", timer.Milliseconds());
+				DM_LOG(LC_AI, LT_INFO).LogString("Obstacle avoidance took: %lf msec \r", timer.Milliseconds());
 			}
 			else 
 			{
@@ -9162,3 +9160,9 @@ float idAI::GetArmReachLength()
 		return 41;
 	}
 }
+
+bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
+{
+	return true;
+}
+
