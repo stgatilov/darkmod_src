@@ -75,21 +75,14 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_bInterruptable);
 	savefile->WriteBool(m_bInterrupted);
 	
-	savefile->WriteFloat(m_Rotate.pitch);
-	savefile->WriteFloat(m_Rotate.yaw);
-	savefile->WriteFloat(m_Rotate.roll);
-	
+	savefile->WriteAngles(m_Rotate);
+		
 	savefile->WriteVec3(m_StartPos);
 	savefile->WriteVec3(m_Translation);
 	savefile->WriteFloat(m_TransSpeed);
 
-	savefile->WriteFloat(m_ClosedAngles.pitch);
-	savefile->WriteFloat(m_ClosedAngles.yaw);
-	savefile->WriteFloat(m_ClosedAngles.roll);
-
-	savefile->WriteFloat(m_OpenAngles.pitch);
-	savefile->WriteFloat(m_OpenAngles.yaw);
-	savefile->WriteFloat(m_OpenAngles.roll);
+	savefile->WriteAngles(m_ClosedAngles);
+	savefile->WriteAngles(m_OpenAngles);
 
 	savefile->WriteVec3(m_ClosedPos);
 	savefile->WriteVec3(m_OpenPos);
@@ -114,21 +107,14 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_bInterruptable);
 	savefile->ReadBool(m_bInterrupted);
 	
-	savefile->ReadFloat(m_Rotate.pitch);
-	savefile->ReadFloat(m_Rotate.yaw);
-	savefile->ReadFloat(m_Rotate.roll);
+	savefile->ReadAngles(m_Rotate);
 	
 	savefile->ReadVec3(m_StartPos);
 	savefile->ReadVec3(m_Translation);
 	savefile->ReadFloat(m_TransSpeed);
 
-	savefile->ReadFloat(m_ClosedAngles.pitch);
-	savefile->ReadFloat(m_ClosedAngles.yaw);
-	savefile->ReadFloat(m_ClosedAngles.roll);
-
-	savefile->ReadFloat(m_OpenAngles.pitch);
-	savefile->ReadFloat(m_OpenAngles.yaw);
-	savefile->ReadFloat(m_OpenAngles.roll);
+	savefile->ReadAngles(m_ClosedAngles);
+	savefile->ReadAngles(m_OpenAngles);
 
 	savefile->ReadVec3(m_ClosedPos);
 	savefile->ReadVec3(m_OpenPos);
@@ -311,8 +297,10 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
-	if(IsLocked() == true)
+	if (IsLocked() == true)
+	{
 		StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
+	}
 	else
 	{
 		// don't play the sound if the door was not closed all the way
@@ -327,7 +315,9 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 			// trigger our targets on opening, if set to do so
 			if( spawnArgs.GetBool("trigger_on_open","") )
+			{
 				ActivateTargets( this );
+			}
 		}
 
 		physicsObj.GetLocalAngles( tempAng );
@@ -338,11 +328,16 @@ void CBinaryFrobMover::Open(bool bMaster)
 		idAngles t = (m_OpenAngles - tempAng).Normalize180();
 		idAngles null;
 
-		if(!t.Compare(null))
+		if (!t.Compare(null))
+		{
 			Event_RotateOnce((m_OpenAngles - tempAng).Normalize180());
+		}
 		
 		if( m_TransSpeed )
+		{
 			Event_SetMoveSpeed( m_TransSpeed );
+		}
+
 		idVec3 tv3 = (m_StartPos +  m_Translation);
 		Event_MoveToPos( tv3 );
 	}
