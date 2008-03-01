@@ -116,33 +116,53 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		gameRenderWorld->DebugArrow(colorGreen, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
 	}
 
-	// Door is closed
+	// Door is closed or was interrupted
 	if (!frobMover->IsOpen() || frobMover->WasInterrupted())
 	{
-		if (_doorHandlingState == EStateNone)
+		switch (_doorHandlingState)
 		{
-			if (!owner->MoveToPosition(_frontPos))
-			{
-				// TODO: position not reachable, need a better one
-			}
-			owner->AI_MOVE_DONE = false;
-			_doorHandlingState = EStateMovingToFrontPos;
+			case EStateNone:
+				if (!owner->MoveToPosition(_frontPos))
+				{
+					// TODO: position not reachable, need a better one
+				}
+				_doorHandlingState = EStateMovingToFrontPos;
+				break;
+
+			case EStateMovingToFrontPos:
+				if (owner->AI_MOVE_DONE)
+				{
+					// reached position
+					owner->StopMove(MOVE_STATUS_WAITING);
+					owner->TurnToward(closedPos);
+					frobMover->Open(false);
+					// TODO: play anim
+					_doorHandlingState = EStateOpeningDoor;
+				}
+				break;
+
+			case EStateOpeningDoor:
+				// we have already started opening the door, but it is closed, try again
+				owner->StopMove(MOVE_STATUS_WAITING);
+				owner->TurnToward(closedPos);
+				frobMover->Open(false);
+				// TODO: play anim
+				break;
+
+			case EStateMovingToBackPos:
+				// door has closed while we were attempting to walk through it.
+				// end this task (it will be initiated again if we are still in front of the door).
+				return true;
+				break;
+				
+			case EStateClosingDoor:
+				// we have moved through the door and closed it, continue what we were doing before.
+				return true;
+				break;
+
+			default:
+				break;
 		}
-		else if (_doorHandlingState == EStateMovingToFrontPos && owner->AI_MOVE_DONE)
-		{
-			// reached position
-			owner->StopMove(MOVE_STATUS_WAITING);
-			owner->TurnToward(closedPos);
-			frobMover->Open(false);
-			// TODO: play anim
-			_doorHandlingState = EStateOpeningDoor;
-		}
-		else if (_doorHandlingState == EStateClosingDoor)
-		{
-			// we have moved through the door and closed it, continue what we were doing before.
-			return true;
-		}
-		// moving to front position...
 	}
 	else
 	{
@@ -153,9 +173,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				owner->MoveToPosition(_backPos);
 				_doorHandlingState = EStateMovingToBackPos;
-				owner->AI_MOVE_DONE = false;
 			}
-			else if (_doorHandlingState == EStateMovingToBackPos && owner->AI_MOVE_DONE)
+			else if (owner->AI_MOVE_DONE)
 			{
 				// close the door
 				//if (owner->ShouldCloseDoor(frobMover)
@@ -175,13 +194,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				// we are blocking the door
 				owner->StopMove(MOVE_STATUS_WAITING);
-				if (_doorHandlingState == EStateMovingToBackPos)
-				{
-					owner->TurnToward(openPos);
-					frobMover->Open(false);
-					_doorHandlingState = EStateOpeningDoor;
-					// TODO: play anim
-				}
+				
+				owner->TurnToward(closedPos);
+				frobMover->Open(false);
+				_doorHandlingState = EStateOpeningDoor;
+				// TODO: play anim
 			}
 			else
 			{
