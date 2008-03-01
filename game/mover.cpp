@@ -940,6 +940,16 @@ void idMover::Event_UpdateRotation( void ) {
 	}
 }
 
+void idMover::CalculateMoveTime()
+{
+	// rotation always uses move_time so that if a move was started before the rotation,
+	// the rotation will take the same amount of time as the move.  If no move has been
+	// started and no time is set, the rotation takes 1 second.
+	if ( !move_time ) {
+		move_time = 1;
+	}
+}
+
 /*
 ================
 idMover::BeginRotation
@@ -954,13 +964,14 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 	lastCommand	= MOVER_ROTATING;
 	rotate_thread = 0;
 
+/* greebo: Disabled this (new code is below), we need a flexible rotation speed for doors.
 	// rotation always uses move_time so that if a move was started before the rotation,
 	// the rotation will take the same amount of time as the move.  If no move has been
 	// started and no time is set, the rotation takes 1 second.
 	if ( !move_time ) {
 		move_time = 1;
 	}
-
+*/
 	physicsObj.GetLocalAngles( ang );
 	angle_delta = dest_angles - ang;
 	if ( angle_delta == ang_zero ) {
@@ -971,6 +982,10 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 		DoneRotating();
 		return;
 	}
+
+	// greebo: Calculate the move_time according to the current rotation state
+	// this is overridden by BinaryFrobMovers to achieve a flexible rotation move time.
+	CalculateMoveTime();
 
 	// scale times up to whole physics frames
 	at = idPhysics::SnapTimeToPhysicsFrame( acceltime );

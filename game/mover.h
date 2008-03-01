@@ -116,6 +116,16 @@ protected:
 	virtual void			DoneRotating( void );
 	virtual void			BeginMove( idThread *thread = NULL );
 	virtual void			BeginRotation( idThread *thread, bool stopwhendone );
+
+	/**
+	 * greebo: Calculates the move_time. For standard-movers, this does more or less nothing
+	 *         but subclasses might do more complicated things based on the current rotation state,
+	 *         like BinaryFrobMovers do.
+	 *
+	 * Note: This is an internal function used by BeginRotation() only.
+	 */
+	virtual void			CalculateMoveTime();
+
 	moveState_t				move;
 
 protected:
