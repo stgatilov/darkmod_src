@@ -1538,7 +1538,10 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
+	if (cv_ai_door_show.GetBool()) 
+	{
+		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
+	}
 
 	Memory& memory = owner->GetMemory();
 

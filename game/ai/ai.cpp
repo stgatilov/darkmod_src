@@ -1055,8 +1055,8 @@ void idAI::Spawn( void )
 	spawnArgs.GetInt(	"fly_offset",			"0",		fly_offset );
 	spawnArgs.GetFloat( "fly_speed",			"100",		fly_speed );
 	spawnArgs.GetFloat( "fly_bob_strength",		"50",		fly_bob_strength );
-	spawnArgs.GetFloat( "fly_bob_vert",			"2",		fly_bob_horz );
-	spawnArgs.GetFloat( "fly_bob_horz",			"2.7",		fly_bob_vert );
+	spawnArgs.GetFloat( "fly_bob_vert",			"2",		fly_bob_vert );
+	spawnArgs.GetFloat( "fly_bob_horz",			"2.7",		fly_bob_horz );
 	spawnArgs.GetFloat( "fly_seek_scale",		"4",		fly_seek_scale );
 	spawnArgs.GetFloat( "fly_roll_scale",		"90",		fly_roll_scale );
 	spawnArgs.GetFloat( "fly_roll_max",			"60",		fly_roll_max );
@@ -9163,6 +9163,20 @@ float idAI::GetArmReachLength()
 
 bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 {
+	return true;
+}
+
+bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
+{
+	if (AI_AlertLevel >= thresh_4)
+	{
+		return false;
+	}
+	else if (frobMover->spawnArgs.GetBool("shouldBeClosed", "0"))
+	{
+		return true;
+	}
+
 	return true;
 }
 

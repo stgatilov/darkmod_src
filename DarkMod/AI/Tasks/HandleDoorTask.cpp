@@ -282,14 +282,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			if (_doorHandlingState == EStateMovingToBackPos && owner->AI_MOVE_DONE)
 			{
 				// close the door
-				//if (owner->ShouldCloseDoor(frobMover)
-				//{
-				owner->StopMove(MOVE_STATUS_DONE);
-				owner->TurnToward(openPos);
-				_waitEndTime = gameLocal.time + 1000;
-				_doorHandlingState = EStateWaitBeforeClose;
-			
-				//}
+				if (owner->ShouldCloseDoor(frobMover))
+				{
+					owner->StopMove(MOVE_STATUS_DONE);
+					owner->TurnToward(openPos);
+					_waitEndTime = gameLocal.time + 1000;
+					_doorHandlingState = EStateWaitBeforeClose;
+				}
+				else
+				{
+					return true;
+				}
 			}
 
 			else if (_doorHandlingState == EStateWaitBeforeClose)

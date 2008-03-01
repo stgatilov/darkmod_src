@@ -1394,6 +1394,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// angua: this is used to check whether the AI is able to unlock a specific door
 	bool					CanUnlock(CBinaryFrobMover *frobMover);
+
+	// angua: this checks whether the AI should close the door after passing through
+	bool					ShouldCloseDoor(CBinaryFrobMover *frobMover);
+
 	
 	//
 	// ai/ai_events.cpp
