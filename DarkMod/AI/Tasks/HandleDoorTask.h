@@ -33,11 +33,14 @@ private:
 	enum EDoorHandlingState {
 		EStateNone,
 		EStateMovingToFrontPos,
+		EStateWaitBeforeOpen,
 		EStateOpeningDoor,
 		EStateMovingToBackPos,
+		EStateWaitBeforeClose,
 		EStateClosingDoor
 	} _doorHandlingState;
 
+	int _waitEndTime;
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
