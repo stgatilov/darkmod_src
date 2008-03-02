@@ -156,6 +156,11 @@ protected:
 	**/
 	void					Event_Activate( idEntity *activator );
 
+	/**
+	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.
+	 */
+	void					Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity );
+
 protected:
 	/**
 	* m_Open is only set to false when the door is completely closed

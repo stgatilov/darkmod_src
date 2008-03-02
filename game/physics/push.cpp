@@ -765,6 +765,12 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 #endif
 			return PUSH_NO;
 		}
+
+		// greebo: Don't push the player
+		if (check->IsType(idPlayer::Type)) {
+			return PUSH_BLOCKED;
+		}
+
 		// get point to rotate bbox around back to axial
 		rotationPoint = results.c.point;
 		// angle along which the entity will be pushed
@@ -858,9 +864,8 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 	trace_t		trace;
 	idVec3		checkMove;
 	idVec3		oldOrigin;
-	idPhysics	*physics;
 
-	physics = check->GetPhysics();
+	idPhysics* physics = check->GetPhysics();
 
 #ifdef TRANSLATIONAL_PUSH_DEBUG
 	bool startsolid = false;

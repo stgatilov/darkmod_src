@@ -43,6 +43,7 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
 	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
+	EVENT( EV_TeamBlocked,					CBinaryFrobMover::Event_TeamBlocked )
 END_CLASS
 
 
@@ -502,6 +503,20 @@ void CBinaryFrobMover::ClosePortal(void)
 void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
 {
 	ToggleOpen();
+}
+
+void CBinaryFrobMover::Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity )
+{
+	// greebo: If we're blocked by the player, stop moving
+	if (blockingEntity->IsType(idPlayer::Type))
+	{
+		m_bInterrupted = true;
+		Event_StopRotating();
+		Event_StopMoving();
+
+		// reverse the intent
+		m_bIntentOpen = !m_bIntentOpen;
+	}
 }
 
 void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse)
