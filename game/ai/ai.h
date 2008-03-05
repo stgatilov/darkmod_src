@@ -1015,6 +1015,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// returns thinking frequency frame number depending on distance
 	int						GetThinkInterleave();
 
+	// angua: stores the last time when the AI was thinking
+	int						m_lastThinkTime;
+
 	/**
 	 * greebo: Sets the chatter sound depending on having an enemy or not. The chat_time
 	 * member is updated as well, but the sound is not actually played, it only paves the way.
