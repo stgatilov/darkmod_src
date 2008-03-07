@@ -85,6 +85,9 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteAngles(m_ClosedAngles);
 	savefile->WriteAngles(m_OpenAngles);
 
+	savefile->WriteVec3(m_ClosedOrigin);
+	savefile->WriteVec3(m_OpenOrigin);
+
 	savefile->WriteVec3(m_ClosedPos);
 	savefile->WriteVec3(m_OpenPos);
 	savefile->WriteVec3(m_OpenDir);
@@ -116,6 +119,9 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 	savefile->ReadAngles(m_ClosedAngles);
 	savefile->ReadAngles(m_OpenAngles);
+
+	savefile->ReadVec3(m_ClosedOrigin);
+	savefile->ReadVec3(m_OpenOrigin);
 
 	savefile->ReadVec3(m_ClosedPos);
 	savefile->ReadVec3(m_OpenPos);
@@ -162,13 +168,18 @@ void CBinaryFrobMover::Spawn( void )
 	idAngles tempAngle;
 	physicsObj.GetLocalAngles( tempAngle );
 
+	// angua: the origin of the door in closed state
+	m_ClosedOrigin = physicsObj.GetOrigin();
 	// Original starting position of the door in case it is a sliding door.
 	// Add the initial position offset in case the mapper makes the door start out inbetween states
-	m_StartPos = physicsObj.GetOrigin() + spawnArgs.GetVector("start_position", "0 0 0");
+	m_StartPos = m_ClosedOrigin + spawnArgs.GetVector("start_position", "0 0 0");
 
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
+
+	// angua: origin in fully opened state
+	m_OpenOrigin = m_ClosedOrigin + m_Translation;
 
 	// set up physics impulse behavior
 	spawnArgs.GetFloat("impulse_thresh_open", "0", m_ImpulseThreshOpenSq );
@@ -194,6 +205,11 @@ void CBinaryFrobMover::Spawn( void )
 	{
 		m_ClosedAngles = tempAngle - partialAngle;
 		m_OpenAngles = tempAngle + m_Rotate - partialAngle;
+	}
+
+	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
+	{
+		gameLocal.Warning("FrobMover %s will not move, translation and rotation not set.", name.c_str());
 	}
 
 	// set the first intent according to the initial doorstate
@@ -443,8 +459,21 @@ void CBinaryFrobMover::DoneStateChange(void)
 	m_StateChange = false;
 	CallScript = true;
 
-	// angua: use the angles to check if the door is open or closed
-	if (GetPhysics()->GetAxis().ToAngles().Compare(m_ClosedAngles))
+	bool checkClose;
+	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
+	{
+		// angua: the intentopen flag is used when the door does not move at all 
+		// (so that triggers etc. are still working)
+		checkClose = !m_bIntentOpen;
+	}
+	else
+	{
+		// in all other cases, use the angles and position of origin to check if the door is open or closed
+		checkClose = GetPhysics()->GetAxis().ToAngles().Compare(m_ClosedAngles)
+			&& GetPhysics()->GetOrigin().Compare(m_ClosedOrigin);
+	}
+
+	if (checkClose)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
 

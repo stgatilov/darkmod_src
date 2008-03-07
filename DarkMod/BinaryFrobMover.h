@@ -219,6 +219,10 @@ protected:
 	**/
 	idAngles					m_OpenAngles;
 
+	// angua: Position of the origin when the door is completely closed or open
+	idVec3						m_ClosedOrigin;
+	idVec3						m_OpenOrigin;
+
 	// angua: the positions of the far edge measured from the origin 
 	// when the door is closed or open.
 	idVec3						m_ClosedPos;
