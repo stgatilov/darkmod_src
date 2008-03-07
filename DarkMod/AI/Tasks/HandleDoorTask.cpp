@@ -259,6 +259,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				return true;
 				break;
 				
+			case EStateWaitBeforeClose:
+				// door has already closed before we were attempting to do it
+				// no need for more waiting
+				return true;
+				break;
+
 			case EStateClosingDoor:
 				// we have moved through the door and closed it
 				if (_wasLocked)
