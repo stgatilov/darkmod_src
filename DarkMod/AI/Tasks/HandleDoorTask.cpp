@@ -130,7 +130,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			parallelTowardOffset = dirNorm * size * 1.2f;
 
 			normalTowardOffset = openDirNorm;
-			normalTowardOffset *= dist + size;
+			normalTowardOffset *= dist + 2 * size;
 
 			towardPos = frobMoverOrg + parallelTowardOffset + normalTowardOffset;
 
@@ -285,19 +285,22 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		// Door is open
 		if (!frobMover->IsChangingState())
 		{	
-			if (_doorHandlingState == EStateMovingToBackPos && owner->AI_MOVE_DONE)
+			if (_doorHandlingState == EStateMovingToBackPos)
 			{
-				// close the door
-				if (owner->ShouldCloseDoor(frobMover))
+				if (owner->AI_MOVE_DONE)
 				{
-					owner->StopMove(MOVE_STATUS_DONE);
-					owner->TurnToward(openPos);
-					_waitEndTime = gameLocal.time + 1000;
-					_doorHandlingState = EStateWaitBeforeClose;
-				}
-				else
-				{
-					return true;
+					if (owner->ShouldCloseDoor(frobMover))
+					{
+						// close the door
+						owner->StopMove(MOVE_STATUS_DONE);
+						owner->TurnToward(openPos);
+						_waitEndTime = gameLocal.time + 1000;
+						_doorHandlingState = EStateWaitBeforeClose;
+					}
+					else
+					{
+						return true;
+					}
 				}
 			}
 
@@ -309,6 +312,34 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// TODO: play anim
 					_doorHandlingState = EStateClosingDoor;
 				}
+			}
+			else if (_doorHandlingState == EStateNone)
+			{
+				// door is open and in the way, need to close it
+				const idVec3& frobMoverOrg = frobMover->GetPhysics()->GetOrigin();
+				idVec3 forward = owner->GetPhysics()->GetAxis().ToAngles().ToForward();
+				if ((closedPos - frobMoverOrg) * forward > 0)
+				{	
+					// can't reach standard position
+					idBounds bounds = owner->GetPhysics()->GetBounds();
+					float size = bounds[1][0];
+
+					idVec3 parallelOffset = openPos - frobMoverOrg;
+					parallelOffset.z = 0;
+					float len = parallelOffset.LengthFast();
+					parallelOffset.NormalizeFast();
+					parallelOffset *= len - 1.2f * size;
+
+					idVec3 normalOffset = closedPos - frobMoverOrg;
+					normalOffset.z = 0;
+					normalOffset.NormalizeFast();
+					normalOffset *= 1.5f * size;
+
+					_frontPos = frobMoverOrg + parallelOffset - normalOffset;
+				}
+				
+				owner->MoveToPosition(_frontPos);
+				_doorHandlingState = EStateMovingToBackPos;
 			}
 			else
 			{
