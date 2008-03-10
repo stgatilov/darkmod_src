@@ -626,7 +626,7 @@ public:
 	 * greebo: Load the objectives directly from the given map file.
 	 *         This is called by the main menu SDK code.
 	 **/
-	void LoadDirectlyFromMapFile(const idStr& mapName);
+	idMapFile* LoadDirectlyFromMapFile(idMapFile* mapFile);
 
 	/**
 	 * greebo: This updates the given GUI overlay with the current
@@ -779,6 +779,9 @@ protected:
 
 	// true if the main menu GUI is up to date
 	bool m_MissionDataLoadedIntoGUI; 
+
+	// parsed map for use by Difficulty screen
+	idMapFile* m_mapFile;
 
 }; // CMissionData
 

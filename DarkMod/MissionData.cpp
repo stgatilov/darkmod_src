@@ -1496,18 +1496,8 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	return ReturnVal;
 }
 
-void CMissionData::LoadDirectlyFromMapFile(const idStr& mapName) 
+idMapFile* CMissionData::LoadDirectlyFromMapFile(idMapFile* mapFile) 
 {
-	idMapFile* mapFile = new idMapFile;
-
-	if (!mapFile->Parse(mapName))
-	{
-		delete mapFile;
-		mapFile = NULL;
-		gameLocal.Warning( "Couldn't load %s", mapName.c_str() );
-		return;
-	}
-	
 	// greebo: get the worldspawn entity
 	idMapEntity* worldspawn = mapFile->GetEntity(0);
 	idDict worldspawnDict = worldspawn->epairs;
@@ -1547,6 +1537,7 @@ void CMissionData::LoadDirectlyFromMapFile(const idStr& mapName)
 			}
 		}
 	}
+	return mapFile;
 }
 
 /**==========================================================================
@@ -2191,37 +2182,74 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	{
 		// The main menu is visible, check if we should display the "Objectives" option
 		
-		// Only update the objectives during map runtime and if not already triggered
-		if (gameLocal.GameState() == GAMESTATE_ACTIVE)
+		// greebo: Invoke the initialisation routine (only once)
+		if (!gui->GetStateBool("ObjectiveScreenInitialised"))
 		{
-			// greebo: Invoke the initialisation routine (only once)
-			if (!gui->GetStateBool("ObjectiveScreenInitialised"))
-			{
-				gui->HandleNamedEvent("InitObjectiveScreen");
-				gui->SetStateBool("ObjectiveScreenInitialised", true);
-			}
-
-			if (!m_MissionDataLoadedIntoGUI)
-			{
-				// Load the objectives into the GUI
-				UpdateGUIState(gui);
-			}
-
-			m_MissionDataLoadedIntoGUI = true;
+			gui->HandleNamedEvent("InitObjectiveScreen");
+			gui->SetStateBool("ObjectiveScreenInitialised", true);
 		}
+
+		if (!m_MissionDataLoadedIntoGUI)
+		{
+			// Load the objectives into the GUI
+			UpdateGUIState(gui);
+		}
+		m_MissionDataLoadedIntoGUI = true;
 	}
 	else if (cmd == "objective_open_request")
 	{
+		gui->HandleNamedEvent("GetObjectivesInfo");
+
 		if (gui->GetStateInt("BriefingIsVisible") == 1)
 		{
 			// We're coming from the briefing screen
 			// Clear the objectives data and load them from the map
 			Clear();
 
-			idStr mapName = gui->GetStateString("map");
+			// Read the startingMap.txt to determine which map we are loading
+			char * mapName = NULL;
+			idLib::fileSystem->ReadFile("startingMap.txt", (void**) &mapName);		
+			if (mapName == NULL) {
+				gameLocal.Warning( "Couldn't open startingMap.txt file. No map installed" );
+				return;
+			}
+			const char * filename = va("maps/%s", mapName);
 
 			// Load the mission data directly from the given map
-			LoadDirectlyFromMapFile(mapName);
+			m_mapFile = new idMapFile;
+			if (!m_mapFile->Parse(filename))
+			{
+				delete m_mapFile;
+				m_mapFile = NULL;
+				gameLocal.Warning( "Couldn't load %s", filename);
+				return;
+			}
+			LoadDirectlyFromMapFile(m_mapFile);
+
+			// Determine the difficulty level strings. The defaults are the "difficultyMenu" entityDef.
+			// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
+			// the worldspawn.
+			const idDecl * diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
+			const idDeclEntityDef *diffDef = static_cast<const idDeclEntityDef *>( diffDecl );
+			idMapEntity* worldspawn = m_mapFile->GetEntity(0);
+			idDict worldspawnDict = worldspawn->epairs;
+			for (int diffLevel = 0; diffLevel < 3; diffLevel++)
+			{
+				const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
+					diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
+				gui->SetStateString(va("diff%dName",diffLevel), diffName);
+			}
+
+			if (worldspawnDict.GetInt("shop_skip", "0") == 1) {
+				// skip the shop, so define the map start command now
+				gui->SetStateString("mapStartCmdNow", va("exec 'map %s'", mapName));
+			} else {
+				// there will be a shop, so don't run the map right away
+				gui->SetStateString("mapStartCmdNow", "");
+			}
+
+			// Let the GUI know what the current difficulty level is
+			gui->SetStateInt("diffSelect", gameLocal.m_DifficultyManager.GetDifficultyLevel());
 
 			// Clear the flag so that the objectives get updated
 			ClearGUIState();
@@ -2229,6 +2257,32 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 			// Hide the briefing screen
 			gui->HandleNamedEvent("HideBriefingScreen");
 			gui->SetStateInt("BriefingIsVisible", 0);
+
+			// Display the Difficulty choices
+			gui->SetStateInt("DifficultyIsVisible", 1);
+
+			// Hide the objective checkboxes
+			gui->SetStateInt("ObjectiveBoxIsVisible", 0);
+
+			// Set the positioning according to the Difficulty screen
+			gui->SetStateInt("ObjXPos", gui->GetStateInt("DifficultyStartXPos"));
+			gui->SetStateInt("ParchmentXPos", gui->GetStateInt("DifficultyParchmentXPos"));
+			gui->SetStateString("ObjTitle", gui->GetStateString("DifficultyTitle"));
+			gui->SetStateInt("TitleXPos", gui->GetStateInt("DifficultyTitleXPos"));
+		}
+		else
+		{
+			// Hide the Difficulty choices
+			gui->SetStateInt("DifficultyIsVisible", 0);
+
+			// Display the objective checkboxes
+			gui->SetStateInt("ObjectiveBoxIsVisible", 1);
+
+			// Set the positioning according to the Objectives screen
+			gui->SetStateInt("ObjXPos", gui->GetStateInt("ObjectiveStartXPos"));
+			gui->SetStateInt("ParchmentXPos", gui->GetStateInt("ObjectiveParchmentXPos"));
+			gui->SetStateString("ObjTitle", gui->GetStateString("ObjectiveTitle"));
+			gui->SetStateInt("TitleXPos", gui->GetStateInt("ObjectiveTitleXPos"));
 		}
 
 		gui->HandleNamedEvent("ShowObjectiveScreen");
@@ -2265,6 +2319,17 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// Set the objectives state flag back to dirty
 		ClearGUIState();
 		gui->HandleNamedEvent("HideObjectiveScreen");
+	}
+	else if (cmd == "diffSelect")
+	{
+		// change the difficulty (skill) level to selected value
+		gameLocal.m_DifficultyManager.SetDifficultyLevel(gui->GetStateInt("diffSelect", "0"));
+		gui->SetStateInt("ObjStartIdx", 0);
+
+		// reload and redisplay objectives
+		m_Objectives.Clear();
+		LoadDirectlyFromMapFile(m_mapFile);
+		ClearGUIState();
 	}
 }
 
