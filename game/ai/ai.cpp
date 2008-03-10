@@ -9167,7 +9167,26 @@ float idAI::GetArmReachLength()
 
 bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 {
-	return true;
+	int n = frobMover->m_UsedBy.Num();
+	for (int i = 0; i < m_attachments.Num(); i++)
+	{
+		idEntity* ent = m_attachments[i].ent.GetEntity();
+
+		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		{
+			continue;
+		}
+		
+		for (int j = 0; j < n; j++)
+		{
+			if (ent->name == frobMover->m_UsedBy[j])
+			{
+				return true;
+			}
+		}
+		
+	}
+	return false;
 }
 
 bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)

@@ -4945,6 +4945,11 @@ void idEntity::Event_SpawnBind( void )
 		bindOrientated = spawnArgs.GetBool( "bindOrientated", "1" );
 		if ( parent ) 
 		{
+			if (spawnArgs.GetBool("is_attachment"))
+			{
+				parent->Attach(this);
+			}
+
 			// bind to a joint of the skeletal model of the parent
 			if ( spawnArgs.GetString( "bindToJoint", "", &joint ) && *joint ) 
 			{
