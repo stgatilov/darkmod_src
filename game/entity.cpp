@@ -2712,7 +2712,12 @@ bool idEntity::InitBind( idEntity *master )
 	}
 
 	// unbind myself from my master
-	Unbind();
+	// angua: only do this if the entity is already bound to something
+	// and the new master is different from the old one
+	if (bindMaster != NULL && master != bindMaster)
+	{
+		Unbind();
+	}
 
 	// add any bind constraints to an articulated figure
 	if ( master && IsType( idAFEntity_Base::Type ) ) {

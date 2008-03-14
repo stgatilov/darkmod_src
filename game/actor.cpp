@@ -2033,6 +2033,17 @@ void idActor::UnbindNotify( idEntity *ent )
 
 		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
 	}
+
+	// angua: remove from attachments
+	for (int i = 0; i < m_attachments.Num(); i++)
+	{
+		idEntity* attachment = m_attachments[i].ent.GetEntity();
+
+		if (attachment != NULL && attachment->name == ent->name)
+		{
+			m_attachments[i].ent = NULL;
+		}
+	}
 }
 
 /*

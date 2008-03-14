@@ -46,13 +46,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	if (frobMover->IsLocked())
 	{
 		_wasLocked = true;
-		if (!owner->CanUnlock(frobMover))
-		{
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			owner->AI_DEST_UNREACHABLE = true;
-			subsystem.FinishTask();
-			return;
-		}
 	}
 
 	const idVec3& frobMoverOrg = frobMover->GetPhysics()->GetOrigin();
@@ -189,16 +182,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	if (frobMover->IsLocked())
-	{
-		if (!owner->CanUnlock(frobMover))
-		{
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			owner->AI_DEST_UNREACHABLE = true;
-			return true;
-		}
-	}
-
 	const idVec3& openPos = frobMover->GetOpenPos();
 	const idVec3& closedPos = frobMover->GetClosedPos();
 
@@ -237,7 +220,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (frobMover->IsLocked())
 					{
-						frobMover->Unlock(false);
+						if (!owner->CanUnlock(frobMover))
+						{
+							owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+							frobMover->Open(false);
+							owner->AI_DEST_UNREACHABLE = true;
+							return true;
+						}
+						else
+						{
+							frobMover->Unlock(false);
+						}
 					}
 					frobMover->Open(false);
 					// TODO: play anim
@@ -267,7 +260,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateClosingDoor:
 				// we have moved through the door and closed it
-				if (_wasLocked)
+				if (_wasLocked && owner->CanUnlock(frobMover))
 				{
 					// if the door was locked before, lock it again
 					frobMover->Lock(false);
@@ -364,7 +357,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// possibly the player, another AI or an object
 			}
 		}
-
 	}
 	return false; // not finished yet
 }
@@ -377,7 +369,6 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	memory.doorRelated.frobMover = NULL;
 	_doorHandlingState = EStateNone;
 }
-
 
 void HandleDoorTask::Save(idSaveGame* savefile) const
 {
