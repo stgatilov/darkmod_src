@@ -349,6 +349,10 @@ void CBinaryFrobMover::Open(bool bMaster)
 		{
 			Event_RotateOnce((m_OpenAngles - tempAng).Normalize180());
 		}
+		else
+		{
+			m_Rotating = false;
+		}
 		
 		if( m_TransSpeed )
 		{
