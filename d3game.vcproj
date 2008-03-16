@@ -1197,6 +1197,12 @@
 					RelativePath=".\DarkMod\FrobDoor.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\FrobButton.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\FrobButton.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\FrobDoorHandle.cpp">
 				</File>
 				<File
