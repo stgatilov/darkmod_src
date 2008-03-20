@@ -3951,6 +3951,11 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		bobFoot = 0;
 		bobfracsin = 0;
 	} else if ( ( !usercmd.forwardmove && !usercmd.rightmove ) || ( xyspeed <= MIN_BOB_SPEED ) ) {
+		// Play a footstep sound when we stop walking (the foot is lowered to the ground;
+		// also this prevents exploits)
+		if (bobCycle != 0) {
+			PlayFootStepSound();
+		}
 		// start at beginning of cycle again
 		bobCycle = 0;
 		bobFoot = 0;
@@ -3964,11 +3969,25 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 			bobmove = pm_walkbob.GetFloat() * ( 1.0f - bobFrac ) + pm_runbob.GetFloat() * bobFrac;
 		}
 
-		// check for footstep / splash sounds
+		// check for footstep / splash sounds <--- old D3 comment, probably legacy
+		// additional explanatory comments added by Crispy
 		old = bobCycle;
+		// bobCycle is effectively an 8-bit integer, which increases at a speed determined by bobmove,
+		// and wraps around when it exceeds 8 bits.
 		bobCycle = (int)( old + bobmove * gameLocal.msec ) & 255;
+		// bobFoot = most significant bit of bobCycle, so it will be equal to 1 for half the time,
+		// and 0 for the other half. This represents which foot we're placing our weight on right now.
 		bobFoot = ( bobCycle & 128 ) >> 7;
+		// Take the other 7 bits of bobCycle, scale them to range from 0 to PI, and take the sine.
+		// The result produces positive values only, from within the first "hump" of the function.
+		// (Look at the graph of sin(x) with x = 0...PI)
 		bobfracsin = idMath::Fabs( sin( ( bobCycle & 127 ) / 127.0 * idMath::PI ) );
+		
+		// Crispy: Play footstep sounds when we hit the bottom of the cycle (i.e. when bobFoot changes)
+		if ((old&128) != (bobCycle&128)) {
+			// We've changed feet, so play a footstep
+			PlayFootStepSound();
+		}
 	}
 
 	// calculate angles for view bobbing
