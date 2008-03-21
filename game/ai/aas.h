@@ -130,13 +130,17 @@ public:
 								// Remove all obstacles from the routing system.
 	virtual void				RemoveAllObstacles( void ) = 0;
 								// Returns the travel time towards the goal area in 100th of a second.
-	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags ) const = 0;
+	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const = 0;
 								// Get the travel time and first reachability to be used towards the goal, returns true if there is a path.
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach ) const = 0;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const = 0;
 								// Creates a walk path towards the goal.
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const = 0;
-								// Returns true if one can walk along a straight line from the origin to the goal origin.
-	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const = 0;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor ) const = 0;
+								/** 
+								 * Returns true if one can walk along a straight line from the origin to the goal origin.
+								 * angua: actor is used to handle AI-specific pathing, such as forbidden areas (e.g. locked doors)
+								 * actor can be NULL
+								 */
+	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, const idActor* actor ) const = 0;
 								// Creates a fly path towards the goal.
 	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const = 0;
 								// Returns true if one can fly along a straight line from the origin to the goal origin.
@@ -155,6 +159,9 @@ public:
 	virtual idBounds			GetAreaBounds (int areaNum) const = 0;
 	virtual int					GetNumAreas() const = 0;
 	virtual idReachability*		GetAreaFirstReachability(int areaNum) const = 0;
+
+	virtual void				SetAreaTravelFlag( int index, int flag ) = 0;
+
 
 	/**
 	* This function fills a reachability list

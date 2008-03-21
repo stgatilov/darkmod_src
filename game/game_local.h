@@ -177,6 +177,7 @@ void gameError( const char *fmt, ... );
 
 #include "../DarkMod/EMissionResult.h"
 #include "../DarkMod/DifficultyManager.h"
+#include "../DarkMod/AI/AreaManager.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -435,6 +436,8 @@ public:
 
 	// The object handling the difficulty settings
 	difficulty::DifficultyManager	m_DifficultyManager;
+
+	ai::AreaManager			m_AreaManager;
 
 /**
 * Pointer to global AI Relations object

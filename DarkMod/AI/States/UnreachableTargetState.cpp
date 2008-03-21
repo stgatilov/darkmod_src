@@ -229,7 +229,7 @@ void UnreachableTargetState::Think(idAI* owner)
 		int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f, -10*forward);
 		aasPath_t path;
 
-		if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+		if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint, owner))
 		{
 			owner->GetMind()->EndState();
 			return;

@@ -189,7 +189,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 		int travelTime;
 		idReachability *reach;
 		
-		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach );
+		RouteToGoalArea( areaNum, org, aas_goalArea.GetInteger(), TFL_WALK|TFL_AIR, travelTime, &reach, NULL );
 		gameLocal.Printf( "\rtt = %4d", travelTime );
 		if ( reach ) {
 			gameLocal.Printf( " to area %4d", reach->toAreaNum );
@@ -254,7 +254,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL ) ) {
 			break;
 		}
 
@@ -273,7 +273,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 		org = reach->end;
 	}
 
-	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR ) ) {
+	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR, NULL ) ) {
 		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 2 );
 	}
 }
@@ -300,7 +300,7 @@ void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec
 
 	for ( i = 0; i < 100; i++ ) {
 
-		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach ) ) {
+		if ( !RouteToGoalArea( curAreaNum, org, goalAreaNum, TFL_WALK|TFL_FLY|TFL_AIR, travelTime, &reach, NULL ) ) {
 			break;
 		}
 
@@ -407,7 +407,7 @@ bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
 	if ( player->GetPhysics()->GetAbsBounds().Expand( 8 ).ContainsPoint( areaCenter ) ) {
 		return false;
 	}
-	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR ) ) {
+	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR, NULL ) ) {
 		dir = path.moveGoal - origin;
 		dir[2] *= 0.5f;
 		dir.Normalize();

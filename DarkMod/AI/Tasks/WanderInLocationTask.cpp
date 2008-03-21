@@ -75,7 +75,7 @@ void WanderInLocationTask::Init(idAI* owner, Subsystem& subsystem)
 				int areaNum = owner->PointReachableAreaNum(owner->GetPhysics()->GetOrigin(), 1.0f);
 				int targetAreaNum = owner->PointReachableAreaNum(targetPoint, 1.0f);
 				aasPath_t path;
-				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint))
+				if (owner->PathToGoal(path, areaNum, owner->GetPhysics()->GetOrigin(), targetAreaNum, targetPoint, owner))
 				{
 					_location = targetPoint;
 				}

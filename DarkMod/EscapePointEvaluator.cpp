@@ -36,7 +36,7 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 
 	// Calculate the traveltime
 	idReachability* reach;
-	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach);
+	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, _conditions.self.GetEntity());
 	
 	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
 

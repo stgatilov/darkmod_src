@@ -14,6 +14,7 @@ static bool init_version = FileVersionList("$Id: HandleDoorTask.cpp 1435 2007-10
 
 #include "../Memory.h"
 #include "HandleDoorTask.h"
+#include "../AreaManager.h"
 
 namespace ai
 {
@@ -222,9 +223,27 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						if (!owner->CanUnlock(frobMover))
 						{
+							// Door is locked and we cannot unlock it
 							owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 							frobMover->Open(false);
 							owner->AI_DEST_UNREACHABLE = true;
+
+							idVec3 center = (closedPos + frobMover->GetPhysics()->GetOrigin()) * 0.5;
+							center.z = frobMover->GetPhysics()->GetOrigin().z;
+
+							idClipModel *clipModel = frobMover->GetPhysics()->GetClipModel();
+							
+							idAAS*	aas = owner->GetAAS();
+									
+							if (aas != NULL)
+							{
+								int areaNum = aas->PointReachableAreaNum( center, clipModel->GetBounds(), AREA_REACHABLE_WALK );
+								idStr areatext(areaNum);
+								// gameRenderWorld->DrawText(areatext.c_str(), center, 0.2f, colorRed, 
+								//	mat3_identity, 1, 10000000);
+								gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
+							}
+
 							return true;
 						}
 						else

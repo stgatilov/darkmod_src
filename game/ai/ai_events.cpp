@@ -719,7 +719,7 @@ void idAI::Event_ClosestReachableEnemyOfEntity( idEntity *team_mate ) {
 		if ( distSquared < bestDistSquared ) {
 			const idVec3 &enemyPos = ent->GetPhysics()->GetOrigin();
 			enemyAreaNum = PointReachableAreaNum( enemyPos );
-			if ( ( areaNum != 0 ) && PathToGoal( path, areaNum, origin, enemyAreaNum, enemyPos ) ) {
+			if ( ( areaNum != 0 ) && PathToGoal( path, areaNum, origin, enemyAreaNum, enemyPos, this ) ) {
 				bestEnt = ent;
 				bestDistSquared = distSquared;
 			}
@@ -3079,7 +3079,7 @@ void idAI::Event_CanReachPosition( const idVec3 &pos ) {
 
 	toAreaNum = PointReachableAreaNum( pos );
 	areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-	if ( !toAreaNum || !PathToGoal( path, areaNum, physicsObj.GetOrigin(), toAreaNum, pos ) ) {
+	if ( !toAreaNum || !PathToGoal( path, areaNum, physicsObj.GetOrigin(), toAreaNum, pos, this ) ) {
 		idThread::ReturnInt( false );
 	} else {
 		idThread::ReturnInt( true );
@@ -3123,7 +3123,7 @@ void idAI::Event_CanReachEntity( idEntity *ent ) {
 
 	const idVec3 &org = physicsObj.GetOrigin();
 	areaNum	= PointReachableAreaNum( org );
-	if ( !toAreaNum || !PathToGoal( path, areaNum, org, toAreaNum, pos ) ) {
+	if ( !toAreaNum || !PathToGoal( path, areaNum, org, toAreaNum, pos, this ) ) {
 		idThread::ReturnInt( false );
 	} else {
 		idThread::ReturnInt( true );

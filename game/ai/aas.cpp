@@ -402,6 +402,15 @@ idReachability* idAASLocal::GetAreaFirstReachability(int areaNum) const
 	
 }
 
+void idAASLocal::SetAreaTravelFlag( int index, int flag )
+{
+	if (file != NULL)
+	{
+		file->SetAreaTravelFlag(index, flag);
+	}
+}
+
+
 /*
 ============
 idAASLocal::BuildReachbilityImpactList

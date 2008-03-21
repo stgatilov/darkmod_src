@@ -390,7 +390,7 @@ idAI::idAI
 idAI::idAI()
 {
 	aas					= NULL;
-	travelFlags			= TFL_WALK|TFL_AIR;
+	travelFlags			= TFL_WALK|TFL_AIR|TFL_DOOR;
 
 	kickForce			= 2048.0f;
 	ignore_obstacles	= false;
@@ -2112,7 +2112,7 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 idAI::PathToGoal
 =====================
 */
-bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
+bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const {
 	idVec3 org;
 	idVec3 goal;
 
@@ -2135,7 +2135,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	if ( move.moveType == MOVETYPE_FLY ) {
 		return aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
 	} else {
-		return aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
+		return aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
 	}
 }
 
@@ -2192,7 +2192,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
 
 	idReachability *reach;
 	int travelTime;
-	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach ) ) {
+	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach, this ) ) {
 		return -1;
 	}
 
@@ -2379,7 +2379,7 @@ bool idAI::MoveToEnemy( void ) {
 		aas->PushPointIntoAreaNum( move.toAreaNum, pos );
 
 		areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos ) ) {
+		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos, this ) ) {
 			AI_DEST_UNREACHABLE = true;
 			return false;
 		}
@@ -2449,7 +2449,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 		aas->PushPointIntoAreaNum( move.toAreaNum, pos );
 
 		areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos ) ) {
+		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, pos, this ) ) {
 			AI_DEST_UNREACHABLE = true;
 			return false;
 		}
@@ -2693,7 +2693,7 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 
 		// See if we can get to the point itself since noplace was good enough
 		// for just looking from a distance due to lighting/occlusion/reachability.
-		if (PathToGoal( path, areaNum, physicsObj.GetOrigin(), areaNum, org ) ) 
+		if (PathToGoal( path, areaNum, physicsObj.GetOrigin(), areaNum, org, this ) ) 
 		{
 
 			// Can reach the point itself, so walk right up to it
@@ -2925,7 +2925,7 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 		aas->PushPointIntoAreaNum( move.toAreaNum, org );
 
 		areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org ) ) {
+		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this ) ) {
 			StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 			AI_DEST_UNREACHABLE = true;
 			return false;
@@ -3350,7 +3350,7 @@ bool idAI::GetMovePos(idVec3 &seekPos)
 
 			// Try to setup a path to the goal
 			aasPath_t path;
-			if (PathToGoal(path, areaNum, org, move.toAreaNum, move.moveDest))
+			if (PathToGoal(path, areaNum, org, move.toAreaNum, move.moveDest, this))
 			{
 				seekPos = path.moveGoal;
 				result = true; // We have a valid Path to the goal
@@ -5349,7 +5349,7 @@ void idAI::SetEnemyPosition()
 			areaNum = PointReachableAreaNum(org);
 
 			// Try to set up a walk/fly path to the enemy
-			if (PathToGoal(path, areaNum, org, enemyAreaNum, pos))
+			if (PathToGoal(path, areaNum, org, enemyAreaNum, pos, this))
 			{
 				// Succeeded, we have a visible and reachable enemy position
 				lastVisibleReachableEnemyPos = pos;
@@ -5529,7 +5529,7 @@ void idAI::UpdateEnemyPosition()
 
 				// Try to setup a path to the goal
 				aasPath_t path;
-				if (PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos))
+				if (PathToGoal( path, areaNum, org, enemyAreaNum, enemyPos, this))
 				{
 					// Path successfully setup, store the position as "reachable"
 					lastReachableEnemyPos = enemyPos;
@@ -5768,7 +5768,7 @@ idVec3 idAI::FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target,
 
 	for( i = 0; i < 10; i++ ) {
 
-		if ( !aas->RouteToGoalArea( curAreaNum, curOrigin, targetAreaNum, travelFlags, travelTime, &reach ) ) {
+		if ( !aas->RouteToGoalArea( curAreaNum, curOrigin, targetAreaNum, travelFlags, travelTime, &reach, this ) ) {
 			break;
 		}
 
@@ -8698,7 +8698,7 @@ bool idAI::CanReachEnemy()
 
 	const idVec3 &org = physicsObj.GetOrigin();
 	areaNum	= PointReachableAreaNum( org );
-	return PathToGoal(path, areaNum, org, toAreaNum, pos);
+	return PathToGoal(path, areaNum, org, toAreaNum, pos, this);
 }
 
 bool idAI::MouthIsUnderwater( void )
