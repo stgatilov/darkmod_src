@@ -552,6 +552,12 @@
 					RelativePath="game\ai\MoveState.cpp">
 				</File>
 				<File
+					RelativePath=".\DarkMod\AI\AreaManager.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AI\AreaManager.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Ai\Mind.cpp">
 				</File>
 				<File
