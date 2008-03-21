@@ -168,6 +168,7 @@ StimResponse/Stim.cpp \
 StimResponse/StimResponse.cpp \
 StimResponse/StimResponseCollection.cpp \
 StimResponse/StimResponseTimer.cpp \
+AI/AreaManager.cpp \
 AI/Mind.cpp \
 AI/Subsystem.cpp \
 AI/States/AgitatedSearchingState.cpp \
