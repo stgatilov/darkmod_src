@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/pvs.h"
 #include "../renderer/renderworld.h"
 #include "../DarkMod/Intersection.h"
+#include "../game/pvs.h"
 
 //----------------------------------------------------------------------------
 
@@ -273,10 +274,13 @@ void PVSToAASMapping::DebugShowMappings(int lifetime)
 		{
 			int aasArea = node->AASAreaIndex;
 			idBounds areaBounds = aas->GetAreaBounds(aasArea);
-			idVec3 areaCenter = areaBounds.GetCenter();
-
-			gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.2f, color, playerViewMatrix, 1, lifetime);
-			gameRenderWorld->DebugBox(color, idBox(areaBounds), lifetime);
+			idVec3 areaCenter = aas->AreaCenter(aasArea);
+			// angua: only draw areas near the player, no need to see them at the other end of the map
+			if ((areaCenter - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast() < 1000)
+			{
+				gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.2f, color, playerViewMatrix, 1, lifetime);
+				gameRenderWorld->DebugBox(color, idBox(areaBounds), lifetime);
+			}
 
 			node = node->p_next;
 		}
