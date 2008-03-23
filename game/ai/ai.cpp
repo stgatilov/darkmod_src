@@ -527,6 +527,8 @@ idAI::idAI()
 	m_maxInterleaveThinkFrames = 0;
 	m_minInterleaveThinkDist = 1000;
 	m_maxInterleaveThinkDist = 3000;
+	m_lastThinkTime = 0;
+	m_nextThinkFrame = 0;
 }
 
 /*
@@ -754,6 +756,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_maxInterleaveThinkFrames);
 	savefile->WriteFloat(m_minInterleaveThinkDist);
 	savefile->WriteFloat(m_maxInterleaveThinkDist);
+
+	savefile->WriteInt(m_lastThinkTime);
+	savefile->WriteInt(m_nextThinkFrame);
 
 	mind->Save(savefile);
 
@@ -993,6 +998,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_minInterleaveThinkDist);
 	savefile->ReadFloat(m_maxInterleaveThinkDist);
 
+	savefile->ReadInt(m_lastThinkTime);
+	savefile->ReadInt(m_nextThinkFrame);
+
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
 
@@ -1102,7 +1110,7 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"30",		atime3_fuzzyness );
 	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"120",		atime4_fuzzyness );
 
-	spawnArgs.GetInt( "max_interleave_think_frames",		"120",		m_maxInterleaveThinkFrames );
+	spawnArgs.GetInt( "max_interleave_think_frames",		"12",		m_maxInterleaveThinkFrames );
 	spawnArgs.GetFloat( "min_interleave_think_dist",		"1000",		m_minInterleaveThinkDist);
 	spawnArgs.GetFloat( "max_interleave_think_dist",		"3000",		m_maxInterleaveThinkDist);
 
@@ -1497,20 +1505,39 @@ void idAI::Think( void )
 	}
 	
 	// Interleaved thinking
-	int thinkFrame = GetThinkInterleave();
-	if (thinkFrame > 1)
+	int frameNum = gameLocal.framenum;
+	if (frameNum < m_nextThinkFrame)
 	{
-		int frameNum = gameLocal.framenum;
-		if (frameNum > 10 && frameNum % thinkFrame != 0)
+		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool();
+		if (skipPVScheck)
 		{
-			bool inPVS = gameLocal.InPlayerPVS(this);
-			if (!inPVS)
-			{
-				return;
-			}
+			return;
+		}
+
+		bool inPVS = gameLocal.InPlayerPVS(this);
+		if (!inPVS)
+		{
+			return;
 		}
 	}
 
+	int thinkFrame = GetThinkInterleave();
+	if (thinkFrame > 1)
+	{
+		if (frameNum < (5 + gameLocal.random.RandomInt(5)))
+		{
+			m_nextThinkFrame = frameNum + 1;
+		}
+		else
+		{
+			m_nextThinkFrame = frameNum + thinkFrame;
+		}
+	}
+	else
+	{
+		m_nextThinkFrame = frameNum + 1;
+	}
+			
 	// save old origin and velocity for crashlanding
 	idVec3 oldOrigin = physicsObj.GetOrigin();
 	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
@@ -1770,6 +1797,8 @@ void idAI::Think( void )
 		}
 		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
+
+	m_lastThinkTime = gameLocal.time;
 }
 
 /*
@@ -1779,24 +1808,46 @@ idAI::GetThinkInterleave
 */
 int idAI::GetThinkInterleave()
 {
-	if (m_maxInterleaveThinkFrames == 0)
+	int maxFrames = m_maxInterleaveThinkFrames;
+	if (cv_ai_opt_interleavethinkframes.GetInteger() > 0)
+	{
+		maxFrames = cv_ai_opt_interleavethinkframes.GetInteger();
+	}
+
+	if (maxFrames == 0)
 	{
 		return 0;
 	}
 
+	float minDist = m_minInterleaveThinkDist;
+	float maxDist = m_maxInterleaveThinkDist;
+	if (cv_ai_opt_interleavethinkmindist.GetFloat() > 0)
+	{
+		minDist = cv_ai_opt_interleavethinkmindist.GetFloat();
+	}
+	if (cv_ai_opt_interleavethinkmaxdist.GetFloat() > 0)
+	{
+		maxDist = cv_ai_opt_interleavethinkmaxdist.GetFloat();
+	}
+
+	if (maxDist < minDist)
+	{
+		gameLocal.Warning("Minimum distance for interleaved thinking is larger than maximum distance, switching optimization off.");
+		return 0;
+	}
+
 	float playerDist = (physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast();
-	if (playerDist < m_minInterleaveThinkDist)
+	if (playerDist < minDist)
 	{
 		return 0;
 	}
-	else if (playerDist > m_maxInterleaveThinkDist)
+	else if (playerDist > maxDist)
 	{
-		return m_maxInterleaveThinkFrames;
+		return maxFrames;
 	}
 	else
 	{
-		int thinkFrames = 1 + m_maxInterleaveThinkFrames * 
-			(playerDist - m_minInterleaveThinkDist) / (m_maxInterleaveThinkDist - m_minInterleaveThinkDist);
+		int thinkFrames = 1 + maxFrames * (playerDist - minDist) / (maxDist - minDist);
 		return thinkFrames;
 	}
 }
@@ -3667,7 +3718,7 @@ void idAI::Turn( void ) {
 		} else if ( turnVel < -turnRate ) {
 			turnVel = -turnRate;
 		}
-		turnAmount = turnVel * MS2SEC( gameLocal.msec );
+		turnAmount = turnVel * MS2SEC( gameLocal.time - m_lastThinkTime );
 		if ( ( diff >= 0.0f ) && ( turnAmount >= diff ) ) {
 			turnVel = diff / MS2SEC( gameLocal.msec );
 			turnAmount = diff;
@@ -3776,7 +3827,11 @@ idAI::GetMoveDelta
 void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta )
 {
 	// Get the delta from the animation system (for one frame) and transform it
-	animator.GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta);
+	// animator.GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta);
+
+	// angua: distance from last thinking time
+	animator.GetDelta( m_lastThinkTime, gameLocal.time, delta);
+
 	delta = axis * delta;
 
 	if ( modelOffset != vec3_zero )
