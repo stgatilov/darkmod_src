@@ -3564,7 +3564,17 @@ bool idEntity::RunPhysics( void ) {
 		return false;
 	}
 
-	startTime = gameLocal.previousTime;
+	// angua: since the AI are not thinking every frame, we need to rescale 
+	// their velocities with the corrected time length to prevent them from dying.
+	idAI* ai = dynamic_cast<idAI*>(this);
+	if (ai)
+	{
+		startTime = ai->m_lastThinkTime;
+	}
+	else
+	{
+		startTime = gameLocal.previousTime;
+	}
 	endTime = gameLocal.time;
 
 	gameLocal.push.InitSavingPushedEntityPositions();
