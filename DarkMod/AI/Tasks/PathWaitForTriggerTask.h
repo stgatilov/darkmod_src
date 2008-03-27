@@ -26,7 +26,10 @@ class PathWaitForTriggerTask :
 {
 	idEntityPtr<idPathCorner> _path;
 	
+	PathWaitForTriggerTask();
 public:
+	PathWaitForTriggerTask(idPathCorner* path);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

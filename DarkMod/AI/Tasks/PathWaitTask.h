@@ -29,7 +29,10 @@ class PathWaitTask :
 	// The game time at which waiting ends in ms.
 	float _endtime;
 
+	PathWaitTask();
 public:
+	PathWaitTask(idPathCorner* path);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

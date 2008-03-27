@@ -26,7 +26,10 @@ class PathShowTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
+	PathShowTask();
 public:
+	PathShowTask(idPathCorner* path);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

@@ -20,6 +20,14 @@ static bool init_version = FileVersionList("$Id: PathTurnTask.cpp 1435 2007-10-1
 namespace ai
 {
 
+PathTurnTask::PathTurnTask()
+{}
+
+PathTurnTask::PathTurnTask(idPathCorner* path)
+{
+	_path = path;
+}
+
 // Get the name of this task
 const idStr& PathTurnTask::GetName() const
 {

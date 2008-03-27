@@ -20,6 +20,14 @@ static bool init_version = FileVersionList("$Id: PathWaitForTriggerTask.cpp 1435
 namespace ai
 {
 
+PathWaitForTriggerTask::PathWaitForTriggerTask()
+{}
+
+PathWaitForTriggerTask::PathWaitForTriggerTask(idPathCorner* path)
+{
+	_path = path;
+}
+
 // Get the name of this task
 const idStr& PathWaitForTriggerTask::GetName() const
 {

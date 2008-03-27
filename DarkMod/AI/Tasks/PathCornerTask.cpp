@@ -24,6 +24,12 @@ PathCornerTask::PathCornerTask() :
 	_moveInitiated(false)
 {}
 
+PathCornerTask::PathCornerTask(idPathCorner* path) :
+	_moveInitiated(false)
+{
+	_path = path;
+}
+
 // Get the name of this task
 const idStr& PathCornerTask::GetName() const
 {

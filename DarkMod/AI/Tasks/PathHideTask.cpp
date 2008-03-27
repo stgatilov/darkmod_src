@@ -20,6 +20,14 @@ static bool init_version = FileVersionList("$Id: PathHideTask.cpp 1435 2007-10-1
 namespace ai
 {
 
+PathHideTask::PathHideTask()
+{}
+
+PathHideTask::PathHideTask(idPathCorner* path)
+{
+	_path = path;
+}
+
 // Get the name of this task
 const idStr& PathHideTask::GetName() const
 {

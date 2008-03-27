@@ -89,71 +89,34 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	// Get the classname, this determines the child routine we're spawning.
 	idStr classname = path->spawnArgs.GetString("classname");
 
+	// Depending on the classname we spawn one of the various Path*Tasks
 	if (classname == "path_corner")
 	{
-		// Allocate a new PathCornerTask
-		PathCornerTaskPtr pathTask = PathCornerTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathCornerTaskPtr(new PathCornerTask(path));
 	}
 	else if (classname == "path_anim")
 	{
-		// Allocate a new task
-		PathAnimTaskPtr pathTask(new PathAnimTask(path));
-		task = pathTask;
+		task = PathAnimTaskPtr(new PathAnimTask(path));
 	}
 	else if (classname == "path_turn")
 	{
-		// Allocate a new task
-		PathTurnTaskPtr pathTask = PathTurnTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathTurnTaskPtr(new PathTurnTask(path));
 	}
 	else if (classname == "path_wait")
 	{
-		// Allocate a new task
-		PathWaitTaskPtr pathTask = PathWaitTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathWaitTaskPtr(new PathWaitTask(path));
 	}
 	else if (classname == "path_waitfortrigger")
 	{
-		// Allocate a new task
-		PathWaitForTriggerTaskPtr pathTask = PathWaitForTriggerTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathWaitForTriggerTaskPtr(new PathWaitForTriggerTask(path));
 	}
 	else if (classname == "path_hide")
 	{
-		// Allocate a new task
-		PathHideTaskPtr pathTask = PathHideTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathHideTaskPtr(new PathHideTask(path));
 	}
 	else if (classname == "path_show")
 	{
-		// Allocate a new task
-		PathShowTaskPtr pathTask = PathShowTask::CreateInstance();
-		assert(pathTask != NULL); // task must be found
-
-		// Set the target entity and push the task
-		pathTask->SetTargetEntity(path);
-		task = pathTask;
+		task = PathShowTaskPtr(new PathShowTask(path));
 	}
 	else
 	{

@@ -26,7 +26,10 @@ class PathHideTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
+	PathHideTask();
 public:
+	PathHideTask(idPathCorner* path);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

@@ -20,6 +20,14 @@ static bool init_version = FileVersionList("$Id: PathWaitTask.cpp 1435 2007-10-1
 namespace ai
 {
 
+PathWaitTask::PathWaitTask()
+{}
+
+PathWaitTask::PathWaitTask(idPathCorner* path)
+{
+	_path = path;
+}
+
 // Get the name of this task
 const idStr& PathWaitTask::GetName() const
 {

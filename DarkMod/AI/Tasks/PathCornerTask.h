@@ -31,6 +31,7 @@ private:
 	PathCornerTask();
 
 public:
+	PathCornerTask(idPathCorner* path);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

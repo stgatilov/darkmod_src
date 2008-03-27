@@ -26,7 +26,11 @@ class PathTurnTask :
 {
 	idEntityPtr<idPathCorner> _path;
 
+	PathTurnTask();
+
 public:
+	PathTurnTask(idPathCorner* path);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
