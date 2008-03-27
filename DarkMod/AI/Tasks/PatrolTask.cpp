@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 #include "PathCornerTask.h"
 #include "PathTurnTask.h"
 #include "PathWaitTask.h"
+#include "PathAnimTask.h"
 #include "PathWaitForTriggerTask.h"
 #include "PathHideTask.h"
 #include "PathShowTask.h"
@@ -97,10 +98,16 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 		// Set the target entity and push the task
 		pathTask->SetTargetEntity(path);
 		task = pathTask;
-	}	
+	}
+	else if (classname == "path_anim")
+	{
+		// Allocate a new task
+		PathAnimTaskPtr pathTask(new PathAnimTask(path));
+		task = pathTask;
+	}
 	else if (classname == "path_turn")
 	{
-		// Allocate a new PathCornerTask
+		// Allocate a new task
 		PathTurnTaskPtr pathTask = PathTurnTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 
@@ -110,7 +117,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_wait")
 	{
-		// Allocate a new PathCornerTask
+		// Allocate a new task
 		PathWaitTaskPtr pathTask = PathWaitTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 
@@ -120,7 +127,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_waitfortrigger")
 	{
-		// Allocate a new PathCornerTask
+		// Allocate a new task
 		PathWaitForTriggerTaskPtr pathTask = PathWaitForTriggerTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 
@@ -130,7 +137,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_hide")
 	{
-		// Allocate a new PathCornerTask
+		// Allocate a new task
 		PathHideTaskPtr pathTask = PathHideTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 
@@ -140,7 +147,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_show")
 	{
-		// Allocate a new PathCornerTask
+		// Allocate a new task
 		PathShowTaskPtr pathTask = PathShowTask::CreateInstance();
 		assert(pathTask != NULL); // task must be found
 

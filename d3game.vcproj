@@ -778,6 +778,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\PathTurnTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathAnimTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathAnimTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PathWaitForTriggerTask.cpp">
 					</File>
 					<File
