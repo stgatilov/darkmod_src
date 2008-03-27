@@ -96,7 +96,18 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	}
 	else if (classname == "path_anim")
 	{
-		task = PathAnimTaskPtr(new PathAnimTask(path));
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			subsystem.PushTask(TaskPtr(new PathAnimTask(path)));
+			// The "task" variable will be pushed later on in this code
+			task = PathTurnTaskPtr(new PathTurnTask(path));
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the animation task
+			task = PathAnimTaskPtr(new PathAnimTask(path));
+		}
 	}
 	else if (classname == "path_turn")
 	{

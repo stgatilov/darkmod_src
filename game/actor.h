@@ -423,6 +423,7 @@ private:
 	void					FinishSetup( void );
 	void					SetupHead( void );
 
+public:
 	void					Event_EnableEyeFocus( void );
 	void					Event_DisableEyeFocus( void );
 	void					Event_Footstep( void );

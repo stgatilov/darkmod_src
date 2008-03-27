@@ -113,7 +113,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		}
 		else
 		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Searchlevel = 1, ZOMG, Panic mode, gotta run now!");
+			DM_LOG(LC_AI, LT_INFO).LogString("Searchlevel = 1, ZOMG, Panic mode, gotta run now!\r");
 
 			// Get the distance to the enemy
 			float enemyDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), enemy->GetPhysics()->GetOrigin());
