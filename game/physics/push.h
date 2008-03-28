@@ -26,6 +26,7 @@
 #define PUSHFL_CLIP					4		// also clip against all non-moveable entities
 #define PUSHFL_CRUSH				8		// kill blocking entities
 #define PUSHFL_APPLYIMPULSE			16		// apply impulse to pushed entities
+#define PUSHFL_NOPLAYER				32		// greebo: Don't push player entities
 
 //#define NEW_PUSH
 

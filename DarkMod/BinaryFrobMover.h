@@ -265,6 +265,12 @@ protected:
 	idVec3						m_vImpulseDirOpen;
 	idVec3						m_vImpulseDirClose;
 
+	/** 
+	 * greebo: If this is TRUE, the door will stop as soon as something is in the way.
+	 *         Corresponds to spawnarg "stop_when_blocked"
+	 */
+	bool						m_stopWhenBlocked;
+
 private:
 };
 

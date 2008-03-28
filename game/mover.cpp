@@ -346,7 +346,13 @@ void idMover::Spawn( void )
 		physicsObj.SetContents( 0 );
 	}
 	if ( !renderEntity.hModel || !spawnArgs.GetBool( "nopush" ) ) {
-		physicsObj.SetPusher( 0 );
+		// greebo: Check if we should be able to push the player (default is yes)
+		if (spawnArgs.GetBool("push_player", "1")) {
+			physicsObj.SetPusher(0);
+		}
+		else {
+			physicsObj.SetPusher(PUSHFL_NOPLAYER);
+		}
 	}
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
 	physicsObj.SetAngularExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_angles, ang_zero, ang_zero );

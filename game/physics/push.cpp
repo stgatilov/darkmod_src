@@ -699,9 +699,8 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 	idVec3 rotationPoint;
 	idRotation newRotation;
 	float checkAngle;
-	idPhysics *physics;
 
-	physics = check->GetPhysics();
+	idPhysics* physics = check->GetPhysics();
 
 #ifdef ROTATIONAL_PUSH_DEBUG
 	bool startsolid = false;
@@ -766,8 +765,15 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 			return PUSH_NO;
 		}
 
-		// greebo: Don't push the player
-		if (check->IsType(idPlayer::Type)) {
+		// greebo: At this point, the pushes knows that the check entity is in the way
+		// Normally, the pusher tries to rotate the entity to see if the entity itself 
+		// is colliding with anything else, but for players, we want to (optionally) skip that.
+		if ((flags & PUSHFL_NOPLAYER) && check->IsType(idPlayer::Type)) 
+		{
+			// We are colliding with a player and are not allowed to push it, return BLOCKED
+			results.c.normal = -results.c.normal;
+			results.c.dist = -results.c.dist;
+
 			return PUSH_BLOCKED;
 		}
 
@@ -1239,7 +1245,8 @@ idPush::ClipRotationalPush
 float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int flags,
 									const idMat3 &newAxis, const idRotation &rotation ) {
 	int			i, listedEntities, res;
-	idEntity	*check, *entityList[ MAX_GENTITIES ];
+	idEntity	*check;
+	static idEntity* entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
 	idRotation	clipRotation;
 	idMat3		clipAxis, oldAxis;
