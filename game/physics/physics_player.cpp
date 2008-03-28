@@ -644,7 +644,8 @@ void idPhysics_Player::WaterMove( void ) {
 
 	// user intentions
 	if ( !scale ) {
-		wishvel = gravityNormal * 60; // sink towards bottom
+		// greebo: Standard downwards velocity is configurable via this CVAR
+		wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat(); // sink towards bottom
 	} else {
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;

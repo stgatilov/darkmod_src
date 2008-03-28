@@ -75,6 +75,7 @@ extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
+extern idCVar cv_pm_water_downwards_velocity;
 
 /**
 * This cvar controls if ai hiding spot search debug graphics are drawn
