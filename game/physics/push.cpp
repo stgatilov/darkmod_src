@@ -919,6 +919,20 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 		if ( results.fraction >= 1.0f ) {
 			return PUSH_NO;
 		}
+
+		
+		// greebo: At this point, the pushes knows that the check entity is in the way
+		// Normally, the pusher tries to rotate the entity to see if the entity itself 
+		// is colliding with anything else, but for players, we want to (optionally) skip that.
+		if ((flags & PUSHFL_NOPLAYER) && check->IsType(idPlayer::Type)) 
+		{
+			// We are colliding with a player and are not allowed to push it, return BLOCKED
+			results.c.normal = -results.c.normal;
+			results.c.dist = -results.c.dist;
+
+			return PUSH_BLOCKED;
+		}
+
 		// vector along which the entity is pushed
 		checkMove = move * (1.0f - results.fraction);
 		// move the entity colliding with all other entities except the pusher itself
