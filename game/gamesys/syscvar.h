@@ -77,6 +77,7 @@ extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
 extern idCVar cv_pm_water_downwards_velocity;
 extern idCVar cv_pm_water_z_friction;
+extern idCVar cv_pm_show_waterlevel;
 
 /**
 * This cvar controls if ai hiding spot search debug graphics are drawn

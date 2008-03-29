@@ -201,6 +201,7 @@ idCVar cv_pm_rope_snd_rep_dist(		"pm_rope_snd_rep_dist",		"32",		CVAR_GAME | CVA
 idCVar cv_pm_rope_velocity_letgo(	"pm_rope_velocity_letgo",	"100",		CVAR_GAME | CVAR_FLOAT, "Maximum allowed velocity of the rope before the player lets go." );
 idCVar cv_pm_water_downwards_velocity(	"pm_water_downwards_velocity",	"-4",		CVAR_GAME | CVAR_FLOAT, "The factor which the gravity vector gets scaled with to calculate the standard downwards velocity in water volumes. Negative values will let the player float upwards." );
 idCVar cv_pm_water_z_friction(	"pm_water_z_friction",	"0.995",		CVAR_GAME | CVAR_FLOAT , "When the player is underwater and has really small z-velocities, this factor gets applied each frame, so that the player stops floating upwards when reaching the surface." );
+idCVar cv_pm_show_waterlevel(	"pm_show_waterlevel",	"0",		CVAR_GAME | CVAR_BOOL , "Shows the waterlevel of the player." );
 /**
  * Darkmod lightgem variables. These are only for debuggingpurpose to tweak the lightgem
  * in a release version they should be disabled.

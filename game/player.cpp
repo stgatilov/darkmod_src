@@ -6245,6 +6245,20 @@ void idPlayer::Think( void )
 		gameLocal.Printf( "%d: enemies\n", num );
 	}
 
+	if (cv_pm_show_waterlevel.GetBool())
+	{
+		idStr waterStr;
+		switch (physicsObj.GetWaterLevel())
+		{
+			case WATERLEVEL_NONE: waterStr = "WATERLEVEL: NONE"; break;
+			case WATERLEVEL_FEET: waterStr = "WATERLEVEL: FEET"; break;
+			case WATERLEVEL_WAIST: waterStr = "WATERLEVEL: WAIST"; break;
+			case WATERLEVEL_HEAD: waterStr = "WATERLEVEL: HEAD"; break;
+			default: waterStr = "WATERLEVEL: ???"; break;
+		};
+		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7, colorWhite, viewAxis, 1, 16);
+	}
+
 	// determine if portal sky is in pvs
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
 }
