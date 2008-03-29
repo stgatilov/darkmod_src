@@ -25,8 +25,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/AI/Memory.h"
 #include "../../DarkMod/AI/States/State.h"
 
-class CRelations;
+#include <vector>
+#include <string>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
+class CRelations;
 
 /***********************************************************************
 
@@ -361,6 +365,7 @@ const idEventDef AI_Knockout( "knockout" );
 *
 */
 CLASS_DECLARATION( idActor, idAI )
+	EVENT( EV_PostSpawn,						idAI::Event_PostSpawn )
 	EVENT( EV_Activate,							idAI::Event_Activate )
 	EVENT( EV_Touch,							idAI::Event_Touch )
 	EVENT( AI_FindEnemy,						idAI::Event_FindEnemy )
@@ -544,6 +549,29 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_IssueCommunication,				idAI::Event_IssueCommunication)
 
 END_CLASS
+
+void idAI::Event_PostSpawn() 
+{
+	// Parse the list of doors that can be unlocked by this AI
+	std::string doorStringList(spawnArgs.GetString("can_unlock", ""));
+
+	std::vector<std::string> doors; // will hold the separated strings
+	boost::algorithm::split(doors, doorStringList, boost::algorithm::is_any_of(" ;"));
+
+	// Copy the strings into the set
+	for (std::size_t i = 0; i < doors.size(); i++)
+	{
+		idEntity* door = gameLocal.FindEntity(doors[i].c_str());
+		if (door != NULL && door->IsType(CBinaryFrobMover::Type))
+		{
+			unlockableDoors.insert(static_cast<CBinaryFrobMover*>(door));
+		}
+		else
+		{
+			gameLocal.Warning("Invalid door name %s on AI %s", doors[i].c_str(), name.c_str());
+		}
+	}
+}
 
 /*
 =====================

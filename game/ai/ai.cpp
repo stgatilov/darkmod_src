@@ -38,7 +38,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/FrobDoorHandle.h"
 #include "tdmAASFindEscape.h"
 
-
 //TODO: Move these to AI def:
 
 // Visual detection parameters
@@ -760,6 +759,13 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_lastThinkTime);
 	savefile->WriteInt(m_nextThinkFrame);
 
+	int size = unlockableDoors.size();
+	savefile->WriteInt(size);
+	for (FrobMoverList::const_iterator i = unlockableDoors.begin(); i != unlockableDoors.end(); i++)
+	{
+		savefile->WriteObject(*i);
+	}
+
 	mind->Save(savefile);
 
 	for (int i = 0; i < ai::SubsystemCount; i++) 
@@ -1000,6 +1006,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt(m_lastThinkTime);
 	savefile->ReadInt(m_nextThinkFrame);
+
+	int size;
+	savefile->ReadInt(size);
+	unlockableDoors.clear();
+	for (int i = 0; i < size; i++)
+	{
+		CBinaryFrobMover* mover;
+		savefile->ReadObject( reinterpret_cast<idClass *&>( mover ) );
+		unlockableDoors.insert(mover);
+	}
 
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
@@ -1375,6 +1391,9 @@ void idAI::Spawn( void )
 
 	// init the move variables
 	StopMove( MOVE_STATUS_DONE );
+
+	// Schedule a post-spawn event to parse the rest of the spawnargs
+	PostEventMS( &EV_PostSpawn, 1 );
 }
 
 /*
@@ -9258,6 +9277,14 @@ float idAI::GetArmReachLength()
 
 bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 {
+	// Look through list of unlockable doors set by spawnarg
+	FrobMoverList::iterator i = unlockableDoors.find(frobMover);
+	if (i != unlockableDoors.end())
+	{
+		return true;
+	}
+	
+	// Look through attachments
 	int n = frobMover->m_UsedBy.Num();
 	for (int i = 0; i < m_attachments.Num(); i++)
 	{
@@ -9275,7 +9302,6 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 				return true;
 			}
 		}
-		
 	}
 	return false;
 }

@@ -20,6 +20,8 @@
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 #include "MoveState.h"
 
+#include <set>
+
 /*
 ===============================================================================
 
@@ -648,6 +650,9 @@ protected:
 	idAngles				eyeMax;
 	jointHandle_t			focusJoint;
 	jointHandle_t			orientationJoint;
+
+	typedef std::set<CBinaryFrobMover*> FrobMoverList;
+	FrobMoverList			unlockableDoors;
 
 public: // greebo: Made these public
 	// enemy variables
@@ -1417,6 +1422,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	//
 	// ai/ai_events.cpp
 	//
+	// The post-spawn event parses the spawnargs which refer to other entities
+	// that might not be available at spawn time.
+	void					Event_PostSpawn();
 	void					Event_Activate( idEntity *activator );
 
 /*****
