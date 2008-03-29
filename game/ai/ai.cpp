@@ -1505,38 +1505,12 @@ void idAI::Think( void )
 	}
 	
 	// Interleaved thinking
-	int frameNum = gameLocal.framenum;
-	if (frameNum < m_nextThinkFrame)
+	if (!ThinkingIsAllowed())
 	{
-		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool();
-		if (skipPVScheck)
-		{
-			return;
-		}
-
-		bool inPVS = gameLocal.InPlayerPVS(this);
-		if (!inPVS)
-		{
-			return;
-		}
+		return;
 	}
 
-	int thinkFrame = GetThinkInterleave();
-	if (thinkFrame > 1)
-	{
-		if (frameNum < (5 + gameLocal.random.RandomInt(5)))
-		{
-			m_nextThinkFrame = frameNum + 1;
-		}
-		else
-		{
-			m_nextThinkFrame = frameNum + thinkFrame;
-		}
-	}
-	else
-	{
-		m_nextThinkFrame = frameNum + 1;
-	}
+	SetNextThinkFrame();
 			
 	// save old origin and velocity for crashlanding
 	idVec3 oldOrigin = physicsObj.GetOrigin();
@@ -1799,6 +1773,68 @@ void idAI::Think( void )
 	}
 
 	m_lastThinkTime = gameLocal.time;
+}
+
+/*
+=====================
+idAI::ThinkingIsAllowed
+=====================
+*/
+bool idAI::ThinkingIsAllowed()
+{
+	int frameNum = gameLocal.framenum;
+	if (frameNum < m_nextThinkFrame)
+	{
+		// Ragdolls think every frame to avoid physics weirdness.
+		if (health <= 0)
+		{
+			return true;
+		}
+
+		// skips PVS check, AI will also do interleaved thinking when in player view.
+		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool();
+		if (skipPVScheck)
+		{
+			return false;
+		}
+
+		// PVS check: let the AI think every frame as long as the player sees them.
+		bool inPVS = gameLocal.InPlayerPVS(this);
+		if (!inPVS)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+
+/*
+=====================
+idAI::SetNextThinkFrame
+=====================
+*/
+void idAI::SetNextThinkFrame()
+{
+	int frameNum = gameLocal.framenum;
+	int thinkFrame = GetThinkInterleave();
+	if (thinkFrame > 1)
+	{
+		// Let them think for the first few frames to initialize state and tasks
+		if (frameNum < (5 + gameLocal.random.RandomInt(5)))
+		{
+			m_nextThinkFrame = frameNum + 1;
+		}
+		else
+		{
+			m_nextThinkFrame = frameNum + thinkFrame;
+		}
+	}
+	else
+	{
+		m_nextThinkFrame = frameNum + 1;
+	}
 }
 
 /*
