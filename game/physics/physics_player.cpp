@@ -1739,9 +1739,16 @@ void idPhysics_Player::CheckDuck( void ) {
 		{
 			if (waterLevel >= WATERLEVEL_WAIST)
 			{
-				// We're outside of water, just duck as requested
-				current.movementFlags |= PMF_DUCKED;
-				// TODO: Perform a trace to see if we're actually swimming or not
+				// greebo: We're waist-deep in water, trace down a few units to see if we're standing on ground
+				trace_t	trace;
+				idVec3 end = current.origin + gravityNormal * 30;
+				gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
+				
+				if (trace.fraction < 1.0f)
+				{
+					// We're not floating in deep water, we're standing in waist-deep water, duck as requested.
+					current.movementFlags |= PMF_DUCKED;
+				}
 			}
 			else
 			{
@@ -1791,7 +1798,6 @@ void idPhysics_Player::CheckDuck( void ) {
 				current.movementFlags |= PMF_DUCKED;
 
 				// Translate the origin a bit upwards to prevent the player head from "jumping" downwards
-				//float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
 				SetOrigin(player->GetEyePosition() + gravityNormal * pm_crouchviewheight.GetFloat());
 
 				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
