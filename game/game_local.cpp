@@ -259,6 +259,8 @@ void idGameLocal::Clear( void )
 
 	m_DifficultyManager.Clear();
 
+	m_AreaManager.Clear();
+
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_Interleave = 0;
 	m_LightgemSurface = NULL;
@@ -619,6 +621,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	CHidingSpotSearchCollection::Instance().Save(&savegame);
 
 	m_DifficultyManager.Save(&savegame);
+
+	m_AreaManager.Save(&savegame);
 
 	savegame.WriteInt( g_skill.GetInteger() );
 
@@ -1518,6 +1522,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	CHidingSpotSearchCollection::Instance().Restore(&savegame);
 
 	m_DifficultyManager.Restore(&savegame);
+
+	m_AreaManager.Restore(&savegame);
 
 	savegame.ReadInt( i );
 	g_skill.SetInteger( i );

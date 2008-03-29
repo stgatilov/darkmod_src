@@ -25,11 +25,13 @@ private:
 
 public:
 	void Save(idSaveGame* savefile) const;
-	void Restore(idSaveGame* savefile);
+	void Restore(idRestoreGame* savefile);
 
 	void AddForbiddenArea(int areanum, const idActor* actor);
 	bool AreaIsForbidden(int areanum, const idActor* actor) const;
 	void RemoveForbiddenArea(int areanum, const idActor* actor);
+
+	void Clear();
 };
 
 } // namespace ai

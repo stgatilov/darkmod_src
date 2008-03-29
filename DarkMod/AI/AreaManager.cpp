@@ -19,12 +19,28 @@ namespace ai
 
 void AreaManager::Save(idSaveGame* savefile) const
 {
-	//TODO
+	int size = _forbiddenAreas.size();
+	savefile->WriteInt(size);
+	for (ForbiddenAreasMap::const_iterator i = _forbiddenAreas.begin(); i != _forbiddenAreas.end(); i++)
+	{
+		savefile->WriteInt(i->first);
+		savefile->WriteObject(i->second);
+	}
 }
 
-void AreaManager::Restore(idSaveGame* savefile)
+void AreaManager::Restore(idRestoreGame* savefile)
 {
-	//TODO
+	int size;
+	savefile->ReadInt(size);
+	_forbiddenAreas.clear();
+	for (int i = 0; i < size; i++)
+	{
+		int areanum;
+		savefile->ReadInt(areanum);
+		idActor* actor;
+		savefile->ReadObject( reinterpret_cast<idClass *&>( actor ) );
+		_forbiddenAreas.insert(ForbiddenAreasMap::value_type(areanum, actor));
+	}
 }
 
 void AreaManager::AddForbiddenArea(int areanum, const idActor* actor)
@@ -65,6 +81,11 @@ void AreaManager::RemoveForbiddenArea(int areanum, const idActor* actor)
 	}
 }
 
+
+void AreaManager::Clear()
+{
+	_forbiddenAreas.clear();
+}
 
 
 } // namespace ai
