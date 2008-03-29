@@ -421,7 +421,12 @@ void idPhysics_Actor::SetWaterLevel( void ) {
 			waterLevel = WATERLEVEL_WAIST;
 
 			// check at head level
-			point = origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
+			// point = origin - ( bounds[1][2] - 1.0f ) * gravityNormal;
+
+			// greebo: Changed the check for head level to test the eyeheight. This is enough
+			// for letting AI drown or for the player to "feel" underwater.
+			point = static_cast<idActor*>(self)->GetEyePosition();
+
 			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
 			if ( contents & MASK_WATER ) {
 				waterLevel = WATERLEVEL_HEAD;
