@@ -6256,7 +6256,7 @@ void idPlayer::Think( void )
 			case WATERLEVEL_HEAD: waterStr = "WATERLEVEL: HEAD"; break;
 			default: waterStr = "WATERLEVEL: ???"; break;
 		};
-		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7, colorWhite, viewAxis, 1, 16);
+		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
 	}
 
 	// determine if portal sky is in pvs

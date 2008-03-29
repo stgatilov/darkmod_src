@@ -39,6 +39,7 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
 	waterType = 0;					// MOD_WATERPHYSICS
 	waterLevelChanged = true;
+	submerseFrame = 0;
 #endif		// MOD_WATERPHYSICS
 }
 
@@ -76,6 +77,7 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt((int)previousWaterLevel);
 	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
 	savefile->WriteBool(waterLevelChanged);
+	savefile->WriteInt(submerseFrame);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Save( savefile );
@@ -103,6 +105,7 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( (int &)previousWaterLevel );
 	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
 	savefile->ReadBool(waterLevelChanged);
+	savefile->ReadInt(submerseFrame);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Restore( savefile );
@@ -393,10 +396,13 @@ bool idPhysics_Actor::EvaluateContacts( void ) {
 idPhysics_Actor::SetWaterLevel
 =============
 */
-void idPhysics_Actor::SetWaterLevel( void ) {
+void idPhysics_Actor::SetWaterLevel( bool updateWaterLevelChanged ) {
 	//
 	// get waterlevel, accounting for ducking
 	//
+	// Remember the current water level
+	previousWaterLevel = waterLevel;
+
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
 
@@ -436,11 +442,16 @@ void idPhysics_Actor::SetWaterLevel( void ) {
 	else
 		this->SetWater(NULL);
 
-	// Set the changed flag
-	waterLevelChanged = (previousWaterLevel != waterLevel);
+	if (updateWaterLevelChanged)
+	{
+		// Set the changed flag
+		waterLevelChanged = (previousWaterLevel != waterLevel);
 
-	// Remember this water level, as the waterLevel itself is reset each frame
-	previousWaterLevel = waterLevel;
+		if (waterLevel == WATERLEVEL_HEAD && waterLevelChanged)
+		{
+			submerseFrame = gameLocal.framenum;
+		}
+	}
 }
 
 /*

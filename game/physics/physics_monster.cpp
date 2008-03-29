@@ -492,7 +492,7 @@ bool idPhysics_Monster::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 #ifdef MOD_WATERPHYSICS
 	// check water level / type
-	idPhysics_Monster::SetWaterLevel();		// MOD_WATERPHYSICS
+	SetWaterLevel(true);		// MOD_WATERPHYSICS
 #endif		// MOD_WATERPHYSICS
 
 	// check if on the ground

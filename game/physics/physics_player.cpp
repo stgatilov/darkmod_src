@@ -645,8 +645,14 @@ void idPhysics_Player::WaterMove( void ) {
 		// greebo: Standard downwards velocity is configurable via this CVAR
 		if (waterLevel >= WATERLEVEL_HEAD)
 		{
-			// Player is completely submersed, apply upwards velocity
-			wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat(); // sink towards bottom	
+			// greebo: Player is completely submersed, apply upwards velocity, but let it raise over time
+			float factor = (gameLocal.framenum - submerseFrame) / 60;
+			if (factor > 1) {
+				factor = 1;
+			}
+
+			// This makes the player slowly rise/sink in water
+			wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat() * factor;
 		}
 		else
 		{
@@ -1707,9 +1713,6 @@ Sets clip model size
 ==============
 */
 void idPhysics_Player::CheckDuck( void ) {
-	trace_t	trace;
-	idVec3 end;
-	idBounds bounds;
 	float maxZ;
 
 	if ( current.movementType == PM_DEAD ) {
@@ -1722,11 +1725,13 @@ void idPhysics_Player::CheckDuck( void ) {
 		}
 		else if (!IsMantling()) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
-			// stand up if possible
-			if ( current.movementFlags & PMF_DUCKED ) 
+			// stand up if possible (but only if we're not underwater
+			if ( current.movementFlags & PMF_DUCKED && waterLevel < WATERLEVEL_HEAD ) 
 			{
 				// try to stand up
-				end = current.origin - ( pm_normalheight.GetFloat() - pm_crouchheight.GetFloat() ) * gravityNormal;
+				idVec3 end = current.origin - ( pm_normalheight.GetFloat() - pm_crouchheight.GetFloat() ) * gravityNormal;
+
+				trace_t	trace;
 				gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
 				if ( trace.fraction >= 1.0f )
 					current.movementFlags &= ~PMF_DUCKED;
@@ -1741,11 +1746,49 @@ void idPhysics_Player::CheckDuck( void ) {
 		{
 			maxZ = pm_normalheight.GetFloat();
 		}
+
+		if (waterLevel == WATERLEVEL_HEAD)
+		{
+			// greebo: We're underwater, set the clipmodel to the crouched size
+			maxZ = pm_crouchheight.GetFloat();
+		}
+
+		// greebo: Check if we've submersed in a liquid. If yes: set the clipmodel to crouchheight
+		// And set the DUCKED flag to 1.
+		if (waterLevelChanged)
+		{
+			if (waterLevel == WATERLEVEL_HEAD)
+			{
+				// We've just submersed into water, set the model to ducked
+				current.movementFlags |= PMF_DUCKED;
+
+				// Translate the origin a bit upwards to prevent the player head from "jumping" downwards
+				float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
+				SetOrigin(GetOrigin() + idVec3(0,0, heightDifference - 1));
+
+				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
+				static_cast<idActor*>(self)->SetEyeHeight(pm_crouchviewheight.GetFloat());
+			}
+			else if (waterLevel == WATERLEVEL_WAIST && previousWaterLevel == WATERLEVEL_HEAD)
+			{
+				// Clear the flag again
+				current.movementFlags &= ~PMF_DUCKED;
+
+				float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
+				SetOrigin(GetOrigin() - idVec3(0,0, heightDifference));
+
+				maxZ = pm_normalheight.GetFloat();
+
+				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
+				static_cast<idActor*>(self)->SetEyeHeight(pm_normalviewheight.GetFloat());
+			}
+		}
 	}
+
 	// if the clipModel height should change
 	if ( clipModel->GetBounds()[1][2] != maxZ ) 
 	{
-		bounds = clipModel->GetBounds();
+		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = maxZ;
 		if ( pm_usecylinder.GetBool() ) {
 			clipModel->LoadModel( idTraceModel( bounds, 8 ) );
@@ -2163,7 +2206,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 
 	// set watertype and waterlevel
-	idPhysics_Player::SetWaterLevel();
+	idPhysics_Player::SetWaterLevel(true); // greebo: Update the previousWaterLevel here
 
 	// check for ground
 	idPhysics_Player::CheckGround();
@@ -2257,7 +2300,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 
 	// set watertype, waterlevel and groundentity
-	idPhysics_Player::SetWaterLevel();
+	idPhysics_Player::SetWaterLevel(false); // greebo: Don't update the previousWaterLevel this time
 	idPhysics_Player::CheckGround();
 
 	// move the player velocity back into the world frame
@@ -2812,8 +2855,9 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	idVec3 masterOrigin, oldOrigin;
 	idMat3 masterAxis;
 
-	waterLevel = WATERLEVEL_NONE;
-	waterType = 0;
+	// greebo: Don't clear the WATERLEVELs each frame, they are updated anyway.
+	//waterLevel = WATERLEVEL_NONE;
+	//waterType = 0;
 	oldOrigin = current.origin;
 
 	clipModel->Unlink();
