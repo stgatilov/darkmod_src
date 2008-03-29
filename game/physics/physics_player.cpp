@@ -1731,17 +1731,20 @@ Sets clip model size
 void idPhysics_Player::CheckDuck( void ) {
 	float maxZ;
 
+	idActor* player = static_cast<idActor*>(self);
+	int oldMovementFlags = current.movementFlags;
+
 	if ( current.movementType == PM_DEAD ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when climbing a ladder or rope
 		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope)
 		{
-			if (waterLevel >= WATERLEVEL_WAIST)
+			if (waterLevel <= WATERLEVEL_WAIST)
 			{
 				// greebo: We're waist-deep in water, trace down a few units to see if we're standing on ground
 				trace_t	trace;
-				idVec3 end = current.origin + gravityNormal * 30;
+				idVec3 end = current.origin + gravityNormal * 20;
 				gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
 				
 				if (trace.fraction < 1.0f)
@@ -1756,18 +1759,52 @@ void idPhysics_Player::CheckDuck( void ) {
 				current.movementFlags |= PMF_DUCKED;
 			}
 		}
-		else if (!IsMantling()) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
+		else if (!IsMantling() && command.upmove >= 0) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
-			// stand up if possible (but only if we're not underwater
-			if ( current.movementFlags & PMF_DUCKED && waterLevel < WATERLEVEL_HEAD ) 
+			// command.upmove is not negative anymore, check if we are still in crouch mode
+			// stand up if appropriate
+			if ( current.movementFlags & PMF_DUCKED ) 
 			{
-				// try to stand up
-				idVec3 end = current.origin - ( pm_normalheight.GetFloat() - pm_crouchheight.GetFloat() ) * gravityNormal;
+				bool canStandUp = true;
 
-				trace_t	trace;
-				gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
-				if ( trace.fraction >= 1.0f )
-					current.movementFlags &= ~PMF_DUCKED;
+				if (waterLevel >= WATERLEVEL_HEAD)
+				{
+					// greebo: We're still in water, check if there is ground below us so that we can stand up
+					trace_t	trace;
+					float viewHeightDelta = pm_normalviewheight.GetFloat() - pm_crouchviewheight.GetFloat();
+					idVec3 end = current.origin + gravityNormal * viewHeightDelta;
+					gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
+
+					if (trace.fraction == 1.0f)
+					{
+						canStandUp = false; // trace missed, no ground below
+					}
+					else 
+					{
+						// The ground trace hit a target, see if our eyes would emerge from the water
+						idVec3 pointAboveHead = player->GetEyePosition() - gravityNormal * viewHeightDelta * (1.0f - trace.fraction);
+
+						int contents = gameLocal.clip.Contents( pointAboveHead, NULL, mat3_identity, -1, self );
+						if (contents & MASK_WATER)
+						{
+							canStandUp = false; // The point above our head is in water
+						}
+					}
+				}
+
+				if (canStandUp)
+				{
+					// greebo: We're not in deep water, so try to stand up
+					idVec3 end = current.origin - ( pm_normalheight.GetFloat() - pm_crouchheight.GetFloat() ) * gravityNormal;
+
+					// Now perform the upwards trace to check if we have room to stand up
+					trace_t	trace;
+					gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
+					if ( trace.fraction >= 1.0f ) {
+						// We have room above us, so turn off the crouch flag
+						current.movementFlags &= ~PMF_DUCKED;
+					}
+				}
 			}
 		}
 
@@ -1790,8 +1827,6 @@ void idPhysics_Player::CheckDuck( void ) {
 		// And set the DUCKED flag to 1.
 		if (waterLevelChanged)
 		{
-			idActor* player = static_cast<idActor*>(self);
-
 			if (waterLevel == WATERLEVEL_HEAD)
 			{
 				// We've just submersed into water, set the model to ducked
@@ -1803,14 +1838,14 @@ void idPhysics_Player::CheckDuck( void ) {
 				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
 				player->SetEyeHeight(pm_crouchviewheight.GetFloat());
 			}
-			else if (waterLevel == WATERLEVEL_WAIST && previousWaterLevel == WATERLEVEL_HEAD)
+ 			else if ((oldMovementFlags & PMF_DUCKED) && waterLevel == WATERLEVEL_WAIST && previousWaterLevel == WATERLEVEL_HEAD)
 			{
-				// Clear the flag again
+				// We're just floating up to the water surface, switch back to non-crouch mode
+				// Clear the flag again, just to be sure
 				current.movementFlags &= ~PMF_DUCKED;
 
-				// TODO: Perform a trace to see how far we can move downwards
-				float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
-				SetOrigin(GetOrigin() - idVec3(0,0, heightDifference));
+				// greebo: check: Perform a trace to see how far we can move downwards?
+				SetOrigin(player->GetEyePosition() + gravityNormal * pm_normalviewheight.GetFloat());
 
 				maxZ = pm_normalheight.GetFloat();
 
