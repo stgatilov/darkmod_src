@@ -544,18 +544,16 @@ idPhysics_Player::Friction
 Handles both ground friction and water friction
 ==================
 */
-void idPhysics_Player::Friction( void ) {
-	idVec3	vel;
-	float	speed, newspeed, control;
-	float	drop;
-	
-	vel = current.velocity;
+void idPhysics_Player::Friction( void )
+{
+	idVec3 vel = current.velocity;
+
 	if ( walking ) {
 		// ignore slope movement, remove all velocity in gravity direction
 		vel += (vel * gravityNormal) * gravityNormal;
 	}
 
-	speed = vel.Length();
+	float speed = vel.Length();
 	if ( speed < 1.0f ) {
 		// remove all movement orthogonal to gravity, allows for sinking underwater
 		if ( fabs( current.velocity * gravityNormal ) < 1e-5f ) {
@@ -563,11 +561,14 @@ void idPhysics_Player::Friction( void ) {
 		} else {
 			current.velocity = (current.velocity * gravityNormal) * gravityNormal;
 		}
-		// FIXME: still have z friction underwater?
+		// greebo: We still want the player to slow down when reaching the surface
+		// This is where velocities are getting really small, but never actually reach 0,
+		// that's why this z-friction is necessary.
+		current.velocity.z *= cv_pm_water_z_friction.GetFloat();
 		return;
 	}
 
-	drop = 0;
+	float drop = 0;
 
 	// spectator friction
 	if ( current.movementType == PM_SPECTATOR ) {
@@ -580,7 +581,7 @@ void idPhysics_Player::Friction( void ) {
 			// if getting knocked back, no friction
 			if ( !(current.movementFlags & PMF_TIME_KNOCKBACK) ) 
 			{
-				control = speed < PM_STOPSPEED ? PM_STOPSPEED : speed;
+				float control = speed < PM_STOPSPEED ? PM_STOPSPEED : speed;
 				drop += control * PM_FRICTION * frametime;
 			}
 		}
@@ -595,7 +596,7 @@ void idPhysics_Player::Friction( void ) {
 	}
 
 	// scale the velocity
-	newspeed = speed - drop;
+	float newspeed = speed - drop;
 	if (newspeed < 0) {
 		newspeed = 0;
 	}
@@ -619,40 +620,45 @@ idPhysics_Player::WaterMove
 ===================
 */
 void idPhysics_Player::WaterMove( void ) {
-	idVec3	wishvel;
-	float	wishspeed;
-	idVec3	wishdir;
-	float	scale;
-	float	vel;
-
-
 	// Keep track of whether jump is held down for mantling out of water
 	if ( command.upmove > 10 ) 
 	{
 		current.movementFlags |= PMF_JUMP_HELD;
 	}
 	else	
+	{
 		current.movementFlags &= ~PMF_JUMP_HELD;
+	}
 
 	// Lower weapons while swimming
-// TODO : In future, only disable some weapons, keep the sword for underwater bashing?
-	static_cast<idPlayer *>(self)->SetImmobilization( "WaterMove", EIM_WEAPON_SELECT | EIM_ATTACK );
+	// TODO : In future, only disable some weapons, keep the sword for underwater bashing?
+	static_cast<idPlayer*>(self)->SetImmobilization( "WaterMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 
 	idPhysics_Player::Friction();
 
-	scale = idPhysics_Player::CmdScale( command );
+	float scale = idPhysics_Player::CmdScale( command );
+
+	idVec3 wishvel;
 
 	// user intentions
 	if ( !scale ) {
 		// greebo: Standard downwards velocity is configurable via this CVAR
-		wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat(); // sink towards bottom
+		if (waterLevel >= WATERLEVEL_HEAD)
+		{
+			// Player is completely submersed, apply upwards velocity
+			wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat(); // sink towards bottom	
+		}
+		else
+		{
+			wishvel.Zero();
+		}
 	} else {
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;
 	}
 
-	wishdir = wishvel;
-	wishspeed = wishdir.Normalize();
+	idVec3 wishdir = wishvel;
+	float wishspeed = wishdir.Normalize();
 
 	if ( wishspeed > playerSpeed * PM_SWIMSCALE ) {
 		wishspeed = playerSpeed * PM_SWIMSCALE;
@@ -662,7 +668,7 @@ void idPhysics_Player::WaterMove( void ) {
 
 	// make sure we can go up slopes easily under water
 	if ( groundPlane && ( current.velocity * groundTrace.c.normal ) < 0.0f ) {
-		vel = current.velocity.Length();
+		float vel = current.velocity.Length();
 		// slide along the ground plane
 		current.velocity.ProjectOntoPlane( groundTrace.c.normal, OVERCLIP );
 
