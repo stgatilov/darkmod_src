@@ -38,6 +38,7 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 #ifdef MOD_WATERPHYSICS
 	waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
 	waterType = 0;					// MOD_WATERPHYSICS
+	waterLevelChanged = true;
 #endif		// MOD_WATERPHYSICS
 }
 
@@ -72,7 +73,9 @@ void idPhysics_Actor::Save( idSaveGame *savefile ) const {
 
 #ifdef MOD_WATERPHYSICS
 	savefile->WriteInt( (int)waterLevel );	// MOD_WATERPHYSICS
+	savefile->WriteInt((int)previousWaterLevel);
 	savefile->WriteInt( waterType );		// MOD_WATERPHYSICS
+	savefile->WriteBool(waterLevelChanged);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Save( savefile );
@@ -97,7 +100,9 @@ void idPhysics_Actor::Restore( idRestoreGame *savefile ) {
 
 #ifdef MOD_WATERPHYSICS
 	savefile->ReadInt( (int &)waterLevel );		// MOD_WATERPHYSICS
+	savefile->ReadInt( (int &)previousWaterLevel );
 	savefile->ReadInt( waterType );				// MOD_WATERPHYSICS
+	savefile->ReadBool(waterLevelChanged);
 #endif 		// MOD_WATERPHYSICS
 
 	groundEntityPtr.Restore( savefile );
@@ -389,23 +394,18 @@ idPhysics_Actor::SetWaterLevel
 =============
 */
 void idPhysics_Actor::SetWaterLevel( void ) {
-	idVec3		point;
-	idVec3		origin;
-	idBounds	bounds;
-	int			contents;
-
 	//
 	// get waterlevel, accounting for ducking
 	//
 	waterLevel = WATERLEVEL_NONE;
 	waterType = 0;
 
-	origin = this->GetOrigin();
-	bounds = clipModel->GetBounds();
+	const idVec3& origin = this->GetOrigin();
+	const idBounds& bounds = clipModel->GetBounds();
 
 	// check at feet level
-	point = origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
-	contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
+	idVec3 point = origin - ( bounds[0][2] + 1.0f ) * gravityNormal;
+	int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, self );
 	if ( contents & MASK_WATER ) {
 		// sets water entity
 		this->SetWaterLevelf();
@@ -435,6 +435,12 @@ void idPhysics_Actor::SetWaterLevel( void ) {
 	}
 	else
 		this->SetWater(NULL);
+
+	// Set the changed flag
+	waterLevelChanged = (previousWaterLevel != waterLevel);
+
+	// Remember this water level, as the waterLevel itself is reset each frame
+	previousWaterLevel = waterLevel;
 }
 
 /*

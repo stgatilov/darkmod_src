@@ -95,7 +95,11 @@ protected:
 #ifdef MOD_WATERPHYSICS
 	virtual void		SetWaterLevel( void );		// MOD_WATERPHYSICS
 	waterLevel_t		waterLevel;					// MOD_WATERPHYSICS
+	waterLevel_t		previousWaterLevel;			// greebo: The water level of the previous frame
 	int					waterType;					// MOD_WATERPHYSICS
+
+	// greebo: This is TRUE if the water level has changed since the last physics evaluation (frame)
+	bool				waterLevelChanged;
 #endif
 
 	idClipModel *			clipModel;			// clip model used for collision detection
