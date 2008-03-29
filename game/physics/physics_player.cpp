@@ -1735,9 +1735,19 @@ void idPhysics_Player::CheckDuck( void ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when climbing a ladder or rope
-		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope && waterLevel < WATERLEVEL_HEAD) {
-			// duck
-			current.movementFlags |= PMF_DUCKED;
+		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope)
+		{
+			if (waterLevel >= WATERLEVEL_WAIST)
+			{
+				// We're outside of water, just duck as requested
+				current.movementFlags |= PMF_DUCKED;
+				// TODO: Perform a trace to see if we're actually swimming or not
+			}
+			else
+			{
+				// We're outside of water, just duck as requested
+				current.movementFlags |= PMF_DUCKED;
+			}
 		}
 		else if (!IsMantling()) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
@@ -1773,30 +1783,33 @@ void idPhysics_Player::CheckDuck( void ) {
 		// And set the DUCKED flag to 1.
 		if (waterLevelChanged)
 		{
+			idActor* player = static_cast<idActor*>(self);
+
 			if (waterLevel == WATERLEVEL_HEAD)
 			{
 				// We've just submersed into water, set the model to ducked
 				current.movementFlags |= PMF_DUCKED;
 
 				// Translate the origin a bit upwards to prevent the player head from "jumping" downwards
-				float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
-				SetOrigin(GetOrigin() + idVec3(0,0, heightDifference - 1));
+				//float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
+				SetOrigin(player->GetEyePosition() + gravityNormal * pm_crouchviewheight.GetFloat());
 
 				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
-				static_cast<idActor*>(self)->SetEyeHeight(pm_crouchviewheight.GetFloat());
+				player->SetEyeHeight(pm_crouchviewheight.GetFloat());
 			}
 			else if (waterLevel == WATERLEVEL_WAIST && previousWaterLevel == WATERLEVEL_HEAD)
 			{
 				// Clear the flag again
 				current.movementFlags &= ~PMF_DUCKED;
 
+				// TODO: Perform a trace to see how far we can move downwards
 				float heightDifference = pm_normalheight.GetFloat() - pm_crouchheight.GetFloat();
 				SetOrigin(GetOrigin() - idVec3(0,0, heightDifference));
 
 				maxZ = pm_normalheight.GetFloat();
 
 				// Set the Eye height directly to the new value, to avoid the smoothing happening in idPlayer::Move()
-				static_cast<idActor*>(self)->SetEyeHeight(pm_normalviewheight.GetFloat());
+				player->SetEyeHeight(pm_normalviewheight.GetFloat());
 			}
 		}
 	}
