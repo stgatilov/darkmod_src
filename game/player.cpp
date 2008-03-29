@@ -3950,7 +3950,15 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		bobCycle = 0;
 		bobFoot = 0;
 		bobfracsin = 0;
-	} else if ( ( !usercmd.forwardmove && !usercmd.rightmove ) || ( xyspeed <= MIN_BOB_SPEED ) ) {
+	} 
+	else if (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD || noclip)
+	{
+		// No viewbob when fully underwater or in noclip mode, start at beginning of cycle again
+		bobCycle = 0;
+		bobFoot = 0;
+		bobfracsin = 0;
+	}
+	else if ( ( !usercmd.forwardmove && !usercmd.rightmove ) || ( xyspeed <= MIN_BOB_SPEED ) ) {
 		// Play a footstep sound when we stop walking (the foot is lowered to the ground;
 		// also this prevents exploits)
 		if (bobCycle != 0) {
@@ -3960,7 +3968,8 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		bobCycle = 0;
 		bobFoot = 0;
 		bobfracsin = 0;
-	} else {
+	} 
+	else {
 		if ( physicsObj.IsCrouching() ) {
 			bobmove = pm_crouchbob.GetFloat();
 			// ducked characters never play footsteps
