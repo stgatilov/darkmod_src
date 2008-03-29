@@ -651,6 +651,14 @@ void idPhysics_Player::WaterMove( void ) {
 				factor = 1;
 			}
 
+			if (command.upmove < 0)
+			{
+				// greebo: upmove is negative, we probably have crouch mode activated
+				command.upmove = 0;
+				// Set the factor to 0, toggle crouch can here be used to keep the player at the current height
+				factor = 0;
+			}
+
 			// This makes the player slowly rise/sink in water
 			wishvel = gravityNormal * cv_pm_water_downwards_velocity.GetFloat() * factor;
 		}
@@ -659,6 +667,14 @@ void idPhysics_Player::WaterMove( void ) {
 			wishvel.Zero();
 		}
 	} else {
+
+		if (waterLevel >= WATERLEVEL_WAIST && command.upmove < 0)
+		{
+			// greebo: This is to compensate the toggle crouch downwards velocity
+			// otherwise the player is rapidly sinking when crouch is on.
+			command.upmove = 0;
+		}
+
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;
 	}
@@ -1719,7 +1735,7 @@ void idPhysics_Player::CheckDuck( void ) {
 		maxZ = pm_deadheight.GetFloat();
 	} else {
 		// stand up when climbing a ladder or rope
-		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope ) {
+		if ( command.upmove < 0 && !m_bOnClimb && !m_bOnRope && waterLevel < WATERLEVEL_HEAD) {
 			// duck
 			current.movementFlags |= PMF_DUCKED;
 		}
