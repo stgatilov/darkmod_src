@@ -6759,13 +6759,20 @@ void idEntity::LoadTDMSettings(void)
 
 void idEntity::UpdateFrob(void)
 {
-	CDarkModPlayer *pDM;
-
-	pDM = g_Global.m_DarkModPlayer;
+	CDarkModPlayer* pDM = g_Global.m_DarkModPlayer;
 
 	// hidden objects are skipped
-	if(pDM == NULL || IsHidden() )
-		goto Quit;
+	if (pDM == NULL || IsHidden() ) 
+	{
+		return;
+	}
+
+	// greebo: Allow the grabbed entity to stay highlighted
+	if (cv_dragged_item_highlight.GetBool() && pDM->grabber->GetSelected() == this)
+	{
+		FrobHighlight(true);
+		return;
+	}
 
 	if( !m_bFrobbed )	
 	{
@@ -6795,7 +6802,7 @@ void idEntity::UpdateFrob(void)
 			FrobHighlight(false );
 		}
 
-		goto Quit;
+		return;
 	}
 
 	// We are frobbed this frame
@@ -6814,9 +6821,6 @@ void idEntity::UpdateFrob(void)
 		if( pDM->m_FrobEntityPrevious.GetEntity() == NULL )
 			pDM->m_FrobEntityPrevious = this;
 	}
-
-Quit:
-	return;
 }
 
 void idEntity::FrobHighlight( bool bVal )
