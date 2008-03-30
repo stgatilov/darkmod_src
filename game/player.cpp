@@ -9321,6 +9321,12 @@ void idPlayer::FrobCheck( void )
 		return;
 	}
 
+	// greebo: Don't run the frobcheck when we're dragging items around
+	if (m_bGrabberActive)
+	{
+		return;
+	}
+
 	idVec3	EyePos = GetEyePosition();
 	idVec3 start = EyePos;
 	idVec3 end = start + viewAngles.ToForward() * g_Global.m_MaxFrobDistance;
