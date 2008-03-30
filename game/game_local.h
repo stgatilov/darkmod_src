@@ -126,7 +126,7 @@ extern idSoundWorld *				gameSoundWorld;
 extern idSoundWorld *			gameSoundWorldBuf;
 
 // the "gameversion" client command will print this plus compile date
-#define	GAME_VERSION		"baseDOOM-1"
+#define	GAME_VERSION		"The Dark Mod"
 
 // classes used by idGameLocal
 class idEntity;
