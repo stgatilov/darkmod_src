@@ -137,6 +137,7 @@ HidingSpotSearchCollection.cpp \
 idAbsenceMarkerEntity.cpp \
 Intersection.cpp \
 liquid.cpp \
+MeleeWeapon.cpp \
 MissionData.cpp \
 ModMenu.cpp \
 overlaysys.cpp \
@@ -200,6 +201,7 @@ AI/Tasks/InvestigateSpotTask.cpp \
 AI/Tasks/MeleeCombatTask.cpp \
 AI/Tasks/MoveToCoverTask.cpp \
 AI/Tasks/MoveToPositionTask.cpp \
+AI/Tasks/PathAnimTask.cpp \
 AI/Tasks/PathCornerTask.cpp \
 AI/Tasks/PathHideTask.cpp \
 AI/Tasks/PathShowTask.cpp \
