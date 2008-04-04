@@ -103,11 +103,6 @@ const float CLIMB_SURFCHECK_DELTA = 5.0f;
 const float CLIMB_SURFCHECK_NORMDELTA = 20.0f;
 
 /**
-* How far the edge of the player clipbox is away from the ladder
-**/
-const float LADDER_DISTANCE = 10.0f;
-
-/**
 * how far away is the player allowed to push out from the climbable section?
 * Measured from the last good attachment point at the origin
 **/
@@ -1377,7 +1372,7 @@ void idPhysics_Player::LadderMove( void )
 	if( SurfTrace.fraction != 1.0f && SurfTrace.c.material 
 		&& (SurfTrace.c.material->GetSurfaceFlags() & SURF_LADDER ) )
 	{
-		m_vClimbPoint = SurfTrace.endpos + LADDER_DISTANCE * ClimbNormXY;
+		m_vClimbPoint = SurfTrace.endpos + cv_pm_climb_distance.GetFloat() * ClimbNormXY;
 		AttachVel = 10 * (m_vClimbPoint - current.origin);
 
 		// Now that we have a valid point, don't need to use the initial one
