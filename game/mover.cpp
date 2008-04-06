@@ -1277,14 +1277,11 @@ idMover::Event_Rotate
 ================
 */
 void idMover::Event_Rotate( idAngles &angles ) {
-	idAngles ang;
-
 	if ( rotate_thread ) {
 		DoneRotating();
 	}
 
-	physicsObj.GetLocalAngles( ang );
-	dest_angles = ang + angles * ( move_time - ( acceltime + deceltime ) / 2 ) * 0.001f;
+	dest_angles = physicsObj.GetLocalAngles() + angles * ( move_time - ( acceltime + deceltime ) / 2 ) * 0.001f;
 
 	BeginRotation( idThread::CurrentThread(), false );
 }
@@ -1295,14 +1292,11 @@ idMover::Event_RotateOnce
 ================
 */
 void idMover::Event_RotateOnce( idAngles &angles ) {
-	idAngles ang;
-
 	if ( rotate_thread ) {
 		DoneRotating();
 	}
 
-	physicsObj.GetLocalAngles( ang );
-	dest_angles = ang + angles;
+	dest_angles = physicsObj.GetLocalAngles() + angles;
 
 	BeginRotation( idThread::CurrentThread(), true );
 }

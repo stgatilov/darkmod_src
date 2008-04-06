@@ -453,6 +453,11 @@ void idPhysics_Parametric::GetLocalAngles( idAngles &curAngles ) const {
 	curAngles = current.localAngles;
 }
 
+const idAngles& idPhysics_Parametric::GetLocalAngles() const
+{
+	return current.localAngles;
+}
+
 /*
 ================
 idPhysics_Parametric::SetClipModel

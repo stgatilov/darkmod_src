@@ -480,8 +480,9 @@ void CBinaryFrobMover::DoneStateChange(void)
 	else
 	{
 		// in all other cases, use the angles and position of origin to check if the door is open or closed
-		checkClose = GetPhysics()->GetAxis().ToAngles().Compare(m_ClosedAngles)
-			&& GetPhysics()->GetOrigin().Compare(m_ClosedOrigin);
+		// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+		checkClose = physicsObj.GetLocalAngles().Compare(m_ClosedAngles, VECTOR_EPSILON)
+			&& physicsObj.GetOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON);
 	}
 
 	if (checkClose)
