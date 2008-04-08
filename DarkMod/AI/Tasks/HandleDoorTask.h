@@ -53,6 +53,13 @@ public:
 
 	virtual void OnFinish(idAI* owner);
 
+	// this checks if the gap is large enough to fit through 
+	// partially openend doors (blocked, interrupted)
+	bool FitsThrough();
+
+	// open door routine (checks if the door is locked and starts to open it when possible)
+	bool OpenDoor();
+
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 

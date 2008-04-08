@@ -56,6 +56,7 @@ CBinaryFrobMover::CBinaryFrobMover(void)
 	m_Locked = false;
 	m_bInterruptable = true;
 	m_bInterrupted = false;
+	m_StoppedDueToBlock = false;
 	m_bIntentOpen = false;
 	m_StateChange = false;
 	m_Rotating = false;
@@ -76,6 +77,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_StateChange);
 	savefile->WriteBool(m_bInterruptable);
 	savefile->WriteBool(m_bInterrupted);
+	savefile->WriteBool(m_StoppedDueToBlock);
 	
 	savefile->WriteAngles(m_Rotate);
 		
@@ -113,6 +115,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_StateChange);
 	savefile->ReadBool(m_bInterruptable);
 	savefile->ReadBool(m_bInterrupted);
+	savefile->ReadBool(m_StoppedDueToBlock);
 	
 	savefile->ReadAngles(m_Rotate);
 	
@@ -313,6 +316,8 @@ void CBinaryFrobMover::ToggleLock(void)
 
 void CBinaryFrobMover::Open(bool bMaster)
 {
+	m_StoppedDueToBlock = false;
+
 	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
@@ -373,6 +378,8 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 void CBinaryFrobMover::Close(bool bMaster)
 {
+	m_StoppedDueToBlock = false;
+
 	idAngles tempAng;
 
 	// If the door is already closed, we don't have anything to do. :)
@@ -552,6 +559,8 @@ void CBinaryFrobMover::Event_TeamBlocked( idEntity *blockedPart, idEntity *block
 	if (m_stopWhenBlocked)
 	{
 		m_bInterrupted = true;
+		m_StoppedDueToBlock = true;
+
 		Event_StopRotating();
 		Event_StopMoving();
 
@@ -670,4 +679,22 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	float fraction = delta[index]/fullRotation[index];
 
 	return fraction;
+}
+
+int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
+{
+	idClipModel *clipModel = GetPhysics()->GetClipModel();
+	if (clipModel == NULL)
+	{
+		gameLocal.Error("FrobMover %s has no clip model", name.c_str());
+	}
+
+	idBounds bounds = clipModel->GetBounds();
+
+	idVec3 center = (m_ClosedPos + GetPhysics()->GetOrigin()) * 0.5;
+	center.z = bounds[1].z + 1;
+
+	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
+
+	return areaNum;
 }

@@ -49,6 +49,11 @@ public:
 
 	bool					IsBlocked( void );
 
+	ID_INLINE idPhysics_Parametric*	GetMoverPhysics()
+	{
+		return &physicsObj;
+	}
+
 
 protected:
 	typedef enum {

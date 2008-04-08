@@ -60,6 +60,12 @@ public:
 		return m_bInterrupted;
 	}
 
+	bool					WasStoppedDueToBlock()
+	{
+		return 	m_StoppedDueToBlock;
+	}
+
+
 	/**
 	* This is the non-script version of GetLock
 	*/
@@ -125,6 +131,11 @@ public:
 		return m_OpenDir;
 	}
 
+	ID_INLINE const idAngles& GetClosedAngles() const
+	{
+		return m_ClosedAngles;
+	}
+
 	/**
 	* This is used to get the remaining translation left on the clip model
 	* if it is moving
@@ -141,6 +152,9 @@ public:
 		idVec3& out_deltaPosition,
 		idAngles& out_deltaAngles
 	);
+
+	// angua: returns the AAS area the center of the door is located in
+	int GetFrobMoverAasArea(idAAS* aas);
 
 protected:
 
@@ -185,6 +199,13 @@ protected:
 	* Set to true if the door was stopped mid-rotation
 	**/
 	bool						m_bInterrupted;
+
+	/**
+	 *	angua: this is set true if the door was interrupted by a blocking object
+	 *	the flag of the physics object is cleared after a frame, this one stays true 
+	 *	until the door changes its state again
+	 */
+	bool						m_StoppedDueToBlock;
 
 	/**
 	* Read from the spawnargs, interpreted into m_OpenAngles and m_ClosedAngles

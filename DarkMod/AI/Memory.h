@@ -12,6 +12,7 @@
 
 #include "../idlib/precompiled.h"
 #include "../BinaryFrobMover.h"
+#include "DoorInfo.h"
 
 namespace ai
 {
@@ -262,11 +263,16 @@ public:
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	idVec3 positionBeforeTakingCover;
 
+	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;
 	// Variables related to door opening/closing process
 	struct DoorRelatedVariables
 	{
-		idEntityPtr<CBinaryFrobMover> frobMover;
+		idEntityPtr<CBinaryFrobMover> currentFrobMover;
+
+		DoorInfoMap doorInfo;
 	} doorRelated;
+
+	
 
 	Memory() :
 		alertState(ERelaxed),
@@ -344,7 +350,7 @@ public:
 		savefile->WriteBool(fleeingDone);
 		savefile->WriteVec3(positionBeforeTakingCover);
 
-		doorRelated.frobMover.Save(savefile);
+		doorRelated.currentFrobMover.Save(savefile);
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -393,8 +399,26 @@ public:
 		savefile->ReadBool(fleeingDone);
 		savefile->ReadVec3(positionBeforeTakingCover);
 
-		doorRelated.frobMover.Restore(savefile);
+		doorRelated.currentFrobMover.Restore(savefile);
 	}
+
+	DoorInfo& GetDoorInfo(CFrobDoor* door)
+	{
+		DoorInfoMap::iterator i = doorRelated.doorInfo.find(door);
+
+		if (i != doorRelated.doorInfo.end())
+		{
+			return *(i->second);
+		}
+		else
+		{
+			DoorInfoPtr info(new DoorInfo);
+			std::pair<DoorInfoMap::iterator, bool> result =
+				doorRelated.doorInfo.insert(DoorInfoMap::value_type(door, info));
+			return *(result.first->second);
+		}
+	}
+	
 };
 
 } // namespace ai
