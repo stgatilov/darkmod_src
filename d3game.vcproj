@@ -546,6 +546,9 @@
 					RelativePath="game\ai\AI_Vagary.cpp">
 				</File>
 				<File
+					RelativePath="DarkMod\AI\DoorInfo.h">
+				</File>
+				<File
 					RelativePath="game\ai\MoveState.h">
 				</File>
 				<File
