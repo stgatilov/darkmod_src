@@ -892,6 +892,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bCanBeKnockedOut;
 
 	/**
+	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
+	 */
+	bool					m_bCanOperateDoors;
+
+	/**
 	* Head center offset in head joint coordinates, relative to head joint
 	* When this offset is added to the head joint, we should be at the head center
 	**/
