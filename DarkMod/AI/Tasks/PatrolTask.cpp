@@ -65,7 +65,6 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// Store the path entity back into the mind, it might have changed
 		owner->GetMemory().currentPath = path;
-
 	}
 	else
 	{

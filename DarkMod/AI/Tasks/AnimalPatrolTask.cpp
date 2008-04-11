@@ -36,7 +36,28 @@ void AnimalPatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (owner->spawnArgs.GetBool("patrol", "1")) 
 	{
-		
+		idPathCorner* path = owner->GetMemory().currentPath.GetEntity();
+
+		// Check if we already have a path entity
+		if (path == NULL)
+		{
+			// Path not yet initialised, get it afresh
+			// Find the next path associated with the owning AI
+			path = idPathCorner::RandomPath(owner, NULL);
+		}
+
+		// If the path is still NULL, there is nothing setup, quit this task
+		if (path == NULL)
+		{
+			// No path corner entities found!
+			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
+			
+			subsystem.FinishTask();
+			return;
+		}
+
+		// Store the path entity back into the mind, it might have changed
+		owner->GetMemory().currentPath = path;
 	}
 	else
 	{

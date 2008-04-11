@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Memory.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/PatrolTask.h"
+#include "../Tasks/AnimalPatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/IdleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
@@ -70,7 +71,12 @@ void IdleState::Init(idAI* owner)
 
 	// The movement subsystem should start patrolling
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->GetSubsystem(SubsysMovement)->PushTask(PatrolTask::CreateInstance());
+
+	// greebo: Choose the patrol task depending on the spawnargs.
+	TaskPtr patrolTask = TaskLibrary::Instance().CreateInstance(
+		owner->spawnArgs.GetBool("animal_patrol", "0") ? TASK_ANIMAL_PATROL : TASK_PATROL
+	);
+	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
 
 	// The communication system is barking in regular intervals
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
