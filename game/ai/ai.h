@@ -1187,6 +1187,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					DirectMoveToPosition( const idVec3 &pos );
 	bool					MoveToEnemyHeight( void );
 	bool					MoveOutOfRange( idEntity *entity, float range );
+	const idVec3&			GetMoveDest() const;
 	/**
 	 * greebo: Flee from the given entity. Pass the maximum distance this AI should search escape areas in.
 	 */

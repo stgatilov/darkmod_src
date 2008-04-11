@@ -2339,6 +2339,11 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.lastMoveTime	= gameLocal.time;
 }
 
+const idVec3& idAI::GetMoveDest() const
+{
+	return move.moveDest;
+}
+
 /*
 =====================
 idAI::FaceEnemy
