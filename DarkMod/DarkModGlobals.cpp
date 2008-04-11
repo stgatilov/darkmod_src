@@ -22,7 +22,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #ifdef _WINDOWS_
-#include "c:\compiled.h"
+//#include "c:\compiled.h"
 #endif
 
 #include "DarkModGlobals.h"

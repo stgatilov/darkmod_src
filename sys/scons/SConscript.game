@@ -209,6 +209,7 @@ AI/Tasks/PathTurnTask.cpp \
 AI/Tasks/PathWaitForTriggerTask.cpp \
 AI/Tasks/PathWaitTask.cpp \
 AI/Tasks/PatrolTask.cpp \
+AI/Tasks/AnimalPatrolTask.cpp \
 AI/Tasks/RandomHeadturnTask.cpp \
 AI/Tasks/RandomTurningTask.cpp \
 AI/Tasks/RangedCombatTask.cpp \
