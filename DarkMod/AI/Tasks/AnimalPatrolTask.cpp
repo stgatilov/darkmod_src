@@ -56,16 +56,6 @@ void AnimalPatrolTask::Init(idAI* owner, Subsystem& subsystem)
 			path = idPathCorner::RandomPath(owner, NULL);
 		}
 
-		// If the path is still NULL, there is nothing setup, quit this task
-		if (path == NULL)
-		{
-			// No path corner entities found!
-			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
-			
-			subsystem.FinishTask();
-			return;
-		}
-
 		// Store the path entity back into the mind, it might have changed
 		owner->GetMemory().currentPath = path;
 	}
@@ -78,13 +68,7 @@ void AnimalPatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool AnimalPatrolTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
-
-	idPathCorner* path = _owner.GetEntity()->GetMind()->GetMemory().currentPath.GetEntity();
-
-	// This task may not be performed with an empty path corner entity,
-	// that case should have been caught by the Init() routine
-	assert(path);
+	DM_LOG(LC_AI, LT_INFO).LogString("AnimalPatrolTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -198,7 +182,11 @@ void AnimalPatrolTask::movingToNextPathCorner(idAI* owner)
 	if (owner->AI_MOVE_DONE) 
 	{
 		// Find the next path associated with the owning AI
-		owner->GetMemory().currentPath = idPathCorner::RandomPath(owner->GetMemory().currentPath.GetEntity(), NULL);
+		idPathCorner* curCorner = owner->GetMemory().currentPath.GetEntity();
+		if (curCorner != NULL)
+		{
+			owner->GetMemory().currentPath = idPathCorner::RandomPath(curCorner, NULL);
+		}
 
 		if (owner->AI_DEST_UNREACHABLE) 
 		{
