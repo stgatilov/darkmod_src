@@ -4060,7 +4060,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 												  path.seekPosObstacle->GetPhysics()->GetAxis()), 16);*/
 
 		// greebo: Check if we have a frobmover entity at our seek position
-		if (path.seekPosObstacle->IsType(CBinaryFrobMover::Type)) 
+		if (path.seekPosObstacle->IsType(CBinaryFrobMover::Type) && m_bCanOperateDoors) 
 		{
 			// We have a frobmover in our way, raise a signal to the current state
 			mind->GetState()->OnFrobMoverEncounter(static_cast<CBinaryFrobMover*>(path.seekPosObstacle));
