@@ -78,21 +78,14 @@ void AgitatedSearchingState::Init(idAI* owner)
 			idStr bark;
 			if (memory.alertClass == EAlertVisual)
 			{
-				bark = "snd_alert3s";
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				bark = "snd_alert2h";
+				bark = "snd_alert4s";
 			}
 			else
 			{
-				bark = "snd_somethingSuspicious";
+				bark = "snd_alert4";
 			}
 
-			// Clear the communication system
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-			// Allocate a singlebarktask, set the sound and enqueue it
-
 			owner->GetSubsystem(SubsysCommunication)->PushTask(
 				TaskPtr(new SingleBarkTask(bark))
 			);

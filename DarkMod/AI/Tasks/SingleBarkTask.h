@@ -26,6 +26,7 @@ class SingleBarkTask :
 {
 	// The name of the sound to be played
 	idStr _soundName;
+	int _endTime;
 
 	// Default constructor
 	SingleBarkTask();
@@ -37,6 +38,7 @@ public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
+	virtual void Init(idAI* owner, Subsystem& subsystem);
 	virtual bool Perform(Subsystem& subsystem);
 
 	// Save/Restore methods

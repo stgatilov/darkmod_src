@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 16:53:28Z greebo $", init_version);
 
 #include "IdleState.h"
+#include "AlertIdleState.h"
 #include "../Memory.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/PatrolTask.h"
@@ -60,14 +61,54 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
+	if (owner->HasSeenEvidence())
+	{
+		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
+	}
+
 	_alertLevelDecreaseRate = 0.01f;
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
 
-	owner->AI_RUN = false;
+	owner->SheathWeapon();
 
-	// Fill the subsystems with their tasks
+	// Initialise the animation state
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+
+	// The action subsystem plays the idle anims (scratching, yawning...)
+	owner->GetSubsystem(SubsysAction)->ClearTasks();
+	owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
+
+	// The sensory system does its Idle tasks
+	owner->GetSubsystem(SubsysSenses)->ClearTasks();
+	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
+
+	InitialiseMovement(owner);
+
+	InitialiseCommunication(owner);
+	// Push the regular patrol barking to the list too
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		TaskPtr(new IdleBarkTask("snd_relaxed"))
+	);
+}
+
+// Gets called each time the mind is thinking
+void IdleState::Think(idAI* owner)
+{
+	UpdateAlertLevel();
+
+	// Ensure we are in the correct alert level
+	if (!CheckAlertLevel(owner)) return;
+
+	// Let the AI check its senses
+	owner->PerformVisualScan();
+}
+
+void IdleState::InitialiseMovement(idAI* owner)
+{
+	owner->AI_RUN = false;
 
 	// The movement subsystem should start patrolling
 	owner->GetSubsystem(SubsysMovement)->ClearTasks();
@@ -77,37 +118,6 @@ void IdleState::Init(idAI* owner)
 		owner->spawnArgs.GetBool("animal_patrol", "0") ? TASK_ANIMAL_PATROL : TASK_PATROL
 	);
 	owner->GetSubsystem(SubsysMovement)->PushTask(patrolTask);
-
-	// The communication system is barking in regular intervals
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-
-	// Push a single bark to the communication subsystem first, it fires only once
-	owner->GetSubsystem(SubsysCommunication)->PushTask(
-		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
-	);
-
-	// No weapons in idle mode, unless we were really alerted before
-	if (owner->m_maxAlertLevel < owner->thresh_5)
-	{
-		owner->SheathWeapon();
-
-		// Push the regular patrol barking to the list too
-		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-			TaskPtr(new IdleBarkTask("snd_relaxed"))
-		);
-
-		// The action subsystem plays the idle anims (scratching, yawning...)
-		owner->GetSubsystem(SubsysAction)->ClearTasks();
-		owner->GetSubsystem(SubsysAction)->PushTask(IdleAnimationTask::CreateInstance());
-	}
-
-	// Initialise the animation state
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
-
-	// The sensory system does its Idle tasks
-	owner->GetSubsystem(SubsysSenses)->ClearTasks();
-	owner->GetSubsystem(SubsysSenses)->PushTask(RandomHeadturnTask::CreateInstance());
 
 	// Check if the owner has patrol routes set
 	idPathCorner* path = idPathCorner::RandomPath(owner, NULL);
@@ -133,17 +143,14 @@ void IdleState::Init(idAI* owner)
 	}
 }
 
-// Gets called each time the mind is thinking
-void IdleState::Think(idAI* owner)
+void IdleState::InitialiseCommunication(idAI* owner)
 {
-	UpdateAlertLevel();
-
-	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
-
-	// Let the AI check its senses
-	owner->PerformVisualScan();
+	// Push a single bark to the communication subsystem first, it fires only once
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		TaskPtr(new SingleBarkTask(GetInitialIdleBark(owner)))
+	);
 }
+
 
 void IdleState::Save(idSaveGame* savefile) const
 {
@@ -169,34 +176,25 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
-	
-	if (owner->AI_AlertLevel <= 0)
-	{
-		//soundName = "snd_relaxed";
-		// greebo: Relaxed sound playing is handled by the IdleBarkTask.
-		soundName = "";
-	}
-	else if (owner->GetMemory().enemiesHaveBeenSeen)
-	{
-		soundName = "snd_alertdown0SeenEvidence";
-	}
-	else if (owner->GetMemory().itemsHaveBeenStolen)
-	{
-		soundName = "snd_alertdown0SeenEvidence";
-	}
-	else if (owner->GetMemory().countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION)
-	{
-		soundName = "snd_alertdown0SeenEvidence";
-	}
-	else
-	{
-		// Play its idle sound
-		soundName = "snd_alertdown0SeenNoEvidence";
-	}
 
-	// Reset the patrol chat time
-	memory.lastPatrolChatTime = gameLocal.time;
-
+	if (owner->m_maxAlertLevel >= owner->thresh_1)
+	{
+		if (owner->m_lastAlertLevel < owner->thresh_4)
+		{
+			if (memory.alertClass == EAlertVisual)
+			{
+				soundName = "snd_alertdown0s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				soundName = "snd_alertdown0h";
+			}
+			else
+			{
+				soundName = "snd_alertdown0";
+			}
+		}
+	}
 	return soundName;
 }
 

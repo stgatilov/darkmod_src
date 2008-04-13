@@ -82,16 +82,35 @@ void SearchingState::Init(idAI* owner)
 		{
 			if (memory.alertClass == EAlertVisual)
 			{
-				bark = "snd_alert2s";
+				if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				{
+					bark = "snd_alert3cs";
+				}
+				else
+				{
+					bark = "snd_alert3s";
+				}
 			}
 			else if (memory.alertClass == EAlertAudio)
 			{
-				bark = "snd_alert2h";
+				if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				{
+					bark = "snd_alert3ch";
+				}
+				else
+				{
+					bark = "snd_alert3h";
+				}
+			}
+			else if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+			{
+				bark = "snd_alert3c";
 			}
 			else
 			{
-				bark = "snd_alert2";
+				bark = "snd_alert3";
 			}
+
 			// Clear the communication system
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			// Allocate a singlebarktask, set the sound and enqueue it
@@ -108,7 +127,7 @@ void SearchingState::Init(idAI* owner)
 		// Allocate a singlebarktask, set the sound and enqueue it
 
 		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask("snd_alertdown2"))
+			TaskPtr(new SingleBarkTask("snd_alertdown3"))
 		);
 	}
 

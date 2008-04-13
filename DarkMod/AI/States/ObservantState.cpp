@@ -67,34 +67,39 @@ void ObservantState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// barking
-	idStr bark;
+	idStr soundName("");
 
 	if (owner->AlertIndexIncreased())
 	{
 		if (memory.alertClass == EAlertVisual)
 		{
-			bark = "snd_alert1s";
+			soundName = "snd_alert1s";
 		}
 		else if (memory.alertClass == EAlertAudio)
 		{
-			bark = "snd_alert1h";
+			soundName = "snd_alert1h";
 		}
 		else
 		{
-			bark = "snd_alert1";
+			soundName = "snd_alert1";
 		}
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(bark))
-			);
-	}
-	else
-	{
-		bark = "snd_alertdown1";
 		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(bark))
-			);
 	}
+	else if (owner->HasSeenEvidence())
+	{
+		if (owner->m_lastAlertLevel >= owner->thresh_3)
+		{
+			soundName = "snd_alertdown0SeenEvidence";
+		}
+	}
+	else if (owner->m_lastAlertLevel >= owner->thresh_4)
+	{
+		soundName = "snd_alertdown0SeenNoEvidence";
+	}
+
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+			TaskPtr(new SingleBarkTask(soundName))
+		);
 }
 
 // Gets called each time the mind is thinking

@@ -21,6 +21,7 @@
 * DarkMod cvars - See text description in syscvar.cpp for descriptions
 **/
 extern idCVar cv_ai_sndvol;
+extern idCVar cv_ai_bark_show;
 extern idCVar cv_ai_bumpobject_impulse;
 extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;

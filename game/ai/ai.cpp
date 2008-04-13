@@ -695,6 +695,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_AlertLevelThisFrame );
 	savefile->WriteInt( m_prevAlertIndex );
 	savefile->WriteFloat( m_maxAlertLevel);
+	savefile->WriteFloat(m_lastAlertLevel);
 	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
@@ -938,6 +939,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_AlertLevelThisFrame );
 	savefile->ReadInt( m_prevAlertIndex );
 	savefile->ReadFloat( m_maxAlertLevel );
+	savefile->ReadFloat(m_lastAlertLevel);
 	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
@@ -7373,6 +7375,8 @@ void idAI::AlertAI(const char *type, float amount)
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
+	m_lastAlertLevel = newAlertLevel;
+
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
@@ -8445,6 +8449,12 @@ void idAI::CheckTactile()
 	}
 }
 
+bool idAI::HasSeenEvidence()
+{
+	return GetMemory().enemiesHaveBeenSeen
+		|| GetMemory().itemsHaveBeenStolen;
+
+}
 /**
 * ========================== BEGIN  TDM KNOCKOUT CODE =============================
 **/
@@ -8925,6 +8935,11 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 	// Play sound
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration );
+	if (cv_ai_bark_show.GetBool())
+	{
+		gameRenderWorld->DrawText( va("%s", soundName), GetEyePosition(), 0.25f, colorBlue, 
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3000 );
+	}
 
 	// Do we want to lipsync this sound?
 	StopLipSync(); // Assume not
