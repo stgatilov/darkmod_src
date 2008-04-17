@@ -9,6 +9,8 @@
 #ifndef _MULTI_STATE_MOVER_H_
 #define _MULTI_STATE_MOVER_H_
 
+#include "MultiStateMoverPosition.h"
+
 /**
  * greebo: A MultiState mover is an extension to the vanilla D3 elevators.
  *
@@ -22,6 +24,8 @@
 class CMultiStateMover : 
 	public idElevator
 {
+	idList<MoverPositionInfo> positionInfo;
+
 public:
 	CLASS_PROTOTYPE( CMultiStateMover );
 
@@ -35,6 +39,9 @@ public:
 	void	Activate(idEntity* activator);
 
 private:
+	// Returns the index of the named position info or -1 if not found
+	int		GetPositionInfoIndex(const idStr& name) const;
+
 	void	Event_Activate(idEntity* activator);
 	void	Event_PostSpawn();
 };

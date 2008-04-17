@@ -25,4 +25,17 @@ public:
 	void	Spawn();
 };
 
+/**
+ * greebo: This is the info structure which gets inserted into
+ * a local list in the MultiStateMover itself.
+ */
+struct MoverPositionInfo 
+{
+	// The name of the position
+	idStr name;
+
+	// The position entity
+	idEntityPtr<CMultiStateMoverPosition> positionEnt;
+};
+
 #endif /* _MULTI_STATE_MOVER_POSITION_H_ */

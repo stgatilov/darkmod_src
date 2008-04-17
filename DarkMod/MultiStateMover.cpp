@@ -35,7 +35,41 @@ void CMultiStateMover::Spawn()
 
 void CMultiStateMover::Event_PostSpawn() 
 {
+	// Go through all the targets and find the PositionEntities
+	for (int i = 0; i < targets.Num(); i++) 
+	{
+		idEntity* target = targets[i].GetEntity();
 
+		if (!target->IsType(CMultiStateMoverPosition::Type)) 
+		{
+			continue;
+		}
+
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Parsing multistate position entity %s.\r", target->name.c_str());
+		
+		idStr positionName;
+		if (!target->spawnArgs.GetString("position", "", positionName) || positionName.IsEmpty())
+		{
+			gameLocal.Warning("'position' spawnarg on %s is missing.\n", target->name.c_str());
+			continue;
+		}
+
+		if (GetPositionInfoIndex(positionName) != -1) 
+		{
+			gameLocal.Warning("Multiple positions with name %s defined for %s.\n", positionName.c_str(), name.c_str());
+			continue;
+		}
+
+		// greebo: Seems like the position entity is valid, let's build an info structure
+		MoverPositionInfo info;
+
+		info.positionEnt = static_cast<CMultiStateMoverPosition*>(target);
+		info.name = positionName;
+
+		positionInfo.Append(info);		
+	}
+
+	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
 }
 
 void CMultiStateMover::Save(idSaveGame *savefile) const
@@ -51,6 +85,19 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 void CMultiStateMover::Activate(idEntity* activator)
 {
 	// TODO
+}
+
+int CMultiStateMover::GetPositionInfoIndex(const idStr& name) const
+{
+	for (int i = 0; i < positionInfo.Num(); i++) 
+	{
+		if (positionInfo[i].name == name) 
+		{
+			return i;
+		}
+	}
+
+	return -1; // not found
 }
 
 void CMultiStateMover::Event_Activate(idEntity* activator)
