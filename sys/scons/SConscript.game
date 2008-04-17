@@ -140,6 +140,8 @@ liquid.cpp \
 MeleeWeapon.cpp \
 MissionData.cpp \
 ModMenu.cpp \
+MultiStateMover.cpp \
+MultiStateMoverPosition.cpp \
 overlaysys.cpp \
 PlayerData.cpp \
 PositionWithinRangeFinder.cpp \
