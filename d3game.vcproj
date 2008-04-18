@@ -769,6 +769,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\PathCornerTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathLookatTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathLookatTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PathHideTask.cpp">
 					</File>
 					<File

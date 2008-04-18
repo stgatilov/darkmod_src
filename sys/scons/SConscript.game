@@ -207,6 +207,7 @@ AI/Tasks/MoveToPositionTask.cpp \
 AI/Tasks/PathAnimTask.cpp \
 AI/Tasks/PathCornerTask.cpp \
 AI/Tasks/PathHideTask.cpp \
+AI/Tasks/PathLookatTask.cpp \
 AI/Tasks/PathShowTask.cpp \
 AI/Tasks/PathTurnTask.cpp \
 AI/Tasks/PathWaitForTriggerTask.cpp \
@@ -233,7 +234,7 @@ local_env = g_game_env.Copy()
 local_env.Append( CPPDEFINES = [ 'GAME_DLL', 'RCF_USE_BOOST_ASIO', 'RCF_USE_BOOST_THREADS', 'RCF_MULTI_THREADED' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated' ] )
 local_env.Append( CPPPATH = [ '../../rcflib' ] )
-local_env.Append(LIBS = ['IL', 'boost_filesystem', 'boost_thread'])
+local_env.Append(LIBS = ['IL', 'libboost_filesystem.a', 'libboost_thread-mt.a'])
 
 ret = local_env.SharedLibrary('game', game_list + darkModList + idlib_objects + RCFLibList )
 Return( 'ret' )

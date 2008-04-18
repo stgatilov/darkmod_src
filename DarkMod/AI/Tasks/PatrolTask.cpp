@@ -21,6 +21,7 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 #include "PathWaitForTriggerTask.h"
 #include "PathHideTask.h"
 #include "PathShowTask.h"
+#include "PathLookatTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -128,9 +129,14 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	{
 		task = PathShowTaskPtr(new PathShowTask(path));
 	}
+	else if (classname == "path_lookat")
+	{
+		task = PathLookatTaskPtr(new PathLookatTask(path));
+	}
 	else
 	{
 		// Finish this task
+		gameLocal.Warning("Unknown path corner classname '%s'\n", classname.c_str());
 		return true;
 	}
 	
