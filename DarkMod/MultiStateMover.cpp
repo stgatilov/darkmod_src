@@ -70,12 +70,6 @@ void CMultiStateMover::Event_PostSpawn()
 	}
 
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
-
-	// Now check if we have a start_position set
-	if (spawnArgs.FindKey("start_position") != NULL) 
-	{
-		// TODO: Put the mover to this position
-	}
 }
 
 void CMultiStateMover::Save(idSaveGame *savefile) const
@@ -122,8 +116,6 @@ void CMultiStateMover::Activate(idEntity* activator)
 	// We appear to have a valid position index, start moving
 	idEntity* positionEnt = positionInfo[positionIdx].positionEnt.GetEntity();
 	assert(positionEnt != NULL);
-
-	// TODO: Compare if we are already at the target position
 
 	MoveToPos(positionEnt->GetPhysics()->GetOrigin());
 }
