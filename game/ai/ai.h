@@ -1082,6 +1082,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// damage
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+
+	void					PostDeath();
+
 	/**
 	* TestKnockOutBlow is called when the AI is hit with a weapon with knockout capability.
 	* This function tests the location hit, angle of the blow, and alert state of the AI.

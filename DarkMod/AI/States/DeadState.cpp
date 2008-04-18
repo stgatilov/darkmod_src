@@ -56,12 +56,34 @@ void DeadState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+
+	_waitingForDeath = true;
 }
 
 // Gets called each time the mind is thinking
 void DeadState::Think(idAI* owner)
 {
-	// Do nothing
+	if (_waitingForDeath 
+		&&	idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "death"
+		&&	idStr(owner->WaitState(ANIMCHANNEL_LEGS)) != "death"
+		&&	idStr(owner->WaitState(ANIMCHANNEL_HEAD)) != "death") 
+	{
+		owner->PostDeath();
+		_waitingForDeath = false;
+	}
+}
+
+// Save/Restore methods
+void DeadState::Save(idSaveGame* savefile) const
+{
+	State::Save(savefile);
+	savefile->WriteBool(_waitingForDeath);
+}
+
+void DeadState::Restore(idRestoreGame* savefile) 
+{
+	State::Restore(savefile);
+	savefile->ReadBool(_waitingForDeath);
 }
 
 StatePtr DeadState::CreateInstance()

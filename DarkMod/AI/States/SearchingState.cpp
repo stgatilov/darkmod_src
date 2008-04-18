@@ -120,18 +120,8 @@ void SearchingState::Init(idAI* owner)
 			);
 		}
 	}
-	else
-	{
-		// Clear the communication system
-		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-		// Allocate a singlebarktask, set the sound and enqueue it
-
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask("snd_alertdown3"))
-		);
-	}
-
-	if (owner->m_maxAlertLevel < owner->thresh_5)
+	
+	if (!owner->HasSeenEvidence())
 	{
 		owner->SheathWeapon();
 	}

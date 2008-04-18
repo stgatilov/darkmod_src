@@ -82,6 +82,7 @@ void SuspiciousState::Init(idAI* owner)
 
 	// barking
 	idStr bark;
+	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 
 	if (owner->AlertIndexIncreased())
 	{
@@ -98,7 +99,6 @@ void SuspiciousState::Init(idAI* owner)
 			bark = "snd_alert1";
 		}
 
-		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 		owner->GetSubsystem(SubsysCommunication)->PushTask(
 			TaskPtr(new SingleBarkTask(bark))
 		);

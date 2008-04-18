@@ -17,6 +17,7 @@ static bool init_version = FileVersionList("$Id: ObservantState.cpp 1435 2007-10
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/WaitTask.h"
 #include "SuspiciousState.h"
 #include "../Library.h"
 
@@ -100,6 +101,10 @@ void ObservantState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->QueueTask(
 			TaskPtr(new SingleBarkTask(soundName))
 		);
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		TaskPtr(new WaitTask(2000))
+		);
+
 }
 
 // Gets called each time the mind is thinking

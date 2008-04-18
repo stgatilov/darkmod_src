@@ -16,6 +16,8 @@ static bool init_version = FileVersionList("$Id: AgitatedSearchingState.cpp 1435
 #include "../Memory.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/RepeatedBarkTask.h"
+#include "../Tasks/WaitTask.h"
 #include "CombatState.h"
 #include "../Library.h"
 #include "../../idAbsenceMarkerEntity.h"
@@ -91,6 +93,27 @@ void AgitatedSearchingState::Init(idAI* owner)
 			);
 		}
 	}
+	owner->GetSubsystem(SubsysCommunication)->QueueTask(
+		TaskPtr(new WaitTask(5000))
+		);
+
+	int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
+	int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
+
+	if (owner->HasSeenEvidence())
+	{
+		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+				TaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
+			);
+	}
+	else
+	{
+		owner->GetSubsystem(SubsysCommunication)->QueueTask(
+				TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
+			);
+	}
+
+
 	
 	owner->DrawWeapon();
 }

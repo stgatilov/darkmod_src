@@ -5138,6 +5138,19 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );
 }
 
+
+/*
+=====================
+idAI::PostDeath
+=====================
+*/
+void idAI::PostDeath()
+{
+	headAnim.Disable();
+	legsAnim.Disable();
+	torsoAnim.Disable();
+}
+
 /***********************************************************************
 
 	Targeting/Combat
