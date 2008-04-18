@@ -70,21 +70,62 @@ void CMultiStateMover::Event_PostSpawn()
 	}
 
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
+
+	// Now check if we have a start_position set
+	if (spawnArgs.FindKey("start_position") != NULL) 
+	{
+		// TODO: Put the mover to this position
+	}
 }
 
 void CMultiStateMover::Save(idSaveGame *savefile) const
 {
-	// TODO or remove
+	savefile->WriteInt(positionInfo.Num());
+	for (int i = 0; i < positionInfo.Num(); i++)
+	{
+		positionInfo[i].positionEnt.Save(savefile);
+		savefile->WriteString(positionInfo[i].name);
+	}
 }
 
 void CMultiStateMover::Restore(idRestoreGame *savefile)
 {
-	// TODO or remove
+	int num;
+	savefile->ReadInt(num);
+	positionInfo.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		positionInfo[i].positionEnt.Restore(savefile);
+		savefile->ReadString(positionInfo[i].name);
+	}
 }
 
 void CMultiStateMover::Activate(idEntity* activator)
 {
-	// TODO
+	if (activator == NULL) return;
+
+	// Get the "position" spawnarg from the activator
+	idStr targetPosition;
+	if (!activator->spawnArgs.GetString("position", "", targetPosition))
+	{
+		return;
+	}
+
+	int positionIdx = GetPositionInfoIndex(targetPosition);
+
+	if (positionIdx == -1) 
+	{
+		gameLocal.Warning("Multistate mover is targetted by an entity with unknown 'position': %s", targetPosition.c_str());
+		return;
+	}
+
+	// We appear to have a valid position index, start moving
+	idEntity* positionEnt = positionInfo[positionIdx].positionEnt.GetEntity();
+	assert(positionEnt != NULL);
+
+	// TODO: Compare if we are already at the target position
+
+	MoveToPos(positionEnt->GetPhysics()->GetOrigin());
 }
 
 int CMultiStateMover::GetPositionInfoIndex(const idStr& name) const
