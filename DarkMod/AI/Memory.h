@@ -275,7 +275,7 @@ public:
 	// Variables related to door opening/closing process
 	struct DoorRelatedVariables
 	{
-		idEntityPtr<CBinaryFrobMover> currentFrobMover;
+		idEntityPtr<CFrobDoor> currentDoor;
 
 		DoorInfoMap doorInfo;
 	} doorRelated;
@@ -360,7 +360,7 @@ public:
 		savefile->WriteBool(fleeingDone);
 		savefile->WriteVec3(positionBeforeTakingCover);
 
-		doorRelated.currentFrobMover.Save(savefile);
+		doorRelated.currentDoor.Save(savefile);
 
 		savefile->WriteInt(doorRelated.doorInfo.size());
 		for (DoorInfoMap::const_iterator i = doorRelated.doorInfo.begin();
@@ -419,7 +419,7 @@ public:
 		savefile->ReadBool(fleeingDone);
 		savefile->ReadVec3(positionBeforeTakingCover);
 
-		doorRelated.currentFrobMover.Restore(savefile);
+		doorRelated.currentDoor.Restore(savefile);
 		doorRelated.doorInfo.clear();
 
 		int num;

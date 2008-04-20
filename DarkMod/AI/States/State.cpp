@@ -1480,10 +1480,10 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 
 	Memory& memory = owner->GetMemory();
 
-	if (memory.doorRelated.currentFrobMover.GetEntity() != frobMover)
+	if (memory.doorRelated.currentDoor.GetEntity() != frobMover && frobMover->IsType(CFrobDoor::Type))
 	{
 		// Store the current movestate
-		memory.doorRelated.currentFrobMover = frobMover;
+		memory.doorRelated.currentDoor = static_cast<CFrobDoor*>(frobMover);
 
 		owner->GetSubsystem(SubsysMovement)->PushTask(HandleDoorTask::CreateInstance());
 	}
