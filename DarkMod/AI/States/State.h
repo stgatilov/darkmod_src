@@ -91,7 +91,7 @@ public:
 	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
-	virtual void OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
 
 	// greebo: Gets called by OnVisualStimPerson on finding a dead body
 	// returns TRUE when the stim should be ignored from now on, FALSE otherwise

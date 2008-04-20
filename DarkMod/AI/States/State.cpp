@@ -391,7 +391,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
 		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeDoor))
 		{
-			OnVisualStimOpenDoor(stimSource, owner);
+			OnVisualStimDoor(stimSource, owner);
 		}
 	}
 }
@@ -1024,14 +1024,21 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	}
 }
 
-void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
+void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	Memory& memory = owner->GetMemory();
+	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
+
+	// Update the info structure for this door
+	DoorInfo& doorInfo = memory.GetDoorInfo(door);
+
+	doorInfo.lastTimeSeen = gameLocal.time;
+	doorInfo.wasOpen = door->IsOpen();
 
 	// We've seen this object, don't respond to it again
-	// Will get cleared if door changes state again (TODO)
+	// Will get cleared if door changes state again
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
 
 	// Is it supposed to be closed?
@@ -1040,8 +1047,6 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 		// door is not supposed to be closed, ignore
 		return;
 	}
-
-	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
 
 	// Is it open?
 	if (!door->IsOpen())
