@@ -195,7 +195,7 @@ public:
 	// This is true if the original alert position is to be searched
 	bool stimulusLocationItselfShouldBeSearched;
 
-	// Set this to TRUE if 
+	// Set this to TRUE if stimulus location itself should be closely investigated (kneel down)
 	bool investigateStimulusLocationClosely;
 
 	// This flag indicates if the search is due to a communication
@@ -327,11 +327,11 @@ public:
 		currentPath.Save(savefile);
 		savefile->WriteInt(lastAlertRiseTime);
 		savefile->WriteInt(lastPatrolChatTime);
-		savefile->WriteInt(countEvidenceOfIntruders);
-		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 		savefile->WriteInt(lastTimeFriendlyAISeen);
 		savefile->WriteInt(lastTimeEnemySeen);
 		savefile->WriteInt(lastTimeVisualStimBark);
+		savefile->WriteInt(countEvidenceOfIntruders);
+		savefile->WriteInt(lastRandomHeadTurnCheckTime);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
 		savefile->WriteBool(unconsciousPeopleHaveBeenFound);
@@ -352,8 +352,8 @@ public:
 		savefile->WriteVec3(currentSearchSpot);
 		savefile->WriteBool(hidingSpotTestStarted);
 		savefile->WriteBool(hidingSpotSearchDone);
-		savefile->WriteInt(hidingSpotThinkFrameCount);
 		savefile->WriteBool(restartSearchForHidingSpots);
+		savefile->WriteInt(hidingSpotThinkFrameCount);
 		savefile->WriteInt(firstChosenHidingSpotIndex);
 		savefile->WriteInt(currentChosenHidingSpotIndex);
 		savefile->WriteVec3(chosenHidingSpot);
@@ -373,13 +373,15 @@ public:
 		currentPath.Restore(savefile);
 		savefile->ReadInt(lastAlertRiseTime);
 		savefile->ReadInt(lastPatrolChatTime);
-		savefile->ReadInt(countEvidenceOfIntruders);
-		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 		savefile->ReadInt(lastTimeFriendlyAISeen);
 		savefile->ReadInt(lastTimeEnemySeen);
 		savefile->ReadInt(lastTimeVisualStimBark);
+		savefile->ReadInt(countEvidenceOfIntruders);
+		savefile->ReadInt(lastRandomHeadTurnCheckTime);
 		savefile->ReadBool(enemiesHaveBeenSeen);
 		savefile->ReadBool(itemsHaveBeenStolen);
+		savefile->ReadBool(unconsciousPeopleHaveBeenFound);
+		savefile->ReadBool(deadPeopleHaveBeenFound);
 		savefile->ReadVec3(alertPos);
 
 		savefile->ReadInt(temp);
@@ -401,8 +403,8 @@ public:
 		savefile->ReadVec3(currentSearchSpot);
 		savefile->ReadBool(hidingSpotTestStarted);
 		savefile->ReadBool(hidingSpotSearchDone);
-		savefile->ReadInt(hidingSpotThinkFrameCount);
 		savefile->ReadBool(restartSearchForHidingSpots);
+		savefile->ReadInt(hidingSpotThinkFrameCount);
 		savefile->ReadInt(firstChosenHidingSpotIndex);
 		savefile->ReadInt(currentChosenHidingSpotIndex);
 		savefile->ReadVec3(chosenHidingSpot);
