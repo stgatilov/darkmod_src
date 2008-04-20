@@ -4460,37 +4460,54 @@ void idRotater::Restore( idRestoreGame *savefile ) {
 idRotater::Event_Activate
 ===============
 */
-void idRotater::Event_Activate( idEntity *activator ) {
-	float		speed;
-	bool		x_axis;
-	bool		y_axis;
-	idAngles	delta;
-
+void idRotater::Event_Activate( idEntity *activator )
+{
 	activatedBy = activator;
 
-	delta.Zero();
+	// greebo: Invert the "rotate" spawnarg
+	spawnArgs.Set("rotate", spawnArgs.GetBool("rotate") ? "0" : "1");
 
-	if ( !spawnArgs.GetBool( "rotate" ) ) {
-		spawnArgs.Set( "rotate", "1" );
-		spawnArgs.GetFloat( "speed", "100", speed );
-		spawnArgs.GetBool( "x_axis", "0", x_axis );
-		spawnArgs.GetBool( "y_axis", "0", y_axis );
-		
+	// Start or stop the rotation, based on the spawnargs (forward direction)
+	SetRotationFromSpawnargs(true);
+}
+
+void idRotater::SetRotationFromSpawnargs(bool forward)
+{
+	idAngles delta(0,0,0);
+
+	if (spawnArgs.GetBool("rotate"))
+	{
+		// We should be rotating, read the parameters
+		float speed = spawnArgs.GetFloat("speed", "100");
+		bool x_axis = spawnArgs.GetBool("x_axis", "0");
+		bool y_axis = spawnArgs.GetBool("y_axis", "0");
+
+		// Invert the speed if the direction boolean is false
+		if (!forward) 
+		{
+			speed *= -1;
+		}
+
 		// set the axis of rotation
-		if ( x_axis ) {
+		if (x_axis) {
 			delta[2] = speed;
-		} else if ( y_axis ) {
+		}
+		else if (y_axis) {
 			delta[0] = speed;
-		} else {
+		}
+		else {
 			delta[1] = speed;
 		}
-	} else {
-		spawnArgs.Set( "rotate", "0" );
 	}
 
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_LINEAR|EXTRAPOLATION_NOSTOP), gameLocal.time, 0, physicsObj.GetAxis().ToAngles(), delta, ang_zero );
 }
 
+void idRotater::SetDirection(bool forward)
+{
+	// Read the rotation parameters again, but consider the direction
+	SetRotationFromSpawnargs(forward);
+}
 
 /*
 ===============================================================================

@@ -512,7 +512,13 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	// greebo: Allows callers to invert the rotation direction
+	void					SetDirection(bool forward);
+
 private:
+	// Reads the rotation axis and speed from the spawnargs and starts/stops to rotate
+	void					SetRotationFromSpawnargs(bool forward);
+
 	idEntityPtr<idEntity>	activatedBy;
 
 	void					Event_Activate( idEntity *activator );

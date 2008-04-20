@@ -15,11 +15,6 @@ static bool init_version = FileVersionList("$Id: MultiStateMover.cpp 2167 2008-0
 #include "MultiStateMover.h"
 
 CLASS_DECLARATION( idElevator, CMultiStateMover )
-	/*EVENT( EV_ReachedPos,	CMultiStateMover::Event_UpdateMove )
-	EVENT( EV_ReachedAng,	CMultiStateMover::Event_UpdateRotation )
-	EVENT( EV_StopMoving,	CMultiStateMover::Event_StopMoving )
-	EVENT( EV_StopRotating,	CMultiStateMover::Event_StopRotating )
-	EVENT( EV_MoveToPos,	CMultiStateMover::Event_MoveToPos )*/
 	EVENT( EV_Activate,		CMultiStateMover::Event_Activate )
 	EVENT( EV_PostSpawn,	CMultiStateMover::Event_PostSpawn )
 END_CLASS
@@ -29,6 +24,9 @@ CMultiStateMover::CMultiStateMover()
 
 void CMultiStateMover::Spawn() 
 {
+	forwardDirection = spawnArgs.GetVector("forward_direction", "0 0 1");
+	forwardDirection.Normalize();
+
 	// Schedule a post-spawn event to analyse the targets
 	PostEventMS(&EV_PostSpawn, 1);
 }
@@ -80,6 +78,8 @@ void CMultiStateMover::Save(idSaveGame *savefile) const
 		positionInfo[i].positionEnt.Save(savefile);
 		savefile->WriteString(positionInfo[i].name);
 	}
+
+	savefile->WriteVec3(forwardDirection);
 }
 
 void CMultiStateMover::Restore(idRestoreGame *savefile)
@@ -92,6 +92,8 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 		positionInfo[i].positionEnt.Restore(savefile);
 		savefile->ReadString(positionInfo[i].name);
 	}
+
+	savefile->ReadVec3(forwardDirection);
 }
 
 void CMultiStateMover::Activate(idEntity* activator)
@@ -115,9 +117,52 @@ void CMultiStateMover::Activate(idEntity* activator)
 
 	// We appear to have a valid position index, start moving
 	idEntity* positionEnt = positionInfo[positionIdx].positionEnt.GetEntity();
+	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
 	assert(positionEnt != NULL);
 
-	MoveToPos(positionEnt->GetPhysics()->GetOrigin());
+	// We're done moving if the velocity is very close to zero
+	bool isDoneMoving = GetPhysics()->GetLinearVelocity().Length() <= VECTOR_EPSILON;
+
+	if (isDoneMoving && spawnArgs.GetBool("trigger_on_leave", "0")) 
+	{
+		// We're leaving our position, trigger targets
+		ActivateTargets(this);
+	}
+
+	// greebo: Look if we need to control the rotation of the targetted rotators
+	if (spawnArgs.GetBool("control_gear_direction", "0")) 
+	{
+		// Check if we're moving forward or backward
+		idVec3 moveDir = targetPos - GetPhysics()->GetOrigin();
+		moveDir.NormalizeFast();
+
+		// The dot product (== angle) shows whether we're moving forward or backwards
+		bool movingForward = (moveDir * forwardDirection >= 0);
+
+		for (int i = 0; i < targets.Num(); i++)
+		{
+			idEntity* target = targets[i].GetEntity();
+			if (target->IsType(idRotater::Type))
+			{
+				idRotater* rotater = static_cast<idRotater*>(target);
+				rotater->SetDirection(movingForward);
+			}
+		}
+	}
+
+	// Finally start moving (this will update the "stage" members of the mover)
+	MoveToPos(targetPos);
+}
+
+void CMultiStateMover::DoneMoving()
+{
+	idMover::DoneMoving();
+
+	if (spawnArgs.GetBool("trigger_on_reached", "0")) 
+	{
+		// Trigger targets now that we've reached our goal position
+		ActivateTargets(this);
+	}
 }
 
 int CMultiStateMover::GetPositionInfoIndex(const idStr& name) const

@@ -26,6 +26,8 @@ class CMultiStateMover :
 {
 	idList<MoverPositionInfo> positionInfo;
 
+	idVec3 forwardDirection;
+
 public:
 	CLASS_PROTOTYPE( CMultiStateMover );
 
@@ -37,6 +39,10 @@ public:
 	void	Restore(idRestoreGame *savefile);
 
 	void	Activate(idEntity* activator);
+
+protected:
+	// override idMover's DoneMoving() to trigger targets
+	virtual void DoneMoving();
 
 private:
 	// Returns the index of the named position info or -1 if not found
