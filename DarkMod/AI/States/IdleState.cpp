@@ -61,6 +61,11 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO).LogString("IdleState initialised.\r");
 	assert(owner);
 
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
+	memory.alertClass = EAlertNone;
+	memory.alertType = EAlertTypeNone;
+
 	if (owner->HasSeenEvidence())
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);

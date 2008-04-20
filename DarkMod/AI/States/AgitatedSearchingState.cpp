@@ -112,8 +112,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 				TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
 			);
 	}
-
-
 	
 	owner->DrawWeapon();
 }

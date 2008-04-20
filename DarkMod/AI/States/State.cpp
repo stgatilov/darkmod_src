@@ -128,47 +128,6 @@ void State::OnVisualAlert(idActor* enemy)
 	// set the flag back (greebo: Is this still necessary?)
 	owner->AI_VISALERT = false;
 
-	// Handle stimulus "barks"
-	if (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
-
-		// Check for any friends nearby we might want to talk to
-		bool b_friendNearby = false;
-		if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
-		{
-			DM_LOG(LC_AI,LT_INFO).LogString("Time since friend is %d\r", (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen));
-			b_friendNearby = true;
-		}
-
-		// Play speech: saw something
-		if (!b_friendNearby)
-		{
-			if (owner->AI_AlertLevel >= owner->thresh_4)
-			{
-				owner->Bark("snd_alert3s");
-			}
-			if (owner->AI_AlertLevel >= owner->thresh_3)
-			{
-				owner->Bark("snd_alert2s");
-			}
-			else if (owner->AI_AlertLevel >= owner->thresh_2)
-			{
-				owner->Bark( "snd_alert1s" );
-			}
-		}
-		else
-		{
-			if (owner->AI_AlertLevel >= owner->thresh_3)
-			{
-				owner->Bark( "snd_alert2cs" );
-			}
-			else if (owner->AI_AlertLevel >= owner->thresh_2)
-			{
-				owner->Bark( "snd_alert1cs" );
-			}
-		}
-	}
 
 	// Is this alert far enough away from the last one we reacted to to
 	// consider it a new alert? Visual alerts are highly compelling and
@@ -310,44 +269,6 @@ void State::OnAudioAlert()
 	owner->AI_HEARDSOUND = false;
 	
 	memory.stimulusLocationItselfShouldBeSearched = true;
-
-	// Handle stimulus "barks"
-	if (MS2SEC(gameLocal.time) - owner->AI_timeOfLastStimulusBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		owner->AI_timeOfLastStimulusBark = MS2SEC(gameLocal.time);
-
-		// Check for any friends nearby we might want to talk to
-		bool b_friendNearby = false;
-		if ( (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
-		{
-			DM_LOG(LC_AI,LT_INFO).LogString("Time since friend is %d\r", (MS2SEC(gameLocal.time) - memory.lastTimeFriendlyAISeen));
-			b_friendNearby = true;
-		}
-
-		// Play speech: heard something 
-		if (!b_friendNearby)
-		{
-			if (owner->AI_AlertLevel >= owner->thresh_3)
-			{
-				owner->Bark( "snd_alert2h" );
-			}
-			else if (owner->AI_AlertLevel >= owner->thresh_2)
-			{
-				owner->Bark( "snd_alert1h" );
-			}
-		}
-		else
-		{
-			if (owner->AI_AlertLevel >= owner->thresh_3)
-			{
-				owner->Bark( "snd_alert2ch" );
-			}
-			else if (owner->AI_AlertLevel >= owner->thresh_2)
-			{
-				owner->Bark( "snd_alert1ch" );
-			}
-		}
-	}
 }
 
 void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
@@ -428,7 +349,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	if (aiUse == AIUSE_WEAPON)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeWeapon");
-		if (chance < chanceToNotice)
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeWeapon))
 		{
 			OnVisualStimWeapon(stimSource, owner);
 		}
@@ -444,7 +365,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeBlood");
-		if (chance < chanceToNotice)
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeBlood))
 		{
 			OnVisualStimBlood(stimSource, owner);
 		}
@@ -452,7 +373,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	else if (aiUse == AIUSE_LIGHTSOURCE)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeLight");
-		if (chance < chanceToNotice)
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeLightSource))
 		{
 			OnVisualStimLightSource(stimSource, owner);
 		}
@@ -460,7 +381,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
-		if (chance < chanceToNotice)
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeMissingItem))
 		{
 			OnVisualStimMissingItem(stimSource, owner);
 		}
@@ -468,11 +389,27 @@ void State::OnVisualStim(idEntity* stimSource)
 	else if (aiUse == AIUSE_DOOR)
 	{
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeDoor");
-		if (chance < chanceToNotice)
+		if (chance < chanceToNotice && ShouldProcessAlert(EAlertTypeDoor))
 		{
 			OnVisualStimOpenDoor(stimSource, owner);
 		}
 	}
+}
+
+bool State::ShouldProcessAlert(EAlertType newAlertType)
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
+	
+	if (owner->alertTypeWeight[memory.alertType] <= owner->alertTypeWeight[newAlertType])
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
@@ -552,12 +489,12 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 	}
 
 	// Are they dead or unconscious?
-	if (other->health <= 0)
+	if (other->health <= 0 && ShouldProcessAlert(EAlertTypeDeadPerson))
 	{
 		// React to finding body
 		ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
 	}
-	else if (other->IsKnockedOut())
+	else if (other->IsKnockedOut() && ShouldProcessAlert(EAlertTypeUnconsciousPerson))
 	{
 		// React to finding unconscious person
 		ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
@@ -732,6 +669,7 @@ bool State::OnVisualStimDeadPerson(idActor* person, idAI* owner)
 	{
 		// The dead person is neutral or friendly, this is suspicious
 		gameLocal.Printf("I see dead people!\n");
+		memory.deadPeopleHaveBeenFound = true;
 
 		// We've seen this object, don't respond to it again
 		person->ResponseIgnore(ST_VISUAL, owner);
@@ -812,6 +750,8 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 	}
 	else 
 	{
+		memory.unconsciousPeopleHaveBeenFound = true;
+
 		// We've seen this object, don't respond to it again
 		person->ResponseIgnore(ST_VISUAL, owner);
 
@@ -833,14 +773,11 @@ bool State::OnVisualStimUnconsciousPerson(idActor* person, idAI* owner)
 		}
 
 		// Speak a reaction
-		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-		{
-			memory.lastTimeVisualStimBark = gameLocal.time;
-			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-			owner->GetSubsystem(SubsysCommunication)->PushTask(
-				TaskPtr(new SingleBarkTask(soundName))
-			);
-		}
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+		owner->GetSubsystem(SubsysCommunication)->PushTask(
+			TaskPtr(new SingleBarkTask(soundName))
+		);
 
 		// Raise alert level
 		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
@@ -882,13 +819,10 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
 
 	// Vocalize that see something out of place
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask("snd_foundBlood"))
-		);
-	}
+	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_foundBlood"))
+	);
 	gameLocal.Printf("Is that blood!\n");
 	
 	// One more piece of evidence of something out of place
@@ -1023,7 +957,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		turnLightOn = false;
 		stimSource->ResponseIgnore(ST_VISUAL, owner);
 	}
-	else if (memory.enemiesHaveBeenSeen || memory.itemsHaveBeenStolen || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
+	else if (owner->HasSeenEvidence() || memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_TURN_ON_ALL_LIGHTS)
 	{
 		//gameLocal.Printf("For my safety, I should turn on the light %s\n", stimSource->name.c_str());
 		turnLightOn = true;
@@ -1062,13 +996,10 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	gameLocal.Printf("Something is missing from over there!\n");
 
 	// Speak a reaction
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask("snd_foundMissingItem"))
-		);
-	}
+	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_foundMissingItem"))
+	);
 
 	// One more piece of evidence of something out of place
 	memory.itemsHaveBeenStolen = true;
@@ -1118,13 +1049,10 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	}
 
 	// Vocalize that see something out of place
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->GetSubsystem(SubsysCommunication)->PushTask(
-			TaskPtr(new SingleBarkTask("snd_foundOpenDoor"))
-		);
-	}
+	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->GetSubsystem(SubsysCommunication)->PushTask(
+		TaskPtr(new SingleBarkTask("snd_foundOpenDoor"))
+	);
 	gameLocal.Printf("That door isn't supposed to be open!\n");
 	
 	// One more piece of evidence of something out of place

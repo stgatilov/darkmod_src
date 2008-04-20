@@ -82,6 +82,8 @@ public:
 	// Handles incoming visual stims coming from the given entity
 	virtual void OnVisualStim(idEntity* stimSource);
 
+	virtual bool ShouldProcessAlert(EAlertType newAlertType);
+
 	// greebo: These get called by the above OnVisualStim() method. 
 	// The passed <stimSource> pointer is guaranteed to be non-NULL.
 	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);

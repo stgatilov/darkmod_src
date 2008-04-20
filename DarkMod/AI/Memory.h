@@ -88,6 +88,7 @@ namespace ai
 
 enum EAlertClass 
 {
+	EAlertNone,
 	EAlertVisual,
 	EAlertTactile,
 	EAlertAudio,
@@ -96,6 +97,7 @@ enum EAlertClass
 
 enum EAlertType
 {
+	EAlertTypeNone,
 	EAlertTypeEnemy,
 	EAlertTypeWeapon,
 	EAlertTypeDeadPerson,
@@ -173,6 +175,10 @@ public:
 
 	// TRUE if the AI knows that items have been stolen
 	bool itemsHaveBeenStolen;
+
+	// TRUE if the AI has found a dead or unconscious person
+	bool unconsciousPeopleHaveBeenFound;
+	bool deadPeopleHaveBeenFound;
 
 	// position of alert causing stimulus
 	idVec3 alertPos;
@@ -286,6 +292,8 @@ public:
 		lastRandomHeadTurnCheckTime(-1),
 		enemiesHaveBeenSeen(false),
 		itemsHaveBeenStolen(false),
+		unconsciousPeopleHaveBeenFound(false),
+		deadPeopleHaveBeenFound(false),
 		alertPos(0,0,0),
 		alertClass(EAlertClassCount),
 		alertType(EAlertTypeCount),
@@ -326,6 +334,8 @@ public:
 		savefile->WriteInt(lastTimeVisualStimBark);
 		savefile->WriteBool(enemiesHaveBeenSeen);
 		savefile->WriteBool(itemsHaveBeenStolen);
+		savefile->WriteBool(unconsciousPeopleHaveBeenFound);
+		savefile->WriteBool(deadPeopleHaveBeenFound);
 		savefile->WriteVec3(alertPos);
 		savefile->WriteInt(static_cast<int>(alertClass));
 		savefile->WriteInt(static_cast<int>(alertType));

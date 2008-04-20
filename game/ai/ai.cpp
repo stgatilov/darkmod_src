@@ -699,6 +699,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
+
+	for (i = 0; i < ai::EAlertTypeCount; i++)
+	{
+		savefile->WriteInt(alertTypeWeight[i]);
+	}
+
 	m_TactAlertEnt.Save( savefile );
 	m_AlertGraceActor.Save( savefile );
 	savefile->WriteInt( m_AlertGraceStart );
@@ -943,6 +949,10 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
+	for (i = 0; i < ai::EAlertTypeCount; i++)
+	{
+		savefile->ReadInt(alertTypeWeight[i]);
+	}
 	m_TactAlertEnt.Restore( savefile );
 	m_AlertGraceActor.Restore( savefile );
 	savefile->ReadInt( m_AlertGraceStart );
@@ -1139,6 +1149,17 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "max_interleave_think_dist",		"3000",		m_maxInterleaveThinkDist);
 
 	spawnArgs.GetBool( "ignore_alerts",			"0",		m_bIgnoreAlerts );
+
+	alertTypeWeight[ai::EAlertTypeNone] = 0;
+	alertTypeWeight[ai::EAlertTypeEnemy] = 50;
+	alertTypeWeight[ai::EAlertTypeWeapon] = 35;
+	alertTypeWeight[ai::EAlertTypeDeadPerson] = 41;
+	alertTypeWeight[ai::EAlertTypeUnconsciousPerson] = 40;
+	alertTypeWeight[ai::EAlertTypeBlood] = 30;
+	alertTypeWeight[ai::EAlertTypeLightSource] = 10;
+	alertTypeWeight[ai::EAlertTypeMissingItem] = 25;
+	alertTypeWeight[ai::EAlertTypeDoor] = 20;
+	alertTypeWeight[ai::EAlertTypeDamage] = 45;
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
 	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
@@ -8464,8 +8485,12 @@ void idAI::CheckTactile()
 
 bool idAI::HasSeenEvidence()
 {
-	return GetMemory().enemiesHaveBeenSeen
-		|| GetMemory().itemsHaveBeenStolen;
+	ai::Memory& memory = GetMemory();
+
+	return memory.enemiesHaveBeenSeen
+		|| memory.itemsHaveBeenStolen
+		|| memory.unconsciousPeopleHaveBeenFound
+		|| memory.deadPeopleHaveBeenFound;
 
 }
 /**

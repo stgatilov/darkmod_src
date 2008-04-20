@@ -471,6 +471,7 @@ public:
 	**/
 	idEntityPtr<idActor>	m_AlertedByActor;
 
+	int						alertTypeWeight[ai::EAlertTypeCount];
 	/**
 	* Set these flags so we can tell if the AI is running or creeping
 	* for the purposes of playing audible sounds and propagated sounds.

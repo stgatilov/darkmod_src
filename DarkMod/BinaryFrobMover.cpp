@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
 #include "sndProp.h"
+#include "StimResponse/StimResponse.h"
 
 //===============================================================================
 //CBinaryFrobMover
@@ -316,6 +317,10 @@ void CBinaryFrobMover::ToggleLock(void)
 
 void CBinaryFrobMover::Open(bool bMaster)
 {
+	// Clear this door from the ignore list so AI can react to it again	
+	StimClearIgnoreList(ST_VISUAL);
+	StimEnable(ST_VISUAL, 1);
+
 	m_StoppedDueToBlock = false;
 
 	idAngles tempAng;
@@ -378,6 +383,10 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 void CBinaryFrobMover::Close(bool bMaster)
 {
+	// Clear this door from the ignore list so AI can react to it again	
+	StimClearIgnoreList(ST_VISUAL);
+	StimEnable(ST_VISUAL, 1);
+
 	m_StoppedDueToBlock = false;
 
 	idAngles tempAng;
