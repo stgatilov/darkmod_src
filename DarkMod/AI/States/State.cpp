@@ -1037,6 +1037,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	// Is it supposed to be closed?
 	if (!stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
 	{
+		// door is not supposed to be closed, ignore
 		return;
 	}
 
@@ -1045,6 +1046,7 @@ void State::OnVisualStimOpenDoor(idEntity* stimSource, idAI* owner)
 	// Is it open?
 	if (!door->IsOpen())
 	{
+		// ignore closed doors
 		return;
 	}
 

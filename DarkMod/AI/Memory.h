@@ -12,6 +12,7 @@
 
 #include "../idlib/precompiled.h"
 #include "../BinaryFrobMover.h"
+#include "../FrobDoor.h"
 #include "DoorInfo.h"
 
 namespace ai
@@ -131,8 +132,8 @@ enum EAlertState {
 #define HIDING_OBJECT_HEIGHT 0.35f
 #define MAX_SPOTS_PER_SEARCH_CALL 100
 
-// The maximum time the AI is able to follow the enemy although it's visible
-#define MAX_BLIND_CHASE_TIME 1500
+// The maximum time the AI is able to follow the enemy although it's invisible
+#define MAX_BLIND_CHASE_TIME 3000
 
 /**
  * greebo: This class acts as container for all kinds of state variables.
@@ -279,8 +280,6 @@ public:
 		DoorInfoMap doorInfo;
 	} doorRelated;
 
-	
-
 	Memory() :
 		alertState(ERelaxed),
 		lastAlertRiseTime(-1),
@@ -362,6 +361,14 @@ public:
 		savefile->WriteVec3(positionBeforeTakingCover);
 
 		doorRelated.currentFrobMover.Save(savefile);
+
+		savefile->WriteInt(doorRelated.doorInfo.size());
+		for (DoorInfoMap::const_iterator i = doorRelated.doorInfo.begin();
+			 i != doorRelated.doorInfo.end(); i++)
+		{
+			savefile->WriteObject(i->first);
+			i->second->Save(savefile);
+		}
 	}
 
 	void Restore(idRestoreGame* savefile)
@@ -413,6 +420,26 @@ public:
 		savefile->ReadVec3(positionBeforeTakingCover);
 
 		doorRelated.currentFrobMover.Restore(savefile);
+		doorRelated.doorInfo.clear();
+
+		int num;
+		savefile->ReadInt(num);
+		for (int i = 0; i < num; i++)
+		{
+			CFrobDoor* door;
+			savefile->ReadObject(reinterpret_cast<idClass*&>(door));
+
+			// Allocate a new doorinfo structure and insert it into the map
+			DoorInfoPtr info(new DoorInfo);
+
+			std::pair<DoorInfoMap::iterator, bool> result = 
+				doorRelated.doorInfo.insert(DoorInfoMap::value_type(door, info));
+
+			// The insertion must succeed (unique pointers in the map!), otherwise we have inconsistent data
+			assert(result.second == true);
+
+			info->Restore(savefile);
+		}
 	}
 
 	DoorInfo& GetDoorInfo(CFrobDoor* door)
