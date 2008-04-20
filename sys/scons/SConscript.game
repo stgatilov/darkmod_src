@@ -132,6 +132,7 @@ func_shooter.cpp \
 FrobDoor.cpp \
 FrobButton.cpp \
 FrobDoorHandle.cpp \
+FrobLever.cpp \
 Grabber.cpp \
 HidingSpotSearchCollection.cpp \
 idAbsenceMarkerEntity.cpp \
