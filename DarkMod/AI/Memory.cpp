@@ -110,14 +110,7 @@ void Memory::Save(idSaveGame* savefile) const
 		i->second->Save(savefile);
 	}
 
-	// greebo: Save the AAS areaNum => DoorInfo mapping (only IDs get saved)
-	savefile->WriteInt(doorRelated.areaDoorInfoMap.size());
-	for (AreaToDoorInfoMap::const_iterator i = doorRelated.areaDoorInfoMap.begin();
-		 i != doorRelated.areaDoorInfoMap.end(); i++)
-	{
-		savefile->WriteInt(i->first); // areanum
-		savefile->WriteInt(i->second->id); // doorinfo id
-	}
+	// greebo: Don't save the AAS areaNum => DoorInfo mapping (can be re-calculated at restore time)
 }
 
 void Memory::Restore(idRestoreGame* savefile)
@@ -194,36 +187,14 @@ void Memory::Restore(idRestoreGame* savefile)
 		info->Restore(savefile);
 	}
 
-	// greebo: Restore the AAS areaNum => DoorInfo mapping (only IDs get saved)
-	savefile->ReadInt(num);
-	for (int i = 0; i < num; i++)
+	// greebo: Reconstruct the AAS areaNum => DoorInfo mapping
+	for (DoorInfoMap::iterator i = doorRelated.doorInfo.begin();
+		 i != doorRelated.doorInfo.end(); i++)
 	{
-		int areaNum;
-		int doorInfoId;
-		savefile->ReadInt(areaNum); // areanum
-		savefile->ReadInt(doorInfoId); // doorinfo id
-
-		bool inserted = false;
-
-		// Look up the door info structure with the given id
-		for (DoorInfoMap::const_iterator i = doorRelated.doorInfo.begin();
-			 i != doorRelated.doorInfo.end(); i++)
-		{
-			if (i->second->id == doorInfoId)
-			{
-				// doorinfo id found, insert!
-				doorRelated.areaDoorInfoMap.insert(
-					AreaToDoorInfoMap::value_type(areaNum, i->second)
-				);
-				inserted = true;
-				break;
-			}
-		}
-
-		if (!inserted)
-		{
-			gameLocal.Warning("Could not restore DoorInfo mapping consistently: areaNum = %d.\n", areaNum);
-		}
+		// Use the areanumber as index and insert the pointer into the map
+		doorRelated.areaDoorInfoMap.insert(
+			AreaToDoorInfoMap::value_type(i->second->areaNum, i->second)
+		);
 	}
 }
 
@@ -238,16 +209,16 @@ DoorInfo& Memory::GetDoorInfo(CFrobDoor* door)
 	else
 	{
 		DoorInfoPtr info(new DoorInfo);
+		// Set the area number
+		info->areaNum = door->GetFrobMoverAasArea(owner->GetAAS());
+		// Insert into the map
 		std::pair<DoorInfoMap::iterator, bool> result =
 			doorRelated.doorInfo.insert(DoorInfoMap::value_type(door, info));
 
-		if (result.second)
-		{
-			// We've got a new door info area inserted, map the area number to this structure
-			doorRelated.areaDoorInfoMap.insert(
-				AreaToDoorInfoMap::value_type(door->GetFrobMoverAasArea(owner->GetAAS()), info)
-			);
-		}
+		// Add the areaNum => info mapping for faster lookup using area numbers
+		doorRelated.areaDoorInfoMap.insert(
+			AreaToDoorInfoMap::value_type(door->GetFrobMoverAasArea(owner->GetAAS()), info)
+		);
 
 		return *(result.first->second);
 	}

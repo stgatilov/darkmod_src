@@ -17,8 +17,8 @@ namespace ai
 
 struct DoorInfo
 {
-	// A unique ID of this object (needed for saving and restoring)
-	int id;
+	// The AAS area number
+	int areaNum;
 
 	// When this door was seen the last time (-1 == never)
 	int lastTimeSeen;
@@ -39,9 +39,6 @@ struct DoorInfo
 
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
-
-private:
-	static int highestId;
 };
 typedef boost::shared_ptr<DoorInfo> DoorInfoPtr;
 

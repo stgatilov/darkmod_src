@@ -18,7 +18,7 @@ namespace ai
 {
 
 DoorInfo::DoorInfo() :
-	id(++highestId),
+	areaNum(-1),
 	lastTimeSeen(-1),
 	lastTimeTriedToOpen(-1),
 	wasOpen(false),
@@ -28,7 +28,7 @@ DoorInfo::DoorInfo() :
 
 void DoorInfo::Save(idSaveGame* savefile) const
 {
-	savefile->WriteInt(id);
+	savefile->WriteInt(areaNum);
 	savefile->WriteInt(lastTimeSeen);
 	savefile->WriteInt(lastTimeTriedToOpen);
 	savefile->WriteBool(wasOpen);
@@ -38,15 +38,12 @@ void DoorInfo::Save(idSaveGame* savefile) const
 
 void DoorInfo::Restore(idRestoreGame* savefile)
 {
-	savefile->ReadInt(id);
+	savefile->ReadInt(areaNum);
 	savefile->ReadInt(lastTimeSeen);
 	savefile->ReadInt(lastTimeTriedToOpen);
 	savefile->ReadBool(wasOpen);
 	savefile->ReadBool(wasLocked);
 	savefile->ReadBool(wasBlocked);
 }
-
-// Initialise the static member
-int DoorInfo::highestId = 0;
 
 } // namespace ai

@@ -305,7 +305,8 @@ public:
 	 * This will create a new info structure if it doesn't exist yet, so the reference is always valid.
 	 */
 	DoorInfo& GetDoorInfo(CFrobDoor* door);
-	
+	// Same as above, but use the area number as input argument
+	DoorInfo& GetDoorInfo(int areaNum);	
 };
 
 } // namespace ai
