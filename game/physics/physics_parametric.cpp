@@ -458,6 +458,32 @@ const idAngles& idPhysics_Parametric::GetLocalAngles() const
 	return current.localAngles;
 }
 
+void idPhysics_Parametric::	SetLocalAngles(idAngles curAngles)
+{
+	current.localAngles = curAngles;
+
+	current.angularExtrapolation.SetStartValue( current.localAngles );
+	current.angularInterpolation.SetStartValue( current.localAngles );
+
+	current.localAngles = current.angularExtrapolation.GetCurrentValue( current.time );
+	if ( hasMaster && isOrientated ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
+		self->GetMasterPosition( masterOrigin, masterAxis );
+		current.axis = current.localAngles.ToMat3() * masterAxis;
+		current.angles = current.axis.ToAngles();
+	}
+	else {
+		current.axis = current.localAngles.ToMat3();
+		current.angles = current.localAngles;
+	}
+	if ( clipModel ) {
+		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	}
+	Activate();
+}
+
+
 /*
 ================
 idPhysics_Parametric::SetClipModel
@@ -756,28 +782,7 @@ idPhysics_Parametric::SetAxis
 ================
 */
 void idPhysics_Parametric::SetAxis( const idMat3 &newAxis, int id ) {
-	idVec3 masterOrigin;
-	idMat3 masterAxis;
-
-	current.localAngles = newAxis.ToAngles();
-
-	current.angularExtrapolation.SetStartValue( current.localAngles );
-	current.angularInterpolation.SetStartValue( current.localAngles );
-
-	current.localAngles = current.angularExtrapolation.GetCurrentValue( current.time );
-	if ( hasMaster && isOrientated ) {
-		self->GetMasterPosition( masterOrigin, masterAxis );
-		current.axis = current.localAngles.ToMat3() * masterAxis;
-		current.angles = current.axis.ToAngles();
-	}
-	else {
-		current.axis = current.localAngles.ToMat3();
-		current.angles = current.localAngles;
-	}
-	if ( clipModel ) {
-		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
-	}
-	Activate();
+	SetLocalAngles(newAxis.ToAngles());
 }
 
 /*

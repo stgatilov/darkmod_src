@@ -287,6 +287,7 @@ void CFrobDoor::Spawn( void )
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
 
+	// Flag the AAS areas the door is located in with door travel flag
 	for (int i = 0; i < gameLocal.NumAAS(); i++)
 	{
 		idAAS*	aas = gameLocal.GetAAS(i);
@@ -491,8 +492,7 @@ void CFrobDoor::OpenDoor(bool bMaster)
 			if( m_TransSpeed )
 				Event_SetMoveSpeed( m_TransSpeed );
 
-			idVec3 tv3 = ( m_StartPos +  m_Translation );
-			Event_MoveToPos( tv3 );
+			Event_MoveToPos( m_OpenOrigin );
 
 			// Update soundprop
 			UpdateSoundLoss();
@@ -573,7 +573,7 @@ void CFrobDoor::Close(bool bMaster)
 		if( m_TransSpeed )
 			Event_SetMoveSpeed( m_TransSpeed );
 
-		Event_MoveToPos(m_StartPos);
+		Event_MoveToPos(m_ClosedOrigin);
 	}
 }
 

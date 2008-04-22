@@ -74,6 +74,7 @@ public:
 	void					GetLocalOrigin( idVec3 &curOrigin ) const;
 	void					GetLocalAngles( idAngles &curAngles ) const;
 	const idAngles&			GetLocalAngles() const;
+	void					SetLocalAngles(idAngles curAngles);
 
 	void					GetAngles( idAngles &curAngles ) const;
 

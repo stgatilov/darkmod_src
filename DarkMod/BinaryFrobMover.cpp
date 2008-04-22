@@ -177,7 +177,7 @@ void CBinaryFrobMover::Spawn( void )
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
 	idAngles tempAngle;
-	physicsObj.GetLocalAngles( tempAngle );
+	tempAngle = physicsObj.GetLocalAngles();
 
 	// angua: the origin of the door in closed state
 	m_ClosedOrigin = physicsObj.GetOrigin();
@@ -204,19 +204,9 @@ void CBinaryFrobMover::Spawn( void )
 	if( m_vImpulseDirClose.LengthSqr() > 0 )
 		m_vImpulseDirClose.Normalize();
 
-	if(!m_Open) 
-	{
-		// Door starts _completely_ closed
-		Event_ClosePortal();
+	m_ClosedAngles = tempAngle;
+	m_OpenAngles = tempAngle + m_Rotate;
 
-		m_ClosedAngles = tempAngle;
-		m_OpenAngles = tempAngle + m_Rotate;
-	}
-	else
-	{
-		m_ClosedAngles = tempAngle - partialAngle;
-		m_OpenAngles = tempAngle + m_Rotate - partialAngle;
-	}
 
 	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
 	{
@@ -280,6 +270,21 @@ void CBinaryFrobMover::Spawn( void )
 	m_OpenDir = ( (m_OpenPos - GetPhysics()->GetOrigin()) * normal ) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
+
+	if(!m_Open) 
+	{
+		// Door starts _completely_ closed
+		Event_ClosePortal();
+
+	}
+	else
+	{
+		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
+		physicsObj.SetOrigin(m_StartPos);
+		physicsObj.SetLocalAngles(tempAngle + partialAngle);
+	}
+
+	UpdateVisuals();
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
