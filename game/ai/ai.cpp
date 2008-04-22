@@ -2096,7 +2096,13 @@ bool idAI::ReEvaluateArea(int areaNum)
 		return false;
 	}
 
-	// TODO: Re-evaluate
+	// Let's see if we have a valid door info structure in our memory
+	ai::DoorInfoPtr doorInfo = GetMemory().GetDoorInfo(areaNum);
+
+	if (doorInfo != NULL)
+	{
+		// TODO: Re-evaluate
+	}
 
 	// Remember the time
 	lastReEvaluationTime = gameLocal.time;

@@ -224,4 +224,10 @@ DoorInfo& Memory::GetDoorInfo(CFrobDoor* door)
 	}
 }
 
+DoorInfoPtr Memory::GetDoorInfo(int areaNum)
+{
+	AreaToDoorInfoMap::iterator i = doorRelated.areaDoorInfoMap.find(areaNum);
+	return (i != doorRelated.areaDoorInfoMap.end()) ? i->second : DoorInfoPtr();
+}
+
 } // namespace ai
