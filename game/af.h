@@ -44,7 +44,7 @@ typedef struct afTouch_s {
 class idAF {
 public:
 							idAF( void );
-							~idAF( void );
+	virtual ~idAF( void );
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );

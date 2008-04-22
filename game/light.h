@@ -30,8 +30,8 @@ class idLight : public idEntity {
 public:
 	CLASS_PROTOTYPE( idLight );
 
-					idLight();
-					~idLight();
+	idLight();
+	virtual ~idLight();
 
 	void			Spawn( void );
 

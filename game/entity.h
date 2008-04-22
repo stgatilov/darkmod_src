@@ -302,8 +302,8 @@ public:
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
-							idEntity();
-							~idEntity();
+	idEntity();
+	virtual ~idEntity();
 
 	void					Spawn( void );
 
