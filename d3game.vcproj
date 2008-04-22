@@ -549,6 +549,9 @@
 					RelativePath="DarkMod\AI\DoorInfo.h">
 				</File>
 				<File
+					RelativePath="DarkMod\AI\DoorInfo.cpp">
+				</File>
+				<File
 					RelativePath="game\ai\MoveState.h">
 				</File>
 				<File
@@ -571,6 +574,9 @@
 				</File>
 				<File
 					RelativePath=".\DarkMod\Ai\Memory.h">
+				</File>
+				<File
+					RelativePath=".\DarkMod\Ai\Memory.cpp">
 				</File>
 				<File
 					RelativePath=".\DarkMod\Ai\Queue.h">

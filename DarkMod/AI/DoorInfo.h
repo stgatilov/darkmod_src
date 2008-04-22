@@ -17,6 +17,9 @@ namespace ai
 
 struct DoorInfo
 {
+	// A unique ID of this object (needed for saving and restoring)
+	int id;
+
 	// When this door was seen the last time (-1 == never)
 	int lastTimeSeen;
 
@@ -32,31 +35,13 @@ struct DoorInfo
 	// Whether this door was blocked at the last open attempt
 	bool wasBlocked;
 
-	DoorInfo() :
-		lastTimeSeen(-1),
-		lastTimeTriedToOpen(-1),
-		wasOpen(false),
-		wasLocked(false),
-		wasBlocked(false)
-	{}
+	DoorInfo();
 
-	void Save(idSaveGame* savefile) const
-	{
-		savefile->WriteInt(lastTimeSeen);
-		savefile->WriteInt(lastTimeTriedToOpen);
-		savefile->WriteBool(wasOpen);
-		savefile->WriteBool(wasLocked);
-		savefile->WriteBool(wasBlocked);
-	}
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 
-	void Restore(idRestoreGame* savefile)
-	{
-		savefile->ReadInt(lastTimeSeen);
-		savefile->ReadInt(lastTimeTriedToOpen);
-		savefile->ReadBool(wasOpen);
-		savefile->ReadBool(wasLocked);
-		savefile->ReadBool(wasBlocked);
-	}
+private:
+	static int highestId;
 };
 typedef boost::shared_ptr<DoorInfo> DoorInfoPtr;
 

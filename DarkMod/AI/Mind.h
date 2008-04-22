@@ -40,7 +40,6 @@ private:
 
 public:
 	Mind(idAI* owner);
-	virtual ~Mind() {}
 
 	/**
 	 * greebo: This should be called each frame to let the AI

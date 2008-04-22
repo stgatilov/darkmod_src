@@ -543,6 +543,9 @@ protected:
 	idAAS *					aas;
 	int						travelFlags;
 
+	// greebo: When this AI has last re-evaluated a forbidden area
+	int						lastReEvaluationTime;
+
 	idMoveState				move;
 	idMoveState				savedMove;
 
@@ -1119,6 +1122,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// navigation
 	void					KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick );
+
+	// greebo: For Documentation, see idActor class (this is an override).
+	virtual bool			ReEvaluateArea(int areaNum);
 
 	/**
 	 * greebo: ReachedPos checks whether we the AI has reached the given target position <pos>.

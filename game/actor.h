@@ -307,6 +307,18 @@ public:
 
 	virtual bool			IsKnockedOut( void ) { return false; };
 
+	/** 
+	 * greebo: This gets called by the pathing routine to let the actor
+	 * reconsider the "forbidden" status of the given area. After some time
+	 * AI should be able to re-try opening locked doors otherwise the door's AAS area
+	 * stays flagged as "forbidden" for all times.
+	 *
+	 * Note: This method is overriden by the AI class.
+	 *
+	 * @returns: TRUE if the area is now considered as "allowed", FALSE otherwise.
+	 */
+	virtual bool			ReEvaluateArea(int areaNum);
+
 protected:
 
 	/*	CrashLand variables	Added by Richard Day	*/

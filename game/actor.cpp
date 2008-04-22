@@ -3083,6 +3083,11 @@ Quit:
 	return ent;
 }
 
+bool idActor::ReEvaluateArea(int areaNum)
+{
+	// Default implementation for actors: return positive
+	return true;
+}
 
 /***********************************************************************
 

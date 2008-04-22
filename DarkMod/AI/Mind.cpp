@@ -27,6 +27,7 @@ namespace ai
 #define STATE_DEFAULT STATE_IDLE
 
 Mind::Mind(idAI* owner) :
+	_memory(owner),
 	_subsystemIterator(SubsystemCount),
 	_switchState(false)
 {
