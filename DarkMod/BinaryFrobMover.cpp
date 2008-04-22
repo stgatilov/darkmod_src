@@ -204,9 +204,8 @@ void CBinaryFrobMover::Spawn( void )
 	if( m_vImpulseDirClose.LengthSqr() > 0 )
 		m_vImpulseDirClose.Normalize();
 
-	m_ClosedAngles = tempAngle;
-	m_OpenAngles = tempAngle + m_Rotate;
-
+	m_ClosedAngles = tempAngle.Normalize180();
+	m_OpenAngles = (tempAngle + m_Rotate).Normalize180();
 
 	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
 	{
@@ -502,8 +501,11 @@ void CBinaryFrobMover::DoneStateChange(void)
 	{
 		// in all other cases, use the angles and position of origin to check if the door is open or closed
 		// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-		checkClose = physicsObj.GetLocalAngles().Compare(m_ClosedAngles, VECTOR_EPSILON)
-			&& physicsObj.GetOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON);
+		idAngles localAngles = physicsObj.GetLocalAngles();
+		localAngles.Normalize180();
+
+		checkClose = localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && 
+			         physicsObj.GetOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON);
 	}
 
 	if (checkClose)
