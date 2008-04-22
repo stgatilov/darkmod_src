@@ -705,10 +705,10 @@ int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 		gameLocal.Error("FrobMover %s has no clip model", name.c_str());
 	}
 
-	idBounds bounds = clipModel->GetBounds();
+	const idBounds& bounds = clipModel->GetAbsBounds();
 
 	idVec3 center = (m_ClosedPos + GetPhysics()->GetOrigin()) * 0.5;
-	center.z = bounds[1].z + 1;
+	center.z = bounds[0].z + 1;
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 

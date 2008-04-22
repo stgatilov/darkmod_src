@@ -665,11 +665,14 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
-	// Update our door info structure
-	DoorInfo& doorInfo = memory.GetDoorInfo(frobDoor);
-	doorInfo.lastTimeSeen = gameLocal.time;
-	doorInfo.wasLocked = frobDoor->IsLocked();
-	doorInfo.wasOpen = frobDoor->IsOpen();
+	if (frobDoor != NULL) 
+	{
+		// Update our door info structure
+		DoorInfo& doorInfo = memory.GetDoorInfo(frobDoor);
+		doorInfo.lastTimeSeen = gameLocal.time;
+		doorInfo.wasLocked = frobDoor->IsLocked();
+		doorInfo.wasOpen = frobDoor->IsOpen();
+	}
 
 	memory.doorRelated.currentDoor = NULL;
 	_doorHandlingState = EStateNone;
