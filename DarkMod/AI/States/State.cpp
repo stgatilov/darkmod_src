@@ -1037,6 +1037,16 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	doorInfo.lastTimeSeen = gameLocal.time;
 	doorInfo.wasOpen = door->IsOpen();
 
+	// greebo: If the door is open, remove the corresponding area from the "forbidden" list
+	if (door->IsOpen()) 
+	{
+		// Also, reset the "locked" property, open doors can't be locked
+		doorInfo.wasLocked = false;
+
+		// Enable the area for pathfinding again now that the door is open
+		gameLocal.m_AreaManager.RemoveForbiddenArea(doorInfo.areaNum, owner);
+	}
+
 	// We've seen this object, don't respond to it again
 	// Will get cleared if door changes state again
 	stimSource->ResponseIgnore(ST_VISUAL, owner);
