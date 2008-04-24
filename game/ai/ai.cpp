@@ -390,7 +390,9 @@ idAI::idAI()
 {
 	aas					= NULL;
 	travelFlags			= TFL_WALK|TFL_AIR|TFL_DOOR;
-	lastReEvaluationTime = -1;
+	lastAreaReevaluationTime = -1;
+	maxAreaReevaluationInterval = 2000; // msec
+	doorRetryTime		= 120000; // msec
 
 	kickForce			= 2048.0f;
 	ignore_obstacles	= false;
@@ -563,7 +565,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	int i;
 
 	savefile->WriteInt( travelFlags );
-	savefile->WriteInt(lastReEvaluationTime);
+	savefile->WriteInt(lastAreaReevaluationTime);
+	savefile->WriteInt(maxAreaReevaluationInterval);
+	savefile->WriteInt(doorRetryTime);
 	move.Save( savefile );
 	savedMove.Save( savefile );
 	savefile->WriteFloat( kickForce );
@@ -799,7 +803,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	idBounds	bounds;
 
 	savefile->ReadInt( travelFlags );
-	savefile->ReadInt(lastReEvaluationTime);
+	savefile->ReadInt(lastAreaReevaluationTime);
+	savefile->ReadInt(maxAreaReevaluationInterval);
+	savefile->ReadInt(doorRetryTime);
 	move.Restore( savefile );
 	savedMove.Restore( savefile );
 	savefile->ReadFloat( kickForce );
@@ -1107,6 +1113,9 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "fly_roll_max",			"60",		fly_roll_max );
 	spawnArgs.GetFloat( "fly_pitch_scale",		"45",		fly_pitch_scale );
 	spawnArgs.GetFloat( "fly_pitch_max",		"30",		fly_pitch_max );
+
+	maxAreaReevaluationInterval = spawnArgs.GetInt( "max_area_reevaluation_interval", "2000");
+	doorRetryTime = SEC2MS(spawnArgs.GetInt( "door_retry_time", "120"));
 
 	spawnArgs.GetFloat( "melee_range",			"64",		melee_range );
 	spawnArgs.GetFloat( "fire_range",			"0",		fire_range );
@@ -2091,20 +2100,20 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 bool idAI::ReEvaluateArea(int areaNum)
 {
 	// Only re-evaluate every now and then, not each frame
-	if (gameLocal.time < lastReEvaluationTime + 2000) 
+	if (gameLocal.time < lastAreaReevaluationTime + maxAreaReevaluationInterval) 
 	{
 		return false;
 	}
 
 	// Remember the time
-	lastReEvaluationTime = gameLocal.time;
+	lastAreaReevaluationTime = gameLocal.time;
 
 	// Let's see if we have a valid door info structure in our memory
 	ai::DoorInfoPtr doorInfo = GetMemory().GetDoorInfo(areaNum);
 
 	if (doorInfo != NULL)
 	{
-		if (doorInfo->lastTimeTriedToOpen + 60000 < gameLocal.time)
+		if (doorInfo->lastTimeTriedToOpen + doorRetryTime < gameLocal.time)
 		{
 			// Re-try the door after 60 seconds
 			gameLocal.m_AreaManager.RemoveForbiddenArea(areaNum, this);

@@ -543,8 +543,12 @@ protected:
 	idAAS *					aas;
 	int						travelFlags;
 
-	// greebo: When this AI has last re-evaluated a forbidden area
-	int						lastReEvaluationTime;
+	// greebo: When this AI has last re-evaluated a forbidden area (game time)
+	int						lastAreaReevaluationTime;
+	// The minimum time that needs to pass by before the AI re-evaluates a forbidden area (msec)
+	int						maxAreaReevaluationInterval;
+	// The time that needs to pass before locked doors are enabled for another try (msec)
+	int						doorRetryTime;
 
 	idMoveState				move;
 	idMoveState				savedMove;
