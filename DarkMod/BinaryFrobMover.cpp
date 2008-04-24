@@ -35,6 +35,7 @@ const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetLock( "GetLock", NULL, 'f' );
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
+	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
 	EVENT( EV_TDM_Door_Open,				CBinaryFrobMover::Open)
 	EVENT( EV_TDM_Door_Close,				CBinaryFrobMover::Close)
 	EVENT( EV_TDM_Door_ToggleOpen,			CBinaryFrobMover::ToggleOpen)
@@ -164,7 +165,6 @@ void CBinaryFrobMover::Spawn( void )
 
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
-	idAngles partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
 
 	m_Locked = spawnArgs.GetBool("locked");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
@@ -176,14 +176,24 @@ void CBinaryFrobMover::Spawn( void )
 	if( areaPortal > 0 )
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
 
+	
+	// Schedule a post-spawn event to parse the rest of the spawnargs
+	PostEventMS( &EV_PostSpawn, 1 );
+}
+
+void CBinaryFrobMover::Event_PostSpawn() 
+{
 	idAngles tempAngle;
 	tempAngle = physicsObj.GetLocalAngles();
 
+	idAngles partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
+
 	// angua: the origin of the door in closed state
-	m_ClosedOrigin = physicsObj.GetOrigin();
+	physicsObj.GetLocalOrigin(m_ClosedOrigin);
+	
 	// Original starting position of the door in case it is a sliding door.
 	// Add the initial position offset in case the mapper makes the door start out inbetween states
-	m_StartPos = m_ClosedOrigin + spawnArgs.GetVector("start_position", "0 0 0");
+	m_StartPos = spawnArgs.GetVector("start_position", "0 0 0");
 
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
@@ -230,43 +240,43 @@ void CBinaryFrobMover::Spawn( void )
 	{
 		gameLocal.Error("Binary Frob Mover %s has no clip model", name.c_str());
 	}
-	idBox closedBox(clipModel->GetBounds(), clipModel->GetOrigin(), m_ClosedAngles.ToMat3());
+	idBox closedBox(clipModel->GetBounds(), m_ClosedOrigin, m_ClosedAngles.ToMat3());
 	idVec3 closedBoxVerts[8];
 	closedBox.GetVerts(closedBoxVerts);
 
 	float maxDistSquare = 0;
 	for (int i = 0; i < 8; i++)
 	{
-		float distSquare = (closedBoxVerts[i] - GetPhysics()->GetOrigin()).LengthSqr();
+		float distSquare = (closedBoxVerts[i] - m_ClosedOrigin).LengthSqr();
 		if (distSquare > maxDistSquare)
 		{
-			m_ClosedPos = closedBoxVerts[i];
+			m_ClosedPos = closedBoxVerts[i] - m_ClosedOrigin;
 			maxDistSquare = distSquare;
 		}
 	}
-	// gameRenderWorld->DebugArrow(colorGreen, m_ClosedPos, m_ClosedPos + idVec3(0, 0, 30), 2, 200000);
+	// gameRenderWorld->DebugArrow(colorGreen, GetPhysics()->GetOrigin() + m_ClosedPos, GetPhysics()->GetOrigin() + m_ClosedPos + idVec3(0, 0, 30), 2, 200000);
 
-	idBox openBox(clipModel->GetBounds(), clipModel->GetOrigin(), m_OpenAngles.ToMat3());
+	idBox openBox(clipModel->GetBounds(), m_OpenOrigin, m_OpenAngles.ToMat3());
 	idVec3 openBoxVerts[8];
 	openBox.GetVerts(openBoxVerts);
 
 	maxDistSquare = 0;
 	for (int i = 0; i < 8; i++)
 	{
-		float distSquare = (openBoxVerts[i] - GetPhysics()->GetOrigin()).LengthSqr();
+		float distSquare = (openBoxVerts[i] - m_OpenOrigin).LengthSqr();
 		if (distSquare > maxDistSquare)
 		{
-			m_OpenPos = openBoxVerts[i];
+			m_OpenPos = openBoxVerts[i] - m_OpenOrigin;
 			maxDistSquare = distSquare;
 		}
 	}
-	// gameRenderWorld->DebugArrow(colorRed, m_OpenPos, m_OpenPos + idVec3(0, 0, 30), 2, 200000);
+	// gameRenderWorld->DebugArrow(colorRed, GetPhysics()->GetOrigin() + m_OpenPos, GetPhysics()->GetOrigin() + m_OpenPos + idVec3(0, 0, 30), 2, 200000);
 
 	idRotation rot = m_Rotate.ToRotation();
 	idVec3 rotationAxis = rot.GetVec();
-	idVec3 normal = rotationAxis.Cross(m_ClosedPos - GetPhysics()->GetOrigin());
+	idVec3 normal = rotationAxis.Cross(m_ClosedPos);
 
-	m_OpenDir = ( (m_OpenPos - GetPhysics()->GetOrigin()) * normal ) * normal;
+	m_OpenDir = ( (m_OpenPos) * normal ) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
@@ -274,15 +284,13 @@ void CBinaryFrobMover::Spawn( void )
 	{
 		// Door starts _completely_ closed
 		Event_ClosePortal();
-
 	}
 	else
 	{
 		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
-		physicsObj.SetOrigin(m_StartPos);
+		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
 		physicsObj.SetLocalAngles(tempAngle + partialAngle);
 	}
-
 	UpdateVisuals();
 }
 
@@ -501,11 +509,13 @@ void CBinaryFrobMover::DoneStateChange(void)
 	{
 		// in all other cases, use the angles and position of origin to check if the door is open or closed
 		// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+		idVec3 localOrg;
+		physicsObj.GetLocalOrigin(localOrg);
 		idAngles localAngles = physicsObj.GetLocalAngles();
 		localAngles.Normalize180();
 
 		checkClose = localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && 
-			         physicsObj.GetOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON);
+			localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 	}
 
 	if (checkClose)

@@ -111,6 +111,8 @@ protected:
 	void					Event_PartBlocked( idEntity *blockingEntity );
 
 	void					MoveToPos( const idVec3 &pos);
+	void					MoveToLocalPos( const idVec3 &pos );
+
 	void					UpdateMoveSound( moveStage_t stage );
 	void					UpdateRotationSound( moveStage_t stage );
 	void					SetGuiStates( const char *state );

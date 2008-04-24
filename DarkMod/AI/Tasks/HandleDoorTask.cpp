@@ -54,8 +54,8 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = frobDoor->GetOpenDir();
-	const idVec3& openPos = frobDoor->GetOpenPos();
-	const idVec3& closedPos = frobDoor->GetClosedPos();
+	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
+	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
 
 	idVec3 dir = closedPos - frobDoorOrg;
 	dir.z = 0;

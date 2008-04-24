@@ -27,6 +27,7 @@ public:
 							CBinaryFrobMover( void );
 
 	void					Spawn( void );
+	void					Event_PostSpawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );

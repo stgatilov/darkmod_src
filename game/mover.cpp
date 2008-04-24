@@ -1108,6 +1108,15 @@ void idMover::MoveToPos( const idVec3 &pos ) {
 
 /*
 ================
+idMover::MoveToLocalPos
+================
+*/
+void idMover::MoveToLocalPos( const idVec3 &pos ) {
+	dest_position = pos;
+	BeginMove( NULL );
+}
+/*
+================
 idMover::Event_MoveToPos
 ================
 */

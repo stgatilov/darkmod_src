@@ -492,7 +492,7 @@ void CFrobDoor::OpenDoor(bool bMaster)
 			if( m_TransSpeed )
 				Event_SetMoveSpeed( m_TransSpeed );
 
-			Event_MoveToPos( m_OpenOrigin );
+			MoveToLocalPos( m_OpenOrigin );
 
 			// Update soundprop
 			UpdateSoundLoss();
@@ -573,7 +573,7 @@ void CFrobDoor::Close(bool bMaster)
 		if( m_TransSpeed )
 			Event_SetMoveSpeed( m_TransSpeed );
 
-		Event_MoveToPos(m_ClosedOrigin);
+		MoveToLocalPos(m_ClosedOrigin);
 	}
 }
 

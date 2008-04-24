@@ -72,6 +72,7 @@ public:
 	bool					UsingSplineAngles( void ) const;
 
 	void					GetLocalOrigin( idVec3 &curOrigin ) const;
+	void					SetLocalOrigin( const idVec3 &newOrigin);
 	void					GetLocalAngles( idAngles &curAngles ) const;
 	const idAngles&			GetLocalAngles() const;
 	void					SetLocalAngles(idAngles curAngles);

@@ -756,14 +756,14 @@ idPhysics_Parametric::SetOrigin
 ================
 */
 void idPhysics_Parametric::SetOrigin( const idVec3 &newOrigin, int id ) {
-	idVec3 masterOrigin;
-	idMat3 masterAxis;
 
 	current.linearExtrapolation.SetStartValue( newOrigin );
 	current.linearInterpolation.SetStartValue( newOrigin );
 
 	current.localOrigin = current.linearExtrapolation.GetCurrentValue( current.time );
 	if ( hasMaster ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
 		self->GetMasterPosition( masterOrigin, masterAxis );
 		current.origin = masterOrigin + current.localOrigin * masterAxis;
 	}
@@ -775,6 +775,28 @@ void idPhysics_Parametric::SetOrigin( const idVec3 &newOrigin, int id ) {
 	}
 	Activate();
 }
+
+void idPhysics_Parametric::SetLocalOrigin( const idVec3 &newOrigin) {
+	current.localOrigin = newOrigin;
+	if ( hasMaster ) {
+		idVec3 masterOrigin;
+		idMat3 masterAxis;
+		self->GetMasterPosition( masterOrigin, masterAxis );
+		current.origin = masterOrigin + current.localOrigin * masterAxis;
+	}
+	else {
+		current.origin = current.localOrigin;
+	}
+	if ( clipModel ) {
+		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
+	}
+
+	current.linearExtrapolation.SetStartValue( current.localOrigin );
+	current.linearInterpolation.SetStartValue( current.localOrigin );
+
+	Activate();
+}
+
 
 /*
 ================
