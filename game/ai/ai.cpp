@@ -2096,16 +2096,21 @@ bool idAI::ReEvaluateArea(int areaNum)
 		return false;
 	}
 
+	// Remember the time
+	lastReEvaluationTime = gameLocal.time;
+
 	// Let's see if we have a valid door info structure in our memory
 	ai::DoorInfoPtr doorInfo = GetMemory().GetDoorInfo(areaNum);
 
 	if (doorInfo != NULL)
 	{
-		// TODO: Re-evaluate
+		if (doorInfo->lastTimeTriedToOpen + 60000 < gameLocal.time)
+		{
+			// Re-try the door after 60 seconds
+			gameLocal.m_AreaManager.RemoveForbiddenArea(areaNum, this);
+			return true;
+		}
 	}
-
-	// Remember the time
-	lastReEvaluationTime = gameLocal.time;
 
 	return false;
 }
