@@ -2446,6 +2446,11 @@ idEntity::PropSoundS
 
 void idEntity::PropSoundS( const char *localName, const char *globalName, float VolModIn )
 {
+	if (cv_sndprop_disable.GetBool())
+	{
+		return;
+	}
+
 	int start, end = -1, len;
 	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
 	float volMod(0.0), durMod(1.0);

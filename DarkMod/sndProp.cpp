@@ -513,7 +513,7 @@ void CsndProp::Propagate
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
 
 	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished finding all AI entities, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished finding all AI entities, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
 	// cull the list by testing distance and valid team flag
 
@@ -579,7 +579,7 @@ void CsndProp::Propagate
 	}
 
 	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished culling AI list, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished culling AI list, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
 
 	/* handle environmental sounds here
@@ -654,7 +654,7 @@ void CsndProp::Propagate
 	}
 	
 	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: Finished filling populated areas, comptime=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished filling populated areas, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
 
 
@@ -667,12 +667,12 @@ void CsndProp::Propagate
 
 	timer_Prop.Stop();
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Timer: COMPTIME=%d [ms]\r", (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: COMPTIME=%lf [ms]\r", timer_Prop.Milliseconds() );
 	timer_Prop.Start();
 	ProcessPopulated( vol0, origin, &propParms );
 
 	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total TIME for propagation: %d [ms]\r", (int) (int) timer_Prop.Milliseconds() );
+	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Total TIME for propagation: %lf [ms]\r", timer_Prop.Milliseconds() );
 
 Quit:
 
