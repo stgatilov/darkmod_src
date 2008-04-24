@@ -459,12 +459,13 @@ void idGameLocal::Init( void ) {
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
 
 	// Start the DarkRadiant RCF Server instance
-	
+	if (cvarSystem->GetCVarBool("darkradiant_rcfserver_enable"))
+	{
 #ifdef __linux__
 	// Linux is using the boost::asio library, this may throw an exception
 	try {
 		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
-		Printf( "------------ RCF Server started -----------\n" );
+		Printf( "------------ DarkRadiant RCF Server started -----------\n" );
 	}
 	catch (const boost::asio::error& e) {
 		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
@@ -473,8 +474,13 @@ void idGameLocal::Init( void ) {
 #else
 	// Win32 builds just instantiate the server, shouldn't throw
 	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
-	Printf( "------------ RCF Server started -----------\n" );
+	Printf( "------------ DarkRadiant RCF Server started -----------\n" );
 #endif
+	}
+	else
+	{
+		Printf( "Info: DarkRadiant RCF Server disabled.\n" );
+	}
 	
 	// Create render pipe
 	m_RenderPipe = new CRenderPipe();
