@@ -20,6 +20,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
+#include "../DarkMod/MissionData.h"
 // #include "logmgr.h"
 /***********************************************************************
 
@@ -2658,10 +2659,10 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	{
 			if( TestKnockoutBlow( dir, collision, bKOPowerBlow ) )
 			{
-				if ( (attacker && attacker->IsType( idPlayer::Type ) ) ) 
+				if (attacker != NULL && attacker->IsType(idActor::Type)) 
 				{
-					// TODO: Add a KO to the player stats (not yet implemented)
-					// static_cast< idPlayer* >( attacker )->AddAIKO();	
+					// Add a KO to the player stats
+					gameLocal.m_MissionData->KOCallback(this, static_cast<idActor*>(attacker));
 				}
 
 				// For now, first KO blow does no health damage

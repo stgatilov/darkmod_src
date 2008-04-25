@@ -1630,6 +1630,11 @@ void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int Alert
 	MissionEvent( COMP_ALERT, &Parms1, &Parms2, bPlayerResponsible );
 }
 
+void CMissionData::KOCallback(idActor* target, idActor* inflictor)
+{
+
+}
+
 int CMissionData::GetTotalLoot( void )
 {
 	return m_Stats.LootOverall;
