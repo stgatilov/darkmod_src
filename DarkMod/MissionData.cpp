@@ -1632,7 +1632,8 @@ void CMissionData::AlertCallback(idEntity *Alerted, idEntity *Alerter, int Alert
 
 void CMissionData::KOCallback(idActor* target, idActor* inflictor)
 {
-
+	// greebo: TODO: Add "is airborne" check
+	MissionEvent(COMP_KO, inflictor, target, true, false);
 }
 
 int CMissionData::GetTotalLoot( void )
