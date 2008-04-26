@@ -19,17 +19,6 @@ static bool init_version = FileVersionList("$Id: RandomHeadturnTask.cpp 1435 200
 namespace ai
 {
 
-	namespace
-	{
-		// Some constants for random head turning
-		const float MIN_CLOCKWISE_YAW = -60;
-		const float MAX_CLOCKWISE_YAW = 60;
-		const float MIN_PITCH = -40;
-		const float MAX_PITCH = 40;
-		const float MIN_DURATION_SECONDS = 1;
-		const float MAX_DURATION_SECONDS = 3;
-	}
-
 // Get the name of this task
 const idStr& RandomHeadturnTask::GetName() const
 {
@@ -41,11 +30,6 @@ void RandomHeadturnTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
-
-	if (owner->GetMemory().lastRandomHeadTurnCheckTime == -1)
-	{
-		owner->GetMemory().lastRandomHeadTurnCheckTime = gameLocal.time;
-	}
 }
 
 bool RandomHeadturnTask::Perform(Subsystem& subsystem)
@@ -57,63 +41,80 @@ bool RandomHeadturnTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
-	PerformRandomHeadTurnCheck();
+	Memory& memory = owner->GetMemory();
 
+	int nowTime = gameLocal.time;
+
+	// Wait until last head turning is finished
+	if (nowTime >= memory.headTurnEndTime)
+	{
+		if (memory.currentlyHeadTurning)
+		{
+			// Wait before starting the next head turn check
+			memory.currentlyHeadTurning = false;
+			SetNextHeadTurnCheckTime();
+		}
+		else if (nowTime >= owner->GetMemory().nextHeadTurnCheckTime)
+		{
+			PerformHeadTurnCheck();
+		}
+	}
 	return false; // not finished yet
 }
 
-void RandomHeadturnTask::PerformRandomHeadTurnCheck()
+void RandomHeadturnTask::PerformHeadTurnCheck()
 {
-	// greebo: This routine has been ported from the scripts written by SophisticatedZombie (SZ)
 	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
 
-	// SZ: Dec 30, 2006
-	// The time between random head turns is now affected by how many out of place things
-	// they have witnessed. In other words, they get more agitated and nervous and look around
-	// more if they have seen too many things out of place.
-	int timeMultiplier = owner->GetMemory().countEvidenceOfIntruders;
-
-	if (timeMultiplier > 5)
+	// Chance to turn head is higher when the AI is searching or has seen evidence of intruders
+	float chance;
+	if (owner->AI_AlertIndex >= 3 || owner->HasSeenEvidence())
 	{
-		timeMultiplier = 5;
+		chance = owner->m_headTurnChanceIdle * owner->m_headTurnFactorAlerted;
 	}
-	else if (timeMultiplier < 1)
+	else
 	{
-		timeMultiplier = 1;
+		chance = owner->m_headTurnChanceIdle;
 	}
-
-	// Check if it is time to see if we should turn our head, don't go below 1 second
-	int nowTime = gameLocal.time;
-	if (((nowTime - owner->GetMemory().lastRandomHeadTurnCheckTime) * timeMultiplier) < 1000)
-	{
-		return;
-	}
-	owner->GetMemory().lastRandomHeadTurnCheckTime = nowTime;
-
-	// Chance to turn head
-	float chance = owner->AI_chancePerSecond_RandomLookAroundWhileIdle;
 
 	float rand = gameLocal.random.RandomFloat();
 	if (rand >= chance)
 	{
-		// Nope
+		// Nope, set the next time when a check should be performed
+		SetNextHeadTurnCheckTime();
 		return;
 	}
 
+	// Yep, set the angles and start head turning
+	memory.currentlyHeadTurning = true;
+
 	// Generate yaw angle in degrees
-	float range = MAX_CLOCKWISE_YAW - MIN_CLOCKWISE_YAW;
-	float headYawAngle = gameLocal.random.RandomFloat()*range + MIN_CLOCKWISE_YAW;
+	float range = 2 * owner->m_headTurnMaxYaw;
+	float headYawAngle = gameLocal.random.RandomFloat()*range - owner->m_headTurnMaxYaw;
 	
 	// Generate pitch angle in degrees
-	range = MAX_PITCH - MIN_PITCH;
-	float headPitchAngle = gameLocal.random.RandomFloat()*range + MIN_PITCH;
+	range = 2 * owner->m_headTurnMaxPitch;
+	float headPitchAngle = gameLocal.random.RandomFloat()*range - owner->m_headTurnMaxPitch;
 
 	// Generate duration in seconds
-	range = MAX_DURATION_SECONDS - MIN_DURATION_SECONDS;
-	float durationInSeconds = gameLocal.random.RandomFloat()*range + MIN_DURATION_SECONDS;
+	range = owner->m_headTurnMaxDuration - owner->m_headTurnMinDuration;
+	int duration = gameLocal.random.RandomFloat()*range + owner->m_headTurnMinDuration;
+
+	memory.headTurnEndTime = gameLocal.time + duration;
 	
 	// Call event
-	owner->Event_LookAtAngles(headYawAngle, headPitchAngle, 0.0, durationInSeconds);
+	owner->Event_LookAtAngles(headYawAngle, headPitchAngle, 0.0, MS2SEC(duration));
+}
+
+void RandomHeadturnTask::SetNextHeadTurnCheckTime()
+{
+	idAI* owner = _owner.GetEntity();
+
+	// Set the time when the next check should be performed (with a little bit of randomness)
+	int nowTime = gameLocal.time;
+	owner->GetMemory().nextHeadTurnCheckTime = nowTime + 0.8f * owner->m_timeBetweenHeadTurnChecks 
+		+ gameLocal.random.RandomFloat() * 0.4f * owner->m_timeBetweenHeadTurnChecks;
 }
 
 RandomHeadturnTaskPtr RandomHeadturnTask::CreateInstance()

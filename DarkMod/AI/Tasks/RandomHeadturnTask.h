@@ -41,7 +41,8 @@ private:
 	* SophisticatedZombie: This method handles a random chance of turning the AIs head
 	* (visual gaze movement)
 	*/
-	void PerformRandomHeadTurnCheck();
+	void PerformHeadTurnCheck();
+	void SetNextHeadTurnCheckTime();
 };
 
 } // namespace ai

@@ -172,8 +172,10 @@ public:
 	*/
 	int countEvidenceOfIntruders;
 
-	// The last time a check for randomly turning the head was done
-	int lastRandomHeadTurnCheckTime;
+	// Random head turning
+	int nextHeadTurnCheckTime;
+	bool currentlyHeadTurning;
+	int headTurnEndTime;
 
 	// TRUE if enemies have been seen
 	bool enemiesHaveBeenSeen;

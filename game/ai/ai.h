@@ -745,7 +745,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	
 	/* Additional scriptvars, imported from scripting. TODO: Document properly (for now, see script for docs) */
 	idScriptVector			AI_lastAlertPosSearched; // greebo: TODO: Remove this, idVec3 doesn't work?
-	idScriptFloat			AI_chancePerSecond_RandomLookAroundWhileIdle;
 	idScriptFloat			AI_timeOfLastStimulusBark;
 	idScriptFloat			AI_currentAlertLevelDuration;
 	idScriptFloat			AI_currentAlertLevelStartTime;
@@ -924,6 +923,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	float atime1, atime2, atime3, atime4;
 
 	float atime1_fuzzyness, atime2_fuzzyness, atime3_fuzzyness, atime4_fuzzyness;
+
+	// angua: Random head turning
+	int m_timeBetweenHeadTurnChecks;
+	float m_headTurnChanceIdle;
+	float m_headTurnFactorAlerted;
+	float m_headTurnMaxYaw;
+	float m_headTurnMaxPitch;
+	int m_headTurnMinDuration;
+	int m_headTurnMaxDuration;
 
 	// The mind of this AI
 	ai::MindPtr mind;

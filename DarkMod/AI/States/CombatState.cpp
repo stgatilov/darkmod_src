@@ -78,6 +78,8 @@ void CombatState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
+	if (!owner->GetMind()->PerformCombatCheck()) return;
+
 	// greebo: Check for weapons and flee if we are unarmed.
 	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 	_meleePossible = owner->GetNumMeleeWeapons() > 0;
@@ -98,14 +100,9 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
-
-
-	if (!owner->GetMind()->PerformCombatCheck()) return;
-
 	// We have an enemy, store the enemy entity locally
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
-
 
 	// Issue a communication stim
 	owner->IssueCommunication_Internal(

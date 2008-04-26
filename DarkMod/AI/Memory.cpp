@@ -27,7 +27,9 @@ Memory::Memory(idAI* owningAI) :
 	lastTimeEnemySeen(-1),
 	lastTimeVisualStimBark(-1),
 	countEvidenceOfIntruders(0),
-	lastRandomHeadTurnCheckTime(-1),
+	nextHeadTurnCheckTime(0),
+	currentlyHeadTurning(false),
+	headTurnEndTime(0),
 	enemiesHaveBeenSeen(false),
 	itemsHaveBeenStolen(false),
 	unconsciousPeopleHaveBeenFound(false),
@@ -70,7 +72,9 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(lastTimeEnemySeen);
 	savefile->WriteInt(lastTimeVisualStimBark);
 	savefile->WriteInt(countEvidenceOfIntruders);
-	savefile->WriteInt(lastRandomHeadTurnCheckTime);
+	savefile->WriteInt(nextHeadTurnCheckTime);
+	savefile->WriteBool(currentlyHeadTurning);
+	savefile->WriteInt(headTurnEndTime);
 	savefile->WriteBool(enemiesHaveBeenSeen);
 	savefile->WriteBool(itemsHaveBeenStolen);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
@@ -128,7 +132,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(lastTimeEnemySeen);
 	savefile->ReadInt(lastTimeVisualStimBark);
 	savefile->ReadInt(countEvidenceOfIntruders);
-	savefile->ReadInt(lastRandomHeadTurnCheckTime);
+	savefile->ReadInt(nextHeadTurnCheckTime);
+	savefile->ReadBool(currentlyHeadTurning);
+	savefile->ReadInt(headTurnEndTime);
 	savefile->ReadBool(enemiesHaveBeenSeen);
 	savefile->ReadBool(itemsHaveBeenStolen);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);

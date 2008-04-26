@@ -27,10 +27,6 @@
 #include <stdio.h>
 #include "../game/game_local.h"
 
-// AI constants; please keep these in sync with ai_darkmod_base.script
-#define IDLE_RANDOM_HEAD_TURN_CHANCE_PER_SECOND 0.10f
-#define SLIGHTLY_AGITATED_HEAD_TURN_CHANCE_MULTIPLIER 2.0f
-
 /*!
 Darkmod LAS
 */
