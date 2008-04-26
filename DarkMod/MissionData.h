@@ -415,6 +415,7 @@ typedef struct SMissionStats_s
 
 	int DamageDealt;
 	int DamageReceived;
+	int HealthReceived;
 	int PocketsPicked;
 
 	// Item stats are handled by the inventory, not here, 
@@ -518,6 +519,7 @@ public:
 	int GetStatAirborne( EComponentType CompType, int AlertLevel = 0);
 	int GetDamageDealt( void );
 	int GetDamageReceived( void );
+	int GetHealthReceived();
 
 // Callback functions:
 
@@ -586,6 +588,11 @@ public:
 	* Called when the player damages AI.  Used for damage stats.
 	**/
 	void AIDamagedByPlayer( int DamageAmount );
+
+	/**
+	 * greebo: Gets called if the player gets healed by something
+	 */
+	void HealthReceivedByPlayer(int amount);
 
 	/**
 	* Called by the inventory when a player picks up or drops an item.

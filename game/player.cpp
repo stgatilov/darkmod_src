@@ -2748,6 +2748,8 @@ void idPlayer::UpdatePowerUps( void ) {
 		// greebo: Changed step amount to be a variable that can be set from the "outside"
 		int amt = ( healthPool > healthPoolStepAmount ) ? healthPoolStepAmount : static_cast<int>(healthPool);
 
+		int oldHealth = health;
+
 		health += amt;
 		if ( health > maxHealth ) {
 			health = maxHealth;
@@ -2755,6 +2757,12 @@ void idPlayer::UpdatePowerUps( void ) {
 		} else {
 			healthPool -= amt;
 		}
+
+		// greebo: Check how much health we actually took
+		int healthTaken = health - oldHealth;
+		// Update the mission statistics
+		gameLocal.m_MissionData->HealthReceivedByPlayer(healthTaken);
+
 		nextHealthPulse = gameLocal.time + healthPoolTimeInterval;
 
 		// Check whether we have a valid interval factor and if yes: apply it
