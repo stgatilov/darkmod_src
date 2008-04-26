@@ -633,6 +633,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_DifficultyManager.Save(&savegame);
 
+	m_GamePlayTimer.Save(&savegame);
 	m_AreaManager.Save(&savegame);
 
 	savegame.WriteInt( g_skill.GetInteger() );
@@ -1537,6 +1538,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	m_DifficultyManager.Restore(&savegame);
 
+	m_GamePlayTimer.Restore(&savegame);
+	m_GamePlayTimer.SetEnabled(false);
 	m_AreaManager.Restore(&savegame);
 
 	savegame.ReadInt( i );
@@ -1801,6 +1804,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	Printf( "--------------------------------------\n" );
+
+	// Restart the timer
+	m_GamePlayTimer.Start();
 
 	return true;
 }

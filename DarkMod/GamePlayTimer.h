@@ -75,23 +75,36 @@ public:
 		_lastTime = _curTime;
 	}
 
-	idStr GetTime() {
-		unsigned int hours = static_cast<unsigned int>(idMath::Floor(_timePassed / 3600.0f));
-		unsigned int minutes = _timePassed % 3600;
-		minutes = static_cast<unsigned int>(idMath::Floor(minutes / 60.0f));
-		unsigned int seconds = _timePassed % 60;
+	idStr GetTime() const {
+		return TimeToStr(_timePassed);
+	}
 
-		return va("%02d:%02d:%02d", hours, minutes, seconds);
+	// Returns the gameplay time in seconds
+	unsigned int GetTimeInSeconds() const
+	{
+		return _timePassed;
 	}
 
 	void Save(idSaveGame *savefile) const
 	{
 		savefile->WriteUnsignedInt(_timePassed);
+		savefile->WriteBool(_enabled);
 	}
 
 	void Restore(idRestoreGame *savefile)
 	{
 		savefile->ReadUnsignedInt(_timePassed);
+		savefile->ReadBool(_enabled);
+	}
+
+	// Formats the given gameplay time
+	static idStr TimeToStr(unsigned int time) {
+		unsigned int hours = static_cast<unsigned int>(idMath::Floor(time / 3600.0f));
+		unsigned int minutes = time % 3600;
+		minutes = static_cast<unsigned int>(idMath::Floor(minutes / 60.0f));
+		unsigned int seconds = time % 60;
+
+		return va("%02d:%02d:%02d", hours, minutes, seconds);
 	}
 };
 

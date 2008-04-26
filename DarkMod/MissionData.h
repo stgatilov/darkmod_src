@@ -798,6 +798,9 @@ protected:
 	// The team number of the player, needed for the statistics GUI
 	int			m_PlayerTeam;
 
+	// This gets read out right at "mission complete" time, is 0 before
+	unsigned int	m_TotalGamePlayTime;
+
 }; // CMissionData
 
 // Helper entity for objective locations
