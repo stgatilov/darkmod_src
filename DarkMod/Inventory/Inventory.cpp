@@ -126,7 +126,7 @@ CInventoryItem* CInventory::ValidateLoot(idEntity *ent)
 
 		// greebo: Update the total loot value in the objectives system BEFORE
 		// the InventoryCallback. Some comparisons rely on a valid total loot value.
-		gameLocal.m_MissionData->ChangeTotalLoot( value );
+		gameLocal.m_MissionData->ChangeFoundLoot( value );
 
 		// Objective Callback for loot on a specific entity:
 		// Pass the loot type name and the net loot value of that group

@@ -8246,7 +8246,7 @@ void idEntity::ChangeLootAmount(int lootType, int amount)
 	if( rc != 0 )
 	{	
 		gameLocal.m_MissionData->InventoryCallback( NULL, Groupname, GroupTotal, Total, bGained );  
-		gameLocal.m_MissionData->ChangeTotalLoot( amount );
+		gameLocal.m_MissionData->ChangeFoundLoot( amount );
 	}
 
 	idThread::ReturnInt(rc);

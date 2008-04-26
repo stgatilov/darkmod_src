@@ -444,7 +444,7 @@ struct SMissionStats
 
 	// Item stats are handled by the inventory, not here, 
 	// Might need this for copying over to career stats though
-	int LootOverall;
+	int FoundLoot;
 
 	// greebo: This is the available amount of loot in the mission
 	int TotalLootInMission;
@@ -470,7 +470,7 @@ struct SMissionStats
 		DamageReceived = 0;
 		HealthReceived = 0;
 		PocketsPicked = 0;
-		LootOverall = 0;
+		FoundLoot = 0;
 		TotalLootInMission = 0;
 	}
 };
@@ -673,8 +673,8 @@ public:
 	**/
 	void KOCallback(idActor* target, idActor* inflictor);
 
-	int GetTotalLoot( void );
-	void ChangeTotalLoot( int amount );
+	int GetFoundLoot( void );
+	void ChangeFoundLoot( int amount );
 
 	/**
 	* Parse the objective data on an entity and add it to the objectives system
