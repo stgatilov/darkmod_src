@@ -8147,6 +8147,16 @@ void idEntity::Event_GetLoot(int LootType)
 
 void idEntity::Event_InitInventory(int callCount)
 {
+	// greebo: Check if this entity represents loot - if yes, update the total mission loot count
+	int lootValue = spawnArgs.GetInt("inv_loot_value", "0");
+	int lootType = spawnArgs.GetInt("inv_loot_type", "0");
+
+	// Check if the loot type is valid
+	if (lootType > CInventoryItem::LT_NONE && lootType < CInventoryItem::LT_COUNT && lootValue != 0) 
+	{
+		gameLocal.m_MissionData->AddMissionLoot(lootType, lootValue);
+	}
+
 	// Check if this object should be put into the inventory of some entity
 	// when the object spawns. Default is no.
 	if (spawnArgs.GetBool("inv_map_start", "0"))

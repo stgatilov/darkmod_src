@@ -1644,6 +1644,11 @@ void CMissionData::ChangeFoundLoot(int amount)
 	m_Stats.FoundLoot += amount;
 }
 
+void CMissionData::AddMissionLoot(int lootType, int amount)
+{
+	// greebo: For now, we disregard the various loot types, just add to the sum
+	m_Stats.TotalLootInMission += amount;
+}
 
 // =============== Boolean Logic Parsing for Objective Failure/Success ==============
 
@@ -2363,6 +2368,10 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	key = "Loot Acquired";
 	value = idStr(m_Stats.FoundLoot);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+
+	key = "Total Loot in Mission";
+	value = idStr(m_Stats.TotalLootInMission);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Killed by the Player";
