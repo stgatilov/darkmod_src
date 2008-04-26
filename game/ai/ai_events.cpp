@@ -562,13 +562,16 @@ void idAI::Event_PostSpawn()
 	for (std::size_t i = 0; i < doors.size(); i++)
 	{
 		idEntity* door = gameLocal.FindEntity(doors[i].c_str());
-		if (door != NULL && door->IsType(CBinaryFrobMover::Type))
+		if (door != NULL)
 		{
-			unlockableDoors.insert(static_cast<CBinaryFrobMover*>(door));
-		}
-		else
-		{
-			gameLocal.Warning("Invalid door name %s on AI %s", doors[i].c_str(), name.c_str());
+			if (door->IsType(CBinaryFrobMover::Type))
+			{
+				unlockableDoors.insert(static_cast<CBinaryFrobMover*>(door));
+			}
+			else
+			{
+				gameLocal.Warning("Invalid door name %s on AI %s", doors[i].c_str(), name.c_str());
+			}
 		}
 	}
 }
