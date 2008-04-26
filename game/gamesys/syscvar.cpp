@@ -99,6 +99,8 @@ idCVar cv_ai_opt_noobstacleavoidance (			"tdm_ai_opt_noobstacleavoidace",	"0",		
 
 idCVar cv_las_showtraces(			"tdm_las_showtraces",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), traces from light origin to testpoints used for visibility testiung are drawn." );
 
+idCVar cv_show_gameplay_time(		"tdm_show_gameplaytime",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), the gameplay time is shown in the player HUD." );
+
 idCVar cv_sr_disable (				"tdm_sr_disable",           "0",           CVAR_GAME | CVAR_BOOL, "Set to 1 to disable all stim/response processing." );
 
 /**

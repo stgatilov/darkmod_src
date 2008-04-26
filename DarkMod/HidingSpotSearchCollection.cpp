@@ -216,7 +216,10 @@ int CHidingSpotSearchCollection::getOrCreateSearch
 
 	// Make new search
 	HidingSpotSearchNodePtr node = getNewSearch();
-	assert(node != NULL);
+	if (node == NULL)
+	{
+		return -1;
+	}
 
 	// At this point, we have a valid handle, we rely on it being inserted in the map
 	

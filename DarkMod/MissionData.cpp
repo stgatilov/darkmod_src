@@ -2388,6 +2388,16 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[m_PlayerTeam]);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
+	key = "Frames";
+	value = idStr(gameLocal.framenum);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+	key = "GameLocal.time";
+	value = idStr(gameLocal.time);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+	key = "GameLocal.realClientTime";
+	value = idStr(gameLocal.realClientTime);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+
 	// Force a redraw
 	gui->StateChanged(gameLocal.time, true);
 }

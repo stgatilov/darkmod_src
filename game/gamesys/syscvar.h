@@ -59,6 +59,7 @@ extern idCVar cv_ai_opt_nopresent;
 extern idCVar cv_ai_opt_noobstacleavoidance;
 
 extern idCVar cv_las_showtraces;
+extern idCVar cv_show_gameplay_time;
 
 extern idCVar cv_sr_disable;
 

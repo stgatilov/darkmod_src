@@ -1260,6 +1260,9 @@
 					RelativePath=".\DarkMod\func_shooter.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\GamePlayTimer.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Grabber.cpp">
 				</File>
 				<File

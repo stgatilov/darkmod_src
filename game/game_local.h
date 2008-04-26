@@ -178,6 +178,7 @@ void gameError( const char *fmt, ... );
 #include "../DarkMod/EMissionResult.h"
 #include "../DarkMod/DifficultyManager.h"
 #include "../DarkMod/AI/AreaManager.h"
+#include "../DarkMod/GamePlayTimer.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -471,6 +472,11 @@ public:
 	 * It basically listens for incoming requests on localhost:50001.
 	 */
 	DarkRadiantRCFServerPtr m_DarkRadiantRCFServer;
+
+	/**
+	 * greebo: This timer keeps track of the actual gameplay time.
+	 */
+	GamePlayTimer m_GamePlayTimer;
 	
 /**
 * Temporary storage of the walkspeed.  This is a workaround

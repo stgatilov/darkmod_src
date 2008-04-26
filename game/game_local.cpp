@@ -352,6 +352,8 @@ void idGameLocal::Clear( void )
 	//	ResetSlowTimeVars();
 
 	m_EscapePointManager->Clear();
+
+	m_GamePlayTimer.Clear();
 }
 
 /*
@@ -1482,6 +1484,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	m_MissionData->ClearGUIState();
 
 	Printf( "--------------------------------------\n" );
+
+	m_GamePlayTimer.Clear();
+	m_GamePlayTimer.Start();
 }
 
 /*
@@ -2650,6 +2655,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 	// Check for any activated signals, and trigger them.
 	CheckSDKSignal();
+
+	// Update the gameplay timer
+	m_GamePlayTimer.Update();
 
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 		// clear any debug lines from a previous frame

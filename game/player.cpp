@@ -5887,6 +5887,12 @@ void idPlayer::UpdateHud( void ) {
 
 	// Check if any HUD messages are pending
 	UpdateHUDMessages();
+
+	if (cv_show_gameplay_time.GetBool())
+	{
+		// Update the playing time in the HUD, if desired
+		hud->SetStateString("PlayingTime", gameLocal.m_GamePlayTimer.GetTime().c_str());
+	}
 }
 
 void idPlayer::UpdateHUDMessages()
