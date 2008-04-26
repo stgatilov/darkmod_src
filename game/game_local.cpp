@@ -3058,9 +3058,13 @@ escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
 		return ESC_IGNORE;
 	}
 
+	// greebo: Hitting the ESC key means that the main menu is about to be entered => stop the timer
+	m_GamePlayTimer.Stop();
+
 	idPlayer *player = GetLocalPlayer();
 	if ( player ) {
 		if ( player->HandleESC() ) {
+			m_GamePlayTimer.SetEnabled(true);
 			return ESC_IGNORE;
 		} else {
 			return ESC_MAIN;
@@ -3107,6 +3111,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 	if (cmd == "mainmenu_heartbeat")
 	{
+		// greebo: Stop the timer, this is already done in HandleESC, but just to make sure...
+		m_GamePlayTimer.Stop();
+
 		if (GetMissionResult() == MISSION_COMPLETE)
 		{
 			if (!gui->GetStateBool("SuccessScreenActive"))
@@ -3152,6 +3159,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
+
+		// Start the timer again, we're closing the menu
+		m_GamePlayTimer.Start();
 	}
 	else if (cmd == "close_success_screen")
 	{
