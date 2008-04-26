@@ -394,21 +394,45 @@ protected:
 	SBoolParseNode m_FailureLogic;
 };
 
-typedef struct SStat_s
+struct SStat
 {
 	int Overall;
 	int ByTeam[ MAX_TEAMS ];
 	int ByType[ MAX_TYPES ];
 	int ByInnocence[2];
 	int WhileAirborne;
-} SStat;
+
+	SStat() 
+	{
+		Clear();
+	}
+
+	void Clear() 
+	{
+		Overall = 0;
+
+		for (int i = 0; i < MAX_TEAMS; i++)
+		{
+			ByTeam[i] = 0;
+		}
+
+		for (int i = 0; i < MAX_TYPES; i++)
+		{
+			ByType[i] = 0;
+		}
+
+		ByInnocence[0] = 0;
+		ByInnocence[1] = 0;
+		WhileAirborne = 0;
+	}
+};
 
 /**
 * Mission stats: Keep track of everything except for loot groups, which are tracked by the inventory
 **/
-typedef struct SMissionStats_s
+struct SMissionStats
 {
-// AI Stats:
+	// AI Stats:
 	SStat AIStats[ MAX_AICOMP ];
 	
 	SStat AIAlerts[ MAX_ALERTLEVELS ];
@@ -422,7 +446,34 @@ typedef struct SMissionStats_s
 	// Might need this for copying over to career stats though
 	int LootOverall;
 
-} SMissionStats;
+	// greebo: This is the available amount of loot in the mission
+	int TotalLootInMission;
+
+	SMissionStats() 
+	{
+		Clear();
+	}
+
+	void Clear()
+	{
+		for (int i = 0; i < MAX_AICOMP; i++)
+		{
+			AIStats[i].Clear();
+		}
+
+		for (int i = 0; i < MAX_ALERTLEVELS; i++)
+		{
+			AIAlerts[i].Clear();
+		}
+
+		DamageDealt = 0;
+		DamageReceived = 0;
+		HealthReceived = 0;
+		PocketsPicked = 0;
+		LootOverall = 0;
+		TotalLootInMission = 0;
+	}
+};
 
 /**
 * CMissionData handles the tasks of maintaining stats and objective completion status
@@ -436,10 +487,10 @@ class CMissionData
 public:
 	friend class CObjective;
 
-	CMissionData( void );
-	virtual ~CMissionData( void );
+	CMissionData();
+	virtual ~CMissionData();
 
-	void Clear( void );
+	void Clear();
 
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );
@@ -639,15 +690,6 @@ public:
 	 *         This is called by the main menu SDK code.
 	 **/
 	idMapFile* LoadDirectlyFromMapFile(idMapFile* mapFile);
-
-	/**
-	 * greebo: This updates the given GUI overlay with the current
-	 *         missiondata (objectives state). Called by idPlayer class.
-	 *
-	 * @entity: The entity whose GUI should be updated (usually the player).
-	 * @overlayHandle: the handle of the GUI to be updated.
-	 */
-	void UpdateGUIState(idEntity* entity, int overlayHandle); // deprecated, do not call anymore
 
 	/**
 	 * greebo: This updates the given GUI with the current

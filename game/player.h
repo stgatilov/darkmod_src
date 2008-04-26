@@ -967,7 +967,6 @@ private:
 	// Objectives GUI-related events
 	void					Event_Pausegame();
 	void					Event_Unpausegame();
-	void					Event_UpdateObjectivesGUI(int guiHandle);
 
 	// Ends the game (fade out, success.gui, etc.)
 	void					Event_MissionSuccess();
