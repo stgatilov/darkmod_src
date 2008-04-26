@@ -3095,11 +3095,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			if (!gui->GetStateBool("SuccessScreenActive"))
 			{
+				// Load the statistics into the GUI
+				m_MissionData->UpdateStatisticsGUI(gui, "stats");
+
 				// Show the success GUI
 				gui->HandleNamedEvent("ShowSuccessScreen");
-
-				// Stop the objectives music
-				gui->HandleNamedEvent("StopObjectivesMusic");
 
 				// Avoid duplicate triggering
 				gui->SetStateBool("SuccessScreenActive", true);
@@ -3136,6 +3136,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
+	}
+	else if (cmd == "close_success_screen")
+	{
+		// Clear the mission result flag
+		SetMissionResult(MISSION_NOTEVENSTARTED);
+
+		// Set the boolean back to false for the next map start
+		gui->SetStateBool("SuccessScreenActive", false);
 	}
 
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());

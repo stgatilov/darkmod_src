@@ -172,7 +172,8 @@ void CObjectiveComponent::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bReversible );
 }
 
-CMissionData::CMissionData( void )
+CMissionData::CMissionData( void ) :
+	m_PlayerTeam(0)
 {
 	int i;
 
@@ -246,10 +247,13 @@ void CMissionData::Clear( void )
 
 	m_SuccessLogic.Clear();
 	m_FailureLogic.Clear();
+
+	m_PlayerTeam = 0;
 }
 
 void CMissionData::Save( idSaveGame *savefile ) const
 {
+	savefile->WriteInt(m_PlayerTeam);
 	savefile->WriteBool( m_bObjsNeedUpdate );
 	
 	savefile->WriteInt( m_Objectives.Num() );
@@ -294,6 +298,7 @@ void CMissionData::Restore( idRestoreGame *savefile )
 {
 	int num(0);
 
+	savefile->ReadInt(m_PlayerTeam);
 	savefile->ReadBool( m_bObjsNeedUpdate );
 	
 	savefile->ReadInt( num );
@@ -373,7 +378,7 @@ void CMissionData::MissionEvent
 
 	// Update AI stats, don't add to stats if playerresponsible is false
 	// Stats for KOs, kills, body found, item found
-	if( ( ( CompType == COMP_KILL ) || CompType == COMP_KO
+	if( ( CompType == COMP_KILL || CompType == COMP_KO
 		|| CompType == COMP_AI_FIND_BODY || CompType == COMP_AI_FIND_ITEM
 		|| CompType == COMP_ALERT ) && bBoolArg )
 	{
@@ -878,13 +883,15 @@ void CMissionData::Event_MissionComplete( void )
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
 	gameLocal.Printf("MISSION COMPLETED\n");
 
-	// TODO: Go to mission successful GUI
 	// TODO: Read off which map to go to next, basically call endLevel
 	
 	// for now, just play the sound (later it will be played in the GUI)
 	idPlayer *player = gameLocal.GetLocalPlayer();
-	if(player)
+	if (player)
 	{
+		// Remember the player team, all entities are about to be removed
+		SetPlayerTeam(player->team);
+
 		// This sound is played by the success.gui
 		//player->StartSoundShader( declManager->FindSound( "mission_complete" ), SND_CHANNEL_ANY, 0, false, NULL );
 		player->SendHUDMessage("Mission Complete");
@@ -2344,18 +2351,9 @@ void CMissionData::ClearGUIState()
 	m_MissionDataLoadedIntoGUI = false;
 }
 
-void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, const idStr& listDefName)
+void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDefName)
 {
-	assert(entity != NULL); // don't accept NULL entities.
-	if (!entity->IsType(idPlayer::Type)) {
-		return;
-	}
-	
-	idPlayer* player = static_cast<idPlayer*>(entity);
-	
-	idUserInterface* ui = player->GetOverlay(overlayHandle);
-
-	if (ui == NULL) {
+	if (gui == NULL) {
 		gameLocal.Warning("Can't update statistics GUI, invalid handle.\n");
 		return; // invalid handle, do nothing
 	}
@@ -2363,33 +2361,35 @@ void CMissionData::UpdateStatisticsGUI(idEntity* entity, int overlayHandle, cons
 	int index(0);
 	idStr key("");
 	idStr value("");
+	// The listdef item (name + _) prefix
+	idStr prefix = va("%s_item_", listDefName.c_str());
 	
 	key = "Damage Dealt"; 
 	value = idStr(m_Stats.DamageDealt);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Damage Received"; 
 	value = idStr(m_Stats.DamageReceived);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Pockets Picked"; 
 	value = idStr(m_Stats.PocketsPicked);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Loot Overall"; 
 	value = idStr(m_Stats.LootOverall);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Killed by the Player";
-	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[player->team]);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[m_PlayerTeam]);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "KOed by the Player";
-	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[player->team]);
-	ui->SetStateString(va("%s_item_%i", listDefName.c_str(), index++), key + "\t" + value);
+	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[m_PlayerTeam]);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	// Force a redraw
-	ui->StateChanged(gameLocal.time, true);
+	gui->StateChanged(gameLocal.time, true);
 }
 
 void CObjective::Save( idSaveGame *savefile ) const
@@ -2453,6 +2453,11 @@ void CObjective::Restore( idRestoreGame *savefile )
 
 	// We have to re-parse the logic since the parse nodes involve raw pointer linkages
 	ParseLogicStrs();
+}
+
+void CMissionData::SetPlayerTeam(int team)
+{
+	m_PlayerTeam = team;
 }
 
 
