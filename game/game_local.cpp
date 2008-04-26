@@ -3096,7 +3096,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			if (!gui->GetStateBool("SuccessScreenActive"))
 			{
 				// Load the statistics into the GUI
-				m_MissionData->UpdateStatisticsGUI(gui, "stats");
+				m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
 
 				// Show the success GUI
 				gui->HandleNamedEvent("ShowSuccessScreen");
