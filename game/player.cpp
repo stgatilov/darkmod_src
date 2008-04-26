@@ -6470,6 +6470,9 @@ void idPlayer::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damag
 	if ( damage && ( victim != this ) && victim->IsType( idActor::Type ) ) {
 		SetLastHitTime( gameLocal.time );
 	}
+
+	// greebo: Update the mission statistics, we've damaged another actor
+	gameLocal.m_MissionData->AIDamagedByPlayer(damage);
 }
 
 /*
@@ -6710,6 +6713,9 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 //		int oldHealth = health;
 		health -= damage;
+
+		// greebo: Update mission statistics, we've taken damage
+		gameLocal.m_MissionData->PlayerDamaged(damage);
 
 		if ( health <= 0 ) {
 
