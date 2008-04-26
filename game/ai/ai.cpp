@@ -5135,9 +5135,10 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// end our looping ambient sound
 	StopSound( SND_CHANNEL_AMBIENT, false );
 
+	/* greebo: This is not needed anymore, I reckon.
 	if ( attacker && attacker->IsType( idActor::Type ) ) {
 		gameLocal.AlertAI( ( idActor * )attacker );
-	}
+	}*/
 
 	// activate targets
 	ActivateTargets( attacker );
@@ -5195,7 +5196,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	// Update TDM objective system
-	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, bPlayerResponsible );
+	gameLocal.m_MissionData->MissionEvent( COMP_KILL, attacker, this, bPlayerResponsible );
 }
 
 
