@@ -335,7 +335,6 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 	m_StoppedDueToBlock = false;
 
-	idAngles tempAng;
 
 	// If the door is already open, we don't have anything to do. :)
 	if(m_Open == true && !m_bInterrupted)
@@ -366,14 +365,16 @@ void CBinaryFrobMover::Open(bool bMaster)
 			}
 		}
 
-		physicsObj.GetLocalAngles( tempAng );
 
 		m_Open = true;
 		m_Rotating = true;
 		m_Translating = true;
+		
+		idAngles tempAng;
+		physicsObj.GetLocalAngles( tempAng );
 		idAngles t = (m_OpenAngles - tempAng).Normalize180();
-		idAngles null;
 
+		idAngles null;
 		if (!t.Compare(null))
 		{
 			Event_RotateOnce((m_OpenAngles - tempAng).Normalize180());
@@ -388,8 +389,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 			Event_SetMoveSpeed( m_TransSpeed );
 		}
 
-		idVec3 tv3 = (m_StartPos +  m_Translation);
-		Event_MoveToPos( tv3 );
+		MoveToLocalPos( m_OpenOrigin );
 	}
 }
 
@@ -420,7 +420,7 @@ void CBinaryFrobMover::Close(bool bMaster)
 	if( m_TransSpeed )
 			Event_SetMoveSpeed( m_TransSpeed );
 
-	Event_MoveToPos(m_StartPos);
+	MoveToLocalPos(m_ClosedOrigin);
 }
 
 void CBinaryFrobMover::ToggleOpen(void)
