@@ -3159,6 +3159,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->HandleNamedEvent("HideBriefingScreen");
 		gui->SetStateInt("BriefingIsVisible", 0);
+		gui->HandleNamedEvent("HideSuccessScreen");
 
 		// Start the timer again, we're closing the menu
 		m_GamePlayTimer.Start();
