@@ -512,6 +512,9 @@ void idGameLocal::Shutdown( void ) {
 	mpGame.Shutdown();
 
 	MapShutdown();
+	// greebo: Separately clear the missiondata, which is not 
+	// cleared in MapShutdown() (needed for mission statistics)
+	m_MissionData->Clear();
 
 	aasList.DeleteContents( true );
 	aasNames.Clear();
@@ -1880,7 +1883,6 @@ void idGameLocal::MapShutdown( void ) {
 
 	m_sndProp->Clear();
 	m_RelationsManager->Clear();
-	m_MissionData->Clear();
 
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
