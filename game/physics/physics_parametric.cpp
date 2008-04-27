@@ -444,6 +444,10 @@ void idPhysics_Parametric::GetLocalOrigin( idVec3 &curOrigin ) const {
 	curOrigin = current.localOrigin;
 }
 
+const idVec3& idPhysics_Parametric::GetLocalOrigin() const {
+	return current.localOrigin;
+}
+
 /*
 ================
 idPhysics_Parametric::GetLocalAngles

@@ -103,10 +103,11 @@ void CFrobLever::Open(bool bMaster)
 		Event_SetMoveSpeed( m_TransSpeed );
 	}
 
-	idVec3 tv3 = (m_StartPos +  m_Translation);
-	if (!GetPhysics()->GetOrigin().Compare(tv3, VECTOR_EPSILON))
+			
+
+	if (!physicsObj.GetLocalOrigin().Compare(m_OpenOrigin, VECTOR_EPSILON))
 	{
-		Event_MoveToPos( tv3 );
+		MoveToLocalPos( m_OpenOrigin );
 	}
 	else
 	{
@@ -144,9 +145,9 @@ void CFrobLever::Close(bool bMaster)
 		Event_SetMoveSpeed( m_TransSpeed );
 	}
 
-	if (!GetPhysics()->GetOrigin().Compare(m_StartPos, VECTOR_EPSILON))
+	if (!physicsObj.GetLocalOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON))
 	{
-		Event_MoveToPos( m_StartPos );
+		MoveToLocalPos(m_ClosedOrigin);
 	}
 	else
 	{
