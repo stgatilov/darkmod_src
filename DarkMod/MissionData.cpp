@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #pragma warning(disable : 4996)
 
 #include "MissionData.h"
+#include "AI/Memory.h"
 #include "DifficultyManager.h"
 #include "../game/player.h"
 #include "StimResponse/StimResponseCollection.h"
@@ -861,12 +862,14 @@ void CMissionData::Event_MissionComplete( void )
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION COMPLETE. \r");
 	gameLocal.Printf("MISSION COMPLETED\n");
 
+	// Fire the general mission end event
+	Event_MissionEnd();
+
 	// TODO: Read off which map to go to next, basically call endLevel
 
 	// greebo: Stop the gameplay timer, we've completed all objectives
 	m_TotalGamePlayTime = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
 	
-	// for now, just play the sound (later it will be played in the GUI)
 	idPlayer *player = gameLocal.GetLocalPlayer();
 	if (player)
 	{
@@ -885,6 +888,9 @@ void CMissionData::Event_MissionFailed( void )
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: MISSION FAILED. \r");
 	gameLocal.Printf("MISSION FAILED\n");
 
+	// Fire the general mission end event
+	Event_MissionEnd();
+
 	// greebo: Notify the local game about this
 	gameLocal.SetMissionResult(MISSION_FAILED);
 
@@ -896,6 +902,28 @@ void CMissionData::Event_MissionFailed( void )
 	}
 }
 
+void CMissionData::Event_MissionEnd()
+{
+	// Clear the breakdown first
+	for (int i = 0; i < ai::EAlertStateNum; i++)
+	{
+		m_Stats.MaxAlertIndices[i] = 0;
+	}
+
+	// greebo: Traverse all AI and collect the highest alert levels
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+		if (ent->IsType(idAI::Type))
+		{
+			idAI* ai = static_cast<idAI*>(ent);
+
+			// Sanity-check the alert index
+			assert(ai->m_maxAlertIndex >= 0 && ai->m_maxAlertIndex < ai::EAlertStateNum);
+
+			// Add one alert index for this AI
+			m_Stats.MaxAlertIndices[ai->m_maxAlertIndex]++;
+		}
+	}
+}
 
 // ============================== Stats =================================
 
@@ -2383,12 +2411,15 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
 	key = "Bodies found";
-	int numBodiesFound = 0;
-	for (int i = 0; i < MAX_TEAMS; i++) {
-		numBodiesFound += m_Stats.AIStats[COMP_AI_FIND_BODY].ByTeam[i];
-	}
-	value = idStr(numBodiesFound);
+	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+
+	for (int i = 0; i < ai::EAlertStateNum; i++) 
+	{
+		key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
+		value = idStr(m_Stats.MaxAlertIndices[i]);
+		gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+	}
 
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);

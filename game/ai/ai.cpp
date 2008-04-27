@@ -497,6 +497,7 @@ idAI::idAI()
 	m_AlertLevelThisFrame = 0.0f;
 	m_prevAlertIndex = 0;
 	m_maxAlertLevel = 0;
+	m_maxAlertIndex = 0;
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
@@ -701,6 +702,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_AlertLevelThisFrame );
 	savefile->WriteInt( m_prevAlertIndex );
 	savefile->WriteFloat( m_maxAlertLevel);
+	savefile->WriteInt( m_maxAlertIndex);
 	savefile->WriteFloat(m_lastAlertLevel);
 	savefile->WriteBool( m_bIgnoreAlerts );
 
@@ -954,6 +956,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_AlertLevelThisFrame );
 	savefile->ReadInt( m_prevAlertIndex );
 	savefile->ReadFloat( m_maxAlertLevel );
+	savefile->ReadInt( m_maxAlertIndex);
 	savefile->ReadFloat(m_lastAlertLevel);
 	savefile->ReadBool( m_bIgnoreAlerts );
 
@@ -7585,6 +7588,12 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		grace_frac = 0.0;
 		grace_count = 0;
 	}
+
+	// greebo: Remember the highest alert index
+	if (AI_AlertIndex > m_maxAlertIndex)
+	{
+		m_maxAlertIndex = AI_AlertIndex;
+	}
 	
 	// Add random variance to alert level duration
 	AI_currentAlertLevelDuration = AI_currentAlertLevelDuration*(1.0 + gameLocal.random.RandomFloat()*0.50);
@@ -7631,15 +7640,12 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		//DEBUG_PRINT ("Clearing last searched alert position");
 		AI_lastAlertPosSearched = idVec3(0,0,0);
 	}
-
 }
-
 
 bool idAI::AlertIndexIncreased() 
 {
 	return (AI_AlertIndex > m_prevAlertIndex);
 }
-
 
 float idAI::GetAcuity(const char *type) const
 {

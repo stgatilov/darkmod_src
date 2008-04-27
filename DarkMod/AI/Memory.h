@@ -123,6 +123,16 @@ enum EAlertState {
 	EAlertStateNum
 };
 
+const char* const AlertStateNames[EAlertStateNum] = 
+{
+	"Relaxed",
+	"Observant",
+	"Suspicious",
+	"Investigating",
+	"AgitatedSearching",
+	"Combat"
+};
+
 #define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15000 // milliseconds
 
 // SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
