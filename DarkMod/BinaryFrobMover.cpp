@@ -183,24 +183,22 @@ void CBinaryFrobMover::Spawn( void )
 
 void CBinaryFrobMover::Event_PostSpawn() 
 {
-	idAngles tempAngle;
-	tempAngle = physicsObj.GetLocalAngles();
+	// angua: the origin of the door in opened and closed state
+	m_ClosedOrigin = physicsObj.GetLocalOrigin();
+	m_OpenOrigin = m_ClosedOrigin + m_Translation;
 
-	idAngles partialAngle = spawnArgs.GetAngles("start_rotate", "0 0 0");
+	m_ClosedAngles = physicsObj.GetLocalAngles();
+	m_ClosedAngles.Normalize180();
+	m_OpenAngles = (m_ClosedAngles + m_Rotate).Normalize180();
 
-	// angua: the origin of the door in closed state
-	physicsObj.GetLocalOrigin(m_ClosedOrigin);
-	
-	// Original starting position of the door in case it is a sliding door.
-	// Add the initial position offset in case the mapper makes the door start out inbetween states
-	m_StartPos = spawnArgs.GetVector("start_position", "0 0 0");
+	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
+	{
+		gameLocal.Warning("FrobMover %s will not move, translation and rotation not set.", name.c_str());
+	}
 
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
-
-	// angua: origin in fully opened state
-	m_OpenOrigin = m_ClosedOrigin + m_Translation;
 
 	// set up physics impulse behavior
 	spawnArgs.GetFloat("impulse_thresh_open", "0", m_ImpulseThreshOpenSq );
@@ -214,14 +212,6 @@ void CBinaryFrobMover::Event_PostSpawn()
 	if( m_vImpulseDirClose.LengthSqr() > 0 )
 		m_vImpulseDirClose.Normalize();
 
-	m_ClosedAngles = tempAngle.Normalize180();
-	m_OpenAngles = (tempAngle + m_Rotate).Normalize180();
-
-	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
-	{
-		gameLocal.Warning("FrobMover %s will not move, translation and rotation not set.", name.c_str());
-	}
-
 	// set the first intent according to the initial doorstate
 	m_bIntentOpen = !m_Open;
 
@@ -231,6 +221,43 @@ void CBinaryFrobMover::Event_PostSpawn()
 		m_bIntentOpen = true;
 		m_bInterrupted = true;
 		m_StateChange = true;
+	}
+
+	// greebo: Partial Angles define the initial angles of the door
+	idAngles partialAngles(0,0,0);
+
+	// Check if the door should spawn as "open"
+	if (spawnArgs.GetBool("open"))
+	{
+		if (!spawnArgs.GetAngles("start_rotate", "0 0 0", partialAngles) || partialAngles.Compare(idAngles(0,0,0)))
+		{
+			// If no partial angles are defined in the spawnargs, assume fully open door
+			partialAngles = m_OpenAngles - m_ClosedAngles;
+
+			if (!partialAngles.Compare(idAngles(0,0,0)))
+			{
+				// greebo: In this case, first_frob_open makes no sense, override the settings
+				m_bIntentOpen = false;
+				m_bInterrupted = false;
+				m_StateChange = false;
+			}
+		}
+
+		// Original starting position of the door in case it is a sliding door.
+		// Add the initial position offset in case the mapper makes the door start out inbetween states
+		if (!spawnArgs.GetVector("start_position", "0 0 0", m_StartPos) || m_StartPos.Compare(idVec3(0,0,0)))
+		{
+			// Assume fully translated door, if no start_position is set
+			m_StartPos = m_OpenOrigin - m_ClosedOrigin;
+
+			if (!m_StartPos.Compare(idVec3(0,0,0)))
+			{
+				// greebo: In this case, first_frob_open makes no sense, override the settings
+				m_bIntentOpen = false;
+				m_bInterrupted = false;
+				m_StateChange = false;
+			}
+		}
 	}
 
 	// angua: calculate the positions of the vertex  with the largest 
@@ -276,7 +303,7 @@ void CBinaryFrobMover::Event_PostSpawn()
 	idVec3 rotationAxis = rot.GetVec();
 	idVec3 normal = rotationAxis.Cross(m_ClosedPos);
 
-	m_OpenDir = ( (m_OpenPos) * normal ) * normal;
+	m_OpenDir = ( m_OpenPos * normal ) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
@@ -289,7 +316,7 @@ void CBinaryFrobMover::Event_PostSpawn()
 	{
 		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
-		physicsObj.SetLocalAngles(tempAngle + partialAngle);
+		physicsObj.SetLocalAngles(m_ClosedAngles + partialAngles);
 	}
 	UpdateVisuals();
 }
