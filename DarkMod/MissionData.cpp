@@ -2374,6 +2374,11 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	// The listdef item (name + _) prefix
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
+	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
+	key = "Difficulty Level";
+	value = gameLocal.m_DifficultyManager.GetDifficultyName(difficultyLevel);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+
 	key = "Time";
 	value = idStr(GamePlayTimer::TimeToStr(m_TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);

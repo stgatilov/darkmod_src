@@ -39,6 +39,9 @@ class DifficultyManager
 	// The global difficulty settings (parsed from the entityDefs)
 	DifficultySettings _globalSettings[DIFFICULTY_COUNT];
 
+	// The name of each difficultylevel
+	idStr _difficultyNames[DIFFICULTY_COUNT];
+
 public:
 	// Constructor
 	DifficultyManager();
@@ -56,6 +59,9 @@ public:
 	// Accessor methods for the currently chosen difficulty level
 	void SetDifficultyLevel(int difficulty);
 	int GetDifficultyLevel() const;
+
+	// Returns the display name for the given level, which must an integer in [0..DIFFICULTY_COUNT)
+	const idStr& GetDifficultyName(int level);
 
 	/**
 	 * greebo: Applies the spawnarg modifiers of the currently chosen

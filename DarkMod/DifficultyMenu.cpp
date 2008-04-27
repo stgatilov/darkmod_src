@@ -107,16 +107,10 @@ void CDifficultyMenu::InitializeDifficulty(idUserInterface *gui, const char * ma
 		gui->SetStateString("mapStartCmdNow", "");
 	}
 
-	// Determine the difficulty level string. The defaults are the "difficultyMenu" entityDef.
-	// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
-	// the worldspawn.
-	const idDecl * diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
-	const idDeclEntityDef *diffDef = static_cast<const idDeclEntityDef *>( diffDecl );
+	// Load the difficulty level strings.
 	for (int diffLevel = 0; diffLevel < DIFFICULTY_COUNT; diffLevel++)
 	{
-		const char* diffName = mapDict.GetString(va("difficulty%dName",diffLevel),
-			diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
-		gui->SetStateString(va("diff%dName",diffLevel), diffName);
+		gui->SetStateString(va("diff%dName",diffLevel), gameLocal.m_DifficultyManager.GetDifficultyName(diffLevel).c_str());
 	}
 
 	// Show/hide appropriate menus

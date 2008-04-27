@@ -24,6 +24,7 @@ void DifficultyManager::Clear()
 	for (int i = 0; i < DIFFICULTY_COUNT; i++)
 	{
 		_globalSettings[i].Clear();
+		_difficultyNames[i] = "";
 	}
 }
 
@@ -61,6 +62,12 @@ void DifficultyManager::SetDifficultyLevel(int difficulty)
 int DifficultyManager::GetDifficultyLevel() const
 {
 	return _difficulty;
+}
+
+const idStr& DifficultyManager::GetDifficultyName(int level)
+{
+	assert(level >= 0 && level < DIFFICULTY_COUNT);
+	return _difficultyNames[level];
 }
 
 void DifficultyManager::Save(idSaveGame* savefile)
@@ -150,6 +157,23 @@ void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
 		{
 			LoadMapDifficultySettings(ent);
 		}
+	}
+
+	// greebo: Find out the names of the difficulty settings
+	idMapEntity* worldSpawn = mapFile->GetEntity(0);
+	idDict mapDict = worldSpawn->epairs;
+
+	// Determine the difficulty level string. The defaults are the "difficultyMenu" entityDef.
+	// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
+	// the worldspawn.
+	const idDecl* diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
+	const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
+	for (int diffLevel = 0; diffLevel < DIFFICULTY_COUNT; diffLevel++)
+	{
+		_difficultyNames[diffLevel] = mapDict.GetString(
+			va("difficulty%dName",diffLevel),
+			diffDef->dict.GetString(va("diff%ddefault",diffLevel), "")
+		);
 	}
 }
 
