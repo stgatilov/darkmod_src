@@ -8333,7 +8333,12 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 				// Remove category from inventory
 				InventoryCursor()->Inventory()->removeCategory(category);
 				// Switch the cursor to the next category (after removal)
-				InventoryCursor()->GetNextCategory();
+				category = InventoryCursor()->GetNextCategory();
+				if (category != NULL && category->isEmpty()) 
+				{
+					// We have an empty category, set the cursor to the dummy item
+					InventoryCursor()->SetCurrentItem(TDM_DUMMY_ITEM);
+				}
 			}
 		}
 		else
