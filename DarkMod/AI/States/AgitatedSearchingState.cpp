@@ -75,17 +75,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if (memory.alertType == EAlertTypeEnemy)
+		if (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy)
 		{
-			idStr bark;
-			if (memory.alertClass == EAlertVisual)
-			{
-				bark = "snd_alert4s";
-			}
-			else
-			{
-				bark = "snd_alert4";
-			}
+			idStr bark = "snd_alert4";
 
 			owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 			owner->GetSubsystem(SubsysCommunication)->PushTask(

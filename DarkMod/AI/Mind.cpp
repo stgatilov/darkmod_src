@@ -305,6 +305,8 @@ bool Mind::PerformCombatCheck()
 		
 		// Spotted an enemy
 		memory.enemiesHaveBeenSeen = true;
+
+		memory.alertType = EAlertTypeEnemy;
 		
 		idActor* enemy = owner->GetEnemy();
 

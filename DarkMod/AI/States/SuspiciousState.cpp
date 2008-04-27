@@ -68,13 +68,16 @@ void SuspiciousState::Init(idAI* owner)
 
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
-
-	owner->GetSubsystem(SubsysMovement)->ClearTasks();
-	owner->StopMove(MOVE_STATUS_DONE);
-	if (!owner->CheckFOV(memory.alertPos))
+	
+	if (gameLocal.random.RandomFloat() > 0.5f)
 	{
-		// Search spot is not within FOV, turn towards the position
-		owner->TurnToward(memory.alertPos);
+		owner->GetSubsystem(SubsysMovement)->ClearTasks();
+		owner->StopMove(MOVE_STATUS_DONE);
+		if (!owner->CheckFOV(memory.alertPos))
+		{
+			// Search spot is not within FOV, turn towards the position
+			owner->TurnToward(memory.alertPos);
+		}
 	}
 
 	// In any case, look at the point to investigate

@@ -119,7 +119,7 @@ void State::OnVisualAlert(idActor* enemy)
 	Memory& memory = owner->GetMemory();
 
 	memory.alertClass = EAlertVisual;
-	memory.alertType = EAlertTypeEnemy;
+	memory.alertType = EAlertTypeSuspicious;
 	memory.alertPos = owner->GetVisDir();
 	memory.alertRadius = VISUAL_ALERT_RADIUS;
 	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
@@ -240,7 +240,7 @@ void State::OnAudioAlert()
 	Memory& memory = owner->GetMemory();
 
 	memory.alertClass = EAlertAudio;
-	memory.alertType = EAlertTypeEnemy;
+	memory.alertType = EAlertTypeSuspicious;
 	memory.alertPos = owner->GetSndDir();
 
 	// Search within radius of stimulus that is 1/3 the distance from the
@@ -489,15 +489,29 @@ void State::OnVisualStimPerson(idEntity* stimSource, idAI* owner)
 	}
 
 	// Are they dead or unconscious?
-	if (other->health <= 0 && ShouldProcessAlert(EAlertTypeDeadPerson))
+	if (other->health <= 0) 
 	{
-		// React to finding body
-		ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
+		if (ShouldProcessAlert(EAlertTypeDeadPerson))
+		{
+			// React to finding body
+			ignoreStimulusFromNowOn = OnVisualStimDeadPerson(other, owner);
+		}
+		else
+		{
+				bool ignoreStimulusFromNowOn = false;
+		}
 	}
-	else if (other->IsKnockedOut() && ShouldProcessAlert(EAlertTypeUnconsciousPerson))
+	else if (other->IsKnockedOut())
 	{
-		// React to finding unconscious person
-		ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
+		if (ShouldProcessAlert(EAlertTypeUnconsciousPerson))
+		{
+			// React to finding unconscious person
+			ignoreStimulusFromNowOn = OnVisualStimUnconsciousPerson(other, owner);
+		}
+		else
+		{
+				bool ignoreStimulusFromNowOn = false;
+		}
 	}
 	else
 	{

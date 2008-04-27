@@ -1182,6 +1182,7 @@ void idAI::Spawn( void )
 
 
 	alertTypeWeight[ai::EAlertTypeNone] = 0;
+	alertTypeWeight[ai::EAlertTypeSuspicious] = 5;
 	alertTypeWeight[ai::EAlertTypeEnemy] = 50;
 	alertTypeWeight[ai::EAlertTypeWeapon] = 35;
 	alertTypeWeight[ai::EAlertTypeDeadPerson] = 41;

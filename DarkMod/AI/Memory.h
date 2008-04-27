@@ -100,6 +100,7 @@ enum EAlertClass
 enum EAlertType
 {
 	EAlertTypeNone,
+	EAlertTypeSuspicious,
 	EAlertTypeEnemy,
 	EAlertTypeWeapon,
 	EAlertTypeDeadPerson,
