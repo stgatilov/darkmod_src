@@ -120,6 +120,7 @@ const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
 
 const idEventDef EV_Player_PauseGame("pauseGame", NULL);
 const idEventDef EV_Player_UnpauseGame("unpauseGame", NULL);
+const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", NULL);
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
@@ -185,6 +186,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	// Events needed for the Objectives GUI (is a blocking GUI - pauses the game)
 	EVENT( EV_Player_PauseGame,				idPlayer::Event_Pausegame )
 	EVENT( EV_Player_UnpauseGame,			idPlayer::Event_Unpausegame )
+	EVENT( EV_Player_StartGamePlayTimer,	idPlayer::Event_StartGamePlayTimer )
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 	EVENT( EV_TriggerMissionEnd,			idPlayer::Event_TriggerMissionEnd )
@@ -925,6 +927,9 @@ void idPlayer::Spawn( void )
 
 	// Post an event to read the LG modifier from the worldspawn entity
 	PostEventMS(&EV_ReadLightgemModifierFromWorldspawn, 0);
+
+	// Start the gameplay timer half a second after spawn
+	PostEventMS(&EV_Player_StartGamePlayTimer, 500);
 }
 
 CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
@@ -9894,4 +9899,10 @@ void idPlayer::Event_TriggerMissionEnd()
 
 	// Schedule an mission success event right after fadeout
 	PostEventMS(&EV_Mission_Success, 1500);
+}
+
+void idPlayer::Event_StartGamePlayTimer()
+{
+	gameLocal.m_GamePlayTimer.Clear();
+	gameLocal.m_GamePlayTimer.Start();
 }

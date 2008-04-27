@@ -1485,9 +1485,6 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	m_MissionData->ClearGUIState();
 
 	Printf( "--------------------------------------\n" );
-
-	m_GamePlayTimer.Clear();
-	m_GamePlayTimer.Start();
 }
 
 /*

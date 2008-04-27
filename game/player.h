@@ -975,6 +975,9 @@ private:
 	// Basically waits for any HUD messages and fades out the screen, afterwards
 	// the Mission Success event is called.
 	void					Event_TriggerMissionEnd();
+
+	// Gets called in the first few frames
+	void					Event_StartGamePlayTimer();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
