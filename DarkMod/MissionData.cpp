@@ -2382,6 +2382,14 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(m_Stats.AIStats[COMP_KO].ByTeam[m_PlayerTeam]);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 
+	key = "Bodies found";
+	int numBodiesFound = 0;
+	for (int i = 0; i < MAX_TEAMS; i++) {
+		numBodiesFound += m_Stats.AIStats[COMP_AI_FIND_BODY].ByTeam[i];
+	}
+	value = idStr(numBodiesFound);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
+
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
