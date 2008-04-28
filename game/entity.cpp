@@ -3238,18 +3238,31 @@ bool idEntity::GetMasterPosition( idVec3 &masterOrigin, idMat3 &masterAxis ) con
 	idMat3		localAxis;
 	idAnimator	*masterAnimator;
 
-	if ( bindMaster ) {
+	if ( bindMaster ) 
+	{
 		// if bound to a joint of an animated model
-		if ( bindJoint != INVALID_JOINT ) {
+		if ( bindJoint != INVALID_JOINT ) 
+		{
 			masterAnimator = bindMaster->GetAnimator();
-			if ( !masterAnimator ) {
+			if ( !masterAnimator ) 
+			{
 				masterOrigin = vec3_origin;
 				masterAxis = mat3_identity;
 				return false;
-			} else {
-				masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
-				masterAxis *= bindMaster->renderEntity.axis;
-				masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
+			} else 
+			{
+				// Use GetGlobalJointTransform for things bound to weapons
+				// This takes into account the view bob, weapon bob and other factors
+				if( bindMaster->IsType(idWeapon::Type) )
+				{
+					static_cast<idWeapon *>(bindMaster)->GetGlobalJointTransform( true, bindJoint, masterOrigin, masterAxis );
+				}
+				else
+				{
+					masterAnimator->GetJointTransform( bindJoint, gameLocal.time, masterOrigin, masterAxis );
+					masterAxis *= bindMaster->renderEntity.axis;
+					masterOrigin = bindMaster->renderEntity.origin + masterOrigin * bindMaster->renderEntity.axis;
+				}
 			}
 		} else if ( bindBody >= 0 && bindMaster->GetPhysics() ) {
 			masterOrigin = bindMaster->GetPhysics()->GetOrigin( bindBody );

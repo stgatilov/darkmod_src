@@ -172,20 +172,9 @@ private:
 	idEntityPtr<idAnimatedEntity>	worldModel;
 
 	/**
-	* TDM: Struct for storing weapon attachment info
-	**/
-	typedef struct SWeaponAttachInfo
-	{
-		idEntityPtr<idEntity>	entPtr;
-		jointHandle_t			joint;
-		idVec3					originOffset;
-		idMat3					angleOffsetMat;
-	} SWeaponAttachInfo;
-
-	/**
 	* TDM: List of attachments attached to weapon
 	**/
-	idList<SWeaponAttachInfo>	m_Attachments;
+	idList< idEntityPtr<idEntity> >	m_Attachments;
 
 	// hiding (for GUIs and NPCs)
 	int						hideTime;
