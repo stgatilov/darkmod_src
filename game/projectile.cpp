@@ -1058,6 +1058,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 			// Populate the data object to pass to the projectile result object
 			SFinalProjData DataIn;
 			
+			DataIn.Owner = owner.GetEntity();
 			DataIn.FinalOrigin = collision.endpos;
 			DataIn.FinalAxis = GetPhysics()->GetAxis();
 			DataIn.LinVelocity = tempVel;

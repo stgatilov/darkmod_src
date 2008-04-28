@@ -101,6 +101,7 @@ void CProjectileResult::Init
 	// copy in the data
 	m_Collision = collision;
 	
+	m_ProjData.Owner = pData->Owner.GetEntity();
 	m_ProjData.FinalOrigin = pData->FinalOrigin;
 	m_ProjData.FinalAxis = pData->FinalAxis;
 	m_ProjData.LinVelocity = pData->LinVelocity;
@@ -218,6 +219,12 @@ void CProjectileResult::Init
 	if (!shooter.IsEmpty()) {
 		// Copy the shooter information to this projectile result
 		spawnArgs.Set("shooter", shooter.c_str());
+	}
+
+	// greebo: Store the name of the owner into the projectile spawnargs
+	if (m_ProjData.Owner.GetEntity() != NULL)
+	{
+		spawnArgs.Set("projectile_owner", m_ProjData.Owner.GetEntity()->name);
 	}
 
 	// Run scripts:

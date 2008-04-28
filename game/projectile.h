@@ -20,6 +20,11 @@
 typedef struct SFinalProjData_s
 {
 	/**
+	 * greebo: The entity which fired the projectile
+	 */
+	idEntityPtr<idEntity> Owner;
+
+	/**
 	* Final world position of the origin of the projectile on impact
 	**/
 	idVec3	FinalOrigin;
