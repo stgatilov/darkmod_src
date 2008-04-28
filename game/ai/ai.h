@@ -1111,13 +1111,15 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* Returns false if BJ attempt failed, or if already knocked out
 	**/
-	bool					TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow );  
+	bool					TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow );  
 	
 	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,
 	* also can be called by itself and is called by scriptevent Event_Knockout.
+	*
+	* @inflictor: This is the entity causing the knockout, can be NULL for "unknown originator".
 	**/
-	void					Knockout( void );
+	void					Knockout( idEntity* inflictor );
 
 	/**
 	 * greebo: Does a few things after the knockout animation has finished.

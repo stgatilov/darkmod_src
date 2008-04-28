@@ -356,9 +356,9 @@ const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v')
 
 
 /**
-* This event handles a knockout of the AI
+* This event handles a knockout of the AI (takes the attacker as argument)
 **/
-const idEventDef AI_Knockout( "knockout" );
+const idEventDef AI_Knockout( "knockout", "e" );
 
 /*
 * This is the AI event table class for a generic NPC actor.

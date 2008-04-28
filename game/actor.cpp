@@ -2653,14 +2653,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	
 	if( (bKO || bKOPowerBlow) && collision )
 	{
-		if( TestKnockoutBlow( dir, collision, bKOPowerBlow ) )
+		if( TestKnockoutBlow( attacker, dir, collision, bKOPowerBlow ) )
 		{
-			if (attacker != NULL && attacker->IsType(idActor::Type)) 
-			{
-				// Add a KO to the player stats
-				gameLocal.m_MissionData->KOCallback(this, static_cast<idActor*>(attacker));
-			}
-
 			// For now, first KO blow does no health damage
 			damage = 0;
 		}

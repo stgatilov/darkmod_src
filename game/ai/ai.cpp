@@ -8560,7 +8560,7 @@ idAI::TestKnockoutBlow
 =====================
 */
 
-bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
+bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 {
 	bool bReturnVal(false);
 	float KOAng(0), MinDot(1);
@@ -8634,9 +8634,10 @@ bool idAI::TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow )
 	if( (delta * HeadAxis[0]) < MinDot )
 		goto Quit;
 
-	// if we made it to this point, this AI just got knocked the taff out!
-	Knockout();
 	bReturnVal = true;
+
+	// if we made it to this point, this AI just got knocked the taff out!
+	Knockout(attacker);
 
 	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was knocked out by a blow to the head\r", name.c_str());
 
@@ -8702,7 +8703,7 @@ Based on idAI::Killed
 =====================
 */
 
-void idAI::Knockout( void )
+void idAI::Knockout( idEntity* inflictor )
 {
 	idAngles ang;
 
@@ -8749,6 +8750,9 @@ void idAI::Knockout( void )
 	// the animation is done
 	mind->ClearStates();
 	mind->PushState(STATE_KNOCKED_OUT);
+
+	// Update TDM objective system
+	gameLocal.m_MissionData->MissionEvent(COMP_KO, inflictor, this, inflictor->IsType(idPlayer::Type));
 }
 
 void idAI::PostKnockOut()
@@ -8787,10 +8791,6 @@ void idAI::PostKnockOut()
 
 	// drop items
 	DropOnRagdoll();
-
-	// Update TDM objective system
-	// TODO: Need a way to determine if player was responsible for the KO
-	gameLocal.m_MissionData->MissionEvent( COMP_KO, this, true );
 }
 
 /**

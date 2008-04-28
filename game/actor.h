@@ -422,7 +422,7 @@ protected:
 	* TestKnockoutBlow, only defined in derived classes
 	* Returns true if going from conscious to unconscious
 	**/
-	virtual bool TestKnockoutBlow( idVec3 dir, trace_t *tr, bool bIsPowerBlow ) {return false;} ;
+	virtual bool TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool bIsPowerBlow ) {return false;} ;
 
 	/**
 	 * greebo: Plays the footstep sound according to the current movement type.

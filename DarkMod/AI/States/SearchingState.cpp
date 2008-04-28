@@ -123,7 +123,7 @@ void SearchingState::Init(idAI* owner)
 	else if (memory.alertType == EAlertTypeEnemy)
 	{
 		// clear the alert type, so we can react to other alert types (such as a dead person)
-		memory.alertType == EAlertTypeSuspicious;
+		memory.alertType = EAlertTypeSuspicious;
 	}
 
 	

@@ -676,11 +676,6 @@ public:
 	**/
 	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
 
-	/**
-	* greebo: This gets called when an actor ("inflictor") knocks out another actor ("target").
-	**/
-	void KOCallback(idActor* target, idActor* inflictor);
-
 	int GetFoundLoot( void );
 	void ChangeFoundLoot( int amount );
 
