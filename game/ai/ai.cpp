@@ -8752,7 +8752,8 @@ void idAI::Knockout( idEntity* inflictor )
 	mind->PushState(STATE_KNOCKED_OUT);
 
 	// Update TDM objective system
-	gameLocal.m_MissionData->MissionEvent(COMP_KO, inflictor, this, inflictor->IsType(idPlayer::Type));
+	bool playerResponsible = (inflictor != NULL && inflictor->IsType(idPlayer::Type));
+	gameLocal.m_MissionData->MissionEvent(COMP_KO, inflictor, this, playerResponsible);
 }
 
 void idAI::PostKnockOut()
