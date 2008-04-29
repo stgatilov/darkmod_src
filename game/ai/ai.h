@@ -907,6 +907,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bCanOperateDoors;
 
 	/**
+	 * angua: is set true while the AI is handling the door.
+	 */
+	bool					m_HandlingDoor;
+
+	/**
 	* Head center offset in head joint coordinates, relative to head joint
 	* When this offset is added to the head joint, we should be at the head center
 	**/

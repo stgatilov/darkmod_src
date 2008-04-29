@@ -528,7 +528,7 @@ idActor::idActor( void ) {
 
 	finalBoss			= false;
 
-	m_attachments.SetGranularity( 1 );
+	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
@@ -557,8 +557,8 @@ idActor::~idActor( void ) {
 	}
 
 	// remove any attached entities
-	for( i = 0; i < m_attachments.Num(); i++ ) {
-		ent = m_attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_Attachments.Num(); i++ ) {
+		ent = m_Attachments[ i ].ent.GetEntity();
 		if ( ent ) {
 			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
@@ -790,7 +790,7 @@ void idActor::SetupHead( void ) {
 
 		idVec3		origin;
 		idMat3		axis;
-		CAttachInfo &attach = m_attachments.Alloc();
+		CAttachInfo &attach = m_Attachments.Alloc();
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
@@ -927,11 +927,11 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( painTime );
 
-	savefile->WriteInt( m_attachments.Num() );
-	for ( i = 0; i < m_attachments.Num(); i++ ) 
+	savefile->WriteInt( m_Attachments.Num() );
+	for ( i = 0; i < m_Attachments.Num(); i++ ) 
 	{
-		m_attachments[i].ent.Save( savefile );
-		savefile->WriteInt( m_attachments[i].channel );
+		m_Attachments[i].ent.Save( savefile );
+		savefile->WriteInt( m_Attachments[i].channel );
 	}
 
 	savefile->WriteBool( finalBoss );
@@ -1069,7 +1069,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) 
 	{
-		CAttachInfo &attach = m_attachments.Alloc();
+		CAttachInfo &attach = m_Attachments.Alloc();
 		attach.ent.Restore( savefile );
 		savefile->ReadInt( attach.channel );
 	}
@@ -1898,8 +1898,8 @@ void idActor::RemoveAttachments( void )
 	idEntity *ent;
 
 	// remove any attached entities
-	for( i = 0; i < m_attachments.Num(); i++ ) {
-		ent = m_attachments[ i ].ent.GetEntity();
+	for( i = 0; i < m_Attachments.Num(); i++ ) {
+		ent = m_Attachments[ i ].ent.GetEntity();
 		if ( ent && ent->spawnArgs.GetBool( "remove" ) ) {
 			ent->PostEventMS( &EV_SafeRemove, 0 );
 		}
@@ -1971,13 +1971,13 @@ void idActor::UnbindNotify( idEntity *ent )
 	}
 
 	// angua: remove from attachments
-	for (int i = 0; i < m_attachments.Num(); i++)
+	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
-		idEntity* attachment = m_attachments[i].ent.GetEntity();
+		idEntity* attachment = m_Attachments[i].ent.GetEntity();
 
 		if (attachment != NULL && attachment->name == ent->name)
 		{
-			m_attachments[i].ent = NULL;
+			m_Attachments[i].ent = NULL;
 		}
 	}
 }
@@ -2838,13 +2838,13 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles
 	jointHandle_t	joint;
 	CAttachInfo	*attachment;
 
-	if( ind < 0 || ind >= m_attachments.Num() )
+	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
 		goto Quit;
 	}
 
-	attachment = &m_attachments[ind];
+	attachment = &m_Attachments[ind];
 	ent = attachment->ent.GetEntity();
 
 	if( !ent || !attachment->ent.IsValid() )
@@ -2888,15 +2888,15 @@ void idActor::ShowAttachment( int ind, bool bShow )
 {
 	idEntity *ent( NULL );
 
-	if( ind < 0 || ind >= m_attachments.Num() )
+	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
 		goto Quit;
 	}
 
-	ent = m_attachments[ind].ent.GetEntity();
+	ent = m_Attachments[ind].ent.GetEntity();
 
-	if( !ent || !m_attachments[ind].ent.IsValid() )
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
 		goto Quit;
@@ -2916,15 +2916,15 @@ void idActor::DropAttachment( int ind )
 	idEntity *ent = NULL;
 
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Dropattachment called for index %d\r", ind);
-	if( ind < 0 || ind >= m_attachments.Num() )
+	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
 		goto Quit;
 	}
 
-	ent = m_attachments[ind].ent.GetEntity();
+	ent = m_Attachments[ind].ent.GetEntity();
 
-	if( !ent || !m_attachments[ind].ent.IsValid() )
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
 		goto Quit;
@@ -2934,7 +2934,7 @@ void idActor::DropAttachment( int ind )
 	ent->Unbind();
 	// We don't want to remove it from the list, otherwise other attachment indices get screwed up
 	//	if a script was keeping track of them.
-	m_attachments[ind].ent = NULL; 
+	m_Attachments[ind].ent = NULL; 
 
 	// greebo: Check if we should extinguish the attachment, like torches
 	if (ent->spawnArgs.GetBool("extinguish_on_drop", "0"))
@@ -2959,15 +2959,15 @@ bool idActor::GetAttachInfo( int ind, idStr &jointName, idVec3 &offset,
 	bool bReturnVal = false;
 	idEntity *ent = NULL;
 
-	if( ind < 0 || ind >= m_attachments.Num() )
+	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
 		goto Quit;
 	}
 
-	ent = m_attachments[ind].ent.GetEntity();
+	ent = m_Attachments[ind].ent.GetEntity();
 
-	if( !ent || !m_attachments[ind].ent.IsValid() )
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
 		goto Quit;
@@ -2987,15 +2987,15 @@ idEntity *idActor::GetAttachedEnt( int ind )
 {
 	idEntity *ent = NULL;
 
-	if( ind < 0 || ind >= m_attachments.Num() )
+	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
 		goto Quit;
 	}
 
-	ent = m_attachments[ind].ent.GetEntity();
+	ent = m_Attachments[ind].ent.GetEntity();
 
-	if( !ent || !m_attachments[ind].ent.IsValid() )
+	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
 		ent = NULL;
@@ -3938,7 +3938,7 @@ idActor::Event_Attach
 void idActor::Event_Attach( idEntity *ent )
 {
 	Attach( ent );
-	idThread::ReturnInt( m_attachments.Num() );
+	idThread::ReturnInt( m_Attachments.Num() );
 }
 
 /*
@@ -3959,7 +3959,7 @@ idActor::Event_GetAttachment
 */
 void idActor::Event_GetNumAttachments( void )
 {
-	idThread::ReturnInt( m_attachments.Num() );
+	idThread::ReturnInt( m_Attachments.Num() );
 }
 
 /*
@@ -3991,11 +3991,11 @@ int idActor::GetNumMeleeWeapons()
 		return 1;
 	}
 
-	for (int i = 0; i < m_attachments.Num(); i++)
+	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
-		idEntity* ent = m_attachments[i].ent.GetEntity();
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
 
-		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		if (ent == NULL || !m_Attachments[i].ent.IsValid())
 		{
 			continue;
 		}
@@ -4017,11 +4017,11 @@ int idActor::GetNumRangedWeapons()
 		return 1;
 	}
 
-	for (int i = 0; i < m_attachments.Num(); i++)
+	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
-		idEntity* ent = m_attachments[i].ent.GetEntity();
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
 
-		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		if (ent == NULL || !m_Attachments[i].ent.IsValid())
 		{
 			continue;
 		}

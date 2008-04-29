@@ -381,7 +381,7 @@ protected:
 
 	int						painTime;
 
-	idList<CAttachInfo>	m_attachments;
+//	idList<CAttachInfo>	m_Attachments;
 	
 	// Maps animation names to the names of their replacements
 	idDict					m_replacementAnims;

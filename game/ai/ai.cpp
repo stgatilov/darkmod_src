@@ -777,6 +777,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_nextThinkFrame);
 
 	savefile->WriteBool(m_bCanOperateDoors);
+	savefile->WriteBool(m_HandlingDoor);
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
@@ -1036,6 +1037,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_nextThinkFrame);
 
 	savefile->ReadBool(m_bCanOperateDoors);
+	savefile->ReadBool(m_HandlingDoor);
 
 	int size;
 	savefile->ReadInt(size);
@@ -1436,6 +1438,7 @@ void idAI::Spawn( void )
 	// end drowning setup
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
+	m_HandlingDoor = false;
 
 	// Set up KOing and FOV
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
@@ -9124,10 +9127,10 @@ void idAI::DropOnRagdoll( void )
 	}
 
 	// Drop TDM style attachments
-	for( int i=0; i<m_attachments.Num(); i++ )
+	for( int i=0; i<m_Attachments.Num(); i++ )
 	{
-		ent = m_attachments[i].ent.GetEntity();
-		if( !ent || !m_attachments[i].ent.IsValid() )
+		ent = m_Attachments[i].ent.GetEntity();
+		if( !ent || !m_Attachments[i].ent.IsValid() )
 			continue;
 
 		bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
@@ -9410,11 +9413,11 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 	
 	// Look through attachments
 	int n = frobMover->m_UsedBy.Num();
-	for (int i = 0; i < m_attachments.Num(); i++)
+	for (int i = 0; i < m_Attachments.Num(); i++)
 	{
-		idEntity* ent = m_attachments[i].ent.GetEntity();
+		idEntity* ent = m_Attachments[i].ent.GetEntity();
 
-		if (ent == NULL || !m_attachments[i].ent.IsValid())
+		if (ent == NULL || !m_Attachments[i].ent.IsValid())
 		{
 			continue;
 		}
