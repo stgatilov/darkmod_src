@@ -131,7 +131,7 @@ public:
 	* TDM: Attach an entity to the weapon's AF.  Different than plain entity attachment
 	* Does not use position name for now
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	enum {
 		EVENT_RELOAD = idEntity::EVENT_MAXEVENTS,
@@ -147,6 +147,15 @@ public:
 	* TDM: Return true if this is a ranged weapon
 	**/
 	bool					IsRanged();
+
+protected:
+	/**
+	* Used internally by the Attach methods.
+	* Offset and axis are filled with the correct offset and axis
+	* for attaching to a particular joint.
+	* Overloaded to call GetJointGlobalTransform on idWeapon entities.
+	**/
+	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
 
 private:
 	// script control
@@ -170,11 +179,6 @@ private:
 
 	idPlayer *				owner;
 	idEntityPtr<idAnimatedEntity>	worldModel;
-
-	/**
-	* TDM: List of attachments attached to weapon
-	**/
-	idList< idEntityPtr<idEntity> >	m_Attachments;
 
 	// hiding (for GUIs and NPCs)
 	int						hideTime;

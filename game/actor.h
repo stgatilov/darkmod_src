@@ -83,12 +83,6 @@ private:
 	bool					disabled;
 };
 
-class idAttachInfo {
-public:
-	idEntityPtr<idEntity>	ent;
-	int						channel;
-};
-
 typedef struct {
 	jointModTransform_t		mod;
 	jointHandle_t			from;
@@ -232,8 +226,11 @@ public:
 	/**
 	* Attach an entity.  Entity spawnArgs checked for attachments are:
 	* "origin", "angles", and "joint".
+	* AttName is the optional name of the attachment for indexing purposes (e.g., "melee_weapon")
+	* Ent is the entity being attached
+	* PosName is the optional position name to attach to.
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	/**
 	* Reattach an existing attachment
@@ -384,7 +381,7 @@ protected:
 
 	int						painTime;
 
-	idList<idAttachInfo>	m_attachments;
+	idList<CAttachInfo>	m_attachments;
 	
 	// Maps animation names to the names of their replacements
 	idDict					m_replacementAnims;

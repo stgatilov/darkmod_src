@@ -6052,6 +6052,30 @@ END_CLASS
 
 /*
 ================
+CAttachInfo::Save
+================
+*/
+void CAttachInfo::Save( idSaveGame *savefile ) const
+{
+	ent.Save( savefile );
+	savefile->WriteInt( channel );
+	savefile->WriteString( name );
+}
+
+/*
+================
+CAttachInfo::Restore
+================
+*/
+void CAttachInfo::Restore( idRestoreGame *savefile )
+{
+	ent.Restore( savefile );
+	savefile->ReadInt( channel );
+	savefile->ReadString( name );
+}
+
+/*
+================
 idAnimatedEntity::idAnimatedEntity
 ================
 */
@@ -6081,11 +6105,16 @@ idAnimatedEntity::Save
 archives object for save game file
 ================
 */
-void idAnimatedEntity::Save( idSaveGame *savefile ) const {
+void idAnimatedEntity::Save( idSaveGame *savefile ) const 
+{
 	animator.Save( savefile );
 
 	// Wounds are very temporary, ignored at this time
 	//damageEffect_t			*damageEffects;
+
+	savefile->WriteInt( m_Attachments.Num() );
+	for( int i=0; i < m_Attachments.Num(); i++ )
+		m_Attachments[i].Save( savefile );
 }
 
 /*
@@ -6110,6 +6139,14 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 			gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 		}
 	}
+
+	m_Attachments.Clear();
+	int num;
+	savefile->ReadInt( num );
+	m_Attachments.SetNum( num );
+
+	for( int i=0; i < num; i++ )
+		m_Attachments[i].Restore( savefile );
 }
 
 /*
@@ -6479,7 +6516,7 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 idAnimatedEntity::Attach
 ================
 */
-void idAnimatedEntity::Attach( idEntity *ent, const char *PosName ) 
+void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 {
 	idVec3			origin;
 	idMat3			axis;
@@ -6487,6 +6524,8 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName )
 	idStr			jointName;
 	idAngles		angleOffset;
 	idVec3			originOffset;
+	idStr			nm;
+	idStr			ClassName;
 	SAttachPosition *pos;
 
 // New position system:
@@ -6508,22 +6547,60 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName )
 		joint = animator.GetJointHandle( jointName );
 		if ( joint == INVALID_JOINT ) 
 		{
-			// TODO: Turn this into a warning and attach relative to origin instead?
-			gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+			jointName = ent->spawnArgs.GetString("bindToJoint");
+			joint = animator.GetJointHandle( jointName );
+			if ( joint == INVALID_JOINT )
+			{
+				gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+			}
 		}
 
-		angleOffset = ent->spawnArgs.GetAngles( "angles" );
-		originOffset = ent->spawnArgs.GetVector( "origin" );
+		// Sparhawk's classname-specific offset system
+		// Will be phased out in favor of attachment positions
+		spawnArgs.GetString("classname", "", ClassName);
+		sprintf(nm, "angles_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
+			angleOffset = ent->spawnArgs.GetAngles( "angles" );
+
+		sprintf(nm, "origin_%s", ClassName.c_str());
+		if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
+		{
+			originOffset = ent->spawnArgs.GetVector( "origin" );
+		}
 	}
 
-	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-
-	ent->SetOrigin( origin + originOffset * renderEntity.axis );
+	GetAttachingTransform( joint, origin, axis );
 	idMat3 rotate = angleOffset.ToMat3();
 	idMat3 newAxis = rotate * axis;
-	ent->SetAxis( newAxis );
+	
+	// Use the local joint axis instead of the overall AI axis
+	if (!ent->spawnArgs.GetBool("is_attachment"))
+	{
+		// angua: don't set origin and axis for attachments added in the map, 
+		// this would lead to the entity floating around through half of the map
+		ent->SetOrigin( origin + axis * originOffset );
+		ent->SetAxis( newAxis );
+	}
+
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
+
+	CAttachInfo	&attach = m_Attachments.Alloc();
+	attach.channel = animator.GetChannelForJoint( joint );
+	attach.ent = ent;
+	attach.name = AttName;
+
+	// TODO: Update name->m_Attachment index mapping
+}
+
+/*
+================
+idAnimatedEntity::GetAttachingTransform
+================
+*/
+void idAnimatedEntity::GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis )
+{
+	GetJointWorldTransform( jointHandle, gameLocal.time, offset, axis );
 }
 
 /*
@@ -7773,7 +7850,7 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 	return pThread;
 }
 
-void idEntity::Attach( idEntity *ent, const char *PosName ) 
+void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName ) 
 {
 	idVec3			origin;
 	idMat3			axis;
@@ -8650,14 +8727,17 @@ void idEntity::ParseAttachments( void )
 			if ( ent != NULL)
 			{
 				// check for attachment position spawnarg
-				idStr PosKey = kv->GetKey();
-				PosKey.StripLeading( "def_attach" );
-				PosKey = "pos_attach" + PosKey;
+				idStr Suffix = kv->GetKey();
+				Suffix.StripLeading( "def_attach" );
+				idStr PosKey = "pos_attach" + Suffix;
+				// String name of the attachment for later accessing
+				idStr AttName = "attach_name" + Suffix;
 
 				if( spawnArgs.FindKey(PosKey.c_str()) )
-					Attach( ent, spawnArgs.GetString(PosKey.c_str()) );
+					Attach( ent, spawnArgs.GetString(PosKey.c_str()), 
+							spawnArgs.GetString(AttName.c_str()) );
 				else
-					Attach( ent );
+					Attach( ent, NULL, spawnArgs.GetString(AttName.c_str()) );
 			}
 			else
 			{

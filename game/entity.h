@@ -713,8 +713,10 @@ public:
 	* rigid body physics and simply calls idEntity::Bind.  
 	* Will be overloaded in derived classes with joints to call BindToJoint.
 	* The position argument is an optional named attachment position
+	* Attachment name is the string name for future lookups, not actually used by idEntity
+	* but used in derived classes.
 	**/
-	virtual void Attach( idEntity *ent, const char *PosName = NULL );
+	virtual void Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	/**
 	* Returns a pointer to the attachment position with this name. 
@@ -1228,7 +1230,19 @@ typedef struct damageEffect_s {
 	struct damageEffect_s *	next;
 } damageEffect_t;
 
-class idAnimatedEntity : public idEntity {
+class CAttachInfo 
+{
+public:
+	void Save( idSaveGame *savefile ) const;
+	void Restore( idRestoreGame *savefile );
+
+	idEntityPtr<idEntity>	ent;
+	int						channel;
+	idStr					name;
+};
+
+class idAnimatedEntity : public idEntity 
+{
 public:
 	CLASS_PROTOTYPE( idAnimatedEntity );
 
@@ -1258,8 +1272,11 @@ public:
 
 	/**
 	* Overloads idEntity::Attach to bind to a joint
+	* AttName is the optional name of the attachment for indexing purposes (e.g., "melee_weapon")
+	* Ent is the entity being attached
+	* PosName is the optional position name to attach to.
 	**/
-	virtual void			Attach( idEntity *ent, const char *PosName = NULL );
+	virtual void			Attach( idEntity *ent, const char *PosName = NULL, const char *AttName = NULL );
 
 	enum {
 		EVENT_ADD_DAMAGE_EFFECT = idEntity::EVENT_MAXEVENTS,
@@ -1267,8 +1284,22 @@ public:
 	};
 
 protected:
+	/**
+	* Used internally by the Attach methods.
+	* Offset and axis are filled with the correct offset and axis
+	* for attaching to a particular joint.
+	* Calls GetJointWorldTransform on idAnimated entities.
+	**/
+	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
+
+protected:
 	idAnimator				animator;
 	damageEffect_t *		damageEffects;
+
+	/**
+	* List storing attachment data for each attachment
+	**/
+	idList<CAttachInfo>		m_Attachments;
 
 private:
 	void					Event_GetJointHandle( const char *jointname );

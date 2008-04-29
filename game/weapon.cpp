@@ -150,7 +150,7 @@ idWeapon::~idWeapon()
 	// destroy weapon attachments
 	for( int i=0; i<m_Attachments.Num(); i++ )
 	{
-		idEntity *ent = m_Attachments[i].GetEntity();
+		idEntity *ent = m_Attachments[i].ent.GetEntity();
 		if( ent )
 			ent->Event_Remove();
 	}
@@ -723,10 +723,9 @@ void idWeapon::Clear( void ) {
 	isFiring			= false;
 
 	// TDM: destroy previous weapon attachments
-	// TODO: Find a better way to do this so we don't have to create and destroy objects?
 	for( int i=0; i<m_Attachments.Num(); i++ )
 	{
-		idEntity *ent = m_Attachments[i].GetEntity();
+		idEntity *ent = m_Attachments[i].ent.GetEntity();
 		if( ent )
 			ent->Event_Remove();
 	}
@@ -1393,7 +1392,7 @@ void idWeapon::HideWeapon( void ) {
 	// hide attachments:
 	for(int i=0; i<m_Attachments.Num(); i++)
 	{
-		m_Attachments[i].GetEntity()->Hide();
+		m_Attachments[i].ent.GetEntity()->Hide();
 	}
 }
 
@@ -1414,7 +1413,7 @@ void idWeapon::ShowWeapon( void ) {
 	// show attachments
 	for(int i=0; i<m_Attachments.Num(); i++)
 	{
-		m_Attachments[i].GetEntity()->Show();
+		m_Attachments[i].ent.GetEntity()->Show();
 	}
 }
 
@@ -2814,7 +2813,7 @@ void idWeapon::Event_ShowAttachment(int id, bool bShow)
 	if( id < 0 || id >= m_Attachments.Num() )
 		goto Quit;
 
-	ent = m_Attachments[id].GetEntity();
+	ent = m_Attachments[id].ent.GetEntity();
 	if( ent )
 	{
 		if( bShow )
@@ -3327,64 +3326,23 @@ void idWeapon::ClientPredictionThink( void ) {
 idWeapon::Attach
 ================
 */
-void idWeapon::Attach( idEntity *ent, const char *PosName ) 
+void idWeapon::Attach( idEntity *ent, const char *PosName, const char *AttName ) 
 {
-	idVec3			origin;
-	idMat3			axis;
-	jointHandle_t	joint;
-	idStr			jointName;
-	idAngles		angleOffset;
-	idVec3			originOffset;
-	SAttachPosition *pos;
-
-// New position system:
-	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
-	{
-		joint = pos->joint;
-
-		originOffset = pos->originOffset;
-		angleOffset = pos->angleOffset;
-
-		// etity-specific offsets to a given position
-		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
-		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
-	}
-// Old system, will be phased out
-	else
-	{
-		jointName = ent->spawnArgs.GetString( "joint" );
-		joint = animator.GetJointHandle( jointName );
-		if ( joint == INVALID_JOINT ) 
-		{
-			// TODO: Turn this into a warning and attach relative to origin instead?
-			gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
-		}
-
-		angleOffset = ent->spawnArgs.GetAngles( "angles" );
-		originOffset = ent->spawnArgs.GetVector( "origin" );
-	}
-
-	GetGlobalJointTransform( true, joint, origin, axis );
-
-	// For "historical" reasons, these offsets are apparently in joint coordinates
-	// As opposed to the offsets on other entities...
-	idMat3 rotate = angleOffset.ToMat3();
-	idMat3 newAxis = rotate * axis;
-	ent->SetAxis( newAxis );
-	ent->SetOrigin( origin + axis * originOffset );
-
-	ent->BindToJoint( this, joint, true );
+	idAnimatedEntity::Attach( ent, PosName, AttName );
 
 	// set up the same rendering conditions as the weapon viewmodel
-	ent->cinematic = cinematic;
 	ent->GetRenderEntity()->allowSurfaceInViewID = owner->entityNumber+1;
 	ent->GetRenderEntity()->weaponDepthHack = true;
+}
 
-	// Add to attachment list used to removed attachments when we change weapons
-	idEntityPtr<idEntity> attachPtr;
-	attachPtr = ent;
-
-	m_Attachments.Append( attachPtr );
+/*
+================
+idWeapon::GetAttachingTransform
+================
+*/
+void idWeapon::GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis )
+{
+	GetGlobalJointTransform( true, jointHandle, offset, axis );
 }
 
 

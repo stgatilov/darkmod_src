@@ -790,7 +790,7 @@ void idActor::SetupHead( void ) {
 
 		idVec3		origin;
 		idMat3		axis;
-		idAttachInfo &attach = m_attachments.Alloc();
+		CAttachInfo &attach = m_attachments.Alloc();
 		attach.channel = animator.GetChannelForJoint( joint );
 		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
 		origin = renderEntity.origin + ( origin + modelOffset + mHeadModelOffset ) * renderEntity.axis;
@@ -1069,7 +1069,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) 
 	{
-		idAttachInfo &attach = m_attachments.Alloc();
+		CAttachInfo &attach = m_attachments.Alloc();
 		attach.ent.Restore( savefile );
 		savefile->ReadInt( attach.channel );
 	}
@@ -1911,82 +1911,17 @@ void idActor::RemoveAttachments( void )
 idActor::Attach
 ================
 */
-void idActor::Attach( idEntity *ent, const char *PosName ) 
+void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
 {
-	idVec3			origin;
-	idMat3			axis, rotate, newAxis;
-	jointHandle_t	joint;
-	idStr			jointName;
-	idAngles		angleOffset;
-	idVec3			originOffset;
-	idStr			nm;
-	idStr			ClassName;
-	SAttachPosition *pos;
+	idAnimatedEntity::Attach( ent, PosName, AttName );
 
-// New position system:
-	if( PosName && ((pos = GetAttachPosition(PosName)) != NULL) )
-	{
-		joint = pos->joint;
-
-		originOffset = pos->originOffset;
-		angleOffset = pos->angleOffset;
-
-		// etity-specific offsets to a given position
-		originOffset += ent->spawnArgs.GetVector( va("origin_%s", PosName ) );
-		angleOffset += ent->spawnArgs.GetAngles( va("angles_%s", PosName ) );
-	}
-// Old system, will be phased out
-	else
-	{
-		jointName = ent->spawnArgs.GetString( "joint" );
-		joint = animator.GetJointHandle( jointName );
-		if ( joint == INVALID_JOINT ) {
-			jointName = ent->spawnArgs.GetString("bindToJoint");
-			joint = animator.GetJointHandle( jointName );
-			if ( joint == INVALID_JOINT )
-			{
-				gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
-			}
-		}
-
-		spawnArgs.GetString("classname", "", ClassName);
-		sprintf(nm, "angles_%s", ClassName.c_str());
-		if(ent->spawnArgs.GetAngles(nm.c_str(), "0 0 0", angleOffset) == false)
-			angleOffset = ent->spawnArgs.GetAngles( "angles" );
-
-		sprintf(nm, "origin_%s", ClassName.c_str());
-		if(ent->spawnArgs.GetVector(nm.c_str(), "0 0 0", originOffset) == false)
-		{
-			originOffset = ent->spawnArgs.GetVector( "origin" );
-		}
-	}
-
-	idAttachInfo	&attach = m_attachments.Alloc();
-
-	attach.channel = animator.GetChannelForJoint( joint );
-	GetJointWorldTransform( joint, gameLocal.time, origin, axis );
-	attach.ent = ent;
-
-	rotate = angleOffset.ToMat3();
-	newAxis = rotate * axis;
-	// Use the local joint axis instead of the overall AI axis
-	if (!ent->spawnArgs.GetBool("is_attachment"))
-	{
-		// angua: don't set origin and axis for attachments added in the map, 
-		// this would lead to the entity floating around through half of the map
-		ent->SetOrigin( origin + originOffset * axis );
-		ent->SetAxis( newAxis );
-	}
-
-	ent->BindToJoint( this, joint, true );
-	ent->cinematic = cinematic;
-
-	// If the ent we're attaching is an AFEntity, call SetBody to set up damage propagation, physics propagation, etc.
+	// If the ent we're attaching is an AFAttachment, call SetBody to set up damage propagation, physics propagation, etc.
+	// NOTE: We read ent->GetBindJoint here, assuming the bind went okay.
 	if( ent->IsType(idAFAttachment::Type) )
 	{
 		// TODO: Is this line correct?  Won't know until we test.
 		idStr modelName = ent->spawnArgs.GetString("model","");
-		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), joint );
+		static_cast<idAFAttachment *>(ent)->SetBody( this, modelName.c_str(), ent->GetBindJoint() );
 	}
 }
 
@@ -2901,7 +2836,7 @@ void idActor::ReAttach( int ind, idStr jointName, idVec3 offset, idAngles angles
 	idVec3			origin;
 	idMat3			axis, rotate, newAxis;
 	jointHandle_t	joint;
-	idAttachInfo	*attachment;
+	CAttachInfo	*attachment;
 
 	if( ind < 0 || ind >= m_attachments.Num() )
 	{
