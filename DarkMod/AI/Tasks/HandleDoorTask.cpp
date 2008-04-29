@@ -182,8 +182,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openPos = frobDoor->GetOpenPos();
-	const idVec3& closedPos = frobDoor->GetClosedPos();
+	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
+	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
 
 	const idBounds& bounds = owner->GetPhysics()->GetBounds();
 	float size = bounds[1][0];
