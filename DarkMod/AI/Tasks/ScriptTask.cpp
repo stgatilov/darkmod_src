@@ -50,7 +50,7 @@ void ScriptTask::Init(idAI* owner, Subsystem& subsystem)
 	if (scriptFunction != NULL)
 	{
 		_thread = new idThread(scriptFunction);
-		_thread->CallFunctionArgs(scriptFunction, true, "e", this);
+		_thread->CallFunctionArgs(scriptFunction, true, "e", owner);
 		_thread->DelayedStart(0);
 	}
 	else
