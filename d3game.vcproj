@@ -853,6 +853,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\RepeatedBarkTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\ScriptTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\ScriptTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\SingleBarkTask.cpp">
 					</File>
 					<File
