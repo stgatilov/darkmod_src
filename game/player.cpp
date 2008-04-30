@@ -9677,10 +9677,10 @@ void idPlayer::PerformFrob(idEntity* target)
 	// First we have to check whether that entity is an inventory 
 	// item. In that case, we have to add it to the inventory and
 	// hide the entity.
-	CInventoryItem* item = AddToInventory(target, hud);
+	CInventoryItem* addedItem = AddToInventory(target, hud);
 
 	// Check if the frobbed entity is the one currently highlighted by the player
-	if (item != NULL && highlightedEntity == target) {
+	if (addedItem != NULL && highlightedEntity == target) {
 		// Item has been added to the inventory, clear the entity pointer
 		pDM->m_FrobEntity = NULL;
 
@@ -9690,6 +9690,17 @@ void idPlayer::PerformFrob(idEntity* target)
 		// greebo: Prevent the grabber from checking the added entity (it may be 
 		// entirely removed from the game, which would cause crashes).
 		pDM->grabber->RemoveFromClipList(target);
+	}
+	else if (addedItem == NULL)
+	{
+		// The entity was not added to the inventory, check if we have 
+		// a "use" relationship with the currently selected inventory item (key => door)
+		CInventoryItem* item = InventoryCursor()->GetCurrentItem();
+		if (item != NULL && item->UseOnFrob())
+		{
+			// Check the item entity for the right spawnargs
+			highlightedEntity->UsedBy(IS_PRESSED, item->GetItemEntity());
+		}
 	}
 }
 

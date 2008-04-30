@@ -34,6 +34,7 @@ CInventoryItem::CInventoryItem(idEntity *owner)
 	m_Orientated = false;
 	m_Persistent = false;
 	m_LightgemModifier = 0;
+	m_UseOnFrob = false;
 }
 
 CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
@@ -55,6 +56,7 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 	m_Name = itemEntity->spawnArgs.GetString("inv_name", "");
 	m_Value	= itemEntity->spawnArgs.GetInt("inv_loot_value", "-1");
 	m_Stackable	= itemEntity->spawnArgs.GetBool("inv_stackable", "0");
+	m_UseOnFrob = itemEntity->spawnArgs.GetBool("inv_use_on_frob", "0");
 
 	m_Count = (m_Stackable) ? itemEntity->spawnArgs.GetInt("inv_count", "1") : 1;
 
@@ -91,10 +93,12 @@ CInventoryItem::CInventoryItem(idEntity* itemEntity, idEntity* owner) {
 
 CInventoryItem::~CInventoryItem()
 {
-	idEntity *e = m_Item.GetEntity();
+	idEntity* ent = m_Item.GetEntity();
 
-	if(e != NULL)
-		e->SetInventoryItem(NULL);
+	if (ent != NULL)
+	{
+		ent->SetInventoryItem(NULL);
+	}
 }
 
 void CInventoryItem::Save( idSaveGame *savefile ) const
@@ -124,6 +128,7 @@ void CInventoryItem::Save( idSaveGame *savefile ) const
 	savefile->WriteBool(m_Persistent);
 	
 	savefile->WriteInt(m_LightgemModifier);
+	savefile->WriteBool(m_UseOnFrob);
 }
 
 void CInventoryItem::Restore( idRestoreGame *savefile )
@@ -158,15 +163,20 @@ void CInventoryItem::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_Persistent);
 
 	savefile->ReadInt(m_LightgemModifier);
+	savefile->ReadBool(m_UseOnFrob);
 }
 
 void CInventoryItem::SetLootType(CInventoryItem::LootType t)
 {
 	// Only positive values are allowed
-	if(t >= CInventoryItem::LT_NONE && t <= CInventoryItem::LT_COUNT)
+	if (t >= CInventoryItem::LT_NONE && t <= CInventoryItem::LT_COUNT)
+	{
 		m_LootType = t;
+	}
 	else
+	{
 		m_LootType = CInventoryItem::LT_NONE;
+	}
 }
 
 void CInventoryItem::SetValue(int n)
@@ -195,14 +205,16 @@ void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 	DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("Setting hud %s on layer %d\r", HudName.c_str(), layer); 
 	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
 	{
-		idEntity *it;
 		idEntity *owner = GetOwner();
 
 		m_Hud = true;
 		m_HudName = HudName;
 		m_Overlay = owner->CreateOverlay(HudName, layer);
-		if((it = m_Item.GetEntity()) != NULL)
+		idEntity* it = m_Item.GetEntity();
+		if (it != NULL)
+		{
 			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, owner, (float)m_Overlay, HudName.c_str());
+		}
 	}
 }
 
@@ -210,17 +222,21 @@ void CInventoryItem::SetOverlay(const idStr &HudName, int Overlay)
 {
 	if(Overlay != OVERLAYS_INVALID_HANDLE)
 	{
-		idEntity *it;
 		idEntity *owner = GetOwner();
 
 		m_Hud = true;
 		m_HudName = HudName;
 		m_Overlay = Overlay;
-		if((it = m_Item.GetEntity()) != NULL)
+		idEntity* it = m_Item.GetEntity();
+		if (it != NULL)
+		{
 			it->CallScriptFunctionArgs("inventory_item_init", true, 0, "eefs", it, owner, (float)m_Overlay, HudName.c_str());
+		}
 	}
 	else
+	{
 		m_Hud = false;
+	}
 }
 
 CInventoryItem::LootType CInventoryItem::getLootTypeFromSpawnargs(const idDict& spawnargs) {

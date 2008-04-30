@@ -112,6 +112,9 @@ public:
 	inline int				GetLightgemModifier() { return m_LightgemModifier; }
 	void					SetLightgemModifier(int newValue);
 
+	// Returns true when this item should be used by the 'frob' impulse
+	inline bool			UseOnFrob() const { return m_UseOnFrob; }
+
 protected:
 	idEntityPtr<idEntity>	m_Owner;
 	idEntityPtr<idEntity>	m_Item;
@@ -141,6 +144,8 @@ protected:
 	bool					m_Persistent;	// Can be taken to the next map (default is FALSE)
 
 	int						m_LightgemModifier; // Is added to the lightgem when this item is active
+
+	bool					m_UseOnFrob;	// Whether this item can be used by the 'frob' button
 };
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

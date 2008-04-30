@@ -6996,26 +6996,24 @@ Quit:
 // carry it around (probably throwing or dropping it).
 void idEntity::FrobAction(bool bMaster, bool bPeer)
 {
-	idEntity *ent;
-
-	int n = m_FrobPeers.Num();
-	idStr s;
-
 	if( IsHidden() )
 		goto Quit;
 
 	// Propagate frobactions to all peers to get them triggered as well.
-	if(bPeer == false)
+	if (bPeer == false)
 	{
+		int n = m_FrobPeers.Num();
 		for(int i = 0; i < n; i++)
 		{
-			s = m_FrobPeers[i];
-			if(s == name)
+			const idStr& str = m_FrobPeers[i];
+			if (str == name)
 				continue;
 
-			idEntity *e = gameLocal.FindEntity(s);
-			if(e != NULL)
-				e->FrobAction(false, true);
+			idEntity* ent = gameLocal.FindEntity(str);
+			if(ent != NULL)
+			{
+				ent->FrobAction(false, true);
+			}
 		}
 	}
 
@@ -7050,20 +7048,20 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 	if(bMaster == true && m_MasterFrob.Length() != 0)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity [%s] is called.\r", m_MasterFrob.c_str());
-		if((ent = gameLocal.FindEntity(m_MasterFrob.c_str())) != NULL)
+		idEntity* ent = gameLocal.FindEntity(m_MasterFrob);
+		if (ent != NULL)
 			ent->FrobAction(false);
 		else
 			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", m_MasterFrob.c_str());
 	}
 	else
 	{
-		int i, n;
-
-		n = m_FrobList.Num();
-		for(i = 0; i < n; i++)
+		int n = m_FrobList.Num();
+		for(int i = 0; i < n; i++)
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_FrobList[i].c_str());
-			if((ent = gameLocal.FindEntity(m_FrobList[i].c_str())) != NULL)
+			idEntity* ent = gameLocal.FindEntity(m_FrobList[i]);
+			if (ent != NULL)
 			{
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s]\r", m_FrobList[i].c_str());
 				ent->FrobAction(false);
@@ -7074,7 +7072,11 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 
 		// Call the frob action script
 		if(m_FrobActionScript.Length() > 0)
-            CallScriptFunctionArgs(m_FrobActionScript.c_str(), true, 0, "e", this);
+		{
+			idThread* thread = CallScriptFunctionArgs(m_FrobActionScript.c_str(), true, 0, "e", this);
+			// greebo: Run the thread at once, the script result might be needed below.
+			thread->Execute();
+		}
 
 		StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
 	}
