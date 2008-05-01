@@ -2657,7 +2657,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 */
 
 	// Check for any activated signals, and trigger them.
-	CheckSDKSignal();
+	CheckSDKSignals();
 
 	// Update the gameplay timer
 	m_GamePlayTimer.Update();
@@ -5956,13 +5956,13 @@ void idGameLocal::AddSDKSignal(idEntity *oObject)
 		m_SignalList.Append(oObject);
 }
 
-void idGameLocal::CheckSDKSignal(void)
+void idGameLocal::CheckSDKSignals()
 {
-	int i, n;
-
-	n = m_SignalList.Num();
-	for(i = 0; i < n; i++)
+	int n = m_SignalList.Num();
+	for(int i = 0; i < n; i++)
+	{
 		m_SignalList[i]->CheckSDKSignal();
+	}
 }
 
 void idGameLocal::PauseGame( bool bPauseState )

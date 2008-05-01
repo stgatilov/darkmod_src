@@ -795,7 +795,7 @@ public:
 	/**
 	 * CheckSignal will call all entites registered for a signal actacvtion.
 	 */
-	void					CheckSDKSignal(void);
+	void					CheckSDKSignals();
 	void					AddSDKSignal(idEntity *oObject);
 
 private:

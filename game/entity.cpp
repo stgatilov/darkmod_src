@@ -8041,19 +8041,20 @@ SDK_SIGNAL idEntity::AddSDKSignal(E_SDK_SIGNAL_STATE (*oFkt)(idEntity *oObject, 
 
 void idEntity::CheckSDKSignal(void)
 {
-	int i, n;
-	SDKSignalInfo *s;
-
 	// Since we are modifying the loopvariable, we use a 'while' her instead of 'for'.
-	n = m_SignalList.Num();
-	i = 0;
-	while(i < n)
+	int n = m_SignalList.Num();
+	int i = 0;
+
+	while (i < n)
 	{
-		s = m_SignalList[i];
-		if(s->m_Signaled == true)
+		SDKSignalInfo* s = m_SignalList[i];
+
+		if (s->m_Signaled == true)
 		{
 			if(s->m_Fkt(s->m_Object, s->m_Data) == SIG_CONTINUE)
+			{
 				s->m_Signaled = false;
+			}
 			else
 			{
 				m_SignalList.Remove(s);
@@ -8069,14 +8070,11 @@ void idEntity::CheckSDKSignal(void)
 
 void idEntity::SDKSignal(SDK_SIGNAL Id, int bState)
 {
-	int i, n;
-	SDKSignalInfo *s;
-
-	n = m_SignalList.Num();
-	for(i = 0; i < n; i++)
+	int n = m_SignalList.Num();
+	for(int i = 0; i < n; i++)
 	{
-		s = m_SignalList[i];
-		if(s->m_Id == Id)
+		SDKSignalInfo* s = m_SignalList[i];
+		if (s->m_Id == Id)
 		{
 			s->m_Signaled = bState;
 			break;
