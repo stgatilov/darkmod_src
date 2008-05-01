@@ -9649,12 +9649,8 @@ CInventoryItem* idPlayer::AddToInventory(idEntity *ent, idUserInterface *_hud) {
 
 void idPlayer::PerformFrob(idEntity* target)
 {
-	if (target == NULL) {
-		return;
-	}
-
-	if (target->IsHidden()) {
-		// greebo: Don't perform frobs on hidden entities
+	if (target == NULL || target->IsHidden()) {
+		// greebo: Don't perform frobs on hidden or NULL entities
 		return;
 	}
 
@@ -9668,6 +9664,21 @@ void idPlayer::PerformFrob(idEntity* target)
 
 	// Fire the STIM_FROB response (if defined) on this entity
 	target->ResponseTrigger(this, ST_FROB);
+
+	// The entity was not added to the inventory, check if we have 
+	// a "use" relationship with the currently selected inventory item (key => door)
+	CInventoryItem* item = InventoryCursor()->GetCurrentItem();
+	if (item != NULL && item->UseOnFrob())
+	{
+		// Check the item entity for the right spawnargs
+		if (highlightedEntity->UsedBy(IS_PRESSED, item->GetItemEntity()))
+		{
+			// The highlighted entity could be used, we're done here
+			return;
+		}
+	}
+
+	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// Trigger the frob action script
 	target->FrobAction(true);
@@ -9690,17 +9701,6 @@ void idPlayer::PerformFrob(idEntity* target)
 		// greebo: Prevent the grabber from checking the added entity (it may be 
 		// entirely removed from the game, which would cause crashes).
 		pDM->grabber->RemoveFromClipList(target);
-	}
-	else if (addedItem == NULL)
-	{
-		// The entity was not added to the inventory, check if we have 
-		// a "use" relationship with the currently selected inventory item (key => door)
-		CInventoryItem* item = InventoryCursor()->GetCurrentItem();
-		if (item != NULL && item->UseOnFrob())
-		{
-			// Check the item entity for the right spawnargs
-			highlightedEntity->UsedBy(IS_PRESSED, item->GetItemEntity());
-		}
 	}
 }
 
