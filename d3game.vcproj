@@ -739,12 +739,6 @@
 						RelativePath=".\DarkMod\Ai\Tasks\IdleAnimationTask.h">
 					</File>
 					<File
-						RelativePath=".\DarkMod\Ai\Tasks\IdleBarkTask.cpp">
-					</File>
-					<File
-						RelativePath=".\DarkMod\Ai\Tasks\IdleBarkTask.h">
-					</File>
-					<File
 						RelativePath=".\DarkMod\Ai\Tasks\InvestigateSpotTask.cpp">
 					</File>
 					<File

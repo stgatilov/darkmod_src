@@ -19,7 +19,6 @@ static bool init_version = FileVersionList("$Id: IdleState.cpp 1435 2007-10-16 1
 #include "../Tasks/PatrolTask.h"
 #include "../Tasks/AnimalPatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "../Tasks/IdleBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/IdleAnimationTask.h"
 #include "ObservantState.h"

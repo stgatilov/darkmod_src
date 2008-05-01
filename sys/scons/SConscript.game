@@ -202,7 +202,6 @@ AI/Tasks/ChaseEnemyTask.cpp \
 AI/Tasks/FleeTask.cpp \
 AI/Tasks/HandleDoorTask.cpp \
 AI/Tasks/IdleAnimationTask.cpp \
-AI/Tasks/IdleBarkTask.cpp \
 AI/Tasks/InvestigateSpotTask.cpp \
 AI/Tasks/MeleeCombatTask.cpp \
 AI/Tasks/MoveToCoverTask.cpp \
