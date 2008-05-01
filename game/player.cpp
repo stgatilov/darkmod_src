@@ -9886,10 +9886,7 @@ void idPlayer::Event_Unpausegame()
 
 void idPlayer::Event_MissionSuccess()
 {
-	// greebo: Hooked off this script, this will be handled via the main menu (TODO: Cleanup)
-	// CallScriptFunctionArgs("onMissionSuccess", true, 0, "e", this);
-
-	// Set the gamestate (and remove all irrelevant entities <<-- can be skipped (FIXME))
+	// Set the gamestate
 	gameLocal.SetMissionResult(MISSION_COMPLETE);
 	gameLocal.sessionCommand = "disconnect";
 }
