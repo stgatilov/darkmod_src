@@ -362,10 +362,12 @@ void CBinaryFrobMover::Open(bool bMaster)
 
 	m_StoppedDueToBlock = false;
 
-
 	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true && !m_bInterrupted)
+	if(m_Open == true && !m_bInterrupted && !IsBlocked())
+	{
+		m_bIntentOpen = false;
 		return;
+	}
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 

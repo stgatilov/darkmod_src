@@ -60,7 +60,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 //	gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
 //		1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 
-	if (_failureCount > 5 || (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE))
+	if (_failureCount > 5 || (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor))
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
 		//Fleeing is done, check if we can see the enemy

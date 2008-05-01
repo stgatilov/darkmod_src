@@ -69,7 +69,6 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		//gameLocal.Printf("Enemy is reachable!\n");
 		// Turn to the player
 		owner->TurnToward(enemy->GetEyePosition());
-		
 	}
 	// no, push the AI forward and try to get to the last visible reachable enemy position
 	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
@@ -85,20 +84,17 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 				owner->TurnToward(enemy->GetEyePosition());
 			}
 		}
-		else
-		{
-			// AI is moving, this is ok
-			
-			// TODO: check_blocked() port from scripts
-		}
 	}
 	
-	else if (owner->AI_MOVE_DONE)
+	else if (owner->AI_MOVE_DONE && !owner->m_HandlingDoor)
 	{
+		// Enemy position itself is not reachable, try to find a position within melee range around the enemy
 		if (_reachEnemyCheck < 4)
 		{
 			idVec3 enemyDirection = owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin();
 			enemyDirection.z = 0;
+
+			// test direction rotates 90° each time the check is performed
 			enemyDirection.NormalizeFast();
 			float angle = _reachEnemyCheck * 90;
 			float sinAngle = idMath::Sin(angle);
@@ -137,20 +133,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 			return true;
 		}
-
-
 	}
 
-	/*
-	else
-	{
-		// Destination unreachable!
-		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
-		gameLocal.Printf("Destination unreachable... \n");
-		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-		return true;
-	}
-*/
 	return false; // not finished yet
 }
 

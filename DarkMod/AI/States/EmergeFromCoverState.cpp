@@ -55,14 +55,19 @@ void EmergeFromCoverState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void EmergeFromCoverState::Think(idAI* owner)
 {
+	Memory& memory = owner->GetMemory();
+
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
-	if (owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE)
+	if (owner->AI_MOVE_DONE 
+		&& !owner->AI_DEST_UNREACHABLE 
+		&& (owner->GetPhysics()->GetOrigin() - memory.positionBeforeTakingCover).LengthFast() < 50)
 	{
 		// Reached position before taking cover, look for enemy
 		// Turn to last visible enemy position
 		owner->TurnToward(owner->lastVisibleEnemyPos);
+		owner->Event_LookAtPosition(owner->lastVisibleEnemyPos,1);
 
 		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 	}
