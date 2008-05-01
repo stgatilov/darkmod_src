@@ -4567,7 +4567,8 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	float fLeanTestDelta = 6.0f;
 	vDelta *= fLeanTestDelta;
 
-	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_SOLID | CONTENTS_BODY, self );
+	// Perform the trace (greebo: use PLAYERSOLID to include player_clip collisions)
+	gameLocal.clip.TraceBounds( trTest, origPoint, newPoint + vDelta, m_LeanViewBounds, MASK_PLAYERSOLID, self );
 	bWouldClip = trTest.fraction < 1.0f;
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Collision trace between old view point ( %d, %d, %d ) and newPoint: ( %d, %d, %d )\r", origPoint.x, origPoint.y, origPoint.z, newPoint.x, newPoint.y, newPoint.z );
 
