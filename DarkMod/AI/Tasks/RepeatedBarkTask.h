@@ -35,8 +35,10 @@ private:
 	RepeatedBarkTask();
 
 public:
-
-	RepeatedBarkTask(const char* soundName, const int barkRepeatIntervalMin, const int barkRepeatIntervalMax);
+	/**
+	 * greebo: Pass the sound shader name plus the interval range in milliseconds
+	 */
+	RepeatedBarkTask(const idStr& soundName, int barkRepeatIntervalMin, int barkRepeatIntervalMax);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

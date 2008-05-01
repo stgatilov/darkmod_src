@@ -95,14 +95,14 @@ void AgitatedSearchingState::Init(idAI* owner)
 	if (owner->HasSeenEvidence())
 	{
 		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-				TaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
-			);
+			TaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime))
+		);
 	}
 	else
 	{
 		owner->GetSubsystem(SubsysCommunication)->QueueTask(
-				TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
-			);
+			TaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime))
+		);
 	}
 	
 	owner->DrawWeapon();

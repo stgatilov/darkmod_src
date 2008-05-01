@@ -20,19 +20,17 @@ namespace ai
 {
 
 // Default constructor
-RepeatedBarkTask :: RepeatedBarkTask() :
+RepeatedBarkTask::RepeatedBarkTask() :
 	_soundName(""), 
 	_barkRepeatIntervalMin(0), 
 	_barkRepeatIntervalMax(0)
 {}
 
-// Constructor with iunput variables
-RepeatedBarkTask :: RepeatedBarkTask(const char* soundName, const int barkRepeatIntervalMin, const int barkRepeatIntervalMax) : 
+RepeatedBarkTask::RepeatedBarkTask(const idStr& soundName, int barkRepeatIntervalMin, int barkRepeatIntervalMax) : 
 	_soundName(soundName), 
 	_barkRepeatIntervalMin(barkRepeatIntervalMin), 
 	_barkRepeatIntervalMax(barkRepeatIntervalMax)
 {}
-
 
 // Get the name of this task
 const idStr& RepeatedBarkTask::GetName() const
@@ -48,11 +46,14 @@ void RepeatedBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// Initialise it to play the sound now
 	_nextBarkTime = gameLocal.time;
+	// greebo: Add some random offset of up to <intervalMax> seconds before barking the first time
+	// This prevents guards barking in choirs.
+	_nextBarkTime += SEC2MS(gameLocal.random.RandomFloat()*_barkRepeatIntervalMax);
 }
 
 bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Repeated Bark Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO).LogString("RepeatedBarkTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
