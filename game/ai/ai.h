@@ -608,10 +608,6 @@ protected:
 	idStr					attack;
 
 	// chatter/talking
-	const idSoundShader		*chat_snd;
-	int						chat_min;
-	int						chat_max;
-	int						chat_time; // The next time chattering is allowed
 	talkState_t				talk_state;
 	idEntityPtr<idActor>	talkTarget;
 
@@ -1033,7 +1029,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						ReactionTo( const idEntity *ent );
 	bool					CheckForEnemy( void );
 	void					EnemyDead( void );
-	virtual bool			CanPlayChatterSounds( void ) const;
 
 	
 	/** 
@@ -1064,13 +1059,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// the last time where the AI did its thinking (used for physics)
 	int						m_lastThinkTime;
 
-	/**
-	 * greebo: Sets the chatter sound depending on having an enemy or not. The chat_time
-	 * member is updated as well, but the sound is not actually played, it only paves the way.
-	 */
-	void					SetChatSound();
-
-	void					PlayChatter( void );
 	virtual void			Hide( void );
 	virtual void			Show( void );
 	virtual bool			CanBecomeSolid();

@@ -431,10 +431,6 @@ idAI::idAI()
 	projectileVelocity	= vec3_origin;
 	projectileGravity	= vec3_origin;
 	projectileSpeed		= 0.0f;
-	chat_snd			= NULL;
-	chat_min			= 0;
-	chat_max			= 0;
-	chat_time			= 0;
 	talk_state			= TALK_NEVER;
 	talkTarget			= NULL;
 
@@ -626,10 +622,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	projectile.Save( savefile );
 	savefile->WriteString( attack );
 
-	savefile->WriteSoundShader( chat_snd );
-	savefile->WriteInt( chat_min );
-	savefile->WriteInt( chat_max );
-	savefile->WriteInt( chat_time );
 	savefile->WriteInt( talk_state );
 	talkTarget.Save( savefile );
 
@@ -872,10 +864,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	projectile.Restore( savefile );
 	savefile->ReadString( attack );
 
-	savefile->ReadSoundShader( chat_snd );
-	savefile->ReadInt( chat_min );
-	savefile->ReadInt( chat_max );
-	savefile->ReadInt( chat_time );
 	savefile->ReadInt( i );
 	talk_state = static_cast<talkState_t>( i );
 	talkTarget.Restore( savefile );
@@ -1417,9 +1405,6 @@ void idAI::Spawn( void )
 		health = 1;
 	}
 
-	// set up monster chatter
-	SetChatSound();
-
 	// Dark Mod: set up drowning
 	m_MouthOffset = spawnArgs.GetVector("mouth_offset");
 	if( !head.GetEntity() && af.IsLoaded() )
@@ -1686,7 +1671,6 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateAIScript();
 				FlyMove();
-				PlayChatter();
 				CheckBlink();
 				break;
 
@@ -1695,7 +1679,6 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateAIScript();
 				StaticMove();
-				PlayChatter();
 				CheckBlink();
 				break;
 
@@ -1707,7 +1690,6 @@ void idAI::Think( void )
 				{
 					AnimMove();
 				}
-				PlayChatter();
 				CheckBlink();
 				break;
 
@@ -1716,7 +1698,6 @@ void idAI::Think( void )
 				UpdateEnemyPosition();
 				UpdateAIScript();
 				SlideMove();
-				PlayChatter();
 				CheckBlink();
 				break;
 			}
@@ -5457,8 +5438,6 @@ void idAI::ClearEnemy( void ) {
 	enemy				= NULL;
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
-
-	SetChatSound();
 }
 
 /*
@@ -5928,9 +5907,6 @@ bool idAI::SetEnemy(idActor* newEnemy)
 		// SetEnemyPosition() can now try to setup a path, 
 		// lastVisibleReachableEnemyPosition is set in ANY CASE by this method
 		SetEnemyPosition();
-
-		// Set the (combat) chattering sound, we have an enemy
-		SetChatSound();
 
 		// greebo: This looks suspicious. It overwrites REACHABLE and
 		// and VISIBLEREACHABLE with VISIBLE enemy position,
@@ -6724,7 +6700,6 @@ void idAI::Hide( void ) {
 	physicsObj.SetContents( 0 );
 	physicsObj.GetClipModel()->Unlink();
 	StopSound( SND_CHANNEL_AMBIENT, false );
-	SetChatSound();
 
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
@@ -6752,7 +6727,6 @@ void idAI::Show( void ) {
 
 	physicsObj.GetClipModel()->Link( gameLocal.clip );
 	fl.takedamage = !spawnArgs.GetBool( "noDamage" );
-	SetChatSound();
 	StartSound( "snd_ambient", SND_CHANNEL_AMBIENT, 0, false, NULL );
 }
 /*
@@ -6783,95 +6757,6 @@ bool idAI::CanBecomeSolid( void ) {
 	}
 	return true;
 
-}
-/*
-=====================
-idAI::SetChatSound
-=====================
-*/
-void idAI::SetChatSound() {
-	const char *snd;
-
-	if ( IsHidden() )
-	{
-		// greebo: No sound when hidden
-		snd = NULL;
-	} 
-	else if ( enemy.GetEntity() )
-	{
-		// greebo: We have an enemy, switch to combat chatter
-		snd = spawnArgs.GetString( "snd_chatter_combat", NULL );
-		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_combat_min", "5" ) );
-		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_combat_max", "10" ) );
-	}
-	else if ( !spawnArgs.GetBool( "no_idle_chatter" ) )
-	{
-		// greebo: No enemy, idle chattering is allowed
-		snd = spawnArgs.GetString( "snd_chatter", NULL );
-		chat_min = SEC2MS( spawnArgs.GetFloat( "chatter_min", "5" ) );
-		chat_max = SEC2MS( spawnArgs.GetFloat( "chatter_max", "10" ) );
-	}
-	else
-	{
-		snd = NULL;
-	}
-
-	if (snd && *snd)
-	{
-		// Lookup the soundshader
-		chat_snd = declManager->FindSound( snd );
-
-		// set the next chat time
-		chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * (chat_max - chat_min);
-	}
-	else
-	{
-		chat_snd = NULL;
-	}
-}
-
-/*
-================
-idAI::CanPlayChatterSounds
-
-Used for playing chatter sounds on monsters.
-================
-*/
-bool idAI::CanPlayChatterSounds( void ) const {
-	if ( AI_DEAD || AI_KNOCKEDOUT ) {
-		return false;
-	}
-
-	if ( IsHidden() ) {
-		return false;
-	}
-
-	if ( enemy.GetEntity() ) {
-		return true;
-	}
-
-	if ( spawnArgs.GetBool( "no_idle_chatter" ) ) {
-		return false;
-	}
-
-	return true;
-}
-
-/*
-=====================
-idAI::PlayChatter
-=====================
-*/
-void idAI::PlayChatter( void ) {
-	// check if it's time to play a chat sound
-	if ( AI_DEAD || AI_KNOCKEDOUT || !chat_snd || ( chat_time > gameLocal.time ) ) {
-		return;
-	}
-
-	StartSoundShader( chat_snd, SND_CHANNEL_VOICE, 0, false, NULL );
-
-	// set the next chat time
-	chat_time = gameLocal.time + chat_min + gameLocal.random.RandomFloat() * ( chat_max - chat_min );
 }
 
 /*
