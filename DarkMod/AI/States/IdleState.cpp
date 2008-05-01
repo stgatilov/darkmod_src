@@ -69,6 +69,7 @@ void IdleState::Init(idAI* owner)
 	if (owner->HasSeenEvidence())
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
+		return;
 	}
 
 	_alertLevelDecreaseRate = 0.01f;
