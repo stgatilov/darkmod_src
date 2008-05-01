@@ -127,6 +127,10 @@ void CFrobDoorHandle::ClosePortal(void)
 {
 }
 
+void CFrobDoorHandle::ToggleOpen(void)
+{
+}
+
 void CFrobDoorHandle::DoneStateChange(void)
 {
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("doorhandle [%s] finished state_change.\r", name.c_str());
@@ -152,8 +156,8 @@ void CFrobDoorHandle::Tap(void)
 	if(s.Length() == 0 || m_Door == NULL)
 		return;
 
-	signal = m_Door->AddSDKSignal(SigOpen, NULL);
-	CallScriptFunctionArgs(s.c_str(), true, 0, "eef", this, m_Door, signal);
+//	signal = m_Door->AddSDKSignal(SigOpen, NULL);
+	CallScriptFunctionArgs(s.c_str(), true, 0, "ee", this, m_Door);
 }
 
 bool CFrobDoorHandle::isLocked(void)
