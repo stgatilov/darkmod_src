@@ -2380,17 +2380,21 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(GamePlayTimer::TimeToStr(m_TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
 	key = "Damage Dealt"; 
-	value = idStr(m_Stats.DamageDealt);
+	value = idStr(m_Stats.DamageDealt) + " and received: " + idStr(m_Stats.DamageReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = "Damage Received"; 
+	/*key = "Damage Received"; 
 	value = idStr(m_Stats.DamageReceived);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
 	key = "Health Restored"; 
 	value = idStr(m_Stats.HealthReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	key = "Pockets Picked"; 
 	value = idStr(m_Stats.PocketsPicked);
@@ -2400,9 +2404,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(m_Stats.FoundLoot) + " out of " + idStr(m_Stats.TotalLootInMission);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	/*key = "Total Loot in Mission";
-	value = idStr(m_Stats.TotalLootInMission);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	key = "Killed by the Player";
 	value = idStr(m_Stats.AIStats[COMP_KILL].ByTeam[m_PlayerTeam]);
@@ -2416,17 +2418,20 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	float stealthScore = 0;
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
+	float stealthScore = 10;
 
 	for (int i = 0; i < ai::EAlertStateNum; i++) 
 	{
-		key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
+		/*key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
 		value = idStr(m_Stats.MaxAlertIndices[i]);
-		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
 		// Increase the stealth factor based on the number of alerted AI weighted with the seriousness
 		stealthScore += -i * m_Stats.MaxAlertIndices[i];
 	}
+	stealthScore = idMath::ClampInt(0, 10, stealthScore);
 	
 	key = "Stealth Score";
 	value = idStr(stealthScore);
