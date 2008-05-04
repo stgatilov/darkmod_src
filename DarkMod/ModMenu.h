@@ -6,7 +6,7 @@
 #define MODS_PER_PAGE 10
 
 // Handles mainmenu that displays list of mods (FMs) and lets user
-// chose which one to load.
+// chose which one to load. Also handles display of briefing page
 class CModMenu
 {
 public:
@@ -19,9 +19,13 @@ public:
 	// updates the GUI variables
 	void UpdateGUI(idUserInterface* gui);
 
+	// displays the current briefing page
+	void CModMenu::DisplayBriefingPage(idUserInterface *gui);
+
 private:
 	idList<const char *> modsAvailable; 
 	unsigned int modTop;
+	int briefingPage;
 };
 
 #endif	/* !__MODS_H__ */

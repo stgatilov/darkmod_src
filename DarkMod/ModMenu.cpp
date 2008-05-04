@@ -3,6 +3,7 @@
 #include "ModMenu.h"
 #include "../DarkMod/shop.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/declxdata.h"
 #include "boost/filesystem.hpp"
 #include <string>
 #ifdef _WINDOWS
@@ -178,7 +179,58 @@ void CModMenu::HandleCommands(const char *menuCommand, idUserInterface *gui)
 		_exit(EXIT_FAILURE);
 #endif
 	}
+	if (idStr::Icmp(menuCommand, "briefing_show") == 0)
+	{
+		// Display the briefing text
+		briefingPage = 1;
+		DisplayBriefingPage(gui);
+	}
+	if (idStr::Icmp(menuCommand, "briefing_scroll_down_request") == 0)
+	{
+		// Display the next page of briefing text
+		briefingPage++;
+		DisplayBriefingPage(gui);
+	}
+	if (idStr::Icmp(menuCommand, "briefing_scroll_up_request") == 0)
+	{
+		// Display the previous page of briefing text
+		briefingPage--;
+		DisplayBriefingPage(gui);
+	}
 }
+
+// Displays the current page of briefing text
+void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
+	// look up the briefing xdata, which is in "maps/<map name>/mission_briefing"
+	idStr briefingData = idStr("maps/") + tdm_mapName.GetString() + "/mission_briefing";
+	const tdmDeclXData *xd = static_cast< const tdmDeclXData* >( declManager->FindType( DECL_XDATA, briefingData, false ) );
+
+	const char * briefing = "";
+	bool scrollDown = false;
+	bool scrollUp = false;
+	if (xd != NULL)
+	{
+		// get page count from xdata
+		int pages = xd->m_data.GetInt("num_pages");
+
+		// ensure current page is between 1 and page count, inclusive
+		briefingPage = max(min(pages, briefingPage), 1);
+
+		// load up page text
+		idStr page = idStr("page") + idStr(briefingPage) + "_body";
+		briefing = xd->m_data.GetString(page);
+
+		// set scroll button visibility
+		scrollDown = pages > briefingPage;
+		scrollUp = briefingPage > 1;
+	}
+
+	// update GUI
+	gui->SetStateString("BriefingText", briefing);
+	gui->SetStateBool("ScrollDownVisible", scrollDown);
+	gui->SetStateBool("ScrollUpVisible", scrollUp);
+}
+
 void CModMenu::UpdateGUI(idUserInterface* gui) {
 	// Display the name of each FM
 	int modPos = 0;
