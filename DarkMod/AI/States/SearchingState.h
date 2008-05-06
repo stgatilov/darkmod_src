@@ -50,6 +50,9 @@ public:
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
+	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
+	virtual void OnAudioAlert();
+
 	static StatePtr CreateInstance();
 
 protected:

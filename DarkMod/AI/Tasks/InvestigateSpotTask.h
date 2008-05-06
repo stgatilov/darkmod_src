@@ -34,6 +34,9 @@ typedef boost::shared_ptr<InvestigateSpotTask> InvestigateSpotTaskPtr;
 class InvestigateSpotTask :
 	public Task
 {
+	// The search spot to investigate
+	idVec3 _searchSpot;
+
 	// The time this task may exit
 	int _exitTime;
 
@@ -54,6 +57,18 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
+
+	/** 
+	 * greebo: Sets a new goal position for this task.
+	 *
+	 * @newPos: The new position
+	 */
+	virtual void SetNewGoal(const idVec3& newPos);
+
+	/** 
+	 * greebo: Sets the "should investigate closely" flag.
+	 */
+	virtual void SetInvestigateClosely(bool closely);
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

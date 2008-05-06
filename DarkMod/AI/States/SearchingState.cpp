@@ -436,6 +436,32 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	return true;
 }
 
+void SearchingState::OnAudioAlert()
+{
+	// First, call the base class
+	State::OnAudioAlert();
+
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+	Memory& memory = owner->GetMemory();
+
+	if (!memory.alertPos.Compare(memory.currentSearchSpot, 50))
+	{
+		// The position of the sound is different to the current search spot, redefine the goal
+		TaskPtr curTask = owner->GetSubsystem(SubsysAction)->GetCurrentTask();
+		InvestigateSpotTaskPtr spotTask = boost::dynamic_pointer_cast<InvestigateSpotTask>(curTask);
+			
+		if (spotTask != NULL)
+		{
+			// Redirect the owner to a new position
+			spotTask->SetNewGoal(memory.alertPos);
+			spotTask->SetInvestigateClosely(false);
+
+			//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 1, 300);
+		}
+	}
+}
+
 StatePtr SearchingState::CreateInstance()
 {
 	return StatePtr(new SearchingState);

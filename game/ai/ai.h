@@ -501,7 +501,7 @@ public:
 	void	setAirTicks(int airTicks);
 
 	// greebo: Accessor methods for the array of subsystems
-	ID_INLINE ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id)
+	ID_INLINE const ai::SubsystemPtr& GetSubsystem(ai::SubsystemId id)
 	{
 		return subsystems[id];
 	}
