@@ -4645,6 +4645,18 @@ void idEntity::ActivateTargets( idEntity *activator ) const {
 	}
 }
 
+void idEntity::RemoveTarget(idEntity* target)
+{
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		if (targets[i].GetEntity() == target)
+		{
+			targets.RemoveIndex(i);
+			return;
+		}
+	}
+}
+
 /***********************************************************************
 
   Misc.

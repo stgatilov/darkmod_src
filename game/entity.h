@@ -500,6 +500,8 @@ public:
 	void					FindTargets( void );
 	void					RemoveNullTargets( void );
 	void					ActivateTargets( idEntity *activator ) const;
+	// greebo: Removes the given target ent from this entity's targets.
+	void					RemoveTarget(idEntity* target);
 
 	// misc
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );

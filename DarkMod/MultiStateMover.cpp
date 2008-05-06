@@ -67,6 +67,13 @@ void CMultiStateMover::Event_PostSpawn()
 		positionInfo.Append(info);		
 	}
 
+	// Now remove all the MultiStatePositionInfo entities from the elevator targets 
+	// to avoid triggering of positionInfo entities when the elevator is reaching different floors.
+	for (int i = 0; i < positionInfo.Num(); i++)
+	{
+		RemoveTarget(positionInfo[i].positionEnt.GetEntity());
+	}
+
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
 }
 
