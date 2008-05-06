@@ -22,6 +22,7 @@ static bool init_version = FileVersionList("$Id: PatrolTask.cpp 1435 2007-10-16 
 #include "PathHideTask.h"
 #include "PathShowTask.h"
 #include "PathLookatTask.h"
+#include "PathInteractTask.h"
 #include "../Library.h"
 
 namespace ai
@@ -132,6 +133,10 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 	else if (classname == "path_lookat")
 	{
 		task = PathLookatTaskPtr(new PathLookatTask(path));
+	}
+	else if (classname == "path_interact")
+	{
+		task = PathInteractTaskPtr(new PathInteractTask(path));
 	}
 	else
 	{

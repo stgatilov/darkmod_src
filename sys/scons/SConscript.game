@@ -209,6 +209,7 @@ AI/Tasks/MoveToPositionTask.cpp \
 AI/Tasks/PathAnimTask.cpp \
 AI/Tasks/PathCornerTask.cpp \
 AI/Tasks/PathHideTask.cpp \
+AI/Tasks/PathInteractTask.cpp \
 AI/Tasks/PathLookatTask.cpp \
 AI/Tasks/PathShowTask.cpp \
 AI/Tasks/PathTurnTask.cpp \
