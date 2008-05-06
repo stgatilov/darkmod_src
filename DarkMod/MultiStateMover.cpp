@@ -120,6 +120,12 @@ void CMultiStateMover::Activate(idEntity* activator)
 	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
 	assert(positionEnt != NULL);
 
+	if (targetPos.Compare(GetPhysics()->GetOrigin(), VECTOR_EPSILON))
+	{
+		// nothing to do, we're already at the target position
+		return;
+	}
+
 	// We're done moving if the velocity is very close to zero
 	bool isDoneMoving = GetPhysics()->GetLinearVelocity().Length() <= VECTOR_EPSILON;
 
