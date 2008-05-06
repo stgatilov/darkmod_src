@@ -224,6 +224,9 @@ public:
     // to determine if a new search is necessary
 	idVec3 lastAlertPosSearched;
 
+	// greebo: This is the position of the alert that was used to set up a hiding spot search.
+	idVec3 alertSearchCenter;
+
 	// A search area vector that is m_alertRadius on each side
 	idVec3 alertSearchVolume;
 

@@ -42,6 +42,7 @@ Memory::Memory(idAI* owningAI) :
 	investigateStimulusLocationClosely(false),
 	searchingDueToCommunication(false),
 	lastAlertPosSearched(0,0,0),
+	alertSearchCenter(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	alertSearchVolume(0,0,0),
 	alertSearchExclusionVolume(0,0,0),
 	lastEnemyPos(0,0,0),
@@ -87,6 +88,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(investigateStimulusLocationClosely);
 	savefile->WriteBool(searchingDueToCommunication);
 	savefile->WriteVec3(lastAlertPosSearched);
+	savefile->WriteVec3(alertSearchCenter);
 	savefile->WriteVec3(alertSearchVolume);
 	savefile->WriteVec3(alertSearchExclusionVolume);
 	savefile->WriteVec3(lastEnemyPos);
@@ -152,6 +154,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(investigateStimulusLocationClosely);
 	savefile->ReadBool(searchingDueToCommunication);
 	savefile->ReadVec3(lastAlertPosSearched);
+	savefile->ReadVec3(alertSearchCenter);
 	savefile->ReadVec3(alertSearchVolume);
 	savefile->ReadVec3(alertSearchExclusionVolume);
 	savefile->ReadVec3(lastEnemyPos);

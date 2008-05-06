@@ -3330,7 +3330,6 @@ void idAI::Event_ClosestReachableEnemy( void )
 
 void idAI::destroyCurrentHidingSpotSearch()
 {
-
 	// Check to see if there is one
 	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
@@ -3344,7 +3343,8 @@ void idAI::destroyCurrentHidingSpotSearch()
 	// No hiding spots
 	m_hidingSpots.clear();
 
-	
+	// greebo: Clear the initial alert position
+	GetMemory().alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 }
 
 //-----------------------------------------------------------------------------------------------------
@@ -3367,6 +3367,9 @@ void idAI::Event_StartSearchForHidingSpots
 	idBounds searchBounds (minBounds, maxBounds);
 	idBounds searchExclusionBounds;
 	searchExclusionBounds.Clear(); // no exclusion bounds
+
+	// greebo: Remember the initial alert position
+	GetMemory().alertSearchCenter = hideFromLocation;
 
 	// SZ: Must use same AAS that LAS used during setup
 
@@ -3437,8 +3440,7 @@ void idAI::Event_ContinueSearchForHidingSpots()
 
 void idAI::Event_CloseHidingSpotSearch ()
 {
-       
-	// Destroy current hiding spot search
+    // Destroy current hiding spot search
 	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\r");
 	destroyCurrentHidingSpotSearch();
 }

@@ -460,6 +460,19 @@ void SearchingState::OnAudioAlert()
 			//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 1, 300);
 		}
 	}
+
+	if (memory.alertSearchCenter != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	{
+		// We have a valid search center
+		float distanceToSearchCenter = (memory.alertPos - memory.alertSearchCenter).LengthSqr();
+		if (distanceToSearchCenter > memory.alertSearchVolume.LengthSqr())
+		{
+			// The alert position is far from the current search center, restart search
+			memory.restartSearchForHidingSpots = true;
+
+			//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 1, 2000);
+		}
+	}
 }
 
 StatePtr SearchingState::CreateInstance()

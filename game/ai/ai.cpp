@@ -9075,7 +9075,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\r");
+	DM_LOG(LC_AI, LT_DEBUG).LogString ("StartSearchForHidingSpots called.\r");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -9083,6 +9083,10 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	// Make caller's search bounds
 	idBounds searchBounds (minBounds, maxBounds);
 	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
+
+	// greebo: Remember the initial alert position
+	ai::Memory& memory = GetMemory();
+	memory.alertSearchCenter = memory.alertPos;
 
 	// Get aas
 	if (aas != NULL)

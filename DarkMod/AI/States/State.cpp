@@ -128,7 +128,6 @@ void State::OnVisualAlert(idActor* enemy)
 	// set the flag back (greebo: Is this still necessary?)
 	owner->AI_VISALERT = false;
 
-
 	// Is this alert far enough away from the last one we reacted to to
 	// consider it a new alert? Visual alerts are highly compelling and
 	// are always considered new
@@ -256,9 +255,9 @@ void State::OnAudioAlert()
 	) * distanceToStim / 400.0f;
 
 	float searchVolModifier = distanceToStim / 600.0f;
-	if (searchVolModifier < 0.01f)
+	if (searchVolModifier < 0.4f)
 	{
-		searchVolModifier = 0.01f;
+		searchVolModifier = 0.4f;
 	}
 
 	memory.alertRadius = AUDIO_ALERT_RADIUS;
