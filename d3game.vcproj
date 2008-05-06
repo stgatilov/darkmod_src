@@ -781,6 +781,12 @@
 						RelativePath=".\DarkMod\Ai\Tasks\PathHideTask.h">
 					</File>
 					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathInteractTask.cpp">
+					</File>
+					<File
+						RelativePath=".\DarkMod\Ai\Tasks\PathInteractTask.h">
+					</File>
+					<File
 						RelativePath=".\DarkMod\Ai\Tasks\PathShowTask.cpp">
 					</File>
 					<File
