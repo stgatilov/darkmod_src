@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id: MultiStateMoverPosition.cpp 2167 2008-04-06 18:41:22Z greebo $", init_version);
 
 #include "MultiStateMoverPosition.h"
+#include "MultiStateMover.h"
 
 CLASS_DECLARATION( idEntity, CMultiStateMoverPosition )
 END_CLASS
@@ -25,9 +26,13 @@ void CMultiStateMoverPosition::Spawn()
 void CMultiStateMoverPosition::OnMultistateMoverArrive(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
+
+	ActivateTargets(mover);
 }
 
 void CMultiStateMoverPosition::OnMultistateMoverLeave(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
+
+	ActivateTargets(mover);
 }

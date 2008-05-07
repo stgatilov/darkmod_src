@@ -22,7 +22,7 @@
  * where the information where to go is contained on the triggering button.
  */
 class CMultiStateMover : 
-	public idElevator
+	public idMover
 {
 	idList<MoverPositionInfo> positionInfo;
 

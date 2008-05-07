@@ -14,7 +14,7 @@ static bool init_version = FileVersionList("$Id: MultiStateMover.cpp 2167 2008-0
 
 #include "MultiStateMover.h"
 
-CLASS_DECLARATION( idElevator, CMultiStateMover )
+CLASS_DECLARATION( idMover, CMultiStateMover )
 	EVENT( EV_Activate,		CMultiStateMover::Event_Activate )
 	EVENT( EV_PostSpawn,	CMultiStateMover::Event_PostSpawn )
 END_CLASS
