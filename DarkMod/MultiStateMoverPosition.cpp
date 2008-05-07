@@ -27,12 +27,37 @@ void CMultiStateMoverPosition::OnMultistateMoverArrive(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
 
+	// First, activate all our targets
 	ActivateTargets(mover);
+
+	// Run the mover event script
+	RunMoverEventScript("call_on_arrive", mover);
 }
 
 void CMultiStateMoverPosition::OnMultistateMoverLeave(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
 
+	// First, activate all our targets
 	ActivateTargets(mover);
+
+	// Run the mover event script
+	RunMoverEventScript("call_on_leave", mover);
+}
+
+void CMultiStateMoverPosition::RunMoverEventScript(const idStr& spawnArg, CMultiStateMover* mover)
+{
+	idStr scriptFuncName;
+	if (!spawnArgs.GetString(spawnArg, "", scriptFuncName))
+	{
+		return; // no scriptfunction
+	}
+
+	// Script function signature is like this: void scriptobj::onMultiStateMover(entity mover)
+	idThread* thread = CallScriptFunctionArgs(scriptFuncName, true, 0, "ee", this, mover);
+	if (thread != NULL)
+	{
+		// greebo: Run the thread at once, the script result might be needed below.
+		thread->Execute();
+	}
 }

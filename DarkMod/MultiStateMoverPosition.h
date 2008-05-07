@@ -29,6 +29,15 @@ public:
 	// greebo: These two events are called when the mulitstate mover leaves/arrives the position
 	virtual void	OnMultistateMoverArrive(CMultiStateMover* mover);
 	virtual void	OnMultistateMoverLeave(CMultiStateMover* mover);
+
+private:
+	/**
+	 * Calls the mover event script whose name is contained in the given spawnArg.
+	 * The script thread is immediately executed, if the function exists. 
+	 *
+	 * @spawnArg: The spawnarg containing the script function name (e.g. "call_on_leave")
+	 */
+	void RunMoverEventScript(const idStr& spawnArg, CMultiStateMover* mover);
 };
 
 /**

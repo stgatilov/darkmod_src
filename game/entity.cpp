@@ -7086,8 +7086,11 @@ void idEntity::FrobAction(bool bMaster, bool bPeer)
 		if(m_FrobActionScript.Length() > 0)
 		{
 			idThread* thread = CallScriptFunctionArgs(m_FrobActionScript.c_str(), true, 0, "e", this);
-			// greebo: Run the thread at once, the script result might be needed below.
-			thread->Execute();
+			if (thread != NULL)
+			{
+				// greebo: Run the thread at once, the script result might be needed below.
+				thread->Execute();
+			}
 		}
 
 		StartSound( "snd_acquire", SND_CHANNEL_ANY, 0, false, NULL );
