@@ -135,16 +135,7 @@ void CMultiStateMover::Activate(idEntity* activator)
 	}
 
 	// Check if we are at a defined position
-	CMultiStateMoverPosition* curPositionEnt = NULL;
-
-	// We are at a known position, set the entity pointer
-	int curPositionIndex = GetPositionInfoIndex(curPos);
-
-	if (curPositionIndex != -1)
-	{
-		curPositionEnt = positionInfo[curPositionIndex].positionEnt.GetEntity();
-		assert(curPositionEnt != NULL);
-	}
+	CMultiStateMoverPosition* curPositionEnt = GetPositionEntity(curPos);
 
 	// We're done moving if the velocity is very close to zero
 	bool isAtRest = GetPhysics()->GetLinearVelocity().Length() <= VECTOR_EPSILON;
@@ -179,6 +170,14 @@ void CMultiStateMover::DoneMoving()
 	{
 		// Trigger targets now that we've reached our goal position
 		ActivateTargets(this);
+	}
+
+	// Try to locate the position entity
+	CMultiStateMoverPosition* positionEnt = GetPositionEntity(GetPhysics()->GetOrigin());
+	if (positionEnt != NULL)
+	{
+		// Fire the event on the position entity
+		positionEnt->OnMultistateMoverArrive(this);
 	}
 }
 
@@ -219,6 +218,12 @@ int CMultiStateMover::GetPositionInfoIndex(const idStr& name) const
 	}
 
 	return -1; // not found
+}
+
+CMultiStateMoverPosition* CMultiStateMover::GetPositionEntity(const idVec3& pos) const
+{
+	int positionIndex = GetPositionInfoIndex(pos);
+	return (positionIndex != -1) ? positionInfo[positionIndex].positionEnt.GetEntity() : NULL;
 }
 
 int CMultiStateMover::GetPositionInfoIndex(const idVec3& pos) const

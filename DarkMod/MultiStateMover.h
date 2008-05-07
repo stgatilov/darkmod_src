@@ -54,6 +54,9 @@ private:
 	// Returns the index of the position info at the given position (using epsilon comparison)
 	int		GetPositionInfoIndex(const idVec3& pos) const;
 
+	// Returns the positioninfo entity of the given location or NULL if no suitable position found 
+	CMultiStateMoverPosition* GetPositionEntity(const idVec3& pos) const;
+
 	void	Event_Activate(idEntity* activator);
 	void	Event_PostSpawn();
 };
