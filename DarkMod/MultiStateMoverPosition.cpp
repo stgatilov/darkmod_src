@@ -27,8 +27,11 @@ void CMultiStateMoverPosition::OnMultistateMoverArrive(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
 
-	// First, activate all our targets
-	ActivateTargets(mover);
+	// First, check if we should trigger our targets
+	if (spawnArgs.GetBool("always_trigger_targets", "1"))
+	{
+		ActivateTargets(mover);
+	}
 
 	// Run the mover event script
 	RunMoverEventScript("call_on_arrive", mover);
@@ -38,8 +41,11 @@ void CMultiStateMoverPosition::OnMultistateMoverLeave(CMultiStateMover* mover)
 {
 	if (mover == NULL) return;
 
-	// First, activate all our targets
-	ActivateTargets(mover);
+	// First, check if we should trigger our targets
+	if (spawnArgs.GetBool("always_trigger_targets", "1"))
+	{
+		ActivateTargets(mover);
+	}
 
 	// Run the mover event script
 	RunMoverEventScript("call_on_leave", mover);
