@@ -9,6 +9,8 @@
 #ifndef _MULTI_STATE_MOVER_POSITION_H_
 #define _MULTI_STATE_MOVER_POSITION_H_
 
+class CMultiStateMover;
+
 /**
  * greebo: A MultiStateMoverPosition is an entity carrying information
  * about a possible MultiStateMover position (doh!).
@@ -23,6 +25,10 @@ public:
 	CLASS_PROTOTYPE( CMultiStateMoverPosition );
 
 	void	Spawn();
+
+	// greebo: These two events are called when the mulitstate mover leaves/arrives the position
+	virtual void	OnMultistateMoverArrive(CMultiStateMover* mover);
+	virtual void	OnMultistateMoverLeave(CMultiStateMover* mover);
 };
 
 /**

@@ -21,3 +21,13 @@ void CMultiStateMoverPosition::Spawn()
 {
 	// nothing to do yet
 }
+
+void CMultiStateMoverPosition::OnMultistateMoverArrive(CMultiStateMover* mover)
+{
+	if (mover == NULL) return;
+}
+
+void CMultiStateMoverPosition::OnMultistateMoverLeave(CMultiStateMover* mover)
+{
+	if (mover == NULL) return;
+}

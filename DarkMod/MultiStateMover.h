@@ -51,6 +51,9 @@ private:
 	// Returns the index of the named position info or -1 if not found
 	int		GetPositionInfoIndex(const idStr& name) const;
 
+	// Returns the index of the position info at the given position (using epsilon comparison)
+	int		GetPositionInfoIndex(const idVec3& pos) const;
+
 	void	Event_Activate(idEntity* activator);
 	void	Event_PostSpawn();
 };

@@ -114,32 +114,54 @@ void CMultiStateMover::Activate(idEntity* activator)
 		return; // no "position" key found => exit
 	}
 
-	int positionIdx = GetPositionInfoIndex(targetPosition);
+	int targetPositionIndex = GetPositionInfoIndex(targetPosition);
 
-	if (positionIdx == -1) 
+	if (targetPositionIndex == -1) 
 	{
 		gameLocal.Warning("Multistate mover is targetted by an entity with unknown 'position': %s", targetPosition.c_str());
 		return;
 	}
 
 	// We appear to have a valid position index, start moving
-	idEntity* positionEnt = positionInfo[positionIdx].positionEnt.GetEntity();
-	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
+	idEntity* positionEnt = positionInfo[targetPositionIndex].positionEnt.GetEntity();
 	assert(positionEnt != NULL);
-
-	if (targetPos.Compare(GetPhysics()->GetOrigin(), VECTOR_EPSILON))
+	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
+	const idVec3& curPos = GetPhysics()->GetOrigin();
+	
+	if (targetPos.Compare(curPos, VECTOR_EPSILON))
 	{
 		// nothing to do, we're already at the target position
 		return;
 	}
 
-	// We're done moving if the velocity is very close to zero
-	bool isDoneMoving = GetPhysics()->GetLinearVelocity().Length() <= VECTOR_EPSILON;
+	// Check if we are at a defined position
+	CMultiStateMoverPosition* curPositionEnt = NULL;
 
-	if (isDoneMoving && spawnArgs.GetBool("trigger_on_leave", "0")) 
+	// We are at a known position, set the entity pointer
+	int curPositionIndex = GetPositionInfoIndex(curPos);
+
+	if (curPositionIndex != -1)
 	{
-		// We're leaving our position, trigger targets
-		ActivateTargets(this);
+		curPositionEnt = positionInfo[curPositionIndex].positionEnt.GetEntity();
+		assert(curPositionEnt != NULL);
+	}
+
+	// We're done moving if the velocity is very close to zero
+	bool isAtRest = GetPhysics()->GetLinearVelocity().Length() <= VECTOR_EPSILON;
+
+	if (isAtRest)
+	{
+		if (spawnArgs.GetBool("trigger_on_leave", "0"))
+		{
+			// We're leaving our position, trigger targets
+			ActivateTargets(this);
+		}
+
+		if (curPositionEnt != NULL) 
+		{
+			// Fire the event on the position entity
+			curPositionEnt->OnMultistateMoverLeave(this);
+		}
 	}
 
 	// Set the rotation direction of any targetted func_rotaters
@@ -191,6 +213,22 @@ int CMultiStateMover::GetPositionInfoIndex(const idStr& name) const
 	for (int i = 0; i < positionInfo.Num(); i++) 
 	{
 		if (positionInfo[i].name == name) 
+		{
+			return i;
+		}
+	}
+
+	return -1; // not found
+}
+
+int CMultiStateMover::GetPositionInfoIndex(const idVec3& pos) const
+{
+	for (int i = 0; i < positionInfo.Num(); i++) 
+	{
+		idEntity* positionEnt = positionInfo[i].positionEnt.GetEntity();
+		assert(positionEnt != NULL);
+
+		if (positionEnt->GetPhysics()->GetOrigin().Compare(pos, VECTOR_EPSILON))
 		{
 			return i;
 		}
