@@ -45,6 +45,9 @@ protected:
 	virtual void DoneMoving();
 
 private:
+	// greebo: Controls the direction of targetted rotaters, depending on the given moveTargetPosition
+	void	SetGearDirection(const idVec3& targetPos);
+
 	// Returns the index of the named position info or -1 if not found
 	int		GetPositionInfoIndex(const idStr& name) const;
 

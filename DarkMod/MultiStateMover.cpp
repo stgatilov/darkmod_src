@@ -111,7 +111,7 @@ void CMultiStateMover::Activate(idEntity* activator)
 	idStr targetPosition;
 	if (!activator->spawnArgs.GetString("position", "", targetPosition))
 	{
-		return;
+		return; // no "position" key found => exit
 	}
 
 	int positionIdx = GetPositionInfoIndex(targetPosition);
@@ -142,26 +142,8 @@ void CMultiStateMover::Activate(idEntity* activator)
 		ActivateTargets(this);
 	}
 
-	// greebo: Look if we need to control the rotation of the targetted rotators
-	if (spawnArgs.GetBool("control_gear_direction", "0")) 
-	{
-		// Check if we're moving forward or backward
-		idVec3 moveDir = targetPos - GetPhysics()->GetOrigin();
-		moveDir.NormalizeFast();
-
-		// The dot product (== angle) shows whether we're moving forward or backwards
-		bool movingForward = (moveDir * forwardDirection >= 0);
-
-		for (int i = 0; i < targets.Num(); i++)
-		{
-			idEntity* target = targets[i].GetEntity();
-			if (target->IsType(idRotater::Type))
-			{
-				idRotater* rotater = static_cast<idRotater*>(target);
-				rotater->SetDirection(movingForward);
-			}
-		}
-	}
+	// Set the rotation direction of any targetted func_rotaters
+	SetGearDirection(targetPos);
 
 	// Finally start moving (this will update the "stage" members of the mover)
 	MoveToPos(targetPos);
@@ -175,6 +157,32 @@ void CMultiStateMover::DoneMoving()
 	{
 		// Trigger targets now that we've reached our goal position
 		ActivateTargets(this);
+	}
+}
+
+void CMultiStateMover::SetGearDirection(const idVec3& targetPos)
+{
+	// greebo: Look if we need to control the rotation of the targetted rotators
+	if (!spawnArgs.GetBool("control_gear_direction", "0")) 
+	{
+		return;
+	}
+
+	// Check if we're moving forward or backward
+	idVec3 moveDir = targetPos - GetPhysics()->GetOrigin();
+	moveDir.NormalizeFast();
+
+	// The dot product (== angle) shows whether we're moving forward or backwards
+	bool movingForward = (moveDir * forwardDirection >= 0);
+
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* target = targets[i].GetEntity();
+		if (target->IsType(idRotater::Type))
+		{
+			idRotater* rotater = static_cast<idRotater*>(target);
+			rotater->SetDirection(movingForward);
+		}
 	}
 }
 
