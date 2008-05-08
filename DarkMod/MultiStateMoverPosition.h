@@ -21,16 +21,25 @@ class CMultiStateMover;
 class CMultiStateMoverPosition : 
 	public idEntity
 {
+	// The list of targetted obstacle entities
+	idList< idEntityPtr<idFuncAASObstacle> > aasObstacleEntities;
+
 public:
 	CLASS_PROTOTYPE( CMultiStateMoverPosition );
 
 	void	Spawn();
+
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
 
 	// greebo: These two events are called when the mulitstate mover leaves/arrives the position
 	virtual void	OnMultistateMoverArrive(CMultiStateMover* mover);
 	virtual void	OnMultistateMoverLeave(CMultiStateMover* mover);
 
 private:
+	// Find all AAS func entities after spawn
+	void	Event_PostSpawn();
+
 	/**
 	 * Calls the mover event script whose name is contained in the given spawnArg.
 	 * The script thread is immediately executed, if the function exists. 

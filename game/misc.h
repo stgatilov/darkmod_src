@@ -752,6 +752,9 @@ public:
 	void				Save( idSaveGame *savefile ) const;
 	void				Restore( idRestoreGame *savefile );
 
+	// greebo: Public function to set the state directly
+	void				SetAASState(bool newState);
+
 private:
 	bool				state;
 
