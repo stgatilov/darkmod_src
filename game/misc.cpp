@@ -3048,7 +3048,10 @@ idFuncAASObstacle::Spawn
 void idFuncAASObstacle::Spawn( void ) {
 	state = spawnArgs.GetBool( "start_on" );
 	gameLocal.SetAASAreaState( GetPhysics()->GetAbsBounds(), AREACONTENTS_OBSTACLE, state );
-	gameRenderWorld->DebugBounds(state ? colorGreen : colorRed, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 15000);
+	if (cv_ai_show_aasfuncobstacle_state.GetBool())
+	{
+		gameRenderWorld->DebugBounds(state ? colorRed : colorGreen, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 15000);
+	}
 }
 
 /*
@@ -3059,14 +3062,20 @@ idFuncAASObstacle::Event_Activate
 void idFuncAASObstacle::Event_Activate( idEntity *activator ) {
 	state ^= 1;
 	gameLocal.SetAASAreaState( GetPhysics()->GetAbsBounds(), AREACONTENTS_OBSTACLE, state );
-	gameRenderWorld->DebugBounds(state ? colorGreen : colorRed, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 2000);
+	if (cv_ai_show_aasfuncobstacle_state.GetBool())
+	{
+		gameRenderWorld->DebugBounds(state ? colorRed : colorGreen, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 2000);
+	}
 }
 
 void idFuncAASObstacle::SetAASState(bool newState)
 {
 	state = newState;
 	gameLocal.SetAASAreaState( GetPhysics()->GetAbsBounds(), AREACONTENTS_OBSTACLE, state );
-	gameRenderWorld->DebugBounds(state ? colorGreen : colorRed, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 2000);
+	if (cv_ai_show_aasfuncobstacle_state.GetBool())
+	{
+		gameRenderWorld->DebugBounds(state ? colorRed : colorGreen, GetPhysics()->GetBounds(), GetPhysics()->GetOrigin(), 2000);
+	}
 }
 
 

@@ -753,6 +753,7 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	// greebo: Public function to set the state directly
+	// Note: Passing TRUE means that the AAS area is DISABLED
 	void				SetAASState(bool newState);
 
 private:

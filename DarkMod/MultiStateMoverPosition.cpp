@@ -77,7 +77,7 @@ void CMultiStateMoverPosition::OnMultistateMoverArrive(CMultiStateMover* mover)
 		// Tell the idFuncAASObstacles to (re-)activate the AAS areas
 		for (int i = 0; i < aasObstacleEntities.Num(); i++)
 		{
-			aasObstacleEntities[i].GetEntity()->SetAASState(true);
+			aasObstacleEntities[i].GetEntity()->SetAASState(false);
 		}
 	}
 
@@ -97,7 +97,7 @@ void CMultiStateMoverPosition::OnMultistateMoverLeave(CMultiStateMover* mover)
 		// Handle the idFuncAASObstacles separately, tell them to deactivate the AAS areas
 		for (int i = 0; i < aasObstacleEntities.Num(); i++)
 		{
-			aasObstacleEntities[i].GetEntity()->SetAASState(false);
+			aasObstacleEntities[i].GetEntity()->SetAASState(true);
 		}
 	}
 
