@@ -56,7 +56,7 @@ void BlindedState::Init(idAI* owner)
 	// Set alert level a little bit below combat
 	if(owner->AI_AlertLevel < owner->thresh_5 - 1)
 	{
-		owner->Event_SetAlertLevel(owner->thresh_5 - 1);
+		owner->SetAlertLevel(owner->thresh_5 - 1);
 	}
 
 	_oldAcuity = owner->GetAcuity("vis");
