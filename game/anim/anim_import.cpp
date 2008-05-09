@@ -96,10 +96,21 @@ bool idModelExport::CheckMayaInstall( void ) {
 	lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Alias|Wavefront\\Maya", &hKey );
 	RegCloseKey( hKey );
 
-	if ( lres != ERROR_SUCCESS ) {
-		return false;
+	if ( lres == ERROR_SUCCESS ) {
+		return true;
 	}
-	return true;
+
+	// greebo: Could not find "Alias|WaveFront" Maya key, check for AutoDesk
+	lres = RegOpenKey( HKEY_LOCAL_MACHINE, "SOFTWARE\\Autodesk\\Maya", &hKey );
+	RegCloseKey( hKey );
+
+	if ( lres == ERROR_SUCCESS ) {
+		return true;
+	}
+
+	gameLocal.Warning("Maya key not found in registry, continuing...\n");
+
+	return true; // greebo: both keys failed, let the game continue anyways
 #endif
 }
 
