@@ -43,6 +43,8 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		return;
 	}
 
+	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+
 	_wasLocked = false;
 
 	if (frobDoor->IsLocked())
@@ -52,11 +54,15 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = bounds[1][0];
+	idTraceModel trm(bounds);
+	idClipModel clip(trm);
 
 	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
 	const idVec3& openDir = frobDoor->GetOpenDir();
 	const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
 	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
+
+	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
 
 	idVec3 dir = closedPos - frobDoorOrg;
 	dir.z = 0;
@@ -76,13 +82,10 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	normalAwayOffset *= size * 2.5;
 
 	idVec3 awayPos = closedPos - parallelAwayOffset - normalAwayOffset;
-	awayPos.z = frobDoorOrg.z;
+	awayPos.z = frobDoorBounds[0].z + 5;
 
 	// calculate where to stand when the door swings towards us
 	// next to the door
-	idTraceModel trm(bounds);
-	idClipModel clip(trm);
-
 	idVec3 parallelTowardOffset = dirNorm;
 	parallelTowardOffset *= dist + size * 2;
 
@@ -90,6 +93,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	normalTowardOffset *= size * 2;
 
 	idVec3 towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
+	towardPos.z = frobDoorBounds[0].z + 5;
 
 	// check if we can stand at this position
 	int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
@@ -110,6 +114,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		towardPos.NormalizeFast();
 		towardPos *= (dist + size * 2);
 		towardPos += frobDoorOrg;
+		towardPos.z = frobDoorBounds[0].z + 5;
 
 		int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
 
@@ -124,9 +129,10 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			parallelTowardOffset = dirNorm * size * 1.2f;
 
 			normalTowardOffset = openDirNorm;
-			normalTowardOffset *= dist + 2 * size;
+			normalTowardOffset *= dist + 2.5f * size;
 
 			towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
+			towardPos.z = frobDoorBounds[0].z + 5;
 
 			int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
 
@@ -188,7 +194,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 	const idBounds& bounds = owner->GetPhysics()->GetBounds();
 	float size = bounds[1][0];
-	idVec3 forward = owner->GetPhysics()->GetAxis().ToAngles().ToForward();
 
 	if (cv_ai_door_show.GetBool()) 
 	{
@@ -206,6 +211,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateWaitBeforeOpen:
 				str = "EStateWaitBeforeOpen";
 				break;
+			case EStateStartOpen:
+				str = "EStateStartOpen";
+				break;
 			case EStateOpeningDoor:
 				str = "EStateOpeningDoor";
 				break;
@@ -214,6 +222,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 			case EStateWaitBeforeClose:
 				str = "EStateWaitBeforeClose";
+				break;
+			case EStateStartClose:
+				str = "EStateStartClose";
 				break;
 			case EStateClosingDoor:
 				str = "EStateClosingDoor";
@@ -251,6 +262,16 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateWaitBeforeOpen:
 				if (gameLocal.time >= _waitEndTime)
 				{
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+
+					_doorHandlingState = EStateStartOpen;
+					_waitEndTime = gameLocal.time + 500;
+				}
+				break;
+
+			case EStateStartOpen:
+				if (gameLocal.time >= _waitEndTime)
+				{
 					if (!OpenDoor())
 					{
 						return true;
@@ -279,6 +300,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// no need for more waiting
 				return true;
 				break;
+
+
+			case EStateStartClose:
+				// door has already closed before we were attempting to do it
+				// no need for more waiting
+				return true;
+				break;
+
 
 			case EStateClosingDoor:
 				// we have moved through the door and closed it
@@ -425,6 +454,23 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				_doorHandlingState = EStateMovingToBackPos;
 				break;
 
+			case EStateStartOpen:
+				if (frobDoor->IsBlocked() || 
+					(frobDoor->WasInterrupted() && 
+					frobDoor->WasStoppedDueToBlock()))
+				{
+					if (FitsThrough())
+					{
+						// gap is large enough, move to back position
+						owner->MoveToPosition(_backPos);
+						_doorHandlingState = EStateMovingToBackPos;
+					}
+				}
+				// no need for waiting, door already is open, let's move
+				owner->MoveToPosition(_backPos);
+				_doorHandlingState = EStateMovingToBackPos;
+				break;
+
 
 			case EStateOpeningDoor:
 				// check blocked
@@ -562,11 +608,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			case EStateWaitBeforeClose:
 				if (gameLocal.time >= _waitEndTime)
 				{
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					_doorHandlingState = EStateStartClose;
+					_waitEndTime = gameLocal.time + 500;
+
+				}
+				break;
+
+			case EStateStartClose:
+				if (gameLocal.time >= _waitEndTime)
+				{
 					frobDoor->Close(false);
-					// TODO: play anim
 					_doorHandlingState = EStateClosingDoor;
 				}
 				break;
+
 
 			case EStateClosingDoor:
 				// check blocked or interrupted

@@ -2206,11 +2206,8 @@ bool idAI::ReachedPos( const idVec3 &pos, const moveCommand_t moveCommand ) cons
 				return true;
 			}
 		} else {
-			//idBounds bnds( idVec3( -16.0, -16.0f, -8.0f ), idVec3( 16.0, 16.0f, 64.0f ) );
-			// SZ: We are using AAS48 for our characters so we are changing this to 24 in each direction
-			// greebo: TODO: We are using AAS32 as of August 2007
-			idBounds bnds( idVec3( -24.0, -24.0f, -8.0f ), idVec3( 24.0, 24.0f, 128.0f ) );
-
+			// angua: use the actual bounds size instead of a box with size 48.
+			idBounds bnds(physicsObj.GetBounds());
 			bnds.TranslateSelf( physicsObj.GetOrigin() );
 
 			/*
@@ -4033,66 +4030,12 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		{
 			AI_OBSTACLE_IN_PATH = true;
 
-			// If its a door handle, switch the obstacle to the door so we don't get all hung
-			// up on door handles
-			if (path.firstObstacle->IsType(CFrobDoorHandle::Type))
+			
+			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) )
 			{
-				// Make the obstacle the door itself
-				path.firstObstacle = static_cast<CFrobDoorHandle*>(path.firstObstacle)->GetDoor();
+				obstacle = path.firstObstacle;
 			}
-
-			// SZ: Further distance for Binary Frob Movers (eg: doors) 
-			if (path.firstObstacle->IsType(CBinaryFrobMover::Type))
-			{
-				// angua: changed the code a bit...
-				// Calculate distance far enough away that we won't hit swinging door
-				// opening toward us
-				// idVec3 gravity;
-				// idVec3 sizePerpGrav;
-				const idVec3& org = path.firstObstacle->GetPhysics()->GetOrigin();
-
-				idBounds moverBounds;
-				moverBounds.FromTransformedBounds(path.firstObstacle->GetPhysics()->GetBounds(), 
-													org,
-													path.firstObstacle->GetPhysics()->GetAxis());
-
-				//gameRenderWorld->DebugBox(colorGreen, idBox(path.firstObstacle->GetPhysics()->GetBounds(), org, path.firstObstacle->GetPhysics()->GetAxis()), gameLocal.msec);
-				idVec3 delta = moverBounds[1] - moverBounds[0];
-				delta.z = 0;
-				stopDistance = delta.LengthFast() * 1.3;
-
-				idBounds avoidBounds;
-				avoidBounds[0] = moverBounds[0] - idVec3(stopDistance, stopDistance, 0);
-				avoidBounds[1] = moverBounds[1] + idVec3(stopDistance, stopDistance, 0);
-				// gameRenderWorld->DebugBox(colorYellow, idBox(avoidBounds), gameLocal.msec);
-				
-/*
-				// old version
-				delta.x = avoidBounds[1][0] - avoidBounds[0][0];
-				delta.y = avoidBounds[1][1] - avoidBounds[0][1];
-				delta.z = avoidBounds[1][2] - avoidBounds[0][2];
-
-				gravity = gameLocal.GetGravity();
-				gravity.Normalize();
-
-				sizePerpGrav = gravity.Cross (delta);
-
-				stopDistance = sizePerpGrav.Length();
-*/
-				// The door becomes an active dynamic pathing obstacle when we
-				// reach that distance (we will open the door at that point)
-				if ( physicsObj.GetAbsBounds().IntersectsBounds(avoidBounds) )
-				{
-					obstacle = path.firstObstacle;
-				}
-			}
-			else
-			{
-				if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) )
-				{
-					obstacle = path.firstObstacle;
-				}
-			}
+			
 		}
 		else if (path.startPosObstacle)
 		{
@@ -4167,25 +4110,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		{
 			// Make the obstacle the door itself
 			obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
-/*
-			// Calculate distance far enough away that we won't hit swinging door
-			// opening toward us
-			idVec3 delta;
-			idVec3 gravity;
-			idVec3 sizePerpGrav;
 
-			idBounds avoidBounds = obstacle->GetPhysics()->GetBounds();
-			delta.x = avoidBounds[0][1] - avoidBounds[0][0];
-			delta.y = avoidBounds[1][1] - avoidBounds[1][0];
-			delta.z = avoidBounds[2][1] - avoidBounds[2][0];
-
-			gravity = gameLocal.GetGravity();
-			gravity.Normalize();
-
-			sizePerpGrav = gravity.Cross (delta);
-
-			stopDistance = sizePerpGrav.Length();
-*/
 		}
 
 		// Handle doors
@@ -4193,35 +4118,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
 		{
 			// Try to open doors
 			CFrobDoor* p_door = static_cast<CFrobDoor*>(obstacle);
-/*
-// angua: not needed any more, is done by HandleDoorTask.
-			// angua: If the door was interrupted half-open, it might be that the ai can't get through 
-			if (!p_door->IsOpen() || 
-				(p_door->IsOpen() && (p_door->WasInterrupted() || p_door->IsBlocked())))
-			{
-				// If it is not interrupted and not changing state
-				if ( !p_door->IsChangingState() || p_door->WasInterrupted() || p_door->IsBlocked() )
-				{
-					bool b_canOpen = true;
 
-					if (p_door->IsLocked())
-					{
-						b_canOpen = false;
-						StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-						AI_DEST_UNREACHABLE = true;
-
-						// TODO: Call script to see if I have this key. For now
-						// answer is always no.
-					}
-
-					// Open the door
-					if (b_canOpen)
-					{
-						p_door->OpenDoor(false);
-					}
-				} 
-			} 
-*/
 			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 			obstacleDelta.NormalizeFast();
 

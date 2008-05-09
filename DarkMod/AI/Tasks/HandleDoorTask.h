@@ -34,9 +34,11 @@ private:
 		EStateNone,
 		EStateMovingToFrontPos,
 		EStateWaitBeforeOpen,
+		EStateStartOpen,
 		EStateOpeningDoor,
 		EStateMovingToBackPos,
 		EStateWaitBeforeClose,
+		EStateStartClose,
 		EStateClosingDoor
 	} _doorHandlingState;
 
