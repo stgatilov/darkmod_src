@@ -245,13 +245,6 @@ public:
 	bool canHitEnemy;
 
 	/*!
-	* This is the number of hiding spots from the current
-	* hiding spot list which have been searched
-	* @author SophisticatedZombie
-	*/
-	int numPossibleHidingSpotsSearched;
-
-	/*!
 	* These hold the current spot search target, regardless of whether
 	* or not it is a hiding spot search or some other sort of spot search
 	*/

@@ -1336,7 +1336,6 @@ void State::OnAICommMessage(CAIComm_Message* message)
 				// Set alert pos to the position we were ordered to search
 				memory.alertPos = directObjectLocation;
 				memory.chosenHidingSpot = directObjectLocation;
-				memory.numPossibleHidingSpotsSearched = 0;
 
 				owner->Event_SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 			}

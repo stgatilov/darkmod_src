@@ -235,9 +235,6 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
 
-	// No current search completed that we know of
-	memory.numPossibleHidingSpotsSearched = 0;
-
 	// Clear all the ongoing tasks
 	owner->GetSubsystem(SubsysSenses)->ClearTasks();
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -388,10 +385,6 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 		}
 		else 
 		{
-			// First hiding spot index is valid, so get the next one
-			// TODO: Copy from task_IteratingHidingSpotSearch
-			memory.numPossibleHidingSpotsSearched++;
-
 			// Make sure we stay in bounds
 			memory.currentChosenHidingSpotIndex++;
 			if (memory.currentChosenHidingSpotIndex >= numSpots)
