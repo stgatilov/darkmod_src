@@ -16,7 +16,6 @@ static bool init_version = FileVersionList("$Id: SearchingState.cpp 1435 2007-10
 #include "../Memory.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "../Tasks/WanderInLocationTask.h"
 #include "../Library.h"
 #include "IdleState.h"
 #include "AgitatedSearchingState.h"
@@ -180,22 +179,33 @@ void SearchingState::Think(idAI* owner)
 	// Is a hiding spot search in progress?
 	else if (!memory.hidingSpotInvestigationInProgress)
 	{
-		// Pick a hiding spot and push the task
+		// Spot search and investigation done, what next?
 
-		// Spot search and investigation done, choose a hiding spot
-		// Try to get a first hiding spot
-		if (!ChooseNextHidingSpotToSearch(owner))
+		// Have run out of hiding spots?
+		if (memory.noMoreHidingSpots) 
+		{
+			idVec3 randomOffset(gameLocal.random.RandomFloat()*200.0f - 100, gameLocal.random.RandomFloat()*200.0f - 100, 0);
+			memory.currentSearchSpot = memory.alertPos + randomOffset;
+
+			// Choose to investigate spots closely on a random basis
+			memory.investigateStimulusLocationClosely = (gameLocal.random.RandomFloat() < 0.3f);
+
+			owner->GetSubsystem(SubsysAction)->PushTask(
+				TaskPtr(InvestigateSpotTask::CreateInstance())
+			);
+			//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+
+			// Set the flag to TRUE, so that the sensory scan can be performed
+			memory.hidingSpotInvestigationInProgress = true;
+		}
+		// We should have more hiding spots, try to get the next one
+		else if (!ChooseNextHidingSpotToSearch(owner))
 		{
 			// No more hiding spots to search
 			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
 
+			// Stop moving, the algorithm will choose another spot the next round
 			owner->StopMove(MOVE_STATUS_DONE);
-
-			owner->GetSubsystem(SubsysMovement)->PushTask(
-				TaskPtr(new WanderInLocationTask(memory.alertPos))
-			);
-
-			memory.hidingSpotInvestigationInProgress = true;
 		}
 		else
 		{
@@ -231,6 +241,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 
 	// Clear the flag in any case
 	memory.restartSearchForHidingSpots = false;
+	memory.noMoreHidingSpots = false;
 
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
@@ -402,6 +413,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 				memory.currentChosenHidingSpotIndex = -1;
 				memory.firstChosenHidingSpotIndex = -1;
+				memory.noMoreHidingSpots = true;
 				return false;
 			}
 			else
@@ -423,6 +435,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 		memory.currentChosenHidingSpotIndex = -1;
 		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+		memory.noMoreHidingSpots = true;
 		return false;
 	}
 

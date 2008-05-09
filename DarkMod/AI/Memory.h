@@ -262,6 +262,12 @@ public:
 	bool hidingSpotSearchDone;
 
 	/**
+	 * greebo: TRUE if a hiding spot search has been started and 
+	 * the AI has searched all of them already. 
+	 */
+	bool noMoreHidingSpots;
+
+	/**
 	 * greebo: This is queried by the SearchStates and indicates a new
 	 *         stimulus to be considered.
 	 */

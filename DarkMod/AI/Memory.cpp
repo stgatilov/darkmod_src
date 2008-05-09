@@ -50,6 +50,7 @@ Memory::Memory(idAI* owningAI) :
 	currentSearchSpot(0,0,0),
 	hidingSpotTestStarted(false),
 	hidingSpotSearchDone(true),
+	noMoreHidingSpots(false),
 	restartSearchForHidingSpots(false),
 	hidingSpotThinkFrameCount(0),
 	firstChosenHidingSpotIndex(0),
@@ -95,6 +96,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(currentSearchSpot);
 	savefile->WriteBool(hidingSpotTestStarted);
 	savefile->WriteBool(hidingSpotSearchDone);
+	savefile->WriteBool(noMoreHidingSpots);
 	savefile->WriteBool(restartSearchForHidingSpots);
 	savefile->WriteInt(hidingSpotThinkFrameCount);
 	savefile->WriteInt(firstChosenHidingSpotIndex);
@@ -160,6 +162,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(currentSearchSpot);
 	savefile->ReadBool(hidingSpotTestStarted);
 	savefile->ReadBool(hidingSpotSearchDone);
+	savefile->ReadBool(noMoreHidingSpots);
 	savefile->ReadBool(restartSearchForHidingSpots);
 	savefile->ReadInt(hidingSpotThinkFrameCount);
 	savefile->ReadInt(firstChosenHidingSpotIndex);
