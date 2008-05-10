@@ -751,34 +751,33 @@ idAASLocal::UpdateAreaRoutingCache
 ============
 */
 void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
-	int i, nextAreaNum, cluster, badTravelFlags, clusterAreaNum, numReachableAreas;
-	unsigned short t, startAreaTravelTimes[MAX_REACH_PER_AREA];
-	idRoutingUpdate *updateListStart, *updateListEnd, *curUpdate, *nextUpdate;
-	idReachability *reach;
-	const aasArea_t *nextArea;
-
 	// number of reachability areas within this cluster
-	numReachableAreas = file->GetCluster( areaCache->cluster ).numReachableAreas;
+	int numReachableAreas = file->GetCluster(areaCache->cluster).numReachableAreas;
 
 	// number of the start area within the cluster
-	clusterAreaNum = ClusterAreaNum( areaCache->cluster, areaCache->areaNum );
-	if ( clusterAreaNum >= numReachableAreas ) {
-		return;
+	int clusterAreaNum = ClusterAreaNum(areaCache->cluster, areaCache->areaNum);
+
+	if (clusterAreaNum >= numReachableAreas) {
+		return; // cluster area is not a reachable area
 	}
 
 	areaCache->travelTimes[clusterAreaNum] = areaCache->startTravelTime;
-	badTravelFlags = ~areaCache->travelFlags;
+	int badTravelFlags = ~areaCache->travelFlags;
+
+	unsigned short startAreaTravelTimes[MAX_REACH_PER_AREA];
 	memset( startAreaTravelTimes, 0, sizeof( startAreaTravelTimes ) );
 
 	// initialize first update
-	curUpdate = &areaUpdate[clusterAreaNum];
+	idRoutingUpdate* curUpdate = &areaUpdate[clusterAreaNum];
+
 	curUpdate->areaNum = areaCache->areaNum;
 	curUpdate->areaTravelTimes = startAreaTravelTimes;
 	curUpdate->tmpTravelTime = areaCache->startTravelTime;
 	curUpdate->next = NULL;
 	curUpdate->prev = NULL;
-	updateListStart = curUpdate;
-	updateListEnd = curUpdate;
+
+	idRoutingUpdate* updateListStart = curUpdate;
+	idRoutingUpdate* updateListEnd = curUpdate;
 
 	// while there are updates in the list
 	while( updateListStart ) {
@@ -794,6 +793,8 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 
 		curUpdate->isInList = false;
 
+		idReachability* reach;
+		int i;
 		for ( i = 0, reach = file->GetArea( curUpdate->areaNum ).rev_reach; reach; reach = reach->rev_next, i++ ) {
 
 			// if the reachability uses an undesired travel type
@@ -802,8 +803,8 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 			}
 
 			// next area the reversed reachability leads to
-			nextAreaNum = reach->fromAreaNum;
-			nextArea = &file->GetArea( nextAreaNum );
+			int nextAreaNum = reach->fromAreaNum;
+			const aasArea_t* nextArea = &file->GetArea( nextAreaNum );
 
 			// if traveling through the next area requires an undesired travel flag
 			if ( nextArea->travelFlags & badTravelFlags ) {
@@ -811,7 +812,7 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 			}
 
 			// get the cluster number of the area
-			cluster = nextArea->cluster;
+			int cluster = nextArea->cluster;
 			// don't leave the cluster, however do flood into cluster portals
 			if ( cluster > 0 && cluster != areaCache->cluster ) {
 				continue;
@@ -827,13 +828,13 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 
 			// time already travelled plus the traveltime through the current area
 			// plus the travel time of the reachability towards the next area
-			t = curUpdate->tmpTravelTime + curUpdate->areaTravelTimes[i] + reach->travelTime;
+			unsigned short t = curUpdate->tmpTravelTime + curUpdate->areaTravelTimes[i] + reach->travelTime;
 
 			if ( !areaCache->travelTimes[clusterAreaNum] || t < areaCache->travelTimes[clusterAreaNum] ) {
 
 				areaCache->travelTimes[clusterAreaNum] = t;
 				areaCache->reachabilities[clusterAreaNum] = reach->number; // reversed reachability used to get into this area
-				nextUpdate = &areaUpdate[clusterAreaNum];
+				idRoutingUpdate* nextUpdate = &areaUpdate[clusterAreaNum];
 				nextUpdate->areaNum = nextAreaNum;
 				nextUpdate->tmpTravelTime = t;
 				nextUpdate->areaTravelTimes = reach->areaTravelTimes;
