@@ -185,7 +185,7 @@ private:	// pathing
 	idVec3						SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum, const idActor* actor ) const;
 	idVec3						SubSampleFlyPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum ) const;
 
-private:	// debug
+public:	// debug
 	const idBounds &			DefaultSearchBounds( void ) const;
 	void						DrawCone( const idVec3 &origin, const idVec3 &dir, float radius, const idVec4 &color ) const;
 	void						DrawArea( int areaNum ) const;

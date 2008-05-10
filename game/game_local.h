@@ -614,6 +614,9 @@ public:
 	void					RemoveAASObstacle( const aasHandle_t handle );
 	void					RemoveAllAASObstacles( void );
 
+	// greebo: Initialises the AAS cluster connections between elevator floors
+	void					SetupElevatorConnections();
+
 	bool					CheatsOk( bool requirePlayer = true );
 	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;

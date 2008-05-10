@@ -29,6 +29,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/sndProp.h"
 #include "../DarkMod/StimResponse/StimResponseCollection.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/MultiStateMover.h"
 #include "../DarkMod/func_shooter.h"
 #include "../DarkMod/shop.h"
 #include "../DarkMod/DifficultyMenu.h"
@@ -1468,6 +1469,9 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	InitScriptForMap();
 
 	MapPopulate();
+
+	// greebo: Add the elevator reachabilities to the AAS
+	SetupElevatorConnections();
 
 	// initialize the AI relationships based on worldspawn
 	m_RelationsManager->SetFromArgs( &world->spawnArgs );
@@ -3567,6 +3571,48 @@ void idGameLocal::RemoveAllAASObstacles( void ) {
 
 	for( i = 0; i < aasList.Num(); i++ ) {
 		aasList[ i ]->RemoveAllObstacles();
+	}
+}
+
+void idGameLocal::SetupElevatorConnections()
+{
+	// Cycle through the entities and find all elevators
+	for (idEntity* ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (!ent->IsType(CMultiStateMover::Type))
+		{
+			continue;
+		}
+
+		// Get all position entities of that mover
+		CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
+		const idList<MoverPositionInfo>& infoEnts = mover->GetPositionInfoList();
+
+		for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
+		{
+			idAAS* aas = GetAAS(aasNum);
+			if (aas == NULL) continue;
+
+			for (int i = 0; i < infoEnts.Num(); i++)
+			{
+				idEntity* positionEnt = infoEnts[i].positionEnt.GetEntity();
+
+				int areaNum = aas->PointAreaNum(positionEnt->GetPhysics()->GetOrigin());
+
+				if (areaNum == 0) continue;
+
+				// Add a reachability connecting this floor to all other floors
+				for (int j = 0; j < infoEnts.Num(); j++)
+				{
+					if (i == j) continue; // don't add reachability to self
+
+					const idVec3& otherOrg = infoEnts[j].positionEnt.GetEntity()->GetPhysics()->GetOrigin();
+					int otherAreaNum = aas->PointAreaNum(otherOrg);
+					if (otherAreaNum == 0) continue;
+
+				}
+			}
+		}
 	}
 }
 
