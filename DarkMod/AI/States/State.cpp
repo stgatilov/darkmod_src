@@ -1495,6 +1495,12 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	CFrobDoor* newDoor = static_cast<CFrobDoor*>(frobMover);
+	if (newDoor == NULL)
+	{
+		return;
+	}
+
 	if (cv_ai_door_show.GetBool()) 
 	{
 		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobMover->GetPhysics()->GetOrigin(), 1, 16);
@@ -1502,11 +1508,12 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 
 	Memory& memory = owner->GetMemory();
 
-	if (memory.doorRelated.currentDoor.GetEntity() != frobMover && frobMover->IsType(CFrobDoor::Type))
+	// check if we already have a door to handle
+	// don't start a DoorHandleTask if it is the same door or the other part of a double door
+	CFrobDoor* currentDoor = memory.doorRelated.currentDoor.GetEntity();
+	if (currentDoor == NULL || (currentDoor != newDoor && newDoor != currentDoor->GetDoubleDoor()))
 	{
-		// Store the current movestate
 		memory.doorRelated.currentDoor = static_cast<CFrobDoor*>(frobMover);
-
 		owner->GetSubsystem(SubsysMovement)->PushTask(HandleDoorTask::CreateInstance());
 	}
 }

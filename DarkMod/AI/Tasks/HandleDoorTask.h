@@ -55,12 +55,17 @@ public:
 
 	virtual void OnFinish(idAI* owner);
 
+	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
+	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
+
 	// this checks if the gap is large enough to fit through 
 	// partially openend doors (blocked, interrupted)
 	bool FitsThrough();
 
 	// open door routine (checks if the door is locked and starts to open it when possible)
 	bool OpenDoor();
+
+	void ResetDoor(idAI* owner, CFrobDoor* newDoor);
 
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
