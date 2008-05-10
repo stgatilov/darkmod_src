@@ -131,10 +131,41 @@ public:
 	virtual void				RemoveAllObstacles( void ) = 0;
 								// Returns the travel time towards the goal area in 100th of a second.
 	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const = 0;
-								// Get the travel time and first reachability to be used towards the goal, returns true if there is a path.
+
+	/**
+	 * greebo: Tries to set up a reachability between <areaNum/origin> and <goalAreaNum>. Uses the local routingcache.
+	 *
+	 * @areaNum/origin: the starting position and AAS area number.
+	 * @goalAreaNum: The AAS area number of the destination
+	 * @travelFlags: The allowed travelflags (used to determine which routing cache should be used).
+	 * 
+	 * @travelTime: Will hold the total traveltime of the best reachability or 0 if no route is found.
+	 * @reach: A reference to a idReachability* pointer. The pointer is set to NULL if no route is found, otherwise it contains the best reachability.
+	 * @actor: the calling actor (optional). Is used to determine whether walk paths are valid (through locked doors, for instance).
+	 *
+	 * @returns TRUE if a route is available, FALSE otherwise. 
+	 *
+	 * Note: A route is usually available if 
+	 *       a) the goal area and the starting area are in the same cluster (no portals in between)
+	 *       b) the clusters are connected via a portal.
+	 */
+	// Get the travel time and first reachability to be used towards the goal, returns true if there is a path.
 	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const = 0;
-								// Creates a walk path towards the goal.
+
+	/**
+	 * greebo: Tries to set up a walk path from areaNum/origin to goalAreaNum/goalOrigin for the given travel flags.
+	 *
+	 * @path: The path structure which will contain the resulting path information. Will contain the starting point if no path is found.
+	 * @areaNum/origin: the AAS area number and origin of the starting point.
+	 * @goalAreaNum/goalOrigin: the AAS area number and origin of the destination.
+	 * @travelFlags: the allowed travelflags (e.g. TFL_WALK|TFL_DOOR)
+	 * @actor: The calling actor (optional), this is used to identify locked doors, which the actor is aware of.
+	 *
+	 * @returns: TRUE if a walk path could be found, FALSE otherwise.
+	 */
+	// Creates a walk path towards the goal.
 	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor ) const = 0;
+
 								/** 
 								 * Returns true if one can walk along a straight line from the origin to the goal origin.
 								 * angua: actor is used to handle AI-specific pathing, such as forbidden areas (e.g. locked doors)

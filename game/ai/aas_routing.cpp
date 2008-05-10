@@ -992,13 +992,7 @@ idAASLocal::RouteToGoalArea
 ============
 */
 bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const {
-	int clusterNum, goalClusterNum, portalNum, i, clusterAreaNum;
-	unsigned short int t, bestTime;
-	const aasPortal_t *portal;
-	const aasCluster_t *cluster;
-	idRoutingCache *areaCache, *portalCache, *clusterCache;
-	idReachability *bestReach, *r, *nextr;
-
+	// Set the default return values
 	travelTime = 0;
 	*reach = NULL;
 
@@ -1023,8 +1017,11 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		DeleteOldestCache();
 	}
 
-	clusterNum = file->GetArea( areaNum ).cluster;
-	goalClusterNum = file->GetArea( goalAreaNum ).cluster;
+	int clusterNum = file->GetArea( areaNum ).cluster;
+	int goalClusterNum = file->GetArea( goalAreaNum ).cluster;
+
+	idRoutingCache* portalCache = NULL;
+	const aasPortal_t* portal = NULL;
 
 	// if the source area is a cluster portal, read directly from the portal cache
 	if ( clusterNum < 0 ) {
@@ -1041,8 +1038,8 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		return true;
 	}
 
-	bestTime = 0;
-	bestReach = NULL;
+	unsigned short int bestTime = 0;
+	idReachability* bestReach = NULL;
 
 	// check if the goal area is a portal of the source area cluster
 	if ( goalClusterNum < 0 ) {
@@ -1052,10 +1049,14 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		}
 	}
 
+	int clusterAreaNum = 0;
+	idRoutingCache* clusterCache = NULL;
+
 	// if both areas are in the same cluster
 	if ( clusterNum > 0 && goalClusterNum > 0 && clusterNum == goalClusterNum ) {
 		clusterCache = GetAreaRoutingCache( clusterNum, goalAreaNum, travelFlags );
 		clusterAreaNum = ClusterAreaNum( clusterNum, areaNum );
+
 		if ( clusterCache->travelTimes[clusterAreaNum] ) {
 			bestReach = GetAreaReachability( areaNum, clusterCache->reachabilities[clusterAreaNum] );
 			bestTime = clusterCache->travelTimes[clusterAreaNum] + AreaTravelTime( areaNum, origin, bestReach->start );
@@ -1063,9 +1064,6 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		else {
 			clusterCache = NULL;
 		}
-	}
-	else {
-		clusterCache = NULL;
 	}
 
 	clusterNum = file->GetArea( areaNum ).cluster;
@@ -1081,7 +1079,7 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 	portalCache = GetPortalRoutingCache( goalClusterNum, goalAreaNum, travelFlags );
 
 	// the cluster the area is in
-	cluster = &file->GetCluster( clusterNum );
+	const aasCluster_t* cluster = &file->GetCluster( clusterNum );
 	// current area inside the current cluster
 	clusterAreaNum = ClusterAreaNum( clusterNum, areaNum );
 	// if the area is not a reachable area
@@ -1090,8 +1088,8 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 	}
 
 	// find the portal of the source area cluster leading towards the goal area
-	for ( i = 0; i < cluster->numPortals; i++ ) {
-		portalNum = file->GetPortalIndex( cluster->firstPortal + i );
+	for (int i = 0; i < cluster->numPortals; i++ ) {
+		int portalNum = file->GetPortalIndex( cluster->firstPortal + i );
 
 		// if the goal area isn't reachable from the portal
 		if ( !portalCache->travelTimes[portalNum] ) {
@@ -1111,17 +1109,17 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		}
 
 		// get the cache of the portal area
-		areaCache = GetAreaRoutingCache( clusterNum, portal->areaNum, travelFlags );
+		idRoutingCache* areaCache = GetAreaRoutingCache( clusterNum, portal->areaNum, travelFlags );
 		// if the portal is not reachable from this area
 		if ( !areaCache->travelTimes[clusterAreaNum] ) {
 			continue;
 		}
 
-		r = GetAreaReachability( areaNum, areaCache->reachabilities[clusterAreaNum] );
+		idReachability* r = GetAreaReachability( areaNum, areaCache->reachabilities[clusterAreaNum] );
 
 		if ( clusterCache ) {
 			// if the next reachability from the portal leads back into the cluster
-			nextr = GetAreaReachability( portal->areaNum, portalCache->reachabilities[portalNum] );
+			idReachability* nextr = GetAreaReachability( portal->areaNum, portalCache->reachabilities[portalNum] );
 			if ( file->GetArea( nextr->toAreaNum ).cluster < 0 || file->GetArea( nextr->toAreaNum ).cluster == clusterNum ) {
 				continue;
 			}
@@ -1129,7 +1127,8 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 
 		// the total travel time is the travel time from the portal area to the goal area
 		// plus the travel time from the source area towards the portal area
-		t = portalCache->travelTimes[portalNum] + areaCache->travelTimes[clusterAreaNum];
+		unsigned short int t = portalCache->travelTimes[portalNum] + areaCache->travelTimes[clusterAreaNum];
+
 		// NOTE:	Should add the exact travel time through the portal area.
 		//			However we add the largest travel time through the portal area.
 		//			We cannot directly calculate the exact travel time through the portal area

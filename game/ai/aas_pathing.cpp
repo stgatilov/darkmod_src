@@ -271,10 +271,7 @@ idAASLocal::WalkPathToGoal
 ============
 */
 bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor ) const {
-	int i, travelTime, curAreaNum, lastAreas[4], lastAreaIndex, endAreaNum;
-	idReachability *reach(NULL);
-	idVec3 endPos;
-
+	// Set the default values
 	path.type = PATHTYPE_WALK;
 	path.moveGoal = origin;
 	path.moveAreaNum = areaNum;
@@ -286,12 +283,15 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 		return true;
 	}
 
-	lastAreas[0] = lastAreas[1] = lastAreas[2] = lastAreas[3] = areaNum;
-	lastAreaIndex = 0;
+	int lastAreas[4] = { areaNum, areaNum, areaNum, areaNum };
+	int lastAreaIndex = 0;
 
-	curAreaNum = areaNum;
+	int curAreaNum = areaNum;
+	idReachability* reach(NULL);
+	idVec3 endPos;
+	int travelTime, endAreaNum;
 
-	for ( i = 0; i < maxWalkPathIterations; i++ ) {
+	for ( int i = 0; i < maxWalkPathIterations; i++ ) {
 
 		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, actor ) ) {
 			break;
