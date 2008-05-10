@@ -162,6 +162,11 @@ void CMultiStateMover::Activate(idEntity* activator)
 	MoveToPos(targetPos);
 }
 
+const idList<MoverPositionInfo>& CMultiStateMover::GetPositionInfoList() const
+{
+	return positionInfo;
+}
+
 void CMultiStateMover::DoneMoving()
 {
 	idMover::DoneMoving();

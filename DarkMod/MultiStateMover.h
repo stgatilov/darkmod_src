@@ -40,6 +40,9 @@ public:
 
 	void	Activate(idEntity* activator);
 
+	// Returns the list of position infos
+	const idList<MoverPositionInfo>& GetPositionInfoList() const;
+
 protected:
 	// override idMover's DoneMoving() to trigger targets
 	virtual void DoneMoving();

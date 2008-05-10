@@ -59,6 +59,8 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const
 	}
 	gameRenderWorld->DebugArrow( reachColor, reach->start, reach->end, 1, 10000 );
 
+	gameRenderWorld->DebugArrow( colorLtGrey, AreaCenter(reach->fromAreaNum), AreaCenter(reach->toAreaNum), 1, 10000);
+
 	if ( gameLocal.GetLocalPlayer() ) {
 		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 10000 );
 	}

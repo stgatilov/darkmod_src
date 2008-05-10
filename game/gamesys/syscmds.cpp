@@ -2635,6 +2635,27 @@ void Cmd_ShowWalkPath_f(const idCmdArgs& args)
 	}
 }
 
+void Cmd_ShowReachabilities_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		common->Printf( "usage: aas_showReachabilities <areaNum>\n" );
+		return;
+	}
+
+	idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+	if (aas != NULL)
+	{
+		idReachability* reach = aas->GetAreaFirstReachability(atoi(args.Argv(1)));
+
+		while (reach != NULL)
+		{
+			aas->DrawReachability(reach);		
+			reach = reach->next;
+		}
+	}
+}
+
 void Cmd_SignalCMDDone_f(const idCmdArgs& args)
 {
 	if (gameLocal.m_DarkRadiantRCFServer != NULL)
@@ -2741,7 +2762,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "inventory_cycle_maps",	Cmd_InventoryCycleMaps_f,	CMD_FL_GAME,				"Usage: Bind a key to this command to cycle through the inventory maps." );
 
 	cmdSystem->AddCommand( "aas_showWalkPath",		Cmd_ShowWalkPath_f,			CMD_FL_GAME,				"Shows the walk path from the player to the given area number (AAS32)." );
-
+	cmdSystem->AddCommand( "aas_showReachabilities",Cmd_ShowReachabilities_f,			CMD_FL_GAME,				"Shows the reachabilities for the given area number (AAS32)." );
+	
 	cmdSystem->AddCommand( "darkradiant_signal_cmd_done",	Cmd_SignalCMDDone_f,		CMD_FL_GAME,				"Called by DarkRadiant to receive the DONE signal after issuing commands." );
 
 #ifndef	ID_DEMO_BUILD
