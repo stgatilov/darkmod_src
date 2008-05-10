@@ -465,19 +465,17 @@ void CsndProp::Propagate
 	// later we will put a permananet value in the def for globals->Vol
 	vol0 += cv_ai_sndvol.GetFloat();
 
-	propParms.duration *= durMod;
-	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified duration %f\r", propParms.duration);
-
 	// set team alert and propagation flags from the parms
 	SetupParms( parms, &propParms, addFlags, &tmask );
 
+	propParms.duration *= durMod;
+	// DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found modified duration %f\r", propParms.duration);
 	propParms.maker = maker;
-
 	propParms.origin = origin;
 
 	if( maker->IsType(idActor::Type) )
 	{
-		mteam = static_cast<idAI *>(maker)->team;
+		mteam = static_cast<idActor *>(maker)->team;
 	}
 	else
 	{

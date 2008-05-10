@@ -37,13 +37,14 @@ class CMatRUT;
 * Global soundprop settings
 * Populated from entityDef soundprop_globals
 **/
-typedef struct SsndPGlobals_s
+class SsndPGlobals
 {
+public:
 	// names
-	const char *AreaPropName; // classname of area properties entity
-	const char *doorName; // classname of darkmod door entites
-	const char *d3DoorName; // classname of D3 doors ("func_door")
-	const char *fileExt; // soundprop file extension
+	idStr AreaPropName; // classname of area properties entity
+	idStr doorName; // classname of darkmod door entites
+	idStr d3DoorName; // classname of D3 doors ("func_door")
+	idStr fileExt; // soundprop file extension
 	
 	// Map compiling:
 	// Maximum number of paths to calculate for a given loss matrix element
@@ -111,7 +112,9 @@ typedef struct SsndPGlobals_s
 
 	bool bDebug;
 
-} SsndPGlobals;
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
+};
 
 //TODO: Move this stuff to documentation
 
@@ -225,9 +228,6 @@ typedef SsndArea* sndAreaPtr;
 class CsndPropBase {
 
 public:
-	CsndPropBase( void ) {}
-	virtual ~CsndPropBase( void ) {}
-
 	void	Save(idSaveGame *savefile) const;
 	void	Restore(idRestoreGame *savefile);
 
