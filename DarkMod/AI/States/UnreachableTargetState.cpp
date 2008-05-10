@@ -236,13 +236,15 @@ void UnreachableTargetState::Think(idAI* owner)
 		}
 		else
 		{
-			_reachEnemyCheck ++;
+			_reachEnemyCheck++;
 		}
 	}
 	else
 	{
-		_reachEnemyCheck ++;
+		_reachEnemyCheck++;
 	}
+
+	_reachEnemyCheck %= 4;
 	
 	// Wait at least for 3 seconds (_takeCoverTime) after starting to throw before taking cover
 	// If a ranged thread from the player is detected (bow is out)

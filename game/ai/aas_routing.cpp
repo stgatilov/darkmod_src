@@ -175,28 +175,70 @@ idAASLocal::SetupRoutingCache
 ============
 */
 void idAASLocal::SetupRoutingCache( void ) {
-	int i;
-	byte *bytePtr;
 
+	// greebo: First, determine the number of areas in the map by adding all reachable areas of all clusters
 	areaCacheIndexSize = 0;
-	for ( i = 0; i < file->GetNumClusters(); i++ ) {
-		areaCacheIndexSize += file->GetCluster( i ).numReachableAreas;
-	}
-	areaCacheIndex = (idRoutingCache ***) Mem_ClearedAlloc( file->GetNumClusters() * sizeof( idRoutingCache ** ) +
-													areaCacheIndexSize * sizeof( idRoutingCache *) );
-	bytePtr = ((byte *)areaCacheIndex) + file->GetNumClusters() * sizeof( idRoutingCache ** );
-	for ( i = 0; i < file->GetNumClusters(); i++ ) {
-		areaCacheIndex[i] = ( idRoutingCache ** ) bytePtr;
-		bytePtr += file->GetCluster( i ).numReachableAreas * sizeof( idRoutingCache * );
+	for ( int i = 0; i < file->GetNumClusters(); i++ ) {
+		areaCacheIndexSize += file->GetCluster(i).numReachableAreas;
 	}
 
+	/**
+	 * greebo: Next, we need to allocate the memory for the idRoutingCache* pointers (only the pointers, not the structs!)
+	 * Take one pointer array per cluster and add one pointer for each area. The area pointers
+	 * are grouped after their clusters.
+	 *
+	 * The area cache index is then looking like this (divided into two large sections). The first
+	 * section serves as "index" for the pointers further down in memory.
+	 *
+	 * idRoutingCache** cluster0	(pointing to the "area0" pointer below)
+	 * idRoutingCache** cluster1	(pointing to the "area3" pointer below)
+	 * idRoutingCache** cluster2	(pointing to the "area5" pointer below)
+	 * ...
+	 *
+	 * idRoutingCache* area0		(belonging to Cluster 0)
+	 * idRoutingCache* area1		(belonging to Cluster 0)
+	 * idRoutingCache* area2		(belonging to Cluster 0)
+	 *
+	 * idRoutingCache* area3		(belonging to Cluster 1)
+	 * idRoutingCache* area4		(belonging to Cluster 1)
+	 *
+	 * idRoutingCache* area5		(belonging to Cluster 2)
+	 * idRoutingCache* area6		(belonging to Cluster 2)
+	 * ...
+	 *
+	 * This whole pointer structure is stored in a dynamically allocated area, hence the type idRoutingCache***
+	 */
+	areaCacheIndex = (idRoutingCache***) Mem_ClearedAlloc( file->GetNumClusters() * sizeof(idRoutingCache**) +
+													areaCacheIndexSize * sizeof(idRoutingCache*) );
+
+	// Now initialise the areaCacheIndex pointers
+
+	// skip the index part, i.e. the first <numClusters> pointers
+	byte* bytePtr = ((byte *)areaCacheIndex) + file->GetNumClusters() * sizeof(idRoutingCache**);
+
+	// Initialise the first pointer section (the clusterN pointers), which point to the second (area) section
+	for ( int i = 0; i < file->GetNumClusters(); i++ ) {
+		// Set the i-th cluster pointer to the first area pointer (corresponding to this cluster)
+		areaCacheIndex[i] = (idRoutingCache**) bytePtr;
+
+		// Set the pointer to the next array
+		bytePtr += file->GetCluster(i).numReachableAreas * sizeof(idRoutingCache*);
+	}
+
+	// At this point, all the area idRoutingCache* pointers are NULL and the index pointers are initialised
+
+	// greebo: Allocate an idRoutingCache pointer for each area in the world and set the pointers to 0
 	portalCacheIndexSize = file->GetNumAreas();
-	portalCacheIndex = (idRoutingCache **) Mem_ClearedAlloc( portalCacheIndexSize * sizeof( idRoutingCache * ) );
+	portalCacheIndex = (idRoutingCache**) Mem_ClearedAlloc( portalCacheIndexSize * sizeof(idRoutingCache*) );
 
-	areaUpdate = (idRoutingUpdate *) Mem_ClearedAlloc( file->GetNumAreas() * sizeof( idRoutingUpdate ) );
-	portalUpdate = (idRoutingUpdate *) Mem_ClearedAlloc( (file->GetNumPortals()+1) * sizeof( idRoutingUpdate ) );
+	// greebo: Allocate as many idRoutingUpdate structures as there are AREAS in the map, and set everything to 0
+	areaUpdate = (idRoutingUpdate*) Mem_ClearedAlloc( file->GetNumAreas() * sizeof(idRoutingUpdate) );
 
-	goalAreaTravelTimes = (unsigned short *) Mem_ClearedAlloc( file->GetNumAreas() * sizeof( unsigned short ) );
+	// greebo: Allocate as many idRoutingUpdate structures as there are PORTALS+1 in the map, and set everything to 0
+	portalUpdate = (idRoutingUpdate*) Mem_ClearedAlloc( (file->GetNumPortals()+1) * sizeof(idRoutingUpdate) );
+
+	// greebo: For each area in the map, allocate a traveltime integer and initialise them to 0
+	goalAreaTravelTimes = (unsigned short *) Mem_ClearedAlloc( file->GetNumAreas() * sizeof(unsigned short) );
 
 	cacheListStart = cacheListEnd = NULL;
 	totalCacheMemory = 0;
