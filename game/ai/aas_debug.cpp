@@ -57,10 +57,10 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const
 	{
 		reachColor = colorRed;
 	}
-	gameRenderWorld->DebugArrow( reachColor, reach->start, reach->end, 2 );
+	gameRenderWorld->DebugArrow( reachColor, reach->start, reach->end, 1, 10000 );
 
 	if ( gameLocal.GetLocalPlayer() ) {
-		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis );
+		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 10000 );
 	}
 
 	switch( reach->travelType ) {
@@ -262,7 +262,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 			break;
 		}
 
-		gameRenderWorld->DebugArrow( colorGreen, org, reach->start, 2 );
+		gameRenderWorld->DebugArrow( colorGreen, org, reach->start, 1, 10000 );
 		DrawReachability( reach );
 
 		if ( reach->toAreaNum == goalAreaNum ) {
@@ -274,7 +274,7 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 	}
 
 	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR, NULL ) ) {
-		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 2 );
+		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 1, 10000 );
 	}
 }
 
