@@ -66,6 +66,10 @@ public:
 		return 	m_StoppedDueToBlock;
 	}
 
+	idEntity* 				GetLastBlockingEnt()
+	{
+		return m_LastBlockingEnt.GetEntity();
+	}
 
 	/**
 	* This is the non-script version of GetLock
@@ -207,6 +211,8 @@ protected:
 	 *	until the door changes its state again
 	 */
 	bool						m_StoppedDueToBlock;
+
+	idEntityPtr<idEntity>		m_LastBlockingEnt;
 
 	/**
 	* Read from the spawnargs, interpreted into m_OpenAngles and m_ClosedAngles
