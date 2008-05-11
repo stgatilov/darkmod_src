@@ -18,8 +18,16 @@ class idAASLocal;
 
 struct ClusterInfo 
 {
-	int clusterNum;					// The number of this cluster
-	unsigned short numElevators;	// the number of elevators in this cluster
+	int clusterNum;							// The number of this cluster
+	unsigned short numElevatorStations;	// the number of elevator stations in this cluster
+};
+
+struct ElevatorStationInfo
+{
+	idEntityPtr<CMultiStateMover> elevator;					// The elevator this station is belonging to
+	idEntityPtr<CMultiStateMoverPosition> elevatorPosition;	// The elevator position entity
+	int areaNum;											// The area number of this elevator station
+	int clusterNum;											// The cluster number of this elevator station
 };
 
 /**
@@ -41,6 +49,10 @@ class tdmEAS
 	// The array of ClusterInfoStructures
 	int _numClusterInfos;
 	ClusterInfo** _clusterInfo;
+
+	// An array of dynamically allocated elevator stations
+	int _numElevatorStations;
+	ElevatorStationInfo** _elevatorStations;
 
 public:
 	// Initialise the EAS with a valid AAS reference
@@ -66,9 +78,14 @@ public:
 
 private:
 	void SetupClusterInfoStructures();
+	void SetupElevatorStationStructures();
+
 	void ClearClusterInfoStructures();
+	void ClearElevatorStationStructures();
 
 	void AssignElevatorsToClusters();
+
+	void SetupClusterRouting();
 };
 
 #endif /* __AI_EAS_H__ */

@@ -203,6 +203,9 @@ private:	// routing
 	void						GetBoundsAreas_r( int nodeNum, const idBounds &bounds, idList<int> &areas ) const;
 	void						SetObstacleState( const idRoutingObstacle *obstacle, bool enable );
 
+	// returns an area within that cluster (SLOW!), returns -1 if none found
+	int							GetAreaInCluster(int clusterNum);
+
 private:	// pathing
 	bool						EdgeSplitPoint( idVec3 &split, int edgeNum, const idPlane &plane ) const;
 	bool						FloorEdgeSplitPoint( idVec3 &split, int areaNum, const idPlane &splitPlane, const idPlane &frontPlane, bool closest ) const;

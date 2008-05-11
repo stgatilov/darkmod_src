@@ -1639,3 +1639,20 @@ void idAASLocal::CompileEAS()
 {
 	elevatorSystem->Compile();
 }
+
+int	idAASLocal::GetAreaInCluster(int clusterNum)
+{
+	if (!file) return -1;
+
+	// Find an area within that cluster
+	for (int i = 0; i < file->GetNumAreas(); i++)
+	{
+		const aasArea_t& area = file->GetArea(i);
+		if (area.cluster == clusterNum && (area.flags & AREA_REACHABLE_WALK) != 0)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}

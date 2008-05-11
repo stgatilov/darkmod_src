@@ -17,40 +17,21 @@ static bool init_version = FileVersionList("$Id: EAS.cpp 1435 2008-05-11 10:15:2
 tdmEAS::tdmEAS(idAASLocal* aas) :
 	_aas(aas),
 	_numClusterInfos(0),
-	_clusterInfo(NULL)
+	_clusterInfo(NULL),
+	_numElevatorStations(0),
+	_elevatorStations(NULL)
 {}
 
 void tdmEAS::Clear()
 {
 	_elevators.Clear();
 	ClearClusterInfoStructures();
+	ClearElevatorStationStructures();
 }
 
 void tdmEAS::AddElevator(CMultiStateMover* mover)
 {
 	_elevators.Alloc() = mover;
-
-	/*const idList<MoverPositionInfo>& infoEnts = mover->GetPositionInfoList();
-
-	for (int i = 0; i < infoEnts.Num(); i++)
-	{
-		idEntity* positionEnt = infoEnts[i].positionEnt.GetEntity();
-
-		int areaNum = PointAreaNum(positionEnt->GetPhysics()->GetOrigin());
-
-		if (areaNum == 0) continue;
-
-		// Add a reachability connecting this floor to all other floors
-		for (int j = 0; j < infoEnts.Num(); j++)
-		{
-			if (i == j) continue; // don't add reachability to self
-
-			const idVec3& otherOrg = infoEnts[j].positionEnt.GetEntity()->GetPhysics()->GetOrigin();
-			int otherAreaNum = PointAreaNum(otherOrg);
-			if (otherAreaNum == 0) continue;
-
-		}
-	}*/
 }
 
 void tdmEAS::Compile()
@@ -62,9 +43,13 @@ void tdmEAS::Compile()
 
 	// First, allocate the memory for the cluster info structures
 	SetupClusterInfoStructures();
+	SetupElevatorStationStructures();
 
 	// Then, traverse the registered elevators and assign their "stations" or floors to the clusters
 	AssignElevatorsToClusters();
+
+	// Now setup the connection information between clusters
+	SetupClusterRouting();
 }
 
 void tdmEAS::SetupClusterInfoStructures() 
@@ -89,6 +74,40 @@ void tdmEAS::SetupClusterInfoStructures()
 	}
 }
 
+void tdmEAS::SetupElevatorStationStructures()
+{
+	if (_elevatorStations != NULL)
+	{
+		ClearElevatorStationStructures();
+	}
+
+	_numElevatorStations = 0;
+	for (int i = 0; i < _elevators.Num(); i++)
+	{
+		CMultiStateMover* elevator = _elevators[i].GetEntity();
+		const idList<MoverPositionInfo>& positionList = elevator->GetPositionInfoList();
+		_numElevatorStations += positionList.Num();
+	}
+
+	// Allocate memory for each elevator station pointer
+	_elevatorStations = (ElevatorStationInfo**) Mem_ClearedAlloc(_numElevatorStations*sizeof(ElevatorStationInfo*));
+}
+
+void tdmEAS::ClearElevatorStationStructures()
+{
+	if (_elevatorStations != NULL)
+	{
+		for (int i = 0; i < _numElevatorStations; i++)
+		{
+			Mem_Free(_elevatorStations[i]);
+		}
+
+		Mem_Free(_elevatorStations);
+	}
+
+	_elevatorStations = NULL;
+}
+
 void tdmEAS::ClearClusterInfoStructures()
 {
 	if (_clusterInfo != NULL)
@@ -106,6 +125,7 @@ void tdmEAS::ClearClusterInfoStructures()
 
 void tdmEAS::AssignElevatorsToClusters()
 {
+	int stationIndex = 0;
 	for (int i = 0; i < _elevators.Num(); i++)
 	{
 		CMultiStateMover* elevator = _elevators[i].GetEntity();
@@ -117,12 +137,12 @@ void tdmEAS::AssignElevatorsToClusters()
 			CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
 			idVec3 origin = positionEnt->GetPhysics()->GetOrigin();
 						
-			int areaNum = _aas->PointAreaNum(origin);
+			int areaNum = _aas->file->PointReachableAreaNum(origin, _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
 
 			// If areaNum could not be determined, try again at a slightly higher position
-			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,16));
-			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,32));
-			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,48));
+			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,16), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
+			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,32), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
+			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,48), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
 
 			if (areaNum == 0)
 			{
@@ -131,7 +151,63 @@ void tdmEAS::AssignElevatorsToClusters()
 			}
 
 			const aasArea_t& area = _aas->file->GetArea(areaNum);
-			_clusterInfo[area.cluster]->numElevators++;
+			_clusterInfo[area.cluster]->numElevatorStations++;
+
+			// Allocate a new ElevatorStationStructure for this station
+			_elevatorStations[stationIndex] = (ElevatorStationInfo*) Mem_Alloc(sizeof(ElevatorStationInfo));
+			
+			_elevatorStations[stationIndex]->elevator = elevator;
+			_elevatorStations[stationIndex]->elevatorPosition = positionEnt;
+			_elevatorStations[stationIndex]->areaNum = areaNum;
+			_elevatorStations[stationIndex]->clusterNum = area.cluster;
+			stationIndex++;
+		}
+	}
+}
+
+void tdmEAS::SetupClusterRouting()
+{
+	for (int cluster = 0; cluster < _numClusterInfos; cluster++)
+	{
+		// Find an area within that cluster
+		int areaNum = _aas->GetAreaInCluster(cluster);
+
+		if (areaNum <= 0)
+		{
+			gameLocal.Warning("No areas in cluster %d?\n", cluster);
+			continue;
+		}
+
+		// For each cluster, try to setup a route to all elevator stations
+		for (int e = 0; e < _numElevatorStations; e++)
+		{
+			/*idBounds areaBounds = _aas->GetAreaBounds(areaNum);
+			idVec3 areaCenter = _aas->AreaCenter(areaNum);
+
+			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugBox(colorRed, idBox(areaBounds), 50000);
+
+			areaBounds = _aas->GetAreaBounds(_elevatorStations[e]->areaNum);
+			idVec3 areaCenter2 = _aas->AreaCenter(_elevatorStations[e]->areaNum);
+
+			gameRenderWorld->DrawText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);*/
+
+			idReachability* reach;
+			int travelTime = 0;
+			bool routeFound = _aas->RouteToGoalArea(areaNum, _aas->AreaCenter(areaNum), 
+				_elevatorStations[e]->areaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
+
+			//gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
+			
+			if (routeFound) 
+			{
+				gameLocal.Printf("Cluster %d can reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
+			}
+			else 
+			{
+				gameLocal.Printf("Cluster %d can NOT reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
+			}
 		}
 	}
 }
