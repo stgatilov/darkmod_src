@@ -645,6 +645,12 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 		}
 	}
 
+	// angua: we can't unlock the door with this key
+	if (bRc == false && IsLocked())
+	{
+		StartSound( "snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL );
+	}
+
 Quit:
 	return bRc;
 }
