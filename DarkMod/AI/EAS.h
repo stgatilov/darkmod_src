@@ -16,6 +16,17 @@
 
 class idAASLocal;
 
+struct ClusterInfo 
+{
+	int clusterNum;					// The number of this cluster
+	unsigned short numElevators;	// the number of elevators in this area
+
+	ClusterInfo() :
+		clusterNum(-1),
+		numElevators(0)
+	{}
+};
+
 /**
  * greebo: The EAS ("Elevator Awareness System") provides some extended
  * routing functionality between AAS clusters for all AI which are able
@@ -31,6 +42,11 @@ class tdmEAS
 
 	// The list of elevators
 	idList< idEntityPtr<CMultiStateMover> > _elevators;
+
+	// The array of ClusterInfoStructures
+	int _numClusterInfos;
+	ClusterInfo** _clusterInfo;
+
 public:
 	// Initialise the EAS with a valid AAS reference
 	tdmEAS(idAASLocal* aas);
@@ -52,6 +68,10 @@ public:
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
+
+private:
+	void SetupClusterInfoStructures();
+	void ClearClusterInfoStructures();
 };
 
 #endif /* __AI_EAS_H__ */

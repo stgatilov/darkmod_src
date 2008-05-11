@@ -15,12 +15,15 @@ static bool init_version = FileVersionList("$Id: EAS.cpp 1435 2008-05-11 10:15:2
 #include "EAS.h"
 
 tdmEAS::tdmEAS(idAASLocal* aas) :
-	_aas(aas)
+	_aas(aas),
+	_numClusterInfos(0),
+	_clusterInfo(NULL)
 {}
 
 void tdmEAS::Clear()
 {
 	_elevators.Clear();
+	ClearClusterInfoStructures();
 }
 
 void tdmEAS::AddElevator(CMultiStateMover* mover)
@@ -52,7 +55,49 @@ void tdmEAS::AddElevator(CMultiStateMover* mover)
 
 void tdmEAS::Compile()
 {
+	if (_aas == NULL)
+	{
+		gameLocal.Error("Cannot Compile EAS, no AAS available.");
+	}
+
+	SetupClusterInfoStructures();
+}
+
+void tdmEAS::SetupClusterInfoStructures() 
+{
+	if (_clusterInfo != NULL)
+	{
+		// Cluster info must be cleared beforehand
+		ClearClusterInfoStructures();
+	}
+
+	_numClusterInfos = _aas->file->GetNumClusters();
+
+	// Allocate the memory for the pointers
+	_clusterInfo = (ClusterInfo**) Mem_ClearedAlloc(_numClusterInfos * sizeof(ClusterInfo*));
 	
+	for (int i = 0; i < _numClusterInfos; i++)
+	{
+		const aasCluster_t& cluster = _aas->file->GetCluster(i);
+		
+		_clusterInfo[i] = (ClusterInfo*) Mem_Alloc(sizeof(ClusterInfo));
+		_clusterInfo[i]->clusterNum = i;
+	}
+}
+
+void tdmEAS::ClearClusterInfoStructures()
+{
+	if (_clusterInfo != NULL)
+	{
+		for (int i = 0; i < _numClusterInfos; i++)
+		{
+			Mem_Free(_clusterInfo[i]);
+		}
+
+		Mem_Free(_clusterInfo);
+	}
+
+	_clusterInfo = NULL;
 }
 
 void tdmEAS::Save(idSaveGame* savefile) const
