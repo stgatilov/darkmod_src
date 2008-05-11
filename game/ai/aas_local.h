@@ -69,7 +69,11 @@ private:
 
 class CMultiStateMover;
 
-class idAASLocal : public idAAS {
+class idAASLocal : 
+	public idAAS
+{
+	friend class tdmEAS; // TDM's EAS is our friend
+
 public:
 								idAASLocal( void );
 	virtual						~idAASLocal( void );
@@ -140,6 +144,11 @@ public:
 	 */
 	virtual void AddElevator(CMultiStateMover* mover);
 
+	/**
+	 * greebo: Assembles the elevator routing information.
+	 */
+	virtual void CompileEAS();
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
@@ -164,7 +173,7 @@ private:	// routing data
 	idList<idRoutingObstacle *>	obstacleList;			// list with obstacles
 
 	// greebo: This is TDM's EAS "Elevator Awareness System" :)
-	tdmEAS						elevatorSystem;
+	tdmEAS*						elevatorSystem;
 
 private:	// routing
 	bool						SetupRouting( void );

@@ -3614,6 +3614,15 @@ void idGameLocal::SetupEAS()
 			aas->AddElevator(mover);
 		}
 	}
+
+	// All elevators registered, compile the routing information
+	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
+	{
+		idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
+		if (aas == NULL) continue;
+
+		aas->CompileEAS();
+	}
 }
 
 /*

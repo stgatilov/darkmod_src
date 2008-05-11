@@ -40,7 +40,9 @@ idAAS::~idAAS( void ) {
 idAASLocal::idAASLocal
 ============
 */
-idAASLocal::idAASLocal( void ) {
+idAASLocal::idAASLocal( void )
+{
+	elevatorSystem = new tdmEAS(this);
 	file = NULL;
 }
 
@@ -51,6 +53,11 @@ idAASLocal::~idAASLocal
 */
 idAASLocal::~idAASLocal( void ) {
 	Shutdown();
+
+	if (elevatorSystem != NULL)
+	{
+		delete elevatorSystem;
+	}
 }
 
 /*
@@ -59,6 +66,9 @@ idAASLocal::Init
 ============
 */
 bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
+	// Clear the elevator system before reloading
+	elevatorSystem->Clear();
+
 	if ( file && mapName.Icmp( file->GetName() ) == 0 && mapFileCRC == file->GetCRC() ) {
 		common->Printf( "Keeping %s\n", file->GetName() );
 		RemoveAllObstacles();
@@ -84,6 +94,7 @@ idAASLocal::Shutdown
 */
 void idAASLocal::Shutdown( void ) {
 	if ( file ) {
+		elevatorSystem->Clear();
 		ShutdownRouting();
 		RemoveAllObstacles();
 		AASFileManager->FreeAAS( file );
@@ -412,12 +423,12 @@ void idAASLocal::SetAreaTravelFlag( int index, int flag )
 
 void idAASLocal::Save(idSaveGame* savefile) const
 {
-	elevatorSystem.Save(savefile);
+	elevatorSystem->Save(savefile);
 }
 
 void idAASLocal::Restore(idRestoreGame* savefile)
 {
-	elevatorSystem.Restore(savefile);
+	elevatorSystem->Restore(savefile);
 }
 
 /*
