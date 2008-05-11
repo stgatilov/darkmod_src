@@ -243,6 +243,9 @@ public:
 		idBounds barrierBounds
 	) const = 0;
 
+	// Save/Restore routines
+	virtual void Save(idSaveGame* savefile) const = 0;
+	virtual void Restore(idRestoreGame* savefile) = 0;
 };
 
 #endif /* !__AAS_H__ */

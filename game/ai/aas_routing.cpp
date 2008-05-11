@@ -19,6 +19,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game_local.h"		// for print and error
 
 #include "../../DarkMod/DarkModGlobals.h"
+#include "../../DarkMod/MultiStateMover.h"
+#include "../../DarkMod/MultiStateMoverPosition.h"
 
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2
@@ -1626,4 +1628,29 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 	}
 
 	return false;
+}
+
+void idAASLocal::AddElevator(CMultiStateMover* mover)
+{
+	const idList<MoverPositionInfo>& infoEnts = mover->GetPositionInfoList();
+
+	for (int i = 0; i < infoEnts.Num(); i++)
+	{
+		idEntity* positionEnt = infoEnts[i].positionEnt.GetEntity();
+
+		int areaNum = PointAreaNum(positionEnt->GetPhysics()->GetOrigin());
+
+		if (areaNum == 0) continue;
+
+		// Add a reachability connecting this floor to all other floors
+		for (int j = 0; j < infoEnts.Num(); j++)
+		{
+			if (i == j) continue; // don't add reachability to self
+
+			const idVec3& otherOrg = infoEnts[j].positionEnt.GetEntity()->GetPhysics()->GetOrigin();
+			int otherAreaNum = PointAreaNum(otherOrg);
+			if (otherAreaNum == 0) continue;
+
+		}
+	}
 }

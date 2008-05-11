@@ -410,6 +410,15 @@ void idAASLocal::SetAreaTravelFlag( int index, int flag )
 	}
 }
 
+void idAASLocal::Save(idSaveGame* savefile) const
+{
+	elevatorSystem.Save(savefile);
+}
+
+void idAASLocal::Restore(idRestoreGame* savefile)
+{
+	elevatorSystem.Restore(savefile);
+}
 
 /*
 ============

@@ -2656,6 +2656,18 @@ void Cmd_ShowReachabilities_f(const idCmdArgs& args)
 	}
 }
 
+void Cmd_ShowAASStats_f(const idCmdArgs& args)
+{
+	for (int i = 0; i < gameLocal.NumAAS(); i++)
+	{
+		idAAS* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS(i));
+		if (aas != NULL)
+		{
+			aas->Stats();
+		}
+	}
+}
+
 void Cmd_SignalCMDDone_f(const idCmdArgs& args)
 {
 	if (gameLocal.m_DarkRadiantRCFServer != NULL)
@@ -2763,6 +2775,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 
 	cmdSystem->AddCommand( "aas_showWalkPath",		Cmd_ShowWalkPath_f,			CMD_FL_GAME,				"Shows the walk path from the player to the given area number (AAS32)." );
 	cmdSystem->AddCommand( "aas_showReachabilities",Cmd_ShowReachabilities_f,			CMD_FL_GAME,				"Shows the reachabilities for the given area number (AAS32)." );
+	cmdSystem->AddCommand( "aas_showStats",			Cmd_ShowAASStats_f,			CMD_FL_GAME,				"Shows the AAS statistics." );
 	
 	cmdSystem->AddCommand( "darkradiant_signal_cmd_done",	Cmd_SignalCMDDone_f,		CMD_FL_GAME,				"Called by DarkRadiant to receive the DONE signal after issuing commands." );
 

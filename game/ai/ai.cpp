@@ -1155,6 +1155,11 @@ void idAI::Spawn( void )
 
 	spawnArgs.GetBool( "ignore_alerts",						"0",		m_bIgnoreAlerts );
 
+	if (spawnArgs.GetBool("canOperateElevators", "0"))
+	{
+		travelFlags |= TFL_ELEVATOR;
+	}
+
 	float headTurnSec;
 	spawnArgs.GetFloat( "headturn_delay_min",				"3",		headTurnSec);
 	m_timeBetweenHeadTurnChecks = SEC2MS(headTurnSec);
@@ -2289,20 +2294,17 @@ idAI::PathToGoal
 =====================
 */
 bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const {
-	idVec3 org;
-	idVec3 goal;
-
 	if ( !aas ) {
 		return false;
 	}
 
-	org = origin;
+	idVec3 org = origin;
 	aas->PushPointIntoAreaNum( areaNum, org );
 	if ( !areaNum ) {
 		return false;
 	}
 
-	goal = goalOrigin;
+	idVec3 goal = goalOrigin;
 	aas->PushPointIntoAreaNum( goalAreaNum, goal );
 	if ( !goalAreaNum ) {
 		return false;
