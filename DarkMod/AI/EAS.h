@@ -18,8 +18,10 @@ class idAASLocal;
 
 struct ClusterInfo 
 {
-	int clusterNum;							// The number of this cluster
-	unsigned short numElevatorStations;	// the number of elevator stations in this cluster
+	int clusterNum;									// The number of this cluster
+	unsigned short numElevatorStations;			// the number of elevator stations in this cluster
+	unsigned short numReachableElevatorStations;	// the number of REACHABLE elevator stations (reachable by walking)
+	unsigned short* reachableElevatorStationIndex;	// a pointer to the index number array of the elevator stations (e.g. => "3","2","5")
 };
 
 struct ElevatorStationInfo

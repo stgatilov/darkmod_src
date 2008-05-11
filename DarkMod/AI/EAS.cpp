@@ -114,6 +114,11 @@ void tdmEAS::ClearClusterInfoStructures()
 	{
 		for (int i = 0; i < _numClusterInfos; i++)
 		{
+			if (_clusterInfo[i]->reachableElevatorStationIndex != NULL)
+			{
+				Mem_Free(_clusterInfo[i]->reachableElevatorStationIndex);
+			}
+
 			Mem_Free(_clusterInfo[i]);
 		}
 
@@ -178,6 +183,8 @@ void tdmEAS::SetupClusterRouting()
 			continue;
 		}
 
+		idList<int> elevatorStationIndices;
+
 		// For each cluster, try to setup a route to all elevator stations
 		for (int e = 0; e < _numElevatorStations; e++)
 		{
@@ -202,12 +209,27 @@ void tdmEAS::SetupClusterRouting()
 			
 			if (routeFound) 
 			{
-				gameLocal.Printf("Cluster %d can reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
+				//gameLocal.Printf("Cluster %d can reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
+				_clusterInfo[cluster]->numReachableElevatorStations++;
+				// Add the elevator index to the list
+				elevatorStationIndices.Append(e);
 			}
-			else 
+		}
+
+		// Now, allocate the elevator indices array
+		if (elevatorStationIndices.Num() > 0)
+		{
+			_clusterInfo[cluster]->reachableElevatorStationIndex = 
+				(unsigned short*) Mem_ClearedAlloc(elevatorStationIndices.Num() * sizeof(unsigned short));
+
+			for (int i = 0; i < elevatorStationIndices.Num(); i++)
 			{
-				gameLocal.Printf("Cluster %d can NOT reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
+				_clusterInfo[cluster]->reachableElevatorStationIndex[i] = elevatorStationIndices[i];
 			}
+		}
+		else 
+		{
+			_clusterInfo[cluster]->reachableElevatorStationIndex = NULL;
 		}
 	}
 }
