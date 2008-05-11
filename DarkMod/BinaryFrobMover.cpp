@@ -747,6 +747,8 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 
 int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 {
+	if (aas == NULL) return -1;
+
 	idClipModel *clipModel = GetPhysics()->GetClipModel();
 	if (clipModel == NULL)
 	{

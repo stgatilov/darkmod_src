@@ -158,7 +158,7 @@ public:
 		idAngles& out_deltaAngles
 	);
 
-	// angua: returns the AAS area the center of the door is located in
+	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
 	int GetFrobMoverAasArea(idAAS* aas);
 
 protected:
