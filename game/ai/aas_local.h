@@ -68,6 +68,7 @@ private:
 
 
 class CMultiStateMover;
+class tdmEAS;
 
 class idAASLocal : 
 	public idAAS
