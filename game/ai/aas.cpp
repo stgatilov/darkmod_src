@@ -81,6 +81,7 @@ bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
 			common->DWarning( "Couldn't load AAS file: '%s'", mapName.c_str() );
 			return false;
 		}
+		mapName.ExtractFileExtension(name);
 
 		SetupRouting();
 	}

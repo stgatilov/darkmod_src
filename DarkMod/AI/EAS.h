@@ -19,12 +19,7 @@ class idAASLocal;
 struct ClusterInfo 
 {
 	int clusterNum;					// The number of this cluster
-	unsigned short numElevators;	// the number of elevators in this area
-
-	ClusterInfo() :
-		clusterNum(-1),
-		numElevators(0)
-	{}
+	unsigned short numElevators;	// the number of elevators in this cluster
 };
 
 /**
@@ -72,6 +67,8 @@ public:
 private:
 	void SetupClusterInfoStructures();
 	void ClearClusterInfoStructures();
+
+	void AssignElevatorsToClusters();
 };
 
 #endif /* __AI_EAS_H__ */

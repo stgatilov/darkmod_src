@@ -60,7 +60,11 @@ void tdmEAS::Compile()
 		gameLocal.Error("Cannot Compile EAS, no AAS available.");
 	}
 
+	// First, allocate the memory for the cluster info structures
 	SetupClusterInfoStructures();
+
+	// Then, traverse the registered elevators and assign their "stations" or floors to the clusters
+	AssignElevatorsToClusters();
 }
 
 void tdmEAS::SetupClusterInfoStructures() 
@@ -80,7 +84,7 @@ void tdmEAS::SetupClusterInfoStructures()
 	{
 		const aasCluster_t& cluster = _aas->file->GetCluster(i);
 		
-		_clusterInfo[i] = (ClusterInfo*) Mem_Alloc(sizeof(ClusterInfo));
+		_clusterInfo[i] = (ClusterInfo*) Mem_ClearedAlloc(sizeof(ClusterInfo));
 		_clusterInfo[i]->clusterNum = i;
 	}
 }
@@ -98,6 +102,38 @@ void tdmEAS::ClearClusterInfoStructures()
 	}
 
 	_clusterInfo = NULL;
+}
+
+void tdmEAS::AssignElevatorsToClusters()
+{
+	for (int i = 0; i < _elevators.Num(); i++)
+	{
+		CMultiStateMover* elevator = _elevators[i].GetEntity();
+
+		const idList<MoverPositionInfo>& positionList = elevator->GetPositionInfoList();
+
+		for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
+		{
+			CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+			idVec3 origin = positionEnt->GetPhysics()->GetOrigin();
+						
+			int areaNum = _aas->PointAreaNum(origin);
+
+			// If areaNum could not be determined, try again at a slightly higher position
+			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,16));
+			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,32));
+			if (areaNum == 0) areaNum = _aas->PointAreaNum(origin + idVec3(0,0,48));
+
+			if (areaNum == 0)
+			{
+				gameLocal.Warning("[%s]: Cannot assign multistatemover position to AAS area:  %s", _aas->name.c_str(), positionEnt->name.c_str());
+				continue;
+			}
+
+			const aasArea_t& area = _aas->file->GetArea(areaNum);
+			_clusterInfo[area.cluster]->numElevators++;
+		}
+	}
 }
 
 void tdmEAS::Save(idSaveGame* savefile) const

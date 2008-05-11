@@ -31,7 +31,7 @@ void CMultiStateMover::Spawn()
 	PostEventMS(&EV_PostSpawn, 1);
 }
 
-void CMultiStateMover::Event_PostSpawn() 
+void CMultiStateMover::FindPositionEntities()
 {
 	// Go through all the targets and find the PositionEntities
 	for (int i = 0; i < targets.Num(); i++) 
@@ -73,7 +73,11 @@ void CMultiStateMover::Event_PostSpawn()
 	{
 		RemoveTarget(positionInfo[i].positionEnt.GetEntity());
 	}
+}
 
+void CMultiStateMover::Event_PostSpawn() 
+{
+	FindPositionEntities();
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
 }
 
@@ -162,8 +166,14 @@ void CMultiStateMover::Activate(idEntity* activator)
 	MoveToPos(targetPos);
 }
 
-const idList<MoverPositionInfo>& CMultiStateMover::GetPositionInfoList() const
+const idList<MoverPositionInfo>& CMultiStateMover::GetPositionInfoList()
 {
+	if (positionInfo.Num() == 0)
+	{
+		// No position entities? Find them now.
+		FindPositionEntities();
+	}
+
 	return positionInfo;
 }
 

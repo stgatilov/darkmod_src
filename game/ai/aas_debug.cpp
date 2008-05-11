@@ -504,3 +504,34 @@ void idAASLocal::Test( const idVec3 &origin ) {
 		ShowPushIntoArea( origin );
 	}
 }
+
+void idAASLocal::DrawAreas(const idVec3& playerOrigin)
+{
+	if (file == NULL) return;
+
+	// Get a colour for each cluster
+	idList<idVec4> colours;
+	for (int c = 0; c < file->GetNumClusters(); c++)
+	{
+		colours.Alloc() = idVec4(gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, 1);
+	}
+
+	idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+	
+	for (int i = 0; i < file->GetNumAreas(); i++)
+	{
+		idBounds areaBounds = GetAreaBounds(i);
+		idVec3 areaCenter = AreaCenter(i);
+
+		int clusterNum = file->GetArea(i).cluster;
+
+		idVec4 colour = (clusterNum == -1) ? colorWhite : colours[clusterNum];
+
+		// angua: only draw areas near the player, no need to see them at the other end of the map
+		if ((areaCenter - playerOrigin).LengthFast() < 1000)
+		{
+			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, colour, playerViewMatrix, 1, 10000);
+			gameRenderWorld->DebugBox(colour, idBox(areaBounds), 10000);
+		}
+	}
+}

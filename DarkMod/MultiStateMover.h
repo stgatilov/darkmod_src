@@ -40,8 +40,8 @@ public:
 
 	void	Activate(idEntity* activator);
 
-	// Returns the list of position infos
-	const idList<MoverPositionInfo>& GetPositionInfoList() const;
+	// Returns the list of position infos, populates the list if none are assigned yet.
+	const idList<MoverPositionInfo>& GetPositionInfoList();
 
 protected:
 	// override idMover's DoneMoving() to trigger targets
@@ -60,8 +60,11 @@ private:
 	// Returns the positioninfo entity of the given location or NULL if no suitable position found 
 	CMultiStateMoverPosition* GetPositionEntity(const idVec3& pos) const;
 
-	void	Event_Activate(idEntity* activator);
-	void	Event_PostSpawn();
+	// Extracts all position entities from the targets
+	void FindPositionEntities();
+
+	void Event_Activate(idEntity* activator);
+	void Event_PostSpawn();
 };
 
 #endif /* _MULTI_STATE_MOVER_H_ */

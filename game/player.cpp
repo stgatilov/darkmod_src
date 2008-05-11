@@ -17,6 +17,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
+#include "ai/aas_local.h"
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/Intersection.h"
@@ -5005,7 +5006,15 @@ void idPlayer::PerformImpulse( int impulse ) {
 		break;
 
 		case IMPULSE_27:
-			LAS.pvsToAASMappingTable.DebugShowMappings(10000);
+			{
+				//LAS.pvsToAASMappingTable.DebugShowMappings(10000);
+				idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+					
+				if (aas != NULL)
+				{
+					aas->DrawAreas(GetEyePosition());
+				}
+			}
 			break;
 
 		case IMPULSE_28:

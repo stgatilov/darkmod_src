@@ -222,6 +222,7 @@ public:	// debug
 	bool						PullPlayer( const idVec3 &origin, int toAreaNum ) const;
 	void						RandomPullPlayer( const idVec3 &origin ) const;
 	void						ShowPushIntoArea( const idVec3 &origin ) const;
+	void						DrawAreas( const idVec3& playerOrigin );
 };
 
 #endif /* !__AAS_LOCAL_H__ */
