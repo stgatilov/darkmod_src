@@ -564,6 +564,12 @@
 					RelativePath=".\DarkMod\AI\AreaManager.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\AI\EAS.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\AI\EAS.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Ai\Mind.cpp">
 				</File>
 				<File
