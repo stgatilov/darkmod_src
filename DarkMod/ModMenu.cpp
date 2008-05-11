@@ -214,7 +214,8 @@ void CModMenu::DisplayBriefingPage(idUserInterface *gui) {
 		int pages = xd->m_data.GetInt("num_pages");
 
 		// ensure current page is between 1 and page count, inclusive
-		briefingPage = max(min(pages, briefingPage), 1);
+		if (briefingPage < 1) briefingPage = 1;
+		if (briefingPage > pages) briefingPage = pages;
 
 		// load up page text
 		idStr page = idStr("page") + idStr(briefingPage) + "_body";

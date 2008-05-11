@@ -20,7 +20,7 @@ public:
 	void UpdateGUI(idUserInterface* gui);
 
 	// displays the current briefing page
-	void CModMenu::DisplayBriefingPage(idUserInterface *gui);
+	void DisplayBriefingPage(idUserInterface *gui);
 
 private:
 	idList<const char *> modsAvailable; 

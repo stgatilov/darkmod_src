@@ -1057,7 +1057,7 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 			markerColor,
 			DebugDrawList[spotIndex].goal.origin + markerArrowLength * DebugDrawList[spotIndex].quality,
 			DebugDrawList[spotIndex].goal.origin,
-			2.0f,
+			2,
 			viewLifetime
 		);
 	}

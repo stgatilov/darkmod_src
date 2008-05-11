@@ -15,7 +15,7 @@
 
 #include "aas.h"
 #include "../pvs.h"
-#include "../../DarkMod/ai/EAS.h"
+#include "../../DarkMod/AI/EAS.h"
 
 class idRoutingCache {
 	friend class idAASLocal;
