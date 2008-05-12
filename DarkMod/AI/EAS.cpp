@@ -311,6 +311,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 			{
 				const ElevatorStationInfoPtr& elevatorInfo = *station;
 
+				// Get all stations reachable via this elevator
 				const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
 
 				// This will be a set of area candidates to spread out the pathing
@@ -342,7 +343,8 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						DM_LOG(LC_AI, LT_INFO).LogString("Elevator leads right to the target cluster %d.\r", goalCluster);
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, goalArea)));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum)));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea)));
 
 						// Save this USE_ELEVATOR route into this startCluster
 						_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(info);
