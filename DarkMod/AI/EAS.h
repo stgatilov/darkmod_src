@@ -156,17 +156,11 @@ private:
 	void SetupClusterInfoStructures();
 	void SetupElevatorStationStructures();
 
-	void ClearClusterInfoStructures();
-	void ClearElevatorStationStructures();
-
 	void AssignElevatorsToClusters();
 
 	void SetupClusterRouting();
 	void SetupReachableElevatorStations();
 	void SetupRoutesBetweenClusters();
-
-	RouteNode* AllocRouteNode(ActionType actionType, int goalArea);
-	RouteInfo* AllocRouteInfo(RouteType routeType, int goalIndex);
 
 	void CondenseRouteInfo();
 

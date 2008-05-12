@@ -23,8 +23,8 @@ tdmEAS::tdmEAS(idAASLocal* aas) :
 void tdmEAS::Clear()
 {
 	_elevators.Clear();
-	ClearClusterInfoStructures();
-	ClearElevatorStationStructures();
+	_clusterInfo.clear();;
+	_elevatorStations.clear();;
 }
 
 void tdmEAS::AddElevator(CMultiStateMover* mover)
@@ -80,16 +80,6 @@ void tdmEAS::SetupElevatorStationStructures()
 	}
 
 	_elevatorStations.resize(numElevatorStations);
-}
-
-void tdmEAS::ClearElevatorStationStructures()
-{
-	_elevatorStations.clear();
-}
-
-void tdmEAS::ClearClusterInfoStructures()
-{
-	_clusterInfo.clear();
 }
 
 int tdmEAS::GetAreaNumForPosition(const idVec3& position)
@@ -224,7 +214,7 @@ void tdmEAS::SetupReachableElevatorStations()
 				continue;
 			}
 
-			idBounds areaBounds = _aas->GetAreaBounds(areaNum);
+			/*idBounds areaBounds = _aas->GetAreaBounds(areaNum);
 			idVec3 areaCenter = _aas->AreaCenter(areaNum);
 
 			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
@@ -234,14 +224,14 @@ void tdmEAS::SetupReachableElevatorStations()
 			idVec3 areaCenter2 = _aas->AreaCenter(_elevatorStations[e]->areaNum);
 
 			gameRenderWorld->DrawText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
-			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);
+			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);*/
 
 			idReachability* reach;
 			int travelTime = 0;
 			bool routeFound = _aas->RouteToGoalArea(areaNum, _aas->AreaCenter(areaNum), 
 				_elevatorStations[e]->areaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
 
-			gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
+			//gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
 			
 			if (routeFound) 
 			{
