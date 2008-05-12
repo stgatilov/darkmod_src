@@ -10,16 +10,17 @@
 #ifndef __AI_EAS_H__
 #define __AI_EAS_H__
 
-#include "../idlib/precompiled.h"
-#include "../MultiStateMover.h"
-#include "../../game/ai/aas_local.h"
+#include "../../../idlib/precompiled.h"
+#include "../../MultiStateMover.h"
+#include "../../../game/ai/aas_local.h"
 #include <set>
 #include <vector>
 #include <list>
 #include <boost/shared_ptr.hpp>
-#include "EAS/RouteNode.h"
-#include "EAS/RouteInfo.h"
-#include "EAS/ElevatorStationInfo.h"
+
+#include "RouteNode.h"
+#include "RouteInfo.h"
+#include "ElevatorStationInfo.h"
 
 class idAASLocal;
 
