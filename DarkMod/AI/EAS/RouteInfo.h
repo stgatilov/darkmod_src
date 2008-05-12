@@ -31,52 +31,17 @@ struct RouteInfo
 	int target;					// either the target AREA or the target CLUSTER number, depending on routeType
 	RouteNodeList routeNodes;	// contains the actual route node chain (WALK, USE_ELEVATOR, WALK, etc.)
 
-	RouteInfo() :
-		routeType(ROUTE_TO_CLUSTER),
-		target(-1)
-	{}
+	// Default constructor
+	RouteInfo();
 
-	RouteInfo(RouteType type, int targetNum) :
-		routeType(type),
-		target(targetNum)
-	{}
+	// Specialised constructor
+	RouteInfo(RouteType type, int targetNum);
 
 	// Copy constructor
-	RouteInfo(const RouteInfo& other) :
-		routeType(other.routeType),
-		target(other.target)
-	{
-		// Copy the RouteNodes of the other list, one by one
-		for (RouteNodeList::const_iterator otherNode = other.routeNodes.begin();
-			otherNode != other.routeNodes.end(); otherNode++)
-		{
-			RouteNodePtr newNode(new RouteNode(**otherNode));
-			routeNodes.push_back(newNode);
-		}
-	}
+	RouteInfo(const RouteInfo& other);
 
-	bool operator==(const RouteInfo& other) const
-	{
-		if (routeType == other.routeType && target == other.target && routeNodes.size() == other.routeNodes.size())
-		{
-			for (RouteNodeList::const_iterator i = routeNodes.begin(), j = other.routeNodes.begin(); i != routeNodes.end(); i++, j++)
-			{
-				if (*i != *j)
-				{
-					return false; // RouteNode mismatch
-				}
-			}
-
-			return true; // everything matched
-		}
-
-		return false; // routeType, routeNodes.size() or target mismatched
-	}
-
-	bool operator!=(const RouteInfo& other) const
-	{
-		return !operator==(other);
-	}
+	bool operator==(const RouteInfo& other) const;
+	bool operator!=(const RouteInfo& other) const;
 };
 typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
 typedef std::list<RouteInfoPtr> RouteInfoList;

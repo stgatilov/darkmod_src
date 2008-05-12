@@ -28,37 +28,17 @@ struct RouteNode
 	int toCluster;			// the target AAS cluster number
 	int elevator;			// the elevator number (is -1 if no elevator to be used in this node)
 
-	RouteNode() :
-		type(ACTION_WALK),
-		toArea(0),
-		toCluster(0),
-		elevator(-1)
-	{}
+	// Default constructor
+	RouteNode();
 
-	RouteNode(ActionType t, int goalArea, int goalCluster, int elevatorNum = -1) :
-		type(t),
-		toArea(goalArea),
-		toCluster(goalCluster),
-		elevator(elevatorNum)
-	{}
+	// Specialised constructor
+	RouteNode(ActionType t, int goalArea, int goalCluster, int elevatorNum = -1);
 
 	// Copy constructor
-	RouteNode(const RouteNode& other) :
-		type(other.type),
-		toArea(other.toArea),
-		toCluster(other.toCluster),
-		elevator(other.elevator)
-	{}
+	RouteNode(const RouteNode& other);
 
-	bool operator==(const RouteNode& other) const
-	{
-		return (type == other.type && toArea == other.toArea && toCluster == other.toCluster && elevator == other.elevator);
-	}
-
-	bool operator!=(const RouteNode& other) const
-	{
-		return !operator==(other);
-	}
+	bool operator==(const RouteNode& other) const;
+	bool operator!=(const RouteNode& other) const;
 };
 typedef boost::shared_ptr<RouteNode> RouteNodePtr;
 typedef std::list<RouteNodePtr> RouteNodeList;
