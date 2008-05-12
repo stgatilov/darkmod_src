@@ -68,7 +68,7 @@ struct RouteInfo
 	{}
 };
 typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
-typedef std::list<RouteInfoPtr> RouteInfoList;
+typedef std::set<RouteInfoPtr> RouteInfoList;
 typedef std::vector<RouteInfoList> RouteInfoListVector;
 
 struct ElevatorStationInfo
@@ -152,6 +152,8 @@ public:
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 
+	void DrawRoute(int startArea, int goalArea);
+
 private:
 	void SetupClusterInfoStructures();
 	void SetupElevatorStationStructures();
@@ -165,8 +167,7 @@ private:
 	void CondenseRouteInfo();
 
 	// Calculates all possible routes from the startCluster/startArea to goalCluster/goalArea 
-	// (returns NULL for goalCluster == startCluster)
-	RouteInfoPtr FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea);
+	RouteInfoList FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea);
 
 	// Returns the AAS area number for the given position
 	int GetAreaNumForPosition(const idVec3& position);

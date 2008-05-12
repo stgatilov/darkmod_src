@@ -158,8 +158,7 @@ void tdmEAS::SetupRoutesBetweenClusters()
 			if (goalArea <= 0) continue;
 
 			_routingIterations = 0;
-			// We can't reach the other cluster by walking, let's check if we can find a route using elevators
-			//RouteInfo* info = FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
+			FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
 		}
 	}
 
@@ -253,12 +252,10 @@ void tdmEAS::Restore(idRestoreGame* savefile)
 	// TODO
 }
 
-RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
+RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
 {
 	_routingIterations++;
 	DM_LOG(LC_AI, LT_INFO).LogString("EAS routing iteration level = %d\r", _routingIterations);
-
-	RouteInfoPtr returnCandidate;
 
 	/**
 	 * greebo: Pseudo-Code:
@@ -276,18 +273,14 @@ RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int go
 	{
 		// Routing information to the goal cluster is right there, return it
 		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d already exists.\r", startCluster, goalCluster);
-		returnCandidate = *_clusterInfo[startCluster]->routeToCluster[goalCluster].begin();
 	}
 	else
 	{
 		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
 
-		// Allocate a new RouteInfo* structure
-		RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
-		returnCandidate = info;
-
-		// Put the RouteInfo structure in the according slot, so that this route is not re-evaluated again
-		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+		// Insert a dummy route into the _clusterInfo matrix, so that we don't come here again
+		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+		_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(dummyRoute);
 
 		// No routing information, check walk path to the goal cluster
 		idReachability* reach;
@@ -298,9 +291,15 @@ RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int go
 		if (routeFound) 
 		{
 			DM_LOG(LC_AI, LT_INFO).LogString("Can walk from cluster %d to %d.\r", startCluster, goalCluster);
-			// Walk path possible, fill the WalkRouteNode into the RouteInfo
+
+			// Walk path possible, allocate a new RouteInfo with a WALK node
+			RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+
 			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea));
-			returnCandidate->routeNodes.push_back(node);
+			info->routeNodes.push_back(node);
+
+			// Save this WALK route into the cluster
+			_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(info);
 		}
 		else 
 		{
@@ -344,15 +343,24 @@ RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int go
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
 						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, goalArea)));
-						_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+
+						// Save this USE_ELEVATOR route into this startCluster
+						_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(info);
 					}
 					else 
 					{
 						DM_LOG(LC_AI, LT_INFO).LogString("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
 						// The elevator station does not start in the goal cluster, find a way from there
-						RouteInfoPtr info = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
-						// Append the route information to the existing chain
-						_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+						RouteInfoList routes = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
+
+						for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); i++)
+						{
+							RouteInfoPtr& route = *i;
+							if (route->routeNodes.empty()) continue;
+
+							// Append the valid route objects to the existing chain
+							_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(routes.begin(), routes.end());
+						}
 					}
 				}
 			}
@@ -362,5 +370,42 @@ RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int go
 	assert(_routingIterations > 0);
 	_routingIterations--;
 
-	return returnCandidate;
+	return _clusterInfo[startCluster]->routeToCluster[goalCluster];
+}
+
+void tdmEAS::DrawRoute(int startArea, int goalArea)
+{
+	int startCluster = _aas->file->GetArea(startArea).cluster;
+	int goalCluster = _aas->file->GetArea(goalArea).cluster;
+
+	if (startCluster < 0 || goalCluster < 0)
+	{
+		gameLocal.Warning("Cannot draw route, cluster numbers < 0.\r");
+		return;
+	}
+
+	const RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+	// Draw all routes to the target area
+	for (RouteInfoList::const_iterator r = routes.begin(); r != routes.end(); r++)
+	{
+		const RouteInfoPtr& route = *r;
+
+		RouteNodePtr prevNode(new RouteNode(ACTION_WALK, startArea));
+		
+		for (RouteNodeList::const_iterator n = route->routeNodes.begin(); n != route->routeNodes.end(); n++)
+		{
+			RouteNodePtr node = *n;
+
+			if (prevNode != NULL)
+			{
+				idVec4 colour = (node->type == ACTION_WALK) ? colorBlue : colorCyan;
+				idVec3 start = _aas->file->GetArea(node->index).center;
+				idVec3 end = _aas->file->GetArea(prevNode->index).center;
+				gameRenderWorld->DebugArrow(colour, start, end, 1, 5000);
+			}
+
+			prevNode = node;
+		}
+	}
 }

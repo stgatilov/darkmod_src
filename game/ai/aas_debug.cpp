@@ -535,3 +535,13 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 		}
 	}
 }
+
+void idAASLocal::DrawEASRoute( const idVec3& playerOrigin, int goalArea )
+{
+	idVec3 origin = playerOrigin;
+	int areaNum = PointReachableAreaNum( origin, DefaultSearchBounds(), (AREA_REACHABLE_WALK|AREA_REACHABLE_FLY) );
+
+	PushPointIntoAreaNum( areaNum, origin );
+
+	elevatorSystem->DrawRoute(areaNum, goalArea);
+}

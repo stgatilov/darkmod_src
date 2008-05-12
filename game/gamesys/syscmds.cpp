@@ -2668,6 +2668,30 @@ void Cmd_ShowAASStats_f(const idCmdArgs& args)
 	}
 }
 
+void Cmd_ShowEASRoute_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 2)
+	{
+		common->Printf( "usage: eas_showRoute <targetAreaNum>\n" );
+		return;
+	}
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL) 
+	{
+		common->Printf( "no player found\n" );
+		return;
+	}
+
+	idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+	if (aas != NULL)
+	{
+		int areaNum = atoi(args.Argv(1));
+
+		aas->DrawEASRoute(player->GetPhysics()->GetOrigin(), areaNum);
+	}
+}
+
 void Cmd_SignalCMDDone_f(const idCmdArgs& args)
 {
 	if (gameLocal.m_DarkRadiantRCFServer != NULL)
@@ -2776,6 +2800,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "aas_showWalkPath",		Cmd_ShowWalkPath_f,			CMD_FL_GAME,				"Shows the walk path from the player to the given area number (AAS32)." );
 	cmdSystem->AddCommand( "aas_showReachabilities",Cmd_ShowReachabilities_f,			CMD_FL_GAME,				"Shows the reachabilities for the given area number (AAS32)." );
 	cmdSystem->AddCommand( "aas_showStats",			Cmd_ShowAASStats_f,			CMD_FL_GAME,				"Shows the AAS statistics." );
+	cmdSystem->AddCommand( "eas_showRoute",			Cmd_ShowEASRoute_f,			CMD_FL_GAME,				"Shows the EAS route to the goal area." );
 	
 	cmdSystem->AddCommand( "darkradiant_signal_cmd_done",	Cmd_SignalCMDDone_f,		CMD_FL_GAME,				"Called by DarkRadiant to receive the DONE signal after issuing commands." );
 
