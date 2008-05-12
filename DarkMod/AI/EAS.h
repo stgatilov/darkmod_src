@@ -35,22 +35,32 @@ enum ActionType {
 
 struct RouteNode
 {
-	ActionType type;	// what needs to be done in this route section (walk?, use elevator?)
-	int index;			// the index number, depends on the route section (can be an elevator index or an AAS number)
+	ActionType type;		// what needs to be done in this route section (walk?, use elevator?)
+	int toArea;				// the target AAS area number
+	int toCluster;			// the target AAS cluster number
 
 	RouteNode() :
 		type(ACTION_WALK),
-		index(0)
+		toArea(0),
+		toCluster(0)
 	{}
 
-	RouteNode(ActionType t, int i) :
+	RouteNode(ActionType t, int goalArea, int goalCluster) :
 		type(t),
-		index(i)
+		toArea(goalArea),
+		toCluster(goalCluster)
+	{}
+
+	// Copy constructor
+	RouteNode(const RouteNode& other) :
+		type(other.type),
+		toArea(other.toArea),
+		toCluster(other.toCluster)
 	{}
 
 	bool operator==(const RouteNode& other) const
 	{
-		return (type == other.type && index == other.index);
+		return (type == other.type && toArea == other.toArea && toCluster == other.toCluster);
 	}
 
 	bool operator!=(const RouteNode& other) const
@@ -77,6 +87,20 @@ struct RouteInfo
 		routeType(type),
 		target(targetNum)
 	{}
+
+	// Copy constructor
+	RouteInfo(const RouteInfo& other) :
+		routeType(other.routeType),
+		target(other.target)
+	{
+		// Copy the RouteNodes of the other list, one by one
+		for (RouteNodeList::const_iterator otherNode = other.routeNodes.begin();
+			otherNode != other.routeNodes.end(); otherNode++)
+		{
+			RouteNodePtr newNode(new RouteNode(**otherNode));
+			routeNodes.push_back(newNode);
+		}
+	}
 
 	bool operator==(const RouteInfo& other) const
 	{
@@ -211,6 +235,9 @@ private:
 
 	// Removes empty routeInfo structures
 	void CleanRouteInfo(int startCluster, int goalCluster);
+
+	// Checks the route for redundancies, returns TRUE if the route is accepted
+	bool EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route);
 };
 
 #endif /* __AI_EAS_H__ */

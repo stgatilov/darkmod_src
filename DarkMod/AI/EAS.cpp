@@ -330,7 +330,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 			// Walk path possible, allocate a new RouteInfo with a WALK node
 			RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
 
-			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea));
+			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea, goalCluster));
 			info->routeNodes.push_back(node);
 
 			// Save this WALK route into the cluster
@@ -375,14 +375,15 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 					if (nextCluster == goalCluster)
 					{
-						DM_LOG(LC_AI, LT_INFO).LogString("Elevator leads right to the target cluster %d.\r", goalCluster);
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum)));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea)));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster)));
 
 						// Save this USE_ELEVATOR route into this startCluster
 						InsertUniqueRouteInfo(startCluster, goalCluster, info);
+
+						DM_LOG(LC_AI, LT_INFO).LogString("Elevator leads right to the target cluster %d.\r", goalCluster);
 					}
 					else 
 					{
@@ -392,11 +393,23 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 						for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); i++)
 						{
-							RouteInfoPtr& route = *i;
-							if (route->routeNodes.empty()) continue;
+							RouteInfoPtr& foundRoute = *i;
 
-							// Append the valid route objects to the existing chain
-							InsertUniqueRouteInfo(startCluster, goalCluster, *i);
+							// Evaluate the suggested route (check for redundancies)
+							if (!EvaluateRoute(startCluster, goalCluster, foundRoute))
+							{
+								continue;
+							}
+
+							// Route was accepted, copy it
+							RouteInfoPtr newRoute(new RouteInfo(*foundRoute));
+
+							// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
+							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster)));
+							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
+							
+							// Add the compiled information to our repository
+							InsertUniqueRouteInfo(startCluster, goalCluster, newRoute);
 						}
 					}
 				}
@@ -420,6 +433,28 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	return _clusterInfo[startCluster]->routeToCluster[goalCluster];
 }
 
+bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route)
+{
+	// Don't regard empty or dummy routes
+	if (route == NULL || route->routeType == ROUTE_DUMMY || route->routeNodes.empty()) 
+	{
+		return false;
+	}
+
+	// Does the route come across our source cluster?
+	for (RouteNodeList::const_iterator node = route->routeNodes.begin(); 
+		 node != route->routeNodes.end(); node++)
+	{
+		if ((*node)->toCluster == startCluster)
+		{
+			// Route is coming across the same cluster as we started, this is a loop, reject
+			return false;
+		}
+	}
+	
+	return true; // accepted
+}
+
 void tdmEAS::DrawRoute(int startArea, int goalArea)
 {
 	int startCluster = _aas->file->GetArea(startArea).cluster;
@@ -438,7 +473,7 @@ void tdmEAS::DrawRoute(int startArea, int goalArea)
 	{
 		const RouteInfoPtr& route = *r;
 
-		RouteNodePtr prevNode(new RouteNode(ACTION_WALK, startArea));
+		RouteNodePtr prevNode(new RouteNode(ACTION_WALK, startArea, startCluster));
 		
 		for (RouteNodeList::const_iterator n = route->routeNodes.begin(); n != route->routeNodes.end(); n++)
 		{
@@ -447,8 +482,8 @@ void tdmEAS::DrawRoute(int startArea, int goalArea)
 			if (prevNode != NULL)
 			{
 				idVec4 colour = (node->type == ACTION_WALK) ? colorBlue : colorCyan;
-				idVec3 start = _aas->file->GetArea(node->index).center;
-				idVec3 end = _aas->file->GetArea(prevNode->index).center;
+				idVec3 start = _aas->file->GetArea(node->toArea).center;
+				idVec3 end = _aas->file->GetArea(prevNode->toArea).center;
 				gameRenderWorld->DebugArrow(colour, start, end, 1, 5000);
 			}
 
