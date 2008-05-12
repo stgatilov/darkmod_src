@@ -21,7 +21,8 @@
 class idAASLocal;
 
 enum RouteType {
-	ROUTE_TO_AREA = 0,	// a route to an AAS area
+	ROUTE_DUMMY = 0,	// placeholder
+	ROUTE_TO_AREA,		// a route to an AAS area
 	ROUTE_TO_CLUSTER,	// a route to an AAS cluster
 	NUM_ROUTE_TYPES,
 };
@@ -46,6 +47,16 @@ struct RouteNode
 		type(t),
 		index(i)
 	{}
+
+	bool operator==(const RouteNode& other) const
+	{
+		return (type == other.type && index == other.index);
+	}
+
+	bool operator!=(const RouteNode& other) const
+	{
+		return !operator==(other);
+	}
 };
 typedef boost::shared_ptr<RouteNode> RouteNodePtr;
 typedef std::list<RouteNodePtr> RouteNodeList;
@@ -66,6 +77,29 @@ struct RouteInfo
 		routeType(type),
 		target(targetNum)
 	{}
+
+	bool operator==(const RouteInfo& other) const
+	{
+		if (routeType == other.routeType && target == other.target && routeNodes.size() == other.routeNodes.size())
+		{
+			for (RouteNodeList::const_iterator i = routeNodes.begin(), j = other.routeNodes.begin(); i != routeNodes.end(); i++, j++)
+			{
+				if (*i != *j)
+				{
+					return false; // RouteNode mismatch
+				}
+			}
+
+			return true; // everything matched
+		}
+
+		return false; // routeType, routeNodes.size() or target mismatched
+	}
+
+	bool operator!=(const RouteInfo& other) const
+	{
+		return !operator==(other);
+	}
 };
 typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
 typedef std::set<RouteInfoPtr> RouteInfoList;
@@ -171,6 +205,12 @@ private:
 
 	// Returns the AAS area number for the given position
 	int GetAreaNumForPosition(const idVec3& position);
+
+	// Inserts the routeInfo for startCluster => goalCluster, but checks for duplicates, returns TRUE if inserted
+	bool InsertUniqueRouteInfo(int startCluster, int goalCluster, RouteInfoPtr route);
+
+	// Removes empty routeInfo structures
+	void CleanRouteInfo(int startCluster, int goalCluster);
 };
 
 #endif /* __AI_EAS_H__ */

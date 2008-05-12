@@ -252,6 +252,41 @@ void tdmEAS::Restore(idRestoreGame* savefile)
 	// TODO
 }
 
+bool tdmEAS::InsertUniqueRouteInfo(int startCluster, int goalCluster, RouteInfoPtr route)
+{
+	RouteInfoList& routeList = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+	for (RouteInfoList::iterator i = routeList.begin(); i != routeList.end(); i++)
+	{
+		RouteInfoPtr& existing = *i;
+		
+		if (*route == *existing)
+		{
+			return false; // Duplicate
+		}
+	}
+
+	routeList.insert(route);
+	return true;
+}
+
+void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
+{
+	RouteInfoList& routeList = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+	for (RouteInfoList::iterator i = routeList.begin(); i != routeList.end(); /* in-loop increment */)
+	{
+		if ((*i)->routeNodes.empty())
+		{
+			routeList.erase(i++);
+		}
+		else
+		{
+			i++;
+		}
+	}
+}
+
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
 {
 	_routingIterations++;
@@ -279,7 +314,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
 
 		// Insert a dummy route into the _clusterInfo matrix, so that we don't come here again
-		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
 		_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(dummyRoute);
 
 		// No routing information, check walk path to the goal cluster
@@ -299,7 +334,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 			info->routeNodes.push_back(node);
 
 			// Save this WALK route into the cluster
-			_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(info);
+			InsertUniqueRouteInfo(startCluster, goalCluster, info);
 		}
 		else 
 		{
@@ -347,7 +382,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea)));
 
 						// Save this USE_ELEVATOR route into this startCluster
-						_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(info);
+						InsertUniqueRouteInfo(startCluster, goalCluster, info);
 					}
 					else 
 					{
@@ -361,12 +396,22 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 							if (route->routeNodes.empty()) continue;
 
 							// Append the valid route objects to the existing chain
-							_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(routes.begin(), routes.end());
+							InsertUniqueRouteInfo(startCluster, goalCluster, *i);
 						}
 					}
 				}
 			}
 		}
+	}
+
+	// Purge all empty RouteInfo nodes
+	CleanRouteInfo(startCluster, goalCluster);
+
+	// Keep one dummy node anyway, to signal that we already traversed this combination
+	if (_clusterInfo[startCluster]->routeToCluster[goalCluster].empty())
+	{
+		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
+		_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(dummyRoute);
 	}
 
 	assert(_routingIterations > 0);
