@@ -124,6 +124,7 @@ void tdmEAS::AssignElevatorsToClusters()
 			_elevatorStations[stationIndex]->elevatorPosition = positionEnt;
 			_elevatorStations[stationIndex]->areaNum = areaNum;
 			_elevatorStations[stationIndex]->clusterNum = area.cluster;
+			_elevatorStations[stationIndex]->elevatorNum = i;
 
 			stationIndex++;
 		}
@@ -378,7 +379,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
 						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster)));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
 
 						// Save this USE_ELEVATOR route into this startCluster
 						InsertUniqueRouteInfo(startCluster, goalCluster, info);
@@ -396,7 +397,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 							RouteInfoPtr& foundRoute = *i;
 
 							// Evaluate the suggested route (check for redundancies)
-							if (!EvaluateRoute(startCluster, goalCluster, foundRoute))
+							if (!EvaluateRoute(startCluster, goalCluster, elevatorInfo->elevatorNum, foundRoute))
 							{
 								continue;
 							}
@@ -405,7 +406,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 							RouteInfoPtr newRoute(new RouteInfo(*foundRoute));
 
 							// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
-							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster)));
+							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
 							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
 							
 							// Add the compiled information to our repository
@@ -433,7 +434,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	return _clusterInfo[startCluster]->routeToCluster[goalCluster];
 }
 
-bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route)
+bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, int forbiddenElevator, RouteInfoPtr route)
 {
 	// Don't regard empty or dummy routes
 	if (route == NULL || route->routeType == ROUTE_DUMMY || route->routeNodes.empty()) 
@@ -445,7 +446,7 @@ bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route
 	for (RouteNodeList::const_iterator node = route->routeNodes.begin(); 
 		 node != route->routeNodes.end(); node++)
 	{
-		if ((*node)->toCluster == startCluster)
+		if ((*node)->toCluster == startCluster || (*node)->elevator == forbiddenElevator)
 		{
 			// Route is coming across the same cluster as we started, this is a loop, reject
 			return false;
@@ -453,6 +454,19 @@ bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route
 	}
 	
 	return true; // accepted
+}
+
+int tdmEAS::GetElevatorIndex(CMultiStateMover* mover)
+{
+	for (int i = 0; i < _elevators.Num(); i++)
+	{
+		if (_elevators[i].GetEntity() == mover)
+		{
+			return i; // found!
+		}
+	}
+
+	return -1; // not found
 }
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)

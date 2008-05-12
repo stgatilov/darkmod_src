@@ -38,29 +38,33 @@ struct RouteNode
 	ActionType type;		// what needs to be done in this route section (walk?, use elevator?)
 	int toArea;				// the target AAS area number
 	int toCluster;			// the target AAS cluster number
+	int elevator;			// the elevator number (is -1 if no elevator to be used in this node)
 
 	RouteNode() :
 		type(ACTION_WALK),
 		toArea(0),
-		toCluster(0)
+		toCluster(0),
+		elevator(-1)
 	{}
 
-	RouteNode(ActionType t, int goalArea, int goalCluster) :
+	RouteNode(ActionType t, int goalArea, int goalCluster, int elevatorNum = -1) :
 		type(t),
 		toArea(goalArea),
-		toCluster(goalCluster)
+		toCluster(goalCluster),
+		elevator(elevatorNum)
 	{}
 
 	// Copy constructor
 	RouteNode(const RouteNode& other) :
 		type(other.type),
 		toArea(other.toArea),
-		toCluster(other.toCluster)
+		toCluster(other.toCluster),
+		elevator(other.elevator)
 	{}
 
 	bool operator==(const RouteNode& other) const
 	{
-		return (type == other.type && toArea == other.toArea && toCluster == other.toCluster);
+		return (type == other.type && toArea == other.toArea && toCluster == other.toCluster && elevator == other.elevator);
 	}
 
 	bool operator!=(const RouteNode& other) const
@@ -135,10 +139,12 @@ struct ElevatorStationInfo
 	idEntityPtr<CMultiStateMoverPosition> elevatorPosition;	// The elevator position entity
 	int areaNum;											// The area number of this elevator station
 	int clusterNum;											// The cluster number of this elevator station
+	int elevatorNum;										// The elevator number this position is belonging to
 
 	ElevatorStationInfo() :
 		areaNum(-1),
-		clusterNum(-1)
+		clusterNum(-1),
+		elevatorNum(-1)
 	{
 		elevator = NULL;
 		elevatorPosition = NULL;
@@ -224,6 +230,9 @@ private:
 
 	void CondenseRouteInfo();
 
+	// Retrieves the internal index of the given mover (or -1 if the mover is not registered)
+	int GetElevatorIndex(CMultiStateMover* mover);
+
 	// Calculates all possible routes from the startCluster/startArea to goalCluster/goalArea 
 	RouteInfoList FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea);
 
@@ -237,7 +246,7 @@ private:
 	void CleanRouteInfo(int startCluster, int goalCluster);
 
 	// Checks the route for redundancies, returns TRUE if the route is accepted
-	bool EvaluateRoute(int startCluster, int goalCluster, RouteInfoPtr route);
+	bool EvaluateRoute(int startCluster, int goalCluster, int forbiddenElevator, RouteInfoPtr route);
 };
 
 #endif /* __AI_EAS_H__ */
