@@ -33,7 +33,8 @@ enum {
 	PATHTYPE_WALKOFFLEDGE,
 	PATHTYPE_BARRIERJUMP,
 	PATHTYPE_JUMP,
-	PATHTYPE_DOOR
+	PATHTYPE_DOOR,
+	PATHTYPE_ELEVATOR, // greebo: Added for TDM
 };
 
 typedef struct aasPath_s {

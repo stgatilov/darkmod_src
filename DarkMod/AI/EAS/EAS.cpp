@@ -455,7 +455,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 					{
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
+						//info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
 						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
 
 						// Save this USE_ELEVATOR route into this startCluster
@@ -484,7 +484,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 							// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
 							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
-							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
+							//newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
 							
 							// Add the compiled information to our repository
 							InsertUniqueRouteInfo(startCluster, goalCluster, newRoute);
@@ -544,6 +544,49 @@ int tdmEAS::GetElevatorIndex(CMultiStateMover* mover)
 	}
 
 	return -1; // not found
+}
+
+bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor) 
+{
+	assert(_aas != NULL);
+	int startCluster = _aas->file->GetArea(areaNum).cluster;
+	int goalCluster = _aas->file->GetArea(goalAreaNum).cluster;
+
+	if (startCluster < 0 || goalCluster < 0)
+	{
+		// Cannot route to portals
+		return false;
+	}
+
+	const RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+	// Draw all routes to the target area
+	if (!routes.empty())
+	{
+		const RouteInfo& route = **routes.begin();
+
+		assert(route.routeNodes.size() > 0);
+		const RouteNode& node = **route.routeNodes.begin();
+
+		switch (node.type)
+		{
+		case ACTION_WALK:
+			// Walking should already be covered by the AI's algorithm
+			break;
+		case ACTION_USE_ELEVATOR:
+			path.type = PATHTYPE_ELEVATOR;
+			path.moveAreaNum = node.toArea;
+			path.moveGoal = _aas->AreaCenter(node.toArea);
+			path.reachability = NULL;
+			path.secondaryGoal = _aas->AreaCenter(node.toArea);
+			return true;
+			break;
+		default:
+			break;
+		};
+	}
+
+	return false;
 }
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)

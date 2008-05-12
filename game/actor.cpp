@@ -703,6 +703,8 @@ void idActor::Spawn( void )
 	
 	finalBoss = spawnArgs.GetBool( "finalBoss" );
 
+	canUseElevators = spawnArgs.GetBool("canOperateElevators", "0");
+
 	FinishSetup();
 
 	ParseAttachmentsAF();

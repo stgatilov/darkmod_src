@@ -358,6 +358,12 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	}
 
 	if ( !reach ) {
+		// No standard reachability, check if the actor can use elevators
+		if (actor->CanUseElevators())
+		{
+			return elevatorSystem->FindRouteToGoal(path, areaNum, origin, goalAreaNum, goalOrigin, travelFlags, actor);
+		}
+
 		return false;
 	}
 

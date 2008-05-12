@@ -304,6 +304,8 @@ public:
 
 	virtual bool			IsKnockedOut( void ) { return false; };
 
+	virtual bool			CanUseElevators() const { return canUseElevators; }
+
 	/** 
 	 * greebo: This gets called by the pathing routine to let the actor
 	 * reconsider the "forbidden" status of the given area. After some time
@@ -380,6 +382,9 @@ protected:
 	bool					finalBoss;
 
 	int						painTime;
+
+	// greebo: Is set to TRUE if this actor can use elevators.
+	bool					canUseElevators;
 
 //	idList<CAttachInfo>	m_Attachments;
 	
