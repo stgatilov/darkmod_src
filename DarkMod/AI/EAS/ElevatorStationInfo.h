@@ -33,6 +33,26 @@ struct ElevatorStationInfo
 		elevator = NULL;
 		elevatorPosition = NULL;
 	}
+
+	void Save(idSaveGame* savefile) const
+	{
+		elevator.Save(savefile);
+		elevatorPosition.Save(savefile);
+
+		savefile->WriteInt(areaNum);
+		savefile->WriteInt(clusterNum);
+		savefile->WriteInt(elevatorNum);
+	}
+
+	void Restore(idRestoreGame* savefile)
+	{
+		elevator.Restore(savefile);
+		elevatorPosition.Restore(savefile);
+
+		savefile->ReadInt(areaNum);
+		savefile->ReadInt(clusterNum);
+		savefile->ReadInt(elevatorNum);
+	}
 };
 typedef boost::shared_ptr<ElevatorStationInfo> ElevatorStationInfoPtr;
 typedef std::list<ElevatorStationInfoPtr> ElevatorStationInfoList;

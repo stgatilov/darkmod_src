@@ -63,4 +63,34 @@ bool RouteInfo::operator!=(const RouteInfo& other) const
 	return !operator==(other);
 }
 
+void RouteInfo::Save(idSaveGame* savefile) const
+{
+	savefile->WriteInt(static_cast<int>(routeType));
+	savefile->WriteInt(target);
+
+	savefile->WriteInt(static_cast<int>(routeNodes.size()));
+	for (RouteNodeList::const_iterator i = routeNodes.begin(); i != routeNodes.end(); i++)
+	{
+		(*i)->Save(savefile);
+	}
+}
+
+void RouteInfo::Restore(idRestoreGame* savefile)
+{
+	int temp;
+	savefile->ReadInt(temp);
+	routeType = static_cast<RouteType>(temp);
+	savefile->ReadInt(target);
+
+	int num;
+	savefile->ReadInt(num);
+	routeNodes.clear();
+	for (int i = 0; i < num; i++)
+	{
+		RouteNodePtr node(new RouteNode);
+		node->Restore(savefile);
+		routeNodes.push_back(node);
+	}
+}
+
 } // namespace eas

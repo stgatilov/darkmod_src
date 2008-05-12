@@ -42,6 +42,9 @@ struct RouteInfo
 
 	bool operator==(const RouteInfo& other) const;
 	bool operator!=(const RouteInfo& other) const;
+
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 };
 typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
 typedef std::list<RouteInfoPtr> RouteInfoList;

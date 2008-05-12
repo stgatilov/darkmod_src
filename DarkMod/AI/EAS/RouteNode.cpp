@@ -48,4 +48,22 @@ bool RouteNode::operator!=(const RouteNode& other) const
 	return !operator==(other);
 }
 
+void RouteNode::Save(idSaveGame* savefile) const
+{
+	savefile->WriteInt(static_cast<int>(type));
+	savefile->WriteInt(toArea);
+	savefile->WriteInt(toCluster);
+	savefile->WriteInt(elevator);
+}
+
+void RouteNode::Restore(idRestoreGame* savefile)
+{
+	int temp;
+	savefile->ReadInt(temp);
+	type = static_cast<ActionType>(temp);
+	savefile->ReadInt(toArea);
+	savefile->ReadInt(toCluster);
+	savefile->ReadInt(elevator);
+}
+
 } // namespace eas

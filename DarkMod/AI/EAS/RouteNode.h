@@ -39,6 +39,9 @@ struct RouteNode
 
 	bool operator==(const RouteNode& other) const;
 	bool operator!=(const RouteNode& other) const;
+
+	void Save(idSaveGame* savefile) const;
+	void Restore(idRestoreGame* savefile);
 };
 typedef boost::shared_ptr<RouteNode> RouteNodePtr;
 typedef std::list<RouteNodePtr> RouteNodeList;

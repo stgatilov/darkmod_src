@@ -276,12 +276,58 @@ void tdmEAS::SetupReachableElevatorStations()
 
 void tdmEAS::Save(idSaveGame* savefile) const
 {
-	// TODO
+	// Elevators
+	savefile->WriteInt(_elevators.Num());
+	for (int i = 0; i < _elevators.Num(); i++)
+	{
+		_elevators[i].Save(savefile);
+	}
+
+	// ClusterInfos
+	savefile->WriteInt(static_cast<int>(_clusterInfo.size()));
+	for (std::size_t i = 0; i < _clusterInfo.size(); i++)
+	{
+		_clusterInfo[i]->Save(savefile);
+	}
+
+	// ElevatorStations
+	savefile->WriteInt(static_cast<int>(_elevatorStations.size()));
+	for (std::size_t i = 0; i < _elevatorStations.size(); i++)
+	{
+		_elevatorStations[i]->Save(savefile);
+	}
 }
 
 void tdmEAS::Restore(idRestoreGame* savefile)
 {
-	// TODO
+	int num;
+
+	// Elevators
+	savefile->ReadInt(num);
+	_elevators.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		_elevators[i].Restore(savefile);
+	}
+
+	// Cluster Infos
+	savefile->ReadInt(num);
+	_clusterInfo.resize(num);
+	for (int i = 0; i < num; i++)
+	{
+		_clusterInfo[i] = ClusterInfoPtr(new ClusterInfo);
+		_clusterInfo[i]->Restore(savefile);
+	}
+
+	// ElevatorStations
+	_elevatorStations.clear();
+	savefile->ReadInt(num);
+	_elevatorStations.resize(num);
+	for (int i = 0; i < num; i++)
+	{
+		_elevatorStations[i] = ElevatorStationInfoPtr(new ElevatorStationInfo);
+		_elevatorStations[i]->Restore(savefile);
+	}
 }
 
 bool tdmEAS::InsertUniqueRouteInfo(int startCluster, int goalCluster, RouteInfoPtr route)
