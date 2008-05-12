@@ -68,12 +68,12 @@ private:
 
 
 class CMultiStateMover;
-class tdmEAS;
+namespace eas { class tdmEAS; }
 
 class idAASLocal : 
 	public idAAS
 {
-	friend class tdmEAS; // TDM's EAS is our friend
+	friend class eas::tdmEAS; // TDM's EAS is our friend
 
 public:
 								idAASLocal( void );
@@ -174,7 +174,7 @@ private:	// routing data
 	idList<idRoutingObstacle *>	obstacleList;			// list with obstacles
 
 	// greebo: This is TDM's EAS "Elevator Awareness System" :)
-	tdmEAS*						elevatorSystem;
+	eas::tdmEAS*				elevatorSystem;
 
 private:	// routing
 	bool						SetupRouting( void );

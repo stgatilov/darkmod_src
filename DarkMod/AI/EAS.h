@@ -20,6 +20,8 @@
 
 class idAASLocal;
 
+namespace eas {
+
 enum RouteType {
 	ROUTE_DUMMY = 0,	// placeholder
 	ROUTE_TO_AREA,		// a route to an AAS area
@@ -253,5 +255,7 @@ private:
 	// Checks the route for redundancies, returns TRUE if the route is accepted
 	bool EvaluateRoute(int startCluster, int goalCluster, int forbiddenElevator, RouteInfoPtr route);
 };
+
+} // namespace eas
 
 #endif /* __AI_EAS_H__ */

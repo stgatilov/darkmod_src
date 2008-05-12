@@ -14,6 +14,8 @@ static bool init_version = FileVersionList("$Id: EAS.cpp 1435 2008-05-11 10:15:2
 
 #include "EAS.h"
 
+namespace eas {
+
 tdmEAS::tdmEAS(idAASLocal* aas) :
 	_aas(aas),
 	_elevatorStations(NULL),
@@ -534,3 +536,5 @@ void tdmEAS::DrawRoute(int startArea, int goalArea)
 		}
 	}
 }
+
+} // namespace eas

@@ -42,7 +42,7 @@ idAASLocal::idAASLocal
 */
 idAASLocal::idAASLocal( void )
 {
-	elevatorSystem = new tdmEAS(this);
+	elevatorSystem = new eas::tdmEAS(this);
 	file = NULL;
 }
 
