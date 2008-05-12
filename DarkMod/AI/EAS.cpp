@@ -16,10 +16,8 @@ static bool init_version = FileVersionList("$Id: EAS.cpp 1435 2008-05-11 10:15:2
 
 tdmEAS::tdmEAS(idAASLocal* aas) :
 	_aas(aas),
-	_numClusterInfos(0),
-	_clusterInfo(NULL),
-	_numElevatorStations(0),
-	_elevatorStations(NULL)
+	_elevatorStations(NULL),
+	_routingIterations(0)
 {}
 
 void tdmEAS::Clear()
@@ -54,83 +52,61 @@ void tdmEAS::Compile()
 
 void tdmEAS::SetupClusterInfoStructures() 
 {
-	if (_clusterInfo != NULL)
-	{
-		// Cluster info must be cleared beforehand
-		ClearClusterInfoStructures();
-	}
+	// Clear the vector and allocate a new one (one structure ptr for each cluster)
+	_clusterInfo.clear();
+	_clusterInfo.resize(_aas->file->GetNumClusters());
 
-	_numClusterInfos = _aas->file->GetNumClusters();
-
-	// Allocate the memory for the pointers
-	_clusterInfo = (ClusterInfo**) Mem_ClearedAlloc(_numClusterInfos * sizeof(ClusterInfo*));
-	
-	for (int i = 0; i < _numClusterInfos; i++)
+	for (std::size_t i = 0; i < _clusterInfo.size(); i++)
 	{
-		const aasCluster_t& cluster = _aas->file->GetCluster(i);
+		const aasCluster_t& cluster = _aas->file->GetCluster(static_cast<int>(i));
 		
-		_clusterInfo[i] = (ClusterInfo*) Mem_ClearedAlloc(sizeof(ClusterInfo));
+		_clusterInfo[i] = ClusterInfoPtr(new ClusterInfo);
 		_clusterInfo[i]->clusterNum = i;
+		// Make sure each ClusterInfo structure can hold RouteInfo pointers to every other cluster
+		_clusterInfo[i]->routeToCluster.resize(_clusterInfo.size());
 	}
 }
 
 void tdmEAS::SetupElevatorStationStructures()
 {
-	if (_elevatorStations != NULL)
-	{
-		ClearElevatorStationStructures();
-	}
+	_elevatorStations.clear();
 
-	_numElevatorStations = 0;
+	std::size_t numElevatorStations = 0;
 	for (int i = 0; i < _elevators.Num(); i++)
 	{
 		CMultiStateMover* elevator = _elevators[i].GetEntity();
 		const idList<MoverPositionInfo>& positionList = elevator->GetPositionInfoList();
-		_numElevatorStations += positionList.Num();
+		numElevatorStations += positionList.Num();
 	}
 
-	// Allocate memory for each elevator station pointer
-	_elevatorStations = (ElevatorStationInfo**) Mem_ClearedAlloc(_numElevatorStations*sizeof(ElevatorStationInfo*));
+	_elevatorStations.resize(numElevatorStations);
 }
 
 void tdmEAS::ClearElevatorStationStructures()
 {
-	if (_elevatorStations != NULL)
-	{
-		for (int i = 0; i < _numElevatorStations; i++)
-		{
-			Mem_Free(_elevatorStations[i]);
-		}
-
-		Mem_Free(_elevatorStations);
-	}
-
-	_elevatorStations = NULL;
+	_elevatorStations.clear();
 }
 
 void tdmEAS::ClearClusterInfoStructures()
 {
-	if (_clusterInfo != NULL)
-	{
-		for (int i = 0; i < _numClusterInfos; i++)
-		{
-			if (_clusterInfo[i]->reachableElevatorStationIndex != NULL)
-			{
-				Mem_Free(_clusterInfo[i]->reachableElevatorStationIndex);
-			}
+	_clusterInfo.clear();
+}
 
-			Mem_Free(_clusterInfo[i]);
-		}
+int tdmEAS::GetAreaNumForPosition(const idVec3& position)
+{
+	int areaNum = _aas->file->PointReachableAreaNum(position, _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
 
-		Mem_Free(_clusterInfo);
-	}
+	// If areaNum could not be determined, try again at a slightly higher position
+	if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(position + idVec3(0,0,16), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
+	if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(position + idVec3(0,0,32), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
+	if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(position + idVec3(0,0,48), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
 
-	_clusterInfo = NULL;
+	return areaNum;
 }
 
 void tdmEAS::AssignElevatorsToClusters()
 {
-	int stationIndex = 0;
+	std::size_t stationIndex = 0;
 	for (int i = 0; i < _elevators.Num(); i++)
 	{
 		CMultiStateMover* elevator = _elevators[i].GetEntity();
@@ -140,14 +116,8 @@ void tdmEAS::AssignElevatorsToClusters()
 		for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
 		{
 			CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
-			idVec3 origin = positionEnt->GetPhysics()->GetOrigin();
-						
-			int areaNum = _aas->file->PointReachableAreaNum(origin, _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
-
-			// If areaNum could not be determined, try again at a slightly higher position
-			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,16), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
-			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,32), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
-			if (areaNum == 0) areaNum = _aas->file->PointReachableAreaNum(origin + idVec3(0,0,48), _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
+									
+			int areaNum = GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin());
 
 			if (areaNum == 0)
 			{
@@ -158,13 +128,13 @@ void tdmEAS::AssignElevatorsToClusters()
 			const aasArea_t& area = _aas->file->GetArea(areaNum);
 			_clusterInfo[area.cluster]->numElevatorStations++;
 
-			// Allocate a new ElevatorStationStructure for this station
-			_elevatorStations[stationIndex] = (ElevatorStationInfo*) Mem_Alloc(sizeof(ElevatorStationInfo));
-			
+			// Allocate a new ElevatorStationStructure for this station and fill in the data
+			_elevatorStations[stationIndex] = ElevatorStationInfoPtr(new ElevatorStationInfo);
 			_elevatorStations[stationIndex]->elevator = elevator;
 			_elevatorStations[stationIndex]->elevatorPosition = positionEnt;
 			_elevatorStations[stationIndex]->areaNum = areaNum;
 			_elevatorStations[stationIndex]->clusterNum = area.cluster;
+
 			stationIndex++;
 		}
 	}
@@ -172,23 +142,89 @@ void tdmEAS::AssignElevatorsToClusters()
 
 void tdmEAS::SetupClusterRouting()
 {
-	for (int cluster = 0; cluster < _numClusterInfos; cluster++)
+	// First, find all the reachable elevator stations (for each cluster)
+	SetupReachableElevatorStations();
+
+	// At this point, all clusters know their reachable elevator stations (numReachableElevatorStations is set)
+	SetupRoutesBetweenClusters();
+}
+
+void tdmEAS::SetupRoutesBetweenClusters()
+{
+	for (std::size_t startCluster = 0; startCluster < _clusterInfo.size(); startCluster++)
+	{
+		int startArea = _aas->GetAreaInCluster(startCluster);
+
+		if (startArea <= 0) continue;
+		
+		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
+		{
+			// No routes so far, clear the list
+			_clusterInfo[startCluster]->routeToCluster[goalCluster].clear();
+
+			if (goalCluster == startCluster) continue;
+
+			int goalArea = _aas->GetAreaInCluster(goalCluster);
+			if (goalArea <= 0) continue;
+
+			_routingIterations = 0;
+			// We can't reach the other cluster by walking, let's check if we can find a route using elevators
+			//RouteInfo* info = FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
+		}
+	}
+
+	CondenseRouteInfo();
+}
+
+void tdmEAS::CondenseRouteInfo()
+{
+	// Disregard empty or invalid RouteInfo structures
+	for (std::size_t startCluster = 0; startCluster < _clusterInfo.size(); startCluster++)
+	{
+		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
+		{
+			for (RouteInfoList::iterator i = _clusterInfo[startCluster]->routeToCluster[goalCluster].begin();
+				 i != _clusterInfo[startCluster]->routeToCluster[goalCluster].end(); /* in-loop increment */)
+			{
+				RouteInfoPtr& info = *i;
+				if (info == NULL || info->routeNodes.empty())
+				{
+					// clear out empty RouteInfos
+					_clusterInfo[startCluster]->routeToCluster[goalCluster].erase(i++);
+					continue;
+				}
+				else
+				{
+					i++;
+				}
+			}
+		}
+	}
+}
+
+void tdmEAS::SetupReachableElevatorStations()
+{
+	for (std::size_t cluster = 0; cluster < _clusterInfo.size(); cluster++)
 	{
 		// Find an area within that cluster
-		int areaNum = _aas->GetAreaInCluster(cluster);
+		int areaNum = _aas->GetAreaInCluster(static_cast<int>(cluster));
 
 		if (areaNum <= 0)
 		{
-			gameLocal.Warning("No areas in cluster %d?\n", cluster);
 			continue;
 		}
 
 		idList<int> elevatorStationIndices;
 
 		// For each cluster, try to setup a route to all elevator stations
-		for (int e = 0; e < _numElevatorStations; e++)
+		for (std::size_t e = 0; e < _elevatorStations.size(); e++)
 		{
-			/*idBounds areaBounds = _aas->GetAreaBounds(areaNum);
+			if (_elevatorStations[e] == NULL)
+			{
+				continue;
+			}
+
+			idBounds areaBounds = _aas->GetAreaBounds(areaNum);
 			idVec3 areaCenter = _aas->AreaCenter(areaNum);
 
 			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
@@ -198,38 +234,21 @@ void tdmEAS::SetupClusterRouting()
 			idVec3 areaCenter2 = _aas->AreaCenter(_elevatorStations[e]->areaNum);
 
 			gameRenderWorld->DrawText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
-			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);*/
+			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);
 
 			idReachability* reach;
 			int travelTime = 0;
 			bool routeFound = _aas->RouteToGoalArea(areaNum, _aas->AreaCenter(areaNum), 
 				_elevatorStations[e]->areaNum, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
 
-			//gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
+			gameRenderWorld->DebugArrow(routeFound ? colorGreen : colorRed, areaCenter, areaCenter2, 1, 50000);
 			
 			if (routeFound) 
 			{
 				//gameLocal.Printf("Cluster %d can reach elevator station %s\n", cluster, _elevatorStations[e]->elevatorPosition.GetEntity()->name.c_str());
-				_clusterInfo[cluster]->numReachableElevatorStations++;
 				// Add the elevator index to the list
-				elevatorStationIndices.Append(e);
+				_clusterInfo[cluster]->reachableElevatorStations.push_back(_elevatorStations[e]);
 			}
-		}
-
-		// Now, allocate the elevator indices array
-		if (elevatorStationIndices.Num() > 0)
-		{
-			_clusterInfo[cluster]->reachableElevatorStationIndex = 
-				(unsigned short*) Mem_ClearedAlloc(elevatorStationIndices.Num() * sizeof(unsigned short));
-
-			for (int i = 0; i < elevatorStationIndices.Num(); i++)
-			{
-				_clusterInfo[cluster]->reachableElevatorStationIndex[i] = elevatorStationIndices[i];
-			}
-		}
-		else 
-		{
-			_clusterInfo[cluster]->reachableElevatorStationIndex = NULL;
 		}
 	}
 }
@@ -242,4 +261,116 @@ void tdmEAS::Save(idSaveGame* savefile) const
 void tdmEAS::Restore(idRestoreGame* savefile)
 {
 	// TODO
+}
+
+RouteInfoPtr tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
+{
+	_routingIterations++;
+	DM_LOG(LC_AI, LT_INFO).LogString("EAS routing iteration level = %d\r", _routingIterations);
+
+	RouteInfoPtr returnCandidate;
+
+	/**
+	 * greebo: Pseudo-Code:
+	 *
+	 * 1. Check if we already have routing information to the target cluster, exit if yes
+	 * 2. Check if we can walk right up to the target cluster, if yes: fill in the RouteNode and exit
+	 * 3. Check all reachable elevator stations and all clusters reachable from there. Go to 1. for each of those.
+	 */
+
+	if (startCluster == goalCluster)
+	{
+		// Do nothing for start == goal
+	}
+	else if (_clusterInfo[startCluster]->routeToCluster[goalCluster].size() > 0)
+	{
+		// Routing information to the goal cluster is right there, return it
+		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d already exists.\r", startCluster, goalCluster);
+		returnCandidate = *_clusterInfo[startCluster]->routeToCluster[goalCluster].begin();
+	}
+	else
+	{
+		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
+
+		// Allocate a new RouteInfo* structure
+		RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+		returnCandidate = info;
+
+		// Put the RouteInfo structure in the according slot, so that this route is not re-evaluated again
+		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+
+		// No routing information, check walk path to the goal cluster
+		idReachability* reach;
+		int travelTime = 0;
+		bool routeFound = _aas->RouteToGoalArea(startArea, _aas->AreaCenter(startArea), 
+			goalArea, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
+
+		if (routeFound) 
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Can walk from cluster %d to %d.\r", startCluster, goalCluster);
+			// Walk path possible, fill the WalkRouteNode into the RouteInfo
+			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea));
+			returnCandidate->routeNodes.push_back(node);
+		}
+		else 
+		{
+			DM_LOG(LC_AI, LT_INFO).LogString("Can NOT walk from cluster %d to %d.\r", startCluster, goalCluster);
+
+			// No walk path possible, check all elevator stations that are reachable from this cluster
+			for (ElevatorStationInfoList::const_iterator station = _clusterInfo[startCluster]->reachableElevatorStations.begin();
+				 station != _clusterInfo[startCluster]->reachableElevatorStations.end(); station++)
+			{
+				const ElevatorStationInfoPtr& elevatorInfo = *station;
+
+				const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
+
+				// This will be a set of area candidates to spread out the pathing
+				idList<int> areaCandidates;
+				// Add the source area first, this one will be skipped
+				areaCandidates.Append(elevatorInfo->areaNum);
+
+				// Add possible candidates
+				for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
+				{
+					CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+					areaCandidates.AddUnique(GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin()));
+				}
+
+				DM_LOG(LC_AI, LT_INFO).LogString("Found %d elevator stations reachable from cluster %d (goal cluster = %d).\r", areaCandidates.Num(), startCluster, goalCluster);
+
+				// Now look at all elevator floors and route from there (but skip the first one, which is the source area)
+				for (int i = 1; i < areaCandidates.Num(); i++)
+				{
+					int nextArea = areaCandidates[i];
+					if (nextArea <= 0) continue;
+
+					int nextCluster = _aas->file->GetArea(nextArea).cluster;
+
+					DM_LOG(LC_AI, LT_INFO).LogString("Checking elevator station %d reachable from cluster %d (goal cluster = %d).\r", i, startCluster, goalCluster);
+
+					if (nextCluster == goalCluster)
+					{
+						DM_LOG(LC_AI, LT_INFO).LogString("Elevator leads right to the target cluster %d.\r", goalCluster);
+						// Hooray, the elevator leads right to the goal cluster, write that down
+						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, goalArea)));
+						_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+					}
+					else 
+					{
+						DM_LOG(LC_AI, LT_INFO).LogString("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
+						// The elevator station does not start in the goal cluster, find a way from there
+						RouteInfoPtr info = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
+						// Append the route information to the existing chain
+						_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(info);
+					}
+				}
+			}
+		}
+	}
+
+	assert(_routingIterations > 0);
+	_routingIterations--;
+
+	return returnCandidate;
 }

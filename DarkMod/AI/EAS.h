@@ -13,16 +13,63 @@
 #include "../idlib/precompiled.h"
 #include "../MultiStateMover.h"
 #include "../../game/ai/aas_local.h"
+#include <set>
+#include <vector>
+#include <list>
+#include <boost/shared_ptr.hpp>
 
 class idAASLocal;
 
-struct ClusterInfo 
-{
-	int clusterNum;									// The number of this cluster
-	unsigned short numElevatorStations;			// the number of elevator stations in this cluster
-	unsigned short numReachableElevatorStations;	// the number of REACHABLE elevator stations (reachable by walking)
-	unsigned short* reachableElevatorStationIndex;	// a pointer to the index number array of the elevator stations (e.g. => "3","2","5")
+enum RouteType {
+	ROUTE_TO_AREA = 0,	// a route to an AAS area
+	ROUTE_TO_CLUSTER,	// a route to an AAS cluster
+	NUM_ROUTE_TYPES,
 };
+
+enum ActionType {
+	ACTION_WALK = 0,		// AI just needs to walk to the target
+	ACTION_USE_ELEVATOR,	// AI needs to use an elevator
+	NUM_ACTIONS,
+};
+
+struct RouteNode
+{
+	ActionType type;	// what needs to be done in this route section (walk?, use elevator?)
+	int index;			// the index number, depends on the route section (can be an elevator index or an AAS number)
+
+	RouteNode() :
+		type(ACTION_WALK),
+		index(0)
+	{}
+
+	RouteNode(ActionType t, int i) :
+		type(t),
+		index(i)
+	{}
+};
+typedef boost::shared_ptr<RouteNode> RouteNodePtr;
+typedef std::list<RouteNodePtr> RouteNodeList;
+
+// A route info contains information of how to get to a specific target
+struct RouteInfo
+{
+	RouteType routeType;		// ROUTE_TO_AREA or ROUTE_TO_CLUSTER, ...
+	int target;					// either the target AREA or the target CLUSTER number, depending on routeType
+	RouteNodeList routeNodes;	// contains the actual route node chain (WALK, USE_ELEVATOR, WALK, etc.)
+
+	RouteInfo() :
+		routeType(ROUTE_TO_CLUSTER),
+		target(-1)
+	{}
+
+	RouteInfo(RouteType type, int targetNum) :
+		routeType(type),
+		target(targetNum)
+	{}
+};
+typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
+typedef std::list<RouteInfoPtr> RouteInfoList;
+typedef std::vector<RouteInfoList> RouteInfoListVector;
 
 struct ElevatorStationInfo
 {
@@ -30,7 +77,31 @@ struct ElevatorStationInfo
 	idEntityPtr<CMultiStateMoverPosition> elevatorPosition;	// The elevator position entity
 	int areaNum;											// The area number of this elevator station
 	int clusterNum;											// The cluster number of this elevator station
+
+	ElevatorStationInfo() :
+		areaNum(-1),
+		clusterNum(-1)
+	{
+		elevator = NULL;
+		elevatorPosition = NULL;
+	}
 };
+typedef boost::shared_ptr<ElevatorStationInfo> ElevatorStationInfoPtr;
+typedef std::list<ElevatorStationInfoPtr> ElevatorStationInfoList;
+
+struct ClusterInfo 
+{
+	int clusterNum;										// The number of this cluster
+	unsigned short numElevatorStations;				// the number of elevator stations in this cluster
+	ElevatorStationInfoList reachableElevatorStations;	// references to the reachable elevator stations
+	RouteInfoListVector routeToCluster;					// for each cluster, a std::list of possible routes (can be empty)
+
+	ClusterInfo() :
+		clusterNum(-1),
+		numElevatorStations(0)
+	{}
+};
+typedef boost::shared_ptr<ClusterInfo> ClusterInfoPtr;
 
 /**
  * greebo: The EAS ("Elevator Awareness System") provides some extended
@@ -49,12 +120,15 @@ class tdmEAS
 	idList< idEntityPtr<CMultiStateMover> > _elevators;
 
 	// The array of ClusterInfoStructures
-	int _numClusterInfos;
-	ClusterInfo** _clusterInfo;
+	typedef std::vector<ClusterInfoPtr> ClusterInfoVector;
+	ClusterInfoVector _clusterInfo;
 
 	// An array of dynamically allocated elevator stations
-	int _numElevatorStations;
-	ElevatorStationInfo** _elevatorStations;
+	typedef std::vector<ElevatorStationInfoPtr> ElevatorStationVector;
+	ElevatorStationVector _elevatorStations;
+
+	// Temporary calculation variables, don't need to be saved
+	mutable int _routingIterations;
 
 public:
 	// Initialise the EAS with a valid AAS reference
@@ -88,6 +162,20 @@ private:
 	void AssignElevatorsToClusters();
 
 	void SetupClusterRouting();
+	void SetupReachableElevatorStations();
+	void SetupRoutesBetweenClusters();
+
+	RouteNode* AllocRouteNode(ActionType actionType, int goalArea);
+	RouteInfo* AllocRouteInfo(RouteType routeType, int goalIndex);
+
+	void CondenseRouteInfo();
+
+	// Calculates all possible routes from the startCluster/startArea to goalCluster/goalArea 
+	// (returns NULL for goalCluster == startCluster)
+	RouteInfoPtr FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea);
+
+	// Returns the AAS area number for the given position
+	int GetAreaNumForPosition(const idVec3& position);
 };
 
 #endif /* __AI_EAS_H__ */
