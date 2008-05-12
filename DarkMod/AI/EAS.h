@@ -130,7 +130,7 @@ struct RouteInfo
 	}
 };
 typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
-typedef std::set<RouteInfoPtr> RouteInfoList;
+typedef std::list<RouteInfoPtr> RouteInfoList;
 typedef std::vector<RouteInfoList> RouteInfoListVector;
 
 struct ElevatorStationInfo
@@ -228,7 +228,12 @@ private:
 	void SetupReachableElevatorStations();
 	void SetupRoutesBetweenClusters();
 
+	// Removes all empty and dummy routes
 	void CondenseRouteInfo();
+
+	// Sorts the existing routes (fastest first)
+	void SortRoutes();
+	void SortRoute(int startCluster, int goalCluster);
 
 	// Retrieves the internal index of the given mover (or -1 if the mover is not registered)
 	int GetElevatorIndex(CMultiStateMover* mover);

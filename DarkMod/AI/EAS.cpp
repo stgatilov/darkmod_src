@@ -138,6 +138,12 @@ void tdmEAS::SetupClusterRouting()
 
 	// At this point, all clusters know their reachable elevator stations (numReachableElevatorStations is set)
 	SetupRoutesBetweenClusters();
+
+	// Remove all dummy routes
+	CondenseRouteInfo();
+
+	// Sort the remaining routes (number of hops is the key)
+	SortRoutes();
 }
 
 void tdmEAS::SetupRoutesBetweenClusters()
@@ -162,8 +168,45 @@ void tdmEAS::SetupRoutesBetweenClusters()
 			FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
 		}
 	}
+}
 
-	CondenseRouteInfo();
+void tdmEAS::SortRoutes()
+{
+	for (std::size_t startCluster = 0; startCluster < _clusterInfo.size(); startCluster++)
+	{
+		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
+		{
+			SortRoute(startCluster, goalCluster);
+		}
+	}
+}
+
+void tdmEAS::SortRoute(int startCluster, int goalCluster)
+{
+	// Use a std::map to sort the Routes after their number of "hops"
+	typedef std::map<std::size_t, RouteInfoPtr> RouteSortMap;
+
+	RouteInfoList& routeList = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+	RouteSortMap sorted;
+
+	// Insert the routeInfo structures, using the hop size as index
+	for (RouteInfoList::const_iterator i = routeList.begin(); i != routeList.end(); i++)
+	{
+		sorted.insert(RouteSortMap::value_type(
+			(*i)->routeNodes.size(), // number of hops
+			(*i)					 // RouteInfoPtr
+		));
+	}
+
+	// Wipe the unsorted list
+	routeList.clear();
+
+	// Re-insert the items
+	for (RouteSortMap::const_iterator i = sorted.begin(); i != sorted.end(); i++)
+	{
+		routeList.push_back(i->second);
+	}
 }
 
 void tdmEAS::CondenseRouteInfo()
@@ -173,21 +216,7 @@ void tdmEAS::CondenseRouteInfo()
 	{
 		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
 		{
-			for (RouteInfoList::iterator i = _clusterInfo[startCluster]->routeToCluster[goalCluster].begin();
-				 i != _clusterInfo[startCluster]->routeToCluster[goalCluster].end(); /* in-loop increment */)
-			{
-				RouteInfoPtr& info = *i;
-				if (info == NULL || info->routeNodes.empty())
-				{
-					// clear out empty RouteInfos
-					_clusterInfo[startCluster]->routeToCluster[goalCluster].erase(i++);
-					continue;
-				}
-				else
-				{
-					i++;
-				}
-			}
+			CleanRouteInfo(startCluster, goalCluster);
 		}
 	}
 }
@@ -267,7 +296,7 @@ bool tdmEAS::InsertUniqueRouteInfo(int startCluster, int goalCluster, RouteInfoP
 		}
 	}
 
-	routeList.insert(route);
+	routeList.push_back(route);
 	return true;
 }
 
@@ -277,7 +306,7 @@ void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
 
 	for (RouteInfoList::iterator i = routeList.begin(); i != routeList.end(); /* in-loop increment */)
 	{
-		if ((*i)->routeNodes.empty())
+		if ((*i)->routeNodes.empty() || (*i)->routeType == ROUTE_DUMMY)
 		{
 			routeList.erase(i++);
 		}
@@ -316,7 +345,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 		// Insert a dummy route into the _clusterInfo matrix, so that we don't come here again
 		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
-		_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(dummyRoute);
+		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(dummyRoute);
 
 		// No routing information, check walk path to the goal cluster
 		idReachability* reach;
@@ -425,7 +454,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	if (_clusterInfo[startCluster]->routeToCluster[goalCluster].empty())
 	{
 		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
-		_clusterInfo[startCluster]->routeToCluster[goalCluster].insert(dummyRoute);
+		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(dummyRoute);
 	}
 
 	assert(_routingIterations > 0);
