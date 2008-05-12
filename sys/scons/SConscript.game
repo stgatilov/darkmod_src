@@ -179,6 +179,8 @@ AI/DoorInfo.cpp \
 AI/Mind.cpp \
 AI/Memory.cpp \
 AI/Subsystem.cpp \
+AI/EAS/RouteInfo.cpp \
+AI/EAS/RouteNode.cpp \
 AI/States/AgitatedSearchingState.cpp \
 AI/States/AlertIdleState.cpp \
 AI/States/BlindedState.cpp \

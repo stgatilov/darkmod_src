@@ -594,6 +594,30 @@
 					RelativePath=".\DarkMod\Ai\Subsystem.h">
 				</File>
 				<Filter
+					Name="EAS"
+					>
+					<File
+						RelativePath=".\DarkMod\AI\EAS\ElevatorStationInfo.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\EAS\RouteInfo.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\EAS\RouteInfo.h"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\EAS\RouteNode.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\DarkMod\AI\EAS\RouteNode.h"
+						>
+					</File>
+				</Filter>
+				<Filter
 					Name="States"
 					Filter="">
 					<File
