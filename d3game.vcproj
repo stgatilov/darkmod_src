@@ -591,6 +591,10 @@
 					Name="EAS"
 					>
 					<File
+						RelativePath=".\DarkMod\AI\EAS\ClusterInfo.h"
+						>
+					</File>
+					<File
 						RelativePath=".\DarkMod\AI\EAS\ElevatorStationInfo.h"
 						>
 					</File>

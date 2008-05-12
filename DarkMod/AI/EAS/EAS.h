@@ -21,24 +21,11 @@
 #include "RouteNode.h"
 #include "RouteInfo.h"
 #include "ElevatorStationInfo.h"
+#include "ClusterInfo.h"
 
 class idAASLocal;
 
 namespace eas {
-
-struct ClusterInfo 
-{
-	int clusterNum;										// The number of this cluster
-	unsigned short numElevatorStations;				// the number of elevator stations in this cluster
-	ElevatorStationInfoList reachableElevatorStations;	// references to the reachable elevator stations
-	RouteInfoListVector routeToCluster;					// for each cluster, a std::list of possible routes (can be empty)
-
-	ClusterInfo() :
-		clusterNum(-1),
-		numElevatorStations(0)
-	{}
-};
-typedef boost::shared_ptr<ClusterInfo> ClusterInfoPtr;
 
 /**
  * greebo: The EAS ("Elevator Awareness System") provides some extended
