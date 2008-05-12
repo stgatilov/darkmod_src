@@ -525,7 +525,7 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 
 		int clusterNum = file->GetArea(i).cluster;
 
-		idVec4 colour = (clusterNum == -1) ? colorWhite : colours[clusterNum];
+		idVec4 colour = (clusterNum <= 0) ? colorWhite : colours[clusterNum];
 
 		// angua: only draw areas near the player, no need to see them at the other end of the map
 		if ((areaCenter - playerOrigin).LengthFast() < 1000)
