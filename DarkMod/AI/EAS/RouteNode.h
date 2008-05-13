@@ -27,12 +27,13 @@ struct RouteNode
 	int toArea;				// the target AAS area number
 	int toCluster;			// the target AAS cluster number
 	int elevator;			// the elevator number (is -1 if no elevator to be used in this node)
+	int elevatorStation;	// The elevator station number of this position (-1 if unused)
 
 	// Default constructor
 	RouteNode();
 
 	// Specialised constructor
-	RouteNode(ActionType t, int goalArea, int goalCluster, int elevatorNum = -1);
+	RouteNode(ActionType t, int goalArea, int goalCluster, int elevatorNum = -1, int elevatorStationNum = -1);
 
 	// Copy constructor
 	RouteNode(const RouteNode& other);

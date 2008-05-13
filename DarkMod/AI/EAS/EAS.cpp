@@ -423,6 +423,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 				 station != _clusterInfo[startCluster]->reachableElevatorStations.end(); station++)
 			{
 				const ElevatorStationInfoPtr& elevatorInfo = *station;
+				int elevatorStationIndex = GetElevatorStationIndex(elevatorInfo);
 
 				// Get all stations reachable via this elevator
 				const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
@@ -456,7 +457,8 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						// Hooray, the elevator leads right to the goal cluster, write that down
 						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
 						//info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
-						info->routeNodes.push_back(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
+						RouteNodePtr node(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum, elevatorStationIndex));
+						info->routeNodes.push_back(node);
 
 						// Save this USE_ELEVATOR route into this startCluster
 						InsertUniqueRouteInfo(startCluster, goalCluster, info);
@@ -483,7 +485,8 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 							RouteInfoPtr newRoute(new RouteInfo(*foundRoute));
 
 							// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
-							newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum)));
+							RouteNodePtr node(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum, elevatorStationIndex));
+							newRoute->routeNodes.push_front(node);
 							//newRoute->routeNodes.push_front(RouteNodePtr(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum)));
 							
 							// Add the compiled information to our repository
@@ -546,6 +549,19 @@ int tdmEAS::GetElevatorIndex(CMultiStateMover* mover)
 	return -1; // not found
 }
 
+int tdmEAS::GetElevatorStationIndex(ElevatorStationInfoPtr info)
+{
+	for (std::size_t i = 0; i < _elevatorStations.size(); i++)
+	{
+		if (_elevatorStations[i] == info)
+		{
+			return static_cast<int>(i); // found!
+		}
+	}
+
+	return -1;
+}
+
 bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor) 
 {
 	assert(_aas != NULL);
@@ -579,6 +595,8 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 			path.moveGoal = _aas->AreaCenter(node.toArea);
 			path.reachability = NULL;
 			path.secondaryGoal = _aas->AreaCenter(node.toArea);
+			// Notify the AI that it needs to use an elevator
+			//actor->OnNeedsToUseElevator(_elevatorStations[node.elevator]->elevatorPosition.GetEntity());
 			return true;
 			break;
 		default:
