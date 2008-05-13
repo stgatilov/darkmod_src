@@ -74,7 +74,7 @@ public:
 
 	// This is the analogous method to idAAS::RouteToGoal. The path variable will contain the right pathing information if a goal was found.
 	// returns TRUE if a route was found, FALSE otherwise.
-	bool FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor);
+	bool FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor);
 
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;

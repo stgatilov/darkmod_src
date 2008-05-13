@@ -1036,7 +1036,7 @@ idRoutingCache *idAASLocal::GetPortalRoutingCache( int clusterNum, int areaNum, 
 idAASLocal::RouteToGoalArea
 ============
 */
-bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const {
+bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const {
 	// Set the default return values
 	travelTime = 0;
 	*reach = NULL;

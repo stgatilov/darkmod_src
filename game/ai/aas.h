@@ -151,7 +151,7 @@ public:
 	 *       b) the clusters are connected via a portal.
 	 */
 	// Get the travel time and first reachability to be used towards the goal, returns true if there is a path.
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const = 0;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const = 0;
 
 	/**
 	 * greebo: Tries to set up a walk path from areaNum/origin to goalAreaNum/goalOrigin for the given travel flags.
@@ -165,20 +165,20 @@ public:
 	 * @returns: TRUE if a walk path could be found, FALSE otherwise.
 	 */
 	// Creates a walk path towards the goal.
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor ) const = 0;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) = 0;
 
 								/** 
 								 * Returns true if one can walk along a straight line from the origin to the goal origin.
 								 * angua: actor is used to handle AI-specific pathing, such as forbidden areas (e.g. locked doors)
 								 * actor can be NULL
 								 */
-	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, const idActor* actor ) const = 0;
+	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor ) const = 0;
 								// Creates a fly path towards the goal.
 	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const = 0;
 								// Returns true if one can fly along a straight line from the origin to the goal origin.
 	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const = 0;
 								// Show the walk path from the origin towards the area.
-	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const = 0;
+	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) = 0;
 								// Show the fly path from the origin towards the area.
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const = 0;
 								// Find the nearest goal which satisfies the callback.

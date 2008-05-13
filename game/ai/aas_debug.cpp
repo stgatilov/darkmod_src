@@ -239,7 +239,7 @@ void idAASLocal::ShowArea( const idVec3 &origin ) const {
 idAASLocal::ShowWalkPath
 ============
 */
-void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
+void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
 	idVec3 org, areaCenter;
@@ -355,7 +355,7 @@ void idAASLocal::ShowWallEdges( const idVec3 &origin ) const {
 idAASLocal::ShowHideArea
 ============
 */
-void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
+void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) {
 	int areaNum, numObstacles;
 	idVec3 target;
 	aasGoal_t goal;
@@ -383,7 +383,7 @@ void idAASLocal::ShowHideArea( const idVec3 &origin, int targetAreaNum ) const {
 idAASLocal::PullPlayer
 ============
 */
-bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
+bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) {
 	int areaNum;
 	idVec3 areaCenter, dir, vel;
 	idAngles delta;
@@ -434,7 +434,7 @@ bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) const {
 idAASLocal::RandomPullPlayer
 ============
 */
-void idAASLocal::RandomPullPlayer( const idVec3 &origin ) const {
+void idAASLocal::RandomPullPlayer( const idVec3 &origin ) {
 	int rnd, i, n;
 
 	if ( !PullPlayer( origin, aas_pullPlayer.GetInteger() ) ) {
@@ -531,10 +531,10 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 		idVec4 colour = (clusterNum <= 0) ? colorWhite : colours[clusterNum];
 
 		// angua: only draw areas near the player, no need to see them at the other end of the map
-		if ((areaCenter - playerOrigin).LengthFast() < 1000)
+		if ((areaCenter - playerOrigin).LengthFast() < 300)
 		{
-			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, colour, playerViewMatrix, 1, 10000);
-			gameRenderWorld->DebugBox(colour, idBox(areaBounds), 10000);
+			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, colour, playerViewMatrix, 1, 1000);
+			gameRenderWorld->DebugBox(colour, idBox(areaBounds), 1000);
 		}
 	}
 

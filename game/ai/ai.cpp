@@ -2347,7 +2347,7 @@ This is feakin' slow, so it's not good to do it too many times per frame.  It al
 are from the goal, so try to break the goals up into shorter distances.
 =====================
 */
-float idAI::TravelDistance( const idVec3 &start, const idVec3 &end ) const {
+float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
 	int			fromArea;
 	int			toArea;
 	float		dist;
@@ -5865,7 +5865,7 @@ bool idAI::SetEnemy(idActor* newEnemy)
 idAI::FirstVisiblePointOnPath
 ============
 */
-idVec3 idAI::FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target, int travelFlags ) const {
+idVec3 idAI::FirstVisiblePointOnPath( const idVec3 origin, const idVec3 &target, int travelFlags ) {
 	int i, areaNum, targetAreaNum, curAreaNum, travelTime;
 	idVec3 curOrigin;
 	idReachability *reach;

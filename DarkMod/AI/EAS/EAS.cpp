@@ -562,7 +562,7 @@ int tdmEAS::GetElevatorStationIndex(ElevatorStationInfoPtr info)
 	return -1;
 }
 
-bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor) 
+bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor) 
 {
 	assert(_aas != NULL);
 	int startCluster = _aas->file->GetArea(areaNum).cluster;
@@ -596,7 +596,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 			path.reachability = NULL;
 			path.secondaryGoal = _aas->AreaCenter(node.toArea);
 			// Notify the AI that it needs to use an elevator
-			//actor->OnNeedsToUseElevator(_elevatorStations[node.elevator]->elevatorPosition.GetEntity());
+			actor->NeedToUseElevator(_elevatorStations[node.elevator]->elevatorPosition.GetEntity());
 			return true;
 			break;
 		default:

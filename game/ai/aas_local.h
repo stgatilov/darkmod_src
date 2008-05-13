@@ -102,12 +102,12 @@ public:
 	virtual void				RemoveObstacle( const aasHandle_t handle );
 	virtual void				RemoveAllObstacles( void );
 	virtual int					TravelTimeToGoalArea( int areaNum, const idVec3 &origin, int goalAreaNum, int travelFlags, idActor* actor ) const;
-	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, const idActor* actor ) const;
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, const idActor* actor ) const;
-	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, const idActor* actor) const;
+	virtual bool				RouteToGoalArea( int areaNum, const idVec3 origin, int goalAreaNum, int travelFlags, int &travelTime, idReachability **reach, idActor* actor ) const;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor );
+	virtual bool				WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum, idActor* actor) const;
 	virtual bool				FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const;
 	virtual bool				FlyPathValid( int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idVec3 &endPos, int &endAreaNum ) const;
-	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
+	virtual void				ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin );
 	virtual void				ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const;
 	virtual bool				FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback, unsigned short maxTravelCost=0 ) const;
 	virtual bool				FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const idVec3 origin, const idVec3 &target, int travelFlags, aasObstacle_t *obstacles, int numObstacles, idAASCallback &callback ) const;
@@ -209,7 +209,7 @@ private:	// routing
 private:	// pathing
 	bool						EdgeSplitPoint( idVec3 &split, int edgeNum, const idPlane &plane ) const;
 	bool						FloorEdgeSplitPoint( idVec3 &split, int areaNum, const idPlane &splitPlane, const idPlane &frontPlane, bool closest ) const;
-	idVec3						SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum, const idActor* actor ) const;
+	idVec3						SubSampleWalkPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum, idActor* actor );
 	idVec3						SubSampleFlyPath( int areaNum, const idVec3 &origin, const idVec3 &start, const idVec3 &end, int travelFlags, int &endAreaNum ) const;
 
 public:	// debug
@@ -221,9 +221,9 @@ public:	// debug
 	void						DrawReachability( const idReachability *reach ) const;
 	void						ShowArea( const idVec3 &origin ) const;
 	void						ShowWallEdges( const idVec3 &origin ) const;
-	void						ShowHideArea( const idVec3 &origin, int targerAreaNum ) const;
-	bool						PullPlayer( const idVec3 &origin, int toAreaNum ) const;
-	void						RandomPullPlayer( const idVec3 &origin ) const;
+	void						ShowHideArea( const idVec3 &origin, int targerAreaNum );
+	bool						PullPlayer( const idVec3 &origin, int toAreaNum );
+	void						RandomPullPlayer( const idVec3 &origin );
 	void						ShowPushIntoArea( const idVec3 &origin ) const;
 	void						DrawAreas( const idVec3& playerOrigin );
 	void						DrawEASRoute( const idVec3& playerOrigin, int goalArea );
