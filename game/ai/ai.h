@@ -537,6 +537,9 @@ public:
 
 	float GetArmReachLength();
 
+	void NeedToUseElevator(CMultiStateMoverPosition* pos);
+
+
 protected:
 	// navigation
 	idAAS *					aas;

@@ -16,6 +16,7 @@ static bool init_version = FileVersionList("$Id: State.cpp 1435 2007-10-16 16:53
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/HandleDoorTask.h"
+#include "../Tasks/HandleElevatorTask.h"
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
 #include "SearchingState.h"
@@ -1517,5 +1518,18 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 		owner->GetSubsystem(SubsysMovement)->PushTask(HandleDoorTask::CreateInstance());
 	}
 }
+
+void State::NeedToUseElevator(CMultiStateMoverPosition* pos)
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	if (owner->CanUseElevators())
+	{
+		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(pos)));
+	}
+
+}
+
 
 } // namespace ai

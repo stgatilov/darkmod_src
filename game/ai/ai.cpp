@@ -9216,6 +9216,12 @@ float idAI::GetArmReachLength()
 	}
 }
 
+void idAI::NeedToUseElevator(CMultiStateMoverPosition* pos)
+{
+	mind->GetState()->NeedToUseElevator(pos);
+}
+
+
 bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 {
 	// Look through list of unlockable doors set by spawnarg

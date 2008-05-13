@@ -357,6 +357,10 @@ const char *idAnimState::WaitState( void ) const
 	}
 }
 
+
+	
+
+
 /***********************************************************************
 
 	idActor
@@ -4111,6 +4115,10 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 	} // if( !noDamage )
 	return delta;
 }
+
+void idActor::NeedToUseElevator(CMultiStateMoverPosition* pos)
+{}
+
 
 void idActor::Event_GetTeam()
 {

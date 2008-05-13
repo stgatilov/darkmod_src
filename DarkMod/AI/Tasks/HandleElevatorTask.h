@@ -27,8 +27,13 @@ class HandleElevatorTask :
 	public Task
 {
 private:
+	HandleElevatorTask();
+
+	idEntityPtr<CMultiStateMoverPosition> _pos;
 	
 public:
+
+	HandleElevatorTask(CMultiStateMoverPosition* pos);
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

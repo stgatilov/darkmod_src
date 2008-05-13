@@ -18,6 +18,15 @@ static bool init_version = FileVersionList("$Id: HandleElevatorTask.cpp 1435 200
 namespace ai
 {
 
+HandleElevatorTask::HandleElevatorTask()
+{}
+
+HandleElevatorTask::HandleElevatorTask(CMultiStateMoverPosition* pos)
+{
+	_pos = pos;
+}
+
+
 // Get the name of this task
 const idStr& HandleElevatorTask::GetName() const
 {
@@ -31,6 +40,8 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	Memory& memory = owner->GetMemory();
+
+
 
 }
 
@@ -56,6 +67,7 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 void HandleElevatorTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
+	_pos.Save(savefile);
 
 	
 }
@@ -63,6 +75,7 @@ void HandleElevatorTask::Save(idSaveGame* savefile) const
 void HandleElevatorTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
+	_pos.Restore(savefile);
 
 	
 }
