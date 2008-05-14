@@ -2437,66 +2437,8 @@ idAI::Event_RestoreMove
 =====================
 */
 void idAI::Event_RestoreMove( void ) {
-	idVec3 goalPos;
-	idVec3 dest;
-
-	switch( savedMove.moveCommand ) {
-	case MOVE_NONE :
-		StopMove( savedMove.moveStatus );
-		break;
-
-	case MOVE_FACE_ENEMY :
-		FaceEnemy();
-		break;
-
-	case MOVE_FACE_ENTITY :
-		FaceEntity( savedMove.goalEntity.GetEntity() );
-		break;
-
-	case MOVE_TO_ENEMY :
-		MoveToEnemy();
-		break;
-
-	case MOVE_TO_ENEMYHEIGHT :
-		MoveToEnemyHeight();
-		break;
-
-	case MOVE_TO_ENTITY :
-		MoveToEntity( savedMove.goalEntity.GetEntity() );
-		break;
-
-	case MOVE_OUT_OF_RANGE :
-		MoveOutOfRange( savedMove.goalEntity.GetEntity(), savedMove.range );
-		break;
-
-	case MOVE_TO_ATTACK_POSITION :
-		MoveToAttackPosition( savedMove.goalEntity.GetEntity(), savedMove.anim );
-		break;
-
-	case MOVE_TO_COVER :
-		MoveToCover( savedMove.goalEntity.GetEntity(), lastVisibleEnemyPos );
-		break;
-
-	case MOVE_TO_POSITION :
-		MoveToPosition( savedMove.moveDest );
-		break;
-
-	case MOVE_TO_POSITION_DIRECT :
-		DirectMoveToPosition( savedMove.moveDest );
-		break;
-
-	case MOVE_SLIDE_TO_POSITION :
-		SlideToPosition( savedMove.moveDest, savedMove.duration );
-		break;
-
-	case MOVE_WANDER :
-		WanderAround();
-		break;
-	}
-
-	if ( GetMovePos( goalPos ) ) {
-		CheckObstacleAvoidance( goalPos, dest );
-	}
+	// greebo: Call the local helper function with the previously stored <savedMove> as argument
+	RestoreMove(savedMove);
 }
 
 /*

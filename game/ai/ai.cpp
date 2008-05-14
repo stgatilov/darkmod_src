@@ -567,6 +567,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(doorRetryTime);
 	move.Save( savefile );
 	savedMove.Save( savefile );
+
+	// greebo: save the movestack
+	savefile->WriteInt(static_cast<int>(moveStack.size()));
+	for (std::list<idMoveState>::const_iterator m = moveStack.begin(); m != moveStack.end(); m++)
+	{
+		m->Save(savefile);
+	}
+
 	savefile->WriteFloat( kickForce );
 	savefile->WriteBool( ignore_obstacles );
 	savefile->WriteFloat( blockedRadius );
@@ -803,6 +811,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(doorRetryTime);
 	move.Restore( savefile );
 	savedMove.Restore( savefile );
+
+	// greebo: restore the movestack
+	moveStack.clear();
+	savefile->ReadInt(num);
+	for (i = 0; i < num; i++)
+	{
+		moveStack.push_back(idMoveState());
+		moveStack.back().Restore(savefile);
+	}
+
 	savefile->ReadFloat( kickForce );
 	savefile->ReadBool( ignore_obstacles );
 	savefile->ReadFloat( blockedRadius );
@@ -9267,3 +9285,92 @@ bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
 	return true;
 }
 
+void idAI::PushMove()
+{
+	// Copy the current movestate structure to the stack
+	moveStack.push_back(move);
+
+	if (moveStack.size() > 100)
+	{
+		gameLocal.Warning("AI MoveStack contains more than 100 moves! (%s)\n", name.c_str());
+	}
+}
+
+void idAI::PopMove()
+{
+	if (moveStack.empty()) {
+		return; // nothing to pop from
+	}
+
+	// Get a reference of the last element
+	const idMoveState& saved = moveStack.back();
+
+	RestoreMove(saved);
+
+	// Remove the last element
+	moveStack.pop_back();
+}
+
+void idAI::RestoreMove(const idMoveState& saved)
+{
+	idVec3 goalPos;
+	idVec3 dest;
+
+	switch( saved.moveCommand ) {
+	case MOVE_NONE :
+		StopMove( saved.moveStatus );
+		break;
+
+	case MOVE_FACE_ENEMY :
+		FaceEnemy();
+		break;
+
+	case MOVE_FACE_ENTITY :
+		FaceEntity( saved.goalEntity.GetEntity() );
+		break;
+
+	case MOVE_TO_ENEMY :
+		MoveToEnemy();
+		break;
+
+	case MOVE_TO_ENEMYHEIGHT :
+		MoveToEnemyHeight();
+		break;
+
+	case MOVE_TO_ENTITY :
+		MoveToEntity( saved.goalEntity.GetEntity() );
+		break;
+
+	case MOVE_OUT_OF_RANGE :
+		MoveOutOfRange( saved.goalEntity.GetEntity(), saved.range );
+		break;
+
+	case MOVE_TO_ATTACK_POSITION :
+		MoveToAttackPosition( saved.goalEntity.GetEntity(), saved.anim );
+		break;
+
+	case MOVE_TO_COVER :
+		MoveToCover( saved.goalEntity.GetEntity(), lastVisibleEnemyPos );
+		break;
+
+	case MOVE_TO_POSITION :
+		MoveToPosition( saved.moveDest );
+		break;
+
+	case MOVE_TO_POSITION_DIRECT :
+		DirectMoveToPosition( saved.moveDest );
+		break;
+
+	case MOVE_SLIDE_TO_POSITION :
+		SlideToPosition( saved.moveDest, saved.duration );
+		break;
+
+	case MOVE_WANDER :
+		WanderAround();
+		break;
+	}
+
+	if ( GetMovePos( goalPos ) ) {
+		CheckObstacleAvoidance( goalPos, dest );
+	}
+}

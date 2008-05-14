@@ -20,6 +20,7 @@
 #include "../../DarkMod/darkmodHidingSpotTree.h"
 #include "MoveState.h"
 
+#include <list>
 #include <set>
 
 /*
@@ -537,7 +538,8 @@ public:
 
 	float GetArmReachLength();
 
-	void NeedToUseElevator(CMultiStateMoverPosition* pos);
+	// Virtual override of idActor method, routes the call into the current Mind State
+	virtual void NeedToUseElevator(CMultiStateMoverPosition* pos);
 
 
 protected:
@@ -554,6 +556,9 @@ protected:
 
 	idMoveState				move;
 	idMoveState				savedMove;
+
+	// A stack of movestates, used for saving and restoring moves in PushMove() and PopMove()
+	std::list<idMoveState>	moveStack;
 
 	float					kickForce;
 	bool					ignore_obstacles;
@@ -1254,6 +1259,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveAlongVector( float yaw );
 	bool					StepDirection( float dir );
 	bool					NewWanderDir( const idVec3 &dest );
+
+	// greebo: These two Push/Pop commands can be used to save the current move state in a stack and restore it later on
+	void					PushMove();
+	void					PopMove();
+
+	// Local helper function, will restore the current movestate from the given saved one
+	void					RestoreMove(const idMoveState& saved);
 
 	// effects
 	const idDeclParticle	*SpawnParticlesOnJoint( particleEmitter_t &pe, const char *particleName, const char *jointName );
