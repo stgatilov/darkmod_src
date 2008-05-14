@@ -69,7 +69,7 @@ typedef int aasHandle_t;
 * This is the typedef for a reachability tracking list
 */
 typedef idList<idReachability*> TReachabilityTrackingList;
-
+namespace eas { class tdmEAS; }
 
 class idAAS {
 public:
@@ -243,6 +243,9 @@ public:
 		int areaIndex,
 		idBounds barrierBounds
 	) const = 0;
+
+	// Accessor function for the EAS
+	virtual eas::tdmEAS* GetEAS() = 0;
 
 	// Save/Restore routines
 	virtual void Save(idSaveGame* savefile) const = 0;

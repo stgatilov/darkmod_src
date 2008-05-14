@@ -150,6 +150,9 @@ public:
 	 */
 	virtual void CompileEAS();
 
+	// Accessor function for the EAS
+	virtual eas::tdmEAS* GetEAS() { return elevatorSystem; }
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
