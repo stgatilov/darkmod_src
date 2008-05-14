@@ -39,6 +39,8 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	owner->PushMove(); // Save the move
+
 	if (_routeInfo.routeNodes.empty())
 	{
 		// no RouteNodes available?
@@ -54,9 +56,7 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 		owner->GetAAS()->GetEAS()->GetElevatorStationInfo(node->elevatorStation);
 
 	Memory& memory = owner->GetMemory();
-	CMultiStateMoverPosition* pos = NULL;//_pos.GetEntity();
-
-	owner->PushMove(); // Save the move
+	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
 
 	// Is the elevator station reachable?
 	if (!IsElevatorStationReachable(pos))
@@ -83,7 +83,6 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 	idVec3 dir;
 	float dist;
-
 
 	switch (_state)
 	{
