@@ -42,6 +42,8 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 	CMultiStateMoverPosition* pos = _pos.GetEntity();
 
+	owner->PushMove(); // Save the move
+
 	// Is the elevator station reachable?
 	if (!IsElevatorStationReachable(pos))
 	{
@@ -81,7 +83,8 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
-
+	// Restore the movestate we had before starting this task
+	owner->PopMove();
 }
 
 void HandleElevatorTask::DebugDraw(idAI* owner) 
