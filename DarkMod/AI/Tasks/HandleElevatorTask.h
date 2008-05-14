@@ -27,10 +27,17 @@ class HandleElevatorTask :
 	public Task
 {
 private:
-	HandleElevatorTask();
-
+	// The elevator position we're asked to use
 	idEntityPtr<CMultiStateMoverPosition> _pos;
+
+	enum State
+	{
+		EMovingTowardsStation,
+		ENumStates,
+	} _state;
 	
+	// Private constructor
+	HandleElevatorTask();
 public:
 
 	HandleElevatorTask(CMultiStateMoverPosition* pos);
@@ -49,6 +56,12 @@ public:
 
 	// Creates a new Instance of this task
 	static HandleElevatorTaskPtr CreateInstance();
+
+private:
+	// Checks if the elevator station is reachable, returns TRUE if this is the case
+	bool IsElevatorStationReachable(CMultiStateMoverPosition* pos);
+
+	void DebugDraw(idAI* owner);
 };
 
 } // namespace ai

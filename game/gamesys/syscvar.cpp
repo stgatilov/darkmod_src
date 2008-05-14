@@ -65,6 +65,7 @@ idCVar cv_ai_dest_show (			"tdm_ai_showdest",			"0",			CVAR_GAME | CVAR_ARCHIVE 
 idCVar cv_ai_goalpos_show (			"tdm_ai_showgoalpos",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the current goalpos (seekpos) is drawn in the world (!= move destination).");
 idCVar cv_ai_aasarea_show (			"tdm_ai_showAASarea",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the current AAS area of the AI is drawn in the world.");
 idCVar cv_ai_door_show(				"tdm_ai_showdoor",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the desired positions for opening and closing the door are shown.");
+idCVar cv_ai_elevator_show(			"tdm_ai_showelevator",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to true, the debug drawings for AI handling elevators are shown.");
 
 idCVar cv_ai_sight_thresh	(		"tdm_ai_sight_thresh",		"1.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the minimum light per-AI-frame gem generated visual stimulus amount required for an AI to be able to see the player or another entity directly when searching.");
 idCVar cv_ai_sight_scale	(		"tdm_ai_sight_scale",		"1000.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the distance that is multiplied by the lightQuotient from the LAS and visual acuity of the AI scaled from 0 to 1, that indicates how far away the AI can be and see a location.");

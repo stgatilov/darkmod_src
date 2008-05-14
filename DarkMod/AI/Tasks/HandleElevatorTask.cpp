@@ -40,9 +40,18 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	Memory& memory = owner->GetMemory();
+	CMultiStateMoverPosition* pos = _pos.GetEntity();
 
+	// Is the elevator station reachable?
+	if (!IsElevatorStationReachable(pos))
+	{
+		subsystem.FinishTask();
+		return;
+	}
 
-
+	// Start moving towards the elevator station
+	owner->MoveToPosition(pos->GetPhysics()->GetOrigin());
+	_state = EMovingTowardsStation;
 }
 
 bool HandleElevatorTask::Perform(Subsystem& subsystem)
@@ -52,9 +61,20 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 
-	
+	// Optional debug output
+	if (cv_ai_elevator_show.GetBool())
+	{
+		DebugDraw(owner);
+	}
 
 	return false; // not finished yet
+}
+
+bool HandleElevatorTask::IsElevatorStationReachable(CMultiStateMoverPosition* pos)
+{
+	// TODO: Implement check here
+
+	return true;
 }
 
 void HandleElevatorTask::OnFinish(idAI* owner)
@@ -64,12 +84,39 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 
 }
 
+void HandleElevatorTask::DebugDraw(idAI* owner) 
+{
+	// Draw current state
+	idMat3 viewMatrix = gameLocal.GetLocalPlayer()->viewAngles.ToMat3();
+
+	idStr str;
+	switch (_state)
+	{
+		case EMovingTowardsStation:
+			str = "EMovingTowardsStation";
+			break;
+		/*case EStateMovingToFrontPos:
+			str = "EStateMovingToFrontPos";
+			break;
+		case EStateWaitBeforeOpen:
+			str = "EStateWaitBeforeOpen";
+			break;
+		case EStateStartOpen:
+			str = "EStateStartOpen";
+			break;*/
+	}
+
+	gameRenderWorld->DrawText(str.c_str(), 
+		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
+		0.25f, colorYellow, viewMatrix, 1, 4 * gameLocal.msec);
+}
+
 void HandleElevatorTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
 	_pos.Save(savefile);
 
-	
+	savefile->WriteInt(static_cast<int>(_state));
 }
 
 void HandleElevatorTask::Restore(idRestoreGame* savefile)
@@ -77,7 +124,9 @@ void HandleElevatorTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 	_pos.Restore(savefile);
 
-	
+	int temp;
+	savefile->ReadInt(temp);
+	_state = static_cast<State>(temp);
 }
 
 HandleElevatorTaskPtr HandleElevatorTask::CreateInstance()
