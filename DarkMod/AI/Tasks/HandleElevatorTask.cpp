@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id: HandleElevatorTask.cpp 1435 200
 #include "../Memory.h"
 #include "HandleElevatorTask.h"
 #include "../../FrobButton.h"
-
+#include "../EAS/EAS.h"
 
 namespace ai
 {
@@ -23,11 +23,9 @@ namespace ai
 HandleElevatorTask::HandleElevatorTask()
 {}
 
-HandleElevatorTask::HandleElevatorTask(CMultiStateMoverPosition* pos)
-{
-	_pos = pos;
-}
-
+HandleElevatorTask::HandleElevatorTask(const eas::RouteInfoPtr& routeInfo) :
+	_routeInfo(*routeInfo) // copy-construct the RouteInfo, creates a clean duplicate
+{}
 
 // Get the name of this task
 const idStr& HandleElevatorTask::GetName() const
@@ -41,8 +39,22 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	if (_routeInfo.routeNodes.empty())
+	{
+		// no RouteNodes available?
+		subsystem.FinishTask(); 
+		return;
+	}
+
+	// Grab the first RouteNode
+	const eas::RouteNodePtr& node = *_routeInfo.routeNodes.begin();
+
+	// Retrieve the elevator station info from the EAS
+	eas::ElevatorStationInfoPtr stationInfo = 
+		owner->GetAAS()->GetEAS()->GetElevatorStationInfo(node->elevatorStation);
+
 	Memory& memory = owner->GetMemory();
-	CMultiStateMoverPosition* pos = _pos.GetEntity();
+	CMultiStateMoverPosition* pos = NULL;//_pos.GetEntity();
 
 	owner->PushMove(); // Save the move
 
@@ -65,7 +77,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 
-	CMultiStateMoverPosition* pos = _pos.GetEntity();
+	CMultiStateMoverPosition* pos = NULL;//_pos.GetEntity();
 	CMultiStateMover* elevator; // = pos->GetElevator();
 	CFrobButton* button; // = pos->GetButton();
 
@@ -214,7 +226,7 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 void HandleElevatorTask::Save(idSaveGame* savefile) const
 {
 	Task::Save(savefile);
-	_pos.Save(savefile);
+	_routeInfo.Save(savefile);
 
 	savefile->WriteInt(static_cast<int>(_state));
 	savefile->WriteInt(_waitEndTime);
@@ -223,7 +235,7 @@ void HandleElevatorTask::Save(idSaveGame* savefile) const
 void HandleElevatorTask::Restore(idRestoreGame* savefile)
 {
 	Task::Restore(savefile);
-	_pos.Restore(savefile);
+	_routeInfo.Restore(savefile);
 
 	int temp;
 	savefile->ReadInt(temp);

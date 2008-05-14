@@ -11,7 +11,7 @@
 #define __AI_HANDLE_ELEVATOR_TASK_H__
 
 #include "Task.h"
-
+#include "../EAS/RouteInfo.h"
 #include "../../BinaryFrobMover.h"
 
 namespace ai
@@ -27,9 +27,6 @@ class HandleElevatorTask :
 	public Task
 {
 private:
-	// The elevator position we're asked to use
-	idEntityPtr<CMultiStateMoverPosition> _pos;
-
 	enum State
 	{
 		EMovingTowardsStation,
@@ -41,12 +38,15 @@ private:
 	} _state;
 
 	int _waitEndTime;
+
+	// The actual route info structure
+	eas::RouteInfo _routeInfo;
 	
 	// Private constructor
 	HandleElevatorTask();
 public:
 
-	HandleElevatorTask(CMultiStateMoverPosition* pos);
+	HandleElevatorTask(const eas::RouteInfoPtr& routeInfo);
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 

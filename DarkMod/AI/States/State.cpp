@@ -1526,9 +1526,8 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 
 	if (owner->CanUseElevators())
 	{
-		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(NULL)));
+		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 	}
-
 }
 
 
