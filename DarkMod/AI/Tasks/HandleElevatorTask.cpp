@@ -14,6 +14,8 @@ static bool init_version = FileVersionList("$Id: HandleElevatorTask.cpp 1435 200
 
 #include "../Memory.h"
 #include "HandleElevatorTask.h"
+#include "../../FrobButton.h"
+
 
 namespace ai
 {
@@ -63,6 +65,96 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 
+	CMultiStateMoverPosition* pos = _pos.GetEntity();
+	CMultiStateMover* elevator; // = pos->GetElevator();
+	CFrobButton* button; // = pos->GetButton();
+
+	idVec3 dir;
+	float dist;
+
+
+	switch (_state)
+	{
+		case EMovingTowardsStation:
+			dist = (owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthFast();
+			if (dist < 500)
+//				&&	(owner->CanSeeExt(pos, true, false) 
+//					|| owner->CanSeeExt(elevator, true, false)))
+			{
+/*
+				if (elevator->IsAtPosition(pos))
+				{
+					// elevator is at the desired position, get onto it
+					// TODO: set elevator user
+					// owner->MoveToPosition();
+					_state = EStateMoveOntoElevator;
+				}
+				else
+				{
+					// elevator is somewhere else
+					// check if the elevator is already in use
+					idActor* user = elevator->GetUser();
+					if (user != NULL)
+					{
+						// elevator is in use
+
+					}
+					else
+					{
+						// it's not occupied, get to the button
+						idVec3 buttonPos = pos->GetButtonPos();
+						owner->MoveToPosition(buttonPos);
+						_state = EStateMovingToButton;
+					}
+				}
+*/
+			}	
+			break;
+
+		case EStateMovingToButton:
+			dir = owner->GetPhysics()->GetOrigin() - button->GetPhysics()->GetOrigin();
+			dir.z = 0;
+			dist = dir.LengthFast();
+			if (dist < owner->GetArmReachLength())
+			{
+				owner->StopMove(MOVE_STATUS_DONE);
+				owner->TurnToward(button->GetPhysics()->GetOrigin());
+				owner->Event_LookAtPosition(button->GetPhysics()->GetOrigin(), 1);
+				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+				_state = EStatePressButton;
+				_waitEndTime = gameLocal.time + 400;
+			}
+			// TODO: set elevator user
+			break;
+
+		case EStatePressButton:
+			if (gameLocal.time >= _waitEndTime)
+			{
+				// Press button and wait for elevator
+				button->Operate();
+				_state = EStateWaitForElevator;
+			}
+			break;
+
+		case EStateWaitForElevator:
+/*
+			if (elevator->IsAtPosition(pos))
+			{
+				// elevator is at the desired position, get onto it
+				owner->MoveToPosition();
+				_state = EStateMoveOntoElevator;
+			}
+*/
+			break;
+
+		case EStateMoveOntoElevator:
+
+			break;
+
+		default:
+				break;
+	}
+
 	// Optional debug output
 	if (cv_ai_elevator_show.GetBool())
 	{
@@ -98,15 +190,20 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 		case EMovingTowardsStation:
 			str = "EMovingTowardsStation";
 			break;
-		/*case EStateMovingToFrontPos:
-			str = "EStateMovingToFrontPos";
+		case EStateMovingToButton:
+			str = "EStateMovingToButton";
 			break;
-		case EStateWaitBeforeOpen:
-			str = "EStateWaitBeforeOpen";
+		case EStatePressButton:
+			str = "EStatePressButton";
 			break;
-		case EStateStartOpen:
-			str = "EStateStartOpen";
-			break;*/
+		case EStateWaitForElevator:
+			str = "EStateWaitForElevator";
+			break;
+		case EStateMoveOntoElevator:
+			str = "EStateMoveOntoElevator";
+			break;
+		default:
+			break;
 	}
 
 	gameRenderWorld->DrawText(str.c_str(), 
@@ -120,6 +217,7 @@ void HandleElevatorTask::Save(idSaveGame* savefile) const
 	_pos.Save(savefile);
 
 	savefile->WriteInt(static_cast<int>(_state));
+	savefile->WriteInt(_waitEndTime);
 }
 
 void HandleElevatorTask::Restore(idRestoreGame* savefile)
@@ -130,6 +228,8 @@ void HandleElevatorTask::Restore(idRestoreGame* savefile)
 	int temp;
 	savefile->ReadInt(temp);
 	_state = static_cast<State>(temp);
+	savefile->ReadInt(_waitEndTime);
+
 }
 
 HandleElevatorTaskPtr HandleElevatorTask::CreateInstance()

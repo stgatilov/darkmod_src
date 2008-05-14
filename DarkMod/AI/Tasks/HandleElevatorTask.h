@@ -33,8 +33,14 @@ private:
 	enum State
 	{
 		EMovingTowardsStation,
+		EStateMovingToButton,
+		EStatePressButton,
+		EStateWaitForElevator,
+		EStateMoveOntoElevator,
 		ENumStates,
 	} _state;
+
+	int _waitEndTime;
 	
 	// Private constructor
 	HandleElevatorTask();
