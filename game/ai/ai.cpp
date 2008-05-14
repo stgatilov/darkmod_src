@@ -9234,9 +9234,9 @@ float idAI::GetArmReachLength()
 	}
 }
 
-void idAI::NeedToUseElevator(CMultiStateMoverPosition* pos)
+void idAI::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 {
-	mind->GetState()->NeedToUseElevator(pos);
+	mind->GetState()->NeedToUseElevator(routeInfo);
 }
 
 

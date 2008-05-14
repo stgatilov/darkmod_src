@@ -539,7 +539,7 @@ public:
 	float GetArmReachLength();
 
 	// Virtual override of idActor method, routes the call into the current Mind State
-	virtual void NeedToUseElevator(CMultiStateMoverPosition* pos);
+	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 
 
 protected:

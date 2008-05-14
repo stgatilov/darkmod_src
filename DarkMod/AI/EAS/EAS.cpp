@@ -608,10 +608,10 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	// Draw all routes to the target area
 	if (!routes.empty())
 	{
-		const RouteInfo& route = **routes.begin();
+		const RouteInfoPtr& route = *routes.begin();
 
-		assert(route.routeNodes.size() > 0);
-		const RouteNode& node = **route.routeNodes.begin();
+		assert(route->routeNodes.size() > 0);
+		const RouteNode& node = **route->routeNodes.begin();
 
 		switch (node.type)
 		{
@@ -625,7 +625,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 			path.reachability = NULL;
 			path.secondaryGoal = _aas->AreaCenter(node.toArea);
 			// Notify the AI that it needs to use an elevator
-			actor->NeedToUseElevator(_elevatorStations[node.elevator]->elevatorPosition.GetEntity());
+			actor->NeedToUseElevator(route);
 			return true;
 			break;
 		default:

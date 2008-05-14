@@ -77,7 +77,7 @@ public:
 	// greebo: An event called by the obstacle avoidance code to indicate that we have a frobmover ahead
 	virtual void OnFrobMoverEncounter(CBinaryFrobMover* frobMover);
 
-	virtual void NeedToUseElevator(CMultiStateMoverPosition* pos);
+	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);
 

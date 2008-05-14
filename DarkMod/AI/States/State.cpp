@@ -1519,14 +1519,14 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 	}
 }
 
-void State::NeedToUseElevator(CMultiStateMoverPosition* pos)
+void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
 	if (owner->CanUseElevators())
 	{
-		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(pos)));
+		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(NULL)));
 	}
 
 }

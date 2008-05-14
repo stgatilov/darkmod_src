@@ -4116,7 +4116,7 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 	return delta;
 }
 
-void idActor::NeedToUseElevator(CMultiStateMoverPosition* pos)
+void idActor::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 {}
 
 
