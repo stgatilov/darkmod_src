@@ -365,6 +365,18 @@ void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
 	}
 }
 
+ElevatorStationInfoPtr tdmEAS::GetElevatorStationInfo(int index)
+{
+	if (index >= 0 || index < static_cast<int>(_elevatorStations.size())) 
+	{
+		return _elevatorStations[static_cast<std::size_t>(index)];
+	}
+	else
+	{
+		return ElevatorStationInfoPtr();
+	}
+}
+
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
 {
 	_routingIterations++;

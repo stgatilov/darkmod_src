@@ -76,6 +76,11 @@ public:
 	// returns TRUE if a route was found, FALSE otherwise.
 	bool FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor);
 
+	/** 
+	 * greebo: Returns the elevator station with the given index.
+	 */
+	ElevatorStationInfoPtr GetElevatorStationInfo(int index);
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
