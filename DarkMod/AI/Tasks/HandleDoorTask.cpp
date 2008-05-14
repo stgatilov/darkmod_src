@@ -34,7 +34,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 
 	// Let the owner save its move
-	owner->Event_SaveMove();
+	owner->PushMove();
 	owner->m_HandlingDoor = true;
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
@@ -863,7 +863,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
-	owner->Event_RestoreMove();
+	owner->PopMove();
 	owner->m_HandlingDoor = false;
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
