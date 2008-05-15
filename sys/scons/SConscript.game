@@ -142,6 +142,7 @@ MeleeWeapon.cpp \
 MissionData.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \
+MultiStateMoverButton.cpp \
 MultiStateMoverPosition.cpp \
 overlaysys.cpp \
 PlayerData.cpp \

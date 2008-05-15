@@ -1375,6 +1375,12 @@
 					RelativePath=".\DarkMod\MultiStateMoverPosition.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\MultiStateMoverButton.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\MultiStateMoverButton.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\overlaysys.cpp">
 				</File>
 				<File

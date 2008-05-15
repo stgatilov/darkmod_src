@@ -29,10 +29,10 @@ public:
 
 	// this does only call open for now, might be that we want 
 	// a more complex operation algorithm when the button is pressed in the future
-	void					Operate();
+	virtual void			Operate();
 
-	void					Open(bool Master);
-	void					Close(bool Master);
+	virtual void			Open(bool Master);
+	virtual void			Close(bool Master);
 };
 
 #endif /* FROBBUTTON_H */
