@@ -111,6 +111,67 @@ void CMultiStateMover::RegisterButton(CMultiStateMoverButton* button, EMMButtonT
 	};
 }
 
+CMultiStateMoverButton* CMultiStateMover::GetButton(
+	CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type)
+{
+	// Sanity checks
+	if (toPosition == NULL) return NULL;
+	if (type == BUTTON_TYPE_RIDE && fromPosition == NULL) return NULL;
+
+	switch (type)
+	{
+	case BUTTON_TYPE_RIDE:
+		{
+			const idVec3& fromOrigin = fromPosition->GetPhysics()->GetOrigin();
+			for (int i = 0; i < rideButtons.Num(); i++)
+			{
+				CMultiStateMoverButton* rideButton = rideButtons[i].GetEntity();
+				if (rideButton == NULL) continue;
+
+				if (rideButton->spawnArgs.GetString("position") != toPosition->spawnArgs.GetString("position")) 
+				{
+					// Wrong position
+					continue;
+				}
+
+				// Check if the position of the buttons is appropriate for the given fromPosition
+				if (idMath::Fabs(fromOrigin.z - rideButton->GetPhysics()->GetOrigin().z) < 100)
+				{
+					return rideButton;
+				}
+			}
+		}
+		break;
+	case BUTTON_TYPE_FETCH:
+		{
+			const idVec3& toOrigin = toPosition->GetPhysics()->GetOrigin();
+			for (int i = 0; i < fetchButtons.Num(); i++)
+			{
+				CMultiStateMoverButton* fetchButton = fetchButtons[i].GetEntity();
+				if (fetchButton == NULL) continue;
+
+				if (fetchButton->spawnArgs.GetString("position") != toPosition->spawnArgs.GetString("position")) 
+				{
+					// Wrong position
+					continue;
+				}
+
+				// Check if the position of the buttons is appropriate for the given toPosition
+				if (idMath::Fabs(toOrigin.z - fetchButton->GetPhysics()->GetOrigin().z) < 100)
+				{
+					return fetchButton;
+				}
+			}
+		}
+		break;
+	default:
+		gameLocal.Warning("Unknown button state type passed to MultiStateMover::GetButton(): %s", name.c_str());
+		break;
+	};
+
+	return NULL;
+}
+
 void CMultiStateMover::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(positionInfo.Num());
