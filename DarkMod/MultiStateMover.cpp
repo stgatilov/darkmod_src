@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 2167 $
- * $Date: 2008-04-06 20:41:22 +0200 (So, 06 Apr 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: MultiStateMover.cpp 2167 2008-04-06 18:41:22Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MultiStateMover.h"
 
@@ -19,7 +19,8 @@ CLASS_DECLARATION( idMover, CMultiStateMover )
 	EVENT( EV_PostSpawn,	CMultiStateMover::Event_PostSpawn )
 END_CLASS
 
-CMultiStateMover::CMultiStateMover()
+CMultiStateMover::CMultiStateMover() :
+	forwardDirection(0,0,0)
 {}
 
 void CMultiStateMover::Spawn() 
@@ -81,6 +82,17 @@ void CMultiStateMover::Event_PostSpawn()
 	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
 }
 
+bool CMultiStateMover::IsAtPosition(CMultiStateMoverPosition* position)
+{
+	if (position == NULL) return false;
+
+	const idVec3& pos = position->GetPhysics()->GetOrigin();
+	const idVec3& curPos = GetPhysics()->GetOrigin();
+	
+	// Compare our current position with the given one, using a small tolerance
+	return (pos.Compare(curPos, VECTOR_EPSILON));
+}
+
 void CMultiStateMover::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(positionInfo.Num());
@@ -127,17 +139,17 @@ void CMultiStateMover::Activate(idEntity* activator)
 	}
 
 	// We appear to have a valid position index, start moving
-	idEntity* positionEnt = positionInfo[targetPositionIndex].positionEnt.GetEntity();
-	assert(positionEnt != NULL);
-	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
-	const idVec3& curPos = GetPhysics()->GetOrigin();
-	
-	if (targetPos.Compare(curPos, VECTOR_EPSILON))
+	CMultiStateMoverPosition* positionEnt = positionInfo[targetPositionIndex].positionEnt.GetEntity();
+
+	if (IsAtPosition(positionEnt))
 	{
 		// nothing to do, we're already at the target position
 		return;
 	}
 
+	const idVec3& targetPos = positionEnt->GetPhysics()->GetOrigin();
+	const idVec3& curPos = GetPhysics()->GetOrigin();
+	
 	// Check if we are at a defined position
 	CMultiStateMoverPosition* curPositionEnt = GetPositionEntity(curPos);
 
