@@ -34,7 +34,7 @@ public:
 	void					Spawn();
 
 private:
-	void					Event_PostSpawn();
+	void					Event_RegisterSelfWithElevator();
 };
 
 #endif /* __MULTISTATEMOVER_BUTTON_H_ */
