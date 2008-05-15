@@ -15,7 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
 #include "HandleElevatorTask.h"
-#include "../../FrobButton.h"
+#include "../../MultiStateMoverButton.h"
 #include "../EAS/EAS.h"
 
 namespace ai
@@ -87,8 +87,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
 	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
-	CFrobButton* fetchButton; // = pos->GetFetchButton();
-
+	CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 
 	// Grab the second RouteNode
 	eas::RouteNodeList::const_iterator first = _routeInfo.routeNodes.begin();
@@ -99,8 +98,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		owner->GetAAS()->GetEAS()->GetElevatorStationInfo(node2->elevatorStation);
 
 	CMultiStateMoverPosition* targetPos = stationInfo2->elevatorPosition.GetEntity(); 
-	CFrobButton* rideButton; // = pos->GetRideButton(targetPos);
-
+	CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
 
 	idVec3 dir;
 	float dist;
@@ -288,6 +286,23 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 
 	// Restore the movestate we had before starting this task
 	owner->PopMove();
+}
+
+bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosition* pos)
+{
+	if (!owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
+	{
+		// Position entity cannot be reached, probably due to elevator not being there, use the button entity
+		CMultiStateMoverButton* button = pos->GetFetchButton();
+		if (button != NULL)
+		{
+			return owner->MoveToPosition(button->GetPhysics()->GetOrigin());
+		}
+
+		return false;
+	}
+
+	return true;
 }
 
 void HandleElevatorTask::DebugDraw(idAI* owner) 

@@ -71,6 +71,9 @@ private:
 	bool IsElevatorStationReachable(CMultiStateMoverPosition* pos);
 
 	void DebugDraw(idAI* owner);
+
+	// Lets the AI move towards the position entity (is slightly more complicated than just idAI::MoveToPos)
+	bool MoveToPositionEntity(idAI* owner, CMultiStateMoverPosition* pos);
 };
 
 } // namespace ai
