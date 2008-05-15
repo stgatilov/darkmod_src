@@ -44,12 +44,14 @@ void CMultiStateMover::FindPositionEntities()
 			continue;
 		}
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Parsing multistate position entity %s.\r", target->name.c_str());
+		CMultiStateMoverPosition* moverPos = static_cast<CMultiStateMoverPosition*>(target);
+
+		DM_LOG(LC_ENTITY, LT_INFO).LogString("Parsing multistate position entity %s.\r", moverPos->name.c_str());
 		
 		idStr positionName;
-		if (!target->spawnArgs.GetString("position", "", positionName) || positionName.IsEmpty())
+		if (!moverPos->spawnArgs.GetString("position", "", positionName) || positionName.IsEmpty())
 		{
-			gameLocal.Warning("'position' spawnarg on %s is missing.\n", target->name.c_str());
+			gameLocal.Warning("'position' spawnarg on %s is missing.\n", moverPos->name.c_str());
 			continue;
 		}
 
@@ -62,10 +64,13 @@ void CMultiStateMover::FindPositionEntities()
 		// greebo: Seems like the position entity is valid, let's build an info structure
 		MoverPositionInfo info;
 
-		info.positionEnt = static_cast<CMultiStateMoverPosition*>(target);
+		info.positionEnt = moverPos;
 		info.name = positionName;
 
 		positionInfo.Append(info);		
+
+		// Associate the mover position with this entity
+		moverPos->SetMover(this);
 	}
 
 	// Now remove all the MultiStatePositionInfo entities from the elevator targets 

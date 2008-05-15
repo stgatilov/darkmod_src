@@ -10,6 +10,7 @@
 #define _MULTI_STATE_MOVER_POSITION_H_
 
 class CMultiStateMover;
+class CMultiStateMoverButton;
 
 /**
  * greebo: A MultiStateMoverPosition is an entity carrying information
@@ -24,6 +25,9 @@ class CMultiStateMoverPosition :
 	// The list of targetted obstacle entities
 	idList< idEntityPtr<idFuncAASObstacle> > aasObstacleEntities;
 
+	// The associated mover
+	idEntityPtr<CMultiStateMover> mover;
+
 public:
 	CLASS_PROTOTYPE( CMultiStateMoverPosition );
 
@@ -31,6 +35,25 @@ public:
 
 	void	Save(idSaveGame *savefile) const;
 	void	Restore(idRestoreGame *savefile);
+
+	// Sets the associated mover entity (called by the mover itself at spawn)
+	void	SetMover(CMultiStateMover* newMover);
+
+	/**
+	 * greebo: Returns the button entity which can be used to fetch the elevator to this position.
+	 * 
+	 * @returns: NULL if no suitable button found.
+	 */
+	CMultiStateMoverButton*	GetFetchButton();
+
+	/** 
+	 * greebo: Returns the button entity which can be used to move the associated elevator to 
+	 * the given <toPosition>. Used by AI to find out which button to press when stanind on
+	 * an elevator.
+	 *
+	 * @returns: the button entity or NULL if nothing found.
+	 */
+	CMultiStateMoverButton*	GetRideButton(CMultiStateMoverPosition* toPosition);
 
 	// greebo: These two events are called when the mulitstate mover leaves/arrives the position
 	virtual void	OnMultistateMoverArrive(CMultiStateMover* mover);
