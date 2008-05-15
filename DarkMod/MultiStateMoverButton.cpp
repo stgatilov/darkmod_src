@@ -26,10 +26,36 @@ END_CLASS
 
 void CMultiStateMoverButton::Spawn()
 {
+	if (!spawnArgs.GetBool("ride", "0") && !spawnArgs.GetBool("fetch", "0"))
+	{
+		gameLocal.Warning("Elevator button %s has neither 'fetch' nor 'ride' spawnargs set. AI will not be able to use this button!", name.c_str());
+	}
+
 	PostEventMS(&EV_PostSpawn, 10);
 }
 
 void CMultiStateMoverButton::Event_PostSpawn()
 {
-	// TODO: Send the button information to the targetted multistatemover
+	for (int i = 0; i < targets.Num(); i++)
+	{
+		idEntity* ent = targets[i].GetEntity();
+
+		if (ent == NULL || !ent->IsType(CMultiStateMover::Type))
+		{
+			continue;
+		}
+
+		CMultiStateMover* elevator = static_cast<CMultiStateMover*>(ent);
+
+		// Send the information about us to the elevator
+		if (spawnArgs.GetBool("ride", "0"))
+		{
+			elevator->RegisterButton(this, BUTTON_TYPE_RIDE);
+		}
+
+		if (spawnArgs.GetBool("fetch", "0"))
+		{
+			elevator->RegisterButton(this, BUTTON_TYPE_FETCH);
+		}
+	}
 }

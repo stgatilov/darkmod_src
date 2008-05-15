@@ -12,6 +12,13 @@
 
 #include "FrobButton.h"
 
+enum EMMButtonType
+{
+	BUTTON_TYPE_RIDE = 0,
+	BUTTON_TYPE_FETCH,
+	NUM_BUTTON_TYPES,
+};
+
 /** 
  * greebo: A MultiStateMoverButton is a bit more intelligent
  * than an ordinary FrobButton as it is "communicating" with

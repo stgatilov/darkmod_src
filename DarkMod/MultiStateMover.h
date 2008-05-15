@@ -10,9 +10,10 @@
 #define _MULTI_STATE_MOVER_H_
 
 #include "MultiStateMoverPosition.h"
+#include "MultiStateMoverButton.h"
 
 /**
- * greebo: A MultiState mover is an extension to the vanilla D3 elevators.
+ * greebo: A MultiState mover is an extension to the vanilla D3 movers.
  *
  * In contrast to the idElevator class, this multistate mover draws the floor
  * information from the MultiStateMoverPosition entities which are targetted
@@ -20,6 +21,9 @@
  * 
  * The MultiStateMover will start moving when it's triggered (e.g. by buttons), 
  * where the information where to go is contained on the triggering button.
+ *
+ * Furthermore, the MultiStateMover provides a public interface for AI to 
+ * help them figuring out which buttons to use, where to go, etc.
  */
 class CMultiStateMover : 
 	public idMover
@@ -27,6 +31,10 @@ class CMultiStateMover :
 	idList<MoverPositionInfo> positionInfo;
 
 	idVec3 forwardDirection;
+
+	// The lists of buttons, AI entities need them to get the elevator moving
+	idList< idEntityPtr<CMultiStateMoverButton> > fetchButtons;
+	idList< idEntityPtr<CMultiStateMoverButton> > rideButtons;
 
 public:
 	CLASS_PROTOTYPE( CMultiStateMover );
@@ -48,6 +56,16 @@ public:
 	 * Note: NULL arguments always return false.
 	 */
 	bool IsAtPosition(CMultiStateMoverPosition* position);
+
+	/** 
+	 * greebo: This is called by the MultiStateMoverButton class exclusively to
+	 * register the button with this Mover, so that the mover knows which buttons
+	 * can be used to get it moving.
+	 *
+	 * @button: The button entity
+	 * @type: The "use type" of the entity, e.g. "fetch" or "ride"
+	 */
+	void RegisterButton(CMultiStateMoverButton* button, EMMButtonType type);
 
 protected:
 	// override idMover's DoneMoving() to trigger targets

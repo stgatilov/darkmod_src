@@ -93,6 +93,24 @@ bool CMultiStateMover::IsAtPosition(CMultiStateMoverPosition* position)
 	return (pos.Compare(curPos, VECTOR_EPSILON));
 }
 
+void CMultiStateMover::RegisterButton(CMultiStateMoverButton* button, EMMButtonType type)
+{
+	if (button == NULL) return;
+
+	switch (type)
+	{
+	case BUTTON_TYPE_RIDE:
+		rideButtons.Alloc() = button;
+		break;
+	case BUTTON_TYPE_FETCH:
+		fetchButtons.Alloc() = button;
+		break;
+	default:
+		gameLocal.Warning("Unknown button state type registered: %s", button->name.c_str());
+		break;
+	};
+}
+
 void CMultiStateMover::Save(idSaveGame *savefile) const
 {
 	savefile->WriteInt(positionInfo.Num());
