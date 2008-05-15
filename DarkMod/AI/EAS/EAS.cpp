@@ -610,27 +610,9 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	{
 		const RouteInfoPtr& route = *routes.begin();
 
-		assert(route->routeNodes.size() > 0);
-		const RouteNode& node = **route->routeNodes.begin();
+		// Notify the AI that it needs to use an elevator
+		actor->NeedToUseElevator(route);
 
-		switch (node.type)
-		{
-		case ACTION_WALK:
-			// Walking should already be covered by the AI's algorithm
-			break;
-		case ACTION_USE_ELEVATOR:
-			path.type = PATHTYPE_ELEVATOR;
-			path.moveAreaNum = node.toArea;
-			path.moveGoal = _aas->AreaCenter(node.toArea);
-			path.reachability = NULL;
-			path.secondaryGoal = _aas->AreaCenter(node.toArea);
-			// Notify the AI that it needs to use an elevator
-			actor->NeedToUseElevator(route);
-			return true;
-			break;
-		default:
-			break;
-		};
 	}
 
 	return false;

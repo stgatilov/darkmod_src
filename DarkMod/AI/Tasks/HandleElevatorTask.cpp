@@ -67,7 +67,7 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	// Start moving towards the elevator station
-	owner->MoveToPosition(pos->GetPhysics()->GetOrigin());
+	MoveToPositionEntity(owner, pos);
 	_state = EMovingTowardsStation;
 }
 
@@ -115,7 +115,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				if (elevator->IsAtPosition(pos))
 				{
 					// TODO: elevator is at the desired position, get onto it
-					// owner->MoveToPosition();
+					MoveToPositionEntity(owner, pos);
 					_state = EStateMoveOntoElevator;
 					// TODO: set elevator user
 				}
@@ -180,7 +180,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 		case EStateMoveOntoElevator:
 			// TODO: we're done moving onto it
-			if (0)
+			if (owner->AI_MOVE_DONE)
 			{
 				owner->MoveToEntity(rideButton);
 				_state = EStateMovingToRideButton;
