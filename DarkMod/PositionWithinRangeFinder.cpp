@@ -1,15 +1,15 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 866 $
- * $Date: 2007-03-23 22:25:02 +0100 (Fr, 23 Mar 2007) $
- * $Author: angua $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PositionWithinRangeFinder.cpp 870 2007-03-27 14:21:59Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "PositionWithinRangeFinder.h"
 

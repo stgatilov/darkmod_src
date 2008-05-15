@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 1435 $
- * $Date: 2008-03-27 18:53:28 +0200 (Do, 27 Mar 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: PathAnimTask.cpp 1435 2008-03-27 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../Memory.h"
 #include "PathAnimTask.h"

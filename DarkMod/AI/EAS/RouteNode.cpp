@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 1435 $
- * $Date: 2008-05-12 10:15:28 +0200 (Mo, 12 May 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: RouteNode.cpp 1435 2008-05-12 10:15:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "RouteNode.h"
 

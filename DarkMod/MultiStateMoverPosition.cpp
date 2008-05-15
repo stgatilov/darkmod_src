@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 2167 $
- * $Date: 2008-04-06 20:41:22 +0200 (So, 06 Apr 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: MultiStateMoverPosition.cpp 2167 2008-04-06 18:41:22Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "MultiStateMoverPosition.h"
 #include "MultiStateMover.h"

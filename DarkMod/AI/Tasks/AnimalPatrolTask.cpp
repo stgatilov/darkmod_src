@@ -1,16 +1,16 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 1435 $
- * $Date: 2008-04-11 18:53:28 +0200 (Fr, 11 Apr 2008) $
- * $Author: greebo $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-static bool init_version = FileVersionList("$Id: AnimalAnimalPatrolTask.cpp 1435 2008-04-11 16:53:28Z greebo $", init_version);
+static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "AnimalPatrolTask.h"
 #include "../Memory.h"
