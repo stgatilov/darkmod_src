@@ -30,10 +30,13 @@ private:
 	enum State
 	{
 		EMovingTowardsStation,
-		EStateMovingToButton,
-		EStatePressButton,
+		EStateMovingToFetchButton,
+		EStatePressFetchButton,
 		EStateWaitForElevator,
 		EStateMoveOntoElevator,
+		EStateMovingToRideButton,
+		EStatePressRideButton,
+		EStateWaitOnElevator,
 		ENumStates,
 	} _state;
 
