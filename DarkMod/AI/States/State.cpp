@@ -1496,11 +1496,11 @@ void State::OnFrobMoverEncounter(CBinaryFrobMover* frobMover)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	CFrobDoor* newDoor = static_cast<CFrobDoor*>(frobMover);
-	if (newDoor == NULL)
+	if (!frobMover->IsType(CFrobDoor::Type))
 	{
 		return;
 	}
+	CFrobDoor* newDoor = static_cast<CFrobDoor*>(frobMover);
 
 	if (cv_ai_door_show.GetBool()) 
 	{
