@@ -88,6 +88,11 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
 	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
 	CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+	if (fetchButton == NULL)
+	{
+		owner->AI_DEST_UNREACHABLE = true;
+		return true;
+	}
 
 	// Grab the second RouteNode
 	eas::RouteNodeList::const_iterator first = _routeInfo.routeNodes.begin();
@@ -99,6 +104,12 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 	CMultiStateMoverPosition* targetPos = stationInfo2->elevatorPosition.GetEntity(); 
 	CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
+	if (rideButton == NULL)
+	{
+		owner->AI_DEST_UNREACHABLE = true;
+		return true;
+	}
+
 
 	idVec3 dir;
 	float dist;
@@ -134,7 +145,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					{
 */
 						// it's not occupied, get to the button
-						owner->MoveToEntity(fetchButton);
+						MoveToButton(owner, fetchButton);
 						_state = EStateMovingToFetchButton;
 //					}
 
@@ -182,7 +193,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			// TODO: we're done moving onto it
 			if (owner->AI_MOVE_DONE)
 			{
-				owner->MoveToEntity(rideButton);
+				MoveToButton(owner, rideButton);
 				_state = EStateMovingToRideButton;
 			}
 			else if (!elevator->IsAtPosition(pos))
@@ -207,7 +218,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					{
 */
 						// elevator is not in use, press button again
-						owner->MoveToEntity(fetchButton);
+						MoveToButton(owner, fetchButton);
 						_state = EStateMovingToFetchButton;
 //					}
 	
@@ -296,12 +307,48 @@ bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosit
 		CMultiStateMoverButton* button = pos->GetFetchButton();
 		if (button != NULL)
 		{
-			return owner->MoveToPosition(button->GetPhysics()->GetOrigin());
+			return MoveToButton(owner, button);
 		}
 
 		return false;
 	}
 
+	return true;
+}
+
+bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* button)
+{
+	idBounds bounds = owner->GetPhysics()->GetBounds();
+	float size = bounds[0][1];
+
+	idVec3 trans = button->spawnArgs.GetVector("translation", "0 2 0");
+	trans.z = 0;
+	if (trans.NormalizeFast() == 0)
+	{
+		trans = idVec3(1, 0, 0);
+	}
+	idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+
+	if (!owner->MoveToPosition(target))
+	{
+		trans = trans.Cross(gameLocal.GetGravity());
+		idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+		if (!owner->MoveToPosition(target))
+		{
+			trans *= -1;
+			idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+			if (!owner->MoveToPosition(target))
+			{
+				trans = trans.Cross(gameLocal.GetGravity());
+				idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+				if (!owner->MoveToPosition(target))
+				{
+					owner->AI_DEST_UNREACHABLE = true;
+					return false;
+				}
+			}
+		}
+	}
 	return true;
 }
 

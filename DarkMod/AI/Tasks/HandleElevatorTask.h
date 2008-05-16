@@ -74,6 +74,10 @@ private:
 
 	// Lets the AI move towards the position entity (is slightly more complicated than just idAI::MoveToPos)
 	bool MoveToPositionEntity(idAI* owner, CMultiStateMoverPosition* pos);
+
+	// Lets the Ai move to the button
+	bool MoveToButton(idAI* owner, CMultiStateMoverButton* button);
+
 };
 
 } // namespace ai
