@@ -183,7 +183,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			if (elevator->IsAtPosition(pos))
 			{
 				// TODO elevator is at the desired position, get onto it
-				// owner->MoveToPosition();
+				owner->MoveToPosition(pos->GetPhysics()->GetOrigin());
 				_state = EStateMoveOntoElevator;
 			}
 			// TODO: check if the elevator is moving towards our station
