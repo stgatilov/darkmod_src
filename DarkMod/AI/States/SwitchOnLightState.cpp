@@ -49,6 +49,10 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
 
+	_switchingOn = false;
+	_waitEndTime = 0;
+	_lightOn = false;
+
 	if (lightType == AIUSE_LIGHTTYPE_TORCH)
 	{
 		idVec3 lightDirection = owner->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin();
@@ -66,15 +70,11 @@ void SwitchOnLightState::Init(idAI* owner)
 		if (projection.LengthFast() < owner->GetArmReachLength() && lightDirection.z < maxHeight)
 		{
 			// If we are already close enough, relight the torch immediately
-			owner->GetSubsystem(SubsysMovement)->ClearTasks();
-			owner->GetSubsystem(SubsysAction)->ClearTasks();
-			owner->StopMove(MOVE_STATUS_DONE);
-			// TODO: Play anim
-			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+			StartSwitchOn(owner, light);
 		}
 		else
 		{
-			// Move a bit in front of the light origin towards the ai 
+			// Move a bit from the light origin towards the ai 
 			// and perform a trace down to detect the ground
 			lightDirection.NormalizeFast();
 		
@@ -166,12 +166,23 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 	
-	if (light->GetLightLevel() > 0)
+	if (_lightOn && gameLocal.time >= _waitEndTime)
 	{
-		// Light is on again
-		// TODO: Wait until anim is finished
 		owner->GetMind()->EndState();
 		return;
+	}
+
+	if (!_lightOn && light->GetLightLevel() > 0)
+	{
+		// Light is on again
+		_waitEndTime = gameLocal.time + 1000;
+		_lightOn = true;
+	}
+
+	if (!_lightOn && _switchingOn && gameLocal.time >= _waitEndTime)
+	{
+		light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+		_waitEndTime = gameLocal.time + 5000;
 	}
 
 	idStr lightType = light->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
@@ -188,21 +199,16 @@ void SwitchOnLightState::Think(idAI* owner)
 		lightDirection.z = 0;
 		float delta = lightDirection.LengthFast();
 
-		if (delta <= size.x)
+		if (!_switchingOn && delta <= size.x)
 		{
-			owner->GetSubsystem(SubsysMovement)->ClearTasks();
-			owner->StopMove(MOVE_STATUS_DONE);
-			// TODO: Play anim
-			light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+			StartSwitchOn(owner, light);
 		}
-		else if (owner->AI_MOVE_DONE)
+		else if (!_switchingOn && owner->AI_MOVE_DONE)
 		{
 			if (delta <= 1.5 * owner->GetArmReachLength())
 			{
-				owner->GetSubsystem(SubsysMovement)->ClearTasks();
-				owner->StopMove(MOVE_STATUS_DONE);
-				// TODO: Play anim
-				light->CallScriptFunctionArgs("frob_ignite", true, 0, "e", light);
+				StartSwitchOn(owner, light);
+				
 			}
 			else
 			{
@@ -214,18 +220,36 @@ void SwitchOnLightState::Think(idAI* owner)
 	}
 }
 
+void SwitchOnLightState::StartSwitchOn(idAI* owner, idLight* light)
+{
+	owner->GetSubsystem(SubsysMovement)->ClearTasks();
+	owner->StopMove(MOVE_STATUS_DONE);
+	_waitEndTime = gameLocal.time + 500;
+	_switchingOn = true;
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+
+	// TODO: Play anim
+	
+}
+
 void SwitchOnLightState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
-
 	_light.Save(savefile);
+
+	savefile->WriteInt(_waitEndTime);
+	savefile->WriteBool(_switchingOn);
+	savefile->WriteBool(_lightOn);
 }
 
 void SwitchOnLightState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
-
 	_light.Restore(savefile);
+
+	savefile->ReadInt(_waitEndTime);
+	savefile->ReadBool(_switchingOn);
+	savefile->ReadBool(_lightOn);
 }
 
 StatePtr SwitchOnLightState::CreateInstance()
