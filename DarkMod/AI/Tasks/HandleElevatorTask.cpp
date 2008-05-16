@@ -67,8 +67,25 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	// Start moving towards the elevator station
-	MoveToPositionEntity(owner, pos);
-	_state = EMovingTowardsStation;
+	if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
+	{
+		// If AI_MOVE_DONE is true, we are already at the target position
+		_state = (owner->AI_MOVE_DONE) ? EStateMoveOntoElevator : EMovingTowardsStation;
+	}
+	else
+	{
+		// Position entity cannot be reached, probably due to elevator not being there, use the button entity
+		CMultiStateMoverButton* button = pos->GetFetchButton();
+		if (button != NULL)
+		{
+			MoveToButton(owner, button);
+			_state = EStateMovingToFetchButton;
+		}
+		else
+		{
+			subsystem.FinishTask();
+		}
+	}
 }
 
 bool HandleElevatorTask::Perform(Subsystem& subsystem)
@@ -102,14 +119,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	eas::ElevatorStationInfoPtr stationInfo2 = 
 		owner->GetAAS()->GetEAS()->GetElevatorStationInfo(node2->elevatorStation);
 
-	CMultiStateMoverPosition* targetPos = stationInfo2->elevatorPosition.GetEntity(); 
-	CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
-	if (rideButton == NULL)
-	{
-		owner->AI_DEST_UNREACHABLE = true;
-		return true;
-	}
-
+	CMultiStateMoverPosition* targetPos = stationInfo2->elevatorPosition.GetEntity();
 
 	idVec3 dir;
 	float dist;
@@ -158,7 +168,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			dir = owner->GetPhysics()->GetOrigin() - fetchButton->GetPhysics()->GetOrigin();
 			dir.z = 0;
 			dist = dir.LengthFast();
-			if (dist < owner->GetArmReachLength())
+			if (dist < owner->GetArmReachLength()+20)
 			{
 				owner->StopMove(MOVE_STATUS_DONE);
 				owner->TurnToward(fetchButton->GetPhysics()->GetOrigin());
@@ -190,6 +200,14 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			break;
 
 		case EStateMoveOntoElevator:
+		{
+			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
+			if (rideButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+
 			// TODO: we're done moving onto it
 			if (owner->AI_MOVE_DONE)
 			{
@@ -227,10 +245,18 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 			}
 
-
-			break;
+		}
+		break;
 
 		case EStateMovingToRideButton:
+		{
+			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
+			if (rideButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+
 			dir = owner->GetPhysics()->GetOrigin() - rideButton->GetPhysics()->GetOrigin();
 			dir.z = 0;
 			dist = dir.LengthFast();
@@ -243,21 +269,31 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				_state = EStatePressRideButton;
 				_waitEndTime = gameLocal.time + 400;
 			}
-
-			break;
+		}
+		break;
 
 		case EStatePressRideButton:
+		{
 			if (gameLocal.time >= _waitEndTime)
 			{
-				// Press button and wait for elevator
-				rideButton->Operate();
-				_state = EStateWaitOnElevator;
+				CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
+				if (rideButton != NULL)
+				{
+					// Press button and wait for elevator
+					rideButton->Operate();
+					_state = EStateWaitOnElevator;
+				}
+				else
+				{
+					owner->AI_DEST_UNREACHABLE = true;
+					return true;
+				}
 			}
-
-			break;
+		}
+		break;
 
 		case EStateWaitOnElevator:
-			if (elevator ->IsAtPosition(targetPos))
+			if (elevator->IsAtPosition(targetPos))
 			{
 				// reached target station, get off the elevator
 				return true;
@@ -272,7 +308,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			break;
 
 		default:
-				break;
+			break;
 	}
 
 	// Optional debug output
