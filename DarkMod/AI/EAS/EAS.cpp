@@ -582,7 +582,7 @@ int tdmEAS::GetElevatorStationIndex(CMultiStateMoverPosition* positionEnt)
 {
 	for (std::size_t i = 0; i < _elevatorStations.size(); i++)
 	{
-		if (_elevatorStations[i]->elevatorPosition.GetEntity() == positionEnt)
+		if (_elevatorStations[i] != NULL && _elevatorStations[i]->elevatorPosition.GetEntity() == positionEnt)
 		{
 			return static_cast<int>(i); // found!
 		}
