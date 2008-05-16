@@ -105,12 +105,6 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
 	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
-	CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
-	if (fetchButton == NULL)
-	{
-		owner->AI_DEST_UNREACHABLE = true;
-		return true;
-	}
 
 	// Grab the second RouteNode
 	eas::RouteNodeList::const_iterator first = _routeInfo.routeNodes.begin();
@@ -155,9 +149,15 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					else
 					{
 */
-						// it's not occupied, get to the button
-						MoveToButton(owner, fetchButton);
-						_state = EStateMovingToFetchButton;
+					CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+					if (fetchButton == NULL)
+					{
+						owner->AI_DEST_UNREACHABLE = true;
+						return true;
+					}
+					// it's not occupied, get to the button
+					MoveToButton(owner, fetchButton);
+					_state = EStateMovingToFetchButton;
 //					}
 
 				}
@@ -166,6 +166,14 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			break;
 
 		case EStateMovingToFetchButton:
+		{
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			if (fetchButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+
 			dir = owner->GetPhysics()->GetOrigin() - fetchButton->GetPhysics()->GetOrigin();
 			dir.z = 0;
 			dist = dir.LengthFast();
@@ -179,16 +187,26 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				_waitEndTime = gameLocal.time + 400;
 			}
 			// TODO: set elevator user
-			break;
+		}
+		break;
 
 		case EStatePressFetchButton:
+		{
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			if (fetchButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+
 			if (gameLocal.time >= _waitEndTime)
 			{
 				// Press button and wait for elevator
 				fetchButton->Operate();
 				_state = EStateWaitForElevator;
 			}
-			break;
+		}
+		break;
 
 		case EStateWaitForElevator:
 			if (elevator->IsAtPosition(pos))
@@ -226,6 +244,12 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
+					CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+					if (fetchButton == NULL)
+					{
+						owner->AI_DEST_UNREACHABLE = true;
+						return true;
+					}
 /*
 					idActor* user = elevator->GetUser();
 					if (user != NULL)
