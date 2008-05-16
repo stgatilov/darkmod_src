@@ -1,4 +1,3 @@
-<<<<<<< .mine
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
@@ -65,6 +64,8 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 		return;
 	}
+
+	owner->m_HandlingElevator = true;
 
 	// Start moving towards the elevator station
 	if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
@@ -330,6 +331,8 @@ bool HandleElevatorTask::IsElevatorStationReachable(CMultiStateMoverPosition* po
 void HandleElevatorTask::OnFinish(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
+
+	owner->m_HandlingElevator = false;
 
 	// Restore the movestate we had before starting this task
 	owner->PopMove();

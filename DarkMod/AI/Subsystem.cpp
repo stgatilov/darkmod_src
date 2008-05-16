@@ -120,15 +120,15 @@ bool Subsystem::FinishTask()
 
 		// Move the task pointer from the queue to the recyclebin
 		_recycleBin.push_back(_taskQueue.front());
+
+		// Now remove the State from the queue
+		_taskQueue.pop_front();
 		
 		// Call the OnFinish event of the task
 		_recycleBin.back()->OnFinish(owner);
 
 		// Issue the "TaskFinished" signal to the MindState
 		owner->GetMind()->GetState()->OnSubsystemTaskFinished(owner, _id);
-
-		// Now remove the State from the queue
-		_taskQueue.pop_front();
 	}
 
 	if (_taskQueue.empty())

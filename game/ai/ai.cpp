@@ -778,6 +778,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
+	savefile->WriteBool(m_HandlingElevator);
 
 	int size = unlockableDoors.size();
 	savefile->WriteInt(size);
@@ -1044,6 +1045,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
+	savefile->ReadBool(m_HandlingElevator);
 
 	int size;
 	savefile->ReadInt(size);
@@ -1447,6 +1449,7 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
+	m_HandlingElevator = false;
 
 	// Set up KOing and FOV
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
@@ -9371,6 +9374,6 @@ void idAI::RestoreMove(const idMoveState& saved)
 	}
 
 	if ( GetMovePos( goalPos ) ) {
-		CheckObstacleAvoidance( goalPos, dest );
+		//CheckObstacleAvoidance( goalPos, dest );
 	}
 }

@@ -1524,8 +1524,10 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	if (owner->CanUseElevators())
+	if (!owner->m_HandlingElevator && owner->CanUseElevators())
 	{
+		// Prevent more ElevatorTasks from being pushed
+		owner->m_HandlingElevator = true;
 		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 	}
 }
