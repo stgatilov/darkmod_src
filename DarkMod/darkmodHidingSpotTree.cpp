@@ -291,12 +291,14 @@ bool CDarkmodHidingSpotTree::determineSpotRedundancy
 		return false;
 	}
 
+	float redundancyDistSqr = redundancyDistance*redundancyDistance;
+
 	// Compare distance with other points in the area
 	for (int i = 0; i < p_areaNode->spots.Num(); i++)
 	{
 		// Compute distance
 		idVec3 distanceVec = goal.origin - p_areaNode->spots[i]->goal.origin;
-		if (distanceVec.LengthFast() <= redundancyDistance)
+		if (distanceVec.LengthSqr() <= redundancyDistance)
 		{
 			// This point is redundant, should combine.
 			p_areaNode->spots[i]->hidingSpotTypes |= hidingSpotTypes;
@@ -440,7 +442,10 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 		// and move the current occupier to the end.
 		int randomLocation = gameLocal.random.RandomInt(spotList.Num());
 
-		spotList.Append( spotList[randomLocation] );
+		// greebo: Important: Don't do this: spotList.Append( spotList[randomLocation] )!
+		// Copy the old pointer beforehand to avoid references to invalid memory
+		darkModHidingSpot* oldSpot = spotList[randomLocation];
+		spotList.Append( oldSpot );
 		spotList[randomLocation] = p_spot;
 	}
 	else

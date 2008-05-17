@@ -617,6 +617,11 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	{
 		const RouteInfoPtr& route = *routes.begin();
 
+		if (route->routeNodes.size() < 2) {
+			// Valid routes have at least two nodes
+			return false;
+		}
+
 		// Notify the AI that it needs to use an elevator
 		actor->NeedToUseElevator(route);
 		path.moveGoal = goalOrigin;

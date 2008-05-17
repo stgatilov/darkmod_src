@@ -1881,6 +1881,13 @@ void idAI::Think( void )
 		}
 	}
 
+	if (cv_ai_elevator_show.GetBool())
+	{
+		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+
+		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
+	}
+
 	m_lastThinkTime = gameLocal.time;
 }
 

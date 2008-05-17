@@ -80,7 +80,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	
 	// No exit time set, continue with ordinary process
 
-	if (owner->AI_MOVE_DONE && !owner->m_HandlingDoor)
+	if (owner->AI_MOVE_DONE && !owner->m_HandlingDoor && !owner->m_HandlingElevator)
 	{
 		if (owner->AI_DEST_UNREACHABLE)
 		{

@@ -628,6 +628,13 @@ idList<type>::Append
 Increases the size of the list by one element and copies the supplied data into it.
 
 Returns the index of the new element.
+
+greebo: Important: Don't do this: spotList.Append( spotList[randomLocation] )!
+
+Don't call idList::Append() or idList::Alloc() with a reference to a current 
+list element. The operator[] will return a reference to the memory BEFORE a
+possible Resize() call, which will relocate the entire list. The reference
+to the "old" memory location will be invalid and crashes are ahead.
 ================
 */
 template< class type >
