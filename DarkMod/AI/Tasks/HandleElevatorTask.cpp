@@ -186,6 +186,14 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				_state = EStatePressFetchButton;
 				_waitEndTime = gameLocal.time + 400;
 			}
+			else if (owner->AI_MOVE_DONE)
+			{
+				if (owner->AI_DEST_UNREACHABLE)
+				{
+					// Destination unreachable, help!
+					return true;
+				}
+			}
 			// TODO: set elevator user
 		}
 		break;
@@ -382,7 +390,7 @@ bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosit
 bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* button)
 {
 	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float size = bounds[0][1];
+	float size = idMath::Fabs(bounds[0][1]);
 
 	idVec3 trans = button->spawnArgs.GetVector("translation", "0 2 0");
 	trans.z = 0;
