@@ -7732,9 +7732,11 @@ float idAI::GetVisibility( idEntity *ent ) const
 		idStr alertText2(clampdist);
 		alertText2 = "clampdist: "+ alertText2;
 		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(colorGreen, GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText3(safedist);
 		alertText3 = "savedist: "+ alertText3;
 		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(colorGreen, GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
 		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
@@ -7750,12 +7752,12 @@ float idAI::GetCalibratedLightgemValue() const
 {
 	float lgem = static_cast<float>(g_Global.m_DarkModPlayer->m_LightgemValue);
 
-	float clampVal = 0.00453f 
-					- 0.000483687f * lgem 
-					+ 0.00289f * idMath::Pow16(lgem, 2)
-					+ 1.19658e-4f * idMath::Pow16(lgem, 3)
-					- 1.2142e-5f * idMath::Pow16(lgem, 4)	
-					+ 2.0494e-7f * idMath::Pow16(lgem, 5);
+	float clampVal = -0.01f
+					+ 0.015f * lgem 
+					+ 0.0018f * idMath::Pow16(lgem, 2)
+					+ 0.000128f * idMath::Pow16(lgem, 3)
+					- 0.0000114f * idMath::Pow16(lgem, 4)	
+					+ 0.000000193f * idMath::Pow16(lgem, 5);
 
 	if (clampVal > 1)
 	{
