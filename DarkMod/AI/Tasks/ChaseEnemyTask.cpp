@@ -71,7 +71,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		owner->TurnToward(enemy->GetEyePosition());
 	}
 	// no, push the AI forward and try to get to the last visible reachable enemy position
-	else if (owner->MoveToPosition(owner->lastVisibleEnemyPos))
+	else if (owner->MoveToPosition(owner->lastVisibleReachableEnemyPos))
 	{
 		_reachEnemyCheck = 0;
 
