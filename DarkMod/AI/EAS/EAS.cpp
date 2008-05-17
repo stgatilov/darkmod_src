@@ -410,8 +410,9 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 		// No routing information, check walk path to the goal cluster
 		idReachability* reach;
 		int travelTime = 0;
+		// Workaround: Include the TFL_INVALID flag to include deactivated AAS areas
 		bool routeFound = _aas->RouteToGoalArea(startArea, _aas->AreaCenter(startArea), 
-			goalArea, TFL_WALK|TFL_AIR, travelTime, &reach, NULL);
+			goalArea, TFL_WALK|TFL_AIR|TFL_INVALID, travelTime, &reach, NULL);
 
 		if (routeFound) 
 		{
