@@ -43,7 +43,7 @@ public:
 	// Override the alert functions
 	virtual void OnTactileAlert(idEntity* tactEnt);
 	virtual void OnVisualAlert(idActor* enemy);
-	virtual void OnAudioAlert(idActor* enemy);
+	virtual void OnAudioAlert();
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

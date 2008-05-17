@@ -57,11 +57,25 @@ void CombatState::OnTactileAlert(idEntity* tactEnt)
 void CombatState::OnVisualAlert(idActor* enemy)
 {
 	// do nothing as of now, we are already in combat mode
+
 }
 
-void CombatState::OnAudioAlert(idActor* enemy)
+void CombatState::OnAudioAlert()
 {
-	// do nothing as of now, we are already in combat mode
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMemory();
+
+	memory.alertClass = EAlertAudio;
+	memory.alertPos = owner->GetSndDir();
+
+	if (!owner->AI_ENEMY_VISIBLE)
+	{
+		memory.lastTimeEnemySeen = gameLocal.time;
+		owner->lastReachableEnemyPos = memory.alertPos;
+		// gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 2, 1000);
+	}
 }
 
 void CombatState::Init(idAI* owner)
