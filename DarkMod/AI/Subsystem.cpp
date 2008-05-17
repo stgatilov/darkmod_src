@@ -187,16 +187,17 @@ void Subsystem::ClearTasks()
 {
 	if (!_taskQueue.empty())
 	{
-		// Move all TaskPtrs from the queue into the bin (front to back)
-		for (TaskQueue::iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++)
-		{
-			// Call the OnFinish event of the task after adding it to the bin
-			_recycleBin.push_back(*i);
-			_recycleBin.back()->OnFinish(_owner.GetEntity());
-		}
-		
+		// Call the OnFinish event of the task after adding it to the bin
+		_recycleBin.insert(_recycleBin.end(), _taskQueue.begin(), _taskQueue.end());
+
 		// Remove ALL tasks from the main queue
 		_taskQueue.clear();
+
+		// Now call the OnFinish method. This might alter the original _taskQueue
+		for (TaskQueue::iterator i = _recycleBin.begin(); i != _recycleBin.end(); i++)
+		{
+			(*i)->OnFinish(_owner.GetEntity());
+		}
 	}
 
 	// Disable this subsystem
