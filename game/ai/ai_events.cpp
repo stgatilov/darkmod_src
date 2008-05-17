@@ -3286,7 +3286,10 @@ void idAI::destroyCurrentHidingSpotSearch()
 	m_hidingSpots.clear();
 
 	// greebo: Clear the initial alert position
-	GetMemory().alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+	if (mind != NULL)
+	{
+		mind->GetMemory().alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+	}
 }
 
 //-----------------------------------------------------------------------------------------------------
