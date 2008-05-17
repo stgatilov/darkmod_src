@@ -598,10 +598,16 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	int startCluster = _aas->file->GetArea(areaNum).cluster;
 	int goalCluster = _aas->file->GetArea(goalAreaNum).cluster;
 
-	if (startCluster < 0 || goalCluster < 0)
+	// Check if we are starting from a portal
+	if (startCluster < 0)
 	{
-		// Cannot route to portals
-		return false;
+		startCluster = _aas->file->GetPortal(-startCluster).clusters[0];
+	}
+
+	// Check if we are going to a portal
+	if (goalCluster < 0)
+	{
+		goalCluster = _aas->file->GetPortal(-goalCluster).clusters[0];
 	}
 
 	const RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
