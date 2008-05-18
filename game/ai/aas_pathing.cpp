@@ -277,6 +277,7 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	path.moveAreaNum = areaNum;
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
+	path.elevatorRoute = eas::RouteInfoPtr();
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;
@@ -462,6 +463,7 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 	path.moveAreaNum = areaNum;
 	path.secondaryGoal = origin;
 	path.reachability = NULL;
+	path.elevatorRoute = eas::RouteInfoPtr();
 
 	if ( file == NULL || areaNum == goalAreaNum ) {
 		path.moveGoal = goalOrigin;

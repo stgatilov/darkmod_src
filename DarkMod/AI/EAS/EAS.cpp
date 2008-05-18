@@ -622,10 +622,11 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 			return false;
 		}
 
-		// Notify the AI that it needs to use an elevator
-		actor->NeedToUseElevator(route);
+		// We have a valid route, set the elevator flag on the path type
+		path.type |= PATHTYPE_ELEVATOR;
 		path.moveGoal = goalOrigin;
 		path.moveAreaNum = goalAreaNum;
+		path.elevatorRoute = route;
 		return true;
 	}
 

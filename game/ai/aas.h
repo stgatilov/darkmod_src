@@ -15,6 +15,7 @@
 
 // Need linked list
 #include "../../idlib/containers/list.h"
+#include "../../DarkMod/AI/EAS/RouteInfo.h"
 
 #ifdef __linux__
 #include "tools/compilers/aas/aasfile.h"
@@ -43,6 +44,7 @@ typedef struct aasPath_s {
 	int							moveAreaNum;	// number of the area the AI should move towards
 	idVec3						secondaryGoal;	// secondary move goal for complex navigation
 	const idReachability *		reachability;	// reachability used for navigation
+	eas::RouteInfoPtr			elevatorRoute;	// EAS reachability information (NULL if unused)
 } aasPath_t;
 
 

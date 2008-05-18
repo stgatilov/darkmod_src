@@ -4119,10 +4119,6 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 	return delta;
 }
 
-void idActor::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
-{}
-
-
 void idActor::Event_GetTeam()
 {
 	idThread::ReturnInt(team);
