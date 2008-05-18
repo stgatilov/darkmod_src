@@ -76,7 +76,7 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	else if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
 	{
 		// If AI_MOVE_DONE is true, we are already at the target position
-		_state = (owner->AI_MOVE_DONE) ? EInitiateMoveToRideButton : EMovingTowardsStation;
+		_state = (owner->GetMoveStatus() == MOVE_STATUS_DONE) ? EInitiateMoveToRideButton : EMovingTowardsStation;
 	}
 	else
 	{
@@ -119,7 +119,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	{
 		case EMovingTowardsStation:
 			//dist = (owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthFast();
-			if (owner->AI_MOVE_DONE)
+			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
 				// Move is done, this means that we might be close enough, but it's not guaranteed
 				_state = EInitiateMoveToFetchButton;
@@ -161,7 +161,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 			if (fetchButton == NULL)
 			{
-				owner->AI_DEST_UNREACHABLE = true;
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				return true;
 			}
 			// it's not occupied, get to the button
@@ -191,13 +191,10 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				_state = EPressFetchButton;
 				_waitEndTime = gameLocal.time + 400;
 			}
-			else if (owner->AI_MOVE_DONE)
+			else if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
-				if (owner->AI_DEST_UNREACHABLE)
-				{
-					// Destination unreachable, help!
-					return true;
-				}
+				// Destination unreachable, help!
+				return true;
 			}
 			// TODO: set elevator user
 		}
@@ -208,7 +205,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 			if (fetchButton == NULL)
 			{
-				owner->AI_DEST_UNREACHABLE = true;
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				return true;
 			}
 
@@ -216,6 +213,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			{
 				// Press button and wait for elevator
 				fetchButton->Operate();
+				owner->StopMove(MOVE_STATUS_WAITING);
 				_state = EWaitForElevator;
 			}
 		}
@@ -233,7 +231,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 		case EMoveOntoElevator:
 		{
-			if (owner->AI_MOVE_DONE)
+			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
 				// We're done moving onto the platform
 				_state = EInitiateMoveToRideButton;
@@ -241,7 +239,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			else if (!elevator->IsAtPosition(pos))
 			{
 				// elevator moved away while we attempted to move onto it
-				owner->StopMove(MOVE_STATUS_DONE);
+				owner->StopMove(MOVE_STATUS_WAITING);
 				// TODO: need to check whether we are already on the elevator
 				if (0)
 				{
@@ -276,7 +274,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
 			if (rideButton == NULL)
 			{
-				owner->AI_DEST_UNREACHABLE = true;
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				return true;
 			}
 
@@ -290,7 +288,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
 			if (rideButton == NULL)
 			{
-				owner->AI_DEST_UNREACHABLE = true;
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				return true;
 			}
 
@@ -322,7 +320,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-					owner->AI_DEST_UNREACHABLE = true;
+					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 					return true;
 				}
 			}
@@ -421,7 +419,7 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 				idVec3 target = buttonOrigin - size * 1.2f * trans;
 				if (!owner->MoveToPosition(target))
 				{
-					owner->AI_DEST_UNREACHABLE = true;
+					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 					return false;
 				}
 			}
