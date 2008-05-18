@@ -200,8 +200,12 @@ void Subsystem::ClearTasks()
 		}
 	}
 
-	// Disable this subsystem
-	_enabled = false;
+	// Disable this subsystem, but only if the task queue is actually empty
+	// the Task::OnFinish() routines might have posted new tasks to the queue
+	if (_taskQueue.empty())
+	{
+		_enabled = false;
+	}
 }
 
 // Save/Restore methods
