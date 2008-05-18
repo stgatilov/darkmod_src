@@ -1137,7 +1137,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	for ( i = 0; i < m_AttachPositions.Num(); i++ ) 
 	{
 		m_AttachPositions[i].Save( savefile );
-	}	
+	}
 }
 
 /*
@@ -6127,6 +6127,14 @@ void idAnimatedEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( m_Attachments.Num() );
 	for( int i=0; i < m_Attachments.Num(); i++ )
 		m_Attachments[i].Save( savefile );
+
+	savefile->WriteInt( m_AttNameMap.size() );
+	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
+         k != m_AttNameMap.end(); k++ )
+    {
+        savefile->WriteString( k->first.c_str() );
+        savefile->WriteInt( k->second );
+    }
 }
 
 /*
@@ -6136,7 +6144,10 @@ idAnimatedEntity::Restore
 unarchives object from save game file
 ================
 */
-void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
+void idAnimatedEntity::Restore( idRestoreGame *savefile ) 
+{
+	int num;
+
 	animator.Restore( savefile );
 
 	// check if the entity has an MD5 model
@@ -6153,12 +6164,22 @@ void idAnimatedEntity::Restore( idRestoreGame *savefile ) {
 	}
 
 	m_Attachments.Clear();
-	int num;
 	savefile->ReadInt( num );
 	m_Attachments.SetNum( num );
-
 	for( int i=0; i < num; i++ )
 		m_Attachments[i].Restore( savefile );
+
+	savefile->ReadInt( num );
+    for ( int i = 0; i < num; i++ )
+    {
+        idStr tempStr;
+        savefile->ReadString(tempStr);
+
+        int tempIndex;
+        savefile->ReadInt(tempIndex);
+
+        m_AttNameMap.insert(AttNameMap::value_type(tempStr.c_str(), tempIndex));
+    }
 }
 
 /*
@@ -6602,7 +6623,9 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	attach.ent = ent;
 	attach.name = AttName;
 
-	// TODO: Update name->m_Attachment index mapping
+	// Update name->m_Attachment index mapping
+	// int index = m_Attachments.Num();
+	// m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
 }
 
 /*

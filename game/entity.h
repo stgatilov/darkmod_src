@@ -1301,7 +1301,13 @@ protected:
 	/**
 	* List storing attachment data for each attachment
 	**/
-	idList<CAttachInfo>		m_Attachments;
+	idList<CAttachInfo>			m_Attachments;
+
+	/**
+	* Maps string name of an attachment to an index in m_Attachments
+	**/
+	typedef std::map<std::string, int>	AttNameMap;
+	AttNameMap							m_AttNameMap;
 
 private:
 	void					Event_GetJointHandle( const char *jointname );
