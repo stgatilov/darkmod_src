@@ -933,6 +933,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( painTime );
 
+	savefile->WriteBool(canUseElevators);
+
 	savefile->WriteInt( m_Attachments.Num() );
 	for ( i = 0; i < m_Attachments.Num(); i++ ) 
 	{
@@ -1071,6 +1073,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( allowEyeFocus );
 
 	savefile->ReadInt( painTime );
+	savefile->ReadBool(canUseElevators);
 
 	savefile->ReadInt( num );
 	for ( i = 0; i < num; i++ ) 
