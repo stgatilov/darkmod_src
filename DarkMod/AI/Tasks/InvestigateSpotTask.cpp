@@ -27,11 +27,13 @@ const int INVESTIGATE_SPOT_TIME_CLOSELY = 2500; // ms
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 
 InvestigateSpotTask::InvestigateSpotTask() :
-	_investigateClosely(false)
+	_investigateClosely(false),
+	_moveInitiated(false)
 {}
 
 InvestigateSpotTask::InvestigateSpotTask(bool investigateClosely) :
-	_investigateClosely(investigateClosely)
+	_investigateClosely(investigateClosely),
+	_moveInitiated(false)
 {}
 
 // Get the name of this task
@@ -50,7 +52,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 
 	// Stop previous moves
-	owner->StopMove(MOVE_STATUS_DONE);
+	//owner->StopMove(MOVE_STATUS_DONE);
 
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
@@ -80,20 +82,51 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	
 	// No exit time set, continue with ordinary process
 
-	if (owner->AI_MOVE_DONE && !owner->m_HandlingDoor && !owner->m_HandlingElevator)
+	if (owner->m_HandlingDoor || owner->m_HandlingElevator)
 	{
-		if (owner->AI_DEST_UNREACHABLE)
+		// Wait, we're busy with a door or elevator
+		return false;
+	}
+
+	if (!_moveInitiated)
+	{
+		// Let's move
+		owner->MoveToPosition(_searchSpot);
+		_moveInitiated = true;
+
+		if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 		{
-			DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot unreachable.\r", _searchSpot);
-			return true;
+			// Hiding spot not reachable, terminate task in the next round
+			DM_LOG(LC_AI, LT_DEBUG).LogString("_searchSpot not reachable, terminating task.\r");
+			_exitTime = gameLocal.time;
+		}
+		else
+		{
+			// Run if the point is more than 500 
+			// greebo: This is taxing and can be replaced by a simpler distance check 
+			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
+			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
+
+			DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
+			owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
 		}
 
+		return false;
+	}
+
+	if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
+	{
+		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot unreachable.\r", _searchSpot);
+		return true;
+	}
+	else if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
+	{
 		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", _searchSpot);
 
-		if (_investigateClosely && !owner->AI_DEST_UNREACHABLE)
+		if (_investigateClosely)
 		{
 			// Stop previous moves
-			owner->StopMove(MOVE_STATUS_DONE);
+			owner->StopMove(MOVE_STATUS_WAITING);
 
 			// Check the position of the stim, is it closer to the eyes than to the feet?
 			// If it's lower than the eye position, kneel down and investigate
@@ -121,8 +154,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	}
 	else
 	{
-		// Can we already see the point? Only stop moving when the spot
-		// shouldn't be investigated closely
+		// Can we already see the point? Only stop moving when the spot shouldn't be investigated closely
 		// angua: added distance check to avoid running in circles if the point is too close to a wall.
 		if (!_investigateClosely && 
 			( owner->CanSeePositionExt(_searchSpot, true, true) 
@@ -154,8 +186,10 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 		return;
 	}
 
-	// Copy the values
+	// Copy the value
 	_searchSpot = newPos;
+	// Reset the "move started" flag
+	_moveInitiated = false;
 
 	// Set the exit time back to negative default, so that the AI starts walking again
 	_exitTime = -1;
@@ -178,28 +212,6 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 		_exitTime = static_cast<int>(
 			gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()*0.2f)
 		);
-	}
-	else 
-	{
-		// Let's move
-		owner->MoveToPosition(_searchSpot);
-
-		if (!owner->AI_DEST_UNREACHABLE)
-		{
-			// Run if the point is more than 500 
-			// greebo: This is taxing and can be replaced by a simpler distance check 
-			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
-			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
-
-			DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
-			owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
-		}
-		else
-		{
-			// Hiding spot not reachable, terminate task in the next round
-			DM_LOG(LC_AI, LT_DEBUG).LogString("_searchSpot not reachable, terminating task.\r");
-			_exitTime = gameLocal.time;
-		}
 	}
 }
 

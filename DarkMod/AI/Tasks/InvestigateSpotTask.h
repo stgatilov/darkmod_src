@@ -44,6 +44,9 @@ class InvestigateSpotTask :
 	// usually by playing the kneel_down animation.
 	bool _investigateClosely;
 
+	// Whether this task has told the AI to actually move to the searchspot
+	bool _moveInitiated;
+
 	// Private default constructor
 	InvestigateSpotTask();
 public:
