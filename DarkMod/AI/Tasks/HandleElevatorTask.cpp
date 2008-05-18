@@ -126,6 +126,15 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			if (owner->AI_MOVE_DONE)
 			{
 				// Move is done, this means that we might be close enough, but it's not guaranteed
+				CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+				if (fetchButton == NULL)
+				{
+					owner->AI_DEST_UNREACHABLE = true;
+					return true;
+				}
+				// it's not occupied, get to the button
+				MoveToButton(owner, fetchButton);
+
 				_state = EStateMovingToFetchButton;
 			}
 			else if (dist < 500 &&	
