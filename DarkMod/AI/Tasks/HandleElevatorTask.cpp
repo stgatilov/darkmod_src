@@ -70,27 +70,18 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	if (owner->ReachedPos(pos->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
 	{
 		// We are already at the elevator position, this is true if the elevator is there
-		_state = EStateInitiateMoveToRideButton;
+		_state = EInitiateMoveToRideButton;
 	}
 	// Start moving towards the elevator station
 	else if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
 	{
 		// If AI_MOVE_DONE is true, we are already at the target position
-		_state = (owner->AI_MOVE_DONE) ? EStateInitiateMoveToRideButton : EMovingTowardsStation;
+		_state = (owner->AI_MOVE_DONE) ? EInitiateMoveToRideButton : EMovingTowardsStation;
 	}
 	else
 	{
 		// Position entity cannot be reached, probably due to elevator not being there, use the button entity
-		CMultiStateMoverButton* button = pos->GetFetchButton();
-		if (button != NULL)
-		{
-			MoveToButton(owner, button);
-			_state = EStateMovingToFetchButton;
-		}
-		else
-		{
-			subsystem.FinishTask();
-		}
+		_state = EInitiateMoveToFetchButton;
 	}
 }
 
@@ -131,16 +122,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			if (owner->AI_MOVE_DONE)
 			{
 				// Move is done, this means that we might be close enough, but it's not guaranteed
-				CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
-				if (fetchButton == NULL)
-				{
-					owner->AI_DEST_UNREACHABLE = true;
-					return true;
-				}
-				// it's not occupied, get to the button
-				MoveToButton(owner, fetchButton);
-
-				_state = EStateMovingToFetchButton;
+				_state = EInitiateMoveToFetchButton;
 			}
 			else if ((owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthSqr() < 500*500 &&
 				      (owner->CanSeeExt(pos, true, false) || owner->CanSeeExt(elevator, true, false)))
@@ -149,7 +131,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				{
 					// TODO: elevator is at the desired position, get onto it
 					MoveToPositionEntity(owner, pos);
-					_state = EStateMoveOntoElevator;
+					_state = EMoveOntoElevator;
 					// TODO: set elevator user
 				}
 				else
@@ -166,15 +148,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					else
 					{
 */
-					CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
-					if (fetchButton == NULL)
-					{
-						owner->AI_DEST_UNREACHABLE = true;
-						return true;
-					}
-					// it's not occupied, get to the button
-					MoveToButton(owner, fetchButton);
-					_state = EStateMovingToFetchButton;
+					_state = EInitiateMoveToFetchButton;
 //					}
 
 				}
@@ -182,7 +156,21 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			}	
 			break;
 
-		case EStateMovingToFetchButton:
+		case EInitiateMoveToFetchButton:
+		{
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			if (fetchButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+			// it's not occupied, get to the button
+			MoveToButton(owner, fetchButton);
+			_state = EMovingToFetchButton;
+		}
+		break;
+
+		case EMovingToFetchButton:
 		{
 			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 			if (fetchButton == NULL)
@@ -200,7 +188,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				owner->TurnToward(fetchButton->GetPhysics()->GetOrigin());
 				owner->Event_LookAtPosition(fetchButton->GetPhysics()->GetOrigin(), 1);
 				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
-				_state = EStatePressFetchButton;
+				_state = EPressFetchButton;
 				_waitEndTime = gameLocal.time + 400;
 			}
 			else if (owner->AI_MOVE_DONE)
@@ -215,7 +203,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		}
 		break;
 
-		case EStatePressFetchButton:
+		case EPressFetchButton:
 		{
 			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 			if (fetchButton == NULL)
@@ -228,27 +216,27 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			{
 				// Press button and wait for elevator
 				fetchButton->Operate();
-				_state = EStateWaitForElevator;
+				_state = EWaitForElevator;
 			}
 		}
 		break;
 
-		case EStateWaitForElevator:
+		case EWaitForElevator:
 			if (elevator->IsAtPosition(pos))
 			{
 				// TODO elevator is at the desired position, get onto it
 				owner->MoveToPosition(pos->GetPhysics()->GetOrigin());
-				_state = EStateMoveOntoElevator;
+				_state = EMoveOntoElevator;
 			}
 			// TODO: check if the elevator is moving towards our station
 			break;
 
-		case EStateMoveOntoElevator:
+		case EMoveOntoElevator:
 		{
 			if (owner->AI_MOVE_DONE)
 			{
 				// We're done moving onto the platform
-				_state = EStateInitiateMoveToRideButton;
+				_state = EInitiateMoveToRideButton;
 			}
 			else if (!elevator->IsAtPosition(pos))
 			{
@@ -257,7 +245,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				// TODO: need to check whether we are already on the elevator
 				if (0)
 				{
-					_state = EStateRideOnElevator;
+					_state = ERideOnElevator;
 				}
 				else
 				{
@@ -279,7 +267,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 */
 						// elevator is not in use, press button again
 						MoveToButton(owner, fetchButton);
-						_state = EStateMovingToFetchButton;
+						_state = EMovingToFetchButton;
 //					}
 	
 
@@ -290,7 +278,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		}
 		break;
 
-		case EStateInitiateMoveToRideButton:
+		case EInitiateMoveToRideButton:
 		{
 			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
 			if (rideButton == NULL)
@@ -300,11 +288,11 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			}
 
 			MoveToButton(owner, rideButton);
-			_state = EStateMovingToRideButton;
+			_state = EMovingToRideButton;
 		}
 		break;
 
-		case EStateMovingToRideButton:
+		case EMovingToRideButton:
 		{
 			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
 			if (rideButton == NULL)
@@ -322,13 +310,13 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				owner->TurnToward(rideButton->GetPhysics()->GetOrigin());
 				owner->Event_LookAtPosition(rideButton->GetPhysics()->GetOrigin(), 1);
 				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
-				_state = EStatePressRideButton;
+				_state = EPressRideButton;
 				_waitEndTime = gameLocal.time + 400;
 			}
 		}
 		break;
 
-		case EStatePressRideButton:
+		case EPressRideButton:
 		{
 			if (gameLocal.time >= _waitEndTime)
 			{
@@ -337,7 +325,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				{
 					// Press button and wait for elevator
 					rideButton->Operate();
-					_state = EStateRideOnElevator;
+					_state = ERideOnElevator;
 				}
 				else
 				{
@@ -348,7 +336,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		}
 		break;
 
-		case EStateRideOnElevator:
+		case ERideOnElevator:
 			if (elevator->IsAtPosition(targetPos))
 			{
 				// reached target station, get off the elevator
@@ -455,31 +443,34 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 	switch (_state)
 	{
 		case EMovingTowardsStation:
-			str = "EMovingTowardsStation";
+			str = "MovingTowardsStation";
 			break;
-		case EStateMovingToFetchButton:
-			str = "EStateMovingToFetchButton";
+		case EInitiateMoveToFetchButton:
+			str = "InitiateMoveToFetchButton";
 			break;
-		case EStatePressFetchButton:
-			str = "EStatePressButton";
+		case EMovingToFetchButton:
+			str = "MovingToFetchButton";
 			break;
-		case EStateWaitForElevator:
-			str = "EStateWaitForElevator";
+		case EPressFetchButton:
+			str = "PressButton";
 			break;
-		case EStateMoveOntoElevator:
-			str = "EStateMoveOntoElevator";
+		case EWaitForElevator:
+			str = "WaitForElevator";
 			break;
-		case EStateInitiateMoveToRideButton:
-			str = "EStateInitiateMoveToRideButton";
+		case EMoveOntoElevator:
+			str = "MoveOntoElevator";
 			break;
-		case EStateMovingToRideButton:
-			str = "EStateMovingToRideButton";
+		case EInitiateMoveToRideButton:
+			str = "InitiateMoveToRideButton";
 			break;
-		case EStatePressRideButton:
-			str = "EStatePressRideButton";
+		case EMovingToRideButton:
+			str = "MovingToRideButton";
 			break;
-		case EStateRideOnElevator:
-			str = "EStateRideOnElevator";
+		case EPressRideButton:
+			str = "PressRideButton";
+			break;
+		case ERideOnElevator:
+			str = "RideOnElevator";
 			break;
 
 			
