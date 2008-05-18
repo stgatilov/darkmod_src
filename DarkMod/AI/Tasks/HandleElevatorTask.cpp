@@ -123,11 +123,14 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	{
 		case EMovingTowardsStation:
 			dist = (owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthFast();
-			if (dist < 500
-				&&	(owner->CanSeeExt(pos, true, false) 
-					|| owner->CanSeeExt(elevator, true, false)))
+			if (owner->AI_MOVE_DONE)
 			{
-
+				// Move is done, this means that we might be close enough, but it's not guaranteed
+				_state = EStateMovingToFetchButton;
+			}
+			else if (dist < 500 &&	
+				      (owner->CanSeeExt(pos, true, false) || owner->CanSeeExt(elevator, true, false)))
+			{
 				if (elevator->IsAtPosition(pos))
 				{
 					// TODO: elevator is at the desired position, get onto it

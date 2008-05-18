@@ -187,6 +187,18 @@ void CMultiStateMover::Save(idSaveGame *savefile) const
 	}
 
 	savefile->WriteVec3(forwardDirection);
+
+	savefile->WriteInt(fetchButtons.Num());
+	for (int i = 0; i < fetchButtons.Num(); i++)
+	{
+		fetchButtons[i].Save(savefile);
+	}
+
+	savefile->WriteInt(rideButtons.Num());
+	for (int i = 0; i < rideButtons.Num(); i++)
+	{
+		rideButtons[i].Save(savefile);
+	}
 }
 
 void CMultiStateMover::Restore(idRestoreGame *savefile)
@@ -201,6 +213,20 @@ void CMultiStateMover::Restore(idRestoreGame *savefile)
 	}
 
 	savefile->ReadVec3(forwardDirection);
+
+	savefile->ReadInt(num);
+	fetchButtons.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		fetchButtons[i].Restore(savefile);
+	}
+
+	savefile->ReadInt(num);
+	rideButtons.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		rideButtons[i].Restore(savefile);
+	}
 }
 
 void CMultiStateMover::Activate(idEntity* activator)
