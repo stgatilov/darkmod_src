@@ -67,11 +67,16 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	owner->m_HandlingElevator = true;
 
+	if (owner->ReachedPos(pos->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
+	{
+		// We are already at the elevator position, this is true if the elevator is there
+		_state = EStateInitiateMoveToRideButton;
+	}
 	// Start moving towards the elevator station
-	if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
+	else if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
 	{
 		// If AI_MOVE_DONE is true, we are already at the target position
-		_state = (owner->AI_MOVE_DONE) ? EStateMoveOntoElevator : EMovingTowardsStation;
+		_state = (owner->AI_MOVE_DONE) ? EStateInitiateMoveToRideButton : EMovingTowardsStation;
 	}
 	else
 	{
@@ -122,7 +127,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	switch (_state)
 	{
 		case EMovingTowardsStation:
-			dist = (owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthFast();
+			//dist = (owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthFast();
 			if (owner->AI_MOVE_DONE)
 			{
 				// Move is done, this means that we might be close enough, but it's not guaranteed
@@ -137,7 +142,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 				_state = EStateMovingToFetchButton;
 			}
-			else if (dist < 500 &&	
+			else if ((owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthSqr() < 500*500 &&
 				      (owner->CanSeeExt(pos, true, false) || owner->CanSeeExt(elevator, true, false)))
 			{
 				if (elevator->IsAtPosition(pos))
@@ -189,7 +194,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			dir = owner->GetPhysics()->GetOrigin() - fetchButton->GetPhysics()->GetOrigin();
 			dir.z = 0;
 			dist = dir.LengthFast();
-			if (dist < owner->GetArmReachLength()+20)
+			if (dist < owner->GetArmReachLength()+10)
 			{
 				owner->StopMove(MOVE_STATUS_DONE);
 				owner->TurnToward(fetchButton->GetPhysics()->GetOrigin());
@@ -240,18 +245,10 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 		case EStateMoveOntoElevator:
 		{
-			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
-			if (rideButton == NULL)
-			{
-				owner->AI_DEST_UNREACHABLE = true;
-				return true;
-			}
-
-			// TODO: we're done moving onto it
 			if (owner->AI_MOVE_DONE)
 			{
-				MoveToButton(owner, rideButton);
-				_state = EStateMovingToRideButton;
+				// We're done moving onto the platform
+				_state = EStateInitiateMoveToRideButton;
 			}
 			else if (!elevator->IsAtPosition(pos))
 			{
@@ -260,7 +257,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				// TODO: need to check whether we are already on the elevator
 				if (0)
 				{
-					_state = EStateWaitOnElevator;
+					_state = EStateRideOnElevator;
 				}
 				else
 				{
@@ -290,6 +287,20 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 			}
 
+		}
+		break;
+
+		case EStateInitiateMoveToRideButton:
+		{
+			CMultiStateMoverButton* rideButton = pos->GetRideButton(targetPos);
+			if (rideButton == NULL)
+			{
+				owner->AI_DEST_UNREACHABLE = true;
+				return true;
+			}
+
+			MoveToButton(owner, rideButton);
+			_state = EStateMovingToRideButton;
 		}
 		break;
 
@@ -326,7 +337,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				{
 					// Press button and wait for elevator
 					rideButton->Operate();
-					_state = EStateWaitOnElevator;
+					_state = EStateRideOnElevator;
 				}
 				else
 				{
@@ -337,7 +348,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		}
 		break;
 
-		case EStateWaitOnElevator:
+		case EStateRideOnElevator:
 			if (elevator->IsAtPosition(targetPos))
 			{
 				// reached target station, get off the elevator
@@ -447,7 +458,7 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 			str = "EMovingTowardsStation";
 			break;
 		case EStateMovingToFetchButton:
-			str = "EStateMovingToButton";
+			str = "EStateMovingToFetchButton";
 			break;
 		case EStatePressFetchButton:
 			str = "EStatePressButton";
@@ -458,14 +469,17 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 		case EStateMoveOntoElevator:
 			str = "EStateMoveOntoElevator";
 			break;
+		case EStateInitiateMoveToRideButton:
+			str = "EStateInitiateMoveToRideButton";
+			break;
 		case EStateMovingToRideButton:
 			str = "EStateMovingToRideButton";
 			break;
 		case EStatePressRideButton:
 			str = "EStatePressRideButton";
 			break;
-		case EStateWaitOnElevator:
-			str = "EStateWaitOnElevator";
+		case EStateRideOnElevator:
+			str = "EStateRideOnElevator";
 			break;
 
 			

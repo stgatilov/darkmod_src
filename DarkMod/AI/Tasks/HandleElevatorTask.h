@@ -34,9 +34,10 @@ private:
 		EStatePressFetchButton,
 		EStateWaitForElevator,
 		EStateMoveOntoElevator,
+		EStateInitiateMoveToRideButton,
 		EStateMovingToRideButton,
 		EStatePressRideButton,
-		EStateWaitOnElevator,
+		EStateRideOnElevator,
 		ENumStates,
 	} _state;
 
