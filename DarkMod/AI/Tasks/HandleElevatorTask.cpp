@@ -175,7 +175,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
 			if (fetchButton == NULL)
 			{
-				owner->AI_DEST_UNREACHABLE = true;
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				return true;
 			}
 
@@ -249,12 +249,6 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-					CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
-					if (fetchButton == NULL)
-					{
-						owner->AI_DEST_UNREACHABLE = true;
-						return true;
-					}
 /*
 					idActor* user = elevator->GetUser();
 					if (user != NULL)
@@ -266,8 +260,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					{
 */
 						// elevator is not in use, press button again
-						MoveToButton(owner, fetchButton);
-						_state = EMovingToFetchButton;
+						_state = EInitiateMoveToFetchButton;
 //					}
 	
 
@@ -411,18 +404,21 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 	}
 	idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
 
+	const idVec3& gravity = gameLocal.GetGravity();
+	const idVec3& buttonOrigin = button->GetPhysics()->GetOrigin();
+
 	if (!owner->MoveToPosition(target))
 	{
-		trans = trans.Cross(gameLocal.GetGravity());
-		idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+		trans = trans.Cross(gravity);
+		idVec3 target = buttonOrigin - size * 1.2f * trans;
 		if (!owner->MoveToPosition(target))
 		{
 			trans *= -1;
-			idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+			idVec3 target = buttonOrigin - size * 1.2f * trans;
 			if (!owner->MoveToPosition(target))
 			{
-				trans = trans.Cross(gameLocal.GetGravity());
-				idVec3 target = button->GetPhysics()->GetOrigin() - size * 1.2f * trans;
+				trans = trans.Cross(gravity);
+				idVec3 target = buttonOrigin - size * 1.2f * trans;
 				if (!owner->MoveToPosition(target))
 				{
 					owner->AI_DEST_UNREACHABLE = true;

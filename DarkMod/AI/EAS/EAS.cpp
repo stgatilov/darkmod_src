@@ -623,7 +623,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 		}
 
 		// We have a valid route, set the elevator flag on the path type
-		path.type |= PATHTYPE_ELEVATOR;
+		path.type = PATHTYPE_ELEVATOR;
 		path.moveGoal = goalOrigin;
 		path.moveAreaNum = goalAreaNum;
 		path.elevatorRoute = route;

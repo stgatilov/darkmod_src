@@ -2446,7 +2446,7 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.toAreaNum		= 0;
 	move.goalEntity		= NULL;
 	move.moveDest		= physicsObj.GetOrigin();
-	AI_DEST_UNREACHABLE	= false;
+	AI_DEST_UNREACHABLE	= (status == MOVE_STATUS_DEST_UNREACHABLE);
 	AI_OBSTACLE_IN_PATH = false;
 	AI_BLOCKED			= false;
 	move.startTime		= gameLocal.time;
@@ -3169,7 +3169,7 @@ bool idAI::MoveToPosition( const idVec3 &pos ) {
 	}
 
 	// Valid path to goal, check if we need to use an elevator
-	if (path.type & PATHTYPE_ELEVATOR)
+	if (path.type == PATHTYPE_ELEVATOR)
 	{
 		NeedToUseElevator(path.elevatorRoute);
 	}
