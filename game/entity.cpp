@@ -6624,8 +6624,9 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	attach.name = AttName;
 
 	// Update name->m_Attachment index mapping
-	// int index = m_Attachments.Num();
-	// m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
+	int index = m_Attachments.Num();
+	if( AttName != NULL )
+		m_AttNameMap.insert(AttNameMap::value_type(AttName, index));
 }
 
 /*
@@ -8769,7 +8770,7 @@ void idEntity::ParseAttachments( void )
 				Suffix.StripLeading( "def_attach" );
 				idStr PosKey = "pos_attach" + Suffix;
 				// String name of the attachment for later accessing
-				idStr AttName = "attach_name" + Suffix;
+				idStr AttName = "name_attach" + Suffix;
 
 				if( spawnArgs.FindKey(PosKey.c_str()) )
 					Attach( ent, spawnArgs.GetString(PosKey.c_str()), 
