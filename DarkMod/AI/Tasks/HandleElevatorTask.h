@@ -46,6 +46,9 @@ private:
 
 	// The actual route info structure
 	eas::RouteInfo _routeInfo;
+
+	// Is TRUE if this task has finished successfully
+	bool _success;
 	
 	// Private constructor
 	HandleElevatorTask();
