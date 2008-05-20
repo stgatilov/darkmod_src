@@ -7241,6 +7241,8 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			m_AlertedByActor = static_cast<idActor *>(propParms->maker);
 // TODO: For sounds from other entities, such as moveables, query the responsible actor
 
+		psychLoud *= GetAcuity("aud");
+
 		AlertAI( "aud", psychLoud );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s HEARD a sound\r", name.c_str() );
 
@@ -7265,9 +7267,11 @@ void idAI::AlertAI(const char *type, float amount)
 	}
 
 	float acuity = GetAcuity(type);
-
 	// Calculate the amount the current AI_AlertLevel is about to be increased
-	float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
+	// float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
+	// angua: alert amount already includes acuity
+
+	float alertInc = amount;
 
 	// Ignore actors in notarget mode
 	idActor* actor = m_AlertedByActor.GetEntity();
@@ -7311,13 +7315,15 @@ void idAI::AlertAI(const char *type, float amount)
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
 	}
 
+	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
+	m_AlertLevelThisFrame = amount;
+
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
 	m_lastAlertLevel = newAlertLevel;
 
-
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\",  amount %f (modified by acuity %f).  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
 		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
@@ -7327,9 +7333,6 @@ void idAI::AlertAI(const char *type, float amount)
 		// AI has been alerted, set the boolean
 		AI_ALERTED = true;
 	}
-
-	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
-	m_AlertLevelThisFrame = amount;
 
 	// Objectives callback
 	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
@@ -7633,7 +7636,10 @@ void idAI::PerformVisualScan(float timecheck)
 	AI_VISALERT = true;
 	
 	// Get the visual alert amount caused by the CVAR setting
-	float incAlert = GetPlayerVisualStimulusAmount();
+	// float incAlert = GetPlayerVisualStimulusAmount();
+
+	// angua: alert increase depends on brightness, distance and acuity
+	float incAlert = 4 + 6 * visFrac;
 
 	float newAlertLevel = AI_AlertLevel + incAlert;
 	if (newAlertLevel > thresh_5)
@@ -7661,18 +7667,8 @@ void idAI::PerformVisualScan(float timecheck)
 
 float idAI::GetVisibility( idEntity *ent ) const
 {
-/**
-* PSUEDOCODE:
-* Factors:
-* Lightgem / brightness: Current lightgem number / max number
-* Distance: Do a linear increase and then cutoff?
-*			or more complicated clamped function?
-*
-* Movement: Do this later, but get the object's current velocity
-* from physics object or just read from the lightgem if this
-* will be factored in to the lightgem.
-**/
-	// NOTE: Returns the probability that the entity will be seen in a half second
+	// Returns the probability that the entity will be seen within half a second
+	// depends on light gem brightness, visual acuity and player distance
 	
 	float returnval(0);
 
@@ -7683,34 +7679,20 @@ float idAI::GetVisibility( idEntity *ent ) const
 	}
 	idPlayer* player = static_cast<idPlayer*>(ent);
 
+	// angua: probability for being seen (within half a second)
+	// this depends only on the brightness of the light gem and the AI's visual acuity
 	float clampVal = GetCalibratedLightgemValue();
 
+	/**
+	 * angua: within the clampDist, the probability stays constant
+	 * the probability decreases linearly towards 0 between clampdist and savedist
+	 * both distances are scaled with clampVal
+	 */ 
 	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
 
-
-	// debug for formula checking
-	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Current lightgem value = %f\r", lgem );
-/*
-	old version:
-	float clampdist = (lgem - 1) * ( cv_ai_sightmindist.GetFloat() / (DARKMOD_LG_MAX - 1) );
-	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat())*(1 - idMath::Cos((lgem - 1) / (DARKMOD_LG_MAX - 1) * idMath::PI /2));
-
-	// clampVal is normalized to 100% at TimeNorm
-	// In other words: Visibility percentage scales linearly with the lightgem
-	//clampVal = (lgem-1)/(lgem_max-1);
-
-	//NOTE: Linear model didn't work so well ingame, not enough response to increasing
-	// brightness.. try an exponential model (between 0 and 1) :
-	// the formula for now is: 1/e^1.2 * exp(1.2* lgem / lgem_max )
-	// TODO: Make the 1.2 a factor that you can tweak.
-	float clampVal = 0.30119f * idMath::Exp16( 1.2 * (lgem/DARKMOD_LG_MAX));
-*/
-
 	idVec3 delta = GetEyePosition() - player->GetEyePosition();
 	float dist = delta.Length()*s_DOOM_TO_METERS;
-
-	//TODO : Add acuity in to this calculation
 
 	if (dist < clampdist) 
 	{
@@ -7730,24 +7712,23 @@ float idAI::GetVisibility( idEntity *ent ) const
 
 	if (cv_ai_visdist_show.GetFloat() > 0) 
 	{
-		// greebo: Debug output, comment me out
 		idStr alertText(clampVal);
 		alertText = "clampVal: "+ alertText;
-		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		idStr alertText2(clampdist);
 		alertText2 = "clampdist: "+ alertText2;
-		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(colorGreen, GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(colorDkGrey, GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText3(safedist);
 		alertText3 = "savedist: "+ alertText3;
-		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(colorGreen, GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(colorDkGrey, GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
-		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		idStr alertText5(dist);
 		alertText5 = "distance: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 	
 	return returnval;
@@ -7764,6 +7745,8 @@ float idAI::GetCalibratedLightgemValue() const
 					- 0.0000114f * idMath::Pow16(lgem, 4)	
 					+ 0.000000193f * idMath::Pow16(lgem, 5);
 
+	clampVal *= GetAcuity("vis") * 0.01f;
+
 	if (clampVal > 1)
 	{
 		clampVal = 1;
@@ -7774,7 +7757,7 @@ float idAI::GetCalibratedLightgemValue() const
 	{
 		idStr alertText5(lgem);
 		alertText5 = "lgem: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, colorDkGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
 	return clampVal;
@@ -7812,6 +7795,8 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	// NOTE: Latest tactile alert always overrides other alerts
 	m_TactAlertEnt = tactEnt;
 	m_AlertedByActor = responsibleActor;
+
+	amount *= GetAcuity("tact");
 	AlertAI("tact", amount);
 
 	// Notify the currently active state
