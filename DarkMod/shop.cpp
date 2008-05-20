@@ -453,7 +453,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 				desc = idStr(item->GetName()) + ": " + item->GetDescription();
 				image = idStr(item->GetImage());
 				available = item->GetCost() <= gold ? item->GetCount() : 0;
-				cost = idStr(item->GetCost()) + " GP";
+				cost = idStr(item->GetCost()) + " GP ";
 			}
 			gui->SetStateString(guiCost, cost);
 			gui->SetStateInt(guiAvailable, available);
@@ -480,7 +480,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 			desc = idStr(item->GetName()) + ": " + item->GetDescription();
 			image = idStr(item->GetImage());
 			available = item->GetCost() <= gold ? item->GetCount() : 0;
-			cost = idStr(item->GetCost()) + " GP";
+			cost = idStr(item->GetCost()) + " GP ";
 		}
 		gui->SetStateString(guiCost, cost);
 		gui->SetStateInt(guiAvailable, available);
