@@ -501,6 +501,8 @@ void HandleElevatorTask::Save(idSaveGame* savefile) const
 
 	savefile->WriteInt(static_cast<int>(_state));
 	savefile->WriteInt(_waitEndTime);
+
+	savefile->WriteBool(_success);
 }
 
 void HandleElevatorTask::Restore(idRestoreGame* savefile)
@@ -513,6 +515,7 @@ void HandleElevatorTask::Restore(idRestoreGame* savefile)
 	_state = static_cast<State>(temp);
 	savefile->ReadInt(_waitEndTime);
 
+	savefile->ReadBool(_success);
 }
 
 HandleElevatorTaskPtr HandleElevatorTask::CreateInstance()
