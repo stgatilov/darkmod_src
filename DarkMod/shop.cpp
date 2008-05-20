@@ -479,7 +479,7 @@ void CShop::UpdateGUI(idUserInterface* gui) {
 			name = idStr(item->GetName()) + " (" + item->GetCount() + ")";
 			desc = idStr(item->GetName()) + ": " + item->GetDescription();
 			image = idStr(item->GetImage());
-			available = item->GetCost() <= gold ? item->GetCount() : 0;
+			available = 1; // sell item is always available
 			cost = idStr(item->GetCost()) + " GP ";
 		}
 		gui->SetStateString(guiCost, cost);
