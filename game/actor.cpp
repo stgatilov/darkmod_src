@@ -2103,6 +2103,11 @@ bool idActor::OnLadder( void ) const {
 	return false;
 }
 
+bool idActor::OnElevator() const
+{
+	return false;
+}
+
 /*
 ==============
 idActor::GetAASLocation

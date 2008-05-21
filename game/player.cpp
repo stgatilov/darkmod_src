@@ -7510,6 +7510,17 @@ bool idPlayer::OnLadder( void ) const {
 	return physicsObj.OnLadder();
 }
 
+bool idPlayer::OnElevator() const 
+{
+	idEntity* ent = physicsObj.GetGroundEntity();
+
+	// Return false if ground entity is not a mover
+	if (!ent->IsType(CMultiStateMover::Type)) return false;
+
+	CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
+	return (!mover->IsAtRest());
+}
+
 /*
 ==================
 idPlayer::Event_GetButtons
