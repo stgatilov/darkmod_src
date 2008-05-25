@@ -2103,9 +2103,9 @@ bool idActor::OnLadder( void ) const {
 	return false;
 }
 
-bool idActor::OnElevator() const
+CMultiStateMover* idActor::OnElevator() const
 {
-	return false;
+	return NULL;
 }
 
 /*

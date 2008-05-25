@@ -11,6 +11,7 @@
 #define __AI_CHASE_ENEMY_TASK_H__
 
 #include "Task.h"
+#include "../../MultiStateMover.h"
 
 namespace ai
 {
@@ -45,6 +46,9 @@ public:
 
 	// Class-specific methods
 	virtual void SetEnemy(idActor* enemy);
+
+private:
+	bool CanFetchElevator(CMultiStateMover* mover, idAI* owner);
 };
 
 } // namespace ai

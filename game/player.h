@@ -577,7 +577,7 @@ public:
 
 	bool					OnLadder( void ) const;
 	// Virtal override of idActor::OnElevator()
-	virtual bool			OnElevator() const;
+	virtual CMultiStateMover* OnElevator() const;
 
 	virtual	void			UpdatePlayerIcons( void );
 	virtual	void			DrawPlayerIcons( void );

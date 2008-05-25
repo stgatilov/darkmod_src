@@ -214,8 +214,8 @@ public:
 	idActor *				EnemyWithMostHealth();
 
 	virtual bool			OnLadder( void ) const;
-	// Returns TRUE if the actor is standing on a moving elevator
-	virtual bool			OnElevator() const;
+	// Returns the elevator entity if the actor is standing on a moving elevator
+	virtual CMultiStateMover* OnElevator() const;
 
 	virtual void			GetAASLocation( idAAS *aas, idVec3 &pos, int &areaNum ) const;
 

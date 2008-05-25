@@ -15,6 +15,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "ChaseEnemyTask.h"
 #include "../Memory.h"
 #include "../Library.h"
+#include "../../MultiStateMover.h"
 #include "../States/UnreachableTargetState.h"
 
 namespace ai
@@ -75,7 +76,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	{
 		_reachEnemyCheck = 0;
 
-		if (owner->AI_MOVE_DONE)
+		if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 		{
 			// Position has been reached, turn to player, if visible
 			if (owner->AI_ENEMY_VISIBLE)
@@ -85,7 +86,6 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			}
 		}
 	}
-	
 	else if (owner->AI_MOVE_DONE && !owner->m_HandlingDoor)
 	{
 		// Enemy position itself is not reachable, try to find a position within melee range around the enemy
@@ -127,6 +127,21 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		}
 		else
 		{
+			// Unreachable by walking, check if the opponent is on an elevator
+			CMultiStateMover* mover = enemy->OnElevator();
+			if (mover != NULL)
+			{
+				//gameRenderWorld->DebugArrow(colorRed, owner->GetPhysics()->GetOrigin(), mover->GetPhysics()->GetOrigin(), 1, 48);
+
+				// greebo: Check if we can fetch the elevator back to our floor
+				if (CanFetchElevator(mover, owner))
+				{
+					// Push to an InteractionTask
+
+					return false;
+				}
+			}
+
 			// Destination unreachable!
 			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
 			gameLocal.Printf("Destination unreachable... \n");
@@ -136,6 +151,13 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	}
 
 	return false; // not finished yet
+}
+
+bool ChaseEnemyTask::CanFetchElevator(CMultiStateMover* mover, idAI* owner)
+{
+	
+
+	return false;
 }
 
 void ChaseEnemyTask::SetEnemy(idActor* enemy)
