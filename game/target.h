@@ -635,5 +635,18 @@ private:
 	idStrList			m_EntsSetUnfrobable;
 };
 
+/**
+ * greebo: This target calls a specific script function (with no arguments).
+ */
+class CTarget_CallScriptFunction : 
+	public idTarget
+{
+public:
+	CLASS_PROTOTYPE( CTarget_CallScriptFunction );
+
+private:
+	void				Event_Activate( idEntity *activator );
+};
+
 
 #endif /* !__GAME_TARGET_H__ */

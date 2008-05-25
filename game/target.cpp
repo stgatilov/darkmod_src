@@ -2052,3 +2052,37 @@ void CTarget_SetFrobable::Restore( idRestoreGame *savefile )
 	for( int i=0;i < num; i++ )
 		savefile->ReadString( m_EntsSetUnfrobable[i] );
 }
+
+/*
+================
+CTarget_CallScriptFunction
+================
+*/
+CLASS_DECLARATION( idTarget, CTarget_CallScriptFunction )
+	EVENT( EV_Activate,	CTarget_CallScriptFunction::Event_Activate )
+END_CLASS
+
+void CTarget_CallScriptFunction::Event_Activate( idEntity *activator )
+{
+	// Get the function name
+	idStr funcName = spawnArgs.GetString("call");
+
+	if (funcName.IsEmpty())
+	{
+		gameLocal.Warning("Target %s has no script function to call!", name.c_str());
+		return;
+	}
+
+	const function_t* scriptFunction = gameLocal.program.FindFunction(funcName);
+	
+	if (scriptFunction != NULL)
+	{
+		idThread* thread = new idThread(scriptFunction);
+		thread->DelayedStart(0);
+	}
+	else
+	{
+		// script function not found!
+		gameLocal.Warning("Target %s specifies non-existent script function!", funcName.c_str());
+	}
+}
