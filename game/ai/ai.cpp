@@ -2321,13 +2321,15 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 		
 		if (areaNum != 0)
 		{
-			// Sanity check the returned area. If the position isn't within the AI's vertical melee
+			// Sanity check the returned area. If the position isn't within the AI's height + vertical melee
 			// reach, then report it as unreachable.
 			const idVec3& grav = physicsObj.GetGravityNormal();
 
 			float height = fabs((newPos - aas->AreaCenter(areaNum)) * grav);
 
-			if (height > melee_range) {
+			idBounds bounds = GetPhysics()->GetBounds();
+
+			if (height > bounds[1][2] + melee_range) {
 				areaNum = 0;
 			}
 		}
