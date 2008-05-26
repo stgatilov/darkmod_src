@@ -172,7 +172,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 
 CMultiStateMoverPosition* ChaseEnemyTask::CanFetchElevator(CMultiStateMover* mover, idAI* owner)
 {
-	if (!owner->CanUseElevators()) 
+	if (!owner->CanUseElevators() || owner->GetAAS() == NULL) 
 	{
 		// Can't use elevators at all, skip this check
 		return NULL;
