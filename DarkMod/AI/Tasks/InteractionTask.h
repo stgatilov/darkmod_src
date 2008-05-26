@@ -41,6 +41,8 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
+	virtual void OnFinish(idAI* owner);
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);

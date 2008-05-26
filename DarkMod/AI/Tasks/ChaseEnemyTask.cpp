@@ -13,6 +13,7 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "ChaseEnemyTask.h"
+#include "InteractionTask.h"
 #include "../Memory.h"
 #include "../Library.h"
 #include "../../MultiStateMover.h"
@@ -143,10 +144,17 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 				//gameRenderWorld->DebugArrow(colorRed, owner->GetPhysics()->GetOrigin(), mover->GetPhysics()->GetOrigin(), 1, 48);
 
 				// greebo: Check if we can fetch the elevator back to our floor
-				if (CanFetchElevator(mover, owner))
-				{
-					// Push to an InteractionTask
+				CMultiStateMoverPosition* reachablePos = CanFetchElevator(mover, owner);
 
+				if (reachablePos != NULL)
+				{
+					// Get the button which will fetch the elevator
+					CMultiStateMoverButton* button = mover->GetButton(reachablePos, reachablePos, BUTTON_TYPE_FETCH);
+
+					gameRenderWorld->DebugArrow(colorBlue, owner->GetPhysics()->GetOrigin(), button->GetPhysics()->GetOrigin(), 1, 5000);
+
+					// Push to an InteractionTask
+					subsystem.PushTask(TaskPtr(new InteractionTask(button)));
 					return false;
 				}
 			}
@@ -162,19 +170,19 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	return false; // not finished yet
 }
 
-bool ChaseEnemyTask::CanFetchElevator(CMultiStateMover* mover, idAI* owner)
+CMultiStateMoverPosition* ChaseEnemyTask::CanFetchElevator(CMultiStateMover* mover, idAI* owner)
 {
 	if (!owner->CanUseElevators()) 
 	{
 		// Can't use elevators at all, skip this check
-		return false;
+		return NULL;
 	}
 
 	// Check all elevator stations
 	const idList<MoverPositionInfo> positionList = mover->GetPositionInfoList();
 	eas::tdmEAS* elevatorSystem = owner->GetAAS()->GetEAS();
 
-	if (elevatorSystem == NULL) return false;
+	if (elevatorSystem == NULL) return NULL;
 
 	idVec3 ownerOrigin;
 	int areaNum;
@@ -195,11 +203,11 @@ bool ChaseEnemyTask::CanFetchElevator(CMultiStateMover* mover, idAI* owner)
 		if (pathFound)
 		{
 			// We can reach the elevator position from here, go there
-			return true;
+			return stationInfo->elevatorPosition.GetEntity();
 		}
 	}
 
-	return false;
+	return NULL;
 }
 
 void ChaseEnemyTask::SetEnemy(idActor* enemy)

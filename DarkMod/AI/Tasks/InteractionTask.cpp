@@ -19,11 +19,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-InteractionTask::InteractionTask()
+InteractionTask::InteractionTask() :
+	_waitEndTime(-1)
 {}
 
 InteractionTask::InteractionTask(idEntity* interactEnt) :
-	_interactEnt(interactEnt)
+	_interactEnt(interactEnt),
+	_waitEndTime(-1)
 {}
 
 // Get the name of this task
@@ -38,20 +40,20 @@ void InteractionTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
+	// Store the current move state
+	owner->PushMove();
+
 	if (_interactEnt == NULL) 
 	{
 		subsystem.FinishTask();
 	}
 	
-	/*owner->StopMove(MOVE_STATUS_DONE);
-	// Turn and look
-	owner->TurnToward(_target->GetPhysics()->GetOrigin());
-	owner->Event_LookAtEntity(_target, 1);
-
-	// Start anim
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
-
-	_waitEndTime = gameLocal.time + 600;*/
+	// Start moving towards that entity
+	if (!owner->MoveToPosition(_interactEnt->GetPhysics()->GetOrigin()))
+	{
+		// No path to that entity!
+		subsystem.FinishTask();
+	}
 }
 
 bool InteractionTask::Perform(Subsystem& subsystem)
@@ -61,17 +63,42 @@ bool InteractionTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	if (gameLocal.time >= _waitEndTime)
+	if (_waitEndTime > 0 && gameLocal.time >= _waitEndTime)
 	{
 		// Trigger the frob action script
 		_interactEnt->FrobAction(true);
 		return true;
 	}
-	
-	// Debug
-	// gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), _target->GetPhysics()->GetOrigin(), 10, 10000);
+	else if (_waitEndTime < 0 && owner->GetMoveStatus() == MOVE_STATUS_DONE)
+	{
+		// We've reached our target, turn and look
+		owner->TurnToward(_interactEnt->GetPhysics()->GetOrigin());
+		owner->Event_LookAtEntity(_interactEnt, 1);
+
+		// Start anim
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+		_waitEndTime = gameLocal.time + 600;
+	}
+	else 
+	{
+		// If horizontal distance smaller than 33, stop running
+		idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+		idVec3 targetOrigin = _interactEnt->GetPhysics()->GetOrigin();
+		ownerOrigin.z = 0;
+		targetOrigin.z = 0;
+
+		if ((ownerOrigin - targetOrigin).LengthSqr() < 1000) 
+		{
+			owner->AI_RUN = false;
+		}
+	}
 	
 	return false; // finish this task
+}
+
+void InteractionTask::OnFinish(idAI* owner)
+{
+	owner->PopMove();
 }
 
 // Save/Restore methods

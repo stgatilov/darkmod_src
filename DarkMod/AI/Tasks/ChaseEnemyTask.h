@@ -52,7 +52,7 @@ public:
 	virtual void SetEnemy(idActor* enemy);
 
 private:
-	bool CanFetchElevator(CMultiStateMover* mover, idAI* owner);
+	CMultiStateMoverPosition* CanFetchElevator(CMultiStateMover* mover, idAI* owner);
 };
 
 } // namespace ai

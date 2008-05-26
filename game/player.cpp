@@ -7515,7 +7515,7 @@ CMultiStateMover* idPlayer::OnElevator() const
 	idEntity* ent = physicsObj.GetGroundEntity();
 
 	// Return false if ground entity is not a mover
-	if (!ent->IsType(CMultiStateMover::Type)) return NULL;
+	if (ent == NULL || !ent->IsType(CMultiStateMover::Type)) return NULL;
 
 	CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
 	return (!mover->IsAtRest()) ? mover : NULL;
