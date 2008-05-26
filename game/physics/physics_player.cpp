@@ -380,11 +380,24 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			if (pushedEnt != NULL)
 			{
 				// Check for any rigid bodies that can be kicked
-				idPhysics_RigidBody* rigidBodyPhysics = dynamic_cast<idPhysics_RigidBody*>(pushedEnt->GetPhysics());
-				if (rigidBodyPhysics != NULL)
+				if (pushedEnt->GetPhysics()->IsType(idPhysics_RigidBody::Type))
 				{
-					rigidBodyPhysics->PropagateImpulse(trace.c.point, current.velocity*GetMass()*cv_pm_pushmod.GetFloat());
+					idPhysics_RigidBody* rigidBodyPhysics = static_cast<idPhysics_RigidBody*>(pushedEnt->GetPhysics());
+
+					// Take the direction of the current velocity
+					idVec3 direction = current.velocity;
+					direction.NormalizeFast();
+
+					// Scale the impulse so that only the fraction pointing in the right direction is considered
+					float scale = -trace.c.normal * current.velocity;
+					idVec3 impulse = direction * scale * GetMass() * cv_pm_pushmod.GetFloat();
+
+					rigidBodyPhysics->PropagateImpulse(trace.c.point, impulse);
+
+					//gameRenderWorld->DrawText( idStr(impulse.LengthFast()), rigidBodyPhysics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+					//gameRenderWorld->DebugArrow( colorWhite, rigidBodyPhysics->GetAbsBounds().GetCenter(), rigidBodyPhysics->GetAbsBounds().GetCenter() + impulse, 1, gameLocal.msec );
 				}
+				
 				totalMass = pushedEnt->GetPhysics()->GetMass();
 			}
 
