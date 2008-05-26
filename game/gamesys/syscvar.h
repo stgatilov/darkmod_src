@@ -134,6 +134,7 @@ extern idCVar cv_drag_encumber_minmass;
 extern idCVar cv_drag_encumber_maxmass;
 extern idCVar cv_drag_encumber_max;
 extern idCVar cv_dragged_item_highlight;
+extern idCVar cv_phys_show_momentum;
 
 extern idCVar cv_throw_min;
 extern idCVar cv_throw_max;
