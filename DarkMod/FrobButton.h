@@ -33,6 +33,9 @@ public:
 
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
+
+	// Override the base class's ApplyImpulse method
+	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 };
 
 #endif /* FROBBUTTON_H */

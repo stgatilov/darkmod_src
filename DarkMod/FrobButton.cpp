@@ -60,3 +60,12 @@ void CFrobButton::Close(bool bMaster)
 {
 	CBinaryFrobMover::Close(false);
 }
+
+void CFrobButton::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse )
+{
+	// Check if the impulse is applied in the right direction
+	if (impulse * m_Translation >= 0)
+	{
+		Operate();
+	}
+}
