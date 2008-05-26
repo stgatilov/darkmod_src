@@ -225,9 +225,8 @@ void CombatState::Think(idAI* owner)
 		owner->GetSubsystem(SubsysMovement)->ClearTasks();
 		owner->GetSubsystem(SubsysAction)->ClearTasks();
 
-		ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
-		chaseEnemy->SetEnemy(enemy);
-		owner->GetSubsystem(SubsysMovement)->PushTask(chaseEnemy);
+		// Allocate a ChaseEnemyTask
+		owner->GetSubsystem(SubsysMovement)->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
 
 		owner->GetSubsystem(SubsysAction)->PushTask(MeleeCombatTask::CreateInstance());
 		_combatType = COMBAT_MELEE;

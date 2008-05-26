@@ -81,6 +81,10 @@ public:
 	 */
 	ElevatorStationInfoPtr GetElevatorStationInfo(int index);
 
+	// Gets the index of the given elevator station
+	int GetElevatorStationIndex(ElevatorStationInfoPtr info);
+	int GetElevatorStationIndex(CMultiStateMoverPosition* positionEnt);
+
 	// Save/Restore routines
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
@@ -106,10 +110,6 @@ private:
 
 	// Retrieves the internal index of the given mover (or -1 if the mover is not registered)
 	int GetElevatorIndex(CMultiStateMover* mover);
-
-	// Gets the index of the given elevator station
-	int GetElevatorStationIndex(ElevatorStationInfoPtr info);
-	int GetElevatorStationIndex(CMultiStateMoverPosition* positionEnt);
 
 	// Calculates all possible routes from the startCluster/startArea to goalCluster/goalArea 
 	RouteInfoList FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea);

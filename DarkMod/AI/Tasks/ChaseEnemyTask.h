@@ -28,7 +28,11 @@ class ChaseEnemyTask :
 	idEntityPtr<idActor> _enemy;
 	int _reachEnemyCheck;
 
+	// Private default constructor
+	ChaseEnemyTask();
 public:
+	ChaseEnemyTask(idActor* enemy);
+
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
