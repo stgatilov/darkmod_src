@@ -74,6 +74,8 @@ static const float VISIBILTIY_LIGHTING_THRESHOLD = 0.2f;
 
 extern const idEventDef EV_PostSpawn;
 extern const idEventDef EV_FindTargets;
+extern const idEventDef EV_RemoveTarget;
+extern const idEventDef EV_AddTarget;
 extern const idEventDef EV_Touch;
 extern const idEventDef EV_Use;
 extern const idEventDef EV_Activate;
@@ -502,6 +504,8 @@ public:
 	void					ActivateTargets( idEntity *activator ) const;
 	// greebo: Removes the given target ent from this entity's targets.
 	void					RemoveTarget(idEntity* target);
+	void					AddTarget(idEntity* target);
+
 
 	// misc
 	virtual void			Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination );
@@ -1026,6 +1030,8 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_IsType ( const char *pstr_typeName );
 	void					Event_FindTargets( void );
 	void					Event_ActivateTargets( idEntity *activator );
+	void					Event_AddTarget(idEntity* target);
+	void					Event_RemoveTarget(idEntity* target);
 	void					Event_NumTargets( void );
 	void					Event_GetTarget( float index );
 	void					Event_RandomTarget( const char *ignore );
