@@ -1471,6 +1471,9 @@ void idAI::Spawn( void )
 
 	// Schedule a post-spawn event to parse the rest of the spawnargs
 	PostEventMS( &EV_PostSpawn, 1 );
+
+	m_lastThinkTime = gameLocal.time;
+
 }
 
 /*
