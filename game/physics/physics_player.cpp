@@ -1852,8 +1852,13 @@ void idPhysics_Player::CheckDuck( void ) {
 				// Clear the flag again, just to be sure
 				current.movementFlags &= ~PMF_DUCKED;
 
-				// greebo: check: Perform a trace to see how far we can move downwards?
-				SetOrigin(player->GetEyePosition() + gravityNormal * pm_normalviewheight.GetFloat());
+				// greebo: Perform a trace to see how far we can move downwards
+				trace_t	trace;
+				idVec3 end = player->GetEyePosition() + gravityNormal * pm_normalviewheight.GetFloat();
+				gameLocal.clip.Translation(trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self);
+
+				// Set the origin to the end position of the trace
+				SetOrigin(trace.endpos);
 
 				maxZ = pm_normalheight.GetFloat();
 
