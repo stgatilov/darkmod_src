@@ -43,7 +43,6 @@ void tdmEAS::Compile()
 
 	// First, allocate the memory for the cluster info structures
 	SetupClusterInfoStructures();
-	SetupElevatorStationStructures();
 
 	// Then, traverse the registered elevators and assign their "stations" or floors to the clusters
 	AssignElevatorsToClusters();
@@ -69,21 +68,6 @@ void tdmEAS::SetupClusterInfoStructures()
 	}
 }
 
-void tdmEAS::SetupElevatorStationStructures()
-{
-	_elevatorStations.clear();
-
-	std::size_t numElevatorStations = 0;
-	for (int i = 0; i < _elevators.Num(); i++)
-	{
-		CMultiStateMover* elevator = _elevators[i].GetEntity();
-		const idList<MoverPositionInfo>& positionList = elevator->GetPositionInfoList();
-		numElevatorStations += positionList.Num();
-	}
-
-	_elevatorStations.resize(numElevatorStations);
-}
-
 int tdmEAS::GetAreaNumForPosition(const idVec3& position)
 {
 	int areaNum = _aas->file->PointReachableAreaNum(position, _aas->DefaultSearchBounds(), AREA_REACHABLE_WALK, 0);
@@ -98,7 +82,9 @@ int tdmEAS::GetAreaNumForPosition(const idVec3& position)
 
 void tdmEAS::AssignElevatorsToClusters()
 {
-	std::size_t stationIndex = 0;
+	_elevatorStations.clear();
+	std::size_t ignoredStations = 0;
+
 	for (int i = 0; i < _elevators.Num(); i++)
 	{
 		CMultiStateMover* elevator = _elevators[i].GetEntity();
@@ -113,7 +99,8 @@ void tdmEAS::AssignElevatorsToClusters()
 
 			if (areaNum == 0)
 			{
-				gameLocal.Warning("[%s]: Cannot assign multistatemover position to AAS area:  %s", _aas->name.c_str(), positionEnt->name.c_str());
+				DM_LOG(LC_AI, LT_WARNING).LogString("[%s]: Cannot assign multistatemover position to AAS area:  %s\r", _aas->name.c_str(), positionEnt->name.c_str());
+				ignoredStations++;
 				continue;
 			}
 
@@ -121,16 +108,18 @@ void tdmEAS::AssignElevatorsToClusters()
 			_clusterInfo[area.cluster]->numElevatorStations++;
 
 			// Allocate a new ElevatorStationStructure for this station and fill in the data
-			_elevatorStations[stationIndex] = ElevatorStationInfoPtr(new ElevatorStationInfo);
-			_elevatorStations[stationIndex]->elevator = elevator;
-			_elevatorStations[stationIndex]->elevatorPosition = positionEnt;
-			_elevatorStations[stationIndex]->areaNum = areaNum;
-			_elevatorStations[stationIndex]->clusterNum = area.cluster;
-			_elevatorStations[stationIndex]->elevatorNum = i;
+			ElevatorStationInfoPtr station(new ElevatorStationInfo);
 
-			stationIndex++;
+			station->elevator = elevator;
+			station->elevatorPosition = positionEnt;
+			station->areaNum = areaNum;
+			station->clusterNum = area.cluster;
+
+			_elevatorStations.push_back(station);
 		}
 	}
+
+	gameLocal.Printf("[%s]: Assigned %d multistatemover positions to AAS areas and ignored %d.\n", _aas->name.c_str(), _elevatorStations.size(), ignoredStations);
 }
 
 void tdmEAS::SetupClusterRouting()

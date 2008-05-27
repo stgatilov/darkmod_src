@@ -93,8 +93,6 @@ public:
 
 private:
 	void SetupClusterInfoStructures();
-	void SetupElevatorStationStructures();
-
 	void AssignElevatorsToClusters();
 
 	void SetupClusterRouting();
