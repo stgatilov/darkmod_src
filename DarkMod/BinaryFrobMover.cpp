@@ -188,6 +188,10 @@ void CBinaryFrobMover::Spawn( void )
 
 void CBinaryFrobMover::Event_PostSpawn() 
 {
+	// m_Translation is the vector between start position and end position
+	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
+	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
+
 	// angua: the origin of the door in opened and closed state
 	m_ClosedOrigin = physicsObj.GetLocalOrigin();
 	m_OpenOrigin = m_ClosedOrigin + m_Translation;
@@ -200,10 +204,6 @@ void CBinaryFrobMover::Event_PostSpawn()
 	{
 		gameLocal.Warning("FrobMover %s will not move, translation and rotation not set.", name.c_str());
 	}
-
-	// m_Translation is the vector between start position and end position
-	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
-	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
 
 	// set up physics impulse behavior
 	spawnArgs.GetFloat("impulse_thresh_open", "0", m_ImpulseThreshOpenSq );
