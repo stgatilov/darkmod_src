@@ -151,14 +151,13 @@ void AnimalPatrolTask::movingToNextSpot(idAI* owner)
 {
 	if (owner->AI_MOVE_DONE) 
 	{
+		// We've reached the destination, wait a bit
+		switchToState(stateWaiting, owner);
 		if (owner->AI_DEST_UNREACHABLE) 
 		{
 			// Destination is unreachable, switch to new state
 			chooseNewState(owner);
 		}
-
-		// We've reached the destination, wait a bit
-		switchToState(stateWaiting, owner);
 	}
 	else if (gameLocal.random.RandomFloat() < 0.1f)
 	{

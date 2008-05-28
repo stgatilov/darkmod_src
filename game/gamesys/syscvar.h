@@ -62,6 +62,8 @@ extern idCVar cv_ai_opt_noobstacleavoidance;
 
 extern idCVar cv_ai_show_aasfuncobstacle_state;
 
+extern idCVar cv_debug_aastype;
+
 extern idCVar cv_las_showtraces;
 extern idCVar cv_show_gameplay_time;
 

@@ -404,7 +404,11 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		clipModel->GetAbsBounds().AxisProjection( -physics->GetGravityNormal(), min, max );
 		if ( max < stepHeight || min > headHeight ) {
 			// can step over this one
-			continue;
+			// angua: do not step over other actors
+			if (obEnt->IsType(idActor::Type))
+			{
+				continue;
+			}
 		}
 
 		// Get the box bounding the obstacle

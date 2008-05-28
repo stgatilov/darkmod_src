@@ -5008,7 +5008,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_27:
 			{
 				//LAS.pvsToAASMappingTable.DebugShowMappings(10000);
-				idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS("aas32"));
+				idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS(cv_debug_aastype.GetString()));
 					
 				if (aas != NULL)
 				{
