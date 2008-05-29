@@ -587,9 +587,10 @@ void idActor::Spawn( void )
 	state		= NULL;
 	idealState	= NULL;
 
-	spawnArgs.GetFloat( "collision_delta_fatal", "86", m_delta_fatal ); // falling 3.5 stories 
+	spawnArgs.GetFloat( "collision_damage_threshold_hard", "25", m_damage_thresh_hard ); // greebo: dealing 50+ hit points is considered "hard"
+	spawnArgs.GetFloat( "collision_damage_threshold_min", "5", m_damage_thresh_min ); // falling ~12 ft, g = 1066
+
 	spawnArgs.GetFloat( "collision_delta_scale",  "1.0", m_delta_scale );
-	spawnArgs.GetFloat( "collision_delta_min",    "31", m_delta_min ); // falling ~12 ft, g = 1066
 	spawnArgs.GetInt( "rank", "0", rank );
 	spawnArgs.GetInt( "team", "0", team );
 	spawnArgs.GetInt( "type", "0", m_AItype );
@@ -943,9 +944,9 @@ void idActor::Save( idSaveGame *savefile ) const {
 	}
 
 	savefile->WriteBool( finalBoss );
-	savefile->WriteFloat( m_delta_fatal );
+	savefile->WriteFloat( m_damage_thresh_hard );
 	savefile->WriteFloat( m_delta_scale );
-	savefile->WriteFloat( m_delta_min );
+	savefile->WriteFloat( m_damage_thresh_min );
 
 	idToken token;
 
@@ -1084,9 +1085,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadBool( finalBoss );
-	savefile->ReadFloat( m_delta_fatal );
+	savefile->ReadFloat( m_damage_thresh_hard );
 	savefile->ReadFloat( m_delta_scale );
-	savefile->ReadFloat( m_delta_min );
+	savefile->ReadFloat( m_damage_thresh_min );
 
 	idStr statename;
 
@@ -4056,10 +4057,9 @@ int idActor::GetNumRangedWeapons()
 	Added by Richard Day
 	=====================
 ****************************************************************************************/
-float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
+int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
 {
-	bool bNoDamage = false;
-	float delta = 0.0f;
+	int damageDealt = 0;
 
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound wont be played otherwise
@@ -4069,59 +4069,79 @@ float idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &saved
 		const contactInfo_t &contact = physicsObj.GetContact( i );
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
 		{
-			bNoDamage = true;
 			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
-			break;
+			return damageDealt;
 		}
 	}
-	if( !bNoDamage )
+
+	const idVec3& vGravNorm = GetPhysics()->GetGravityNormal();
+
+	// Get the vdelta (how much the velocity has changed in this frame)
+	idVec3 deltaVec = (savedVelocity - GetPhysics()->GetLinearVelocity());
+
+	// greebo: Get the vertical portion of the velocity 
+	idVec3 deltaVecVert = (deltaVec * vGravNorm) * vGravNorm;
+	// Get the horizontal portion by subtracting the vertical one from the velocity
+	idVec3 deltaVecHoriz = deltaVec - deltaVecVert;
+
+	float deltaHoriz = deltaVecHoriz.LengthSqr();
+	float deltaVert = deltaVec.LengthSqr() - deltaHoriz;
+	
+	// conversion factor to 10s of MJ/kg, horizontal and vertical weighted differently
+	double delta = cv_collision_damage_scale_vert.GetFloat() * deltaVert;
+	delta += cv_collision_damage_scale_horiz.GetFloat() * deltaHoriz;
+
+	// damage scale per actor
+	delta *= m_delta_scale;
+
+	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
+
+	// reduce falling damage if there is standing water
+	switch (waterLevel)
 	{
-		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
-		idVec3 deltaVec = (savedVelocity - GetPhysics()->GetLinearVelocity());
-		idVec3 deltaVecHoriz = deltaVec - (deltaVec * vGravNorm) * vGravNorm;
-		float deltaHoriz = deltaVecHoriz.LengthSqr();
-		float deltaVert = deltaVec.LengthSqr() - deltaHoriz;
-		
-		// conversion factor to 10s of MJ/kg, horizontal and vertical weighted differently
-		delta = cv_collision_damage_scale_vert.GetFloat() * deltaVert;
-		delta += cv_collision_damage_scale_horiz.GetFloat() * deltaHoriz;
+		case WATERLEVEL_NONE:
+			break;
+		case WATERLEVEL_FEET:	delta *= 0.8f;	// -20% for shallow water
+			break; 
+		case WATERLEVEL_WAIST:	delta *= 0.5f;	// -50% for medium water
+			break; 
+		case WATERLEVEL_HEAD:	delta *= 0.25f;	// -75% for deep water
+			break;
+		default: 
+			break;
+	};
 
-		// damage scale per AI:
-		delta *= m_delta_scale;
+	// greebo: Now calibrate the damage using the sixth power of the velocity (=square^3)
+	// The damage has a linear relationship to the sixth power of vdelta
+	delta = delta*delta*delta;
+	int damage = static_cast<int>(1.445E-16 * delta + 0.58);
 
-		waterLevel_t waterLevel = physicsObj.GetWaterLevel();
+	//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 
-		// reduce falling damage if there is standing water
-		if( waterLevel == WATERLEVEL_HEAD )
+	// Check if the damage is above our threshold, ignore otherwise
+	if (damage > m_damage_thresh_min)
+	{
+		//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
+		gameLocal.Printf("Damage dealt: %d\n", damage);
+
+		pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
+
+		// Update our return value
+		damageDealt = damage;
+
+		if (damage > m_damage_thresh_hard)
 		{
-			delta *= 0.25f;
+			// greebo: the damage_fall_hard entityDef has a damage value of 1, which is scaled by the calculated damage integer
+			Damage(NULL, NULL, vGravNorm, "damage_fall_hard", damage, 0);
 		}
-		else if( waterLevel == WATERLEVEL_WAIST )
+		else
 		{
-			delta *= 0.5f;
+			// We are below the "hard" threshold, just deal the "soft" damage
+			Damage(NULL, NULL, vGravNorm, "damage_fall_soft", damage, 0);
 		}
-		else if( waterLevel == WATERLEVEL_FEET )
-		{
-			delta *= 0.8f;
-		}
-		if( delta >= m_delta_min )
-		{
-			pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
-			if( delta > m_delta_fatal )
-			{
-				Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_fatalfall", 10.0f, 0 );
-			}
-			else
-			{
-				// damage scales linearly with delta up to fatal
-				// assume a max health of 100, player-relative, damage_softfall of 10
-				float dScale = cv_collision_damage_min.GetFloat() / 10.0f;
-				dScale += 10.0f * (delta - m_delta_min) / m_delta_fatal;
-				Damage( NULL, NULL, idVec3( 0, 0, -1 ), "damage_softfall", dScale, 0 );
-			} // if( delta > fatalDelta ) else
-		}// if ( delta >= 1.0f )
-	} // if( !noDamage )
-	return delta;
+	}
+
+	return damageDealt;
 }
 
 void idActor::Event_GetTeam()

@@ -188,8 +188,9 @@ public:
 	handle collision(Falling) damage to AI/Players
 	Added by Richard Day
 	=====================
+	// greebo: Changed return type: the amount of damage points is returned
 	****************************************************************************************/
-	virtual float		    CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+	virtual int		    CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
 
 	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );
@@ -328,9 +329,9 @@ protected:
 
 	/*	CrashLand variables	Added by Richard Day	*/
 
-	float m_delta_fatal; ///< any value above this is death
+	float m_damage_thresh_min;		// min damage. anything at or below this does 0 damage
+	float m_damage_thresh_hard;		// any damage above this is considered "hard"
 	float m_delta_scale; ///< scale the damage based on this. delta is divide by this
-	float m_delta_min;   ///< min delta anything at or below this does 0 damage
 	
 
 	friend class			idAnimState;

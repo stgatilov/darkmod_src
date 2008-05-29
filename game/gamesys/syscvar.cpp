@@ -150,9 +150,8 @@ idCVar cv_frob_ammo_selects_weapon(	"tdm_frob_ammo_selects_weapon", "1",		CVAR_G
 /**
 * Physics
 **/
-idCVar cv_collision_damage_scale_vert(	"tdm_collision_dmg_scale_vert", "0.0001",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from vertical collisions/decelerations.  This multiplies delta-velocity squared." );
-idCVar cv_collision_damage_scale_horiz(	"tdm_collision_dmg_scale_horiz", "0.00005",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations.  This multiplies delta-velocity squared." );
-idCVar cv_collision_damage_min(			"tdm_collision_dmg_min", "5.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum damage the player takes from collisions above the minimum delta" );
+idCVar cv_collision_damage_scale_vert(	"tdm_collision_damage_scale_vert", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from vertical collisions/decelerations. This multiplies delta-velocity squared." );
+idCVar cv_collision_damage_scale_horiz(	"tdm_collision_damage_scale_horiz", "0.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations. This multiplies delta-velocity squared." );
 idCVar cv_drag_limit_force(				"tdm_drag_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
 idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]" );
 idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );

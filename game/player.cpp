@@ -3897,29 +3897,29 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	
 	AI_SOFTLANDING = false;
 	AI_HARDLANDING = false;
-	float delta = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
+	int damageDealt = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 	
-
-	if ( delta > m_delta_fatal )
+	if (health < 0)
 	{
+		// This was a deadly fall
 		AI_HARDLANDING = true;
 		landChange = -32;
 		landTime = gameLocal.time;
 	}
-	else if ( delta > m_delta_min )
+	else if (damageDealt >= m_damage_thresh_hard)
 	{
 		AI_HARDLANDING = true;
 		landChange = -24;
 		landTime = gameLocal.time;
 	}
-	else if ( delta > (m_delta_min / 4.0f) )
+	else if (damageDealt >= m_damage_thresh_min)
 	{
 		AI_SOFTLANDING = true;
 		landChange	= -8;
 		landTime = gameLocal.time;
 	}
+
 	// otherwise, just walk on
-	
 }
 
 /*

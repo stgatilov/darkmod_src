@@ -122,7 +122,6 @@ extern idCVar cv_frob_ammo_selects_weapon;
 // physics
 extern idCVar cv_collision_damage_scale_vert;
 extern idCVar cv_collision_damage_scale_horiz;
-extern idCVar cv_collision_damage_min;
 extern idCVar cv_drag_limit_force;
 extern idCVar cv_drag_force_max;
 extern idCVar cv_drag_stuck_dist;
