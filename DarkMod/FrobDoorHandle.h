@@ -36,9 +36,6 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
-
 	/**
 	 * Get the door that is currently associated with this handle.
 	 */
@@ -64,7 +61,15 @@ public:
 
 	bool					isLocked(void);
 
-	void					Tap(void);
+	/**
+	 * greebo: This method is invoked directly or it gets called by the attached door.
+	 * For instance, a call to CFrobDoor::Open() gets re-routed here first to let 
+	 * the handle animation play before actually trying to open the door.
+	 *
+	 * The Tap() algorithm attempts to rotate the door handle down until and 
+	 * calls OpenDoor() when the handle reaches its end rotation/position.
+	 */
+	void					Tap();
 
 protected:
 	/**
