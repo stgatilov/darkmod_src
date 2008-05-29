@@ -56,8 +56,6 @@ public:
 	void					ToggleOpen();
 	void					ClosePortal(void);
 	void					DoneStateChange(void);
-	void					DoneRotating(void);
-	void					DoneMoving(void);
 
 	bool					isLocked(void);
 

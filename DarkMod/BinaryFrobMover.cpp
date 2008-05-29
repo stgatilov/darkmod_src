@@ -368,9 +368,8 @@ void CBinaryFrobMover::Open(bool bMaster)
 	m_StoppedDueToBlock = false;
 	m_LastBlockingEnt = NULL;
 
-
 	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true && !m_bInterrupted && !IsBlocked())
+	if (m_Open == true && !m_bInterrupted && !IsBlocked())
 	{
 		m_bIntentOpen = false;
 		return;
@@ -401,31 +400,36 @@ void CBinaryFrobMover::Open(bool bMaster)
 			}
 		}
 
-
 		m_Open = true;
 		m_Rotating = true;
 		m_Translating = true;
 		
-		idAngles tempAng;
-		physicsObj.GetLocalAngles( tempAng );
-		idAngles t = (m_OpenAngles - tempAng).Normalize180();
+		idAngles angleDelta = (m_OpenAngles - physicsObj.GetLocalAngles()).Normalize180();
 
-		idAngles null;
-		if (!t.Compare(null))
+		if (!angleDelta.Compare(idAngles(0,0,0)))
 		{
-			Event_RotateOnce((m_OpenAngles - tempAng).Normalize180());
+			Event_RotateOnce(angleDelta);
 		}
 		else
 		{
 			m_Rotating = false;
 		}
 		
-		if( m_TransSpeed )
+		if (!m_OpenOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
+		{	
+			if (m_TransSpeed)
+			{
+				Event_SetMoveSpeed( m_TransSpeed );
+			}
+
+			MoveToLocalPos(m_OpenOrigin);
+		}
+		else
 		{
-			Event_SetMoveSpeed( m_TransSpeed );
+			m_Translating = false;
 		}
 
-		MoveToLocalPos( m_OpenOrigin );
+		m_StateChange = (m_Translating || m_Rotating);
 	}
 }
 
@@ -438,26 +442,42 @@ void CBinaryFrobMover::Close(bool bMaster)
 	m_StoppedDueToBlock = false;
 	m_LastBlockingEnt = NULL;
 
-	idAngles tempAng;
-
 	// If the door is already closed, we don't have anything to do. :)
-	if(m_Open == false)
+	if (m_Open == false)
 		return;
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
-	physicsObj.GetLocalAngles( tempAng );
-	
-	m_StateChange = true;
 	m_Rotating = true;
+	m_StateChange = true;
 	m_Translating = true;
 
-	Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
-	
-	if( m_TransSpeed )
-			Event_SetMoveSpeed( m_TransSpeed );
+	// greebo: Only rotate, if there is something to do
+	idAngles angleDelta = (m_ClosedAngles - physicsObj.GetLocalAngles()).Normalize180();
+	if (!angleDelta.Compare(idAngles(0,0,0)))
+	{
+		Event_RotateOnce(angleDelta);
+	}
+	else
+	{
+		m_Rotating = false;
+	}
 
-	MoveToLocalPos(m_ClosedOrigin);
+	if (!m_ClosedOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
+	{	
+		if (m_TransSpeed)
+		{
+			Event_SetMoveSpeed( m_TransSpeed );
+		}
+
+		MoveToLocalPos(m_ClosedOrigin);
+	}
+	else
+	{
+		m_Translating = false;
+	}
+
+	m_StateChange = (m_Rotating || m_Translating);
 }
 
 void CBinaryFrobMover::ToggleOpen(void)
@@ -546,8 +566,7 @@ void CBinaryFrobMover::DoneStateChange(void)
 	{
 		// in all other cases, use the angles and position of origin to check if the door is open or closed
 		// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-		idVec3 localOrg;
-		physicsObj.GetLocalOrigin(localOrg);
+		idVec3 localOrg = physicsObj.GetLocalOrigin();
 		idAngles localAngles = physicsObj.GetLocalAngles();
 		localAngles.Normalize180();
 
