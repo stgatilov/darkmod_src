@@ -6721,12 +6721,12 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 		if ( !gameLocal.isMultiplayer ) {
 			float scale = g_damageScale.GetFloat();
-			if ( g_useDynamicProtection.GetBool() && g_skill.GetInteger() < 2 ) {
+			/*if ( g_useDynamicProtection.GetBool() && g_skill.GetInteger() < 2 ) {
 				if ( gameLocal.time > lastDmgTime + 500 && scale > 0.25f ) {
 					scale -= 0.05f;
 					g_damageScale.SetFloat( scale );
 				}
-			}
+			}*/
 
 			if ( scale > 0.0f ) {
 				damage *= scale;

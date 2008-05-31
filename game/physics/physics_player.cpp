@@ -1722,7 +1722,7 @@ void idPhysics_Player::CheckGround( void ) {
 		// greebo: Don't push entities that already have a velocity towards the ground.
 		if ( groundPhysics && info.invMass != 0.0f && groundPhysics->GetLinearVelocity()*gravityNormal <= 0) {
 			// greebo: Apply a force to the entity below the player
-			gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
+			//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
 			groundPhysics->AddForce(0, current.origin, gravityNormal*mass);
 			groundPhysics->Activate();
 		}
