@@ -7198,7 +7198,7 @@ void idEntity::ParseUsedByList(idList<idStr> &list, idStr &s)
 	}
 }
 
-bool idEntity::UsedBy(IMPULSE_STATE nState, idEntity *ent)
+bool idEntity::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
 	return false;
 }

@@ -18,6 +18,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/game_local.h"
 #include "DarkModGlobals.h"
 #include "BinaryFrobMover.h"
+#include "Inventory/Item.h"
+#include "Inventory/Category.h"
 #include "FrobDoor.h"
 #include "FrobDoorHandle.h"
 #include "../tools/compilers/aas/aasfile.h"
@@ -87,8 +89,7 @@ Quit:
 }
 
 
-CFrobDoor::CFrobDoor(void)
-: CBinaryFrobMover()
+CFrobDoor::CFrobDoor()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
@@ -101,10 +102,6 @@ CFrobDoor::CFrobDoor(void)
 	m_PinTranslationFractionFlag = false;
 	m_PinRotationFractionFlag = false;
 	m_KeyReleased = false;
-}
-
-CFrobDoor::~CFrobDoor(void)
-{
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -224,14 +221,6 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	m_DoubleDoor.Restore(savefile);
 	m_Doorhandle.Restore(savefile);
 	m_Bar.Restore(savefile);
-}
-
-void CFrobDoor::WriteToSnapshot( idBitMsgDelta &msg ) const
-{
-}
-
-void CFrobDoor::ReadFromSnapshot( const idBitMsgDelta &msg )
-{
 }
 
 void CFrobDoor::Spawn( void )
@@ -575,12 +564,14 @@ void CFrobDoor::Close(bool bMaster)
 	}
 }
 
-bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
+bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
 	bool bRc = false;
 
-	if(ent == NULL)
+	if (item == NULL || item->GetItemEntity() == NULL)
 		return bRc;
+
+	idEntity* ent = item->GetItemEntity();
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
 		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
@@ -623,6 +614,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 	if (nState != IS_PRESSED)
 		return bRc;
 
+	// Cycle through our known "UsedBy" names and see if we have a match
 	int n = m_UsedBy.Num();
 	for (int i = 0; i < n; i++)
 	{
@@ -639,18 +631,18 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 	{
 		// Try to find the master lock entity
 		idEntity* masterEnt = gameLocal.FindEntity(m_MasterLock);
-		if (masterEnt != NULL && masterEnt->IsType(CFrobDoor::Type))
+		if (masterEnt != NULL)
 		{
-			bRc = static_cast<CFrobDoor*>(masterEnt)->UsedBy(nState, ent);
+			bRc = masterEnt->UsedBy(nState, item);
 		}
 		else
 		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] could not be found or is not of class CFrobDoor\r", name.c_str(), masterEnt->name.c_str());
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] could not be found\r", name.c_str(), masterEnt->name.c_str());
 		}
 	}
 
 	// angua: we can't unlock the door with this key
-	if (bRc == false && IsLocked())
+	if (bRc == false && IsLocked() && item->Category()->GetName() == "Keys")
 	{
 		StartSound( "snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL );
 	}

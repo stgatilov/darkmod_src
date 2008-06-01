@@ -48,7 +48,7 @@ public:
 	 */
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
-	bool					UsedBy(IMPULSE_STATE nState, idEntity *);
+	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 	void					FrobAction(bool bMaster);
 
 	// These functions need to be disabled on the handle. Therefore
