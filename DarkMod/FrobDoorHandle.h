@@ -54,10 +54,12 @@ public:
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
 	void					ToggleOpen();
+	void					ToggleLock();
 	void					ClosePortal(void);
 	void					DoneStateChange(void);
 
-	bool					isLocked(void);
+	// greebo: Returns TRUE if the associated door is locked (not to confuse with CBinaryFrobMover::IsLocked())
+	bool					DoorIsLocked();
 
 	/**
 	 * greebo: This method is invoked directly or it gets called by the attached door.

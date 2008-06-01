@@ -488,7 +488,7 @@ void CBinaryFrobMover::ToggleOpen(void)
 	{
 //		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
 
-		if(m_bIntentOpen == true)
+		if (m_bIntentOpen)
 		{
 			Open(true);
 		}
