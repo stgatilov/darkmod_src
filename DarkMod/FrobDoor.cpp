@@ -770,20 +770,6 @@ bool CFrobDoor::IsFrobbed(void)
 	return idEntity::IsFrobbed();
 }
 
-void CFrobDoor::ToggleOpen(void)
-{
-	CBinaryFrobMover::ToggleOpen();
-	// if(m_Doorhandle.GetEntity())
-	//	m_Doorhandle.GetEntity()->ToggleOpen();
-}
-
-void CFrobDoor::ToggleLock(void)
-{
-	CBinaryFrobMover::ToggleLock();
-	if(m_Doorhandle.GetEntity())
-		m_Doorhandle.GetEntity()->ToggleLock();
-}
-
 idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &str)
 {
 	idStringList *rc = NULL;

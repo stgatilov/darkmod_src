@@ -98,9 +98,6 @@ public:
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);
 
-	void					ToggleOpen(void);
-	void					ToggleLock(void);
-
 	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
 
