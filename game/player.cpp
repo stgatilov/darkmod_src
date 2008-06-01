@@ -5179,23 +5179,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_51:	// Inventory use item
 		{
-			// Check for a held grabber entity, which should be put back into the inventory
-			if (AddGrabberEntityToInventory())
-				return;
-
-			// If the grabber item can be equipped/dequipped, use item does this
-			if ( g_Global.m_DarkModPlayer->grabber->GetSelected() )
-			{
-				if( g_Global.m_DarkModPlayer->grabber->ToggleEquip() )
-					return;
-			}
-
-			// Pass the "inventoryUseItem" event to the GUIs
-			m_overlays.broadcastNamedEvent("inventoryUseItem");
-
-			if (GetImmobilization() & EIM_ITEM_USE)
-				return;
-
 			inventoryUseItem();
 		}
 		break;
@@ -8765,6 +8748,17 @@ void idPlayer::inventoryUseKeyRelease(int holdTime)
 
 void idPlayer::inventoryUseItem()
 {
+	// Check for a held grabber entity, which should be put back into the inventory
+	if (AddGrabberEntityToInventory())
+		return;
+
+	// If the grabber item can be equipped/dequipped, use item does this
+	if ( g_Global.m_DarkModPlayer->grabber->GetSelected() )
+	{
+		if( g_Global.m_DarkModPlayer->grabber->ToggleEquip() )
+			return;
+	}
+
 	// If the player has an item that is selected we need to check if this
 	// is a usable item (like a key). In this case the use action takes
 	// precedence over the frobaction.
@@ -8776,6 +8770,12 @@ void idPlayer::inventoryUseItem()
 
 void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime)
 {
+	// Pass the "inventoryUseItem" event to the GUIs
+	m_overlays.broadcastNamedEvent("inventoryUseItem");
+
+	// Check if we're allowed to use items at all
+	if (GetImmobilization() & EIM_ITEM_USE) return;
+
 	// Sanity check
 	if (item == NULL) return;
 

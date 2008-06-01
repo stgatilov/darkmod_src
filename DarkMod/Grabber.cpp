@@ -245,12 +245,13 @@ void CGrabber::StopDrag( void )
 
 	m_drag.SetRefEnt( NULL );
 
-	if(m_player.GetEntity())
+	idPlayer* player = m_player.GetEntity();
+	if (player != NULL)
 	{
-		m_player.GetEntity()->m_bDraggingBody = false;
-		m_player.GetEntity()->m_bGrabberActive = false;
-		m_player.GetEntity()->SetImmobilization( "Grabber", 0 );
-		m_player.GetEntity()->SetHinderance( "Grabber", 1.0f, 1.0f );
+		player->m_bDraggingBody = false;
+		player->m_bGrabberActive = false;
+		player->SetImmobilization( "Grabber", 0 );
+		player->SetHinderance( "Grabber", 1.0f, 1.0f );
 	}
 }
 
@@ -1212,7 +1213,7 @@ void CGrabber::SetDragEncumbrance( void )
 		goto Quit;
 
 	// don't let the player switch weapons or items, and lower their weapon
-	Immobilizations = EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK;
+	Immobilizations = EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE;
 
 	mass = m_dragEnt.GetEntity()->GetPhysics()->GetMass();
 	// Don't jump if mass is over the limit
