@@ -578,52 +578,53 @@ void CFrobDoor::Close(bool bMaster)
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 {
 	bool bRc = false;
-	int i, n;
-	CFrobDoor *master;
-	idEntity *e;
-	idStr s;
-	char type = 0;
 
 	if(ent == NULL)
-		return false;
+		return bRc;
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
 		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
 
 	// First we check if this item is a lockpick. It has to be of the toolclass lockpick
 	// and the type must be set.
-	ent->spawnArgs.GetString("toolclass", "", s);
-	if(s == "lockpick")
+	char type = 0;
+
+	idStr str = ent->spawnArgs.GetString("toolclass", "");
+	if (str == "lockpick")
 	{
-		ent->spawnArgs.GetString("type", "", s);
-		if(s.Length() == 1)
-			type = s[0];
+		str = ent->spawnArgs.GetString("type", "");
+		if(str.Length() == 1)
+		{
+			type = str[0];
+		}
 	}
 
 	// Process the lockpick
-	if(type != 0)
+	if (type != 0)
 	{
-		ELockpickSoundsample v;
+		ELockpickSoundsample sample;
 
-		if(nState == IS_PRESSED)
-			v = LPSOUND_INIT;
-		else if(nState == IS_RELEASED)
-			v = LPSOUND_RELEASED;
-		else
-			v = LPSOUND_REPEAT;
-
-		ProcessLockpick((int)type, v);
+		switch (nState)
+		{
+		case IS_PRESSED:	sample = LPSOUND_INIT; 
+			break;
+		case IS_RELEASED:	sample = LPSOUND_RELEASED;
+			break;
+		default:			sample = LPSOUND_REPEAT;
+		};
+		
+		ProcessLockpick((int)type, sample);
 	}
 
 	// When we are here we know that the item is usable
 	// so we have to check if it is associated with this entity.
 	// We ignore all repeat or release events to make it a true 
 	// IMPULSE event.
-	if(nState != IS_PRESSED)
-		goto Quit;
+	if (nState != IS_PRESSED)
+		return bRc;
 
-	n = m_UsedBy.Num();
-	for(i = 0; i < n; i++)
+	int n = m_UsedBy.Num();
+	for (int i = 0; i < n; i++)
 	{
 		if(ent->name == m_UsedBy[i])
 		{
@@ -634,14 +635,17 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 
 	// If we haven't found the entity here. we can still try to unlock it
 	// via a master
-	if(bRc == false && m_MasterLock.Length() != 0)
+	if (bRc == false && !m_MasterLock.IsEmpty())
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		// Try to find the master lock entity
+		idEntity* masterEnt = gameLocal.FindEntity(m_MasterLock);
+		if (masterEnt != NULL && masterEnt->IsType(CFrobDoor::Type))
 		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				bRc = master->UsedBy(nState, ent);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			bRc = static_cast<CFrobDoor*>(masterEnt)->UsedBy(nState, ent);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] could not be found or is not of class CFrobDoor\r", name.c_str(), masterEnt->name.c_str());
 		}
 	}
 
@@ -651,7 +655,6 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, idEntity *ent)
 		StartSound( "snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL );
 	}
 
-Quit:
 	return bRc;
 }
 
