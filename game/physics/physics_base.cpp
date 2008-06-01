@@ -248,6 +248,12 @@ idPhysics_Base::ApplyImpulse
 void idPhysics_Base::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
 }
 
+// greebo: The default implementation of PropagateImpulse just applies the impulse
+bool idPhysics_Base::PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) {
+	ApplyImpulse(id, point, impulse);
+	return false;
+}
+
 /*
 ================
 idPhysics_Base::AddForce

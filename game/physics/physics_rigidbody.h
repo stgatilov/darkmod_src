@@ -86,6 +86,14 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
+	
+	/**
+	 * greebo: This is similar to ApplyImpulse, although this distributes the impulse
+	 *         on all entities in contact with this one in *this* very frame. If 
+	 *         no entities are in contact, all the impulse gets applied to this one.
+	 */
+	bool					PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse);
+
 	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
@@ -146,13 +154,6 @@ public:	// common physics interface
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
 public:
-	/**
-	 * greebo: This is similar to ApplyImpulse, although this distributes the impulse
-	 *         on all entities in contact with this one in *this* very frame. If 
-	 *         no entities are in contact, all the impulse gets applied to this one.
-	 */
-	bool					PropagateImpulse(const idVec3& point, const idVec3& impulse);
-
 	/**
 	 * greebo: "Accessor" method to the internal state. This is a bit hacky, I admit.
 	 */

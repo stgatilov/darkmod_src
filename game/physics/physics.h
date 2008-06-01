@@ -105,6 +105,12 @@ public:	// common physics interface
 								// collision interaction between different physics objects
 	virtual void				GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const = 0;
 	virtual void				ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) = 0;
+
+	// greebo: Applies the impulse to this entity and lets it propagate to other contacts 
+	// (not supported by all entities, works good in rigid body physics)
+	// returns true if the impulse has been applied to any neighbours
+	virtual bool				PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) = 0;
+
 	virtual void				AddForce( const int id, const idVec3 &point, const idVec3 &force ) = 0;
 	virtual void				Activate( void ) = 0;
 	virtual void				PutToRest( void ) = 0;

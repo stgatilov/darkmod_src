@@ -395,6 +395,10 @@ idPhysics_StaticMulti::ApplyImpulse
 void idPhysics_StaticMulti::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
 }
 
+bool idPhysics_StaticMulti::PropagateImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
+	return false;
+}
+
 /*
 ================
 idPhysics_StaticMulti::AddForce
@@ -826,6 +830,10 @@ const contactInfo_t &idPhysics_StaticMulti::GetContact( int num ) const {
 	static contactInfo_t info;
 	memset( &info, 0, sizeof( info ) );
 	return info;
+}
+
+bool idPhysics_StaticMulti::HasNonStaticContacts() {
+	return false;
 }
 
 /*

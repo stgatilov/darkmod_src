@@ -283,6 +283,10 @@ idPhysics_Static::ApplyImpulse
 void idPhysics_Static::ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
 }
 
+bool idPhysics_Static::PropagateImpulse( const int id, const idVec3 &point, const idVec3 &impulse ) {
+	return false;
+}
+
 /*
 ================
 idPhysics_Static::AddForce
@@ -622,6 +626,10 @@ idPhysics_Static::GetNumContacts
 */
 int idPhysics_Static::GetNumContacts( void ) const {
 	return 0;
+}
+
+bool idPhysics_Static::HasNonStaticContacts() {
+	return false;
 }
 
 /*

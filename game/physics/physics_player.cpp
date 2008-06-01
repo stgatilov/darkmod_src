@@ -379,24 +379,18 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			idEntity* pushedEnt = gameLocal.entities[trace.c.entityNum];
 			if (pushedEnt != NULL)
 			{
-				// Check for any rigid bodies that can be kicked
-				if (pushedEnt->GetPhysics()->IsType(idPhysics_RigidBody::Type))
-				{
-					idPhysics_RigidBody* rigidBodyPhysics = static_cast<idPhysics_RigidBody*>(pushedEnt->GetPhysics());
+				// Take the direction of the current velocity
+				idVec3 direction = current.velocity;
+				direction.NormalizeFast();
 
-					// Take the direction of the current velocity
-					idVec3 direction = current.velocity;
-					direction.NormalizeFast();
+				// Scale the impulse so that only the fraction pointing in the right direction is considered
+				float scale = -trace.c.normal * current.velocity;
+				idVec3 impulse = direction * scale * GetMass() * cv_pm_pushmod.GetFloat();
 
-					// Scale the impulse so that only the fraction pointing in the right direction is considered
-					float scale = -trace.c.normal * current.velocity;
-					idVec3 impulse = direction * scale * GetMass() * cv_pm_pushmod.GetFloat();
+				pushedEnt->GetPhysics()->PropagateImpulse(0, trace.c.point, impulse);
 
-					rigidBodyPhysics->PropagateImpulse(trace.c.point, impulse);
-
-					//gameRenderWorld->DrawText( idStr(impulse.LengthFast()), rigidBodyPhysics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-					//gameRenderWorld->DebugArrow( colorWhite, rigidBodyPhysics->GetAbsBounds().GetCenter(), rigidBodyPhysics->GetAbsBounds().GetCenter() + impulse, 1, gameLocal.msec );
-				}
+				//gameRenderWorld->DrawText( idStr(impulse.LengthFast()), rigidBodyPhysics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+				//gameRenderWorld->DebugArrow( colorWhite, rigidBodyPhysics->GetAbsBounds().GetCenter(), rigidBodyPhysics->GetAbsBounds().GetCenter() + impulse, 1, gameLocal.msec );
 				
 				totalMass = pushedEnt->GetPhysics()->GetMass();
 			}

@@ -60,6 +60,7 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
+	bool					PropagateImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
 	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
@@ -102,6 +103,7 @@ public:	// common physics interface
 	bool					EvaluateContacts( void );
 	int						GetNumContacts( void ) const;
 	const contactInfo_t &	GetContact( int num ) const;
+	bool					HasNonStaticContacts();
 	void					ClearContacts( void );
 	void					AddContactEntity( idEntity *e );
 	void					RemoveContactEntity( idEntity *e );
