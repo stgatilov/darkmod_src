@@ -1799,7 +1799,7 @@ idActor::UnlinkCombat
 void idActor::UnlinkCombat( void ) {
 	idAFAttachment *headEnt;
 
-	if ( combatModel ) {
+	if ( combatModel != NULL ) {
 		combatModel->Unlink();
 	}
 	headEnt = head.GetEntity();

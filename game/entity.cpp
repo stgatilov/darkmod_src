@@ -3672,9 +3672,10 @@ bool idEntity::RunPhysics( void ) {
 		}
 
 		// greebo: Apply the "reactio" to the team master
-		idPhysics_RigidBody* rigidBodyPhysics = dynamic_cast<idPhysics_RigidBody*>(physics);
-		if (rigidBodyPhysics != NULL)
+		if (physics->IsType(idPhysics_RigidBody::Type))
 		{
+			idPhysics_RigidBody* rigidBodyPhysics = static_cast<idPhysics_RigidBody*>(physics);
+
 			// Calculate the movement (proportional to kinetic energy)
 			float movement = rigidBodyPhysics->GetLinearVelocity().LengthSqr() + 
 				              rigidBodyPhysics->GetAngularVelocity().LengthSqr();
