@@ -123,6 +123,8 @@ const idEventDef EV_Player_PauseGame("pauseGame", NULL);
 const idEventDef EV_Player_UnpauseGame("unpauseGame", NULL);
 const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", NULL);
 
+const idEventDef EV_CheckAAS("checkAAS", NULL);
+
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
 const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
 const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", NULL);
@@ -191,6 +193,8 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_Mission_Success,				idPlayer::Event_MissionSuccess)
 	EVENT( EV_TriggerMissionEnd,			idPlayer::Event_TriggerMissionEnd )
+
+	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 
 END_CLASS
 
@@ -931,6 +935,9 @@ void idPlayer::Spawn( void )
 
 	// Start the gameplay timer half a second after spawn
 	PostEventMS(&EV_Player_StartGamePlayTimer, 500);
+
+	// Check the AAS status
+	PostEventMS(&EV_CheckAAS, 0);
 }
 
 CInventoryWeaponItem* idPlayer::getCurrentWeaponItem() {
@@ -9936,4 +9943,28 @@ void idPlayer::Event_StartGamePlayTimer()
 {
 	gameLocal.m_GamePlayTimer.Clear();
 	gameLocal.m_GamePlayTimer.Start();
+}
+
+void idPlayer::Event_CheckAAS() 
+{
+	if (gameLocal.GameState() >= GAMESTATE_ACTIVE)
+	{
+		idList<idStr> aasNames;
+
+		for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+			if (!ent->IsType(idAI::Type)) continue;
+
+			idAI* ai = static_cast<idAI*>(ent);
+			if (ai->GetAAS() == NULL)
+			{
+				idStr aasName = ai->spawnArgs.GetString("use_aas");
+				aasNames.AddUnique(aasName);
+			}
+		}
+
+		for (int i = 0; i < aasNames.Num(); i++)
+		{
+			SendHUDMessage("Warning: " + aasNames[i] + " is out of date!");
+		}
+	}
 }

@@ -980,6 +980,9 @@ private:
 
 	// Gets called in the first few frames
 	void					Event_StartGamePlayTimer();
+
+	// Checks the AAS status and displays the HUD warning
+	void					Event_CheckAAS();
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
