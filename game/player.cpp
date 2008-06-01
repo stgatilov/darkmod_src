@@ -9511,17 +9511,15 @@ void idPlayer::SetHinderance( const char *source, float mCap, float aCap )
 
 void idPlayer::PlayFootStepSound()
 {
-	idStr				moveType, localSound, sound;
-	idMaterial			*material = NULL;
-	const idSoundShader	*sndShader = NULL;
-	
 	if ( !GetPhysics()->HasGroundContacts() ) {
 		return;
 	}
 
+	idStr localSound, sound;
+	
 	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
 	// Currently only players have movement flags set up this way, not AI.  We could change that later.
-	moveType.Clear();
+	idStr moveType("");
 
 	UpdateMoveVolumes();
 
@@ -9544,7 +9542,7 @@ void idPlayer::PlayFootStepSound()
 	}
 
 	// start footstep sound based on material type
-	material = const_cast<idMaterial *>( GetPhysics()->GetContact( 0 ).material );
+	const idMaterial* material = GetPhysics()->GetContact( 0 ).material;
 	if ( material != NULL ) 
 	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Player %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
@@ -9555,24 +9553,24 @@ void idPlayer::PlayFootStepSound()
 		sound = spawnArgs.GetString( localSound.c_str() );
 	}
 
-	waterLevel_t waterLevel = static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel();
+	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
 	// If player is walking in liquid, replace the bottom surface sound with water sounds
 	if (waterLevel == WATERLEVEL_FEET )
 	{
 		localSound = "snd_footstep_puddle";
-		sound = spawnArgs.GetString( localSound.c_str() );
+		sound = spawnArgs.GetString( localSound );
 	}
 	else if (waterLevel == WATERLEVEL_WAIST)
 	{
 		localSound = "snd_footstep_wading";
-		sound = spawnArgs.GetString( localSound.c_str() );
+		sound = spawnArgs.GetString( localSound );
 	}
 	// greebo: Added this to disable the walking sound when completely underwater
 	// this should be replaced by snd_
 	else if (waterLevel == WATERLEVEL_HEAD)
 	{
 		localSound = "snd_footstep_swim";
-		sound = spawnArgs.GetString( localSound.c_str() );
+		sound = spawnArgs.GetString( localSound );
 	}
 
 	if ( sound.IsEmpty() && waterLevel != WATERLEVEL_HEAD ) 
@@ -9580,7 +9578,7 @@ void idPlayer::PlayFootStepSound()
 		localSound = "snd_footstep";
 	}
 	
-	sound = spawnArgs.GetString( localSound.c_str() );
+	sound = spawnArgs.GetString( localSound );
 
 	// if a sound was not found for that specific material, use default
 	if( sound.IsEmpty() && waterLevel != WATERLEVEL_HEAD )
@@ -9595,13 +9593,13 @@ void idPlayer::PlayFootStepSound()
 	if ( !sound.IsEmpty() ) 
 	{
 		// apply the movement type modifier to the volume
-		sndShader = declManager->FindSound( sound.c_str() );
+		const idSoundShader* sndShader = declManager->FindSound( sound );
 		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() );
 		StartSoundShader( sndShader, SND_CHANNEL_BODY, 0, false, NULL );
 		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
-		PropSoundDirect( static_cast<const char *>( localSound.c_str() ), true, false );
+		PropSoundDirect( localSound, true, false );
 	}
 }
 
