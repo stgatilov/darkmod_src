@@ -984,7 +984,7 @@ void idPlayer::NextInventoryMap()
 	if (mapItem != NULL)
 	{
 		// We already have a map selected, toggle it off
-		inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+		inventoryUseItem(IS_PRESSED, mapItem, 0); 
 	}
 
 	// Advance the cursor to the next item
@@ -996,7 +996,7 @@ void idPlayer::NextInventoryMap()
 	}
 	
 	// Use this item
-	inventoryUseItem(IS_PRESSED, mapItem->GetItemEntity(), 0); 
+	inventoryUseItem(IS_PRESSED, mapItem, 0); 
 }
 
 void idPlayer::SetupInventory()
@@ -5217,7 +5217,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 			CInventoryCursor *crsr = InventoryCursor();
 			CInventoryItem *it = crsr->GetCurrentItem();
 			if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-				inventoryUseItem(IS_REPEAT, it->GetItemEntity(), holdTime);
+				inventoryUseItem(IS_REPEAT, it, holdTime);
 		}
 		break;
 	}
@@ -8752,7 +8752,7 @@ void idPlayer::inventoryUseKeyRelease(int holdTime)
 
 	// Check if there is a valid item selected
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(IS_RELEASED, it->GetItemEntity(), holdTime);
+		inventoryUseItem(IS_RELEASED, it, holdTime);
 }
 
 void idPlayer::inventoryUseItem()
@@ -8763,29 +8763,31 @@ void idPlayer::inventoryUseItem()
 	CInventoryCursor *crsr = InventoryCursor();
 	CInventoryItem *it = crsr->GetCurrentItem();
 	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
-		inventoryUseItem(IS_PRESSED, it->GetItemEntity(), 0);
+		inventoryUseItem(IS_PRESSED, it, 0);
 }
 
-void idPlayer::inventoryUseItem(IMPULSE_STATE nState, idEntity *ent, int holdTime)
+void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime)
 {
 	// Sanity check
+	if (item == NULL) return;
+
+	idEntity* ent = item->GetItemEntity();
 	if (ent == NULL) return;
 
 	idThread *thread = NULL;
 	idEntity *frob = g_Global.m_DarkModPlayer->m_FrobEntity.GetEntity();
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %s  KeyState: %u\r", ent->name.c_str(), nState);
-	if(frob != NULL)
+
+	if(nState == IS_PRESSED)
 	{
-		if(ent->spawnArgs.GetBool("usable") == true)
+		// greebo: Directly use the frobbed entity, if the spawnarg is set on the inventory item
+		if (frob != NULL && ent->spawnArgs.GetBool("usable") == true)
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
 			frob->UsedBy(nState, ent);
 		}
-	}
 
-	if(nState == IS_PRESSED)
-	{
 		// greebo: Start tracking of this impulse when the button is pressed
 		m_ButtonStateTracker.startTracking(IMPULSE_51);
 

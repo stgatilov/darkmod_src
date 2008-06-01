@@ -329,7 +329,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		if (item != NULL)
 		{
 			// Item found, set the cursor to it
-			player->inventoryUseItem(IS_PRESSED, item->GetItemEntity(), 0);
+			player->inventoryUseItem(IS_PRESSED, item, 0);
 		}
 		else
 		{

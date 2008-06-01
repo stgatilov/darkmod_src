@@ -644,8 +644,8 @@ public:
 	// Performs the inventory action for onButtonRelease
 	void inventoryUseKeyRelease(int holdTime);
 
-	// Uses a specific item, if it's in the same inventory.
-	void inventoryUseItem(IMPULSE_STATE nState, idEntity* useEnt, int holdTime);
+	// Uses a specific inventory item
+	void inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime);
 
 	// Changes the inventory selection to the item with the given name
 	void inventoryChangeSelection(const idStr& name);
