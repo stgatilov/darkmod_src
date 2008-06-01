@@ -8770,8 +8770,11 @@ void idPlayer::inventoryUseItem()
 
 void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int holdTime)
 {
-	// Pass the "inventoryUseItem" event to the GUIs
-	m_overlays.broadcastNamedEvent("inventoryUseItem");
+	if (nState == IS_PRESSED)
+	{
+		// Pass the "inventoryUseItem" event to the GUIs
+		m_overlays.broadcastNamedEvent("inventoryUseItem");
+	}
 
 	// Check if we're allowed to use items at all
 	if (GetImmobilization() & EIM_ITEM_USE) return;
