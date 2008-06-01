@@ -414,11 +414,12 @@ void CFrobDoor::OpenDoor(bool bMaster)
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
 	// Open door handle if there is one
-	if(m_Doorhandle.GetEntity() != NULL)
-		m_Doorhandle.GetEntity()->Open(false);
+	// greebo: This call is not necessary, the handle already moved
+	/*if(m_Doorhandle.GetEntity() != NULL)
+		m_Doorhandle.GetEntity()->Open(false);*/
 
 	// Handle master mode
-	if(bMaster == true && m_MasterLock.Length() != 0)
+	if (bMaster == true && !m_MasterLock.IsEmpty())
 	{
 		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
 		{
