@@ -4079,8 +4079,13 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 
 	const idVec3& vGravNorm = GetPhysics()->GetGravityNormal();
 
+	const idVec3& curVelocity = physicsObj.GetLinearVelocity();
+
+	// The current speed parallel to gravity
+	idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
+
 	// Get the vdelta (how much the velocity has changed in this frame)
-	idVec3 deltaVec = (savedVelocity - GetPhysics()->GetLinearVelocity());
+	idVec3 deltaVec = (savedVelocity - curVelocity);
 
 	// greebo: Get the vertical portion of the velocity 
 	idVec3 deltaVecVert = (deltaVec * vGravNorm) * vGravNorm;
@@ -4115,7 +4120,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	};
 
 	// We've been moving downwards with a certain velocity, set the flag 
-	if (deltaVecVert*vGravNorm > 100)
+	if (curGravVelocity.LengthFast() < 1 && deltaVecVert*vGravNorm > 100)
 	{
 		result.hasLanded = true;
 	}
