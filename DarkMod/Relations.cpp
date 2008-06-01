@@ -307,7 +307,7 @@ bool CRelations::SetFromArgs( idDict *args )
 	EntryList.Condense();
 
 	maxrow++;
-	if (EntryList.Num() != (maxrow*maxrow))
+	if (EntryList.Num() > (maxrow*maxrow))
 	{
 		hadLogicError = true;
 		goto Quit;
