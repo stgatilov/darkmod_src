@@ -93,6 +93,12 @@ typedef struct {
 	jointHandle_t			to;
 } copyJoints_t;
 
+struct CrashLandResult
+{
+	int damageDealt;	// contains the damage done to the actor
+	bool hasLanded;		// true if the actor hit the ground after a fall this frame
+};
+
 class idActor : public idAFEntity_Gibbable {
 public:
 	CLASS_PROTOTYPE( idActor );
@@ -188,9 +194,9 @@ public:
 	handle collision(Falling) damage to AI/Players
 	Added by Richard Day
 	=====================
-	// greebo: Changed return type: the amount of damage points is returned
+	// greebo: Changed return type: the amount of damage points is contained in the struct
 	****************************************************************************************/
-	virtual int		    CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+	CrashLandResult			CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &oldOrigin, const idVec3 &oldVelocity );
 
 	int						GetDamageForLocation( int damage, int location );
 	const char *			GetDamageGroup( int location );

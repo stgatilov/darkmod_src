@@ -3897,7 +3897,8 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	
 	AI_SOFTLANDING = false;
 	AI_HARDLANDING = false;
-	int damageDealt = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
+
+	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 	
 	if (health < 0)
 	{
@@ -3906,13 +3907,13 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 		landChange = -32;
 		landTime = gameLocal.time;
 	}
-	else if (damageDealt >= m_damage_thresh_hard)
+	else if (result.damageDealt >= m_damage_thresh_hard)
 	{
 		AI_HARDLANDING = true;
 		landChange = -24;
 		landTime = gameLocal.time;
 	}
-	else if (damageDealt >= m_damage_thresh_min)
+	else if (result.hasLanded || result.damageDealt >= m_damage_thresh_min)
 	{
 		AI_SOFTLANDING = true;
 		landChange	= -8;

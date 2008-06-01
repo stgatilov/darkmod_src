@@ -4057,10 +4057,12 @@ int idActor::GetNumRangedWeapons()
 	Added by Richard Day
 	=====================
 ****************************************************************************************/
-int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
+CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOrigin, const idVec3 &savedVelocity )
 {
-	int damageDealt = 0;
-
+	CrashLandResult result;
+	result.damageDealt = 0;
+	result.hasLanded = false;
+	
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound wont be played otherwise
 	// as we do no damage if this is true.
@@ -4070,7 +4072,8 @@ int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOr
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
 		{
 			StartSound( "snd_land_hard", SND_CHANNEL_ANY, 0, false, NULL );
-			return damageDealt;
+			result.hasLanded = true;
+			return result;
 		}
 	}
 
@@ -4111,10 +4114,16 @@ int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOr
 			break;
 	};
 
+	// We've been moving downwards with a certain velocity, set the flag 
+	if (deltaVecVert*vGravNorm > 100)
+	{
+		result.hasLanded = true;
+	}
+
 	if (delta < 390000)
 	{
 		// Below this threshold, nothing happens
-		return damageDealt;
+		return result;
 	}
 
 	// greebo: Now calibrate the damage using the sixth power of the velocity (=square^3)
@@ -4135,7 +4144,7 @@ int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOr
 		pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
 
 		// Update our return value
-		damageDealt = damage;
+		result.damageDealt = damage;
 
 		if (damage > m_damage_thresh_hard)
 		{
@@ -4149,7 +4158,7 @@ int idActor::CrashLand( const idPhysics_Actor& physicsObj, const idVec3 &savedOr
 		}
 	}
 
-	return damageDealt;
+	return result;
 }
 
 void idActor::Event_GetTeam()
