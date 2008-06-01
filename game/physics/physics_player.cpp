@@ -1693,12 +1693,14 @@ void idPhysics_Player::CheckGround( void ) {
 
 	// if the player didn't have ground contacts the previous frame
 	if ( !hadGroundContacts ) {
+		// greebo: Set the "jump" deadtime in any case to 100 msec to disallow jumps for small timespan
+		current.movementTime = 100;
 
 		// don't do landing time if we were just going down a slope
 		if ( (current.velocity * -gravityNormal) < -200.0f ) {
 			// don't allow another jump for a little while
 			current.movementFlags |= PMF_TIME_LAND;
-			current.movementTime = 250;
+			current.movementTime = 100;
 		}
 	}
 
@@ -2064,8 +2066,8 @@ bool idPhysics_Player::CheckJump( void ) {
 		return false;
 	}
 
-	// must wait for jump to be released
-	if ( current.movementFlags & PMF_JUMP_HELD ) {
+	// must wait for jump to be released or dead time to have passed
+	if ( current.movementFlags & PMF_JUMP_HELD || current.movementTime > 0) {
 		return false;
 	}
 
@@ -2434,7 +2436,7 @@ idPhysics_Player::HasJumped
 ================
 */
 bool idPhysics_Player::HasJumped( void ) const {
-	return ( ( current.movementFlags & PMF_JUMPED ) != 0 );
+   	return ( ( current.movementFlags & PMF_JUMPED ) != 0 && current.movementTime <= 0);
 }
 
 /*
