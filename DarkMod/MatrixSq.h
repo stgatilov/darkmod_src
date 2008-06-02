@@ -44,6 +44,12 @@ public:
 
 		void Clear( void );
 
+		/** 
+		 * greebo: Fills the whole matrix with the given value.
+		 * Does not change matrix dimensions.
+		 */
+		void Fill(type& src);
+
 		/**
 		* Set the appropriate entry to the provided type
 		*
@@ -240,6 +246,17 @@ inline CMatrixSq<type> &CMatrixSq<type>::operator=(const CMatrixSq<type> &in)
 		m_mat[i] = in.m_mat[i];
 Quit:
 	return *this;
+}
+
+template <class type>
+inline void CMatrixSq<type>::Fill(type& src)
+{
+	int num = NumFromDim( m_dim );
+	for (int i = 0; i < num; i++)
+	{
+		m_mat[i] = src;
+	}
+	m_filled = num;
 }
 
 template <class type>
