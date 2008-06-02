@@ -61,7 +61,7 @@ CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 END_CLASS
 
-static char *sSampleTypeText[] = 
+static const char *sSampleTypeText[] = 
 {
 	"LPSOUND_INIT",					// Initial call (impulse has been triggered)
 	"LPSOUND_REPEAT",				// Call from the keyboardhandler for repeated presses
