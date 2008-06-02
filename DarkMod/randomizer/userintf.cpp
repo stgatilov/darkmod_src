@@ -43,7 +43,7 @@ void EndOfProgram() {
                      Error message function
 ***********************************************************************/
 
-void FatalError(char * ErrorText) {
+void FatalError(const char * ErrorText) {
   // This function outputs an error message and aborts the program.
 
   // Important: There is no universally portable way of outputting an 

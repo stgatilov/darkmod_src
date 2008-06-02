@@ -86,7 +86,7 @@ const char* DARKMOD_LOGFILE = "/tmp/DarkMod.log";
 const char* DARKMOD_LOGFILE = "c:\\d3modlogger.log";
 #endif
 
-static char *LTString[LT_COUNT+1] = {
+static const char *LTString[LT_COUNT+1] = {
 	"INI",
 	"FRC",
 	"ERR",
@@ -98,7 +98,7 @@ static char *LTString[LT_COUNT+1] = {
 	"---"
 };
 
-static char *LCString[LC_COUNT+1] = {
+static const char *LCString[LC_COUNT+1] = {
 	"INIT",
 	"FORCE",
 	"MISC",
@@ -411,7 +411,7 @@ void CGlobal::LogMat3(idStr const &Name, idMat3 const &Mat)
 		);
 }
 
-void CGlobal::LogString(char *fmt, ...)
+void CGlobal::LogString(const char *fmt, ...)
 {
 	if(m_LogFile == NULL)
 		return;

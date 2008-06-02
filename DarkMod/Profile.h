@@ -172,7 +172,7 @@ ULONG RemoveSection(PROFILE_HANDLE *, char *SectionName, BOOL ReAlloc);
  * Returns the section for a given sectionname.
  * PROFILE_SECTION may be NULL if the pointer to the section is not needed.
  */
-ULONG FindSection(PROFILE_HANDLE *, char *SectionName, PROFILE_SECTION **s);
+ULONG FindSection(PROFILE_HANDLE *, const char *SectionName, PROFILE_SECTION **s);
 /**
  * Returns a section with the given index or NULL if the indes doesn't exist.
  * This could be either because the entry at that indes is set to NULL, or the
@@ -211,7 +211,7 @@ ULONG RemoveMap(PROFILE_SECTION *Section, PROFILE_MAP *, BOOL ReAlloc);
  * Searches for a key in a given section.
  * PROFILE_MAP may be NULL if the pointer to the map is not needed.
  */
-ULONG FindMap(PROFILE_SECTION *, char *Key, BOOL CaseSensitiv, PROFILE_MAP **Mapptr);
+ULONG FindMap(PROFILE_SECTION *, const char *Key, BOOL CaseSensitiv, PROFILE_MAP **Mapptr);
 
 
 

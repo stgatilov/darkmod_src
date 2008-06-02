@@ -169,7 +169,7 @@ public:
 	void LogPlane(idStr const &Name, idPlane const &Plane);
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogMat3(idStr const &Name, idMat3 const &Matrix);
-	void LogString(char *Format, ...);
+	void LogString(const char *Format, ...);
 	CLightMaterial *GetMaterial(idStr const &MaterialName);
 
 	/**
@@ -216,7 +216,7 @@ public:
 	long			m_Frame;
 	char			m_ModPath[1024];
 	char			m_ModName[256];
-	char			*m_Filename;
+	const char		*m_Filename;
 	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;
 	CDarkModPlayer	*m_DarkModPlayer;
@@ -342,7 +342,7 @@ public:
 };
 
 extern CGlobal g_Global;
-extern char *g_LCString[];
+extern const char *g_LCString[];
 
 #define LOGBUILD
 

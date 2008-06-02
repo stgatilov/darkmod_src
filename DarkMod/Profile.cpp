@@ -466,7 +466,7 @@ Quit:
 	return(rc);
 }
 
-ULONG FindSection(PROFILE_HANDLE *h, char *sn, PROFILE_SECTION **ps)
+ULONG FindSection(PROFILE_HANDLE *h, const char *sn, PROFILE_SECTION **ps)
 {
 	ULONG rc = -1;
 	ULONG i, n, v;
@@ -503,7 +503,7 @@ Quit:
 	return(rc);
 }
 
-ULONG FindMap(PROFILE_SECTION *s, char *k, BOOL CaseSensitive, PROFILE_MAP **m)
+ULONG FindMap(PROFILE_SECTION *s, const char *k, BOOL CaseSensitive, PROFILE_MAP **m)
 {
 	ULONG rc = -1;
 	ULONG i, n, v;
