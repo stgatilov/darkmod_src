@@ -48,7 +48,7 @@ public:
 		 * greebo: Fills the whole matrix with the given value.
 		 * Does not change matrix dimensions.
 		 */
-		void Fill(type& src);
+		void Fill(const type& src);
 
 		/**
 		* Set the appropriate entry to the provided type
@@ -61,12 +61,12 @@ public:
 		* CsndPropLoader handles this with another function that reverses the
 		* indices if row is greater than column.
 		**/
-		bool Set(int row, int col, type &src);
+		bool Set(int row, int col, const type &src);
 
 		/**
 		* Set an element explicitly in the 1d unwrapped RUT matrix
 		**/
-		bool Set1d( int ind, type &src );
+		bool Set1d( int ind, const type &src );
 		
 		/**
 		* Returns a pointer to the entry for the given 2d indices
@@ -249,7 +249,7 @@ Quit:
 }
 
 template <class type>
-inline void CMatrixSq<type>::Fill(type& src)
+inline void CMatrixSq<type>::Fill(const type& src)
 {
 	int num = NumFromDim( m_dim );
 	for (int i = 0; i < num; i++)
@@ -260,7 +260,7 @@ inline void CMatrixSq<type>::Fill(type& src)
 }
 
 template <class type>
-inline bool CMatrixSq<type>::Set(int row, int col, type &src )
+inline bool CMatrixSq<type>::Set(int row, int col, const type &src )
 {
 	bool returnval;
 	int ind;
@@ -279,7 +279,7 @@ inline bool CMatrixSq<type>::Set(int row, int col, type &src )
 }
 
 template <class type>
-inline bool CMatrixSq<type>::Set1d(int ind, type &src )
+inline bool CMatrixSq<type>::Set1d(int ind, const type &src )
 {
 	bool returnval;
 	if (ind >= m_filled || ind < 0)
