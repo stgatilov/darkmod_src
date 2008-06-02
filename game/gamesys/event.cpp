@@ -24,7 +24,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "event.h"
 #include "../game_local.h"
 
-#define MAX_EVENTSPERFRAME			4096
+#define MAX_EVENTSPERFRAME			8192
 //#define CREATE_EVENT_CODE
 
 /***********************************************************************
