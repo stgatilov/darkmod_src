@@ -306,10 +306,15 @@ bool CRelations::SetFromArgs( idDict *args )
 
 	EntryList.Condense();
 
-	maxrow++;
+	//maxrow++;
 	if (EntryList.Num() > (maxrow*maxrow))
 	{
 		hadLogicError = true;
+		goto Quit;
+	}
+
+	if (EntryList.Num() == 0)
+	{
 		goto Quit;
 	}
 
@@ -322,14 +327,14 @@ bool CRelations::SetFromArgs( idDict *args )
 	// angua: Fill matrix with defaults
 	m_RelMat->Fill(s_DefaultRelation);
 
-	for (int counter = 1; counter <= maxrow; counter++)
+	// Set the default relationship between teams
+	for (int i = 0; i < maxrow; i++)
 	{
-		m_RelMat->Set(EntryList[counter].row, EntryList[counter].col, s_DefaultSameTeamRel);
+		m_RelMat->Set(i, i, s_DefaultSameTeamRel);
 	}
 
-
 	// angua: Set values from list
-	for( int i=0; i<EntryList.Num(); i++ )
+	for( int i = 0; i < EntryList.Num(); i++ )
 	{
 		if ( !m_RelMat->Set(EntryList[i].row, EntryList[i].col, EntryList[i].val ) )
 		{
