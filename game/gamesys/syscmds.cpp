@@ -687,7 +687,6 @@ argv(0) god
 ==================
 */
 void Cmd_God_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -697,13 +696,12 @@ void Cmd_God_f( const idCmdArgs &args ) {
 
 	if ( player->godmode ) {
 		player->godmode = false;
-		msg = "godmode OFF\n";
+		gameLocal.Printf( "godmode OFF\n" );
 	} else {
 		player->godmode = true;
-		msg = "godmode ON\n";
+		gameLocal.Printf( "godmode ON\n" );
 	}
 
-	gameLocal.Printf( "%s", msg );
 }
 
 /*
@@ -716,7 +714,6 @@ argv(0) notarget
 ==================
 */
 void Cmd_Notarget_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -726,13 +723,12 @@ void Cmd_Notarget_f( const idCmdArgs &args ) {
 
 	if ( player->fl.notarget ) {
 		player->fl.notarget = false;
-		msg = "notarget OFF\n";
+		gameLocal.Printf( "notarget OFF\n" );
 	} else {
 		player->fl.notarget = true;
-		msg = "notarget ON\n";
+		gameLocal.Printf( "notarget ON\n" );
 	}
 
-	gameLocal.Printf( "%s", msg );
 }
 
 /*
@@ -743,7 +739,6 @@ argv(0) noclip
 ==================
 */
 void Cmd_Noclip_f( const idCmdArgs &args ) {
-	char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
@@ -752,13 +747,12 @@ void Cmd_Noclip_f( const idCmdArgs &args ) {
 	}
 
 	if ( player->noclip ) {
-		msg = "noclip OFF\n";
+		player->noclip = false;
+		gameLocal.Printf( "notclip OFF\n" );
 	} else {
-		msg = "noclip ON\n";
+		player->noclip = true;
+		gameLocal.Printf( "notclip ON\n" );
 	}
-	player->noclip = !player->noclip;
-
-	gameLocal.Printf( "%s", msg );
 }
 
 /*

@@ -241,7 +241,7 @@ void CShop::LoadShopItemDefinitions() {
 	}
 }
 
-int CShop::AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list) {
+int CShop::AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list) {
 	int itemNum = 1;
 	while (true) {
 		const char* itemName = mapDict->GetString(va("%s_%d_item",itemKey,itemNum));

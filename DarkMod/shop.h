@@ -98,7 +98,7 @@ public:
 	void AddStartingItem(CShopItem *item);
 
 	// initializes the 'list' based on the map
-	int AddItems(idDict* mapDict, char* itemKey, idList<CShopItem *>* list);
+	int AddItems(idDict* mapDict, const char* itemKey, idList<CShopItem *>* list);
 
 	// returns the various lists
 	idList<CShopItem *>* GetItemsForSale();
