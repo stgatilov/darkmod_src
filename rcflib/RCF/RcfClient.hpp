@@ -15,6 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility/enable_if.hpp>
 
+#include <RCF/ClientStub.hpp>
 #include <RCF/CheckRtti.hpp>
 
 namespace RCF {
