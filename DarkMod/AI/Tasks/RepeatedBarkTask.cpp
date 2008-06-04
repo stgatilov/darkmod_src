@@ -48,7 +48,7 @@ void RepeatedBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	_nextBarkTime = gameLocal.time;
 	// greebo: Add some random offset of up to <intervalMax> seconds before barking the first time
 	// This prevents guards barking in choirs.
-	_nextBarkTime += SEC2MS(gameLocal.random.RandomFloat()*_barkRepeatIntervalMax);
+	_nextBarkTime += gameLocal.random.RandomFloat()*_barkRepeatIntervalMax;
 }
 
 bool RepeatedBarkTask::Perform(Subsystem& subsystem)
