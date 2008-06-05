@@ -575,6 +575,9 @@ protected:
 	float					anim_turn_amount;
 	float					anim_turn_angles;
 
+	// This expands the AABB a bit when the AI is checking for reached positions.
+	float					reachedpos_bbox_expansion;
+
 	// physics
 	idPhysics_Monster		physicsObj;
 
