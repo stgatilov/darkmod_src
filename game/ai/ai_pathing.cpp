@@ -405,7 +405,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		if ( max < stepHeight || min > headHeight ) {
 			// can step over this one
 			// angua: do not step over other actors
-			if (obEnt->IsType(idActor::Type))
+			if (!obEnt->IsType(idActor::Type))
 			{
 				continue;
 			}
@@ -1050,7 +1050,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	aas->PushPointIntoAreaNum( areaNum, path.startPosOutsideObstacles );
 
 	// get all the nearby obstacles
-	obstacle_t obstacles[MAX_OBSTACLES];
+	static obstacle_t obstacles[MAX_OBSTACLES];
 	idBounds clipBounds;
 	int numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds, path );
 
