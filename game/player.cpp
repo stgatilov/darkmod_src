@@ -3989,10 +3989,19 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 	} 
 	else {
 		if ( physicsObj.IsCrouching() ) {
-			bobmove = pm_crouchbob.GetFloat();
-		} else {
+			// greebo: Double the crouchbob speed when fully running
+			bobmove = pm_crouchbob.GetFloat() * (1 + bobFrac);
+		} 
+		else 
+		{
 			// vary the bobbing based on the speed of the player
 			bobmove = pm_walkbob.GetFloat() * ( 1.0f - bobFrac ) + pm_runbob.GetFloat() * bobFrac;
+		}
+
+		// greebo: is the player creeping?
+		if (usercmd.buttons & BUTTON_5) 
+		{
+			bobmove *= 0.5f * (1 - bobFrac);
 		}
 		
 		// additional explanatory comments added by Crispy
