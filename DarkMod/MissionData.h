@@ -890,7 +890,7 @@ protected:
 	/**
 	* List of entity names that intersected bounds in previous clock tick
 	**/
-	idStrList	m_EntsInBounds;
+	idList< idEntityPtr<idEntity> >	m_EntsInBounds;
 	/**
 	* Objective system: Location's objective group name for objective checks
 	**/

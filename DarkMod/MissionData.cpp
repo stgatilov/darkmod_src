@@ -2582,7 +2582,9 @@ void CObjectiveLocation::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_EntsInBounds.Num() );
 	for( int i=0;i < m_EntsInBounds.Num(); i++ )
-		savefile->WriteString( m_EntsInBounds[i] );
+	{
+		m_EntsInBounds[i].Save(savefile);
+	}
 
 	savefile->WriteClipModel( clipModel );
 }
@@ -2598,17 +2600,18 @@ void CObjectiveLocation::Restore( idRestoreGame *savefile )
 	m_EntsInBounds.Clear();
 	savefile->ReadInt( num );
 	m_EntsInBounds.SetNum( num );
-	for( int i=0;i < num; i++ )
-		savefile->ReadString( m_EntsInBounds[i] );
+	for (int i = 0; i < num; i++)
+	{
+		m_EntsInBounds[i].Restore(savefile);
+	}
 
 	savefile->ReadClipModel( clipModel );
 }
 
 void CObjectiveLocation::Think()
 {
-	idStrList current, added, missing;
-	bool bFound = false;
-	
+	idList< idEntityPtr<idEntity> > current;
+
 	// only check on clock ticks
 	if( (gameLocal.time - m_TimeStamp) < m_Interval )
 		goto Quit;
@@ -2628,16 +2631,11 @@ void CObjectiveLocation::Think()
 		{
 			cm = clipModelList[ k ];
 
-			if ( !cm->IsTraceModel() ) 
-			{
-				continue;
-			}
+			if (!cm->IsTraceModel()) continue;
 
 			idEntity *entity = cm->GetEntity();
-			if ( !entity ) 
-			{
-				continue;
-			}
+
+			if (entity == NULL) continue;
 			
 			if ( !gameLocal.clip.ContentsModel( cm->GetOrigin(), cm, cm->GetAxis(), -1,
 										clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis() ) ) 
@@ -2648,7 +2646,7 @@ void CObjectiveLocation::Think()
 			if (entity->m_bIsObjective)
 			{
 				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), entity->name.c_str() );
-				current.Append( entity->name );
+				current.Alloc() = entity;
 			}
 		}
 	}
@@ -2664,7 +2662,7 @@ void CObjectiveLocation::Think()
 			if( Ents[i] && Ents[i]->m_bIsObjective )
 			{
 				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
-				current.Append( Ents[i]->name );
+				current.Alloc() = Ents[i];
 			}
 		}
 	}
@@ -2672,69 +2670,28 @@ void CObjectiveLocation::Think()
 	// compare current list to previous clock tick list to generate added list
 	for( int i = 0; i < current.Num(); i++ )
 	{
-		bFound = false;
-		for( int j = 0; j < m_EntsInBounds.Num(); j++ )
+		// Try to look up this entity in the existing list
+		if( m_EntsInBounds.FindIndex(current[i]) == -1  && current[i].GetEntity() != NULL)
 		{
-			if( current[i] == m_EntsInBounds[j] )
-			{
-                  bFound = true;
-                  break;
-            }
-		}
-
-		if( !bFound )
-		{
-			added.Append( current[i] );
+			// Not found, call objectives system for all missing or added ents
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", current[i].GetEntity()->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, current[i].GetEntity(), this, true );
 		}
 	}
 
 	// compare again the other way to generate missing list
 	for( int i = 0; i < m_EntsInBounds.Num(); i++ )
 	{
-		bFound = false;
-		for( int j = 0; j < current.Num(); j++ )
+		if (current.FindIndex(m_EntsInBounds[i]) == -1 && m_EntsInBounds[i].GetEntity() != NULL)
 		{
-			if( m_EntsInBounds[i] == current[j] )
-			{
-                  bFound = true;
-                  break;
-            }
-		}
-
-		if( !bFound )
-		{
-			missing.Append( m_EntsInBounds[i] );
+			// not found in current, must be missing
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", m_EntsInBounds[i].GetEntity()->name.c_str(), name.c_str() );
+			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, m_EntsInBounds[i].GetEntity(), this, false );
 		}
 	}
 
-	// call objectives system for all missing or added ents
-	for( int i = 0; i < added.Num(); i++ )
-	{
-		idEntity *Ent = gameLocal.FindEntity( added[i].c_str() );
-		if( Ent )
-		{
-			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s entered objective location %s \r", Ent->name.c_str(), name.c_str() );
-			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent, this, true );
-		}
-	}
-
-	for( int j = 0; j < missing.Num(); j++ )
-	{
-		idEntity *Ent2 = gameLocal.FindEntity( missing[j].c_str() );
-		if( Ent2 )
-		{
-			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective entity %s left objective location %s \r", Ent2->name.c_str(), name.c_str() );
-			gameLocal.m_MissionData->MissionEvent( COMP_LOCATION, Ent2, this, false );
-		}
-	}
-
-	// copy over the list
-	m_EntsInBounds.Clear();
-	m_EntsInBounds = current;
-
-	current.Clear();
-	missing.Clear();
-	added.Clear();
+	// Swap the "old" list with the updated one
+	m_EntsInBounds.Swap(current);
 
 Quit:
 	idEntity::Think();
