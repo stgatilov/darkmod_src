@@ -108,6 +108,8 @@ protected:
 
 	void					Event_OpenPortal( void );
 	void					Event_ClosePortal( void );
+	virtual void			OpenPortal();
+	virtual void			ClosePortal();
 	void					Event_PartBlocked( idEntity *blockingEntity );
 
 	void					MoveToPos( const idVec3 &pos);

@@ -107,11 +107,6 @@ public:
 	virtual void			CallStateScript(void);
 
 	/**
-	* Close the portal.  Overloaded on CFrobDoor
-	**/
-	virtual void			ClosePortal(void);
-
-	/**
 	* This is used to test if the mover is moving
 	*/
 	virtual bool			IsMoving();

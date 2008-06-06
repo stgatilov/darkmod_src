@@ -1345,10 +1345,10 @@ idMover::Event_OpenPortal
 Sets the portal associtated with this mover to be open
 ================
 */
-void idMover::Event_OpenPortal( void ) {
-	if ( areaPortal ) {
-		SetPortalState( true );
-	}
+void idMover::Event_OpenPortal( void ) 
+{
+	// angua: call the virtual function
+	OpenPortal();
 }
 
 /*
@@ -1358,11 +1358,41 @@ idMover::Event_ClosePortal
 Sets the portal associtated with this mover to be closed
 ================
 */
-void idMover::Event_ClosePortal( void ) {
+void idMover::Event_ClosePortal( void ) 
+{
+	// angua: call the virtual function
+	ClosePortal();
+}
+
+
+/*
+================
+idMover::OpenPortal
+
+Sets the portal associtated with this mover to be open
+================
+*/
+void idMover::OpenPortal() {
+	if ( areaPortal ) {
+		SetPortalState( true );
+	}
+}
+
+/*
+================
+idMover::ClosePortal
+
+Sets the portal associtated with this mover to be closed
+================
+*/
+void idMover::ClosePortal() {
 	if ( areaPortal ) {
 		SetPortalState( false );
 	}
 }
+
+
+
 
 /*
 ================

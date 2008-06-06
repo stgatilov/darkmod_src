@@ -40,6 +40,10 @@ public:
 private:
 	void			Event_Operate();
 	void			Event_Switch(int newState);
+
+	virtual void	ClosePortal();
+	virtual void	OpenPortal();
+
 };
 
 #endif /* _FROB_LEVER_H_ */

@@ -164,3 +164,12 @@ void CFrobLever::Event_Switch(int newState)
 {
 	SwitchState(newState == 0 ? false : true);
 }
+
+// A lever can't close or open a portal, so we block it.
+void CFrobLever::ClosePortal()
+{
+}
+
+void CFrobLever::OpenPortal()
+{
+}

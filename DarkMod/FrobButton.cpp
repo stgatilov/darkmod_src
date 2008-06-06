@@ -69,3 +69,13 @@ void CFrobButton::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, cons
 		Operate();
 	}
 }
+
+
+// A button can't close or open a portal, so we block it.
+void CFrobButton::ClosePortal()
+{
+}
+
+void CFrobButton::OpenPortal()
+{
+}

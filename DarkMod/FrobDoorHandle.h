@@ -55,8 +55,9 @@ public:
 	// they are provided but empty.
 	void					ToggleOpen();
 	void					ToggleLock();
-	void					ClosePortal(void);
-	void					DoneStateChange(void);
+	virtual void			ClosePortal();
+	virtual void			OpenPortal();
+	void					DoneStateChange();
 
 	// greebo: Returns TRUE if the associated door is locked (not to confuse with CBinaryFrobMover::IsLocked())
 	bool					DoorIsLocked();

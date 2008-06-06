@@ -463,7 +463,7 @@ void CFrobDoor::OpenDoor(bool bMaster)
 				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
 				
 				// Open visportal
-				Event_OpenPortal();
+				OpenPortal();
 
 				// trigger our targets on opening, if set to do so
 				if( spawnArgs.GetBool("trigger_on_open","") )
@@ -742,10 +742,15 @@ CFrobDoor* CFrobDoor::GetDoubleDoor( void )
 	return m_DoubleDoor.GetEntity();
 }
 
-void CFrobDoor::ClosePortal( void )
+void CFrobDoor::ClosePortal()
 {
 	if( !m_DoubleDoor.GetEntity() || !m_DoubleDoor.GetEntity()->m_Open )
-		Event_ClosePortal();
+	{
+		if ( areaPortal ) 
+		{
+			SetPortalState( false );
+		}
+	}
 }
 
 void CFrobDoor::SetFrobbed(bool val)

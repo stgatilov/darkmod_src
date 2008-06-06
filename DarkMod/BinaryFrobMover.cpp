@@ -391,7 +391,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 			StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
 			
 			// Open visportal
-			Event_OpenPortal();
+			OpenPortal();
 
 			// trigger our targets on opening, if set to do so
 			if( spawnArgs.GetBool("trigger_on_open","") )
@@ -624,10 +624,6 @@ void CBinaryFrobMover::GetOpen(void)
 void CBinaryFrobMover::GetLock(void)
 {
 	idThread::ReturnInt(IsLocked());
-}
-void CBinaryFrobMover::ClosePortal(void)
-{
-	Event_ClosePortal();
 }
 
 void CBinaryFrobMover::Event_Activate( idEntity *activator ) 

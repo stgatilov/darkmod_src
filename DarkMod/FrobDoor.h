@@ -93,7 +93,7 @@ public:
 	/**
 	 * Close the visportal, but only if the double door is also closed.
 	 **/
-	void					ClosePortal( void );
+	virtual void			ClosePortal();
 
 	void					SetFrobbed(bool val);
 	bool					IsFrobbed(void);

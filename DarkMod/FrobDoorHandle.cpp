@@ -114,10 +114,15 @@ void CFrobDoorHandle::FrobAction(bool bMaster)
 		m_Door->FrobAction(bMaster);
 }
 
-// A handle can't close a portal, so we block it. The same is true for the Done* and statechanges
+// A handle can't close or open a portal, so we block it. The same is true for the Done* and statechanges
 void CFrobDoorHandle::ClosePortal(void)
 {
 }
+
+void CFrobDoorHandle::OpenPortal(void)
+{
+}
+
 
 void CFrobDoorHandle::ToggleOpen(void)
 {
