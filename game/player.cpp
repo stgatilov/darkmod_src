@@ -8660,42 +8660,28 @@ idPlayer::GetMovementVolMod
 float idPlayer::GetMovementVolMod( void )
 {
 	float returnval;
-	bool bCrouched(false);
-	
-	if( AI_CROUCH )
-		bCrouched = true;
+
+	bool isCrouched = AI_CROUCH != 0;
 
 	// figure out which of the 6 cases we have:
 	if( !AI_RUN && !AI_CREEP )
 	{
-		if( !bCrouched )
-			returnval = m_stepvol_walk;
-		else
-			returnval = m_stepvol_crouch_walk;
+		returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
 	}
-
 	// NOTE: running always has priority over creeping
 	else if( AI_RUN )
 	{
-		if( !bCrouched )
-			returnval = m_stepvol_run;
-		else
-			returnval = m_stepvol_crouch_run;
+		returnval = (isCrouched) ? m_stepvol_crouch_run : m_stepvol_run;
 	}
-
 	else if( AI_CREEP )
 	{
-		if( !bCrouched )
-			returnval = m_stepvol_creep;
-		else
-			returnval = m_stepvol_crouch_creep;
+		returnval = (isCrouched) ? m_stepvol_crouch_creep : m_stepvol_creep;
 	}
-
-	else
+	else 
 	{
-		// something unexpected happened
-		returnval = 0;
+		gameLocal.Error("idPlayer::GetMovementVolMod: Logic Error.");
 	}
+	//gameRenderWorld->DrawText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
 
 	return returnval;
 }
