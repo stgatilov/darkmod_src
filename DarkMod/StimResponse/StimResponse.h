@@ -9,7 +9,7 @@
 #ifndef SR_STIMRESPONSE__H
 #define SR_STIMRESPONSE__H
 
-extern char *cStimType[];
+extern const char *cStimType[];
 
 // If default stims are to be added here, the static array in the CPP file
 // also must be updated. USER and UNDEFINED are not to be added though, as

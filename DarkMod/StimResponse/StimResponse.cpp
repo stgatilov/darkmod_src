@@ -18,7 +18,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 // they have special meanings. This array allows us to reuse
 // the name in the key in the entity definition for the 
 // predefined stim/responses instead of their numerical values.
-char *cStimType[] = {
+const char *cStimType[] = {
 	"STIM_FROB",
 	"STIM_FIRE",
 	"STIM_WATER",
