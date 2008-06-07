@@ -41,7 +41,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../game/ai/ai.h"
 #include "sourcehook/sourcehook.h"
 #include "sourcehook/sourcehook_impl.h"
-#include "DarkRadiantRCFServer.h"
 #include "renderpipe.h"
 
 // Default length of time for holding down jump key to start
@@ -343,9 +342,6 @@ void CGlobal::Init()
 {
 	PROFILE_HANDLE *pfh = NULL;
 
-	// greebo: Intercept the periodic Frame call to run the RCF Server cycle
-	SH_ADD_HOOK_STATICFUNC(idCommon, Frame, common, DarkRadiantRCFServer::Frame, 0);
-	
 #ifdef _WINDOWS_
 
 	SH_ADD_HOOK_STATICFUNC(idFileSystem, BuildOSPath, fileSystem, DM_BuildOSPath, 0);

@@ -1,22 +1,48 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="8,00"
 	Name="MayaImport"
-	ProjectGUID="{AF5D5E6F-8276-4415-8623-48C3F2F30EE5}">
+	ProjectGUID="{AF5D5E6F-8276-4415-8623-48C3F2F30EE5}"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug with inlines|Win32"
 			OutputDirectory="MayaImport/InlineDebugDLL"
 			IntermediateDirectory="MayaImport/InlineDebugDLL"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\InlineDebug/MayaImport.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -25,184 +51,294 @@
 				PreprocessorDefinitions="_D3SDK,WIN32;_DEBUG;_WINDOWS;_USRDLL;MAYAIMPORT_EXPORTS;MAYA_IMPORT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
-				ForceConformanceInForLoopScope="TRUE"
-				UsePrecompiledHeader="2"
+				ForceConformanceInForLoopScope="true"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\InlineDebugDLL/MayaImport.pch"
 				AssemblerListingLocation=".\InlineDebugDLL/"
 				ObjectFile=".\InlineDebugDLL/"
 				ProgramDataBaseFileName=".\InlineDebugDLL/"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /NODEFAULTLIB:&quot;LIBCMT.LIB&quot;"
 				AdditionalDependencies="odbc32.lib odbccp32.lib ./InlineDebugDLL/idLib.lib"
 				OutputFile="./InlineDebugDLL/MayaImportx86.dll"
 				LinkIncremental="2"
-				SuppressStartupBanner="TRUE"
-				IgnoreAllDefaultLibraries="FALSE"
+				SuppressStartupBanner="true"
+				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="MayaImport\mayaimport.def"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\InlineDebugDLL/MayaImportx86.pdb"
-				ImportLibrary=".\InlineDebugDLL/MayaImportx86.lib"/>
+				ImportLibrary=".\InlineDebugDLL/MayaImportx86.lib"
+			/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\InlineDebug/MayaImport.tlb"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="MayaImport\ReleaseDLL"
 			IntermediateDirectory="MayaImport\ReleaseDLL"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/MayaImport.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="MayaImport\Maya4.5\include,mssdk\include"
+				AdditionalIncludeDirectories="MayaImport\Maya4.5\include;mssdk\include;C:\Programme\Autodesk\Maya8.5\include"
 				PreprocessorDefinitions="_D3SDK,WIN32;NDEBUG;_WINDOWS;_USRDLL;MAYAIMPORT_EXPORTS;MAYA_IMPORT"
-				StringPooling="TRUE"
+				StringPooling="true"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
-				ForceConformanceInForLoopScope="TRUE"
-				UsePrecompiledHeader="2"
+				EnableFunctionLevelLinking="true"
+				ForceConformanceInForLoopScope="true"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\ReleaseDLL/MayaImport.pch"
 				AssemblerListingLocation=".\ReleaseDLL/"
 				ObjectFile=".\ReleaseDLL/"
 				ProgramDataBaseFileName=".\ReleaseDLL/"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				CompileAs="0"/>
+				SuppressStartupBanner="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ./ReleaseDLL/idLib.lib"
-				OutputFile="./ReleaseDLL/MayaImportx86.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames="libc.lib"
-				ModuleDefinitionFile="MayaImport\mayaimport.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\ReleaseDLL/MayaImportx86.pdb"
-				ImportLibrary=".\ReleaseDLL/MayaImportx86.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/MayaImport.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="Foundation.lib OpenMaya.lib OpenMayaUI.lib OpenMayaAnim.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib odbc32.lib odbccp32.lib ./ReleaseDLL/idLib.lib"
+				OutputFile="./ReleaseDLL/MayaImportx86.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="C:\Programme\Autodesk\Maya8.5\lib"
+				IgnoreDefaultLibraryNames="libc.lib"
+				ModuleDefinitionFile="MayaImport\mayaimport.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\ReleaseDLL/MayaImportx86.pdb"
+				ImportLibrary=".\ReleaseDLL/MayaImportx86.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="MayaImport\DebugDLL"
 			IntermediateDirectory="MayaImport\DebugDLL"
 			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
+			UseOfMFC="1"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/MayaImport.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="MayaImport\Maya4.5\include,mssdk\include"
+				AdditionalIncludeDirectories="MayaImport\Maya4.5\include;mssdk\include;C:\Programme\Autodesk\Maya8.5\include"
 				PreprocessorDefinitions="_D3SDK,WIN32;_DEBUG;_WINDOWS;_USRDLL;MAYAIMPORT_EXPORTS;MAYA_IMPORT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
-				ForceConformanceInForLoopScope="TRUE"
-				UsePrecompiledHeader="2"
+				ForceConformanceInForLoopScope="true"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\DebugDLL/MayaImport.pch"
 				AssemblerListingLocation="$(OutDir)/"
 				ObjectFile="$(OutDir)/"
 				ProgramDataBaseFileName="$(OutDir)/"
 				BrowseInformation="1"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386 /NODEFAULTLIB:&quot;LIBCMT.LIB&quot;"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ./DebugDLL/idLib.lib"
-				OutputFile="./DebugDLL/MayaImportx86.dll"
-				LinkIncremental="2"
-				SuppressStartupBanner="TRUE"
-				IgnoreDefaultLibraryNames=""
-				ModuleDefinitionFile="MayaImport\mayaimport.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\DebugDLL/MayaImportx86.pdb"
-				ImportLibrary=".\DebugDLL/MayaImportx86.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/MayaImport.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
+				Culture="1033"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386 /NODEFAULTLIB:&quot;LIBCMT.LIB&quot;"
+				AdditionalDependencies="Foundation.lib OpenMaya.lib OpenMayaUI.lib OpenMayaAnim.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib odbc32.lib odbccp32.lib ./DebugDLL/idLib.lib"
+				OutputFile="./DebugDLL/MayaImportx86.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="C:\Programme\Autodesk\Maya8.5\lib"
+				IgnoreDefaultLibraryNames=""
+				ModuleDefinitionFile="MayaImport\mayaimport.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\DebugDLL/MayaImportx86.pdb"
+				ImportLibrary=".\DebugDLL/MayaImportx86.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug with inlines and memory log|Win32"
 			OutputDirectory="MayaImport\InlineDebugMemoryDLL"
 			IntermediateDirectory="MayaImport\InlineDebugMemoryDLL"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\InlineDebug/MayaImport.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -211,1608 +347,2123 @@
 				PreprocessorDefinitions="_D3SDK,WIN32;_DEBUG;_WINDOWS;_USRDLL;MAYAIMPORT_EXPORTS;MAYA_IMPORT,ID_REDIRECT_NEWDELETE,ID_DEBUG_MEMORY,ID_DEBUG_UNINITIALIZED_MEMORY"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
-				ForceConformanceInForLoopScope="TRUE"
-				UsePrecompiledHeader="2"
+				ForceConformanceInForLoopScope="true"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\InlineDebugMemoryDLL/MayaImport.pch"
 				AssemblerListingLocation=".\InlineDebugMemoryDLL/"
 				ObjectFile=".\InlineDebugMemoryDLL/"
 				ProgramDataBaseFileName=".\InlineDebugMemoryDLL/"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /NODEFAULTLIB:&quot;LIBCMT.LIB&quot; /FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib ./InlineDebugMemoryDLL/idLib.lib"
 				OutputFile="./InlineDebugMemoryDLL/MayaImportx86.dll"
 				LinkIncremental="2"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="MayaImport\mayaimport.def"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\InlineDebugMemoryDLL/MayaImportx86.pdb"
-				ImportLibrary=".\InlineDebugMemoryDLL/MayaImportx86.lib"/>
+				ImportLibrary=".\InlineDebugMemoryDLL/MayaImportx86.lib"
+			/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\InlineDebug/MayaImport.tlb"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="MayaImport"
-			Filter="">
+			>
 			<File
-				RelativePath="MayaImport\exporter.h">
+				RelativePath="MayaImport\exporter.h"
+				>
 			</File>
 			<File
-				RelativePath="MayaImport\maya_main.cpp">
+				RelativePath="MayaImport\maya_main.cpp"
+				>
 			</File>
 			<File
-				RelativePath="MayaImport\maya_main.h">
+				RelativePath="MayaImport\maya_main.h"
+				>
 			</File>
 			<Filter
 				Name="Maya 4.5"
-				Filter="*.h">
+				Filter="*.h"
+				>
 				<File
-					RelativePath="MayaImport\Maya4.5\maya.h">
+					RelativePath="MayaImport\Maya4.5\maya.h"
+					>
 				</File>
 				<Filter
 					Name="lib"
-					Filter="">
-					<File
-						RelativePath="MayaImport\Maya4.5\lib\Foundation.lib">
-					</File>
-					<File
-						RelativePath="MayaImport\Maya4.5\lib\OpenMaya.lib">
-					</File>
-					<File
-						RelativePath="MayaImport\Maya4.5\lib\OpenMayaAnim.lib">
-					</File>
+					>
 				</Filter>
 				<Filter
 					Name="include"
-					Filter="*.h">
+					Filter="*.h"
+					>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\M3dView.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\flib.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAngle.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\ilib.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimControl.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\M3dView.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveChange.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAngle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboard.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimControl.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboardItem.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveChange.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboardItemArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboard.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboardItem.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAnimUtil.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimCurveClipboardItemArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MApiVersion.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MArgDatabase.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAnimUtil.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MArgList.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MApiVersion.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MArgParser.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MArgDatabase.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MArrayDataBuilder.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MArgList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MArrayDataHandle.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MArgParser.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeIndex.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MArrayDataBuilder.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeSpec.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MArrayDataHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeSpecArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeIndex.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MBoundingBox.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeSpec.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MColor.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MAttributeSpecArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MColorArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MBoundingBox.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MCommandResult.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MColor.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MComputation.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MColorArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MConditionMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MCommandResult.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MCursor.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MComputation.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDGContext.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MConditionMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDGMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MCursor.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDGModifier.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDagMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDagMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDagModifier.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDagModifier.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDagPath.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDagPath.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDagPathArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDagPathArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDataBlock.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDataBlock.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDataHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDataHandle.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDeviceChannel.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDeviceChannel.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDeviceState.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDeviceState.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDGContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDistance.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDGMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDoubleArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDGModifier.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDrawData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDistance.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDrawInfo.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDoubleArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDrawRequest.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDrawData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDrawRequestQueue.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDrawInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDynSweptLine.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDrawRequest.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MDynSweptTriangle.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDrawRequestQueue.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MEulerRotation.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDynSweptLine.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MEvent.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MDynSweptTriangle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MEventMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MEulerRotation.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFeedbackLine.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MEvent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFileIO.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MEventMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFileObject.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFeedbackLine.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFileIO.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatMatrix.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFileObject.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatPoint.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatPointArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatVector.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatPoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFloatVectorArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatPointArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFn.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatVector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnAirField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFloatVectorArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnAmbientLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFn.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnAnimCurve.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnAirField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnAreaLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnAmbientLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnArrayAttrsData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnAnimCurve.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnAreaLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnBase.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnArrayAttrsData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnBlendShapeDeformer.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnBlinnShader.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnBase.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnCamera.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnBlendShapeDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnCharacter.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnBlinnShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnCircleSweepManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnCamera.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnClip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnCharacter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnComponent.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnCircleSweepManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnComponentListData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnClip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnCompoundAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnCurveSegmentManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnComponentListData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDagNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnCompoundAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnCurveSegmentManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDependencyNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDagNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDirectionManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDirectionalLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDependencyNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDiscManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDirectionalLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDistanceManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDirectionManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDoubleArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDiscManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDoubleIndexedComponent.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDistanceManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDragField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDoubleArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnDynSweptGeometryData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDoubleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnEnumAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDragField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnExpression.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnDynSweptGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnEnumAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnFreePointTriadManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnExpression.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnGenericAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnGeometryData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnFreePointTriadManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnGeometryFilter.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnGenericAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnGravityField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkEffector.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnGeometryFilter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkHandle.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnGravityField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkJoint.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkEffector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkSolver.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnIntArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkJoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLambertShader.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnIkSolver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLattice.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnIntArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLatticeData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLambertShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLatticeDeformer.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLattice.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLatticeData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnLightDataAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLatticeDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnManip3D.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMatrixAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnLightDataAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMatrixData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnManip3D.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMesh.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMatrixAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMeshData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMatrixData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMessageAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMesh.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnMotionPath.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMeshData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNewtonField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMessageAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNonAmbientLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnMotionPath.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNonExtendedLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNewtonField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNumericAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNonAmbientLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNumericData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNonExtendedLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsCurve.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNumericAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsCurveData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNumericData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsSurface.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsCurve.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsSurfaceData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsCurveData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPartition.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsSurface.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPhongShader.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnNurbsSurfaceData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPlugin.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPartition.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPluginData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPhongShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPlugin.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPluginData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointOnCurveManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointOnSurfaceManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnRadialField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointOnCurveManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnReflectShader.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnPointOnSurfaceManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSet.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnRadialField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSingleIndexedComponent.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnReflectShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSkinCluster.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSet.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSphereData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSingleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSpotLight.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSkinCluster.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnStateManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSphereData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnStringArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSpotLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnStringData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnStateManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubd.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnStringArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubdData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnStringData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubdNames.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubd.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnToggleManip.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubdData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnTransform.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnSubdNames.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnTripleIndexedComponent.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnToggleManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnTurbulenceField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnTransform.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnTypedAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnTripleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnUInt64ArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnTurbulenceField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnUniformField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnTypedAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnUnitAttribute.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnUInt64ArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnVectorArrayData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnUniformField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnVolumeAxisField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnUnitAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnVortexField.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnVectorArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnWeightGeometryFilter.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnVolumeAxisField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MFnWireDeformer.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnVortexField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MGlobal.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnWeightGeometryFilter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MIkHandleGroup.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MFnWireDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MIkSystem.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MGlobal.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MImage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MIkHandleGroup.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MIntArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MIkSystem.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItCurveCV.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MImage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItDag.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MIntArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItDependencyGraph.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItCurveCV.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItDependencyNodes.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItDag.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItGeometry.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItDependencyGraph.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItKeyframe.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItDependencyNodes.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshEdge.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItGeometry.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshPolygon.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItKeyframe.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshVertex.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshEdge.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItSelectionList.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshPolygon.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MItSurfaceCV.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItMeshVertex.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MLibrary.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItSelectionList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MManipData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MItSurfaceCV.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MMaterial.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MLibrary.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MMatrix.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MManipData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MMaterial.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MModelMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MNodeMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MObject.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MModelMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MObjectArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MNodeMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPlug.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MObject.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPlugArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MObjectArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPoint.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\mocapserial.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPointArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\mocapserver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxCommand.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\mocaptcp.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxContext.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPlug.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxContextCommand.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPlugArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxDeformerNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPointArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxEmitterNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxFieldNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxFileTranslator.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxContextCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxGeometryData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxGeometryIterator.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxDeformerNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxGlBuffer.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxEmitterNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxHwShaderNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxFieldNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxIkSolver.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxFileTranslator.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxIkSolverNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxLocatorNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxGeometryIterator.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxManipContainer.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxGlBuffer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxMidiInputDevice.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxHwShaderNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxIkSolver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxSelectionContext.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxIkSolverNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxSpringNode.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxLocatorNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxSurfaceShape.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxManipContainer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxSurfaceShapeUI.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxMidiInputDevice.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MPxToolCommand.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MQuaternion.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxSelectionContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MRenderCallback.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxSpringNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MRenderData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxSurfaceShape.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MRenderShadowData.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxSurfaceShapeUI.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MRenderUtil.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MPxToolCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSceneMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MQuaternion.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSelectInfo.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MRenderCallback.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSelectionList.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MRenderData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSelectionMask.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MRenderShadowData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSimple.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MRenderUtil.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MStatus.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSceneMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MString.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSelectInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MStringArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSelectionList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MSyntax.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSelectionMask.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTesselationParams.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSimple.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTime.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MStatus.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTimeArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MString.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MToolsInfo.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MStringArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTransformationMatrix.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MSyntax.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTypeId.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTesselationParams.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MTypes.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTime.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MUiMessage.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTimeArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MUint64Array.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MToolsInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MVector.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTransformationMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\MVectorArray.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTypeId.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\flib.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MTypes.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\ilib.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MUiMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\mocapserial.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MUint64Array.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\mocapserver.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MVector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya4.5\include\maya\mocaptcp.h">
+						RelativePath="MayaImport\Maya4.5\include\maya\MVectorArray.h"
+						>
 					</File>
 				</Filter>
 			</Filter>
 			<Filter
 				Name="Maya 6.0"
-				Filter="">
+				>
 				<File
-					RelativePath="MayaImport\Maya6.0\maya.h">
+					RelativePath="MayaImport\Maya6.0\maya.h"
+					>
 				</File>
 				<Filter
 					Name="lib"
-					Filter="">
+					>
 				</Filter>
 				<Filter
 					Name="include"
-					Filter="">
+					>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\M3dView.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\flib.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAngle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\ilib.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimControl.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\M3dView.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveChange.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAngle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboard.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimControl.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboardItem.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveChange.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboardItemArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboard.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboardItem.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAnimUtil.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimCurveClipboardItemArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MApiVersion.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MArgDatabase.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAnimUtil.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MArgList.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MApiVersion.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MArgParser.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MArgDatabase.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MArrayDataBuilder.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MArgList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MArrayDataHandle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MArgParser.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeIndex.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MArrayDataBuilder.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeSpec.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MArrayDataHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeSpecArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeIndex.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MBoundingBox.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeSpec.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MColor.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MAttributeSpecArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MColorArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MBoundingBox.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MCommandResult.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MColor.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MComputation.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MColorArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MConditionMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MCommandResult.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MCursor.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MComputation.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDGContext.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MConditionMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDGMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MCursor.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDGModifier.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDagMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDagMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDagModifier.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDagModifier.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDagPath.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDagPath.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDagPathArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDagPathArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDataBlock.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDataBlock.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDataHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDataHandle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDeviceChannel.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDeviceChannel.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDeviceState.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDeviceState.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDGContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDistance.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDGMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDoubleArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDGModifier.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDrawData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDistance.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDrawInfo.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDoubleArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDrawRequest.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDrawData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDrawRequestQueue.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDrawInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDynSweptLine.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDrawRequest.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MDynSweptTriangle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDrawRequestQueue.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MEulerRotation.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDynSweptLine.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MEvent.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MDynSweptTriangle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MEventMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MEulerRotation.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFStream.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MEvent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFeedbackLine.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MEventMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFileIO.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFeedbackLine.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFileObject.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFileIO.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFileObject.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatMatrix.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatPoint.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatPointArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatPoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatVector.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatPointArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFloatVectorArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatVector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFn.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFloatVectorArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnAirField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFn.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnAmbientLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnAirField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnAnimCurve.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnAmbientLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnAreaLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnAnimCurve.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnArrayAttrsData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnAreaLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnArrayAttrsData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnBase.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnBlendShapeDeformer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnBase.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnBlinnShader.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnBlendShapeDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnCamera.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnBlinnShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnCharacter.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnCamera.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnCircleSweepManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnCharacter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnClip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnCircleSweepManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnComponent.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnClip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnComponentListData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnCompoundAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnComponentListData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnCurveSegmentManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnCompoundAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDagNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnCurveSegmentManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDagNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDependencyNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDirectionManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDependencyNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDirectionalLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDirectionalLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDiscManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDirectionManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDistanceManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDiscManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDoubleArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDistanceManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDoubleIndexedComponent.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDoubleArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDragField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDoubleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnDynSweptGeometryData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDragField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnEnumAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnDynSweptGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnExpression.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnEnumAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnExpression.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnFluid.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnFreePointTriadManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnFluid.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnGenericAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnFreePointTriadManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnGeometryData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnGenericAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnGeometryFilter.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnGravityField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnGeometryFilter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkEffector.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnGravityField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkHandle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkEffector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkJoint.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkSolver.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkJoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnIntArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnIkSolver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLambertShader.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnIntArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLattice.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLambertShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLatticeData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLattice.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLatticeDeformer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLatticeData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLatticeDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnLightDataAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnManip3D.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnLightDataAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMatrixAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnManip3D.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMatrixData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMatrixAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMesh.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMatrixData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMeshData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMesh.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMessageAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMeshData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnMotionPath.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMessageAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNewtonField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnMotionPath.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNonAmbientLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNewtonField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNonExtendedLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNonAmbientLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNumericAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNonExtendedLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNumericData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNumericAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsCurve.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNumericData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsCurveData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsCurve.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsSurface.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsCurveData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsSurfaceData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsSurface.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnParticleSystem.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnNurbsSurfaceData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPartition.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnParticleSystem.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPhongShader.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPartition.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPlugin.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPhongShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPluginData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPlugin.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPluginData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointOnCurveManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointOnSurfaceManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointOnCurveManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnRadialField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnPointOnSurfaceManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnReflectShader.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnRadialField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnRotateManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnReflectShader.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnScaleManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnRotateManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSet.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnScaleManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSingleIndexedComponent.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSet.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSkinCluster.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSingleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSphereData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSkinCluster.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSpotLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSphereData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnStateManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSpotLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnStringArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnStateManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnStringData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnStringArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubd.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnStringData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubdData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubd.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubdNames.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubdData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnToggleManip.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnSubdNames.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnTransform.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnToggleManip.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnTripleIndexedComponent.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnTransform.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnTurbulenceField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnTripleIndexedComponent.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnTypedAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnTurbulenceField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnUInt64ArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnTypedAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnUniformField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnUInt64ArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnUnitAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnUniformField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnVectorArrayData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnUnitAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnVolumeAxisField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnVectorArrayData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnVolumeLight.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnVolumeAxisField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnVortexField.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnVolumeLight.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnWeightGeometryFilter.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnVortexField.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MFnWireDeformer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnWeightGeometryFilter.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MGlobal.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFnWireDeformer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MIOStream.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MFStream.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MIkHandleGroup.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MGlobal.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MIkSystem.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MIkHandleGroup.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MImage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MIkSystem.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MIntArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MImage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItCurveCV.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MIntArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItDag.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MIOStream.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItDependencyGraph.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItCurveCV.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItDependencyNodes.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItDag.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItGeometry.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItDependencyGraph.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItInstancer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItDependencyNodes.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItKeyframe.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItGeometry.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshEdge.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItInstancer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshFaceVertex.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItKeyframe.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshPolygon.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshEdge.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshVertex.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshFaceVertex.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItSelectionList.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshPolygon.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MItSurfaceCV.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItMeshVertex.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MLibrary.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItSelectionList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MLightLinks.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MItSurfaceCV.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MLockMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MLibrary.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MManipData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MLightLinks.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MMaterial.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MLockMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MMatrix.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MManipData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MMaterial.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MModelMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MNodeMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MObject.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MModelMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MObjectArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MNodeMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MObjectHandle.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MObject.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MObjectSetMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MObjectArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPlug.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MObjectHandle.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPlugArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MObjectSetMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPoint.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\mocapserial.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPointArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\mocapserver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPolyMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\mocaptcp.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MProgressWindow.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPlug.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPx3dModelView.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPlugArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxCommand.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPoint.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxContext.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPointArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxContextCommand.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPolyMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MProgressWindow.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxDeformerNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPx3dModelView.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxDragAndDropBehavior.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxEmitterNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxFieldNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxContextCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxFileTranslator.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxGeometryData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxDeformerNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxGeometryIterator.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxDragAndDropBehavior.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxGlBuffer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxEmitterNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxHwShaderNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxFieldNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxIkSolver.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxFileTranslator.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxIkSolverNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxGeometryData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxLocatorNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxGeometryIterator.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxManipContainer.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxGlBuffer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxMidiInputDevice.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxHwShaderNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxModelEditorCommand.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxIkSolver.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxIkSolverNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxObjectSet.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxLocatorNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxPolyTrg.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxManipContainer.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxPolyTweakUVCommand.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxMidiInputDevice.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxSelectionContext.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxModelEditorCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxSpringNode.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxSurfaceShape.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxObjectSet.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxSurfaceShapeUI.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxPolyTrg.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxToolCommand.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxPolyTweakUVCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxTransform.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxSelectionContext.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MPxTransformationMatrix.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxSpringNode.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MQuaternion.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxSurfaceShape.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRampAttribute.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxSurfaceShapeUI.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRenderCallback.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxToolCommand.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRenderData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxTransform.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRenderShadowData.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MPxTransformationMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRenderUtil.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MQuaternion.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MRenderView.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRampAttribute.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSceneMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRenderCallback.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSelectInfo.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRenderData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSelectionList.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRenderShadowData.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSelectionMask.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRenderUtil.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSimple.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MRenderView.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MStatus.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSceneMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MString.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSelectInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MStringArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSelectionList.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MSyntax.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSelectionMask.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTesselationParams.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSimple.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTime.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MStatus.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTimeArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MString.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MToolsInfo.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MStringArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTransformationMatrix.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MSyntax.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTrimBoundaryArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTesselationParams.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTypeId.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTime.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MTypes.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTimeArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MUiMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MToolsInfo.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MUint64Array.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTransformationMatrix.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MUintArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTrimBoundaryArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MUserEventMessage.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTypeId.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MVector.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MTypes.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\MVectorArray.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MUiMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\flib.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MUint64Array.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\ilib.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MUintArray.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\mocapserial.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MUserEventMessage.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\mocapserver.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MVector.h"
+						>
 					</File>
 					<File
-						RelativePath="MayaImport\Maya6.0\include\maya\mocaptcp.h">
+						RelativePath="MayaImport\Maya6.0\include\maya\MVectorArray.h"
+						>
 					</File>
 				</Filter>
 			</Filter>
 		</Filter>
 		<File
-			RelativePath="MayaImport\mayaimport.def">
+			RelativePath="MayaImport\mayaimport.def"
+			>
 		</File>
 	</Files>
 	<Globals>

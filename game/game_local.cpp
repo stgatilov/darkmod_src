@@ -18,7 +18,6 @@
 static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "game_local.h"
-#include <DarkRadiantRCFServer.h>
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/darkModLAS.h"
 #include "../DarkMod/decltdm_matinfo.h"
@@ -462,30 +461,6 @@ void idGameLocal::Init( void ) {
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "bank" ), font_bank );
 	renderSystem->RegisterFont( va( "fonts/%s/%s", szLang, "micro" ), font_micro );
 
-	// Start the DarkRadiant RCF Server instance
-	if (cvarSystem->GetCVarBool("darkradiant_rcfserver_enable"))
-	{
-#ifdef __linux__
-	// Linux is using the boost::asio library, this may throw an exception
-	try {
-		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
-		Printf( "------------ DarkRadiant RCF Server started -----------\n" );
-	}
-	catch (const boost::asio::error& e) {
-		m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
-		Warning("Could not start RCF Server: %s", e.what());
-	}
-#else
-	// Win32 builds just instantiate the server, shouldn't throw
-	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr(new DarkRadiantRCFServer);
-	Printf( "------------ DarkRadiant RCF Server started -----------\n" );
-#endif
-	}
-	else
-	{
-		Printf( "Info: DarkRadiant RCF Server disabled.\n" );
-	}
-	
 	// Create render pipe
 	m_RenderPipe = new CRenderPipe();
 	if (m_RenderPipe == NULL) {
@@ -505,9 +480,6 @@ void idGameLocal::Shutdown( void ) {
 	if ( !common ) {
 		return;
 	}
-
-	// Destruct RCF server to avoid memory deallocation issues
-	m_DarkRadiantRCFServer = DarkRadiantRCFServerPtr();
 
 	Printf( "------------ Game Shutdown -----------\n" );
 	
