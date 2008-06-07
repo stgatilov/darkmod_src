@@ -40,7 +40,7 @@ void ChaseEnemyRangedTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("ChaseEnemyRangedTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("ChaseEnemyRangedTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -50,7 +50,7 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return true;
 	}
 
@@ -106,7 +106,7 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 			{
 				// We did not find a reachable attack position 
 				// it might be that the AI is not able to reach the enemy at all
-				DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
 				gameLocal.Printf("Destination unreachable... \n");
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);

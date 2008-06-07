@@ -37,7 +37,7 @@ void RangedCombatTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool RangedCombatTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("RangedCombatTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("RangedCombatTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -45,7 +45,7 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return false; // terminate me
 	}
 

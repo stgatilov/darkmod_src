@@ -1920,7 +1920,7 @@ void	idThread::Event_GetPortSoundLoss( int handle )
 
 void idThread::Event_LogString(int logClass, int logType, const char* output) 
 {
-	DM_LOG(static_cast<LC_LogClass>(logClass), static_cast<LT_LogType>(logType)).LogString(const_cast<char*>(output));
+	DM_LOG(static_cast<LC_LogClass>(logClass), static_cast<LT_LogType>(logType))LOGSTRING(const_cast<char*>(output));
 }
 
 /*

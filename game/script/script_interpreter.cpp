@@ -157,7 +157,7 @@ void idInterpreter::Reset( void ) {
 		{
 			topMost.Stop();
 		}
-		DM_LOG(LC_AI, LT_INFO).LogString("Resetting script stack, Timer: %lf\n", functionTimers.top().Milliseconds());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Resetting script stack, Timer: %lf\n", functionTimers.top().Milliseconds());
 		functionTimers.pop();
 	}
 #endif
@@ -992,7 +992,7 @@ bool idInterpreter::Execute( void ) {
 				// greebo: End the current timer, before adding a new one
 				functionTimers.top().Stop();
 
-				DM_LOG(LC_AI, LT_INFO).LogString("Spent %lf msec in function %s.", functionTimers.top().Milliseconds(), currentFunction->Name());
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Spent %lf msec in function %s.", functionTimers.top().Milliseconds(), currentFunction->Name());
 
 				// Remove the stopped timer
 				functionTimers.pop();
@@ -1005,7 +1005,7 @@ bool idInterpreter::Execute( void ) {
 			// greebo: Maybe we have a timer of a previous function?
 			if (debug && functionTimers.size() > 0)
 			{
-				//DM_LOG(LC_AI, LT_INFO).LogString("Restarting timer of previous function: %s", currentFunction->Name());
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Restarting timer of previous function: %s", currentFunction->Name());
 				// Start the timer of the previous thread
 				functionTimers.top().Start();
 			}
@@ -1046,7 +1046,7 @@ bool idInterpreter::Execute( void ) {
 			{
 				// End the current timer, before leaving the current one
 				functionTimers.top().Stop();
-				//DM_LOG(LC_AI, LT_INFO).LogString("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
 			}
 #endif
 			EnterFunction( st->a->value.functionPtr, false );
@@ -1057,14 +1057,14 @@ bool idInterpreter::Execute( void ) {
 
 				functionTimers.top().Clear();
 				functionTimers.top().Start();
-				//DM_LOG(LC_AI, LT_INFO).LogString("Starting new timer on entering function %s.", currentFunction->Name());
+				//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Starting new timer on entering function %s.", currentFunction->Name());
 			}
 #endif
 			break;
 
 		case OP_EVENTCALL:
 #ifdef PROFILE_SCRIPT
-			//DM_LOG(LC_AI, LT_INFO).LogString("Calling script event.");
+			//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Calling script event.");
 #endif
 			CallEvent( st->a->value.functionPtr, st->b->value.argSize );
 			break;
@@ -1080,7 +1080,7 @@ bool idInterpreter::Execute( void ) {
 				{
 					// End the current timer, before leaving the current one
 					functionTimers.top().Stop();
-					//DM_LOG(LC_AI, LT_INFO).LogString("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
+					//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Stopping timer of %s at %lf msec.", currentFunction->Name(), functionTimers.top().Milliseconds());
 				}
 #endif
 				EnterFunction( func, false );
@@ -1091,7 +1091,7 @@ bool idInterpreter::Execute( void ) {
 
 					functionTimers.top().Clear();
 					functionTimers.top().Start();
-					//DM_LOG(LC_AI, LT_INFO).LogString("Starting new timer on entering function %s.", currentFunction->Name());
+					//DM_LOG(LC_AI, LT_INFO)LOGSTRING("Starting new timer on entering function %s.", currentFunction->Name());
 				}
 #endif
 			} else {

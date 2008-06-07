@@ -62,14 +62,14 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	else
 	{
 		// Invalid hiding spot, terminate task
-		DM_LOG(LC_AI, LT_DEBUG).LogString("memory.currentSearchSpot not set to something valid, terminating task.\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task.\r");
 		subsystem.FinishTask();
 	}
 }
 
 bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("InvestigateSpotTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("InvestigateSpotTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -97,7 +97,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 		{
 			// Hiding spot not reachable, terminate task in the next round
-			DM_LOG(LC_AI, LT_DEBUG).LogString("_searchSpot not reachable, terminating task.\r");
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("_searchSpot not reachable, terminating task.\r");
 			_exitTime = gameLocal.time;
 		}
 		else
@@ -107,7 +107,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
 			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
 
-			DM_LOG(LC_AI, LT_DEBUG).LogString("TravelDistance is %f.\r", travelDist);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TravelDistance is %f.\r", travelDist);
 			owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
 		}
 
@@ -116,12 +116,12 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot unreachable.\r", _searchSpot);
+		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot unreachable.\r", _searchSpot);
 		return true;
 	}
 	else if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogVector("Hiding spot investigated: \r", _searchSpot);
+		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		if (_investigateClosely)
 		{
@@ -160,7 +160,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			( owner->CanSeePositionExt(_searchSpot, true, true) 
 			|| (_searchSpot - owner->GetPhysics()->GetOrigin()).LengthFast() < 20 ))
 		{
-			DM_LOG(LC_AI, LT_INFO).LogVector("Stop, I can see the point now...\r", _searchSpot);
+			DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Stop, I can see the point now...\r", _searchSpot);
 
 			// Stop moving, we can see the point
 			owner->StopMove(MOVE_STATUS_DONE);
@@ -197,7 +197,7 @@ void InvestigateSpotTask::SetNewGoal(const idVec3& newPos)
 	// Check if we can see the point from where we are (only for remote inspection)
 	if (!_investigateClosely && owner->CanSeePositionExt(_searchSpot, false, true))
 	{
-		DM_LOG(LC_AI, LT_INFO).LogVector("I can see the point...\r", _searchSpot);
+		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("I can see the point...\r", _searchSpot);
 
 		if (!owner->CheckFOV(_searchSpot))
 		{

@@ -53,7 +53,7 @@ void RepeatedBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("RepeatedBarkTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("RepeatedBarkTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 

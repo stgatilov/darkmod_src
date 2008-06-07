@@ -139,7 +139,7 @@ void CEscapePointManager::Restore(idRestoreGame *savefile)
 
 void CEscapePointManager::AddEscapePoint(tdmPathFlee* escapePoint)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Adding escape point: %s\r", escapePoint->name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Adding escape point: %s\r", escapePoint->name.c_str());
 
 	idEntityPtr<tdmPathFlee> pathFlee;
 	pathFlee = escapePoint;
@@ -148,7 +148,7 @@ void CEscapePointManager::AddEscapePoint(tdmPathFlee* escapePoint)
 
 void CEscapePointManager::RemoveEscapePoint(tdmPathFlee* escapePoint)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Removing escape point: %s\r", escapePoint->name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Removing escape point: %s\r", escapePoint->name.c_str());
 	for (int i = 0; i < _escapeEntities->Num(); i++)
 	{
 		if ((*_escapeEntities)[i].GetEntity() == escapePoint) 
@@ -159,7 +159,7 @@ void CEscapePointManager::RemoveEscapePoint(tdmPathFlee* escapePoint)
 	}
 
 	// Not found
-	DM_LOG(LC_AI, LT_ERROR).LogString("Failed to remove escape point: %s\r", escapePoint->name.c_str());
+	DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Failed to remove escape point: %s\r", escapePoint->name.c_str());
 }
 
 void CEscapePointManager::InitAAS()
@@ -169,7 +169,7 @@ void CEscapePointManager::InitAAS()
 		idAAS* aas = gameLocal.GetAAS(i);
 
 		if (aas != NULL) {
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePointManager: Initializing AAS: %s\r", aas->GetSettings()->fileExtension.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePointManager: Initializing AAS: %s\r", aas->GetSettings()->fileExtension.c_str());
 
 			// Allocate a new list for this AAS type
 			_aasEscapePoints[aas] = EscapePointListPtr(new EscapePointList);
@@ -181,7 +181,7 @@ void CEscapePointManager::InitAAS()
 				tdmPathFlee* escapeEnt = (*_escapeEntities)[i].GetEntity();
 				int areaNum = aas->PointAreaNum(escapeEnt->GetPhysics()->GetOrigin());
 
-				DM_LOG(LC_AI, LT_INFO).LogString("Flee entity %s is in area number %d\r", escapeEnt->name.c_str(), areaNum);
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Flee entity %s is in area number %d\r", escapeEnt->name.c_str(), areaNum);
 				if (areaNum != -1)
 				{
 					// Increase the unique escape point ID
@@ -207,7 +207,7 @@ void CEscapePointManager::InitAAS()
 				}
 			}
 
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePointManager: AAS initialized: %s\r", aas->GetSettings()->fileExtension.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePointManager: AAS initialized: %s\r", aas->GetSettings()->fileExtension.c_str());
 		}
 	}
 }
@@ -225,7 +225,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	// The AAS pointer has to be known
 	assert(_aasEscapePoints.find(conditions.aas) != _aasEscapePoints.end());
 
-	DM_LOG(LC_AI, LT_INFO).LogString("Calculating escape point info.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Calculating escape point info.\r");
 
 	// A timer object to measure the time it needs to calculate the escape route
 	idTimer timer;
@@ -246,7 +246,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	else if (escapePoints.Num() == 1) 
 	{
 		// Only one point available, return that one
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Only one escape point available, returning this one: %d.\r", escapePoints[0].id);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Only one escape point available, returning this one: %d.\r", escapePoints[0].id);
 
 		goal.escapePointId = escapePoints[0].id;
 		goal.distance = (conditions.self.GetEntity()->GetPhysics()->GetOrigin() - escapePoints[0].origin).LengthFast();
@@ -261,23 +261,23 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	switch (conditions.algorithm)
 	{
 		case FIND_ANY:
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_ANY\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePoint Lookup Algorithm: FIND_ANY\r");
 			evaluator = EscapePointEvaluatorPtr(new AnyEscapePointFinder(conditions));
 			break;
 		case FIND_GUARDED:
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_GUARDED\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePoint Lookup Algorithm: FIND_GUARDED\r");
 			evaluator = EscapePointEvaluatorPtr(new GuardedEscapePointFinder(conditions));
 			break;
 		case FIND_FRIENDLY:
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_FRIENDLY\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePoint Lookup Algorithm: FIND_FRIENDLY\r");
 			evaluator = EscapePointEvaluatorPtr(new FriendlyEscapePointFinder(conditions));
 			break;
 		case FIND_FRIENDLY_GUARDED:
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: FIND_FRIENDLY_GUARDED\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePoint Lookup Algorithm: FIND_FRIENDLY_GUARDED\r");
 			evaluator = EscapePointEvaluatorPtr(new FriendlyGuardedEscapePointFinder(conditions));
 			break;
 		default:
-			DM_LOG(LC_AI, LT_INFO).LogString("EscapePoint Lookup Algorithm: DEFAULT = FIND_ANY\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("EscapePoint Lookup Algorithm: DEFAULT = FIND_ANY\r");
 			// This is the default algorithm: seek the farthest point
 			evaluator = EscapePointEvaluatorPtr(new AnyEscapePointFinder(conditions));
 	};
@@ -299,7 +299,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	if (goal.escapePointId == -1)
 	{
 		// No point found, return false
-		DM_LOG(LC_AI, LT_DEBUG).LogString("No escape point found!\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No escape point found!\r");
 		return goal;
 	}
 
@@ -309,14 +309,14 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 	EscapePoint* bestPoint = GetEscapePoint(goal.escapePointId);
 	goal.distance = (conditions.self.GetEntity()->GetPhysics()->GetOrigin() - bestPoint->origin).LengthFast();
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString(
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING(
 		"Best escape point has ID %d at %f %f %f in area %d.\r", 
 		goal.escapePointId, 
 		bestPoint->origin.x, bestPoint->origin.y, bestPoint->origin.z, 
 		bestPoint->areaNum
 	);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("Escape route calculation took %f msec.\r", timer.Milliseconds());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Escape route calculation took %f msec.\r", timer.Milliseconds());
 
 	return goal;
 }

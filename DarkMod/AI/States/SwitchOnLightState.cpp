@@ -40,7 +40,7 @@ void SwitchOnLightState::Init(idAI* owner)
 {
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("SwitchOnLightState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SwitchOnLightState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference
@@ -152,7 +152,7 @@ void SwitchOnLightState::Think(idAI* owner)
 	idLight* light = _light.GetEntity();
 	if (light == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No stim source, terminating state!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No stim source, terminating state!\r");
 		owner->GetMind()->EndState();
 		return;
 	}

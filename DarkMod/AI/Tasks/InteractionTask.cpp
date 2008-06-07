@@ -58,7 +58,7 @@ void InteractionTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool InteractionTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("InteractionTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("InteractionTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

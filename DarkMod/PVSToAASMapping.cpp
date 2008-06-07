@@ -98,7 +98,7 @@ bool PVSToAASMapping::buildMappings(idStr in_aasName)
 	idAAS* p_aas = gameLocal.GetAAS (in_aasName);
 	if (p_aas == NULL)
 	{
-		DM_LOG (LC_AI, LT_ERROR).LogString ("No aas with name '%s' exists for this map, AI will not be able to locate darkness...\r", in_aasName.c_str());
+		DM_LOG (LC_AI, LT_ERROR)LOGSTRING("No aas with name '%s' exists for this map, AI will not be able to locate darkness...\r", in_aasName.c_str());
 		return false;
 	}
 
@@ -111,7 +111,7 @@ bool PVSToAASMapping::buildMappings(idStr in_aasName)
 		if (m_p_AASAreaIndicesPerPVSArea == NULL)
 		{
 			numPVSAreas = 0;
-			DM_LOG (LC_AI, LT_ERROR).LogString ("Failed to alloate mapping table header pointers\r");
+			DM_LOG (LC_AI, LT_ERROR)LOGSTRING("Failed to alloate mapping table header pointers\r");
 			return false;
 		}
 	}
@@ -143,7 +143,7 @@ bool PVSToAASMapping::buildMappings(idStr in_aasName)
 	aasName = in_aasName;
 
 	// Log success
-	DM_LOG(LC_AI, LT_DEBUG).LogString 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING
 	(
 		"Successfully set up mapping of %d PVS areas to %d AAS areas\r", 
 		numPVSAreas,
@@ -169,7 +169,7 @@ bool PVSToAASMapping::insertAASAreaIntoPVSAreaMapping (int aasAreaIndex, int pvs
 	if (pvsAreaIndex >= numPVSAreas)
 	{
 		// Log error
-		DM_LOG(LC_AI, LT_ERROR).LogString 
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING 
 		(
 			"AAS area %d falls in PVS area %d which is beyond supposed PVS area count of %d\r", 
 			aasAreaIndex, 
@@ -180,7 +180,7 @@ bool PVSToAASMapping::insertAASAreaIntoPVSAreaMapping (int aasAreaIndex, int pvs
 	}
 	else if (pvsAreaIndex < 0)
 	{
-		DM_LOG(LC_AI, LT_WARNING).LogString 
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING 
 		(
 			"AAS area %d falls in no PVS area, left out of mapping\r", 
 			aasAreaIndex
@@ -192,7 +192,7 @@ bool PVSToAASMapping::insertAASAreaIntoPVSAreaMapping (int aasAreaIndex, int pvs
 		PVSToAASMappingNode* p_node = new PVSToAASMappingNode;
 		if (p_node == NULL)
 		{
-			DM_LOG(LC_AI, LT_ERROR).LogString 
+			DM_LOG(LC_AI, LT_ERROR)LOGSTRING 
 			(
 				"Failed to allocate mapping node\r"
 			);

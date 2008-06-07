@@ -41,7 +41,7 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 	float distThreatSqr(( _threatPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
 	float distSelfSqr(( _selfPosition.ToVec2() - areaCenter.ToVec2() ).LengthSqr());
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString(
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING(
 		"Testing area: %d, distThreatSqr = %f, distSelfSqr = %f, _minDistThreatSqr = %f\r", 
 		areaNum, distThreatSqr, distSelfSqr, _minDistThreatSqr
 	);

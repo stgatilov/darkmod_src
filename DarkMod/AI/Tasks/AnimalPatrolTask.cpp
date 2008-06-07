@@ -68,7 +68,7 @@ void AnimalPatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool AnimalPatrolTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("AnimalPatrolTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AnimalPatrolTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

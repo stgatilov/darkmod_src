@@ -56,7 +56,7 @@ void ChaseEnemyTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Chase Enemy Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Chase Enemy Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -66,7 +66,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return true;
 	}
 
@@ -160,7 +160,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			}
 
 			// Destination unreachable!
-			DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable!\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
 			gameLocal.Printf("Destination unreachable... \n");
 			owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 			return true;

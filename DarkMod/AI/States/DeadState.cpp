@@ -31,7 +31,7 @@ void DeadState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("DeadState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("DeadState initialised.\r");
 	assert(owner);
 
 	// Stop move!

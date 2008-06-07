@@ -853,7 +853,7 @@ void idEntity::LoadModels( void ) {
 	// we only use a brokenModel if we can find one automatically
 	bool needBroken = false;
 
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Loading models for entity %d (%s)\r", entityNumber, name.c_str() ); 
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading models for entity %d (%s)\r", entityNumber, name.c_str() ); 
 
 	// load the normal visual model
 	spawnArgs.GetString( "model", "", model );
@@ -866,7 +866,7 @@ void idEntity::LoadModels( void ) {
 
 	// see if we need to create a broken model name
 	if ( brokenModel.Length() ) {
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Need broken model '%s' for entity %d (%s)\r", brokenModel.c_str(), entityNumber, name.c_str() );
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Need broken model '%s' for entity %d (%s)\r", brokenModel.c_str(), entityNumber, name.c_str() );
 		// spawnarg "broken" was set, so we need the broken model
 		needBroken = true;
 	} else if 
@@ -874,7 +874,7 @@ void idEntity::LoadModels( void ) {
 		( health || spawnArgs.FindKey( "max_force" ) ) {
 		int pos;
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Looking for broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Looking for broken models for entity %d (%s) (health: %d)\r", entityNumber, name.c_str(), health );
 
 		pos = model.Find( "." );
 		if ( pos < 0 ) {
@@ -1520,7 +1520,7 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs )
 				gameLocal.Error( "Failed to spawn flinder entity %s", fs.m_Entity.c_str() );
 				return -1;
 	        }
-			DM_LOG(LC_ENTITY, LT_INFO).LogString(" Spawned entity %s\r", flinder->GetName() ); 
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Spawned entity %s\r", flinder->GetName() ); 
 
 			// move the entity to the origin (plus offset) and orientation of the original
 			flinder->GetPhysics()->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
@@ -1560,10 +1560,10 @@ void idEntity::BecomeBroken( idEntity *activator )
 	{
 		SetModel( brokenModel );
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Breaking entity %s (nonsolid: %i)\r", name.c_str(), spawnArgs.GetBool( "nonsolid" ) ); 
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Breaking entity %s (nonsolid: %i)\r", name.c_str(), spawnArgs.GetBool( "nonsolid" ) ); 
 		if ( !spawnArgs.GetBool( "nonsolid" ) )
 		{
-			DM_LOG(LC_ENTITY, LT_INFO).LogString("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Setting new clipmodel '%s'\r)", brokenModel.c_str() ); 
 
 			idClipModel* clipmodel = new idClipModel( brokenModel );
 
@@ -1582,7 +1582,7 @@ void idEntity::BecomeBroken( idEntity *activator )
 	} 
 	else if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
 	{
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Hiding broken entity %s\r", name.c_str() ); 
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
 		SetModel( "" );
 		GetPhysics()->SetContents( 0 );
 	}
@@ -3680,11 +3680,11 @@ bool idEntity::RunPhysics( void ) {
 			float movement = rigidBodyPhysics->GetLinearVelocity().LengthSqr() + 
 				              rigidBodyPhysics->GetAngularVelocity().LengthSqr();
 
-			//DM_LOG(LC_ENTITY, LT_INFO).LogString("Movement is %f\r", movement);
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Movement is %f\r", movement);
 
 			if (movement < 10.0f)
 			{
-				DM_LOG(LC_ENTITY, LT_INFO).LogString("Putting %s to rest, velocity was %f\r", name.c_str(), physics->GetLinearVelocity().LengthFast());
+				DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Putting %s to rest, velocity was %f\r", name.c_str(), physics->GetLinearVelocity().LengthFast());
 				physics->PutToRest();
 			}
 			else

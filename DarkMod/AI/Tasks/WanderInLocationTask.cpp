@@ -96,7 +96,7 @@ void WanderInLocationTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool WanderInLocationTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("WanderInLocationTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("WanderInLocationTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

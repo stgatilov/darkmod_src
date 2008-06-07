@@ -57,7 +57,7 @@ void SearchingState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("SearchingState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SearchingState initialised.\r");
 	assert(owner);
 
 	// Ensure we are in the correct alert level
@@ -202,7 +202,7 @@ void SearchingState::Think(idAI* owner)
 		else if (!ChooseNextHidingSpotToSearch(owner))
 		{
 			// No more hiding spots to search
-			DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots!\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots!\r");
 
 			// Stop moving, the algorithm will choose another spot the next round
 			owner->StopMove(MOVE_STATUS_DONE);
@@ -355,7 +355,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	int numSpots = owner->m_hidingSpots.getNumSpots();
-	DM_LOG(LC_AI, LT_INFO).LogString("Found hidings spots: %d\r", numSpots);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found hidings spots: %d\r", numSpots);
 
 	// Choose randomly
 	if (numSpots > 0)
@@ -389,7 +389,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
 			memory.currentSearchSpot = memory.chosenHidingSpot;
 			
-			DM_LOG(LC_AI, LT_INFO).LogString(
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING(
 				"First spot chosen is index %d of %d spots.\r", 
 				memory.firstChosenHidingSpotIndex, numSpots
 			);
@@ -408,7 +408,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 				memory.currentChosenHidingSpotIndex < 0)
 			{
 				// No more hiding spots
-				DM_LOG(LC_AI, LT_INFO).LogString("No more hiding spots to search.\r");
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots to search.\r");
 				memory.hidingSpotSearchDone = false;
 				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 				memory.currentChosenHidingSpotIndex = -1;
@@ -419,7 +419,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			else
 			{
 				// Index is valid, let's acquire the position
-				DM_LOG(LC_AI, LT_INFO).LogString("Next spot chosen is index %d of %d, first was %d.\r", 
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Next spot chosen is index %d of %d, first was %d.\r", 
 					memory.currentChosenHidingSpotIndex, numSpots-1, memory.firstChosenHidingSpotIndex);
 
 				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
@@ -430,7 +430,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Didn't find any hiding spots near stimulus.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Didn't find any hiding spots near stimulus.\r");
 		memory.firstChosenHidingSpotIndex = -1;
 		memory.currentChosenHidingSpotIndex = -1;
 		memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);

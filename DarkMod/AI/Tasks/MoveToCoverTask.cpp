@@ -41,7 +41,7 @@ void MoveToCoverTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool MoveToCoverTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Move to Cover Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move to Cover Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
@@ -51,14 +51,14 @@ bool MoveToCoverTask::Perform(Subsystem& subsystem)
 	if (owner->AI_DEST_UNREACHABLE)
 	{
 		//TODO
-		DM_LOG(LC_AI, LT_INFO).LogString("Destination unreachable.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable.\r");
 		return true;
 	}
 
 	if (owner->AI_MOVE_DONE)
 	{
 		// Move is done, 
-		DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
 		owner->TurnToward(owner->lastVisibleEnemyPos);
 
 		// finish this task

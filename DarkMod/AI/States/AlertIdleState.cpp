@@ -39,7 +39,7 @@ void AlertIdleState::Init(idAI* owner)
 	// Init state class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("AlertIdleState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AlertIdleState initialised.\r");
 	assert(owner);
 
 	_alertLevelDecreaseRate = 0.005f;

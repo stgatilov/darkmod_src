@@ -82,7 +82,7 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 	if (p_cursor == NULL)
 	{
 		// Log error
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Failed to remove LAS light record from list for area %d", oldAreaNum);
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Failed to remove LAS light record from list for area %d", oldAreaNum);
 
 		// Failed
 		return false;
@@ -97,12 +97,12 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 	// Add to new area
 	if (m_pp_areaLightLists[newAreaNum] != NULL)
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Added to existing area %d\r", newAreaNum);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Added to existing area %d\r", newAreaNum);
 		p_cursor->AddToEnd (*m_pp_areaLightLists[newAreaNum]);
 	}
 	else
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Created new area %d\r", newAreaNum);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Created new area %d\r", newAreaNum);
 		m_pp_areaLightLists[newAreaNum] = p_cursor;
 	}
 	
@@ -110,12 +110,12 @@ __inline bool darkModLAS::moveLightBetweenAreas (darkModLightRecord_t* p_LASLigh
 	p_LASLight->areaIndex = newAreaNum;
 	p_LASLight->p_idLight->LASAreaIndex = newAreaNum;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Area %d has now %d elements\r", oldAreaNum, 
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Area %d has now %d elements\r", oldAreaNum, 
 		m_pp_areaLightLists[oldAreaNum] ? m_pp_areaLightLists[oldAreaNum]->Num() : 0);
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Area %d has now %d elements\r", newAreaNum, m_pp_areaLightLists[newAreaNum]->Num());
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Area %d has now %d elements\r", newAreaNum, m_pp_areaLightLists[newAreaNum]->Num());
 
 	// Done
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light '%s' was moved from area %d to area %d ", p_cursor->Owner()->p_idLight->name.c_str(), oldAreaNum, newAreaNum);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was moved from area %d to area %d ", p_cursor->Owner()->p_idLight->name.c_str(), oldAreaNum, newAreaNum);
 
 	return true;
 	
@@ -159,13 +159,13 @@ void darkModLAS::accumulateEffectOfLightsInArea
 		if (p_LASLight == NULL)
 		{
 			// Log error
-			DM_LOG(LC_LIGHT, LT_ERROR).LogString("LASLight record in area %d is NULL", areaIndex);
+			DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("LASLight record in area %d is NULL", areaIndex);
 
 			// Return what we have so far
 			return;
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 		(
 			"accumulateEffectOfLightsInArea (area=%d): accounting for light '%s'", 
 			areaIndex,
@@ -205,14 +205,14 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
 			// be blocked by the geometry.
 			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineEllipsoid returned %u\r", inter);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineEllipsoid returned %u\r", inter);
 		}
 		else
 		{
 			bool bStump = false;
 			p_LASLight->p_idLight->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
 			inter = IntersectLineCone(vTargetSeg, vLightCone, vResult, bStump);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("IntersectLineCone returned %u\r", inter);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineCone returned %u\r", inter);
 		}
 
 		// Do tests to see if we should exclude this light from consideration
@@ -242,7 +242,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			if (testDistance > p_LASLight->p_idLight->m_MaxLightRadius)
 			{
 				b_excludeLight = true;
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s]: exluded due to max light radius\r", p_LASLight->p_idLight->name.c_str());
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s]: exluded due to max light radius\r", p_LASLight->p_idLight->name.c_str());
 			}
 			else if (b_useShadows && p_LASLight->p_idLight->CastsShadow()) 
 			{
@@ -255,7 +255,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 							trace.fraction == 1 ? testPoint1 : trace.endpos, 
 							p_LASLight->lastWorldPos, 1, 1000);
 				}
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 				if(trace.fraction < 1.0f)
 				{
 					gameLocal.clip.TracePoint (trace, testPoint2, p_LASLight->lastWorldPos, CONTENTS_OPAQUE, p_ignoredEntity);
@@ -266,10 +266,10 @@ void darkModLAS::accumulateEffectOfLightsInArea
 							trace.fraction == 1 ? testPoint2 : trace.endpos, 
 							p_LASLight->lastWorldPos, 1, 1000);
 					}
-					DM_LOG(LC_LIGHT, LT_DEBUG).LogString("TraceFraction: %f\r", trace.fraction);
+					DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 					if(trace.fraction < 1.0f)
 					{
-						DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light [%s]: test point is in a shadow of the light\r", p_LASLight->p_idLight->name.c_str());
+						DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s]: test point is in a shadow of the light\r", p_LASLight->p_idLight->name.c_str());
 						b_excludeLight = true;
 					}
 				}
@@ -309,7 +309,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 				vLightCone[ELL_ORIGIN].x - fx, 
 				vLightCone[ELL_ORIGIN].y - fy
 			);
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 			(
 				"%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
 				p_LASLight->p_idLight->name.c_str(), 
@@ -345,7 +345,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 */
 void darkModLAS::initialize()
 {	
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Initializing Light Awareness System (LAS)");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Initializing Light Awareness System (LAS)");
 
 	// Dispose of any previous information
 	if (m_pp_areaLightLists != NULL)
@@ -364,7 +364,7 @@ void darkModLAS::initialize()
 		if (m_pp_areaLightLists == NULL)
 		{
 			// Log error and exit
-			DM_LOG(LC_LIGHT, LT_ERROR).LogString("Failed to allocate LAS area light lists");
+			DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Failed to allocate LAS area light lists");
 			m_numAreas = 0;
 			return;
 		}
@@ -381,22 +381,22 @@ void darkModLAS::initialize()
 
 
 	// Log status
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS initialized for %d map areas", m_numAreas);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS initialized for %d map areas", m_numAreas);
 
 	// Build default PVS to AAS Mapping table
 	pvsToAASMappingTable.clear();
 	if (!pvsToAASMappingTable.buildMappings("aas32"))
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Failed to initialize PVS to aas32 mapping table, trying aas48");
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Failed to initialize PVS to aas32 mapping table, trying aas48");
 
 		if (!pvsToAASMappingTable.buildMappings("aas48"))
 		{
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Failed to initialize PVS to aas48 mapping table");
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Failed to initialize PVS to aas48 mapping table");
 		}
 	}
 	else
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("PVS to aas32 mapping table initialized");
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("PVS to aas32 mapping table initialized");
 	}
 
 }
@@ -414,7 +414,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 	{
 		// The light isn't in an area
 		// TODO: Log error, light is not in an area
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Light is not contained in an area");
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Light is not contained in an area");
 		return;
 	}
 
@@ -434,7 +434,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 		p_node->SetOwner (p_record);
 		p_node->AddToEnd (*(m_pp_areaLightLists[containingAreaIndex]));
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light '%s' was added to area %d at end of list, area now has %d lights", p_idLight->name.c_str(), containingAreaIndex, m_pp_areaLightLists[containingAreaIndex]->Num());
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was added to area %d at end of list, area now has %d lights", p_idLight->name.c_str(), containingAreaIndex, m_pp_areaLightLists[containingAreaIndex]->Num());
 	}
 	else
 	{
@@ -443,7 +443,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 		p_first->SetOwner (p_record);
 		if (p_first == NULL)
 		{
-			DM_LOG(LC_LIGHT, LT_ERROR).LogString("Failed to create node for LASLight record");
+			DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Failed to create node for LASLight record");
 			return;
 		}
 		else
@@ -451,7 +451,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 			m_pp_areaLightLists[containingAreaIndex] = p_first;
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light '%s' was added to area %d as first in list", p_idLight->name.c_str(), containingAreaIndex);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was added to area %d as first in list", p_idLight->name.c_str(), containingAreaIndex);
 
 	}
 
@@ -472,13 +472,13 @@ void darkModLAS::removeLight (idLight* p_idLight)
 	if (p_idLight->LASAreaIndex < 0)
 	{
 		// Log error
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Attempted to remove the light '%s' with no assigned LAS area index", p_idLight->name.c_str());
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Attempted to remove the light '%s' with no assigned LAS area index", p_idLight->name.c_str());
 		return;
 	}
 	else if (p_idLight->LASAreaIndex >= m_numAreas)
 	{
 		// Log error
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("Attempted to remove the light '%s' with out of bounds area index %d", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Attempted to remove the light '%s' with out of bounds area index %d", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
 		return;
 	}
 
@@ -486,7 +486,7 @@ void darkModLAS::removeLight (idLight* p_idLight)
 	if (m_pp_areaLightLists == NULL)
 	{
 		// Log error
-		DM_LOG(LC_LIGHT, LT_ERROR).LogString("LAS not initialized. Remove light '%s' request ignored", p_idLight->name.c_str());
+		DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("LAS not initialized. Remove light '%s' request ignored", p_idLight->name.c_str());
 		return;
 	}
 
@@ -525,7 +525,7 @@ void darkModLAS::removeLight (idLight* p_idLight)
 			delete p_cursor;
 
 			// Log status
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light '%s' was removed from LAS area %d", p_idLight->name.c_str(), tempIndex);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was removed from LAS area %d", p_idLight->name.c_str(), tempIndex);
 
 			// Done
 			return;
@@ -538,7 +538,7 @@ void darkModLAS::removeLight (idLight* p_idLight)
 
 	// Light not found
 	// Log error
-	DM_LOG(LC_LIGHT, LT_ERROR).LogString("Light '%s' stating it was in LAS area index %d was not found in that LAS Area's list", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
+	DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("Light '%s' stating it was in LAS area index %d was not found in that LAS Area's list", p_idLight->name.c_str(), p_idLight->LASAreaIndex);
 
 	// Done
 }
@@ -548,12 +548,12 @@ void darkModLAS::removeLight (idLight* p_idLight)
 void darkModLAS::shutDown()
 {
 	// Log activity
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown initiated...\n");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown initiated...\n");
 
 	// Delete all records in each list
 	for (int areaIndex = 0; areaIndex < m_numAreas; areaIndex ++)
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown clearing light records for areaIndex %d...\n", areaIndex);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown clearing light records for areaIndex %d...\n", areaIndex);
 	
 		// Destroy each light record
 		idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
@@ -561,11 +561,11 @@ void darkModLAS::shutDown()
 		while (p_cursor != NULL)
 		{
 			darkModLightRecord_t* p_LASLight = p_cursor->Owner();
-			DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light list iterating node %d ", p_cursor);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list iterating node %d ", p_cursor);
 
 			if (p_LASLight != NULL)
 			{
-				DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Light list clear is deleting light '%s' ", p_LASLight->p_idLight->GetName());
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light list clear is deleting light '%s' ", p_LASLight->p_idLight->GetName());
 				delete p_LASLight;
 			}
 
@@ -574,7 +574,7 @@ void darkModLAS::shutDown()
 			p_cursor = p_temp;
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroying node list for areaIndex %d...\n", areaIndex);
 
 		// Clear the list of nodes
 		if (m_pp_areaLightLists[areaIndex] != NULL)
@@ -583,12 +583,12 @@ void darkModLAS::shutDown()
 			m_pp_areaLightLists[areaIndex] = NULL;
 		}
 
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown destroyed list for for areaIndex %d\n", areaIndex);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown destroyed list for for areaIndex %d\n", areaIndex);
 
 	} // Next area
 
 	// Log activity
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown deleting array of per-area list pointers...\n");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown deleting array of per-area list pointers...\n");
 
 	// Delete array of list pointers
 	if (m_pp_areaLightLists != NULL)
@@ -600,15 +600,15 @@ void darkModLAS::shutDown()
 	// No areas
 	m_numAreas = 0;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shutdown deleted array of per-area list pointers...\n");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shutdown deleted array of per-area list pointers...\n");
 
 	// Log activity
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS shut down and empty");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS shut down and empty");
 
 	// Destroy PVS to AAS mapping table contents
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Clearing PVS to AAS(0) mapping table ...");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Clearing PVS to AAS(0) mapping table ...");
 	pvsToAASMappingTable.clear();
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("PVS to AAS(0) mapping table cleared");
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("PVS to AAS(0) mapping table cleared");
 
 
 }
@@ -620,7 +620,7 @@ void darkModLAS::updateLASState()
 	// Doing a new update frame
 	m_updateFrameIndex ++;
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("Updating LAS state, new LAS frame index is %d", m_updateFrameIndex);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Updating LAS state, new LAS frame index is %d", m_updateFrameIndex);
 
 	// Go through each of the areas and for any light that has moved, see
 	// if it has changed areas.
@@ -672,7 +672,7 @@ void darkModLAS::updateLASState()
 	} // Next area
 
 	// Done
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString("LAS update frame %d complete", m_updateFrameIndex);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS update frame %d complete", m_updateFrameIndex);
 
 }
 
@@ -692,7 +692,7 @@ float darkModLAS::queryLightingAlongLine
 	lightingTimer.Start();
 	if (p_ignoreEntity != NULL)
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 		(
 			"queryLightingAlongLine <%f,%f,%f> to <%f,%f,%f>, IgnoredEntity = '%s', UseShadows = %d'", 
 			testPoint1.x, testPoint1.y, testPoint1.z,
@@ -703,7 +703,7 @@ float darkModLAS::queryLightingAlongLine
 	}
 	else
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 		(
 			"queryLightingAlongLine <%f,%f,%f> to <%f,%f,%f>,  UseShadows = %d'", 
 			testPoint1.x, testPoint1.y, testPoint1.z,
@@ -773,7 +773,7 @@ float darkModLAS::queryLightingAlongLine
 		numPVSTestAreas
 	);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 	(
 		"queryLightingAlongLine: PVS test results in %d PVS areas", 
 		numPVSTestAreas
@@ -800,7 +800,7 @@ float darkModLAS::queryLightingAlongLine
 	// Done with PVS test
 	gameLocal.pvs.FreeCurrentPVS( h_lightPVS );
 
-	DM_LOG(LC_LIGHT, LT_DEBUG).LogString
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 	(
 		"queryLightingAlongLine <%f,%f,%f> to <%f,%f,%f>,  result is %.2f", 
 		testPoint1.x, testPoint1.y, testPoint1.z,
@@ -809,7 +809,7 @@ float darkModLAS::queryLightingAlongLine
 	);
 
 	lightingTimer.Stop();
-	DM_LOG(LC_LIGHT, LT_INFO).LogString("Lighing along line took %lf\r", lightingTimer.Milliseconds());
+	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Lighing along line took %lf\r", lightingTimer.Milliseconds());
 
 	// Return total illumination value to the caller
 	return totalIllumination;

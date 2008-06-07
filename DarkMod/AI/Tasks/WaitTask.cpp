@@ -44,7 +44,7 @@ void WaitTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool WaitTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("WaitTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("WaitTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 

@@ -61,7 +61,7 @@ void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathWaitTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -75,7 +75,7 @@ bool PathWaitTask::Perform(Subsystem& subsystem)
 		owner->ActivateTargets(owner);
 
 		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO).LogString("Turn is done.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Turn is done.\r");
 
 		return true; // finish this task
 	}

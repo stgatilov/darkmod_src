@@ -98,7 +98,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool HandleDoorTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("HandleDoorTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();

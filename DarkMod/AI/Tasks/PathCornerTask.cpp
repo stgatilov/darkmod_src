@@ -53,7 +53,7 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathCornerTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Corner Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -73,13 +73,13 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 				owner->ActivateTargets(owner);
 
 				// Move is done, fall back to PatrolTask
-				DM_LOG(LC_AI, LT_INFO).LogString("Move is done.\r");
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
 			}
 			
 			if (owner->AI_DEST_UNREACHABLE)
 			{
 				// Unreachable, fall back to PatrolTask
-				DM_LOG(LC_AI, LT_INFO).LogString("Destination is unreachable, skipping.\r");
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination is unreachable, skipping.\r");
 			}
 		
 			return true; // finish this task

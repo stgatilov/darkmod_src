@@ -78,7 +78,7 @@ void PathAnimTask::OnFinish(idAI* owner)
 
 bool PathAnimTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("PathAnimTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathAnimTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 

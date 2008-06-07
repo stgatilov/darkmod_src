@@ -99,7 +99,7 @@ void tdmEAS::AssignElevatorsToClusters()
 
 			if (areaNum == 0)
 			{
-				DM_LOG(LC_AI, LT_WARNING).LogString("[%s]: Cannot assign multistatemover position to AAS area:  %s\r", _aas->name.c_str(), positionEnt->name.c_str());
+				DM_LOG(LC_AI, LT_WARNING)LOGSTRING("[%s]: Cannot assign multistatemover position to AAS area:  %s\r", _aas->name.c_str(), positionEnt->name.c_str());
 				ignoredStations++;
 				continue;
 			}
@@ -369,7 +369,7 @@ ElevatorStationInfoPtr tdmEAS::GetElevatorStationInfo(int index)
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
 {
 	_routingIterations++;
-	DM_LOG(LC_AI, LT_INFO).LogString("EAS routing iteration level = %d\r", _routingIterations);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("EAS routing iteration level = %d\r", _routingIterations);
 
 	/**
 	 * greebo: Pseudo-Code:
@@ -386,11 +386,11 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	else if (_clusterInfo[startCluster]->routeToCluster[goalCluster].size() > 0)
 	{
 		// Routing information to the goal cluster is right there, return it
-		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d already exists.\r", startCluster, goalCluster);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Route from cluster %d to %d already exists.\r", startCluster, goalCluster);
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
 
 		// Insert a dummy route into the _clusterInfo matrix, so that we don't come here again
 		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
@@ -405,7 +405,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 		if (routeFound) 
 		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Can walk from cluster %d to %d.\r", startCluster, goalCluster);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Can walk from cluster %d to %d.\r", startCluster, goalCluster);
 
 			// Walk path possible, allocate a new RouteInfo with a WALK node
 			RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
@@ -418,7 +418,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 		}
 		else 
 		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Can NOT walk from cluster %d to %d.\r", startCluster, goalCluster);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Can NOT walk from cluster %d to %d.\r", startCluster, goalCluster);
 
 			// No walk path possible, check all elevator stations that are reachable from this cluster
 			for (ElevatorStationInfoList::const_iterator station = _clusterInfo[startCluster]->reachableElevatorStations.begin();
@@ -430,7 +430,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 				// Get all stations reachable via this elevator
 				const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
 
-				DM_LOG(LC_AI, LT_INFO).LogString("Found %d elevator stations reachable from cluster %d (goal cluster = %d).\r", positionList.Num(), startCluster, goalCluster);
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found %d elevator stations reachable from cluster %d (goal cluster = %d).\r", positionList.Num(), startCluster, goalCluster);
 
 				// Now look at all elevator floors and route from there
 				for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
@@ -449,7 +449,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 					int nextCluster = _aas->file->GetArea(nextArea).cluster;
 
-					DM_LOG(LC_AI, LT_INFO).LogString("Checking elevator station %d reachable from cluster %d (goal cluster = %d).\r", startStationIndex, startCluster, goalCluster);
+					DM_LOG(LC_AI, LT_INFO)LOGSTRING("Checking elevator station %d reachable from cluster %d (goal cluster = %d).\r", startStationIndex, startCluster, goalCluster);
 
 					if (nextCluster == goalCluster)
 					{
@@ -467,11 +467,11 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 						// Save this USE_ELEVATOR route into this startCluster
 						InsertUniqueRouteInfo(startCluster, goalCluster, info);
 
-						DM_LOG(LC_AI, LT_INFO).LogString("Elevator leads right to the target cluster %d.\r", goalCluster);
+						DM_LOG(LC_AI, LT_INFO)LOGSTRING("Elevator leads right to the target cluster %d.\r", goalCluster);
 					}
 					else 
 					{
-						DM_LOG(LC_AI, LT_INFO).LogString("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
+						DM_LOG(LC_AI, LT_INFO)LOGSTRING("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
 						// The elevator station does not start in the goal cluster, find a way from there
 						RouteInfoList routes = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
 

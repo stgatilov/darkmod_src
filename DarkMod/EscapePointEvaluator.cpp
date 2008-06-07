@@ -38,7 +38,7 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	idReachability* reach;
 	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, _conditions.self.GetEntity());
 	
-	DM_LOG(LC_AI, LT_INFO).LogString("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
 
 	// Take this if no point has been found yet or if this one is better
 	if (_bestId == -1 || travelTime*_distanceMultiplier < _bestTime*_distanceMultiplier)
@@ -82,7 +82,7 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 	if (!escapePoint.isGuarded)
 	{
 		// Not guarded, continue the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not guarded.\r", escapePoint.id);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not guarded.\r", escapePoint.id);
 		return true;
 	}
 
@@ -102,7 +102,7 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 	if (!gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
 	{
 		// Not guarded, continue the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is not friendly.\r", escapePoint.id);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not friendly.\r", escapePoint.id);
 		return true;
 	}
 
@@ -122,7 +122,7 @@ bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 	if (!escapePoint.isGuarded || !gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
 	{
 		// Not guarded, continue the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Escape point %d is either not friendly or not guarded.\r", escapePoint.id);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is either not friendly or not guarded.\r", escapePoint.id);
 		return true;
 	}
 

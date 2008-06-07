@@ -49,7 +49,7 @@ void PathShowTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathShowTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Show task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Show task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -68,7 +68,7 @@ bool PathShowTask::Perform(Subsystem& subsystem)
 		owner->ActivateTargets(owner);
 
 		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO).LogString("entity is visible.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("entity is visible.\r");
 
 		return true; // finish this task
 	}

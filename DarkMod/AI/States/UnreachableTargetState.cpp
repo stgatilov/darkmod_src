@@ -37,7 +37,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("UnreachableTargetState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("UnreachableTargetState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference
@@ -74,7 +74,7 @@ void UnreachableTargetState::Init(idAI* owner)
 			{
 				_takingCoverPossible = false;
 			}
-			DM_LOG(LC_AI, LT_INFO).LogString("Taking Cover Possible: %d \r" , _takingCoverPossible);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Taking Cover Possible: %d \r" , _takingCoverPossible);
 		}
 	}
 	_takeCoverTime = -1;
@@ -126,7 +126,7 @@ void UnreachableTargetState::Init(idAI* owner)
 			// TODO: make not hardcoded, some randomness?
 			_takeCoverTime = gameLocal.time + 3000;
 		}
-		DM_LOG(LC_AI, LT_INFO).LogString("move required: %d \r" , _moveRequired);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("move required: %d \r" , _moveRequired);
 	}
 	else
 	{
@@ -148,7 +148,7 @@ void UnreachableTargetState::Think(idAI* owner)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy!\r");
 		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
 		return;
 	}

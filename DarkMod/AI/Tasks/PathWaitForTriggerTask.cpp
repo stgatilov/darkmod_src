@@ -51,7 +51,7 @@ void PathWaitForTriggerTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path WaitForTrigger Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path WaitForTrigger Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -67,7 +67,7 @@ bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 		owner->ActivateTargets(owner);
 
 		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO).LogString("Waiting for trigger is done.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Waiting for trigger is done.\r");
 
 		return true; // finish this task
 	}

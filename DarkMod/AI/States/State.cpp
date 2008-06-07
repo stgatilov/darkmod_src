@@ -429,7 +429,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 		
 		if (owner->IsFriend(objectOwner))
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Ignoring visual stim from weapon with friendly owner\r");
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Ignoring visual stim from weapon with friendly owner\r");
 			return;
 		}
 	}
@@ -1132,7 +1132,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 
 	if (issuingEntity != NULL)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Got incoming message from %s\r", issuingEntity->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Got incoming message from %s\r", issuingEntity->name.c_str());
 	}
 
 	Memory& memory = owner->GetMemory();
@@ -1140,7 +1140,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 	switch (commType)
 	{
 		case CAIComm_Message::Greeting_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: Greeting_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: Greeting_CommType\r");
 			// Have seen a friend
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
@@ -1151,7 +1151,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::FriendlyJoke_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FriendlyJoke_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: FriendlyJoke_CommType\r");
 			// Have seen a friend
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
@@ -1165,7 +1165,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::Insult_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: Insult_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: Insult_CommType\r");
 			if (directObjectEntity == owner)
 			{
 				gameLocal.Printf("Same to you, buddy\n");
@@ -1180,7 +1180,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::RequestForHelp_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForHelp_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForHelp_CommType\r");
 			if (owner->IsFriend(issuingEntity))
 			{
 				// Do we already have a target we are dealing with?
@@ -1209,7 +1209,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::RequestForMissileHelp_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMissileHelp_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMissileHelp_CommType\r");
 			// Respond if they are a friend and we have a ranged weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumRangedWeapons() > 0)
 			{
@@ -1243,7 +1243,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::RequestForMeleeHelp_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForMeleeHelp_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMeleeHelp_CommType\r");
 			// Respond if they are a friend and we have a melee weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumMeleeWeapons() > 0)
 			{
@@ -1277,15 +1277,15 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::RequestForLight_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: RequestForLight_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForLight_CommType\r");
 			gameLocal.Printf("I don't know how to bring light!\n");
 			break;
 		case CAIComm_Message::DetectedSomethingSuspicious_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedSomethingSuspicious_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
 			OnMessageDetectedSomethingSuspicious(message);
 			break;
 		case CAIComm_Message::DetectedEnemy_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: DetectedEnemy_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedEnemy_CommType\r");
 			//gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
 	
 			if (owner->GetEnemy() != NULL)
@@ -1303,35 +1303,35 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::FollowOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: FollowOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: FollowOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to follow somebody!\n");
 			}
 			break;
 		case CAIComm_Message::GuardLocationOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GuardLocationOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardLocationOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard a location!\n");
 			}
 			break;
 		case CAIComm_Message::GuardEntityOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GuardEntityOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardEntityOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard an entity!\n");
 			}
 			break;
 		case CAIComm_Message::PatrolOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: PatrolOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: PatrolOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to switch my patrol route!\n");
 			}
 			break;
 		case CAIComm_Message::SearchOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: SearchOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: SearchOrder_CommType\r");
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				// Set alert pos to the position we were ordered to search
@@ -1342,7 +1342,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::AttackOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: AttackOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: AttackOrder_CommType\r");
 			// Set this as our enemy and enter combat
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
@@ -1360,10 +1360,10 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::GetOutOfTheWayOrder_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: GetOutOfTheWayOrder_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GetOutOfTheWayOrder_CommType\r");
 			break;
 		case CAIComm_Message::ConveyWarning_EvidenceOfIntruders_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
 			if (issuingEntity->IsType(idAI::Type))
 			{
 				idAI* issuer = static_cast<idAI*>(issuingEntity);
@@ -1383,7 +1383,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::ConveyWarning_ItemsHaveBeenStolen_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if (!memory.itemsHaveBeenStolen)
 			{
@@ -1397,7 +1397,7 @@ void State::OnAICommMessage(CAIComm_Message* message)
 			}
 			break;
 		case CAIComm_Message::ConveyWarning_EnemiesHaveBeenSeen_CommType:
-			DM_LOG(LC_AI, LT_INFO).LogString("Message Type: ConveyWarning_EnemiesHaveBeenSeen_CommType\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EnemiesHaveBeenSeen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if (!memory.enemiesHaveBeenSeen)
 			{

@@ -30,7 +30,7 @@ void DifficultyManager::Clear()
 
 void DifficultyManager::Init(idMapFile* mapFile)
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Searching for difficulty setting on worldspawn.\r");
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Searching for difficulty setting on worldspawn.\r");
 
 	if (mapFile->GetNumEntities() <= 0) {
 		return; // no entities!
@@ -44,7 +44,7 @@ void DifficultyManager::Init(idMapFile* mapFile)
 	if (spawnArgs.GetInt("difficulty", "0", mapDifficulty))
 	{
 		// We have a difficulty spawnarg set on the map's worldspawn, take it as override value
-		DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found overriding difficulty setting on worldspawn entity: %d.\r", mapDifficulty);
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found overriding difficulty setting on worldspawn entity: %d.\r", mapDifficulty);
 		_difficulty = mapDifficulty;
 	}
 
@@ -90,7 +90,7 @@ void DifficultyManager::Restore(idRestoreGame* savefile)
 
 void DifficultyManager::ApplyDifficultySettings(idDict& target)
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Applying difficulty settings to entity: %s.\r", target.GetString("name"));
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Applying difficulty settings to entity: %s.\r", target.GetString("name"));
 
 	// greebo: Preliminary case: just apply the global settings
 	_globalSettings[_difficulty].ApplySettings(target);
@@ -105,7 +105,7 @@ bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
 	// The entity is allowed to spawn by default, must be set to 1 by the mapper
 	isAllowed = !target.GetBool(key, "0");
 
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Entity %s is allowed to spawn: %s.\r", target.GetString("name"), isAllowed ? "YES" : "NO");
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Entity %s is allowed to spawn: %s.\r", target.GetString("name"), isAllowed ? "YES" : "NO");
 
 	// Return false if the entity is allowed to spawn
 	return !isAllowed;
@@ -113,7 +113,7 @@ bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
 
 void DifficultyManager::LoadDefaultDifficultySettings()
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load default difficulty settings from entityDefs.\r");
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Trying to load default difficulty settings from entityDefs.\r");
 
 	// Construct the entityDef name (e.g. atdm:difficulty_settings_default_0)
 	idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
@@ -122,7 +122,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 
 	if (difficultyDict != NULL)
 	{
-		DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found difficulty settings: %s.\r", defName.c_str());
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found difficulty settings: %s.\r", defName.c_str());
 
 		// greebo: Try to lookup the entityDef for each difficulty level and load the settings
 		for (int i = 0; i < DIFFICULTY_COUNT; i++)
@@ -145,7 +145,7 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 
 void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
 {
-	DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Trying to load map-specific difficulty settings.\r");
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Trying to load map-specific difficulty settings.\r");
 
 	if (mapFile == NULL) return;
 

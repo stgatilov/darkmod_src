@@ -91,7 +91,7 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool HandleElevatorTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("HandleElevatorTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleElevatorTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();

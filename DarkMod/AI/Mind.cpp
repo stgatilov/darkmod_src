@@ -57,7 +57,7 @@ void Mind::Think()
 	assert(owner != NULL);
 
 	// Thinking
-	DM_LOG(LC_AI, LT_INFO).LogString("Mind is thinking... %s\r", owner->name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Mind is thinking... %s\r", owner->name.c_str());
 
 
 	// Should we switch states (i.e. initialise a new one)?
@@ -128,7 +128,7 @@ bool Mind::EndState()
 		// Don't destroy the State object this round
 		_recycleBin = _stateQueue.front();
 
-		DM_LOG(LC_AI, LT_INFO).LogString("Ending State %s (%s)\r", _recycleBin->GetName().c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Ending State %s (%s)\r", _recycleBin->GetName().c_str(), _owner.GetEntity()->name.c_str());
 
 		// Remove the current state from the queue
 		_stateQueue.pop_front();
@@ -151,11 +151,11 @@ void Mind::SwitchState(const idStr& stateName)
 {
 	if (_stateQueue.size() > 0)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Switching to %s to %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s to %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Switching to %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
 	}
 
 	// greebo: Switch the state without destroying the current State object immediately
@@ -218,7 +218,7 @@ bool Mind::SetTarget()
 		if (tactEnt == NULL || !tactEnt->IsType(idActor::Type)) 
 		{
 			// Invalid enemy type, todo?
-			//DM_LOG(LC_AI, LT_ERROR).LogString("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
+			//DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
 			return false;
 		}
 
@@ -230,7 +230,7 @@ bool Mind::SetTarget()
 		**/
 		if (owner->IsEnemy(target))
 		{
-			DM_LOG(LC_AI, LT_INFO).LogString("Set tactile alert enemy to entity %s\r", target->name.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Set tactile alert enemy to entity %s\r", target->name.c_str());
 
 			// set the bool back
 			owner->AI_TACTALERT = false;
@@ -269,7 +269,7 @@ bool Mind::SetTarget()
 			}
 		}
 		
-		DM_LOG(LC_AI, LT_INFO).LogString("No target\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("No target\r");
 		
 		return false;
 	}
@@ -301,7 +301,7 @@ bool Mind::PerformCombatCheck()
 	
 	if (targetFound)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("COMBAT NOW!\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("COMBAT NOW!\r");
 		
 		// Spotted an enemy
 		memory.enemiesHaveBeenSeen = true;

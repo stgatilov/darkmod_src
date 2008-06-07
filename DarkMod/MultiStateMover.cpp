@@ -46,7 +46,7 @@ void CMultiStateMover::FindPositionEntities()
 
 		CMultiStateMoverPosition* moverPos = static_cast<CMultiStateMoverPosition*>(target);
 
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("Parsing multistate position entity %s.\r", moverPos->name.c_str());
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Parsing multistate position entity %s.\r", moverPos->name.c_str());
 		
 		idStr positionName;
 		if (!moverPos->spawnArgs.GetString("position", "", positionName) || positionName.IsEmpty())
@@ -84,7 +84,7 @@ void CMultiStateMover::FindPositionEntities()
 void CMultiStateMover::Event_PostSpawn() 
 {
 	FindPositionEntities();
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Found %d multistate position entities.\r", positionInfo.Num());
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Found %d multistate position entities.\r", positionInfo.Num());
 }
 
 bool CMultiStateMover::IsAtPosition(CMultiStateMoverPosition* position)

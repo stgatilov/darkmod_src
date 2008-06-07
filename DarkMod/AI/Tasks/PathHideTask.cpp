@@ -52,7 +52,7 @@ void PathHideTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathHideTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Hide task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Hide task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
@@ -67,7 +67,7 @@ bool PathHideTask::Perform(Subsystem& subsystem)
 		owner->ActivateTargets(owner);
 
 		// Move is done, fall back to PatrolTask
-		DM_LOG(LC_AI, LT_INFO).LogString("entity is hidden.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("entity is hidden.\r");
 
 		return true; // finish this task
 	}

@@ -202,7 +202,7 @@ void CInventoryItem::SetStackable(bool stack)
 
 void CInventoryItem::SetHUD(const idStr &HudName, int layer)
 {
-	DM_LOG(LC_INVENTORY, LT_DEBUG).LogString("Setting hud %s on layer %d\r", HudName.c_str(), layer); 
+	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Setting hud %s on layer %d\r", HudName.c_str(), layer); 
 	if(m_Overlay == OVERLAYS_INVALID_HANDLE || m_HudName != HudName)
 	{
 		idEntity *owner = GetOwner();

@@ -254,7 +254,7 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 
 bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse)
 {
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Contacts with this entity %s = %d\r", self->name.c_str(), contacts.Num());
 
 	if (impulse.LengthSqr() < 1e-5)
 	{
@@ -281,14 +281,14 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	current.i.angularMomentum.Zero();
 	ApplyImpulse(0, point, impulse);
 
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum before friction:", current.i.linearMomentum);
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum before friction:", current.i.angularMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum before friction:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
 
 	// Calculate the friction using this state
 	ContactFriction(current.lastTimeStep);
 
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum after friction:", current.i.linearMomentum);
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum after friction:", current.i.angularMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
 
 	// The list of all the touching entities
 	idList<contactInfo_t> touching;
@@ -311,7 +311,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 
 		if ((impulse * -contacts[i].normal) < 0.0f)
 		{
-			DM_LOG(LC_ENTITY, LT_INFO).LogString("Entity %s is not in push direction.\r", contactEntity->name.c_str());
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Entity %s is not in push direction.\r", contactEntity->name.c_str());
 			continue;
 		}
 		
@@ -320,7 +320,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	}
 
 	int numTouching = touching.Num();
-	DM_LOG(LC_ENTITY, LT_INFO).LogString("Contacts with this entity %s without world = %d\r", self->name.c_str(), numTouching);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Contacts with this entity %s without world = %d\r", self->name.c_str(), numTouching);
 
 	if (numTouching > 0)
 	{
@@ -336,7 +336,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 			if (pushed == NULL)
 				continue;
 
-			DM_LOG(LC_ENTITY, LT_INFO).LogString("Propagating impulse to entity %s\r", pushed->name.c_str());
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Propagating impulse to entity %s\r", pushed->name.c_str());
 			//gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
 
 			pushed->GetPhysics()->PropagateImpulse(id, touching[i].point, -touching[i].normal * impulseFractionLen);
@@ -355,8 +355,8 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	// Apply the remaining impulse to this object
 	ApplyImpulse(0, point, remainingImpulse);
 
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Linear Momentum after applyImpulse:", current.i.linearMomentum);
-	DM_LOG(LC_ENTITY, LT_INFO).LogVector("Angular Momentum after applyImpulse:", current.i.angularMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after applyImpulse:", current.i.linearMomentum);
+	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after applyImpulse:", current.i.angularMomentum);
 
 	// Return TRUE if we pushed any neighbours, FALSE if this was a single pushed object
 	return (numTouching > 0);
@@ -464,7 +464,7 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += r.Cross(impulse);
 
-	//DM_LOG(LC_ENTITY, LT_INFO).LogString("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Collision fraction of %s = %f\r", self->name.c_str(), collision.fraction);
 
 	// if no movement at all don't blow up
 	if ( collision.fraction < 0.0001f ) {
@@ -1060,7 +1060,7 @@ void idPhysics_RigidBody::SetClipModel( idClipModel *model, const float density,
 
 	// check whether or not the clip model has valid mass properties
 	if ( mass <= 0.0f || FLOAT_IS_NAN( mass ) ) {
-		DM_LOG(LC_ENTITY, LT_INFO).LogString( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING( "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
 							self->name.c_str(), self->GetType()->classname );
 		mass = 1.0f;
 		centerOfMass.Zero();
@@ -1472,7 +1472,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 			float l1 = arm1N.NormalizeFast();
 			float l2 = arm1N * arm2;
-			//DM_LOG(LC_ENTITY, LT_INFO).LogString("Arm 1: %f, Arm2: %f\r", l1, l2);
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Arm 1: %f, Arm2: %f\r", l1, l2);
 
 			if (arm2.LengthFast() > l1)
 			{
@@ -1488,10 +1488,10 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 				forceFactor *= 15;
 				idVec3 leverForceLinear = current.externalForce * forceFactor;
 
-				//DM_LOG(LC_ENTITY, LT_INFO).LogString("forceFactor: %f\r", forceFactor);
-				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("Current impulse", current.i.linearMomentum);
-				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force", current.externalForce);
-				//DM_LOG(LC_ENTITY, LT_INFO).LogVector("External Force Modified", current.externalForce*forceFactor);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("forceFactor: %f\r", forceFactor);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Current impulse", current.i.linearMomentum);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("External Force", current.externalForce);
+				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("External Force Modified", current.externalForce*forceFactor);
 				//gameRenderWorld->DebugArrow(colorMdGrey, massCenter, massCenter + leverForceLinear, 1, 20);
 
 				// Apply the linear momentum caused by the lever force
@@ -1604,7 +1604,7 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 		 (fabs(impulse.y) > maxForce.y) || 
 		 (fabs(impulse.z) > maxForce.z)) ) 
 	{
-		DM_LOG(LC_ENTITY, LT_INFO).LogString("impulse (%f %f %f) > maxForce (%f %f %f) for entity %s\r\r", 
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("impulse (%f %f %f) > maxForce (%f %f %f) for entity %s\r\r", 
 			impulse.x, impulse.y, impulse.z,
 			maxForce.x, maxForce.y, maxForce.z,
 			self->name.c_str()

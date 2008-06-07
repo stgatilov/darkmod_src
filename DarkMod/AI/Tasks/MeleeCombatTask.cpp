@@ -36,7 +36,7 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Melee Combat Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Melee Combat Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -44,7 +44,7 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return true; // terminate me
 	}
 */

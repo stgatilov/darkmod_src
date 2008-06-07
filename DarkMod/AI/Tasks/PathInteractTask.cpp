@@ -67,7 +67,7 @@ void PathInteractTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathInteractTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("PathInteractTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathInteractTask performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();

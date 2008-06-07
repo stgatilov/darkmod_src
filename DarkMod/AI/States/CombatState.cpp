@@ -83,7 +83,7 @@ void CombatState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("CombatState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatState initialised.\r");
 	assert(owner);
 
 	// Ensure we are in the correct alert level
@@ -101,7 +101,7 @@ void CombatState::Init(idAI* owner)
 
 	if (!_meleePossible && !_rangedPossible)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("I'm unarmed, I'm afraid!\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm unarmed, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -109,7 +109,7 @@ void CombatState::Init(idAI* owner)
 	// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
 	if (owner->spawnArgs.GetBool("is_civilian", "0"))
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("I'm civilian. I'm afraid.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm civilian. I'm afraid.\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -195,14 +195,14 @@ void CombatState::Think(idAI* owner)
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("No enemy, terminating task!\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		owner->GetMind()->EndState();
 		return;
 	}
 
 	if (owner->health < _criticalHealth)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("I'm badly hurt, I'm afraid!\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}

@@ -39,7 +39,7 @@ void FleeDoneState::Init(idAI* owner)
 {
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("FleeDoneState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("FleeDoneState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference
@@ -75,7 +75,7 @@ void FleeDoneState::Think(idAI* owner)
 		if ( friendlyAI != NULL)
 		{
 			// We found a friend, cry for help to him
-			DM_LOG(LC_AI, LT_INFO).LogString("Found friendly AI %s \r", friendlyAI->name.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found friendly AI %s \r", friendlyAI->name.c_str());
 
 			_searchForFriendDone = true;
 			owner->GetSubsystem(SubsysMovement)->ClearTasks();

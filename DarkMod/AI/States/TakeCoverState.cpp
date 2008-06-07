@@ -37,7 +37,7 @@ void TakeCoverState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("TakeCoverState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("TakeCoverState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference

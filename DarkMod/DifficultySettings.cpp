@@ -139,7 +139,7 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 		  keyVal != NULL;
 		  keyVal = dict.MatchPrefix(prefix, keyVal))
 	{
-		DM_LOG(LC_DIFFICULTY, LT_INFO).LogString("Parsing keyvalue: %s = %s.\r", keyVal->GetKey().c_str(), keyVal->GetValue().c_str());
+		DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Parsing keyvalue: %s = %s.\r", keyVal->GetKey().c_str(), keyVal->GetValue().c_str());
 
 		// Get the index from this keyvalue (remove the prefix and convert to int)
 		idStr key = keyVal->GetKey();
@@ -162,7 +162,7 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 		else
 		{
 			gameLocal.Warning("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
-			DM_LOG(LC_DIFFICULTY, LT_ERROR).LogString("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
+			DM_LOG(LC_DIFFICULTY, LT_ERROR)LOGSTRING("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
 		}
 	}
 
@@ -245,12 +245,12 @@ void DifficultySettings::ApplySettings(idDict& target)
 	// greebo: First, get the list of entity-specific difficulty settings from the dictionary
 	// Everything processed here will be ignored in the second run (where the default settings are applied)
 	idList<Setting> entSettings = Setting::ParseSettingsFromDict(target, _level);
-	DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Found %d difficulty settings on the entity %s.\r", entSettings.Num(), target.GetString("name"));
+	DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found %d difficulty settings on the entity %s.\r", entSettings.Num(), target.GetString("name"));
 
 	// Apply the settings one by one
 	for (int i = 0; i < entSettings.Num(); i++)
 	{
-		DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Applying entity-specific setting: %s => %s.\r", entSettings[i].spawnArg.c_str(), entSettings[i].argument.c_str());
+		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Applying entity-specific setting: %s => %s.\r", entSettings[i].spawnArg.c_str(), entSettings[i].argument.c_str());
 		entSettings[i].Apply(target);
 	}
 
@@ -279,7 +279,7 @@ void DifficultySettings::ApplySettings(idDict& target)
 				if (entSettings[k].spawnArg == setting.spawnArg)
 				{
 					// This target spawnarg has already been processed in the first run, skip it
-					DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Ignoring global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
+					DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Ignoring global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
 					settingApplicable = false;
 					break;
 				}
@@ -288,7 +288,7 @@ void DifficultySettings::ApplySettings(idDict& target)
 			if (settingApplicable)
 			{
 				// We have green light, apply the setting
-				DM_LOG(LC_DIFFICULTY, LT_DEBUG).LogString("Applying global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
+				DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Applying global setting: %s => %s.\r", setting.spawnArg.c_str(), setting.argument.c_str());
 				setting.Apply(target);
 			}
 		}

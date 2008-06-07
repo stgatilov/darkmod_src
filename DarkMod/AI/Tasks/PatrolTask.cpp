@@ -59,7 +59,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 		if (path == NULL)
 		{
 			// No path corner entities found!
-			DM_LOG(LC_AI, LT_INFO).LogString("Warning: No Path corner entites found for %s\r", owner->name.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Warning: No Path corner entites found for %s\r", owner->name.c_str());
 			
 			subsystem.FinishTask();
 			return;
@@ -77,7 +77,7 @@ void PatrolTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PatrolTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Patrol Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Patrol Task performing.\r");
 
 	idPathCorner* path = _owner.GetEntity()->GetMind()->GetMemory().currentPath.GetEntity();
 
@@ -150,7 +150,7 @@ bool PatrolTask::Perform(Subsystem& subsystem)
 
 	if (next == NULL)
 	{
-		DM_LOG(LC_AI, LT_INFO).LogString("Cannot advance path pointer, no more targets.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot advance path pointer, no more targets.\r");
 		subsystem.SwitchTask(task);
 		// finish patrolling after this path
 	}

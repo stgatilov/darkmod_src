@@ -36,7 +36,7 @@ void EmergeFromCoverState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("EmergeFromCoverState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("EmergeFromCoverState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference

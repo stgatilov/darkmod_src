@@ -1752,7 +1752,7 @@ void idAI::Think( void )
 			mind->Think();
 
 			thinkTimer.Stop();
-			DM_LOG(LC_AI,LT_DEBUG).LogString("Mind's thinking timer says: %lf msecs.\r", thinkTimer.Milliseconds());
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Mind's thinking timer says: %lf msecs.\r", thinkTimer.Milliseconds());
 		}
 
 		// Clear DarkMod per frame vars now that the mind had time to think
@@ -3072,7 +3072,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 		return false;
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Best fleeing location is: %f %f %f in area %d\r", goal.origin.x, goal.origin.y, goal.origin.z, goal.areaNum);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Best fleeing location is: %f %f %f in area %d\r", goal.origin.x, goal.origin.y, goal.origin.z, goal.areaNum);
 
 	if ( ReachedPos( goal.origin, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
@@ -4293,7 +4293,7 @@ void idAI::AnimMove()
 				timer.Start();
 				CheckObstacleAvoidance( goalPos, newDest );
 				timer.Stop();
-				DM_LOG(LC_AI, LT_INFO).LogString("Obstacle avoidance took: %lf msec \r", timer.Milliseconds());
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Obstacle avoidance took: %lf msec \r", timer.Milliseconds());
 			}
 			else 
 			{
@@ -7939,23 +7939,23 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 			continue;
 		}
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s into account\r", actor->name.c_str());
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Taking actor %s into account\r", actor->name.c_str());
 
 		if (requiredTeam != -1 && actor->team != requiredTeam) {
 			// wrong team
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Taking actor %s has wrong team: %d\r", actor->name.c_str(), actor->team);
 			continue;
 		}
 
 		if (!gameLocal.m_RelationsManager->IsFriend(team, actor->team))
 		{
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s is not on friendly team: %d\r", actor->name.c_str(), actor->team);
 			// Not friendly
 			continue;
 		}
 
 		if (!gameLocal.pvs.InCurrentPVS( pvs, actor->GetPVSAreas(), actor->GetNumPVSAreas())) {
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Actor %s is not in PVS\r", actor->name.c_str());
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s is not in PVS\r", actor->name.c_str());
 			// greebo: This actor is not in our PVS, skip it
 			continue;
 		}
@@ -8432,7 +8432,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 	else
 		statename = "NULL State";
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("Attempted KO of AI %s in state %s\r", name.c_str(), statename);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s in state %s\r", name.c_str(), statename);
 
 	if( AI_KNOCKEDOUT )
 	{
@@ -8444,7 +8444,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 
 	LocationName = GetDamageGroup( CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id), LocationName.c_str());
 
 	// check if we're hitting the right zone (usually the head)
 	if( strcmp(LocationName.c_str(), spawnArgs.GetString("ko_zone")) != 0 )
@@ -8496,7 +8496,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, idVec3 dir, trace_t *tr, bool b
 	// if we made it to this point, this AI just got knocked the taff out!
 	Knockout(attacker);
 
-	DM_LOG(LC_AI, LT_DEBUG).LogString("AI %s was knocked out by a blow to the head\r", name.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
 
 Quit:
 	return bReturnVal;
@@ -9044,7 +9044,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("StartSearchForHidingSpots called.\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("StartSearchForHidingSpots called.\r");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -9061,7 +9061,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	if (aas != NULL)
 	{
 		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Making finder\r");
 		bool b_searchCompleted = false;
 		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
 		(
@@ -9082,7 +9082,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
 	
 		// Search is done since there is no search
 		return 0;
@@ -9091,7 +9091,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 
 int idAI::ContinueSearchForHidingSpots()
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("ContinueSearchForHidingSpots called.\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
 
 	// Get hiding spot search instance from handle
 	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
@@ -9106,7 +9106,7 @@ int idAI::ContinueSearchForHidingSpots()
 	if (p_hidingSpotFinder == NULL)
 	{
 		// No hiding spot search to continue
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("No current hiding spot search to continue\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No current hiding spot search to continue\r");
 		return 0;
 	}
 	else
@@ -9156,7 +9156,7 @@ int idAI::ContinueSearchForHidingSpots()
 			p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
 		}
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search completed\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search completed\r");
 		return 0;
 	}
 }
@@ -9206,7 +9206,7 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
     }
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
 	}
 
 	// Return the location

@@ -58,7 +58,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("AgitatedSearchingState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
 	// Ensure we are in the correct alert level

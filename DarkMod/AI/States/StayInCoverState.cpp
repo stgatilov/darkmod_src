@@ -38,7 +38,7 @@ void StayInCoverState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("StayInCoverState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("StayInCoverState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference

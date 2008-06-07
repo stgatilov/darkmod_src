@@ -43,7 +43,7 @@ void RandomTurningTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool RandomTurningTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Random Turning Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Random Turning Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 
@@ -60,7 +60,7 @@ bool RandomTurningTask::Perform(Subsystem& subsystem)
 		
 		// Wait a bit before turning again
 		_nextTurningTime = gameLocal.time + turnDelay;
-		DM_LOG(LC_AI, LT_INFO).LogString("Turn is done.\r");
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Turn is done.\r");
 		_turning = false;
 		_nextYaw = owner->GetCurrentYaw() + (gameLocal.random.RandomFloat() - 0.5) * 180;
 		

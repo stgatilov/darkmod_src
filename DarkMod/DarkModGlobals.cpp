@@ -1133,7 +1133,7 @@ void DM_Printf(const char* fmt, ...)
 	vsprintf( text, fmt, arg );
 	va_end( arg );
 
-	DM_LOG(LC_AI, LT_INFO).LogString("Console output %s!\r", text);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
 }
 
 const char *DM_BuildOSPath(const char *basePath, const char *game, const char *relativePath)

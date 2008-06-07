@@ -35,7 +35,7 @@ void FleeState::Init(idAI* owner)
 {
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("FleeState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("FleeState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference

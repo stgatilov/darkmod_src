@@ -56,7 +56,7 @@ void ScriptTask::Init(idAI* owner, Subsystem& subsystem)
 	else
 	{
 		// script function not found!
-		DM_LOG(LC_AI, LT_ERROR).LogString("ScriptTask could not find task %s.\r", _functionName.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("ScriptTask could not find task %s.\r", _functionName.c_str());
 		subsystem.FinishTask();
 		return;
 	}
@@ -64,7 +64,7 @@ void ScriptTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool ScriptTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("ScriptTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("ScriptTask performing.\r");
 	assert(_thread != NULL);
 
 	if (_thread->IsDoneProcessing() || _thread->IsDying())

@@ -55,7 +55,7 @@ void ObservantState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("ObservantState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("ObservantState initialised.\r");
 	assert(owner);
 
 	float alertTime = owner->atime1 + owner->atime1_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);

@@ -41,7 +41,7 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool ThrowObjectTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Throw Object Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Throw Object Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);

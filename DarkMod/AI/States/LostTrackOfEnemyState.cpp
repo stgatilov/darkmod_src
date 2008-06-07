@@ -32,7 +32,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AI, LT_INFO).LogString("LostTrackOfEnemyState initialised.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("LostTrackOfEnemyState initialised.\r");
 	assert(owner);
 
 	// Shortcut reference

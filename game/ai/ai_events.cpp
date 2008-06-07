@@ -892,12 +892,12 @@ void idAI::IssueCommunication_Internal
 
 		if (!p_commStim->addMessage ( messageTypeEnumVal, maxRadius, this, intendedRecipientEntity, directObjectEntity, directObjectLocation ))
 		{
-			DM_LOG(LC_AI, LT_WARNING).LogString ("Failed to add message to communication stim");
+			DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Failed to add message to communication stim");
 		}
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_WARNING).LogString ("Failed to make or get communication stim");
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Failed to make or get communication stim");
 	}
 
 
@@ -918,7 +918,7 @@ void idAI::Event_SpawnThrowableProjectile
 	projectileDef = gameLocal.FindEntityDefDict( pstr_projectileName );
 	if (!projectileDef)
 	{
-		DM_LOG(LC_AI, LT_WARNING).LogString ("Projectile with name '%s' was not found\r", pstr_projectileName);
+		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Projectile with name '%s' was not found\r", pstr_projectileName);
 		idThread::ReturnEntity (NULL);
 	}
 
@@ -3279,7 +3279,7 @@ void idAI::destroyCurrentHidingSpotSearch()
 		CHidingSpotSearchCollection::Instance().dereference(m_HidingSpotSearchHandle);
 		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Hiding spot search dereferenced\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search dereferenced\r");
 	}
 
 	// No hiding spots
@@ -3303,7 +3303,7 @@ void idAI::Event_StartSearchForHidingSpots
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Event_StartSearchForHidingSpots called.\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Event_StartSearchForHidingSpots called.\r");
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -3322,7 +3322,7 @@ void idAI::Event_StartSearchForHidingSpots
 	if (aas != NULL)
 	{
 		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG).LogString ("Making finder\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Making finder\r");
 		bool b_searchCompleted = false;
 		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
 		(
@@ -3344,7 +3344,7 @@ void idAI::Event_StartSearchForHidingSpots
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\r");
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Cannot perform Event_StartSearchForHidingSpots if no AAS is set for the AI\r");
 	
 		// Search is done since there is no search
 		idThread::ReturnInt(0);
@@ -3386,7 +3386,7 @@ void idAI::Event_ContinueSearchForHidingSpots()
 void idAI::Event_CloseHidingSpotSearch ()
 {
     // Destroy current hiding spot search
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Closing hiding spot search\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Closing hiding spot search\r");
 	destroyCurrentHidingSpotSearch();
 }
 
@@ -3398,7 +3398,7 @@ void idAI::Event_ResortHidingSpots
 	const idVec3& searchRadius
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG).LogString ("Resorting hiding spots for new search center\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Resorting hiding spots for new search center\r");
 	m_hidingSpots.sortForNewCenter
 	(
 		searchCenter,
@@ -3451,7 +3451,7 @@ void idAI::Event_GetNthHidingSpotType (int hidingSpotIndex)
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString ("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
 	}
 
 	// Return the type

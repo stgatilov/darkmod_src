@@ -49,7 +49,7 @@ void PathLookatTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathLookatTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Path Lookat Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Lookat Task performing.\r");
 
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();

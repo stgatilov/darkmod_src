@@ -34,7 +34,7 @@ void RandomHeadturnTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool RandomHeadturnTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("RandomHeadturnTask performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("RandomHeadturnTask performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 	

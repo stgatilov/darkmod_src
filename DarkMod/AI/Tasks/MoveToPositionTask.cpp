@@ -46,7 +46,7 @@ void MoveToPositionTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool MoveToPositionTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("run to position Task performing.\r");
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("run to position Task performing.\r");
 
 	idAI* owner = _owner.GetEntity();
 

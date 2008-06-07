@@ -2752,7 +2752,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// Update the Light Awareness System
 		LAS.updateLASState();
 		lasTimer.Stop();
-		DM_LOG(LC_LIGHT, LT_INFO).LogString("Time to update LAS: %lf\r", lasTimer.Milliseconds());
+		DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
 
 		unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
 
@@ -2786,7 +2786,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				ms = timer_singlethink.Milliseconds();
 				if ( ms >= g_timeentities.GetFloat() ) {
 					//Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
-					DM_LOG(LC_ENTITY, LT_INFO).LogString("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+					DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
 				}
 				num++;
 			}
@@ -2827,7 +2827,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 		timer_think.Stop();
 	
-		//DM_LOG(LC_ENTITY, LT_INFO).LogString("Thinking timer: %lfms\r", timer_think.Milliseconds());
+		//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Thinking timer: %lfms\r", timer_think.Milliseconds());
 
 		timer_events.Clear();
 		timer_events.Start();
@@ -5928,7 +5928,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 				{
 					// Radius based stims
 					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
-					//DM_LOG(LC_STIM_RESPONSE, LT_INFO).LogString("Entities touching bounds: %d\r", n);
+					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
 				}
 				
 				if (n > 0)
@@ -5944,7 +5944,7 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 	}
 
 	srTimer.Stop();
-	DM_LOG(LC_STIM_RESPONSE, LT_INFO).LogString("Processing S/R took %lf\r", srTimer.Milliseconds());
+	DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Processing S/R took %lf\r", srTimer.Milliseconds());
 }
 
 /*

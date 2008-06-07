@@ -100,7 +100,7 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 	p_aas = gameLocal.GetAAS(LAS.getAASName());
 	if (p_aas == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("AAS with name %s not found\n", LAS.getAASName().c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AAS with name %s not found\n", LAS.getAASName().c_str());
 	}
 
 	// Set search parameters
@@ -157,7 +157,7 @@ bool CDarkmodAASHidingSpotFinder::initialize
 	p_aas = gameLocal.GetAAS (LAS.getAASName());
 	if (p_aas == NULL)
 	{
-		DM_LOG(LC_AI, LT_ERROR).LogString("AAS with name %s not found\n", LAS.getAASName().c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AAS with name %s not found\n", LAS.getAASName().c_str());
 		return false;
 	}
 
@@ -326,7 +326,7 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 	int& inout_numPointsTestedThisPass
 )
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Find more hiding spots called, searchState = %d.\r", searchState);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Find more hiding spots called, searchState = %d.\r", searchState);
 	// Make sure search wasn't destroyed
 	if (h_hideFromPVS.h == 0 && h_hideFromPVS.i == -1)
 	{
@@ -413,7 +413,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 			return false;
 		}
 
-		DM_LOG(LC_AI, LT_DEBUG).LogString("Testing PVS area %d, which is %d out of %d in the set\r", PVSAreas[numPVSAreasIterated], numPVSAreasIterated+1, numPVSAreas);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Testing PVS area %d, which is %d out of %d in the set\r", PVSAreas[numPVSAreasIterated], numPVSAreasIterated+1, numPVSAreas);
 
 		// Our current PVS given by h_hidePVS holds the list of areas visible from
 		// the "hide from" point.
@@ -427,7 +427,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 				// Get AAS areas in this visible PVS area
 				aasAreaIndices.Clear();
 				LAS.pvsToAASMappingTable.getAASAreasForPVSArea (PVSAreas[numPVSAreasIterated], aasAreaIndices);
-				DM_LOG(LC_AI, LT_DEBUG).LogString("Non-visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Non-visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
 
 				// None searched yet
 				numAASAreaIndicesSearched = 0;
@@ -447,7 +447,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 			// PVS area is visible, get its AAS areas
 			aasAreaIndices.Clear();
 			LAS.pvsToAASMappingTable.getAASAreasForPVSArea (PVSAreas[numPVSAreasIterated], aasAreaIndices);
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visible PVS area %d contains %d AAS areas\r", PVSAreas[numPVSAreasIterated], aasAreaIndices.Num());
 
 			// None searched yet
 			numAASAreaIndicesSearched = 0;
@@ -538,7 +538,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 				hidingSpotRedundancyDistance
 			);
 			
-			DM_LOG(LC_AI, LT_DEBUG).LogString("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \r", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot added for PVS non-visible area %d, AAS area %d, quality \r", PVSAreas[numPVSAreasIterated], hidingSpot.goal.areaNum);
 		}
 
 		// This counts as a point tested
@@ -660,7 +660,7 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 	// No hiding spot area node yet used
 	TDarkmodHidingSpotAreaNode* p_hidingAreaNode = NULL;
 
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
 
 	// Iterate X grid
 	while (currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE + 0.1)
@@ -737,7 +737,7 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 					hidingSpotRedundancyDistance
 				);
 
-				//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
+				//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
 			// One more point tested
@@ -773,7 +773,7 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 
 	} // X iteration
 
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Finished hide grid iteration for AAS area %d\r", currentGridSearchAASAreaNum);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Finished hide grid iteration for AAS area %d\r", currentGridSearchAASAreaNum);
 
 	// One more AAS area searched
 	numAASAreaIndicesSearched ++;
@@ -814,14 +814,14 @@ int CDarkmodAASHidingSpotFinder::TestHidingPoint
 	if ((hidingSpotTypesAllowed & DARKNESS_HIDING_SPOT_TYPE) != 0)
 	{
 		// Test the lighting level of this position
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 
 		out_lightQuotient = LAS.queryLightingAlongLine(testPoint, testLineTop, p_ignoreEntity, true);
 
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Done testing hiding-spot lighting at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 		if (out_lightQuotient < g_Global.m_hidingSpotMaxLightQuotient && out_lightQuotient >= 0.0)
 		{
-			//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hidable darkness of %f at point %f,%f,%f\n", LightQuotient, testPoint.x, testPoint.y, testPoint.z);
+			//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Found hidable darkness of %f at point %f,%f,%f\n", LightQuotient, testPoint.x, testPoint.y, testPoint.z);
 			out_hidingSpotTypesThatApply |= DARKNESS_HIDING_SPOT_TYPE;
 
 			float darknessQuality = 0.0;
@@ -848,7 +848,7 @@ int CDarkmodAASHidingSpotFinder::TestHidingPoint
 		occlusionTestPoint.z += hidingHeight;
 
 		trace_t rayResult;
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 		if (gameLocal.clip.TracePoint 
 		(
 			rayResult, 
@@ -860,7 +860,7 @@ int CDarkmodAASHidingSpotFinder::TestHidingPoint
 		))
 		{
 			// Some sort of occlusion
-			//DM_LOG(LC_AI, LT_DEBUG).LogString("Found hiding-spot occlusion at point %f,%f,%f, fraction of %f\n", testPoint.x, testPoint.y, testPoint.z, rayResult.fraction);
+			//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Found hiding-spot occlusion at point %f,%f,%f, fraction of %f\n", testPoint.x, testPoint.y, testPoint.z, rayResult.fraction);
 			out_hidingSpotTypesThatApply |= VISUAL_OCCLUSION_HIDING_SPOT_TYPE;
 
 			// Occlusions are 50% good
@@ -869,7 +869,7 @@ int CDarkmodAASHidingSpotFinder::TestHidingPoint
 				out_quality = OCCLUSION_HIDING_SPOT_QUALITY;
 			}
 		}
-		//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Done testing hiding-spot occlusion at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	}
 
 
@@ -905,7 +905,7 @@ int CDarkmodAASHidingSpotFinder::TestHidingPoint
 		out_quality = 0.0f;
 	}
 
-	//DM_LOG(LC_AI, LT_DEBUG).LogString("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Done testing for hidability at point %f,%f,%f\n", testPoint.x, testPoint.y, testPoint.z);
 	return out_hidingSpotTypesThatApply;
 }
 
@@ -1083,8 +1083,8 @@ void CDarkmodAASHidingSpotFinder::testFindHidingSpots
 
 	CDarkmodHidingSpotTree hidingSpotList;
 
-	DM_LOG(LC_AI, LT_DEBUG).LogVector ("Hide search mins", in_hideSearchBounds[0]);
-	DM_LOG(LC_AI, LT_DEBUG).LogVector ("Hide search maxes", in_hideSearchBounds[1]);
+	DM_LOG(LC_AI, LT_DEBUG)LOGVECTOR("Hide search mins", in_hideSearchBounds[0]);
+	DM_LOG(LC_AI, LT_DEBUG)LOGVECTOR("Hide search maxes", in_hideSearchBounds[1]);
 
 #define MAX_SPOTS_PER_TEST_ROUND 1000
 
@@ -1192,7 +1192,7 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	int frameNumber
 )
 {
-	DM_LOG(LC_AI, LT_INFO).LogString("Finder:continueSearchForHidingSpots called, last frame processed = %d, this frame = %d\r", lastProcessingFrameNumber, frameNumber);
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Finder:continueSearchForHidingSpots called, last frame processed = %d, this frame = %d\r", lastProcessingFrameNumber, frameNumber);
 
 	bool searchCompleted = isSearchCompleted();
 
