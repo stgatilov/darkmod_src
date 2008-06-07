@@ -344,7 +344,7 @@ public:
 extern CGlobal g_Global;
 extern const char *g_LCString[];
 
-//#define LOGBUILD
+#define LOGBUILD
 
 #ifdef LOGBUILD
 #define DM_LOG(lc, lt)				if(g_Global.m_ClassArray[lc] == true && g_Global.m_LogArray[lt] == true) g_Global.m_LogClass = lc, g_Global.m_LogType = lt, g_Global.m_Filename = __FILE__, g_Global.m_Linenumber = __LINE__, g_Global
