@@ -1737,6 +1737,8 @@ void idAI::Think( void )
 				CheckBlink();
 				break;
 			}
+			default:
+				break;
 		}
 
 		if (!cv_ai_opt_nomind.GetBool())

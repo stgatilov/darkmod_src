@@ -54,7 +54,7 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 	}
 
-	float blendIn = path->spawnArgs.GetInt("blend_in");
+	int blendIn = path->spawnArgs.GetInt("blend_in");
 	
 	// Synchronise the leg channel
 	owner->Event_OverrideAnim(ANIMCHANNEL_LEGS);

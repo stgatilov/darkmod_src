@@ -96,6 +96,8 @@ bool AnimalPatrolTask::Perform(Subsystem& subsystem)
 			//gameRenderWorld->DrawText("Waiting", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			waiting(owner);
 			break;
+		default:
+			break;
 	};
 
 	return false; // not finished yet
@@ -132,6 +134,8 @@ void AnimalPatrolTask::switchToState(EState newState, idAI* owner)
 				owner->AI_RUN = path->spawnArgs.GetBool("run", "0");
 			}
 		}
+		break;
+	default:
 		break;
 	}
 

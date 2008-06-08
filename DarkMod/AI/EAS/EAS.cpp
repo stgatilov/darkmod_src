@@ -18,7 +18,6 @@ namespace eas {
 
 tdmEAS::tdmEAS(idAASLocal* aas) :
 	_aas(aas),
-	_elevatorStations(NULL),
 	_routingIterations(0)
 {}
 

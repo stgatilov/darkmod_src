@@ -1335,7 +1335,7 @@ void idMover::Event_Sway( float speed, float phase, idAngles &depth ) {
 	assert ( speed > 0.0f );
 	duration = idMath::Sqrt( depth[0] * depth[0] + depth[1] * depth[1] + depth[2] * depth[2] ) / speed;
 	angSpeed = depth / ( duration * idMath::SQRT_1OVER2 );
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), duration * 1000.0f * phase, duration * 1000.0f, ang, angSpeed, static_cast<int>(ang_zero) );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), duration * 1000.0f * phase, duration * 1000.0f, ang, angSpeed, ang_zero );
 }
 
 /*

@@ -2444,7 +2444,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		// Increase the stealth factor based on the number of alerted AI weighted with the seriousness
 		stealthScore += -i * m_Stats.MaxAlertIndices[i];
 	}
-	stealthScore = idMath::ClampInt(0, 10, stealthScore);
+	stealthScore = idMath::ClampInt(0, 10, static_cast<int>(stealthScore));
 	
 	key = "Stealth Score";
 	value = idStr(stealthScore);

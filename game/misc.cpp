@@ -2618,7 +2618,7 @@ void idShaking::BeginShaking( void ) {
 	phase = gameLocal.random.RandomInt( 1000 );
 	shake = spawnArgs.GetAngles( "shake", "0.5 0.5 0.5" );
 	period = static_cast<int>(spawnArgs.GetFloat( "period", "0.05" ) * 1000);
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase, period * 0.25f, GetPhysics()->GetAxis().ToAngles(), shake, ang_zero );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase, static_cast<int>(period * 0.25f), GetPhysics()->GetAxis().ToAngles(), shake, ang_zero );
 }
 
 /*
