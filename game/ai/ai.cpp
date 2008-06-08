@@ -3208,6 +3208,8 @@ idAI::LookForCover
 */
 bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 &hideFromPos) 
 {
+	if (aas == NULL) return false;
+
 	idBounds bounds;
 	aasObstacle_t obstacle;
 
