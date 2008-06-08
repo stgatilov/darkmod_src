@@ -99,7 +99,7 @@ void RandomHeadturnTask::PerformHeadTurnCheck()
 
 	// Generate duration in seconds
 	range = owner->m_headTurnMaxDuration - owner->m_headTurnMinDuration;
-	int duration = gameLocal.random.RandomFloat()*range + owner->m_headTurnMinDuration;
+	int duration = static_cast<int>(gameLocal.random.RandomFloat()*range + owner->m_headTurnMinDuration);
 
 	memory.headTurnEndTime = gameLocal.time + duration;
 	
@@ -113,8 +113,8 @@ void RandomHeadturnTask::SetNextHeadTurnCheckTime()
 
 	// Set the time when the next check should be performed (with a little bit of randomness)
 	int nowTime = gameLocal.time;
-	owner->GetMemory().nextHeadTurnCheckTime = nowTime + 0.8f * owner->m_timeBetweenHeadTurnChecks 
-		+ gameLocal.random.RandomFloat() * 0.4f * owner->m_timeBetweenHeadTurnChecks;
+	owner->GetMemory().nextHeadTurnCheckTime = static_cast<int>(nowTime + 0.8f * owner->m_timeBetweenHeadTurnChecks 
+		+ gameLocal.random.RandomFloat() * 0.4f * owner->m_timeBetweenHeadTurnChecks);
 }
 
 RandomHeadturnTaskPtr RandomHeadturnTask::CreateInstance()

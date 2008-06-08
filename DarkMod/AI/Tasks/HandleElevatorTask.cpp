@@ -21,8 +21,8 @@ namespace ai
 {
 
 HandleElevatorTask::HandleElevatorTask() :
-	_success(false),
-	_waitEndTime(0)
+	_waitEndTime(0),
+	_success(false)
 {}
 
 HandleElevatorTask::HandleElevatorTask(const eas::RouteInfoPtr& routeInfo) :

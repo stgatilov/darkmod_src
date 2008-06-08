@@ -5779,7 +5779,7 @@ void idPlayer::Move( void )
 		float RefZOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel().z;
 		
 		old_vert = static_cast<int>(savedOrigin.z / cv_pm_rope_snd_rep_dist.GetInteger());
-		new_vert = (physicsObj.GetOrigin().z - RefZOffset) / cv_pm_rope_snd_rep_dist.GetInteger();
+		new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefZOffset) / cv_pm_rope_snd_rep_dist.GetInteger());
 		
 		if ( old_vert != new_vert ) 
 		{
@@ -5803,11 +5803,11 @@ void idPlayer::Move( void )
 		idVec3 GravNormal = physicsObj.GetGravityNormal();
 		idVec3 RefFrameOffsetXY = RefFrameOffset - (RefFrameOffset * GravNormal ) * GravNormal;
 
-		old_vert = savedOrigin.z / physicsObj.GetClimbSndRepDistVert();
-		new_vert = (physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert();
+		old_vert = static_cast<int>(savedOrigin.z / physicsObj.GetClimbSndRepDistVert());
+		new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert());
 
-		old_horiz = physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz();
-		new_horiz = physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz();
+		old_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz());
+		new_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz());
 
 		if ( old_vert != new_vert ) 
 		{
@@ -6362,7 +6362,7 @@ void idPlayer::Kill( bool delayRespawn, bool nodamage ) {
 			Damage( this, this, vec3_origin, "damage_suicide", 1.0f, INVALID_JOINT );
 			if ( delayRespawn ) {
 				forceRespawn = false;
-				int delay = spawnArgs.GetFloat( "respawn_delay" );
+				int delay = spawnArgs.GetInt( "respawn_delay" );
 				minRespawnTime = gameLocal.time + SEC2MS( delay );
 				maxRespawnTime = minRespawnTime + MAX_RESPAWN_TIME;
 			}
@@ -6492,7 +6492,7 @@ callback function for when another entity recieved damage from this entity.  dam
 */
 void idPlayer::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) {
 	assert( !gameLocal.isClient );
-	damage *= PowerUpModifier( BERSERK );
+	damage = static_cast<int>(damage * PowerUpModifier( BERSERK ));
 	if ( damage && ( victim != this ) && victim->IsType( idActor::Type ) ) {
 		SetLastHitTime( gameLocal.time );
 	}
@@ -9003,6 +9003,8 @@ void idPlayer::inventoryChangeSelection(idUserInterface *_hud, bool bUpdate, CIn
 				SetGuiFloat(mInventoryOverlay, "Inventory_GroupVisible", 0.0);
 			}
 			break;
+			
+			default: break;
 		}
 	}
 
@@ -9811,7 +9813,7 @@ int idPlayer::GetLightgemModifier(int curLightgemValue)
 		if (velocityFactor < 0) velocityFactor = 0;
 
 		float factor = 1.0f + velocityFactor*cv_lg_velocity_mod_amount.GetFloat();
-		returnValue *= factor;
+		returnValue = static_cast<int>(returnValue * factor);
 	}
 
 	// Check the weapon/inventory items

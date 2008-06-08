@@ -322,7 +322,7 @@ void idTarget_SetShaderParm::Event_Activate( idEntity *activator ) {
 				}
 			}
 			if (spawnArgs.GetBool("toggle") && (value == 0 || value == 1)) {
-				int val = value;
+				int val = static_cast<int>(value);
 				val ^= 1;
 				value = val;
 				spawnArgs.SetFloat(va("shaderParm%d", parmnum), value);
@@ -1143,7 +1143,7 @@ void idTarget_SetInfluence::Event_RestoreInfluence() {
 	}
 
 	if ( switchToCamera ) {
-		switchToCamera->PostEventMS( &EV_Activate, 0.0f, this );
+		switchToCamera->PostEventMS( &EV_Activate, 0, this );
 	}
 
 	for ( i = 0; i < genericList.Num(); i++ ) {
@@ -1302,9 +1302,9 @@ void idTarget_SetFov::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( setting );
 	fovSetting.SetDuration( setting );
 	savefile->ReadFloat( setting );
-	fovSetting.SetStartValue( setting );
+	fovSetting.SetStartValue( static_cast<int>(setting) );
 	savefile->ReadFloat( setting );
-	fovSetting.SetEndValue( setting );
+	fovSetting.SetEndValue( static_cast<int>(setting) );
 
 	fovSetting.GetCurrentValue( gameLocal.time );
 }

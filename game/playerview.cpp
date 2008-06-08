@@ -256,7 +256,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 		if ( dvFinishTime < gameLocal.time ) {
 			dvFinishTime = gameLocal.time;
 		}
-		dvFinishTime += g_dvTime.GetFloat() * dvTime;
+		dvFinishTime += static_cast<int>(g_dvTime.GetFloat() * dvTime);
 		// don't let it add up too much in god mode
 		if ( dvFinishTime > gameLocal.time + 5000 ) {
 			dvFinishTime = gameLocal.time + 5000;
@@ -268,7 +268,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	//
 	float	kickTime = damageDef->GetFloat( "kick_time" );
 	if ( kickTime ) {
-		kickFinishTime = gameLocal.time + g_kickTime.GetFloat() * kickTime;
+		kickFinishTime = gameLocal.time + static_cast<int>(g_kickTime.GetFloat() * kickTime);
 
 		// forward / back kick will pitch view
 		kickAngles[0] = localKickDir[0];
@@ -295,7 +295,7 @@ void idPlayerView::DamageImpulse( idVec3 localKickDir, const idDict *damageDef )
 	if ( blobTime ) {
 		screenBlob_t	*blob = GetScreenBlob();
 		blob->startFadeTime = gameLocal.time;
-		blob->finishTime = gameLocal.time + blobTime * g_blobTime.GetFloat();
+		blob->finishTime = gameLocal.time + static_cast<int>(blobTime * g_blobTime.GetFloat());
 
 		const char *materialName = damageDef->GetString( "mtr_blob" );
 		blob->material = declManager->FindMaterial( materialName );
@@ -383,7 +383,7 @@ void idPlayerView::WeaponFireFeedback( const idDict *weaponDef ) {
 		idAngles angles;
 		weaponDef->GetAngles( "recoilAngles", "5 0 0", angles );
 		kickAngles = angles;
-		int	finish = gameLocal.time + g_kickTime.GetFloat() * recoilTime;
+		int	finish = gameLocal.time + static_cast<int>(g_kickTime.GetFloat() * recoilTime);
 		kickFinishTime = finish;
 	}	
 

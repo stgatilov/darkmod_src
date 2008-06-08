@@ -1196,7 +1196,7 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding *wind, idVe
 	idVec3 line, u1, u2, v1, v2, edge, isect, lineSect;
 	idVec3 returnVec, tempVec, pointA;
 	idPlane WPlane;
-	float lenV1, lenV2, lineU1, lineU2, Scale, frac;
+	float lenV1, lenV2, lineU1, lineU2, Scale(0), frac;
 	int edgeStart(0), edgeStop(0);
 
 	// If the winding is not a rectangle, just return the center coordinate
@@ -1620,6 +1620,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin,
 				tempQEntry.curAtt = tempAtt;
 				tempQEntry.portalH = pSndAreas->portals[i].handle;
 				tempQEntry.PrevPort = pPortEv->PrevPort;
+				tempQEntry.curLoss = 0.0f; // greebo: Initialised to 0.0f to fix gcc warning
 
 				AddedAreas.Append( tempQEntry );
 			

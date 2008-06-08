@@ -205,8 +205,8 @@ void idMover::Save( idSaveGame *savefile ) const
 
 		savefile->WriteBool( true );
 		splineEnt.Save( savefile );
-		savefile->WriteInt( spline->GetTime( 0 ) );
-		savefile->WriteInt( spline->GetTime( spline->GetNumValues() - 1 ) - spline->GetTime( 0 ) );
+		savefile->WriteInt( static_cast<int>(spline->GetTime( 0 )) );
+		savefile->WriteInt( static_cast<int>(spline->GetTime( spline->GetNumValues() - 1 ) - spline->GetTime( 0 )) );
 		savefile->WriteInt( physicsObj.GetSplineAcceleration() );
 		savefile->WriteInt( physicsObj.GetSplineDeceleration() );
 		savefile->WriteInt( (int)physicsObj.UsingSplineAngles() );
@@ -327,9 +327,9 @@ void idMover::Spawn( void )
 	stopRotation	= false;
 	lastCommand		= MOVER_NONE;
 
-	acceltime		= 1000.0f * spawnArgs.GetFloat( "accel_time", "0" );
-	deceltime		= 1000.0f * spawnArgs.GetFloat( "decel_time", "0" );
-	move_time		= 1000.0f * spawnArgs.GetFloat( "move_time", "1" );	// safe default value
+	acceltime		= static_cast<int>(1000.0f * spawnArgs.GetFloat( "accel_time", "0" ));
+	deceltime		= static_cast<int>(1000.0f * spawnArgs.GetFloat( "decel_time", "0" ));
+	move_time		= static_cast<int>(1000.0f * spawnArgs.GetFloat( "move_time", "1" ));	// safe default value
 	move_speed		= spawnArgs.GetFloat( "move_speed", "0" );
 
 	spawnArgs.GetFloat( "damage" , "0", damage );
@@ -752,7 +752,7 @@ void idMover::BeginMove( idThread *thread ) {
 			move_time = totalacceltime;
 		} else {
 			// calculate move time taking acceleration into account
-			move_time = totalacceltime + 1000.0f * ( dist - acceldist ) / move_speed;
+			move_time = static_cast<int>(totalacceltime + 1000.0f * ( dist - acceldist ) / move_speed);
 		}
 	}
 
@@ -954,7 +954,7 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 	// this is overridden by BinaryFrobMovers to achieve a flexible rotation move time.
 	float moveTimeFraction = GetMoveTimeFraction();
 
-	moveTime *= moveTimeFraction;
+	moveTime = static_cast<int>(moveTime*moveTimeFraction);
 
 	// scale times up to whole physics frames
 	at = idPhysics::SnapTimeToPhysicsFrame( acceltime );
@@ -1319,7 +1319,7 @@ void idMover::Event_Bob( float speed, float phase, idVec3 &depth ) {
 	idVec3 org;
 
 	physicsObj.GetLocalOrigin( org );
-	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), speed * 1000 * phase, speed * 500, org, depth * 2.0f, vec3_origin );
+	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), speed * 1000 * phase, static_cast<int>(speed * 500), org, depth * 2.0f, vec3_origin );
 }
 
 /*
@@ -1335,7 +1335,7 @@ void idMover::Event_Sway( float speed, float phase, idAngles &depth ) {
 	assert ( speed > 0.0f );
 	duration = idMath::Sqrt( depth[0] * depth[0] + depth[1] * depth[1] + depth[2] * depth[2] ) / speed;
 	angSpeed = depth / ( duration * idMath::SQRT_1OVER2 );
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), duration * 1000.0f * phase, duration * 1000.0f, ang, angSpeed, ang_zero );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), duration * 1000.0f * phase, duration * 1000.0f, ang, angSpeed, static_cast<int>(ang_zero) );
 }
 
 /*
@@ -3030,7 +3030,7 @@ void idMover_Binary::InitSpeed( idVec3 &mpos1, idVec3 &mpos2, float mspeed, floa
 	// calculate time to reach second position from speed
 	move = pos2 - pos1;
 	distance = move.Length();
-	duration = idPhysics::SnapTimeToPhysicsFrame( distance * 1000 / speed );
+	duration = idPhysics::SnapTimeToPhysicsFrame( static_cast<int>(distance * 1000 / speed) );
 	if ( duration <= 0 ) {
 		duration = 1;
 	}
@@ -4605,7 +4605,7 @@ void idBobber::Spawn( void )
 	if ( !spawnArgs.GetBool( "nopush" ) ) {
 		physicsObj.SetPusher( 0 );
 	}
-	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, speed * 500, GetPhysics()->GetOrigin(), delta * 2.0f, vec3_origin );
+	physicsObj.SetLinearExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, static_cast<int>(speed * 500), GetPhysics()->GetOrigin(), delta * 2.0f, vec3_origin );
 	SetPhysics( &physicsObj );
 }
 
@@ -4667,7 +4667,7 @@ void idPendulum::Spawn( void )
 		physicsObj.SetPusher( 0 );
 	}
 	physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, GetPhysics()->GetOrigin(), vec3_origin, vec3_origin );
-	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, 500/freq, GetPhysics()->GetAxis().ToAngles(), idAngles( 0, 0, speed * 2.0f ), ang_zero );
+	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase * 1000, 500/freq, GetPhysics()->GetAxis().ToAngles(), idAngles( 0, 0, speed * 2.0f ), static_cast<int>(ang_zero) );
 	SetPhysics( &physicsObj );
 }
 
@@ -4736,7 +4736,7 @@ void idRiser::Event_Activate( idEntity *activator ) {
 		delta = vec3_origin;
 		delta[ 2 ] = height;
 
-		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_LINEAR, gameLocal.time, time * 1000, physicsObj.GetOrigin(), delta, vec3_origin );
+		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_LINEAR, gameLocal.time, static_cast<int>(time * 1000), physicsObj.GetOrigin(), delta, vec3_origin );
 	}
 }
 

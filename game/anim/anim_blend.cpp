@@ -4015,6 +4015,7 @@ void idAnimator::FinishAFPose( int animNum, const idBounds &bounds, const int ti
 				joints[0].SetTranslation( AFPoseJointMods[0].origin );
 				break;
 			}
+			default: break;
 		}
 		j = 1;
 	} else {
@@ -4050,6 +4051,7 @@ void idAnimator::FinishAFPose( int animNum, const idBounds &bounds, const int ti
 				joints[i].SetTranslation( AFPoseJointMods[jointMod].origin );
 				break;
 			}
+			default: break;
 		}
 	}
 

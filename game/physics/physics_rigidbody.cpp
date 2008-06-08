@@ -23,7 +23,7 @@ CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS
 
 #ifdef MOD_WATERPHYSICS
-const int STOP_SPEED            = 10.0f;
+const int STOP_SPEED            = 10;
 // if linearVelocity < WATER_STOP_LINEAR && angularVelocity < WATER_STOP_ANGULAR then set the RB to rest
 // and we need  this->noMoveTime + NO_MOVE_TIME < gameLocal.getTime()
 const idVec3 WATER_STOP_LINEAR(10.0f,10.0f,10.0f);
@@ -884,7 +884,7 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	isOrientated = false;
 
 #ifdef MOD_WATERPHYSICS
-	this->noMoveTime = 0.0f;
+	this->noMoveTime = 0;
 #endif
 #ifdef RB_TIMINGS
 	lastTimerReset = 0;

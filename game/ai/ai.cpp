@@ -1451,7 +1451,7 @@ void idAI::Spawn( void )
 	m_AirCheckTimer = gameLocal.time + gameLocal.random.RandomInt( 8000 );
 	m_AirTicksMax = spawnArgs.GetInt( "max_air_tics", "5" );
 	m_AirTics = m_AirTicksMax;
-	m_AirCheckInterval = (int) 1000.0f * spawnArgs.GetFloat( "air_check_interval", "4.0" );
+	m_AirCheckInterval = static_cast<int>(1000.0f * spawnArgs.GetFloat( "air_check_interval", "4.0" ));
 	// end drowning setup
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
@@ -1649,7 +1649,7 @@ void idAI::Think( void )
 				// FIXME: animator.NumFrames is returning strange values.
 				// So for now the frame count of the animation is hardcoded
 				// at 20.
-				int frame = 20*GetSoundEmitter()->CurrentAmplitude();
+				int frame = static_cast<int>(20*GetSoundEmitter()->CurrentAmplitude());
 				headAnim.SetFrame(m_lipSyncAnim, frame);
 			}
 			else
@@ -2009,7 +2009,7 @@ int idAI::GetThinkInterleave()
 	}
 	else
 	{
-		int thinkFrames = 1 + maxFrames * (playerDist - minDist) / (maxDist - minDist);
+		int thinkFrames = 1 + maxFrames * static_cast<int>((playerDist - minDist) / (maxDist - minDist));
 		return thinkFrames;
 	}
 }
@@ -3439,7 +3439,7 @@ bool idAI::NewWanderDir( const idVec3 &dest ) {
 	float	d[ 3 ];
 	float	tdir, olddir, turnaround;
 
-	move.nextWanderTime = gameLocal.time + ( gameLocal.random.RandomFloat() * 500 + 500 );
+	move.nextWanderTime = gameLocal.time + ( gameLocal.random.RandomInt(500) + 500 );
 
 	olddir = idMath::AngleNormalize360( ( int )( current_yaw / 45 ) * 45 );
 	turnaround = idMath::AngleNormalize360( olddir - 180 );
@@ -6915,7 +6915,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 		if ( !angDelta.Compare( ang_zero, 0.1f ) ) {
 			alignHeadTime = gameLocal.time;
 		} else {
-			alignHeadTime = gameLocal.time + ( 0.5f + 0.5f * gameLocal.random.RandomFloat() ) * focusAlignTime;
+			alignHeadTime = gameLocal.time + static_cast<int>(( 0.5f + 0.5f * gameLocal.random.RandomFloat() ) * focusAlignTime);
 		}
 	}
 
@@ -6924,7 +6924,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 	}
 
 	if ( ( gameLocal.time >= alignHeadTime ) || ( gameLocal.time < forceAlignHeadTime ) ) {
-		alignHeadTime = gameLocal.time + ( 0.5f + 0.5f * gameLocal.random.RandomFloat() ) * focusAlignTime;
+		alignHeadTime = gameLocal.time + static_cast<int>(( 0.5f + 0.5f * gameLocal.random.RandomFloat() ) * focusAlignTime);
 		destLookAng = newLookAng;
 		destLookAng.Clamp( lookMin, lookMax );
 	}
@@ -7332,7 +7332,7 @@ void idAI::AlertAI(const char *type, float amount)
 			{
 				// greebo: Let the alert grace count increase by 12.5% of the current lightgem value
 				// The maximum increase is therefore 32/8 = 4 based on DARKMOD_LG_MAX at the time of writing.
-				m_AlertGraceCount += idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f);
+				m_AlertGraceCount += static_cast<int>(idMath::Rint(g_Global.m_DarkModPlayer->m_LightgemValue * 0.125f));
 			}
 			return;
 		}
@@ -8923,7 +8923,7 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName)
 
 void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 {
-	idThread::ReturnInt(MS2SEC(PlayAndLipSync(soundName, animName)));
+	idThread::ReturnInt(static_cast<int>(MS2SEC(PlayAndLipSync(soundName, animName))));
 }
 
 void idAI::StopLipSync()
@@ -9394,6 +9394,8 @@ void idAI::RestoreMove(const idMoveState& saved)
 	case MOVE_WANDER :
 		WanderAround();
 		break;
+		
+	default: break;
 	}
 
 	if ( GetMovePos( goalPos ) ) {

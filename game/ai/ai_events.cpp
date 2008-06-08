@@ -1252,7 +1252,7 @@ idAI::Event_SetHealth
 =====================
 */
 void idAI::Event_SetHealth( float newHealth ) {
-	health = newHealth;
+	health = static_cast<int>(newHealth);
 	fl.takedamage = true;
 	if ( health > 0 ) {
 		AI_DEAD = false;

@@ -414,7 +414,7 @@ idPhysics_Parametric::GetSplineAcceleration
 ================
 */
 int idPhysics_Parametric::GetSplineAcceleration( void ) const {
-	return current.splineInterpolate.GetAcceleration();
+	return static_cast<int>(current.splineInterpolate.GetAcceleration());
 }
 
 /*
@@ -423,7 +423,7 @@ idPhysics_Parametric::GetSplineDeceleration
 ================
 */
 int idPhysics_Parametric::GetSplineDeceleration( void ) const {
-	return current.splineInterpolate.GetDeceleration();
+	return static_cast<int>(current.splineInterpolate.GetDeceleration());
 }
 
 /*
@@ -1023,14 +1023,14 @@ idPhysics_Parametric::GetLinearEndTime
 int idPhysics_Parametric::GetLinearEndTime( void ) const {
 	if ( current.spline != NULL ) {
 		if ( current.spline->GetBoundaryType() != idCurve_Spline<idVec3>::BT_CLOSED ) {
-			return current.spline->GetTime( current.spline->GetNumValues() - 1 );
+			return static_cast<int>(current.spline->GetTime( current.spline->GetNumValues() - 1 ));
 		} else {
 			return 0;
 		}
 	} else if ( current.linearInterpolation.GetDuration() != 0 ) {
-		return current.linearInterpolation.GetEndTime();
+		return static_cast<int>(current.linearInterpolation.GetEndTime());
 	} else {
-		return current.linearExtrapolation.GetEndTime();
+		return static_cast<int>(current.linearExtrapolation.GetEndTime());
 	}
 }
 
@@ -1041,9 +1041,9 @@ idPhysics_Parametric::GetAngularEndTime
 */
 int idPhysics_Parametric::GetAngularEndTime( void ) const {
 	if ( current.angularInterpolation.GetDuration() != 0 ) {
-		return current.angularInterpolation.GetEndTime();
+		return static_cast<int>(current.angularInterpolation.GetEndTime());
 	} else {
-		return current.angularExtrapolation.GetEndTime();
+		return static_cast<int>(current.angularExtrapolation.GetEndTime());
 	}
 }
 

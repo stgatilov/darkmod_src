@@ -2617,7 +2617,7 @@ void idShaking::BeginShaking( void ) {
 	active = true;
 	phase = gameLocal.random.RandomInt( 1000 );
 	shake = spawnArgs.GetAngles( "shake", "0.5 0.5 0.5" );
-	period = spawnArgs.GetFloat( "period", "0.05" ) * 1000;
+	period = static_cast<int>(spawnArgs.GetFloat( "period", "0.05" ) * 1000);
 	physicsObj.SetAngularExtrapolation( extrapolation_t(EXTRAPOLATION_DECELSINE|EXTRAPOLATION_NOSTOP), phase, period * 0.25f, GetPhysics()->GetAxis().ToAngles(), shake, ang_zero );
 }
 
@@ -3337,7 +3337,7 @@ void idPhantomObjects::Event_Activate( idEntity *activator ) {
 	// scale up the times to fit within throw_time
 	scale = throw_time / time;
 	for( i = 0; i < targetTime.Num(); i++ ) {
-		targetTime[ i ] = gameLocal.time + SEC2MS( shake_time )+ targetTime[ i ] * scale;
+		targetTime[ i ] = static_cast<int>(gameLocal.time + SEC2MS( shake_time )+ targetTime[ i ] * scale);
 	}
 
 	BecomeActive( TH_THINK );

@@ -268,7 +268,7 @@ const int idEntityFx::Duration( void ) {
 	}
 	for( int i = 0; i < fxEffect->events.Num(); i++ ) {
 		const idFXSingleAction& fxaction = fxEffect->events[i];
-		int d = ( fxaction.delay + fxaction.duration ) * 1000.0f;
+		int d = static_cast<int>(( fxaction.delay + fxaction.duration ) * 1000.0f);
 		if ( d > max ) {
 			max = d;
 		}

@@ -284,8 +284,14 @@ ID_INLINE idMat2 idMat2::Inverse( void ) const {
 	idMat2 invMat;
 
 	invMat = *this;
+
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -293,8 +299,14 @@ ID_INLINE idMat2 idMat2::InverseFast( void ) const {
 	idMat2 invMat;
 
 	invMat = *this;
+
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -691,8 +703,14 @@ ID_INLINE idMat3 idMat3::Inverse( void ) const {
 	idMat3 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -700,8 +718,14 @@ ID_INLINE idMat3 idMat3::InverseFast( void ) const {
 	idMat3 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1099,8 +1123,14 @@ ID_INLINE idMat4 idMat4::Inverse( void ) const {
 	idMat4 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1108,8 +1138,14 @@ ID_INLINE idMat4 idMat4::InverseFast( void ) const {
 	idMat4 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1404,8 +1440,14 @@ ID_INLINE idMat5 idMat5::Inverse( void ) const {
 	idMat5 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1413,8 +1455,14 @@ ID_INLINE idMat5 idMat5::InverseFast( void ) const {
 	idMat5 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1731,8 +1779,14 @@ ID_INLINE idMat6 idMat6::Inverse( void ) const {
 	idMat6 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -1740,8 +1794,14 @@ ID_INLINE idMat6 idMat6::InverseFast( void ) const {
 	idMat6 invMat;
 
 	invMat = *this;
+	
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 
@@ -2575,8 +2635,14 @@ ID_INLINE idMatX idMatX::Inverse( void ) const {
 
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
+	
+#ifdef DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
+#else
+	invMat.InverseSelf();
+#endif
+
 	return invMat;
 }
 
@@ -2611,8 +2677,14 @@ ID_INLINE idMatX idMatX::InverseFast( void ) const {
 
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
+
+#ifdef DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
+#else
+	invMat.InverseFastSelf();
+#endif
+
 	return invMat;
 }
 

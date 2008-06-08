@@ -439,7 +439,7 @@ void idAASLocal::RandomPullPlayer( const idVec3 &origin ) {
 
 	if ( !PullPlayer( origin, aas_pullPlayer.GetInteger() ) ) {
 
-		rnd = gameLocal.random.RandomFloat() * file->GetNumAreas();
+		rnd = gameLocal.random.RandomInt(file->GetNumAreas());
 
 		for ( i = 0; i < file->GetNumAreas(); i++ ) {
 			n = (rnd + i) % file->GetNumAreas();

@@ -452,9 +452,9 @@ void idSecurityCamera::Event_ContinueSweep( void ) {
 	int speed;
 
 	sweepStart = f;
-	speed = MS2SEC( SweepSpeed() );
+	speed = static_cast<int>(MS2SEC( SweepSpeed() ));
 	sweepEnd = sweepStart + speed;
-   	PostEventMS( &EV_SecurityCam_Pause, speed * (1.0 - pct));
+   	PostEventMS( &EV_SecurityCam_Pause, speed * (1.0f - pct));
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(SCANNING);
 	sweeping = true;

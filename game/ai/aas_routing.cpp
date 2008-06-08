@@ -1333,7 +1333,7 @@ bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 ori
 
 			// avoid moving closer to the target
 			if ( dist < targetDist ) {
-				t += ( targetDist - dist ) * 10;
+				t += static_cast<short unsigned int>(( targetDist - dist ) * 10);
 			}
 
 			// if we already found a closer location
@@ -1460,7 +1460,7 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 	int numAreas = file->GetNumAreas();
 	for (int ai = 0; ai < numAreas; ai ++)
 	{
-		areaUpdate[ai].tmpTravelTime = 0.0;
+		areaUpdate[ai].tmpTravelTime = 0;
 	}
 
 
@@ -1504,7 +1504,7 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 		else
 		{
 			// We are checking it
-			curUpdate->tmpTravelTime = 2.0;
+			curUpdate->tmpTravelTime = 2;
 		}
 
 
