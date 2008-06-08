@@ -103,7 +103,7 @@ ID_INLINE type idInterpolate<type>::GetCurrentValue( float time ) const {
 		} else if ( deltaTime >= duration ) {
 			currentValue = endValue;
 		} else {
-			currentValue = startValue + ( endValue - startValue ) * ( (float) deltaTime / duration );
+			currentValue = static_cast<type>(startValue + ( endValue - startValue ) * ( (float) deltaTime / duration ));
 		}
 	}
 	return currentValue;
