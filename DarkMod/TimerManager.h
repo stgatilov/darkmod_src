@@ -22,7 +22,7 @@
   #define START_TIMING(id)
   #define STOP_TIMING(id)
   #define START_SCOPED_TIMING(id, varname)
-  #define CREATE_TIMER(outId, name)
+  #define CREATE_TIMER(outId, entityname, name)
   #define INIT_TIMER_HANDLE(outId)
   #define PRINT_TIMERS
 #endif
