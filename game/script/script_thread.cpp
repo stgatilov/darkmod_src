@@ -123,7 +123,7 @@ const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 const idEventDef EV_LogString("logString", "dds");
 
 // Propagates the string to the sessioncommand variable in gameLocal
-const idEventDef EV_SessionCommand("sessionCommand", "s", NULL);
+const idEventDef EV_SessionCommand("sessionCommand", "s");
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )

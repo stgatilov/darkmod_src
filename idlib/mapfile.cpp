@@ -124,8 +124,8 @@ idMapPatch *idMapPatch::Parse( idLexer &src, const idVec3 &origin, bool patchDef
 		}
 	}
 
-	idMapPatch *patch = new idMapPatch( info[0], info[1] );
-	patch->SetSize( info[0], info[1] );
+	idMapPatch *patch = new idMapPatch( static_cast<int>(info[0]), static_cast<int>(info[1]) );
+	patch->SetSize( static_cast<int>(info[0]), static_cast<int>(info[1]) );
 	if ( version < 2.0f ) {
 		patch->SetMaterial( "textures/" + token );
 	} else {
@@ -133,8 +133,8 @@ idMapPatch *idMapPatch::Parse( idLexer &src, const idVec3 &origin, bool patchDef
 	}
 
 	if ( patchDef3 ) {
-		patch->SetHorzSubdivisions( info[2] );
-		patch->SetVertSubdivisions( info[3] );
+		patch->SetHorzSubdivisions( static_cast<int>(info[2]) );
+		patch->SetVertSubdivisions( static_cast<int>(info[3]) );
 		patch->SetExplicitlySubdivided( true );
 	}
 

@@ -1267,16 +1267,16 @@ void idMultiplayerGame::CheckVote( void ) {
 	if ( !numVoters ) {
 		// abort
 		vote = VOTE_NONE;
-		ClientUpdateVote( VOTE_ABORTED, yesVotes, static_cast<int>(noVotes) );
+		ClientUpdateVote( VOTE_ABORTED, static_cast<int>(yesVotes), static_cast<int>(noVotes) );
 		return;
 	}
 	if ( yesVotes / numVoters > 0.5f ) {
-		ClientUpdateVote( VOTE_PASSED, yesVotes, static_cast<int>(noVotes) );
+		ClientUpdateVote( VOTE_PASSED, static_cast<int>(yesVotes), static_cast<int>(noVotes) );
 		voteExecTime = gameLocal.time + 2000;
 		return;
 	}
 	if ( gameLocal.time > voteTimeOut || noVotes / numVoters >= 0.5f ) {
-		ClientUpdateVote( VOTE_FAILED, yesVotes, static_cast<int>(noVotes) );
+		ClientUpdateVote( VOTE_FAILED, static_cast<int>(yesVotes), static_cast<int>(noVotes) );
 		vote = VOTE_NONE;
 		return;
 	}
@@ -2683,7 +2683,7 @@ void idMultiplayerGame::CastVote( int clientNum, bool castVote ) {
 		noVotes++;
 	}
 
-	ClientUpdateVote( VOTE_UPDATE, yesVotes, static_cast<int>(noVotes) );
+	ClientUpdateVote( VOTE_UPDATE, static_cast<int>(yesVotes), static_cast<int>(noVotes) );
 }
 
 /*

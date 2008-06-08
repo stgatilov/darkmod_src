@@ -169,7 +169,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 		return false;
 	}
 
-	idRandom steppingRandom( 0xffff * diversity );
+	idRandom steppingRandom( static_cast<int>(0xffff * diversity) );
 
 	// for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
 	for ( int stageNum = 0; stageNum < smoke->stages.Num(); stageNum++ ) {
@@ -189,7 +189,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 
 		// see how many particles we should emit this tic
 		// FIXME: 			smoke.privateStartTime += stage->timeOffset;
-		int		finalParticleTime = stage->cycleMsec * stage->spawnBunching;
+		int		finalParticleTime = static_cast<int>(stage->spawnBunching * stage->cycleMsec);
 		int		deltaMsec = gameLocal.time - systemStartTime;
 
 		int		nowCount = 0, prevCount;
@@ -202,7 +202,7 @@ bool idSmokeParticles::EmitSmoke( const idDeclParticle *smoke, const int systemS
 				prevCount = stage->totalParticles;
 			}
 		} else {
-			nowCount = floor( ( (float)deltaMsec / finalParticleTime ) * stage->totalParticles );
+			nowCount = static_cast<int>(floor( ( (float)deltaMsec / finalParticleTime ) * stage->totalParticles ));
 			if ( nowCount >= stage->totalParticles ) {
 				nowCount = stage->totalParticles-1;
 			}
