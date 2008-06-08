@@ -1736,9 +1736,9 @@ void idAI::Think( void )
 				SlideMove();
 				CheckBlink();
 				break;
-			}
 			default:
 				break;
+			}
 		}
 
 		if (!cv_ai_opt_nomind.GetBool())
