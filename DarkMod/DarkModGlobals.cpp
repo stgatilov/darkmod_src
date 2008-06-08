@@ -31,7 +31,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "Misc.h"
 #include "Profile.h"
 //#include "direct.h" [OrbWeaver] does not exist?
-#include "il/il.h"
+#include "IL/il.h"
 #include "sndPropLoader.h"
 #include "sndProp.h"
 #include "Relations.h"

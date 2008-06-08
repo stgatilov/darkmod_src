@@ -37,8 +37,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/ModMenu.h"
 #include "../DarkMod/renderpipe.h"
 
-#include "il/config.h"
-#include "il/il.h"
+#include "IL/config.h"
+#include "IL/il.h"
 #include "../DarkMod/randomizer/randomc.h"
 
 #include <iostream>
