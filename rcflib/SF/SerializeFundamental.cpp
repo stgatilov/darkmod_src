@@ -1,2 +1,0 @@
-
-#include <SF/SerializeFundamental.hpp>
