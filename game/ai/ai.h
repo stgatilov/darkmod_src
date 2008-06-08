@@ -1779,6 +1779,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	void Event_ClosestReachableEnemy( void );
 
+#ifdef TIMING_BUILD
+private:
+	int aiThinkTimer;
+#endif
 };
 
 class idCombatNode : public idEntity {

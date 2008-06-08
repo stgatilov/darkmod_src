@@ -155,6 +155,7 @@ Relations.cpp \
 renderpipeposix.cpp \
 sndProp.cpp \
 sndPropLoader.cpp \
+TimerManager.cpp \
 Strip.cpp \
 ToUpper.cpp \
 Inventory/Category.cpp \

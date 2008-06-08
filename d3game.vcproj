@@ -1462,6 +1462,12 @@
 					RelativePath=".\DarkMod\sndPropLoader.h">
 				</File>
 				<File
+					RelativePath=".\DarkMod\TimerManager.cpp">
+				</File>
+				<File
+					RelativePath=".\DarkMod\TimerManager.h">
+				</File>
+				<File
 					RelativePath=".\DarkMod\Strip.cpp">
 				</File>
 				<File

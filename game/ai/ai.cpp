@@ -31,6 +31,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../../DarkMod/sndProp.h"
 #include "../../DarkMod/EscapePointManager.h"
 #include "../../DarkMod/PositionWithinRangeFinder.h"
+#include "../../DarkMod/TimerManager.h"
 
 // For handling the opening of doors and other binary Frob movers
 #include "../../DarkMod/BinaryFrobMover.h"
@@ -531,6 +532,8 @@ idAI::idAI()
 	m_maxInterleaveThinkDist = 3000;
 	m_lastThinkTime = 0;
 	m_nextThinkFrame = 0;
+
+	INIT_TIMER_HANDLE(aiThinkTimer);
 }
 
 /*
@@ -796,6 +799,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		subsystems[i]->Save(savefile);
 	}
+#ifdef TIMING_BUILD
+	savefile->WriteInt(aiThinkTimer);
+#endif
 }
 
 /*
@@ -1088,6 +1094,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	if ( restorePhysics ) {
 		RestorePhysics( &physicsObj );
 	}
+#ifdef TIMING_BUILD
+	savefile->ReadInt(aiThinkTimer);
+#endif
 }
 
 /*
@@ -1481,6 +1490,7 @@ void idAI::Spawn( void )
 
 	m_lastThinkTime = gameLocal.time;
 
+	CREATE_TIMER(aiThinkTimer, name, "aiThinkTimer");
 }
 
 /*
@@ -1599,6 +1609,7 @@ idAI::Think
 */
 void idAI::Think( void ) 
 {
+	START_SCOPED_TIMING(aiThinkTimer, scopedThinkTimer);
 	if (cv_ai_opt_nothink.GetBool()) 
 	{
 		return; // Thinking is disabled.
