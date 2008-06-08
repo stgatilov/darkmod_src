@@ -2906,7 +2906,7 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 
 	// What is the lighting along the line where the thing to be observed
 	// might be.
-	float maxDistanceToObserve = getMaximumObservationDistance
+	float maxDistanceToObserve = GetMaximumObservationDistance
 	(
 		pointToObserve,
 		pointToObserve2,
@@ -3725,7 +3725,7 @@ bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
 	{
 		idVec3 bottomPoint = position;
 		idVec3 topPoint = position - (physicsObj.GetGravityNormal() * 32.0);
-		float maxDistanceToObserve = getMaximumObservationDistance
+		float maxDistanceToObserve = GetMaximumObservationDistance
 		(
 			bottomPoint,
 			topPoint,
@@ -7979,14 +7979,12 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 
 /*---------------------------------------------------------------------------------*/
 
-float idAI::getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const
+float idAI::GetMaximumObservationDistance(idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const
 {
-	float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, p_ignoreEntity, true);
-	float visualAcuityZeroToOne = GetAcuity("vis")/ 100.0;
+	float lightQuotient = LAS.queryLightingAlongLine(bottomPoint, topPoint, p_ignoreEntity, true);
 
-	float maxDistanceToObserve = lightQuotient
-		* cv_ai_sight_scale.GetFloat()
-		* visualAcuityZeroToOne;
+	float visualAcuityZeroToOne = GetAcuity("vis") * 0.01f;
+	float maxDistanceToObserve = lightQuotient * cv_ai_sight_scale.GetFloat() * visualAcuityZeroToOne;
 
 	return maxDistanceToObserve;
 }
@@ -8042,146 +8040,104 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity) const
 {
 	// Quick test using LAS at entity origin
 	idPhysics* p_physics = p_entity->GetPhysics();
-	if (p_physics != NULL)
+
+	if (p_physics == NULL) 
 	{
-		// Use lightgem if it is the player
-		if (p_entity->IsType(idPlayer::Type ))
-		{
-			// Get the alert increase amount (log) caused by the CVAR tdm_ai_sight_mag
-			// greebo: Commented this out, this is not suitable to detect if player is hidden in darkness
-			//float incAlert = GetPlayerVisualStimulusAmount();
-			
-			// greebo: Check the visibility of the player depending on lgem and distance
-			float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
-/*
-			// greebo: Debug output, comment me out
-			idStr alertText(visFraction);
-			gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-*/
-			// Get base sight threshold
-			float sightThreshold = 0.1f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
-
-			// Draw debug graphic
-			/*if (cv_ai_visdist_show.GetFloat() > 1.0)
-			{
-				idVec4 markerColor (0.0, 0.0, 0.0, 0.0);
-
-				float percToSeen = 1.0;
-				if (sightThreshold > 0)
-				{
-					if (sightThreshold > incAlert)
-					{
-						percToSeen = (sightThreshold - incAlert) / sightThreshold;
-					}
-				}
-
-				// Scale red to green from not perceptable to quickly perceptable
-				markerColor.x = idMath::Sin (percToSeen * (idMath::PI / 2.0));
-				markerColor.y = idMath::Cos (percToSeen * (idMath::PI / 2.0));
-
-				idVec3 observeFrom = GetEyePosition();
-
-				gameRenderWorld->DebugArrow
-				(
-					markerColor,
-					observeFrom,
-					p_physics->GetOrigin(),
-					2,
-					cv_ai_visdist_show.GetInteger()
-				);
-			}*/
-
-			// Very low threshold for visibility
-			if (visFraction < sightThreshold)
-			{
-				// Not visible, entity is hidden in darkness
-				return true;
-			}
-			else
-			{
-				// Visible, visual stim above threshold
-				return false;
-			}
-		}
-		else // Not the player
-		{
-			idBounds entityBounds = p_physics->GetAbsBounds();
-			entityBounds.ExpandSelf (0.1f); // A single point doesn't work with ellipse intersection
-
-			idVec3 bottomPoint = entityBounds[0];
-			idVec3 topPoint = entityBounds[1];
-			bottomPoint += p_physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
-			topPoint += p_physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
-
-
-			float maxDistanceToObserve = getMaximumObservationDistance
-			(
-				bottomPoint,
-				topPoint,
-				p_entity
-			);
-
-			// Are we close enough to see it in the current light level?
-			idVec3 observeFrom = GetEyePosition();
-			idVec3 midPoint = bottomPoint + ((topPoint - bottomPoint) /2.0);
-			if ( (observeFrom - midPoint).Length() > maxDistanceToObserve)
-			{
-				// Draw debug graphic?
-				if (cv_ai_visdist_show.GetFloat() > 1.0)
-				{
-					idVec4 markerColor (1.0, 0.0, 0.0, 0.0);
-					idVec4 markerColor2 (1.0, 0.0, 1.0, 0.0);
-					idVec3 arrowLength = midPoint - observeFrom;
-					arrowLength.Normalize();
-					arrowLength *= maxDistanceToObserve;
-
-					// Distance we could see
-					gameRenderWorld->DebugArrow
-					(
-						markerColor,
-						observeFrom,
-						observeFrom + arrowLength,
-						2,
-						cv_ai_visdist_show.GetInteger()
-					);
-
-					// Gap to where we want to see
-					gameRenderWorld->DebugArrow
-					(
-						markerColor2,
-						observeFrom + arrowLength,
-						midPoint,
-						2,
-						cv_ai_visdist_show.GetInteger()
-					);
-				}
-
-				return true;
-			}
-			else
-			{
-				// Draw debug graphic?
-				if (cv_ai_visdist_show.GetFloat() > 1.0)
-				{
-					idVec4 markerColor (0.0, 1.0, 0.0, 0.0);
-
-					// We can see to target
-					gameRenderWorld->DebugArrow
-					(
-						markerColor,
-						observeFrom,
-						midPoint,
-						2,
-						cv_ai_visdist_show.GetInteger()
-					);
-				}
-				return false;
-			}
-		}
+		return false;	// Not in darkness
 	}
 
-	// Not in darkness
-	return false;
+	// Use lightgem if it is the player
+	if (p_entity->IsType(idPlayer::Type))
+	{
+		// Get the alert increase amount (log) caused by the CVAR tdm_ai_sight_mag
+		// greebo: Commented this out, this is not suitable to detect if player is hidden in darkness
+		//float incAlert = GetPlayerVisualStimulusAmount();
+		
+		// greebo: Check the visibility of the player depending on lgem and distance
+		float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
+/*
+		// greebo: Debug output, comment me out
+		gameRenderWorld->DrawText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+*/
+		// Get base sight threshold
+		float sightThreshold = 0.1f;//cv_ai_sight_thresh.GetFloat(); // defaults to 1.0
+
+		// Draw debug graphic
+		/*if (cv_ai_visdist_show.GetFloat() > 1.0)
+		{
+			idVec4 markerColor (0.0, 0.0, 0.0, 0.0);
+
+			float percToSeen = 1.0;
+			if (sightThreshold > 0 && sightThreshold > incAlert)
+			{
+				percToSeen = (sightThreshold - incAlert) / sightThreshold;
+			}
+
+			// Scale red to green from not perceptable to quickly perceptable
+			markerColor.x = idMath::Sin (percToSeen * (idMath::PI / 2.0));
+			markerColor.y = idMath::Cos (percToSeen * (idMath::PI / 2.0));
+
+			idVec3 observeFrom = GetEyePosition();
+
+			gameRenderWorld->DebugArrow(markerColor, observeFrom, p_physics->GetOrigin(), 2, cv_ai_visdist_show.GetInteger());
+		}*/
+
+		// Very low threshold for visibility
+		if (visFraction < sightThreshold)
+		{
+			// Not visible, entity is hidden in darkness
+			return true;
+		}
+		else
+		{
+			// Visible, visual stim above threshold
+			return false;
+		}
+	}
+	else // Not the player
+	{
+		idBounds entityBounds = p_physics->GetAbsBounds();
+		entityBounds.ExpandSelf(0.1f); // A single point doesn't work with ellipse intersection
+
+		idVec3 bottomPoint = entityBounds[0] + p_physics->GetGravityNormal() * 0.1f;	// Tweak to stay out of floors
+		idVec3 topPoint = entityBounds[1] + p_physics->GetGravityNormal() * 0.1f;		// Tweak to stay out of floors
+
+		float maxDistanceToObserve = GetMaximumObservationDistance(	bottomPoint, topPoint, p_entity);
+
+		// Are we close enough to see it in the current light level?
+		idVec3 observeFrom = GetEyePosition();
+		idVec3 midPoint = (topPoint + bottomPoint) * 0.5f;
+
+		if ((observeFrom - midPoint).LengthSqr() > maxDistanceToObserve*maxDistanceToObserve)
+		{
+			// Draw debug graphic?
+			if (cv_ai_visdist_show.GetFloat() > 1.0f)
+			{
+				idVec3 arrowLength = midPoint - observeFrom;
+				arrowLength.Normalize();
+				arrowLength *= maxDistanceToObserve;
+
+				// Distance we could see
+				gameRenderWorld->DebugArrow(colorRed, observeFrom, observeFrom + arrowLength, 2, cv_ai_visdist_show.GetInteger());
+
+				// Gap to where we want to see
+				gameRenderWorld->DebugArrow(colorMagenta, observeFrom + arrowLength, midPoint, 2, cv_ai_visdist_show.GetInteger());
+			}
+
+			return true; // hidden by darkness
+		}
+		else
+		{
+			// Draw debug graphic?
+			if (cv_ai_visdist_show.GetFloat() > 1.0f)
+			{
+				// We can see to target
+				gameRenderWorld->DebugArrow(colorGreen, observeFrom, midPoint, 2, cv_ai_visdist_show.GetInteger());
+			}
+
+			return false; // not hidden by darkness
+		}
+	}
 }
 
 /*---------------------------------------------------------------------------------*/

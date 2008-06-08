@@ -1393,7 +1393,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* line segment that the segment is visible due to current light conditions
 	* at the segment
 	*/
-	float getMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const;
+	float GetMaximumObservationDistance (idVec3 bottomPoint, idVec3 topPoint, idEntity* p_ignoreEntity) const;
 
 	/**
 	* The point of this function is to determine the visual stimulus level caused
