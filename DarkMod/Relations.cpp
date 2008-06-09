@@ -109,8 +109,11 @@ int CRelations::GetRelNum(int i, int j)
 	{
 		// uncomment for reporting errors when doing relationship checks
 		// DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Bad indices used to query relationship matrix: %d, col: %d.\r", i, j);
-		
-		returnval = s_DefaultRelation;
+		if( i == j )
+			returnval = s_DefaultSameTeamRel;
+		else
+			returnval = s_DefaultRelation;
+
 		goto Quit;
 	}
 
