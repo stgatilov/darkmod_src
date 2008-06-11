@@ -402,6 +402,13 @@ void CMissionData::MissionEvent
 	{
 		CObjective *pObj = &m_Objectives[i];
 
+		// greebo: Check for irreversible objectives that have already "snapped" into their final state
+		if (!pObj->m_bReversible && pObj->m_bLatched)
+		{
+			// don't re-evaluate latched irreversible objectives
+			continue;
+		}
+
 		for( int j=0; j < pObj->m_Components.Num(); j++ )
 		{
 			CObjectiveComponent *pComp;
@@ -1098,9 +1105,7 @@ Quit:
 
 void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
 {
-	CObjectiveComponent *pComp(NULL);
-
-	pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
+	CObjectiveComponent* pComp = &m_Objectives[ObjIndex].m_Components[CompIndex];
 
 	if( !pComp )
 	{

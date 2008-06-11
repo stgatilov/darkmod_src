@@ -1814,6 +1814,13 @@ void CTarget_SetObjectiveState::Event_Activate( idEntity *activator )
 		int objId = atoi(keyVal->GetValue().c_str());
 
 		if (objId > 0) {
+			// "Unlock" the objective first, if desired
+			if (spawnArgs.GetBool("unlatch_irreversible_objectives", "1"))
+			{
+				gameLocal.m_MissionData->UnlatchObjective(objId-1);
+			}
+
+			// Now set the completion state
 			gameLocal.m_MissionData->SetCompletionState(objId-1, state);
 		}
 		else {
