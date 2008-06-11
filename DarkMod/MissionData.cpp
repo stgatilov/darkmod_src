@@ -736,6 +736,9 @@ void CMissionData::UpdateObjectives( void )
 		// If objective was just completed
 		if( pObj->CheckSuccess() )
 		{
+			// greebo: Set the bool back to true before evaluating the components
+			bObjEnabled = true;
+
 			// Check for enabling objectives
 			for( int k=0; k < pObj->m_EnablingObjs.Num(); k++ )
 			{
@@ -747,16 +750,19 @@ void CMissionData::UpdateObjectives( void )
 
 				bObjEnabled = bObjEnabled && (CompState == STATE_COMPLETE || CompState == STATE_INVALID);
 			}
+
 			if( !bObjEnabled )
+			{
 				goto Quit;
+			}
 
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
 			SetCompletionState( i, STATE_COMPLETE );
 		}
 		else if( pObj->CheckFailure() )
 		{
-				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
-				SetCompletionState(i, STATE_FAILED );
+			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d FAILED\r", i+1);
+			SetCompletionState(i, STATE_FAILED );
 		}
 		else
 		{
