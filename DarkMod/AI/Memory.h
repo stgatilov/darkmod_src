@@ -188,6 +188,9 @@ public:
 	bool currentlyHeadTurning;
 	int headTurnEndTime;
 
+	idVec3 idlePosition;
+	float idleYaw;
+
 	// TRUE if enemies have been seen
 	bool enemiesHaveBeenSeen;
 

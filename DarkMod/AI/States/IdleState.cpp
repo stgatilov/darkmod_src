@@ -28,10 +28,6 @@ static bool init_version = FileVersionList("$Id$", init_version);
 namespace ai
 {
 
-IdleState::IdleState() :
-	_idlePosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	_idleYaw(idMath::INFINITY)
-{}
 
 // Get the name of this state
 const idStr& IdleState::GetName() const
@@ -80,8 +76,18 @@ void IdleState::Init(idAI* owner)
 	owner->SheathWeapon();
 
 	// Initialise the animation state
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+	if (owner->spawnArgs.GetBool("sitting", "0") 
+		&& memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+		owner->Event_SetMoveType(MOVETYPE_SIT);
+	}
+	else
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
+	}
 
 	// The action subsystem plays the idle anims (scratching, yawning...)
 	owner->GetSubsystem(SubsysAction)->ClearTasks();
@@ -106,6 +112,19 @@ void IdleState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void IdleState::Think(idAI* owner)
 {
+	Memory& memory = owner->GetMemory();
+
+	if (owner->GetMoveType() != MOVETYPE_SIT 
+		&& owner->spawnArgs.GetBool("sitting", "0"))
+	{
+		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
+			&& owner->GetCurrentYaw() == memory.idleYaw)
+		{
+			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
+			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
+			owner->Event_SetMoveType(MOVETYPE_SIT);
+		}
+	}
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
@@ -117,6 +136,8 @@ void IdleState::Think(idAI* owner)
 
 void IdleState::InitialiseMovement(idAI* owner)
 {
+	Memory& memory = owner->GetMemory();
+
 	owner->AI_RUN = false;
 
 	// The movement subsystem should start patrolling
@@ -135,18 +156,18 @@ void IdleState::InitialiseMovement(idAI* owner)
 	{
 		// We don't have any patrol routes, so we're supposed to stand around
 		// where the mapper has put us.
-		if (_idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+		if (memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 		{
 			// No idle position saved yet, take the current one
-			_idlePosition = owner->GetPhysics()->GetOrigin();
-			_idleYaw = owner->GetCurrentYaw();
+			memory.idlePosition = owner->GetPhysics()->GetOrigin();
+			memory.idleYaw = owner->GetCurrentYaw();
 		}
 		else
 		{
 			// We already HAVE an idle position set, this means that we are
 			// supposed to be there, let's move
 			owner->GetSubsystem(SubsysMovement)->PushTask(
-				TaskPtr(new MoveToPositionTask(_idlePosition, _idleYaw))
+				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw))
 			);
 		}
 	}
@@ -164,17 +185,11 @@ void IdleState::InitialiseCommunication(idAI* owner)
 void IdleState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
-
-	savefile->WriteVec3(_idlePosition);
-	savefile->WriteFloat(_idleYaw);
 }
 
 void IdleState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
-
-	savefile->ReadVec3(_idlePosition);
-	savefile->ReadFloat(_idleYaw);
 }
 
 idStr IdleState::GetInitialIdleBark(idAI* owner)

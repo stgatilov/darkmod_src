@@ -1089,6 +1089,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					DeadMove( void );
 	void					AnimMove( void );
 	void					SlideMove( void );
+	void					SittingMove();
 	void					AdjustFlyingAngles( void );
 	void					AddFlyBob( idVec3 &vel );
 	void					AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos );
@@ -1173,6 +1174,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					DrawRoute( void ) const;
 	bool					GetMovePos( idVec3 &seekPos );
 	bool					MoveDone( void ) const;
+
+	ID_INLINE moveType_t GetMoveType()
+	{
+		return move.moveType;
+	}
+
 	
 	/**
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration

@@ -20,13 +20,6 @@ namespace ai
 class IdleState :
 	public State
 {
-protected:
-	// These are finite if the guard has no patrol route
-	idVec3 _idlePosition;
-	float _idleYaw;
-
-	// Protected constructor
-	IdleState();
 
 public:
 	// Get the name of this state

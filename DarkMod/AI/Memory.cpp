@@ -30,6 +30,8 @@ Memory::Memory(idAI* owningAI) :
 	nextHeadTurnCheckTime(0),
 	currentlyHeadTurning(false),
 	headTurnEndTime(0),
+	idlePosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
+	idleYaw(0),
 	enemiesHaveBeenSeen(false),
 	itemsHaveBeenStolen(false),
 	unconsciousPeopleHaveBeenFound(false),
@@ -76,6 +78,8 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(nextHeadTurnCheckTime);
 	savefile->WriteBool(currentlyHeadTurning);
 	savefile->WriteInt(headTurnEndTime);
+	savefile->WriteVec3(idlePosition);
+	savefile->WriteFloat(idleYaw);
 	savefile->WriteBool(enemiesHaveBeenSeen);
 	savefile->WriteBool(itemsHaveBeenStolen);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
@@ -137,6 +141,8 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(nextHeadTurnCheckTime);
 	savefile->ReadBool(currentlyHeadTurning);
 	savefile->ReadInt(headTurnEndTime);
+	savefile->ReadVec3(idlePosition);
+	savefile->ReadFloat(idleYaw);
 	savefile->ReadBool(enemiesHaveBeenSeen);
 	savefile->ReadBool(itemsHaveBeenStolen);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);

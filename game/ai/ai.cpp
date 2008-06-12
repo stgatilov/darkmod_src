@@ -1740,6 +1740,14 @@ void idAI::Think( void )
 				CheckBlink();
 				break;
 
+			case MOVETYPE_SIT :
+				// static monsters
+				UpdateEnemyPosition();
+				UpdateAIScript();
+				SittingMove();
+				CheckBlink();
+				break;
+
 			case MOVETYPE_SLIDE :
 				// velocity based movement
 				UpdateEnemyPosition();
@@ -4400,6 +4408,52 @@ void idAI::AnimMove()
 		DrawRoute();
 	}
 }
+
+/*
+=====================
+idAI::SittingMove
+=====================
+*/
+void idAI::SittingMove()
+{
+	idVec3				goalPos;
+	idVec3				goalDelta;
+	monsterMoveResult_t	moveResult;
+	idVec3				newDest;
+
+	idVec3 oldorigin = physicsObj.GetOrigin();
+	idMat3 oldaxis = viewAxis;
+
+	AI_BLOCKED = false;
+
+	if ( move.moveCommand != MOVE_NONE )
+	{
+		move.moveType = MOVETYPE_ANIM;
+	}
+
+	RunPhysics();
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
+	}
+
+	moveResult = physicsObj.GetMoveResult();
+
+	AI_ONGROUND = physicsObj.OnGround();
+
+	const idVec3& org = physicsObj.GetOrigin();
+	if (oldorigin != org) {
+		TouchTriggers();
+	}
+
+	if ( ai_debugMove.GetBool() ) {
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		DrawRoute();
+	}
+}
+
 
 /*
 =====================
