@@ -402,13 +402,6 @@ void CMissionData::MissionEvent
 	{
 		CObjective *pObj = &m_Objectives[i];
 
-		// greebo: Check for irreversible objectives that have already "snapped" into their final state
-		if (!pObj->m_bReversible && pObj->m_bLatched)
-		{
-			// don't re-evaluate latched irreversible objectives
-			continue;
-		}
-
 		for( int j=0; j < pObj->m_Components.Num(); j++ )
 		{
 			CObjectiveComponent *pComp;
@@ -438,6 +431,13 @@ void CMissionData::MissionEvent
 			// this will return true and we must mark this objective for update.
 			if( pComp->SetState( bCompState ) )
 			{
+				// greebo: Check for irreversible objectives that have already "snapped" into their final state
+				if (!pObj->m_bReversible && pObj->m_bLatched)
+				{
+					// don't re-evaluate latched irreversible objectives
+					continue;
+				}
+
 				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective %d, Component %d state changed, needs updating", i+1, j+1 );
 				pObj->m_bNeedsUpdate = true;
 				m_bObjsNeedUpdate = true;
