@@ -37,6 +37,7 @@ const idStr& AlertIdleState::GetName() const
 void AlertIdleState::Init(idAI* owner)
 {
 	// Init state class first
+	// Note: we do not call IdleState::Init
 	State::Init(owner);
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AlertIdleState initialised.\r");
@@ -46,6 +47,8 @@ void AlertIdleState::Init(idAI* owner)
 
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) return;
+
+	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 
 	InitialiseMovement(owner);
 

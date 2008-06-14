@@ -75,9 +75,10 @@ void IdleState::Init(idAI* owner)
 
 	owner->SheathWeapon();
 
+	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
+
 	// Initialise the animation state
-	if (owner->spawnArgs.GetBool("sitting", "0") 
-		&& memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	if (_startSitting && memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle_Sit", 0);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle_Sit", 0);
@@ -114,8 +115,7 @@ void IdleState::Think(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
-	if (owner->GetMoveType() != MOVETYPE_SIT 
-		&& owner->spawnArgs.GetBool("sitting", "0"))
+	if (_startSitting && owner->GetMoveType() != MOVETYPE_SIT)
 	{
 		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
 			&& owner->GetCurrentYaw() == memory.idleYaw)
@@ -185,11 +185,15 @@ void IdleState::InitialiseCommunication(idAI* owner)
 void IdleState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
+
+	savefile->WriteBool(_startSitting);
 }
 
 void IdleState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
+
+	savefile->ReadBool(_startSitting);
 }
 
 idStr IdleState::GetInitialIdleBark(idAI* owner)

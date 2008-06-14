@@ -31,7 +31,10 @@ public:
 	virtual const idStr& GetName() const;
 
 	// This is called when the state is first attached to the AI's Mind.
+	// Note: we do not call IdleState::Init
 	virtual void Init(idAI* owner);
+
+	// Think is inherited from IdleState::Think
 
 	static StatePtr CreateInstance();
 

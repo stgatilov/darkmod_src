@@ -20,7 +20,6 @@ namespace ai
 class IdleState :
 	public State
 {
-
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -38,6 +37,9 @@ public:
 	static StatePtr CreateInstance();
 
 protected:
+
+	bool _startSitting;
+
 	// Override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
 
