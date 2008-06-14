@@ -800,10 +800,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		subsystems[i]->Save(savefile);
 	}
-#ifdef TIMING_BUILD
-	savefile->WriteInt(aiThinkTimer);
-	savefile->WriteInt(aiMindTimer);
-#endif
+
+	SAVE_TIMER_HANDLE(aiThinkTimer, savefile);
+	SAVE_TIMER_HANDLE(aiMindTimer, savefile);
 }
 
 /*
@@ -1096,10 +1095,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	if ( restorePhysics ) {
 		RestorePhysics( &physicsObj );
 	}
-#ifdef TIMING_BUILD
-	savefile->ReadInt(aiThinkTimer);
-	savefile->ReadInt(aiMindTimer);
-#endif
+
+	RESTORE_TIMER_HANDLE(aiThinkTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiMindTimer, savefile);
 }
 
 /*
