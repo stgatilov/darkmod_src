@@ -977,7 +977,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	// TDM Ambient Method checking. By Dram
 	if ( cur_amb_method != cv_ambient_method.GetBool() ) // If the ambient method option has changed
 	{
-		idEntity *ambient_light = gameLocal.FindEntity( "world_ambient" ); // Looks for a light named "world_ambient"
+		idEntity *ambient_light = gameLocal.FindEntity( "ambient_world" ); // Looks for a light named "ambient_world"
 		idVec3 ambient_color;
 
 		if ( ambient_light ) // If the light exists
