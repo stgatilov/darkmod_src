@@ -14,6 +14,7 @@
 #define __AI_MOVESTATE_H__
 
 // defined in script/ai_base.script.  please keep them up to date.
+// greebo: also be sure to update the ai::setMoveTypeFromSpawnargs() script method in the same file.
 enum moveType_t {
 	MOVETYPE_DEAD,
 	MOVETYPE_ANIM,

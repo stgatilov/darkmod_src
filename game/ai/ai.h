@@ -1180,6 +1180,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 		return move.moveType;
 	}
 
+	void					SetMoveType( int moveType );
+
 	
 	/**
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration

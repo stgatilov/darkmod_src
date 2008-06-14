@@ -2410,16 +2410,7 @@ idAI::Event_SetMoveTypes
 =====================
 */
 void idAI::Event_SetMoveType( int moveType ) {
-	if ( ( moveType < 0 ) || ( moveType >= NUM_MOVETYPES ) ) {
-		gameLocal.Error( "Invalid movetype %d", moveType );
-	}
-
-	move.moveType = static_cast<moveType_t>( moveType );
-	if ( move.moveType == MOVETYPE_FLY ) {
-		travelFlags = TFL_WALK|TFL_AIR|TFL_FLY|TFL_DOOR;
-	} else {
-		travelFlags = TFL_WALK|TFL_AIR|TFL_DOOR;
-	}
+	SetMoveType(moveType);
 }
 
 /*
