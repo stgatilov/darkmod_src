@@ -978,7 +978,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 void idPlayerView::UpdateAmbientLight()
 {
 	// Looks for a light named "ambient_world"
-	idEntity* ambient_light = gameLocal.FindEntity(cv_ambient_light_name.GetString());
+	idEntity* ambient_light = gameLocal.FindEntity("ambient_world");
 	
 	if (ambient_light != NULL) // If the light exists
 	{
@@ -1008,7 +1008,7 @@ void idPlayerView::UpdateAmbientLight()
 	}
 	else // The ambient light does not exist
 	{
-		gameLocal.Printf( "Note: Ambient light by name of '%s' not found", cv_ambient_light_name.GetString()); // Show in console of light not existing in map
+		gameLocal.Printf( "Note: Ambient light by name of 'ambient_world' not found"); // Show in console of light not existing in map
 	}
 
 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
