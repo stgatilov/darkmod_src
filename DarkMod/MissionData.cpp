@@ -783,11 +783,11 @@ Quit:
 
 void CMissionData::Event_ObjectiveComplete( int ind )
 {
-	bool bTest(true), bTemp(false);
+	bool missionComplete = true;
 
 	if( !m_SuccessLogic.IsEmpty() ) 
 	{
-		bTest = EvalBoolLogic( &m_SuccessLogic, true );
+		missionComplete = EvalBoolLogic( &m_SuccessLogic, true );
 	}
 	else
 	{
@@ -797,64 +797,62 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 		{
 			CObjective& obj = m_Objectives[i];
 
-			// only check visible objectives
-			if (obj.m_bVisible)
+			// greebo: only check visible and applicable objectives
+			if (obj.m_bVisible && obj.m_bApplies)
 			{
-				bTemp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory );
-				bTest = bTest && bTemp;
+				bool temp = ( obj.m_state == STATE_COMPLETE || obj.m_state == STATE_INVALID || !obj.m_bMandatory );
+				missionComplete = missionComplete && temp;
 			}
 		}
 	}
 
-	idPlayer* player = gameLocal.GetLocalPlayer();
-
-	if (player == NULL) {
-		gameLocal.Error("No player at mission success!\n");
-	}
-
-	if (bTest)
+	if (missionComplete)
 	{
 		// All objectives ok, mission complete
 		Event_MissionComplete();
+		return;
 	}
-	else
+
+	// Only this objective is complete, not the entire mission
+	// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
+	if (!m_Objectives[ind].m_bOngoing)
 	{
-		// Only this objective is complete, not the entire mission
-		// Ongoing objectives don't play the sound or mark off in the GUI as complete during mission
-		if (!m_Objectives[ind].m_bOngoing)
-		{
-			player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
+		idPlayer* player = gameLocal.GetLocalPlayer();
 
-			// call completion script
-			function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
-			if (pScriptFun != NULL)
-			{
-				idThread *pThread = new idThread( pScriptFun );
-				pThread->CallFunction( pScriptFun, true );
-				pThread->DelayedStart( 0 );
-			}
-
-			// greebo: Notify the player
-			player->SendHUDMessage("Objective complete");
+		if (player == NULL) {
+			gameLocal.Error("No player at mission success!\n");
 		}
+
+		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
+
+		// call completion script
+		function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_CompletionScript.c_str() );
+		if (pScriptFun != NULL)
+		{
+			idThread *pThread = new idThread( pScriptFun );
+			pThread->CallFunction( pScriptFun, true );
+			pThread->DelayedStart( 0 );
+		}
+
+		// greebo: Notify the player
+		player->SendHUDMessage("Objective complete");
 	}
 }
 
-void CMissionData::Event_ObjectiveFailed( int ind )
+void CMissionData::Event_ObjectiveFailed(int ind)
 {
-	bool bTest(false);
 	// play an objective failed sound for optional objectives?
 
 	// call failure script
 	function_t *pScriptFun = gameLocal.program.FindFunction( m_Objectives[ind].m_FailureScript.c_str() );
-	if(pScriptFun)
+	if (pScriptFun != NULL)
 	{
-		idThread *pThread = new idThread( pScriptFun );
+		idThread *pThread = new idThread(pScriptFun);
 		pThread->CallFunction( pScriptFun, true );
 		pThread->DelayedStart( 0 );
 	}
 
-	idPlayer* player = static_cast<idPlayer*>(gameLocal.entities[gameLocal.localClientNum]);
+	idPlayer* player = gameLocal.GetLocalPlayer();
 	assert(player != NULL);
 
 	player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
@@ -862,16 +860,23 @@ void CMissionData::Event_ObjectiveFailed( int ind )
 	// greebo: notify the player
 	player->SendHUDMessage("Objective failed");
 
-	if( !m_FailureLogic.IsEmpty() )
-		bTest = EvalBoolLogic( &m_FailureLogic, true );
+	// Check for mission failure
+	bool missionFailed = false;
+
+	if (!m_FailureLogic.IsEmpty())
+	{
+		missionFailed = EvalBoolLogic(&m_FailureLogic, true);
+	}
 	else
 	{
 		// default logic: if the objective was mandatory, fail the mission
-		bTest = m_Objectives[ind].m_bMandatory;
+		missionFailed = m_Objectives[ind].m_bMandatory;
 	}
 
-	if( bTest )
+	if (missionFailed)
+	{
 		Event_MissionFailed();
+	}
 }
 
 void CMissionData::Event_MissionComplete( void )
