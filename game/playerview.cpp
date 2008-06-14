@@ -972,8 +972,45 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
 
-	}	
+	}
 
+	// TDM Ambient Method checking. By Dram
+	if ( cur_amb_method != cv_ambient_method.GetBool() ) // If the ambient method option has changed
+	{
+		idEntity *ambient_light = gameLocal.FindEntity( "world_ambient" ); // Looks for a light named "world_ambient"
+		idVec3 ambient_color;
+
+		if ( ambient_light ) // If the light exists
+		{
+			if ( !cv_ambient_method.GetBool() ) // If the Ambient Light method is used
+			{
+				gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
+				gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
+				gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
+				if ( ambient_light->IsType( idLight::Type ) )
+				{
+					static_cast<idLight *>( ambient_light )->On(); // Turn on ambient light
+				}
+			}
+			else // If the Texture Brightness method is used
+			{
+				ambient_color = ambient_light->spawnArgs.GetVector( "_color" ); // Get the ambient color from the spawn arguments
+				gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
+				gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
+				gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
+				if ( ambient_light->IsType( idLight::Type ) )
+				{
+					static_cast<idLight *>( ambient_light )->Off(); // Turn off ambient light
+				}
+			}
+		}
+		else // The ambient light does not exist
+		{
+			gameLocal.Printf( "Note: Ambient light by name of 'world_ambient' not found" ); // Show in console of light not existing in map
+		}
+
+		cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
+	}
 }
 
 

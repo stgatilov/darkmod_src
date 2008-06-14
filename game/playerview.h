@@ -112,6 +112,9 @@ private:
 
 	idPlayer *			player;
 	renderView_t		view;
+
+	// TDM Related
+	bool				cur_amb_method;		// Current ambient method. Used for checking whether ambient method grpahics option has changed. By Dram
 };
 
 #endif /* !__GAME_PLAYERVIEW_H__ */

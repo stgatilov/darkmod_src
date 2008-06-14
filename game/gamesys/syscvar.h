@@ -201,6 +201,9 @@ extern idCVar cv_lp_pawlow;
 
 extern idCVar cv_dm_distance;
 
+// Ambient light method CVar
+extern idCVar cv_ambient_method;
+
 /**
 * CVars added for Darkmod knockout and field of vision changes
 */
