@@ -2089,8 +2089,20 @@ idAI::UpdateAIScript
 */
 void idAI::UpdateScript()
 {
-	idActor::UpdateScript();
+	// greebo: This is overriding idActor::UpdateScript(), where all the state change stuff 
+	// is executed, which is not needed for TDM AI
 
+	if ( ai_debugScript.GetInteger() == entityNumber ) {
+		scriptThread->EnableDebugInfo();
+	} else {
+		scriptThread->DisableDebugInfo();
+	}
+
+	// don't call script until it's done waiting
+	if (!scriptThread->IsWaiting()) {
+		scriptThread->Execute();
+	}
+    
 	// clear the hit enemy flag so we catch the next time we hit someone
 	AI_HIT_ENEMY = false;
 
