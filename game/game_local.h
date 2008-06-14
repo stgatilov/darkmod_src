@@ -182,10 +182,6 @@ void gameError( const char *fmt, ... );
 
 #include <boost/shared_ptr.hpp>
 
-// Forward decl.
-class DarkRadiantRCFServer;
-typedef boost::shared_ptr<DarkRadiantRCFServer> DarkRadiantRCFServerPtr;
-
 #ifdef __linux__
 #include "renderer/renderworld.h"
 #endif
@@ -414,6 +410,10 @@ public:
 	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 
+	// greebo: Is set to TRUE if the success screen is currently active. (Usually these state variables should
+	// be kept in the GUI, but in this case I need it to be accessible when the player loads a new map via the console.)
+	bool					successScreenActive;
+
 	// can be used to automatically effect every material in the world that references globalParms
 	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];	
 
@@ -467,12 +467,6 @@ public:
 	 *         of all the tdmPathFlee entities.
 	 */
 	CEscapePointManager*	m_EscapePointManager;
-
-	/**
-	 * This is the server providing methods for use in DarkRadiant.
-	 * It basically listens for incoming requests on localhost:50001.
-	 */
-	DarkRadiantRCFServerPtr m_DarkRadiantRCFServer;
 
 	/**
 	 * greebo: This timer keeps track of the actual gameplay time.

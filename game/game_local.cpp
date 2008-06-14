@@ -221,6 +221,7 @@ idGameLocal::idGameLocal()
 {
 	m_HighestSRId = 0;
 	m_MissionResult = MISSION_NOTEVENSTARTED;
+	successScreenActive = false;
 	Clear();
 }
 
@@ -661,10 +662,12 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( sortPushers );
 	savegame.WriteBool( sortTeamMasters );
 	savegame.WriteDict( &persistentLevelInfo );
-
+	
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.WriteFloat( globalShaderParms[ i ] );
 	}
+
+	savegame.WriteBool(successScreenActive);
 
 	savegame.WriteInt( random.GetSeed() );
 	savegame.WriteObject( frameCommandThread );
@@ -1187,6 +1190,11 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	if ( !sameMap ) {
 		mapFile->RemovePrimitiveData();
 	}
+
+	// greebo: Reset the flag. When a map is loaded, the success screen is definitely not shown anymore.
+	// This is meant to catch cases where the player is reloading a map from the console without clicking
+	// the "Continue" button on the success GUI. I can't stop him, so I need to track this here.
+	successScreenActive = false;
 }
 
 /*
@@ -1620,6 +1628,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	for( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ ) {
 		savegame.ReadFloat( globalShaderParms[ i ] );
 	}
+
+	savegame.ReadBool(successScreenActive);
 
 	savegame.ReadInt( i );
 	random.SetSeed( i );
@@ -2434,35 +2444,20 @@ void idGameLocal::SetupPlayerPVS( void ) {
 		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
 
 		if ( portalSkyEnt.GetEntity() ) {
-
 			idEntity *skyEnt = portalSkyEnt.GetEntity();
 
-
-
 			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
-
 			newPVS = pvs.MergeCurrentPVS( playerPVS, otherPVS );
-
 			pvs.FreeCurrentPVS( playerPVS );
-
 			pvs.FreeCurrentPVS( otherPVS );
-
 			playerPVS = newPVS;
 
-
-
 			otherPVS = pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
-
 			newPVS = pvs.MergeCurrentPVS( playerConnectedAreas, otherPVS );
-
 			pvs.FreeCurrentPVS( playerConnectedAreas );
-
 			pvs.FreeCurrentPVS( otherPVS );
-
 			playerConnectedAreas = newPVS;
-
 		}
-
 	}
 }
 
@@ -3117,7 +3112,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		if (GetMissionResult() == MISSION_COMPLETE)
 		{
-			if (!gui->GetStateBool("SuccessScreenActive"))
+			// Check if we should show the success screen (also check the member variable
+			// to catch cases where the player reloaded the map via the console)
+			if (!gui->GetStateBool("SuccessScreenActive") || !successScreenActive)
 			{
 				// Load the statistics into the GUI
 				m_MissionData->UpdateStatisticsGUI(gui, "listStatistics");
@@ -3127,6 +3124,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 				// Avoid duplicate triggering
 				gui->SetStateBool("SuccessScreenActive", true);
+				successScreenActive = true;
 			}
 			return;
 		}
@@ -3172,6 +3170,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// Set the boolean back to false for the next map start
 		gui->SetStateBool("SuccessScreenActive", false);
+		successScreenActive = false;
 	}
 
 	g_Shop.HandleCommands(menuCommand, gui, GetLocalPlayer());
