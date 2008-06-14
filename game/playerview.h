@@ -74,6 +74,9 @@ private:
 	void				InfluenceVision( idUserInterface *hud, const renderView_t *view );
 	void				ScreenFade();
 
+	// Updates the ambient light settings
+	void				UpdateAmbientLight();
+
 	screenBlob_t *		GetScreenBlob();
 
 	screenBlob_t		screenBlobs[MAX_SCREEN_BLOBS];

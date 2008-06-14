@@ -18,15 +18,11 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "game_local.h"
 
 static int MakePowerOfTwo( int num ) {
-
 	int		pot;
 
-	for (pot = 1 ; pot < num ; pot<<=1) {
-
-	}
+	for (pot = 1 ; pot < num ; pot<<=1) {}
 
 	return pot;
-
 }
 
 const int IMPULSE_DELAY = 150;
@@ -70,22 +66,19 @@ idPlayerView::idPlayerView() {
 	shakeAng.Zero();
 
 /*
-
 	fxManager = NULL;
 
-
-
 	if ( !fxManager ) {
-
 		fxManager = new FullscreenFXManager;
-
 		fxManager->Initialize( this );
-
 	}
-
 */
 
 	ClearEffects();
+
+	// greebo: Set the bool to the inverse of the CVAR, so that the code triggers 
+	// an update in the first frame
+	cur_amb_method = !cv_ambient_method.GetBool();
 }
 
 /*
@@ -137,6 +130,8 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( player );
 	savefile->WriteRenderView( view );
+
+	savefile->WriteBool(cur_amb_method);
 }
 
 /*
@@ -188,6 +183,8 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( player ) );
 	savefile->ReadRenderView( view );
+
+	savefile->ReadBool(cur_amb_method);
 }
 
 /*
@@ -950,7 +947,6 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 				renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, declManager->FindMaterial( bluryMaterial[blurMtrIndex] ) );
 			}
 
-
 			renderSystem->CaptureRenderToImage( "_fsfx_input" );
 
 			renderSystem->UnCrop();
@@ -966,51 +962,54 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 		ScreenFade();
 	}
+
 	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
-
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-
 		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
-
 	}
 
 	// TDM Ambient Method checking. By Dram
 	if ( cur_amb_method != cv_ambient_method.GetBool() ) // If the ambient method option has changed
 	{
-		idEntity *ambient_light = gameLocal.FindEntity( "ambient_world" ); // Looks for a light named "ambient_world"
-		idVec3 ambient_color;
-
-		if ( ambient_light ) // If the light exists
-		{
-			if ( !cv_ambient_method.GetBool() ) // If the Ambient Light method is used
-			{
-				gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
-				gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
-				gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
-				if ( ambient_light->IsType( idLight::Type ) )
-				{
-					static_cast<idLight *>( ambient_light )->On(); // Turn on ambient light
-				}
-			}
-			else // If the Texture Brightness method is used
-			{
-				ambient_color = ambient_light->spawnArgs.GetVector( "_color" ); // Get the ambient color from the spawn arguments
-				gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
-				gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
-				gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
-				if ( ambient_light->IsType( idLight::Type ) )
-				{
-					static_cast<idLight *>( ambient_light )->Off(); // Turn off ambient light
-				}
-			}
-		}
-		else // The ambient light does not exist
-		{
-			gameLocal.Printf( "Note: Ambient light by name of 'world_ambient' not found" ); // Show in console of light not existing in map
-		}
-
-		cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
+		UpdateAmbientLight();
 	}
 }
 
+void idPlayerView::UpdateAmbientLight()
+{
+	// Looks for a light named "ambient_world"
+	idEntity* ambient_light = gameLocal.FindEntity(cv_ambient_light_name.GetString());
+	
+	if (ambient_light != NULL) // If the light exists
+	{
+		if (!cv_ambient_method.GetBool()) // If the Ambient Light method is used
+		{
+			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
+			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
+			gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
 
+			if (ambient_light->IsType(idLight::Type))
+			{
+				static_cast<idLight*>(ambient_light)->On(); // Turn on ambient light
+			}
+		}
+		else // If the Texture Brightness method is used
+		{
+			idVec3 ambient_color = ambient_light->spawnArgs.GetVector( "_color" ); // Get the ambient color from the spawn arguments
+			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
+			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
+			gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
+
+			if (ambient_light->IsType(idLight::Type))
+			{
+				static_cast<idLight*>(ambient_light)->Off(); // Turn off ambient light
+			}
+		}
+	}
+	else // The ambient light does not exist
+	{
+		gameLocal.Printf( "Note: Ambient light by name of '%s' not found", cv_ambient_light_name.GetString()); // Show in console of light not existing in map
+	}
+
+	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
+}
