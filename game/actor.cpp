@@ -805,6 +805,9 @@ void idActor::SetupHead( void ) {
 		headEnt->SetOrigin( origin );
 		headEnt->SetAxis( renderEntity.axis );
 		headEnt->BindToJoint( this, joint, true );
+
+		// greebo: Setup the frob-peer relationship between head and body
+		m_FrobPeers.AddUnique(headEnt->name);
 	}
 }
 

@@ -7011,7 +7011,7 @@ void idEntity::FrobHighlight( bool bVal )
 
 		ent = gameLocal.FindEntity( m_FrobPeers[i].c_str() );
 		// don't call it on self, would get stuck in a loop
-		if(ent != NULL && ent != this)
+		if (ent != NULL && ent != this && ent->m_bFrobHighlightState != bVal)
 			ent->FrobHighlight( bVal );
 	}
 
@@ -7215,6 +7215,9 @@ bool idEntity::IsFrobbed( void )
 
 void idEntity::SetFrobable( bool bVal )
 {
+	// greebo: This is to avoid infinite loops
+	if (m_bFrobable == bVal) return; 
+
 	m_bFrobable = bVal;
 
 	// If this entity is currently being hilighted, make sure to un-frob it
@@ -7229,6 +7232,15 @@ void idEntity::SetFrobable( bool bVal )
 
 	// Make sure Present gets called when we make something frobable
 	BecomeActive( TH_UPDATEVISUALS );
+
+	// greebo: Also update all frob peers
+	for (int i = 0; i < m_FrobPeers.Num(); i++)
+	{
+		idEntity* peer = gameLocal.FindEntity(m_FrobPeers[i]);
+		if (peer == NULL) continue;
+
+		peer->SetFrobable(bVal);
+	}
 }
 
 void idEntity::StimAdd(int Type, float Radius)

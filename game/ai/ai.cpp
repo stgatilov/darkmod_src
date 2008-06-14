@@ -8668,7 +8668,7 @@ void idAI::PostKnockOut()
 	}
 
 	// AI becomes frobable on KO
-	Event_SetFrobable( true );
+	SetFrobable( true );
 
 	restartParticles = false;
 

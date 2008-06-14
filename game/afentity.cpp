@@ -310,6 +310,9 @@ void idAFAttachment::SetBody( idEntity *bodyEnt, const char *model, jointHandle_
 
 	bleed = body->spawnArgs.GetBool( "bleed" );
 	spawnArgs.SetBool( "bleed", bleed );
+
+	// greebo: Add the body as frob peer
+	m_FrobPeers.AddUnique(bodyEnt->name);
 }
 
 /*
