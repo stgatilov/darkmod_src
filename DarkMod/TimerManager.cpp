@@ -117,7 +117,7 @@ void TimerManager::PrintTimerResults()
 	}
 }
 
-void Timermanager::Clear()
+void TimerManager::Clear()
 {
 	_timers.clear();
 }
