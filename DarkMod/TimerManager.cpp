@@ -1,9 +1,9 @@
 /***************************************************************************
  *
  * PROJECT: The Dark Mod
- * $Revision: 2443 $
- * $Date: 2008-06-07 15:48:49 +0200 (Sa, 07 Jun 2008) $
- * $Author: angua $
+ * $Revision$
+ * $Date$
+ * $Author$
  *
  ***************************************************************************/
 
@@ -82,7 +82,6 @@ void TimerManager::StartTimer(int timerId)
 	TimerInfo& info = found->second;
 	info.timer.Clear();
 	info.timer.Start();
-
 }
 
 void TimerManager::StopTimer(int timerId)

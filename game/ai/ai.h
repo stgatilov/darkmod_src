@@ -1789,6 +1789,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 #ifdef TIMING_BUILD
 private:
 	int aiThinkTimer;
+	int aiMindTimer;
 #endif
 };
 
