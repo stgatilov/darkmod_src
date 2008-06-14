@@ -145,7 +145,7 @@ public:
 	void					ShutdownThreads( void );
 	virtual bool			ShouldConstructScriptObjectAtSpawn( void ) const;
 	virtual idThread *		ConstructScriptObject( void );
-	void					UpdateScript( void );
+	virtual void			UpdateScript();
 	const function_t		*GetScriptFunction( const char *funcname );
 	void					SetState( const function_t *newState );
 	void					SetState( const char *statename );

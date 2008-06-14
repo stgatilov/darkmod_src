@@ -1669,17 +1669,7 @@ void idAI::Think( void )
 				StopLipSync();
 			}
 		}
-/*
-		// greebo: Look for enemies, perform the visual scan if not disabled
-		if (!(outsidePVS && cv_ai_opt_novisualscan.GetBool()))
-		{
-			if (!AI_DEAD && !AI_KNOCKEDOUT)
-			{
-				// Try to locate an enemy actor (= player in TDM)
-				PerformVisualScan();
-			}
-		}
-*/
+
 		// Check for tactile alert due to AI movement
 		CheckTactile();
 
@@ -1697,7 +1687,7 @@ void idAI::Think( void )
 		else if (!allowHiddenMovement && IsHidden())
 		{
 			// hidden monsters
-			UpdateAIScript();
+			UpdateScript();
 		}
 		else
 		{
@@ -1709,14 +1699,14 @@ void idAI::Think( void )
 			{
 			case MOVETYPE_DEAD :
 				// dead monsters
-				UpdateAIScript();
+				UpdateScript();
 				DeadMove();
 				break;
 
 			case MOVETYPE_FLY :
 				// flying monsters
 				UpdateEnemyPosition();
-				UpdateAIScript();
+				UpdateScript();
 				FlyMove();
 				CheckBlink();
 				break;
@@ -1724,7 +1714,7 @@ void idAI::Think( void )
 			case MOVETYPE_STATIC :
 				// static monsters
 				UpdateEnemyPosition();
-				UpdateAIScript();
+				UpdateScript();
 				StaticMove();
 				CheckBlink();
 				break;
@@ -1732,7 +1722,7 @@ void idAI::Think( void )
 			case MOVETYPE_ANIM :
 				// animation based movement
 				UpdateEnemyPosition();
-				UpdateAIScript();
+				UpdateScript();
 				if (!cv_ai_opt_noanims.GetBool())
 				{
 					AnimMove();
@@ -1743,7 +1733,7 @@ void idAI::Think( void )
 			case MOVETYPE_SIT :
 				// static monsters
 				UpdateEnemyPosition();
-				UpdateAIScript();
+				UpdateScript();
 				SittingMove();
 				CheckBlink();
 				break;
@@ -1751,7 +1741,7 @@ void idAI::Think( void )
 			case MOVETYPE_SLIDE :
 				// velocity based movement
 				UpdateEnemyPosition();
-				UpdateAIScript();
+				UpdateScript();
 				SlideMove();
 				CheckBlink();
 				break;
@@ -2097,9 +2087,9 @@ void idAI::LinkScriptVariables( void )
 idAI::UpdateAIScript
 =====================
 */
-void idAI::UpdateAIScript( void )
+void idAI::UpdateScript()
 {
-	UpdateScript();
+	idActor::UpdateScript();
 
 	// clear the hit enemy flag so we catch the next time we hit someone
 	AI_HIT_ENEMY = false;
@@ -5229,7 +5219,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	// AI becomes frobable on death
-	Event_SetFrobable( true );
+	SetFrobable( true );
 
 	restartParticles = false;
 
@@ -5386,7 +5376,7 @@ void idAI::Activate( idEntity *activator ) {
 
 		// update the script in cinematics so that entities don't start anims or show themselves a frame late.
 		if ( cinematic ) {
-            UpdateAIScript();
+            UpdateScript();
 
 			// make sure our model gets updated
 			animator.ForceUpdate();
@@ -8410,11 +8400,11 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 void idAI::CheckTactile()
 {
 	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
-	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertLevel < thresh_4)
+	if (!AI_KNOCKEDOUT && !AI_DEAD && AI_AlertLevel < thresh_5)
 	{
 		idEntity* blockingEnt = physicsObj.GetSlideMoveEntity();
 
-		if (blockingEnt && blockingEnt->IsType(idActor::Type))
+		if (blockingEnt != NULL && blockingEnt->IsType(idActor::Type))
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
 			HadTactile(static_cast<idActor*>(blockingEnt));

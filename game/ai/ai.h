@@ -1434,7 +1434,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// AI script state management
 	void					LinkScriptVariables( void );
-	void					UpdateAIScript( void );
+	virtual void			UpdateScript(); // overrides idActor::UpdateScript
 
 	// Returns true if the current enemy can be reached
 	bool					CanReachEnemy();
