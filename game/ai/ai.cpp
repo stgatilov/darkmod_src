@@ -535,6 +535,7 @@ idAI::idAI()
 
 	INIT_TIMER_HANDLE(aiThinkTimer);
 	INIT_TIMER_HANDLE(aiMindTimer);
+	INIT_TIMER_HANDLE(aiAnimationTimer);
 }
 
 /*
@@ -803,6 +804,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	SAVE_TIMER_HANDLE(aiThinkTimer, savefile);
 	SAVE_TIMER_HANDLE(aiMindTimer, savefile);
+	SAVE_TIMER_HANDLE(aiAnimationTimer, savefile);
 }
 
 /*
@@ -1098,6 +1100,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	RESTORE_TIMER_HANDLE(aiThinkTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiMindTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiAnimationTimer, savefile);
 }
 
 /*
@@ -1493,6 +1496,7 @@ void idAI::Spawn( void )
 
 	CREATE_TIMER(aiThinkTimer, name, "aiThinkTimer");
 	CREATE_TIMER(aiMindTimer, name, "aiMindTimer");
+	CREATE_TIMER(aiAnimationTimer, name, "aiAnimationTimer");
 }
 
 /*
@@ -1792,6 +1796,7 @@ void idAI::Think( void )
 	UpdateMuzzleFlash();
 	if (!cv_ai_opt_noanims.GetBool())
 	{
+		START_SCOPED_TIMING(aiAnimationTimer, scopedAnimationTimer)
 		UpdateAnimation();
 	}
 	UpdateParticles();

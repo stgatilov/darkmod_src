@@ -1794,6 +1794,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 private:
 	int aiThinkTimer;
 	int aiMindTimer;
+	int aiAnimationTimer;
 #endif
 };
 
