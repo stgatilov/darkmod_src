@@ -476,7 +476,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	int blockingEdgeNum; // will hold the edge number of the winding which intersects the path
 	float blockingScale;
 	// if the current path doesn't intersect any dynamic obstacles the path should be through valid AAS space
-	if ( PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2() ) == -1 )
+	int startObstacleNum = PointInsideObstacle( obstacles, numObstacles, startPos.ToVec2());
+	if (startObstacleNum  == -1 )
 	{
 		if (!GetFirstBlockingObstacle(obstacles, numObstacles, -1, startPos.ToVec2(), seekDelta.ToVec2(), 
 									  blockingScale, blockingObstacle, blockingEdgeNum))
@@ -492,6 +493,11 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			pathInfo.frobMoverObstacle = static_cast<CBinaryFrobMover*>(obstacles[blockingObstacle].entity);
 		}
 	}
+	else if (obstacles[startObstacleNum].entity->IsType(CBinaryFrobMover::Type))
+	{
+		pathInfo.frobMoverObstacle = static_cast<CBinaryFrobMover*>(obstacles[startObstacleNum].entity);
+	}
+
 
 	// create obstacles for AAS walls
 	if ( aas != NULL )

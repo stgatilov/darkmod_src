@@ -59,7 +59,7 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 		_goal.areaNum = areaNum;
 		_goal.origin = areaCenter;
 
-		// There's a 50% chance that the search is truncated here.
+		// There's a 10% chance that the search is truncated here.
 		if (gameLocal.random.RandomFloat() < 0.1f)
 		{
 			return true;
