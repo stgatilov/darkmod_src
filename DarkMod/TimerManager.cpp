@@ -110,7 +110,7 @@ void TimerManager::PrintTimerResults()
 		gameLocal.Printf("%s %s \n", info.entityName.c_str(), info.name.c_str());
 		gameLocal.Printf("Number of calls: %d\n", info.runCount);
 		gameLocal.Printf("Total run time: %lf ms\n", info.runTime);
-		gameLocal.Printf("Mean run time per call: %lf ms\n", info.runTime / info.runCount);
+		gameLocal.Printf("Mean run time per call: %lf ms\n", (info.runCount > 0 ? (info.runTime / info.runCount) : 0));
 		gameLocal.Printf("Max runtime: %lf ms at call number %d\n", info.maxTime, info.maxTimeCall);
 		gameLocal.Printf("---------------------------------\n");
 	}

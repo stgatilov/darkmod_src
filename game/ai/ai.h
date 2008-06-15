@@ -1795,6 +1795,7 @@ private:
 	int aiThinkTimer;
 	int aiMindTimer;
 	int aiAnimationTimer;
+	int aiPushWithAFTimer;
 #endif
 };
 
