@@ -4067,9 +4067,6 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), gameLocal.msec );
 	}
 
-	// If there is an obstacle, this is the distance from it we should stop to take action
-	float stopDistance = 0.0f;
-
 	if (!foundPath)
 	{
 		// couldn't get around obstacles
@@ -4162,15 +4159,14 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	{
 		// If its a door handle, switch the obstacle to the door so we don't get all hung
 		// up on door handles
-		if (obstacle->IsType (CFrobDoorHandle::Type))
+		if (obstacle->IsType(CFrobDoorHandle::Type))
 		{
 			// Make the obstacle the door itself
-			obstacle = ((CFrobDoorHandle*) (obstacle))->GetDoor();
-
+			obstacle = static_cast<CFrobDoorHandle*>(obstacle)->GetDoor();
 		}
 
 		// Handle doors
-		if (obstacle->IsType (CFrobDoor::Type))
+		if (obstacle->IsType(CFrobDoor::Type))
 		{
 			// Try to open doors
 			CFrobDoor* p_door = static_cast<CFrobDoor*>(obstacle);
@@ -4180,34 +4176,18 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 				// We have a frobmover in our way, raise a signal to the current state
 				mind->GetState()->OnFrobDoorEncounter(p_door);
 			}
-
-			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-			obstacleDelta.NormalizeFast();
-
-			obstacleDelta *= stopDistance;
-
-			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-
-			//newPos = path.seekPos;
-			move.obstacle = obstacle;
-			//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 		}
 		else
 		{
-			// try kicking the object out of the way
-			//move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
-			//newPos = obstacle->GetPhysics()->GetOrigin();
-
 			// Try backing away
 			newPos = obstacle->GetPhysics()->GetOrigin();
 			idVec3 obstacleDelta = obstacle->GetPhysics()->GetOrigin() -
 				GetPhysics()->GetOrigin();
 
-			obstacleDelta.Normalize();
+			obstacleDelta.NormalizeFast();
 			obstacleDelta *= 128.0;
 
 			newPos = obstacle->GetPhysics()->GetOrigin() - obstacleDelta;
-			move.obstacle = obstacle;
 			move.moveStatus = MOVE_STATUS_BLOCKED_BY_OBJECT;
 		}
 	}
