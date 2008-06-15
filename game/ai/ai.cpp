@@ -539,6 +539,8 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiPushWithAFTimer);
 	INIT_TIMER_HANDLE(aiUpdateEnemyPositionTimer);
 	INIT_TIMER_HANDLE(aiScriptTimer);
+	INIT_TIMER_HANDLE(aiAnimMoveTimer);
+	INIT_TIMER_HANDLE(aiObstacleAvoidanceTimer);
 }
 
 /*
@@ -811,6 +813,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
 	SAVE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
 	SAVE_TIMER_HANDLE(aiScriptTimer, savefile);
+	SAVE_TIMER_HANDLE(aiAnimMoveTimer, savefile);
+	SAVE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 }
 
 /*
@@ -1110,6 +1114,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiScriptTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiAnimMoveTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 }
 
 /*
@@ -1503,12 +1509,14 @@ void idAI::Spawn( void )
 
 	m_lastThinkTime = gameLocal.time;
 
-	CREATE_TIMER(aiThinkTimer, name, "aiThinkTimer");
-	CREATE_TIMER(aiMindTimer, name, "aiMindTimer");
-	CREATE_TIMER(aiAnimationTimer, name, "aiAnimationTimer");
-	CREATE_TIMER(aiPushWithAFTimer, name, "aiPushWithAFTimer");
-	CREATE_TIMER(aiUpdateEnemyPositionTimer, name, "aiUpdateEnemyPositionTimer");
-	CREATE_TIMER(aiScriptTimer, name, "aiScriptTimer");
+	CREATE_TIMER(aiThinkTimer, name, "Think");
+	CREATE_TIMER(aiMindTimer, name, "Mind");
+	CREATE_TIMER(aiAnimationTimer, name, "Animation");
+	CREATE_TIMER(aiPushWithAFTimer, name, "PushWithAF");
+	CREATE_TIMER(aiUpdateEnemyPositionTimer, name, "UpdateEnemyPosition");
+	CREATE_TIMER(aiScriptTimer, name, "UpdateScript");
+	CREATE_TIMER(aiAnimMoveTimer, name, "AnimMove");
+	CREATE_TIMER(aiObstacleAvoidanceTimer, name, "ObstacleAvoidance");
 }
 
 /*
@@ -4009,8 +4017,11 @@ void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delt
 idAI::CheckObstacleAvoidance
 =====================
 */
-void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos ) {
-	if (ignore_obstacles)
+void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
+{
+	START_SCOPED_TIMING(aiObstacleAvoidanceTimer, scopedObstacleAvoidanceTimer);
+
+	if (ignore_obstacles || cv_ai_opt_noobstacleavoidance.GetBool())
 	{
 		newPos = goalPos;
 		move.obstacle = NULL;
@@ -4212,11 +4223,10 @@ idAI::AnimMove
 */
 void idAI::AnimMove()
 {
+	START_SCOPED_TIMING(aiAnimMoveTimer, scopedAnimMoveTimer);
+
 	idVec3				goalPos;
 	idVec3				goalDelta;
-	float				goalDist;
-	monsterMoveResult_t	moveResult;
-	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
 	idMat3 oldaxis = viewAxis;
@@ -4245,19 +4255,10 @@ void idAI::AnimMove()
 		if (move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_VECTOR) 
 		{
 			//gameRenderWorld->DebugArrow(colorCyan, goalPos, goalPos + idVec3(0,0,15), 2, 1000);
-			if (!cv_ai_opt_noobstacleavoidance.GetBool())
-			{
-				idTimer timer;
-				timer.Clear();
-				timer.Start();
-				CheckObstacleAvoidance( goalPos, newDest );
-				timer.Stop();
-				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Obstacle avoidance took: %lf msec \r", timer.Milliseconds());
-			}
-			else 
-			{
-				newDest = goalPos; // no avoidance, do nothing
-			}
+
+			idVec3 newDest;
+			CheckObstacleAvoidance( goalPos, newDest );
+
 			TurnToward(newDest);
 		} 
 		else // MOVE_WANDER || MOVE_VECTOR
@@ -4303,7 +4304,7 @@ void idAI::AnimMove()
 
 	if ( move.moveCommand == MOVE_TO_POSITION ) {
 		goalDelta = move.moveDest - oldorigin;
-		goalDist = goalDelta.LengthFast();
+		float goalDist = goalDelta.LengthFast();
 		if ( goalDist < delta.LengthFast() ) {
 			delta = goalDelta;
 		}
@@ -4318,7 +4319,7 @@ void idAI::AnimMove()
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	moveResult = physicsObj.GetMoveResult();
+	monsterMoveResult_t moveResult = physicsObj.GetMoveResult();
 	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {

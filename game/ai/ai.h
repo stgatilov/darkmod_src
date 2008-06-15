@@ -1798,6 +1798,8 @@ private:
 	int aiPushWithAFTimer;
 	int aiUpdateEnemyPositionTimer;
 	int aiScriptTimer;
+	int aiAnimMoveTimer;
+	int aiObstacleAvoidanceTimer;
 #endif
 };
 
