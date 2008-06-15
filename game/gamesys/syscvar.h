@@ -28,7 +28,6 @@ extern idCVar cv_ai_sight_mag;
 extern idCVar cv_ai_sightmaxdist;
 extern idCVar cv_ai_sightmindist;
 extern idCVar cv_ai_tactalert;
-extern idCVar cv_ai_state_show;
 extern idCVar cv_ai_task_show;
 extern idCVar cv_ai_alertlevel_show;
 extern idCVar cv_ai_dest_show;

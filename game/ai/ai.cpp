@@ -1788,11 +1788,6 @@ void idAI::Think( void )
 		// UpdateAnimation won't call frame commands when hidden, so call them here when we allow hidden movement
 		animator.ServiceAnims( gameLocal.previousTime, gameLocal.time );
 	}
-/*	this still draws in retail builds.. not sure why.. don't care at this point.
-	if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
-		gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-*/
 
 	UpdateMuzzleFlash();
 	if (!cv_ai_opt_noanims.GetBool())
@@ -1807,105 +1802,15 @@ void idAI::Think( void )
 	UpdateDamageEffects();
 	LinkCombat();
 
-	if ( health > 0 )
+	if (health > 0)
 	{
 		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
 	}
 
-	// DarkMod: Show debug info
-	if( cv_ai_ko_show.GetBool() )
-	{
-		KnockoutDebugDraw();
-	}
-
-	if( cv_ai_fov_show.GetBool() )
-	{
-		FOVDebugDraw();
-	}
-	
-	if ( cv_ai_dest_show.GetBool() )
-	{
-		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
-	}
-
-	if( cv_ai_state_show.GetBool() )
-	{
-		const char *statename;
-		if( state )
-			statename = state->Name();
-		else
-			statename = "NULL State";
-
-		gameRenderWorld->DrawText( statename, (GetEyePosition() - physicsObj.GetGravityNormal()*15.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-
-	if ( cv_ai_task_show.GetBool())
-	{
-		idStr str("State: ");
-		str += mind->GetState()->GetName() + "\n";
-		
-		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
-		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
-		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
-		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
-
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-
-	if( cv_ai_alertlevel_show.GetBool() )
-	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-
-	if (cv_ai_animstate_show.GetBool())
-	{
-		idStr debugText("Torso: ");
-		debugText += GetAnimState(ANIMCHANNEL_TORSO);
-		debugText += " Waitstate: ";
-		debugText += WaitState(ANIMCHANNEL_TORSO);
-		debugText += "\nLegs: ";
-		debugText += GetAnimState(ANIMCHANNEL_LEGS);
-		debugText += " Waitstate: ";
-		debugText += WaitState(ANIMCHANNEL_LEGS);
-		debugText += "\nHead: ";
-		debugText += GetAnimState(ANIMCHANNEL_HEAD);
-		debugText += " Waitstate: ";
-		debugText += WaitState(ANIMCHANNEL_LEGS);
-		debugText += "\n";
-
-
-		if (WaitState() != NULL)
-		{
-			debugText += idStr("Waitstate: ") + WaitState();
-		}
-		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-	}
-
-	if (cv_ai_aasarea_show.GetBool())
-	{
-		if (aas != NULL)
-		{
-			idVec3 org = GetPhysics()->GetOrigin();
-			int areaNum = PointReachableAreaNum(org);
-
-			idBounds areaBounds = aas->GetAreaBounds(areaNum);
-			idVec3 areaCenter = aas->AreaCenter(areaNum);
-
-			idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
-
-			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorGreen, playerViewMatrix, 1, gameLocal.msec);
-			gameRenderWorld->DebugBox(colorGreen, idBox(areaBounds), gameLocal.msec);
-		}
-	}
-
-	if (cv_ai_elevator_show.GetBool())
-	{
-		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
-
-		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
-	}
-
 	m_lastThinkTime = gameLocal.time;
+
+	// Check the CVARs and print debug info, if appropriate
+	ShowDebugInfo();
 }
 
 /*
@@ -9436,5 +9341,86 @@ void idAI::RestoreMove(const idMoveState& saved)
 
 	if ( GetMovePos( goalPos ) ) {
 		//CheckObstacleAvoidance( goalPos, dest );
+	}
+}
+
+void idAI::ShowDebugInfo()
+{
+	// DarkMod: Show debug info
+	if( cv_ai_ko_show.GetBool() )
+	{
+		KnockoutDebugDraw();
+	}
+
+	if( cv_ai_fov_show.GetBool() )
+	{
+		FOVDebugDraw();
+	}
+	
+	if ( cv_ai_dest_show.GetBool() )
+	{
+		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
+	}
+
+	if ( cv_ai_task_show.GetBool())
+	{
+		idStr str("State: ");
+		str += mind->GetState()->GetName() + "\n";
+		
+		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
+
+		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+
+	if( cv_ai_alertlevel_show.GetBool() )
+	{
+		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+
+	if (cv_ai_animstate_show.GetBool())
+	{
+		idStr debugText("Torso: ");
+		debugText += GetAnimState(ANIMCHANNEL_TORSO);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_TORSO);
+		debugText += "\nLegs: ";
+		debugText += GetAnimState(ANIMCHANNEL_LEGS);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_LEGS);
+		debugText += "\nHead: ";
+		debugText += GetAnimState(ANIMCHANNEL_HEAD);
+		debugText += " Waitstate: ";
+		debugText += WaitState(ANIMCHANNEL_LEGS);
+		debugText += "\n";
+
+		if (WaitState() != NULL)
+		{
+			debugText += idStr("Waitstate: ") + WaitState();
+		}
+		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	}
+
+	if (cv_ai_aasarea_show.GetBool() && aas != NULL)
+	{
+		idVec3 org = GetPhysics()->GetOrigin();
+		int areaNum = PointReachableAreaNum(org);
+
+		idBounds areaBounds = aas->GetAreaBounds(areaNum);
+		idVec3 areaCenter = aas->AreaCenter(areaNum);
+
+		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+
+		gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorGreen, playerViewMatrix, 1, gameLocal.msec);
+		gameRenderWorld->DebugBox(colorGreen, idBox(areaBounds), gameLocal.msec);
+	}
+
+	if (cv_ai_elevator_show.GetBool())
+	{
+		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+
+		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
 	}
 }

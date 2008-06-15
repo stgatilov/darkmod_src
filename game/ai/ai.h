@@ -1483,6 +1483,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// angua: this checks whether the AI should close the door after passing through
 	bool					ShouldCloseDoor(CBinaryFrobMover *frobMover);
 
+	// greebo: Contains all the checks for CVAR-dependent debug info
+	void					ShowDebugInfo();
 	
 	//
 	// ai/ai_events.cpp
