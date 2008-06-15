@@ -535,6 +535,28 @@ void CBinaryFrobMover::DoneRotating(void)
 	DoneStateChange();
 }
 
+bool CBinaryFrobMover::IsAtOpenPosition()
+{
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+
+	idAngles localAngles = physicsObj.GetLocalAngles();
+	localAngles.Normalize180();
+
+	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
+}
+
+bool CBinaryFrobMover::IsAtClosedPosition()
+{
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+
+	idAngles localAngles = physicsObj.GetLocalAngles();
+	localAngles.Normalize180();
+
+	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
+}
+
 void CBinaryFrobMover::DoneStateChange(void)
 {
 	bool CallScript = false;
@@ -565,13 +587,7 @@ void CBinaryFrobMover::DoneStateChange(void)
 	else
 	{
 		// in all other cases, use the angles and position of origin to check if the door is open or closed
-		// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-		idVec3 localOrg = physicsObj.GetLocalOrigin();
-		idAngles localAngles = physicsObj.GetLocalAngles();
-		localAngles.Normalize180();
-
-		checkClose = localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && 
-			localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
+		checkClose = IsAtClosedPosition();
 	}
 
 	if (checkClose)
