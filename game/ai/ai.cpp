@@ -537,6 +537,7 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiMindTimer);
 	INIT_TIMER_HANDLE(aiAnimationTimer);
 	INIT_TIMER_HANDLE(aiPushWithAFTimer);
+	INIT_TIMER_HANDLE(aiUpdateEnemyPositionTimer);
 }
 
 /*
@@ -807,6 +808,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiMindTimer, savefile);
 	SAVE_TIMER_HANDLE(aiAnimationTimer, savefile);
 	SAVE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
+	SAVE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
 }
 
 /*
@@ -1104,6 +1106,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiMindTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiAnimationTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
 }
 
 /*
@@ -5664,6 +5667,8 @@ void idAI::UpdateEnemyPosition()
 	{
 		return;
 	}
+
+	START_SCOPED_TIMING(aiUpdateEnemyPositionTimer, scopedUpdateEnemyPositionTimer)
 
 	int				enemyAreaNum(-1);
 	idVec3			enemyPos;

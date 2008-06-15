@@ -1796,6 +1796,7 @@ private:
 	int aiMindTimer;
 	int aiAnimationTimer;
 	int aiPushWithAFTimer;
+	int aiUpdateEnemyPositionTimer;
 #endif
 };
 
