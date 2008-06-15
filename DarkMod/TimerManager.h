@@ -56,6 +56,7 @@ public:
 	void	StartTimer(int timerId);
 	void	StopTimer(int timerId);
 	void	PrintTimerResults();
+	void	DumpTimerResults(const char* const separator = ";", const char* const comma = ".");
 	void	Clear();
 
 
