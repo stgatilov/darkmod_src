@@ -542,6 +542,7 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiAnimMoveTimer);
 	INIT_TIMER_HANDLE(aiObstacleAvoidanceTimer);
 	INIT_TIMER_HANDLE(aiPhysicsTimer);
+	INIT_TIMER_HANDLE(aiGetMovePosTimer);
 }
 
 /*
@@ -817,6 +818,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiAnimMoveTimer, savefile);
 	SAVE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 	SAVE_TIMER_HANDLE(aiPhysicsTimer, savefile);
+	SAVE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
 }
 
 /*
@@ -1119,6 +1121,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiAnimMoveTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPhysicsTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
 }
 
 /*
@@ -1521,6 +1524,7 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiAnimMoveTimer, name, "AnimMove");
 	CREATE_TIMER(aiObstacleAvoidanceTimer, name, "ObstacleAvoidance");
 	CREATE_TIMER(aiPhysicsTimer, name, "RunPhysics");
+	CREATE_TIMER(aiGetMovePosTimer, name, "GetMovePos");
 }
 
 /*
@@ -3498,6 +3502,8 @@ idAI::GetMovePos
 */
 bool idAI::GetMovePos(idVec3 &seekPos)
 {
+	START_SCOPED_TIMING(aiGetMovePosTimer, scopedGetMovePosTimer);
+
 	const idVec3& org = physicsObj.GetOrigin();
 	seekPos = org;
 

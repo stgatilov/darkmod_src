@@ -1801,6 +1801,7 @@ private:
 	int aiAnimMoveTimer;
 	int aiObstacleAvoidanceTimer;
 	int aiPhysicsTimer;
+	int aiGetMovePosTimer;
 #endif
 };
 
