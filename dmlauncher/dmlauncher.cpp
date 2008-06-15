@@ -43,10 +43,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// Get the path for this executable
 	GetModuleFileName(hInstance, exename, 1000);
 
-	// optionally pause 2 seconds
-	if (strlen(lpCmdLine)) {
-		Sleep(2000);
-	}
+	// pause 2 seconds
+	Sleep(2000);
 
 	// path to this exe
 	fs::path dmlauncher(exename);
@@ -57,10 +55,23 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// optional file that contains custom doom3 command line args
 	fs::path argFileName(darkmodDir / "dmargs.txt");
 
+	if (strlen(lpCmdLine)) {
+		fs::path optionalArgsFileName(darkmodDir / lpCmdLine);
+		if (exists(optionalArgsFileName))
+		{
+			if (exists(argFileName))
+			{
+				remove(argFileName);
+			}
+			copy_file(optionalArgsFileName, argFileName);
+		}
+	}
+
 	// file that contains name of the current FM directory
 	fs::path currentFMName(darkmodDir / "currentfm.txt");
 
 	// path to doom3.exe
+	fs::path doom3dir(darkmodDir / "..");
 	fs::path doom3exe(darkmodDir / ".." / "doom3.exe");
 
 	// get the current FM
@@ -83,13 +94,14 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	}
 
 	// build command line to doom3
-	strcpy(doomArgs, "+set fs_game_base darkmod");
+	strcpy(doomArgs, "+set fs_game_base darkmod ");
 	if (current != NULL) {
-		strcat(doomArgs, " +set fs_game ");
+		strcat(doomArgs, "+set fs_game ");
 		strcat(doomArgs, current);
 		strcat(doomArgs, " ");
 	}
 	strcat(doomArgs, extraArgs);
+	::SetCurrentDirectory(doom3dir.file_string().c_str());
 	_spawnl(_P_NOWAIT, doom3exe.file_string().c_str(), doom3exe.file_string().c_str(), doomArgs, NULL);
 	return 0;
 }
