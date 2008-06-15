@@ -494,8 +494,8 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 			pot = MakePowerOfTwo( h );
 			shiftScale.y = (float)h / pot;
 
-			hackedView.shaderParms[4] = shiftScale.x;
-			hackedView.shaderParms[5] = shiftScale.y;
+			hackedView.shaderParms[6] = shiftScale.x;
+			hackedView.shaderParms[7] = shiftScale.y;
 		}
 
 		gameRenderWorld->RenderScene( &portalView );
