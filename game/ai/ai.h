@@ -76,7 +76,7 @@ typedef struct obstaclePath_s {
 	idEntity *			startPosObstacle;			// if != NULL the obstacle containing the start position 
 	idVec3				seekPosOutsideObstacles;	// seek position outside obstacles
 	idEntity *			seekPosObstacle;			// if != NULL the obstacle containing the seek position 
-	CBinaryFrobMover*	frobMoverObstacle;			// greebo: if != NULL, this is the door in our way
+	CFrobDoor*			doorObstacle;				// greebo: if != NULL, this is the door in our way
 } obstaclePath_t;
 
 // path prediction

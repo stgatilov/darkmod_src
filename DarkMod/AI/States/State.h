@@ -75,7 +75,7 @@ public:
 	virtual void OnAICommMessage(CAIComm_Message* message);
 
 	// greebo: An event called by the obstacle avoidance code to indicate that we have a frobmover ahead
-	virtual void OnFrobMoverEncounter(CBinaryFrobMover* frobMover);
+	virtual void OnFrobDoorEncounter(CFrobDoor* frobDoor);
 
 	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 

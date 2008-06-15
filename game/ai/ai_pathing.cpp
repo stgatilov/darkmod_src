@@ -308,10 +308,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	 * If NULL its not, if non NULL it is, and the pointer is a cast to it
 	 * as a binary mover
 	 */
-	// So far, we don't have a mover
-	pathInfo.frobMoverObstacle = NULL;
-
-	//CBinaryFrobMover* p_binaryFrobMover = NULL;
+	// So far, we don't have a door
+	pathInfo.doorObstacle = NULL;
 
 	// TDM: Store our team. const_cast<> is necessary due to GetSelf() not being const
 	idActor* self = static_cast<idActor*>(const_cast<idPhysics*>(physics)->GetSelf()); 
@@ -487,15 +485,15 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		}
 
 		if (blockingObstacle != -1 && obstacles[blockingObstacle].entity != NULL && 
-			obstacles[blockingObstacle].entity->IsType(CBinaryFrobMover::Type))
+			obstacles[blockingObstacle].entity->IsType(CFrobDoor::Type))
 		{
 			// greebo: We have a frobmover as first blocking obstacle
-			pathInfo.frobMoverObstacle = static_cast<CBinaryFrobMover*>(obstacles[blockingObstacle].entity);
+			pathInfo.doorObstacle = static_cast<CFrobDoor*>(obstacles[blockingObstacle].entity);
 		}
 	}
-	else if (obstacles[startObstacleNum].entity->IsType(CBinaryFrobMover::Type))
+	else if (obstacles[startObstacleNum].entity->IsType(CFrobDoor::Type))
 	{
-		pathInfo.frobMoverObstacle = static_cast<CBinaryFrobMover*>(obstacles[startObstacleNum].entity);
+		pathInfo.doorObstacle = static_cast<CFrobDoor*>(obstacles[startObstacleNum].entity);
 	}
 
 
