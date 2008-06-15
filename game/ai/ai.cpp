@@ -538,6 +538,7 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiAnimationTimer);
 	INIT_TIMER_HANDLE(aiPushWithAFTimer);
 	INIT_TIMER_HANDLE(aiUpdateEnemyPositionTimer);
+	INIT_TIMER_HANDLE(aiScriptTimer);
 }
 
 /*
@@ -809,6 +810,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiAnimationTimer, savefile);
 	SAVE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
 	SAVE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
+	SAVE_TIMER_HANDLE(aiScriptTimer, savefile);
 }
 
 /*
@@ -1107,6 +1109,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiAnimationTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPushWithAFTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiUpdateEnemyPositionTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiScriptTimer, savefile);
 }
 
 /*
@@ -1504,6 +1507,8 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiMindTimer, name, "aiMindTimer");
 	CREATE_TIMER(aiAnimationTimer, name, "aiAnimationTimer");
 	CREATE_TIMER(aiPushWithAFTimer, name, "aiPushWithAFTimer");
+	CREATE_TIMER(aiUpdateEnemyPositionTimer, name, "aiUpdateEnemyPositionTimer");
+	CREATE_TIMER(aiScriptTimer, name, "aiScriptTimer");
 }
 
 /*
@@ -2003,6 +2008,8 @@ idAI::UpdateAIScript
 */
 void idAI::UpdateScript()
 {
+	START_SCOPED_TIMING(aiScriptTimer, scopedScriptTimer);
+
 	// greebo: This is overriding idActor::UpdateScript(), where all the state change stuff 
 	// is executed, which is not needed for TDM AI
 

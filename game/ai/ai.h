@@ -1797,6 +1797,7 @@ private:
 	int aiAnimationTimer;
 	int aiPushWithAFTimer;
 	int aiUpdateEnemyPositionTimer;
+	int aiScriptTimer;
 #endif
 };
 
