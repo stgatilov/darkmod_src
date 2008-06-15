@@ -4070,36 +4070,38 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	// If there is an obstacle, this is the distance from it we should stop to take action
 	float stopDistance = 0.0f;
 
-	if ( !foundPath )
+	if (!foundPath)
 	{
+		// couldn't get around obstacles
+
 		if (path.frobMoverObstacle != NULL && m_bCanOperateDoors) 
 		{
 			// We have a frobmover in our way, raise a signal to the current state
 			mind->GetState()->OnFrobMoverEncounter(path.frobMoverObstacle);
 		}
 
-		// couldn't get around obstacles
-		if ( path.firstObstacle )
+		if (path.firstObstacle)
 		{
 			AI_OBSTACLE_IN_PATH = true;
 
-			
 			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.firstObstacle->GetPhysics()->GetAbsBounds() ) )
 			{
+				// We are already touching the first obstacle
 				obstacle = path.firstObstacle;
 			}
-			
 		}
 		else if (path.startPosObstacle)
 		{
 			AI_OBSTACLE_IN_PATH = true;
-			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.startPosObstacle->GetPhysics()->GetAbsBounds() ) ) {
+			if ( physicsObj.GetAbsBounds().Expand( 2.0f ).IntersectsBounds( path.startPosObstacle->GetPhysics()->GetAbsBounds() ) )
+			{
+				// We are touching the startpos obstacle
 				obstacle = path.startPosObstacle;
 			}
 		}
 		else
 		{
-			// Blocked by wall
+			// No firstObstacle, no startPosObstacle, must be blocked by wall
 			move.moveStatus = MOVE_STATUS_BLOCKED_BY_WALL;
 		}
 #if 0
@@ -4114,6 +4116,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 		}
 #endif
 	}
+	// We found a path around obstacles, but we should still check for the seekPosObstacle
 	else if (path.seekPosObstacle)
 	{
 		/*gameRenderWorld->DebugBox(foundPath ? colorGreen : colorRed, idBox(path.seekPosObstacle->GetPhysics()->GetBounds(), 
