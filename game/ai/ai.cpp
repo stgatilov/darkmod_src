@@ -543,6 +543,7 @@ idAI::idAI()
 	INIT_TIMER_HANDLE(aiObstacleAvoidanceTimer);
 	INIT_TIMER_HANDLE(aiPhysicsTimer);
 	INIT_TIMER_HANDLE(aiGetMovePosTimer);
+	INIT_TIMER_HANDLE(aiPathToGoalTimer);
 }
 
 /*
@@ -819,6 +820,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	SAVE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 	SAVE_TIMER_HANDLE(aiPhysicsTimer, savefile);
 	SAVE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
+	SAVE_TIMER_HANDLE(aiPathToGoalTimer, savefile);
 }
 
 /*
@@ -1122,6 +1124,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	RESTORE_TIMER_HANDLE(aiObstacleAvoidanceTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiPhysicsTimer, savefile);
 	RESTORE_TIMER_HANDLE(aiGetMovePosTimer, savefile);
+	RESTORE_TIMER_HANDLE(aiPathToGoalTimer, savefile);
 }
 
 /*
@@ -1525,6 +1528,7 @@ void idAI::Spawn( void )
 	CREATE_TIMER(aiObstacleAvoidanceTimer, name, "ObstacleAvoidance");
 	CREATE_TIMER(aiPhysicsTimer, name, "RunPhysics");
 	CREATE_TIMER(aiGetMovePosTimer, name, "GetMovePos");
+	CREATE_TIMER(aiPathToGoalTimer, name, "PathToGoal");
 }
 
 /*
@@ -2317,6 +2321,8 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	if ( !aas ) {
 		return false;
 	}
+
+	START_SCOPED_TIMING(aiPathToGoalTimer, scopedPathToGoalTimer);
 
 	idVec3 org = origin;
 	aas->PushPointIntoAreaNum( areaNum, org );
