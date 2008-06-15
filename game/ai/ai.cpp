@@ -1617,12 +1617,6 @@ void idAI::Think( void )
 		return; // Thinking is disabled.
 	}
 
-	// if we are completely closed off from the player, don't do anything at all
-	bool outsidePVS = CheckDormant();
-	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
-		return;
-	}
-	
 	// Interleaved thinking
 	if (!ThinkingIsAllowed())
 	{
@@ -1630,6 +1624,12 @@ void idAI::Think( void )
 	}
 
 	SetNextThinkFrame();
+
+	// if we are completely closed off from the player, don't do anything at all
+	bool outsidePVS = CheckDormant();
+	if (outsidePVS && cv_ai_opt_disable.GetBool()) {
+		return;
+	}
 			
 	// save old origin and velocity for crashlanding
 	idVec3 oldOrigin = physicsObj.GetOrigin();
