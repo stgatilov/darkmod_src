@@ -21,6 +21,8 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "../DarkMod/DarkModGlobals.h"
 #include "../DarkMod/PlayerData.h"
 #include "../DarkMod/MissionData.h"
+#include "../DarkMod/TimerManager.h"
+
 // #include "logmgr.h"
 /***********************************************************************
 
@@ -536,6 +538,12 @@ idActor::idActor( void ) {
 
 	enemyNode.SetOwner( this );
 	enemyList.SetOwner( this );
+
+	INIT_TIMER_HANDLE(actorGetObstaclesTimer);
+	INIT_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer);
+	INIT_TIMER_HANDLE(actorBuildPathTreeTimer);
+	INIT_TIMER_HANDLE(actorPrunePathTreeTimer);
+	INIT_TIMER_HANDLE(actorFindOptimalPathTimer);
 }
 
 /*
@@ -713,6 +721,12 @@ void idActor::Spawn( void )
 	FinishSetup();
 
 	ParseAttachmentsAF();
+
+	CREATE_TIMER(actorGetObstaclesTimer, name, "GetObstacles");
+	CREATE_TIMER(actorGetPointOutsideObstaclesTimer, name, "GetPointOutsideObstacles");
+	CREATE_TIMER(actorBuildPathTreeTimer, name, "BuildPathTree");
+	CREATE_TIMER(actorPrunePathTreeTimer, name, "PrunePathTree");
+	CREATE_TIMER(actorFindOptimalPathTimer, name, "FindOptimalPath");
 }
 
 /*
@@ -987,6 +1001,12 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_stepvol_crouch_run);
 
 	savefile->WriteDict(&m_replacementAnims);
+
+	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	SAVE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
+	SAVE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
+	SAVE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
 }
 
 /*
@@ -1113,6 +1133,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_stepvol_crouch_run);
 
 	savefile->ReadDict(&m_replacementAnims);
+
+	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorBuildPathTreeTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorPrunePathTreeTimer, savefile);
+	RESTORE_TIMER_HANDLE(actorFindOptimalPathTimer, savefile);
 }
 
 /*

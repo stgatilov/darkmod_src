@@ -19,6 +19,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 
 #include "../../DarkMod/BinaryFrobMover.h"
 #include "../../DarkMod/FrobDoor.h"
+#include "../../DarkMod/TimerManager.h"
 
 /*
 ===============================================================================
@@ -1031,7 +1032,7 @@ idAI::FindPathAroundObstacles
   Finds a path around dynamic obstacles using a path tree with clockwise and counter clockwise edge walks.
 ============
 */
-bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path ) {
+bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner ) {
 	// Initialise the path structure with reasonable defaults
 	path.seekPos = seekPos;
 	path.firstObstacle = NULL;
@@ -1056,7 +1057,12 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	// get all the nearby obstacles
 	static obstacle_t obstacles[MAX_OBSTACLES];
 	idBounds clipBounds;
+
+	START_TIMING(owner->actorGetObstaclesTimer);
 	int numObstacles = GetObstacles( physics, aas, ignore, areaNum, path.startPosOutsideObstacles, path.seekPosOutsideObstacles, obstacles, MAX_OBSTACLES, clipBounds, path );
+	STOP_TIMING(owner->actorGetObstaclesTimer);
+
+	START_TIMING(owner->actorGetPointOutsideObstaclesTimer);
 
 	// get a source position outside the obstacles
 	int insideObstacle;
@@ -1071,6 +1077,8 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 		path.seekPosObstacle = obstacles[insideObstacle].entity;
 	}
 
+	STOP_TIMING(owner->actorGetPointOutsideObstaclesTimer);
+
 	// if start and destination are pushed to the same point, we don't have a path around the obstacle
 	if ( ( path.seekPosOutsideObstacles.ToVec2() - path.startPosOutsideObstacles.ToVec2() ).LengthSqr() < Square( 1.0f ) ) {
 		if ( ( seekPos.ToVec2() - startPos.ToVec2() ).LengthSqr() > Square( 2.0f ) ) {
@@ -1078,8 +1086,10 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 		}
 	}
 
+	START_TIMING(owner->actorBuildPathTreeTimer);
 	// build a path tree
 	pathNode_t* root = BuildPathTree( obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path );
+	STOP_TIMING(owner->actorBuildPathTreeTimer);
 
 	// draw the path tree
 	if ( ai_showObstacleAvoidance.GetBool() ) {
@@ -1087,10 +1097,14 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	}
 
 	// prune the tree
+	START_TIMING(owner->actorPrunePathTreeTimer);
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
+	STOP_TIMING(owner->actorPrunePathTreeTimer);
 
 	// find the optimal path
+	START_TIMING(owner->actorFindOptimalPathTimer);
 	bool pathToGoalExists = FindOptimalPath( root, obstacles, numObstacles, physics->GetOrigin().z, physics->GetLinearVelocity(), path.seekPos );
+	STOP_TIMING(owner->actorFindOptimalPathTimer);
 
 	// free the tree
 	FreePathTree_r( root );

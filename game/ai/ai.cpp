@@ -4059,7 +4059,7 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	obstaclePath_t	path;
 
 	AI_OBSTACLE_IN_PATH = false;
-	bool foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path );
+	bool foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path, this );
 
 	if ( ai_showObstacleAvoidance.GetBool())
 	{

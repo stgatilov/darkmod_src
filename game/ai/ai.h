@@ -265,7 +265,7 @@ public:
 	static void				List_f( const idCmdArgs &args );
 
 							// Finds a path around dynamic obstacles.
-	static bool				FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path );
+	static bool				FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner );
 							// Frees any nodes used for the dynamic obstacle avoidance.
 	static void				FreeObstacleAvoidanceNodes( void );
 							// Predicts movement, returns true if a stop event was triggered.

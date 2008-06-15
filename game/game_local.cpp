@@ -3440,7 +3440,7 @@ void idGameLocal::RunDebugInfo( void ) {
 			obstaclePath_t path;
 
 			seekPos = player->GetPhysics()->GetOrigin() + player->viewAxis[0] * 200.0f;
-			idAI::FindPathAroundObstacles( player->GetPhysics(), aas, NULL, player->GetPhysics()->GetOrigin(), seekPos, path );
+			idAI::FindPathAroundObstacles( player->GetPhysics(), aas, NULL, player->GetPhysics()->GetOrigin(), seekPos, path, player );
 		}
 	}
 
