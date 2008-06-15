@@ -541,8 +541,10 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 				nextEdgeNormal.y = -nextEdgeDir.x;
 			}
 
-			// greebo: TODO: Check if caching the AAS obstacle representations can save some CPU time.
+			// greebo: Check if caching the AAS obstacle representations can save some CPU time.
 			// AAS areas never change during map runtime, so why calculate them each time?
+			// 15/06/2008: Did some profiling, the section below is harmless, it's the 
+			// aas->GetWallEdges and aas->SortWallEdges() calls above which are expensive.
 
 			// Start to fill the values in the new obstacle structure
 			obstacle_t& obstacle = obstacles[numObstacles++];
