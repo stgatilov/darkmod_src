@@ -1800,6 +1800,7 @@ private:
 	int aiScriptTimer;
 	int aiAnimMoveTimer;
 	int aiObstacleAvoidanceTimer;
+	int aiPhysicsTimer;
 #endif
 };
 

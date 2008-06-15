@@ -3588,10 +3588,9 @@ bool idEntity::RunPhysics( void ) {
 
 	// angua: since the AI are not thinking every frame, we need to rescale 
 	// their velocities with the corrected time length to prevent them from dying.
-	idAI* ai = dynamic_cast<idAI*>(this);
-	if (ai)
+	if (IsType(idAI::Type))
 	{
-		startTime = ai->m_lastThinkTime;
+		startTime = static_cast<idAI*>(this)->m_lastThinkTime;
 	}
 	else
 	{
