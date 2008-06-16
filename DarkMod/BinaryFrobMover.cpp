@@ -152,7 +152,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 void CBinaryFrobMover::Spawn()
 {
-	idStr str;
+	/*idStr str;
 
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
@@ -173,12 +173,12 @@ void CBinaryFrobMover::Spawn()
 
 	
 	// Schedule a post-spawn event to parse the rest of the spawnargs
-	PostEventMS( &EV_PostSpawn, 1 );
+	PostEventMS( &EV_PostSpawn, 1 );*/
 }
 
 void CBinaryFrobMover::Event_PostSpawn() 
 {
-	// m_Translation is the vector between start position and end position
+	/*// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
 
@@ -313,30 +313,30 @@ void CBinaryFrobMover::Event_PostSpawn()
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
 		physicsObj.SetLocalAngles(m_ClosedAngles + partialAngles);
 	}
-	UpdateVisuals();
+	UpdateVisuals();*/
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	/*StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
 	m_Locked = true;
-	CallStateScript();
+	CallStateScript();*/
 }
 
 void CBinaryFrobMover::Unlock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	/*StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
 	m_Locked = false;
 
-	ToggleOpen();
+	ToggleOpen();*/
 }
 
 void CBinaryFrobMover::ToggleLock()
 {
-	// A door can only be un/locked when it is closed.
+	/*// A door can only be un/locked when it is closed.
 	if(m_Open == true)
 	{
 		ToggleOpen();
@@ -346,12 +346,12 @@ void CBinaryFrobMover::ToggleLock()
 	if(m_Locked == true)
 		Unlock(true);
 	else
-		Lock(true);
+		Lock(true);*/
 }
 
 void CBinaryFrobMover::Open(bool bMaster)
 {
-	// Clear this door from the ignore list so AI can react to it again	
+	/*// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
 	StimEnable(ST_VISUAL, 1);
 
@@ -420,12 +420,12 @@ void CBinaryFrobMover::Open(bool bMaster)
 		}
 
 		m_StateChange = (m_Translating || m_Rotating);
-	}
+	}*/
 }
 
 void CBinaryFrobMover::Close(bool bMaster)
 {
-	// Clear this door from the ignore list so AI can react to it again	
+	/*// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
 	StimEnable(ST_VISUAL, 1);
 
@@ -467,12 +467,12 @@ void CBinaryFrobMover::Close(bool bMaster)
 		m_Translating = false;
 	}
 
-	m_StateChange = (m_Rotating || m_Translating);
+	m_StateChange = (m_Rotating || m_Translating);*/
 }
 
 void CBinaryFrobMover::ToggleOpen()
 {
-	// Check if the door is stopped.
+	/*// Check if the door is stopped.
 //	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
 	if( !m_Rotating && !m_Translating )
 	{
@@ -505,51 +505,53 @@ void CBinaryFrobMover::ToggleOpen()
 	}
 
 Quit:
-	return;
+	return;*/
 }
 
 void CBinaryFrobMover::DoneMoving()
 {
-	idMover::DoneMoving();
+	/*idMover::DoneMoving();
     m_Translating = false;
 
-	DoneStateChange();
+	DoneStateChange();*/
 }
 
 
 void CBinaryFrobMover::DoneRotating()
 {
-	idMover::DoneRotating();
+	/*idMover::DoneRotating();
     m_Rotating = false;
 
-	DoneStateChange();
+	DoneStateChange();*/
 }
 
 bool CBinaryFrobMover::IsAtOpenPosition()
 {
-	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+	/*const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
 	idAngles localAngles = physicsObj.GetLocalAngles();
 	localAngles.Normalize180();
 
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
+	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);*/
+	return true;
 }
 
 bool CBinaryFrobMover::IsAtClosedPosition()
 {
-	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+	/*const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
 	idAngles localAngles = physicsObj.GetLocalAngles();
 	localAngles.Normalize180();
 
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
+	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);*/
+	return false;
 }
 
 void CBinaryFrobMover::DoneStateChange()
 {
-	bool CallScript = false;
+	/*bool CallScript = false;
 
 //	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
 
@@ -608,38 +610,38 @@ Quit:
 	if(CallScript == true)
 		CallStateScript();
 
-	return;
+	return;*/
 }
 
 void CBinaryFrobMover::CallStateScript()
 {
-	idStr str;
+	/*idStr str;
 	if(spawnArgs.GetString("state_change_callback", "", str))
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Locked: %d   Interrupt: %d\r",
 			str.c_str(), m_Open, m_Locked, m_bInterrupted);
 		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
-	}
+	}*/
 }
 
 void CBinaryFrobMover::GetOpen()
 {
-	idThread::ReturnInt(m_Open);
+	//idThread::ReturnInt(m_Open);
 }
 
 void CBinaryFrobMover::GetLock()
 {
-	idThread::ReturnInt(IsLocked());
+	//idThread::ReturnInt(IsLocked());
 }
 
 void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
 {
-	ToggleOpen();
+	//ToggleOpen();
 }
 
 void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 {
-	m_LastBlockingEnt = blockingEntity;
+	/*m_LastBlockingEnt = blockingEntity;
 	// greebo: If we're blocked by something, check if we should stop moving
 	if (m_stopWhenBlocked)
 	{
@@ -651,12 +653,12 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 
 		// reverse the intent
 		m_bIntentOpen = !m_bIntentOpen;
-	}
+	}*/
 }
 
 void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse)
 {
-	idVec3 SwitchDir;
+	/*idVec3 SwitchDir;
 	float SwitchThreshSq(0), ImpulseMagSq(0);
 
 	if( (m_Open && (m_ImpulseThreshCloseSq > 0)) || (!m_Open && (m_ImpulseThreshOpenSq > 0)) )
@@ -686,28 +688,28 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 			ToggleOpen();
 	}
 
-	idEntity::ApplyImpulse( ent, id, point, impulse);
+	idEntity::ApplyImpulse( ent, id, point, impulse);*/
 }
 
 /*-------------------------------------------------------------------------*/
 
 bool CBinaryFrobMover::IsMoving()
 {
-	return ((m_Translating) || (m_Rotating));
+	return false;//return ((m_Translating) || (m_Rotating));
 }
 
 /*-------------------------------------------------------------------------*/
 
 bool CBinaryFrobMover::IsChangingState()
 {
-	return m_StateChange;
+	return false;//return m_StateChange;
 }
 
 /*-------------------------------------------------------------------------*/
 
 void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles)
 {
-	// Get remaining translation if translating
+	/*// Get remaining translation if translating
 	if (m_bIntentOpen)
 	{
 		out_deltaPosition = (m_StartPos + m_Translation) - physicsObj.GetOrigin();
@@ -728,14 +730,14 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 	else
 	{
 		out_deltaAngles = m_ClosedAngles - curAngles;
-	}
+	}*/
 
 	// Done
 }
 
 float CBinaryFrobMover::GetMoveTimeFraction()
 {
-	// Get the current angles
+	/*// Get the current angles
 	idAngles curAngles;
 	physicsObj.GetLocalAngles(curAngles);
 
@@ -759,12 +761,13 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 
 	float fraction = delta[index]/fullRotation[index];
 
-	return fraction;
+	return fraction;*/
+	return 0;
 }
 
 int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 {
-	if (aas == NULL) return -1;
+	/*if (aas == NULL) return -1;
 
 	idClipModel *clipModel = GetPhysics()->GetClipModel();
 	if (clipModel == NULL)
@@ -779,5 +782,6 @@ int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 
-	return areaNum;
+	return areaNum;*/
+	return -1;
 }

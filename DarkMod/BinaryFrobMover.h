@@ -20,11 +20,14 @@
  * them but this doesn't work with normal idDoors. So CBinaryFrobMover is a mixture
  * of idDoor and idMover.
  */
-class CBinaryFrobMover : public idMover {
+class CBinaryFrobMover : 
+	public idMover
+{
 public:
 	CLASS_PROTOTYPE( CBinaryFrobMover );
 
-							CBinaryFrobMover();
+	// Constructor
+	CBinaryFrobMover();
 
 	void					Spawn();
 	void					Event_PostSpawn();
