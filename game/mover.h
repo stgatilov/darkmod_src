@@ -111,6 +111,7 @@ protected:
 	virtual void			OpenPortal();
 	virtual void			ClosePortal();
 	void					Event_PartBlocked( idEntity *blockingEntity );
+	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 
 	void					MoveToPos( const idVec3 &pos);
 	void					MoveToLocalPos( const idVec3 &pos );

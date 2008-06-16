@@ -58,6 +58,8 @@ void CFrobLever::Operate()
 		{
 			// Aha, seems like we're flagged as open, but we are at the closed position => open
 			m_Open = false;
+			m_bIntentOpen = true;
+			m_bInterrupted = false;
 			Open(false);
 		}
 		else

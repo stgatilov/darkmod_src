@@ -996,6 +996,10 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 	ProcessEvent( &EV_ReachedAng );
 }
 
+void idMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
+{
+	// empty default implementation, overridden by subclasses
+}
 
 /***********************************************************************
 
@@ -1012,6 +1016,9 @@ void idMover::Event_TeamBlocked( idEntity *blockedEntity, idEntity *blockingEnti
 	if ( g_debugMover.GetBool() ) {
 		gameLocal.Printf( "%d: '%s' stopped due to team member '%s' blocked by '%s'\n", gameLocal.time, name.c_str(), blockedEntity->name.c_str(), blockingEntity->name.c_str() );
 	}
+
+	// greebo: Pass the call to the virtual function
+	OnTeamBlocked(blockedEntity, blockingEntity);
 }
 
 /*

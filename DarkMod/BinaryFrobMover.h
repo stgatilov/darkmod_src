@@ -24,31 +24,28 @@ class CBinaryFrobMover : public idMover {
 public:
 	CLASS_PROTOTYPE( CBinaryFrobMover );
 
-							CBinaryFrobMover( void );
+							CBinaryFrobMover();
 
-	void					Spawn( void );
+	void					Spawn();
 	void					Event_PostSpawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-
-	virtual void			WriteToSnapshot( idBitMsgDelta &msg ) const;
-	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 	virtual void			Lock(bool Master);
 	virtual void			Unlock(bool Master);
 
-	virtual void			ToggleOpen(void);
-	virtual void			ToggleLock(void);
-	virtual void			GetOpen(void);
-	virtual void			GetLock(void);
+	virtual void			ToggleOpen();
+	virtual void			ToggleLock();
+	virtual void			GetOpen();
+	virtual void			GetLock();
 
 	/**
 	* This is the non-script version of GetOpen 
 	*/
-	bool					IsOpen(void)
+	bool					IsOpen()
 	{
 		return m_Open;
 	}
@@ -56,7 +53,7 @@ public:
 	/**
 	* This indicates if the door was interrupted in its last action
 	*/
-	bool					WasInterrupted(void)
+	bool					WasInterrupted()
 	{
 		return m_bInterrupted;
 	}
@@ -74,11 +71,10 @@ public:
 	/**
 	* This is the non-script version of GetLock
 	*/
-	virtual bool			IsLocked(void)
+	virtual bool			IsLocked()
 	{
 		return m_Locked;
 	}
-
 
 	/**
 	* Overload the apply impulse function to see if we should change mover
@@ -91,20 +87,16 @@ public:
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 
 	/**
-	* Overloading idMover::DoneRotating in order to close the portal when door closes
+	* Overloading idMover::DoneRotating/DoneMoving in order to close the portal when door closes
 	**/
-	virtual void			DoneRotating( void );
-
-	/**
-	 *
-	 */
-	virtual void			DoneMoving(void);
+	virtual void			DoneRotating();
+	virtual void			DoneMoving();
 
 	/**
 	 * A helper function that implements the finalisation for rotations or movings.
 	 */
-	virtual void			DoneStateChange(void);
-	virtual void			CallStateScript(void);
+	virtual void			DoneStateChange();
+	virtual void			CallStateScript();
 
 	/**
 	* This is used to test if the mover is moving
@@ -145,13 +137,8 @@ public:
 	*
 	* @param out_deltaAngles: Passes back out the rotation remaining in
 	*	the current movement.
-	*
 	*/
-	void getRemainingMovement
-	(
-		idVec3& out_deltaPosition,
-		idAngles& out_deltaAngles
-	);
+	void GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles);
 
 	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
 	int GetFrobMoverAasArea(idAAS* aas);
@@ -185,7 +172,7 @@ protected:
 	/**
 	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.
 	 */
-	void					Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity );
+	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 
 protected:
 	/**
@@ -305,8 +292,6 @@ protected:
 	 *         Corresponds to spawnarg "stop_when_blocked"
 	 */
 	bool						m_stopWhenBlocked;
-
-private:
 };
 
 #endif /* !BINARYFROBMOVER */

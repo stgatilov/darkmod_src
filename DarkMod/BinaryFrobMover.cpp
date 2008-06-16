@@ -45,12 +45,10 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
 	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
-	EVENT( EV_TeamBlocked,					CBinaryFrobMover::Event_TeamBlocked )
 END_CLASS
 
 
-CBinaryFrobMover::CBinaryFrobMover(void)
-: idMover()
+CBinaryFrobMover::CBinaryFrobMover()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_binary_mover";
@@ -152,15 +150,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_stopWhenBlocked);
 }
 
-void CBinaryFrobMover::WriteToSnapshot( idBitMsgDelta &msg ) const
-{
-}
-
-void CBinaryFrobMover::ReadFromSnapshot( const idBitMsgDelta &msg )
-{
-}
-
-void CBinaryFrobMover::Spawn( void )
+void CBinaryFrobMover::Spawn()
 {
 	idStr str;
 
@@ -344,7 +334,7 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 	ToggleOpen();
 }
 
-void CBinaryFrobMover::ToggleLock(void)
+void CBinaryFrobMover::ToggleLock()
 {
 	// A door can only be un/locked when it is closed.
 	if(m_Open == true)
@@ -480,7 +470,7 @@ void CBinaryFrobMover::Close(bool bMaster)
 	m_StateChange = (m_Rotating || m_Translating);
 }
 
-void CBinaryFrobMover::ToggleOpen(void)
+void CBinaryFrobMover::ToggleOpen()
 {
 	// Check if the door is stopped.
 //	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
@@ -518,7 +508,7 @@ Quit:
 	return;
 }
 
-void CBinaryFrobMover::DoneMoving(void)
+void CBinaryFrobMover::DoneMoving()
 {
 	idMover::DoneMoving();
     m_Translating = false;
@@ -527,7 +517,7 @@ void CBinaryFrobMover::DoneMoving(void)
 }
 
 
-void CBinaryFrobMover::DoneRotating(void)
+void CBinaryFrobMover::DoneRotating()
 {
 	idMover::DoneRotating();
     m_Rotating = false;
@@ -557,7 +547,7 @@ bool CBinaryFrobMover::IsAtClosedPosition()
 	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 }
 
-void CBinaryFrobMover::DoneStateChange(void)
+void CBinaryFrobMover::DoneStateChange()
 {
 	bool CallScript = false;
 
@@ -621,7 +611,7 @@ Quit:
 	return;
 }
 
-void CBinaryFrobMover::CallStateScript(void)
+void CBinaryFrobMover::CallStateScript()
 {
 	idStr str;
 	if(spawnArgs.GetString("state_change_callback", "", str))
@@ -632,12 +622,12 @@ void CBinaryFrobMover::CallStateScript(void)
 	}
 }
 
-void CBinaryFrobMover::GetOpen(void)
+void CBinaryFrobMover::GetOpen()
 {
 	idThread::ReturnInt(m_Open);
 }
 
-void CBinaryFrobMover::GetLock(void)
+void CBinaryFrobMover::GetLock()
 {
 	idThread::ReturnInt(IsLocked());
 }
@@ -647,7 +637,7 @@ void CBinaryFrobMover::Event_Activate( idEntity *activator )
 	ToggleOpen();
 }
 
-void CBinaryFrobMover::Event_TeamBlocked( idEntity *blockedPart, idEntity *blockingEntity )
+void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 {
 	m_LastBlockingEnt = blockingEntity;
 	// greebo: If we're blocked by something, check if we should stop moving
@@ -715,11 +705,7 @@ bool CBinaryFrobMover::IsChangingState()
 
 /*-------------------------------------------------------------------------*/
 
-void CBinaryFrobMover::getRemainingMovement
-(
-	idVec3& out_deltaPosition,
-	idAngles& out_deltaAngles
-)
+void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles)
 {
 	// Get remaining translation if translating
 	if (m_bIntentOpen)
