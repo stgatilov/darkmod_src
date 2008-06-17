@@ -55,7 +55,7 @@ void CFrobDoorHandle::Spawn(void)
 	m_bInterruptable = false;
 
 	// greebo: The handle itself must never locked, otherwise it can't move in Tap()
-	m_Locked = false;
+	//m_Locked = false;
 }
 
 CFrobDoor *CFrobDoorHandle::GetDoor(void)
@@ -160,12 +160,12 @@ void CFrobDoorHandle::Tap()
 	if (m_Door != NULL)
 	{
 		// Start the appropriate sound
-		idStr snd = m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default";
+		idStr snd = "snd_tap_default";//m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default";
 		StartSound(snd, SND_CHANNEL_ANY, 0, false, NULL);
 	}
 }
 
 bool CFrobDoorHandle::DoorIsLocked()
 {
-	return m_Door ? m_Door->IsLocked() : m_Locked;
+	return false;//return m_Door ? m_Door->IsLocked() : m_Locked;
 }

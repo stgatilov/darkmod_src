@@ -37,13 +37,13 @@ public:
 
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
-	virtual void			Lock(bool Master);
-	virtual void			Unlock(bool Master);
+	//virtual void			Lock(bool Master);
+	//virtual void			Unlock(bool Master);
 
 	virtual void			ToggleOpen();
-	virtual void			ToggleLock();
+	//virtual void			ToggleLock();
 	virtual void			GetOpen();
-	virtual void			GetLock();
+	//virtual void			GetLock();
 
 	/**
 	* This is the non-script version of GetOpen 
@@ -74,10 +74,10 @@ public:
 	/**
 	* This is the non-script version of GetLock
 	*/
-	virtual bool			IsLocked()
+	/*virtual bool			IsLocked()
 	{
 		return m_Locked;
-	}
+	}*/
 
 	/**
 	* Overload the apply impulse function to see if we should change mover
@@ -144,7 +144,7 @@ public:
 	void GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles);
 
 	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
-	int GetFrobMoverAasArea(idAAS* aas);
+	int GetAASArea(idAAS* aas);
 
 protected:
 
@@ -182,7 +182,7 @@ protected:
 	* m_Open is only set to false when the door is completely closed
 	**/
 	bool						m_Open;
-	bool						m_Locked;
+	//bool						m_Locked;
 
 	/**
 	* Stores whether the player intends to open or close the door

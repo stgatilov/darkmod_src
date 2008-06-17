@@ -39,11 +39,11 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_Door_Open,				CBinaryFrobMover::Open)
 	EVENT( EV_TDM_Door_Close,				CBinaryFrobMover::Close)
 	EVENT( EV_TDM_Door_ToggleOpen,			CBinaryFrobMover::ToggleOpen)
-	EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
-	EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
-	EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
+	//EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
+	//EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
+	//EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
 	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
-	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
+	//EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
 END_CLASS
 
@@ -53,7 +53,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_binary_mover";
 	m_Open = false;
-	m_Locked = false;
+	//m_Locked = false;
 	m_bInterruptable = true;
 	m_bInterrupted = false;
 	m_StoppedDueToBlock = false;
@@ -73,7 +73,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
 {
 	savefile->WriteBool(m_Open);
-	savefile->WriteBool(m_Locked);
+	//savefile->WriteBool(m_Locked);
 	savefile->WriteBool(m_bIntentOpen);
 	savefile->WriteBool(m_StateChange);
 	savefile->WriteBool(m_bInterruptable);
@@ -113,7 +113,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadBool(m_Open);
-	savefile->ReadBool(m_Locked);
+	//savefile->ReadBool(m_Locked);
 	savefile->ReadBool(m_bIntentOpen);
 	savefile->ReadBool(m_StateChange);
 	savefile->ReadBool(m_bInterruptable);
@@ -152,7 +152,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 void CBinaryFrobMover::Spawn()
 {
-	/*idStr str;
+	idStr str;
 
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
@@ -161,24 +161,25 @@ void CBinaryFrobMover::Spawn()
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
 
-	m_Locked = spawnArgs.GetBool("locked");
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
+	/*m_Locked = spawnArgs.GetBool("locked");
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);*/
 
 	m_bInterruptable = spawnArgs.GetBool("interruptable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] interruptable (%u)\r", name.c_str(), m_bInterruptable);
 
 	// log if visportal was found
 	if( areaPortal > 0 )
+	{
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
-
+	}
 	
 	// Schedule a post-spawn event to parse the rest of the spawnargs
-	PostEventMS( &EV_PostSpawn, 1 );*/
+	PostEventMS( &EV_PostSpawn, 1 );
 }
 
 void CBinaryFrobMover::Event_PostSpawn() 
 {
-	/*// m_Translation is the vector between start position and end position
+	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
 	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
 
@@ -298,14 +299,14 @@ void CBinaryFrobMover::Event_PostSpawn()
 	idVec3 rotationAxis = rot.GetVec();
 	idVec3 normal = rotationAxis.Cross(m_ClosedPos);
 
-	m_OpenDir = ( m_OpenPos * normal ) * normal;
+	m_OpenDir = (m_OpenPos * normal) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
 	if(!m_Open) 
 	{
-		// Door starts _completely_ closed
-		Event_ClosePortal();
+		// FrobMover starts _completely_ closed
+		ClosePortal(); // TODO: Move this to CFrobDoor
 	}
 	else
 	{
@@ -313,30 +314,30 @@ void CBinaryFrobMover::Event_PostSpawn()
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
 		physicsObj.SetLocalAngles(m_ClosedAngles + partialAngles);
 	}
-	UpdateVisuals();*/
+	UpdateVisuals();
 }
 
-void CBinaryFrobMover::Lock(bool bMaster)
+/*void CBinaryFrobMover::Lock(bool bMaster)
 {
-	/*StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
 	m_Locked = true;
-	CallStateScript();*/
-}
+	CallStateScript();
+}*/
 
-void CBinaryFrobMover::Unlock(bool bMaster)
+/*void CBinaryFrobMover::Unlock(bool bMaster)
 {
-	/*StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
 	m_Locked = false;
 
-	ToggleOpen();*/
-}
+	ToggleOpen();
+}*/
 
-void CBinaryFrobMover::ToggleLock()
+/*void CBinaryFrobMover::ToggleLock()
 {
-	/*// A door can only be un/locked when it is closed.
+	// A door can only be un/locked when it is closed.
 	if(m_Open == true)
 	{
 		ToggleOpen();
@@ -346,8 +347,8 @@ void CBinaryFrobMover::ToggleLock()
 	if(m_Locked == true)
 		Unlock(true);
 	else
-		Lock(true);*/
-}
+		Lock(true);
+}*/
 
 void CBinaryFrobMover::Open(bool bMaster)
 {
@@ -629,10 +630,10 @@ void CBinaryFrobMover::GetOpen()
 	//idThread::ReturnInt(m_Open);
 }
 
-void CBinaryFrobMover::GetLock()
+/*void CBinaryFrobMover::GetLock()
 {
 	//idThread::ReturnInt(IsLocked());
-}
+}*/
 
 void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
 {
@@ -765,9 +766,9 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	return 0;
 }
 
-int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
+int CBinaryFrobMover::GetAASArea(idAAS* aas)
 {
-	/*if (aas == NULL) return -1;
+	if (aas == NULL) return -1;
 
 	idClipModel *clipModel = GetPhysics()->GetClipModel();
 	if (clipModel == NULL)
@@ -782,6 +783,5 @@ int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 
-	return areaNum;*/
-	return -1;
+	return areaNum;
 }

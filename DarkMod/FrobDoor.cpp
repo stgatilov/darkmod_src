@@ -341,7 +341,7 @@ void CFrobDoor::Lock(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		CBinaryFrobMover::Lock(bMaster);
+//		CBinaryFrobMover::Lock(bMaster);
 	}
 */
 }
@@ -384,7 +384,7 @@ void CFrobDoor::Unlock(bool bMaster)
 				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
 		}
 
-		CBinaryFrobMover::Unlock(bMaster);
+//		CBinaryFrobMover::Unlock(bMaster);
 	}
 */
 }

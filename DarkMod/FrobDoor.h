@@ -66,6 +66,8 @@ public:
 	void					Lock(bool Master);
 	void					Unlock(bool Master);
 
+	bool					IsLocked() { return false; } // TODO
+
 	void					GetPickable(void);
 	void					GetDoorhandle(void);
 
