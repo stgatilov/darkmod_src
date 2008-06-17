@@ -97,8 +97,9 @@ public:
 	 **/
 	virtual void			ClosePortal();
 
-	void					SetFrobbed(bool val);
-	bool					IsFrobbed(void);
+	// Override the idEntity frob methods
+	virtual void			SetFrobbed(bool val);
+	virtual bool			IsFrobbed();
 
 	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
 	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);

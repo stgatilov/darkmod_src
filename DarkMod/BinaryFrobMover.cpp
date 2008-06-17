@@ -350,6 +350,65 @@ void CBinaryFrobMover::Event_PostSpawn()
 		Lock(true);
 }*/
 
+bool CBinaryFrobMover::StartMoving(bool open) 
+{
+	// Get the target position and orientation
+	idVec3 targetOrigin = open ? m_OpenOrigin : m_ClosedOrigin;
+	idAngles targetAngles = open ? m_OpenAngles : m_ClosedAngles;
+
+	// Assume we are moving
+	m_Rotating = true;
+	m_Translating = true;
+
+	// Clear the block variables
+	m_StoppedDueToBlock = false;
+	m_LastBlockingEnt = NULL;
+	m_bInterrupted = false;
+	
+	idAngles angleDelta = (targetAngles - physicsObj.GetLocalAngles()).Normalize180();
+
+	if (!angleDelta.Compare(idAngles(0,0,0)))
+	{
+		Event_RotateOnce(angleDelta);
+	}
+	else
+	{
+		m_Rotating = false; // nothing to rotate
+	}
+	
+	if (!targetOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
+	{	
+		if (m_TransSpeed)
+		{
+			Event_SetMoveSpeed(m_TransSpeed);
+		}
+
+		MoveToLocalPos(targetOrigin); // Start moving
+	}
+	else
+	{
+		m_Translating = false;
+	}
+
+	// Now let's look if we are actually moving
+	m_StateChange = (m_Translating || m_Rotating);
+
+	
+	if (m_StateChange)
+	{
+		// Fire the "we're starting to move" event
+		OnMoveStart(open);
+
+		// If we're changing states from closed to open, set the bool right now
+		if (!m_Open)
+		{
+			m_Open = true;
+		}
+	}
+
+	return m_StateChange;
+}
+
 void CBinaryFrobMover::Open(bool bMaster)
 {
 	/*// Clear this door from the ignore list so AI can react to it again	
@@ -364,11 +423,30 @@ void CBinaryFrobMover::Open(bool bMaster)
 	{
 		m_bIntentOpen = false;
 		return;
+	}*/
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Opening\r" );
+
+	if (!PreOpen()) 
+	{
+		// PreOpen returned FALSE, cancel the operation
+		return;
 	}
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
+	// We have green light, let's see where we are starting from
+	bool wasClosed = IsAtClosedPosition();
 
-	if (IsLocked() == true)
+	// Now, actually trigger the moving process
+	if (StartMoving(true))
+	{
+		// We're moving, fire the event and pass the starting state
+		OnOpen(wasClosed);
+
+		// Set the "intention" flag so that we're closing next time
+		m_bIntentOpen = false;
+	}
+
+	/*if (IsLocked() == true)
 	{
 		StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
 	}
@@ -391,36 +469,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 			}
 		}
 
-		m_Open = true;
-		m_Rotating = true;
-		m_Translating = true;
-		
-		idAngles angleDelta = (m_OpenAngles - physicsObj.GetLocalAngles()).Normalize180();
-
-		if (!angleDelta.Compare(idAngles(0,0,0)))
-		{
-			Event_RotateOnce(angleDelta);
-		}
-		else
-		{
-			m_Rotating = false;
-		}
-		
-		if (!m_OpenOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
-		{	
-			if (m_TransSpeed)
-			{
-				Event_SetMoveSpeed( m_TransSpeed );
-			}
-
-			MoveToLocalPos(m_OpenOrigin);
-		}
-		else
-		{
-			m_Translating = false;
-		}
-
-		m_StateChange = (m_Translating || m_Rotating);
+		StartMoving(true);
 	}*/
 }
 
@@ -439,36 +488,8 @@ void CBinaryFrobMover::Close(bool bMaster)
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
-	m_Rotating = true;
-	m_StateChange = true;
-	m_Translating = true;
-
-	// greebo: Only rotate, if there is something to do
-	idAngles angleDelta = (m_ClosedAngles - physicsObj.GetLocalAngles()).Normalize180();
-	if (!angleDelta.Compare(idAngles(0,0,0)))
-	{
-		Event_RotateOnce(angleDelta);
-	}
-	else
-	{
-		m_Rotating = false;
-	}
-
-	if (!m_ClosedOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
-	{	
-		if (m_TransSpeed)
-		{
-			Event_SetMoveSpeed( m_TransSpeed );
-		}
-
-		MoveToLocalPos(m_ClosedOrigin);
-	}
-	else
-	{
-		m_Translating = false;
-	}
-
-	m_StateChange = (m_Rotating || m_Translating);*/
+	StartMoving(false);
+	*/
 }
 
 void CBinaryFrobMover::ToggleOpen()
@@ -784,4 +805,19 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 
 	return areaNum;
+}
+
+void CBinaryFrobMover::OnMoveStart(bool open)
+{
+	// To be implemented by the subclasses
+}
+
+bool CBinaryFrobMover::PreOpen() 
+{
+	return true; // default: mover is allowed to open
+}
+
+void CBinaryFrobMover::OnOpen(bool wasClosed)
+{
+	// To be implemented by the subclasses
 }

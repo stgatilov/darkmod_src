@@ -148,6 +148,47 @@ public:
 
 protected:
 
+	// ===================== Overridable events ================
+
+	/**
+	 * greebo: Gets called when the mover actually starts to move, regardless
+	 * what the state was beforehand. The boolean tells which state the mover
+	 * is heading towards.
+	 */
+	virtual void OnMoveStart(bool open);
+
+	/**
+	 * greebo: Is called before the mover is told to open. Based on the return
+	 * value of this function, the mover continues its Opening operation or cancels it.
+	 *
+	 * Subclasses can implement this call to prevent the mover from opening (e.g. when 
+	 * a door is locked) or to play sounds before opening starts.
+	 *
+	 * @returns: TRUE if the mover can continue opening, FALSE to cancel the process.
+	 */
+	virtual bool PreOpen();
+
+	/**
+	 * greebo: Gets called when the mover opens. The boolean tells the function 
+	 * whether the mover is starting from its fully closed state.
+	 *
+	 * This can be implemented by subclasses to do stuff that should be done
+	 * when the "fully closed" => "opening" transition is happening, like opening 
+	 * visportals or playing open sounds.
+	 */
+	virtual void OnOpen(bool wasClosed);
+
+	// =========================================================
+
+	/** 
+	 * greebo: Tells the frobmover to start moving. The boolean specifies whether
+	 * to open or to close.
+	 *
+	 * @returns: TRUE if the mover had something to move or FALSE if the target position
+	 * has already been reached.
+	 */
+	virtual bool StartMoving(bool open);
+
 	/** 
 	 * greebo: Returns TRUE if the mover is at the open position. Doesn't change
 	 * the state of the mover, just compares the local angles and origin.

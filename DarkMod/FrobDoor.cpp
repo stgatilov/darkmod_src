@@ -73,25 +73,8 @@ static const char *sSampleTypeText[] =
 	"LPSOUND_LOCK_PICKED"			// Callback for the pin picked
 };
 
-
-E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData)
-{
-	E_SDK_SIGNAL_STATE rc = SIG_REMOVE;
-	CFrobDoor *e;
-
-	if((e = dynamic_cast<CFrobDoor *>(oEntity)) == NULL)
-		goto Quit;
-
-	e->OpenDoor(false);
-
-Quit:
-	return rc;
-}
-
-
 CFrobDoor::CFrobDoor()
 {
-/*
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
@@ -103,7 +86,6 @@ CFrobDoor::CFrobDoor()
 	m_PinTranslationFractionFlag = false;
 	m_PinRotationFractionFlag = false;
 	m_KeyReleased = false;
-*/
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
@@ -391,6 +373,7 @@ void CFrobDoor::Unlock(bool bMaster)
 
 void CFrobDoor::Open(bool bMaster)
 {
+	CBinaryFrobMover::Open(bMaster);
 /*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
@@ -507,6 +490,7 @@ void CFrobDoor::OpenDoor(bool bMaster)
 
 void CFrobDoor::Close(bool bMaster)
 {
+	CBinaryFrobMover::Close(bMaster);
 /*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
@@ -783,29 +767,31 @@ void CFrobDoor::ClosePortal()
 
 void CFrobDoor::SetFrobbed(bool val)
 {
-	/*
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
+
+	// First invoke the base class, then check for a doorhandle
 	idEntity::SetFrobbed(val);
-	if(m_Doorhandle.GetEntity())
-		m_Doorhandle.GetEntity()->SetFrobbed(val);
-		*/
+
+	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
+
+	if (handle != NULL)
+	{
+		handle->SetFrobbed(val);
+	}
 }
 
-bool CFrobDoor::IsFrobbed(void)
+bool CFrobDoor::IsFrobbed()
 {
-	/*
 	// If the door has a handle and it is frobbed, then we are also considered 
-	// to be frobbed. Maybe this changes later, when the lockpicking is
-	// implemented, but usually this should be true.
-	if(m_Doorhandle.GetEntity())
+	// to be frobbed. 
+	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
+
+	if (handle != NULL && handle->IsFrobbed())
 	{
-		if(m_Doorhandle.GetEntity()->IsFrobbed() == true)
-			return true;
+		return true;
 	}
 
 	return idEntity::IsFrobbed();
-	*/
-	return false;
 }
 
 idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &str)
