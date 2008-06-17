@@ -490,15 +490,35 @@ void CBinaryFrobMover::Close(bool bMaster)
 
 	StartMoving(false);
 	*/
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Closing\r" );
+
+	if (!PreClose()) 
+	{
+		// PreClose returned FALSE, cancel the operation
+		return;
+	}
+
+	// We have green light, let's see where we are starting from
+	bool wasOpen = IsAtOpenPosition();
+
+	// Now, actually trigger the moving process
+	if (StartMoving(false))
+	{
+		// We're moving, fire the event and pass the starting state
+		OnClose(wasOpen);
+
+		// Set the "intention" flag so that we're opening next time
+		m_bIntentOpen = true;
+	}
 }
 
 void CBinaryFrobMover::ToggleOpen()
 {
-	/*// Check if the door is stopped.
-//	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
-	if( !m_Rotating && !m_Translating )
+	if (!IsMoving())
 	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
+		// We are not moving
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Was stationary on ToggleOpen\r" );
 
 		if (m_bIntentOpen)
 		{
@@ -509,66 +529,58 @@ void CBinaryFrobMover::ToggleOpen()
 			Close(true);
 		}
 
-		m_bInterrupted = false;
-		goto Quit;
+		return;
 	}
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was moving on ToggleOpen.\r" );
 
-	// Otherwise, door is moving.  Stop it if it is interruptable
-	if(m_bInterruptable)
+	// We are moving, is the mover interruptable?
+	if (m_bInterruptable)
 	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted! Stopping door\r" );
+
 		m_bInterrupted = true;
 		Event_StopRotating();
 		Event_StopMoving();
-
-		// reverse the intent
-		m_bIntentOpen = !m_bIntentOpen;
 	}
-
-Quit:
-	return;*/
 }
 
 void CBinaryFrobMover::DoneMoving()
 {
-	/*idMover::DoneMoving();
+	idMover::DoneMoving();
     m_Translating = false;
 
-	DoneStateChange();*/
+	DoneStateChange();
 }
-
 
 void CBinaryFrobMover::DoneRotating()
 {
-	/*idMover::DoneRotating();
+	idMover::DoneRotating();
     m_Rotating = false;
 
-	DoneStateChange();*/
+	DoneStateChange();
 }
 
 bool CBinaryFrobMover::IsAtOpenPosition()
 {
-	/*const idVec3& localOrg = physicsObj.GetLocalOrigin();
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
 	idAngles localAngles = physicsObj.GetLocalAngles();
 	localAngles.Normalize180();
 
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);*/
-	return true;
+	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
 }
 
 bool CBinaryFrobMover::IsAtClosedPosition()
 {
-	/*const idVec3& localOrg = physicsObj.GetLocalOrigin();
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
 	idAngles localAngles = physicsObj.GetLocalAngles();
 	localAngles.Normalize180();
 
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);*/
-	return false;
+	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 }
 
 void CBinaryFrobMover::DoneStateChange()
@@ -717,7 +729,7 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 
 bool CBinaryFrobMover::IsMoving()
 {
-	return false;//return ((m_Translating) || (m_Rotating));
+	return (m_Translating || m_Rotating);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -759,7 +771,7 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 
 float CBinaryFrobMover::GetMoveTimeFraction()
 {
-	/*// Get the current angles
+	// Get the current angles
 	idAngles curAngles;
 	physicsObj.GetLocalAngles(curAngles);
 
@@ -783,8 +795,7 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 
 	float fraction = delta[index]/fullRotation[index];
 
-	return fraction;*/
-	return 0;
+	return fraction;
 }
 
 int CBinaryFrobMover::GetAASArea(idAAS* aas)
@@ -817,7 +828,17 @@ bool CBinaryFrobMover::PreOpen()
 	return true; // default: mover is allowed to open
 }
 
+bool CBinaryFrobMover::PreClose()
+{
+	return true; // default: mover is allowed to close
+}
+
 void CBinaryFrobMover::OnOpen(bool wasClosed)
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnClose(bool wasOpen)
 {
 	// To be implemented by the subclasses
 }

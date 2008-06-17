@@ -164,9 +164,12 @@ protected:
 	 * Subclasses can implement this call to prevent the mover from opening (e.g. when 
 	 * a door is locked) or to play sounds before opening starts.
 	 *
-	 * @returns: TRUE if the mover can continue opening, FALSE to cancel the process.
+	 * The analogue function for closing is PreClose(), of course.
+	 *
+	 * @returns: TRUE if the mover can continue opening/closing, FALSE to cancel the process.
 	 */
 	virtual bool PreOpen();
+	virtual bool PreClose();
 
 	/**
 	 * greebo: Gets called when the mover opens. The boolean tells the function 
@@ -177,6 +180,15 @@ protected:
 	 * visportals or playing open sounds.
 	 */
 	virtual void OnOpen(bool wasClosed);
+
+	/**
+	 * greebo: Gets called when the mover is closing. The boolean tells the function 
+	 * whether the mover is starting from its fully "open" state.
+	 *
+	 * This can be implemented by subclasses to do stuff that should be done
+	 * when the "fully open" => "opening" transition is happening.
+	 */
+	virtual void OnClose(bool wasOpen);
 
 	// =========================================================
 
