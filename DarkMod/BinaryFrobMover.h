@@ -172,6 +172,13 @@ protected:
 	virtual bool PreClose();
 
 	/**
+	 * greebo: This is invoked when the mover is receiving an "interrupt request".
+	 * If this function returns TRUE, the mover is allowed to be interrupted, 
+	 * on FALSE the mover continues its moves and the request is declined.
+	 */
+	virtual bool PreInterrupt();
+
+	/**
 	 * greebo: Gets called when the mover opens. The boolean tells the function 
 	 * whether the mover is starting from its fully closed state.
 	 *
@@ -179,7 +186,7 @@ protected:
 	 * when the "fully closed" => "opening" transition is happening, like opening 
 	 * visportals or playing open sounds.
 	 */
-	virtual void OnOpen(bool wasClosed);
+	virtual void OnStartOpen(bool wasClosed);
 
 	/**
 	 * greebo: Gets called when the mover is closing. The boolean tells the function 
@@ -188,7 +195,24 @@ protected:
 	 * This can be implemented by subclasses to do stuff that should be done
 	 * when the "fully open" => "opening" transition is happening.
 	 */
-	virtual void OnClose(bool wasOpen);
+	virtual void OnStartClose(bool wasOpen);
+
+	/**
+	 * greebo: Gets called when the mover stops its opening move and has
+	 * reached its final open position. This not only gets called when the
+	 * mover has been actually moving beforehand.
+	 */
+	virtual void OnOpenPositionReached();
+
+	/**
+	 * greebo: Gets called when the mover finishes its closing move and is fully closed.
+	 */
+	virtual void OnClosedPositionReached();
+
+	/**
+	 * greebo: Is called when the mover has been interrupted (move has already been stopped).
+	 */
+	virtual void OnInterrupt();
 
 	// =========================================================
 

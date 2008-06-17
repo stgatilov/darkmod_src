@@ -393,7 +393,6 @@ bool CBinaryFrobMover::StartMoving(bool open)
 	// Now let's look if we are actually moving
 	m_StateChange = (m_Translating || m_Rotating);
 
-	
 	if (m_StateChange)
 	{
 		// Fire the "we're starting to move" event
@@ -440,7 +439,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 	if (StartMoving(true))
 	{
 		// We're moving, fire the event and pass the starting state
-		OnOpen(wasClosed);
+		OnStartOpen(wasClosed);
 
 		// Set the "intention" flag so that we're closing next time
 		m_bIntentOpen = false;
@@ -506,7 +505,7 @@ void CBinaryFrobMover::Close(bool bMaster)
 	if (StartMoving(false))
 	{
 		// We're moving, fire the event and pass the starting state
-		OnClose(wasOpen);
+		OnStartClose(wasOpen);
 
 		// Set the "intention" flag so that we're opening next time
 		m_bIntentOpen = true;
@@ -535,13 +534,15 @@ void CBinaryFrobMover::ToggleOpen()
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was moving on ToggleOpen.\r" );
 
 	// We are moving, is the mover interruptable?
-	if (m_bInterruptable)
+	if (m_bInterruptable && PreInterrupt())
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted! Stopping door\r" );
 
 		m_bInterrupted = true;
 		Event_StopRotating();
 		Event_StopMoving();
+
+		OnInterrupt();
 	}
 }
 
@@ -561,33 +562,41 @@ void CBinaryFrobMover::DoneRotating()
 	DoneStateChange();
 }
 
-bool CBinaryFrobMover::IsAtOpenPosition()
-{
-	const idVec3& localOrg = physicsObj.GetLocalOrigin();
-
-	idAngles localAngles = physicsObj.GetLocalAngles();
-	localAngles.Normalize180();
-
-	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
-}
-
-bool CBinaryFrobMover::IsAtClosedPosition()
-{
-	const idVec3& localOrg = physicsObj.GetLocalOrigin();
-
-	idAngles localAngles = physicsObj.GetLocalAngles();
-	localAngles.Normalize180();
-
-	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
-}
-
 void CBinaryFrobMover::DoneStateChange()
 {
-	/*bool CallScript = false;
+	if (!m_StateChange || IsMoving())
+	{
+		// Entity is still moving, wait for the next call (this usually gets called twice)
+		return;
+	}
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: DoneStateChange\r" );
+
+	// Check which position we're at, set the state variables and fire the correct events
+
+	m_StateChange = false;
+
+	// We are assuming that we're still "open", this gets overwritten by the check below
+	// if we are at the final "closed" position
+	m_Open = true;
+
+	if (IsAtClosedPosition())
+	{
+		m_Open = false;
+
+		// We have reached the final close position, fire the event
+		OnClosedPositionReached();
+	}
+	else if (IsAtOpenPosition())
+	{
+		// We have reached the final open position, fire the event
+		OnOpenPositionReached();
+	}
+
+	// Invoked the script object to notify it about the state change
+	CallStateScript();
+
+	/*bool CallScript = false;
 
 	// Ignore it if we already did it.
 	if(m_StateChange == false)
@@ -647,20 +656,43 @@ Quit:
 	return;*/
 }
 
+bool CBinaryFrobMover::IsAtOpenPosition()
+{
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+
+	idAngles localAngles = physicsObj.GetLocalAngles();
+	localAngles.Normalize180();
+
+	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+	return localAngles.Compare(m_OpenAngles, VECTOR_EPSILON) && localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
+}
+
+bool CBinaryFrobMover::IsAtClosedPosition()
+{
+	const idVec3& localOrg = physicsObj.GetLocalOrigin();
+
+	idAngles localAngles = physicsObj.GetLocalAngles();
+	localAngles.Normalize180();
+
+	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
+	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
+}
+
 void CBinaryFrobMover::CallStateScript()
 {
-	/*idStr str;
-	if(spawnArgs.GetString("state_change_callback", "", str))
+	idStr functionName = spawnArgs.GetString("state_change_callback", "");
+
+	if (!functionName.IsEmpty())
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Locked: %d   Interrupt: %d\r",
-			str.c_str(), m_Open, m_Locked, m_bInterrupted);
-		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
-	}*/
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Interrupted: %d\r",
+			functionName.c_str(), m_Open, m_bInterrupted);
+		CallScriptFunctionArgs(functionName, true, 0, "ebb", this, m_Open, m_bInterrupted);
+	}
 }
 
 void CBinaryFrobMover::GetOpen()
 {
-	//idThread::ReturnInt(m_Open);
+	idThread::ReturnInt(m_Open);
 }
 
 /*void CBinaryFrobMover::GetLock()
@@ -668,14 +700,14 @@ void CBinaryFrobMover::GetOpen()
 	//idThread::ReturnInt(IsLocked());
 }*/
 
-void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
+void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
-	//ToggleOpen();
+	ToggleOpen();
 }
 
 void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
 {
-	/*m_LastBlockingEnt = blockingEntity;
+	m_LastBlockingEnt = blockingEntity;
 	// greebo: If we're blocked by something, check if we should stop moving
 	if (m_stopWhenBlocked)
 	{
@@ -684,20 +716,17 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 
 		Event_StopRotating();
 		Event_StopMoving();
-
-		// reverse the intent
-		m_bIntentOpen = !m_bIntentOpen;
-	}*/
+	}
 }
 
 void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse)
 {
-	/*idVec3 SwitchDir;
+	idVec3 SwitchDir;
 	float SwitchThreshSq(0), ImpulseMagSq(0);
 
-	if( (m_Open && (m_ImpulseThreshCloseSq > 0)) || (!m_Open && (m_ImpulseThreshOpenSq > 0)) )
+	if ( (m_Open && m_ImpulseThreshCloseSq > 0) || (!m_Open && m_ImpulseThreshOpenSq > 0) )
 	{
-		if( m_Open )
+		if (m_Open)
 		{
 			SwitchDir = m_vImpulseDirClose;
 			SwitchThreshSq = m_ImpulseThreshCloseSq;
@@ -709,20 +738,24 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 		}
 		
 		// only resolve along the axis if it is set.  Defaults to (0,0,0) if not set
-		if( SwitchDir.LengthSqr() )
+		if (SwitchDir.LengthSqr())
 		{
 			SwitchDir = GetPhysics()->GetAxis() * SwitchDir;
 			ImpulseMagSq = impulse*SwitchDir;
 			ImpulseMagSq *= ImpulseMagSq;
 		}
 		else
+		{
 			ImpulseMagSq = impulse.LengthSqr();
+		}
 
-		if( ImpulseMagSq >= SwitchThreshSq )
+		if (ImpulseMagSq >= SwitchThreshSq)
+		{
 			ToggleOpen();
+		}
 	}
 
-	idEntity::ApplyImpulse( ent, id, point, impulse);*/
+	idEntity::ApplyImpulse( ent, id, point, impulse);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -736,14 +769,14 @@ bool CBinaryFrobMover::IsMoving()
 
 bool CBinaryFrobMover::IsChangingState()
 {
-	return false;//return m_StateChange;
+	return m_StateChange;
 }
 
 /*-------------------------------------------------------------------------*/
 
 void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles)
 {
-	/*// Get remaining translation if translating
+	// Get remaining translation if translating
 	if (m_bIntentOpen)
 	{
 		out_deltaPosition = (m_StartPos + m_Translation) - physicsObj.GetOrigin();
@@ -764,7 +797,7 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 	else
 	{
 		out_deltaAngles = m_ClosedAngles - curAngles;
-	}*/
+	}
 
 	// Done
 }
@@ -833,12 +866,32 @@ bool CBinaryFrobMover::PreClose()
 	return true; // default: mover is allowed to close
 }
 
-void CBinaryFrobMover::OnOpen(bool wasClosed)
+bool CBinaryFrobMover::PreInterrupt()
+{
+	return true; // default: mover is allowed to be interrupted
+}
+
+void CBinaryFrobMover::OnStartOpen(bool wasClosed)
 {
 	// To be implemented by the subclasses
 }
 
-void CBinaryFrobMover::OnClose(bool wasOpen)
+void CBinaryFrobMover::OnStartClose(bool wasOpen)
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnOpenPositionReached()
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnClosedPositionReached()
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnInterrupt()
 {
 	// To be implemented by the subclasses
 }
