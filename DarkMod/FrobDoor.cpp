@@ -91,6 +91,7 @@ Quit:
 
 CFrobDoor::CFrobDoor()
 {
+/*
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
@@ -102,10 +103,12 @@ CFrobDoor::CFrobDoor()
 	m_PinTranslationFractionFlag = false;
 	m_PinRotationFractionFlag = false;
 	m_KeyReleased = false;
+*/
 }
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
+/*
 	savefile->WriteString(m_MasterOpen.c_str());
 
 	savefile->WriteInt(m_OpenList.Num());
@@ -157,10 +160,12 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	m_DoubleDoor.Save(savefile);
 	m_Doorhandle.Save(savefile);
 	m_Bar.Save(savefile);
+*/
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
 {
+/*
 	int num;
 
 	savefile->ReadString(m_MasterOpen);
@@ -221,10 +226,12 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	m_DoubleDoor.Restore(savefile);
 	m_Doorhandle.Restore(savefile);
 	m_Bar.Restore(savefile);
+*/
 }
 
 void CFrobDoor::Spawn( void )
 {
+/*
 	idStr str;
 
 	// If a door is locked but has no pins, it means it can not be picked and needs a key.
@@ -293,10 +300,12 @@ void CFrobDoor::Spawn( void )
 		//	mat3_identity, 1, 10000000);
 		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
 	}
+	*/
 }
 
 void CFrobDoor::Lock(bool bMaster)
 {
+/*
 	CFrobDoor *ent;
 	idEntity *e;
 
@@ -334,10 +343,12 @@ void CFrobDoor::Lock(bool bMaster)
 
 		CBinaryFrobMover::Lock(bMaster);
 	}
+*/
 }
 
 void CFrobDoor::Unlock(bool bMaster)
 {
+/*
 	CFrobDoor *ent;
 	idEntity *e;
 
@@ -375,10 +386,12 @@ void CFrobDoor::Unlock(bool bMaster)
 
 		CBinaryFrobMover::Unlock(bMaster);
 	}
+*/
 }
 
 void CFrobDoor::Open(bool bMaster)
 {
+/*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
 	StimEnable(ST_VISUAL, 1);
@@ -404,10 +417,12 @@ void CFrobDoor::Open(bool bMaster)
 		OpenDoor(bMaster);
 		m_bInterrupted = false;
 	}
+*/
 }
 
 void CFrobDoor::OpenDoor(bool bMaster)
 {
+/*
 	CFrobDoor *ent;
 	idEntity *e;
 
@@ -415,8 +430,8 @@ void CFrobDoor::OpenDoor(bool bMaster)
 
 	// Open door handle if there is one
 	// greebo: This call is not necessary, the handle already moved
-	/*if(m_Doorhandle.GetEntity() != NULL)
-		m_Doorhandle.GetEntity()->Open(false);*/
+	//if(m_Doorhandle.GetEntity() != NULL)
+	//	m_Doorhandle.GetEntity()->Open(false);
 
 	// Handle master mode
 	if (bMaster == true && !m_MasterLock.IsEmpty())
@@ -487,10 +502,12 @@ void CFrobDoor::OpenDoor(bool bMaster)
 			UpdateSoundLoss();
 		}
 	}
+*/
 }
 
 void CFrobDoor::Close(bool bMaster)
 {
+/*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
 	StimEnable(ST_VISUAL, 1);
@@ -563,10 +580,12 @@ void CFrobDoor::Close(bool bMaster)
 
 		MoveToLocalPos(m_ClosedOrigin);
 	}
+*/
 }
 
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
+/*
 	bool bRc = false;
 
 	if (item == NULL || item->GetItemEntity() == NULL)
@@ -649,10 +668,13 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	}
 
 	return bRc;
+*/
+	return false;
 }
 
 void CFrobDoor::UpdateSoundLoss(void)
 {
+/*
 	float SetVal(0.0f);
 	bool bDoubleOpen(true);
 
@@ -682,10 +704,12 @@ void CFrobDoor::UpdateSoundLoss(void)
 
 Quit:
 	return;
+*/
 }
 
 void CFrobDoor::FindDoubleDoor(void)
 {
+/*
 	int i, numListedClipModels, testPortal;
 	idBounds clipBounds;
 	idEntity *obEnt;
@@ -725,25 +749,28 @@ void CFrobDoor::FindDoubleDoor(void)
 	// Open the portal if either of the doors is open
 	if( m_Open || (m_DoubleDoor.GetEntity() && m_DoubleDoor.GetEntity()->m_Open) )
 		Event_OpenPortal();
+*/
 }
 
 void CFrobDoor::GetPickable(void)
 {
-	idThread::ReturnInt(m_Pickable);
+	//idThread::ReturnInt(m_Pickable);
 }
 
 void CFrobDoor::GetDoorhandle(void)
 {
-	idThread::ReturnEntity(m_Doorhandle.GetEntity());
+	//idThread::ReturnEntity(m_Doorhandle.GetEntity());
 }
 
 CFrobDoor* CFrobDoor::GetDoubleDoor( void )
 {
-	return m_DoubleDoor.GetEntity();
+	//return m_DoubleDoor.GetEntity();
+	return NULL;
 }
 
 void CFrobDoor::ClosePortal()
 {
+	/*
 	if( !m_DoubleDoor.GetEntity() || !m_DoubleDoor.GetEntity()->m_Open )
 	{
 		if ( areaPortal ) 
@@ -751,18 +778,22 @@ void CFrobDoor::ClosePortal()
 			SetPortalState( false );
 		}
 	}
+	*/
 }
 
 void CFrobDoor::SetFrobbed(bool val)
 {
+	/*
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
 	idEntity::SetFrobbed(val);
 	if(m_Doorhandle.GetEntity())
 		m_Doorhandle.GetEntity()->SetFrobbed(val);
+		*/
 }
 
 bool CFrobDoor::IsFrobbed(void)
 {
+	/*
 	// If the door has a handle and it is frobbed, then we are also considered 
 	// to be frobbed. Maybe this changes later, when the lockpicking is
 	// implemented, but usually this should be true.
@@ -773,10 +804,13 @@ bool CFrobDoor::IsFrobbed(void)
 	}
 
 	return idEntity::IsFrobbed();
+	*/
+	return false;
 }
 
 idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &str)
 {
+	/*
 	idStringList *rc = NULL;
 	int i, r;
 	idStr click;
@@ -806,17 +840,22 @@ idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCoun
 	}
 
 	return rc;
+	*/
+	return NULL;
 }
 
 void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
 {
+	/*
 	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
 	ProcessLockpick(cType, nSampleType);
+	*/
 }
 
 
 void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
 {
+	/*
 	idAngles a;
 	idVec3 v;
 	double n;
@@ -868,10 +907,12 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 
 		m->UpdateVisuals();
 	}
+	*/
 }
 
 void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
+	/*
 	int sample_delay, pick_timeout;
 	idStr oPickSound;
 	char type = cType;
@@ -1055,10 +1096,12 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 Quit:
 	return;
+	*/
 }
 
 void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex)
 {
+	/*
 	int length = 0;
 
 	m_SoundTimerStarted++;
@@ -1068,10 +1111,12 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 	if(PinIndex != -1)
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
+	*/
 }
 
 void CFrobDoor::Event_Init(void)
 {
+	/*
 	idStr str;
 	idEntity *e;
 	CFrobDoor *master;
@@ -1192,4 +1237,5 @@ void CFrobDoor::Event_Init(void)
 	}
 
 	FindDoubleDoor();
+	*/
 }
