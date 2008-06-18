@@ -42,20 +42,16 @@ const idEventDef EV_TDM_Door_Close( "Close", "f" );
 const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
 const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
 const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
-const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
-const idEventDef EV_TDM_Door_Init( "Init", NULL);						// set the bar/handle entity on the door
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
-	EVENT( EV_TDM_Door_Init,				CFrobDoor::Event_Init)
 	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::OpenDoor)
 	EVENT( EV_TDM_Door_Close,				CFrobDoor::Close)
 	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
 	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
-	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
@@ -283,6 +279,139 @@ void CFrobDoor::Spawn( void )
 		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
 	}
 	*/
+}
+
+void CFrobDoor::PostSpawn()
+{
+	// Let the base class do its stuff first
+	CBinaryFrobMover::PostSpawn();
+
+	if (!m_Open) 
+	{
+		// Door starts _completely_ closed, shut the portal
+		ClosePortal();
+	}
+
+	idStr str;
+	idEntity *e;
+	CFrobDoor *master;
+	idAngles tempAngle, partialAngle;
+	bool flag = true;
+
+	if(spawnArgs.GetString("master_open", "", str))
+	{
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_OpenList, str) == true)
+					m_MasterOpen = str;
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
+	}
+
+	if(spawnArgs.GetString("master_lock", "", str))
+	{
+		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		{
+			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			{
+				if(AddToMasterList(master->m_LockList, str) == true)
+					m_MasterLock = str;
+				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
+			}
+			else
+				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+		}
+		else
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
+	}
+
+	if(spawnArgs.GetString("door_handle", "", str))
+	{
+		e = gameLocal.FindEntity(str);
+
+		if(e)
+		{
+			CFrobDoorHandle *dh = dynamic_cast<CFrobDoorHandle *>(e);
+			if(dh)
+			{
+				m_Doorhandle = dh;
+				m_OriginalPosition = e->GetPhysics()->GetOrigin();
+				m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
+				dh->m_Door = this;
+			}
+			else
+				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not a valid doorhandle: %s\r", str.c_str());
+
+			spawnArgs.GetBool("door_handle_bind_flag", "1", flag);
+			if(flag == true)
+			{
+				m_FrobPeers.AddUnique(e->name);
+				e->GetFrobPeers().AddUnique(name);
+				e->m_bFrobable = m_bFrobable;
+				e->Bind(this, true);
+			}
+		}
+		else
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not found: %s\r", str.c_str());
+	}
+
+	if(spawnArgs.GetString("lockpick_bar", "", str))
+	{
+		e = gameLocal.FindEntity(str);
+
+		if(e)
+		{
+			m_Bar = e;
+
+			// The bar overrides the handle info if it exists, because
+			// this is the one that has to move if the lock is picked.
+			m_OriginalPosition = e->GetPhysics()->GetOrigin();
+			m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
+
+			flag = true;
+			spawnArgs.GetBool("lockpick_bar_bind_flag", "1", flag);
+			if(flag == true)
+			{
+				m_FrobPeers.AddUnique(e->name);
+				e->GetFrobPeers().AddUnique(name);
+				e->m_bFrobable = m_bFrobable;
+				e->Bind(this, true);
+			}
+		}
+		else
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", str.c_str());
+	}
+
+	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0")/m_Pins.Num();
+	// Check if the rotation is empty and set the flag.
+	{
+		idAngles cmp;
+		cmp.Zero();
+		if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+			m_PinRotationFractionFlag = false;
+		else
+			m_PinRotationFractionFlag = true;
+	}
+
+	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0")/m_Pins.Num();
+	// Check if the translation is empty and set the flag.
+	{
+		idVec3 cmp;
+		cmp.Zero();
+		if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
+			m_PinTranslationFractionFlag = false;
+		else
+			m_PinTranslationFractionFlag = true;
+	}
+
+	FindDoubleDoor();
 }
 
 void CFrobDoor::Lock(bool bMaster)
@@ -1097,131 +1226,5 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 	if(PinIndex != -1)
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
-	*/
-}
-
-void CFrobDoor::Event_Init(void)
-{
-	/*
-	idStr str;
-	idEntity *e;
-	CFrobDoor *master;
-	idAngles tempAngle, partialAngle;
-	bool flag = true;
-
-	if(spawnArgs.GetString("master_open", "", str))
-	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
-		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-			{
-				if(AddToMasterList(master->m_OpenList, str) == true)
-					m_MasterOpen = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
-			}
-			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
-		}
-		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
-	}
-
-	if(spawnArgs.GetString("master_lock", "", str))
-	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
-		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
-			{
-				if(AddToMasterList(master->m_LockList, str) == true)
-					m_MasterLock = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
-			}
-			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
-		}
-		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
-	}
-
-	if(spawnArgs.GetString("door_handle", "", str))
-	{
-		e = gameLocal.FindEntity(str);
-
-		if(e)
-		{
-			CFrobDoorHandle *dh = dynamic_cast<CFrobDoorHandle *>(e);
-			if(dh)
-			{
-				m_Doorhandle = dh;
-				m_OriginalPosition = e->GetPhysics()->GetOrigin();
-				m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
-				dh->m_Door = this;
-			}
-			else
-				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not a valid doorhandle: %s\r", str.c_str());
-
-			spawnArgs.GetBool("door_handle_bind_flag", "1", flag);
-			if(flag == true)
-			{
-				m_FrobPeers.AddUnique(e->name);
-				e->GetFrobPeers().AddUnique(name);
-				e->m_bFrobable = m_bFrobable;
-				e->Bind(this, true);
-			}
-		}
-		else
-			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not found: %s\r", str.c_str());
-	}
-
-	if(spawnArgs.GetString("lockpick_bar", "", str))
-	{
-		e = gameLocal.FindEntity(str);
-
-		if(e)
-		{
-			m_Bar = e;
-
-			// The bar overrides the handle info if it exists, because
-			// this is the one that has to move if the lock is picked.
-			m_OriginalPosition = e->GetPhysics()->GetOrigin();
-			m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
-
-			flag = true;
-			spawnArgs.GetBool("lockpick_bar_bind_flag", "1", flag);
-			if(flag == true)
-			{
-				m_FrobPeers.AddUnique(e->name);
-				e->GetFrobPeers().AddUnique(name);
-				e->m_bFrobable = m_bFrobable;
-				e->Bind(this, true);
-			}
-		}
-		else
-			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", str.c_str());
-	}
-
-	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0")/m_Pins.Num();
-	// Check if the rotation is empty and set the flag.
-	{
-		idAngles cmp;
-		cmp.Zero();
-		if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-			m_PinRotationFractionFlag = false;
-		else
-			m_PinRotationFractionFlag = true;
-	}
-
-	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0")/m_Pins.Num();
-	// Check if the translation is empty and set the flag.
-	{
-		idVec3 cmp;
-		cmp.Zero();
-		if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-			m_PinTranslationFractionFlag = false;
-		else
-			m_PinTranslationFractionFlag = true;
-	}
-
-	FindDoubleDoor();
 	*/
 }

@@ -174,7 +174,7 @@ void CBinaryFrobMover::Spawn()
 	PostEventMS( &EV_PostSpawn, 1 );
 }
 
-void CBinaryFrobMover::Event_PostSpawn() 
+void CBinaryFrobMover::PostSpawn()
 {
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
@@ -300,18 +300,20 @@ void CBinaryFrobMover::Event_PostSpawn()
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
-	if(!m_Open) 
-	{
-		// FrobMover starts _completely_ closed
-		ClosePortal(); // TODO: Move this to CFrobDoor
-	}
-	else
+	if(m_Open) 
 	{
 		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
 		physicsObj.SetLocalAngles(m_ClosedAngles + partialAngles);
 	}
+
 	UpdateVisuals();
+}
+
+void CBinaryFrobMover::Event_PostSpawn() 
+{
+	// Call the virtual function
+	PostSpawn();
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
@@ -870,7 +872,9 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 
 void CBinaryFrobMover::OnMoveStart(bool open)
 {
-	// To be implemented by the subclasses
+	// Clear this door from the ignore list so AI can react to it again	
+	StimClearIgnoreList(ST_VISUAL);
+	StimEnable(ST_VISUAL, 1);
 }
 
 bool CBinaryFrobMover::PreOpen() 

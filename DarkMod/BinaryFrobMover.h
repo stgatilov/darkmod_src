@@ -239,6 +239,10 @@ protected:
 
 	// =========================================================
 
+	// An event for convenience. Gets called right after spawn time at time 0.
+	// Override this event to do your stuff in the subclass, but be sure to call the baseclass
+	virtual void PostSpawn();
+
 	/** 
 	 * greebo: Tells the frobmover to start moving. The boolean specifies whether
 	 * to open or to close.
