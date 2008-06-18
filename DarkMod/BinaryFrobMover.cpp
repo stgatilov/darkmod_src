@@ -582,6 +582,8 @@ void CBinaryFrobMover::DoneStateChange()
 
 	if (IsAtClosedPosition())
 	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
+
 		m_Open = false;
 
 		// We have reached the final close position, fire the event
@@ -888,7 +890,14 @@ void CBinaryFrobMover::OnOpenPositionReached()
 
 void CBinaryFrobMover::OnClosedPositionReached()
 {
-	// To be implemented by the subclasses
+	// play the closing sound when the door closes completely
+	StartSound("snd_close", SND_CHANNEL_ANY, 0, false, NULL);
+
+	// trigger our targets on completely closing, if set to do so
+	if (spawnArgs.GetBool("trigger_on_close", "0"))
+	{
+		ActivateTargets(this);
+	}
 }
 
 void CBinaryFrobMover::OnInterrupt()
