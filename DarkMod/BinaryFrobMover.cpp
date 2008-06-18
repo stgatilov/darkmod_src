@@ -39,21 +39,20 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_Door_Open,				CBinaryFrobMover::Open)
 	EVENT( EV_TDM_Door_Close,				CBinaryFrobMover::Close)
 	EVENT( EV_TDM_Door_ToggleOpen,			CBinaryFrobMover::ToggleOpen)
-	//EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
-	//EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
-	//EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
+	EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
+	EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
+	EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
 	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
-	//EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
-	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
+	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::Event_IsLocked)
+	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
 END_CLASS
-
 
 CBinaryFrobMover::CBinaryFrobMover()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_binary_mover";
 	m_Open = false;
-	//m_Locked = false;
+	m_Locked = false;
 	m_bInterruptable = true;
 	m_bInterrupted = false;
 	m_StoppedDueToBlock = false;
@@ -73,7 +72,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 void CBinaryFrobMover::Save(idSaveGame *savefile) const
 {
 	savefile->WriteBool(m_Open);
-	//savefile->WriteBool(m_Locked);
+	savefile->WriteBool(m_Locked);
 	savefile->WriteBool(m_bIntentOpen);
 	savefile->WriteBool(m_StateChange);
 	savefile->WriteBool(m_bInterruptable);
@@ -113,7 +112,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadBool(m_Open);
-	//savefile->ReadBool(m_Locked);
+	savefile->ReadBool(m_Locked);
 	savefile->ReadBool(m_bIntentOpen);
 	savefile->ReadBool(m_StateChange);
 	savefile->ReadBool(m_bInterruptable);
@@ -152,8 +151,6 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 void CBinaryFrobMover::Spawn()
 {
-	idStr str;
-
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
@@ -161,8 +158,8 @@ void CBinaryFrobMover::Spawn()
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
 
-	/*m_Locked = spawnArgs.GetBool("locked");
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);*/
+	m_Locked = spawnArgs.GetBool("locked");
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] locked (%u)\r", name.c_str(), m_Locked);
 
 	m_bInterruptable = spawnArgs.GetBool("interruptable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] interruptable (%u)\r", name.c_str(), m_bInterruptable);
@@ -317,38 +314,56 @@ void CBinaryFrobMover::Event_PostSpawn()
 	UpdateVisuals();
 }
 
-/*void CBinaryFrobMover::Lock(bool bMaster)
+void CBinaryFrobMover::Lock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
+	if (!PreLock()) {
+		// PreLock returned FALSE, cancel the operation
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover prevented from being locked\r", name.c_str());
+		return;
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is locked\r", name.c_str());
+
 	m_Locked = true;
 	CallStateScript();
-}*/
 
-/*void CBinaryFrobMover::Unlock(bool bMaster)
+	OnLock();
+}
+
+void CBinaryFrobMover::Unlock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	if (!PreUnlock()) {
+		// PreUnlock returned FALSE, cancel the operation
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover prevented from being unlocked\r", name.c_str());
+		return;
+	}
+	
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is unlocked\r", name.c_str());
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
 	m_Locked = false;
+	CallStateScript();
 
-	ToggleOpen();
-}*/
+	OnUnlock();
+}
 
-/*void CBinaryFrobMover::ToggleLock()
+void CBinaryFrobMover::ToggleLock()
 {
-	// A door can only be un/locked when it is closed.
-	if(m_Open == true)
+	// A frobmover can only be un/locked when it is closed.
+	if (m_Open == true)
 	{
 		ToggleOpen();
 		return;
 	}
 
-	if(m_Locked == true)
+	if (m_Locked)
+	{
 		Unlock(true);
+	}
 	else
+	{
 		Lock(true);
-}*/
+	}
+}
 
 bool CBinaryFrobMover::StartMoving(bool open) 
 {
@@ -686,9 +701,9 @@ void CBinaryFrobMover::CallStateScript()
 
 	if (!functionName.IsEmpty())
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Interrupted: %d\r",
-			functionName.c_str(), m_Open, m_bInterrupted);
-		CallScriptFunctionArgs(functionName, true, 0, "ebb", this, m_Open, m_bInterrupted);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d, Locked: %d Interrupted: %d\r",
+			functionName.c_str(), m_Open, m_Locked, m_bInterrupted);
+		CallScriptFunctionArgs(functionName, true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
 	}
 }
 
@@ -697,10 +712,10 @@ void CBinaryFrobMover::GetOpen()
 	idThread::ReturnInt(m_Open);
 }
 
-/*void CBinaryFrobMover::GetLock()
+void CBinaryFrobMover::Event_IsLocked()
 {
-	//idThread::ReturnInt(IsLocked());
-}*/
+	idThread::ReturnInt(IsLocked());
+}
 
 void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
@@ -860,6 +875,14 @@ void CBinaryFrobMover::OnMoveStart(bool open)
 
 bool CBinaryFrobMover::PreOpen() 
 {
+	if (m_Locked) 
+	{
+		// Play the "I'm locked" sound 
+		StartSound("snd_locked", SND_CHANNEL_ANY, 0, false, NULL);
+		// and prevent the door from opening (return false)
+		return false;
+	}
+
 	return true; // default: mover is allowed to open
 }
 
@@ -873,9 +896,23 @@ bool CBinaryFrobMover::PreInterrupt()
 	return true; // default: mover is allowed to be interrupted
 }
 
+bool CBinaryFrobMover::PreLock()
+{
+	return true; // default: mover is allowed to be locked
+}
+
+bool CBinaryFrobMover::PreUnlock()
+{
+	return true; // default: mover is allowed to be unlocked
+}
+
 void CBinaryFrobMover::OnStartOpen(bool wasClosed)
 {
-	// To be implemented by the subclasses
+	if (wasClosed)
+	{
+		// Only play the "open" sound when the door was completely closed
+		StartSound("snd_open", SND_CHANNEL_ANY, 0, false, NULL);
+	}
 }
 
 void CBinaryFrobMover::OnStartClose(bool wasOpen)
@@ -903,4 +940,20 @@ void CBinaryFrobMover::OnClosedPositionReached()
 void CBinaryFrobMover::OnInterrupt()
 {
 	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnLock()
+{
+	StartSound("snd_lock", SND_CHANNEL_ANY, 0, false, NULL);
+}
+
+void CBinaryFrobMover::OnUnlock()
+{
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+
+	if (spawnArgs.GetBool("open_on_unlock", "1"))
+	{
+		// The configuration says: open the mover when it's unlocked
+		ToggleOpen();
+	}
 }

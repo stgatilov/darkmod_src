@@ -37,14 +37,13 @@ public:
 
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
-	//virtual void			Lock(bool Master);
-	//virtual void			Unlock(bool Master);
+	virtual void			Lock(bool Master);
+	virtual void			Unlock(bool Master);
 
 	virtual void			ToggleOpen();
-	//virtual void			ToggleLock();
+	virtual void			ToggleLock();
 	virtual void			GetOpen();
-	//virtual void			GetLock();
-
+	
 	/**
 	* This is the non-script version of GetOpen 
 	*/
@@ -74,10 +73,10 @@ public:
 	/**
 	* This is the non-script version of GetLock
 	*/
-	/*virtual bool			IsLocked()
+	virtual bool			IsLocked()
 	{
 		return m_Locked;
-	}*/
+	}
 
 	/**
 	* Overload the apply impulse function to see if we should change mover
@@ -179,6 +178,20 @@ protected:
 	virtual bool PreInterrupt();
 
 	/**
+	 * greebo: This is called before the frobmover is locked. When this function
+	 * returns TRUE, the mover is allowed to be locked, returning FALSE will
+	 * let the mover stay unlocked.
+	 */
+	virtual bool PreLock();
+
+	/**
+	 * greebo: This is called before the frobmover is unlocked. When this function
+	 * returns TRUE, the mover is allowed to be unlocked, returning FALSE will
+	 * let the mover stay locked.
+	 */
+	virtual bool PreUnlock();
+
+	/**
 	 * greebo: Gets called when the mover opens. The boolean tells the function 
 	 * whether the mover is starting from its fully closed state.
 	 *
@@ -213,6 +226,16 @@ protected:
 	 * greebo: Is called when the mover has been interrupted (move has already been stopped).
 	 */
 	virtual void OnInterrupt();
+
+	/**
+	 * greebo: Is called when the mover is about to be locked.
+	 */
+	virtual void OnLock();
+
+	/**
+	 * greebo: Is called when the mover is about to be unlocked.
+	 */
+	virtual void OnUnlock();
 
 	// =========================================================
 
@@ -249,6 +272,9 @@ protected:
 	**/
 	void					Event_Activate( idEntity *activator );
 
+	// Script event to return the locked status
+	void					Event_IsLocked();
+
 	/**
 	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.
 	 */
@@ -259,7 +285,7 @@ protected:
 	* m_Open is only set to false when the door is completely closed
 	**/
 	bool						m_Open;
-	//bool						m_Locked;
+	bool						m_Locked;
 
 	/**
 	* Stores whether the player intends to open or close the door
