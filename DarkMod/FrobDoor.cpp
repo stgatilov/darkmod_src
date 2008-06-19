@@ -209,56 +209,64 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 
 void CFrobDoor::Spawn( void )
 {
-/*
-	idStr str;
+	idStr lockPins = spawnArgs.GetString("lock_pins", "");
 
 	// If a door is locked but has no pins, it means it can not be picked and needs a key.
 	// In that case we can ignore the pins, otherwise we must create the patterns.
-	if(spawnArgs.GetString("lock_pins", "", str))
+	if (!lockPins.IsEmpty())
 	{
 		idStr head = "lockpick_pin_";
-		idStr empty = "";
-		int n = str.Length();
 		int b = cv_lp_pin_base_count.GetInteger();
-		if(b < MIN_CLICK_NUM)
-			b = MIN_CLICK_NUM;
 
-		for(int i = 0; i < n; i++)
+		if (b < MIN_CLICK_NUM)
 		{
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, str[i]);
-			idStringList *p = CreatePinPattern(str[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
-			if(p)
+			b = MIN_CLICK_NUM;
+		}
+
+		for (int i = 0; i < lockPins.Length(); i++)
+		{
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, lockPins[i]);
+
+			idStringList* pattern = CreatePinPattern(lockPins[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
+
+			if (pattern != NULL)
 			{
-				m_Pins.Append(p);
-				if(cv_lp_pawlow.GetBool() == false)
-					p->Insert("lockpick_pin_sweetspot");
+				m_Pins.Append(pattern);
+				if (cv_lp_pawlow.GetBool() == false)
+				{
+					pattern->Insert("lockpick_pin_sweetspot");
+				}
 				else
-					p->Append("lockpick_pin_sweetspot");
+				{
+					pattern->Append("lockpick_pin_sweetspot");
+				}
 			}
 			else
-				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, str[i]);
+			{
+				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+			}
 
-			if(cv_lp_randomize.GetBool() == true)
+			if (cv_lp_randomize.GetBool() == true)
 			{
 				// TODO: Hardcoded 9 is wrong here. Actually the number must be determined by
 				// seeing how many positions the lock can have while in transit.
-				p = CreatePinPattern(str[i] - 0x030, b, 9, 1, empty);
-				if(p)
+				idStr empty = "";
+				pattern = CreatePinPattern(lockPins[i] - 0x030, b, 9, 1, empty);
+				if (pattern != NULL)
 				{
-					p->Insert("0");
-					m_RandomPins.Append(p);
+					pattern->Insert("0");
+					m_RandomPins.Append(pattern);
 				}
 				else
-					DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin jiggle pattern for pin %u value %c\r", name.c_str(), i, str[i]);
+				{
+					DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin jiggle pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+				}
 			}
 		}
 	}
 
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
-
-	//schedule intialization of the doors for after all entities have spawned
-	PostEventMS(&EV_TDM_Door_Init, 0);
 
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
@@ -272,13 +280,12 @@ void CFrobDoor::Spawn( void )
 			continue;
 		}
 		
-		int areaNum = GetFrobMoverAasArea(aas);
+		int areaNum = GetAASArea(aas);
 		idStr areatext(areaNum);
 		//gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,i), 0.2f, colorGreen, 
 		//	mat3_identity, 1, 10000000);
 		aas->SetAreaTravelFlag(areaNum, TFL_DOOR);
 	}
-	*/
 }
 
 void CFrobDoor::PostSpawn()
@@ -912,40 +919,35 @@ bool CFrobDoor::IsFrobbed()
 	return idEntity::IsFrobbed();
 }
 
-idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &str)
+idStringList *CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, idStr &str)
 {
-	/*
-	idStringList *rc = NULL;
-	int i, r;
-	idStr click;
-
-	if(!(Clicks >= 0 && Clicks <= 9))
-		return NULL;
-
-	if(Clicks == 0)
-		Clicks = 10;
-
-	Clicks += BaseCount;
-	rc = new idStringList();
-
-	idStr head;
-	sprintf(head, str+"%%0%uu", StrNumLen);
-
-	for(i = 0; i < Clicks; i++)
+	if (clicks < 0 || clicks > 9)
 	{
-		if(i % 2)
-			r = gameLocal.random.RandomInt(MaxCount);
-		else
-			r = rnd.IRandom(0, MaxCount);
+		return NULL;
+	}
 
-		sprintf(click, head, r);
-		rc->Append(click);
+	if (clicks == 0)
+	{
+		clicks = 10;
+	}
+
+	clicks += baseCount;
+	idStringList* returnValue = new idStringList();
+
+	idStr head = va(str+"%%0%uu", strNumLen);
+
+	for (int i = 0; i < clicks; i++)
+	{
+		// Choose a different random number generator every other frame
+		int r = (i % 2) ? gameLocal.random.RandomInt(maxCount) : rnd.IRandom(0, maxCount);
+
+		idStr click = va(head, r);
+		returnValue->Append(click);
+
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("PinPattern %u : %s\r", i, click.c_str());
 	}
 
-	return rc;
-	*/
-	return NULL;
+	return returnValue;
 }
 
 void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
