@@ -519,21 +519,6 @@ void CFrobDoor::OnUnlock()
 
 void CFrobDoor::Open(bool bMaster)
 {
-	//CBinaryFrobMover::Open(bMaster);
-/*
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
-
-	m_StoppedDueToBlock = false;
-
-	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true && !m_bInterrupted && !IsBlocked())
-	{
-		m_bIntentOpen = false;
-		return;
-	}*/
-
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
 	// already interrupted
 	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
@@ -572,40 +557,6 @@ void CFrobDoor::OpenDoor(bool bMaster)
 	{
 		// Now pass the call to the base class, which will invoke PreOpen() and the other events
 		CBinaryFrobMover::Open(bMaster);
-
-		/*else
-		{
-			// don't play the sound if the door was not closed all the way
-			if( !m_bInterrupted )
-			{	
-				//m_StateChange = true;
-				
-				//StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-				
-				// Open visportal
-				//OpenPortal();
-
-				// trigger our targets on opening, if set to do so
-				//if( spawnArgs.GetBool("trigger_on_open","") )
-				//	ActivateTargets( this );
-			}
-
-			
-			m_Open = true;
-			m_Rotating = true;
-			m_Translating = true;
-
-			idAngles tempAng = physicsObj.GetLocalAngles();
-			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
-			
-			if( m_TransSpeed )
-				Event_SetMoveSpeed( m_TransSpeed );
-
-			MoveToLocalPos( m_OpenOrigin );
-
-			// Update soundprop
-			UpdateSoundLoss();
-		}*/
 	}
 }
 
@@ -641,31 +592,7 @@ void CFrobDoor::OnStartOpen(bool wasClosed)
 
 void CFrobDoor::Close(bool bMaster)
 {
-/*
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
-
-	m_StoppedDueToBlock = false;
-
-	CFrobDoor *ent;
-	idEntity *e;
-
-	if(m_Open == false)
-		return;
-
-	m_bInterrupted = false;
-
-	// When we close the door, we don't want to do the handle tap, as 
-	// it looks a bit strange
-//	if(m_Doorhandle)
-//		m_Doorhandle->Tap();*/
-
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
-
-	// Open door handle if there is one
-	//if(m_Doorhandle)
-	//	m_Doorhandle->Open(false);
 
 	// Handle master mode
 	if (bMaster && !m_MasterLock.IsEmpty())
@@ -685,19 +612,6 @@ void CFrobDoor::Close(bool bMaster)
 	{
 		// Invoke the close method in non-master mode, this will fire the events
 		CBinaryFrobMover::Close(bMaster);
-
-		/*idAngles tempAng = physicsObj.GetLocalAngles();
-		
-		m_StateChange = true;
-		m_Rotating = true;
-		m_Translating = true;
-
-		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
-		
-		if( m_TransSpeed )
-			Event_SetMoveSpeed( m_TransSpeed );
-
-		MoveToLocalPos(m_ClosedOrigin);*/
 	}
 }
 
