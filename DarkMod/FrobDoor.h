@@ -53,9 +53,9 @@ public:
 public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
-							CFrobDoor( void );
+							CFrobDoor();
 
-	void					Spawn( void );
+	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -66,10 +66,8 @@ public:
 	void					Lock(bool Master);
 	void					Unlock(bool Master);
 
-	bool					IsLocked() { return false; } // TODO
-
-	void					GetPickable(void);
-	void					GetDoorhandle(void);
+	void					GetPickable();
+	void					GetDoorhandle();
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
@@ -77,20 +75,12 @@ public:
 	 * Write the proper sound loss value to the soundprop portal data
 	 * Called when door spawns, is and when it is opened or closed
 	 **/
-	void					UpdateSoundLoss(void);
-
-	/**
-	 * Find out if this door is touching another door, and if they share the same portal
-	 * If so, store a pointer to the other door m_DoubleDoor on this door.
-	 *
-	 * This is posted as an event to be called on all doors after entities spawn
-	 **/
-	void					FindDoubleDoor();
+	void					UpdateSoundLoss();
 
 	/**
 	 * Return the double door.  Returns NULL if there is none.
 	 **/
-	CFrobDoor *				GetDoubleDoor( void );
+	CFrobDoor *				GetDoubleDoor();
 
 	/**
 	 * Close the visportal, but only if the double door is also closed.
@@ -118,11 +108,19 @@ protected:
 	virtual void			PostSpawn();
 
 	/**
+	 * Find out if this door is touching another door, and if they share the same portal
+	 * If so, store a pointer to the other door m_DoubleDoor on this door.
+	 *
+	 * This is posted as an event to be called on all doors after entities spawn
+	 **/
+	void					FindDoubleDoor();
+
+	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
 	 * number of clicks for this pin, and BaseCount, defines the minimum number
 	 * of clicks, which is always added.
 	 */
-	idStringList				*CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
+	idStringList*			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
 
 protected:
 	/**
