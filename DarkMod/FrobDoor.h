@@ -60,7 +60,8 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	void					Open(bool Master);
+	virtual void			Open(bool Master);
+	virtual void			Close(bool Master);
 
 	/** 
 	 * greebo: The OpenDoor method is necessary to give the FrobDoorHandles a 
@@ -68,11 +69,10 @@ public:
 	 * the FrobDoorHandle::Tap() method, so there must be a way to actually
 	 * let the door open. Which is what this method does.
 	 */
-	void					OpenDoor(bool Master);		
+	virtual void			OpenDoor(bool Master);		
 
-	void					Close(bool Master);
-	void					Lock(bool Master);
-	void					Unlock(bool Master);
+	virtual void			Lock(bool Master);
+	virtual void			Unlock(bool Master);
 
 	void					GetPickable();
 	void					GetDoorhandle();

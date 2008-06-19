@@ -540,11 +540,11 @@ void CBinaryFrobMover::ToggleOpen()
 
 		if (m_bIntentOpen)
 		{
-			Open(true);
+			Open();
 		}
 		else
 		{
-			Close(true);
+			Close();
 		}
 
 		return;

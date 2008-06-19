@@ -35,6 +35,17 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	/**
+	 * greebo: A set of convenience methods, which set the master bool to TRUE.
+	 * Don't use default argument initialisers on the virtual functions, 
+	 * as the default values are statically bound and lead to problems 
+	 * if subclasses want to override that default value.
+	 */
+	ID_INLINE void			Open()		{ Open(true);	}
+	ID_INLINE void			Close()		{ Close(true);	}
+	ID_INLINE void			Lock()		{ Lock(true);	}
+	ID_INLINE void			Unlock()	{ Unlock(true);	}
+	
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 	virtual void			Lock(bool Master);
