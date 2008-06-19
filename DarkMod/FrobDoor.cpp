@@ -631,7 +631,6 @@ void CFrobDoor::OnStartOpen(bool wasClosed)
 
 void CFrobDoor::Close(bool bMaster)
 {
-	CBinaryFrobMover::Close(bMaster);
 /*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
@@ -650,8 +649,7 @@ void CFrobDoor::Close(bool bMaster)
 	// When we close the door, we don't want to do the handle tap, as 
 	// it looks a bit strange
 //	if(m_Doorhandle)
-//		m_Doorhandle->Tap();
-
+//		m_Doorhandle->Tap();*/
 
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
@@ -660,39 +658,25 @@ void CFrobDoor::Close(bool bMaster)
 	//	m_Doorhandle->Open(false);
 
 	// Handle master mode
-	if(bMaster == true && m_MasterLock.Length() != 0)
+	if (bMaster && !m_MasterLock.IsEmpty())
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		idEntity* ent = gameLocal.FindEntity(m_MasterLock);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Close(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			static_cast<CFrobDoor*>(ent)->Close(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not spawned or of wrong type.\r", name.c_str(), m_MasterLock.c_str());
 		}
 	}
 	else
 	{
-		int i, n;
+		// Invoke the close method in non-master mode, this will fire the events
+		CBinaryFrobMover::Close();
 
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
-					ent->Close(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
-
-		idAngles tempAng = physicsObj.GetLocalAngles();
+		/*idAngles tempAng = physicsObj.GetLocalAngles();
 		
 		m_StateChange = true;
 		m_Rotating = true;
@@ -703,9 +687,31 @@ void CFrobDoor::Close(bool bMaster)
 		if( m_TransSpeed )
 			Event_SetMoveSpeed( m_TransSpeed );
 
-		MoveToLocalPos(m_ClosedOrigin);
+		MoveToLocalPos(m_ClosedOrigin);*/
 	}
-*/
+}
+
+void CFrobDoor::OnStartClose(bool wasOpen)
+{
+	CBinaryFrobMover::OnStartClose(wasOpen);
+
+	// Cycle through our "open peers" list and issue the call to them
+	for (int i = 0; i < m_OpenList.Num(); i++)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_OpenList[i].c_str());
+
+		idEntity* ent = gameLocal.FindEntity(m_OpenList[i]);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for close\r", m_OpenList[i].c_str());
+			static_cast<CFrobDoor*>(ent)->Close(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), m_OpenList[i].c_str());
+		}
+	}
 }
 
 void CFrobDoor::OnClosedPositionReached() 

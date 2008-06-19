@@ -127,8 +127,9 @@ protected:
 	virtual void			OnLock();
 	virtual void			OnUnlock();
 
-	// Specialise the OnStartOpen event to send the call to the open peers
+	// Specialise the OnStartOpen/OnStartClose event to send the call to the open peers
 	virtual void			OnStartOpen(bool wasClosed);
+	virtual void			OnStartClose(bool wasOpen);
 
 	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
 	virtual void			OnClosedPositionReached();
