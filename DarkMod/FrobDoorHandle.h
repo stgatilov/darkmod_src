@@ -18,30 +18,23 @@ class CFrobDoor;
 /**
  * CFrobDoorHandle is the complement for CFrobDoors. This is
  * quite similar to the doors itself, because they are attached
- * to it. If a handle is frobbed, instead of the actual door,
- * all calls are basically forwarded to it's door, so that the 
+ * to it. If a handle is frobbed instead of the actual door,
+ * all calls are basically forwarded to its door, so that the 
  * player doesn't see a difference. From the player perspective
  * the handle acts the same as the door.
  */
-class CFrobDoorHandle : public CBinaryFrobMover {
+class CFrobDoorHandle : 
+	public CBinaryFrobMover
+{
 public:
-	friend class CFrobDoor;
-
 	CLASS_PROTOTYPE( CFrobDoorHandle );
 
-							CFrobDoorHandle( void );
+							CFrobDoorHandle();
 
-	void					Spawn( void );
+	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
-
-	/**
-	 * Get the door that is currently associated with this handle.
-	 */
-	CFrobDoor				*GetDoor(void);
-	void					Event_GetDoor(void);
-	void					Event_Tap(void);
 
 	/**
 	 * Functions that must be forwarded to the door.
@@ -54,9 +47,12 @@ public:
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
 	void					ToggleLock();
-	virtual void			ClosePortal();
-	virtual void			OpenPortal();
-	void					DoneStateChange();
+
+	/**
+	 * Get/set the door associated with this handle.
+	 */
+	CFrobDoor*				GetDoor();
+	void					SetDoor(CFrobDoor* door);
 
 	// greebo: Returns TRUE if the associated door is locked (not to confuse with CBinaryFrobMover::IsLocked())
 	bool					DoorIsLocked();
@@ -72,13 +68,21 @@ public:
 	void					Tap();
 
 protected:
+	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
+	virtual void OnOpenPositionReached();
+
+	// Script event interface
+	void					Event_GetDoor();
+	void					Event_Tap();
+
+protected:
 	/**
 	* Pointer to the door that is associated with this handle
 	**/
-	CFrobDoor				*m_Door;
-	bool					m_FrobLock;
+	CFrobDoor*				m_Door;
 
-private:
+	// A mutable bool to avoid infinite loops when propagating the frob
+	bool					m_FrobLock;
 };
 
-#endif /* !TDMDOORHANDLE_H */
+#endif /* FROBDOORHANDLE_H */

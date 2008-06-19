@@ -360,7 +360,7 @@ void CFrobDoor::PostSpawn()
 			m_Doorhandle = handle;
 			m_OriginalPosition = handle->GetPhysics()->GetOrigin();
 			m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
-			handle->m_Door = this;
+			handle->SetDoor(this);
 
 			// Check if we should bind the handle to ourselves
 			if (spawnArgs.GetBool("door_handle_bind_flag", "1"))

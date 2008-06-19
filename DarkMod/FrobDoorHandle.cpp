@@ -49,7 +49,7 @@ void CFrobDoorHandle::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_FrobLock);
 }
 
-void CFrobDoorHandle::Spawn(void)
+void CFrobDoorHandle::Spawn()
 {
 	// Dorhandles are always non-interruptable
 	m_bInterruptable = false;
@@ -58,9 +58,14 @@ void CFrobDoorHandle::Spawn(void)
 	m_Locked = false;
 }
 
-CFrobDoor *CFrobDoorHandle::GetDoor(void)
+CFrobDoor* CFrobDoorHandle::GetDoor()
 {
 	return m_Door;
+}
+
+void CFrobDoorHandle::SetDoor(CFrobDoor* door)
+{
+	m_Door = door;
 }
 
 void CFrobDoorHandle::Event_GetDoor(void)
@@ -75,14 +80,20 @@ void CFrobDoorHandle::Event_Tap(void)
 
 void CFrobDoorHandle::SetFrobbed(bool val)
 {
-	if(m_FrobLock == false)		// Prevent an infinte loop here.
+	if (m_FrobLock == false)		// Prevent an infinte loop here.
 	{
 		m_FrobLock = true;
+
 		idEntity::SetFrobbed(val);
-		if(m_Door)
+
+		if (m_Door != NULL)
+		{
 			m_Door->SetFrobbed(val);
+		}
+
 		m_FrobLock = false;
 	}
+
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_handle [%s] %08lX is frobbed\r", name.c_str(), this);
 }
 
@@ -92,55 +103,38 @@ bool CFrobDoorHandle::IsFrobbed(void)
 	// want to crash the game just because of it. And after all, a handle
 	// MIGHT be used for some other purpose, so it acts like a normal entity
 	// if it doesn't has a door.
-	if(m_Door)
-		return m_Door->IsFrobbed();
-	else
-		return idEntity::IsFrobbed();
+	return (m_Door != NULL) ? m_Door->IsFrobbed() : idEntity::IsFrobbed();
 }
 
 // A handle itself can not be used by other objects, so we only
 // forward it in case of a door.
 bool CFrobDoorHandle::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
-	if(m_Door)
-		return m_Door->UsedBy(nState, item);
-
-	return false;
+	// Pass the call to the door, if we have one, otherwise just ignore it
+	return (m_Door != NULL) ? m_Door->UsedBy(nState, item) : false;
 }
 
 void CFrobDoorHandle::FrobAction(bool bMaster)
 {
-	if(m_Door)
+	if (m_Door != NULL)
+	{
 		m_Door->FrobAction(bMaster);
-}
-
-// A handle can't close or open a portal, so we block it. The same is true for the Done* and statechanges
-void CFrobDoorHandle::ClosePortal(void)
-{
-}
-
-void CFrobDoorHandle::OpenPortal(void)
-{
+	}
 }
 
 void CFrobDoorHandle::ToggleLock() 
 {}
 
-void CFrobDoorHandle::DoneStateChange(void)
+void CFrobDoorHandle::OnOpenPositionReached()
 {
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("doorhandle [%s] finished state_change.\r", name.c_str());
-	CBinaryFrobMover::DoneStateChange();
-
-	if (m_Open)
+	// The handle is "opened", trigger the door
+	if (m_Door != NULL && !m_Door->IsOpen())
 	{
-		// The handle is "opened", trigger the door
-		if (m_Door != NULL && !m_Door->IsOpen())
-		{
-			m_Door->OpenDoor(false);
-		}
-
-		Close(true);
+		m_Door->OpenDoor(true);
 	}
+
+	// Let the handle return to its initial position
+	Close(true);
 }
 
 void CFrobDoorHandle::Tap()
