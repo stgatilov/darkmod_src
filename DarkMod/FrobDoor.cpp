@@ -86,18 +86,17 @@ CFrobDoor::CFrobDoor()
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
-/*
-	savefile->WriteString(m_MasterOpen.c_str());
+	savefile->WriteString(m_MasterOpen);
 
 	savefile->WriteInt(m_OpenList.Num());
 	for (int i = 0; i < m_OpenList.Num(); i++)
-		savefile->WriteString(m_OpenList[i].c_str());
+		savefile->WriteString(m_OpenList[i]);
 
-	savefile->WriteString(m_MasterLock.c_str());
+	savefile->WriteString(m_MasterLock);
 
 	savefile->WriteInt(m_LockList.Num());
 	for (int i = 0; i < m_LockList.Num(); i++)
-		savefile->WriteString(m_LockList[i].c_str());
+		savefile->WriteString(m_LockList[i]);
 
 	savefile->WriteInt(m_Pins.Num());
 	for (int i = 0; i < m_Pins.Num(); i++)
@@ -106,7 +105,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
-			savefile->WriteString(stringList[j].c_str());
+			savefile->WriteString(stringList[j]);
 	}
 
 	savefile->WriteInt(m_RandomPins.Num());
@@ -116,7 +115,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
-			savefile->WriteString(stringList[j].c_str());
+			savefile->WriteString(stringList[j]);
 	}
 
 	savefile->WriteBool(m_PinTranslationFractionFlag);
@@ -138,12 +137,10 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	m_DoubleDoor.Save(savefile);
 	m_Doorhandle.Save(savefile);
 	m_Bar.Save(savefile);
-*/
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
 {
-/*
 	int num;
 
 	savefile->ReadString(m_MasterOpen);
@@ -204,7 +201,6 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	m_DoubleDoor.Restore(savefile);
 	m_Doorhandle.Restore(savefile);
 	m_Bar.Restore(savefile);
-*/
 }
 
 void CFrobDoor::Spawn( void )
@@ -498,7 +494,7 @@ void CFrobDoor::Unlock(bool bMaster)
 
 void CFrobDoor::Open(bool bMaster)
 {
-	CBinaryFrobMover::Open(bMaster);
+	//CBinaryFrobMover::Open(bMaster);
 /*
 	// Clear this door from the ignore list so AI can react to it again	
 	StimClearIgnoreList(ST_VISUAL);
@@ -511,21 +507,23 @@ void CFrobDoor::Open(bool bMaster)
 	{
 		m_bIntentOpen = false;
 		return;
-	}
+	}*/
 
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
 	// already interrupted
-	if (m_Doorhandle.GetEntity() != NULL && !m_bInterrupted)
+	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
+
+	if (handle != NULL && !m_bInterrupted)
 	{
-		m_StateChange = true;
-		m_Doorhandle.GetEntity()->Tap();
+		// Relay the call to the handle, it will came back to us
+		handle->Tap();
 	}
 	else
 	{
+		// No handle present, let's just proceed with our own open routine
 		OpenDoor(bMaster);
 		m_bInterrupted = false;
 	}
-*/
 }
 
 void CFrobDoor::OpenDoor(bool bMaster)

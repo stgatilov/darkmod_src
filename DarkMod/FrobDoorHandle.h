@@ -53,7 +53,6 @@ public:
 
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
-	void					ToggleOpen();
 	void					ToggleLock();
 	virtual void			ClosePortal();
 	virtual void			OpenPortal();
