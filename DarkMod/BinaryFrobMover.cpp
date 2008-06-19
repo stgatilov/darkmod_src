@@ -918,6 +918,12 @@ void CBinaryFrobMover::OnStartOpen(bool wasClosed)
 	{
 		// Only play the "open" sound when the door was completely closed
 		StartSound("snd_open", SND_CHANNEL_ANY, 0, false, NULL);
+
+		// trigger our targets on opening, if set to do so
+		if (spawnArgs.GetBool("trigger_on_open", "0"))
+		{
+			ActivateTargets(this);
+		}
 	}
 }
 

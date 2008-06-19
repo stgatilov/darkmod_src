@@ -61,7 +61,15 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	void					Open(bool Master);
-	void					OpenDoor(bool Master);		// Needed for the handle to riger the open state
+
+	/** 
+	 * greebo: The OpenDoor method is necessary to give the FrobDoorHandles a 
+	 * "low level" open routine. The CFrobDoor::Open() call is re-routed to 
+	 * the FrobDoorHandle::Tap() method, so there must be a way to actually
+	 * let the door open. Which is what this method does.
+	 */
+	void					OpenDoor(bool Master);		
+
 	void					Close(bool Master);
 	void					Lock(bool Master);
 	void					Unlock(bool Master);
@@ -118,6 +126,12 @@ protected:
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock();
 	virtual void			OnUnlock();
+
+	// Specialise the OnStartOpen event to send the call to the open peers
+	virtual void			OnStartOpen(bool wasClosed);
+
+	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
+	virtual void			OnClosedPositionReached();
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 

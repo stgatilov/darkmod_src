@@ -6780,6 +6780,9 @@ bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 	if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
+
+		// greebo: TODO: Refactor this to use idList::AddUnique()
+
 		i = 0;
 		n = MasterList.Num();
 		bFound = false;

@@ -423,6 +423,7 @@ void CFrobDoor::Lock(bool bMaster)
 		else
 		{
 			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), m_MasterLock.c_str());
+			m_MasterLock = ""; // clear the master string
 		}
 	}
 	else
@@ -471,6 +472,7 @@ void CFrobDoor::Unlock(bool bMaster)
 		else
 		{
 			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), m_MasterLock.c_str());
+			m_MasterLock = ""; // clear the master string
 		}
 	}
 	else
@@ -535,73 +537,47 @@ void CFrobDoor::Open(bool bMaster)
 	{
 		// No handle present, let's just proceed with our own open routine
 		OpenDoor(bMaster);
-		m_bInterrupted = false;
 	}
 }
 
 void CFrobDoor::OpenDoor(bool bMaster)
 {
-/*
-	CFrobDoor *ent;
-	idEntity *e;
-
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
-	// Open door handle if there is one
-	// greebo: This call is not necessary, the handle already moved
-	//if(m_Doorhandle.GetEntity() != NULL)
-	//	m_Doorhandle.GetEntity()->Open(false);
-
 	// Handle master mode
-	if (bMaster == true && !m_MasterLock.IsEmpty())
+	if (bMaster && !m_MasterLock.IsEmpty())
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		idEntity* ent = gameLocal.FindEntity(m_MasterLock);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Open(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			static_cast<CFrobDoor*>(ent)->Open(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not spawned or of wrong type.\r", name.c_str(), m_MasterLock.c_str());
 		}
 	}
-	else
+	else // Non-master mode
 	{
-		int i, n;
+		// Now pass the call to the base class, which will invoke PreOpen() and the other events
+		CBinaryFrobMover::Open(bMaster);
 
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
-					ent->Open(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
-
-		if(m_Locked == true)
-			StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
-		else
+		/*else
 		{
 			// don't play the sound if the door was not closed all the way
 			if( !m_bInterrupted )
 			{	
-				m_StateChange = true;
+				//m_StateChange = true;
 				
-				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
+				//StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
 				
 				// Open visportal
-				OpenPortal();
+				//OpenPortal();
 
 				// trigger our targets on opening, if set to do so
-				if( spawnArgs.GetBool("trigger_on_open","") )
-					ActivateTargets( this );
+				//if( spawnArgs.GetBool("trigger_on_open","") )
+				//	ActivateTargets( this );
 			}
 
 			
@@ -619,9 +595,38 @@ void CFrobDoor::OpenDoor(bool bMaster)
 
 			// Update soundprop
 			UpdateSoundLoss();
+		}*/
+	}
+}
+
+void CFrobDoor::OnStartOpen(bool wasClosed)
+{
+	// Call the base class first
+	CBinaryFrobMover::OnStartOpen(wasClosed);
+
+	// We are actually opening, open the visportal too
+	OpenPortal();
+
+	// Update soundprop
+	UpdateSoundLoss();
+
+	// Cycle through our "open peers" list and issue the call to them
+	for (int i = 0; i < m_OpenList.Num(); i++)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_OpenList[i].c_str());
+
+		idEntity* ent = gameLocal.FindEntity(m_OpenList[i]);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for open\r", m_OpenList[i].c_str());
+			static_cast<CFrobDoor*>(ent)->Open(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), m_OpenList[i].c_str());
 		}
 	}
-*/
 }
 
 void CFrobDoor::Close(bool bMaster)
@@ -701,6 +706,18 @@ void CFrobDoor::Close(bool bMaster)
 		MoveToLocalPos(m_ClosedOrigin);
 	}
 */
+}
+
+void CFrobDoor::OnClosedPositionReached() 
+{
+	// Call the base class
+	CBinaryFrobMover::OnClosedPositionReached();
+
+	// Try to close the visportal
+	ClosePortal();
+
+	// Update the sound propagation values
+	UpdateSoundLoss();
 }
 
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
