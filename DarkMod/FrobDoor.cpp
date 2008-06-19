@@ -1042,7 +1042,6 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 
 void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 {
-	/*
 	int sample_delay, pick_timeout;
 	idStr oPickSound;
 	char type = cType;
@@ -1051,16 +1050,18 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	idVec3 pos;
 	idAngles angle;
 
-	if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+	if (common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+	{
 		m_KeyReleased = true;
+	}
 
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
 	// if there is not currently a sound sample still playing, in which case we 
 	// can ignore that event and wait for all sample events to arrive.
-	if(m_FirstLockedPinIndex >= m_Pins.Num())
+	if (m_FirstLockedPinIndex >= m_Pins.Num())
 	{
-		if(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT)
+		if (nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT)
 		{
 			if(m_SoundTimerStarted <= 0)
 			{
@@ -1226,20 +1227,19 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 Quit:
 	return;
-	*/
 }
 
 void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex)
 {
-	/*
 	int length = 0;
 
 	m_SoundTimerStarted++;
 	PropSoundDirect(oPickSound, true, false );
+
 	idSoundShader const *shader = declManager->FindSound(oPickSound);
 	StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+
 	if(PinIndex != -1)
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
-	*/
 }
