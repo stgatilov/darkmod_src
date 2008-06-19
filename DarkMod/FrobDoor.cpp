@@ -292,10 +292,20 @@ void CFrobDoor::PostSpawn()
 	// Locate the double door entity befor closing our portal
 	FindDoubleDoor();
 
+	// Wait until here for the first update of sound loss, in case a double door is open
+	UpdateSoundLoss();
+
 	if (!m_Open)
 	{
-		// Door starts _completely_ closed, shut the portal
+		// Door starts _completely_ closed, try to shut the portal
 		ClosePortal();
+	}
+
+	// Open the portal if either of the doors is open
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
+	if (m_Open || (doubleDoor != NULL && doubleDoor->IsOpen()))
+	{
+		OpenPortal();
 	}
 
 	m_MasterOpen = spawnArgs.GetString("master_open", "");
@@ -674,7 +684,7 @@ void CFrobDoor::Close(bool bMaster)
 	else
 	{
 		// Invoke the close method in non-master mode, this will fire the events
-		CBinaryFrobMover::Close();
+		CBinaryFrobMover::Close(bMaster);
 
 		/*idAngles tempAng = physicsObj.GetLocalAngles();
 		
@@ -746,7 +756,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	if (str == "lockpick")
 	{
 		str = ent->spawnArgs.GetString("type", "");
-		if(str.Length() == 1)
+		if (str.Length() == 1)
 		{
 			type = str[0];
 		}
@@ -766,7 +776,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 		default:			sample = LPSOUND_REPEAT;
 		};
 		
-		ProcessLockpick((int)type, sample);
+		ProcessLockpick(static_cast<int>(type), sample);
 	}
 
 	// When we are here we know that the item is usable
@@ -780,7 +790,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	int n = m_UsedBy.Num();
 	for (int i = 0; i < n; i++)
 	{
-		if(ent->name == m_UsedBy[i])
+		if (ent->name == m_UsedBy[i])
 		{
 			ToggleLock();
 			bRc = true;
@@ -806,7 +816,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	// angua: we can't unlock the door with this key
 	if (bRc == false && IsLocked() && item->Category()->GetName() == "Keys")
 	{
-		StartSound( "snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL );
+		StartSound("snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL);
 	}
 
 	return bRc;
@@ -814,37 +824,33 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 
 void CFrobDoor::UpdateSoundLoss(void)
 {
-/*
-	float SetVal(0.0f);
-	bool bDoubleOpen(true);
+	if (!areaPortal) return; // not a portal door
 
-	if( !areaPortal )
-		goto Quit;
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
 
-	if( m_DoubleDoor.GetEntity() )
-		bDoubleOpen = m_DoubleDoor.GetEntity()->m_Open;
+	// If we have no double door, assume the bool to be "open"
+	bool doubleDoorIsOpen = (doubleDoor != NULL) ? doubleDoor->IsOpen() : true;
+	bool thisDoorIsOpen = IsOpen();
 
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
 
-	if (m_Open && bDoubleOpen)
+	float lossDB = 0.0f;
+
+	if (thisDoorIsOpen && doubleDoorIsOpen)
 	{
-		SetVal = spawnArgs.GetFloat( "loss_open", "1.0");
+		lossDB = spawnArgs.GetFloat("loss_open", "1.0");
 	}
-	else if (m_Open && !bDoubleOpen)
+	else if (thisDoorIsOpen && !doubleDoorIsOpen)
 	{
-		SetVal = spawnArgs.GetFloat( "loss_double_open", "1.0");
+		lossDB = spawnArgs.GetFloat("loss_double_open", "1.0");
 	}
 	else
 	{
-		SetVal = spawnArgs.GetFloat( "loss_closed", "15.0");
+		lossDB = spawnArgs.GetFloat("loss_closed", "15.0");
 	}
 	
-	gameLocal.m_sndProp->SetPortalLoss( areaPortal, SetVal );
-
-Quit:
-	return;
-*/
+	gameLocal.m_sndProp->SetPortalLoss(areaPortal, lossDB);
 }
 
 void CFrobDoor::FindDoubleDoor(void)
@@ -875,15 +881,6 @@ void CFrobDoor::FindDoubleDoor(void)
 				m_DoubleDoor = static_cast<CFrobDoor*>(obEnt);
 			}
 		}
-	}
-
-	// Wait until here for the first update of sound loss, in case double door is open
-	UpdateSoundLoss();
-
-	// Open the portal if either of the doors is open
-	if (m_Open || (m_DoubleDoor.GetEntity() != NULL && m_DoubleDoor.GetEntity()->IsOpen()))
-	{
-		OpenPortal();
 	}
 }
 
@@ -978,68 +975,69 @@ idStringList *CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCoun
 
 void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
 {
-	/*
 	DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Lockpick Timerevent\r");
 	ProcessLockpick(cType, nSampleType);
-	*/
 }
-
 
 void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
 {
-	/*
-	idAngles a;
-	idVec3 v;
-	double n;
-
-	idEntity *m = m_Bar.GetEntity();
-	if(!m)
-		m = m_Doorhandle.GetEntity();
-
-	if(!m)
-		return;
-
-	if(nPos == HANDLE_POS_ORIGINAL)
+	// If we have a bar entity, this is taken as moving entity
+	idEntity* handle = m_Bar.GetEntity();
+	if (handle == NULL)
 	{
-		m->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
-		v = m->GetLocalCoordinates(m_OriginalPosition);
-		m->SetOrigin(v);
-		m->UpdateVisuals();
+		handle = m_Doorhandle.GetEntity();
+	}
+
+	if (handle == NULL) return; // neither handle nor bar => quit
+
+	if (nPos == HANDLE_POS_ORIGINAL)
+	{
+		// Set the handle back to its original position
+		handle->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
+		idVec3 position = handle->GetLocalCoordinates(m_OriginalPosition);
+		handle->SetOrigin(position);
+
+		handle->UpdateVisuals();
 	}
 	else
 	{
-		n = m_Pins[pin]->Num();
-		if(sample < 0)
-			sample = 0;
-
-		if(m_RandomPins.Num() > 0)
+		int n = m_Pins[pin]->Num();
+		if (sample < 0)
 		{
-			idList<idStr> &sl = *m_RandomPins[pin];
+			sample = 0;
+		}
+
+		if (m_RandomPins.Num() > 0)
+		{
+			idList<idStr>& sl = *m_RandomPins[pin];
 			idStr s = sl[sample];
 			sample = s[0] - '0';
 		}
 
-		if(m_PinRotationFractionFlag == true)
+		// Set the rotation
+		if (m_PinRotationFractionFlag)
 		{
-			m_SampleRotationFraction = m_PinRotationFraction/n;
+			m_SampleRotationFraction = m_PinRotationFraction / n;
 
-			a = (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
-			m->GetPhysics()->SetAxis(a.ToMat3());
+			idAngles angles = (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
+
+			handle->GetPhysics()->SetAxis(angles.ToMat3());
 		}
 
-		if(m_PinTranslationFractionFlag == true)
+		// Set the translation
+		if (m_PinTranslationFractionFlag)
 		{
-			m_SampleTranslationFraction = m_PinTranslationFraction/n;
+			m_SampleTranslationFraction = m_PinTranslationFraction / n;
 
-			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
-			v += m_OriginalPosition;
-			v = m->GetLocalCoordinates(v);
-			m->SetOrigin(v);
+			idVec3 position = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
+			position += m_OriginalPosition;
+			position = handle->GetLocalCoordinates(position);
+
+			handle->SetOrigin(position);
 		}
 
-		m->UpdateVisuals();
+		handle->UpdateVisuals();
 	}
-	*/
 }
 
 void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
