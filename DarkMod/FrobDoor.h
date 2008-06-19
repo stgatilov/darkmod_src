@@ -115,6 +115,9 @@ protected:
 	 **/
 	void					FindDoubleDoor();
 
+	// Specialise the CBinaryFrobMover::OnLock() method to lock the peers
+	virtual void			OnLock();
+
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
 	 * number of clicks for this pin, and BaseCount, defines the minimum number

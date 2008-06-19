@@ -228,12 +228,12 @@ protected:
 	virtual void OnInterrupt();
 
 	/**
-	 * greebo: Is called when the mover is about to be locked.
+	 * greebo: Is called when the mover has just been locked.
 	 */
 	virtual void OnLock();
 
 	/**
-	 * greebo: Is called when the mover is about to be unlocked.
+	 * greebo: Is called when the mover has just been unlocked.
 	 */
 	virtual void OnUnlock();
 

@@ -329,6 +329,7 @@ void CBinaryFrobMover::Lock(bool bMaster)
 	m_Locked = true;
 	CallStateScript();
 
+	// Fire the event for the subclasses
 	OnLock();
 }
 
@@ -345,6 +346,7 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 	m_Locked = false;
 	CallStateScript();
 
+	// Fire the event for the subclasses
 	OnUnlock();
 }
 

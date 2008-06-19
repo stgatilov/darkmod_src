@@ -314,6 +314,7 @@ void CFrobDoor::PostSpawn()
 		else
 		{
 			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned or of wrong type.\r", m_MasterOpen.c_str());
+			m_MasterOpen = "";
 		}
 	}
 
@@ -332,7 +333,8 @@ void CFrobDoor::PostSpawn()
 		}
 		else
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_lock [%s] not spawned\r", m_MasterLock.c_str());
+			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_lock [%s] not spawned or of wrong type\r", m_MasterLock.c_str());
+			m_MasterLock = "";
 		}
 	}
 
@@ -409,45 +411,50 @@ void CFrobDoor::PostSpawn()
 
 void CFrobDoor::Lock(bool bMaster)
 {
-/*
-	CFrobDoor *ent;
-	idEntity *e;
-
-	if(bMaster == true && m_MasterLock.Length() != 0)
+	if (bMaster && !m_MasterLock.IsEmpty())
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		// We have a master lock, re-route the call to it
+		idEntity* ent = gameLocal.FindEntity(m_MasterLock);
+
+		if (ent == NULL || !ent->IsType(CFrobDoor::Type))
 		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Lock(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			static_cast<CFrobDoor*>(ent)->Lock(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), m_MasterLock.c_str());
 		}
 	}
 	else
 	{
-		int i, n;
-
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
-					ent->Lock(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
-
-//		CBinaryFrobMover::Lock(bMaster);
+		// Pass the call to the base class, the OnLock() event will be fired 
+		// if the locking process is allowed
+		CBinaryFrobMover::Lock(bMaster);
 	}
-*/
+}
+
+void CFrobDoor::OnLock()
+{
+	// Call the base class first
+	CBinaryFrobMover::OnLock();
+
+	// No master boolean set, lock all the "lock peers" in the list
+	for (int i = 0; i < m_LockList.Num(); i++)
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
+
+		idEntity* ent = gameLocal.FindEntity(m_LockList[i]);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+			static_cast<CFrobDoor*>(ent)->Lock(false);
+		}
+		else
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found or of wrong type\r", m_LockList[i].c_str());
+		}
+	}
 }
 
 void CFrobDoor::Unlock(bool bMaster)
