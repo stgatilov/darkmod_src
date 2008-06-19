@@ -115,8 +115,9 @@ protected:
 	 **/
 	void					FindDoubleDoor();
 
-	// Specialise the CBinaryFrobMover::OnLock() method to lock the peers
+	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock();
+	virtual void			OnUnlock();
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
