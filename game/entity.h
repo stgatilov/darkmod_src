@@ -581,6 +581,7 @@ public:
 	/**
 	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
 	 * is not the current entities name and b) if the name already exists in the list.
+	 * 
 	 * If both conditions are met, the name is added to the list and true is returned,
 	 * otherwise false is returned and the name is not added to the list.
 	 */
