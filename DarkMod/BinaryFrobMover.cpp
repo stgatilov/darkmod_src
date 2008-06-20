@@ -459,10 +459,10 @@ void CBinaryFrobMover::Open(bool bMaster)
 	{
 		// We're moving, fire the event and pass the starting state
 		OnStartOpen(wasClosed);
-
-		// Set the "intention" flag so that we're closing next time
-		m_bIntentOpen = false;
 	}
+
+	// Set the "intention" flag so that we're closing next time, even if we didn't move
+	m_bIntentOpen = false;
 
 	/*if (IsLocked() == true)
 	{
@@ -525,10 +525,10 @@ void CBinaryFrobMover::Close(bool bMaster)
 	{
 		// We're moving, fire the event and pass the starting state
 		OnStartClose(wasOpen);
-
-		// Set the "intention" flag so that we're opening next time
-		m_bIntentOpen = true;
 	}
+
+	// Set the "intention" flag so that we're opening next time, even if we didn't move
+	m_bIntentOpen = true;
 }
 
 void CBinaryFrobMover::ToggleOpen()
@@ -934,7 +934,11 @@ void CBinaryFrobMover::OnStartClose(bool wasOpen)
 
 void CBinaryFrobMover::OnOpenPositionReached()
 {
-	// To be implemented by the subclasses
+	// trigger our targets when completely opened, if set to do so
+	if (spawnArgs.GetBool("trigger_when_opened", "0"))
+	{
+		ActivateTargets(this);
+	}
 }
 
 void CBinaryFrobMover::OnClosedPositionReached()
