@@ -18,17 +18,12 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndProp.h"
 
 //===============================================================================
-//CFrobButton
+// CFrobButton
 //===============================================================================
 
-
-const idEventDef EV_TDM_Button_Open( "Open", "f" );
-const idEventDef EV_TDM_Button_Close( "Close", "f" );
 const idEventDef EV_TDM_Button_Operate("Operate", NULL);
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobButton )
-	EVENT( EV_TDM_Button_Open,				CFrobButton::Open)
-	EVENT( EV_TDM_Button_Close,				CFrobButton::Close)
 	EVENT( EV_TDM_Button_Operate,			CFrobButton::Operate)
 END_CLASS
 

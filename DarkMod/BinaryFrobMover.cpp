@@ -22,28 +22,28 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "StimResponse/StimResponse.h"
 
 //===============================================================================
-//CBinaryFrobMover
+// CBinaryFrobMover
 //===============================================================================
 
-const idEventDef EV_TDM_Door_Open( "Open", "f" );
-const idEventDef EV_TDM_Door_Close( "Close", "f" );
-const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
-const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
-const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
-const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
-const idEventDef EV_TDM_Door_GetLock( "GetLock", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_Open( "Open", NULL );
+const idEventDef EV_TDM_FrobMover_Close( "Close", NULL );
+const idEventDef EV_TDM_FrobMover_ToggleOpen( "ToggleOpen", NULL );
+const idEventDef EV_TDM_FrobMover_Lock( "Lock", NULL );
+const idEventDef EV_TDM_FrobMover_Unlock( "Unlock", NULL );
+const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", NULL );
+const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", NULL, 'f' );
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
-	EVENT( EV_TDM_Door_Open,				CBinaryFrobMover::Open)
-	EVENT( EV_TDM_Door_Close,				CBinaryFrobMover::Close)
-	EVENT( EV_TDM_Door_ToggleOpen,			CBinaryFrobMover::ToggleOpen)
-	EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
-	EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
-	EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
-	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
-	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::Event_IsLocked)
+	EVENT( EV_TDM_FrobMover_Open,			CBinaryFrobMover::Event_Open)
+	EVENT( EV_TDM_FrobMover_Close,			CBinaryFrobMover::Event_Close)
+	EVENT( EV_TDM_FrobMover_ToggleOpen,		CBinaryFrobMover::Event_ToggleOpen)
+	EVENT( EV_TDM_FrobMover_Lock,			CBinaryFrobMover::Event_Lock)
+	EVENT( EV_TDM_FrobMover_Unlock,			CBinaryFrobMover::Event_Unlock)
+	EVENT( EV_TDM_FrobMover_ToggleLock,		CBinaryFrobMover::Event_ToggleLock)
+	EVENT( EV_TDM_FrobMover_IsOpen,			CBinaryFrobMover::Event_IsOpen)
+	EVENT( EV_TDM_FrobMover_IsLocked,		CBinaryFrobMover::Event_IsLocked)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
 END_CLASS
 
@@ -711,16 +711,6 @@ void CBinaryFrobMover::CallStateScript()
 	}
 }
 
-void CBinaryFrobMover::GetOpen()
-{
-	idThread::ReturnInt(m_Open);
-}
-
-void CBinaryFrobMover::Event_IsLocked()
-{
-	idThread::ReturnInt(IsLocked());
-}
-
 void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
 	ToggleOpen();
@@ -939,6 +929,14 @@ void CBinaryFrobMover::OnOpenPositionReached()
 	{
 		ActivateTargets(this);
 	}
+
+	// Check if we should move back to the closedpos after use
+	float autoCloseTime = -1;
+	if (spawnArgs.GetFloat("auto_close_time", "-1", autoCloseTime) && autoCloseTime >= 0)
+	{
+		// Convert the time to msec and post the event
+		PostEventMS(&EV_TDM_FrobMover_Close, static_cast<int>(SEC2MS(autoCloseTime)));
+	}
 }
 
 void CBinaryFrobMover::OnClosedPositionReached()
@@ -972,4 +970,44 @@ void CBinaryFrobMover::OnUnlock()
 		// The configuration says: open the mover when it's unlocked
 		ToggleOpen();
 	}
+}
+
+void CBinaryFrobMover::Event_Open()
+{
+	Open();
+}
+
+void CBinaryFrobMover::Event_Close()
+{
+	Close();
+}
+
+void CBinaryFrobMover::Event_ToggleOpen()
+{
+	ToggleOpen();
+}
+
+void CBinaryFrobMover::Event_IsOpen()
+{
+	idThread::ReturnInt(m_Open);
+}
+
+void CBinaryFrobMover::Event_Lock()
+{
+	Lock();
+}
+
+void CBinaryFrobMover::Event_Unlock()
+{
+	Unlock();
+}
+
+void CBinaryFrobMover::Event_ToggleLock()
+{
+	ToggleLock();
+}
+
+void CBinaryFrobMover::Event_IsLocked()
+{
+	idThread::ReturnInt(IsLocked());
 }

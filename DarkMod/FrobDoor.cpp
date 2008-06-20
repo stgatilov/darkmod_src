@@ -36,22 +36,13 @@ extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
 //CFrobDoor
 //===============================================================================
 
-const idEventDef EV_TDM_Door_Open( "Open", "f" );
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
-const idEventDef EV_TDM_Door_Close( "Close", "f" );
-const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
-const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
 const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
-	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::OpenDoor)
-	EVENT( EV_TDM_Door_Close,				CFrobDoor::Close)
-	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
-	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
 	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
 	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
