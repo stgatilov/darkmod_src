@@ -22,7 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "FrobDoorHandle.h"
 
 //===============================================================================
-//CFrobDoorHandle
+// CFrobDoorHandle
 //===============================================================================
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
 const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
@@ -68,12 +68,12 @@ void CFrobDoorHandle::SetDoor(CFrobDoor* door)
 	m_Door = door;
 }
 
-void CFrobDoorHandle::Event_GetDoor(void)
+void CFrobDoorHandle::Event_GetDoor()
 {
 	return idThread::ReturnEntity(m_Door);
 }
 
-void CFrobDoorHandle::Event_Tap(void)
+void CFrobDoorHandle::Event_Tap()
 {
 	Tap();
 }

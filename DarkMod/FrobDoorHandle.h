@@ -16,12 +16,15 @@
 class CFrobDoor;
 
 /**
- * CFrobDoorHandle is the complement for CFrobDoors. This is
- * quite similar to the doors itself, because they are attached
- * to it. If a handle is frobbed instead of the actual door,
- * all calls are basically forwarded to its door, so that the 
- * player doesn't see a difference. From the player perspective
- * the handle acts the same as the door.
+ * CFrobDoorHandle is the complement for CFrobDoors. 
+ *
+ * Basically, if a handle is frobbed instead of the actual door,
+ * all calls are forwarded to its door, so that the player doesn't 
+ * notice the difference. From the player's perspective frobbing
+ * the handle feels the same as frobbing the door.
+ *
+ * When frobbing a door with a handle attached, the event chain is like this:
+ * Frob > Door::Open > Handle::Tap > Handle moves to open pos > Door::OpenDoor
  */
 class CFrobDoorHandle : 
 	public CBinaryFrobMover
@@ -40,7 +43,7 @@ public:
 	 * Functions that must be forwarded to the door.
 	 */
 	void					SetFrobbed(bool val);
-	bool					IsFrobbed(void);
+	bool					IsFrobbed();
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 	void					FrobAction(bool bMaster);
 
@@ -69,7 +72,7 @@ public:
 
 protected:
 	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
-	virtual void OnOpenPositionReached();
+	virtual void			OnOpenPositionReached();
 
 	// Script event interface
 	void					Event_GetDoor();
