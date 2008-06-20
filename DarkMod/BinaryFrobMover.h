@@ -192,14 +192,14 @@ protected:
 	 * returns TRUE, the mover is allowed to be locked, returning FALSE will
 	 * let the mover stay unlocked.
 	 */
-	virtual bool PreLock();
+	virtual bool PreLock(bool bMaster);
 
 	/**
 	 * greebo: This is called before the frobmover is unlocked. When this function
 	 * returns TRUE, the mover is allowed to be unlocked, returning FALSE will
 	 * let the mover stay locked.
 	 */
-	virtual bool PreUnlock();
+	virtual bool PreUnlock(bool bMaster);
 
 	/**
 	 * greebo: Gets called when the mover opens. The boolean tells the function 
@@ -240,12 +240,12 @@ protected:
 	/**
 	 * greebo: Is called when the mover has just been locked.
 	 */
-	virtual void OnLock();
+	virtual void OnLock(bool bMaster);
 
 	/**
 	 * greebo: Is called when the mover has just been unlocked.
 	 */
-	virtual void OnUnlock();
+	virtual void OnUnlock(bool bMaster);
 
 	// =========================================================
 

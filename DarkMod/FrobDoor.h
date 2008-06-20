@@ -124,8 +124,8 @@ protected:
 	void					FindDoubleDoor();
 
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
-	virtual void			OnLock();
-	virtual void			OnUnlock();
+	virtual void			OnLock(bool bMaster);
+	virtual void			OnUnlock(bool bMaster);
 
 	// Specialise the OnStartOpen/OnStartClose event to send the call to the open peers
 	virtual void			OnStartOpen(bool wasClosed);
