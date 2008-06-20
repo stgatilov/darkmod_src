@@ -31,15 +31,8 @@ public:
 	// a more complex operation algorithm when the button is pressed in the future
 	virtual void			Operate();
 
-	virtual void			Open(bool Master);
-	virtual void			Close(bool Master);
-
 	// Override the base class's ApplyImpulse method
-	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
-
-	virtual void			ClosePortal();
-	virtual void			OpenPortal();
-
+	virtual void			ApplyImpulse(idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse);
 };
 
 #endif /* FROBBUTTON_H */
