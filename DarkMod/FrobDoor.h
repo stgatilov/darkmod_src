@@ -43,7 +43,9 @@ typedef enum
  * them but this doesn't work with normal idDoors. So CFrobDoor is a mixture
  * of idDoor and idMover.
  */
-class CFrobDoor : public CBinaryFrobMover {
+class CFrobDoor : 
+	public CBinaryFrobMover
+{
 public:
 	typedef enum {
 		HANDLE_POS_ORIGINAL,	// Reset it to the original starting value
@@ -74,8 +76,8 @@ public:
 	virtual void			Lock(bool Master);
 	virtual void			Unlock(bool Master);
 
-	void					GetPickable();
-	void					GetDoorhandle();
+	bool					IsPickable();
+	CFrobDoorHandle*		GetDoorhandle();
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
@@ -140,6 +142,11 @@ protected:
 	 * of clicks, which is always added.
 	 */
 	idStringList*			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
+
+	// Script event interface
+	void					Event_GetDoorhandle();
+	void					Event_IsPickable();
+	void					Event_OpenDoor(float master);
 
 protected:
 	/**

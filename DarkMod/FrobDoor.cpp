@@ -37,14 +37,14 @@ extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
 //===============================================================================
 
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
-const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
+const idEventDef EV_TDM_Door_IsPickable( "IsPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
-	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::OpenDoor)
-	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
-	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
+	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
+	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
+	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 END_CLASS
 
@@ -410,6 +410,11 @@ void CFrobDoor::PostSpawn()
 	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);
 }
 
+bool CFrobDoor::IsPickable()
+{
+	return m_Pickable;
+}
+
 void CFrobDoor::Lock(bool bMaster)
 {
 	if (bMaster && !m_MasterLock.IsEmpty())
@@ -524,6 +529,33 @@ void CFrobDoor::Open(bool bMaster)
 	{
 		// Relay the call to the handle, it will come back to us
 		handle->Tap();
+
+		if (bMaster)
+		{
+			// In master mode, tap the handles of the master_open chain too
+			// Cycle through our "open peers" list and issue the call to them
+			for (int i = 0; i < m_OpenList.Num(); i++)
+			{
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_OpenList[i].c_str());
+
+				idEntity* ent = gameLocal.FindEntity(m_OpenList[i]);
+
+				if (ent != NULL && ent->IsType(CFrobDoor::Type))
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for open\r", m_OpenList[i].c_str());
+					CFrobDoor* other = static_cast<CFrobDoor*>(ent);
+
+					if (other->GetDoorhandle() != NULL)
+					{
+						other->GetDoorhandle()->Tap();
+					}
+				}
+				else
+				{
+					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), m_OpenList[i].c_str());
+				}
+			}
+		}
 	}
 	else
 	{
@@ -801,14 +833,9 @@ void CFrobDoor::FindDoubleDoor(void)
 	}
 }
 
-void CFrobDoor::GetPickable()
+CFrobDoorHandle* CFrobDoor::GetDoorhandle()
 {
-	idThread::ReturnInt(m_Pickable);
-}
-
-void CFrobDoor::GetDoorhandle()
-{
-	idThread::ReturnEntity(m_Doorhandle.GetEntity());
+	return m_Doorhandle.GetEntity();
 }
 
 CFrobDoor* CFrobDoor::GetDoubleDoor()
@@ -1159,4 +1186,19 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 	if(PinIndex != -1)
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
+}
+
+void CFrobDoor::Event_GetDoorhandle()
+{
+	idThread::ReturnEntity(m_Doorhandle.GetEntity());
+}
+
+void CFrobDoor::Event_IsPickable()
+{
+	idThread::ReturnInt(m_Pickable);
+}
+
+void CFrobDoor::Event_OpenDoor(float master)
+{
+	OpenDoor(master != 0.0f ? true : false);
 }

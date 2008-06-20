@@ -130,7 +130,7 @@ void CFrobDoorHandle::OnOpenPositionReached()
 	// The handle is "opened", trigger the door
 	if (m_Door != NULL && !m_Door->IsOpen())
 	{
-		m_Door->OpenDoor(true);
+		m_Door->OpenDoor(false);
 	}
 
 	// Let the handle return to its initial position
