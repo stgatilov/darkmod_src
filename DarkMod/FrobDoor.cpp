@@ -77,17 +77,17 @@ CFrobDoor::CFrobDoor()
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
-	savefile->WriteString(m_MasterOpen);
+	savefile->WriteInt(m_OpenPeers.Num());
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
+	{
+		savefile->WriteString(m_OpenPeers[i]);
+	}
 
-	savefile->WriteInt(m_OpenList.Num());
-	for (int i = 0; i < m_OpenList.Num(); i++)
-		savefile->WriteString(m_OpenList[i]);
-
-	savefile->WriteString(m_MasterLock);
-
-	savefile->WriteInt(m_LockList.Num());
-	for (int i = 0; i < m_LockList.Num(); i++)
-		savefile->WriteString(m_LockList[i]);
+	savefile->WriteInt(m_LockPeers.Num());
+	for (int i = 0; i < m_LockPeers.Num(); i++)
+	{
+		savefile->WriteString(m_LockPeers[i]);
+	}
 
 	savefile->WriteInt(m_Pins.Num());
 	for (int i = 0; i < m_Pins.Num(); i++)
@@ -134,19 +134,19 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 {
 	int num;
 
-	savefile->ReadString(m_MasterOpen);
+	savefile->ReadInt(num);
+	m_OpenPeers.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_OpenPeers[i]);
+	}
 
 	savefile->ReadInt(num);
-	m_OpenList.SetNum(num);
+	m_LockPeers.SetNum(num);
 	for (int i = 0; i < num; i++)
-		savefile->ReadString(m_OpenList[i]);
-
-	savefile->ReadString(m_MasterLock);
-
-	savefile->ReadInt(num);
-	m_LockList.SetNum(num);
-	for (int i = 0; i < num; i++)
-		savefile->ReadString(m_LockList[i]);
+	{
+		savefile->ReadString(m_LockPeers[i]);
+	}
 
 	int numPins;
 	savefile->ReadInt(numPins);
@@ -299,44 +299,50 @@ void CFrobDoor::PostSpawn()
 		OpenPortal();
 	}
 
-	m_MasterOpen = spawnArgs.GetString("master_open", "");
-	if (!m_MasterOpen.IsEmpty())
+	// Search for all spawnargs matching "slave_door_N" and add them to our open peer list
+	const idKeyValue* kv = spawnArgs.MatchPrefix("slave_door");
+
+	while (kv != NULL)
 	{
-		idEntity* entity = gameLocal.FindEntity(m_MasterOpen);
+		const idStr& slaveDoorName = kv->GetValue();
+
+		// Find the entity and check if it's actually a door
+		idEntity* entity = gameLocal.FindEntity(slaveDoorName);
 
 		if (entity != NULL && entity->IsType(CFrobDoor::Type))
 		{
-			CFrobDoor* master = static_cast<CFrobDoor*>(entity);
-
-			AddToMasterList(master->m_OpenList, m_MasterOpen);
-			
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+			m_OpenPeers.AddUnique(slaveDoorName);
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: slave_door %s added to local list (%u)\r", name.c_str(), slaveDoorName.c_str(), m_OpenPeers.Num());
 		}
 		else
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned or of wrong type.\r", m_MasterOpen.c_str());
-			m_MasterOpen = "";
+			DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("slave_door [%s] not spawned or of wrong type.\r", slaveDoorName.c_str());
 		}
+
+		kv = spawnArgs.MatchPrefix("slave_door", kv);
 	}
 
-	m_MasterLock = spawnArgs.GetString("master_lock", "");
-	if (!m_MasterLock.IsEmpty())
+	// Search for all spawnargs matching "slave_lock_N" and add them to our lock peer list
+	kv = spawnArgs.MatchPrefix("slave_lock");
+
+	while (kv != NULL)
 	{
-		idEntity* entity = gameLocal.FindEntity(m_MasterLock);
+		const idStr& slaveLockName = kv->GetValue();
+
+		// Find the entity and check if it's actually a door
+		idEntity* entity = gameLocal.FindEntity(slaveLockName);
 
 		if (entity != NULL && entity->IsType(CFrobDoor::Type))
 		{
-			CFrobDoor* master = static_cast<CFrobDoor*>(entity);
-
-			AddToMasterList(master->m_LockList, m_MasterLock);
-
-			DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_lock [%s] (%u)\r", m_MasterLock.c_str(), master->m_LockList.Num());
+			m_LockPeers.AddUnique(slaveLockName);
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: slave_lock %s added to local list (%u)\r", name.c_str(), slaveLockName.c_str(), m_LockPeers.Num());
 		}
 		else
 		{
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_lock [%s] not spawned or of wrong type\r", m_MasterLock.c_str());
-			m_MasterLock = "";
+			DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("slave_lock [%s] not spawned or of wrong type.\r", slaveLockName.c_str());
 		}
+
+		kv = spawnArgs.MatchPrefix("slave_lock", kv);
 	}
 
 	idStr doorHandleName = spawnArgs.GetString("door_handle", "");
@@ -417,27 +423,9 @@ bool CFrobDoor::IsPickable()
 
 void CFrobDoor::Lock(bool bMaster)
 {
-	if (bMaster && !m_MasterLock.IsEmpty())
-	{
-		// We have a master lock, re-route the call to it
-		idEntity* ent = gameLocal.FindEntity(m_MasterLock);
-
-		if (ent == NULL || !ent->IsType(CFrobDoor::Type))
-		{
-			static_cast<CFrobDoor*>(ent)->Lock(false);
-		}
-		else
-		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), m_MasterLock.c_str());
-			m_MasterLock = ""; // clear the master string
-		}
-	}
-	else
-	{
-		// Pass the call to the base class, the OnLock() event will be fired 
-		// if the locking process is allowed
-		CBinaryFrobMover::Lock(bMaster);
-	}
+	// Pass the call to the base class, the OnLock() event will be fired 
+	// if the locking process is allowed
+	CBinaryFrobMover::Lock(bMaster);
 }
 
 void CFrobDoor::OnLock(bool bMaster)
@@ -453,27 +441,9 @@ void CFrobDoor::OnLock(bool bMaster)
 
 void CFrobDoor::Unlock(bool bMaster)
 {
-	if (bMaster && !m_MasterLock.IsEmpty())
-	{
-		// We have a master lock, re-route the call to it
-		idEntity* ent = gameLocal.FindEntity(m_MasterLock);
-
-		if (ent == NULL || !ent->IsType(CFrobDoor::Type))
-		{
-			static_cast<CFrobDoor*>(ent)->Unlock(false);
-		}
-		else
-		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), m_MasterLock.c_str());
-			m_MasterLock = ""; // clear the master string
-		}
-	}
-	else
-	{
-		// Pass the call to the base class, the OnUnlock() event will be fired 
-		// if the locking process is allowed
-		CBinaryFrobMover::Unlock(bMaster);
-	}
+	// Pass the call to the base class, the OnUnlock() event will be fired 
+	// if the locking process is allowed
+	CBinaryFrobMover::Unlock(bMaster);
 }
 
 void CFrobDoor::OnUnlock(bool bMaster)
@@ -541,21 +511,6 @@ void CFrobDoor::Close(bool bMaster)
 
 	// Invoke the close method in any case
 	CBinaryFrobMover::Close(bMaster);
-
-	// Handle master mode
-	if (bMaster && !m_MasterOpen.IsEmpty())
-	{
-		idEntity* ent = gameLocal.FindEntity(m_MasterOpen);
-
-		if (ent != NULL && ent->IsType(CFrobDoor::Type))
-		{
-			static_cast<CFrobDoor*>(ent)->Close(false);
-		}
-		else
-		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not spawned or of wrong type.\r", name.c_str(), m_MasterOpen.c_str());
-		}
-	}
 }
 
 void CFrobDoor::OnStartClose(bool wasOpen, bool bMaster)
@@ -588,9 +543,6 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 		return bRc;
 
 	idEntity* ent = item->GetItemEntity();
-
-	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
-		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
 
 	// First we check if this item is a lockpick. It has to be of the toolclass lockpick
 	// and the type must be set.
@@ -638,22 +590,6 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 		{
 			ToggleLock();
 			bRc = true;
-		}
-	}
-
-	// If we haven't found the entity here. we can still try to unlock it
-	// via a master
-	if (bRc == false && !m_MasterLock.IsEmpty())
-	{
-		// Try to find the master lock entity
-		idEntity* masterEnt = gameLocal.FindEntity(m_MasterLock);
-		if (masterEnt != NULL)
-		{
-			bRc = masterEnt->UsedBy(nState, item);
-		}
-		else
-		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] could not be found\r", name.c_str(), masterEnt->name.c_str());
 		}
 	}
 
@@ -1096,15 +1032,17 @@ void CFrobDoor::CloseSlaves()
 void CFrobDoor::OpenCloseSlaves(bool open)
 {
 	// Cycle through our "open peers" list and issue the call to them
-	for (int i = 0; i < m_OpenList.Num(); i++)
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_OpenList[i].c_str());
+		const idStr& openPeer = m_OpenPeers[i];
 
-		idEntity* ent = gameLocal.FindEntity(m_OpenList[i]);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", openPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(openPeer);
 
 		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for OpenClose\r", m_OpenList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for OpenClose\r", openPeer.c_str());
 
 			CFrobDoor* door = static_cast<CFrobDoor*>(ent);
 
@@ -1128,7 +1066,7 @@ void CFrobDoor::OpenCloseSlaves(bool open)
 		}
 		else
 		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), m_OpenList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), openPeer.c_str());
 		}
 	}
 }
@@ -1146,15 +1084,17 @@ void CFrobDoor::UnlockSlaves()
 void CFrobDoor::LockUnlockSlaves(bool lock)
 {
 	// Go through the list and issue the call
-	for (int i = 0; i < m_LockList.Num(); i++)
+	for (int i = 0; i < m_LockPeers.Num(); i++)
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
+		const idStr& lockPeer = m_LockPeers[i];
 
-		idEntity* ent = gameLocal.FindEntity(m_LockList[i]);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", lockPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(lockPeer);
 
 		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", lockPeer.c_str());
 
 			CFrobDoor* door = static_cast<CFrobDoor*>(ent);
 			
@@ -1169,7 +1109,7 @@ void CFrobDoor::LockUnlockSlaves(bool lock)
 		}
 		else
 		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found or of wrong type\r", m_LockList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found or of wrong type\r", lockPeer.c_str());
 		}
 	}
 }
@@ -1178,15 +1118,17 @@ void CFrobDoor::TapSlaves()
 {
 	// In master mode, tap the handles of the master_open chain too
 	// Cycle through our "open peers" list and issue the call to them
-	for (int i = 0; i < m_OpenList.Num(); i++)
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_OpenList[i].c_str());
+		const idStr& openPeer = m_OpenPeers[i];
 
-		idEntity* ent = gameLocal.FindEntity(m_OpenList[i]);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", openPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(openPeer);
 
 		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for tapping\r", m_OpenList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for tapping\r", openPeer.c_str());
 			CFrobDoor* other = static_cast<CFrobDoor*>(ent);
 
 			if (other->GetDoorhandle() != NULL)
@@ -1196,7 +1138,7 @@ void CFrobDoor::TapSlaves()
 		}
 		else
 		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), m_OpenList[i].c_str());
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), openPeer.c_str());
 		}
 	}
 }

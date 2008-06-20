@@ -162,32 +162,16 @@ protected:
 
 protected:
 	/**
-	 * LinkedOpen will point to a door that is to be switched when this
-	 * one is triggered. Note that the next door is flipped! This means
-	 * it will change it's state according to it's current state. So if
-	 * this door is open and the other one is closed this door will be
-	 * closed and the other one will be opened. If both are open and they
-	 * are used, both are closed and vice versa. With this pointer you can
-	 * also create a chain of doors by each door pointing to the next one.
-	 * Of ocurse the last door in the chain should NOT point to the first
-	 * door, otherwise it will result in an endless loop.
+	 * This is a list of slave doors, which should be opened and closed
+	 * along with this door.
 	 */
-	idStr						m_MasterOpen;
-	idList<idStr>				m_OpenList;
+	idList<idStr>				m_OpenPeers;
 
-	/**
-	 * This member is the same as m_LinkedOpen, only for locks. This means
-	 * that, if this door is locked, or unlocked, all other associated doors
-	 * will also be locked or unlocked. Again the state depends on the respective
-	 * entity state and not on the action itself. This means that if one door
-	 * is locked and the other is unlocked, the lockstate will reverse. If both
-	 * are locked or unlocked, both will become unlocked or locked.
-	 * This way you can create i.e. a safety catch were always one door is open
-	 * and the other one is closed. Or you can create a set of doors that all are
-	 * locked when this one is unlocked.
+	/** 
+	 * This list is the pendant to the above one: m_OpenPeers. It specifies
+	 * all names of the doors which should be locked/unlocked along with this one.
 	 */
-	idStr						m_MasterLock;
-	idList<idStr>				m_LockList;
+	idList<idStr>				m_LockPeers;
 
 	idList<idStringList *>		m_Pins;
 	idList<idStringList *>		m_RandomPins;
