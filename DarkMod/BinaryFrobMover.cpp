@@ -308,6 +308,27 @@ void CBinaryFrobMover::PostSpawn()
 	}
 
 	UpdateVisuals();
+
+	// Check if we should auto-open, which could also happen right at the map start
+	if (IsAtClosedPosition())
+	{
+		float autoOpenTime = -1;
+		if (spawnArgs.GetFloat("auto_open_time", "-1", autoOpenTime) && autoOpenTime >= 0)
+		{
+			// Convert the time to msec and post the event
+			PostEventMS(&EV_TDM_FrobMover_Open, static_cast<int>(SEC2MS(autoOpenTime)));
+		}
+	}
+	else if (IsAtOpenPosition())
+	{
+		// Check if we should move back to the closedpos
+		float autoCloseTime = -1;
+		if (spawnArgs.GetFloat("auto_close_time", "-1", autoCloseTime) && autoCloseTime >= 0)
+		{
+			// Convert the time to msec and post the event
+			PostEventMS(&EV_TDM_FrobMover_Close, static_cast<int>(SEC2MS(autoCloseTime)));
+		}
+	}
 }
 
 void CBinaryFrobMover::Event_PostSpawn() 
@@ -948,6 +969,14 @@ void CBinaryFrobMover::OnClosedPositionReached()
 	if (spawnArgs.GetBool("trigger_on_close", "0"))
 	{
 		ActivateTargets(this);
+	}
+
+	// Check if we should move back to the openpos
+	float autoOpenTime = -1;
+	if (spawnArgs.GetFloat("auto_open_time", "-1", autoOpenTime) && autoOpenTime >= 0)
+	{
+		// Convert the time to msec and post the event
+		PostEventMS(&EV_TDM_FrobMover_Open, static_cast<int>(SEC2MS(autoOpenTime)));
 	}
 }
 
