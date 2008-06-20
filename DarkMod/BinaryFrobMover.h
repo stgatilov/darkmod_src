@@ -209,7 +209,7 @@ protected:
 	 * when the "fully closed" => "opening" transition is happening, like opening 
 	 * visportals or playing open sounds.
 	 */
-	virtual void OnStartOpen(bool wasClosed);
+	virtual void OnStartOpen(bool wasClosed, bool bMaster);
 
 	/**
 	 * greebo: Gets called when the mover is closing. The boolean tells the function 
@@ -218,7 +218,7 @@ protected:
 	 * This can be implemented by subclasses to do stuff that should be done
 	 * when the "fully open" => "opening" transition is happening.
 	 */
-	virtual void OnStartClose(bool wasOpen);
+	virtual void OnStartClose(bool wasOpen, bool bMaster);
 
 	/**
 	 * greebo: Gets called when the mover stops its opening move and has

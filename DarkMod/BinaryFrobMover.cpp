@@ -465,7 +465,7 @@ void CBinaryFrobMover::Open(bool bMaster)
 	if (StartMoving(true))
 	{
 		// We're moving, fire the event and pass the starting state
-		OnStartOpen(wasClosed);
+		OnStartOpen(wasClosed, bMaster);
 	}
 
 	// Set the "intention" flag so that we're closing next time, even if we didn't move
@@ -489,7 +489,7 @@ void CBinaryFrobMover::Close(bool bMaster)
 	if (StartMoving(false))
 	{
 		// We're moving, fire the event and pass the starting state
-		OnStartClose(wasOpen);
+		OnStartClose(wasOpen, bMaster);
 	}
 
 	// Set the "intention" flag so that we're opening next time, even if we didn't move
@@ -808,7 +808,7 @@ bool CBinaryFrobMover::PreUnlock(bool bMaster)
 	return true; // default: mover is allowed to be unlocked
 }
 
-void CBinaryFrobMover::OnStartOpen(bool wasClosed)
+void CBinaryFrobMover::OnStartOpen(bool wasClosed, bool bMaster)
 {
 	if (wasClosed)
 	{
@@ -823,7 +823,7 @@ void CBinaryFrobMover::OnStartOpen(bool wasClosed)
 	}
 }
 
-void CBinaryFrobMover::OnStartClose(bool wasOpen)
+void CBinaryFrobMover::OnStartClose(bool wasOpen, bool bMaster)
 {
 	// To be implemented by the subclasses
 }
