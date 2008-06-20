@@ -29,7 +29,7 @@ public:
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);
 
-	// Switches the lever state to the given state (true = "on")
+	// Switches the lever state to the given state (true = "open")
 	void			SwitchState(bool newState);
 
 	// Calling Operate() toggles the current state
