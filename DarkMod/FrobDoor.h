@@ -136,6 +136,18 @@ protected:
 	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
 	virtual void			OnClosedPositionReached();
 
+	// Helper functions to cycle through the m_OpenList members
+	void					OpenSlaves();
+	void					CloseSlaves();
+	void					OpenCloseSlaves(bool open);
+
+	// Taps all slave doorhandles
+	void					TapSlaves();
+
+	void					LockSlaves();
+	void					UnlockSlaves();
+	void					LockUnlockSlaves(bool lock);
+
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
 	 * number of clicks for this pin, and BaseCount, defines the minimum number
