@@ -1180,7 +1180,15 @@ CFrobDoorHandle* CFrobDoor::GetDoorhandle()
 void CFrobDoor::AddDoorhandle(CFrobDoorHandle* handle)
 {
 	// Store the pointer and the original position
-	m_Doorhandles.Alloc() = handle;
+	idEntityPtr<CFrobDoorHandle> handlePtr;
+	handlePtr = handle;
+
+	if (m_Doorhandles.FindIndex(handlePtr) != -1)
+	{
+		return; // handle is already known
+	}
+
+	m_Doorhandles.Append(handlePtr);
 
 	m_OriginalPosition = handle->GetPhysics()->GetOrigin();
 	m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
