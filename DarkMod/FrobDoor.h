@@ -77,7 +77,9 @@ public:
 	virtual void			Unlock(bool Master);
 
 	bool					IsPickable();
+
 	CFrobDoorHandle*		GetDoorhandle();
+	void					SetDoorhandle(CFrobDoorHandle* handle);
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
@@ -124,6 +126,12 @@ protected:
 	 * This is posted as an event to be called on all doors after entities spawn
 	 **/
 	void					FindDoubleDoor();
+
+	/** 
+	 * greebo: This automatically searches for handles bound to this door and
+	 * sets up the frob_peer, door_handle relationship for mapper's convenience.
+	 */
+	void					AutoSetupDoorHandles();
 
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock(bool bMaster);

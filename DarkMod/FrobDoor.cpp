@@ -320,20 +320,13 @@ void CFrobDoor::PostSpawn()
 
 		if (handleEnt != NULL && handleEnt->IsType(CFrobDoorHandle::Type))
 		{
+			// Convert to frobdoorhandle pointer and call the helper function
 			CFrobDoorHandle* handle = static_cast<CFrobDoorHandle*>(handleEnt);
-			
-			m_Doorhandle = handle;
-			m_OriginalPosition = handle->GetPhysics()->GetOrigin();
-			m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
-			handle->SetDoor(this);
+			SetDoorhandle(handle);
 
-			// Check if we should bind the handle to ourselves
+			// Check if we should bind the named handle to ourselves
 			if (spawnArgs.GetBool("door_handle_bind_flag", "1"))
 			{
-				// Set up the frob peer relationship between the door and the handle
-				m_FrobPeers.AddUnique(handle->name);
-				handle->GetFrobPeers().AddUnique(name);
-				handle->m_bFrobable = m_bFrobable;
 				handle->Bind(this, true);
 			}
 		}
@@ -382,6 +375,12 @@ void CFrobDoor::PostSpawn()
 	// Check if the translation is empty and set the flag.
 	// Set the pin translation flag to FALSE if the translation fraction is zero
 	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);
+
+	// greebo: Should we auto-setup the doorhandles?
+	if (spawnArgs.GetBool("auto_setup_door_handles", "1"))
+	{
+		AutoSetupDoorHandles();
+	}
 }
 
 bool CFrobDoor::IsPickable()
@@ -630,11 +629,6 @@ void CFrobDoor::FindDoubleDoor(void)
 			}
 		}
 	}
-}
-
-CFrobDoorHandle* CFrobDoor::GetDoorhandle()
-{
-	return m_Doorhandle.GetEntity();
 }
 
 CFrobDoor* CFrobDoor::GetDoubleDoor()
@@ -1145,6 +1139,39 @@ void CFrobDoor::AddLockPeer(const idStr& peerName)
 	else
 	{
 		DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("lock_peer [%s] not spawned or of wrong type.\r", peerName.c_str());
+	}
+}
+
+CFrobDoorHandle* CFrobDoor::GetDoorhandle()
+{
+	return m_Doorhandle.GetEntity();
+}
+
+void CFrobDoor::SetDoorhandle(CFrobDoorHandle* handle)
+{
+	// Store the pointer and the original position
+	m_Doorhandle = handle;
+	m_OriginalPosition = handle->GetPhysics()->GetOrigin();
+	m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
+
+	// Let the handle know about us
+	handle->SetDoor(this);
+
+	// Set up the frob peer relationship between the door and the handle
+	m_FrobPeers.AddUnique(handle->name);
+	handle->GetFrobPeers().AddUnique(name);
+	handle->m_bFrobable = m_bFrobable;
+}
+
+void CFrobDoor::AutoSetupDoorHandles()
+{
+	// Find a suitable teamchain member
+	idEntity* part = FindMatchingTeamEntity(CFrobDoorHandle::Type);
+
+	if (part != NULL)
+	{
+		// Found the handle, set it up
+		SetDoorhandle(static_cast<CFrobDoorHandle*>(part));
 	}
 }
 
