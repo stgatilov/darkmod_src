@@ -134,6 +134,11 @@ protected:
 	 */
 	void					AutoSetupDoorHandles();
 
+	/**
+	 * greebo: This is the algorithm for linking the double door via open_peer and lock_peer.
+	 */
+	void					AutoSetupDoubleDoor();
+
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock(bool bMaster);
 	virtual void			OnUnlock(bool bMaster);
