@@ -22,7 +22,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "FrobDoorHandle.h"
 
 //===============================================================================
-//CFrobDoorHandle
+// CFrobDoorHandle
 //===============================================================================
 const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
 const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
@@ -34,22 +34,25 @@ END_CLASS
 
 CFrobDoorHandle::CFrobDoorHandle() :
 	m_Door(NULL),
+	m_Master(true),
 	m_FrobLock(false)
 {}
 
 void CFrobDoorHandle::Save(idSaveGame *savefile) const
 {
 	savefile->WriteObject(m_Door);
+	savefile->WriteBool(m_Master);
 	savefile->WriteBool(m_FrobLock);
 }
 
 void CFrobDoorHandle::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Door));
+	savefile->ReadBool(m_Master);
 	savefile->ReadBool(m_FrobLock);
 }
 
-void CFrobDoorHandle::Spawn(void)
+void CFrobDoorHandle::Spawn()
 {
 	// Dorhandles are always non-interruptable
 	m_bInterruptable = false;
@@ -58,31 +61,42 @@ void CFrobDoorHandle::Spawn(void)
 	m_Locked = false;
 }
 
-CFrobDoor *CFrobDoorHandle::GetDoor(void)
+CFrobDoor* CFrobDoorHandle::GetDoor()
 {
 	return m_Door;
 }
 
-void CFrobDoorHandle::Event_GetDoor(void)
+void CFrobDoorHandle::SetDoor(CFrobDoor* door)
+{
+	m_Door = door;
+}
+
+void CFrobDoorHandle::Event_GetDoor()
 {
 	return idThread::ReturnEntity(m_Door);
 }
 
-void CFrobDoorHandle::Event_Tap(void)
+void CFrobDoorHandle::Event_Tap()
 {
 	Tap();
 }
 
 void CFrobDoorHandle::SetFrobbed(bool val)
 {
-	if(m_FrobLock == false)		// Prevent an infinte loop here.
+	if (m_FrobLock == false)		// Prevent an infinte loop here.
 	{
 		m_FrobLock = true;
+
 		idEntity::SetFrobbed(val);
-		if(m_Door)
+
+		if (m_Door != NULL)
+		{
 			m_Door->SetFrobbed(val);
+		}
+
 		m_FrobLock = false;
 	}
+
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_handle [%s] %08lX is frobbed\r", name.c_str(), this);
 }
 
@@ -92,64 +106,48 @@ bool CFrobDoorHandle::IsFrobbed(void)
 	// want to crash the game just because of it. And after all, a handle
 	// MIGHT be used for some other purpose, so it acts like a normal entity
 	// if it doesn't has a door.
-	if(m_Door)
-		return m_Door->IsFrobbed();
-	else
-		return idEntity::IsFrobbed();
+	return (m_Door != NULL) ? m_Door->IsFrobbed() : idEntity::IsFrobbed();
 }
 
 // A handle itself can not be used by other objects, so we only
 // forward it in case of a door.
 bool CFrobDoorHandle::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 {
-	if(m_Door)
-		return m_Door->UsedBy(nState, item);
-
-	return false;
+	// Pass the call to the door, if we have one, otherwise just ignore it
+	return (m_Door != NULL) ? m_Door->UsedBy(nState, item) : false;
 }
 
 void CFrobDoorHandle::FrobAction(bool bMaster)
 {
-	if(m_Door)
-		m_Door->FrobAction(bMaster);
-}
-
-// A handle can't close or open a portal, so we block it. The same is true for the Done* and statechanges
-void CFrobDoorHandle::ClosePortal(void)
-{
-}
-
-void CFrobDoorHandle::OpenPortal(void)
-{
-}
-
-
-void CFrobDoorHandle::ToggleOpen(void)
-{
-	if( !m_Rotating && !m_Translating )
+	if (m_Door != NULL)
 	{
-		Open(true);
+		m_Door->FrobAction(bMaster);
 	}
 }
 
 void CFrobDoorHandle::ToggleLock() 
 {}
 
-void CFrobDoorHandle::DoneStateChange(void)
+bool CFrobDoorHandle::IsMaster()
 {
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("doorhandle [%s] finished state_change.\r", name.c_str());
-	CBinaryFrobMover::DoneStateChange();
+	return m_Master;
+}
 
-	if (m_Open)
+void CFrobDoorHandle::SetMaster(bool isMaster)
+{
+	m_Master = isMaster;
+}
+
+void CFrobDoorHandle::OnOpenPositionReached()
+{
+	// The handle is "opened", trigger the door, but only if this is the master handle
+	if (m_Master && m_Door != NULL && !m_Door->IsOpen())
 	{
-		// The handle is "opened", trigger the door
-		if (m_Door != NULL && !m_Door->IsOpen())
-		{
-			m_Door->OpenDoor(false);
-		}
-
-		Close(true);
+		m_Door->OpenDoor(false);
 	}
+
+	// Let the handle return to its initial position
+	Close(true);
 }
 
 void CFrobDoorHandle::Tap()
@@ -157,7 +155,8 @@ void CFrobDoorHandle::Tap()
 	// Trigger the handle movement
 	ToggleOpen();
 
-	if (m_Door != NULL)
+	// Only the master handle is allowed to trigger sounds
+	if (m_Master && m_Door != NULL)
 	{
 		// Start the appropriate sound
 		idStr snd = m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default";

@@ -11,9 +11,11 @@
 #define _FROB_LEVER_H_
 
 /** 
- * greebo: This class is designed specifically for buttons.
- * It doesn't do much more than using the BinaryFrobMover functions for now
- * but I guess we will want some additional functionality in the future.
+ * greebo: This class is designed specifically for levers.
+ *
+ * It builds on top of the BinaryFrobMover class and overrides
+ * the relevant virtual event functions to implement proper 
+ * two-state lever behaviour.
  */
 class CFrobLever : 
 	public CBinaryFrobMover 
@@ -27,23 +29,30 @@ public:
 	void			Save(idSaveGame *savefile) const;
 	void			Restore(idRestoreGame *savefile);
 
-	// Switches the lever state to the given state (true = "on")
+	// Switches the lever state to the given state (true = "open")
 	void			SwitchState(bool newState);
 
 	// Calling Operate() toggles the current state
 	void			Operate();
 
-	// Virtual overrides of BinaryFrobMover methods
-	virtual void	Open(bool Master);
-	virtual void	Close(bool Master);
+protected:
+	// Specialise the postspawn event 
+	virtual void	PostSpawn();
+
+	// Specialise the BinaryFrobMover events
+	virtual void	OnOpenPositionReached();
+	virtual void	OnClosedPositionReached();
+
+protected:
+	// The latch is to keep track of our visited positions.
+	// For instance, the lever should not trigger the targets at
+	// its closed position when it wasn't fully opened before.
+	bool			m_Latch;
 
 private:
+	// Script interface
 	void			Event_Operate();
 	void			Event_Switch(int newState);
-
-	virtual void	ClosePortal();
-	virtual void	OpenPortal();
-
 };
 
 #endif /* _FROB_LEVER_H_ */

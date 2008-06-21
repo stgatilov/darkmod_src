@@ -26,140 +26,71 @@ END_CLASS
 
 void CFrobLever::Save(idSaveGame *savefile) const
 {
-	// nothing to save (yet)
+	savefile->WriteBool(m_Latch);
 }
 
 void CFrobLever::Restore( idRestoreGame *savefile )
 {
-	// nothing to restore (yet)
+	savefile->ReadBool(m_Latch);
 }
 
 void CFrobLever::Spawn()
+{}
+
+void CFrobLever::PostSpawn()
 {
+	// Call the base class first
+	CBinaryFrobMover::PostSpawn();
+
+	// Set the latch to TRUE if the mover starts out closed
+	m_Latch = IsAtClosedPosition();
 }
 
 void CFrobLever::SwitchState(bool newState)
 {
 	if (newState)
 	{
-		Open(false);
+		Open();
 	}
 	else
 	{
-		Close(false);
+		Close();
 	}
 }
 
 void CFrobLever::Operate()
 {
-	if (IsOpen())
+	// Just call the BinaryFrobMover method
+	ToggleOpen();
+}
+
+void CFrobLever::OnOpenPositionReached()
+{
+	// Only allow event firing when the latch is TRUE
+	if (m_Latch)
 	{
-		if (IsAtClosedPosition())
+		// Set the latch to false, we've reached the position
+		m_Latch = false;
+
+		CBinaryFrobMover::OnOpenPositionReached();
+
+		// Check if we should move back to the closedpos after use
+		if (spawnArgs.GetBool("revert_when_opened", "0"))
 		{
-			// Aha, seems like we're flagged as open, but we are at the closed position => open
-			m_Open = false;
-			m_bIntentOpen = true;
-			m_bInterrupted = false;
-			Open(false);
+			SwitchState(false);
 		}
-		else
-		{
-			Close(false);
-		}		
-	}
-	else
-	{
-		Open(false);
 	}
 }
 
-void CFrobLever::Open(bool bMaster)
+void CFrobLever::OnClosedPositionReached()
 {
-	// If the mover is already open, we don't have anything to do. :)
-	if (m_Open == true)
-		return;
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobLever: Opening\r" );
-
-	// don't play the sound if the door was not closed all the way
-	m_StateChange = true;
-		
-	StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-		
-	// trigger our targets on opening, if set to do so
-	if( spawnArgs.GetBool("trigger_on_open","") )
+	// Only allow event firing when the latch is FALSE
+	if (!m_Latch)
 	{
-		ActivateTargets( this );
-	}
+		// Set the latch to false, we've reached the position
+		m_Latch = true;
 
-	const idAngles& tempAng = physicsObj.GetLocalAngles();
-
-	m_Open = true;
-	m_Rotating = true;
-	m_Translating = true;
-	idAngles angleDelta = (m_OpenAngles - tempAng).Normalize180();
-	
-	if (!angleDelta.Compare(idAngles(0,0,0)))
-	{
-		Event_RotateOnce(angleDelta);
-	}
-	else
-	{
-		m_Rotating = false;
-	}
-	
-	if( m_TransSpeed )
-	{
-		Event_SetMoveSpeed( m_TransSpeed );
-	}
-
-	if (!physicsObj.GetLocalOrigin().Compare(m_OpenOrigin, VECTOR_EPSILON))
-	{
-		MoveToLocalPos( m_OpenOrigin );
-	}
-	else
-	{
-		m_Translating = false;
-	}
-}
-
-void CFrobLever::Close(bool bMaster)
-{
-	// If the mover is already closed, we don't have anything to do. :)
-	if (m_Open == false)
-		return;
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobLever: Closing\r" );
-
-	m_StateChange = true;
-	m_Rotating = true;
-	m_Translating = true;
-
-	idAngles tempAng;
-	physicsObj.GetLocalAngles( tempAng );
-	idAngles angleDelta = (m_ClosedAngles - tempAng).Normalize180();
-
-	if (!angleDelta.Compare(idAngles(0,0,0)))
-	{
-		Event_RotateOnce(angleDelta);
-	}
-	else
-	{
-		m_Rotating = false;
-	}
-	
-	if( m_TransSpeed )
-	{
-		Event_SetMoveSpeed( m_TransSpeed );
-	}
-
-	if (!physicsObj.GetLocalOrigin().Compare(m_ClosedOrigin, VECTOR_EPSILON))
-	{
-		MoveToLocalPos(m_ClosedOrigin);
-	}
-	else
-	{
-		m_Translating = false;
+		CBinaryFrobMover::OnClosedPositionReached();
 	}
 }
 
@@ -171,13 +102,4 @@ void CFrobLever::Event_Operate()
 void CFrobLever::Event_Switch(int newState)
 {
 	SwitchState(newState == 0 ? false : true);
-}
-
-// A lever can't close or open a portal, so we block it.
-void CFrobLever::ClosePortal()
-{
-}
-
-void CFrobLever::OpenPortal()
-{
 }

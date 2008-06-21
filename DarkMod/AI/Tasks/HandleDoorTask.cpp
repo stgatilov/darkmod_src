@@ -48,7 +48,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 			idAAS*	aas = owner->GetAAS();
 			if (aas != NULL)
 			{
-				int areaNum = frobDoor->GetFrobMoverAasArea(aas);
+				int areaNum = frobDoor->GetAASArea(aas);
 				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 			}
 			subsystem.FinishTask();
@@ -861,7 +861,7 @@ bool HandleDoorTask::OpenDoor()
 			idAAS*	aas = owner->GetAAS();
 			if (aas != NULL)
 			{
-				int areaNum = frobDoor->GetFrobMoverAasArea(aas);
+				int areaNum = frobDoor->GetAASArea(aas);
 				gameLocal.m_AreaManager.AddForbiddenArea(areaNum, owner);
 			}
 

@@ -36,28 +36,15 @@ extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
 //CFrobDoor
 //===============================================================================
 
-const idEventDef EV_TDM_Door_Open( "Open", "f" );
 const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
-const idEventDef EV_TDM_Door_Close( "Close", "f" );
-const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
-const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
-const idEventDef EV_TDM_Door_FindDouble( "FindDoubleDoor", NULL );
-const idEventDef EV_TDM_Door_GetPickable( "GetPickable", NULL, 'f' );
+const idEventDef EV_TDM_Door_IsPickable( "IsPickable", NULL, 'f' );
 const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
 const idEventDef EV_TDM_LockpickTimer( "LockpickTimer", "dd");			// boolean 1 = init, 0 = regular processing, type of lockpick
-const idEventDef EV_TDM_Door_Init( "Init", NULL);						// set the bar/handle entity on the door
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
-	EVENT( EV_TDM_Door_Init,				CFrobDoor::Event_Init)
-	EVENT( EV_TDM_Door_Open,				CFrobDoor::Open)
-	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::OpenDoor)
-	EVENT( EV_TDM_Door_Close,				CFrobDoor::Close)
-	EVENT( EV_TDM_Door_Lock,				CFrobDoor::Lock)
-	EVENT( EV_TDM_Door_Unlock,				CFrobDoor::Unlock)
-	EVENT( EV_TDM_Door_FindDouble,			CFrobDoor::FindDoubleDoor)
-	EVENT( EV_TDM_Door_GetPickable,			CFrobDoor::GetPickable)
-	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::GetDoorhandle)
+	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
+	EVENT( EV_TDM_Door_IsPickable,			CFrobDoor::Event_IsPickable)
+	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
 	EVENT( EV_TDM_LockpickTimer,			CFrobDoor::LockpickTimerEvent)
 END_CLASS
 
@@ -73,29 +60,12 @@ static const char *sSampleTypeText[] =
 	"LPSOUND_LOCK_PICKED"			// Callback for the pin picked
 };
 
-
-E_SDK_SIGNAL_STATE SigOpen(idEntity *oEntity, void *pData)
-{
-	E_SDK_SIGNAL_STATE rc = SIG_REMOVE;
-	CFrobDoor *e;
-
-	if((e = dynamic_cast<CFrobDoor *>(oEntity)) == NULL)
-		goto Quit;
-
-	e->OpenDoor(false);
-
-Quit:
-	return rc;
-}
-
-
 CFrobDoor::CFrobDoor()
 {
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
 	m_DoubleDoor = NULL;
-	m_Doorhandle = NULL;
 	m_FirstLockedPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
 	m_SoundTimerStarted = 0;
@@ -106,17 +76,17 @@ CFrobDoor::CFrobDoor()
 
 void CFrobDoor::Save(idSaveGame *savefile) const
 {
-	savefile->WriteString(m_MasterOpen.c_str());
+	savefile->WriteInt(m_OpenPeers.Num());
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
+	{
+		savefile->WriteString(m_OpenPeers[i]);
+	}
 
-	savefile->WriteInt(m_OpenList.Num());
-	for (int i = 0; i < m_OpenList.Num(); i++)
-		savefile->WriteString(m_OpenList[i].c_str());
-
-	savefile->WriteString(m_MasterLock.c_str());
-
-	savefile->WriteInt(m_LockList.Num());
-	for (int i = 0; i < m_LockList.Num(); i++)
-		savefile->WriteString(m_LockList[i].c_str());
+	savefile->WriteInt(m_LockPeers.Num());
+	for (int i = 0; i < m_LockPeers.Num(); i++)
+	{
+		savefile->WriteString(m_LockPeers[i]);
+	}
 
 	savefile->WriteInt(m_Pins.Num());
 	for (int i = 0; i < m_Pins.Num(); i++)
@@ -125,7 +95,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
-			savefile->WriteString(stringList[j].c_str());
+			savefile->WriteString(stringList[j]);
 	}
 
 	savefile->WriteInt(m_RandomPins.Num());
@@ -135,7 +105,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 		savefile->WriteInt(stringList.Num());
 		for (int j = 0; j < stringList.Num(); j++)
-			savefile->WriteString(stringList[j].c_str());
+			savefile->WriteString(stringList[j]);
 	}
 
 	savefile->WriteBool(m_PinTranslationFractionFlag);
@@ -155,7 +125,12 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_SoundTimerStarted);
 
 	m_DoubleDoor.Save(savefile);
-	m_Doorhandle.Save(savefile);
+
+	savefile->WriteInt(m_Doorhandles.Num());
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
+	{
+		m_Doorhandles[i].Save(savefile);
+	}
 	m_Bar.Save(savefile);
 }
 
@@ -163,19 +138,19 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 {
 	int num;
 
-	savefile->ReadString(m_MasterOpen);
+	savefile->ReadInt(num);
+	m_OpenPeers.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		savefile->ReadString(m_OpenPeers[i]);
+	}
 
 	savefile->ReadInt(num);
-	m_OpenList.SetNum(num);
+	m_LockPeers.SetNum(num);
 	for (int i = 0; i < num; i++)
-		savefile->ReadString(m_OpenList[i]);
-
-	savefile->ReadString(m_MasterLock);
-
-	savefile->ReadInt(num);
-	m_LockList.SetNum(num);
-	for (int i = 0; i < num; i++)
-		savefile->ReadString(m_LockList[i]);
+	{
+		savefile->ReadString(m_LockPeers[i]);
+	}
 
 	int numPins;
 	savefile->ReadInt(numPins);
@@ -219,61 +194,77 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_SoundTimerStarted);
 
 	m_DoubleDoor.Restore(savefile);
-	m_Doorhandle.Restore(savefile);
+	
+	savefile->ReadInt(num);
+	m_Doorhandles.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_Doorhandles[i].Restore(savefile);
+	}
+
 	m_Bar.Restore(savefile);
 }
 
 void CFrobDoor::Spawn( void )
 {
-	idStr str;
+	idStr lockPins = spawnArgs.GetString("lock_pins", "");
 
 	// If a door is locked but has no pins, it means it can not be picked and needs a key.
 	// In that case we can ignore the pins, otherwise we must create the patterns.
-	if(spawnArgs.GetString("lock_pins", "", str))
+	if (!lockPins.IsEmpty())
 	{
 		idStr head = "lockpick_pin_";
-		idStr empty = "";
-		int n = str.Length();
 		int b = cv_lp_pin_base_count.GetInteger();
-		if(b < MIN_CLICK_NUM)
-			b = MIN_CLICK_NUM;
 
-		for(int i = 0; i < n; i++)
+		if (b < MIN_CLICK_NUM)
 		{
-			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, str[i]);
-			idStringList *p = CreatePinPattern(str[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
-			if(p)
+			b = MIN_CLICK_NUM;
+		}
+
+		for (int i = 0; i < lockPins.Length(); i++)
+		{
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pin: %u - %c\r", i, lockPins[i]);
+
+			idStringList* pattern = CreatePinPattern(lockPins[i] - 0x030, b, MAX_PIN_CLICKS, 2, head);
+
+			if (pattern != NULL)
 			{
-				m_Pins.Append(p);
-				if(cv_lp_pawlow.GetBool() == false)
-					p->Insert("lockpick_pin_sweetspot");
+				m_Pins.Append(pattern);
+				if (cv_lp_pawlow.GetBool() == false)
+				{
+					pattern->Insert("lockpick_pin_sweetspot");
+				}
 				else
-					p->Append("lockpick_pin_sweetspot");
+				{
+					pattern->Append("lockpick_pin_sweetspot");
+				}
 			}
 			else
-				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, str[i]);
+			{
+				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+			}
 
-			if(cv_lp_randomize.GetBool() == true)
+			if (cv_lp_randomize.GetBool() == true)
 			{
 				// TODO: Hardcoded 9 is wrong here. Actually the number must be determined by
 				// seeing how many positions the lock can have while in transit.
-				p = CreatePinPattern(str[i] - 0x030, b, 9, 1, empty);
-				if(p)
+				idStr empty = "";
+				pattern = CreatePinPattern(lockPins[i] - 0x030, b, 9, 1, empty);
+				if (pattern != NULL)
 				{
-					p->Insert("0");
-					m_RandomPins.Append(p);
+					pattern->Insert("0");
+					m_RandomPins.Append(pattern);
 				}
 				else
-					DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin jiggle pattern for pin %u value %c\r", name.c_str(), i, str[i]);
+				{
+					DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Door [%s]: couldn't create pin jiggle pattern for pin %u value %c\r", name.c_str(), i, lockPins[i]);
+				}
 			}
 		}
 	}
 
 	m_Pickable = spawnArgs.GetBool("pickable");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] pickable (%u)\r", name.c_str(), m_Pickable);
-
-	//schedule intialization of the doors for after all entities have spawned
-	PostEventMS(&EV_TDM_Door_Init, 0);
 
 	//TODO: Add portal/door pair to soundprop data here, 
 	//	replacing the old way in sndPropLoader
@@ -287,7 +278,7 @@ void CFrobDoor::Spawn( void )
 			continue;
 		}
 		
-		int areaNum = GetFrobMoverAasArea(aas);
+		int areaNum = GetAASArea(aas);
 		idStr areatext(areaNum);
 		//gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,i), 0.2f, colorGreen, 
 		//	mat3_identity, 1, 10000000);
@@ -295,274 +286,241 @@ void CFrobDoor::Spawn( void )
 	}
 }
 
-void CFrobDoor::Lock(bool bMaster)
+void CFrobDoor::PostSpawn()
 {
-	CFrobDoor *ent;
-	idEntity *e;
+	// Let the base class do its stuff first
+	CBinaryFrobMover::PostSpawn();
 
-	if(bMaster == true && m_MasterLock.Length() != 0)
+	// Locate the double door entity befor closing our portal
+	FindDoubleDoor();
+
+	// Wait until here for the first update of sound loss, in case a double door is open
+	UpdateSoundLoss();
+
+	if (!m_Open)
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
+		// Door starts _completely_ closed, try to shut the portal
+		ClosePortal();
+	}
+
+	// Open the portal if either of the doors is open
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
+	if (m_Open || (doubleDoor != NULL && doubleDoor->IsOpen()))
+	{
+		OpenPortal();
+	}
+
+	// Search for all spawnargs matching "open_peer_N" and add them to our open peer list
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("open_peer"); kv != NULL; kv = spawnArgs.MatchPrefix("open_peer", kv))
+	{
+		// Add the peer
+		AddOpenPeer(kv->GetValue());
+	}
+
+	// Search for all spawnargs matching "lock_peer_N" and add them to our lock peer list
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("lock_peer"); kv != NULL; kv = spawnArgs.MatchPrefix("lock_peer", kv))
+	{
+		// Add the peer
+		AddLockPeer(kv->GetValue());
+	}
+
+	idStr doorHandleName = spawnArgs.GetString("door_handle", "");
+	if (!doorHandleName.IsEmpty())
+	{
+		idEntity* handleEnt = gameLocal.FindEntity(doorHandleName);
+
+		if (handleEnt != NULL && handleEnt->IsType(CFrobDoorHandle::Type))
 		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Lock(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
+			// Convert to frobdoorhandle pointer and call the helper function
+			CFrobDoorHandle* handle = static_cast<CFrobDoorHandle*>(handleEnt);
+			AddDoorhandle(handle);
+
+			// Check if we should bind the named handle to ourselves
+			if (spawnArgs.GetBool("door_handle_bind_flag", "1"))
+			{
+				handle->Bind(this, true);
+			}
+		}
+		else
+		{
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not spawned or of wrong type: %s\r", doorHandleName.c_str());
 		}
 	}
-	else
+
+	idStr lockPickBarName = spawnArgs.GetString("lockpick_bar", "");
+	if (!lockPickBarName.IsEmpty())
 	{
-		int i, n;
+		idEntity* bar = gameLocal.FindEntity(lockPickBarName);
 
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
+		if (bar != NULL)
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
-					ent->Lock(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
+			m_Bar = bar;
 
-		CBinaryFrobMover::Lock(bMaster);
+			// The bar overrides the handle info if it exists, because
+			// this is the one that has to move if the lock is picked.
+			m_OriginalPosition = bar->GetPhysics()->GetOrigin();
+			m_OriginalAngle = bar->GetPhysics()->GetAxis().ToAngles();
+
+			// Check if we should bind the bar to ourselves
+			if (spawnArgs.GetBool("lockpick_bar_bind_flag", "1"))
+			{
+				// Set up the frob peer relationship between the door and the bar
+				m_FrobPeers.AddUnique(bar->name);
+				bar->GetFrobPeers().AddUnique(name);
+				bar->m_bFrobable = m_bFrobable;
+				bar->Bind(this, true);
+			}
+		}
+		else
+		{
+			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", lockPickBarName.c_str());
+		}
+	}
+
+	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0") / m_Pins.Num();
+	// Check if the rotation is empty and set the flag.
+	// Set the pin rotation flag to FALSE if the rotation fraction is zero
+	m_PinRotationFractionFlag = (m_PinRotationFraction.Compare(idAngles(0,0,0), VECTOR_EPSILON) == false);
+	
+	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0") / m_Pins.Num();
+	// Check if the translation is empty and set the flag.
+	// Set the pin translation flag to FALSE if the translation fraction is zero
+	m_PinTranslationFractionFlag = (m_PinTranslationFraction.Compare(idVec3(0,0,0), VECTOR_EPSILON) == false);
+
+	// greebo: Should we auto-setup the doorhandles?
+	if (spawnArgs.GetBool("auto_setup_door_handles", "1"))
+	{
+		AutoSetupDoorHandles();
+	}
+
+	// greebo: Should we auto-setup the double door behaviour?
+	if (spawnArgs.GetBool("auto_setup_double_door", "1"))
+	{
+		AutoSetupDoubleDoor();
+	}
+}
+
+bool CFrobDoor::IsPickable()
+{
+	return m_Pickable;
+}
+
+void CFrobDoor::Lock(bool bMaster)
+{
+	// Pass the call to the base class, the OnLock() event will be fired 
+	// if the locking process is allowed
+	CBinaryFrobMover::Lock(bMaster);
+}
+
+void CFrobDoor::OnLock(bool bMaster)
+{
+	// Call the base class first
+	CBinaryFrobMover::OnLock(bMaster);
+
+	if (bMaster)
+	{
+		LockPeers();
 	}
 }
 
 void CFrobDoor::Unlock(bool bMaster)
 {
-	CFrobDoor *ent;
-	idEntity *e;
+	// Pass the call to the base class, the OnUnlock() event will be fired 
+	// if the locking process is allowed
+	CBinaryFrobMover::Unlock(bMaster);
+}
 
-	if(bMaster == true && m_MasterLock.Length() != 0)
+void CFrobDoor::OnUnlock(bool bMaster)
+{
+	// Call the base class first
+	CBinaryFrobMover::OnUnlock(bMaster);
+
+	if (bMaster) 
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
-		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Unlock(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-		}
-	}
-	else
-	{
-		int i, n;
-
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_LockList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_LockList[i].c_str());
-					ent->Unlock(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
-
-		CBinaryFrobMover::Unlock(bMaster);
+		UnlockPeers();
 	}
 }
 
 void CFrobDoor::Open(bool bMaster)
 {
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
-
-	m_StoppedDueToBlock = false;
-
-	// If the door is already open, we don't have anything to do. :)
-	if(m_Open == true && !m_bInterrupted && !IsBlocked())
-	{
-		m_bIntentOpen = false;
-		return;
-	}
-
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
 	// already interrupted
-	if (m_Doorhandle.GetEntity() != NULL && !m_bInterrupted)
+	if (m_Doorhandles.Num() > 0 && !m_bInterrupted)
 	{
-		m_StateChange = true;
-		m_Doorhandle.GetEntity()->Tap();
+		// Relay the call to the handles, the OpenDoor() call will come back to us
+		for (int i = 0; i < m_Doorhandles.Num(); i++)
+		{
+			CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+			if (handle == NULL) continue;
+
+			handle->Tap();
+		}
+
+		if (bMaster)
+		{
+			TapPeers();
+		}
 	}
 	else
 	{
+		// No handle present or interrupted, let's just proceed with our own open routine
 		OpenDoor(bMaster);
-		m_bInterrupted = false;
 	}
 }
 
 void CFrobDoor::OpenDoor(bool bMaster)
 {
-	CFrobDoor *ent;
-	idEntity *e;
-
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
 
-	// Open door handle if there is one
-	// greebo: This call is not necessary, the handle already moved
-	/*if(m_Doorhandle.GetEntity() != NULL)
-		m_Doorhandle.GetEntity()->Open(false);*/
+	// Now pass the call to the base class, which will invoke PreOpen() and the other events
+	CBinaryFrobMover::Open(bMaster);
+}
 
-	// Handle master mode
-	if (bMaster == true && !m_MasterLock.IsEmpty())
+void CFrobDoor::OnStartOpen(bool wasClosed, bool bMaster)
+{
+	// Call the base class first
+	CBinaryFrobMover::OnStartOpen(wasClosed, bMaster);
+
+	// We are actually opening, open the visportal too
+	OpenPortal();
+
+	// Update soundprop
+	UpdateSoundLoss();
+
+	if (bMaster)
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
-		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Open(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-		}
-	}
-	else
-	{
-		int i, n;
-
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
-					ent->Open(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
-
-		if(m_Locked == true)
-			StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
-		else
-		{
-			// don't play the sound if the door was not closed all the way
-			if( !m_bInterrupted )
-			{	
-				m_StateChange = true;
-				
-				StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-				
-				// Open visportal
-				OpenPortal();
-
-				// trigger our targets on opening, if set to do so
-				if( spawnArgs.GetBool("trigger_on_open","") )
-					ActivateTargets( this );
-			}
-
-			
-			m_Open = true;
-			m_Rotating = true;
-			m_Translating = true;
-
-			idAngles tempAng = physicsObj.GetLocalAngles();
-			Event_RotateOnce( (m_OpenAngles - tempAng).Normalize180() );
-			
-			if( m_TransSpeed )
-				Event_SetMoveSpeed( m_TransSpeed );
-
-			MoveToLocalPos( m_OpenOrigin );
-
-			// Update soundprop
-			UpdateSoundLoss();
-		}
+		OpenPeers();
 	}
 }
 
 void CFrobDoor::Close(bool bMaster)
 {
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
-
-	m_StoppedDueToBlock = false;
-
-	CFrobDoor *ent;
-	idEntity *e;
-
-	if(m_Open == false)
-		return;
-
-	m_bInterrupted = false;
-
-	// When we close the door, we don't want to do the handle tap, as 
-	// it looks a bit strange
-//	if(m_Doorhandle)
-//		m_Doorhandle->Tap();
-
-
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
 
-	// Open door handle if there is one
-	//if(m_Doorhandle)
-	//	m_Doorhandle->Open(false);
+	// Invoke the close method in any case
+	CBinaryFrobMover::Close(bMaster);
+}
 
-	// Handle master mode
-	if(bMaster == true && m_MasterLock.Length() != 0)
+void CFrobDoor::OnStartClose(bool wasOpen, bool bMaster)
+{
+	CBinaryFrobMover::OnStartClose(wasOpen, bMaster);
+
+	if (bMaster)
 	{
-		if((e = gameLocal.FindEntity(m_MasterLock.c_str())) != NULL)
-		{
-			if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				ent->Close(false);
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-		}
+		ClosePeers();
 	}
-	else
-	{
-		int i, n;
+}
 
-		n = m_LockList.Num();
-		for(i = 0; i < n; i++)
-		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", m_LockList[i].c_str());
-			if((e = gameLocal.FindEntity(m_OpenList[i].c_str())) != NULL)
-			{
-				if((ent = dynamic_cast<CFrobDoor *>(e)) != NULL)
-				{
-					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", m_OpenList[i].c_str());
-					ent->Close(false);
-				}
-				else
-					DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] is not of class CFrobDoor\r", name.c_str(), e->name.c_str());
-			}
-			else
-				DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found\r", m_LockList[i].c_str());
-		}
+void CFrobDoor::OnClosedPositionReached() 
+{
+	// Call the base class
+	CBinaryFrobMover::OnClosedPositionReached();
 
-		idAngles tempAng = physicsObj.GetLocalAngles();
-		
-		m_StateChange = true;
-		m_Rotating = true;
-		m_Translating = true;
+	// Try to close the visportal
+	ClosePortal();
 
-		Event_RotateOnce( (m_ClosedAngles - tempAng).Normalize180() );
-		
-		if( m_TransSpeed )
-			Event_SetMoveSpeed( m_TransSpeed );
-
-		MoveToLocalPos(m_ClosedOrigin);
-	}
+	// Update the sound propagation values
+	UpdateSoundLoss();
 }
 
 bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
@@ -574,9 +532,6 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 
 	idEntity* ent = item->GetItemEntity();
 
-	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] used by [%s] (%u)  Masterlock: [%s]\r", 
-		name.c_str(), ent->name.c_str(), m_UsedBy.Num(), m_MasterLock.c_str());
-
 	// First we check if this item is a lockpick. It has to be of the toolclass lockpick
 	// and the type must be set.
 	char type = 0;
@@ -585,7 +540,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	if (str == "lockpick")
 	{
 		str = ent->spawnArgs.GetString("type", "");
-		if(str.Length() == 1)
+		if (str.Length() == 1)
 		{
 			type = str[0];
 		}
@@ -605,7 +560,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 		default:			sample = LPSOUND_REPEAT;
 		};
 		
-		ProcessLockpick((int)type, sample);
+		ProcessLockpick(static_cast<int>(type), sample);
 	}
 
 	// When we are here we know that the item is usable
@@ -619,33 +574,17 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	int n = m_UsedBy.Num();
 	for (int i = 0; i < n; i++)
 	{
-		if(ent->name == m_UsedBy[i])
+		if (ent->name == m_UsedBy[i])
 		{
 			ToggleLock();
 			bRc = true;
 		}
 	}
 
-	// If we haven't found the entity here. we can still try to unlock it
-	// via a master
-	if (bRc == false && !m_MasterLock.IsEmpty())
-	{
-		// Try to find the master lock entity
-		idEntity* masterEnt = gameLocal.FindEntity(m_MasterLock);
-		if (masterEnt != NULL)
-		{
-			bRc = masterEnt->UsedBy(nState, item);
-		}
-		else
-		{
-			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Master entity [%s] could not be found\r", name.c_str(), masterEnt->name.c_str());
-		}
-	}
-
 	// angua: we can't unlock the door with this key
 	if (bRc == false && IsLocked() && item->Category()->GetName() == "Keys")
 	{
-		StartSound( "snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL );
+		StartSound("snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL);
 	}
 
 	return bRc;
@@ -653,102 +592,81 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 
 void CFrobDoor::UpdateSoundLoss(void)
 {
-	float SetVal(0.0f);
-	bool bDoubleOpen(true);
+	if (!areaPortal) return; // not a portal door
 
-	if( !areaPortal )
-		goto Quit;
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
 
-	if( m_DoubleDoor.GetEntity() )
-		bDoubleOpen = m_DoubleDoor.GetEntity()->m_Open;
+	// If we have no double door, assume the bool to be "open"
+	bool doubleDoorIsOpen = (doubleDoor != NULL) ? doubleDoor->IsOpen() : true;
+	bool thisDoorIsOpen = IsOpen();
 
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
 
-	if (m_Open && bDoubleOpen)
+	float lossDB = 0.0f;
+
+	if (thisDoorIsOpen && doubleDoorIsOpen)
 	{
-		SetVal = spawnArgs.GetFloat( "loss_open", "1.0");
+		lossDB = spawnArgs.GetFloat("loss_open", "1.0");
 	}
-	else if (m_Open && !bDoubleOpen)
+	else if (thisDoorIsOpen && !doubleDoorIsOpen)
 	{
-		SetVal = spawnArgs.GetFloat( "loss_double_open", "1.0");
+		lossDB = spawnArgs.GetFloat("loss_double_open", "1.0");
 	}
 	else
 	{
-		SetVal = spawnArgs.GetFloat( "loss_closed", "15.0");
+		lossDB = spawnArgs.GetFloat("loss_closed", "15.0");
 	}
 	
-	gameLocal.m_sndProp->SetPortalLoss( areaPortal, SetVal );
-
-Quit:
-	return;
+	gameLocal.m_sndProp->SetPortalLoss(areaPortal, lossDB);
 }
 
 void CFrobDoor::FindDoubleDoor(void)
 {
-	int i, numListedClipModels, testPortal;
-	idBounds clipBounds;
-	idEntity *obEnt;
-	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
+	idClipModel* clipModelList[MAX_GENTITIES];
 
-	clipBounds = physicsObj.GetAbsBounds();
+	idBounds clipBounds = physicsObj.GetAbsBounds();
 	clipBounds.ExpandSelf( 10.0f );
 
-	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
 
-	for ( i = 0; i < numListedClipModels; i++ ) 
+	for (int i = 0; i < numListedClipModels; i++) 
 	{
-		clipModel = clipModelList[i];
-		obEnt = clipModel->GetEntity();
+		idClipModel* clipModel = clipModelList[i];
+		idEntity* obEnt = clipModel->GetEntity();
 
 		// Ignore self
-		if( obEnt == this )
-			continue;
+		if (obEnt == this) continue;
 
-		if ( obEnt->IsType( CFrobDoor::Type ) ) 
+		if (obEnt->IsType(CFrobDoor::Type))
 		{
-			// check the visportal inside the other door, if it's the same as this one, double door
-			testPortal = gameRenderWorld->FindPortal( obEnt->GetPhysics()->GetAbsBounds() );
+			// check the visportal inside the other door, if it's the same as this one => double door
+			int testPortal = gameRenderWorld->FindPortal(obEnt->GetPhysics()->GetAbsBounds());
 
-			if( testPortal == areaPortal && testPortal != 0 )
+			if (testPortal == areaPortal && testPortal != 0)
 			{
-				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str() );
-				m_DoubleDoor = static_cast<CFrobDoor *>( obEnt );
+				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str());
+				m_DoubleDoor = static_cast<CFrobDoor*>(obEnt);
 			}
 		}
 	}
-
-	// Wait until here for the first update of sound loss, in case double door is open
-	UpdateSoundLoss();
-
-	// Open the portal if either of the doors is open
-	if( m_Open || (m_DoubleDoor.GetEntity() && m_DoubleDoor.GetEntity()->m_Open) )
-		Event_OpenPortal();
 }
 
-void CFrobDoor::GetPickable(void)
-{
-	idThread::ReturnInt(m_Pickable);
-}
-
-void CFrobDoor::GetDoorhandle(void)
-{
-	idThread::ReturnEntity(m_Doorhandle.GetEntity());
-}
-
-CFrobDoor* CFrobDoor::GetDoubleDoor( void )
+CFrobDoor* CFrobDoor::GetDoubleDoor()
 {
 	return m_DoubleDoor.GetEntity();
 }
 
 void CFrobDoor::ClosePortal()
 {
-	if( !m_DoubleDoor.GetEntity() || !m_DoubleDoor.GetEntity()->m_Open )
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
+
+	if (doubleDoor == NULL || !doubleDoor->IsOpen())
 	{
-		if ( areaPortal ) 
+		// No double door or double door is closed too
+		if (areaPortal) 
 		{
-			SetPortalState( false );
+			SetPortalState(false);
 		}
 	}
 }
@@ -756,56 +674,67 @@ void CFrobDoor::ClosePortal()
 void CFrobDoor::SetFrobbed(bool val)
 {
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
+
+	// First invoke the base class, then check for a doorhandle
 	idEntity::SetFrobbed(val);
-	if(m_Doorhandle.GetEntity())
-		m_Doorhandle.GetEntity()->SetFrobbed(val);
+
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
+	{
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		handle->SetFrobbed(val);
+	}
 }
 
-bool CFrobDoor::IsFrobbed(void)
+bool CFrobDoor::IsFrobbed()
 {
 	// If the door has a handle and it is frobbed, then we are also considered 
-	// to be frobbed. Maybe this changes later, when the lockpicking is
-	// implemented, but usually this should be true.
-	if(m_Doorhandle.GetEntity())
+	// to be frobbed.
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
 	{
-		if(m_Doorhandle.GetEntity()->IsFrobbed() == true)
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		if (handle->IsFrobbed())
+		{
 			return true;
+		}
 	}
 
+	// None of the handles are frobbed
 	return idEntity::IsFrobbed();
 }
 
-idStringList *CFrobDoor::CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &str)
+idStringList *CFrobDoor::CreatePinPattern(int clicks, int baseCount, int maxCount, int strNumLen, idStr &str)
 {
-	idStringList *rc = NULL;
-	int i, r;
-	idStr click;
-
-	if(!(Clicks >= 0 && Clicks <= 9))
-		return NULL;
-
-	if(Clicks == 0)
-		Clicks = 10;
-
-	Clicks += BaseCount;
-	rc = new idStringList();
-
-	idStr head;
-	sprintf(head, str+"%%0%uu", StrNumLen);
-
-	for(i = 0; i < Clicks; i++)
+	if (clicks < 0 || clicks > 9)
 	{
-		if(i % 2)
-			r = gameLocal.random.RandomInt(MaxCount);
-		else
-			r = rnd.IRandom(0, MaxCount);
+		return NULL;
+	}
 
-		sprintf(click, head, r);
-		rc->Append(click);
+	if (clicks == 0)
+	{
+		clicks = 10;
+	}
+
+	clicks += baseCount;
+	idStringList* returnValue = new idStringList();
+
+	idStr head = va(str+"%%0%uu", strNumLen);
+
+	for (int i = 0; i < clicks; i++)
+	{
+		// Choose a different random number generator every other frame
+		int r = (i % 2) ? gameLocal.random.RandomInt(maxCount) : rnd.IRandom(0, maxCount);
+
+		idStr click = va(head, r);
+		returnValue->Append(click);
+
 		DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("PinPattern %u : %s\r", i, click.c_str());
 	}
 
-	return rc;
+	return returnValue;
 }
 
 void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
@@ -814,59 +743,67 @@ void CFrobDoor::LockpickTimerEvent(int cType, ELockpickSoundsample nSampleType)
 	ProcessLockpick(cType, nSampleType);
 }
 
-
 void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int sample)
 {
-	idAngles a;
-	idVec3 v;
-	double n;
-
-	idEntity *m = m_Bar.GetEntity();
-	if(!m)
-		m = m_Doorhandle.GetEntity();
-
-	if(!m)
-		return;
-
-	if(nPos == HANDLE_POS_ORIGINAL)
+	// If we have a bar entity, this is taken as moving entity
+	idEntity* handle = m_Bar.GetEntity();
+	if (handle == NULL)
 	{
-		m->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
-		v = m->GetLocalCoordinates(m_OriginalPosition);
-		m->SetOrigin(v);
-		m->UpdateVisuals();
+		if (m_Doorhandles.Num() > 0)
+		{
+			handle = m_Doorhandles[0].GetEntity();
+		}
+	}
+
+	if (handle == NULL) return; // neither handle nor bar => quit
+
+	if (nPos == HANDLE_POS_ORIGINAL)
+	{
+		// Set the handle back to its original position
+		handle->GetPhysics()->SetAxis(m_OriginalAngle.ToMat3());
+		idVec3 position = handle->GetLocalCoordinates(m_OriginalPosition);
+		handle->SetOrigin(position);
+
+		handle->UpdateVisuals();
 	}
 	else
 	{
-		n = m_Pins[pin]->Num();
-		if(sample < 0)
-			sample = 0;
-
-		if(m_RandomPins.Num() > 0)
+		int n = m_Pins[pin]->Num();
+		if (sample < 0)
 		{
-			idList<idStr> &sl = *m_RandomPins[pin];
+			sample = 0;
+		}
+
+		if (m_RandomPins.Num() > 0)
+		{
+			idList<idStr>& sl = *m_RandomPins[pin];
 			idStr s = sl[sample];
 			sample = s[0] - '0';
 		}
 
-		if(m_PinRotationFractionFlag == true)
+		// Set the rotation
+		if (m_PinRotationFractionFlag)
 		{
-			m_SampleRotationFraction = m_PinRotationFraction/n;
+			m_SampleRotationFraction = m_PinRotationFraction / n;
 
-			a = (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
-			m->GetPhysics()->SetAxis(a.ToMat3());
+			idAngles angles = m_OriginalAngle + (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
+
+			handle->GetPhysics()->SetAxis(angles.ToMat3());
 		}
 
-		if(m_PinTranslationFractionFlag == true)
+		// Set the translation
+		if (m_PinTranslationFractionFlag)
 		{
-			m_SampleTranslationFraction = m_PinTranslationFraction/n;
+			m_SampleTranslationFraction = m_PinTranslationFraction / n;
 
-			v = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
-			v += m_OriginalPosition;
-			v = m->GetLocalCoordinates(v);
-			m->SetOrigin(v);
+			idVec3 position = (m_PinTranslationFraction * pin) + (m_SampleTranslationFraction * sample);
+			position += m_OriginalPosition;
+			position = handle->GetLocalCoordinates(position);
+
+			handle->SetOrigin(position);
 		}
 
-		m->UpdateVisuals();
+		handle->UpdateVisuals();
 	}
 }
 
@@ -880,16 +817,18 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 	idVec3 pos;
 	idAngles angle;
 
-	if(common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+	if (common->ButtonState(KEY_FROM_IMPULSE(IMPULSE_51)) == false)
+	{
 		m_KeyReleased = true;
+	}
 
 	// If a key has been pressed and the lock is already picked, we play a sample
 	// to indicate that the lock doesn't need picking anymore. This we do only
 	// if there is not currently a sound sample still playing, in which case we 
 	// can ignore that event and wait for all sample events to arrive.
-	if(m_FirstLockedPinIndex >= m_Pins.Num())
+	if (m_FirstLockedPinIndex >= m_Pins.Num())
 	{
-		if(nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT)
+		if (nSampleType == LPSOUND_INIT || nSampleType == LPSOUND_REPEAT)
 		{
 			if(m_SoundTimerStarted <= 0)
 			{
@@ -1063,133 +1002,266 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 
 	m_SoundTimerStarted++;
 	PropSoundDirect(oPickSound, true, false );
+
 	idSoundShader const *shader = declManager->FindSound(oPickSound);
 	StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+
 	if(PinIndex != -1)
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
 }
 
-void CFrobDoor::Event_Init(void)
+void CFrobDoor::OpenPeers()
 {
-	idStr str;
-	idEntity *e;
-	CFrobDoor *master;
-	idAngles tempAngle, partialAngle;
-	bool flag = true;
+	OpenClosePeers(true);
+}
 
-	if(spawnArgs.GetString("master_open", "", str))
+void CFrobDoor::ClosePeers()
+{
+	OpenClosePeers(false);
+}
+
+void CFrobDoor::OpenClosePeers(bool open)
+{
+	// Cycle through our "open peers" list and issue the call to them
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
 	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
+		const idStr& openPeer = m_OpenPeers[i];
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", openPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(openPeer);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for OpenClose\r", openPeer.c_str());
+
+			CFrobDoor* door = static_cast<CFrobDoor*>(ent);
+
+			if (open)
 			{
-				if(AddToMasterList(master->m_OpenList, str) == true)
-					m_MasterOpen = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_OpenList.Num());
+				if (door->IsAtClosedPosition())
+				{
+					// Other door is at closed position, let the handle tap
+					door->Open(false);
+				}
+				else
+				{
+					// The other door is open or in an intermediate state, just call open
+					door->OpenDoor(false);
+				}
 			}
 			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+			{
+				door->Close(false);
+			}
 		}
 		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
-	}
-
-	if(spawnArgs.GetString("master_lock", "", str))
-	{
-		if((e = gameLocal.FindEntity(str.c_str())) != NULL)
 		{
-			if((master = dynamic_cast<CFrobDoor *>(e)) != NULL)
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), openPeer.c_str());
+		}
+	}
+}
+
+void CFrobDoor::LockPeers()
+{
+	LockUnlockPeers(true);
+}
+
+void CFrobDoor::UnlockPeers()
+{
+	LockUnlockPeers(false);
+}
+
+void CFrobDoor::LockUnlockPeers(bool lock)
+{
+	// Go through the list and issue the call
+	for (int i = 0; i < m_LockPeers.Num(); i++)
+	{
+		const idStr& lockPeer = m_LockPeers[i];
+
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", lockPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(lockPeer);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for lock\r", lockPeer.c_str());
+
+			CFrobDoor* door = static_cast<CFrobDoor*>(ent);
+			
+			if (lock)
 			{
-				if(AddToMasterList(master->m_LockList, str) == true)
-					m_MasterLock = str;
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("master_open [%s] (%u)\r", m_MasterOpen.c_str(), master->m_LockList.Num());
+				door->Lock(false);
 			}
 			else
-				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] is of wrong type\r", m_MasterOpen.c_str());
+			{
+				door->Unlock(false);
+			}
 		}
 		else
-			DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("master_open [%s] not spawned\r", m_MasterOpen.c_str());
-	}
-
-	if(spawnArgs.GetString("door_handle", "", str))
-	{
-		e = gameLocal.FindEntity(str);
-
-		if(e)
 		{
-			CFrobDoorHandle *dh = dynamic_cast<CFrobDoorHandle *>(e);
-			if(dh)
-			{
-				m_Doorhandle = dh;
-				m_OriginalPosition = e->GetPhysics()->GetOrigin();
-				m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
-				dh->m_Door = this;
-			}
-			else
-				DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not a valid doorhandle: %s\r", str.c_str());
-
-			spawnArgs.GetBool("door_handle_bind_flag", "1", flag);
-			if(flag == true)
-			{
-				m_FrobPeers.AddUnique(e->name);
-				e->GetFrobPeers().AddUnique(name);
-				e->m_bFrobable = m_bFrobable;
-				e->Bind(this, true);
-			}
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Linked entity [%s] not found or of wrong type\r", lockPeer.c_str());
 		}
-		else
-			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Doorhandle entity not found: %s\r", str.c_str());
 	}
+}
 
-	if(spawnArgs.GetString("lockpick_bar", "", str))
+void CFrobDoor::TapPeers()
+{
+	// In master mode, tap the handles of the master_open chain too
+	// Cycle through our "open peers" list and issue the call to them
+	for (int i = 0; i < m_OpenPeers.Num(); i++)
 	{
-		e = gameLocal.FindEntity(str);
+		const idStr& openPeer = m_OpenPeers[i];
 
-		if(e)
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Trying linked entity [%s]\r", openPeer.c_str());
+
+		idEntity* ent = gameLocal.FindEntity(openPeer);
+
+		if (ent != NULL && ent->IsType(CFrobDoor::Type))
 		{
-			m_Bar = e;
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Calling linked entity [%s] for tapping\r", openPeer.c_str());
+			CFrobDoor* other = static_cast<CFrobDoor*>(ent);
 
-			// The bar overrides the handle info if it exists, because
-			// this is the one that has to move if the lock is picked.
-			m_OriginalPosition = e->GetPhysics()->GetOrigin();
-			m_OriginalAngle = e->GetPhysics()->GetAxis().ToAngles();
-
-			flag = true;
-			spawnArgs.GetBool("lockpick_bar_bind_flag", "1", flag);
-			if(flag == true)
+			if (other->GetDoorhandle() != NULL)
 			{
-				m_FrobPeers.AddUnique(e->name);
-				e->GetFrobPeers().AddUnique(name);
-				e->m_bFrobable = m_bFrobable;
-				e->Bind(this, true);
+				other->GetDoorhandle()->Tap();
 			}
 		}
 		else
-			DM_LOG(LC_LOCKPICK, LT_ERROR)LOGSTRING("Bar entity name not found: %s\r", str.c_str());
+		{
+			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), openPeer.c_str());
+		}
 	}
+}
 
-	m_PinRotationFraction = spawnArgs.GetAngles("lockpick_rotate", "0 0 0")/m_Pins.Num();
-	// Check if the rotation is empty and set the flag.
+void CFrobDoor::AddOpenPeer(const idStr& peerName)
+{
+	// Find the entity and check if it's actually a door
+	idEntity* entity = gameLocal.FindEntity(peerName);
+
+	if (entity != NULL && entity->IsType(CFrobDoor::Type))
 	{
-		idAngles cmp;
-		cmp.Zero();
-		if(m_PinRotationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-			m_PinRotationFractionFlag = false;
-		else
-			m_PinRotationFractionFlag = true;
+		m_OpenPeers.AddUnique(peerName);
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: open_peer %s added to local list (%u)\r", name.c_str(), peerName.c_str(), m_OpenPeers.Num());
 	}
-
-	m_PinTranslationFraction = spawnArgs.GetVector("lockpick_translate", "0 0 0")/m_Pins.Num();
-	// Check if the translation is empty and set the flag.
+	else
 	{
-		idVec3 cmp;
-		cmp.Zero();
-		if(m_PinTranslationFraction.Compare(cmp, VECTOR_EPSILON) == true)
-			m_PinTranslationFractionFlag = false;
-		else
-			m_PinTranslationFractionFlag = true;
+		DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("open_peer [%s] not spawned or of wrong type.\r", peerName.c_str());
+	}
+}
+
+void CFrobDoor::RemoveOpenPeer(const idStr& peerName)
+{
+	m_OpenPeers.Remove(peerName);
+}
+
+void CFrobDoor::AddLockPeer(const idStr& peerName)
+{
+	// Find the entity and check if it's actually a door
+	idEntity* entity = gameLocal.FindEntity(peerName);
+
+	if (entity != NULL && entity->IsType(CFrobDoor::Type))
+	{
+		m_LockPeers.AddUnique(peerName);
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: lock_peer %s added to local list (%u)\r", name.c_str(), peerName.c_str(), m_LockPeers.Num());
+	}
+	else
+	{
+		DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("lock_peer [%s] not spawned or of wrong type.\r", peerName.c_str());
+	}
+}
+
+CFrobDoorHandle* CFrobDoor::GetDoorhandle()
+{
+	return (m_Doorhandles.Num() > 0) ? m_Doorhandles[0].GetEntity() : NULL;
+}
+
+void CFrobDoor::AddDoorhandle(CFrobDoorHandle* handle)
+{
+	// Store the pointer and the original position
+	idEntityPtr<CFrobDoorHandle> handlePtr;
+	handlePtr = handle;
+
+	if (m_Doorhandles.FindIndex(handlePtr) != -1)
+	{
+		return; // handle is already known
 	}
 
-	FindDoubleDoor();
+	m_Doorhandles.Append(handlePtr);
+
+	m_OriginalPosition = handle->GetPhysics()->GetOrigin();
+	m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
+
+	// Let the handle know about us
+	handle->SetDoor(this);
+
+	// Set up the frob peer relationship between the door and the handle
+	m_FrobPeers.AddUnique(handle->name);
+	handle->GetFrobPeers().AddUnique(name);
+	handle->m_bFrobable = m_bFrobable;
+}
+
+void CFrobDoor::AutoSetupDoorHandles()
+{
+	// Find a suitable teamchain member
+	idEntity* part = FindMatchingTeamEntity(CFrobDoorHandle::Type);
+
+	while (part != NULL)
+	{
+		// Found the handle, set it up
+		AddDoorhandle(static_cast<CFrobDoorHandle*>(part));
+
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: Auto-added door handle %s to local list.\r", name.c_str(), part->name.c_str());
+
+		// Get the next handle
+		part = FindMatchingTeamEntity(CFrobDoorHandle::Type, part);
+	}
+
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
+	{
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		// The first handle is the master, all others get their master flag set to FALSE
+		handle->SetMaster(i == 0);
+	}
+}
+
+void CFrobDoor::AutoSetupDoubleDoor()
+{
+	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
+
+	if (doubleDoor != NULL)
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: Auto-setting up %s as double door.\r", name.c_str(), doubleDoor->name.c_str());
+
+		// Add "self" to the peers of the other door
+		doubleDoor->AddOpenPeer(name);
+		doubleDoor->AddLockPeer(name);
+
+		// Now add the name of the other door to our own peer list
+		AddOpenPeer(doubleDoor->name);
+		AddLockPeer(doubleDoor->name);
+	}
+}
+
+void CFrobDoor::RemoveLockPeer(const idStr& peerName)
+{
+	m_LockPeers.Remove(peerName);
+}
+
+void CFrobDoor::Event_GetDoorhandle()
+{
+	idThread::ReturnEntity(m_Doorhandles.Num() > 0 ? m_Doorhandles[0].GetEntity() : NULL);
+}
+
+void CFrobDoor::Event_IsPickable()
+{
+	idThread::ReturnInt(m_Pickable);
+}
+
+void CFrobDoor::Event_OpenDoor(float master)
+{
+	OpenDoor(master != 0.0f ? true : false);
 }

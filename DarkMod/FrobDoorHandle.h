@@ -16,48 +16,46 @@
 class CFrobDoor;
 
 /**
- * CFrobDoorHandle is the complement for CFrobDoors. This is
- * quite similar to the doors itself, because they are attached
- * to it. If a handle is frobbed, instead of the actual door,
- * all calls are basically forwarded to it's door, so that the 
- * player doesn't see a difference. From the player perspective
- * the handle acts the same as the door.
+ * CFrobDoorHandle is the complement for CFrobDoors. 
+ *
+ * Basically, if a handle is frobbed instead of the actual door,
+ * all calls are forwarded to its door, so that the player doesn't 
+ * notice the difference. From the player's perspective frobbing
+ * the handle feels the same as frobbing the door.
+ *
+ * When frobbing a door with a handle attached, the event chain is like this:
+ * Frob > Door::Open > Handle::Tap > Handle moves to open pos > Door::OpenDoor
  */
-class CFrobDoorHandle : public CBinaryFrobMover {
+class CFrobDoorHandle : 
+	public CBinaryFrobMover
+{
 public:
-	friend class CFrobDoor;
-
 	CLASS_PROTOTYPE( CFrobDoorHandle );
 
-							CFrobDoorHandle( void );
+							CFrobDoorHandle();
 
-	void					Spawn( void );
+	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
 	/**
-	 * Get the door that is currently associated with this handle.
-	 */
-	CFrobDoor				*GetDoor(void);
-	void					Event_GetDoor(void);
-	void					Event_Tap(void);
-
-	/**
 	 * Functions that must be forwarded to the door.
 	 */
 	void					SetFrobbed(bool val);
-	bool					IsFrobbed(void);
+	bool					IsFrobbed();
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 	void					FrobAction(bool bMaster);
 
 	// These functions need to be disabled on the handle. Therefore
 	// they are provided but empty.
-	void					ToggleOpen();
 	void					ToggleLock();
-	virtual void			ClosePortal();
-	virtual void			OpenPortal();
-	void					DoneStateChange();
+
+	/**
+	 * Get/set the door associated with this handle.
+	 */
+	CFrobDoor*				GetDoor();
+	void					SetDoor(CFrobDoor* door);
 
 	// greebo: Returns TRUE if the associated door is locked (not to confuse with CBinaryFrobMover::IsLocked())
 	bool					DoorIsLocked();
@@ -72,14 +70,41 @@ public:
 	 */
 	void					Tap();
 
+	/** 
+	 * greebo: Accessor methods for the "master" flag. If a door has multiple
+	 * handles, only one is allowed to open the door, all others are dummies.
+	 *
+	 * Note: These methods are mainly for "internal" use by the CFrobDoor class.
+	 */
+	bool					IsMaster();
+	void					SetMaster(bool isMaster);
+
+protected:
+	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
+	virtual void			OnOpenPositionReached();
+
+	// Script event interface
+	void					Event_GetDoor();
+	void					Event_Tap();
+
 protected:
 	/**
 	* Pointer to the door that is associated with this handle
 	**/
-	CFrobDoor				*m_Door;
-	bool					m_FrobLock;
+	CFrobDoor*				m_Door;
 
-private:
+	/**
+	 * A door can have multiple doorhandles attached, but only the master
+	 * handle is allowed to call OpenDoor() to avoid double-triggering.
+	 *
+	 * This bool defaults to TRUE at spawn time, so the mapper doesn't need
+	 * to care about that. If a door has multiple handles, the auto-setup
+	 * algorithm takes care of "deactivating" all handles but one.
+	 */
+	bool					m_Master;
+
+	// A mutable bool to avoid infinite loops when propagating the frob
+	bool					m_FrobLock;
 };
 
-#endif /* !TDMDOORHANDLE_H */
+#endif /* FROBDOORHANDLE_H */

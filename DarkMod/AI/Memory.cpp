@@ -225,14 +225,15 @@ DoorInfo& Memory::GetDoorInfo(CFrobDoor* door)
 	{
 		DoorInfoPtr info(new DoorInfo);
 		// Set the area number
-		info->areaNum = door->GetFrobMoverAasArea(owner->GetAAS());
+		info->areaNum = door->GetAASArea(owner->GetAAS());
+
 		// Insert into the map
 		std::pair<DoorInfoMap::iterator, bool> result =
 			doorRelated.doorInfo.insert(DoorInfoMap::value_type(door, info));
 
 		// Add the areaNum => info mapping for faster lookup using area numbers
 		doorRelated.areaDoorInfoMap.insert(
-			AreaToDoorInfoMap::value_type(door->GetFrobMoverAasArea(owner->GetAAS()), info)
+			AreaToDoorInfoMap::value_type(info->areaNum, info)
 		);
 
 		return *(result.first->second);

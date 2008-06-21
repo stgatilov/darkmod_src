@@ -3379,6 +3379,40 @@ void idEntity::JoinTeam( idEntity *teammember ) {
 	gameLocal.sortTeamMasters = true;
 }
 
+idEntity* idEntity::FindMatchingTeamEntity(const idTypeInfo& type, idEntity* lastMatch)
+{
+	idEntity* part;
+
+	if (lastMatch != NULL)
+	{
+		for (part = teamChain; part != NULL; part = part->teamChain)
+		{
+			if (part == lastMatch) 
+			{
+				// We've found our previous match, increase the pointer and break;
+				part = part->teamChain;
+				break;
+			}
+		}
+	}
+	else
+	{
+		// No last match specified, set the pointer to the start
+		part = teamChain;
+	}
+
+	for (/* no initialisation */; part != NULL; part = part->teamChain)
+	{
+		if (part->IsType(type))
+		{
+			// Found a suitable one, return it
+			return part;
+		}
+	}
+
+	return NULL;
+}
+
 /*
 ================
 idEntity::QuitTeam
@@ -6767,43 +6801,33 @@ void idAnimatedEntity::Event_GetJointAngle( jointHandle_t jointnum ) {
 
 bool idEntity::AddToMasterList(idList<idStr> &MasterList, idStr &str)
 {
-	bool bRc = false;
-	idEntity *ent;
-	int i, n;
-	bool bFound;
-
+	idEntity* ent = gameLocal.FindEntity(str);
+	
 	// The master may not be the same as this entity.
-	if(str == name)
-		goto Quit;
+	if (ent == this)
+	{
+		return false;
+	}
+
+	bool bRc = false;
 
 	DM_LOG(LC_FROBBING, LT_INFO)LOGSTRING("[%s] Master set to [%s]\r", name.c_str(), str.c_str());
-	if((ent = gameLocal.FindEntity(str.c_str())) != NULL)
+	if (ent != NULL)
 	{
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Master entity %08lX [%s] is updated.\r", ent, ent->name.c_str());
-		i = 0;
-		n = MasterList.Num();
-		bFound = false;
-		for(i = 0; i < n; i++)
-		{
-			if(MasterList[i] == name)
-			{
-				bFound = true;
-				break;
-			}
-		}
-		if(bFound == false)
-			MasterList.Append(name);
+
+		// Only add the name if it doesn't exist yet
+		int prevNum = MasterList.Num();
+		int inserted = MasterList.AddUnique(name);
+
+		// greebo: The item was inserted, if the returned index is equal to the number it had before the insertion
+		return (inserted == prevNum);
 	}
 	else
 	{
 		DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("Master entity [%s] not found.\r", str.c_str());
-		goto Quit;
+		return false;
 	}
-
-	bRc = true;
-
-Quit:
-	return bRc;
 }
 
 void idEntity::Flinderize( void )

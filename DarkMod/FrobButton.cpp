@@ -18,18 +18,13 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "sndProp.h"
 
 //===============================================================================
-//CFrobButton
+// CFrobButton
 //===============================================================================
 
-
-const idEventDef EV_TDM_Button_Open( "Open", "f" );
-const idEventDef EV_TDM_Button_Close( "Close", "f" );
 const idEventDef EV_TDM_Button_Operate("Operate", NULL);
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobButton )
-	EVENT( EV_TDM_Button_Open,				CFrobButton::Open)
-	EVENT( EV_TDM_Button_Close,				CFrobButton::Close)
-	EVENT( EV_TDM_Button_Operate,			CFrobButton::Operate)
+	EVENT( EV_TDM_Button_Operate,	CFrobButton::Operate)
 END_CLASS
 
 void CFrobButton::Save(idSaveGame *savefile) const
@@ -48,17 +43,7 @@ void CFrobButton::Spawn()
 
 void CFrobButton::Operate()
 {
-	Open(false);
-}
-
-void CFrobButton::Open(bool bMaster)
-{
-	CBinaryFrobMover::Open(false);
-}
-
-void CFrobButton::Close(bool bMaster)
-{
-	CBinaryFrobMover::Close(false);
+	ToggleOpen();
 }
 
 void CFrobButton::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse )
@@ -68,14 +53,4 @@ void CFrobButton::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, cons
 	{
 		Operate();
 	}
-}
-
-
-// A button can't close or open a portal, so we block it.
-void CFrobButton::ClosePortal()
-{
-}
-
-void CFrobButton::OpenPortal()
-{
 }

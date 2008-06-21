@@ -22,31 +22,30 @@ static bool init_version = FileVersionList("$Id$", init_version);
 #include "StimResponse/StimResponse.h"
 
 //===============================================================================
-//CBinaryFrobMover
+// CBinaryFrobMover
 //===============================================================================
 
-const idEventDef EV_TDM_Door_Open( "Open", "f" );
-const idEventDef EV_TDM_Door_Close( "Close", "f" );
-const idEventDef EV_TDM_Door_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_Door_Lock( "Lock", "f" );
-const idEventDef EV_TDM_Door_Unlock( "Unlock", "f" );
-const idEventDef EV_TDM_Door_ToggleLock( "ToggleLock", NULL );
-const idEventDef EV_TDM_Door_GetOpen( "GetOpen", NULL, 'f' );
-const idEventDef EV_TDM_Door_GetLock( "GetLock", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_Open( "Open", NULL );
+const idEventDef EV_TDM_FrobMover_Close( "Close", NULL );
+const idEventDef EV_TDM_FrobMover_ToggleOpen( "ToggleOpen", NULL );
+const idEventDef EV_TDM_FrobMover_Lock( "Lock", NULL );
+const idEventDef EV_TDM_FrobMover_Unlock( "Unlock", NULL );
+const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", NULL );
+const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", NULL, 'f' );
+const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", NULL, 'f' );
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
-	EVENT( EV_TDM_Door_Open,				CBinaryFrobMover::Open)
-	EVENT( EV_TDM_Door_Close,				CBinaryFrobMover::Close)
-	EVENT( EV_TDM_Door_ToggleOpen,			CBinaryFrobMover::ToggleOpen)
-	EVENT( EV_TDM_Door_Lock,				CBinaryFrobMover::Lock)
-	EVENT( EV_TDM_Door_Unlock,				CBinaryFrobMover::Unlock)
-	EVENT( EV_TDM_Door_ToggleLock,			CBinaryFrobMover::ToggleLock)
-	EVENT( EV_TDM_Door_GetOpen,				CBinaryFrobMover::GetOpen)
-	EVENT( EV_TDM_Door_GetLock,				CBinaryFrobMover::GetLock)
-	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate )
+	EVENT( EV_TDM_FrobMover_Open,			CBinaryFrobMover::Event_Open)
+	EVENT( EV_TDM_FrobMover_Close,			CBinaryFrobMover::Event_Close)
+	EVENT( EV_TDM_FrobMover_ToggleOpen,		CBinaryFrobMover::Event_ToggleOpen)
+	EVENT( EV_TDM_FrobMover_Lock,			CBinaryFrobMover::Event_Lock)
+	EVENT( EV_TDM_FrobMover_Unlock,			CBinaryFrobMover::Event_Unlock)
+	EVENT( EV_TDM_FrobMover_ToggleLock,		CBinaryFrobMover::Event_ToggleLock)
+	EVENT( EV_TDM_FrobMover_IsOpen,			CBinaryFrobMover::Event_IsOpen)
+	EVENT( EV_TDM_FrobMover_IsLocked,		CBinaryFrobMover::Event_IsLocked)
+	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
 END_CLASS
-
 
 CBinaryFrobMover::CBinaryFrobMover()
 {
@@ -152,8 +151,6 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 
 void CBinaryFrobMover::Spawn()
 {
-	idStr str;
-
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
 	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
@@ -169,14 +166,16 @@ void CBinaryFrobMover::Spawn()
 
 	// log if visportal was found
 	if( areaPortal > 0 )
+	{
 		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FrobDoor [%s] found portal handle %d on spawn \r", name.c_str(), areaPortal);
-
+	}
 	
 	// Schedule a post-spawn event to parse the rest of the spawnargs
-	PostEventMS( &EV_PostSpawn, 1 );
+	// greebo: Be sure to use 16 ms as delay to allow the SpawnBind event to execute before this one.
+	PostEventMS( &EV_PostSpawn, 16 );
 }
 
-void CBinaryFrobMover::Event_PostSpawn() 
+void CBinaryFrobMover::PostSpawn()
 {
 	// m_Translation is the vector between start position and end position
 	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
@@ -298,214 +297,238 @@ void CBinaryFrobMover::Event_PostSpawn()
 	idVec3 rotationAxis = rot.GetVec();
 	idVec3 normal = rotationAxis.Cross(m_ClosedPos);
 
-	m_OpenDir = ( m_OpenPos * normal ) * normal;
+	m_OpenDir = (m_OpenPos * normal) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
 
-	if(!m_Open) 
-	{
-		// Door starts _completely_ closed
-		Event_ClosePortal();
-	}
-	else
+	if(m_Open) 
 	{
 		// door starts out partially open, set origin and angles to the values defined in the spawnargs.
 		physicsObj.SetLocalOrigin(m_ClosedOrigin + m_StartPos);
 		physicsObj.SetLocalAngles(m_ClosedAngles + partialAngles);
 	}
+
 	UpdateVisuals();
+
+	// Check if we should auto-open, which could also happen right at the map start
+	if (IsAtClosedPosition())
+	{
+		float autoOpenTime = -1;
+		if (spawnArgs.GetFloat("auto_open_time", "-1", autoOpenTime) && autoOpenTime >= 0)
+		{
+			// Convert the time to msec and post the event
+			PostEventMS(&EV_TDM_FrobMover_Open, static_cast<int>(SEC2MS(autoOpenTime)));
+		}
+	}
+	else if (IsAtOpenPosition())
+	{
+		// Check if we should move back to the closedpos
+		float autoCloseTime = -1;
+		if (spawnArgs.GetFloat("auto_close_time", "-1", autoCloseTime) && autoCloseTime >= 0)
+		{
+			// Convert the time to msec and post the event
+			PostEventMS(&EV_TDM_FrobMover_Close, static_cast<int>(SEC2MS(autoCloseTime)));
+		}
+	}
+}
+
+void CBinaryFrobMover::Event_PostSpawn() 
+{
+	// Call the virtual function
+	PostSpawn();
 }
 
 void CBinaryFrobMover::Lock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is locked\r", name.c_str());
+	if (!PreLock(bMaster)) {
+		// PreLock returned FALSE, cancel the operation
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover prevented from being locked\r", name.c_str());
+		return;
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is locked\r", name.c_str());
+
 	m_Locked = true;
 	CallStateScript();
+
+	// Fire the event for the subclasses
+	OnLock(bMaster);
 }
 
 void CBinaryFrobMover::Unlock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	if (!PreUnlock(bMaster)) {
+		// PreUnlock returned FALSE, cancel the operation
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover prevented from being unlocked\r", name.c_str());
+		return;
+	}
+	
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is unlocked\r", name.c_str());
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] Door is unlocked\r", name.c_str());
 	m_Locked = false;
+	CallStateScript();
 
-	ToggleOpen();
+	// Fire the event for the subclasses
+	OnUnlock(bMaster);
 }
 
 void CBinaryFrobMover::ToggleLock()
 {
-	// A door can only be un/locked when it is closed.
-	if(m_Open == true)
+	// A frobmover can only be un/locked when it is closed.
+	if (m_Open == true)
 	{
 		ToggleOpen();
 		return;
 	}
 
-	if(m_Locked == true)
+	if (m_Locked)
+	{
 		Unlock(true);
+	}
 	else
+	{
 		Lock(true);
-}
-
-void CBinaryFrobMover::Open(bool bMaster)
-{
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
-
-	m_StoppedDueToBlock = false;
-	m_LastBlockingEnt = NULL;
-
-	// If the door is already open, we don't have anything to do. :)
-	if (m_Open == true && !m_bInterrupted && !IsBlocked())
-	{
-		m_bIntentOpen = false;
-		return;
-	}
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opening\r" );
-
-	if (IsLocked() == true)
-	{
-		StartSound( "snd_locked", SND_CHANNEL_ANY, 0, false, NULL );
-	}
-	else
-	{
-		// don't play the sound if the door was not closed all the way
-		if( !m_bInterrupted )
-		{	
-			m_StateChange = true;
-			
-			StartSound( "snd_open", SND_CHANNEL_ANY, 0, false, NULL );
-			
-			// Open visportal
-			OpenPortal();
-
-			// trigger our targets on opening, if set to do so
-			if( spawnArgs.GetBool("trigger_on_open","") )
-			{
-				ActivateTargets( this );
-			}
-		}
-
-		m_Open = true;
-		m_Rotating = true;
-		m_Translating = true;
-		
-		idAngles angleDelta = (m_OpenAngles - physicsObj.GetLocalAngles()).Normalize180();
-
-		if (!angleDelta.Compare(idAngles(0,0,0)))
-		{
-			Event_RotateOnce(angleDelta);
-		}
-		else
-		{
-			m_Rotating = false;
-		}
-		
-		if (!m_OpenOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
-		{	
-			if (m_TransSpeed)
-			{
-				Event_SetMoveSpeed( m_TransSpeed );
-			}
-
-			MoveToLocalPos(m_OpenOrigin);
-		}
-		else
-		{
-			m_Translating = false;
-		}
-
-		m_StateChange = (m_Translating || m_Rotating);
 	}
 }
 
-void CBinaryFrobMover::Close(bool bMaster)
+bool CBinaryFrobMover::StartMoving(bool open) 
 {
-	// Clear this door from the ignore list so AI can react to it again	
-	StimClearIgnoreList(ST_VISUAL);
-	StimEnable(ST_VISUAL, 1);
+	// Get the target position and orientation
+	idVec3 targetOrigin = open ? m_OpenOrigin : m_ClosedOrigin;
+	idAngles targetAngles = open ? m_OpenAngles : m_ClosedAngles;
 
-	m_StoppedDueToBlock = false;
-	m_LastBlockingEnt = NULL;
-
-	// If the door is already closed, we don't have anything to do. :)
-	if (m_Open == false)
-		return;
-
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closing\r" );
-
+	// Assume we are moving
 	m_Rotating = true;
-	m_StateChange = true;
 	m_Translating = true;
 
-	// greebo: Only rotate, if there is something to do
-	idAngles angleDelta = (m_ClosedAngles - physicsObj.GetLocalAngles()).Normalize180();
+	// Clear the block variables
+	m_StoppedDueToBlock = false;
+	m_LastBlockingEnt = NULL;
+	m_bInterrupted = false;
+	
+	idAngles angleDelta = (targetAngles - physicsObj.GetLocalAngles()).Normalize180();
+
 	if (!angleDelta.Compare(idAngles(0,0,0)))
 	{
 		Event_RotateOnce(angleDelta);
 	}
 	else
 	{
-		m_Rotating = false;
+		m_Rotating = false; // nothing to rotate
 	}
-
-	if (!m_ClosedOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
+	
+	if (!targetOrigin.Compare(physicsObj.GetLocalOrigin(), VECTOR_EPSILON))
 	{	
 		if (m_TransSpeed)
 		{
-			Event_SetMoveSpeed( m_TransSpeed );
+			Event_SetMoveSpeed(m_TransSpeed);
 		}
 
-		MoveToLocalPos(m_ClosedOrigin);
+		MoveToLocalPos(targetOrigin); // Start moving
 	}
 	else
 	{
 		m_Translating = false;
 	}
 
-	m_StateChange = (m_Rotating || m_Translating);
+	// Now let's look if we are actually moving
+	m_StateChange = (m_Translating || m_Rotating);
+
+	if (m_StateChange)
+	{
+		// Fire the "we're starting to move" event
+		OnMoveStart(open);
+
+		// If we're changing states from closed to open, set the bool right now
+		if (!m_Open)
+		{
+			m_Open = true;
+		}
+	}
+
+	return m_StateChange;
+}
+
+void CBinaryFrobMover::Open(bool bMaster)
+{
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Opening\r" );
+
+	if (!PreOpen()) 
+	{
+		// PreOpen returned FALSE, cancel the operation
+		return;
+	}
+
+	// We have green light, let's see where we are starting from
+	bool wasClosed = IsAtClosedPosition();
+
+	// Now, actually trigger the moving process
+	if (StartMoving(true))
+	{
+		// We're moving, fire the event and pass the starting state
+		OnStartOpen(wasClosed, bMaster);
+	}
+
+	// Set the "intention" flag so that we're closing next time, even if we didn't move
+	m_bIntentOpen = false;
+}
+
+void CBinaryFrobMover::Close(bool bMaster)
+{
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Closing\r" );
+
+	if (!PreClose()) 
+	{
+		// PreClose returned FALSE, cancel the operation
+		return;
+	}
+
+	// We have green light, let's see where we are starting from
+	bool wasOpen = IsAtOpenPosition();
+
+	// Now, actually trigger the moving process
+	if (StartMoving(false))
+	{
+		// We're moving, fire the event and pass the starting state
+		OnStartClose(wasOpen, bMaster);
+	}
+
+	// Set the "intention" flag so that we're opening next time, even if we didn't move
+	m_bIntentOpen = true;
 }
 
 void CBinaryFrobMover::ToggleOpen()
 {
-	// Check if the door is stopped.
-//	if( physicsObj.GetAngularExtrapolationType() == EXTRAPOLATION_NONE )
-	if( !m_Rotating && !m_Translating )
+	if (!IsMoving())
 	{
-//		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was stationary on frobbing\r" );
+		// We are not moving
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: Was stationary on ToggleOpen\r" );
 
 		if (m_bIntentOpen)
 		{
-			Open(true);
+			Open();
 		}
 		else
 		{
-			Close(true);
+			Close();
 		}
 
-		m_bInterrupted = false;
-		goto Quit;
+		return;
 	}
 
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted!  Stopping door\r" );
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Was moving on ToggleOpen.\r" );
 
-	// Otherwise, door is moving.  Stop it if it is interruptable
-	if(m_bInterruptable)
+	// We are moving, is the mover interruptable?
+	if (m_bInterruptable && PreInterrupt())
 	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Interrupted! Stopping door\r" );
+
 		m_bInterrupted = true;
 		Event_StopRotating();
 		Event_StopMoving();
 
-		// reverse the intent
-		m_bIntentOpen = !m_bIntentOpen;
+		OnInterrupt();
 	}
-
-Quit:
-	return;
 }
 
 void CBinaryFrobMover::DoneMoving()
@@ -516,13 +539,49 @@ void CBinaryFrobMover::DoneMoving()
 	DoneStateChange();
 }
 
-
 void CBinaryFrobMover::DoneRotating()
 {
 	idMover::DoneRotating();
     m_Rotating = false;
 
 	DoneStateChange();
+}
+
+void CBinaryFrobMover::DoneStateChange()
+{
+	if (!m_StateChange || IsMoving())
+	{
+		// Entity is still moving, wait for the next call (this usually gets called twice)
+		return;
+	}
+
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("BinaryFrobMover: DoneStateChange\r" );
+
+	// Check which position we're at, set the state variables and fire the correct events
+
+	m_StateChange = false;
+
+	// We are assuming that we're still "open", this gets overwritten by the check below
+	// if we are at the final "closed" position
+	m_Open = true;
+
+	if (IsAtClosedPosition())
+	{
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
+
+		m_Open = false;
+
+		// We have reached the final close position, fire the event
+		OnClosedPositionReached();
+	}
+	else if (IsAtOpenPosition())
+	{
+		// We have reached the final open position, fire the event
+		OnOpenPositionReached();
+	}
+
+	// Invoked the script object to notify it about the state change
+	CallStateScript();
 }
 
 bool CBinaryFrobMover::IsAtOpenPosition()
@@ -547,92 +606,19 @@ bool CBinaryFrobMover::IsAtClosedPosition()
 	return localAngles.Compare(m_ClosedAngles, VECTOR_EPSILON) && localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 }
 
-void CBinaryFrobMover::DoneStateChange()
-{
-	bool CallScript = false;
-
-//	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Done rotating\r" );
-
-	// Ignore it if we already did it.
-	if(m_StateChange == false)
-		goto Quit;
-
-    if(m_Rotating == true || m_Translating == true)
-        goto Quit;
-
-	// if the door is not completely opened or closed, do nothing
-	if( m_bInterrupted )
-		goto Quit;
-
-	m_StateChange = false;
-	CallScript = true;
-
-	bool checkClose;
-	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
-	{
-		// angua: the intentopen flag is used when the door does not move at all 
-		// (so that triggers etc. are still working)
-		checkClose = !m_bIntentOpen;
-	}
-	else
-	{
-		// in all other cases, use the angles and position of origin to check if the door is open or closed
-		checkClose = IsAtClosedPosition();
-	}
-
-	if (checkClose)
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Closed completely\r" );
-
-		m_bIntentOpen = true;
-		m_Open = false;
-
-		// play the closing sound when the door closes completely
-		StartSound( "snd_close", SND_CHANNEL_ANY, 0, false, NULL );
-		
-		// close visportal
-		ClosePortal();
-
-		// trigger our targets on completely closing, if set to do so
-		if( spawnArgs.GetBool("trigger_on_close","") )
-			ActivateTargets( this );
-	}
-	else
-	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Opened completely\r" );
-		m_Open = true;
-		m_bIntentOpen = false;
-	}
-
-Quit:
-	if(CallScript == true)
-		CallStateScript();
-
-	return;
-}
-
 void CBinaryFrobMover::CallStateScript()
 {
-	idStr str;
-	if(spawnArgs.GetString("state_change_callback", "", str))
+	idStr functionName = spawnArgs.GetString("state_change_callback", "");
+
+	if (!functionName.IsEmpty())
 	{
-		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d  Locked: %d   Interrupt: %d\r",
-			str.c_str(), m_Open, m_Locked, m_bInterrupted);
-		CallScriptFunctionArgs(str.c_str(), true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
+		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor: Callscript '%s' Open: %d, Locked: %d Interrupted: %d\r",
+			functionName.c_str(), m_Open, m_Locked, m_bInterrupted);
+		CallScriptFunctionArgs(functionName, true, 0, "ebbb", this, m_Open, m_Locked, m_bInterrupted);
 	}
 }
 
-void CBinaryFrobMover::GetOpen()
-{
-	idThread::ReturnInt(m_Open);
-}
-
-void CBinaryFrobMover::GetLock()
-{
-	idThread::ReturnInt(IsLocked());
-}
-
-void CBinaryFrobMover::Event_Activate( idEntity *activator ) 
+void CBinaryFrobMover::Event_Activate(idEntity *activator) 
 {
 	ToggleOpen();
 }
@@ -648,9 +634,6 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 
 		Event_StopRotating();
 		Event_StopMoving();
-
-		// reverse the intent
-		m_bIntentOpen = !m_bIntentOpen;
 	}
 }
 
@@ -659,9 +642,9 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 	idVec3 SwitchDir;
 	float SwitchThreshSq(0), ImpulseMagSq(0);
 
-	if( (m_Open && (m_ImpulseThreshCloseSq > 0)) || (!m_Open && (m_ImpulseThreshOpenSq > 0)) )
+	if ( (m_Open && m_ImpulseThreshCloseSq > 0) || (!m_Open && m_ImpulseThreshOpenSq > 0) )
 	{
-		if( m_Open )
+		if (m_Open)
 		{
 			SwitchDir = m_vImpulseDirClose;
 			SwitchThreshSq = m_ImpulseThreshCloseSq;
@@ -673,17 +656,21 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 		}
 		
 		// only resolve along the axis if it is set.  Defaults to (0,0,0) if not set
-		if( SwitchDir.LengthSqr() )
+		if (SwitchDir.LengthSqr())
 		{
 			SwitchDir = GetPhysics()->GetAxis() * SwitchDir;
 			ImpulseMagSq = impulse*SwitchDir;
 			ImpulseMagSq *= ImpulseMagSq;
 		}
 		else
+		{
 			ImpulseMagSq = impulse.LengthSqr();
+		}
 
-		if( ImpulseMagSq >= SwitchThreshSq )
+		if (ImpulseMagSq >= SwitchThreshSq)
+		{
 			ToggleOpen();
+		}
 	}
 
 	idEntity::ApplyImpulse( ent, id, point, impulse);
@@ -693,7 +680,7 @@ void CBinaryFrobMover::ApplyImpulse(idEntity *ent, int id, const idVec3 &point, 
 
 bool CBinaryFrobMover::IsMoving()
 {
-	return ((m_Translating) || (m_Rotating));
+	return (m_Translating || m_Rotating);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -762,7 +749,7 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	return fraction;
 }
 
-int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
+int CBinaryFrobMover::GetAASArea(idAAS* aas)
 {
 	if (aas == NULL) return -1;
 
@@ -780,4 +767,162 @@ int CBinaryFrobMover::GetFrobMoverAasArea(idAAS* aas)
 	int areaNum = aas->PointReachableAreaNum( center, bounds, AREA_REACHABLE_WALK );
 
 	return areaNum;
+}
+
+void CBinaryFrobMover::OnMoveStart(bool open)
+{
+	// Clear this door from the ignore list so AI can react to it again	
+	StimClearIgnoreList(ST_VISUAL);
+	StimEnable(ST_VISUAL, 1);
+}
+
+bool CBinaryFrobMover::PreOpen() 
+{
+	if (m_Locked) 
+	{
+		// Play the "I'm locked" sound 
+		StartSound("snd_locked", SND_CHANNEL_ANY, 0, false, NULL);
+		// and prevent the door from opening (return false)
+		return false;
+	}
+
+	return true; // default: mover is allowed to open
+}
+
+bool CBinaryFrobMover::PreClose()
+{
+	return true; // default: mover is allowed to close
+}
+
+bool CBinaryFrobMover::PreInterrupt()
+{
+	return true; // default: mover is allowed to be interrupted
+}
+
+bool CBinaryFrobMover::PreLock(bool bMaster)
+{
+	return true; // default: mover is allowed to be locked
+}
+
+bool CBinaryFrobMover::PreUnlock(bool bMaster)
+{
+	return true; // default: mover is allowed to be unlocked
+}
+
+void CBinaryFrobMover::OnStartOpen(bool wasClosed, bool bMaster)
+{
+	if (wasClosed)
+	{
+		// Only play the "open" sound when the door was completely closed
+		StartSound("snd_open", SND_CHANNEL_ANY, 0, false, NULL);
+
+		// trigger our targets on opening, if set to do so
+		if (spawnArgs.GetBool("trigger_on_open", "0"))
+		{
+			ActivateTargets(this);
+		}
+	}
+}
+
+void CBinaryFrobMover::OnStartClose(bool wasOpen, bool bMaster)
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnOpenPositionReached()
+{
+	// trigger our targets when completely opened, if set to do so
+	if (spawnArgs.GetBool("trigger_when_opened", "0"))
+	{
+		ActivateTargets(this);
+	}
+
+	// Check if we should move back to the closedpos after use
+	float autoCloseTime = -1;
+	if (spawnArgs.GetFloat("auto_close_time", "-1", autoCloseTime) && autoCloseTime >= 0)
+	{
+		// Convert the time to msec and post the event
+		PostEventMS(&EV_TDM_FrobMover_Close, static_cast<int>(SEC2MS(autoCloseTime)));
+	}
+}
+
+void CBinaryFrobMover::OnClosedPositionReached()
+{
+	// play the closing sound when the door closes completely
+	StartSound("snd_close", SND_CHANNEL_ANY, 0, false, NULL);
+
+	// trigger our targets on completely closing, if set to do so
+	if (spawnArgs.GetBool("trigger_on_close", "0"))
+	{
+		ActivateTargets(this);
+	}
+
+	// Check if we should move back to the openpos
+	float autoOpenTime = -1;
+	if (spawnArgs.GetFloat("auto_open_time", "-1", autoOpenTime) && autoOpenTime >= 0)
+	{
+		// Convert the time to msec and post the event
+		PostEventMS(&EV_TDM_FrobMover_Open, static_cast<int>(SEC2MS(autoOpenTime)));
+	}
+}
+
+void CBinaryFrobMover::OnInterrupt()
+{
+	// To be implemented by the subclasses
+}
+
+void CBinaryFrobMover::OnLock(bool bMaster)
+{
+	StartSound("snd_lock", SND_CHANNEL_ANY, 0, false, NULL);
+}
+
+void CBinaryFrobMover::OnUnlock(bool bMaster)
+{
+	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+
+	if (spawnArgs.GetBool("open_on_unlock", "1"))
+	{
+		// The configuration says: open the mover when it's unlocked
+		ToggleOpen();
+	}
+}
+
+void CBinaryFrobMover::Event_Open()
+{
+	Open();
+}
+
+void CBinaryFrobMover::Event_Close()
+{
+	Close();
+}
+
+void CBinaryFrobMover::Event_ToggleOpen()
+{
+	ToggleOpen();
+}
+
+void CBinaryFrobMover::Event_IsOpen()
+{
+	idThread::ReturnInt(m_Open);
+}
+
+void CBinaryFrobMover::Event_Lock()
+{
+	Lock();
+}
+
+void CBinaryFrobMover::Event_Unlock()
+{
+	Unlock();
+}
+
+void CBinaryFrobMover::Event_ToggleLock()
+{
+	ToggleLock();
+}
+
+void CBinaryFrobMover::Event_IsLocked()
+{
+	idThread::ReturnInt(IsLocked());
 }

@@ -43,7 +43,9 @@ typedef enum
  * them but this doesn't work with normal idDoors. So CFrobDoor is a mixture
  * of idDoor and idMover.
  */
-class CFrobDoor : public CBinaryFrobMover {
+class CFrobDoor : 
+	public CBinaryFrobMover
+{
 public:
 	typedef enum {
 		HANDLE_POS_ORIGINAL,	// Reset it to the original starting value
@@ -53,21 +55,32 @@ public:
 public:
 	CLASS_PROTOTYPE( CFrobDoor );
 
-							CFrobDoor( void );
+							CFrobDoor();
 
-	void					Spawn( void );
+	void					Spawn();
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
-	void					Open(bool Master);
-	void					OpenDoor(bool Master);		// Needed for the handle to riger the open state
-	void					Close(bool Master);
-	void					Lock(bool Master);
-	void					Unlock(bool Master);
+	virtual void			Open(bool Master);
+	virtual void			Close(bool Master);
 
-	void					GetPickable(void);
-	void					GetDoorhandle(void);
+	/** 
+	 * greebo: The OpenDoor method is necessary to give the FrobDoorHandles a 
+	 * "low level" open routine. The CFrobDoor::Open() call is re-routed to 
+	 * the FrobDoorHandle::Tap() method, so there must be a way to actually
+	 * let the door open. Which is what this method does.
+	 */
+	virtual void			OpenDoor(bool Master);		
+
+	virtual void			Lock(bool Master);
+	virtual void			Unlock(bool Master);
+
+	bool					IsPickable();
+
+	CFrobDoorHandle*		GetDoorhandle();
+	// Adds a door handle to this door. A door can have multiple handles
+	void					AddDoorhandle(CFrobDoorHandle* handle);
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
@@ -75,7 +88,37 @@ public:
 	 * Write the proper sound loss value to the soundprop portal data
 	 * Called when door spawns, is and when it is opened or closed
 	 **/
-	void					UpdateSoundLoss(void);
+	void					UpdateSoundLoss();
+
+	/**
+	 * Return the double door.  Returns NULL if there is none.
+	 **/
+	CFrobDoor*				GetDoubleDoor();
+
+	/**
+	 * Close the visportal, but only if the double door is also closed.
+	 **/
+	virtual void			ClosePortal();
+
+	// Override the idEntity frob methods
+	virtual void			SetFrobbed(bool val);
+	virtual bool			IsFrobbed();
+
+	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
+	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
+
+	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
+
+	void					PropPickSound(idStr &picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
+
+protected:
+	/**
+	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 
+	 * lockpick_translate, to setup the parameters how the bar or handle should behave
+	 * while it is picked. Also other intialization stuff, that can only be done after all
+	 * the entities are loaded, should be done here.
+	 */
+	virtual void			PostSpawn();
 
 	/**
 	 * Find out if this door is touching another door, and if they share the same portal
@@ -83,72 +126,73 @@ public:
 	 *
 	 * This is posted as an event to be called on all doors after entities spawn
 	 **/
-	void					FindDoubleDoor( void );
+	void					FindDoubleDoor();
 
-	/**
-	 * Return the double door.  Returns NULL if there is none.
-	 **/
-	CFrobDoor *				GetDoubleDoor( void );
-
-	/**
-	 * Close the visportal, but only if the double door is also closed.
-	 **/
-	virtual void			ClosePortal();
-
-	void					SetFrobbed(bool val);
-	bool					IsFrobbed(void);
-
-	void					ProcessLockpick(int cType, ELockpickSoundsample nSampleType);
-	void					LockpickTimerEvent(int cType, ELockpickSoundsample nSoundSample);
-
-	void					SetHandlePosition(EHandleReset, int msec, int pin_index = 0, int sample_index = 0);
-
-	/**
-	 * Init will read the spawnargs lockpick_bar, lockpick_rotate and 
-	 * lockpick_translate, to setup the parameters how the bar or handle should behave
-	 * while it is picked. Also other intialization stuff, that can only be done after all
-	 * the entities are loaded, should be done here.
+	/** 
+	 * greebo: This automatically searches for handles bound to this door and
+	 * sets up the frob_peer, door_handle relationship for mapper's convenience.
 	 */
-	void					Event_Init(void);
+	void					AutoSetupDoorHandles();
 
-	void					PropPickSound(idStr &picksound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex);
+	/**
+	 * greebo: This is the algorithm for linking the double door via open_peer and lock_peer.
+	 */
+	void					AutoSetupDoubleDoor();
 
-protected:
+	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
+	virtual void			OnLock(bool bMaster);
+	virtual void			OnUnlock(bool bMaster);
+
+	// Specialise the OnStartOpen/OnStartClose event to send the call to the open peers
+	virtual void			OnStartOpen(bool wasClosed, bool bMaster);
+	virtual void			OnStartClose(bool wasOpen, bool bMaster);
+
+	// Gets called when the mover finishes its closing move and is fully closed (virtual override)
+	virtual void			OnClosedPositionReached();
+
+	// Helper functions to cycle through the m_OpenList members
+	void					OpenPeers();
+	void					ClosePeers();
+	void					OpenClosePeers(bool open);
+
+	// Taps all doorhandles of open peers
+	void					TapPeers();
+
+	void					LockPeers();
+	void					UnlockPeers();
+	void					LockUnlockPeers(bool lock);
+
+	// Accessor functions for adding and removing peers
+	void					AddOpenPeer(const idStr& peerName);
+	void					RemoveOpenPeer(const idStr& peerName);
+
+	void					AddLockPeer(const idStr& peerName);
+	void					RemoveLockPeer(const idStr& peerName);
+
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
 	 * number of clicks for this pin, and BaseCount, defines the minimum number
 	 * of clicks, which is always added.
 	 */
-	idStringList				*CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
+	idStringList*			CreatePinPattern(int Clicks, int BaseCount, int MaxCount, int StrNumLen, idStr &Header);
+
+	// Script event interface
+	void					Event_GetDoorhandle();
+	void					Event_IsPickable();
+	void					Event_OpenDoor(float master);
 
 protected:
 	/**
-	 * LinkedOpen will point to a door that is to be switched when this
-	 * one is triggered. Note that the next door is flipped! This means
-	 * it will change it's state according to it's current state. So if
-	 * this door is open and the other one is closed this door will be
-	 * closed and the other one will be opened. If both are open and they
-	 * are used, both are closed and vice versa. With this pointer you can
-	 * also create a chain of doors by each door pointing to the next one.
-	 * Of ocurse the last door in the chain should NOT point to the first
-	 * door, otherwise it will result in an endless loop.
+	 * This is a list of slave doors, which should be opened and closed
+	 * along with this door.
 	 */
-	idStr						m_MasterOpen;
-	idList<idStr>				m_OpenList;
+	idList<idStr>				m_OpenPeers;
 
-	/**
-	 * This member is the same as m_LinkedOpen, only for locks. This means
-	 * that, if this door is locked, or unlocked, all other associated doors
-	 * will also be locked or unlocked. Again the state depends on the respective
-	 * entity state and not on the action itself. This means that if one door
-	 * is locked and the other is unlocked, the lockstate will reverse. If both
-	 * are locked or unlocked, both will become unlocked or locked.
-	 * This way you can create i.e. a safety catch were always one door is open
-	 * and the other one is closed. Or you can create a set of doors that all are
-	 * locked when this one is unlocked.
+	/** 
+	 * This list is the pendant to the above one: m_OpenPeers. It specifies
+	 * all names of the doors which should be locked/unlocked along with this one.
 	 */
-	idStr						m_MasterLock;
-	idList<idStr>				m_LockList;
+	idList<idStr>				m_LockPeers;
 
 	idList<idStringList *>		m_Pins;
 	idList<idStringList *>		m_RandomPins;
@@ -183,9 +227,9 @@ protected:
 	idEntityPtr<CFrobDoor>		m_DoubleDoor;
 
 	/**
-	 * Handle that is associated with this door, if the door has one.
+	 * Handles that are associated with this door.
 	 */
-	idEntityPtr<CFrobDoorHandle>	m_Doorhandle;
+	idList< idEntityPtr<CFrobDoorHandle> >	m_Doorhandles;
 
 	/**
 	 * Bar is the movable part of a lock that should jiggle, while

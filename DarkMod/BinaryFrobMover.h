@@ -20,11 +20,14 @@
  * them but this doesn't work with normal idDoors. So CBinaryFrobMover is a mixture
  * of idDoor and idMover.
  */
-class CBinaryFrobMover : public idMover {
+class CBinaryFrobMover : 
+	public idMover
+{
 public:
 	CLASS_PROTOTYPE( CBinaryFrobMover );
 
-							CBinaryFrobMover();
+	// Constructor
+	CBinaryFrobMover();
 
 	void					Spawn();
 	void					Event_PostSpawn();
@@ -32,6 +35,17 @@ public:
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
 
+	/**
+	 * greebo: A set of convenience methods, which set the master bool to TRUE.
+	 * Don't use default argument initialisers on the virtual functions, 
+	 * as the default values are statically bound and lead to problems 
+	 * if subclasses want to override that default value.
+	 */
+	ID_INLINE void			Open()		{ Open(true);	}
+	ID_INLINE void			Close()		{ Close(true);	}
+	ID_INLINE void			Lock()		{ Lock(true);	}
+	ID_INLINE void			Unlock()	{ Unlock(true);	}
+	
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 	virtual void			Lock(bool Master);
@@ -39,9 +53,7 @@ public:
 
 	virtual void			ToggleOpen();
 	virtual void			ToggleLock();
-	virtual void			GetOpen();
-	virtual void			GetLock();
-
+		
 	/**
 	* This is the non-script version of GetOpen 
 	*/
@@ -141,9 +153,114 @@ public:
 	void GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles);
 
 	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
-	int GetFrobMoverAasArea(idAAS* aas);
+	int GetAASArea(idAAS* aas);
 
 protected:
+
+	// ===================== Overridable events ================
+
+	/**
+	 * greebo: Gets called when the mover actually starts to move, regardless
+	 * what the state was beforehand. The boolean tells which state the mover
+	 * is heading towards.
+	 */
+	virtual void OnMoveStart(bool open);
+
+	/**
+	 * greebo: Is called before the mover is told to open. Based on the return
+	 * value of this function, the mover continues its Opening operation or cancels it.
+	 *
+	 * Subclasses can implement this call to prevent the mover from opening (e.g. when 
+	 * a door is locked) or to play sounds before opening starts.
+	 *
+	 * The analogue function for closing is PreClose(), of course.
+	 *
+	 * @returns: TRUE if the mover can continue opening/closing, FALSE to cancel the process.
+	 */
+	virtual bool PreOpen();
+	virtual bool PreClose();
+
+	/**
+	 * greebo: This is invoked when the mover is receiving an "interrupt request".
+	 * If this function returns TRUE, the mover is allowed to be interrupted, 
+	 * on FALSE the mover continues its moves and the request is declined.
+	 */
+	virtual bool PreInterrupt();
+
+	/**
+	 * greebo: This is called before the frobmover is locked. When this function
+	 * returns TRUE, the mover is allowed to be locked, returning FALSE will
+	 * let the mover stay unlocked.
+	 */
+	virtual bool PreLock(bool bMaster);
+
+	/**
+	 * greebo: This is called before the frobmover is unlocked. When this function
+	 * returns TRUE, the mover is allowed to be unlocked, returning FALSE will
+	 * let the mover stay locked.
+	 */
+	virtual bool PreUnlock(bool bMaster);
+
+	/**
+	 * greebo: Gets called when the mover opens. The boolean tells the function 
+	 * whether the mover is starting from its fully closed state.
+	 *
+	 * This can be implemented by subclasses to do stuff that should be done
+	 * when the "fully closed" => "opening" transition is happening, like opening 
+	 * visportals or playing open sounds.
+	 */
+	virtual void OnStartOpen(bool wasClosed, bool bMaster);
+
+	/**
+	 * greebo: Gets called when the mover is closing. The boolean tells the function 
+	 * whether the mover is starting from its fully "open" state.
+	 *
+	 * This can be implemented by subclasses to do stuff that should be done
+	 * when the "fully open" => "opening" transition is happening.
+	 */
+	virtual void OnStartClose(bool wasOpen, bool bMaster);
+
+	/**
+	 * greebo: Gets called when the mover stops its opening move and has
+	 * reached its final open position. This not only gets called when the
+	 * mover has been actually moving beforehand.
+	 */
+	virtual void OnOpenPositionReached();
+
+	/**
+	 * greebo: Gets called when the mover finishes its closing move and is fully closed.
+	 */
+	virtual void OnClosedPositionReached();
+
+	/**
+	 * greebo: Is called when the mover has been interrupted (move has already been stopped).
+	 */
+	virtual void OnInterrupt();
+
+	/**
+	 * greebo: Is called when the mover has just been locked.
+	 */
+	virtual void OnLock(bool bMaster);
+
+	/**
+	 * greebo: Is called when the mover has just been unlocked.
+	 */
+	virtual void OnUnlock(bool bMaster);
+
+	// =========================================================
+
+	// An event for convenience. Gets called right after spawn time at time 0.
+	// Override this event to do your stuff in the subclass, but be sure to call the baseclass
+	virtual void PostSpawn();
+
+	/** 
+	 * greebo: Tells the frobmover to start moving. The boolean specifies whether
+	 * to open or to close.
+	 *
+	 * @returns: TRUE if the mover had something to move or FALSE if the target position
+	 * has already been reached.
+	 */
+	virtual bool StartMoving(bool open);
 
 	/** 
 	 * greebo: Returns TRUE if the mover is at the open position. Doesn't change
@@ -168,6 +285,20 @@ protected:
 	* By default, a BinaryFrobMover toggles its state when triggered
 	**/
 	void					Event_Activate( idEntity *activator );
+
+	// Script event to return the locked status
+	void					Event_IsLocked();
+
+	// Script events for opening and closing
+	void					Event_Open();
+	void					Event_Close();
+	void					Event_ToggleOpen();
+	void					Event_IsOpen();
+
+	// Script events for locking and unlocking
+	void					Event_Lock();
+	void					Event_Unlock();
+	void					Event_ToggleLock();
 
 	/**
 	 * greebo: "Override" the TeamBlocked event to detect collisions with the player.

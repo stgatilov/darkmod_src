@@ -392,6 +392,16 @@ public:
 	virtual void			PreUnbind( void );
 	virtual void			PostUnbind( void );
 	void					JoinTeam( idEntity *teammember );
+	
+	/** 
+	 * greebo: Returns the first team entity matching the given type. If the second
+	 * argument is specified, it returns the next entity after that one.
+	 *
+	 * @returns: NULL if nothing found, the entity pointer otherwise. The entity pointer can be
+	 * safely static_cast<> onto the given type, as the type check has already been performed in this function.
+	 */
+	idEntity*				FindMatchingTeamEntity(const idTypeInfo& type, idEntity* lastMatch = NULL);
+
 	void					Bind( idEntity *master, bool orientated );
 	void					BindToJoint( idEntity *master, const char *jointname, bool orientated );
 	void					BindToJoint( idEntity *master, jointHandle_t jointnum, bool orientated );
@@ -581,6 +591,7 @@ public:
 	/**
 	 * AddToMasterList adds a string entry to a list and checks if a) the new entry
 	 * is not the current entities name and b) if the name already exists in the list.
+	 * 
 	 * If both conditions are met, the name is added to the list and true is returned,
 	 * otherwise false is returned and the name is not added to the list.
 	 */
