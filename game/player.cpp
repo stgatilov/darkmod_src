@@ -8785,10 +8785,12 @@ void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int 
 
 	DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Inventory selection %s  KeyState: %u\r", ent->name.c_str(), nState);
 
+	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
+
 	if(nState == IS_PRESSED)
 	{
 		// greebo: Directly use the frobbed entity, if the spawnarg is set on the inventory item
-		if (frob != NULL && ent->spawnArgs.GetBool("usable") == true)
+		if (frob != NULL && itemIsUsable)
 		{
 			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
 			frob->UsedBy(nState, item);
@@ -8801,7 +8803,21 @@ void idPlayer::inventoryUseItem(IMPULSE_STATE nState, CInventoryItem* item, int 
 	}
 	else if(nState == IS_RELEASED)
 	{
+		if (frob != NULL && itemIsUsable)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
+			frob->UsedBy(nState, item);
+		}
+
 		thread = ent->CallScriptFunctionArgs("inventoryUseKeyRelease", true, 0, "eeef", ent, this, frob, static_cast<float>(holdTime));
+	}
+	else
+	{
+		if (frob != NULL && itemIsUsable)
+		{
+			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Item is usable\r");
+			frob->UsedBy(nState, item);
+		}
 	}
 
 	if (thread)
