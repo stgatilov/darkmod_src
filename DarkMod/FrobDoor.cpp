@@ -300,51 +300,17 @@ void CFrobDoor::PostSpawn()
 	}
 
 	// Search for all spawnargs matching "open_peer_N" and add them to our open peer list
-	const idStr openPeerPrefix("open_peer");
-	const idKeyValue* kv = spawnArgs.MatchPrefix(openPeerPrefix);
-
-	while (kv != NULL)
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("open_peer"); kv != NULL; kv = spawnArgs.MatchPrefix("open_peer", kv))
 	{
-		const idStr& slaveDoorName = kv->GetValue();
-
-		// Find the entity and check if it's actually a door
-		idEntity* entity = gameLocal.FindEntity(slaveDoorName);
-
-		if (entity != NULL && entity->IsType(CFrobDoor::Type))
-		{
-			m_OpenPeers.AddUnique(slaveDoorName);
-			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: %s %s added to local list (%u)\r", name.c_str(), openPeerPrefix.c_str(), slaveDoorName.c_str(), m_OpenPeers.Num());
-		}
-		else
-		{
-			DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("%s [%s] not spawned or of wrong type.\r", openPeerPrefix.c_str(), slaveDoorName.c_str());
-		}
-
-		kv = spawnArgs.MatchPrefix(openPeerPrefix, kv);
+		// Add the peer
+		AddOpenPeer(kv->GetValue());
 	}
 
 	// Search for all spawnargs matching "lock_peer_N" and add them to our lock peer list
-	const idStr lockPeerPrefix("lock_peer");
-	kv = spawnArgs.MatchPrefix(lockPeerPrefix);
-
-	while (kv != NULL)
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("lock_peer"); kv != NULL; kv = spawnArgs.MatchPrefix("lock_peer", kv))
 	{
-		const idStr& slaveLockName = kv->GetValue();
-
-		// Find the entity and check if it's actually a door
-		idEntity* entity = gameLocal.FindEntity(slaveLockName);
-
-		if (entity != NULL && entity->IsType(CFrobDoor::Type))
-		{
-			m_LockPeers.AddUnique(slaveLockName);
-			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: %s %s added to local list (%u)\r", name.c_str(), lockPeerPrefix.c_str(), slaveLockName.c_str(), m_LockPeers.Num());
-		}
-		else
-		{
-			DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("%s [%s] not spawned or of wrong type.\r", lockPeerPrefix.c_str(), slaveLockName.c_str());
-		}
-
-		kv = spawnArgs.MatchPrefix(lockPeerPrefix, kv);
+		// Add the peer
+		AddLockPeer(kv->GetValue());
 	}
 
 	idStr doorHandleName = spawnArgs.GetString("door_handle", "");
@@ -437,7 +403,7 @@ void CFrobDoor::OnLock(bool bMaster)
 
 	if (bMaster)
 	{
-		LockSlaves();
+		LockPeers();
 	}
 }
 
@@ -455,7 +421,7 @@ void CFrobDoor::OnUnlock(bool bMaster)
 
 	if (bMaster) 
 	{
-		UnlockSlaves();
+		UnlockPeers();
 	}
 }
 
@@ -472,7 +438,7 @@ void CFrobDoor::Open(bool bMaster)
 
 		if (bMaster)
 		{
-			TapSlaves();
+			TapPeers();
 		}
 	}
 	else
@@ -503,7 +469,7 @@ void CFrobDoor::OnStartOpen(bool wasClosed, bool bMaster)
 
 	if (bMaster)
 	{
-		OpenSlaves();
+		OpenPeers();
 	}
 }
 
@@ -521,7 +487,7 @@ void CFrobDoor::OnStartClose(bool wasOpen, bool bMaster)
 
 	if (bMaster)
 	{
-		CloseSlaves();
+		ClosePeers();
 	}
 }
 
@@ -1021,17 +987,17 @@ void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
 }
 
-void CFrobDoor::OpenSlaves()
+void CFrobDoor::OpenPeers()
 {
-	OpenCloseSlaves(true);
+	OpenClosePeers(true);
 }
 
-void CFrobDoor::CloseSlaves()
+void CFrobDoor::ClosePeers()
 {
-	OpenCloseSlaves(false);
+	OpenClosePeers(false);
 }
 
-void CFrobDoor::OpenCloseSlaves(bool open)
+void CFrobDoor::OpenClosePeers(bool open)
 {
 	// Cycle through our "open peers" list and issue the call to them
 	for (int i = 0; i < m_OpenPeers.Num(); i++)
@@ -1073,17 +1039,17 @@ void CFrobDoor::OpenCloseSlaves(bool open)
 	}
 }
 
-void CFrobDoor::LockSlaves()
+void CFrobDoor::LockPeers()
 {
-	LockUnlockSlaves(true);
+	LockUnlockPeers(true);
 }
 
-void CFrobDoor::UnlockSlaves()
+void CFrobDoor::UnlockPeers()
 {
-	LockUnlockSlaves(false);
+	LockUnlockPeers(false);
 }
 
-void CFrobDoor::LockUnlockSlaves(bool lock)
+void CFrobDoor::LockUnlockPeers(bool lock)
 {
 	// Go through the list and issue the call
 	for (int i = 0; i < m_LockPeers.Num(); i++)
@@ -1116,7 +1082,7 @@ void CFrobDoor::LockUnlockSlaves(bool lock)
 	}
 }
 
-void CFrobDoor::TapSlaves()
+void CFrobDoor::TapPeers()
 {
 	// In master mode, tap the handles of the master_open chain too
 	// Cycle through our "open peers" list and issue the call to them
@@ -1143,6 +1109,48 @@ void CFrobDoor::TapSlaves()
 			DM_LOG(LC_FROBBING, LT_ERROR)LOGSTRING("[%s] Linked entity [%s] not spawned or not of class CFrobDoor\r", name.c_str(), openPeer.c_str());
 		}
 	}
+}
+
+void CFrobDoor::AddOpenPeer(const idStr& peerName)
+{
+	// Find the entity and check if it's actually a door
+	idEntity* entity = gameLocal.FindEntity(peerName);
+
+	if (entity != NULL && entity->IsType(CFrobDoor::Type))
+	{
+		m_OpenPeers.AddUnique(peerName);
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: open_peer %s added to local list (%u)\r", name.c_str(), peerName.c_str(), m_OpenPeers.Num());
+	}
+	else
+	{
+		DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("open_peer [%s] not spawned or of wrong type.\r", peerName.c_str());
+	}
+}
+
+void CFrobDoor::RemoveOpenPeer(const idStr& peerName)
+{
+	m_OpenPeers.Remove(peerName);
+}
+
+void CFrobDoor::AddLockPeer(const idStr& peerName)
+{
+	// Find the entity and check if it's actually a door
+	idEntity* entity = gameLocal.FindEntity(peerName);
+
+	if (entity != NULL && entity->IsType(CFrobDoor::Type))
+	{
+		m_LockPeers.AddUnique(peerName);
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: lock_peer %s added to local list (%u)\r", name.c_str(), peerName.c_str(), m_LockPeers.Num());
+	}
+	else
+	{
+		DM_LOG(LC_ENTITY, LT_ERROR)LOGSTRING("lock_peer [%s] not spawned or of wrong type.\r", peerName.c_str());
+	}
+}
+
+void CFrobDoor::RemoveLockPeer(const idStr& peerName)
+{
+	m_LockPeers.Remove(peerName);
 }
 
 void CFrobDoor::Event_GetDoorhandle()

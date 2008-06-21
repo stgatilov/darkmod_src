@@ -171,7 +171,8 @@ void CBinaryFrobMover::Spawn()
 	}
 	
 	// Schedule a post-spawn event to parse the rest of the spawnargs
-	PostEventMS( &EV_PostSpawn, 1 );
+	// greebo: Be sure to use 16 ms as delay to allow the SpawnBind event to execute before this one.
+	PostEventMS( &EV_PostSpawn, 16 );
 }
 
 void CBinaryFrobMover::PostSpawn()

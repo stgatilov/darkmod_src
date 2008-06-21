@@ -137,16 +137,23 @@ protected:
 	virtual void			OnClosedPositionReached();
 
 	// Helper functions to cycle through the m_OpenList members
-	void					OpenSlaves();
-	void					CloseSlaves();
-	void					OpenCloseSlaves(bool open);
+	void					OpenPeers();
+	void					ClosePeers();
+	void					OpenClosePeers(bool open);
 
-	// Taps all slave doorhandles
-	void					TapSlaves();
+	// Taps all doorhandles of open peers
+	void					TapPeers();
 
-	void					LockSlaves();
-	void					UnlockSlaves();
-	void					LockUnlockSlaves(bool lock);
+	void					LockPeers();
+	void					UnlockPeers();
+	void					LockUnlockPeers(bool lock);
+
+	// Accessor functions for adding and removing peers
+	void					AddOpenPeer(const idStr& peerName);
+	void					RemoveOpenPeer(const idStr& peerName);
+
+	void					AddLockPeer(const idStr& peerName);
+	void					RemoveLockPeer(const idStr& peerName);
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
