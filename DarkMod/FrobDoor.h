@@ -79,7 +79,8 @@ public:
 	bool					IsPickable();
 
 	CFrobDoorHandle*		GetDoorhandle();
-	void					SetDoorhandle(CFrobDoorHandle* handle);
+	// Adds a door handle to this door. A door can have multiple handles
+	void					AddDoorhandle(CFrobDoorHandle* handle);
 
 	bool					UsedBy(IMPULSE_STATE nState, CInventoryItem* item);
 
@@ -92,7 +93,7 @@ public:
 	/**
 	 * Return the double door.  Returns NULL if there is none.
 	 **/
-	CFrobDoor *				GetDoubleDoor();
+	CFrobDoor*				GetDoubleDoor();
 
 	/**
 	 * Close the visportal, but only if the double door is also closed.
@@ -221,9 +222,9 @@ protected:
 	idEntityPtr<CFrobDoor>		m_DoubleDoor;
 
 	/**
-	 * Handle that is associated with this door, if the door has one.
+	 * Handles that are associated with this door.
 	 */
-	idEntityPtr<CFrobDoorHandle>	m_Doorhandle;
+	idList< idEntityPtr<CFrobDoorHandle> >	m_Doorhandles;
 
 	/**
 	 * Bar is the movable part of a lock that should jiggle, while

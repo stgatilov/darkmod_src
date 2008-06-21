@@ -66,7 +66,6 @@ CFrobDoor::CFrobDoor()
 	m_FrobActionScript = "frob_door";
 	m_Pickable = true;
 	m_DoubleDoor = NULL;
-	m_Doorhandle = NULL;
 	m_FirstLockedPinIndex = 0;
 	m_SoundPinSampleIndex = 0;
 	m_SoundTimerStarted = 0;
@@ -126,7 +125,12 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_SoundTimerStarted);
 
 	m_DoubleDoor.Save(savefile);
-	m_Doorhandle.Save(savefile);
+
+	savefile->WriteInt(m_Doorhandles.Num());
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
+	{
+		m_Doorhandles[i].Save(savefile);
+	}
 	m_Bar.Save(savefile);
 }
 
@@ -190,7 +194,14 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_SoundTimerStarted);
 
 	m_DoubleDoor.Restore(savefile);
-	m_Doorhandle.Restore(savefile);
+	
+	savefile->ReadInt(num);
+	m_Doorhandles.SetNum(num);
+	for (int i = 0; i < num; i++)
+	{
+		m_Doorhandles[i].Restore(savefile);
+	}
+
 	m_Bar.Restore(savefile);
 }
 
@@ -322,7 +333,7 @@ void CFrobDoor::PostSpawn()
 		{
 			// Convert to frobdoorhandle pointer and call the helper function
 			CFrobDoorHandle* handle = static_cast<CFrobDoorHandle*>(handleEnt);
-			SetDoorhandle(handle);
+			AddDoorhandle(handle);
 
 			// Check if we should bind the named handle to ourselves
 			if (spawnArgs.GetBool("door_handle_bind_flag", "1"))
@@ -428,12 +439,16 @@ void CFrobDoor::Open(bool bMaster)
 {
 	// If we have a doorhandle we want to tap it before the door starts to open if the door wasn't
 	// already interrupted
-	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
-
-	if (handle != NULL && !m_bInterrupted)
+	if (m_Doorhandles.Num() > 0 && !m_bInterrupted)
 	{
-		// Relay the call to the handle, it will come back to us
-		handle->Tap();
+		// Relay the call to the handles, the OpenDoor() call will come back to us
+		for (int i = 0; i < m_Doorhandles.Num(); i++)
+		{
+			CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+			if (handle == NULL) continue;
+
+			handle->Tap();
+		}
 
 		if (bMaster)
 		{
@@ -657,10 +672,11 @@ void CFrobDoor::SetFrobbed(bool val)
 	// First invoke the base class, then check for a doorhandle
 	idEntity::SetFrobbed(val);
 
-	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
-
-	if (handle != NULL)
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
 	{
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
 		handle->SetFrobbed(val);
 	}
 }
@@ -668,14 +684,19 @@ void CFrobDoor::SetFrobbed(bool val)
 bool CFrobDoor::IsFrobbed()
 {
 	// If the door has a handle and it is frobbed, then we are also considered 
-	// to be frobbed. 
-	CFrobDoorHandle* handle = m_Doorhandle.GetEntity();
-
-	if (handle != NULL && handle->IsFrobbed())
+	// to be frobbed.
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
 	{
-		return true;
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		if (handle->IsFrobbed())
+		{
+			return true;
+		}
 	}
 
+	// None of the handles are frobbed
 	return idEntity::IsFrobbed();
 }
 
@@ -722,7 +743,10 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 	idEntity* handle = m_Bar.GetEntity();
 	if (handle == NULL)
 	{
-		handle = m_Doorhandle.GetEntity();
+		if (m_Doorhandles.Num() > 0)
+		{
+			handle = m_Doorhandles[0].GetEntity();
+		}
 	}
 
 	if (handle == NULL) return; // neither handle nor bar => quit
@@ -1144,13 +1168,14 @@ void CFrobDoor::AddLockPeer(const idStr& peerName)
 
 CFrobDoorHandle* CFrobDoor::GetDoorhandle()
 {
-	return m_Doorhandle.GetEntity();
+	return (m_Doorhandles.Num() > 0) ? m_Doorhandles[0].GetEntity() : NULL;
 }
 
-void CFrobDoor::SetDoorhandle(CFrobDoorHandle* handle)
+void CFrobDoor::AddDoorhandle(CFrobDoorHandle* handle)
 {
 	// Store the pointer and the original position
-	m_Doorhandle = handle;
+	m_Doorhandles.Alloc() = handle;
+
 	m_OriginalPosition = handle->GetPhysics()->GetOrigin();
 	m_OriginalAngle = handle->GetPhysics()->GetAxis().ToAngles();
 
@@ -1168,10 +1193,22 @@ void CFrobDoor::AutoSetupDoorHandles()
 	// Find a suitable teamchain member
 	idEntity* part = FindMatchingTeamEntity(CFrobDoorHandle::Type);
 
-	if (part != NULL)
+	while (part != NULL)
 	{
 		// Found the handle, set it up
-		SetDoorhandle(static_cast<CFrobDoorHandle*>(part));
+		AddDoorhandle(static_cast<CFrobDoorHandle*>(part));
+
+		// Get the next handle
+		part = FindMatchingTeamEntity(CFrobDoorHandle::Type, part);
+	}
+
+	for (int i = 0; i < m_Doorhandles.Num(); i++)
+	{
+		CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
+		if (handle == NULL) continue;
+
+		// The first handle is the master, all others get their master flag set to FALSE
+		handle->SetMaster(i == 0);
 	}
 }
 
@@ -1182,7 +1219,7 @@ void CFrobDoor::RemoveLockPeer(const idStr& peerName)
 
 void CFrobDoor::Event_GetDoorhandle()
 {
-	idThread::ReturnEntity(m_Doorhandle.GetEntity());
+	idThread::ReturnEntity(m_Doorhandles.Num() > 0 ? m_Doorhandles[0].GetEntity() : NULL);
 }
 
 void CFrobDoor::Event_IsPickable()

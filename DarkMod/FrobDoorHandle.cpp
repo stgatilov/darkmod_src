@@ -34,18 +34,21 @@ END_CLASS
 
 CFrobDoorHandle::CFrobDoorHandle() :
 	m_Door(NULL),
+	m_Master(true),
 	m_FrobLock(false)
 {}
 
 void CFrobDoorHandle::Save(idSaveGame *savefile) const
 {
 	savefile->WriteObject(m_Door);
+	savefile->WriteBool(m_Master);
 	savefile->WriteBool(m_FrobLock);
 }
 
 void CFrobDoorHandle::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Door));
+	savefile->ReadBool(m_Master);
 	savefile->ReadBool(m_FrobLock);
 }
 
@@ -125,10 +128,20 @@ void CFrobDoorHandle::FrobAction(bool bMaster)
 void CFrobDoorHandle::ToggleLock() 
 {}
 
+bool CFrobDoorHandle::IsMaster()
+{
+	return m_Master;
+}
+
+void CFrobDoorHandle::SetMaster(bool isMaster)
+{
+	m_Master = isMaster;
+}
+
 void CFrobDoorHandle::OnOpenPositionReached()
 {
-	// The handle is "opened", trigger the door
-	if (m_Door != NULL && !m_Door->IsOpen())
+	// The handle is "opened", trigger the door, but only if this is the master handle
+	if (m_Master && m_Door != NULL && !m_Door->IsOpen())
 	{
 		m_Door->OpenDoor(false);
 	}
@@ -142,7 +155,8 @@ void CFrobDoorHandle::Tap()
 	// Trigger the handle movement
 	ToggleOpen();
 
-	if (m_Door != NULL)
+	// Only the master handle is allowed to trigger sounds
+	if (m_Master && m_Door != NULL)
 	{
 		// Start the appropriate sound
 		idStr snd = m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default";

@@ -70,6 +70,15 @@ public:
 	 */
 	void					Tap();
 
+	/** 
+	 * greebo: Accessor methods for the "master" flag. If a door has multiple
+	 * handles, only one is allowed to open the door, all others are dummies.
+	 *
+	 * Note: These methods are mainly for "internal" use by the CFrobDoor class.
+	 */
+	bool					IsMaster();
+	void					SetMaster(bool isMaster);
+
 protected:
 	// Specialise the OpenPositionReached method of BinaryFrobMover to trigger the door's Open() routine
 	virtual void			OnOpenPositionReached();
@@ -83,6 +92,16 @@ protected:
 	* Pointer to the door that is associated with this handle
 	**/
 	CFrobDoor*				m_Door;
+
+	/**
+	 * A door can have multiple doorhandles attached, but only the master
+	 * handle is allowed to call OpenDoor() to avoid double-triggering.
+	 *
+	 * This bool defaults to TRUE at spawn time, so the mapper doesn't need
+	 * to care about that. If a door has multiple handles, the auto-setup
+	 * algorithm takes care of "deactivating" all handles but one.
+	 */
+	bool					m_Master;
 
 	// A mutable bool to avoid infinite loops when propagating the frob
 	bool					m_FrobLock;
