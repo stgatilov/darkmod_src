@@ -3379,6 +3379,40 @@ void idEntity::JoinTeam( idEntity *teammember ) {
 	gameLocal.sortTeamMasters = true;
 }
 
+idEntity* idEntity::FindMatchingTeamEntity(const idTypeInfo& type, idEntity* lastMatch)
+{
+	idEntity* part;
+
+	if (lastMatch != NULL)
+	{
+		for (part = teamChain; part != NULL; part = part->teamChain)
+		{
+			if (part == lastMatch) 
+			{
+				// We've found our previous match, increase the pointer and break;
+				part = part->teamChain;
+				break;
+			}
+		}
+	}
+	else
+	{
+		// No last match specified, set the pointer to the start
+		part = teamChain;
+	}
+
+	for (/* no initialisation */; part != NULL; part = part->teamChain)
+	{
+		if (part->IsType(type))
+		{
+			// Found a suitable one, return it
+			return part;
+		}
+	}
+
+	return NULL;
+}
+
 /*
 ================
 idEntity::QuitTeam
