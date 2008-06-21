@@ -786,7 +786,7 @@ void CFrobDoor::SetHandlePosition(EHandleReset nPos, int msec, int pin, int samp
 		{
 			m_SampleRotationFraction = m_PinRotationFraction / n;
 
-			idAngles angles = (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
+			idAngles angles = m_OriginalAngle + (m_PinRotationFraction * pin) + (m_SampleRotationFraction * sample);
 
 			handle->GetPhysics()->SetAxis(angles.ToMat3());
 		}
