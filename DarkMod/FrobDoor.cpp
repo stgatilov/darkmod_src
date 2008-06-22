@@ -584,7 +584,7 @@ bool CFrobDoor::UsedBy(IMPULSE_STATE nState, CInventoryItem* item)
 	// angua: we can't unlock the door with this key
 	if (bRc == false && IsLocked() && item->Category()->GetName() == "Keys")
 	{
-		StartSound("snd_wrong_key", SND_CHANNEL_ANY, 0, false, NULL);
+		FrobMoverStartSound("snd_wrong_key");
 	}
 
 	return bRc;

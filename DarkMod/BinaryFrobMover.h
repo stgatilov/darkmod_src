@@ -305,6 +305,14 @@ protected:
 	 */
 	virtual void			OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 
+	/**
+	 * greebo: Within the FrobMover class hierarchy, this function should be used to play sounds 
+	 * instead of the standard StartSound() method. Some frobmovers like doors might want to 
+	 * relay the sound playing to another entity (like doorhandles) to avoid sounds being
+	 * played from the door's origin, barely audible to the player.
+	 */
+	virtual void			FrobMoverStartSound(const char* soundName);
+
 protected:
 	/**
 	* m_Open is only set to false when the door is completely closed

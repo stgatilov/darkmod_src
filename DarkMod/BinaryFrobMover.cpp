@@ -780,7 +780,7 @@ bool CBinaryFrobMover::PreOpen()
 	if (m_Locked) 
 	{
 		// Play the "I'm locked" sound 
-		StartSound("snd_locked", SND_CHANNEL_ANY, 0, false, NULL);
+		FrobMoverStartSound("snd_locked");
 		// and prevent the door from opening (return false)
 		return false;
 	}
@@ -813,7 +813,7 @@ void CBinaryFrobMover::OnStartOpen(bool wasClosed, bool bMaster)
 	if (wasClosed)
 	{
 		// Only play the "open" sound when the door was completely closed
-		StartSound("snd_open", SND_CHANNEL_ANY, 0, false, NULL);
+		FrobMoverStartSound("snd_open");
 
 		// trigger our targets on opening, if set to do so
 		if (spawnArgs.GetBool("trigger_on_open", "0"))
@@ -848,7 +848,7 @@ void CBinaryFrobMover::OnOpenPositionReached()
 void CBinaryFrobMover::OnClosedPositionReached()
 {
 	// play the closing sound when the door closes completely
-	StartSound("snd_close", SND_CHANNEL_ANY, 0, false, NULL);
+	FrobMoverStartSound("snd_close");
 
 	// trigger our targets on completely closing, if set to do so
 	if (spawnArgs.GetBool("trigger_on_close", "0"))
@@ -872,18 +872,24 @@ void CBinaryFrobMover::OnInterrupt()
 
 void CBinaryFrobMover::OnLock(bool bMaster)
 {
-	StartSound("snd_lock", SND_CHANNEL_ANY, 0, false, NULL);
+	FrobMoverStartSound("snd_lock");
 }
 
 void CBinaryFrobMover::OnUnlock(bool bMaster)
 {
-	StartSound("snd_unlock", SND_CHANNEL_ANY, 0, false, NULL);
+	FrobMoverStartSound("snd_unlock");
 
 	if (spawnArgs.GetBool("open_on_unlock", "1"))
 	{
 		// The configuration says: open the mover when it's unlocked
 		ToggleOpen();
 	}
+}
+
+void CBinaryFrobMover::FrobMoverStartSound(const char* soundName)
+{
+	// Default implementation: Just play the sound on this entity.
+	StartSound(soundName, SND_CHANNEL_ANY, 0, false, NULL);
 }
 
 void CBinaryFrobMover::Event_Open()

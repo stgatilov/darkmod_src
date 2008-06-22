@@ -159,8 +159,7 @@ void CFrobDoorHandle::Tap()
 	if (m_Master && m_Door != NULL)
 	{
 		// Start the appropriate sound
-		idStr snd = m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default";
-		StartSound(snd, SND_CHANNEL_ANY, 0, false, NULL);
+		FrobMoverStartSound(m_Door->IsLocked() ? "snd_tap_locked" : "snd_tap_default");
 	}
 }
 
