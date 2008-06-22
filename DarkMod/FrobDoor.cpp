@@ -1251,6 +1251,28 @@ void CFrobDoor::RemoveLockPeer(const idStr& peerName)
 	m_LockPeers.Remove(peerName);
 }
 
+void CFrobDoor::FrobMoverStartSound(const char* soundName)
+{
+	if (m_Doorhandles.Num() > 0)
+	{
+		CFrobDoorHandle* handle = m_Doorhandles[0].GetEntity();
+
+		if (handle != NULL)
+		{
+			// Let the sound play from the first handle, but use the soundshader
+			// as defined on this entity.
+			idStr sound = spawnArgs.GetString(soundName, "");
+			const idSoundShader* shader = declManager->FindSound(sound);
+
+			handle->StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, NULL);
+			return;
+		}
+	}
+
+	// No handle or NULL handle, just call the base class
+	CBinaryFrobMover::FrobMoverStartSound(soundName);
+}
+
 void CFrobDoor::Event_GetDoorhandle()
 {
 	idThread::ReturnEntity(m_Doorhandles.Num() > 0 ? m_Doorhandles[0].GetEntity() : NULL);
