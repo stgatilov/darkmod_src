@@ -17,7 +17,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
 	_bestId(-1), // Set the ID to invalid
-	_startAreaNum(conditions.aas->PointAreaNum(conditions.fromPosition)),
+	_startAreaNum(conditions.self.GetEntity()->PointReachableAreaNum(conditions.fromPosition, 2.0f)),
 	_bestTime(0),
 	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
 	_threatPosition(conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin())
