@@ -153,8 +153,6 @@ void CBinaryFrobMover::Spawn()
 {
 	m_stopWhenBlocked = spawnArgs.GetBool("stop_when_blocked", "1");
 
-	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
-
 	m_Open = spawnArgs.GetBool("open");
 	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("[%s] open (%u)\r", name.c_str(), m_Open);
 
@@ -178,8 +176,9 @@ void CBinaryFrobMover::Spawn()
 void CBinaryFrobMover::PostSpawn()
 {
 	// m_Translation is the vector between start position and end position
-	spawnArgs.GetVector("translate", "0 0 0", m_Translation);
-	spawnArgs.GetFloat( "translate_speed", "0", m_TransSpeed );
+	m_Rotate = spawnArgs.GetAngles("rotate", "0 90 0");
+	m_Translation = spawnArgs.GetVector("translate", "0 0 0");
+	m_TransSpeed = spawnArgs.GetFloat( "translate_speed", "0");
 
 	// angua: the origin of the door in opened and closed state
 	m_ClosedOrigin = physicsObj.GetLocalOrigin();

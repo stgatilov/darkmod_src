@@ -73,12 +73,6 @@ void CFrobLever::OnOpenPositionReached()
 		m_Latch = false;
 
 		CBinaryFrobMover::OnOpenPositionReached();
-
-		// Check if we should move back to the closedpos after use
-		if (spawnArgs.GetBool("revert_when_opened", "0"))
-		{
-			SwitchState(false);
-		}
 	}
 }
 
