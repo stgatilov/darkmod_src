@@ -237,7 +237,7 @@ idCVar cv_lg_model("tdm_lg_model",		"models/darkmod/misc/system/lightgem.lwo",	C
 idCVar cv_lg_adjust("tdm_lg_adjust",		"0",		CVAR_GAME | CVAR_FLOAT,	"Adds a constant value to the lightgem." );
 idCVar cv_lg_split("tdm_lg_split",		"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,	"Lightgem is always fully calculated (no splitting between interleaves). Warning! This can cause particle flickering if set to 1." );
 idCVar cv_lg_path("tdm_lg_path",		"",	CVAR_GAME,	"Dump the rendersnapshot to the filepath specified here." );
-idCVar cv_lg_crouch_modifier("tdm_lg_crouch_modifier",	"-5",	CVAR_GAME | CVAR_INTEGER,	"The value the lightgem is adjusted by when the player is crouching." );
+idCVar cv_lg_crouch_modifier("tdm_lg_crouch_modifier",	"-4",	CVAR_GAME | CVAR_INTEGER,	"The value the lightgem is adjusted by when the player is crouching." );
 idCVar cv_lg_image_width("tdm_lg_image_width",	"64",	CVAR_GAME | CVAR_INTEGER,		"Defines the pixel width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 idCVar cv_lg_screen_width("tdm_lg_screen_width",	"640",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen width of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
 idCVar cv_lg_screen_height("tdm_lg_screen_height",	"480",	CVAR_GAME | CVAR_INTEGER,		"Defines the screen height of the lightem rendering. WARNING!!! Increasing this severly affects performance!" );
@@ -255,6 +255,8 @@ idCVar cv_lp_max_pick_attempts("tdm_lp_max_pick_attempts",	"0",	CVAR_GAME | CVAR
 idCVar cv_lp_auto_pick("tdm_lp_auto_pick",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Determines if auto picking is enabled (see tdm_lp_max_pick_attempts)" );
 idCVar cv_lp_randomize("tdm_lp_randomize",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, the jiggling, while lockpicking, will be randomized, otherwise it is linear." );
 idCVar cv_lp_pawlow("tdm_lp_pawlow",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 the sweetspot sound will play at the end of the pattern instead of at the beginning. Thus making it into a reaction game." );
+
+idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 doors and chests will start to open after being unlocked." );
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
