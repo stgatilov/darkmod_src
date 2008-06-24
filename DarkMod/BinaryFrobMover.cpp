@@ -879,10 +879,17 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 {
 	FrobMoverStartSound("snd_unlock");
 
-	if (spawnArgs.GetBool("open_on_unlock", "1"))
+	if (cv_door_auto_open_on_unlock.GetBool())
 	{
-		// The configuration says: open the mover when it's unlocked
-		ToggleOpen();
+		// The configuration says: open the mover when it's unlocked, but let's check the mapper's settings
+		bool openOnUnlock = true;
+		bool spawnArgSet = spawnArgs.GetBool("open_on_unlock", "1", openOnUnlock);
+
+		if (!spawnArgSet || openOnUnlock)
+		{
+			// No spawnarg set or opening is allowed, just open the mover
+			ToggleOpen();
+		}
 	}
 }
 
