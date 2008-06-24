@@ -748,10 +748,10 @@ void Cmd_Noclip_f( const idCmdArgs &args ) {
 
 	if ( player->noclip ) {
 		player->noclip = false;
-		gameLocal.Printf( "notclip OFF\n" );
+		gameLocal.Printf( "noclip OFF\n" );
 	} else {
 		player->noclip = true;
-		gameLocal.Printf( "notclip ON\n" );
+		gameLocal.Printf( "noclip ON\n" );
 	}
 }
 
