@@ -373,20 +373,19 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 
 void CBinaryFrobMover::ToggleLock()
 {
-	// A frobmover can only be un/locked when it is closed.
+	// greebo: When the mover is open, close and lock it.
 	if (m_Open == true)
 	{
-		ToggleOpen();
-		return;
+		Close();
 	}
 
 	if (m_Locked)
 	{
-		Unlock(true);
+		Unlock();
 	}
 	else
 	{
-		Lock(true);
+		Lock();
 	}
 }
 
