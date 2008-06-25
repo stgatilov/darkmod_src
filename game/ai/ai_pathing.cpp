@@ -40,6 +40,7 @@ static bool init_version = FileVersionList("$Id$", init_version);
 */
 
 const float MAX_OBSTACLE_RADIUS			= 128.0f;
+const float OBSTACLE_HEIGHT_EXPANSION		= 20.0f;
 const float PUSH_OUTSIDE_OBSTACLES		= 0.5f;
 const float CLIP_BOUNDS_EPSILON			= 10.0f;
 const int 	MAX_AAS_WALL_EDGES			= 256;
@@ -333,8 +334,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	clipBounds[1][0] += MAX_OBSTACLE_RADIUS;
 	clipBounds[1][1] += MAX_OBSTACLE_RADIUS;
 
-	clipBounds[0][2] -= bounds[0][2] - 20;
-	clipBounds[1][2] += bounds[1][2] + 20;
+	clipBounds[0][2] -= bounds[0][2] - OBSTACLE_HEIGHT_EXPANSION;
+	clipBounds[1][2] += bounds[1][2] + OBSTACLE_HEIGHT_EXPANSION;
 
 	// clipBounds.ExpandSelf( MAX_OBSTACLE_RADIUS );
 	clipMask = physics->GetClipMask();

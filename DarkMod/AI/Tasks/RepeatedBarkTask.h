@@ -27,6 +27,7 @@ class RepeatedBarkTask :
 private:
 	// Corresponds to AI spawnarg "bark_repeat_patrol"
 	idStr _soundName;
+	// times in milliseconds:
 	int _barkRepeatIntervalMin;
 	int _barkRepeatIntervalMax;
 	int _nextBarkTime;
