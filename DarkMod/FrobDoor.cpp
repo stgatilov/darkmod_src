@@ -1236,13 +1236,31 @@ void CFrobDoor::AutoSetupDoubleDoor()
 	{
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%s: Auto-setting up %s as double door.\r", name.c_str(), doubleDoor->name.c_str());
 
-		// Add "self" to the peers of the other door
-		doubleDoor->AddOpenPeer(name);
-		doubleDoor->AddLockPeer(name);
+		if (spawnArgs.GetBool("auto_setup_double_door_frob_peer", "0"))
+		{
+			// Add the door to our frob_peer set
+			m_FrobPeers.AddUnique(doubleDoor->name);
 
-		// Now add the name of the other door to our own peer list
-		AddOpenPeer(doubleDoor->name);
-		AddLockPeer(doubleDoor->name);
+			// Add ourselves to the double door as frob peer
+			doubleDoor->GetFrobPeers().AddUnique(name);
+			doubleDoor->m_bFrobable = m_bFrobable;
+		}
+
+		if (spawnArgs.GetBool("auto_setup_double_door_open_peer", "0"))
+		{
+			// Add "self" to the peers of the other door
+			doubleDoor->AddOpenPeer(name);
+			// Now add the name of the other door to our own peer list
+			AddOpenPeer(doubleDoor->name);
+		}
+
+		if (spawnArgs.GetBool("auto_setup_double_door_lock_peer", "0"))
+		{
+			// Add "self" to the peers of the other door
+			doubleDoor->AddLockPeer(name);
+			// Now add the name of the other door to our own peer list
+			AddLockPeer(doubleDoor->name);
+		}
 	}
 }
 
