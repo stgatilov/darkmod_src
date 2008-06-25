@@ -310,8 +310,10 @@ protected:
 	 * instead of the standard StartSound() method. Some frobmovers like doors might want to 
 	 * relay the sound playing to another entity (like doorhandles) to avoid sounds being
 	 * played from the door's origin, barely audible to the player.
+	 *
+	 * @returns: The length of the sound.
 	 */
-	virtual void			FrobMoverStartSound(const char* soundName);
+	virtual int			FrobMoverStartSound(const char* soundName);
 
 protected:
 	/**

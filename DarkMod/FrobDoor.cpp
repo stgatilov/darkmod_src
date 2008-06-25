@@ -832,7 +832,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 		{
 			if(m_SoundTimerStarted <= 0)
 			{
-				oPickSound = "lockpick_lock_picked";
+				oPickSound = "snd_lockpick_pick_wrong";
 				PropPickSound(oPickSound, cType, LPSOUND_LOCK_PICKED, 0, HANDLE_POS_ORIGINAL, -1, -1);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] already picked\r", name.c_str());
 			}
@@ -852,14 +852,14 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 
 	// Now check if the pick is of the correct type. If no picktype is given, or
 	// the mapper doesn't care, we ignore it.
-	spawnArgs.GetString("lock_picktype", "", pick);
+	spawnArgs.GetString("snd_lock_picktype", "", pick);
 	if(m_FirstLockedPinIndex < pick.Length())
 	{
 		if(!(pick[m_FirstLockedPinIndex] == '*' || pick[m_FirstLockedPinIndex] == type))
 		{
 			if(m_SoundTimerStarted == 0)
 			{
-				oPickSound = "lockpick_pick_wrong";
+				oPickSound = "snd_lockpick_pick_wrong";
 				PropPickSound(oPickSound, cType, LPSOUND_WRONG_LOCKPICK, 0, HANDLE_POS_ORIGINAL, -1, -1);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
 			}
@@ -935,7 +935,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				if(m_FirstLockedPinIndex >= m_Pins.Num())
 				{
 					m_FirstLockedPinIndex = m_Pins.Num();
-					oPickSound = "lockpick_lock_picked";
+					oPickSound = "snd_lockpick_lock_picked";
 					PropPickSound(oPickSound, cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, 0, 0);
 					Unlock(true);
 					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
@@ -943,7 +943,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 				}
 				else
 				{
-					oPickSound = "lockpick_pin_success";
+					oPickSound = "snd_lockpick_pin_success";
 					m_SoundPinSampleIndex = 0;
 					PropPickSound(oPickSound, cType, LPSOUND_PIN_SUCCESS, 0, HANDLE_POS_ORIGINAL, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 					DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Door [%s] successfully picked!\r", name.c_str());
@@ -952,7 +952,7 @@ void CFrobDoor::ProcessLockpick(int cType, ELockpickSoundsample nSampleType)
 			else
 			{
 				m_SoundPinSampleIndex = 0;
-				oPickSound = "lockpick_pin_fail";
+				oPickSound = "snd_lockpick_pin_fail";
 				PropPickSound(oPickSound, cType, LPSOUND_PIN_FAILED, 0, HANDLE_POS_SAMPLE, m_FirstLockedPinIndex, m_SoundPinSampleIndex);
 				DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("Pick attempt: %u/%u failed (len: %u).\r", m_FirstLockedPinIndex, m_SoundPinSampleIndex, length);
 			}
@@ -998,16 +998,16 @@ Quit:
 
 void CFrobDoor::PropPickSound(idStr &oPickSound, int cType, ELockpickSoundsample nSampleType, int time, EHandleReset nHandlePos, int PinIndex, int SampleIndex)
 {
-	int length = 0;
-
 	m_SoundTimerStarted++;
 	PropSoundDirect(oPickSound, true, false );
 
-	idSoundShader const *shader = declManager->FindSound(oPickSound);
-	StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+	int length = FrobMoverStartSound(oPickSound);
 
 	if(PinIndex != -1)
+	{
 		SetHandlePosition(nHandlePos, length, PinIndex, SampleIndex);
+	}
+
 	PostEventMS(&EV_TDM_LockpickTimer, length+time, cType, nSampleType);
 }
 
@@ -1269,7 +1269,7 @@ void CFrobDoor::RemoveLockPeer(const idStr& peerName)
 	m_LockPeers.Remove(peerName);
 }
 
-void CFrobDoor::FrobMoverStartSound(const char* soundName)
+int CFrobDoor::FrobMoverStartSound(const char* soundName)
 {
 	if (m_Doorhandles.Num() > 0)
 	{
@@ -1282,13 +1282,14 @@ void CFrobDoor::FrobMoverStartSound(const char* soundName)
 			idStr sound = spawnArgs.GetString(soundName, "");
 			const idSoundShader* shader = declManager->FindSound(sound);
 
-			handle->StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, NULL);
-			return;
+			int length = 0;
+			handle->StartSoundShader(shader, SND_CHANNEL_ANY, 0, false, &length);
+			return length;
 		}
 	}
 
 	// No handle or NULL handle, just call the base class
-	CBinaryFrobMover::FrobMoverStartSound(soundName);
+	return CBinaryFrobMover::FrobMoverStartSound(soundName);
 }
 
 void CFrobDoor::Event_GetDoorhandle()

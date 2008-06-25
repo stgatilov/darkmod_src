@@ -892,10 +892,13 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 	}
 }
 
-void CBinaryFrobMover::FrobMoverStartSound(const char* soundName)
+int CBinaryFrobMover::FrobMoverStartSound(const char* soundName)
 {
 	// Default implementation: Just play the sound on this entity.
-	StartSound(soundName, SND_CHANNEL_ANY, 0, false, NULL);
+	int length = 0;
+	StartSound(soundName, SND_CHANNEL_ANY, 0, false, &length);
+
+	return length;
 }
 
 void CBinaryFrobMover::Event_Open()

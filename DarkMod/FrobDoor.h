@@ -174,7 +174,7 @@ protected:
 	 * to the doorhandle. This avoids sounds being played from door origins,
 	 * which is barely audible to the player.
 	 */
-	virtual void			FrobMoverStartSound(const char* soundName);
+	virtual int			FrobMoverStartSound(const char* soundName);
 
 	/**
 	 * Create a random pin pattern for a given pin. Clicks defines the required 
