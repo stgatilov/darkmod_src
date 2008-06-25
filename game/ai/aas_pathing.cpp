@@ -558,15 +558,15 @@ idAASLocal::SortWallEdges
 */
 void idAASLocal::SortWallEdges( int *edges, int numEdges ) const 
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Sort wall edges, number of edges: %d\r", numEdges);
-
+#ifdef TIMING_BUILD
 	static int sortWallEdgesTimer = -1;
 	if (sortWallEdgesTimer == -1)
 	{
 		CREATE_TIMER(sortWallEdgesTimer, name, "SortWallEdges");
 	}
-	START_TIMING(sortWallEdgesTimer);
+#endif
 
+	START_TIMING(sortWallEdgesTimer);
 
 	int i, j, k, numSequences;
 	wallEdge_t **sequenceFirst, **sequenceLast, *wallEdges, *wallEdge;
@@ -623,11 +623,13 @@ idAASLocal::GetWallEdges
 */
 int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const 
 {
+#ifdef TIMING_BUILD
 	static int getWallEdgesTimer = -1;
 	if (getWallEdgesTimer == -1)
 	{
 		CREATE_TIMER(getWallEdgesTimer, name, "GetWallEdges");
 	}
+#endif
 	START_SCOPED_TIMING(getWallEdgesTimer, scopedWallEdgesTimer);
 
 	if ( !file ) 
