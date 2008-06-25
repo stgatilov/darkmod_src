@@ -16,6 +16,8 @@
 static bool init_version = FileVersionList("$Source$  $Revision$   $Date$", init_version);
 
 #include "aas_local.h"
+#include "../../DarkMod/TimerManager.h"
+
 
 #define SUBSAMPLE_WALK_PATH		1
 #define SUBSAMPLE_FLY_PATH		0
@@ -554,7 +556,18 @@ typedef struct wallEdge_s {
 idAASLocal::SortWallEdges
 ============
 */
-void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
+void idAASLocal::SortWallEdges( int *edges, int numEdges ) const 
+{
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Sort wall edges, number of edges: %d\r", numEdges);
+
+	static int sortWallEdgesTimer = -1;
+	if (sortWallEdgesTimer == -1)
+	{
+		CREATE_TIMER(sortWallEdgesTimer, name, "SortWallEdges");
+	}
+	START_TIMING(sortWallEdgesTimer);
+
+
 	int i, j, k, numSequences;
 	wallEdge_t **sequenceFirst, **sequenceLast, *wallEdges, *wallEdge;
 
@@ -569,8 +582,8 @@ void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
 		sequenceFirst[i] = &wallEdges[i];
 		sequenceLast[i] = &wallEdges[i];
 	}
-	numSequences = numEdges;
 
+	numSequences = numEdges;
 	for ( i = 0; i < numSequences; i++ ) {
 		for ( j = i+1; j < numSequences; j++ ) {
 			if ( sequenceFirst[i]->verts[0] == sequenceLast[j]->verts[1] ) {
@@ -599,6 +612,8 @@ void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
 			edges[k++] = wallEdge->edgeNum;
 		}
 	}
+	STOP_TIMING(sortWallEdgesTimer);
+
 }
 
 /*
@@ -606,59 +621,65 @@ void idAASLocal::SortWallEdges( int *edges, int numEdges ) const {
 idAASLocal::GetWallEdges
 ============
 */
-int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const {
-	int i, j, k, l, face1Num, face2Num, edge1Num, edge2Num, numEdges, absEdge1Num;
-	int *areaQueue, curArea, queueStart, queueEnd;
-	byte *areasVisited;
-	const aasArea_t *area;
-	const aasFace_t *face1, *face2;
-	idReachability *reach;
+int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFlags, int *edges, int maxEdges ) const 
+{
+	static int getWallEdgesTimer = -1;
+	if (getWallEdgesTimer == -1)
+	{
+		CREATE_TIMER(getWallEdgesTimer, name, "GetWallEdges");
+	}
+	START_SCOPED_TIMING(getWallEdgesTimer, scopedWallEdgesTimer);
 
-	if ( !file ) {
+	if ( !file ) 
+	{
 		return 0;
 	}
 
-	numEdges = 0;
+	int numEdges = 0;
+	int numAreas = file->GetNumAreas();
 
-	areasVisited = (byte *) _alloca16( file->GetNumAreas() );
-	memset( areasVisited, 0, file->GetNumAreas() * sizeof( byte ) );
-	areaQueue = (int *) _alloca16( file->GetNumAreas() * sizeof( int ) );
+	byte *areasVisited = (byte *) _alloca16( numAreas);
+	memset( areasVisited, 0, numAreas * sizeof( byte ) );
+	int *areaQueue = (int *) _alloca16( numAreas * sizeof( int ) );
 
-	queueStart = -1;
-	queueEnd = 0;
+	int queueStart = -1;
+	int queueEnd = 0;
 	areaQueue[0] = areaNum;
 	areasVisited[areaNum] = true;
 
-	for ( curArea = areaNum; queueStart < queueEnd; curArea = areaQueue[++queueStart] ) {
+	idReachability *reach;
 
-		area = &file->GetArea( curArea );
+	for (int curArea = areaNum; queueStart < queueEnd; curArea = areaQueue[++queueStart] ) {
 
-		for ( i = 0; i < area->numFaces; i++ ) {
-			face1Num = file->GetFaceIndex( area->firstFace + i );
-			face1 = &file->GetFace( abs(face1Num) );
+		const aasArea_t *area = &file->GetArea( curArea );
+
+		for (int i = 0; i < area->numFaces; i++) {
+			int face1Num = file->GetFaceIndex(area->firstFace + i);
+			const aasFace_t *face1 = &file->GetFace( abs(face1Num) );
 
 			if ( !(face1->flags & FACE_FLOOR ) ) {
 				continue;
 			}
 
-			for ( j = 0; j < face1->numEdges; j++ ) {
-				edge1Num = file->GetEdgeIndex( face1->firstEdge + j );
-				absEdge1Num = abs( edge1Num );
+			for (int j = 0; j < face1->numEdges; j++ ) {
+				int edge1Num = file->GetEdgeIndex(face1->firstEdge + j);
+				int absEdge1Num = abs( edge1Num );
 
 				// test if the edge is shared by another floor face of this area
-				for ( k = 0; k < area->numFaces; k++ ) {
+				int k;
+				for (k = 0; k < area->numFaces; k++ ) {
 					if ( k == i ) {
 						continue;
 					}
-					face2Num = file->GetFaceIndex( area->firstFace + k );
-					face2 = &file->GetFace( abs(face2Num) );
+					int face2Num = file->GetFaceIndex( area->firstFace + k );
+					const aasFace_t  *face2 = &file->GetFace( abs(face2Num) );
 
 					if ( !(face2->flags & FACE_FLOOR ) ) {
 						continue;
 					}
-
-					for ( l = 0; l < face2->numEdges; l++ ) {
-						edge2Num = abs( file->GetEdgeIndex( face2->firstEdge + l ) );
+					int l;
+					for (l = 0; l < face2->numEdges; l++ ) {
+						int edge2Num = abs( file->GetEdgeIndex( face2->firstEdge + l ) );
 						if ( edge2Num == absEdge1Num ) {
 							break;
 						}
@@ -672,7 +693,7 @@ int idAASLocal::GetWallEdges( int areaNum, const idBounds &bounds, int travelFla
 				}
 
 				// test if the edge is used by a reachability
-				for ( reach = area->reach; reach; reach = reach->next ) {
+				for (reach = area->reach; reach; reach = reach->next ) {
 					if ( reach->travelType & travelFlags ) {
 						if ( reach->edgeNum == absEdge1Num ) {
 							break;
